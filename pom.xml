@@ -9,7 +9,7 @@
  -->
   <groupId>net.wetheinter</groupId>
   <artifactId>xapi</artifactId>
-  <version>0.4-SNAPSHOT</version>
+  <version>0.3-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>XApi - Cross Platform Java Api</name>
   <description>
@@ -33,8 +33,8 @@
   </organization>
 
   <properties>
-    <xapi.version>0.4-SNAPSHOT</xapi.version>
-    <xapi.test.version>0.3</xapi.test.version>
+    <xapi.version>0.3-SNAPSHOT</xapi.version>
+    <xapi.test.version>0.3-SNAPSHOT</xapi.test.version>
     <playn.version>1.5.1</playn.version>
     <gwt.version>2.5.0</gwt.version>
     <appengine.version>1.7.3</appengine.version>
@@ -608,23 +608,6 @@
       <organizationUrl>http://www.wetheinter.net/</organizationUrl>
     </developer>
   </developers>
-
-  <distributionManagement>
-    <repository>
-      <id>sonatype-nexus-staging</id>
-      <name>Sonatype Release</name>
-      <url>http://oss.sonatype.org/service/local/staging/deploy/maven2</url>
-    </repository>
-    <snapshotRepository>
-      <id>sonatype-nexus-snapshots</id>
-      <name>sonatype-nexus-snapshots</name>
-      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-    </snapshotRepository>
-    <site>
-      <id>github-project-site</id>
-      <url>gitsite:git@github.com/WeTheInternet/xapi</url>
-    </site>
-  </distributionManagement>
 
   <profiles>
     <profile>

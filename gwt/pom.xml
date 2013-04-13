@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi</artifactId>
-    <version>0.4-SNAPSHOT</version>
+    <version>0.3-SNAPSHOT</version>
   </parent>
 
   <artifactId>xapi-gwt-parent</artifactId>
@@ -89,7 +90,9 @@
       of calls of reflection, which, in gwt will be very fast (no security manager, no layers of indirection, just js 
       functions and field accessors). This would allow a block of code to be translated such that the method calls are 
       accessed from the class object, instead of arbitrary static methods. Whenever a class calls out to another class 
-      on an object, the Provider<> of that class reference can start out with the hardcoded initial version. Then, when a class is updated to contain new sets of instructions, our gwt recompiler on the server can add a new impl class in a new split point, recompile, send back url, and when that class loads, it updates the providers to point to 
+      on an object, the Provider<> of that class reference can start out with the hardcoded initial version. Then, when 
+      a class is updated to contain new sets of instructions, our gwt recompiler on the server can add a new impl class 
+      in a new split point, recompile, send back url, and when that class loads, it updates the providers to point to 
       it instead of the old class. The goal is to be able to live hotswap gwt code indefinitely (that is, until your 
       tab runs out of memory). -->
     <module>reflect</module>
