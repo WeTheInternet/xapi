@@ -9,7 +9,7 @@
  -->
   <groupId>net.wetheinter</groupId>
   <artifactId>xapi</artifactId>
-  <version>0.3-SNAPSHOT</version>
+  <version>0.3</version>
   <packaging>pom</packaging>
   <name>XApi - Cross Platform Java Api</name>
   <description>
@@ -33,8 +33,8 @@
   </organization>
 
   <properties>
-    <xapi.version>0.3-SNAPSHOT</xapi.version>
-    <xapi.test.version>0.3-SNAPSHOT</xapi.test.version>
+    <xapi.version>0.3</xapi.version>
+    <xapi.test.version>0.3</xapi.test.version>
     <playn.version>1.5.1</playn.version>
     <gwt.version>2.5.0</gwt.version>
     <appengine.version>1.7.3</appengine.version>
@@ -583,7 +583,7 @@
   </build>
 
 
-  <url>https://github.com/WeTheInternet/xapi</url>
+  <url>https://WeTheInter.net</url>
   <scm>
     <url>git@github.com:WeTheInternet/xapi.git</url>
     <connection>scm:git:git@github.com:WeTheInternet/xapi.git</connection>
@@ -621,8 +621,8 @@
       <url>https://oss.sonatype.org/content/repositories/snapshots</url>
     </snapshotRepository>
     <site>
-      <id>github-project-site</id>
-      <url>gitsite:git@github.com/WeTheInternet/xapi.git</url>
+      <id>The Internet Party</id>
+      <url>http://WeTheInter.net</url>
     </site>
   </distributionManagement>
 
