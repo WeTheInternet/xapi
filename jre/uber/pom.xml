@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-jre-parent</artifactId>
+    <version>0.3-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>xapi-jre</artifactId>
+  <packaging>jar</packaging>
+  <name>XApi - Jre uber jar</name>
+  <url>WeTheInter.net</url>
+  <description>
+    This module exists solely to package all other jre modules into a single
+    uber jar.  This makes deploying to non-mavenized targets much easier.
+    
+    To use the uber jar in maven projects, you much inherit using a classifier:
+    groupId: wetheinter.net
+    artifactId: xapi-jre
+    classifier: uber
+    
+    Of course, you would be wise to inherit your dependencies individually;
+    the uber jar is intended for projects like collide,
+    which have complex configuration, and adding many jars would be a pain.
+    
+    It also allows dependent modules to discover new features,
+    as modules graduate from labs to final, they will be added here.
+    As you type X_, autocomplete will expose newly added services.
+ </description>
+  <properties>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-jre-reflect</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-jre-inject</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-jre-process</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-jre-collect</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-jre-io</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-core-inject</artifactId>
+    </dependency>
+<!--    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-common</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-common</artifactId>
+      <classifier>sources</classifier>
+    </dependency>
+-->
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>uberjar</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+            <configuration>
+              <archive /><!-- TODO put in a useful main class -->
+              <!-- <manifest> <mainClass>my.package.to.my.MainClass</mainClass> </manifest> -->
+              <descriptors>
+                <descriptor>src/main/assembly/jar-assembly.xml</descriptor>
+              </descriptors>
+              <appendAssemblyId>true</appendAssemblyId>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>

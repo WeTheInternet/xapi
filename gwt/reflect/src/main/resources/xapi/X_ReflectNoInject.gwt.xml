@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE module PUBLIC "-//Google Inc.//DTD Google Web Toolkit 2.5.0-rc1//EN" "http://google-web-toolkit.googlecode.com/svn/tags/2.5.0-rc1/distro-source/core/src/gwt-module.dtd">
+<module>
+  <!-- 
+  This unwieldly named module, X_ReflectNoInject is a reflection service
+  implementation which does not depend on our magic-method-injector.
+  
+  This implementation using a single, massive, generated factory for your app,
+  and will pull in unused types and force them to be used.
+  
+  It's uglier name is to discourage its use; the injected variation will only
+  pull in reflection code for types that are accessed, where they are accessed.
+  
+  You may, however, want to prefer this method if you actually want to
+  import unused types, perhaps for exposing a GWT api in raw javascript.
+   -->
+
+
+	<!-- Pull in the source folders we need for basic api support -->
+	<source path="gwt"/>
+	<source path="reflect"/>
+
+	<!-- Include our emulation layer -->
+	<super-source path="emul"/>
+	
+  <!-- Inherit our basic needs -->
+  <inherits name="xapi.X_Inject" />
+  <inherits name="com.google.gwt.core.Core" />
+	
+	<!-- 
+  This generator will iterate for all classes annotated with @GwtClass
+  It is provided to give an injection-free form of reflection in gwt,
+  but it is not recommended, as it will pull all these classes into whatever
+  splitpoint requests them first.
+  
+  Inheriting wetheinter.net.XReflect will include magic-method-injection,
+  to make every call into X_Reflect directly access the magic classes,
+  instead of using the built-in mapping used for the monolith service.
+  
+  Note that dev mode in gwt will do nothing; the generator will emit
+  a simple service that does nothing (it just uses normal jre reflection)
+   -->
+	<generate-with class="xapi.dev.reflect.MonolithReflectionGenerator">
+		<when-type-assignable class="xapi.reflect.api.ReflectionService" />
+	</generate-with>
+	
+</module>

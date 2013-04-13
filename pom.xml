@@ -1,0 +1,700 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+<!--   <parent>
+    <groupId>org.sonatype.oss</groupId>
+    <artifactId>oss-parent</artifactId>
+    <version>7</version>
+  </parent>
+ -->
+  <groupId>net.wetheinter</groupId>
+  <artifactId>xapi</artifactId>
+  <version>0.3-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>XApi - Cross Platform Java Api</name>
+  <description>
+  XApi is a dependency injection, service-oriented, polyglot java framework.
+  It is comprised of standalone modules for use in web, desktop and mobile java applications.
+
+  It is geared towards servlets and gwt clients,
+  with the ability to share a service interface across many or all platforms,
+  currently: java, gwt [webkit, firefox, ie], playn [android, ios, flash], appengine &amp; vert.x
+
+  For Google Web Toolkit, we also include reflection support,
+  more complete emulation of java.lang.Class,
+  a range of code generation utilities, and even magic-method injection
+  (for production compiles any method in the app can be swapped out with 
+  others based on configuration properties, or any AST mangling / code generating
+  methods you wish to write).
+  </description>
+  <organization>
+    <name>The Internet Party</name>
+    <url>WeTheInter.net</url>
+  </organization>
+
+  <properties>
+    <xapi.version>0.3-SNAPSHOT</xapi.version>
+    <xapi.test.version>0.3-SNAPSHOT</xapi.test.version>
+    <playn.version>1.5.1</playn.version>
+    <gwt.version>2.5.0</gwt.version>
+    <appengine.version>1.7.3</appengine.version>
+    <guava.version>13.0.1</guava.version>
+    <android.maven.version>3.4.0</android.maven.version>
+    <maven.version>3.0.4</maven.version>
+    <maven.plugin.version>2.2.1</maven.plugin.version>
+    <plexus.version>1.5.1</plexus.version>
+  </properties>
+  <modules>
+  
+    <!-- Core interfaces and injection layer -->
+    <module>core</module>
+
+    <!-- Jre default runtime -->
+    <module>jre</module>
+    
+    <!-- Gwt mode runtime -->
+    <module>gwt</module>
+
+    <!-- Dev mode runtime -->
+    <module>dev</module>
+
+    <!-- Server layer -->
+    <module>server</module>
+
+    <!-- Maven build tools -->
+    <module>maven</module>
+
+<!-- NSFW
+    <module>gui</module>
+    <module>android</module>
+    <module>appengine</module>
+    <module>collide</module>
+    <module>playn</module>
+-->
+
+  </modules>
+  <dependencyManagement>
+    <!-- Include versioned copies of all dependencies, so children don't set versions manually -->
+    <dependencies>
+      <!-- XApi core modules -->
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-core-api</artifactId>
+        <version>${xapi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-core-api</artifactId>
+        <version>${xapi.version}</version>
+        <classifier>sources</classifier>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-core-inject</artifactId>
+        <version>${xapi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-core-inject</artifactId>
+        <version>${xapi.version}</version>
+        <classifier>sources</classifier>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-core-inject</artifactId>
+        <version>${xapi.version}</version>
+        <type>test-jar</type>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-test</artifactId>
+        <version>${xapi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-maven-plugin</artifactId>
+        <version>${xapi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-common</artifactId>
+        <version>${xapi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-common</artifactId>
+        <classifier>sources</classifier>
+        <version>${xapi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-core-reflect</artifactId>
+        <version>${xapi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-core-reflect</artifactId>
+        <version>${xapi.version}</version>
+        <classifier>sources</classifier>
+      </dependency>
+      
+      <!-- Dev stuff -->
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-dev-api</artifactId>
+        <version>${xapi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-dev-template</artifactId>
+        <version>${xapi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-dev-source</artifactId>
+        <version>${xapi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-dev-maven</artifactId>
+        <version>${xapi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-dev-shell</artifactId>
+        <version>${xapi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-dev-scanner</artifactId>
+        <version>${xapi.version}</version>
+      </dependency>
+      
+      <!-- Collections module -->
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-core-collect</artifactId>
+        <version>${xapi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-core-collect</artifactId>
+        <type>test-jar</type>
+        <version>${xapi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-core-collect</artifactId>
+        <version>${xapi.version}</version>
+        <classifier>sources</classifier>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-gwt-collect</artifactId>
+        <version>${xapi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-gwt-collect</artifactId>
+        <version>${xapi.version}</version>
+        <classifier>sources</classifier>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-jre-collect</artifactId>
+        <version>${xapi.version}</version>
+      </dependency>
+      
+      <!-- Model module -->
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-core-model</artifactId>
+        <version>${xapi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-gwt-model</artifactId>
+        <version>${xapi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-core-model</artifactId>
+        <version>${xapi.version}</version>
+        <classifier>sources</classifier>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-gwt-model</artifactId>
+        <classifier>sources</classifier>
+        <version>${xapi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-jre-model</artifactId>
+        <version>${xapi.version}</version>
+      </dependency>
+
+      <!-- IO module -->
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-core-io</artifactId>
+        <version>${xapi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-gwt-io</artifactId>
+        <version>${xapi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-core-io</artifactId>
+        <version>${xapi.version}</version>
+        <classifier>sources</classifier>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-gwt-io</artifactId>
+        <classifier>sources</classifier>
+        <version>${xapi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-jre-io</artifactId>
+        <version>${xapi.version}</version>
+      </dependency>
+
+
+      <!-- Concurrency support -->
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-core-process</artifactId>
+        <version>${xapi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-gwt-process</artifactId>
+        <version>${xapi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-core-process</artifactId>
+        <version>${xapi.version}</version>
+        <classifier>sources</classifier>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-gwt-process</artifactId>
+        <classifier>sources</classifier>
+        <version>${xapi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-jre-process</artifactId>
+        <version>${xapi.version}</version>
+      </dependency>
+
+  <!-- XApi JRE modules -->
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-jre-inject</artifactId>
+        <version>${xapi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-jre-reflect</artifactId>
+        <version>${xapi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-jre</artifactId>
+        <classifier>uber</classifier>
+        <version>${xapi.version}</version>
+      </dependency>
+      
+  <!-- XApi GWT modules -->
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-gwt-api</artifactId>
+        <version>${xapi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-gwt-api</artifactId>
+        <classifier>sources</classifier>
+        <version>${xapi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-gwt-inject</artifactId>
+        <version>${xapi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-gwt-reflect</artifactId>
+        <version>${xapi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-gwt-inject</artifactId>
+        <classifier>sources</classifier>
+        <version>${xapi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-gwt-reflect</artifactId>
+        <classifier>sources</classifier>
+        <version>${xapi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-gwt-test</artifactId>
+        <version>${xapi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-core-test</artifactId>
+        <version>${xapi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-gwt</artifactId>
+        <version>${xapi.version}</version>
+      </dependency>
+
+   <!-- XApi Server Modules -->
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-server-api</artifactId>
+        <version>${xapi.version}</version>
+      </dependency>
+      
+      <!-- Maven dependencies -->
+      <dependency>
+        <groupId>org.apache.maven</groupId>
+        <artifactId>maven-plugin-registry</artifactId>
+        <version>${maven.plugin.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven</groupId>
+        <artifactId>maven-artifact</artifactId>
+        <version>${maven.version}</version>
+        <scope>compile</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven</groupId>
+        <artifactId>maven-model</artifactId>
+        <version>${maven.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven</groupId>
+        <artifactId>maven-core</artifactId>
+        <version>${maven.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven</groupId>
+        <artifactId>maven-plugin-api</artifactId>
+        <version>${maven.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.codehaus.plexus</groupId>
+        <artifactId>plexus-utils</artifactId>
+        <version>${plexus.version}</version>
+      </dependency>
+
+      <!-- Google modules -->
+      <dependency>
+        <groupId>com.google.gwt</groupId>
+        <artifactId>gwt-user</artifactId>
+        <version>${gwt.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.gwt</groupId>
+        <artifactId>gwt-dev</artifactId>
+        <version>${gwt.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.gwt</groupId>
+        <artifactId>gwt-servlet</artifactId>
+        <version>${gwt.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.gwt</groupId>
+        <artifactId>gwt-elemental</artifactId>
+        <version>${gwt.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.gwt</groupId>
+        <artifactId>gwt-codeserver</artifactId>
+        <version>${gwt.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.google.appengine</groupId>
+        <artifactId>appengine</artifactId>
+        <version>${appengine.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.appengine</groupId>
+        <artifactId>appengine-api-1.0-sdk</artifactId>
+        <version>${appengine.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.appengine</groupId>
+        <artifactId>appengine-api-labs</artifactId>
+        <version>${appengine.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.appengine</groupId>
+        <artifactId>appengine-api-stubs</artifactId>
+        <version>${appengine.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.appengine</groupId>
+        <artifactId>appengine-jsr107cache</artifactId>
+        <version>${appengine.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.appengine</groupId>
+        <artifactId>appengine-remote-api</artifactId>
+        <version>${appengine.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.appengine</groupId>
+        <artifactId>appengine-testing</artifactId>
+        <version>${appengine.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.appengine</groupId>
+        <artifactId>appengine-tools-sdk</artifactId>
+        <version>${appengine.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.appengine</groupId>
+        <artifactId>orm</artifactId>
+        <version>${appengine.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.appengine</groupId>
+        <artifactId>appengine-java-sdk</artifactId>
+        <version>${appengine.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava</artifactId>
+        <version>${guava.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava-gwt</artifactId>
+        <version>${guava.version}</version>
+      </dependency>
+
+      <!-- Testing modules -->
+      <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>4.8.1</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <!-- Dependencies we make all modules inherit -->
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>javax.validation</groupId>
+      <artifactId>validation-api</artifactId>
+      <version>1.0.0.GA</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>2.12.4</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>3.0</version>
+          <configuration>
+            <source>1.7</source>
+            <target>1.7</target>
+          </configuration>
+        </plugin>
+        <plugin>
+          <artifactId>maven-jar-plugin</artifactId>
+          <version>2.4</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-plugin-plugin</artifactId>
+          <version>2.9</version>
+          <configuration>
+            <goalPrefix>xapi</goalPrefix>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>net.wetheinter</groupId>
+          <artifactId>xapi-maven-plugin</artifactId>
+          <version>${xapi.version}</version>
+          <configuration>
+
+          </configuration>
+        </plugin>
+              <plugin>
+        <groupId>org.eclipse.m2e</groupId>
+        <artifactId>lifecycle-mapping</artifactId>
+        <version>1.0.0</version>
+        <configuration>
+          <lifecycleMappingMetadata>
+            <pluginExecutions>
+              <pluginExecution>
+                <pluginExecutionFilter>
+                  <groupId>org.apache.maven.plugins</groupId>
+                  <artifactId>maven-enforcer-plugin</artifactId>
+                  <versionRange>[1.0.0,)</versionRange>
+                  <goals>
+                    <goal>enforce</goal>
+                  </goals>
+                </pluginExecutionFilter>
+                <action>
+                  <ignore />
+                </action>
+              </pluginExecution>
+            </pluginExecutions>
+          </lifecycleMappingMetadata>
+        </configuration>
+      </plugin>
+      </plugins>
+    </pluginManagement>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
+
+
+  <url>https://github.com/WeTheInternet/xapi</url>
+  <scm>
+    <url>git@github.com:WeTheInternet/xapi.git</url>
+    <connection>scm:git:git@github.com:WeTheInternet/xapi.git</connection>
+    <developerConnection>scm:git:git@github.com:WeTheInternet/xapi.git</developerConnection>
+  </scm>
+  <licenses>
+    <license>
+      <name>Modified BSD License</name>
+      <url>http://wetheinter.net/LICENSE.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+  <inceptionYear>2012</inceptionYear>
+  <issueManagement>
+    <system>Github Issues</system>
+    <url>https://github.com/WeTheInternet/xapi/issues</url>
+  </issueManagement>
+  <developers>
+    <developer>
+      <name>James X. Nelson</name>
+      <email>james@wetheinter.net</email>
+      <organizationUrl>http://www.wetheinter.net/</organizationUrl>
+    </developer>
+  </developers>
+
+  <distributionManagement>
+    <repository>
+      <id>sonatype-nexus-staging</id>
+      <name>Sonatype Release</name>
+      <url>http://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+    </repository>
+    <snapshotRepository>
+      <id>sonatype-nexus-snapshots</id>
+      <name>sonatype-nexus-snapshots</name>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>
+    <site>
+      <id>github-project-site</id>
+      <url>gitsite:git@github.com/WeTheInternet/xapi.git</url>
+    </site>
+  </distributionManagement>
+
+  <profiles>
+    <profile>
+      <id>release</id>
+      <activation>
+        <property>
+          <name>xapi.release</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>attach-sources</id>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+             <execution>
+              <id>attach-javadocs</id>
+              <goals>
+                <goal>jar</goal>
+              </goals>
+            </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-jar-plugin</artifactId>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>test-jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>release-sign-artifacts</id>
+      <activation>
+        <property>
+          <name>performRelease</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.1</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
+</project>

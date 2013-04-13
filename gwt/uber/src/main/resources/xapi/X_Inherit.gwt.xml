@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module>
+<inherits name="xapi.X_Inject" />
+<inherits name="xapi.X_Reflect" />
+<inherits name="xapi.X_Collect" />
+<inherits name="xapi.X_Model" />
+<inherits name="xapi.X_Process" />
+</module>

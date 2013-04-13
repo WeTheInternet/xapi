@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-dev-parent</artifactId>
+    <version>0.3-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>xapi-dev-scanner</artifactId>
+  <packaging>jar</packaging>
+  <name>XApi - Classpath and pom scanner</name>
+  <url>WeTheInter.net</url>
+  <description>
+    A set of tools for scanning the classpath, and reading in maven projects.
+  </description>
+  
+  <dependencies>
+     <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-dev-maven</artifactId>
+     </dependency>
+     <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-dev-shell</artifactId>
+     </dependency>
+     <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-terminal-jre</artifactId>
+      <version>${xapi.version}</version>
+     </dependency>
+  </dependencies>
+
+  <build>
+  </build>
+</project>

@@ -1,0 +1,8 @@
+.classpath
+.settings
+.project
+target
+war
+gwt-unitCache
+compile
+*.iml

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi</artifactId>
+    <version>0.3-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>xapi-jre-parent</artifactId>
+  <packaging>pom</packaging>
+  <name>XApi - Jre SuperPom</name>
+  <url>WeTheInter.net</url>
+  <description>
+  This is the main aggregator for all jre submodules.
+  
+  It will contain all of the default implementations for all java runtimes,
+  and leave extension points for any cross-platform differences between
+  restricted platforms, like android, appengine or servlet environments.
+    
+ </description>
+  
+  <modules>
+
+    <module>reflect</module>
+    <module>inject</module>
+    <module>collect</module>
+    <module>process</module>
+    <module>model</module>
+    <module>io</module>
+    <module>uber</module>
+    
+  </modules>
+
+</project>

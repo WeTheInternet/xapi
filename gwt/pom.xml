@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi</artifactId>
+    <version>0.3-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>xapi-gwt-parent</artifactId>
+  <packaging>pom</packaging>
+  <name>XApi - Gwt SuperPom</name>
+  <url>WeTheInter.net</url>
+
+  <properties>
+    <xapi.skip.test>true</xapi.skip.test>
+  </properties>
+
+  <description>
+  This is the main aggregator for all gwt submodules.
+  
+  All gwt-specific code resides here.
+  Submodules should avoid inheriting from each other unless necessary.
+  This goes for maven structure and gwt.xml structure.
+  
+  The super module is where our jre emulation layer and super-source live;
+  all modules should inherit super, and a minimum of other modules.
+  
+  Some modules, like injection, are fulfilling an api in the core module,
+  and should be accessed only through core service interfaces.
+  
+  Other modules, like reflection, are capable of being standalone inherits,
+  but can benefit from core utilities like injection,
+  so, two (or more) .gwt.xml modules may be provided.
+  
+  As XApi nears 1.0, all submodules will be routinely stitched together into
+  an uber-jar, in order to have a single jar with a single gwt module
+  that can provide all of the services at once.
+  
+  Internal projects will never use the uber jar, to help maintain modularity,
+  but external projects that want to use more than one service
+  will certainly prefer inheriting one artifact, instead of twelve.
+  
+  When distributed in uber-jar format, it will likely be necessary for 
+  either the uber jar, or just xapi-gwt-api.jar to appear before gwt-dev
+  on your compile-time classpath.  If using gwt-maven-plugin, the 
+  gwtFirstOnClasspath option may become problematic.  If so, we will provide
+  a forked gwt-plugin to make sure our compiler enhancements are included in
+  the build process.
+  
+  There is also work going on to make a super-source-everything plugin,
+  which will use maven to find source files, and generate synthetic .gwt.xml
+  for you, as part of an effort to create a wholly unified programming 
+  environment.  In addition to java-to-javascript, we intend to compile
+  java-to-java and possibly other languages, like go; imagine implementing
+  gwt deferred binding to eliminate cross-platform differences between 
+  server environments, or operating systems, or versions of a platform,
+  or anywhere else a core api needs to bind to multiple implementations,
+  depending on the runtime environment.
+ </description>
+
+  <modules>
+
+    <!-- All super-source, gwt-compiler hacks and shared gwt-only code go here. Must come before gwt-dev during 
+      gwt compiles! Your runtime dependency ordering doesn't matter, but your classpath ordering in gwt-maven-plugin 
+      or ant build script, etc is important. See ClasspathFixer to fix jenkins and eclipse runtimes to auto-add gwt source 
+      and manipulate classpath order. We have made "light additions" to the compiler that add a great deal of value. 
+      The primary addition is of a magic-method injector, which allows gwt production-mode to arbitrarily replace any 
+      method call in the app with generated source code, or even dynamically built AST nodes. Details below. -->
+    <module>api</module>
+    <!-- This module contains the implementation code for wetheinter.net.inject.* It depends on the magic-method 
+      injector to allow gwt (in production mode) to implement all singleton or instance injection using GWT.create-like 
+      semantics. Although it is possible to build an injector using regular GWT.create, it either requires boilerplate, 
+      or for a factory class that references all of your injected classes from one place. Because this screws with code 
+      splitting, we implemented magic method injection, so every call to X_Inject.singleton or .instance doesn't route 
+      through a common factory; the returned JExpression becomes a static method injected wherever you choose to put 
+      it! In order to better facilitate code splitting, there is also an asynchronous api for accessing singleton services. 
+      You can either send a callback object you create in the caller split point, or you can just send the singleton 
+      class you want to bind, and the callback class you want to process the object, and the injector boilerplate will 
+      assemble a splitpoint with both classes cleanly placed on the other side. Only the class literal, a tiny object, 
+      is referenced from the caller island. This is used with X_Inject.singletonAsync(ServiceClass.class, CallbackClass.class). -->
+    <module>inject</module>
+    <!-- One is to attach the codesource of each classpath to all JRealClassTypes; that is, every real class in 
+      the TypeOracle can return the source file. We use this to implement class.getProtectionDomain().getCodeSource().getLocation() 
+      This is primarily intended for collIDE integration; as you are editing the source file in collIDE, the server can 
+      recompile the class, serializes it (or its error messages), then sends it back to the client, who then reflects 
+      upon it to provide runtime IDE markup, like hyperlinking, or error / warning markup. What better transport object 
+      than an actual java.lang.Class? A labs module is in progress to rip apart an annotated method block into a series 
+      of calls of reflection, which, in gwt will be very fast (no security manager, no layers of indirection, just js 
+      functions and field accessors). This would allow a block of code to be translated such that the method calls are 
+      accessed from the class object, instead of arbitrary static methods. Whenever a class calls out to another class 
+      on an object, the Provider<> of that class reference can start out with the hardcoded initial version. Then, when 
+      a class is updated to contain new sets of instructions, our gwt recompiler on the server can add a new impl class 
+      in a new split point, recompile, send back url, and when that class loads, it updates the providers to point to 
+      it instead of the old class. The goal is to be able to live hotswap gwt code indefinitely (that is, until your 
+      tab runs out of memory). -->
+    <module>reflect</module>
+
+
+    <!-- Contains the gwt-only implementation of our collections library. This module is VERY experimental, and 
+      the apis will likely change. -->
+    <module>collect</module>
+
+
+    <!-- Contains the gwt-only implementation of our concurrency library. 
+      This module is VERY experimental, the internal apis WILL change.
+      The basic X_Process.runLater() methods, will not. 
+    -->
+    <module>process</module>
+
+    <!-- Contains the basic model / dto api. -->
+    <module>model</module>
+
+    <!-- Contains adapters for gwt XmlHttpRequest, jsonp, or other io strategies -->
+    <module>io</module>
+
+    <!-- This uber jar module is here simply to bundle all our dependencies into a single jar for easier deployment. 
+      Currently it only contains xapi-core-inject, xapi-gwt-inject and xapi-gwt-reflect, but it will grow to include 
+      all gwt-friendly, production-ready modules. To inherit the uber jar, you must use the following dependency: groupId: 
+      wetheinter.net artifactId: xapi-gwt classifier: uber Of course, you should probably just inherit the modules you 
+      want directly, as this jar will contain duplicates of any other gwt jars you inherit (as well as the core xapi-core-inject 
+      module). -->
+    <module>uber</module>
+
+    <!-- Some common testing utilities -->
+    <module>test</module>
+
+
+  </modules>
+
+  <profiles>
+    <profile>
+      <id>bundle-source</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <modules>
+        <module>api</module>
+        <module>inject</module>
+        <module>reflect</module>
+        <module>collect</module>
+        <module>process</module>
+        <module>model</module>
+        <module>io</module>
+        <module>test</module>
+        <module>uber</module>
+      </modules>
+      <build>
+        <resources>
+          <resource>
+            <directory>src/main/java</directory>
+          </resource>
+          <resource>
+            <directory>src/main/resources</directory>
+          </resource>
+        </resources>
+        <testResources>
+          <testResource>
+            <directory>src/test/java</directory>
+          </testResource>
+          <testResource>
+            <directory>src/test/resources</directory>
+          </testResource>
+        </testResources>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-clean-plugin</artifactId>
+            <version>2.5</version>
+            <configuration>
+              <filesets>
+                <fileset>
+                  <directory>target</directory>
+                </fileset>
+                <fileset>
+                  <directory>war</directory>
+                </fileset>
+                <fileset>
+                  <directory>www-test</directory>
+                </fileset>
+                <fileset>
+                  <directory>gwt-unitCache</directory>
+                </fileset>
+              </filesets>
+            </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <skip>${xapi.skip.test}</skip>
+              <additionalClasspathElements>
+                <additionalClasspathElement>
+                  ${project.build.sourceDirectory}
+                </additionalClasspathElement>
+                <additionalClasspathElement>
+                  ${project.build.testSourceDirectory}
+                </additionalClasspathElement>
+              </additionalClasspathElements>
+              <useManifestOnlyJar>false</useManifestOnlyJar>
+              <forkMode>always</forkMode>
+              <systemProperties>
+                <property>
+                  <name>gwt.args</name>
+                  <value>-out /tmp/gwtc</value>
+                </property>
+              </systemProperties>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
+</project>

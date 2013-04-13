@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-jre-parent</artifactId>
+    <version>0.3-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>xapi-jre-reflect</artifactId>
+  <packaging>jar</packaging>
+  <name>XApi - Jre Reflection and Classpath Scanning</name>
+  <url>WeTheInter.net</url>
+  <description>
+  This module contains a classpath scanner, and bytecode reader.
+  
+  It is useful in any java runtime environment, and allows java code to 
+  parse bytecode into a meta structure of classes, annotations, methods and fields.
+  
+  This meta structure is used throughout xapi to allow us to extend java structures
+  in a cross-platform compliant way (exposing services and service objects so 
+  you can hack support for whatever runtime you need).  
+  
+  It is especially useful for fast runtime injection, and as an extensible
+  structure during codegen (which exposes mutable interfaces for our meta structure)
+  </description>
+  
+  
+  <dependencies>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-core-inject</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-core-inject</artifactId>
+      <version>${xapi.test.version}</version><!--$NO-MVN-MAN-VER$-->
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+</project>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-dev-parent</artifactId>
+    <version>0.3-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>xapi-dev-source</artifactId>
+  <packaging>jar</packaging>
+  <name>XApi - Dev mode tools for source generation</name>
+  <url>WeTheInter.net</url>
+  <description>
+    A fluent, functional codegen utility 
+  </description>
+  
+  <dependencies>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-core-inject</artifactId>
+    </dependency>
+    <dependency>
+       <groupId>com.google.gwt</groupId>
+       <artifactId>gwt-user</artifactId>
+       <scope>provided</scope>
+     </dependency>
+     <dependency>
+       <groupId>com.google.gwt</groupId>
+       <artifactId>gwt-dev</artifactId>
+       <scope>provided</scope>
+     </dependency>
+  </dependencies>
+
+  <build>
+  </build>
+</project>

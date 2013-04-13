@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi</artifactId>
+    <version>0.3-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>xapi-server-parent</artifactId>
+  <packaging>pom</packaging>
+  <name>XApi - Server SuperPom</name>
+  <url>WeTheInter.net/source/server</url>
+  <description>
+    <!-- 
+      This is the main aggregator for server-side modules.
+      Each module should export one (or more) public services, in a standalone fashion.
+
+      All services should offer injection overrides to allow extensions in depedent projects.
+    -->
+  </description>
+
+  <modules>
+    <!--
+    The base server api contains a few server-side utils, 
+    and enough code to throw up a servlet for tests, or hookup an endpoint of some kind.
+    -->
+    <module>api</module>
+
+  </modules>
+
+</project>

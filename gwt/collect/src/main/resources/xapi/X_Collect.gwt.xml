@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE module PUBLIC "-//Google Inc.//DTD Google Web Toolkit 2.5.0//EN" "http://google-web-toolkit.googlecode.com/svn/tags/2.5.0/distro-source/core/src/gwt-module.dtd">
+<module>
+    <source path="collect" />
+	<!-- Pull in X_Inject, which has all common utilities we need -->
+    <inherits name="xapi.X_Inject" />
+	<!-- We also need X_Reflect, to perform array reflection -->
+    <inherits name="xapi.X_Reflect" />
+	
+</module>

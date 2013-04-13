@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE module PUBLIC "-//Google Inc.//DTD Google Web Toolkit 2.5.0//EN" "http://google-web-toolkit.googlecode.com/svn/tags/2.5.0/distro-source/core/src/gwt-module.dtd">
+<module>
+ 
+ <!-- Pull in the source folders we need for basic api support -->
+  
+  <source path="annotations"/> <!-- Annotations used throughout -->
+  <source path="api"/> <!-- Basic api objects -->
+  <source path="platform"/> <!-- Platform annotations -->
+  <source path="collect"/> <!-- Basic collections abstractions -->
+  <source path="exceptions"/> <!-- Runtime exceptions -->
+  <source path="log"/> <!-- Our logger -->
+  <source path="inject"/> <!-- Runtime injection utils -->
+  <source path="util"/> <!-- Basic utility layer -->
+  <source path="gwt"/> <!-- Gwt implementation layer.  
+      xapi.gwt is where web mode implementations should go.
+      xapi.jre is for pure java runtimes; never include in web mode.
+      
+      Avoid com.foo.gwt and com.foo.jre syntax,
+      as you cannot include com.foo.* in gwt w/out taking com.foo.jre
+  -->
+  
+  <!-- Include our emulation layer -->
+  <super-source path="emul"/>
+  
+  <!-- Move to new package -->
+ <inherits name="xapi.X_Core"/>
+
+</module>

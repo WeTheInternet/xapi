@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi</artifactId>
+    <version>0.3-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>xapi-core-parent</artifactId>
+  <packaging>pom</packaging>
+  <name>XApi - Core SuperPom</name>
+  <url>WeTheInter.net/source/core</url>
+  <description>
+  This is the main aggregator for all implementation code shared between modules.
+  
+  Each module contains one or more service interfaces, exposed statically using "X_" prefixed classes.  Core modules will define their API interfaces, their static accessor, and often a "plain-jre" default implementations which can be replaced by injection override for performance or compatibility reasons.
+
+  There must be zero external dependencies in any core modules.
+
+  A low-performance, low-feature default which can be replaced with as much gold plating as you want is preferred over thick, dependency-ridden shared inherits.
+ </description>
+
+  <properties>
+    <!-- Always build source jars, so gwt stays fresh. -->
+    <xapi.include.source>true</xapi.include.source>
+  </properties>
+
+  <modules>
+    <!-- The api module is the root dependency of all xapi modules, artifactId: xapi-core. It consists mostly of 
+      interfaces, annotations, and a few implementation classes; the annotations used for injection are stored here, 
+      for modules which wish to define a default injection target, but do not want or need to perform injection themselves. 
+      xapi-core exports the following injectable services: X_Log, X_String, X_Property and the following static service 
+      classes, which will become injectable if needed: X_Byte, X_Debug -->
+    <module>api</module>
+
+    <!-- The reflect module is where we keep our code-mirroring interfaces. It's only dependency is xapi-api, and 
+      it is capable of classpath scanning, and reading in class structure + annotations directly from bytecode. It also 
+      includes a read-only abstraction api of java language semantics, to abstract away the source of said structure 
+      (bytecode, programmatic, ast, etc) This module also exposes the X_Reflect service, which is primarily used to achieve 
+      reflection in GWT. See wetheinter.net:xapi-gwt-reflect -->
+
+    <module>reflect</module>
+
+    <!-- The inject module contains the skeleton infrastructure of our dependency injection mechanism. It is functional 
+      in any jre environment, though the bare module can only perform injection if manfiests are saved to META-INF/instances 
+      and META-INF/singletons. For runtime classpath scanning, and manifest generation, see xapi-jre-inject The gwt module, 
+      xapi-gwt-inject, implements dependency injection with heavy use of codegen. -->
+    <module>inject</module>
+
+    <!-- Core model api -->
+    <module>model</module>
+
+    <!-- Core io api -->
+    <module>io</module>
+
+    <!-- Core collection abstractions. Beta -->
+    <module>collect</module>
+
+    <!-- Core concurrency abstractions. Alpha -->
+    <module>process</module>
+
+    <!-- Test module -->
+    <module>test</module>
+
+  </modules>
+
+</project>

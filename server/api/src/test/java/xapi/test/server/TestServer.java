@@ -1,0 +1,126 @@
+package xapi.test.server;
+
+import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.handler.ContextHandlerCollection;
+import org.eclipse.jetty.server.handler.DefaultHandler;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+
+import xapi.bytecode.Annotation;
+import xapi.bytecode.ClassFile;
+import xapi.bytecode.StringMemberValue;
+import xapi.dev.scanner.ClasspathResourceMap;
+import xapi.dev.scanner.ClasspathScanner;
+import xapi.inject.X_Inject;
+import xapi.log.X_Log;
+import xapi.log.api.LogLevel;
+import xapi.server.annotation.XapiServlet;
+import xapi.time.X_Time;
+import xapi.time.api.Moment;
+import xapi.util.X_Debug;
+import xapi.util.X_Namespace;
+import xapi.util.X_Properties;
+import xapi.util.X_Runtime;
+
+
+public class TestServer
+{
+
+  Server server;
+
+  public static final int TEST_PORT = 13113;
+  private int port = TEST_PORT;
+
+  public TestServer() {
+    X_Properties.setProperty(X_Namespace.PROPERTY_SERVER_PORT, Integer.toString(getPort()));
+    server = new Server(getPort());
+    // When testing, we don't want to setup configuration files,
+    // we want to write code and run-it-right-now.
+    // So, we scan the classpath for instances of HttpServlet,
+    // and we mount everything we find.
+    scanForServlets();
+  }
+
+  /**
+   * Performs runtime scan for servlets.  For integration tests, you
+   * probably don't want your tests to load resources they can't load in production.
+   */
+  protected void scanForServlets() {
+
+    if (X_Runtime.isRuntimeInjection()) {
+      ClasspathResourceMap resources = X_Inject.instance(ClasspathScanner.class)
+        .scanAnnotation(XapiServlet.class)
+        .matchClassFile(".*")
+      .scan(getClassloader());
+      boolean debug = X_Runtime.isDebug();
+      ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
+      context.setContextPath("/xapi");
+      ClassLoader cl = getClassloader();
+      context.setClassLoader(cl);
+      Moment start = X_Time.now();
+      for (ClassFile cls : resources.findClassAnnotatedWith(XapiServlet.class)) {
+        Annotation a = cls.getAnnotation(XapiServlet.class.getName());
+        StringMemberValue prefix = (StringMemberValue)a.getMemberValue("prefix");
+        if (debug) {
+          X_Log.info("Found XapiServlet "+cls.getName()+" mounted at /xapi/"+prefix.getValue());
+        }
+        String fragment = prefix.getValue();
+        if (fragment.length() == 0 || fragment.charAt(0) != '/') {
+          fragment = "/"+fragment;
+        }
+        // TODO: run injection on the servlet types
+        // TODO check if this servlet is registered in xapi.xml or not.
+        try {
+          context.addServlet(cls.getName(), "/*"); //fragment);
+        } catch (Throwable e) {
+          X_Log.error("Error starting servlet "+cls.getName()+" @ "+fragment);
+        }
+
+      }
+      ContextHandlerCollection all = new ContextHandlerCollection();
+      all.setHandlers(new Handler[] {context, new DefaultHandler()});
+      server.setHandler(all);
+      if (X_Log.loggable(LogLevel.DEBUG))
+        X_Log.trace("Scanned XApiServlet annotations in "+X_Time.difference(start)+" ");
+    }
+  }
+
+  protected ClassLoader getClassloader() {
+    return Thread.currentThread().getContextClassLoader();
+  }
+
+  protected int getPort() {
+    return port;
+  }
+
+  /**
+   * Called when the server is ready.
+   */
+  protected void onReady() {
+
+  }
+
+  public void start() {
+    if (server.isStarted())
+      return;
+    try {
+      server.start();
+    } catch (Exception e) {
+      X_Log.error("Test server could not start", e);
+      throw X_Debug.wrap(e);
+    }
+  }
+
+  public void finish() {
+
+    try {
+      server.stop();
+    } catch (Exception e) {
+      X_Log.warn("Failure stopping server: ", e);
+      Thread.currentThread().interrupt();
+    } finally {
+      server.destroy();
+    }
+  }
+
+}

@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE module PUBLIC "-//Google Inc.//DTD Google Web Toolkit 2.5.1//EN" "http://google-web-toolkit.googlecode.com/svn/tags/2.5.1/distro-source/core/src/gwt-module.dtd">
+<module>
+	
+    <!-- Pull in source -->
+    <source path="inject" />
+    
+	  <!-- Inherit our core emulation layer -->
+    <inherits name="xapi.X_Core" />
+    <set-property name="xapi.inject" value="true" />
+    
+    <!-- Basic gwt support -->
+    <inherits name="com.google.gwt.core.Core" />
+    <!-- We've also defined a java.Util module for extended emulation support -->
+    <inherits name="java.util.Util" />
+    <!-- We use javax.inject.Provider to avoid requiring dependent projects to 
+    access wetheinter.net packages in their implementation layer  -->
+    <inherits name="javax.Inject" />
+	
+	<!-- Generators for X_Inject -->
+	
+	<!-- The dev-mode injection generator for the XInject class -->
+	<!-- Production and super-dev mode rely on magic-method rewriters to perform code generation -->
+	<generate-with class="xapi.dev.generators.GwtDevGenerator">
+		<when-type-assignable class="xapi.inject.api.Injector" />
+	</generate-with>
+
+	<!-- This generator defers the instantiation of async injection callbacks 
+	into the method body of RunAsyncCallback.onSuccess(); -->
+	<generate-with class="xapi.dev.generators.RunAsyncInjectionGenerator">
+		<when-type-assignable class="xapi.util.api.ApplyMethod" />
+	</generate-with>
+
+	<!-- enables jre emulation for java.util.ServiceLoader. Not used by default in gwt, but available -->
+	<!-- Disabled as it presently interferes with code splitting. Will re-enable when MagicClass is ready.   -->
+	<!-- <generate-with class="xapi.dev.generators.ServiceGenerator">
+		<when-type-assignable class="java.util.ServiceLoader" />
+	</generate-with> -->
+	
+  
+  <!-- Magic Methods; these are injected during gwt java -> js transpiling -->
+  
+  <!-- 
+  Magic method properties are loaded and executed via reflection during the UnifyAST process of gwt compilation.
+  This is when the java source is loaded into an AST node graph, when GWT.create() is injected,
+  and where you can map the fully qualified jsni name of any method in your app,
+  and point it to a generator which receives the JMethodCall, JProgram and a view of the UnifyAST utility.
+  
+  If you want to use class objects in such methods, you are still forced to use class literals,
+  as the UnifyAST process does not store any state to navigate.
+  There is an experimental, rather complex workaround, detailed later on.
+  
+  The (ugly) syntax for these mappings is as follows:
+  com.foo.Class.method(Lcom/foo/JsniSyntax;)L/com/foo/ReturnType; *= com.foo.InjectorClass::injectorMethod
+  This first string is how method calls are expressed in UnifyAST, *= is arbitrary, but expressive (pointer equals)
+  the injectorMethod should be static (if you want an instance, store your own reference because we don't need it).
+  
+  See xapi.dev.magic.MagicClassInjector,
+  and implement xapi.dev.magic.MagicInterface to use the correct method signature.
+  -->
+
+<!-- And now, our magic methods used to expose cross-platform support without having to wrangle AST around -->
+
+
+  <!-- Turns a class literal / MagicClass into a singleton (only one per runtime)
+       This method is greedy; it instantiates immediately. 
+       It is also synchronous; if you wish to use codesplitting, see X_Inject.singletonAsync.
+       -->
+	<extend-configuration-property name="gwt.magic.methods" 
+		value="xapi.inject.X_Inject.singleton(Ljava/lang/Class;)Ljava/lang/Object; *= xapi.dev.inject.MagicMethods::rebindSingleton"/>
+
+
+  <!-- Turns a class literal / MagicClass into a lazy singleton provider object
+       This method is lazy; it allows you to defer instantiation until you need it.
+       It is also synchronous; if you wish to use codesplitting, see X_Inject.singletonAsync.
+        -->
+	<extend-configuration-property name="gwt.magic.methods" 
+		value="xapi.inject.X_Inject.singletonLazy(Ljava/lang/Class;)Ljavax/inject/Provider; *= xapi.dev.inject.MagicMethods::rebindSingletonLazy"/>
+
+
+	<!-- Accepts a class literal to inject as a singleton, as well as a callback object.
+       This method is async; it uses code splitting to push your singleton class into its own code split.
+       If you have already used either of the synchronous methods, your split point will not be created.
+       Once your application flows through the code split, you can safely use synchronous injection.
+       
+       This method cannot move all of the ReceivesValue callback into the code split,
+       as the clinit() and some dependencies must be in the parent code split to create your instance.
+       See below for the optimal method.
+   -->
+  <extend-configuration-property name="gwt.magic.methods" 
+		value="xapi.inject.X_Inject.singletonAsync(Ljava/lang/Class;Lwetheinter/net/api/ReceivesValue;)V *= xapi.dev.inject.MagicMethods::rebindSingletonAsync"/>
+
+
+	<!-- Accepts a class literal to inject as a singleton, as well as a callback class, which is also injected.
+       This method is async; it uses code splitting to push your singleton class into its own code split.
+       
+       We currently do not support multiple code splits for the singleton and the callbacks,
+       but we do support using the same singleton class multiple times with different callbacks,
+       allowing you to push multiple callbacks into a single callback (one to many).
+       
+       Once your application has flown through the code split,
+       calls using this method will execute synchronously, or asynchronously,
+       depending on the module setting of xinject.async.policy, as defined below.
+   -->
+	<extend-configuration-property name="gwt.magic.methods" 
+		value="xapi.inject.X_Inject.singletonAsync(Ljava/lang/Class;Ljava/lang/Class;)V *= xapi.dev.inject.MagicMethods::rebindSingletonAndCallback"/>
+	<extend-configuration-property name="gwt.magic.methods" 
+		value="xapi.inject.X_Inject.instance(Ljava/lang/Class;)Ljava/lang/Object; *= xapi.dev.inject.MagicMethods::rebindInstance"/>
+<!-- 	<extend-configuration-property name="gwt.magic.methods" 
+		value="java.lang.Class.newInstance()Ljava/lang/Object; *= xapi.dev.magic.MagicMethods::rebindNewInstance"/>
+ -->	
+		
+  <define-configuration-property name="xinject.async.policy" is-multi-valued="true"/>
+  <extend-configuration-property name="xinject.async.policy" value="X"/>
+  <extend-configuration-property name="xinject.async.policy" value="timer"/>
+  <extend-configuration-property name="xinject.async.policy" value="finally"/>
+  <extend-configuration-property name="xinject.async.policy" value="deferred"/>
+  <extend-configuration-property name="xinject.async.policy" value="sync"/>
+  
+	<!-- Tells the compiler whether it is supposed to move generated java injections to the top of META-INF/services files. -->
+	<!-- Presently, only the top entry of META-INF/services is used, though it can be extended. -->
+	<define-configuration-property name="xinject.overwrite.existing" is-multi-valued="true" />
+	<extend-configuration-property name="xinject.overwrite.existing" value="true"/>
+	<extend-configuration-property name="xinject.overwrite.existing" value="false"/>
+	
+	<!-- To use dev mode / pure java DI, --> 
+	<!-- you should extend this property to include your source directory-->
+	<!-- Recommended use is to have separate maven modules for each injection target. -->
+	<define-configuration-property name="xinject.output.dir" is-multi-valued="true"/>
+
+	<!-- Examples for common project layouts: -->
+	<!-- Simple java project: -->
+	<!-- <extend-configuration-property name="xinject.output.dir" value="src"/> -->
+	<!-- Maven java project: -->
+	<!-- <extend-configuration-property name="xinject.output.dir" value="src/main/java"/> -->
+	<!-- Webapp project (you should use src instead of war): -->
+	<!-- <extend-configuration-property name="xinject.output.dir" value="war/WEB-INF/classes"/> -->
+	
+</module>

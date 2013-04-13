@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module>
+  <source path='process'/>
+  <inherits name="xapi.X_Inject" />
+  
+  <!-- TODO: link up web workers for threads as independent compiles -->
+  
+</module>
