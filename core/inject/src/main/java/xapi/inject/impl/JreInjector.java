@@ -106,6 +106,8 @@ public class JreInjector implements Injector{
 	           }
 	         };
 	       }catch(Exception e){
+	         if (instanceProviders.containsKey(clazz))
+	           return instanceProviders.get(clazz);
 	         throw new RuntimeException("Could not create instance provider for "+clazz.getName()+" : "+target,e);
 	       }
 	     }
@@ -134,6 +136,8 @@ public class JreInjector implements Injector{
           Class.forName(target, true, clazz.getClassLoader())
           .newInstance();
       }catch(Throwable e){
+        if (singletonProviders.containsKey(clazz))
+          return singletonProviders.get(clazz);
         //Try to log the exception, but do not recurse into X_Inject methods
         if (clazz == LogService.class){
             LogService serv = new JreLog();
@@ -230,7 +234,6 @@ public class JreInjector implements Injector{
 	          System.getProperty(PROPERTY_RUNTIME_META, "target/classes")
 	        );
 	        X_Log.info("Runtime injection success.");
-	        map.removeValue(on.getName());
 	      }catch (Exception e) {
 	        X_Log.warn("Runtime injection failure.",e);
 	      }
@@ -239,10 +242,12 @@ public class JreInjector implements Injector{
     
     @Override
     public <T> void setInstanceFactory(Class<T> cls, Provider<T> provider) {
+      X_Log.debug("Setting instance factory for ",cls);
       instanceProviders.put(cls, provider);
     }
     @Override
     public <T> void setSingletonFactory(Class<T> cls, Provider<T> provider) {
+      X_Log.debug("Setting singleton factory for ",cls);
       singletonProviders.put(cls, provider.get());
     }
 

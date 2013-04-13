@@ -26,8 +26,6 @@
     <module>template</module>
     <!-- Pom scanner (cli) -->
     <module>maven</module>
-    <!-- Classpath scanner (with gui) -->
-    <module>scanner</module>
   </modules>
 
 </project>
