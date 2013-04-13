@@ -51,12 +51,13 @@
 
     <!-- Jre default runtime -->
     <module>jre</module>
+
+    <!-- Dev mode runtime -->
+    <module>dev</module>
     
     <!-- Gwt mode runtime -->
     <module>gwt</module>
 
-    <!-- Dev mode runtime -->
-    <module>dev</module>
 
     <!-- Server layer -->
     <module>server</module>
