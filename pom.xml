@@ -9,7 +9,7 @@
  -->
   <groupId>net.wetheinter</groupId>
   <artifactId>xapi</artifactId>
-  <version>0.4-SNAPSHOT</version>
+  <version>0.3-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>XApi - Cross Platform Java Api</name>
   <description>
@@ -33,8 +33,8 @@
   </organization>
 
   <properties>
-    <xapi.version>0.4-SNAPSHOT</xapi.version>
-    <xapi.test.version>0.3</xapi.test.version>
+    <xapi.version>0.3-SNAPSHOT</xapi.version>
+    <xapi.test.version>0.3-SNAPSHOT</xapi.test.version>
     <playn.version>1.5.1</playn.version>
     <gwt.version>2.5.0</gwt.version>
     <appengine.version>1.7.3</appengine.version>
