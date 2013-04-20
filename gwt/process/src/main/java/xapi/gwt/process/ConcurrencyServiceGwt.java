@@ -1,9 +1,6 @@
 package xapi.gwt.process;
 
 import java.lang.Thread.UncaughtExceptionHandler;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
 
 import xapi.annotation.inject.SingletonOverride;
 import xapi.collect.api.Fifo;
@@ -168,6 +165,7 @@ class SingleThreadedLock implements AsyncLock {
   }
 
   @Override
+  @SuppressWarnings({"rawtypes","unchecked"})
   public void unlock() {
     locked = false;
     // Pull task off queue and do it too.

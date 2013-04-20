@@ -1,11 +1,14 @@
 package xapi.dev.reflect;
 
+import static com.google.gwt.core.ext.typeinfo.JPrimitiveType.BOOLEAN;
+import static com.google.gwt.core.ext.typeinfo.JPrimitiveType.CHAR;
+import static com.google.gwt.core.ext.typeinfo.JPrimitiveType.LONG;
+
 import java.lang.annotation.Annotation;
 import java.util.Map;
 
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
-import xapi.dev.source.PrintBuffer;
 
 import com.google.gwt.core.client.UnsafeNativeLong;
 import com.google.gwt.core.ext.GeneratorContext;
@@ -14,13 +17,8 @@ import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JConstructor;
-import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
 import com.google.gwt.core.ext.typeinfo.JType;
-
-import static com.google.gwt.core.ext.typeinfo.JPrimitiveType.BOOLEAN;
-import static com.google.gwt.core.ext.typeinfo.JPrimitiveType.CHAR;
-import static com.google.gwt.core.ext.typeinfo.JPrimitiveType.LONG;
 
 public class GwtConstructorGenerator extends ReflectionGeneratorUtil{
 
@@ -102,7 +100,7 @@ public class GwtConstructorGenerator extends ReflectionGeneratorUtil{
       //now, we have the key, let's generate a constructor provider.
       //this method will create a new constructor for the given signature
       //and then replace itself with a method to directly return the singleton.
-      initCtors.println("map[var" +i+"] = function(){").indent();
+      initCtors.println("map[sig" +i+"] = function(){").indent();
       //create constructor lazily, and reset the provider function to give back
       //the singleton instance; (no sense creating an object every time)
       initCtors.println("var newInstance = function("+methodSig.toString()+"){");

@@ -190,6 +190,7 @@ public class IntToAbstract <V> implements IntTo<V> {
     return store.entryFor(key);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public void setValue(Object key, Object value) {
     if (key instanceof Number) {

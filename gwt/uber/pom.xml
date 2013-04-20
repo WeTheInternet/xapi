@@ -22,11 +22,6 @@
     This module exists solely to package all other gwt modules into a single
     uber jar.  This makes deploying to non-mavenized targets much easier.
     
-    To use the uber jar in maven projects, you much inherit using a classifier:
-    groupId: wetheinter.net
-    artifactId: xapi-gwt
-    classifier: uber
-    
     Of course, you would be wise to inherit your dependencies individually;
     the uber jar is intended for projects like collide,
     which have complex configuration, and adding many jars would be a pain.

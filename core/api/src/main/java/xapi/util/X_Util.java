@@ -37,6 +37,7 @@ public final class X_Util{
     return first == null ? second == null ? third : second : first;
   }
 
+  @SuppressWarnings("unchecked")
   public static <T> T firstNotNull(T first, T ... rest) {
     if (first == null)
     for (T t : rest)

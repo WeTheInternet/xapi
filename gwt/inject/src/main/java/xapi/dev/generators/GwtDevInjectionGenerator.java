@@ -181,12 +181,12 @@ public class GwtDevInjectionGenerator extends AbstractInjectionGenerator {
     // Print setters for factories, to allow runtime injection support.
     cb
     .createMethod("public <T> void setSingletonFactory(Class<T> cls, Provider<T> provider)")
-//    .addAnnotation("Override")
+    .addAnnotation("Override")
     .println("singletons.put(cls, provider);")
     ;
     cb
     .createMethod("public <T> void setInstanceFactory(Class<T> cls, Provider<T> provider)")
-//    .addAnnotation("Override")
+    .addAnnotation("Override")
     .println("instances.put(cls, provider);")
     ;
 

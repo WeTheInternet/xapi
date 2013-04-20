@@ -1,9 +1,5 @@
 package xapi.gwt.collect;
 
-import java.util.HashMap;
-
-import org.apache.commons.collections.map.AbstractHashedMap;
-
 import xapi.annotation.inject.SingletonOverride;
 import xapi.collect.api.CollectionOptions;
 import xapi.collect.api.StringTo;

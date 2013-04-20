@@ -45,6 +45,7 @@ public class TestServer
    * Performs runtime scan for servlets.  For integration tests, you
    * probably don't want your tests to load resources they can't load in production.
    */
+  @SuppressWarnings("unchecked")
   protected void scanForServlets() {
 
     if (X_Runtime.isRuntimeInjection()) {

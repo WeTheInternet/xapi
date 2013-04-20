@@ -1,6 +1,13 @@
 package xapi.collect;
 
 
+import static xapi.collect.api.CollectionOptions.asImmutableList;
+import static xapi.collect.api.CollectionOptions.asImmutableSet;
+import static xapi.collect.api.CollectionOptions.asMutable;
+import static xapi.collect.api.CollectionOptions.asMutableList;
+import static xapi.collect.api.CollectionOptions.asMutableSet;
+import static xapi.inject.X_Inject.singleton;
+
 import java.util.Comparator;
 
 import xapi.collect.api.ClassTo;
@@ -16,14 +23,7 @@ import xapi.collect.impl.ArrayIterator;
 import xapi.collect.impl.HashComparator;
 import xapi.collect.impl.SingletonIterator;
 import xapi.collect.service.CollectionService;
-import xapi.inject.X_Inject;
 import xapi.util.api.ReceivesValue;
-import static xapi.collect.api.CollectionOptions.asImmutableList;
-import static xapi.collect.api.CollectionOptions.asImmutableSet;
-import static xapi.collect.api.CollectionOptions.asMutable;
-import static xapi.collect.api.CollectionOptions.asMutableList;
-import static xapi.collect.api.CollectionOptions.asMutableSet;
-import static xapi.inject.X_Inject.singleton;
 
 public class X_Collect {
 
@@ -85,7 +85,6 @@ public class X_Collect {
     return new HashComparator<T>();
   }
 
-  @SuppressWarnings("unchecked")
   public static <T> Fifo<T> newFifo() {
     return service.newFifo();
   }
@@ -106,7 +105,7 @@ public class X_Collect {
   public static <T, S extends T> Iterable<T> iterable(S item) {
     return new SingletonIterator<T>(item);
   }
-  public static <T, S extends T> Iterable<T> iterable(S ... items) {
+  public static <T, S extends T> Iterable<T> iterable(@SuppressWarnings("unchecked") S ... items) {
     return new ArrayIterator<T>(items);
   }
 

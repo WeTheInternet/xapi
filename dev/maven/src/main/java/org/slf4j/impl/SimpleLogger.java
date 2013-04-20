@@ -14,9 +14,6 @@ public class SimpleLogger extends MarkerIgnoringBase {
   private static long startTime = System.currentTimeMillis();
   public static final String LINE_SEPARATOR =
     System.getProperty("line.separator");
-  private static String INFO_STR = "INFO";
-  private static String WARN_STR = "WARN";
-  private static String ERROR_STR = "ERROR";
   String name;
 
   /**
@@ -46,10 +43,14 @@ public class SimpleLogger extends MarkerIgnoringBase {
 
     long millis = System.currentTimeMillis();
     buf.append(millis - startTime);
-
+    
     buf.append(" [");
-    buf.append(Thread.currentThread().getName());
+    buf.append(level);
     buf.append("] ");
+
+    buf.append(" {");
+    buf.append(Thread.currentThread().getName());
+    buf.append("} ");
 
     buf.append(level);
     buf.append(" ");

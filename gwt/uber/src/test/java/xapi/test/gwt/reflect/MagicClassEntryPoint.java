@@ -14,7 +14,6 @@ import xapi.annotation.reflect.KeepField;
 import xapi.annotation.reflect.KeepMethod;
 import xapi.inject.X_Inject;
 import xapi.reflect.X_Reflect;
-import xapi.test.Assert;
 
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.JavaScriptObject;

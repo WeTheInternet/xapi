@@ -19,7 +19,6 @@ import com.google.gwt.dev.jjs.SourceInfo;
 import com.google.gwt.dev.jjs.UnifyAstView;
 import com.google.gwt.dev.jjs.ast.Context;
 import com.google.gwt.dev.jjs.ast.JClassLiteral;
-import com.google.gwt.dev.jjs.ast.JClassType;
 import com.google.gwt.dev.jjs.ast.JDeclaredType;
 import com.google.gwt.dev.jjs.ast.JExpression;
 import com.google.gwt.dev.jjs.ast.JGwtCreate;

@@ -1,7 +1,5 @@
 package xapi.process;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.concurrent.Future;
 
 import javax.inject.Provider;

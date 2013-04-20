@@ -35,12 +35,10 @@
 
 package xapi.dev.source;
 
-import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import xapi.source.X_Source;
 import xapi.source.except.TypeDefinitionException;
 import xapi.util.X_String;
 

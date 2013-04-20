@@ -15,7 +15,6 @@ import xapi.except.NotConfiguredCorrectly;
 import xapi.reflect.api.ClassDataCallback;
 import xapi.reflect.api.ReflectionService;
 import xapi.reflect.impl.GwtDevReflectionService;
-import xapi.util.X_Properties;
 import xapi.util.X_Runtime;
 
 import com.google.gwt.core.ext.GeneratorContext;

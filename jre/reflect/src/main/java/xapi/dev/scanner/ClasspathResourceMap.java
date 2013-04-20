@@ -11,7 +11,6 @@ import java.util.regex.Pattern;
 
 import xapi.bytecode.ClassFile;
 import xapi.collect.impl.MultithreadedStringTrie;
-import xapi.log.X_Log;
 import xapi.util.api.Pointer;
 
 public class ClasspathResourceMap {

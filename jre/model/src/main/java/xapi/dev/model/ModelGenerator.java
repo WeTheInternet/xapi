@@ -3,7 +3,6 @@ package xapi.dev.model;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
-import xapi.annotation.inject.PlatformType;
 import xapi.annotation.model.FieldName;
 import xapi.annotation.model.Key;
 import xapi.annotation.model.Persistent;
@@ -20,45 +19,21 @@ import xapi.model.impl.AbstractModel;
 
 public class ModelGenerator {
 
-  @SuppressWarnings({"unchecked", "unused"})
+  @SuppressWarnings("unused")
   public static void generateModelClass(LogService logger, Class<?> modelSource,
     ModelGeneratorContext modelContext) {
-    PlatformType platform = modelContext.getPlatform();
     if (!modelSource.isInterface())
       throw new GeneratorFailedException("Tried to get a model that was not an interface.  "
         + "Please do not request concrete classes from X_Model; we must injust our own subclasses manually.");
 
-    final Class<? extends Model> baseClass;
-    switch (platform) {
-    case GwtAll:
-    case GwtDev:
-    case GwtScript:
-      try {
-        baseClass = Class.class.cast(Class.forName("xapi.model.gwt.ModelGwt"));
-      } catch (Exception e) {
-        logger.log(LogLevel.ERROR, "Unable to find xapi.model.gwt.ModelGwt on " +
-        		"classpath; ensure you are inheriting xapi-gwt-model.");
-        throw new RuntimeException(e);
-      }
-      break;
-    case All:
-    case Android:
-    case Appengine:
-    case Desktop:
-    case Flash:
-    case Ios:
-    case Java:
-    case WebApp:
-    default:
-      baseClass = AbstractModel.class;
-    }
+    // TODO allow injecting the model baseclass.
+    final Class<? extends Model> baseClass = AbstractModel.class;
     // reflect upon the model source we need to generate.
     Method[] methods = modelSource.getMethods();
     if (logger.shouldLog(LogLevel.TRACE)) {
       logger.log(
         LogLevel.TRACE,
-        "Generating model for interface " + modelSource.getCanonicalName() + " on platform " +
-          platform.name());
+        "Generating model for interface " + modelSource.getCanonicalName());
       for (Method method : methods) {
         logger.log(LogLevel.TRACE, Arrays.asList(method.getAnnotations()) + ": " + method.toGenericString());
       }

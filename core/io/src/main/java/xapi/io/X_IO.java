@@ -32,6 +32,7 @@ public class X_IO {
       return;
     }
     start(new Runnable() {
+      @SuppressWarnings({ "unchecked", "rawtypes" })
       @Override
       public void run() {
         boolean log = info != null && X_Log.loggable(info);

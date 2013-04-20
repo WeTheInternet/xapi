@@ -56,16 +56,6 @@
       <groupId>net.wetheinter</groupId>
       <artifactId>xapi-core-inject</artifactId>
     </dependency>
-<!--    <dependency>
-      <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-common</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-common</artifactId>
-      <classifier>sources</classifier>
-    </dependency>
--->
   </dependencies>
 
   <build>

@@ -13,7 +13,6 @@ import xapi.io.api.StringReader;
 import xapi.log.X_Log;
 import xapi.shell.api.ShellCommand;
 import xapi.shell.api.ShellResult;
-import xapi.shell.impl.ShellCommandDefault;
 import xapi.time.X_Time;
 import xapi.util.X_Namespace;
 import xapi.util.api.SuccessHandler;

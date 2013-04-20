@@ -1,6 +1,7 @@
 package xapi.test.gwt.inject;
 
-import junit.framework.Assert;
+import org.junit.Assert;
+
 import xapi.annotation.inject.SingletonDefault;
 import xapi.test.gwt.inject.SplitPointTest.ImportTestInterface;
 import xapi.test.gwt.inject.cases.ImportTestImplementation;

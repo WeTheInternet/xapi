@@ -17,7 +17,8 @@ public class CurrentGwtPlatform {
     runtime = new AbstractMultiInitMap<String,PlatformSet,GeneratorContext>(
       AbstractMultiInitMap.PASS_THRU) {
 
-	@Override
+	@SuppressWarnings("unchecked")
+  @Override
     protected PlatformSet initialize(String key, GeneratorContext context) {
       PlatformSet all = new PlatformSet();
       boolean isDebug;

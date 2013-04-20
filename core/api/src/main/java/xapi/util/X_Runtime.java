@@ -35,9 +35,11 @@ public class X_Runtime {
   private static final boolean inject;
   private static final boolean parallel;
   private static final boolean debug;
+  private static final boolean test;
   private static final boolean gwt;
   static {
     debug = "true".equals(System.getProperty(PROPERTY_DEBUG));
+    test = !"false".equals(System.getProperty(PROPERTY_TEST));
 
     boolean success = !"false".equals(System.getProperty(PROPERTY_USE_X_INJECT, "true"));
     try {
@@ -182,6 +184,10 @@ public class X_Runtime {
   public static boolean isDebug() {
     //set xapi.debug = true to enable debugging.
     return debug;
+  }
+  
+  public static boolean isTest() {
+    return test;
   }
 
   /**

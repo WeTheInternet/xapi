@@ -2,7 +2,6 @@ package xapi.jre.process;
 
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import xapi.annotation.inject.SingletonDefault;
@@ -140,6 +139,7 @@ class LockWrapper implements AsyncLock {
     return lock.tryLock();
   }
 
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   @Override
   public RemovalHandler lock(SuccessHandler<AsyncLock> onLocked) {
     // TODO actually push the callback onto a deferred stack,

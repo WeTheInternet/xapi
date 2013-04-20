@@ -1,4 +1,4 @@
-package xapi.test;
+package xapi.time.api;
 
 import xapi.util.X_String;
 

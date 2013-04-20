@@ -10,6 +10,7 @@ import java.util.List;
 
 import static xapi.util.X_String.toMetricSuffix;
 
+import xapi.time.api.Clock;
 import xapi.util.api.ReceivesValue;
 
 public class Benchmark {

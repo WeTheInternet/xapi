@@ -1,5 +1,12 @@
 package xapi.inject.impl;
 
+import static xapi.util.X_Namespace.DEFAULT_INSTANCES_LOCATION;
+import static xapi.util.X_Namespace.DEFAULT_SINGLETONS_LOCATION;
+import static xapi.util.X_Namespace.PROPERTY_INJECTOR;
+import static xapi.util.X_Namespace.PROPERTY_INSTANCES;
+import static xapi.util.X_Namespace.PROPERTY_RUNTIME_META;
+import static xapi.util.X_Namespace.PROPERTY_SINGLETONS;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -15,14 +22,7 @@ import xapi.log.api.LogLevel;
 import xapi.log.api.LogService;
 import xapi.log.impl.JreLog;
 import xapi.util.api.ConvertsValue;
-import xapi.util.api.ProvidesValue;
 import xapi.util.api.ReceivesValue;
-import static xapi.util.X_Namespace.DEFAULT_INSTANCES_LOCATION;
-import static xapi.util.X_Namespace.DEFAULT_SINGLETONS_LOCATION;
-import static xapi.util.X_Namespace.PROPERTY_INJECTOR;
-import static xapi.util.X_Namespace.PROPERTY_INSTANCES;
-import static xapi.util.X_Namespace.PROPERTY_RUNTIME_META;
-import static xapi.util.X_Namespace.PROPERTY_SINGLETONS;
 
 public class JreInjector implements Injector{
 

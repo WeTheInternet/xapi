@@ -8,6 +8,7 @@ import xapi.annotation.inject.SingletonDefault;
 import xapi.inject.X_Inject;
 import static org.junit.Assert.assertNotNull;
 
+@SingletonDefault(implFor=JreInjectionTest.class)
 public class JreInjectionTest extends AbstractInjectionTest{
 
 

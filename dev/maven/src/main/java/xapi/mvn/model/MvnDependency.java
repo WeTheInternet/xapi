@@ -1,6 +1,5 @@
 package xapi.mvn.model;
 
-import xapi.model.api.Model;
 
 public interface MvnDependency extends MvnArtifact{
 

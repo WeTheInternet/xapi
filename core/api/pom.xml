@@ -29,5 +29,31 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+  
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>compile-processors</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <configuration>
+             <includes>
+              <include>xapi/dev/processor/*</include>
+             </includes>
+             <proc>none</proc>
+             <inherited>false</inherited>
+             <compilerReuseStrategy>alwaysNew</compilerReuseStrategy>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 
 </project>

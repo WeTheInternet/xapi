@@ -36,7 +36,6 @@ package xapi.gwt.log;
 
 import xapi.annotation.inject.SingletonOverride;
 import xapi.collect.api.Fifo;
-import xapi.gwt.collect.JsFifo;
 import xapi.log.api.LogLevel;
 import xapi.log.api.LogService;
 import xapi.platform.GwtDevPlatform;

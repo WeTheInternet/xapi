@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-core-parent</artifactId>
+    <version>0.4-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>xapi-core-util</artifactId>
+  <packaging>jar</packaging>
+  <name>XApi - Public services exposed by XApi core</name>
+  <url>WeTheInter.net</url>
+  <description>
+    This module contains static services and default implementations for other core services.
+
+    In order to keep core dependencies as clean as possible,  
+    we avoid accessing helpers like X_Inject or X_Reflect unless they are needed to perform a task.
+    For example, ReflectionService and it's default implementation don't have to know about X_Inject,
+    but it's public service X_Reflect does.  So, the implementation goes in xapi-core-reflect,
+    and the static accessor goes in xapi-core-util.
+  </description>
+
+  <dependencies>
+
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-core-inject</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-core-reflect</artifactId>
+    </dependency>
+    
+    <!-- Testing dependencies -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+</project>

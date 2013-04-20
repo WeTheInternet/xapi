@@ -3,7 +3,6 @@ package xapi.inject.impl;
 import java.util.Iterator;
 
 import xapi.inject.impl.RuntimeInjectorAbstract.ScopeMap;
-import xapi.inject.impl.RuntimeInjectorAbstract.ScopeMap.ScopeIterator;
 import xapi.util.api.HasId;
 
 public class InjectionScope implements Iterable<InjectionScope>, HasId {

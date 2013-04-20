@@ -4,18 +4,24 @@ import java.lang.reflect.Constructor;
 
 public class ConstructorMap <T> extends MemberMap{
 
-  protected ConstructorMap() {
-  }
-  
+  protected ConstructorMap() {}
   
   public final Constructor<T> getConstructor(Class<?>[] signature) 
     throws NoSuchMethodException{
-    return getOrMakeMember("!"+getSignature(signature), this);
+    String sig = "__init"+getSignature(signature);
+    Constructor<T> ctor = getOrMakeMember(sig, this);
+    if (ctor == null)
+      throw new NoSuchMethodException("Constructor "+sig+" not found");
+    return ctor;
   }
 
   public final Constructor<T> getDeclaredConstructor(Class<?>[] signature) 
       throws NoSuchMethodException{
-    return getOrMakeMember("!"+getSignature(signature), this);
+    String sig = "__init"+getSignature(signature);
+    Constructor<T> ctor = getOrMakeDeclaredMember(sig, this);
+    if (ctor == null)
+      throw new NoSuchMethodException("Constructor "+sig+" not found");
+    return ctor;
   }
 
   public final Constructor<T>[] getConstructors () {
@@ -23,7 +29,7 @@ public class ConstructorMap <T> extends MemberMap{
   }
   
   public final Constructor<T>[] getDeclaredConstructors() {
-    return getMembers(this);
+    return getDeclaredMembers(this);
   }
 
   

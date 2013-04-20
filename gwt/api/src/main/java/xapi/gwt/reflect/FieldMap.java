@@ -8,12 +8,20 @@ public class FieldMap extends MemberMap{
   
   public final Field getField(String name) 
     throws NoSuchFieldException{
-    return getOrMakeMember(name, this);
+    Field field = getOrMakeMember(name, this);
+    if (field == null) {
+      throw new NoSuchFieldException("Field "+name+" not found.");
+    }
+    return field;
   }
 
   public final Field getDeclaredField(String name) 
       throws NoSuchFieldException{
-    return getOrMakeMember(name, this);
+    Field field = getOrMakeDeclaredMember(name, this);
+    if (field == null) {
+      throw new NoSuchFieldException("Field "+name+" not found.");
+    }
+    return field;
   }
 
   public final Field[] getFields() {
@@ -21,7 +29,7 @@ public class FieldMap extends MemberMap{
   }
   
   public final Field[] getDeclaredFields () {
-    return getMembers(this);
+    return getDeclaredMembers(this);
   }
 
   

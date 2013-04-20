@@ -7,6 +7,12 @@ import org.junit.Before;
 import xapi.time.impl.RunOnce;
 import xapi.util.X_Namespace;
 
+/**
+ * An abstract base class for jre modules that want to manually force runtime injection at bootstrap.
+ * 
+ * @author "James X. Nelson (james@wetheinter.net)"
+ *
+ */
 public class AbstractInjectionTest {
 
   private static final RunOnce once = new RunOnce();

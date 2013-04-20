@@ -16,7 +16,6 @@
 package com.google.gwt.dev.javac.asm;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 

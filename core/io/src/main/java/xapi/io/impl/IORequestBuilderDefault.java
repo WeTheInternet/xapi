@@ -1,6 +1,13 @@
 package xapi.io.impl;
 
-import xapi.collect.X_Collect;
+import static xapi.collect.X_Collect.copyDictionary;
+import static xapi.collect.X_Collect.newStringDictionary;
+import static xapi.io.IOConstants.METHOD_DELETE;
+import static xapi.io.IOConstants.METHOD_GET;
+import static xapi.io.IOConstants.METHOD_HEAD;
+import static xapi.io.IOConstants.METHOD_PATCH;
+import static xapi.io.IOConstants.METHOD_POST;
+import static xapi.io.IOConstants.METHOD_PUT;
 import xapi.collect.api.Dictionary;
 import xapi.collect.api.StringDictionary;
 import xapi.except.NotYetImplemented;
@@ -17,8 +24,6 @@ import xapi.util.api.ConvertsValue;
 import xapi.util.api.ErrorHandler;
 import xapi.util.api.Pointer;
 import xapi.util.api.SuccessHandler;
-import static xapi.io.IOConstants.*;
-import static xapi.collect.X_Collect.*;
 
 public class IORequestBuilderDefault <V> implements IORequestBuilder<V>{
 

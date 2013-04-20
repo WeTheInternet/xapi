@@ -2,8 +2,6 @@ package xapi.shell.impl;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.concurrent.locks.ReentrantLock;
 
 import xapi.annotation.inject.InstanceDefault;
 import xapi.collect.X_Collect;
@@ -15,7 +13,6 @@ import xapi.shell.api.ShellCommand;
 import xapi.shell.api.ShellResult;
 import xapi.util.X_Debug;
 import xapi.util.api.ErrorHandler;
-import xapi.util.api.ReceivesValue;
 import xapi.util.api.SuccessHandler;
 
 @InstanceDefault(implFor = ShellCommand.class)
@@ -75,7 +72,7 @@ public class ShellCommandDefault implements ShellCommand {
 
   
   @Override
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   public ShellResult run(final SuccessHandler<ShellResult> callback,
       final ArgumentProcessor processor) {
     final ErrorHandler<Throwable> err = callback instanceof ErrorHandler ? (ErrorHandler) callback

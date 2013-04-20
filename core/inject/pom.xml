@@ -41,14 +41,7 @@
       <artifactId>javax.inject</artifactId>
       <version>1</version>
     </dependency>
-    <dependency>
-      <groupId>javax.inject</groupId>
-      <artifactId>javax.inject</artifactId>
-      <version>1</version>
-      <classifier>sources</classifier>
-    </dependency>
     
-    <!-- Testing dependencies -->
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>

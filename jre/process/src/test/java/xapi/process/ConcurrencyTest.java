@@ -1,15 +1,21 @@
 package xapi.process;
 
+import static xapi.log.X_Log.info;
+import static xapi.process.X_Process.flush;
+import static xapi.process.X_Process.kill;
+import static xapi.process.X_Process.newThread;
+import static xapi.process.X_Process.now;
+import static xapi.process.X_Process.runDeferred;
+import static xapi.process.X_Process.runFinally;
+import static xapi.process.X_Process.threadStartTime;
+import static xapi.process.X_Process.trySleep;
+
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import xapi.util.X_Namespace;
 import xapi.util.api.Pointer;
-
-import static xapi.log.X_Log.*;
-import static xapi.process.X_Process.*;
-import static xapi.util.X_Properties.*;
 
 public class ConcurrencyTest {
 

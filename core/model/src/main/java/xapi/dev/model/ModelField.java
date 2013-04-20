@@ -8,7 +8,6 @@ import xapi.annotation.model.ServerToClient;
 import xapi.collect.X_Collect;
 import xapi.collect.api.Fifo;
 import xapi.source.api.IsType;
-import xapi.util.X_String;
 
 public class ModelField {
 

@@ -9,12 +9,20 @@ public abstract class MethodMap extends MemberMap{
   
   public final Method getMethod (String name, Class<?>[] signature) 
     throws NoSuchMethodException{
-    return getOrMakeMember(name+getSignature(signature), this);
+    String sig = name+getSignature(signature);
+    Method method = getOrMakeMember(sig, this);
+    if (method == null)
+      throw new NoSuchMethodException(sig+" doesn't exist");
+    return method;
   }
 
   public final Method getDeclaredMethod (String name, Class<?>[] signature) 
       throws NoSuchMethodException{
-    return getOrMakeMember(name+getSignature(signature), this);
+    String sig = name+getSignature(signature);
+    Method method = getOrMakeMember(sig, this);
+    if (method == null)
+      throw new NoSuchMethodException(sig+" doesn't exist");
+    return method;
   }
 
   public final Method[] getMethods () {
@@ -22,7 +30,7 @@ public abstract class MethodMap extends MemberMap{
   }
   
   public final Method[] getDeclaredMethods () {
-    return getMembers(this);
+    return getDeclaredMembers(this);
   }
   
 }

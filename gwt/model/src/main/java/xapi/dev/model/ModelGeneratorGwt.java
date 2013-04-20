@@ -14,7 +14,6 @@ import xapi.dev.source.SourceBuilder;
 import xapi.source.X_Source;
 import xapi.source.api.IsType;
 import xapi.util.X_Properties;
-import xapi.util.api.Pair;
 
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.IncrementalGenerator;

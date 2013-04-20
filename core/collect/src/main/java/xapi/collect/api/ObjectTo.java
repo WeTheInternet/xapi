@@ -1,9 +1,5 @@
 package xapi.collect.api;
 
-import java.util.Map.Entry;
-
-import javax.inject.Provider;
-
 import xapi.collect.impl.EntryIterable;
 import xapi.collect.proxy.CollectionProxy;
 

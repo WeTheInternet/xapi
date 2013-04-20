@@ -11,21 +11,28 @@
   <artifactId>xapi</artifactId>
   <version>0.4-SNAPSHOT</version>
   <packaging>pom</packaging>
-  <name>XApi - Cross Platform Java Api</name>
+  <name>XApi (Extremely Extensible Cross-Platform API)</name>
   <description>
   XApi is a dependency injection, service-oriented, polyglot java framework.
   It is comprised of standalone modules for use in web, desktop and mobile java applications.
 
-  It is geared towards servlets and gwt clients,
-  with the ability to share a service interface across many or all platforms,
-  currently: java, gwt [webkit, firefox, ie], playn [android, ios, flash], appengine &amp; vert.x
+  This codebase enables complete reuse of all code across your java stack,
+  as well as the ability to easily define your own Platform, so you can
+  build your own customized runtime environment to extend or replace existing platforms.
+
+  It is currently geared towards servlets and gwt clients, but the target we are currently developing include:
+  java, gwt [webkit, firefox, ie], javafx, playn [android, ios, flash], appengine &amp; vert.x
 
   For Google Web Toolkit, we also include reflection support,
-  more complete emulation of java.lang.Class,
-  a range of code generation utilities, and even magic-method injection
+  more complete emulation of java.lang.Class, zero-overhead dependency injection,
+  a range of code generation utilities, and even "magic-method injection"
   (for production compiles any method in the app can be swapped out with 
   others based on configuration properties, or any AST mangling / code generating
   methods you wish to write).
+  
+  There is also a bytecode transformer in the works which will replace calls
+  into the DI utility with direct references to static final factories,
+  to allow the java compiler to completely erase all injection overhead in all java runtimes.
   </description>
   <organization>
     <name>The Internet Party</name>
@@ -34,7 +41,7 @@
 
   <properties>
     <xapi.version>0.4-SNAPSHOT</xapi.version>
-    <xapi.test.version>0.3</xapi.test.version>
+    <xapi.test.version>0.4-SNAPSHOT</xapi.test.version>
     <playn.version>1.5.1</playn.version>
     <gwt.version>2.5.0</gwt.version>
     <appengine.version>1.7.3</appengine.version>
@@ -106,14 +113,20 @@
         <version>${xapi.version}</version>
         <type>test-jar</type>
       </dependency>
+   <dependency>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-core-util</artifactId>
+    <version>${xapi.version}</version>
+   </dependency>
+   <dependency>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-core-util</artifactId>
+    <version>${xapi.version}</version>
+    <classifier>sources</classifier>
+   </dependency>
       <dependency>
         <groupId>net.wetheinter</groupId>
         <artifactId>xapi-test</artifactId>
-        <version>${xapi.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>net.wetheinter</groupId>
-        <artifactId>xapi-maven-plugin</artifactId>
         <version>${xapi.version}</version>
       </dependency>
       <dependency>
@@ -170,7 +183,12 @@
         <artifactId>xapi-dev-scanner</artifactId>
         <version>${xapi.version}</version>
       </dependency>
-      
+      <dependency>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-maven-plugin</artifactId>
+        <version>${xapi.version}</version>
+      </dependency>
+
       <!-- Collections module -->
       <dependency>
         <groupId>net.wetheinter</groupId>

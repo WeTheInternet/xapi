@@ -1,8 +1,19 @@
 package xapi.util.impl;
 
 import xapi.util.api.Pair;
-
-public class ComparablePair <X extends Comparable<X>,Y extends Comparable<Y>> implements Pair<X, Y>,Comparable<ComparablePair<X, Y>>{
+/**
+ * A pair which implements comparable, using both components as comparable objects.
+ * 
+ * It allows you to define whether to compare x before y (slot 0 or 1), or vice versa.
+ * This is useful in graphical mapping, where you may want to sort a map horizontally or vertically.
+ * 
+ * @author "James X. Nelson (james@wetheinter.net)"
+ *
+ * @param <X>
+ * @param <Y>
+ */
+public class ComparablePair <X extends Comparable<X>,Y extends Comparable<Y>> 
+implements Pair<X, Y>,Comparable<ComparablePair<X, Y>>{
 
   private X x;
   private Y y;

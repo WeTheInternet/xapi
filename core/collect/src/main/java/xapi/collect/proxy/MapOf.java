@@ -122,6 +122,7 @@ implements CollectionProxy<K,V>, Map<K,V>, HasValues<K,V>, ObjectTo<K,V>
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public void setValue(Object key, Object value) {
     map.put((K)key, (V)value);
   }

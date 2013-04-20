@@ -21,7 +21,7 @@
 	
 	<!-- The dev-mode injection generator for the XInject class -->
 	<!-- Production and super-dev mode rely on magic-method rewriters to perform code generation -->
-	<generate-with class="xapi.dev.generators.GwtDevGenerator">
+	<generate-with class="xapi.dev.generators.GwtDevInjectionGenerator">
 		<when-type-assignable class="xapi.inject.api.Injector" />
 	</generate-with>
 

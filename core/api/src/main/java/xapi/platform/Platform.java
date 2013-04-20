@@ -11,6 +11,7 @@ import xapi.annotation.inject.InstanceOverride;
 import xapi.annotation.inject.SingletonDefault;
 import xapi.annotation.inject.SingletonOverride;
 import xapi.platform.PlatformSelector.AlwaysTrue;
+import xapi.util.X_Namespace;
 
 
 /**
@@ -88,13 +89,27 @@ public @interface Platform {
    * have debug types injected for when developing the development tools. :)
    */
   boolean isDevMode() default false;
+  
   /**
    * @return a class to use as a runtime platform selector.
    * Not really implemented yet.
    */
   Class<? extends PlatformSelector> selector() default AlwaysTrue.class;
+  
   /**
    * @return a set of platforms to allow as fallback.
    */
   Class<? extends Annotation>[] fallback() default {};
+  
+  /**
+   * @return - The folder relative to package root in which to place injection resources.
+   * Most JREs will use META-INF/, android will use assets/, and projects with custom
+   * packaging solutions can define their own location for injection manifests, 
+   * provided they make sure to either tell the runtime injector which root to use,
+   * (by setting property {@link X_Namespace#PROPERTY_SINGLETONS} and {@link X_Namespace#PROPERTY_INSTANCES})
+   * or by defining their own runtime injector
+   * (by setting property {@link X_Namespace#PROPERTY_INJECTOR},
+   * 
+   */
+  String metaRoot () default "META-INF/";
 }

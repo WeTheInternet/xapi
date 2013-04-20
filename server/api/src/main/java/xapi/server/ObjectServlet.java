@@ -6,8 +6,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import xapi.server.annotation.XapiServlet;
-
 /**
  * A servlet class designed to expose a generic data type as a web service.
  *

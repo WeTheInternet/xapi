@@ -24,6 +24,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
 
+@SuppressWarnings("rawtypes")
 public class SourcesSelector extends JPanel{
 
   private static final long serialVersionUID = 1153019705058563667L;
@@ -38,8 +39,8 @@ public class SourcesSelector extends JPanel{
 
   private JList list;
 
-  @SuppressWarnings("serial")
-public SourcesSelector() {
+  @SuppressWarnings({"unchecked", "serial"})
+  public SourcesSelector() {
     super(new BorderLayout(0, 5));
     JPanel buttons = new JPanel(new GridLayout(4, 1,0,10));
     buttons.add(new JButton(new AbstractAction("Add Source") {
@@ -163,6 +164,7 @@ public SourcesSelector() {
     addSource(file,true);
     testSources.add(file);
   }
+  @SuppressWarnings("unchecked")
   public void addSource(File file,boolean resolve) {
     //TODO: put in some whitelist / blacklist parameters
     if (resolve && file.isDirectory()){

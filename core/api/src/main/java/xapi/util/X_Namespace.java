@@ -43,10 +43,12 @@ public class X_Namespace {
    * For runtime injection in a jre environment
    */
   public static final String PROPERTY_PLATFORM = "xapi.platform";
+
   /**
    * "xapi.debug" System property for setting debug level
    */
   public static final String PROPERTY_DEBUG = "xapi.debug";
+  
   /**
    * "xapi.injector" System property for choosing the runtime injector to use.
    * Default value is xapi.jre.inject.RuntimeInjector
@@ -117,12 +119,15 @@ public class X_Namespace {
    * Comma-separated list of classpath prefixes to scan for runtime injection.
    *
    * Package names only; periods will be translated to / for resource lookup.
-   *
-   * defaults to wetheinter/net. You are recommended to include wetheinter/net
-   * when using any experimental xapi libraries which may not have all injection
-   * targets packaged in META-INF / assets folders.
    */
   public static final String PROPERTY_RUNTIME_SCANPATH = "xapi.inject.packages";
+  /**
+   * "xapi.test" System property for enabling X_Runtime.isTest() to return true.
+   * Set to anything other than false to have isTest() return true.
+   * (and make a test profile for maven with this property set for you!)
+   */
+  public static final String PROPERTY_TEST = "xapi.test";
+  
   /**
    * "xapi.meta"
    * Location to write injection metadata, if runtime injection is allowed

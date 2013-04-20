@@ -11,24 +11,19 @@ import javax.inject.Named;
 
 import xapi.annotation.model.ClientToServer;
 import xapi.annotation.model.DeleterFor;
-import xapi.annotation.model.FieldName;
 import xapi.annotation.model.GetterFor;
 import xapi.annotation.model.Persistent;
 import xapi.annotation.model.Serializable;
 import xapi.annotation.model.ServerToClient;
 import xapi.annotation.model.SetterFor;
-import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.except.NotConfiguredCorrectly;
-import xapi.log.X_Log;
 import xapi.model.api.Model;
 import xapi.source.X_Source;
 import xapi.source.api.IsType;
 import xapi.util.X_Runtime;
-import xapi.util.api.Pair;
 
-import com.google.gwt.core.client.UnsafeNativeLong;
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.RebindResult;
 import com.google.gwt.core.ext.TreeLogger;
@@ -40,7 +35,6 @@ import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.JParameter;
 import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
-import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.gwt.core.ext.typeinfo.NotFoundException;
 
 public class ModelArtifact extends Artifact<ModelArtifact> {

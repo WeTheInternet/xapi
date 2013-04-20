@@ -1,7 +1,5 @@
 package xapi.collect;
 
-import xapi.annotation.reflect.KeepClass;
-import xapi.annotation.reflect.NewInstanceStrategy;
 
 /**
  * An optimized mapping structure for java packages; we are avoiding java.util

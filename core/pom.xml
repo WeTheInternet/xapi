@@ -48,6 +48,9 @@
       xapi-gwt-inject, implements dependency injection with heavy use of codegen. -->
     <module>inject</module>
 
+    <!-- A collection of core static services and default implementations. -->
+    <module>util</module>
+
     <!-- Core model api -->
     <module>model</module>
 
