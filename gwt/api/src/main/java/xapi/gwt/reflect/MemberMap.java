@@ -25,6 +25,7 @@ public class MemberMap extends JavaScriptObject {
     return cls.@java.lang.Class::seedId;
   }-*/;
   
+  @SuppressWarnings("rawtypes")
   public static native void setClassData(Class<?> cls, ClassMap data)
   /*-{
      cls.@java.lang.Class::classData = data;

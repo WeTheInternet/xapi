@@ -36,7 +36,6 @@
 package xapi.util;
 
 import xapi.inject.impl.SingletonProvider;
-import xapi.log.X_Log;
 import xapi.platform.JrePlatform;
 import xapi.util.impl.PropertyServiceDefault;
 import xapi.util.service.PropertyService;
@@ -77,11 +76,13 @@ public final class X_Properties {
 	    instance = (PropertyService)cls.newInstance();
 	  }catch(ClassCastException e) {
 	    // No hope of getting a logger at this point...
-	    System.err.println("Could not load "+propClass+"; it does not implement " +
+	    System.err.println("Could not load "+propClass+";" +
+	    		(X_Runtime.isDebug()?" it does not implement " +
 	    		"PropertyService, or the classloader which loaded X_Properties is " +
-	    		"unable to load this class.");
-	  }catch(Throwable ignored) {
-	    X_Log.warn("Error loading property service",ignored);
+	    		"unable to load this class.":""));
+	  }catch(Throwable e) {
+	    e.printStackTrace();
+	    System.err.println("Unknown error loading "+propClass+": "+e);
 	  }
 	  if (instance == null)
 	    service = new PropertyServiceDefault();

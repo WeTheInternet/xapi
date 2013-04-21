@@ -6,11 +6,7 @@ import javax.validation.constraints.NotNull;
 
 import xapi.annotation.inject.SingletonDefault;
 import xapi.platform.GwtDevPlatform;
-import xapi.reflect.api.ClassDataCallback;
-import xapi.reflect.api.ReflectionService;
-
-import com.google.gwt.core.client.Scheduler;
-import com.google.gwt.core.client.Scheduler.ScheduledCommand;
+import xapi.reflect.service.ReflectionService;
 
 @GwtDevPlatform
 @SingletonDefault(implFor=ReflectionService.class)
@@ -49,16 +45,4 @@ public class GwtDevReflectionService implements ReflectionService{
     }
   }
 
-  @Override
-  public <T> void async(final Class<T> classLit,
-    final ClassDataCallback<T> callback) {
-    //enforce asynchronicity.
-    //the generated override (if any) will also enforce asynchronicity here.
-    Scheduler.get().scheduleDeferred(new ScheduledCommand() {
-      @Override
-      public void execute() {
-        callback.onSuccess(classLit);
-      }
-    });
-  }
 }

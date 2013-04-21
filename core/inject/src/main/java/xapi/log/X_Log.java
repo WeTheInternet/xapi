@@ -51,8 +51,7 @@ import xapi.log.api.LogService;
  */
 public class X_Log {
   //you may not have one of these; this method is static only.
-  protected X_Log(){
-  }
+  private X_Log(){}
 
   private static final Provider<LogService> singleton = X_Inject.singletonLazy(LogService.class);
 

@@ -84,6 +84,100 @@ public class AccessFlag {
         return (accflags & (PROTECTED | PUBLIC | PRIVATE)) == 0;
     }
 
+    
+
+    /**
+     * Returns true if the modifiers include the <tt>static</tt>
+     * modifier.
+     */
+    public static boolean isStatic(int mod) {
+        return (mod & STATIC) != 0;
+    }
+
+    /**
+     * Returns true if the modifiers include the <tt>final</tt>
+     * modifier.
+     */
+    public static boolean isFinal(int mod) {
+        return (mod & FINAL) != 0;
+    }
+
+    /**
+     * Returns true if the modifiers include the <tt>synchronized</tt>
+     * modifier.
+     */
+    public static boolean isSynchronized(int mod) {
+        return (mod & SYNCHRONIZED) != 0;
+    }
+
+    /**
+     * Returns true if the modifiers include the <tt>volatile</tt>
+     * modifier.
+     */
+    public static boolean isVolatile(int mod) {
+        return (mod & VOLATILE) != 0;
+    }
+
+    /**
+     * Returns true if the modifiers include the <tt>transient</tt>
+     * modifier.
+     */
+    public static boolean isTransient(int mod) {
+        return (mod & TRANSIENT) != 0;
+    }
+
+    /**
+     * Returns true if the modifiers include the <tt>native</tt>
+     * modifier.
+     */
+    public static boolean isNative(int mod) {
+        return (mod & NATIVE) != 0;
+    }
+
+    /**
+     * Returns true if the modifiers include the <tt>interface</tt>
+     * modifier.
+     */
+    public static boolean isInterface(int mod) {
+        return (mod & INTERFACE) != 0;
+    }
+
+    /**
+     * Returns true if the modifiers include the <tt>annotation</tt>
+     * modifier.
+     *
+     * @since 3.2
+     */
+    public static boolean isAnnotation(int mod) {
+        return (mod & ANNOTATION) != 0;
+    }
+
+    /**
+     * Returns true if the modifiers include the <tt>enum</tt>
+     * modifier.
+     *
+     * @since 3.2
+     */
+    public static boolean isEnum(int mod) {
+        return (mod & ENUM) != 0;
+    }
+
+    /**
+     * Returns true if the modifiers include the <tt>abstract</tt>
+     * modifier.
+     */
+    public static boolean isAbstract(int mod) {
+        return (mod & ABSTRACT) != 0;
+    }
+
+    /**
+     * Returns true if the modifiers include the <tt>strictfp</tt>
+     * modifier.
+     */
+    public static boolean isStrict(int mod) {
+        return (mod & STRICT) != 0;
+    }
+    
     /**
      * Clears a specified bit in <code>accflags</code>.
      */

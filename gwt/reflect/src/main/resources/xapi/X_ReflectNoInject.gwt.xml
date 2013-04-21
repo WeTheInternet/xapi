@@ -41,7 +41,7 @@
   a simple service that does nothing (it just uses normal jre reflection)
    -->
 	<generate-with class="xapi.dev.reflect.MonolithReflectionGenerator">
-		<when-type-assignable class="xapi.reflect.api.ReflectionService" />
+		<when-type-assignable class="xapi.reflect.service.ReflectionService" />
 	</generate-with>
 	
 </module>

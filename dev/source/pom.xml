@@ -18,7 +18,7 @@
   <dependencies>
     <dependency>
       <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-core-inject</artifactId>
+      <artifactId>xapi-core-reflect</artifactId>
     </dependency>
     <dependency>
        <groupId>com.google.gwt</groupId>
@@ -29,6 +29,11 @@
        <groupId>com.google.gwt</groupId>
        <artifactId>gwt-dev</artifactId>
        <scope>provided</scope>
+     </dependency>
+     <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
      </dependency>
   </dependencies>
 

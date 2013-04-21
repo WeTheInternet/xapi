@@ -6,9 +6,9 @@ import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.server.handler.DefaultHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 
-import xapi.bytecode.Annotation;
 import xapi.bytecode.ClassFile;
-import xapi.bytecode.StringMemberValue;
+import xapi.bytecode.annotation.Annotation;
+import xapi.bytecode.annotation.StringMemberValue;
 import xapi.dev.scanner.ClasspathResourceMap;
 import xapi.dev.scanner.ClasspathScanner;
 import xapi.inject.X_Inject;
@@ -17,10 +17,10 @@ import xapi.log.api.LogLevel;
 import xapi.server.annotation.XapiServlet;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
-import xapi.util.X_Debug;
 import xapi.util.X_Namespace;
 import xapi.util.X_Properties;
 import xapi.util.X_Runtime;
+import xapi.util.X_Util;
 
 
 public class TestServer
@@ -108,7 +108,7 @@ public class TestServer
       server.start();
     } catch (Exception e) {
       X_Log.error("Test server could not start", e);
-      throw X_Debug.wrap(e);
+      throw X_Util.rethrow(e);
     }
   }
 

@@ -1,6 +1,5 @@
 package xapi.collect.api;
 
-import xapi.collect.impl.EntryIterable;
 import xapi.collect.proxy.CollectionProxy;
 
 public interface ObjectTo <K, V>

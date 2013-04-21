@@ -34,10 +34,6 @@
   <dependencies>
     <dependency>
       <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-jre-reflect</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>net.wetheinter</groupId>
       <artifactId>xapi-jre-inject</artifactId>
     </dependency>
     <dependency>
@@ -54,7 +50,7 @@
     </dependency>
     <dependency>
       <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-core-inject</artifactId>
+      <artifactId>xapi-dev-scanner</artifactId>
     </dependency>
   </dependencies>
 

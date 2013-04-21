@@ -11,26 +11,16 @@
   <packaging>jar</packaging>
   <name>XApi - Core testing utilities</name>
   <url>WeTheInter.net</url>
-  <description>Some generic, non-platform specific tools for use during testing.
-        inherit using type: tests-jar
- </description>
+  <description>Some generic, non-platform specific tools for use during testing.</description>
   <dependencies>
 
     <dependency>
       <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-core-api</artifactId>
+      <artifactId>xapi-core-util</artifactId>
     </dependency>
-    <dependency>
-      <groupId>javax.inject</groupId>
-      <artifactId>javax.inject</artifactId>
-      <version>1</version>
-    </dependency>
-    
-    <!-- Testing dependencies -->
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <scope>test</scope>
     </dependency>
   </dependencies>
 

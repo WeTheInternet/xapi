@@ -6,8 +6,6 @@ import static xapi.collect.api.CharPool.EMPTY_STRING;
 import java.io.Serializable;
 import java.util.concurrent.locks.Lock;
 
-import xapi.util.impl.CharPoolTrie;
-import xapi.util.impl.Chars;
 
 public class StringTrie<E> {
 

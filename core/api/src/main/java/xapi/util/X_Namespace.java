@@ -1,6 +1,5 @@
 package xapi.util;
 
-import xapi.util.service.PropertyService;
 
 /**
  * A collection of string constants, used as property keys throughout the app.

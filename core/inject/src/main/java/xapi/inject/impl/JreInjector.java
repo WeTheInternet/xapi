@@ -55,6 +55,7 @@ public class JreInjector implements Injector{
     @Override
     public void set(String value) {
       //no-op implementation.
+      
     }
   };
 
@@ -145,7 +146,7 @@ public class JreInjector implements Injector{
             return serv;
           }
         e.printStackTrace();
-        String message = "Could not instantiate singleton for "+clazz.getName()+": "+target;
+        String message = "Could not instantiate singleton for "+clazz.getName()+" using "+target;
         tryLog(message, e);
         throw new RuntimeException(message,e);
       }
@@ -154,10 +155,10 @@ public class JreInjector implements Injector{
 	});
 	private void tryLog(String message, Throwable e) {
 		try{
-			System.err.println(message);
 			LogService log = (LogService) singletonProviders.get(LogService.class);
 			log.log(LogLevel.ERROR,message);
 		}catch(Exception ex){
+		  System.err.println(message);
 			ex.printStackTrace();
 		}
 	}

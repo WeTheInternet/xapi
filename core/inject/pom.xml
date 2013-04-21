@@ -33,10 +33,6 @@
       <artifactId>xapi-core-api</artifactId>
     </dependency>
     <dependency>
-      <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-core-reflect</artifactId>
-    </dependency>
-    <dependency>
       <groupId>javax.inject</groupId>
       <artifactId>javax.inject</artifactId>
       <version>1</version>

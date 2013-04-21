@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+ <modelVersion>4.0.0</modelVersion>
+
+ <parent>
+  <groupId>net.wetheinter</groupId>
+  <artifactId>xapi-settings-root</artifactId>
+  <version>0.4-SNAPSHOT</version>
+  <relativePath>root.xml</relativePath>
+ </parent>
+
+ <groupId>net.wetheinter</groupId>
+ <artifactId>xapi-settings-properties</artifactId>
+ <version>0.4-SNAPSHOT</version>
+ <packaging>pom</packaging>
+ <name>XApi - Settings (Properties)</name>
+ <description>
+  This is the root module of the XApi project.
+  
+  It contains the deployment metadata needed to properly sign and deploy all other artifacts.
+  </description>
+  
+ <organization>
+  <name>The Internet Party</name>
+  <url>WeTheInter.net</url>
+ </organization>
+
+ <properties>
+  <java.version>1.7</java.version>
+  <maven.compiler.source>${java.version}</maven.compiler.source>
+  <maven.compiler.target>${java.version}</maven.compiler.target>
+  <xapi.version>0.4-SNAPSHOT</xapi.version>
+  <xapi.test.version>0.4-SNAPSHOT</xapi.test.version>
+  <playn.version>1.5.1</playn.version>
+  <gwt.version>2.5.1</gwt.version>
+  <appengine.version>1.7.6</appengine.version>
+  <guava.version>13.0.1</guava.version>
+  <android.maven.version>3.4.0</android.maven.version>
+  <maven.version>3.0.4</maven.version>
+  <maven.plugin.version>2.2.1</maven.plugin.version>
+  <plexus.version>1.5.1</plexus.version>
+  <selenium.version>2.31.0</selenium.version>
+  <relative.output>properties</relative.output>
+ </properties>
+
+ <modules>
+  <module>dependencies.xml</module>
+ </modules>
+ 
+ <build>
+  <directory>${project.basedir}/target/properties</directory>
+ </build>
+ 
+</project>

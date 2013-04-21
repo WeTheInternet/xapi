@@ -1,17 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>net.wetheinter</groupId>
-    <artifactId>xapi-gwt-parent</artifactId>
-    <version>0.4-SNAPSHOT</version>
-  </parent>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+ <modelVersion>4.0.0</modelVersion>
+ <parent>
+  <groupId>net.wetheinter</groupId>
+  <artifactId>xapi-gwt-parent</artifactId>
+  <version>0.4-SNAPSHOT</version>
+ </parent>
 
-  <artifactId>xapi-gwt-api</artifactId>
-  <packaging>jar</packaging>
-  <name>XApi - Gwt core emulation layer</name>
-  <url>WeTheInter.net</url>
-  <description>
+ <artifactId>xapi-gwt-api</artifactId>
+ <packaging>jar</packaging>
+ <name>XApi - Gwt core emulation layer</name>
+ <url>WeTheInter.net</url>
+ <description>
   All Gwt jre emulation code goes in this module,
   as well as any gwt-compiler overrides.
   
@@ -31,42 +32,63 @@
   Some modules, like appengine, provide dependency-specific super-source 
   in their own packages.  This module is for jre, junit and core XApi services.
  </description>
-  
-  <dependencies>
-    <dependency>
-      <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-core-api</artifactId>
-      <classifier>sources</classifier>
-    </dependency>
-    <dependency>
-      <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-core-api</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-core-inject</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-core-inject</artifactId>
-      <classifier>sources</classifier>
-    </dependency>
-    <dependency>
-      <groupId>com.google.gwt</groupId>
-      <artifactId>gwt-dev</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.google.gwt</groupId>
-      <artifactId>gwt-user</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>javax.inject</groupId>
-      <artifactId>javax.inject</artifactId>
-      <classifier>sources</classifier>
-      <version>1</version>
-    </dependency>
-  </dependencies>
+
+ <dependencies>
+  <dependency>
+   <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-core-api</artifactId>
+   <classifier>sources</classifier>
+  </dependency>
+  <dependency>
+   <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-core-inject</artifactId>
+   <classifier>sources</classifier>
+  </dependency>
+  <dependency>
+   <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-core-reflect</artifactId>
+   <classifier>sources</classifier>
+  </dependency>
+  <dependency>
+   <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-core-util</artifactId>
+   <classifier>sources</classifier>
+  </dependency>
+  <dependency>
+   <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-core-collect</artifactId>
+   <classifier>sources</classifier>
+  </dependency>
+  <dependency>
+   <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-core-collect</artifactId>
+  </dependency>
+  <dependency>
+   <groupId>com.google.gwt</groupId>
+   <artifactId>gwt-dev</artifactId>
+   <scope>provided</scope>
+  </dependency>
+  <dependency>
+   <groupId>com.google.gwt</groupId>
+   <artifactId>gwt-user</artifactId>
+   <scope>provided</scope>
+  </dependency>
+  <dependency>
+   <groupId>javax.inject</groupId>
+   <artifactId>javax.inject</artifactId>
+   <classifier>sources</classifier>
+   <version>1</version>
+  </dependency>
+  <dependency>
+   <groupId>javax.validation</groupId>
+   <artifactId>validation-api</artifactId>
+  </dependency>
+  <dependency>
+   <groupId>javax.validation</groupId>
+   <artifactId>validation-api</artifactId>
+   <classifier>sources</classifier>
+  </dependency>
+
+ </dependencies>
 
 </project>

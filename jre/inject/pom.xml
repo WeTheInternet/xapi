@@ -24,21 +24,15 @@
  <dependencies>
   <dependency>
    <groupId>net.wetheinter</groupId>
-   <artifactId>xapi-jre-reflect</artifactId>
-  </dependency>
-  <dependency>
-   <groupId>net.wetheinter</groupId>
    <artifactId>xapi-core-inject</artifactId>
   </dependency>
   <dependency>
    <groupId>net.wetheinter</groupId>
-   <artifactId>xapi-core-inject</artifactId>
-   <version>${xapi.test.version}</version><!--$NO-MVN-MAN-VER$ -->
-   <type>test-jar</type>
+   <artifactId>xapi-dev-scanner</artifactId>
   </dependency>
   <dependency>
-   <groupId>junit</groupId>
-   <artifactId>junit</artifactId>
+   <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-core-test</artifactId>
    <scope>test</scope>
   </dependency>
  </dependencies>

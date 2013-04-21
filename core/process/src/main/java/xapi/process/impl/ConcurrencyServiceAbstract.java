@@ -1,5 +1,7 @@
 package xapi.process.impl;
 
+import static xapi.util.X_Debug.debug;
+
 import java.lang.Thread.State;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.Iterator;
@@ -16,12 +18,10 @@ import xapi.process.api.ConcurrentEnvironment.Priority;
 import xapi.process.api.Process;
 import xapi.process.api.ProcessController;
 import xapi.process.service.ConcurrencyService;
-import xapi.util.X_Debug;
 import xapi.util.X_Runtime;
+import xapi.util.X_Util;
 import xapi.util.api.ConvertsValue;
 import xapi.util.api.ReceivesValue;
-import static xapi.util.X_Debug.debug;
-import static xapi.util.X_Debug.unwrap;
 
 public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
 
@@ -206,11 +206,12 @@ public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
       Thread.interrupted();
     } catch (ExecutionException e) {
       debug(e);
-      throw X_Debug.wrap(unwrap(e));
+      throw X_Util.rethrow(X_Util.unwrap(e));
     }
   }
 
   @Override
+  @SuppressWarnings("deprecation")
   public boolean kill(Thread thread, int timeout) {
     if (destroy(thread, timeout))
       return true;

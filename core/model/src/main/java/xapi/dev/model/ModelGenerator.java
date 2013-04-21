@@ -1,8 +1,6 @@
 package xapi.dev.model;
 
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Set;
 
 import xapi.annotation.model.ClientToServer;
 import xapi.annotation.model.Serializable;
@@ -55,7 +53,6 @@ public class ModelGenerator {
       if (field.getType() == null) {
         throw new RuntimeException();
       }
-      Set<String> publicGetters = new HashSet<String>();
       for (GetterMethod getter : field.getGetters()) {
         String datatype = getter.returnType.getQualifiedName();
         MethodBuffer mb = createMethod(datatype,

@@ -4,7 +4,6 @@ import java.io.File;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.Arrays;
 import java.util.Random;
 
 import javax.tools.JavaCompiler;
@@ -14,9 +13,6 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import xapi.dev.source.SourceBuilder;
-import xapi.dev.template.TemplateClassGenerator;
-import xapi.dev.template.TemplateGeneratorOptions;
-import xapi.dev.template.TemplateToJava;
 
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;

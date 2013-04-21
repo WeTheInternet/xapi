@@ -3,8 +3,8 @@ package xapi.collect.trie;
 import xapi.collect.api.StringTrie;
 import xapi.collect.api.StringTrie.StringTrieCursor;
 import xapi.collect.api.StringTrie.StringTrieEdge;
-import xapi.util.impl.Chars;
-import xapi.util.impl.Chars.SingleChar;
+import xapi.collect.impl.Chars;
+import xapi.collect.impl.Chars.SingleChar;
 
 public class DeepTrieEdge <E> implements StringTrie.StringTrieEdge<E>{
 

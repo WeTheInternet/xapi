@@ -37,7 +37,6 @@ import xapi.gwt.reflect.MemberMap;
 import xapi.gwt.reflect.MethodMap;
 import xapi.inject.X_Inject;
 import xapi.platform.Platform;
-import xapi.util.X_String;
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JavaScriptObject;
@@ -332,7 +331,7 @@ public class MagicClassGenerator extends IncrementalGenerator {
 
     ClassBuffer cls = classBuilder.getClassBuffer();
     
-    MethodBuffer ctor = cls.createMethod("private " +generatedName+"()");
+    cls.createMethod("private " +generatedName+"()");
     
     if (keepHierarchy) {
       injectionType.getNestedTypes();
@@ -427,7 +426,7 @@ public class MagicClassGenerator extends IncrementalGenerator {
           .println("return Package.getPackage(\""+packageName+"\");");
       }
 
-      if (!X_String.isEmpty(classDebug)) {
+      if (classDebug.length() > 0) {
         logger.log(Type.INFO, classDebug);
         logger.log(Type.INFO, "Source Dump For " +clsToEnhance+":");
         logger.log(Type.INFO, classBuilder.toString());

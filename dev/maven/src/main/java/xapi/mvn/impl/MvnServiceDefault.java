@@ -37,8 +37,8 @@ import xapi.log.api.LogLevel;
 import xapi.mvn.service.MvnService;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
-import xapi.util.X_Debug;
 import xapi.util.X_String;
+import xapi.util.X_Util;
 
 @SingletonDefault(implFor = MvnService.class)
 public class MvnServiceDefault implements MvnService {
@@ -103,7 +103,7 @@ public class MvnServiceDefault implements MvnService {
 		  X_Log.error(e1.getResult().isResolved(), e1.getResult().getExceptions());
 		  e1.printStackTrace();
 			X_Log.error("Could not download " + artifact, e1);
-			throw X_Debug.wrap(e1);
+			throw X_Util.rethrow(e1);
 		} finally {
 			if (X_Log.loggable(LogLevel.DEBUG))
 				X_Log.debug("Resolved: " + artifact.toString() + " in " + X_Time.difference(before));
@@ -127,7 +127,7 @@ public class MvnServiceDefault implements MvnService {
 		try {
 			return new MavenXpp3Reader().read(new StringReader(pomString));
 		} catch (IOException ignored) {
-			throw X_Debug.wrap(ignored);
+			throw X_Util.rethrow(ignored);
 		}
 	}
 
@@ -167,7 +167,7 @@ public class MvnServiceDefault implements MvnService {
 					return loadPomString(next.readAll());
 				} catch (Exception e) {
 					X_Log.error("Unable to load resouce "+next.getResourceName(), e);
-					throw X_Debug.wrap(e);
+					throw X_Util.rethrow(e);
 				}
 			}
 

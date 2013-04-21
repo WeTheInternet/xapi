@@ -3,7 +3,6 @@ package xapi.shell.impl;
 import xapi.annotation.inject.InstanceDefault;
 import xapi.annotation.inject.SingletonDefault;
 import xapi.inject.X_Inject;
-import xapi.inject.impl.SingletonProvider;
 import xapi.io.api.LineReader;
 import xapi.log.X_Log;
 import xapi.shell.X_Shell;
@@ -27,13 +26,13 @@ public class ShellServiceDefault implements ShellService {
   }
 
   private static ShellResult runningShell; //TODO use a map with key by user...
-  private static abstract class ScriptProvider extends SingletonProvider<String> {
-    abstract String getScriptName();
-    public String getScriptLocation() {
-      return X_Shell.getResourceMaybeUnzip(getScriptName(), Thread.currentThread().getContextClassLoader());
-      
-    }
-  }
+//  private static abstract class ScriptProvider extends SingletonProvider<String> {
+//    abstract String getScriptName();
+//    public String getScriptLocation() {
+//      return X_Shell.getResourceMaybeUnzip(getScriptName(), Thread.currentThread().getContextClassLoader());
+//      
+//    }
+//  }
   
   @Override
   public ShellResult runInShell(final String cmd, LineReader stdOut, LineReader stdErr) {

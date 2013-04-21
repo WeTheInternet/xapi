@@ -7,35 +7,34 @@
     <version>0.4-SNAPSHOT</version>
   </parent>
 
-  <artifactId>xapi-jre-reflect</artifactId>
+  <artifactId>xapi-jre-test</artifactId>
   <packaging>jar</packaging>
-  <name>XApi - Jre Reflection and Classpath Scanning</name>
+  <name>XApi - Jre test code</name>
   <url>WeTheInter.net</url>
   <description>
-  This module contains a classpath scanner, and bytecode reader.
+  This module contains various test code that requires more 
+  dependencies to run than a given module needs to export.
   
-  It is useful in any java runtime environment, and allows java code to 
-  parse bytecode into a meta structure of classes, annotations, methods and fields.
-  
-  This meta structure is used throughout xapi to allow us to extend java structures
-  in a cross-platform compliant way (exposing services and service objects so 
-  you can hack support for whatever runtime you need).  
-  
-  It is especially useful for fast runtime injection, and as an extensible
-  structure during codegen (which exposes mutable interfaces for our meta structure)
+  Using one module exclusively for testing allows us to avoid
+  any circular dependency issues in public api, plus it 
+  means we can build jars quickly, and worry about failing the 
+  build after and modules depending on us are already being
+  processed on other threads. (mvn -T 2.5C = lots of threads)
   </description>
   
   
   <dependencies>
     <dependency>
       <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-core-inject</artifactId>
+      <artifactId>xapi-jre-inject</artifactId>
     </dependency>
     <dependency>
       <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-core-inject</artifactId>
-      <version>${xapi.test.version}</version><!--$NO-MVN-MAN-VER$-->
-      <type>test-jar</type>
+      <artifactId>xapi-dev-scanner</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-core-test</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>

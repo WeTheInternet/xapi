@@ -9,7 +9,6 @@ import xapi.inject.X_Inject;
 import xapi.io.api.HasLiveness;
 import xapi.io.api.StringReader;
 import xapi.log.X_Log;
-import xapi.shell.api.ShellResult;
 import xapi.shell.service.ShellService;
 import xapi.source.X_Source;
 import xapi.util.X_Debug;
@@ -75,7 +74,8 @@ public class X_Shell {
           +" "+X_String.join(" ", args);
       X_Log.info(cmd);
       // just run as a file
-      ShellResult result = globalService().runInShell(
+//      ShellResult result = 
+      globalService().runInShell(
           cmd
           ,new StringReader(), new StringReader());
     }

@@ -6,7 +6,7 @@ import java.util.List;
 import xapi.collect.impl.AbstractMultiInitMap;
 import xapi.except.NotConfiguredCorrectly;
 import xapi.platform.Platform;
-import xapi.util.X_Debug;
+import xapi.util.X_Util;
 
 import com.google.gwt.core.ext.ConfigurationProperty;
 import com.google.gwt.core.ext.GeneratorContext;
@@ -80,7 +80,7 @@ public class CurrentGwtPlatform {
         prop = context.getPropertyOracle().getConfigurationProperty("xapi.platform.dev");
       }
     } catch (Throwable e) {
-      throw X_Debug.wrap(e);
+      throw X_Util.rethrow(e);
     }
     // TODO: filter on isDebug based on whether or not the flag is set...
     PlatformSet platforms = new PlatformSet();

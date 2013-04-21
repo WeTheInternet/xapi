@@ -40,8 +40,8 @@ import javax.inject.Provider;
 
 import xapi.inject.api.Injector;
 import xapi.log.X_Log;
-import xapi.util.X_Debug;
 import xapi.util.X_Runtime;
+import xapi.util.X_Util;
 
 public class JavaInjector {
 
@@ -85,7 +85,7 @@ public class JavaInjector {
             Method m = cls.getDeclaredMethod("create", Class.class);
             return (Injector)m.invoke(null, Injector.class);
           }catch (Exception e) {
-            throw X_Debug.wrap(e);
+            throw X_Util.rethrow(e);
           }
         }
         // pure jre
@@ -120,7 +120,7 @@ public class JavaInjector {
             return Class.forName(name).newInstance();
           } catch (Exception e) {
             X_Log.error("Unable to instantiate ",name," using Class.newInstance", e);
-            throw X_Debug.wrap(e);
+            throw X_Util.rethrow(e);
           }
         }
       });
@@ -140,7 +140,7 @@ public class JavaInjector {
             return cls.newInstance();
           } catch (Exception e) {
             X_Log.error("Unable to instantiate ",name," using Class.newInstance", e);
-            throw X_Debug.wrap(e);
+            throw X_Util.rethrow(e);
           }
         }
       });

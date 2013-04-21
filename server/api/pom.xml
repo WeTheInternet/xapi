@@ -38,6 +38,11 @@
       <artifactId>xapi-core-io</artifactId>
       <scope>test</scope>
     </dependency>
+     <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+     </dependency>
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-server</artifactId>
@@ -52,7 +57,7 @@
     </dependency>
     <dependency>
       <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-jre-reflect</artifactId>
+      <artifactId>xapi-dev-scanner</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>

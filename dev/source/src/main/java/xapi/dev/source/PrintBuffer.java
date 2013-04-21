@@ -55,6 +55,14 @@ public class PrintBuffer {
     }
   }
 
+  protected static String join(String sep, String[] args) {
+    if (args.length==0)return "";
+    StringBuilder b = new StringBuilder(args[0]);
+    for (int i = 1, m = args.length; i < m; i++)
+      b.append(sep).append(args[i]);
+    return b.toString();
+  }
+  
 
   StringBuilder target;
   String indent = "";

@@ -2,7 +2,7 @@ package xapi.source.impl;
 
 import xapi.collect.api.Fifo;
 import xapi.collect.impl.SimpleFifo;
-import xapi.source.Modifier;
+import xapi.source.api.AccessFlag;
 import xapi.source.api.HasModifier;
 import xapi.source.api.IsAnnotation;
 import xapi.source.api.IsMember;
@@ -90,17 +90,17 @@ public class AbstractMember <Self extends AbstractMember<Self>> implements IsMem
 
   @Override
   public boolean isPublic() {
-    return (mod & 7) == Modifier.PUBLIC;
+    return (mod & 7) == AccessFlag.PUBLIC;
   }
 
   @Override
   public boolean isPrivate() {
-    return (mod & 7) == Modifier.PRIVATE;
+    return (mod & 7) == AccessFlag.PRIVATE;
   }
 
   @Override
   public boolean isProtected() {
-    return (mod & 7) == Modifier.PROTECTED;
+    return (mod & 7) == AccessFlag.PROTECTED;
   }
 
   @Override
@@ -109,15 +109,15 @@ public class AbstractMember <Self extends AbstractMember<Self>> implements IsMem
   }
 
   public boolean isAbstract() {
-    return (mod & Modifier.ABSTRACT) == Modifier.ABSTRACT;
+    return (mod & AccessFlag.ABSTRACT) == AccessFlag.ABSTRACT;
   }
 
   public boolean isFinal() {
-    return (mod & Modifier.FINAL) == Modifier.FINAL;
+    return (mod & AccessFlag.FINAL) == AccessFlag.FINAL;
   }
 
   public boolean isStatic() {
-    return (mod & Modifier.STATIC) == Modifier.STATIC;
+    return (mod & AccessFlag.STATIC) == AccessFlag.STATIC;
   }
 
   @SuppressWarnings("unchecked")
@@ -146,19 +146,19 @@ public class AbstractMember <Self extends AbstractMember<Self>> implements IsMem
   }
   @SuppressWarnings("unchecked")
   protected Self makePublic() {
-    mod = (mod & ~7)+Modifier.PUBLIC;
+    mod = (mod & ~7)+AccessFlag.PUBLIC;
     return (Self)this;
   }
 
   @SuppressWarnings("unchecked")
   protected Self makePrivate() {
-    mod = (mod & ~7)+Modifier.PRIVATE;
+    mod = (mod & ~7)+AccessFlag.PRIVATE;
     return (Self)this;
   }
 
   @SuppressWarnings("unchecked")
   protected Self makeProtected() {
-    mod = (mod & ~7)+Modifier.PROTECTED;
+    mod = (mod & ~7)+AccessFlag.PROTECTED;
     return (Self)this;
   }
 
@@ -177,27 +177,27 @@ public class AbstractMember <Self extends AbstractMember<Self>> implements IsMem
   @SuppressWarnings("unchecked")
   protected Self makeAbstract(boolean add) {
     if (add)
-      mod |= Modifier.ABSTRACT;
+      mod |= AccessFlag.ABSTRACT;
     else
-      mod &= ~Modifier.ABSTRACT;
+      mod &= ~AccessFlag.ABSTRACT;
     return (Self)this;
   }
 
   @SuppressWarnings("unchecked")
   protected Self makeFinal(boolean add) {
     if (add)
-      mod |= Modifier.FINAL;
+      mod |= AccessFlag.FINAL;
     else
-      mod &= ~Modifier.FINAL;
+      mod &= ~AccessFlag.FINAL;
     return (Self)this;
   }
 
   @SuppressWarnings("unchecked")
   protected Self makeStatic(boolean add) {
     if (add)
-      mod |= Modifier.STATIC;
+      mod |= AccessFlag.STATIC;
     else
-      mod &= ~Modifier.STATIC;
+      mod &= ~AccessFlag.STATIC;
     return (Self)this;
   }
 

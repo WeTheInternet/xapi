@@ -35,14 +35,12 @@
 package xapi.log.impl;
 
 import xapi.annotation.inject.SingletonDefault;
-import xapi.annotation.inject.SingletonOverride;
 import xapi.collect.api.Fifo;
 import xapi.log.api.LogLevel;
 import xapi.log.api.LogService;
 import xapi.util.X_Namespace;
 
 @SingletonDefault(implFor=LogService.class)
-@SingletonOverride(implFor=LogService.class, priority=Integer.MIN_VALUE)
 public class JreLog extends AbstractLog{
 
   public JreLog() {

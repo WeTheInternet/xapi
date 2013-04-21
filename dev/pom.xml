@@ -9,23 +9,27 @@
 
   <artifactId>xapi-dev-parent</artifactId>
   <packaging>pom</packaging>
-  <name>XApi - Dev Module SuperPom</name>
+  <name>XApi - Dev mode super-pom</name>
   <url>WeTheInter.net</url>
   <description>
-    Our aggregator for all dev-mode tools
+    Our aggregator for dev-mode tools
   </description>
 
   <modules>
     <!-- Shared dev tools -->
     <module>api</module>
-    <!-- Running shell commands, like mvn or git -->
-    <module>shell</module>
     <!-- Java source generation -->
     <module>source</module>
+    <!-- Bytecode parsing -->
+    <module>bytecode</module>
+    <!-- Classpath scanning -->
+    <module>scanner</module>
     <!-- Template generator -->
     <module>template</module>
-    <!-- Pom scanner (cli) -->
+    <!-- Runtime maven utils -->
     <module>maven</module>
+    <!-- Running shell commands (opens an sh session) -->
+    <module>shell</module>
   </modules>
 
 </project>

@@ -25,7 +25,7 @@
   <dependencies>
     <dependency>
       <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-core-api</artifactId>
+      <artifactId>xapi-core-inject</artifactId>
     </dependency>
   </dependencies>
 

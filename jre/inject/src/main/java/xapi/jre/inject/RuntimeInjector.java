@@ -15,12 +15,12 @@ import xapi.annotation.inject.InstanceDefault;
 import xapi.annotation.inject.InstanceOverride;
 import xapi.annotation.inject.SingletonDefault;
 import xapi.annotation.inject.SingletonOverride;
-import xapi.bytecode.Annotation;
-import xapi.bytecode.ArrayMemberValue;
 import xapi.bytecode.ClassFile;
-import xapi.bytecode.ClassMemberValue;
-import xapi.bytecode.IntegerMemberValue;
-import xapi.bytecode.MemberValue;
+import xapi.bytecode.annotation.Annotation;
+import xapi.bytecode.annotation.ArrayMemberValue;
+import xapi.bytecode.annotation.ClassMemberValue;
+import xapi.bytecode.annotation.IntegerMemberValue;
+import xapi.bytecode.annotation.MemberValue;
 import xapi.collect.api.Fifo;
 import xapi.collect.impl.SimpleFifo;
 import xapi.dev.scanner.ClasspathResourceMap;
@@ -74,12 +74,13 @@ public class RuntimeInjector implements ReceivesValue<String> {
     Fifo<ClassFile> singletonImpls = new SimpleFifo<ClassFile>();
     Fifo<ClassFile> instanceImpls = new SimpleFifo<ClassFile>();
 
-    Iterable<ClassFile> platforms = resources.findClassAnnotatedWith(Platform.class);
     ClassFile bestMatch = null;
     HashMap<String,ClassFile> platformMap = new HashMap<String, ClassFile>();
     String shortName = null;
     Set<String> scopes = new LinkedHashSet<String>();
-    for (ClassFile file : platforms) {
+    ArrayList<ClassFile> platforms = new ArrayList<ClassFile>();
+    for (ClassFile file : resources.findClassAnnotatedWith(Platform.class)) {
+      platforms.add(file);
       for (String platform : runtime) {
         scopes.add(platform);
         shortName = platform.substring(platform.lastIndexOf('.')+1);
@@ -262,7 +263,7 @@ public class RuntimeInjector implements ReceivesValue<String> {
     for (String iface : injectables.keySet()){
       File metaInf = new File(target, iface);
       String impl = injectables.get(iface).getName();
-      X_Log.debug("Injecting "+iface+" -> "+impl);
+      X_Log.debug("Injecting ",iface," -> ",impl);
       try{
         if (metaInf.exists()){
           // when the file exists, we must append to the top of it,

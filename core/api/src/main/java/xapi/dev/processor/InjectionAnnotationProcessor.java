@@ -1,5 +1,7 @@
 package xapi.dev.processor;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -7,27 +9,26 @@ import java.util.Set;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Filer;
+import javax.annotation.processing.FilerException;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
+import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementVisitor;
 import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.TypeParameterElement;
-import javax.lang.model.element.VariableElement;
-import javax.lang.model.util.AbstractElementVisitor6;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.util.ElementFilter;
+import javax.lang.model.util.Elements;
+import javax.tools.FileObject;
+import javax.tools.StandardLocation;
 
-import xapi.annotation.inject.InstanceDefault;
-import xapi.annotation.inject.InstanceOverride;
-import xapi.annotation.inject.SingletonDefault;
-import xapi.annotation.inject.SingletonOverride;
+import xapi.util.X_Util;
 import xapi.util.api.Pair;
 import xapi.util.impl.AbstractPair;
-import static xapi.util.impl.PairBuilder.of;
 
 /**
  * This is the annotation processor for our injection library.
@@ -54,20 +55,70 @@ import static xapi.util.impl.PairBuilder.of;
  *
  */
 @SupportedAnnotationTypes({"xapi.annotation.inject.*"})
-@SupportedSourceVersion(SourceVersion.RELEASE_6)
+@SupportedSourceVersion(SourceVersion.RELEASE_7)
 public class InjectionAnnotationProcessor extends AbstractProcessor{
 
   protected static class PlatformPair extends AbstractPair<String, Class<?>> {}
   
   protected static class ManifestWriter {
-    void writeSingleton(Class<?> iface, String platform, Integer priority, Element element) {
-      
+    HashMap<String, Pair<Integer, String>> singletons = new HashMap<String, Pair<Integer, String>>();
+    HashMap<String, Pair<Integer, String>> instances = new HashMap<String, Pair<Integer, String>>();
+    void writeSingleton(String iface, String platform, Integer priority, String element) {
+      if (priority == null) {
+        if (!singletons.containsKey(iface))
+          singletons.put(iface, X_Util.pairOf(priority, element));
+      } else {
+        Pair<Integer, String> existing = singletons.get(iface);
+        if (
+            existing == null || 
+            existing.get0() == null ||
+            existing.get0() < priority
+        )
+          singletons.put(iface, X_Util.pairOf(priority, element));
+      }
     }
-    void writeInstance(Class<?> iface, String platform, Integer priority, Element element) {
-      
+    void writeInstance(String iface, String platform, Integer priority, String element) {
+      if (priority == null) {
+        if (!instances.containsKey(iface))
+          instances.put(iface, X_Util.pairOf(priority, element));
+      } else {
+        Pair<Integer, String> existing = instances.get(iface);
+        if (
+            existing == null || 
+            existing.get0() == null ||
+            existing.get0() < priority
+            )
+          instances.put(iface, X_Util.pairOf(priority, element));
+      }
     }
-    void commit(Filer filer) {
-      
+    void commit(Filer filer) throws IOException {
+      for (String iface : singletons.keySet()) {
+        String impl = singletons.get(iface).get1();
+        writeTo("singletons",iface, impl, filer);
+      }
+      for (String iface : instances.keySet()) {
+        String impl = instances.get(iface).get1();
+        writeTo("instances",iface, impl, filer);
+      }
+    }
+    protected void writeTo(String location, String iface, String impl, Filer filer) throws IOException {
+      CharSequence existing;
+      String manifest = "META-INF/" + location+ "/" + iface;
+      try {
+        existing = filer.getResource(StandardLocation.CLASS_OUTPUT, "", manifest).getCharContent(true);
+        if (!impl.contentEquals(existing))
+          System.out.println("Cannot overwrite existing " +location+" injection target.\n" +
+              "Tried: "+iface+" -> "+impl+"\n" +
+              "but existing manifest has: "+existing);
+      } catch (FilerException ignored) {
+        // Re-opening the file for reading or after writing is ignorable
+      } catch (IOException e) {
+        // File does not exist, just create one.
+        FileObject res = filer.createResource(StandardLocation.CLASS_OUTPUT, "",manifest);
+        OutputStream out = res.openOutputStream();
+        out.write(impl.getBytes());
+        out.close();
+      }
     }
   }
   
@@ -91,58 +142,84 @@ public class InjectionAnnotationProcessor extends AbstractProcessor{
   }
 
   @Override
-  public boolean process(Set<? extends TypeElement> annotations,
-      RoundEnvironment roundEnv) {
-    // TODO use Pair<String, Class<?>> as key, and put overrides into scoped folders in META-INF
-    // Also, we should be looking up the current runtime platform and adjusting /META-INF for /assets
-    HashMap<Class<?>, Pair<Integer, Element>> singletons = new HashMap<Class<?>, Pair<Integer, Element>>();
-    HashMap<Class<?>, Pair<Integer, Element>> instances = new HashMap<Class<?>, Pair<Integer, Element>>();
+  public boolean process(
+      Set<? extends TypeElement> annotations,
+      RoundEnvironment roundEnv
+  ) {
+    Elements elements = processingEnv.getElementUtils();
     for (TypeElement anno : annotations) {
+      ExecutableElement implFor = extractImplFor(anno);
+      ExecutableElement priorityFor = extractPriorityFor(anno);
       for (Element element : roundEnv.getElementsAnnotatedWith(anno)) {
-        //Disabled until TypeMirror issue is resolved
-//
-//        if (anno.getQualifiedName().contentEquals(SingletonDefault.class.getCanonicalName())) {
-//          SingletonDefault def = element.getAnnotation(SingletonDefault.class);
-//          if (!singletons.containsKey(def.implFor()))
-//            singletons.put(def.implFor(), of((Integer)null, element));
-//        } else if (anno.getQualifiedName().contentEquals(SingletonOverride.class.getCanonicalName())) {
-//          SingletonOverride def = element.getAnnotation(SingletonOverride.class);
-//          Pair<Integer, Element> existing = singletons.get(def.implFor());
-//          if (
-//              existing == null || 
-//              existing.get0() == null ||
-//              existing.get0() < def.priority()
-//          )
-//            singletons.put(def.implFor(), of(def.priority(), element));
-//        } else if (anno.getQualifiedName().contentEquals(InstanceDefault.class.getCanonicalName())) {
-//          InstanceDefault def = element.getAnnotation(InstanceDefault.class);
-//          if (!instances.containsKey(def.implFor()))
-//            instances.put(def.implFor(), of((Integer)null, element));
-//        } else if (anno.getQualifiedName().contentEquals(InstanceOverride.class.getCanonicalName())) {
-//          InstanceOverride def = element.getAnnotation(InstanceOverride.class);
-//          Pair<Integer, Element> existing = instances.get(def.implFor());
-//          if (
-//              existing == null || 
-//              existing.get0() == null ||
-//              existing.get0() < def.priority()
-//              )
-//            instances.put(def.implFor(), of(def.priority(), element));
-//        } 
+        AnnotationMirror mirror = getMirror(element, anno);
+        AnnotationValue t = 
+            elements.getElementValuesWithDefaults(mirror)
+            .get(implFor);
+        DeclaredType cls = (DeclaredType) t.getValue();
+        Integer priority = getPriority(elements, mirror, priorityFor);
+        if (anno.getSimpleName().contentEquals("SingletonDefault")) {
+          for (String platform : getPlatforms(element))
+            writer.writeSingleton(cls.toString(), platform, null, element.toString());
+        } else if (anno.getSimpleName().contentEquals("SingletonOverride")) {
+          for (String platform : getPlatforms(element))
+            writer.writeSingleton(cls.toString(), platform, priority, element.toString());
+        } else if (anno.getSimpleName().contentEquals("InstanceDefault")) {
+          for (String platform : getPlatforms(element))
+            writer.writeInstance(cls.toString(), platform, null, element.toString());
+        } else if (anno.getSimpleName().contentEquals("InstanceOverride")) {
+          for (String platform : getPlatforms(element))
+            writer.writeInstance(cls.toString(), platform, priority, element.toString());
+        } 
       }
     }
-    for (Class<?> iface : singletons.keySet()) {
-      Pair<Integer, Element> impl = singletons.get(iface);
-      writer.writeSingleton(iface, "", impl.get0(), impl.get1());
+    if (roundEnv.processingOver())
+    try {
+      writer.commit(filer);
+    } catch (Exception e) {
+      e.printStackTrace();
+      System.err.println("Unable to write injection metadata.");
+      return false;
     }
-    for (Class<?> iface : instances.keySet()) {
-      Pair<Integer, Element> impl = instances.get(iface);
-      writer.writeInstance(iface, "", impl.get0(), impl.get1());
-    }
-    writer.commit(filer);
     
     return true;
   }
   
+  private Integer getPriority(Elements elements, AnnotationMirror mirror,
+      ExecutableElement priorityFor) {
+    if (priorityFor == null) 
+      return null; // *Default annos
+    return (Integer)elements.getElementValuesWithDefaults(mirror)
+        .get(priorityFor)
+        .getValue();
+  }
+
+  private AnnotationMirror getMirror(Element element, TypeElement type) {
+    for (AnnotationMirror mirror : element.getAnnotationMirrors()) {
+      if (mirror.getAnnotationType().toString().equals(type.toString())) {
+        return mirror;
+      }
+    }
+    throw new RuntimeException("Element "+element+" did not contain annotation "+type);
+  }
+
+  private ExecutableElement extractImplFor(TypeElement anno) {
+    for (ExecutableElement e : ElementFilter.methodsIn(anno.getEnclosedElements())) {
+      if (e.getSimpleName().toString().equals("implFor")){
+        return e;
+      }
+    }
+    throw new RuntimeException("Annotation "+anno+" does not contain an implFor() method.\n" +
+    		"Available methods: "+anno.getEnclosedElements());
+  }
+  private ExecutableElement extractPriorityFor(TypeElement anno) {
+    for (ExecutableElement e : ElementFilter.methodsIn(anno.getEnclosedElements())) {
+      if (e.getSimpleName().toString().equals("priority")){
+        return e;
+      }
+    }
+    return null; // Default annos don't have priority
+  }
+
   protected Iterable<String> getPlatforms(Element element) {
     return Arrays.asList("");
   }

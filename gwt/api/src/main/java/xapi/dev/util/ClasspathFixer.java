@@ -41,12 +41,12 @@ public class ClasspathFixer extends ThreadLocal<ClassLoader>{
       gwtArgs = "-logLevel "+flag+" "+gwtArgs;
     }
 
-    flag = X_Properties.getProperty("xapi.gwt.batch", "class");
+    flag = X_Properties.getProperty("xapi.gwt.batch", "module");
     if (!gwtArgs.contains("-batch")) {
       gwtArgs = "-batch "+flag+" "+gwtArgs;
     }
 
-    flag = X_Properties.getProperty("xapi.gwt.precompile", "all");
+    flag = X_Properties.getProperty("xapi.gwt.precompile", "parallel");
     if (!gwtArgs.contains("-precompile")) {
       gwtArgs = "-precompile "+flag+" "+gwtArgs;
     }

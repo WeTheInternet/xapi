@@ -12,9 +12,8 @@ import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.except.NotConfiguredCorrectly;
-import xapi.reflect.api.ClassDataCallback;
-import xapi.reflect.api.ReflectionService;
 import xapi.reflect.impl.GwtDevReflectionService;
+import xapi.reflect.service.ReflectionService;
 import xapi.util.X_Runtime;
 
 import com.google.gwt.core.ext.GeneratorContext;
@@ -91,11 +90,6 @@ public class MonolithReflectionGenerator extends IncrementalGenerator{
       .println("private static final Object[] OBJECT_ARRAY = new Object[0];")
       .outdent()
       .println();
-
-    MethodBuffer async = buffer.createMethod(
-        "public <T> void async(" +
-    		"Class<T> classLit, " +
-    		ClassDataCallback.class.getName()+"<T> callback)");
 
     // switch/case from class to provider method is the best a standard monolithic generator can do.
     MethodBuffer magicClass = buffer.createMethod(

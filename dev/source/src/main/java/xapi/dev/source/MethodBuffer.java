@@ -40,7 +40,6 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 import xapi.source.except.TypeDefinitionException;
-import xapi.util.X_String;
 
 
 public class MethodBuffer extends PrintBuffer{
@@ -157,7 +156,7 @@ public class MethodBuffer extends PrintBuffer{
   		  returnType = returnType.substring(ind+1);
   		}
   		if (usedGenerics && metadata.hasGenerics()) {
-  		  returnType += "<"+X_String.join(", ", metadata.getGenerics())+"> ";
+  		  returnType += "<"+join(", ", metadata.getGenerics())+"> ";
   		}
 		}
 		
@@ -201,8 +200,8 @@ public class MethodBuffer extends PrintBuffer{
 		if (methodName.length() == 0)
 			throw new TypeDefinitionException("Did not have a class name in class definition "+definition);
 	}
-
-	public void addParameters(String ... parameters) {
+	
+  public void addParameters(String ... parameters) {
 		for (String parameter0 : parameters){
 		  for (String parameter : parameter0.split(",")){
   			parameter = parameter.trim();

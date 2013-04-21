@@ -1,9 +1,9 @@
 package xapi.collect.impl;
 
 import xapi.util.X_Runtime;
+import xapi.util.X_Util;
 import xapi.util.api.ConvertsValue;
 import xapi.util.api.Pair;
-import xapi.util.impl.PairBuilder;
 
 public class AbstractMultiInitMap <Key, Value, Params> extends InitMapDefault<Pair<Key, Params>,Value> {
 
@@ -44,7 +44,7 @@ public class AbstractMultiInitMap <Key, Value, Params> extends InitMapDefault<Pa
   private Value doGet(Key key, Params params) {
     this.params = params;
     try {
-      return super.get(PairBuilder.of(key, params));
+      return super.get(X_Util.pairOf(key, params));
     }finally {
       if (isClearState())
         this.params = null;

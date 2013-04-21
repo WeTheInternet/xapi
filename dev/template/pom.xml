@@ -1,37 +1,43 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>net.wetheinter</groupId>
-    <artifactId>xapi-dev-parent</artifactId>
-    <version>0.4-SNAPSHOT</version>
-  </parent>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+ <modelVersion>4.0.0</modelVersion>
+ <parent>
+  <groupId>net.wetheinter</groupId>
+  <artifactId>xapi-dev-parent</artifactId>
+  <version>0.4-SNAPSHOT</version>
+ </parent>
 
-  <artifactId>xapi-dev-template</artifactId>
-  <packaging>jar</packaging>
-  <name>XApi - Code Generator Templates</name>
-  <url>WeTheInter.net</url>
-  <description>
+ <artifactId>xapi-dev-template</artifactId>
+ <packaging>jar</packaging>
+ <name>XApi - Code Generator Templates</name>
+ <url>WeTheInter.net</url>
+ <description>
     A templating system for using in creating cross-platform frameworks.
   </description>
-  
-  <dependencies>
-     <dependency>
-      <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-dev-source</artifactId>
-     </dependency>
-     <dependency>
-       <groupId>com.google.gwt</groupId>
-       <artifactId>gwt-user</artifactId>
-       <scope>provided</scope>
-     </dependency>
-     <dependency>
-       <groupId>com.google.gwt</groupId>
-       <artifactId>gwt-dev</artifactId>
-       <scope>provided</scope>
-     </dependency>
-  </dependencies>
 
-  <build>
-  </build>
+ <dependencies>
+  <dependency>
+   <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-dev-source</artifactId>
+  </dependency>
+  <dependency>
+   <groupId>com.google.gwt</groupId>
+   <artifactId>gwt-user</artifactId>
+   <scope>provided</scope>
+  </dependency>
+  <dependency>
+   <groupId>com.google.gwt</groupId>
+   <artifactId>gwt-dev</artifactId>
+   <scope>provided</scope>
+  </dependency>
+  <dependency>
+   <groupId>junit</groupId>
+   <artifactId>junit</artifactId>
+   <scope>test</scope>
+  </dependency>
+ </dependencies>
+
+ <build>
+ </build>
 </project>

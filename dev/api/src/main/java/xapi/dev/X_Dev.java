@@ -7,9 +7,9 @@ import xapi.dev.scanner.ClasspathScanner;
 import xapi.dev.scanner.StringDataResource;
 import xapi.inject.X_Inject;
 import xapi.log.X_Log;
-import xapi.util.X_Debug;
 import xapi.util.X_Namespace;
 import xapi.util.X_Properties;
+import xapi.util.X_Util;
 
 public class X_Dev {
 
@@ -65,7 +65,7 @@ public class X_Dev {
   	  }
   	  return home;
 	  } catch (Throwable e) {
-	    throw X_Debug.wrap(e);
+	    throw X_Util.rethrow(e);
 	  }
 	}
 	
