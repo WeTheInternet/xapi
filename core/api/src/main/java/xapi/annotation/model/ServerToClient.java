@@ -1,7 +1,6 @@
 package xapi.annotation.model;
 
 import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -28,7 +27,7 @@ import java.lang.annotation.Target;
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.TYPE, ElementType.METHOD, ElementType.FIELD})
+@Target({}) // Must be placed inside a @Serializable annotation
 public @interface ServerToClient {
 
   SerializationStrategy serializer() default SerializationStrategy.ProtoStream;

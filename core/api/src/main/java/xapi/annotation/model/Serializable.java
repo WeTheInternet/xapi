@@ -22,32 +22,18 @@ import java.lang.annotation.Target;
  *
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.FIELD, ElementType.METHOD, ElementType.TYPE})
+@Target(ElementType.METHOD)
 public @interface Serializable {
 
   /**
-   * @return true to allow the data to be sent from client to server.
-   * false to prevent the value from leaving the client.
-   *
-   * Useful for dirty flags, or client-side rendering objects.
-   */
-  public boolean clientToServer() default true;
-
-  /**
-   *
    * @return true to obfuscate values before serialization.
    *
    * The default obfuscator will use a one-time pad to hash your values.
    */
   public boolean obfuscated() default false;
-
-  /**
-   *
-   * @return true to allow the data to be sent from server to client.
-   * false to prevent the value from leaving the server.
-   *
-   * Useful for passwords and other sensitive data.
-   */
-  public boolean serverToClient() default true;
+  
+  ClientToServer clientToServer() default @ClientToServer;
+  
+  ServerToClient serverToClient() default @ServerToClient;
 
 }

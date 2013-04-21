@@ -4,6 +4,7 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 
 import xapi.annotation.model.FieldName;
+import xapi.annotation.model.IsModel;
 import xapi.annotation.model.Key;
 import xapi.annotation.model.Persistent;
 import xapi.annotation.model.Serializable;
@@ -42,6 +43,7 @@ public class ModelGenerator {
     // first, collect up our metadata
     Persistent classPersistence = modelSource.getAnnotation(Persistent.class);
     Serializable classSerializable = modelSource.getAnnotation(Serializable.class);
+    IsModel model = modelSource.getAnnotation(IsModel.class);
 
     logger.log(LogLevel.TRACE, "Class Peristence Level: " + classPersistence);
     logger.log(LogLevel.TRACE, "Default Serialization Level: " + classSerializable);
@@ -71,10 +73,10 @@ public class ModelGenerator {
 
       }
       if (methodSerializable != null) {
-        if (modelContext.isServer() && methodSerializable.serverToClient()) {
+        if (modelContext.isServer() && methodSerializable.serverToClient().enabled()) {
 
         }
-        if (modelContext.isClient() && methodSerializable.clientToServer()) {
+        if (modelContext.isClient() && methodSerializable.clientToServer().enabled()) {
 
         }
       }

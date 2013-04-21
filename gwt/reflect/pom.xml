@@ -21,15 +21,6 @@
     </dependency>
     <dependency>
       <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-core-reflect</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-core-reflect</artifactId>
-      <classifier>sources</classifier>
-    </dependency>
-    <dependency>
-      <groupId>net.wetheinter</groupId>
       <artifactId>xapi-dev-source</artifactId>
     </dependency>
     <dependency>

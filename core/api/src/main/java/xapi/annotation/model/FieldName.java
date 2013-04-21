@@ -6,10 +6,11 @@ public @interface FieldName {
    *
    * @return - Field name to use in production mode ${xapi.prod} = true.
    */
-  String name();
+  String value();
 
   /**
-   * If debug name is specified, it will only be used when xapi.prod != true.
+   * If debug name is specified, it will only be used when xapi.debug = true,
+   * and never when xapi.prod = true;
    *
    * @return human-friendly name, or "" to use obfuscated name.
    */

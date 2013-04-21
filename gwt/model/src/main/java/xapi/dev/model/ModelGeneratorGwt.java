@@ -61,16 +61,16 @@ public class ModelGeneratorGwt extends IncrementalGenerator{
     if (field != null)
       return field.debugName().length() > 0
         // TODO && models.isDebugMode
-        ? field.debugName() : field.name();
+        ? field.debugName() : field.value();
     GetterFor getter = method.getAnnotation(GetterFor.class);
     if (getter != null)
-      return getter.name();
+      return getter.value();
     SetterFor setter = method.getAnnotation(SetterFor.class);
     if (setter != null)
-      return setter.name();
+      return setter.value();
     DeleterFor deleter = method.getAnnotation(DeleterFor.class);
     if (deleter != null)
-      return deleter.name();
+      return deleter.value();
     // No annotations, we have to guess.
     String name = method.getName();
     if (

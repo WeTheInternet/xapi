@@ -3,8 +3,8 @@ package xapi.test.model;
 import org.junit.Assert;
 import org.junit.Test;
 
+import xapi.annotation.model.IsModel;
 import xapi.annotation.model.Key;
-import xapi.annotation.model.Serializable;
 import xapi.dev.model.HasModelFields;
 import xapi.dev.model.ModelField;
 import xapi.dev.model.ModelUtil;
@@ -13,9 +13,8 @@ import xapi.model.api.Model;
 
 public class ModelTester {
 
-  @Serializable
+  @IsModel(key=@Key("id"))
   public interface TestModel extends Model {
-    @Key
     String id();
 
     Object getItem();

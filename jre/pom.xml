@@ -23,7 +23,6 @@
   <modules>
 
     <module>api</module>
-    <module>reflect</module>
     <module>inject</module>
     <module>collect</module>
     <module>process</module>

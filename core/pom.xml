@@ -80,7 +80,7 @@
     <executions>
      <execution>
       <id>attach-sources</id>
-      <phase>prepare-package</phase>
+      <phase>package</phase>
       <goals>
        <goal>jar</goal>
       </goals>

@@ -1,12 +1,11 @@
 package xapi.annotation.model;
 
-import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.FIELD, ElementType.METHOD})
+@Target({})//only allowed inside an @Model tag.
 public @interface Key {
 
   /**
@@ -21,5 +20,7 @@ public @interface Key {
    * Prefer instead to use deterministic keys that you can contruct from runtime data.
    */
   public Class<?> keyType() default String.class;
+  
+  public String value();
 
 }

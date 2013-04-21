@@ -1,4 +1,4 @@
-package xapi.source.except;
+package xapi.dev.source;
 
 public class TypeDefinitionException extends RuntimeException{
 

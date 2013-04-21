@@ -212,7 +212,7 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
 
       GetterFor getter = method.getAnnotation(GetterFor.class);
       if (getter != null) {
-        String name = getter.name();
+        String name = getter.value();
         if (name.length() == 0) {
           name = ModelUtil.stripGetter(method.getName());
         }
@@ -226,7 +226,7 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
       }
       SetterFor setter = method.getAnnotation(SetterFor.class);
       if (setter != null) {
-        String name = setter.name();
+        String name = setter.value();
         if (name.length() == 0)
           name = ModelUtil.stripSetter(method.getName());
         grabAnnotations(logger, models, fieldMap, method, annos, type);
@@ -358,15 +358,15 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
     if (field.getSerializable() == null) {
       field.setSerializable(serial);
     } else {
-      assert serial == null ||
-        ( // this block is all assert, so it will compile out of production.
-          serial.clientToServer() == field.getSerializable().clientToServer() &&
-          serial.serverToClient() == field.getSerializable().serverToClient() &&
-          serial.obfuscated() == field.getSerializable().obfuscated()
-          ) : "Model annotation mismatch! Field "+field.getName()+" contained " +
-          		"multiple @Serializable annotations which did not match.  You may " +
-          		"have to override an annotated supertype method with the correct " +
-          		"@Serializable annotation.";
+//      assert serial == null ||
+//        ( // this block is all assert, so it will compile out of production.
+//          serial.clientToServer() == field.getSerializable().clientToServer() &&
+//          serial.serverToClient() == field.getSerializable().serverToClient() &&
+//          serial.obfuscated() == field.getSerializable().obfuscated()
+//          ) : "Model annotation mismatch! Field "+field.getName()+" contained " +
+//          		"multiple @Serializable annotations which did not match.  You may " +
+//          		"have to override an annotated supertype method with the correct " +
+//          		"@Serializable annotation.";
     }
     if (field.getServerToClient() == null) {
       field.setServerToClient(s2c);

@@ -183,7 +183,6 @@
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-jre</artifactId>
-    <classifier>uber</classifier>
     <version>${xapi.version}</version>
    </dependency>
 

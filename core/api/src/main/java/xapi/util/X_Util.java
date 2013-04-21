@@ -55,6 +55,9 @@ public final class X_Util{
   }
 
   public static Throwable unwrap(Throwable e) {
+    if (X_Runtime.isDebug())
+      e.printStackTrace();// Avoid losing information in debug mode.
+    
     //don't use instanceof because we don't want to treat subclasses of RuntimeException as wrappers...
     while (e.getClass().equals(RuntimeException.class) || e.getClass().equals(ExecutionException.class)) {
       if (e.getCause() == null)

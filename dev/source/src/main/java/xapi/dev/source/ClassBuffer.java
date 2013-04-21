@@ -39,7 +39,6 @@ import java.lang.reflect.Modifier;
 import java.util.Set;
 import java.util.TreeSet;
 
-import xapi.source.except.TypeDefinitionException;
 
 public class ClassBuffer extends PrintBuffer{
 

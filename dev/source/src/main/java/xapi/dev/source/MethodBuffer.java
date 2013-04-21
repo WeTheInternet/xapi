@@ -39,7 +39,6 @@ import java.lang.reflect.Modifier;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import xapi.source.except.TypeDefinitionException;
 
 
 public class MethodBuffer extends PrintBuffer{

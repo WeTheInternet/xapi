@@ -35,7 +35,6 @@
 
 package xapi.dev.source;
 
-import xapi.except.NotConfiguredCorrectly;
 
 public class SourceBuilder <Payload> {
 
@@ -61,7 +60,7 @@ public class SourceBuilder <Payload> {
 
 	public ClassBuffer getClassBuffer(){
 		if (classDef == null)
-			throw new NotConfiguredCorrectly(
+			throw new TypeDefinitionException(
 			  "setClassDefinition() has not been called yet.\n" +
 			  "If you are running the template generator, your template " +
 			  "does include a //@classDefinition()// declaration,\n" +
