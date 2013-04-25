@@ -5,7 +5,7 @@ import java.util.concurrent.Future;
 import xapi.process.api.AsyncLock;
 import xapi.process.api.Process;
 import xapi.process.api.ProcessController;
-import xapi.time.api.TimeService;
+import xapi.time.service.TimeService;
 import xapi.util.api.ErrorHandler;
 import xapi.util.api.ReceivesValue;
 

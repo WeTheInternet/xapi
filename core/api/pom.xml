@@ -17,6 +17,10 @@
   <dependencies>
 
     <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-dev-source</artifactId>
+    </dependency>
+    <dependency>
       <groupId>javax.inject</groupId>
       <artifactId>javax.inject</artifactId>
       <version>1</version>

@@ -2,8 +2,8 @@ package xapi.time;
 
 import static xapi.inject.X_Inject.singleton;
 import xapi.time.api.Moment;
-import xapi.time.api.TimeService;
 import xapi.time.impl.ImmutableMoment;
+import xapi.time.service.TimeService;
 import xapi.util.X_String;
 
 public class X_Time {

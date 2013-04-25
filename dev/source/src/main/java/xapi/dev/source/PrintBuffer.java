@@ -271,7 +271,7 @@ public class PrintBuffer {
   }
 
   public PrintBuffer addToEnd(PrintBuffer buffer) {
-    assert notContained(buffer) : "Infinite recursion!";
+    assert notContained(buffer) : "Infinite recursion! On ["+buffer+"] in "+this;
     PrintStack newTail = new PrintStack();
     newTail.buffer = buffer;
     newTail.prefix = target.toString();

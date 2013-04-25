@@ -41,8 +41,16 @@
   </dependency>
   <dependency>
    <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-core-api</artifactId>
+  </dependency>
+  <dependency>
+   <groupId>net.wetheinter</groupId>
    <artifactId>xapi-core-inject</artifactId>
    <classifier>sources</classifier>
+  </dependency>
+  <dependency>
+   <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-core-inject</artifactId>
   </dependency>
   <dependency>
    <groupId>net.wetheinter</groupId>
@@ -51,12 +59,7 @@
   </dependency>
   <dependency>
    <groupId>net.wetheinter</groupId>
-   <artifactId>xapi-core-collect</artifactId>
-   <classifier>sources</classifier>
-  </dependency>
-  <dependency>
-   <groupId>net.wetheinter</groupId>
-   <artifactId>xapi-core-collect</artifactId>
+   <artifactId>xapi-core-util</artifactId>
   </dependency>
   <dependency>
    <groupId>com.google.gwt</groupId>

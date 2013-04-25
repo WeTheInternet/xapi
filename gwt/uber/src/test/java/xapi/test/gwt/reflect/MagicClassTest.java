@@ -7,7 +7,7 @@ import xapi.annotation.reflect.KeepMethod;
 import xapi.log.X_Log;
 import xapi.reflect.X_Reflect;
 
-@KeepClass(debugData="Test")
+@KeepClass(debugData="")
 @KeepField
 @InstanceDefault(implFor=MagicClassTest.class)
 public class MagicClassTest {

@@ -40,6 +40,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import xapi.annotation.reflect.MirroredAnnotation;
+
 
 /**
  * An annotation used to map an interface to a given implementation on a per-runtime basis.
@@ -69,6 +71,7 @@ import java.lang.annotation.Target;
  */
 @Target(value=ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
+@MirroredAnnotation
 public @interface InstanceOverride {
   /**
    * @return - The service interface or base class the inject instance implements / overrides.

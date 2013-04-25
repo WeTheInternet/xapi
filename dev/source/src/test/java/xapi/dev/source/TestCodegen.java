@@ -35,5 +35,18 @@ public class TestCodegen {
     Assert.assertTrue(b.toString().contains("import java.util.Date;"));
     Assert.assertTrue(b.toString().contains("<T extends Date>"));
   }
+  
+  @Test
+  public void testFieldWriter() {
+    SourceBuilder<Object> b = new SourceBuilder<Object>(
+        "public static abstract class Test");
+    b.setPackage("xapi.test");
+    b.getClassBuffer()
+    .createField("int", "theInt")
+    .addGetter(0)
+    .addSetter(0)
+    ;
+//    System.out.println(b);
+  }
 
 }

@@ -50,9 +50,9 @@ public class X_Runtime {
         Class.forName("xapi.inject.X_Inject");
       }
     } catch (Throwable e) {
-      String error = "Class xapi.inject.X_Inject is not loadable.\n" +
-        "Ensure your module inherits xapi-core-inject, or set system property " +
-                 PROPERTY_USE_X_INJECT+" to \"false\".";
+      String error = "Class xapi.inject.X_Inject is not loadable." +
+        (debug?"\nEnsure your module inherits xapi-core-inject, or set system property " +
+                 PROPERTY_USE_X_INJECT+" to \"false\"." : "");
       if (debug || success)
         System.err.println(error);
       // If the user explicitly set use X inject to true, we bail early,
@@ -71,9 +71,9 @@ public class X_Runtime {
         Class.forName("xapi.process.X_Process");
       }
     } catch (Throwable e) {
-      String message = "Class xapi.process.X_Process is not loadable.\n" +
-        "Ensure your module inherits xapi-core-process, or set system property " +
-         PROPERTY_MULTITHREADED+" to empty string \"\".";
+      String message = "Class xapi.process.X_Process is not loadable." +
+        (debug?"\nEnsure your module inherits xapi-core-process, or set system property " +
+         PROPERTY_MULTITHREADED+" to empty string \"\".":"");
       if (debug || success)
         System.err.println(message);
       if (success) { //if system property was set

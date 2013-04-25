@@ -32,7 +32,7 @@ public class ByteCodeReaderTest  {
 
   private interface InnerInterface {}
   @InstanceDefault(implFor=InnerInterface.class)
-  private class InnerClass implements InnerInterface {}
+  static class InnerClass implements InnerInterface {}
 
   @Test
   public void testReadClass() throws Exception {
@@ -70,10 +70,9 @@ public class ByteCodeReaderTest  {
         SingletonDefault a = (SingletonDefault)anno.toAnnotationType(Thread.currentThread().getContextClassLoader(), cp);
         System.out.println(a);
       }
-//      System.out.println(cls.getName());
     }
     X_Time.tick();
-//    System.gc();
+    System.gc();
     long memDone = Runtime.getRuntime().freeMemory();
     System.out.println(
       "Scanned annotations in "+X_Time.difference(start)

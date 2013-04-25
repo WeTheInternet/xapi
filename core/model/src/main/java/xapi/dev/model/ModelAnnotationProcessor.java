@@ -45,6 +45,7 @@ public class ModelAnnotationProcessor extends AbstractProcessor{
     for (TypeElement anno : annotations) {
       for (Element element : roundEnv.getElementsAnnotatedWith(anno)) {
         Element e = element.getEnclosingElement();
+        
         if (e instanceof TypeElement) {
           modelTypes.add(((TypeElement)e).getQualifiedName().toString());
         } else if (e instanceof PackageElement){

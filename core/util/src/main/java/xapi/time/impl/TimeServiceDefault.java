@@ -2,7 +2,7 @@ package xapi.time.impl;
 
 import xapi.annotation.inject.SingletonDefault;
 import xapi.time.api.Moment;
-import xapi.time.api.TimeService;
+import xapi.time.service.TimeService;
 
 @SingletonDefault(implFor = TimeService.class)
 public class TimeServiceDefault extends ImmutableMoment implements TimeService {

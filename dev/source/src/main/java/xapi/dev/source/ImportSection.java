@@ -36,26 +36,26 @@
 package xapi.dev.source;
 
 
-import java.util.TreeSet;
-import java.util.regex.Pattern;
-
 import static xapi.dev.source.PrintBuffer.NEW_LINE;
+
+import java.util.TreeMap;
+import java.util.regex.Pattern;
 
 public class ImportSection {
 
-	private TreeSet<String> imports = new TreeSet<String>();
-	private TreeSet<String> importStatic = new TreeSet<String>();
+	private final TreeMap<String, String> imports = new TreeMap<String, String>();
+	private final TreeMap<String, String> importStatic = new TreeMap<String, String>();
 
 	private static final Pattern skipImports = Pattern.compile(
-	  "(import )*(static )*(" +
+	  "(" +
   	  "(java[.]lang.[^.]*)" + // discard java.lang, but keep java.lang.reflect
 	  "|" + //also discard primitives
-  	  "((void)(boolean)(short)(char)(int)(long)(float)(double))" +
+  	  "((void)|(boolean)|(short)|(char)|(int)|(long)|(float)|(double))" +
 	  ")" +
 	  "[;]*"
   );
-	private static final Pattern trimArrays = Pattern.compile(
-	  "\\[\\]"
+	private static final Pattern trimmer = Pattern.compile(
+	  "(\\[\\])|(\\s*import\\s+)|(static\\s+)|(\\s*;\\s*)"
 	  );
 
 	public ImportSection() {
@@ -67,50 +67,114 @@ public class ImportSection {
 		}
 		return this;
 	}
-	public ImportSection addImport(String importName){
-	  if (skipImports.matcher(importName).matches())
-	    return this;
-	  importName = trimArrays.matcher(importName.trim()).replaceAll("");
-		if (importName.startsWith("import "))
-			imports.add(importName);
-		else
-			imports.add("import "+importName+";");
-		return this;
+
+	public String addImport(String importName){
+	  return tryImport(importName, importName.contains("static "));
+	}
+	
+	public String addStatic(String importName){
+	  return tryImport(importName, true);
 	}
 
 	public void addStatics(String ... imports){
 	  for (String iport :  imports)
 	    addStatic(iport);
 	}
-	public void addStatic(String importName){
-	  if (importName.startsWith("import static "))
-	    importStatic.add(importName.trim());
-	  else
-	    importStatic.add("import static "+importName+";");
-	}
 
 	@Override
 	public String toString() {
 	  StringBuilder b = new StringBuilder(NEW_LINE);
-		for (String importName : imports){
-			b.append(importName);
-			b.append(NEW_LINE);
+		for (String importName : imports.values()){
+		  if (importName.length() > 0)
+  		  b.append("import ")
+  		   .append(importName)
+  		   .append(';')
+  			 .append(NEW_LINE);
 		}
-		for (String importName : importStatic){
-		  b.append(importName);
-		  b.append(NEW_LINE);
+		for (String importName : importStatic.values()){
+		  if (importName.length() > 0)
+		    b.append("import static ")
+		    .append(importName)
+		    .append(';')
+		    .append(NEW_LINE);
 		}
 		return b.toString()+NEW_LINE;
 	}
 
-	public ImportSection addImport(Class<?> importName) {
-    this.imports.add("import "+importName.getCanonicalName()+";");
+	public ImportSection reserveSimpleName(String cls) {
+	  if (!imports.containsKey(cls))
+	    imports.put(cls, "");
 	  return this;
 	}
+	
+	public ImportSection reserveMethodName(String name) {
+	  if (!imports.containsKey(name))
+	    imports.put(name, "");
+	  return this;
+	}
+	
+	public String addImport(Class<?> cls) {
+	  if (cls.isPrimitive() || "java.lang".equals(cls.getPackage().getName()))
+	    return cls.getSimpleName();
+	  
+	  if (imports.containsKey(cls.getSimpleName())) {
+	    String uniqueKey = 
+	        (imports.containsKey(cls.getSimpleName())?" "+imports.size():"");
+	    imports.put(
+	        cls.getSimpleName()+uniqueKey ,cls.getCanonicalName());
+	    return cls.getCanonicalName();
+	  }
+	  imports.put(cls.getSimpleName(), cls.getCanonicalName());
+	  return cls.getSimpleName();
+	}
+	
   public ImportSection addImports(Class<?> ... imports) {
     for (Class<?> cls : imports) {
-      this.imports.add("import "+cls.getCanonicalName()+";");
+      addImport(cls);
     }
     return this;
+  }
+
+  protected String tryImport(String importName, boolean staticImport) {
+    TreeMap<String, String> map = staticImport ? importStatic : imports;
+    int arrayDepth = 0;
+    int index = importName.indexOf("[]");
+    while (index != -1) {
+      importName = importName.substring(0, index) +
+          (index < importName.length() - 2 ? importName.substring(index + 2) : "");
+      index = importName.indexOf("[]", index);
+      arrayDepth++;
+    }
+    importName = trimmer.matcher(importName.trim()).replaceAll("");
+    index = importName.indexOf('<');
+    String suffix;
+    if (index == -1)
+      suffix = "";
+    else {
+      suffix = importName.substring(index);
+      // TODO import and strip these generics too.
+      importName = importName.substring(0, index);
+    }
+    while (arrayDepth --> 0)
+      suffix += "[]";
+    
+    if (skipImports.matcher(importName).matches())
+      return importName.replace("java.lang.", "")+suffix;
+    importName = importName.replace('$', '.');
+    String shortname = importName.substring(1+importName.lastIndexOf('.'));
+    if ("*".equals(shortname)) {
+      map.put(shortname+" "+map.size(), importName);
+      return importName+suffix;
+    }
+      
+    String existing = map.get(shortname);
+    if (existing == null) {
+      map.put(shortname, importName);
+      return shortname+suffix;
+    }
+    if (existing.equals(importName))
+      return shortname+suffix;
+    map.put(importName+" "+map.size(), importName);
+    return importName+suffix;
   }
 }

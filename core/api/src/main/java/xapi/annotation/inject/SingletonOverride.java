@@ -41,6 +41,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import xapi.annotation.reflect.MirroredAnnotation;
+
 
 /**
  * An annotation used to override a {@link SingletonDefault} used in dependency injection.
@@ -70,6 +72,7 @@ import java.lang.annotation.Target;
 @Documented
 @Target(value=ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
+@MirroredAnnotation
 public @interface SingletonOverride {
   /**
    * @return - The service interface or base class the inject instance implements / overrides.

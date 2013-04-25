@@ -39,17 +39,17 @@ import java.lang.reflect.Modifier;
 import java.util.Set;
 import java.util.TreeSet;
 
+import xapi.source.read.JavaLexer;
 
-public class ClassBuffer extends PrintBuffer{
+
+public class ClassBuffer extends MemberBuffer<ClassBuffer>{
 
 	protected int privacy;
 	private boolean isClass;
-	private boolean isStatic, isFinal, isAbstract;
 	private String superClass;
 	private String simpleName;
 	private final Set<String> interfaces;
-	private final Set<String> generics;
-	private SourceBuilder<?> context;
+	protected SourceBuilder<?> context;
   private boolean isWellFormatted;
   private PrintBuffer prefix;
 
@@ -60,7 +60,6 @@ public class ClassBuffer extends PrintBuffer{
 		super();
 		this.context = context;
 		interfaces = new TreeSet<String>();
-		generics = new TreeSet<String>();
 	}
 
 	@Override
@@ -76,11 +75,11 @@ public class ClassBuffer extends PrintBuffer{
 		else if (privacy == Modifier.PROTECTED)
 			b.append("protected ");
 
-		if (isStatic)
+		if (isStatic())
 			b.append("static ");
-		if (isAbstract)
+		if (isAbstract())
 			b.append("abstract ");
-		if (isFinal)
+		if (isFinal())
 			b.append("final ");
 
 		if (isClass)
@@ -134,12 +133,13 @@ public class ClassBuffer extends PrintBuffer{
 	}
 
 	public ClassBuffer setDefinition(String definition, boolean wellFormatted) {
-		JavaMetadata metadata = new JavaMetadata(definition);
+		JavaLexer metadata = new JavaLexer(definition);
 		isWellFormatted = wellFormatted;
 		privacy = metadata.getPrivacy();
-		isStatic = metadata.isStatic();
-		isFinal = metadata.isFinal();
-		isAbstract = metadata.isAbstract();
+		if (metadata.isStatic())makeStatic();
+		if (metadata.isFinal())makeFinal();
+		if (metadata.isAbstract())makeAbstract();
+		else makeConcrete();
 		isClass = metadata.isClass();
 		addInterfaces(metadata.getInterfaces());
 		superClass = metadata.getSuperClass();
@@ -184,26 +184,23 @@ public class ClassBuffer extends PrintBuffer{
 	  }
 	  return this;
 	}
-	public ClassBuffer addGenerics(String ... generics) {
-		for (String generic : generics){
-			generic = generic.trim();
-			boolean noImport = generic.contains("!");
-			if (noImport){
-				this.generics.add(generic.replace("!", ""));
-			}else{
-				//pull out import statements and shorten them
-				for (String part : generic.split(" ")){
-					int index = part.lastIndexOf(".");
-					if (index > 0){
-						context.getImports().addImport(part);
-						generic = generic.replace(part.substring(0, index+1), "");
-					}
-				}
-				this.generics.add(generic);
-			}
-		}
-		return this;
+
+	public String addImport(String importName) {
+	  return context.getImports().addImport(importName);
 	}
+	
+	public String addImport(Class<?> cls) {
+	  return context.getImports().addImport(cls);
+	}
+	
+	public ClassBuffer addImports(String ... imports) {
+    context.getImports().addImports(imports);
+    return this;
+  }
+  public ClassBuffer addImports(Class<?> ... imports) {
+    context.getImports().addImports(imports);
+    return this;
+  }
 
 	public String getSuperClass() {
 		return superClass;
@@ -213,7 +210,10 @@ public class ClassBuffer extends PrintBuffer{
 		this.superClass = superClass;
 	}
 
-	public String getSimpleName() {
+	public String getPackage() {
+    return context.getRepackage();
+  }
+  public String getSimpleName() {
 		return simpleName;
 	}
 
@@ -228,6 +228,7 @@ public class ClassBuffer extends PrintBuffer{
 	  addToEnd(inner);
 	  return inner;
 	}
+	
 	public MethodBuffer createMethod(String methodDef) {
 	  MethodBuffer method = new MethodBuffer(context, indent+INDENT);
 	  method.setDefinition(methodDef);
@@ -235,161 +236,26 @@ public class ClassBuffer extends PrintBuffer{
 	  return method;
 	}
 
+	public FieldBuffer createField(String type, String name) {
+	  FieldBuffer field = new FieldBuffer(this, type, name, indent+INDENT);
+	  addToEnd(field);
+	  return field;
+	}
+
 	@Override
 	protected String footer() {
 	  return isWellFormatted ? "" : "\n" + indent+"}\n";
 	}
 
-  // Sigh...  to create a fluent api w/out generics,
-  // we have to override a bunch of methods...
-
   @Override
-  public ClassBuffer append(boolean b) {
-    super.append(b);
+  public final ClassBuffer makeAbstract() {
+    return super.makeAbstract();
+  }
+  
+  public final ClassBuffer makeConcrete() {
+    modifier = modifier & ~Modifier.ABSTRACT;
     return this;
   }
 
-  @Override
-  public ClassBuffer append(char c) {
-    super.append(c);
-    return this;
-  }
-
-  @Override
-  public ClassBuffer append(char[] str) {
-    super.append(str);
-    return this;
-  }
-
-  @Override
-  public ClassBuffer append(char[] str, int offset, int len) {
-    super.append(str, offset, len);
-    return this;
-  }
-
-  @Override
-  public ClassBuffer append(CharSequence s) {
-    super.append(s);
-    return this;
-  }
-
-  @Override
-  public ClassBuffer append(CharSequence s, int start, int end) {
-    super.append(s, start, end);
-    return this;
-  }
-
-  @Override
-  public ClassBuffer append(double d) {
-    super.append(d);
-    return this;
-  }
-
-  @Override
-  public ClassBuffer append(float f) {
-    super.append(f);
-    return this;
-  }
-
-  @Override
-  public ClassBuffer append(int i) {
-    super.append(i);
-    return this;
-  }
-
-  @Override
-  public ClassBuffer append(long lng) {
-    super.append(lng);
-    return this;
-  }
-
-  @Override
-  public ClassBuffer append(Object obj) {
-    super.append(obj);
-    return this;
-  }
-
-  @Override
-  public ClassBuffer append(String str) {
-    super.append(str);
-    return this;
-  }
-
-  @Override
-  public ClassBuffer indent() {
-    super.indent();
-    return this;
-  }
-
-  @Override
-  public ClassBuffer indentln(char[] str) {
-    super.indentln(str);
-    return this;
-  }
-
-  @Override
-  public ClassBuffer indentln(CharSequence s) {
-    super.indentln(s);
-    return this;
-  }
-
-  @Override
-  public ClassBuffer indentln(Object obj) {
-    super.indentln(obj);
-    return this;
-  }
-
-  @Override
-  public ClassBuffer indentln(String str) {
-    super.indentln(str);
-    return this;
-  }
-
-  @Override
-  public ClassBuffer outdent() {
-    super.outdent();
-    return this;
-  }
-
-  @Override
-  public ClassBuffer println() {
-    super.println();
-    return this;
-  }
-
-  @Override
-  public ClassBuffer println(char[] str) {
-    super.println(str);
-    return this;
-  }
-
-  @Override
-  public ClassBuffer println(CharSequence s) {
-    super.println(s);
-    return this;
-  }
-
-  @Override
-  public ClassBuffer println(Object obj) {
-    super.println(obj);
-    return this;
-  }
-
-  @Override
-  public ClassBuffer println(String str) {
-    super.println(str);
-    return this;
-  }
-  public String getPackage() {
-    return context.getRepackage();
-  }
-  public ClassBuffer addImports(String ... imports) {
-    context.getImports().addImports(imports);
-    return this;
-  }
-  public ClassBuffer addImports(Class<?> ... imports) {
-    context.getImports().addImports(imports);
-    return this;
-  }
-
+  
 }

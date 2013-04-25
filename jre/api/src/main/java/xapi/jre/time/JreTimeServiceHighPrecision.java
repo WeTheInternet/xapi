@@ -4,9 +4,9 @@ import xapi.annotation.inject.SingletonOverride;
 import xapi.platform.AndroidPlatform;
 import xapi.platform.JrePlatform;
 import xapi.time.api.Moment;
-import xapi.time.api.TimeService;
 import xapi.time.impl.ImmutableMoment;
 import xapi.time.impl.TimeServiceDefault;
+import xapi.time.service.TimeService;
 
 @JrePlatform
 @AndroidPlatform

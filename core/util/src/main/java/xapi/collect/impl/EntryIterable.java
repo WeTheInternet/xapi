@@ -1,4 +1,4 @@
-package xapi.collect.api;
+package xapi.collect.impl;
 
 import java.util.Map.Entry;
 

@@ -43,7 +43,7 @@ public class SourceBuilder <Payload> {
 	private ImportSection imports;
 	private ClassBuffer classDef;
 	private Payload payload;
-	private String repackage;
+	private String pkgName;
   private int skip;
 
 	public SourceBuilder() {
@@ -107,16 +107,16 @@ public class SourceBuilder <Payload> {
 	}
 
 	public String getRepackage() {
-		return repackage;
+		return pkgName;
 	}
 
-	public SourceBuilder<Payload> setPackage(String repackage) {
-		if (repackage.endsWith(";")){
-			repackage = repackage.substring(0, repackage.length()-1);
+	public SourceBuilder<Payload> setPackage(String pkgName) {
+		if (pkgName.endsWith(";")){
+			pkgName = pkgName.substring(0, pkgName.length()-1);
 		}
-		if (repackage.startsWith("package "))
-			repackage = repackage.substring(8);
-		this.repackage = repackage;
+		if (pkgName.startsWith("package "))
+			pkgName = pkgName.substring(8);
+		this.pkgName = pkgName;
 		return this;
 	}
 
@@ -137,12 +137,12 @@ public class SourceBuilder <Payload> {
   public String toString() {
     StringBuilder source = new StringBuilder();
     String body = head.toString();
-    if (repackage != null) {
+    if (pkgName != null) {
       if (body.trim().startsWith("package")) {
         int ind = body.indexOf(';', body.indexOf("package"));
         body = body.substring(ind+1);
       }
-      source.append("package "+repackage+";\n\n");
+      source.append("package "+pkgName+";\n\n");
     }
     if (imports != null)
       source.append(imports.toString());

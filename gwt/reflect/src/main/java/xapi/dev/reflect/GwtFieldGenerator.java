@@ -130,8 +130,10 @@ public class GwtFieldGenerator extends ReflectionGeneratorUtil{
       //objects and any already-boxed primitives go here.
       initFields
         .println("return "+jsni+";")
+        .outdent()
         .println("},")//end getter
-        .println("setter : function(inst, val) {");
+        .println("setter : function(inst, val) {")
+        .indent();
         //our setter is receiving an object, so any primitives will be boxed.
         //however, since you might send in primitives from jsni,
         //we do perform a runtime box-checking.
@@ -180,8 +182,8 @@ public class GwtFieldGenerator extends ReflectionGeneratorUtil{
       }
 
       initFields
-        .println("}").outdent()// end setter
-        .println("};").outdent();//end accessor
+        .outdent().println("}")// end setter
+        .outdent().println("};");//end accessor
 
 
 

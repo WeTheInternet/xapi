@@ -316,18 +316,20 @@ public class MagicClassGenerator extends IncrementalGenerator {
       .setPackage(packageName);
 
     ImportSection imports = classBuilder.getImports()
-    .addImports(ClassMap.class, JavaScriptObject.class ,UnsafeNativeLong.class)
-    .addImport(clsToEnhance);
+    .addImports(clsToEnhance)
+    .addImports(
+        ClassMap.class, JavaScriptObject.class, UnsafeNativeLong.class,
+        MethodMap.class, MemberMap.class);
 
     if (newInst != null)
-      imports.addImport(Constructor.class.getName());
+      imports.addImport(Constructor.class);
     if (keepMethod != null)
-      imports.addImport(Method.class.getName());
+      imports.addImport(Method.class);
     if (keepField != null)
-      imports.addImport(Field.class.getName());
+      imports.addImport(Field.class);
     if (keepCodesource)
-      imports.addImport(CodeSource.class.getName());
-    imports.addImports(MethodMap.class, MemberMap.class);
+      imports.addImport(CodeSource.class);
+    
 
     ClassBuffer cls = classBuilder.getClassBuffer();
     

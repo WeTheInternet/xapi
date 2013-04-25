@@ -39,8 +39,8 @@
       <scope>test</scope>
     </dependency>
      <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-core-test</artifactId>
       <scope>test</scope>
      </dependency>
     <dependency>

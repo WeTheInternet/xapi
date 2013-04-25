@@ -72,6 +72,10 @@
 
   </modules>
 
+  <build>
+   <directory>${project.basedir}/target</directory>
+  </build>
+
   <url>https://github.com/WeTheInternet/xapi</url>
   <scm>
     <url>git@github.com:WeTheInternet/xapi.git</url>

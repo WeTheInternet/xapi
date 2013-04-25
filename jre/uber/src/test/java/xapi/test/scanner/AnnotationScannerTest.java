@@ -1,4 +1,4 @@
-package xapi.test.bytecode;
+package xapi.test.scanner;
 
 
 import static xapi.inject.X_Inject.instance;

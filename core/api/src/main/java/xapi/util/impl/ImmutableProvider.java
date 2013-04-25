@@ -1,5 +1,7 @@
 package xapi.util.impl;
 
+import javax.inject.Provider;
+
 import xapi.util.api.ProvidesValue;
 
 /**
@@ -9,7 +11,7 @@ import xapi.util.api.ProvidesValue;
  *
  * @param <X>
  */
-public final class ImmutableProvider <X> implements ProvidesValue<X> {
+public final class ImmutableProvider <X> implements ProvidesValue<X>, Provider<X> {
   private final X x;
 
   public ImmutableProvider(X x) {

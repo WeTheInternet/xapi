@@ -1,5 +1,6 @@
-package xapi.time.api;
+package xapi.time.service;
 
+import xapi.time.api.Moment;
 import xapi.time.impl.ImmutableMoment;
 
 public interface TimeService extends Moment{

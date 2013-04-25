@@ -21,8 +21,10 @@ import xapi.log.X_Log;
 import xapi.log.api.LogLevel;
 import xapi.log.api.LogService;
 import xapi.log.impl.JreLog;
+import xapi.util.X_Runtime;
 import xapi.util.api.ConvertsValue;
 import xapi.util.api.ReceivesValue;
+import xapi.util.impl.ImmutableProvider;
 
 public class JreInjector implements Injector{
 
@@ -123,10 +125,10 @@ public class JreInjector implements Injector{
 	 * Note that this method will use whatever ClassLoader loaded the key class.
 	 *
 	 */
-	private InitMap<Class<?>, Object> singletonProviders =
+	private InitMap<Class<?>, Provider<Object>> singletonProviders =
 	InitMapDefault.createInitMap(AbstractInitMap.CLASS_NAME, new
-	  ConvertsValue<Class<?>,Object>() {
-	  public Object convert(Class<?> clazz) {
+	  ConvertsValue<Class<?>,Provider<Object>>() {
+	  public Provider<Object> convert(Class<?> clazz) {
 	     //TODO: optionally run through java.util.ServiceLoader,
       //in case client code already uses ServiceLoader directly (unlikely edge case)
       String target = null;
@@ -134,16 +136,17 @@ public class JreInjector implements Injector{
         //First, lookup META-INF/singletons for a replacement.
         target = lookup(clazz, singletonUrlFragment.get(), JreInjector.this, singletonProviders);
         return
-          Class.forName(target, true, clazz.getClassLoader())
-          .newInstance();
+          new ImmutableProvider<Object>(Class.forName(target, true, clazz.getClassLoader())
+          .newInstance());
       }catch(Throwable e){
         if (singletonProviders.containsKey(clazz))
           return singletonProviders.get(clazz);
         //Try to log the exception, but do not recurse into X_Inject methods
         if (clazz == LogService.class){
             LogService serv = new JreLog();
-            singletonProviders.setValue(clazz.getName(), serv);
-            return serv;
+            ImmutableProvider<Object> provider = new ImmutableProvider<Object>(serv);
+            singletonProviders.setValue(clazz.getName(), provider);
+            return provider;
           }
         e.printStackTrace();
         String message = "Could not instantiate singleton for "+clazz.getName()+" using "+target;
@@ -155,7 +158,7 @@ public class JreInjector implements Injector{
 	});
 	private void tryLog(String message, Throwable e) {
 		try{
-			LogService log = (LogService) singletonProviders.get(LogService.class);
+			LogService log = (LogService) singletonProviders.get(LogService.class).get();
 			log.log(LogLevel.ERROR,message);
 		}catch(Exception ex){
 		  System.err.println(message);
@@ -209,7 +212,7 @@ public class JreInjector implements Injector{
 	  @SuppressWarnings("unchecked")
 	public <T> T provide(Class<? super T> cls){
 	  try {
-		  return (T) singletonProviders.get(cls);
+		  return (T) singletonProviders.get(cls).get();
 	  } catch (Exception e) {
 	    if (initOnce) {
 	      initOnce = false;
@@ -243,13 +246,16 @@ public class JreInjector implements Injector{
     
     @Override
     public <T> void setInstanceFactory(Class<T> cls, Provider<T> provider) {
-      X_Log.debug("Setting instance factory for ",cls);
+      if (X_Runtime.isDebug())
+        X_Log.debug("Setting instance factory for ",cls);
       instanceProviders.put(cls, provider);
     }
     @Override
+    @SuppressWarnings({ "unchecked", "rawtypes" }) // Our target is already erased to Object
     public <T> void setSingletonFactory(Class<T> cls, Provider<T> provider) {
-      X_Log.debug("Setting singleton factory for ",cls);
-      singletonProviders.put(cls, provider.get());
+      if (X_Runtime.isDebug())
+        X_Log.debug("Setting singleton factory for ",cls);
+      singletonProviders.put(cls, (Provider)provider);
     }
 
 
