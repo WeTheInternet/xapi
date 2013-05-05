@@ -90,6 +90,12 @@ public class SimpleFifo <E> implements Fifo<E>, Iterable<E>, Serializable{
     tail = head;
   }
 
+  public SimpleFifo(E[] els) {
+    this();
+    for (E el : els)
+      give(el);
+  }
+
   @Override
   public Fifo<E> give(E item) {
     if (item==null)return this;
@@ -209,7 +215,7 @@ public class SimpleFifo <E> implements Fifo<E>, Iterable<E>, Serializable{
   
   @Override
   @SuppressWarnings("unchecked")
-  public Fifo<E> giveAll(E... elements) {
+  public Fifo<E> giveAll(E ... elements) {
     for (E element : elements)
       give(element);
     return this;

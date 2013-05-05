@@ -569,13 +569,13 @@ public class MagicMethods {
           type = ast.searchForTypeBySource(fromSourceInfo);
           arg = new JClassLiteral(type.getSourceInfo(), type);
         }
-//        arg = ast.getProgram().getClassLiteralField(((JFieldRef)init).getEnclosingType()).getLiteralInitializer();
       } else if (arg instanceof JMethodCall) {
         JMethodCall call = (JMethodCall)arg;
         System.out.println(call.getType());
         arg = call.getArgs().get(0);
       }
-      logger.log(Type.ERROR, "Could not generate X_Inject.instance for "+arg.getClass().getName());
+      if (!(arg instanceof JClassLiteral))
+        logger.log(Type.ERROR, "Could not generate X_Inject.instance for "+arg.getType().getName());
     }
     JClassLiteral classLiteral = (JClassLiteral) arg;
     return injectInstance(logger, classLiteral, x, currentMethod, ast);

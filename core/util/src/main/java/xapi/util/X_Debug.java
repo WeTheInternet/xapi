@@ -51,6 +51,11 @@ public class X_Debug {
     }
   }
 
+  public static RuntimeException rethrow(Throwable e) {
+    debug(e);
+    throw X_Util.rethrow(e);
+  }
+
 }
 class DefaultHandler implements ErrorHandler<Throwable> {
 	static final DefaultHandler handler = new DefaultHandler();

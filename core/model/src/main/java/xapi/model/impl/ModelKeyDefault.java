@@ -1,9 +1,11 @@
 package xapi.model.impl;
 
 
+import xapi.annotation.inject.InstanceDefault;
 import xapi.model.api.ModelKey;
 
-public class AbstractModelKey implements ModelKey{
+@InstanceDefault(implFor=ModelKey.class)
+public class ModelKeyDefault implements ModelKey{
 
 
   private ModelKey parentKey;

@@ -2,7 +2,7 @@ package xapi.bytecode;
 
 import java.lang.reflect.Modifier;
 
-import xapi.source.api.AccessFlag;
+import xapi.source.X_Modifier;
 
 public abstract class CtMember {
     CtMember next;          // for internal use
@@ -165,9 +165,9 @@ public abstract class CtMember {
      */
     public boolean visibleFrom(CtClass clazz) {
         int mod = getModifiers();
-        if (AccessFlag.isPublic(mod))
+        if (X_Modifier.isPublic(mod))
             return true;
-        else if (AccessFlag.isPrivate(mod))
+        else if (X_Modifier.isPrivate(mod))
             return clazz == declaringClass;
         else {  // package or protected
             String declName = declaringClass.getPackageName();
@@ -178,7 +178,7 @@ public abstract class CtMember {
             else
                 visible = declName.equals(fromName);
 
-            if (!visible && AccessFlag.isProtected(mod))
+            if (!visible && X_Modifier.isProtected(mod))
                 return clazz.subclassOf(declaringClass);
 
             return visible;

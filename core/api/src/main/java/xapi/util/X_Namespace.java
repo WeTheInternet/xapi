@@ -11,6 +11,14 @@ public class X_Namespace {
   private X_Namespace() {}//static only.
 
   /**
+   * The current version of XApi, updated after releases;
+   * this could probably be derived from poms in jars on classpath,
+   * but it's faster at runtime to use a constant field.
+   * 
+   */
+  public static final String XAPI_VERSION = "0.4-SNAPSHOT";
+  
+  /**
    * META-INF - Used a separate constant to encourage fragment reuse.
    */
   public static final String META_INF = "META-INF";

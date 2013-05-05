@@ -22,6 +22,7 @@ import xapi.io.service.IOService;
 import xapi.log.X_Log;
 import xapi.util.X_Namespace;
 import xapi.util.X_Properties;
+import xapi.util.X_Runtime;
 import xapi.util.api.ConvertsValue;
 import xapi.util.api.ReceivesValue;
 import xapi.util.api.RemovalHandler;
@@ -139,7 +140,8 @@ public class IOServiceDefault implements IOService{
       });
     } catch (Throwable e) {
       callback.onError(e);
-      X_Log.warn("IO Error", e);
+      if (X_Runtime.isDebug())
+        X_Log.warn("IO Error", e);
     }
 
   }

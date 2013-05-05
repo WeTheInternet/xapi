@@ -39,12 +39,14 @@ import xapi.collect.api.Fifo;
 import xapi.log.api.LogLevel;
 import xapi.log.api.LogService;
 import xapi.util.X_Namespace;
+import xapi.util.X_Runtime;
 
 @SingletonDefault(implFor=LogService.class)
 public class JreLog extends AbstractLog{
 
   public JreLog() {
-    logLevel = LogLevel.valueOf(System.getProperty(X_Namespace.PROPERTY_LOG_LEVEL, "ALL"));
+    logLevel = LogLevel.valueOf(System.getProperty(X_Namespace.PROPERTY_LOG_LEVEL, 
+        X_Runtime.isDebug() ? "ALL" : "INFO"));
   }
 
   public void doLog(LogLevel level, Fifo<Object> array)

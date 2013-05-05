@@ -2,7 +2,7 @@ package xapi.source.impl;
 
 import xapi.collect.api.Fifo;
 import xapi.collect.impl.SimpleFifo;
-import xapi.source.api.AccessFlag;
+import xapi.source.X_Modifier;
 import xapi.source.api.HasModifier;
 import xapi.source.api.IsAnnotation;
 import xapi.source.api.IsMember;
@@ -43,6 +43,11 @@ public class AbstractMember <Self extends AbstractMember<Self>> implements IsMem
 
   /**
    * This method is final to remind you to always call setEnclosingType();
+   * A class may be enclosed by an IsClass or IsMethod, 
+   * while an IsMethod or IsField will always be enclosed by IsClass.
+   * 
+   * Thus, we reserve this method for any kind of enclosing type,
+   * and leave it to subclasses to expose their own typed getEnclosing____() method.
    */
   @Override
   public final IsType getEnclosingType() {
@@ -90,17 +95,17 @@ public class AbstractMember <Self extends AbstractMember<Self>> implements IsMem
 
   @Override
   public boolean isPublic() {
-    return (mod & 7) == AccessFlag.PUBLIC;
+    return (mod & 7) == X_Modifier.PUBLIC;
   }
 
   @Override
   public boolean isPrivate() {
-    return (mod & 7) == AccessFlag.PRIVATE;
+    return (mod & 7) == X_Modifier.PRIVATE;
   }
 
   @Override
   public boolean isProtected() {
-    return (mod & 7) == AccessFlag.PROTECTED;
+    return (mod & 7) == X_Modifier.PROTECTED;
   }
 
   @Override
@@ -109,15 +114,15 @@ public class AbstractMember <Self extends AbstractMember<Self>> implements IsMem
   }
 
   public boolean isAbstract() {
-    return (mod & AccessFlag.ABSTRACT) == AccessFlag.ABSTRACT;
+    return (mod & X_Modifier.ABSTRACT) == X_Modifier.ABSTRACT;
   }
 
   public boolean isFinal() {
-    return (mod & AccessFlag.FINAL) == AccessFlag.FINAL;
+    return (mod & X_Modifier.FINAL) == X_Modifier.FINAL;
   }
 
   public boolean isStatic() {
-    return (mod & AccessFlag.STATIC) == AccessFlag.STATIC;
+    return (mod & X_Modifier.STATIC) == X_Modifier.STATIC;
   }
 
   @SuppressWarnings("unchecked")
@@ -146,19 +151,19 @@ public class AbstractMember <Self extends AbstractMember<Self>> implements IsMem
   }
   @SuppressWarnings("unchecked")
   protected Self makePublic() {
-    mod = (mod & ~7)+AccessFlag.PUBLIC;
+    mod = (mod & ~7)+X_Modifier.PUBLIC;
     return (Self)this;
   }
 
   @SuppressWarnings("unchecked")
   protected Self makePrivate() {
-    mod = (mod & ~7)+AccessFlag.PRIVATE;
+    mod = (mod & ~7)+X_Modifier.PRIVATE;
     return (Self)this;
   }
 
   @SuppressWarnings("unchecked")
   protected Self makeProtected() {
-    mod = (mod & ~7)+AccessFlag.PROTECTED;
+    mod = (mod & ~7)+X_Modifier.PROTECTED;
     return (Self)this;
   }
 
@@ -177,27 +182,27 @@ public class AbstractMember <Self extends AbstractMember<Self>> implements IsMem
   @SuppressWarnings("unchecked")
   protected Self makeAbstract(boolean add) {
     if (add)
-      mod |= AccessFlag.ABSTRACT;
+      mod |= X_Modifier.ABSTRACT;
     else
-      mod &= ~AccessFlag.ABSTRACT;
+      mod &= ~X_Modifier.ABSTRACT;
     return (Self)this;
   }
 
   @SuppressWarnings("unchecked")
   protected Self makeFinal(boolean add) {
     if (add)
-      mod |= AccessFlag.FINAL;
+      mod |= X_Modifier.FINAL;
     else
-      mod &= ~AccessFlag.FINAL;
+      mod &= ~X_Modifier.FINAL;
     return (Self)this;
   }
 
   @SuppressWarnings("unchecked")
   protected Self makeStatic(boolean add) {
     if (add)
-      mod |= AccessFlag.STATIC;
+      mod |= X_Modifier.STATIC;
     else
-      mod &= ~AccessFlag.STATIC;
+      mod &= ~X_Modifier.STATIC;
     return (Self)this;
   }
 

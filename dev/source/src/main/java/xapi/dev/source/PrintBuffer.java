@@ -35,25 +35,14 @@
 
 package xapi.dev.source;
 
+import xapi.collect.impl.StringStack;
+
 public class PrintBuffer {
 
   static final char NEW_LINE = '\n';
   static final String INDENT = "  ";
 
-  protected static final class PrintStack {
-    PrintStack next;
-    String prefix = "";
-    PrintBuffer buffer;
-
-    public PrintStack push(String prefix, PrintBuffer b) {
-      PrintStack node = new PrintStack();
-      node.prefix = prefix == null ? "" : prefix;
-      node.buffer = b;
-      assert next == null : "Pushing to the same stack twice overwrites old value.";
-      next = node;
-      return node;
-    }
-  }
+  protected static final class PrintStack extends StringStack<PrintBuffer>{ }
 
   protected static String join(String sep, String[] args) {
     if (args.length==0)return "";
@@ -62,13 +51,13 @@ public class PrintBuffer {
       b.append(sep).append(args[i]);
     return b.toString();
   }
-  
+
 
   StringBuilder target;
   String indent = "";
   PrintStack head;
   PrintStack tail;
-  private boolean indented = false;
+  protected boolean indented = false;
 
   public PrintBuffer() {
     this(new StringBuilder());
@@ -76,7 +65,7 @@ public class PrintBuffer {
 
   public PrintBuffer(PrintBuffer preamble) {
     this(new StringBuilder());
-    head.buffer = preamble;
+    head.setValue(preamble);
   }
 
   public PrintBuffer(StringBuilder target) {
@@ -265,7 +254,7 @@ public class PrintBuffer {
     assert notContained(buffer) : "Infinite recursion!";
     PrintStack newHead = new PrintStack();
     newHead.next = head;
-    newHead.buffer = buffer;
+    newHead.setValue(buffer);
     head = newHead;
     return this;
   }
@@ -273,25 +262,28 @@ public class PrintBuffer {
   public PrintBuffer addToEnd(PrintBuffer buffer) {
     assert notContained(buffer) : "Infinite recursion! On ["+buffer+"] in "+this;
     PrintStack newTail = new PrintStack();
-    newTail.buffer = buffer;
-    newTail.prefix = target.toString();
+    newTail.setValue(buffer);
+    newTail.setPrefix(target.toString());
     target.setLength(0);
     tail.next = newTail;
     tail = newTail;
+    indented = false;
     return this;
   }
 
   /**
    * Tests to ensure there is no recursion between nodes.
+   *
+   * Only called when -ea [enable assertions = true]
    */
   private boolean notContained(PrintBuffer buffer) {
     if (buffer == this) {
       System.err.println("Trying to add a buffer to itself");
       return false;
     }
-    PrintStack next = head;
+    StringStack<PrintBuffer> next = head;
     while (next!=null) {
-      if (next.buffer == buffer) {
+      if (next.getValue() == buffer) {
         System.err.println("Trying to add a buffer that is already a child");
         return false;
       }
@@ -299,7 +291,7 @@ public class PrintBuffer {
     }
     next = buffer.head;
     while (next!=null) {
-      if (next.buffer == this) {
+      if (next.getValue() == this) {
         System.err.println("Trying to add an ancestor to a child");
         return false;
       }
@@ -319,14 +311,7 @@ public class PrintBuffer {
   @Override
   public String toString() {
     StringBuilder body = new StringBuilder(header());
-    PrintStack next = head;
-    while (next != null) {
-      if (next.prefix.length() > 0)
-        body.append(next.prefix);
-      if (next.buffer != null)
-        body.append(next.buffer);
-      next = next.next;
-    }
+    body.append(head);
     body.append(target);
     return body + footer();
   }

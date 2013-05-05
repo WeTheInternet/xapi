@@ -1,15 +1,23 @@
 package xapi.mvn;
 
 import java.io.IOException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.List;
 
+import org.apache.maven.artifact.DependencyResolutionRequiredException;
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Model;
+import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.sonatype.aether.repository.RemoteRepository;
 import org.sonatype.aether.resolution.ArtifactResult;
 
+import xapi.dev.X_Dev;
+import xapi.dev.scanner.ClasspathResourceMap;
 import xapi.inject.X_Inject;
 import xapi.mvn.service.MvnService;
+import xapi.util.X_Debug;
 
 public class X_Maven {
 
@@ -61,6 +69,25 @@ public class X_Maven {
       return groupId+":"+artifactId+":"+version;
     }
     return artifactId+":"+version;
+  }
+
+  public static ClasspathResourceMap scanCompileScope(MavenProject project,
+      MavenSession session) {
+    try {
+      List<String> compile = project.getCompileClasspathElements();
+      if (project.hasLifecyclePhase("test-classes")) {
+        List<String> testElements = project.getTestClasspathElements();
+        testElements.addAll(compile);
+        compile = testElements;
+      }
+      URL[] urls = new URL[compile.size()];
+      for (int i = compile.size(); i-->0;) {
+        urls[i] = X_Dev.toUrl(compile.get(i));
+      }
+      return X_Dev.scanClassloader(URLClassLoader.newInstance(urls));
+    } catch (DependencyResolutionRequiredException e) {
+      throw X_Debug.rethrow(e);
+    }
   }
 
 }

@@ -3,8 +3,6 @@ package xapi.dev.source;
 import org.junit.Assert;
 import org.junit.Test;
 
-import xapi.dev.source.SourceBuilder;
-
 public class TestCodegen {
 
   @Test
@@ -35,7 +33,15 @@ public class TestCodegen {
     Assert.assertTrue(b.toString().contains("import java.util.Date;"));
     Assert.assertTrue(b.toString().contains("<T extends Date>"));
   }
-  
+
+  @Test
+  public void testMethodWithSimpleGeneric() {
+    SourceBuilder<Object> b = new SourceBuilder<Object>(
+        "public static abstract class Test");
+    b.getClassBuffer().createMethod(
+        "public native <T> Class<T> magicClass(Class<T> ... cls)");
+  }
+
   @Test
   public void testFieldWriter() {
     SourceBuilder<Object> b = new SourceBuilder<Object>(

@@ -1,58 +1,53 @@
 package xapi.source.read;
 
 import java.lang.reflect.Modifier;
-import java.util.Collection;
 
 import org.junit.Assert;
 import org.junit.Test;
 
+import xapi.source.read.JavaVisitor.AnnotationMemberVisitor;
 import xapi.source.read.JavaVisitor.AnnotationVisitor;
 import xapi.source.read.JavaVisitor.MethodVisitor;
+import xapi.source.read.JavaVisitor.ParameterVisitor;
 import xapi.source.read.JavaVisitor.TypeData;
 
 public class JavaLexerTest {
 
   @Test
   public void testAnnotationLexer() {
-    final short[] success = new short[2];
-    final String annoBody = 
+    final short[] success = new short[1];
+    final String annoBody =
         "name=\"one \\\"\\\"two\\\"\\\" three\\\\\", " +
             "{1, 2.0, false}, values={1, \"string\", com.test.Class.class}";
-    
+
     JavaLexer.visitAnnotation(new AnnotationVisitor<Void>(){
+
       @Override
-      public void visitType(String type, Void receiver) {
-        success[0] = 1;
-        Assert.assertEquals(type, "java.lang.Annotation");
-      }
-      
-      @Override
-      public void visitAnnotation(String annoName, String annoContent,
+      public AnnotationMemberVisitor<Void> visitAnnotation(String annoName, String annoContent,
           Void receiver) {
-        success[1] = 1;
+        success[0] = 1;
         Assert.assertEquals(annoName, "java.lang.Annotation");
         Assert.assertEquals(annoContent, annoBody);
+        return null;
+
       }
-      
-      @Override
-      public void visitModifier(int modifier, Void receiver) {
-      }
+
     }, null, "@java.lang.Annotation(" + annoBody + ")" , 0);
-    
-    Assert.assertArrayEquals(success, new short[]{1, 1});
+
+    Assert.assertEquals(success[0], 1);
   }
-  
+
   @Test
   public void testTypeLexer() {
-    
+
     String type = "java.lang.Class";
-    
+
     TypeData data = JavaLexer.extractType(type, 0);
     Assert.assertEquals("java.lang", data.pkgName);
     Assert.assertEquals("Class", data.clsName);
     Assert.assertEquals("Class", data.simpleName);
     Assert.assertEquals(type, data.toString());
-    
+
     String generics = "<SomeGenerics<With, Generics, In<Them>>>";
     type = "com.foo.Outer.Inner" + generics + " [] [][ ]";
     data = JavaLexer.extractType(type, 0);
@@ -61,7 +56,7 @@ public class JavaLexerTest {
     Assert.assertEquals("Inner", data.simpleName);
     Assert.assertEquals(3, data.arrayDepth);
     Assert.assertEquals(generics, data.generics);
-    
+
   }
   @Test
   public void testMethodLexer() {
@@ -73,23 +68,20 @@ public class JavaLexerTest {
     final String paramGeneric = "<? extends Generic<int[]>>";
     String params = "String[] i, java . lang . Class" +paramGeneric+ " cls";
     String exceptions = "java.lang.RuntimeException, ClassCastException  ";
-    
-    String method = modifiers + " "+methodGeneric +" "+ 
+
+    String method = modifiers + " "+methodGeneric +" "+
         returnType+returnGeneric+"[][] " + methodName+
         "(" + params+") throws "+exceptions;
-    
+
     final int[] success = new int[8];
-    
+
     JavaLexer.visitMethodSignature(new MethodVisitor<Void>() {
 
       @Override
-      public void visitType(String type, Void receiver) {
-      }
-
-      @Override
-      public void visitAnnotation(String annoName, String annoBody,
+      public AnnotationMemberVisitor<Void> visitAnnotation(String annoName, String annoBody,
           Void receiver) {
         Assert.fail("No annotations");
+        return null;
       }
 
       @Override
@@ -109,7 +101,7 @@ public class JavaLexerTest {
           Assert.fail("Illegal modifier: "+Integer.toHexString(modifier));
         }
       }
-      
+
       @Override
       public void visitGeneric(String generic, Void receiver) {
         Assert.assertEquals(generic, methodGeneric);
@@ -124,31 +116,47 @@ public class JavaLexerTest {
         Assert.assertEquals(returnedType.arrayDepth, 2);
         success[2] = 1;
       }
-      
+
       @Override
       public void visitName(String name, Void receiver) {
         Assert.assertEquals(name, methodName);
         success[3] = 1;
       }
-      
 
       @Override
-      public void visitParameter(TypeData type, String name, Void receiver) {
-        if ("i".equals(name)) {
-          success[4] = 1;
-          Assert.assertEquals("String", type.clsName);
-          Assert.assertEquals(1, type.arrayDepth);
-        } else if ("cls".equals(name)){
-          success[5] = 1;
-          Assert.assertEquals("java.lang", type.pkgName);
-          Assert.assertEquals("Class", type.clsName);
-          Assert.assertEquals(0, type.arrayDepth);
-          Assert.assertEquals(paramGeneric, type.generics);
-        } else {
-          Assert.fail("Unrecognized name: "+name+"; type: "+type);
-        }
+      public ParameterVisitor<Void> visitParameter() {
+        return new ParameterVisitor<Void>() {
+
+          @Override
+          public AnnotationMemberVisitor<Void> visitAnnotation(String annoName, String annoBody,
+              Void receiver) {
+            return null;
+          }
+
+          @Override
+          public void visitModifier(int modifier, Void receiver) {
+
+          }
+
+          @Override
+          public void visitType(TypeData type, String name, boolean varargs, Void receiver) {
+            if ("i".equals(name)) {
+              success[4] = 1;
+              Assert.assertEquals("String", type.clsName);
+              Assert.assertEquals(1, type.arrayDepth);
+            } else if ("cls".equals(name)){
+              success[5] = 1;
+              Assert.assertEquals("java.lang", type.pkgName);
+              Assert.assertEquals("Class", type.clsName);
+              Assert.assertEquals(0, type.arrayDepth);
+              Assert.assertEquals(paramGeneric, type.generics);
+            } else {
+              Assert.fail("Unrecognized name: "+name+"; type: "+type);
+            }
+          }
+
+        };
       }
-      
 
       @Override
       public void visitException(String type, Void receiver) {
@@ -161,26 +169,10 @@ public class JavaLexerTest {
         }
       }
     }, null, method, 0);
-    
+
     // Make sure everything got called.
     Assert.assertArrayEquals(success, new int[]{
         Modifier.PUBLIC|Modifier.STATIC|Modifier.FINAL
         ,1,1,1, 1,1,1,1 });
   }
-  
-  private void testMethod(
-      String javadoc,
-      Collection<String> annotations,
-      String modifiers,
-      String generic,
-      String returnType,
-      String returnGeneric,
-      int returnArrayDepth,
-      String methodName,
-      Collection<String> params,
-      Collection<String> exceptions
-      ) {
-    
-  }
-  
 }

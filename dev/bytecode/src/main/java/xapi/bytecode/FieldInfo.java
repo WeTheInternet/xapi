@@ -10,6 +10,7 @@ import xapi.bytecode.annotation.AnnotationsAttribute;
 import xapi.bytecode.attributes.AttributeInfo;
 import xapi.bytecode.attributes.ConstantAttribute;
 import xapi.bytecode.attributes.SignatureAttribute;
+import xapi.source.X_Modifier;
 import xapi.source.api.AccessFlag;
 
 public final class FieldInfo {
@@ -176,7 +177,7 @@ public final class FieldInfo {
      * @return 0    if a ConstantValue attribute is not found.
      */
     public int getConstantValue() {
-        if ((accessFlags & AccessFlag.STATIC) == 0)
+        if ((accessFlags & X_Modifier.STATIC) == 0)
             return 0;
 
         ConstantAttribute attr

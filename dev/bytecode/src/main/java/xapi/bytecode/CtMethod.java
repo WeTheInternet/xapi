@@ -1,6 +1,6 @@
 package xapi.bytecode;
 
-import xapi.source.api.AccessFlag;
+import xapi.source.X_Modifier;
 
 public final class CtMethod extends CtBehavior {
     protected String cachedStringRep;
@@ -30,7 +30,7 @@ public final class CtMethod extends CtBehavior {
         ConstPool cp = declaring.getClassFile2().getConstPool();
         String desc = Descriptor.ofMethod(returnType, parameters);
         methodInfo = new MethodInfo(cp, mname, desc);
-        setModifiers(AccessFlag.PUBLIC | AccessFlag.ABSTRACT);
+        setModifiers(X_Modifier.PUBLIC | X_Modifier.ABSTRACT);
     }
 
 //    /**

@@ -1,11 +1,15 @@
 package xapi.test.io;
 
+import java.net.UnknownHostException;
+
 import org.junit.Test;
 
 import xapi.io.api.IOCallback;
 import xapi.io.api.IOMessage;
 import xapi.io.impl.IOServiceDefault;
 import xapi.io.service.IOService;
+import xapi.util.X_Util;
+
 
 public class IOServiceTest {
 
@@ -15,6 +19,7 @@ public class IOServiceTest {
 
   @Test
   public void testGet() {
+    try{
     service().get("http://google.com", null, new IOCallback<IOMessage<String>>() {
 
       @Override
@@ -36,6 +41,11 @@ public class IOServiceTest {
         return false;
       }
     });
+    } catch (Throwable e){
+      if (X_Util.unwrap(e) instanceof UnknownHostException)
+        return;
+      throw X_Util.rethrow(e);   
+    }
   }
 
 

@@ -21,9 +21,16 @@ public final class ImmutableType implements IsType, Serializable{
   public ImmutableType(
     @Named("pkg") String pkg,
     @Named("cls") String simpleName) {
+    simpleName = simpleName.replace('$', '.');
+    int ind = simpleName.lastIndexOf('.');
+    if (ind == -1) {
+      this.simple = simpleName;
+      this.enclosing = null;
+    } else {
+      this.simple = simpleName.substring(ind+1);
+      this.enclosing = new ImmutableType(pkg, simpleName.substring(0, ind));
+    }
     this.pkg = pkg;
-    this.simple = simpleName;
-    enclosing = null;
   }
 
   @Inject

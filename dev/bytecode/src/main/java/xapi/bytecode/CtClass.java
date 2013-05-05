@@ -1340,4 +1340,8 @@ public abstract class CtClass {
      */
     void compress() {}
 
+    public String getEnclosedName() {
+      return getName().substring(getPackageName().length());
+    }
+
 }

@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 import xapi.annotation.inject.InstanceDefault;
 import xapi.collect.api.Fifo;
 import xapi.collect.impl.SimpleFifo;
+import xapi.log.X_Log;
 import xapi.util.X_Namespace;
 import xapi.util.X_Util;
 
@@ -142,7 +143,6 @@ public class ClasspathScannerDefault implements ClasspathScanner {
         if (map.includeSourcecode(name))
           map.addSourcecode(name, new SourceCodeResource(
             new FileBackedResource(name, file, priority)));
-        // TODO add other source type filters.
       } else {
         if (map.includeResource(name))
           map.addResource(name, new StringDataResource(
@@ -199,7 +199,8 @@ public class ClasspathScannerDefault implements ClasspathScanner {
   public synchronized ClasspathResourceMap scan(ClassLoader loadFrom, ExecutorService executor) {
     // perform the actual scan
     Map<URL,Fifo<String>> classPaths = new LinkedHashMap<URL,Fifo<String>>();
-    if (pkgs.size() == 0) {
+    if (pkgs.size() == 0 || (pkgs.size() == 1 && "".equals(pkgs.iterator().next()))) {
+      
       for (String pkg : System.getProperty(X_Namespace.PROPERTY_RUNTIME_SCANPATH,
         "xapi,META-INF/singletons,META-INF/instances").split(",\\s*")) {
         pkgs.add(pkg);
@@ -209,7 +210,8 @@ public class ClasspathScannerDefault implements ClasspathScanner {
       final Enumeration<URL> resources;
       try {
         resources = loadFrom.getResources(
-          pkg.equals(".*")?".":pkg
+          pkg.equals(".*")//||pkg.equals("")
+            ?"":pkg
           );
       } catch (Exception e) {
         e.printStackTrace();
@@ -246,6 +248,7 @@ public class ClasspathScannerDefault implements ClasspathScanner {
       try {
         Thread.sleep(0, 50);
       } catch (InterruptedException e) {
+        X_Log.warn("Interrupted while scanning classpath");
         Thread.currentThread().interrupt();
         return map;
       }
@@ -290,9 +293,8 @@ public class ClasspathScannerDefault implements ClasspathScanner {
   }
   @Override
   public ClasspathScanner matchResources(String ... regexes) {
-    for (String regex : regexes) {
+    for (String regex : regexes)
       resourceMatchers.add(Pattern.compile(regex));
-    }
     return this;
   }
   @Override
@@ -302,9 +304,8 @@ public class ClasspathScannerDefault implements ClasspathScanner {
   }
   @Override
   public ClasspathScanner matchSourceFiles(String ... regexes) {
-    for (String regex : regexes) {
+    for (String regex : regexes)
       sourceMatchers.add(Pattern.compile(regex));
-    }
     return this;
   }
 

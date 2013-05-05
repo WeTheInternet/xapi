@@ -57,15 +57,25 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer>{
 	  this(new SourceBuilder<Object>());
 	}
 	public ClassBuffer(SourceBuilder<?> context) {
-		super();
-		this.context = context;
-		interfaces = new TreeSet<String>();
+	  this(context, "");
+	}
+	public ClassBuffer(SourceBuilder<?> context, String indent) {
+	  super(indent);
+	  indent();
+	  this.context = context;
+	  interfaces = new TreeSet<String>();
 	}
 
 	@Override
 	public String toString() {
 		StringBuilder b = new StringBuilder(NEW_LINE);
-		b.append(indent);
+		b.append(NEW_LINE);
+		if (annotations.size() > 0) {
+		  for (String anno : annotations) {
+		    b.append(origIndent).append("@").append(anno).append(NEW_LINE);
+		  }
+		}
+		b.append(origIndent);
 		if (prefix != null)
 		  b.append(prefix);
 		if (privacy == Modifier.PUBLIC)
@@ -124,6 +134,10 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer>{
 		return b + super.toString();
 	}
 
+	protected String superString() {
+	  return super.toString();
+	}
+
 	@Override
 	public PrintBuffer addToBeginning(PrintBuffer buffer) {
 	  if (prefix == null)
@@ -164,43 +178,57 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer>{
 
 	public ClassBuffer addInterfaces(String ... interfaces) {
 		for (String superInterface : interfaces){
-			superInterface = superInterface.trim();
-			int index = superInterface.lastIndexOf(".");
-			if (index > 0){
-				context.getImports().addImport(superInterface);
-				this.interfaces.add(superInterface.substring(index+1));
-			}else{//assume imports are handled externally
-				this.interfaces.add(superInterface);
-			}
+			addInterface(superInterface);
 		}
 		return this;
 	}
+
+	public ClassBuffer addInterface(String iface) {
+	  iface = iface.trim();
+	  if (iface.indexOf('.') > 0)
+	    iface = context.getImports().addImport(iface);
+    this.interfaces.add(iface);
+    return this;
+	}
+
 	public ClassBuffer addInterfaces(Class<?> ... interfaces) {
 	  for (Class<?> superInterface : interfaces){
-	    assert superInterface.isInterface();
-      context.getImports().addImport(superInterface.getCanonicalName());
-      // TODO make sure the type name is unique before reducing to simple name
-      this.interfaces.add(superInterface.getSimpleName());
+	    addInterface(superInterface);
 	  }
 	  return this;
 	}
 
-	public String addImport(String importName) {
+	public ClassBuffer addInterface(Class<?> iface) {
+	  assert iface.isInterface();
+    String name = context.getImports().addImport(iface.getCanonicalName());
+    this.interfaces.add(name);
+	  return this;
+	}
+
+	@Override
+  public String addImport(String importName) {
+	  // Don't import types in the same package as us.
+	  if (importName.startsWith(getPackage())) {
+	    // Make sure it's not in a sub-package
+	    String stripped = importName.substring(getPackage().length()+1);
+	    // Assuming java camel case naming convention.
+	    if (Character.isUpperCase(stripped.charAt(0))){
+	      // This is our package.  Don't import, but do try to strip package.
+	      if (context.getImports().canMinimize(importName)) {
+	        context.getImports().reserveSimpleName(stripped.substring(stripped.lastIndexOf('.')+1));
+	        return stripped;
+	      } else {
+	        return importName;
+	      }
+	    }
+	  }
 	  return context.getImports().addImport(importName);
 	}
-	
-	public String addImport(Class<?> cls) {
+
+	@Override
+  public String addImport(Class<?> cls) {
 	  return context.getImports().addImport(cls);
 	}
-	
-	public ClassBuffer addImports(String ... imports) {
-    context.getImports().addImports(imports);
-    return this;
-  }
-  public ClassBuffer addImports(Class<?> ... imports) {
-    context.getImports().addImports(imports);
-    return this;
-  }
 
 	public String getSuperClass() {
 		return superClass;
@@ -211,7 +239,7 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer>{
 	}
 
 	public String getPackage() {
-    return context.getRepackage();
+    return context.getPackage();
   }
   public String getSimpleName() {
 		return simpleName;
@@ -222,40 +250,80 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer>{
 	}
 
 	public ClassBuffer createInnerClass(String classDef) {
-	  ClassBuffer inner = new ClassBuffer(context);
-	  inner.indent = indent + INDENT;
+	  ClassBuffer inner = new ClassBuffer(context, memberIndent());
 	  inner.setDefinition(classDef, classDef.trim().endsWith("{"));
 	  addToEnd(inner);
 	  return inner;
 	}
-	
-	public MethodBuffer createMethod(String methodDef) {
-	  MethodBuffer method = new MethodBuffer(context, indent+INDENT);
+
+	public ClassBuffer createAnonymousClass(final String classDef) {
+	  class AnonymousClass extends ClassBuffer {
+	    public AnonymousClass(SourceBuilder<?> context, String indent) {
+	      super(context, indent);
+      }
+
+	    @Override
+	    public String toString() {
+	      return
+	        NEW_LINE + origIndent+
+	        "new "+classDef+"() {" +NEW_LINE+
+	      	superString();
+	    }
+
+      @Override
+	    protected String memberIndent() {
+	      return indent + INDENT;
+	    }
+	  }
+	  ClassBuffer inner = new AnonymousClass(context, indent+INDENT);
+	  inner.setDefinition(classDef, classDef.trim().endsWith("{"));
+	  addToEnd(inner);
+	  return inner;
+	}
+
+	protected String memberIndent() {
+    return origIndent + INDENT;
+  }
+
+  public MethodBuffer createMethod(String methodDef) {
+	  MethodBuffer method = new MethodBuffer(context, memberIndent());
 	  method.setDefinition(methodDef);
 	  addToEnd(method);
 	  return method;
 	}
 
+	public FieldBuffer createField(Class<?> type, String name) {
+	  return createField(type.getCanonicalName(), name);
+	}
+
+	public FieldBuffer createField(Class<?> type, String name, int modifier) {
+	  FieldBuffer field = new FieldBuffer(this, type.getCanonicalName(), name, memberIndent());
+	  field.setModifier(modifier);
+	  addToEnd(field);
+	  return field;
+	}
+
 	public FieldBuffer createField(String type, String name) {
-	  FieldBuffer field = new FieldBuffer(this, type, name, indent+INDENT);
+	  FieldBuffer field = new FieldBuffer(this, type, name, memberIndent());
+	  addToEnd(field);
+	  return field;
+	}
+
+	public FieldBuffer createField(String type, String name, int modifier) {
+	  FieldBuffer field = new FieldBuffer(this, type, name, memberIndent());
+	  field.setModifier(modifier);
 	  addToEnd(field);
 	  return field;
 	}
 
 	@Override
 	protected String footer() {
-	  return isWellFormatted ? "" : "\n" + indent+"}\n";
+	  return isWellFormatted ? "" : "\n" + origIndent+"}\n";
 	}
 
   @Override
   public final ClassBuffer makeAbstract() {
     return super.makeAbstract();
   }
-  
-  public final ClassBuffer makeConcrete() {
-    modifier = modifier & ~Modifier.ABSTRACT;
-    return this;
-  }
 
-  
 }

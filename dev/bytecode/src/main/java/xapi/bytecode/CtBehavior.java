@@ -8,6 +8,7 @@ import xapi.bytecode.attributes.LocalVariableAttribute;
 import xapi.bytecode.attributes.ParameterAnnotationsAttribute;
 import xapi.bytecode.attributes.StackMap;
 import xapi.bytecode.attributes.StackMapTable;
+import xapi.source.X_Modifier;
 import xapi.source.api.AccessFlag;
 
 public abstract class CtBehavior extends CtMember {
@@ -112,7 +113,7 @@ public abstract class CtBehavior extends CtMember {
      * @see Modifier
      */
     public int getModifiers() {
-        return AccessFlag.toModifier(methodInfo.getAccessFlags());
+        return methodInfo.getAccessFlags();
     }
 
     /**
@@ -126,7 +127,7 @@ public abstract class CtBehavior extends CtMember {
      */
     public void setModifiers(int mod) {
         declaringClass.checkModify();
-        methodInfo.setAccessFlags(AccessFlag.of(mod));
+        methodInfo.setAccessFlags(mod);
     }
 
     /**
@@ -421,7 +422,7 @@ public abstract class CtBehavior extends CtMember {
         }
 
         destInfo.setAccessFlags(destInfo.getAccessFlags()
-                                & ~AccessFlag.ABSTRACT);
+                                & ~X_Modifier.ABSTRACT);
         destClass.rebuildClassFile();
     }
 
@@ -556,7 +557,7 @@ public abstract class CtBehavior extends CtMember {
         String desc = methodInfo.getDescriptor();
         String desc2 = Descriptor.insertParameter(type, desc);
         try {
-            addParameter2(AccessFlag.isStatic(getModifiers()) ? 0 : 1, type, desc);
+            addParameter2(X_Modifier.isStatic(getModifiers()) ? 0 : 1, type, desc);
         }
         catch (BadBytecode e) {
             throw new CannotCompileException(e);
@@ -574,7 +575,7 @@ public abstract class CtBehavior extends CtMember {
         declaringClass.checkModify();
         String desc = methodInfo.getDescriptor();
         String desc2 = Descriptor.appendParameter(type, desc);
-        int offset = AccessFlag.isStatic(getModifiers()) ? 0 : 1;
+        int offset = X_Modifier.isStatic(getModifiers()) ? 0 : 1;
         try {
             addParameter2(offset + Descriptor.paramSize(desc), type, desc);
         }

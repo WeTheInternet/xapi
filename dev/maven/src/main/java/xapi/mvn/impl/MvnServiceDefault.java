@@ -56,10 +56,10 @@ public class MvnServiceDefault implements MvnService {
 			new SingletonInitializer<RepositorySystem>() {
 		protected RepositorySystem initialValue() {
 	    // use netty to stream from maven
-//		  maven.addService(RepositoryConnectorFactory.class,
-//		      WagonRepositoryConnectorFactory.class);
 		  maven.addService(RepositoryConnectorFactory.class,
 		      AsyncRepositoryConnectorFactory.class);
+//		  maven.addService(RepositoryConnectorFactory.class,
+//		      WagonRepositoryConnectorFactory.class);
 	      return maven.getService(RepositorySystem.class);
 		}};
 		

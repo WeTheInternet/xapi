@@ -5,9 +5,9 @@ import static xapi.inject.X_Inject.instance;
 
 import org.junit.Test;
 
-import xapi.test.AbstractInjectionTest;
 import xapi.dev.scanner.ClasspathScanner;
 import xapi.platform.JrePlatform;
+import xapi.test.AbstractInjectionTest;
 
 @JrePlatform
 public class AnnotationScannerTest extends AbstractInjectionTest{

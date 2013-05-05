@@ -3,7 +3,7 @@ package xapi.source.impl;
 import xapi.collect.api.Fifo;
 import xapi.collect.impl.SimpleFifo;
 import xapi.except.NotYetImplemented;
-import xapi.source.X_Source;
+import xapi.source.X_Modifier;
 import xapi.source.api.IsAnnotation;
 import xapi.source.api.IsClass;
 import xapi.source.api.IsField;
@@ -247,7 +247,7 @@ public class AbstractClass extends AbstractMember<AbstractClass> implements IsCl
   @Override
   public String toSignature() {
     return
-        X_Source.classModifiers(getModifier())
+        X_Modifier.classModifiers(getModifier())
       + (hasInterface() ? " interface " : " class ")
       + (hasGenerics() ? "<"+ generics.join(", ") + ">" : "")
       + (parentClass == null ?

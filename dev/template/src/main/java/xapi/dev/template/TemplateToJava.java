@@ -129,7 +129,7 @@ public class TemplateToJava {
     if (!filename.endsWith(".java")) filename = filename + ".java";
 
     // repackage if requested; useful for generating non-transient super-source
-    String repackage = context.getRepackage();
+    String repackage = context.getPackage();
     if (repackage != null) {
       filename = repackage.replace('.', File.separatorChar) + File.separator +
         filename.substring(filename.lastIndexOf('/'));

@@ -72,13 +72,15 @@ public abstract class AbstractLog implements LogService {
 				for (StackTraceElement el : trace)
 					serialized += String.valueOf(el)+"\n";
 			return serialized;
+		} if (m != null && m.getClass().isArray()) {
+		  return new SimpleFifo<Object>((Object[])m).join(", ");
 		}
 		return m;
 	}
 
 	protected void writeLog(StringBuilder b, Object object) {
 		// TODO: inspect w/ conditional reflection
-		b.append(String.valueOf(object));
+		b.append(unwrap(object));
 		b.append("\t");
 	}
 

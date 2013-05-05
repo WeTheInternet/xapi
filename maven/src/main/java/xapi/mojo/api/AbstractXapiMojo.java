@@ -1,4 +1,4 @@
-package wetheinter.net.mojo.model;
+package xapi.mojo.api;
 
 import java.io.File;
 
@@ -6,8 +6,8 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.project.MavenProjectHelper;
 import org.apache.maven.project.ProjectBuilder;
-import org.sonatype.aether.impl.ArtifactResolver;
-import org.sonatype.aether.repository.ArtifactRepository;
+
+import xapi.util.X_Namespace;
 
 import com.google.common.base.Preconditions;
 
@@ -15,21 +15,21 @@ public abstract class AbstractXapiMojo extends AbstractMojo{
 
 
   /** @component */
-  private ArtifactResolver artifactResolver;
-
-  /** @component */
   private ProjectBuilder builder;
-
-  /** @parameter default-value="${localRepository}" */
-  private ArtifactRepository localRepository;
 
   /** @component */
   private MavenProjectHelper projectHelper;
 
+
+  /**
+   * @parameter expression="${xapi.version}"
+   */
+  private String xapiVersion = X_Namespace.XAPI_VERSION;
+  
   /**
    * The runtime we are targeting
    *
-   * @parameter expression="${xapi.platform}"
+   * @parameter expression="${xapi.platform}" default-value="jre"
    * @required
    * @readonly
    */
@@ -73,16 +73,8 @@ public abstract class AbstractXapiMojo extends AbstractMojo{
    */
   private String targetProject;
 
-  public ArtifactResolver getArtifactResolver() {
-    return artifactResolver;
-  }
-
   public ProjectBuilder getBuilder() {
     return builder;
-  }
-
-  public ArtifactRepository getLocalRepository() {
-    return localRepository;
   }
 
   public MavenProjectHelper getProjectHelper() {
@@ -101,6 +93,10 @@ public abstract class AbstractXapiMojo extends AbstractMojo{
     return sourceRoot;
   }
 
+  public String getXapiVersion() {
+    return xapiVersion;
+  }
+  
   public File getTargetPom() {
     Preconditions.checkNotNull(targetProject, "You must supply a ${target.project} configuration property " +
     		"in order to use any service methods which depend upon #getTargetPom().");

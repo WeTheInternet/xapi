@@ -1,7 +1,7 @@
 package xapi.bytecode;
 
 import xapi.bytecode.attributes.InnerClassesAttribute;
-import xapi.source.api.AccessFlag;
+import xapi.source.X_Modifier;
 
 class CtNewNestedClass extends CtNewClass {
     CtNewNestedClass(String realName, ClassPool cp, boolean isInterface,
@@ -13,7 +13,7 @@ class CtNewNestedClass extends CtNewClass {
      * This method does not change the STATIC bit.  The original value is kept.
      */
     public void setModifiers(int mod) {
-        mod = mod & ~AccessFlag.STATIC;
+        mod = mod & ~X_Modifier.STATIC;
         super.setModifiers(mod);
         updateInnerEntry(mod, getName(), this, true);
     }
@@ -28,7 +28,7 @@ class CtNewNestedClass extends CtNewClass {
         int n = ica.tableLength();
         for (int i = 0; i < n; i++)
             if (name.equals(ica.innerClass(i))) {
-                int acc = ica.accessFlags(i) & AccessFlag.STATIC;
+                int acc = ica.accessFlags(i) & X_Modifier.STATIC;
                 ica.setAccessFlags(i, mod | acc);
                 String outName = ica.outerClass(i);
                 if (outName != null && outer)

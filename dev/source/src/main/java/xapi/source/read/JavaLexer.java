@@ -40,15 +40,55 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeSet;
 
+import xapi.collect.impl.SimpleStack;
 import xapi.dev.source.TypeDefinitionException;
+import xapi.source.read.JavaModel.AnnotationMember;
+import xapi.source.read.JavaModel.HasAnnotations;
+import xapi.source.read.JavaModel.HasModifier;
+import xapi.source.read.JavaModel.IsAnnotation;
+import xapi.source.read.JavaModel.IsGeneric;
+import xapi.source.read.JavaModel.IsParameter;
+import xapi.source.read.JavaModel.IsType;
+import xapi.source.read.JavaVisitor.AnnotationMemberVisitor;
 import xapi.source.read.JavaVisitor.AnnotationVisitor;
 import xapi.source.read.JavaVisitor.GenericVisitor;
 import xapi.source.read.JavaVisitor.JavadocVisitor;
 import xapi.source.read.JavaVisitor.MethodVisitor;
 import xapi.source.read.JavaVisitor.ModifierVisitor;
+import xapi.source.read.JavaVisitor.ParameterVisitor;
 import xapi.source.read.JavaVisitor.TypeData;
 
 public class JavaLexer {
+
+  public static class ModifierExtractor implements ModifierVisitor<HasModifier> {
+
+    @Override
+    public void visitModifier(int modifier, HasModifier receiver) {
+      receiver.modifier |= modifier;
+    }
+    
+  }
+  public static class AnnotationExtractor implements AnnotationVisitor<HasAnnotations> {
+    
+    @Override
+    public AnnotationMemberVisitor<HasAnnotations> visitAnnotation(String annoName, String annoBody, HasAnnotations receiver) {
+      IsAnnotation anno = new IsAnnotation(annoName);
+      if (receiver != null)
+        receiver.addAnnotation(anno);
+      return new AnnotationMemberExtractor();
+    }
+
+  }
+  public static class AnnotationMemberExtractor implements AnnotationMemberVisitor<HasAnnotations> {
+
+    @Override
+    public void visitMember(String name, String value, HasAnnotations receiver) {
+      assert !receiver.annotations.isEmpty() : 
+        "You must visit an annotation before visiting an annotation member";
+      receiver.annotations.tail().members.add(new AnnotationMember(name, value));
+    }
+    
+  }
 
   /**
    * We need to store an index with our type data,
@@ -64,6 +104,15 @@ public class JavaLexer {
     
     public TypeDef(String name) {
       super(name);
+    }
+
+    public TypeDef(String name, int index) {
+      super(name);
+      this.index = index;
+    }
+
+    public boolean isArray() {
+      return arrayDepth > 0;
     }
   }
   
@@ -122,20 +171,25 @@ public class JavaLexer {
       return pos;
     int start = pos;
     try {
-      if (chars.charAt(pos) == '@') {
+      while(chars.charAt(pos) == '@') {
         pos = eatJavaname(chars, pos + 1);
         String annoName = chars.subSequence(start + 1, pos).toString();
         String annoBody = "";
-        if (isQualified(annoName))
-          visitor.visitType(annoName, receiver);
         pos = eatWhitespace(chars, pos);
         if (pos < chars.length() && chars.charAt(pos) == '(') {
           // Annotation has a body
           int bodyStart = pos+1;
           pos = eatAnnotationBody(visitor, receiver, chars, pos);
           annoBody = chars.subSequence(bodyStart, pos).toString();
+          pos ++;
         }
-        visitor.visitAnnotation(annoName, annoBody, receiver);
+        AnnotationMemberVisitor<R> bodyVisitor = visitor.visitAnnotation(annoName, annoBody, receiver);
+        if (bodyVisitor != null && annoBody.length() > 0) {
+          visitAnnotationMembers(bodyVisitor, receiver, annoBody, 0);
+        }
+        start = pos = eatWhitespace(chars, pos);
+        if (pos == chars.length())
+          break;
       }
     } catch (IndexOutOfBoundsException e) {
       error(
@@ -143,9 +197,93 @@ public class JavaLexer {
           "Error parsing annotation on: "
               + chars.subSequence(start, chars.length()));
     }
-    return eatWhitespace(chars, pos);
+    return pos;
   }
   
+  public static <R> int visitAnnotationMembers
+  (AnnotationMemberVisitor<R> visitor, R receiver, CharSequence chars, int pos) {
+    String name = "value";
+    boolean nameNext = true;
+    while (true) {
+      if (pos == chars.length())
+        return pos;
+      pos = eatWhitespace(chars, pos);
+      switch (chars.charAt(pos)) {
+      case ',':
+        nameNext = true;
+      case ' ':
+      case '\n':
+      case '\t':
+      case '\r':
+        continue;
+      case ')':
+        return pos;
+      // In case there is a value field without the name, we need to skip extracting the name.
+      case '{':
+      case '"':
+      case '@':
+        name = "value";
+        nameNext = false;
+      default:
+        if (nameNext) {
+          nameNext = false;
+          int start = pos;
+          while (Character.isJavaIdentifierPart(chars.charAt(pos)))pos++;
+          String maybeName = chars.subSequence(start, pos).toString().trim();
+          if (maybeName.length() == 0)
+            name = "value";
+          else
+            name = maybeName;
+          pos = eatWhitespace(chars, pos);
+          switch (chars.charAt(pos)) {
+          case '=': // assignment
+            nameNext = false;
+            continue;
+          case ',': // end of a value= without explicit "value="
+            visitor.visitMember("value", maybeName, receiver);
+            nameNext = true;
+            continue;
+          case ')': // end of a value= without more items
+            visitor.visitMember("value", maybeName, receiver);
+            nameNext = true;
+            return pos;
+          default:
+            if (pos == chars.length()) {
+              visitor.visitMember("value", maybeName, receiver);
+              return pos;
+            }
+            pos--;
+            continue;
+          }
+        } else {
+          // there's a variable to read
+          int start = pos;
+          switch (chars.charAt(pos)) {
+          case '{':
+            pos = eatArrayInitializer(chars, pos);
+            
+            break;
+          case '"':
+            pos = eatStringValue(chars, pos);
+            if (chars.charAt(pos) == '"')
+              pos++;
+            break;
+          case '@':
+            AnnotationVisitor<HasAnnotations> extractor = new AnnotationExtractor();
+            pos = visitAnnotation(extractor, null, chars, pos);
+            break;
+          default:
+            char c = chars.charAt(pos);
+            while (!Character.isWhitespace(c)) {
+              c = chars.charAt(++pos);
+            }
+          }
+          visitor.visitMember(name, chars.subSequence(start, pos).toString(), receiver);
+        }
+      }
+    }
+  }
+
   public static <R> int visitModifier
   (ModifierVisitor<R> visitor, R receiver, CharSequence chars, int pos) {
     pos = eatWhitespace(chars, pos);
@@ -258,6 +396,10 @@ public class JavaLexer {
     TypeDef returnType = extractType(chars, pos);
     visitor.visitReturnType(returnType, receiver);
     int start = pos = eatWhitespace(chars, returnType.index);
+    if (chars.charAt(pos) == '.' && chars.charAt(pos+1) == '.') {
+      pos = eatWhitespace(chars, pos+3);
+      returnType.arrayDepth++;
+    }
     pos = eatJavaname(chars, pos);
     visitor.visitName(chars.subSequence(start, pos).toString(), receiver);
     pos = eatWhitespace(chars, pos);
@@ -266,10 +408,24 @@ public class JavaLexer {
       pos = eatWhitespace(chars, pos + 1);
       while (chars.charAt(pos) != ')') {
         // TODO grab parameter annotations here.
+        ParameterVisitor<R> param = visitor.visitParameter();
+        pos = visitAnnotation(param, receiver, chars, pos);
+        pos = visitModifier(param, receiver, chars, pos);
+        
         TypeDef def = extractType(chars, pos);
         start = pos = eatWhitespace(chars, def.index);
-        pos = eatJavaname(chars, start);
-        visitor.visitParameter(def, chars.subSequence(start, pos).toString(), receiver);
+        boolean varargs = false;
+        if (chars.charAt(pos) == '.') {
+          assert chars.charAt(pos+1)=='.';
+          assert chars.charAt(pos+2)=='.';
+          def.arrayDepth ++;
+          start = pos = eatWhitespace(chars, pos+3);
+          pos = eatJavaname(chars, start);
+          varargs = true;
+        } else {
+          pos = eatJavaname(chars, start);
+        }
+        param.visitType(def, chars.subSequence(start, pos).toString(), varargs, receiver);
         pos = eatWhitespace(chars, pos);
         if (chars.charAt(pos) == ',')
           pos++;
@@ -348,6 +504,9 @@ public class JavaLexer {
         }
         int whitespace = eatWhitespace(chars, pos);
         if (chars.charAt(whitespace) == '.') {
+          if (whitespace > pos && chars.charAt(whitespace+1)=='.') {
+            break package_loop;
+          }
           if (lastPeriod != -1)
             pkg.append('.');
           lastPeriod = pos = whitespace;
@@ -366,7 +525,8 @@ public class JavaLexer {
   }
   TypeDef def;
     if (doneParsing){
-      if (pos == max)return new TypeDef(chars.subSequence(start, pos+1).toString());
+      if (pos == max)
+        return new TypeDef(chars.subSequence(start, pos+1).toString(), pos);
       def = new TypeDef(chars.subSequence(start, pos).toString());
     } else {
       StringBuilder typeName = new StringBuilder();
@@ -393,8 +553,12 @@ public class JavaLexer {
         if (chars.charAt(whitespace) == '.') {
           if (lastPeriod != -1)
             typeName.append('.');
+          if (pos != whitespace && chars.charAt(whitespace + 1) == '.') {
+            typeName.append(chars.subSequence(start, pos).toString().trim());
+            break;
+          }
           lastPeriod = pos = whitespace;
-          typeName.append(chars.subSequence(start, pos).toString().trim());
+          typeName.append(chars.subSequence(start, pos).toString());
           start = pos = eatWhitespace(chars, pos+1);
         } else {
           if (whitespace > pos) {
@@ -405,8 +569,8 @@ public class JavaLexer {
           }
         }
       }
-      if (pos == max)pos++;
       def = new TypeDef(typeName.toString());
+      if (pos == max)pos++;
     }
     def.pkgName = pkg.toString();
     start = pos = eatWhitespace(chars, pos);
@@ -423,6 +587,12 @@ public class JavaLexer {
         pos = eatWhitespace(chars, pos+1);
       }
     } catch (IndexOutOfBoundsException ignored){}
+    if (pos < chars.length() && chars.charAt(pos) == '.') {
+      assert chars.charAt(pos+1) == '.';
+      assert chars.charAt(pos+2) == '.';
+      def.arrayDepth++;
+      pos = eatWhitespace(chars, pos+3);
+    }
     def.index = pos;
     return def;
   }
@@ -461,6 +631,7 @@ public class JavaLexer {
           case ')': // end of a value= without more items
             return pos;
           default:
+            pos--;
             continue;
           }
         } else {
@@ -476,22 +647,9 @@ public class JavaLexer {
             pos = visitAnnotation(visitor, receiver, chars, pos);
             break;
           default:
-            int start = pos;
             char c = chars.charAt(pos);
-            boolean hasPeriod = false;
             while (!Character.isWhitespace(c)) {
-              if (c == '.')
-                hasPeriod = true;
               c = chars.charAt(++pos);
-            }
-            if (hasPeriod) {
-              String value = chars.subSequence(start, pos).toString();
-              try {
-                Float.parseFloat(value);
-              } catch (NumberFormatException e) {
-                visitor.visitType(value, receiver);
-              }
-  
             }
           }
         }
@@ -879,7 +1037,8 @@ public class JavaLexer {
               // do we have a period before anything else?
               int start = pos;
               while (Character.isJavaIdentifierPart(generic.charAt(pos)))
-                pos ++;
+                if (++pos == max)
+                  return false;
               int whitespace = eatWhitespace(generic, pos);
               if (generic.charAt(whitespace) == '.') {
                 // we have a fqcn.  Let's eat it.
@@ -920,6 +1079,152 @@ public class JavaLexer {
         return new Itr();
       }
     };
+  }
+
+  protected static String stripTypeMods(String type) {
+    int end = type.indexOf('<');
+    if (end != -1)
+      type = type.substring(0, end);
+    end = type.indexOf('[');
+    if (end != -1)
+      type = type.substring(0, end);
+    return type;
+  }
+  
+  protected static int lexType(final IsType into, CharSequence chars, int pos) {
+    int start = pos = eatWhitespace(chars, pos);
+    int lastPeriod = -1, max = chars.length()-1;
+    boolean doneParsing = false;
+    StringBuilder pkg = new StringBuilder();
+    package_loop:
+    if (Character.isLowerCase(chars.charAt(pos))) {
+      // We may have package names to read.
+      while(true) {
+        pos = eatWhitespace(chars, pos);
+        while(Character.isJavaIdentifierPart(chars.charAt(++pos))){
+          if (pos == max){
+            if (lastPeriod == -1) {
+              // no package, so don't go looking for class references either.
+              doneParsing = true;
+            } else {
+              // everything up to the last period is already in package variable.
+              start = pos = lastPeriod + 1;
+            }
+            break package_loop;
+          }
+        }
+        int whitespace = eatWhitespace(chars, pos);
+        if (chars.charAt(whitespace) == '.') {
+          if (whitespace > pos && chars.charAt(whitespace+1)=='.') {
+            break package_loop;
+          }
+          if (lastPeriod != -1)
+            pkg.append('.');
+          lastPeriod = pos = whitespace;
+          pkg.append(chars.subSequence(start, pos).toString().trim());
+          pos = start = eatWhitespace(chars, pos+1);
+          if (Character.isUpperCase(chars.charAt(start))) {
+            break package_loop;
+          }
+        } else {
+          if (whitespace > pos) {
+            doneParsing = true;
+            break package_loop;
+          }
+        }
+      }
+  }
+    if (doneParsing){
+      if (pos == max) {
+        into.setType(pkg.toString(), chars.subSequence(start, pos+1).toString());
+        return pos;
+      }
+      into.setType(pkg.toString(), chars.subSequence(start, pos).toString());
+    } else {
+      StringBuilder typeName = new StringBuilder();
+      lastPeriod = -1;
+      typeloop:
+      while (true) {
+        pos = eatWhitespace(chars, pos);
+        if (!Character.isJavaIdentifierStart(chars.charAt(pos))){
+          if (pos > start) {
+            if (lastPeriod != -1)
+              typeName.append('.');
+            typeName.append(chars.subSequence(start, pos).toString().trim());
+          }
+          break;
+        }
+        while(Character.isJavaIdentifierPart(chars.charAt(++pos)))
+          if (pos == max) {
+            if (lastPeriod != -1)
+              typeName.append('.');
+            typeName.append(chars.subSequence(start, pos+1).toString().trim());
+            break typeloop;
+          }
+        int whitespace = eatWhitespace(chars, pos);
+        if (chars.charAt(whitespace) == '.') {
+          if (lastPeriod != -1)
+            typeName.append('.');
+          if (pos != whitespace && chars.charAt(whitespace + 1) == '.') {
+            typeName.append(chars.subSequence(start, pos).toString().trim());
+            break;
+          }
+          lastPeriod = pos = whitespace;
+          typeName.append(chars.subSequence(start, pos).toString());
+          start = pos = eatWhitespace(chars, pos+1);
+        } else {
+          if (whitespace > pos) {
+            if (lastPeriod != -1)
+              typeName.append('.');
+            typeName.append(chars.subSequence(start, pos).toString().trim());
+            break;
+          }
+        }
+      }
+      into.setType(pkg.toString(), typeName.toString());
+      if (pos == max)pos++;
+    }
+    into.packageName = pkg.toString();
+    start = pos = eatWhitespace(chars, pos);
+    if (pos < chars.length()) {
+      pos = eatGeneric(chars, pos);
+      if (pos != start)
+        lexGenerics(into.generics, chars.subSequence(start, ++pos), 0);
+    }
+    pos = eatWhitespace(chars, pos);
+    try{
+      while (chars.charAt(pos) == '[') {
+        into.arrayDepth ++;
+        while (chars.charAt(++pos)!=']');
+        pos = eatWhitespace(chars, pos+1);
+      }
+    } catch (IndexOutOfBoundsException ignored){}
+    if (pos < chars.length() && chars.charAt(pos) == '.') {
+      assert chars.charAt(pos+1) == '.';
+      assert chars.charAt(pos+2) == '.';
+      into.arrayDepth++;
+      pos = eatWhitespace(chars, pos+3);
+    }
+    return pos;
+  }
+
+  private static void lexGenerics(
+      SimpleStack<IsGeneric> into, CharSequence chars, int pos) {
+    
+  }
+
+  public static IsParameter lexParam(CharSequence chars) {
+    int pos = eatWhitespace(chars, 0);
+    HasModifier mods = new HasModifier();
+    HasAnnotations annos = new HasAnnotations();
+    pos = visitModifier(new ModifierExtractor(), mods, chars, pos);
+    pos = visitAnnotation(new AnnotationExtractor(), annos, chars, pos);
+    TypeDef type = extractType(chars, pos);
+    int start = eatWhitespace(chars, type.index);
+    pos = eatJavaname(chars, start);
+    IsParameter param = new IsParameter(chars.subSequence(start, pos).toString(), type.clsName);
+    param.annotations = annos;
+    return param;
   }
 
 }

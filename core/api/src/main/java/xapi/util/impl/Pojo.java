@@ -6,12 +6,12 @@ import xapi.util.api.Bean;
 
 public class Pojo <X> implements Provider<X>, Bean<X>{
 
-  public X data;
+  private X data;
 
   public Pojo() {
   }
   public Pojo(X x) {
-    set(x);//test if gwt does this wrong...
+    set(x);
   }
   
   @Override

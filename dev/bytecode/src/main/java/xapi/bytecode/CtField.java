@@ -159,7 +159,7 @@ public class CtField extends CtMember {
      * @see Modifier
      */
     public int getModifiers() {
-        return AccessFlag.toModifier(fieldInfo.getAccessFlags());
+        return fieldInfo.getAccessFlags();
     }
 
     /**
@@ -169,7 +169,7 @@ public class CtField extends CtMember {
      */
     public void setModifiers(int mod) {
         declaringClass.checkModify();
-        fieldInfo.setAccessFlags(AccessFlag.of(mod));
+        fieldInfo.setAccessFlags(mod);
     }
 
     /**

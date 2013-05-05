@@ -73,7 +73,7 @@ public class SourceBuilder <Payload> {
 		if (classDef == null){
 		  // make sure import buffer comes before class def
 		  getImports();
-			classDef = new ClassBuffer(this);
+			classDef = new ClassBuffer(this).indent();
 			//create a new print buffer for content after class definition
 			head.addToEnd(classDef);
 			addBuffer(new PrintBuffer());
@@ -106,7 +106,7 @@ public class SourceBuilder <Payload> {
 		return this;
 	}
 
-	public String getRepackage() {
+	public String getPackage() {
 		return pkgName;
 	}
 

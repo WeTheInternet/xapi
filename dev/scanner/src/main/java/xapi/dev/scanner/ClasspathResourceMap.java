@@ -11,6 +11,7 @@ import java.util.regex.Pattern;
 
 import xapi.bytecode.ClassFile;
 import xapi.collect.impl.MultithreadedStringTrie;
+import xapi.util.api.MatchesValue;
 import xapi.util.api.Pointer;
 
 public class ClasspathResourceMap {
@@ -138,6 +139,86 @@ public class ClasspathResourceMap {
     return new Iterable<StringDataResource>() {
       @Override
       public Iterator<StringDataResource> iterator() {
+        return new Itr();
+      }
+    };
+  }
+  
+  class ClassFileIterator implements Iterator<ClassFile>, Iterable<ClassFile> {
+
+    private MatchesValue<ClassFile> matcher;
+    
+    ClassFileIterator(MatchesValue<ClassFile> matcher) {
+      assert matcher != null;
+      this.matcher = matcher;
+    }
+    
+    private ClassFile cls;
+    private Iterator<ByteCodeResource> iter;
+    
+    @Override
+    public boolean hasNext() {
+      while(iter.hasNext()) {
+        cls = iter.next().getClassData();
+      }
+      return false;
+    }
+
+    @Override
+    public ClassFile next() {
+      return cls;
+    }
+
+    @Override
+    public void remove() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Iterator<ClassFile> iterator() {
+      ClassFileIterator live = new ClassFileIterator(matcher);
+      live.iter = bytecode.findPrefixed("").iterator();
+      return live;
+    }
+
+  }
+  
+  public final Iterable<ClassFile> findClassesImplementing(
+      final Class<?> ... interfaces) {
+    // Make sure all pending tasks are done before a read succeeds
+    flush();
+    // Local class to capture the final method parameter
+    class Itr implements Iterator<ClassFile> {
+      ClassFile cls;
+      Iterator<ByteCodeResource> iter = bytecode.findPrefixed("").iterator();
+      @Override
+      public boolean hasNext() {
+        while(iter.hasNext()) {
+          cls = iter.next().getClassData();
+          for (Class<?> iface : interfaces) {
+            //TODO lookup the annotation's target and check fields / methods as well
+            for (String clsIface : cls.getInterfaces()){
+              if (iface.getCanonicalName().equals(clsIface))
+                return true;
+            }
+          }
+        }
+        return false;
+      }
+
+      @Override
+      public ClassFile next() {
+        return cls;
+      }
+
+      @Override
+      public void remove() {
+        throw new UnsupportedOperationException();
+      }
+    }
+    return new Iterable<ClassFile>() {
+      @Override
+      public Iterator<ClassFile> iterator() {
         return new Itr();
       }
     };

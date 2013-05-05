@@ -4,6 +4,7 @@ package xapi.model.impl;
 import java.util.HashMap;
 import java.util.Map;
 
+import xapi.annotation.inject.InstanceDefault;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.log.X_Log;
@@ -13,7 +14,7 @@ import xapi.model.api.ModelKey;
 import xapi.util.api.ErrorHandler;
 import xapi.util.api.SuccessHandler;
 
-
+@InstanceDefault(implFor=Model.class)
 public class AbstractModel implements Model{
 
   protected StringTo<Object> map;
@@ -58,7 +59,6 @@ public class AbstractModel implements Model{
 
   @Override
   public Model setProperty(String key, Object value) {
-    X_Log.info(map);
     try {
       map.put(key, value);
     } catch (Throwable e) {

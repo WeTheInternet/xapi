@@ -1,6 +1,6 @@
 package xapi.bytecode;
 
-import xapi.source.api.AccessFlag;
+import xapi.source.X_Modifier;
 
 public final class CtPrimitiveType extends CtClass {
   private char descriptor;
@@ -38,7 +38,7 @@ public final class CtPrimitiveType extends CtClass {
    * @see Modifier
    */
   public int getModifiers() {
-      return AccessFlag.PUBLIC | AccessFlag.FINAL;
+      return X_Modifier.PUBLIC | X_Modifier.FINAL;
   }
 
   /**

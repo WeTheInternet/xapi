@@ -292,7 +292,7 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
         }
       }
     }
-    generator.generateModel(X_Source.toType(builder.getRepackage(), builder.getClassBuffer().getSimpleName()), fieldMap);
+    generator.generateModel(X_Source.toType(builder.getPackage(), builder.getClassBuffer().getSimpleName()), fieldMap);
   }
 
   private void implementException(TreeLogger logger, MethodBuffer mb, JMethod method) {

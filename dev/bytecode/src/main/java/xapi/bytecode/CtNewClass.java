@@ -1,6 +1,6 @@
 package xapi.bytecode;
 
-import xapi.source.api.AccessFlag;
+import xapi.source.X_Modifier;
 
 class CtNewClass extends CtClassType {
     /* true if the class is an interface.
@@ -21,7 +21,7 @@ class CtNewClass extends CtClassType {
         if (isInterface && superclass != null)
             classfile.setInterfaces(new String[] { superclass.getName() });
 
-        setModifiers(AccessFlag.setPublic(getModifiers()));
+        setModifiers(X_Modifier.setPublic(getModifiers()));
         hasConstructor = isInterface;
     }
 
@@ -91,10 +91,10 @@ class CtNewClass extends CtClassType {
 //    }
 
     private boolean isInheritable(int mod, CtClass superclazz) {
-        if (AccessFlag.isPrivate(mod))
+        if (X_Modifier.isPrivate(mod))
             return false;
 
-        if (AccessFlag.isPackage(mod)) {
+        if (X_Modifier.isPackage(mod)) {
             String pname = getPackageName();
             String pname2 = superclazz.getPackageName();
             if (pname == null)

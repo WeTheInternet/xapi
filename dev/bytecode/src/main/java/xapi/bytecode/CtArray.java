@@ -1,6 +1,6 @@
 package xapi.bytecode;
 
-import xapi.source.api.AccessFlag;
+import xapi.source.X_Modifier;
 
 
 final class CtArray extends CtClass {
@@ -26,10 +26,10 @@ final class CtArray extends CtClass {
 
     @Override
     public int getModifiers() {
-        int mod = AccessFlag.FINAL;
+        int mod = X_Modifier.FINAL;
         try {
             mod |= getComponentType().getModifiers()
-                   & (AccessFlag.PROTECTED | AccessFlag.PUBLIC | AccessFlag.PRIVATE);
+                   & (X_Modifier.PROTECTED | X_Modifier.PUBLIC | X_Modifier.PRIVATE);
         }
         catch (NotFoundException e) {}
         return mod;

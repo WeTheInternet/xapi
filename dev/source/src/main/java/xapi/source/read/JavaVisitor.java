@@ -1,5 +1,6 @@
 package xapi.source.read;
 
+
 public class JavaVisitor <Param> {
 
   /**
@@ -14,6 +15,8 @@ public class JavaVisitor <Param> {
    *
    */
   public static class TypeData {
+    
+    public static final TypeData NONE = new TypeData("");
     
     public TypeData(String name) {
       clsName = name;
@@ -53,6 +56,12 @@ public class JavaVisitor <Param> {
       if (pkgName.length() > 0)
         b.append(pkgName).append('.');
       b.append(clsName).append(generics);
+      b.append(getArrayDefinition());
+      return b.toString();
+    }
+
+    protected String getArrayDefinition() {
+      StringBuilder b = new StringBuilder();
       int i = arrayDepth;
       while (i --> 0)
         b.append("[]");
@@ -65,8 +74,15 @@ public class JavaVisitor <Param> {
           +(index == -1 ? clsName : clsName.substring(0, index)));
     }
 
+    public String getQualifiedName() {
+      return (pkgName.length()==0?"":pkgName+".")+clsName;
+    }
+
     public String getSimpleName() {
-      return clsName;
+      return clsName
+          + (generics.length() > 0 ? generics : "")
+          + getArrayDefinition()
+      ;
     }
   }
   
@@ -79,19 +95,27 @@ public class JavaVisitor <Param> {
   }
   
   public static interface TypeVisitor <Param> extends ModifierVisitor <Param> {
-    void visitType(String type, Param receiver);
+//    void visitType(String type, Param receiver);
   }
   
-  public static interface AnnotationVisitor <Param> extends TypeVisitor <Param> {
-    void visitAnnotation(String annoName, String annoBody, Param receiver);
+  public static interface AnnotationVisitor <Param> {
+    AnnotationMemberVisitor<Param> visitAnnotation(String annoName, String annoBody, Param receiver);
   }
-  
+
+  public static interface AnnotationMemberVisitor <Param> {
+    void visitMember(String name, String value, Param receiver);
+  }
+
   public static interface GenericVisitor <Param> {
     void visitGeneric(String generic, Param receiver);
   }
 
   public static interface MemberVisitor <Param> 
-  extends AnnotationVisitor<Param>, GenericVisitor<Param>, JavadocVisitor<Param>{
+  extends AnnotationVisitor<Param>, 
+  GenericVisitor<Param>, 
+  JavadocVisitor<Param>,
+  ModifierVisitor<Param>
+  {
   }
   
   public static interface FieldVisitor <Param> 
@@ -99,10 +123,15 @@ public class JavaVisitor <Param> {
     void visitName(String type, Param receiver);
     void visitInitializer(String initializer, Param receiver);
   }
+
+  public static interface ParameterVisitor <Param> 
+  extends AnnotationVisitor<Param>, ModifierVisitor<Param> {
+    void visitType(TypeData type, String name, boolean varargs, Param receiver);
+  }
   
   public static interface ExecutableVisitor <Param> 
   extends MemberVisitor<Param> {
-    void visitParameter(TypeData type, String name, Param receiver);
+    ParameterVisitor<Param> visitParameter();
     void visitException(String type, Param receiver);
   }
   

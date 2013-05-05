@@ -40,30 +40,31 @@ public class ModelAnnotationProcessor extends AbstractProcessor{
       Set<? extends TypeElement> annotations,
       RoundEnvironment roundEnv
   ) {
-    HashSet<String> modelTypes = new HashSet<String>();
-    HashSet<String> modelPackages = new HashSet<String>();
+    ClassLoader parentCl = ModelAnnotationProcessor.class.getClassLoader();
+    URL[] urls = ((URLClassLoader)parentCl).getURLs();
+    URLClassLoader cl = new URLClassLoader(urls, Thread.currentThread().getContextClassLoader());
+//    X_Log.info(Arrays.asList(urls));
+    
+    HashSet<String> annotatedTypes = new HashSet<String>();
+    HashSet<String> annotatedPackages = new HashSet<String>();
     for (TypeElement anno : annotations) {
       for (Element element : roundEnv.getElementsAnnotatedWith(anno)) {
         Element e = element.getEnclosingElement();
         
         if (e instanceof TypeElement) {
-          modelTypes.add(((TypeElement)e).getQualifiedName().toString());
+          annotatedTypes.add(((TypeElement)e).getQualifiedName().toString());
         } else if (e instanceof PackageElement){
-          modelPackages.add(((PackageElement)e).getQualifiedName().toString());
+          annotatedPackages.add(((PackageElement)e).getQualifiedName().toString());
         } else {
           X_Log.warn("Ignored an enclosing element that was not a TypeElement or package element"
               ,e,e.getClass());
         }
       }
     }
-    ClassLoader parentCl = ModelAnnotationProcessor.class.getClassLoader();
-    URL[] urls = ((URLClassLoader)parentCl).getURLs();
-    URLClassLoader cl = new URLClassLoader(urls, Thread.currentThread().getContextClassLoader());
-//    X_Log.info(Arrays.asList(urls));
-    for (String s : modelPackages) {
+    for (String s : annotatedPackages) {
       X_Log.info("Model Package",s);
     }
-    for (String modelCls : modelTypes) {
+    for (String modelCls : annotatedTypes) {
       Class<?> cls = loadClass(modelCls, cl);
       X_Log.info("Loaded model: ", cls);
     }

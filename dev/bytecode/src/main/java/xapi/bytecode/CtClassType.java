@@ -21,9 +21,9 @@ import xapi.bytecode.annotation.AnnotationsAttribute;
 import xapi.bytecode.attributes.AttributeInfo;
 import xapi.bytecode.attributes.InnerClassesAttribute;
 import xapi.bytecode.attributes.ParameterAnnotationsAttribute;
-import xapi.source.api.AccessFlag;
+import xapi.source.X_Modifier;
 
-class CtClassType extends CtClass {
+public class CtClassType extends CtClass {
   ClassPool classPool;
   boolean wasChanged;
   boolean wasPruned;
@@ -53,7 +53,7 @@ class CtClassType extends CtClass {
     getCount = 0;
   }
 
-  CtClassType(InputStream ins, ClassPool cp) throws IOException {
+  public CtClassType(InputStream ins, ClassPool cp) throws IOException {
     this((String) null, cp);
     classfile = new ClassFile(new DataInputStream(ins));
     qualifiedName = classfile.getName();
@@ -249,29 +249,29 @@ class CtClassType extends CtClass {
 
   @Override
   public boolean isInterface() {
-    return AccessFlag.isInterface(getModifiers());
+    return X_Modifier.isInterface(getModifiers());
   }
 
   @Override
   public boolean isAnnotation() {
-    return AccessFlag.isAnnotation(getModifiers());
+    return X_Modifier.isAnnotation(getModifiers());
   }
 
   @Override
   public boolean isEnum() {
-    return AccessFlag.isEnum(getModifiers());
+    return X_Modifier.isEnum(getModifiers());
   }
 
   @Override
   public int getModifiers() {
     ClassFile cf = getClassFile2();
     int acc = cf.getAccessFlags();
-    acc = AccessFlag.clear(acc, AccessFlag.SUPER);
+    acc = X_Modifier.clear(acc, X_Modifier.SUPER);
     int inner = cf.getInnerAccessFlags();
-    if (inner != -1 && (inner & AccessFlag.STATIC) != 0)
-      acc |= AccessFlag.STATIC;
+    if (inner != -1 && (inner & X_Modifier.STATIC) != 0)
+      acc |= X_Modifier.STATIC;
 
-    return AccessFlag.toModifier(acc);
+    return acc;
   }
 
   @Override
@@ -304,17 +304,17 @@ class CtClassType extends CtClass {
   @Override
   public void setModifiers(int mod) {
     ClassFile cf = getClassFile2();
-    if (AccessFlag.isStatic(mod)) {
+    if (X_Modifier.isStatic(mod)) {
       int flags = cf.getInnerAccessFlags();
-      if (flags != -1 && (flags & AccessFlag.STATIC) != 0)
-        mod = mod & ~AccessFlag.STATIC;
+      if (flags != -1 && (flags & X_Modifier.STATIC) != 0)
+        mod = mod & ~X_Modifier.STATIC;
       else
         throw new RuntimeException("cannot change " + getName()
             + " into a static class");
     }
 
     checkModify();
-    cf.setAccessFlags(AccessFlag.of(mod));
+    cf.setAccessFlags(mod);
   }
 
   @Override
@@ -672,13 +672,13 @@ class CtClassType extends CtClass {
     }
 
     ica.append(c.getName(), this.getName(), name,
-        (cf2.getAccessFlags() & ~AccessFlag.SUPER) | AccessFlag.STATIC);
+        (cf2.getAccessFlags() & ~X_Modifier.SUPER) | X_Modifier.STATIC);
     cf2.addAttribute(ica.copy(cf2.getConstPool(), null));
     return c;
   }
 
   private static boolean isPubCons(CtConstructor cons) {
-    return !AccessFlag.isPrivate(cons.getModifiers()) && cons.isConstructor();
+    return !X_Modifier.isPrivate(cons.getModifiers()) && cons.isConstructor();
   }
 
   @Override
@@ -772,7 +772,7 @@ class CtClassType extends CtClass {
 
       while (mth != mthTail) {
         mth = mth.next();
-        if (!AccessFlag.isPrivate(mth.getModifiers()))
+        if (!X_Modifier.isPrivate(mth.getModifiers()))
           h.put(((CtMethod) mth).getStringRep(), mth);
       }
     }
@@ -1327,7 +1327,7 @@ class CtClassType extends CtClass {
 
   private void makeMemberList(HashMap<String, CtClassType> table) {
     int mod = getModifiers();
-    if (AccessFlag.isAbstract(mod) || AccessFlag.isInterface(mod))
+    if (X_Modifier.isAbstract(mod) || X_Modifier.isInterface(mod))
       try {
         CtClass[] ifs = getInterfaces();
         int size = ifs.length;

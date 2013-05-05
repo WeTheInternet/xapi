@@ -13,7 +13,7 @@ import xapi.bytecode.attributes.AttributeInfo;
 import xapi.bytecode.attributes.InnerClassesAttribute;
 import xapi.bytecode.attributes.SignatureAttribute;
 import xapi.bytecode.attributes.SourceFileAttribute;
-import xapi.source.api.AccessFlag;
+import xapi.source.X_Modifier;
 
 
 public final class ClassFile {
@@ -23,8 +23,8 @@ public final class ClassFile {
     int accessFlags;
     int superClass;
     int[] interfaces;
-    ArrayList<Object> fields;
-    ArrayList<Object> methods;
+    ArrayList<FieldInfo> fields;
+    ArrayList<MethodInfo> methods;
     ArrayList<AttributeInfo> attributes;
     String thisclassname; // not JVM-internal name
     String[] cachedInterfaces;
@@ -110,14 +110,14 @@ public final class ClassFile {
         constPool = new ConstPool(classname);
         thisClass = constPool.getThisClassInfo();
         if (isInterface)
-            accessFlags = AccessFlag.INTERFACE | AccessFlag.ABSTRACT;
+            accessFlags = X_Modifier.INTERFACE | X_Modifier.ABSTRACT;
         else
-            accessFlags = AccessFlag.SUPER;
+            accessFlags = X_Modifier.SUPER;
 
         initSuperclass(superclass);
         interfaces = null;
-        fields = new ArrayList<Object>();
-        methods = new ArrayList<Object>();
+        fields = new ArrayList<FieldInfo>();
+        methods = new ArrayList<MethodInfo>();
         thisclassname = classname;
 
         attributes = new ArrayList<AttributeInfo>();
@@ -151,17 +151,15 @@ public final class ClassFile {
      */
     public void compact() {
         ConstPool cp = compact0();
-        ArrayList<Object> list = methods;
-        int n = list.size();
+        int n = methods.size();
         for (int i = 0; i < n; ++i) {
-            MethodInfo minfo = (MethodInfo)list.get(i);
+            MethodInfo minfo = methods.get(i);
             minfo.compact(cp);
         }
 
-        list = fields;
-        n = list.size();
+        n = fields.size();
         for (int i = 0; i < n; ++i) {
-            FieldInfo finfo = (FieldInfo)list.get(i);
+            FieldInfo finfo = fields.get(i);
             finfo.compact(cp);
         }
 
@@ -216,17 +214,15 @@ public final class ClassFile {
             newAttributes.add(signature);
         }
 
-        ArrayList<Object> list = methods;
-        int n = list.size();
+        int n = methods.size();
         for (int i = 0; i < n; ++i) {
-            MethodInfo minfo = (MethodInfo)list.get(i);
+            MethodInfo minfo = methods.get(i);
             minfo.prune(cp);
         }
 
-        list = fields;
-        n = list.size();
+        n = fields.size();
         for (int i = 0; i < n; ++i) {
-            FieldInfo finfo = (FieldInfo)list.get(i);
+            FieldInfo finfo = fields.get(i);
             finfo.prune(cp);
         }
 
@@ -245,21 +241,21 @@ public final class ClassFile {
      * Returns true if this is an interface.
      */
     public boolean isInterface() {
-        return (accessFlags & AccessFlag.INTERFACE) != 0;
+        return (accessFlags & X_Modifier.INTERFACE) != 0;
     }
 
     /**
      * Returns true if this is a final class or interface.
      */
     public boolean isFinal() {
-        return (accessFlags & AccessFlag.FINAL) != 0;
+        return (accessFlags & X_Modifier.FINAL) != 0;
     }
 
     /**
      * Returns true if this is an abstract class or an interface.
      */
     public boolean isAbstract() {
-        return (accessFlags & AccessFlag.ABSTRACT) != 0;
+        return (accessFlags & X_Modifier.ABSTRACT) != 0;
     }
 
     /**
@@ -277,8 +273,8 @@ public final class ClassFile {
      * @see javassist.bytecode.AccessFlag
      */
     public void setAccessFlags(int acc) {
-        if ((acc & AccessFlag.INTERFACE) == 0)
-            acc |= AccessFlag.SUPER;
+        if ((acc & X_Modifier.INTERFACE) == 0)
+            acc |= X_Modifier.SUPER;
 
         accessFlags = acc;
     }
@@ -381,7 +377,6 @@ public final class ClassFile {
      *            the substituted class name
      */
     public final void renameClass(String oldname, String newname) {
-        ArrayList<Object> list;
         int n;
 
         if (oldname.equals(newname))
@@ -395,19 +390,17 @@ public final class ClassFile {
         constPool.renameClass(oldname, newname);
 
         AttributeInfo.renameClass(attributes, oldname, newname);
-        list = methods;
-        n = list.size();
+        n = methods.size();
         for (int i = 0; i < n; ++i) {
-            MethodInfo minfo = (MethodInfo)list.get(i);
+            MethodInfo minfo = (MethodInfo)methods.get(i);
             String desc = minfo.getDescriptor();
             minfo.setDescriptor(Descriptor.rename(desc, oldname, newname));
             AttributeInfo.renameClass(minfo.getAttributes(), oldname, newname);
         }
 
-        list = fields;
-        n = list.size();
+        n = fields.size();
         for (int i = 0; i < n; ++i) {
-            FieldInfo finfo = (FieldInfo)list.get(i);
+            FieldInfo finfo = fields.get(i);
             String desc = finfo.getDescriptor();
             finfo.setDescriptor(Descriptor.rename(desc, oldname, newname));
             AttributeInfo.renameClass(finfo.getAttributes(), oldname, newname);
@@ -432,19 +425,17 @@ public final class ClassFile {
         constPool.renameClass(classnames);
 
         AttributeInfo.renameClass(attributes, classnames);
-        ArrayList<Object> list = methods;
-        int n = list.size();
+        int n = methods.size();
         for (int i = 0; i < n; ++i) {
-            MethodInfo minfo = (MethodInfo)list.get(i);
+            MethodInfo minfo = (MethodInfo)methods.get(i);
             String desc = minfo.getDescriptor();
             minfo.setDescriptor(Descriptor.rename(desc, classnames));
             AttributeInfo.renameClass(minfo.getAttributes(), classnames);
         }
 
-        list = fields;
-        n = list.size();
+        n = fields.size();
         for (int i = 0; i < n; ++i) {
-            FieldInfo finfo = (FieldInfo)list.get(i);
+            FieldInfo finfo = (FieldInfo)fields.get(i);
             String desc = finfo.getDescriptor();
             finfo.setDescriptor(Descriptor.rename(desc, classnames));
             AttributeInfo.renameClass(finfo.getAttributes(), classnames);
@@ -516,7 +507,7 @@ public final class ClassFile {
      * @return a list of <code>FieldInfo</code>.
      * @see FieldInfo
      */
-    public List<Object> getFields() {
+    public List<FieldInfo> getFields() {
         return fields;
     }
 
@@ -534,7 +525,7 @@ public final class ClassFile {
      * @return a list of <code>MethodInfo</code>.
      * @see MethodInfo
      */
-    public List<Object> getMethods() {
+    public List<MethodInfo> getMethods() {
         return methods;
     }
 
@@ -545,10 +536,9 @@ public final class ClassFile {
      * @return null if no such a method is found.
      */
     public MethodInfo getMethod(String name) {
-        ArrayList<Object> list = methods;
-        int n = list.size();
+        int n = methods.size();
         for (int i = 0; i < n; ++i) {
-            MethodInfo minfo = (MethodInfo)list.get(i);
+            MethodInfo minfo = (MethodInfo)methods.get(i);
             if (minfo.getName().equals(name))
                 return minfo;
         }
@@ -651,12 +641,12 @@ public final class ClassFile {
 
         ConstPool cp = constPool;
         n = in.readUnsignedShort();
-        fields = new ArrayList<Object>();
+        fields = new ArrayList<FieldInfo>();
         for (i = 0; i < n; ++i)
             addField(new FieldInfo(cp, in));
 
         n = in.readUnsignedShort();
-        methods = new ArrayList<Object>();
+        methods = new ArrayList<MethodInfo>();
         for (i = 0; i < n; ++i)
             addMethod(new MethodInfo(cp, in));
 
@@ -691,19 +681,17 @@ public final class ClassFile {
         for (i = 0; i < n; ++i)
             out.writeShort(interfaces[i]);
 
-        ArrayList<Object> list = fields;
-        n = list.size();
+        n = fields.size();
         out.writeShort(n);
         for (i = 0; i < n; ++i) {
-            FieldInfo finfo = (FieldInfo)list.get(i);
+            FieldInfo finfo = fields.get(i);
             finfo.write(out);
         }
 
-        list = methods;
-        n = list.size();
+        n = methods.size();
         out.writeShort(n);
         for (i = 0; i < n; ++i) {
-            MethodInfo minfo = (MethodInfo)list.get(i);
+            MethodInfo minfo = methods.get(i);
             minfo.write(out);
         }
 
@@ -808,4 +796,17 @@ public final class ClassFile {
         return null;
       return ((AnnotationsAttribute)attr).getAnnotation(name);
     }
+
+    public String getPackage() {
+      System.err.println(
+          constPool.getClassInfo(thisClass)
+          );
+      System.err.println(thisclassname);
+      return X_Modifier.binaryNameToPackage(constPool.getClassName());
+    }
+
+    public String getEnclosedName() {
+      return X_Modifier.binaryNameToEnclosed(constPool.getClassName());
+    }
+    
 }

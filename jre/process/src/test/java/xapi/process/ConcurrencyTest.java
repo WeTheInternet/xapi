@@ -146,7 +146,6 @@ public class ConcurrencyTest {
             timeout.set(true);
           }
         });
-        trySleep(100);
         timeout.set(false);
       }
     });

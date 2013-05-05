@@ -2,7 +2,7 @@ package xapi.bytecode;
 
 import xapi.bytecode.api.Opcode;
 import xapi.bytecode.attributes.CodeAttribute;
-import xapi.source.api.AccessFlag;
+import xapi.source.X_Modifier;
 
 public final class CtConstructor extends CtBehavior {
     protected CtConstructor(MethodInfo minfo, CtClass declaring) {
@@ -29,7 +29,7 @@ public final class CtConstructor extends CtBehavior {
         ConstPool cp = declaring.getClassFile2().getConstPool();
         String desc = Descriptor.ofConstructor(parameters);
         methodInfo = new MethodInfo(cp, "<init>", desc);
-        setModifiers(AccessFlag.PUBLIC);
+        setModifiers(X_Modifier.PUBLIC);
     }
 
     /**

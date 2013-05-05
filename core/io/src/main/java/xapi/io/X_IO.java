@@ -3,17 +3,22 @@ package xapi.io;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.UnknownHostException;
 
 import javax.inject.Provider;
 
 import xapi.inject.X_Inject;
 import xapi.io.api.HasLiveness;
+import xapi.io.api.IOCallback;
+import xapi.io.api.IOMessage;
 import xapi.io.api.StringReader;
+import xapi.io.impl.IOCallbackDefault;
 import xapi.io.service.IOService;
 import xapi.log.X_Log;
 import xapi.log.api.LogLevel;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
+import xapi.util.X_Util;
 import xapi.util.api.ErrorHandler;
 
 public class X_IO {
@@ -97,6 +102,20 @@ public class X_IO {
     try {
       in.close();
     } catch (IOException ignored){}
+  }
+
+  public static boolean isOffline() {
+    final boolean[] failure = new boolean[]{false};
+    getIOService().get("http://google.com", null, new IOCallbackDefault<IOMessage<String>>() {
+      @Override
+      public void onError(Throwable e) {
+        if (X_Util.unwrap(e) instanceof UnknownHostException)
+          failure[0] = true;
+        else
+          X_Util.rethrow(e);
+      }
+    });
+    return failure[0];
   }
   
 

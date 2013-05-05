@@ -143,6 +143,10 @@ public class X_String {
     return str.split("\n");
   }
 
+  public static String notNull(String str) {
+    return str == null ? "" : str;
+  }
+
 
 
 }
