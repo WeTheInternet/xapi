@@ -2,6 +2,7 @@ package xapi.bytecode;
 
 import java.io.DataInput;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,7 +14,9 @@ import xapi.bytecode.attributes.AttributeInfo;
 import xapi.bytecode.attributes.InnerClassesAttribute;
 import xapi.bytecode.attributes.SignatureAttribute;
 import xapi.bytecode.attributes.SourceFileAttribute;
+import xapi.bytecode.impl.BytecodeUtil;
 import xapi.source.X_Modifier;
+import xapi.util.X_Util;
 
 
 public final class ClassFile {
@@ -580,7 +583,7 @@ public final class ClassFile {
      * @param name          attribute name
      * @see #getAttributes()
      */
-    protected AttributeInfo getAttribute(String name) {
+    public AttributeInfo getAttribute(String name) {
         ArrayList<AttributeInfo> list = attributes;
         int n = list.size();
         for (int i = 0; i < n; ++i) {
@@ -761,12 +764,24 @@ public final class ClassFile {
      */
     public Annotation getAnnotation(String name) {
       AttributeInfo attr = getAttribute(AnnotationsAttribute.visibleTag);
-      if (attr == null) {
-        attr = getAttribute(AnnotationsAttribute.invisibleTag);
-        if (attr == null)
-          return null;
+      if (attr != null) {
+        Annotation anno = ((AnnotationsAttribute)attr).getAnnotation(name);
+        if (anno != null) {
+          return anno;
+        }
       }
+      attr = getAttribute(AnnotationsAttribute.invisibleTag);
+      if (attr == null)
+        return null;
       return ((AnnotationsAttribute)attr).getAnnotation(name);
+    }
+    /**
+     * @return all compiletime and runtime annotations present on this class file.
+     */
+    public Annotation[] getAnnotations() {
+      AttributeInfo vis = getAttribute(AnnotationsAttribute.visibleTag);
+      AttributeInfo invis = getAttribute(AnnotationsAttribute.invisibleTag);
+      return BytecodeUtil.extractAnnotations((AnnotationsAttribute)vis, (AnnotationsAttribute)invis);
     }
 
     /**
@@ -798,15 +813,37 @@ public final class ClassFile {
     }
 
     public String getPackage() {
-      System.err.println(
-          constPool.getClassInfo(thisClass)
-          );
-      System.err.println(thisclassname);
-      return X_Modifier.binaryNameToPackage(constPool.getClassName());
+      return X_Modifier.sourceNameToPackage(constPool.getClassName());
     }
 
     public String getEnclosedName() {
-      return X_Modifier.binaryNameToEnclosed(constPool.getClassName());
+      return X_Modifier.sourceNameToEnclosed(constPool.getClassName());
+    }
+    
+    @Override
+    public int hashCode() {
+      return getName().hashCode();
+    }
+    
+    @Override
+    public boolean equals(Object obj) {
+      if (!(obj instanceof ClassFile))
+        return false;
+      ClassFile other = (ClassFile)obj;
+      if (!getName().equals(other.getName()))
+        return false;
+      // Classes of the same name and different location are not equal
+      return X_Util.equal(getSourceFile(), other.getSourceFile());
+      
+    }
+    
+    @Override
+    public String toString() {
+      return X_Modifier.classModifiers(getAccessFlags())+getName();
+    }
+
+    public String getResourceName() {
+      return getPackage().replace('.', File.separatorChar)+File.separatorChar+getSourceFile();
     }
     
 }

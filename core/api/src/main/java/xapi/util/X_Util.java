@@ -3,8 +3,6 @@ package xapi.util;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ExecutionException;
 
-import xapi.util.api.Pair;
-import xapi.util.impl.AbstractPair;
 
 
 
@@ -65,14 +63,6 @@ public final class X_Util{
       e = e.getCause();
     }
     return e;
-  }
-
-  public static <X, Y> Pair <X, Y> pairOf(X x, Y y) {
-    return new AbstractPair<X,Y>(x, y);
-  }
-
-  public static <X, Y> Pair <X, Y> newPair() {
-    return new AbstractPair<X,Y>();
   }
 
 }

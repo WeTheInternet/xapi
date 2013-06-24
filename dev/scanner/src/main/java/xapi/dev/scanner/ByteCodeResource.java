@@ -29,5 +29,9 @@ public class ByteCodeResource extends DelegateClasspathResource{
     }
     return data;
   }
-
+  
+  public String toString() {
+    return getClassData().getName();
+  };
+  
 }

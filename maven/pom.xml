@@ -1,138 +1,109 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>net.wetheinter</groupId>
-    <artifactId>xapi</artifactId>
-    <version>0.4-SNAPSHOT</version>
-  </parent>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>net.wetheinter</groupId>
+		<artifactId>xapi</artifactId>
+		<version>0.4-SNAPSHOT</version>
+	</parent>
+	<artifactId>xapi-maven-plugin</artifactId>
+	<packaging>maven-plugin</packaging>
+	<name>XApi - Maven plugins</name>
+	<url>WeTheInter.net</url>
+	<description>Mojos for using xapi-dev utilies in maven builds.</description>
 
-  <artifactId>xapi-maven-plugin</artifactId>
-  <packaging>maven-plugin</packaging>
-  <name>XApi - Maven plugins</name>
-  <url>WeTheInter.net</url>
-  <description>Mojos for using xapi-dev utilies in maven builds.</description>
-  
-  <properties>
-    <xapi.include.test>true</xapi.include.test>
-    <java.version>1.6</java.version>
-  </properties>
-  
-  
-  <dependencies>
-    
-    <dependency>
-      <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-gwt</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-dev-maven</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.maven</groupId>
-      <artifactId>maven-plugin-registry</artifactId>
-      <scope>runtime</scope>
-    </dependency>
+	<properties>
+		<xapi.include.test>true</xapi.include.test>
+		<xapi.platform>jre</xapi.platform>
+		<java.version>1.6</java.version>
+	</properties>
 
 
-    
-    <dependency>
-      <groupId>org.apache.maven</groupId>
-      <artifactId>maven-artifact</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.maven</groupId>
-      <artifactId>maven-model</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.maven</groupId>
-      <artifactId>maven-core</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.maven</groupId>
-      <artifactId>maven-plugin-api</artifactId>
-    </dependency>
-    
-    <dependency>
-      <groupId>org.apache.maven</groupId>
-      <artifactId>maven-project</artifactId>
-      <version>3.0-alpha-2</version>
-    </dependency>
-    
-    <dependency>
-      <groupId>org.codehaus.plexus</groupId>
-      <artifactId>plexus-utils</artifactId>
-    </dependency>
-    <!-- 
-     -->
-<!-- 
-    <dependency>
-      <groupId>org.codehaus.mojo</groupId>
-      <artifactId>gwt-maven-plugin</artifactId>
-      <version>2.4.0</version>
-    </dependency> -->
+	<dependencies>
 
-    <dependency>
-      <groupId>com.google.gwt</groupId>
-      <artifactId>gwt-codeserver</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.google.gwt</groupId>
-      <artifactId>gwt-dev</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.google.gwt</groupId>
-      <artifactId>gwt-user</artifactId>
-    </dependency>
-    
-    <dependency>
-    <groupId>org.apache.maven.plugins</groupId>
-     <artifactId>maven-plugin-plugin</artifactId>
-     <version>3.2</version>
-    </dependency>
-    
-  </dependencies>
+		<dependency>
+			<groupId>net.wetheinter</groupId>
+			<artifactId>xapi-dev-maven</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>net.wetheinter</groupId>
+			<artifactId>xapi-gwt</artifactId>
+		</dependency>
 
-  <build>
-    <sourceDirectory>src/main/java</sourceDirectory>
-	<plugins>
-    <plugin>
-     <groupId>org.apache.maven.plugins</groupId>
-     <artifactId>maven-plugin-plugin</artifactId>
-     
-    </plugin>
-    
-    <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-source-plugin</artifactId>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <configuration>
-          <archive>
-            <manifest>
-              <!-- 
-              <addClasspath>true</addClasspath>
-              <classpathPrefix>lib/</classpathPrefix>
-              -->
-              <mainClass>wetheinter.net.dev.CodeServerMain</mainClass>
-            </manifest>
-          </archive>
-        </configuration>
-      </plugin>
-      <plugin>
-        <artifactId>maven-clean-plugin</artifactId>
-        <configuration>
-          <filesets>
-            <fileset><directory>war</directory></fileset>
-            <fileset><directory>gwt-unitCache/</directory></fileset>
-          </filesets>
-        </configuration>
-      </plugin>
+		<dependency>
+			<groupId>org.apache.maven</groupId>
+			<artifactId>maven-plugin-api</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.maven.plugin-tools</groupId>
+			<artifactId>maven-plugin-annotations</artifactId>
+			<version>3.2</version>
+		</dependency>
 
-    </plugins>
-  </build>
+		<dependency>
+			<groupId>com.google.gwt</groupId>
+			<artifactId>gwt-codeserver</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.google.gwt</groupId>
+			<artifactId>gwt-dev</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.google.gwt</groupId>
+			<artifactId>gwt-user</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+	</dependencies>
+
+	<build>
+		<sourceDirectory>src/main/java</sourceDirectory>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-plugin-plugin</artifactId>
+				<version>3.2</version>
+				<configuration>
+					<skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
+					<extractors>
+					 <extractor>java-annotations</extractor>
+					</extractors>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<configuration>
+					<archive>
+						<manifest>
+							<mainClass>wetheinter.net.dev.CodeServerMain</mainClass>
+						</manifest>
+					</archive>
+				</configuration>
+			</plugin>
+			<plugin>
+				<artifactId>maven-clean-plugin</artifactId>
+				<configuration>
+					<filesets>
+						<fileset>
+							<directory>war</directory>
+						</fileset>
+						<fileset>
+							<directory>gwt-unitCache/</directory>
+						</fileset>
+					</filesets>
+				</configuration>
+			</plugin>
+
+		</plugins>
+	</build>
 </project>

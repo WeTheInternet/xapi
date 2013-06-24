@@ -75,7 +75,6 @@ public class TypeOracleMediatorFromSource extends TypeOracleMediator {
   }
 
   @SuppressWarnings({ "rawtypes", "unchecked" })
-@Override
   protected Class<?> rescueMissingType(TreeLogger logger, Type valueType) {
     CompiledClass clazz = null;
     for (CompilationUnit unit : units) {

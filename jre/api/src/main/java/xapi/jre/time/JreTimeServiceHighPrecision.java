@@ -10,7 +10,7 @@ import xapi.time.service.TimeService;
 
 @JrePlatform
 @AndroidPlatform
-@SingletonOverride(implFor=TimeService.class)
+@SingletonOverride(implFor=TimeService.class,priority=Integer.MIN_VALUE+2)
 public class JreTimeServiceHighPrecision extends TimeServiceDefault{
 
   private static final long serialVersionUID = 7851025085789327954L;
@@ -53,4 +53,5 @@ public class JreTimeServiceHighPrecision extends TimeServiceDefault{
   public synchronized void tick() {
     nanoNow = (milli_to_nano*(System.nanoTime()-nanoBirth));
   }
+  
 }

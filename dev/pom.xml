@@ -30,6 +30,8 @@
     <module>maven</module>
     <!-- Running shell commands (opens an sh session) -->
     <module>shell</module>
+    <!-- A tool to translate enums to class types -->
+    <module>denum</module>
   </modules>
 
 </project>

@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.SocketException;
 import java.net.URL;
 import java.net.URLConnection;
 
@@ -103,13 +104,25 @@ public class IOServiceDefault implements IOService{
         }
       });
       applySettings(connect, IOConstants.METHOD_GET);
-      InputStream in = connect.getInputStream();
-      final String result;
+      InputStream in;
+      String res;
+      
       try {
-        result = drainInput(in, callback);
-      } finally {
-        in.close();
+        in = connect.getInputStream();
+        try {
+          res = drainInput(in, callback);
+        } finally {
+          in.close();
+        }
+      } catch (SocketException e) {
+        in = connect.getInputStream();
+        try {
+          res = drainInput(in, callback);
+        } finally {
+          in.close();
+        }
       }
+      final String result = res;
 
       callback.onSuccess(new IOMessage<String>() {
         @Override

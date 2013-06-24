@@ -71,7 +71,7 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
     this.indent = indent + INDENT;
     // The type to expose on methods; usually == fieldType, unless exposing []
     this.simpleType = cls.addImport(type);
-    this.methodType = JavaLexer.extractType(type, 0);
+    this.methodType = JavaLexer.extractType(simpleType, 0);
     this.fieldType = initGenerator(this.methodType);
   }
 

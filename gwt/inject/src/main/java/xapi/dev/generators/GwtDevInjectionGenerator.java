@@ -192,7 +192,7 @@ public class GwtDevInjectionGenerator extends AbstractInjectionGenerator {
 
     // Print the factory provider methods, which throw exception instead of return null
     cb
-      .createMethod("public <T> Provider<T> getSingletonFactory(Class<T> cls)")
+      .createMethod("public <T> Provider<T> getSingletonFactory(Class<? super T> cls)")
 //      .addAnnotation("Override")
       .addAnnotation("SuppressWarnings({\"rawtypes\", \"unchecked\"})")
       .println("Provider p = singletons.get(cls);")
@@ -200,7 +200,7 @@ public class GwtDevInjectionGenerator extends AbstractInjectionGenerator {
       .println("return (Provider<T>)p;")
     ;
     cb
-      .createMethod("public <T> Provider<T> getInstanceFactory(Class<T> cls)")
+      .createMethod("public <T> Provider<T> getInstanceFactory(Class<? super T> cls)")
 //      .addAnnotation("Override")
       .addAnnotation("SuppressWarnings({\"rawtypes\", \"unchecked\"})")
       .println("Provider p = instances.get(cls);")
@@ -210,12 +210,12 @@ public class GwtDevInjectionGenerator extends AbstractInjectionGenerator {
 
 
     cb
-      .createMethod("public final <T> T provide(Class<? extends T> cls)")
+      .createMethod("public final <T> T provide(Class<? super T> cls)")
       .addAnnotation("@Override")
       .println("return getSingletonFactory(cls).get();")
     ;
     cb
-      .createMethod("public final <T> T create(Class<? extends T> cls)")
+      .createMethod("public final <T> T create(Class<? super T> cls)")
       .addAnnotation("@Override")
       .println("return getInstanceFactory(cls).get();")
     ;

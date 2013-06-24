@@ -1,8 +1,9 @@
 package xapi.bytecode;
 
+import java.lang.reflect.Modifier;
+
 import xapi.bytecode.annotation.AnnotationsAttribute;
 import xapi.bytecode.attributes.AttributeInfo;
-import xapi.source.api.AccessFlag;
 
 public class CtField extends CtMember {
     static final String javaLangString = "java.lang.String";

@@ -5,11 +5,14 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 
+import xapi.bytecode.ClassFile;
 import xapi.dev.scanner.ClasspathResourceMap;
 import xapi.dev.scanner.ClasspathScanner;
+import xapi.dev.scanner.FileBackedResource;
 import xapi.dev.scanner.StringDataResource;
 import xapi.inject.X_Inject;
 import xapi.log.X_Log;
+import xapi.util.X_Debug;
 import xapi.util.X_Namespace;
 import xapi.util.X_Properties;
 import xapi.util.X_String;
@@ -83,6 +86,14 @@ public class X_Dev {
 	      .scan(cl)
 	      .findResources("");
 	  }
+
+	public static Iterable<ClassFile> findEnums(ClassLoader cl) {
+	  return X_Inject.instance(ClasspathScanner.class)
+	      .matchClassFile(".*")
+	      .scanPackage("")
+	      .scan(cl)
+	      .findDirectSubclasses(Enum.class);
+	}
 	
 	public static synchronized File getXApiHome() {
 	  // We purposely don't cache this value so users can change it at runtime.
@@ -112,5 +123,28 @@ public class X_Dev {
 	    throw X_Util.rethrow(e);
 	  }
 	}
+
+  public static String readFile(File file) {
+    return new StringDataResource(new FileBackedResource(file.getName(), file, 1)).readAll();
+  }
+
+  public static String toClasspath(URL cp) {
+    try {
+      String loc = cp.toURI().toString().replace("file:", "");
+      int ind = loc.indexOf("jar!");
+      if (ind == -1)
+        return loc;
+      return loc.substring(0, ind+3);
+    } catch (Exception e) {
+      throw X_Debug.rethrow(e);
+    }
+  }
+  public static String[] toStrings(URL ... cp) {
+    String[] urls = new String[cp.length];
+    for (int i = 0, m = cp.length; i < m; i ++) {
+      urls[i] = toClasspath(cp[i]);
+    }
+    return urls;
+  }
 	
 }

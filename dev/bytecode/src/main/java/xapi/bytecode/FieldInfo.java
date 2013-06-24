@@ -6,10 +6,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import xapi.bytecode.annotation.Annotation;
 import xapi.bytecode.annotation.AnnotationsAttribute;
 import xapi.bytecode.attributes.AttributeInfo;
 import xapi.bytecode.attributes.ConstantAttribute;
 import xapi.bytecode.attributes.SignatureAttribute;
+import xapi.bytecode.impl.BytecodeUtil;
 import xapi.source.X_Modifier;
 import xapi.source.api.AccessFlag;
 
@@ -250,5 +252,11 @@ public final class FieldInfo {
             out.writeShort(attribute.size());
             AttributeInfo.writeAll(attribute, out);
         }
+    }
+
+    public Annotation[] getAnnotations() {
+      AttributeInfo vis = getAttribute(AnnotationsAttribute.visibleTag);
+      AttributeInfo invis = getAttribute(AnnotationsAttribute.invisibleTag);
+      return BytecodeUtil.extractAnnotations((AnnotationsAttribute)vis, (AnnotationsAttribute)invis);
     }
 }

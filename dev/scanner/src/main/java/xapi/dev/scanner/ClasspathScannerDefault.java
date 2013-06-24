@@ -13,6 +13,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -24,6 +25,7 @@ import xapi.annotation.inject.InstanceDefault;
 import xapi.collect.api.Fifo;
 import xapi.collect.impl.SimpleFifo;
 import xapi.log.X_Log;
+import xapi.util.X_Debug;
 import xapi.util.X_Namespace;
 import xapi.util.X_Util;
 
@@ -35,6 +37,7 @@ public class ClasspathScannerDefault implements ClasspathScanner {
   final Set<Pattern> resourceMatchers;
   final Set<Pattern> bytecodeMatchers;
   final Set<Pattern> sourceMatchers;
+  final Set<String> activeJars;
 
   public ClasspathScannerDefault() {
     pkgs = new HashSet<String>();
@@ -42,6 +45,7 @@ public class ClasspathScannerDefault implements ClasspathScanner {
     resourceMatchers = new HashSet<Pattern>();
     bytecodeMatchers = new HashSet<Pattern>();
     sourceMatchers = new HashSet<Pattern>();
+    activeJars = new HashSet<String>();
   }
 
   protected class ScanRunner implements Runnable {
@@ -86,7 +90,6 @@ public class ClasspathScannerDefault implements ClasspathScanner {
       }
       try {
         if (classpath.getProtocol().equals("jar")) {
-
           scan(((JarURLConnection)classpath.openConnection()).getJarFile());
           return;
         }
@@ -98,9 +101,14 @@ public class ClasspathScannerDefault implements ClasspathScanner {
           // For files, we need to strip everything up to the package we are
           // scanning
           String fileRoot = file.getCanonicalPath().replace('\\', '/');
+          int delta = 0;
+          if (!fileRoot.endsWith("/")) {
+            delta = -1;
+            fileRoot += "/";
+          }
           for (String pkg : pathRoot) {
-            if (fileRoot.endsWith(pkg)) {
-              scan(file, fileRoot.substring(0, fileRoot.length() - pkg.length()));
+            if (fileRoot.replace('/', '.').endsWith(pkg.endsWith(".")?pkg:pkg+".")) {
+              scan(file, fileRoot.substring(0, fileRoot.length() - pkg.length() + delta));
               break;
             }
           }
@@ -126,15 +134,20 @@ public class ClasspathScannerDefault implements ClasspathScanner {
     }
 
     private final void scan(JarFile jarFile) {
-      Enumeration<JarEntry> entries = jarFile.entries();
-      while (entries.hasMoreElements()) {
-        JarEntry next = entries.nextElement();
-        addEntry(jarFile, next);
+      if (activeJars.add(jarFile.getName())) {
+        Enumeration<JarEntry> entries = jarFile.entries();
+        while (entries.hasMoreElements()) {
+          JarEntry next = entries.nextElement();
+          addEntry(jarFile, next);
+        }
       }
     }
 
     protected void addFile(File file, String pathRoot) throws IOException {
       String name = file.getCanonicalPath().substring(pathRoot.length());
+      if (name.startsWith(File.separator)) {
+        name = name.substring(1);
+      }
       if (name.endsWith(".class")) {
         if (map.includeBytecode(name))
           map.addBytecode(name, new ByteCodeResource(
@@ -152,7 +165,6 @@ public class ClasspathScannerDefault implements ClasspathScanner {
 
     protected void addEntry(JarFile file, JarEntry entry) {
       String name = entry.getName();
-
       for (String pkg : pkgs) {
         if (name.startsWith(pkg)) {
           if (name.endsWith(".class")) {
@@ -191,18 +203,24 @@ public class ClasspathScannerDefault implements ClasspathScanner {
 
   @Override
   public ClasspathResourceMap scan(ClassLoader loaders) {
-    ExecutorService executor = Executors.newFixedThreadPool(7);
-    return scan(loaders, executor);
+    ExecutorService executor = Executors.newFixedThreadPool(
+//        1);//TODO re-enable multi-threading
+        Runtime.getRuntime().availableProcessors()*3/2);
+    try {
+      return scan(loaders, executor).call();
+    } catch (Exception e) {
+      throw X_Debug.rethrow(e);
+    }
   }
 
   @Override
-  public synchronized ClasspathResourceMap scan(ClassLoader loadFrom, ExecutorService executor) {
+  public synchronized Callable<ClasspathResourceMap> scan(ClassLoader loadFrom, ExecutorService executor) {
     // perform the actual scan
     Map<URL,Fifo<String>> classPaths = new LinkedHashMap<URL,Fifo<String>>();
     if (pkgs.size() == 0 || (pkgs.size() == 1 && "".equals(pkgs.iterator().next()))) {
       
       for (String pkg : System.getProperty(X_Namespace.PROPERTY_RUNTIME_SCANPATH,
-        "xapi,META-INF/singletons,META-INF/instances").split(",\\s*")) {
+        ",META-INF,com,org,net,xapi").split(",\\s*")) {
         pkgs.add(pkg);
       }
     }
@@ -219,6 +237,9 @@ public class ClasspathScannerDefault implements ClasspathScanner {
       }
       while (resources.hasMoreElements()) {
         final URL resource = resources.nextElement();
+        String file = resource.toExternalForm();
+        if (file.contains("gwt-dev.jar"))
+          continue;
         Fifo<String> fifo = classPaths.get(resource);
         if (fifo == null) {
           fifo = new SimpleFifo<String>();
@@ -233,27 +254,31 @@ public class ClasspathScannerDefault implements ClasspathScanner {
     int pos = 0;
     final ClasspathResourceMap map = new ClasspathResourceMap(executor,
       annotations, bytecodeMatchers, resourceMatchers, sourceMatchers);
-    Fifo<Future<?>> jobs = new SimpleFifo<Future<?>>();
+    final Fifo<Future<?>> jobs = new SimpleFifo<Future<?>>();
     for (URL url : classPaths.keySet()) {
       Fifo<String> packages = classPaths.get(url);
       jobs.give(executor.submit(newScanRunner(url, map, executor, packages.forEach(), pos)));
     }
-    while (!jobs.isEmpty()) {
-      // drain the work pool
-      Iterator<Future<?>> iter = jobs.forEach().iterator();
-      while (iter.hasNext()) {
-        if (iter.next().isDone()) iter.remove();
-      }
-      // sleep 50 nanos at a time; we shoudn't be long
-      try {
-        Thread.sleep(0, 50);
-      } catch (InterruptedException e) {
-        X_Log.warn("Interrupted while scanning classpath");
-        Thread.currentThread().interrupt();
+    class Finisher implements Callable<ClasspathResourceMap>{
+      @Override
+      public ClasspathResourceMap call() throws Exception {
+        while (!jobs.isEmpty()) {
+          // drain the work pool
+          Iterator<Future<?>> iter = jobs.forEach().iterator();
+          while (iter.hasNext()) {
+            if (iter.next().isDone()) iter.remove();
+          }
+          try {
+            Thread.sleep(0, 500);
+          } catch (InterruptedException e) {
+            X_Log.warn("Interrupted while scanning classpath");
+            throw X_Debug.rethrow(e);
+          }
+        }
         return map;
       }
     }
-    return map;
+    return new Finisher();
   }
 
   private Runnable newScanRunner(URL classPath, ClasspathResourceMap map, ExecutorService executor,

@@ -1,10 +1,17 @@
 package xapi.test.inject;
 
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+
 import org.junit.Test;
 
 import xapi.test.AbstractInjectionTest;
 import xapi.annotation.inject.InstanceDefault;
 import xapi.annotation.inject.SingletonDefault;
+import xapi.collect.impl.MultithreadedStringTrie;
 import xapi.inject.X_Inject;
 import static org.junit.Assert.assertNotNull;
 
@@ -34,6 +41,37 @@ public class JreInjectionTest extends AbstractInjectionTest{
     }
   }
 
+//  @Test 
+//  public void arg() throws Throwable {
+//    String jar = "/home/james/.m2/repository/net/wetheinter/xapi-core-api/0.4-SNAPSHOT/xapi-core-api-0.4-SNAPSHOT.jar";
+//    JarFile J = new JarFile(jar);
+//    Enumeration<JarEntry> entries = J.entries();
+//    MultithreadedStringTrie<JarEntry> trie = new MultithreadedStringTrie<>();
+//    HashSet<JarEntry> jars = new LinkedHashSet<>();
+//    int cnt=0;
+//    while (entries.hasMoreElements()) {
+//      JarEntry next = entries.nextElement();
+//      if (next.isDirectory()){
+//        System.out.println(next);
+////        continue;
+//      }
+//      trie.put(next.getName(), next);
+//      jars.add(next);
+//      cnt++;
+//    }
+//    for (JarEntry e : trie.findPrefixed("")) {
+//      jars.remove(e);
+//      cnt--;
+//    }
+//    System.err.println(cnt);
+//    for (JarEntry left : jars) {
+//      System.err.println(left);
+//    }
+//    System.err.flush();
+//    J.close();
+//  }
+
+  
 	@Test
 	public void testSingletonInjection(){
 		ImportSingleton service = X_Inject.singleton(ImportSingleton.class);

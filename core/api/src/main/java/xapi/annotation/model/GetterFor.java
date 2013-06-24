@@ -6,6 +6,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
 
+import xapi.annotation.reflect.MirroredAnnotation;
+
 /**
  * An annotation to specify that an abstract method is a getter for a model field.
  * 
@@ -39,6 +41,7 @@ import java.lang.annotation.Target;
 @Documented
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.CLASS)
+@MirroredAnnotation
 public @interface GetterFor {
 
   String value() default "";

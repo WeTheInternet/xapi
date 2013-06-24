@@ -6,6 +6,7 @@ import java.util.LinkedHashSet;
 import xapi.annotation.inject.InstanceOverride;
 import xapi.annotation.inject.SingletonOverride;
 import xapi.except.NotConfiguredCorrectly;
+import xapi.log.X_Log;
 import xapi.platform.Platform;
 
 import com.google.gwt.core.ext.typeinfo.JClassType;
@@ -30,6 +31,7 @@ public class PlatformSet extends LinkedHashSet<Class<? extends Annotation>>{
           // priority if second is also of the desire platform type
           for (Annotation secondAnno : second.getAnnotations()) {
             if (secondAnno.annotationType() == best) {
+              X_Log.debug("Choosing between",first, second);
               // Both types are of the same platform.
               if (qualifier.getName().endsWith("Default"))
                 throw new NotConfiguredCorrectly("Cannot have two types registered " +
@@ -39,30 +41,37 @@ public class PlatformSet extends LinkedHashSet<Class<? extends Annotation>>{
             				"be marked as default.  Change one to "+
                 		qualifier.getSimpleName().replace("Default", "Override")+"."
             		);
+              int firstPriority, secondPriority;
               if (qualifier == SingletonOverride.class) {
-                return
-                  ((SingletonOverride)secondQualifier).priority()
-                  < ((SingletonOverride)firstQualifier).priority()
-                  ? first : second;
+                firstPriority = ((SingletonOverride)firstQualifier).priority();
+                secondPriority = ((SingletonOverride)firstQualifier).priority();
               } else if (qualifier == InstanceOverride.class) {
-                return ((InstanceOverride)secondQualifier).priority()
-                < ((InstanceOverride)firstQualifier).priority()
-                ? first : second;
+                firstPriority = ((InstanceOverride)firstQualifier).priority();
+                secondPriority = ((InstanceOverride)firstQualifier).priority();
               } else {
                 throw new IllegalStateException("Unknown injection qualifier: "+qualifier);
               }
+              JClassType winner = secondPriority
+              < firstPriority
+              ? first : second;
+              X_Log.debug("Winner:",winner);
+              return winner;
             }
           }
+          X_Log.debug("Selecting",first);
           // didn't return, second does not have our best platform type
           return first;
         }
       }
       // didn't return, first is not best
       for (Annotation anno : second.getAnnotations()) {
-        if (anno.annotationType() == best)
+        if (anno.annotationType() == best) {
+          X_Log.debug("Selecting",second);
           return second;
+        }
       }
     }
+    X_Log.debug("Selecting",first);
     return first;
   }
 

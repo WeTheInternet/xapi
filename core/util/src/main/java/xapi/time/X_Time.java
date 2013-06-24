@@ -99,4 +99,8 @@ public class X_Time {
   public static boolean isFuture(double millis) {
     return millis > now().millis();
   }
+
+  public static String timestamp() {
+    return service.timestamp();
+  }
 }

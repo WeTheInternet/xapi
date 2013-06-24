@@ -6,7 +6,7 @@ import java.lang.reflect.Method;
 import xapi.bytecode.ClassPool;
 import xapi.bytecode.ConstPool;
 
-class AnnotationMemberValue extends MemberValue {
+public class AnnotationMemberValue extends MemberValue {
     Annotation value;
 
     /**

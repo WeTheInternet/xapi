@@ -1,19 +1,28 @@
 package xapi.dev.model;
 
 import xapi.annotation.model.ClientToServer;
+import xapi.annotation.model.Key;
+import xapi.annotation.model.Persistent;
 import xapi.annotation.model.Serializable;
 import xapi.annotation.model.ServerToClient;
 import xapi.collect.X_Collect;
 import xapi.collect.api.Fifo;
 import xapi.collect.api.StringTo;
+import xapi.model.api.Model;
+import xapi.model.api.NestedModel;
+import xapi.model.api.PersistentModel;
+import xapi.source.api.HasQualifiedName;
+import xapi.source.api.IsClass;
 
 public class HasModelFields {
 
-  private Serializable defaultSerializable;
+//  private Serializable defaultSerializable;
   private ClientToServer defaultToServer;
   private ServerToClient defaultToClient;
 
   StringTo<ModelField> fields = X_Collect.newStringMap(ModelField.class);
+  private Persistent defaultPersistence;
+  private Key key;
 
   public ModelField getOrMakeField(String field) {
     assert field.length() > 0 : "Cannot have a field named \"\"";
@@ -87,17 +96,16 @@ public class HasModelFields {
   }
 
   /**
-   * @return the defaultSerializable
-   */
-  public Serializable getDefaultSerializable() {
-    return defaultSerializable;
-  }
-
-  /**
-   * @param defaultSerializable the defaultSerializable to set
+   * @param defaultSerializable the default Serializable policy to set
    */
   public void setDefaultSerializable(Serializable defaultSerializable) {
-    this.defaultSerializable = defaultSerializable;
+    if (defaultSerializable == null) {
+      defaultToClient = null;
+      defaultToServer = null;
+    } else {
+      defaultToClient = defaultSerializable.serverToClient();
+      defaultToServer = defaultSerializable.clientToServer();
+    }
   }
 
   /**
@@ -107,12 +115,6 @@ public class HasModelFields {
     return defaultToServer;
   }
 
-  /**
-   * @param defaultToServer the defaultToServer to set
-   */
-  public void setDefaultToServer(ClientToServer defaultToServer) {
-    this.defaultToServer = defaultToServer;
-  }
 
   /**
    * @return the defaultToClient
@@ -121,11 +123,23 @@ public class HasModelFields {
     return defaultToClient;
   }
 
-  /**
-   * @param defaultToClient the defaultToClient to set
-   */
-  public void setDefaultToClient(ServerToClient defaultToClient) {
-    this.defaultToClient = defaultToClient;
+  public void setDefaultPersistence(Persistent persist) {
+    this.defaultPersistence = persist;
+  }
+
+  public void setKey(Key key) {
+    this.key = key;
+  }
+
+  public static boolean isPersistentModel(HasQualifiedName type) {
+    return type.getQualifiedName().equals(PersistentModel.class.getName());
+  }
+  public static boolean isNestedModel(HasQualifiedName type) {
+    return type.getQualifiedName().equals(NestedModel.class.getName());
+  }
+  public static boolean isModel(HasQualifiedName type) {
+    return type.getQualifiedName().equals(Model.class.getName())
+        ||isPersistentModel(type)||isNestedModel(type);
   }
 
 }

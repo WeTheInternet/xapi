@@ -37,9 +37,9 @@
   <appengine.version>1.7.6</appengine.version>
   <guava.version>13.0.1</guava.version>
   <android.maven.version>3.4.0</android.maven.version>
-  <maven.version>3.0.4</maven.version>
+  <maven.version>3.0.5</maven.version>
   <maven.plugin.version>2.2.1</maven.plugin.version>
-  <plexus.version>1.5.1</plexus.version>
+  <plexus.version>3.0.1</plexus.version>
   <selenium.version>2.31.0</selenium.version>
   <relative.output>properties</relative.output>
  </properties>

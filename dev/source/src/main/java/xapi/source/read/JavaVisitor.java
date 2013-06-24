@@ -1,7 +1,7 @@
 package xapi.source.read;
 
 
-public class JavaVisitor <Param> {
+public class JavaVisitor {
 
   /**
    * The default TypeData object is used to deserialize source-compatible type names.
@@ -143,6 +143,45 @@ public class JavaVisitor <Param> {
   extends ExecutableVisitor<Param> {
     void visitReturnType(TypeData returnType, Param receiver);
     void visitName(String name, Param receiver);
+  }
+  
+  public static interface ImportVisitor <Param> {
+    void visitImport(String name, boolean isStatic, Param receiver);
+  }
+  
+  public static interface ClassVisitor <Param>
+  extends MemberVisitor<Param>,
+  ImportVisitor<Param>
+  {
+    /**
+     * Called on a javadoc comment found before the package statement.
+     * @param copyright - The copyright javadoc
+     * @param receiver - An object you want to pass to your visitor
+     */
+    void visitCopyright(String copyright, Param receiver);
+    void visitPackage(String pkg, Param receiver);
+    void visitName(String name, Param receiver);
+    void visitSuperclass(String superClass, Param receiver);
+    void visitInterface(String iface, Param receiver);
+    ClassBodyVisitor<Param> visitBody(String body, Param receiver);
+  }
+  
+  public static interface EnumVisitor <Param> 
+  extends ClassVisitor<Param> {
+    EnumDefinitionVisitor<Param> visitItem(String definition, Param param);
+  }
+
+  public static interface EnumDefinitionVisitor <Param> 
+  extends ClassVisitor<Param> {
+    ParameterVisitor<Param> visitParams(String params, Param param);
+    ClassBodyVisitor<Param> visitBody(String body, Param param);
+  }
+  
+  public static interface ClassBodyVisitor <Param> {
+    void visitCodeBlock(String block, boolean isStatic, Param param);
+    FieldVisitor<Param> visitField(String definition, Param param);
+    MethodVisitor<Param> visitMethod(String definition, Param param);
+    ClassVisitor<Param> visitInnerClass(String definition, Param param);
   }
   
 }

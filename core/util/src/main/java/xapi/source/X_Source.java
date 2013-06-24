@@ -2,8 +2,6 @@ package xapi.source;
 
 
 
-import java.lang.annotation.Annotation;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -12,23 +10,33 @@ import java.util.Collections;
 import javax.inject.Provider;
 
 import xapi.inject.X_Inject;
+import xapi.source.api.HasQualifiedName;
 import xapi.source.api.IsType;
 import xapi.source.service.SourceService;
-import xapi.util.X_Util;
-
-
+import xapi.util.X_String;
+import xapi.util.api.Pair;
+import xapi.util.impl.PairBuilder;
 
 public class X_Source {
 
   private X_Source() {}
   
+  private static final String arrays = "\\[\\]";
+
   private static final Provider<SourceService> service = X_Inject.singletonLazy(SourceService.class);
 
   public static IsType toType(Class<?> cls) {
     return service.get().toType(cls);
   }
+  protected static IsType toType(String qualifiedName) {
+    String pkg = toPackage(qualifiedName);
+    return toType(pkg, 
+        pkg.length() == 0 ? qualifiedName :
+        qualifiedName.substring(pkg.length()+1));
+  }
+  
   public static IsType toType(String pkg, String enclosedName) {
-    return service.get().toType(pkg.replace('/', '.'), enclosedName.replace('$', '.'));
+    return service.get().toType(X_String.notNull(pkg).replace('/', '.'), enclosedName.replace('$', '.'));
   }
 
   /**
@@ -69,6 +77,12 @@ public class X_Source {
   public static String stripFileName(String loc) {
     return loc.startsWith("file:") ?  loc.substring(5) : loc;
   }
+  
+  public static String stripClassExtension(String loc) {
+    return loc.endsWith(".class") ?  loc.substring(0, loc.length()-6) : loc;
+  }
+
+  
   public static String primitiveToObject(String datatype) {
     if ("int".equals(datatype))
       return "Integer";
@@ -104,6 +118,96 @@ public class X_Source {
   public static String classToEnclosedSourceName(
       Class<?> cls) {
     return cls.getCanonicalName().substring(1+cls.getPackage().getName().length());
+  }
+  public static boolean typesEqual(IsType[] one, IsType[] two) {
+    if (one == null)
+      return two == null;
+    if (one.length != two.length)
+      return false;
+    for (int i = 0, m = one.length; i < m; ++i) {
+      if (!one[i].equals(two[i]))
+        return false;
+    }
+    return true;
+  }
+  public static boolean typesEqual(IsType[] one, Class<?> ... two) {
+    if (one == null)
+      return two == null;
+    if (one.length != two.length)
+      return false;
+    for (int i = 0, m = one.length; i < m; ++i) {
+      if (!one[i].getQualifiedName().equals(two[i].getCanonicalName()))
+        return false;
+    }
+    return true;
+  }
+
+  public static boolean typesEqual(Class<?>[] one, IsType ... two) {
+    if (one == null)
+      return two == null;
+    if (one.length != two.length)
+      return false;
+    for (int i = 0, m = one.length; i < m; ++i) {
+      if (!one[i].getCanonicalName().equals(two[i].getQualifiedName()))
+        return false;
+    }
+    return true;
+  }
+  
+  public static boolean typesEqual(Class<?>[] one, Class<?> ... two) {
+    if (one == null)
+      return two == null;
+    if (one.length != two.length)
+      return false;
+    for (int i = 0, m = one.length; i < m; ++i) {
+      if (one[i] != two[i])
+        return false;
+    }
+    return true;
+  }
+  
+  public static boolean typesAssignable(Class<?>[] subtypes, Class<?> ... supertypes) {
+    if (subtypes == null)
+      return supertypes == null;
+    if (subtypes.length != supertypes.length)
+      return false;
+    for (int i = 0, m = subtypes.length; i < m; ++i) {
+      if (!subtypes[i].isAssignableFrom(supertypes[i]))
+        return false;
+    }
+    return true;
+  }
+  public static IsType[] toTypes(String[] from) {
+    IsType[] types = new IsType[from.length];
+    for (int i = 0, m = from.length; i < m; ++i) {
+      String type = from[i];
+      types[i] = toType(type);
+    }
+    return types;
+  }
+  public static String toPackage(String cls) {
+    int lastPeriod = cls.lastIndexOf('.');
+    while (lastPeriod != -1) {
+      if (Character.isUpperCase(cls.charAt(lastPeriod+1)))
+        lastPeriod = cls.lastIndexOf('.', lastPeriod-1);
+      else break;
+    }
+    if (lastPeriod == -1)
+      return "";
+    else
+      return cls.substring(0, lastPeriod);
+  }
+  public static Pair<String, Integer> extractArrayDepth(String from) {
+    int arrayDepth = 0;
+    while (from.matches(".*"+arrays)) {
+      arrayDepth ++;
+      from = from.replaceFirst(arrays, "");
+    }
+    return PairBuilder.pairOf(from, arrayDepth);
+  }
+  
+  public static boolean isJavaLangObject(HasQualifiedName type) {
+    return type.getQualifiedName().equals("java.lang.Object");
   }
 
 }

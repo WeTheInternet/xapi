@@ -135,21 +135,23 @@ implements MethodVisitor<SourceBuilder<?>>
 	  JavaLexer.visitMethodSignature(this, context, definition, 0);
 	}
 
-  public void addParameters(String ... parameters) {
-		for (String parameter : parameters){
-		  parameter = parameter.trim();
+  public MethodBuffer addParameters(String... parameters) {
+    for (String parameter : parameters) {
+      parameter = parameter.trim();
       int index = parameter.lastIndexOf(' ');
       TypeData type = JavaLexer.extractType(parameter, 0);
       if (type.pkgName.length() > 0) {
         String shortName = context.getImports().addImport(type.getImportName());
         if (type.getSimpleName().startsWith(shortName)) {
-          this.parameters.add(type.getSimpleName()+" "+parameter.substring(index+1).trim());
+          this.parameters.add(type.getSimpleName() + " "
+              + parameter.substring(index + 1).trim());
           continue;
         }
       }
       this.parameters.add(parameter);
-		}
-	}
+    }
+    return this;
+  }
 
   @Override
   public String addImport(Class<?> cls) {

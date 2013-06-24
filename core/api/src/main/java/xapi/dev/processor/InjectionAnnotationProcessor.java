@@ -26,9 +26,9 @@ import javax.lang.model.util.Elements;
 import javax.tools.FileObject;
 import javax.tools.StandardLocation;
 
-import xapi.util.X_Util;
 import xapi.util.api.Pair;
 import xapi.util.impl.AbstractPair;
+import xapi.util.impl.PairBuilder;
 
 /**
  * This is the annotation processor for our injection library.
@@ -66,7 +66,7 @@ public class InjectionAnnotationProcessor extends AbstractProcessor{
     void writeSingleton(String iface, String platform, Integer priority, String element) {
       if (priority == null) {
         if (!singletons.containsKey(iface))
-          singletons.put(iface, X_Util.pairOf(priority, element));
+          singletons.put(iface, PairBuilder.pairOf(priority, element));
       } else {
         Pair<Integer, String> existing = singletons.get(iface);
         if (
@@ -74,13 +74,13 @@ public class InjectionAnnotationProcessor extends AbstractProcessor{
             existing.get0() == null ||
             existing.get0() < priority
         )
-          singletons.put(iface, X_Util.pairOf(priority, element));
+          singletons.put(iface, PairBuilder.pairOf(priority, element));
       }
     }
     void writeInstance(String iface, String platform, Integer priority, String element) {
       if (priority == null) {
         if (!instances.containsKey(iface))
-          instances.put(iface, X_Util.pairOf(priority, element));
+          instances.put(iface, PairBuilder.pairOf(priority, element));
       } else {
         Pair<Integer, String> existing = instances.get(iface);
         if (
@@ -88,7 +88,7 @@ public class InjectionAnnotationProcessor extends AbstractProcessor{
             existing.get0() == null ||
             existing.get0() < priority
             )
-          instances.put(iface, X_Util.pairOf(priority, element));
+          instances.put(iface, PairBuilder.pairOf(priority, element));
       }
     }
     void commit(Filer filer) throws IOException {

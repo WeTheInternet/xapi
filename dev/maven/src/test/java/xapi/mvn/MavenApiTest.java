@@ -5,6 +5,7 @@ import org.junit.Test;
 import org.sonatype.aether.resolution.ArtifactResult;
 
 import xapi.io.X_IO;
+import xapi.mvn.impl.MvnServiceDefault;
 
 public class MavenApiTest {
 

@@ -36,6 +36,7 @@ package xapi.gwt.log;
 
 import xapi.annotation.inject.SingletonOverride;
 import xapi.collect.api.Fifo;
+import xapi.collect.impl.SimpleFifo;
 import xapi.log.api.LogLevel;
 import xapi.log.api.LogService;
 import xapi.platform.GwtDevPlatform;
@@ -74,6 +75,12 @@ public class DevLog extends JsLog{
     if (i > 1)
       consoleLog("");
   }
+  
+  @Override
+  public Fifo<Object> newFifo() {
+    return new SimpleFifo<Object>();
+  }
+  
   @Override
   public Object unwrap(Object m) {
     return String.valueOf(m);

@@ -45,144 +45,152 @@ public class MvnServiceDefault implements MvnService {
 
   public MvnServiceDefault() {
   }
-  
-	private static final Pattern POM_PATTERN = Pattern.compile(".*pom.*xml");
 
+  private static final Pattern POM_PATTERN = Pattern.compile(".*pom.*xml");
 
-	protected final MavenServiceLocator maven = new MavenServiceLocator();
-	
-	
-	protected final SingletonInitializer<RepositorySystem> repoSystem = 
-			new SingletonInitializer<RepositorySystem>() {
-		protected RepositorySystem initialValue() {
-	    // use netty to stream from maven
-		  maven.addService(RepositoryConnectorFactory.class,
-		      AsyncRepositoryConnectorFactory.class);
-//		  maven.addService(RepositoryConnectorFactory.class,
-//		      WagonRepositoryConnectorFactory.class);
-	      return maven.getService(RepositorySystem.class);
-		}};
-		
-	protected final SingletonInitializer<RepositorySystemSession> session = 
-			new SingletonInitializer<RepositorySystemSession>() {
-		protected RepositorySystemSession initialValue() {
-			MavenRepositorySystemSession session = new MavenRepositorySystemSession();
-			LocalRepository localRepo = new LocalRepository("target/local-repo");
-			localRepo.getBasedir().mkdirs();
-			session.setLocalRepositoryManager(repoSystem.get().newLocalRepositoryManager(localRepo));
-			return session;
-		}};
+  protected final MavenServiceLocator maven = new MavenServiceLocator();
 
-	private final class ResourceMap extends
-			AbstractMultiInitMap<Integer, ClasspathResourceMap, ClassLoader> {
-		@SuppressWarnings("unchecked")
+  protected final SingletonInitializer<RepositorySystem> repoSystem = new SingletonInitializer<RepositorySystem>() {
+    protected RepositorySystem initialValue() {
+      // use netty to stream from maven
+      maven.addService(RepositoryConnectorFactory.class,
+          AsyncRepositoryConnectorFactory.class);
+      // maven.addService(RepositoryConnectorFactory.class,
+      // WagonRepositoryConnectorFactory.class);
+      return maven.getService(RepositorySystem.class);
+    }
+  };
+
+  @Override
+  public RepositorySystemSession getRepoSession() {
+    return session.get();
+  }
+
+  protected final SingletonInitializer<RepositorySystemSession> session = new SingletonInitializer<RepositorySystemSession>() {
+    protected RepositorySystemSession initialValue() {
+      return initLocalRepo();
+    }
+  };
+
+  private final class ResourceMap extends
+      AbstractMultiInitMap<Integer, ClasspathResourceMap, ClassLoader> {
+    @SuppressWarnings("unchecked")
     public ResourceMap() {
-			super(TO_STRING);
-		}
+      super(TO_STRING);
+    }
 
-		@Override
-		protected ClasspathResourceMap initialize(Integer key,
-				ClassLoader params) {
-			return X_Dev.scanClassloader(params);
-		}
-	}
+    @Override
+    protected ClasspathResourceMap initialize(Integer key, ClassLoader params) {
+      return X_Dev.scanClassloader(params);
+    }
+  }
 
-	@Override
-	public ArtifactResult loadArtifact(String groupId, String artifactId,
-			String classifier, String extension, String version) {
-		Moment before = X_Time.now();
+  @Override
+  public ArtifactResult loadArtifact(String groupId, String artifactId,
+      String classifier, String extension, String version) {
+    Moment before = X_Time.now();
 
-		
-		RepositorySystemSession sess = session.get();
-		Artifact artifact = new DefaultArtifact(groupId, artifactId,
-				classifier, X_String.isEmpty(extension) ? "jar" : extension, version);
-		ArtifactRequest request = new ArtifactRequest(artifact, remoteRepos(),null);
-		try {
-			return repoSystem.get().resolveArtifact(sess, request);
-		} catch (ArtifactResolutionException e1) {
-		  X_Log.error(e1.getResult().isResolved(), e1.getResult().getExceptions());
-		  e1.printStackTrace();
-			X_Log.error("Could not download " + artifact, e1);
-			throw X_Util.rethrow(e1);
-		} finally {
-			if (X_Log.loggable(LogLevel.DEBUG))
-				X_Log.debug("Resolved: " + artifact.toString() + " in " + X_Time.difference(before));
-		}
-	}
+    RepositorySystemSession sess = session.get();
+    Artifact artifact = new DefaultArtifact(groupId, artifactId, classifier,
+        X_String.isEmpty(extension) ? "jar" : extension, version);
+    ArtifactRequest request = new ArtifactRequest(artifact, remoteRepos(), null);
+    try {
+      return repoSystem.get().resolveArtifact(sess, request);
+    } catch (ArtifactResolutionException e1) {
+      X_Log.error(e1.getResult().isResolved(), e1.getResult().getExceptions());
+      e1.printStackTrace();
+      X_Log.error("Could not download " + artifact, e1);
+      throw X_Util.rethrow(e1);
+    } finally {
+      if (X_Log.loggable(LogLevel.DEBUG))
+        X_Log.debug("Resolved: " + artifact.toString() + " in "
+            + X_Time.difference(before));
+    }
+  }
 
-	@Override
-	public Model loadPomFile(String pomLocation) throws IOException,
-			XmlPullParserException {
-		File pomfile = new File(pomLocation);
-		FileReader reader = null;
-		MavenXpp3Reader mavenreader = new MavenXpp3Reader();
-		reader = new FileReader(pomfile);
-		Model model = mavenreader.read(reader);
-		model.setPomFile(pomfile);
-		return model;
-	}
+  protected RepositorySystemSession initLocalRepo() {
+    MavenRepositorySystemSession session = new MavenRepositorySystemSession();
+    LocalRepository localRepo = new LocalRepository("target/local-repo");
+    localRepo.getBasedir().mkdirs();
+    session.setLocalRepositoryManager(repoSystem.get()
+        .newLocalRepositoryManager(localRepo));
+    return session;
+  }
 
-	@Override
-	public Model loadPomString(String pomString) throws XmlPullParserException {
-		try {
-			return new MavenXpp3Reader().read(new StringReader(pomString));
-		} catch (IOException ignored) {
-			throw X_Util.rethrow(ignored);
-		}
-	}
+  @Override
+  public Model loadPomFile(String pomLocation) throws IOException,
+      XmlPullParserException {
+    File pomfile = new File(pomLocation);
+    FileReader reader = null;
+    MavenXpp3Reader mavenreader = new MavenXpp3Reader();
+    reader = new FileReader(pomfile);
+    Model model = mavenreader.read(reader);
+    model.setPomFile(pomfile);
+    return model;
+  }
 
-	@Override
-	public String mvnHome() {
-		return System.getenv("M2_HOME");
-	}
+  @Override
+  public Model loadPomString(String pomString) throws XmlPullParserException {
+    try {
+      return new MavenXpp3Reader().read(new StringReader(pomString));
+    } catch (IOException ignored) {
+      throw X_Util.rethrow(ignored);
+    }
+  }
 
-	@Override
-	public String localRepo() {
-		return null;
-	}
+  @Override
+  public String mvnHome() {
+    return System.getenv("M2_HOME");
+  }
 
-	@Override
-	public List<RemoteRepository> remoteRepos() {
-		return Arrays.asList(new RemoteRepository("maven-central", "default", "http://repo1.maven.org/maven2/"));
-	}
+  @Override
+  public String localRepo() {
+    return session.get().getLocalRepository().getBasedir().getAbsolutePath();
+  }
 
-	private final ResourceMap loaded = new ResourceMap();
+  @Override
+  public List<RemoteRepository> remoteRepos() {
+    return Arrays.asList(new RemoteRepository("maven-central", "default",
+        "http://repo1.maven.org/maven2/"));
+  }
 
-	@Override
-	public Iterable<Model> findPoms(final ClassLoader loader) {
-		final Iterable<StringDataResource> poms = loaded.get(loader.hashCode(), loader)
-				.findResources("", POM_PATTERN);
-		class Itr implements Iterator<Model> {
-			Iterator<StringDataResource> iterator = poms.iterator();
+  private final ResourceMap loaded = new ResourceMap();
 
-			@Override
-			public boolean hasNext() {
-				return iterator.hasNext();
-			}
+  @Override
+  public Iterable<Model> findPoms(final ClassLoader loader) {
+    final Iterable<StringDataResource> poms = loaded.get(loader.hashCode(),
+        loader).findResources("", POM_PATTERN);
+    class Itr implements Iterator<Model> {
+      Iterator<StringDataResource> iterator = poms.iterator();
 
-			@Override
-			public Model next() {
-				StringDataResource next = iterator.next();
-				try {
-					return loadPomString(next.readAll());
-				} catch (Exception e) {
-					X_Log.error("Unable to load resouce "+next.getResourceName(), e);
-					throw X_Util.rethrow(e);
-				}
-			}
+      @Override
+      public boolean hasNext() {
+        return iterator.hasNext();
+      }
 
-			@Override
-			public void remove() {
-				throw new UnsupportedOperationException();
-			}
+      @Override
+      public Model next() {
+        StringDataResource next = iterator.next();
+        try {
+          return loadPomString(next.readAll());
+        } catch (Exception e) {
+          X_Log.error("Unable to load resouce " + next.getResourceName(), e);
+          throw X_Util.rethrow(e);
+        }
+      }
 
-		}
-		return new Iterable<Model>() {
-			@Override
-			public Iterator<Model> iterator() {
-				return new Itr();
-			}
-		};
-	}
+      @Override
+      public void remove() {
+        throw new UnsupportedOperationException();
+      }
+
+    }
+    return new Iterable<Model>() {
+      @Override
+      public Iterator<Model> iterator() {
+        return new Itr();
+      }
+    };
+  }
 
 }

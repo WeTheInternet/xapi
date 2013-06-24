@@ -19,7 +19,7 @@ public class CollectionServiceGwt implements CollectionService{
 
   @Override
   public <V> IntTo<V> newList(Class<V> cls, CollectionOptions opts) {
-    throw new NotYetImplemented("IntTo not yet implemented");
+    return IntToListGwt.newInstance();
   }
 
   @Override

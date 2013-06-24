@@ -1,17 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>net.wetheinter</groupId>
-    <artifactId>xapi-core-parent</artifactId>
-    <version>0.4-SNAPSHOT</version>
-  </parent>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>net.wetheinter</groupId>
+		<artifactId>xapi-core-parent</artifactId>
+		<version>0.4-SNAPSHOT</version>
+	</parent>
 
-  <artifactId>xapi-core-util</artifactId>
-  <packaging>jar</packaging>
-  <name>XApi - Public services exposed by XApi core</name>
-  <url>WeTheInter.net</url>
-  <description>
+	<artifactId>xapi-core-util</artifactId>
+	<packaging>jar</packaging>
+	<name>XApi - Public services exposed by XApi core</name>
+	<url>WeTheInter.net</url>
+	<description>
     This module contains static services and default implementations for other core services.
 
     In order to keep core dependencies as clean as possible,  
@@ -21,23 +22,53 @@
     and the static accessor goes in xapi-core-util.
   </description>
 
-  <dependencies>
+	<dependencies>
 
-    <dependency>
-      <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-core-inject</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-core-reflect</artifactId>
-    </dependency>
-    
-    <!-- Testing dependencies -->
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
+		<dependency>
+			<groupId>net.wetheinter</groupId>
+			<artifactId>xapi-core-inject</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>net.wetheinter</groupId>
+			<artifactId>xapi-core-reflect</artifactId>
+		</dependency>
+
+		<!-- Testing dependencies -->
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+				<version>1.8</version>
+				<executions>
+					<execution>
+						<id>add-source</id>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>add-source</goal>
+						</goals>
+						<inherited>false</inherited>
+						<configuration>
+							<sources>
+								<source>target/generated-sources/xapi</source>
+							</sources>
+						</configuration>
+					</execution>
+				</executions>
+				<goals>
+					<goal>add-source</goal>
+				</goals>
+			</plugin>
+		</plugins>
+	</build>
+
+
 
 </project>

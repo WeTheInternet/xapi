@@ -35,6 +35,20 @@
   
   <build>
     <plugins>
+<!--       <plugin>
+        <groupId>net.wetheinter</groupId>
+        <artifactId>xapi-maven-plugin</artifactId>
+        <version>0.3</version>
+        <executions>
+          <execution>
+            <id>annogen</id>
+            <phase>process-classes</phase>
+            <goals>
+              <goal>annogen</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin> -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -57,6 +71,37 @@
         </executions>
       </plugin>
     </plugins>
+    <pluginManagement>
+    	<plugins>
+    		<!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
+    		<plugin>
+    			<groupId>org.eclipse.m2e</groupId>
+    			<artifactId>lifecycle-mapping</artifactId>
+    			<version>1.0.0</version>
+    			<configuration>
+    				<lifecycleMappingMetadata>
+    					<pluginExecutions>
+    						<pluginExecution>
+    							<pluginExecutionFilter>
+    								<groupId>net.wetheinter</groupId>
+    								<artifactId>
+    									xapi-maven-plugin
+    								</artifactId>
+    								<versionRange>[0.3,)</versionRange>
+    								<goals>
+    									<goal>annogen</goal>
+    								</goals>
+    							</pluginExecutionFilter>
+    							<action>
+    								<ignore></ignore>
+    							</action>
+    						</pluginExecution>
+    					</pluginExecutions>
+    				</lifecycleMappingMetadata>
+    			</configuration>
+    		</plugin>
+    	</plugins>
+    </pluginManagement>
   </build>
 
 </project>

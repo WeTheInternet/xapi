@@ -1,18 +1,19 @@
 package xapi.dev.scanner;
 
+import java.io.File;
 import java.lang.annotation.Annotation;
 import java.util.Iterator;
-import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 import java.util.regex.Pattern;
 
 import xapi.bytecode.ClassFile;
+import xapi.collect.api.Fifo;
 import xapi.collect.impl.MultithreadedStringTrie;
+import xapi.collect.impl.SimpleFifo;
+import xapi.log.X_Log;
+import xapi.source.X_Source;
 import xapi.util.api.MatchesValue;
-import xapi.util.api.Pointer;
 
 public class ClasspathResourceMap {
 
@@ -24,7 +25,8 @@ public class ClasspathResourceMap {
   private final ExecutorService executor;
   private final Set<Pattern> resourceMatchers;
   private final Set<Pattern> sourceMatchers;
-  private final Queue<Future<?>> pending;
+  private final Fifo<ByteCodeResource> pending;
+  private AnnotatedClassIterator allAnnos;
 
   public ClasspathResourceMap(ExecutorService executor, Set<Class<? extends Annotation>> annotations,
     Set<Pattern> bytecodeMatchers, Set<Pattern> resourceMatchers, Set<Pattern> sourceMatchers) {
@@ -36,28 +38,41 @@ public class ClasspathResourceMap {
     this.bytecode = new ResourceTrie<ByteCodeResource>();
     this.sources = new ResourceTrie<SourceCodeResource>();
     this.resources = new ResourceTrie<StringDataResource>();
-    this.pending = new ConcurrentLinkedQueue<Future<?>>();
+    this.pending = new SimpleFifo<ByteCodeResource>();
   }
 
   public void addBytecode(final String name, final ByteCodeResource bytecode) {
-    // if annotations are specified, we must peek at the bytecode before adding
-    if (annotations.size() == 0) {
-      this.bytecode.put(name, bytecode);
-    } else {
-      final Pointer<Future<?>> future = new Pointer<Future<?>>();
-      future.set(
-      executor.submit(new Runnable() {
-        @Override
-        public void run() {
-          try {
-            accept(name, bytecode, annotations);
-          }finally {
-            pending.remove(future.remove());
+    this.bytecode.put(X_Source.stripClassExtension(name.replace(File.separatorChar, '.')), bytecode);
+      if (!preloadClasses())
+        return;
+      if (pending.isEmpty()) {
+        synchronized (pending) {
+          // double-checked lock
+          if (pending.isEmpty()) {
+            executor.submit(new Runnable() {
+              // We use one thread to iterate and preload class files
+              @Override
+              public void run() {
+                while (!pending.isEmpty()) {
+                  Iterator<ByteCodeResource> iter = pending.iterator();
+                  while (iter.hasNext()) {
+                    // Preload classes
+                    iter.next().getClassData();
+                    iter.remove();
+                  }
+                }
+              }
+            });
           }
-        }
-      }));
-      pending.add(future.get());
-    }
+          pending.give(bytecode);
+        } // end synchro
+      } else {
+        pending.give(bytecode);
+      }
+  }
+
+  private boolean preloadClasses() {
+    return !annotations.isEmpty() || !bytecodeMatchers.isEmpty();
   }
 
   protected void accept(String name, ByteCodeResource bytecode, Set<Class<? extends Annotation>> annotations) {
@@ -107,7 +122,6 @@ public class ClasspathResourceMap {
   }
 
   public final Iterable<StringDataResource> findResources(final String prefix, final Pattern ... patterns) {
-    flush();
     if (patterns.length == 0) {
       return resources.findPrefixed(prefix);
     }
@@ -143,7 +157,7 @@ public class ClasspathResourceMap {
       }
     };
   }
-  
+
   class ClassFileIterator implements Iterator<ClassFile>, Iterable<ClassFile> {
 
     private MatchesValue<ClassFile> matcher;
@@ -160,6 +174,8 @@ public class ClasspathResourceMap {
     public boolean hasNext() {
       while(iter.hasNext()) {
         cls = iter.next().getClassData();
+        if (matcher.matches(cls))
+          return true;
       }
       return false;
     }
@@ -180,13 +196,76 @@ public class ClasspathResourceMap {
       live.iter = bytecode.findPrefixed("").iterator();
       return live;
     }
+  }
+  
+  class AnnotatedClassIterator implements Iterable<ClassFile>, MatchesValue<ClassFile> {
+    
+    Iterator<ClassFile> allClasses = new ClassFileIterator(this).iterator();
+    Fifo<ClassFile> results = new SimpleFifo<ClassFile>();
+    boolean working = true;
+    {
+      executor.submit(new Runnable() {
+        @Override
+        public void run() {
+          while (allClasses.hasNext())
+            results.give(allClasses.next());
+          working = false;
+        }
+      });
+    }
+    class Itr implements Iterator<ClassFile> {
 
+      Iterator<ClassFile> itr = results.forEach().iterator();
+      
+      @Override
+      public boolean hasNext() {
+        while (working) {
+          if (itr.hasNext())
+            return true;
+          try {
+            Thread.sleep(0, 500);
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            break;
+          }
+        }
+        return itr.hasNext();
+      }
+
+      @Override
+      public ClassFile next() {
+        return itr.next();
+      }
+
+      @Override
+      public void remove() {
+        throw new UnsupportedOperationException();
+      }
+    }
+    
+    @Override
+    public Iterator<ClassFile> iterator() {
+      return new Itr();
+    }
+
+    @Override
+    public boolean matches(ClassFile value) {
+      return value.getAnnotations().length > 0;
+    }
+  }
+  
+  public final ClassFile findClass(String clsName) {
+    ByteCodeResource resource = bytecode.get(clsName);
+    return resource == null ? null : resource.getClassData();
+  }
+  
+  @SuppressWarnings("unchecked")
+  public final Iterable<ClassFile> getAllClasses(){
+    return new ClassFileIterator(MatchesValue.ANY);
   }
   
   public final Iterable<ClassFile> findClassesImplementing(
       final Class<?> ... interfaces) {
-    // Make sure all pending tasks are done before a read succeeds
-    flush();
     // Local class to capture the final method parameter
     class Itr implements Iterator<ClassFile> {
       ClassFile cls;
@@ -224,11 +303,20 @@ public class ClasspathResourceMap {
     };
   }
 
-  public final Iterable<ClassFile> findClassAnnotatedWith(
-     @SuppressWarnings("unchecked")
-     final Class<? extends Annotation> ... annotations) {
-    // Make sure all pending tasks are done before a read succeeds
-    flush();
+  /**
+   * Finds all classes that are direct subclasses of one of the supplied types.
+   * 
+   * This does not check interfaces, only the direct supertype.
+   * It will _not_ match types equal to the supplied types.
+   * 
+   * This is primarily used for types that cannot have more than one subclass,
+   * like Enum or Annotation.
+   * 
+   * @param superClasses
+   * @return
+   */
+  public final Iterable<ClassFile> findDirectSubclasses(
+      final Class<?> ... superClasses) {
     // Local class to capture the final method parameter
     class Itr implements Iterator<ClassFile> {
       ClassFile cls;
@@ -237,10 +325,49 @@ public class ClasspathResourceMap {
       public boolean hasNext() {
         while(iter.hasNext()) {
           cls = iter.next().getClassData();
-          for (Class<?> annotation : annotations) {
-            //TODO lookup the annotation's target and check fields / methods as well
-            if (cls.getAnnotation(annotation.getName())!=null) {
+          for (Class<?> iface : superClasses) {
+            if (cls.getSuperclass().equals(iface.getCanonicalName())) {
+              return true;
+            }
+          }
+        }
+        return false;
+      }
+      
+      @Override
+      public ClassFile next() {
+        return cls;
+      }
+      
+      @Override
+      public void remove() {
+        throw new UnsupportedOperationException();
+      }
+    }
+    return new Iterable<ClassFile>() {
+      @Override
+      public Iterator<ClassFile> iterator() {
+        return new Itr();
+      }
+    };
+  }
 
+  public final Iterable<ClassFile> findClassAnnotatedWith(
+     @SuppressWarnings("unchecked")
+     final Class<? extends Annotation> ... annotations) {
+    if (allAnnos == null) {
+      allAnnos = new AnnotatedClassIterator();
+    }
+    // Local class to capture the final method parameter
+    class Itr implements Iterator<ClassFile> {
+      ClassFile cls;
+      Iterator<ClassFile> iter = allAnnos.iterator();
+      @Override
+      public boolean hasNext() {
+        while(iter.hasNext()) {
+          cls = iter.next();
+          for (Class<?> annotation : annotations) {
+            if (cls.getAnnotation(annotation.getName())!=null) {
               return true;
             }
           }
@@ -265,24 +392,6 @@ public class ClasspathResourceMap {
       }
     };
   }
-
-  private void flush() {
-    if (pending.isEmpty())return;
-    long deadline = System.currentTimeMillis()+10000;
-    while (deadline > System.currentTimeMillis()&&!pending.isEmpty()) {
-      Iterator<Future<?>> iter = pending.iterator();
-      while (iter.hasNext()) {
-        if (iter.next().isDone())
-          iter.remove();
-      }
-      try {
-        Thread.sleep(0, 100);
-      }catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-      }
-    }
-  }
-
 }
 
 

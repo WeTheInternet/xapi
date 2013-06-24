@@ -266,6 +266,7 @@ public class CtClassType extends CtClass {
   public int getModifiers() {
     ClassFile cf = getClassFile2();
     int acc = cf.getAccessFlags();
+
     acc = X_Modifier.clear(acc, X_Modifier.SUPER);
     int inner = cf.getInnerAccessFlags();
     if (inner != -1 && (inner & X_Modifier.STATIC) != 0)

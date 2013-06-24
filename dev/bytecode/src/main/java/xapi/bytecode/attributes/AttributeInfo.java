@@ -64,6 +64,8 @@ public class AttributeInfo {
               return new ConstantAttribute(cp, name, in);
           else if (nameStr.equals(InnerClassesAttribute.tag))
               return new InnerClassesAttribute(cp, name, in);
+          else if (nameStr.equals(ExceptionsAttribute.tag))
+            return new ExceptionsAttribute(cp, name, in);
       }
       else {
           /* Note that the names of Annotations attributes begin with 'R'.

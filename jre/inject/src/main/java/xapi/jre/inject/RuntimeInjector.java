@@ -31,15 +31,21 @@ import xapi.inject.X_Inject;
 import xapi.inject.impl.JavaInjector;
 import xapi.log.X_Log;
 import xapi.platform.Platform;
+import xapi.time.X_Time;
+import xapi.time.api.Moment;
+import xapi.time.impl.ImmutableMoment;
 import xapi.util.X_Properties;
+import xapi.util.X_Runtime;
 import xapi.util.api.ReceivesValue;
 
 public class RuntimeInjector implements ReceivesValue<String> {
+  
   @Override
   public void set(String targetDir) {
     String prefix = "META-INF"+File.separator;
     writeMetaInfo(targetDir, prefix+"singletons", prefix+"instances");
   }
+  
   @SuppressWarnings("unchecked")
   public void writeMetaInfo(String targetDir, String singletonDir, String instanceDir){
     if (!targetDir.endsWith(File.separator))
@@ -56,6 +62,7 @@ public class RuntimeInjector implements ReceivesValue<String> {
     } catch (Exception e) {
       scanner = new ClasspathScannerDefault();
     }
+    Moment start = now();
 	ClasspathResourceMap resources = scanner
       .scanAnnotations(
         Platform.class,
@@ -79,6 +86,7 @@ public class RuntimeInjector implements ReceivesValue<String> {
     String shortName = null;
     Set<String> scopes = new LinkedHashSet<String>();
     ArrayList<ClassFile> platforms = new ArrayList<ClassFile>();
+    Moment prepped = now();
     for (ClassFile file : resources.findClassAnnotatedWith(Platform.class)) {
       platforms.add(file);
       for (String platform : runtime) {
@@ -92,6 +100,7 @@ public class RuntimeInjector implements ReceivesValue<String> {
           bestMatch = file;
           }
     }
+    Moment scanned = now();
     if (bestMatch == null) {
       throw platformMisconfigured(shortName);
     }
@@ -119,7 +128,7 @@ public class RuntimeInjector implements ReceivesValue<String> {
       }
       remainder.remove(next);
     }
-
+    Moment checked = now();
     for (ClassFile cls : resources.findClassAnnotatedWith(
       SingletonDefault.class, SingletonOverride.class,
       InstanceDefault.class, InstanceOverride.class
@@ -137,6 +146,7 @@ public class RuntimeInjector implements ReceivesValue<String> {
       if (anno != null && allowedPlatform(cls, scopes, platforms))
         instanceImpls.give(cls);
     }
+    Moment mapped = now();
 
     Map<String, ClassFile> injectionTargets = new HashMap<String,ClassFile>();
     //determine injection by priority.  Defaults first
@@ -176,6 +186,7 @@ public class RuntimeInjector implements ReceivesValue<String> {
         injectionTargets.put(clsName, cls);
       }
     }
+    Moment startInject = now();
     for (String iface : injectionTargets.keySet()) {
       JavaInjector.registerSingletonProvider(iface, injectionTargets.get(iface).getName());
     }
@@ -226,7 +237,23 @@ public class RuntimeInjector implements ReceivesValue<String> {
     } catch (Throwable e) {
       X_Log.warn("Trouble encountered writing instance meta to ",new File(target, instanceDir),e);
     }
+    Moment finished = now();
+    
+    if (X_Runtime.isDebug()) {
+      X_Log.info("Multithreaded? ", X_Runtime.isMultithreaded());
+      X_Log.info("Prepped: ", X_Time.difference(start, prepped));
+      X_Log.info("Scanned: ", X_Time.difference(prepped, scanned));
+      X_Log.info("Checked: ", X_Time.difference(scanned, checked));
+      X_Log.info("Mapped: ", X_Time.difference(checked, mapped));
+      X_Log.info("Analyzed: ", X_Time.difference(mapped, startInject));
+      X_Log.info("Injected: ", X_Time.difference(startInject, finished));
+      X_Log.info("Total: ", X_Time.difference(start, finished));
+    }
 
+  }
+  private final double init = System.nanoTime();
+  private Moment now() {
+    return new ImmutableMoment(System.currentTimeMillis()+ Math.abs(System.nanoTime()-init)/100000000.0);
   }
   private boolean allowedPlatform(ClassFile cls, Set<String> scopes, Iterable<ClassFile> platforms) {
     // first, if the given class file has a platform we are using, return true

@@ -28,8 +28,13 @@ public class IntToAbstract <V> implements IntTo<V> {
   }
 
   @Override
-  public Iterator<V> iterator() {
-    return new IntToIterator<V>(this);
+  public Iterable<V> forEach() {
+    return new Iterable<V>() {
+      @Override
+      public Iterator<V> iterator() {
+        return new IntToIterator<V>(IntToAbstract.this);
+      }
+    };
   }
   @Override
   public int size() {
@@ -90,7 +95,7 @@ public class IntToAbstract <V> implements IntTo<V> {
 
   @Override
   public boolean contains(V value) {
-    for (V val : this) {
+    for (V val : forEach()) {
       if (comparator.compare(val, value)==0)
         return true;
     }

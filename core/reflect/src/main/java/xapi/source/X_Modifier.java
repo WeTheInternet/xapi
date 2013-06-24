@@ -40,6 +40,10 @@ public final class X_Modifier {
 
   public static final int VOLATILE  = 0x0040;
 
+  public static final int PUBLIC_FINAL  = PUBLIC | FINAL;
+
+  public static final int PUBLIC_STATIC_FINAL  = PUBLIC | FINAL | STATIC;
+
   public static String addArrayBrackets(String addTo, int arrDepth) {
     if (arrDepth<1)return addTo;
     StringBuilder b = new StringBuilder(addTo);
@@ -51,10 +55,10 @@ public final class X_Modifier {
     return
       modifierToProtection(protection) +
       (
-        isStatic(protection) ? " static"
-          : isAbstract(protection) ? " abstract" : ""
+        isStatic(protection) ? "static "
+          : isAbstract(protection) ? "abstract " : ""
         ) +
-        (isFinal(protection) ? " final" : "")
+        (isFinal(protection) ? "final " : "")
         ;
   }
 
@@ -204,9 +208,9 @@ public final class X_Modifier {
   }
   public static String modifierToProtection(int protection) {
     return
-      isPublic(protection) ? "public" :
-      isProtected(protection) ? "protected" :
-      isPrivate(protection) ? "private" :
+      isPublic(protection) ? "public " :
+      isProtected(protection) ? "protected " :
+      isPrivate(protection) ? "private " :
       "";
   }
   /**
@@ -241,7 +245,6 @@ public final class X_Modifier {
   }
 
   public static String binaryNameToPackage(String clsName) {
-    System.err.println(clsName);
     int ind = clsName.lastIndexOf('/');
     if (ind == -1) {
       return "";
@@ -249,10 +252,26 @@ public final class X_Modifier {
       return clsName.substring(0, ind).replace('/', '.');
     }
   }
+  
+  public static String sourceNameToPackage(String clsName) {
+    int ind = clsName.lastIndexOf('.');
+    if (ind == -1) {
+      return "";
+    } else {
+      return clsName.substring(0, ind);
+    }
+  }
 
   public static String binaryNameToEnclosed(String name) {
-    System.err.println(name);
     int ind = name.lastIndexOf('/');
+    if (ind != -1) {
+      name = name.substring(ind+1);
+    }
+    return name.replace('$', '.');
+  }
+
+  public static String sourceNameToEnclosed(String name) {
+    int ind = name.lastIndexOf('.');
     if (ind != -1) {
       name = name.substring(ind+1);
     }

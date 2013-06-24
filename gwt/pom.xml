@@ -99,6 +99,9 @@
       the apis will likely change. -->
     <module>collect</module>
 
+    <!-- Labs code for leveraging elemental to enable html5 features -->
+    <module>elemental</module>
+
 
     <!-- Contains the gwt-only implementation of our concurrency library. 
       This module is VERY experimental, the internal apis WILL change.

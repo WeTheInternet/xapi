@@ -209,13 +209,15 @@ java.lang.reflect.AnnotatedElement
   static void setName(Class<?> clazz, String packageName, String className,
       int seedId) {
     if (clazz.isClassMetadataEnabled()||clazz.isPrimitive()) {
-      clazz.typeName = packageName + className;
+      clazz.pkgName = packageName.length() == 0 ? "" : packageName+".";
+      clazz.typeName = className;
     } else {
       /*
        * The initial "" + in the below code is to prevent clazz.hashCode() from
        * being autoboxed. The class literal creation code is run very early
        * during application start up, before class Integer has been initialized.
        */
+      clazz.pkgName = "";
       clazz.typeName = "Class$"
           + (isInstantiableOrPrimitive(seedId) ? asString(seedId) : "" + clazz.hashCode());
     }
@@ -240,6 +242,7 @@ java.lang.reflect.AnnotatedElement
   int modifiers;
 
   protected JavaScriptObject enumConstantsFunc;
+  protected String pkgName;
   protected String typeName;
   //these are regular emulated classes, and not magic classes
   protected Class<?> componentType;
@@ -280,6 +283,9 @@ java.lang.reflect.AnnotatedElement
   }-*/;
 
   public String getName() {
+    return pkgName + typeName;
+  }
+  public String getSimpleName() {
     return typeName;
   }
 
@@ -306,6 +312,11 @@ java.lang.reflect.AnnotatedElement
   public boolean isEnum() {
     return (modifiers & ENUM) != 0;
   }
+  
+  public boolean isAnonymousClass() {
+    return "".equals(getSimpleName());
+  }
+  
 
   public boolean isInterface() {
     return (modifiers & INTERFACE) != 0;

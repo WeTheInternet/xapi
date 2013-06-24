@@ -80,6 +80,11 @@ public class AbstractClass extends AbstractMember<AbstractClass> implements IsCl
   }
 
   @Override
+  public Iterable<IsMethod> getDeclaredMethods() {
+    return new DeclaredMemberFilter<IsMethod>(getMethods(), this);
+  }
+  
+  @Override
   public Iterable<IsMethod> getMethods() {
     return methods.forEach();
   }
@@ -90,7 +95,7 @@ public class AbstractClass extends AbstractMember<AbstractClass> implements IsCl
   }
 
   @Override
-  public IsMethod getMethod(String name, Class<?> ... params) {
+  public IsMethod getMethod(String name, boolean checkErased, Class<?> ... params) {
     throw new NotYetImplemented("getMethod in AbstractClass not yet implemented");
   }
 
@@ -265,6 +270,16 @@ public class AbstractClass extends AbstractMember<AbstractClass> implements IsCl
   @Override
   public boolean isInterface() {
     return isInterface;
+  }
+  
+  @Override
+  public boolean isAnnotation() {
+    return hasModifier(X_Modifier.ANNOTATION);
+  }
+  
+  @Override
+  public boolean isEnum() {
+    return hasModifier(X_Modifier.ENUM);
   }
 
   protected AbstractClass makeInterface(boolean add) {

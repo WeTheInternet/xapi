@@ -3,7 +3,6 @@ package xapi.dev.model;
 import java.util.Iterator;
 
 import xapi.annotation.model.ClientToServer;
-import xapi.annotation.model.Serializable;
 import xapi.annotation.model.ServerToClient;
 import xapi.collect.X_Collect;
 import xapi.collect.api.Fifo;
@@ -77,19 +76,10 @@ public class ModelGenerator {
 
     ServerToClient clientReceives = fields.getDefaultToClient();
     ClientToServer serverReceives = fields.getDefaultToServer();
-    Serializable defaultSerializable = fields.getDefaultSerializable();
 
-    boolean toClientEnabled = defaultSerializable == null ?
-        // not default serializable, so if and only if @C2S.enabled == true
-        clientReceives != null && clientReceives.enabled():
-        // class is default serializable, anything but @C2S.enabled == false
-        clientReceives == null || clientReceives.enabled();
+    boolean toClientEnabled = clientReceives != null && clientReceives.enabled();
 
-    boolean toServerEnabled = defaultSerializable == null ?
-        // not default serializable, so if and only if @S2C.enabled == true
-        serverReceives != null && serverReceives.enabled():
-        // class is default serializable, anything but @S2C.enabled == false
-        serverReceives == null || serverReceives.enabled();
+    boolean toServerEnabled = serverReceives != null && serverReceives.enabled();
 
     boolean balanced = true;
     while(serializable.hasNext()) {

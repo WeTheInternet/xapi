@@ -11,8 +11,8 @@ public class StringServiceTest {
   @Test
   public void testTiming() {
     System.out.println(toMetricSuffix(1));
-    Assert.assertEquals("1.0", toMetricSuffix(1));
-    Assert.assertEquals("100.0", toMetricSuffix(100));
+    Assert.assertEquals("1.0 ", toMetricSuffix(1));
+    Assert.assertEquals("100.0 ", toMetricSuffix(100));
     Assert.assertEquals("100.0 milli", toMetricSuffix(0.1));
     Assert.assertEquals("1.0 milli", toMetricSuffix(0.001));
     Assert.assertEquals("100.0 micro", toMetricSuffix(0.0001));

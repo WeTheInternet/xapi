@@ -16,7 +16,6 @@ public class TestCodegen {
     Assert.assertTrue(b.toString().contains("import java.util.Date;"));
     Assert.assertTrue(b.toString().contains("import java.util.Iterator;"));
   }
-
   @Test
   public void testMethodWriter() {
     SourceBuilder<Object> b = new SourceBuilder<Object>(
@@ -25,13 +24,16 @@ public class TestCodegen {
     b.getClassBuffer()
       .createMethod("public <T extends java.util.Date> void Test(java.lang.String t) {")
       .indentln("System.out.println(\"Hellow World\");")
-      .createInnerClass("class InnerClass")
+      .createInnerClass("class InnerClass ")
       .createMethod("void innerMethod()")
       ;
     // We discard java.lang imports
     Assert.assertFalse(b.toString().contains("import java.lang.String;"));
+    // We used java.util.Date as a fully qualified name first, so it should be imported
     Assert.assertTrue(b.toString().contains("import java.util.Date;"));
     Assert.assertTrue(b.toString().contains("<T extends Date>"));
+    // We used java.sql.Date as a fqcn after java.util.Date, so it must NOT be imported
+    Assert.assertFalse(b.toString().contains("import java.sql.Date;"));
   }
 
   @Test

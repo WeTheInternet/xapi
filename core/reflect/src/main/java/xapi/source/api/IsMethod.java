@@ -14,5 +14,6 @@ HasEnclosingClass
   IsGeneric[] getGenerics();
   IsType[] getExceptions();
   IsClass getEnclosingType();
+  IsAnnotationValue getDefaultValue();
 
 }

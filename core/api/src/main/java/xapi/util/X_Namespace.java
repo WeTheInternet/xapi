@@ -17,6 +17,14 @@ public class X_Namespace {
    * 
    */
   public static final String XAPI_VERSION = "0.4-SNAPSHOT";
+
+  /**
+   * The groupId used for the xapi project.  This is used to 
+   * allow anyone that wishes to fork the project to use their own groupId.
+   * 
+   * It also allows tracing all source-level accessors of the maven group id.
+   */
+  public static final String XAPI_GROUP_ID = "net.wetheinter";
   
   /**
    * META-INF - Used a separate constant to encourage fragment reuse.

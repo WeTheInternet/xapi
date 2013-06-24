@@ -65,6 +65,11 @@ public final class ImmutableType implements IsType, Serializable{
 
   @Override
   public String getQualifiedName() {
+    if (pkg.length()==0)return getEnclosedName();
+    return getPackage()+"."+getEnclosedName();
+  }
+
+  public String getImportName() {
     if (pkg.length()==0 || "java.lang".equals(pkg))return getEnclosedName();
     return getPackage()+"."+getEnclosedName();
   }
@@ -85,6 +90,11 @@ public final class ImmutableType implements IsType, Serializable{
     return enclosing == null ? hash : enclosing.hashCode() * 31 + hash;
   }
 
+  @Override
+  public String toString() {
+    return getQualifiedName();
+  }
+  
   @Override
   public boolean equals(Object obj) {
     if (obj == this)return true;

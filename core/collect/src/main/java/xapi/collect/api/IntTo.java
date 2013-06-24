@@ -9,12 +9,22 @@ import xapi.collect.proxy.CollectionProxy;
 
 
 public interface IntTo <T>
-extends Iterable<T>, CollectionProxy<Integer,T>
+extends CollectionProxy<Integer,T>
 {
 
   static interface Many <T> extends IntTo<IntTo<T>> {
   }
 
+  static class IntToIterable <T> implements Iterable <T> {
+    private final IntTo<T> self;
+    public IntToIterable(IntTo<T> self) {
+      this.self = self;
+    }
+    @Override
+    public Iterator<T> iterator() {
+      return new IntToIterator<T>(self);
+    }
+  }
   static class IntToIterator <T> implements Iterator <T> {
     private IntTo<T> source;
     int pos = 0;
@@ -36,6 +46,8 @@ extends Iterable<T>, CollectionProxy<Integer,T>
       }
     }
   }
+  
+  Iterable<T> forEach();
 
   boolean add(T item);
 

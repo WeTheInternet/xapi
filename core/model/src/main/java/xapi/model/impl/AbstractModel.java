@@ -11,11 +11,13 @@ import xapi.log.X_Log;
 import xapi.model.X_Model;
 import xapi.model.api.Model;
 import xapi.model.api.ModelKey;
+import xapi.model.api.NestedModel;
+import xapi.model.api.PersistentModel;
 import xapi.util.api.ErrorHandler;
 import xapi.util.api.SuccessHandler;
 
 @InstanceDefault(implFor=Model.class)
-public class AbstractModel implements Model{
+public class AbstractModel implements Model, PersistentModel, NestedModel{
 
   protected StringTo<Object> map;
   private Model parent;

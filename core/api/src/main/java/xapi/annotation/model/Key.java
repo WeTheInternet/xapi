@@ -5,8 +5,11 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import xapi.annotation.reflect.MirroredAnnotation;
+
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD})
+@MirroredAnnotation // Generate a key builder
 public @interface Key {
 
   /**

@@ -65,15 +65,14 @@ public class X_Runtime {
     inject = success;
 
     try {
-      success = !"".equals(System.getProperty(PROPERTY_MULTITHREADED,""));
-      if (success) {
-        // Make sure X_Process is loadable, and bail with a usable error message.
-        Class.forName("xapi.process.X_Process");
-      }
+      // Make sure X_Process is loadable, and bail with a usable error message.
+      Class.forName("xapi.process.X_Process");
+      success = !"".equals(System.getProperty(PROPERTY_MULTITHREADED,"1"));
     } catch (Throwable e) {
+      success = !"".equals(System.getProperty(PROPERTY_MULTITHREADED,""));
       String message = "Class xapi.process.X_Process is not loadable." +
-        (debug?"\nEnsure your module inherits xapi-core-process, or set system property " +
-         PROPERTY_MULTITHREADED+" to empty string \"\".":"");
+          (debug?"\nEnsure your module inherits xapi-core-process, or set system property " +
+              PROPERTY_MULTITHREADED+" to empty string \"\".":"");
       if (debug || success)
         System.err.println(message);
       if (success) { //if system property was set

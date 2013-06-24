@@ -67,6 +67,11 @@ public class X_String {
   }
 
   public static <T> String joinObjects(
+      @SuppressWarnings("unchecked") T ... values
+      ) {
+    return joinObjects(", ", values);
+  }
+  public static <T> String joinObjects(
     String separator,
     @SuppressWarnings("unchecked") T ... values
   ) {
@@ -86,6 +91,9 @@ public class X_String {
         copy[i] = cls.getCanonicalName();
     }
     return join(separator, copy);
+  }
+  public static String joinStrings(String ... values) {
+    return join(", ", values);
   }
   public static String join(String separator, String ... values) {
     if (values.length == 0) return "";// need at least one element
@@ -122,9 +130,17 @@ public class X_String {
   public static boolean isEmpty(String enclosing) {
     return enclosing == null || enclosing.length() == 0;
   }
-
+  
   public static boolean isEmptyTrimmed(String enclosing) {
     return enclosing == null || enclosing.trim().length() == 0;
+  }
+
+  public static boolean isNotEmpty(String enclosing) {
+    return enclosing != null && enclosing.length() > 0;
+  }
+
+  public static boolean isNotEmptyTrimmed(String enclosing) {
+    return enclosing != null && enclosing.trim().length() > 0;
   }
 
   public static String firstChunk(String string, char c) {

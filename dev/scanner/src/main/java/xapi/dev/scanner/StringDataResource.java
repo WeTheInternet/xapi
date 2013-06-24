@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Iterator;
 
+import xapi.util.X_Debug;
 import xapi.util.X_Util;
 
 public class StringDataResource extends DelegateClasspathResource{
@@ -18,6 +19,7 @@ public class StringDataResource extends DelegateClasspathResource{
       @Override
       public Iterator<String> iterator() {
         try {
+          // reader is closed by StringReader
           BufferedReader reader = new BufferedReader(new InputStreamReader(open()));
           return new StringReader(reader);
         } catch (IOException e) {
@@ -27,11 +29,15 @@ public class StringDataResource extends DelegateClasspathResource{
     };
   }
 
-  public String readAll() throws IOException{
+  public String readAll() {
     StringBuilder b = new StringBuilder();
-    for (String line : readLines())
-      b.append(line).append('\n');
-    return b.toString();
+    try {
+      for (String line : readLines())
+        b.append(line).append('\n');
+      return b.toString();
+    } catch (IOException e) {
+      throw X_Debug.rethrow(e);
+    }
   }
 
 }

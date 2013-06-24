@@ -190,8 +190,6 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
 
     HasModelFields fieldMap = new HasModelFields();
     fieldMap.setDefaultSerializable(type.getAnnotation(Serializable.class));
-    fieldMap.setDefaultToClient(type.getAnnotation(ServerToClient.class));
-    fieldMap.setDefaultToServer(type.getAnnotation(ClientToServer.class));
 
     for (JMethod method : methods.keySet()) {
         if (!toGenerate.contains(ModelGeneratorGwt.toSignature(method))) {

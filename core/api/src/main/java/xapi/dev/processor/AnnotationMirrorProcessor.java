@@ -35,7 +35,6 @@ import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.FieldBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
-import xapi.util.X_Runtime;
 
 /**
  * This is the annotation processor for our injection library.
@@ -165,6 +164,7 @@ public class AnnotationMirrorProcessor extends AbstractProcessor {
 
     // Create an immutable, private class that implements the annotation.
     ClassBuffer immutableAnno = annoBuilder
+        .addAnnotation("@SuppressWarnings(\"all\")")
         .createInnerClass("private static class Immutable" + simpleName)
         .addInterfaces(annoName).makeFinal();
     immutableAnno

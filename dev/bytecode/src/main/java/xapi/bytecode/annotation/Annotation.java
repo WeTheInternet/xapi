@@ -69,7 +69,7 @@ public class Annotation {
     public Annotation(ConstPool cp, CtClass clazz)
         throws NotFoundException
     {
-        // todo Enums are not supported right now.
+        // TODO Enums are not supported right now.
         this(cp.addUtf8Info(Descriptor.of(clazz.getName())), cp);
 
         if (!clazz.isInterface())

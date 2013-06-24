@@ -177,10 +177,10 @@ public class MultithreadedStringTrie<E> {
               next = next.greater;
             }
           } else if (next.greater == null) {
-            next = stack.value;
-            stack = stack.next;
+            next = next.lesser;
           } else {
-            next = next.greater;
+            stack = new Stack(stack, next.greater);
+            next = next.lesser;
           }
           return true;
         }
@@ -230,6 +230,8 @@ public class MultithreadedStringTrie<E> {
 
   protected void doPut(final Edge into, final char[] key, final int index, final int end, final E value) {
     assert index < end;
+    try {
+      
     // To stay threadsafe, we synchronize on Edges when we modify them.
     // To stay fast, we don't recurse until we are out of the synchro block.
 
@@ -242,7 +244,10 @@ public class MultithreadedStringTrie<E> {
     // handle peeking into deeper nodes that will result in recursion.
     final Edge greater = into.greater;
     if (greater != null) {
-      assert into.lesser != null;
+      if (into.lesser == null) {
+        assert into.lesser != null : "Node structure inconsistent at "+into + " on key "+new String(key)
+         + " against existing key "+greater;
+      }
       final char[] greaterKey = greater.key;
       // deep nodes are stored in greater slot
       if (greaterKey.length == 0) {// this is a deep node!
@@ -390,6 +395,15 @@ public class MultithreadedStringTrie<E> {
     } else {
       doPut(nextInto, key, nextIndex, end, value);
     }
+    } finally {
+      if (into.greater != null)
+        assert into.lesser != null : "Trie structure malformed @ "+into+"; greater = "+into.greater+
+        " on key "+newString(key);
+    }
+  }
+
+  private String newString(char[] key) {
+    return new String(key);
   }
 
   protected Edge newEdge() {
@@ -459,14 +473,14 @@ public class MultithreadedStringTrie<E> {
     if (matchesTo == greaterKey.length) {
       return false;
     }
-    // If we haven't returned, than the existing key is longer than the one
+    // If we haven't returned, then the existing key is longer than the one
     // we are inserting. Thus, we must slip the new node behind the old one.
     final Edge newNode = newEdge(key, index, end, value);
     final char[] newGreater = new char[greaterKey.length - keyLen];
     System.arraycopy(greaterKey, keyLen, newGreater, 0, newGreater.length);
-    newNode.greater = into.greater;
+    newNode.lesser = into.greater;
     into.greater = newNode;
-    newNode.greater.key = newGreater;
+    newNode.lesser.key = newGreater;
     return true;
   }
 

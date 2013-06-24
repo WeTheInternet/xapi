@@ -12,6 +12,8 @@ HasInterfaces
   boolean isFinal();
   boolean isStatic();
   boolean isInterface();
+  boolean isAnnotation();
+  boolean isEnum();
   IsMethod getEnclosingMethod();
   Iterable<IsClass> getInnerClasses();
 

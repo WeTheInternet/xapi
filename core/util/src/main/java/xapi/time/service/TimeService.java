@@ -5,6 +5,8 @@ import xapi.time.impl.ImmutableMoment;
 
 public interface TimeService extends Moment{
 
+  final Double second_to_nano = 0.000000001;
+  final Double milli_to_nano = 0.000001;
 
   //float now();// from Moment
 
@@ -56,6 +58,12 @@ public interface TimeService extends Moment{
    */
 //  void trySleep(int millis, int nanos);
   void runLater(Runnable runnable);
+  
+  /**
+   * @return An ISO-8601 compliant timestamp:
+   * yyyy-MM-dd'T'HH:mm.sssZ
+   */
+  String timestamp();
 
 
 }

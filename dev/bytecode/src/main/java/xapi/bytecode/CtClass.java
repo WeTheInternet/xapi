@@ -1341,7 +1341,10 @@ public abstract class CtClass {
     void compress() {}
 
     public String getEnclosedName() {
-      return getName().substring(getPackageName().length());
+      String pkg = getPackageName();
+      if (pkg == null)
+        return getName();
+      return getName().substring(pkg.length());
     }
 
 }

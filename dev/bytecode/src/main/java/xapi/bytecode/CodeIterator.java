@@ -757,7 +757,12 @@ public class CodeIterator implements Opcode {
 
     // methods for implementing insertGap().
 
-    static class AlignmentException extends Exception {}
+    static class AlignmentException extends Exception {
+
+      /**
+       * 
+       */
+      private static final long serialVersionUID = 3738570979667470053L;}
 
     /**
      * insertGapCore0() inserts a gap (some NOPs).

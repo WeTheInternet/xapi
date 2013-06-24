@@ -105,12 +105,12 @@ public class CollectionServiceDefault implements CollectionService{
 
   @Override
   public <V> IntTo<V> newList(Class<V> cls, CollectionOptions opts) {
-    throw new NotYetImplemented("IntTo not yet implemented");
+    return new IntToList<V>();
   }
 
   @Override
   public <V> IntTo<V> newSet(Class<V> cls, CollectionOptions opts) {
-    throw new NotYetImplemented("IntTo not yet implemented");
+    throw new NotYetImplemented("IntToSet not yet implemented");
   }
 
   @Override

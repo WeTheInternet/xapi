@@ -38,7 +38,7 @@ public class JsFifo<E> extends JavaScriptObject implements Fifo<E> {
       this.push(item);
     return this;
   }-*/;
-
+  
   @Override
   @SuppressWarnings("unchecked")
   public final native Fifo<E> giveAll(E... elements)

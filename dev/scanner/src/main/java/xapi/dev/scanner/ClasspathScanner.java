@@ -1,6 +1,7 @@
 package xapi.dev.scanner;
 
 import java.lang.annotation.Annotation;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -29,6 +30,6 @@ public interface ClasspathScanner {
   ClasspathScanner matchResources(String ... regex);
 
   ClasspathResourceMap scan(ClassLoader loader);
-  ClasspathResourceMap scan(ClassLoader loader, ExecutorService executor);
+  Callable<ClasspathResourceMap> scan(ClassLoader loader, ExecutorService executor);
 
 }

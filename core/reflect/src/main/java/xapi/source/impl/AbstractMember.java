@@ -92,6 +92,21 @@ public class AbstractMember <Self extends AbstractMember<Self>> implements IsMem
   public Iterable<IsAnnotation> getAnnotations() {
     return annotations.forEach();
   }
+  
+  @Override
+  public IsAnnotation getAnnotation(String name) {
+    if (name.indexOf('.')==-1)
+    for (IsAnnotation anno : getAnnotations()) {
+      if (anno.getSimpleName().equals(name))
+        return anno;
+    }
+    else 
+    for (IsAnnotation anno : getAnnotations()) {
+      if (anno.getQualifiedName().equals(name))
+        return anno;
+    }
+    return null;
+  }
 
   @Override
   public boolean isPublic() {

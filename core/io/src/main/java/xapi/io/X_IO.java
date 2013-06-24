@@ -3,13 +3,13 @@ package xapi.io;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 
 import javax.inject.Provider;
 
 import xapi.inject.X_Inject;
 import xapi.io.api.HasLiveness;
-import xapi.io.api.IOCallback;
 import xapi.io.api.IOMessage;
 import xapi.io.api.StringReader;
 import xapi.io.impl.IOCallbackDefault;
@@ -109,10 +109,15 @@ public class X_IO {
     getIOService().get("http://google.com", null, new IOCallbackDefault<IOMessage<String>>() {
       @Override
       public void onError(Throwable e) {
-        if (X_Util.unwrap(e) instanceof UnknownHostException)
+        Throwable unwrapped = X_Util.unwrap(e);
+        if (unwrapped instanceof UnknownHostException)
           failure[0] = true;
-        else
+        else if (unwrapped instanceof SocketException)
+          failure[0] = true;
+        else {
+          e.printStackTrace();
           X_Util.rethrow(e);
+        }
       }
     });
     return failure[0];

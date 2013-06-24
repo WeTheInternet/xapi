@@ -34,6 +34,7 @@
  */
 package xapi.annotation.inject;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -72,6 +73,7 @@ import java.lang.annotation.Target;
  *
  * @author James X. Nelson (james@wetheinter.net, @james)
  */
+@Documented
 @Target(value=ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface SingletonDefault {
