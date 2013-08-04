@@ -389,7 +389,7 @@ public class CodeIterator implements Opcode {
      * <p>The index at which the byte sequence is actually inserted
      * might be different from pos since some other bytes might be
      * inserted at other positions (e.g. to change <code>GOTO</code>
-     * to <code>GOTO_W</code>). 
+     * to <code>GOTO_W</code>).
      *
      * @param pos       the index at which a byte sequence is inserted.
      * @param code      inserted bytecode sequence.
@@ -760,14 +760,14 @@ public class CodeIterator implements Opcode {
     static class AlignmentException extends Exception {
 
       /**
-       * 
+       *
        */
       private static final long serialVersionUID = 3738570979667470053L;}
 
     /**
      * insertGapCore0() inserts a gap (some NOPs).
      * It cannot handle a long code sequence more than 32K.  All branch offsets must be
-     * signed 16bits. 
+     * signed 16bits.
      *
      * If "where" is the beginning of a block statement and exclusive is false,
      * then the inserted gap is also included in the block statement.
@@ -1057,11 +1057,11 @@ public class CodeIterator implements Opcode {
     }
 
     /*
-     * insertGapCore0w() can handle a long code sequence more than 32K. 
+     * insertGapCore0w() can handle a long code sequence more than 32K.
      * It guarantees that the length of the inserted gap (NOPs) is equal to
      * gapLength.  No other NOPs except some NOPs following TABLESWITCH or
-     * LOOKUPSWITCH will not be inserted. 
-     * 
+     * LOOKUPSWITCH will not be inserted.
+     *
      * Note: currentPos might be moved.
      *
      * @param where       It must indicate the first byte of an opcode.
@@ -1198,6 +1198,9 @@ public class CodeIterator implements Opcode {
         return jumps;
     }
 
+    /**
+     * @throws BadBytecode
+     */
     private static byte[] makeExapndedCode(byte[] code, ArrayList<Branch> jumps,
                                            int where, int gapLength)
         throws BadBytecode
@@ -1220,7 +1223,7 @@ public class CodeIterator implements Opcode {
         }
         else {
             b = null;
-            bpos = len;  // src will be never equal to bpos 
+            bpos = len;  // src will be never equal to bpos
         }
 
         while (src < len) {
@@ -1277,6 +1280,7 @@ public class CodeIterator implements Opcode {
             state = true;
         }
 
+        @Override
         boolean expanded() {
             if (state) {
                 state = false;
@@ -1286,8 +1290,10 @@ public class CodeIterator implements Opcode {
                 return false;
         }
 
+        @Override
         int deltaSize() { return 1; }
 
+        @Override
         int write(int srcPos, byte[] code, int destPos, byte[] newcode) {
             newcode[destPos] = LDC_W;
             X_Byte.write16bit(index, newcode, destPos + 1);
@@ -1308,6 +1314,7 @@ public class CodeIterator implements Opcode {
             state = BIT16;
         }
 
+        @Override
         void shift(int where, int gapLength, boolean exclusive) {
             offset = newOffset(pos, offset, where, gapLength, exclusive);
             super.shift(where, gapLength, exclusive);
@@ -1316,6 +1323,7 @@ public class CodeIterator implements Opcode {
                     state = EXPAND;
         }
 
+        @Override
         boolean expanded() {
             if (state == EXPAND) {
                 state = BIT32;
@@ -1325,9 +1333,11 @@ public class CodeIterator implements Opcode {
                 return false;
         }
 
+        @Override
         abstract int deltaSize();
         abstract void write32(int src, byte[] code, int dest, byte[] newcode);
 
+        @Override
         int write(int src, byte[] code, int dest, byte[] newcode) {
             if (state == BIT32)
                 write32(src, code, dest, newcode);
@@ -1346,10 +1356,12 @@ public class CodeIterator implements Opcode {
             super(p, off);
         }
 
+        @Override
         int deltaSize() {
             return state == BIT32 ? 2 : 0;
         }
 
+        @Override
         void write32(int src, byte[] code, int dest, byte[] newcode) {
             newcode[dest] = (byte)(((code[src] & 0xff) == GOTO) ? GOTO_W : JSR_W);
             X_Byte.write32bit(offset, newcode, dest + 1);
@@ -1362,10 +1374,12 @@ public class CodeIterator implements Opcode {
             super(p, off);
         }
 
+        @Override
         int deltaSize() {
             return state == BIT32 ? 5 : 0;
         }
 
+        @Override
         void write32(int src, byte[] code, int dest, byte[] newcode) {
             newcode[dest] = (byte)opcode(code[src] & 0xff);
             newcode[dest + 1] = 0;
@@ -1396,11 +1410,13 @@ public class CodeIterator implements Opcode {
             offset = off;
         }
 
+        @Override
         void shift(int where, int gapLength, boolean exclusive) {
             offset = newOffset(pos, offset, where, gapLength, exclusive);
             super.shift(where, gapLength, exclusive);
         }
 
+        @Override
         int write(int src, byte[] code, int dest, byte[] newcode) {
             newcode[dest] = code[src];
             X_Byte.write32bit(offset, newcode, dest + 1);
@@ -1419,6 +1435,7 @@ public class CodeIterator implements Opcode {
             this.offsets = offsets;
         }
 
+        @Override
         void shift(int where, int gapLength, boolean exclusive) {
             int p = pos;
             defaultByte = newOffset(p, defaultByte, where, gapLength, exclusive);
@@ -1429,6 +1446,7 @@ public class CodeIterator implements Opcode {
             super.shift(where, gapLength, exclusive);
         }
 
+        @Override
         int gapChanged() {
             int newGap = 3 - (pos & 3);
             if (newGap > gap) {
@@ -1440,10 +1458,12 @@ public class CodeIterator implements Opcode {
             return 0;
         }
 
+        @Override
         int deltaSize() {
             return gap - (3 - (orgPos & 3));
         }
 
+        @Override
         int write(int src, byte[] code, int dest, byte[] newcode) {
             int padding = 3 - (pos & 3);
             int nops = gap - padding;
@@ -1493,6 +1513,7 @@ public class CodeIterator implements Opcode {
             this.high = high;
         }
 
+        @Override
         int write2(int dest, byte[] newcode) {
             X_Byte.write32bit(low, newcode, dest);
             X_Byte.write32bit(high, newcode, dest + 4);
@@ -1506,6 +1527,7 @@ public class CodeIterator implements Opcode {
             return 8 + 4 * n;
         }
 
+        @Override
         int tableSize() { return 8 + 4 * offsets.length; }
     }
 
@@ -1517,6 +1539,7 @@ public class CodeIterator implements Opcode {
             this.matches = matches;
         }
 
+        @Override
         int write2(int dest, byte[] newcode) {
             int n = matches.length;
             X_Byte.write32bit(n, newcode, dest);
@@ -1530,6 +1553,7 @@ public class CodeIterator implements Opcode {
             return 4 + 8 * n;
         }
 
+        @Override
         int tableSize() { return 4 + 8 * matches.length; }
     }
 }

@@ -15,7 +15,11 @@
  </description>
 
   <dependencies>
-    <dependency>
+  <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>gwt-reflect</artifactId>
+    </dependency>
+  <dependency>
       <groupId>net.wetheinter</groupId>
       <artifactId>xapi-gwt-inject</artifactId>
     </dependency>

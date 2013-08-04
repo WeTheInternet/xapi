@@ -2,6 +2,7 @@
 <!DOCTYPE module PUBLIC "-//Google Inc.//DTD Google Web Toolkit 2.5.1//EN" "http://google-web-toolkit.googlecode.com/svn/tags/2.5.1/distro-source/core/src/gwt-module.dtd">
 <module>
  
+  <inherits name="com.google.gwt.MagicMethods" />
   
   <!--Include our emulation layer, xapi.emul.* -->
   <super-source path="emul"/><!-- 
@@ -46,25 +47,6 @@ You may set it back to false if you wish to use monolithic factory generators in
 <define-property values="true,false" name="xapi.inject"/>
 <set-property name="xapi.inject" value="false" />
      
-  
-  <!-- Configuration Property: gwt.magic.methods -> extend to add magic method injection.
-  
-  Allows end users to extend GWT.create() abilities using custom magic methods,
-  by replacing a callsite with custom AST (and a chance to call any generators).
-  
-  This enables bloat-free code to create factory methods that can take parameters.
-
-   These method overrides only work in the gwt compiler (super dev mode).
-   GwtDev will call the original method, without injection. 
-   
-   Beware that using magic method injection requires manipulating the classpath,
-   to ensure that either xapi-gwt-api (root gwt module) or xapi-gwt (uber module)
-   comes before gwt-dev and gwt-user on the classpath.
-   
-   A ClasspathFixer class is provided, and will be available as a maven goal.
-    -->
-  <define-configuration-property name="gwt.magic.methods" is-multi-valued="true"/>
-  
   <!-- 
   As an example of magic method injection, we'll set up a runtime property
   that will compile down to return true; if runtime injection is working.
@@ -78,7 +60,7 @@ You may set it back to false if you wish to use monolithic factory generators in
 
 <!-- Allows modules to define what platform annotation the production mode compiler uses -->
 <!-- This is useful in case you want to have multiple production targets in gwt that exclude each other -->
-<!-- Once again, the platform types and fallback types merely define what types are elligible for injection -->
+<!-- Once again, the platform types and fallback types merely define what types are eligible for injection -->
 <!-- The chosen type will always be whatever valid choice has the highest priority -->
  <define-configuration-property name="xapi.platform.prod" is-multi-valued="true"/>
  <extend-configuration-property name="xapi.platform.prod" value="xapi.platform.GwtPlatform"/>

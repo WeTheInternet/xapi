@@ -7,7 +7,7 @@ import javax.inject.Provider;
 
 import xapi.annotation.inject.SingletonDefault;
 import xapi.collect.impl.AbstractMultiInitMap;
-import xapi.dev.util.InjectionUtils;
+import xapi.source.read.SourceUtil;
 
 import com.google.gwt.core.ext.Generator;
 import com.google.gwt.core.ext.TreeLogger;
@@ -24,6 +24,8 @@ import com.google.gwt.dev.jjs.ast.JExpression;
 import com.google.gwt.dev.jjs.ast.JGwtCreate;
 import com.google.gwt.dev.jjs.ast.JMethod;
 import com.google.gwt.dev.jjs.ast.JMethodCall;
+import com.google.gwt.reflect.rebind.MagicContext;
+import com.google.gwt.reflect.rebind.generators.ReflectionGeneratorUtil;
 
 @SingletonDefault(implFor = MagicClassInjector.class)
 public class MagicClassInjector implements MagicMethodGenerator {
@@ -34,7 +36,7 @@ public class MagicClassInjector implements MagicMethodGenerator {
   // it's more for end users to experiment with while developing their own plugins,
   // but you can if you want and are fine with upgrading as the api grows.
   //
-  // If you need more functionality, than provided, submit a pull request
+  // If you need more functionality than provided, submit a pull request
   // and we can make a usable upstream api
   private static final Provider<MagicClassInjector> generator = singletonLazy(MagicClassInjector.class);
 
@@ -67,7 +69,7 @@ public class MagicClassInjector implements MagicMethodGenerator {
       JDeclaredType type =
         params.getAst().searchForTypeBySource(params.getClazz().getRefType().getName());
       String typeName = JGwtCreate.nameOf(type);
-      String generatedName = InjectionUtils.generatedMagicClassName(typeName);
+      String generatedName = ReflectionGeneratorUtil.generatedMagicClassName(typeName);
       try {
         params.getAst().searchForTypeBySource(generatedName);
       }catch(NoClassDefFoundError e) {
@@ -110,7 +112,7 @@ public class MagicClassInjector implements MagicMethodGenerator {
     Class<? extends Generator> generator = MagicClassGenerator.class;
 
     String result = ctx.runGenerator(params.getLogger(), generator,
-      InjectionUtils.toSourceName(type.getName()));
+      SourceUtil.toSourceName(type.getName()));
     ctx.finish(params.getLogger());
 
     params.getLogger().log(Type.INFO, "Generated Class Enhancer: " + result);

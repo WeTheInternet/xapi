@@ -31,12 +31,9 @@ import xapi.dev.source.ImportSection;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.dev.util.CurrentGwtPlatform;
-import xapi.dev.util.InjectionUtils;
-import xapi.gwt.reflect.ClassMap;
-import xapi.gwt.reflect.MemberMap;
-import xapi.gwt.reflect.MethodMap;
 import xapi.inject.X_Inject;
 import xapi.platform.Platform;
+import xapi.source.read.SourceUtil;
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JavaScriptObject;
@@ -57,6 +54,11 @@ import com.google.gwt.core.ext.typeinfo.JPackage;
 import com.google.gwt.core.ext.typeinfo.JRealClassType;
 import com.google.gwt.core.ext.typeinfo.NotFoundException;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
+import com.google.gwt.reflect.client.ClassMap;
+import com.google.gwt.reflect.client.MemberMap;
+import com.google.gwt.reflect.rebind.generators.GwtConstructorGenerator;
+import com.google.gwt.reflect.rebind.generators.GwtFieldGenerator;
+import com.google.gwt.reflect.rebind.generators.ReflectionGeneratorUtil;
 
 public class MagicClassGenerator extends IncrementalGenerator {
 
@@ -125,18 +127,18 @@ public class MagicClassGenerator extends IncrementalGenerator {
     boolean keepCodesource = false;
     boolean keepHierarchy = false;
     boolean keepPackageName = true;
-    
+
     synchronized (packages){
-        
+
       manifest = packages.get(pkg).cleanCopy();
-  
+
       defaultClass = manifest.cls;
       keepClass = type.getAnnotation(KeepClass.class);
       keepConstructor = type.getAnnotation(KeepConstructor.class);
       keepMethod = type.getAnnotation(KeepMethod.class);
       keepField = type.getAnnotation(KeepField.class);
       keepAnnotation = type.getAnnotation(KeepAnnotation.class);
-  
+
       if (defaultClass != null) {
         keepCodesource = defaultClass.keepCodeSource();
         keepHierarchy = defaultClass.keepHierarchy();
@@ -166,9 +168,9 @@ public class MagicClassGenerator extends IncrementalGenerator {
     JClassType injectionType = null;
     JClassType targetType = type;
     String packageName = type.getPackage().getName();
-    String simpleName = InjectionUtils.toSourceName(type.getSimpleSourceName());
-    String generatedName = InjectionUtils.generatedMagicClassName(simpleName);
-    String clsToEnhance = InjectionUtils.toSourceName(type.getQualifiedSourceName());
+    String simpleName = SourceUtil.toSourceName(type.getSimpleSourceName());
+    String generatedName = ReflectionGeneratorUtil.generatedMagicClassName(simpleName);
+    String clsToEnhance = SourceUtil.toSourceName(type.getQualifiedSourceName());
 
 
     //if the magic class implements newInstance()
@@ -284,15 +286,11 @@ public class MagicClassGenerator extends IncrementalGenerator {
         //Only call ensureProviderClass if injectMethod is X_Inject.singleton
         AbstractInjectionGenerator.
         ensureProviderClass(logger, packageName, type.getSimpleSourceName(), type.getQualifiedSourceName(),
-          InjectionUtils.toSourceName(injectionType.getQualifiedSourceName()), context);
+          SourceUtil.toSourceName(injectionType.getQualifiedSourceName()), context);
         default:
       }
-      //in case there was no injection target, just use the original Type as injectionType
-      if (injectionType == null) {
-        injectionType = targetType;// no matches, resort to instantiate the class sent.
-      }
     }
-    //in case there was no injection target, just use the targetType as injectionType
+    //in case there was no injection target, just use the original Type as injectionType
     if (injectionType == null) {
       injectionType = targetType;// no matches, resort to instantiate the class sent.
     }
@@ -319,7 +317,7 @@ public class MagicClassGenerator extends IncrementalGenerator {
     .addImports(clsToEnhance)
     .addImports(
         ClassMap.class, JavaScriptObject.class, UnsafeNativeLong.class,
-        MethodMap.class, MemberMap.class);
+        MemberMap.class);
 
     if (newInst != null)
       imports.addImport(Constructor.class);
@@ -329,16 +327,16 @@ public class MagicClassGenerator extends IncrementalGenerator {
       imports.addImport(Field.class);
     if (keepCodesource)
       imports.addImport(CodeSource.class);
-    
+
 
     ClassBuffer cls = classBuilder.getClassBuffer();
-    
+
     cls.createMethod("private " +generatedName+"()");
-    
+
     if (keepHierarchy) {
       injectionType.getNestedTypes();
     }
-    
+
     // This is the method that fills in all of the extra class data
     MethodBuffer enhanceMethod = cls.createMethod
       ("public static Class<"+simpleName+"> enhanceClass(Class<" +simpleName+"> toEnhance)")
@@ -383,21 +381,21 @@ public class MagicClassGenerator extends IncrementalGenerator {
       // check type for methods we want to keep
       extractMethods(logger, keepMethod, injectionType, manifest);
       if (keepMethod != null || manifest.methods.size()>0) {
-        GwtMethodGenerator.generateMethods(logger, cls, context, injectionType, manifest.methods);
+//        GwtMethodGenerator.generateMethods(logger, classBuilder, context, injectionType, manifest);
         enhanceMethod.println("enhanceMethods(toEnhance);");
       }
 
       // check type for constructors we want to keep
       extractConstructors(logger, keepConstructor, injectionType, manifest);
       if (keepConstructor != null || manifest.constructors.size()>0) {
-        GwtConstructorGenerator.generateConstructors(logger, cls, context, injectionType, manifest.constructors);
+        GwtConstructorGenerator.generateConstructors(logger, classBuilder, context, injectionType, manifest.constructors);
         enhanceMethod.println("enhanceConstructors(toEnhance);");
       }
-      
+
       // now, do the fields
       extractFields(logger, keepField, injectionType, manifest);
       if (keepField != null || manifest.fields.size()>0) {
-        if (GwtFieldGenerator.generateFields(logger, cls, context, injectionType, manifest.fields)){
+        if (GwtFieldGenerator.generateFields(logger, classBuilder, context, injectionType, manifest.fields)){
           enhanceMethod.println("enhanceFields(toEnhance);");
         }
       }
@@ -406,7 +404,7 @@ public class MagicClassGenerator extends IncrementalGenerator {
         .outdent()
         .println("}")
         .println("return toEnhance;");
-      
+
       if (keepCodesource) {
         if (injectionType instanceof JRealClassType) {
           String location = ((JRealClassType)injectionType).getLocation();
@@ -448,7 +446,7 @@ public class MagicClassGenerator extends IncrementalGenerator {
     boolean keepAnnos = manifest.anno != null;
     Set<String> seen = new HashSet<String>();
     Set<? extends JClassType> allTypes = injectionType.getFlattenedSupertypeHierarchy();
-    
+
     for(JClassType nextClass : allTypes) {
       for (JConstructor ctor : nextClass.getConstructors()) {
         if (keepCtors || ctor.getAnnotation(KeepConstructor.class) != null){
@@ -480,7 +478,7 @@ public class MagicClassGenerator extends IncrementalGenerator {
     boolean keepAnnos = manifest.anno != null;
     Set<String> seen = new HashSet<String>();
     Set<? extends JClassType> allTypes = injectionType.getFlattenedSupertypeHierarchy();
-    
+
     for(JClassType nextClass : allTypes) {
       if (nextClass.getQualifiedSourceName().equals("java.lang.Object")) {
         // gwt puts some intrinsic fields in Object we can't access
@@ -509,7 +507,7 @@ public class MagicClassGenerator extends IncrementalGenerator {
       nextClass = nextClass.getSuperclass();
     }
   }
-  
+
   private static void extractMethods(TreeLogger logger, KeepMethod keepMethod, JClassType injectionType,
     ReflectionManifest manifest) {
     boolean keepMethods = keepMethod != null;
@@ -548,7 +546,7 @@ public class MagicClassGenerator extends IncrementalGenerator {
     TypeOracle oracle = context.getTypeOracle();
     logger.log(Type.TRACE, "Generating magic class for " + typeName);
     try {
-      return execImpl(logger, context, oracle.getType(InjectionUtils.toSourceName(typeName)));
+      return execImpl(logger, context, oracle.getType(SourceUtil.toSourceName(typeName)));
     } catch (NotFoundException e) {
       logger.log(Type.ERROR, "Could not find class for " + typeName, e);
     }

@@ -1,8 +1,13 @@
 package xapi.dev.source;
 
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
+
+import xapi.source.read.JavaLexer;
+import xapi.source.read.JavaVisitor.TypeData;
 
 public abstract class MemberBuffer <Self extends MemberBuffer<Self>> extends PrintBuffer{
 
@@ -322,6 +327,40 @@ public abstract class MemberBuffer <Self extends MemberBuffer<Self>> extends Pri
   public Self print(String str) {
     super.print(str);
     return self();
+  }
+
+  protected void addNamedTypes(Set<String> result, Iterable<Entry<String, Class<?>>> types) {
+    for (Entry<String, Class<?>> type : types) {
+      String shortName = addImport(type.getValue());
+      result.add(shortName + " "+type.getKey());
+    }
+  }
+  protected void addNamedTypes(Set<String> result, String ... types) {
+    for (String parameter : types) {
+      parameter = parameter.trim();
+      int index = parameter.lastIndexOf(' ');
+      assert index > 0 : "Malformed named parameter missing ' ': "+parameter+"; from "+Arrays.asList(types);
+      TypeData type = JavaLexer.extractType(parameter, 0);
+      String shortName = addImport(type.getImportName());
+      result.add(shortName + " "
+          + parameter.substring(index + 1).trim());
+    }
+  }
+  protected void addTypes(Set<String> result, Class<?> ... types) {
+    for (Class<?> type : types) {
+      result.add(addImport(type.getCanonicalName()));
+    }
+  }
+  protected void addTypes(Set<String> result, String ... types) {
+    for (String typeName : types) {
+      typeName = typeName.trim();
+      TypeData type = JavaLexer.extractType(typeName, 0);
+      if (type.pkgName.length() > 0) {
+        String shortName = addImport(type.getImportName());
+        result.add(shortName);
+      }
+      result.add(typeName);
+    }
   }
 
 }

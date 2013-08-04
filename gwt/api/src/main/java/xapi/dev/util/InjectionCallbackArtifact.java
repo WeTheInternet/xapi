@@ -1,21 +1,21 @@
 package xapi.dev.util;
+import static xapi.dev.util.InjectionUtils.generatedAsyncProviderName;
+
 import java.util.LinkedHashSet;
 import java.util.Set;
 
 import javax.annotation.Nonnull;
 
+import xapi.source.read.SourceUtil;
+
 import com.google.gwt.core.ext.linker.Artifact;
 import com.google.gwt.core.ext.linker.Transferable;
 import com.google.gwt.core.ext.linker.impl.StandardLinkerContext;
 
-import static xapi.dev.util.InjectionUtils.generatedAsyncProviderName;
-import static xapi.dev.util.InjectionUtils.toSourceName;
-import static xapi.dev.util.InjectionUtils.toUniqueName;
-
 @Transferable
 public class InjectionCallbackArtifact extends Artifact<InjectionCallbackArtifact>{
   private static final long serialVersionUID = -6712802856568810532L;
-  
+
   private String boundTarget;
   private final String canonicalName;
   private final String className;
@@ -23,7 +23,7 @@ public class InjectionCallbackArtifact extends Artifact<InjectionCallbackArtifac
   private final String implementationPackage;
   private final String packageName;
   private final String simpleName;
-  
+
   private final Set<String> callbacks = new LinkedHashSet<String>();
 
   public InjectionCallbackArtifact(@Nonnull String packageName, @Nonnull String className) {
@@ -31,9 +31,9 @@ public class InjectionCallbackArtifact extends Artifact<InjectionCallbackArtifac
     this.packageName = packageName;
     //TODO: allow package crunching
     this.implementationPackage = packageName+".impl";
-    this.className = toSourceName(className.replace(packageName+".", ""));
+    this.className = SourceUtil.toSourceName(className.replace(packageName+".", ""));
     this.canonicalName = packageName+"."+this.className;
-    this.generatedName = toUniqueName(this.className);
+    this.generatedName = SourceUtil.toFlatName(this.className);
     int lastPeriod = this.className.lastIndexOf('.');
     if (lastPeriod==-1){
       this.simpleName = this.className;

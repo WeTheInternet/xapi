@@ -23,6 +23,13 @@ public class JavaModelTest {
   }
 
   @Test
+  public void testArrayParam () {
+    IsParameter param = JavaLexer.lexParam("Class<?>[] param");
+    Assert.assertEquals("Class<?>[]", param.getType());
+    Assert.assertEquals("param", param.getName());
+  }
+
+  @Test
   public void testComplexParam () {
     IsParameter param = JavaLexer.lexParam("final @Named(\"param\") @NotNull String param");
     Assert.assertEquals("String", param.getType());

@@ -41,8 +41,8 @@ import java.util.Set;
 import xapi.annotation.inject.InstanceDefault;
 import xapi.annotation.inject.InstanceOverride;
 import xapi.dev.util.CurrentGwtPlatform;
-import xapi.dev.util.InjectionUtils;
 import xapi.platform.Platform;
+import xapi.source.read.SourceUtil;
 
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.RebindMode;
@@ -135,7 +135,7 @@ public class InstanceInjectionGenerator extends AbstractInjectionGenerator {
     }
     String packageName = type.getPackage().getName();
     ensureProviderClass(logger, packageName, type.getSimpleSourceName(), type.getQualifiedSourceName(),
-      InjectionUtils.toSourceName(winningType.getQualifiedSourceName()), context);
+      SourceUtil.toSourceName(winningType.getQualifiedSourceName()), context);
     logger.log(Type.INFO,
       "Instance injection: " + type.getQualifiedSourceName() + " -> " + winningType.getQualifiedSourceName());
     return new RebindResult(RebindMode.USE_ALL_NEW_WITH_NO_CACHING, winningType.getQualifiedSourceName());
@@ -153,7 +153,7 @@ public class InstanceInjectionGenerator extends AbstractInjectionGenerator {
     logger = logger.branch(Type.INFO, "Generating instance injection for " + typeName);
 
     try {
-      return execImpl(logger, context, oracle.getType(InjectionUtils.toSourceName(typeName)));
+      return execImpl(logger, context, oracle.getType(SourceUtil.toSourceName(typeName)));
     } catch (NotFoundException e) {
       logger.log(Type.ERROR, "Could not find class for " + typeName, e);
     } catch (ClassNotFoundException e) {

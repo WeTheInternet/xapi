@@ -28,6 +28,7 @@ import com.google.gwt.dev.jjs.ast.JDeclaredType;
 import com.google.gwt.dev.jjs.ast.JExpression;
 import com.google.gwt.dev.jjs.ast.JMethod;
 import com.google.gwt.dev.jjs.ast.JMethodCall;
+import com.google.gwt.dev.jjs.impl.UnifyAst.UnifyVisitor;
 
 public class ModelMagic implements UnifyAstListener, MagicMethodGenerator {
 
@@ -59,12 +60,13 @@ public class ModelMagic implements UnifyAstListener, MagicMethodGenerator {
   }
 
   @Override
-  public void onUnifyAstStart(UnifyAstView unifyAst, Queue<JMethod> todo) {
+  public void onUnifyAstStart(UnifyAstView ast, UnifyVisitor visitor, Queue<JMethod> todo) {
 
   }
 
   @Override
-  public void onUnifyAstFinished(UnifyAstView ast, Queue<JMethod> todo) {
+  public boolean onUnifyAstPostProcess(UnifyAstView ast, UnifyVisitor visitor, Queue<JMethod> todo) {
+    return false;
   }
 
   @Override

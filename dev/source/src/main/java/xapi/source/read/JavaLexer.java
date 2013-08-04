@@ -51,12 +51,12 @@ import xapi.source.read.JavaModel.IsParameter;
 import xapi.source.read.JavaModel.IsType;
 import xapi.source.read.JavaVisitor.AnnotationMemberVisitor;
 import xapi.source.read.JavaVisitor.AnnotationVisitor;
+import xapi.source.read.JavaVisitor.ClassVisitor;
 import xapi.source.read.JavaVisitor.GenericVisitor;
 import xapi.source.read.JavaVisitor.JavadocVisitor;
 import xapi.source.read.JavaVisitor.MethodVisitor;
 import xapi.source.read.JavaVisitor.ModifierVisitor;
 import xapi.source.read.JavaVisitor.ParameterVisitor;
-import xapi.source.read.JavaVisitor.ClassVisitor;
 import xapi.source.read.JavaVisitor.TypeData;
 
 public class JavaLexer {
@@ -99,6 +99,16 @@ public class JavaLexer {
 
   }
 
+  public static class GenericsExtractor implements GenericVisitor<SimpleStack<IsGeneric>> {
+    @Override
+    public void visitGeneric(String generic, SimpleStack<IsGeneric> receiver) {
+      if (generic.charAt(0) == '<') {
+        generic = generic.substring(1, generic.length()-1);
+      }
+      receiver.add(new IsGeneric(generic, ""));
+    }
+  }
+
   /**
    * We need to store an index with our type data,
    * so our lexer method can return a new type object,
@@ -110,6 +120,7 @@ public class JavaLexer {
   public static class TypeDef extends TypeData {
 
     int index;
+    public boolean varargs;
 
     public TypeDef(String name) {
       super(name);
@@ -381,6 +392,7 @@ public class JavaLexer {
       }
     }
   }
+
   public static <R> int visitGeneric
   (GenericVisitor<R> visitor, R receiver,
       CharSequence chars, int pos) {
@@ -513,7 +525,8 @@ public class JavaLexer {
           }
         }
         int whitespace = eatWhitespace(chars, pos);
-        if (chars.charAt(whitespace) == '.') {
+        int next = chars.charAt(whitespace);
+        if (next == '.') {
           if (whitespace > pos && chars.charAt(whitespace+1)=='.') {
             break package_loop;
           }
@@ -526,7 +539,7 @@ public class JavaLexer {
             break package_loop;
           }
         } else {
-          if (whitespace > pos) {
+          if (whitespace > pos || next == '[' || next == '<') {
             doneParsing = true;
             break package_loop;
           }
@@ -590,21 +603,26 @@ public class JavaLexer {
         def.generics = chars.subSequence(start, ++pos).toString();
     }
     pos = eatWhitespace(chars, pos);
-    try{
-      while (chars.charAt(pos) == '[') {
-        def.arrayDepth ++;
-        while (chars.charAt(++pos)!=']');
-        pos = eatWhitespace(chars, pos+1);
-      }
-    } catch (IndexOutOfBoundsException ignored){}
+    while (pos < max && chars.charAt(pos) == '[') {
+      def.arrayDepth ++;
+      while (chars.charAt(++pos)!=']');
+      pos = eatWhitespace(chars, pos+1);
+    }
     if (pos < chars.length() && chars.charAt(pos) == '.') {
       assert chars.charAt(pos+1) == '.';
       assert chars.charAt(pos+2) == '.';
       def.arrayDepth++;
+      def.varargs = true;
       pos = eatWhitespace(chars, pos+3);
     }
     def.index = pos;
     return def;
+  }
+
+  public static SimpleStack<IsGeneric> extractGenerics (CharSequence chars, int pos) {
+    SimpleStack<IsGeneric> stack = new SimpleStack<IsGeneric>();
+    visitGeneric(new GenericsExtractor(), stack, chars, pos);
+    return stack;
   }
 
   protected static <R> int eatAnnotationBody
@@ -869,14 +887,13 @@ public class JavaLexer {
         // extends applies to superclass
         index = definition.indexOf("extends ");
         if (index > 0) {
-          definition = definition.replace("extends ", "");
-          int endIndex = definition.indexOf(' ', index);
+          int endIndex = definition.indexOf(' ', index+8);
           if (endIndex == -1) {
-            superClass = definition.substring(index);
-            definition = definition.replace(superClass, "");
+            superClass = definition.substring(index+8);
+            definition = definition.replace("extends "+superClass, "");
           } else {
-            superClass = definition.substring(index, endIndex);
-            definition = definition.replace(superClass + " ", "");
+            superClass = definition.substring(index+8, endIndex);
+            definition = definition.replace("extends "+superClass + " ", "");
           }
         } else {
           superClass = null;
@@ -1232,7 +1249,7 @@ public class JavaLexer {
     TypeDef type = extractType(chars, pos);
     int start = eatWhitespace(chars, type.index);
     pos = eatJavaname(chars, start);
-    IsParameter param = new IsParameter(chars.subSequence(start, pos).toString(), type.clsName);
+    IsParameter param = new IsParameter(chars.subSequence(start, pos).toString(), type.toString());
     param.annotations = annos;
     return param;
   }

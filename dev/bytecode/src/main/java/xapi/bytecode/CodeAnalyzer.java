@@ -167,13 +167,14 @@ public class CodeAnalyzer implements Opcode {
             throw new BadBytecode("verification error (" + stackDepth +
                                   "," + d + ") at " + opIndex);
     }
-                             
+
     private static boolean isEnd(int opcode) {
-        return (IRETURN <= opcode && opcode <= RETURN) || opcode == ATHROW; 
+        return (IRETURN <= opcode && opcode <= RETURN) || opcode == ATHROW;
     }
 
     /**
      * Visits an instruction.
+     * @throws BadBytecode
      */
     private int visitInst(int op, CodeIterator ci, int index, int stack)
         throws BadBytecode

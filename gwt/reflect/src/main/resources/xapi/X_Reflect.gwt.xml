@@ -51,7 +51,10 @@
   
  -->
 <extend-configuration-property name="gwt.magic.methods" 
-    value="xapi.gwt.reflect.X_Reflect.magicClass(Ljava/lang/Class;)Ljava/lang/Class; *= xapi.dev.reflect.MagicClassInjector::injectMagicClass"/>
+    value="xapi.gwt.reflect.X_Reflect.magicClass(Ljava/lang/Class;)Ljava/lang/Class; *= com.google.gwt.reflect.rebind.injectors.MagicClassInjector"/>
+<!-- Original Prototype -->
+<!-- <extend-configuration-property name="gwt.magic.methods" 
+    value="xapi.gwt.reflect.X_Reflect.magicClass(Ljava/lang/Class;)Ljava/lang/Class; *= xapi.dev.reflect.MagicClassInjector::injectMagicClass"/> -->
 	
 	
 </module>

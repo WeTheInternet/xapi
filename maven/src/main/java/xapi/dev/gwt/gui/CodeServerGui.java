@@ -105,17 +105,11 @@ public class CodeServerGui extends JFrame{
     try{
       String cpSep = File.pathSeparator;
     String cp = getClasspath(includeTestSources, cpSep);
-//    String xapi = getXapiPluginJar();
-//    if (!StringUtils.isEmpty(xapi)) {
-//      cp = xapi+cpSep+cp;
-//    }
+
     cp = alterClasspath(cp, cpSep);
 
     LinkedList<String> paths = getSourcePaths(includeTestSources);
 
-    //TODO conditionally add testing dependencies as well...
-
-//    paths.addFirst("/shared/xapi/super/src/test/java");
     for (String path : paths.toArray(new String[paths.size()])){
       File pathFile = new File(path);
       if (pathFile.exists()){
@@ -132,6 +126,8 @@ public class CodeServerGui extends JFrame{
         cp += cpSep+path;
       }
     }
+    X_Log.debug("Codeserver classpath",cp);
+    
     int debugPort = debugPort();
     int len = debugPort > 0 ? 8 : 6;
     final String[] cmdArray = new String[len];
@@ -240,7 +236,7 @@ public class CodeServerGui extends JFrame{
     public GwtFinder() {
       super(PASS_THRU);
     }
-    
+
     @Override
     protected Pair<String, Boolean> initialize(String cp, String sep) {
       return findGwt(cp, sep);
@@ -251,7 +247,7 @@ public class CodeServerGui extends JFrame{
         if (cpSep == null)
           cpSep = File.separator;
         String version = "";
-        
+
         if (!cp.contains(artifact)){
           X_Log.info(artifact," was not found in classpath.  Trying to guess from existing classpath.");
           //if the user did not specify codeserver location, let's try to guess it.
@@ -302,15 +298,15 @@ public class CodeServerGui extends JFrame{
               ex.printStackTrace();
             }
           }
-        
+
       }
       return cp;
     }
-    
+
   }
-  
+
   protected final GwtFinder gwtLocations = initFinder();
-  
+
 
   protected Pair<String, Boolean> findGwt(String cp, String cpSep) {
     String version;
@@ -361,7 +357,7 @@ public class CodeServerGui extends JFrame{
     }
     return null;
   }
-  
+
   protected String alterClasspath(String cp, String cpSep) {
     String gwt = gwtLocations.findArtifact(cp, "gwt-codeserver", cpSep);
     gwt = gwtLocations.findArtifact(cp, "gwt-dev", cpSep);

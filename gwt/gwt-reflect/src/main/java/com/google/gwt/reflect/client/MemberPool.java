@@ -1,0 +1,37 @@
+package com.google.gwt.reflect.client;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+
+import com.google.gwt.core.client.SingleJsoImpl;
+
+@SingleJsoImpl(JsMemberPool.class)
+public interface MemberPool <T> {
+
+  <A extends Annotation> A getAnnotation(Class<A> annoCls);
+  Annotation[] getAnnotations();
+  Annotation[] getDeclaredAnnotations();
+
+  Constructor<T> getConstructor(Class<?> ... params) throws NoSuchMethodException;
+  Constructor<T> getDeclaredConstructor(Class<?> ... params) throws NoSuchMethodException;
+  Constructor<T>[] getConstructors();
+  Constructor<T>[] getDeclaredConstructors();
+
+  Field getField(String name) throws NoSuchFieldException;
+  Field getDeclaredField(String name) throws NoSuchFieldException;
+  Field[] getFields();
+  Field[] getDeclaredFields();
+
+  Method getMethod(String name, Class<?> ... params) throws NoSuchMethodException;
+  Method getDeclaredMethod(String name, Class<?> ... params) throws NoSuchMethodException;
+  Method[] getMethods();
+  Method[] getDeclaredMethods();
+
+  MemberPool<? super T> getSuperclass();
+  MemberPool<? super T>[] getInterfaces();
+  MemberPool<?>[] getClasses();
+  Class<T> getType();
+
+}

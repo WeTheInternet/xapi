@@ -44,28 +44,9 @@
 	<build>
 		<plugins>
 			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>build-helper-maven-plugin</artifactId>
-				<version>1.8</version>
-				<executions>
-					<execution>
-						<id>add-source</id>
-						<phase>generate-sources</phase>
-						<goals>
-							<goal>add-source</goal>
-						</goals>
-						<inherited>false</inherited>
-						<configuration>
-							<sources>
-								<source>target/generated-sources/xapi</source>
-							</sources>
-						</configuration>
-					</execution>
-				</executions>
-				<goals>
-					<goal>add-source</goal>
-				</goals>
-			</plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+      </plugin>
 		</plugins>
 	</build>
 

@@ -1,20 +1,15 @@
 package xapi.util.api;
 
+import xapi.util.matchers.MatchesAll;
+import xapi.util.matchers.MatchesNone;
+
 public interface MatchesValue <T> {
 
   @SuppressWarnings("rawtypes")
-  final MatchesValue ANY = new MatchesValue(){
-    public boolean matches(Object value) {
-      return true;
-    }
-  };
+  final MatchesValue ANY = new MatchesAll();
 
   @SuppressWarnings("rawtypes")
-  final MatchesValue NONE = new MatchesValue(){
-    public boolean matches(Object value) {
-      return false;
-    }
-  };
+  final MatchesValue NONE = new MatchesNone();
 
   boolean matches(T value);
 

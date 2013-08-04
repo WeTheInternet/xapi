@@ -49,6 +49,7 @@ import xapi.dev.source.SourceBuilder;
 import xapi.dev.util.GwtInjectionMap;
 import xapi.dev.util.InjectionUtils;
 import xapi.inject.api.Injector;
+import xapi.source.read.SourceUtil;
 import xapi.util.X_Runtime;
 
 import com.google.gwt.core.client.GWT;
@@ -116,7 +117,7 @@ public class GwtDevInjectionGenerator extends AbstractInjectionGenerator {
       JClassType impl = entry.getValue();
       // make sure our provider class is available
       ensureProviderClass(logger, cls.getPackage().getName(), cls.getSimpleName(), cls
-          .getCanonicalName(), InjectionUtils.toSourceName(impl.getQualifiedSourceName()), context);
+          .getCanonicalName(), SourceUtil.toSourceName(impl.getQualifiedSourceName()), context);
       ensureAsyncInjected(logger, cls.getPackage().getName(), cls.getName(), impl.getQualifiedSourceName(), context);
 //      ensureCallbackClass(logger, cls.getPackage().getName(),cls.getCanonicalName(), cls.getSimpleName(), impl
 //          .getQualifiedSourceName(), context);

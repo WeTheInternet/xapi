@@ -14,6 +14,9 @@ public class StringDataResource extends DelegateClasspathResource{
     super(source);
   }
 
+  /**
+   * @throws IOException
+   */
   public Iterable<String> readLines() throws IOException {
     return new Iterable<String>(){
       @Override

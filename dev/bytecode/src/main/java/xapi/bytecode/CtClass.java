@@ -148,6 +148,7 @@ public abstract class CtClass {
     /**
      * Converts the object to a string.
      */
+    @Override
     public String toString() {
         StringBuffer buf = new StringBuffer(getClass().getName());
         buf.append("@");
@@ -277,6 +278,7 @@ public abstract class CtClass {
     /**
      * If this object represents an array, this method returns the component
      * type of the array.  Otherwise, it returns <code>null</code>.
+     * @throws NotFoundException
      */
     public CtClass getComponentType() throws NotFoundException {
         return null;
@@ -286,6 +288,7 @@ public abstract class CtClass {
      * Returns <code>true</code> if this class extends or implements
      * <code>clazz</code>.  It also returns <code>true</code> if
      * this class is the same as <code>clazz</code>.
+     * @throws NotFoundException
      */
     public boolean subtypeOf(CtClass clazz) throws NotFoundException {
         return this == clazz || getName().equals(clazz.getName());
@@ -376,16 +379,19 @@ public abstract class CtClass {
             ClassMap cm = new ClassMap() {
               private static final long serialVersionUID = -2857251063424982386L;
 
+                @Override
                 public void put(String oldname, String newname) {
                     put0(oldname, newname);
                 }
 
+                @Override
                 public Object get(Object jvmClassName) {
                     String n = toJavaName((String)jvmClassName);
                     put0(n, n);
                     return null;
                 }
 
+                @Override
                 public void fix(String name) {}
             };
             cf.renameClass(cm);
@@ -428,7 +434,7 @@ public abstract class CtClass {
      * For decoding, use <code>javassist.Modifier</code>.
      *
      * <p>If the class is a static nested class (a.k.a. static inner class),
-     * the returned modifiers include <code>Modifier.STATIC</code>. 
+     * the returned modifiers include <code>Modifier.STATIC</code>.
      *
      * @see Modifier
      */
@@ -456,6 +462,7 @@ public abstract class CtClass {
      *
      * @param clz the annotation class.
      * @return the annotation if found, otherwise <code>null</code>.
+     * @throws ClassNotFoundException
      * @since 3.11
      */
     public Object getAnnotation(Class<?> clz) throws ClassNotFoundException {
@@ -470,6 +477,7 @@ public abstract class CtClass {
      * the <code>Author</code> object.
      *
      * @return an array of annotation-type objects.
+     * @throws ClassNotFoundException
      * @see CtMember#getAnnotations()
      * @since 3.1
      */
@@ -496,6 +504,7 @@ public abstract class CtClass {
      * Returns an array of nested classes declared in the class.
      * Nested classes are inner classes, anonymous classes, local classes,
      * and static nested classes.
+     * @throws NotFoundException
      *
      * @since 3.2
      */
@@ -541,6 +550,7 @@ public abstract class CtClass {
      * always returns the <code>java.lang.Object</code> class.
      * To obtain the super interfaces
      * extended by that interface, call <code>getInterfaces()</code>.
+     * @throws NotFoundException
      */
     public CtClass getSuperclass() throws NotFoundException {
         return null;
@@ -555,6 +565,7 @@ public abstract class CtClass {
      * to <code>addInterface()</code>; it appends <code>clazz</code> to
      * the list of the super interfaces extended by that interface.
      * Note that an interface can extend multiple super interfaces.
+     * @throws CannotCompileException
      *
      * @see #replaceClassName(String, String)
      * @see #replaceClassName(ClassMap)
@@ -567,6 +578,7 @@ public abstract class CtClass {
      * Obtains the class objects representing the interfaces implemented
      * by the class or, if this object represents an interface, the interfaces
      * extended by that interface.
+     * @throws NotFoundException
      */
     public CtClass[] getInterfaces() throws NotFoundException {
         return new CtClass[0];
@@ -599,6 +611,7 @@ public abstract class CtClass {
      * then the class enclosing this class is returned.
      *
      * @return null if this class is a top-level class or an anonymous class.
+     * @throws NotFoundException
      */
     public CtClass getDeclaringClass() throws NotFoundException {
         return null;
@@ -607,9 +620,10 @@ public abstract class CtClass {
     /**
      * Returns the immediately enclosing method of this class.
      * This method works only with JDK 1.5 or later.
-     * 
+     *
      * @return null if this class is not a local class or an anonymous
      * class.
+     * @throws NotFoundException
      */
     public CtMethod getEnclosingMethod() throws NotFoundException {
         return null;
@@ -618,7 +632,7 @@ public abstract class CtClass {
     /**
      * Makes a new public nested class.  If this method is called,
      * the <code>CtClass</code>, which encloses the nested class, is modified
-     * since a class file includes a list of nested classes.  
+     * since a class file includes a list of nested classes.
      *
      * <p>The current implementation only supports a static nested class.
      * <code>isStatic</code> must be true.
@@ -817,6 +831,7 @@ public abstract class CtClass {
     /**
      * Adds a constructor.  To add a class initializer (static constructor),
      * call <code>makeClassInitializer()</code>.
+     * @throws CannotCompileException
      *
      * @see #makeClassInitializer()
      */
@@ -838,6 +853,7 @@ public abstract class CtClass {
 
     /**
      * Adds a method.
+     * @throws CannotCompileException
      */
     public void addMethod(CtMethod m) throws CannotCompileException {
         checkModify();
@@ -1105,7 +1121,7 @@ public abstract class CtClass {
      * <p>If <code>ClassPool.doPruning</code> is true, the automatic pruning
      * is on by default.  Otherwise, it is off.  The default value of
      * <code>ClassPool.doPruning</code> is false.
-     * 
+     *
      * @param stop      disallow pruning if true.  Otherwise, allow.
      * @return the previous status of pruning.  true if pruning is already stopped.
      *
@@ -1129,7 +1145,7 @@ public abstract class CtClass {
      *
      * <p><code>toBytecode()</code>, <code>writeFile()</code>, and
      * <code>toClass()</code> internally call this method if
-     * automatic pruning is on. 
+     * automatic pruning is on.
      *
      * <p>According to some experiments, pruning does not really reduce
      * memory consumption.  Only about 20%.  Since pruning takes time,
@@ -1192,6 +1208,7 @@ public abstract class CtClass {
      * object in the current directory.
      * Once this method is called, further modifications are not
      * possible any more.
+     * @throws NotFoundException
      *
      * @see #debugWriteFile()
      */
@@ -1280,27 +1297,32 @@ public abstract class CtClass {
                 file = new FileOutputStream(filename);
         }
 
+        @Override
         public void write(int b) throws IOException {
             init();
             file.write(b);
         }
 
+        @Override
         public void write(byte[] b) throws IOException {
             init();
             file.write(b);
         }
 
+        @Override
         public void write(byte[] b, int off, int len) throws IOException {
             init();
             file.write(b, off, len);
 
         }
 
+        @Override
         public void flush() throws IOException {
             init();
             file.flush();
         }
 
+        @Override
         public void close() throws IOException {
             init();
             file.close();
@@ -1315,6 +1337,7 @@ public abstract class CtClass {
      * <p>This method dose not close the output stream in the end.
      *
      * @param out       the output stream that a class file is written to.
+     * @throws IOException
      */
     public void toBytecode(DataOutputStream out)
         throws CannotCompileException, IOException

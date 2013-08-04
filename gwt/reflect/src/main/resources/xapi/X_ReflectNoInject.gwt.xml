@@ -25,7 +25,7 @@
 	
   <!-- Inherit our basic needs -->
   <inherits name="xapi.X_Inject" />
-  <inherits name="com.google.gwt.core.Core" />
+  <inherits name="com.google.gwt.reflect.Reflect" />
 	
 	<!-- 
   This generator will iterate for all classes annotated with @GwtClass

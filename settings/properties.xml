@@ -7,7 +7,7 @@
   <groupId>net.wetheinter</groupId>
   <artifactId>xapi-settings-root</artifactId>
   <version>0.4-SNAPSHOT</version>
-  <relativePath>root.xml</relativePath>
+  <relativePath>pom.xml</relativePath>
  </parent>
 
  <groupId>net.wetheinter</groupId>
@@ -32,8 +32,9 @@
   <maven.compiler.target>${java.version}</maven.compiler.target>
   <xapi.version>0.4-SNAPSHOT</xapi.version>
   <xapi.test.version>0.4-SNAPSHOT</xapi.test.version>
-  <playn.version>1.5.1</playn.version>
   <gwt.version>2.5.1</gwt.version>
+  <xapi.gwt.version>${gwt.version}-rc1</xapi.gwt.version>
+  <playn.version>1.5.1</playn.version>
   <appengine.version>1.7.6</appengine.version>
   <guava.version>13.0.1</guava.version>
   <android.maven.version>3.4.0</android.maven.version>

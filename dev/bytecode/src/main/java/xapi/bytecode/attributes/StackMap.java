@@ -86,6 +86,7 @@ public class StackMap extends AttributeInfo {
     /**
      * Makes a copy.
      */
+    @Override
     public AttributeInfo copy(ConstPool newCp, Map<?, ?> classnames) {
         Copier copier = new Copier(this, newCp, classnames);
         copier.visit();
@@ -106,7 +107,7 @@ public class StackMap extends AttributeInfo {
         }
 
         /**
-         * Visits each entry of the stack map frames. 
+         * Visits each entry of the stack map frames.
          */
         public void visit() {
             int num = X_Byte.readU16bit(info, 0);
@@ -122,7 +123,7 @@ public class StackMap extends AttributeInfo {
 
         /**
          * Invoked when <code>locals</code> of <code>stack_map_frame</code>
-         * is visited.  
+         * is visited.
          */
         public int locals(int pos, int offset, int num) {
             return typeInfoArray(pos, offset, num, true);
@@ -130,7 +131,7 @@ public class StackMap extends AttributeInfo {
 
         /**
          * Invoked when <code>stack</code> of <code>stack_map_frame</code>
-         * is visited.  
+         * is visited.
          */
         public int stack(int pos, int offset, int num) {
             return typeInfoArray(pos, offset, num, false);
@@ -203,33 +204,39 @@ public class StackMap extends AttributeInfo {
             destCp = newCp;
             this.classnames = classnames;
         }
-        
+
+        @Override
         public void visit() {
             int num = X_Byte.readU16bit(info, 0);
             X_Byte.write16bit(num, dest, 0);
             super.visit();
         }
 
+        @Override
         public int locals(int pos, int offset, int num) {
             X_Byte.write16bit(offset, dest, pos - 4);
             return super.locals(pos, offset, num);
         }
 
+        @Override
         public int typeInfoArray(int pos, int offset, int num, boolean isLocals) {
             X_Byte.write16bit(num, dest, pos - 2);
             return super.typeInfoArray(pos, offset, num, isLocals);
         }
 
+        @Override
         public void typeInfo(int pos, byte tag) {
             dest[pos] = tag;
         }
 
+        @Override
         public void objectVariable(int pos, int clazz) {
             dest[pos] = OBJECT;
             int newClazz = srcCp.copy(clazz, destCp, classnames);
             X_Byte.write16bit(newClazz, dest, pos + 1);
         }
 
+        @Override
         public void uninitialized(int pos, int offset) {
             dest[pos] = UNINIT;
             X_Byte.write16bit(offset, dest, pos + 1);
@@ -250,6 +257,7 @@ public class StackMap extends AttributeInfo {
      * @param classInfo      the index of the <code>CONSTANT_Class_info</code> structure
      *                       in a constant pool table.  This should be zero unless the tag
      *                       is <code>ITEM_Object</code>.
+     * @throws BadBytecode
      *
      * @see javassist.CtBehavior#addParameter(javassist.CtClass)
      * @see StackMapTable#typeTagOf(char)
@@ -275,30 +283,36 @@ public class StackMap extends AttributeInfo {
             return writer.toByteArray();
         }
 
+        @Override
         public void visit() {
             int num = X_Byte.readU16bit(info, 0);
             writer.write16bit(num);
             super.visit();
         }
 
+        @Override
         public int locals(int pos, int offset, int num) {
             writer.write16bit(offset);
             return super.locals(pos, offset, num);
         }
 
+        @Override
         public int typeInfoArray(int pos, int offset, int num, boolean isLocals) {
             writer.write16bit(num);
             return super.typeInfoArray(pos, offset, num, isLocals);
         }
 
+        @Override
         public void typeInfo(int pos, byte tag) {
             writer.writeVerifyTypeInfo(tag, 0);
         }
 
+        @Override
         public void objectVariable(int pos, int clazz) {
             writer.writeVerifyTypeInfo(OBJECT, clazz);
         }
 
+        @Override
         public void uninitialized(int pos, int offset) {
             writer.writeVerifyTypeInfo(UNINIT, offset);
         }
@@ -315,6 +329,7 @@ public class StackMap extends AttributeInfo {
             this.varData = varData;
         }
 
+        @Override
         public int typeInfoArray(int pos, int offset, int num, boolean isLocals) {
             if (!isLocals || num < varIndex)
                 return super.typeInfoArray(pos, offset, num, isLocals);
@@ -343,6 +358,9 @@ public class StackMap extends AttributeInfo {
         }
     }
 
+    /**
+     * @throws BadBytecode
+     */
     public void shiftPc(int where, int gapSize, boolean exclusive)
         throws BadBytecode
     {
@@ -360,6 +378,7 @@ public class StackMap extends AttributeInfo {
             this.exclusive = exclusive;
         }
 
+        @Override
         public int locals(int pos, int offset, int num) {
             if (exclusive ? where <= offset : where < offset)
                 X_Byte.write16bit(offset + gap, info, pos - 4);
@@ -373,9 +392,10 @@ public class StackMap extends AttributeInfo {
      *
      * <p>This method is for javassist.convert.TransformNew.
      * It is called to update the stack map when
-     * the NEW opcode (and the following DUP) is removed. 
+     * the NEW opcode (and the following DUP) is removed.
      *
      * @param where     the position of the removed NEW opcode.
+     * @throws CannotCompileException
      */
      public void removeNew(int where) throws CannotCompileException {
          byte[] data = new NewRemover(this, where).doit();
@@ -390,6 +410,7 @@ public class StackMap extends AttributeInfo {
             posOfNew = where;
         }
 
+        @Override
         public int stack(int pos, int offset, int num) {
             return stackTypeInfoArray(pos, offset, num);
         }
@@ -458,6 +479,7 @@ public class StackMap extends AttributeInfo {
             visit();
         }
 
+        @Override
         public int locals(int pos, int offset, int num) {
             writer.println("  * offset " + offset);
             return super.locals(pos, offset, num);

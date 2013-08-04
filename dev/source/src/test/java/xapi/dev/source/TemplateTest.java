@@ -5,6 +5,8 @@ import java.util.regex.Pattern;
 import org.junit.Assert;
 import org.junit.Test;
 
+import xapi.source.write.Template;
+
 public class TemplateTest {
 
   @Test

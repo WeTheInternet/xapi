@@ -5,6 +5,7 @@ import java.lang.reflect.Modifier;
 import xapi.source.read.JavaLexer;
 import xapi.source.read.JavaLexer.TypeDef;
 import xapi.source.read.JavaVisitor.TypeData;
+import xapi.source.write.Template;
 
 /**
  * A field buffer is used to add a field to a generated class.

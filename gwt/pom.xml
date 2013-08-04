@@ -61,6 +61,11 @@
 
   <modules>
 
+    <!-- Implementation of magic method injection. -->
+    <module>gwt-method-inject</module>
+    <!-- Implementation of gwt reflection. -->
+    <module>gwt-reflect</module>
+
     <!-- All super-source, gwt-compiler hacks and shared gwt-only code go here. Must come before gwt-dev during 
       gwt compiles! Your runtime dependency ordering doesn't matter, but your classpath ordering in gwt-maven-plugin 
       or ant build script, etc is important. See ClasspathFixer to fix jenkins and eclipse runtimes to auto-add gwt source 
@@ -94,7 +99,6 @@
       tab runs out of memory). -->
     <module>reflect</module>
 
-
     <!-- Contains the gwt-only implementation of our collections library. This module is VERY experimental, and 
       the apis will likely change. -->
     <module>collect</module>
@@ -125,7 +129,6 @@
 
     <!-- Some common testing utilities -->
     <module>test</module>
-
 
   </modules>
 

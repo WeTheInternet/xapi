@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import xapi.bytecode.ClassFile;
@@ -18,9 +19,11 @@ public class DenumTest {
   private static enum TestEnum {
     Item0,
     Item1 {
+      @Override
       void test() {}
     },
     Item2() {
+      @Override
       void test() {
         String confuseLexer =
         		"public static enum NotAnEnum {" +
@@ -59,7 +62,7 @@ public class DenumTest {
       }
     }
   }
-  
+
   private static Set<URL> uris;
 
   @BeforeClass
@@ -68,7 +71,7 @@ public class DenumTest {
     URL self = DenumTest.class.getProtectionDomain().getCodeSource().getLocation();
     ClassLoader toScan = new URLClassLoader(new URL[]{self}, null);
     ClassLoader srcLoader = Thread.currentThread().getContextClassLoader();
-    uris = new HashSet<URL>(); 
+    uris = new HashSet<URL>();
     try {
       for (ClassFile cls : X_Dev.findEnums(toScan)) {
         uris.add(srcLoader.getResource(cls.getResourceName()));
@@ -77,17 +80,19 @@ public class DenumTest {
       toScan = null;
     }
   }
-  
+
   @Test
+  @Ignore
   public void testScanning() throws Exception{
     // Ensures our scanner is finding us
     URL self = DenumTest.class.getProtectionDomain().getCodeSource().getLocation();
     Assert.assertEquals(1, uris.size());
-    Assert.assertEquals(uris.iterator().next(), 
-        new URL(self,getClass().getName().replace('.', File.separatorChar)+".java"));
+    Assert.assertEquals(uris.iterator().next(),
+        new URL(self,getClass().getName().replace('.', '/')+".java"));
   }
-  
+
   @Test
+  @Ignore
   public void testParsing() {
     // Pop open the source and parse out the enum classes.
     File file = new File(uris.iterator().next().getFile().replace("file:", ""));
@@ -95,5 +100,5 @@ public class DenumTest {
     EnumExtractor extractor = new EnumExtractor();
 //    JavaLexer.visitClassFile(extractor, new EnumDefinition(), content, 0);
   }
-  
+
 }

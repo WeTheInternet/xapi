@@ -1,0 +1,28 @@
+TODO:
+Create a gwt-async module,
+Requirement r = GwtAsync.require(Some.class);
+r.requireMore(Other.class, More.class); 
+r.onDone(new Callback());// always called asynchronously, after requirements are met, in the order added
+GwtAsync.resolve(r, Callback.class.getMethod("callback")); // send a method to prevent leaking code in current split point
+// Bonus points: make the getMethod magic, by looking at it in the generator, pulling data, and moving the reference inside the generated RunAsyncCallback.
+
+
+For any required class, use a @Requirement() annotation to declare other dependencies to be loaded at the same time (preferable before, except in the case of cycles; then the child comes before the parent).  Most @Requirement should be done at the interface level, with implementation classes only requiring other package private stuff they need.
+
+This will tell the generator(s) to automatically bundle together any requirements and load them asynchronously.
+
+The actual call to GwtAsync.resolve() will result in a GWT.runAsync() that will call GwtReflect.magicClass() on all class literals required.
+
+It will be left up to the gwt fragment sharder to determine where to actually emit the javascript for each enhanced class.
+
+
+Once the gwt api is solid, it could become an implementation for the gwt branch of xapi,
+and the @Requirement() could be used to autogenerate maven and osgi dependencies,
+or even to create a synthetic classworld of a stripped down view of the application
+(to allow runtime exploration of the classpath w/out potentially many thousands of unneeded classes loaded).
+
+Ideally,
+a jvm backend for a running gwt app could create this synthetic classworld in an isolated classloader,
+then just serialize the ClassWorld and send it to the client (in pieces, as needed).
+Requirements at the interface level could be rebound in a target gwt or maven module,
+so that a jvm running as a server can emulate other environments, and send serialized copies to less capable clients.

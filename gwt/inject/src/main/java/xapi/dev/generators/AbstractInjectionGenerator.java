@@ -57,6 +57,7 @@ import xapi.gwt.collect.JsFifo;
 import xapi.inject.AsyncProxy;
 import xapi.inject.impl.SingletonInitializer;
 import xapi.inject.impl.SingletonProvider;
+import xapi.source.read.SourceUtil;
 import xapi.util.api.ApplyMethod;
 import xapi.util.api.ReceivesValue;
 import xapi.util.impl.ReceiverAdapter;
@@ -448,9 +449,9 @@ public abstract class AbstractInjectionGenerator extends IncrementalGenerator{
         String packageName, String simpleName0,String canonical,
         String qualifiedSourceName,
         GeneratorContext ctx){
-      String simpleName = InjectionUtils.toSourceName(simpleName0);
+      String simpleName = SourceUtil.toSourceName(simpleName0);
       String generatedName = InjectionUtils.generatedProviderName(simpleName);
-      String cleanedCanonical = InjectionUtils.toSourceName(canonical);
+      String cleanedCanonical = SourceUtil.toSourceName(canonical);
       logger.log(Type.DEBUG, "Creating provider for "+packageName+"."+generatedName);
 
         PrintWriter printWriter = ctx.tryCreate(logger, packageName, generatedName);
@@ -475,7 +476,7 @@ public abstract class AbstractInjectionGenerator extends IncrementalGenerator{
             sw.indent();
 
             sw.print("return GWT.<" +cleanedCanonical+">create(");
-            sw.print(InjectionUtils.toSourceName(qualifiedSourceName)+".class");
+            sw.print(SourceUtil.toSourceName(qualifiedSourceName)+".class");
             sw.println(");");
 
             sw.outdent();

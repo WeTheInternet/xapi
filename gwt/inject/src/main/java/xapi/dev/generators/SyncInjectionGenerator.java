@@ -43,6 +43,7 @@ import xapi.dev.util.InjectionUtils;
 import xapi.dev.util.PlatformSet;
 import xapi.inject.impl.SingletonInitializer;
 import xapi.log.X_Log;
+import xapi.source.read.SourceUtil;
 import xapi.util.api.ReceivesValue;
 
 import com.google.gwt.core.ext.GeneratorContext;
@@ -101,7 +102,7 @@ public class SyncInjectionGenerator extends AbstractInjectionGenerator{
     if (trace)
     X_Log.info("Singleton Injection Winner: "+winningType.getName());
     String packageName = type.getPackage().getName();
-        ensureProviderClass(logger, packageName,type.getSimpleSourceName(),type.getQualifiedSourceName(), InjectionUtils.toSourceName(winningType.getQualifiedSourceName()), context);
+        ensureProviderClass(logger, packageName,type.getSimpleSourceName(),type.getQualifiedSourceName(), SourceUtil.toSourceName(winningType.getQualifiedSourceName()), context);
     packageName = packageName+".impl";
     PrintWriter printWriter = context.tryCreate(logger, packageName, simpleName);
     if (printWriter == null) {
@@ -182,7 +183,7 @@ public class SyncInjectionGenerator extends AbstractInjectionGenerator{
     logger.log(Type.TRACE,"Generating singleton for "+typeName);
 
     try {
-      return execImpl(logger, context, oracle.getType(InjectionUtils.toSourceName(typeName)));
+      return execImpl(logger, context, oracle.getType(SourceUtil.toSourceName(typeName)));
        } catch (NotFoundException e) {
       logger.log(Type.ERROR, "Could not find class for "+typeName,e);
     }

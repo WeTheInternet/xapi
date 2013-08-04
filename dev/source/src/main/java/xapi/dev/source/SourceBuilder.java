@@ -43,7 +43,7 @@ public class SourceBuilder <Payload> {
 	private ImportSection imports;
 	private ClassBuffer classDef;
 	private Payload payload;
-	private String pkgName;
+	private String pkgName = "";
   private int skip;
 
 	public SourceBuilder() {
@@ -137,7 +137,7 @@ public class SourceBuilder <Payload> {
   public String toString() {
     StringBuilder source = new StringBuilder();
     String body = head.toString();
-    if (pkgName != null) {
+    if (pkgName.length() > 0) {
       if (body.trim().startsWith("package")) {
         int ind = body.indexOf(';', body.indexOf("package"));
         body = body.substring(ind+1);
@@ -148,6 +148,9 @@ public class SourceBuilder <Payload> {
       source.append(imports.toString());
     source.append(body);
     return source.toString();
+  }
+  public String getQualifiedName() {
+    return getClassBuffer().getQualifiedName();
   }
 
 }

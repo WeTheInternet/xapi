@@ -204,7 +204,7 @@ public final class CtMethod extends CtBehavior {
     public boolean isEmpty() {
         return true;
     }
-    
+
     public static class ConstParameter {
       /**
        * Makes an integer constant.
@@ -237,6 +237,7 @@ public final class CtMethod extends CtBehavior {
 
       /**
        * @return      the size of the stack consumption.
+       * @throws CannotCompileException
        */
       int compile(Bytecode code) throws CannotCompileException {
           return 0;
@@ -277,15 +278,18 @@ public final class CtMethod extends CtBehavior {
           param = i;
       }
 
+      @Override
       int compile(Bytecode code) throws CannotCompileException {
           code.addIconst(param);
           return 1;
       }
 
+      @Override
       String descriptor() {
           return "([Ljava/lang/Object;I)Ljava/lang/Object;";
       }
 
+      @Override
       String constDescriptor() {
           return "([Ljava/lang/Object;I)V";
       }
@@ -298,15 +302,18 @@ public final class CtMethod extends CtBehavior {
           param = l;
       }
 
+      @Override
       int compile(Bytecode code) throws CannotCompileException {
           code.addLconst(param);
           return 2;
       }
 
+      @Override
       String descriptor() {
           return "([Ljava/lang/Object;J)Ljava/lang/Object;";
       }
 
+      @Override
       String constDescriptor() {
           return "([Ljava/lang/Object;J)V";
       }
@@ -319,15 +326,18 @@ public final class CtMethod extends CtBehavior {
           param = s;
       }
 
+      @Override
       int compile(Bytecode code) throws CannotCompileException {
           code.addLdc(param);
           return 1;
       }
 
+      @Override
       String descriptor() {
           return "([Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;";
       }
 
+      @Override
       String constDescriptor() {
           return "([Ljava/lang/Object;Ljava/lang/String;)V";
       }

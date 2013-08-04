@@ -41,6 +41,7 @@ import xapi.annotation.inject.SingletonOverride;
 import xapi.dev.util.CurrentGwtPlatform;
 import xapi.dev.util.InjectionUtils;
 import xapi.dev.util.PlatformSet;
+import xapi.source.read.SourceUtil;
 import xapi.util.api.ReceivesValue;
 
 import com.google.gwt.core.ext.GeneratorContext;
@@ -147,7 +148,7 @@ public class AsyncInjectionGenerator extends AbstractInjectionGenerator{
     logger.log(Type.TRACE,"Generating singleton for "+typeName);
 
     try {
-      return execImpl(logger, context, oracle.getType(InjectionUtils.toSourceName(typeName)));
+      return execImpl(logger, context, oracle.getType(SourceUtil.toSourceName(typeName)));
        } catch (NotFoundException e) {
       logger.log(Type.ERROR, "Could not find class for "+typeName,e);
     }

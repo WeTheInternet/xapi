@@ -39,6 +39,7 @@ import java.lang.reflect.Modifier;
 import java.util.Set;
 import java.util.TreeSet;
 
+import xapi.collect.impl.SimpleStack;
 import xapi.source.read.JavaLexer;
 
 
@@ -49,6 +50,7 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer>{
 	private String superClass;
 	private String simpleName;
 	private final Set<String> interfaces;
+	private final SimpleStack<MethodBuffer> ctors;
 	protected SourceBuilder<?> context;
   private boolean isWellFormatted;
   private PrintBuffer prefix;
@@ -64,6 +66,7 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer>{
 	  indent();
 	  this.context = context;
 	  interfaces = new TreeSet<String>();
+	  ctors = new SimpleStack<MethodBuffer>();
 	}
 
 	@Override
@@ -208,6 +211,8 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer>{
 	@Override
   public String addImport(String importName) {
 	  // Don't import types in the same package as us.
+	  if (getPackage() == null)
+	    throw new NullPointerException("ClassBuffer package not yet set; use .setPackage() on your SourceBuilder for "+this);
 	  if (importName.startsWith(getPackage())) {
 	    // Make sure it's not in a sub-package
 	    String stripped = importName.substring(getPackage().length()+1);
@@ -241,12 +246,24 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer>{
 	public String getPackage() {
     return context.getPackage();
   }
+
   public String getSimpleName() {
 		return simpleName;
 	}
 
+  public String getQualifiedName() {
+    String pkg = context.getPackage();
+    if (pkg.length() == 0)
+      return getSimpleName();
+    return pkg+"."+getSimpleName();
+  }
+
+
 	public void setSimpleName(String className) {
 		this.simpleName = className;
+		for (MethodBuffer buffer : ctors) {
+		  buffer.setName(className);
+		}
 	}
 
 	public ClassBuffer createInnerClass(String classDef) {
@@ -285,12 +302,30 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer>{
     return origIndent + INDENT;
   }
 
+	public MethodBuffer createConstructor(int modifiers, String ... params) {
+	  MethodBuffer method = new MethodBuffer(context, memberIndent());
+	  method.setModifier(modifiers);
+	  method.setName(getSimpleName());
+	  method.setReturnType("");
+	  method.addParameters(params);
+	  addToEnd(method);
+	  ctors.add(method);
+	  return method;
+	}
   public MethodBuffer createMethod(String methodDef) {
 	  MethodBuffer method = new MethodBuffer(context, memberIndent());
 	  method.setDefinition(methodDef);
 	  addToEnd(method);
 	  return method;
 	}
+  public MethodBuffer createMethod(int modifiers, Class<?> returnType, String name, String ... params) {
+    MethodBuffer method = new MethodBuffer(context, memberIndent());
+    method.setModifier(modifiers);
+    method.setName(name);
+    method.addParameters(params);
+    addToEnd(method);
+    return method;
+  }
 
 	public FieldBuffer createField(Class<?> type, String name) {
 	  return createField(type.getCanonicalName(), name);

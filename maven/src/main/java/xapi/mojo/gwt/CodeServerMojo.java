@@ -34,8 +34,6 @@ import org.codehaus.plexus.util.xml.Xpp3DomBuilder;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.sonatype.aether.resolution.ArtifactResult;
 
-import com.google.gwt.core.shared.GWT;
-
 import xapi.dev.gwt.gui.CodeServerGui;
 import xapi.inject.impl.SingletonProvider;
 import xapi.log.X_Log;
@@ -46,6 +44,8 @@ import xapi.util.X_Properties;
 import xapi.util.X_String;
 import xapi.util.api.Pair;
 import xapi.util.impl.PairBuilder;
+
+import com.google.gwt.core.shared.GWT;
 
 /**
  * Goal which launches a gui which runs the gwt 2.5 codeserver from maven
@@ -74,20 +74,20 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
    */
   @Parameter(property="gwt.module", defaultValue="")
   private String module;
-  
-  
+
+
   /**
    * The gwt version to use; if not set, we'll scan the classpath for gwt dependencies
    */
   @Parameter(property="gwt.version")
   private String gwtVersion;
-  
+
   /**
    * The port on which to start opening codeservers.
    */
   @Parameter(property="port",defaultValue="1337")
   private Integer port;
-  
+
   /**
    * The port on which to listen for a debugger
    */
@@ -100,24 +100,26 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
    */
   @Parameter(property="debug.delay", defaultValue="-1")
   private Integer debugDelay;
-  
-  
-  
+
+
+
   /**
    * Whether or not to scan test source paths.
    */
   @Parameter(property="xapi.include.test", defaultValue="false")
   private Boolean includeTestSource;
-  
+
 
   private Log log;
   @SuppressWarnings("rawtypes")
   private Map pluginContext;
 
+  @Override
   public void setLog(Log log) {
     this.log = log;
   }
 
+  @Override
   public Log getLog() {
     if (log == null) {
       log = new SystemStreamLog();
@@ -126,18 +128,21 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
     return log;
   }
 
+  @Override
   @SuppressWarnings("rawtypes")
   public Map getPluginContext() {
     return pluginContext;
   }
 
+  @Override
   @SuppressWarnings("rawtypes")
   public void setPluginContext(Map pluginContext) {
     this.pluginContext = pluginContext;
   }
 
-  
+
   private final SingletonProvider<String> _gwtVersion = new SingletonProvider<String>() {
+    @Override
     protected String initialValue() {
       if (X_String.isNotEmpty(gwtVersion))
         return gwtVersion;
@@ -150,7 +155,7 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
       return superGuess("com.google.gwt", "2.5.1");
     };
   };
-  
+
   /**
    * Whether or not to compile immediately.
    */
@@ -163,12 +168,12 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
     protected int getPort() {
       return port == null ? super.getPort() : port;
     }
-    
+
     @Override
     protected int debugTimeout() {
       return debugDelay == null ? -1 : debugDelay;
     }
-    
+
     @Override
     protected int debugPort() {
       int delay = debugDelay;
@@ -176,7 +181,7 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
         return 0;
       return debugPort == 0 ? super.debugPort() : debugPort;
     }
-    
+
     public void keepAlive() throws MojoExecutionException {
       final MavenProject project = getProject();
       if (null != project) {
@@ -187,7 +192,7 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
             File f = new File(String.valueOf(o));
             if (f.exists()) {
               // Add the source location
-              addSource(f);
+              addTestSource(f);
               // also scan for .gwt.xml modules
               try {
                 modules.addAll(findModules(f));
@@ -202,7 +207,7 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
           for (Resource o : project.getTestResources()) {
             File f = new File(o.getDirectory());
             if (f.exists()) {
-              addSource(f);
+              addTestSource(f);
               // scan for .gwt.xml modules; the resources will be on classpath
               // already
               try {
@@ -259,9 +264,9 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
               if (f.exists())
                 if (f.isDirectory()) {
                   // directories are to be handled differently
-                  addToClasspath(f);
+                  addToTestClasspath(f);
                 } else {
-                  addSource(f);
+                  addTestSource(f);
                 }
             }
           }
@@ -286,7 +291,7 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
       }
       setVisible(true);
       SwingUtilities.invokeLater(new Runnable() {
-        
+
         @Override
         public void run() {
           String cp = getClasspath(includeTestSource, ":");
@@ -309,14 +314,14 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
       } catch (Exception e) {
         throw new MojoExecutionException("Error while waiting on codeserver", e);
       }
-      
+
     }
-    
+
     @Override
     protected boolean isUseTestSources() {
       return Boolean.TRUE.equals(includeTestSource);
     }
-    
+
     @Override
     protected Pair<String, Boolean> findGwt(String cp, String cpSep) {
       VersionRange versions;
@@ -325,9 +330,9 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
       } catch (InvalidVersionSpecificationException e) {
         throw X_Debug.rethrow(e);
       }
-      
+
       ArtifactHandler artifactHandler = new DefaultArtifactHandler("default");
-      Artifact gwtUser = new DefaultArtifact("com.google.gwt", "gwt-user", versions, "compile", "default", "jar", 
+      Artifact gwtUser = new DefaultArtifact("com.google.gwt", "gwt-user", versions, "compile", "default", "jar",
           artifactHandler);
       // Check maven first
       Artifact local = getSession().getLocalRepository().find(gwtUser);
@@ -337,7 +342,7 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
       return super.findGwt(cp, cpSep);
     }
 
-    
+
     @Override
     protected String getModuleDefault() {
       if (!"".equals(module))
@@ -363,7 +368,7 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
       findModules(f, list);
       return list;
     }
-    
+
     private void findModules(File f, Collection<String> into) throws FileNotFoundException,
       XmlPullParserException, IOException {
       if (f.isDirectory()) {
@@ -408,7 +413,7 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
       }
       return null;
     }
-    
+
     @Override
     protected GwtFinder initFinder() {
       return new GwtFinder() {
@@ -436,32 +441,33 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
         return location.getArtifact().getFile().getAbsolutePath();
       return null;
     }
-    
+
   }
-  
+
   /**
    * TODO: instead of parsing the objects directly from the maven project,
    * assemble a command line argument to pass to {@link Runtime#exec(String)},
    * so we can fork a single codeserver gui, save pid w/
    * {@link System#setProperty(String, String)}, and send new executions by
    * writing to the processes {@link Process#getOutputStream()}.
-   * 
+   *
    * This will also allow us to launch the gui as a maven goal, or as a java
    * executable; both of which can be created as an IDE launch config.
-   * 
+   *
    */
 
+  @Override
   public void doExecute() throws MojoExecutionException, MojoFailureException {
     new CodeServerView().keepAlive();
   }
-    
+
   protected String superGuess(String groupId, String backup) {
     return super.guessVersion(groupId, backup);
   }
-  
+
   @Override
   public String guessVersion(String groupId, String backup) {
-    
+
     String version = X_Properties.getProperty("gwt.version");
     if (version != null)
       return version;
@@ -470,5 +476,5 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
       return version;
     return superGuess(groupId, backup);
   }
-  
+
 }

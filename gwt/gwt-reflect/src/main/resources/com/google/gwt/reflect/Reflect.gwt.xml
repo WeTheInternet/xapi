@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE module PUBLIC "-//Google Inc.//DTD Google Web Toolkit 2.5.1//EN" "http://google-web-toolkit.googlecode.com/svn/tags/2.5.1/distro-source/core/src/gwt-module.dtd">
+<module>
+
+  
+  <!-- Configuration Property: gwt.reflection.factory -> 
+  set to override the default reflection factory used.
+  
+  This factory defines how we fill out reflection information at runtime.
+  
+  The default implementation at com.google.gwt.reflect.GwtReflect is 
+  a fully optimized, simple solution which defaults to use GWT.create 
+  for Class.newInstance();
+  
+  For more exotic reflection scenarios, see net.wetheinter:xapi-gwt-reflect,
+  and inherit xapi.X_Reflect, to use a reflection service that adapts 
+  types created by newInstance() and other constructors to X_Inject results.
+  
+    -->
+  <define-configuration-property name="gwt.reflection.factory" is-multi-valued="false" />
+  <set-configuration-property name="gwt.reflection.factory"
+    value="com.google.gwt.reflect.rebind.GwtReflectionFactory"/>
+
+  <!-- Now, hook up our static methods as magic methods in production. -->
+  <inherits name="com.google.gwt.MagicMethods" />
+
+  <!-- Enhance entire class -->
+  <extend-configuration-property name="gwt.magic.methods" 
+    value="com.google.gwt.reflect.client.GwtReflect.magicClass(Ljava/lang/Class;)Ljava/lang/Class; *= com.google.gwt.reflect.rebind.injectors.MagicClassInjector"/>
+
+  <!-- Array reflection, single dim -->
+  <extend-configuration-property name="gwt.magic.methods" 
+    value="com.google.gwt.reflect.client.GwtReflect.newArray(Ljava/lang/Class;I)[Ljava/lang/Object; *= com.google.gwt.reflect.rebind.injectors.SingleDimArrayInjector"/>
+  <extend-configuration-property name="gwt.magic.methods" 
+    value="java.lang.reflect.Array.newInstance(Ljava/lang/Class;I)Ljava/lang/Object; *= com.google.gwt.reflect.rebind.injectors.SingleDimArrayInjector"/>
+
+  <!-- Array reflection, multi dim -->
+  <extend-configuration-property name="gwt.magic.methods" 
+    value="com.google.gwt.reflect.client.GwtReflect.newArray(Ljava/lang/Class;II)[[Ljava/lang/Object; *= com.google.gwt.reflect.rebind.injectors.MultiDimArrayInjector"/>
+  <extend-configuration-property name="gwt.magic.methods" 
+    value="java.lang.reflect.Array.newInstance(Ljava/lang/Class;[I)Ljava/lang/Object; *= com.google.gwt.reflect.rebind.injectors.MultiDimArrayInjector"/>
+    
+  <!-- ConstPool splitpoint (scans TypeOracle, and slurps all annotated elements) -->
+  <extend-configuration-property name="gwt.magic.methods" 
+    value="com.google.gwt.reflect.client.ConstPool.fillConstPool()V *= com.google.gwt.reflect.rebind.injectors.ConstPoolInjector"/>
+  
+  <!-- Experimental "direct reflection" using class literals -->
+  <extend-configuration-property name="gwt.magic.methods" 
+    value="java.lang.Class.getMethod(Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method; *= com.google.gwt.reflect.rebind.injectors.PublicMethodInjector"/>
+  <extend-configuration-property name="gwt.magic.methods" 
+    value="com.google.gwt.reflect.client.GwtReflect.getPublicMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method; *= com.google.gwt.reflect.rebind.injectors.PublicMethodInjector"/>
+
+  <source path="client" />
+</module>

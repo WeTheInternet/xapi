@@ -59,6 +59,7 @@ public abstract class CtBehavior extends CtMember {
         }
     }
 
+    @Override
     protected void extendToString(StringBuffer buffer) {
         buffer.append(' ');
         buffer.append(getName());
@@ -111,6 +112,7 @@ public abstract class CtBehavior extends CtMember {
      *                  <code>javassist.Modifier</code>.
      * @see Modifier
      */
+    @Override
     public int getModifiers() {
         return methodInfo.getAccessFlags();
     }
@@ -124,6 +126,7 @@ public abstract class CtBehavior extends CtMember {
      *
      * @see Modifier
      */
+    @Override
     public void setModifiers(int mod) {
         declaringClass.checkModify();
         methodInfo.setAccessFlags(mod);
@@ -137,12 +140,13 @@ public abstract class CtBehavior extends CtMember {
      *         otherwise <code>false</code>.
      * @since 3.11
      */
+    @Override
     public boolean hasAnnotation(Class<?> clz) {
        MethodInfo mi = getMethodInfo2();
        AnnotationsAttribute ainfo = (AnnotationsAttribute)
-                   mi.getAttribute(AnnotationsAttribute.invisibleTag);  
+                   mi.getAttribute(AnnotationsAttribute.invisibleTag);
        AnnotationsAttribute ainfo2 = (AnnotationsAttribute)
-                   mi.getAttribute(AnnotationsAttribute.visibleTag);  
+                   mi.getAttribute(AnnotationsAttribute.visibleTag);
        return CtClassType.hasAnnotationType(clz,
                                             getDeclaringClass().getClassPool(),
                                             ainfo, ainfo2);
@@ -159,12 +163,13 @@ public abstract class CtBehavior extends CtMember {
      * @return the annotation if found, otherwise <code>null</code>.
      * @since 3.11
      */
+    @Override
     public Object getAnnotation(Class<?> clz) throws ClassNotFoundException {
        MethodInfo mi = getMethodInfo2();
        AnnotationsAttribute ainfo = (AnnotationsAttribute)
-                   mi.getAttribute(AnnotationsAttribute.invisibleTag);  
+                   mi.getAttribute(AnnotationsAttribute.invisibleTag);
        AnnotationsAttribute ainfo2 = (AnnotationsAttribute)
-                   mi.getAttribute(AnnotationsAttribute.visibleTag);  
+                   mi.getAttribute(AnnotationsAttribute.visibleTag);
        return CtClassType.getAnnotationType(clz,
                                             getDeclaringClass().getClassPool(),
                                             ainfo, ainfo2);
@@ -177,6 +182,7 @@ public abstract class CtBehavior extends CtMember {
      * @see #getAvailableAnnotations()
      * @since 3.1
      */
+    @Override
     public Object[] getAnnotations() throws ClassNotFoundException {
        return getAnnotations(false);
    }
@@ -185,11 +191,12 @@ public abstract class CtBehavior extends CtMember {
      * Returns the annotations associated with this method or constructor.
      * If any annotations are not on the classpath, they are not included
      * in the returned array.
-     * 
+     *
      * @return an array of annotation-type objects.
      * @see #getAnnotations()
      * @since 3.3
      */
+    @Override
     public Object[] getAvailableAnnotations(){
        try{
            return getAnnotations(true);
@@ -204,9 +211,9 @@ public abstract class CtBehavior extends CtMember {
     {
        MethodInfo mi = getMethodInfo2();
        AnnotationsAttribute ainfo = (AnnotationsAttribute)
-                   mi.getAttribute(AnnotationsAttribute.invisibleTag);  
+                   mi.getAttribute(AnnotationsAttribute.invisibleTag);
        AnnotationsAttribute ainfo2 = (AnnotationsAttribute)
-                   mi.getAttribute(AnnotationsAttribute.visibleTag);  
+                   mi.getAttribute(AnnotationsAttribute.visibleTag);
        return CtClassType.toAnnotationType(ignoreNotFound,
                                            getDeclaringClass().getClassPool(),
                                            ainfo, ainfo2);
@@ -231,7 +238,7 @@ public abstract class CtBehavior extends CtMember {
      * Returns the parameter annotations associated with this method or constructor.
      * If any annotations are not on the classpath, they are not included in the
      * returned array.
-     * 
+     *
      * @return an array of annotation-type objects.  The length of the returned array is
      * equal to the number of the formal parameters.  If each parameter has no
      * annotation, the elements of the returned array are empty arrays.
@@ -254,9 +261,9 @@ public abstract class CtBehavior extends CtMember {
     {
         MethodInfo mi = getMethodInfo2();
         ParameterAnnotationsAttribute ainfo = (ParameterAnnotationsAttribute)
-                    mi.getAttribute(ParameterAnnotationsAttribute.invisibleTag);  
+                    mi.getAttribute(ParameterAnnotationsAttribute.invisibleTag);
         ParameterAnnotationsAttribute ainfo2 = (ParameterAnnotationsAttribute)
-                    mi.getAttribute(ParameterAnnotationsAttribute.visibleTag);  
+                    mi.getAttribute(ParameterAnnotationsAttribute.visibleTag);
         return CtClassType.toAnnotationType(ignoreNotFound,
                                             getDeclaringClass().getClassPool(),
                                             ainfo, ainfo2, mi);
@@ -292,13 +299,14 @@ public abstract class CtBehavior extends CtMember {
      * contained in the <code>SignatureAttirbute</code>.  It is
      * a descriptor.  To obtain a type signature, call the following
      * methods:
-     * 
+     *
      * <ul><pre>getMethodInfo().getAttribute(SignatureAttribute.tag)
      * </pre></ul>
      *
      * @see javassist.bytecode.Descriptor
      * @see javassist.bytecode.SignatureAttribute
      */
+    @Override
     public String getSignature() {
         return methodInfo.getDescriptor();
     }
@@ -321,6 +329,7 @@ public abstract class CtBehavior extends CtMember {
 
     /**
      * Sets exceptions that this method/constructor may throw.
+     * @throws NotFoundException
      */
     public void setExceptionTypes(CtClass[] types) throws NotFoundException {
         declaringClass.checkModify();
@@ -436,6 +445,7 @@ public abstract class CtBehavior extends CtMember {
      *
      * @param name              attribute name
      */
+    @Override
     public byte[] getAttribute(String name) {
         AttributeInfo ai = methodInfo.getAttribute(name);
         if (ai == null)
@@ -454,6 +464,7 @@ public abstract class CtBehavior extends CtMember {
      * @param name      attribute name
      * @param data      attribute value
      */
+    @Override
     public void setAttribute(String name, byte[] data) {
         declaringClass.checkModify();
         methodInfo.addAttribute(new AttributeInfo(methodInfo.getConstPool(),
@@ -775,7 +786,7 @@ public abstract class CtBehavior extends CtMember {
 //            iterator.append(b.getExceptionTable(), gapPos);
 //
 //            if (asFinally)
-//                ca.getExceptionTable().add(getStartPosOfBody(ca), gapPos, gapPos, 0); 
+//                ca.getExceptionTable().add(getStartPosOfBody(ca), gapPos, gapPos, 0);
 //
 //            int gapLen = iterator.getCodeLength() - gapPos - handlerLen;
 //            int subr = iterator.getCodeLength() - gapLen;
@@ -979,6 +990,9 @@ public abstract class CtBehavior extends CtMember {
 
     /* CtConstructor overrides this method.
      */
+    /**
+     * @throws CannotCompileException
+     */
     int getStartPosOfBody(CodeAttribute ca) throws CannotCompileException {
         return 0;
     }
@@ -1015,7 +1029,7 @@ public abstract class CtBehavior extends CtMember {
 //     * For example, if there is only a closing brace at that line, the
 //     * bytecode would be inserted at another line below.
 //     * To know exactly where the bytecode will be inserted, call with
-//     * <code>modify</code> set to <code>false</code>. 
+//     * <code>modify</code> set to <code>false</code>.
 //     *
 //     * @param lineNum   the line number.  The bytecode is inserted at the
 //     *                  beginning of the code at the line specified by this

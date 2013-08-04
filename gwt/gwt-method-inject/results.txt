@@ -1,0 +1,26 @@
+Apache Maven 3.0.5 (r01de14724cdef164cd33c7c8c2fe155faf9602da; 2013-02-19 06:51:28-0700)
+Maven home: c:\Program Files\Apache\apache-maven-3.0.5
+Java version: 1.7.0_21, vendor: Oracle Corporation
+Java home: c:\Program Files\Java\jdk1.7.0_21\jre
+Default locale: en_US, platform encoding: Cp1252
+OS name: "windows 7", version: "6.1", arch: "amd64", family: "windows"
+[INFO] Error stacktraces are turned on.
+[DEBUG] Reading global settings from c:\Program Files\Apache\apache-maven-3.0.5\conf\settings.xml
+[DEBUG] Reading user settings from C:\Users\James.Nelson\.m2\settings.xml
+[DEBUG] Using local repository at C:\Users\James.Nelson\.m2\repository
+[DEBUG] Using manager EnhancedLocalRepositoryManager with priority 10 for C:\Users\James.Nelson\.m2\repository
+[INFO] Scanning for projects...
+[DEBUG] Extension realms for project net.wetheinter:gwt-method-inject:jar:2.5.1: (none)
+[DEBUG] Looking up lifecyle mappings for packaging jar from ClassRealm[plexus.core, parent: null]
+[DEBUG] === REACTOR BUILD PLAN ================================================
+[DEBUG] Project: net.wetheinter:gwt-method-inject:jar:2.5.1
+[DEBUG] Tasks:   [test]
+[DEBUG] Style:   Regular
+[DEBUG] =======================================================================
+[INFO]                                                                         
+[INFO] ------------------------------------------------------------------------
+[INFO] Building gwt-method-inject 2.5.1
+[INFO] ------------------------------------------------------------------------
+[DEBUG] Lifecycle default -> [validate, initialize, generate-sources, process-sources, generate-resources, process-resources, compile, process-classes, generate-test-sources, process-test-sources, generate-test-resources, process-test-resources, test-compile, process-test-classes, test, prepare-package, package, pre-integration-test, integration-test, post-integration-test, verify, install, deploy]
+[DEBUG] Lifecycle clean -> [pre-clean, clean, post-clean]
+[DEBUG] Lifecycle site -> [pre-site, site, post-site, site-deploy]

@@ -30,8 +30,6 @@ implements ProvidesValue<X>, ReceivesValue<X>, Bean<X> {
   private volatile X x;
 
   public final void set(X x) {
-    // No fluent api.  Only time you would need it is at construction time,
-    // and you can just pass your ref there.
     this.x=x;
   }
 

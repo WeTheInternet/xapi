@@ -115,6 +115,29 @@
      </configuration>
     </plugin>
     <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>1.8</version>
+        <executions>
+          <execution>
+            <id>add-source</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <inherited>false</inherited>
+            <configuration>
+              <sources>
+                <source>target/generated-sources/xapi</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+        <goals>
+          <goal>add-source</goal>
+        </goals>
+      </plugin>
+    <plugin>
      <groupId>org.codehaus.mojo</groupId>
      <artifactId>selenium-maven-plugin</artifactId>
      <version>2.3</version>
@@ -143,6 +166,33 @@
        </configuration>
       </execution>
      </executions>
+    </plugin>
+    <!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
+    <plugin>
+    	<groupId>org.eclipse.m2e</groupId>
+    	<artifactId>lifecycle-mapping</artifactId>
+    	<version>1.0.0</version>
+    	<configuration>
+    		<lifecycleMappingMetadata>
+    			<pluginExecutions>
+    				<pluginExecution>
+    					<pluginExecutionFilter>
+    						<groupId>org.codehaus.mojo</groupId>
+    						<artifactId>
+    							build-helper-maven-plugin
+    						</artifactId>
+    						<versionRange>[1.8,)</versionRange>
+    						<goals>
+    							<goal>add-source</goal>
+    						</goals>
+    					</pluginExecutionFilter>
+    					<action>
+    						<ignore></ignore>
+    					</action>
+    				</pluginExecution>
+    			</pluginExecutions>
+    		</lifecycleMappingMetadata>
+    	</configuration>
     </plugin>
    </plugins>
   </pluginManagement>

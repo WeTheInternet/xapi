@@ -36,17 +36,17 @@
 package xapi.dev.source;
 
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
 import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.Map.Entry;
 
 import xapi.collect.impl.SimpleStack;
 import xapi.source.read.JavaLexer;
+import xapi.source.read.JavaModel.IsParameter;
 import xapi.source.read.JavaVisitor.AnnotationMemberVisitor;
 import xapi.source.read.JavaVisitor.MethodVisitor;
 import xapi.source.read.JavaVisitor.ParameterVisitor;
 import xapi.source.read.JavaVisitor.TypeData;
-
-
 
 public class MethodBuffer
 extends MemberBuffer<MethodBuffer>
@@ -57,8 +57,8 @@ implements MethodVisitor<SourceBuilder<?>>
 	private boolean once;
 	private boolean useJsni = true;
 	private String methodName;
-	private final Set<String> parameters;
-	private final Set<String> exceptions;
+	private final LinkedHashSet<String> parameters;
+	private final LinkedHashSet<String> exceptions;
   private TypeData returnType;
 
   public MethodBuffer(SourceBuilder<?> context) {
@@ -71,6 +71,7 @@ implements MethodVisitor<SourceBuilder<?>>
 		parameters = new LinkedHashSet<String>();
 		exceptions = new LinkedHashSet<String>();
 	}
+
 	@Override
 	public String toString() {
 		StringBuilder b = new StringBuilder(NEW_LINE+origIndent);
@@ -130,26 +131,8 @@ implements MethodVisitor<SourceBuilder<?>>
 	  return b.toString()+prefix+super.toString()+suffix;
 	}
 
-	public void setDefinition(String definition) {
-	  // JavaMetadata will extract all modifiers for us
-	  JavaLexer.visitMethodSignature(this, context, definition, 0);
-	}
-
-  public MethodBuffer addParameters(String... parameters) {
-    for (String parameter : parameters) {
-      parameter = parameter.trim();
-      int index = parameter.lastIndexOf(' ');
-      TypeData type = JavaLexer.extractType(parameter, 0);
-      if (type.pkgName.length() > 0) {
-        String shortName = context.getImports().addImport(type.getImportName());
-        if (type.getSimpleName().startsWith(shortName)) {
-          this.parameters.add(type.getSimpleName() + " "
-              + parameter.substring(index + 1).trim());
-          continue;
-        }
-      }
-      this.parameters.add(parameter);
-    }
+	public MethodBuffer addExceptions(String... exceptions) {
+    addTypes(this.exceptions, exceptions);
     return this;
   }
 
@@ -165,7 +148,97 @@ implements MethodVisitor<SourceBuilder<?>>
     return context.getImports().addImport(cls);
   }
 
-  public ClassBuffer createInnerClass(String classDef) {
+  public MethodBuffer addParameters(String... parameters) {
+    for (String parameter : parameters) {
+      IsParameter param = JavaLexer.lexParam(parameter);
+      this.parameters.add(param.toString());
+    }
+    return this;
+  }
+  public MethodBuffer addParameters(Entry<String,Class<?>> ... parameters) {
+	  return addParameters(Arrays.asList(parameters));
+	}
+
+	public MethodBuffer addParameters(Iterable<Entry<String,Class<?>>> parameters) {
+    addNamedTypes(this.parameters, parameters);
+	  return this;
+	}
+
+	public MethodBuffer addExceptions(Class<?> ... exceptions) {
+	  addTypes(this.exceptions, exceptions);
+	  return this;
+	}
+
+	public MethodBuffer setExceptions(Class<?> ... exceptions) {
+	  this.exceptions.clear();
+	  addTypes(this.exceptions, exceptions);
+	  return this;
+	}
+
+	public MethodBuffer setExceptions(String... exceptions) {
+	  this.exceptions.clear();
+	  addTypes(this.exceptions, exceptions);
+	  return this;
+	}
+
+	/**
+	 * Uses {@link JavaLexer} to extract a MethodBuffer definition.
+	 * <p>
+	 * This is slower than manually setting method metadata,
+	 * but it does automatically import fully qualified class names
+	 * (if and only if there is not already an imported type matching imported simple name).
+	 *
+	 * @param definition - Any valid java method definition. "public void doSomething()"
+	 * @return - A method buffer initialized to whatever the provided text lexes.
+	 * <p>
+	 * Report any parsing errors to github.com/WeTheInternet/xapi and/or james@wetheinter.net
+	 */
+  public MethodBuffer setDefinition(String definition) {
+	  // JavaMetadata will extract all modifiers for us
+	  JavaLexer.visitMethodSignature(this, context, definition, 0);
+	  return this;
+	}
+
+	public MethodBuffer setName(String name) {
+	  methodName = name;
+	  return this;
+	}
+
+	public MethodBuffer setParameters(String ... parameters) {
+    this.parameters.clear();
+    return addParameters(parameters);
+  }
+  public MethodBuffer setParameters(Entry<String,Class<?>> ... parameters) {
+    this.parameters.clear();
+    return addParameters(Arrays.asList(parameters));
+  }
+  public MethodBuffer setParameters(Iterable<Entry<String,Class<?>>> parameters) {
+    this.parameters.clear();
+    return addParameters(parameters);
+  }
+  public MethodBuffer setReturnType(Class<?> cls) {
+	  String pkgName = cls.getPackage().getName();
+	  if (pkgName.length() == 0)
+	    returnType = new TypeData("", cls.getCanonicalName());
+	  else
+	    returnType = new TypeData(pkgName, cls.getCanonicalName().replace(pkgName+".", ""));
+	  return this;
+	}
+
+	public MethodBuffer setReturnType(String pkgName, String enclosedClassName) {
+    returnType = new TypeData(pkgName, enclosedClassName);
+    return this;
+	}
+
+	public MethodBuffer setReturnType(String canonicalName) {
+	  if ("".equals(canonicalName))
+	    returnType = new TypeData("");
+	  else
+	    returnType = JavaLexer.extractType(canonicalName, 0);
+	  return this;
+	}
+
+	public ClassBuffer createInnerClass(String classDef) {
 	  ClassBuffer cls = new ClassBuffer(context);
 	  cls.setDefinition(classDef, classDef.trim().endsWith("{"));
 	  cls.indent = indent + INDENT;
@@ -212,27 +285,19 @@ implements MethodVisitor<SourceBuilder<?>>
     return super.makeAbstract();
   }
 
-  public MethodBuffer addThrowsClause(Class<?> ... throwables) {
-    context.getImports().addImports(throwables);
-    for (Class<?> cls : throwables) {
-      exceptions.add(cls.getSimpleName());
-    }
-    return this;
-  }
-  public MethodBuffer addThrowsClause(String ... throwables) {
-    for (String cls : throwables) {
-      int ind = cls.lastIndexOf('.');
-      if (ind == -1)
-        exceptions.add(cls);
-      else {
-        context.getImports().addImport(cls);
-        exceptions.add(cls.substring(ind+1));
-      }
-    }
-    return this;
-  }
+  /**
+   * Add a return clause;
+   * the return keyword and semicolon are optional.
+   * <p>
+   * If you send "throw someException()", a return will not be added.
+   * <p>
+   * This allows you to use the returnValue() to optionally throw instead of return.
+   *
+   * @param name
+   * @return
+   */
   public MethodBuffer returnValue(String name) {
-    return println("return " +name+(name.endsWith(";")?"":";"));
+    return println((name.matches("\\s*(throw|return)\\s.*")?"":"return ") +name+(name.endsWith(";")?"":";"));
   }
 
   @Override
@@ -252,7 +317,7 @@ implements MethodVisitor<SourceBuilder<?>>
 
       @Override
       public void visitModifier(int modifier, SourceBuilder<?> receiver) {
-        modifier |= modifier;
+        this.modifier |= modifier;
       }
 
       @Override
@@ -264,7 +329,9 @@ implements MethodVisitor<SourceBuilder<?>>
         for (String anno : annotations) {
           b.append(anno).append(' ');
         }
-        b.append(Modifier.toString(modifier));
+        String mod = Modifier.toString(modifier);
+        if (mod.length() > 0)
+          b.append(mod).append(" ");
 
         if (varargs) {
           b.append(type.getSimpleName().replace("[]", "")+" ... "+name);

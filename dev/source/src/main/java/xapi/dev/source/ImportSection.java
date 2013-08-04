@@ -77,9 +77,10 @@ public class ImportSection {
 	  return tryImport(importName, true);
 	}
 
-	public void addStatics(String ... imports){
+	public ImportSection addStatics(String ... imports){
 	  for (String iport :  imports)
 	    addStatic(iport);
+	  return this;
 	}
 
 	@Override

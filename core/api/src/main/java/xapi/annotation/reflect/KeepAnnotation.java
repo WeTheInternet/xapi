@@ -23,7 +23,7 @@ import java.lang.annotation.Target;
  * its best to retain manual annotation retention overrides.
  * <p>
  * Primarily used in gwt reflection, but available as well for future
- * iterations of classpath scanner to intelligently discard runtime metadata.
+ * iterations of classpath scanner to intelligently discard runtime metadata (anything not annotated).
  * <p>
  * @author "James X. Nelson (james@wetheinter.net)"
  */

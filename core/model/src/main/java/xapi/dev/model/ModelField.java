@@ -320,5 +320,10 @@ public class ModelField {
     return getters.forEach();
   }
 
+  
+  @Override
+  public String toString() {
+    return type+" "+name;
+  }
 
 }

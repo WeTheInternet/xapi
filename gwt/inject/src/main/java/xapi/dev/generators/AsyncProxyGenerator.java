@@ -34,8 +34,8 @@ import xapi.annotation.inject.SingletonDefault;
 import xapi.annotation.inject.SingletonOverride;
 import xapi.dev.util.CurrentGwtPlatform;
 import xapi.dev.util.InjectionCallbackArtifact;
-import xapi.dev.util.InjectionUtils;
 import xapi.dev.util.PlatformSet;
+import xapi.source.read.SourceUtil;
 
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
@@ -63,7 +63,7 @@ public class AsyncProxyGenerator {
     logger.log(Type.WARN, "Checking " + callbackType.getName() + " : "
         + callbackType.getJavahSignatureName());
     JClassType providerType =
-        context.getTypeOracle().findType(InjectionUtils.toSourceName(callbackType.getName()));
+        context.getTypeOracle().findType(SourceUtil.toSourceName(callbackType.getName()));
     for (JClassType subtype : providerType.getSubtypes()) {
       if (winningCallback == null) {
         SingletonDefault singletonDefault = subtype.getAnnotation(SingletonDefault.class);

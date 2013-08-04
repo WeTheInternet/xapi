@@ -93,6 +93,7 @@ public final class CtConstructor extends CtBehavior {
      *
      * @since 3.5
      */
+    @Override
     public String getLongName() {
         return getDeclaringClass().getName()
                + (isConstructor() ? Descriptor.toString(getSignature())
@@ -105,6 +106,7 @@ public final class CtConstructor extends CtBehavior {
      * constructor.  If this object represents a class initializer,
      * then this method returns <code>"&lt;clinit&gt;"</code>.
      */
+    @Override
     public String getName() {
         if (methodInfo.isStaticInitializer())
             return MethodInfo.nameClinit;
@@ -119,6 +121,7 @@ public final class CtConstructor extends CtBehavior {
      * calling <code>super()</code> (the no-argument constructor of
      * the super class).
      */
+    @Override
     public boolean isEmpty() {
         CodeAttribute ca = getMethodInfo2().getCodeAttribute();
         if (ca == null)
@@ -151,7 +154,7 @@ public final class CtConstructor extends CtBehavior {
     /**
      * Returns true if this constructor calls a constructor
      * of the super class.  This method returns false if it
-     * calls another constructor of this class by <code>this()</code>. 
+     * calls another constructor of this class by <code>this()</code>.
      */
     public boolean callsSuper() throws CannotCompileException {
         CodeAttribute codeAttr = methodInfo.getCodeAttribute();
@@ -177,6 +180,7 @@ public final class CtConstructor extends CtBehavior {
      *                  If it is <code>null</code>, the substituted
      *                  constructor body does nothing except calling
      *                  <code>super()</code>.
+     * @throws CannotCompileException
      */
     public void setBody(String src) throws CannotCompileException {
         if (src == null)
@@ -251,6 +255,7 @@ public final class CtConstructor extends CtBehavior {
     /* This method is called by addCatch() in CtBehavior.
      * super() and this() must not be in a try statement.
      */
+    @Override
     int getStartPosOfBody(CodeAttribute ca) throws CannotCompileException {
         CodeIterator ci = ca.iterator();
         try {
@@ -272,7 +277,7 @@ public final class CtConstructor extends CtBehavior {
      *
      * <p>An occurrence of another constructor call <code>this()</code>
      * or a super constructor call <code>super()</code> is
-     * eliminated from the resulting method. 
+     * eliminated from the resulting method.
      *
      * <p>The immediate super class of the class declaring this constructor
      * must be also a super class of the class declaring the resulting method.
@@ -298,7 +303,7 @@ public final class CtConstructor extends CtBehavior {
      *
      * <p>An occurrence of another constructor call <code>this()</code>
      * or a super constructor call <code>super()</code> is
-     * eliminated from the resulting method. 
+     * eliminated from the resulting method.
      *
      * <p>The immediate super class of the class declaring this constructor
      * must be also a super class of the class declaring the resulting method
