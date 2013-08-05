@@ -30,8 +30,8 @@ public interface MemberPool <T> {
   Method[] getDeclaredMethods();
 
   MemberPool<? super T> getSuperclass();
-  MemberPool<? super T>[] getInterfaces();
-  MemberPool<?>[] getClasses();
+  Class<?>[] getInterfaces();
+  Class<?>[] getClasses();
   Class<T> getType();
 
 }

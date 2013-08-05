@@ -1,11 +1,10 @@
-package com.google.gwt.reflect.test;
+package com.google.gwt.reflect.test.annotations;
 
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
 
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.reflect.client.GwtReflect;
-import com.google.gwt.reflect.client.SourceVisitor;
 
 /**
  * A somewhat ugly, but functional implementation of an annotation;
@@ -42,12 +41,12 @@ public abstract class AbstractAnnotation extends SourceVisitor{
 
   protected final native <T> T getValue(String member)
   /*-{
-    return this.@com.google.gwt.reflect.test.AbstractAnnotation::memberMap[member];
+    return this.@com.google.gwt.reflect.test.annotations.AbstractAnnotation::memberMap[member];
   }-*/;
 
   protected final native void setValue(String member, Object value)
   /*-{
-    this.@com.google.gwt.reflect.test.AbstractAnnotation::memberMap[member] = value;
+    this.@com.google.gwt.reflect.test.annotations.AbstractAnnotation::memberMap[member] = value;
   }-*/;
 
   @Override
@@ -301,7 +300,7 @@ public abstract class AbstractAnnotation extends SourceVisitor{
 
   private native void arrayToString(StringBuilder b, String key)
   /*-{
-    var i = 0, o = this.@com.google.gwt.reflect.test.AbstractAnnotation::memberMap[key], m = o.length;
+    var i = 0, o = this.@com.google.gwt.reflect.test.annotations.AbstractAnnotation::memberMap[key], m = o.length;
     if (m > 0) {
       b.@java.lang.StringBuilder::append(Ljava/lang/String;)(""+o[i++]);
       for (;i < m; i++) {
@@ -313,13 +312,13 @@ public abstract class AbstractAnnotation extends SourceVisitor{
 
   private final native String getNativeString(String key)
   /*-{
-    return ''+this.@com.google.gwt.reflect.test.AbstractAnnotation::memberMap[key];
+    return ''+this.@com.google.gwt.reflect.test.annotations.AbstractAnnotation::memberMap[key];
   }-*/;
 
   private native int getPrimitiveArrayHash(String member)
   /*-{
     var hash = 1;
-    var arr = this.@com.google.gwt.reflect.test.AbstractAnnotation::memberMap[member];
+    var arr = this.@com.google.gwt.reflect.test.annotations.AbstractAnnotation::memberMap[member];
     for ( var i in arr) {
       hash += 31*(~~arr[i]);// GWT's number hash codes just cast to int anyway
     }
@@ -328,12 +327,12 @@ public abstract class AbstractAnnotation extends SourceVisitor{
 
   private native int getInt(String member)
   /*-{
-    return this.@com.google.gwt.reflect.test.AbstractAnnotation::memberMap[member];
+    return this.@com.google.gwt.reflect.test.annotations.AbstractAnnotation::memberMap[member];
   }-*/;
 
   private native int getBoolInt(String member)
   /*-{
-    return this.@com.google.gwt.reflect.test.AbstractAnnotation::memberMap[member] ? 1 : 0;
+    return this.@com.google.gwt.reflect.test.annotations.AbstractAnnotation::memberMap[member] ? 1 : 0;
   }-*/;
 
   private final int getObjectHash(String member) {
@@ -344,12 +343,12 @@ public abstract class AbstractAnnotation extends SourceVisitor{
 
   private final native boolean isNull(String key)
   /*-{
-    return this.@com.google.gwt.reflect.test.AbstractAnnotation::memberMap[key] == null;
+    return this.@com.google.gwt.reflect.test.annotations.AbstractAnnotation::memberMap[key] == null;
   }-*/;
 
   private final native boolean quickEquals(String key, JavaScriptObject you)
   /*-{
-    return you[key] === this.@com.google.gwt.reflect.test.AbstractAnnotation::memberMap[key];
+    return you[key] === this.@com.google.gwt.reflect.test.annotations.AbstractAnnotation::memberMap[key];
   }-*/;
 
 

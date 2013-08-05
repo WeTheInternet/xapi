@@ -195,9 +195,17 @@ public class ConstPool extends JavaScriptObject {
     return c == null ? false : isPrimitive(constId(c));
   }
 
-  protected static native void setClass(int constId, Class<?> cls)
+  private static native int rememberClass(int pos, Class<?> cls)
   /*-{
-    @com.google.gwt.reflect.client.ConstPool::CONSTS.c[constId]=cls;
+    @com.google.gwt.reflect.client.ConstPool::CONSTS.c[pos] = cls;
+    return pos;
+  }-*/;
+  
+  public static native int setClass(Class<?> cls)
+  /*-{
+    var pos = @com.google.gwt.reflect.client.ConstPool::CONSTS.c.length;
+    @com.google.gwt.reflect.client.ConstPool::rememberClass(ILjava/lang/Class;)(pos, cls);
+    return pos;
   }-*/;
 
   protected static native void setEnhancedClass(int constId, ClassMap<?> cls)
@@ -205,7 +213,7 @@ public class ConstPool extends JavaScriptObject {
     @com.google.gwt.reflect.client.ConstPool::CONSTS.$[constId]=cls;
   }-*/;
 
-  protected static ConstPool getConstPool() {
+  public static ConstPool getConstPool() {
     return CONSTS;
   }
 
@@ -260,6 +268,11 @@ public class ConstPool extends JavaScriptObject {
   public final native <T> T[] getArrayObjects(int id)
   /*-{
     return this._o[id];
+   }-*/;
+
+  public final native int[] getArrayInt(int id)
+  /*-{
+    return this._i[id];
    }-*/;
 
   final <T> ClassMap<T> getClassData(Class<?> c) {

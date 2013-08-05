@@ -25,7 +25,7 @@ import com.google.gwt.dev.jjs.ast.JGwtCreate;
 import com.google.gwt.dev.jjs.ast.JMethod;
 import com.google.gwt.dev.jjs.ast.JMethodCall;
 import com.google.gwt.reflect.rebind.MagicContext;
-import com.google.gwt.reflect.rebind.generators.ReflectionGeneratorUtil;
+import com.google.gwt.reflect.rebind.ReflectionUtilJava;
 
 @SingletonDefault(implFor = MagicClassInjector.class)
 public class MagicClassInjector implements MagicMethodGenerator {
@@ -69,7 +69,7 @@ public class MagicClassInjector implements MagicMethodGenerator {
       JDeclaredType type =
         params.getAst().searchForTypeBySource(params.getClazz().getRefType().getName());
       String typeName = JGwtCreate.nameOf(type);
-      String generatedName = ReflectionGeneratorUtil.generatedMagicClassName(typeName);
+      String generatedName = ReflectionUtilJava.generatedMagicClassName(typeName);
       try {
         params.getAst().searchForTypeBySource(generatedName);
       }catch(NoClassDefFoundError e) {

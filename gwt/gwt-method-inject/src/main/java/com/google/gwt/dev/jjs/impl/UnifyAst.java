@@ -451,8 +451,8 @@ public class UnifyAst implements UnifyAstView{
         MagicMethodGenerator method = magicMethodMap.get(sig);
         try {
           JExpression expr = method.injectMagic(logger, x, currentMethod, ctx, UnifyAst.this);
-          if (logger.isLoggable(Type.TRACE)){
-            logger.log(Type.TRACE, "Magic method "+method
+          if (logger.isLoggable(Type.DEBUG)){
+            logger.log(Type.DEBUG, "Magic method "+method
                 +" converted:\n"+x+"\ninto: "+expr);
           }
           return expr;

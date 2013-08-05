@@ -27,7 +27,7 @@ import com.google.gwt.reflect.rebind.ReflectionManifest;
 import com.google.gwt.reflect.rebind.ReflectionUtilType;
 import com.google.gwt.reflect.rebind.generators.MemberGenerator;
 
-public abstract class AbstractMethodInjector extends MemberGenerator implements MagicMethodGenerator {
+public abstract class AbstractFieldInjector extends MemberGenerator implements MagicMethodGenerator {
 
   protected abstract boolean isDeclared();
 
@@ -128,7 +128,7 @@ public abstract class AbstractMethodInjector extends MemberGenerator implements 
       logger.log(Type.ERROR, "Unable to find enclosing class "+clsName);
       throw new UnableToCompleteException();
     }
-    
+      
     String methodFactoryName = getMethodFactoryName(cls, name, method.getParameters());
     JClassType factory;
     String pkgName = method.getEnclosingType().getPackage().getName();

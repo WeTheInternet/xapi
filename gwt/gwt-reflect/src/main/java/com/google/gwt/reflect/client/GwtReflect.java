@@ -77,24 +77,6 @@ public class GwtReflect {
   }
 
   /**
-   * In gwt dev and standard jvms, this just calls cls.newInstance();
-   * in gwt production, this is a magic method which will generate calls to new T();
-   *
-   * Note that for gwt production to be fully optimized, you must always send class literals (SomeClass.class)
-   * If you send a class reference (a Class&lt;?> object),
-   * the magic method injector will be forced to generate a monolithic helper class.
-   *
-   * In gwt production, this method will avoid generating the magic class metadata.
-   *
-   * @param cls - The class on which to call .newInstance();
-   * @return A new instance of type defined by cls.
-   * @throws Exception - Standard reflection exceptions in java vms, generator-base exceptions in js vms.
-   */
-  public static <T> T newInstance(Class<? extends T> cls) throws Exception {
-    return magicClass(cls).newInstance();
-  }
-
-  /**
    * For the time being you MUST send only class literals to this method.
    * <p>
    * Returns a new Typed[size], null-initialized and properly typed.

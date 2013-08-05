@@ -27,8 +27,7 @@ import com.google.gwt.reflect.client.MemberMap;
  * @author  Kenneth Russell
  * @author  Nakul Saraiya
  */
-public
-    class Constructor<T> extends AccessibleObject implements
+public class Constructor<T> extends AccessibleObject implements
                                                     GenericDeclaration,
                                                     Member {
 
@@ -45,10 +44,11 @@ public
     private static final int LANGUAGE_MODIFIERS =
       Modifier.PUBLIC   | Modifier.PROTECTED  | Modifier.PRIVATE;
 
+    protected Constructor() {
+    }
     /**
      * Public constructor to allow gwt to create constructors anywhere
      */
-
     public Constructor(Class<T> from, JavaScriptObject method, JavaScriptObject annos) {
       this.clazz = from;
       // TODO implement these

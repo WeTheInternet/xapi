@@ -96,25 +96,13 @@ public class JvmMemberPool <T> implements MemberPool<T>{
   }
 
   @Override
-  @SuppressWarnings({"rawtypes", "unchecked"})
-  public MemberPool<? super T>[] getInterfaces() {
-    Class<?>[] ifaces = type.getInterfaces();
-    MemberPool[] members = new MemberPool[ifaces.length];
-    for (int i = ifaces.length; i-->0;) {
-      members[i] = new JvmMemberPool(ifaces[i]);
-    }
-    return members;
+  public Class<?>[] getInterfaces() {
+    return type.getInterfaces();
   }
 
   @Override
-  @SuppressWarnings({"rawtypes", "unchecked"})
-  public MemberPool<?>[] getClasses() {
-    Class<?>[] classes = type.getClasses();
-    MemberPool<?>[] members = new MemberPool[classes.length];
-    for (int i = classes.length; i-->0;) {
-      members[i] = new JvmMemberPool(classes[i]);
-    }
-    return members;
+  public Class<?>[] getClasses() {
+    return type.getClasses();
   }
 
   @Override

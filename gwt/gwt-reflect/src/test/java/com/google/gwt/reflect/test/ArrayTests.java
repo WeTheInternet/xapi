@@ -13,7 +13,7 @@ import com.google.gwt.reflect.client.strategy.ReflectionStrategy;
  * @author James X. Nelson (james@wetheinter.net, @james)
  */
 @ReflectionStrategy(magicSupertypes=false, keepCodeSource=true)
-public class ArrayTests extends GWTTestCase {
+public class ArrayTests extends AbstractReflectionTest {
 
   public ArrayTests() {}
 
@@ -32,6 +32,40 @@ public class ArrayTests extends GWTTestCase {
     Array.setLong(longs, 3, Array.getLong(longs, 2) +1);
     Array.setLong(longs, 4, Array.getLength(longs));
     assertTrue("Arrays not equals", Arrays.equals(longs, new long[] {1,2,3,4,5}));
+  }
+
+  @Test
+  public void testSingleDimComplex() {
+    long[][] longs = (long[][])Array.newInstance(long[].class, 5);
+    assertEquals(longs.length, 5);
+    assertEquals(longs[0], null);
+    assertEquals(longs.getClass(), long[][].class);
+
+    long[] subArr = longs[0] = new long[3];
+    subArr[0] = 1;
+    Array.setLong(subArr, 1, 2);
+    Array.setLong(subArr, 2, subArr[0] + 2);
+    
+    Array.set(longs, 1, new long[3]);
+    subArr = (long[])Array.get(longs, 1);
+    Array.setLong(subArr, 0, 1);
+    subArr[1] = Array.getLong(subArr, 0) +1;
+    Array.setLong(subArr, 2, Array.getLength(subArr));
+    assertTrue("Arrays not equals", Arrays.deepEquals(longs, new long[][] {
+      new long[]{1,2,3},new long[]{1,2,3}, null, null, null
+    }));
+  }
+  
+  @Test
+  public void testArrayEqualsSanity() {
+    long[][] arrays = new long[][]{
+      new long[]{1,2}, new long[]{3,4}  
+    }
+    , arrays2 = new long[][]{
+        new long[]{0,2}, new long[]{3,4}  
+    };
+    assertTrue("Arrays not equals", Arrays.deepEquals(arrays, arrays));
+    assertFalse("Arrays.deepEquals fail", Arrays.deepEquals(arrays, arrays2));
   }
 
   @Test
@@ -93,11 +127,6 @@ public class ArrayTests extends GWTTestCase {
     long[][][][] longs = GwtReflect.newArray(long[][].class, 2, 3);
     long[][] one = new long[0][], two = new long[1][], three = new long[2][];
 
-  }
-
-  @Override
-  public String getModuleName() {
-    return "com.google.gwt.reflect.ReflectTest";
   }
 
 }

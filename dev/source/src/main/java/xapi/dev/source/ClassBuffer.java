@@ -239,8 +239,9 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer>{
 		return superClass;
 	}
 
-	public void setSuperClass(String superClass) {
+	public ClassBuffer setSuperClass(String superClass) {
 		this.superClass = superClass;
+		return this;
 	}
 
 	public String getPackage() {

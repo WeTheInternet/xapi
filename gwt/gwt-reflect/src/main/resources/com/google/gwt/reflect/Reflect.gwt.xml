@@ -43,12 +43,18 @@
   <!-- ConstPool splitpoint (scans TypeOracle, and slurps all annotated elements) -->
   <extend-configuration-property name="gwt.magic.methods" 
     value="com.google.gwt.reflect.client.ConstPool.fillConstPool()V *= com.google.gwt.reflect.rebind.injectors.ConstPoolInjector"/>
+  <extend-configuration-property name="gwt.magic.methods" 
+    value="com.google.gwt.reflect.client.ConstPool.setClass(Ljava/lang/Class;)I *= com.google.gwt.reflect.rebind.injectors.ConstPoolInjector"/>
   
   <!-- Experimental "direct reflection" using class literals -->
   <extend-configuration-property name="gwt.magic.methods" 
     value="java.lang.Class.getMethod(Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method; *= com.google.gwt.reflect.rebind.injectors.PublicMethodInjector"/>
   <extend-configuration-property name="gwt.magic.methods" 
     value="com.google.gwt.reflect.client.GwtReflect.getPublicMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method; *= com.google.gwt.reflect.rebind.injectors.PublicMethodInjector"/>
+  <extend-configuration-property name="gwt.magic.methods" 
+    value="java.lang.Class.getDeclaredMethod(Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method; *= com.google.gwt.reflect.rebind.injectors.DeclaredMethodInjector"/>
+  <extend-configuration-property name="gwt.magic.methods" 
+    value="com.google.gwt.reflect.client.GwtReflect.getDeclaredMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method; *= com.google.gwt.reflect.rebind.injectors.DeclaredMethodInjector"/>
 
   <source path="client" />
 </module>

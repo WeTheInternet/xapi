@@ -23,7 +23,7 @@ import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.gwt.reflect.client.ConstPool;
 import com.google.gwt.reflect.rebind.generators.GwtAnnotationGenerator.GeneratedAnnotation;
 
-public class GwtConstructorGenerator extends ReflectionGeneratorUtil{
+public class GwtConstructorGenerator {
 
   private static final String CONSTRUCTOR_CTOR = "new(" +
     "Ljava/lang/Class;" +

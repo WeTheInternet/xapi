@@ -1,30 +1,39 @@
 package com.google.gwt.reflect.test;
 
-import static com.google.gwt.reflect.test.AbstractAnnotation.MemberType.Annotation;
-import static com.google.gwt.reflect.test.AbstractAnnotation.MemberType.Annotation_Array;
-import static com.google.gwt.reflect.test.AbstractAnnotation.MemberType.Boolean;
-import static com.google.gwt.reflect.test.AbstractAnnotation.MemberType.Boolean_Array;
-import static com.google.gwt.reflect.test.AbstractAnnotation.MemberType.Class;
-import static com.google.gwt.reflect.test.AbstractAnnotation.MemberType.Class_Array;
-import static com.google.gwt.reflect.test.AbstractAnnotation.MemberType.Enum;
-import static com.google.gwt.reflect.test.AbstractAnnotation.MemberType.Enum_Array;
-import static com.google.gwt.reflect.test.AbstractAnnotation.MemberType.Int;
-import static com.google.gwt.reflect.test.AbstractAnnotation.MemberType.Int_Array;
-import static com.google.gwt.reflect.test.AbstractAnnotation.MemberType.Long;
-import static com.google.gwt.reflect.test.AbstractAnnotation.MemberType.Long_Array;
-import static com.google.gwt.reflect.test.AbstractAnnotation.MemberType.String;
-import static com.google.gwt.reflect.test.AbstractAnnotation.MemberType.String_Array;
+import static com.google.gwt.reflect.client.GwtReflect.magicClass;
+import static com.google.gwt.reflect.test.annotations.AbstractAnnotation.MemberType.Annotation;
+import static com.google.gwt.reflect.test.annotations.AbstractAnnotation.MemberType.Annotation_Array;
+import static com.google.gwt.reflect.test.annotations.AbstractAnnotation.MemberType.Boolean;
+import static com.google.gwt.reflect.test.annotations.AbstractAnnotation.MemberType.Boolean_Array;
+import static com.google.gwt.reflect.test.annotations.AbstractAnnotation.MemberType.Class;
+import static com.google.gwt.reflect.test.annotations.AbstractAnnotation.MemberType.Class_Array;
+import static com.google.gwt.reflect.test.annotations.AbstractAnnotation.MemberType.Enum;
+import static com.google.gwt.reflect.test.annotations.AbstractAnnotation.MemberType.Enum_Array;
+import static com.google.gwt.reflect.test.annotations.AbstractAnnotation.MemberType.Int;
+import static com.google.gwt.reflect.test.annotations.AbstractAnnotation.MemberType.Int_Array;
+import static com.google.gwt.reflect.test.annotations.AbstractAnnotation.MemberType.Long;
+import static com.google.gwt.reflect.test.annotations.AbstractAnnotation.MemberType.Long_Array;
+import static com.google.gwt.reflect.test.annotations.AbstractAnnotation.MemberType.String;
+import static com.google.gwt.reflect.test.annotations.AbstractAnnotation.MemberType.String_Array;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 import org.junit.Test;
 
 import com.google.gwt.core.client.UnsafeNativeLong;
 import com.google.gwt.core.shared.GWT;
 import com.google.gwt.reflect.client.strategy.ReflectionStrategy;
+import com.google.gwt.reflect.test.annotations.AbstractAnnotation;
+import com.google.gwt.reflect.test.annotations.CompileRetention;
 import com.google.gwt.reflect.test.annotations.ComplexAnnotation;
+import com.google.gwt.reflect.test.annotations.RuntimeRetention;
 import com.google.gwt.reflect.test.annotations.SimpleAnnotation;
+import com.google.gwt.reflect.test.cases.ReflectionCaseHasAllAnnos;
+import com.google.gwt.reflect.test.cases.ReflectionCaseSimple;
 
 @ComplexAnnotation
 @SuppressWarnings("all")
@@ -133,7 +142,7 @@ public class AnnotationTests extends AbstractReflectionTest{
       Class<?>[] multiClass
       )
     /*-{
-      var m = this.@com.google.gwt.reflect.test.AbstractAnnotation::memberMap;
+      var m = this.@com.google.gwt.reflect.test.annotations.AbstractAnnotation::memberMap;
       m['singleBool'] = singleBool;
       m['singleInt'] = singleInt;
       m['singleLong'] = singleLong;
@@ -153,87 +162,87 @@ public class AnnotationTests extends AbstractReflectionTest{
     @Override
     public native boolean singleBool()
     /*-{
-      return this.@com.google.gwt.reflect.test.AbstractAnnotation::memberMap['singleBool'];
+      return this.@com.google.gwt.reflect.test.annotations.AbstractAnnotation::memberMap['singleBool'];
     }-*/;
 
     @Override
     public native int singleInt()
     /*-{
-      return this.@com.google.gwt.reflect.test.AbstractAnnotation::memberMap['singleInt'];
+      return this.@com.google.gwt.reflect.test.annotations.AbstractAnnotation::memberMap['singleInt'];
     }-*/;
 
     @Override
     @UnsafeNativeLong
     public native long singleLong()
     /*-{
-      return this.@com.google.gwt.reflect.test.AbstractAnnotation::memberMap['singleLong'];
+      return this.@com.google.gwt.reflect.test.annotations.AbstractAnnotation::memberMap['singleLong'];
     }-*/;
 
     @Override
     public native String singleString()
     /*-{
-      return this.@com.google.gwt.reflect.test.AbstractAnnotation::memberMap['singleString'];
+      return this.@com.google.gwt.reflect.test.annotations.AbstractAnnotation::memberMap['singleString'];
     }-*/;
 
     @Override
     public native ElementType singleEnum()
     /*-{
-      return this.@com.google.gwt.reflect.test.AbstractAnnotation::memberMap['singleEnum'];
+      return this.@com.google.gwt.reflect.test.annotations.AbstractAnnotation::memberMap['singleEnum'];
     }-*/;
 
     @Override
     public native SimpleAnnotation singleAnnotation()
     /*-{
-      return this.@com.google.gwt.reflect.test.AbstractAnnotation::memberMap['singleAnnotation'];
+      return this.@com.google.gwt.reflect.test.annotations.AbstractAnnotation::memberMap['singleAnnotation'];
     }-*/;
 
     @Override
     public native Class<?> singleClass()
     /*-{
-      return this.@com.google.gwt.reflect.test.AbstractAnnotation::memberMap['singleClass'];
+      return this.@com.google.gwt.reflect.test.annotations.AbstractAnnotation::memberMap['singleClass'];
     }-*/;
 
     @Override
     public native boolean[] multiBool()
     /*-{
-      return this.@com.google.gwt.reflect.test.AbstractAnnotation::memberMap['multiBool'];
+      return this.@com.google.gwt.reflect.test.annotations.AbstractAnnotation::memberMap['multiBool'];
     }-*/;
 
     @Override
     public native int[] multiInt()
     /*-{
-      return this.@com.google.gwt.reflect.test.AbstractAnnotation::memberMap['multiInt'];
+      return this.@com.google.gwt.reflect.test.annotations.AbstractAnnotation::memberMap['multiInt'];
     }-*/;
 
     @Override
     @UnsafeNativeLong
     public native long[] multiLong()
     /*-{
-      return this.@com.google.gwt.reflect.test.AbstractAnnotation::memberMap['multiLong'];
+      return this.@com.google.gwt.reflect.test.annotations.AbstractAnnotation::memberMap['multiLong'];
     }-*/;
 
     @Override
     public native String[] multiString()
     /*-{
-      return this.@com.google.gwt.reflect.test.AbstractAnnotation::memberMap['multiString'];
+      return this.@com.google.gwt.reflect.test.annotations.AbstractAnnotation::memberMap['multiString'];
     }-*/;
 
     @Override
     public native ElementType[] multiEnum()
     /*-{
-      return this.@com.google.gwt.reflect.test.AbstractAnnotation::memberMap['multiEnum'];
+      return this.@com.google.gwt.reflect.test.annotations.AbstractAnnotation::memberMap['multiEnum'];
     }-*/;
 
     @Override
     public native SimpleAnnotation[] multiAnnotation()
     /*-{
-      return this.@com.google.gwt.reflect.test.AbstractAnnotation::memberMap['multiAnnotation'];
+      return this.@com.google.gwt.reflect.test.annotations.AbstractAnnotation::memberMap['multiAnnotation'];
     }-*/;
 
     @Override
     public native Class<?>[] multiClass()
     /*-{
-      return this.@com.google.gwt.reflect.test.AbstractAnnotation::memberMap['multiClass'];
+      return this.@com.google.gwt.reflect.test.annotations.AbstractAnnotation::memberMap['multiClass'];
     }-*/;
 
     @Override
@@ -264,6 +273,104 @@ public class AnnotationTests extends AbstractReflectionTest{
     assertEquals(impl1.hashCode(), impl2.hashCode());
   }
 
-  
+
+  @Test
+  public void testSimpleReflection() throws Exception {
+    final Class<ReflectionCaseSimple> c = ReflectionCaseSimple.class;
+    ReflectionCaseSimple inst = testNewInstance(c);
+    ReflectionCaseSimple anon = new ReflectionCaseSimple() {};
+    testAssignable(inst, anon);
+
+    testHasNoArgDeclaredMethods(c, "privatePrimitive", "privateObject", "publicPrimitive", "publicObject");
+    testHasNoArgPublicMethods(c, "publicPrimitive", "publicObject", "hashCode", "toString");
+    testCantAccessNonPublicMethods(c, "privatePrimitive", "privateObject");
+    testCantAccessNonDeclaredMethods(c, "hashCode", "toString");
+  }
+
+  @Test
+  public void testAnnotationsKeepAll() throws Exception {
+    Class<?> testCase = magicClass(ReflectionCaseHasAllAnnos.class);
+    Field field = testCase.getDeclaredField("field");
+    Method method = testCase.getDeclaredMethod("method", Long.class);
+    Constructor<?> ctor = testCase.getDeclaredConstructor(long.class);
+
+    Annotation[] annos = testCase.getAnnotations();
+    assertHasAnno(testCase, annos, RuntimeRetention.class);
+    if (GWT.isScript()) {
+      // Gwt Dev can only access runtime level retention annotations
+      assertHasAnno(testCase, annos, CompileRetention.class);
+    }
+    annos = field.getAnnotations();
+    assertHasAnno(testCase, annos, RuntimeRetention.class);
+    if (GWT.isScript()) {
+      // Gwt Dev can only access runtime level retention annotations
+      assertHasAnno(testCase, annos, CompileRetention.class);
+    }
+
+    annos = method.getAnnotations();
+    assertHasAnno(testCase, annos, RuntimeRetention.class);
+    if (GWT.isScript()) {
+      // Gwt Dev can only access runtime level retention annotations
+      assertHasAnno(testCase, annos, CompileRetention.class);
+    }
+
+    annos = ctor.getAnnotations();
+    assertHasAnno(testCase, annos, RuntimeRetention.class);
+    if (GWT.isScript()) {
+      // Gwt Dev can only access runtime level retention annotations
+      assertHasAnno(testCase, annos, CompileRetention.class);
+    }
+
+  }
+
+  private void assertHasAnno(Class<?> cls, Annotation[] annos, Class<? extends Annotation> annoClass) {
+    for (Annotation anno : annos ) {
+      if (anno.annotationType() == annoClass)
+        return;
+    }
+    fail(cls.getName()+" did not have required annotation "+annoClass);
+  }
+
+  private void testCantAccessNonPublicMethods(Class<?> c, String ... methods) {
+    for (String method : methods) {
+      try {
+        c.getMethod(method);
+        fail("Could erroneously access non-public method "+method+" in "+c.getName());
+      } catch (NoSuchMethodException e) {}
+    }
+  }
+
+  private void testCantAccessNonDeclaredMethods(Class<?> c, String ... methods) {
+    for (String method : methods) {
+      try {
+        c.getDeclaredMethod(method);
+        fail("Could erroneously access non-declared method "+method+" in "+c.getName());
+      } catch (NoSuchMethodException e) {}
+    }
+  }
+
+  private void testHasNoArgDeclaredMethods(Class<?> c, String ... methods) throws Exception{
+    for (String method : methods) {
+      assertNotNull(c.getDeclaredMethod(method));
+    }
+  }
+    private void testHasNoArgPublicMethods(Class<?> c, String ... methods) throws Exception{
+      for (String method : methods) {
+        assertNotNull(c.getMethod(method));
+      }
+  }
+
+  private void testAssignable(Object inst, Object anon) {
+    assertTrue(inst.getClass().isAssignableFrom(anon.getClass()));
+    assertFalse(anon.getClass().isAssignableFrom(inst.getClass()));
+  }
+
+  private <T> T testNewInstance(Class<T> c) throws Exception {
+    T newInst = c.newInstance();
+    assertNotNull(c.getName()+" returned null instead of a new instance", newInst);
+    assertTrue(c.isAssignableFrom(newInst.getClass()));
+    return newInst;
+  }
+
   
 }

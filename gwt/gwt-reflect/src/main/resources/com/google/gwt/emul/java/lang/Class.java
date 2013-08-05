@@ -31,8 +31,6 @@ import com.google.gwt.core.shared.GWT;
 import com.google.gwt.reflect.client.AnnotationMap;
 import com.google.gwt.reflect.client.ClassMap;
 import com.google.gwt.reflect.client.ConstPool;
-import com.google.gwt.reflect.client.ConstructorMap;
-import com.google.gwt.reflect.client.FieldMap;
 import com.google.gwt.reflect.client.GwtReflect;
 import com.google.gwt.reflect.client.JsMemberPool;
 import com.google.gwt.user.client.Window;
@@ -225,8 +223,6 @@ java.lang.reflect.AnnotatedElement
       clazz.typeName = "Class$"
           + (isInstantiableOrPrimitive(seedId) ? asString(seedId) : "" + clazz.hashCode());
     }
-    clazz.constId = clazz.hashCode();// index++;
-    remember(clazz);
 
     if (isInstantiable(seedId)) {
       setClassLiteral(seedId, clazz);
@@ -243,12 +239,6 @@ java.lang.reflect.AnnotatedElement
     return loader.loadClass(name);
   }
 
-  private static native void remember(Class<?> c)
-  /*-{
-    @com.google.gwt.reflect.client.ConstPool::setClass(ILjava/lang/Class;)(c.@java.lang.Class::constId, c);
-  }-*/;
-
-
   JavaScriptObject enumValueOfFunc;
 
   int modifiers;
@@ -259,8 +249,6 @@ java.lang.reflect.AnnotatedElement
   protected Class<?> componentType;
   protected Class<? super T> enumSuperclass;
   protected Class<? super T> superclass;
-  private ConstructorMap<T> constructors;
-  private FieldMap fields;
   private AnnotationMap annotations;
   public ClassMap<T> classData;
   public JsMemberPool<T> members;
@@ -283,7 +271,13 @@ java.lang.reflect.AnnotatedElement
    * @skip
    */
   protected Class() {
+    constId = remember();
   }
+  
+  private native int remember()
+  /*-{
+    return @com.google.gwt.reflect.client.ConstPool::setClass(Ljava/lang/Class;)(this);
+  }-*/;
   
   public boolean desiredAssertionStatus() {
     // This body is ignored by the JJS compiler and a new one is
@@ -448,7 +442,7 @@ java.lang.reflect.AnnotatedElement
   public Field getDeclaredField(String name) 
   throws NoSuchFieldException
   {
-    if (fields == null)
+    if (members == null)
       // Throw a helpful error message suggesting the client forgot to initialize this class
       // Note, we throw NoSuchFieldERROR is the field repo is null, as this means
       // we _might_ actually support this class, but it simply wasn't enhanded yet
@@ -457,12 +451,12 @@ java.lang.reflect.AnnotatedElement
     // Call into our field repo; it will throw NoSuchFieldEXCEPTION,
     // as this is the correct behavior when our field repo IS initialized,
     // but the field is legitimately missing
-    return fields.getDeclaredField(name);
+    return members.getDeclaredField(name);
   }
   
   public Field getField(String name) 
   throws NoSuchFieldException {
-    if (fields == null)
+    if (members == null)
       // Throw a helpful error message suggesting the client forgot to initialize this class
       // Note, we throw NoSuchFieldERROR is the method repo is null, as this means
       // we _might_ actually support this class, but it simply wasn't enhanded yet
@@ -471,25 +465,25 @@ java.lang.reflect.AnnotatedElement
     // Call into our field repo; it will throw NoSuchFieldEXCEPTION,
     // as this is the correct behavior when our field repo IS initialized,
     // but the field is legitimately missing
-    return fields.getField(name);
+    return members.getField(name);
   }
   
   public Field[] getDeclaredFields()
   {
-    if (fields == null)
+    if (members == null)
       throw new NoSuchFieldError(NOT_IMPLEMENTED_CORRECTLY);
-    return fields.getDeclaredFields();
+    return members.getDeclaredFields();
   }
   
   public Field[] getFields() {
-    if (fields == null)
+    if (members == null)
       throw new NoSuchFieldError(NOT_IMPLEMENTED_CORRECTLY);
-    return fields.getFields();
+    return members.getFields();
   }
   
   public Constructor<T> getConstructor(Class<?> ... parameterTypes) 
   throws NoSuchMethodException {
-    if (constructors == null)
+    if (members == null)
       // Throw a helpful error message suggesting the client forgot to initialize this class
       // Note, we throw NoSuchMethodERROR is the constructor repo is null, as this means
       // we _might_ actually support this class, but it simply wasn't enhanded yet
@@ -498,18 +492,18 @@ java.lang.reflect.AnnotatedElement
     // Call into our constructor repo; it will throw NoSuchMethodEXCEPTION,
     // as this is the correct behavior when our constructor repo IS initialized,
     // but the method is legitimately missing
-    return constructors.getConstructor(parameterTypes);
+    return members.getConstructor(parameterTypes);
   }
   
   public Constructor[] getConstructors() {
-    if (constructors == null)
+    if (members == null)
       throw new NoSuchMethodError(NOT_IMPLEMENTED_CORRECTLY);
-    return constructors.getConstructors();
+    return members.getConstructors();
   }
   
   public Constructor<T> getDeclaredConstructor(Class<?> ... parameterTypes) 
       throws NoSuchMethodException {
-    if (constructors == null)
+    if (members == null)
       // Throw a helpful error message suggesting the client forgot to initialize this class
       // Note, we throw NoSuchMethodERROR is the constructor repo is null, as this means
       // we _might_ actually support this class, but it simply wasn't enhanded yet
@@ -518,13 +512,13 @@ java.lang.reflect.AnnotatedElement
     // Call into our constructor repo; it will throw NoSuchMethodEXCEPTION,
     // as this is the correct behavior when our constructor repo IS initialized,
     // but the method is legitimately missing
-    return constructors.getDeclaredConstructor(parameterTypes);
+    return members.getDeclaredConstructor(parameterTypes);
   }
   
   public Constructor[] getDeclaredConstructors() {
-    if (constructors == null)
+    if (members == null)
       throw new NoSuchMethodError(NOT_IMPLEMENTED_CORRECTLY);
-    return constructors.getDeclaredConstructors();
+    return members.getDeclaredConstructors();
   }
   
   public Class<?>[] getClasses() {

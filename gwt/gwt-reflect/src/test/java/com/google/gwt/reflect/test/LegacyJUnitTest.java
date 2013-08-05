@@ -11,16 +11,14 @@ public class LegacyJUnitTest extends GWTTestCase {
     return "com.google.gwt.reflect.ReflectTest";
   }
 
-  public void testSimpleReflection() throws Exception {
-    new FieldTests().testSimpleReflection();
+  public void testFields() throws Throwable {
+    magicClass(FieldTests.class);
+    JUnit4Test.runTests(FieldTests.class);
   }
 
-  public void testAnnotationsKeepAll() throws Exception {
-    new FieldTests().testAnnotationsKeepAll();
-  }
-
-  public void testDirectMethodInjection() throws Exception {
-    new FieldTests().testDirectMethodInjection();
+  public void testArrays() throws Throwable {
+    magicClass(ArrayTests.class);
+    JUnit4Test.runTests(ArrayTests.class);
   }
 
   public void testAnnotations() throws Throwable {

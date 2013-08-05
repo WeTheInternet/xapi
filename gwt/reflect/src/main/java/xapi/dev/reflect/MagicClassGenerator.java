@@ -56,9 +56,8 @@ import com.google.gwt.core.ext.typeinfo.NotFoundException;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.reflect.client.ClassMap;
 import com.google.gwt.reflect.client.MemberMap;
+import com.google.gwt.reflect.rebind.ReflectionUtilJava;
 import com.google.gwt.reflect.rebind.generators.GwtConstructorGenerator;
-import com.google.gwt.reflect.rebind.generators.GwtFieldGenerator;
-import com.google.gwt.reflect.rebind.generators.ReflectionGeneratorUtil;
 
 public class MagicClassGenerator extends IncrementalGenerator {
 
@@ -169,7 +168,7 @@ public class MagicClassGenerator extends IncrementalGenerator {
     JClassType targetType = type;
     String packageName = type.getPackage().getName();
     String simpleName = SourceUtil.toSourceName(type.getSimpleSourceName());
-    String generatedName = ReflectionGeneratorUtil.generatedMagicClassName(simpleName);
+    String generatedName = ReflectionUtilJava.generatedMagicClassName(simpleName);
     String clsToEnhance = SourceUtil.toSourceName(type.getQualifiedSourceName());
 
 
@@ -395,9 +394,9 @@ public class MagicClassGenerator extends IncrementalGenerator {
       // now, do the fields
       extractFields(logger, keepField, injectionType, manifest);
       if (keepField != null || manifest.fields.size()>0) {
-        if (GwtFieldGenerator.generateFields(logger, classBuilder, context, injectionType, manifest.fields)){
+//        if (GwtFieldGenerator.generateFields(logger, classBuilder, context, injectionType, manifest.fields)){
           enhanceMethod.println("enhanceFields(toEnhance);");
-        }
+//        }
       }
 
       enhanceMethod

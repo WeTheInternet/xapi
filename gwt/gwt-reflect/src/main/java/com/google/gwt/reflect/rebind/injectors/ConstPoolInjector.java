@@ -23,34 +23,56 @@ import com.google.gwt.dev.jjs.ast.JBlock;
 import com.google.gwt.dev.jjs.ast.JClassLiteral;
 import com.google.gwt.dev.jjs.ast.JDeclaredType;
 import com.google.gwt.dev.jjs.ast.JExpression;
+import com.google.gwt.dev.jjs.ast.JIntLiteral;
 import com.google.gwt.dev.jjs.ast.JMethod;
 import com.google.gwt.dev.jjs.ast.JMethodBody;
 import com.google.gwt.dev.jjs.ast.JMethodCall;
+import com.google.gwt.dev.jjs.ast.JReferenceType;
+import com.google.gwt.dev.jjs.ast.JThisRef;
 import com.google.gwt.dev.jjs.ast.JType;
 import com.google.gwt.dev.jjs.impl.UnifyAst.UnifyVisitor;
+import com.google.gwt.reflect.client.ConstPool;
 import com.google.gwt.reflect.client.GwtReflect;
 import com.google.gwt.reflect.client.strategy.GwtRetention;
 import com.google.gwt.reflect.client.strategy.ReflectionStrategy;
 import com.google.gwt.reflect.rebind.generators.ConstPoolGenerator;
+import com.google.gwt.reflect.rebind.generators.MemberGenerator;
 
 @ReflectionStrategy
 public class ConstPoolInjector implements MagicMethodGenerator, UnifyAstListener{
 
   private static final Type logLevel = Type.TRACE;
+  private JMethodCall rememberClass;
   
   @Override
   public JExpression injectMagic(TreeLogger logger, JMethodCall methodCall, JMethod enclosingMethod,
     Context context, UnifyAstView ast) throws UnableToCompleteException {
 
+    if (methodCall.getTarget().getName().equals("setClass")) {
+      JThisRef cls = (JThisRef) methodCall.getArgs().get(0);
+      JClassType type = (JClassType) cls.getType().getUnderlyingType();
+      if (rememberClass == null) {
+        JDeclaredType pool = ast.searchForTypeBySource(ConstPool.class.getName());
+        for (JMethod method : pool.getMethods()) {
+          if (method.getName().equals("rememberClass")) {
+            rememberClass = new JMethodCall(method.getSourceInfo(), null, method);
+            rememberClass.addArg(null);
+            rememberClass.addArg(null);
+          }
+        }
+      }
+      int constId = ConstPoolGenerator.getGenerator().rememberClass(type);
+      JMethodCall call = new JMethodCall(rememberClass, null);
+      call.setArg(0, new JIntLiteral(methodCall.getSourceInfo(), constId));
+      call.setArg(1, cls);
+      return call.makeStatement().getExpr();
+    }
+    
     StandardGeneratorContext ctx = ast.getRebindPermutationOracle().getGeneratorContext();
     HashMap<String,JPackage> packages = new HashMap<String,JPackage>();
     LinkedHashMap<JClassType,ReflectionStrategy> retained = new LinkedHashMap<JClassType,ReflectionStrategy>();
     ReflectionStrategy defaultStrategy = ConstPoolInjector.class.getAnnotation(ReflectionStrategy.class);
     TypeOracle oracle = ctx.getTypeOracle();
-    JPackage test = oracle.findPackage("com.google.gwt.reflect.test");
-    for (JClassType type : test.getTypes()) {
-      logger.log(Type.INFO, type.getQualifiedSourceName());
-    }
     boolean doLog = logger.isLoggable(logLevel);
     if (doLog)
       logger = logger.branch(logLevel, "Injecting all remaining members into ClassPool");
@@ -102,7 +124,11 @@ public class ConstPoolInjector implements MagicMethodGenerator, UnifyAstListener
       JClassType cls = type.getKey();
       if (cls.isPrivate())
         continue;//use a jsni helper instead here.
-      if (cls.getName().endsWith("_MC") || cls.getName().contains(MemberInjector.METHOD_SPACER))
+      if (cls.getName().endsWith("_MC") 
+          || cls.getName().contains(MemberGenerator.METHOD_SPACER)
+          || cls.getName().contains(MemberGenerator.FIELD_SPACER)
+          || cls.getName().contains(MemberGenerator.CONSTRUCTOR_SPACER)
+          )
         continue;
       JType asType = ast.getProgram().getFromTypeMap(cls.getQualifiedSourceName());
       if (asType == null) {
@@ -119,7 +145,6 @@ public class ConstPoolInjector implements MagicMethodGenerator, UnifyAstListener
     JMethodCall call = new JMethodCall(methodSource, null, newMethod);
     
     ast.getRebindPermutationOracle().getGeneratorContext().finish(logger);
-    logger.log(Type.INFO, "ConstPool: "+call.getTarget().toSource());
     return call.makeStatement().getExpr();
   }
 

@@ -4,6 +4,8 @@ import static com.google.gwt.reflect.client.GwtReflect.magicClass;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.Test;
 
@@ -75,6 +77,33 @@ public class MethodTests extends AbstractReflectionTest {
   @Test(expected=NoSuchMethodException.class)
   public void testCantAccessPrivateMethods() throws Throwable  {
     SUPER_CLASS.getMethod(PRIVATE_CALL);
+  }
+  
+
+  private static final Class<?> classInt = int.class;
+  private static final Class<?> classLit = classList();
+  private static final Class<?> classObject(){return Object.class;};
+  private static final Class<?> classList(){return List.class;};
+  private static final native Class<?> nativeMethod()
+  /*-{
+   return @java.util.List::class;
+   }-*/;
+  private static Class<?>[] classArray() {
+    final Class<?>[] array = new Class<?>[]{classInt, classObject()};
+    return array;
+  }
+
+  @Test
+  public void testComplexMethodInjection() throws Exception {
+    ArrayList<String> list = new ArrayList<String>();
+    Method method = ArrayList.class.getMethod("add", Object.class);
+    method.invoke(list, "success");
+    assertEquals("success", list.get(0));
+
+    final Class<?>[] array = classArray();
+    method = classLit.getMethod("add", array);
+    method.invoke(list, 0, "Success!");
+    assertEquals("Success!", list.get(0));
   }
   
 }

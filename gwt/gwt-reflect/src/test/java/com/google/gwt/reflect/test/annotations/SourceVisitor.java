@@ -1,4 +1,4 @@
-package com.google.gwt.reflect.client;
+package com.google.gwt.reflect.test.annotations;
 
 import java.util.Arrays;
 

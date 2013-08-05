@@ -26,7 +26,4 @@ See the [MagicMethodGenerator]
 and the [UnifyAstListener] (src/main/java/com/google/gwt/dev/jjs/UnifyAstListener.java)
 interfaces for details.
 
-Note that you must put the jar containing this code above gwt-dev on the classpath.
-
-For automated testing, you may want to inherit net.wetheinter:xapi-gwt-test,
-which overrides JUnitShell to allow us to reorder the classpath.
+The [GWT Reflection API](../gwt-reflect) makes extensive use of magic method injection.

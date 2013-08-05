@@ -95,13 +95,13 @@ public class JUnit4Test {
 
   }
 
-  public static Iterable<Method> findTests(Class<?> testClass) throws Throwable {
+  public static Method[] findTests(Class<?> testClass) throws Throwable {
     return new JUnit4Test().findAnnotated(testClass);
   }
 
-  private Iterable<Method> findAnnotated(Class<?> testClass) {
+  private Method[] findAnnotated(Class<?> testClass) {
     Lifecycle lifecycle = new Lifecycle(testClass);
-    return lifecycle.tests.values();
+    return lifecycle.tests.values().toArray(new Method[0]);
   }
 
   public static void runTests(Class<?> testClass) throws Throwable {
@@ -225,7 +225,7 @@ public class JUnit4Test {
 
   protected void debug(String string, Throwable e) {
     if (GWT.isProdMode()) {
-      Window.alert(string+" ("+e+")");
+      GWT.log(string+" ("+e+")");
     }
     else
       System.out.println(string);

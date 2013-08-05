@@ -4,6 +4,7 @@ import java.lang.annotation.Annotation;
 
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.UnsafeNativeLong;
+import com.google.gwt.reflect.client.ConstPool;
 import com.google.gwt.reflect.client.MemberMap;
 import com.google.gwt.user.client.Window;
 
@@ -38,6 +39,8 @@ public class Method extends AccessibleObject implements GenericDeclaration, Memb
   private JavaScriptObject method;
   private JavaScriptObject annos;
 
+  private int[] constants;
+  
   // Modifiers that can be applied to a method in source code
   private static final int LANGUAGE_MODIFIERS = Modifier.PUBLIC | Modifier.PROTECTED | Modifier.PRIVATE |
     Modifier.ABSTRACT | Modifier.STATIC | Modifier.FINAL | Modifier.SYNCHRONIZED | Modifier.NATIVE;
@@ -49,6 +52,10 @@ public class Method extends AccessibleObject implements GenericDeclaration, Memb
   }
 
   protected Method(){}
+
+  protected Method(int constants) {
+    this.constants = ConstPool.getConstPool().getArrayInt(constants);
+  }
   
   public Method(Class from, String name, Class[] parameterTypes, Class returnType, Class[] checkedExceptions,
     int modifiers, JavaScriptObject method, JavaScriptObject annos) {

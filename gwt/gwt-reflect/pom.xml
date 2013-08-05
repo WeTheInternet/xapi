@@ -149,10 +149,9 @@
             <inherited>false</inherited>
             <configuration>
               <sources>
-            <!--     
+            <!-- Uncomment these to look at super-source and/or generated source
                 <source>src/main/resources/com/google/gwt/emul/</source>
                 <source>target/gwt-gen</source>
-                Uncomment these to add super source directly to classpath.
                 <source>target/gwt-emul/com/google/gwt/emul/</source>
                 <source>target/gwt-lang/com/google/gwt/dev/jjs/intrinsic/</source> 
             -->

@@ -27,6 +27,7 @@ import com.google.gwt.core.ext.typeinfo.JParameter;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.dev.jjs.UnifyAstListener;
 import com.google.gwt.reflect.client.GwtReflect;
+import com.google.gwt.reflect.rebind.ReflectionUtilJava;
 
 
 public class GwtAnnotationGenerator {
@@ -324,7 +325,7 @@ public class GwtAnnotationGenerator {
       .createMethod("public static "+proxyName+" "+method+"()")
       .print("return new "+proxyName+"(");
 
-      Method[] methods = ReflectionGeneratorUtil.getMethods(anno);
+      Method[] methods = ReflectionUtilJava.getMethods(anno);
       int len = methods.length;
       for (int i = 0; i < len; i ++ ) {
         Method m = methods[i];
@@ -359,7 +360,7 @@ public class GwtAnnotationGenerator {
           mb.println("}");
         } else {
           // any other type, we can just generate raw source for now.
-          mb.print(ReflectionGeneratorUtil.sourceName(value));
+          mb.print(ReflectionUtilJava.sourceName(value));
         }
       }
 
@@ -401,7 +402,7 @@ public class GwtAnnotationGenerator {
         // A method the client has declared
         Class<?> returnType = (Class<?>)method.getReturnType();
         String simpleName = method.getName();
-        String paramName = ReflectionGeneratorUtil.toSourceName(method.getGenericReturnType())
+        String paramName = ReflectionUtilJava.toSourceName(method.getGenericReturnType())
           +" "+simpleName;
         Object defaultValue = defaults[i] = method.getDefaultValue();
 

@@ -22,9 +22,6 @@ import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.dev.javac.StandardGeneratorContext;
 import com.google.gwt.reflect.client.strategy.GwtRetention;
 import com.google.gwt.reflect.client.strategy.ReflectionStrategy;
-import com.google.gwt.reflect.rebind.generators.ReflectionAstUtil;
-import com.google.gwt.reflect.rebind.generators.ReflectionGeneratorUtil;
-import com.google.gwt.reflect.rebind.generators.ReflectionTypeUtil;
 import com.google.gwt.reflect.rebind.injectors.MagicClassInjector;
 import com.google.gwt.thirdparty.guava.common.collect.Maps;
 import com.google.gwt.thirdparty.guava.common.collect.Sets;
@@ -104,6 +101,8 @@ public class ReflectionManifest {
     declaredFields.clear();
     final String typeName = type.getQualifiedSourceName();
     for (JField field : type.getFields()) {
+      if (field.getName().equals("serialVersionUID"))
+        continue;
       if (field.getEnclosingType().getQualifiedSourceName().equals(typeName)) {
         GwtRetention retention = field.getAnnotation(GwtRetention.class);
         if (retention == null)
@@ -144,9 +143,33 @@ public class ReflectionManifest {
   public boolean isOverloaded(String methodName) {
     return overloadedMethods.contains(methodName);
   }
+  
+  public Collection<ReflectionUnit<JConstructor>> getConstructors() {
+    return declaredConstructors.values();
+  }
+  
+  public Collection<ReflectionUnit<JField>> getFields() {
+    return declaredFields.values();
+  }
 
   public Collection<ReflectionUnit<JMethod>> getMethods() {
     return declaredMethods.values();
+  }
+  
+  public GwtRetention getRetention(JConstructor ctor) {
+    GwtRetention retention = ctor.getAnnotation(GwtRetention.class);
+    if (retention == null) {
+      retention = strategy.constructorRetention();
+    }
+    return retention;
+  }
+  
+  public GwtRetention getRetention(JField field) {
+    GwtRetention retention = field.getAnnotation(GwtRetention.class);
+    if (retention == null) {
+      retention = strategy.fieldRetention();
+    }
+    return retention;
   }
 
   public GwtRetention getRetention(JMethod method) {
@@ -166,7 +189,7 @@ public class ReflectionManifest {
     while (from != null) {
       for (JMethod method : from.getMethods()) {
         if (method.getName().equals(name)) {
-          if (seen.add(ReflectionTypeUtil.toJsniClassLits(method.getParameterTypes())))
+          if (seen.add(ReflectionUtilType.toJsniClassLits(method.getParameterTypes())))
             list.add(method);
         }
       }

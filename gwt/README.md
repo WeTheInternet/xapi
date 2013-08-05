@@ -1,0 +1,35 @@
+
+## GWT Tools
+
+For Google Web Toolkit XApi enables reflection support, more complete emulation of java.lang.Class, a range of code generation utilities, GWT.runAsync() injection, and a little something called "magic-method injection".
+
+In order to make pluggable dependency injection work in GWT, we hacked the GWT UnifyAST phase (at the beginning of production compiles, where java source is turned into an Abstract Syntax Tree) to allow the writing of custom "GWT.create()-like methods".  Using a custom configuration property in a .gwt.xml file, we map any static method in the app to a generator, which swaps out the method call with any combination of generated source files or programmatically assembled AST node objects.  The process was modelled on GWT.create(), but expands to allow you to send an arbitrary number of arguments, which you can then reference in your generated code.
+
+There are two caveats with magic method injection.
+
+The first is that, like GWT, if you want to know the class of a parameter at compile-time, you must send a class literal, and not a Class object.  There is a fix in the mix for using one magic method to record all classes passed in, to let the compiler know which types you want to support, and generate a provider class which can operate on runtime class objects.
+
+The second is that whatever code is in the body of the method you replaced will be getting called during gwt dev and jre runtimes.  Even though it's not actually being called in gwt, and will get pruned, it may not contain any jre classes not included in your gwt module or methods on the gwt whitelist.  This is why our injection service allows you to cleanly separate source paths; a jre injected service can access whatever it wants, and the gwt module will never need to know.  We went through the trouble to make our JreInjector gwt-compatible so our other services wouldn't have to care about gwt dependencies.  
+
+There may be a fix for requiring gwt compatible code in the method bodies replaced by injection if we can move the magic method injection from UnifyAST to GwtAstBuilder.  The only trouble here is that we would be forced to work entirely on eclipse JDT AST instead of the more feature rich gwt ast; waiting for the UnifyAST stage is also handy because it gives us access to the JProgram and TypeOracle and RebindPermutationOracle needed to call into standard gwt generators.  By tying into the GWT generator framework, we can allow the replaced method bodies to just call GWT.create() and access the exact same code generated for injected methods, or to do java-esque stuff like reflection, to mask a non-gwt compatible dependency.
+
+Beyond the dependency injection system, xapi-gwt also used to give fuller (and eventually complete) emulation for reflection and java.lang.Class.  Current support for reflection is only the Constructor, Method and Field methods, and provides full functionality for invoking methods, but only partial metadata.  Our internal purpose for supporting reflection is for the collIDE project.  If we can are running a web IDE on an arbitrary source file, and your build files are all there, then there's no reason we can't just recompile your file, and send back metadata, warnings or errors (most likely through a long-lived maven plugin).  There is also talk of implementing java 7 method handles in GWT using the same techniques as used for Constructor and Method emulation.
+
+Future enhancements to the gwt branch of the project will be geared around more dynamic code generation, with a functional-programming style methodology of building ast nodes (or source code), as well as a project to make services in a gwt app hot-swappable, for extra-fast compile-time development; why recompile the whole app to change one piece?  In order to prepare for fully hotswappable code in the client and the server, all dynamic services are designed around static access to a provider object.  Change the provider object, never keep a reference to the returned object, and now all code which uses the functionality update automatically.  Throw in an event listener and an api for transferring live state, drop it into the collIDE real-time collaborative web app editor, and turn the devs loose!
+
+Between source maps support, being able to reflectively visualize and interact with your live object graph, and the ability to edit and recompile that source code, writing web apps will become far more tactile and interactive than ever before!
+
+## Codegen Tools
+
+The initial investment in code generation is generally higher than its immediate payouy.  However, once you have a powerful set of code generation tools, you are able to work almost entirely in the interface and annotation layer, where you can achieve things like multiple inheritance (provided your generators play nicely together), boilerplate-free code, extensive testing without touching public code, complete dereferencing of unrelated dependencies, and the ability to write highly optimizable private final code; if someone wants to add functionality, they can inject their own generator or runtime service and build whatever they please. 
+
+All that matters is the API.
+
+The code that produces functionality can be hardcoded or dynamic.  In many cases, it's more efficient to just write the code and be done with it.  But, when you find yourself writing the same thing more than three times, it's time to ask yourself if you should keep inventing the wheel, or just automate the process of generating the wheel from its interface.
+
+This is where it comes down to opportunity cost.  Do you bother with a generator, or just keep writing it by hand (and updating it by hand, in every location!)?  Well, if the generation process was dead simply to plug in, and looked a lot like a well structured java document in the first place, then the investment cost is much lower, and you gain the ability to add features to multiple implementations by changing one or two files, instead of ten or twenty or a hundred.
+
+Code itself is an evolving thing; even if you don't plan to introduce breaking changes, your environment and your need for more features pretty much makes changes inevitable.  When you code in the interface + annotation + generator layer, you gain the ability to offer legacy implementations for legacy clients, and bleeding edge features for the more web savvy clients.
+
+When you create a new pojo, do you really want to write fields and getters and setters and serializers and validators and events by hand every time?  Isn't it much nicer to say, "Ah, I need an Address object with fields for Street, State, Zip... And just annotate your interface with serialization and validation options"?  When you've written one thousand and one field serializers, will you think then about automation?  Ya, there might be runtime solutions to do that serialization for you, but unless they are preprocessing your classes, they're doing computations at runtime that could have been done at compile time, and you're losing out on performance.
+
