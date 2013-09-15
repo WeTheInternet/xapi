@@ -1,4 +1,4 @@
-package java.util;
+package java.util.concurrent;
 
 import java.util.*;
 import java.io.Serializable;
@@ -53,9 +53,10 @@ public class BaseConcurrentHashMap<K, V> extends AbstractHashMap<K, V>
   }
 
   @Override
-  protected boolean equals(Object value1, Object value2) {
-    return Utility.equalsWithNullCheck(value1, value2);
-  }
+  protected native boolean equals(Object value1, Object value2)
+  /*-{
+    return @java.util.Utility::equalsWithNullCheck(Ljava/lang/Object;Ljava/lang/Object;)(value1, value2);
+  }-*/;
 
   @Override
   protected int getHashCode(Object key) {

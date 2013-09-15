@@ -37,19 +37,18 @@ package xapi.dev.template;
 
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
-
-import com.google.gwt.core.ext.TreeLogger;
-import com.google.gwt.core.ext.TreeLogger.Type;
+import xapi.log.api.LogLevel;
+import xapi.log.api.LogService;
 
 public class AbstractMethodGenerator <Payload> implements TemplateMethodGenerator<Payload>{
 
 	@Override
-	public void initialize(TreeLogger logger, TemplateGeneratorOptions options) {
-		logger.log(Type.TRACE, "Initializing method generator "+getClass().getName());
+	public void initialize(LogService logger, TemplateGeneratorOptions options) {
+		logger.log(LogLevel.TRACE, "Initializing method generator "+getClass().getName());
 	}
 
 	@Override
-	public MethodBuffer generate(TreeLogger logger, SourceBuilder<Payload> context,
+	public MethodBuffer generate(LogService logger, SourceBuilder<Payload> context,
 			String params) {
 		MethodBuffer buffer = new MethodBuffer(context);
 		if (params.length()>0)

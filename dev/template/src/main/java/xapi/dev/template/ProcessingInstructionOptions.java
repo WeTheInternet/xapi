@@ -35,8 +35,8 @@
 
 package xapi.dev.template;
 
-import com.google.gwt.dev.ArgProcessorBase;
-import com.google.gwt.util.tools.ArgHandlerInt;
+import xapi.args.ArgHandlerInt;
+import xapi.args.ArgProcessorBase;
 
 public class ProcessingInstructionOptions extends ArgProcessorBase {
 

@@ -35,7 +35,7 @@ import xapi.collect.impl.SimpleFifo;
  *
  * @param <E>
  */
-public interface Fifo <E>{
+public interface Fifo <E> {
   
   /**
    * Analagous to add(), however, we do not use the standard naming convention,

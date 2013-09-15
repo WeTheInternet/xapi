@@ -23,21 +23,10 @@
   </properties>
   <dependencies>
 
-  <!--
-      We inherit javax.inject classes and sources.
-      It's two jars, but only six annotations each.
-   -->
-
     <dependency>
       <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-core-api</artifactId>
+      <artifactId>xapi-core-log</artifactId>
     </dependency>
-    <dependency>
-      <groupId>javax.inject</groupId>
-      <artifactId>javax.inject</artifactId>
-      <version>1</version>
-    </dependency>
-    
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>

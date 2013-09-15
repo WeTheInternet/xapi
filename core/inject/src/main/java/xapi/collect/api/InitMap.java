@@ -46,5 +46,4 @@ public interface InitMap <Key, Value> extends StringDictionary<Value>{
   boolean containsKey(Key key);
   Value put(Key key, Value value);
 
-
 }

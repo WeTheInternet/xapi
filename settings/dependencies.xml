@@ -51,6 +51,17 @@
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-core-log</artifactId>
+    <version>${xapi.version}</version>
+   </dependency>
+   <dependency>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-core-log</artifactId>
+    <version>${xapi.version}</version>
+    <classifier>sources</classifier>
+   </dependency>
+   <dependency>
+    <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-inject</artifactId>
     <version>${xapi.version}</version>
    </dependency>
@@ -86,6 +97,17 @@
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-collect</artifactId>
     <version>${xapi.version}</version>
+   </dependency>
+   <dependency>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-core-args</artifactId>
+    <version>${xapi.version}</version>
+   </dependency>
+   <dependency>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-core-args</artifactId>
+    <version>${xapi.version}</version>
+    <classifier>sources</classifier>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
@@ -242,7 +264,6 @@
     <artifactId>xapi-gwt</artifactId>
     <version>${xapi.version}</version>
    </dependency>
-
 
    <!-- Dev stuff -->
    <dependency>

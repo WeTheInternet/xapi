@@ -4,6 +4,8 @@ import java.io.DataInput;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -774,6 +776,14 @@ public final class ClassFile {
       if (attr == null)
         return null;
       return ((AnnotationsAttribute)attr).getAnnotation(name);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends java.lang.annotation.Annotation> T getAnnotation(Class<T> annoClass) {
+      Annotation anno = getAnnotation(annoClass.getName());
+      if (anno == null)
+        return null;
+      return (T)anno;
     }
     /**
      * @return all compiletime and runtime annotations present on this class file.

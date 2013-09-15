@@ -58,5 +58,9 @@ public class InitMapDefault <Key, Value> extends AbstractInitMap<Key,Value>{
      for (String key : map.keySet())
        receiver.set(key);
   }
+  
+  public Iterable<String> keys() {
+    return map.keySet();
+  }
 
 }

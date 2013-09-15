@@ -34,6 +34,8 @@
  */
 package xapi.test.gwt.reflect;
 
+import static com.google.gwt.reflect.client.GwtReflect.*;
+
 import xapi.inject.X_Inject;
 import xapi.log.X_Log;
 import xapi.reflect.X_Reflect;
@@ -60,12 +62,12 @@ public class ServiceLoaderTest extends GWTTestCase {
     // }
     // test = new SplitPointTest();
     try {
-      Class<MagicClassTest> cls = X_Reflect.magicClass(MagicClassTest.class);
+      Class<MagicClassTest> cls = magicClass(MagicClassTest.class);
       X_Log.info("Test package: " + X_Reflect.getPackage(cls));
       System.err.println(cls);
-      testAsField = X_Inject.instance(X_Reflect.magicClass(MagicClassTest.class));
+      testAsField = X_Inject.instance(magicClass(MagicClassTest.class));
       X_Log.info("Test direct method injection ", testAsField);
-      MagicClassTest instance = X_Reflect.magicClass(MagicClassTest.class).newInstance();
+      MagicClassTest instance = magicClass(MagicClassTest.class).newInstance();
       X_Log.info("Test Class.newInstance()", instance);
 
       assert testAsField != null : "Null instance returned";

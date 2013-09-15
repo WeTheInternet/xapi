@@ -35,10 +35,10 @@
 
 package xapi.dev.template;
 
-import com.google.gwt.core.ext.TreeLogger;
+import xapi.log.api.LogService;
 
 public interface TemplateClassGenerator {
 
-	void initialize(TreeLogger logger, TemplateGeneratorOptions options);
+	void initialize(LogService logger, TemplateGeneratorOptions options);
 	
 }

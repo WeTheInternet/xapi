@@ -42,14 +42,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
+import xapi.args.ArgHandlerLogLevel;
+import xapi.args.ArgHandlerString;
+import xapi.args.ArgProcessorBase;
+import xapi.args.OptionLogLevel;
 import xapi.dev.source.SourceBuilder;
-
-import com.google.gwt.core.ext.TreeLogger;
-import com.google.gwt.core.ext.TreeLogger.Type;
-import com.google.gwt.dev.ArgProcessorBase;
-import com.google.gwt.dev.util.arg.ArgHandlerLogLevel;
-import com.google.gwt.dev.util.arg.OptionLogLevel;
-import com.google.gwt.util.tools.ArgHandlerString;
+import xapi.log.api.LogLevel;
+import xapi.log.api.LogService;
 
 public class TemplateGeneratorOptions extends ArgProcessorBase implements OptionLogLevel{
 
@@ -57,11 +56,11 @@ public class TemplateGeneratorOptions extends ArgProcessorBase implements Option
 	private final List<String> extraData = new ArrayList<String>();
 	private final PayloadTypeArg payloadArg;
 	private final Map<String, SourceBuilder<?>> context;
-	private Type logLevel;
+	private LogLevel logLevel;
 	private String outputLocation = "src/main/java";
 
 	public TemplateGeneratorOptions() {
-	  logLevel = Type.INFO;
+	  logLevel = LogLevel.INFO;
 		payloadArg = new PayloadTypeArg();
 		context = new HashMap<String, SourceBuilder<?>>();
 		registerHandler(new TemplateLocationArg(templates));
@@ -197,7 +196,7 @@ public class TemplateGeneratorOptions extends ArgProcessorBase implements Option
 			return new String[]{"com.template.payload.ClassName"};
 		}
 
-		public Object getPayload(TreeLogger logger, TemplateGeneratorOptions options) {
+		public Object getPayload(LogService logger, TemplateGeneratorOptions options) {
 			if (payload == null){
 				try{
 					payload = Class.forName(payloadClass).newInstance();
@@ -221,7 +220,7 @@ public class TemplateGeneratorOptions extends ArgProcessorBase implements Option
 	}
 
 	@SuppressWarnings({"rawtypes", "unchecked"})
-	public SourceBuilder<?> getContext(TreeLogger logger, String forTemplate){
+	public SourceBuilder<?> getContext(LogService logger, String forTemplate){
     SourceBuilder ctx = context.get(forTemplate);
 		if (ctx == null){
 			ctx = new SourceBuilder();
@@ -240,12 +239,12 @@ public class TemplateGeneratorOptions extends ArgProcessorBase implements Option
 	}
 
   @Override
-  public Type getLogLevel() {
+  public LogLevel getLogLevel() {
     return logLevel;
   }
 
   @Override
-  public void setLogLevel(Type logLevel) {
+  public void setLogLevel(LogLevel logLevel) {
     this.logLevel = logLevel;
   }
 

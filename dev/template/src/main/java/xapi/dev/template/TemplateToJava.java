@@ -51,14 +51,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import xapi.collect.impl.SimpleFifo;
 import xapi.dev.source.ImportSection;
 import xapi.dev.source.SourceBuilder;
-
-import com.google.gwt.core.ext.TreeLogger;
-import com.google.gwt.core.ext.TreeLogger.Type;
-import com.google.gwt.dev.util.Util;
-import com.google.gwt.dev.util.log.AbstractTreeLogger;
-import com.google.gwt.dev.util.log.PrintWriterTreeLogger;
+import xapi.log.api.LogLevel;
+import xapi.log.api.LogService;
+import xapi.log.impl.JreLog;
 
 public class TemplateToJava {
 
@@ -69,11 +67,12 @@ public class TemplateToJava {
   public static void main(String[] templates) {
 
     TemplateToJava generator = new TemplateToJava();
-    AbstractTreeLogger logger = new PrintWriterTreeLogger();
+    
+    LogService logger = new JreLog();
     TemplateGeneratorOptions options = new TemplateGeneratorOptions();
 
     if (options.processArgs(templates)) {
-      logger.setMaxDetail(options.getLogLevel());
+      logger.setLogLevel(options.getLogLevel());
       for (String template : options.getTemplates()) {
         generator.generate(logger, template, options);
       }
@@ -85,8 +84,7 @@ public class TemplateToJava {
   private Class<?> generatorClass;
   private final Map<Class<?>,Object> generators = new HashMap<Class<?>,Object>();
 
-  @SuppressWarnings("resource")
-  private void generate(TreeLogger logger, String template, TemplateGeneratorOptions options) {
+  public void generate(LogService logger, String template, TemplateGeneratorOptions options) {
     SourceBuilder<?> context = options.getContext(logger, template);
     InputStream input;
     try {
@@ -97,7 +95,7 @@ public class TemplateToJava {
         if (url == null) {
           url = ClassLoader.getSystemResource(template);
           if (url == null) {
-            logger.log(Type.ERROR, "You requested code generation for template " + template +
+            logger.log(LogLevel.ERROR, "You requested code generation for template " + template +
               ", but the file could not be found.");
             throw new CompilationFailed();
           }
@@ -120,7 +118,10 @@ public class TemplateToJava {
     }
   }
 
-  private void exportClass(TreeLogger logger, String filename, SourceBuilder<?> context,
+  private static final int BUF_SIZE = 16 * 1024;
+
+  
+  private void exportClass(LogService logger, String filename, SourceBuilder<?> context,
     TemplateGeneratorOptions opts) {
     File outputFile = new File(opts.getOutputLocation());
     // normalize filename
@@ -129,9 +130,9 @@ public class TemplateToJava {
     if (!filename.endsWith(".java")) filename = filename + ".java";
 
     // repackage if requested; useful for generating non-transient super-source
-    String repackage = context.getPackage();
-    if (repackage != null) {
-      filename = repackage.replace('.', File.separatorChar) + File.separator +
+    String packageName = context.getPackage();
+    if (packageName != null) {
+      filename = packageName.replace('.', File.separatorChar) + File.separator +
         filename.substring(filename.lastIndexOf('/'));
     }
 
@@ -139,16 +140,30 @@ public class TemplateToJava {
     outputFile = new File(outputFile.getAbsoluteFile(), filename);
     outputFile.getParentFile().mkdirs();
     try {
-      logger.log(Type.INFO, "Writing generated output to " + outputFile.getAbsolutePath());
+      logger.log(LogLevel.INFO, "Writing generated output to " + outputFile.getAbsolutePath());
       InputStream in = new ByteArrayInputStream(context.toString().getBytes(utf8));
       OutputStream out = new FileOutputStream(outputFile);
-      Util.copy(in, out);
+      
+      byte[] buf = new byte[BUF_SIZE];
+      try {
+        int i;
+        while ((i = in.read(buf)) != -1) {
+          out.write(buf, 0, i);
+        }
+      } finally {
+        in.close();
+        out.close();
+      }
+      
     } catch (IOException e) {
-      logger.log(Type.ERROR, "Error streaming generated output to file " + outputFile.getAbsolutePath(), e);
+      logger.doLog(LogLevel.ERROR, new SimpleFifo<Object>()
+          .give("Error streaming generated output to file")
+          .give(outputFile.getAbsolutePath())
+          .give(e));
     }
   }
 
-  private void applyTemplate(TreeLogger logger, BufferedReader input, SourceBuilder<?> context,
+  private void applyTemplate(LogService logger, BufferedReader input, SourceBuilder<?> context,
     TemplateGeneratorOptions options, String line) throws IOException {
     if (lineMatcher.matcher(line).matches())
       line = line.substring(2, line.length() - 2);
@@ -176,7 +191,7 @@ public class TemplateToJava {
         }
         break;
       case generateWith:
-        logger.log(Type.TRACE, "Setting generator to " + command);
+        logger.log(LogLevel.TRACE, "Setting generator to " + command);
         try {
           generatorClass = Class.forName(command);
           // Using X_Inject allows payloads to be specified as interfaces.
@@ -204,7 +219,7 @@ public class TemplateToJava {
             + "above the package statement.");
         }
         String repackage = packageStatement.substring(8);
-        logger.log(Type.TRACE, "Repackaging emulated source into " + command + "." + repackage);
+        logger.log(LogLevel.TRACE, "Repackaging emulated source into " + command + "." + repackage);
         context.getBuffer().append("package " + repackage);
         context.setPackage(command + "." + repackage);
         break;
@@ -215,7 +230,7 @@ public class TemplateToJava {
             + "above the package statement.");
         }
         repackage = command + ";";
-        logger.log(Type.TRACE, "Repackaging source into " + repackage);
+        logger.log(LogLevel.TRACE, "Repackaging source into " + repackage);
         context.getBuffer().append("package " + repackage);
         context.setPackage(repackage);
         break;
@@ -256,7 +271,7 @@ public class TemplateToJava {
 
       Method method;
       try {
-        method = generatorClass.getDeclaredMethod(parts[0], TreeLogger.class, SourceBuilder.class,
+        method = generatorClass.getDeclaredMethod(parts[0], LogService.class, SourceBuilder.class,
           String.class);
         method.setAccessible(true);
       } catch (Exception e) {

@@ -2,6 +2,7 @@ package xapi.test.gwt.reflect;
 
 import static xapi.log.X_Log.error;
 import static xapi.log.X_Log.trace;
+import static com.google.gwt.reflect.client.GwtReflect.*;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -13,7 +14,6 @@ import xapi.annotation.reflect.KeepConstructor;
 import xapi.annotation.reflect.KeepField;
 import xapi.annotation.reflect.KeepMethod;
 import xapi.inject.X_Inject;
-import xapi.reflect.X_Reflect;
 
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.JavaScriptObject;
@@ -60,7 +60,7 @@ public class MagicClassEntryPoint implements EntryPoint{
   }
 
   public void onModuleLoad() {
-    Class<MagicClassEntryPoint> cls = X_Reflect.magicClass(MagicClassEntryPoint.class);
+    Class<MagicClassEntryPoint> cls = magicClass(MagicClassEntryPoint.class);
     //test the big ugly ctor
     try {
     Constructor<MagicClassEntryPoint> ctor = cls.getConstructor(String.class, int.class, Integer.class,

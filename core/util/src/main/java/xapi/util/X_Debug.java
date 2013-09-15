@@ -29,7 +29,6 @@ public class X_Debug {
       orig.print(e.getStackTrace()[3]+": ");
     }
 
-    @Override
     public PrintStream append(CharSequence str) {
       // GWT doesn't have an append method, so we hack it here
       print(str.toString());

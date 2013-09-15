@@ -25,7 +25,7 @@ import com.google.gwt.core.client.JavaScriptObject;
  * @param <K> key type
  * @param <V> value type
  */
-abstract class AbstractHashMap<K, V> extends AbstractMap<K, V> {
+public abstract class AbstractHashMap<K, V> extends AbstractMap<K, V> {
   /*
    * Implementation notes:
    * 

@@ -17,6 +17,7 @@
   <source path="collect"/> <!-- Basic collections abstractions -->
   <source path="except"/> <!-- Runtime exceptions -->
   <source path="log"/> <!-- Our logger -->
+  <source path="enviro"/> <!-- Our logger -->
   <source path="util"/> <!-- Basic utility layer -->
   <source path="time"/> <!-- Time provider -->
   <source path="gwt"/> <!-- Gwt implementation layer.  

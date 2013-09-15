@@ -36,7 +36,6 @@
 package xapi.dev.template;
 
 public enum TemplateProcessingInstruction {
-
 	generateWith //used to switch generators during processing
 	,repackaged //used to repackage templates into a specific package
 	,emulated //used to move templates into an emulated package w/out modifying package statement

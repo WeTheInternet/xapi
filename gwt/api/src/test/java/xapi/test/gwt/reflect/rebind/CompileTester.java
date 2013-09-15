@@ -1,4 +1,4 @@
-package xapi.gwt.reflect.rebind.test;
+package xapi.test.gwt.reflect.rebind;
 
 import static java.io.File.separator;
 

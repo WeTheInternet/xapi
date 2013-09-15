@@ -13,9 +13,8 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import xapi.dev.source.SourceBuilder;
-
-import com.google.gwt.core.ext.TreeLogger;
-import com.google.gwt.core.ext.TreeLogger.Type;
+import xapi.log.api.LogLevel;
+import xapi.log.api.LogService;
 
 /**
  * A fairly simple test of our templating system;
@@ -73,11 +72,11 @@ public class TestTemplate implements TemplateClassGenerator{
 
 
   @Override
-	public void initialize(TreeLogger logger, TemplateGeneratorOptions options) {
-	  logger.log(Type.INFO, "Initializing "+getClass().getName());
+	public void initialize(LogService logger, TemplateGeneratorOptions options) {
+	  logger.log(LogLevel.INFO, "Initializing "+getClass().getName());
 	}
 
-	public void injected(TreeLogger logger, SourceBuilder<?> context, String payload){
+	public void injected(LogService logger, SourceBuilder<?> context, String payload){
 		context
 		  .setLinesToSkip(1)
 		  .getImports().addImport(Assert.class.getName());

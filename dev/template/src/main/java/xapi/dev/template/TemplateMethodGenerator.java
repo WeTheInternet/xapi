@@ -37,11 +37,10 @@ package xapi.dev.template;
 
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
-
-import com.google.gwt.core.ext.TreeLogger;
+import xapi.log.api.LogService;
 
 public interface TemplateMethodGenerator <Payload> {
 
-	void initialize(TreeLogger logger, TemplateGeneratorOptions options);
-	MethodBuffer generate(TreeLogger logger, SourceBuilder<Payload> context, String params);
+	void initialize(LogService logger, TemplateGeneratorOptions options);
+	MethodBuffer generate(LogService logger, SourceBuilder<Payload> context, String params);
 }

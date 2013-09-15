@@ -1,5 +1,7 @@
 package xapi.test.gwt.reflect;
 
+import static com.google.gwt.reflect.client.GwtReflect.*;
+
 import xapi.annotation.inject.InstanceDefault;
 import xapi.annotation.reflect.KeepClass;
 import xapi.annotation.reflect.KeepField;
@@ -22,7 +24,7 @@ public class MagicClassTest {
 
   // This method is actually elided from the generator
   public void testCompleteEmulation() {
-    Class<MagicClassTest> magicClass = X_Reflect.magicClass(MagicClassTest.class);
+    Class<MagicClassTest> magicClass = magicClass(MagicClassTest.class);
 
 //    assert X_Reflect.getPackage(MagicClassTest.class).getName()
 //      .equals(MagicClassTest.class.getName());

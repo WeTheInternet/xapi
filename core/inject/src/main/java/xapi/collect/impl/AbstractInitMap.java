@@ -153,5 +153,5 @@ public abstract class AbstractInitMap <Key, Value> implements InitMap<Key,Value>
 	public String toKey(Key key) {
 	  return keyProvider.convert(key);
 	}
-
+	
 }
