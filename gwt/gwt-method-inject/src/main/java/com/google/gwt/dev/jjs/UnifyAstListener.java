@@ -68,7 +68,7 @@ public interface UnifyAstListener {
    * Base library code should never add work to the queue, and only use
    * this method to perform any initialization that may be required.
    *
-   * See {@link xapi.gwt.rebind.MagicMethodTestGenerator} for a reference implementation,
+   * See {@link xapi.test.gwt.rebind.MagicMethodTestGenerator} for a reference implementation,
    * which inserts code before the main module entry point.
    * You may insert code anywhere; see {@link UnifyAstListener} for a reference implementation.
    *

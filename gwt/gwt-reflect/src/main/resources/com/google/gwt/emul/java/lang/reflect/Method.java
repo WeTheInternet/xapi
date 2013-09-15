@@ -53,8 +53,11 @@ public class Method extends AccessibleObject implements GenericDeclaration, Memb
 
   protected Method(){}
 
-  protected Method(int constants) {
-    this.constants = ConstPool.getConstPool().getArrayInt(constants);
+  protected Method(JavaScriptObject method) {
+//    this.constants = ConstPool.getConstPool().getArrayInt(constants);
+    this.method = method;
+    this.parameterTypes = exceptionTypes = new Class<?>[0];
+    this.annos = JavaScriptObject.createObject();
   }
   
   public Method(Class from, String name, Class[] parameterTypes, Class returnType, Class[] checkedExceptions,
@@ -474,7 +477,8 @@ public class Method extends AccessibleObject implements GenericDeclaration, Memb
    */
   @Override
   public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
-    if (annotationClass == null) throw new NullPointerException("Null annotation in getClass() for "+this);
+    if (annotationClass == null)
+      throw new NullPointerException("Null annotationClass in getAnnotation() for "+this);
     return MemberMap.getAnnotation(annos, annotationClass);
   }
 

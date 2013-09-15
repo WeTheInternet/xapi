@@ -45,14 +45,16 @@ public class Constructor<T> extends AccessibleObject implements
       Modifier.PUBLIC   | Modifier.PROTECTED  | Modifier.PRIVATE;
 
     protected Constructor() {
+      this.parameterTypes = exceptionTypes = new Class[0];
+      this.annos = JavaScriptObject.createObject();
     }
     /**
      * Public constructor to allow gwt to create constructors anywhere
      */
     public Constructor(Class<T> from, JavaScriptObject method, JavaScriptObject annos) {
+      this();
       this.clazz = from;
       // TODO implement these
-      this.parameterTypes = exceptionTypes = new Class[0];
       this.modifiers = 0;
       this.signature = "";
       this.annos = annos;
@@ -427,10 +429,8 @@ public class Constructor<T> extends AccessibleObject implements
     @UnsafeNativeLong
     public T newInstance(Object ... initargs)
   throws InstantiationException, IllegalAccessException,
-               IllegalArgumentException//, InvocationTargetException
+               IllegalArgumentException, InvocationTargetException
     {
-//      if ((clazz.getModifiers() & Modifier.ENUM) != 0)
-//        throw new IllegalArgumentException("Cannot reflectively create enum objects");
       return create(method, initargs);
     }
 

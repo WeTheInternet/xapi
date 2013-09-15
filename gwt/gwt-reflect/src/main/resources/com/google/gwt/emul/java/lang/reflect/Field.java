@@ -293,7 +293,8 @@ public class Field extends AccessibleObject implements Member {
     }
     
     protected boolean isNotAssignable(Class<?> c) {
-      return !getType().isAssignableFrom(c);
+      // TODO remove the need for this .isPrimitive() using subclasses of Field
+      return !getType().isPrimitive() && !getType().isAssignableFrom(c);
     }
     
     protected boolean nullNotAllowed() {

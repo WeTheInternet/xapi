@@ -177,7 +177,12 @@ public class JUnit4Test {
 
   protected Throwable runTest(Object inst, Method value, List<Method> before, List<Method> after) {
     
-    Test test = value.getAnnotation(Test.class);
+    Test test = null;
+    try {
+      test = value.getAnnotation(Test.class);
+    } catch (Exception e) {
+      debug("Error getting @Test annotation",e);
+    }
     Class<? extends Throwable> expected = test == null ? Test.None.class : test.expected();
     // We'll have to figure out timeouts in the actual JUnit jvm
     

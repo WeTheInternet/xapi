@@ -70,7 +70,7 @@
                 -runStyle HtmlUnit:FF3 -userAgents gecko1_8</value>
             </property>
           </systemProperties>
-          <skip>false</skip>
+          <skip>true</skip>
         </configuration>
       </plugin>
       

@@ -11,9 +11,9 @@ public class LegacyJUnitTest extends GWTTestCase {
     return "com.google.gwt.reflect.ReflectTest";
   }
 
-  public void testFields() throws Throwable {
-    magicClass(FieldTests.class);
-    JUnit4Test.runTests(FieldTests.class);
+  public void testAnnotations() throws Throwable {
+    magicClass(AnnotationTests.class);
+    JUnit4Test.runTests(AnnotationTests.class);
   }
 
   public void testArrays() throws Throwable {
@@ -21,9 +21,14 @@ public class LegacyJUnitTest extends GWTTestCase {
     JUnit4Test.runTests(ArrayTests.class);
   }
 
-  public void testAnnotations() throws Throwable {
-    magicClass(AnnotationTests.class);
-    JUnit4Test.runTests(AnnotationTests.class);
+//  public void testConstructors() throws Throwable {
+//    magicClass(ConstructorTests.class);
+//    JUnit4Test.runTests(ConstructorTests.class);
+//  }
+  
+  public void testFields() throws Throwable {
+    magicClass(FieldTests.class);
+    JUnit4Test.runTests(FieldTests.class);
   }
 
   public void testMethods() throws Throwable {

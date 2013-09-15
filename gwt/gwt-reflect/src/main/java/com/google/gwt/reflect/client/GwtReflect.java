@@ -4,6 +4,8 @@ import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 
 import com.google.gwt.core.client.UnsafeNativeLong;
@@ -30,6 +32,45 @@ public class GwtReflect {
   private GwtReflect() {}
 
   /**
+   *
+   * In gwt dev and standard jvms, this just calls cls.getConstructor(...).newInstance(...);
+   * in gwt production, this is a magic method which will generate calls to new T(params);
+   *
+   * Note that for gwt production to be fully optimized, you must always send class literals (SomeClass.class)
+   * If you send a class reference (a Class&lt;?> object),
+   * the magic method injector will be forced to generate a monolithic helper class.
+   *
+   * In gwt production, this method will avoid generating the magic class metadata.
+   *
+   * @param cls - The class on which to call .newInstance();
+   * @param paramSignature - The constructor parameter signature.  The array and it's contents must be constants.
+   * @param params - The actual objects (which should be assignable to param signature).
+   * @return A new instance of type T
+   * @throws Throwable - Standard reflection exceptions in java vms, generator-base exceptions in js vms.
+   * InvocationTargetExceptions are unwrapped for you.  This also forces you to catch Errors,
+   * which may very well be thrown by gwt, or by the jvm
+   */
+  public static <T> T construct(Class<? extends T> cls, Class<?>[] paramSignature, Object ... params)
+    throws Throwable {
+    assert isAssignable(paramSignature, params);
+    try {
+      return makeAccessible(magicClass(cls).getDeclaredConstructor(paramSignature)).newInstance(params);
+    } catch (InvocationTargetException e) {
+      throw e.getCause();
+    }
+  }
+
+  public static Object invoke(Class<?> cls, String name, Class<?>[] paramTypes, 
+      Object inst, Object ... params) throws Throwable {
+    assert isAssignable(paramTypes, params);
+    try {
+      return makeAccessible(cls.getDeclaredMethod(name, paramTypes)).invoke(inst, params);
+    } catch (InvocationTargetException e) {
+      throw e.getCause();
+    }
+  }
+
+  /**
    * Ensures that a given class has all its reflection data filled in.
    *
    * A magic method injection optimizes this in production mode.
@@ -52,28 +93,6 @@ public class GwtReflect {
   public static <T> Class<T> magicClass(Class<? extends T> cls) {
     assert cls != null;
     return Class.class.cast(cls);
-  }
-
-  /**
-   *
-   * In gwt dev and standard jvms, this just calls cls.getConstructor(...).newInstance(...);
-   * in gwt production, this is a magic method which will generate calls to new T(params);
-   *
-   * Note that for gwt production to be fully optimized, you must always send class literals (SomeClass.class)
-   * If you send a class reference (a Class&lt;?> object),
-   * the magic method injector will be forced to generate a monolithic helper class.
-   *
-   * In gwt production, this method will avoid generating the magic class metadata.
-   *
-   * @param cls - The class on which to call .newInstance();
-   * @param paramSignature - The constructor parameter signature
-   * @param params - The actual objects (which should be assignable to param signature).
-   * @return A new instance of type T
-   * @throws Exception - Standard reflection exceptions in java vms, generator-base exceptions in js vms.
-   */
-  public static <T> T construct(Class<? extends T> cls, Class<?>[] paramSignature, Object ... params)
-    throws Exception {
-    return magicClass(cls).getConstructor(paramSignature).newInstance(params);
   }
 
   /**
@@ -270,7 +289,7 @@ public class GwtReflect {
   }
   
   @SuppressWarnings("unchecked")
-  public static <T> Constructor<? super T>[] getPublicConstructors(Class<T> c) {
+  public static <T> Constructor<T>[] getPublicConstructors(Class<T> c) {
     return Constructor[].class.cast(c.getConstructors());
   }
   
@@ -344,6 +363,21 @@ public class GwtReflect {
     }
   }
   
+  private static boolean isAssignable(Class<?>[] paramSignature, Object[] params) {
+    if (paramSignature.length != params.length)
+    return false;
+    for (int i = paramSignature.length; i-->0;) {
+      if (params[i] == null) {
+        if (paramSignature[i].isPrimitive())
+          return false;
+      } else {
+        if (!paramSignature[i].isAssignableFrom(params[i].getClass()))
+          return false;
+      }
+    }
+    return true;
+  }
+
   private static <T extends AccessibleObject> T makeAccessible(T member) {
     // TODO use security manager
     if (!member.isAccessible())
@@ -357,6 +391,11 @@ public class GwtReflect {
     return members;
   }
 
+  private static void nullCheck(Object o) {
+    if (o == null)
+      throw new NullPointerException("Null is not allowed");
+  }
+  
   private static void log(String string, Throwable e) {
     GWT.log(string, e);
   }

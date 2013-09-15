@@ -12,6 +12,7 @@ import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.dev.javac.StandardGeneratorContext;
 import com.google.gwt.dev.jjs.MagicMethodGenerator;
 import com.google.gwt.dev.jjs.SourceInfo;
+import com.google.gwt.dev.jjs.SourceOrigin;
 import com.google.gwt.dev.jjs.UnifyAstListener;
 import com.google.gwt.dev.jjs.UnifyAstView;
 import com.google.gwt.dev.jjs.ast.Context;
@@ -31,6 +32,7 @@ import com.google.gwt.reflect.rebind.ReflectionUtilAst;
 import com.google.gwt.reflect.rebind.ReflectionUtilJava;
 import com.google.gwt.reflect.rebind.generators.GwtAnnotationGenerator;
 import com.google.gwt.reflect.rebind.generators.MagicClassGenerator;
+import com.google.gwt.reflect.rebind.generators.MemberGenerator;
 
 public class MagicClassInjector implements MagicMethodGenerator, UnifyAstListener {
 
@@ -51,10 +53,9 @@ public class MagicClassInjector implements MagicMethodGenerator, UnifyAstListene
     return generator.get().injectMagic(logger, x, currentMethod, context, ast);
   }
 
-    private final HashMap<String, JExpression> classEnhancers = new HashMap<String, JExpression>();
+    private final HashMap<String, JMethodCall> classEnhancers = new HashMap<String, JMethodCall>();
 
-
-    protected JExpression initialize(String clsName, MagicContext params) {
+    protected JMethodCall initialize(String clsName, MagicContext params) {
       try {
         return doRebind(clsName, params);
       } catch (Exception e) {
@@ -77,11 +78,15 @@ public class MagicClassInjector implements MagicMethodGenerator, UnifyAstListene
         classEnhancers.remove(key);
       }
       if (classEnhancers.containsKey(key)) {
-        return classEnhancers.get(key);
+        JMethodCall previous = classEnhancers.get(key);
+        previous = new JMethodCall(previous, previous.getInstance());
+        previous.addArg(params.getClazz().makeStatement().getExpr());
+        return previous.makeStatement().getExpr();
       }
-      JExpression expr = initialize(key, params);
+      JMethodCall expr = initialize(key, params);
       classEnhancers.put(key, expr);
-      return expr;
+      expr.setArg(0, params.getClazz().makeStatement().getExpr());
+      return expr.makeStatement().getExpr();
     }
 
   @Override
@@ -99,7 +104,7 @@ public class MagicClassInjector implements MagicMethodGenerator, UnifyAstListene
         logger, info, clazz, methodCall, currentMethod, context, ast));
   }
 
-  public JExpression doRebind(String clsName, MagicContext params) throws UnableToCompleteException {
+  public JMethodCall doRebind(String clsName, MagicContext params) throws UnableToCompleteException {
     // generate
     params.getLogger().log(logLevel, "Binding magic class for " + clsName);
     // JType type = params.getClazz().getRefType();
@@ -120,7 +125,7 @@ public class MagicClassInjector implements MagicMethodGenerator, UnifyAstListene
 
     for (JMethod method : success.getMethods()) {
       if (method.isStatic() && method.getName().equals("enhanceClass")) {
-        JMethodCall call = new JMethodCall(method.getSourceInfo(), null, method);
+        JMethodCall call = new JMethodCall(method.getSourceInfo().makeChild(SourceOrigin.UNKNOWN), null, method);
         call.addArg(params.getClazz().makeStatement().getExpr());
         return call;
       }
@@ -167,14 +172,18 @@ public class MagicClassInjector implements MagicMethodGenerator, UnifyAstListene
     // Every recompile should generate fresh results,
     // but we don't want to generate a new type if we recursively access the same type twice.
     MagicClassGenerator.cleanup();
+    
+    MemberGenerator.cleanup();
     // Our annotation generator caches types that it has seen.
     // We want to clear these regularly, so our generator
     // can examine cached, generated types, and avoid needless regeneration.
     GwtAnnotationGenerator.cleanup();
     
+    
     generator.remove();
   }
 
+  static int cnt;
   public static ReflectionStrategy getDefaultStrategy() {
     return generator.get().strategy;
   }

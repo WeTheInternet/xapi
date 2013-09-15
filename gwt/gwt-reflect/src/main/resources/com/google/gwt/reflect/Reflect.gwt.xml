@@ -2,6 +2,11 @@
 <!DOCTYPE module PUBLIC "-//Google Inc.//DTD Google Web Toolkit 2.5.1//EN" "http://google-web-toolkit.googlecode.com/svn/tags/2.5.1/distro-source/core/src/gwt-module.dtd">
 <module>
 
+  <!-- Enable magic methods in production. -->
+  <inherits name="com.google.gwt.MagicMethods" />
+  <inherits name="com.google.gwt.core.Core" />
+  <set-property name="compiler.stackMode" value="strip" />
+
   
   <!-- Configuration Property: gwt.reflection.factory -> 
   set to override the default reflection factory used.
@@ -21,8 +26,9 @@
   <set-configuration-property name="gwt.reflection.factory"
     value="com.google.gwt.reflect.rebind.GwtReflectionFactory"/>
 
-  <!-- Now, hook up our static methods as magic methods in production. -->
-  <inherits name="com.google.gwt.MagicMethods" />
+  <define-configuration-property name="gwt.reflect.never.fail" is-multi-valued="false" />
+  <set-configuration-property name="gwt.reflect.never.fail" value="false"/>
+
 
   <!-- Enhance entire class -->
   <extend-configuration-property name="gwt.magic.methods" 
@@ -55,6 +61,12 @@
     value="java.lang.Class.getDeclaredMethod(Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method; *= com.google.gwt.reflect.rebind.injectors.DeclaredMethodInjector"/>
   <extend-configuration-property name="gwt.magic.methods" 
     value="com.google.gwt.reflect.client.GwtReflect.getDeclaredMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method; *= com.google.gwt.reflect.rebind.injectors.DeclaredMethodInjector"/>
+
+  <extend-configuration-property name="gwt.magic.methods" 
+    value="java.lang.Class.getField(Ljava/lang/String;)Ljava/lang/reflect/Field; *= com.google.gwt.reflect.rebind.injectors.PublicFieldInjector"/>
+  <extend-configuration-property name="gwt.magic.methods" 
+    value="java.lang.Class.getDeclaredField(Ljava/lang/String;)Ljava/lang/reflect/Field; *= com.google.gwt.reflect.rebind.injectors.DeclaredFieldInjector"/>
+
 
   <source path="client" />
 </module>

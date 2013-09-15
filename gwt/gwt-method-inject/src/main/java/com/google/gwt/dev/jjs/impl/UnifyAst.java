@@ -455,6 +455,9 @@ public class UnifyAst implements UnifyAstView{
             logger.log(Type.DEBUG, "Magic method "+method
                 +" converted:\n"+x+"\ninto: "+expr);
           }
+          if (expr instanceof JMethodCall) {
+            flowInto(((JMethodCall)expr).getTarget());
+          }
           return expr;
         } catch (Exception e) {
           logger.log(Type.ERROR, "Fatal error calling magic method "+method+" on "+x, e);
@@ -1120,10 +1123,10 @@ public class UnifyAst implements UnifyAstView{
           //find the magic method.
           if (magicMethod.length>0){
             try{
-              final Class<?> magicClass = Class.forName(magicMethod[0]);
+              final Class<?> magicClass = Thread.currentThread().getContextClassLoader().loadClass(magicMethod[0]);
               final Method method = magicClass.getMethod(methodName,
                   TreeLogger.class, JMethodCall.class, JMethod.class, Context.class, UnifyAstView.class);
-              if ((method.getModifiers() & Modifier.STATIC) == Modifier.STATIC) {
+              if ((method.getModifiers() & Modifier.STATIC) > 0) {
                 magicMethodMap.put(clientMethod, new MagicMethodGenerator() {
                   @Override
                   public JExpression injectMagic(TreeLogger logger, JMethodCall methodCall, JMethod currentMethod,

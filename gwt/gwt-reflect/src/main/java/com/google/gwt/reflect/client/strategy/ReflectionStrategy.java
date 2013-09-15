@@ -10,7 +10,22 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ReflectionStrategy {
 
-  final int NONE = 0, COMPILE = 1, RUNTIME = 2;
+  // Annotation retention
+  final int 
+      NONE = 0,
+      COMPILE = 1,
+      RUNTIME = 2;
+  
+  // Member/type ids
+  final int 
+    TYPE = 1,
+    CONSTRUCTOR = 2,
+    FIELD = 4,
+    METHOD = 8,
+    ANNOTATION = 0x10,
+    META = 0x20,
+    SOURCE = 0x40,
+    ALL = 0x7f;
 
   /**
    * Set to true to retain all ancestors' public fields.
@@ -102,10 +117,12 @@ public @interface ReflectionStrategy {
    */
   int annotationRetention() default NONE;
   /**
+   * An int register of member types that should emit debug data.
+   * 
    * @return an non-empty string causes the compiler to dump the generated reflection
    * source for this class.
    */
-  String debug() default "";
+  int debug() default NONE;
   
   /**
    * @return true to keep the package, false to elide

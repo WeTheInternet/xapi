@@ -136,7 +136,6 @@ public class MagicClassGenerator extends IncrementalGenerator {
     manifest = getReflectionManifest(logger, injectionType.getQualifiedSourceName(), (StandardGeneratorContext)context);
     
     ReflectionStrategy strategy = manifest.getStrategy();
-    String classDebug = strategy.debug();
     boolean keepHierarchy = strategy.magicSupertypes();
     boolean keepCodesource = strategy.keepCodeSource();
     boolean keepPackageName = strategy.keepPackage();
@@ -146,6 +145,11 @@ public class MagicClassGenerator extends IncrementalGenerator {
       logger.log(Type.TRACE,"Writing magic class instance for " + type.getQualifiedSourceName() + " -> " +
           injectionType.getQualifiedSourceName());
 
+    if ((strategy.debug() & ReflectionStrategy.SOURCE) > 0) {
+      logger.log(Type.INFO, "Source Dump For " +clsToEnhance+":");
+      logger.log(Type.INFO, type.toString());
+    }
+    
     String typeName = injectionType.isPrivate() ? "?" : simpleName;
     SourceBuilder<Object> classBuilder = new SourceBuilder<Object>(
         "public class "+generatedName +" extends ClassMap"
@@ -180,9 +184,9 @@ public class MagicClassGenerator extends IncrementalGenerator {
       ("public static Class<"+typeName+"> enhanceClass(final Class<" +typeName+"> toEnhance)")
       .println("if (Class.needsEnhance(toEnhance)) {")
       .indent()
-      .println(generatedName + " cls = new "+generatedName+"();")
-      .println("MemberMap.setClassData(toEnhance, cls);")
-      .println("remember(constId(toEnhance), cls);")
+      .println(generatedName + " classMap = new "+generatedName+"();")
+      .println("MemberMap.setClassData(toEnhance, classMap);")
+      .println("remember(constId(toEnhance), classMap);")
     ;
     String returnName = injectionType.isPrivate() ? "Object" : simpleName;
     if (injectionType.isDefaultInstantiable() && !(injectionType instanceof JEnumType)) {
@@ -245,6 +249,8 @@ public class MagicClassGenerator extends IncrementalGenerator {
       .returnValue("toEnhance");
 
     if (keepCodesource) {
+      logger.log(Type.TRACE, "Processing request to keep codesource for "
+          +injectionType.getClass().getName()+" : "+injectionType);
       if (injectionType instanceof JRealClassType) {
         injectLocation(logger, cls, (JRealClassType)injectionType);
       } else {
@@ -258,9 +264,8 @@ public class MagicClassGenerator extends IncrementalGenerator {
         .println("return Package.getPackage(\""+packageName+"\");");
     }
 
-    if (classDebug.length() > 0) {
-      logger.log(Type.INFO, classDebug);
-      logger.log(Type.INFO, "Source Dump For " +clsToEnhance+":");
+    if ((strategy.debug() & ReflectionStrategy.TYPE) > 0) {
+      logger.log(Type.INFO, "Class Enhancer source dump for " +clsToEnhance+":");
       logger.log(Type.INFO, classBuilder.toString());
     }
 

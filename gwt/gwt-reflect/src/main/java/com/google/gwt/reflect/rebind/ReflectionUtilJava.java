@@ -14,8 +14,10 @@ import com.google.gwt.reflect.client.GwtReflect;
 
 public class ReflectionUtilJava {
 
+  public static final String MAGIC_CLASS_SUFFIX = "_MC";
+  
   public static String generatedMagicClassName(String simpleName) {
-    return simpleName+"_MC";
+    return simpleName+MAGIC_CLASS_SUFFIX;
   }
 
   public static Method[] getMethods(Annotation anno) {

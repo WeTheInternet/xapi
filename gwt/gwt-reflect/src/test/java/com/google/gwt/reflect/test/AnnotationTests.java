@@ -34,6 +34,7 @@ import com.google.gwt.reflect.test.annotations.RuntimeRetention;
 import com.google.gwt.reflect.test.annotations.SimpleAnnotation;
 import com.google.gwt.reflect.test.cases.ReflectionCaseHasAllAnnos;
 import com.google.gwt.reflect.test.cases.ReflectionCaseSimple;
+import com.google.gwt.user.client.Window;
 
 @ComplexAnnotation
 @SuppressWarnings("all")
@@ -277,7 +278,7 @@ public class AnnotationTests extends AbstractReflectionTest{
   @Test
   public void testSimpleReflection() throws Exception {
     final Class<ReflectionCaseSimple> c = ReflectionCaseSimple.class;
-    ReflectionCaseSimple inst = testNewInstance(c);
+    ReflectionCaseSimple inst = testNewInstance(magicClass(c));
     ReflectionCaseSimple anon = new ReflectionCaseSimple() {};
     testAssignable(inst, anon);
 
@@ -293,20 +294,22 @@ public class AnnotationTests extends AbstractReflectionTest{
     Field field = testCase.getDeclaredField("field");
     Method method = testCase.getDeclaredMethod("method", Long.class);
     Constructor<?> ctor = testCase.getDeclaredConstructor(long.class);
-
     Annotation[] annos = testCase.getAnnotations();
     assertHasAnno(testCase, annos, RuntimeRetention.class);
     if (GWT.isScript()) {
       // Gwt Dev can only access runtime level retention annotations
       assertHasAnno(testCase, annos, CompileRetention.class);
     }
+    Window.alert("field annos");
     annos = field.getAnnotations();
     assertHasAnno(testCase, annos, RuntimeRetention.class);
+    Window.alert("field annos!");
     if (GWT.isScript()) {
       // Gwt Dev can only access runtime level retention annotations
       assertHasAnno(testCase, annos, CompileRetention.class);
     }
 
+    Window.alert("method annos");
     annos = method.getAnnotations();
     assertHasAnno(testCase, annos, RuntimeRetention.class);
     if (GWT.isScript()) {
@@ -324,7 +327,7 @@ public class AnnotationTests extends AbstractReflectionTest{
   }
 
   private void assertHasAnno(Class<?> cls, Annotation[] annos, Class<? extends Annotation> annoClass) {
-    for (Annotation anno : annos ) {
+    for (Annotation anno : annos) {
       if (anno.annotationType() == annoClass)
         return;
     }

@@ -8,6 +8,7 @@ import java.lang.reflect.MalformedParameterizedTypeException;
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.UnsafeNativeLong;
 import com.google.gwt.reflect.client.MemberMap;
+import com.google.gwt.user.client.Window;
 
 /**
  * A field representing a primitive boolean.
@@ -22,7 +23,7 @@ public final class Boolean_Field extends Field {
   }
 
   protected final Object nativeGet(Object obj) {
-    return new Boolean(primitiveGet(obj));
+    return primitiveGet(obj) ? Boolean.TRUE : Boolean.FALSE;
   }
 
   protected final void nativeSet(Object obj, Object value) {

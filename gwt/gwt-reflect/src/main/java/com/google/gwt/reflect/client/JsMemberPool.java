@@ -172,7 +172,7 @@ public class JsMemberPool <T> extends JavaScriptObject implements MemberPool <T>
       else 
         break; // super classes can't match if the subclass has a lower privacy method
     }
-    throw new NoSuchFieldException("Could not find public field "+name+ " in "+getType());
+    throw new NoSuchFieldException("Could not find public field "+name+ " in "+getTypeName());
   }
 
   @Override
@@ -180,7 +180,7 @@ public class JsMemberPool <T> extends JavaScriptObject implements MemberPool <T>
     Field field = findField(this, name);
     if (field != null)
       return field;
-    throw new NoSuchFieldException("Could not find declared field "+name+" in "+getType());
+    throw new NoSuchFieldException("Could not find declared field "+name+" in "+getTypeName());
   }
 
   @Override
@@ -281,6 +281,11 @@ public class JsMemberPool <T> extends JavaScriptObject implements MemberPool <T>
   public final native Class<T> getType()
   /*-{
     return this.$;
+  }-*/;
+
+  public final native String getTypeName()
+  /*-{
+    return this && this.$.@java.lang.Class::getName()() || "<unknown type>";
   }-*/;
 
   static native int getSeedId(Class<?> cls)

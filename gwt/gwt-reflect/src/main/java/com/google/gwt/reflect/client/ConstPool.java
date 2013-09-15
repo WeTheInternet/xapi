@@ -358,6 +358,36 @@ public class ConstPool extends JavaScriptObject {
       (@java.util.ArrayList::new()(), this.$$);
   }-*/;
 
+  public static class ArrayConsts {
+    // We keep these constants inside an inner class to avoid preemptive init.
+    public static final Class[] EMPTY_CLASSES = new Class[0];
+    public static final Object[] EMPTY_OBJECTS = new Object[0];
+    public static final String[] EMPTY_STRINGS = new String[0];
+    public static final Enum[] EMPTY_ENUMS = new Enum[0];
+    public static final Annotation[] EMPTY_ANNOTATIONS = new Annotation[0];
+    public static final Method[] EMPTY_METHODS = new Method[0];
+    public static final Constructor[] EMPTY_CONSTRUCTORS = new Constructor[0];
+    public static final Field[] EMPTY_FIELDS = new Field[0];
+    
+    public static final boolean[] EMPTY_booleans = new boolean[0];
+    public static final byte[] EMPTY_bytes = new byte[0];
+    public static final char[] EMPTY_chars = new char[0];
+    public static final short[] EMPTY_shorts = new short[0];
+    public static final int[] EMPTY_ints = new int[0];
+    public static final long[] EMPTY_longs = new long[0];
+    public static final float[] EMPTY_floats = new float[0];
+    public static final double[] EMPTY_doubles = new double[0];
+    
+    public static final Boolean[] EMPTY_Booleans = new Boolean[0];
+    public static final Byte[] EMPTY_Bytes = new Byte[0];
+    public static final Character[] EMPTY_Characters = new Character[0];
+    public static final Short[] EMPTY_Shorts = new Short[0];
+    public static final Integer[] EMPTY_Integers = new Integer[0];
+    public static final Long[] EMPTY_Longs = new Long[0];
+    public static final Float[] EMPTY_Floats = new Float[0];
+    public static final Double[] EMPTY_Doubles = new Double[0];
+  }
+  
   public static class Ids {
     // We can't use these "non constant" ints in switches in java,
     // but they're fair game for javascript.
@@ -370,6 +400,7 @@ public class ConstPool extends JavaScriptObject {
       ID_Method = constId(Method.class),
       ID_Constructor = constId(Constructor.class),
       ID_Field = constId(Field.class),
+      
       ID_boolean = constId(boolean.class),
       ID_byte = constId(byte.class),
       ID_char = constId(char.class),
@@ -378,6 +409,16 @@ public class ConstPool extends JavaScriptObject {
       ID_long = constId(long.class),
       ID_float = constId(float.class),
       ID_double = constId(double.class),
+      
+      ID_Boolean = constId(Boolean.class),
+      ID_Byte = constId(Byte.class),
+      ID_Character = constId(Character.class),
+      ID_Short = constId(Short.class),
+      ID_Integer = constId(Integer.class),
+      ID_Long = constId(Long.class),
+      ID_Float = constId(Float.class),
+      ID_Double = constId(Double.class),
+      
       ID_Class_Array = constId(Class[].class),
       ID_Object_Array = constId(Object[].class),
       ID_String_Array = constId(String[].class),
@@ -387,12 +428,21 @@ public class ConstPool extends JavaScriptObject {
       ID_Constructor_Array = constId(Constructor[].class),
       ID_Field_Array = constId(Field[].class),
       ID_boolean_Array = constId(boolean[].class),
+      ID_byte_Array = constId(byte[].class),
       ID_char_Array = constId(char[].class),
       ID_short_Array = constId(short[].class),
       ID_int_Array = constId(int[].class),
       ID_long_Array = constId(long[].class),
       ID_float_Array = constId(float[].class),
-      ID_double_Array = constId(double[].class)
+      ID_double_Array = constId(double[].class),
+      ID_Boolean_Array = constId(Boolean[].class),
+      ID_Byte_Array = constId(Byte[].class),
+      ID_Character_Array = constId(Character[].class),
+      ID_Short_Array = constId(Short[].class),
+      ID_Integer_Array = constId(Integer[].class),
+      ID_Long_Array = constId(Long[].class),
+      ID_Float_Array = constId(Float[].class),
+      ID_Double_Array = constId(Double[].class)
     ;
   }
 

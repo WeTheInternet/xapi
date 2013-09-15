@@ -64,7 +64,11 @@ import com.google.gwt.reflect.client.GwtReflect;
 @Retention(RetentionPolicy.CLASS)
 public @interface GwtRetention {
 
-  final int PUBLIC = 1, PRIVATE = 2, PROTECTED = 4, PACKAGE = 8,
+  final int 
+    PUBLIC = 1,
+    PRIVATE = 2,
+    PROTECTED = 4,
+    PACKAGE = 8,
     ALL = PRIVATE | PROTECTED | PUBLIC | PACKAGE;
 
   /**

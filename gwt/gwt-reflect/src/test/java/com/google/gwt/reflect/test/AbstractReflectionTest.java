@@ -13,6 +13,10 @@ public class AbstractReflectionTest {
   protected static final String METHOD_EQUALS = "equals";
   protected static final String METHOD_HASHCODE = "hashCode";
   protected static final String METHOD_TOSTRING = "toString";
+
+  protected static final String PRIVATE_FIELD = "privateCall";
+  protected static final String PUBLIC_FIELD = "publicCall";
+  protected static final String OVERRIDE_FIELD = "overrideField";
   
 
   static public void fail(String message) {
@@ -262,12 +266,140 @@ public class AbstractReflectionTest {
   static public void assertEquals(String message, int expected, int actual) {
       assertEquals(message, new Integer(expected), new Integer(actual));
   }
-
+  
   /**
    * Asserts that two ints are equal.
    */
   static public void assertEquals(int expected, int actual) {
       assertEquals(null, expected, actual);
+  }
+
+  private static boolean isEquals(Object expected, Object actual) {
+    return expected.equals(actual);
+  }
+  
+  private static boolean equalsRegardingNull(Object expected, Object actual) {
+      if (expected == null) {
+          return actual == null;
+      }
+
+      return isEquals(expected, actual);
+  }
+  
+  /**
+   * Asserts that two objects are <b>not</b> equals. If they are, an
+   * {@link AssertionError} is thrown with the given message. If
+   * <code>first</code> and <code>second</code> are <code>null</code>,
+   * they are considered equal.
+   *
+   * @param message the identifying message for the {@link AssertionError} (<code>null</code>
+   * okay)
+   * @param first first value to check
+   * @param second the value to check against <code>first</code>
+   */
+  static public void assertNotEquals(String message, Object first,
+          Object second) {
+      if (equalsRegardingNull(first, second)) {
+          failEquals(message, first);
+      }
+  }
+
+  /**
+   * Asserts that two objects are <b>not</b> equals. If they are, an
+   * {@link AssertionError} without a message is thrown. If
+   * <code>first</code> and <code>second</code> are <code>null</code>,
+   * they are considered equal.
+   *
+   * @param first first value to check
+   * @param second the value to check against <code>first</code>
+   */
+  static public void assertNotEquals(Object first, Object second) {
+      assertNotEquals(null, first, second);
+  }
+
+
+  private static void failEquals(String message, Object actual) {
+      String formatted = "Values should be different. ";
+      if (message != null) {
+          formatted = message + ". ";
+      }
+
+      formatted += "Actual: " + actual;
+      fail(formatted);
+  }
+
+  /**
+   * Asserts that two longs are <b>not</b> equals. If they are, an
+   * {@link AssertionError} is thrown with the given message.
+   *
+   * @param message the identifying message for the {@link AssertionError} (<code>null</code>
+   * okay)
+   * @param first first value to check
+   * @param second the value to check against <code>first</code>
+   */
+  static public void assertNotEquals(String message, long first, long second) {
+      assertNotEquals(message, (Long) first, (Long) second);
+  }
+
+  /**
+   * Asserts that two longs are <b>not</b> equals. If they are, an
+   * {@link AssertionError} without a message is thrown.
+   *
+   * @param first first value to check
+   * @param second the value to check against <code>first</code>
+   */
+  static public void assertNotEquals(long first, long second) {
+      assertNotEquals(null, first, second);
+  }
+
+  /**
+   * Asserts that two doubles or floats are <b>not</b> equal to within a positive delta.
+   * If they are, an {@link AssertionError} is thrown with the given
+   * message. If the expected value is infinity then the delta value is
+   * ignored. NaNs are considered equal:
+   * <code>assertNotEquals(Double.NaN, Double.NaN, *)</code> fails
+   *
+   * @param message the identifying message for the {@link AssertionError} (<code>null</code>
+   * okay)
+   * @param first first value to check
+   * @param second the value to check against <code>first</code>
+   * @param delta the maximum delta between <code>expected</code> and
+   * <code>actual</code> for which both numbers are still
+   * considered equal.
+   */
+  static public void assertNotEquals(String message, double first,
+          double second, double delta) {
+      if (!doubleIsDifferent(first, second, delta)) {
+          failEquals(message, new Double(first));
+      }
+  }
+
+  /**
+   * Asserts that two doubles or floats are <b>not</b> equal to within a positive delta.
+   * If they are, an {@link AssertionError} is thrown. If the expected
+   * value is infinity then the delta value is ignored.NaNs are considered
+   * equal: <code>assertNotEquals(Double.NaN, Double.NaN, *)</code> fails
+   *
+   * @param first first value to check
+   * @param second the value to check against <code>first</code>
+   * @param delta the maximum delta between <code>expected</code> and
+   * <code>actual</code> for which both numbers are still
+   * considered equal.
+   */
+  static public void assertNotEquals(double first, double second, double delta) {
+      assertNotEquals(null, first, second, delta);
+  }
+
+  
+  static private boolean doubleIsDifferent(double d1, double d2, double delta) {
+      if (Double.compare(d1, d2) == 0) {
+          return false;
+      }
+      if ((Math.abs(d1 - d2) <= delta)) {
+          return false;
+      }
+  
+      return true;
   }
 
   static public void failNotEquals(String message, Object expected, Object actual) {

@@ -266,4 +266,15 @@
     </pluginManagement>
   </build>
 
+<profiles>
+  <profile>
+    <id>eclipse</id>
+    <activation>
+      <property>
+        <name>eclipse</name>
+      </property>
+    </activation>
+  </profile>
+</profiles>
+
 </project>

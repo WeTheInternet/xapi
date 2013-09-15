@@ -105,8 +105,8 @@ public class TestEntryPoint implements EntryPoint {
           .append("</h3>")
       ;
       try {
-        String path = c.getProtectionDomain().getCodeSource().getLocation().toExternalForm();
-        b.append("<sup><a href='"+path+"'>")
+        String path = c.getProtectionDomain().getCodeSource().getLocation().getPath();
+        b.append("<sup><a href='file://"+path+"'>")
         .append(path)
         .append("</a></sup>");
       } catch (Exception ignored) {}

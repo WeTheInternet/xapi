@@ -2,7 +2,6 @@ package com.google.gwt.reflect.test;
 
 import static com.google.gwt.reflect.client.GwtReflect.magicClass;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,17 +31,13 @@ public class MethodTests extends AbstractReflectionTest {
   private static final Class<ReflectionCaseNoMagic> NO_MAGIC = ReflectionCaseNoMagic.class;
   private static final Class<Object> CLASS_OBJECT = Object.class;
   
-  
-  private static final String PRIVATE_CALL = "privateCall";
-  private static final String PUBLIC_CALL = "publicCall";
-
   public MethodTests() {}
   
   @Test
   public void testDeclaredMethodDirectly() throws Throwable {
     ReflectionCaseNoMagic superClass = new ReflectionCaseNoMagic();
     assertFalse(superClass.wasPrivateCalled());
-    Method m = NO_MAGIC.getDeclaredMethod(PRIVATE_CALL);
+    Method m = NO_MAGIC.getDeclaredMethod(PRIVATE_FIELD);
     m.setAccessible(true);
     assertNotNull(m);
     m.invoke(superClass);
@@ -53,7 +48,7 @@ public class MethodTests extends AbstractReflectionTest {
   public void testDeclaredMethodInjectly() throws Throwable {
     ReflectionCaseSuperclass superClass = new ReflectionCaseSuperclass();
     assertFalse(superClass.publicCall);
-    Method m = GwtReflect.getDeclaredMethod(SUPER_CLASS, PUBLIC_CALL);
+    Method m = GwtReflect.getDeclaredMethod(SUPER_CLASS, PUBLIC_FIELD);
     assertNotNull(m);
     m.invoke(superClass);
     assertTrue(superClass.publicCall);
@@ -76,7 +71,8 @@ public class MethodTests extends AbstractReflectionTest {
   
   @Test(expected=NoSuchMethodException.class)
   public void testCantAccessPrivateMethods() throws Throwable  {
-    SUPER_CLASS.getMethod(PRIVATE_CALL);
+    String preventMagicMethod = PRIVATE_FIELD;
+    SUPER_CLASS.getMethod(preventMagicMethod);
   }
   
 
@@ -92,16 +88,15 @@ public class MethodTests extends AbstractReflectionTest {
     final Class<?>[] array = new Class<?>[]{classInt, classObject()};
     return array;
   }
-
   @Test
   public void testComplexMethodInjection() throws Exception {
-    ArrayList<String> list = new ArrayList<String>();
+    List<String> list = new ArrayList<String>();
     Method method = ArrayList.class.getMethod("add", Object.class);
     method.invoke(list, "success");
     assertEquals("success", list.get(0));
 
     final Class<?>[] array = classArray();
-    method = classLit.getMethod("add", array);
+    method = classList().getMethod("add", array);
     method.invoke(list, 0, "Success!");
     assertEquals("Success!", list.get(0));
   }

@@ -1,9 +1,9 @@
-package xapi.gwt.rebind;
+package xapi.test.gwt.rebind;
 
 import java.util.Queue;
 
 import junit.framework.Assert;
-import xapi.gwt.test.MagicMethodGwtTest;
+import xapi.test.gwt.MagicMethodGwtTest;
 
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;

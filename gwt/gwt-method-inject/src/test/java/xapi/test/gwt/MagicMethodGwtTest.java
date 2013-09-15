@@ -1,7 +1,7 @@
-package xapi.gwt.test;
+package xapi.test.gwt;
 
 import junit.framework.Assert;
-import xapi.gwt.rebind.MagicMethodTestGenerator;
+import xapi.test.gwt.rebind.MagicMethodTestGenerator;
 
 import com.google.gwt.core.shared.GWT;
 import com.google.gwt.junit.client.GWTTestCase;

@@ -35,6 +35,7 @@ import com.google.gwt.reflect.client.ConstPool;
 import com.google.gwt.reflect.client.GwtReflect;
 import com.google.gwt.reflect.client.strategy.GwtRetention;
 import com.google.gwt.reflect.client.strategy.ReflectionStrategy;
+import com.google.gwt.reflect.rebind.ReflectionUtilJava;
 import com.google.gwt.reflect.rebind.generators.ConstPoolGenerator;
 import com.google.gwt.reflect.rebind.generators.MemberGenerator;
 
@@ -124,7 +125,7 @@ public class ConstPoolInjector implements MagicMethodGenerator, UnifyAstListener
       JClassType cls = type.getKey();
       if (cls.isPrivate())
         continue;//use a jsni helper instead here.
-      if (cls.getName().endsWith("_MC") 
+      if (cls.getName().endsWith(ReflectionUtilJava.MAGIC_CLASS_SUFFIX) 
           || cls.getName().contains(MemberGenerator.METHOD_SPACER)
           || cls.getName().contains(MemberGenerator.FIELD_SPACER)
           || cls.getName().contains(MemberGenerator.CONSTRUCTOR_SPACER)

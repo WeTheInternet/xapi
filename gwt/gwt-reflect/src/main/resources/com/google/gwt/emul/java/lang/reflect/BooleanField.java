@@ -32,7 +32,7 @@ public class BooleanField extends Field{
     
     public void setBoolean(Object obj, boolean z)
   throws IllegalArgumentException, IllegalAccessException {
-      set(obj, new Boolean(z));
+      set(obj, z ? Boolean.TRUE : Boolean.FALSE);
     }
 
 }

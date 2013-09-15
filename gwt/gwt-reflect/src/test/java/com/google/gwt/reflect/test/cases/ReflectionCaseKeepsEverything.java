@@ -5,7 +5,7 @@ import com.google.gwt.reflect.test.annotations.CompileRetention;
 import com.google.gwt.reflect.test.annotations.RuntimeRetention;
 
 @RuntimeRetention
-@ReflectionStrategy(keepNothing=true)
+@ReflectionStrategy(keepEverything=true)
 public class ReflectionCaseKeepsEverything extends ReflectionCaseSuperclass{
 
   public ReflectionCaseKeepsEverything() {}

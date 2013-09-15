@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
+import com.google.gwt.core.ext.TreeLogger;
+import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.core.ext.typeinfo.HasAnnotations;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JConstructor;
@@ -46,17 +48,59 @@ public class ReflectionUtilType {
     return annos.toArray(new Annotation[annos.size()]);
   }
 
-  public static JMethod findMethod(
+  public static JField findField(TreeLogger logger,
+      JClassType type, String name, boolean declared) {
+    for (JField field : type.getFields()) {
+      if (field.getName().equals(name)) {
+        if (declared){
+          if (!field.getEnclosingType().getQualifiedSourceName().equals(type.getQualifiedSourceName())) {
+            logger.log(Type.TRACE, 
+                "Field with same name and different enclosing type skipped because declared-only field was requested;\n"
+                    +field.getEnclosingType().getQualifiedSourceName()+" != "+type.getQualifiedSourceName()); 
+            continue;
+          }
+        } else {
+          if (!field.isPublic()) {
+            logger.log(Type.TRACE, 
+                "Non-public field " +field.getEnclosingType().getName()+"."+ field.getName() + " skipped because declared=false."); 
+            continue;
+          }
+        }
+          return field;
+        }
+    }
+    return declared || type.getSuperclass() == null ? null: findField(logger, type.getSuperclass(), name, declared);
+  }
+  
+  public static JMethod findMethod(TreeLogger logger,
       JClassType type, String name, List<String> params, boolean declared) {
     loop:
     for (JMethod method : type.getMethods()) {
       if (method.getName().equals(name)) {
-        if (declared && !method.getEnclosingType().getQualifiedSourceName().equals(type.getQualifiedSourceName()))
-          continue;
+        if (declared){
+          if (!method.getEnclosingType().getQualifiedSourceName().equals(type.getQualifiedSourceName())) {
+            logger.log(Type.TRACE, 
+                "Method with same name and different enclosing type skipped because declared-only method was requested;\n"
+                +method.getEnclosingType().getQualifiedSourceName()+" != "+type.getQualifiedSourceName()); 
+            continue;
+          }
+        } else {
+          if (!method.isPublic()) {
+            logger.log(Type.TRACE, 
+                "Non-public method " +method.getJsniSignature() + " skipped because declared=false."); 
+            continue;
+          }
+        }
         JType[] types = method.getParameterTypes();
         if (types.length == params.size()) {
           for (int i = 0, m = types.length; i < m; i++ ) {
-            if (!params.get(i).equals(types[i].getErasedType().getQualifiedBinaryName())) {
+            String typeName = types[i].getErasedType().getQualifiedBinaryName();
+            while (typeName.startsWith("[")) {
+              typeName = typeName.substring(1)+"[]";
+            }
+            if (!params.get(i).equals(typeName)) {
+              logger.log(Type.TRACE, "Method with same name and different signature; "
+                  +name+"("+params+") mismatches at index "+i+" with value "+typeName); 
               continue loop;
             }
           }
@@ -64,7 +108,7 @@ public class ReflectionUtilType {
         }
       }
     }
-    return declared || type.getSuperclass() == null ? null: findMethod(type.getSuperclass(), name, params, declared);
+    return declared || type.getSuperclass() == null ? null: findMethod(logger, type.getSuperclass(), name, params, declared);
   }
 
   public static int getModifiers(JConstructor ctor) {

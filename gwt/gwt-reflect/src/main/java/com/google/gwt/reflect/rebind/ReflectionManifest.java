@@ -40,7 +40,7 @@ public class ReflectionManifest {
     ReflectionManifest manifest = map.get(clsName);
     if (manifest == null) {
       TypeOracle oracle = ctx.getTypeOracle();
-      JClassType type = oracle.findType(clsName);
+      JClassType type = oracle.findType(clsName.replace('$', '.'));
       if (type == null) {
         logger.log(Type.ERROR, "Could not find type "+clsName+" while getting reflection manifest.");
         throw new UnableToCompleteException();

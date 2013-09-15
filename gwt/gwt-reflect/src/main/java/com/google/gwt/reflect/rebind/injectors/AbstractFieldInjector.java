@@ -1,6 +1,5 @@
 package com.google.gwt.reflect.rebind.injectors;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import com.google.gwt.core.ext.GeneratorContext;
@@ -19,11 +18,10 @@ import com.google.gwt.dev.jjs.ast.JField;
 import com.google.gwt.dev.jjs.ast.JFieldRef;
 import com.google.gwt.dev.jjs.ast.JMethod;
 import com.google.gwt.dev.jjs.ast.JMethodCall;
-import com.google.gwt.dev.jjs.ast.JNewArray;
 import com.google.gwt.dev.jjs.ast.JStringLiteral;
 import com.google.gwt.dev.jjs.ast.JType;
-import com.google.gwt.reflect.rebind.ReflectionUtilAst;
 import com.google.gwt.reflect.rebind.ReflectionManifest;
+import com.google.gwt.reflect.rebind.ReflectionUtilAst;
 import com.google.gwt.reflect.rebind.ReflectionUtilType;
 import com.google.gwt.reflect.rebind.generators.MemberGenerator;
 
@@ -32,80 +30,68 @@ public abstract class AbstractFieldInjector extends MemberGenerator implements M
   protected abstract boolean isDeclared();
 
   @Override
-  public JExpression injectMagic(TreeLogger logger, JMethodCall methodCall,
+  public JExpression injectMagic(TreeLogger logger, JMethodCall callSite,
       JMethod enclosingMethod, Context context, UnifyAstView ast)
       throws UnableToCompleteException {
     
-    boolean isFromGwtReflect = methodCall.getArgs().size() == 3;
-    JExpression inst = isFromGwtReflect ? methodCall.getArgs().get(0) : methodCall.getInstance();
+    boolean isFromGwtReflect = callSite.getArgs().size() == 2;
+    JExpression inst = isFromGwtReflect ? callSite.getArgs().get(0) : callSite.getInstance();
     JClassLiteral classLit = ReflectionUtilAst.extractClassLiteral(logger, inst, false);
-    List<JExpression> args = methodCall.getArgs();
-    JExpression arg0 = args.get(isFromGwtReflect?1:0), arg1 = args.get(isFromGwtReflect?2:1);
+    List<JExpression> args = callSite.getArgs();
+    JExpression arg0 = args.get(isFromGwtReflect?1:0);
     
     if (classLit == null) {
-      if (logger.isLoggable(Type.DEBUG))
-        logger.log(Type.DEBUG,
-            "Non-final class literal used to invoke reflection method; "
-                + ReflectionUtilAst.debug(methodCall.getInstance()));
-      return checkConstPool(ast, inst, arg0, arg1);
+//      if (logger.isLoggable(Type.DEBUG))
+        logger.log(Type.ERROR,
+            "Non-final class literal used to invoke reflection field; "
+                + ReflectionUtilAst.debug(callSite.getInstance()));
+      return checkConstPool(ast, callSite, inst, arg0);
     }
     
     JStringLiteral stringLit = ReflectionUtilAst.extractImmutableNode(logger, JStringLiteral.class, arg0, false);
     if (stringLit == null) {
       if (logger.isLoggable(Type.DEBUG))
         logger.log(Type.DEBUG,
-            "Non-final string arg used to retrieve reflection method; "
+            "Non-final string arg used to retrieve reflection field; "
                 + ReflectionUtilAst.debug(arg0));
-      return checkConstPool(ast, inst, arg0, arg1);
+      return checkConstPool(ast, callSite, inst, arg0);
     }
     String name = stringLit.getValue();
     
-    JNewArray newArray = ReflectionUtilAst.extractImmutableNode(logger, JNewArray.class, arg1, false);
-    if (newArray == null) {
-      if (logger.isLoggable(Type.DEBUG))
-        logger.log(Type.DEBUG,
-            "Non-final array arg used to retrieve reflection method "+name+" "
-                + ReflectionUtilAst.debug(arg1));
-    }
-  
-    ArrayList<JType> params = new ArrayList<JType>(); 
-    for (JExpression expr : newArray.initializers) {
-      JClassLiteral type = ReflectionUtilAst.extractClassLiteral(logger, expr, false);
-      if (type == null) {
-        return checkConstPool(ast, inst, arg0, arg1);
-      } else {
-        params.add(type.getRefType());
-      }
-    } 
-
     // We got all our literals; the class, method name and parameter classes
     // now get the requested method
-    JClassType oracleType = ast.getTypeOracle().findType(classLit.getRefType().getName());
-    com.google.gwt.core.ext.typeinfo.JMethod method = 
-        ReflectionUtilType.findMethod(oracleType, name, ReflectionUtilAst.getTypeNames(params), isDeclared()); 
+
+    JType ref = classLit.getRefType();
+    JClassType oracleType = ast.getTypeOracle().findType(ref.getName().replace('$', '.'));
+    com.google.gwt.core.ext.typeinfo.JField field = 
+        ReflectionUtilType.findField(logger, oracleType, name, isDeclared()); 
     
-    if (method == null) {
+    if (field == null) {
       // We fail here because the requested method is not findable.
-      logger.log(Type.ERROR, "Unable to find method " + oracleType.getQualifiedSourceName()+"."+name+ "("+params+").");
-      logger.log(Type.ERROR, "Did you forget to call StandardGeneratorContext.finish()?");
-      throw new UnableToCompleteException();
+      if (shouldFailIfMissing(logger, ast, classLit)) {
+        logger.log(Type.ERROR, "Unable to find field " + oracleType.getQualifiedSourceName()+"."+name+ ";");
+        logger.log(Type.ERROR, "Did you forget to call StandardGeneratorContext.finish()?");
+        throw new UnableToCompleteException();
+      } else {
+        return checkConstPool(ast, callSite, inst, arg0);
+      }
     }
     if (logger.isLoggable(Type.TRACE)) {
-      logger.log(Type.TRACE, "Found method " + method);
+      logger.log(Type.TRACE, "Found injectable field " + field);
     }
     
     // now, get or make a handle to the requested method,
-    JMethodCall methodFactory = getMethodProvider(logger, ast, method, classLit, isDeclared());
+    JMethodCall methodFactory = getFieldProvider(logger, ast, field, classLit, isDeclared());
     // and return a call to the generated Method provider
     return methodFactory.makeStatement().getExpr();
   }
   
-  public JMethodCall getMethodProvider(TreeLogger logger, UnifyAstView ast, com.google.gwt.core.ext.typeinfo.JMethod method,
+  public JMethodCall getFieldProvider(TreeLogger logger, UnifyAstView ast, com.google.gwt.core.ext.typeinfo.JField field,
       JClassLiteral classLit, boolean declaredOnly) throws UnableToCompleteException {
     String clsName = classLit.getRefType().getName();
     ReflectionManifest manifest = ReflectionManifest.getReflectionManifest(logger, clsName, ast.getGeneratorContext());
-    String factoryCls = getOrMakeMethodFactory(logger, ast.getRebindPermutationOracle().getGeneratorContext(), method, method.getEnclosingType(), manifest, declaredOnly);
-    ast.getRebindPermutationOracle().getGeneratorContext().finish(logger);
+    String factoryCls = getOrMakeFieldFactory(logger, ast.getRebindPermutationOracle().getGeneratorContext(), field, field.getEnclosingType(), manifest, declaredOnly);
+    ast.getGeneratorContext().finish(logger);
     JDeclaredType factory = ast.searchForTypeBySource(factoryCls);
     // pull out the static accessor method
     for (JMethod factoryMethod : factory.getMethods()) {
@@ -117,47 +103,30 @@ public abstract class AbstractFieldInjector extends MemberGenerator implements M
     throw new UnableToCompleteException();
   }
   
-  public String getOrMakeMethodFactory(TreeLogger logger, GeneratorContext ctx, com.google.gwt.core.ext.typeinfo.JMethod method,
+  public String getOrMakeFieldFactory(TreeLogger logger, GeneratorContext ctx, com.google.gwt.core.ext.typeinfo.JField field,
       com.google.gwt.core.ext.typeinfo.JType classType, ReflectionManifest manifest, boolean declaredOnly) throws UnableToCompleteException {
     // get cached manifest for this type
     String clsName = classType.getQualifiedSourceName();
     TypeOracle oracle = ctx.getTypeOracle();
-    String name = method.getName();
+    String name = field.getName();
     JClassType cls = oracle.findType(clsName);
     if (cls == null) {
       logger.log(Type.ERROR, "Unable to find enclosing class "+clsName);
       throw new UnableToCompleteException();
     }
       
-    String methodFactoryName = getMethodFactoryName(cls, name, method.getParameters());
+    String fieldFactoryName = getFieldFactoryName(cls, name);
     JClassType factory;
-    String pkgName = method.getEnclosingType().getPackage().getName();
-    factory = oracle.findType(pkgName, methodFactoryName);
+    String pkgName = field.getEnclosingType().getPackage().getName();
+    factory = oracle.findType(pkgName, fieldFactoryName);
     if (factory == null) {
-      return generateMethodFactory(logger, ctx, method, methodFactoryName, manifest);
+      return generateFieldFactory(logger, ctx, field, fieldFactoryName, manifest);
     } else 
-      return (pkgName.length()==0?"":pkgName+".")+ methodFactoryName;
+      return (pkgName.length()==0?"":pkgName+".")+ fieldFactoryName;
   }
 
-  protected JExpression checkConstPool(UnifyAstView ast, JExpression inst, JExpression arg0, JExpression arg1) throws UnableToCompleteException {
-    for (JField field : ast.getProgram().getTypeJavaLangClass().getFields()) {
-      if (field.getName().equals("members")) {
-        JDeclaredType result = ast.searchForTypeByBinary(field.getType().getName());
-        for (JMethod memberPoolMethod : result.getMethods()) {
-          if (memberPoolMethod.getName().equals(memberGetter())) {
-            JFieldRef ref = new JFieldRef(memberPoolMethod.getSourceInfo(), inst, field, ast.getProgram().getTypeJavaLangClass());
-            JMethodCall methodCall = new JMethodCall(memberPoolMethod.getSourceInfo(), ref, memberPoolMethod);
-            methodCall.addArg(arg0);
-            methodCall.addArg(arg1);
-            return methodCall.makeStatement().getExpr();
-          }
-        }
-      }
-    }
-    throw new UnableToCompleteException();
-  }
-
+  @Override
   protected String memberGetter() {
-    return "get"+(isDeclared()?"Declared":"")+"Method";
+    return "get"+(isDeclared()?"Declared":"")+"Field";
   }
 }

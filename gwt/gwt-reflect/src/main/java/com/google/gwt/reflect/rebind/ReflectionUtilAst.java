@@ -19,12 +19,17 @@ import com.google.gwt.dev.jjs.ast.JParameterRef;
 import com.google.gwt.dev.jjs.ast.JReturnStatement;
 import com.google.gwt.dev.jjs.ast.JStatement;
 import com.google.gwt.dev.jjs.ast.JType;
+import com.google.gwt.dev.jjs.ast.JVariable;
+import com.google.gwt.dev.jjs.ast.JVisitor;
 import com.google.gwt.dev.jjs.ast.js.JsniClassLiteral;
 import com.google.gwt.dev.jjs.ast.js.JsniMethodBody;
 import com.google.gwt.reflect.client.GwtReflect;
+import com.google.gwt.reflect.rebind.generators.MagicClassGenerator;
 
 public final class ReflectionUtilAst {
 
+  private static final Type logLevel = Type.INFO;
+  
   private ReflectionUtilAst() {}
 
   public static ArrayList<String> getTypeNames(ArrayList<JType> params) {
@@ -54,12 +59,16 @@ public final class ReflectionUtilAst {
 
   @SuppressWarnings("unchecked")
   public static <X extends JExpression> X extractImmutableNode(TreeLogger logger, Class<X> type, JExpression inst, boolean strict) throws UnableToCompleteException {
-    boolean doLog = logger.isLoggable(Type.TRACE);
+    boolean doLog = logger.isLoggable(logLevel);
     if (inst == null) {
       failIfStrict(logger, strict, inst, type);
       return null;
     }
-    else if (type.isAssignableFrom(inst.getClass())) {
+    if (doLog) {
+      logger.log(logLevel, "Extracting "+type.getName()+" from "+inst.getClass().getName()+": "+inst);
+    }
+    try {
+    if (type.isAssignableFrom(inst.getClass())) {
       // We have a winner!
       return (X)inst;
     } else if (inst instanceof JLocalRef) {
@@ -69,7 +78,7 @@ public final class ReflectionUtilAst {
           if (localInit == null) {
             inst = localInit;
           } else {
-            return extractImmutableNode(logger, type, localInit, true);
+            return extractImmutableNode(logger, type, localInit, strict);
           }
         } else {
           if (doLog) ReflectionUtilAst.logNonFinalError(logger, inst);
@@ -86,6 +95,13 @@ public final class ReflectionUtilAst {
       JMethod target = (call).getTarget();
       if (ReflectionUtilAst.isGetMagicClass(target)) {
         return extractImmutableNode(logger, type, call.getArgs().get(0), strict);
+      }
+      if (target.isExternal()) {
+        if (doLog)
+          logger.log(logLevel, "Unable to navigate through external method "+
+              target.getName()+" while searching for a "+type.getName());
+        failIfStrict(logger, strict, inst, type);
+        return null;
       }
       JAbstractMethodBody method = target.getBody();
       // TODO: maybe enforce final / static on method calls
@@ -108,8 +124,8 @@ public final class ReflectionUtilAst {
         if (returns.size() == 1) {
           return extractImmutableNode(logger, type, returns.get(0).getExpr(), strict);
         } else {
-          if (logger.isLoggable(Type.TRACE)) {
-            logger.log(Type.TRACE, "Java "+type.getName()+" provider method must have one " +
+          if (doLog) {
+            logger.log(logLevel, "Java "+type.getName()+" provider method must have one " +
               "and only one return statement, which returns a "+ type.getName()+ " " + method);
           }
         }
@@ -121,6 +137,10 @@ public final class ReflectionUtilAst {
       }
     }
     failIfStrict(logger, strict, inst, type);
+    } catch (Exception e) {
+      logger.log(Type.ERROR, "Unknown exception in extractImmutableNode", e);
+      throw new UnableToCompleteException();
+    }
     return null;
   }
 
@@ -131,7 +151,7 @@ public final class ReflectionUtilAst {
   private static void failIfStrict(TreeLogger logger, boolean strict,
       JExpression inst, Class<?> type) throws UnableToCompleteException {
     if (strict) {
-      logger.log(Type.TRACE, "Unable to acquire a " + type.getCanonicalName()
+      logger.log(logLevel, "Unable to acquire a " + type.getCanonicalName()
           + " from "+ReflectionUtilAst.debug(inst));
       throw new UnableToCompleteException();
     }
@@ -139,8 +159,12 @@ public final class ReflectionUtilAst {
 
   private static boolean isGetMagicClass(JMethod target) {
     return 
-        target.getName().equals("magicClass") &&
-        target.getEnclosingType().getName().equals(GwtReflect.class.getName());
+        (target.getName().equals("magicClass") &&
+        target.getEnclosingType().getName().equals(GwtReflect.class.getName()))
+        ||
+        (target.getName().equals("enhanceClass") &&
+            target.getEnclosingType().getName().endsWith(ReflectionUtilJava.MAGIC_CLASS_SUFFIX))
+        ;
   }
 
   private static boolean isUnknownType(JExpression inst) {
@@ -148,7 +172,7 @@ public final class ReflectionUtilAst {
   }
 
   private static void logNonFinalError(TreeLogger logger, JExpression inst) {
-    logger.log(Type.TRACE, "Traced class literal down to a "+ debug(inst)+","
+    logger.log(logLevel, "Traced class literal down to a "+ debug(inst)+","
         + " but this member was not marked final."
         + " Aborting class literal search due to lack of determinism.");
   }

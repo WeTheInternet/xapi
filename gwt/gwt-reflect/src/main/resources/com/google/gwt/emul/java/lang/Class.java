@@ -146,7 +146,7 @@ java.lang.reflect.AnnotatedElement
      return func;
    }-*/;
 
-  static boolean isClassMetadataEnabled() {
+  public static boolean isClassMetadataEnabled() {
     // This body may be replaced by the compiler
     return false;
   }
