@@ -142,11 +142,10 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer>{
 	}
 
 	@Override
-	public PrintBuffer addToBeginning(PrintBuffer buffer) {
+	public void addToBeginning(PrintBuffer buffer) {
 	  if (prefix == null)
 	    prefix = new PrintBuffer();
 	  prefix.addToBeginning(buffer);
-	  return this;
 	}
 
 	public ClassBuffer setDefinition(String definition, boolean wellFormatted) {
@@ -299,6 +298,12 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer>{
 	  return inner;
 	}
 
+	@Override
+	public void addToEnd(PrintBuffer buffer) {
+	  super.addToEnd(buffer);
+	  clearIndent();
+	}
+	
 	protected String memberIndent() {
     return origIndent + INDENT;
   }

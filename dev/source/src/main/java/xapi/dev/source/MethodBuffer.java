@@ -244,6 +244,7 @@ implements MethodVisitor<SourceBuilder<?>>
 	  cls.indent = indent + INDENT;
 	  assert cls.privacy == 0 : "A local class cannot be "+Modifier.toString(cls.privacy);
 	  addToEnd(cls);
+	  clearIndent();
 	  return cls;
 	}
 

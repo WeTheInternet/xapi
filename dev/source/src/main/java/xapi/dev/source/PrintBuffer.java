@@ -250,16 +250,15 @@ public class PrintBuffer {
     return this;
   }
 
-  public PrintBuffer addToBeginning(PrintBuffer buffer) {
+  public void addToBeginning(PrintBuffer buffer) {
     assert notContained(buffer) : "Infinite recursion!";
     PrintStack newHead = new PrintStack();
     newHead.next = head;
     newHead.setValue(buffer);
     head = newHead;
-    return this;
   }
 
-  public PrintBuffer addToEnd(PrintBuffer buffer) {
+  public void addToEnd(PrintBuffer buffer) {
     assert notContained(buffer) : "Infinite recursion! On ["+buffer+"] in "+this;
     PrintStack newTail = new PrintStack();
     newTail.setValue(buffer);
@@ -267,8 +266,6 @@ public class PrintBuffer {
     target.setLength(0);
     tail.next = newTail;
     tail = newTail;
-    indented = false;
-    return this;
   }
 
   /**
@@ -306,6 +303,10 @@ public class PrintBuffer {
 
   protected String footer() {
     return "";
+  }
+  
+  protected void clearIndent() {
+    indented = false;
   }
 
   @Override
