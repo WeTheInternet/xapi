@@ -30,9 +30,12 @@
    classes; the annotations used for injection are stored here, for modules 
    which wish to define a default injection target, but do not want or need 
    to perform injection themselves. xapi-core exports the following injectable 
-   services: X_Log, X_String, X_Property and the following static service classes, 
-   which will become injectable if needed: X_Byte, X_Debug -->
+   services: X_String, X_Property and the following static service classes, 
+   which may become injectable as required: X_Byte, X_Debug -->
   <module>api</module>
+
+  <!-- Basic logging interfaces, and a few adapter types to aid in integrating other APIs. -->
+  <module>log</module>
 
   <!-- The reflect module is where we keep our code-mirroring interfaces. 
    It's only dependency is xapi-api, and it is capable of classpath scanning, 
@@ -66,6 +69,9 @@
 
   <!-- Core concurrency abstractions. Alpha -->
   <module>process</module>
+
+  <!-- A simple argument processor, based on GWT ArgProcessor classes. -->
+  <module>args</module>
 
   <!-- Test module -->
   <module>test</module>
