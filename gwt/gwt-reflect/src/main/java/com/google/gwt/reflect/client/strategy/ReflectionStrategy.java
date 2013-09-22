@@ -121,6 +121,9 @@ public @interface ReflectionStrategy {
    * 
    * @return an non-empty string causes the compiler to dump the generated reflection
    * source for this class.
+   * 
+   * Valid values are OR'd combinations of 
+   * {@link #TYPE}, {@link #CONSTRUCTOR}, {@link #FIELD}, {@link #METHOD} and {@link #ANNOTATION}
    */
   int debug() default NONE;
   

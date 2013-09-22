@@ -3,9 +3,14 @@ package com.google.gwt.dev.jjs;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.dev.javac.StandardGeneratorContext;
 import com.google.gwt.dev.jdt.RebindPermutationOracle;
+import com.google.gwt.dev.jjs.ast.JClassType;
 import com.google.gwt.dev.jjs.ast.JDeclaredType;
+import com.google.gwt.dev.jjs.ast.JField;
+import com.google.gwt.dev.jjs.ast.JMethod;
 import com.google.gwt.dev.jjs.ast.JNode;
 import com.google.gwt.dev.jjs.ast.JProgram;
+import com.google.gwt.dev.jjs.ast.JReferenceType;
+import com.google.gwt.dev.jjs.ast.JType;
 import com.google.gwt.dev.jjs.impl.UnifyAst;
 
 /**
@@ -107,5 +112,17 @@ public interface UnifyAstView {
    * retrieved from getRebindPermutationOracle().getGeneratorContext()
    */
   StandardGeneratorContext getGeneratorContext();
+
+  JReferenceType translate(JReferenceType type);
+
+  JClassType translate(JClassType type);
+
+  JDeclaredType translate(JDeclaredType type);
+
+  JField translate(JField field);
+
+  JMethod translate(JMethod method);
+
+  JType translate(JType type);
 
 }

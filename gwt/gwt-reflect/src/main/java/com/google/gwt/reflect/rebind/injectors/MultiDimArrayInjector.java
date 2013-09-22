@@ -26,7 +26,7 @@ public class MultiDimArrayInjector implements MagicMethodGenerator{
   @Override
   public JExpression injectMagic(TreeLogger logger, JMethodCall methodCall, JMethod enclosingMethod,
     Context context, UnifyAstView ast) throws UnableToCompleteException {
-    JClassLiteral clazz = ReflectionUtilAst.extractClassLiteral(logger, methodCall, 0);
+    JClassLiteral clazz = ReflectionUtilAst.extractClassLiteral(logger, methodCall, 0, ast);
     JProgram prog = ast.getProgram();
     List<JExpression> args = methodCall.getArgs();
     List<JExpression> emptyDims = Lists.create(), sizedDims;
@@ -43,7 +43,7 @@ public class MultiDimArrayInjector implements MagicMethodGenerator{
       sizedDims = Lists.create(args.get(1), args.get(2));
     } else {
       // we have an untyped call to Array.newInstance
-      JNewArray newArr = ReflectionUtilAst.extractImmutableNode(logger, JNewArray.class, args.get(1), false);
+      JNewArray newArr = ReflectionUtilAst.extractImmutableNode(logger, JNewArray.class, args.get(1), ast, false);
       sizedDims = newArr.initializers;
     }
     int dimensions = sizedDims.size();

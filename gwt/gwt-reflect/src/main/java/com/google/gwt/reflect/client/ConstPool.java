@@ -41,6 +41,7 @@ public class ConstPool extends JavaScriptObject {
       e:[],// enums
       i:[],// ints (includes short, char, byte)
       l:[],// longs
+      n:{},// class by name
       s:[],// strings
       p:{},// packages
       _a:[],// annotation arrays
@@ -117,9 +118,9 @@ public class ConstPool extends JavaScriptObject {
   }
 
   public static int constId(Class<?> c) {
-    return c.hashCode();
     // it's unique, and good enough for jvms using maps instead of arrays.
-    // GWT prod overrides this method to return a field we added to Class.
+    // GWT prod overrides this method to return a field we added to Class in supersource.
+    return c.hashCode();
   }
 
   public static Object setPrimitiveArray(Class<?> componentType, Object array) {
@@ -195,18 +196,49 @@ public class ConstPool extends JavaScriptObject {
     return c == null ? false : isPrimitive(constId(c));
   }
 
+  /**
+   * TODO implement magic methods such that we can detect whether any of the 
+   * methods which use class.getName() -> class mappings,
+   * and elide the calls entirely if they are unused.
+   * 
+   * @param pos -> the length of the javascript array we are appending too
+   * @param cls -> Send the class
+   * @return -> pos
+   */
   private static native int rememberClass(int pos, Class<?> cls)
   /*-{
     @com.google.gwt.reflect.client.ConstPool::CONSTS.c[pos] = cls;
+    if (@com.google.gwt.reflect.client.ConstPool::isRememberClassByName()()) {
+      var n = cls.@java.lang.Class::getName()();
+      @com.google.gwt.reflect.client.ConstPool::CONSTS.n[cls.@java.lang.Class::getName()()] = cls;
+    }
     return pos;
   }-*/;
   
+  /**
+   * Do NOT call this method from client code.
+   * 
+   * It is only public so the generator subsystem can call it from anywhere easily.
+   * 
+   * If you look up methods calling this and see any usage,
+   * you should consider that an error.
+   * 
+   * @param cls
+   * @return
+   */
+  @Deprecated()
   public static native int setClass(Class<?> cls)
   /*-{
     var pos = @com.google.gwt.reflect.client.ConstPool::CONSTS.c.length;
     @com.google.gwt.reflect.client.ConstPool::rememberClass(ILjava/lang/Class;)(pos, cls);
     return pos;
   }-*/;
+  
+  protected static boolean isRememberClassByName() {
+    // TODO replace System.getProperty calls such that they become JStringLiterals
+    return "true".equals(System.getProperty("gwt.reflect.remember.names", "true"));
+  }
+  
 
   protected static native void setEnhancedClass(int constId, ClassMap<?> cls)
   /*-{
@@ -238,6 +270,11 @@ public class ConstPool extends JavaScriptObject {
   /*-{
     return this.c[id];
    }-*/;
+
+  public final native Class<?> getClassByName(String className)
+  /*-{
+    return this.n[className];
+  }-*/;
 
   public final native boolean getDouble(int id)
   /*-{

@@ -223,7 +223,7 @@ java.lang.reflect.AnnotatedElement
       clazz.typeName = "Class$"
           + (isInstantiableOrPrimitive(seedId) ? asString(seedId) : "" + clazz.hashCode());
     }
-
+    clazz.constId = clazz.remember();
     if (isInstantiable(seedId)) {
       setClassLiteral(seedId, clazz);
     }
@@ -232,11 +232,11 @@ java.lang.reflect.AnnotatedElement
   
   public static Class forName(String name)
     throws ClassNotFoundException{
-      return forName(name, true, Class.class.getClassLoader());
+      return ConstPool.getConstPool().getClassByName(name);
   }
   public static Class forName(String name, boolean initialize, ClassLoader loader) 
     throws ClassNotFoundException{
-    return loader.loadClass(name);
+    return ConstPool.getConstPool().getClassByName(name);
   }
 
   JavaScriptObject enumValueOfFunc;
@@ -271,7 +271,6 @@ java.lang.reflect.AnnotatedElement
    * @skip
    */
   protected Class() {
-    constId = remember();
   }
   
   private native int remember()

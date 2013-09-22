@@ -8,9 +8,24 @@ public class ReflectionCaseNoMagic {
     public static boolean getOverrideField(Subclass s) {
       return s.overrideField;
     }
+    public Subclass() {}
+    
+    protected Subclass(String s) {
+      super(s+"1");
+    }
+
+    public Subclass(long l) {
+      super(l+1);
+    }
   }
   
   public ReflectionCaseNoMagic() {}
+  protected ReflectionCaseNoMagic(String s) {
+    _String = s;
+  }
+  private ReflectionCaseNoMagic(long l) {
+    this._long = l;
+  }
 
   private boolean privateCall;
   public boolean publicCall;
@@ -20,9 +35,10 @@ public class ReflectionCaseNoMagic {
   short _short;
   char _char;
   int _int;
-  long _long;
+  public long _long;
   float _float;
   double _double;
+  public String _String;
   
   @SuppressWarnings("unused")
   private void privateCall() { privateCall = true; }

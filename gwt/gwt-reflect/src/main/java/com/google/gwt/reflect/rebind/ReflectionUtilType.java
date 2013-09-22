@@ -17,7 +17,6 @@ import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.JParameter;
 import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
 import com.google.gwt.core.ext.typeinfo.JType;
-import com.google.gwt.dev.jjs.ast.JProgram;
 import com.google.gwt.reflect.client.strategy.ReflectionStrategy;
 
 public class ReflectionUtilType {
@@ -109,6 +108,29 @@ public class ReflectionUtilType {
       }
     }
     return declared || type.getSuperclass() == null ? null: findMethod(logger, type.getSuperclass(), name, params, declared);
+  }
+
+  public static JConstructor findConstructor(TreeLogger logger,
+      JClassType type, List<String> params, boolean declared) {
+    loop:
+      for (JConstructor ctor : type.getConstructors()) {
+          JType[] types = ctor.getParameterTypes();
+          if (types.length == params.size()) {
+            for (int i = 0, m = types.length; i < m; i++ ) {
+              String typeName = types[i].getErasedType().getQualifiedBinaryName();
+              while (typeName.startsWith("[")) {
+                typeName = typeName.substring(1)+"[]";
+              }
+              if (!params.get(i).equals(typeName)) {
+                logger.log(Type.DEBUG, "constructor with different signature; "
+                    +"("+params+") mismatches at index "+i+" with value "+typeName); 
+                continue loop;
+              }
+            }
+            return ctor;
+          }
+        }
+        return declared || type.getSuperclass() == null ? null: findConstructor(logger, type.getSuperclass(), params, declared);
   }
 
   public static int getModifiers(JConstructor ctor) {

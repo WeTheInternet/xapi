@@ -179,15 +179,24 @@ public class MagicClassGenerator extends IncrementalGenerator {
         superType.getNestedTypes();
       }
     }
+    
     // This is the method that fills in all of the extra class data
     MethodBuffer enhanceMethod = cls.createMethod
-      ("public static Class<"+typeName+"> enhanceClass(final Class<" +typeName+"> toEnhance)")
-      .println("if (Class.needsEnhance(toEnhance)) {")
+      ("private static void doEnhance(final Class<" +typeName+"> toEnhance)")
       .indent()
       .println(generatedName + " classMap = new "+generatedName+"();")
       .println("MemberMap.setClassData(toEnhance, classMap);")
       .println("remember(constId(toEnhance), classMap);")
     ;
+    
+    // Print the public method that will conditionally enhance the class in question  
+    cls.createMethod
+    ("public static Class<"+typeName+"> enhanceClass(final Class<" +typeName+"> toEnhance)")
+      .println("if (Class.needsEnhance(toEnhance))")
+      .indentln("doEnhance(toEnhance);")
+      .returnValue("toEnhance");
+    ;
+    
     String returnName = injectionType.isPrivate() ? "Object" : simpleName;
     if (injectionType.isDefaultInstantiable() && !(injectionType instanceof JEnumType)) {
       NewInstanceStrategy newInst = getNewInstanceStrategy(logger, strategy, injectionType, context);
@@ -243,10 +252,6 @@ public class MagicClassGenerator extends IncrementalGenerator {
       enhanceMethod.println("enhanceClasses(toEnhance);");
     }
 
-    enhanceMethod
-      .outdent()
-      .println("}")
-      .returnValue("toEnhance");
 
     if (keepCodesource) {
       logger.log(Type.TRACE, "Processing request to keep codesource for "

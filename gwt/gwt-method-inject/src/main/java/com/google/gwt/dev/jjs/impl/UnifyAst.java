@@ -1214,11 +1214,12 @@ public class UnifyAst implements UnifyAstView{
     }
   }
 
-  private JClassType translate(JClassType type) {
+  @Override
+  public JClassType translate(JClassType type) {
     return (JClassType) translate((JDeclaredType) type);
   }
-
-  private JDeclaredType translate(JDeclaredType type) {
+  @Override
+  public JDeclaredType translate(JDeclaredType type) {
     if (!type.isExternal()) {
       return type;
     }
@@ -1233,8 +1234,8 @@ public class UnifyAst implements UnifyAstView{
     assert !newType.isExternal();
     return newType;
   }
-
-  private JField translate(JField field) {
+  @Override
+  public JField translate(JField field) {
     if (!field.isExternal()) {
       return field;
     }
@@ -1263,8 +1264,8 @@ public class UnifyAst implements UnifyAstView{
     assert !field.isExternal();
     return field;
   }
-
-  private JMethod translate(JMethod method) {
+  @Override
+  public JMethod translate(JMethod method) {
     if (!method.isExternal()) {
       return method;
     }
@@ -1292,8 +1293,8 @@ public class UnifyAst implements UnifyAstView{
     assert !method.isExternal();
     return method;
   }
-
-  private JReferenceType translate(JReferenceType type) {
+  @Override
+  public JReferenceType translate(JReferenceType type) {
     if (type instanceof JNonNullType) {
       return translate(type.getUnderlyingType()).getNonNull();
     }
@@ -1314,8 +1315,8 @@ public class UnifyAst implements UnifyAstView{
 
     return type;
   }
-
-  private JType translate(JType type) {
+  @Override
+  public JType translate(JType type) {
     if (type instanceof JPrimitiveType) {
       return type;
     }

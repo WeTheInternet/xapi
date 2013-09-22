@@ -6,6 +6,7 @@ import java.util.List;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.core.ext.UnableToCompleteException;
+import com.google.gwt.dev.jjs.UnifyAstView;
 import com.google.gwt.dev.jjs.ast.JAbstractMethodBody;
 import com.google.gwt.dev.jjs.ast.JClassLiteral;
 import com.google.gwt.dev.jjs.ast.JExpression;
@@ -40,25 +41,29 @@ public final class ReflectionUtilAst {
     return list ;
   }
 
-  public static JClassLiteral extractClassLiteral(TreeLogger logger, JExpression inst, boolean strict) throws UnableToCompleteException {
-    return ReflectionUtilAst.extractImmutableNode(logger, JClassLiteral.class, inst, strict);
+  public static JClassLiteral extractClassLiteral(TreeLogger logger, JExpression inst, UnifyAstView ast, boolean strict) throws UnableToCompleteException {
+    return ReflectionUtilAst.extractImmutableNode(logger, JClassLiteral.class, inst, ast, strict);
   }
 
-  public static JClassLiteral extractClassLiteral(TreeLogger logger, JMethodCall methodCall, int paramPosition) throws UnableToCompleteException {
+  public static JClassLiteral extractClassLiteral(TreeLogger logger, JMethodCall methodCall, int paramPosition, UnifyAstView ast) throws UnableToCompleteException {
     List<JExpression> args = methodCall.getArgs();
     JExpression arg = args.get(paramPosition);
-    JClassLiteral classLit = extractClassLiteral(logger, arg, false);
+    JClassLiteral classLit = extractClassLiteral(logger, arg, ast, false);
     if (classLit == null) {
       logger.log(Type.ERROR, "The method " +
         methodCall.getTarget().toSource() + " only accepts class literals." +
-        " You sent a " + arg.getClass() + " : " + arg.toSource()+";");
+        " You sent a " + arg.getClass() + " : " + arg.toSource()+" from method "
+            + methodCall.toSource()+ " with argumetsn "
+                + methodCall.getArgs()+ ";");
       throw new UnableToCompleteException();
     }
     return classLit;
   }
 
   @SuppressWarnings("unchecked")
-  public static <X extends JExpression> X extractImmutableNode(TreeLogger logger, Class<X> type, JExpression inst, boolean strict) throws UnableToCompleteException {
+  public static <X extends JExpression> X extractImmutableNode(
+      TreeLogger logger, Class<X> type, JExpression inst, 
+      UnifyAstView ast, boolean strict) throws UnableToCompleteException {
     boolean doLog = logger.isLoggable(logLevel);
     if (inst == null) {
       failIfStrict(logger, strict, inst, type);
@@ -78,30 +83,33 @@ public final class ReflectionUtilAst {
           if (localInit == null) {
             inst = localInit;
           } else {
-            return extractImmutableNode(logger, type, localInit, strict);
+            return extractImmutableNode(logger, type, localInit, ast, strict);
           }
         } else {
           if (doLog) ReflectionUtilAst.logNonFinalError(logger, inst);
         }
     } else if (inst instanceof JFieldRef) {
       com.google.gwt.dev.jjs.ast.JField field = ((JFieldRef)inst).getField();
+      if (field.isExternal()) {
+        field = ast.translate(field);
+      }
       if (field.isFinal()) {
-        return extractImmutableNode(logger, type, field.getInitializer(), strict);
+        
+        return extractImmutableNode(logger, type, field.getInitializer(), ast, strict);
+      } else if (field.getLiteralInitializer() != null) {
+        return extractImmutableNode(logger, type, field.getLiteralInitializer(), ast, strict);
       } else {
+        logger.log(Type.WARN, "Not final "+field);
         if (doLog) ReflectionUtilAst.logNonFinalError(logger, inst);
       }
     } else if (inst instanceof JMethodCall){
       JMethodCall call = (JMethodCall)inst;
       JMethod target = (call).getTarget();
       if (ReflectionUtilAst.isGetMagicClass(target)) {
-        return extractImmutableNode(logger, type, call.getArgs().get(0), strict);
+        return extractImmutableNode(logger, type, call.getArgs().get(0), ast, strict);
       }
       if (target.isExternal()) {
-        if (doLog)
-          logger.log(logLevel, "Unable to navigate through external method "+
-              target.getName()+" while searching for a "+type.getName());
-        failIfStrict(logger, strict, inst, type);
-        return null;
+        target = ast.translate(target);
       }
       JAbstractMethodBody method = target.getBody();
       // TODO: maybe enforce final / static on method calls
@@ -122,7 +130,7 @@ public final class ReflectionUtilAst {
             returns.add((JReturnStatement)statement);
         }
         if (returns.size() == 1) {
-          return extractImmutableNode(logger, type, returns.get(0).getExpr(), strict);
+          return extractImmutableNode(logger, type, returns.get(0).getExpr(), ast, strict);
         } else {
           if (doLog) {
             logger.log(logLevel, "Java "+type.getName()+" provider method must have one " +

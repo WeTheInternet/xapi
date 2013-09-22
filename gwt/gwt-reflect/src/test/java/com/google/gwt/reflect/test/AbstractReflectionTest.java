@@ -3,6 +3,7 @@ package com.google.gwt.reflect.test;
 import static com.google.gwt.reflect.client.GwtReflect.magicClass;
 
 import com.google.gwt.reflect.client.strategy.ReflectionStrategy;
+import com.google.gwt.reflect.test.cases.ReflectionCaseNoMagic;
 
 @ReflectionStrategy(keepNothing=true)
 @SuppressWarnings("rawtypes")
@@ -18,6 +19,9 @@ public class AbstractReflectionTest {
   protected static final String PUBLIC_FIELD = "publicCall";
   protected static final String OVERRIDE_FIELD = "overrideField";
   
+  static final Class<ReflectionCaseNoMagic> NO_MAGIC = ReflectionCaseNoMagic.class;
+  static final Class<ReflectionCaseNoMagic.Subclass> NO_MAGIC_SUBCLASS = ReflectionCaseNoMagic.Subclass.class;
+
 
   static public void fail(String message) {
       if (message == null) {

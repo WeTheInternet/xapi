@@ -5,32 +5,35 @@ import java.lang.reflect.Constructor;
 import org.junit.Test;
 
 import com.google.gwt.reflect.client.GwtReflect;
+import com.google.gwt.reflect.client.strategy.ReflectionStrategy;
+import com.google.gwt.reflect.test.cases.ReflectionCaseNoMagic;
 
 public class ConstructorTests extends AbstractReflectionTest {
 
-  private static final Class<? extends SuperCase>
-    CLS_SUPER_CASE = SuperCase.class,
+   public static final Class<? extends SuperCase>
+    CLS_SUPER_CASE = GwtReflect.magicClass(SuperCase.class),
     // We purposely want to erase the SubCase to SuperCase, 
     // to make sure the field type does not influence our lookup.
-    CLS_SUB_CASE = SubCase.class;
+    CLS_SUB_CASE = GwtReflect.magicClass(SubCase.class);
+   
   
   @SuppressWarnings("rawtypes")
   private static final Class[]
     CLS_LONG = new Class[]{long.class},
     CLS_STRING = new Class[]{String.class};
   
-  @SuppressWarnings("unused")// it's a reflection test, after all
-  private static class SuperCase {
+  @ReflectionStrategy(debug=ReflectionStrategy.CONSTRUCTOR)
+  protected static class SuperCase {
     Object value;
-    private SuperCase() {
+     SuperCase() {
       value = this;
     }
     
-    private SuperCase(String s) {
+    SuperCase(String s) {
       value = s;
     }
     
-    public SuperCase(long j) {
+    private SuperCase(long j) {
       value = j;
     }
     
@@ -42,7 +45,7 @@ public class ConstructorTests extends AbstractReflectionTest {
   }
   
   @SuppressWarnings("unused")
-  private static class SubCase extends SuperCase {
+  protected static class SubCase extends SuperCase {
     public SubCase(long l) {
       super(l+1);// to differentiate between super and sub class
     }
@@ -56,10 +59,11 @@ public class ConstructorTests extends AbstractReflectionTest {
     SuperCase inst;
     Constructor<? extends SuperCase> ctor;
     
-    ctor = CLS_SUPER_CASE.getConstructor(CLS_LONG);
+    ctor = CLS_SUPER_CASE.getDeclaredConstructor(CLS_LONG);
+    ctor.setAccessible(true);
     inst = ctor.newInstance(1);
     assertNotNull(inst);
-    assertEquals(1L, inst.value);
+    assertEquals((Long)1L, (Long)inst.value);
     assertNotEquals(1, inst.value);
     
     ctor = CLS_SUPER_CASE.getDeclaredConstructor(CLS_STRING);
@@ -98,8 +102,26 @@ public class ConstructorTests extends AbstractReflectionTest {
     assertNotNull(inst);
     assertEquals("1", inst.value);
   }    
+  
   @Test
-  public void testMagicsSubCase() throws Throwable {
+  public void testDirectInjection_SubCase() throws Throwable {
+    ReflectionCaseNoMagic inst;
+    Constructor<? extends ReflectionCaseNoMagic> ctor;
+    
+    ctor = NO_MAGIC_SUBCLASS.getConstructor(CLS_LONG);
+    inst = ctor.newInstance(1);
+    assertNotNull(inst);
+    assertEquals(2L, inst._long);// sub class adds 1 to values
+    
+    ctor = NO_MAGIC_SUBCLASS.getDeclaredConstructor(CLS_STRING);
+    ctor.setAccessible(true);
+    inst = ctor.newInstance("1");
+    assertNotNull(inst);
+    assertEquals("11", inst._String);
+  }
+
+  @Test
+  public void testDirectConstruction_SubCase() throws Throwable {
     SuperCase inst;
     inst = GwtReflect.construct(CLS_SUB_CASE, CLS_LONG, 1L);
     assertNotNull(inst);
@@ -108,17 +130,14 @@ public class ConstructorTests extends AbstractReflectionTest {
     inst = GwtReflect.construct(CLS_SUB_CASE, CLS_STRING, "1");
     assertNotNull(inst);
     assertEquals("11", inst.value);
-    
   }
 
   @Test
   public void testConstructorVisibility() throws Throwable {
     Constructor<?>[] ctors = SubCase.class.getConstructors();
-    assertEquals(1, ctors.length);
-    for (Constructor<?> ctor : ctors) {
-      SubCase inst = (SubCase) ctor.newInstance(1);
-      assertEquals(2L, inst.value);
-    }
+    assertEquals(1, ctors.length); // Must not return super class constructors!!
+    SubCase inst = (SubCase) ctors[0].newInstance(1);
+    assertEquals(2L, inst.value);
   }
   
 }

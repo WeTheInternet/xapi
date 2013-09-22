@@ -300,16 +300,13 @@ public class AnnotationTests extends AbstractReflectionTest{
       // Gwt Dev can only access runtime level retention annotations
       assertHasAnno(testCase, annos, CompileRetention.class);
     }
-    Window.alert("field annos");
     annos = field.getAnnotations();
     assertHasAnno(testCase, annos, RuntimeRetention.class);
-    Window.alert("field annos!");
     if (GWT.isScript()) {
       // Gwt Dev can only access runtime level retention annotations
       assertHasAnno(testCase, annos, CompileRetention.class);
     }
 
-    Window.alert("method annos");
     annos = method.getAnnotations();
     assertHasAnno(testCase, annos, RuntimeRetention.class);
     if (GWT.isScript()) {

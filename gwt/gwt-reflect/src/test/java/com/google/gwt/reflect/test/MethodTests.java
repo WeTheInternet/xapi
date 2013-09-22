@@ -2,12 +2,14 @@ package com.google.gwt.reflect.test;
 
 import static com.google.gwt.reflect.client.GwtReflect.magicClass;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Test;
 
+import com.google.gwt.core.shared.GWT;
 import com.google.gwt.reflect.client.GwtReflect;
 import com.google.gwt.reflect.client.strategy.ReflectionStrategy;
 import com.google.gwt.reflect.test.cases.ReflectionCaseKeepsEverything;
@@ -72,7 +74,15 @@ public class MethodTests extends AbstractReflectionTest {
   @Test(expected=NoSuchMethodException.class)
   public void testCantAccessPrivateMethods() throws Throwable  {
     String preventMagicMethod = PRIVATE_FIELD;
-    SUPER_CLASS.getMethod(preventMagicMethod);
+    try {
+      SUPER_CLASS.getMethod(preventMagicMethod);
+    } catch (Throwable e) {
+      // GWT dev wraps it's reflection failures in InvocationTargetException :/
+      if (GWT.isClient() && !GWT.isScript() && e instanceof InvocationTargetException) {
+        throw e.getCause();
+      }
+      throw e;
+    }
   }
   
 

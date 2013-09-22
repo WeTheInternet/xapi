@@ -25,10 +25,10 @@ public class SingleDimArrayInjector implements MagicMethodGenerator {
   @Override
   public JExpression injectMagic(TreeLogger logger, JMethodCall methodCall, JMethod enclosingMethod,
     Context context, UnifyAstView ast) throws UnableToCompleteException {
-    JClassLiteral clazz = ReflectionUtilAst.extractClassLiteral(logger, methodCall, 0);
+    JClassLiteral clazz = ReflectionUtilAst.extractClassLiteral(logger, methodCall, 0, ast);
     JType cur, type = cur =clazz.getRefType();
     JIntLiteral size = ReflectionUtilAst.extractImmutableNode(logger, 
-        JIntLiteral.class, methodCall.getArgs().get(1), false);
+        JIntLiteral.class, methodCall.getArgs().get(1), ast, false);
     
     // Add absent array dimensions in case use supplies a Class[].class
     List<JExpression> dims = Lists.create(size.makeStatement().getExpr());

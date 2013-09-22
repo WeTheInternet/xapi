@@ -21,10 +21,10 @@ public class LegacyJUnitTest extends GWTTestCase {
     JUnit4Test.runTests(ArrayTests.class);
   }
 
-//  public void testConstructors() throws Throwable {
-//    magicClass(ConstructorTests.class);
-//    JUnit4Test.runTests(ConstructorTests.class);
-//  }
+  public void testConstructors() throws Throwable {
+    magicClass(ConstructorTests.class);
+    JUnit4Test.runTests(ConstructorTests.class);
+  }
   
   public void testFields() throws Throwable {
     magicClass(FieldTests.class);

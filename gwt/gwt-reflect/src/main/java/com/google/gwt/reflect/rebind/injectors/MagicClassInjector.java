@@ -33,10 +33,11 @@ import com.google.gwt.reflect.rebind.ReflectionUtilJava;
 import com.google.gwt.reflect.rebind.generators.GwtAnnotationGenerator;
 import com.google.gwt.reflect.rebind.generators.MagicClassGenerator;
 import com.google.gwt.reflect.rebind.generators.MemberGenerator;
+import com.google.gwt.reflect.test.FieldTests;
 
 public class MagicClassInjector implements MagicMethodGenerator, UnifyAstListener {
 
-  private static final Type logLevel = Type.INFO;
+  private static final Type logLevel = Type.TRACE;
   private static final ThreadLocal<MagicClassInjector> generator = new ThreadLocal<MagicClassInjector>();
 
   /**
@@ -77,6 +78,7 @@ public class MagicClassInjector implements MagicMethodGenerator, UnifyAstListene
       }catch(NoClassDefFoundError e) {
         classEnhancers.remove(key);
       }
+      boolean debug = params.getClazz().getRefType().getName().startsWith(FieldTests.class.getName());
       if (classEnhancers.containsKey(key)) {
         JMethodCall previous = classEnhancers.get(key);
         previous = new JMethodCall(previous, previous.getInstance());
@@ -93,7 +95,7 @@ public class MagicClassInjector implements MagicMethodGenerator, UnifyAstListene
   public JExpression injectMagic(TreeLogger logger, JMethodCall methodCall, JMethod currentMethod,
     Context context, UnifyAstView ast) throws UnableToCompleteException {
 
-    JClassLiteral clazz = ReflectionUtilAst.extractClassLiteral(logger, methodCall, 0);
+    JClassLiteral clazz = ReflectionUtilAst.extractClassLiteral(logger, methodCall, 0, ast);
     SourceInfo info = methodCall.getSourceInfo().makeChild();
     JType type = clazz.getRefType();
     if (type == null) {

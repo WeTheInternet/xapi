@@ -52,7 +52,9 @@
   <extend-configuration-property name="gwt.magic.methods" 
     value="com.google.gwt.reflect.client.ConstPool.setClass(Ljava/lang/Class;)I *= com.google.gwt.reflect.rebind.injectors.ConstPoolInjector"/>
   
-  <!-- Experimental "direct reflection" using class literals -->
+  <!-- "direct reflection" using class and string literals -->
+  
+  <!-- Methods -->
   <extend-configuration-property name="gwt.magic.methods" 
     value="java.lang.Class.getMethod(Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method; *= com.google.gwt.reflect.rebind.injectors.PublicMethodInjector"/>
   <extend-configuration-property name="gwt.magic.methods" 
@@ -62,10 +64,19 @@
   <extend-configuration-property name="gwt.magic.methods" 
     value="com.google.gwt.reflect.client.GwtReflect.getDeclaredMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method; *= com.google.gwt.reflect.rebind.injectors.DeclaredMethodInjector"/>
 
+  <!-- Fields -->
   <extend-configuration-property name="gwt.magic.methods" 
     value="java.lang.Class.getField(Ljava/lang/String;)Ljava/lang/reflect/Field; *= com.google.gwt.reflect.rebind.injectors.PublicFieldInjector"/>
   <extend-configuration-property name="gwt.magic.methods" 
     value="java.lang.Class.getDeclaredField(Ljava/lang/String;)Ljava/lang/reflect/Field; *= com.google.gwt.reflect.rebind.injectors.DeclaredFieldInjector"/>
+
+  <!-- Constructors -->
+  <extend-configuration-property name="gwt.magic.methods" 
+    value="java.lang.Class.getConstructor([Ljava/lang/Class;)Ljava/lang/reflect/Constructor; *= com.google.gwt.reflect.rebind.injectors.PublicConstructorInjector"/>
+  <extend-configuration-property name="gwt.magic.methods" 
+    value="java.lang.Class.getDeclaredConstructor([Ljava/lang/Class;)Ljava/lang/reflect/Constructor; *= com.google.gwt.reflect.rebind.injectors.DeclaredConstructorInjector"/>
+  <extend-configuration-property name="gwt.magic.methods" 
+    value="com.google.gwt.reflect.client.GwtReflect.construct(Ljava/lang/Class;[Ljava/lang/Class;[Ljava/lang/Object;)Ljava/lang/Object; *= com.google.gwt.reflect.rebind.injectors.ConstructInjector"/>
 
 
   <source path="client" />

@@ -147,6 +147,9 @@ public class MemberGenerator {
     SourceBuilder<JConstructor> out = new SourceBuilder<JConstructor>
     ("public final class "+factoryName+" extends Constructor").setPackage(pkg);
   
+    PrintWriter pw = ctx.tryCreate(logger, pkg, factoryName);
+    if (pw == null)
+      return out.getQualifiedName();
     
     String simpleName = out.getImports().addImport(type.getQualifiedSourceName());
     
@@ -162,8 +165,7 @@ public class MemberGenerator {
     MethodBuffer invoke = cb.createMethod(
         "public final native "+simpleName+ " newInstance(Object ... args)")
         .makeJsni();
-      
-    invoke.print("var c = ");
+    invoke.print("return ");
     
     invoke.print("@"+type.getQualifiedSourceName()+"::new(");
     JParameter[] params = ctor.getParameters();
@@ -177,19 +179,21 @@ public class MemberGenerator {
     if (hasLong)
       invoke.addAnnotation(UnsafeNativeLong.class);
     
-    invoke.println(");");
-    invoke.println("return c(");
+    invoke.println(")(").indent();
     for (int i = 0, m = params.length; i < m; i++ ) {
       if (i > 0)
         invoke.print(", ");
       JParameter param = params[i];
       JType paramType = param.getType();
       // unbox primitives!
-      maybeStartBoxing(invoke, paramType);
-      invoke.print("args["+i+"]");
-      maybeFinishBoxing(invoke, paramType);
+      StringBuilder b = new StringBuilder();
+      maybeStartUnboxing(b, paramType);
+      
+      b.append("args["+i+"]");
+      maybeFinishUnboxing(b, paramType);
+      invoke.print(b.toString());
     }
-    invoke.print(")");
+    invoke.println().outdent().print(")");
     
     invoke.println(";");
     
@@ -208,12 +212,12 @@ public class MemberGenerator {
     generateGetModifier(logger, cb, ReflectionUtilType.getModifiers(ctor));
     generateGetDeclaringClass(logger, cb, ctor.getEnclosingType(), simpleName);
     
-    PrintWriter pw = ctx.tryCreate(logger, pkg, factoryName);
     
     pw.println(out.toString());
     
-    if (isDebug(type, ReflectionStrategy.CONSTRUCTOR))
+    if (isDebug(type, ReflectionStrategy.CONSTRUCTOR)) {
       logger.log(Type.INFO, out.toString());
+    }
     
     ctx.commit(logger, pw);
     
@@ -428,21 +432,28 @@ public class MemberGenerator {
   
 
   
-  protected void createInvokerMethod(ClassBuffer cb, JClassType type, JType returnType, String methodName, JParameter[] params, boolean isStatic) {
+  protected void createInvokerMethod(ClassBuffer cb, JClassType type, JType returnType, 
+      String methodName, JParameter[] params, boolean isStatic) {
     boolean hasLong = returnType.getJNISignature().equals("J");
     
     StringBuilder functionSig = new StringBuilder();
     StringBuilder jsniSig = new StringBuilder();
     StringBuilder arguments = new StringBuilder();
     // Fill in parameter data
+    boolean isNotCtor = !"new".equals(methodName);
+    assert isStatic || isNotCtor : "Constructors must be static!";
+    
     for (int i = 0, m = params.length; i < m; i++) {
       JType param = params[i].getType();
       jsniSig.append(param.getJNISignature());
       char varName = Character.toUpperCase(Character.forDigit(10+i, 36));
-      functionSig.append(", ");
+      if (isNotCtor || i > 0) {
+        functionSig.append(", ");
+      }
       functionSig.append(varName);
-      if (i > 0)
+      if (i > 0) {
         arguments.append(", ");
+      }
       maybeStartUnboxing(arguments, param);
       arguments.append(varName);
       maybeFinishUnboxing(arguments, param);
@@ -452,7 +463,10 @@ public class MemberGenerator {
     MethodBuffer invoker = cb.addImports(JavaScriptObject.class)
         .createMethod("private static "+JSO+" "+ "invoker()")
         .setUseJsni(true)
-        .print("return function(o");
+        .print("return function(");
+    if (isNotCtor) {
+      invoker.print("o");
+    }
       if (hasLong)
         invoker.addAnnotation(UnsafeNativeLong.class);
       invoker.println(functionSig + ") {");
@@ -511,7 +525,7 @@ public class MemberGenerator {
 
   private void maybeStartUnboxing(StringBuilder b, JType returnType) {
     if (JPrimitiveType.LONG == returnType.isPrimitive()) {
-        b.append("@"+GWT_REFLECT+"::unboxLong(Ljava/lang/Long;)(");
+        b.append("@"+GWT_REFLECT+"::unboxLong(Ljava/lang/Number;)(");
     }
   }
   

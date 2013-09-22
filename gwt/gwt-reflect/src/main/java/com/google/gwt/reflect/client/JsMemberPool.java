@@ -6,7 +6,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
+import com.google.gwt.core.client.JavaScriptException;
 import com.google.gwt.core.client.JavaScriptObject;
+import com.google.gwt.user.client.Window;
 
 public class JsMemberPool <T> extends JavaScriptObject implements MemberPool <T>{
 
@@ -139,15 +141,12 @@ public class JsMemberPool <T> extends JavaScriptObject implements MemberPool <T>
     Constructor[] ctors = constructorArray();
     JsMemberPool<? super T> pool = this;
     JavaScriptObject set = JavaScriptObject.createObject();
-    while (pool != null) {
-      for (Constructor declared : pool.getDeclaredConstructors()) {
-        if (Modifier.isPublic(declared.getModifiers()) &&
-            isUnique(set, getSignature(declared.getParameterTypes()))) {
-          // javascript actually likes this; preallocating arrays doesn't save time
-          ctors[ctors.length] = declared;
-        }
+    for (Constructor declared : pool.getDeclaredConstructors()) {
+      if (Modifier.isPublic(declared.getModifiers()) &&
+          isUnique(set, getSignature(declared.getParameterTypes()))) {
+        // javascript actually likes this; preallocating arrays doesn't save time
+        ctors[ctors.length] = declared;
       }
-      pool = pool.getSuperclass();
     }
     return ctors;
   }
@@ -283,9 +282,27 @@ public class JsMemberPool <T> extends JavaScriptObject implements MemberPool <T>
     return this.$;
   }-*/;
 
+  private static final void debug() {
+    Throwable e = new Exception();
+    ConstPool pool = ConstPool.getConstPool();
+    while (e != null && !(e instanceof JavaScriptException)) {
+      for (StackTraceElement trace : e.getStackTrace()) {
+        String name = trace.getClassName();
+        Class<?> cls = pool.getClassByName(name);
+        if (cls != null) {
+          name = cls.getPackage()+" : "+cls.getName();
+        }
+        Window.alert(name+"."+trace.getMethodName()+"() : "+trace.getFileName()+" @ "+trace.getLineNumber());
+      }
+      e = e.getCause();
+    }
+  }
+  
   public final native String getTypeName()
   /*-{
-    return this && this.$.@java.lang.Class::getName()() || "<unknown type>";
+    if (!this || !this.$)
+      @com.google.gwt.reflect.client.JsMemberPool::debug()();
+    return this && this.$ && this.$.@java.lang.Class::getName()() || "<unknown type>";
   }-*/;
 
   static native int getSeedId(Class<?> cls)

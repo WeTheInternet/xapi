@@ -36,7 +36,7 @@ public abstract class AbstractFieldInjector extends MemberGenerator implements M
     
     boolean isFromGwtReflect = callSite.getArgs().size() == 2;
     JExpression inst = isFromGwtReflect ? callSite.getArgs().get(0) : callSite.getInstance();
-    JClassLiteral classLit = ReflectionUtilAst.extractClassLiteral(logger, inst, false);
+    JClassLiteral classLit = ReflectionUtilAst.extractClassLiteral(logger, inst, ast, false);
     List<JExpression> args = callSite.getArgs();
     JExpression arg0 = args.get(isFromGwtReflect?1:0);
     
@@ -48,7 +48,7 @@ public abstract class AbstractFieldInjector extends MemberGenerator implements M
       return checkConstPool(ast, callSite, inst, arg0);
     }
     
-    JStringLiteral stringLit = ReflectionUtilAst.extractImmutableNode(logger, JStringLiteral.class, arg0, false);
+    JStringLiteral stringLit = ReflectionUtilAst.extractImmutableNode(logger, JStringLiteral.class, arg0, ast, false);
     if (stringLit == null) {
       if (logger.isLoggable(Type.DEBUG))
         logger.log(Type.DEBUG,
@@ -99,7 +99,7 @@ public abstract class AbstractFieldInjector extends MemberGenerator implements M
         return new JMethodCall(factoryMethod.getSourceInfo(), null, factoryMethod);
       }
     }
-    logger.log(Type.ERROR, "Unable to find static initializer for Method subclass "+factoryCls);
+    logger.log(Type.ERROR, "Unable to find static initializer for Field subclass "+factoryCls);
     throw new UnableToCompleteException();
   }
   

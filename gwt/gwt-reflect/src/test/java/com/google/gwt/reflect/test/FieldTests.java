@@ -25,8 +25,6 @@ public class FieldTests extends AbstractReflectionTest {
   static final Class<Objects> OBJECTS_CLASS = magicClass(Objects.class);
   static final Class<ReflectionCaseKeepsNothing> KEEPS_NONE = magicClass(ReflectionCaseKeepsNothing.class);
   static final Class<ReflectionCaseKeepsEverything> KEEPS_EVERYTHING = magicClass(ReflectionCaseKeepsEverything.class);
-  static final Class<ReflectionCaseNoMagic> NO_MAGIC = ReflectionCaseNoMagic.class;
-  static final Class<ReflectionCaseNoMagic.Subclass> NO_MAGIC_SUBCLASS = ReflectionCaseNoMagic.Subclass.class;
 
   Primitives primitives;
   Objects objects;
@@ -38,7 +36,7 @@ public class FieldTests extends AbstractReflectionTest {
   }
   
   public static class Primitives {
-    Primitives() {}
+    public Primitives() {}
     public boolean z;
     public byte b;
     public char c;
@@ -70,7 +68,6 @@ public class FieldTests extends AbstractReflectionTest {
 
   @Test(expected=NullPointerException.class)
   public void testObjectNullAccess() throws Exception {
-    assertNotNull(objects);
     Field f = OBJECTS_CLASS.getField("L");
     f.get(null);
   }

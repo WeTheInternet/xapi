@@ -17,5 +17,7 @@
    <extend-configuration-property name="compiler.splitpoint.initial.sequence"
   value="com.google.gwt.reflect.client.ConstPool"/>
   
+  <set-configuration-property name="gwt.reflect.never.fail" value="true" />
+  
   <entry-point class="com.google.gwt.reflect.test.TestEntryPoint"/>
 </module>

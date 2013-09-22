@@ -169,7 +169,7 @@ public class JUnit4Test {
     for (Entry<Method, Throwable> e : result.entrySet()) {
       if (e.getValue() != null) {
         TestsFailed failure = new TestsFailed(result);
-        debug("Tests Failed; ", failure);
+        debug("Tests Failed;\n", failure);
         throw new AssertionError(failure.toString());
       }
     }
@@ -191,7 +191,12 @@ public class JUnit4Test {
       for (Method m : before) {
         m.invoke(inst);
       }
-      value.invoke(inst);
+      try {
+        value.invoke(inst);
+      } catch (InvocationTargetException e) {
+        throw e.getCause();
+      }
+      
       if (expected != Test.None.class)
         return new AssertionError("Method "+value+" was supposed to throw "+expected.getName()
             +", but failed to do so");
