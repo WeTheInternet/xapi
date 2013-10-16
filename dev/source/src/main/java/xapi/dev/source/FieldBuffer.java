@@ -51,7 +51,7 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
   private final String simpleType;// Shortest form possible for use in source
   private final String methodFragment;// Camel-case form of name, for getField, setField methods.
 
-  private String initializer;
+  private PrintBuffer initializer;
   private MethodBuffer get;
   private MethodBuffer set;
   private MethodBuffer add;
@@ -84,8 +84,18 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
   }
 
   public FieldBuffer setInitializer(String initializer) {
-    this.initializer = initializer;
+    this.initializer = new PrintBuffer();
+    this.initializer.print(initializer);
     return this;
+  }
+  
+  public PrintBuffer getInitializer() {
+    if (initializer == null) {
+      initializer = new PrintBuffer();
+      initializer.indent = indent;
+      initializer.println().indent();
+    }
+    return initializer;
   }
 
   public FieldBuffer addGetter(int modifiers) {
@@ -198,6 +208,16 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
     if (cls.replace(this.cls.getPackage()+".", "").indexOf('.')==-1)return cls;
     return this.cls.addImport(cls);
   };
+  
+  @Override
+  public String addImportStatic(Class<?> cls, String name) {
+    return this.cls.addImportStatic(cls, name);
+  }
+  
+  @Override
+  public String addImportStatic(String cls) {
+    return this.cls.addImportStatic(cls);
+  }
 
   @Override
   public String toString() {
@@ -227,10 +247,10 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
     b.append(simpleType).append(" ");
     //field name
     b.append(fieldName);
-
-    if (initializer != null && initializer.length() > 0) {
-      b.append(" = ").append(initializer);
-      if (!initializer.trim().endsWith(";"))
+    String init = initializer == null ? "" : initializer.toString();
+    if (init.length() > 0) {
+      b.append(" = ").append(init);
+      if (!init.trim().endsWith(";"))
         b.append(";");
     } else
       b.append(";");

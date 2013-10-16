@@ -147,6 +147,16 @@ implements MethodVisitor<SourceBuilder<?>>
       return cls;
     return context.getImports().addImport(cls);
   }
+  
+  @Override
+  public String addImportStatic(Class<?> cls, String name) {
+    return context.getImports().addStatic(cls.getCanonicalName()+"."+name);
+  }
+  
+  @Override
+  public String addImportStatic(String cls) {
+    return context.getImports().addStatic(cls);
+  }
 
   public MethodBuffer addParameters(String... parameters) {
     for (String parameter : parameters) {

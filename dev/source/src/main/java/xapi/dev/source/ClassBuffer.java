@@ -233,6 +233,16 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer>{
   public String addImport(Class<?> cls) {
 	  return context.getImports().addImport(cls);
 	}
+	
+	@Override
+	public String addImportStatic(Class<?> cls, String name) {
+	  return context.getImports().addStatic(cls.getCanonicalName()+"."+name);
+	}
+	
+	@Override
+	public String addImportStatic(String importName) {
+	  return context.getImports().addStatic(importName);
+	}
 
 	public String getSuperClass() {
 		return superClass;

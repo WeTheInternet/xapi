@@ -60,6 +60,8 @@ public abstract class MemberBuffer <Self extends MemberBuffer<Self>> extends Pri
 
   public abstract String addImport(String cls);
   public abstract String addImport(Class<?> cls);
+  public abstract String addImportStatic(String cls);
+  public abstract String addImportStatic(Class<?> cls, String name);
 
   public final Self addImports(String ... clses) {
     for (String cls : clses) {
