@@ -57,7 +57,6 @@ import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.reflect.client.ClassMap;
 import com.google.gwt.reflect.client.MemberMap;
 import com.google.gwt.reflect.rebind.ReflectionUtilJava;
-import com.google.gwt.reflect.rebind.generators.GwtConstructorGenerator;
 
 public class MagicClassGenerator extends IncrementalGenerator {
 
@@ -387,7 +386,7 @@ public class MagicClassGenerator extends IncrementalGenerator {
       // check type for constructors we want to keep
       extractConstructors(logger, keepConstructor, injectionType, manifest);
       if (keepConstructor != null || manifest.constructors.size()>0) {
-        GwtConstructorGenerator.generateConstructors(logger, classBuilder, context, injectionType, manifest.constructors);
+//        GwtConstructorGenerator.generateConstructors(logger, classBuilder, context, injectionType, manifest.constructors);
         enhanceMethod.println("enhanceConstructors(toEnhance);");
       }
 

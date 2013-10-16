@@ -37,7 +37,6 @@
   <dependency>
    <groupId>net.wetheinter</groupId>
    <artifactId>gwt-reflect</artifactId>
-   <version>${xapi.gwt.version}</version>
   </dependency>
   <dependency>
    <groupId>net.wetheinter</groupId>

@@ -46,15 +46,15 @@
   <modules>
     <!-- Core interfaces and injection layer -->
     <module>core</module>
+    
+    <!-- Gwt mode runtime -->
+    <module>gwt</module>
 
     <!-- Jre default runtime -->
     <module>jre</module>
 
     <!-- Dev mode runtime -->
     <module>dev</module>
-    
-    <!-- Gwt mode runtime -->
-    <module>gwt</module>
 
     <!-- Server layer -->
     <module>server</module>

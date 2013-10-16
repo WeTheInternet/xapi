@@ -24,8 +24,8 @@ import com.google.gwt.dev.jjs.ast.JExpression;
 import com.google.gwt.dev.jjs.ast.JGwtCreate;
 import com.google.gwt.dev.jjs.ast.JMethod;
 import com.google.gwt.dev.jjs.ast.JMethodCall;
-import com.google.gwt.reflect.rebind.MagicContext;
 import com.google.gwt.reflect.rebind.ReflectionUtilJava;
+import com.google.gwt.reflect.rebind.generators.ReflectionGeneratorContext;
 
 @SingletonDefault(implFor = MagicClassInjector.class)
 public class MagicClassInjector implements MagicMethodGenerator {
@@ -46,14 +46,14 @@ public class MagicClassInjector implements MagicMethodGenerator {
     return generator.get().injectMagic(logger, x, currentMethod, context, ast);
   }
 
-  private class InitMap extends AbstractMultiInitMap<String,JExpression,MagicContext> {
+  private class InitMap extends AbstractMultiInitMap<String,JExpression,ReflectionGeneratorContext> {
 
     public InitMap() {
       super(PASS_THRU);
     }
 
     @Override
-    protected JExpression initialize(String clsName, MagicContext params) {
+    protected JExpression initialize(String clsName, ReflectionGeneratorContext params) {
       try {
         return doRebind(clsName, params);
       } catch (Exception e) {
@@ -62,7 +62,7 @@ public class MagicClassInjector implements MagicMethodGenerator {
       }
     }
     @Override
-    public JExpression get(String key, MagicContext params) {
+    public JExpression get(String key, ReflectionGeneratorContext params) {
       //because we cache results, super dev mode recompiles need to skip the
       //cache if the magic class does not exist, so we test for that state on every get().
 
@@ -96,13 +96,11 @@ public class MagicClassInjector implements MagicMethodGenerator {
       throw new UnableToCompleteException();
     }
     JClassLiteral clazz = (JClassLiteral)methodCall.getArgs().get(0);
-    SourceInfo info = methodCall.getSourceInfo().makeChild();
-
-    return mappedClasses.get(clazz.getRefType().getName(), new MagicContext(logger, info, clazz, methodCall,
+    return mappedClasses.get(clazz.getRefType().getName(), new ReflectionGeneratorContext(logger, clazz, methodCall,
       currentMethod, context, ast));
   }
 
-  public JExpression doRebind(String clsName, MagicContext params) throws UnableToCompleteException {
+  public JExpression doRebind(String clsName, ReflectionGeneratorContext params) throws UnableToCompleteException {
     // generate
     params.getLogger().log(Type.INFO, "Binding magic class for " + clsName);
     // JType type = params.getClazz().getRefType();

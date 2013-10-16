@@ -1,6 +1,10 @@
 package xapi.util;
 
 import static xapi.util.X_Namespace.*;
+
+import java.io.File;
+import java.io.IOException;
+
 import xapi.platform.JrePlatform;
 
 /**
@@ -197,6 +201,14 @@ public class X_Runtime {
     return parallel;
   }
 
+  public static String getWorkingDirectory() {
+    String pwd = System.getenv("PWD");
+    if (pwd == null)
+      try {
+        pwd = new File(".").getCanonicalPath();
+      } catch (IOException ignored) {}
+    return pwd == null ? "." : pwd;
+  }
 
 
 

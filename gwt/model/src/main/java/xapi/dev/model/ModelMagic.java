@@ -60,17 +60,17 @@ public class ModelMagic implements UnifyAstListener, MagicMethodGenerator {
   }
 
   @Override
-  public void onUnifyAstStart(UnifyAstView ast, UnifyVisitor visitor, Queue<JMethod> todo) {
+  public void onUnifyAstStart(TreeLogger logger, UnifyAstView ast, UnifyVisitor visitor, Queue<JMethod> todo) {
 
   }
 
   @Override
-  public boolean onUnifyAstPostProcess(UnifyAstView ast, UnifyVisitor visitor, Queue<JMethod> todo) {
+  public boolean onUnifyAstPostProcess(TreeLogger logger, UnifyAstView ast, UnifyVisitor visitor, Queue<JMethod> todo) {
     return false;
   }
 
   @Override
-  public void destroy() {
+  public void destroy(TreeLogger logger) {
     // clean up our static reference
     // this is necessary to allow super-dev-mode to recompile correctly.
     // without scope on when we are recompiling versus when we are doing an

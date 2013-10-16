@@ -22,44 +22,41 @@ implements Pair<X, Y>,Comparable<ComparablePair<X, Y>>{
   public ComparablePair() {
   }
   public ComparablePair(X x,Y y) {
+    
     set0(x);
     set1(y);
   }
   
-  private boolean xFirst = true;
     @Override
     public int compareTo(ComparablePair<X, Y> o) {
-      int ret = 0;
-      if (isXFirst()){
-        try{
-          ret = get0().compareTo(o.get0());
-          if (ret==0){
-            try{
-              ret = get1().compareTo(o.get1());
-            }catch (NullPointerException e) {
-              //null gets sent backward
-              return get1()==null?-1:1;
-            }
-          }
-        }catch (NullPointerException e) {
-          return get0()==null?-1:1;
+      X _x = o.get0();
+      Y _y = o.get1();
+      final int dX, dY;
+      if (x == null) {
+        if (_x != null) {
+          return 1;
         }
-      }else{
-        try{
-          ret = get1().compareTo(o.get1());
-          if (ret==0){//passed first compare
-            try{
-              ret = get0().compareTo(o.get0());
-            }catch (NullPointerException e) {
-              //null gets sent backward
-              return get0()==null?-1:1;
-            }
-          }
-        }catch (NullPointerException e) {
-          return get1()==null?-1:1;
+        dX = 0;
+      } else {
+        if (_x == null) {
+          return -1;
         }
+        dX = x.compareTo(_x);
       }
-      return ret;
+      
+      if (y == null) {
+        if (_y != null) {
+          return 1;
+        }
+        dY = 0;
+      } else {
+        if (_y == null) {
+          return -1;
+        }
+        dY = y.compareTo(_y);
+      }
+      
+      return dX ^ dY;
     }
 
     @Override
@@ -78,13 +75,5 @@ implements Pair<X, Y>,Comparable<ComparablePair<X, Y>>{
     @Override
     public void set1(Y y) {
       this.y=y;
-    }
-
-    public boolean isXFirst() {
-      return xFirst;
-    }
-
-    public void setXFirst(boolean xFirst) {
-      this.xFirst = xFirst;
     }
 }
