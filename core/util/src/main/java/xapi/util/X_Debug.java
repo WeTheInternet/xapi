@@ -10,23 +10,31 @@ public class X_Debug {
 
   public static class DebugStream extends PrintStream {
 
-    private PrintStream orig;
+    private final PrintStream orig;
+    private final int depth;
 
-    public DebugStream(PrintStream orig) {
+    public DebugStream(PrintStream orig, int ignoreDepth) {
       super(orig);
+      this.depth = ignoreDepth;
       this.orig = orig;
     }
 
     @Override
     public void println() {
-      debugCaller();
       super.println();
+      debugCaller();
     };
 
     private void debugCaller() {
       RuntimeException e = new RuntimeException();
       e.fillInStackTrace();
-      orig.print(e.getStackTrace()[3]+": ");
+      StackTraceElement[] traces = e.getStackTrace();
+      int index = depth, end = Math.min(depth+10, traces.length);
+      orig.print("\n\t\t @ ");
+      for(;index < end; index++ ) {
+        orig.print(traces[index]+": ");
+      }
+      orig.flush();
     }
 
     public PrintStream append(CharSequence str) {
@@ -37,8 +45,8 @@ public class X_Debug {
 
     @Override
     public void print(String s) {
-      debugCaller();
       super.print(s);
+      debugCaller();
     }
 
   }
@@ -92,19 +100,29 @@ public class X_Debug {
   }
 
   public static void traceSystemErr() {
+    traceSystemErr(3);
+  }
+  public static void traceSystemErr(int ignoreDepth) {
     final PrintStream orig = System.err;
     // Avoid cyclic calls, but don't store references...
     if (orig instanceof DebugStream)
       return;
-    System.setErr(new DebugStream(orig));
+    System.setErr(new DebugStream(orig, ignoreDepth));
   }
 
   public static void traceSystemOut() {
+    traceSystemOut(3);
+  }
+  /**
+   * 
+   * @param ignoreDepth
+   */
+  public static void traceSystemOut(int ignoreDepth) {
     final PrintStream orig = System.out;
     // Avoid cyclic calls, but don't store references...
-    if (orig.getClass().isAnonymousClass())
+    if (orig instanceof DebugStream)
       return;
-    System.setOut(new DebugStream(orig));
+    System.setOut(new DebugStream(orig, ignoreDepth));
   }
 }
 
