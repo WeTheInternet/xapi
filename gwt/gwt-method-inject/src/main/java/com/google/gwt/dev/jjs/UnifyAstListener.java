@@ -2,6 +2,7 @@ package com.google.gwt.dev.jjs;
 
 import java.util.Queue;
 
+import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.dev.jdt.RebindPermutationOracle;
 import com.google.gwt.dev.jjs.ast.JMethod;
 import com.google.gwt.dev.jjs.ast.JProgram;
@@ -78,7 +79,7 @@ public interface UnifyAstListener {
    *
    * @param todo - The queue of methods to be added to the program.
    */
-  void onUnifyAstStart(UnifyAstView ast, UnifyVisitor visitor, Queue<JMethod> todo);
+  void onUnifyAstStart(TreeLogger logger, UnifyAstView ast, UnifyVisitor visitor, Queue<JMethod> todo);
   /**
    * Called at the end of every iteration of {@link UnifyAst#mainLoop()}.
    *
@@ -100,13 +101,13 @@ public interface UnifyAstListener {
    *
    *
    */
-  boolean onUnifyAstPostProcess(UnifyAstView ast, UnifyVisitor visitor, Queue<JMethod> todo);
+  boolean onUnifyAstPostProcess(TreeLogger logger, UnifyAstView ast, UnifyVisitor visitor, Queue<JMethod> todo);
 
   /**
    * Called once after the main ast loop is finished;
    * make sure you clear any ThreadLocal or static resources here!
    *
    */
-  void destroy();
+  void destroy(TreeLogger logger);
 
 }

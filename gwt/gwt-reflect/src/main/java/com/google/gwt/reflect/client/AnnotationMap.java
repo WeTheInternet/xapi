@@ -7,17 +7,14 @@ public class AnnotationMap extends MemberMap{
   protected AnnotationMap() {}
 
   public final boolean hasAnnotation(Class<? extends Annotation> annoClass) {
-//    String key = getSignature(annoClass);
     return hasMember(annoClass.getName(), this);
   }
 
   public final <T extends Annotation> T getAnnotation(Class<T> annoClass) {
-//    String key = getSignature(annoClass);
     return getOrMakePublicMember(annoClass.getName(), this);
   }
 
   public final <T extends Annotation> T getDeclaredAnnotation(Class<T> annoClass) {
-//    String key = getSignature(annoClass);
     return getOrMakeDeclaredMember(annoClass.getName(), this);
   }
 

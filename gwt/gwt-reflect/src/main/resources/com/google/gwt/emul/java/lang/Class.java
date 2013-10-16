@@ -19,21 +19,17 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.lang.reflect.TypeVariable;
 import java.security.ProtectionDomain;
-import java.util.ArrayList;
-import java.util.Arrays;
 
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.UnsafeNativeLong;
-import com.google.gwt.core.shared.GWT;
 import com.google.gwt.reflect.client.AnnotationMap;
 import com.google.gwt.reflect.client.ClassMap;
 import com.google.gwt.reflect.client.ConstPool;
 import com.google.gwt.reflect.client.GwtReflect;
 import com.google.gwt.reflect.client.JsMemberPool;
-import com.google.gwt.user.client.Window;
+import com.google.gwt.rpc.server.WebModePayloadSink;
 
 /**
  * Generally unsupported. This class is provided so that the GWT compiler can
@@ -41,6 +37,7 @@ import com.google.gwt.user.client.Window;
  * 
  * @param <T> the type of the object
  */
+@SuppressWarnings("serial")
 public final class Class<T>
 implements java.io.Serializable, 
 java.lang.reflect.GenericDeclaration, 
@@ -210,7 +207,7 @@ java.lang.reflect.AnnotatedElement
    */
   static void setName(Class<?> clazz, String packageName, String className,
       int seedId) {
-    if (clazz.isClassMetadataEnabled()||clazz.isPrimitive()) {
+    if (Class.isClassMetadataEnabled()||clazz.isPrimitive()) {
       clazz.pkgName = packageName.length() == 0 ? "" : packageName;
       clazz.typeName = className;
     } else {
@@ -230,10 +227,12 @@ java.lang.reflect.AnnotatedElement
   }
   
   
+  @SuppressWarnings("rawtypes")
   public static Class forName(String name)
     throws ClassNotFoundException{
       return ConstPool.getConstPool().getClassByName(name);
   }
+  @SuppressWarnings("rawtypes")
   public static Class forName(String name, boolean initialize, ClassLoader loader) 
     throws ClassNotFoundException{
     return ConstPool.getConstPool().getClassByName(name);
@@ -373,7 +372,7 @@ java.lang.reflect.AnnotatedElement
     return annotations.hasAnnotation(annotationClass);
   }
 
-  public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
+  public <A extends Annotation> A getAnnotation(Class<A> annotationClass) {
     if (annotations == null)
       throw new NoSuchMethodError(NOT_IMPLEMENTED_CORRECTLY);
     return annotations.getAnnotation(annotationClass);
@@ -494,7 +493,7 @@ java.lang.reflect.AnnotatedElement
     return members.getConstructor(parameterTypes);
   }
   
-  public Constructor[] getConstructors() {
+  public Constructor<T>[] getConstructors() {
     if (members == null)
       throw new NoSuchMethodError(NOT_IMPLEMENTED_CORRECTLY);
     return members.getConstructors();
@@ -514,7 +513,7 @@ java.lang.reflect.AnnotatedElement
     return members.getDeclaredConstructor(parameterTypes);
   }
   
-  public Constructor[] getDeclaredConstructors() {
+  public Constructor<T>[] getDeclaredConstructors() {
     if (members == null)
       throw new NoSuchMethodError(NOT_IMPLEMENTED_CORRECTLY);
     return members.getDeclaredConstructors();
@@ -542,6 +541,7 @@ java.lang.reflect.AnnotatedElement
     return classData.getInterfaces();
   }
   
+  @SuppressWarnings("unchecked")
   public TypeVariable<Class<T>>[] getTypeParameters() {
 //    if (getGenericSignature() != null) 
 //      return (TypeVariable<Class<T>>[])getGenericInfo().getTypeParameters();
@@ -549,6 +549,7 @@ java.lang.reflect.AnnotatedElement
       return (TypeVariable<Class<T>>[])new TypeVariable[0];
   }
   
+  @SuppressWarnings("unchecked")
   public <U> Class<? extends U> asSubclass(Class<U> clazz) {
     if (clazz.isAssignableFrom(this))
         return (Class<? extends U>) this;

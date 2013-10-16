@@ -1,4 +1,4 @@
-package com.google.gwt.reflect.rebind.injectors;
+package com.google.gwt.reflect.rebind.generators;
 
 import java.util.List;
 
@@ -14,8 +14,6 @@ import com.google.gwt.dev.jjs.ast.Context;
 import com.google.gwt.dev.jjs.ast.JClassLiteral;
 import com.google.gwt.dev.jjs.ast.JDeclaredType;
 import com.google.gwt.dev.jjs.ast.JExpression;
-import com.google.gwt.dev.jjs.ast.JField;
-import com.google.gwt.dev.jjs.ast.JFieldRef;
 import com.google.gwt.dev.jjs.ast.JMethod;
 import com.google.gwt.dev.jjs.ast.JMethodCall;
 import com.google.gwt.dev.jjs.ast.JStringLiteral;
@@ -23,26 +21,18 @@ import com.google.gwt.dev.jjs.ast.JType;
 import com.google.gwt.reflect.rebind.ReflectionManifest;
 import com.google.gwt.reflect.rebind.ReflectionUtilAst;
 import com.google.gwt.reflect.rebind.ReflectionUtilType;
-import com.google.gwt.reflect.rebind.generators.MemberGenerator;
 
-public abstract class AbstractFieldInjector extends MemberGenerator implements MagicMethodGenerator {
+public abstract class FieldGenerator extends MemberGenerator implements MagicMethodGenerator {
 
   protected abstract boolean isDeclared();
 
-  @Override
-  public JExpression injectMagic(TreeLogger logger, JMethodCall callSite,
-      JMethod enclosingMethod, Context context, UnifyAstView ast)
-      throws UnableToCompleteException {
-    
-    boolean isFromGwtReflect = callSite.getArgs().size() == 2;
-    JExpression inst = isFromGwtReflect ? callSite.getArgs().get(0) : callSite.getInstance();
-    JClassLiteral classLit = ReflectionUtilAst.extractClassLiteral(logger, inst, ast, false);
-    List<JExpression> args = callSite.getArgs();
-    JExpression arg0 = args.get(isFromGwtReflect?1:0);
-    
+  protected JMethodCall getFactoryMethod(TreeLogger logger, JMethodCall callSite,
+      JMethod enclosingMethod, Context context, JClassLiteral classLit, JExpression inst, JExpression arg0, UnifyAstView ast)
+          throws UnableToCompleteException {
+
     if (classLit == null) {
-//      if (logger.isLoggable(Type.DEBUG))
-        logger.log(Type.ERROR,
+      if (logger.isLoggable(logLevel()))
+        logger.log(logLevel(),
             "Non-final class literal used to invoke reflection field; "
                 + ReflectionUtilAst.debug(callSite.getInstance()));
       return checkConstPool(ast, callSite, inst, arg0);
@@ -50,8 +40,8 @@ public abstract class AbstractFieldInjector extends MemberGenerator implements M
     
     JStringLiteral stringLit = ReflectionUtilAst.extractImmutableNode(logger, JStringLiteral.class, arg0, ast, false);
     if (stringLit == null) {
-      if (logger.isLoggable(Type.DEBUG))
-        logger.log(Type.DEBUG,
+      if (logger.isLoggable(logLevel()))
+        logger.log(logLevel(),
             "Non-final string arg used to retrieve reflection field; "
                 + ReflectionUtilAst.debug(arg0));
       return checkConstPool(ast, callSite, inst, arg0);
@@ -76,14 +66,29 @@ public abstract class AbstractFieldInjector extends MemberGenerator implements M
         return checkConstPool(ast, callSite, inst, arg0);
       }
     }
-    if (logger.isLoggable(Type.TRACE)) {
-      logger.log(Type.TRACE, "Found injectable field " + field);
+    if (logger.isLoggable(logLevel())) {
+      logger.log(logLevel(), "Found injectable field " + field);
     }
     
     // now, get or make a handle to the requested method,
-    JMethodCall methodFactory = getFieldProvider(logger, ast, field, classLit, isDeclared());
+    return getFieldProvider(logger, ast, field, classLit, isDeclared());
+  }
+  
+  @Override
+  public JExpression injectMagic(TreeLogger logger, JMethodCall callSite,
+      JMethod enclosingMethod, Context context, UnifyAstView ast)
+      throws UnableToCompleteException {
+    
+    boolean isFromGwtReflect = callSite.getArgs().size() == 2;
+    JExpression inst = isFromGwtReflect ? callSite.getArgs().get(0) : callSite.getInstance();
+    JClassLiteral classLit = ReflectionUtilAst.extractClassLiteral(logger, inst, ast, false);
+    List<JExpression> args = callSite.getArgs();
+    JExpression arg0 = args.get(isFromGwtReflect?1:0);
+    
     // and return a call to the generated Method provider
-    return methodFactory.makeStatement().getExpr();
+    return 
+        getFactoryMethod(logger, callSite, enclosingMethod, context, classLit, inst, arg0, ast)
+        .makeStatement().getExpr();
   }
   
   public JMethodCall getFieldProvider(TreeLogger logger, UnifyAstView ast, com.google.gwt.core.ext.typeinfo.JField field,

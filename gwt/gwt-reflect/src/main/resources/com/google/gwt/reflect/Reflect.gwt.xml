@@ -5,8 +5,6 @@
   <!-- Enable magic methods in production. -->
   <inherits name="com.google.gwt.MagicMethods" />
   <inherits name="com.google.gwt.core.Core" />
-  <set-property name="compiler.stackMode" value="strip" />
-
   
   <!-- Configuration Property: gwt.reflection.factory -> 
   set to override the default reflection factory used.
@@ -63,6 +61,8 @@
     value="java.lang.Class.getDeclaredMethod(Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method; *= com.google.gwt.reflect.rebind.injectors.DeclaredMethodInjector"/>
   <extend-configuration-property name="gwt.magic.methods" 
     value="com.google.gwt.reflect.client.GwtReflect.getDeclaredMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method; *= com.google.gwt.reflect.rebind.injectors.DeclaredMethodInjector"/>
+  <extend-configuration-property name="gwt.magic.methods" 
+    value="com.google.gwt.reflect.client.GwtReflect.invoke(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Class;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object; *= com.google.gwt.reflect.rebind.injectors.InvokeInjector"/>
 
   <!-- Fields -->
   <extend-configuration-property name="gwt.magic.methods" 

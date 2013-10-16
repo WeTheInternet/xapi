@@ -11,7 +11,6 @@ import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JPackage;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
-import com.google.gwt.dev.javac.StandardGeneratorContext;
 import com.google.gwt.dev.jjs.MagicMethodGenerator;
 import com.google.gwt.dev.jjs.SourceInfo;
 import com.google.gwt.dev.jjs.SourceOrigin;
@@ -27,7 +26,6 @@ import com.google.gwt.dev.jjs.ast.JIntLiteral;
 import com.google.gwt.dev.jjs.ast.JMethod;
 import com.google.gwt.dev.jjs.ast.JMethodBody;
 import com.google.gwt.dev.jjs.ast.JMethodCall;
-import com.google.gwt.dev.jjs.ast.JReferenceType;
 import com.google.gwt.dev.jjs.ast.JThisRef;
 import com.google.gwt.dev.jjs.ast.JType;
 import com.google.gwt.dev.jjs.impl.UnifyAst.UnifyVisitor;
@@ -38,6 +36,7 @@ import com.google.gwt.reflect.client.strategy.ReflectionStrategy;
 import com.google.gwt.reflect.rebind.ReflectionUtilJava;
 import com.google.gwt.reflect.rebind.generators.ConstPoolGenerator;
 import com.google.gwt.reflect.rebind.generators.MemberGenerator;
+import com.google.gwt.reflect.rebind.generators.ReflectionGeneratorContext;
 
 @ReflectionStrategy
 public class ConstPoolInjector implements MagicMethodGenerator, UnifyAstListener{
@@ -49,27 +48,8 @@ public class ConstPoolInjector implements MagicMethodGenerator, UnifyAstListener
   public JExpression injectMagic(TreeLogger logger, JMethodCall methodCall, JMethod enclosingMethod,
     Context context, UnifyAstView ast) throws UnableToCompleteException {
 
-    if (methodCall.getTarget().getName().equals("setClass")) {
-      JThisRef cls = (JThisRef) methodCall.getArgs().get(0);
-      JClassType type = (JClassType) cls.getType().getUnderlyingType();
-      if (rememberClass == null) {
-        JDeclaredType pool = ast.searchForTypeBySource(ConstPool.class.getName());
-        for (JMethod method : pool.getMethods()) {
-          if (method.getName().equals("rememberClass")) {
-            rememberClass = new JMethodCall(method.getSourceInfo(), null, method);
-            rememberClass.addArg(null);
-            rememberClass.addArg(null);
-          }
-        }
-      }
-      int constId = ConstPoolGenerator.getGenerator().rememberClass(type);
-      JMethodCall call = new JMethodCall(rememberClass, null);
-      call.setArg(0, new JIntLiteral(methodCall.getSourceInfo(), constId));
-      call.setArg(1, cls);
-      return call.makeStatement().getExpr();
-    }
+    ReflectionGeneratorContext ctx = new ReflectionGeneratorContext(logger, null, methodCall, enclosingMethod, context, ast);
     
-    StandardGeneratorContext ctx = ast.getRebindPermutationOracle().getGeneratorContext();
     HashMap<String,JPackage> packages = new HashMap<String,JPackage>();
     LinkedHashMap<JClassType,ReflectionStrategy> retained = new LinkedHashMap<JClassType,ReflectionStrategy>();
     ReflectionStrategy defaultStrategy = ConstPoolInjector.class.getAnnotation(ReflectionStrategy.class);
@@ -150,17 +130,17 @@ public class ConstPoolInjector implements MagicMethodGenerator, UnifyAstListener
   }
 
   @Override
-  public void onUnifyAstStart(UnifyAstView ast, UnifyVisitor visitor, Queue<JMethod> todo) {
+  public void onUnifyAstStart(TreeLogger logger, UnifyAstView ast, UnifyVisitor visitor, Queue<JMethod> todo) {
 
   }
 
   @Override
-  public boolean onUnifyAstPostProcess(UnifyAstView ast, UnifyVisitor visitor, Queue<JMethod> todo) {
+  public boolean onUnifyAstPostProcess(TreeLogger logger, UnifyAstView ast, UnifyVisitor visitor, Queue<JMethod> todo) {
     return false;
   }
 
   @Override
-  public void destroy() {
+  public void destroy(TreeLogger logger) {
     ConstPoolGenerator.cleanup();
   }
 

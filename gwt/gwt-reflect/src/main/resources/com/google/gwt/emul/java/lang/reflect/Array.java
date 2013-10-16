@@ -1,7 +1,6 @@
 package java.lang.reflect;
+
 import com.google.gwt.core.client.UnsafeNativeLong;
-import com.google.gwt.reflect.client.ConstPool;
-import com.google.gwt.reflect.client.GwtReflect;
 
 /**
  * The <code>Array</code> class provides static methods to dynamically create and
@@ -21,7 +20,7 @@ class Array {
     assert o.getClass().getComponentType() != null : "Not an array class: "+o.getClass()+" '"+o+"'";
   }
   @UnsafeNativeLong
-  private static void assertIsArrayType(Object o, Class component) {
+  private static void assertIsArrayType(Object o, Class<?> component) {
     assertIsArray(o);
     assert o.getClass().getComponentType() == component : "Array class "+o.getClass().getName()+" does not have " +
       "claimed component type "+component.getName();

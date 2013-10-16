@@ -1,5 +1,7 @@
 package com.google.gwt.reflect.rebind.injectors;
 
+import static com.google.gwt.reflect.rebind.ReflectionUtilAst.*;
+
 import java.util.List;
 
 import com.google.gwt.core.ext.TreeLogger;
@@ -12,6 +14,7 @@ import com.google.gwt.dev.jjs.ast.JAbsentArrayDimension;
 import com.google.gwt.dev.jjs.ast.JArrayType;
 import com.google.gwt.dev.jjs.ast.JClassLiteral;
 import com.google.gwt.dev.jjs.ast.JExpression;
+import com.google.gwt.dev.jjs.ast.JIntLiteral;
 import com.google.gwt.dev.jjs.ast.JMethod;
 import com.google.gwt.dev.jjs.ast.JMethodCall;
 import com.google.gwt.dev.jjs.ast.JNewArray;
@@ -40,10 +43,17 @@ public class MultiDimArrayInjector implements MagicMethodGenerator{
     
     if (args.size() == 3) {
       // we have a typed call to GwtReflect.newArray(Class, int, int); we know we have two dimensions
-      sizedDims = Lists.create(args.get(1), args.get(2));
+      // the Array.newInstance call is (Class, [int), which is a length of 2
+      sizedDims = Lists.create(
+          (JExpression)extractImmutableNode(logger, JIntLiteral.class, args.get(1), ast, true)
+          , extractImmutableNode(logger, JIntLiteral.class, args.get(2), ast, true)
+          );
     } else {
+      assert args.size() == 2 : "Malformed arguments sent to MultiDimArrayInjector; "
+          + "the only valid method calls have the signature (Class, int, int) or (Class, [int)";
       // we have an untyped call to Array.newInstance
-      JNewArray newArr = ReflectionUtilAst.extractImmutableNode(logger, JNewArray.class, args.get(1), ast, false);
+      // TODO: have a runtime fallback so we can perform non-strict int 
+      JNewArray newArr = extractImmutableNode(logger, JNewArray.class, args.get(1), ast, true);
       sizedDims = newArr.initializers;
     }
     int dimensions = sizedDims.size();

@@ -5,7 +5,6 @@ import java.util.Arrays;
 
 import org.junit.Test;
 
-import com.google.gwt.junit.client.GWTTestCase;
 import com.google.gwt.reflect.client.GwtReflect;
 import com.google.gwt.reflect.client.strategy.ReflectionStrategy;
 

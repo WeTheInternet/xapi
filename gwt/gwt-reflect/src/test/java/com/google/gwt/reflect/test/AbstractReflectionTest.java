@@ -3,25 +3,29 @@ package com.google.gwt.reflect.test;
 import static com.google.gwt.reflect.client.GwtReflect.magicClass;
 
 import com.google.gwt.reflect.client.strategy.ReflectionStrategy;
+import com.google.gwt.reflect.test.cases.ReflectionCaseKeepsEverything;
+import com.google.gwt.reflect.test.cases.ReflectionCaseKeepsNothing;
 import com.google.gwt.reflect.test.cases.ReflectionCaseNoMagic;
 
 @ReflectionStrategy(keepNothing=true)
 @SuppressWarnings("rawtypes")
 public class AbstractReflectionTest {
 
-  public static final Class CLASS_OBJECT = magicClass(Object.class);
+  protected static final Class CLASS_OBJECT = magicClass(Object.class);
   
   protected static final String METHOD_EQUALS = "equals";
   protected static final String METHOD_HASHCODE = "hashCode";
   protected static final String METHOD_TOSTRING = "toString";
 
-  protected static final String PRIVATE_FIELD = "privateCall";
-  protected static final String PUBLIC_FIELD = "publicCall";
+  protected static final String PRIVATE_MEMBER = "privateCall";
+  protected static final String PUBLIC_MEMBER = "publicCall";
   protected static final String OVERRIDE_FIELD = "overrideField";
   
   static final Class<ReflectionCaseNoMagic> NO_MAGIC = ReflectionCaseNoMagic.class;
   static final Class<ReflectionCaseNoMagic.Subclass> NO_MAGIC_SUBCLASS = ReflectionCaseNoMagic.Subclass.class;
-
+  static final Class<ReflectionCaseKeepsEverything> KEEPS_EVERYTHING = magicClass(ReflectionCaseKeepsEverything.class);
+  static final Class<ReflectionCaseKeepsNothing> KEEPS_NONE = magicClass(ReflectionCaseKeepsNothing.class);
+ 
 
   static public void fail(String message) {
       if (message == null) {

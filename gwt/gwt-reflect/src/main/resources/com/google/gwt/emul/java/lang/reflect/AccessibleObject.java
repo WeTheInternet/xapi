@@ -1,18 +1,14 @@
 package java.lang.reflect;
 
-import java.security.AccessController;
-import sun.reflect.ReflectionFactory;
 import java.lang.annotation.Annotation;
 
 /**
  * The AccessibleObject class is the base class for Field, Method and
- * Constructor objects.  It provides the ability to flag a reflected
+ * Constructor objects.  It normally provides the ability to flag a reflected
  * object as suppressing default Java language access control checks
- * when it is used.  The access checks--for public, default (package)
- * access, protected, and private members--are performed when Fields,
- * Methods or Constructors are used to set or get fields, to invoke
- * methods, or to create and initialize new instances of classes,
- * respectively.
+ * when it is used.  
+ * 
+ * In gwt, all objects will be made accessible through jsni
  *
  * <p>Setting the <tt>accessible</tt> flag in a reflected object
  * permits sophisticated applications with sufficient privilege, such
@@ -39,7 +35,7 @@ public class AccessibleObject implements AnnotatedElement {
     /**
      * No-op in gwt; isAccessible returns true.
      */
-    public void setAccessible(boolean flag) /* throws SecurityException */ {
+    public final void setAccessible(boolean flag) /* throws SecurityException */ {
       //provided only for emulated compatibility.
       //everything is accessible in gwt.
     }
@@ -47,7 +43,7 @@ public class AccessibleObject implements AnnotatedElement {
     /**
      * All objects are accessible in gwt.
      */
-    public boolean isAccessible() {
+    public final boolean isAccessible() {
       return true;
     }
 

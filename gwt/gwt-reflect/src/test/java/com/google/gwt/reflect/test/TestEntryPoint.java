@@ -1,5 +1,7 @@
 package com.google.gwt.reflect.test;
 
+import static com.google.gwt.reflect.client.GwtReflect.magicClass;
+
 import java.lang.reflect.Method;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -10,6 +12,10 @@ import com.google.gwt.core.client.RunAsyncCallback;
 import com.google.gwt.dom.client.BodyElement;
 import com.google.gwt.dom.client.DivElement;
 import com.google.gwt.dom.client.Document;
+import com.google.gwt.dom.client.Style.Display;
+import com.google.gwt.dom.client.Style.Overflow;
+import com.google.gwt.dom.client.Style.Unit;
+import com.google.gwt.dom.client.Style.VerticalAlign;
 import com.google.gwt.reflect.client.ConstPool;
 import com.google.gwt.reflect.client.GwtReflect;
 import com.google.gwt.reflect.client.MemberPool;
@@ -23,7 +29,7 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 public class TestEntryPoint implements EntryPoint {
 
   private final Map<Method,Object> tests = new LinkedHashMap<Method,Object>();
-  private final Map<Class,Method[]> testClasses = new LinkedHashMap<Class,Method[]>();
+  private final Map<Class<?>,Method[]> testClasses = new LinkedHashMap<Class<?>,Method[]>();
 
   @Override
   public void onModuleLoad() {
@@ -42,44 +48,163 @@ public class TestEntryPoint implements EntryPoint {
 
       @Override
       public void onSuccess() {
-        GwtReflect.magicClass(TestEntryPoint.class);
-        MethodTests.class.getName();
-        FieldTests.class.getName();
-        ArrayTests.class.getName();
-        AnnotationTests.class.getName();
         try {
           String.class.getMethod("equals", Object.class).invoke("!", "!");
-        } catch (Exception e) {debug("oops", e);
-          }
+        } catch (Exception e) {debug("Basic string reflection not working", e);
+        }
+        // Do not change the order of the following calls unless you also
+        // update the initial-load-sequence defined in CompileSizeTest.gwt.xml
+        loadTests(false);
+        addArrayTests();
+        addAnnotationTests();
+        addConstructorTests();
+        addMethodTests();
+        addFieldTests();
+        
         ConstPool.loadConstPool(new AsyncCallback<ConstPool>() {
           @Override
           public void onSuccess(ConstPool result) {
             for (MemberPool<?> m : result.getAllReflectionData()) {
               try {
                 Class<?> c = m.getType();
-                addTests(c);
+                if (!testClasses.containsKey(c)) {
+                  addTests(c);
+                }
               } catch (Throwable e) {
                 debug("Error adding tests", e);
               }
             }
-            displayTests();
-            runTests();
+            loadTests(true);
           }
 
           @Override
           public void onFailure(Throwable caught) {
-
+            debug("Error loading ConstPool", caught);
           }
         });
-
+        
+        
       }
 
       @Override
       public void onFailure(Throwable reason) {
-
+        debug("Error loading TestEntryPoint", reason);
       }
     });
 
+  }
+
+  protected void loadTests(final boolean forReal) {
+    GWT.runAsync(JUnit4Test.class, new RunAsyncCallback() {
+      
+      @Override
+      public void onSuccess() {
+        if (forReal) {
+          displayTests();
+          runTests();
+        }
+      }
+      
+      @Override
+      public void onFailure(Throwable reason) {
+        
+      }
+    });
+  }
+
+  protected void addAnnotationTests() {
+    GWT.runAsync(AnnotationTests.class, new RunAsyncCallback() {
+      @Override
+      public void onSuccess() {
+        magicClass(AnnotationTests.class);
+        try {
+          addTests(AnnotationTests.class);
+        } catch (Throwable e) {
+          debug("Error adding AnnotationTests", e);
+        }
+      }
+      
+      @Override
+      public void onFailure(Throwable reason) {
+        debug("Error loading AnnotationTests", reason);
+      }
+    });
+  }
+
+  protected void addArrayTests() {
+    GWT.runAsync(ArrayTests.class, new RunAsyncCallback() {
+      @Override
+      public void onSuccess() {
+        magicClass(ArrayTests.class);
+        try {
+          addTests(ArrayTests.class);
+        } catch (Throwable e) {
+          debug("Error adding ArrayTests", e);
+        }
+      }
+      
+      @Override
+      public void onFailure(Throwable reason) {
+        debug("Error loading ArrayTests", reason);
+      }
+    });
+  }
+
+  protected void addConstructorTests() {
+    GWT.runAsync(ConstructorTests.class, new RunAsyncCallback() {
+      @Override
+      public void onSuccess() {
+        magicClass(ConstructorTests.class);
+        try {
+          addTests(ConstructorTests.class);
+        } catch (Throwable e) {
+          debug("Error adding ConstructorTests", e);
+        }
+      }
+      
+      @Override
+      public void onFailure(Throwable reason) {
+        debug("Error loading ConstructorTests", reason);
+      }
+    });
+  }
+
+  protected void addFieldTests() {
+    GWT.runAsync(FieldTests.class, new RunAsyncCallback() {
+      @Override
+      public void onSuccess() {
+        magicClass(FieldTests.class);
+        try {
+          addTests(FieldTests.class);
+        } catch (Throwable e) {
+          debug("Error adding FieldTests", e);
+        }
+      }
+      
+      @Override
+      public void onFailure(Throwable reason) {
+        debug("Error loading FieldTests", reason);
+      }
+    });
+  }
+
+  protected void addMethodTests() {
+    GWT.runAsync(MethodTests.class, new RunAsyncCallback() {
+      @Override
+      public void onSuccess() {
+        magicClass(MethodTests.class).getMethods();
+        try {
+          addTests(MethodTests.class);
+        } catch (Throwable e) {
+          debug("Error adding MethodTests", e);
+        }
+      }
+      
+      @Override
+      public void onFailure(Throwable reason) {
+        debug("Error loading MethodTests", reason);
+      }
+    });
   }
 
   private void addTests(Class<?> cls) throws Throwable {
@@ -98,6 +223,12 @@ public class TestEntryPoint implements EntryPoint {
     
     for (final Class<?> c : testClasses.keySet()) {
       DivElement div = Document.get().createDivElement();
+      div.getStyle().setDisplay(Display.INLINE_BLOCK);
+      div.getStyle().setVerticalAlign(VerticalAlign.TOP);
+      div.getStyle().setMarginRight(2, Unit.EM);
+      div.getStyle().setProperty("maxHeight", "400px");
+      div.getStyle().setOverflowY(Overflow.AUTO);
+      
       StringBuilder b = new StringBuilder();
       b
           .append("<h3>")
@@ -150,7 +281,7 @@ public class TestEntryPoint implements EntryPoint {
         public void run() {
           runTest(method);
         }
-      }.schedule(delay += 100);
+      }.schedule(delay += 5);
     }
   }
 

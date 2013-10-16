@@ -35,6 +35,7 @@ import com.google.gwt.dev.jjs.impl.UnifyAst.UnifyVisitor;
  * @author James X. Nelson (james@wetheinter.net, @james)
  *
  */
+@SuppressWarnings("deprecation")
 public class MagicMethodTestGenerator implements MagicMethodGenerator, UnifyAstListener {
 
   @Override
@@ -56,7 +57,7 @@ public class MagicMethodTestGenerator implements MagicMethodGenerator, UnifyAstL
    * Allows us to insert code before anything else is examined.
    */
   @Override
-  public void onUnifyAstStart(UnifyAstView ast, UnifyVisitor visitor, Queue<JMethod> todo) {
+  public void onUnifyAstStart(TreeLogger logger, UnifyAstView ast, UnifyVisitor visitor, Queue<JMethod> todo) {
     // Demonstrates how to insert code into your entry point, (before it, actually)
     // to execute before anything else in the app.
 
@@ -92,7 +93,7 @@ public class MagicMethodTestGenerator implements MagicMethodGenerator, UnifyAstL
    * Blindly adding elements to todo will result in looping behavior.
    */
   @Override
-  public boolean onUnifyAstPostProcess(UnifyAstView ast, UnifyVisitor visitor, Queue<JMethod> todo) {
+  public boolean onUnifyAstPostProcess(TreeLogger logger, UnifyAstView ast, UnifyVisitor visitor, Queue<JMethod> todo) {
     return false;
   }
 
@@ -100,7 +101,7 @@ public class MagicMethodTestGenerator implements MagicMethodGenerator, UnifyAstL
    * Called once every UnifyAstListener has stopped adding JMethods to the todo queue.
    */
   @Override
-  public void destroy() {
+  public void destroy(TreeLogger logger) {
   }
 
 }

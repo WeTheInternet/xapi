@@ -16,11 +16,11 @@
 
 package java.util;
 
+import java.io.Serializable;
+
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.UnsafeNativeLong;
 import com.google.gwt.lang.Array;
-
-import java.io.Serializable;
 
 /**
  * Utility methods related to native arrays. <a

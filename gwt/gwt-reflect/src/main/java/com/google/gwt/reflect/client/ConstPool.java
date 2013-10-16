@@ -5,7 +5,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Vector;
+import java.util.Collection;
 
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.RunAsyncCallback;
@@ -152,6 +152,7 @@ public class ConstPool extends JavaScriptObject {
     }
   }-*/;
 
+  @SuppressWarnings("unchecked")
   public static Iterable<Class<?>> extractClasses(ClassLoader loader) {
     try {
       GwtReflect.magicClass(ClassLoader.class);
@@ -163,7 +164,7 @@ public class ConstPool extends JavaScriptObject {
         return fillArray(new ArrayList<Class<?>>(), all);
       } else {
         // standard jvm.  Hope this works!
-        return (Vector<Class<?>>)classes.get(loader);
+        return (Collection<Class<?>>)classes.get(loader);
       }
     } catch (Exception e) {
       throw e instanceof RuntimeException ? (RuntimeException)e : new RuntimeException(e);
@@ -395,6 +396,22 @@ public class ConstPool extends JavaScriptObject {
       (@java.util.ArrayList::new()(), this.$$);
   }-*/;
 
+  @SuppressWarnings("rawtypes")
+  public static interface ClassConsts {
+    Class<Class> CLASS_Class = Class.class;
+    Class<Object> CLASS_Object = Object.class;
+    Class<String> CLASS_String = String.class;
+    Class<Enum> CLASS_Enum = Enum.class;
+    Class CLASS_boolean = boolean.class;
+    Class CLASS_byte = byte.class;
+    Class CLASS_char = char.class;
+    Class CLASS_short = short.class;
+    Class CLASS_int = int.class;
+    Class CLASS_long = long.class;
+    Class CLASS_float = float.class;
+    Class CLASS_double = double.class;
+  }
+  @SuppressWarnings("rawtypes")
   public static class ArrayConsts {
     // We keep these constants inside an inner class to avoid preemptive init.
     public static final Class[] EMPTY_CLASSES = new Class[0];

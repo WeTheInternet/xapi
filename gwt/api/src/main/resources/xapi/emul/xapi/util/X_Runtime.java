@@ -71,6 +71,9 @@ public class X_Runtime {
     return false;
   }
 
+  public static String getWorkingDirectory() {
+    return com.google.gwt.core.client.GWT.getModuleBaseURL();
+  }
 
 
 

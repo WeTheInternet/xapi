@@ -20,16 +20,13 @@ import com.google.gwt.dev.jjs.ast.JParameterRef;
 import com.google.gwt.dev.jjs.ast.JReturnStatement;
 import com.google.gwt.dev.jjs.ast.JStatement;
 import com.google.gwt.dev.jjs.ast.JType;
-import com.google.gwt.dev.jjs.ast.JVariable;
-import com.google.gwt.dev.jjs.ast.JVisitor;
 import com.google.gwt.dev.jjs.ast.js.JsniClassLiteral;
 import com.google.gwt.dev.jjs.ast.js.JsniMethodBody;
 import com.google.gwt.reflect.client.GwtReflect;
-import com.google.gwt.reflect.rebind.generators.MagicClassGenerator;
 
 public final class ReflectionUtilAst {
 
-  private static final Type logLevel = Type.INFO;
+  private static final Type logLevel = Type.DEBUG;
   
   private ReflectionUtilAst() {}
 
@@ -93,13 +90,12 @@ public final class ReflectionUtilAst {
       if (field.isExternal()) {
         field = ast.translate(field);
       }
-      if (field.isFinal()) {
-        
-        return extractImmutableNode(logger, type, field.getInitializer(), ast, strict);
-      } else if (field.getLiteralInitializer() != null) {
+      if (field.getLiteralInitializer() != null) {
         return extractImmutableNode(logger, type, field.getLiteralInitializer(), ast, strict);
+      } else if (field.isFinal()) {
+        return extractImmutableNode(logger, type, field.getInitializer(), ast, strict);
       } else {
-        logger.log(Type.WARN, "Not final "+field);
+        logger.log(logLevel, "Not final "+field);
         if (doLog) ReflectionUtilAst.logNonFinalError(logger, inst);
       }
     } else if (inst instanceof JMethodCall){

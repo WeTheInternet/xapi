@@ -26,9 +26,6 @@ import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.UnsafeNativeLong;
 import com.google.gwt.core.ext.GeneratorContext;
-import com.google.gwt.core.ext.IncrementalGenerator;
-import com.google.gwt.core.ext.RebindMode;
-import com.google.gwt.core.ext.RebindResult;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.core.ext.UnableToCompleteException;
@@ -39,7 +36,6 @@ import com.google.gwt.core.ext.typeinfo.JEnumType;
 import com.google.gwt.core.ext.typeinfo.JField;
 import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.JRealClassType;
-import com.google.gwt.core.ext.typeinfo.NotFoundException;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.dev.javac.StandardGeneratorContext;
 import com.google.gwt.reflect.client.ClassMap;
@@ -49,13 +45,12 @@ import com.google.gwt.reflect.client.MemberMap;
 import com.google.gwt.reflect.client.strategy.NewInstanceStrategy;
 import com.google.gwt.reflect.client.strategy.ReflectionStrategy;
 import com.google.gwt.reflect.client.strategy.UseGwtCreate;
-import com.google.gwt.reflect.rebind.ReflectionUtilJava;
 import com.google.gwt.reflect.rebind.ReflectionManifest;
-import com.google.gwt.reflect.rebind.ReflectionUtilType;
 import com.google.gwt.reflect.rebind.ReflectionUnit;
+import com.google.gwt.reflect.rebind.ReflectionUtilJava;
 
-@ReflectionStrategy()
-public class MagicClassGenerator extends IncrementalGenerator {
+@ReflectionStrategy
+public class MagicClassGenerator {
 
   public static interface MemberFilter <T extends HasAnnotations> {
     boolean keepMember(T type, boolean isDeclared, boolean isPublic, ReflectionStrategy strategy);
@@ -89,14 +84,14 @@ public class MagicClassGenerator extends IncrementalGenerator {
   private final ManifestMap manifests = newManifestMap();
   
   private final HashMap<String, NewInstanceStrategy> newInstanceStrategies = new HashMap<String, NewInstanceStrategy>();
-  private static final ThreadLocal<HashSet<String>> finished = new ThreadLocal<HashSet<String>>() {
+  private static final ThreadLocal<MagicClassGenerator> GENERATOR = new ThreadLocal<MagicClassGenerator>() {
     @Override
-    protected java.util.HashSet<String> initialValue() {
-      return new HashSet<String>();
+    protected MagicClassGenerator initialValue() {
+      return new MagicClassGenerator();
     };
   };
   public static void cleanup() {
-    finished.remove();
+    GENERATOR.remove();
   }
 
   protected ManifestMap newManifestMap() {
@@ -104,18 +99,22 @@ public class MagicClassGenerator extends IncrementalGenerator {
   }
 
   private boolean logOnce = true;
+  private final HashSet<String> done = new HashSet<String>();
 
-  public RebindResult execImpl(TreeLogger logger, GeneratorContext context, JClassType type)
+  public static String generate(TreeLogger logger, ReflectionGeneratorContext reflectionCtx, JClassType type)
+      throws UnableToCompleteException {
+    return GENERATOR.get().execImpl(logger, reflectionCtx, type);
+  }
+  public String execImpl(TreeLogger logger, ReflectionGeneratorContext reflectionCtx, JClassType type)
     throws UnableToCompleteException {
-
+    StandardGeneratorContext context = reflectionCtx.getGeneratorContext();
     String simpleName = SourceUtil.toSourceName(type.getSimpleSourceName());
     String generatedName = ReflectionUtilJava.generatedMagicClassName(simpleName);
     String packageName = type.getPackage().getName();
     String pkg = packageName.length() == 0 ? "" : packageName+".";
 
-    HashSet<String> done = finished.get();
     if (!done.add(type.getQualifiedSourceName()))
-      return new RebindResult(RebindMode.USE_ALL_CACHED, pkg+generatedName);
+      return pkg+generatedName;
 
     ReflectionManifest manifest;
 
@@ -218,10 +217,11 @@ public class MagicClassGenerator extends IncrementalGenerator {
     }
 
     // constructors...
-    if (generateConstructors(logger, manifest, classBuilder, context)) {
+    if (generateConstructors(logger, manifest, classBuilder, reflectionCtx)) {
       enhanceMethod.println("enhanceConstructors(toEnhance);");
     }
 
+    logger.log(Type.INFO, "Keep Annos: "+keepAnnos+ "from "+strategy);
     if (keepAnnos) {
       if (GwtAnnotationGenerator.generateAnnotations(
         logger, classBuilder, context, injectionType.getAnnotations()).length > 0) {
@@ -281,13 +281,12 @@ public class MagicClassGenerator extends IncrementalGenerator {
     if (keepHierarchy) {
       JClassType superType = injectionType.getSuperclass();
       while (superType != null) {
-        execImpl(logger, context, superType);
+        execImpl(logger, reflectionCtx, superType);
         superType = injectionType.getSuperclass();
       }
     }
 
-    return new RebindResult(RebindMode.USE_ALL_NEW_WITH_NO_CACHING, packageName+"."+generatedName);
-
+    return packageName+"."+generatedName;
   }
 
 
@@ -308,7 +307,7 @@ public class MagicClassGenerator extends IncrementalGenerator {
           JClassType existing;
 
           String factory;
-          synchronized (finished) {
+          synchronized (GENERATOR) {
             existing = oracle.findType(method.getEnclosingType().getPackage().getName(), methodFactoryName);
             if (existing == null)
               factory = manifests.generateMethodFactory(logger, context, method, methodFactoryName, manifest);
@@ -325,7 +324,7 @@ public class MagicClassGenerator extends IncrementalGenerator {
   }
 
   private boolean generateConstructors(TreeLogger logger,
-      ReflectionManifest manifest, SourceBuilder<Object> classBuilder, GeneratorContext context) throws UnableToCompleteException {
+      ReflectionManifest manifest, SourceBuilder<Object> classBuilder, ReflectionGeneratorContext context) throws UnableToCompleteException {
     Collection<ReflectionUnit<JConstructor>> ctors = manifest.getConstructors();
     if (ctors.size() > 0) {
       MethodBuffer initMethod = classBuilder.getClassBuffer()
@@ -338,13 +337,11 @@ public class MagicClassGenerator extends IncrementalGenerator {
         String ctorFactoryName = MemberGenerator.getConstructorFactoryName(ctor.getEnclosingType(), ctor.getParameters());
         JClassType existing;
         String factory;
-        synchronized(finished) {
-          existing = oracle.findType(ctor.getEnclosingType().getPackage().getName(), ctorFactoryName);
-          if (existing == null)
-            factory = manifests.generateConstructorFactory(logger, context, ctor, ctorFactoryName, manifest);
-          else {
-            factory = existing.getQualifiedSourceName();
-          }
+        existing = oracle.findType(ctor.getEnclosingType().getPackage().getName(), ctorFactoryName);
+        if (existing == null)
+          factory = manifests.generateConstructorFactory(logger, context, ctor, ctorFactoryName, manifest);
+        else {
+          factory = existing.getQualifiedSourceName();
         }
         factory = initMethod.addImport(factory);
         initMethod.println("map.addConstructor("+factory+".instantiate());");
@@ -368,7 +365,7 @@ public class MagicClassGenerator extends IncrementalGenerator {
         String fieldFactoryName = MemberGenerator.getFieldFactoryName(field.getEnclosingType(), field.getName());
         JClassType existing;
         String factory;
-        synchronized(finished) {
+        synchronized(GENERATOR) {
           existing = oracle.findType(field.getEnclosingType().getPackage().getName(), fieldFactoryName);
           if (existing == null)
             factory = manifests.generateFieldFactory(logger, context, field, fieldFactoryName, manifest);
@@ -421,8 +418,8 @@ public class MagicClassGenerator extends IncrementalGenerator {
         logOnce  = false;
         logger.log(Type.ERROR, "Unable to call "+injectionType.getClass().getName()+".getLocation on "+injectionType.getJNISignature());
         logger.log(Type.ERROR, "Ensure that you have the jar/artifact net.wetheinter:gwt-reflect before gwt-dev on your classpath.");
-        logger.log(Type.ERROR, "The artifact net.wetheinter:xapi-gwt-api contains a class, ClasspathFixer, which can help you.");
-        logger.log(Type.ERROR, "For unit tests, xapi-gwt-test overrides JUnitShell to fix the classpath for you.", e);
+        logger.log(Type.TRACE, "The artifact net.wetheinter:xapi-gwt-api contains a class, ClasspathFixer, which can help you.");
+        logger.log(Type.TRACE, "For unit tests, xapi-gwt-test overrides JUnitShell to fix the classpath for you.", e);
       }
       return;
     }
@@ -440,41 +437,10 @@ public class MagicClassGenerator extends IncrementalGenerator {
     return MemberFilter.DEFAULT_FILTER;
   }
 
-  @SuppressWarnings("unchecked")
-  protected MemberFilter<JConstructor> constructorFilter(TreeLogger logger, JClassType injectionType) {
-    return MemberFilter.DEFAULT_FILTER;
-  }
-
   protected void implementNewInstance(TreeLogger logger, NewInstanceStrategy strategy, ClassBuffer cls, String clsToEnhance, MethodBuffer newInstance, GeneratorContext context) {
     if (UseGwtCreate.class.isAssignableFrom(strategy.getClass()))
       cls.addImport(GWT.class);
     newInstance.println(strategy.generate(clsToEnhance));
-  }
-
-  private static boolean extractConstructors(TreeLogger logger, ReflectionStrategy strategy, MemberFilter<JConstructor> keepCtor, JClassType injectionType,
-      ReflectionManifest manifest) {
-    Set<String> seen = new HashSet<String>();
-    Set<? extends JClassType> allTypes = injectionType.getFlattenedSupertypeHierarchy();
-
-    for(JClassType nextClass : allTypes) {
-      for (JConstructor ctor : nextClass.getConstructors()) {
-        if (keepCtor.keepMember(ctor, ctor.getEnclosingType() == injectionType, ctor.isPublic(), strategy)){
-          // do not include overridden constructors
-          if (seen.add(ReflectionUtilType.toJsniClassLits(ctor.getParameterTypes()))) {
-            final Annotation[] annos;
-            final List<Annotation> keepers = new ArrayList<Annotation>();
-            for (Annotation anno : ctor.getAnnotations()) {
-              if (keepCtor.keepAnnotation(ctor, anno, strategy))
-                keepers.add(anno);
-            }
-            annos = keepers.toArray(new Annotation[keepers.size()]);
-            manifest.constructors.put(ctor, annos);
-          }
-        }
-      }
-      nextClass = nextClass.getSuperclass();
-    }
-    return true;
   }
 
   private static boolean extractClasses(TreeLogger logger, ReflectionStrategy strategy, MemberFilter<JClassType> keepClass, JClassType injectionType,
@@ -503,24 +469,6 @@ public class MagicClassGenerator extends IncrementalGenerator {
       nextClass = nextClass.getSuperclass();
     }
     return true;
-  }
-
-  @Override
-  public RebindResult generateIncrementally(TreeLogger logger, GeneratorContext context, String typeName)
-    throws UnableToCompleteException {
-    TypeOracle oracle = context.getTypeOracle();
-    logger.log(Type.TRACE, "Generating magic class for " + typeName);
-    try {
-      return execImpl(logger, context, oracle.getType(SourceUtil.toSourceName(typeName)));
-    } catch (NotFoundException e) {
-      logger.log(Type.ERROR, "Could not find class for " + typeName, e);
-    }
-    throw new UnableToCompleteException();
-  }
-
-  @Override
-  public long getVersionId() {
-    return 0;
   }
 
 }

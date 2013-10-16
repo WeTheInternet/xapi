@@ -1,8 +1,5 @@
 package java.lang.reflect;
 
-import java.security.AccessController;
-import sun.reflect.LangReflectAccess;
-import sun.reflect.ReflectionFactory;
 
 /**
  * Gwt emulation for reflection modifiers.

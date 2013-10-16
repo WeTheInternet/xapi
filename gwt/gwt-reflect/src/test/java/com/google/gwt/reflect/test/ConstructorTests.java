@@ -22,7 +22,6 @@ public class ConstructorTests extends AbstractReflectionTest {
     CLS_LONG = new Class[]{long.class},
     CLS_STRING = new Class[]{String.class};
   
-  @ReflectionStrategy(debug=ReflectionStrategy.CONSTRUCTOR)
   protected static class SuperCase {
     Object value;
      SuperCase() {

@@ -4,16 +4,18 @@ import static com.google.gwt.reflect.client.GwtReflect.magicClass;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Test;
 
 import com.google.gwt.core.shared.GWT;
+import com.google.gwt.reflect.client.ConstPool;
 import com.google.gwt.reflect.client.GwtReflect;
+import com.google.gwt.reflect.client.ConstPool.ArrayConsts;
 import com.google.gwt.reflect.client.strategy.ReflectionStrategy;
-import com.google.gwt.reflect.test.cases.ReflectionCaseKeepsEverything;
-import com.google.gwt.reflect.test.cases.ReflectionCaseKeepsNothing;
+import com.google.gwt.reflect.test.annotations.RuntimeRetention;
 import com.google.gwt.reflect.test.cases.ReflectionCaseNoMagic;
 import com.google.gwt.reflect.test.cases.ReflectionCaseSubclass;
 import com.google.gwt.reflect.test.cases.ReflectionCaseSuperclass;
@@ -24,56 +26,34 @@ import com.google.gwt.reflect.test.cases.ReflectionCaseSuperclass;
 @ReflectionStrategy(keepEverything=true)
 public class MethodTests extends AbstractReflectionTest {
 
-  static {magicClass(MethodTests.class);}
-  
-  private static final Class<ReflectionCaseSuperclass> SUPER_CLASS = magicClass(ReflectionCaseSuperclass.class);
-  private static final Class<ReflectionCaseSubclass> SUB_CLASS = magicClass(ReflectionCaseSubclass.class);
-  private static final Class<ReflectionCaseKeepsNothing> KEEPS_NONE = magicClass(ReflectionCaseKeepsNothing.class);
-  private static final Class<ReflectionCaseKeepsEverything> KEEPS_EVERYTHING = magicClass(ReflectionCaseKeepsEverything.class);
-  private static final Class<ReflectionCaseNoMagic> NO_MAGIC = ReflectionCaseNoMagic.class;
   private static final Class<Object> CLASS_OBJECT = Object.class;
   
-  public MethodTests() {}
+  private static final Class<?> classInt = int.class;
+  private static final Class<?> classLit = classList();
+  private static final Class<ReflectionCaseSubclass> SUB_CLASS = magicClass(ReflectionCaseSubclass.class);
+  private static final Class<ReflectionCaseSuperclass> SUPER_CLASS = magicClass(ReflectionCaseSuperclass.class);
   
-  @Test
-  public void testDeclaredMethodDirectly() throws Throwable {
-    ReflectionCaseNoMagic superClass = new ReflectionCaseNoMagic();
-    assertFalse(superClass.wasPrivateCalled());
-    Method m = NO_MAGIC.getDeclaredMethod(PRIVATE_FIELD);
-    m.setAccessible(true);
-    assertNotNull(m);
-    m.invoke(superClass);
-    assertTrue(superClass.wasPrivateCalled());
-  }
+  static {magicClass(MethodTests.class);}
   
-  @Test
-  public void testDeclaredMethodInjectly() throws Throwable {
-    ReflectionCaseSuperclass superClass = new ReflectionCaseSuperclass();
-    assertFalse(superClass.publicCall);
-    Method m = GwtReflect.getDeclaredMethod(SUPER_CLASS, PUBLIC_FIELD);
-    assertNotNull(m);
-    m.invoke(superClass);
-    assertTrue(superClass.publicCall);
+  private static Class<?>[] classArray() {
+    final Class<?>[] array = new Class<?>[]{classInt, classObject()};
+    return array;
   }
 
-  @Test
-  public void testGetPublicMethodDirectly() throws Throwable {
-    ReflectionCaseNoMagic noMagic = new ReflectionCaseNoMagic();
-    Method m = NO_MAGIC.getMethod(METHOD_EQUALS, Object.class);
-    assertNotNull(m);
-    assertTrue((Boolean)m.invoke(noMagic, noMagic));
-  }
+  private static final Class<?> classList(){return List.class;}
   
-  @Test
-  public void testGetPublicMethodInjectly() throws Throwable {
-    Method m = GwtReflect.getPublicMethod(NO_MAGIC, METHOD_EQUALS, CLASS_OBJECT);
-    assertNotNull(m);
-    assertFalse((Boolean)m.invoke(new ReflectionCaseNoMagic(), new ReflectionCaseNoMagic()));
-  }
+  private static final Class<?> classObject(){return Object.class;}
   
+  private static final native Class<?> nativeMethod()
+  /*-{
+   return @java.util.List::class;
+   }-*/;
+  
+
+  public MethodTests() {}
   @Test(expected=NoSuchMethodException.class)
   public void testCantAccessPrivateMethods() throws Throwable  {
-    String preventMagicMethod = PRIVATE_FIELD;
+    String preventMagicMethod = PRIVATE_MEMBER;
     try {
       SUPER_CLASS.getMethod(preventMagicMethod);
     } catch (Throwable e) {
@@ -83,20 +63,6 @@ public class MethodTests extends AbstractReflectionTest {
       }
       throw e;
     }
-  }
-  
-
-  private static final Class<?> classInt = int.class;
-  private static final Class<?> classLit = classList();
-  private static final Class<?> classObject(){return Object.class;};
-  private static final Class<?> classList(){return List.class;};
-  private static final native Class<?> nativeMethod()
-  /*-{
-   return @java.util.List::class;
-   }-*/;
-  private static Class<?>[] classArray() {
-    final Class<?>[] array = new Class<?>[]{classInt, classObject()};
-    return array;
   }
   @Test
   public void testComplexMethodInjection() throws Exception {
@@ -109,6 +75,54 @@ public class MethodTests extends AbstractReflectionTest {
     method = classList().getMethod("add", array);
     method.invoke(list, 0, "Success!");
     assertEquals("Success!", list.get(0));
+  };
+  @Test
+  public void testDeclaredMethodDirectly() throws Throwable {
+    ReflectionCaseNoMagic superClass = new ReflectionCaseNoMagic();
+    assertFalse(superClass.wasPrivateCalled());
+    Method m = NO_MAGIC.getDeclaredMethod(PRIVATE_MEMBER);
+    m.setAccessible(true);
+    assertNotNull(m);
+    m.invoke(superClass);
+    assertTrue(superClass.wasPrivateCalled());
+  };
+  @Test
+  public void testDeclaredMethodInjectly() throws Throwable {
+    ReflectionCaseSuperclass superClass = new ReflectionCaseSuperclass();
+    assertFalse(superClass.publicCall);
+    Method m = GwtReflect.getDeclaredMethod(SUPER_CLASS, PUBLIC_MEMBER);
+    assertNotNull(m);
+    m.invoke(superClass);
+    assertTrue(superClass.publicCall);
+  }
+  @Test
+  public void testGetPublicMethodDirectly() throws Throwable {
+    ReflectionCaseNoMagic noMagic = new ReflectionCaseNoMagic();
+    Method m = NO_MAGIC.getMethod(METHOD_EQUALS, Object.class);
+    assertNotNull(m);
+    assertTrue((Boolean)m.invoke(noMagic, noMagic));
+  }
+  @Test
+  public void testGetPublicMethodInjectly() throws Throwable {
+    Method m = GwtReflect.getPublicMethod(NO_MAGIC, METHOD_EQUALS, CLASS_OBJECT);
+    assertNotNull(m);
+    assertFalse((Boolean)m.invoke(new ReflectionCaseNoMagic(), new ReflectionCaseNoMagic()));
+  }
+  
+  @Test
+  public void testInvoke() throws Throwable {
+    ReflectionCaseNoMagic inst = new ReflectionCaseNoMagic();
+    assertFalse(inst.publicCall);
+    assertFalse(inst.wasPrivateCalled());
+    
+    GwtReflect.invoke(NO_MAGIC, PUBLIC_MEMBER, ArrayConsts.EMPTY_CLASSES, inst, ArrayConsts.EMPTY_OBJECTS);
+    assertTrue(inst.publicCall);
+    assertFalse(inst.wasPrivateCalled());
+    
+    GwtReflect.invoke(NO_MAGIC, PRIVATE_MEMBER, ArrayConsts.EMPTY_CLASSES, inst, ArrayConsts.EMPTY_OBJECTS);
+    assertTrue(inst.publicCall);
+    assertTrue(inst.wasPrivateCalled());
+    
   }
   
 }

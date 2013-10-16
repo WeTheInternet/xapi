@@ -1,5 +1,7 @@
 package com.google.gwt.reflect.rebind.injectors;
 
+import com.google.gwt.core.ext.TreeLogger;
+import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.dev.jjs.ast.Context;
 import com.google.gwt.dev.jjs.ast.JClassLiteral;
 import com.google.gwt.dev.jjs.ast.JClassType;
@@ -13,14 +15,31 @@ import com.google.gwt.dev.jjs.ast.JNode;
 import com.google.gwt.dev.jjs.ast.JReboundEntryPoint;
 import com.google.gwt.dev.jjs.ast.JStatement;
 import com.google.gwt.dev.jjs.ast.JVisitor;
+import com.google.gwt.dev.util.log.PrintWriterTreeLogger;
 
 final class EntryPointFinder extends JVisitor {
+  
+  private static final Type logLevel = Type.INFO;
+  
   JClassType result;
   boolean pastRebound, pastConstructor;
+  private final TreeLogger logger;
+  
+  class JUnit3EntryPointFinder extends JVisitor {
+    
+  }
+  
+  public EntryPointFinder(TreeLogger logger) {
+    this.logger = logger == null ? new PrintWriterTreeLogger() : logger;
+  }
+  
   @Override
   public boolean visit(JClassType x, Context ctx) {
     for (JInterfaceType i : x.getImplements()) {
       if (i.getName().equals("EntryPoint")) {
+        if (logger.isLoggable(logLevel)) {
+           logger.log(logLevel, "Using entry point class "+x.getName()+" for gwt-reflection module defaults");
+        }
         result = x;
         return false;
       }
@@ -33,7 +52,7 @@ final class EntryPointFinder extends JVisitor {
     return result == null;
   }
 
-  public Context getContext() {
+  public final Context getContext() {
     return UNMODIFIABLE_CONTEXT;
   }
   

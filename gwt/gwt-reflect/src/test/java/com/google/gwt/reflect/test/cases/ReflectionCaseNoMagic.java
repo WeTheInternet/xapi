@@ -1,5 +1,7 @@
 package com.google.gwt.reflect.test.cases;
 
+import com.google.gwt.reflect.test.annotations.RuntimeRetention;
+
 public class ReflectionCaseNoMagic {
   
   public static class Subclass extends ReflectionCaseNoMagic {
@@ -27,7 +29,9 @@ public class ReflectionCaseNoMagic {
     this._long = l;
   }
 
+  @RuntimeRetention
   private boolean privateCall;
+  @RuntimeRetention
   public boolean publicCall;
   public boolean overrideField;
   boolean _boolean;

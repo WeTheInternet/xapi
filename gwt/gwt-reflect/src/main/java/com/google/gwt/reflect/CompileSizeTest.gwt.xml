@@ -15,6 +15,18 @@
    <extend-configuration-property name="compiler.splitpoint.initial.sequence"
     value="com.google.gwt.reflect.test.TestEntryPoint"/>
    <extend-configuration-property name="compiler.splitpoint.initial.sequence"
+    value="com.google.gwt.reflect.test.JUnit4Test"/>
+   <extend-configuration-property name="compiler.splitpoint.initial.sequence"
+    value="com.google.gwt.reflect.test.ArrayTests"/>
+   <extend-configuration-property name="compiler.splitpoint.initial.sequence"
+    value="com.google.gwt.reflect.test.AnnotationTests"/>
+   <extend-configuration-property name="compiler.splitpoint.initial.sequence"
+    value="com.google.gwt.reflect.test.ConstructorTests"/>
+   <extend-configuration-property name="compiler.splitpoint.initial.sequence"
+    value="com.google.gwt.reflect.test.MethodTests"/>
+   <extend-configuration-property name="compiler.splitpoint.initial.sequence"
+    value="com.google.gwt.reflect.test.FieldTests"/>
+   <extend-configuration-property name="compiler.splitpoint.initial.sequence"
   value="com.google.gwt.reflect.client.ConstPool"/>
   
   <set-configuration-property name="gwt.reflect.never.fail" value="true" />

@@ -1,7 +1,6 @@
 package java.net;
 
 import java.io.InputStream;
-import java.net.MalformedURLException;
 
 /**
  * A stripped-down URL suitable for use in GWT client-side.

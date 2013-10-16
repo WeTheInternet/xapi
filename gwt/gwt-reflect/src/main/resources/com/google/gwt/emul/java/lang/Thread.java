@@ -1,9 +1,5 @@
 package java.lang;
 
-import java.lang.Thread.State;
-import java.lang.reflect.Array;
-import java.util.concurrent.locks.LockSupport;
-
 import javax.inject.Provider;
 
 import com.google.gwt.user.client.Timer;

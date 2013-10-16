@@ -10,6 +10,23 @@ public class ReflectionCaseKeepsEverything extends ReflectionCaseSuperclass{
 
   public ReflectionCaseKeepsEverything() {}
   
+  @CompileRetention
+  private class Subclass extends ReflectionCaseKeepsEverything {
+    @RuntimeRetention
+    long privateCall;
+    
+    @CompileRetention
+    Long publicCall;
+    
+    @CompileRetention private void privateCall() {
+      privateCall+=2;
+    }
+    
+    @RuntimeRetention public void publicCall() {
+      publicCall = 2L;
+    }
+  }
+  
   @RuntimeRetention
   long privateCall;
   
@@ -17,8 +34,10 @@ public class ReflectionCaseKeepsEverything extends ReflectionCaseSuperclass{
   Long publicCall;
   
   @CompileRetention private void privateCall() {
+    privateCall++;
   }
   
   @RuntimeRetention public void publicCall() {
+    publicCall = 1L;
   }
 }

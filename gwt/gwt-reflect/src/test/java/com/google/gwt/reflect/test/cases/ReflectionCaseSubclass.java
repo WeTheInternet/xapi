@@ -1,6 +1,7 @@
 package com.google.gwt.reflect.test.cases;
 
 
+@SuppressWarnings("unused")
 public class ReflectionCaseSubclass extends ReflectionCaseSuperclass {
   // Exact same fields as super class so we can test behavior
   private boolean privateCall;

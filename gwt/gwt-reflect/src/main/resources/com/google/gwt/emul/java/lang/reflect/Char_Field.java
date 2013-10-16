@@ -1,14 +1,6 @@
 package java.lang.reflect;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.AccessibleObject;
-import java.lang.reflect.GenericSignatureFormatError;
-import java.lang.reflect.MalformedParameterizedTypeException;
-
 import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.core.client.UnsafeNativeLong;
-import com.google.gwt.reflect.client.MemberMap;
-import com.google.gwt.user.client.Window;
 
 /**
  * A field representing a primitive char.
@@ -18,7 +10,7 @@ import com.google.gwt.user.client.Window;
  */
 public final class Char_Field extends Field {
 
-  public Char_Field(Class declaringClass, String name, int modifiers, JavaScriptObject accessor) {
+  public Char_Field(Class<?> declaringClass, String name, int modifiers, JavaScriptObject accessor) {
     super(char.class, declaringClass, name, modifiers, accessor);
   }
 

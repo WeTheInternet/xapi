@@ -1,14 +1,7 @@
 package java.lang.reflect;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.AccessibleObject;
-import java.lang.reflect.GenericSignatureFormatError;
-import java.lang.reflect.MalformedParameterizedTypeException;
-
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.UnsafeNativeLong;
-import com.google.gwt.reflect.client.MemberMap;
-import com.google.gwt.user.client.Window;
 
 /**
  * A field representing a long short.
@@ -20,7 +13,7 @@ public final class Long_Field extends Field {
 
   private boolean expectChar;
   
-  public Long_Field(Class declaringClass, String name, int modifiers, JavaScriptObject accessor) {
+  public Long_Field(Class<?> declaringClass, String name, int modifiers, JavaScriptObject accessor) {
     super(long.class, declaringClass, name, modifiers, accessor);
   }
 

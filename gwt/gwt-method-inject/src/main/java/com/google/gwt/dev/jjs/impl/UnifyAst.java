@@ -614,7 +614,7 @@ public class UnifyAst implements UnifyAstView{
   public JProgram getProgram() {
     return program;
   }
-
+  
   @Override
   public RebindPermutationOracle getRebindPermutationOracle() {
     return rpo;
@@ -1017,7 +1017,7 @@ public class UnifyAst implements UnifyAstView{
     List<UnifyAstListener> listeners = setupMagicMethods();
     for (UnifyAstListener listener : listeners) {
       // Allows listeners to inject code at the start of the application
-      listener.onUnifyAstStart(this, visitor, todo);
+      listener.onUnifyAstStart(logger, this, visitor, todo);
     }
     boolean loop = true;
     int maxLoop = 50;
@@ -1031,16 +1031,18 @@ public class UnifyAst implements UnifyAstView{
       loop = false;
       for (UnifyAstListener listener : listeners) {
         // Allows listeners to inject code at the end of an iteration
-        loop |= listener.onUnifyAstPostProcess(this, visitor, todo);
+        loop |= listener.onUnifyAstPostProcess(logger, this, visitor, todo);
       }
     }// end loop
-    if (maxLoop == 0)
+    if (maxLoop == 0) {
       logger.log(Type.WARN, "A unify ast listener caused 50 iterations, and is likely " +
-        "returning true ad infinitum\nListeners: "+listeners);
+          "returning true ad infinitum in onUnifyAstPostProcess"
+          + "\nListeners: "+listeners);
+    }
     // Always cleanup
     } finally {
       for (UnifyAstListener listener : listeners) {
-        listener.destroy();
+        listener.destroy(logger);
       }
     }
 

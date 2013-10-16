@@ -1,14 +1,7 @@
 
 package java.lang.reflect;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.AccessibleObject;
-import java.lang.reflect.GenericSignatureFormatError;
-import java.lang.reflect.MalformedParameterizedTypeException;
-
 import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.core.client.UnsafeNativeLong;
-import com.google.gwt.reflect.client.MemberMap;
 
 /** 
  * A field representing a Integer object.
@@ -18,7 +11,7 @@ import com.google.gwt.reflect.client.MemberMap;
  */
 public class IntegerField extends Field{
 
-  public IntegerField(Class declaringClass, String name, int modifiers, JavaScriptObject accessor) {
+  public IntegerField(Class<?> declaringClass, String name, int modifiers, JavaScriptObject accessor) {
     super(Integer.class, declaringClass, name, modifiers, accessor);
   }
   

@@ -41,11 +41,13 @@ public class JvmMemberPool <T> implements MemberPool<T>{
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public Constructor<T>[] getConstructors() {
     return (Constructor<T>[])type.getConstructors();
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public Constructor<T>[] getDeclaredConstructors() {
     return (Constructor<T>[])type.getDeclaredConstructors();
   }
@@ -91,6 +93,7 @@ public class JvmMemberPool <T> implements MemberPool<T>{
   }
 
   @Override
+  @SuppressWarnings({"rawtypes", "unchecked"})
   public MemberPool<? super T> getSuperclass() {
     return new JvmMemberPool(type.getSuperclass());
   }

@@ -1,5 +1,10 @@
 package com.google.gwt.reflect.rebind.generators;
 
+import static java.lang.reflect.Modifier.FINAL;
+import static java.lang.reflect.Modifier.PRIVATE;
+import static java.lang.reflect.Modifier.PUBLIC;
+import static java.lang.reflect.Modifier.STATIC;
+
 import java.io.PrintWriter;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
@@ -7,7 +12,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
-import java.util.Map;
 
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
@@ -33,24 +37,18 @@ import com.google.gwt.dev.jjs.UnifyAstView;
 import com.google.gwt.dev.jjs.ast.JClassLiteral;
 import com.google.gwt.dev.jjs.ast.JDeclaredType;
 import com.google.gwt.dev.jjs.ast.JExpression;
-import com.google.gwt.dev.jjs.ast.JFieldRef;
 import com.google.gwt.dev.jjs.ast.JMethodCall;
 import com.google.gwt.reflect.client.ConstPool;
+import com.google.gwt.reflect.client.ConstPool.ArrayConsts;
 import com.google.gwt.reflect.client.GwtReflect;
 import com.google.gwt.reflect.client.strategy.GwtRetention;
 import com.google.gwt.reflect.client.strategy.ReflectionStrategy;
 import com.google.gwt.reflect.rebind.ReflectionManifest;
 import com.google.gwt.reflect.rebind.ReflectionUtilType;
 import com.google.gwt.reflect.rebind.generators.GwtAnnotationGenerator.GeneratedAnnotation;
-import com.google.gwt.uibinder.client.UiBinder;
-import com.google.gwt.user.client.ui.Widget;
 
 @ReflectionStrategy
 public class MemberGenerator {
-
-  protected static class MemberPoolManifest {
-    
-  }
 
   private static class ManifestMap {
     private final HashMap<String, MemberPoolManifest> existing = new HashMap<String, MemberGenerator.MemberPoolManifest>();
@@ -58,6 +56,23 @@ public class MemberGenerator {
         new HashMap<String, com.google.gwt.dev.jjs.ast.JMethod>();
     private com.google.gwt.dev.jjs.ast.JMethod initMethod;
     
+    public com.google.gwt.dev.jjs.ast.JMethod findGetterFor(UnifyAstView ast, String memberGetter) throws UnableToCompleteException {
+      com.google.gwt.dev.jjs.ast.JMethod getter = getters.get(memberGetter);
+      if (getter == null) {
+        initMethod(ast);
+        JDeclaredType type = ast.translate((JDeclaredType) initMethod.getOriginalReturnType());
+        for (com.google.gwt.dev.jjs.ast.JMethod method : type.getMethods()) {
+          if (method.getName().endsWith(memberGetter)) {
+            getters.put(memberGetter, method);
+            return method;
+          }
+        }
+        ast.error(type, "Type "+type.getName()+" does not have member getter method "+memberGetter);
+        throw new UnableToCompleteException();
+      }
+      return getter;
+    }
+
     public com.google.gwt.dev.jjs.ast.JMethod initMethod(UnifyAstView ast) {
       if (initMethod == null) {
         JDeclaredType type = ast.searchForTypeBySource(ConstPool.class.getName());
@@ -70,38 +85,14 @@ public class MemberGenerator {
       }
       return initMethod;
     }
+  }
 
-    public com.google.gwt.dev.jjs.ast.JMethod findGetterFor(UnifyAstView ast, String memberGetter) throws UnableToCompleteException {
-      com.google.gwt.dev.jjs.ast.JMethod getter = getters.get(memberGetter);
-      if (getter == null) {
-        initMethod(ast);
-        JDeclaredType type = (JDeclaredType) initMethod.getOriginalReturnType();
-        for (com.google.gwt.dev.jjs.ast.JMethod method : type.getMethods()) {
-          if (method.getName().endsWith(memberGetter)) {
-            getters.put(memberGetter, method);
-            return method;
-          }
-        }
-        ast.error(type, "Type "+type.getName()+" does not have member getter method "+memberGetter);
-        throw new UnableToCompleteException();
-      }
-      return getter;
-    }
+  protected static class MemberPoolManifest {
+    
   }
   
-  private static final ThreadLocal<ManifestMap> manifests = new ThreadLocal<ManifestMap>() {
-    protected ManifestMap initialValue() {
-      return new ManifestMap();
-    };
-  };
-  
-  public static void cleanup() {
-    manifests.remove();
-  }
-  
-  protected static final Type logLevel = Type.INFO;
   public static final ReflectionStrategy DEFAULT_STRATEGY = MemberGenerator.class.getAnnotation(ReflectionStrategy.class);
-
+  
   public static final String 
   METHOD_SPACER = "_m_",
   FIELD_SPACER = "_f_",
@@ -111,7 +102,17 @@ public class MemberGenerator {
   GWT_REFLECT = GwtReflect.class.getName(),
   JSO = JavaScriptObject.class.getSimpleName(),
   NULL_CHECK = "@"+GWT_REFLECT+"::nullCheck(*)(o);";
+  private static final Type logLevel = Type.TRACE;
 
+  private static final ThreadLocal<ManifestMap> manifests = new ThreadLocal<ManifestMap>() {
+    protected ManifestMap initialValue() {
+      return new ManifestMap();
+    };
+  };
+  public static void cleanup() {
+    manifests.remove();
+  }
+  
   public static String getConstructorFactoryName(JClassType type, JParameter[] list) {
     StringBuilder b = new StringBuilder(type.getName());
     b.append(CONSTRUCTOR_SPACER).append(ReflectionUtilType.toUniqueFactory(list, type.getConstructors()));
@@ -123,7 +124,7 @@ public class MemberGenerator {
     b.append(FIELD_SPACER).append(name);
     return b.toString();
   }
-  
+
   public static String getMethodFactoryName(JClassType type, String name,
       JParameter[] list) {
     StringBuilder b = new StringBuilder(type.getName());
@@ -138,88 +139,75 @@ public class MemberGenerator {
     }
     return b.toString();
   }
-
-  public String generateConstructorFactory(TreeLogger logger, GeneratorContext ctx,
-      JConstructor ctor, String factoryName, ReflectionManifest manifest) throws UnableToCompleteException {
+  
+  public String generateConstructorFactory(TreeLogger logger, ReflectionGeneratorContext ctx,
+      JConstructor ctor, String factory, ReflectionManifest manifest) throws UnableToCompleteException {
     JClassType type = ctor.getEnclosingType();
     String pkg = type.getPackage().getName();
-    factoryName = factoryName.replace('.', '_');
-    SourceBuilder<JConstructor> out = new SourceBuilder<JConstructor>
-    ("public final class "+factoryName+" extends Constructor").setPackage(pkg);
-  
-    PrintWriter pw = ctx.tryCreate(logger, pkg, factoryName);
-    if (pw == null)
-      return out.getQualifiedName();
+    factory = factory.replace('.', '_');
+    SourceBuilder<?> out = ctx.tryCreate(PUBLIC | FINAL, pkg, factory);
+    
+    if (out == null) {
+      // TODO some kind of test to see if structure has changed...
+      return pkg + "." + factory;
+    }
     
     String simpleName = out.getImports().addImport(type.getQualifiedSourceName());
     
     ClassBuffer cb = out.getClassBuffer();
-    cb
+    
+    cb.createConstructor(Modifier.PRIVATE);
+    cb.createField("Constructor <"+simpleName+">", "ctor", PRIVATE | STATIC);
+    
+    MethodBuffer instantiator = cb
         .addImports(Constructor.class, GwtReflect.class)
-        .setSuperClass("Constructor <"+simpleName+">")
-        .createMethod("public static "+factoryName+" instantiate()")
-        .returnValue("new "+factoryName+"()");
-    
-    createInvokerMethod(cb, type, type, "new", ctor.getParameters(), true);
-    
-    MethodBuffer invoke = cb.createMethod(
-        "public final native "+simpleName+ " newInstance(Object ... args)")
-        .makeJsni();
-    invoke.print("return ");
-    
-    invoke.print("@"+type.getQualifiedSourceName()+"::new(");
-    JParameter[] params = ctor.getParameters();
-    boolean hasLong = false;
-    for (JParameter param : params) {
-      if (param.getType().isPrimitive() == com.google.gwt.core.ext.typeinfo.JPrimitiveType.LONG) {
-        hasLong = true;
-      }
-      invoke.print(param.getType().getJNISignature());
-    }
-    if (hasLong)
-      invoke.addAnnotation(UnsafeNativeLong.class);
-    
-    invoke.println(")(").indent();
-    for (int i = 0, m = params.length; i < m; i++ ) {
-      if (i > 0)
-        invoke.print(", ");
-      JParameter param = params[i];
-      JType paramType = param.getType();
-      // unbox primitives!
-      StringBuilder b = new StringBuilder();
-      maybeStartUnboxing(b, paramType);
-      
-      b.append("args["+i+"]");
-      maybeFinishUnboxing(b, paramType);
-      invoke.print(b.toString());
-    }
-    invoke.println().outdent().print(")");
-    
-    invoke.println(";");
-    
+        .createMethod("public static Constructor <"+simpleName+"> instantiate()")
+        .println("if (ctor == null) {")
+        .indent()
+        .println("ctor = new Constructor<"+simpleName+">(")
+        .print(ctor.getEnclosingType().getQualifiedSourceName()+".class, ")
+        .print(ReflectionUtilType.getModifiers(ctor)+", ")
+        .println("invoker(), ")
+        ;
+    ConstPoolGenerator.getGenerator();
     GwtRetention retention = manifest.getRetention(ctor);
     
+    out.getImports().addStatic(ArrayConsts.class.getCanonicalName()+".EMPTY_CLASSES");
+    JParameter[] params = ctor.getParameters();
+    instantiator
+      .addImports(JavaScriptObject.class)
+      .addImports(ArrayConsts.class);
     
+
     if (retention.annotationRetention() > 0) {
       Annotation[] annos = ReflectionUtilType.extractAnnotations(retention.annotationRetention(), ctor);
-      generateGetAnnos(logger, out, annos, ctx);
+      if (annos.length == 0) {
+        out.getImports().addStatic(ArrayConsts.class.getCanonicalName()+".EMPTY_ANNOTATIONS");
+        instantiator.print("EMPTY_ANNOTATIONS, ");
+      } else {
+        ctx.getConstPool().arrayOfAnnotations(logger, ctx.getGeneratorContext(), instantiator, annos);
+        instantiator.print(", ");
+      }
     } else {
-      generateGetAnnos(logger, out, new Annotation[0], ctx);
+      out.getImports().addStatic(ArrayConsts.class.getCanonicalName()+".EMPTY_ANNOTATIONS");
+      instantiator.print("EMPTY_ANNOTATIONS, ");
     }
+    appendClassArray(instantiator, params, ctx);
     
-    generateGetParams(logger, cb, ctor.getParameters());
-    generateGetExceptions(logger, cb, ctor.getThrows());
-    generateGetModifier(logger, cb, ReflectionUtilType.getModifiers(ctor));
-    generateGetDeclaringClass(logger, cb, ctor.getEnclosingType(), simpleName);
-    
-    
-    pw.println(out.toString());
+    instantiator
+      .print(", EMPTY_CLASSES ")
+      .println(");")
+      .outdent()
+      .println("}")
+      .returnValue("ctor");
+
+    createInvokerMethod(cb, type, type, "new", ctor.getParameters(), true);
     
     if (isDebug(type, ReflectionStrategy.CONSTRUCTOR)) {
       logger.log(Type.INFO, out.toString());
     }
     
-    ctx.commit(logger, pw);
+    ctx.commit(logger);
     
     return out.getQualifiedName();
   }
@@ -235,6 +223,8 @@ public class MemberGenerator {
     SourceBuilder<JField> out = new SourceBuilder<JField>
     ("public final class "+factoryName).setPackage(pkg);
 
+    out.getClassBuffer().createConstructor(PRIVATE);
+    
     PrintWriter pw = ctx.tryCreate(logger, pkg, factoryName);
     if (pw == null) {
       if (isDebug(enclosingType, ReflectionStrategy.FIELD)) {
@@ -429,9 +419,206 @@ public class MemberGenerator {
     
     return out.getQualifiedName();
   }
+
+  protected void appendClassArray(MethodBuffer out, JParameter[] params,
+      ReflectionGeneratorContext ctx) {
+    int i = params.length;
+    String[] names = new String[i];
+    for (;i-->0;) {
+      names[i] = params[i].getType().getErasedType().getQualifiedSourceName();
+    }
+    ConstPoolGenerator constPool = ctx.getConstPool();
+    constPool.arrayOfClasses(ctx.getLogger(), out, names);
+  }
+
+  private void generateGetAnnos(TreeLogger logger, SourceBuilder<?> sb, Annotation[] annos, GeneratorContext ctx) throws UnableToCompleteException {
+    if (annos.length == 0)return;
+    
+    MethodBuffer getAnno = sb.getClassBuffer().createMethod(
+        "public <T extends Annotation> T getAnnotation(Class<T> cls)")
+        .setUseJsni(true);
+    sb.getClassBuffer().createMethod(
+        "public Annotation[] getAnnotations()")
+        .returnValue("allAnnos()");
+        
+    MethodBuffer getAnnos = sb.getClassBuffer().createMethod(
+        "private static Annotation[] allAnnos()")
+        .println("return new Annotation[]{");
+    getAnnos.addImport(Annotation.class);
+    if (annos.length > 0) {
+      GeneratedAnnotation gen = GwtAnnotationGenerator.generateAnnotationProvider(logger, sb, annos[0], ctx);
+      getAnnos.println(gen.providerClass()+"."+gen.providerMethod()+"()");
+      getAnnos.addImport(gen.providerQualifiedName());
+      getAnno
+        .println("switch (@"+ConstPool.class.getName()+"::constId(Ljava/lang/Class;)(cls)) {")
+        .indent()
+        .print("case @"+ConstPool.class.getName()+"::constId(Ljava/lang/Class;)")
+        .println("(@" + gen.getAnnoName() + "::class) :")
+        .indentln(" return @" + gen.providerQualifiedName() + "::" + gen.providerMethod()+"()();");
+      for (int i = 1, m = annos.length; i < m; i++ ) {
+        gen = GwtAnnotationGenerator.generateAnnotationProvider(logger, sb, annos[i], ctx);
+        getAnnos.println(", "+gen.providerClass()+"."+gen.providerMethod()+"()");
+        getAnnos.addImport(gen.providerQualifiedName());
+        getAnno
+          .print("case @"+ConstPool.class.getName()+"::constId(Ljava/lang/Class;)")
+          .println("(@" + gen.getAnnoName() + "::class) :")
+          .indentln(" return @" + gen.providerQualifiedName() + "::" + gen.providerMethod()+"()();");
+      }
+      getAnno.outdent().println("}");
+    }
+    getAnno
+      .println("return null;");
+    getAnnos
+      .println("};");
+  }
   
 
   
+  private void generateGetDeclaringClass(TreeLogger logger, ClassBuffer cb, JClassType type, String generic) {
+    MethodBuffer getDeclaringClass = cb.createMethod("public Class<"+generic+ "> getDeclaringClass()");
+    if (type.isPrivate()) {
+      getDeclaringClass
+        .setUseJsni(true)
+        .returnValue("@"+type.getQualifiedSourceName()+"::class");
+    } else {
+      getDeclaringClass
+        .returnValue(type.getQualifiedSourceName()+".class");
+    }
+  }
+
+  private void generateGetExceptions(TreeLogger logger, ClassBuffer cb, JClassType[] exceptions) {
+    if (exceptions.length == 0)return;
+    MethodBuffer getExceptions = cb
+        .createMethod("public Class<?>[] getExceptionTypes()")
+        .println("return new Class<?>[]{");
+    if (exceptions.length > 0) {
+      getExceptions.println(toClass(exceptions[0]));
+      for (int i = 1, m = exceptions.length; i < m; i ++) {
+        getExceptions.println(", "+toClass(exceptions[i]));
+      }
+    }
+    getExceptions.println("};");
+  }
+
+  private void generateGetModifier(TreeLogger logger, ClassBuffer cb, int mod) {
+    cb.createMethod("public int getModifiers()").returnValue(Integer.toString(mod));
+  }
+
+  private void generateGetName(TreeLogger logger, ClassBuffer cb, JMethod method) {
+    cb.createMethod("public String getName()").returnValue("\""+method.getName()+ "\"");
+  }
+
+  private void generateGetParams(TreeLogger logger, ClassBuffer cb, JParameter[] params) {
+    if (params.length == 0) {
+      return;
+    }
+    MethodBuffer getParameters = cb
+      .createMethod("public Class<?>[] getParameterTypes()")
+      .println("return new Class<?>[]{");
+    if (params.length > 0) {
+      getParameters.println(toClass(params[0]));
+      for (int i = 1, m = params.length; i < m; i ++) {
+        getParameters.println(", "+toClass(params[i]));
+      }
+    }
+    getParameters.println("};");
+  }
+
+  private void generateGetReturnType(TreeLogger logger, ClassBuffer cb, JMethod method) {
+    cb.createMethod("public Class<?> getReturnType()").returnValue(
+        method.getReturnType().getErasedType().getQualifiedSourceName()+".class");
+  }
+  
+  private void maybeFinishBoxing(PrintBuffer invoke, JType returnType) {
+    JPrimitiveType prim = returnType.isPrimitive();
+    if (prim != null) {
+      switch (prim) {
+        case BOOLEAN:
+          invoke.print(" ? @java.lang.Boolean::TRUE : @java.lang.Boolean::FALSE");
+        case VOID:
+          return;
+        default:
+          invoke.print(")");
+      }
+    }
+  }
+
+  private void maybeFinishUnboxing(StringBuilder b, JType returnType) {
+    JPrimitiveType type = returnType.isPrimitive();
+    if (type != null)
+    switch(type) {
+      case BOOLEAN:
+        b.append(".@java.lang.Boolean::booleanValue()()");
+        break;
+      case CHAR:
+        b.append(".@java.lang.Character::charValue()()");
+        break;
+      case LONG:
+        b.append(")");
+        break;
+      case BYTE:
+      case DOUBLE:
+      case INT:
+      case FLOAT:
+      case SHORT:
+        b.append(".@java.lang.Number::doubleValue()()");
+        break;
+      default:
+    }
+  }
+
+  private void maybeStartBoxing(PrintBuffer invoke, JType returnType) {
+    JPrimitiveType prim = returnType.isPrimitive();
+    if (prim != null) {
+      switch (prim) {
+      case LONG:
+        invoke.print("@"+GWT_REFLECT+"::boxLong(J)(");
+        break;
+      case BYTE:
+        invoke.print("@java.lang.Byte::new(B)(");
+        break;
+      case CHAR:
+        invoke.print("@java.lang.Character::new(C)(");
+        break;
+      case DOUBLE:
+        invoke.print("@java.lang.Double::new(D)(");
+        break;
+      case FLOAT:
+        invoke.print("@java.lang.Float::new(F)(");
+        break;
+      case INT:
+        invoke.print("@java.lang.Integer::new(I)(");
+        break;
+      case SHORT:
+        invoke.print("@java.lang.Short::new(S)(");
+        break;
+      default:
+      }
+    }
+  }
+  private void maybeStartUnboxing(StringBuilder b, JType returnType) {
+    if (JPrimitiveType.LONG == returnType.isPrimitive()) {
+        b.append("@"+GWT_REFLECT+"::unboxLong(Ljava/lang/Number;)(");
+    }
+  }
+  protected JMethodCall checkConstPool(UnifyAstView ast, JMethodCall callSite, JExpression classRef,
+      JExpression ... args) throws UnableToCompleteException {
+    com.google.gwt.dev.jjs.ast.JMethod initPool = getMemberPoolInit(ast);
+
+    JMethodCall getMemberPool = new JMethodCall(initPool.getSourceInfo(), null, initPool);
+    getMemberPool.addArg(classRef);
+    
+    ManifestMap map = manifests.get();
+    com.google.gwt.dev.jjs.ast.JMethod getter = map.findGetterFor(ast, memberGetter());
+    
+    JMethodCall checkPool = new JMethodCall(initPool.getSourceInfo(), getMemberPool, getter);
+    for (JExpression arg : args) {
+      checkPool.addArg(arg);
+    }
+    
+    return checkPool;
+  }
+
   protected void createInvokerMethod(ClassBuffer cb, JClassType type, JType returnType, 
       String methodName, JParameter[] params, boolean isStatic) {
     boolean hasLong = returnType.getJNISignature().equals("J");
@@ -496,10 +683,12 @@ public class MemberGenerator {
         .outdent()
         .println("};");
       
-      
-      
   }
-
+  
+  protected com.google.gwt.dev.jjs.ast.JMethod getMemberPoolInit(UnifyAstView ast) {
+    ManifestMap map = manifests.get();
+    return map.initMethod(ast);
+  }
   protected boolean isDebug(JClassType type, int memberType) {
     ReflectionStrategy strategy = type.getAnnotation(ReflectionStrategy.class);
     if (strategy == null) {
@@ -510,185 +699,16 @@ public class MemberGenerator {
     }
     return (strategy.debug() & memberType) > 0;
   }
-
+  
   protected boolean isReturnable(JType returnType) {
     return !"V".equals(returnType.getJNISignature());
   }
-
-  protected String toClass(JParameter param) {
-    return param.getType().getErasedType().getQualifiedSourceName()+".class";
-  }
-
-  protected String toClass(JClassType param) {
-    return param.getErasedType().getQualifiedSourceName()+".class";
-  }
-
-  private void maybeStartUnboxing(StringBuilder b, JType returnType) {
-    if (JPrimitiveType.LONG == returnType.isPrimitive()) {
-        b.append("@"+GWT_REFLECT+"::unboxLong(Ljava/lang/Number;)(");
-    }
-  }
   
-  private void maybeFinishUnboxing(StringBuilder b, JType returnType) {
-    JPrimitiveType type = returnType.isPrimitive();
-    if (type != null)
-    switch(type) {
-      case BOOLEAN:
-        b.append(".@java.lang.Boolean::booleanValue()()");
-        break;
-      case CHAR:
-        b.append(".@java.lang.Character::charValue()()");
-        break;
-      case LONG:
-        b.append(")");
-        break;
-      case BYTE:
-      case DOUBLE:
-      case INT:
-      case FLOAT:
-      case SHORT:
-        b.append(".@java.lang.Number::doubleValue()()");
-        break;
-      default:
-    }
+  protected String memberGetter() {
+    throw new UnsupportedOperationException("memberGetting not implemented by "+getClass().getName());
   }
 
-  private void maybeStartBoxing(PrintBuffer invoke, JType returnType) {
-    JPrimitiveType prim = returnType.isPrimitive();
-    if (prim != null) {
-      switch (prim) {
-      case LONG:
-        invoke.print("@"+GWT_REFLECT+"::boxLong(J)(");
-        break;
-      case BYTE:
-        invoke.print("@java.lang.Byte::new(B)(");
-        break;
-      case CHAR:
-        invoke.print("@java.lang.Character::new(C)(");
-        break;
-      case DOUBLE:
-        invoke.print("@java.lang.Double::new(D)(");
-        break;
-      case FLOAT:
-        invoke.print("@java.lang.Float::new(F)(");
-        break;
-      case INT:
-        invoke.print("@java.lang.Integer::new(I)(");
-        break;
-      case SHORT:
-        invoke.print("@java.lang.Short::new(S)(");
-        break;
-      default:
-      }
-    }
-  }
-
-  private void maybeFinishBoxing(PrintBuffer invoke, JType returnType) {
-    JPrimitiveType prim = returnType.isPrimitive();
-    if (prim != null) {
-      switch (prim) {
-        case BOOLEAN:
-          invoke.print(" ? @java.lang.Boolean::TRUE : @java.lang.Boolean::FALSE");
-        case VOID:
-          return;
-        default:
-          invoke.print(")");
-      }
-    }
-  }
-  private void generateGetAnnos(TreeLogger logger, SourceBuilder<?> sb, Annotation[] annos, GeneratorContext ctx) throws UnableToCompleteException {
-    if (annos.length == 0)return;
-    
-    MethodBuffer getAnno = sb.getClassBuffer().createMethod(
-        "public <T extends Annotation> T getAnnotation(Class<T> cls)")
-        .setUseJsni(true);
-    sb.getClassBuffer().createMethod(
-        "public Annotation[] getAnnotations()")
-        .returnValue("allAnnos()");
-        
-    MethodBuffer getAnnos = sb.getClassBuffer().createMethod(
-        "private static Annotation[] allAnnos()")
-        .println("return new Annotation[]{");
-    getAnnos.addImport(Annotation.class);
-    if (annos.length > 0) {
-      GeneratedAnnotation gen = GwtAnnotationGenerator.generateAnnotationProvider(logger, sb, annos[0], ctx);
-      getAnnos.println(gen.providerClass()+"."+gen.providerMethod()+"()");
-      getAnnos.addImport(gen.providerQualifiedName());
-      getAnno
-        .println("switch (@"+ConstPool.class.getName()+"::constId(Ljava/lang/Class;)(cls)) {")
-        .indent()
-        .print("case @"+ConstPool.class.getName()+"::constId(Ljava/lang/Class;)")
-        .println("(@" + gen.getAnnoName() + "::class) :")
-        .indentln(" return @" + gen.providerQualifiedName() + "::" + gen.providerMethod()+"()();");
-      for (int i = 1, m = annos.length; i < m; i++ ) {
-        gen = GwtAnnotationGenerator.generateAnnotationProvider(logger, sb, annos[i], ctx);
-        getAnnos.println(", "+gen.providerClass()+"."+gen.providerMethod()+"()");
-        getAnnos.addImport(gen.providerQualifiedName());
-        getAnno
-          .print("case @"+ConstPool.class.getName()+"::constId(Ljava/lang/Class;)")
-          .println("(@" + gen.getAnnoName() + "::class) :")
-          .indentln(" return @" + gen.providerQualifiedName() + "::" + gen.providerMethod()+"()();");
-      }
-      getAnno.outdent().println("}");
-    }
-    getAnno
-      .println("return null;");
-    getAnnos
-      .println("};");
-  }
-  private void generateGetName(TreeLogger logger, ClassBuffer cb, JMethod method) {
-    cb.createMethod("public String getName()").returnValue("\""+method.getName()+ "\"");
-  }
-
-  private void generateGetReturnType(TreeLogger logger, ClassBuffer cb, JMethod method) {
-    cb.createMethod("public Class<?> getReturnType()").returnValue(
-        method.getReturnType().getErasedType().getQualifiedSourceName()+".class");
-  }
-  
-  private void generateGetModifier(TreeLogger logger, ClassBuffer cb, int mod) {
-    cb.createMethod("public int getModifiers()").returnValue(Integer.toString(mod));
-  }
-  private void generateGetDeclaringClass(TreeLogger logger, ClassBuffer cb, JClassType type, String generic) {
-    MethodBuffer getDeclaringClass = cb.createMethod("public Class<"+generic+ "> getDeclaringClass()");
-    if (type.isPrivate()) {
-      getDeclaringClass
-        .setUseJsni(true)
-        .returnValue("@"+type.getQualifiedSourceName()+"::class");
-    } else {
-      getDeclaringClass
-        .returnValue(type.getQualifiedSourceName()+".class");
-    }
-  }
-  
-  private void generateGetParams(TreeLogger logger, ClassBuffer cb, JParameter[] params) {
-    if (params.length == 0)return;
-    MethodBuffer getParameters = cb
-      .createMethod("public Class<?>[] getParameterTypes()")
-      .println("return new Class<?>[]{");
-    if (params.length > 0) {
-      getParameters.println(toClass(params[0]));
-      for (int i = 1, m = params.length; i < m; i ++) {
-        getParameters.println(", "+toClass(params[i]));
-      }
-    }
-    getParameters.println("};");
-  }
-  
-  private void generateGetExceptions(TreeLogger logger, ClassBuffer cb, JClassType[] exceptions) {
-    if (exceptions.length == 0)return;
-    MethodBuffer getExceptions = cb
-        .createMethod("public Class<?>[] getExceptionTypes()")
-        .println("return new Class<?>[]{");
-    if (exceptions.length > 0) {
-      getExceptions.println(toClass(exceptions[0]));
-      for (int i = 1, m = exceptions.length; i < m; i ++) {
-        getExceptions.println(", "+toClass(exceptions[i]));
-      }
-    }
-    getExceptions.println("};");
-  }
-
-  public boolean shouldFailIfMissing(TreeLogger logger, UnifyAstView ast, JClassLiteral classLit) {
+  protected boolean shouldFailIfMissing(TreeLogger logger, UnifyAstView ast, JClassLiteral classLit) {
     PropertyOracle properties = ast.getGeneratorContext().getPropertyOracle();
     try {
       if ("true".equals(properties.getConfigurationProperty("gwt.reflect.never.fail").getValues().get(0))) {
@@ -701,33 +721,18 @@ public class MemberGenerator {
     return true;
   }
 
-  protected com.google.gwt.dev.jjs.ast.JMethod getMemberPoolInit(UnifyAstView ast) {
-    ManifestMap map = manifests.get();
-    return map.initMethod(ast);
+  protected String toClass(JClassType param) {
+    return param.getErasedType().getQualifiedSourceName()+".class";
   }
   
   
 
-  protected JExpression checkConstPool(UnifyAstView ast, JMethodCall callSite, JExpression classRef,
-      JExpression ... args) throws UnableToCompleteException {
-    com.google.gwt.dev.jjs.ast.JMethod initPool = getMemberPoolInit(ast);
-
-    JMethodCall getMemberPool = new JMethodCall(initPool.getSourceInfo(), null, initPool);
-    getMemberPool.addArg(classRef);
-    
-    ManifestMap map = manifests.get();
-    com.google.gwt.dev.jjs.ast.JMethod getter = map.findGetterFor(ast, memberGetter());
-    
-    JMethodCall checkPool = new JMethodCall(initPool.getSourceInfo(), getMemberPool, getter);
-    for (JExpression arg : args) {
-      checkPool.addArg(arg);
-    }
-    
-    return checkPool.makeStatement().getExpr();
+  protected String toClass(JParameter param) {
+    return param.getType().getErasedType().getQualifiedSourceName()+".class";
   }
 
-  protected String memberGetter() {
-    throw new UnsupportedOperationException("memberGetting not implemented by "+getClass().getName());
+  Type logLevel() {
+    return logLevel;
   }
 
 }

@@ -1,14 +1,6 @@
 package java.lang.reflect;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.AccessibleObject;
-import java.lang.reflect.GenericSignatureFormatError;
-import java.lang.reflect.MalformedParameterizedTypeException;
-
 import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.core.client.UnsafeNativeLong;
-import com.google.gwt.reflect.client.MemberMap;
-import com.google.gwt.user.client.Window;
 
 /**
  * A field representing a primitive double.
@@ -20,7 +12,7 @@ public final class Double_Field extends Field {
 
   private boolean expectChar;
   
-  public Double_Field(Class declaringClass, String name, int modifiers, JavaScriptObject accessor) {
+  public Double_Field(Class<?> declaringClass, String name, int modifiers, JavaScriptObject accessor) {
     super(float.class, declaringClass, name, modifiers, accessor);
   }
 

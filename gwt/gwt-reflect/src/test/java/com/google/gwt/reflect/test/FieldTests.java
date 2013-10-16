@@ -818,7 +818,7 @@ public class FieldTests extends AbstractReflectionTest {
   @Test
   public void testDirectInjection_Declared() throws Exception{ 
     ReflectionCaseNoMagic superClass = new ReflectionCaseNoMagic();
-    Field field = NO_MAGIC.getDeclaredField(PRIVATE_FIELD);
+    Field field = NO_MAGIC.getDeclaredField(PRIVATE_MEMBER);
     field.setAccessible(true);
     assertFalse(field.getBoolean(superClass));
     field.setBoolean(superClass, true);
@@ -827,21 +827,21 @@ public class FieldTests extends AbstractReflectionTest {
 
   @Test
   public void testDirectInjection_Public() throws Exception{ 
-    Field field = NO_MAGIC.getField(PUBLIC_FIELD);
+    Field field = NO_MAGIC.getField(PUBLIC_MEMBER);
     field.setAccessible(true);
     assertFieldFalseToTrue(field, new ReflectionCaseNoMagic());
   }
 
   @Test(expected=NoSuchFieldException.class)
   public void testDirectInjection_PublicFail() throws Exception{ 
-    Field field = NO_MAGIC.getField(PRIVATE_FIELD);
+    Field field = NO_MAGIC.getField(PRIVATE_MEMBER);
     field.setAccessible(true);
     assertFieldFalseToTrue(field, new ReflectionCaseNoMagic());
   }
   
   @Test(expected=NoSuchFieldException.class)
   public void testDirectInjection_DeclaredFail() throws Exception{ 
-    Field field = NO_MAGIC_SUBCLASS.getDeclaredField(PRIVATE_FIELD);
+    Field field = NO_MAGIC_SUBCLASS.getDeclaredField(PRIVATE_MEMBER);
     field.setAccessible(true);
     assertFieldFalseToTrue(field, new ReflectionCaseNoMagic.Subclass());
   }

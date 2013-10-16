@@ -1,7 +1,5 @@
 package java.lang.reflect;
 
-import java.lang.reflect.GenericSignatureFormatError;
-import java.lang.reflect.TypeVariable;
 
 /**
  * A common interface for all entities that declare type variables.

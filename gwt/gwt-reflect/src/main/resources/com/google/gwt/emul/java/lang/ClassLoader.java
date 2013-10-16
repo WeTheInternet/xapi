@@ -11,7 +11,6 @@ import java.net.URL;
 import javax.inject.Provider;
 
 import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.core.shared.GWT;
 
 /**
  * This stripped down ClassLoader class is simply here to give us cross-platform

@@ -149,6 +149,7 @@
             <inherited>false</inherited>
             <configuration>
               <sources>
+                <source>src/main/gwt-${gwt.version}/</source>
             <!-- Uncomment these to look at super-source and/or generated source
                 <source>src/main/resources/com/google/gwt/emul/</source>
                 <source>target/gwt-gen</source>

@@ -7,8 +7,8 @@
 
 package java.lang;
 
-import java.security.*;
-import java.io.File;
+import java.security.AccessController;
+import java.security.Permission;
 
 /**
  * Stripped down emulation-layer only no-op SecurityManager.

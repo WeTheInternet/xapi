@@ -223,7 +223,12 @@ public class GwtReflect {
     assert isAssignable(paramTypes, params) : formatUnassignableError(cls, paramTypes, params)
       +" for method named "+name;
     try {
-      return makeAccessible(cls.getDeclaredMethod(name, paramTypes)).invoke(inst, params);
+      Method method = makeAccessible(cls.getDeclaredMethod(name, paramTypes));
+      if (method.getReturnType() == void.class) {
+        method.invoke(inst, params);
+        return null;
+      }
+      else return method.invoke(inst, params);
     } catch (InvocationTargetException e) {
       throw e.getCause();
     }

@@ -6,6 +6,7 @@ import java.lang.annotation.Annotation;
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.UnsafeNativeLong;
 import com.google.gwt.reflect.client.MemberMap;
+import com.google.gwt.reflect.client.ConstPool.ArrayConsts;
 
 /**
  * <code>Constructor</code> provides information about, and access to, a single
@@ -39,26 +40,28 @@ public class Constructor<T> extends AccessibleObject implements
     private transient String    signature;
 
     private JavaScriptObject method;
-    private JavaScriptObject annos;
+    private Annotation[] annos;
 
     private static final int LANGUAGE_MODIFIERS =
       Modifier.PUBLIC   | Modifier.PROTECTED  | Modifier.PRIVATE;
 
     protected Constructor() {
-      this.parameterTypes = exceptionTypes = new Class[0];
-      this.annos = JavaScriptObject.createObject();
+      this.parameterTypes = exceptionTypes = ArrayConsts.EMPTY_CLASSES;
+      this.annos = ArrayConsts.EMPTY_ANNOTATIONS;
     }
     /**
      * Public constructor to allow gwt to create constructors anywhere
      */
-    public Constructor(Class<T> from, JavaScriptObject method, JavaScriptObject annos) {
-      this();
+    public Constructor(Class<T> from, int modifiers, JavaScriptObject method, Annotation[] annos, 
+        Class<?>[] params, Class<?>[] exceptions) {
       this.clazz = from;
+      this.modifiers = modifiers;
       // TODO implement these
-      this.modifiers = 0;
       this.signature = "";
-      this.annos = annos;
       this.method = method;
+      this.annos = annos;
+      this.parameterTypes = params;
+      this.exceptionTypes = exceptions;
     }
 
     /**
@@ -84,7 +87,7 @@ public class Constructor<T> extends AccessibleObject implements
      * class.
      */
     public String getName() {
-  return getDeclaringClass().getName();
+  return getDeclaringClass().getSimpleName();
     }
 
     /**
@@ -478,9 +481,14 @@ public class Constructor<T> extends AccessibleObject implements
      * @since 1.5
      */
     @Override
-    public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
+    public <A extends Annotation> A getAnnotation(Class<A> annotationClass) {
         if (annotationClass == null) throw new NullPointerException();
-        return MemberMap.getAnnotation(annos, annotationClass);
+//        return MemberMap.getAnnotation(annos, annotationClass);
+        for (Annotation a : annos) {
+          if (a.annotationType() == annotationClass)
+            return (A)a;
+        }
+        return null;
     }
 
     /**
@@ -488,7 +496,7 @@ public class Constructor<T> extends AccessibleObject implements
      */
     @Override
     public Annotation[] getDeclaredAnnotations()  {
-        return MemberMap.getAnnotations(annos, new Annotation[0]);
+        return annos;
     }
 
     /**

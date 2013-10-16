@@ -18,6 +18,7 @@ import java.io.IOException;
  * @version %I%, %G%
  * @since   JDK1.0
  */
+@SuppressWarnings("serial")
 public class MalformedURLException extends IOException {
     /**
      * Constructs a <code>MalformedURLException</code> with no detail message.

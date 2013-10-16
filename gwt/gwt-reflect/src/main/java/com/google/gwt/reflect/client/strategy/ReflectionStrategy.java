@@ -34,7 +34,7 @@ public @interface ReflectionStrategy {
    * and will have reflection data written for those members (via clinit on
    * supertypes) when the direct .getMethod(), .getMethods(), etc is called
    * (versus the more precise .getDeclaredMethod(), .getDeclaredMethods()).
-   *
+   * 
    * @return true to cause all superclasses to be enhanced.
    */
   boolean magicSupertypes() default false;

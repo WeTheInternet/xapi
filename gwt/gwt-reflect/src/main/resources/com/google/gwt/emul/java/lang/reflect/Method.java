@@ -4,9 +4,7 @@ import java.lang.annotation.Annotation;
 
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.UnsafeNativeLong;
-import com.google.gwt.reflect.client.ConstPool;
 import com.google.gwt.reflect.client.MemberMap;
-import com.google.gwt.user.client.Window;
 
 /**
  * A <code>Method</code> provides information about, and access to, a single method on a class or interface.

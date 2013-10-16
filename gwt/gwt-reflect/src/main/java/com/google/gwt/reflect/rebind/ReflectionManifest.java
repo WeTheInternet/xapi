@@ -6,7 +6,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -76,15 +75,7 @@ public class ReflectionManifest {
   private transient com.google.gwt.core.ext.typeinfo.JClassType type;
   
   @Deprecated
-  public transient Map<JMethod, Annotation[]> methods = new LinkedHashMap<JMethod, Annotation[]>();
-  @Deprecated
-  public transient Map<JField, Annotation[]> fields = new LinkedHashMap<JField, Annotation[]>();
-  @Deprecated
-  public transient Map<JConstructor, Annotation[]> constructors = new LinkedHashMap<JConstructor, Annotation[]>();
-  @Deprecated
   public transient Map<JClassType, Annotation[]> innerClasses = new LinkedHashMap<JClassType, Annotation[]>();
-  @Deprecated
-  protected transient List<Annotation> annotations = new ArrayList<Annotation>();
   
   private ReflectionStrategy strategy;
   

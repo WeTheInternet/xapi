@@ -16,22 +16,24 @@ public class TestsFailed extends Exception {
   }
 
   private static String serialize(Map<Method, Throwable> result) {
-    StringBuilder b = new StringBuilder();
+    StringBuilder pass = new StringBuilder();
+    StringBuilder fail = new StringBuilder("\n");
     for (Entry<Method, Throwable> e : result.entrySet()) {
       if (e.getValue() == null) {
-        b.append(e.getKey().getName()).append(" (pass)\n");
+        pass.append(e.getKey().getName()).append("\n (pass)");
       } else {
-        b.append(e.getKey().getName()).append(" (FAIL):\n");
-        print(b, e.getValue());
+        fail.append(e.getKey().getName()).append("\n (FAIL):");
+        print(fail, e.getValue());
       }
     }
-    return b.toString();
+    return fail.append(pass).toString();
   }
 
   private static void print(StringBuilder b, Throwable e) {
     while (e != null) {
       b.append(e).append("\n");
       for (StackTraceElement trace : e.getStackTrace()) {
+        
         b.append("\t ").append(trace).append("\n");
       }
       e = e.getCause();

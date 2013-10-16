@@ -4,6 +4,7 @@ import java.io.PrintWriter;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -152,7 +153,7 @@ public class GwtAnnotationGenerator {
   static GeneratedAnnotation[] generateAnnotations(
     TreeLogger logger, SourceBuilder<?> out, GeneratorContext context, Annotation ... annotations
   ) throws UnableToCompleteException {
-
+    logger.log(Type.INFO, "Generating annotations "+Arrays.asList(annotations));
     final MethodBuffer initAnnos = out.getClassBuffer()
       .createMethod("private static void enhanceAnnotations" +
           "(final Class<?> cls)");
@@ -211,7 +212,7 @@ public class GwtAnnotationGenerator {
     return results.keySet().toArray(new GeneratedAnnotation[results.size()]);
   }
 
-  private static GeneratedAnnotation generateAnnotation(TreeLogger logger, GeneratorContext context,
+  protected static GeneratedAnnotation generateAnnotation(TreeLogger logger, GeneratorContext context,
     Annotation anno) throws UnableToCompleteException {
     final TypeOracle oracle = context.getTypeOracle();
     final boolean doLog = logger.isLoggable(logLevel);
@@ -224,7 +225,7 @@ public class GwtAnnotationGenerator {
       // This annotation type will likely have been seen before,
       // but it may have changed (across gwt compiles in super dev mode).
       String proxyPkg = annoType.getPackage().getName();
-      String proxyName = annoType.getName().replace(proxyPkg+".", "").replace('.', '_')+"Proxy";
+      String proxyName = annoType.getCanonicalName().replace(proxyPkg+".", "").replace('.', '_')+"Proxy";
       String proxyFQCN = (proxyPkg.length()==0 ? "" : proxyPkg + ".")+ proxyName;
       if (doLog)
         logger = logger.branch(logLevel, "Checking for existing "+proxyFQCN+" on classpath");
@@ -271,11 +272,12 @@ public class GwtAnnotationGenerator {
           ).setPackage(proxyPkg);
         sw.setPayload(gen);// allow the source builder to access GeneratedAnnotation
         // cache this type _before_ we start generating,
-        // as it is possible / likely to recurse into the same type more than once.
+        // as it is possible to recurse into the same type more than once
+        // when generating annotations that have other annotations as members.
         finished.put(annoType, gen);
 
         // create this annotation proxy, and any proxies needed in its fields.
-        generateProxy(logger, anno, sw, proxyPkg, proxyName);
+        generateProxy(logger, anno, sw.getClassBuffer(), proxyPkg, proxyName);
 
         // maybe log our generated contents
         String src = sw.toString();
@@ -296,7 +298,6 @@ public class GwtAnnotationGenerator {
     }
     return gen;
   }
-
 
   public static GeneratedAnnotation generateAnnotationProvider(TreeLogger logger, SourceBuilder<?> out
     , Annotation anno, GeneratorContext context) throws UnableToCompleteException {
@@ -370,9 +371,10 @@ public class GwtAnnotationGenerator {
 
 
   private static void generateProxy(TreeLogger logger, Annotation anno,
-  SourceBuilder<GeneratedAnnotation> sw, String proxyPkg, String proxyName) {
-
-    ClassBuffer cw = sw.getClassBuffer();
+  ClassBuffer cw, String proxyPkg, String proxyName) {
+    assert proxyPkg.equals(anno.annotationType().getPackage().getName());
+    assert proxyName.equals(anno.annotationType().getCanonicalName().replace(
+        anno.annotationType().getPackage().getName()+".","").replace('.','_')+"Proxy");
     cw.addImport(Annotation.class);
     cw.addInterface(anno.annotationType());
     MethodBuffer ctor = cw.createConstructor(Modifier.PUBLIC);

@@ -5,8 +5,8 @@ public abstract class NewInstanceStrategy {
 
   private final String[] bits;
 
-  public NewInstanceStrategy(String template, String replacement) {
-    bits = template.split(replacement);
+  protected NewInstanceStrategy(String template, String splitter) {
+    bits = template.split(splitter);
   }
 
   public String generate(String className) {
@@ -16,8 +16,8 @@ public abstract class NewInstanceStrategy {
     for (int i = 1, m = bits.length; i < m; i++) {
       b.append(className).append(bits[i]);
     }
-    String def = b.toString();
-    if (def.trim().matches("(return .*)|(throw .*)"))
+    String def = b.toString().trim();
+    if (def.startsWith("return ") || def.startsWith("throw "))
       return def;
     return "return " + def+";";
   }

@@ -1,6 +1,8 @@
 package com.google.gwt.reflect.rebind.injectors;
 
-public class DeclaredConstructorInjector extends AbstractConstructorInjector {
+import com.google.gwt.reflect.rebind.generators.ConstructorGenerator;
+
+public class DeclaredConstructorInjector extends ConstructorGenerator {
 
   @Override
   protected boolean isDeclared() {

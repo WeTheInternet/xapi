@@ -18,6 +18,7 @@ package java.net;
  * @since 1.4
  */
 
+@SuppressWarnings("serial")
 public class URISyntaxException
     extends Exception
 {

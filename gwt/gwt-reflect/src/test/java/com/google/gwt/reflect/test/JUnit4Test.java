@@ -21,14 +21,13 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.google.gwt.core.shared.GWT;
-import com.google.gwt.user.client.Window;
 
 public class JUnit4Test {
   
   private class Lifecycle {
     Map<String, Method> after = newMap();
-    Map<String, Method> before = newMap();
     Map<String, Method> afterClass = newMap();
+    Map<String, Method> before = newMap();
     Map<String, Method> beforeClass = newMap();
     Map<String, Method> tests = newMap();
     
@@ -54,6 +53,22 @@ public class JUnit4Test {
       }
     }
 
+    public List<Method> after() {
+      return newList(after, true);
+    }
+
+    public List<Method> afterClass() {
+      return newList(afterClass, true);
+    }
+
+    public List<Method> before() {
+      return newList(before, true);
+    }
+
+    public List<Method> beforeClass() {
+      return newList(beforeClass, true);
+    }
+
     public void maybeAdd(Method method) {
       if (method.getAnnotation(Before.class) != null) {
         assertPublicZeroArgInstanceMethod(method, Before.class);
@@ -77,26 +92,18 @@ public class JUnit4Test {
       }
     }
 
-    public List<Method> beforeClass() {
-      return newList(beforeClass, true);
-    }
-
-    public List<Method> before() {
-      return newList(before, true);
-    }
-
-    public List<Method> after() {
-      return newList(after, true);
-    }
-
-    public List<Method> afterClass() {
-      return newList(afterClass, true);
-    }
-
   }
 
   public static Method[] findTests(Class<?> testClass) throws Throwable {
     return new JUnit4Test().findAnnotated(testClass);
+  }
+
+  public static void runTest(Object inst, Method m) throws Throwable {
+    new JUnit4Test().run(inst, m);
+  }
+
+  public static void runTests(Class<?> testClass) throws Throwable {
+    new JUnit4Test().runAll(testClass);
   }
 
   private Method[] findAnnotated(Class<?> testClass) {
@@ -104,47 +111,34 @@ public class JUnit4Test {
     return lifecycle.tests.values().toArray(new Method[0]);
   }
 
-  public static void runTests(Class<?> testClass) throws Throwable {
-    new JUnit4Test().runAll(testClass);
+  protected void assertPublicZeroArgInstanceMethod(Method method, Class<?> type) {
+    assertPublicZeroArgMethod(method, type);
+    assertFalse("@" + type.getSimpleName() + " methods must not be static",
+        Modifier.isStatic(method.getModifiers()));
   }
 
-  public static void runTest(Object inst, Method m) throws Throwable {
-    new JUnit4Test().run(inst, m);
+  protected void assertPublicZeroArgMethod(Method method, Class<?> type) {
+    assertTrue("@" + type.getSimpleName() + " methods must be public",
+        Modifier.isPublic(method.getModifiers()));
+    assertEquals("@" + type.getSimpleName() + " methods must be zero-arg",
+        0, method.getParameterTypes().length);
   }
 
-  protected void run(Object inst, Method m) throws Throwable {
-    Lifecycle lifecycle = new Lifecycle(m.getDeclaringClass());
-    lifecycle.tests.clear();
-    lifecycle.tests.put(m.getName(), m);
-    execute(inst, lifecycle.tests, 
-        lifecycle.beforeClass(), lifecycle.before(), lifecycle.after(), lifecycle.afterClass());
+  protected void assertPublicZeroArgStaticMethod(Method method, Class<?> type) {
+    assertPublicZeroArgMethod(method, type);
+    assertTrue("@" + type.getSimpleName() + " methods must be static",
+        Modifier.isStatic(method.getModifiers()));
   }
-
-  protected void runAll(Class<?> testClass) throws Throwable {
-    Lifecycle lifecycle = new Lifecycle(testClass);
-    if (lifecycle.tests.size() > 0) {
-      Object inst = testClass.newInstance();
-      execute(inst, lifecycle.tests, lifecycle.beforeClass(), lifecycle.before(), lifecycle.after(), lifecycle.afterClass());
+  protected void debug(String string, Throwable e) {
+    if (GWT.isProdMode()) {
+      GWT.log(string+" ("+e+")");
     }
-  }
-
-  protected Map<String, Method> newMap() {
-    return new LinkedHashMap<String, Method>();
-  }
-  protected List<Method> newList(Map<String, Method> beforeClass, boolean reverse) {
-    List<Method> list;
-    if (reverse) {
-      list = new LinkedList<Method>();
-      for (Entry<String, Method> e : beforeClass.entrySet()) {
-        list.add(0, e.getValue());
-      }
-    } else {
-      list = new ArrayList<Method>();
-      for (Entry<String, Method> e : beforeClass.entrySet()) {
-        list.add(e.getValue());
-      }
+    else
+      System.out.println(string);
+    while (e != null) {
+      e.printStackTrace(System.err);
+      e = e.getCause();
     }
-    return list;
   }
 
   protected void execute(Object inst, Map<String, Method> tests, List<Method> beforeClass,
@@ -152,7 +146,7 @@ public class JUnit4Test {
       throws TestsFailed, IllegalArgumentException, IllegalAccessException, InvocationTargetException, NoSuchMethodError {
     Map<Method, Throwable> result = new LinkedHashMap<Method, Throwable>();
     try {
-    
+
       for (Method m : beforeClass)
         m.invoke(null);
       
@@ -172,6 +166,41 @@ public class JUnit4Test {
         debug("Tests Failed;\n", failure);
         throw new AssertionError(failure.toString());
       }
+    }
+  }
+
+  protected List<Method> newList(Map<String, Method> beforeClass, boolean reverse) {
+    List<Method> list;
+    if (reverse) {
+      list = new LinkedList<Method>();
+      for (Entry<String, Method> e : beforeClass.entrySet()) {
+        list.add(0, e.getValue());
+      }
+    } else {
+      list = new ArrayList<Method>();
+      for (Entry<String, Method> e : beforeClass.entrySet()) {
+        list.add(e.getValue());
+      }
+    }
+    return list;
+  }
+
+  protected Map<String, Method> newMap() {
+    return new LinkedHashMap<String, Method>();
+  }
+  protected void run(Object inst, Method m) throws Throwable {
+    Lifecycle lifecycle = new Lifecycle(m.getDeclaringClass());
+    lifecycle.tests.clear();
+    lifecycle.tests.put(m.getName(), m);
+    execute(inst, lifecycle.tests, 
+        lifecycle.beforeClass(), lifecycle.before(), lifecycle.after(), lifecycle.afterClass());
+  }
+
+  protected void runAll(Class<?> testClass) throws Throwable {
+    Lifecycle lifecycle = new Lifecycle(testClass);
+    if (lifecycle.tests.size() > 0) {
+      Object inst = testClass.newInstance();
+      execute(inst, lifecycle.tests, lifecycle.beforeClass(), lifecycle.before(), lifecycle.after(), lifecycle.afterClass());
     }
   }
 
@@ -212,36 +241,6 @@ public class JUnit4Test {
           return e;
         }
       }
-    }
-  }
-
-  protected void assertPublicZeroArgMethod(Method method, Class<?> type) {
-    assertTrue("@" + type.getSimpleName() + " methods must be public",
-        Modifier.isPublic(method.getModifiers()));
-    assertEquals("@" + type.getSimpleName() + " methods must be zero-arg",
-        0, method.getParameterTypes().length);
-  }
-  protected void assertPublicZeroArgInstanceMethod(Method method, Class<?> type) {
-    assertPublicZeroArgMethod(method, type);
-    assertFalse("@" + type.getSimpleName() + " methods must not be static",
-        Modifier.isStatic(method.getModifiers()));
-  }
-
-  protected void assertPublicZeroArgStaticMethod(Method method, Class<?> type) {
-    assertPublicZeroArgMethod(method, type);
-    assertTrue("@" + type.getSimpleName() + " methods must be static",
-        Modifier.isStatic(method.getModifiers()));
-  }
-
-  protected void debug(String string, Throwable e) {
-    if (GWT.isProdMode()) {
-      GWT.log(string+" ("+e+")");
-    }
-    else
-      System.out.println(string);
-    while (e != null) {
-      e.printStackTrace(System.err);
-      e = e.getCause();
     }
   }
   

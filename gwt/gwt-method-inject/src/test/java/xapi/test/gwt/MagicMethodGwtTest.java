@@ -13,6 +13,7 @@ import com.google.gwt.junit.client.GWTTestCase;
  * <p>
  * @author James X. Nelson (james@wetheinter.net, @james)
  */
+@SuppressWarnings("deprecation")
 public class MagicMethodGwtTest extends GWTTestCase{
 
 
