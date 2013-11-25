@@ -278,6 +278,11 @@
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-dev-file</artifactId>
+    <version>${xapi.version}</version>
+   </dependency>
+   <dependency>
+    <groupId>net.wetheinter</groupId>
     <artifactId>xapi-dev-bytecode</artifactId>
     <version>${xapi.version}</version>
    </dependency>

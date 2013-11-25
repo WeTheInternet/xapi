@@ -33,6 +33,10 @@
      </dependency>
      <dependency>
       <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-dev-file</artifactId>
+     </dependency>
+     <dependency>
+      <groupId>net.wetheinter</groupId>
       <artifactId>xapi-core-test</artifactId>
       <scope>test</scope>
      </dependency>

@@ -33,8 +33,8 @@ public interface ShellCommand {
 	 * 
 	 * @param callback - optional success handler, to allow pushing work forward
 	 * @param processor - optional argument handler, to manipulate the command being run.
-	 * @return - A {@link ShellResult} future, for platforms that can afford to block on results.
+	 * @return - A {@link ShellSession} future, for platforms that can afford to block on results.
 	 */
-	ShellResult run(SuccessHandler<ShellResult> callback, ArgumentProcessor processor);
+	ShellSession run(SuccessHandler<ShellSession> callback, ArgumentProcessor processor);
 	
 }

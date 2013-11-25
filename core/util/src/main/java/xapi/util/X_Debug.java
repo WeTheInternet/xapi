@@ -34,6 +34,12 @@ public class X_Debug {
       for(;index < end; index++ ) {
         orig.print(traces[index]+": ");
       }
+      if (X_Runtime.isJava()) {
+        flush(orig);
+      }
+    }
+    
+    private void flush(PrintStream orig2) {
       orig.flush();
     }
 

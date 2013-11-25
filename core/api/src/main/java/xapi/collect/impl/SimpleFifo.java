@@ -92,8 +92,12 @@ public class SimpleFifo <E> implements Fifo<E>, Iterable<E>, Serializable{
 
   public SimpleFifo(E[] els) {
     this();
-    for (E el : els)
+    for (E el : els) {
+      if (el == null) {
+        return;
+      }
       give(el);
+    }
   }
 
   @Override
@@ -188,7 +192,7 @@ public class SimpleFifo <E> implements Fifo<E>, Iterable<E>, Serializable{
 
   @Override
   public String toString() {
-    return "Fifo ["+head.next +" -> "+tail+"]";
+    return " ["+head.next +" -> "+tail+"]";
   }
 
   @Override

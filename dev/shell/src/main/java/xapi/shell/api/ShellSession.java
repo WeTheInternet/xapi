@@ -5,7 +5,7 @@ import java.util.concurrent.Future;
 import xapi.io.api.LineReader;
 import xapi.util.api.Destroyable;
 
-public interface ShellResult extends Destroyable{
+public interface ShellSession extends Destroyable{
 
 	/**
 	 * @return - The shell command which spawned us.
@@ -43,12 +43,12 @@ public interface ShellResult extends Destroyable{
 	/**
 	 * @return - A future that will block on the process, then return stdIn.
 	 */
-	ShellResult stdOut(LineReader reader);
+	ShellSession stdOut(LineReader reader);
 	
 	/**
 	 * @return - A future that will block on the process, then return stdOut.
 	 */
-	ShellResult stdErr(LineReader reader);
+	ShellSession stdErr(LineReader reader);
 	
 	/**
 	 * Send a string to the stdin of the given command.

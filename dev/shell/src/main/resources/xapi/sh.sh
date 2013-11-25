@@ -12,14 +12,12 @@ debug=$xdebug||0
 while true 
 do
   read -r command
-  sleep 1
   if [ $debug > 0 ]; then 
     echo "[RUN] $command" 
   fi
-  eval "$command" || echo "[ERROR] $errno"
+  eval "$command" || exit $errno
   if [ $debug > 1 ]; then
    echo "$USER@$HOSTNAME:$PWD$"
   fi
+  sleep 1
 done
-
-

@@ -6,11 +6,12 @@ import java.io.IOException;
 import xapi.annotation.inject.InstanceDefault;
 import xapi.collect.X_Collect;
 import xapi.collect.api.Fifo;
+import xapi.file.X_File;
 import xapi.log.X_Log;
 import xapi.process.X_Process;
 import xapi.shell.api.ArgumentProcessor;
 import xapi.shell.api.ShellCommand;
-import xapi.shell.api.ShellResult;
+import xapi.shell.api.ShellSession;
 import xapi.util.X_Debug;
 import xapi.util.api.ErrorHandler;
 import xapi.util.api.SuccessHandler;
@@ -19,8 +20,8 @@ import xapi.util.api.SuccessHandler;
 public class ShellCommandDefault implements ShellCommand {
 
   final Fifo<String> commands;
-  private String owner;
-  private String directory = ".";
+  private String owner="User";
+  private String directory;
 
   public ShellCommandDefault() {
     this.commands = X_Collect.newFifo();
@@ -41,6 +42,18 @@ public class ShellCommandDefault implements ShellCommand {
 
   @Override
   public String directory() {
+    if (directory == null) {
+      File dir = X_File.createTempDir("exeFor"+owner);
+      if (dir == null) {
+        directory = ".";
+      } else {
+        if (dir.exists() || dir.mkdirs()) {
+          directory = dir.getPath();
+        } else {
+          directory = ".";
+        }
+      }
+    }
     return directory;
   }
 
@@ -73,12 +86,11 @@ public class ShellCommandDefault implements ShellCommand {
   
   @Override
   @SuppressWarnings({ "unchecked", "rawtypes" })
-  public ShellResult run(final SuccessHandler<ShellResult> callback,
-      final ArgumentProcessor processor) {
+  public ShellSession run(final SuccessHandler<ShellSession> callback, final ArgumentProcessor processor) {
     final ErrorHandler<Throwable> err = callback instanceof ErrorHandler ? (ErrorHandler) callback
         : X_Debug.defaultHandler();
     
-    ShellResultDefault result = new ShellResultDefault(this, processor, callback, err);
+    final ShellSessionDefault result = new ShellSessionDefault(this, processor, callback, err);
     X_Process.newThread(result).start();
     return result;
   }
@@ -94,7 +106,7 @@ public class ShellCommandDefault implements ShellCommand {
     if (dir.exists()) {
       pb.directory(dir);
     } else {
-      X_Log.error("Process run directory " + dir.getCanonicalPath()
+      X_Log.error(getClass(), "Process run directory " + dir.getCanonicalPath()
           + " does not exist " + "for ");
     }
     return pb.start();

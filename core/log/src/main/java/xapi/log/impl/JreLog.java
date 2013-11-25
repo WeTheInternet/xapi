@@ -57,5 +57,19 @@ public class JreLog extends AbstractLog{
     }
     (level == LogLevel.ERROR ? System.err : System.out).println(b.toString());
   }
+  
+  @Override
+  public Object unwrap(Object m) {
+    if (m instanceof Class) {
+      Class<?> c = (Class<?>)m;
+      for (StackTraceElement trace : new Throwable().getStackTrace()) {
+        if (trace.getClassName().equals(c.getName())) {
+          return " "+trace;
+        }
+      }
+      return c.getCanonicalName();
+    }
+    return super.unwrap(m);
+  }
 
 }

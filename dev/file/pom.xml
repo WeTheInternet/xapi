@@ -7,18 +7,18 @@
     <version>0.4-SNAPSHOT</version>
   </parent>
 
-  <artifactId>xapi-dev-denum</artifactId>
+  <artifactId>xapi-dev-file</artifactId>
   <packaging>jar</packaging>
-  <name>XApi - Enum to class converter</name>
+  <name>XApi - java.io.File utilities</name>
   <url>WeTheInter.net</url>
   <description>
-  A tool to convert enums to class types for supporting jres &lt; 1.5. 
+  Helper methods for dealing w/ java.io.File
   </description>
   
   <dependencies>
      <dependency>
       <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-dev-api</artifactId>
+      <artifactId>xapi-core-io</artifactId>
      </dependency>
      <dependency>
       <groupId>net.wetheinter</groupId>
@@ -26,14 +26,5 @@
       <scope>test</scope>
      </dependency>
   </dependencies>
-
-  <build>
-    <testResources>
-      <testResource>
-        <!-- Denum requires sources to be present as resources -->
-        <directory>src/test/java</directory>
-      </testResource>
-    </testResources>
-  </build>
 
 </project>

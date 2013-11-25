@@ -86,7 +86,7 @@ public abstract class AbstractLog implements LogService {
 		} else if (m instanceof Fifo) {
 		  return "{"+((Fifo)m).join(", ")+"}";
 		}
-		return m;
+		return m == null ? "null" : m;
 	}
 
 	protected void writeLog(StringBuilder b, Object object) {

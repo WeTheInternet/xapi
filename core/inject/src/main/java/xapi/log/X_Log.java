@@ -37,6 +37,7 @@ package xapi.log;
 import javax.inject.Provider;
 
 import xapi.collect.api.Fifo;
+import xapi.collect.impl.SimpleFifo;
 import xapi.inject.X_Inject;
 import xapi.log.api.LogLevel;
 import xapi.log.api.LogService;
@@ -71,7 +72,13 @@ public class X_Log {
     Fifo<Object> logMsg = log.newFifo();
     logMsg.give("[" +level+"]");
     for (Object m : message){
-      logMsg.give(log.unwrap(m));
+      if (m instanceof Fifo) {
+        for (Object o : ((Fifo<?>)m).forEach()) {
+          logMsg.give(log.unwrap(o));
+        }
+      } else {
+        logMsg.give(log.unwrap(m));
+      }
     }
     log.doLog(l, logMsg);
   }
@@ -101,6 +108,28 @@ public class X_Log {
     LogService service = singleton.get();
     if (service.shouldLog(LogLevel.DEBUG))
       log(service,LogLevel.DEBUG,"DEBUG",message);
+  }
+  public static void log(Class<?> caller, LogLevel info, Object ... objects) {
+    // TODO adjust log-level based on caller class criteria
+    Object o = new SimpleFifo<Object>(objects);
+    switch(info) {
+      case ALL:
+      case DEBUG:
+        debug(caller, o);
+        return;
+      case ERROR:
+        error(caller, o);
+        return;
+      case INFO:
+        info(caller, o);
+        return;
+      case TRACE:
+        trace(caller, o);
+        return;
+      case WARN:
+        warn(caller, o);
+        return;
+    }
   }
   public static void log(LogLevel info, Object o) {
     switch(info) {

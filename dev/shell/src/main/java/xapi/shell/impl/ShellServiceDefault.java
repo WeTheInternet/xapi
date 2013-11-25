@@ -1,15 +1,20 @@
 package xapi.shell.impl;
 
+import java.util.Iterator;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 import xapi.annotation.inject.InstanceDefault;
 import xapi.annotation.inject.SingletonDefault;
+import xapi.file.X_File;
 import xapi.inject.X_Inject;
 import xapi.io.api.LineReader;
 import xapi.log.X_Log;
-import xapi.shell.X_Shell;
 import xapi.shell.api.ShellCommand;
-import xapi.shell.api.ShellResult;
+import xapi.shell.api.ShellSession;
 import xapi.shell.service.ShellService;
 import xapi.time.X_Time;
+import xapi.time.api.Moment;
 import xapi.util.X_GC;
 import xapi.util.api.SuccessHandler;
 
@@ -25,8 +30,22 @@ public class ShellServiceDefault implements ShellService {
     return X_Inject.instance(ShellCommand.class).commands(cmds);
   }
 
-  private static ShellResult runningShell; //TODO use a map with key by user...
-//  private static abstract class ScriptProvider extends SingletonProvider<String> {
+  static {
+    new Thread() {
+      { 
+        Runtime.getRuntime().addShutdownHook(this); 
+      }
+      public void run() {
+        while(!runningShells.isEmpty()){
+          runningShells.remove().destroy();
+        }
+      }
+    }; 
+  }
+  
+  private static final Queue<ShellSession> runningShells = new ConcurrentLinkedQueue<>();
+
+  //  private static abstract class ScriptProvider extends SingletonProvider<String> {
 //    abstract String getScriptName();
 //    public String getScriptLocation() {
 //      return X_Shell.getResourceMaybeUnzip(getScriptName(), Thread.currentThread().getContextClassLoader());
@@ -35,34 +54,60 @@ public class ShellServiceDefault implements ShellService {
 //  }
   
   @Override
-  public ShellResult runInShell(final String cmd, LineReader stdOut, LineReader stdErr) {
-    if (runningShell != null && !runningShell.isRunning()) {
-      X_Log.trace("Recycle shell that is no longer running");
-      X_GC.destroy(ShellResult.class, runningShell);
-      runningShell = null;
+  public ShellSession runInShell(final boolean keepAlive, LineReader stdOut, LineReader stdErr, final String ... cmds) {
+    final Moment start = X_Time.now();
+    final String[] commands;
+    if (keepAlive) {
+      final String sh = X_File.getResourceMaybeUnzip("xapi/sh.sh", null);
+      commands = new String[]{"sh", "-ac", sh};
+    } else {
+      commands = cmds;
     }
-    if (runningShell == null) {
-      String terminal = X_Shell.getResourceMaybeUnzip("xapi/sh.sh", null);
-      runningShell = X_Inject.instance(ShellCommand.class)
-          .commands("sh","-ac",terminal)
-          .run(new SuccessHandler<ShellResult>() {
-              @Override
-              public void onSuccess(ShellResult t) {
-                X_Log.info("success!", t.isRunning());
-              }
+    final ShellSession runningShell = 
+      X_Inject.instance(ShellCommand.class)
+        .commands(commands)
+        .run(new SuccessHandler<ShellSession>() {
+            @Override
+            public void onSuccess(ShellSession t) {
+              X_Log.info(getClass(), "Shell still running?", t.isRunning());
+            }
       }, null);
-    }
-    if (stdOut != null)
+    X_Log.debug(getClass(), "Time create shell command", X_Time.difference(start));
+    if (stdOut != null) {
       runningShell.stdOut(stdOut);
-    if (stdErr != null)
+    }
+    if (stdErr != null) {
       runningShell.stdErr(stdErr);
+    }
     X_Time.runLater(new Runnable() {
       @Override
       public void run() {
-        runningShell.stdIn(cmd);
+        if (keepAlive) {
+          for (String cmd : cmds) {
+            runningShell.stdIn(cmd);
+          }
+        }
+        X_Log.debug(getClass(), "Time to send shell command", X_Time.difference(start));
+        // release thread
+        X_Time.trySleep(0, 1000);
+        // periodically clean up trash object
+        runCleanup();
       }
     });
     return runningShell;
+  }
+
+  protected void runCleanup() {
+    for (
+        Iterator<ShellSession> iter = runningShells.iterator();
+        iter.hasNext(); ) {
+      ShellSession next = iter.next();
+      if (!next.isRunning()) {
+        X_Log.trace(getClass(), "Recycle shell that is no longer running", next);
+        X_GC.destroy(ShellSession.class, next);
+        iter.remove();
+      }
+    }
   }
   
 }

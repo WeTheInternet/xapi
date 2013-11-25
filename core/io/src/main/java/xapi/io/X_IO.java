@@ -3,11 +3,13 @@ package xapi.io;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 
 import javax.inject.Provider;
 
+import xapi.collect.impl.SimpleFifo;
 import xapi.inject.X_Inject;
 import xapi.io.api.HasLiveness;
 import xapi.io.api.IOMessage;
@@ -33,7 +35,7 @@ public class X_IO {
       final StringReader successHandler, final HasLiveness liveCheck) {
     final ByteArrayOutputStream buffer = new ByteArrayOutputStream(4096);
     if (!liveCheck.isAlive()) {
-      X_Log.trace("Trying to drain a dead process", liveCheck);
+      X_Log.trace(X_IO.class, "Trying to drain a dead process", liveCheck);
       return;
     }
     start(new Runnable() {
@@ -47,46 +49,54 @@ public class X_IO {
         
         try {
           top: while (read >= 0 && loops-- > 0) {
-            X_Time.trySleep(5, 0);
             Moment start = X_Time.now();
             do {
               int avail = in.available();
               if (avail == 0) {
                 // Maybe process is dead...
                 if (!liveCheck.isAlive()){
-                  X_Log.debug("Stream not alive; bailing");
+                  X_Log.debug(getClass(), "Stream not alive; bailing");
+                  read = -1;
                   break top;
                 }
               }
               byte[] bytes = new byte[Math.min(1024,avail)];
               read = in.read(bytes);
+              X_Log.debug(getClass(), "Got", read,"bytes from input stream", this);
               if (read > 0){
                 delay = 20;
                 buffer.write(bytes, 0, read);
                 bytes = null;
                 String asStr = new String(buffer.toByteArray(), "UTF-8");
+                X_Log.trace(getClass(), "Read", asStr,"from input stream");
                 if (log && asStr.trim().length()>0){
-                  X_Log.log(info, asStr);
+                  X_Log.log(info, new SimpleFifo<Object>().give(getClass()).give(asStr));
                 }
               } 
               else{
+                if (read == -1) {
+                  break top;
+                }
                 X_Time.trySleep(delay*=2,0);
                 break;
               }
             } while (X_Time.now().millis() - start.millis() < 100);
+            X_Time.trySleep(5, 0);
           }
-          if (read < 1)
-            successHandler.onLine(new String(buffer.toByteArray(), "UTF-8"));
+          if (read < 1) {
+            String res = new String(buffer.toByteArray(), "UTF-8");
+            successHandler.onLine(res);
+          }
           else {
-            throw new RuntimeException("Input stream not cleared "+read+"; left: |"+new String(buffer.toByteArray())+"|");
+            throw new RuntimeException("Input stream not cleared "+read+"; left: `"+new String(buffer.toByteArray())+"`");
           }
         } catch (Exception e) {
           if (successHandler instanceof ErrorHandler) {
             ((ErrorHandler)successHandler).onError(e);
-          } else {
-            X_Log.error("Error draining input stream", info, in, e);
           }
+          X_Log.error(getClass(), "Error draining input stream", info, in, e);
         } finally {
+          X_Log.trace(getClass(), "Finished blocking", this);
           successHandler.onEnd();
           close(in);
         }
@@ -121,6 +131,29 @@ public class X_IO {
       }
     });
     return failure[0];
+  }
+
+  public static void drain(OutputStream out, InputStream in) throws IOException {
+    int size = 4096;
+    byte[] buffer = new byte[size];
+    int read;
+    while ((read = in.read(buffer)) >= 0) {
+      if (read == 0) {
+        try {
+          Thread.sleep(0, 10000);
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          X_Log.warn("Interrupted while draining input stream",in,"to output stream",out);
+          return;
+        }
+        continue;
+      }
+      out.write(buffer, 0, read);
+      if (size < 0x10000) {
+        size <<= 0;
+      }
+      buffer = new byte[size];
+    }
   }
   
 

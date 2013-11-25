@@ -2,11 +2,13 @@ package xapi.io.api;
 
 import xapi.collect.api.Fifo;
 import xapi.collect.impl.SimpleFifo;
+import xapi.log.X_Log;
 import xapi.util.X_String;
 
 public class StringReader implements LineReader {
   private StringBuilder b;
-  private Fifo<LineReader> delegates = new SimpleFifo<LineReader>();
+  private final Fifo<LineReader> delegates = new SimpleFifo<LineReader>();
+  boolean finished;
 
   @Override
   public void onStart() {
@@ -19,36 +21,71 @@ public class StringReader implements LineReader {
   @Override
   public void onLine(String line) {
     synchronized (this) {
+      if (b.length() > 0) {
+        b.append('\n');
+      }
       b.append(line);
-      b.append('\n');
       if (delegates.isEmpty())return;
       for (LineReader delegate : delegates.forEach()) {
         delegate.onLine(line);
       }
     }
   }
+  
   @Override
-  public void onEnd() {
-    b = null;
-    if (delegates.isEmpty())return;
-    for (LineReader delegate : delegates.forEach()) {
-      delegate.onEnd();
+  public final void onEnd() {
+    X_Log.trace(getClass(),"ending", this);
+    try {
+      for (LineReader delegate : delegates.forEach()) {
+        X_Log.debug(getClass(),"ending delegate", delegate.getClass(), delegate);
+        delegate.onEnd();
+      }
+    } finally {
+      finished = true;
+      onEnd0();
+    }
+    synchronized (delegates) {
+      delegates.notifyAll();
     }
   }
+  
+  protected void onEnd0() {
+  }
+  
   @Override
   public String toString() {
     return String.valueOf(b);
   }
 
   public synchronized void forwardTo(LineReader callback) {
-    if (b == null) {
-      delegates.give(callback);
-    } else {
+    X_Log.debug(getClass(),getClass().getName(),"forwardingTo", callback.getClass().getName(),":", callback);
+    if (b != null) {
       callback.onStart();
       for (String line : X_String.splitNewLine(b.toString())) {
         callback.onLine(line);
       }
-      delegates.give(callback);
+    }
+    delegates.give(callback);
+    if (finished) {
+      callback.onEnd();
+    }
+  }
+  
+  public void waitToEnd() throws InterruptedException {
+    if (finished) {
+      return;
+    }
+    synchronized (delegates) {
+      delegates.wait();
+    }
+  }
+  
+  public void waitToEnd(long timeout, int nanos) throws InterruptedException {
+    if (finished) {
+      return;
+    }
+    synchronized (delegates) {
+      delegates.wait(timeout, nanos);
     }
   }
 }
