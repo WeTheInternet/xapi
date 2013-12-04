@@ -72,6 +72,11 @@ public class IsClassDelegate implements IsClass{
   public String toSignature() {
     return cls.toSignature()+ arrayString();
   }
+  
+  @Override
+  public boolean isArray() {
+    return cls.isArray();
+  }
 
   @Override
   public boolean isPublic() {
@@ -201,7 +206,7 @@ public class IsClassDelegate implements IsClass{
 
   @Override
   public Class<?> toClass(ClassLoader loader) throws ClassNotFoundException {
-    throw new UnsupportedOperationException("IsClassDelegate.toClass() not yet implemented");
+    return loader.loadClass(cls.getQualifiedName());
   }
   
   @Override

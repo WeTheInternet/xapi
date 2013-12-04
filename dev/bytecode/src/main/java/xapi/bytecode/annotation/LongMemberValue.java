@@ -44,7 +44,7 @@ public class LongMemberValue extends MemberValue {
     }
 
     @Override
-    Class<?> getType(ClassLoader cl) {
+    public Class<?> getType(ClassLoader cl) {
         return long.class;
     }
 

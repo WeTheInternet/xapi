@@ -1,6 +1,7 @@
 package xapi.shell.api;
 
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import xapi.io.api.LineReader;
 import xapi.util.api.Destroyable;
@@ -58,5 +59,6 @@ public interface ShellSession extends Destroyable{
 	 * @return true if the command was accepted right away, false if it was buffered.
 	 */
 	boolean stdIn(String string);
+  int block(int i, TimeUnit seconds);
 	
 }

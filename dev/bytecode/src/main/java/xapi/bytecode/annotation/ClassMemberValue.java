@@ -68,7 +68,7 @@ public class ClassMemberValue extends MemberValue {
     }
 
     @Override
-    Class<?> getType(ClassLoader cl) throws ClassNotFoundException {
+    public Class<?> getType(ClassLoader cl) throws ClassNotFoundException {
         return loadClass(cl, "java.lang.Class");
     }
 

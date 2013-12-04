@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>net.wetheinter</groupId>
+		<artifactId>xapi-dev-gwtc</artifactId>
+		<version>0.4-SNAPSHOT</version>
+	</parent>
+
+	<artifactId>xapi-gwtc-api</artifactId>
+	<packaging>jar</packaging>
+	<name>XApi - Gwt Compiler Api</name>
+	<url>WeTheInter.net</url>
+	<description>
+  This module contains the core api surrounding a gwt compile.
+
+  It exposes compile events, and interfaces to act as controllers.
+  The default implementations will function only from a command line (or web server).
+  The other modules are gui frontends that merely speak to an api backend.  
+  </description>
+
+	<dependencies>
+		<dependency>
+			<groupId>net.wetheinter</groupId>
+			<artifactId>gwt-reflect</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>net.wetheinter</groupId>
+			<artifactId>xapi-core-model</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>net.wetheinter</groupId>
+			<artifactId>xapi-jre-inject</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.google.gwt</groupId>
+			<artifactId>gwt-dev</artifactId>
+			<scope>provided</scope>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<resources>
+			<resource>
+				<directory>src/main/java</directory>
+			</resource>
+			<resource>
+				<directory>target/generated-sources/annotations</directory>
+			</resource>
+			<resource>
+				<directory>src/main/resources</directory>
+			</resource>
+		</resources>
+		<plugins>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>add-source</id>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>add-source</goal>
+						</goals>
+						<inherited>false</inherited>
+						<configuration>
+							<sources>
+								<source>${project.build.directory}/generated-sources/annotations</source>
+								<source>${project.build.directory}/generated-sources/xapi</source>
+							</sources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<!--This plugin's configuration is used to store Eclipse m2e settings 
+				only. It has no influence on the Maven build itself. -->
+			<plugin>
+				<groupId>org.eclipse.m2e</groupId>
+				<artifactId>lifecycle-mapping</artifactId>
+				<version>1.0.0</version>
+				<configuration>
+					<lifecycleMappingMetadata>
+						<pluginExecutions>
+							<pluginExecution>
+								<pluginExecutionFilter>
+									<artifactId>maven-compiler-plugin</artifactId>
+									<versionRange>[3.0,)</versionRange>
+									<goals>
+										<goal>compile</goal>
+									</goals>
+								</pluginExecutionFilter>
+								<action>
+									<execute>
+										<runOnConfiguration>true</runOnConfiguration>
+										<runOnIncremental>true</runOnIncremental>
+									</execute>
+								</action>
+							</pluginExecution>
+						</pluginExecutions>
+					</lifecycleMappingMetadata>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>

@@ -5,7 +5,7 @@ import static xapi.inject.X_Inject.instance;
 
 import org.junit.Test;
 
-import xapi.dev.scanner.ClasspathScanner;
+import xapi.dev.scanner.api.ClasspathScanner;
 import xapi.platform.JrePlatform;
 import xapi.test.AbstractInjectionTest;
 

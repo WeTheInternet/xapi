@@ -38,6 +38,12 @@
   </dependency>
   <dependency>
    <groupId>net.wetheinter</groupId>
+   <artifactId>gwt-reflect</artifactId>
+   <classifier>tests</classifier>
+   <version>${xapi.gwt.version}</version>
+  </dependency>
+  <dependency>
+   <groupId>net.wetheinter</groupId>
    <artifactId>xapi-gwt-inject</artifactId>
   </dependency>
   <dependency>
@@ -59,6 +65,10 @@
   <dependency>
    <groupId>net.wetheinter</groupId>
    <artifactId>xapi-gwt-io</artifactId>
+  </dependency>
+  <dependency>
+   <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-gwtc-api</artifactId>
   </dependency>
   <!--
   Yes, we're including gwt-test as compile dependency;

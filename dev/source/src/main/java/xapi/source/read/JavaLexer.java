@@ -424,6 +424,9 @@ public class JavaLexer {
     pos = eatJavaname(chars, pos);
     visitor.visitName(chars.subSequence(start, pos).toString(), receiver);
     pos = eatWhitespace(chars, pos);
+    if (pos == chars.length()) {
+      return pos;
+    }
     if (chars.charAt(pos) == '(') {
       // params
       pos = eatWhitespace(chars, pos + 1);

@@ -105,7 +105,7 @@ public class CollectionServiceDefault implements CollectionService{
 
   @Override
   public <V> IntTo<V> newList(Class<V> cls, CollectionOptions opts) {
-    return new IntToList<V>();
+    return new IntToList<V>(cls);
   }
 
   @Override

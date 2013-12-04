@@ -286,6 +286,9 @@ public class AbstractClass extends AbstractMember<AbstractClass> implements IsCl
     isInterface = add;
     return this;
   }
-
+  
+  public boolean isArray() {
+    return getSimpleName().contains("[]");
+  };
 
 }

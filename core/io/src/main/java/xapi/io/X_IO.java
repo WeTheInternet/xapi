@@ -20,6 +20,7 @@ import xapi.log.X_Log;
 import xapi.log.api.LogLevel;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
+import xapi.util.X_String;
 import xapi.util.X_Util;
 import xapi.util.api.ErrorHandler;
 
@@ -46,8 +47,8 @@ public class X_IO {
         int delay = 50;
         int read = 1;
         int loops = 20000;
-        
         try {
+          boolean hadBytes = false;
           top: while (read >= 0 && loops-- > 0) {
             Moment start = X_Time.now();
             do {
@@ -55,39 +56,49 @@ public class X_IO {
               if (avail == 0) {
                 // Maybe process is dead...
                 if (!liveCheck.isAlive()){
-                  X_Log.debug(getClass(), "Stream not alive; bailing");
+                  X_Log.info(getClass(), "Stream not alive; bailing");
                   read = -1;
                   break top;
                 }
               }
-              byte[] bytes = new byte[Math.min(1024,avail)];
+              byte[] bytes = new byte[Math.min(4096,avail)];
               read = in.read(bytes);
-              X_Log.debug(getClass(), "Got", read,"bytes from input stream", this);
               if (read > 0){
                 delay = 20;
                 buffer.write(bytes, 0, read);
+                hadBytes = true;
                 bytes = null;
-                String asStr = new String(buffer.toByteArray(), "UTF-8");
-                X_Log.trace(getClass(), "Read", asStr,"from input stream");
-                if (log && asStr.trim().length()>0){
+                if (log){
+                  String asStr = new String(buffer.toByteArray(), "UTF-8");
                   X_Log.log(info, new SimpleFifo<Object>().give(getClass()).give(asStr));
                 }
               } 
               else{
+                if (hadBytes) {
+                  hadBytes = false;
+                  String asStr = new String(buffer.toByteArray(), "UTF-8");
+                  sendString(successHandler, asStr);
+                  buffer.reset();
+                }
                 if (read == -1) {
                   break top;
                 }
-                X_Time.trySleep(delay*=2,0);
+                synchronized (liveCheck) {
+                  liveCheck.wait(delay*=2,0);
+                }
                 break;
               }
             } while (X_Time.now().millis() - start.millis() < 100);
-            X_Time.trySleep(5, 0);
+            synchronized (liveCheck) {
+              liveCheck.wait(10,0);
+            }
           }
-          if (read < 1) {
+          if (buffer.size() > 0) {
             String res = new String(buffer.toByteArray(), "UTF-8");
-            successHandler.onLine(res);
+            sendString(successHandler, res);
+            buffer.reset();
           }
-          else {
+          else if (read != -1){
             throw new RuntimeException("Input stream not cleared "+read+"; left: `"+new String(buffer.toByteArray())+"`");
           }
         } catch (Exception e) {
@@ -104,6 +115,17 @@ public class X_IO {
     });
   }
 
+  protected static void sendString(StringReader successHandler, String res) {
+    res = res.replaceAll("\r\n", "\n").replace('\r', '\n');
+    int pos = 0, ind = res.indexOf('\n');
+    while (ind > -1) {
+      successHandler.onLine(res.substring(pos, ++ind));
+      pos = ind;
+      ind = res.indexOf('\n', pos);
+    }
+    successHandler.onLine(res.substring(pos));
+  }
+
   private static void start(Runnable runnable) {
     new Thread(runnable).start();
   }
@@ -111,7 +133,7 @@ public class X_IO {
   public static void close(InputStream in) {
     try {
       in.close();
-    } catch (IOException ignored){}
+    } catch (IOException ignored){ignored.printStackTrace();}
   }
 
   public static boolean isOffline() {

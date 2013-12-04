@@ -60,6 +60,7 @@ implements MethodVisitor<SourceBuilder<?>>
 	private final LinkedHashSet<String> parameters;
 	private final LinkedHashSet<String> exceptions;
   private TypeData returnType;
+  private int tryDepth;
 
   public MethodBuffer(SourceBuilder<?> context) {
     this(context, INDENT);
@@ -419,5 +420,55 @@ implements MethodVisitor<SourceBuilder<?>>
   public void visitName(String name, SourceBuilder<?> receiver) {
     methodName = name;
   }
+  
+  public MethodBuffer startTry() {
+    tryDepth ++;
+    println("try {");
+    indent();
+    return this;
+  }
+
+  public MethodBuffer startTry(String withResources) {
+    tryDepth ++;
+    println("try ("+withResources+") {");
+    indent();
+    return this;
+  }
+  
+  public MethodBuffer startCatch(String exceptionType, String exceptionName) {
+    outdent();
+    println("} catch ("+exceptionType+" "+exceptionName+") {");
+    indent();
+    return this;
+  }
+  public String startCatch(String exceptionType) {
+    outdent();
+    int ind = exceptionType.lastIndexOf(' ');
+    String name;
+    if (ind == -1) {
+      name = "e"+tryDepth;
+      exceptionType = exceptionType+" "+name;
+    } else {
+      name = exceptionType.substring(ind +1);
+    }
+    println("} catch ("+exceptionType+") {");
+    indent();
+    return name;
+  }
+
+  public MethodBuffer startFinally() {
+    outdent();
+    println("} finally {");
+    indent();
+    return this;
+  }
+
+  public MethodBuffer endTry() {
+    outdent();
+    println("}");
+    tryDepth --;
+    return this;
+  }
+  
 
 }

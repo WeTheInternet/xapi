@@ -6,8 +6,9 @@ import java.util.Iterator;
 import java.util.concurrent.locks.Lock;
 
 import static xapi.collect.api.CharPool.EMPTY_STRING;
-
 import xapi.collect.api.CharPool;
+import xapi.collect.api.HasPrefixed;
+import xapi.collect.api.PrefixedMap;
 
 /**
  * NSFW
@@ -38,7 +39,7 @@ import xapi.collect.api.CharPool;
  *
  * @param <E>
  */
-public class MultithreadedStringTrie<E> {
+public class MultithreadedStringTrie<E> implements PrefixedMap<E> {
 
   private static final char[] emptyString = new char[0];
 

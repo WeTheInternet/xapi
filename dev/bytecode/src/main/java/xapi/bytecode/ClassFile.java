@@ -15,11 +15,13 @@ import xapi.bytecode.attributes.InnerClassesAttribute;
 import xapi.bytecode.attributes.SignatureAttribute;
 import xapi.bytecode.attributes.SourceFileAttribute;
 import xapi.bytecode.impl.BytecodeUtil;
+import xapi.log.X_Log;
 import xapi.source.X_Modifier;
+import xapi.source.X_Source;
 import xapi.util.X_Util;
 
 
-public final class ClassFile {
+public final class ClassFile implements Annotated {
     int major, minor; // version number
     ConstPool constPool;
     int thisClass;
@@ -828,6 +830,10 @@ public final class ClassFile {
       return X_Modifier.sourceNameToEnclosed(constPool.getClassName());
     }
     
+    public String getQualifiedName() {
+      return X_Source.qualifiedName(getPackage(), getEnclosedName());
+    }
+    
     @Override
     public int hashCode() {
       return getName().hashCode();
@@ -852,6 +858,14 @@ public final class ClassFile {
 
     public String getResourceName() {
       return getPackage().replace('.', File.separatorChar)+File.separatorChar+getSourceFile();
+    }
+
+    public boolean isClass(String pkg, String enclosed) {
+      return getPackage().equals(pkg) && getEnclosedName().equals(enclosed);
+    }
+    
+    public boolean hasSuperClass(String superClass) {
+      return getSuperclass().equals(superClass);
     }
     
 }

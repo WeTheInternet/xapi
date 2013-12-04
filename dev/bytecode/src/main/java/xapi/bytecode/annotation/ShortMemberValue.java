@@ -44,7 +44,7 @@ public class ShortMemberValue extends MemberValue {
     }
 
     @Override
-    Class<?> getType(ClassLoader cl) {
+    public Class<?> getType(ClassLoader cl) {
         return short.class;
     }
 

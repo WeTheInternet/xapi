@@ -12,6 +12,7 @@ import java.util.concurrent.TimeoutException;
 import xapi.collect.X_Collect;
 import xapi.collect.api.Fifo;
 import xapi.io.X_IO;
+import xapi.io.api.HasLiveness;
 import xapi.io.api.LineReader;
 import xapi.io.api.StringReader;
 import xapi.log.X_Log;
@@ -61,24 +62,40 @@ class ShellSessionDefault implements ShellSession, Runnable {
   @SuppressWarnings({"unchecked", "rawtypes"})
   @Override
   public void run() {
+    final InputStream stdOut;
+    final InputStream stdErr;
     synchronized (this) {
       if (process == null) {
+        InputStream o = null;
+        InputStream e = null;
         try {
           process = command.doRun(processor);
-          final InputStream stdOut = process.getInputStream();
-          final InputStream stdErr = process.getErrorStream();
-          onStdOut.onStart();
-          onStdErr.onStart();
-          X_IO.drain(LogLevel.TRACE, stdOut, onStdOut, X_Shell.liveChecker(process));
-          X_IO.drain(LogLevel.ERROR, stdErr, onStdErr, X_Shell.liveChecker(process));
-        } catch (Throwable e) {
-          X_Log.error(getClass(), "Could not start command " + command.commands(), e);
-          err.onError(e);
+          o = process.getInputStream();
+          e = process.getErrorStream();
+        } catch (Throwable ex) {
+          X_Log.error(getClass(), "Could not start command " + command.commands(), ex);
+          err.onError(ex);
         }
+        stdOut = o;
+        stdErr = e;
       } else {
+        stdOut = null;
+        stdErr = null;
         X_Log.warn(getClass(), "Shell command " + command.commands() + " has already been started.");
       }
       notifyAll();
+    }
+    if (stdOut != null) {
+      onStdOut.onStart();
+      onStdErr.onStart();
+      HasLiveness check = new HasLiveness() {
+        @Override
+        public boolean isAlive() {
+          return !finished;
+        }
+      };
+      X_IO.drain(LogLevel.INFO, stdOut, onStdOut, check);
+      X_IO.drain(LogLevel.ERROR, stdErr, onStdErr, check);
     }
     join();
     if (status == 0) {
@@ -91,8 +108,11 @@ class ShellSessionDefault implements ShellSession, Runnable {
         X_Log.error("Exit status",status,"for ",command.commands);
       }
     }
-    drainStreams();
     destroy();
+    drainStreams();
+    synchronized (this) {
+      notifyAll();
+    }
   }
 
   @Override
@@ -111,6 +131,29 @@ class ShellSessionDefault implements ShellSession, Runnable {
   }
 
   @Override
+  public int block(final int i, final TimeUnit seconds) {
+    final Thread waiting = Thread.currentThread();
+    X_Process.newThread(new Runnable() {
+      @Override
+      public void run() {
+        synchronized (ShellSessionDefault.this) {
+          try {
+            ShellSessionDefault.this.wait(seconds.toMillis(i), 0);
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            waiting.interrupt();
+            return;
+          }
+        }
+        if (status == null) {
+          waiting.interrupt();
+        }
+      }
+    }).start();
+    return join();
+  }
+  
+  @Override
   public int join() {
     if (status != null) {
       return status;
@@ -118,11 +161,21 @@ class ShellSessionDefault implements ShellSession, Runnable {
     try {
       if (process == null) {
         synchronized (this) {
-          wait(10000);
+          if (process == null) {
+            wait(10000);
+          }
+        }
+        if (status != null) {
+          return status;
         }
       }
-      X_Log.info(getClass(), "Joining process",process, "after",X_Time.difference(birth), "uptime");
-      return (status = process.waitFor());
+      if (process == null) {
+        X_Log.warn(getClass(),"Process failed to start after "+X_Time.difference(birth));
+      } else {
+        X_Log.info(getClass(), "Joining process",process, "after",X_Time.difference(birth), "uptime");
+        X_Log.trace(getClass(), "Joining from",new Throwable());
+        return (status = process.waitFor());
+      }
     } catch (InterruptedException e) {
       X_Log.info(getClass(), "Interrupted while joining process",process);
       finished = true;
@@ -159,7 +212,7 @@ class ShellSessionDefault implements ShellSession, Runnable {
   }
 
   @Override
-  public synchronized void destroy() {
+  public void destroy() {
     if (status == null) {// don't clobber a real exit status
       status = ShellCommandDefault.STATUS_DESTROYED;
     }
@@ -177,10 +230,10 @@ class ShellSessionDefault implements ShellSession, Runnable {
   
   protected void drainStreams() {
     try {
-      X_Log.trace(getClass(), "Process ended; blocking on stdOut");
-      onStdOut.waitToEnd();
-      X_Log.trace(getClass(), "Waiting for stdErr");
+      X_Log.trace(getClass(), "Process ended; Waiting for stdErr");
       onStdErr.waitToEnd();
+      X_Log.trace(getClass(), "Blocking on stdOut");
+      onStdOut.waitToEnd();
       X_Log.trace(getClass(), "Done");
     } catch (InterruptedException e) {
       Thread.interrupted();
@@ -189,11 +242,15 @@ class ShellSessionDefault implements ShellSession, Runnable {
   }
 
   protected void finish () {
-    for (RemovalHandler clear : clears.forEach()) {
-      clear.remove();
+    boolean shouldRun = false;
+    synchronized (once) {
+      for (RemovalHandler clear : clears.forEach()) {
+        clear.remove();
+      }
+      clears.clear();
+      shouldRun = status == 0 && once.shouldRun(false);
     }
-    clears.clear();
-    if (status == 0 && once.shouldRun(false)) {
+    if (shouldRun) {
       if (callback != null) {
         callback.onSuccess(this);
       }

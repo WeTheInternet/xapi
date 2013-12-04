@@ -13,7 +13,7 @@ public class ClassFileMatchers {
 
     @SuppressWarnings("unchecked")
     public HasAnnotationMatcher(Class<? extends Annotation> ... classes) {
-      this(X_Source.toString(classes));
+      this(X_Source.toStringCanonical(classes));
     }
     public HasAnnotationMatcher(String ... annotations) {
       this.annotations = annotations;

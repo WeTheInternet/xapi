@@ -5,24 +5,25 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import xapi.dev.X_Dev;
-import xapi.dev.scanner.StringDataResource;
+import xapi.dev.resource.impl.StringDataResource;
+import xapi.dev.scanner.X_Scanner;
 
 public class MavenAdapterTest {
 
-  private static Model coreTestModel;
+  private static Model scannerTestModel;
 
   @BeforeClass
-  public static void findOwnPom () {
+  public static void findTestPom () {
     ClassLoader cl = MavenAdapterTest.class.getClassLoader();
-    Iterable<StringDataResource> poms = X_Dev.findPoms(cl);
+    Iterable<StringDataResource> poms = X_Scanner.findPoms(cl);
     for (StringDataResource pom : poms) {
-      if (pom.getResourceName().contains("xapi-core-test")) {
-        coreTestModel = X_Maven.loadPomString(pom.readAll());
+      if (pom.getResourceName().contains("xapi-dev-scanner-test")) {
+        String pomString = pom.readAll();
+        scannerTestModel = X_Maven.loadPomString(pomString);
         return;
       }
     }
-    Assert.assertNotNull(coreTestModel);
+    Assert.assertNotNull(scannerTestModel);
   }
   
   

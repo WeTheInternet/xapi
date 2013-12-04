@@ -6,6 +6,7 @@ import java.lang.reflect.Method;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import com.google.gwt.core.client.Callback;
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.RunAsyncCallback;
@@ -24,7 +25,6 @@ import com.google.gwt.user.client.Element;
 import com.google.gwt.user.client.Event;
 import com.google.gwt.user.client.EventListener;
 import com.google.gwt.user.client.Timer;
-import com.google.gwt.user.client.rpc.AsyncCallback;
 
 public class TestEntryPoint implements EntryPoint {
 
@@ -60,8 +60,7 @@ public class TestEntryPoint implements EntryPoint {
         addConstructorTests();
         addMethodTests();
         addFieldTests();
-        
-        ConstPool.loadConstPool(new AsyncCallback<ConstPool>() {
+        ConstPool.loadConstPool(new Callback<ConstPool, Throwable>() {
           @Override
           public void onSuccess(ConstPool result) {
             for (MemberPool<?> m : result.getAllReflectionData()) {

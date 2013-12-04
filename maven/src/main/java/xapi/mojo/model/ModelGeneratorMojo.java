@@ -18,10 +18,10 @@ import xapi.annotation.model.GetterFor;
 import xapi.annotation.model.IsModel;
 import xapi.bytecode.ClassFile;
 import xapi.bytecode.impl.BytecodeAdapterService;
-import xapi.dev.X_Dev;
 import xapi.dev.model.HasModelFields;
 import xapi.dev.model.ModelField;
-import xapi.dev.scanner.ClasspathResourceMap;
+import xapi.dev.scanner.X_Scanner;
+import xapi.dev.scanner.impl.ClasspathResourceMap;
 import xapi.inject.impl.SingletonProvider;
 import xapi.log.X_Log;
 import xapi.model.api.Model;
@@ -60,7 +60,7 @@ public class ModelGeneratorMojo extends AbstractXapiMojo {
     MavenProject project = getSession().getCurrentProject();
     Build build = project.getBuild();
     ClasspathResourceMap classFolder // The classes we just compiled
-      = X_Dev.scanFolder(build.getOutputDirectory(), true, false, false, "");
+      = X_Scanner.scanFolder(build.getOutputDirectory(), true, false, false, "");
     ClasspathResourceMap environment // The complete compile-scope classpath
       = X_Maven.compileScopeScanner(project, getSession());
     final BytecodeAdapterService adapter = X_Maven.compileScopeAdapter(project, getSession());
@@ -72,7 +72,7 @@ public class ModelGeneratorMojo extends AbstractXapiMojo {
 
     // While we iterate the result of the classes we just compiled,
     // The full compile classpath scan is running in separate threads
-    for (ClassFile model : classFolder.findClassesImplementing(Model.class)) {
+    for (ClassFile model : classFolder.findImplementationOf(Model.class)) {
       models.put(model, 1);
     }
     for (ClassFile model : classFolder.findClassAnnotatedWith(IsModel.class)) {
@@ -115,8 +115,8 @@ public class ModelGeneratorMojo extends AbstractXapiMojo {
   };
   
   void buildModel(ClassFile clsFile, BytecodeAdapterService adapter, ClasspathResourceMap classpath) {
+    X_Log.info("Building model ",clsFile);
     IsClass cls = adapter.toClass(clsFile.getName());
-    X_Log.info("Building model ",cls);
     IsAnnotation modelAnno = cls.getAnnotation(IsModel.class.getName());
     HasModelFields model = new HasModelFields();
     if (modelAnno != null) {

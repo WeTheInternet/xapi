@@ -18,11 +18,15 @@
   <dependencies>
      <dependency>
       <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-dev-api</artifactId>
+      <artifactId>xapi-dev-scanner</artifactId>
      </dependency>
      <dependency>
       <groupId>net.wetheinter</groupId>
       <artifactId>xapi-jre-model</artifactId>
+     </dependency>
+     <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-jre-inject</artifactId>
      </dependency>
      <dependency>
       <groupId>net.wetheinter</groupId>

@@ -15,14 +15,13 @@ import xapi.bytecode.impl.BytecodeUtil;
 import xapi.source.X_Modifier;
 import xapi.source.api.AccessFlag;
 
-public final class FieldInfo {
+public final class FieldInfo extends MemberInfo {
     ConstPool constPool;
     int accessFlags;
     int name;
     String cachedName;
     String cachedType;
     int descriptor;
-    ArrayList<AttributeInfo> attribute;       // may be null.
 
     private FieldInfo(ConstPool cp) {
         constPool = cp;
@@ -56,7 +55,12 @@ public final class FieldInfo {
      */
     @Override
     public String toString() {
-        return getName() + " " + getDescriptor();
+        return getSignature();
+    }
+    
+    @Override
+    public String getSignature() {
+      return getName() + " " + getDescriptor();
     }
 
     /**

@@ -1,0 +1,35 @@
+.block {
+	display: inline-block;
+	text-align: left;
+}
+
+.button {
+  cursor: pointer;
+}
+
+.hidden {
+	display:none;
+}
+
+.inputItem {
+	padding: 2px 0px;
+	width: 150px;
+	display: inline-block;
+}
+
+.inputLabel {
+	width: 80px;
+	display: inline-block;
+}
+
+.radio {
+}
+
+.radioLabel {
+  cursor: pointer;
+  padding-left: 0.5em;
+}
+
+.row * {
+	vertical-align: middle;
+}

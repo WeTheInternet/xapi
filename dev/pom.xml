@@ -32,6 +32,10 @@
     <module>maven</module>
     <!-- Running shell commands (opens an sh session) -->
     <module>shell</module>
+    <!-- An extended gwt compiler service -->
+    <module>gwtc</module>
+    <!-- Everything needed to run a comprehensive dev environment -->
+    <module>uber</module>
   </modules>
 
 </project>

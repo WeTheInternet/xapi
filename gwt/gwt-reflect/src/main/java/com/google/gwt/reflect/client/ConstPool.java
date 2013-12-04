@@ -7,13 +7,13 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import com.google.gwt.core.client.Callback;
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.RunAsyncCallback;
 import com.google.gwt.core.client.UnsafeNativeLong;
 import com.google.gwt.core.shared.GWT;
 import com.google.gwt.reflect.client.strategy.GwtRetention;
 import com.google.gwt.reflect.client.strategy.ReflectionStrategy;
-import com.google.gwt.user.client.rpc.AsyncCallback;
 
 public class ConstPool extends JavaScriptObject {
 
@@ -96,7 +96,7 @@ public class ConstPool extends JavaScriptObject {
    *
    * @param callback
    */
-  public static void loadConstPool(final AsyncCallback<ConstPool> callback) {
+  public static void loadConstPool(final Callback<ConstPool, Throwable> callback) {
     if (GWT.isClient()) {
       com.google.gwt.core.client.GWT.runAsync(ConstPool.class, new RunAsyncCallback() {
   

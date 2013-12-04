@@ -44,7 +44,7 @@ public class CharMemberValue extends MemberValue {
     }
 
     @Override
-    Class<?> getType(ClassLoader cl) {
+    public Class<?> getType(ClassLoader cl) {
         return char.class;
     }
 

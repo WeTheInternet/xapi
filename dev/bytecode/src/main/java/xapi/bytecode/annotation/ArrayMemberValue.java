@@ -58,7 +58,7 @@ public class ArrayMemberValue extends MemberValue {
     }
 
     @Override
-    Class<?> getType(ClassLoader cl) throws ClassNotFoundException {
+    public Class<?> getType(ClassLoader cl) throws ClassNotFoundException {
         if (type == null)
             throw new ClassNotFoundException("no array type specified");
 

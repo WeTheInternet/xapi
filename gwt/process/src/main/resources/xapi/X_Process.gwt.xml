@@ -3,7 +3,7 @@
 <module>
   <source path='process'/>
   <inherits name="xapi.X_Inject" />
-  
+  <inherits name="com.google.gwt.user.User" />
   <!-- TODO: link up web workers for threads as independent compiles -->
   
 </module>

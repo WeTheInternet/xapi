@@ -118,8 +118,9 @@ public class AnnotationImpl implements InvocationHandler {
            return getAnnotationType();
 
         MemberValue mv = annotation.getMemberValue(name);
-        if (mv == null)
-            return getDefault(name, method);
+        if (mv == null) {
+          return getDefault(name, method);
+        }
         else
             return mv.getValue(classLoader, pool, method);
     }

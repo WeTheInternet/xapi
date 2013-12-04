@@ -33,7 +33,7 @@ public class AnnotationMemberValue extends MemberValue {
     }
 
     @Override
-    Class<?> getType(ClassLoader cl) throws ClassNotFoundException {
+    public Class<?> getType(ClassLoader cl) throws ClassNotFoundException {
         if (value == null)
             throw new ClassNotFoundException("no type specified");
         else

@@ -136,6 +136,11 @@ public enum Primitives implements IsClass{
   public final boolean isPrimitive() {
     return true;
   }
+  
+  @Override
+  public boolean isArray() {
+    return false;
+  }
 
   public abstract String getObjectName();
   

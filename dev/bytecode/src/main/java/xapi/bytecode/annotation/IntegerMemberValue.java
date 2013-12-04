@@ -50,7 +50,7 @@ public class IntegerMemberValue extends MemberValue {
     }
 
     @Override
-    Class<?> getType(ClassLoader cl) {
+    public Class<?> getType(ClassLoader cl) {
         return int.class;
     }
 

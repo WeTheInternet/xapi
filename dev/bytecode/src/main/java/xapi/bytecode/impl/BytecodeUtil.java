@@ -1,5 +1,6 @@
 package xapi.bytecode.impl;
 
+import java.lang.reflect.Array;
 import java.util.Arrays;
 
 import xapi.bytecode.annotation.Annotation;
@@ -23,8 +24,12 @@ import xapi.collect.impl.ToStringFifo;
 import xapi.log.X_Log;
 import xapi.source.X_Modifier;
 import xapi.source.api.IsAnnotationValue;
+import xapi.source.api.IsClass;
+import xapi.source.api.IsType;
 import xapi.source.impl.ImmutableAnnotationValue;
+import xapi.util.X_Debug;
 import xapi.util.api.ConvertsValue;
+import xapi.util.converters.ConvertsStringValue;
 
 public class BytecodeUtil {
 
@@ -42,8 +47,8 @@ public class BytecodeUtil {
     return vis;
   }
 
-  public static IsAnnotationValue extractValue(MemberValue value, BytecodeAdapterService service) {
-    return new ValueExtractor().extract(value, service);
+  public static IsAnnotationValue extractValue(MemberValue value, BytecodeAdapterService service, IsType type) {
+    return new ValueExtractor().extract(value, service, type);
   }
   
   private static final class ArrayTypeExtractor implements MemberValueVisitor {
@@ -116,9 +121,11 @@ public class BytecodeUtil {
 
     IsAnnotationValue value;
     private BytecodeAdapterService service;
+    private IsType knownType;
     
-    public IsAnnotationValue extract(MemberValue member, BytecodeAdapterService service) {
+    public IsAnnotationValue extract(MemberValue member, BytecodeAdapterService service, IsType type) {
       this.service = service;
+      this.knownType = type;
       member.accept(this);
       return value;
     }
@@ -140,8 +147,87 @@ public class BytecodeUtil {
       ToStringFifo<IsAnnotationValue> toString = new ToStringFifo<IsAnnotationValue>();
       ValueExtractor extract = new ValueExtractor();
       MemberValue type = node.getType();
+      if (type == null) {
+        try {
+          node.getType(service.getClassLoader());
+        } catch (ClassNotFoundException e) {
+          if (val.length == 0 && this.knownType != null) {
+              // We have a zero-arg array value of a known type; we can create the necessary value
+            
+            IsClass cls = service.toClass(knownType.getQualifiedName());
+            Object value;
+            ConvertsValue<Object, String> toStringer = new ConvertsValue<Object, String>() {
+              @Override
+              public String convert(Object from) {
+                return "{}";
+              }
+            };
+            int modifier = 0;
+            if (cls.isPrimitive()) {
+              modifier = -1;
+              switch (cls.getQualifiedName()) {
+                case "boolean":
+                  value = new boolean[0];
+                  break;
+                case "byte":
+                  value = new byte[0];
+                  break;
+                case "char":
+                  value = new char[0];
+                  break;
+                case "short":
+                  value = new short[0];
+                  break;
+                case "int":
+                  value = new int[0];
+                  break;
+                case "long":
+                  value = new long[0];
+                  break;
+                case "float":
+                  value = new float[0];
+                  break;
+                case "double":
+                  value = new double[0];
+                  break;
+                default:
+                  throw new IllegalArgumentException();
+              }
+            } else {
+              if (X_Modifier.isEnum(cls.getModifier())) {
+                modifier = X_Modifier.ENUM;
+                try {
+                  Class<?> clazz = cls.toClass(service.getClassLoader());
+                  value = Array.newInstance(clazz, 0);
+                } catch (ClassNotFoundException e1) {
+                  throw X_Debug.rethrow(e1);
+                }
+              } else if (X_Modifier.isAnnotation(cls.getModifier())) {
+                modifier = X_Modifier.ANNOTATION;
+                value = new Class[0];
+                try {
+                  Class<?> clazz = cls.toClass(service.getClassLoader());
+                  value = Array.newInstance(clazz, 0);
+                } catch (ClassNotFoundException e1) {
+                  throw X_Debug.rethrow(e1);
+                }
+              } else if (cls.getQualifiedName().equals(String.class.getName())) {
+                value = new String[0];
+              } else {
+                // Must be a class array
+                value = new Class[0];
+              }
+            }
+            this.value = new ImmutableAnnotationValue(cls.getQualifiedName(), value, modifier);
+          } else {
+            X_Log.error(getClass(), "Unable to load array member value type", node,"from",this.value,  e);
+          }
+          return;
+        }
+        type = node.getType();
+      }
       for (MemberValue member : val) {
-        toString.give(extract.extract((type = member), service));
+        toString.give(extract.extract((type = member), service, null));
       }
       ArrayTypeExtractor getType = new ArrayTypeExtractor();
       type.accept(getType);

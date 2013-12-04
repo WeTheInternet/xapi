@@ -6,6 +6,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
@@ -13,9 +14,11 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import xapi.log.X_Log;
 import xapi.source.X_Source;
 import xapi.source.api.HasAnnotations;
 import xapi.source.api.IsAnnotation;
+import xapi.source.api.IsAnnotationValue;
 import xapi.source.api.IsClass;
 import xapi.source.api.IsField;
 import xapi.source.api.IsMethod;
@@ -48,6 +51,11 @@ class OuterTestClass implements Serializable {
   @Target(ElementType.METHOD)
   private static @interface StaticInnerAnno{
     Class<?>[] value();
+  }
+  @Retention(RetentionPolicy.RUNTIME)
+  @Target({})
+  static @interface NoTargetAnno{
+    Class<?>[] value() default {};
   }
   @Retention(RetentionPolicy.RUNTIME)
   @interface InnerAnno {
@@ -83,10 +91,21 @@ public class BytecodeAdapterServiceTest {
   }
   
   @Test
-  public void testTestParser() {
+  public void testArrayParser() {
     IsClass clsArray = service.toClass("java.lang.Class[]");
-    
+    Assert.assertNotNull(clsArray);
   }
+  
+  @Test
+  public void testAnnoNoArgs() {
+    IsClass asClass = service.toClass(OuterTestClass.NoTargetAnno.class.getName());
+    IsAnnotation anno = asClass.getAnnotation(Target.class.getName());
+    
+    IsAnnotationValue empty = anno.getValue(anno.getMethod("value"));
+    Assert.assertTrue(empty.isArray());
+    Assert.assertEquals(0, Array.getLength(empty.getRawValue()));
+  }
+  
   @Test
   public void testTestClass() {
     Class<?> cls = getTestClass();
@@ -95,7 +114,11 @@ public class BytecodeAdapterServiceTest {
     Assert.assertEquals(asClass.getEnclosedName(), X_Source.classToEnclosedSourceName(cls));
     Assert.assertEquals(asClass.getModifier(), cls.getModifiers());
     testAnnos(cls.getDeclaredAnnotations(), asClass);
-    
+  }
+  @Test
+  public void testTestClass_Methods() {
+    Class<?> cls = getTestClass();
+    IsClass asClass = service.toClass(cls.getName());
     for (Method method : cls.getMethods()) {
       IsMethod imethod = asClass.getMethod(method.getName(), true, method.getParameterTypes());
       String testCase = imethod.getQualifiedName() +" != "+method.getName();
@@ -108,6 +131,12 @@ public class BytecodeAdapterServiceTest {
       
       testAnnos(method.getDeclaredAnnotations(), imethod);
     }
+  }
+  
+  @Test
+  public void testTestClass_Fields() {
+    Class<?> cls = getTestClass();
+    IsClass asClass = service.toClass(cls.getName());
     for (Field field : cls.getFields()) {
       IsField ifield = asClass.getField(field.getName());
       Assert.assertNotNull(field.getName(), ifield);

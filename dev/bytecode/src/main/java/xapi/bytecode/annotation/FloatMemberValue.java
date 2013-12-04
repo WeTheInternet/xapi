@@ -44,7 +44,7 @@ public class FloatMemberValue extends MemberValue {
     }
 
     @Override
-    Class<?> getType(ClassLoader cl) {
+    public Class<?> getType(ClassLoader cl) {
         return float.class;
     }
 

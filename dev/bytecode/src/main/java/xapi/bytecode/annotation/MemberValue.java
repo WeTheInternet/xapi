@@ -25,7 +25,7 @@ public abstract class MemberValue {
     abstract Object getValue(ClassLoader cl, ClassPool cp, Method m)
         throws ClassNotFoundException;
 
-    abstract Class<?> getType(ClassLoader cl) throws ClassNotFoundException;
+    public abstract Class<?> getType(ClassLoader cl) throws ClassNotFoundException;
 
     static Class<?> loadClass(ClassLoader cl, String classname)
         throws ClassNotFoundException, NoSuchClassError

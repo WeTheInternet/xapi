@@ -8,6 +8,7 @@ import xapi.util.api.ErrorHandler;
 
 public class X_Debug {
 
+  private X_Debug() {}
   public static class DebugStream extends PrintStream {
 
     private final PrintStream orig;
@@ -57,15 +58,16 @@ public class X_Debug {
 
   }
 
-  private X_Debug() {
-  }
-
   public static void debug(Throwable e) {
     // TODO: give an injectable service to handle debug messages
     // This would be good for threadlocal processes,
     // so the object inspecting the throwable will have context for the
     // exception
-    e.printStackTrace();
+    while (e != null) {
+      e.printStackTrace();
+      if (e == e.getCause()) return;
+      e = e.getCause();
+    }
   }
 
   public static boolean isBenchmark() {
@@ -114,6 +116,7 @@ public class X_Debug {
     if (orig instanceof DebugStream)
       return;
     System.setErr(new DebugStream(orig, ignoreDepth));
+    System.err.println("Tracing system.err");
   }
 
   public static void traceSystemOut() {
@@ -129,6 +132,7 @@ public class X_Debug {
     if (orig instanceof DebugStream)
       return;
     System.setOut(new DebugStream(orig, ignoreDepth));
+    System.out.println("Tracing system.out");
   }
 }
 

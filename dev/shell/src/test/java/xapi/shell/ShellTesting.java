@@ -1,5 +1,6 @@
 package xapi.shell;
 
+import java.io.File;
 import java.util.concurrent.CountDownLatch;
 
 import org.junit.BeforeClass;
@@ -14,17 +15,44 @@ import xapi.shell.api.ShellCommand;
 import xapi.shell.api.ShellSession;
 import xapi.test.Assert;
 import xapi.time.X_Time;
+import xapi.time.api.Moment;
 import xapi.util.X_Namespace;
 import xapi.util.api.SuccessHandler;
 
 public class ShellTesting {
+
+  private static final String success = "succ\ness";
+  private static final int exitStatus = 111;
 
   @BeforeClass
   public static void prepare() {
     System.setProperty(X_Namespace.PROPERTY_MULTITHREADED, "10");
     JavaInjector.instance(ShellCommand.class);
   }
-
+  
+  public static void main(String[] args) {
+    System.out.print(success);
+    System.exit(exitStatus);// Test custom exit status
+  }
+  
+  @Test(timeout=15000)
+  public void testInvokeJavaMain() {
+    Moment start = X_Time.now();
+    String[] classpath = System.getProperty("java.class.path").split(File.pathSeparator);
+    StringReader reader = new StringReader();
+    ShellSession result = X_Shell.launchJava(ShellTesting.class, classpath, new String[]{"-Xmx128M"}, new String[0]);
+    result.stdOut(reader);
+    X_Log.debug(getClass(), "Bootstrap shell", X_Time.difference(start));
+    try {
+      reader.waitToEnd(14000, 0);
+    } catch (InterruptedException e) {
+      Assert.fail("Interrupted while waiting for process to end");
+    }
+    Assert.assertEquals(success, reader.toString());
+    Assert.assertEquals(exitStatus, result.join());
+    X_Log.trace(getClass(), "Process Runtime", X_Time.difference(start));
+  }
+  
   @Test(timeout=10000)
   public void testShell() throws Throwable {
     

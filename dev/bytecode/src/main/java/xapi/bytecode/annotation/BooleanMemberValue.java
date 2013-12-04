@@ -44,7 +44,7 @@ public class BooleanMemberValue extends MemberValue {
     }
 
     @Override
-    Class<?> getType(ClassLoader cl) {
+    public Class<?> getType(ClassLoader cl) {
         return boolean.class;
     }
 

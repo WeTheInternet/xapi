@@ -8,6 +8,7 @@ HasGenerics,
 HasInterfaces
 {
 
+  boolean isArray();
   boolean isAbstract();
   boolean isFinal();
   boolean isStatic();

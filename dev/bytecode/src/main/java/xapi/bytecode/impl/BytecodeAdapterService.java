@@ -41,6 +41,7 @@ import xapi.source.impl.DeclaredMemberFilter;
 import xapi.source.impl.ImmutableType;
 import xapi.source.impl.IsClassDelegate;
 import xapi.source.service.SourceAdapterService;
+import xapi.util.X_Byte;
 import xapi.util.X_Debug;
 import xapi.util.X_String;
 import xapi.util.api.ConvertsValue;
@@ -113,7 +114,8 @@ public class BytecodeAdapterService implements
   }
 
   protected ClassLoader getClassLoader() {
-    return BytecodeAdapterService.class.getClassLoader();
+    return Thread.currentThread().getContextClassLoader();
+//        BytecodeAdapterService.class.getClassLoader();
   }
 
   @Override
@@ -240,7 +242,7 @@ public class BytecodeAdapterService implements
       MemberValue val = anno.getMemberValue(value.getName());
       if (val == null)
         return getDefaultValue(value);
-      return BytecodeUtil.extractValue(val, BytecodeAdapterService.this);
+      return BytecodeUtil.extractValue(val, BytecodeAdapterService.this, value.getReturnType());
     }
 
     @Override
@@ -615,6 +617,11 @@ public class BytecodeAdapterService implements
     }
     
     @Override
+    public boolean isArray() {
+      return cls.isArray();
+    }
+    
+    @Override
     public boolean isEnum() {
       return X_Modifier.isEnum(getModifier());
     }
@@ -705,7 +712,12 @@ public class BytecodeAdapterService implements
     public boolean isAbstract() {
       return X_Modifier.isAbstract(getModifier());
     }
-
+    @Override
+    public IsAnnotation getAnnotation(String name) {
+      // TODO Auto-generated method stub
+      return super.getAnnotation(name);
+    }
+    
     @Override
     public boolean isStatic() {
       return X_Modifier.isStatic(getModifier());
@@ -755,7 +767,14 @@ public class BytecodeAdapterService implements
     @Override
     public IsAnnotationValue getDefaultValue() {
       AnnotationDefaultAttribute def = (AnnotationDefaultAttribute)method.getMethodInfo2().getAttribute(AnnotationDefaultAttribute.tag);
-      return def == null ? null : BytecodeUtil.extractValue(def.getDefaultValue(), BytecodeAdapterService.this);
+      IsType type;
+      try {
+        type = new ImmutableType(method.getReturnType().getPackageName(), method.getReturnType().getEnclosedName());
+      } catch (NotFoundException e) {
+        X_Log.warn("Not able to lookup return type for ",method, e);
+        type = null;
+      }
+      return def == null ? null : BytecodeUtil.extractValue(def.getDefaultValue(), BytecodeAdapterService.this, type);
     }
 
     @Override

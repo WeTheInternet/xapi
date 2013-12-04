@@ -19,11 +19,7 @@
   <dependencies>
      <dependency>
       <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-dev-scanner</artifactId>
-     </dependency>
-     <dependency>
-      <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-jre-inject</artifactId>
+      <artifactId>xapi-core-util</artifactId>
      </dependency>
   </dependencies>
 

@@ -306,6 +306,41 @@
     <artifactId>xapi-dev-shell</artifactId>
     <version>${xapi.version}</version>
    </dependency>
+
+   <!-- Gwtc module -->
+   <dependency>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-dev-gwtc</artifactId>
+    <version>${xapi.version}</version>
+   </dependency>
+   <dependency>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-gwtc-api</artifactId>
+    <version>${xapi.version}</version>
+   </dependency>
+   <dependency>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-gwtc-api</artifactId>
+    <classifier>sources</classifier>
+    <version>${xapi.version}</version>
+   </dependency>
+   <dependency>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-gwtc-impl</artifactId>
+    <version>${xapi.version}</version>
+   </dependency>
+   <dependency>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-gwtc-gwt</artifactId>
+    <version>${xapi.version}</version>
+   </dependency>
+   <dependency>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-gwtc-jre</artifactId>
+    <version>${xapi.version}</version>
+   </dependency>
+   
+   <!-- Maven plugin -->
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-maven-plugin</artifactId>

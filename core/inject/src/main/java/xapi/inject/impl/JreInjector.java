@@ -104,6 +104,7 @@ public class JreInjector implements Injector{
 	             try{
 	               return cls.newInstance();
 	             }catch(Exception e){
+	               e.printStackTrace();
 	               throw new RuntimeException("Could not instantiate new instance of "+cls.getName()+" : "+target,e);
 	             }
 	           }
@@ -176,8 +177,11 @@ public class JreInjector implements Injector{
 		  if (injector.initOnce) {
 		    injector.initOnce = false;
 		    injector.init(cls, map);
+		    resource = loader.getResource(relativeUrl+name);
 		  }
-		  return name;
+		  if (resource == null) {
+		    return name;
+		  }
 		}
 		InputStream stream = resource.openStream();
 		byte[] into = new byte[stream.available()];
@@ -197,6 +201,7 @@ public class JreInjector implements Injector{
 	      return (T) instanceProviders.get(cls).get();
 	    } catch (Exception e) {
 	      if (initOnce) {
+	        X_Log.warn("Instance provider failed; attempting runtime injection", e);
 	        initOnce = false;
 	        init(cls, instanceProviders);
 	        return create(cls);
@@ -215,6 +220,7 @@ public class JreInjector implements Injector{
 		  return (T) singletonProviders.get(cls).get();
 	  } catch (Exception e) {
 	    if (initOnce) {
+	      X_Log.warn("Singleton provider failed; attempting runtime injection", e);
 	      initOnce = false;
 	      init(cls, singletonProviders);
 	      return provide(cls);
@@ -230,16 +236,16 @@ public class JreInjector implements Injector{
 
     protected void init(Class<?> on, InitMap<Class<?>, ?> map) {
 
-	    X_Log.warn("X_Inject encountered a class without injection metadata:",on);
+	    X_Log.warn(getClass(), "X_Inject encountered a class without injection metadata:",on);
 	    if (!"false".equals(System.getProperty("xinject.no.runtime.injection"))) {
-	      X_Log.info("Attempting runtime injection.");
+	      X_Log.info(getClass(), "Attempting runtime injection.");
 	      try {
 	        runtimeInjector.get().set(
 	          System.getProperty(PROPERTY_RUNTIME_META, "target/classes")
 	        );
-	        X_Log.info("Runtime injection success.");
+	        X_Log.info(getClass(), "Runtime injection success.");
 	      }catch (Exception e) {
-	        X_Log.warn("Runtime injection failure.",e);
+	        X_Log.warn(getClass(), "Runtime injection failure.",e);
 	      }
 	    }
 	  }

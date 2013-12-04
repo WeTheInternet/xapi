@@ -20,13 +20,12 @@ import xapi.bytecode.impl.BytecodeUtil;
 import xapi.source.api.AccessFlag;
 import xapi.util.X_Byte;
 
-public class MethodInfo {
+public class MethodInfo extends MemberInfo {
     ConstPool constPool;
     int accessFlags;
     int name;
     String cachedName;
     int descriptor;
-    ArrayList<AttributeInfo> attribute; // may be null
 
     /**
      * If this value is true, Javassist maintains a <code>StackMap</code> attribute
@@ -106,7 +105,12 @@ public class MethodInfo {
      */
     @Override
     public String toString() {
-        return getName() + " " + getDescriptor();
+        return getSignature();
+    }
+    
+    @Override
+    public String getSignature() {
+      return getName() + " " + getDescriptor();
     }
 
     /**
@@ -260,35 +264,6 @@ public class MethodInfo {
     public void setDescriptor(String desc) {
         if (!desc.equals(getDescriptor()))
             descriptor = constPool.addUtf8Info(desc);
-    }
-
-    /**
-     * Returns all the attributes.  The returned <code>List</code> object
-     * is shared with this object.  If you add a new attribute to the list,
-     * the attribute is also added to the method represented by this
-     * object.  If you remove an attribute from the list, it is also removed
-     * from the method.
-     *
-     * @return a list of <code>AttributeInfo</code> objects.
-     * @see AttributeInfo
-     */
-    public List<AttributeInfo> getAttributes() {
-        if (attribute == null)
-            attribute = new ArrayList<AttributeInfo>();
-
-        return attribute;
-    }
-
-    /**
-     * Returns the attribute with the specified name. If it is not found, this
-     * method returns null.
-     *
-     * @param name attribute name
-     * @return an <code>AttributeInfo</code> object or null.
-     * @see #getAttributes()
-     */
-    public AttributeInfo getAttribute(String name) {
-        return AttributeInfo.lookup(attribute, name);
     }
 
     /**
@@ -533,10 +508,15 @@ public class MethodInfo {
             AttributeInfo.writeAll(attribute, out);
         }
     }
-
-    public Annotation[] getAnnotations() {
-      AttributeInfo vis = getAttribute(AnnotationsAttribute.visibleTag);
-      AttributeInfo invis = getAttribute(AnnotationsAttribute.invisibleTag);
-      return BytecodeUtil.extractAnnotations((AnnotationsAttribute)vis, (AnnotationsAttribute)invis);
+    
+    @Override
+    public boolean equals(Object obj) {
+      return obj instanceof MethodInfo && getName().equals(((MethodInfo)obj).getName());
     }
+    
+    @Override
+    public int hashCode() {
+      return getName().hashCode();
+    }
+    
 }

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:UiBinder xmlns:ui="urn:ui:com.google.gwt.uibinder"
+	xmlns:g="urn:import:com.google.gwt.user.client.ui"
+	xmlns:x="urn:import:xapi.gwtc.view"
+	>
+	<ui:with field="res" type="xapi.gwtc.view.GwtcResources" />
+	<g:HTMLPanel ui:field="root" styleName="{res.css.block}">
+	   
+     <x:ModuleSelectorView ui:field="modules" />
+     <br/>
+     <label ui:field="portLabel" class="{res.css.inputLabel}">Port</label>
+     <input ui:field="port" class="{res.css.inputItem}" type="text" value="1337"></input>
+	</g:HTMLPanel>
+</ui:UiBinder>

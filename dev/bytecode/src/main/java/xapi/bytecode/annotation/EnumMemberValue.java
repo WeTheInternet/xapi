@@ -50,7 +50,7 @@ public class EnumMemberValue extends MemberValue {
     }
 
     @Override
-    Class<?> getType(ClassLoader cl) throws ClassNotFoundException {
+    public Class<?> getType(ClassLoader cl) throws ClassNotFoundException {
         return loadClass(cl, getType());
     }
 

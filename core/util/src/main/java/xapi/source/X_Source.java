@@ -91,13 +91,25 @@ public class X_Source {
     return Character.toUpperCase(datatype.charAt(0)) + datatype.substring(1);
   }
 
-  public static String[] toString(
+  public static String[] toStringCanonical(
       Class<?> ... classes) {
     // TODO move this to service, so gwt can use seedId or something more deterministic
     String[] names = new String[classes.length];
     for (int i = classes.length; i-->0;)
       names[i] = classes[i].getCanonicalName(); 
     return names;
+  }
+  
+  public static String[] toStringBinary(
+      Class<?> ... classes) {
+    // TODO move this to service, so gwt can use seedId or something more deterministic
+    String[] names = new String[classes.length];
+    for (int i = classes.length; i-->0;)
+      names[i] = classes[i].getName(); 
+    return names;
+  }
+  public static String toStringEnclosed(Class<?> cls) {
+    return cls.getCanonicalName().replace(cls.getPackage().getName()+".", "");
   }
   
   public static URL[] getUrls(ClassLoader classLoader) {
@@ -208,6 +220,9 @@ public class X_Source {
   
   public static boolean isJavaLangObject(HasQualifiedName type) {
     return type.getQualifiedName().equals("java.lang.Object");
+  }
+  public static String qualifiedName(String pkg, String enclosed) {
+    return X_String.isEmpty(pkg) ? enclosed : pkg + "." + enclosed;
   }
 
 }

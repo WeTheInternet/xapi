@@ -1,16 +1,11 @@
 package xapi.mojo.model;
 
-import java.util.Enumeration;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-
-import org.junit.Ignore;
 import org.junit.Test;
 
 import xapi.bytecode.ClassFile;
 import xapi.bytecode.impl.BytecodeAdapterService;
-import xapi.dev.X_Dev;
-import xapi.dev.scanner.ClasspathResourceMap;
+import xapi.dev.scanner.X_Scanner;
+import xapi.dev.scanner.impl.ClasspathResourceMap;
 import xapi.log.X_Log;
 import xapi.model.api.Model;
 
@@ -23,11 +18,11 @@ public class ModelGeneratorTest {
   @Test
   public void testModelGen() {
     ModelGeneratorMojo mojo = new ModelGeneratorMojo();
-    ClasspathResourceMap map = X_Dev.scanClassloader(Thread.currentThread().getContextClassLoader()
+    ClasspathResourceMap map = X_Scanner.scanClassloader(getClass().getClassLoader()
         , true, true, true, "xapi");
     BytecodeAdapterService adapter = new BytecodeAdapterService();
     ClassFile cls = map.findClass(TestModel.class.getName());
-    X_Log.info(cls.getAccessFlags());
+    X_Log.info(getClass(), "test model:", cls);
     mojo.buildModel(cls, adapter, map);
   }
   

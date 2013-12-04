@@ -53,7 +53,8 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer>{
 	private final SimpleStack<MethodBuffer> ctors;
 	protected SourceBuilder<?> context;
   private boolean isWellFormatted;
-  private PrintBuffer prefix;
+  private PrintBuffer prefix, classes, fields, constructors, methods
+    ,staticFields, staticMethods, staticClasses, statics;
 
 	public ClassBuffer() {
 	  this(new SourceBuilder<Object>());
@@ -67,6 +68,16 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer>{
 	  this.context = context;
 	  interfaces = new TreeSet<String>();
 	  ctors = new SimpleStack<MethodBuffer>();
+	  classes = new PrintBuffer();
+	  fields = new PrintBuffer();
+	  constructors = new PrintBuffer();
+	  methods = new PrintBuffer();
+	  statics = new PrintBuffer();
+	  addToEnd(statics);
+	  addToEnd(classes);
+	  addToEnd(fields);
+	  addToEnd(constructors);
+	  addToEnd(methods);
 	}
 
 	@Override
@@ -279,7 +290,7 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer>{
 	public ClassBuffer createInnerClass(String classDef) {
 	  ClassBuffer inner = new ClassBuffer(context, memberIndent());
 	  inner.setDefinition(classDef, classDef.trim().endsWith("{"));
-	  addToEnd(inner);
+	  addClass(inner);
 	  return inner;
 	}
 
@@ -324,14 +335,14 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer>{
 	  method.setName(getSimpleName());
 	  method.setReturnType("");
 	  method.addParameters(params);
-	  addToEnd(method);
+	  constructors.addToEnd(method);
 	  ctors.add(method);
 	  return method;
 	}
   public MethodBuffer createMethod(String methodDef) {
 	  MethodBuffer method = new MethodBuffer(context, memberIndent());
 	  method.setDefinition(methodDef);
-	  addToEnd(method);
+	  addMethod(method);
 	  return method;
 	}
   public MethodBuffer createMethod(int modifiers, Class<?> returnType, String name, String ... params) {
@@ -339,7 +350,7 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer>{
     method.setModifier(modifiers);
     method.setName(name);
     method.addParameters(params);
-    addToEnd(method);
+    addMethod(method);
     return method;
   }
 
@@ -350,24 +361,72 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer>{
 	public FieldBuffer createField(Class<?> type, String name, int modifier) {
 	  FieldBuffer field = new FieldBuffer(this, type.getCanonicalName(), name, memberIndent());
 	  field.setModifier(modifier);
-	  addToEnd(field);
+	  addField(field);
 	  return field;
 	}
 
 	public FieldBuffer createField(String type, String name) {
 	  FieldBuffer field = new FieldBuffer(this, type, name, memberIndent());
-	  addToEnd(field);
+	  addField(field);
 	  return field;
 	}
 
 	public FieldBuffer createField(String type, String name, int modifier) {
 	  FieldBuffer field = new FieldBuffer(this, type, name, memberIndent());
 	  field.setModifier(modifier);
-	  addToEnd(field);
+	  addField(field);
 	  return field;
 	}
+	
+	private void addClass(ClassBuffer clazz) {
+	  if (Modifier.isStatic(clazz.modifier)) {
+	    staticClasses().addToEnd(clazz);
+	  } else {
+	    classes.addToEnd(clazz);
+	  }
+	}
 
-	@Override
+	private void addField(FieldBuffer field) {
+    if (Modifier.isStatic(field.modifier)) {
+      staticFields().addToEnd(field);
+    } else {
+      fields.addToEnd(field);
+    }
+  }
+	
+  private void addMethod(MethodBuffer method) {
+    if (Modifier.isStatic(method.modifier)) {
+      staticMethods().addToEnd(method);
+    } else {
+      methods.addToEnd(method);
+    }
+  }
+  private void ensureStatics() {
+    if (staticFields == null) {
+      staticFields = new PrintBuffer();
+      staticClasses = new PrintBuffer();
+      staticMethods = new PrintBuffer();
+      statics.addToEnd(staticClasses);
+      statics.addToEnd(staticFields);
+      statics.addToEnd(staticMethods);
+    }
+  }
+  private PrintBuffer staticFields() {
+    ensureStatics();
+    return staticFields;
+  }
+
+	private PrintBuffer staticMethods() {
+	  ensureStatics();
+	  return staticMethods;
+	}
+	
+	private PrintBuffer staticClasses() {
+	  ensureStatics();
+	  return staticClasses;
+	}
+	
+  @Override
 	protected String footer() {
 	  return isWellFormatted ? "" : "\n" + origIndent+"}\n";
 	}

@@ -44,7 +44,7 @@ public class DoubleMemberValue extends MemberValue {
     }
 
     @Override
-    Class<?> getType(ClassLoader cl) {
+    public Class<?> getType(ClassLoader cl) {
         return double.class;
     }
 

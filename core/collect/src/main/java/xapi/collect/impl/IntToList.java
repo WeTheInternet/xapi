@@ -1,5 +1,6 @@
 package xapi.collect.impl;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Deque;
@@ -22,7 +23,12 @@ import xapi.util.impl.AbstractPair;
 public class IntToList<E> implements IntTo<E> {
 
   private final ArrayList<E> list = new ArrayList<E>(10);
+  private final Class<E> type;
   
+  public IntToList(Class<E> cls) {
+    this.type = cls;
+  }
+
   @Override
   public Iterable<E> forEach() {
     return list;
@@ -74,7 +80,7 @@ public class IntToList<E> implements IntTo<E> {
   @Override
   @SuppressWarnings("unchecked")
   public E[] toArray() {
-    return (E[])list.toArray();
+    return list.toArray((E[])Array.newInstance(type, list.size()));
   }
 
   @Override
@@ -197,6 +203,11 @@ public class IntToList<E> implements IntTo<E> {
     LinkedList<E> deque = new LinkedList<E>();
     deque.addAll(list);
     return deque;
+  }
+  
+  @Override
+  public String toString() {
+    return list.toString();
   }
 
 }

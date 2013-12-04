@@ -28,9 +28,9 @@ import org.sonatype.aether.util.artifact.DefaultArtifact;
 
 import xapi.annotation.inject.SingletonDefault;
 import xapi.collect.impl.AbstractMultiInitMap;
-import xapi.dev.X_Dev;
-import xapi.dev.scanner.ClasspathResourceMap;
-import xapi.dev.scanner.StringDataResource;
+import xapi.dev.resource.impl.StringDataResource;
+import xapi.dev.scanner.X_Scanner;
+import xapi.dev.scanner.impl.ClasspathResourceMap;
 import xapi.inject.impl.SingletonInitializer;
 import xapi.log.X_Log;
 import xapi.log.api.LogLevel;
@@ -81,7 +81,7 @@ public class MvnServiceDefault implements MvnService {
 
     @Override
     protected ClasspathResourceMap initialize(Integer key, ClassLoader params) {
-      return X_Dev.scanClassloader(params);
+      return X_Scanner.scanClassloader(params);
     }
   }
 

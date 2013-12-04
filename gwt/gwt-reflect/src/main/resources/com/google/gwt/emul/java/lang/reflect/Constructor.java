@@ -516,7 +516,7 @@ public class Constructor<T> extends AccessibleObject implements
      * @since 1.5
      */
     public Annotation[][] getParameterAnnotations() {
-        Annotation[][] result = new Annotation[0][];
+        Annotation[][] result = new Annotation[0][0];
         return result;
     }
 }

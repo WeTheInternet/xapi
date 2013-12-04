@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:UiBinder xmlns:ui="urn:ui:com.google.gwt.uibinder"
+	xmlns:g="urn:import:com.google.gwt.user.client.ui">
+	<ui:with field="res" type="xapi.gwtc.view.GwtcResources" />
+	<g:HTMLPanel ui:field="root" styleName="{res.css.block}">
+	   
+	   <g:HTMLPanel styleName="{res.css.row}">
+	     <label ui:field="modulesLabel" class="{res.css.inputLabel}">Modules</label>
+	     <input ui:field="moduleAdder" type="text" class="{res.css.inputItem}" />
+	     <g:Image ui:field="addButton" resource="{res.plus}" styleName="{res.css.button}" />
+	   </g:HTMLPanel>
+     
+     <div ui:field="selectedModules">
+     </div>
+     
+     <g:HTMLPanel ui:field="moduleTemplate" styleName="{res.css.hidden} {res.css.row}">
+      <label class="{res.css.inputLabel}" />
+      <div class="{res.css.inputItem}" style="padding: 2px" />
+      <g:Image resource="{res.minus}" />
+     </g:HTMLPanel>
+	</g:HTMLPanel>
+</ui:UiBinder>

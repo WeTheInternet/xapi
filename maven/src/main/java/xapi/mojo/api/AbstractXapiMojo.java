@@ -127,6 +127,7 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
   }
 
   public MavenProject getProject() {
+    X_Log.trace(getClass(), "project", project,"dependencies",project.getDependencies());
     return project;
   }
   
@@ -174,30 +175,26 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
                   + "in order to use any service methods which depend upon #getTargetPom().");
       boolean endsWithXml = targetProject.endsWith(".xml");
       String target;
-      if (endsWithXml) {
-        // Assume pom location
-        target = targetProject;
-
-        // first, check for absolute file.
-        File targetFile = new File(target);
-        try {
-          targetFile = targetFile.getCanonicalFile();
-        } catch (IOException ignored) {
-        }
-
+      // first, check for absolute file.
+      File targetFile = new File(targetProject);
+      try {
+        targetFile = targetFile.getCanonicalFile();
+      } catch (IOException ignored) {
+      }
+      if (endsWithXml && targetFile.exists()) {
+        targetFile = targetFile.getParentFile();
+      }
+      if (targetFile.isDirectory()) {
+        return targetFile;
+      }
+      try {
+        // okay, no absolute file. Now check relative to source root.
+        targetFile = new File(sourceRoot.getCanonicalFile(), targetProject);
         if (targetFile.exists())
           return targetFile.getParentFile();
+      } catch (IOException ignored) {
+      }
 
-        try {
-          // okay, no absolute file. Now check relative to source root.
-          targetFile = new File(sourceRoot.getCanonicalFile(), target);
-          if (targetFile.exists())
-            return targetFile.getParentFile();
-        } catch (IOException ignored) {
-        }
-
-        throw new RuntimeException("Unable to locate pom for " + targetProject);
-      } else {
         // Assume maven artifact
         String[] bits = targetProject.split(":", -1);
         if (bits.length < 2) {
@@ -229,17 +226,17 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
             .getWorkspaceReader();
         if (workspace != null) {
           File result = workspace.findArtifact(artifact);
+          X_Log.warn(getClass(), "Searching for target project directory from",result
+              ,"derived from artifact",artifact);
           return result.getParentFile().getParentFile();
         }
         throw new RuntimeException(
             "Could not find pom file for "
-                + targetProject
-                + "; if you wish to target a project outside your maven tree," +
-                " you must specify the full location of the project pom" +
+                + targetProject + "; if you wish to target a project outside your "
+                + "maven workspace, you must specify the full location of the project pom" +
                 " (using groupId:artifactId only works if the given project "
                 + "is accessible to WorkspaceReader)");
       }
-    };
   };
 
   public File getTargetProjectDirectory() {
@@ -261,13 +258,14 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
 
   public void compile(final String javaName, final String source,
       boolean overwrite, String... additionalClasspath) {
-    prepareCompile(javaName, source, overwrite, additionalClasspath).run();
+    File file = saveModel(javaName, source, overwrite);
+    prepareCompile(file, javaName, source, overwrite, additionalClasspath).run();
   }
 
-  public Runnable prepareCompile(final String javaName, final String source,
-      boolean overwrite, String... additionalClasspath) {
+  public File saveModel(final String javaName, final String source,
+      boolean overwrite) {
     File genDir = getGenerateDirectory();
-    X_Log.info(getTargetProjectDirectory(), genDir);
+    X_Log.info(getClass(),"Preparing compile", getTargetProjectDirectory(), genDir);
     genDir.mkdirs();
     String sourceName;
     if (javaName.endsWith(".java"))
@@ -298,6 +296,11 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
       X_Log.error("Unable to save generated file", javaName, "to", f, e);
       throw X_Debug.rethrow(e);
     }
+    return f;
+  }
+  public Runnable prepareCompile(File srcFile,final String javaName, final String source,
+      boolean overwrite, String... additionalClasspath) {
+    File genDir = getGenerateDirectory();
     String[] cp = compileClasspath.get();
     if (additionalClasspath.length > 0) {
       String[] clone = Arrays.copyOf(additionalClasspath,
@@ -310,7 +313,8 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
         "-classpath", X_String.join(File.pathSeparator, cp),
         "-d", getProject().getBuild().getDirectory() + File.separator + "classes",
         "-proc:none",
-        f.getAbsolutePath() };
+        srcFile.getAbsolutePath() };
+    X_Log.info(getClass(),"Compile arguments", args);
     return new Runnable() {
       @Override
       public void run() {
@@ -321,9 +325,10 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
           X_Log.error("Cannot compile", javaName, ":\n", source, e);
           throw X_Debug.rethrow(e);
         }
-        if (result != 0)
+        if (result != 0) {
           throw new RuntimeException("Unable to compile generated source("
               + result + ")" + "\nClass: " + javaName + "\nSource: " + source);
+        }
       }
     };
 

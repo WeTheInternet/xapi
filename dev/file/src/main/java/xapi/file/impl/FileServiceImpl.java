@@ -32,19 +32,19 @@ public class FileServiceImpl implements FileService {
         }
       }
       {
-        final boolean isReadable = (chmod & 0x222) > 0;
+        final boolean isWritable = (chmod & 0x222) > 0;
         try {
-          file.setReadable(isReadable, isReadable? (chmod & 0x022) == 0 : (chmod & 0x22) > 0);
+          file.setWritable(isWritable, isWritable ? (chmod & 0x022) == 0 : (chmod & 0x2) > 0);
         } catch (SecurityException e) {
-          file.setReadable(isReadable);
+          file.setWritable(isWritable);
         }
       }
       {
-        final boolean isWritable = (chmod & 0x444) > 0;
+        final boolean isReadable = (chmod & 0x444) > 0;
         try {
-          file.setWritable(isWritable, isWritable ? (chmod & 0x044) == 0 : (chmod & 0x44) > 0);
+          file.setReadable(isReadable, isReadable? (chmod & 0x044) == 0 : (chmod & 0x44) > 0);
         } catch (SecurityException e) {
-          file.setWritable(isWritable);
+          file.setReadable(isReadable);
         }
       }
     }

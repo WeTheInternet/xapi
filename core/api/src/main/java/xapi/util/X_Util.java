@@ -43,11 +43,18 @@ public final class X_Util{
       throw (RuntimeException)e;// Don't re-wrap
     if (e instanceof Error)
       throw ((Error)e);// Just rethrow errors without wrappers
-    if (// unwrap checked wrappers, for ease later on
+    while (// unwrap checked wrappers, for ease later on
         e instanceof InvocationTargetException
         || e instanceof ExecutionException
         )
-      if (e.getCause()!=null)e = e.getCause();
+      if (e.getCause()!=null){
+        e = e.getCause();
+      } else if (e == e.getCause()) {
+        break;
+      }
+    if (e instanceof InterruptedException) {
+      Thread.currentThread().interrupt();
+    }
     // throw unchecked.  
     throw new RuntimeException(e);
   }

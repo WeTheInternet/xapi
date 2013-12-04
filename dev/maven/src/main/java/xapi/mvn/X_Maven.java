@@ -13,7 +13,8 @@ import org.sonatype.aether.resolution.ArtifactResult;
 
 import xapi.bytecode.impl.BytecodeAdapterService;
 import xapi.dev.X_Dev;
-import xapi.dev.scanner.ClasspathResourceMap;
+import xapi.dev.scanner.X_Scanner;
+import xapi.dev.scanner.impl.ClasspathResourceMap;
 import xapi.inject.X_Inject;
 import xapi.inject.impl.SingletonProvider;
 import xapi.log.X_Log;
@@ -90,13 +91,16 @@ public class X_Maven {
   public static ClasspathResourceMap compileScopeScanner(MavenProject project,
       MavenSession session) {
     URL[] urls = compileScopeUrls(project, session);
-    return X_Dev.scanClassloader(URLClassLoader.newInstance(urls));
+    X_Log.trace(X_Maven.class,"Compile scope URLS",urls);
+    return X_Scanner.scanClassloader(URLClassLoader.newInstance(urls));
   }
 
   public static URL[] compileScopeUrls(MavenProject project,
       MavenSession session) {
     try {
       List<String> compile = project.getCompileClasspathElements();
+      X_Log.info(X_Maven.class,"Compile classpath",compile);
+      X_Log.info(X_Maven.class,"Runtime classpath",project.getRuntimeClasspathElements());
       if (project.hasLifecyclePhase("test-classes")) {
         List<String> testElements = project.getTestClasspathElements();
         testElements.addAll(compile);
