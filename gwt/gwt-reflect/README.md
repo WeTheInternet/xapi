@@ -1,7 +1,24 @@
 # Gwt Reflection
 
 Implements the java reflection API in GWT,  
-with light-weight and heavy-weight support baked in.
+with options for fly-weight, light-weight and heavy-weight (full) support baked in.
+
+## Fly-Weight ##
+
+The most optimal use case for reflection in GWT is to avoid creating any reflection Member objects at all.  
+Rather than create a field, method or constructor, you may use the direct invocation methods provided in GwtReflect.  
+This will cause the compiler to only generate a jsni accessor method (if needed), without pulling in any unused code.
+
+Please note that, in order for fly-weight reflection to function, the class, string and class array literals to identifiy the member MUST resolve to constant values.  This means final fields, final local variables whose initializers resolve to final variables, or final methods whose return value is directly traceable to a final value.
+
+    GwtReflect.invoke(List.class, "add", Object.class, myList, myObject);  // Works fine
+
+    static final Class<?> LIST_CLASS = List.class;
+    static final Class<?>[] OBJECT_CLASS = new Class<?>[]{Object.class};
+    static String addMethod() { return "add"; }
+    GwtReflect.invoke(LIST_CLASS, addMethod(), OBJECT_CLASS, myList, myObject); // also works
+
+    GwtReflect.invoke(myList.getClass(), "add", Object.class, myList, myObject); // won't work; myList.getClass() cannot be resolved to a literal value
 
 ## Light-Weight ##
 
@@ -28,7 +45,10 @@ there is also a more heavy-weight solution, which enhances the class object with
     c.getMethod("", ...); // All reflection methods on a class reference will work without resolving to a constant value.
 
 This method is intended moreso for integrating libraries that use reflection,  
-where you want to selectively enable all reflection data in code you do not control.
+where you want to selectively enable all reflection data in code you do not control.  
+It will create runtime objects to lookup reflection objects from JSNI dictionaries to achieve full reflection support.
+
+Beware that this option can increase code size if used on a big classes, or many classes.
 
 There is work being done to filter the amount of code the class enhancing process adds to your compile;  
 in an effort to keep code size down, there is also an option to load Fields, Constructors and Methods without metadata,
