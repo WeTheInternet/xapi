@@ -30,7 +30,6 @@ import xapi.dev.resource.impl.SourceCodeResource;
 import xapi.dev.resource.impl.StringDataResource;
 import xapi.dev.scanner.api.ClasspathScanner;
 import xapi.except.ThreadsafeUncaughtExceptionHandler;
-import xapi.log.X_Log;
 import xapi.util.X_Debug;
 import xapi.util.X_Namespace;
 import xapi.util.X_Properties;
@@ -169,7 +168,6 @@ public class ClasspathScannerDefault implements ClasspathScanner {
         }
       } else {
         if (map.includeResource(name)) {
-          X_Log.debug(getClass(),"Including resource", name,"from",file);
           map.addResource(name, new StringDataResource(
               new FileBackedResource(name, file, priority)));
         }
@@ -192,7 +190,6 @@ public class ClasspathScannerDefault implements ClasspathScanner {
             }
           } else {
             if (map.includeResource(name)) {
-              X_Log.debug(getClass(),"Including resource", name,"in",file.getName(),entry);
               map.addResource(name, new StringDataResource(
                   new JarBackedResource(file, entry, priority)));
             }
@@ -246,11 +243,12 @@ public class ClasspathScannerDefault implements ClasspathScanner {
       }
     }
     for (String pkg : pkgs) {
+
       final Enumeration<URL> resources;
       try {
         resources = loadFrom.getResources(
           pkg.equals(".*")//||pkg.equals("")
-            ?"":pkg
+            ?"":pkg.replace('.', '/')
           );
       } catch (Exception e) {
         e.printStackTrace();
@@ -279,7 +277,6 @@ public class ClasspathScannerDefault implements ClasspathScanner {
     class Finisher implements Callable<ClasspathResourceMap>{
       @Override
       public ClasspathResourceMap call() throws Exception {
-        X_Log.debug(getClass(), "Scanning jobs",jobs);
         while (!jobs.isEmpty()) {
           // drain the work pool
           Iterator<Future<?>> iter = jobs.forEach().iterator();
@@ -291,11 +288,9 @@ public class ClasspathScannerDefault implements ClasspathScanner {
           try {
             Thread.sleep(0, 500);
           } catch (InterruptedException e) {
-            X_Log.warn("Interrupted while scanning classpath");
             throw X_Debug.rethrow(e);
           }
         }
-        X_Log.debug(getClass(), "Done scanning resources");
         return map;
       }
     }

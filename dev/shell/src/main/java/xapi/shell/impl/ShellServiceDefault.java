@@ -8,6 +8,7 @@ import xapi.annotation.inject.InstanceDefault;
 import xapi.annotation.inject.SingletonDefault;
 import xapi.file.X_File;
 import xapi.inject.X_Inject;
+import xapi.inject.impl.SingletonProvider;
 import xapi.io.api.LineReader;
 import xapi.log.X_Log;
 import xapi.shell.api.ShellCommand;
@@ -45,11 +46,10 @@ public class ShellServiceDefault implements ShellService {
   
   private static final Queue<ShellSession> runningShells = new ConcurrentLinkedQueue<>();
 
-  //  private static abstract class ScriptProvider extends SingletonProvider<String> {
+//  private static abstract class ScriptProvider extends SingletonProvider<String> {
 //    abstract String getScriptName();
 //    public String getScriptLocation() {
-//      return X_Shell.getResourceMaybeUnzip(getScriptName(), Thread.currentThread().getContextClassLoader());
-//      
+//      return X_File.getResourceMaybeUnzip(getScriptName(), Thread.currentThread().getContextClassLoader());
 //    }
 //  }
   
@@ -58,7 +58,7 @@ public class ShellServiceDefault implements ShellService {
     final Moment start = X_Time.now();
     final String[] commands;
     if (keepAlive) {
-      final String sh = X_File.getResourceMaybeUnzip("xapi/sh.sh", null);
+      final String sh = X_File.unzippedResourcePath("xapi/sh.sh", null);
       commands = new String[]{"sh", "-ac", sh};
     } else {
       commands = cmds;
@@ -69,7 +69,7 @@ public class ShellServiceDefault implements ShellService {
         .run(new SuccessHandler<ShellSession>() {
             @Override
             public void onSuccess(ShellSession t) {
-              X_Log.info(getClass(), "Shell still running?", t.isRunning());
+              X_Log.trace(getClass(), "Shell still running?", t.isRunning());
             }
       }, null);
     X_Log.debug(getClass(), "Time create shell command", X_Time.difference(start));

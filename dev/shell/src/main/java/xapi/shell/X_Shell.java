@@ -109,17 +109,17 @@ public class X_Shell {
     javaArgs[pos] = "-classpath";
     javaArgs[++pos] = X_String.join(File.pathSeparator, classpath).trim();
     javaArgs[++pos] = mainClass.getCanonicalName();
-    X_Log.info(ShellSession.class, "Running java command",mainClass,args);
+    X_Log.info(X_Shell.class, "Running java command",mainClass,args);
     if (args != null && args.length > 0) {
       System.arraycopy(args, 0, javaArgs, ++pos, args.length);
     }
-    X_Log.info("Java command", X_String.join(" ",javaArgs));
+    X_Log.info(X_Shell.class, "Java command", X_String.join(" ",javaArgs));
     return globalService().runInShell(
         false , new StringReader() , new StringReader(), javaArgs);
   }
 
   public static ShellSession launchInShell(String cmd, LineReader stdOut, LineReader stdErr) {
-    X_Log.info(ShellSession.class, "Running in shell\n",cmd);
+    X_Log.trace(X_Shell.class, "Running in shell\n",cmd);
     return globalService().runInShell(
         false
         , stdOut

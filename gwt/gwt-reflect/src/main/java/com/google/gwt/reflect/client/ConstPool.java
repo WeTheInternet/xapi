@@ -227,7 +227,6 @@ public class ConstPool extends JavaScriptObject {
    * @param cls
    * @return
    */
-  @Deprecated()
   public static native int setClass(Class<?> cls)
   /*-{
     var pos = @com.google.gwt.reflect.client.ConstPool::CONSTS.c.length;

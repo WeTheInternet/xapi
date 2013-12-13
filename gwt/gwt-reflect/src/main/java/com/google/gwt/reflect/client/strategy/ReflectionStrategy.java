@@ -123,7 +123,7 @@ public @interface ReflectionStrategy {
    * source for this class.
    * 
    * Valid values are OR'd combinations of 
-   * {@link #TYPE}, {@link #CONSTRUCTOR}, {@link #FIELD}, {@link #METHOD} and {@link #ANNOTATION}
+   * {@link ReflectionStrategy#TYPE}, {@link #CONSTRUCTOR}, {@link #FIELD}, {@link #METHOD} and {@link #ANNOTATION}
    */
   int debug() default NONE;
   

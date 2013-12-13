@@ -258,6 +258,33 @@ public class ClasspathResourceMap {
     return new ClassFileIterator(MatchesValue.ANY, bytecode);
   }
   
+  public Iterable<ClassFile> findClassesInPackage(final String name) {
+    return new ClassFileIterator(new MatchesValue<ClassFile>() {
+      @Override
+      public boolean matches(ClassFile value) {
+        return !"package-info".equals(value.getEnclosedName()) && value.getPackage().equals(name);
+      }
+    }, bytecode);
+  }
+
+  public Iterable<ClassFile> findClassesBelowPackage(final String name) {
+    return new ClassFileIterator(new MatchesValue<ClassFile>() {
+      @Override
+      public boolean matches(ClassFile value) {
+        return !"package-info".equals(value.getEnclosedName()) && value.getPackage().startsWith(name);
+      }
+    }, bytecode);
+  }
+  
+  public Iterable<ClassFile> findPackagesBelowPackage(final String name) {
+    return new ClassFileIterator(new MatchesValue<ClassFile>() {
+      @Override
+      public boolean matches(ClassFile value) {
+        return "package-info".equals(value.getEnclosedName()) && value.getPackage().startsWith(name+".");
+      }
+    }, bytecode);
+  }
+
   /**
    * Finds all classes that are direct subclasses of one of the supplied types.
    * 
@@ -429,6 +456,7 @@ public final Iterable<ClassFile> findClassWithAnnotatedMethods(
     }
   };
 }
+
 }
 
 

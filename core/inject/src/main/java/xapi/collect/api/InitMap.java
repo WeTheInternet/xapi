@@ -1,6 +1,9 @@
 package xapi.collect.api;
 
+import java.util.Map.Entry;
+
 import xapi.collect.impl.AbstractInitMap;
+import xapi.util.api.ConvertsValue;
 import xapi.util.api.Pair;
 import xapi.util.api.Triple;
 
@@ -17,7 +20,7 @@ import xapi.util.api.Triple;
  * @param <Key>
  * @param <Value>
  */
-public interface InitMap <Key, Value> extends StringDictionary<Value>{
+public interface InitMap <Key, Value> extends StringDictionary<Value>, ConvertsValue<Key, Value>, Iterable<Entry<String, Value>>{
 
   /**
    * @param key - The Key used when value was null.

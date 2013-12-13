@@ -36,34 +36,34 @@
  <dependencies>
   <dependency>
    <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-core-api</artifactId>
+   <classifier>sources</classifier>
+  </dependency>
+  <dependency>
+   <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-core-api</artifactId>
+  </dependency>
+  <dependency>
+   <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-core-inject</artifactId>
+   <classifier>sources</classifier>
+  </dependency>
+  <dependency>
+   <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-core-inject</artifactId>
+  </dependency>
+  <dependency>
+   <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-core-util</artifactId>
+   <classifier>sources</classifier>
+  </dependency>
+  <dependency>
+   <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-core-util</artifactId>
+  </dependency>
+  <dependency>
+   <groupId>net.wetheinter</groupId>
    <artifactId>gwt-reflect</artifactId>
-  </dependency>
-  <dependency>
-   <groupId>net.wetheinter</groupId>
-   <artifactId>xapi-core-api</artifactId>
-   <classifier>sources</classifier>
-  </dependency>
-  <dependency>
-   <groupId>net.wetheinter</groupId>
-   <artifactId>xapi-core-api</artifactId>
-  </dependency>
-  <dependency>
-   <groupId>net.wetheinter</groupId>
-   <artifactId>xapi-core-inject</artifactId>
-   <classifier>sources</classifier>
-  </dependency>
-  <dependency>
-   <groupId>net.wetheinter</groupId>
-   <artifactId>xapi-core-inject</artifactId>
-  </dependency>
-  <dependency>
-   <groupId>net.wetheinter</groupId>
-   <artifactId>xapi-core-util</artifactId>
-   <classifier>sources</classifier>
-  </dependency>
-  <dependency>
-   <groupId>net.wetheinter</groupId>
-   <artifactId>xapi-core-util</artifactId>
   </dependency>
   <dependency>
    <groupId>com.google.gwt</groupId>

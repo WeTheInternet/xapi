@@ -43,6 +43,16 @@
     <dependency>
       <groupId>net.wetheinter</groupId>
       <artifactId>gwt-method-inject</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>com.google.gwt</groupId>
+          <artifactId>gwt-dev</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.google.gwt</groupId>
+          <artifactId>gwt-user</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.google.gwt</groupId>

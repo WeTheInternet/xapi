@@ -1,5 +1,7 @@
 package xapi.collect.impl;
 
+import java.util.Iterator;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 import xapi.util.api.ConvertsValue;
@@ -61,6 +63,11 @@ public class InitMapDefault <Key, Value> extends AbstractInitMap<Key,Value>{
   
   public Iterable<String> keys() {
     return map.keySet();
+  }
+  
+  @Override
+  public Iterator<Entry<String, Value>> iterator() {
+    return map.entrySet().iterator();
   }
 
 }

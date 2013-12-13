@@ -13,7 +13,7 @@
   <source path="test/gwt/magic"/>
   <source path="test/gwt/reflect"/>
   
-  <entry-point class="xapi.test.gwt.reflect.MagicClassEntryPoint"/>
+  <entry-point class="xapi.dev.test.gwt.reflect.MagicClassEntryPoint"/>
 
   <set-property name="user.agent" value="gecko1_8,safari"/>
 

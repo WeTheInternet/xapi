@@ -11,6 +11,7 @@ import xapi.annotation.compile.Property;
 import xapi.annotation.compile.Resource;
 import xapi.annotation.compile.Resource.ResourceType;
 import xapi.annotation.reflect.MirroredAnnotation;
+import xapi.annotation.ui.UiTemplate;
 
 /**
  * An annotation used to describe gwt compiler settings.
@@ -87,6 +88,13 @@ public @interface Gwtc {
     INHERIT
   }
 
+  public enum IsolationMode {
+    MONOLITHIC,
+    PER_PACKAGE,
+    PER_CLASS,
+    PER_METHOD
+  }
+  
   /**
    * This enum is used to control how ancestor {@link Gwtc} annotation
    * are used to build generated gwt.xml.  
@@ -95,11 +103,12 @@ public @interface Gwtc {
    *
    */
   public enum AncestorMode {
-    INHERIT_OWN_PACKAGE,
-    INHERIT_ALL_PACKAGES,
-    INHERIT_ENCOLSING_CLASSES,
+    INHERIT_ONE_PARENT,
+    INHERIT_ALL_PARENTS,
+    INHERIT_ENCLOSING_CLASSES,
     INHERIT_SUPER_CLASSES,
-    INHERIT_OVERRIDEN_METHOD
+    INHERIT_CHILDREN
+    // TODO INHERIT_INTERFACES
   }
   
   /**
@@ -131,6 +140,8 @@ public @interface Gwtc {
    */
   Property[] propertiesGwtConfiguration() default {};
   
+  GwtcProperties[] propertiesLaunch() default {};
+  
   /**
    * @return an array of {@link Resource} annotations describing additional
    * gwt.xml to include.  If you want to manually add snippets of xml, be sure
@@ -153,6 +164,8 @@ public @interface Gwtc {
   
   String[] includeSource() default { "client" };
   
+  IsolationMode isolationMode() default IsolationMode.MONOLITHIC;
+  
   /**
    * @return an array of {@link Resource} annotations describing additional
    * html code to include in generated host page.  If you want to manually 
@@ -172,7 +185,7 @@ public @interface Gwtc {
    * {@link ResourceType#ABSOLUTE_FILE} - Specify an absolute path, include extension</li><li>
    * 
    */
-  Resource[] includeHostHtml() default {};
+  UiTemplate[] includeHostHtml() default {};
   
   /**
    * @return an array of {@link Dependency} elements to include.
@@ -201,7 +214,7 @@ public @interface Gwtc {
    * allowing classes or methods to ignore enclosing class or package level settings.
    */
   AncestorMode[] inheritanceMode() default {
-    AncestorMode.INHERIT_ALL_PACKAGES, AncestorMode.INHERIT_SUPER_CLASSES, AncestorMode.INHERIT_ENCOLSING_CLASSES
+    AncestorMode.INHERIT_ALL_PARENTS, AncestorMode.INHERIT_SUPER_CLASSES, AncestorMode.INHERIT_ENCLOSING_CLASSES
   };
   /**
    * return true to print generated gwt.xml to stdOut during compilation

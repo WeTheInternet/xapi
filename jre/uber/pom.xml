@@ -59,6 +59,13 @@
       <plugin>
         <artifactId>maven-shade-plugin</artifactId>
       </plugin>
+      <plugin>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <!-- Prevent duplicate warnings by changing intermediate jar name -->
+          <finalName>${artifactId}-${version}-tmp</finalName>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
 

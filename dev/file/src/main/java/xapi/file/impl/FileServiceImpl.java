@@ -1,11 +1,18 @@
 package xapi.file.impl;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.net.JarURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.ListIterator;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 
@@ -19,6 +26,20 @@ import xapi.util.X_Debug;
 @SingletonDefault(implFor=FileService.class)
 public class FileServiceImpl implements FileService {
 
+  private final static class Cleanup extends Thread {
+    private final List<String> toKill = new ArrayList<String>();
+    @Override
+    public void run() {
+      for (String kill : toKill) {
+        rm(kill, Boolean.getBoolean("xapi.file.autorm"));
+      }
+    }
+  }
+  private static final Cleanup GC = new Cleanup();
+  static {
+    Runtime.getRuntime().addShutdownHook(GC);
+  }
+  
   @Override
   public File chmod(int chmod, File file) {
     assertValidChmod(chmod);
@@ -52,7 +73,40 @@ public class FileServiceImpl implements FileService {
   }
   
   @Override
-  public File createTempDir(String prefix) {
+  public void delete(String kill, boolean recursive) {
+    rm(kill, recursive);
+  }
+
+  private static void rm(String kill, boolean recursive) {
+    File f = new File(kill);
+    if (recursive) {
+      HashSet<File> cycle = new HashSet<File>();
+      rmRecursive(f, cycle);
+    }
+    if (f.exists() && !f.delete()) {
+      X_Log.warn(FileServiceImpl.class, "Unable to delete file ",f);
+    }
+  }
+
+  private static void rmRecursive(File f, HashSet<File> cycle) {
+    if (cycle.add(f)) {
+      if (f.isDirectory()) {
+        for (File child : f.listFiles()) {
+          rmRecursive(child, cycle); // Prevent symlink cycle recursion
+        }
+        if (!f.delete()) {
+          X_Log.warn(FileServiceImpl.class,"Unable to delete",f);
+        }
+      } else if (f.isFile()) {
+        if (!f.delete()) {
+          X_Log.warn(FileServiceImpl.class,"Unable to delete",f);
+        }
+      }
+    }
+  }
+
+  @Override
+  public File createTempDir(String prefix, boolean deleteOnExit) {
     File f = null;
     try {
       f = File.createTempFile(prefix, "");
@@ -63,13 +117,37 @@ public class FileServiceImpl implements FileService {
         f.delete();
       }
       f.mkdirs();
+      if (deleteOnExit) {
+        GC.toKill.add(f.getCanonicalPath());
+      }
       chmod(0x777, f);
-      f.deleteOnExit();
     } catch (IOException e) {
       X_Log.warn("Unable to create temporary directory for ", prefix, e);
       X_Debug.maybeRethrow(e);
     }
     return f;
+  }
+  
+  @Override
+  public String getPath(String path) {
+    try {
+      return new File(path).getCanonicalPath();
+    } catch (IOException e) {
+      return new File(path).getAbsolutePath();
+    }
+  }
+  
+  @Override
+  public String getFileMaybeUnzip(String file, int chmod) {
+    File f = new File(file);
+    if (f.getAbsolutePath().contains("jar!")) {
+      try {
+        return unzip(file, new JarFile(f), chmod);
+      } catch (IOException e) {
+        X_Log.error(getClass(), "Unable to unzip", f, "from file", file,"with chmod",Integer.toHexString(chmod), e);
+      }
+    }
+    return getPath(file);
   }
   
   @Override
@@ -103,6 +181,38 @@ public class FileServiceImpl implements FileService {
       X_Debug.maybeRethrow(e);
     }
     return null;
+  }
+  
+  @Override
+  public boolean saveFile(String path, String fileName, String contents) {
+    return saveFile(path, fileName, contents, "UTF-8");
+  }
+  
+  @Override
+  public boolean saveFile(String path, String fileName, String contents, String charset) {
+    File f = new File(path);
+    if (!f.exists()) {
+      if (!f.mkdirs()) {
+        X_Log.warn("Unable to create parent directory", path,"in", f, new Throwable());
+        return false;
+      }
+    }
+    f = new File(f, fileName);
+    if (!f.exists()) {
+      try {
+        f.createNewFile();
+      } catch (IOException e) {
+        X_Log.warn("Unable to create new file", fileName,"in", f, e);
+        return false;
+      }
+    }
+    try {
+      X_IO.drain(new FileOutputStream(f), new ByteArrayInputStream(contents.getBytes()));
+    } catch (IOException e) {
+      X_Log.warn("Unable to save contents to file", f, e);
+      return false;
+    }
+    return true;
   }
 
 
@@ -149,6 +259,31 @@ public class FileServiceImpl implements FileService {
    */
   protected static boolean isHexadecimalChmod(int chmod) {
     return chmod < 0x778 && ((chmod & 0x888) == 0);
+  }
+  
+  @Override
+  public void mkdirsTransient(File dest) {
+    if (!dest.exists()) {
+      File parent = dest.getParentFile();
+      List<File> parents = new ArrayList<File>();
+      while (parent != null) {
+        if (parent.exists()) {
+          break;
+        } else {
+          parents.add(parent);
+        }
+        parent = parent.getParentFile();
+      }
+      if (!parents.isEmpty()) {
+        dest.getParentFile().mkdirs();
+        for (
+            ListIterator<File> iter = parents.listIterator(parents.size());
+            iter.hasNext();) {
+          File prev = iter.next();
+          prev.deleteOnExit();
+        }
+      }
+    }
   }
 
 }

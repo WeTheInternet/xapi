@@ -24,19 +24,10 @@
   </description>
   
   <dependencies>
-    <dependency>
-      <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-gwtc-api</artifactId>
-      
-    </dependency>
     <!-- Take the full jre injection, for runtime classpath scanning. -->
     <dependency>
       <groupId>net.wetheinter</groupId>
       <artifactId>xapi-jre-inject</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-dev-shell</artifactId>
     </dependency>
     <!-- Take the gwt uber jar, so we always have all production mode code-->
     <!-- Because we are taking the uber jar, we will be shadowing other gwt modules. -->
@@ -44,6 +35,14 @@
     <dependency>
       <groupId>net.wetheinter</groupId>
       <artifactId>xapi-gwt</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-gwtc-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-dev-shell</artifactId>
     </dependency>
     
     <!-- Yes, we declare direct dependency on gwt-dev. -->
@@ -55,6 +54,7 @@
     <dependency>
       <groupId>com.google.gwt</groupId>
       <artifactId>gwt-dev</artifactId>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.google.gwt</groupId>
@@ -70,9 +70,20 @@
   </dependencies>
 
   <build>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+      </resource>
+      <resource>
+        <directory>src/main/java</directory>
+      </resource>
+    </resources>
     <testResources>
       <testResource>
         <directory>src/test/java</directory>
+      </testResource>
+      <testResource>
+        <directory>src/main/java</directory>
       </testResource>
       <testResource>
         <directory>src/test/resources</directory>

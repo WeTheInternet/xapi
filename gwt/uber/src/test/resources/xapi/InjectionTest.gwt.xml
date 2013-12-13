@@ -9,7 +9,7 @@
 	<super-source path='emul'/>
 	<source path="inject"/>
 	<source path="test/inject"/>
-	<entry-point class="xapi.test.gwt.inject.InjectionTestEntryPoint" />
+	<entry-point class="xapi.dev.test.gwt.inject.InjectionTestEntryPoint" />
 	
 	
     <extend-configuration-property name="xinject.output.dir" value="src/main/java"/>
@@ -27,15 +27,15 @@
 	<extend-configuration-property name="compiler.splitpoint.initial.sequence" value="xapi.inject.SplitPointTest$ImportTestInterface"/>
 	 -->
 	
-	<replace-with class="xapi.test.gwt.inject.cases.DeferredBindingOverride">
-		<when-type-is class="xapi.test.gwt.inject.cases.ImportTestImplementation"/>
+	<replace-with class="xapi.dev.test.gwt.inject.cases.DeferredBindingOverride">
+		<when-type-is class="xapi.dev.test.gwt.inject.cases.ImportTestImplementation"/>
 	</replace-with>
-	<replace-with class="xapi.test.gwt.inject.cases.DeferredBindingInstanceOverride">
-		<when-type-is class="xapi.test.gwt.inject.cases.InstanceImplOverriding"/>
+	<replace-with class="xapi.dev.test.gwt.inject.cases.DeferredBindingInstanceOverride">
+		<when-type-is class="xapi.dev.test.gwt.inject.cases.InstanceImplOverriding"/>
 	</replace-with>
 
-	<replace-with class="xapi.test.gwt.inject.ImportTestCallback_DeferredOverride">
-		<when-type-is class="xapi.test.gwt.inject.ImportTestCallback_NeverCalled"/>
+	<replace-with class="xapi.dev.test.gwt.inject.ImportTestCallback_DeferredOverride">
+		<when-type-is class="xapi.dev.test.gwt.inject.ImportTestCallback_NeverCalled"/>
 	</replace-with>
 	
 	

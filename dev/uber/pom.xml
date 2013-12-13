@@ -1,17 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>net.wetheinter</groupId>
-    <artifactId>xapi-dev-parent</artifactId>
-    <version>0.4-SNAPSHOT</version>
-  </parent>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>net.wetheinter</groupId>
+		<artifactId>xapi-dev-parent</artifactId>
+		<version>0.4-SNAPSHOT</version>
+	</parent>
 
-  <artifactId>xapi-dev</artifactId>
-  <packaging>jar</packaging>
-  <name>XApi - Dev uber jar</name>
-  <url>WeTheInter.net</url>
-  <description>
+	<artifactId>xapi-dev</artifactId>
+	<packaging>jar</packaging>
+	<name>XApi - Dev uber jar</name>
+	<url>WeTheInter.net</url>
+	<description>
     Everything needed to run a comprehensive dev environment.
 
     Just type X_ and pick a service from autocomplete;
@@ -21,44 +22,64 @@
     as it includes all runtime dependencies of maven, adding ~4 seconds to build time,
     and 6 megabytes to the final output jar size (without xapi-dev-maven, it's ~1MB).
  </description>
-  <properties>
-  </properties>
+	<properties>
+	</properties>
 
-  <dependencies>
-    <dependency>
-      <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-jre-inject</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-dev-file</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-dev-shell</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-dev-scanner</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-dev-shell</artifactId>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-core-test</artifactId>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
+	<dependencies>
+		<dependency>
+			<groupId>net.wetheinter</groupId>
+			<artifactId>xapi-jre-inject</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>net.wetheinter</groupId>
+			<artifactId>xapi-dev-file</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>net.wetheinter</groupId>
+			<artifactId>xapi-dev-shell</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>net.wetheinter</groupId>
+			<artifactId>xapi-dev-scanner</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>net.wetheinter</groupId>
+			<artifactId>xapi-dev-shell</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>net.wetheinter</groupId>
+			<artifactId>xapi-gwtc-impl</artifactId>
+			<exclusions>
+			 <exclusion>
+          <groupId>com.google.gwt</groupId>
+          <artifactId>gwt-dev</artifactId>
+        </exclusion>
+			 <exclusion>
+          <groupId>com.google.gwt</groupId>
+          <artifactId>gwt-user</artifactId>
+        </exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>net.wetheinter</groupId>
+			<artifactId>xapi-core-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
 
-  <build>
-    <plugins>
-      <plugin>
-        <artifactId>maven-shade-plugin</artifactId>
-      </plugin>
-    </plugins>
-  </build>
+	<build>
+		<plugins>
+			<plugin>
+				<artifactId>maven-shade-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<artifactId>maven-jar-plugin</artifactId>
+				<configuration>
+				  <!-- Prevent duplicate warnings by changing intermediate jar name -->
+					<finalName>${artifactId}-${version}-tmp</finalName>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 
 </project>

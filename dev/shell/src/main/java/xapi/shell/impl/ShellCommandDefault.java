@@ -43,7 +43,7 @@ public class ShellCommandDefault implements ShellCommand {
   @Override
   public String directory() {
     if (directory == null) {
-      File dir = X_File.createTempDir("exeFor"+owner);
+      File dir = X_File.createTempDir("exeFor"+owner, true);
       if (dir == null) {
         directory = ".";
       } else {

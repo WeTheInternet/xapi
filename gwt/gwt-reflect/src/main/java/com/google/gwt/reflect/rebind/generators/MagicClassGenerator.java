@@ -221,7 +221,7 @@ public class MagicClassGenerator {
       enhanceMethod.println("enhanceConstructors(toEnhance);");
     }
 
-    logger.log(Type.INFO, "Keep Annos: "+keepAnnos+ "from "+strategy);
+    logger.log(Type.DEBUG, "Keep Annos: "+keepAnnos+ "; from "+strategy);
     if (keepAnnos) {
       if (GwtAnnotationGenerator.generateAnnotations(
         logger, classBuilder, context, injectionType.getAnnotations()).length > 0) {

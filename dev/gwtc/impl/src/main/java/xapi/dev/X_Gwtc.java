@@ -36,10 +36,10 @@ public class X_Gwtc {
     return service;
   }
   
-  public static GwtcService getServiceFor(Package pkg) {
+  public static GwtcService getServiceFor(Package pkg, boolean recursive) {
     final GwtcService service = X_Inject.instance(GwtcService.class);
     if (pkg != null) {
-      service.addPackage(pkg);
+      service.addPackage(pkg, recursive);
     }
     return service;
   }
@@ -67,7 +67,7 @@ public class X_Gwtc {
     } else if (param == String.class) {
       return DefaultValue.Defaults.DEFAULT_STRING;
     } else if (param.isArray()){
-      return null;
+      return DefaultValue.Defaults.DEFAULT_OBJECT;
     } else {
       DefaultValue value = param.getAnnotation(DefaultValue.class);
       if (value == null) {

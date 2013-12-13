@@ -41,15 +41,20 @@
 					<artifactId>maven-surefire-plugin</artifactId>
 					<version>2.16</version>
 					<configuration>
-						<parallel>both</parallel>
-						<threadCount>12</threadCount>
-						<threadCountClasses>3</threadCountClasses>
-						<threadCountMethods>6</threadCountMethods>
+					  <forkCount>1.5C</forkCount>
 					</configuration>
 				</plugin>
 				<plugin>
 					<artifactId>maven-source-plugin</artifactId>
 					<version>2.2.1</version>
+				</plugin>
+				<plugin>
+					<artifactId>maven-install-plugin</artifactId>
+					<version>2.5.1</version>
+				</plugin>
+				<plugin>
+					<artifactId>maven-resources-plugin</artifactId>
+					<version>2.6</version>
 				</plugin>
 				<plugin>
 					<artifactId>maven-clean-plugin</artifactId>
@@ -77,7 +82,7 @@
 								<proc>none</proc>
 							</configuration>
 						</execution>
-						<execution>
+<!-- 						<execution>
 							<id>process-annos</id>
 							<phase>compile</phase>
 							<goals>
@@ -92,7 +97,7 @@
 									</annotationProcessor>
 								</annotationProcessors>
 							</configuration>
-						</execution>
+						</execution> -->
 						<execution>
 							<id>default-testCompile</id>
 							<phase>test-compile</phase>
@@ -104,7 +109,7 @@
 								<proc>none</proc>
 							</configuration>
 						</execution>
-						<execution>
+				<!-- 		<execution>
 							<id>process-testAnnos</id>
 							<phase>test-compile</phase>
 							<goals>
@@ -119,9 +124,14 @@
 									</annotationProcessor>
 								</annotationProcessors>
 							</configuration>
-						</execution>
+						</execution> -->
 					</executions>
 				</plugin>
+				   <plugin>
+			      <groupId>org.bsc.maven</groupId>
+			      <artifactId>maven-processor-plugin</artifactId>
+			      <version>2.2.4</version>
+       </plugin>
 				<plugin>
 					<groupId>org.apache.maven.mojo</groupId>
 					<artifactId>maven-plugin-plugin</artifactId>

@@ -32,4 +32,7 @@ public class File {
   //until we can come up with a good virtualization strategy.
   private File() {}
   
+  public String getCanonicalPath(){
+    return "";
+  }
 }

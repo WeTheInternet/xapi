@@ -7,7 +7,9 @@ public interface FileService {
 
   String getResourceMaybeUnzip(String resource, ClassLoader cl, int chmod);
 
-  File createTempDir(String prefix);
+  String getFileMaybeUnzip(String file, int chmod);
+
+  File createTempDir(String prefix, boolean deleteOnExit);
 
   String unzip(String resource, JarFile jarFile, int chmod);
 
@@ -30,5 +32,19 @@ public interface FileService {
    * @return That same file.
    */
   File chmod(int chmod, File file);
+
+  /**
+   * Return the canonical (fully resolved) path of the given path segment.
+   */
+  String getPath(String path);
+
+  boolean saveFile(String path, String fileName, String contents);
+
+  boolean saveFile(String path, String fileName, String contents, String charset);
+
+  void mkdirsTransient(File dest);
+
+  void delete(String kill, boolean recursive);
+
   
 }

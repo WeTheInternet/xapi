@@ -23,15 +23,15 @@
 	<dependencies>
 		<dependency>
 			<groupId>net.wetheinter</groupId>
-			<artifactId>gwt-reflect</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>net.wetheinter</groupId>
 			<artifactId>xapi-core-model</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>net.wetheinter</groupId>
 			<artifactId>xapi-jre-inject</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>net.wetheinter</groupId>
+			<artifactId>gwt-reflect</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>com.google.gwt</groupId>
@@ -57,6 +57,27 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 			</plugin>
 			<plugin>
+        <groupId>org.bsc.maven</groupId>
+        <artifactId>maven-processor-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>annogen</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>process</goal>
+            </goals>
+            <inherited>false</inherited>
+            <configuration>
+              <processors>
+                <processor>
+                  xapi.dev.processor.AnnotationMirrorProcessor
+                </processor>
+              </processors>
+            </configuration>
+          </execution>
+        </executions>
+			</plugin>
+			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>build-helper-maven-plugin</artifactId>
 				<executions>
@@ -69,7 +90,7 @@
 						<inherited>false</inherited>
 						<configuration>
 							<sources>
-								<source>${project.build.directory}/generated-sources/annotations</source>
+								<source>${project.build.directory}/generated-sources/apt</source>
 								<source>${project.build.directory}/generated-sources/xapi</source>
 							</sources>
 						</configuration>

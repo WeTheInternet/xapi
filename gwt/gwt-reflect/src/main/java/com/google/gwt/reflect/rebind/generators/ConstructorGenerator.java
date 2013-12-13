@@ -90,7 +90,7 @@ public abstract class ConstructorGenerator extends MemberGenerator implements Ma
     
     if (ctor == null) {
       // We fail here because the requested method is not findable.
-      logger.log(Type.ERROR, "Unable to find constructor ("+params+").");
+      logger.log(Type.ERROR, "Unable to find constructor "+classLit.getRefType().getName()+ "("+params+").");
       logger.log(Type.ERROR, "Did you forget to call StandardGeneratorContext.finish()?");
       return null;
     }

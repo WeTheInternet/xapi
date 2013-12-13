@@ -21,10 +21,6 @@
     </dependency>
     <dependency>
       <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-gwt-reflect</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>net.wetheinter</groupId>
       <artifactId>xapi-core-collect</artifactId>
     </dependency>
     <dependency>
@@ -36,6 +32,10 @@
       <groupId>net.wetheinter</groupId>
       <artifactId>xapi-gwt-test</artifactId>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-gwt-reflect</artifactId>
     </dependency>
     <dependency>
       <groupId>com.google.gwt</groupId>

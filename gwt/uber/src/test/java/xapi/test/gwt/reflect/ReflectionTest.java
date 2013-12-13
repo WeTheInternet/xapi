@@ -42,6 +42,7 @@ import xapi.test.Assert;
 
 import com.google.gwt.core.shared.GWT;
 import com.google.gwt.junit.client.GWTTestCase;
+import com.google.gwt.reflect.client.GwtReflect;
 
 public class ReflectionTest extends GWTTestCase {
 
@@ -53,8 +54,7 @@ public class ReflectionTest extends GWTTestCase {
     LogService log = new DevLog();
     log.setLogLevel(LogLevel.INFO);
     try {
-      ReflectionService service = GWT.create(ReflectionService.class);
-      Class<MagicClassTest> cls = service.magicClass(MagicClassTest.class);
+      Class<MagicClassTest> cls = GwtReflect.magicClass(MagicClassTest.class);
       GWT.log("Test Class.newInstance() "+cls.getName());
       MagicClassTest instance = cls.newInstance();
       Assert.assertNotNull("Null instance returned",instance);

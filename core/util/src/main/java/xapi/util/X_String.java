@@ -163,6 +163,14 @@ public class X_String {
     return str == null ? "" : str;
   }
 
+  public static String chopOrReturnEmpty(String source, String match) {
+    int ind = source.lastIndexOf(match);
+    if (ind == -1) {
+      return "";
+    }
+    return source.substring(0, ind);
+  }
+
 
 
 }

@@ -178,6 +178,14 @@ public class GwtReflect {
     return makeAccessible(c.getDeclaredMethods());
   }
   
+  public static Package getPackage(String name) {
+    if (GWT.isProdMode()) {
+      return Package.getPackage(name);
+    } else {
+      return GwtReflectJre.getPackage(name);
+    }
+  }
+  
   public static <T> Constructor<T> getPublicConstructor(Class<T> c, Class<?> ... params) {
     try {
       return c.getConstructor(params);

@@ -153,7 +153,7 @@ public class GwtAnnotationGenerator {
   static GeneratedAnnotation[] generateAnnotations(
     TreeLogger logger, SourceBuilder<?> out, GeneratorContext context, Annotation ... annotations
   ) throws UnableToCompleteException {
-    logger.log(Type.INFO, "Generating annotations "+Arrays.asList(annotations));
+//    logger.log(Type.INFO, "Generating annotations "+Arrays.asList(annotations));
     final MethodBuffer initAnnos = out.getClassBuffer()
       .createMethod("private static void enhanceAnnotations" +
           "(final Class<?> cls)");

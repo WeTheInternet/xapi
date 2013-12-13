@@ -35,5 +35,10 @@ public class LegacyJUnitTest extends GWTTestCase {
     magicClass(MethodTests.class);
     JUnit4Test.runTests(MethodTests.class);
   }
+  
+  public void testForDemo() throws Throwable {
+    magicClass(DemoTest.class);
+    JUnit4Test.runTests(DemoTest.class);
+  }
 
 }

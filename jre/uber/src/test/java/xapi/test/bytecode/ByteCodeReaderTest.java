@@ -68,7 +68,6 @@ public class ByteCodeReaderTest  {
       Annotation anno = cls.getAnnotation(SingletonDefault.class.getName());
       if (anno != null) {
         SingletonDefault a = (SingletonDefault)anno.toAnnotationType(Thread.currentThread().getContextClassLoader(), cp);
-        System.out.println(a);
       }
     }
     X_Time.tick();

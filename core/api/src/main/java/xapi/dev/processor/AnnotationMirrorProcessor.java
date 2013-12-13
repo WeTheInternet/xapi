@@ -26,7 +26,11 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
+import javax.tools.FileObject;
+import javax.tools.JavaFileManager.Location;
+import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
+import javax.tools.StandardLocation;
 
 import xapi.annotation.reflect.MirroredAnnotation;
 import xapi.collect.api.Fifo;
@@ -124,7 +128,25 @@ public class AnnotationMirrorProcessor extends AbstractProcessor {
         String code = mirror.generated;
         log("Generating " + key);
         String genClass = key + "Builder";
+        
+        // Delete previous class, or build will break.
+        try {
+          int ind = genClass.lastIndexOf('.');
+          String pkg = genClass.substring(0, ind);
+          String name = genClass.substring(ind+1)+".class";
+          FileObject file = filer.getResource(StandardLocation.CLASS_OUTPUT, pkg, name);
+          CharSequence content = file.getCharContent(true);
+          if (code.equals(content.toString())) {
+            continue;
+          } else {
+            file.delete();
+          }
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
+        
         JavaFileObject src = filer.createSourceFile(genClass);
+        
         Writer out = src.openWriter();
         out.write(code);
         generatedMirrors.put(key, null);

@@ -250,12 +250,34 @@ public class PrintBuffer {
     return this;
   }
 
+  /**
+   * Prepend the given string, and return a printbuffer to append to this point.
+   * @param prefix - The text to prepend
+   * @return - A buffer pointed at this text, capable of further before/after branching
+   */
+  public PrintBuffer printBefore(String prefix) {
+    PrintBuffer buffer = new PrintBuffer(new StringBuilder(prefix));
+    addToBeginning(buffer);
+    return buffer;
+  }
+  
   public void addToBeginning(PrintBuffer buffer) {
     assert notContained(buffer) : "Infinite recursion!";
     PrintStack newHead = new PrintStack();
     newHead.next = head;
     newHead.setValue(buffer);
     head = newHead;
+  }
+  
+  /**
+   * Append the given string, and return a printbuffer to append to this point.
+   * @param suffix - The text to append
+   * @return - A buffer pointed at this text, capable of further before/after branching
+   */
+  public PrintBuffer printAfter(String suffix) {
+    PrintBuffer buffer = new PrintBuffer(new StringBuilder(suffix));
+    addToEnd(buffer);
+    return buffer;
   }
 
   public void addToEnd(PrintBuffer buffer) {
@@ -315,5 +337,9 @@ public class PrintBuffer {
     body.append(head);
     body.append(target);
     return body + footer();
+  }
+
+  public boolean isEmpty() {
+    return target.length()==0 && head.next==null;
   }
 }

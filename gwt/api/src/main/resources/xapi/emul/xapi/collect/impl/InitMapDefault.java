@@ -3,6 +3,8 @@ package xapi.collect.impl;
 import xapi.gwt.collect.JsDictionary;
 import xapi.util.api.ConvertsValue;
 import xapi.util.api.ReceivesValue;
+import java.util.Map.Entry;
+import java.util.Iterator;
 
 public class InitMapDefault <Key, Value> extends AbstractInitMap<Key,Value>{
 
@@ -57,5 +59,9 @@ public class InitMapDefault <Key, Value> extends AbstractInitMap<Key,Value>{
   public void forKeys(ReceivesValue<String> receiver) {
      for (String key : map.keys())
        receiver.set(key);
+  }
+  
+  public Iterator<Entry<String, Value>> iterator() {
+    return map.entries().iterator();
   }
 }

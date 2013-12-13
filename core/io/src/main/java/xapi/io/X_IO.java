@@ -15,12 +15,12 @@ import xapi.io.api.HasLiveness;
 import xapi.io.api.IOMessage;
 import xapi.io.api.StringReader;
 import xapi.io.impl.IOCallbackDefault;
+import xapi.io.impl.StringBufferOutputStream;
 import xapi.io.service.IOService;
 import xapi.log.X_Log;
 import xapi.log.api.LogLevel;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
-import xapi.util.X_String;
 import xapi.util.X_Util;
 import xapi.util.api.ErrorHandler;
 
@@ -43,10 +43,11 @@ public class X_IO {
       @SuppressWarnings({ "unchecked", "rawtypes" })
       @Override
       public void run() {
-        boolean log = info != null && X_Log.loggable(info);
-        int delay = 50;
+        boolean log = info != null && X_Log.loggable(info), trace = X_Log.loggable(LogLevel.TRACE);
+        int delay = 20;
         int read = 1;
         int loops = 20000;
+        Moment birth = X_Time.now();
         try {
           boolean hadBytes = false;
           top: while (read >= 0 && loops-- > 0) {
@@ -56,13 +57,26 @@ public class X_IO {
               if (avail == 0) {
                 // Maybe process is dead...
                 if (!liveCheck.isAlive()){
-                  X_Log.info(getClass(), "Stream not alive; bailing");
+                  X_Log.debug(getClass(), "Stream not alive; bailing after ",X_Time.difference(birth));
                   read = -1;
                   break top;
                 }
               }
               byte[] bytes = new byte[Math.min(4096,avail)];
+              if (trace) {
+                X_Log.log(info, new SimpleFifo<Object>().give(getClass())
+                    .give("before read")
+                    .give(X_Time.difference(birth))
+                );
+              }
               read = in.read(bytes);
+              if (trace) {
+                X_Log.log(info, new SimpleFifo<Object>().give(getClass())
+                    .give("after read")
+                    .give(X_Time.difference(birth))
+                    .give("delay: "+delay)
+                    );
+              }
               if (read > 0){
                 delay = 20;
                 buffer.write(bytes, 0, read);
@@ -81,16 +95,15 @@ public class X_IO {
                   buffer.reset();
                 }
                 if (read == -1) {
+                  X_Log.debug(getClass(), "read returned -1");
                   break top;
-                }
-                synchronized (liveCheck) {
-                  liveCheck.wait(delay*=2,0);
                 }
                 break;
               }
-            } while (X_Time.now().millis() - start.millis() < 100);
+            } while (X_Time.isFuture(start.millis() + 100));
             synchronized (liveCheck) {
-              liveCheck.wait(10,0);
+              delay = delay < 1000 ? delay << 1 : delay > 2000 ? 2000 : delay + 250;
+              liveCheck.wait(delay,0);
             }
           }
           if (buffer.size() > 0) {
@@ -107,7 +120,7 @@ public class X_IO {
           }
           X_Log.error(getClass(), "Error draining input stream", info, in, e);
         } finally {
-          X_Log.trace(getClass(), "Finished blocking", this);
+          X_Log.debug(getClass(), "Finished blocking", this);
           successHandler.onEnd();
           close(in);
         }
@@ -175,6 +188,16 @@ public class X_IO {
         size <<= 0;
       }
       buffer = new byte[size];
+    }
+  }
+
+  public static String toStringUtf8(InputStream in) throws IOException {
+    StringBufferOutputStream b = new StringBufferOutputStream();
+    drain(b, in);
+    try {
+      return b.toString();
+    } finally {
+      b.close();
     }
   }
   

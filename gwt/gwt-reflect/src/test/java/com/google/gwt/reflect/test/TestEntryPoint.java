@@ -3,13 +3,17 @@ package com.google.gwt.reflect.test;
 import static com.google.gwt.reflect.client.GwtReflect.magicClass;
 
 import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import com.google.gwt.core.client.Callback;
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.RunAsyncCallback;
+import com.google.gwt.core.client.Scheduler;
+import com.google.gwt.core.client.Scheduler.ScheduledCommand;
 import com.google.gwt.dom.client.BodyElement;
 import com.google.gwt.dom.client.DivElement;
 import com.google.gwt.dom.client.Document;
@@ -28,13 +32,14 @@ import com.google.gwt.user.client.Timer;
 
 public class TestEntryPoint implements EntryPoint {
 
+  private static final String TEST_RESULTS = "test.result";
   private final Map<Method,Object> tests = new LinkedHashMap<Method,Object>();
   private final Map<Class<?>,Method[]> testClasses = new LinkedHashMap<Class<?>,Method[]>();
 
   @Override
   public void onModuleLoad() {
     String module = GWT.getModuleName(), host = GWT.getHostPageBaseURL().replace("/"+module, "");
-    debug("<a href='#' onclick=\""
+    print("<a href='#' onclick=\""
           + "window.__gwt_bookmarklet_params = "
             + "{server_url:'" + host+ "', "
             + "module_name:'" + module + "'}; "
@@ -43,6 +48,22 @@ public class TestEntryPoint implements EntryPoint {
           + "document.getElementsByTagName('head')[0].appendChild(s); "
           + "return true;"
         + "\">Recompile</a>", null);
+    print("<style>"
+        + "h3 {"
+          + "margin-bottom: 5px;"
+        + "}"
+        + ".results {"
+          +  "color: grey;"
+          + " margin-bottom: 5px;"
+          + " text-align: center;"
+        + "}"
+        + ".success {"
+          + "color: green;"
+        + "}"
+        + ".fail {"
+          + "color: red;"
+        + "}"
+        + "</style>", null);
     
     GWT.runAsync(TestEntryPoint.class, new RunAsyncCallback() {
 
@@ -50,7 +71,8 @@ public class TestEntryPoint implements EntryPoint {
       public void onSuccess() {
         try {
           String.class.getMethod("equals", Object.class).invoke("!", "!");
-        } catch (Exception e) {debug("Basic string reflection not working", e);
+        } catch (Exception e) {print("Basic string reflection not working; "
+            + "expect failures...", e);
         }
         // Do not change the order of the following calls unless you also
         // update the initial-load-sequence defined in CompileSizeTest.gwt.xml
@@ -70,7 +92,7 @@ public class TestEntryPoint implements EntryPoint {
                   addTests(c);
                 }
               } catch (Throwable e) {
-                debug("Error adding tests", e);
+                print("Error adding tests", e);
               }
             }
             loadTests(true);
@@ -78,7 +100,7 @@ public class TestEntryPoint implements EntryPoint {
 
           @Override
           public void onFailure(Throwable caught) {
-            debug("Error loading ConstPool", caught);
+            print("Error loading ConstPool", caught);
           }
         });
         
@@ -87,7 +109,7 @@ public class TestEntryPoint implements EntryPoint {
 
       @Override
       public void onFailure(Throwable reason) {
-        debug("Error loading TestEntryPoint", reason);
+        print("Error loading TestEntryPoint", reason);
       }
     });
 
@@ -119,13 +141,13 @@ public class TestEntryPoint implements EntryPoint {
         try {
           addTests(AnnotationTests.class);
         } catch (Throwable e) {
-          debug("Error adding AnnotationTests", e);
+          print("Error adding AnnotationTests", e);
         }
       }
       
       @Override
       public void onFailure(Throwable reason) {
-        debug("Error loading AnnotationTests", reason);
+        print("Error loading AnnotationTests", reason);
       }
     });
   }
@@ -138,13 +160,13 @@ public class TestEntryPoint implements EntryPoint {
         try {
           addTests(ArrayTests.class);
         } catch (Throwable e) {
-          debug("Error adding ArrayTests", e);
+          print("Error adding ArrayTests", e);
         }
       }
       
       @Override
       public void onFailure(Throwable reason) {
-        debug("Error loading ArrayTests", reason);
+        print("Error loading ArrayTests", reason);
       }
     });
   }
@@ -157,13 +179,13 @@ public class TestEntryPoint implements EntryPoint {
         try {
           addTests(ConstructorTests.class);
         } catch (Throwable e) {
-          debug("Error adding ConstructorTests", e);
+          print("Error adding ConstructorTests", e);
         }
       }
       
       @Override
       public void onFailure(Throwable reason) {
-        debug("Error loading ConstructorTests", reason);
+        print("Error loading ConstructorTests", reason);
       }
     });
   }
@@ -176,13 +198,13 @@ public class TestEntryPoint implements EntryPoint {
         try {
           addTests(FieldTests.class);
         } catch (Throwable e) {
-          debug("Error adding FieldTests", e);
+          print("Error adding FieldTests", e);
         }
       }
       
       @Override
       public void onFailure(Throwable reason) {
-        debug("Error loading FieldTests", reason);
+        print("Error loading FieldTests", reason);
       }
     });
   }
@@ -195,18 +217,18 @@ public class TestEntryPoint implements EntryPoint {
         try {
           addTests(MethodTests.class);
         } catch (Throwable e) {
-          debug("Error adding MethodTests", e);
+          print("Error adding MethodTests", e);
         }
       }
       
       @Override
       public void onFailure(Throwable reason) {
-        debug("Error loading MethodTests", reason);
+        print("Error loading MethodTests", reason);
       }
     });
   }
 
-  private void addTests(Class<?> cls) throws Throwable {
+  public void addTests(Class<?> cls) throws Throwable {
     Method[] allTests = JUnit4Test.findTests(cls);
     if (allTests.length > 0) {
       testClasses.put(cls, allTests);
@@ -229,10 +251,12 @@ public class TestEntryPoint implements EntryPoint {
       div.getStyle().setOverflowY(Overflow.AUTO);
       
       StringBuilder b = new StringBuilder();
+      final String id = toId(c);
       b
-          .append("<h3>")
+          .append("<h3><a id='"+id+ "' href='#run:"+id+ "'>")
           .append(c.getName())
-          .append("</h3>")
+          .append("</a></h3>")
+          .append("<div class='results' id='"+TEST_RESULTS+id+"'> </div>")
       ;
       try {
         String path = c.getProtectionDomain().getCodeSource().getLocation().getPath();
@@ -242,7 +266,7 @@ public class TestEntryPoint implements EntryPoint {
       } catch (Exception ignored) {}
       div.setInnerHTML(b.toString());
       for (final Method m : testClasses.get(c)) {
-        final String id = m.getName()+c.hashCode();
+        final String methodId = m.getName()+c.hashCode();
         b = new StringBuilder();
         b.append("<pre>");
         b.append("<a href='javascript:'>");
@@ -252,7 +276,7 @@ public class TestEntryPoint implements EntryPoint {
         b.append(GwtReflect.joinClasses(", ", m.getParameterTypes()));
         b.append(')');
         b.append("</pre>");
-        b.append("<div id='"+id+"'> </div>");
+        b.append("<div id='"+methodId+"'> </div>");
         Element el = Document.get().createDivElement().cast();
         el.setInnerHTML(b.toString());
         DOM.setEventListener(el, new EventListener() {
@@ -267,13 +291,52 @@ public class TestEntryPoint implements EntryPoint {
         div.appendChild(el);
       }
       body.appendChild(div);
+      Element anchor = Document.get().getElementById(id).cast();
+      DOM.setEventListener(anchor, new EventListener() {
+        @Override
+        public void onBrowserEvent(Event event) {
+          Map<Method, Boolean> res = testResults.get(c);
+          
+          for (final Method m : res.keySet().toArray(new Method[res.size()])) {
+            res.put(m, null);
+          }
+          updateTestClass(c);
+          
+          for (final Method m : testClasses.get(c)) {
+            Scheduler.get().scheduleDeferred(new ScheduledCommand() {
+              @Override
+              public void execute() {
+                runTest(m);
+              }
+            });
+          }
+        }
+      });
+      DOM.sinkEvents(anchor, Event.ONCLICK);
     }
     
   }
 
+  private native void log(Object o)
+  /*-{
+    $wnd.console && $wnd.console.log(o);
+  }-*/;
+
+  private String toId(Class<?> c) {
+    return c.getName().replace('.', '_');
+  }
+
+  Map<Class<?>, Map<Method, Boolean>> testResults = new LinkedHashMap<Class<?>, Map<Method, Boolean>>();
   private void runTests() {
     int delay = 1;
+    testResults.clear();
     for (final Method method : tests.keySet()) {
+      Map<Method, Boolean> results = testResults.get(method.getDeclaringClass());
+      if (results == null) {
+        results = new HashMap<Method, Boolean>();
+        testResults.put(method.getDeclaringClass(), results);
+      }
+      results.put(method, null);
       new Timer() {
 
         @Override
@@ -282,24 +345,69 @@ public class TestEntryPoint implements EntryPoint {
         }
       }.schedule(delay += 5);
     }
+    for (Class<?> testClass : testResults.keySet()) {
+      updateTestClass(testClass);
+    }
   }
 
-  protected void runTest(Method m) {
-    String id = m.getName()+m.getDeclaringClass().hashCode();
-    com.google.gwt.dom.client.Element el = Document.get().getElementById(id);
+  private void updateTestClass(Class<?> cls) {
+    String id = toId(cls);
+    Element el = DOM.getElementById(TEST_RESULTS+id);
+    Map<Method, Boolean> results = testResults.get(cls);
+    int success = 0, fail = 0, total = results.size();
+    for (Entry<Method, Boolean> e : results.entrySet()) {
+      if (e.getValue() != null) {
+        if (e.getValue()) {
+          success ++;
+        } else {
+          fail ++;
+        }
+      }
+    }
+    StringBuilder b = new StringBuilder("<span class='success'>Passed: ")
+    .append(success).append("/").append(total).append("</span>; ")
+    .append("<span");
+    if (fail > 0) {
+      b.append(" class='fail'");
+    }
+    b.append(">Failed: ").append(fail).append("/").append(total);
+    el.setInnerHTML(b.toString());
+  }
+
+  protected void runTest(final Method m) {
+    final String id = m.getName()+m.getDeclaringClass().hashCode();
+    final com.google.gwt.dom.client.Element el = Document.get().getElementById(id);
+    el.setInnerHTML("");
+    Map<Method, Boolean> results = testResults.get(m.getDeclaringClass());
     try {
       JUnit4Test.runTest(tests.get(m), m);
+      results.put(m, true);
       debug(el, "<div style='color:green'>" + m.getName() + " passes!</div>", null);
     } catch (Throwable e) {
+      results.put(m, false);
       String error = m.getDeclaringClass().getName() + "." + m.getName() + " failed";
       while (e.getClass() == RuntimeException.class && e.getCause() != null)
         e = e.getCause();
       debug(el, error, e);
+      try {
+        // Move the element up to the top of the results list.
+        com.google.gwt.dom.client.Element result = el.getParentElement();
+        com.google.gwt.dom.client.Element parent = result.getParentElement();
+        parent.insertAfter(result, parent.getChild(2));
+      } catch(Exception ignored){}
+      if (e instanceof Error) {
+        throw (Error)e;
+      }
+      if (e instanceof RuntimeException) {
+        throw (Error)e;
+      }
       throw new AssertionError(error);
+    } finally {
+      updateTestClass(m.getDeclaringClass());
     }
   }
 
-  private void debug(String string, Throwable e) {
+  private void print(String string, Throwable e) {
     DivElement el = Document.get().createDivElement();
     debug(el, string, e);
     Document.get().getBody().appendChild(el);

@@ -53,7 +53,7 @@ public class GwtManifest {
   private static final int DEFAULT_LOCAL_WORKERS = 6;
   private static final int DEFAULT_OPTIMIZATION = 9;
   private static final Type DEFAULT_LOG_LEVEL = Type.INFO;
-  private static final ObfuscationLevel DEFAULT_OBFUSCATION = ObfuscationLevel.PRETTY;
+  private static final ObfuscationLevel DEFAULT_OBFUSCATION = ObfuscationLevel.OBFUSCATED;
   private static final OpenAction DEFAULT_OPEN_ACTION = OpenAction.IFRAME;
   
   private boolean autoOpen;
@@ -223,7 +223,7 @@ public class GwtManifest {
   }
   
   public String getWarDir() {
-    return workDir;
+    return warDir;
   }
 
   public String getWorkDir() {
@@ -573,7 +573,7 @@ public class GwtManifest {
     if (!hadGwtDev) {
       addGwtArtifact(cp, gwtHome, gwtVersion, "gwt-dev");
     }
-    X_Log.info(getClass(), cp);
+    X_Log.trace(getClass(), cp);
     return cp.toArray();
   }
   protected void addGwtArtifact(IntTo<String> cp, String gwtHome, String gwtVersion, String artifact) {

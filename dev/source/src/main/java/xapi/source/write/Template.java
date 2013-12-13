@@ -42,7 +42,7 @@ public class Template extends Stack{
    *
    */
   @Override
-  public String apply(String ... args) {
+  public String apply(Object ... args) {
     return super.apply(args);
   }
 
@@ -173,7 +173,7 @@ class Stack {
     this.prefix = prefix;
   }
 
-  public String apply(String ... values) {
+  public String apply(Object ... values) {
     // head and tail need to null check.  Children don't.
     return prefix + (next == null ? "" : next.apply(values));
   }
@@ -211,7 +211,7 @@ final class StackNode extends Stack {
   }
 
   @Override
-  public final String apply(String ... values) {
+  public final String apply(Object ... values) {
     return prefix
         + (position < values.length && values[position] != null // coerce nulls
           ? values[position] : onNull(position))

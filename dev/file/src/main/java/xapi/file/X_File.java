@@ -1,6 +1,12 @@
 package xapi.file;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ListIterator;
 import java.util.jar.JarFile;
 
 import javax.inject.Provider;
@@ -40,17 +46,56 @@ public class X_File {
   public static String unzip(String resource, JarFile jarFile, int chmod) {
     return SERVICE.get().unzip(resource, jarFile, chmod);
   }
-
-  public static String getResourceMaybeUnzip(String resource, ClassLoader cl) {
-    return getResourceMaybeUnzip(resource, cl, 0x755);
+  
+  public static InputStream unzipFile(String file) throws FileNotFoundException {
+    String path = unzippedFilePath(file, 0x755);
+    return new FileInputStream(path);
   }
   
-  public static String getResourceMaybeUnzip(String resource, ClassLoader cl, int chmod) {
+  public static InputStream unzipFile(String file, int chmod) throws FileNotFoundException {
+    String path = unzippedFilePath(file, chmod);
+    return new FileInputStream(path);
+  }
+
+  public static InputStream unzipResource(String resource, ClassLoader cl) throws FileNotFoundException {
+    return unzipResource(resource, cl, 0x755);
+  }
+  
+  public static InputStream unzipResource(String resource, ClassLoader cl, int chmod) throws FileNotFoundException {
+    String path = unzippedResourcePath(resource, cl, chmod);
+    return new FileInputStream(path);
+  }
+  
+  public static String unzippedResourcePath(String resource, ClassLoader cl) {
+    return unzippedResourcePath(resource, cl, 0x755);
+  }
+  
+  public static String unzippedResourcePath(String resource, ClassLoader cl, int chmod) {
     return SERVICE.get().getResourceMaybeUnzip(resource, cl, chmod);
   }
 
+  public static String unzippedFilePath(String file, int chmod) {
+    return SERVICE.get().getFileMaybeUnzip(file, chmod);
+  }
+
   public static File createTempDir(String prefix) {
-    return SERVICE.get().createTempDir(prefix);
+    return SERVICE.get().createTempDir(prefix, false);
+  }
+  
+  public static File createTempDir(String prefix, boolean deleteOnExit) {
+    return SERVICE.get().createTempDir(prefix, deleteOnExit);
+  }
+
+  public static String getPath(String path) {
+    return SERVICE.get().getPath(path);
+  }
+
+  public static void saveFile(String path, String fileName, String contents) {
+    SERVICE.get().saveFile(path, fileName, contents);
+  }
+
+  public static void mkdirsTransient(File dest) {
+    SERVICE.get().mkdirsTransient(dest);
   }
   
 }

@@ -50,6 +50,20 @@ public class ScannerTest {
     };
     fail("Could not find "+SecondSubclass.class.getName()+" using X_Scanner.findImplementationsOf()");
   }
+
+  @Test
+  public void testFindInPackage() {
+    Moment start = X_Time.now();
+    for (ClassFile cls : X_Scanner.findClassesInPackage(getClass().getClassLoader(), 
+        ScannerTest.class.getPackage().getName())) {
+      X_Log.info(getClass(), cls);
+      if (cls.getName().equals(ScannerTest.class.getName())) {
+        X_Log.trace("Found self class in "+X_Time.difference(start));
+        return;
+      }
+    };
+    fail("Could not find "+ScannerTest.class+" using X_Scanner.findClassesInPackages()");
+  }
   
   
   

@@ -30,20 +30,6 @@
  <dependencies>
   <dependency>
    <groupId>net.wetheinter</groupId>
-   <artifactId>gwt-method-inject</artifactId>
-  </dependency>
-  <dependency>
-   <groupId>net.wetheinter</groupId>
-   <artifactId>gwt-reflect</artifactId>
-  </dependency>
-  <dependency>
-   <groupId>net.wetheinter</groupId>
-   <artifactId>gwt-reflect</artifactId>
-   <classifier>tests</classifier>
-   <version>${xapi.gwt.version}</version>
-  </dependency>
-  <dependency>
-   <groupId>net.wetheinter</groupId>
    <artifactId>xapi-gwt-inject</artifactId>
   </dependency>
   <dependency>
@@ -69,6 +55,24 @@
   <dependency>
    <groupId>net.wetheinter</groupId>
    <artifactId>xapi-gwtc-api</artifactId>
+  </dependency>
+  <dependency>
+   <groupId>net.wetheinter</groupId>
+   <artifactId>gwt-method-inject</artifactId>
+  </dependency>
+  <dependency>
+   <groupId>net.wetheinter</groupId>
+   <artifactId>gwt-method-inject</artifactId>
+  </dependency>
+  <dependency>
+   <groupId>net.wetheinter</groupId>
+   <artifactId>gwt-reflect</artifactId>
+  </dependency>
+  <dependency>
+   <groupId>net.wetheinter</groupId>
+   <artifactId>gwt-reflect</artifactId>
+   <classifier>tests</classifier>
+   <version>${xapi.gwt.version}</version>
   </dependency>
   <!--
   Yes, we're including gwt-test as compile dependency;
@@ -116,6 +120,10 @@
       <goals>
        <goal>test-jar</goal>
       </goals>
+        <configuration>
+          <!-- Prevent duplicate warnings by changing intermediate jar name -->
+          <finalName>${artifactId}-${version}-tmp</finalName>
+        </configuration>
      </execution>
     </executions>
    </plugin>

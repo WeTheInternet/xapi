@@ -1128,34 +1128,46 @@ public class UnifyAst implements UnifyAstView{
               final Class<?> magicClass = Thread.currentThread().getContextClassLoader().loadClass(magicMethod[0]);
               final Method method = magicClass.getMethod(methodName,
                   TreeLogger.class, JMethodCall.class, JMethod.class, Context.class, UnifyAstView.class);
-              if ((method.getModifiers() & Modifier.STATIC) > 0) {
-                magicMethodMap.put(clientMethod, new MagicMethodGenerator() {
-                  @Override
-                  public JExpression injectMagic(TreeLogger logger, JMethodCall methodCall, JMethod currentMethod,
-                    Context context, UnifyAstView ast) throws UnableToCompleteException {
-                    try {
-                      return (JExpression)method.invoke(null, logger, methodCall, currentMethod, context, ast);
-                    } catch (Exception e) {
-                      logger.log(Type.ERROR, magicClass.getName()+"::"+method.getName()+" failed during ast generation", e);
-                      throw new UnableToCompleteException();
-                    }
-                  }
-                });
-                if (UnifyAstListener.class.isAssignableFrom(magicClass)) {
-                  listeners.add(UnifyAstListener.class.cast(magicClass.newInstance()));
+              if (magicMethodMap.containsKey(clientMethod)) {
+                MagicMethodGenerator existing = magicMethodMap.get(clientMethod);
+                if (existing.getClass() != magicClass) {
+                  logger.log(Type.WARN, "Duplicate magic method mappings found; "+existing+
+                      "already exists; not replacing with "+method+"; which was encountered later in compile");
                 }
               } else {
-                assert MagicMethodGenerator.class.isAssignableFrom(magicClass)
-                  : "An instance-scoped magic method, "+magicClass.getName()+"::"+method.getName()
-                  +" must inherit "+MagicMethodGenerator.class.getName();
-                assert !magicMethodMap.containsKey(clientMethod):
-                  "Duplicate magic instance declarations for "+clientMethod+";" +
-                    " \nexisting: "+magicMethodMap.get(clientMethod)+"" +
-                      "\nreplacement: new "+magicClass.getName()+"()";
-                MagicMethodGenerator inst = (MagicMethodGenerator)magicClass.newInstance();
-                magicMethodMap.put(clientMethod, inst);
-                if (inst instanceof UnifyAstListener) {
-                  listeners.add((UnifyAstListener)inst);
+                if ((method.getModifiers() & Modifier.STATIC) > 0) {
+                  magicMethodMap.put(clientMethod, new MagicMethodGenerator() {
+                    @Override
+                    public JExpression injectMagic(TreeLogger logger, JMethodCall methodCall, JMethod currentMethod,
+                      Context context, UnifyAstView ast) throws UnableToCompleteException {
+                      try {
+                        return (JExpression)method.invoke(null, logger, methodCall, currentMethod, context, ast);
+                      } catch (Exception e) {
+                        logger.log(Type.ERROR, magicClass.getName()+"::"+method.getName()+" failed during ast generation", e);
+                        throw new UnableToCompleteException();
+                      }
+                    }
+                    @Override
+                    public String toString() {
+                      return method.toString();
+                    }
+                  });
+                  if (UnifyAstListener.class.isAssignableFrom(magicClass)) {
+                    listeners.add(UnifyAstListener.class.cast(magicClass.newInstance()));
+                  }
+                } else {
+                  assert MagicMethodGenerator.class.isAssignableFrom(magicClass)
+                    : "An instance-scoped magic method, "+magicClass.getName()+"::"+method.getName()
+                    +" must inherit "+MagicMethodGenerator.class.getName();
+                  assert !magicMethodMap.containsKey(clientMethod):
+                    "Duplicate magic instance declarations for "+clientMethod+";" +
+                      " \nexisting: "+magicMethodMap.get(clientMethod)+"" +
+                        "\nreplacement: new "+magicClass.getName()+"()";
+                  MagicMethodGenerator inst = (MagicMethodGenerator)magicClass.newInstance();
+                  magicMethodMap.put(clientMethod, inst);
+                  if (inst instanceof UnifyAstListener) {
+                    listeners.add((UnifyAstListener)inst);
+                  }
                 }
               }
               MAGIC_METHOD_CALLS.add(clientMethod);

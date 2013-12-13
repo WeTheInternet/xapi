@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <launchConfiguration type="com.google.gwt.eclipse.core.launch.gwtJUnit">
-<stringAttribute key="com.google.gwt.eclipse.core.LOG_LEVEL" value="TRACE"/>
+<stringAttribute key="com.google.gwt.eclipse.core.LOG_LEVEL" value="INFO"/>
 <booleanAttribute key="com.google.gwt.eclipse.core.NOT_HEADLESS" value="false"/>
 <stringAttribute key="com.google.gwt.eclipse.core.OUT_DIR" value="target/www-test"/>
 <booleanAttribute key="com.google.gwt.eclipse.core.STANDARDS_MODE" value="false"/>
@@ -21,5 +21,5 @@
 <stringAttribute key="org.eclipse.jdt.launching.CLASSPATH_PROVIDER" value="com.google.gdt.eclipse.maven.mavenClasspathProvider"/>
 <stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="com.google.gwt.reflect.test.LegacyJUnitTest"/>
 <stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="gwt-reflect"/>
-<stringAttribute key="org.eclipse.jdt.launching.VM_ARGUMENTS" value="-ea -Dgwt.persistentunitcache="/>
+<stringAttribute key="org.eclipse.jdt.launching.VM_ARGUMENTS" value="-ea -Dgwt.persistentunitcache= -Dgwt.usearchives=false"/>
 </launchConfiguration>

@@ -359,7 +359,7 @@ public class MemberGenerator {
     String src = out.toString();
     pw.println(src);
     if (isDebug(enclosingType, ReflectionStrategy.FIELD)) {
-      logger.log(Type.INFO, "Field wrapper for "+field.toString()+"\n"+src);
+      logger.log(Type.INFO, "Field provider for "+field.toString()+"\n"+src);
     }
     
     ctx.commit(logger, pw);
@@ -409,11 +409,10 @@ public class MemberGenerator {
     
     String src = out.toString();
     if (isDebug(type, ReflectionStrategy.METHOD)) {
-      logger.log(Type.INFO, "Method wrapper for "+method.getReadableDeclaration()+"\n"+src);
+      logger.log(Type.INFO, "Method provider for "+method.getReadableDeclaration()+"\n"+src);
     }
     
     pw.println(src);
-    
     
     ctx.commit(logger, pw);
     

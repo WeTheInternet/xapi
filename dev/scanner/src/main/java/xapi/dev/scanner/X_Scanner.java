@@ -3,6 +3,8 @@ package xapi.dev.scanner;
 import java.lang.annotation.Annotation;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
 
 import xapi.bytecode.ClassFile;
 import xapi.dev.X_Dev;
@@ -17,12 +19,25 @@ public class X_Scanner {
   private X_Scanner() {}
   
   public static ClasspathResourceMap scanClassloader(ClassLoader cl) {
-    return X_Inject.instance(ClasspathScanner.class)
-      .matchClassFile(".*")
-      .matchResource(".*")
-      .matchSourceFile(".*")
-      .scanPackage("")
+    return scanAll()
       .scan(cl);
+  }
+
+  public static Callable<ClasspathResourceMap> scanClassloaderAsync(ClassLoader cl) {
+    return X_Inject.instance(ClasspathScanner.class)
+        .matchClassFile(".*")
+        .matchResource(".*")
+        .matchSourceFile(".*")
+        .scanPackage("")
+        .scan(cl, Executors.newCachedThreadPool());
+  }
+  
+  private static ClasspathScanner scanAll() {
+    return X_Inject.instance(ClasspathScanner.class)
+        .matchClassFile(".*")
+        .matchResource(".*")
+        .matchSourceFile(".*")
+        .scanPackage("");
   }
 
   public static ClasspathResourceMap scanClassloader(ClassLoader cl, 
@@ -98,6 +113,16 @@ public class X_Scanner {
         .scanPackage("")
         .scan(classLoader)
         .findImplementationOf(cls);
+  }
+
+  public static Iterable<ClassFile> findClassesInPackage(ClassLoader classLoader, String pkgName) {
+    return 
+        X_Inject.instance(ClasspathScanner.class)
+        .matchClassFile(".*")
+        .scanPackage("")
+        .scan(classLoader)
+        .findClassesInPackage(pkgName);
+    
   }
 
 }

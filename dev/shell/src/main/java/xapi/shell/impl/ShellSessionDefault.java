@@ -18,11 +18,9 @@ import xapi.io.api.StringReader;
 import xapi.log.X_Log;
 import xapi.log.api.LogLevel;
 import xapi.process.X_Process;
-import xapi.shell.X_Shell;
 import xapi.shell.api.ArgumentProcessor;
 import xapi.shell.api.ShellCommand;
 import xapi.shell.api.ShellSession;
-import xapi.shell.service.ShellService;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
 import xapi.time.impl.RunOnce;
@@ -94,10 +92,11 @@ class ShellSessionDefault implements ShellSession, Runnable {
           return !finished;
         }
       };
-      X_IO.drain(LogLevel.INFO, stdOut, onStdOut, check);
+      X_IO.drain(LogLevel.TRACE, stdOut, onStdOut, check);
       X_IO.drain(LogLevel.ERROR, stdErr, onStdErr, check);
     }
     join();
+    drainStreams();
     if (status == 0) {
       if (callback != null) {
         callback.onSuccess(this);
@@ -109,7 +108,6 @@ class ShellSessionDefault implements ShellSession, Runnable {
       }
     }
     destroy();
-    drainStreams();
     synchronized (this) {
       notifyAll();
     }
@@ -172,20 +170,24 @@ class ShellSessionDefault implements ShellSession, Runnable {
       if (process == null) {
         X_Log.warn(getClass(),"Process failed to start after "+X_Time.difference(birth));
       } else {
-        X_Log.info(getClass(), "Joining process",process, "after",X_Time.difference(birth), "uptime");
-        X_Log.trace(getClass(), "Joining from",new Throwable());
+        X_Log.trace(getClass(), "Joining process",process, "after",X_Time.difference(birth), "uptime");
+        X_Log.debug(getClass(), "Joining from",new Throwable());
         return (status = process.waitFor());
       }
     } catch (InterruptedException e) {
       X_Log.info(getClass(), "Interrupted while joining process",process);
       finished = true;
-      if (normalCompletion) {
-        return (status = 0);
-      }
+      try {
+        if (normalCompletion) {
+          return (status = 0);
+        }
       status = -1;
+      } finally {
+        destroy();
+      }
       err.onError(e);
     } finally {
-      X_Log.info(getClass(), "Joined process",process,"after", X_Time.difference(birth)," uptime");
+      X_Log.trace(getClass(), "Joined process",process,"after", X_Time.difference(birth)," uptime");
       if (status == null) {
         if (process == null) {
           status = ShellCommand.STATUS_FAILED;
@@ -207,6 +209,8 @@ class ShellSessionDefault implements ShellSession, Runnable {
           }
         }
       }
+      finished = true;
+      drainStreams();
     }
     return status;
   }

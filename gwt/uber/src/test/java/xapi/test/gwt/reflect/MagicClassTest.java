@@ -1,13 +1,11 @@
 package xapi.test.gwt.reflect;
 
-import static com.google.gwt.reflect.client.GwtReflect.*;
-
+import static com.google.gwt.reflect.client.GwtReflect.magicClass;
 import xapi.annotation.inject.InstanceDefault;
 import xapi.annotation.reflect.KeepClass;
 import xapi.annotation.reflect.KeepField;
 import xapi.annotation.reflect.KeepMethod;
 import xapi.log.X_Log;
-import xapi.reflect.X_Reflect;
 
 @KeepClass(debugData="")
 @KeepField

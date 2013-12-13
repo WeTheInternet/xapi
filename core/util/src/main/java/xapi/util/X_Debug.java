@@ -7,7 +7,6 @@ import xapi.log.X_Log;
 import xapi.util.api.ErrorHandler;
 
 public class X_Debug {
-
   private X_Debug() {}
   public static class DebugStream extends PrintStream {
 

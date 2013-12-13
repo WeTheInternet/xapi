@@ -1,12 +1,17 @@
 package xapi.dev.source;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 public class XmlBuffer extends PrintBuffer {
 
   private String tagName;
-  private PrintBuffer attributes, comment;
+  private PrintBuffer attributes, comment, before;
+  private Map<String, StringBuilder> attributeMap;
 
   public XmlBuffer() {
     comment = new PrintBuffer();
+    before = new PrintBuffer();
     indent = INDENT;
   }
   public XmlBuffer(String tagName) {
@@ -24,20 +29,30 @@ public class XmlBuffer extends PrintBuffer {
   
   public XmlBuffer setAttribute(String name, String value) {
     ensureAttributes();
-    attributes.print(name);
-    if (value != null) {
-      attributes
-        .print("=\"")
-        .print(value.replaceAll("\"", "&quot;"))
-        .print("\"");
+    StringBuilder attr = attributeMap.get(name);
+    String val;
+    if (value == null) {
+      val = " ";
+    } else {
+      val = "=\""+value.replaceAll("\"", "&quot;")+"\" ";
     }
-    attributes.print(" ");
+    if (attr == null) {
+      attributes.print(name);
+      attr = new StringBuilder(val);
+      attributeMap.put(name, attr);
+      PrintBuffer attrBuf = new PrintBuffer(attr);
+      attributes.addToEnd(attrBuf);
+    } else {
+      attr.setLength(0);
+      attr.append(val);
+    }
     return this;
   }
   
   private void ensureAttributes() {
     if (attributes == null) {
       attributes = new PrintBuffer();
+      attributeMap = new LinkedHashMap<String, StringBuilder>();
     }
   }
   public XmlBuffer makeTag(String name) {
@@ -63,18 +78,25 @@ public class XmlBuffer extends PrintBuffer {
     }
     String origIndent = indent.replaceFirst(INDENT, "");
     StringBuilder b = new StringBuilder(origIndent);
-    String comment = this.comment.toString();
-    if (comment.length() > 0) {
-      if (!comment.startsWith("<!--")) {
+    
+    String text;
+    text = this.before.toString();
+    if (text.length() > 0) {
+      b.append(text);
+    }
+    text = this.comment.toString();
+    if (text.length() > 0) {
+      if (!text.startsWith("<!--")) {
         b.append("<!--\n");
       }
       b.append(indent);
-      b.append(comment);
-      if (!comment.endsWith("-->")) {
+      b.append(text);
+      if (!text.endsWith("-->")) {
         b.append("\n-->");
       }
       b.append(origIndent);
     }
+    
     b
       .append("<")
       .append(tagName);
@@ -83,7 +105,13 @@ public class XmlBuffer extends PrintBuffer {
     }
     String body = super.toString();
     if (body.length() == 0) {
-      b.append("/>\n");
+      if (shouldShortenEmptyTag(tagName)) {
+        b.append("/>\n");
+      } else {
+        b.append("> </")
+         .append(tagName)
+         .append(">\n");
+      }
     } else {
       b.append(">\n")
        .append(body)
@@ -95,7 +123,9 @@ public class XmlBuffer extends PrintBuffer {
     return b.toString();
   }
   
-
+  protected boolean shouldShortenEmptyTag(String tag) {
+    return !"script".equals(tag);
+  }
   public XmlBuffer append(Object obj) {
     super.append(obj);
     return this;
@@ -213,6 +243,14 @@ public class XmlBuffer extends PrintBuffer {
   public XmlBuffer println(char[] str) {
     super.println(str);
     return this;
+  }
+  
+  @Override
+  public PrintBuffer printBefore(String prefix) {
+    return before.printBefore(prefix);
+  }
+  public boolean isEmpty() {
+    return super.isEmpty() && tagName == null && comment.isEmpty() && before.isEmpty();
   }
   
 }

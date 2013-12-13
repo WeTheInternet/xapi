@@ -24,6 +24,12 @@
       <plugin>
         <artifactId>maven-shade-plugin</artifactId>
       </plugin>
+      <plugin>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <finalName>${artifactId}-${version}-tmp</finalName>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
   <dependencies>

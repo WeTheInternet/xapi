@@ -154,4 +154,8 @@ public abstract class AbstractInitMap <Key, Value> implements InitMap<Key,Value>
 	  return keyProvider.convert(key);
 	}
 	
+	@Override
+	public Value convert(Key from) {
+	  return get(from);
+	}
 }

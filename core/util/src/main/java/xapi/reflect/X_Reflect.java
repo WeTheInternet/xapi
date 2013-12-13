@@ -78,4 +78,8 @@ public class X_Reflect {
     return singleton.get().magicClass(cls);
   }
 
+  public static Package getPackage(String parentName, ClassLoader cl) {
+    return singleton.get().getPackage(parentName, cl);
+  }
+
 }
