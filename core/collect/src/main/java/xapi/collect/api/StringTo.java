@@ -23,6 +23,7 @@ extends HasValues<String,V>
 
   public static interface Many <V>
   extends StringTo<IntTo<V>>
-  {}
+  {
+  }
 
 }

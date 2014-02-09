@@ -70,7 +70,7 @@ public class TemplateTest {
           Template t = new Template(templates[loop], replacers);
           String templateResult=null;
           while (iterations --> 0) {
-            templateResult = t.apply(values);
+            templateResult = t.apply((Object[])values);
           }
           templateCases[loop] = templateResult;
         }

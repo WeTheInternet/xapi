@@ -41,7 +41,7 @@
             <additionalClasspathElement>${project.build.testSourceDirectory}</additionalClasspathElement>
           </additionalClasspathElements>
           <useManifestOnlyJar>false</useManifestOnlyJar>
-          <forkMode>always</forkMode>
+          <forkCount>1.5C</forkCount>
           <systemProperties>
             <property>
               <name>gwt.args</name>

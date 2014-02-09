@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+ <modelVersion>4.0.0</modelVersion>
+ <parent>
+  <groupId>net.wetheinter</groupId>
+  <artifactId>xapi-gwt-ui-parent</artifactId>
+  <version>0.4-SNAPSHOT</version>
+ </parent>
+
+ <artifactId>xapi-gwt-ui-autoui</artifactId>
+ <packaging>jar</packaging>
+ <name>XApi - GWT AutoUi (generating GWT UI's based on model interfaces)</name>
+ <url>WeTheInter.net</url>
+ <description>
+    A set of generator utils to create GWT views and editors from your data models.
+  </description>
+
+ <dependencies>
+  <dependency>
+   <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-core-ui-autoui</artifactId>
+   <classifier>sources</classifier>
+  </dependency>
+  <dependency>
+   <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-core-ui-autoui</artifactId>
+  </dependency>
+  <dependency>
+   <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-gwt-inject</artifactId>
+  </dependency>
+  <dependency>
+   <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-dev-source</artifactId>
+  </dependency>
+  <dependency>
+   <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-dev-source</artifactId>
+   <classifier>sources</classifier>
+  </dependency>
+  
+  <!-- Testing dependencies -->
+  
+  <dependency>
+   <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-core-ui-autoui</artifactId>
+   <classifier>tests</classifier>
+   <version>${xapi.version}</version>
+  </dependency>
+  <dependency>
+   <groupId>junit</groupId>
+   <artifactId>junit</artifactId>
+   <scope>test</scope>
+  </dependency>
+  <dependency>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-gwt-test</artifactId>
+    <scope>test</scope>
+  </dependency>
+  <dependency>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-jre-inject</artifactId>
+  </dependency>
+  <dependency>
+   <groupId>com.google.gwt</groupId>
+   <artifactId>gwt-dev</artifactId>
+   <scope>test</scope>
+  </dependency>
+  <dependency>
+   <groupId>com.sencha.gwt</groupId>
+   <artifactId>formality</artifactId>
+   <version>0.0.1-SNAPSHOT</version>
+   <scope>test</scope>
+  </dependency>
+  <dependency>
+   <groupId>com.sencha.gxt</groupId>
+   <artifactId>gxt</artifactId>
+   <version>3.0.1</version>
+   <scope>test</scope>
+  </dependency>
+  <dependency>
+   <groupId>com.sencha.gwt</groupId>
+   <artifactId>formality</artifactId>
+   <version>0.0.1-SNAPSHOT</version>
+   <classifier>tests</classifier>
+   <scope>test</scope>
+  </dependency>
+ </dependencies>
+
+</project>

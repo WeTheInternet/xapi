@@ -47,6 +47,8 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer>{
 
 	protected int privacy;
 	private boolean isClass;
+	private boolean isAnnotation;
+	private boolean isEnum;
 	private String superClass;
 	private String simpleName;
 	private final Set<String> interfaces;
@@ -83,7 +85,9 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer>{
 	@Override
 	public String toString() {
 		StringBuilder b = new StringBuilder(NEW_LINE);
-		b.append(NEW_LINE);
+		if (javaDoc != null && javaDoc.isNotEmpty()) {
+		  b.append(javaDoc.toString());
+		}
 		if (annotations.size() > 0) {
 		  for (String anno : annotations) {
 		    b.append(origIndent).append("@").append(anno).append(NEW_LINE);
@@ -108,8 +112,16 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer>{
 
 		if (isClass)
 			b.append("class ");
-		else
-			b.append("interface ");
+		else {
+		  if (isAnnotation) {
+		    b.append('@');
+		  }
+		  if (isEnum) {
+		    b.append("enum ");
+		  } else {
+		    b.append("interface ");
+		  }
+		}
 
 		b.append(simpleName+" ");
 
@@ -126,7 +138,11 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer>{
 			}
 		}else{
 			if (interfaces.size()>0){
-				b.append("extends ");
+			  if (isEnum) {
+			    b.append("implements ");
+			  } else {
+			    b.append("extends ");
+			  }
 				for (String iface : interfaces){
 					b.append(iface);
 					b.append(", ");
@@ -168,6 +184,8 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer>{
 		if (metadata.isAbstract())makeAbstract();
 		else makeConcrete();
 		isClass = metadata.isClass();
+		isAnnotation = metadata.isAnnotation();
+		isEnum = metadata.isEnum();
 		addInterfaces(metadata.getInterfaces());
 		superClass = metadata.getSuperClass();
 		definition = metadata.getClassName();

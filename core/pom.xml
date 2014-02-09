@@ -73,6 +73,9 @@
   <!-- A simple argument processor, based on GWT ArgProcessor classes. -->
   <module>args</module>
 
+  <!-- Core user interface apis. -->
+  <module>ui</module>
+
   <!-- Test module -->
   <module>test</module>
 

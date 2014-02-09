@@ -9,7 +9,6 @@ import xapi.dev.scanner.X_Scanner;
 import xapi.log.X_Log;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
-import xapi.util.X_Debug;
 
 public class ScannerTest {
 

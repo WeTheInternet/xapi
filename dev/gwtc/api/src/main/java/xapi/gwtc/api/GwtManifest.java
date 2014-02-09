@@ -1,5 +1,7 @@
 package xapi.gwtc.api;
 
+import java.util.Iterator;
+
 import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.impl.SimpleFifo;
@@ -9,6 +11,42 @@ import com.google.gwt.core.ext.TreeLogger.Type;
 
 public class GwtManifest {
 
+  private final class ClasspathIterable implements Iterable<String> {
+    private final class Itr implements Iterator<String> {
+      IntTo<String> src = getSources();
+      IntTo<String> dep = getDependencies();
+      int pos = 0;
+      @Override
+      public boolean hasNext() {
+        if (dep == null) {
+          return pos < src.size();
+        }
+        if (dep.isEmpty()) {
+          dep = null;
+          return pos < src.size();
+        }
+        if (pos == src.size()) {
+          src = dep;
+          pos = 0;
+          return !src.isEmpty();
+        }
+        return true;
+      }
+
+      @Override
+      public String next() {
+        return src.get(pos++);
+      }
+
+      @Override
+      public void remove() {}
+    }
+    @Override
+    public Iterator<String> iterator() {
+      return new Itr();
+    }
+  }
+  
   private static final String ARG_AGGRESSIVE_OPTIMIZE = "XdisableAggressiveOptimization";
   private static final String ARG_AUTO_OPEN = "autoOpen";
   private static final String ARG_CAST_CHECKING = "XdisableCastChecking";
@@ -771,6 +809,10 @@ public class GwtManifest {
     }
     
     return b.toString();
+  }
+
+  public Iterable<String> getClasspath() {
+    return new ClasspathIterable();
   }
   
 }

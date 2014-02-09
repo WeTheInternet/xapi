@@ -10,7 +10,6 @@ import java.util.Set;
 
 import xapi.annotation.compile.Resource;
 import xapi.dev.source.XmlBuffer;
-import xapi.file.X_File;
 import xapi.gwtc.api.Gwtc;
 import xapi.io.X_IO;
 import xapi.log.X_Log;

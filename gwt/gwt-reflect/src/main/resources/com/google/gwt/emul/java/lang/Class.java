@@ -230,12 +230,16 @@ java.lang.reflect.AnnotatedElement
   @SuppressWarnings("rawtypes")
   public static Class forName(String name)
     throws ClassNotFoundException{
-      return ConstPool.getConstPool().getClassByName(name);
+    Class c = ConstPool.getConstPool().getClassByName(name);
+    if (c == null) {
+      throw new ClassNotFoundException("No class found for "+name);
+    }
+    return c;
   }
   @SuppressWarnings("rawtypes")
   public static Class forName(String name, boolean initialize, ClassLoader loader) 
     throws ClassNotFoundException{
-    return ConstPool.getConstPool().getClassByName(name);
+    return forName(name);
   }
 
   JavaScriptObject enumValueOfFunc;
@@ -346,7 +350,7 @@ java.lang.reflect.AnnotatedElement
   }
 
   public T newInstance()
-  throws IllegalAccessException {
+  throws IllegalAccessException, InstantiationException {
     return classData.newInstance();
   }
   
@@ -574,6 +578,15 @@ java.lang.reflect.AnnotatedElement
     }
     return false;
   }
+  
+  public Method getEnclosingMethod() {
+    return classData.getEnclosingMethod();
+  }
+  
+  public Class<?> getEnclosingClass() {
+    return classData.getEnclosingClass();
+  }
+  
   protected static native int isNumber(Class<?> cls)
   /*-{
     // yup, switch case on classes works in jsni ;)

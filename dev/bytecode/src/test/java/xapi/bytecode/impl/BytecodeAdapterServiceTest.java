@@ -14,7 +14,6 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import xapi.log.X_Log;
 import xapi.source.X_Source;
 import xapi.source.api.HasAnnotations;
 import xapi.source.api.IsAnnotation;

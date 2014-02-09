@@ -1,7 +1,5 @@
 package xapi.gwt.collect;
 
-import com.google.gwt.core.shared.GWT;
-
 import xapi.annotation.inject.SingletonOverride;
 import xapi.collect.api.CollectionOptions;
 import xapi.collect.api.StringTo;

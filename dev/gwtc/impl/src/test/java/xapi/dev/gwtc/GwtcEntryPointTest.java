@@ -6,8 +6,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.google.gwt.core.ext.TreeLogger.Type;
-
 import xapi.dev.X_Gwtc;
 import xapi.dev.gwtc.api.GwtcService;
 import xapi.gwtc.api.GwtManifest;

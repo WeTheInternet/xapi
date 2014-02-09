@@ -150,6 +150,17 @@
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-core-ui-autoui</artifactId>
+    <version>${xapi.version}</version>
+   </dependency>
+   <dependency>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-core-ui-autoui</artifactId>
+    <version>${xapi.version}</version>
+    <classifier>sources</classifier>
+   </dependency>
+   <dependency>
+    <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-test</artifactId>
     <version>${xapi.version}</version>
    </dependency>
@@ -256,7 +267,32 @@
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-gwt-ui-autoui</artifactId>
+    <version>${xapi.version}</version>
+   </dependency>
+   <dependency>
+    <groupId>net.wetheinter</groupId>
     <artifactId>xapi-gwt-test</artifactId>
+    <version>${xapi.version}</version>
+   </dependency>
+   <dependency>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-gwt-inspect-parent</artifactId>
+    <version>${xapi.version}</version>
+   </dependency>
+   <dependency>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-gwt-inspect-generator</artifactId>
+    <version>${xapi.version}</version>
+   </dependency>
+   <dependency>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-gwt-inspect-api</artifactId>
+    <version>${xapi.version}</version>
+   </dependency>
+   <dependency>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-gwt-inspect-impl</artifactId>
     <version>${xapi.version}</version>
    </dependency>
    <dependency>
@@ -274,6 +310,12 @@
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-dev-source</artifactId>
+    <version>${xapi.version}</version>
+   </dependency>
+   <dependency>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-dev-source</artifactId>
+    <classifier>sources</classifier>
     <version>${xapi.version}</version>
    </dependency>
    <dependency>

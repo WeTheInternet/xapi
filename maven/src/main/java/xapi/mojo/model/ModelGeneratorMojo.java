@@ -14,7 +14,6 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 
-import xapi.annotation.model.GetterFor;
 import xapi.annotation.model.IsModel;
 import xapi.bytecode.ClassFile;
 import xapi.bytecode.impl.BytecodeAdapterService;

@@ -4,10 +4,8 @@ import java.io.DataInput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
-import xapi.bytecode.annotation.Annotation;
 import xapi.bytecode.annotation.AnnotationDefaultAttribute;
 import xapi.bytecode.annotation.AnnotationsAttribute;
 import xapi.bytecode.attributes.AttributeInfo;
@@ -16,7 +14,6 @@ import xapi.bytecode.attributes.ExceptionsAttribute;
 import xapi.bytecode.attributes.LineNumberAttribute;
 import xapi.bytecode.attributes.ParameterAnnotationsAttribute;
 import xapi.bytecode.attributes.SignatureAttribute;
-import xapi.bytecode.impl.BytecodeUtil;
 import xapi.source.api.AccessFlag;
 import xapi.util.X_Byte;
 

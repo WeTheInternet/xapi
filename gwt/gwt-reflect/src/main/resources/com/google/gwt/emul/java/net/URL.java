@@ -71,11 +71,6 @@ public final class URL implements java.io.Serializable {
    */
   private String ref;
 
-  /**
-   * The URLStreamHandler for this URL.
-   */
-  // transient URLStreamHandler handler; //XXX
-
   /* Our hash code.
    * @serial */
   private int hashCode = -1;

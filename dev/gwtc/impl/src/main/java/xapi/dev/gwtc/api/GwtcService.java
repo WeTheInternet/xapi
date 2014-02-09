@@ -17,7 +17,7 @@ public interface GwtcService {
   void addPackage(Package pkg, boolean recursive);
   void addGwtTestCase(Class<? extends GWTTestCase> subclass);
   void addGwtTestSuite(Class<? extends GWTTestSuite> asSubclass);
-  void addJUnitClass(Class<?> clazz);
+  boolean addJUnitClass(Class<?> clazz);
   void addAsyncBlock(Class<? extends RunAsyncCallback> asSubclass);
   int compile(GwtManifest manifest);
   void addGwtModules(Class<?> clazz);

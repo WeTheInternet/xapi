@@ -15,6 +15,7 @@ public abstract class MemberBuffer <Self extends MemberBuffer<Self>> extends Pri
   protected final Set<String> annotations;
   protected final Set<String> generics;
   protected final String origIndent;
+  protected PrintBuffer javaDoc;
 
   protected int modifier = Modifier.PUBLIC;
 
@@ -104,6 +105,36 @@ public abstract class MemberBuffer <Self extends MemberBuffer<Self>> extends Pri
 
     }
     this.annotations.add(anno);
+    return self();
+  }
+  
+  protected final PrintBuffer createJavadoc() {
+    if (javaDoc == null) {
+      javaDoc = new PrintBuffer();
+    }
+    return javaDoc;
+  }
+  
+  public final Self setJavadoc(String doc) {
+    String[] bits = doc.split("\n");
+    if (bits.length>0) {
+      javaDoc = new PrintBuffer();
+      javaDoc.indent = origIndent;
+      if (bits.length == 1) {
+        javaDoc.println("/** "+doc+" */");
+      } else {
+        javaDoc.println("/**");
+        for (String bit : bits) {
+          javaDoc.print("* ");
+          if ("".equals(bit)) {
+            javaDoc.println("<br/>");
+          } else {
+            javaDoc.println(bit);
+          }
+        }
+        javaDoc.println("*/");
+      }
+    }
     return self();
   }
 

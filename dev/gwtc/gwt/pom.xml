@@ -21,6 +21,7 @@
     <dependency>
       <groupId>net.wetheinter</groupId>
       <artifactId>gui-gwt</artifactId>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>net.wetheinter</groupId>

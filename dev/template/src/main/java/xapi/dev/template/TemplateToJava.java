@@ -86,7 +86,7 @@ public class TemplateToJava {
 
   public void generate(LogService logger, String template, TemplateGeneratorOptions options) {
     SourceBuilder<?> context = options.getContext(logger, template);
-    InputStream input;
+    InputStream input = null;
     try {
       if (new File(template).exists()) {
         input = new FileInputStream(template);
@@ -115,6 +115,12 @@ public class TemplateToJava {
       exportClass(logger, template, context, options);
     } catch (Exception e) {
       throw new CompilationFailed("Unable to generate java source file for template " + template, e);
+    } finally {
+      if (input != null) {
+        try {
+          input.close();
+        } catch (IOException e) {}
+      }
     }
   }
 

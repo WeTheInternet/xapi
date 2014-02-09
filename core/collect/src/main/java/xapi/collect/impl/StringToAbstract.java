@@ -17,12 +17,15 @@ public class StringToAbstract <V> implements StringTo<V>{
   private final java.util.Map<String,V> map;
 
   public StringToAbstract() {
-    if (X_Runtime.isMultithreaded()) {
+    if (isMultithreaded()) {
       map = new ConcurrentHashMap<String,V>();
     } else {
       map = new HashMap<String,V>();
-
     }
+  }
+
+  protected boolean isMultithreaded() {
+    return X_Runtime.isMultithreaded();
   }
 
   @Override

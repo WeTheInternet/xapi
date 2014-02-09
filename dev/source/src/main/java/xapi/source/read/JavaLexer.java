@@ -798,6 +798,8 @@ public class JavaLexer {
   private final int modifier;
 
   private final boolean isClass;
+  private final boolean isAnnotation;
+  private final boolean isEnum;
   private final boolean isGenerics;
   private final Set<String> interfaces;
   private final Set<String> generics;
@@ -865,7 +867,13 @@ public class JavaLexer {
     int index;
 
     if (definition.contains("interface ")) {
-      definition = definition.replace("interface ", "");
+      isEnum = false;
+      isAnnotation = definition.contains("@interface");
+      if (isAnnotation) {
+        definition = definition.replace("@interface ", "");
+      } else {
+        definition = definition.replace("interface ", "");
+      }
       isClass = false;
       superClass = null;
       // extends applies to superinterfaces
@@ -885,8 +893,15 @@ public class JavaLexer {
     } else {
       isClass = definition.contains("class ");
       if (isClass) {
-
         definition = definition.replace("class ", "");
+        isEnum = false;
+      } else {
+        isEnum = definition.contains("enum ");
+        definition = definition.replace("enum ", "");
+      }
+      isAnnotation = false;
+      if (isClass) {
+
         // extends applies to superclass
         index = definition.indexOf("extends ");
         if (index > 0) {
@@ -1048,6 +1063,14 @@ public class JavaLexer {
 
   public boolean isClass() {
     return isClass;
+  }
+  
+  public boolean isAnnotation() {
+    return isAnnotation;
+  }
+
+  public boolean isEnum() {
+    return isEnum;
   }
 
   public boolean hasGenerics() {

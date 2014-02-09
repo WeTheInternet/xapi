@@ -46,7 +46,7 @@ import xapi.util.api.ProvidesValue;
  *
  * @author James X Nelson (james@wetheinter.net, @ajax)
  */
-public class SingletonProvider<X> implements Provider<X>, ProvidesValue<X>{
+public abstract class SingletonProvider<X> implements Provider<X>, ProvidesValue<X>{
 
   public class NullCheckOnGet implements Provider<X>{
     /**
@@ -143,9 +143,7 @@ public class SingletonProvider<X> implements Provider<X>, ProvidesValue<X>{
 	 * Called once, on first .get(). Override to provide new value, or use @LazyPojo to set(X) externally.
 	 * @return A singleton object that will be saved and returned on every subsequent .get()
 	 */
-	protected X initialValue(){
-	  return null;
-	}
+	protected abstract X initialValue();
 	/**
 	 * This method is final so the compiler can optimize the call.
 	 *

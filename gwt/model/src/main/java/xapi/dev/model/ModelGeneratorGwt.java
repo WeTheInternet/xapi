@@ -194,6 +194,8 @@ public class ModelGeneratorGwt extends IncrementalGenerator{
       }
     }
 
+    logger.log(Type.ERROR, builder.toString());
+
     // Step three, determine the fields we'll need to generate
     model.build(logger, builder, ctx, type);
     pw.println(builder.toString());
@@ -202,7 +204,6 @@ public class ModelGeneratorGwt extends IncrementalGenerator{
 
     // Step four, generate serialization protocols for this model type.
 
-    logger.log(Type.ERROR, builder.toString());
 
     return new RebindResult(RebindMode.USE_ALL_NEW, MODEL_PACKAGE + "." + mangledName);
   }

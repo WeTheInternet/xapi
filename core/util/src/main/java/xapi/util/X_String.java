@@ -171,6 +171,10 @@ public class X_String {
     return source.substring(0, ind);
   }
 
+  public static String toTitleCase(String name) {
+    return isEmpty(name) ? name : Character.toUpperCase(name.charAt(0))+name.substring(1);
+  }
+
 
 
 }

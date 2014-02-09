@@ -224,7 +224,11 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
     if (fieldType == TypeData.NONE)
       return super.toString();
 
-    StringBuilder b = new StringBuilder(NEW_LINE+origIndent);
+    StringBuilder b = new StringBuilder(NEW_LINE);
+    if (javaDoc != null && javaDoc.isNotEmpty()) {
+      b.append(javaDoc.toString());
+    }
+    b.append(origIndent);
     if (annotations.size() > 0) {
       for (String anno : annotations)
         b.append('@').append(anno).append(NEW_LINE+origIndent);

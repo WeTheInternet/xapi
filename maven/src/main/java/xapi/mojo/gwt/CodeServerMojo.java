@@ -184,6 +184,7 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
 
     public void keepAlive() throws MojoExecutionException {
       final MavenProject project = getProject();
+      X_Log.info(getClass(),"Preparing gwt recompiler for "+project,"Include test sources? "+isUseTestSources());
       if (null != project) {
         addSource(project.getBasedir());
         LinkedList<String> modules = new LinkedList<String>();
@@ -202,6 +203,8 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
                         "An error was encountered while searching for .gwt.xml modules",
                         e);
               }
+            } else {
+              X_Log.warn(getClass(), "Test source does not exist",f);
             }
           }
           for (Resource o : project.getTestResources()) {
@@ -218,6 +221,8 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
                         "An error was encountered while searching for .gwt.xml modules",
                         e);
               }
+            } else {
+              X_Log.warn(getClass(), "Test resource does not exist",f);
             }
           }
         }
@@ -261,13 +266,16 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
             for (Object o : project.getTestClasspathElements()) {
               getLog().info(o.toString());
               File f = new File(String.valueOf(o));
-              if (f.exists())
+              if (f.exists()) {
                 if (f.isDirectory()) {
                   // directories are to be handled differently
                   addToTestClasspath(f);
                 } else {
                   addTestSource(f);
                 }
+              } else {
+                X_Log.warn(getClass(), "Test classpath element does not exist",f,"from "+o);
+              }
             }
           }
           for (Object o : project.getCompileClasspathElements()) {

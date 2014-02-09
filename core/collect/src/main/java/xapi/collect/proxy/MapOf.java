@@ -6,11 +6,12 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
+import com.google.gwt.reflect.client.GwtReflect;
+
 import xapi.collect.X_Collect;
 import xapi.collect.api.CollectionOptions;
 import xapi.collect.api.HasValues;
 import xapi.collect.api.ObjectTo;
-import xapi.reflect.X_Reflect;
 
 public class MapOf <K, V>
 implements CollectionProxy<K,V>, Map<K,V>, HasValues<K,V>, ObjectTo<K,V>
@@ -49,7 +50,7 @@ implements CollectionProxy<K,V>, Map<K,V>, HasValues<K,V>, ObjectTo<K,V>
 
   @Override
   public V[] toArray() {
-    V[] values = X_Reflect.newArray(valueClass, map.size());
+    V[] values = GwtReflect.newArray(valueClass, map.size());
     map.values().toArray(values);
     return values;
   }

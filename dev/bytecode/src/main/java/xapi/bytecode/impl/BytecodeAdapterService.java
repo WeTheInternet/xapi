@@ -41,7 +41,6 @@ import xapi.source.impl.DeclaredMemberFilter;
 import xapi.source.impl.ImmutableType;
 import xapi.source.impl.IsClassDelegate;
 import xapi.source.service.SourceAdapterService;
-import xapi.util.X_Byte;
 import xapi.util.X_Debug;
 import xapi.util.X_String;
 import xapi.util.api.ConvertsValue;

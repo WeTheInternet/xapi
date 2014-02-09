@@ -22,7 +22,6 @@ import xapi.util.impl.AbstractPair;
 
 import com.google.gwt.core.client.GwtScriptOnly;
 import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.reflect.client.GwtReflect;
 
 
 @GwtPlatform

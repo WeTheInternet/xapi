@@ -6,8 +6,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import xapi.log.X_Log;
-
 import com.google.gwt.reflect.client.GwtReflect;
 import com.google.gwt.reflect.client.strategy.GwtRetention;
 import com.google.gwt.reflect.client.strategy.ReflectionStrategy;

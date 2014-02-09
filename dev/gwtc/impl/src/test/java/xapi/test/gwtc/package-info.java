@@ -30,8 +30,5 @@
 //  }
 )
 package xapi.test.gwtc;
-import static xapi.annotation.ui.UiTemplate.EmbedStrategy.*;
-import static xapi.annotation.ui.UiTemplate.*;
-import xapi.annotation.ui.UiTemplate;
 import xapi.annotation.compile.Resource;
 import xapi.gwtc.api.Gwtc;

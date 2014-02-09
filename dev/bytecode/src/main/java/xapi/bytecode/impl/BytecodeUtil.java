@@ -29,7 +29,6 @@ import xapi.source.api.IsType;
 import xapi.source.impl.ImmutableAnnotationValue;
 import xapi.util.X_Debug;
 import xapi.util.api.ConvertsValue;
-import xapi.util.converters.ConvertsStringValue;
 
 public class BytecodeUtil {
 

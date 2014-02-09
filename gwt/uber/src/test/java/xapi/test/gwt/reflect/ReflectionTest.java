@@ -37,7 +37,6 @@ package xapi.test.gwt.reflect;
 import xapi.gwt.log.DevLog;
 import xapi.log.api.LogLevel;
 import xapi.log.api.LogService;
-import xapi.reflect.service.ReflectionService;
 import xapi.test.Assert;
 
 import com.google.gwt.core.shared.GWT;

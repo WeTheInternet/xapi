@@ -1,5 +1,6 @@
 package com.google.gwt.reflect.client;
 
+import java.lang.reflect.Method;
 import java.security.ProtectionDomain;
 
 import com.google.gwt.core.client.JavaScriptObject;
@@ -7,10 +8,10 @@ import com.google.gwt.core.client.JavaScriptObject;
 
 public abstract class ClassMap <T> {
 
-
-
   public JavaScriptObject ifaces = JavaScriptObject.createArray();
   public JavaScriptObject classes = JavaScriptObject.createArray();
+  private Method enclosingMethod;
+  private Class<?> enclosingClass;
 
   public final Class<?>[] getInterfaces() {
     return MemberMap.getPublicMembers(ifaces, new Class[0]);
@@ -34,6 +35,14 @@ public abstract class ClassMap <T> {
   /*-{
     @com.google.gwt.reflect.client.ConstPool::CONSTS.$[constId] = cls;
    }-*/;
+  
+  public Method getEnclosingMethod() {
+    return enclosingMethod;
+  }
+  
+  public Class<?> getEnclosingClass() {
+    return enclosingClass;
+  }
 
   private static void throwIllegalAccess() throws IllegalAccessException {
     throw new IllegalAccessException();

@@ -31,6 +31,6 @@ public class File {
   //trying to use files should still throw errors,
   //until we can come up with a good virtualization strategy.
   private File() {}
-  File(String path) {}
+  public File(String path) {}
   
 }

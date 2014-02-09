@@ -1,7 +1,6 @@
 package xapi.dev.gwtc.impl;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -13,13 +12,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.junit.Test;
+
 import xapi.annotation.compile.Dependency;
 import xapi.annotation.compile.ResourceBuilder;
 import xapi.annotation.inject.InstanceDefault;
 import xapi.dev.gwtc.api.GwtcService;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
-import xapi.dev.source.XmlBuffer;
 import xapi.file.X_File;
 import xapi.gwtc.api.GwtManifest;
 import xapi.gwtc.api.Gwtc;
@@ -144,7 +144,9 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
     X_Log.info(getClass(), "Generated module", "\n"+getGwtXml());
     if (manifest.getModuleName() == null) {
       manifest.setModuleName(genName);
+      manifestName = genName;
     } else {
+      manifestName = manifest.getModuleName();
       context.setRenameTo(manifest.getModuleName());
     }
     saveGwtXmlFile(context.getGwtXml(), manifest.getModuleName(), tempDir);
@@ -224,22 +226,6 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
     return null;
   }
 
-  private void saveGwtXmlFile(XmlBuffer xml, String moduleName, File dest) {
-    saveTempFile(GwtcXmlBuilder.HEADER+xml, new File(dest,moduleName+".gwt.xml"));
-  }
-
-  private void saveTempFile(String value, File dest) {
-    X_Log.trace(getClass(), "saving generated file to",dest);
-    dest.getParentFile().mkdirs();
-    try (FileWriter out = new FileWriter(dest);) {
-      out.append(value);
-      out.close();
-    } catch (IOException e) {
-      X_Log.warn(getClass(), "Error saving generated file ",dest,"\n"+value);
-      throw X_Debug.rethrow(e);
-    }
-  }
-
   protected GwtcProperties getDefaultLaunchProperties() {
     return getClass().getAnnotation(Gwtc.class).propertiesLaunch()[0];
   }
@@ -311,10 +297,18 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
   }
   
   @Override
-  public void addJUnitClass(Class<?> clazz) {
+  public boolean addJUnitClass(Class<?> clazz) {
     if (!finished.add(clazz.getName())) {
       X_Log.info(getClass(), "Skipped JUnit 4 class",clazz);
-      return;
+      return false;
+    }
+    search: {
+      for (Method m : clazz.getMethods()) {
+        if (m.isAnnotationPresent(Test.class)) {
+          break search;
+        }
+      }
+      return false;
     }
     Gwtc gwtc = clazz.getAnnotation(Gwtc.class);
     X_Log.info(getClass(), "generating JUnit class", clazz, "?"+(gwtc != null));
@@ -360,26 +354,7 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
       ;
     
     junitLoader.println(methodName+"();");
-    /*
-     protected void addAnnotationTests() {
-  GWT.runAsync(AnnotationTests.class, new RunAsyncCallback() {
-    @Override
-    public void onSuccess() {
-      magicClass(AnnotationTests.class);
-      try {
-        addTests(AnnotationTests.class);
-      } catch (Throwable e) {
-        print("Error adding AnnotationTests", e);
-      }
-    }
-    
-    @Override
-    public void onFailure(Throwable reason) {
-      print("Error loading AnnotationTests", reason);
-    }
-  });
-}
-     */
+    return true;
   }
   
   @Override
@@ -395,5 +370,5 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
     
     out.println("junit.onModuleLoad();");
   }
-  
+
 }

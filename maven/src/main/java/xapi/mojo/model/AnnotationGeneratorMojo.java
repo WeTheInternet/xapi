@@ -7,8 +7,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import javax.annotation.Generated;
-
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Execute;
@@ -16,7 +14,6 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 
-import xapi.annotation.model.SetterFor;
 import xapi.annotation.reflect.MirroredAnnotation;
 import xapi.bytecode.ClassFile;
 import xapi.bytecode.impl.BytecodeAdapterService;

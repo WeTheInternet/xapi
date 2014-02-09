@@ -9,7 +9,7 @@
 
   <artifactId>xapi-server-api</artifactId>
   <packaging>jar</packaging>
-  <name>XApi - Server core api</name>
+  <name>XApi - Server server api</name>
   <url>WeTheInter.net</url>
   <description>
     Common utilities and service abstractions for standard servlets in a plain jvm.

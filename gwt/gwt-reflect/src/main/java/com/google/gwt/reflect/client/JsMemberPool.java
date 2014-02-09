@@ -6,9 +6,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
-import com.google.gwt.core.client.JavaScriptException;
 import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.user.client.Window;
 
 public class JsMemberPool <T> extends JavaScriptObject implements MemberPool <T>{
 

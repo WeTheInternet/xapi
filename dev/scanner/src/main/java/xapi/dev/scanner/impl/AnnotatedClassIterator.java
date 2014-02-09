@@ -12,15 +12,15 @@ import xapi.util.api.MatchesValue;
 
 /**
  * Finds all classes that have any annotation.
- * 
+ *
  * If you want more fine-grained search capabilities,
  * override {@link #matches(ClassFile)}.
- * 
+ *
  * @author "James X. Nelson (james@wetheinter.net)"
  *
  */
 class AnnotatedClassIterator implements Iterable<ClassFile>, MatchesValue<ClassFile> {
-  
+
   final Iterator<ClassFile> allClasses;
   Fifo<ClassFile> results = new SimpleFifo<ClassFile>();
   boolean working = true, waiting = false;
@@ -30,30 +30,35 @@ class AnnotatedClassIterator implements Iterable<ClassFile>, MatchesValue<ClassF
     executor.submit(new Runnable() {
       @Override
       public void run() {
-        while (allClasses.hasNext()) {
-          ClassFile next = allClasses.next();
-          results.give(next);
-          if (waiting) {
-            synchronized(allClasses) {
-              allClasses.notifyAll();
+        try {
+          while (allClasses.hasNext()) {
+            ClassFile next = allClasses.next();
+            results.give(next);
+            if (waiting) {
+              synchronized(allClasses) {
+                allClasses.notifyAll();
+              }
+              waiting = false;
             }
-            waiting = false;
           }
+        } finally {
+          working = false;
         }
+
         if (waiting) {
           synchronized(allClasses) {
             allClasses.notifyAll();
           }
         }
-        working = false;
+
       }
     });
   }
-  
+
   class Itr implements Iterator<ClassFile> {
 
     Iterator<ClassFile> itr = results.forEach().iterator();
-    
+
     @Override
     public boolean hasNext() {
       while (working) {
@@ -82,7 +87,7 @@ class AnnotatedClassIterator implements Iterable<ClassFile>, MatchesValue<ClassF
       throw new UnsupportedOperationException();
     }
   }
-  
+
   @Override
   public Iterator<ClassFile> iterator() {
     return new Itr();

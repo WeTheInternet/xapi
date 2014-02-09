@@ -119,6 +119,9 @@
     <!-- Contains adapters for gwt XmlHttpRequest, jsonp, or other io strategies -->
     <module>io</module>
 
+    <!-- A set of widgets and generators for use in GWT -->
+    <module>ui</module>
+    
     <!-- This uber jar module is here simply to bundle all our dependencies into a single jar for easier deployment. 
       Currently it only contains xapi-core-inject, xapi-gwt-inject and xapi-gwt-reflect, but it will grow to include 
       all gwt-friendly, production-ready modules. To inherit the uber jar, you must use the following dependency: groupId: 
@@ -146,6 +149,7 @@
         <module>process</module>
         <module>model</module>
         <module>io</module>
+        <module>inspect</module>
         <module>test</module>
         <module>uber</module>
       </modules>

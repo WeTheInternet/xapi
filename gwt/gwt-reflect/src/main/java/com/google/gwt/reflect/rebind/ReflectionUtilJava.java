@@ -73,10 +73,13 @@ public class ReflectionUtilJava {
   }
 
   public static String toSourceName(java.lang.reflect.Type type) {
+    return toSourceName(type, true);
+  }
+  private static String toSourceName(java.lang.reflect.Type type, boolean keepGenericNames) {
     if (type instanceof Class) {
-      return toSourceName((Class<?>)type);
+      return toSourceName((Class<?>)type, keepGenericNames);
     } else if (type instanceof TypeVariable) {
-      return toSourceName((TypeVariable<?>)type);
+      return toSourceName((TypeVariable<?>)type, keepGenericNames);
     } else if (type instanceof ParameterizedType){
       return toSourceName((ParameterizedType)type);
     } else if (type instanceof WildcardType){
@@ -123,7 +126,7 @@ public class ReflectionUtilJava {
     }
   }
 
-  private static String toSourceName(Class<?> returnType) {
+  private static String toSourceName(Class<?> returnType, boolean keepGenericTypeName) {
     StringBuilder b = new StringBuilder();
     int arrayDepth = 0;
     while (returnType.getComponentType() != null) {
@@ -134,9 +137,9 @@ public class ReflectionUtilJava {
     TypeVariable<?>[] params = returnType.getTypeParameters();
     if (params.length > 0) {
       b.append('<');
-      b.append(toSourceName(params[0]));
+      b.append(toSourceName(params[0], keepGenericTypeName));
       for (int i = 1, m = params.length; i < m; i ++ ) {
-        b.append(", ").append(toSourceName(params[0]));
+        b.append(", ").append(toSourceName(params[i], keepGenericTypeName));
       }
       b.append("> ");
     }
@@ -164,7 +167,7 @@ public class ReflectionUtilJava {
       b.append('<');
       b.append(toSourceName(params[0]));
       for (int i = 1, m = params.length; i < m; i ++ ) {
-        b.append(", ").append(toSourceName(params[0]));
+        b.append(", ").append(toSourceName(params[i]));
       }
       b.append("> ");
     }
@@ -174,14 +177,19 @@ public class ReflectionUtilJava {
     return b.toString();
   }
 
-  private static String toSourceName(TypeVariable<?> typeVariable) {
+  private static String toSourceName(TypeVariable<?> typeVariable, boolean keepGenericTypeName) {
     StringBuilder b = new StringBuilder();
-    b.append(typeVariable.getName());
+    if (keepGenericTypeName) {
+      b.append(typeVariable.getName());
+    }
     java.lang.reflect.Type[] bounds = typeVariable.getBounds();
     if (bounds.length > 0) {
+      if (keepGenericTypeName) {
+        b.append(" extends ");
+      }
       b.append(toSourceName(bounds[0]));
       for (int i = 1, m = bounds.length; i < m; i++) {
-        b.append(", ").append(toSourceName(bounds[0]));
+        b.append(", ").append(toSourceName(bounds[i]));
       }
     }
     return b.toString();
@@ -199,7 +207,7 @@ public class ReflectionUtilJava {
     } else {
       return b.toString();
     }
-    b.append(toSourceName(bounds[0]));
+    b.append(toSourceName(bounds[0], false));
     for (int i = 1, m = bounds.length; i < m; i ++) {
       b.append(" & ").append(toSourceName(bounds[i]));
     }

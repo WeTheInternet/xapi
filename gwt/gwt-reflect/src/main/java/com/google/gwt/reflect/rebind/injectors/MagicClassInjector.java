@@ -91,6 +91,11 @@ public class MagicClassInjector implements MagicMethodGenerator, UnifyAstListene
       String srcName = SourceUtil.toSourceName(params.getClazz().getRefType().getName());
       JClassType type = params.getTypeOracle().findType(srcName);
     
+      if (type == null) {
+        params.getLogger().log(Type.ERROR, "Unable to enhance class; "+srcName+" not found by Gwt type oracle");
+        throw new UnableToCompleteException();
+      }
+      
       StandardGeneratorContext ctx = params.getGeneratorContext();
       String result = MagicClassGenerator.generate(params.getLogger(), params, type);
       ctx.finish(params.getLogger());
@@ -175,7 +180,7 @@ public class MagicClassInjector implements MagicMethodGenerator, UnifyAstListene
       //cache if the magic class does not exist, thus we test type presence on every get().
 
       JDeclaredType type =
-        params.getAst().searchForTypeBySource(params.getClazz().getRefType().getName());
+        params.getAst().searchForTypeByBinary(params.getClazz().getRefType().getName());
       String typeName = JGwtCreate.nameOf(type);
       String generatedName = ReflectionUtilJava.generatedMagicClassName(typeName);
       try {

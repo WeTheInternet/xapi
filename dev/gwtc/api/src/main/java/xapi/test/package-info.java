@@ -5,7 +5,7 @@
   includeHostHtml={
     @UiTemplate(
       value="<div>"
-            + "<h3>$package</h3>"
+            + "<h3>Collide JUnit 4</h3>"
           + "</div>",
       embedStrategy=WrapEachPackage,
       keys={"$package","$childId"}

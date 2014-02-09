@@ -12,7 +12,7 @@ import xapi.collect.impl.EntryValueAdapter;
 import xapi.collect.impl.IteratorWrapper;
 
 import com.google.gwt.core.client.JavaScriptObject;
-
+import com.google.gwt.reflect.client.GwtReflect;
 
 public class JsDictionary <V> extends JavaScriptObject {
 
@@ -197,7 +197,7 @@ public class JsDictionary <V> extends JavaScriptObject {
 
   public final V[] toArray() {
     String[] keys = keyArray();
-    V[] array = xapi.reflect.X_Reflect.newArray(valueType(), keys.length);
+    V[] array = GwtReflect.newArray(valueType(), keys.length);
     for (int i = keys.length; i --> 0; array[i] = get(keys[i]));
     return array;
   }

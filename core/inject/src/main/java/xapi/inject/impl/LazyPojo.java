@@ -4,7 +4,7 @@ import xapi.util.api.Bean;
 import xapi.util.api.ReceivesValue;
 import xapi.util.impl.Pojo;
 
-public class LazyPojo <X> extends SingletonInitializer<X> implements Bean<X>{
+public abstract class LazyPojo <X> extends SingletonInitializer<X> implements Bean<X>{
 
   protected class NullCheckOnSet extends Pojo<X>{
     public NullCheckOnSet(X init) {

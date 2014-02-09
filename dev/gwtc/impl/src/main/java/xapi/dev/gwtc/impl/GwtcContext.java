@@ -1,9 +1,7 @@
 package xapi.dev.gwtc.impl;
 
 import java.io.File;
-import java.io.InputStream;
 import java.lang.reflect.Method;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -18,28 +16,21 @@ import com.google.gwt.reflect.client.GwtReflectJre;
 
 import xapi.annotation.compile.Dependency;
 import xapi.annotation.compile.Resource;
-import xapi.annotation.ui.UiTemplate;
 import xapi.annotation.ui.UiTemplateBuilder;
 import xapi.bytecode.ClassFile;
 import xapi.collect.api.InitMap;
 import xapi.collect.impl.InitMapDefault;
 import xapi.dev.gwtc.api.GwtcService;
-import xapi.dev.gwtc.impl.GwtcContext.GwtcUnit;
 import xapi.dev.scanner.X_Scanner;
 import xapi.dev.scanner.impl.ClasspathResourceMap;
 import xapi.dev.source.XmlBuffer;
-import xapi.file.X_File;
 import xapi.gwtc.api.Gwtc;
 import xapi.gwtc.api.GwtcProperties;
 import xapi.gwtc.api.Gwtc.AncestorMode;
 import xapi.inject.impl.SingletonProvider;
-import xapi.io.X_IO;
 import xapi.log.X_Log;
-import xapi.reflect.X_Reflect;
-import xapi.util.X_Byte;
 import xapi.util.X_Debug;
 import xapi.util.X_String;
-import xapi.util.X_Util;
 import xapi.util.api.ConvertsValue;
 import xapi.util.api.ReceivesValue;
 

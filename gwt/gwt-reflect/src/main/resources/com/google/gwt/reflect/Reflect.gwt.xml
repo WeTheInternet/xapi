@@ -23,7 +23,6 @@
   <define-configuration-property name="gwt.reflection.factory" is-multi-valued="false" />
   <set-configuration-property name="gwt.reflection.factory"
     value="com.google.gwt.reflect.rebind.GwtReflectionFactory"/>
-
   <define-configuration-property name="gwt.reflect.never.fail" is-multi-valued="false" />
   <set-configuration-property name="gwt.reflect.never.fail" value="false"/>
 

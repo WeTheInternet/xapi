@@ -4,7 +4,6 @@ import java.io.PrintWriter;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -147,6 +146,17 @@ public class GwtAnnotationGenerator {
   }
 
 
+  static void generateEmptyAnnotations(SourceBuilder<?> out) {
+    final MethodBuffer initAnnos = out.getClassBuffer()
+        .createMethod("private static void enhanceAnnotations" +
+            "(final Class<?> cls)");
+
+      initAnnos
+        .setUseJsni(true)
+        .println("var map = cls.@java.lang.Class::annotations;")
+        .println("if (map) return;")
+        .println("map = cls.@java.lang.Class::annotations = {};");
+  }
   /**
    * @throws UnableToCompleteException
    */
@@ -158,8 +168,6 @@ public class GwtAnnotationGenerator {
       .createMethod("private static void enhanceAnnotations" +
           "(final Class<?> cls)");
 
-    if (annotations.length == 0)
-      return new GeneratedAnnotation[0];
 
     initAnnos
       .setUseJsni(true)
@@ -167,6 +175,10 @@ public class GwtAnnotationGenerator {
       .println("var map = cls.@java.lang.Class::annotations;")
       .println("if (map) return;")
       .println("map = cls.@java.lang.Class::annotations = {};");
+
+    if (annotations.length == 0){
+      return new GeneratedAnnotation[0];
+    }
 
     Map<GeneratedAnnotation, IsNamedType> results = new LinkedHashMap<GeneratedAnnotation, IsNamedType>();
     for (int i = 0, max = annotations.length; i < max; i++ ) {

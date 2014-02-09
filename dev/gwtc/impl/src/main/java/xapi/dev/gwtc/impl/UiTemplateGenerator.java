@@ -1,19 +1,15 @@
 package xapi.dev.gwtc.impl;
 
-import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 
 import xapi.annotation.ui.UiTemplate;
 import xapi.annotation.ui.UiTemplate.EmbedStrategy;
 import xapi.annotation.ui.UiTemplate.Location;
 import xapi.collect.api.Fifo;
-import xapi.collect.impl.LazyLinkedSet;
 import xapi.collect.impl.LazyList;
-import xapi.dev.gwtc.api.GwtcService;
 import xapi.dev.gwtc.impl.GwtcContext.GwtcUnit;
 import xapi.dev.source.PrintBuffer;
 import xapi.dev.source.XmlBuffer;
@@ -21,7 +17,6 @@ import xapi.file.X_File;
 import xapi.inject.X_Inject;
 import xapi.io.X_IO;
 import xapi.log.X_Log;
-import xapi.source.write.Template;
 import xapi.util.X_Util;
 
 public class UiTemplateGenerator {

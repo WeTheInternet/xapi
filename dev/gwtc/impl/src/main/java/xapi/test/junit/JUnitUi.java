@@ -48,14 +48,28 @@ public class JUnitUi {
 
   public void onModuleLoad() {
     String module = GWT.getModuleName(), host = GWT.getHostPageBaseURL().replace("/" + module, "");
-    print("<a href='#' onclick=\"" + "window.__gwt_bookmarklet_params = " + "{server_url:'" + host
-        + "', " + "module_name:'" + module + "'}; " + "var s = document.createElement('script'); "
-        + "s.src = 'http://localhost:1337/dev_mode_on.js'; "
-        + "document.getElementsByTagName('head')[0].appendChild(s); " + "return true;"
-        + "\">Recompile</a>", null);
-    print("<style>" + "h3 {" + "margin-bottom: 5px; padding-right: 15px;" + "}" + ".results {" + "color: grey;"
-        + " margin-bottom: 5px;" + " text-align: center;" + "}" + ".success {" + "color: green;"
-        + "}" + ".fail {" + "color: red;" + "}" + "</style>", null);
+//    print("<a href='#' onclick=\"" + "window.__gwt_bookmarklet_params = " + "{server_url:'" + host
+//        + "', " + "module_name:'" + module + "'}; " + "var s = document.createElement('script'); "
+//        + "s.src = 'http://localhost:1337/dev_mode_on.js'; "
+//        + "document.getElementsByTagName('head')[0].appendChild(s); " + "return true;"
+//        + "\">Recompile</a>", null);
+    print("<style>" + 
+          "h3 {" + 
+            "margin-bottom: 5px; padding-right: 15px;" + 
+           "}" + 
+          ".results {" +
+            "color: grey;" +
+            " margin-bottom: 5px;" +
+            " text-align: center;" +
+            " width: 350px;" +
+          "}" + 
+          ".success {" + 
+            "color: green;" +
+          "}" +
+          ".fail {" + 
+            "color: red;" +
+          "}" +
+          "</style>", null);
 
     GWT.runAsync(JUnitUi.class, new RunAsyncCallback() {
 

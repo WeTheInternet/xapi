@@ -22,13 +22,15 @@ import xapi.collect.api.StringTo;
 import xapi.collect.impl.ArrayIterator;
 import xapi.collect.impl.HashComparator;
 import xapi.collect.impl.SingletonIterator;
+import xapi.collect.impl.StringToDeepMap;
+import xapi.collect.impl.StringToManyList;
 import xapi.collect.service.CollectionService;
 import xapi.util.api.ReceivesValue;
 
 public class X_Collect {
 
   private X_Collect() {}
-  
+
   public static final CollectionService service = singleton(CollectionService.class);
 
   public static final CollectionOptions IMMUTABLE = asMutable(false).build();
@@ -107,6 +109,14 @@ public class X_Collect {
   }
   public static <T, S extends T> Iterable<T> iterable(@SuppressWarnings("unchecked") S ... items) {
     return new ArrayIterator<T>(items);
+  }
+
+  public static <X> StringTo.Many<X> newStringMultiMap(Class<X> component) {
+    return new StringToManyList<X>(component);
+  }
+
+  public static <X> StringTo<StringTo<X>> newStringDeepMap(Class<X> component) {
+    return new StringToDeepMap<X>(component);
   }
 
 }

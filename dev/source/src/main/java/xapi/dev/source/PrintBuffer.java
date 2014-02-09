@@ -342,4 +342,8 @@ public class PrintBuffer {
   public boolean isEmpty() {
     return target.length()==0 && head.next==null;
   }
+  
+  public boolean isNotEmpty() {
+    return target.length()>0 || head.next!=null;
+  }
 }

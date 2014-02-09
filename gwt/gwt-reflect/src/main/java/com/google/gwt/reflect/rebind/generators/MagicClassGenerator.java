@@ -130,7 +130,7 @@ public class MagicClassGenerator {
 
     JClassType targetType = type;
     String clsToEnhance = type.getQualifiedSourceName();
-    JClassType injectionType = getInjectionType(logger, targetType, context);
+    final JClassType injectionType = getInjectionType(logger, targetType, context);
 
     manifest = getReflectionManifest(logger, injectionType.getQualifiedSourceName(), (StandardGeneratorContext)context);
     
@@ -223,10 +223,8 @@ public class MagicClassGenerator {
 
     logger.log(Type.DEBUG, "Keep Annos: "+keepAnnos+ "; from "+strategy);
     if (keepAnnos) {
-      if (GwtAnnotationGenerator.generateAnnotations(
-        logger, classBuilder, context, injectionType.getAnnotations()).length > 0) {
-        enhanceMethod.println("enhanceAnnotations(toEnhance);");
-      }
+      GwtAnnotationGenerator.generateAnnotations(logger, classBuilder, context, injectionType.getAnnotations());
+      enhanceMethod.println("enhanceAnnotations(toEnhance);");
     }
     
     if (extractClasses(logger, strategy, classFilter(logger, injectionType), injectionType, manifest)) {
@@ -248,6 +246,11 @@ public class MagicClassGenerator {
           .print("Ljava/lang/Class;Lcom/google/gwt/core/client/JavaScriptObject;)(@")
           .print(iface.getQualifiedSourceName()+"::class")
           .println(", map.@com.google.gwt.reflect.client.ClassMap::ifaces);");
+      }
+      if (injectionType.getEnclosingType() != null) {
+        enhanceClasses
+        .print("map.@com.google.gwt.reflect.client.ClassMap::enclosingClass = @")
+        .print(injectionType.getEnclosingType().getQualifiedSourceName()+"::class;");
       }
       enhanceMethod.println("enhanceClasses(toEnhance);");
     }

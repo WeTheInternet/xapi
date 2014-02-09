@@ -4,57 +4,9 @@
 	  <!-- Pull in X_Inject, which has all common utilities we need -->
     <source path="reflect" />
     <inherits name="xapi.X_Inject" />
+    <inherits name="com.google.gwt.reflect.Reflect" />
     <!-- Take the injection-free utility, to keep dev mode happy -->
     <!-- Dev mode will use the monolith injector, but prod mode will not -->
     <inherits name="xapi.X_ReflectNoInject" />
-    
-<!-- 
-  Due to the generator's need to see a class literal in order to get type data during the UnifyAST phase,
-  it becomes impossible to use Class object references in your app,
-  which can be handy, since you may not want to / be able to reference the class literal reference.
-  
-  There is an experimental workaround in progress which will allow you to store state during UnifyAST,
-  and then receive a notification to generate code after each split point, and when the app is fully compiled.
-  This workaround exposes a method, X_Inject.magicClass(Class) Class; that remembers the class literal,
-  returns a Class object with extended Class emulation, and allows you to pass object references into injector code.
-  
-  Once a class has passed through X_Inject.magicClass(Class), you do not need to keep the reference to the returned class,
-  the generator will be exporting code that uses the class object you provide, and we make our mappings with the 
-  original class literal (so calling X_Inject.instance(clone.getClass()) will work, if it's class literal has been seen before).
-
-  A MagicClass actually extends java.lang.Class (not allowed in jre!),
-  and it exposes as much or as little functionality as you please, (see the @MagicClass annotation).
-  Classes without @MagicClass will not add emulation support for class methods like getPackage() or getAnnotation(),
-  but will still be functional in injector methods (and anywhere else tying into the MagicClass framework).
-
-  
-  
-  In the generator runtime, it remembers ALL class literals you have sent through it,
-  and will generate a singleton which maps class literal objects to MagicClass singletons.
-  This allows other magic method services to receive MagicClass instances instead of class literals,
-  provided they generate a method call which treats the class like a map key;
-  
-  To facilitate this end, our MagicClassInjector exposes a method, getClassesSeen() which returns 
-  all class literals it has seen during generation; in order to generate a handler with the complete list of classes,
-  when we have to return generated AST, we need to make a reference to a method we haven't generated yet.
-  
-  It is up to the implementor to decide how to build support for using MagicClasses incrementally,
-  but a default implementation is provided in the injection utilities, 
-  which calls MagicClassInjector.getClassesSeen() and generates support for any types not yet seen.
-  It has an internal plugin service to map from runtime Class object to an instantiator object,
-  and it adds support incrementally
-  
-  The MagicContext object sent to magic method generators accepts callbacks, OnUnifyASTFinished,
-  which will be called after the entire app has been compiled.
-  You will then be able to iterate any state you stored during the app visit,
-  have all class literals (or method calls or whatever you collect) in memory,
-  
- -->
-<extend-configuration-property name="gwt.magic.methods" 
-    value="xapi.gwt.reflect.X_Reflect.magicClass(Ljava/lang/Class;)Ljava/lang/Class; *= com.google.gwt.reflect.rebind.injectors.MagicClassInjector"/>
-<!-- Original Prototype -->
-<!-- <extend-configuration-property name="gwt.magic.methods" 
-    value="xapi.gwt.reflect.X_Reflect.magicClass(Ljava/lang/Class;)Ljava/lang/Class; *= xapi.dev.reflect.MagicClassInjector::injectMagicClass"/> -->
-	
 	
 </module>

@@ -3,6 +3,7 @@
 <module>
  
   <inherits name="com.google.gwt.MagicMethods" />
+  <inherits name="com.google.gwt.reflect.Reflect" />
   
   <!--Include our emulation layer, xapi.emul.* -->
   <super-source path="emul"/><!-- 

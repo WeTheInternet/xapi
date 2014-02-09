@@ -7,7 +7,6 @@ import java.util.concurrent.locks.Lock;
 
 import static xapi.collect.api.CharPool.EMPTY_STRING;
 import xapi.collect.api.CharPool;
-import xapi.collect.api.HasPrefixed;
 import xapi.collect.api.PrefixedMap;
 
 /**

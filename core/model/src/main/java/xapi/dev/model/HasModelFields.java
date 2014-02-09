@@ -8,11 +8,11 @@ import xapi.annotation.model.ServerToClient;
 import xapi.collect.X_Collect;
 import xapi.collect.api.Fifo;
 import xapi.collect.api.StringTo;
+import xapi.collect.impl.StringToAbstract;
 import xapi.model.api.Model;
 import xapi.model.api.NestedModel;
 import xapi.model.api.PersistentModel;
 import xapi.source.api.HasQualifiedName;
-import xapi.source.api.IsClass;
 
 public class HasModelFields {
 
@@ -20,7 +20,7 @@ public class HasModelFields {
   private ClientToServer defaultToServer;
   private ServerToClient defaultToClient;
 
-  StringTo<ModelField> fields = X_Collect.newStringMap(ModelField.class);
+  StringTo<ModelField> fields = new StringToAbstract<ModelField>();
   private Persistent defaultPersistence;
   private Key key;
 

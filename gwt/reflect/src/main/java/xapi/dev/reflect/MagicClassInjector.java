@@ -15,7 +15,6 @@ import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.dev.javac.StandardGeneratorContext;
 import com.google.gwt.dev.jjs.MagicMethodGenerator;
-import com.google.gwt.dev.jjs.SourceInfo;
 import com.google.gwt.dev.jjs.UnifyAstView;
 import com.google.gwt.dev.jjs.ast.Context;
 import com.google.gwt.dev.jjs.ast.JClassLiteral;

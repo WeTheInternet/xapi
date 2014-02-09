@@ -8,7 +8,6 @@ import xapi.annotation.inject.InstanceDefault;
 import xapi.annotation.inject.SingletonDefault;
 import xapi.file.X_File;
 import xapi.inject.X_Inject;
-import xapi.inject.impl.SingletonProvider;
 import xapi.io.api.LineReader;
 import xapi.log.X_Log;
 import xapi.shell.api.ShellCommand;

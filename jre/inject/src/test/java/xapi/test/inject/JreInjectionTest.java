@@ -1,17 +1,10 @@
 package xapi.test.inject;
 
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-
 import org.junit.Test;
 
 import xapi.test.AbstractInjectionTest;
 import xapi.annotation.inject.InstanceDefault;
 import xapi.annotation.inject.SingletonDefault;
-import xapi.collect.impl.MultithreadedStringTrie;
 import xapi.inject.X_Inject;
 import static org.junit.Assert.assertNotNull;
 

@@ -503,7 +503,7 @@ public class ConstPoolGenerator {
         values[i] = out.getImports().addStatic(rememberAnnotation(logger, ctx, (Annotation) value));
       } else if (value instanceof Class){
         values[i] = 
-            out.getImports().addImport(((Class)value).getCanonicalName())
+            out.getImports().addImport(((Class<?>)value).getCanonicalName())
             +".class";
       } else if (value instanceof Enum) {
         Enum<?> e = (Enum<?>) value;

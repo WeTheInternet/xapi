@@ -5,7 +5,6 @@ import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.regex.Pattern;
@@ -21,10 +20,8 @@ import xapi.dev.resource.api.ClasspathResource;
 import xapi.dev.resource.impl.ByteCodeResource;
 import xapi.dev.resource.impl.SourceCodeResource;
 import xapi.dev.resource.impl.StringDataResource;
-import xapi.log.X_Log;
 import xapi.source.X_Source;
 import xapi.util.X_Debug;
-import xapi.util.X_Util;
 import xapi.util.api.MatchesValue;
 
 public class ClasspathResourceMap {
@@ -151,7 +148,7 @@ public class ClasspathResourceMap {
     } catch (Throwable e) {
       throw X_Debug.rethrow(e);
     }
-    
+
   }
 
   private boolean accepts(MemberInfo method, Class<? extends Annotation> annoClass) {
@@ -159,7 +156,7 @@ public class ClasspathResourceMap {
   }
 
   protected ElementType[] getDefaultAnnotationTargets() {
-    return 
+    return
         shouldScanMethods() ?
         new ElementType[]{ElementType.METHOD} :
           new ElementType[0];
@@ -178,18 +175,13 @@ public class ClasspathResourceMap {
   }
 
   public boolean includeResource(String name) {
-    X_Log.debug(getClass(), "Maybe including resource", name);
     for (Pattern p : resourceMatchers) {
       if (p.matcher(name).matches()) {
-        X_Log.trace(getClass(), "Including resource", name);
         return true;
       }
       if (p.matcher(name.substring(name.lastIndexOf('/')+1)).matches()) {
-        X_Log.trace(getClass(), "Including resource", name);
         return true;
       }
-      X_Log.debug(getClass(), "Not including resource", name);
-
     }
     return false;
   }
@@ -221,7 +213,6 @@ public class ClasspathResourceMap {
       public boolean hasNext() {
         while(iter.hasNext()) {
           cls = iter.next();
-          X_Log.info(getClass(), "Checking if resource", cls,"matches",patterns);
           for (Pattern pattern : patterns) {
             if (pattern.matcher(cls.getResourceName()).matches())
               return true;
@@ -252,12 +243,12 @@ public class ClasspathResourceMap {
     ByteCodeResource resource = bytecode.get(clsName);
     return resource == null ? null : resource.getClassData();
   }
-  
+
   @SuppressWarnings("unchecked")
   public final Iterable<ClassFile> getAllClasses(){
     return new ClassFileIterator(MatchesValue.ANY, bytecode);
   }
-  
+
   public Iterable<ClassFile> findClassesInPackage(final String name) {
     return new ClassFileIterator(new MatchesValue<ClassFile>() {
       @Override
@@ -275,7 +266,7 @@ public class ClasspathResourceMap {
       }
     }, bytecode);
   }
-  
+
   public Iterable<ClassFile> findPackagesBelowPackage(final String name) {
     return new ClassFileIterator(new MatchesValue<ClassFile>() {
       @Override
@@ -287,13 +278,13 @@ public class ClasspathResourceMap {
 
   /**
    * Finds all classes that are direct subclasses of one of the supplied types.
-   * 
+   *
    * This does not check interfaces, only the direct supertype.
    * It will _not_ match types equal to the supplied types.
-   * 
+   *
    * This is primarily used for types that cannot have more than one subclass,
    * like Enum or Annotation.
-   * 
+   *
    * @param superClasses
    * @return
    */
@@ -314,12 +305,12 @@ public class ClasspathResourceMap {
         }
         return false;
       }
-      
+
       @Override
       public ClassFile next() {
         return cls;
       }
-      
+
       @Override
       public void remove() {
         throw new UnsupportedOperationException();
@@ -348,15 +339,15 @@ public class ClasspathResourceMap {
             return true;
           }
         }
-        
+
         return false;
       }
-      
+
       @Override
       public ClassFile next() {
         return cls;
       }
-      
+
       @Override
       public void remove() {
         throw new UnsupportedOperationException();
@@ -438,12 +429,12 @@ public final Iterable<ClassFile> findClassWithAnnotatedMethods(
       }
       return false;
     }
-    
+
     @Override
     public ClassFile next() {
       return cls;
     }
-    
+
     @Override
     public void remove() {
       throw new UnsupportedOperationException();

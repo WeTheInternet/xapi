@@ -1,7 +1,8 @@
 package xapi.dev.gwtc.impl;
 
 import java.io.File;
-import java.io.InputStream;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -21,17 +22,15 @@ import xapi.annotation.compile.DependencyBuilder;
 import xapi.annotation.compile.Resource;
 import xapi.annotation.compile.ResourceBuilder;
 import xapi.annotation.compile.Dependency.DependencyType;
-import xapi.annotation.ui.UiTemplate;
 import xapi.dev.gwtc.api.GwtcService;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.dev.source.XmlBuffer;
 import xapi.file.X_File;
-import xapi.io.X_IO;
 import xapi.log.X_Log;
 import xapi.log.api.LogLevel;
-import xapi.util.X_Util;
+import xapi.util.X_Debug;
 
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.RunAsyncCallback;
@@ -59,6 +58,7 @@ public abstract class GwtcServiceAbstract implements GwtcService {
   protected final Set<String> finished;
   protected GwtcEntryPointBuilder out;
   private boolean needsReportError = true;
+  protected String manifestName;
 
   public GwtcServiceAbstract(ClassLoader resourceLoader) {
     context = new GwtcContext(this, resourceLoader);
@@ -197,7 +197,7 @@ public abstract class GwtcServiceAbstract implements GwtcService {
   }
 
   @Override
-  public void addJUnitClass(Class<?> clazz) {
+  public boolean addJUnitClass(Class<?> clazz) {
     inheritGwtXml(clazz, ResourceBuilder.buildResource("org.junit.JUnit4").build());
     X_Log.info(getClass(), "Adding class", clazz," to junit 4 module");
     addDependency(
@@ -239,6 +239,7 @@ public abstract class GwtcServiceAbstract implements GwtcService {
       }
     }
     out.println(generateTestRunner(clazz, beforeClass, before, test, after, afterClass));
+    return true;
   }
 
   protected void inheritGwtXml(Class<?> clazz, Resource build) {
@@ -337,5 +338,39 @@ public abstract class GwtcServiceAbstract implements GwtcService {
       generateReportError(entryPoint.getClassBuffer());
     }
   }
-  
+
+
+  public void copyModuleTo(String module) {
+    String from = manifestName == null ? genName : manifestName;
+    File f = new File(tempDir, from+".gwt.xml");
+    if (f.exists()) {
+      int ind = module.lastIndexOf('.');
+      String path;
+      if (ind == -1) {
+        path = "";
+      } else {
+        path = module.substring(0, ind).replace('.', '/');
+      }
+      f = new File(tempDir, path);
+      f.mkdirs();
+      saveGwtXmlFile(context.getGwtXml(), module.substring(ind+1), f);
+    }
+  }
+
+  protected void saveGwtXmlFile(XmlBuffer xml, String moduleName, File dest) {
+    saveTempFile(GwtcXmlBuilder.HEADER+xml, new File(dest,moduleName+".gwt.xml"));
+  }
+
+  protected void saveTempFile(String value, File dest) {
+    X_Log.trace(getClass(), "saving generated file to",dest);
+    dest.getParentFile().mkdirs();
+    try (FileWriter out = new FileWriter(dest);) {
+      out.append(value);
+      out.close();
+    } catch (IOException e) {
+      X_Log.warn(getClass(), "Error saving generated file ",dest,"\n"+value);
+      throw X_Debug.rethrow(e);
+    }
+  }
+
 }

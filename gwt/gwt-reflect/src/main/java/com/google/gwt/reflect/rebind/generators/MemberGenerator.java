@@ -631,6 +631,14 @@ public class MemberGenerator {
     
     for (int i = 0, m = params.length; i < m; i++) {
       JType param = params[i].getType();
+//      if (param.isParameterized() != null) {
+//        param = param.isParameterized().getRawType();
+//      }
+      boolean isArray = param.isArray() != null;
+      while (param.isArray() != null) {
+        jsniSig.append("[");
+        param = param.isArray().getComponentType();
+      }
       jsniSig.append(param.getJNISignature());
       char varName = Character.toUpperCase(Character.forDigit(10+i, 36));
       if (isNotCtor || i > 0) {
@@ -640,9 +648,13 @@ public class MemberGenerator {
       if (i > 0) {
         arguments.append(", ");
       }
-      maybeStartUnboxing(arguments, param);
+      if (!isArray) {
+        maybeStartUnboxing(arguments, param);
+      }
       arguments.append(varName);
-      maybeFinishUnboxing(arguments, param);
+      if (!isArray) {
+        maybeFinishUnboxing(arguments, param);
+      }
       hasLong |= "J".equals(param.getJNISignature());
     }
     
