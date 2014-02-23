@@ -4,5 +4,4 @@
 target
 war
 gwt-unitCache
-compile
 *.iml
