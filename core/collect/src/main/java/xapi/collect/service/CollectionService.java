@@ -22,7 +22,7 @@ public interface CollectionService {
 
   <V> ClassTo.Many<V> newClassMultiMap(Class<V> cls, CollectionOptions opts);
 
-  <V> StringTo<V> newStringMap(Class<V> cls, CollectionOptions opts);
+  <V> StringTo<V> newStringMap(Class<? extends V> cls, CollectionOptions opts);
 
   <V> StringTo.Many<V> newStringMultiMap(Class<V> cls, CollectionOptions opts);
 

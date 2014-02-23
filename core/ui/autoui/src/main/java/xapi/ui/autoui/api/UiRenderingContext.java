@@ -1,16 +1,18 @@
 package xapi.ui.autoui.api;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Provider;
 
-import xapi.source.write.Template;
+import xapi.source.write.MappedTemplate;
 import xapi.util.impl.ImmutableProvider;
 
 public class UiRenderingContext {
 
-  private static final Template DEFAULT_TEMPLATE = new Template("");
+  private static final MappedTemplate DEFAULT_TEMPLATE = new MappedTemplate("");
   @SuppressWarnings("rawtypes")
   private static final Validator[] DEFAULT_VALIDATORS = new Validator[0];
   private static final Object[] EMPTY_MESSAGES = new Object[0];
@@ -22,10 +24,12 @@ public class UiRenderingContext {
   private UiRendererSelector selector = UiRendererSelector.ALWAYS_TRUE;
   private boolean tail = false;
   
-  private Template template = DEFAULT_TEMPLATE;
+  private MappedTemplate template = DEFAULT_TEMPLATE;
   @SuppressWarnings("rawtypes")
   private Validator[] validators = DEFAULT_VALIDATORS;
   private boolean wrapper = false;
+  private BeanValueProvider valueProvider;
+  private String name = "";
   
 
   public UiRenderingContext(Provider<UiRenderer<?>> renderProvider) {
@@ -34,6 +38,10 @@ public class UiRenderingContext {
   
   public UiRenderingContext(UiRenderer<?> renderer) {
     this(new ImmutableProvider<UiRenderer<?>>(renderer));
+  }
+  
+  public String getName() {
+    return name;
   }
   
   @SuppressWarnings("rawtypes")
@@ -45,8 +53,33 @@ public class UiRenderingContext {
     return selector;
   }
 
-  public Template getTemplate() {
+  public MappedTemplate getTemplate() {
     return template;
+  }
+  
+  public String applyTemplate(String name, Object val) {
+    Map<String, Object> map = new HashMap<String, Object>();
+    BeanValueProvider bean = getBeanValueProvider();
+    if ("".equals(name)) {
+      for (String key : bean.childKeys()) {
+        String k = "${"+key+"}";
+        if (template.hasKey(k)) {
+          map.put(k, bean.getValue(key, "", val));
+        }
+        k = "${"+key+".name()}";
+        if (template.hasKey(k)) {
+          map.put(k, key);
+        }
+      }
+    } else {
+      val = bean.getValue(name, "", val);
+      map.put("$value", val);
+      map.put("$name", name);
+      map.put("${"+name+"}", val);
+      map.put("${"+name+".name()}", name);
+      // We should also have a means to do deep name resolving on rebased bean items...
+    }
+    return getTemplate().applyMap(map);
   }
 
   @SuppressWarnings("rawtypes")
@@ -87,6 +120,11 @@ public class UiRenderingContext {
     this.head = head;
     return this;
   }
+  
+  public UiRenderingContext setName(String name) {
+    this.name = name;
+    return this;
+  }
 
   public UiRenderingContext setSelector(UiRendererSelector selector) {
     assert selector != null : "You must supply a valid UiRendererSelector; "
@@ -100,12 +138,7 @@ public class UiRenderingContext {
     return this;
   }
 
-  public UiRenderingContext setTemplate(String template, String ... replacementKeys) {
-    setTemplate("".equals(template) ? DEFAULT_TEMPLATE : new Template(template, replacementKeys));
-    return this;
-  }
-
-  public UiRenderingContext setTemplate(Template template) {
+  public UiRenderingContext setTemplate(MappedTemplate template) {
     this.template = template;
     return this;
   }
@@ -133,6 +166,14 @@ public class UiRenderingContext {
       }
     }
     return errors.toArray(new Object[errors.size()]);
+  }
+
+  public void setBeanProvider(BeanValueProvider bean) {
+    this.valueProvider = bean;
+  }
+  
+  public BeanValueProvider getBeanValueProvider() {
+    return valueProvider;
   }
   
 }

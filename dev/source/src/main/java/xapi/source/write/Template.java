@@ -33,8 +33,16 @@ package xapi.source.write;
 public class Template extends Stack{
 
   public Template(String template, String ... replaceables) {
-    super("");
+    super("", ToStringer.DEFAULT_TO_STRINGER);
     compile(template, replaceables);
+  }
+  
+  public void setToStringer(ToStringer toString) {
+    Stack s = this;
+    while (s != null) {
+      s.toString = toString;
+      s = s.next;
+    }
   }
 
   /**
@@ -65,7 +73,7 @@ public class Template extends Stack{
     }
     // Try to get off easy
     if (numLive == 0) {
-      next = new Stack(template);
+      next = new Stack(template, toString);
       return;
     }
     // Perform a single full sort of live indices
@@ -100,7 +108,7 @@ public class Template extends Stack{
         // A token is exhausted
         if (--numLive == 0) {
           // At the very end, we tack on a tail with any remaining string value
-          tail.next = new Stack(curPos == template.length() ? "" : template.substring(curPos));
+          tail.next = new Stack(curPos == template.length() ? "" : template.substring(curPos), toString);
           return; // The end of the recursion
         }
         // Reusing the same array, just shift values left;
@@ -165,12 +173,14 @@ public class Template extends Stack{
  *
  */
 class Stack {
+  ToStringer toString;
   final String prefix;
   Stack next;
 
-  Stack(String prefix) {
+  Stack(String prefix, ToStringer toString) {
     assert prefix != null;
     this.prefix = prefix;
+    this.toString = toString;
   }
 
   public String apply(Object ... values) {
@@ -184,7 +194,7 @@ class Stack {
    */
   final Stack push(String prefix, int pos) {
     assert next == null;
-    next = new StackNode(prefix, pos);
+    next = new StackNode(prefix, pos, toString);
     return next;
   }
 }
@@ -204,8 +214,8 @@ final class StackNode extends Stack {
 
   private final int position;
 
-  StackNode(String prefix, int position) {
-    super(prefix);
+  StackNode(String prefix, int position, ToStringer toString) {
+    super(prefix, toString);
     assert position >= 0;
     this.position = position;
   }
@@ -214,7 +224,7 @@ final class StackNode extends Stack {
   public final String apply(Object ... values) {
     return prefix
         + (position < values.length && values[position] != null // coerce nulls
-          ? values[position] : onNull(position))
+          ? toString.toString(values[position]) : onNull(position))
         + next.apply(values);// next is never null
   }
 

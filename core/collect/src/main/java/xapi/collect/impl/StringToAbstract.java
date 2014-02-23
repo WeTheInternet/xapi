@@ -99,5 +99,10 @@ public class StringToAbstract <V> implements StringTo<V>{
   public V remove(String key) {
     return map.remove(key);
   }
+  
+  @Override
+  public int size() {
+    return map.size();
+  }
 
 }

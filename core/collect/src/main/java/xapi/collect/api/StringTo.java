@@ -21,6 +21,8 @@ extends HasValues<String,V>
 
   String[] keyArray();
 
+  int size();
+  
   public static interface Many <V>
   extends StringTo<IntTo<V>>
   {

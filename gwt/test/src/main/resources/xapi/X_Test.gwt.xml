@@ -4,8 +4,8 @@
 
 <source path="test" includes="Assert.java, gwt/**"/>
 <source path="gwt/test"/>
-<inherits name="xapi.X_Core"/>
 <inherits name="com.google.gwt.core.Core"/>
+<inherits name="xapi.X_Core"/>
 <script src="forceload.js" />
 <servlet class="xapi.server.DebugServlet" path="/debug"/>
 </module>

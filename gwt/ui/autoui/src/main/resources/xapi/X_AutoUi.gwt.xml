@@ -7,4 +7,9 @@
   <source path="ui/autoui" />
   <source path="gwt/ui/autoui/client" />
   <source path="gwt/ui/autoui/shared" />
+  
+  <extend-configuration-property name="gwt.magic.methods" 
+    value="xapi.ui.autoui.X_AutoUi.makeUi(Ljava/lang/Object;Ljava/lang/Class;Ljava/lang/Class;)Lxapi/ui/autoui/api/UserInterface; *= xapi.gwt.ui.autoui.dev.AutoUiInjector"/>
+  
+  
 </module>

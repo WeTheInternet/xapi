@@ -1,9 +1,14 @@
 package xapi.ui.autoui.impl;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import javax.inject.Named;
+
+import xapi.source.write.MappedTemplate;
+import xapi.ui.autoui.api.BeanValueProvider;
 import xapi.ui.autoui.api.UiOptions;
 import xapi.ui.autoui.api.UiRenderer;
 import xapi.ui.autoui.api.UiRendererOptions;
@@ -14,6 +19,7 @@ import xapi.ui.autoui.api.UserInterfaceFactory;
 import xapi.ui.autoui.api.Validator;
 import xapi.util.X_Debug;
 import xapi.util.X_Util;
+import xapi.util.api.ConvertsValue;
 
 @SuppressWarnings("rawtypes")
 public abstract class AbstractUserInterfaceFactory implements UserInterfaceFactory {
@@ -52,29 +58,58 @@ public abstract class AbstractUserInterfaceFactory implements UserInterfaceFacto
     if (rendererOptions.isWrapper()) {
       ctx.setWrapper(true);
     }
-    if (rendererOptions.template().length() > 0) {
-      ctx.setTemplate(rendererOptions.template(), rendererOptions.templatekeys());
-    }
     ctx.setSelector(getSelector(ctx, rendererOptions));
     ctx.setValidators(getValidators(ctx, rendererOptions));
   }
 
-  protected Collection<UiRenderingContext> extractRenderingContext(UiOptions annotation) {
-    List<UiRenderingContext> ctx = new ArrayList<UiRenderingContext>();
+  protected Collection<UiRenderingContext> extractRenderingContext(UiOptions annotation, BeanValueProvider bean) {
+    List<UiRenderingContext> ctxes = new ArrayList<UiRenderingContext>();
     for (UiRendererOptions rendererOption : annotation.renderers()) {
-      for (Class<? extends UiRenderer> renderer : rendererOption.renderers()) {
-        ctx.add(createContext(renderer, rendererOption));
-      }
+      ctxes.addAll(extractRenderingContext(rendererOption, bean, null));
     }
-    return ctx;
+    return ctxes;
   }
 
-  protected Collection<UiRenderingContext> extractRenderingContext(UiRendererOptions rendererOption) {
-    List<UiRenderingContext> ctx = new ArrayList<UiRenderingContext>();
+  protected Collection<UiRenderingContext> extractRenderingContext(UiRendererOptions rendererOption, BeanValueProvider bean, String methodName) {
+    List<UiRenderingContext> ctxes = new ArrayList<UiRenderingContext>();
     for (Class<? extends UiRenderer> renderer : rendererOption.renderers()) {
-      ctx.add(createContext(renderer, rendererOption));
+      UiRenderingContext ctx = createContext(renderer, rendererOption);
+      ctxes.add(ctx);
+      final BeanValueProvider ctxBean;
+      if (methodName == null) {
+        if (rendererOption.isWrapper()) {
+          // We must rebase $name and $value ad-hoc for each method
+          ctxBean = bean.rebaseAll();
+        } else {
+          ctxBean = bean;
+        }
+      } else {
+        // Rebase $name and $value to match the given method
+        ctxBean = bean.rebase(methodName);
+      }
+      ctx.setBeanProvider(ctxBean);
+      final String t = rendererOption.template();
+      if (t.length() > 0) {
+        // Assemble all the keys to be used in the template.
+        List<String> replaceables = new ArrayList<String>();
+        for (String key : rendererOption.templatekeys()) {
+          if (t.contains(key)) {
+            replaceables.add(key);
+          }
+        }
+        for (String key : ctxBean.getChildKeys()) {
+          if (t.contains("${"+key+"}")) {
+            replaceables.add("${"+key+"}");
+          }
+          if (t.contains("${"+key+".name()}")) {
+            replaceables.add("${"+key+".name()}");
+          }
+        }
+        ctx.setTemplate(new MappedTemplate(t, replaceables.toArray(new String[replaceables.size()])));
+      }
+
     }
-    return ctx;
+    return ctxes;
   }
 
   protected Validator[] getValidators(UiRenderingContext ctx,
@@ -95,6 +130,48 @@ public abstract class AbstractUserInterfaceFactory implements UserInterfaceFacto
     } catch (IllegalAccessException e) {
       throw X_Util.rethrow(e);
     }
+  }
+
+  protected BeanValueProvider getBeanProvider(Class<?> cls) {
+    BeanValueProvider bean = new BeanValueProvider();
+    ConvertsValue<Object, Object> valueConverter = new ConvertsValue<Object, Object>() {
+      @Override
+      public Object convert(Object from) {
+        return from;
+      }
+    };
+    bean.addProvider("this", getName(cls), valueConverter);
+    // Now, go through all the getter methods, and add bean providers for everything we need
+    recursiveAddBeanValues(bean, cls, valueConverter, "", 0);
+    return bean;
+  }
+  
+  protected abstract void recursiveAddBeanValues(BeanValueProvider bean, Class<?> cls, ConvertsValue<Object, Object> valueConverter, String prefix, int depth);
+
+  protected String getNameFromMethod(Method from) {
+    if (from.isAnnotationPresent(Named.class)) {
+      return from.getAnnotation(Named.class).value();
+    }
+    String name = from.getName();
+    if (name.startsWith("get") || name.startsWith("has")) {
+      if (name.length() > 3 && Character.isUpperCase(name.charAt(3))) {
+        name = Character.toLowerCase(name.charAt(3)) + 
+            (name.length() > 4 ? name.substring(4) : "");
+      }
+    } else if (name.startsWith("is")) {
+      if (name.length() > 2 && Character.isUpperCase(name.charAt(2))) {
+        name = Character.toLowerCase(name.charAt(2)) + 
+            (name.length() > 3 ? name.substring(3) : "");
+      }
+    }
+    return name;
+    
+  }
+  protected String getName(Class<?> from) {
+    if (from.isAnnotationPresent(Named.class)) {
+      return from.getClass().getAnnotation(Named.class).value();
+    }
+    return from.getName();
   }
 
   private final <T, U extends UserInterface<T>> U instantiateUi(

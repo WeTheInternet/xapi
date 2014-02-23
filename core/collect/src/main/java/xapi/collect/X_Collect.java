@@ -19,7 +19,7 @@ import xapi.collect.api.IntTo;
 import xapi.collect.api.ObjectTo;
 import xapi.collect.api.StringDictionary;
 import xapi.collect.api.StringTo;
-import xapi.collect.impl.ArrayIterator;
+import xapi.collect.impl.ArrayIterable;
 import xapi.collect.impl.HashComparator;
 import xapi.collect.impl.SingletonIterator;
 import xapi.collect.impl.StringToDeepMap;
@@ -63,7 +63,7 @@ public class X_Collect {
     return service.newClassMap(valueCls, MUTABLE);
   }
 
-  public static <V> StringTo<V> newStringMap(Class<V> valueCls) {
+  public static <V> StringTo<V> newStringMap(Class<? extends V> valueCls) {
     return service.newStringMap(valueCls, MUTABLE);
   }
 
@@ -108,7 +108,7 @@ public class X_Collect {
     return new SingletonIterator<T>(item);
   }
   public static <T, S extends T> Iterable<T> iterable(@SuppressWarnings("unchecked") S ... items) {
-    return new ArrayIterator<T>(items);
+    return new ArrayIterable<T>(items);
   }
 
   public static <X> StringTo.Many<X> newStringMultiMap(Class<X> component) {

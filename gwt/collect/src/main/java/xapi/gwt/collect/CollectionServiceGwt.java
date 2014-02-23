@@ -38,7 +38,7 @@ public class CollectionServiceGwt implements CollectionService{
   }
 
   @Override
-  public <V> StringTo<V> newStringMap(Class<V> cls, CollectionOptions opts) {
+  public <V> StringTo<V> newStringMap(Class<? extends V> cls, CollectionOptions opts) {
     // we ignore options because js maps are, for now, all the same
     // all maps are insertion ordered an mutable;
     // there's nothing we can do to stop you from changing a jso value ;)

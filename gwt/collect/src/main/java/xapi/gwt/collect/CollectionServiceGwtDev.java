@@ -31,7 +31,7 @@ implements CollectionService{
   }
 
   @Override
-  public <V> StringTo<V> newStringMap(Class<V> cls, CollectionOptions opts) {
+  public <V> StringTo<V> newStringMap(Class<? extends V> cls, CollectionOptions opts) {
     return super.newStringMap(cls, opts);
   }
 

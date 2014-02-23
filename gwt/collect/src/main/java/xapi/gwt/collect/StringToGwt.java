@@ -5,7 +5,7 @@ import java.util.Map.Entry;
 
 import xapi.annotation.inject.InstanceOverride;
 import xapi.collect.api.StringTo;
-import xapi.collect.impl.ArrayIterator;
+import xapi.collect.impl.ArrayIterable;
 import xapi.collect.impl.EntryValueAdapter;
 import xapi.collect.impl.IteratorWrapper;
 import xapi.platform.GwtPlatform;
@@ -25,7 +25,7 @@ public class StringToGwt <V> extends JavaScriptObject implements StringTo<V>{
     return create(Object.class);
   }
 
-  public static native <V> StringTo<V> create(Class<V> valueType)
+  public static native <V> StringTo<V> create(Class<? extends V> valueType)
   /*-{
    return {_v$: valueType, _k: @xapi.gwt.collect.StringToGwt::newStringArray()() };
   }-*/;
@@ -35,7 +35,7 @@ public class StringToGwt <V> extends JavaScriptObject implements StringTo<V>{
   }
 
 
-  class KeyItr extends ArrayIterator<String>{
+  class KeyItr extends ArrayIterable<String>{
     public KeyItr() {
       super(keyArray());
     }

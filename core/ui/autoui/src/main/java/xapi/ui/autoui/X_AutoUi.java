@@ -24,7 +24,7 @@ public class X_AutoUi {
     }
   }
 
-  static <T, U extends UserInterface<T>> U instantiate(Class<? extends T> cls, Class<U> uiType) {
+  public static <T, U extends UserInterface<T>> U instantiate(Class<? extends T> cls, Class<U> uiType) {
       return X_Inject
           .instance(UserInterfaceFactory.class)
           .createUi(cls, uiType);

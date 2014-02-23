@@ -367,6 +367,7 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer>{
     MethodBuffer method = new MethodBuffer(context, memberIndent());
     method.setModifier(modifiers);
     method.setName(name);
+    method.setReturnType(addImport(returnType));
     method.addParameters(params);
     addMethod(method);
     return method;

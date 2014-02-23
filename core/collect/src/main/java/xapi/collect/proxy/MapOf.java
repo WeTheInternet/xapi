@@ -1,12 +1,11 @@
 package xapi.collect.proxy;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
-
-import com.google.gwt.reflect.client.GwtReflect;
 
 import xapi.collect.X_Collect;
 import xapi.collect.api.CollectionOptions;
@@ -49,8 +48,9 @@ implements CollectionProxy<K,V>, Map<K,V>, HasValues<K,V>, ObjectTo<K,V>
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public V[] toArray() {
-    V[] values = GwtReflect.newArray(valueClass, map.size());
+    V[] values = (V[]) Array.newInstance(valueClass, map.size());
     map.values().toArray(values);
     return values;
   }

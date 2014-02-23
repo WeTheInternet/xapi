@@ -1,11 +1,5 @@
 package xapi.ui.autoui.impl;
 
-import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.Iterator;
-
-import xapi.ui.autoui.api.HasNamedValue;
-import xapi.ui.autoui.api.NameValuePair;
 import xapi.ui.autoui.api.UiRenderer;
 import xapi.ui.autoui.api.UiRendererSelector;
 import xapi.ui.autoui.api.UiRenderingContext;
@@ -71,10 +65,10 @@ public abstract class AbstractUserInterface <T> implements UserInterface <T>{
   protected void recursiveRender(UiRenderingContext ctx, UiRenderer renderer, T model){
     UiRendererSelector selector = ctx.getSelector();
     if (ctx.isWrapper()) {
-      for (HasNamedValue child : getChildren(model)) {
+      for (String key : ctx.getBeanValueProvider().getChildKeys()) {
         try {
-          if (selector.useRenderer(this, renderer, child)) {
-            renderer.renderInto(this, ctx, child);
+          if (selector.useRenderer(this, renderer, key, model)) {
+            renderer.renderInto(this, ctx, key, model);
           }
         } catch(ClassCastException e) {
           e.printStackTrace();
@@ -83,65 +77,10 @@ public abstract class AbstractUserInterface <T> implements UserInterface <T>{
         }
       }
     } else {
-      if (model instanceof HasNamedValue) {
-        renderer.renderInto(this, ctx, (HasNamedValue)model);
-      } else {
-        renderer.renderInto(this, ctx, new NameValuePair("", model));
+      if (selector.useRenderer(this, renderer, ctx.getName(), model)) {
+        renderer.renderInto(this, ctx, ctx.getName(), model);
       }
     }
   }
   
-
-  protected Iterable<HasNamedValue<?>> getChildren(final Object model) {
-    final Method[] methods = model.getClass().getMethods();
-    return new Iterable<HasNamedValue<?>>() {
-      @Override
-      public Iterator<HasNamedValue<?>> iterator() {
-        return new Iterator<HasNamedValue<?>>() {
-          int pos = 0;
-          Method next;
-          
-          @Override
-          public boolean hasNext() {
-            if (next == null) {
-              while (pos < methods.length) {
-                Method m = methods[pos++];
-                if (
-                    m.getReturnType() != void.class && 
-                    m.getParameterTypes().length == 0 && 
-                    m.getDeclaringClass() != Object.class
-                ) {
-                  next = m;
-                  break;
-                }
-              }
-            }
-            return next != null;
-          }
-
-          @Override
-          @SuppressWarnings({"unchecked", "rawtypes"})
-          public HasNamedValue<?> next() {
-            try {
-              Object nextVal = next.invoke(model);
-              return new NameValuePair(next.getName(), nextVal);
-            } catch (Exception e) {
-              throw X_Debug.rethrow(e);
-            } finally {
-              next = null;
-              hasNext();
-            }
-          }
-
-          @Override
-          public void remove() {
-            throw new UnsupportedOperationException();
-          }
-          
-        };
-      }
-    };
-  }
-
-
 }
