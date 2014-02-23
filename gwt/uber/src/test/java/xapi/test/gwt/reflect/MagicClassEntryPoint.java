@@ -2,7 +2,7 @@ package xapi.test.gwt.reflect;
 
 import static xapi.log.X_Log.error;
 import static xapi.log.X_Log.trace;
-import static com.google.gwt.reflect.client.GwtReflect.*;
+import static com.google.gwt.reflect.shared.GwtReflect.*;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;

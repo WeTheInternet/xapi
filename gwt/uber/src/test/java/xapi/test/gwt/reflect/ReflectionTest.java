@@ -41,7 +41,7 @@ import xapi.test.Assert;
 
 import com.google.gwt.core.shared.GWT;
 import com.google.gwt.junit.client.GWTTestCase;
-import com.google.gwt.reflect.client.GwtReflect;
+import com.google.gwt.reflect.shared.GwtReflect;
 
 public class ReflectionTest extends GWTTestCase {
 

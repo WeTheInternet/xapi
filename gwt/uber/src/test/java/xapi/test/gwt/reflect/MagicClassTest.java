@@ -1,6 +1,6 @@
 package xapi.test.gwt.reflect;
 
-import static com.google.gwt.reflect.client.GwtReflect.magicClass;
+import static com.google.gwt.reflect.shared.GwtReflect.magicClass;
 import xapi.annotation.inject.InstanceDefault;
 import xapi.annotation.reflect.KeepClass;
 import xapi.annotation.reflect.KeepField;
