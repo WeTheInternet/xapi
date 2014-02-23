@@ -5,9 +5,8 @@
 	
   <parent>
     <groupId>net.wetheinter</groupId>
-    <artifactId>xapi-settings-dependencies</artifactId>
+    <artifactId>xapi-core-parent</artifactId>
     <version>0.4-SNAPSHOT</version>
-    <relativePath>../../settings/dependencies.xml</relativePath>
   </parent>
 
 	<artifactId>xapi-core-args</artifactId>

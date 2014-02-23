@@ -4,9 +4,9 @@
 
   <parent>
 	  <groupId>net.wetheinter</groupId>
-    <artifactId>xapi-settings-plugins</artifactId>
+    <artifactId>xapi</artifactId>
   	<version>0.4-SNAPSHOT</version>
-  	<relativePath>../../settings/plugins.xml</relativePath>
+  	<relativePath>../../pom.xml</relativePath>
   </parent>
 
   <groupId>net.wetheinter</groupId>
@@ -14,7 +14,6 @@
   <version>2.5.1</version>
   <properties>
     <gwt.version>2.5.1</gwt.version>
-    <xapi.version>0.4-SNAPSHOT</xapi.version>
     <webAppDirectory>target/www-test</webAppDirectory>
     <maven.compiler.source>1.6</maven.compiler.source>
     <maven.compiler.target>1.6</maven.compiler.target>
@@ -24,7 +23,6 @@
     <dependency>
       <groupId>net.wetheinter</groupId>
       <artifactId>xapi-dev-source</artifactId>
-      <version>${xapi.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>

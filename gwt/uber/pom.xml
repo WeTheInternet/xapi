@@ -81,7 +81,7 @@
    <groupId>net.wetheinter</groupId>
    <artifactId>gwt-reflect</artifactId>
    <classifier>tests</classifier>
-   <version>${xapi.gwt.version}</version>
+   <version>2.5.1</version>
   </dependency>
   <!--
   Yes, we're including gwt-test as compile dependency;

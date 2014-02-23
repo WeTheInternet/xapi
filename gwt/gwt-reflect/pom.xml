@@ -4,9 +4,9 @@
 
   <parent>
 	  <groupId>net.wetheinter</groupId>
-    <artifactId>xapi-settings-plugins</artifactId>
+    <artifactId>xapi</artifactId>
   	<version>0.4-SNAPSHOT</version>
-  	<relativePath>../../settings/plugins.xml</relativePath>
+  	<relativePath>../../pom.xml</relativePath>
   </parent>
 
 	<groupId>net.wetheinter</groupId>
@@ -235,7 +235,6 @@
 				<plugin>
 					<groupId>net.wetheinter</groupId>
 					<artifactId>xapi-maven-plugin</artifactId>
-					<version>${xapi.version}</version>
 					<configuration>
 						<generateDirectory>${project.build.directory}/gwt-gen</generateDirectory>
 						<includeTestSource>true</includeTestSource>

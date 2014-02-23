@@ -196,10 +196,12 @@ public class JsDictionary <V> extends JavaScriptObject {
   }
 
   public final V[] toArray() {
-    String[] keys = keyArray();
-    V[] array = GwtReflect.newArray(valueType(), keys.length);
-    for (int i = keys.length; i --> 0; array[i] = get(keys[i]));
-    return array;
+//    String[] keys = keyArray();
+//    
+//    V[] array = GwtReflect.newArray(valueType(), keys.length);
+//    for (int i = keys.length; i --> 0; array[i] = get(keys[i]));
+//    return array;
+    throw new UnsupportedOperationException();
   }
 
   public final Collection<V> toCollection(Collection<V> into) {
