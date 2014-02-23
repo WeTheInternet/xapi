@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+ <modelVersion>4.0.0</modelVersion>
+
+ <groupId>net.wetheinter</groupId>
+ <artifactId>xapi-settings-root</artifactId>
+ <version>0.4</version>
+ <packaging>pom</packaging>
+ <name>XApi - Settings (Project Setup)</name>
+ <description>
+  This is the root module of the XApi project.
+  
+  It contains the deployment metadata needed to properly sign and deploy all other artifacts.
+  </description>
+  
+ <organization>
+  <name>The Internet Party</name>
+  <url>WeTheInter.net</url>
+ </organization>
+
+ <properties>
+  <github.account>WeTheInternet</github.account>
+  <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+ </properties>
+
+ <modules>
+  <module>settings/properties.xml</module>
+ </modules>
+ 
+ <url>https://github.com/${github.account}/xapi</url>
+ <scm>
+  <url>git@github.com:${github.account}/xapi.git</url>
+  <connection>scm:git:git@github.com:${github.account}/xapi.git</connection>
+  <developerConnection>scm:git:git@github.com:${github.account}/xapi.git</developerConnection>
+  <tag>xapi-0.4</tag>
+ </scm>
+ <licenses>
+  <license>
+   <name>The Apache Software License, Version 2.0</name>
+   <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+   <distribution>repo</distribution>
+  </license>
+ </licenses>
+ <inceptionYear>December 07, 2012</inceptionYear>
+ <issueManagement>
+  <system>Github Issues</system>
+  <url>https://github.com/${github.account}/xapi/issues</url>
+ </issueManagement>
+ 
+ <developers>
+  <developer>
+   <name>James X. Nelson</name>
+   <email>james@wetheinter.net</email>
+   <organizationUrl>http://WeTheInter.net</organizationUrl>
+  </developer>
+ </developers>
+
+ <distributionManagement>
+  <repository>
+   <id>sonatype-nexus-staging</id>
+   <name>Sonatype Release</name>
+   <url>http://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+  </repository>
+  <snapshotRepository>
+   <id>sonatype-nexus-snapshots</id>
+   <name>sonatype-nexus-snapshots</name>
+   <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+  </snapshotRepository>
+  <site>
+   <id>github-project-site</id>
+   <url>gitsite:git@github.com/${github.account}/xapi.git</url>
+  </site>
+ </distributionManagement>
+ 
+ <build>
+<pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-site-plugin</artifactId>
+          <version>3.3</version>
+          <dependencies>
+            <dependency>
+	            <groupId>com.github.stephenc.wagon</groupId>
+	            <artifactId>wagon-gitsite</artifactId>
+	            <version>0.4.1</version>
+            </dependency>
+          </dependencies>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+ </build>
+</project>

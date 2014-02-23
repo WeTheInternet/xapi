@@ -38,15 +38,14 @@ import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.JRealClassType;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.dev.javac.StandardGeneratorContext;
-import com.google.gwt.reflect.client.ClassMap;
-import com.google.gwt.reflect.client.ConstPool;
-import com.google.gwt.reflect.client.JsMemberPool;
 import com.google.gwt.reflect.client.strategy.NewInstanceStrategy;
 import com.google.gwt.reflect.client.strategy.ReflectionStrategy;
 import com.google.gwt.reflect.client.strategy.UseGwtCreate;
 import com.google.gwt.reflect.rebind.ReflectionManifest;
 import com.google.gwt.reflect.rebind.ReflectionUnit;
 import com.google.gwt.reflect.rebind.ReflectionUtilJava;
+import com.google.gwt.reflect.shared.ClassMap;
+import com.google.gwt.reflect.shared.GwtReflect;
 import com.google.gwt.reflect.shared.ReflectUtil;
 
 @ReflectionStrategy
@@ -163,7 +162,7 @@ public class MagicClassGenerator {
           ClassMap.class, JavaScriptObject.class, UnsafeNativeLong.class,
           ReflectUtil.class, Annotation.class,
           Constructor.class,Method.class,Field.class,CodeSource.class)
-      .addStatics(ConstPool.class.getName()+".constId")
+      .addStatics(GwtReflect.class.getName()+".constId")
      ;
 
 
@@ -239,21 +238,21 @@ public class MagicClassGenerator {
         ;
       for (JClassType subclass : manifest.innerClasses.keySet()) {
         enhanceClasses
-          .print("map.@com.google.gwt.reflect.client.ClassMap::addClass(")
+          .print("map.@com.google.gwt.reflect.shared.ClassMap::addClass(")
           .print("Ljava/lang/Class;Lcom/google/gwt/core/client/JavaScriptObject;)(@")
           .print(subclass.getQualifiedSourceName()+"::class")
-          .println(", map.@com.google.gwt.reflect.client.ClassMap::classes);");
+          .println(", map.@com.google.gwt.reflect.shared.ClassMap::classes);");
       }
       for (JClassType iface : injectionType.getImplementedInterfaces()) {
         enhanceClasses
-          .print("map.@com.google.gwt.reflect.client.ClassMap::addClass(")
+          .print("map.@com.google.gwt.reflect.shared.ClassMap::addClass(")
           .print("Ljava/lang/Class;Lcom/google/gwt/core/client/JavaScriptObject;)(@")
           .print(iface.getQualifiedSourceName()+"::class")
-          .println(", map.@com.google.gwt.reflect.client.ClassMap::ifaces);");
+          .println(", map.@com.google.gwt.reflect.shared.ClassMap::ifaces);");
       }
       if (injectionType.getEnclosingType() != null) {
         enhanceClasses
-        .print("map.@com.google.gwt.reflect.client.ClassMap::enclosingClass = @")
+        .print("map.@com.google.gwt.reflect.shared.ClassMap::enclosingClass = @")
         .print(injectionType.getEnclosingType().getQualifiedSourceName()+"::class;");
       }
       enhanceMethod.println("enhanceClasses(toEnhance);");
@@ -305,8 +304,8 @@ public class MagicClassGenerator {
           classBuilder.getClassBuffer().createMethod("public static void enhanceMethods(Class<?> cls)")
               .addAnnotation(UnsafeNativeLong.class);
         initMethod
-          .println("JsMemberPool map = ConstPool.getMembers(cls);")
-          .addImports(JsMemberPool.class, ConstPool.class);
+          .println("JsMemberPool map = JsMemberPool.getMembers(cls);")
+          .addImport("com.google.gwt.reflect.shared.JsMemberPool");
         TypeOracle oracle = context.getTypeOracle();
         for (ReflectionUnit<JMethod> unit : methods) {
           JMethod method = unit.getNode();
@@ -336,8 +335,8 @@ public class MagicClassGenerator {
     if (ctors.size() > 0) {
       MethodBuffer initMethod = classBuilder.getClassBuffer()
           .createMethod("public static void enhanceConstructors(Class<?> cls)")
-          .println("JsMemberPool map = ConstPool.getMembers(cls);")
-          .addImports(JsMemberPool.class, ConstPool.class);
+          .println("JsMemberPool map = JsMemberPool.getMembers(cls);")
+          .addImports("com.google.gwt.reflect.shared.JsMemberPool");
       TypeOracle oracle = context.getTypeOracle();
       for (ReflectionUnit<JConstructor> unit : ctors) {
         JConstructor ctor = unit.getNode();
@@ -364,8 +363,8 @@ public class MagicClassGenerator {
     if (fields.size() > 0) {
       MethodBuffer initMethod = classBuilder.getClassBuffer()
           .createMethod("public static void enhanceFields(Class<?> cls)")
-          .println("JsMemberPool map = ConstPool.getMembers(cls);")
-          .addImports(JsMemberPool.class, ConstPool.class);
+          .println("JsMemberPool map = JsMemberPool.getMembers(cls);")
+          .addImports("com.google.gwt.reflect.shared.JsMemberPool");
       TypeOracle oracle = context.getTypeOracle();
       for (ReflectionUnit<JField> unit : fields) {
         JField field = unit.getNode();

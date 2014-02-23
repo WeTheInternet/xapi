@@ -131,7 +131,7 @@
       </goals>
         <configuration>
           <!-- Prevent duplicate warnings by changing intermediate jar name -->
-          <finalName>${artifactId}-${version}-tmp</finalName>
+          <finalName>${project.artifactId}-${project.version}-tmp</finalName>
         </configuration>
      </execution>
     </executions>

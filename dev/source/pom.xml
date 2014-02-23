@@ -21,7 +21,7 @@
 	<properties>
 		<maven.compiler.source>1.6</maven.compiler.source>
 		<maven.compiler.target>1.6</maven.compiler.target>
-    <relative.output>target</relative.output>
+        <relative.output>target</relative.output>
 	</properties>
 
 	<dependencies>

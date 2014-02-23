@@ -82,6 +82,16 @@ public class GwtReflect {
   }
 
   /**
+   * @param  a unique int identified for the class;
+   * in this jvm, though hotswapped classes that should == will have different constIds.
+   * GWT prod overrides this method to return a field we added to Class in supersource.
+   * 
+   */
+  public static int constId(Class<?> c) {
+    return c.hashCode();
+  }
+
+  /**
    * Escapes string content to be a valid string literal.
    * Copied directly from {@link com.google.gwt.core.ext.Generator#escape(String)}
    *

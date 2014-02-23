@@ -1,4 +1,4 @@
-package com.google.gwt.reflect.client;
+package com.google.gwt.reflect.shared;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
@@ -7,8 +7,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.reflect.shared.MemberPool;
-import com.google.gwt.reflect.shared.ReflectUtil;
 
 public class JsMemberPool <T> extends JavaScriptObject implements MemberPool <T>{
 
@@ -74,20 +72,46 @@ public class JsMemberPool <T> extends JavaScriptObject implements MemberPool <T>
   /*-{
     return set[key] ? false : (set[key] = true);
   }-*/;
+  
+  private static native int constId(Class<?> cls)
+  /*-{
+     return cls.@java.lang.Class::constId;
+   }-*/;
+
+  public static <T> JsMemberPool<T> getMembers(Class<T> cls) {
+    int constId = constId(cls);
+    JsMemberPool<T> members = findMembers(constId);
+    if (members == null) {
+      members = createMemberPool(cls);
+      setMembers(constId, members);
+    }
+    return members;
+  }
+
+  private static native <T> JsMemberPool<T> findMembers(int constId)
+  /*-{
+    return $wnd.Reflect.$$[constId];
+  }-*/;
+
+  private static native <T> void setMembers(int constId, JsMemberPool<T> members)
+  /*-{
+    $wnd.Reflect.$$[constId]=members;
+  }-*/;
+  
   private static Method[] methodArray() {return new Method[0];}
   @SuppressWarnings("rawtypes")
   static void addConstructor(Class<?> cls, Constructor c) {
-    JsMemberPool<?> pool = ConstPool.getMembers(cls);
+    JsMemberPool<?> pool = getMembers(cls);
     pool.addConstructor(c);
   }
   
   static void addField(Class<?> cls, Field f) {
-    JsMemberPool<?> pool = ConstPool.getMembers(cls);
+    JsMemberPool<?> pool = getMembers(cls);
     pool.addField(f);
   }
 
   static void addMethod(Class<?> cls, Method m) {
-    JsMemberPool<?> pool = ConstPool.getMembers(cls);
+    JsMemberPool<?> pool = getMembers(cls);
     pool.addMethod(m);
   }
 
@@ -100,7 +124,7 @@ public class JsMemberPool <T> extends JavaScriptObject implements MemberPool <T>
     StringBuilder key = new StringBuilder();
     for (int i = 0; i < signature.length; i++) {
       key.append('_');
-      key.append(ConstPool.constId(signature[i]));
+      key.append(constId(signature[i]));
     }
     return key.toString();
   }
@@ -130,7 +154,7 @@ public class JsMemberPool <T> extends JavaScriptObject implements MemberPool <T>
   @Override
   public final native Annotation[] getAnnotations()
   /*-{
-    var array = @com.google.gwt.reflect.client.JsMemberPool::annoArray()();
+    var array = @com.google.gwt.reflect.shared.JsMemberPool::annoArray()();
     for (var i in this.a) {
       if (this.a.hasOwnProperty(i))
         array.push(this.a[i]());
@@ -295,7 +319,7 @@ public class JsMemberPool <T> extends JavaScriptObject implements MemberPool <T>
     if (pool.getType().isInterface()) {
       all[all.length] = this;
       for (Class<?> iface : pool.getInterfaces()) {
-        all[all.length] = ConstPool.getMembers(iface);
+        all[all.length] = getMembers(iface);
       }
     } else {
       while(pool != null) {
@@ -319,7 +343,7 @@ public class JsMemberPool <T> extends JavaScriptObject implements MemberPool <T>
   public final JsMemberPool<? super T> getSuperclass() {
     Class<? super T> superClass = getType().getSuperclass();
     assert superClass != getType();
-    return superClass == null ? null : ConstPool.getMembers(superClass);
+    return superClass == null ? null : getMembers(superClass);
   }
 
   @Override

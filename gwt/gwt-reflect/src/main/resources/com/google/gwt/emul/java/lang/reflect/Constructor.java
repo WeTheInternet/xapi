@@ -5,7 +5,6 @@ import java.lang.annotation.Annotation;
 
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.UnsafeNativeLong;
-import com.google.gwt.reflect.client.ConstPool.ArrayConsts;
 
 /**
  * <code>Constructor</code> provides information about, and access to, a single
@@ -30,7 +29,9 @@ import com.google.gwt.reflect.client.ConstPool.ArrayConsts;
 public class Constructor<T> extends AccessibleObject implements
                                                     GenericDeclaration,
                                                     Member {
-
+  private static final Class[] EMPTY_CLASSES = new Class[0];
+  private static final Annotation[] EMPTY_ANNOTATIONS = new Annotation[0];
+  
     private Class<T>    clazz;
     private int     slot;
     private Class[]   parameterTypes;
@@ -45,8 +46,8 @@ public class Constructor<T> extends AccessibleObject implements
       Modifier.PUBLIC   | Modifier.PROTECTED  | Modifier.PRIVATE;
 
     protected Constructor() {
-      this.parameterTypes = exceptionTypes = ArrayConsts.EMPTY_CLASSES;
-      this.annos = ArrayConsts.EMPTY_ANNOTATIONS;
+      this.parameterTypes = exceptionTypes = EMPTY_CLASSES;
+      this.annos = EMPTY_ANNOTATIONS;
     }
     /**
      * Public constructor to allow gwt to create constructors anywhere

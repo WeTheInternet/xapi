@@ -24,10 +24,10 @@ import java.security.ProtectionDomain;
 
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.UnsafeNativeLong;
-import com.google.gwt.reflect.client.AnnotationMap;
-import com.google.gwt.reflect.client.ClassMap;
-import com.google.gwt.reflect.client.ConstPool;
-import com.google.gwt.reflect.client.JsMemberPool;
+import com.google.gwt.core.shared.GWT;
+import com.google.gwt.reflect.shared.AnnotationMap;
+import com.google.gwt.reflect.shared.ClassMap;
+import com.google.gwt.reflect.shared.JsMemberPool;
 import com.google.gwt.reflect.shared.ReflectUtil;
 
 /**
@@ -53,6 +53,47 @@ java.lang.reflect.AnnotatedElement
   		"or to call GwtReflect.magicClass on your class literal?.";
   private static int index;
   
+  private static final JavaScriptObject CONSTS;
+  static {
+    if (GWT.isClient()) {
+      CONSTS = initConstPool();
+    }
+    else {
+      CONSTS = null;
+    }
+  }
+
+  private static native JavaScriptObject initConstPool()
+  /*-{
+    $wnd.Reflect = {
+      $:[],// enhanced classes
+      $$:[],// class members
+      a:[],// annotations
+      c:[],// classes
+      d:[],// doubles (includes float)
+      e:[],// enums
+      i:[],// ints (includes short, char, byte)
+      l:[],// longs
+      n:{},// class by name
+      s:[],// strings
+      p:{},// packages
+      _a:[],// annotation arrays
+      _b:[],// byte arrays
+      _c:[],// char arrays
+      _d:[],// double arrays
+      _e:[],// enum arrays
+      _f:[],// float arrays
+      _i:[],// int arrays
+      _j:[],// long arrays
+      _l:[],// Class (type) arrays
+      _o:[],// Object arrays
+      _s:[],// short arrays
+      _t:[],// String arrays
+      _z:[]// boolan arrays
+    };
+    return $wnd.Reflect;
+  }-*/;
+
   static native String asString(int number) /*-{
     // for primitives, the seedId isn't a number, but a string like ' Z'
     return typeof(number) == 'number' ?  "S" + (number < 0 ? -number : number) : number;
@@ -219,10 +260,10 @@ java.lang.reflect.AnnotatedElement
       clazz.typeName = "Class$"
           + (isInstantiableOrPrimitive(seedId) ? asString(seedId) : "" + clazz.hashCode());
     }
-    clazz.constId = clazz.remember();
     if (isInstantiable(seedId)) {
       setClassLiteral(seedId, clazz);
     }
+    clazz.constId = clazz.remember();
   }
   
   /**
@@ -235,12 +276,18 @@ java.lang.reflect.AnnotatedElement
   @SuppressWarnings("rawtypes")
   public static Class forName(String name)
     throws ClassNotFoundException{
-    Class c = ConstPool.getConstPool().getClassByName(name);
+    Class c = findClass(name);
     if (c == null) {
       throw new ClassNotFoundException("No class found for "+name);
     }
     return c;
   }
+  
+  private static native Class findClass(String name)
+  /*-{
+    return @java.lang.Class::CONSTS.n[className];
+   }-*/;
+  
   @SuppressWarnings("rawtypes")
   public static Class forName(String name, boolean initialize, ClassLoader loader) 
     throws ClassNotFoundException{
@@ -265,10 +312,15 @@ java.lang.reflect.AnnotatedElement
   public static <T> boolean needsEnhance(Class<T> cls) {
     if (cls.members == null) {
       // might as well init here; as soon as we return true, the class is enhanced.
-      cls.members = ConstPool.getMembers(cls);
+      cls.members = JsMemberPool.getMembers(cls);
       return true;
     }
     return false;
+  }
+
+  protected static boolean isRememberClassByName() {
+    // TODO replace System.getProperty calls such that they become JStringLiterals
+    return "true".equals(System.getProperty("gwt.reflect.remember.names", "true"));
   }
   
   public int seedId;
@@ -283,7 +335,13 @@ java.lang.reflect.AnnotatedElement
   
   private native int remember()
   /*-{
-    return @com.google.gwt.reflect.client.ConstPool::setClass(Ljava/lang/Class;)(this);
+    var pos = @java.lang.Class::CONSTS.c.length;
+    @java.lang.Class::CONSTS.c[pos] = this;
+    if (@java.lang.Class::isRememberClassByName()()) {
+      var n = this.@java.lang.Class::getName()();
+      @java.lang.Class::CONSTS.n[n] = this;
+    }
+    return pos;
   }-*/;
   
   public boolean desiredAssertionStatus() {

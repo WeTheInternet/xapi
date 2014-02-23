@@ -1011,34 +1011,37 @@ public class UnifyAst implements UnifyAstView{
   /**
    * Main loop: run through the queue doing deferred resolution. We could have
    * made this entirely recursive, but a work queue uses much less max stack.
+   * @throws UnableToCompleteException 
    */
-  private void mainLoop() {
+  private void mainLoop() throws UnableToCompleteException {
     UnifyVisitor visitor = new UnifyVisitor();
     List<UnifyAstListener> listeners = setupMagicMethods();
-    for (UnifyAstListener listener : listeners) {
-      // Allows listeners to inject code at the start of the application
-      listener.onUnifyAstStart(logger, this, visitor, todo);
-    }
-    boolean loop = true;
-    int maxLoop = 50;
     try {
-      
-    for (; loop && maxLoop --> 0; ) {
-      // Normal behavior for mainLoop()
-      while (!todo.isEmpty()) {
-        visitor.accept(todo.poll());
-      }
-      loop = false;
       for (UnifyAstListener listener : listeners) {
-        // Allows listeners to inject code at the end of an iteration
-        loop |= listener.onUnifyAstPostProcess(logger, this, visitor, todo);
+        // Allows listeners to inject code at the start of the application
+        listener.onUnifyAstStart(logger, this, visitor, todo);
       }
-    }// end loop
-    if (maxLoop == 0) {
-      logger.log(Type.WARN, "A unify ast listener caused 50 iterations, and is likely " +
-          "returning true ad infinitum in onUnifyAstPostProcess"
-          + "\nListeners: "+listeners);
-    }
+      boolean loop = true;
+      int maxLoop = 50;
+        
+      for (; loop && maxLoop --> 0; ) {
+        // Normal behavior for mainLoop()
+        while (!todo.isEmpty()) {
+          visitor.accept(todo.poll());
+        }
+        loop = false;
+        for (UnifyAstListener listener : listeners) {
+          // Allows listeners to inject code at the end of an iteration
+          loop |= listener.onUnifyAstPostProcess(logger, this, visitor, todo);
+        }
+      }// end loop
+      if (maxLoop == 0) {
+        logger.log(Type.WARN, "A unify ast listener caused 50 iterations, and is likely " +
+            "returning true ad infinitum in onUnifyAstPostProcess"
+            + "\nListeners: "+listeners);
+      }
+    } catch (Throwable e) {
+      throw CompilationProblemReporter.logAndTranslateException(logger, e);
     // Always cleanup
     } finally {
       for (UnifyAstListener listener : listeners) {

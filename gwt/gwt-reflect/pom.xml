@@ -2,60 +2,63 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
+  <parent>
+	  <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-settings-plugins</artifactId>
+  	<version>0.4-SNAPSHOT</version>
+  	<relativePath>../../settings/plugins.xml</relativePath>
+  </parent>
+
 	<groupId>net.wetheinter</groupId>
 	<artifactId>gwt-reflect</artifactId>
 
 	<!-- We'll move this to match gwt version upon community approval -->
-	<version>2.5.1-rc1</version>
+	<version>2.5.1</version>
 
 	<properties>
 		<gwt.version>2.5.1</gwt.version>
-        <gwt.skip.test>false</gwt.skip.test>
+        <gwt.skip.test>true</gwt.skip.test>
         <xapi.log.level>INFO</xapi.log.level>
-		<xapi.version>0.4-SNAPSHOT</xapi.version>
 		<maven.compiler.source>1.6</maven.compiler.source>
 		<maven.compiler.target>1.6</maven.compiler.target>
+    <relative.output>target</relative.output>
 	</properties>
 
 	<dependencies>
 		<dependency>
 			<groupId>net.wetheinter</groupId>
 			<artifactId>xapi-dev-source</artifactId>
-			<version>${xapi.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>net.wetheinter</groupId>
 			<artifactId>gwt-method-inject</artifactId>
-			<version>${project.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.google.gwt</groupId>
 			<artifactId>gwt-dev</artifactId>
-			<version>${gwt.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.google.gwt</groupId>
 			<artifactId>gwt-user</artifactId>
-			<version>${gwt.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>4.11</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>4.11</version>
+            <version>4.11</version>
 			<classifier>sources</classifier>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
 
 	<build>
+    <directory>${project.basedir}/target</directory>
 		<resources>
 			<resource>
 				<directory>src/main/java</directory>
@@ -173,7 +176,7 @@
 						<additionalClasspathElement>${project.build.sourceDirectory}</additionalClasspathElement>
 					</additionalClasspathElements>
 					<useManifestOnlyJar>false</useManifestOnlyJar>
-					<forkCount>3</forkCount>
+					<forkCount>1</forkCount>
 					<reuseForks>false</reuseForks>
 					<systemProperties>
 						<property>

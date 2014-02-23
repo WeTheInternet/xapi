@@ -3,7 +3,7 @@
   <parent>
     <artifactId>xapi-jre-parent</artifactId>
     <groupId>net.wetheinter</groupId>
-    <version>0.4-SNAPSHOT</version>
+    <version>0.4</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>xapi-jre</artifactId>
@@ -27,7 +27,7 @@
       <plugin>
         <artifactId>maven-jar-plugin</artifactId>
         <configuration>
-          <finalName>${artifactId}-${version}-tmp</finalName>
+          <finalName>${project.artifactId}-${project.version}-tmp</finalName>
         </configuration>
       </plugin>
     </plugins>
@@ -36,7 +36,7 @@
     <dependency>
       <groupId>net.wetheinter</groupId>
       <artifactId>xapi-core-test</artifactId>
-      <version>0.4-SNAPSHOT</version>
+      <version>0.4</version>
       <scope>test</scope>
       <exclusions>
         <exclusion>

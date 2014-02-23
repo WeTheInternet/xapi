@@ -5,6 +5,9 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
+import com.google.gwt.core.client.SingleJsoImplName;
+
+@SingleJsoImplName("com.google.gwt.reflect.shared.JsMemberPool")
 public interface MemberPool <T> {
 
   <A extends Annotation> A getAnnotation(Class<A> annoCls);

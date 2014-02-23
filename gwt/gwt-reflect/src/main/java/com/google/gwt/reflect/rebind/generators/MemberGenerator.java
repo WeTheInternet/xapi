@@ -75,7 +75,7 @@ public class MemberGenerator {
 
     public com.google.gwt.dev.jjs.ast.JMethod initMethod(UnifyAstView ast) {
       if (initMethod == null) {
-        JDeclaredType type = ast.searchForTypeBySource(ConstPool.class.getName());
+        JDeclaredType type = ast.searchForTypeBySource("com.google.gwt.reflect.shared.JsMemberPool");
         for (com.google.gwt.dev.jjs.ast.JMethod method : type.getMethods()) {
           if (method.getName().equals("getMembers")) {
             initMethod = method;
@@ -449,9 +449,9 @@ public class MemberGenerator {
       getAnnos.println(gen.providerClass()+"."+gen.providerMethod()+"()");
       getAnnos.addImport(gen.providerQualifiedName());
       getAnno
-        .println("switch (@"+ConstPool.class.getName()+"::constId(Ljava/lang/Class;)(cls)) {")
+        .println("switch (@"+GwtReflect.class.getName()+"::constId(Ljava/lang/Class;)(cls)) {")
         .indent()
-        .print("case @"+ConstPool.class.getName()+"::constId(Ljava/lang/Class;)")
+        .print("case @"+GwtReflect.class.getName()+"::constId(Ljava/lang/Class;)")
         .println("(@" + gen.getAnnoName() + "::class) :")
         .indentln(" return @" + gen.providerQualifiedName() + "::" + gen.providerMethod()+"()();");
       for (int i = 1, m = annos.length; i < m; i++ ) {
@@ -459,7 +459,7 @@ public class MemberGenerator {
         getAnnos.println(", "+gen.providerClass()+"."+gen.providerMethod()+"()");
         getAnnos.addImport(gen.providerQualifiedName());
         getAnno
-          .print("case @"+ConstPool.class.getName()+"::constId(Ljava/lang/Class;)")
+          .print("case @"+GwtReflect.class.getName()+"::constId(Ljava/lang/Class;)")
           .println("(@" + gen.getAnnoName() + "::class) :")
           .indentln(" return @" + gen.providerQualifiedName() + "::" + gen.providerMethod()+"()();");
       }

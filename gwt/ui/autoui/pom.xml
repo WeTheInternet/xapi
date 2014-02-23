@@ -72,25 +72,6 @@
    <artifactId>gwt-user</artifactId>
    <scope>provided</scope>
   </dependency>
-  <dependency>
-   <groupId>com.sencha.gwt</groupId>
-   <artifactId>formality</artifactId>
-   <version>0.0.1-SNAPSHOT</version>
-   <scope>test</scope>
-  </dependency>
-  <dependency>
-   <groupId>com.sencha.gxt</groupId>
-   <artifactId>gxt</artifactId>
-   <version>3.0.1</version>
-   <scope>test</scope>
-  </dependency>
-  <dependency>
-   <groupId>com.sencha.gwt</groupId>
-   <artifactId>formality</artifactId>
-   <version>0.0.1-SNAPSHOT</version>
-   <classifier>tests</classifier>
-   <scope>test</scope>
-  </dependency>
  </dependencies>
 
 </project>

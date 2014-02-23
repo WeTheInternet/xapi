@@ -203,7 +203,7 @@ public abstract class GwtcServiceAbstract implements GwtcService {
     addDependency(
         DependencyBuilder.buildDependency("gwt-reflect")
         .setGroupId("net.wetheinter")
-        .setVersion("2.5.1-rc1")
+        .setVersion("2.5.1")
         .setClassifier("tests")
         .setDependencyType(DependencyType.MAVEN)
         .build()

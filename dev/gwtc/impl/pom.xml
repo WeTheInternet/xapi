@@ -23,6 +23,10 @@
   In the collide plugin, the gwt frontend runs in the browser, and this backend runs in vert.x server. 
   </description>
   
+  <properties>
+    <xapi.skip.test>true</xapi.skip.test>
+  </properties>
+  
   <dependencies>
     <!-- Take the full jre injection, for runtime classpath scanning. -->
     <dependency>

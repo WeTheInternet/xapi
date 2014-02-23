@@ -1,9 +1,8 @@
-package com.google.gwt.reflect.client;
+package com.google.gwt.reflect.shared;
 
 import java.lang.annotation.Annotation;
 
 import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.reflect.shared.ReflectUtil;
 
 public class AnnotationMap extends JavaScriptObject {
 

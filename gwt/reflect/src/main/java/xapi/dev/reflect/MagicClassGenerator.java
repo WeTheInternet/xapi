@@ -54,8 +54,8 @@ import com.google.gwt.core.ext.typeinfo.JPackage;
 import com.google.gwt.core.ext.typeinfo.JRealClassType;
 import com.google.gwt.core.ext.typeinfo.NotFoundException;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
-import com.google.gwt.reflect.client.ClassMap;
 import com.google.gwt.reflect.rebind.ReflectionUtilJava;
+import com.google.gwt.reflect.shared.ClassMap;
 import com.google.gwt.reflect.shared.ReflectUtil;
 
 public class MagicClassGenerator extends IncrementalGenerator {

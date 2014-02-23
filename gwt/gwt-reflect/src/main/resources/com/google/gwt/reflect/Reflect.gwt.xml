@@ -48,8 +48,6 @@
   <!-- ConstPool splitpoint (scans TypeOracle, and slurps all annotated elements) -->
   <extend-configuration-property name="gwt.magic.methods" 
     value="com.google.gwt.reflect.shared.ConstPool.fillConstPool()V *= com.google.gwt.reflect.rebind.injectors.ConstPoolInjector"/>
-  <extend-configuration-property name="gwt.magic.methods" 
-    value="com.google.gwt.reflect.shared.ConstPool.setClass(Ljava/lang/Class;)I *= com.google.gwt.reflect.rebind.injectors.ConstPoolInjector"/>
   
   <!-- "direct reflection" using class and string literals -->
   

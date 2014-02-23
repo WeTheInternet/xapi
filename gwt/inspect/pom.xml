@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-gwt-parent</artifactId>
+    <version>0.4-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>xapi-gwt-inspect-parent</artifactId>
+  <packaging>pom</packaging>
+  <name>XApi - Gwt Inspector SuperPom</name>
+  <url>WeTheInter.net</url>
+
+  <description>
+    The root module for all modules used in the gwt inspector
+ </description>
+
+  <modules>
+
+    <!-- The generator to transform chrome dev tools json api into a java api. -->
+    <module>generator</module>
+    <!-- The generated java api; this should not be edited by hand. -->
+    <module>api</module>
+    <!-- The implementation code which uses the generated api to expose chrome dev tools api -->
+    <module>impl</module>
+
+  </modules>
+
+  <profiles>
+    <profile>
+      <id>bundle-source</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <modules>
+        <module>api</module>
+        <module>impl</module>
+      </modules>
+      <build>
+        <resources>
+          <resource>
+            <directory>src/main/java</directory>
+          </resource>
+          <resource>
+            <directory>src/main/resources</directory>
+          </resource>
+        </resources>
+        <testResources>
+          <testResource>
+            <directory>src/test/java</directory>
+          </testResource>
+          <testResource>
+            <directory>src/test/resources</directory>
+          </testResource>
+        </testResources>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-clean-plugin</artifactId>
+            <version>2.5</version>
+            <configuration>
+              <filesets>
+                <fileset>
+                  <directory>target</directory>
+                </fileset>
+                <fileset>
+                  <directory>war</directory>
+                </fileset>
+                <fileset>
+                  <directory>www-test</directory>
+                </fileset>
+                <fileset>
+                  <directory>gwt-unitCache</directory>
+                </fileset>
+              </filesets>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
+</project>
