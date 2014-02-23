@@ -4,7 +4,7 @@
 
  <groupId>net.wetheinter</groupId>
  <artifactId>xapi</artifactId>
- <version>0.4</version>
+ <version>0.5-SNAPSHOT</version>
  <packaging>pom</packaging>
 
   <name>XApi (Extremely Extensible Cross-Platform API)</name>
@@ -42,7 +42,7 @@
   <java.version>1.7</java.version>
   <maven.compiler.source>${java.version}</maven.compiler.source>
   <maven.compiler.target>${java.version}</maven.compiler.target>
-  <xapi.version>0.4</xapi.version>
+  <xapi.version>0.5-SNAPSHOT</xapi.version>
   <xapi.test.version>0.4</xapi.test.version>
   <xapi.log.level>INFO</xapi.log.level>
   <gwt.version>2.5.1</gwt.version>
@@ -315,12 +315,12 @@
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>gwt-reflect</artifactId>
-    <version>2.5.1</version>
+    <version>2.6.0-SNAPSHOT</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>gwt-method-inject</artifactId>
-    <version>2.5.1</version>
+    <version>2.6.0-SNAPSHOT</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
