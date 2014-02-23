@@ -29,25 +29,27 @@
 
   <!-- Enhance entire class -->
   <extend-configuration-property name="gwt.magic.methods" 
-    value="com.google.gwt.reflect.client.GwtReflect.magicClass(Ljava/lang/Class;)Ljava/lang/Class; *= com.google.gwt.reflect.rebind.injectors.MagicClassInjector"/>
+    value="com.google.gwt.reflect.shared.GwtReflect.magicClass(Ljava/lang/Class;)Ljava/lang/Class; *= com.google.gwt.reflect.rebind.injectors.MagicClassInjector"/>
+  <extend-configuration-property name="gwt.magic.methods" 
+    value="java.lang.Class.magicClass(Ljava/lang/Class;)Ljava/lang/Class; *= com.google.gwt.reflect.rebind.injectors.MagicClassInjector"/>
 
   <!-- Array reflection, single dim -->
   <extend-configuration-property name="gwt.magic.methods" 
-    value="com.google.gwt.reflect.client.GwtReflect.newArray(Ljava/lang/Class;I)[Ljava/lang/Object; *= com.google.gwt.reflect.rebind.injectors.SingleDimArrayInjector"/>
+    value="com.google.gwt.reflect.shared.GwtReflect.newArray(Ljava/lang/Class;I)[Ljava/lang/Object; *= com.google.gwt.reflect.rebind.injectors.SingleDimArrayInjector"/>
   <extend-configuration-property name="gwt.magic.methods" 
     value="java.lang.reflect.Array.newInstance(Ljava/lang/Class;I)Ljava/lang/Object; *= com.google.gwt.reflect.rebind.injectors.SingleDimArrayInjector"/>
 
   <!-- Array reflection, multi dim -->
   <extend-configuration-property name="gwt.magic.methods" 
-    value="com.google.gwt.reflect.client.GwtReflect.newArray(Ljava/lang/Class;II)[[Ljava/lang/Object; *= com.google.gwt.reflect.rebind.injectors.MultiDimArrayInjector"/>
+    value="com.google.gwt.reflect.shared.GwtReflect.newArray(Ljava/lang/Class;II)[[Ljava/lang/Object; *= com.google.gwt.reflect.rebind.injectors.MultiDimArrayInjector"/>
   <extend-configuration-property name="gwt.magic.methods" 
     value="java.lang.reflect.Array.newInstance(Ljava/lang/Class;[I)Ljava/lang/Object; *= com.google.gwt.reflect.rebind.injectors.MultiDimArrayInjector"/>
     
   <!-- ConstPool splitpoint (scans TypeOracle, and slurps all annotated elements) -->
   <extend-configuration-property name="gwt.magic.methods" 
-    value="com.google.gwt.reflect.client.ConstPool.fillConstPool()V *= com.google.gwt.reflect.rebind.injectors.ConstPoolInjector"/>
+    value="com.google.gwt.reflect.shared.ConstPool.fillConstPool()V *= com.google.gwt.reflect.rebind.injectors.ConstPoolInjector"/>
   <extend-configuration-property name="gwt.magic.methods" 
-    value="com.google.gwt.reflect.client.ConstPool.setClass(Ljava/lang/Class;)I *= com.google.gwt.reflect.rebind.injectors.ConstPoolInjector"/>
+    value="com.google.gwt.reflect.shared.ConstPool.setClass(Ljava/lang/Class;)I *= com.google.gwt.reflect.rebind.injectors.ConstPoolInjector"/>
   
   <!-- "direct reflection" using class and string literals -->
   
@@ -55,13 +57,13 @@
   <extend-configuration-property name="gwt.magic.methods" 
     value="java.lang.Class.getMethod(Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method; *= com.google.gwt.reflect.rebind.injectors.PublicMethodInjector"/>
   <extend-configuration-property name="gwt.magic.methods" 
-    value="com.google.gwt.reflect.client.GwtReflect.getPublicMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method; *= com.google.gwt.reflect.rebind.injectors.PublicMethodInjector"/>
+    value="com.google.gwt.reflect.shared.GwtReflect.getPublicMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method; *= com.google.gwt.reflect.rebind.injectors.PublicMethodInjector"/>
   <extend-configuration-property name="gwt.magic.methods" 
     value="java.lang.Class.getDeclaredMethod(Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method; *= com.google.gwt.reflect.rebind.injectors.DeclaredMethodInjector"/>
   <extend-configuration-property name="gwt.magic.methods" 
-    value="com.google.gwt.reflect.client.GwtReflect.getDeclaredMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method; *= com.google.gwt.reflect.rebind.injectors.DeclaredMethodInjector"/>
+    value="com.google.gwt.reflect.shared.GwtReflect.getDeclaredMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method; *= com.google.gwt.reflect.rebind.injectors.DeclaredMethodInjector"/>
   <extend-configuration-property name="gwt.magic.methods" 
-    value="com.google.gwt.reflect.client.GwtReflect.invoke(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Class;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object; *= com.google.gwt.reflect.rebind.injectors.InvokeInjector"/>
+    value="com.google.gwt.reflect.shared.GwtReflect.invoke(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Class;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object; *= com.google.gwt.reflect.rebind.injectors.InvokeInjector"/>
 
   <!-- Fields -->
   <extend-configuration-property name="gwt.magic.methods" 
@@ -75,8 +77,9 @@
   <extend-configuration-property name="gwt.magic.methods" 
     value="java.lang.Class.getDeclaredConstructor([Ljava/lang/Class;)Ljava/lang/reflect/Constructor; *= com.google.gwt.reflect.rebind.injectors.DeclaredConstructorInjector"/>
   <extend-configuration-property name="gwt.magic.methods" 
-    value="com.google.gwt.reflect.client.GwtReflect.construct(Ljava/lang/Class;[Ljava/lang/Class;[Ljava/lang/Object;)Ljava/lang/Object; *= com.google.gwt.reflect.rebind.injectors.ConstructInjector"/>
+    value="com.google.gwt.reflect.shared.GwtReflect.construct(Ljava/lang/Class;[Ljava/lang/Class;[Ljava/lang/Object;)Ljava/lang/Object; *= com.google.gwt.reflect.rebind.injectors.ConstructInjector"/>
 
 
   <source path="client" />
+  <source path="shared" />
 </module>

@@ -25,7 +25,7 @@ import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
-import com.google.gwt.reflect.client.GwtReflectJre;
+import com.google.gwt.reflect.shared.GwtReflectJre;
 
 public class MonolithReflectionGenerator extends IncrementalGenerator{
 

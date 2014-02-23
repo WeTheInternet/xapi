@@ -1111,6 +1111,7 @@ public class UnifyAst implements UnifyAstView{
     try{
       PropertyOracle props = rpo.getGeneratorContext().getPropertyOracle();
       ConfigurationProperty methods = props.getConfigurationProperty("gwt.magic.methods");
+      Map<Class<?>, MagicMethodGenerator> generators = new HashMap<Class<?>, MagicMethodGenerator>();
       for (String prop : methods.getValues()){
         String[] bits = prop.split("[*]=");
         if (bits.length==2){
@@ -1163,10 +1164,14 @@ public class UnifyAst implements UnifyAstView{
                     "Duplicate magic instance declarations for "+clientMethod+";" +
                       " \nexisting: "+magicMethodMap.get(clientMethod)+"" +
                         "\nreplacement: new "+magicClass.getName()+"()";
-                  MagicMethodGenerator inst = (MagicMethodGenerator)magicClass.newInstance();
-                  magicMethodMap.put(clientMethod, inst);
-                  if (inst instanceof UnifyAstListener) {
-                    listeners.add((UnifyAstListener)inst);
+                  MagicMethodGenerator generator = generators.get(magicClass);
+                  if (generator == null) {
+                    generator = (MagicMethodGenerator)magicClass.newInstance();
+                    generators.put(magicClass, generator);
+                  }
+                  magicMethodMap.put(clientMethod, generator);
+                  if (generator instanceof UnifyAstListener) {
+                    listeners.add((UnifyAstListener)generator);
                   }
                 }
               }

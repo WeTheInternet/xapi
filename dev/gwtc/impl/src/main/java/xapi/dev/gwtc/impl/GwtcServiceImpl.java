@@ -39,7 +39,7 @@ import com.google.gwt.dev.Compiler;
 import com.google.gwt.dev.GwtCompiler;
 import com.google.gwt.junit.client.GWTTestCase;
 import com.google.gwt.junit.tools.GWTTestSuite;
-import com.google.gwt.reflect.client.GwtReflect;
+import com.google.gwt.reflect.shared.GwtReflect;
 
 @Gwtc(propertiesLaunch=@GwtcProperties)
 @InstanceDefault(implFor=GwtcService.class)

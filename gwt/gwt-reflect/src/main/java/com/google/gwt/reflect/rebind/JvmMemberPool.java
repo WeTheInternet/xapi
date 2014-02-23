@@ -5,7 +5,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
-import com.google.gwt.reflect.client.MemberPool;
+import com.google.gwt.reflect.shared.MemberPool;
 
 public class JvmMemberPool <T> implements MemberPool<T>{
 

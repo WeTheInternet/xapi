@@ -1,6 +1,6 @@
 package com.google.gwt.reflect.test;
 
-import static com.google.gwt.reflect.client.GwtReflect.magicClass;
+import static com.google.gwt.reflect.shared.GwtReflect.magicClass;
 
 import com.google.gwt.reflect.client.strategy.ReflectionStrategy;
 import com.google.gwt.reflect.test.cases.ReflectionCaseKeepsEverything;

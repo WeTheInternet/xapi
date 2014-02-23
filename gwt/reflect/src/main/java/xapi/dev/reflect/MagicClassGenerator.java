@@ -55,8 +55,8 @@ import com.google.gwt.core.ext.typeinfo.JRealClassType;
 import com.google.gwt.core.ext.typeinfo.NotFoundException;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.reflect.client.ClassMap;
-import com.google.gwt.reflect.client.MemberMap;
 import com.google.gwt.reflect.rebind.ReflectionUtilJava;
+import com.google.gwt.reflect.shared.ReflectUtil;
 
 public class MagicClassGenerator extends IncrementalGenerator {
 
@@ -315,7 +315,7 @@ public class MagicClassGenerator extends IncrementalGenerator {
     .addImports(clsToEnhance)
     .addImports(
         ClassMap.class, JavaScriptObject.class, UnsafeNativeLong.class,
-        MemberMap.class);
+        ReflectUtil.class);
 
     if (newInst != null)
       imports.addImport(Constructor.class);
@@ -340,7 +340,7 @@ public class MagicClassGenerator extends IncrementalGenerator {
       ("public static Class<"+simpleName+"> enhanceClass(Class<" +simpleName+"> toEnhance)")
       .println("if (Class.needsEnhance(toEnhance)) {")
       .indent()
-      .println("MemberMap.setClassData(toEnhance, new "+generatedName+"());")
+      .println("ReflectUtil.setClassData(toEnhance, new "+generatedName+"());")
     ;
       if (injectionType.getEnclosingType() != null) {
         if (newInst != null) {

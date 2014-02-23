@@ -40,12 +40,12 @@ import com.google.gwt.dev.jjs.ast.JExpression;
 import com.google.gwt.dev.jjs.ast.JMethodCall;
 import com.google.gwt.reflect.client.ConstPool;
 import com.google.gwt.reflect.client.ConstPool.ArrayConsts;
-import com.google.gwt.reflect.client.GwtReflect;
 import com.google.gwt.reflect.client.strategy.GwtRetention;
 import com.google.gwt.reflect.client.strategy.ReflectionStrategy;
 import com.google.gwt.reflect.rebind.ReflectionManifest;
 import com.google.gwt.reflect.rebind.ReflectionUtilType;
 import com.google.gwt.reflect.rebind.generators.GwtAnnotationGenerator.GeneratedAnnotation;
+import com.google.gwt.reflect.shared.GwtReflect;
 
 @ReflectionStrategy
 public class MemberGenerator {

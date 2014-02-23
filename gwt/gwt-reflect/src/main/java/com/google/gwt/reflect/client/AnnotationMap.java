@@ -2,28 +2,31 @@ package com.google.gwt.reflect.client;
 
 import java.lang.annotation.Annotation;
 
-public class AnnotationMap extends MemberMap{
+import com.google.gwt.core.client.JavaScriptObject;
+import com.google.gwt.reflect.shared.ReflectUtil;
+
+public class AnnotationMap extends JavaScriptObject {
 
   protected AnnotationMap() {}
 
   public final boolean hasAnnotation(Class<? extends Annotation> annoClass) {
-    return hasMember(annoClass.getName(), this);
+    return ReflectUtil.hasMember(annoClass.getName(), this);
   }
 
   public final <T extends Annotation> T getAnnotation(Class<T> annoClass) {
-    return getOrMakePublicMember(annoClass.getName(), this);
+    return ReflectUtil.getOrMakePublicMember(annoClass.getName(), this);
   }
 
   public final <T extends Annotation> T getDeclaredAnnotation(Class<T> annoClass) {
-    return getOrMakeDeclaredMember(annoClass.getName(), this);
+    return ReflectUtil.getOrMakeDeclaredMember(annoClass.getName(), this);
   }
 
   public final Annotation[] getAnnotations() {
-    return getPublicMembers(this, new Annotation[0]);
+    return ReflectUtil.getPublicMembers(this, new Annotation[0]);
   }
 
   public final Annotation[] getDeclaredAnnotations() {
-    return getDeclaredMembers(this, new Annotation[0]);
+    return ReflectUtil.getDeclaredMembers(this, new Annotation[0]);
   }
 
 }

@@ -4,7 +4,7 @@ package java.lang.reflect;
 import java.lang.annotation.Annotation;
 
 import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.reflect.client.MemberMap;
+import com.google.gwt.reflect.shared.ReflectUtil;
 
 
 /**
@@ -430,7 +430,7 @@ public class Field extends AccessibleObject implements Member {
     public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
         if (annotationClass == null)
             throw new NullPointerException();
-        return MemberMap.getAnnotation(accessor, annotationClass);
+        return ReflectUtil.getAnnotation(accessor, annotationClass);
     }
 
     /**
@@ -438,7 +438,7 @@ public class Field extends AccessibleObject implements Member {
      */
     @Override
     public Annotation[] getDeclaredAnnotations()  {
-      return MemberMap.getAnnotations(accessor, new Annotation[0]);
+      return ReflectUtil.getAnnotations(accessor, new Annotation[0]);
     }
 
 }

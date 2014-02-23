@@ -3,7 +3,7 @@ package com.google.gwt.reflect.test;
 import com.google.gwt.core.client.Duration;
 import com.google.gwt.core.client.Scheduler;
 import com.google.gwt.junit.client.GWTTestCase;
-import com.google.gwt.reflect.client.GwtReflect;
+import com.google.gwt.reflect.shared.GwtReflect;
 import com.google.gwt.user.client.Window;
 
 public class ObfuscatedJUnitTest extends GWTTestCase{

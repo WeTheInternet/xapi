@@ -29,6 +29,7 @@ public class ClassLoader {
     private ClassLoader parent;
 
     // A JSO with all known classes;
+    // We access this value via reflection in ConstPool#extractClasses
     private JavaScriptObject classes = JavaScriptObject.createObject();
     
     /**

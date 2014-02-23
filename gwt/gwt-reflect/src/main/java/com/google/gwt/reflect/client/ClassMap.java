@@ -4,7 +4,7 @@ import java.lang.reflect.Method;
 import java.security.ProtectionDomain;
 
 import com.google.gwt.core.client.JavaScriptObject;
-
+import com.google.gwt.reflect.shared.ReflectUtil;
 
 public abstract class ClassMap <T> {
 
@@ -14,11 +14,11 @@ public abstract class ClassMap <T> {
   private Class<?> enclosingClass;
 
   public final Class<?>[] getInterfaces() {
-    return MemberMap.getPublicMembers(ifaces, new Class[0]);
+    return ReflectUtil.getRawClasses(ifaces);
   }
 
   public final Class<?>[] getDeclaredClasses() {
-    return MemberMap.getRawClasses(classes);
+    return ReflectUtil.getRawClasses(classes);
   }
 
   public native void addClass(Class<?> cls, JavaScriptObject into)
@@ -27,6 +27,7 @@ public abstract class ClassMap <T> {
   }-*/;
 
   public abstract T newInstance();
+  
   public ProtectionDomain getProtectionDomain() {
     return null;
   }
@@ -44,8 +45,4 @@ public abstract class ClassMap <T> {
     return enclosingClass;
   }
 
-  private static void throwIllegalAccess() throws IllegalAccessException {
-    throw new IllegalAccessException();
-  }
-  
 }

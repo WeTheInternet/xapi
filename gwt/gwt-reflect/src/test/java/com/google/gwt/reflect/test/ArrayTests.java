@@ -5,7 +5,6 @@ import java.util.Arrays;
 
 import org.junit.Test;
 
-import com.google.gwt.reflect.client.GwtReflect;
 import com.google.gwt.reflect.client.strategy.ReflectionStrategy;
 
 /**
@@ -15,10 +14,6 @@ import com.google.gwt.reflect.client.strategy.ReflectionStrategy;
 public class ArrayTests extends AbstractReflectionTest {
 
   public ArrayTests() {}
-
-  public static <T> T[] createFrom(T[] array, int length) {
-    return array;
-  }
 
   @Test
   public void testSingleDimPrimitive() {
@@ -123,8 +118,8 @@ public class ArrayTests extends AbstractReflectionTest {
 
   @Test
   public void testComplexDims() {
-    long[][][][] longs = GwtReflect.newArray(long[][].class, 2, 3);
-    long[][] one = new long[0][], two = new long[1][], three = new long[2][];
+//    long[][][][] longs = GwtReflect.newArray(long[][].class, 2, 3);
+//    long[][] one = new long[0][], two = new long[1][], three = new long[2][];
 
   }
 

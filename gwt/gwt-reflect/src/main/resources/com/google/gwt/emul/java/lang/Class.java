@@ -27,9 +27,8 @@ import com.google.gwt.core.client.UnsafeNativeLong;
 import com.google.gwt.reflect.client.AnnotationMap;
 import com.google.gwt.reflect.client.ClassMap;
 import com.google.gwt.reflect.client.ConstPool;
-import com.google.gwt.reflect.client.GwtReflect;
 import com.google.gwt.reflect.client.JsMemberPool;
-import com.google.gwt.rpc.server.WebModePayloadSink;
+import com.google.gwt.reflect.shared.ReflectUtil;
 
 /**
  * Generally unsupported. This class is provided so that the GWT compiler can
@@ -135,7 +134,7 @@ java.lang.reflect.AnnotatedElement
   }
 
   /**
-    * Used by {@link WebModePayloadSink} to create uninitialized instances.
+    * Used by {@link com.google.gwt.rpc.server.WebModePayloadSink} to create uninitialized instances.
     */
    static native JavaScriptObject getSeedFunction(Class<?> clazz) /*-{
      var func = @com.google.gwt.lang.SeedUtil::seedTable[clazz.@java.lang.Class::seedId];
@@ -225,6 +224,12 @@ java.lang.reflect.AnnotatedElement
       setClassLiteral(seedId, clazz);
     }
   }
+  
+  /**
+   * This is a magic-method hook used by Package.java; it is wired up the same as 
+   * GwtReflect.magicClass, except it does not require a dependency on com.google.gwt.reflect.shared
+   */
+  static Class<?> magicClass(Class<?> c) {return c;}
   
   
   @SuppressWarnings("rawtypes")
@@ -407,7 +412,7 @@ java.lang.reflect.AnnotatedElement
       // Note, we throw NoSuchMethodERROR if the method repo is null, as this means
       // we _might_ actually support this class, but it simply wasn't enhanded yet
       throw new NoSuchMethodError("Could not find "+getName()+"#"+ name+
-          ": ("+GwtReflect.joinClasses(", ", parameterTypes)+"); "+NOT_FOUND);
+          ": ("+ReflectUtil.joinClasses(", ", parameterTypes)+"); "+NOT_FOUND);
     // Call into our method repo; it will throw NoSuchMethodEXCEPTION,
     // as this is the correct behavior when our metho repo IS initialized,
     // but the method is legitimately missing
@@ -421,7 +426,7 @@ java.lang.reflect.AnnotatedElement
       // Note, we throw NoSuchMethodERROR if the method repo is null, as this means
       // we _might_ actually support this class, but it simply wasn't enhanced yet
       throw new NoSuchMethodError("Could not find "+getName()+"#"+ name+
-          ": ("+GwtReflect.joinClasses(", ", parameterTypes)+"); "+NOT_FOUND);
+          ": ("+ReflectUtil.joinClasses(", ", parameterTypes)+"); "+NOT_FOUND);
     // Call into our method repo; it will throw NoSuchMethodEXCEPTION,
     // as this is the correct behavior when our metho repo IS initialized,
     // but the method is legitimately missing
@@ -490,7 +495,7 @@ java.lang.reflect.AnnotatedElement
       // Note, we throw NoSuchMethodERROR is the constructor repo is null, as this means
       // we _might_ actually support this class, but it simply wasn't enhanded yet
       throw new NoSuchMethodError("Could not find "+getName()+"#<init>(" +
-      		GwtReflect.joinClasses(", ", parameterTypes)+") "+NOT_FOUND);
+      		ReflectUtil.joinClasses(", ", parameterTypes)+") "+NOT_FOUND);
     // Call into our constructor repo; it will throw NoSuchMethodEXCEPTION,
     // as this is the correct behavior when our constructor repo IS initialized,
     // but the method is legitimately missing
@@ -510,7 +515,7 @@ java.lang.reflect.AnnotatedElement
       // Note, we throw NoSuchMethodERROR is the constructor repo is null, as this means
       // we _might_ actually support this class, but it simply wasn't enhanded yet
       throw new NoSuchMethodError("Could not find "+getName()+"#<init>(" +
-          GwtReflect.joinClasses(", ", parameterTypes)+") "+NOT_FOUND);
+          ReflectUtil.joinClasses(", ", parameterTypes)+") "+NOT_FOUND);
     // Call into our constructor repo; it will throw NoSuchMethodEXCEPTION,
     // as this is the correct behavior when our constructor repo IS initialized,
     // but the method is legitimately missing

@@ -19,6 +19,8 @@ import xapi.io.X_IO;
 import xapi.log.X_Log;
 import xapi.util.X_Util;
 
+
+@SuppressWarnings("unused")
 public class UiTemplateGenerator {
 
   protected static interface WrapElements{

@@ -41,13 +41,13 @@ import com.google.gwt.dev.javac.StandardGeneratorContext;
 import com.google.gwt.reflect.client.ClassMap;
 import com.google.gwt.reflect.client.ConstPool;
 import com.google.gwt.reflect.client.JsMemberPool;
-import com.google.gwt.reflect.client.MemberMap;
 import com.google.gwt.reflect.client.strategy.NewInstanceStrategy;
 import com.google.gwt.reflect.client.strategy.ReflectionStrategy;
 import com.google.gwt.reflect.client.strategy.UseGwtCreate;
 import com.google.gwt.reflect.rebind.ReflectionManifest;
 import com.google.gwt.reflect.rebind.ReflectionUnit;
 import com.google.gwt.reflect.rebind.ReflectionUtilJava;
+import com.google.gwt.reflect.shared.ReflectUtil;
 
 @ReflectionStrategy
 public class MagicClassGenerator {
@@ -138,7 +138,8 @@ public class MagicClassGenerator {
     boolean keepHierarchy = strategy.magicSupertypes();
     boolean keepCodesource = strategy.keepCodeSource();
     boolean keepPackageName = strategy.keepPackage();
-    boolean keepAnnos = strategy.annotationRetention() > 0;
+    boolean keepAnnos = strategy.annotationRetention() > 0 || 
+        injectionType.getQualifiedSourceName().equals(Package.class.getName()+".PackageInfoProxy");
 
     if (logger.isLoggable(Type.TRACE))
       logger.log(Type.TRACE,"Writing magic class instance for " + type.getQualifiedSourceName() + " -> " +
@@ -160,7 +161,7 @@ public class MagicClassGenerator {
     classBuilder.getImports()
       .addImports(
           ClassMap.class, JavaScriptObject.class, UnsafeNativeLong.class,
-          MemberMap.class, Annotation.class,
+          ReflectUtil.class, Annotation.class,
           Constructor.class,Method.class,Field.class,CodeSource.class)
       .addStatics(ConstPool.class.getName()+".constId")
      ;
@@ -175,6 +176,9 @@ public class MagicClassGenerator {
       JClassType superType = injectionType;
       while (superType != superType.getSuperclass()) {
         superType = superType.getSuperclass();
+        if (superType == null) {
+          break;
+        }
         superType.getNestedTypes();
       }
     }
@@ -184,7 +188,7 @@ public class MagicClassGenerator {
       ("private static void doEnhance(final Class<" +typeName+"> toEnhance)")
       .indent()
       .println(generatedName + " classMap = new "+generatedName+"();")
-      .println("MemberMap.setClassData(toEnhance, classMap);")
+      .println("ReflectUtil.setClassData(toEnhance, classMap);")
       .println("remember(constId(toEnhance), classMap);")
     ;
     

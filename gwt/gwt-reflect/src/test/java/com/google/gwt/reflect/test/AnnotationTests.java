@@ -1,6 +1,6 @@
 package com.google.gwt.reflect.test;
 
-import static com.google.gwt.reflect.client.GwtReflect.magicClass;
+import static com.google.gwt.reflect.shared.GwtReflect.magicClass;
 import static com.google.gwt.reflect.test.annotations.AbstractAnnotation.MemberType.Annotation;
 import static com.google.gwt.reflect.test.annotations.AbstractAnnotation.MemberType.Annotation_Array;
 import static com.google.gwt.reflect.test.annotations.AbstractAnnotation.MemberType.Boolean;

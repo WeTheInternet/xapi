@@ -4,7 +4,7 @@ import java.util.Iterator;
 
 import xapi.except.NotImplemented;
 
-public class ArrayIterator <E> implements Iterable<E> {
+public class ArrayIterable <E> implements Iterable<E> {
 
   private final E[] array;
 
@@ -20,11 +20,11 @@ public class ArrayIterator <E> implements Iterable<E> {
     }
     @Override
     public void remove() {
-      ArrayIterator.this.remove(array[pos-1]);
+      ArrayIterable.this.remove(array[pos-1]);
     }
   }
 
-  public ArrayIterator(E[] array) {
+  public ArrayIterable(E[] array) {
     this.array = array;
   }
 
@@ -34,7 +34,7 @@ public class ArrayIterator <E> implements Iterable<E> {
   }
 
   protected void remove(E key) {
-    throw new NotImplemented("ArrayIterator does not support remove");
+    throw new NotImplemented("ArrayIterable does not support remove");
   }
 
 }

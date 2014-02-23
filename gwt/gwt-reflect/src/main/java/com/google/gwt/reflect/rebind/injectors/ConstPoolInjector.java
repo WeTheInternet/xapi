@@ -27,13 +27,13 @@ import com.google.gwt.dev.jjs.ast.JMethodBody;
 import com.google.gwt.dev.jjs.ast.JMethodCall;
 import com.google.gwt.dev.jjs.ast.JType;
 import com.google.gwt.dev.jjs.impl.UnifyAst.UnifyVisitor;
-import com.google.gwt.reflect.client.GwtReflect;
 import com.google.gwt.reflect.client.strategy.GwtRetention;
 import com.google.gwt.reflect.client.strategy.ReflectionStrategy;
 import com.google.gwt.reflect.rebind.ReflectionUtilJava;
 import com.google.gwt.reflect.rebind.generators.ConstPoolGenerator;
 import com.google.gwt.reflect.rebind.generators.MemberGenerator;
 import com.google.gwt.reflect.rebind.generators.ReflectionGeneratorContext;
+import com.google.gwt.reflect.shared.GwtReflect;
 
 @ReflectionStrategy
 public class ConstPoolInjector implements MagicMethodGenerator, UnifyAstListener{

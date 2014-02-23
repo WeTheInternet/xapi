@@ -7,8 +7,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.google.gwt.junit.client.GWTTestCase;
-import com.google.gwt.reflect.client.GwtReflect;
 import com.google.gwt.reflect.client.strategy.ReflectionStrategy;
+import com.google.gwt.reflect.shared.GwtReflect;
 
 @ReflectionStrategy(debug=ReflectionStrategy.ALL, annotationRetention=ReflectionStrategy.ALL)
 public class DemoTest extends GWTTestCase {
@@ -38,7 +38,7 @@ public class DemoTest extends GWTTestCase {
   public void testMethodInvocation() throws Throwable {
     Method method = DemoTest.class.getDeclaredMethod("setInstanceField", int.class);
     method.setAccessible(true);
-    method.invoke(this, 2.5);
+    method.invoke(this, 2);
     assertEquals(instanceField, 2);
   }
   
@@ -56,14 +56,13 @@ public class DemoTest extends GWTTestCase {
   }
   
   @Test
-  public void testNewInstance() throws Throwable {
+  public void testNewInstance() throws NoSuchMethodException, Throwable {
     DemoTest instance = DemoTest.class.newInstance();
     assertEquals(instance.instanceField, finalField);
-    instance = DemoTest.class.getConstructor(int.class).newInstance(3);
+    instance = DemoTest.class.getDeclaredConstructor(int.class).newInstance(3);
     assertEquals(instance.instanceField, 3);
   }
 
-  
   @SuppressWarnings("unused")
   private void setInstanceField(int value) {
     instanceField = new Long(value);

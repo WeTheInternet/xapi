@@ -4,7 +4,7 @@ import java.lang.annotation.Annotation;
 import java.util.Arrays;
 
 import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.reflect.client.GwtReflect;
+import com.google.gwt.reflect.shared.GwtReflect;
 
 /**
  * A somewhat ugly, but functional implementation of an annotation;

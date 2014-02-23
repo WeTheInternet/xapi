@@ -14,19 +14,22 @@ import com.google.gwt.core.client.UnsafeNativeLong;
 import com.google.gwt.core.shared.GWT;
 import com.google.gwt.reflect.client.strategy.GwtRetention;
 import com.google.gwt.reflect.client.strategy.ReflectionStrategy;
+import com.google.gwt.reflect.shared.GwtReflect;
+import com.google.gwt.reflect.shared.MemberPool;
 
 public class ConstPool extends JavaScriptObject {
 
-  private static final ConstPool CONSTS;
-
+  static final ConstPool CONSTS;
   static {
     if (GWT.isClient()) {
       CONSTS = initConstPool();
       enhance(CONSTS);
     }
-    else
+    else {
       CONSTS = null;
+    }
   }
+
 
   protected ConstPool() {}
 
@@ -117,21 +120,25 @@ public class ConstPool extends JavaScriptObject {
     }
   }
 
+  /**
+   * @param  a unique int identified for the class;
+   * in this jvm, though hotswapped classes that should == will have different constIds.
+   * GWT prod overrides this method to return a field we added to Class in supersource.
+   * 
+   */
   public static int constId(Class<?> c) {
-    // it's unique, and good enough for jvms using maps instead of arrays.
-    // GWT prod overrides this method to return a field we added to Class in supersource.
     return c.hashCode();
   }
 
   public static Object setPrimitiveArray(Class<?> componentType, Object array) {
     assert array != null;
     assert isPrimitiveArray(array);
-    CONSTS.arraySet(constId(componentType), array);
+    ConstPool.CONSTS.arraySet(constId(componentType), array);
     return array;
   }
 
   public static <T> T[] setArray(Class<?> componentType, T[] array) {
-    CONSTS.arraySet(constId(componentType), array);
+    ConstPool.CONSTS.arraySet(constId(componentType), array);
     return array;
   }
 
@@ -155,16 +162,14 @@ public class ConstPool extends JavaScriptObject {
   @SuppressWarnings("unchecked")
   public static Iterable<Class<?>> extractClasses(ClassLoader loader) {
     try {
-      GwtReflect.magicClass(ClassLoader.class);
-      Field classes = loader.getClass().getDeclaredField("classes");
-      classes.setAccessible(true);
+      Object classes = GwtReflect.fieldGet(ClassLoader.class, "classes", loader);
       if (GWT.isProdMode()) {
         // we have a js object of classes
-        JavaScriptObject all = (JavaScriptObject)classes.get(loader);
+        JavaScriptObject all = (JavaScriptObject)classes;
         return fillArray(new ArrayList<Class<?>>(), all);
       } else {
-        // standard jvm.  Hope this works!
-        return (Collection<Class<?>>)classes.get(loader);
+        // standard jvm.  Hope this works (should be a Vector<Class>)!
+        return (Collection<Class<?>>)classes;
       }
     } catch (Exception e) {
       throw e instanceof RuntimeException ? (RuntimeException)e : new RuntimeException(e);
@@ -246,7 +251,7 @@ public class ConstPool extends JavaScriptObject {
   }-*/;
 
   public static ConstPool getConstPool() {
-    return CONSTS;
+    return ConstPool.CONSTS;
   }
 
   private static void fillConstPool() {
@@ -441,7 +446,7 @@ public class ConstPool extends JavaScriptObject {
     public static final Double[] EMPTY_Doubles = new Double[0];
   }
   
-  public static class Ids {
+  public static interface Ids {
     // We can't use these "non constant" ints in switches in java,
     // but they're fair game for javascript.
     public static final int

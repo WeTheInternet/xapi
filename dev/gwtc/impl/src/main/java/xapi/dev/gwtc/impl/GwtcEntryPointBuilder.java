@@ -10,7 +10,7 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import com.google.gwt.core.client.EntryPoint;
-import com.google.gwt.reflect.client.GwtReflect;
+import com.google.gwt.reflect.shared.GwtReflect;
 
 import xapi.dev.X_Gwtc;
 import xapi.dev.gwtc.api.GwtcService;

@@ -26,8 +26,8 @@ import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.JParameter;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.dev.jjs.UnifyAstListener;
-import com.google.gwt.reflect.client.GwtReflect;
 import com.google.gwt.reflect.rebind.ReflectionUtilJava;
+import com.google.gwt.reflect.shared.GwtReflect;
 
 
 public class GwtAnnotationGenerator {

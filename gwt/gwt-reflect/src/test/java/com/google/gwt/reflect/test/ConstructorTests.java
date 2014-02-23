@@ -4,8 +4,7 @@ import java.lang.reflect.Constructor;
 
 import org.junit.Test;
 
-import com.google.gwt.reflect.client.GwtReflect;
-import com.google.gwt.reflect.client.strategy.ReflectionStrategy;
+import com.google.gwt.reflect.shared.GwtReflect;
 import com.google.gwt.reflect.test.cases.ReflectionCaseNoMagic;
 
 public class ConstructorTests extends AbstractReflectionTest {

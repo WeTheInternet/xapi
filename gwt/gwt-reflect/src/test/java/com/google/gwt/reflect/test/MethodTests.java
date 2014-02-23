@@ -1,21 +1,18 @@
 package com.google.gwt.reflect.test;
 
-import static com.google.gwt.reflect.client.GwtReflect.magicClass;
+import static com.google.gwt.reflect.shared.GwtReflect.magicClass;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Test;
 
 import com.google.gwt.core.shared.GWT;
-import com.google.gwt.reflect.client.ConstPool;
-import com.google.gwt.reflect.client.GwtReflect;
 import com.google.gwt.reflect.client.ConstPool.ArrayConsts;
 import com.google.gwt.reflect.client.strategy.ReflectionStrategy;
-import com.google.gwt.reflect.test.annotations.RuntimeRetention;
+import com.google.gwt.reflect.shared.GwtReflect;
 import com.google.gwt.reflect.test.cases.ReflectionCaseNoMagic;
 import com.google.gwt.reflect.test.cases.ReflectionCaseSubclass;
 import com.google.gwt.reflect.test.cases.ReflectionCaseSuperclass;

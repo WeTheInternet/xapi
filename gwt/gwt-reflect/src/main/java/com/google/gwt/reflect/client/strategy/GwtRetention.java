@@ -9,7 +9,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import com.google.gwt.reflect.client.GwtReflect;
+import com.google.gwt.reflect.shared.GwtReflect;
 
 /**
  * Use this annotations on your types and members to refine your

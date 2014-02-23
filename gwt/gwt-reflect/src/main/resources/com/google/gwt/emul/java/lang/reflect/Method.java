@@ -4,7 +4,7 @@ import java.lang.annotation.Annotation;
 
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.UnsafeNativeLong;
-import com.google.gwt.reflect.client.MemberMap;
+import com.google.gwt.reflect.shared.ReflectUtil;
 
 /**
  * A <code>Method</code> provides information about, and access to, a single method on a class or interface.
@@ -477,7 +477,7 @@ public class Method extends AccessibleObject implements GenericDeclaration, Memb
   public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
     if (annotationClass == null)
       throw new NullPointerException("Null annotationClass in getAnnotation() for "+this);
-    return MemberMap.getAnnotation(annos, annotationClass);
+    return ReflectUtil.getAnnotation(annos, annotationClass);
   }
 
   /**
@@ -485,7 +485,7 @@ public class Method extends AccessibleObject implements GenericDeclaration, Memb
    */
   @Override
   public Annotation[] getDeclaredAnnotations() {
-    return MemberMap.getAnnotations(annos, new Annotation[0]);
+    return ReflectUtil.getAnnotations(annos, new Annotation[0]);
   }
 
   /**

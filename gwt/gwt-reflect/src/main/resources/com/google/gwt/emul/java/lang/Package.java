@@ -6,8 +6,6 @@ import java.security.CodeSource;
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.reflect.client.GwtReflect;
-import com.google.gwt.reflect.client.strategy.ReflectionStrategy;
 
 
 public class Package implements java.lang.reflect.AnnotatedElement {
@@ -319,14 +317,16 @@ public class Package implements java.lang.reflect.AnnotatedElement {
   }
 
   // store a proxy for the package info that has no annotations
-  @ReflectionStrategy(annotationRetention=1)
   public static final class PackageInfoProxy {}
   private Class<?> getPackageInfo() {
     if (packageInfo == null) {
       try {
         packageInfo = Class.forName(pkgName + ".package-info", false, loader);
       } catch (ClassNotFoundException ex) {
-        GwtReflect.magicClass(PackageInfoProxy.class);
+        try {
+          // Attempt to use magic method injection to prime the default package-info class
+          Class.magicClass(PackageInfoProxy.class);
+        } catch (Throwable ignored) {}
         packageInfo = PackageInfoProxy.class;
       }
     }

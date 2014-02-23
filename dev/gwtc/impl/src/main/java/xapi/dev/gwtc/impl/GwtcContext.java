@@ -11,8 +11,8 @@ import java.util.concurrent.Callable;
 
 import javax.inject.Provider;
 
-import com.google.gwt.reflect.client.GwtReflect;
-import com.google.gwt.reflect.client.GwtReflectJre;
+import com.google.gwt.reflect.shared.GwtReflect;
+import com.google.gwt.reflect.shared.GwtReflectJre;
 
 import xapi.annotation.compile.Dependency;
 import xapi.annotation.compile.Resource;
@@ -34,7 +34,7 @@ import xapi.util.X_String;
 import xapi.util.api.ConvertsValue;
 import xapi.util.api.ReceivesValue;
 
-@SuppressWarnings({"unchecked", "rawtypes"})
+@SuppressWarnings({"unchecked", "rawtypes", "unused"})
 public class GwtcContext {
 
   private static final ConvertsValue LIST_PROVIDER = new ConvertsValue() {

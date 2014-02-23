@@ -31,9 +31,9 @@ import com.google.gwt.dev.util.collect.HashMap;
 import com.google.gwt.reflect.client.ConstPool;
 import com.google.gwt.reflect.client.ConstPool.ArrayConsts;
 import com.google.gwt.reflect.client.ConstPool.ClassConsts;
-import com.google.gwt.reflect.client.GwtReflect;
 import com.google.gwt.reflect.rebind.ReflectionUtilJava;
 import com.google.gwt.reflect.rebind.generators.GwtAnnotationGenerator.GeneratedAnnotation;
+import com.google.gwt.reflect.shared.GwtReflect;
 import com.google.gwt.thirdparty.guava.common.collect.Maps;
 
 public class ConstPoolGenerator {

@@ -1,9 +1,11 @@
-package com.google.gwt.reflect.client;
+package com.google.gwt.reflect.shared;
 
 import java.net.URL;
 
-public class GwtReflectJre {
+public final class GwtReflectJre {
 
+  private GwtReflectJre() {}
+  
   public static Package getPackage(String name, ClassLoader cl) {
     Package pkg = Package.getPackage(name);
     if (pkg == null) {

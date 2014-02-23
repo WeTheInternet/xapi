@@ -10,7 +10,7 @@ import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
 
 import com.google.gwt.core.shared.GWT;
-import com.google.gwt.reflect.client.GwtReflect;
+import com.google.gwt.reflect.shared.GwtReflect;
 
 public class ReflectionUtilJava {
 

@@ -1,6 +1,6 @@
 package com.google.gwt.reflect.test;
 
-import static com.google.gwt.reflect.client.GwtReflect.magicClass;
+import static com.google.gwt.reflect.shared.GwtReflect.magicClass;
 
 import java.lang.reflect.Field;
 

@@ -7,19 +7,19 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import xapi.collect.impl.ArrayIterator;
+import xapi.collect.impl.ArrayIterable;
 import xapi.collect.impl.EntryValueAdapter;
 import xapi.collect.impl.IteratorWrapper;
 
 import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.reflect.client.GwtReflect;
+import com.google.gwt.reflect.shared.GwtReflect;
 
 public class JsDictionary <V> extends JavaScriptObject {
 
   protected JsDictionary() {
   }
 
-  class KeyItr extends ArrayIterator<String>{
+  class KeyItr extends ArrayIterable<String>{
     public KeyItr() {
       super(keyArray());
     }

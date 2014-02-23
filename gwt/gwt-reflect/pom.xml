@@ -9,7 +9,7 @@
 	<version>2.5.1-rc1</version>
 
 	<properties>
-		<gwt.version>2.5.1</gwt.version>
+		<gwt.version>2.6.2</gwt.version>
 		<xapi.version>0.4-SNAPSHOT</xapi.version>
 		<maven.compiler.source>1.6</maven.compiler.source>
 		<maven.compiler.target>1.6</maven.compiler.target>
@@ -181,8 +181,12 @@
 								${project.build.directory}/gwt-gen
 								-prod -runStyle HtmlUnit:FF3 -userAgents gecko1_8</value>
 						</property>
+                        <property>
+                            <name>gwt.persistentunitcache</name>
+                            <value>false</value>
+                        </property>
 					</systemProperties>
-					<skip>true</skip>
+					<skip>${xapi.skip.test}</skip>
 				</configuration>
 			</plugin>
 			<plugin>

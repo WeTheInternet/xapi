@@ -7,6 +7,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 import com.google.gwt.core.client.JavaScriptObject;
+import com.google.gwt.reflect.shared.MemberPool;
+import com.google.gwt.reflect.shared.ReflectUtil;
 
 public class JsMemberPool <T> extends JavaScriptObject implements MemberPool <T>{
 
@@ -153,7 +155,7 @@ public class JsMemberPool <T> extends JavaScriptObject implements MemberPool <T>
       return method;
     }
     throw new NoSuchMethodException("Could not find public constructor "+getType().getSimpleName()+
-        "("+GwtReflect.joinClasses(",",  params)+")");
+        "("+ReflectUtil.joinClasses(",",  params)+")");
   }
 
   @Override
@@ -185,7 +187,7 @@ public class JsMemberPool <T> extends JavaScriptObject implements MemberPool <T>
     if (ctor != null)
       return ctor;
     throw new NoSuchMethodException("Could not find declared constructor "+getType().getSimpleName()+
-        "("+GwtReflect.joinClasses(",",  params)+") in "+getType());
+        "("+ReflectUtil.joinClasses(",",  params)+") in "+getType());
   }
 
   @Override
@@ -217,7 +219,7 @@ public class JsMemberPool <T> extends JavaScriptObject implements MemberPool <T>
     if (method != null)
       return method;
     throw new NoSuchMethodException("Could not find declared method "+name+
-        "("+GwtReflect.joinClasses(",",  params)+") in "+getType());
+        "("+ReflectUtil.joinClasses(",",  params)+") in "+getType());
   }
 
   @Override
@@ -280,23 +282,35 @@ public class JsMemberPool <T> extends JavaScriptObject implements MemberPool <T>
         break; // super classes can't match if the subclass has a lower privacy method
     }
     throw new NoSuchMethodException("Could not find public method "+name+
-        "("+GwtReflect.joinClasses(",",  params)+") in "+getType());
+        "("+ReflectUtil.joinClasses(",",  params)+") in "+getType());
   }
   
   @Override
+  @SuppressWarnings("rawtypes")
   public final Method[] getMethods() {
     Method[] methods = methodArray();
     JsMemberPool<? super T> pool = this;
     JavaScriptObject set = JavaScriptObject.createObject();
-    while (pool != null) {
-      for (Method declared : pool.getDeclaredMethods()) {
+    JsMemberPool[] all = new JsMemberPool[]{};
+    if (pool.getType().isInterface()) {
+      all[all.length] = this;
+      for (Class<?> iface : pool.getInterfaces()) {
+        all[all.length] = ConstPool.getMembers(iface);
+      }
+    } else {
+      while(pool != null) {
+        all[all.length] = pool;
+        pool = pool.getSuperclass();
+      }
+    }
+    for(JsMemberPool cls : all) {
+      for (Method declared : cls.getDeclaredMethods()) {
         if (Modifier.isPublic(declared.getModifiers()) &&
             isUnique(set, declared.getName()+getSignature(declared.getParameterTypes()))) {
           // javascript actually likes this; preallocating arrays doesn't save time
           methods[methods.length] = declared;
         }
       }
-      pool = pool.getSuperclass();
     }
     return methods;
   }

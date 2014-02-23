@@ -1,6 +1,6 @@
 package com.google.gwt.reflect.test;
 
-import static com.google.gwt.reflect.client.GwtReflect.magicClass;
+import static com.google.gwt.reflect.shared.GwtReflect.magicClass;
 
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -22,8 +22,8 @@ import com.google.gwt.dom.client.Style.Overflow;
 import com.google.gwt.dom.client.Style.Unit;
 import com.google.gwt.dom.client.Style.VerticalAlign;
 import com.google.gwt.reflect.client.ConstPool;
-import com.google.gwt.reflect.client.GwtReflect;
-import com.google.gwt.reflect.client.MemberPool;
+import com.google.gwt.reflect.shared.MemberPool;
+import com.google.gwt.reflect.shared.ReflectUtil;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Element;
 import com.google.gwt.user.client.Event;
@@ -273,7 +273,7 @@ public class TestEntryPoint implements EntryPoint {
         b.append(m.getName());
         b.append("</a>");
         b.append('(');
-        b.append(GwtReflect.joinClasses(", ", m.getParameterTypes()));
+        b.append(ReflectUtil.joinClasses(", ", m.getParameterTypes()));
         b.append(')');
         b.append("</pre>");
         b.append("<div id='"+methodId+"'> </div>");

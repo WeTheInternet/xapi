@@ -5,7 +5,6 @@ import java.lang.annotation.Annotation;
 
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.UnsafeNativeLong;
-import com.google.gwt.reflect.client.MemberMap;
 import com.google.gwt.reflect.client.ConstPool.ArrayConsts;
 
 /**
@@ -483,7 +482,6 @@ public class Constructor<T> extends AccessibleObject implements
     @Override
     public <A extends Annotation> A getAnnotation(Class<A> annotationClass) {
         if (annotationClass == null) throw new NullPointerException();
-//        return MemberMap.getAnnotation(annos, annotationClass);
         for (Annotation a : annos) {
           if (a.annotationType() == annotationClass)
             return (A)a;
