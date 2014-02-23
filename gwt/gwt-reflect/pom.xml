@@ -4,9 +4,9 @@
 
   <parent>
 	  <groupId>net.wetheinter</groupId>
-    <artifactId>xapi-settings-plugins</artifactId>
+    <artifactId>xapi</artifactId>
   	<version>0.4-SNAPSHOT</version>
-  	<relativePath>../../settings/plugins.xml</relativePath>
+  	<relativePath>../../pom.xml</relativePath>
   </parent>
 
 	<groupId>net.wetheinter</groupId>
