@@ -10,7 +10,8 @@
 
 	<properties>
 		<gwt.version>2.5.1</gwt.version>
-        <gwt.skip.test>true</gwt.skip.test>
+        <gwt.skip.test>false</gwt.skip.test>
+        <xapi.log.level>INFO</xapi.log.level>
 		<xapi.version>0.4-SNAPSHOT</xapi.version>
 		<maven.compiler.source>1.6</maven.compiler.source>
 		<maven.compiler.target>1.6</maven.compiler.target>
@@ -151,7 +152,8 @@
 						<configuration>
 							<sources>
 								<source>src/main/gwt-${gwt.version}/</source>
-								<!-- Uncomment these to look at super-source and/or generated source 
+								<!--
+                                    Uncomment these to look at super-source and/or generated source 
 									<source>src/main/resources/com/google/gwt/emul/</source> <source>target/gwt-gen</source> 
 									<source>target/gwt-emul/com/google/gwt/emul/</source> <source>target/gwt-lang/com/google/gwt/dev/jjs/intrinsic/</source> -->
 							</sources>
@@ -171,7 +173,7 @@
 						<additionalClasspathElement>${project.build.sourceDirectory}</additionalClasspathElement>
 					</additionalClasspathElements>
 					<useManifestOnlyJar>false</useManifestOnlyJar>
-					<forkCount>2</forkCount>
+					<forkCount>3</forkCount>
 					<reuseForks>false</reuseForks>
 					<systemProperties>
 						<property>
@@ -182,11 +184,16 @@
 								${project.build.directory}/gwt-gen
 								-prod -runStyle HtmlUnit:FF3
                                 -userAgents gecko1_8
-                                -style TRACE</value>
+                                -logLevel ${xapi.log.level}
+                                </value>
 						</property>
                         <property>
                             <name>gwt.persistentunitcache</name>
                             <value>false</value>
+                        </property>
+                        <property>
+                          <name>gwt.usearchives</name>
+                          <value>false</value>
                         </property>
 					</systemProperties>
 					<skip>${gwt.skip.test}</skip>

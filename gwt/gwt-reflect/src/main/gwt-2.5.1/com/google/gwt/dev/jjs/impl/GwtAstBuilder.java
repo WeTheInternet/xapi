@@ -1394,7 +1394,8 @@ public class GwtAstBuilder {
     @Override
     public void endVisit(ThisReference x, BlockScope scope) {
       try {
-        assert (typeMap.get(x.resolvedType) == curClass.classType);
+        assert (typeMap.get(x.resolvedType) == curClass.classType) 
+          : "Type for "+x.resolvedType +" does not match expected " + curClass.classType;
         push(makeThisRef(makeSourceInfo(x)));
       } catch (Throwable e) {
         throw translateException(x, e);

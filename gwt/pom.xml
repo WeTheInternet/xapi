@@ -149,7 +149,7 @@
         <module>process</module>
         <module>model</module>
         <module>io</module>
-        <module>inspect</module>
+<!-- NSFW        <module>inspect</module> -->
         <module>test</module>
         <module>uber</module>
       </modules>

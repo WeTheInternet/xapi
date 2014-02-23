@@ -21,6 +21,7 @@
 	<properties>
 		<maven.compiler.source>1.6</maven.compiler.source>
 		<maven.compiler.target>1.6</maven.compiler.target>
+    <relative.output>target</relative.output>
 	</properties>
 
 	<dependencies>
@@ -30,7 +31,9 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-    <build>
+  <build>
+
+   <directory>${project.basedir}/target</directory>
       <plugins>
        <plugin>
         <groupId>org.apache.maven.plugins</groupId>

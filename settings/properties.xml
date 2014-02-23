@@ -31,6 +31,7 @@
   <maven.compiler.source>${java.version}</maven.compiler.source>
   <maven.compiler.target>${java.version}</maven.compiler.target>
   <xapi.version>0.4-SNAPSHOT</xapi.version>
+  <xapi.log.level>INFO</xapi.log.level>
   <xapi.test.version>0.4-SNAPSHOT</xapi.test.version>
   <gwt.version>2.5.1</gwt.version>
   <xapi.gwt.version>${gwt.version}-rc1</xapi.gwt.version>

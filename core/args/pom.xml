@@ -18,6 +18,12 @@
     This module contains a basic argument processor subsystem,
     based on the GWT ArgProcessor classes.
   </description>
+  <properties>
+    <relative.output>target</relative.output>
+  </properties>
+  <build>
+   <directory>${project.basedir}/target</directory>
+  </build>
 
 	<dependencies>
 		<!-- Testing dependencies -->

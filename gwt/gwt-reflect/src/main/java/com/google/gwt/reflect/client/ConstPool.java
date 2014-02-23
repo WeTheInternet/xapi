@@ -446,7 +446,9 @@ public class ConstPool extends JavaScriptObject {
     public static final Double[] EMPTY_Doubles = new Double[0];
   }
   
-  public static interface Ids {
+  // this is a class and not an interface because gwt junit chokes on interface here
+  // (when run in maven-surefire, that is...
+  public static final class Ids {
     // We can't use these "non constant" ints in switches in java,
     // but they're fair game for javascript.
     public static final int
