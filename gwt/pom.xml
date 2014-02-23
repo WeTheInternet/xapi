@@ -4,7 +4,7 @@
   <parent>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi</artifactId>
-    <version>0.5-SNAPSHOT</version>
+    <version>0.4-SNAPSHOT</version>
   </parent>
 
   <artifactId>xapi-gwt-parent</artifactId>
@@ -94,7 +94,9 @@
       of calls of reflection, which, in gwt will be very fast (no security manager, no layers of indirection, just js 
       functions and field accessors). This would allow a block of code to be translated such that the method calls are 
       accessed from the class object, instead of arbitrary static methods. Whenever a class calls out to another class 
-      on an object, the Provider<> of that class reference can start out with the hardcoded initial version. Then, when a class is updated to contain new sets of instructions, our gwt recompiler on the server can add a new impl class in a new split point, recompile, send back url, and when that class loads, it updates the providers to point to it instead of the old class. The goal is to be able to live hotswap gwt code indefinitely (that is, until your tab runs out of memory). -->
+      on an object, the Provider<> of that class reference can start out with the hardcoded initial version. Then, when a class is updated to contain new sets of instructions, our gwt recompiler on the server can add a new impl class in a new split point, recompile, send back url, and when that class loads, it updates the providers to point to 
+      it instead of the old class. The goal is to be able to live hotswap gwt code indefinitely (that is, until your 
+      tab runs out of memory). -->
     <module>reflect</module>
 
     <!-- Contains the gwt-only implementation of our collections library. This module is VERY experimental, and 
