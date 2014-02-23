@@ -4,7 +4,7 @@
 
  <groupId>net.wetheinter</groupId>
  <artifactId>xapi</artifactId>
- <version>0.4-SNAPSHOT</version>
+ <version>0.4</version>
  <packaging>pom</packaging>
 
   <name>XApi (Extremely Extensible Cross-Platform API)</name>
@@ -39,10 +39,10 @@
  <properties>
   <github.account>WeTheInternet</github.account>
   <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  <java.version>1.6</java.version>
+  <java.version>1.7</java.version>
   <maven.compiler.source>${java.version}</maven.compiler.source>
   <maven.compiler.target>${java.version}</maven.compiler.target>
-  <xapi.version>0.4-SNAPSHOT</xapi.version>
+  <xapi.version>0.4</xapi.version>
   <xapi.test.version>0.4</xapi.test.version>
   <xapi.log.level>INFO</xapi.log.level>
   <gwt.version>2.5.1</gwt.version>
@@ -83,7 +83,8 @@
   <url>git@github.com:${github.account}/xapi.git</url>
   <connection>scm:git:git@github.com:${github.account}/xapi.git</connection>
   <developerConnection>scm:git:git@github.com:${github.account}/xapi.git</developerConnection>
- </scm>
+   <tag>xapi-0.4</tag>
+  </scm>
  <licenses>
   <license>
    <name>The Apache Software License, Version 2.0</name>
