@@ -12,7 +12,6 @@ import xapi.collect.impl.EntryValueAdapter;
 import xapi.collect.impl.IteratorWrapper;
 
 import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.reflect.shared.GwtReflect;
 
 public class JsDictionary <V> extends JavaScriptObject {
 

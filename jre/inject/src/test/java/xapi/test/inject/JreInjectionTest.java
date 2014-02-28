@@ -36,7 +36,7 @@ public class JreInjectionTest extends AbstractInjectionTest{
 
 //  @Test 
 //  public void arg() throws Throwable {
-//    String jar = "/home/james/.m2/repository/net/wetheinter/xapi-core-api/0.4-SNAPSHOT/xapi-core-api-0.4-SNAPSHOT.jar";
+//    String jar = "/home/james/.m2/repository/net/wetheinter/xapi-core-api/0.5-SNAPSHOT/xapi-core-api-0.5-SNAPSHOT.jar";
 //    JarFile J = new JarFile(jar);
 //    Enumeration<JarEntry> entries = J.entries();
 //    MultithreadedStringTrie<JarEntry> trie = new MultithreadedStringTrie<>();
