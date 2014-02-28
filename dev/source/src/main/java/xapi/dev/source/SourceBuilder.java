@@ -35,92 +35,93 @@
 
 package xapi.dev.source;
 
-
-public class SourceBuilder <Payload> {
+public class SourceBuilder<Payload> {
 
   private final PrintBuffer head;
-	private PrintBuffer buffer;
-	private ImportSection imports;
-	private ClassBuffer classDef;
-	private Payload payload;
-	private String pkgName = "";
+  private PrintBuffer buffer;
+  private ImportSection imports;
+  private ClassBuffer classDef;
+  private Payload payload;
+  private String pkgName = "";
   private int skip;
 
-	public SourceBuilder() {
-		head = buffer = new PrintBuffer();
-	}
-	public SourceBuilder(String classDef) {
-	  this();
-	  setClassDefinition(classDef, classDef.trim().endsWith("{"));
-	}
+  public SourceBuilder() {
+    head = buffer = new PrintBuffer();
+  }
 
-	public PrintBuffer getBuffer() {
-		return buffer;
-	}
+  public SourceBuilder(String classDef) {
+    this();
+    setClassDefinition(classDef, classDef.trim().endsWith("{"));
+  }
 
-	public ClassBuffer getClassBuffer(){
-		if (classDef == null)
-			throw new TypeDefinitionException(
-			  "setClassDefinition() has not been called yet.\n" +
-			  "If you are running the template generator, your template " +
-			  "does include a //@classDefinition()// declaration,\n" +
-				"or your generator is attempting to access the class " +
-				"definition before it is parsed.");
-		return classDef;
-	}
+  public PrintBuffer getBuffer() {
+    return buffer;
+  }
 
-	public SourceBuilder<Payload> setClassDefinition(String definition, boolean wellFormatted){
-		if (classDef == null){
-		  // make sure import buffer comes before class def
-		  getImports();
-			classDef = new ClassBuffer(this).indent();
-			//create a new print buffer for content after class definition
-			head.addToEnd(classDef);
-			head.clearIndent();
-			addBuffer(new PrintBuffer());
-		}
-		classDef.setDefinition(definition, wellFormatted);
-		return this;
-	}
+  public ClassBuffer getClassBuffer() {
+    if (classDef == null)
+      throw new TypeDefinitionException(
+          "setClassDefinition() has not been called yet.\n"
+              + "If you are running the template generator, your template "
+              + "does include a //@classDefinition()// declaration,\n"
+              + "or your generator is attempting to access the class "
+              + "definition before it is parsed.");
+    return classDef;
+  }
 
-	public ImportSection getImports(){
-		if (imports == null){
-		  imports = new ImportSection();
-		}
-		return imports;
-	}
+  public SourceBuilder<Payload> setClassDefinition(String definition,
+      boolean wellFormatted) {
+    if (classDef == null) {
+      // make sure import buffer comes before class def
+      getImports();
+      classDef = new ClassBuffer(this).indent();
+      // create a new print buffer for content after class definition
+      head.addToEnd(classDef);
+      head.clearIndent();
+      addBuffer(new PrintBuffer());
+    }
+    classDef.setDefinition(definition, wellFormatted);
+    return this;
+  }
 
-	public Payload getPayload() {
-		return payload;
-	}
+  public ImportSection getImports() {
+    if (imports == null) {
+      imports = new ImportSection();
+    }
+    return imports;
+  }
 
-	protected SourceBuilder<Payload> addBuffer(PrintBuffer newBuffer){
-		if (newBuffer == buffer)
-			return this;
-		head.addToEnd(newBuffer);
-		head.clearIndent();
-		buffer = newBuffer;
-		return this;
-	}
+  public Payload getPayload() {
+    return payload;
+  }
 
-	public SourceBuilder<Payload> setPayload(Payload payload) {
-		this.payload = payload;
-		return this;
-	}
+  protected SourceBuilder<Payload> addBuffer(PrintBuffer newBuffer) {
+    if (newBuffer == buffer)
+      return this;
+    head.addToEnd(newBuffer);
+    head.clearIndent();
+    buffer = newBuffer;
+    return this;
+  }
 
-	public String getPackage() {
-		return pkgName;
-	}
+  public SourceBuilder<Payload> setPayload(Payload payload) {
+    this.payload = payload;
+    return this;
+  }
 
-	public SourceBuilder<Payload> setPackage(String pkgName) {
-		if (pkgName.endsWith(";")){
-			pkgName = pkgName.substring(0, pkgName.length()-1);
-		}
-		if (pkgName.startsWith("package "))
-			pkgName = pkgName.substring(8);
-		this.pkgName = pkgName;
-		return this;
-	}
+  public String getPackage() {
+    return pkgName;
+  }
+
+  public SourceBuilder<Payload> setPackage(String pkgName) {
+    if (pkgName.endsWith(";")) {
+      pkgName = pkgName.substring(0, pkgName.length() - 1);
+    }
+    if (pkgName.startsWith("package "))
+      pkgName = pkgName.substring(8);
+    this.pkgName = pkgName;
+    return this;
+  }
 
   public SourceBuilder<Payload> setLinesToSkip(int i) {
     this.skip = i;
@@ -128,9 +129,9 @@ public class SourceBuilder <Payload> {
   }
 
   public int getLinesToSkip() {
-    try{
+    try {
       return skip;
-    }finally {
+    } finally {
       skip = 0;
     }
   }
@@ -142,18 +143,20 @@ public class SourceBuilder <Payload> {
     if (pkgName.length() > 0) {
       if (body.trim().startsWith("package")) {
         int ind = body.indexOf(';', body.indexOf("package"));
-        body = body.substring(ind+1);
+        body = body.substring(ind + 1);
       }
-      source.append("package "+pkgName+";\n\n");
+      source.append("package " + pkgName + ";\n\n");
     }
     if (imports != null)
       source.append(imports.toString());
     source.append(body);
     return source.toString();
   }
+
   public String getQualifiedName() {
     return getClassBuffer().getQualifiedName();
   }
+
   public void destroy() {
     setPayload(null);
     head.tail = null;

@@ -42,16 +42,17 @@ public class PrintBuffer {
   static final char NEW_LINE = '\n';
   static final String INDENT = "  ";
 
-  protected static final class PrintStack extends StringStack<PrintBuffer>{ }
+  protected static final class PrintStack extends StringStack<PrintBuffer> {
+  }
 
   protected static String join(String sep, String[] args) {
-    if (args.length==0)return "";
+    if (args.length == 0)
+      return "";
     StringBuilder b = new StringBuilder(args[0]);
     for (int i = 1, m = args.length; i < m; i++)
       b.append(sep).append(args[i]);
     return b.toString();
   }
-
 
   StringBuilder target;
   String indent = "";
@@ -88,6 +89,7 @@ public class PrintBuffer {
     append(str);
     return this;
   }
+
   public PrintBuffer append(String str) {
     onAppend();
     target.append(str);
@@ -252,15 +254,18 @@ public class PrintBuffer {
 
   /**
    * Prepend the given string, and return a printbuffer to append to this point.
-   * @param prefix - The text to prepend
-   * @return - A buffer pointed at this text, capable of further before/after branching
+   * 
+   * @param prefix
+   *          - The text to prepend
+   * @return - A buffer pointed at this text, capable of further before/after
+   *         branching
    */
   public PrintBuffer printBefore(String prefix) {
     PrintBuffer buffer = new PrintBuffer(new StringBuilder(prefix));
     addToBeginning(buffer);
     return buffer;
   }
-  
+
   public void addToBeginning(PrintBuffer buffer) {
     assert notContained(buffer) : "Infinite recursion!";
     PrintStack newHead = new PrintStack();
@@ -268,11 +273,14 @@ public class PrintBuffer {
     newHead.setValue(buffer);
     head = newHead;
   }
-  
+
   /**
    * Append the given string, and return a printbuffer to append to this point.
-   * @param suffix - The text to append
-   * @return - A buffer pointed at this text, capable of further before/after branching
+   * 
+   * @param suffix
+   *          - The text to append
+   * @return - A buffer pointed at this text, capable of further before/after
+   *         branching
    */
   public PrintBuffer printAfter(String suffix) {
     PrintBuffer buffer = new PrintBuffer(new StringBuilder(suffix));
@@ -281,7 +289,8 @@ public class PrintBuffer {
   }
 
   public void addToEnd(PrintBuffer buffer) {
-    assert notContained(buffer) : "Infinite recursion! On ["+buffer+"] in "+this;
+    assert notContained(buffer) : "Infinite recursion! On [" + buffer + "] in "
+        + this;
     PrintStack newTail = new PrintStack();
     newTail.setValue(buffer);
     newTail.setPrefix(target.toString());
@@ -301,7 +310,7 @@ public class PrintBuffer {
       return false;
     }
     StringStack<PrintBuffer> next = head;
-    while (next!=null) {
+    while (next != null) {
       if (next.getValue() == buffer) {
         System.err.println("Trying to add a buffer that is already a child");
         return false;
@@ -309,7 +318,7 @@ public class PrintBuffer {
       next = next.next;
     }
     next = buffer.head;
-    while (next!=null) {
+    while (next != null) {
       if (next.getValue() == this) {
         System.err.println("Trying to add an ancestor to a child");
         return false;
@@ -326,7 +335,7 @@ public class PrintBuffer {
   protected String footer() {
     return "";
   }
-  
+
   protected void clearIndent() {
     indented = false;
   }
@@ -340,10 +349,10 @@ public class PrintBuffer {
   }
 
   public boolean isEmpty() {
-    return target.length()==0 && head.next==null;
+    return target.length() == 0 && head.next == null;
   }
-  
+
   public boolean isNotEmpty() {
-    return target.length()>0 || head.next!=null;
+    return target.length() > 0 || head.next != null;
   }
 }

@@ -10,15 +10,15 @@ import xapi.source.write.Template;
 /**
  * A field buffer is used to add a field to a generated class.
  *
- * The field definition itself is exported during .toString(),
- * but this buffer also exposes functionality to auto-generate
- * getter, setter, adder, remover and clear methods.
+ * The field definition itself is exported during .toString(), but this buffer
+ * also exposes functionality to auto-generate getter, setter, adder, remover
+ * and clear methods.
  *
- * The current implementation translates arrays in return types
- * into ArrayList that returns .toArray() copies of elements.
+ * The current implementation translates arrays in return types into ArrayList
+ * that returns .toArray() copies of elements.
  *
- * This allows you to implement a varargs setter (which clears before add),
- * and varargs adders and removers.
+ * This allows you to implement a varargs setter (which clears before add), and
+ * varargs adders and removers.
  *
  * @author "James X. Nelson (james@wetheinter.net)"
  *
@@ -29,10 +29,8 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
     public String generate(TypeData type, String name);
   }
 
-  protected static class TypeDataTemplateGenerator
-  extends Template
-  implements TypeDataGenerator
-  {
+  protected static class TypeDataTemplateGenerator extends Template implements
+      TypeDataGenerator {
     public TypeDataTemplateGenerator(String template) {
       super(template, "<>", "$");
     }
@@ -64,11 +62,13 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
     this(enclosingClass, type, name, INDENT);
   }
 
-  public FieldBuffer(ClassBuffer enclosingClass, String type, String name, String indent) {
+  public FieldBuffer(ClassBuffer enclosingClass, String type, String name,
+      String indent) {
     super(indent);
     this.cls = enclosingClass;
     this.fieldName = name;
-    this.methodFragment = Character.toUpperCase(name.charAt(0)) + (name.length()==0?"":name.substring(1));
+    this.methodFragment = Character.toUpperCase(name.charAt(0))
+        + (name.length() == 0 ? "" : name.substring(1));
     this.indent = indent + INDENT;
     // The type to expose on methods; usually == fieldType, unless exposing []
     this.simpleType = cls.addImport(type);
@@ -88,7 +88,7 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
     this.initializer.print(initializer);
     return this;
   }
-  
+
   public PrintBuffer getInitializer() {
     if (initializer == null) {
       initializer = new PrintBuffer();
@@ -106,7 +106,7 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
   }
 
   protected MethodBuffer initGetter() {
-    return cls.createMethod("public "+methodType+" " +getterName()+"()")
+    return cls.createMethod("public " + methodType + " " + getterName() + "()")
         .returnValue(fieldName);
   }
 
@@ -119,7 +119,9 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
   }
 
   protected String getterName() {
-    return exact ? fieldName : (fieldType.clsName.equalsIgnoreCase("boolean") ? "is" :"get")+methodFragment;
+    return exact ? fieldName
+        : (fieldType.clsName.equalsIgnoreCase("boolean") ? "is" : "get")
+            + methodFragment;
   }
 
   public FieldBuffer addClearer() {
@@ -129,8 +131,9 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
   }
 
   protected MethodBuffer initClearer() {
-    return cls.createMethod("public "+simpleType+" get"+methodFragment+"()")
-        .returnValue(fieldName);
+    return cls.createMethod(
+        "public " + simpleType + " get" + methodFragment + "()").returnValue(
+        fieldName);
   }
 
   public FieldBuffer addSetter(int modifier) {
@@ -142,15 +145,16 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
 
   protected MethodBuffer initSetter() {
     MethodBuffer setter = cls.createMethod(
-      "public "+fluentReturnType()+" "+setterName()+"(" +simpleType+" " +fieldName + ")"
-      ).println("this."+fieldName+" = "+fieldName+";");
+        "public " + fluentReturnType() + " " + setterName() + "(" + simpleType
+            + " " + fieldName + ")").println(
+        "this." + fieldName + " = " + fieldName + ";");
     if (isFluent())
       setter.returnValue(fluentReturnValue());
     return setter;
   }
 
   protected String setterName() {
-    return exact ? fieldName : "set"+methodFragment;
+    return exact ? fieldName : "set" + methodFragment;
   }
 
   public FieldBuffer addAdder() {
@@ -161,9 +165,11 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
   }
 
   protected MethodBuffer initAdder() {
-    return cls.createMethod(
-        "public "+fluentReturnType()+" add"+methodFragment+"(" +simpleType+" " +fieldName + ")"
-        ).println("this."+fieldName+" = "+fieldName+";")
+    return cls
+        .createMethod(
+            "public " + fluentReturnType() + " add" + methodFragment + "("
+                + simpleType + " " + fieldName + ")")
+        .println("this." + fieldName + " = " + fieldName + ";")
         .returnValue(fluentReturnValue());
   }
 
@@ -174,19 +180,20 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
   }
 
   protected MethodBuffer initRemover() {
-    return cls.createMethod(
-        "public "+fluentReturnType()+" remove"+methodFragment+"(" +simpleType+" " +fieldName + ")"
-        ).println("this."+fieldName+" = null;")
+    return cls
+        .createMethod(
+            "public " + fluentReturnType() + " remove" + methodFragment + "("
+                + simpleType + " " + fieldName + ")")
+        .println("this." + fieldName + " = null;")
         .returnValue(fluentReturnValue());
   }
 
-
   protected String fluentReturnType() {
-    return (fluent?cls.getSimpleName():"void");
+    return (fluent ? cls.getSimpleName() : "void");
   }
 
   protected String fluentReturnValue() {
-    return (fluent?"this":"");
+    return (fluent ? "this" : "");
   }
 
   public boolean isFluent() {
@@ -205,15 +212,16 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
 
   @Override
   public String addImport(String cls) {
-    if (cls.replace(this.cls.getPackage()+".", "").indexOf('.')==-1)return cls;
+    if (cls.replace(this.cls.getPackage() + ".", "").indexOf('.') == -1)
+      return cls;
     return this.cls.addImport(cls);
   };
-  
+
   @Override
   public String addImportStatic(Class<?> cls, String name) {
     return this.cls.addImportStatic(cls, name);
   }
-  
+
   @Override
   public String addImportStatic(String cls) {
     return this.cls.addImportStatic(cls);
@@ -231,12 +239,12 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
     b.append(origIndent);
     if (annotations.size() > 0) {
       for (String anno : annotations)
-        b.append('@').append(anno).append(NEW_LINE+origIndent);
+        b.append('@').append(anno).append(NEW_LINE + origIndent);
     }
     String mods = Modifier.toString(modifier);
     if (mods.length() > 0)
       b.append(mods).append(" ");
-    //generics
+    // generics
     if (generics.size() > 0) {
       b.append("<");
       String prefix = "";
@@ -247,9 +255,9 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
       }
       b.append("> ");
     }
-    //field type
+    // field type
     b.append(simpleType).append(" ");
-    //field name
+    // field name
     b.append(fieldName);
     String init = initializer == null ? "" : initializer.toString();
     if (init.length() > 0) {
@@ -259,7 +267,7 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
     } else
       b.append(";");
     b.append("\n");
-    return b.toString()+super.toString();
+    return b.toString() + super.toString();
   }
 
   public FieldBuffer setExactName(boolean exact) {

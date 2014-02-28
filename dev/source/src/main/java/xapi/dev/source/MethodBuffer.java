@@ -48,95 +48,94 @@ import xapi.source.read.JavaVisitor.MethodVisitor;
 import xapi.source.read.JavaVisitor.ParameterVisitor;
 import xapi.source.read.JavaVisitor.TypeData;
 
-public class MethodBuffer
-extends MemberBuffer<MethodBuffer>
-implements MethodVisitor<SourceBuilder<?>>
-{
+public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
+    MethodVisitor<SourceBuilder<?>> {
 
-	protected SourceBuilder<?> context;
-	private boolean once;
-	private boolean useJsni = true;
-	private String methodName;
-	private final LinkedHashSet<String> parameters;
-	private final LinkedHashSet<String> exceptions;
+  protected SourceBuilder<?> context;
+  private boolean once;
+  private boolean useJsni = true;
+  private String methodName;
+  private final LinkedHashSet<String> parameters;
+  private final LinkedHashSet<String> exceptions;
   private TypeData returnType;
   private int tryDepth;
 
   public MethodBuffer(SourceBuilder<?> context) {
     this(context, INDENT);
   }
-	public MethodBuffer(SourceBuilder<?> context, String indent) {
-		super(indent);
-		this.context = context;
-		this.indent = indent + INDENT;
-		parameters = new LinkedHashSet<String>();
-		exceptions = new LinkedHashSet<String>();
-	}
 
-	@Override
-	public String toString() {
-		StringBuilder b = new StringBuilder(NEW_LINE);
-		if (javaDoc != null && javaDoc.isNotEmpty()) {
+  public MethodBuffer(SourceBuilder<?> context, String indent) {
+    super(indent);
+    this.context = context;
+    this.indent = indent + INDENT;
+    parameters = new LinkedHashSet<String>();
+    exceptions = new LinkedHashSet<String>();
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder b = new StringBuilder(NEW_LINE);
+    if (javaDoc != null && javaDoc.isNotEmpty()) {
       b.append(javaDoc.toString());
     }
-		b.append(origIndent);
-		if (annotations.size() > 0) {
-		  for (String anno : annotations)
-		    b.append('@').append(anno).append(NEW_LINE).append(origIndent);
-		}
-		b.append(Modifier.toString(modifier));
-		b.append(" ");
-		//generics
-		if (generics.size() > 0) {
-		  b.append("<");
-		  String prefix = "";
-		  for (String generic : generics) {
-		    b.append(prefix);
-		    b.append(generic);
-		    prefix = ", ";
-		  }
-		  b.append("> ");
-		}
-		//return type
-		b.append(returnType).append(" ");
-		//method name
-		b.append(methodName);
-		//parameters
-		b.append(" (");
-	  String prefix = "";
-	  for (String parameter : parameters) {
-	    b.append(prefix).append(parameter);
-	    prefix = ", ";
-	  }
-		b.append(") ");
-		if (!exceptions.isEmpty()) {
-		  b.append("\n"+indent+"  throws ");
-		  prefix = "";
-		  for (String exception : exceptions) {
-		    b.append(prefix).append(exception);
-		    prefix = ", ";
-		  }
-		}
-		final String suffix;
-		if (Modifier.isAbstract(modifier)) {
-		  prefix = ";\n";
-		  suffix = "";
-		} else if (Modifier.isNative(modifier)) {
-		  if (useJsni) {
-		    prefix = "/*-{\n";
-		    suffix = (once ? NEW_LINE : "") + origIndent + "}-*/;\n";
-		  } else {
-		    prefix = ";\n";
-		    suffix = "";
-		  }
-		} else {
-		  prefix = "{\n";
-		  suffix = (once ? NEW_LINE : "") + origIndent + "}\n";
-		}
-	  return b.toString()+prefix+super.toString()+suffix;
-	}
+    b.append(origIndent);
+    if (annotations.size() > 0) {
+      for (String anno : annotations)
+        b.append('@').append(anno).append(NEW_LINE).append(origIndent);
+    }
+    b.append(Modifier.toString(modifier));
+    b.append(" ");
+    // generics
+    if (generics.size() > 0) {
+      b.append("<");
+      String prefix = "";
+      for (String generic : generics) {
+        b.append(prefix);
+        b.append(generic);
+        prefix = ", ";
+      }
+      b.append("> ");
+    }
+    // return type
+    b.append(returnType).append(" ");
+    // method name
+    b.append(methodName);
+    // parameters
+    b.append(" (");
+    String prefix = "";
+    for (String parameter : parameters) {
+      b.append(prefix).append(parameter);
+      prefix = ", ";
+    }
+    b.append(") ");
+    if (!exceptions.isEmpty()) {
+      b.append("\n" + indent + "  throws ");
+      prefix = "";
+      for (String exception : exceptions) {
+        b.append(prefix).append(exception);
+        prefix = ", ";
+      }
+    }
+    final String suffix;
+    if (Modifier.isAbstract(modifier)) {
+      prefix = ";\n";
+      suffix = "";
+    } else if (Modifier.isNative(modifier)) {
+      if (useJsni) {
+        prefix = "/*-{\n";
+        suffix = (once ? NEW_LINE : "") + origIndent + "}-*/;\n";
+      } else {
+        prefix = ";\n";
+        suffix = "";
+      }
+    } else {
+      prefix = "{\n";
+      suffix = (once ? NEW_LINE : "") + origIndent + "}\n";
+    }
+    return b.toString() + prefix + super.toString() + suffix;
+  }
 
-	public MethodBuffer addExceptions(String... exceptions) {
+  public MethodBuffer addExceptions(String... exceptions) {
     addTypes(this.exceptions, exceptions);
     return this;
   }
@@ -148,16 +147,16 @@ implements MethodVisitor<SourceBuilder<?>>
 
   @Override
   public String addImport(String cls) {
-    if (cls.replace(context.getPackage()+".", "").indexOf('.')==-1)
+    if (cls.replace(context.getPackage() + ".", "").indexOf('.') == -1)
       return cls;
     return context.getImports().addImport(cls);
   }
-  
+
   @Override
   public String addImportStatic(Class<?> cls, String name) {
-    return context.getImports().addStatic(cls.getCanonicalName()+"."+name);
+    return context.getImports().addStatic(cls.getCanonicalName() + "." + name);
   }
-  
+
   @Override
   public String addImportStatic(String cls) {
     return context.getImports().addStatic(cls);
@@ -170,112 +169,123 @@ implements MethodVisitor<SourceBuilder<?>>
     }
     return this;
   }
-  public MethodBuffer addParameters(Entry<String,Class<?>> ... parameters) {
-	  return addParameters(Arrays.asList(parameters));
-	}
 
-	public MethodBuffer addParameters(Iterable<Entry<String,Class<?>>> parameters) {
+  public MethodBuffer addParameters(Entry<String, Class<?>>... parameters) {
+    return addParameters(Arrays.asList(parameters));
+  }
+
+  public MethodBuffer addParameters(Iterable<Entry<String, Class<?>>> parameters) {
     addNamedTypes(this.parameters, parameters);
-	  return this;
-	}
+    return this;
+  }
 
-	public MethodBuffer addExceptions(Class<?> ... exceptions) {
-	  addTypes(this.exceptions, exceptions);
-	  return this;
-	}
+  public MethodBuffer addExceptions(Class<?>... exceptions) {
+    addTypes(this.exceptions, exceptions);
+    return this;
+  }
 
-	public MethodBuffer setExceptions(Class<?> ... exceptions) {
-	  this.exceptions.clear();
-	  addTypes(this.exceptions, exceptions);
-	  return this;
-	}
+  public MethodBuffer setExceptions(Class<?>... exceptions) {
+    this.exceptions.clear();
+    addTypes(this.exceptions, exceptions);
+    return this;
+  }
 
-	public MethodBuffer setExceptions(String... exceptions) {
-	  this.exceptions.clear();
-	  addTypes(this.exceptions, exceptions);
-	  return this;
-	}
+  public MethodBuffer setExceptions(String... exceptions) {
+    this.exceptions.clear();
+    addTypes(this.exceptions, exceptions);
+    return this;
+  }
 
-	/**
-	 * Uses {@link JavaLexer} to extract a MethodBuffer definition.
-	 * <p>
-	 * This is slower than manually setting method metadata,
-	 * but it does automatically import fully qualified class names
-	 * (if and only if there is not already an imported type matching imported simple name).
-	 *
-	 * @param definition - Any valid java method definition. "public void doSomething()"
-	 * @return - A method buffer initialized to whatever the provided text lexes.
-	 * <p>
-	 * Report any parsing errors to github.com/WeTheInternet/xapi and/or james@wetheinter.net
-	 */
+  /**
+   * Uses {@link JavaLexer} to extract a MethodBuffer definition.
+   * <p>
+   * This is slower than manually setting method metadata, but it does
+   * automatically import fully qualified class names (if and only if there is
+   * not already an imported type matching imported simple name).
+   *
+   * @param definition
+   *          - Any valid java method definition. "public void doSomething()"
+   * @return - A method buffer initialized to whatever the provided text lexes.
+   *         <p>
+   *         Report any parsing errors to github.com/WeTheInternet/xapi and/or
+   *         james@wetheinter.net
+   */
   public MethodBuffer setDefinition(String definition) {
-	  // JavaMetadata will extract all modifiers for us
-	  JavaLexer.visitMethodSignature(this, context, definition, 0);
-	  return this;
-	}
+    // JavaMetadata will extract all modifiers for us
+    JavaLexer.visitMethodSignature(this, context, definition, 0);
+    return this;
+  }
 
-	public MethodBuffer setName(String name) {
-	  methodName = name;
-	  return this;
-	}
+  public MethodBuffer setName(String name) {
+    methodName = name;
+    return this;
+  }
 
-	public MethodBuffer setParameters(String ... parameters) {
+  public MethodBuffer setParameters(String... parameters) {
     this.parameters.clear();
     return addParameters(parameters);
   }
-  public MethodBuffer setParameters(Entry<String,Class<?>> ... parameters) {
+
+  public MethodBuffer setParameters(Entry<String, Class<?>>... parameters) {
     this.parameters.clear();
     return addParameters(Arrays.asList(parameters));
   }
-  public MethodBuffer setParameters(Iterable<Entry<String,Class<?>>> parameters) {
+
+  public MethodBuffer setParameters(Iterable<Entry<String, Class<?>>> parameters) {
     this.parameters.clear();
     return addParameters(parameters);
   }
-  public MethodBuffer setReturnType(Class<?> cls) {
-	  String pkgName = cls.getPackage().getName();
-	  if (pkgName.length() == 0)
-	    returnType = new TypeData("", cls.getCanonicalName());
-	  else
-	    returnType = new TypeData(pkgName, cls.getCanonicalName().replace(pkgName+".", ""));
-	  return this;
-	}
 
-	public MethodBuffer setReturnType(String pkgName, String enclosedClassName) {
+  public MethodBuffer setReturnType(Class<?> cls) {
+    String pkgName = cls.getPackage().getName();
+    if (pkgName.length() == 0)
+      returnType = new TypeData("", cls.getCanonicalName());
+    else
+      returnType = new TypeData(pkgName, cls.getCanonicalName().replace(
+          pkgName + ".", ""));
+    return this;
+  }
+
+  public MethodBuffer setReturnType(String pkgName, String enclosedClassName) {
     returnType = new TypeData(pkgName, enclosedClassName);
     return this;
-	}
+  }
 
-	public MethodBuffer setReturnType(String canonicalName) {
-	  if ("".equals(canonicalName))
-	    returnType = new TypeData("");
-	  else
-	    returnType = JavaLexer.extractType(canonicalName, 0);
-	  return this;
-	}
+  public MethodBuffer setReturnType(String canonicalName) {
+    if ("".equals(canonicalName))
+      returnType = new TypeData("");
+    else
+      returnType = JavaLexer.extractType(canonicalName, 0);
+    return this;
+  }
 
-	public ClassBuffer createInnerClass(String classDef) {
-	  ClassBuffer cls = new ClassBuffer(context);
-	  cls.setDefinition(classDef, classDef.trim().endsWith("{"));
-	  cls.indent = indent + INDENT;
-	  assert cls.privacy == 0 : "A local class cannot be "+Modifier.toString(cls.privacy);
-	  addToEnd(cls);
-	  clearIndent();
-	  return cls;
-	}
+  public ClassBuffer createInnerClass(String classDef) {
+    ClassBuffer cls = new ClassBuffer(context);
+    cls.setDefinition(classDef, classDef.trim().endsWith("{"));
+    cls.indent = indent + INDENT;
+    assert cls.privacy == 0 : "A local class cannot be "
+        + Modifier.toString(cls.privacy);
+    addToEnd(cls);
+    clearIndent();
+    return cls;
+  }
 
-	@Override
-	protected void onAppend() {
-	  if (once) {
-	    once = false;
-	    onFirstAppend();
-	  }
-	  super.onAppend();
-	}
-	protected void onFirstAppend() {
+  @Override
+  protected void onAppend() {
+    if (once) {
+      once = false;
+      onFirstAppend();
+    }
+    super.onAppend();
+  }
 
-	}
+  protected void onFirstAppend() {
+
+  }
+
   /**
-   * @param useJsni - Whether to encapsulate native methods with /*-{ }-* /
+   * @param useJsni
+   *          - Whether to encapsulate native methods with /*-{ }-* /
    * @return
    */
   public MethodBuffer setUseJsni(boolean useJsni) {
@@ -284,11 +294,11 @@ implements MethodVisitor<SourceBuilder<?>>
     return this;
   }
 
-
   public final MethodBuffer makeJsni() {
     setUseJsni(true).makeFinal();
     return this;
   }
+
   public final MethodBuffer makeNative() {
     if ((modifier & Modifier.ABSTRACT) > 0)
       modifier &= ~Modifier.ABSTRACT;// "Cannot be both native and abstract";
@@ -302,18 +312,19 @@ implements MethodVisitor<SourceBuilder<?>>
   }
 
   /**
-   * Add a return clause;
-   * the return keyword and semicolon are optional.
+   * Add a return clause; the return keyword and semicolon are optional.
    * <p>
    * If you send "throw someException()", a return will not be added.
    * <p>
-   * This allows you to use the returnValue() to optionally throw instead of return.
+   * This allows you to use the returnValue() to optionally throw instead of
+   * return.
    *
    * @param name
    * @return
    */
   public MethodBuffer returnValue(String name) {
-    return println((name.matches("\\s*(throw|return)\\s.*")?"":"return ") +name+(name.endsWith(";")?"":";"));
+    return println((name.matches("\\s*(throw|return)\\s.*") ? "" : "return ")
+        + name + (name.endsWith(";") ? "" : ";"));
   }
 
   @Override
@@ -322,12 +333,14 @@ implements MethodVisitor<SourceBuilder<?>>
 
       int modifier;
       private SimpleStack<String> annotations = new SimpleStack<String>();
+
       @Override
-      public AnnotationMemberVisitor<SourceBuilder<?>> visitAnnotation(String annoName, String annoBody,
-          SourceBuilder<?> receiver) {
-        annoName = addImport(annoName.startsWith("@")?annoName.substring(1):annoName);
-        annotations.add("@"+annoName+
-            (annoBody.length()>0?"("+annoBody+")":""));
+      public AnnotationMemberVisitor<SourceBuilder<?>> visitAnnotation(
+          String annoName, String annoBody, SourceBuilder<?> receiver) {
+        annoName = addImport(annoName.startsWith("@") ? annoName.substring(1)
+            : annoName);
+        annotations.add("@" + annoName
+            + (annoBody.length() > 0 ? "(" + annoBody + ")" : ""));
         return null;
       }
 
@@ -350,9 +363,9 @@ implements MethodVisitor<SourceBuilder<?>>
           b.append(mod).append(" ");
 
         if (varargs) {
-          b.append(type.getSimpleName().replace("[]", "")+" ... "+name);
+          b.append(type.getSimpleName().replace("[]", "") + " ... " + name);
         } else {
-          b.append(type.getSimpleName()+" "+name);
+          b.append(type.getSimpleName() + " " + name);
         }
         parameters.add(b.toString());
       }
@@ -363,12 +376,15 @@ implements MethodVisitor<SourceBuilder<?>>
   public void visitException(String type, SourceBuilder<?> receiver) {
     exceptions.add(type);
   }
+
   @Override
-  public AnnotationMemberVisitor<SourceBuilder<?>> visitAnnotation(String annoName, String annoBody,
-      SourceBuilder<?> receiver) {
-    addAnnotation("@"+annoName+(annoBody.trim().length()>0 ? "("+annoBody+")":""));
+  public AnnotationMemberVisitor<SourceBuilder<?>> visitAnnotation(
+      String annoName, String annoBody, SourceBuilder<?> receiver) {
+    addAnnotation("@" + annoName
+        + (annoBody.trim().length() > 0 ? "(" + annoBody + ")" : ""));
     return null;
   }
+
   @Override
   public void visitModifier(int modifier, SourceBuilder<?> receiver) {
     assert validModification(this.modifier, modifier);
@@ -377,16 +393,20 @@ implements MethodVisitor<SourceBuilder<?>>
 
   private boolean validModification(int modifier, int change) {
     if ((change & Modifier.ABSTRACT) > 0) {
-      if ( (modifier & Modifier.STATIC) > 0)
-          throw new AssertionError("You cannot make a static method abstract.\n"+this);
+      if ((modifier & Modifier.STATIC) > 0)
+        throw new AssertionError("You cannot make a static method abstract.\n"
+            + this);
       if ((modifier & Modifier.FINAL) > 0)
-        throw new AssertionError("You cannot make a final method abstract.\n"+this);
+        throw new AssertionError("You cannot make a final method abstract.\n"
+            + this);
     }
     if ((modifier & Modifier.ABSTRACT) > 0) {
-      if ( (change & Modifier.STATIC) > 0)
-        throw new AssertionError("You cannot make an abstract method static.\n"+this);
+      if ((change & Modifier.STATIC) > 0)
+        throw new AssertionError("You cannot make an abstract method static.\n"
+            + this);
       if ((change & Modifier.FINAL) > 0)
-        throw new AssertionError("You cannot make an abstract method final.\n"+this);
+        throw new AssertionError("You cannot make an abstract method final.\n"
+            + this);
     }
     return true;
   }
@@ -395,13 +415,13 @@ implements MethodVisitor<SourceBuilder<?>>
   public void visitGeneric(String generic, SourceBuilder<?> receiver) {
     generic = generic.trim();
     if (generic.charAt(0) == '<') {
-      generic = generic.substring(1, generic.length()-1);
+      generic = generic.substring(1, generic.length() - 1);
     }
     for (String importable : JavaLexer.findImportsInGeneric(generic)) {
       String imported = receiver.getImports().addImport(importable);
       if (importable.length() != imported.length()) {
         int len = -1;
-        while (len != generic.length()){
+        while (len != generic.length()) {
           len = generic.length();
           generic = generic.replace(importable, imported);
         }
@@ -409,10 +429,12 @@ implements MethodVisitor<SourceBuilder<?>>
     }
     generics.add(generic);
   }
+
   @Override
   public void visitJavadoc(String javadoc, SourceBuilder<?> receiver) {
 
   }
+
   @Override
   public void visitReturnType(TypeData returnType, SourceBuilder<?> receiver) {
     this.returnType = returnType;
@@ -420,42 +442,44 @@ implements MethodVisitor<SourceBuilder<?>>
       receiver.getImports().addImport(returnType.getImportName());
     }
   }
+
   @Override
   public void visitName(String name, SourceBuilder<?> receiver) {
     methodName = name;
   }
-  
+
   public MethodBuffer startTry() {
-    tryDepth ++;
+    tryDepth++;
     println("try {");
     indent();
     return this;
   }
 
   public MethodBuffer startTry(String withResources) {
-    tryDepth ++;
-    println("try ("+withResources+") {");
+    tryDepth++;
+    println("try (" + withResources + ") {");
     indent();
     return this;
   }
-  
+
   public MethodBuffer startCatch(String exceptionType, String exceptionName) {
     outdent();
-    println("} catch ("+exceptionType+" "+exceptionName+") {");
+    println("} catch (" + exceptionType + " " + exceptionName + ") {");
     indent();
     return this;
   }
+
   public String startCatch(String exceptionType) {
     outdent();
     int ind = exceptionType.lastIndexOf(' ');
     String name;
     if (ind == -1) {
-      name = "e"+tryDepth;
-      exceptionType = exceptionType+" "+name;
+      name = "e" + tryDepth;
+      exceptionType = exceptionType + " " + name;
     } else {
-      name = exceptionType.substring(ind +1);
+      name = exceptionType.substring(ind + 1);
     }
-    println("} catch ("+exceptionType+") {");
+    println("} catch (" + exceptionType + ") {");
     indent();
     return name;
   }
@@ -470,9 +494,8 @@ implements MethodVisitor<SourceBuilder<?>>
   public MethodBuffer endTry() {
     outdent();
     println("}");
-    tryDepth --;
+    tryDepth--;
     return this;
   }
-  
 
 }

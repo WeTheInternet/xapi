@@ -14,11 +14,12 @@ public class XmlBuffer extends PrintBuffer {
     before = new PrintBuffer();
     indent = INDENT;
   }
+
   public XmlBuffer(String tagName) {
     this();
     setTagName(tagName);
   }
-  
+
   public XmlBuffer setTagName(String name) {
     if (tagName != null) {
       indent();
@@ -26,7 +27,7 @@ public class XmlBuffer extends PrintBuffer {
     tagName = name;
     return this;
   }
-  
+
   public XmlBuffer setAttribute(String name, String value) {
     ensureAttributes();
     StringBuilder attr = attributeMap.get(name);
@@ -34,7 +35,7 @@ public class XmlBuffer extends PrintBuffer {
     if (value == null) {
       val = " ";
     } else {
-      val = "=\""+value.replaceAll("\"", "&quot;")+"\" ";
+      val = "=\"" + value.replaceAll("\"", "&quot;") + "\" ";
     }
     if (attr == null) {
       attributes.print(name);
@@ -48,37 +49,38 @@ public class XmlBuffer extends PrintBuffer {
     }
     return this;
   }
-  
+
   private void ensureAttributes() {
     if (attributes == null) {
       attributes = new PrintBuffer();
       attributeMap = new LinkedHashMap<String, StringBuilder>();
     }
   }
+
   public XmlBuffer makeTag(String name) {
     XmlBuffer buffer = new XmlBuffer(name);
     buffer.indent = indent + INDENT;
     addToEnd(buffer);
     return buffer;
   }
+
   public XmlBuffer makeTagAtBeginning(String name) {
     XmlBuffer buffer = new XmlBuffer(name);
     buffer.indent = indent + INDENT;
     addToBeginning(buffer);
     return buffer;
   }
-  
+
   @Override
   public String toString() {
     if (tagName == null) {
       assert attributes == null : "Cannot add attributes to an XmlBuffer with no tag name: "
-          + "\nAttributes: "+ attributes
-          + "\nBody: "+super.toString();
+          + "\nAttributes: " + attributes + "\nBody: " + super.toString();
       return super.toString();
     }
     String origIndent = indent.replaceFirst(INDENT, "");
     StringBuilder b = new StringBuilder(origIndent);
-    
+
     String text;
     text = this.before.toString();
     if (text.length() > 0) {
@@ -96,10 +98,8 @@ public class XmlBuffer extends PrintBuffer {
       }
       b.append(origIndent);
     }
-    
-    b
-      .append("<")
-      .append(tagName);
+
+    b.append("<").append(tagName);
     if (attributes != null) {
       b.append(" ").append(attributes);
     }
@@ -108,24 +108,19 @@ public class XmlBuffer extends PrintBuffer {
       if (shouldShortenEmptyTag(tagName)) {
         b.append("/>\n");
       } else {
-        b.append("> </")
-         .append(tagName)
-         .append(">\n");
+        b.append("> </").append(tagName).append(">\n");
       }
     } else {
-      b.append(">\n")
-       .append(body)
-       .append(origIndent)
-       .append("</")
-       .append(tagName)
-       .append(">\n");
+      b.append(">\n").append(body).append(origIndent).append("</")
+          .append(tagName).append(">\n");
     }
     return b.toString();
   }
-  
+
   protected boolean shouldShortenEmptyTag(String tag) {
     return !"script".equals(tag);
   }
+
   public XmlBuffer append(Object obj) {
     super.append(obj);
     return this;
@@ -135,6 +130,7 @@ public class XmlBuffer extends PrintBuffer {
     super.print(str);
     return this;
   }
+
   public XmlBuffer append(String str) {
     super.append(str);
     return this;
@@ -244,13 +240,15 @@ public class XmlBuffer extends PrintBuffer {
     super.println(str);
     return this;
   }
-  
+
   @Override
   public PrintBuffer printBefore(String prefix) {
     return before.printBefore(prefix);
   }
+
   public boolean isEmpty() {
-    return super.isEmpty() && tagName == null && comment.isEmpty() && before.isEmpty();
+    return super.isEmpty() && tagName == null && comment.isEmpty()
+        && before.isEmpty();
   }
-  
+
 }
