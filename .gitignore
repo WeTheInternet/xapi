@@ -1,6 +1,7 @@
 .classpath
 .settings
 .project
+.DS_Store
 target
 war
 gwt-unitCache
