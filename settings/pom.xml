@@ -5,7 +5,7 @@
 
  <groupId>net.wetheinter</groupId>
  <artifactId>xapi-settings-root</artifactId>
- <version>0.4-SNAPSHOT</version>
+ <version>0.5-SNAPSHOT</version>
  <packaging>pom</packaging>
  <name>XApi - Settings (Project Setup)</name>
  <description>
