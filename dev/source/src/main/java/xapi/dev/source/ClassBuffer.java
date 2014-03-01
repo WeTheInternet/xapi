@@ -61,6 +61,10 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
     this(new SourceBuilder<Object>());
   }
 
+  public ClassBuffer(String indent) {
+    this(new SourceBuilder<Object>(), indent);
+  }
+
   public ClassBuffer(SourceBuilder<?> context) {
     this(context, "");
   }

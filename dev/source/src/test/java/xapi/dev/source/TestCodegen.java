@@ -23,9 +23,10 @@ public class TestCodegen {
     b.setPackage("xapi.test");
     b.getClassBuffer()
       .createMethod("public <T extends java.util.Date> void Test(java.lang.String t) {")
-      .indentln("System.out.println(\"Hellow World\");")
-      .createInnerClass("class InnerClass ")
-      .createMethod("void innerMethod()")
+      .println("System.out.println(\"Hellow World\");")
+      .createLocalClass("class InnerClass ")
+      .createMethod("java.sql.Date innerMethod()")
+      .returnValue("null")
       ;
     // We discard java.lang imports
     Assert.assertFalse(b.toString().contains("import java.lang.String;"));
@@ -34,6 +35,7 @@ public class TestCodegen {
     Assert.assertTrue(b.toString().contains("<T extends Date>"));
     // We used java.sql.Date as a fqcn after java.util.Date, so it must NOT be imported
     Assert.assertFalse(b.toString().contains("import java.sql.Date;"));
+    System.out.println(b.toString());
   }
 
   @Test
