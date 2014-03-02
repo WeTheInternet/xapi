@@ -198,7 +198,8 @@ public class AutoUiGenerator {
         .indent()
         .println("case 'this': return o;")
         // TODO prefer @Named value
-        .println("case 'this.name()': return o.@java.lang.Object::getClass()().@java.lang.Class::getName()();");
+        .print("case 'this.name()':")
+        .indentln("return o.@java.lang.Object::getClass()().@java.lang.Class::getName()();");
     for (String name : methods.keySet()) {
       JMethod method = methods.get(name);
       valueProvider.println("case '"+name+".name()': return '"+name+"';");
