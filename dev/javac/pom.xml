@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-dev-parent</artifactId>
+    <version>0.5-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>xapi-dev-javac</artifactId>
+  <packaging>jar</packaging>
+  <name>XApi - Java 8 compiler plugins</name>
+  <url>WeTheInter.net</url>
+  <description>
+  Code for creating java 8 compiler plugins
+  </description>
+  <properties>
+    <java.version>1.8</java.version>
+  </properties>
+  
+  <dependencies>
+     <dependency>
+      <groupId>com.google.gwt</groupId>
+      <artifactId>gwt-dev</artifactId>
+      <scope>provided</scope>
+     </dependency>
+     <dependency>
+      <groupId>com.google.gwt</groupId>
+      <artifactId>gwt-user</artifactId>
+      <scope>test</scope>
+     </dependency>
+     <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-jre-io</artifactId>
+     </dependency>
+     <dependency>
+      <groupId>com.sun</groupId>
+      <artifactId>compiler-plugins</artifactId>
+      <version>1.0</version>
+      <systemPath>${project.basedir}/lib/classes.jar</systemPath>
+      <scope>system</scope>
+     </dependency>
+     <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-core-test</artifactId>
+      <scope>test</scope>
+     </dependency>
+  </dependencies>
+
+</project>
