@@ -48,6 +48,11 @@ public class GwtCreateInvocationSite implements HasClassLiteralReference {
   }
   
   @Override
+  public ExpressionTree getSource() {
+    return source;
+  }
+  
+  @Override
   public void setSource(ExpressionTree init) {
     source = init;
     type = SearchFor.classLiteral(init);
@@ -75,7 +80,7 @@ public class GwtCreateInvocationSite implements HasClassLiteralReference {
   }
 
   public boolean isResolved() {
-    return type != null && source == null;
+    return type != null;
   }
 
   public ExpressionTree getInvocation() {

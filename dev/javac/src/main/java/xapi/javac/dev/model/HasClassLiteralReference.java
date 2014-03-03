@@ -12,6 +12,8 @@ public interface HasClassLiteralReference {
   Kind getNodeKind();
 
   Name getNodeName();
+  
+  ExpressionTree getSource();
 
   void setSource(ExpressionTree init);
 

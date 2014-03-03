@@ -7,6 +7,7 @@ import java.io.PrintWriter;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import xapi.log.X_Log;
 import xapi.test.Assert;
 import xapi.util.X_Namespace;
 
@@ -37,12 +38,16 @@ public class JavacPluginTest {
 //       "-s", resources.getAbsolutePath(),
        "-processorpath", 
        jar,
+      
        "-Xplugin:GwtCreatePlugin", 
-       input0//, input1
+       "-Xplugin:ClassWorldPlugin", 
+//       input0
+//       ,
+       input1
        
     }, new PrintWriter(System.out));
-    System.out.println(gen+" exists? "+gen.exists());
-    System.out.println(jar+" exists? "+new File(jar).exists());
+    X_Log.info(getClass(), gen," exists? "+gen.exists());
+    X_Log.info(getClass(), jar," exists? "+new File(jar).exists());
     Assert.assertEquals("Javac failed", 0, result); 
   }
 }

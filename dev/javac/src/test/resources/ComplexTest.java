@@ -9,19 +9,19 @@ public class ComplexTest extends Test {
   }
   
   void finalFieldInitedByClassLiteral() {
-    create(FINAL_FIELD_INITED_BY_CLASS_LITERAL);
+    GWT.create(FINAL_FIELD_INITED_BY_CLASS_LITERAL);
   }
   
   void nonFinalFieldInitedByClassLiteral() {
-    create(NONFINAL_FIELD_INITED_BY_CLASS_LITERAL);
+    GWT.create(NONFINAL_FIELD_INITED_BY_CLASS_LITERAL);
   }
   
   void methodWithLiteralReturn() {
-    create(withLiteralReturn());
+    GWT.create(withLiteralReturn());
   }
   
   void methodWithFinalFieldReturn() {
-    create(withFinalFieldReturn());
+    GWT.create(withFinalFieldReturn());
   }
 
 }
