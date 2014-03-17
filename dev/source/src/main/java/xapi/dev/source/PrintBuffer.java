@@ -55,7 +55,7 @@ public class PrintBuffer {
   }
 
   StringBuilder target;
-  String indent = "";
+  protected String indent = "";
   PrintStack head;
   PrintStack tail;
   protected boolean indented = false;
@@ -287,6 +287,12 @@ public class PrintBuffer {
     addToEnd(buffer);
     return buffer;
   }
+  
+  public PrintBuffer clear() {
+    tail = head = new PrintStack();
+    target.setLength(0);
+    return this;
+  }
 
   public void addToEnd(PrintBuffer buffer) {
     assert notContained(buffer) : "Infinite recursion! On [" + buffer + "] in "
@@ -336,15 +342,20 @@ public class PrintBuffer {
     return "";
   }
 
-  protected void clearIndent() {
+  protected void setNotIndent() {
     indented = false;
+  }
+
+  public PrintBuffer clearIndent() {
+    indent = "";
+    return this;
   }
 
   @Override
   public String toString() {
     StringBuilder body = new StringBuilder(header());
     body.append(head);
-    body.append(target);
+    body.append(target.toString());
     return body + footer();
   }
 

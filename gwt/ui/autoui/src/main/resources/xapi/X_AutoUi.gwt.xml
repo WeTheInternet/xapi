@@ -3,7 +3,7 @@
 <module>
   <inherits name="xapi.X_Inject"/>
   <inherits name="xapi.X_Source"/>
-  <inherits name="com.google.gwt.reflect.Reflect"/>
+<!--   <inherits name="com.google.gwt.reflect.Reflect"/> -->
   <source path="ui/autoui" />
   <source path="gwt/ui/autoui/client" />
   <source path="gwt/ui/autoui/shared" />

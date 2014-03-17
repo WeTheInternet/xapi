@@ -35,6 +35,7 @@ import xapi.ui.autoui.api.UiRenderingContext;
 import com.google.gwt.core.ext.Generator;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;
+import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.JType;
@@ -67,7 +68,7 @@ public class AutoUiGenerator {
   int ctxCnt;
   final SourceBuilder<UnifyAstView> out;
   
-  public static final String generateUiProvider(TreeLogger logger, UnifyAstView ast, JClassType uiModel, JClassType uiType) {
+  public static final String generateUiProvider(TreeLogger logger, UnifyAstView ast, JClassType uiModel, JClassType uiType) throws UnableToCompleteException {
     AutoUiGenerator ctx = new AutoUiGenerator(ast, uiModel, uiType);
     String src = ctx.out.toString();
     final String digest = 
@@ -203,9 +204,22 @@ public class AutoUiGenerator {
     for (String name : methods.keySet()) {
       JMethod method = methods.get(name);
       valueProvider.println("case '"+name+".name()': return '"+name+"';");
-      String rootMethodClass = getMethodRoot(method);
-      valueProvider.println("case '"+name+"': return o.@"+rootMethodClass+"::" +
-      		method.getName()+"()();");
+      JClassType rootMethodClass = getMethodRoot(method);
+      String rootMethod = beanCls.addImport(rootMethodClass.getQualifiedSourceName());
+      if (method.isPublic()) {
+        // An interface might be a lambda with defender methods...
+        // and they are currently broken from a jsni context
+        String accessor = "access"+method.getName();
+        String returnType = beanCls.addImport(method.getReturnType().getQualifiedSourceName());
+        out.getClassBuffer().createMethod("private static "+returnType+" "+accessor+"()") 
+          .addParameters(rootMethod+" o")
+          .returnValue("o."+method.getName()+"()");
+        valueProvider.println("case '"+name+"': return @"+out.getQualifiedName()+"::"+accessor+"(" +
+            rootMethodClass.getJNISignature() + ")(o);");
+      } else {
+        valueProvider.println("case '"+name+"': return o.@"+rootMethodClass.getQualifiedSourceName()+"::" +
+            method.getName()+"()();");
+      }
     }
     valueProvider
         .println("default: return @"+BeanValueProvider.class.getName()+
@@ -215,7 +229,7 @@ public class AutoUiGenerator {
   }
   
 
-  private String getMethodRoot(JMethod method) {
+  private JClassType getMethodRoot(JMethod method) {
     JClassType winner = method.getEnclosingType();
     if (winner.isInterface() != null) {
       for (JClassType type : winner.getImplementedInterfaces()) {
@@ -226,7 +240,7 @@ public class AutoUiGenerator {
         }
       }
     }
-    return winner.getErasedType().getQualifiedSourceName();
+    return winner.getErasedType();
   }
 
 

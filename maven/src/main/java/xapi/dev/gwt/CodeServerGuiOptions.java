@@ -94,19 +94,24 @@ public class CodeServerGuiOptions{
     }
     
     @Override
-    public boolean setFlag() {
-      opts.setUnload(true);
-      return true;
+    public boolean setFlag(boolean value) {
+      opts.setUnload(value);
+      return value;
     }
 
     @Override
-    public String getPurpose() {
+    public String getPurposeSnippet() {
       return "When supplied, tell the CodeServerGui to unload the running modules, if any.";
     }
+    
+    @Override
+    public String getLabel() {
+      return unloadParam;
+    }
 
     @Override
-    public String getTag() {
-      return "-"+unloadParam;
+    public boolean getDefaultValue() {
+      return false;
     }
     
   }

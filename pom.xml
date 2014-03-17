@@ -45,8 +45,9 @@
   <xapi.version>0.5-SNAPSHOT</xapi.version>
   <xapi.test.version>0.4</xapi.test.version>
   <xapi.log.level>INFO</xapi.log.level>
-  <gwt.version>2.5.1</gwt.version>
-  <xapi.gwt.version>${gwt.version}</xapi.gwt.version>
+  <gwt.version>2.6.2</gwt.version>
+  <gwt.plugin.version>2.6.0</gwt.plugin.version>
+  <xapi.gwt.version>2.5.1</xapi.gwt.version>
   <playn.version>1.5.1</playn.version>
   <appengine.version>1.7.6</appengine.version>
   <guava.version>13.0.1</guava.version>

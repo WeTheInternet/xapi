@@ -77,7 +77,7 @@ public class SourceBuilder<Payload> {
       classDef = new ClassBuffer(this).indent();
       // create a new print buffer for content after class definition
       head.addToEnd(classDef);
-      head.clearIndent();
+      head.setNotIndent();
       addBuffer(new PrintBuffer());
     }
     classDef.setDefinition(definition, wellFormatted);
@@ -99,7 +99,7 @@ public class SourceBuilder<Payload> {
     if (newBuffer == buffer)
       return this;
     head.addToEnd(newBuffer);
-    head.clearIndent();
+    head.setNotIndent();
     buffer = newBuffer;
     return this;
   }

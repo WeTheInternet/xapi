@@ -11,7 +11,6 @@ import com.google.gwt.dev.Compiler;
 import com.google.gwt.dev.CompilerOptions;
 import com.google.gwt.dev.CompileTaskRunner.CompileTask;
 import com.google.gwt.dev.Compiler.ArgProcessor;
-import com.google.gwt.dev.Compiler.CompilerOptionsImpl;
 import com.google.gwt.dev.shell.CheckForUpdates;
 import com.google.gwt.dev.shell.CheckForUpdates.UpdateResult;
 import com.google.gwt.dev.util.Memory;

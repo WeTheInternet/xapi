@@ -117,7 +117,7 @@ public class JsMemberPool <T> extends JavaScriptObject implements MemberPool <T>
 
   static native int getSeedId(Class<?> cls)
   /*-{
-    return cls.@java.lang.Class::seedId;
+    return cls.@java.lang.Class::typeId;
   }-*/;
 
   static String getSignature(Class<?> ... signature) {

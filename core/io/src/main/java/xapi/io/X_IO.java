@@ -1,9 +1,11 @@
 package xapi.io;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 
@@ -21,6 +23,7 @@ import xapi.log.X_Log;
 import xapi.log.api.LogLevel;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
+import xapi.util.X_Debug;
 import xapi.util.X_Util;
 import xapi.util.api.ErrorHandler;
 
@@ -201,5 +204,13 @@ public class X_IO {
     }
   }
   
+  public static InputStream toStreamUtf8(String in) {
+    try {
+      return new ByteArrayInputStream(in.getBytes("utf-8"));
+    } catch (UnsupportedEncodingException e) {
+      X_Debug.debug(e);
+      return new ByteArrayInputStream(in.getBytes());
+    }
+  }
 
 }

@@ -94,7 +94,9 @@ public class AutoUiInjector implements MagicMethodGenerator {
       JDeclaredType uiCls = ast.searchForTypeBySource(UserInterface.class.getName());
       for (JMethod method : uiCls.getMethods()) {
         if (method.getName().equals("renderUi")) {
-          return new JMethodCall(info.makeChild(), inst, method);
+          JMethodCall call = new JMethodCall(info.makeChild(), inst, method);
+          call.addArg(args.get(0));
+          return call;
         }
       }
     }

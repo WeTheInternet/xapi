@@ -3,7 +3,7 @@
   <parent>
     <artifactId>xapi-jre-parent</artifactId>
     <groupId>net.wetheinter</groupId>
-    <version>0.4</version>
+    <version>0.5-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>xapi-jre</artifactId>
@@ -36,7 +36,7 @@
     <dependency>
       <groupId>net.wetheinter</groupId>
       <artifactId>xapi-core-test</artifactId>
-      <version>0.4</version>
+      <version>0.5-SNAPSHOT</version>
       <scope>test</scope>
       <exclusions>
         <exclusion>

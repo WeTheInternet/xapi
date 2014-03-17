@@ -1,5 +1,6 @@
 package xapi.gwt.ui.autoui.client;
 
+import com.google.gwt.safehtml.shared.SafeHtml;
 import com.google.gwt.safehtml.shared.SafeHtmlBuilder;
 
 import xapi.gwt.ui.autoui.api.IsSafeHtmlBuilder;
@@ -23,6 +24,10 @@ public class SafeHtmlUserInterface <T> extends AbstractUserInterface<T> implemen
 
   protected void startRender(SafeHtmlBuilder out, T model) {
     
+  }
+  
+  public SafeHtml getSafeHtml() {
+    return out.toSafeHtml();
   }
 
   @Override

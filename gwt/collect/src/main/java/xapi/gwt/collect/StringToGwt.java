@@ -30,6 +30,22 @@ public class StringToGwt <V> extends JavaScriptObject implements StringTo<V>{
    return {_v$: valueType, _k: @xapi.gwt.collect.StringToGwt::newStringArray()() };
   }-*/;
 
+  public static native StringToGwt<Object> create()
+  /*-{
+   return {_k: @xapi.gwt.collect.StringToGwt::newStringArray()() };
+  }-*/;
+  
+  public static native <T> StringToGwt<T> fromJso(JavaScriptObject o)
+  /*-{
+     var m = @xapi.gwt.collect.StringToGwt::create()();
+     for (var i in o) {
+       var slot = {i : this._k.length, v: o[i]};
+       m._k[slot.i] = i;
+       m[i] = slot;
+     }
+   }-*/;
+  
+
   private static String[] newStringArray() {
     return new String[0];
   }
@@ -92,6 +108,17 @@ public class StringToGwt <V> extends JavaScriptObject implements StringTo<V>{
 
   }
 
+  public final native JavaScriptObject toJso()
+  /*-{
+    var out = {}, i = this._k.length;
+    while(i --> 0) {
+      var k = this._k[i];
+      out[k] = this[k].v;
+    }
+    return out;
+  }-*/;
+  
+  
   public final native String[] keyArray()
   /*-{
    return this._k;
@@ -136,7 +163,7 @@ public class StringToGwt <V> extends JavaScriptObject implements StringTo<V>{
       this._k[slot.i] = key;
       return null;
     }
-    var slot = this._k[index], v = slot.v;
+    var slot = this[this._k[index]], v = slot.v;
     slot.v = value;
     return v;
   }-*/;
@@ -192,27 +219,5 @@ public class StringToGwt <V> extends JavaScriptObject implements StringTo<V>{
   public final int size() {
     return keyArray().length;
   }
-
-//  public final V[] toArray() {
-//    String[] keys = keyArray();
-//    V[] array = X_Reflect.newArray(valueType(), keys.length);
-//    for (int i = keys.length; i --> 0; array[i] = get(keys[i]));
-//    return array;
-//  }
-//
-//  public final native Class<V> valueType()
-//  /*-{
-//    return this._v$;
-//  }-*/;
-//
-//  public final Class<?> componentType() {
-//    return valueType();
-//  }
-//
-//
-//  public final Class<String> keyType() {
-//    return String.class;
-//  }
-
 
 }

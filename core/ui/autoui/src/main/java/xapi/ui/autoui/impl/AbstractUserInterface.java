@@ -53,7 +53,7 @@ public abstract class AbstractUserInterface <T> implements UserInterface <T>{
     for (int i : body) {
       doRender(renderers[i], model);
     }
-    for (int i : head) {
+    for (int i : tail) {
       doRender(renderers[i], model);
     }
     return this;

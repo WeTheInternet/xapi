@@ -1,4 +1,4 @@
-package xapi.annotation.compile;
+package xapi.annotation.common;
 
 public @interface Property {
 

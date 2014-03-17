@@ -9,7 +9,7 @@ public class X_AutoUi {
   private X_AutoUi(){}
   
   @SuppressWarnings("unchecked")
-  public static <T, U extends UserInterface<T>> U makeUi(T model, Class<? extends T> uiOptions, Class<U> uiType) {
+  public static <T, U extends UserInterface<T>> U makeUi(T model, Class<? extends T> uiOptions, Class<? super U> uiType) {
     if (uiOptions == null) {
       assert model != null : "You must provide either a model object, or a model class";
       uiOptions = (Class<? extends T>) model.getClass();
@@ -24,7 +24,7 @@ public class X_AutoUi {
     }
   }
 
-  public static <T, U extends UserInterface<T>> U instantiate(Class<? extends T> cls, Class<U> uiType) {
+  public static <T, U extends UserInterface<T>> U instantiate(Class<? extends T> cls, Class<? super U> uiType) {
       return X_Inject
           .instance(UserInterfaceFactory.class)
           .createUi(cls, uiType);

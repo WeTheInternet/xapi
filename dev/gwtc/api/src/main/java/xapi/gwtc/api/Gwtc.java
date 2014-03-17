@@ -6,8 +6,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import xapi.annotation.common.Property;
 import xapi.annotation.compile.Dependency;
-import xapi.annotation.compile.Property;
 import xapi.annotation.compile.Resource;
 import xapi.annotation.compile.Resource.ResourceType;
 import xapi.annotation.reflect.MirroredAnnotation;

@@ -351,7 +351,7 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
   @Override
   public void addToEnd(PrintBuffer buffer) {
     super.addToEnd(buffer);
-    clearIndent();
+    setNotIndent();
   }
 
   protected String memberIndent() {

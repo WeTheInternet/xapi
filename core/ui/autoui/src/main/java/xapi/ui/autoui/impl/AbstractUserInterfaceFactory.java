@@ -7,6 +7,7 @@ import java.util.List;
 
 import javax.inject.Named;
 
+import xapi.log.X_Log;
 import xapi.source.write.MappedTemplate;
 import xapi.ui.autoui.api.BeanValueProvider;
 import xapi.ui.autoui.api.UiOptions;
@@ -25,7 +26,7 @@ import xapi.util.api.ConvertsValue;
 public abstract class AbstractUserInterfaceFactory implements UserInterfaceFactory {
 
   @Override
-  public <T, U extends UserInterface<T>> U createUi(Class<? extends T> type, Class<U> uiType) {
+  public <T, U extends UserInterface<T>> U createUi(Class<? extends T> type, Class<? super U> uiType) {
     UiRenderingContext[] options = getOptions(type);
     List<UiRenderingContext> 
       head = new ArrayList<UiRenderingContext>(),
@@ -176,7 +177,7 @@ public abstract class AbstractUserInterfaceFactory implements UserInterfaceFacto
 
   private final <T, U extends UserInterface<T>> U instantiateUi(
       final Class<? extends T> type,
-      final Class<U> uiType,
+      final Class<? super U> uiType,
       final UiRenderingContext[] head) {
     final U ui = newUi(type, uiType);
     try {
@@ -186,11 +187,17 @@ public abstract class AbstractUserInterfaceFactory implements UserInterfaceFacto
     }
   }
 
-  protected <T, U extends UserInterface<T>> U newUi(Class<? extends T> type, Class<U> uiType) {
+  @SuppressWarnings("unchecked")
+  protected <T, U extends UserInterface<T>> U newUi(Class<? extends T> type, Class<? super U> uiType) {
     if (uiType == null) {
       throw new NullPointerException("Must specify UI type for "+type);
     }
-    return create(uiType);
+    try {
+      return (U) uiType.newInstance();
+    } catch (InstantiationException | IllegalAccessException e) {
+      X_Log.error(getClass(), "Unable to instantiate",uiType, e);
+      throw X_Debug.rethrow(e);
+    }
   }
 
 }

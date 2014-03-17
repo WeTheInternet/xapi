@@ -26,7 +26,7 @@ public class AutoUiEntryPoint implements EntryPoint {
 //
 //    UserInterfaceFactory factory = X_Inject.<UserInterfaceFactory>instance(UserInterfaceFactory.class);
 //    ui = factory.createUi(UserToDiv.class, SafeHtmlUserInterface.class);
-    ui = X_AutoUi.makeUi(null, UserToDiv.class, SafeHtmlUserInterface.class);
+    ui = X_AutoUi.<User, SafeHtmlUserInterface<User>>makeUi(null, UserToDiv.class, SafeHtmlUserInterface.class);
     
     X_Log.info(getClass(), ui, ""+ui.renderUi(new UserModel("email", "id","name")));
     

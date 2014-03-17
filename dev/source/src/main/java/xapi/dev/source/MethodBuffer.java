@@ -170,6 +170,7 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
     return this;
   }
 
+  @SuppressWarnings("unchecked")
   public MethodBuffer addParameters(Entry<String, Class<?>>... parameters) {
     return addParameters(Arrays.asList(parameters));
   }
@@ -226,6 +227,7 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
     return addParameters(parameters);
   }
 
+  @SuppressWarnings("unchecked")
   public MethodBuffer setParameters(Entry<String, Class<?>>... parameters) {
     this.parameters.clear();
     return addParameters(Arrays.asList(parameters));
@@ -265,7 +267,7 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
     assert cls.privacy == 0 : "A local class cannot be "
         + Modifier.toString(cls.privacy);
     addToEnd(cls);
-    clearIndent();
+    setNotIndent();
     return cls;
   }
 

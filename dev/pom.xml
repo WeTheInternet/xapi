@@ -34,8 +34,8 @@
     <module>shell</module>
     <!-- An extended gwt compiler service -->
     <module>gwtc</module>
-    <!-- Work on the java8 compiler plugin -->
-    <module>javac</module>
+    <!-- Work on the java8 compiler plugin; commented out so production does not need java 8 -->
+    <!--<module>javac</module>-->
     <!-- Everything needed to run a comprehensive dev environment -->
     <module>uber</module>
   </modules>

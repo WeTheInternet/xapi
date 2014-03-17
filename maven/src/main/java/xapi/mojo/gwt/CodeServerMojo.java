@@ -152,7 +152,7 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
 //      version = GWT.getVersion();
 //      if (version != null)
 //        return version;
-      return superGuess("com.google.gwt", "2.5.1");
+      return superGuess("com.google.gwt", "2.6.1");
     };
   };
 
@@ -444,7 +444,7 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
     }
 
     protected String locateArtifact(String cp, String artifact, String cpSep) {
-      ArtifactResult location = X_Maven.loadArtifact("com.google.gwt", artifact, guessVersion("com.google.gwt", "2.5.1"));
+      ArtifactResult location = X_Maven.loadArtifact("com.google.gwt", artifact, guessVersion("com.google.gwt", "2.6.1"));
       if (location != null)
         return location.getArtifact().getFile().getAbsolutePath();
       return null;

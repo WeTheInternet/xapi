@@ -1,11 +1,9 @@
 package xapi.javac.dev.util;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import xapi.javac.dev.model.HasClassLiteralReference;
 import xapi.javac.dev.plugin.ClassWorldPlugin;
@@ -19,26 +17,20 @@ import com.sun.source.tree.StatementTree;
 import com.sun.source.tree.Tree.Kind;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.util.TreeScanner;
-import com.sun.source.util.Trees;
-import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.tree.JCTree.JCIdent;
-import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
 import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
-import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 
 public class ClassLiteralResolver extends TreeScanner<Void, Void>{
 
   private final List<HasClassLiteralReference> variables;
   private final List<HasClassLiteralReference> invocations;
-  private final List<HasClassLiteralReference> onComplete;
   private final ClassWorldPlugin classWorld;
   private String currentUnit;
   int depth = 0;
   
   public ClassLiteralResolver(List<? extends HasClassLiteralReference> items, ClassWorldPlugin classWorld) {
     this.classWorld = classWorld;
-    onComplete = new ArrayList<>();
     variables = new ArrayList<>();
     invocations = new ArrayList<>();
     items

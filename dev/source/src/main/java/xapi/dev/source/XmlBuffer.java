@@ -8,6 +8,8 @@ public class XmlBuffer extends PrintBuffer {
   private String tagName;
   private PrintBuffer attributes, comment, before;
   private Map<String, StringBuilder> attributeMap;
+  private boolean printNewline = true;
+  private boolean abbr = true;
 
   public XmlBuffer() {
     comment = new PrintBuffer();
@@ -64,8 +66,24 @@ public class XmlBuffer extends PrintBuffer {
     return buffer;
   }
 
+  public XmlBuffer makeTagNoIndent(String name) {
+    XmlBuffer buffer = new XmlBuffer(name);
+    buffer.indent = indent + INDENT;
+    buffer.setNewLine(false);
+    addToEnd(buffer);
+    return buffer;
+  }
+
   public XmlBuffer makeTagAtBeginning(String name) {
     XmlBuffer buffer = new XmlBuffer(name);
+    buffer.indent = indent + INDENT;
+    addToBeginning(buffer);
+    return buffer;
+  }
+  
+  public XmlBuffer makeTagAtBeginningNoIndent(String name) {
+    XmlBuffer buffer = new XmlBuffer(name);
+    buffer.setNewLine(false);
     buffer.indent = indent + INDENT;
     addToBeginning(buffer);
     return buffer;
@@ -104,17 +122,29 @@ public class XmlBuffer extends PrintBuffer {
       b.append(" ").append(attributes);
     }
     String body = super.toString();
-    if (body.length() == 0) {
+    if (abbr && body.length() == 0) {
       if (shouldShortenEmptyTag(tagName)) {
-        b.append("/>\n");
+        newline(b.append("/>"));
       } else {
-        b.append("> </").append(tagName).append(">\n");
+        newline(b.append("> </").append(tagName).append(">"));
       }
     } else {
-      b.append(">\n").append(body).append(origIndent).append("</")
-          .append(tagName).append(">\n");
+      newline(newline(b.append(">")).append(body).append(printNewline ? origIndent : "").append("</")
+          .append(tagName).append(">"));
     }
     return b.toString();
+  }
+
+  private StringBuilder newline(StringBuilder append) {
+    if (printNewline) {
+      append.append("\n");
+    }
+    return append;
+  }
+  
+  public XmlBuffer setNewLine(boolean useNewLine) {
+    printNewline = useNewLine;
+    return this;
   }
 
   protected boolean shouldShortenEmptyTag(String tag) {
@@ -130,7 +160,12 @@ public class XmlBuffer extends PrintBuffer {
     super.print(str);
     return this;
   }
-
+  
+  public XmlBuffer clearIndent() {
+    indent = "";
+    return this;
+  }
+  
   public XmlBuffer append(String str) {
     super.append(str);
     return this;
@@ -249,6 +284,37 @@ public class XmlBuffer extends PrintBuffer {
   public boolean isEmpty() {
     return super.isEmpty() && tagName == null && comment.isEmpty()
         && before.isEmpty();
+  }
+
+  public XmlBuffer setId(String id) {
+    setAttribute("id", id);
+    return this;
+  }
+
+  public String getId() {
+    if (!attributeMap.containsKey("id")) {
+      setId("x-"+hashCode());
+    }
+    StringBuilder id = attributeMap.get("id");
+    return id.substring(2, id.length()-2);
+  }
+  
+  public boolean hasAttribute(String name) {
+    ensureAttributes();
+    return attributeMap.containsKey(name);
+  }
+  
+  public String getAttribute(String name) {
+    if (hasAttribute(name)) {
+      StringBuilder attr = attributeMap.get(name);
+      return attr.substring(2, attr.length()-2);
+    }
+    return null;
+  }
+
+  public XmlBuffer allowAbbreviation(boolean abbr) {
+    this.abbr = abbr;
+    return this;
   }
 
 }

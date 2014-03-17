@@ -8,8 +8,6 @@ package java.lang;
 import java.io.InputStream;
 import java.net.URL;
 
-import javax.inject.Provider;
-
 import com.google.gwt.core.client.JavaScriptObject;
 
 /**
@@ -258,20 +256,14 @@ public class ClassLoader {
       return parent;
     }
 
-    private static Provider<ClassLoader> systemClassloader = new Provider<ClassLoader>() {
-      ClassLoader cl;
-      public ClassLoader get() {
-        return cl == null ? ((cl = new ClassLoader(null))) : cl;
-      }
-    };
+    private static ClassLoader cl;
     
     /**
      * A
      * @return
      */
     public static ClassLoader getSystemClassLoader() {
-      // Just one classloader for everyone
-      return systemClassloader.get();
+      return cl == null ? ((cl = new ClassLoader(null))) : cl;
     }
 
 
