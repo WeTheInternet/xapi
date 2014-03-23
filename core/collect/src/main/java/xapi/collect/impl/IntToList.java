@@ -41,7 +41,7 @@ public class IntToList<E> implements IntTo<E> {
 
   @Override
   public E put(Entry<Integer, E> item) {
-    list.ensureCapacity(item.getKey());
+    ensureCapacity(item.getKey());
     return list.set(item.getKey(), item.getValue());
   }
 
@@ -125,6 +125,12 @@ public class IntToList<E> implements IntTo<E> {
   public boolean add(E item) {
     return list.add(item);
   }
+  
+  @Override
+  public boolean insert(int pos, E item) {
+    list.add(pos, item);
+    return true;
+  }
 
   @Override
   public boolean contains(E value) {
@@ -168,8 +174,18 @@ public class IntToList<E> implements IntTo<E> {
 
   @Override
   public void set(int index, E value) {
-    list.ensureCapacity(index);
+    ensureCapacity(index);
     list.set(index, value);
+  }
+  
+  private void ensureCapacity(int index) {
+    while(list.size()<=index) {
+      list.add(getDefaultValue());
+    }
+  }
+
+  private E getDefaultValue() {
+    return null;
   }
 
   @Override

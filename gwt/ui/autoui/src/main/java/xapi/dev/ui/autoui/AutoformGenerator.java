@@ -1,4 +1,4 @@
-package xapi.gwt.ui.autoui.dev;
+package xapi.dev.ui.autoui;
 
 public class AutoformGenerator {
 

@@ -55,7 +55,7 @@ public class BaseConcurrentHashMap<K, V> extends AbstractHashMap<K, V>
   @Override
   protected native boolean equals(Object value1, Object value2)
   /*-{
-    return @java.util.Utility::equalsWithNullCheck(Ljava/lang/Object;Ljava/lang/Object;)(value1, value2);
+    return @java.util.Objects::equals(Ljava/lang/Object;Ljava/lang/Object;)(value1, value2);
   }-*/;
 
   @Override

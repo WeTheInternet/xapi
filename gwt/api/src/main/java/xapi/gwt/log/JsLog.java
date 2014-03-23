@@ -36,6 +36,7 @@ package xapi.gwt.log;
 
 import xapi.annotation.inject.SingletonOverride;
 import xapi.collect.api.Fifo;
+import xapi.collect.impl.SimpleFifo;
 import xapi.gwt.collect.JsFifo;
 import xapi.log.api.LogLevel;
 import xapi.log.api.LogService;
@@ -60,6 +61,12 @@ public class JsLog extends AbstractLog implements Initable {
     // TODO: implement a hard-coded version which uses the gwt user.agent property
     // to compile out lower-level log commands.
     // Production builds can just inject a JsLog subclass which hardcodes limit
+  }
+  
+  @Override
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  public Iterable<Object> shouldIterate(Object m) {
+    return m instanceof Iterable ? (Iterable)m : m instanceof SimpleFifo ? ((SimpleFifo)m).forEach() : null;
   }
 
   private final native void initialize()
@@ -119,6 +126,7 @@ public class JsLog extends AbstractLog implements Initable {
     try {
       //handy trick to unwrap boxed numbers in pretty and obf mode
       return m == undefined ? 'null'
+          : m.innerHTML != undefined ? m
           : m['value'] !== undefined ? m['value']
           : m['value_0'] !== undefined ? m['value_0']
           : m['a'] !== undefined ? m['a']
@@ -136,7 +144,6 @@ public class JsLog extends AbstractLog implements Initable {
   @Override
   public native void doLog(LogLevel level, Fifo<Object> o)
   /*-{
-//    var arr = o.@xapi.gwt.collect.JsFifo::array;
     try {
       $wnd.console.log(o);
     } catch (e) {
@@ -157,9 +164,12 @@ public class JsLog extends AbstractLog implements Initable {
     try {
       $wnd.console.log(o);
     } catch (e) {//for junit / browsers w/out a console
-      if (!$wnd.console) $wnd.console = {};
-      $wnd.console.log = function() {
-      }
+      if (!$wnd.console) 
+        $wnd.console = {};
+      if (!$wnd.console.log)
+        $wnd.console.log = function() {}
+      else
+        $wnd.console.log('Error logging object', e);
     }
   }-*/;
 

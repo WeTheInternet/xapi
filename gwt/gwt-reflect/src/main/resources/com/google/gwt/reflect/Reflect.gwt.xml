@@ -3,7 +3,7 @@
 <module>
 
   <!-- Enable magic methods in production. -->
-  <inherits name="com.google.gwt.MagicMethods" />
+  <inherits name="com.google.gwt.core.MagicMethods" />
   <inherits name="com.google.gwt.core.Core" />
   
   <!-- Configuration Property: gwt.reflection.factory -> 

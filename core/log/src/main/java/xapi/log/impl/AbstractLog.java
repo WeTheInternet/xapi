@@ -58,6 +58,12 @@ public abstract class AbstractLog implements LogService {
 			doLog(level, arr);
 		}
 	}
+	
+    @Override
+    @SuppressWarnings("unchecked")
+	public Iterable<Object> shouldIterate(Object m) {
+	  return m instanceof Fifo ? ((Fifo)m).forEach() : m instanceof Iterable ? (Iterable)m : null;
+	}
 
 	@Override
 	public Fifo<Object> newFifo() {

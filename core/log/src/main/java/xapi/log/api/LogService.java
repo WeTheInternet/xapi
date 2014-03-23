@@ -52,7 +52,6 @@ public interface LogService {
   //allow javascript to return an array for better console logging
   Fifo<Object> newFifo();
 
-
-
+  Iterable<Object> shouldIterate(Object m);
 
 }

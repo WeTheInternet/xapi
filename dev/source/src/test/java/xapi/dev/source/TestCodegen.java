@@ -35,7 +35,6 @@ public class TestCodegen {
     Assert.assertTrue(b.toString().contains("<T extends Date>"));
     // We used java.sql.Date as a fqcn after java.util.Date, so it must NOT be imported
     Assert.assertFalse(b.toString().contains("import java.sql.Date;"));
-    System.out.println(b.toString());
   }
 
   @Test

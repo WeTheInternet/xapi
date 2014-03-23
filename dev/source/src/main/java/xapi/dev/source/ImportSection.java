@@ -38,22 +38,11 @@ package xapi.dev.source;
 import static xapi.dev.source.PrintBuffer.NEW_LINE;
 
 import java.util.TreeMap;
-import java.util.regex.Pattern;
 
 public class ImportSection {
 
   private final TreeMap<String, String> imports = new TreeMap<String, String>();
   private final TreeMap<String, String> importStatic = new TreeMap<String, String>();
-
-  private static final Pattern skipImports = Pattern
-      .compile("("
-          + "(java[.]lang.[^.]*)" + // discard java.lang, but keep java.lang.reflect
-          "|" +  // also discard primitives
-          "((void)|(boolean)|(short)|(char)|(int)|(long)|(float)|(double)"
-          + "|(String)|(Object)|(Void)|(Boolean)|(Short)|(Character)|(Integer)|(Long)|(Float)|(Double))"
-          + ")" + "[;]*");
-  private static final Pattern trimmer = Pattern
-      .compile("(\\[\\])|(\\s*import\\s+)|(static\\s+)|(\\s*;\\s*)");
 
   public ImportSection() {
   }
@@ -149,7 +138,7 @@ public class ImportSection {
       index = importName.indexOf("[]", index);
       arrayDepth++;
     }
-    importName = trimmer.matcher(importName.trim()).replaceAll("");
+    importName = trim(importName);
     index = importName.indexOf('<');
     String suffix;
     if (index == -1)
@@ -161,7 +150,7 @@ public class ImportSection {
     }
     while (arrayDepth-- > 0)
       suffix += "[]";
-    if (skipImports.matcher(importName).matches())
+    if (skipImports(importName))
       return importName.replace("java.lang.", "") + suffix;
     importName = importName.replace('$', '.');
     String shortname = importName.substring(1 + importName.lastIndexOf('.'));
@@ -179,5 +168,18 @@ public class ImportSection {
       return shortname + suffix;
     // map.put(importName+" "+map.size(), importName);
     return importName + suffix;
+  }
+
+  private boolean skipImports(String importName) {
+    return importName.matches("("
+        + "(java[.]lang.[^.]*)" + // discard java.lang, but keep java.lang.reflect
+        "|" +  // also discard primitives
+        "((void)|(boolean)|(short)|(char)|(int)|(long)|(float)|(double)"
+        + "|(String)|(Object)|(Void)|(Boolean)|(Short)|(Character)|(Integer)|(Long)|(Float)|(Double))"
+        + ")" + "[;]*");
+  }
+
+  private String trim(String importName) {
+    return importName.replaceAll("(\\[\\])|(\\s*import\\s+)|(static\\s+)|(\\s*;\\s*)", "");
   }
 }

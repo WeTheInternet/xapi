@@ -4,12 +4,14 @@
   <inherits name="xapi.X_Inject"/>
   <inherits name="xapi.X_Source"/>
 <!--   <inherits name="com.google.gwt.reflect.Reflect"/> -->
-  <source path="ui/autoui" />
+  <source path="ui/autoui/" />
+  <source path="ui/autoui/api" />
+  <source path="ui/autoui/impl" />
   <source path="gwt/ui/autoui/client" />
   <source path="gwt/ui/autoui/shared" />
   
   <extend-configuration-property name="gwt.magic.methods" 
-    value="xapi.ui.autoui.X_AutoUi.makeUi(Ljava/lang/Object;Ljava/lang/Class;Ljava/lang/Class;)Lxapi/ui/autoui/api/UserInterface; *= xapi.gwt.ui.autoui.dev.AutoUiInjector"/>
+    value="xapi.ui.autoui.X_AutoUi.makeUi(Ljava/lang/Object;Ljava/lang/Class;Ljava/lang/Class;)Lxapi/ui/autoui/api/UserInterface; *= xapi.dev.ui.autoui.AutoUiInjector"/>
   
   
 </module>

@@ -51,6 +51,8 @@ extends CollectionProxy<Integer,T>
 
   boolean add(T item);
 
+  boolean insert(int pos, T item);
+
   boolean contains(T value);
 
   T at(int index);

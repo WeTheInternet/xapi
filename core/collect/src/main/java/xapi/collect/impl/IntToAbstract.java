@@ -50,6 +50,16 @@ public class IntToAbstract <V> implements IntTo<V> {
   public boolean add(V item) {
     return store.put(newEntry(size(), item)) == null;
   }
+  
+  @Override
+  public boolean insert(int pos, V item) {
+    for (int i = store.size(); i --> 0; ) {
+      V v = store.get(i);
+      store.put(newEntry(i+1, v));
+    }
+    store.put(newEntry(pos, item));
+    return true;
+  }
 
   protected Entry<Integer,V> newEntry(int size, V item) {
     return null;

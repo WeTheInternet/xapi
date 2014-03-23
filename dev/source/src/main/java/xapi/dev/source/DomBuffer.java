@@ -127,7 +127,9 @@ public class DomBuffer extends XmlBuffer {
   }
 
   public DomBuffer makeBr() {
-    return makeTag("br").setNewLine(false);
+    return makeTag("br")
+        .setNewLine(false)
+        .allowAbbreviation(true);
   }
   
   public DomBuffer makeFieldset() {

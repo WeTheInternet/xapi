@@ -222,5 +222,30 @@ public class X_Source {
   public static String qualifiedName(String pkg, String enclosed) {
     return X_String.isEmpty(pkg) ? enclosed : pkg + "." + enclosed;
   }
+  public static String[] splitClassName(String providerName) {
+    int was, is = was = providerName.lastIndexOf('.');
+    if (was == -1) {
+      return new String[]{"", providerName};
+    }
+    while (is != -1) {
+      if (Character.isLowerCase(providerName.charAt(is+1))) {
+        // the dot is before a lower-case value.  Use the next position as match
+        return new String[]{
+            providerName.substring(0, was),
+            providerName.substring(was+1)
+        };
+      } else {
+        was = is;
+        is = providerName.lastIndexOf('.', was-1);
+      }
+    }
+    if (Character.isLowerCase(providerName.charAt(0))) {
+      return new String[]{
+          providerName.substring(0, was),
+          providerName.substring(was+1)
+      };
+    }
+    return new String[]{"", providerName};
+  }
 
 }

@@ -11,6 +11,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import javax.inject.Provider;
+
 import xapi.annotation.inject.InstanceOverride;
 import xapi.collect.api.CollectionOptions;
 import xapi.collect.api.IntTo;
@@ -36,6 +38,10 @@ public class IntToListGwt <E> extends JavaScriptObject implements IntTo<E>{
   /*-{
    return [];
   }-*/;
+
+  public static <V> IntTo<V> create(Provider<V[]> arrayProvider) {
+    return JavaScriptObject.createArray().<IntToListGwt<V>>cast().setArrayProvider(arrayProvider);
+  }
   
   
   @Override
@@ -90,11 +96,35 @@ public class IntToListGwt <E> extends JavaScriptObject implements IntTo<E>{
   /*-{
     return this.length;
   }-*/;
+  
+  @Override
+  public final native boolean insert(int pos, E item)
+  /*-{
+    while(this.length < pos){
+      this.push(undefined);
+    }
+    this.splice(pos, 0, item);
+    return true;
+  }-*/;
 
   @Override
-  public final E[] toArray() {
-    return null;
-  }
+  public final native E[] toArray()
+  /*-{
+    if (this.toArray) {
+      var arr = this.toArray();
+      this.forEach(function(i) {
+        arr[arr.length] = i;
+      });
+      return arr;
+    }
+    throw "toArray not supported";
+  }-*/;
+  
+  public final native IntToListGwt<E> setArrayProvider(Provider<E[]> provider)
+  /*-{
+     this.toArray = function(){return provider.@javax.inject.Provider::get()();}
+     return this;
+   }-*/;
 
   @Override
   public final Collection<E> toCollection(Collection<E> into) {

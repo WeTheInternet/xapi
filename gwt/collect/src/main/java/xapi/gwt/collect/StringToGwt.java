@@ -149,7 +149,7 @@ public class StringToGwt <V> extends JavaScriptObject implements StringTo<V>{
 
   public final native V get(String key)
   /*-{
-    return this.hasOwnProperty(key) && this[key].v;
+    return this.hasOwnProperty(key) ? this[key].v : null;
   }-*/;
 
   @Override

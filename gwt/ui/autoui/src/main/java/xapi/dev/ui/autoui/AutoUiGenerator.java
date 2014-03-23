@@ -1,4 +1,4 @@
-package xapi.gwt.ui.autoui.dev;
+package xapi.dev.ui.autoui;
 
 import static java.lang.reflect.Modifier.FINAL;
 import static java.lang.reflect.Modifier.PRIVATE;

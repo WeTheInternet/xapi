@@ -5,7 +5,10 @@
     <inherits name="java.util.Util" />
 	<!-- Pull in X_Inject, which has all common utilities we need -->
     <inherits name="xapi.X_Inject" />
-	<!-- We also need X_Reflect, to perform array reflection -->
-    <inherits name="xapi.X_Reflect" />
+
+    <inherits name="com.google.gwt.reflect.Reflect" /> 
 	
+   <extend-configuration-property name="gwt.magic.methods" 
+     value="xapi.collect.X_Collect.newList(Ljava/lang/Class;)Lxapi/collect/api/IntTo; *= xapi.dev.collect.IntToInjector" />
+ 
 </module>

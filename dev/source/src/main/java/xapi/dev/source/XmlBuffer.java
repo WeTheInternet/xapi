@@ -9,7 +9,7 @@ public class XmlBuffer extends PrintBuffer {
   private PrintBuffer attributes, comment, before;
   private Map<String, StringBuilder> attributeMap;
   private boolean printNewline = true;
-  private boolean abbr = true;
+  private boolean abbr = false;
 
   public XmlBuffer() {
     comment = new PrintBuffer();

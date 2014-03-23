@@ -92,7 +92,11 @@ public class StringToAbstract <V> implements StringTo<V>{
 
   @Override
   public V put(String key, V value) {
-    return map.put(key, value);
+    if (value == null) {
+      return map.remove(key);
+    } else {
+      return map.put(key, value);
+    }
   }
 
   @Override
@@ -103,6 +107,11 @@ public class StringToAbstract <V> implements StringTo<V>{
   @Override
   public int size() {
     return map.size();
+  }
+  
+  @Override
+  public String toString() {
+    return map.toString();
   }
 
 }

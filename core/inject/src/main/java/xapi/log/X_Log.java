@@ -72,12 +72,13 @@ public class X_Log {
     Fifo<Object> logMsg = log.newFifo();
     logMsg.give("[" +level+"]");
     for (Object m : message){
-      if (m instanceof Fifo) {
-        for (Object o : ((Fifo<?>)m).forEach()) {
+      Iterable<Object> iter = log.shouldIterate(m);
+      if (iter == null) {
+        logMsg.give(log.unwrap(m));
+      } else {
+        for (Object o : iter) {
           logMsg.give(log.unwrap(o));
         }
-      } else {
-        logMsg.give(log.unwrap(m));
       }
     }
     log.doLog(l, logMsg);
