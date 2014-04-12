@@ -21,7 +21,7 @@ public class JsStringDictionary <V> implements StringDictionary<V>{
   }-*/;
 
   @Override
-  public final native boolean hasValue(String key)
+  public final native boolean hasKey(String key)
   /*-{
     return this[key] != undefined;
   }-*/;

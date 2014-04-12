@@ -37,7 +37,7 @@ public final class X_Util{
         return t;
     return first;
   }
-
+  
   public static RuntimeException rethrow(Throwable e) {
     if (e instanceof RuntimeException)
       throw (RuntimeException)e;// Don't re-wrap
@@ -57,6 +57,14 @@ public final class X_Util{
     }
     // throw unchecked.  
     throw new RuntimeException(e);
+  }
+  
+  public static int zeroSafeInt(Integer i) {
+    return i == null ? 0 : i;
+  }
+  
+  public static double zeroSafeDouble(Number i) {
+    return i == null ? 0 : i.doubleValue();
   }
 
   public static Throwable unwrap(Throwable e) {

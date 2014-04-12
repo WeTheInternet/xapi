@@ -37,6 +37,7 @@ package xapi.inject.impl;
 import javax.inject.Provider;
 
 import xapi.util.api.ProvidesValue;
+import xapi.util.impl.ImmutableProvider;
 
 /**
  * A proxy class used to create a lazy-loading provider, with an efficient proxy (self-overwriting) proxy.
@@ -74,20 +75,6 @@ public abstract class SingletonProvider<X> implements Provider<X>, ProvidesValue
     }
   }
 
-  private final class ImmutableProvider implements Provider<X>{
-
-    private final X x;
-
-    private ImmutableProvider(X x) {
-      this.x = x;
-    }
-    @Override
-    public final X get() {
-      return x;
-    }
-
-  }
-
   /**
    * The proxy object will override itself on first load with a bare pojo-based provider.
    *
@@ -117,7 +104,7 @@ public abstract class SingletonProvider<X> implements Provider<X>, ProvidesValue
 	protected Provider<X> createImmutableProvider(X init) {
 	  assert init != null : "Do not send null values to the immutable provider; " +
 	  		"the singleton will then return null forever.";
-    return new ImmutableProvider(init);
+    return new ImmutableProvider<X>(init);
   }
   /**
    * Tells whether or not this singleton is already set by instanceof checking
@@ -127,7 +114,7 @@ public abstract class SingletonProvider<X> implements Provider<X>, ProvidesValue
    * @return - Whether or not our proxy class matches the expected immutable class.
    */
 	public boolean isSet(){
-    return proxy instanceof SingletonProvider.ImmutableProvider;
+    return proxy instanceof ImmutableProvider;
   }
 
   /**

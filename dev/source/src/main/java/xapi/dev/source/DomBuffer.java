@@ -339,5 +339,15 @@ public class DomBuffer extends XmlBuffer {
     super.allowAbbreviation(abbr);
     return this;
   }
+
+  public DomBuffer makeTextArea() {
+    return makeTag("textarea")
+        .setNewLine(false)
+        .allowAbbreviation(false);
+  }
+
+  public void setPlaceholder(String placeholder) {
+    setAttribute("placeholder", placeholder);
+  }
   
 }

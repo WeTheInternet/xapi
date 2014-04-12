@@ -225,7 +225,7 @@ public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
   }
 
   private boolean destroy(Thread thread, int timeout) {
-    if (environments.hasValue(thread.getName())) {
+    if (environments.hasKey(thread.getName())) {
       ConcurrentEnvironment enviro = environments.get(thread, thread.getUncaughtExceptionHandler());
       boolean success = enviro.destroy(timeout);
       environments.removeValue(thread.getName());

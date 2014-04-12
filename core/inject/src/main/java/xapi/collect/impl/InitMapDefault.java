@@ -26,7 +26,7 @@ public class InitMapDefault <Key, Value> extends AbstractInitMap<Key,Value>{
   }
 
   @Override
-  public boolean hasValue(String key) {
+  public boolean hasKey(String key) {
     return map.containsKey(key);
   }
 

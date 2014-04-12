@@ -25,12 +25,22 @@ public class HtmlBuffer {
     }
     
     public HeadBuffer addScript(String src) {
-      makeTag("script")
+      script(src);
+      buffer.println();
+      return this;
+    }
+
+    private DomBuffer script(String src) {
+      return makeTag("script")
         .setType("text/javascript")
         .setSrc(src)
         .setNewLine(false)
         .append(" ")// force script tags to have a body;
       ;
+    }
+
+    public HeadBuffer addScript(String src, boolean async) {
+      script(src).setAttribute("async", Boolean.toString(async));
       buffer.println();
       return this;
     }
@@ -83,11 +93,20 @@ public class HtmlBuffer {
       buffer.setAttribute("lang", lang);
       return this;
     }
+
+    public HeadBuffer addLink(String rel, String href) {
+      buffer.makeTag("link")
+        .setRel(rel)
+        .setHref(href)
+        .allowAbbreviation(true)
+      ;
+      return this;
+    }
   }
 
   public HtmlBuffer() {
     root = new XmlBuffer("html");
-    doctype = "<!doctype html>\n";
+    doctype = "<!doctype html>\n"; 
   }
   
   public final DomBuffer getBody() {

@@ -113,13 +113,13 @@ public abstract class AbstractInitMap <Key, Value> implements InitMap<Key,Value>
 
 	public Value get(Key k) {
 	  String key = keyProvider.convert(k);
-		if (hasValue(key))
+		if (hasKey(key))
 			return getValue(key);
 		Value value;
 		if (isMultiThreaded()) {
 		  //double-checked lock for multithreaded enviros only
 		  synchronized(getLock(key)) {
-  		  if (hasValue(key))
+  		  if (hasKey(key))
           return getValue(key);
 		    //init object
 		    value = initialize(k);
@@ -139,7 +139,7 @@ public abstract class AbstractInitMap <Key, Value> implements InitMap<Key,Value>
 	}
 
   public boolean containsKey(Key key) {
-    return hasValue(keyProvider.convert(key));
+    return hasKey(keyProvider.convert(key));
   }
 
   protected boolean isMultiThreaded() {

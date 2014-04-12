@@ -23,9 +23,9 @@ import xapi.util.impl.AbstractPair;
 public class IntToList<E> implements IntTo<E> {
 
   private final ArrayList<E> list = new ArrayList<E>(10);
-  private final Class<E> type;
+  private final Class<? extends E> type;
   
-  public IntToList(Class<E> cls) {
+  public IntToList(Class<? extends E> cls) {
     this.type = cls;
   }
 
@@ -124,6 +124,27 @@ public class IntToList<E> implements IntTo<E> {
   @Override
   public boolean add(E item) {
     return list.add(item);
+  }
+  
+  @Override
+  @SuppressWarnings("unchecked")
+  public boolean addAll(E... items) {
+    for (E item : items) {
+      list.add(item);
+    }
+    return true;
+  }
+  
+  @Override
+  public boolean addAll(Iterable<E> items) {
+    if (items instanceof Collection) {
+      list.addAll((Collection<E>)items);
+    } else {
+      for (E item : items) {
+        list.add(item);
+      }
+    }
+    return true;
   }
   
   @Override

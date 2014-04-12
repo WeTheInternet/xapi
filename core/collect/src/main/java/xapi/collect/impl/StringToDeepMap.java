@@ -5,9 +5,9 @@ import xapi.collect.api.StringTo;
 
 public class StringToDeepMap <X> extends StringToAbstract<StringTo<X>>{
 
-  private final Class<X> componentClass;
+  private final Class<? extends X> componentClass;
 
-  public StringToDeepMap(Class<X> componentClass) {
+  public StringToDeepMap(Class<? extends X> componentClass) {
     this.componentClass = componentClass;
   }
 
@@ -20,8 +20,9 @@ public class StringToDeepMap <X> extends StringToAbstract<StringTo<X>>{
     return list;
   }
 
+  @SuppressWarnings("unchecked")
   protected StringTo<X> newMap() {
-    return X_Collect.newStringMap(componentClass);
+    return X_Collect.newStringMap(Class.class.cast(componentClass));
   }
 
 }

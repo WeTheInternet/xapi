@@ -6,6 +6,7 @@ import java.util.NoSuchElementException;
 
 import xapi.annotation.inject.InstanceDefault;
 import xapi.collect.api.Fifo;
+import xapi.util.api.ConvertsValue;
 
 /**
  * A simple, fast, threadsafe, one-way, single-linked list.
@@ -217,6 +218,22 @@ public class SimpleFifo <E> implements Fifo<E>, Iterable<E>, Serializable{
     return b.toString();
   }
   
+  public String join(String delim, ConvertsValue<E, String> serializer) {
+    Node n = head.next;
+    if (n == null)return "";
+    StringBuilder b = new StringBuilder();
+    b.append(serialize(serializer, n.item));
+    while ((n = n.next)!=null) {
+      b.append(delim);
+      b.append(serializer.convert(n.item));
+    }
+    return b.toString();
+  }
+  
+  protected String serialize(ConvertsValue<E, String> serializer, E item) {
+    return serializer == null ? String.valueOf(item) : serializer.convert(item);
+  }
+
   @Override
   @SuppressWarnings("unchecked")
   public Fifo<E> giveAll(E ... elements) {

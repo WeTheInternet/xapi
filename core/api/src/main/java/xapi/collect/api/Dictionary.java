@@ -18,7 +18,7 @@ import xapi.util.api.ReceivesValue;
  */
 public interface Dictionary <K, V> {
 
-  boolean hasValue(K key);
+  boolean hasKey(K key);
 
   V getValue(K key);
 

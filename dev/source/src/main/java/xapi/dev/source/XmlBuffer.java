@@ -92,7 +92,7 @@ public class XmlBuffer extends PrintBuffer {
   @Override
   public String toString() {
     if (tagName == null) {
-      assert attributes == null : "Cannot add attributes to an XmlBuffer with no tag name: "
+      assert attributes == null || attributes.isEmpty() : "Cannot add attributes to an XmlBuffer with no tag name: "
           + "\nAttributes: " + attributes + "\nBody: " + super.toString();
       return super.toString();
     }

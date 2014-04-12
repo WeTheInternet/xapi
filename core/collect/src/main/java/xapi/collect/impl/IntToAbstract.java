@@ -212,5 +212,22 @@ public class IntToAbstract <V> implements IntTo<V> {
       set(((Number)key).intValue(), (V)value);
     }
   }
+  
+  @Override
+  public boolean addAll(Iterable<V> items) {
+    for (V item : items) {
+      add(item);
+    }
+    return true;
+  }
+  
+  @Override
+  @SuppressWarnings("unchecked")
+  public boolean addAll(V ... items) {
+    for (V item : items) {
+      add(item);
+    }
+    return true;
+  }
 
 }

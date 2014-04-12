@@ -6,7 +6,7 @@ import xapi.util.api.ReceivesValue;
 public class StringDictionaryDefault <V> extends StringToAbstract<V> implements StringDictionary<V>{
 
   @Override
-  public boolean hasValue(String key) {
+  public boolean hasKey(String key) {
     return containsKey(key);
   }
 

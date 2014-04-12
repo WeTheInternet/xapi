@@ -10,7 +10,7 @@ import xapi.collect.api.StringTo;
 
 public interface CollectionService {
 
-  <V> IntTo<V> newList(Class<V> cls, CollectionOptions opts);
+  <V> IntTo<V> newList(Class<? extends V> cls, CollectionOptions opts);
 
   <V> IntTo<V> newSet(Class<V> cls, CollectionOptions opts);
 

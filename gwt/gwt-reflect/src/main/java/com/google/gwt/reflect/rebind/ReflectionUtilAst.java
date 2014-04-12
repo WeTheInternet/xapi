@@ -8,6 +8,7 @@ import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.dev.jjs.UnifyAstView;
 import com.google.gwt.dev.jjs.ast.JAbstractMethodBody;
+import com.google.gwt.dev.jjs.ast.JCastOperation;
 import com.google.gwt.dev.jjs.ast.JClassLiteral;
 import com.google.gwt.dev.jjs.ast.JExpression;
 import com.google.gwt.dev.jjs.ast.JFieldRef;
@@ -98,10 +99,13 @@ public final class ReflectionUtilAst {
         logger.log(logLevel, "Not final "+field);
         if (doLog) ReflectionUtilAst.logNonFinalError(logger, inst);
       }
+    } else if (inst instanceof JCastOperation){
+      JCastOperation op = (JCastOperation) inst;
+      return extractImmutableNode(logger, type, op.getExpr(), ast, strict);
     } else if (inst instanceof JMethodCall){
       JMethodCall call = (JMethodCall)inst;
       JMethod target = (call).getTarget();
-      if (ReflectionUtilAst.isGetMagicClass(target)) {
+      if (isGetMagicClass(target) || isClassCast(target)) {
         return extractImmutableNode(logger, type, call.getArgs().get(0), ast, strict);
       }
       if (target.isExternal()) {
@@ -169,6 +173,11 @@ public final class ReflectionUtilAst {
         (target.getName().equals("enhanceClass") &&
             target.getEnclosingType().getName().endsWith(ReflectionUtilJava.MAGIC_CLASS_SUFFIX))
         ;
+  }
+  
+  private static boolean isClassCast(JMethod target) {
+    return target.getName().equals("cast") &&
+            target.getEnclosingType().getName().equals(Class.class.getName());
   }
 
   private static boolean isUnknownType(JExpression inst) {

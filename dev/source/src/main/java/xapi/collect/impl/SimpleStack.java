@@ -117,5 +117,4 @@ public class SimpleStack <T> implements Iterable<T>{
     return new Node<T>();
   }
 
-
 }

@@ -168,6 +168,23 @@ public class IntToListGwt <E> extends JavaScriptObject implements IntTo<E>{
     set(size(), item);
     return true;
   }
+  
+  @Override
+  @SuppressWarnings("unchecked")
+  public final boolean addAll(E... items) {
+    for (E item : items) {
+      add(item);
+    }
+    return true;
+  }
+  
+  @Override
+  public final boolean addAll(Iterable<E> items) {
+    for (E item : items) {
+      add(item);
+    }
+    return true;
+  }
 
   @Override
   public final boolean contains(E value) {

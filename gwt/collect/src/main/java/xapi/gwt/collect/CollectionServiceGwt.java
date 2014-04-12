@@ -18,7 +18,7 @@ import xapi.platform.GwtPlatform;
 public class CollectionServiceGwt implements CollectionService{
 
   @Override
-  public <V> IntTo<V> newList(Class<V> cls, CollectionOptions opts) {
+  public <V> IntTo<V> newList(Class<? extends V> cls, CollectionOptions opts) {
     return IntToListGwt.newInstance();
   }
 

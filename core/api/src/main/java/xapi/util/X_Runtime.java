@@ -123,6 +123,10 @@ public class X_Runtime {
         assert false : e;//should never get here, but don't punish prod
       }
       }
+    } catch (VerifyError e) {
+      // only ever thrown by java; can happen when gwt w/ java 8 is on classpath
+    } catch (UnsupportedClassVersionError e) {
+      // only ever thrown by java; can happen when gwt w/ java 8 is on classpath
     }catch(NoSuchMethodException e) {
       //What an unpatched GWT java.lang.Class will throw
       success = true;

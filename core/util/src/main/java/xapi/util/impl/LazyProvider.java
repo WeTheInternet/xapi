@@ -12,6 +12,13 @@ public class LazyProvider <T> extends SingletonProvider<T> {
     this.provider = provider;
   }
   
+  public LazyProvider(T maybeNull, Provider<T> provider) {
+    this.provider = 
+        maybeNull == null 
+          ? provider 
+          : new ImmutableProvider<>(maybeNull);
+  }
+  
   @Override
   protected final T initialValue() {
     return provider.get();

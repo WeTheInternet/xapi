@@ -40,7 +40,7 @@ public class X_Collect {
   public static final CollectionOptions MUTABLE_LIST = asMutableList().build();
   public static final CollectionOptions MUTABLE_SET = asMutableSet().build();
 
-  public static <V> IntTo<V> newList(Class<V> cls) {
+  public static <V> IntTo<V> newList(Class<? extends V> cls) {
     return service.newList(cls, MUTABLE_LIST);
   }
 
@@ -63,7 +63,7 @@ public class X_Collect {
     return service.newClassMap(valueCls, MUTABLE);
   }
 
-  public static <V> StringTo<V> newStringMap(Class<? extends V> valueCls) {
+  public static <V> StringTo<V> newStringMap(Class<V> valueCls) {
     return service.newStringMap(valueCls, MUTABLE);
   }
 
@@ -115,7 +115,7 @@ public class X_Collect {
     return new StringToManyList<X>(component);
   }
 
-  public static <X> StringTo<StringTo<X>> newStringDeepMap(Class<X> component) {
+  public static <X> StringTo<StringTo<X>> newStringDeepMap(Class<? extends X> component) {
     return new StringToDeepMap<X>(component);
   }
 
