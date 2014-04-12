@@ -281,8 +281,12 @@ public class XmlBuffer extends PrintBuffer {
     return before.printBefore(prefix);
   }
 
+  public boolean isNoTagName() {
+    return tagName == null;
+  }
+  
   public boolean isEmpty() {
-    return super.isEmpty() && tagName == null && comment.isEmpty()
+    return super.isEmpty() && isNoTagName() && comment.isEmpty()
         && before.isEmpty();
   }
 

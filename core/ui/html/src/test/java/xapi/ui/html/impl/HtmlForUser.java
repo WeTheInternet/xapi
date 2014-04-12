@@ -1,7 +1,7 @@
-package xapi.gwt.ui.autoui.client;
+package xapi.ui.html.impl;
 
-import xapi.gwt.ui.autoui.api.El;
 import xapi.ui.autoui.client.User;
+import xapi.ui.html.api.El;
 
 public interface HtmlForUser extends User {
 

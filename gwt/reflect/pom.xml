@@ -13,6 +13,10 @@
   <url>WeTheInter.net</url>
   <description>
  </description>
+ 
+ <properties>
+   <gwt.version>2.6.2</gwt.version>
+ </properties>
 
   <dependencies>
   <dependency>

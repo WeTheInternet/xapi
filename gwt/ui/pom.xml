@@ -17,6 +17,7 @@
 
   <modules>
     <module>autoui</module>
+    <module>html</module>
   </modules>
 
   <dependencies>

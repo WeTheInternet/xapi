@@ -60,26 +60,9 @@ public class UiRenderingContext {
   public String applyTemplate(String name, Object val) {
     Map<String, Object> map = new HashMap<String, Object>();
     BeanValueProvider bean = getBeanValueProvider();
-    if ("".equals(name)) {
-      for (String key : bean.childKeys()) {
-        String k = "${"+key+"}";
-        if (template.hasKey(k)) {
-          map.put(k, bean.getValue(key, "", val));
-        }
-        k = "${"+key+".name()}";
-        if (template.hasKey(k)) {
-          map.put(k, key);
-        }
-      }
-    } else {
-      val = bean.getValue(name, "", val);
-      map.put("$value", val);
-      map.put("$name", name);
-      map.put("${"+name+"}", val);
-      map.put("${"+name+".name()}", name);
-      // We should also have a means to do deep name resolving on rebased bean items...
-    }
-    return getTemplate().applyMap(map);
+    MappedTemplate template = getTemplate();
+    bean.fillMap(name, template, map, val);
+    return template.applyMap(map);
   }
 
   @SuppressWarnings("rawtypes")

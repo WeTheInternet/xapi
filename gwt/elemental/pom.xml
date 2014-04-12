@@ -18,8 +18,6 @@
 	<description>
     Some playground code for using gwt elemental to enable advanced html5 features.
  </description>
-	<properties>
-	</properties>
 
 	<dependencies>
 		<dependency>
@@ -49,6 +47,16 @@
 	</dependencies>
 
 	<profiles>
+
+  <profile>
+    <id>jdk7</id>
+    <activation>
+      <jdk>!1.8</jdk>
+    </activation>
+    <properties>
+      <gwt.version>2.6.0</gwt.version>
+    </properties>
+  </profile>
 		<profile>
 		  <id>launch</id>
 			<activation>

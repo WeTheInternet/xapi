@@ -1,5 +1,8 @@
 package xapi.source.write;
 
+import java.util.ArrayList;
+import java.util.Collection;
+
 /**
  * A fast, lightweight string templating system with zero dependencies.
  * <p>
@@ -37,6 +40,21 @@ public class Template extends Stack{
     compile(template, replaceables);
   }
   
+  public Template(String template, Iterable<String> replaceables) {
+    this(template, toArray(replaceables));
+  }
+  
+  protected static String[] toArray(Iterable<String> items) {
+    if (items instanceof Collection) {
+      return ((Collection<String>)items).toArray(new String[0]);
+    }
+    ArrayList<String> all = new ArrayList<String>();
+    for (String item : items) {
+      all.add(item);
+    }
+    return all.toArray(new String[all.size()]);
+  }
+
   public void setToStringer(ToStringer toString) {
     Stack s = this;
     while (s != null) {

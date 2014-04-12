@@ -7,6 +7,10 @@ public class MappedTemplate extends Template {
 
   private Map<String, Integer> positions;
   
+  public MappedTemplate(String template, Iterable<String> items) {
+    this(template, toArray(items));
+  }
+  
   public MappedTemplate(String template, String ... replaceables) {
     super(template, replaceables);
     positions = new HashMap<String, Integer>();

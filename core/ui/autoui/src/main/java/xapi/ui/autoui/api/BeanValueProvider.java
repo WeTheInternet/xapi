@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import xapi.collect.impl.ArrayIterable;
+import xapi.source.write.MappedTemplate;
 import xapi.util.api.ConvertsValue;
 
 public class BeanValueProvider {
@@ -78,12 +79,17 @@ public class BeanValueProvider {
   
   public void addProvider(String key, final String name, ConvertsValue<Object, Object> provider) {
     map.put(key, provider);
-    map.put(key+".name()", new ConvertsValue<Object, Object>() {
+    ConvertsValue<Object, Object> namer = new ConvertsValue<Object, Object>() {
       @Override
       public Object convert(Object from) {
-        return name;
+        return from instanceof HasName ? ((HasName)from).getName() : name;
       }
-    });
+    };
+    map.put(key+".name()", namer );
+    if ("this".equals(key)) {
+      map.put("$name", namer);
+      map.put("$value", provider);
+    }
   }
   
   protected Object valueOf(String name, Object object) {
@@ -136,6 +142,28 @@ public class BeanValueProvider {
 
   public Iterable<String> getChildKeys() {
     return new ArrayIterable<String>(childKeys());
+  }
+
+  public void fillMap(String name, MappedTemplate template, Map<String, Object> map, Object val) {
+    if ("".equals(name)) {
+      for (String key : childKeys()) {
+        String k = key.startsWith("$") ? key : "${"+key+"}";
+        if (template.hasKey(k)) {
+          map.put(k, getValue(key, "", val));
+        }
+        k = "${"+key+".name()}";
+        if (template.hasKey(k)) {
+          map.put(k, key);
+        }
+      }
+    } else {
+      val = getValue(name, "", val);
+      map.put("$value", val);
+      map.put("$name", name);
+      map.put("${"+name+"}", val);
+      map.put("${"+name+".name()}", name);
+      // We should also have a means to do deep name resolving on rebased bean items...
+    }
   }
   
 }

@@ -1,4 +1,5 @@
-package xapi.gwt.ui.autoui.api;
+package xapi.ui.html.api;
+
 
 public interface HasHtml extends Html {
 

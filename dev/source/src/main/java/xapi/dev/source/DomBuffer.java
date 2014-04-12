@@ -166,7 +166,7 @@ public class DomBuffer extends XmlBuffer {
   
   public DomBuffer makeTag(String name) {
     DomBuffer buffer = new DomBuffer(name);
-    buffer.indent = indent + INDENT;
+    buffer.indent = isNoTagName() ? indent : indent + INDENT;
     addToEnd(buffer);
     return buffer;
   }

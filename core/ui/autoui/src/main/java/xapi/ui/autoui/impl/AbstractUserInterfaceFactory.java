@@ -133,7 +133,7 @@ public abstract class AbstractUserInterfaceFactory implements UserInterfaceFacto
     }
   }
 
-  protected BeanValueProvider getBeanProvider(Class<?> cls) {
+  public BeanValueProvider getBeanProvider(Class<?> cls) {
     BeanValueProvider bean = new BeanValueProvider();
     ConvertsValue<Object, Object> valueConverter = new ConvertsValue<Object, Object>() {
       @Override
@@ -170,7 +170,7 @@ public abstract class AbstractUserInterfaceFactory implements UserInterfaceFacto
   }
   protected String getName(Class<?> from) {
     if (from.isAnnotationPresent(Named.class)) {
-      return from.getClass().getAnnotation(Named.class).value();
+      return from.getAnnotation(Named.class).value();
     }
     return from.getName();
   }

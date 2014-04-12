@@ -1,5 +1,9 @@
-package xapi.gwt.ui.autoui.api;
+package xapi.ui.html.api;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
+@Retention(RetentionPolicy.RUNTIME)
 public @interface Html {
 
   Css[] css() default {};

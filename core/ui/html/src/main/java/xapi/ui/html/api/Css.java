@@ -1,4 +1,4 @@
-package xapi.gwt.ui.autoui.api;
+package xapi.ui.html.api;
 
 import com.google.gwt.resources.client.ClientBundle;
 import com.google.gwt.resources.client.CssResource;

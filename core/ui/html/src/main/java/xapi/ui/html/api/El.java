@@ -1,4 +1,4 @@
-package xapi.gwt.ui.autoui.api;
+package xapi.ui.html.api;
 
 import xapi.annotation.common.Property;
 
@@ -11,6 +11,8 @@ import xapi.annotation.common.Property;
 public @interface El {
 
   Style[] style() default {};
+  
+  String[] className() default {};
   
   Property[] properties() default {@Property(name="class",value="$name")};
   
