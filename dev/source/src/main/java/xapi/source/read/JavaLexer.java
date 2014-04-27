@@ -1277,6 +1277,7 @@ public class JavaLexer {
     pos = eatJavaname(chars, start);
     IsParameter param = new IsParameter(chars.subSequence(start, pos).toString(), type.toString());
     param.annotations = annos;
+    param.modifier = mods.modifier;
     return param;
   }
 

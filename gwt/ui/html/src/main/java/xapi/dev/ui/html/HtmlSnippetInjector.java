@@ -2,7 +2,9 @@ package xapi.dev.ui.html;
 
 import java.util.List;
 
+import xapi.log.X_Log;
 import xapi.ui.autoui.api.UserInterface;
+import xapi.ui.html.api.HtmlSnippet;
 
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;
@@ -15,10 +17,12 @@ import com.google.gwt.dev.jjs.UnifyAstView;
 import com.google.gwt.dev.jjs.ast.Context;
 import com.google.gwt.dev.jjs.ast.JClassLiteral;
 import com.google.gwt.dev.jjs.ast.JClassType;
+import com.google.gwt.dev.jjs.ast.JConstructor;
 import com.google.gwt.dev.jjs.ast.JDeclaredType;
 import com.google.gwt.dev.jjs.ast.JExpression;
 import com.google.gwt.dev.jjs.ast.JMethod;
 import com.google.gwt.dev.jjs.ast.JMethodCall;
+import com.google.gwt.dev.jjs.ast.JNewInstance;
 import com.google.gwt.dev.jjs.ast.JNullType;
 import com.google.gwt.reflect.rebind.ReflectionUtilAst;
 
@@ -45,22 +49,38 @@ public class HtmlSnippetInjector implements MagicMethodGenerator {
       throws UnableToCompleteException {
     List<JExpression> args = methodCall.getArgs();
     JClassLiteral typeLiteral = ReflectionUtilAst.extractClassLiteral(logger, args.get(0), ast, true);
-    boolean isToHtml = args.size() == 3;
+    boolean isToHtml = "toHtml".equals(methodCall.getTarget().getName());
+    int instanceIndex = args.size() - 2;
     
+    logger.log(Type.INFO, "Injecting "+methodCall.getTarget().getName()+" for "+typeLiteral.getRefType().getName());
     
     TypeOracle oracle = ast.getTypeOracle();
     ast.translate(typeLiteral.getRefType());
     
-    com.google.gwt.core.ext.typeinfo.JClassType uiOptions;
+    com.google.gwt.core.ext.typeinfo.JClassType templateType;
     try {
-      uiOptions = oracle.getType(typeLiteral.getRefType().getName().replace('$', '.'));
+      templateType = oracle.getType(typeLiteral.getRefType().getName().replace('$', '.'));
+    } catch (NotFoundException e) {
+      logger.log(Type.ERROR, "Unable to load "+typeLiteral.getRefType()+" from the type oracle");
+      throw new UnableToCompleteException();
+    }
+
+    com.google.gwt.core.ext.typeinfo.JClassType modelType;
+    try {
+      if (args.size() == (isToHtml ? 3 : 2)) {
+        modelType = templateType;
+      } else {
+        JClassLiteral modelLiteral = ReflectionUtilAst.extractClassLiteral(logger, args.get(1), ast, true);
+        ast.translate(modelLiteral.getRefType());
+        modelType = oracle.getType(modelLiteral.getRefType().getName().replace('$', '.'));
+      }
     } catch (NotFoundException e) {
       logger.log(Type.ERROR, "Unable to load "+typeLiteral.getRefType()+" from the type oracle");
       throw new UnableToCompleteException();
     }
     
     String provider;
-    provider = HtmlSnippetGenerator.generateSnippetProvider(logger, ast, uiOptions);
+    provider = HtmlSnippetGenerator.generateSnippetProvider(logger, ast, templateType, modelType);
     // Force load the type
     ast.getTypeOracle().findType(provider);
     
@@ -70,27 +90,25 @@ public class HtmlSnippetInjector implements MagicMethodGenerator {
     SourceInfo info = methodCall.getSourceInfo().makeChild();
     JExpression inst = null;
     for (JMethod method : uiType.getMethods()) {
-      if ("newUi".equals(method.getName())) {
-        inst = new JMethodCall(info, null, method);
+      if (method instanceof JConstructor) {
+        JNewInstance newInst = new JNewInstance(info, (JConstructor) method, null, args.get(args.size()-1).makeStatement().getExpr());
+        inst = newInst;
+        logger.log(Type.INFO, method.getSignature()+" : "+newInst.getArgs());
         break;
+      }
+    }
+    X_Log.info(getClass(), "Generated X_Html implementation ", uiType);
+    if (isToHtml) {
+      JDeclaredType snippet = ast.searchForTypeBySource(HtmlSnippet.class.getName());
+      for (JMethod method : snippet.getMethods()) {
+        if (method.getName().equals("convert")) {
+          return new JMethodCall(info, inst, method, args.get(instanceIndex));
+        }
       }
     }
     if (inst == null) {
       logger.log(Type.ERROR, "Unable to find method newUi in generated UI provider "+provider);
       throw new UnableToCompleteException();
-    }
-    
-    // Possible render the ui immediately, if a non-null model was supplied
-    if (!(args.get(0).getType() instanceof JNullType)) {
-      // We need to call renderUi on the new instance.
-      JDeclaredType uiCls = ast.searchForTypeBySource(UserInterface.class.getName());
-      for (JMethod method : uiCls.getMethods()) {
-        if (method.getName().equals("renderUi")) {
-          JMethodCall call = new JMethodCall(info.makeChild(), inst, method);
-          call.addArg(args.get(0));
-          return call;
-        }
-      }
     }
     return inst;
   }

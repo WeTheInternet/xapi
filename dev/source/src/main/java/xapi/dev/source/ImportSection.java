@@ -58,6 +58,11 @@ public class ImportSection {
     return tryImport(importName, importName.contains("static "));
   }
 
+  public String addStatic(Class<?> cls, String importName) {
+    boolean hasStatic = importName!=null&&importName.length()>0;
+    return tryImport(cls.getCanonicalName()+(hasStatic ? "."+importName : ""), hasStatic, false);
+  }
+  
   public String addStatic(String importName) {
     return tryImport(importName, true);
   }
@@ -125,6 +130,10 @@ public class ImportSection {
   }
 
   protected String tryImport(String importName, boolean staticImport) {
+    return tryImport(importName, staticImport, true);
+  }
+  
+  protected String tryImport(String importName, boolean staticImport, boolean replaceDollarSigns) {
     TreeMap<String, String> map = staticImport ? importStatic : imports;
     int arrayDepth = 0;
     int index = importName.indexOf(".");
@@ -152,7 +161,9 @@ public class ImportSection {
       suffix += "[]";
     if (skipImports(importName))
       return importName.replace("java.lang.", "") + suffix;
-    importName = importName.replace('$', '.');
+    if (replaceDollarSigns) {
+      importName = importName.replace('$', '.');
+    }
     String shortname = importName.substring(1 + importName.lastIndexOf('.'));
     if ("*".equals(shortname)) {
       map.put(importName, importName);

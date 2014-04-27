@@ -3,18 +3,25 @@ package xapi.dev.source;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import xapi.util.api.ConvertsValue;
+
 public class XmlBuffer extends PrintBuffer {
 
+  public static final String QUOTE = "\"", QUOTE_ENTITY = "&quot;";
+  
   private String tagName;
   private PrintBuffer attributes, comment, before;
   private Map<String, StringBuilder> attributeMap;
-  private boolean printNewline = true;
+  private boolean printNewline = false;
   private boolean abbr = false;
+  private ConvertsValue<String, String> escaper;
 
+  @SuppressWarnings("unchecked")
   public XmlBuffer() {
     comment = new PrintBuffer();
     before = new PrintBuffer();
     indent = INDENT;
+    escaper = ConvertsValue.PASS_THRU;
   }
 
   public XmlBuffer(String tagName) {
@@ -32,13 +39,25 @@ public class XmlBuffer extends PrintBuffer {
 
   public XmlBuffer setAttribute(String name, String value) {
     ensureAttributes();
-    StringBuilder attr = attributeMap.get(name);
-    String val;
+    String val = escapeAttribute(value);
+    setRawAttribute(name, val);
+    return this;
+  }
+
+  protected String escapeAttribute(String value) {
     if (value == null) {
-      val = " ";
+      return " ";
     } else {
-      val = "=\"" + value.replaceAll("\"", "&quot;") + "\" ";
+      if (value.startsWith("//")) {
+        return "=" + escape(value.substring(2));
+      } else {
+        return "=\"" + value.replaceAll(QUOTE, QUOTE_ENTITY) + "\" ";
+      }
     }
+  }
+
+  protected void setRawAttribute(String name, String val) {
+    StringBuilder attr = attributeMap.get(name);
     if (attr == null) {
       attributes.print(name);
       attr = new StringBuilder(val);
@@ -49,10 +68,9 @@ public class XmlBuffer extends PrintBuffer {
       attr.setLength(0);
       attr.append(val);
     }
-    return this;
   }
 
-  private void ensureAttributes() {
+  protected void ensureAttributes() {
     if (attributes == null) {
       attributes = new PrintBuffer();
       attributeMap = new LinkedHashMap<String, StringBuilder>();
@@ -102,7 +120,7 @@ public class XmlBuffer extends PrintBuffer {
     String text;
     text = this.before.toString();
     if (text.length() > 0) {
-      b.append(text);
+      b.append(escape(text));
     }
     text = this.comment.toString();
     if (text.length() > 0) {
@@ -110,14 +128,21 @@ public class XmlBuffer extends PrintBuffer {
         b.append("<!--\n");
       }
       b.append(indent);
-      b.append(text);
+      b.append(escape(text));
       if (!text.endsWith("-->")) {
         b.append("\n-->");
       }
       b.append(origIndent);
     }
 
-    b.append("<").append(tagName);
+    b.append("<");
+    String tag;
+    if (tagName.startsWith("//")) {
+      tag = escape(tagName.substring(2));
+    } else {
+      tag = tagName;
+    }
+    b.append(tag);
     if (attributes != null) {
       b.append(" ").append(attributes);
     }
@@ -126,13 +151,22 @@ public class XmlBuffer extends PrintBuffer {
       if (shouldShortenEmptyTag(tagName)) {
         newline(b.append("/>"));
       } else {
-        newline(b.append("> </").append(tagName).append(">"));
+        newline(b.append("> </").append(tag).append(">"));
       }
     } else {
-      newline(newline(b.append(">")).append(body).append(printNewline ? origIndent : "").append("</")
-          .append(tagName).append(">"));
+      newline(newline(b.append(">")).append(escape(body)).append(printNewline ? origIndent : "").append("</")
+          .append(tag).append(">"));
     }
     return b.toString();
+  }
+
+  public String escape(String text) {
+    return escaper.convert(text);
+  }
+  
+  public XmlBuffer setEscaper(ConvertsValue<String, String> escaper) {
+    this.escaper = escaper;
+    return this;
   }
 
   private StringBuilder newline(StringBuilder append) {
@@ -311,9 +345,16 @@ public class XmlBuffer extends PrintBuffer {
   public String getAttribute(String name) {
     if (hasAttribute(name)) {
       StringBuilder attr = attributeMap.get(name);
-      return attr.substring(2, attr.length()-2);
+      if (isRemoveQuotes(attr)) {
+        return attr.substring(2, attr.length()-2);
+      }
+      return attr.substring(1, attr.length());
     }
     return null;
+  }
+
+  protected boolean isRemoveQuotes(StringBuilder attr) {
+    return attr.charAt(1) == '"';
   }
 
   public XmlBuffer allowAbbreviation(boolean abbr) {

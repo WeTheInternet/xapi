@@ -12,7 +12,10 @@
   <inherits name="com.google.gwt.http.HTTP"/>
   <inherits name="xapi.X_ReflectNoInject"/>
   <inherits name="com.google.gwt.junit.JUnit"/>
+  
   <script src="forceload.js" />
+  <set-configuration-property name='xsiframe.failIfScriptTag' value='FALSE'/>
+  
   
 <!--   <entry-point class="xapi.test.reflect.MonolithTest"/> -->
 

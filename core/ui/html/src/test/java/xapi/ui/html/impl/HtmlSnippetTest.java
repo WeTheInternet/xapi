@@ -2,13 +2,12 @@ package xapi.ui.html.impl;
 
 import javax.inject.Named;
 
-import junit.framework.Assert;
-
 import org.junit.Before;
 import org.junit.Test;
 
 import xapi.dev.source.HtmlBuffer;
 import xapi.inject.X_Inject;
+import xapi.test.Assert;
 import xapi.ui.autoui.X_AutoUi;
 import xapi.ui.autoui.api.BeanValueProvider;
 import xapi.ui.autoui.api.UserInterfaceFactory;
@@ -18,7 +17,8 @@ import xapi.ui.html.api.Html;
 import xapi.ui.html.api.HtmlSnippet;
 
 @Html(
-  elements=@El(
+  body=@El(
+    className="$name",
     html="Hello World"
   )
 )
@@ -46,7 +46,7 @@ public class HtmlSnippetTest {
   @Test
   public void testHelloWorld_Static() {
     
-    String result = X_Html.toHtml(HtmlSnippet.class, this, new HtmlBuffer());
+    String result = X_Html.toHtml(HtmlSnippetTest.class, this, new HtmlBuffer());
     
     Assert.assertEquals("<div class=\"" + NAME + "\" >Hello World</div>", result);
   }

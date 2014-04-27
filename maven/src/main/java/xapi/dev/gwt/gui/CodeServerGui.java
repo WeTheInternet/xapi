@@ -66,7 +66,6 @@ public class CodeServerGui extends JFrame{
       }
     });
     add(controls,BorderLayout.SOUTH);
-    sources = new SourcesSelector("Gwt Sources");
     logger = new ProcessLog(){
       Runnable recalc;
       @Override
@@ -84,10 +83,9 @@ public class CodeServerGui extends JFrame{
         }
       }
     };
+    sources = new SourcesSelector("Gwt Sources", logger);
     JScrollPane wrap =
         new JScrollPane(logger,JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
-//    logger.setMaximumSize(new Dimension(500, 800));
-//    wrap.setMaximumSize(new Dimension(500, 800));
     JSplitPane splitter = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
     splitter.setLeftComponent(sources);
     splitter.setRightComponent(wrap);

@@ -39,10 +39,13 @@ public class SourcesSelector extends JPanel{
 
   private JList list;
 
+  private ProcessLog logger;
+
   @SuppressWarnings({"unchecked", "serial"})
-  public SourcesSelector() {
+  public SourcesSelector(final ProcessLog logger) {
     super(new BorderLayout(0, 5));
-    JPanel buttons = new JPanel(new GridLayout(4, 1,0,10));
+    this.logger = logger;
+    JPanel buttons = new JPanel(new GridLayout(5, 1,0,10));
     buttons.add(new JButton(new AbstractAction("Add Source") {
       @Override
       public void actionPerformed(ActionEvent e) {
@@ -71,6 +74,12 @@ public class SourcesSelector extends JPanel{
       public void actionPerformed(ActionEvent e) {
         dir.removeAllElements();
         refreshModules();
+      }
+    }));
+    buttons.add(new JButton(new AbstractAction("Clear Log") {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        logger.clear();
       }
     }));
     splitter = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
@@ -143,8 +152,8 @@ public class SourcesSelector extends JPanel{
     //Scan the selected sources for .gwt.xml files with <entry-point> elements
 
   }
-  public SourcesSelector(String title) {
-    this();
+  public SourcesSelector(String title, ProcessLog logger) {
+    this(logger);
     setTitle(title);
   }
   public void setTitle(String title) {

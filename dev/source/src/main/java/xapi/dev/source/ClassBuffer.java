@@ -292,7 +292,7 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
   }
 
   public ClassBuffer setSuperClass(String superClass) {
-    this.superClass = superClass;
+    this.superClass = addImport(superClass);
     return this;
   }
 

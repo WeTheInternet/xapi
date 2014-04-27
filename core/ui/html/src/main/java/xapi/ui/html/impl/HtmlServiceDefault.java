@@ -17,9 +17,9 @@ public class HtmlServiceDefault implements HtmlService {
   private static final Provider<UserInterfaceFactory> ui = X_Inject.singletonLazy(UserInterfaceFactory.class);
   
   @Override
-  public <T> HtmlSnippet<T> toSnippet(Class<? extends T> cls, HtmlBuffer buffer) {
+  public <T> HtmlSnippet<T> toSnippet(Class<?> templateClass, Class<? extends T> cls, HtmlBuffer buffer) {
     BeanValueProvider bean = ui.get().getBeanProvider(cls);
-    return new HtmlSnippet<>(cls.getAnnotation(Html.class), bean, buffer);
+    return new HtmlSnippet<>(templateClass.getAnnotation(Html.class), bean, buffer);
   }
 
 }

@@ -1,6 +1,8 @@
 package xapi.ui.html.api;
 
 import xapi.annotation.common.Property;
+import xapi.annotation.compile.Import;
+import xapi.ui.autoui.api.Action;
 
 /**
  * Shorthand for an Element.
@@ -10,20 +12,34 @@ import xapi.annotation.common.Property;
  */
 public @interface El {
 
+  String DEFAULT_ACCESSOR = "from.$name()";
+  
   Style[] style() default {};
   
   String[] className() default {};
   
-  Property[] properties() default {@Property(name="class",value="$name")};
+  Property[] properties() default {};
   
   String tag() default "div";
+  
+  String accessor() default DEFAULT_ACCESSOR;
+  
+  Action[] onClick() default {};
+  Action[] onMouseOver() default {};
+  Action[] onMouseOut() default {};
+  Action[] onFocus() default {};
+  Action[] onBlur() default {};
+  Action[] onKeyDown() default {};
+  Action[] onKeyUp() default {};
+  Action[] onKeyPress() default {};
+  
+  Import[] imports() default {};
   
   /**
    *  Default element content:
    * <pre>
-   *   &lt;div>$value&lt;/div>
+   *   &lt;div>&lt;/div>
    * </pre>
-   * where $value is the result of String.valueOf(data), or " " if there is no $value in scope.
    */
-  String[] html() default "<$this>$value</$this>";
+  String[] html() default "";
 }

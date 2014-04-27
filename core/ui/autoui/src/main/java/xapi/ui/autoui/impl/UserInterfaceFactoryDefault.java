@@ -6,8 +6,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import xapi.annotation.inject.InstanceDefault;
+import xapi.annotation.inject.InstanceOverride;
 import xapi.log.X_Log;
 import xapi.log.api.LogLevel;
+import xapi.platform.GwtDevPlatform;
+import xapi.platform.JrePlatform;
+import xapi.reflect.X_Reflect;
 import xapi.ui.autoui.api.BeanValueProvider;
 import xapi.ui.autoui.api.DoNotIndex;
 import xapi.ui.autoui.api.UiOptions;
@@ -17,7 +21,9 @@ import xapi.ui.autoui.api.UserInterfaceFactory;
 import xapi.util.X_Debug;
 import xapi.util.api.ConvertsValue;
 
-@InstanceDefault(implFor=UserInterfaceFactory.class)
+@JrePlatform
+@GwtDevPlatform
+@InstanceOverride(implFor=UserInterfaceFactory.class, priority=1)
 public class UserInterfaceFactoryDefault extends AbstractUserInterfaceFactory{
 
   private static final int MAX_DEPTH = 10;
@@ -27,8 +33,9 @@ public class UserInterfaceFactoryDefault extends AbstractUserInterfaceFactory{
     
     BeanValueProvider values = getBeanProvider(type);
     // Check the package for options
-    if (type.getPackage().isAnnotationPresent(UiOptions.class)) {
-      options.addAll(extractRenderingContext(type.getPackage().getAnnotation(UiOptions.class), values));
+    Package pkg = X_Reflect.getPackage(type);
+    if (pkg != null && pkg.isAnnotationPresent(UiOptions.class)) {
+      options.addAll(extractRenderingContext(pkg.getAnnotation(UiOptions.class), values));
     }
     if (type.isAnnotationPresent(UiOptions.class)) {
       UiOptions opts = type.getAnnotation(UiOptions.class);

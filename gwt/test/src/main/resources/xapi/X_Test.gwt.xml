@@ -6,6 +6,9 @@
 <source path="gwt/test"/>
 <inherits name="com.google.gwt.core.Core"/>
 <inherits name="xapi.X_Core"/>
-<script src="forceload.js" />
+<!-- 
+Re-enable this if test cases start to hang :-/
+<script src="forceload.js" /> 
+-->
 <servlet class="xapi.server.DebugServlet" path="/debug"/>
 </module>

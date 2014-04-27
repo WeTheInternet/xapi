@@ -1,5 +1,7 @@
 package xapi.dev.source;
 
+import xapi.util.api.ConvertsValue;
+
 public class DomBuffer extends XmlBuffer {
 
   public DomBuffer() {
@@ -16,7 +18,7 @@ public class DomBuffer extends XmlBuffer {
 
   public DomBuffer addClassName(String clsName) {
     if (hasAttribute("class")) {
-      setAttribute("class", getAttribute("class")+" "+clsName);
+      setAttribute("class", getAttribute("class") + " " + clsName);
     } else {
       setAttribute("class", clsName);
     }
@@ -350,4 +352,9 @@ public class DomBuffer extends XmlBuffer {
     setAttribute("placeholder", placeholder);
   }
   
+  @Override
+  public DomBuffer setEscaper(ConvertsValue<String, String> escaper) {
+    super.setEscaper(escaper);
+    return this;
+  }
 }

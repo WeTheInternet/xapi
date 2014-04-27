@@ -9,11 +9,19 @@ public class X_Html {
 
   private X_Html() {}
    
+  public static <T> String toHtml(Class<?> template, Class<? extends T> cls, T o, HtmlBuffer context) {
+    return toSnippet(template, cls, context).convert(o);
+  }
+  
   public static <T> String toHtml(Class<? extends T> cls, T o, HtmlBuffer context) {
-    return toSnippet(o.getClass(), context).convert(o);
+    return toHtml(cls,  cls, o, context);
   }
   
   public static <T> HtmlSnippet<T> toSnippet(Class<? extends T> cls, HtmlBuffer context) {
-    return X_Inject.singleton(HtmlService.class).toSnippet(cls, context);
+    return toSnippet(cls, cls, context);
+  }
+
+  public static <T> HtmlSnippet<T> toSnippet(Class<?> templateClass, Class<? extends T> cls, HtmlBuffer context) {
+    return X_Inject.singleton(HtmlService.class).toSnippet(templateClass, cls, context);
   }
 }

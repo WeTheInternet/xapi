@@ -219,7 +219,10 @@ public class ClasspathScannerDefault implements ClasspathScanner {
   public ClasspathResourceMap scan(ClassLoader loaders) {
     ExecutorService executor = newExecutor();
     try {
-      return scan(loaders, executor).call();
+      ClasspathResourceMap map = scan(loaders, executor).call();
+      synchronized (map) {
+        return map;
+      }
     } catch (Exception e) {
       throw X_Debug.rethrow(e);
     }

@@ -4,6 +4,6 @@ import xapi.dev.source.HtmlBuffer;
 
 public interface HtmlService {
 
-  <T> HtmlSnippet<T> toSnippet(Class<? extends T> cls, HtmlBuffer buffer);
+  <T> HtmlSnippet<T> toSnippet(Class<?> templateClass, Class<? extends T> cls, HtmlBuffer buffer);
   
 }

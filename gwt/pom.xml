@@ -135,6 +135,17 @@
 
   <profiles>
     <profile>
+      <id>test-java8-only</id>
+      <activation>
+        <jdk>!1.8</jdk>
+      </activation>
+      <properties>
+        <gwt.skip.test>true</gwt.skip.test>
+        <xapi.skip.test>true</xapi.skip.test>
+        <maven.skip.test>true</maven.skip.test>
+      </properties>
+    </profile>
+    <profile>
       <id>bundle-source</id>
       <activation>
         <activeByDefault>true</activeByDefault>

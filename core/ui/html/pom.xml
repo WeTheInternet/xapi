@@ -22,6 +22,10 @@
    <artifactId>xapi-core-ui-autoui</artifactId>
   </dependency>
   <dependency>
+   <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-core-collect</artifactId>
+  </dependency>
+  <dependency>
    <groupId>com.google.gwt</groupId>
    <artifactId>gwt-servlet</artifactId>
    <optional>true</optional>

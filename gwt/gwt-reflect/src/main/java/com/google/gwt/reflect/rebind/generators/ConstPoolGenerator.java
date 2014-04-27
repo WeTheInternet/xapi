@@ -9,7 +9,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
@@ -20,6 +22,7 @@ import xapi.dev.source.MemberBuffer;
 import xapi.dev.source.PrintBuffer;
 import xapi.dev.source.SourceBuilder;
 
+import com.google.gwt.core.ext.Generator;
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;
@@ -53,9 +56,8 @@ public class ConstPoolGenerator {
         Object obj1 = Array.get(o1, len1);
         Object obj2 = Array.get(o2, len1);
         if (!obj1.equals(obj2)) {
-          if (obj1 instanceof Comparable) {
+          if (obj1 instanceof Comparable)
             return ((Comparable)obj1).compareTo(obj2);
-          }
           int hash1 = obj1.hashCode();
           int hash2 = obj2.hashCode();
           if (hash1 != hash2)
@@ -66,7 +68,7 @@ public class ConstPoolGenerator {
       return 0;
     }
   }
-  
+
   @SuppressWarnings("serial")
   private static class ComparableArray<T extends Number> extends ArrayList<T> implements Comparable<ComparableArray<T>> {
     @Override
@@ -82,7 +84,7 @@ public class ConstPoolGenerator {
       return 0;
     }
   }
-  
+
   private static ThreadLocal<ConstPoolGenerator> generator = new ThreadLocal<ConstPoolGenerator>() {
     private int iteration;
     @Override
@@ -90,21 +92,21 @@ public class ConstPoolGenerator {
       return new ConstPoolGenerator(iteration++);
     };
   };
-  
+
   public static void cleanup() {
     generator.remove();
   }
 
-  static ConstPoolGenerator getGenerator() {
+  public static ConstPoolGenerator getGenerator() {
     return generator.get();
   }
 
   public int generateReference(TreeLogger logger,
     GeneratorContext context, Object value) throws UnableToCompleteException {
     int pool = initBuffer();
-    
+
     if (value instanceof String) {
-  
+
     } else if (value instanceof Long) {
     } else if (value instanceof Float || value instanceof Double) {
         Double val = ((Float)value).doubleValue();
@@ -114,10 +116,10 @@ public class ConstPoolGenerator {
           doubles.put(val, key);
         }
         return key;
-    } else if (value instanceof Number) {
+    } else if (value instanceof Number)
       // Any non-floating point, non-long, is passed around as int
       return ((Number)value).intValue();
-    } else if (value instanceof Class) {
+    else if (value instanceof Class) {
     } else if (value.getClass().isArray()) {
       Class<?> type = value.getClass().getComponentType();
       if (type == boolean.class) {
@@ -158,11 +160,11 @@ public class ConstPoolGenerator {
       }
       return generateReference(logger, context, values);
     } else if (value instanceof Character) {
-  
+
     } else if (value instanceof Enum) {
-  
+
     } else if (value instanceof Annotation) {
-  
+
     } else {
       logger.log(Type.ERROR, "ConstPoolGenerator encountered a type it cannot handle");
       logger.log(Type.ERROR, "value type "+value.getClass()+" ");
@@ -216,17 +218,18 @@ public class ConstPoolGenerator {
   private int iteration;
   private int start;
 
-  
+
   private Map<Double,Integer> doubles = Maps.newHashMap();
   private Map<Enum<?>,Integer> enums = Maps.newHashMap();
   private Map<Integer,Integer> ints = Maps.newHashMap();
   private Map<Long,Integer> longs = Maps.newHashMap();
-  private Map<String,Integer> strings = Maps.newHashMap();
+  private Map<String,String> strings = Maps.newHashMap();
 
   private Map<String,String> classes = Maps.newHashMap();
   private Map<String,String> classArrays = Maps.newHashMap();
   private Map<Annotation,String> annos = Maps.newHashMap();
   private Map<String,String> annoArrays = Maps.newHashMap();
+  private Set<String> dependencies = new HashSet<String>();
 
   private static Map<String,String> wellKnownClasses = Maps.newHashMap();
   static {
@@ -255,7 +258,7 @@ public class ConstPoolGenerator {
       return 0;
     }
   });
-  
+
   private HashMap<Object,int[]> arraySeeds = new HashMap<Object,int[]>();
 
   private transient ArrayList<SourceBuilder<?>> sourceClasses = new ArrayList<SourceBuilder<?>>();
@@ -275,17 +278,24 @@ public class ConstPoolGenerator {
       ctx.commit(logger, pw);
       // erase our writer
       sourceClasses.set(pos--, null);
-      if (pos < 0)
+      if (pos < 0) {
         out = null;
-      else
+      } else {
         out = sourceClasses.get(pos);
+      }
     }
   }
 
   public void addDependencies(TreeLogger logger, ClassBuffer out) {
     for (int i = start, m = sourceClasses.size(); i < m; i++) {
-      out.addInterface("contants.Const"+iteration+"_"+i);
+      String dependency = "constants.Const"+iteration+"_"+i;
+      out.addInterface(dependency);
+      dependencies.remove(dependency);
     }
+    for (String dependency : dependencies) {
+      out.addInterface(dependency);
+    }
+    dependencies.clear();
   }
 
   public void printNewArray(TreeLogger logger, PrintBuffer out, JClassLiteral classLit, boolean jsni) {
@@ -332,7 +342,7 @@ public class ConstPoolGenerator {
   private String getConstName(int pos) {
     return "Const"+iteration+"_"+pos;
   }
-  
+
   public String getConstClass(int[] array) {
     return "constants.Const"+iteration+"_"+array[0];
   }
@@ -340,6 +350,7 @@ public class ConstPoolGenerator {
   public String rememberClass(JClassType type) {
     return rememberClass(type.getQualifiedSourceName());
   }
+
   public String rememberClass(String type) {
     String name = classes.get(type);
     if (name == null) {
@@ -360,15 +371,40 @@ public class ConstPoolGenerator {
     return name;
   }
 
+
+  public String rememberString(String value) {
+    String name = strings.get(value);
+    int pool = initBuffer();
+    String cls = getConstName(pool);
+    if (name == null) {
+      name = "STRING_"+strings.size();
+      out.getClassBuffer()
+        .createField("String", name)
+        .setInitializer("\""+Generator.escape(value)+"\"")
+        .setModifier(FINAL)
+        .makePublic();
+      strings.put(value, "constants."+cls+"."+name);
+    } else {
+      String constName = "constants."+cls+".";
+      if (name.startsWith(constName))
+        return name.substring(constName.length());
+      else {
+        constName = name.substring(0, name.lastIndexOf('.'));
+        dependencies.add(constName);
+      }
+    }
+    return name;
+  }
+
   public void arrayOfClasses(TreeLogger logger, MemberBuffer<?> out, String ... names) {
-    
+
     if (names.length == 0) {
       out.print(
           out.addImportStatic(ArrayConsts.class, "EMPTY_CLASSES")
       );
       return;
     }
-    
+
     String shortName;
     {
       StringBuilder b = new StringBuilder();
@@ -378,7 +414,7 @@ public class ConstPoolGenerator {
       }
       shortName = b.toString();
     }
-    
+
     String existing = classArrays.get(shortName);
     if (existing == null) {
       int pool = initBuffer();
@@ -401,7 +437,7 @@ public class ConstPoolGenerator {
       }
       init.outdent();
       init.print("}");
-      
+
       existing = "constants."+constName+"."+name;
       classArrays.put(shortName, existing);
     }
@@ -418,14 +454,14 @@ public class ConstPoolGenerator {
       return;
     }
     String flatName;
-    { 
+    {
       TreeSet<String> ordered = new TreeSet<String>();
       for (Annotation anno : annos) {
         ordered.add(anno.toString());
       }
       flatName = ordered.toString();
     }
-    
+
     String existing = annoArrays.get(flatName);
     if (existing != null) {
       buffer.print(
@@ -433,7 +469,7 @@ public class ConstPoolGenerator {
           );
       return;
     }
-    
+
     String[] items;
     {
       int i = annos.length;
@@ -442,14 +478,14 @@ public class ConstPoolGenerator {
         items[i] = rememberAnnotation(logger, ctx, annos[i]);
       }
     }
-    
+
     int pool = initBuffer();
     String constName = getConstName(pool);
     String arrayName = "ANNO_ARR_"+annoArrays.size();
     String finalName = "constants."+constName+"."+arrayName;
     annoArrays.put(flatName, finalName);
-    
-    
+
+
     PrintBuffer init = out
       .getClassBuffer()
       .createField(Annotation[].class, arrayName)
@@ -477,7 +513,7 @@ public class ConstPoolGenerator {
         .outdent()
         .print("}");
     }
-    
+
     buffer.print(
         buffer.addImportStatic(finalName)
     );
@@ -485,15 +521,14 @@ public class ConstPoolGenerator {
 
   private String rememberAnnotation(TreeLogger logger, GeneratorContext ctx, Annotation anno) throws UnableToCompleteException {
     String existing = annos.get(anno);
-    if (existing != null) {
+    if (existing != null)
       return existing;
-    }
     String constName = getConstName(initBuffer());
     String annoName = "ANNO_"+annos.size();
 
     existing = "constants."+constName+"."+annoName;
     annos.put(anno, existing);
-    
+
     Method[] methods = ReflectionUtilJava.getMethods(anno);
     String[] values = new String[methods.length];
     for (int i = 0, m = methods.length; i < m; i++) {
@@ -502,12 +537,12 @@ public class ConstPoolGenerator {
       if (value instanceof Annotation) {
         values[i] = out.getImports().addStatic(rememberAnnotation(logger, ctx, (Annotation) value));
       } else if (value instanceof Class){
-        values[i] = 
+        values[i] =
             out.getImports().addImport(((Class<?>)value).getCanonicalName())
             +".class";
       } else if (value instanceof Enum) {
         Enum<?> e = (Enum<?>) value;
-        values[i] = 
+        values[i] =
             out.getImports().addStatic(e.getDeclaringClass().getCanonicalName()+"."+e.name());
       } else if (value instanceof String) {
         values[i] = "\""+GwtReflect.escape((String)value)+"\"";
@@ -519,14 +554,14 @@ public class ConstPoolGenerator {
         throw new UnableToCompleteException();
       }
     }
-    
+
     PrintBuffer init = out
         .getClassBuffer()
         .createField(anno.annotationType(), annoName)
         .makeFinal()
         .makePackageProtected()
         .getInitializer();
-    
+
     GeneratedAnnotation gen = GwtAnnotationGenerator.generateAnnotation(logger, ctx, anno);
 //    IsNamedType known = gen.knownInstances.get(anno);
 //    if (known != null) {
@@ -535,17 +570,17 @@ public class ConstPoolGenerator {
       .print("new ")
       .print(out.getImports().addImport(gen.proxyName))
       .print("(");
-    
+
     if (values.length > 0) {
       init.print(values[0]);
       for (int i = 1, m = values.length; i < m; i++) {
         init.print(", ").print(values[i]);
       }
     }
-    
+
     init.print(")");
-    
-    
+
+
     return existing;
   }
 

@@ -156,6 +156,10 @@ public class SourceBuilder<Payload> {
   public String getQualifiedName() {
     return getClassBuffer().getQualifiedName();
   }
+  
+  public String getSimpleName() {
+    return getClassBuffer().getSimpleName();
+  }
 
   public void destroy() {
     setPayload(null);

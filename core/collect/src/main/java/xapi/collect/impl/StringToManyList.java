@@ -17,6 +17,7 @@ public class StringToManyList <X> extends StringToAbstract<IntTo<X>> implements 
     IntTo<X> list = super.get(key);
     if (list == null) {
       list = newList();
+      put(key, list);
     }
     return list;
   }

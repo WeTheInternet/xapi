@@ -60,6 +60,7 @@
       <phase>verify</phase>
       <goals>
        <goal>jar-no-fork</goal>
+       <goal>test-jar-no-fork</goal>
       </goals>
      </execution>
     </executions>

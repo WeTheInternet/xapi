@@ -19,6 +19,10 @@ import javax.swing.SwingUtilities;
 @SuppressWarnings("serial")
 public class ProcessLog extends Box {
 
+  /**
+   * Log max size is 1M in memory
+   */
+  protected static final int LOG_MAX = 1024*1024;
   final JTextArea text;
   final JScrollPane scroller;
   StringBuffer body = new StringBuffer();
@@ -51,6 +55,11 @@ public ProcessLog() {
   ArrayList<BufferedReader> readerStd = new ArrayList<BufferedReader>();
   ArrayList<BufferedReader> readerErr = new ArrayList<BufferedReader>();
   WeakReference<Thread> bufferReader;
+
+  public void clear() {
+    body.setLength(0);
+    scheduleRedraw();
+  }
 
   public synchronized void monitor(final Process handle, final String module) {
     try {
@@ -168,7 +177,9 @@ public ProcessLog() {
             if (onDone.containsKey(module)) {
               onDone.remove(module).run();
             }
-            if (null != selfRemove) Runtime.getRuntime().removeShutdownHook(selfRemove);
+            if (null != selfRemove) {
+              Runtime.getRuntime().removeShutdownHook(selfRemove);
+            }
             selfRemove = null;
           } catch (Exception e) {
             e.printStackTrace();
@@ -208,7 +219,9 @@ public ProcessLog() {
     if (bufferReader != null) {
       Thread thread = bufferReader.get();
       bufferReader.clear();
-      if (thread != null) thread.interrupt();
+      if (thread != null) {
+        thread.interrupt();
+      }
       bufferReader = null;
     }
     if (waitThreads.containsKey(module)) {
@@ -231,6 +244,10 @@ public ProcessLog() {
         public void run() {
           redraw = null;
           boolean autoscroll = lastHeight == 0 || visibleRect.y + scroller.getHeight() == lastHeight;
+          int overflow = body.length() - LOG_MAX;
+          if (overflow > 0) {
+            body.replace(0, overflow, "");
+          }
           text.setText(body.toString());
           invalidate();
           if (autoscroll) {
@@ -253,7 +270,9 @@ public ProcessLog() {
   }
 
   public void log(String string, IOException e) {
-    if (string != null && string.length() > 0) out(string);
+    if (string != null && string.length() > 0) {
+      out(string);
+    }
     if (e != null) {
       out(e.toString());
       for (StackTraceElement el : e.getStackTrace()) {

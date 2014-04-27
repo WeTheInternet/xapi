@@ -5,6 +5,22 @@ import xapi.time.api.Moment;
 
 public class RunOnce {
 
+  public static Runnable runOnce(final Runnable job) {
+    return runOnce(job, false);
+  }
+  
+  public static Runnable runOnce(final Runnable job, final boolean oncePerMoment) {
+    return new Runnable() {
+      RunOnce lock = new RunOnce();
+      @Override
+      public void run() {
+        if (lock.shouldRun(oncePerMoment)) {
+          job.run();
+        }
+      }
+    };
+  }
+  
   private Moment once;
 
   public boolean shouldRun(boolean oncePerMoment) {

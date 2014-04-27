@@ -21,8 +21,10 @@
     as it includes all runtime dependencies of maven, adding ~4 seconds to build time,
     and 6 megabytes to the final output jar size (without xapi-dev-maven, it's ~1MB).
  </description>
-	<properties>
-	</properties>
+ 
+ <properties>
+  <xapi.skip.test>true</xapi.skip.test>
+ </properties>
 
 	<dependencies>
 		<dependency>
@@ -76,13 +78,38 @@
 				<artifactId>maven-shade-plugin</artifactId>
 			</plugin>
 			<plugin>
+              <artifactId>maven-surefire-plugin</artifactId>
+              <configuration>
+                <skipTests>${xapi.skip.test}</skipTests>
+              </configuration>
+            </plugin>
+			<plugin>
 				<artifactId>maven-jar-plugin</artifactId>
+                <goals>
+                   <goal>test-jar</goal>
+                  </goals>
 				<configuration>
+                    <forceCreation>true</forceCreation>
 				  <!-- Prevent duplicate warnings by changing intermediate jar name -->
 					<finalName>${project.artifactId}-${project.version}-tmp</finalName>
 				</configuration>
 			</plugin>
 		</plugins>
 	</build>
+ 
+ <profiles>
+   <profile>
+      <id>release</id>
+      <activation>
+        <property>
+          <name>xapi.release</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <properties>
+        <xapi.skip.test>false</xapi.skip.test>
+      </properties>
+    </profile>
+ </profiles>
 
 </project>

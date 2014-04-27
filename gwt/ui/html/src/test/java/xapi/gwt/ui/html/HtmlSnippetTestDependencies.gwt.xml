@@ -3,7 +3,6 @@
 <module>
   
   <inherits name="xapi.X_Html"/>
-  <inherits name="xapi.X_Test"/>
   <set-property name="user.agent" value="safari" />
   
 </module>

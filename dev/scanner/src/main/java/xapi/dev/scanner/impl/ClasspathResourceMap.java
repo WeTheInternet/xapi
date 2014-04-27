@@ -443,6 +443,7 @@ public final Iterable<ClassFile> findClassWithAnnotatedMethods(
   return new Iterable<ClassFile>() {
     @Override
     public Iterator<ClassFile> iterator() {
+      preloadClasses();
       return new Itr();
     }
   };

@@ -43,6 +43,14 @@ package xapi.util.api;
  * @param <To> - The result type expected from conversion.
  */
 public interface ConvertsValue <From, To>{
+  @SuppressWarnings("rawtypes")
+  ConvertsValue PASS_THRU = new ConvertsValue() {
+    @Override
+    public Object convert(Object from) {
+      return from;
+    }
+  };
+
   /**
    * @param from - An object to convert
    * @return - The result of the conversion
