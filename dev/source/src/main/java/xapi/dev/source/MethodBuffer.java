@@ -80,8 +80,9 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
     }
     b.append(origIndent);
     if (annotations.size() > 0) {
-      for (String anno : annotations)
+      for (String anno : annotations) {
         b.append('@').append(anno).append(NEW_LINE).append(origIndent);
+      }
     }
     b.append(Modifier.toString(modifier));
     b.append(" ");
@@ -154,7 +155,7 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
 
   @Override
   public String addImportStatic(Class<?> cls, String name) {
-    return context.getImports().addStatic(cls.getCanonicalName() + "." + name);
+    return context.getImports().addStatic(cls, name);
   }
 
   @Override
@@ -240,11 +241,12 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
 
   public MethodBuffer setReturnType(Class<?> cls) {
     String pkgName = cls.getPackage().getName();
-    if (pkgName.length() == 0)
+    if (pkgName.length() == 0) {
       returnType = new TypeData("", cls.getCanonicalName());
-    else
+    } else {
       returnType = new TypeData(pkgName, cls.getCanonicalName().replace(
           pkgName + ".", ""));
+    }
     return this;
   }
 
@@ -254,10 +256,11 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
   }
 
   public MethodBuffer setReturnType(String canonicalName) {
-    if ("".equals(canonicalName))
+    if ("".equals(canonicalName)) {
       returnType = new TypeData("");
-    else
+    } else {
       returnType = JavaLexer.extractType(canonicalName, 0);
+    }
     return this;
   }
 
@@ -302,7 +305,9 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
 
   public final MethodBuffer makeNative() {
     if ((modifier & Modifier.ABSTRACT) > 0)
+     {
       modifier &= ~Modifier.ABSTRACT;// "Cannot be both native and abstract";
+    }
     modifier = modifier | Modifier.NATIVE;
     return this;
   }
@@ -353,15 +358,17 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
       @Override
       public void visitType(TypeData type, String name, boolean varargs,
           SourceBuilder<?> receiver) {
-        if (type.pkgName.length() > 0)
+        if (type.pkgName.length() > 0) {
           receiver.getImports().addImport(type.getImportName());
+        }
         StringBuilder b = new StringBuilder();
         for (String anno : annotations) {
           b.append(anno).append(' ');
         }
         String mod = Modifier.toString(modifier);
-        if (mod.length() > 0)
+        if (mod.length() > 0) {
           b.append(mod).append(" ");
+        }
 
         if (varargs) {
           b.append(type.getSimpleName().replace("[]", "") + " ... " + name);

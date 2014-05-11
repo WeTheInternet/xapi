@@ -54,15 +54,17 @@ public class StringToAbstract <V> implements StringTo<V>{
     if (items instanceof java.util.Map) {
       map.putAll((java.util.Map)items);
     } else {
-      for (java.util.Map.Entry<String, V> item : items)
+      for (java.util.Map.Entry<String, V> item : items) {
         map.put(item.getKey(), item.getValue());
+      }
     }
   }
 
   @Override
   public void removeAll(Iterable<String> items) {
-    for (String item : items)
+    for (String item : items) {
       map.remove(item);
+    }
   }
 
   @Override
@@ -92,23 +94,22 @@ public class StringToAbstract <V> implements StringTo<V>{
 
   @Override
   public V put(String key, V value) {
-    if (value == null) {
+    if (value == null)
       return map.remove(key);
-    } else {
+    else
       return map.put(key, value);
-    }
   }
 
   @Override
   public V remove(String key) {
     return map.remove(key);
   }
-  
+
   @Override
   public int size() {
     return map.size();
   }
-  
+
   @Override
   public String toString() {
     return map.toString();

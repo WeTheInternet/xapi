@@ -1,9 +1,10 @@
 package xapi.ui.html.api;
 
-import xapi.dev.source.HtmlBuffer;
+import xapi.ui.api.StyleService;
+
 
 public interface HtmlService {
 
-  <T> HtmlSnippet<T> toSnippet(Class<?> templateClass, Class<? extends T> cls, HtmlBuffer buffer);
-  
+  <T> HtmlSnippet<T> toSnippet(Class<?> templateClass, Class<? extends T> cls, StyleService<?> buffer);
+
 }

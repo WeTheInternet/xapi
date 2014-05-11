@@ -58,9 +58,11 @@ public abstract class AbstractLog implements LogService {
 			doLog(level, arr);
 		}
 	}
-	
+
     @Override
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({
+        "unchecked", "rawtypes"
+    })
 	public Iterable<Object> shouldIterate(Object m) {
 	  return m instanceof Fifo ? ((Fifo)m).forEach() : m instanceof Iterable ? (Iterable)m : null;
 	}
@@ -77,21 +79,23 @@ public abstract class AbstractLog implements LogService {
 		if (m instanceof Throwable) {
 			StackTraceElement[] trace = ((Throwable) m).getStackTrace();
 			String serialized = m + "\n";
-			if (trace != null)
-				for (StackTraceElement el : trace)
-					serialized += String.valueOf(el)+"\n";
+			if (trace != null) {
+        for (StackTraceElement el : trace) {
+          serialized += String.valueOf(el)+"\n";
+        }
+      }
 			return serialized;
-		} else if (m != null && m.getClass().isArray()) {
-		  return new SimpleFifo<Object>((Object[])m).join(", ");
-		} else if (m instanceof Iterable) {
+		} else if (m != null && m.getClass().isArray())
+      return new SimpleFifo<Object>((Object[])m).join(", ");
+    else if (m instanceof Iterable) {
 		  Iterator iter = ((Iterable)m).iterator();
 		  SimpleFifo fifo = new SimpleFifo();
-		  while(iter.hasNext())
-		    fifo.give(String.valueOf(iter.next()));
+		  while(iter.hasNext()) {
+        fifo.give(String.valueOf(iter.next()));
+      }
 		  return "["+fifo.join(", ")+"]";
-		} else if (m instanceof Fifo) {
-		  return "{"+((Fifo)m).join(", ")+"}";
-		}
+		} else if (m instanceof Fifo)
+      return "{"+((Fifo)m).join(", ")+"}";
 		return m == null ? "null" : m;
 	}
 

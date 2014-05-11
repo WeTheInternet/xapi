@@ -18,7 +18,7 @@ import xapi.util.impl.PairBuilder;
 public class X_Source {
 
   private X_Source() {}
-  
+
   private static final String arrays = "\\[\\]";
 
   private static final Provider<SourceService> service = X_Inject.singletonLazy(SourceService.class);
@@ -28,11 +28,11 @@ public class X_Source {
   }
   protected static IsType toType(String qualifiedName) {
     String pkg = toPackage(qualifiedName);
-    return toType(pkg, 
+    return toType(pkg,
         pkg.length() == 0 ? qualifiedName :
         qualifiedName.substring(pkg.length()+1));
   }
-  
+
   public static IsType toType(String pkg, String enclosedName) {
     return service.get().toType(X_String.notNull(pkg).replace('/', '.'), enclosedName.replace('$', '.'));
   }
@@ -75,12 +75,12 @@ public class X_Source {
   public static String stripFileName(String loc) {
     return loc.startsWith("file:") ?  loc.substring(5) : loc;
   }
-  
+
   public static String stripClassExtension(String loc) {
     return loc.endsWith(".class") ?  loc.substring(0, loc.length()-6) : loc;
   }
 
-  
+
   public static String primitiveToObject(String datatype) {
     if ("int".equals(datatype))
       return "Integer";
@@ -94,28 +94,28 @@ public class X_Source {
     // TODO move this to service, so gwt can use seedId or something more deterministic
     String[] names = new String[classes.length];
     for (int i = classes.length; i-->0;)
-      names[i] = classes[i].getCanonicalName(); 
+      names[i] = classes[i].getCanonicalName();
     return names;
   }
-  
+
   public static String[] toStringBinary(
       Class<?> ... classes) {
     // TODO move this to service, so gwt can use seedId or something more deterministic
     String[] names = new String[classes.length];
     for (int i = classes.length; i-->0;)
-      names[i] = classes[i].getName(); 
+      names[i] = classes[i].getName();
     return names;
   }
   public static String toStringEnclosed(Class<?> cls) {
     return cls.getCanonicalName().replace(cls.getPackage().getName()+".", "");
   }
-  
+
   public static URL[] getUrls(ClassLoader classLoader) {
     ArrayList<URL> urls = new ArrayList<URL>();
     ClassLoader system = ClassLoader.getSystemClassLoader();
     while (classLoader != null && classLoader != system) {
       if (classLoader instanceof URLClassLoader) {
-        Collections.addAll(urls, 
+        Collections.addAll(urls,
             ((URLClassLoader)classLoader).getURLs());
         classLoader = classLoader.getParent();
       }
@@ -127,7 +127,7 @@ public class X_Source {
   }
   public static String classToEnclosedSourceName(
       Class<?> cls) {
-    return cls.getCanonicalName().substring(1+cls.getPackage().getName().length());
+    return cls.getCanonicalName().replace(cls.getPackage().getName()+".", "");
   }
   public static boolean typesEqual(IsType[] one, IsType[] two) {
     if (one == null)
@@ -163,7 +163,7 @@ public class X_Source {
     }
     return true;
   }
-  
+
   public static boolean typesEqual(Class<?>[] one, Class<?> ... two) {
     if (one == null)
       return two == null;
@@ -175,7 +175,7 @@ public class X_Source {
     }
     return true;
   }
-  
+
   public static boolean typesAssignable(Class<?>[] subtypes, Class<?> ... supertypes) {
     if (subtypes == null)
       return supertypes == null;
@@ -215,7 +215,7 @@ public class X_Source {
     }
     return PairBuilder.pairOf(from, arrayDepth);
   }
-  
+
   public static boolean isJavaLangObject(HasQualifiedName type) {
     return type.getQualifiedName().equals("java.lang.Object");
   }

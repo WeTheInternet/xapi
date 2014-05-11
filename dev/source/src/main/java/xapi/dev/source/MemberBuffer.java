@@ -150,6 +150,14 @@ public abstract class MemberBuffer<Self extends MemberBuffer<Self>> extends
     return self();
   }
 
+  /**
+    TODO: StatementBuffers.
+    enum StatementType {
+    IF, ELSE, ELSE_IF, BINARY, ADD, SUB, MULT, DIV, TRY, CATCH, FINALLY, etc.
+    }
+    public StatementBuffer makeStatement(StatementType type) {}
+   */
+
   protected Self makeAbstract() {
     if ((modifier & Modifier.FINAL) > 0)
       modifier &= ~Modifier.FINAL;// "Cannot be both final and abstract";

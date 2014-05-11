@@ -50,7 +50,7 @@
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-            <version>4.11</version>
+            <version>4.11</version><!--$NO-MVN-MAN-VER$-->
 			<classifier>sources</classifier>
 			<scope>test</scope>
 		</dependency>
@@ -77,7 +77,7 @@
 		<plugins>
 			<plugin>
 				<artifactId>maven-clean-plugin</artifactId>
-				<version>2.5</version>
+				<version>2.5</version><!--$NO-MVN-MAN-VER$-->
 				<executions>
 					<execution>
 						<id>clean-gwt</id>
@@ -142,7 +142,7 @@
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>build-helper-maven-plugin</artifactId>
-				<version>1.8</version>
+				<version>1.8</version><!--$NO-MVN-MAN-VER$-->
 				<executions>
 					<execution>
 						<id>add-source</id>
@@ -168,7 +168,7 @@
 			</plugin>
 			<plugin>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.15</version>
+				<version>2.15</version><!--$NO-MVN-MAN-VER$-->
 				<configuration>
 					<additionalClasspathElements>
 						<additionalClasspathElement>${project.build.testSourceDirectory}</additionalClasspathElement>

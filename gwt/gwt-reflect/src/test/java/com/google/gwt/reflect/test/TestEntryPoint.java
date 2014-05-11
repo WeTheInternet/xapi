@@ -30,6 +30,7 @@ import com.google.gwt.user.client.Event;
 import com.google.gwt.user.client.EventListener;
 import com.google.gwt.user.client.Timer;
 
+@SuppressWarnings("deprecation" )
 public class TestEntryPoint implements EntryPoint {
 
   private static final String TEST_RESULTS = "test.result";
@@ -64,7 +65,7 @@ public class TestEntryPoint implements EntryPoint {
           + "color: red;"
         + "}"
         + "</style>", null);
-    
+
     GWT.runAsync(TestEntryPoint.class, new RunAsyncCallback() {
 
       @Override
@@ -103,8 +104,8 @@ public class TestEntryPoint implements EntryPoint {
             print("Error loading ConstPool", caught);
           }
         });
-        
-        
+
+
       }
 
       @Override
@@ -117,7 +118,7 @@ public class TestEntryPoint implements EntryPoint {
 
   protected void loadTests(final boolean forReal) {
     GWT.runAsync(JUnit4Test.class, new RunAsyncCallback() {
-      
+
       @Override
       public void onSuccess() {
         if (forReal) {
@@ -125,10 +126,10 @@ public class TestEntryPoint implements EntryPoint {
           runTests();
         }
       }
-      
+
       @Override
       public void onFailure(Throwable reason) {
-        
+
       }
     });
   }
@@ -144,7 +145,7 @@ public class TestEntryPoint implements EntryPoint {
           print("Error adding AnnotationTests", e);
         }
       }
-      
+
       @Override
       public void onFailure(Throwable reason) {
         print("Error loading AnnotationTests", reason);
@@ -163,7 +164,7 @@ public class TestEntryPoint implements EntryPoint {
           print("Error adding ArrayTests", e);
         }
       }
-      
+
       @Override
       public void onFailure(Throwable reason) {
         print("Error loading ArrayTests", reason);
@@ -182,7 +183,7 @@ public class TestEntryPoint implements EntryPoint {
           print("Error adding ConstructorTests", e);
         }
       }
-      
+
       @Override
       public void onFailure(Throwable reason) {
         print("Error loading ConstructorTests", reason);
@@ -201,7 +202,7 @@ public class TestEntryPoint implements EntryPoint {
           print("Error adding FieldTests", e);
         }
       }
-      
+
       @Override
       public void onFailure(Throwable reason) {
         print("Error loading FieldTests", reason);
@@ -220,7 +221,7 @@ public class TestEntryPoint implements EntryPoint {
           print("Error adding MethodTests", e);
         }
       }
-      
+
       @Override
       public void onFailure(Throwable reason) {
         print("Error loading MethodTests", reason);
@@ -241,7 +242,7 @@ public class TestEntryPoint implements EntryPoint {
 
   private void displayTests() {
     BodyElement body = Document.get().getBody();
-    
+
     for (final Class<?> c : testClasses.keySet()) {
       DivElement div = Document.get().createDivElement();
       div.getStyle().setDisplay(Display.INLINE_BLOCK);
@@ -249,7 +250,7 @@ public class TestEntryPoint implements EntryPoint {
       div.getStyle().setMarginRight(2, Unit.EM);
       div.getStyle().setProperty("maxHeight", "400px");
       div.getStyle().setOverflowY(Overflow.AUTO);
-      
+
       StringBuilder b = new StringBuilder();
       final String id = toId(c);
       b
@@ -296,12 +297,12 @@ public class TestEntryPoint implements EntryPoint {
         @Override
         public void onBrowserEvent(Event event) {
           Map<Method, Boolean> res = testResults.get(c);
-          
+
           for (final Method m : res.keySet().toArray(new Method[res.size()])) {
             res.put(m, null);
           }
           updateTestClass(c);
-          
+
           for (final Method m : testClasses.get(c)) {
             Scheduler.get().scheduleDeferred(new ScheduledCommand() {
               @Override
@@ -314,7 +315,7 @@ public class TestEntryPoint implements EntryPoint {
       });
       DOM.sinkEvents(anchor, Event.ONCLICK);
     }
-    
+
   }
 
   private native void log(Object o)
@@ -412,7 +413,7 @@ public class TestEntryPoint implements EntryPoint {
     debug(el, string, e);
     Document.get().getBody().appendChild(el);
   }
-  
+
   private void debug(com.google.gwt.dom.client.Element el, String string, Throwable e) {
     StringBuilder b = new StringBuilder();
     b.append(string);

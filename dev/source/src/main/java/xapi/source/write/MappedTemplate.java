@@ -2,15 +2,16 @@ package xapi.source.write;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 public class MappedTemplate extends Template {
 
   private Map<String, Integer> positions;
-  
+
   public MappedTemplate(String template, Iterable<String> items) {
     this(template, toArray(items));
   }
-  
+
   public MappedTemplate(String template, String ... replaceables) {
     super(template, replaceables);
     positions = new HashMap<String, Integer>();
@@ -18,18 +19,26 @@ public class MappedTemplate extends Template {
       positions.put(replaceables[i], i);
     }
   }
-  
-  public String applyMap(Map<String, Object> map) {
+
+  public String applyMap(Iterable<Entry<String, Object>> map) {
     Object[] values = new Object[positions.size()];
-    for (String key : map.keySet()) {
+    for (Entry<String, Object> entry : map) {
+      String key = entry.getKey();
       Integer pos = positions.get(key);
       if (pos == null) {
         warnMissing(key);
       } else {
-        values[pos] = map.get(key);
+        values[pos] = retrieve(key, entry.getValue());
       }
     }
     return apply(values);
+  }
+
+  /**
+   * Allow subclasses to perform additional data retrieval logic.
+   */
+  protected Object retrieve(String key, Object object) {
+    return object;
   }
 
   protected void warnMissing(String key) {
@@ -39,5 +48,5 @@ public class MappedTemplate extends Template {
   public boolean hasKey(String key) {
     return positions.containsKey(key);
   }
-  
+
 }

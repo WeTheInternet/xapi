@@ -3,5 +3,8 @@
 <module>
   <source path="source" />
   <source path="dev/source" />
+  <source path="source/service" />
+  <source path="source/api" />
+  <source path="source/*.java" />
   <inherits name="com.google.gwt.core.Core"/>
 </module>

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import xapi.collect.api.StringTo;
 import xapi.collect.impl.ArrayIterable;
 import xapi.source.write.MappedTemplate;
 import xapi.util.api.ConvertsValue;
@@ -18,11 +19,11 @@ public class BeanValueProvider {
     }
     return map.get(name).convert(object);
   }
-  
+
   protected static Object illegalArg(String name) {
     throw new IllegalArgumentException("Value for field named "+name+" not found");
   }
-  
+
   private class Converter {
     protected Object valueOf(String name, Object object) {
       return BeanValueProvider.this.valueOf(name, object);
@@ -37,16 +38,14 @@ public class BeanValueProvider {
       this.name = name;
       this.converter = converter;
     }
-    
+
     @Override
     public Object getValue(String name, String context, Object object) {
 //      assert context.equals(this.name);
-      if ("$name".equals(name) || "this.name()".equals(name) || (this.name+".name()").equals(name)) {
+      if ("$name".equals(name) || "this.name()".equals(name) || (this.name+".name()").equals(name))
         return this.name;
-      }
-      if ("$value".equals(name) || "this".equals(name) || this.name.equals(name)) {
+      if ("$value".equals(name) || "this".equals(name) || this.name.equals(name))
         return converter.valueOf(this.name, object);
-      }
       return converter.valueOf(this.name+"."+name, object);
     }
   }
@@ -57,26 +56,24 @@ public class BeanValueProvider {
     private RebaseAllBeanValueProvider(Converter converter) {
       this.converter = converter;
     }
-    
+
     @Override
     public Object getValue(String name, String context, Object object) {
-      if ("$name".equals(name) || "this.name()".equals(name)) {
+      if ("$name".equals(name) || "this.name()".equals(name))
         return context;
-      }
-      if ("$value".equals(name) || "this".equals(name)) {
+      if ("$value".equals(name) || "this".equals(name))
         return object;
-      }
       if (context.length()>0) {
         context += ".";
       }
       return converter.valueOf(context+name, object);
     }
-    
+
   }
-  
+
   private Map<String, ConvertsValue<Object, Object>> map = new LinkedHashMap<String, ConvertsValue<Object, Object>>();
   private String[] childKeys;
-  
+
   public void addProvider(String key, final String name, ConvertsValue<Object, Object> provider) {
     map.put(key, provider);
     ConvertsValue<Object, Object> namer = new ConvertsValue<Object, Object>() {
@@ -91,7 +88,7 @@ public class BeanValueProvider {
       map.put("$value", provider);
     }
   }
-  
+
   protected Object valueOf(String name, Object object) {
     return getValue(name, object, map);
   }
@@ -103,7 +100,7 @@ public class BeanValueProvider {
     }
     return keys;
   }
-  
+
   protected String[] childKeys() {
     if (childKeys == null) {
       List<String> keys = new ArrayList<String>();
@@ -117,7 +114,7 @@ public class BeanValueProvider {
     }
     return childKeys;
   }
-  
+
   public void setChildKeys(String[] keys) {
     this.childKeys = keys;
   }
@@ -132,7 +129,7 @@ public class BeanValueProvider {
     bean.map = map;
     return bean;
   }
-  
+
   public BeanValueProvider rebaseAll() {
     BeanValueProvider bean = new RebaseAllBeanValueProvider(new Converter());
     bean.childKeys = childKeys;
@@ -144,7 +141,10 @@ public class BeanValueProvider {
     return new ArrayIterable<String>(childKeys());
   }
 
-  public void fillMap(String name, MappedTemplate template, Map<String, Object> map, Object val) {
+  @SuppressWarnings({
+      "rawtypes", "unchecked"
+  })
+  public void fillMap(String name, MappedTemplate template, StringTo map, Object val) {
     if ("".equals(name)) {
       for (String key : childKeys()) {
         String k = key.startsWith("$") ? key : "${"+key+"}";
@@ -165,5 +165,5 @@ public class BeanValueProvider {
       // We should also have a means to do deep name resolving on rebased bean items...
     }
   }
-  
+
 }

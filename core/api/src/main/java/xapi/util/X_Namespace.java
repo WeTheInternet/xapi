@@ -1,5 +1,7 @@
 package xapi.util;
 
+import xapi.util.service.PropertyService;
+
 
 /**
  * A collection of string constants, used as property keys throughout the app.
@@ -14,18 +16,18 @@ public class X_Namespace {
    * The current version of XApi, updated after releases;
    * this could probably be derived from poms in jars on classpath,
    * but it's faster at runtime to use a constant field.
-   * 
+   *
    */
   public static final String XAPI_VERSION = "0.5-SNAPSHOT";
 
   /**
-   * The groupId used for the xapi project.  This is used to 
+   * The groupId used for the xapi project.  This is used to
    * allow anyone that wishes to fork the project to use their own groupId.
-   * 
+   *
    * It also allows tracing all source-level accessors of the maven group id.
    */
   public static final String XAPI_GROUP_ID = "net.wetheinter";
-  
+
   /**
    * META-INF - Used a separate constant to encourage fragment reuse.
    */
@@ -53,8 +55,6 @@ public class X_Namespace {
   /**
    * "xapi.platform" System property for specifying injection runtime.
    *
-   * In a gwt environment, this will be
-   *
    * For runtime injection in a jre environment
    */
   public static final String PROPERTY_PLATFORM = "xapi.platform";
@@ -63,7 +63,7 @@ public class X_Namespace {
    * "xapi.debug" System property for setting debug level
    */
   public static final String PROPERTY_DEBUG = "xapi.debug";
-  
+
   /**
    * "xapi.injector" System property for choosing the runtime injector to use.
    * Default value is xapi.jre.inject.RuntimeInjector
@@ -142,7 +142,7 @@ public class X_Namespace {
    * (and make a test profile for maven with this property set for you!)
    */
   public static final String PROPERTY_TEST = "xapi.test";
-  
+
   /**
    * "xapi.meta"
    * Location to write injection metadata, if runtime injection is allowed
@@ -156,7 +156,7 @@ public class X_Namespace {
    * and gwt module xml <set-property name="xapi.inject" value="false" />
    */
   public static String PROPERTY_USE_X_INJECT = "xapi.inject";
-  
+
   /**
    * "xapi.home"
    * Sets the working location of a local xapi install, if any.

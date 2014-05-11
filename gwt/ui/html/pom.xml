@@ -31,6 +31,10 @@
    <groupId>net.wetheinter</groupId>
    <artifactId>xapi-gwt-ui-autoui</artifactId>
   </dependency>
+  <dependency>
+   <groupId>com.google.gwt</groupId>
+   <artifactId>gwt-elemental</artifactId>
+  </dependency>
   
   <!-- Testing dependencies -->
   
@@ -38,7 +42,7 @@
    <groupId>net.wetheinter</groupId>
    <artifactId>xapi-core-ui-autoui</artifactId>
    <classifier>tests</classifier>
-   <version>${xapi.version}</version>
+   <version>${xapi.version}</version><!--$NO-MVN-MAN-VER$-->
   </dependency>
   <dependency>
     <groupId>net.wetheinter</groupId>

@@ -29,7 +29,8 @@ public class CodeServerControls extends JPanel{
     setLayout(layout);
     this.launch = launch;
     module = new JTextField("com.example.MyApp");
-    module.setPreferredSize(new Dimension(350, 20));
+    module.setPreferredSize(new Dimension(350, 30));
+    module.setSize(new Dimension(350, 30));
     render();
   }
   GridBagConstraints

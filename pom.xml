@@ -246,6 +246,17 @@
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-core-ui-api</artifactId>
+    <version>${xapi.version}</version>
+   </dependency>
+   <dependency>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-core-ui-api</artifactId>
+    <version>${xapi.version}</version>
+    <classifier>sources</classifier>
+   </dependency>
+   <dependency>
+    <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-ui-autoui</artifactId>
     <version>${xapi.version}</version>
    </dependency>
@@ -380,6 +391,11 @@
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-gwt-ui-html</artifactId>
+    <version>${xapi.version}</version>
+   </dependency>
+   <dependency>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-elemental</artifactId>
     <version>${xapi.version}</version>
    </dependency>
    <dependency>

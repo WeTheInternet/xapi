@@ -18,6 +18,11 @@
  <dependencies>
   <dependency>
    <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-core-ui-api</artifactId>
+   <classifier>sources</classifier>
+  </dependency>
+  <dependency>
+   <groupId>net.wetheinter</groupId>
    <artifactId>xapi-core-ui-autoui</artifactId>
    <classifier>sources</classifier>
   </dependency>
@@ -45,7 +50,7 @@
    <groupId>net.wetheinter</groupId>
    <artifactId>xapi-core-ui-autoui</artifactId>
    <classifier>tests</classifier>
-   <version>${xapi.version}</version>
+   <version>${xapi.version}</version><!--$NO-MVN-MAN-VER$-->
   </dependency>
   <dependency>
    <groupId>junit</groupId>

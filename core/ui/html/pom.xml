@@ -51,7 +51,7 @@
   <dependency>
    <groupId>net.wetheinter</groupId>
    <artifactId>xapi-core-ui-autoui</artifactId>
-   <version>${project.version}</version>
+   <version>${project.version}</version><!--$NO-MVN-MAN-VER$-->
    <type>test-jar</type>
    <scope>test</scope>
   </dependency>

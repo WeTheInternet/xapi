@@ -26,4 +26,11 @@ public class StringToManyList <X> extends StringToAbstract<IntTo<X>> implements 
     return X_Collect.newList(componentClass);
   }
 
+  @Override
+  public StringToManyList<X> add(String key, X value) {
+    get(key).add(value);
+    return this;
+  }
+
+
 }

@@ -46,13 +46,14 @@ extends CollectionProxy<Integer,T>
       }
     }
   }
-  
+
   Iterable<T> forEach();
 
   boolean add(T item);
-  
+
   boolean addAll(Iterable<T> items);
 
+  @SuppressWarnings("unchecked")
   boolean addAll(T ... items);
 
   boolean insert(int pos, T item);

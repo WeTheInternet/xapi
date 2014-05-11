@@ -5,14 +5,10 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.google.gwt.reflect.shared.GwtReflect;
-
-import xapi.annotation.inject.InstanceDefault;
 import xapi.annotation.inject.InstanceOverride;
 import xapi.log.X_Log;
 import xapi.log.api.LogLevel;
 import xapi.platform.GwtPlatform;
-import xapi.reflect.X_Reflect;
 import xapi.ui.autoui.api.BeanValueProvider;
 import xapi.ui.autoui.api.DoNotIndex;
 import xapi.ui.autoui.api.UiOptions;

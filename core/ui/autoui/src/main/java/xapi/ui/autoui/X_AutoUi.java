@@ -7,7 +7,7 @@ import xapi.ui.autoui.api.UserInterfaceFactory;
 public class X_AutoUi {
 
   private X_AutoUi(){}
-  
+
   @SuppressWarnings("unchecked")
   public static <T, U extends UserInterface<T>> U makeUi(T model, Class<? extends T> uiOptions, Class<? super U> uiType) {
     if (uiOptions == null) {
@@ -24,10 +24,10 @@ public class X_AutoUi {
     }
   }
 
-  public static <T, U extends UserInterface<T>> U instantiate(Class<? extends T> cls, Class<? super U> uiType) {
+  private static <T, U extends UserInterface<T>> U instantiate(Class<? extends T> cls, Class<? super U> uiType) {
       return X_Inject
           .instance(UserInterfaceFactory.class)
           .createUi(cls, uiType);
   }
-  
+
 }

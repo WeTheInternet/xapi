@@ -1,5 +1,7 @@
 package xapi.ui.html.api;
 
+import xapi.ui.api.Stylizer;
+
 public @interface Style {
 
   public static @interface Unit {
@@ -129,7 +131,13 @@ public @interface Style {
 
   public static enum Display {
     None("none"), Block("block"), Inline("inline"),
-    InlineBlock("inline-block"), Inherit("inherit");
+    InlineBlock("inline-block"), Inherit("inherit"),
+    Table("table"), TableRow("table-row"), TableColumn("table-column"),
+    TableCaption("table-caption"), TableCell("table-cell"),
+    TableHeaderGroup("table-header-group"), TableFooterGroup("table-footer-group"),
+    TableRowGroup("table-row-group"), TableColumnGroup("table-column-group"),
+    Flex("flex"), InlineFlex("inline-flex")
+    ;
     String styleName;
     private Display(String styleName) {
       this.styleName = styleName;
@@ -140,8 +148,8 @@ public @interface Style {
   }
 
   public static enum Position {
-    Static("static"), Relative("relative"), Absolute("absolte"),
-    Fixed("fixed"), Sticky("sticky",Position.Fixed), Inherit("inheritd");
+    Static("static"), Relative("relative"), Absolute("absolute"),
+    Fixed("fixed"), Sticky("sticky",Position.Fixed), Inherit("inherited");
 
     private final Position fallback;
     private final String styleName;
@@ -225,4 +233,14 @@ public @interface Style {
   Overflow overflowY() default Overflow.Inherit;
 
   Class<? extends Stylizer<?>>[] stylizers() default {};
+  /**
+   * The insertion-order priority in which to insert the style.
+   *
+   * A best effort will be made to ensure style injected at different priorities will be
+   * appended to an ordered set of style tags in the document's head,
+   * but the only solid guarantee is that all style inserted in a single javascript
+   * event loop will be in prioritized order.
+   *
+   */
+  int priority() default 0;
 }

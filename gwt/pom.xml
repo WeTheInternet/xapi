@@ -158,6 +158,7 @@
         <module>process</module>
         <module>model</module>
         <module>io</module>
+        <module>elemental</module>
 <!-- NSFW        <module>inspect</module> -->
         <module>test</module>
         <module>uber</module>

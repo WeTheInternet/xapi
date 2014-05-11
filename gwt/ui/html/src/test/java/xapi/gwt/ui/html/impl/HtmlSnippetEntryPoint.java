@@ -1,16 +1,17 @@
 package xapi.gwt.ui.html.impl;
 
-import xapi.dev.source.HtmlBuffer;
-import xapi.ui.autoui.client.UserModel;
-import xapi.ui.html.X_Html;
-
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.dom.client.Document;
 import com.google.gwt.user.client.Window;
 
+import xapi.inject.X_Inject;
+import xapi.ui.api.StyleService;
+import xapi.ui.autoui.client.UserModel;
+import xapi.ui.html.X_Html;
+
 public class HtmlSnippetEntryPoint implements EntryPoint {
 
-  private HtmlBuffer context = new HtmlBuffer();
+  private StyleService<?> context = X_Inject.singleton(StyleService.class);
 
   @Override
   public void onModuleLoad() {

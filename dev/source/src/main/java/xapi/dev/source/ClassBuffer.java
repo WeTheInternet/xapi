@@ -99,25 +99,30 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
       }
     }
     b.append(origIndent);
-    if (prefix != null)
+    if (prefix != null) {
       b.append(prefix);
-    if (privacy == Modifier.PUBLIC)
+    }
+    if (privacy == Modifier.PUBLIC) {
       b.append("public ");
-    else if (privacy == Modifier.PRIVATE)
+    } else if (privacy == Modifier.PRIVATE) {
       b.append("private ");
-    else if (privacy == Modifier.PROTECTED)
+    } else if (privacy == Modifier.PROTECTED) {
       b.append("protected ");
+    }
 
-    if (isStatic())
+    if (isStatic()) {
       b.append("static ");
-    if (isAbstract())
+    }
+    if (isAbstract()) {
       b.append("abstract ");
-    if (isFinal())
+    }
+    if (isFinal()) {
       b.append("final ");
+    }
 
-    if (isClass)
+    if (isClass) {
       b.append("class ");
-    else {
+    } else {
       if (isAnnotation) {
         b.append('@');
       }
@@ -131,8 +136,9 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
     b.append(simpleName + " ");
 
     if (isClass) {
-      if (superClass != null)
+      if (superClass != null) {
         b.append("extends " + superClass + " ");
+      }
       if (interfaces.size() > 0) {
         b.append("implements ");
         for (String iface : interfaces) {
@@ -175,8 +181,9 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
 
   @Override
   public void addToBeginning(PrintBuffer buffer) {
-    if (prefix == null)
+    if (prefix == null) {
       prefix = new PrintBuffer();
+    }
     prefix.addToBeginning(buffer);
   }
 
@@ -184,14 +191,17 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
     JavaLexer metadata = new JavaLexer(definition);
     isWellFormatted = wellFormatted;
     privacy = metadata.getPrivacy();
-    if (metadata.isStatic())
+    if (metadata.isStatic()) {
       makeStatic();
-    if (metadata.isFinal())
+    }
+    if (metadata.isFinal()) {
       makeFinal();
-    if (metadata.isAbstract())
+    }
+    if (metadata.isAbstract()) {
       makeAbstract();
-    else
+    } else {
       makeConcrete();
+    }
     isClass = metadata.isClass();
     isAnnotation = metadata.isAnnotation();
     isEnum = metadata.isEnum();
@@ -204,8 +214,9 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
     if (metadata.hasGenerics()) {
       generics.clear();
       String[] generic = metadata.getGenerics();
-      for (String s : generic)
+      for (String s : generic) {
         generics.add(s);
+      }
     }
 
     if (definition.contains(" "))
@@ -226,9 +237,17 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
   }
 
   public ClassBuffer addInterface(String iface) {
+    return addInterface(iface, true);
+  }
+
+  public ClassBuffer addInterface(String iface, boolean doImport) {
     iface = iface.trim();
-    if (iface.indexOf('.') > 0)
-      iface = context.getImports().addImport(iface);
+    if (doImport) {
+      int ind = iface.indexOf('.');
+      if (ind > 0 && Character.isLowerCase(iface.charAt(0))) {
+        iface = context.getImports().addImport(iface);
+      }
+    }
     this.interfaces.add(iface);
     return this;
   }
@@ -264,9 +283,8 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
           context.getImports().reserveSimpleName(
               stripped.substring(stripped.lastIndexOf('.') + 1));
           return stripped;
-        } else {
+        } else
           return importName;
-        }
       }
     }
     return context.getImports().addImport(importName);
@@ -279,7 +297,7 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
 
   @Override
   public String addImportStatic(Class<?> cls, String name) {
-    return context.getImports().addStatic(cls.getCanonicalName() + "." + name);
+    return context.getImports().addStatic(cls, name);
   }
 
   @Override

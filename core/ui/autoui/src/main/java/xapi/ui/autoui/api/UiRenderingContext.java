@@ -1,12 +1,13 @@
 package xapi.ui.autoui.api;
 
+import static xapi.collect.X_Collect.newStringMap;
+
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import javax.inject.Provider;
 
+import xapi.collect.api.StringTo;
 import xapi.source.write.MappedTemplate;
 import xapi.util.impl.ImmutableProvider;
 
@@ -17,38 +18,38 @@ public class UiRenderingContext {
   private static final Validator[] DEFAULT_VALIDATORS = new Validator[0];
   private static final Object[] EMPTY_MESSAGES = new Object[0];
 
-  
+
   private boolean head = false;
 
   private final Provider<UiRenderer<?>> renderProvider;
   private UiRendererSelector selector = UiRendererSelector.ALWAYS_TRUE;
   private boolean tail = false;
-  
+
   private MappedTemplate template = DEFAULT_TEMPLATE;
   @SuppressWarnings("rawtypes")
   private Validator[] validators = DEFAULT_VALIDATORS;
   private boolean wrapper = false;
   private BeanValueProvider valueProvider;
   private String name = "";
-  
+
 
   public UiRenderingContext(Provider<UiRenderer<?>> renderProvider) {
     this.renderProvider = renderProvider;
   }
-  
+
   public UiRenderingContext(UiRenderer<?> renderer) {
     this(new ImmutableProvider<UiRenderer<?>>(renderer));
   }
-  
+
   public String getName() {
     return name;
   }
-  
+
   @SuppressWarnings("rawtypes")
   public final UiRenderer getRenderer() {
     return renderProvider.get();
   }
-  
+
   public UiRendererSelector getSelector() {
     return selector;
   }
@@ -56,13 +57,13 @@ public class UiRenderingContext {
   public MappedTemplate getTemplate() {
     return template;
   }
-  
+
   public String applyTemplate(String name, Object val) {
-    Map<String, Object> map = new HashMap<String, Object>();
+    StringTo<Object> map = newStringMap(Object.class);
     BeanValueProvider bean = getBeanValueProvider();
     MappedTemplate template = getTemplate();
     bean.fillMap(name, template, map, val);
-    return template.applyMap(map);
+    return template.applyMap(map.entries());
   }
 
   @SuppressWarnings("rawtypes")
@@ -77,20 +78,18 @@ public class UiRenderingContext {
   public boolean isTail() {
     return tail;
   }
-  
+
   public boolean isTemplateSet() {
     return template != DEFAULT_TEMPLATE;
   }
-  
+
   public boolean isValid(Object o) {
-    if (validators.length == 0) {
+    if (validators.length == 0)
       return true;
-    }
     for (Validator<?> validator : validators) {
       Object error = validator.isValid(o);
-      if (!(Boolean.TRUE.equals(error) || error == null)) {
+      if (!(Boolean.TRUE.equals(error) || error == null))
         return false;
-      }
     }
     return true;
   }
@@ -103,7 +102,7 @@ public class UiRenderingContext {
     this.head = head;
     return this;
   }
-  
+
   public UiRenderingContext setName(String name) {
     this.name = name;
     return this;
@@ -115,7 +114,7 @@ public class UiRenderingContext {
     this.selector = selector;
     return this;
   }
-  
+
   public UiRenderingContext setTail(boolean tail) {
     this.tail = tail;
     return this;
@@ -136,11 +135,10 @@ public class UiRenderingContext {
     this.wrapper = wrapper;
     return this;
   }
-  
+
   public Object[] validate(Object o) {
-    if (validators.length == 0) {
+    if (validators.length == 0)
       return EMPTY_MESSAGES;
-    }
     List<Object> errors = new ArrayList<Object>();
     for (Validator<?> validator : validators) {
       Object error = validator.isValid(o);
@@ -154,9 +152,9 @@ public class UiRenderingContext {
   public void setBeanProvider(BeanValueProvider bean) {
     this.valueProvider = bean;
   }
-  
+
   public BeanValueProvider getBeanValueProvider() {
     return valueProvider;
   }
-  
+
 }

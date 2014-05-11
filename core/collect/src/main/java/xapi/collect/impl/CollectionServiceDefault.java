@@ -13,8 +13,8 @@ import xapi.collect.api.CollectionOptions;
 import xapi.collect.api.Fifo;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.ObjectTo;
-import xapi.collect.api.StringDictionary;
 import xapi.collect.api.ObjectTo.Many;
+import xapi.collect.api.StringDictionary;
 import xapi.collect.api.StringTo;
 import xapi.collect.proxy.CollectionProxy;
 import xapi.collect.proxy.MapOf;
@@ -58,8 +58,12 @@ public class CollectionServiceDefault implements CollectionService{
   static final Comparator<Number> NUMBER_CMP = new Comparator<Number>() {
     @Override
     public int compare(Number o1, Number o2) {
-      if (o1==null)o1=0;
-      if (o2==null)o2=0;
+      if (o1==null) {
+        o1=0;
+      }
+      if (o2==null) {
+        o2=0;
+      }
       double delta = o1.doubleValue() - o2.doubleValue();
       if (Math.abs(delta)<0.0000000001)return 0;
       return delta < 0 ? -1 : 1;
@@ -69,9 +73,8 @@ public class CollectionServiceDefault implements CollectionService{
     @Override
     @SuppressWarnings({"unchecked","rawtypes"})
     public int compare(Object o1, Object o2) {
-      if (o1 instanceof Comparable) {
+      if (o1 instanceof Comparable)
         return ((Comparable)o1).compareTo(o2);
-      }
       return System.identityHashCode(o1) - System.identityHashCode(o2);
     }
   };
@@ -96,11 +99,10 @@ public class CollectionServiceDefault implements CollectionService{
   }
 
   protected <K, V> Map<K,V> newMap() {
-    if (X_Runtime.isMultithreaded()) {
+    if (X_Runtime.isMultithreaded())
       return new ConcurrentHashMap<K,V>();
-    } else {
+    else
       return new HashMap<K,V>();
-    }
   }
 
   @Override
@@ -131,24 +133,25 @@ public class CollectionServiceDefault implements CollectionService{
 
   protected <K, V> CollectionProxy<K,V> newProxy(Class<K> keyType, Class<V> valueType, CollectionOptions opts) {
     if (opts.insertionOrdered()) {
-      if (opts.concurrent()) {
+      if (opts.concurrent())
         return new MapOf<K,V>(new ConcurrentSkipListMap<K,V>(), keyType, valueType);
-      } else {
+      else
         return new MapOf<K,V>(new LinkedHashMap<K,V>(), keyType, valueType);
-      }
     }
-    if (opts.concurrent()) {
+    if (opts.concurrent())
       return new MapOf<K,V>(new ConcurrentHashMap<K,V>(), keyType, valueType);
-    } else {
+    else
       return new MapOf<K,V>(new HashMap<K,V>(), keyType, valueType);
-    }
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({
+      "unchecked", "unused"
+  })
   private <V> Comparator<V> getComparator(Class<?> cls) {
     Comparator<?> cmp = null;
-    while ((cmp = comparators.get(cls))==null)
+    while ((cmp = comparators.get(cls))==null) {
       cls = cls.getSuperclass();
+    }
     return (Comparator<V>)cmp;
   }
 

@@ -7,16 +7,16 @@
   <source path="ui/html/impl" />
   
   <extend-configuration-property name="gwt.magic.methods" 
-    value="xapi.ui.html.X_Html.toHtml(Ljava/lang/Class;Ljava/lang/Object;Lxapi/dev/source/HtmlBuffer;)Ljava/lang/String; *= xapi.dev.ui.html.HtmlSnippetInjector"/>
+    value="xapi.ui.html.X_Html.toHtml(Ljava/lang/Class;Ljava/lang/Object;Lxapi/ui/api/StyleService;)Ljava/lang/String; *= xapi.dev.ui.html.HtmlSnippetInjector"/>
 
   <extend-configuration-property name="gwt.magic.methods" 
-    value="xapi.ui.html.X_Html.toHtml(Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/Object;Lxapi/dev/source/HtmlBuffer;)Ljava/lang/String; *= xapi.dev.ui.html.HtmlSnippetInjector"/>
+    value="xapi.ui.html.X_Html.toHtml(Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/Object;Lxapi/ui/api/StyleService;)Ljava/lang/String; *= xapi.dev.ui.html.HtmlSnippetInjector"/>
   
   <extend-configuration-property name="gwt.magic.methods" 
-    value="xapi.ui.html.X_Html.toSnippet(Ljava/lang/Class;Lxapi/dev/source/HtmlBuffer;)Lxapi/ui/html/api/HtmlSnippet; *= xapi.dev.ui.html.HtmlSnippetInjector"/>
+    value="xapi.ui.html.X_Html.toSnippet(Ljava/lang/Class;Lxapi/ui/api/StylService;)Lxapi/ui/html/api/HtmlSnippet; *= xapi.dev.ui.html.HtmlSnippetInjector"/>
   
   <extend-configuration-property name="gwt.magic.methods" 
-    value="xapi.ui.html.X_Html.toSnippet(Ljava/lang/Class;Ljava/lang/Class;Lxapi/dev/source/HtmlBuffer;)Lxapi/ui/html/api/HtmlSnippet; *= xapi.dev.ui.html.HtmlSnippetInjector"/>
+    value="xapi.ui.html.X_Html.toSnippet(Ljava/lang/Class;Ljava/lang/Class;Lxapi/ui/api/StyleService;)Lxapi/ui/html/api/HtmlSnippet; *= xapi.dev.ui.html.HtmlSnippetInjector"/>
   
   
 </module>

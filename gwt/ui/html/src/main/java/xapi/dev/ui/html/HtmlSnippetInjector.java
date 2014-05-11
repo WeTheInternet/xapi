@@ -2,10 +2,6 @@ package xapi.dev.ui.html;
 
 import java.util.List;
 
-import xapi.log.X_Log;
-import xapi.ui.autoui.api.UserInterface;
-import xapi.ui.html.api.HtmlSnippet;
-
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.core.ext.UnableToCompleteException;
@@ -23,8 +19,9 @@ import com.google.gwt.dev.jjs.ast.JExpression;
 import com.google.gwt.dev.jjs.ast.JMethod;
 import com.google.gwt.dev.jjs.ast.JMethodCall;
 import com.google.gwt.dev.jjs.ast.JNewInstance;
-import com.google.gwt.dev.jjs.ast.JNullType;
 import com.google.gwt.reflect.rebind.ReflectionUtilAst;
+
+import xapi.ui.html.api.HtmlSnippet;
 
 /**
  * A magic method injector for the methods X_Html.toHtml and X_Html.toSnippet:
@@ -33,11 +30,11 @@ import com.google.gwt.reflect.rebind.ReflectionUtilAst;
  * public static <T> HtmlSnippet<T> toSnippet(Class<? extends T> type, HtmlBuffer context)
  * </pre>
  * This magic method will create a generated class that is much more efficient at runtime than
- * what the default code does (via reflection).  At present, sending non-class literals to this 
+ * what the default code does (via reflection).  At present, sending non-class literals to this
  * method is not supported.  It can be supported by using reflection in Gwt, but it requires a lot
  * of reflection which comes with a lot of overhead, and will not be supported unless there is a
- * very compelling use case offered.  
- * 
+ * very compelling use case offered.
+ *
  * @author "James X. Nelson (james@wetheinter.net)"
  *
  */
@@ -51,12 +48,12 @@ public class HtmlSnippetInjector implements MagicMethodGenerator {
     JClassLiteral typeLiteral = ReflectionUtilAst.extractClassLiteral(logger, args.get(0), ast, true);
     boolean isToHtml = "toHtml".equals(methodCall.getTarget().getName());
     int instanceIndex = args.size() - 2;
-    
+
     logger.log(Type.INFO, "Injecting "+methodCall.getTarget().getName()+" for "+typeLiteral.getRefType().getName());
-    
+
     TypeOracle oracle = ast.getTypeOracle();
     ast.translate(typeLiteral.getRefType());
-    
+
     com.google.gwt.core.ext.typeinfo.JClassType templateType;
     try {
       templateType = oracle.getType(typeLiteral.getRefType().getName().replace('$', '.'));
@@ -78,15 +75,15 @@ public class HtmlSnippetInjector implements MagicMethodGenerator {
       logger.log(Type.ERROR, "Unable to load "+typeLiteral.getRefType()+" from the type oracle");
       throw new UnableToCompleteException();
     }
-    
-    String provider;
+
+    HtmlGeneratorResult provider;
     provider = HtmlSnippetGenerator.generateSnippetProvider(logger, ast, templateType, modelType);
     // Force load the type
-    ast.getTypeOracle().findType(provider);
-    
+    ast.getTypeOracle().findType(provider.getFinalName());
+
     // Grab the type from the jjs ast
-    
-    JClassType uiType = (JClassType) ast.searchForTypeBySource(provider);
+
+    JClassType uiType = (JClassType) ast.searchForTypeBySource(provider.getFinalName());
     SourceInfo info = methodCall.getSourceInfo().makeChild();
     JExpression inst = null;
     for (JMethod method : uiType.getMethods()) {
@@ -97,13 +94,11 @@ public class HtmlSnippetInjector implements MagicMethodGenerator {
         break;
       }
     }
-    X_Log.info(getClass(), "Generated X_Html implementation ", uiType);
     if (isToHtml) {
       JDeclaredType snippet = ast.searchForTypeBySource(HtmlSnippet.class.getName());
       for (JMethod method : snippet.getMethods()) {
-        if (method.getName().equals("convert")) {
+        if (method.getName().equals("convert"))
           return new JMethodCall(info, inst, method, args.get(instanceIndex));
-        }
       }
     }
     if (inst == null) {

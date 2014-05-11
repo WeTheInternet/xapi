@@ -22,10 +22,11 @@ extends HasValues<String,V>
   String[] keyArray();
 
   int size();
-  
+
   public static interface Many <V>
   extends StringTo<IntTo<V>>
   {
+    Many <V> add(String key, V value);
   }
 
 }

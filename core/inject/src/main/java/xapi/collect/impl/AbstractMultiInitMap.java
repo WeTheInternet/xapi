@@ -2,10 +2,14 @@ package xapi.collect.impl;
 
 import xapi.util.X_Runtime;
 import xapi.util.api.ConvertsValue;
+import xapi.util.api.MergesValues;
 import xapi.util.api.Pair;
 import xapi.util.impl.PairBuilder;
 
-public class AbstractMultiInitMap <Key, Value, Params> extends InitMapDefault<Pair<Key, Params>,Value> {
+public class AbstractMultiInitMap <Key, Value, Params>
+extends InitMapDefault<Pair<Key, Params>,Value>
+implements MergesValues<Key, Params, Value>
+{
 
   private transient volatile Params params;
 
@@ -29,6 +33,17 @@ public class AbstractMultiInitMap <Key, Value, Params> extends InitMapDefault<Pa
   public AbstractMultiInitMap(ConvertsValue<Key, String> keyConverter, ConvertsValue<Pair<Key,Params>,Value> valueConverter) {
     super(AbstractMultiInitMap.<Key, Params>adapt(keyConverter), valueConverter);
     clearState = true;
+  }
+
+  public static <Params, Value> AbstractMultiInitMap<String, Value, Params>
+    stringMultiInitMap(final ConvertsValue<Params, Value> converter) {
+    return new AbstractMultiInitMap<String, Value, Params>(PASS_THRU,
+      new ConvertsValue<Pair<String, Params>, Value>() {
+      @Override
+      public Value convert(Pair<String, Params> from) {
+        return converter.convert(from.get1());
+      }
+    });
   }
 
   public Value get(Key key, Params params) {
@@ -89,6 +104,11 @@ public class AbstractMultiInitMap <Key, Value, Params> extends InitMapDefault<Pa
 
   protected Value initialize(Key key, Params params) {
     return null;
+  }
+
+  @Override
+  public Value merge(Key key1, Params key2) {
+    return get(key1, key2);
   }
 
 }

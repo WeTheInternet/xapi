@@ -1,16 +1,17 @@
 package xapi.ui.html.api;
 
+import static xapi.collect.X_Collect.newStringMap;
+
 import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 import javax.inject.Provider;
 
 import xapi.annotation.common.Property;
+import xapi.collect.api.StringTo;
 import xapi.dev.source.DomBuffer;
-import xapi.dev.source.HtmlBuffer;
 import xapi.log.X_Log;
 import xapi.source.write.MappedTemplate;
+import xapi.ui.api.StyleService;
 import xapi.ui.autoui.api.BeanValueProvider;
 import xapi.ui.html.api.Style.AlignHorizontal;
 import xapi.ui.html.api.Style.AlignVertical;
@@ -40,11 +41,11 @@ public class HtmlSnippet <T> implements ConvertsValue<T, String> {
   public HtmlSnippet(Provider<ConvertsValue<T, DomBuffer>> generator) {
     this.generator = new LazyProvider<>(generator);
   }
-      
+
   public HtmlSnippet(
       final Html html,
       final BeanValueProvider values,
-      final HtmlBuffer context
+      final StyleService<?> context
     ) {
     assert html != null : "Do not send null @Html to HtmlSnippet!";
     assert values != null : "Do not send null BeanValueProvider to HtmlSnippet!";
@@ -67,15 +68,15 @@ public class HtmlSnippet <T> implements ConvertsValue<T, String> {
               for (String clsName : el.className()) {
                 child.addClassName(toValue(values, keys, clsName, from));
               }
-              
+
               for (String html : el.html()) {
                 MappedTemplate m = new MappedTemplate(html, keys);
-                Map<String, Object> vals = new LinkedHashMap<>();
+                StringTo<Object> vals = newStringMap(Object.class);
                 values.fillMap("", m, vals, from);
-                child.append(m.applyMap(vals));
+                child.append(m.applyMap(vals.entries()));
               }
             }
-            
+
             return buffer;
           }
 
@@ -85,16 +86,17 @@ public class HtmlSnippet <T> implements ConvertsValue<T, String> {
       }
     });
   }
+
   protected String toValue(BeanValueProvider values, Iterable<String> keys, String template, T from) {
     MappedTemplate m = new MappedTemplate(template, keys);
-    Map<String, Object> vals = new LinkedHashMap<>();
+    StringTo<Object> vals = newStringMap(Object.class);
     values.fillMap("", m, vals, from);
-    return m.applyMap(vals);
+    return m.applyMap(vals.entries());
   }
-  
-  private void toStyleSheet(Style style, HtmlBuffer context) {
+
+  private void toStyleSheet(Style style, StyleService<?> context) {
     StringBuilder sheet = new StringBuilder();
-    
+
     String[] names = style.names();
     for (int i = 0, m = names.length; i < m; ++i) {
       if (i > 0) {
@@ -105,15 +107,15 @@ public class HtmlSnippet <T> implements ConvertsValue<T, String> {
     if (names.length > 0) {
       sheet.append("{\n");
     }
-    
+
     appendTo(sheet, style);
-    
+
     if (names.length > 0) {
       sheet.append("}\n");
     }
-    context.getHead().addStylesheet(sheet.toString());
+    context.addCss(sheet.toString(), style.priority());
   }
-  
+
   public static void appendTo(Appendable sheet, Style style) {
     try {
       doAppend(sheet, style);
@@ -121,9 +123,9 @@ public class HtmlSnippet <T> implements ConvertsValue<T, String> {
       X_Log.error(HtmlSnippet.class, "Error rendering",style,e);
     }
   }
-  
+
   public static void doAppend(Appendable sheet, Style style) throws IOException {
-    
+
     append("left", sheet, style.left());
     append("right", sheet, style.right());
     append("top", sheet, style.top());
@@ -134,7 +136,7 @@ public class HtmlSnippet <T> implements ConvertsValue<T, String> {
     append("max-width", sheet, style.maxWidth());
     append("min-height", sheet, style.minHeight());
     append("min-width", sheet, style.minWidth());
-    
+
     if (style.boxSizing() != BoxSizing.Inherit) {
       append("box-sizing", sheet, style.boxSizing().styleName);
     }
@@ -142,43 +144,43 @@ public class HtmlSnippet <T> implements ConvertsValue<T, String> {
     if (style.display() != Display.Inherit) {
       append("display", sheet, style.display().styleName());
     }
-    
+
     if (style.position() != Position.Inherit) {
       append("position", sheet, style.position().styleName());
     }
-    
+
     if (style.fontStyle() != FontStyle.Inherit) {
       append("font-style", sheet, style.fontStyle().styleName());
     }
-    
+
     if (style.fontWeight() != FontWeight.Inherit) {
       append("font-weight", sheet, style.fontWeight().styleName());
     }
-    
+
     if (style.textAlign() != AlignHorizontal.Auto) {
       append("text-align", sheet, style.textAlign().styleName());
     }
-    
+
     if (style.verticalAign() != AlignVertical.Auto) {
       append("vertical-align", sheet, style.verticalAign().styleName());
     }
-    
+
     if (style.cursor() != Cursor.Inherit) {
       append("cursor", sheet, style.cursor().styleName());
     }
-    
+
     if (style.floats() != Floats.Auto) {
       append("float", sheet, style.floats().styleName());
     }
-    
+
     if (style.clear() != Clear.Auto) {
       append("clear", sheet, style.clear().styleName());
     }
-    
+
     if (style.opacity() != 1) {
       append("opacity", sheet,Double.toString(style.opacity()));
     }
-    
+
     if (style.fontFamily().length > 0) {
       Class<? extends FontFamily>[] fonts = style.fontFamily();
       StringBuilder b = new StringBuilder();
@@ -194,7 +196,7 @@ public class HtmlSnippet <T> implements ConvertsValue<T, String> {
       }
       sheet.append("font-family").append(":").append(b).append(";");
     }
-    
+
     Transition[] transitions = style.transition();
     if (transitions.length > 0) {
       StringBuilder b = new StringBuilder();
@@ -212,7 +214,7 @@ public class HtmlSnippet <T> implements ConvertsValue<T, String> {
       }
       append("transition", sheet, b.toString());
     }
-    
+
     if (style.color().length > 0) {
       appendColor("color", sheet, style.color()[0]);
     }
@@ -220,28 +222,28 @@ public class HtmlSnippet <T> implements ConvertsValue<T, String> {
     if (style.backgroundColor().length > 0) {
       appendColor("background-color", sheet, style.backgroundColor()[0]);
     }
-    
+
     append("font-size", sheet, style.fontSize());
     append("line-height", sheet, style.lineHeight());
 
-    append("padding", sheet, style.padding(), 
+    append("padding", sheet, style.padding(),
         style.paddingTop(), style.paddingRight(), style.paddingBottom(), style.paddingLeft());
-    
-    append("margin", sheet, style.margin(), 
+
+    append("margin", sheet, style.margin(),
         style.marginTop(), style.marginRight(), style.marginBottom(), style.marginLeft());
-    
+
     if (style.overflow() != Overflow.Inherit) {
       append("overflow", sheet, style.overflow().styleName());
     }
-    
+
     if (style.overflowX() != Overflow.Inherit) {
       append("overflow-x", sheet, style.overflowX().styleName());
     }
-    
+
     if (style.overflowY() != Overflow.Inherit) {
       append("overflow-y", sheet, style.overflowY().styleName());
     }
-    
+
   }
 
   private static void append(String type, Appendable sheet, String value) throws IOException {
@@ -306,7 +308,7 @@ public class HtmlSnippet <T> implements ConvertsValue<T, String> {
         .append(";");
     }
   }
-  
+
   private static void append(String type0, String type1, Appendable sheet, Unit unit) throws IOException {
     if (unit.type() != UnitType.Auto) {
       sheet
@@ -336,18 +338,18 @@ public class HtmlSnippet <T> implements ConvertsValue<T, String> {
   protected DomBuffer newChild(DomBuffer buffer, El el) {
     return buffer.makeTag(el.tag()).setNewLine(false);
   }
-  
+
   protected DomBuffer newBuffer(Html html, T from) {
     return new DomBuffer();
   }
-  
+
   @Override
   public String convert(T from) {
     return toBuffer(from).toString();
   }
-  
+
   public DomBuffer toBuffer(T from) {
     return generator.get().convert(from);
   }
-  
+
 }

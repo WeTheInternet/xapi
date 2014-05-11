@@ -39,17 +39,18 @@ import xapi.util.X_Runtime;
 import xapi.util.api.ReceivesValue;
 
 public class RuntimeInjector implements ReceivesValue<String> {
-  
+
   @Override
   public void set(String targetDir) {
     String prefix = "META-INF"+File.separator;
     writeMetaInfo(targetDir, prefix+"singletons", prefix+"instances");
   }
-  
+
   @SuppressWarnings("unchecked")
   public void writeMetaInfo(String targetDir, String singletonDir, String instanceDir){
-    if (!targetDir.endsWith(File.separator))
+    if (!targetDir.endsWith(File.separator)) {
       targetDir += File.separator;
+    }
     File target = new File(targetDir).getAbsoluteFile();
     if (!target.isDirectory())
       if (!target.mkdirs())
@@ -71,7 +72,7 @@ public class RuntimeInjector implements ReceivesValue<String> {
       )
       .matchResource("META[-]INF/(instances|singletons)")
       .matchClassFile(".*")
-      .scan(Thread.currentThread().getContextClassLoader())
+      .scan(targetClassloader())
       ;
     // Only collect platform types if we are not running in a known platform.
     String runtime[] = X_Properties.platform.get().split(",");
@@ -96,23 +97,22 @@ public class RuntimeInjector implements ReceivesValue<String> {
         if (file.getName().equals(runtime)) {
           bestMatch = file;
         }
-        if (bestMatch == null && file.getName().endsWith(shortName))
+        if (bestMatch == null && file.getName().endsWith(shortName)) {
           bestMatch = file;
+        }
           }
     }
     Moment scanned = now();
-    if (bestMatch == null) {
+    if (bestMatch == null)
       throw platformMisconfigured(shortName);
-    }
     MemberValue fallbacks;
     LinkedHashSet<ClassFile> remainder = new LinkedHashSet<ClassFile>();
     remainder.add(bestMatch);
     while (remainder.size()>0) {
       ClassFile next = remainder.iterator().next();
       Annotation anno = next.getAnnotation("xapi.platform.Platform");
-      if (anno == null) {
+      if (anno == null)
         throw platformMisconfigured(next.getName());
-      }
       fallbacks = anno.getMemberValue("fallback");
       if (fallbacks != null) {
         ArrayMemberValue arr = (ArrayMemberValue)fallbacks;
@@ -134,17 +134,21 @@ public class RuntimeInjector implements ReceivesValue<String> {
       InstanceDefault.class, InstanceOverride.class
       )) {
       Annotation anno = cls.getAnnotation(SingletonDefault.class.getName());
-      if (anno != null && allowedPlatform(cls, scopes, platforms))
-          defaultSingletons.give(cls);
+      if (anno != null && allowedPlatform(cls, scopes, platforms)) {
+        defaultSingletons.give(cls);
+      }
       anno = cls.getAnnotation(SingletonOverride.class.getName());
-      if (anno != null && allowedPlatform(cls, scopes, platforms))
+      if (anno != null && allowedPlatform(cls, scopes, platforms)) {
         singletonImpls.give(cls);
+      }
       anno = cls.getAnnotation(InstanceDefault.class.getName());
-      if (anno != null && allowedPlatform(cls, scopes, platforms))
+      if (anno != null && allowedPlatform(cls, scopes, platforms)) {
         defaultInstances.give(cls);
+      }
       anno = cls.getAnnotation(InstanceOverride.class.getName());
-      if (anno != null && allowedPlatform(cls, scopes, platforms))
+      if (anno != null && allowedPlatform(cls, scopes, platforms)) {
         instanceImpls.give(cls);
+      }
     }
     Moment mapped = now();
 
@@ -180,8 +184,9 @@ public class RuntimeInjector implements ReceivesValue<String> {
       }
       IntegerMemberValue oldPriority = (IntegerMemberValue)oldOverride.getMemberValue("priority");
       IntegerMemberValue newPriority = (IntegerMemberValue)impl.getMemberValue("priority");
-      if (newPriority == null)
+      if (newPriority == null) {
         continue;
+      }
       if (oldPriority == null || newPriority.getValue() > oldPriority.getValue()){
         injectionTargets.put(clsName, cls);
       }
@@ -193,7 +198,7 @@ public class RuntimeInjector implements ReceivesValue<String> {
     try {
       writeMeta(injectionTargets, new File(target, singletonDir));
     } catch( Exception e) {e.printStackTrace();}
-    
+
     injectionTargets.clear();
 
     //determine injection by priority
@@ -232,13 +237,13 @@ public class RuntimeInjector implements ReceivesValue<String> {
     for (String iface : injectionTargets.keySet()) {
       JavaInjector.registerInstanceProvider(iface, injectionTargets.get(iface).getName());
     }
-    try{ 
+    try{
       writeMeta(injectionTargets, new File(target, instanceDir));
     } catch (Throwable e) {
       X_Log.warn("Trouble encountered writing instance meta to ",new File(target, instanceDir),e);
     }
     Moment finished = now();
-    
+
     if (X_Runtime.isDebug()) {
       X_Log.info("Multithreaded? ", X_Runtime.isMultithreaded());
       X_Log.info("Prepped: ", X_Time.difference(start, prepped));
@@ -251,6 +256,13 @@ public class RuntimeInjector implements ReceivesValue<String> {
     }
 
   }
+  /**
+   * @return
+   */
+  protected ClassLoader targetClassloader() {
+    return Thread.currentThread().getContextClassLoader();
+  }
+
   private final double init = System.nanoTime();
   private Moment now() {
     return new ImmutableMoment(System.currentTimeMillis()+ Math.abs(System.nanoTime()-init)/100000000.0);
@@ -258,9 +270,8 @@ public class RuntimeInjector implements ReceivesValue<String> {
   private boolean allowedPlatform(ClassFile cls, Set<String> scopes, Iterable<ClassFile> platforms) {
     // first, if the given class file has a platform we are using, return true
     for (String allowed : scopes) {
-      if (cls.getAnnotation(allowed) != null) {
+      if (cls.getAnnotation(allowed) != null)
         return true;
-      }
     }
     // next, check if the type has any known platforms
     for (ClassFile platform : platforms) {
@@ -300,8 +311,9 @@ public class RuntimeInjector implements ReceivesValue<String> {
           try {
             String line;
             while((line = reader.readLine()) != null){
-              if (line.equals(impl))
+              if (line.equals(impl)) {
                 continue mainLoop;
+              }
             }
           }finally {
             reader.close();

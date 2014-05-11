@@ -19,7 +19,7 @@
  * Neither the name of We The Internet nor the names of its contributors may
  * be used to endorse or promote products derived from this software without
  * specific prior written permission.
- * 
+ *
  * Public displays of software using this code may choose to credit the contributors,
  * but are not required to give attribution.
  *
@@ -114,7 +114,7 @@ import static xapi.util.X_Runtime.*;
 public class X_Inject{
 
   private X_Inject() {}
-  
+
   @KeepMethod
   public static <T> T instance(Class<? super T> cls){
     if (isJava()) {
@@ -269,4 +269,19 @@ public class X_Inject{
     return new NotConfiguredCorrectly("xapi-gwt(-api) must be above gwt-dev on classpath");
   }
 
+  /** TODO: use well-known scopes, like UserAgent or Language to create "scope worlds".
+
+  public static enum InjectionScopes {
+    // Some handy default scopes to share.
+    // You are free to use any scope you want;
+    // the Global scope will be checked by default if there is no match
+    // in the requested scope.
+//     DO NOT USE A PLATFORM ANNOTATION class, LIKE JreAnnotion, UNLESS YOU
+//     REALLY WANT TO HAVE A BINDING THAT ONLY EXISTS IN THAT PLATFORM.
+    UserAgent, Language, Authenticated, Request, User, Global;
+  }
+  // public static <T> T scopedInject(Class scope, Class<T> type);
+  // public static <T> void scopedInjectAsync(Class scope, Class<T> type, ReceivesValue<T> callback);
+
+   */
 }

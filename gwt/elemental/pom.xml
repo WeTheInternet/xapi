@@ -6,23 +6,22 @@
 		<artifactId>xapi-gwt-parent</artifactId>
 		<version>0.5-SNAPSHOT</version>
 	</parent>
-
-	<!-- Standalone gwt module; runs all gwt tests, and builds uber jar. Deferring 
-		tests until the dist module allows all gwt source jars to compile quickly, 
-		but ensures that any module dependent on a working distribution gets a working 
-		jar. -->
 	<artifactId>xapi-elemental</artifactId>
 	<packaging>jar</packaging>
 	<name>XApi - Elemental Implementations</name>
 	<url>WeTheInter.net</url>
 	<description>
-    Some playground code for using gwt elemental to enable advanced html5 features.
- </description>
+    An advanced elemental-based auto-generating template / widget framework
+  </description>
+  
+  <properties>
+   <java.version>1.8</java.version>
+  </properties>
 
 	<dependencies>
 		<dependency>
 			<groupId>net.wetheinter</groupId>
-			<artifactId>xapi-gwt-inject</artifactId>
+			<artifactId>xapi-gwt-ui-html</artifactId>
 		</dependency>
 
 		<dependency>
@@ -33,7 +32,7 @@
 		<dependency>
 			<groupId>com.google.gwt</groupId>
 			<artifactId>gwt-dev</artifactId>
-			<scope>test</scope>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.google.gwt</groupId>

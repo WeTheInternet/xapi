@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+ <modelVersion>4.0.0</modelVersion>
+ <parent>
+  <groupId>net.wetheinter</groupId>
+  <artifactId>xapi-core-ui-parent</artifactId>
+  <version>0.5-SNAPSHOT</version>
+ </parent>
+
+ <artifactId>xapi-core-ui-api</artifactId>
+ <packaging>jar</packaging>
+ <name>XApi - Core UI Apis</name>
+ <url>WeTheInter.net</url>
+ <description>
+    Shared api abstractions for user interfaces
+  </description>
+
+ <dependencies>
+  <dependency>
+   <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-core-util</artifactId>
+  </dependency>
+
+  <!-- Testing dependencies -->
+  <dependency>
+   <groupId>junit</groupId>
+   <artifactId>junit</artifactId>
+   <scope>test</scope>
+  </dependency>
+  <dependency>
+   <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-jre-inject</artifactId>
+   <scope>test</scope>
+  </dependency>
+  <dependency>
+   <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-core-test</artifactId>
+   <scope>test</scope>
+  </dependency>
+ </dependencies>
+
+ <build>
+  <testResources>
+   <testResource>
+    <directory>src/test/java</directory>
+   </testResource>
+   <testResource>
+    <directory>src/test/resources</directory>
+   </testResource>
+  </testResources>
+  <plugins>
+   <plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-source-plugin</artifactId>
+    <executions>
+     <execution>
+      <id>attach-sources</id>
+      <phase>verify</phase>
+      <goals>
+       <goal>jar-no-fork</goal>
+       <goal>test-jar-no-fork</goal>
+      </goals>
+     </execution>
+    </executions>
+   </plugin>
+  </plugins>
+ </build>
+
+</project>

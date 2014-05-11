@@ -103,7 +103,7 @@ public class ConstPoolGenerator {
 
   public int generateReference(TreeLogger logger,
     GeneratorContext context, Object value) throws UnableToCompleteException {
-    int pool = initBuffer();
+    initBuffer();
 
     if (value instanceof String) {
 
@@ -220,9 +220,6 @@ public class ConstPoolGenerator {
 
 
   private Map<Double,Integer> doubles = Maps.newHashMap();
-  private Map<Enum<?>,Integer> enums = Maps.newHashMap();
-  private Map<Integer,Integer> ints = Maps.newHashMap();
-  private Map<Long,Integer> longs = Maps.newHashMap();
   private Map<String,String> strings = Maps.newHashMap();
 
   private Map<String,String> classes = Maps.newHashMap();
