@@ -52,6 +52,10 @@ public class ElementalInjector implements
   private JMethodCall service;
   private ElementalGeneratorContext ctx;
 
+  public static ElementalGeneratorContext getContext() {
+    return context.get().ctx;
+  }
+
   public ElementalInjector() {
     assert context.get() == null : "ElementalInjector must only be created once per thread";
     context.set(this);
@@ -120,7 +124,7 @@ public class ElementalInjector implements
           JMethodCall expr = new JMethodCall(info, invoke, convert, args.get(1));
           try {
             convert =
-                ast.getProgram().getIndexedMethod(PotentialNode.class.getSimpleName()+ ".getElement");
+                ast.getProgram().getIndexedMethod(Widget.class.getSimpleName()+ ".getElement");
           } catch (InternalCompilerException e) {
             logger.log(Type.WARN, "Unable to look up indexed PotentialNode.getElement(); looking up method manually");
             error:

@@ -23,6 +23,7 @@ import xapi.elemental.impl.LazyHtmlConverter;
 import xapi.source.X_Source;
 import xapi.time.impl.RunOnce;
 import xapi.ui.html.X_Html;
+import xapi.ui.api.Widget;
 import xapi.ui.html.api.El;
 import xapi.ui.html.api.HtmlSnippet;
 import xapi.ui.html.api.HtmlTemplate;
@@ -136,14 +137,12 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
       typeConverter = out.addImport(ConvertsValue.class),
       typeElement = out.addImport(Element.class),
       typeService = out.addImport(ElementalService.class),
-      typeTemplate = out.addImport(templateType.getQualifiedSourceName()),
       typeModel = out.addImport(modelType.getQualifiedSourceName()),
       typePotentialElement = out.addImport(PotentialNode.class),
       potential = typePotentialElement+"<"+typeElement+">",
-      qualifiedConverter = typeConverter +" <"+typeTemplate+", "+potential+">";
+      qualifiedConverter = typeConverter +" <"+typeModel+", "+potential+">";
 
     out.addInterface(qualifiedConverter);
-
     MethodBuffer convert = out
         .createMethod("public " + potential + " convert(" + typeModel + " from)");
 
@@ -433,7 +432,7 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
       });
     final String messagesQname = templateType.getQualifiedSourceName();
     for (JClassType type : templateType.getFlattenedSupertypeHierarchy()) {
-      if ("java.lang.Object".equals(type.getQualifiedSourceName())) {
+      if (type.getQualifiedSourceName().equals(Object.class.getCanonicalName())) {
         continue;
       }
       for (JMethod method : type.getMethods()) {
@@ -443,7 +442,9 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
         // TODO handle parameter types that are @Named
 
         if (method.getParameters().length==0) {
-          if (finished.add(method.getName())) {
+          if (isWidget_getElement(method)) {
+
+          } else if (finished.add(method.getName())) {
             final String provider, methodType = method.getEnclosingType().getErasedType().getQualifiedSourceName();
             ElementalGeneratorResult result;
             if (methodType.equals(messagesQname)) {
@@ -518,6 +519,12 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
     } finally {
       clear();
     }
+  }
+
+  private boolean isWidget_getElement(JMethod method) {
+    return method.getEnclosingType().getQualifiedSourceName()
+      .equals(Widget.class.getCanonicalName())
+      && method.getName().equals("getElement");
   }
 
   private String printElement(
@@ -656,6 +663,17 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
   @Override
   protected Type getLogLevel() {
     return Type.DEBUG;
+  }
+
+  @Override
+  protected ElementalGeneratorResult saveGeneratedType(
+    TreeLogger logger,
+    UnifyAstView ast,
+    SourceBuilder<?> out,
+    ElementalGeneratorResult result,
+    String inputHash) throws UnableToCompleteException {
+    logger.log(Type.INFO, "Saving generated type "+ out.getQualifiedName());
+    return super.saveGeneratedType(logger, ast, out, result, inputHash);
   }
 
   private static String toImplName(TreeLogger logger, JClassType modelType, JClassType templateType) {

@@ -1,9 +1,11 @@
 package xapi.gwt.collect;
 
+import com.google.gwt.core.client.JavaScriptObject;
+
 import xapi.collect.api.StringDictionary;
 import xapi.util.api.ReceivesValue;
 
-public class JsStringDictionary <V> implements StringDictionary<V>{
+public class JsStringDictionary <V> extends JavaScriptObject implements StringDictionary<V>{
 
   protected JsStringDictionary() {
   }
@@ -13,6 +15,25 @@ public class JsStringDictionary <V> implements StringDictionary<V>{
     return {};
   }-*/;
 
+  public final native <Unsafe> Unsafe getUnsafe(String key)
+  /*-{
+    return this[key];
+  }-*/;
+
+  public final native int getInt(String key)
+  /*-{
+    return this[key];
+  }-*/;
+
+  public final native double getDouble(String key)
+  /*-{
+    return this[key];
+  }-*/;
+
+  public final native double getBoolean(String key)
+  /*-{
+    return !!this[key];
+  }-*/;
 
   @Override
   public final native V getValue(String key)

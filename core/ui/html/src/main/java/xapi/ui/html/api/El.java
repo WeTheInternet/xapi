@@ -27,6 +27,7 @@ public @interface El {
   String id() default "";
   String src() default "";
   String type() default "";
+  String href() default "";
 
   String accessor() default DEFAULT_ACCESSOR;
 
@@ -42,6 +43,8 @@ public @interface El {
   Import[] imports() default {};
 
   Class<?>[] useToHtml() default {};
+
+  HtmlTemplate[] inherit() default {};
 
   /**
    *  Default element content:
