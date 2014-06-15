@@ -7,5 +7,6 @@ package xapi.source.api;
 public interface CharIterator {
   boolean hasNext();
   char next();
+  char peek();
 
 }

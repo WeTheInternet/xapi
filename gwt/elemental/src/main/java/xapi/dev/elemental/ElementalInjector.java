@@ -96,7 +96,7 @@ public class ElementalInjector implements
     JClassType classLit;
     // Implement the type's element builders.
     ElementalGeneratorResult impl =
-      ElementalGenerator.generateProvider(logger, modelType, templateType, ast, ctx);
+      ElementalGenerator.generateProvider(logger, new ModelProviderImpl(modelType), templateType, ast, ctx);
     ast.getGeneratorContext().finish(logger);
     classLit = ast.translate((JClassType) ast.searchForTypeBySource(impl.getFinalName()));
     for (JMethod init : classLit.getMethods()) {

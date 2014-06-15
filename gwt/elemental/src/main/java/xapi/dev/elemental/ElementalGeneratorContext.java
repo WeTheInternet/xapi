@@ -6,6 +6,7 @@ package xapi.dev.elemental;
 import java.util.HashMap;
 import java.util.Map;
 
+import xapi.dev.source.MethodBuffer;
 import xapi.dev.ui.html.HtmlGeneratorNode;
 import xapi.dev.ui.html.HtmlGeneratorResult;
 import xapi.elemental.api.ElementalService;
@@ -59,6 +60,13 @@ public class ElementalGeneratorContext {
     public boolean isTypeAssignable(JClassType templateType) {
       return getSourceType() == null ? false :
         getSourceType().getErasedType().isAssignableFrom(templateType.getErasedType());
+    }
+
+    public void printMethodImport(MethodBuffer out, String styleServiceRef) {
+      out.println(
+        out.addImport(getTemplateName())
+        +"."+ElementalGenerator.FIELD_STYLIZE
+        +".set("+styleServiceRef+");");
     }
 
   }

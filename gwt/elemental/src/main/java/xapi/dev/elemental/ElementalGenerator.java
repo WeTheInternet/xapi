@@ -3,12 +3,14 @@
  */
 package xapi.dev.elemental;
 
+import static xapi.util.X_String.join;
+
 import java.lang.reflect.Modifier;
 import java.util.HashSet;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import xapi.annotation.common.Property;
 import xapi.collect.impl.AbstractMultiInitMap;
 import xapi.dev.elemental.ElementalGeneratorContext.ElementalGeneratorResult;
 import xapi.dev.source.ClassBuffer;
@@ -20,6 +22,7 @@ import xapi.dev.ui.html.HtmlGeneratorNode;
 import xapi.elemental.api.ElementalService;
 import xapi.elemental.api.PotentialNode;
 import xapi.elemental.impl.LazyHtmlConverter;
+import xapi.elemental.impl.LexerForMarkup;
 import xapi.source.X_Source;
 import xapi.time.impl.RunOnce;
 import xapi.ui.html.X_Html;
@@ -55,9 +58,9 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
   }
   private static final String KEY_ELEMENT = "_el";
   private static final String SUFFIX_MODEL_TO_ELEMENT = "__toHtml";
-  private static final String FIELD_STYLIZE = "__stylize";
+  public static final String FIELD_STYLIZE = "__stylize";
   private static final String METHOD_TO_POTENTIAL = "_serialize";
-  private static final String METHOD_IMPORT = "__import";
+  public static final String METHOD_IMPORT = "__import";
   private static final Pattern PATTERN_VALUE = Pattern.compile(HtmlTemplate.KEY_VALUE.replace("$", "[$]"));
   protected static final String KEY_SERVICE = "_elemental";
 
@@ -72,7 +75,6 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
    * @param ctx
    */
   public ElementalGenerator(TreeLogger logger, String clsName,
-      JClassType modelType,
       JClassType templateType,
       UnifyAstView ast, ElementalGeneratorContext ctx) {
     super(clsName, templateType, ast);
@@ -91,28 +93,32 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
    */
   public static ElementalGeneratorResult generateProvider(
       TreeLogger logger,
-      JClassType modelType,
+      ModelProvider model,
       JClassType templateType,
       UnifyAstView ast,
       ElementalGeneratorContext ctx) throws UnableToCompleteException {
 
-    String implName = toImplName(logger, modelType, templateType);
-    String packaged = X_Source.qualifiedName(modelType.getPackage().getName(), implName);
-    ElementalGeneratorResult existing = ctx.findExistingProvider(packaged);
+    String implName = toImplName(logger, model.getModelPackage(), model.getModelQualifiedName(), templateType.getQualifiedSourceName());
+    ElementalGeneratorResult existing = ctx.findExistingProvider(implName);
     if (existing != null) {
       return existing;
     }
-    ElementalGenerator gen = new ElementalGenerator(logger, implName, modelType, templateType, ast, ctx);
+    ElementalGenerator gen = new ElementalGenerator(logger, implName, templateType, ast, ctx);
 
-    return gen.generate(logger, modelType, templateType, ast);
+    return gen.generate(logger, model, templateType, ast);
   }
 
 
-  private ElementalGeneratorResult generate(TreeLogger logger, JClassType modelType, JClassType templateType, UnifyAstView ast) throws UnableToCompleteException {
+  private ElementalGeneratorResult generate(TreeLogger logger, ModelProvider model, JClassType templateType, UnifyAstView ast) throws UnableToCompleteException {
 
-    boolean modelIsTemplate = modelType.getQualifiedSourceName().equals(templateType.getQualifiedSourceName());
-    String inputHash = toHash(ast, modelIsTemplate ? templateType : modelType , templateType);
-    ElementalGeneratorResult existingType = findExisting(ast, this, out.getPackage(), out.getQualifiedName());
+    boolean modelIsTemplate = model.getModelQualifiedName().equals(templateType.getQualifiedSourceName());
+    String inputHash;
+    if (modelIsTemplate) {
+      inputHash = toHash(ast, templateType.getQualifiedSourceName());
+    } else {
+      inputHash = toHash(ast, model.getModelQualifiedName(), templateType.getQualifiedSourceName());
+    }
+    ElementalGeneratorResult existingType = findExisting(ast, out.getPackage(), out.getQualifiedName());
     existingType.setSourceType(templateType);
     ElementalGeneratorResult existingResult = existingTypesUnchanged(logger, ast, existingType, inputHash);
     // Check if there is an existing type, and that it's generated hashes match our input type.
@@ -137,7 +143,8 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
       typeConverter = out.addImport(ConvertsValue.class),
       typeElement = out.addImport(Element.class),
       typeService = out.addImport(ElementalService.class),
-      typeModel = out.addImport(modelType.getQualifiedSourceName()),
+//      typeStyleService = out.addImport(StyleService.class),
+      typeModel = out.addImport(model.getModelQualifiedName()),
       typePotentialElement = out.addImport(PotentialNode.class),
       potential = typePotentialElement+"<"+typeElement+">",
       qualifiedConverter = typeConverter +" <"+typeModel+", "+potential+">";
@@ -214,7 +221,7 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
     if (existing != null) {
       return existing;
     }
-    inputHash = toHash(ast, type);
+    inputHash = toHash(ast, type.getQualifiedSourceName());
     final ElementalGeneratorResult
       templateType = findExisting(ast, this, type.getPackage().getName(), templateName),
       existingResult = existingTypesUnchanged(logger, ast, templateType, inputHash);
@@ -382,7 +389,8 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
         JClassType foreignType = ast.getTypeOracle().findType(ref.getPackage().getName(),
           X_Source.classToEnclosedSourceName(ref));
         if (templateRef == null) {
-          templateRef = generateProvider(logger, foreignType, foreignType, ast, ctx);
+          String pkg = foreignType.getPackage().getName();
+          templateRef = generateProvider(logger, new ModelProviderImpl(pkg, foreignType.getQualifiedSourceName().replace(pkg+".", "")), foreignType, ast, ctx);
         }
         String templateCls = out.addImport(templateRef.getFinalName());
         styleInit.println(templateCls +"." +METHOD_IMPORT+"("+KEY_SERVICE+");");
@@ -420,7 +428,7 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
         @Override
         public ElementalGeneratorResult convert(JClassType from) {
           try {
-            ElementalGeneratorResult provider = generateProvider(logger, from, from, ast, ctx);
+            ElementalGeneratorResult provider = generateProvider(logger, new ModelProviderImpl(from), from, ast, ctx);
             String template = src.getImports().addImport(provider.getFinalName());
             styleInit.println(template+"."+METHOD_IMPORT+"("+KEY_SERVICE+");");
             return provider;
@@ -541,7 +549,9 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
     String newKey = keyElement;
     String methodName = method == null ? null : method.getName();
     for (String html : el.html()) {
-      String result = node.escape(html, methodName == null ? "" : methodName, keyFrom+".");
+      String result = translate(
+        node.escape(html, methodName == null ? "" : methodName, keyFrom+".")
+      );
       if (result.length() > 0 ) {
         boolean is$value = HtmlTemplate.KEY_VALUE.equals(result);
         String[] bits = PATTERN_VALUE.split(result);
@@ -559,11 +569,15 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
                     .print("String.valueOf("+invocation+")")
                     .println(");");
                 } else {
-                  logger.log(Type.ERROR, "Method return type "+method.getReturnType()+" is not supported by ElementalGenerator");
+                  logger.log(Type.ERROR,
+                    "Method return type "+method.getReturnType()
+                    +" in " + method.getJsniSignature()
+                    +" is not supported by ElementalGenerator");
                   throw new UnableToCompleteException();
                 }
               } else {
                 if (method.getReturnType().isClassOrInterface().isAssignableTo(ctx.getTypeCharSequence())) {
+                  // Wrap this w/ runtime enhancement of text
                   printEl.println(keyElement+".append("+invocation+");");
                 } else if (method.getReturnType().isClassOrInterface().isAssignableTo(ctx.getTypePotentialElement())) {
                   printEl.println(keyElement+".addChild("+invocation+");");
@@ -623,13 +637,13 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
       }
       b.append(classes[i].startsWith(".")?classes[i].substring(1):classes[i]);
     }
-    for (Property prop : el.properties()) {
-      if ("class".equals(prop.name())) {
+    for (Entry<String, String> prop : htmlGen.getProperties(el).entrySet()) {
+      if ("class".equals(prop.getKey())) {
         if (b.length() > 0) {b.append(" ");}
-        b.append(prop.value());
+        b.append(prop.getValue());
       } else {
-        printEl.println(keyElement+".setAttribute(\""+prop.name()+"\""
-            + ", \""+prop.value()+ "\");");
+        printEl.println(keyElement+".setAttribute(\""+prop.getKey()+"\""
+            + ", \""+prop.getValue()+ "\");");
       }
     }
     if (b.length() > 0) {
@@ -645,14 +659,25 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
       // Apply the given style to the potential element.
       // TODO Create a method to apply the given style to the potential element
       printEl.println(keyElement+".setStyle(\""+
-          Generator.escape(localStyle.toString())
+          translate(localStyle.toString())
       + "\");");
     }
 
     return newKey;
   }
 
-  private void printStyle(TreeLogger logger, Style style, StringBuilder localStyle) {
+  private String translate(String encoded) {
+    return Generator.escape(new LexerForMarkup()
+      .setLinkAttributes("class=\"local-link\"")
+      .lex(encoded)
+      .toSource());
+  }
+
+  private void printStyle(
+      TreeLogger logger,
+      Style style,
+      StringBuilder localStyle,
+      PrintBuffer styleInit) {
     boolean isLocal = style.names().length == 0;
     if (!isLocal) {
       return;
@@ -676,11 +701,18 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
     return super.saveGeneratedType(logger, ast, out, result, inputHash);
   }
 
-  private static String toImplName(TreeLogger logger, JClassType modelType, JClassType templateType) {
-    return toImplSuffix(modelType.getSimpleSourceName()+(
-        modelType.getQualifiedSourceName().equals(templateType.getQualifiedSourceName())
-        ? "" : "_"+templateType.getSimpleSourceName()
-        ));
+  private static String toImplName(TreeLogger logger, String modelPackage, String ... types) {
+    StringBuilder b = new StringBuilder();
+    for (int i = 0, m = types.length; i < m; i++) {
+      if (i > 0) {
+        if (types[i].equals(types[i-1])) {
+          continue;
+        }
+        b.append("_");
+      }
+      b.append(types[i].replace(modelPackage+".", "").replace('.', '_'));
+    }
+    return toImplSuffix(b.toString());
   }
 
   private static String toImplSuffix(String value) {

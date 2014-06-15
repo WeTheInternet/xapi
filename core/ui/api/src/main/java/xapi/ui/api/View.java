@@ -1,7 +1,7 @@
 package xapi.ui.api;
 
-public interface View <T> {
+public interface View <T, S extends StyleService<S>> {
 
-  View<T> initialize(T data, StyleService<?> cssService);
+  View<T, S> initialize(T data, S cssService);
 
 }

@@ -28,6 +28,8 @@ public @interface El {
   String src() default "";
   String type() default "";
   String href() default "";
+  String rel() default "";
+  String value() default "";
 
   String accessor() default DEFAULT_ACCESSOR;
 

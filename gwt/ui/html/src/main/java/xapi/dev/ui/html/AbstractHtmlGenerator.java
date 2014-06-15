@@ -77,10 +77,10 @@ public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> im
     return null;
   }
 
-  protected static String toHash(UnifyAstView ast, JClassType ... types) throws UnableToCompleteException {
+  protected static String toHash(UnifyAstView ast, String ... types) {
     StringBuilder b = new StringBuilder();
-    for (JClassType type : types) {
-      b.append(ast.searchForTypeBySource(type.getQualifiedSourceName()).toSource());
+    for (String type : types) {
+      b.append(ast.searchForTypeBySource(type).toSource());
     }
     return Base64Utils.toBase64(Md5Utils.getMd5Digest(b.toString().getBytes()));
   }

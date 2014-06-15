@@ -6,9 +6,13 @@ package xapi.dev.ui.html;
 import static xapi.collect.X_Collect.newStringMap;
 import static xapi.collect.X_Collect.newStringMultiMap;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JMethod;
 
+import xapi.annotation.common.Property;
 import xapi.annotation.compile.Import;
 import xapi.collect.api.StringTo;
 import xapi.collect.api.StringTo.Many;
@@ -138,12 +142,38 @@ public class HtmlGeneratorContext extends HtmlGeneratorNode {
     allMethods.put(name, method);
   }
 
-  public Iterable<HtmlTemplate> getNodes(String key) {
+  public Iterable<HtmlTemplate> getTemplates(String key) {
     return allNodes.get(key).getTemplates();
   }
 
   public Iterable<El> getElements(String key) {
     return allNodes.get(key).getElements();
+  }
+
+  public Map<String, String> getProperties(El el) {
+    LinkedHashMap<String, String> properties = new LinkedHashMap<>();
+    for (Property prop : el.properties()) {
+      properties.put(prop.name(), prop.value());
+    }
+    if (el.id().length()>0) {
+      properties.put("id", el.id());
+    }
+    if (el.src().length()>0) {
+      properties.put("src", el.src());
+    }
+    if (el.type().length()>0) {
+      properties.put("type", el.type());
+    }
+    if (el.href().length()>0) {
+      properties.put("href", el.href());
+    }
+    if (el.value().length()>0) {
+      properties.put("value", el.value());
+    }
+    if (el.rel().length()>0) {
+      properties.put("rel", el.rel());
+    }
+    return properties;
   }
 
 }

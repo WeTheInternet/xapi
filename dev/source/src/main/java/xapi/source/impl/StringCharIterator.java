@@ -17,10 +17,11 @@ public class StringCharIterator implements CharIterator {
     return content.charAt(current++);
   }
 
+  @Override
   public char peek() {
     return content.charAt(current);
   }
-  
+
   public String peekString() {
     return content.substring(current, current+1);
   }
@@ -29,7 +30,7 @@ public class StringCharIterator implements CharIterator {
   public boolean hasNext() {
     return current < length;
   }
-  
+
   @Override
   public String toString() {
     return current == length ? "" : content.substring(current);

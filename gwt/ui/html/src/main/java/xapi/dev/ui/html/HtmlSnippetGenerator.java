@@ -32,7 +32,7 @@ public class HtmlSnippetGenerator extends AbstractHtmlGenerator <HtmlGeneratorRe
     String simpleName = templateType.getSimpleSourceName()+"_"+modelType.getSimpleSourceName()+"_ToHtml";
 
     // Check if there is an existing type, and that it's generated hashes match our input type.
-    String inputHash = toHash(ast, templateType, modelType);
+    String inputHash = toHash(ast, templateType.getQualifiedSourceName(), modelType.getQualifiedSourceName());
 
     // Generate a new result
     HtmlSnippetGenerator ctx = new HtmlSnippetGenerator(simpleName, ast, templateType);
