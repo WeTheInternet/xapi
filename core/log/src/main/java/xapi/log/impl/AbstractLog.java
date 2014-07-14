@@ -54,7 +54,7 @@ public abstract class AbstractLog implements LogService {
 	public void log(LogLevel level, Object o) {
 		if (shouldLog(level)) {
 			Fifo<Object> arr = newFifo();
-			arr.give(unwrap(o));
+			arr.give(unwrap(level, o));
 			doLog(level, arr);
 		}
 	}
@@ -74,7 +74,7 @@ public abstract class AbstractLog implements LogService {
 
   @Override
   @SuppressWarnings({"rawtypes", "unchecked"})
-	public Object unwrap(Object m) {
+	public Object unwrap(LogLevel level, Object m) {
 		// unwrap throwables and log strack trace elements
 		if (m instanceof Throwable) {
 			StackTraceElement[] trace = ((Throwable) m).getStackTrace();
@@ -99,9 +99,9 @@ public abstract class AbstractLog implements LogService {
 		return m == null ? "null" : m;
 	}
 
-	protected void writeLog(StringBuilder b, Object object) {
+	protected void writeLog(LogLevel level, StringBuilder b, Object object) {
 		// TODO: inspect w/ conditional reflection
-		b.append(unwrap(object));
+		b.append(unwrap(level, object));
 		b.append("\t");
 	}
 

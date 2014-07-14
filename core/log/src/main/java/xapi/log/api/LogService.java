@@ -38,7 +38,7 @@ import xapi.collect.api.Fifo;
 
 public interface LogService {
 
-  Object unwrap(Object m);
+  Object unwrap(LogLevel level, Object m);
 
   void doLog(LogLevel level, Fifo<Object> o);
   void log(LogLevel level, Object o);

@@ -45,7 +45,7 @@ import xapi.util.X_Runtime;
 public class JreLog extends AbstractLog{
 
   public JreLog() {
-    logLevel = LogLevel.valueOf(System.getProperty(X_Namespace.PROPERTY_LOG_LEVEL, 
+    logLevel = LogLevel.valueOf(System.getProperty(X_Namespace.PROPERTY_LOG_LEVEL,
         X_Runtime.isDebug() ? "ALL" : "INFO"));
   }
 
@@ -53,13 +53,13 @@ public class JreLog extends AbstractLog{
   {
     StringBuilder b = new StringBuilder();
     while(!array.isEmpty()){
-      writeLog(b, array.take());
+      writeLog(level, b, array.take());
     }
     (level == LogLevel.ERROR ? System.err : System.out).println(b.toString());
   }
-  
+
   @Override
-  public Object unwrap(Object m) {
+  public Object unwrap(LogLevel level, Object m) {
     if (m instanceof Class) {
       Class<?> c = (Class<?>)m;
       for (StackTraceElement trace : new Throwable().getStackTrace()) {
@@ -69,7 +69,7 @@ public class JreLog extends AbstractLog{
       }
       return c.getCanonicalName();
     }
-    return super.unwrap(m);
+    return super.unwrap(level, m);
   }
 
 }

@@ -62,7 +62,7 @@ public class JsLog extends AbstractLog implements Initable {
     // to compile out lower-level log commands.
     // Production builds can just inject a JsLog subclass which hardcodes limit
   }
-  
+
   @Override
   @SuppressWarnings({ "unchecked", "rawtypes" })
   public Iterable<Object> shouldIterate(Object m) {
@@ -121,7 +121,11 @@ public class JsLog extends AbstractLog implements Initable {
   }-*/;
 
   @Override
-  public native Object unwrap(Object m)
+  public Object unwrap(LogLevel level, Object m) {
+    return unwrapJs(m);
+  }
+
+  public native Object unwrapJs(Object m)
   /*-{
     try {
       //handy trick to unwrap boxed numbers in pretty and obf mode
@@ -164,7 +168,7 @@ public class JsLog extends AbstractLog implements Initable {
     try {
       $wnd.console.log(o);
     } catch (e) {//for junit / browsers w/out a console
-      if (!$wnd.console) 
+      if (!$wnd.console)
         $wnd.console = {};
       if (!$wnd.console.log)
         $wnd.console.log = function() {}

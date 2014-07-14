@@ -1,6 +1,7 @@
 package xapi.adapter.log.gwt;
 
 import xapi.collect.api.Fifo;
+import xapi.except.NotYetImplemented;
 import xapi.log.api.LogLevel;
 import xapi.log.api.LogService;
 import xapi.log.impl.JreLog;
@@ -17,7 +18,7 @@ public class GwtLogAdapter extends CompositeTreeLogger {
     super(children);
     this.service = service == null ? new JreLog() : service;
   }
-  
+
 
   @Override
   public boolean isLoggable(Type type) {
@@ -42,9 +43,10 @@ public class GwtLogAdapter extends CompositeTreeLogger {
   @Override
   public void log(Type type, String msg, Throwable caught, HelpInfo helpInfo) {
     Fifo<Object> fifo = service.newFifo();
+    LogLevel level = toLevel(type);
     fifo.give(msg);
     if (caught != null)
-      fifo.give(service.unwrap(caught));
+      fifo.give(service.unwrap(level, caught));
     if (helpInfo != null) {
       fifo.give(helpInfo.getPrefix());
       if (helpInfo.getURL() != null) {
@@ -55,23 +57,29 @@ public class GwtLogAdapter extends CompositeTreeLogger {
         fifo.give("Help URL").give(helpInfo.getURL().toExternalForm());
       }
     }
-    switch (type) {
-      case ALL:
-      case TRACE:
-        service.doLog(LogLevel.ALL, fifo);
-      case DEBUG:
-        service.doLog(LogLevel.DEBUG, fifo);
-      case ERROR:
-        service.doLog(LogLevel.ERROR, fifo);
-      case INFO:
-        service.doLog(LogLevel.INFO, fifo);
-      case SPAM:
-        service.doLog(LogLevel.TRACE, fifo);
-      case WARN:
-        service.doLog(LogLevel.WARN, fifo);
-    }
+    service.doLog(level, fifo);
     if (isLogToChildren())
       super.log(type, msg, caught, helpInfo);
+  }
+
+
+  public static LogLevel toLevel(Type type) {
+    switch (type) {
+      case ALL:
+      case SPAM:
+        return LogLevel.ALL;
+      case TRACE:
+        return LogLevel.TRACE;
+      case DEBUG:
+        return LogLevel.DEBUG;
+      case ERROR:
+        return LogLevel.ERROR;
+      case INFO:
+        return LogLevel.INFO;
+      case WARN:
+        return LogLevel.WARN;
+    }
+    throw new UnsupportedOperationException();
   }
 
 

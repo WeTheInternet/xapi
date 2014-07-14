@@ -68,21 +68,21 @@ public class DevLog extends JsLog{
       if (!clsName.startsWith("java.lang."))//don't print class names for primitives
         consoleLog(clsName);
       consoleLog(item);
-      writeLog(b, item);
+      writeLog(level, b, item);
     }
     //print to gwt / System.out
     GWT.log(b.toString());
     if (i > 1)
       consoleLog("");
   }
-  
+
   @Override
   public Fifo<Object> newFifo() {
     return new SimpleFifo<Object>();
   }
-  
+
   @Override
-  public Object unwrap(Object m) {
+  public Object unwrap(LogLevel level, Object m) {
     return String.valueOf(m);
   }
 }

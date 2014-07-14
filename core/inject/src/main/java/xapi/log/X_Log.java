@@ -74,10 +74,10 @@ public class X_Log {
     for (Object m : message){
       Iterable<Object> iter = log.shouldIterate(m);
       if (iter == null) {
-        logMsg.give(log.unwrap(m));
+        logMsg.give(log.unwrap(l, m));
       } else {
         for (Object o : iter) {
-          logMsg.give(log.unwrap(o));
+          logMsg.give(log.unwrap(l, o));
         }
       }
     }
