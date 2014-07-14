@@ -12,6 +12,7 @@ public abstract class NodeBuilder <E> implements Widget <E> {
   protected NodeBuilder<E> children;
   protected NodeBuilder<E> siblings;
   protected E el;
+  @SuppressWarnings("rawtypes" )
   private NodeBuilder childTarget = this;
 
   public <C extends NodeBuilder<E>> C addChild(C child) {
@@ -95,7 +96,12 @@ public abstract class NodeBuilder <E> implements Widget <E> {
     StringBuilder b = new StringBuilder();
     toHtml(b);
     el = create(b.toString());
+    onInitialize(el);
     return el;
+  }
+
+  protected void onInitialize(E el) {
+    // default does nothing; this is here for subclasses
   }
 
   protected CharSequence join(final CharSequence body, final CharSequence chars) {

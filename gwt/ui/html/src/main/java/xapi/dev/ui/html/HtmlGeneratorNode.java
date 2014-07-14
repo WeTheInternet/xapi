@@ -112,9 +112,7 @@ public class HtmlGeneratorNode {
       return;
     }
     elements.add(e);
-    for (Style style : e.style()) {
-      styles.add(style);
-    }
+    addStyle(e.style());
     addImports(e.imports());
   }
 

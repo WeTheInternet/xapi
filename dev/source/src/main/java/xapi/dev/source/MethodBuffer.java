@@ -153,8 +153,9 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
 
   @Override
   public String addImport(String cls) {
-    if (cls.replace(context.getPackage() + ".", "").indexOf('.') == -1) {
-      return cls;
+    String noPkg = cls.replace(context.getPackage() + ".", "");
+    if (noPkg.indexOf('.') == -1) {
+      return noPkg;
     }
     return context.getImports().addImport(cls);
   }

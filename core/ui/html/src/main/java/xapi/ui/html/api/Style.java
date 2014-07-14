@@ -7,6 +7,7 @@ public @interface Style {
   public static @interface Unit {
     UnitType type() default UnitType.Px;
     double value() default 1;
+    boolean important() default false;
   }
 
   public static @interface Transition {

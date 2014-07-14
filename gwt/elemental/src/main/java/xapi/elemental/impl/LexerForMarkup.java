@@ -1,5 +1,7 @@
 package xapi.elemental.impl;
 
+import static xapi.util.X_Util.firstNotNull;
+
 import xapi.source.api.CharIterator;
 import xapi.source.api.Lexer;
 import xapi.source.impl.LexerDefault;
@@ -40,12 +42,14 @@ public class LexerForMarkup extends LexerStack {
   }
 
   private Lexer onLink(String linkText, CharIterator str) {
-    return onWord(this, "<a href=\""+formatLinkHref(linkText)+"\" "
-      + commonLinkAttributes()+">"+formatLinkText(linkText)+"</a>", str);
+    return onWord(this, "<a "
+      + "href=\""+formatLinkHref(linkText)+"\" "
+      + firstNotNull(commonLinkAttributes(),"")
+      +">"+formatLinkText(linkText)+"</a>", str);
   }
 
   protected String commonLinkAttributes() {
-    return null;//linkAttributes;
+    return linkAttributes;
   }
 
   protected String formatLinkText(String linkText) {
@@ -53,7 +57,7 @@ public class LexerForMarkup extends LexerStack {
   }
 
   protected String formatLinkHref(String linkText) {
-    return "/"+linkText;
+    return "/"+linkText.replace(' ', '-');
   }
 
   @Override
@@ -66,10 +70,11 @@ public class LexerForMarkup extends LexerStack {
   @Override
   protected Lexer onWhitespace(char c, CharIterator str) {
     if (c == '\n') {
-      onWord("<br/>", str);
+      b.append("<br/>");
       if (str.hasNext() && isWhitespace(str.peek())) {
         // A newline followed by whitespace is considered a new paragraph
       }
+      return super.onWhitespace(c, str);
     }
     b.append(c);
     return super.onWhitespace(c, str);
@@ -105,6 +110,11 @@ public class LexerForMarkup extends LexerStack {
   public LexerForMarkup lex(String in) {
     super.lex(in);
     return this;
+  }
+
+  @Override
+  public void clear() {
+    b.setLength(0);
   }
 
 }

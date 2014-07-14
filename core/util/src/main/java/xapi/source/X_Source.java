@@ -220,7 +220,7 @@ public class X_Source {
     return type.getQualifiedName().equals("java.lang.Object");
   }
   public static String qualifiedName(String pkg, String enclosed) {
-    return X_String.isEmpty(pkg) ? enclosed : pkg + "." + enclosed;
+    return X_String.isEmpty(pkg) ? enclosed : enclosed.startsWith(pkg+".") ? enclosed : pkg + "." + enclosed;
   }
   public static String[] splitClassName(String providerName) {
     int was, is = was = providerName.lastIndexOf('.');

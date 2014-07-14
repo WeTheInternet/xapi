@@ -35,7 +35,8 @@ public interface FontFamily {
   public static class Impact implements FontFamily{
     @Override
     public String name() {
-      return "Merienda One, intro, impact, bookman, arial black";
+      return "Junge, times, bookman, arial black";
+//      return "Merienda One, intro, impact, bookman, arial black";
     }
   }
 

@@ -2,15 +2,19 @@ package xapi.elemental.impl;
 
 import javax.inject.Provider;
 
+import xapi.ui.api.StyleService;
 import xapi.util.api.ConvertsValue;
+import xapi.util.api.MergesValues;
 import elemental.dom.Element;
 
-public class LazyHtmlConverter <T, E extends Element> implements ConvertsValue<T, E> {
+public class LazyHtmlConverter <T, S extends StyleService<S>, E extends Element>
+implements MergesValues<T, S, E> {
 
-  private final ConvertsValue<T, E> converter;
+  protected final LazyHtmlClone<E> cloner;
+  private final MergesValues<T, S, E> converter;
 
   public LazyHtmlConverter(ConvertsValue<T, String> serializer) {
-    converter = new ConvertsValue<T, E>() {
+    class Merger implements MergesValues<T, S, E> {
 
       private T item;
       private final LazyHtmlClone<E> cloner = new LazyHtmlClone<E>(
@@ -21,8 +25,9 @@ public class LazyHtmlConverter <T, E extends Element> implements ConvertsValue<T
             }
           }
       );
+
       @Override
-      public E convert(final T from) {
+      public E merge(T from, S service) {
         item = from;
         try {
           return cloner.get();
@@ -31,10 +36,80 @@ public class LazyHtmlConverter <T, E extends Element> implements ConvertsValue<T
         }
       }
     };
+    Merger merger = new Merger();
+    converter = merger;
+    cloner = merger.cloner;
+  }
+
+  public LazyHtmlConverter(final MergesValues<T, S, String> serializer) {
+    class Merger implements MergesValues<T, S, E> {
+
+      private T item;
+      private S service;
+      private final LazyHtmlClone<E> cloner = new LazyHtmlClone<E>(
+        new Provider<String>() {
+          @Override
+          public String get() {
+            return serializer.merge(item, service);
+          }
+        }
+      );
+
+      @Override
+      public E merge(T from, S service) {
+        this.service = service;
+        item = from;
+        try {
+          return cloner.get();
+        } finally {
+          item = null;
+          service = null;
+        }
+      }
+    };
+
+    Merger merger = new Merger();
+    converter = merger;
+    cloner = merger.cloner;
+  }
+
+  public LazyHtmlConverter(final MergesValues<T, S, String> serializer, final S service) {
+    class Merger implements MergesValues<T, S, E> {
+
+      private T item;
+      private final LazyHtmlClone<E> cloner = new LazyHtmlClone<E>(
+        new Provider<String>() {
+          @Override
+          public String get() {
+            return serializer.merge(item, service);
+          }
+        }
+      );
+
+      @Override
+      public E merge(T from, S service) {
+        item = from;
+        try {
+          return cloner.get();
+        } finally {
+          item = null;
+        }
+      }
+    };
+
+    Merger merger = new Merger();
+    converter = merger;
+    cloner = merger.cloner;
   }
 
   @Override
-  public E convert(T from) {
-      return converter.convert(from);
+  public E merge(T from, S service) {
+    return converter.merge(from, service);
   }
+
+  public LazyHtmlConverter<T, S, E> setInitializer(ConvertsValue<E, E> initializer) {
+    cloner.setInitializer(initializer);
+    return this;
+  }
+
 }

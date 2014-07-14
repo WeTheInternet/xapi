@@ -321,15 +321,16 @@ public class HtmlSnippet <T> implements ConvertsValue<T, String> {
   }
 
   private static String toString(Unit unit) {
+    String important = unit.important() ? " !important" : "";
     switch (unit.type()) {
     case Auto:
-      return "auto";
+      return "auto" + important;
     case Pct:
-      return unit.value() + "%";
+      return unit.value() + "%"+ important;
     case Em:
-      return unit.value() + "em";
+      return unit.value() + "em" + important;
     case Px:
-      return unit.value() + "px";
+      return unit.value() + "px" + important;
     default:
       throw new UnsupportedOperationException("Type "+unit+" not supported");
     }

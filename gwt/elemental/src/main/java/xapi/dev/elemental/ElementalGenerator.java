@@ -9,6 +9,7 @@ import java.lang.reflect.Modifier;
 import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import xapi.collect.impl.AbstractMultiInitMap;
@@ -34,6 +35,7 @@ import xapi.ui.html.api.NoUi;
 import xapi.ui.html.api.Style;
 import xapi.util.X_Debug;
 import xapi.util.api.ConvertsValue;
+import xapi.util.api.MergesValues;
 import xapi.util.api.ReceivesValue;
 
 import com.google.gwt.core.ext.Generator;
@@ -42,6 +44,7 @@ import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JMethod;
+import com.google.gwt.core.shared.GWT;
 import com.google.gwt.dev.jjs.UnifyAstView;
 
 import elemental.dom.Element;
@@ -62,6 +65,8 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
   private static final String METHOD_TO_POTENTIAL = "_serialize";
   public static final String METHOD_IMPORT = "__import";
   private static final Pattern PATTERN_VALUE = Pattern.compile(HtmlTemplate.KEY_VALUE.replace("$", "[$]"));
+  private static final Pattern PATTERN_REFERENCE = Pattern.compile(
+    "(?:@)(([a-zA-Z][a-zA-Z0-9_$]*[.]?)+)");
   protected static final String KEY_SERVICE = "_elemental";
 
   private final ElementalGeneratorContext ctx;
@@ -143,7 +148,6 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
       typeConverter = out.addImport(ConvertsValue.class),
       typeElement = out.addImport(Element.class),
       typeService = out.addImport(ElementalService.class),
-//      typeStyleService = out.addImport(StyleService.class),
       typeModel = out.addImport(model.getModelQualifiedName()),
       typePotentialElement = out.addImport(PotentialNode.class),
       potential = typePotentialElement+"<"+typeElement+">",
@@ -183,18 +187,19 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
     MethodBuffer doImport = out.createMethod("public static void "+METHOD_IMPORT+"("+typeService+" "+KEY_SERVICE+")");
 
     if (templateClass == null) {
-      convert.returnValue("new "+typePotentialElement+"(\"div\");");
+      convert.returnValue(KEY_SERVICE+".newNode(\"div\");");
     } else {
       convert.returnValue(templateClass + "."
-          + SUFFIX_MODEL_TO_ELEMENT + "(service, from)");
+          + SUFFIX_MODEL_TO_ELEMENT + "("
+            + KEY_FROM + ", " + KEY_SERVICE + ")");
 
       doImport.println(templateClass+"."+FIELD_STYLIZE+".set("+KEY_SERVICE+");");
     }
 
-    out.createField(ElementalService.class, "service");
+    out.createField(ElementalService.class, KEY_SERVICE);
     out
       .createConstructor(Modifier.PUBLIC, typeService+" service")
-      .println("this.service = service;");
+      .println("this." + KEY_SERVICE + " = service;");
     // Check the type of the class we are implementing.
 
     existingType.setTemplateName(templateGen.getFinalName());
@@ -203,7 +208,6 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
     } finally {
       clear();
     }
-
   }
 
   private ElementalGeneratorResult generateTemplateClass(
@@ -296,8 +300,10 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
     // For implementations of Messages, we just return a single potentialElement
     MethodBuffer toElement = out.createMethod(
         "public static " + potentialElement + " "+ SUFFIX_MODEL_TO_ELEMENT + "(" +
-        "final "+classElemental+" " + KEY_SERVICE + ", "+
-        "final "+classTemplate+" " + KEY_FROM + ")")
+        "final "+classTemplate+" " + KEY_FROM +
+        ", "+
+        "final "+classElemental+" " + KEY_SERVICE +
+        ")")
         .println(applyStyle)
         .println(potentialElement+" "+KEY_ELEMENT+";"
     );
@@ -306,7 +312,6 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
     if (staticProvider) {
       // Empty root means the simplest possible action.
       // Create a static final LazyElement to supply queries for html
-
       String elementConverter = out.addImport(ConvertsValue.class)
           +"<" + classTemplate + ", Element>";
       PrintBuffer init = out
@@ -320,7 +325,6 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
         init.println("new "+elementConverter+"() {")
           .indent()
           .println("public Element convert("+classTemplate+" "+KEY_FROM+") {")
-
           .indentln("return "+METHOD_TO_POTENTIAL+ "(" + KEY_FROM + ").getElement();")
 
           .println("}")
@@ -333,13 +337,15 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
         String converter = out.addImport(ConvertsValue.class)
             +"<" + classTemplate + ", String>";
         init.println("new "+lazyConverter+"(")
-          .indent()
-          .println("new " + converter+"() {")
-          .indent()
-          .println("public String convert("+classTemplate+" "+KEY_FROM+") {")
+            .indent()
+            .println("new " + converter+"() {")
+            .indent()
+            .println("public String merge("
+              +classTemplate+" "+KEY_FROM+", "
+              +classElemental+" "+KEY_SERVICE
+            +"){")
 
-          .indentln("return "+METHOD_TO_POTENTIAL+ "(" + KEY_FROM + ").toSource();")
-
+            .indentln("return "+METHOD_TO_POTENTIAL+ "(" + KEY_FROM + ","+ KEY_SERVICE+ ").toSource();")
           .println("}")
           .outdent()
           .print("}")
@@ -348,8 +354,10 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
       }
 
 
-      toElement.println(KEY_ELEMENT +" = new "+potentialElement+"(")
-            .indentln("_FACTORY_.convert("+ KEY_FROM + ")")
+      toElement.println(KEY_ELEMENT +" = "
+            + KEY_SERVICE+ ".newNode(")
+            .indentln("_CLONE.setInitializer("
+              + KEY_SERVICE+".asConverter()).merge("+ KEY_FROM + ", "+KEY_SERVICE + ")")
             .println(");");
     } else {
       // There is a root tag, we might not get away w/ a static provider
@@ -358,10 +366,13 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
     final String tag = root.rootElementTag();
     MethodBuffer toHtml = out.createMethod(
         "public static "+ potentialElement + " " + METHOD_TO_POTENTIAL +
-          "(final "+classTemplate+" " + KEY_FROM + ")")
-            .print(potentialElement+" "+KEY_ELEMENT+" = ")
-            .println("new "+potentialElement+"(\""+tag+"\");")
-            ;
+          "("
+            + "final "+classTemplate+" " + KEY_FROM + ","
+            + "final "+classElemental+" "+KEY_SERVICE
+          + ")")
+          .print(potentialElement+" "+KEY_ELEMENT+" = ")
+          .println(KEY_SERVICE+".newNode(\""+tag+"\");")
+          ;
     String elementKey = KEY_ELEMENT;
     root.setNameElement(elementKey);
     for (El el : root.getElements()) {
@@ -405,8 +416,7 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
             String newKey =
                 (elementKey = root.getNameElement())  +"_";
 
-
-            toHtml.println(potential+" "+newKey+" = "+methodName+"("+from+");");
+            toHtml.println(potential+" "+newKey+" = "+methodName+"("+from+","+KEY_SERVICE+");");
 
             root.setNameElement(elementKey+"_");
             toHtml.println(elementKey+".addChild(")
@@ -416,7 +426,7 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
           } else {
 
             toHtml.println(root.getNameElement()+".addChild(")
-            .indentln(methodName+"("+ from + ")")
+            .indentln(methodName+"("+ from + ","+KEY_SERVICE+")")
             .println(");");
           }
         }
@@ -468,7 +478,7 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
               String makeDeep =
                 result.getRoot(method.getEnclosingType(), ast.getTypeOracle()).hasChildren() ? ", true" : "";
               toHtml.println(root.getNameElement()+".addChild(")
-              .indentln(methodName+"("+ from + ")"+makeDeep)
+              .indentln(methodName+"("+ from + "," + KEY_SERVICE + ")"+makeDeep)
               .println(");");
               continue;
             }
@@ -543,6 +553,7 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
       MethodBuffer printEl,
       PrintBuffer styleInit,
       JMethod method,
+      UnifyAstView ast,
       String keyElement,
       String keyFrom,
       GeneratedState generatedState) throws UnableToCompleteException {
@@ -555,6 +566,14 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
       if (result.length() > 0 ) {
         boolean is$value = HtmlTemplate.KEY_VALUE.equals(result);
         String[] bits = PATTERN_VALUE.split(result);
+        String keyService = "_"+KEY_SERVICE;
+        if (!generatedState.needsServiceField) {
+          generatedState.needsServiceField = true;
+          styleInit.println(keyService+"="+KEY_SERVICE+";");
+          out.createField(generatedState.serviceType, keyService)
+            .makeStatic()
+            .makePrivate();
+        }
         for (int i = 0, m = bits.length; i<m || is$value; ++i) {
           if (is$value || i > 0 || bits[i].length()==0) {
             if (method == null) {
@@ -565,9 +584,12 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
               String invocation = keyFrom+"."+method.getName()+"()";
               if (cls == null) {
                 if (method.getReturnType().isPrimitive()!= null) {
-                  printEl.print(keyElement+".append(")
-                    .print("String.valueOf("+invocation+")")
-                    .println(");");
+                  printEl.println(keyElement+".append("
+                    // Appending raw string to template here
+                    + keyService+"."+ElementalService.METHOD_ENHANCE_MARKUP+"("
+                      + "String.valueOf("+invocation+")"
+                    +")"
+                  + ");");
                 } else {
                   logger.log(Type.ERROR,
                     "Method return type "+method.getReturnType()
@@ -578,9 +600,13 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
               } else {
                 if (method.getReturnType().isClassOrInterface().isAssignableTo(ctx.getTypeCharSequence())) {
                   // Wrap this w/ runtime enhancement of text
-                  printEl.println(keyElement+".append("+invocation+");");
+                  printEl.println(keyElement+".append("
+                    + keyService+"."+ElementalService.METHOD_ENHANCE_MARKUP+"("+invocation+ ")"
+                  + ");");
                 } else if (method.getReturnType().isClassOrInterface().isAssignableTo(ctx.getTypePotentialElement())) {
-                  printEl.println(keyElement+".addChild("+invocation+");");
+                  printEl.println(keyElement+".addChild("
+                    + keyService+"."+ElementalService.METHOD_ENHANCE_MARKUP+"("+invocation+ ")"
+                  + ");");
                 } else {
                   for (Class<?> toHtml : el.useToHtml()) {
                     if (cls.getQualifiedBinaryName().equals(toHtml.getName())) {
@@ -588,14 +614,8 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
                       // Print a X_Html.toHtml() method call here.
                       String xhtml = printEl.addImport(X_Html.class);
                       String type = out.addImport(method.getReturnType().getQualifiedSourceName());
-                      printEl.print(xhtml+".toHtml("+type+".class, "+invocation+", _"+KEY_SERVICE+")");
-                      if (!generatedState.needsServiceField) {
-                        generatedState.needsServiceField = true;
-                        styleInit.println("_"+KEY_SERVICE+"="+KEY_SERVICE+";");
-                        out.createField(generatedState.serviceType, "_"+KEY_SERVICE)
-                          .makeStatic()
-                          .makePrivate();
-                      }
+                      printEl.print(xhtml+".toHtml("+type+".class, "+invocation+", "+keyService+")");
+                   
                       printEl.println(");");
                       break;
                     }
@@ -612,18 +632,60 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
           String encoded = bits[i];
           int ind = encoded.indexOf(HtmlTemplate.KEY_CHILDREN);
           if (ind == -1) {
-            printEl.println(keyElement+".append(\""+encoded+"\");");
+            // If this encoded bit matches a @fully.qualified.Name,
+            // then we should add the foreign class as a child element here.
+            Matcher matcher = PATTERN_REFERENCE.matcher(encoded);
+            if (matcher.matches()) {
+              // check the group that matches, and construct a call to the
+              // referenced classes .toElement
+              String val = matcher.group(1);
+
+              JClassType type = ast.getTypeOracle().findType(val);
+              ElementalGeneratorResult res = generateProvider(logger, new ModelProviderImpl(type), type, ast, ctx);
+              String imported = printEl.addImport(type.getQualifiedSourceName());
+              styleInit.println(printEl.addImport(res.getFinalNameQualified())
+                +"."+METHOD_IMPORT+"("+KEY_SERVICE+");");
+              String source =
+                method.getReturnType().isClassOrInterface().isAssignableTo(type)
+                  ? keyFrom+"."+method.getName()+"()"
+                : type.isAssignableTo(ctx.getTypeMessages())
+                  ? printEl.addImport(GWT.class)+ ".<"
+                    + imported+ ">create("
+                    +imported+".class)"
+                : type.isAssignableFrom(method.getEnclosingType())
+                  ? keyFrom
+                : "null";
+              printEl.println(keyElement+".addChild("
+                + printEl.addImport(res.getTemplateName())
+                + "."+METHOD_TO_POTENTIAL+"("
+                  + source + ", "+KEY_SERVICE
+                + "));");
+            } else {
+              printEl.println(keyElement+".append("
+                + keyService+"."+ElementalService.METHOD_ENHANCE_MARKUP+"("
+                  + "\""+encoded+"\""
+                +")"
+              + ");");
+            }
           } else {
             int len = HtmlTemplate.KEY_CHILDREN.length();
             if (ind > 0) {
-              printEl.println(keyElement+".append(\""+encoded.substring(0, ind)+"\");");
+              printEl.println(keyElement+".append("
+                + keyService+"."+ElementalService.METHOD_ENHANCE_MARKUP+"("
+                  + "\""+encoded.substring(0, ind)+"\""
+                +")"
+              + ");");
             }
             newKey = keyElement+"_";
             String potential = printEl.addImport(PotentialNode.class)+"<"+printEl.addImport(Element.class)+">";
-            printEl.println(potential+" "+newKey+" = new "+potential+"();");
+            printEl.println(potential+" "+newKey+" = "+KEY_SERVICE+"."+"newNode();");
             printEl.println(keyElement+".addChild("+newKey+", true);");
             if (ind < encoded.length()-len) {
-              printEl.println(keyElement+".append(\""+encoded.substring(ind+len)+"\");");
+              printEl.println(keyElement+".append("
+                + keyService+"."+ElementalService.METHOD_ENHANCE_MARKUP+"("
+                  + "\""+encoded.substring(ind+len)+"\""
+                +")"
+              + ");");
             }
           }
         }
@@ -687,7 +749,8 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
 
   @Override
   protected Type getLogLevel() {
-    return Type.DEBUG;
+    return Type.INFO;
+//    return Type.DEBUG;
   }
 
   @Override

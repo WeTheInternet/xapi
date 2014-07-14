@@ -18,8 +18,13 @@ public class LexerDefault implements Lexer {
     return consume(str);
   }
 
-  public LexerDefault lex(String in) {
+  @Override
+  public Lexer lex(String in) {
     consume(new StringCharIterator(in));
     return this;
+  }
+
+  @Override
+  public void clear() {
   }
 }

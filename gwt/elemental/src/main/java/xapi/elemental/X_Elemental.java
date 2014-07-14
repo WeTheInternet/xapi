@@ -52,10 +52,14 @@ public class X_Elemental {
   }
 
   public static void addClassName(Element e, String cls) {
-    String clsName = " " + e.getClassName() + " ";
-    if (!clsName.contains(" " + cls + " ")) {
+    if (!hasClassName(e, cls)) {
       e.setClassName(e.getClassName() + " " + cls);
     }
+  }
+
+  public static boolean hasClassName(Element e, String cls) {
+    return (" " + e.getClassName() + " ")
+        .contains(" " + cls + " ");
   }
 
   public static void removeClassName(Element e, String cls) {

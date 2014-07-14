@@ -241,6 +241,7 @@ public class PotentialNode <E extends Element> extends NodeBuilder <E>{
     attributeApplier = new ApplyLiveAttribute();
     stylizer = new LazyProvider<StyleApplier>(()-> new StyleApplier());
     el = element;
+    onInitialize(el);
   }
 
   public void setAttribute(String name, String value) {
