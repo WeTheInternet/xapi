@@ -37,11 +37,15 @@ package xapi.dev.util;
 import java.lang.reflect.Field;
 
 import com.google.gwt.core.ext.PropertyOracle;
+import com.google.gwt.core.ext.SubsetFilteringPropertyOracle;
 import com.google.gwt.dev.cfg.BindingProperty;
 import com.google.gwt.dev.cfg.ConfigurationProperty;
 import com.google.gwt.dev.cfg.DynamicPropertyOracle;
 import com.google.gwt.dev.cfg.Properties;
 import com.google.gwt.dev.shell.ModuleSpacePropertyOracle;
+
+import java.lang.reflect.Field;
+import java.util.Arrays;
 
 /**
  * A place to put general-purpose debugging tools for use during code
@@ -62,7 +66,19 @@ public class GenDebug {
    *          - The property oracle to inspect and print out
    */
   public static void dumpProperties(final PropertyOracle oracle) {
-    if (oracle instanceof ModuleSpacePropertyOracle) {
+    if (oracle instanceof SubsetFilteringPropertyOracle){
+      try {
+        Field field =
+            SubsetFilteringPropertyOracle.class.getDeclaredField("wrappedPropertyOracle");
+        field.setAccessible(true);
+        PropertyOracle subOracle = (PropertyOracle) field.get(oracle);
+        dumpProperties(subOracle);
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+      return;
+    }
+    if (oracle instanceof ModuleSpacePropertyOracle){
       ModuleSpacePropertyOracle mod = (ModuleSpacePropertyOracle) oracle;
       Properties props;
       try {
@@ -83,19 +99,17 @@ public class GenDebug {
         e.printStackTrace();
       }
     }
-    if (oracle instanceof DynamicPropertyOracle) {
+    else if (oracle instanceof DynamicPropertyOracle){
       DynamicPropertyOracle stat = (DynamicPropertyOracle) oracle;
-      for (BindingProperty binding : stat.getAccessedProperties()) {
-        System.out.println("Accessed: " + binding.getName() + " : " + binding.getConstrainedValue());
-      }
-      try {
-        ConfigurationProperty[] configProps;
-        Field field = stat.getClass().getDeclaredField("configProps");
+      System.out.println("Prescribed props: "+Arrays.asList(stat.getPrescribedPropertyValuesByName()));
+      try{
+        Properties configProps;
+        Field field = stat.getClass().getDeclaredField("properties");
         field.setAccessible(true);
-        configProps = (ConfigurationProperty[]) field.get(stat);
-        System.out.println("Config props: ");
-        for (ConfigurationProperty prop : configProps) {
-          System.out.print(prop.getName() + " : ");
+        configProps = (Properties) field.get(stat);
+        System.out.println("Properties: ");
+        for (ConfigurationProperty prop : configProps.getConfigurationProperties()){
+          System.out.print(prop.getName()+" : ");
           System.out.println(
             (prop.isMultiValued() || prop.allowsMultipleValues() ? prop.getValues() : prop.getValue())
             );
@@ -103,6 +117,8 @@ public class GenDebug {
       } catch (Exception e) {
         e.printStackTrace(System.out);
       }
+    } else {
+      System.out.println("Unhandled properties type: "+oracle.getClass()+":\n"+oracle);
     }
   }
 

@@ -77,7 +77,7 @@ public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> im
     return null;
   }
 
-  protected static String toHash(UnifyAstView ast, String ... types) {
+  protected static String toHash(UnifyAstView ast, String ... types) throws UnableToCompleteException {
     StringBuilder b = new StringBuilder();
     for (String type : types) {
       b.append(ast.searchForTypeBySource(type).toSource());

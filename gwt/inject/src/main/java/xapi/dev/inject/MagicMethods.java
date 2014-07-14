@@ -47,6 +47,7 @@ import xapi.dev.util.InjectionCallbackArtifact;
 import xapi.inject.AsyncProxy;
 import xapi.inject.X_Inject;
 import xapi.inject.impl.SingletonProvider;
+import xapi.source.X_Source;
 
 import com.google.gwt.core.ext.Generator;
 import com.google.gwt.core.ext.RebindResult;
@@ -76,6 +77,7 @@ import com.google.gwt.dev.jjs.ast.JVariableRef;
 import com.google.gwt.dev.jjs.impl.UnifyAst;
 import com.google.gwt.dev.util.Name.BinaryName;
 import com.google.gwt.dev.util.collect.Lists;
+import com.google.gwt.reflect.rebind.ReflectionUtilAst;
 
 /**
  * A collection of magic method providers used for gwt production mode. These methods are mapped over top of
@@ -684,6 +686,14 @@ public class MagicMethods {
     // to reduce the bloat of clinits by visiting preloadable methods before
     // any client code can possibly access them (less clinit in runtime code)
 
+  }
+
+  public static String toSourceName(JDeclaredType type) {
+    JDeclaredType enclosing = type.getEnclosingType();
+    if (enclosing == null) {
+      return type.getName();
+    }
+    return toSourceName(enclosing) + "." + type.getShortName();
   }
 
 }

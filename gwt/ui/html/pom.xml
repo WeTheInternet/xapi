@@ -15,6 +15,10 @@
     A set of generator utils to create raw html from annotated data models.
   </description>
 
+  <properties>
+    <java.version>1.8</java.version>
+    <gwt.version>2.6.4</gwt.version>
+  </properties>
 
 
  <dependencies>

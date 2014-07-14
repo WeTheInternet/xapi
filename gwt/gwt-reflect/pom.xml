@@ -17,8 +17,8 @@
 	<properties>
         <gwt.skip.test>true</gwt.skip.test>
         <xapi.log.level>INFO</xapi.log.level>
-		<maven.compiler.source>1.6</maven.compiler.source>
-		<maven.compiler.target>1.6</maven.compiler.target>
+		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.target>1.8</maven.compiler.target>
     <relative.output>target</relative.output>
 	</properties>
 

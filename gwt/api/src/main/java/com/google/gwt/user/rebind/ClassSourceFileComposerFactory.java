@@ -1,12 +1,12 @@
 /*
  * Copyright 2007 Google Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
  * the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -27,15 +27,24 @@ import com.google.gwt.core.ext.GeneratorContext;
 
 /**
  * Factory clas to create <code>SourceFileComposer</code> instances.
- * 
+ *
  */
 public class ClassSourceFileComposerFactory {
   /**
    * Represents a java source file category. Right now support interface and
    * class, later should support abstract class, static class, etc.
    */
-  enum JavaSourceCategory {
-    CLASS, INTERFACE;
+  public static enum JavaSourceCategory {
+
+      CLASS("class"),
+      INTERFACE("interface");
+
+
+    private String key;
+
+    private JavaSourceCategory(String key) {
+      this.key = key;
+    }
   }
 
   private List<String> annotations = new ArrayList<String>();
@@ -78,7 +87,7 @@ public class ClassSourceFileComposerFactory {
    * Creates an implementation of {@link SourceWriter} that can be used to write
    * the innards of a class. Note that the subsequent changes to this factory do
    * not affect the returned instance.
-   * 
+   *
    * @throws RuntimeException If the settings on this factory are inconsistent
    *           or invalid
    */
@@ -94,7 +103,7 @@ public class ClassSourceFileComposerFactory {
    * Creates an implementation of {@link SourceWriter} that can be used to write
    * the innards of a class. Note that the subsequent changes to this factory do
    * not affect the returned instance.
-   * 
+   *
    * @param printWriter underlying writer
    * @return the source writer
    * @throws RuntimeException If the settings on this factory are inconsistent
@@ -144,7 +153,7 @@ public class ClassSourceFileComposerFactory {
 
   /**
    * Sets the java doc comment for <code>this</code>.
-   * 
+   *
    * @param comment java doc comment.
    */
   public void setJavaDocCommentForClass(String comment) {
@@ -154,7 +163,7 @@ public class ClassSourceFileComposerFactory {
   public void setSuperclass(String superclassName) {
     superClassName = superclassName;
   }
-  
+
   public void setPrivacy(String privacy) {
     this.privacy = privacy;
   }
