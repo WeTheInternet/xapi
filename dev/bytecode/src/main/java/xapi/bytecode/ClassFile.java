@@ -777,12 +777,25 @@ public final class ClassFile implements Annotated {
       return ((AnnotationsAttribute)attr).getAnnotation(name);
     }
 
-    @SuppressWarnings("unchecked")
-    public <T extends java.lang.annotation.Annotation> T getAnnotation(Class<T> annoClass) {
+    public Annotation getAnnotation(Class<?> annoClass) {
       Annotation anno = getAnnotation(annoClass.getName());
       if (anno == null)
         return null;
-      return (T)anno;
+      return anno;
+    }
+
+    public boolean hasAnnotation(Class<?> annoClass) {
+      Annotation anno = getAnnotation(annoClass.getName());
+      return anno != null;
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends java.lang.annotation.Annotation> T getAnnotation(Class<T> annoClass, ClassLoader loader) throws ClassNotFoundException, NoSuchClassError {
+      Annotation anno = getAnnotation(annoClass);
+      if (anno != null) {
+        return (T)anno.toAnnotationType(loader, new ClassPool());
+      }
+      return null;
     }
     /**
      * @return all compiletime and runtime annotations present on this class file.
@@ -828,16 +841,22 @@ public final class ClassFile implements Annotated {
     public String getEnclosedName() {
       return X_Modifier.sourceNameToEnclosed(constPool.getClassName());
     }
-    
+
+    public String getSimpleName() {
+      String enclosed = getEnclosedName();
+      int last = enclosed.lastIndexOf('.');
+      return last == -1 ? enclosed : enclosed.substring(last + 1);
+    }
+
     public String getQualifiedName() {
       return X_Source.qualifiedName(getPackage(), getEnclosedName());
     }
-    
+
     @Override
     public int hashCode() {
       return getName().hashCode();
     }
-    
+
     @Override
     public boolean equals(Object obj) {
       if (!(obj instanceof ClassFile))
@@ -847,9 +866,9 @@ public final class ClassFile implements Annotated {
         return false;
       // Classes of the same name and different location are not equal
       return X_Util.equal(getSourceFile(), other.getSourceFile());
-      
+
     }
-    
+
     @Override
     public String toString() {
       return X_Modifier.classModifiers(getAccessFlags())+getName();
@@ -862,9 +881,9 @@ public final class ClassFile implements Annotated {
     public boolean isClass(String pkg, String enclosed) {
       return getPackage().equals(pkg) && getEnclosedName().equals(enclosed);
     }
-    
+
     public boolean hasSuperClass(String superClass) {
       return getSuperclass().equals(superClass);
     }
-    
+
 }

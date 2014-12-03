@@ -31,18 +31,17 @@ public class MatchesImplementationsOf implements MatchesValue<ClassFile> {
       }
     }
   }
-  
+
   @Override
   public boolean matches(ClassFile value) {
-    if (value.isInterface()) {
-      for (String iface : value.getInterfaces()) {
-        for (String subclass : interfaces) {
-          if (iface.equals(subclass)) {
-            return true;
-          }
+    for (String iface : value.getInterfaces()) {
+      for (String subclass : interfaces) {
+        if (iface.equals(subclass)) {
+          return true;
         }
       }
-    } else {
+    }
+    if (!value.isInterface()) {
       for (String superclass : getHierarchy(value)) {
         for (String subclass : classes) {
           if (superclass.equals(subclass)) {
@@ -76,5 +75,5 @@ public class MatchesImplementationsOf implements MatchesValue<ClassFile> {
     }
   }
 
-  
+
 }

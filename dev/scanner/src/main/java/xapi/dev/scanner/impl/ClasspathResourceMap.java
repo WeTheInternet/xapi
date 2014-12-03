@@ -289,12 +289,16 @@ public class ClasspathResourceMap {
    * @return
    */
   public final Iterable<ClassFile> findDirectSubclasses(
-      final Class<?> ... superClasses) {
+    final Class<?> ... superClasses) {
+    return findDirectSubclasses(X_Source.toStringBinary(superClasses));
+  }
+  public final Iterable<ClassFile> findDirectSubclasses(
+      final String ... superClasses) {
     // Local class to capture the final method parameter
     class Itr implements Iterator<ClassFile> {
       ClassFile cls;
       Iterator<ByteCodeResource> iter = bytecode.findPrefixed("").iterator();
-      final MatchesDirectSubclasses matcher = new MatchesDirectSubclasses(X_Source.toStringBinary(superClasses));
+      final MatchesDirectSubclasses matcher = new MatchesDirectSubclasses(superClasses);
       @Override
       public boolean hasNext() {
         while(iter.hasNext()) {
@@ -325,12 +329,16 @@ public class ClasspathResourceMap {
   }
 
   public final Iterable<ClassFile> findImplementationOf(
-      final Class<?> ... superClasses) {
+    final Class<?> ... superClasses) {
+    return findImplementationOf(X_Source.toStringBinary(superClasses));
+  }
+  public final Iterable<ClassFile> findImplementationOf(
+      final String ... superClasses) {
     // Local class to capture the final method parameter
     class Itr implements Iterator<ClassFile> {
       ClassFile cls;
       Iterator<ByteCodeResource> iter = bytecode.findPrefixed("").iterator();
-      final MatchesImplementationsOf matcher = new MatchesImplementationsOf(bytecode, X_Source.toStringBinary(superClasses));
+      final MatchesImplementationsOf matcher = new MatchesImplementationsOf(bytecode, superClasses);
       @Override
       public boolean hasNext() {
         while(iter.hasNext()) {
