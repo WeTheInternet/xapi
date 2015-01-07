@@ -27,31 +27,30 @@ public class SingleDimArrayInjector implements MagicMethodGenerator {
     Context context, UnifyAstView ast) throws UnableToCompleteException {
     JClassLiteral clazz = ReflectionUtilAst.extractClassLiteral(logger, methodCall, 0, ast);
     JType cur, type = cur =clazz.getRefType();
-    JIntLiteral size = ReflectionUtilAst.extractImmutableNode(logger, 
+    JIntLiteral size = ReflectionUtilAst.extractImmutableNode(logger,
         JIntLiteral.class, methodCall.getArgs().get(1), ast, false);
-    
+
     // Add absent array dimensions in case use supplies a Class[].class
     List<JExpression> dims = Lists.create(size.makeStatement().getExpr());
     while (cur instanceof JArrayType) {
       dims = Lists.add(dims, JAbsentArrayDimension.INSTANCE);
       cur = ((JArrayType)cur).getElementType();
     }
-    
+
     // Toss on an extra array dimension
     JArrayType arrayType = ast.getProgram().getTypeArray(type);
-    
+
     // Collect up the class literals
-    List<JClassLiteral> classLits = Lists.create();
+    JClassLiteral classLit = null;
     SourceInfo info = methodCall.getSourceInfo().makeChild();
     cur = arrayType;
     while (cur instanceof JArrayType) {
-      JClassLiteral classLit = new JClassLiteral(info.makeChild(), cur);
-      classLits = Lists.add(classLits, classLit);
+      classLit = new JClassLiteral(info.makeChild(), cur);
       cur = ((JArrayType) cur).getElementType();
     }
-    
-    // Define new array[n]...[]; statement 
-    JNewArray newArr = new JNewArray(info, arrayType, dims, null, classLits);
+
+    // Define new array[n]...[]; statement
+    JNewArray newArr = new JNewArray(info, arrayType, dims, null, classLit);
     return newArr.makeStatement().getExpr();
   }
 

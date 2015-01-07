@@ -54,7 +54,7 @@ import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.shared.GWT;
 import com.google.gwt.user.client.Timer;
-import com.google.gwt.user.rebind.SourceFileComposerFactory;
+import com.google.gwt.user.rebind.ClassSourceFileComposerFactory;
 import com.google.gwt.user.rebind.SourceWriter;
 
 public class RunAsyncInjectionGenerator extends AbstractInjectionGenerator{
@@ -83,8 +83,8 @@ public class RunAsyncInjectionGenerator extends AbstractInjectionGenerator{
             logger.log(Type.TRACE, "Re-Using existing "+typeName);
             return new RebindResult(RebindMode.USE_EXISTING, typeName);
           }
-          SourceFileComposerFactory composer =
-              new SourceFileComposerFactory(packageName, generatedName);
+          ClassSourceFileComposerFactory composer =
+              new ClassSourceFileComposerFactory(packageName, generatedName);
           composer.addImplementedInterface(ApplyMethod.class.getName());
           composer.setPrivacy("public final");
           composer.addImport(GWT.class.getName());

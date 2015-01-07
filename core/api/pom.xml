@@ -37,7 +37,25 @@
 
 	<build>
 		<plugins>
-			<plugin>
+    <!--
+           <plugin>
+             <groupId>net.wetheinter</groupId>
+             <artifactId>xapi-maven-plugin</artifactId>
+             <version>0.5.1-SNAPSHOT</version>
+             <executions>
+               <execution>
+                <id>annogen</id>
+                <phase>generate-sources</phase>
+                <goals>
+                  <goal>annogen</goal>
+                </goals>
+                <inherited>false</inherited>
+                <configuration>
+                </configuration>
+              </execution>
+             </executions>
+           </plugin>-->
+           <plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<executions>

@@ -5,6 +5,5 @@
   <inherits name="xapi.X_AutoUi"/>
   <inherits name="xapi.X_Test"/>
   <inherits name="com.google.gwt.reflect.Reflect"/>
-  <set-property name="user.agent" value="safari" />
   
 </module>

@@ -5,8 +5,10 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import xapi.annotation.reflect.MirroredAnnotation;
+
 /**
- * A compile-time resource; default behavior is to treat {@link #value()} as a 
+ * A compile-time resource; default behavior is to treat {@link #value()} as a
  * resource location, and use the current thread classloader to get that resource.
  * <p>
  * The {@link #type()} method is used to specify what kind of resource is being included;
@@ -18,27 +20,28 @@ import java.lang.annotation.Target;
  * The use of the {@link #qualifier()} method is strictly implementation dependent;
  * it is used when the default {@link ResourceType}s are not enough to fully describe
  * how to treat the given dependency.
- * 
+ *
  * @author "James X. Nelson (james@wetheinter.net)"
  *
  */
 @Documented
 @Target({})
 @Retention(RetentionPolicy.RUNTIME)
+@MirroredAnnotation
 public @interface Resource {
 
   public enum ResourceType {
     CLASSPATH_RESOURCE, LITERAL_VALUE, ABSOLUTE_FILE, CLASS_NAME, PACKAGE_NAME, ARTIFACT_ID
   }
-  
+
   String value();
   ResourceType type() default ResourceType.CLASSPATH_RESOURCE;
   String qualifier() default "";
-  
+
   /**
    * @return false if it's ok that a requested resource is not found;
    * default is true.
    */
   boolean required() default true;
-  
+
 }

@@ -1,7 +1,6 @@
 package xapi.elemental.api;
 
 import static xapi.collect.X_Collect.newStringMap;
-
 import xapi.collect.api.StringTo;
 import xapi.elemental.X_Elemental;
 import xapi.ui.api.NodeBuilder;
@@ -230,7 +229,7 @@ public class PotentialNode <E extends Element> extends NodeBuilder <E>{
   public PotentialNode() {
     attributes = newStringMap(AttributeBuilder.class);
     attributeApplier = new ApplyPendingAttribute();
-    stylizer = new LazyProvider<StyleApplier>(()->new StyleApplier());
+    stylizer = new LazyProvider<StyleApplier>(()-> new StyleApplier());
   }
   public PotentialNode(String tagName) {
     this();
@@ -240,7 +239,7 @@ public class PotentialNode <E extends Element> extends NodeBuilder <E>{
   public PotentialNode(E element) {
     attributes = newStringMap(AttributeBuilder.class);
     attributeApplier = new ApplyLiveAttribute();
-    stylizer = new LazyProvider<StyleApplier>(()->new StyleApplier());
+    stylizer = new LazyProvider<StyleApplier>(()-> new StyleApplier());
     el = element;
   }
 
@@ -315,7 +314,7 @@ public class PotentialNode <E extends Element> extends NodeBuilder <E>{
   @Override
   protected CharSequence getCharsBefore() {
     StringBuilder b = new StringBuilder();
-    if (tagName == null) {
+    if (tagName == null || tagName.isEmpty()) {
       assert attributes.isEmpty() : "Cannot have attributes without a tagname";
     } else {
       b.append("<");

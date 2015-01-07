@@ -42,6 +42,7 @@
    <groupId>net.wetheinter</groupId>
    <artifactId>xapi-core-ui-autoui</artifactId>
    <classifier>tests</classifier>
+   <scope>test</scope>
    <version>${xapi.version}</version><!--$NO-MVN-MAN-VER$-->
   </dependency>
   <dependency>

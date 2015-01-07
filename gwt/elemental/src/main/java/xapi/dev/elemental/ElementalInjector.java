@@ -7,6 +7,15 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Queue;
 
+import xapi.dev.elemental.ElementalGeneratorContext.ElementalGeneratorResult;
+import xapi.elemental.X_Elemental;
+import xapi.elemental.api.ElementalService;
+import xapi.elemental.api.PotentialNode;
+import xapi.log.X_Log;
+import xapi.ui.api.Stylizer;
+import xapi.ui.api.Widget;
+import xapi.util.api.ConvertsValue;
+
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.core.ext.UnableToCompleteException;
@@ -30,14 +39,6 @@ import com.google.gwt.dev.jjs.impl.UnifyAst.UnifyVisitor;
 import com.google.gwt.reflect.rebind.ReflectionUtilAst;
 
 import elemental.dom.Element;
-import xapi.dev.elemental.ElementalGeneratorContext.ElementalGeneratorResult;
-import xapi.elemental.X_Elemental;
-import xapi.elemental.api.ElementalService;
-import xapi.elemental.api.PotentialNode;
-import xapi.log.X_Log;
-import xapi.ui.api.Stylizer;
-import xapi.ui.api.Widget;
-import xapi.util.api.ConvertsValue;
 
 /**
  * @author "James X. Nelson (james@wetheinter.net)"
@@ -97,7 +98,7 @@ public class ElementalInjector implements
     for (JMethod init : classLit.getMethods()) {
       if (init instanceof JConstructor) {
         JConstructor ctor = (JConstructor) init;
-        JNewInstance invoke = new JNewInstance(info, ctor, classLit, instance);
+        JNewInstance invoke = new JNewInstance(info, ctor, instance);
         if (invokeProvider) {
           JMethod convert;
           try {

@@ -38,7 +38,6 @@ import com.google.gwt.dev.jjs.ast.JClassLiteral;
 import com.google.gwt.dev.jjs.ast.JDeclaredType;
 import com.google.gwt.dev.jjs.ast.JExpression;
 import com.google.gwt.dev.jjs.ast.JMethodCall;
-import com.google.gwt.reflect.client.ConstPool;
 import com.google.gwt.reflect.client.ConstPool.ArrayConsts;
 import com.google.gwt.reflect.client.strategy.GwtRetention;
 import com.google.gwt.reflect.client.strategy.ReflectionStrategy;
@@ -52,10 +51,10 @@ public class MemberGenerator {
 
   private static class ManifestMap {
     private final HashMap<String, MemberPoolManifest> existing = new HashMap<String, MemberGenerator.MemberPoolManifest>();
-    private final HashMap<String, com.google.gwt.dev.jjs.ast.JMethod> getters = 
+    private final HashMap<String, com.google.gwt.dev.jjs.ast.JMethod> getters =
         new HashMap<String, com.google.gwt.dev.jjs.ast.JMethod>();
     private com.google.gwt.dev.jjs.ast.JMethod initMethod;
-    
+
     public com.google.gwt.dev.jjs.ast.JMethod findGetterFor(UnifyAstView ast, String memberGetter) throws UnableToCompleteException {
       com.google.gwt.dev.jjs.ast.JMethod getter = getters.get(memberGetter);
       if (getter == null) {
@@ -73,7 +72,7 @@ public class MemberGenerator {
       return getter;
     }
 
-    public com.google.gwt.dev.jjs.ast.JMethod initMethod(UnifyAstView ast) {
+    public com.google.gwt.dev.jjs.ast.JMethod initMethod(UnifyAstView ast) throws UnableToCompleteException {
       if (initMethod == null) {
         JDeclaredType type = ast.searchForTypeBySource("com.google.gwt.reflect.shared.JsMemberPool");
         for (com.google.gwt.dev.jjs.ast.JMethod method : type.getMethods()) {
@@ -88,23 +87,24 @@ public class MemberGenerator {
   }
 
   protected static class MemberPoolManifest {
-    
+
   }
-  
+
   public static final ReflectionStrategy DEFAULT_STRATEGY = MemberGenerator.class.getAnnotation(ReflectionStrategy.class);
-  
-  public static final String 
+
+  public static final String
   METHOD_SPACER = "_m_",
   FIELD_SPACER = "_f_",
   CONSTRUCTOR_SPACER = "_c_";
-  
-  private static final String 
+
+  private static final String
   GWT_REFLECT = GwtReflect.class.getName(),
   JSO = JavaScriptObject.class.getSimpleName(),
   NULL_CHECK = "@"+GWT_REFLECT+"::nullCheck(*)(o);";
   private static final Type logLevel = Type.TRACE;
 
   private static final ThreadLocal<ManifestMap> manifests = new ThreadLocal<ManifestMap>() {
+    @Override
     protected ManifestMap initialValue() {
       return new ManifestMap();
     };
@@ -112,7 +112,7 @@ public class MemberGenerator {
   public static void cleanup() {
     manifests.remove();
   }
-  
+
   public static String getConstructorFactoryName(JClassType type, JParameter[] list) {
     StringBuilder b = new StringBuilder(type.getName());
     b.append(CONSTRUCTOR_SPACER).append(ReflectionUtilType.toUniqueFactory(list, type.getConstructors()));
@@ -132,33 +132,33 @@ public class MemberGenerator {
     // Check for polymorphism
     JMethod[] overloads = type.getOverloads(name);
     if (overloads.length > 1) {
-      // Have to use the parameters to make a unique name. 
+      // Have to use the parameters to make a unique name.
       // Might be worth it to move this method to instance level, and use a count
       String uniqueName = ReflectionUtilType.toUniqueFactory(list, overloads);
       b.append('_').append(uniqueName);
     }
     return b.toString();
   }
-  
+
   public String generateConstructorFactory(TreeLogger logger, ReflectionGeneratorContext ctx,
       JConstructor ctor, String factory, ReflectionManifest manifest) throws UnableToCompleteException {
     JClassType type = ctor.getEnclosingType();
     String pkg = type.getPackage().getName();
     factory = factory.replace('.', '_');
     SourceBuilder<?> out = ctx.tryCreate(PUBLIC | FINAL, pkg, factory);
-    
+
     if (out == null) {
       // TODO some kind of test to see if structure has changed...
       return pkg + "." + factory;
     }
-    
+
     String simpleName = out.getImports().addImport(type.getQualifiedSourceName());
-    
+
     ClassBuffer cb = out.getClassBuffer();
-    
+
     cb.createConstructor(Modifier.PRIVATE);
     cb.createField("Constructor <"+simpleName+">", "ctor", PRIVATE | STATIC);
-    
+
     MethodBuffer instantiator = cb
         .addImports(Constructor.class, GwtReflect.class)
         .createMethod("public static Constructor <"+simpleName+"> instantiate()")
@@ -171,13 +171,13 @@ public class MemberGenerator {
         ;
     ConstPoolGenerator.getGenerator();
     GwtRetention retention = manifest.getRetention(ctor);
-    
+
     out.getImports().addStatic(ArrayConsts.class.getCanonicalName()+".EMPTY_CLASSES");
     JParameter[] params = ctor.getParameters();
     instantiator
       .addImports(JavaScriptObject.class)
       .addImports(ArrayConsts.class);
-    
+
 
     if (retention.annotationRetention() > 0) {
       Annotation[] annos = ReflectionUtilType.extractAnnotations(retention.annotationRetention(), ctor);
@@ -193,7 +193,7 @@ public class MemberGenerator {
       instantiator.print("EMPTY_ANNOTATIONS, ");
     }
     appendClassArray(instantiator, params, ctx);
-    
+
     instantiator
       .print(", EMPTY_CLASSES ")
       .println(");")
@@ -202,13 +202,13 @@ public class MemberGenerator {
       .returnValue("ctor");
 
     createInvokerMethod(cb, type, type, "new", ctor.getParameters(), true);
-    
+
     if (isDebug(type, ReflectionStrategy.CONSTRUCTOR)) {
       logger.log(Type.INFO, out.toString());
     }
-    
+
     ctx.commit(logger);
-    
+
     return out.getQualifiedName();
   }
 
@@ -219,12 +219,12 @@ public class MemberGenerator {
     JType fieldType = field.getType().getErasedType();
     String jni = field.getType().getJNISignature();
     factoryName = factoryName.replace('.', '_');
-    
+
     SourceBuilder<JField> out = new SourceBuilder<JField>
     ("public final class "+factoryName).setPackage(pkg);
 
     out.getClassBuffer().createConstructor(PRIVATE);
-    
+
     PrintWriter pw = ctx.tryCreate(logger, pkg, factoryName);
     if (pw == null) {
       if (isDebug(enclosingType, ReflectionStrategy.FIELD)) {
@@ -232,7 +232,7 @@ public class MemberGenerator {
       }
       return out.getQualifiedName();
     }
-    
+
     ClassBuffer cb = out.getClassBuffer();
 
 
@@ -246,7 +246,7 @@ public class MemberGenerator {
       annos = new Annotation[0];
       generateGetAnnos(logger, out, new Annotation[0], ctx);
     }
-    
+
     final String ref = (field.isStatic() ? "" : "o.")+"@"+enclosingType.getQualifiedSourceName()+"::"+field.getName();
     MethodBuffer accessor = cb
         .createMethod("private static JavaScriptObject getAccessor()")
@@ -264,7 +264,7 @@ public class MemberGenerator {
           .print("@")
           .print(out.getQualifiedName())
           .println("::allAnnos()();");
-        
+
       }
       accessor.outdent().println("},");
     }
@@ -274,11 +274,11 @@ public class MemberGenerator {
       accessor.indentln(NULL_CHECK);
     }
     boolean isPrimitive = field.getType().isPrimitive() != null;
-    
-    
+
+
     accessor.indent().print("return ");
     accessor.append(ref);
-    
+
     accessor
       .println(";")
       .outdent()
@@ -287,25 +287,26 @@ public class MemberGenerator {
       accessor.println().outdent().println("};");
     } else {
       accessor.println(", setter: function(o, v) {");
-      if (!field.isStatic())
+      if (!field.isStatic()) {
         accessor.indentln(NULL_CHECK);
+      }
       accessor.indentln(ref+" = ");
-      
+
       StringBuilder unboxer = new StringBuilder();
-      unboxer.append("v"); 
-      
+      unboxer.append("v");
+
       accessor
           .indentln(unboxer+";")
           .println("}")
           .outdent().println("};")
       ;
     }
-    
+
     MethodBuffer instantiate = cb
       .createMethod("public static Field instantiate()")
       .print("return new ")
       .addImports(Field.class, JavaScriptObject.class);
-    
+
     if (isPrimitive) {
       switch (jni.charAt(0)) {
       case 'Z':
@@ -349,19 +350,19 @@ public class MemberGenerator {
         String imported = instantiate.addImport(fieldType.getQualifiedSourceName());
         instantiate.print("Field("+imported+".class, ");
     }
-    
+
     String enclosing = instantiate.addImport(field.getEnclosingType().getQualifiedSourceName());
     instantiate
         .print(enclosing+".class, ")
         .print("\""+field.getName()+"\", ")
         .print(ReflectionUtilType.getModifiers(field)+", getAccessor());");
-     
+
     String src = out.toString();
     pw.println(src);
     if (isDebug(enclosingType, ReflectionStrategy.FIELD)) {
       logger.log(Type.INFO, "Field provider for "+field.toString()+"\n"+src);
     }
-    
+
     ctx.commit(logger, pw);
     return out.getQualifiedName();
   }
@@ -376,46 +377,46 @@ public class MemberGenerator {
     if (pw == null) {
       return (pkg.length()==0?"":pkg+".")+factoryName;
     }
-    
+
     SourceBuilder<JMethod> out = new SourceBuilder<JMethod>
       ("public final class "+factoryName+" extends Method").setPackage(pkg);
     ClassBuffer cb = out.getClassBuffer().addImports(Method.class);
-    
-    
+
+
     createInvokerMethod(cb, type, method.getReturnType(), method.getName(), method.getParameters(), method.isStatic());
-    
+
     cb
       .createMethod("public static "+factoryName+" instantiate()")
       .returnValue("new "+factoryName+"()");
-    
+
     cb.createConstructor(Modifier.PRIVATE).println("super(invoker());");
-    
+
     GwtRetention retention = manifest.getRetention(method);
-    
+
     if (retention.annotationRetention() > 0) {
       Annotation[] annos = ReflectionUtilType.extractAnnotations(retention.annotationRetention(), method);
       generateGetAnnos(logger, out, annos, ctx);
     } else {
       generateGetAnnos(logger, out, new Annotation[0], ctx);
     }
-    
+
     generateGetParams(logger, cb, method.getParameters());
     generateGetExceptions(logger, cb, method.getThrows());
     generateGetReturnType(logger, cb, method);
     generateGetName(logger, cb, method);
     generateGetModifier(logger, cb, ReflectionUtilType.getModifiers(method));
     generateGetDeclaringClass(logger, cb, method.getEnclosingType(), "?");
-    
-    
+
+
     String src = out.toString();
     if (isDebug(type, ReflectionStrategy.METHOD)) {
       logger.log(Type.INFO, "Method provider for "+method.getReadableDeclaration()+"\n"+src);
     }
-    
+
     pw.println(src);
-    
+
     ctx.commit(logger, pw);
-    
+
     return out.getQualifiedName();
   }
 
@@ -431,15 +432,17 @@ public class MemberGenerator {
   }
 
   private void generateGetAnnos(TreeLogger logger, SourceBuilder<?> sb, Annotation[] annos, GeneratorContext ctx) throws UnableToCompleteException {
-    if (annos.length == 0)return;
-    
+    if (annos.length == 0) {
+      return;
+    }
+
     MethodBuffer getAnno = sb.getClassBuffer().createMethod(
         "public <T extends Annotation> T getAnnotation(Class<T> cls)")
         .setUseJsni(true);
     sb.getClassBuffer().createMethod(
         "public Annotation[] getAnnotations()")
         .returnValue("allAnnos()");
-        
+
     MethodBuffer getAnnos = sb.getClassBuffer().createMethod(
         "private static Annotation[] allAnnos()")
         .println("return new Annotation[]{");
@@ -470,9 +473,9 @@ public class MemberGenerator {
     getAnnos
       .println("};");
   }
-  
 
-  
+
+
   private void generateGetDeclaringClass(TreeLogger logger, ClassBuffer cb, JClassType type, String generic) {
     MethodBuffer getDeclaringClass = cb.createMethod("public Class<"+generic+ "> getDeclaringClass()");
     if (type.isPrivate()) {
@@ -486,7 +489,9 @@ public class MemberGenerator {
   }
 
   private void generateGetExceptions(TreeLogger logger, ClassBuffer cb, JClassType[] exceptions) {
-    if (exceptions.length == 0)return;
+    if (exceptions.length == 0) {
+      return;
+    }
     MethodBuffer getExceptions = cb
         .createMethod("public Class<?>[] getExceptionTypes()")
         .println("return new Class<?>[]{");
@@ -527,7 +532,7 @@ public class MemberGenerator {
     cb.createMethod("public Class<?> getReturnType()").returnValue(
         method.getReturnType().getErasedType().getQualifiedSourceName()+".class");
   }
-  
+
   private void maybeFinishBoxing(PrintBuffer invoke, JType returnType) {
     JPrimitiveType prim = returnType.isPrimitive();
     if (prim != null) {
@@ -544,25 +549,26 @@ public class MemberGenerator {
 
   private void maybeFinishUnboxing(StringBuilder b, JType returnType) {
     JPrimitiveType type = returnType.isPrimitive();
-    if (type != null)
-    switch(type) {
-      case BOOLEAN:
-        b.append(".@java.lang.Boolean::booleanValue()()");
-        break;
-      case CHAR:
-        b.append(".@java.lang.Character::charValue()()");
-        break;
-      case LONG:
-        b.append(")");
-        break;
-      case BYTE:
-      case DOUBLE:
-      case INT:
-      case FLOAT:
-      case SHORT:
-        b.append(".@java.lang.Number::doubleValue()()");
-        break;
-      default:
+    if (type != null) {
+      switch(type) {
+        case BOOLEAN:
+          b.append(".@java.lang.Boolean::booleanValue()()");
+          break;
+        case CHAR:
+          b.append(".@java.lang.Character::charValue()()");
+          break;
+        case LONG:
+          b.append(")");
+          break;
+        case BYTE:
+        case DOUBLE:
+        case INT:
+        case FLOAT:
+        case SHORT:
+          b.append(".@java.lang.Number::doubleValue()()");
+          break;
+        default:
+      }
     }
   }
 
@@ -606,29 +612,29 @@ public class MemberGenerator {
 
     JMethodCall getMemberPool = new JMethodCall(initPool.getSourceInfo(), null, initPool);
     getMemberPool.addArg(classRef);
-    
+
     ManifestMap map = manifests.get();
     com.google.gwt.dev.jjs.ast.JMethod getter = map.findGetterFor(ast, memberGetter());
-    
+
     JMethodCall checkPool = new JMethodCall(initPool.getSourceInfo(), getMemberPool, getter);
     for (JExpression arg : args) {
       checkPool.addArg(arg);
     }
-    
+
     return checkPool;
   }
 
-  protected void createInvokerMethod(ClassBuffer cb, JClassType type, JType returnType, 
+  protected void createInvokerMethod(ClassBuffer cb, JClassType type, JType returnType,
       String methodName, JParameter[] params, boolean isStatic) {
     boolean hasLong = returnType.getJNISignature().equals("J");
-    
+
     StringBuilder functionSig = new StringBuilder();
     StringBuilder jsniSig = new StringBuilder();
     StringBuilder arguments = new StringBuilder();
     // Fill in parameter data
     boolean isNotCtor = !"new".equals(methodName);
     assert isStatic || isNotCtor : "Constructors must be static!";
-    
+
     for (int i = 0, m = params.length; i < m; i++) {
       JType param = params[i].getType();
 //      if (param.isParameterized() != null) {
@@ -657,7 +663,7 @@ public class MemberGenerator {
       }
       hasLong |= "J".equals(param.getJNISignature());
     }
-    
+
     MethodBuffer invoker = cb.addImports(JavaScriptObject.class)
         .createMethod("private static "+JSO+" "+ "invoker()")
         .setUseJsni(true)
@@ -665,14 +671,17 @@ public class MemberGenerator {
     if (isNotCtor) {
       invoker.print("o");
     }
-      if (hasLong)
+      if (hasLong) {
         invoker.addAnnotation(UnsafeNativeLong.class);
+      }
       invoker.println(functionSig + ") {");
       if (!isStatic) {
         invoker.indentln(NULL_CHECK);
       }
       // Build the structure of the method invoker javascript function
-      if (isReturnable(returnType)) invoker.print("return ");
+      if (isReturnable(returnType)) {
+        invoker.print("return ");
+      }
       maybeStartBoxing(invoker, returnType);
       if (!isStatic){
         invoker.print("o.");
@@ -688,18 +697,19 @@ public class MemberGenerator {
         .print(arguments.toString())
         .print(")");
       maybeFinishBoxing(invoker, returnType);
-      
+
       invoker
         .println(";")
         .outdent()
         .println("};");
-      
+
   }
-  
-  protected com.google.gwt.dev.jjs.ast.JMethod getMemberPoolInit(UnifyAstView ast) {
+
+  protected com.google.gwt.dev.jjs.ast.JMethod getMemberPoolInit(UnifyAstView ast) throws UnableToCompleteException {
     ManifestMap map = manifests.get();
     return map.initMethod(ast);
   }
+
   protected boolean isDebug(JClassType type, int memberType) {
     ReflectionStrategy strategy = type.getAnnotation(ReflectionStrategy.class);
     if (strategy == null) {
@@ -710,11 +720,11 @@ public class MemberGenerator {
     }
     return (strategy.debug() & memberType) > 0;
   }
-  
+
   protected boolean isReturnable(JType returnType) {
     return !"V".equals(returnType.getJNISignature());
   }
-  
+
   protected String memberGetter() {
     throw new UnsupportedOperationException("memberGetting not implemented by "+getClass().getName());
   }
@@ -735,8 +745,8 @@ public class MemberGenerator {
   protected String toClass(JClassType param) {
     return param.getErasedType().getQualifiedSourceName()+".class";
   }
-  
-  
+
+
 
   protected String toClass(JParameter param) {
     return param.getType().getErasedType().getQualifiedSourceName()+".class";

@@ -13,7 +13,7 @@
  <url>WeTheInter.net</url>
  <description>
     A set of generator utils to create GWT views and editors from your data models.
-  </description>
+ </description>
 
  <dependencies>
   <dependency>
@@ -28,11 +28,20 @@
   </dependency>
   <dependency>
    <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-core-collect</artifactId>
+   <classifier>sources</classifier>
+  </dependency>
+  <dependency>
+   <groupId>net.wetheinter</groupId>
    <artifactId>xapi-core-ui-autoui</artifactId>
   </dependency>
   <dependency>
    <groupId>net.wetheinter</groupId>
    <artifactId>xapi-gwt-inject</artifactId>
+  </dependency>
+  <dependency>
+   <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-gwt-reflect</artifactId>
   </dependency>
   <dependency>
    <groupId>net.wetheinter</groupId>
@@ -50,6 +59,7 @@
    <groupId>net.wetheinter</groupId>
    <artifactId>xapi-core-ui-autoui</artifactId>
    <classifier>tests</classifier>
+   <scope>test</scope>
    <version>${xapi.version}</version><!--$NO-MVN-MAN-VER$-->
   </dependency>
   <dependency>
@@ -77,5 +87,19 @@
    <scope>provided</scope>
   </dependency>
  </dependencies>
+
+ <build>
+   <plugins>
+     <plugin>
+       <artifactId>maven-surefire-plugin</artifactId>
+       <configuration>
+         <systemPropertyVariables>
+           <name>java.specification.version</name>
+           <value>1.8</value>
+         </systemPropertyVariables>
+       </configuration>
+     </plugin>
+   </plugins>
+ </build>
 
 </project>

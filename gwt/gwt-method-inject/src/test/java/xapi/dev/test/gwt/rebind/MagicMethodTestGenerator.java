@@ -62,7 +62,12 @@ public class MagicMethodTestGenerator implements MagicMethodGenerator, UnifyAstL
     // to execute before anything else in the app.
 
     // Grab our test class
-    JDeclaredType type = ast.searchForTypeBySource(MagicMethodGwtTest.class.getName());
+    JDeclaredType type;
+    try {
+      type = ast.searchForTypeBySource(MagicMethodGwtTest.class.getName());
+    } catch (UnableToCompleteException e) {
+      throw new RuntimeException(e);
+    }
     // Find the method we want to call
     for (JMethod method : type.getMethods()) {
       if (method.getName().equals("callFromGenerator")) {

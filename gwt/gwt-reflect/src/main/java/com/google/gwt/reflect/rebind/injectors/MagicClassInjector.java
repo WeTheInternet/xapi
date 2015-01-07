@@ -18,13 +18,13 @@ import com.google.gwt.dev.jjs.ast.Context;
 import com.google.gwt.dev.jjs.ast.JClassLiteral;
 import com.google.gwt.dev.jjs.ast.JDeclaredType;
 import com.google.gwt.dev.jjs.ast.JExpression;
-import com.google.gwt.dev.jjs.ast.JGwtCreate;
 import com.google.gwt.dev.jjs.ast.JMethod;
 import com.google.gwt.dev.jjs.ast.JMethodBody;
 import com.google.gwt.dev.jjs.ast.JMethodCall;
 import com.google.gwt.dev.jjs.ast.JType;
 import com.google.gwt.dev.jjs.impl.UnifyAst;
 import com.google.gwt.dev.jjs.impl.UnifyAst.UnifyVisitor;
+import com.google.gwt.dev.util.Name.BinaryName;
 import com.google.gwt.reflect.client.strategy.ReflectionStrategy;
 import com.google.gwt.reflect.rebind.ReflectionUtilAst;
 import com.google.gwt.reflect.rebind.ReflectionUtilJava;
@@ -47,7 +47,7 @@ public class MagicClassInjector implements MagicMethodGenerator, UnifyAstListene
   private final HashMap<String, JMethodCall> classEnhancers = new HashMap<String, JMethodCall>();
 
   ReflectionStrategy strategy;
- 
+
   /**
    * Instance created by {@link UnifyAst} before any methods are called.
    */
@@ -64,22 +64,22 @@ public class MagicClassInjector implements MagicMethodGenerator, UnifyAstListene
     // Every recompile should generate fresh results,
     // but we don't want to generate a new type if we recursively access the same type twice.
     MagicClassGenerator.cleanup();
-    
-    
+
+
     MemberGenerator.cleanup();
     // Our annotation generator caches types that it has seen.
     // We want to clear these regularly, so our generator
     // can examine cached, generated types, and avoid needless regeneration.
     GwtAnnotationGenerator.cleanup();
-    
-    
+
+
     injector.remove();
   }
 
     /**
      * Call {@link MagicClassGenerator#execImpl(TreeLogger, ReflectionGeneratorContext, JClassType)},
      * then load (and cache) a jjs {@link JMethodCall} to call the generated class enhancer method.
-     * 
+     *
      * @param clsName -> The name of the class to rebind
      * @param params -> The {@link ReflectionGeneratorContext}
      * @return -> JMethod call MyClassEnhancer.enhance(MyClass.class)
@@ -90,22 +90,22 @@ public class MagicClassInjector implements MagicMethodGenerator, UnifyAstListene
       params.getLogger().log(logLevel, "Binding magic class for " + clsName);
       String srcName = SourceUtil.toSourceName(params.getClazz().getRefType().getName());
       JClassType type = params.getTypeOracle().findType(srcName);
-    
+
       if (type == null) {
         params.getLogger().log(Type.ERROR, "Unable to enhance class; "+srcName+" not found by Gwt type oracle");
         throw new UnableToCompleteException();
       }
-      
+
       StandardGeneratorContext ctx = params.getGeneratorContext();
       String result = MagicClassGenerator.generate(params.getLogger(), params, type);
       ctx.finish(params.getLogger());
-    
+
       params.getLogger().log(logLevel, "Generated Class Enhancer: " + result);
       JDeclaredType success = params.getAst().searchForTypeBySource(result);
-    
+
       //Okay, we've generated the correct magic class subtype;
       //Now pull off its static accessor method to enhance and return our class.
-    
+
       for (JMethod method : success.getMethods()) {
         if (method.isStatic() && method.getName().equals("enhanceClass")) {
           JMethodCall call = new JMethodCall(method.getSourceInfo().makeChild(SourceOrigin.UNKNOWN), null, method);
@@ -120,7 +120,7 @@ public class MagicClassInjector implements MagicMethodGenerator, UnifyAstListene
     @Override
     public JExpression injectMagic(TreeLogger logger, JMethodCall methodCall, JMethod currentMethod,
       Context context, UnifyAstView ast) throws UnableToCompleteException {
-    
+
       JClassLiteral clazz = ReflectionUtilAst.extractClassLiteral(logger, methodCall, 0, ast);
       JType type = clazz.getRefType();
       if (type == null) {
@@ -170,18 +170,19 @@ public class MagicClassInjector implements MagicMethodGenerator, UnifyAstListene
 
     /**
      * Implements a caching layer guarding the {@link #initialize(String, ReflectionGeneratorContext)} method
-     * 
+     *
      * @param key
      * @param params
      * @return
+     * @throws UnableToCompleteException
      */
-    protected JExpression get(String key, ReflectionGeneratorContext params) {
+    protected JExpression get(String key, ReflectionGeneratorContext params) throws UnableToCompleteException {
       //because we cache results, super dev mode recompiles need to skip the
       //cache if the magic class does not exist, thus we test type presence on every get().
 
       JDeclaredType type =
         params.getAst().searchForTypeByBinary(params.getClazz().getRefType().getName());
-      String typeName = JGwtCreate.nameOf(type);
+      String typeName = BinaryName.toSourceName(type.getName());
       String generatedName = ReflectionUtilJava.generatedMagicClassName(typeName);
       try {
         params.getAst().searchForTypeBySource(generatedName);
@@ -204,7 +205,9 @@ public class MagicClassInjector implements MagicMethodGenerator, UnifyAstListene
       try {
         return doRebind(clsName, params);
       } catch (Exception e) {
-        if (e instanceof RuntimeException) throw (RuntimeException)e;
+        if (e instanceof RuntimeException) {
+          throw (RuntimeException)e;
+        }
         throw new RuntimeException("Could not initialize magic class for " + clsName, e);
       }
     }

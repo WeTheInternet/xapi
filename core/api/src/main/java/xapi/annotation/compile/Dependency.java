@@ -5,6 +5,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import xapi.annotation.reflect.MirroredAnnotation;
+
 /**
  * This annotation is used to describe a dependency in a compile.
  * <p>
@@ -24,7 +26,7 @@ import java.lang.annotation.Target;
  * <p>
  * Note that {@link DependencyType#RELATIVE} will check {@link #groupId()} for a value
  * to use as the base of the relative uri; special values like {@link Dependency#DIR_TEMP},
- * {@link Dependency#DIR_BIN}, {@link Dependency#DIR_GEN} or {@link Dependency#DIR_LAUNCH} 
+ * {@link Dependency#DIR_BIN}, {@link Dependency#DIR_GEN} or {@link Dependency#DIR_LAUNCH}
  * can be used as {@link #groupId()} to specify where the resource must be found.
  * <br/>
  * Providing no groupId() when using a {@link DependencyType#RELATIVE} Dependency
@@ -37,13 +39,14 @@ import java.lang.annotation.Target;
  * <p>
  * Note that changing the {@link #version()} will cause the default compilers
  * to discard the classloader / existing runtime environment.
- * 
+ *
  * @author "James X. Nelson (james@wetheinter.net)"
  *
  */
 @Documented
 @Target({})// May only be used as a value in other annotations
 @Retention(RetentionPolicy.RUNTIME)
+@MirroredAnnotation
 public @interface Dependency {
 
   /**
@@ -56,7 +59,7 @@ public @interface Dependency {
   String DIR_LAUNCH = "${dir.cwd}";
   /**
    * The bin directory; whatever directory we can ascertain that the {@link Dependency}
-   * was launched from.  
+   * was launched from.
    * try {
    *   return getClassloader().findResource(toClassLocation(Dependency.class.getName()));
    * } catch (Exception e) {
@@ -66,7 +69,7 @@ public @interface Dependency {
   String DIR_BIN = "${dir.bin}";
   /**
    * The bin directory; whatever directory we can ascertain that the {@link Dependency}
-   * was launched from.  
+   * was launched from.
    * try {
    *   return getClassloader().findResource(toJavaLocation(Dependency.class.getName()));
    *   // toJavaLocation = name.replace(packageName, packageName.replace('.', '/')
@@ -92,18 +95,18 @@ public @interface Dependency {
   /**
    * The war directory; must be set as a system property (or in whatever PropertyService
    * is used by X_Properties).  Some implementations, like the gwt compiler,
-   * will fill this value in for you.  
+   * will fill this value in for you.
    */
   String DIR_WAR = "${dir.target}";
-  
+
   String value();
   String groupId() default "";
   String version() default "";
   String classifier() default "";
   DependencyType dependencyType() default DependencyType.RELATIVE;
-  
+
   public enum DependencyType {
     RELATIVE, ABSOLUTE, MAVEN
   }
-  
+
 }

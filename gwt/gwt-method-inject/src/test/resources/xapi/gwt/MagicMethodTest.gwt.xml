@@ -3,7 +3,7 @@
 <module>
   
   <!-- Grab the module xml that declares the configuration property we need to extend. -->
-  <inherits name="com.google.gwt.MagicMethods"/>
+  <inherits name="com.google.gwt.core.MagicMethods"/>
   <inherits name="com.google.gwt.core.Core"/>
   
   <!-- Tell gwt we want to swap out a method in production mode. -->

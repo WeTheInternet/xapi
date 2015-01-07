@@ -222,6 +222,10 @@
                   <name>gwt.args</name>
                   <value>-out /tmp/gwtc</value>
                 </property>
+                <property>
+                  <name>java.specification.version</name>
+                  <value>1.8</value>
+                </property>
               </systemProperties>
             </configuration>
           </plugin>

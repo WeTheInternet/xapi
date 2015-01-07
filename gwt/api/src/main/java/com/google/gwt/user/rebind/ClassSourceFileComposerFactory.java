@@ -29,35 +29,13 @@ import com.google.gwt.core.ext.GeneratorContext;
  * Factory clas to create <code>SourceFileComposer</code> instances.
  * 
  */
-public class SourceFileComposerFactory {
+public class ClassSourceFileComposerFactory {
   /**
    * Represents a java source file category. Right now support interface and
    * class, later should support abstract class, static class, etc.
    */
-  public static class JavaSourceCategory extends Enum {
-    /**
-     * This type is a class.
-     */
-    public static final JavaSourceCategory CLASS;
-
-    /**
-     * This type is a interface.
-     */
-    public static final JavaSourceCategory INTERFACE;
-    static Map<String, Enum> pool = new HashMap<String, Enum>();
-
-    static {
-      CLASS = new JavaSourceCategory("class");
-      INTERFACE = new JavaSourceCategory("interface");
-    }
-
-    public static JavaSourceCategory require(String key) {
-      return (JavaSourceCategory) Enum.require(key, pool);
-    }
-
-    protected JavaSourceCategory(String key) {
-      super(key, pool);
-    }
+  enum JavaSourceCategory {
+    CLASS, INTERFACE;
   }
 
   private List<String> annotations = new ArrayList<String>();
@@ -78,7 +56,7 @@ public class SourceFileComposerFactory {
 
   private String privacy;
   
-  public SourceFileComposerFactory(String packageName, String className) {
+  public ClassSourceFileComposerFactory(String packageName, String className) {
     this.packageName = packageName;
     this.className = className;
     this.privacy = "public";
@@ -106,7 +84,7 @@ public class SourceFileComposerFactory {
    */
   public SourceWriter createSourceWriter(GeneratorContext ctx,
       PrintWriter printWriter) {
-    return new SourceFileComposer(ctx, printWriter, getCreatedPackage(),
+    return new ClassSourceFileComposer(ctx, printWriter, getCreatedPackage(),
         getAnnotationDeclarations(), getCreatedClassShortName(),
         getSuperclassName(), getInterfaceNames(), getImports(), classCategory,
         classComment, getPrivacy());
@@ -123,7 +101,7 @@ public class SourceFileComposerFactory {
    *           or invalid
    */
   public SourceWriter createSourceWriter(PrintWriter printWriter) {
-    return new SourceFileComposer(null, printWriter, getCreatedPackage(),
+    return new ClassSourceFileComposer(null, printWriter, getCreatedPackage(),
         getAnnotationDeclarations(), getCreatedClassShortName(),
         getSuperclassName(), getInterfaceNames(), getImports(), classCategory,
         classComment, getPrivacy());

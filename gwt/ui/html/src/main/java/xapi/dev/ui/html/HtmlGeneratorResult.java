@@ -1,7 +1,5 @@
 package xapi.dev.ui.html;
 
-import xapi.source.X_Source;
-
 import com.google.gwt.core.ext.typeinfo.JClassType;
 
 public class HtmlGeneratorResult {
@@ -18,9 +16,6 @@ public class HtmlGeneratorResult {
     return finalName;
   }
 
-  public final String getFinalNameQualified() {
-    return X_Source.qualifiedName(packageName, finalName);
-  }
   /**
    * @return the sourceType
    */

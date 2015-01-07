@@ -1,17 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<parent>
-		<groupId>net.wetheinter</groupId>
-		<artifactId>xapi-core-parent</artifactId>
-		<version>0.5-SNAPSHOT</version>
-	</parent>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-core-parent</artifactId>
+    <version>0.5-SNAPSHOT</version>
+  </parent>
 
-	<artifactId>xapi-core-util</artifactId>
-	<packaging>jar</packaging>
-	<name>XApi - Public services exposed by XApi core</name>
-	<url>WeTheInter.net</url>
-	<description>
+  <artifactId>xapi-core-util</artifactId>
+  <packaging>jar</packaging>
+  <name>XApi - Public services exposed by XApi core</name>
+  <url>WeTheInter.net</url>
+  <description>
     This module contains static services and default implementations for other core services.
 
     In order to keep core dependencies as clean as possible,  
@@ -21,33 +22,77 @@
     and the static accessor goes in xapi-core-util.
   </description>
 
-	<dependencies>
+  <dependencies>
 
-		<dependency>
-			<groupId>net.wetheinter</groupId>
-			<artifactId>xapi-core-inject</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>net.wetheinter</groupId>
-			<artifactId>xapi-core-reflect</artifactId>
-		</dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-core-inject</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-core-reflect</artifactId>
+    </dependency>
 
-		<!-- Testing dependencies -->
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<scope>test</scope>
-		</dependency>
-	</dependencies>
+    <!-- Testing dependencies -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
 
-	<build>
-		<plugins>
-			<plugin>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.bsc.maven</groupId>
+        <artifactId>maven-processor-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>annogen</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>process</goal>
+            </goals>
+            <inherited>false</inherited>
+            <configuration>
+              <processors>
+                <processor>
+                  xapi.dev.processor.AnnotationMirrorProcessor
+                </processor>
+              </processors>
+              <outputDirectory>${project.build.directory}/generated-sources/annotations</outputDirectory>
+              <appendSourceArtifacts>true</appendSourceArtifacts>
+              <additionalSourceDirectories>
+                <additionalSourceDirectory>
+                  ${project.basedir}/../api/src/main/java
+                </additionalSourceDirectory>
+              </additionalSourceDirectories>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>build-helper-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>add-source</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <inherited>false</inherited>
+            <configuration>
+              <sources>
+                <source>${project.build.directory}/generated-sources/annotations</source>
+                <source>${project.build.directory}/generated-sources/xapi</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
-		</plugins>
-	</build>
+    </plugins>
+  </build>
 
 
 

@@ -3,6 +3,8 @@
 <module>
 	  <!-- Pull in X_Inject, which has all common utilities we need -->
     <source path="reflect" />
+    <source path="reflect/impl" />
+    <source path="reflect/service" />
     <inherits name="xapi.X_Inject" />
     <inherits name="com.google.gwt.reflect.Reflect" />
     <!-- Take the injection-free utility, to keep dev mode happy -->

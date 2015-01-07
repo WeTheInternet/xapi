@@ -79,9 +79,9 @@ public class CollectionServiceDefault implements CollectionService{
     }
   };
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   private final CollectionProxy<Class<?>,Comparator<?>> comparators =
-    newProxy(Class.class.cast(Class.class), Comparator.class, CollectionOptions.asConcurrent(true).build());
+    newProxy((Class)Class.class, (Class)Comparator.class, CollectionOptions.asConcurrent(true).build());
 
 
   public CollectionServiceDefault() {

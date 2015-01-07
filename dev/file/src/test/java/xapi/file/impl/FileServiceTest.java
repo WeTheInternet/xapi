@@ -1,5 +1,8 @@
 package xapi.file.impl;
-import static xapi.test.Assert.*;
+
+import static xapi.test.Assert.assertFalse;
+import static xapi.test.Assert.assertTrue;
+
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -16,9 +19,9 @@ public class FileServiceTest {
   static {
     FileServiceTest.class.getClassLoader().setPackageAssertionStatus("xapi.file", true);
   }
-  
+
   final FileService service = X_Inject.singleton(FileService.class);
-  
+
   @Test
   public void testChmodValidation() throws Throwable {
     File f = File.createTempFile("testFile", "");
@@ -35,7 +38,12 @@ public class FileServiceTest {
   }
 
   private void assertChmod(int chmod, File f) throws Throwable {
-    Set<PosixFilePermission> permissions = Files.getPosixFilePermissions(Paths.get(f.getCanonicalPath()));
+    Set<PosixFilePermission> permissions;
+    try {
+      permissions = Files.getPosixFilePermissions(Paths.get(f.getCanonicalPath()));
+    } catch (UnsupportedOperationException e) {
+      return;// running on windows... ew.
+    }
     if ((chmod & 0x100) == 0) {
       assertFalse(permissions.contains(PosixFilePermission.OWNER_EXECUTE));
     } else {
@@ -51,7 +59,7 @@ public class FileServiceTest {
     } else {
       assertTrue(permissions.contains(PosixFilePermission.OWNER_READ));
     }
-    
+
     if ((chmod & 0x10) == 0) {
       assertFalse(permissions.contains(PosixFilePermission.GROUP_EXECUTE));
     } else {
@@ -67,7 +75,7 @@ public class FileServiceTest {
     } else {
       assertTrue(permissions.contains(PosixFilePermission.GROUP_READ));
     }
-    
+
     if ((chmod & 0x1) == 0) {
       assertFalse(permissions.contains(PosixFilePermission.OTHERS_EXECUTE));
     } else {
@@ -83,6 +91,6 @@ public class FileServiceTest {
     } else {
       assertTrue(permissions.contains(PosixFilePermission.OTHERS_READ));
     }
-    
+
   }
 }

@@ -51,14 +51,14 @@ import xapi.source.read.JavaVisitor.TypeData;
 public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
     MethodVisitor<SourceBuilder<?>> {
 
-  protected SourceBuilder<?> context;
-  private boolean once;
-  private boolean useJsni = true;
-  private String methodName;
+  protected SourceBuilder<?>          context;
+  private boolean                     once;
+  private boolean                     useJsni = true;
+  private String                      methodName;
   private final LinkedHashSet<String> parameters;
   private final LinkedHashSet<String> exceptions;
-  private TypeData returnType;
-  private int tryDepth;
+  private TypeData                    returnType;
+  private int                         tryDepth;
 
   public MethodBuffer(SourceBuilder<?> context) {
     this(context, INDENT);
@@ -148,8 +148,9 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
 
   @Override
   public String addImport(String cls) {
-    if (cls.replace(context.getPackage() + ".", "").indexOf('.') == -1)
+    if (cls.replace(context.getPackage() + ".", "").indexOf('.') == -1) {
       return cls;
+    }
     return context.getImports().addImport(cls);
   }
 
@@ -168,6 +169,18 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
       IsParameter param = JavaLexer.lexParam(parameter);
       this.parameters.add(param.toString());
     }
+    return this;
+  }
+
+  public MethodBuffer addParameter(Class<?> type, String name) {
+    String typeName = addImport(type);
+    this.parameters.add(typeName + " " + name);
+    return this;
+  }
+
+  public MethodBuffer addParameter(String type, String name) {
+    String typeName = addImport(type);
+    this.parameters.add(typeName + " " + name);
     return this;
   }
 
@@ -245,7 +258,7 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
       returnType = new TypeData("", cls.getCanonicalName());
     } else {
       returnType = new TypeData(pkgName, cls.getCanonicalName().replace(
-          pkgName + ".", ""));
+        pkgName + ".", ""));
     }
     return this;
   }
@@ -268,7 +281,7 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
     ClassBuffer cls = new ClassBuffer(context, indent);
     cls.setDefinition(classDef, classDef.trim().endsWith("{"));
     assert cls.privacy == 0 : "A local class cannot be "
-        + Modifier.toString(cls.privacy);
+      + Modifier.toString(cls.privacy);
     addToEnd(cls);
     setNotIndent();
     return cls;
@@ -299,13 +312,13 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
   }
 
   public final MethodBuffer makeJsni() {
-    setUseJsni(true).makeFinal();
+    setUseJsni(true).makeNative();
     return this;
   }
 
   public final MethodBuffer makeNative() {
     if ((modifier & Modifier.ABSTRACT) > 0)
-     {
+    {
       modifier &= ~Modifier.ABSTRACT;// "Cannot be both native and abstract";
     }
     modifier = modifier | Modifier.NATIVE;
@@ -330,23 +343,23 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
    */
   public MethodBuffer returnValue(String name) {
     return println((name.matches("\\s*(throw|return)\\s.*") ? "" : "return ")
-        + name + (name.endsWith(";") ? "" : ";"));
+      + name + (name.endsWith(";") ? "" : ";"));
   }
 
   @Override
   public ParameterVisitor<SourceBuilder<?>> visitParameter() {
     return new ParameterVisitor<SourceBuilder<?>>() {
 
-      int modifier;
+      int                         modifier;
       private SimpleStack<String> annotations = new SimpleStack<String>();
 
       @Override
       public AnnotationMemberVisitor<SourceBuilder<?>> visitAnnotation(
           String annoName, String annoBody, SourceBuilder<?> receiver) {
         annoName = addImport(annoName.startsWith("@") ? annoName.substring(1)
-            : annoName);
+          : annoName);
         annotations.add("@" + annoName
-            + (annoBody.length() > 0 ? "(" + annoBody + ")" : ""));
+          + (annoBody.length() > 0 ? "(" + annoBody + ")" : ""));
         return null;
       }
 
@@ -389,7 +402,7 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
   public AnnotationMemberVisitor<SourceBuilder<?>> visitAnnotation(
       String annoName, String annoBody, SourceBuilder<?> receiver) {
     addAnnotation("@" + annoName
-        + (annoBody.trim().length() > 0 ? "(" + annoBody + ")" : ""));
+      + (annoBody.trim().length() > 0 ? "(" + annoBody + ")" : ""));
     return null;
   }
 
@@ -401,20 +414,24 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
 
   private boolean validModification(int modifier, int change) {
     if ((change & Modifier.ABSTRACT) > 0) {
-      if ((modifier & Modifier.STATIC) > 0)
+      if ((modifier & Modifier.STATIC) > 0) {
         throw new AssertionError("You cannot make a static method abstract.\n"
-            + this);
-      if ((modifier & Modifier.FINAL) > 0)
+          + this);
+      }
+      if ((modifier & Modifier.FINAL) > 0) {
         throw new AssertionError("You cannot make a final method abstract.\n"
-            + this);
+          + this);
+      }
     }
     if ((modifier & Modifier.ABSTRACT) > 0) {
-      if ((change & Modifier.STATIC) > 0)
+      if ((change & Modifier.STATIC) > 0) {
         throw new AssertionError("You cannot make an abstract method static.\n"
-            + this);
-      if ((change & Modifier.FINAL) > 0)
+          + this);
+      }
+      if ((change & Modifier.FINAL) > 0) {
         throw new AssertionError("You cannot make an abstract method final.\n"
-            + this);
+          + this);
+      }
     }
     return true;
   }

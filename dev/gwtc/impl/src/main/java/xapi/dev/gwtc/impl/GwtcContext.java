@@ -11,9 +11,6 @@ import java.util.concurrent.Callable;
 
 import javax.inject.Provider;
 
-import com.google.gwt.reflect.shared.GwtReflect;
-import com.google.gwt.reflect.shared.GwtReflectJre;
-
 import xapi.annotation.compile.Dependency;
 import xapi.annotation.compile.Resource;
 import xapi.annotation.ui.UiTemplateBuilder;
@@ -25,14 +22,17 @@ import xapi.dev.scanner.X_Scanner;
 import xapi.dev.scanner.impl.ClasspathResourceMap;
 import xapi.dev.source.XmlBuffer;
 import xapi.gwtc.api.Gwtc;
-import xapi.gwtc.api.GwtcProperties;
 import xapi.gwtc.api.Gwtc.AncestorMode;
+import xapi.gwtc.api.GwtcProperties;
 import xapi.inject.impl.SingletonProvider;
 import xapi.log.X_Log;
 import xapi.util.X_Debug;
 import xapi.util.X_String;
 import xapi.util.api.ConvertsValue;
 import xapi.util.api.ReceivesValue;
+
+import com.google.gwt.reflect.shared.GwtReflect;
+import com.google.gwt.reflect.shared.GwtReflectJre;
 
 @SuppressWarnings({"unchecked", "rawtypes", "unused"})
 public class GwtcContext {
@@ -61,7 +61,7 @@ public class GwtcContext {
           } else if (from instanceof Package) {
             return ((Package) from).getName();
           } else {
-            X_Log.warn(getClass(), "Unsupported toString object type", 
+            X_Log.warn(getClass(), "Unsupported toString object type",
                 from == null ? "null" : from.getClass(), from);
             return String.valueOf(from);
           }
@@ -127,12 +127,12 @@ public class GwtcContext {
     public final Object source;
     private GwtcUnit parent;
     private Set<GwtcUnit> children = new LinkedHashSet<GwtcUnit>();
-    
+
     public String generateGwtXml(Gwtc gwtc, String pkg, String name) {
       xml = GwtcXmlBuilder.generateGwtXml(gwtc, pkg, name);
       return xml.getInheritName();
     }
-    
+
     public boolean isFindAllParents() {
       for (AncestorMode mode : gwtc.inheritanceMode()) {
         if (mode == AncestorMode.INHERIT_ALL_PARENTS) {
@@ -153,7 +153,7 @@ public class GwtcContext {
       }
       return false;
     }
-    
+
     public boolean isFindChild() {
       for (AncestorMode mode : gwtc.inheritanceMode()) {
         if (mode == AncestorMode.INHERIT_CHILDREN) {
@@ -171,7 +171,7 @@ public class GwtcContext {
       }
       return false;
     }
-    
+
     public boolean isFindSuperClasses() {
       for (AncestorMode mode : gwtc.inheritanceMode()) {
         if (mode == AncestorMode.INHERIT_SUPER_CLASSES) {
@@ -191,7 +191,7 @@ public class GwtcContext {
      * <br/>
      * This method should NOT be used to recurse parent hierarchy;
      * instead use {@link #getParents()}
-     * 
+     *
      * @return the next parent with @Gwtc, if there is one.
      */
     public Object getParent() {
@@ -265,12 +265,12 @@ public class GwtcContext {
 
     public void addChild(GwtcUnit data) {
       children.add(data);
-      assert data.parent == null || data.parent == this : 
+      assert data.parent == null || data.parent == this :
         "GwtcUnit "+data+" already has a parent; "+ data.parent+
         "; cannot set "+this+" as new parent.";
       data.parent = this;
     }
-    
+
     @Override
     public String toString() {
       return "GwtcUnit "+source+" "+type;
@@ -434,7 +434,7 @@ public class GwtcContext {
         search : while (gwtc == null) {
           int ind = parentName.lastIndexOf('.');
           if (ind == -1) {
-            break;  
+            break;
           }
           parentName = parentName.substring(0, ind);
           pkg = GwtReflect.getPackage(parentName);
@@ -467,7 +467,7 @@ public class GwtcContext {
 
   protected void inherit(GwtcUnit data) {
     if (data.isFindAllParents()) {
-      
+
     } else if (data.isFindParent()) {
       Object o = data.getParent();
     }
@@ -578,7 +578,7 @@ public class GwtcContext {
   public XmlBuffer getGwtXml() {
     return module.getBuffer();
   }
-  
+
   public void setRenameTo(String renameTo) {
     module.setRenameTo(renameTo);
   }
@@ -664,7 +664,7 @@ public class GwtcContext {
       ind = parentName.lastIndexOf('.');
       pkg = GwtReflect.getPackage(parentName);
       X_Log.debug(getClass(), "Checking parent package", "'"+parentName+"'", pkg != null);
-      
+
       if (pkg != null) {
         gwtc = pkg.getAnnotation(Gwtc.class);
         if (gwtc != null && addPackage(pkg)) {

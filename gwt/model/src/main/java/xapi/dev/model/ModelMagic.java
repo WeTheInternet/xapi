@@ -123,8 +123,9 @@ public class ModelMagic implements UnifyAstListener, MagicMethodGenerator {
   }
 
   public static void initialize() {
-    if (active.get() == null)
+    if (active.get() == null) {
       active.set(X_Inject.instance(ModelMagic.class));
+    }
   }
 
 
@@ -137,8 +138,9 @@ public class ModelMagic implements UnifyAstListener, MagicMethodGenerator {
       } else {
         StringTokenizer tokens = new StringTokenizer(fqcn, ".");
         StringBuilder b = new StringBuilder('M');
-        while (tokens.hasMoreElements())
+        while (tokens.hasMoreElements()) {
           b.append(tokens.nextToken().charAt(0)).append('_');
+        }
         minified = b+fqcn.substring(fqcn.lastIndexOf('.')+1);
       }
       nameMap.put(fqcn, minified);
@@ -163,8 +165,9 @@ public class ModelMagic implements UnifyAstListener, MagicMethodGenerator {
   private com.google.gwt.core.ext.typeinfo.JClassType root;
   public com.google.gwt.core.ext.typeinfo.JClassType getRootType
     (TreeLogger logger, GeneratorContext ctx) throws UnableToCompleteException {
-    if (root != null)
+    if (root != null) {
       return root;
+    }
     String rootType = X_Properties.getProperty(X_Namespace.PROPERTY_MODEL_ROOT,
       ModelGwt.class.getName());
     root = ctx.getTypeOracle().findType(rootType);
@@ -173,8 +176,9 @@ public class ModelMagic implements UnifyAstListener, MagicMethodGenerator {
         bailNoGwtModel(logger);
       } else {
         root = ctx.getTypeOracle().findType(ModelGwt.class.getName());
-        if (root == null)
+        if (root == null) {
           bailNoGwtModel(logger);
+        }
       }
     }
     logger.log(Type.DEBUG, "");

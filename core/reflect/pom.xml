@@ -27,6 +27,11 @@
       <groupId>net.wetheinter</groupId>
       <artifactId>xapi-core-api</artifactId>
     </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
 </project>

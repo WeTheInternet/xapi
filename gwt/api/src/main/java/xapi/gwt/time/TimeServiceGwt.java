@@ -18,18 +18,20 @@ import com.google.gwt.i18n.shared.DateTimeFormat.PredefinedFormat;
 public class TimeServiceGwt extends AbstractTimeService {
 
   private static final long serialVersionUID = -7873490109878690176L;
-  
+
+  // TODO move this dependency out of X_Core so we don't have to depend on GWT I18N by default
   private final SingletonProvider<DateTimeFormat> formatter = new SingletonProvider<DateTimeFormat>() {
+    @Override
     protected DateTimeFormat initialValue() {
       return DateTimeFormat.getFormat(PredefinedFormat.ISO_8601);
     };
   };
-  
+
   @Override
   public String timestamp() {
     return formatter.get().format(new Date());
   }
-  
+
   @Override
   public void runLater(final Runnable runnable) {
     Scheduler.get().scheduleDeferred(new ScheduledCommand() {

@@ -3,7 +3,6 @@
  */
 package xapi.dev.elemental;
 
-import static xapi.log.X_Log.info;
 import static xapi.util.X_String.join;
 
 import java.lang.reflect.Modifier;
@@ -25,9 +24,11 @@ import xapi.elemental.api.PotentialNode;
 import xapi.elemental.impl.LazyHtmlConverter;
 import xapi.source.X_Source;
 import xapi.time.impl.RunOnce;
+import xapi.ui.html.X_Html;
 import xapi.ui.html.api.El;
 import xapi.ui.html.api.HtmlSnippet;
 import xapi.ui.html.api.HtmlTemplate;
+import xapi.ui.html.api.NoUi;
 import xapi.ui.html.api.Style;
 import xapi.util.X_Debug;
 import xapi.util.api.ConvertsValue;
@@ -49,6 +50,10 @@ import elemental.dom.Element;
  */
 public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGeneratorResult> {
 
+  protected static class GeneratedState {
+    boolean needsServiceField;
+    public String serviceType;
+  }
   private static final String KEY_ELEMENT = "_el";
   private static final String SUFFIX_MODEL_TO_ELEMENT = "__toHtml";
   private static final String FIELD_STYLIZE = "__stylize";
@@ -109,7 +114,6 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
     String inputHash = toHash(ast, modelIsTemplate ? templateType : modelType , templateType);
     ElementalGeneratorResult existingType = findExisting(ast, out.getPackage(), out.getQualifiedName());
     existingType.setSourceType(templateType);
-    ctx.setExistingProvider(existingType.getFinalName(), existingType);
     ElementalGeneratorResult existingResult = existingTypesUnchanged(logger, ast, existingType, inputHash);
     // Check if there is an existing type, and that it's generated hashes match our input type.
     // update classname in case there is a stale existing provider
@@ -222,15 +226,13 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
       return existingResult;
     }
 
-    existing = newContext(type, templateType.getPackageName(), templateType.getFinalName());
-
     SourceBuilder<ElementalGeneratorResult> buffer =
-      new SourceBuilder<ElementalGeneratorResult>("public class "+existing.getFinalName())
+      new SourceBuilder<ElementalGeneratorResult>("public class "+templateType.getFinalName())
         .setPackage(type.getPackage().getName())
-        .setPayload(existing);
+        .setPayload(templateType);
 
     return printProviderTemplate(
-        logger.branch(Type.TRACE, "Generating messaging template for "+type.getName()),
+        logger.branch(Type.DEBUG, "Generating element template for "+type.getName()),
         ast, type, inputHash, buffer);
   }
 
@@ -253,6 +255,8 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
       classRunOnce = out.addImport(RunOnce.class),
       classTemplate = out.addImport(templateType.getQualifiedSourceName());
 
+    GeneratedState generatedState = new GeneratedState();
+    generatedState.serviceType = classElemental;
 
     PrintBuffer stylizeField = out
         .createField(receivesElemental, FIELD_STYLIZE)
@@ -294,36 +298,50 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
     if (staticProvider) {
       // Empty root means the simplest possible action.
       // Create a static final LazyElement to supply queries for html
-      String
-        lazyConverter = out.addImport(LazyHtmlConverter.class)
-          +"<" + classTemplate + ", "+ out.addImport(Element.class) + ">",
-        converter = out.addImport(ConvertsValue.class)
-          +"<" + classTemplate + ", String>"
 
-        ;
+      String elementConverter = out.addImport(ConvertsValue.class)
+          +"<" + classTemplate + ", Element>";
       PrintBuffer init = out
-        .createField(lazyConverter, "_CLONE")
-        .makePrivate()
-        .makeStatic()
-        .makeFinal()
-        .getInitializer();
+          .createField(elementConverter, "_FACTORY_")
+          .makePrivate()
+          .makeStatic()
+          .makeFinal()
+          .getInitializer();
 
-      init.println("new "+lazyConverter+"(")
-            .indent()
-            .println("new " + converter+"() {")
-            .indent()
-            .println("public String convert("+classTemplate+" "+KEY_FROM+") {")
+      if (root.isDynamic()) {
+        init.println("new "+elementConverter+"() {")
+          .indent()
+          .println("public Element convert("+classTemplate+" "+KEY_FROM+") {")
 
-            .indentln("return "+METHOD_TO_POTENTIAL+ "(" + KEY_FROM + ").toSource();")
+          .indentln("return "+METHOD_TO_POTENTIAL+ "(" + KEY_FROM + ").getElement();")
 
-            .println("}")
-            .outdent()
-            .print("}")
-            .outdent()
+          .println("}")
+          .outdent()
+          .println("};");
+      } else {
+        String
+          lazyConverter = out.addImport(LazyHtmlConverter.class)
+          +"<" + classTemplate + ", "+ out.addImport(Element.class) + ">";
+        String converter = out.addImport(ConvertsValue.class)
+            +"<" + classTemplate + ", String>";
+        init.println("new "+lazyConverter+"(")
+          .indent()
+          .println("new " + converter+"() {")
+          .indent()
+          .println("public String convert("+classTemplate+" "+KEY_FROM+") {")
+
+          .indentln("return "+METHOD_TO_POTENTIAL+ "(" + KEY_FROM + ").toSource();")
+
+          .println("}")
+          .outdent()
+          .print("}")
+          .outdent()
           .println(");");
+      }
+
 
       toElement.println(KEY_ELEMENT +" = new "+potentialElement+"(")
-            .indentln("_CLONE.convert("+ KEY_FROM + ")")
+            .indentln("_FACTORY_.convert("+ KEY_FROM + ")")
             .println(");");
     } else {
       // There is a root tag, we might not get away w/ a static provider
@@ -339,7 +357,7 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
     String elementKey = KEY_ELEMENT;
     root.setNameElement(elementKey);
     for (El el : root.getElements()) {
-      elementKey = printElement(logger, el, root, toHtml, null, null, elementKey, KEY_FROM);
+      elementKey = printElement(logger, el, root, out, toHtml, styleInit, null, elementKey, KEY_FROM, generatedState);
     }
     root.setNameElement(elementKey);
 
@@ -414,7 +432,9 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
     final String messagesQname = templateType.getQualifiedSourceName();
     for (JClassType type : templateType.getFlattenedSupertypeHierarchy()) {
       for (JMethod method : type.getMethods()) {
-
+        if (method.isAnnotationPresent(NoUi.class)) {
+          continue;
+        }
         // TODO handle parameter types that are @Named
 
         if (method.getParameters().length==0) {
@@ -438,6 +458,10 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
               .println(");");
               continue;
             }
+            HtmlGeneratorNode node = root.getNode(method.getName());
+//            if (node == null) {
+//              continue;
+//            }
             String returnType = out.addImport(
               method.getReturnType().getQualifiedSourceName()
             );
@@ -447,23 +471,29 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
 //          method.getReturnType().isParameterized().getTypeArgs();
             // Create a public static method which accepts a NodeBuilder, and a string,
             // and appends our template result to said builder.
-            HtmlGeneratorNode node = root.getNode(method.getName());
-
-            info(getClass(), "Method: ",method,"Node",node);
 
             String makeDeep = "";//result.getRoot(method.getEnclosingType(), ast.getTypeOracle()).hasChildren() ? ", true" : "";
             String methodName = method.getName()+SUFFIX_MODEL_TO_ELEMENT;
             toHtml.println(root.getNameElement()+".addChild(")
-            .indentln(methodName+"(" + KEY_FROM +")"+makeDeep)
-            .println(");");
+              .indentln(methodName+"(" + KEY_FROM +")"+makeDeep)
+              .println(");");
             MethodBuffer printEl = out.createMethod("public static final "+ potentialElement+ " "+methodName+"()")
               .addParameters(classTemplate+" "+KEY_FROM)
-              .println(potentialElement+" "+KEY_ELEMENT+" = ")
-              .indentln("new "+potentialElement+"(\""+node.rootElementTag()+"\");");
+              .println(potentialElement+" "+KEY_ELEMENT+" = ");
+            String tagName = "";
+            if (node.rootElementTag().length() > 0) {
+              if (node.rootElementTag().charAt(0)=='#') {
+                tagName = "from."+node.rootElementTag().substring(1)+"()";
+              } else {
+                tagName = "\""+node.rootElementTag()+"\"";
+              }
+            }
+            printEl
+              .indentln("new "+potentialElement+"("+tagName+");");
 
             // Apply any important style
             for (El el : node.getElements()) {
-              printElement(logger, el, node, printEl, styleInit, method, KEY_ELEMENT, KEY_FROM);
+              printElement(logger, el, node, out, printEl, styleInit, method, KEY_ELEMENT, KEY_FROM, generatedState);
             }
             printEl.returnValue(KEY_ELEMENT);
           }
@@ -485,11 +515,13 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
       TreeLogger logger,
       El el,
       HtmlGeneratorNode node,
+      ClassBuffer out,
       MethodBuffer printEl,
       PrintBuffer styleInit,
       JMethod method,
       String keyElement,
-      String keyFrom) throws UnableToCompleteException {
+      String keyFrom,
+      GeneratedState generatedState) throws UnableToCompleteException {
     String newKey = keyElement;
     String methodName = method == null ? null : method.getName();
     for (String html : el.html()) {
@@ -504,18 +536,40 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
               throw new UnableToCompleteException();
             } else {
               JClassType cls = method.getReturnType().isClassOrInterface();
+              String invocation = keyFrom+"."+method.getName()+"()";
               if (cls == null) {
                 if (method.getReturnType().isPrimitive()!= null) {
-                  printEl.println(keyElement+".append(String.valueOf("+keyFrom+"."+method.getName()+"()));");
+                  printEl.print(keyElement+".append(")
+                    .print("String.valueOf("+invocation+")")
+                    .println(");");
                 } else {
                   logger.log(Type.ERROR, "Method return type "+method.getReturnType()+" is not supported by ElementalGenerator");
                   throw new UnableToCompleteException();
                 }
               } else {
                 if (method.getReturnType().isClassOrInterface().isAssignableTo(ctx.getTypeCharSequence())) {
-                  printEl.println(keyElement+".append("+keyFrom+"."+method.getName()+"());");
+                  printEl.println(keyElement+".append("+invocation+");");
                 } else if (method.getReturnType().isClassOrInterface().isAssignableTo(ctx.getTypePotentialElement())) {
-                  printEl.println(keyElement+".addChild("+keyFrom+"."+method.getName()+"());");
+                  printEl.println(keyElement+".addChild("+invocation+");");
+                } else {
+                  for (Class<?> toHtml : el.useToHtml()) {
+                    if (cls.getQualifiedBinaryName().equals(toHtml.getName())) {
+                      printEl.print(keyElement+".append(");
+                      // Print a X_Html.toHtml() method call here.
+                      String xhtml = printEl.addImport(X_Html.class);
+                      String type = out.addImport(method.getReturnType().getQualifiedSourceName());
+                      printEl.print(xhtml+".toHtml("+type+".class, "+invocation+", _"+KEY_SERVICE+")");
+                      if (!generatedState.needsServiceField) {
+                        generatedState.needsServiceField = true;
+                        styleInit.println("_"+KEY_SERVICE+"="+KEY_SERVICE+";");
+                        out.createField(generatedState.serviceType, "_"+KEY_SERVICE)
+                          .makeStatic()
+                          .makePrivate();
+                      }
+                      printEl.println(");");
+                      break;
+                    }
+                  }
                 }
                 // TODO handle element, by using callbacks in potential node,
                 // This can be done by inserting tagged elements to replace once attached.

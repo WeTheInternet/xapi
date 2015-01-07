@@ -161,7 +161,9 @@ public class ElementalGeneratorContext {
   public void setExistingProvider(
       String implName,
       ElementalGeneratorResult result) {
-    assert !results.containsKey(implName);
+    assert !results.containsKey(implName) || results.get(implName) == result
+        : "Duplicate results found for "+implName+": "+
+        results.get(implName).getFinalName() +" and "+result.getFinalName();
     results.put(implName, result);
   }
 

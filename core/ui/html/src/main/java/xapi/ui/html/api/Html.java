@@ -27,4 +27,10 @@ public @interface Html {
    * unspecified means the children will be rendered in the order declared.
    */
   String[] renderOrder() default {};
+
+  /**
+   * @return false to treat the template as a static singleton (one and only one instance is used);
+   * return true (default) to create a new element on every invocation.
+   */
+  boolean isDynamic() default true;
 }

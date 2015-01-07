@@ -4,13 +4,6 @@ import java.lang.reflect.Modifier;
 
 import javax.inject.Provider;
 
-import com.google.gwt.core.ext.Generator;
-import com.google.gwt.core.ext.TreeLogger;
-import com.google.gwt.core.ext.TreeLogger.Type;
-import com.google.gwt.core.ext.UnableToCompleteException;
-import com.google.gwt.core.ext.typeinfo.JClassType;
-import com.google.gwt.dev.jjs.UnifyAstView;
-
 import xapi.annotation.common.Property;
 import xapi.annotation.compile.Import;
 import xapi.dev.source.ClassBuffer;
@@ -23,6 +16,13 @@ import xapi.ui.html.api.El;
 import xapi.ui.html.api.Html;
 import xapi.ui.html.api.HtmlSnippet;
 import xapi.util.api.ConvertsValue;
+
+import com.google.gwt.core.ext.Generator;
+import com.google.gwt.core.ext.TreeLogger;
+import com.google.gwt.core.ext.TreeLogger.Type;
+import com.google.gwt.core.ext.UnableToCompleteException;
+import com.google.gwt.core.ext.typeinfo.JClassType;
+import com.google.gwt.dev.jjs.UnifyAstView;
 
 public class HtmlSnippetGenerator extends AbstractHtmlGenerator <HtmlGeneratorResult> {
 
@@ -110,7 +110,11 @@ public class HtmlSnippetGenerator extends AbstractHtmlGenerator <HtmlGeneratorRe
       .print(buffer+" out = new "+buffer+"(")
     ;
     if (!Html.ROOT_ELEMENT.equals(documentType)) {
-      converter.print("\""+documentType+"\"");
+      if (documentType.charAt(0)=='#') {
+        converter.print("from."+documentType.substring(1)+"()");
+      } else {
+        converter.print("\""+documentType+"\"");
+      }
     }
     converter.println( ");");
 
@@ -125,7 +129,13 @@ public class HtmlSnippetGenerator extends AbstractHtmlGenerator <HtmlGeneratorRe
         String name = el.tag();
         converter.println("out").indent();
         if (name.length()>0) {
-          converter.println(".makeTag(\""+name+"\")");
+          if (name.charAt(0)=='#') {
+            // The tagname is a method reference...
+            // TODO validate the method name, and allow for full @fully.qualified.Names::toMethods()
+            converter.println(".makeTag(from."+name.substring(1)+"())");
+          } else {
+            converter.println(".makeTag(\""+name+"\")");
+          }
         }
 
         for (String clsName : el.className()) {
@@ -183,4 +193,8 @@ public class HtmlSnippetGenerator extends AbstractHtmlGenerator <HtmlGeneratorRe
     }
   }
 
+  @Override
+  protected Type getLogLevel() {
+    return Type.TRACE;
+  }
 }

@@ -18,10 +18,10 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import xapi.annotation.compile.Dependency;
+import xapi.annotation.compile.Dependency.DependencyType;
 import xapi.annotation.compile.DependencyBuilder;
 import xapi.annotation.compile.Resource;
 import xapi.annotation.compile.ResourceBuilder;
-import xapi.annotation.compile.Dependency.DependencyType;
 import xapi.dev.gwtc.api.GwtcService;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
@@ -42,7 +42,7 @@ public abstract class GwtcServiceAbstract implements GwtcService {
   protected class Replacement {
     protected String newValue;
     protected int start, end;
-    
+
     public Replacement(int start, int end, String path) {
       this.start = start;
       this.end = end;
@@ -62,18 +62,18 @@ public abstract class GwtcServiceAbstract implements GwtcService {
 
   public GwtcServiceAbstract(ClassLoader resourceLoader) {
     context = new GwtcContext(this, resourceLoader);
-    
+
     finished = new HashSet<String>();
     genName = context.getGenName();
     tempDir = X_File.createTempDir(genName);
     String qualifiedName = GEN_PREFIX+"."+genName;
-        
+
     entryPoint = new SourceBuilder<GwtcService>("public class "+ genName).setPackage(GEN_PREFIX);
     out = new GwtcEntryPointBuilder(entryPoint);
-    
+
     context.setEntryPoint(qualifiedName);
     context.addGwtXmlSource(GEN_PREFIX);
-    
+
   }
 
 
@@ -114,7 +114,7 @@ public abstract class GwtcServiceAbstract implements GwtcService {
       }
     }
   }
-  
+
   @Override
   public void addGwtModules(Class<?> clazz) {
     context.addClass(clazz);
@@ -134,39 +134,40 @@ public abstract class GwtcServiceAbstract implements GwtcService {
   }
 
   protected void generateWar(String warDir, String moduleName) {
-    final XmlBuffer 
+    final XmlBuffer
       buffer = new XmlBuffer("html"),
       head = buffer.makeTag("head"),
       body= buffer.makeTag("body")
     ;
     buffer.printBefore(getHostPageDocType());
-    
+
     context.generateAll(new File(warDir), moduleName, head, body);
 
     head.makeTag("script")
     .setAttribute("type", "text/javascript")
     .setAttribute("src", getScriptLocation(moduleName));
-    
+
     String hostPage = buffer.toString();
     X_File.saveFile(warDir +"/public", "index.html", hostPage);
     info("Generated host page:\n"+hostPage);
     X_Log.info("Generate war into ", warDir);
   }
-  
+
   protected String getHostPageDocType() {
     return "<!doctype html>\n";
   }
-  
+
   private String getScriptLocation(String genName) {
     return //genName+"/"+
           genName+".nocache.js";
   }
 
-  
+
   protected void doLog(LogLevel level, String msg) {
     X_Log.log(level, msg);
   }
-  
+
+  @Override
   public File getTempDir() {
     return tempDir;
   }
@@ -186,7 +187,7 @@ public abstract class GwtcServiceAbstract implements GwtcService {
   public void trace(String log) {
     doLog(LogLevel.TRACE, log);
   }
-  
+
   public void debug(String log) {
     doLog(LogLevel.DEBUG, log);
   }
@@ -208,7 +209,7 @@ public abstract class GwtcServiceAbstract implements GwtcService {
         .setDependencyType(DependencyType.MAVEN)
         .build()
         );
-    List<Method> 
+    List<Method>
       beforeClass = new ArrayList<>(),
       before = new ArrayList<>(),
       test = new ArrayList<>(),
@@ -273,22 +274,22 @@ public abstract class GwtcServiceAbstract implements GwtcService {
     String simpleName = entryPoint.getImports().addImport(clazz);
     MethodBuffer runner = entryPoint.getClassBuffer().createMethod(
         "private final void "+methodName+"("+simpleName+" field)");
-    
+
     for (Method before : befores) {
       runner.println("field."+before.getName()+"();");
     }
-    
+
     return methodName;
   }
 
-  protected String generateTestRunner(Class<?> clazz, List<Method> beforeClasses, 
-      List<Method> befores, List<Method> tests, List<Method> afters, 
+  protected String generateTestRunner(Class<?> clazz, List<Method> beforeClasses,
+      List<Method> befores, List<Method> tests, List<Method> afters,
       List<Method> afterClasses) {
     String field = out.formatInstanceProvider(clazz);
     String methodName = "testRun_"+field;
-    
+
     MethodBuffer runner = classBuffer().createMethod("private final void "+methodName);
-    // Setup 
+    // Setup
     for (Method beforeClass : beforeClasses) {
       String shortName = runner.addImport(beforeClass.getDeclaringClass());
       runner.println(shortName+"."+beforeClass.getName()+"();");
@@ -328,7 +329,7 @@ public abstract class GwtcServiceAbstract implements GwtcService {
       shortName = runner.addImport(afterClass.getDeclaringClass());
       runner.println(shortName+"."+afterClass.getName()+"();");
     }
-    
+
     return methodName+"();";
   }
 

@@ -3,6 +3,7 @@
 <module>
  
   <inherits name="com.google.gwt.core.MagicMethods" />
+  <inherits name="com.google.gwt.i18n.I18N" />
   
   <!--Include our emulation layer, xapi.emul.* -->
   <super-source path="emul"/><!-- 

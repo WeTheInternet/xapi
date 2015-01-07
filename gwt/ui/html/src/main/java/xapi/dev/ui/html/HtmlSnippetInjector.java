@@ -2,6 +2,8 @@ package xapi.dev.ui.html;
 
 import java.util.List;
 
+import xapi.ui.html.api.HtmlSnippet;
+
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.core.ext.UnableToCompleteException;
@@ -20,8 +22,6 @@ import com.google.gwt.dev.jjs.ast.JMethod;
 import com.google.gwt.dev.jjs.ast.JMethodCall;
 import com.google.gwt.dev.jjs.ast.JNewInstance;
 import com.google.gwt.reflect.rebind.ReflectionUtilAst;
-
-import xapi.ui.html.api.HtmlSnippet;
 
 /**
  * A magic method injector for the methods X_Html.toHtml and X_Html.toSnippet:
@@ -88,7 +88,7 @@ public class HtmlSnippetInjector implements MagicMethodGenerator {
     JExpression inst = null;
     for (JMethod method : uiType.getMethods()) {
       if (method instanceof JConstructor) {
-        JNewInstance newInst = new JNewInstance(info, (JConstructor) method, null, args.get(args.size()-1).makeStatement().getExpr());
+        JNewInstance newInst = new JNewInstance(info, (JConstructor) method, args.get(args.size()-1).makeStatement().getExpr());
         inst = newInst;
         logger.log(Type.INFO, method.getSignature()+" : "+newInst.getArgs());
         break;
@@ -97,8 +97,9 @@ public class HtmlSnippetInjector implements MagicMethodGenerator {
     if (isToHtml) {
       JDeclaredType snippet = ast.searchForTypeBySource(HtmlSnippet.class.getName());
       for (JMethod method : snippet.getMethods()) {
-        if (method.getName().equals("convert"))
+        if (method.getName().equals("convert")) {
           return new JMethodCall(info, inst, method, args.get(instanceIndex));
+        }
       }
     }
     if (inst == null) {

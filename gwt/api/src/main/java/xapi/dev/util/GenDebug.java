@@ -35,17 +35,17 @@
 package xapi.dev.util;
 
 import java.lang.reflect.Field;
-import java.util.Arrays;
 
 import com.google.gwt.core.ext.PropertyOracle;
 import com.google.gwt.dev.cfg.BindingProperty;
 import com.google.gwt.dev.cfg.ConfigurationProperty;
+import com.google.gwt.dev.cfg.DynamicPropertyOracle;
 import com.google.gwt.dev.cfg.Properties;
-import com.google.gwt.dev.cfg.StaticPropertyOracle;
 import com.google.gwt.dev.shell.ModuleSpacePropertyOracle;
 
 /**
- * A place to put general-purpose debugging tools for use during code generation.
+ * A place to put general-purpose debugging tools for use during code
+ * generation.
  *
  *
  * @author James X. Nelson (james@wetheinter.net)
@@ -54,56 +54,56 @@ import com.google.gwt.dev.shell.ModuleSpacePropertyOracle;
 public class GenDebug {
 
   /**
-   * In case you're too lazy to step through the debugger to find all set properties,
-   * just make a call here to print out all known properties at gwt compile time.
+   * In case you're too lazy to step through the debugger to find all set
+   * properties, just make a call here to print out all known properties at gwt
+   * compile time.
    *
-   * @param oracle - The property oracle to inspect and print out
+   * @param oracle
+   *          - The property oracle to inspect and print out
    */
   public static void dumpProperties(final PropertyOracle oracle) {
-    if (oracle instanceof ModuleSpacePropertyOracle){
+    if (oracle instanceof ModuleSpacePropertyOracle) {
       ModuleSpacePropertyOracle mod = (ModuleSpacePropertyOracle) oracle;
       Properties props;
-      try{
+      try {
         Field field = mod.getClass().getDeclaredField("props");
         field.setAccessible(true);
         props = (Properties) field.get(mod);
-        for (BindingProperty binding : props.getBindingProperties()){
-          System.out.println(binding.getName()+" : "+binding.getConstrainedValue());
+        for (BindingProperty binding : props.getBindingProperties()) {
+          System.out.println(binding.getName() + " : " + binding.getConstrainedValue());
         }
         System.out.println();
-        for (ConfigurationProperty prop : props.getConfigurationProperties()){
-          System.out.print(prop.getName()+" : ");
+        for (ConfigurationProperty prop : props.getConfigurationProperties()) {
+          System.out.print(prop.getName() + " : ");
           System.out.println(
-              (prop.isMultiValued()||prop.allowsMultipleValues()?prop.getValues():prop.getValue())
-              );
+            (prop.isMultiValued() || prop.allowsMultipleValues() ? prop.getValues() : prop.getValue())
+            );
         }
-      }catch (Exception e) {
+      } catch (Exception e) {
         e.printStackTrace();
       }
     }
-    if (oracle instanceof StaticPropertyOracle){
-      StaticPropertyOracle stat = (StaticPropertyOracle) oracle;
-      for (BindingProperty binding : stat.getOrderedProps()){
-        System.out.println(binding.getName()+" : "+binding.getConstrainedValue());
+    if (oracle instanceof DynamicPropertyOracle) {
+      DynamicPropertyOracle stat = (DynamicPropertyOracle) oracle;
+      for (BindingProperty binding : stat.getAccessedProperties()) {
+        System.out.println("Accessed: " + binding.getName() + " : " + binding.getConstrainedValue());
       }
-      System.out.println("Ordered props: "+Arrays.asList(stat.getOrderedPropValues()));
-      try{
+      try {
         ConfigurationProperty[] configProps;
         Field field = stat.getClass().getDeclaredField("configProps");
         field.setAccessible(true);
         configProps = (ConfigurationProperty[]) field.get(stat);
         System.out.println("Config props: ");
-        for (ConfigurationProperty prop : configProps){
-          System.out.print(prop.getName()+" : ");
+        for (ConfigurationProperty prop : configProps) {
+          System.out.print(prop.getName() + " : ");
           System.out.println(
-              (prop.isMultiValued()||prop.allowsMultipleValues()?prop.getValues():prop.getValue())
-          );
+            (prop.isMultiValued() || prop.allowsMultipleValues() ? prop.getValues() : prop.getValue())
+            );
         }
-      }catch (Exception e) {
+      } catch (Exception e) {
         e.printStackTrace(System.out);
       }
     }
   }
-
 
 }

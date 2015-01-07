@@ -55,7 +55,7 @@ import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.NotFoundException;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
-import com.google.gwt.user.rebind.SourceFileComposerFactory;
+import com.google.gwt.user.rebind.ClassSourceFileComposerFactory;
 import com.google.gwt.user.rebind.SourceWriter;
 
 public class SyncInjectionGenerator extends AbstractInjectionGenerator{
@@ -108,7 +108,7 @@ public class SyncInjectionGenerator extends AbstractInjectionGenerator{
     if (printWriter == null) {
       return new RebindResult(RebindMode.USE_EXISTING, packageName+"."+simpleName);
     }
-    SourceFileComposerFactory composer = new SourceFileComposerFactory(packageName, simpleName);
+    ClassSourceFileComposerFactory composer = new ClassSourceFileComposerFactory(packageName, simpleName);
     composer.setSuperclass(SingletonInitializer.class.getName()+
         "<" + type.getQualifiedSourceName()+">");
     composer.addImport(ReceivesValue.class.getName());

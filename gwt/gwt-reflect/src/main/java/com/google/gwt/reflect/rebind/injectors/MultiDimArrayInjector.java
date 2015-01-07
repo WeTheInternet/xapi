@@ -1,6 +1,6 @@
 package com.google.gwt.reflect.rebind.injectors;
 
-import static com.google.gwt.reflect.rebind.ReflectionUtilAst.*;
+import static com.google.gwt.reflect.rebind.ReflectionUtilAst.extractImmutableNode;
 
 import java.util.List;
 
@@ -40,7 +40,7 @@ public class MultiDimArrayInjector implements MagicMethodGenerator{
       cur = ((JArrayType)cur).getElementType();
       emptyDims = Lists.add(emptyDims, JAbsentArrayDimension.INSTANCE);
     }
-    
+
     if (args.size() == 3) {
       // we have a typed call to GwtReflect.newArray(Class, int, int); we know we have two dimensions
       // the Array.newInstance call is (Class, [int), which is a length of 2
@@ -52,7 +52,7 @@ public class MultiDimArrayInjector implements MagicMethodGenerator{
       assert args.size() == 2 : "Malformed arguments sent to MultiDimArrayInjector; "
           + "the only valid method calls have the signature (Class, int, int) or (Class, [int)";
       // we have an untyped call to Array.newInstance
-      // TODO: have a runtime fallback so we can perform non-strict int 
+      // TODO: have a runtime fallback so we can perform non-strict int
       JNewArray newArr = extractImmutableNode(logger, JNewArray.class, args.get(1), ast, true);
       sizedDims = newArr.initializers;
     }
@@ -62,17 +62,16 @@ public class MultiDimArrayInjector implements MagicMethodGenerator{
     }
 
     SourceInfo info = methodCall.getSourceInfo().makeChild();
-    List<JClassLiteral> classLiterals = Lists.create();
+    JClassLiteral classLiteral = null;
 
     cur = type;
     while (cur instanceof JArrayType) {
       // Add array type wrappers for the number of requested dimensions
-      JClassLiteral classLit = new JClassLiteral(info.makeChild(), cur);
-      classLiterals = Lists.add(classLiterals, classLit);
+      classLiteral = new JClassLiteral(info.makeChild(), cur);
       cur = ((JArrayType) cur).getElementType();
     }
     List<JExpression> dims = Lists.addAll(sizedDims, emptyDims);
-    return new JNewArray(info, (JArrayType)type, dims, null, classLiterals);
+    return new JNewArray(info, (JArrayType)type, dims, null, classLiteral);
   }
 
 }

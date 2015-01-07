@@ -74,7 +74,8 @@ import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.linker.EmittedArtifact.Visibility;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.shared.GWT;
-import com.google.gwt.user.rebind.SourceFileComposerFactory;
+import com.google.gwt.user.rebind.ClassSourceFileComposerFactory;
+import com.google.gwt.user.rebind.ClassSourceFileComposerFactory;
 import com.google.gwt.user.rebind.SourceWriter;
 
 /**
@@ -313,8 +314,8 @@ public abstract class AbstractInjectionGenerator extends IncrementalGenerator{
       ctx.commitArtifact(logger, artifact);
 
 
-      SourceFileComposerFactory composer =
-          new SourceFileComposerFactory(implPackage, generatedName);
+      ClassSourceFileComposerFactory composer =
+          new ClassSourceFileComposerFactory(implPackage, generatedName);
       composer.setPrivacy("public final");
 
       composer.addImport(com.google.gwt.core.client.GWT.class.getName());
@@ -461,8 +462,8 @@ public abstract class AbstractInjectionGenerator extends IncrementalGenerator{
         }
         logger.log(Type.TRACE, "Newly Generating provider "+generatedName+" <- "+qualifiedSourceName);
 
-        SourceFileComposerFactory composer =
-            new SourceFileComposerFactory(packageName, generatedName);
+        ClassSourceFileComposerFactory composer =
+            new ClassSourceFileComposerFactory(packageName, generatedName);
         composer.setSuperclass(SingletonInitializer.class.getName() +
         		                  "<" +simpleName0+">");
         composer.addImport(cleanedCanonical);

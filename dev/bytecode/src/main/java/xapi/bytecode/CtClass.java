@@ -236,8 +236,9 @@ public abstract class CtClass {
     /* Note: this method is overridden by CtClassType
      */
     void checkModify() throws RuntimeException {
-        if (isFrozen())
-            throw new RuntimeException(getName() + " class is frozen");
+        if (isFrozen()) {
+          throw new RuntimeException(getName() + " class is frozen");
+        }
 
         // isModified() must return true after this method is invoked.
     }
@@ -305,10 +306,11 @@ public abstract class CtClass {
     public final String getSimpleName() {
         String qname = qualifiedName;
         int index = qname.lastIndexOf('.');
-        if (index < 0)
-            return qname;
-        else
-            return qname.substring(index + 1);
+        if (index < 0) {
+          return qname;
+        } else {
+          return qname.substring(index + 1);
+        }
     }
 
     /**
@@ -317,10 +319,11 @@ public abstract class CtClass {
     public final String getPackageName() {
         String qname = qualifiedName;
         int index = qname.lastIndexOf('.');
-        if (index < 0)
-            return null;
-        else
-            return qname.substring(0, index);
+        if (index < 0) {
+          return null;
+        } else {
+          return qname.substring(0, index);
+        }
     }
 
     /**
@@ -330,8 +333,9 @@ public abstract class CtClass {
      */
     public void setName(String name) {
         checkModify();
-        if (name != null)
-            qualifiedName = name;
+        if (name != null) {
+          qualifiedName = name;
+        }
     }
 
     /**
@@ -396,9 +400,9 @@ public abstract class CtClass {
             };
             cf.renameClass(cm);
             return cm.values();
+        } else {
+          return null;
         }
-        else
-            return null;
     }
 
     /**
@@ -1101,8 +1105,9 @@ public abstract class CtClass {
     public void detach() {
         ClassPool cp = getClassPool();
         CtClass obj = cp.removeCached(getName());
-        if (obj != this)
-            cp.cacheCtClass(getName(), obj, false);
+        if (obj != this) {
+          cp.cacheCtClass(getName(), obj, false);
+        }
     }
 
     /**
@@ -1236,8 +1241,9 @@ public abstract class CtClass {
         int pos = filename.lastIndexOf(File.separatorChar);
         if (pos > 0) {
             String dir = filename.substring(0, pos);
-            if (!dir.equals("."))
-                new File(dir).mkdirs();
+            if (!dir.equals(".")) {
+              new File(dir).mkdirs();
+            }
         }
 
         DataOutputStream out
@@ -1293,8 +1299,9 @@ public abstract class CtClass {
         }
 
         private void init() throws IOException {
-            if (file == null)
-                file = new FileOutputStream(filename);
+            if (file == null) {
+              file = new FileOutputStream(filename);
+            }
         }
 
         @Override
@@ -1365,9 +1372,11 @@ public abstract class CtClass {
 
     public String getEnclosedName() {
       String pkg = getPackageName();
-      if (pkg == null)
+      if (pkg == null) {
         return getName();
-      return getName().substring(pkg.length());
+      }
+      String type = getName().substring(pkg.length());
+      return type.startsWith(".") ? type.substring(1) : type;
     }
 
 }

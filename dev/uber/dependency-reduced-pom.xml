@@ -23,13 +23,31 @@
         <artifactId>maven-shade-plugin</artifactId>
       </plugin>
       <plugin>
-        <artifactId>maven-jar-plugin</artifactId>
+        <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
+          <skipTests>${xapi.skip.test}</skipTests>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-jar-plugin</artifactId>
+        <goals>
+          <goal>test-jar</goal>
+        </goals>
+        <configuration>
+          <forceCreation>true</forceCreation>
           <finalName>${project.artifactId}-${project.version}-tmp</finalName>
         </configuration>
       </plugin>
     </plugins>
   </build>
+  <profiles>
+    <profile>
+      <id>release</id>
+      <properties>
+        <xapi.skip.test>false</xapi.skip.test>
+      </properties>
+    </profile>
+  </profiles>
   <dependencies>
     <dependency>
       <groupId>net.wetheinter</groupId>
@@ -38,5 +56,8 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+  <properties>
+    <xapi.skip.test>true</xapi.skip.test>
+  </properties>
 </project>
 

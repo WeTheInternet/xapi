@@ -9,8 +9,9 @@ public class X_Html {
 
   private X_Html() {}
 
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   public static <T> String toHtml(Class<?> template, Class<? extends T> cls, T o, StyleService<?> context) {
-    return toSnippet(template, cls, context).convert(o);
+    return toSnippet(template, (Class)cls, context).convert(o);
   }
 
   public static <T> String toHtml(Class<? extends T> cls, T o, StyleService<?> context) {

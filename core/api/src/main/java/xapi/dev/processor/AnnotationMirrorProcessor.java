@@ -67,7 +67,7 @@ import xapi.dev.source.SourceBuilder;
  */
 
 @SupportedAnnotationTypes({ "xapi.annotation.reflect.MirroredAnnotation" })
-@SupportedSourceVersion(SourceVersion.RELEASE_7)
+@SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class AnnotationMirrorProcessor extends AbstractProcessor {
 
   private final HashMap<String, AnnotationManifest> generatedMirrors;
@@ -165,8 +165,9 @@ public class AnnotationMirrorProcessor extends AbstractProcessor {
 
   private AnnotationManifest addAnnotation(TypeElement element) {
     String annoName = element.getQualifiedName().toString();
-    if (generatedMirrors.containsKey(annoName))
+    if (generatedMirrors.containsKey(annoName)) {
       return generatedMirrors.get(annoName);
+    }
     AnnotationManifest manifest = new AnnotationManifest(annoName);
     generatedMirrors.put(annoName, manifest);
     PackageElement pkg = processingEnv.getElementUtils().getPackageOf(element);

@@ -1,5 +1,6 @@
 package com.google.gwt.dev.jjs;
 
+import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.dev.javac.StandardGeneratorContext;
 import com.google.gwt.dev.jdt.RebindPermutationOracle;
@@ -50,7 +51,7 @@ public interface UnifyAstView {
    * @return - The type, if it exists
    * @throws NoClassDefFoundError if the type is not found.
    */
-  JDeclaredType searchForTypeByBinary(String binaryTypeName);
+  JDeclaredType searchForTypeByBinary(String binaryTypeName) throws UnableToCompleteException;
 
   /**
    * Finds an assimilates a class file from the given fully.qualified.Source.Name.
@@ -66,7 +67,7 @@ public interface UnifyAstView {
    * @return - The type, if it exists
    * @throws NoClassDefFoundError if class is unavailable to gwt classpath
    */
-  JDeclaredType searchForTypeBySource(String sourceTypeName);
+  JDeclaredType searchForTypeBySource(String sourceTypeName) throws UnableToCompleteException;
 
   /**
    * @return the {@link RebindPermutationOracle} for use in calling gwt generators.

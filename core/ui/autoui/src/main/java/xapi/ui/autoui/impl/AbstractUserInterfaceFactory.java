@@ -25,19 +25,20 @@ import xapi.util.api.ConvertsValue;
 @SuppressWarnings("rawtypes")
 public abstract class AbstractUserInterfaceFactory implements UserInterfaceFactory {
 
+  @SuppressWarnings("unchecked")
   @Override
   public <T, U extends UserInterface<T>> U createUi(Class<? extends T> type, Class<? super U> uiType) {
     UiRenderingContext[] options = getOptions(type);
-    List<UiRenderingContext> 
+    List<UiRenderingContext>
       head = new ArrayList<UiRenderingContext>(),
       body = new ArrayList<UiRenderingContext>(),
       tail = new ArrayList<UiRenderingContext>()
     ;
-    
+
     for (UiRenderingContext ctx : options) {
       (ctx.isHead()?head:ctx.isTail()?tail:body).add(ctx);
     }
-    return instantiateUi(type, uiType, options);
+    return (U) instantiateUi((Class)type, (Class)uiType, options);
   }
 
   protected abstract UiRenderingContext[] getOptions(Class<?> type);
@@ -133,6 +134,7 @@ public abstract class AbstractUserInterfaceFactory implements UserInterfaceFacto
     }
   }
 
+  @Override
   public BeanValueProvider getBeanProvider(Class<?> cls) {
     BeanValueProvider bean = new BeanValueProvider();
     ConvertsValue<Object, Object> valueConverter = new ConvertsValue<Object, Object>() {
@@ -146,7 +148,7 @@ public abstract class AbstractUserInterfaceFactory implements UserInterfaceFacto
     recursiveAddBeanValues(bean, cls, valueConverter, "", 0);
     return bean;
   }
-  
+
   protected abstract void recursiveAddBeanValues(BeanValueProvider bean, Class<?> cls, ConvertsValue<Object, Object> valueConverter, String prefix, int depth);
 
   protected String getNameFromMethod(Method from) {
@@ -156,17 +158,17 @@ public abstract class AbstractUserInterfaceFactory implements UserInterfaceFacto
     String name = from.getName();
     if (name.startsWith("get") || name.startsWith("has")) {
       if (name.length() > 3 && Character.isUpperCase(name.charAt(3))) {
-        name = Character.toLowerCase(name.charAt(3)) + 
+        name = Character.toLowerCase(name.charAt(3)) +
             (name.length() > 4 ? name.substring(4) : "");
       }
     } else if (name.startsWith("is")) {
       if (name.length() > 2 && Character.isUpperCase(name.charAt(2))) {
-        name = Character.toLowerCase(name.charAt(2)) + 
+        name = Character.toLowerCase(name.charAt(2)) +
             (name.length() > 3 ? name.substring(3) : "");
       }
     }
     return name;
-    
+
   }
   protected String getName(Class<?> from) {
     if (from.isAnnotationPresent(Named.class)) {
@@ -175,11 +177,12 @@ public abstract class AbstractUserInterfaceFactory implements UserInterfaceFacto
     return from.getName();
   }
 
+  @SuppressWarnings("unchecked")
   private final <T, U extends UserInterface<T>> U instantiateUi(
       final Class<? extends T> type,
       final Class<? super U> uiType,
       final UiRenderingContext[] head) {
-    final U ui = newUi(type, uiType);
+    final U ui = (U) newUi((Class)type, (Class)uiType);
     try {
       return ui;
     } finally {

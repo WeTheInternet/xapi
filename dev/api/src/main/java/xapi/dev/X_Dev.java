@@ -19,10 +19,11 @@ public class X_Dev {
 	public static URL toUrl(String url) {
     // Normalize
     if (!url.endsWith(File.separator)) {
-      if (!url.endsWith(".jar"))
+      if (!url.endsWith(".jar")) {
         url += File.separator;
+      }
     }
-    if (!url.matches("[a-z]*:.*")) {
+    if (!url.matches("[a-z]*:.*")||url.matches("[a-z]:[\\\\].*")) {
         url = "file:"+url;
     }
     // toUrl
@@ -37,7 +38,7 @@ public class X_Dev {
 	  // We purposely don't cache this value so users can change it at runtime.
 	  String loc = X_Properties.getProperty(X_Namespace.PROPERTY_XAPI_HOME);
 	  try {
-	    
+
   	  if (loc == null) {
   	    // use a temporary directory instead
   	    File f = File.createTempFile("xapi", "home");
@@ -70,8 +71,9 @@ public class X_Dev {
     try {
       String loc = cp.toURI().toString().replace("file:", "");
       int ind = loc.indexOf("jar!");
-      if (ind == -1)
+      if (ind == -1) {
         return loc;
+      }
       return loc.substring(0, ind+3);
     } catch (Exception e) {
       throw X_Debug.rethrow(e);
@@ -84,5 +86,5 @@ public class X_Dev {
     }
     return urls;
   }
-	
+
 }

@@ -53,7 +53,7 @@ import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.NotFoundException;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
-import com.google.gwt.user.rebind.SourceFileComposerFactory;
+import com.google.gwt.user.rebind.ClassSourceFileComposerFactory;
 import com.google.gwt.user.rebind.SourceWriter;
 
 public class AsyncInjectionGenerator extends AbstractInjectionGenerator{
@@ -102,8 +102,8 @@ public class AsyncInjectionGenerator extends AbstractInjectionGenerator{
     if (printWriter == null) {
       return new RebindResult(RebindMode.USE_EXISTING, packageName+"."+generatedName);
     }
-    SourceFileComposerFactory composer =
-        new SourceFileComposerFactory(packageName, generatedName);
+    ClassSourceFileComposerFactory composer =
+        new ClassSourceFileComposerFactory(packageName, generatedName);
     composer.setPrivacy("public final");
     composer.addImplementedInterface("ReceivesValue<ReceivesValue<" +simpleName+">>"
         );

@@ -41,6 +41,8 @@ public @interface El {
 
   Import[] imports() default {};
 
+  Class<?>[] useToHtml() default {};
+
   /**
    *  Default element content:
    * <pre>

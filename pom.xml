@@ -45,16 +45,16 @@
   <xapi.version>0.5-SNAPSHOT</xapi.version>
   <xapi.test.version>0.4</xapi.test.version>
   <xapi.log.level>INFO</xapi.log.level>
-  <gwt.version>2.6.2</gwt.version>
+  <gwt.version>2.7.2</gwt.version>
   <gwt.plugin.version>2.6.0</gwt.plugin.version>
-  <xapi.gwt.version>2.6.2</xapi.gwt.version>
+  <xapi.gwt.version>2.7.2</xapi.gwt.version>
   <playn.version>1.5.1</playn.version>
   <appengine.version>1.7.6</appengine.version>
   <guava.version>13.0.1</guava.version>
   <android.maven.version>3.4.0</android.maven.version>
-  <maven.version>3.0.5</maven.version>
+  <maven.version>3.2.5</maven.version>
   <maven.plugin.version>2.2.1</maven.plugin.version>
-  <plexus.version>3.0.1</plexus.version>
+  <plexus.version>3.0.21</plexus.version>
   <selenium.version>2.31.0</selenium.version>
   <relative.output>target</relative.output>
   <xapi.release>true</xapi.release>
@@ -770,7 +770,7 @@
     <plugin>
      <groupId>org.apache.maven.mojo</groupId>
      <artifactId>maven-plugin-plugin</artifactId>
-     <version>3.2</version>
+     <version>3.3</version>
      <configuration>
       <goalPrefix>xapi</goalPrefix>
      </configuration>
@@ -809,7 +809,7 @@
     </plugin>
     <plugin>
      <artifactId>maven-shade-plugin</artifactId>
-     <version>2.0</version>
+     <version>2.3</version>
      <executions>
       <execution>
        <phase>package</phase>

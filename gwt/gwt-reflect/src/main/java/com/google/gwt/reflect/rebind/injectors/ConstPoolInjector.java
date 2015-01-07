@@ -40,20 +40,21 @@ public class ConstPoolInjector implements MagicMethodGenerator, UnifyAstListener
 
   private static final Type logLevel = Type.TRACE;
   private JMethodCall rememberClass;
-  
+
   @Override
   public JExpression injectMagic(TreeLogger logger, JMethodCall methodCall, JMethod enclosingMethod,
     Context context, UnifyAstView ast) throws UnableToCompleteException {
 
     ReflectionGeneratorContext ctx = new ReflectionGeneratorContext(logger, null, methodCall, enclosingMethod, context, ast);
-    
+
     HashMap<String,JPackage> packages = new HashMap<String,JPackage>();
     LinkedHashMap<JClassType,ReflectionStrategy> retained = new LinkedHashMap<JClassType,ReflectionStrategy>();
     ReflectionStrategy defaultStrategy = ConstPoolInjector.class.getAnnotation(ReflectionStrategy.class);
     TypeOracle oracle = ctx.getTypeOracle();
     boolean doLog = logger.isLoggable(logLevel);
-    if (doLog)
+    if (doLog) {
       logger = logger.branch(logLevel, "Injecting all remaining members into ClassPool");
+    }
     for (com.google.gwt.core.ext.typeinfo.JClassType type : oracle.getTypes()) {
       ReflectionStrategy strategy = type.getAnnotation(ReflectionStrategy.class);
       if (strategy == null) {
@@ -91,9 +92,9 @@ public class ConstPoolInjector implements MagicMethodGenerator, UnifyAstListener
 
     SourceInfo methodSource = methodCall.getSourceInfo().makeChild(SourceOrigin.UNKNOWN);
 
-    JMethod newMethod = new JMethod(methodSource, "enhanceAll", methodCall.getTarget().getEnclosingType(), ast.getProgram().getTypeVoid(), 
+    JMethod newMethod = new JMethod(methodSource, "enhanceAll", methodCall.getTarget().getEnclosingType(), ast.getProgram().getTypeVoid(),
         false, true, true, AccessModifier.PUBLIC);
-    
+
     newMethod.setOriginalTypes(ast.getProgram().getTypeVoid(), methodCall.getTarget().getOriginalParamTypes());
     JMethodBody body = new JMethodBody(methodSource);
     newMethod.setBody(body);
@@ -101,13 +102,16 @@ public class ConstPoolInjector implements MagicMethodGenerator, UnifyAstListener
     for (Entry<JClassType,ReflectionStrategy> type : retained.entrySet()) {
       JClassType cls = type.getKey();
       if (cls.isPrivate())
+       {
         continue;//use a jsni helper instead here.
-      if (cls.getName().endsWith(ReflectionUtilJava.MAGIC_CLASS_SUFFIX) 
+      }
+      if (cls.getName().endsWith(ReflectionUtilJava.MAGIC_CLASS_SUFFIX)
           || cls.getName().contains(MemberGenerator.METHOD_SPACER)
           || cls.getName().contains(MemberGenerator.FIELD_SPACER)
           || cls.getName().contains(MemberGenerator.CONSTRUCTOR_SPACER)
-          )
+          ) {
         continue;
+      }
       JType asType = ast.getProgram().getFromTypeMap(cls.getQualifiedSourceName());
       if (asType == null) {
         continue;
@@ -115,13 +119,14 @@ public class ConstPoolInjector implements MagicMethodGenerator, UnifyAstListener
       JMethodCall call = new JMethodCall(methodSource.makeChild(SourceOrigin.UNKNOWN), null, magicClass);
       call.addArg(new JClassLiteral(methodSource.makeChild(SourceOrigin.UNKNOWN), asType));
       JExpression invoke = MagicClassInjector.injectMagicClass(logger, call, magicClass, context, ast);
-      if (invoke != null)
+      if (invoke != null) {
         block.addStmt(invoke.makeStatement());
+      }
     }
     block.addStmts(((JMethodBody)methodCall.getTarget().getBody()).getStatements());
     methodCall.getTarget().getEnclosingType().addMethod(newMethod);
     JMethodCall call = new JMethodCall(methodSource, null, newMethod);
-    
+
     ast.getRebindPermutationOracle().getGeneratorContext().finish(logger);
     return call.makeStatement().getExpr();
   }

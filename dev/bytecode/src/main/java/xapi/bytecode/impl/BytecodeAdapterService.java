@@ -55,6 +55,7 @@ public class BytecodeAdapterService implements
   // We use a lazy provider to delay the call until the class pool is actually
   // needed.
   protected final SingletonProvider<ClassPool> classPool = new SingletonProvider<ClassPool>() {
+    @Override
     protected ClassPool initialValue() {
       for (URL url : getScanUrls()) {
         try {
@@ -68,22 +69,36 @@ public class BytecodeAdapterService implements
   };
 
   InitMap<String, IsClass> classes = new InitMapDefault<String, IsClass>(
-      InitMapDefault.PASS_THRU, new 
+      InitMapDefault.PASS_THRU, new
       ConvertsValue<String, IsClass>(){
         @Override
         public IsClass convert(String classString) {
           Pair<String, Integer> cls = X_Source.extractArrayDepth(classString);
-          URL location = X_Source.classToUrl(cls.get0(), getClassLoader());
+          String clsName = cls.get0();
+          URL location = X_Source.classToUrl(clsName, getClassLoader());
+          while (location == null) {
+            // Might be an inner class.  Lets have a peek.
+            int lastPeriod = clsName.lastIndexOf('.');
+            if (lastPeriod == -1) {
+              break;
+            }
+            char[] newName = clsName.toCharArray();
+            newName[lastPeriod] = '$';
+            clsName = new String(newName);
+            location = X_Source.classToUrl(clsName, getClassLoader());
+
+          }
           IsClass asClass;
           try {
             X_Log.debug("Converting",cls.get0(),"to",location);
             asClass = new ClassAdapter(new CtClassType(location.openStream(),
                 classPool.get()));
           } catch (NullPointerException e) {
-            if (cls.get0().equals(cls.get0().toLowerCase()))
+            if (cls.get0().equals(cls.get0().toLowerCase())) {
               asClass = Primitives.valueOf("_"+cls.get0());
-            else
+            } else {
               throw X_Debug.rethrow(e);
+            }
           } catch (IOException e) {
             X_Log.error("Unable to find "+cls.get0());
             throw X_Debug.rethrow(e);
@@ -136,11 +151,13 @@ public class BytecodeAdapterService implements
 
     private Annotation anno;
     private SingletonProvider<IsClass> annoClass = new SingletonProvider<IsClass>() {
+      @Override
       protected IsClass initialValue() {
         return toClass(anno.getTypeName());
       };
     };
     private SingletonProvider<IsAnnotation> retentionAnno = new SingletonProvider<IsAnnotation>() {
+      @Override
       protected IsAnnotation initialValue() {
         return annoClass.get().getAnnotation(Retention.class.getName());
       };
@@ -185,7 +202,7 @@ public class BytecodeAdapterService implements
       IsAnnotationValue val = retention.getValue(value);
       return RetentionPolicy.SOURCE == val.getRawValue();
     }
-    
+
     @Override
     public IsType getEnclosingType() {
       return annoClass.get().getEnclosingType();
@@ -215,7 +232,7 @@ public class BytecodeAdapterService implements
     public Iterable<IsMethod> getMethods() {
       return annoClass.get().getMethods();
     }
-    
+
     @Override
     public Iterable<IsMethod> getDeclaredMethods() {
       return annoClass.get().getDeclaredMethods();
@@ -235,12 +252,13 @@ public class BytecodeAdapterService implements
     public IsAnnotationValue getDefaultValue(IsMethod method) {
       return method.getDefaultValue();
     }
-    
+
     @Override
     public IsAnnotationValue getValue(IsMethod value) {
       MemberValue val = anno.getMemberValue(value.getName());
-      if (val == null)
+      if (val == null) {
         return getDefaultValue(value);
+      }
       return BytecodeUtil.extractValue(val, BytecodeAdapterService.this, value.getReturnType());
     }
 
@@ -248,17 +266,17 @@ public class BytecodeAdapterService implements
     public Object toAnnotation(ClassLoader loader) {
       throw new NotYetImplemented("AnnotationProxy not yet implemented");
     }
-    
+
     @Override
     public String toString() {
       return getQualifiedName();
     }
-    
+
     @Override
     public int hashCode() {
       return getQualifiedName().hashCode();
     }
-    
+
     @Override
     public boolean equals(Object obj) {
       if (obj instanceof IsAnnotation) {
@@ -275,6 +293,7 @@ public class BytecodeAdapterService implements
     ImmutableType type;
 
     protected final SingletonProvider<Iterable<IsAnnotation>> annotations = new SingletonProvider<Iterable<IsAnnotation>>() {
+      @Override
       protected Iterable<IsAnnotation> initialValue() {
         Annotation[] annos = getRawAnnotations();
         if (annos == null) {
@@ -331,13 +350,15 @@ public class BytecodeAdapterService implements
     public IsAnnotation getAnnotation(String name) {
       if (name.indexOf('.') == -1) {
         for (IsAnnotation anno : getAnnotations()) {
-          if (anno.getSimpleName().equals(name))
+          if (anno.getSimpleName().equals(name)) {
             return anno;
+          }
         }
       } else {
         for (IsAnnotation anno : getAnnotations()) {
-          if (anno.getQualifiedName().equals(name))
+          if (anno.getQualifiedName().equals(name)) {
             return anno;
+          }
         }
       }
       return null;
@@ -372,12 +393,12 @@ public class BytecodeAdapterService implements
     public int getModifier() {
       return modifier;
     }
-    
+
     @Override
     public int hashCode() {
       return getQualifiedName().hashCode();
     }
-    
+
     @Override
     public boolean equals(Object obj) {
       if (obj instanceof IsType) {
@@ -385,7 +406,7 @@ public class BytecodeAdapterService implements
       }
       return false;
     }
-    
+
     @Override
     public String toString() {
       return getQualifiedName();
@@ -463,6 +484,7 @@ public class BytecodeAdapterService implements
     private CtClass cls;
 
     private SingletonProvider<Iterable<IsMethod>> methods = new SingletonProvider<Iterable<IsMethod>>() {
+      @Override
       protected Iterable<IsMethod> initialValue() {
         return new MemberIterable<CtMethod, IsMethod>(methodBuilder,
             cls.getMethods());
@@ -470,6 +492,7 @@ public class BytecodeAdapterService implements
     };
 
     private SingletonProvider<Iterable<IsField>> fields = new SingletonProvider<Iterable<IsField>>() {
+      @Override
       protected Iterable<IsField> initialValue() {
         return new MemberIterable<CtField, IsField>(fieldBuilder,
             cls.getFields());
@@ -477,6 +500,7 @@ public class BytecodeAdapterService implements
     };
 
     private SingletonProvider<Iterable<IsClass>> interfaces = new SingletonProvider<Iterable<IsClass>>() {
+      @Override
       protected Iterable<IsClass> initialValue() {
         try {
           return new MemberIterable<CtClass, IsClass>(interfaceBuilder,
@@ -489,6 +513,7 @@ public class BytecodeAdapterService implements
     };
 
     private SingletonProvider<Iterable<IsClass>> innerClasses = new SingletonProvider<Iterable<IsClass>>() {
+      @Override
       protected Iterable<IsClass> initialValue() {
         try {
           return new MemberIterable<CtClass, IsClass>(interfaceBuilder,
@@ -514,7 +539,7 @@ public class BytecodeAdapterService implements
     public Iterable<IsMethod> getDeclaredMethods() {
       return new DeclaredMemberFilter<IsMethod>(getMethods(), this);
     }
-    
+
     @Override
     public Iterable<IsMethod> getMethods() {
       return methods.get();
@@ -525,8 +550,9 @@ public class BytecodeAdapterService implements
       assert name != null;
       for (IsMethod method : getMethods()) {
         if (method.getName().equals(name)) {
-          if (X_Source.typesEqual(method.getParameters(), params))
+          if (X_Source.typesEqual(method.getParameters(), params)) {
             return method;
+          }
         }
       }
       return null;
@@ -536,14 +562,15 @@ public class BytecodeAdapterService implements
     public IsAnnotation getAnnotation(String name) {
       return super.getAnnotation(name);
     }
-    
+
     @Override
     public IsMethod getMethod(String name, boolean checkErased, Class<?>... params) {
       assert name != null;
       for (IsMethod method : getMethods()) {
         if (method.getName().equals(name)) {
-          if (X_Source.typesEqual(method.getParameters(), params))
+          if (X_Source.typesEqual(method.getParameters(), params)) {
             return method;
+          }
         }
       }
       if (checkErased) {
@@ -560,8 +587,9 @@ public class BytecodeAdapterService implements
     @Override
     public IsField getField(String name) {
       for (IsField field : getFields()) {
-        if (field.getDeclaredName().equals(name))
+        if (field.getDeclaredName().equals(name)) {
           return field;
+        }
       }
       return null;
     }
@@ -571,8 +599,9 @@ public class BytecodeAdapterService implements
     public Iterable<IsGeneric> getGenerics() {
       SignatureAttribute attr = (SignatureAttribute) cls.getClassFile2()
           .getAttribute(SignatureAttribute.tag);
-      if (attr == null)
+      if (attr == null) {
         return Collections.EMPTY_LIST;
+      }
       System.err.println(attr);
       return Collections.EMPTY_LIST;
     }
@@ -580,8 +609,9 @@ public class BytecodeAdapterService implements
     @Override
     public IsGeneric getGeneric(String name) {
       for (IsGeneric g : getGenerics()) {
-        if (g.genericName().equals(name))
+        if (g.genericName().equals(name)) {
           return g;
+        }
       }
       return null;
     }
@@ -609,17 +639,17 @@ public class BytecodeAdapterService implements
     public boolean isAbstract() {
       return X_Modifier.isAbstract(getModifier());
     }
-    
+
     @Override
     public boolean isAnnotation() {
       return X_Modifier.isAnnotation(getModifier());
     }
-    
+
     @Override
     public boolean isArray() {
       return cls.isArray();
     }
-    
+
     @Override
     public boolean isEnum() {
       return X_Modifier.isEnum(getModifier());
@@ -644,8 +674,9 @@ public class BytecodeAdapterService implements
     public IsMethod getEnclosingMethod() {
       try {
         CtMethod enclosed = cls.getEnclosingMethod();
-        if (enclosed == null)
+        if (enclosed == null) {
           return null;
+        }
         IsClass method = BytecodeAdapterService.this.toClass(enclosed
             .getDeclaringClass().getName());
         return method.getMethod(enclosed.getName(),
@@ -716,7 +747,7 @@ public class BytecodeAdapterService implements
       // TODO Auto-generated method stub
       return super.getAnnotation(name);
     }
-    
+
     @Override
     public boolean isStatic() {
       return X_Modifier.isStatic(getModifier());
@@ -762,7 +793,7 @@ public class BytecodeAdapterService implements
         return X_Source.toTypes(exceptions.getExceptions());
       }
     }
-    
+
     @Override
     public IsAnnotationValue getDefaultValue() {
       AnnotationDefaultAttribute def = (AnnotationDefaultAttribute)method.getMethodInfo2().getAttribute(AnnotationDefaultAttribute.tag);

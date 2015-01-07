@@ -14,6 +14,9 @@
   <description>
     This super module contains the gwt user interface layer for xapi.
   </description>
+  <properties>
+    <java.version>1.8</java.version>
+  </properties>
 
   <modules>
     <module>autoui</module>

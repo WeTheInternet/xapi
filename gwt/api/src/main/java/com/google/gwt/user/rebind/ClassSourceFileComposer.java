@@ -19,9 +19,9 @@ import java.io.PrintWriter;
 
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
-import com.google.gwt.user.rebind.SourceFileComposerFactory.JavaSourceCategory;
+import com.google.gwt.user.rebind.ClassSourceFileComposerFactory.JavaSourceCategory;
 
-class SourceFileComposer implements SourceWriter {
+class ClassSourceFileComposer implements SourceWriter {
 
   /**
    * For the interior of a '*' style comment.
@@ -49,7 +49,7 @@ class SourceFileComposer implements SourceWriter {
 
   private final String privacy;
 
-  SourceFileComposer(GeneratorContext ctx, PrintWriter printWriter,
+  ClassSourceFileComposer(GeneratorContext ctx, PrintWriter printWriter,
       String targetPackageName, String[] annotationDeclarations,
       String targetClassShortName, String superClassName,
       String[] interfaceNames, String[] imports, JavaSourceCategory category,
@@ -60,7 +60,7 @@ class SourceFileComposer implements SourceWriter {
         interfaceNames, imports, category,
         classJavaDocComment, "public");
   }
-  SourceFileComposer(GeneratorContext ctx, PrintWriter printWriter,
+  ClassSourceFileComposer(GeneratorContext ctx, PrintWriter printWriter,
       String targetPackageName, String[] annotationDeclarations,
       String targetClassShortName, String superClassName,
       String[] interfaceNames, String[] imports, JavaSourceCategory category,

@@ -12,12 +12,12 @@ import xapi.ui.html.api.Css;
 import xapi.ui.html.api.El;
 import xapi.ui.html.api.Html;
 import xapi.ui.html.api.HtmlTemplate;
+import xapi.ui.html.api.NoUi;
 import xapi.ui.html.api.Style;
 
 import com.google.gwt.core.ext.typeinfo.HasAnnotations;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JMethod;
-import com.google.gwt.safehtml.client.SafeHtmlTemplates.Template;
 
 public class HtmlGeneratorNode {
 
@@ -32,6 +32,7 @@ public class HtmlGeneratorNode {
   private final IntTo<Import> imports;
   private final Html html;
   private String elementKey;
+  private boolean dynamic = true;
 
   private HtmlGeneratorNode(HasAnnotations source, String name) {
     this.source = source;
@@ -48,6 +49,8 @@ public class HtmlGeneratorNode {
 
     addEl(source.getAnnotation(El.class));
     if (html != null) {
+      dynamic = html.isDynamic();
+
       for (El e : html.body()) {
         addEl(e);
       }
@@ -121,10 +124,24 @@ public class HtmlGeneratorNode {
         ? fromClass.getAnnotation(Named.class).value()
         : fromClass.getSimpleSourceName());
     for (JMethod method : fromClass.getMethods()) {
-      addChild(new HtmlGeneratorNode(method));
+      if (isValidMethod(method)) {
+        addChild(new HtmlGeneratorNode(method));
+      }
     }
   }
 
+
+  protected boolean isValidMethod(JMethod method) {
+    return method.isAnnotationPresent(NoUi.class) ? false :
+           method.getParameterTypes().length == 0
+        || method.getAnnotation(Html.class) != null
+        || method.getAnnotation(El.class) != null
+        || method.getAnnotation(Css.class) != null
+        || method.getAnnotation(Style.class) != null
+        || method.getAnnotation(Import.class) != null
+        || method.getAnnotation(HtmlTemplate.class) != null
+        ;
+  }
 
   public HtmlGeneratorNode(JMethod fromMethod) {
     this(fromMethod,
@@ -294,6 +311,10 @@ public class HtmlGeneratorNode {
       }
     }
     return false;
+  }
+
+  public boolean isDynamic() {
+    return dynamic ;
   }
 
 }
