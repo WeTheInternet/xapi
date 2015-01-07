@@ -37,12 +37,12 @@ import xapi.util.X_Namespace;
 
 /**
  * This goal will lookup all annotation that are themselves
- * annotated with {@link MirroredAnnotation}, and then 
+ * annotated with {@link MirroredAnnotation}, and then
  * generate runtime annotation proxy classes to enable
- * creating instances of annotations at runtime, either 
+ * creating instances of annotations at runtime, either
  * manually through AnnoNameBuilder objects,
  * or by wrapping {@link IsAnnotation} instances into AnnoNameProxy objects.
- * 
+ *
  * @author <a href="mailto:james@wetheinter.net">James X. Nelson</a>
  * @version $Id$
  */
@@ -66,13 +66,13 @@ public class AnnotationGeneratorMojo extends AbstractXapiMojo{
     X_Log.trace(getClass(), "Scanning compile scope dependencies", scanner);
     for (ClassFile mirror : scanner.findClassAnnotatedWith(MirroredAnnotation.class)) {
       X_Log.trace(getClass(), "Adding annotation type", mirror);
-      addType(mirror.getName(), mirror.getPackage(), generated, adapter);    
+      addType(mirror.getName(), mirror.getPackage(), generated, adapter);
     }
-    
+
     final String[] cp = getAdditionalClasspath();
     X_Log.trace(getClass(), "Compiling generated annotations with classpath",cp);
     ArrayList<Runnable> compileTasks = new ArrayList<Runnable>();
-    
+
     for (String type : generated.keySet()) {
       final SourceBuilder<IsClass> builder = generated.get(type);
       final IsClass cls = builder.getPayload();
@@ -88,8 +88,12 @@ public class AnnotationGeneratorMojo extends AbstractXapiMojo{
           .addParameters(IsAnnotation.class.getName()+" from");
       boolean firstDefault = true;
       for (IsMethod method : cls.getMethods()) {
-        if (method.getEnclosingType().getQualifiedName().equals("java.lang.Object"))
+        if (method.getEnclosingType().getQualifiedName().equals("java.lang.Object")) {
           continue;
+        }
+        if (method.getName().equals("type")) {
+          X_Log.error("\n\n\n\n\n", method.getReturnType().toString(), "   ",method.getQualifiedName());
+        }
         String returnType = out.addImport(method.getReturnType().toString());
         IsClass returnClass = adapter.toClass(method.getReturnType().getQualifiedName().replace("[]", ""));
         if (!method.getName().equals("annotationType")) {
@@ -110,7 +114,7 @@ public class AnnotationGeneratorMojo extends AbstractXapiMojo{
             if (method.getReturnType().getSimpleName().contains("[]")) {
               // TODO implement array builders
             } else {
-              
+
             }
             ctor.println("this."+method.getName()+" = "+
                 getExtractor(out, returnClass, method, returnType)+";");
@@ -123,7 +127,7 @@ public class AnnotationGeneratorMojo extends AbstractXapiMojo{
         }
       }
       factory.returnValue("proxy");
-      
+
       // Saves the source file to generated-sources directory, and returns a compile job
       String javaName = cls.getQualifiedName().replace("[]", "")+"Proxy";
       String source = builder.toString();
@@ -189,15 +193,16 @@ public class AnnotationGeneratorMojo extends AbstractXapiMojo{
         .setPayload(anno)
         .getClassBuffer()
         .addInterface(annoName)
-        .addImports(Annotation.class, IsAnnotationValue.class)
+        .addImports(Annotation.class, IsAnnotation.class, IsAnnotationValue.class)
         .addAnnotation("@SuppressWarnings(\"all\")")// Ugly, but we don't need warnings from generated code
         .addAnnotation(generatedAnnotation())
       ;
       String clsName = generator.getImports().addImport(anno.getQualifiedName());
       generated.put(annoName, generator);
       for (IsMethod method : anno.getMethods()) {
-        if (method.getEnclosingType().getQualifiedName().equals("java.lang.Object"))
+        if (method.getEnclosingType().getQualifiedName().equals("java.lang.Object")) {
           continue;
+        }
         if (method.getName().equals("annotationType")) {
           generator.getClassBuffer()
           .createMethod("public Class<? extends Annotation> annotationType()")

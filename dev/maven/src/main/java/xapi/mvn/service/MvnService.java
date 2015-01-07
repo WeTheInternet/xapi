@@ -5,9 +5,9 @@ import java.util.List;
 
 import org.apache.maven.model.Model;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
-import org.sonatype.aether.RepositorySystemSession;
-import org.sonatype.aether.repository.RemoteRepository;
-import org.sonatype.aether.resolution.ArtifactResult;
+import org.eclipse.aether.RepositorySystemSession;
+import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.aether.resolution.ArtifactResult;
 
 public interface MvnService {
 
@@ -22,7 +22,7 @@ public interface MvnService {
 	ArtifactResult loadArtifact(String groupId, String artifactId,
 			String classifier, String extension, String version);
 
-	Model loadPomString(String pomString) 
+	Model loadPomString(String pomString)
 			throws IOException, XmlPullParserException;
 
 	Model loadPomFile(String pomFile)

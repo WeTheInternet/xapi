@@ -32,7 +32,7 @@ import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.codehaus.plexus.util.xml.Xpp3DomBuilder;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
-import org.sonatype.aether.resolution.ArtifactResult;
+import org.eclipse.aether.resolution.ArtifactResult;
 
 import xapi.dev.gwt.gui.CodeServerGui;
 import xapi.inject.impl.SingletonProvider;
@@ -144,11 +144,13 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
   private final SingletonProvider<String> _gwtVersion = new SingletonProvider<String>() {
     @Override
     protected String initialValue() {
-      if (X_String.isNotEmpty(gwtVersion))
+      if (X_String.isNotEmpty(gwtVersion)) {
         return gwtVersion;
+      }
       String version = X_Properties.getProperty("gwt.version");
-      if (version != null)
+      if (version != null) {
         return version;
+      }
 //      version = GWT.getVersion();
 //      if (version != null)
 //        return version;
@@ -177,8 +179,9 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
     @Override
     protected int debugPort() {
       int delay = debugDelay;
-      if (delay < 1)
+      if (delay < 1) {
         return 0;
+      }
       return debugPort == 0 ? super.debugPort() : debugPort;
     }
 
@@ -280,13 +283,14 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
           }
           for (Object o : project.getCompileClasspathElements()) {
             File f = new File(String.valueOf(o));
-            if (f.exists())
+            if (f.exists()) {
               if (f.isDirectory()) {
                 // directories are to be handled differently
                 addToClasspath(f);
               } else {
                 addSource(f);
               }
+            }
           }
         } catch (DependencyResolutionRequiredException e1) {
           getLog()
@@ -310,8 +314,9 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
           if (before != cp.length()) {
             // Missing gwt-user means we're probably missing org.json and validation apis...
           }
-          if (autoCompile)
-          launchServer(includeTestSource);
+          if (autoCompile) {
+            launchServer(includeTestSource);
+          }
         }
         });
 
@@ -353,15 +358,17 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
 
     @Override
     protected String getModuleDefault() {
-      if (!"".equals(module))
+      if (!"".equals(module)) {
         return module;
+      }
       for (String source : getProject().getCompileSourceRoots()) {
         File f = new File(source);
         if (f.exists()) {
           try {
             String module = findModule(f);
-            if (module != null)
+            if (module != null) {
               return module;
+            }
           }catch(Throwable e) {
             X_Log.error("Failed lookup of gwt module for ", f, e);
           }
@@ -390,10 +397,11 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
         getLog().debug(dom.toString());
         for (Xpp3Dom entry : dom.getChildren("entry-point")) {
           String attr = entry.getAttribute("class");
-          if (null != attr && attr.length() > 0)
+          if (null != attr && attr.length() > 0) {
             into.add(attr.substring(0,
                 attr.lastIndexOf('.', attr.lastIndexOf('.') - 1))
                 + "." + f.getName().replace(".gwt.xml", ""));
+          }
         }
       }
     }
@@ -403,8 +411,9 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
         String module;
         for (File child : f.listFiles(gwt_xml_filter)) {
           module = findModule(child);
-          if (module != null)
+          if (module != null) {
             return module;
+          }
         }
       } else if (f.getName().endsWith(".gwt.xml")) {
         getLog().debug("Checking for entry points in " + f);
@@ -413,10 +422,11 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
         getLog().debug(dom.toString());
         for (Xpp3Dom entry : dom.getChildren("entry-point")) {
           String attr = entry.getAttribute("class");
-          if (null != attr && attr.length() > 0)
+          if (null != attr && attr.length() > 0) {
             return attr.substring(0,
                 attr.lastIndexOf('.', attr.lastIndexOf('.') - 1))
                 + "." + f.getName().replace(".gwt.xml", "");
+          }
         }
       }
       return null;
@@ -427,8 +437,9 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
       return new GwtFinder() {
         @Override
         public String findArtifact(String cp, String artifact, String cpSep) {
-          if (cp.contains(artifact))
+          if (cp.contains(artifact)) {
             return cp;
+          }
           String location = locateArtifact(cp, artifact, cpSep);
           File f = new File(location);
           if (f.exists()){
@@ -445,8 +456,9 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
 
     protected String locateArtifact(String cp, String artifact, String cpSep) {
       ArtifactResult location = X_Maven.loadArtifact("com.google.gwt", artifact, guessVersion("com.google.gwt", "2.6.1"));
-      if (location != null)
+      if (location.isResolved()) {
         return location.getArtifact().getFile().getAbsolutePath();
+      }
       return null;
     }
 
@@ -477,11 +489,13 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
   public String guessVersion(String groupId, String backup) {
 
     String version = X_Properties.getProperty("gwt.version");
-    if (version != null)
+    if (version != null) {
       return version;
+    }
     version = GWT.getVersion();
-    if (version != null)
+    if (version != null) {
       return version;
+    }
     return superGuess(groupId, backup);
   }
 

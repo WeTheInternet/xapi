@@ -8,8 +8,8 @@ import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Model;
 import org.apache.maven.project.MavenProject;
-import org.sonatype.aether.repository.RemoteRepository;
-import org.sonatype.aether.resolution.ArtifactResult;
+import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.aether.resolution.ArtifactResult;
 
 import xapi.bytecode.impl.BytecodeAdapterService;
 import xapi.dev.X_Dev;
@@ -47,7 +47,7 @@ public class X_Maven {
   public static List<RemoteRepository> remoteRepos() {
     return service.remoteRepos();
   }
-  
+
   public static MvnService getMavenService() {
     return service;
   }
@@ -120,11 +120,12 @@ public class X_Maven {
       MavenProject project, MavenSession session) {
     return new CompileScopeBytecodeAdapter(project, session);
   }
-  
+
   private static class CompileScopeBytecodeAdapter extends BytecodeAdapterService {
 
     private final URL[] urls;
     private final SingletonProvider<ClassLoader> cl = new SingletonProvider<ClassLoader>() {
+      @Override
       protected ClassLoader initialValue() {
         if (X_Runtime.isDebug()) {
           X_Log.info("Maven compile scope: "+X_String.joinObjects(urls));
@@ -139,12 +140,12 @@ public class X_Maven {
     protected URL[] getScanUrls() {
       return urls;
     }
-    
+
     @Override
     protected ClassLoader getClassLoader() {
       return cl.get();
     }
-    
+
   }
 
 }

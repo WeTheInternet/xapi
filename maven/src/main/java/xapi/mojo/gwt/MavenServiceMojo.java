@@ -1,6 +1,6 @@
 package xapi.mojo.gwt;
 
-import org.sonatype.aether.RepositorySystemSession;
+import org.eclipse.aether.RepositorySystemSession;
 
 import xapi.annotation.inject.SingletonOverride;
 import xapi.mojo.api.AbstractXapiMojo;
@@ -11,7 +11,7 @@ import xapi.mvn.service.MvnService;
 public class MavenServiceMojo extends MvnServiceDefault{
 
   private static ThreadLocal<AbstractXapiMojo> mojos = new ThreadLocal<AbstractXapiMojo>();
-  
+
   public static void init(AbstractXapiMojo mojo) {
     mojos.set(mojo);
   }
@@ -19,7 +19,7 @@ public class MavenServiceMojo extends MvnServiceDefault{
   public static void gc() {
     mojos.remove();
   }
-  
+
   @Override
   protected RepositorySystemSession initLocalRepo() {
     AbstractXapiMojo mojo = mojos.get();
@@ -28,7 +28,7 @@ public class MavenServiceMojo extends MvnServiceDefault{
     }
     return super.initLocalRepo();
   }
-  
+
   @Override
   public RepositorySystemSession getRepoSession() {
     AbstractXapiMojo mojo = mojos.get();
@@ -37,5 +37,5 @@ public class MavenServiceMojo extends MvnServiceDefault{
     }
     return super.getRepoSession();
   }
-  
+
 }

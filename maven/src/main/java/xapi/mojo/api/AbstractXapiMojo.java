@@ -4,7 +4,9 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import javax.annotation.Generated;
 import javax.inject.Provider;
@@ -19,12 +21,15 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.descriptor.PluginDescriptor;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.project.DefaultProjectBuildingRequest;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectHelper;
 import org.apache.maven.project.ProjectBuilder;
+import org.apache.maven.project.ProjectBuildingException;
+import org.apache.maven.project.ProjectBuildingResult;
 import org.codehaus.plexus.component.repository.ComponentDependency;
-import org.sonatype.aether.repository.WorkspaceReader;
-import org.sonatype.aether.util.artifact.DefaultArtifact;
+import org.eclipse.aether.artifact.DefaultArtifact;
+import org.eclipse.aether.repository.WorkspaceReader;
 
 import xapi.dev.X_Dev;
 import xapi.inject.impl.SingletonProvider;
@@ -56,6 +61,9 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
   @Component
   private MavenProject project;
 
+  @Component
+  private WorkspaceReader workspace;
+
   /**
    * The directory in which to place generated resources
    */
@@ -82,30 +90,30 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
 
   /**
    * The Maven Session Object, injected by plexus
-   * 
+   *
    */
   @Component
   private MavenSession session;
 
   @Component
   private PluginDescriptor plugin;
-  
+
   /**
    * A target project to use for dynamically building MavenProjects from other
    * poms. This value can be a simple string as relative from your
    * ${source.root} directory.
-   * 
+   *
    * So long as you stick with the pom.xml naming convention, that is.
-   * 
+   *
    * You may also provide an absolute path name, or even a fully qualified
    * artifact ID to load from local repo.
-   * 
+   *
    * Artifact id must contain at least the following groupId:artifactId:version
    * is the exact format provided.
-   * 
+   *
    * You may optionally include a classifier, as
    * groupId:artifactId:classifier:version
-   * 
+   *
    */
   @Parameter(property = "target.project", defaultValue = "${project.basedir}")
   private String targetProject;
@@ -121,7 +129,7 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
   public PluginDescriptor getPluginDescriptor() {
     return plugin;
   }
-  
+
   public String getPlatform() {
     return platform;
   }
@@ -130,7 +138,7 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
     X_Log.trace(getClass(), "project", project,"dependencies",project.getDependencies());
     return project;
   }
-  
+
   public File getGenerateDirectory() {
     return generateDirectoryProvider.get();
   }
@@ -146,7 +154,7 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
   public String getXapiVersion() {
     return xapiVersion;
   }
-  
+
   @Override
   @SuppressWarnings("unchecked")
   public void execute() throws MojoExecutionException, MojoFailureException {
@@ -154,10 +162,11 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
     doExecute();
     X_GC.deepDestroy(Class.class.cast(getClass()), this);
   }
-  
+
   protected abstract void doExecute() throws MojoExecutionException, MojoFailureException;
 
   private final Provider<File> generateDirectoryProvider = new SingletonProvider<File>() {
+    @Override
     protected File initialValue() {
       if (targetProject == null) {
         return new File(getSourceRoot(), generateDirectory);
@@ -167,6 +176,7 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
     };
   };
   private final Provider<File> targetProjectDirectory = new SingletonProvider<File>() {
+    @Override
     protected File initialValue() {
       Preconditions
           .checkNotNull(
@@ -174,7 +184,6 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
               "You must supply a ${target.project} configuration property "
                   + "in order to use any service methods which depend upon #getTargetPom().");
       boolean endsWithXml = targetProject.endsWith(".xml");
-      String target;
       // first, check for absolute file.
       File targetFile = new File(targetProject);
       try {
@@ -190,8 +199,9 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
       try {
         // okay, no absolute file. Now check relative to source root.
         targetFile = new File(sourceRoot.getCanonicalFile(), targetProject);
-        if (targetFile.exists())
+        if (targetFile.exists()) {
           return targetFile.getParentFile();
+        }
       } catch (IOException ignored) {
       }
 
@@ -222,13 +232,37 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
         }
         // Check workspace first, since that is the most useful place for use to
         // resolve artifacts
-        WorkspaceReader workspace = getSession().getRepositorySession()
-            .getWorkspaceReader();
         if (workspace != null) {
           File result = workspace.findArtifact(artifact);
           X_Log.warn(getClass(), "Searching for target project directory from",result
-              ,"derived from artifact",artifact);
-          return result.getParentFile().getParentFile();
+              ,"derived from artifact",artifact, getSession());
+          if (result != null) {
+            return result.getParentFile().getParentFile();
+          }
+          // If we couldn't find the artifact directly from the workspace, we need to
+          // look up the pom tree to the root, build all modules, and find the correct artifact.
+          MavenProject root = getSession().getCurrentProject();
+          while (root.getParent() != null) {
+            root = root.getParent();
+          }
+          try {
+            DefaultProjectBuildingRequest req = new DefaultProjectBuildingRequest(session.getProjectBuildingRequest());
+            req.setProject(root);
+            req.setResolveDependencies(true);
+            List<File> poms = new ArrayList<File>();
+            poms.add(new File(root.getBasedir(), "pom.xml"));
+            List<ProjectBuildingResult> res = builder.build(poms,true,req);
+            for (ProjectBuildingResult proj : res) {
+              String ident = proj.getProject().getArtifact().getId();
+              if (ident.startsWith(targetProject)) {
+                if (ident.equals(targetProject)||ident.startsWith(targetProject+":")) {
+                  return proj.getProject().getBasedir();
+                }
+              }
+            }
+          } catch (ProjectBuildingException e) {
+            e.printStackTrace();
+          }
         }
         throw new RuntimeException(
             "Could not find pom file for "
@@ -244,12 +278,14 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
   }
 
   public final SingletonProvider<JavaCompiler> compiler = new SingletonProvider<JavaCompiler>() {
+    @Override
     protected JavaCompiler initialValue() {
       return initCompiler();
     };
   };
 
   public final SingletonProvider<String[]> compileClasspath = new SingletonProvider<String[]>() {
+    @Override
     protected String[] initialValue() {
       URL[] cp = X_Maven.compileScopeUrls(getProject(), getSession());
       return X_Dev.toStrings(cp);
@@ -268,10 +304,11 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
     X_Log.info(getClass(),"Preparing compile", getTargetProjectDirectory(), genDir);
     genDir.mkdirs();
     String sourceName;
-    if (javaName.endsWith(".java"))
+    if (javaName.endsWith(".java")) {
       sourceName = javaName.substring(0, source.length() - 5);
-    else
+    } else {
       sourceName = javaName;
+    }
     File f = new File(genDir, sourceName.replace('.',
         File.separatorChar) + ".java");
     try {
@@ -309,7 +346,7 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
       cp = clone;
     }
     final String[] args = new String[] {
-        "-sourcepath", genDir.getAbsolutePath() + File.separator, 
+        "-sourcepath", genDir.getAbsolutePath() + File.separator,
         "-classpath", X_String.join(File.pathSeparator, cp),
         "-d", getProject().getBuild().getDirectory() + File.separator + "classes",
         "-proc:none",
@@ -340,14 +377,16 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
 
   public String findArtifact(String groupId, String artifactId,
       String extension, String version) {
-    if (extension == null)
+    if (extension == null) {
       extension = "jar";
-    WorkspaceReader reader = getSession().getRepositorySession()
-        .getWorkspaceReader();
-    File artifact = reader.findArtifact(new DefaultArtifact(groupId,
+    }
+//    WorkspaceReader workspace = getSession().getRepositorySession()
+//        .getWorkspaceReader();
+    File artifact = workspace.findArtifact(new DefaultArtifact(groupId,
         artifactId, extension, X_Namespace.XAPI_VERSION));
-    if (artifact != null)
+    if (artifact != null) {
       return artifact.getAbsolutePath();
+    }
     return null;
   }
 
@@ -360,16 +399,20 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
   }
 
   public String guessVersion(String groupId, String backup) {
-      if (getPluginDescriptor() != null)
+      if (getPluginDescriptor() != null) {
         for (ComponentDependency dep : getPluginDescriptor().getDependencies()) {
-          if (dep.getGroupId().equals(groupId))
+          if (dep.getGroupId().equals(groupId)) {
             return dep.getVersion();
+          }
         }
-      if (getProject() != null)
+      }
+      if (getProject() != null) {
         for (Dependency dep : getProject().getDependencies()) {
-          if (dep.getGroupId().equals(groupId))
+          if (dep.getGroupId().equals(groupId)) {
             return dep.getVersion();
+          }
         }
+      }
       return backup;
   }
 
