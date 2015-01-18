@@ -99,8 +99,9 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
   }
 
   public FieldBuffer addGetter(int modifiers) {
-    if (get == null)
+    if (get == null) {
       get = initGetter();
+    }
     get.visitModifier(modifiers, cls.context);
     return this;
   }
@@ -125,8 +126,9 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
   }
 
   public FieldBuffer addClearer() {
-    if (clear == null)
+    if (clear == null) {
       clear = initClearer();
+    }
     return this;
   }
 
@@ -137,8 +139,9 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
   }
 
   public FieldBuffer addSetter(int modifier) {
-    if (set == null)
+    if (set == null) {
       set = initSetter();
+    }
     set.visitModifier(modifier, cls.context);
     return this;
   }
@@ -148,8 +151,9 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
         "public " + fluentReturnType() + " " + setterName() + "(" + simpleType
             + " " + fieldName + ")").println(
         "this." + fieldName + " = " + fieldName + ";");
-    if (isFluent())
+    if (isFluent()) {
       setter.returnValue(fluentReturnValue());
+    }
     return setter;
   }
 
@@ -174,8 +178,9 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
   }
 
   public FieldBuffer remover() {
-    if (remove == null)
+    if (remove == null) {
       remove = initRemover();
+    }
     return this;
   }
 
@@ -212,8 +217,9 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
 
   @Override
   public String addImport(String cls) {
-    if (cls.replace(this.cls.getPackage() + ".", "").indexOf('.') == -1)
+    if (cls.replace(this.cls.getPackage() + ".", "").indexOf('.') == -1) {
       return cls;
+    }
     return this.cls.addImport(cls);
   };
 
@@ -229,21 +235,24 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
 
   @Override
   public String toString() {
-    if (fieldType == TypeData.NONE)
+    if (fieldType == TypeData.NONE) {
       return super.toString();
+    }
 
-    StringBuilder b = new StringBuilder(NEW_LINE);
+    StringBuilder b = new StringBuilder(Character.toString(NEW_LINE));
     if (javaDoc != null && javaDoc.isNotEmpty()) {
       b.append(javaDoc.toString());
     }
     b.append(origIndent);
     if (annotations.size() > 0) {
-      for (String anno : annotations)
+      for (String anno : annotations) {
         b.append('@').append(anno).append(NEW_LINE + origIndent);
+      }
     }
     String mods = Modifier.toString(modifier);
-    if (mods.length() > 0)
+    if (mods.length() > 0) {
       b.append(mods).append(" ");
+    }
     // generics
     if (generics.size() > 0) {
       b.append("<");
@@ -262,10 +271,12 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
     String init = initializer == null ? "" : initializer.toString();
     if (init.length() > 0) {
       b.append(" = ").append(init);
-      if (!init.trim().endsWith(";"))
+      if (!init.trim().endsWith(";")) {
         b.append(";");
-    } else
+      }
+    } else {
       b.append(";");
+    }
     b.append("\n");
     return b.toString() + super.toString();
   }

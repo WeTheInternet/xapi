@@ -13,6 +13,7 @@ extends CollectionProxy<Integer,T>
 {
 
   static interface Many <T> extends IntTo<IntTo<T>> {
+    void add(int key, T item);
   }
 
   static class IntToIterable <T> implements Iterable <T> {

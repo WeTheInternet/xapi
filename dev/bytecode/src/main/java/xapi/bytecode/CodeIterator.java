@@ -1,3 +1,22 @@
+/*
+ * Javassist, a Java-bytecode translator toolkit.
+ * Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License.  Alternatively, the contents of this file may be used under
+ * the terms of the GNU Lesser General Public License Version 2.1 or later,
+ * or the Apache License Version 2.0.
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * MODIFIED BY James Nelson of We The Internet, 2013.
+ * Repackaged to avoid conflicts with different versions of Javassist,
+ * and modified Javassist APIs to make them more accessible to outside code.
+ */
 package xapi.bytecode;
 
 import java.util.ArrayList;
@@ -141,8 +160,9 @@ public class CodeIterator implements Opcode {
      */
     public void write(byte[] code, int index) {
         int len = code.length;
-        for (int j = 0; j < len; ++j)
-            bytecode[index++] = code[j];
+        for (int j = 0; j < len; ++j) {
+          bytecode[index++] = code[j];
+        }
     }
 
     /**
@@ -254,21 +274,24 @@ public class CodeIterator implements Opcode {
         while (hasNext()) {
             int index = next();
             int c = byteAt(index);
-            if (c == NEW)
-                ++nested;
-            else if (c == INVOKESPECIAL) {
+            if (c == NEW) {
+              ++nested;
+            } else if (c == INVOKESPECIAL) {
                 int mref = X_Byte.readU16bit(bytecode, index + 1);
-                if (cp.getMethodrefName(mref).equals(MethodInfo.nameInit))
-                    if (--nested < 0) {
-                        if (skipThis < 0)
-                            return index;
+                if (cp.getMethodrefName(mref).equals(MethodInfo.nameInit)) {
+                  if (--nested < 0) {
+                      if (skipThis < 0) {
+                        return index;
+                      }
 
-                        String cname = cp.getMethodrefClassName(mref);
-                        if (cname.equals(thisClassName) == (skipThis > 0))
-                            return index;
-                        else
-                            break;
-                    }
+                      String cname = cp.getMethodrefClassName(mref);
+                      if (cname.equals(thisClassName) == (skipThis > 0)) {
+                        return index;
+                      } else {
+                        break;
+                      }
+                  }
+                }
             }
         }
 
@@ -430,15 +453,17 @@ public class CodeIterator implements Opcode {
         throws BadBytecode
     {
         int len = code.length;
-        if (len <= 0)
-            return pos;
+        if (len <= 0) {
+          return pos;
+        }
 
         // currentPos will change.
         pos = insertGapAt(pos, len, exclusive).position;
 
         int p = pos;
-        for (int j = 0; j < len; ++j)
-            bytecode[p++] = code[j];
+        for (int j = 0; j < len; ++j) {
+          bytecode[p++] = code[j];
+        }
 
         return pos;
     }
@@ -601,11 +626,13 @@ public class CodeIterator implements Opcode {
             length2 = c.length - bytecode.length;
             gap.position = pos;
             gap.length = length2;
-            if (cur >= pos)
-                currentPos = cur + length2;
+            if (cur >= pos) {
+              currentPos = cur + length2;
+            }
 
-            if (mark > pos || (mark == pos && exclusive))
-                mark += length2;
+            if (mark > pos || (mark == pos && exclusive)) {
+              mark += length2;
+            }
         }
 
         codeAttr.setCode(c);
@@ -647,13 +674,15 @@ public class CodeIterator implements Opcode {
     public int append(byte[] code) {
         int size = getCodeLength();
         int len = code.length;
-        if (len <= 0)
-            return size;
+        if (len <= 0) {
+          return size;
+        }
 
         appendGap(len);
         byte[] dest = bytecode;
-        for (int i = 0; i < len; ++i)
-            dest[i + size] = code[i];
+        for (int i = 0; i < len; ++i) {
+          dest[i + size] = code[i];
+        }
 
         return size;
     }
@@ -669,11 +698,13 @@ public class CodeIterator implements Opcode {
         byte[] newcode = new byte[codeLength + gapLength];
 
         int i;
-        for (i = 0; i < codeLength; ++i)
-            newcode[i] = code[i];
+        for (i = 0; i < codeLength; ++i) {
+          newcode[i] = code[i];
+        }
 
-        for (i = codeLength; i < codeLength + gapLength; ++i)
-            newcode[i] = NOP;
+        for (i = codeLength; i < codeLength + gapLength; ++i) {
+          newcode[i] = NOP;
+        }
 
         codeAttr.setCode(newcode);
         bytecode = newcode;
@@ -726,14 +757,16 @@ public class CodeIterator implements Opcode {
 
         try {
             int len = opcodeLength[opcode];
-            if (len > 0)
-                return index + len;
-            else if (opcode == WIDE)
-                if (code[index + 1] == (byte)IINC)      // WIDE IINC
-                    return index + 6;
-                else
-                    return index + 4;           // WIDE ...
-            else {
+            if (len > 0) {
+              return index + len;
+            } else if (opcode == WIDE) {
+              if (code[index + 1] == (byte)IINC) {
+                return index + 6;
+              }
+              else {
+                return index + 4;           // WIDE ...
+              }
+            } else {
                 int index2 = (index & ~3) + 8;
                 if (opcode == LOOKUPSWITCH) {
                     int npairs = X_Byte.read32bit(code, index2);
@@ -783,8 +816,9 @@ public class CodeIterator implements Opcode {
                                  boolean exclusive, ExceptionTable etable, CodeAttribute ca)
         throws BadBytecode
     {
-        if (gapLength <= 0)
-            return code;
+        if (gapLength <= 0) {
+          return code;
+        }
 
         try {
             return insertGapCore1(code, where, gapLength, exclusive, etable, ca);
@@ -811,27 +845,32 @@ public class CodeIterator implements Opcode {
         etable.shiftPc(where, gapLength, exclusive);
         LineNumberAttribute na
             = (LineNumberAttribute)ca.getAttribute(LineNumberAttribute.tag);
-        if (na != null)
-            na.shiftPc(where, gapLength, exclusive);
+        if (na != null) {
+          na.shiftPc(where, gapLength, exclusive);
+        }
 
         LocalVariableAttribute va = (LocalVariableAttribute)ca.getAttribute(
                                                 LocalVariableAttribute.tag);
-        if (va != null)
-            va.shiftPc(where, gapLength, exclusive);
+        if (va != null) {
+          va.shiftPc(where, gapLength, exclusive);
+        }
 
         LocalVariableAttribute vta
             = (LocalVariableAttribute)ca.getAttribute(
                                               LocalVariableAttribute.typeTag);
-        if (vta != null)
-            vta.shiftPc(where, gapLength, exclusive);
+        if (vta != null) {
+          vta.shiftPc(where, gapLength, exclusive);
+        }
 
         StackMapTable smt = (StackMapTable)ca.getAttribute(StackMapTable.tag);
-        if (smt != null)
-            smt.shiftPc(where, gapLength, exclusive);
+        if (smt != null) {
+          smt.shiftPc(where, gapLength, exclusive);
+        }
 
         StackMap sm = (StackMap)ca.getAttribute(StackMap.tag);
-        if (sm != null)
-            sm.shiftPc(where, gapLength, exclusive);
+        if (sm != null) {
+          sm.shiftPc(where, gapLength, exclusive);
+        }
 
         return newcode;
     }
@@ -846,8 +885,9 @@ public class CodeIterator implements Opcode {
         for (; i < endPos; i = nextPos) {
             if (i == where) {
                 int j2 = j + gapLength;
-                while (j < j2)
-                    newcode[j++] = NOP;
+                while (j < j2) {
+                  newcode[j++] = NOP;
+                }
             }
 
             nextPos = nextOpcode(code, i);
@@ -871,8 +911,9 @@ public class CodeIterator implements Opcode {
                 j += 4;
             }
             else if (inst == TABLESWITCH) {
-                if (i != j && (gapLength & 3) != 0)
-                    throw new AlignmentException();
+                if (i != j && (gapLength & 3) != 0) {
+                  throw new AlignmentException();
+                }
 
                 int i2 = (i & ~3) + 4;  // 0-3 byte padding
                 // IBM JVM 1.4.2 cannot run the following code:
@@ -902,8 +943,9 @@ public class CodeIterator implements Opcode {
                 }
             }
             else if (inst == LOOKUPSWITCH) {
-                if (i != j && (gapLength & 3) != 0)
-                    throw new AlignmentException();
+                if (i != j && (gapLength & 3) != 0) {
+                  throw new AlignmentException();
+                }
 
                 int i2 = (i & ~3) + 4;  // 0-3 byte padding
 
@@ -932,10 +974,11 @@ public class CodeIterator implements Opcode {
                     j += 8;
                     i0 += 8;
                 }
+            } else {
+              while (i < nextPos) {
+                newcode[j++] = code[i++];
+              }
             }
-            else
-                while (i < nextPos)
-                    newcode[j++] = code[i++];
             }
     }
 
@@ -960,18 +1003,21 @@ public class CodeIterator implements Opcode {
                                  int gapLength, boolean exclusive) {
         int target = i + offset;
         if (i < where) {
-            if (where < target || (exclusive && where == target))
-                offset += gapLength;
+            if (where < target || (exclusive && where == target)) {
+              offset += gapLength;
+            }
         }
         else if (i == where) {
-            if (target < where && exclusive)
-                offset -= gapLength;
-            else if (where < target && !exclusive)
-                offset += gapLength;
+            if (target < where && exclusive) {
+              offset -= gapLength;
+            } else if (where < target && !exclusive) {
+              offset += gapLength;
+            }
         }
         else
-            if (target < where || (!exclusive && where == target))
-                offset -= gapLength;
+            if (target < where || (!exclusive && where == target)) {
+              offset -= gapLength;
+            }
 
         return offset;
     }
@@ -998,30 +1044,38 @@ public class CodeIterator implements Opcode {
         }
 
         void shiftPc(int where, int gapLength, boolean exclusive) throws BadBytecode {
-            if (where < cursor || (where == cursor && exclusive))
-                cursor += gapLength;
+            if (where < cursor || (where == cursor && exclusive)) {
+              cursor += gapLength;
+            }
 
-            if (where < mark || (where == mark && exclusive))
-                mark += gapLength;
+            if (where < mark || (where == mark && exclusive)) {
+              mark += gapLength;
+            }
 
-            if (where < mark0 || (where == mark0 && exclusive))
-                mark0 += gapLength;
+            if (where < mark0 || (where == mark0 && exclusive)) {
+              mark0 += gapLength;
+            }
 
             etable.shiftPc(where, gapLength, exclusive);
-            if (line != null)
-                line.shiftPc(where, gapLength, exclusive);
+            if (line != null) {
+              line.shiftPc(where, gapLength, exclusive);
+            }
 
-            if (vars != null)
-                vars.shiftPc(where, gapLength, exclusive);
+            if (vars != null) {
+              vars.shiftPc(where, gapLength, exclusive);
+            }
 
-            if (types != null)
-                types.shiftPc(where, gapLength, exclusive);
+            if (types != null) {
+              types.shiftPc(where, gapLength, exclusive);
+            }
 
-            if (stack != null)
-                stack.shiftPc(where, gapLength, exclusive);
+            if (stack != null) {
+              stack.shiftPc(where, gapLength, exclusive);
+            }
 
-            if (stack2 != null)
-                stack2.shiftPc(where, gapLength, exclusive);
+            if (stack2 != null) {
+              stack2.shiftPc(where, gapLength, exclusive);
+            }
         }
     }
 
@@ -1047,11 +1101,12 @@ public class CodeIterator implements Opcode {
         int where = ldcs.where;
         LdcW ldcw = new LdcW(where, ldcs.index);
         int s = jumps.size();
-        for (int i = 0; i < s; i++)
-            if (where < jumps.get(i).orgPos) {
-                jumps.add(i, ldcw);
-                return;
-            }
+        for (int i = 0; i < s; i++) {
+          if (where < jumps.get(i).orgPos) {
+              jumps.add(i, ldcw);
+              return;
+          }
+        }
 
         jumps.add(ldcw);
     }
@@ -1073,8 +1128,9 @@ public class CodeIterator implements Opcode {
                                    ExceptionTable etable, CodeAttribute ca, Gap newWhere)
         throws BadBytecode
     {
-        if (gapLength <= 0)
-            return code;
+        if (gapLength <= 0) {
+          return code;
+        }
 
         ArrayList<Branch> jumps = makeJumpList(code, code.length);
         Pointers pointers = new Pointers(currentPos, mark, where, etable, ca);
@@ -1082,11 +1138,13 @@ public class CodeIterator implements Opcode {
         currentPos = pointers.cursor;
         mark = pointers.mark;
         int where2 = pointers.mark0;
-        if (where2 == currentPos && !exclusive)
-            currentPos += gapLength;
+        if (where2 == currentPos && !exclusive) {
+          currentPos += gapLength;
+        }
 
-        if (exclusive)
-            where2 -= gapLength;
+        if (exclusive) {
+          where2 -= gapLength;
+        }
 
         newWhere.position = where2;
         newWhere.length = gapLength;
@@ -1100,8 +1158,9 @@ public class CodeIterator implements Opcode {
         int n = jumps.size();
         if (gapLength > 0) {
             ptrs.shiftPc(where, gapLength, exclusive);
-            for (int i = 0; i < n; i++)
-                jumps.get(i).shift(where, gapLength, exclusive);
+            for (int i = 0; i < n; i++) {
+              jumps.get(i).shift(where, gapLength, exclusive);
+            }
         }
 
         boolean unstable = true;
@@ -1115,8 +1174,9 @@ public class CodeIterator implements Opcode {
                         int p = b.pos;
                         int delta = b.deltaSize();
                         ptrs.shiftPc(p, delta, false);
-                        for (int j = 0; j < n; j++)
-                            jumps.get(j).shift(p, delta, false);
+                        for (int j = 0; j < n; j++) {
+                          jumps.get(j).shift(p, delta, false);
+                        }
                     }
                 }
             }
@@ -1128,8 +1188,9 @@ public class CodeIterator implements Opcode {
                     unstable = true;
                     int p = b.pos;
                     ptrs.shiftPc(p, diff, false);
-                    for (int j = 0; j < n; j++)
-                        jumps.get(j).shift(p, diff, false);
+                    for (int j = 0; j < n; j++) {
+                      jumps.get(j).shift(p, diff, false);
+                    }
                 }
             }
         } while (unstable);
@@ -1151,10 +1212,11 @@ public class CodeIterator implements Opcode {
                 /* 2bytes *signed* offset */
                 int offset = (code[i + 1] << 8) | (code[i + 2] & 0xff);
                 Branch b;
-                if (inst == GOTO || inst == JSR)
-                    b = new Jump16(i, offset);
-                else
-                    b = new If16(i, offset);
+                if (inst == GOTO || inst == JSR) {
+                  b = new Jump16(i, offset);
+                } else {
+                  b = new If16(i, offset);
+                }
 
                 jumps.add(b);
             }
@@ -1229,13 +1291,14 @@ public class CodeIterator implements Opcode {
         while (src < len) {
             if (src == where) {
                 int pos2 = dest + gapLength;
-                while (dest < pos2)
-                    newcode[dest++] = NOP;
+                while (dest < pos2) {
+                  newcode[dest++] = NOP;
+                }
             }
 
-            if (src != bpos)
-                newcode[dest++] = code[src++];
-            else {
+            if (src != bpos) {
+              newcode[dest++] = code[src++];
+            } else {
                 int s = b.write(src, code, dest, newcode);
                 src += s;
                 dest += s + b.deltaSize();
@@ -1257,8 +1320,9 @@ public class CodeIterator implements Opcode {
         int pos, orgPos;
         Branch(int p) { pos = orgPos = p; }
         void shift(int where, int gapLength, boolean exclusive) {
-            if (where < pos || (where == pos && exclusive))
-                pos += gapLength;
+            if (where < pos || (where == pos && exclusive)) {
+              pos += gapLength;
+            }
         }
 
         boolean expanded() { return false; }
@@ -1285,9 +1349,9 @@ public class CodeIterator implements Opcode {
             if (state) {
                 state = false;
                 return true;
+            } else {
+              return false;
             }
-            else
-                return false;
         }
 
         @Override
@@ -1318,9 +1382,11 @@ public class CodeIterator implements Opcode {
         void shift(int where, int gapLength, boolean exclusive) {
             offset = newOffset(pos, offset, where, gapLength, exclusive);
             super.shift(where, gapLength, exclusive);
-            if (state == BIT16)
-                if (offset < Short.MIN_VALUE || Short.MAX_VALUE < offset)
-                    state = EXPAND;
+            if (state == BIT16) {
+              if (offset < Short.MIN_VALUE || Short.MAX_VALUE < offset) {
+                state = EXPAND;
+              }
+            }
         }
 
         @Override
@@ -1328,9 +1394,9 @@ public class CodeIterator implements Opcode {
             if (state == EXPAND) {
                 state = BIT32;
                 return true;
+            } else {
+              return false;
             }
-            else
-                return false;
         }
 
         @Override
@@ -1339,9 +1405,9 @@ public class CodeIterator implements Opcode {
 
         @Override
         int write(int src, byte[] code, int dest, byte[] newcode) {
-            if (state == BIT32)
-                write32(src, code, dest, newcode);
-            else {
+            if (state == BIT32) {
+              write32(src, code, dest, newcode);
+            } else {
                 newcode[dest] = code[src];
                 X_Byte.write16bit(offset, newcode, dest + 1);
             }
@@ -1389,15 +1455,16 @@ public class CodeIterator implements Opcode {
         }
 
         int opcode(int op) {
-            if (op == IFNULL)
-                return IFNONNULL;
-            else if (op == IFNONNULL)
-                return IFNULL;
-            else {
-                if (((op - IFEQ) & 1) == 0)
-                    return op + 1;
-                else
-                    return op - 1;
+            if (op == IFNULL) {
+              return IFNONNULL;
+            } else if (op == IFNONNULL) {
+              return IFNULL;
+            } else {
+                if (((op - IFEQ) & 1) == 0) {
+                  return op + 1;
+                } else {
+                  return op - 1;
+                }
             }
         }
     }
@@ -1440,8 +1507,9 @@ public class CodeIterator implements Opcode {
             int p = pos;
             defaultByte = newOffset(p, defaultByte, where, gapLength, exclusive);
             int num = offsets.length;
-            for (int i = 0; i < num; i++)
-                offsets[i] = newOffset(p, offsets[i], where, gapLength, exclusive);
+            for (int i = 0; i < num; i++) {
+              offsets[i] = newOffset(p, offsets[i], where, gapLength, exclusive);
+            }
 
             super.shift(where, gapLength, exclusive);
         }
@@ -1470,14 +1538,16 @@ public class CodeIterator implements Opcode {
             int bytecodeSize = 5 + (3 - (orgPos & 3)) + tableSize();
             adjustOffsets(bytecodeSize, nops);
             newcode[dest++] = code[src];
-            while (padding-- > 0)
-                newcode[dest++] = 0;
+            while (padding-- > 0) {
+              newcode[dest++] = 0;
+            }
 
             X_Byte.write32bit(defaultByte, newcode, dest);
             int size = write2(dest + 4, newcode);
             dest += size + 4;
-            while (nops-- > 0)
-                newcode[dest++] = NOP;
+            while (nops-- > 0) {
+              newcode[dest++] = NOP;
+            }
 
             return 5 + (3 - (orgPos & 3)) + size;
         }
@@ -1495,12 +1565,15 @@ public class CodeIterator implements Opcode {
          * StackMapTable.
          */
         void adjustOffsets(int size, int nops) {
-            if (defaultByte == size)
-                defaultByte -= nops;
+            if (defaultByte == size) {
+              defaultByte -= nops;
+            }
 
-            for (int i = 0; i < offsets.length; i++)
-                if (offsets[i] == size)
-                    offsets[i] -= nops;
+            for (int i = 0; i < offsets.length; i++) {
+              if (offsets[i] == size) {
+                offsets[i] -= nops;
+              }
+            }
         }
     }
 

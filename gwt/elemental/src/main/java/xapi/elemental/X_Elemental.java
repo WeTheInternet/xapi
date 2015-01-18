@@ -2,15 +2,16 @@ package xapi.elemental;
 
 import javax.inject.Provider;
 
-import elemental.client.Browser;
-import elemental.dom.Element;
-import elemental.html.DivElement;
-import elemental.html.Location;
 import xapi.elemental.api.ElementIterable;
 import xapi.elemental.api.ElementalService;
 import xapi.elemental.api.PotentialNode;
 import xapi.inject.X_Inject;
+import xapi.ui.html.X_Html;
 import xapi.util.api.ConvertsValue;
+import elemental.client.Browser;
+import elemental.dom.Element;
+import elemental.html.DivElement;
+import elemental.html.Location;
 
 public class X_Elemental {
 
@@ -21,8 +22,12 @@ public class X_Elemental {
   private static final Provider<ElementalService> SERVICE = X_Inject
       .singletonLazy(ElementalService.class);
 
+  public static void injectCss(Class<?> cls) {
+    X_Html.injectCss(cls, SERVICE.get());
+  }
+
   public static <T, E extends Element> ConvertsValue<T, PotentialNode<E>> toElementBuilder(
-      final Class<T> cls) {
+    final Class<T> cls) {
     return SERVICE.get().toElementBuilder(cls);
   }
 

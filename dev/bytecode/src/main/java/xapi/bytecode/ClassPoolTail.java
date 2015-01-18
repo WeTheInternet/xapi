@@ -1,3 +1,22 @@
+/*
+ * Javassist, a Java-bytecode translator toolkit.
+ * Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License.  Alternatively, the contents of this file may be used under
+ * the terms of the GNU Lesser General Public License Version 2.1 or later,
+ * or the Apache License Version 2.0.
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * MODIFIED BY James Nelson of We The Internet, 2013.
+ * Repackaged to avoid conflicts with different versions of Javassist,
+ * and modified Javassist APIs to make them more accessible to outside code.
+ */
 package xapi.bytecode;
 
 import java.io.File;
@@ -30,6 +49,7 @@ final class DirClassPath implements ClassPath {
         directory = dirName;
     }
 
+    @Override
     public InputStream openClassfile(String classname) {
         try {
             char sep = File.separatorChar;
@@ -42,21 +62,24 @@ final class DirClassPath implements ClassPath {
         return null;
     }
 
+    @Override
     public URL find(String classname) {
         char sep = File.separatorChar;
         String filename = directory + sep
             + classname.replace('.', sep) + ".class";
         File f = new File(filename);
-        if (f.exists())
-            try {
-                return f.getCanonicalFile().toURI().toURL();
-            }
-            catch (MalformedURLException e) {}
-            catch (IOException e) {}
+        if (f.exists()) {
+          try {
+              return f.getCanonicalFile().toURI().toURL();
+          }
+          catch (MalformedURLException e) {}
+          catch (IOException e) {}
+        }
 
         return null;
     }
 
+    @Override
     public void close() {}
 
     @Override
@@ -70,6 +93,7 @@ final class JarDirClassPath implements ClassPath {
 
     JarDirClassPath(String dirName) throws NotFoundException {
         File[] files = new File(dirName).listFiles(new FilenameFilter() {
+            @Override
             public boolean accept(File dir, String name) {
                 name = name.toLowerCase();
                 return name.endsWith(".jar") || name.endsWith(".zip");
@@ -78,37 +102,47 @@ final class JarDirClassPath implements ClassPath {
 
         if (files != null) {
             jars = new JarClassPath[files.length];
-            for (int i = 0; i < files.length; i++)
-                jars[i] = new JarClassPath(files[i].getPath());
+            for (int i = 0; i < files.length; i++) {
+              jars[i] = new JarClassPath(files[i].getPath());
+            }
         }
     }
 
+    @Override
     public InputStream openClassfile(String classname) throws NotFoundException {
-        if (jars != null)
-            for (int i = 0; i < jars.length; i++) {
-                InputStream is = jars[i].openClassfile(classname);
-                if (is != null)
-                    return is;
-            }
+        if (jars != null) {
+          for (int i = 0; i < jars.length; i++) {
+              InputStream is = jars[i].openClassfile(classname);
+              if (is != null) {
+                return is;
+              }
+          }
+        }
 
         return null;    // not found
     }
 
+    @Override
     public URL find(String classname) {
-        if (jars != null)
-            for (int i = 0; i < jars.length; i++) {
-                URL url = jars[i].find(classname);
-                if (url != null)
-                    return url;
-            }
+        if (jars != null) {
+          for (int i = 0; i < jars.length; i++) {
+              URL url = jars[i].find(classname);
+              if (url != null) {
+                return url;
+              }
+          }
+        }
 
         return null;    // not found
     }
 
+    @Override
     public void close() {
-        if (jars != null)
-            for (int i = 0; i < jars.length; i++)
-                jars[i].close();
+        if (jars != null) {
+          for (int i = 0; i < jars.length; i++) {
+            jars[i].close();
+          }
+        }
     }
 }
 
@@ -127,34 +161,40 @@ final class JarClassPath implements ClassPath {
         throw new NotFoundException(pathname);
     }
 
+    @Override
     public InputStream openClassfile(String classname)
         throws NotFoundException
     {
         try {
             String jarname = classname.replace('.', '/') + ".class";
             JarEntry je = jarfile.getJarEntry(jarname);
-            if (je != null)
-                return jarfile.getInputStream(je);
-            else
-                return null;    // not found
+            if (je != null) {
+              return jarfile.getInputStream(je);
+            }
+            else {
+              return null;    // not found
+            }
         }
         catch (IOException e) {}
         throw new NotFoundException("broken jar file?: "
                                     + jarfile.getName());
     }
 
+    @Override
     public URL find(String classname) {
         String jarname = classname.replace('.', '/') + ".class";
         JarEntry je = jarfile.getJarEntry(jarname);
-        if (je != null)
-            try {
-                return new URL("jar:" + jarfileURL + "!/" + jarname);
-            }
-            catch (MalformedURLException e) {}
+        if (je != null) {
+          try {
+              return new URL("jar:" + jarfileURL + "!/" + jarname);
+          }
+          catch (MalformedURLException e) {}
+        }
 
         return null;            // not found
     }
 
+    @Override
     public void close() {
         try {
             jarfile.close();
@@ -201,11 +241,12 @@ final class ClassPoolTail {
     public synchronized ClassPath appendClassPath(ClassPath cp) {
         ClassPathList tail = new ClassPathList(cp, null);
         ClassPathList list = pathList;
-        if (list == null)
-            pathList = tail;
-        else {
-            while (list.next != null)
-                list = list.next;
+        if (list == null) {
+          pathList = tail;
+        } else {
+            while (list.next != null) {
+              list = list.next;
+            }
 
             list.next = tail;
         }
@@ -215,16 +256,19 @@ final class ClassPoolTail {
 
     public synchronized void removeClassPath(ClassPath cp) {
         ClassPathList list = pathList;
-        if (list != null)
-            if (list.path == cp)
-                pathList = list.next;
-            else {
-                while (list.next != null)
-                    if (list.next.path == cp)
-                        list.next = list.next.next;
-                    else
-                        list = list.next;
-            }
+        if (list != null) {
+          if (list.path == cp) {
+            pathList = list.next;
+          } else {
+              while (list.next != null) {
+                if (list.next.path == cp) {
+                  list.next = list.next.next;
+                } else {
+                  list = list.next;
+                }
+              }
+          }
+        }
 
         cp.close();
     }
@@ -249,8 +293,9 @@ final class ClassPoolTail {
         throws NotFoundException
     {
         String lower = pathname.toLowerCase();
-        if (lower.endsWith(".jar") || lower.endsWith(".zip"))
-            return new JarClassPath(pathname);
+        if (lower.endsWith(".jar") || lower.endsWith(".zip")) {
+          return new JarClassPath(pathname);
+        }
 
         int len = pathname.length();
         if (len > 2 && pathname.charAt(len - 1) == '*'
@@ -278,8 +323,9 @@ final class ClassPoolTail {
         throws NotFoundException, IOException
     {
         InputStream fin = openClassfile(classname);
-        if (fin == null)
-            throw new NotFoundException(classname);
+        if (fin == null) {
+          throw new NotFoundException(classname);
+        }
 
         try {
             copyStream(fin, out);
@@ -320,7 +366,9 @@ final class ClassPoolTail {
         throws NotFoundException
     {
         if (packages.get(classname) != null)
-            return null;    // not found
+         {
+          return null;    // not found
+        }
 
         ClassPathList list = pathList;
         InputStream ins = null;
@@ -330,20 +378,24 @@ final class ClassPoolTail {
                 ins = list.path.openClassfile(classname);
             }
             catch (NotFoundException e) {
-                if (error == null)
-                    error = e;
+                if (error == null) {
+                  error = e;
+                }
             }
 
-            if (ins == null)
-                list = list.next;
-            else
-                return ins;
+            if (ins == null) {
+              list = list.next;
+            } else {
+              return ins;
+            }
         }
 
-        if (error != null)
-            throw error;
-        else
-            return null;    // not found
+        if (error != null) {
+          throw error;
+        }
+        else {
+          return null;    // not found
+        }
     }
 
     /**
@@ -355,17 +407,19 @@ final class ClassPoolTail {
      * @return null if the class file could not be found.
      */
     public URL find(String classname) {
-        if (packages.get(classname) != null)
-            return null;
+        if (packages.get(classname) != null) {
+          return null;
+        }
 
         ClassPathList list = pathList;
         URL url = null;
         while (list != null) {
             url = list.path.find(classname);
-            if (url == null)
-                list = list.next;
-            else
-                return url;
+            if (url == null) {
+              list = list.next;
+            } else {
+              return url;
+            }
         }
 
         return null;
@@ -386,9 +440,9 @@ final class ClassPoolTail {
             int len = 0;
             do {
                 len = fin.read(bufs[i], size, bufsize - size);
-                if (len >= 0)
-                    size += len;
-                else {
+                if (len >= 0) {
+                  size += len;
+                } else {
                     byte[] result = new byte[bufsize - 4096 + size];
                     int s = 0;
                     for (int j = 0; j < i; ++j) {
@@ -421,9 +475,9 @@ final class ClassPoolTail {
             int len = 0;
             do {
                 len = fin.read(buf, size, bufsize - size);
-                if (len >= 0)
-                    size += len;
-                else {
+                if (len >= 0) {
+                  size += len;
+                } else {
                     fout.write(buf, 0, size);
                     return;
                 }

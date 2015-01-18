@@ -1,3 +1,22 @@
+/*
+ * Javassist, a Java-bytecode translator toolkit.
+ * Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License.  Alternatively, the contents of this file may be used under
+ * the terms of the GNU Lesser General Public License Version 2.1 or later,
+ * or the Apache License Version 2.0.
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * MODIFIED BY James Nelson of We The Internet, 2013.
+ * Repackaged to avoid conflicts with different versions of Javassist,
+ * and modified Javassist APIs to make them more accessible to outside code.
+ */
 package xapi.bytecode.attributes;
 
 import java.io.DataInput;
@@ -48,8 +67,9 @@ public class AttributeInfo {
       name = n;
       int len = in.readInt();
       info = new byte[len];
-      if (len > 0)
-          in.readFully(info);
+      if (len > 0) {
+        in.readFully(info);
+      }
   }
 
   public static AttributeInfo read(ConstPool cp, DataInput in)
@@ -58,14 +78,18 @@ public class AttributeInfo {
       int name = in.readUnsignedShort();
       String nameStr = cp.getUtf8Info(name);
       if (nameStr.charAt(0) < 'L') {
-          if (nameStr.equals(AnnotationDefaultAttribute.tag))
-              return new AnnotationDefaultAttribute(cp, name, in);
-          else if (nameStr.equals(ConstantAttribute.tag))
-              return new ConstantAttribute(cp, name, in);
-          else if (nameStr.equals(InnerClassesAttribute.tag))
-              return new InnerClassesAttribute(cp, name, in);
-          else if (nameStr.equals(ExceptionsAttribute.tag))
+        switch(nameStr) {
+          case AnnotationDefaultAttribute.tag:
+            return new AnnotationDefaultAttribute(cp, name, in);
+          case ConstantAttribute.tag:
+            return new ConstantAttribute(cp, name, in);
+          case InnerClassesAttribute.tag:
+            return new InnerClassesAttribute(cp, name, in);
+          case ExceptionsAttribute.tag:
             return new ExceptionsAttribute(cp, name, in);
+          case CodeAttribute.tag:
+            return new CodeAttribute(cp, name, in);
+        }
       }
       else {
           /* Note that the names of Annotations attributes begin with 'R'.
@@ -75,10 +99,11 @@ public class AttributeInfo {
               // RuntimeVisibleAnnotations or RuntimeInvisibleAnnotations
               return new AnnotationsAttribute(cp, name, in);
           }
-          else if (nameStr.equals(SignatureAttribute.tag))
-              return new SignatureAttribute(cp, name, in);
-          else if (nameStr.equals(SourceFileAttribute.tag))
-              return new SourceFileAttribute(cp, name, in);
+          else if (nameStr.equals(SignatureAttribute.tag)) {
+            return new SignatureAttribute(cp, name, in);
+          } else if (nameStr.equals(SourceFileAttribute.tag)) {
+            return new SourceFileAttribute(cp, name, in);
+          }
       }
 
       return new AttributeInfo(cp, name, in);
@@ -135,8 +160,9 @@ public class AttributeInfo {
       int s = info.length;
       byte[] srcInfo = info;
       byte[] newInfo = new byte[s];
-      for (int i = 0; i < s; ++i)
-          newInfo[i] = srcInfo[i];
+      for (int i = 0; i < s; ++i) {
+        newInfo[i] = srcInfo[i];
+      }
 
       return new AttributeInfo(newCp, getName(), newInfo);
   }
@@ -144,8 +170,9 @@ public class AttributeInfo {
   void write(DataOutputStream out) throws IOException {
       out.writeShort(name);
       out.writeInt(info.length);
-      if (info.length > 0)
-          out.write(info);
+      if (info.length > 0) {
+        out.write(info);
+      }
   }
 
   public static int getLength(ArrayList<?> list) {
@@ -160,36 +187,41 @@ public class AttributeInfo {
   }
 
   public static AttributeInfo lookup(ArrayList<?> list, String name) {
-      if (list == null)
-          return null;
+      if (list == null) {
+        return null;
+      }
 
       ListIterator<?> iterator = list.listIterator();
       while (iterator.hasNext()) {
           AttributeInfo ai = (AttributeInfo)iterator.next();
-          if (ai.getName().equals(name))
-              return ai;
+          if (ai.getName().equals(name)) {
+            return ai;
+          }
       }
 
       return null;            // no such attribute
   }
 
   public static synchronized void remove(ArrayList<?> list, String name) {
-      if (list == null)
-          return;
+      if (list == null) {
+        return;
+      }
 
       ListIterator<?> iterator = list.listIterator();
       while (iterator.hasNext()) {
           AttributeInfo ai = (AttributeInfo)iterator.next();
-          if (ai.getName().equals(name))
-              iterator.remove();
+          if (ai.getName().equals(name)) {
+            iterator.remove();
+          }
       }
   }
 
   public static void writeAll(ArrayList<?> list, DataOutputStream out)
       throws IOException
   {
-      if (list == null)
-          return;
+      if (list == null) {
+        return;
+      }
 
       int n = list.size();
       for (int i = 0; i < n; ++i) {
@@ -199,8 +231,9 @@ public class AttributeInfo {
   }
 
   public static ArrayList<AttributeInfo> copyAll(ArrayList<?> list, ConstPool cp) {
-      if (list == null)
-          return null;
+      if (list == null) {
+        return null;
+      }
 
       ArrayList<AttributeInfo> newList = new ArrayList<AttributeInfo>();
       int n = list.size();

@@ -102,10 +102,9 @@ public class ElementalInjector implements
         if (invokeProvider) {
           JMethod convert;
           try {
-            convert =
-              ast.getProgram().getIndexedMethod("ConvertsValue.convert");
+            convert = ast.getProgram().getIndexedMethod("ConvertsValue.convert");
           } catch (InternalCompilerException e) {
-            logger.log(Type.ERROR, "Error looking up View.initialize()", e);
+            logger.log(Type.WARN, "Unable to look up indexed ConvertsValue.convert(); looking up method manually");
             error:
             {
               for (JMethod method : ast.searchForTypeBySource(
@@ -123,7 +122,7 @@ public class ElementalInjector implements
             convert =
                 ast.getProgram().getIndexedMethod(PotentialNode.class.getSimpleName()+ ".getElement");
           } catch (InternalCompilerException e) {
-            logger.log(Type.ERROR, "Error looking up View.initialize()", e);
+            logger.log(Type.WARN, "Unable to look up indexed PotentialNode.getElement(); looking up method manually");
             error:
             {
               for (JMethod method : ast.searchForTypeBySource(

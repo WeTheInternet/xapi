@@ -1,3 +1,22 @@
+/*
+ * Javassist, a Java-bytecode translator toolkit.
+ * Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License.  Alternatively, the contents of this file may be used under
+ * the terms of the GNU Lesser General Public License Version 2.1 or later,
+ * or the Apache License Version 2.0.
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * MODIFIED BY James Nelson of We The Internet, 2013.
+ * Repackaged to avoid conflicts with different versions of Javassist,
+ * and modified Javassist APIs to make them more accessible to outside code.
+ */
 package xapi.bytecode;
 
 import java.io.DataInput;
@@ -13,7 +32,6 @@ import xapi.bytecode.attributes.ConstantAttribute;
 import xapi.bytecode.attributes.SignatureAttribute;
 import xapi.bytecode.impl.BytecodeUtil;
 import xapi.source.X_Modifier;
-import xapi.source.api.AccessFlag;
 
 public final class FieldInfo extends MemberInfo {
     ConstPool constPool;
@@ -57,7 +75,7 @@ public final class FieldInfo extends MemberInfo {
     public String toString() {
         return getSignature();
     }
-    
+
     @Override
     public String getSignature() {
       return getName() + " " + getDescriptor();
@@ -125,8 +143,9 @@ public final class FieldInfo extends MemberInfo {
      * Returns the field name.
      */
     public String getName() {
-       if (cachedName == null)
-           cachedName = constPool.getUtf8Info(name);
+       if (cachedName == null) {
+        cachedName = constPool.getUtf8Info(name);
+      }
 
        return cachedName;
     }
@@ -172,8 +191,9 @@ public final class FieldInfo extends MemberInfo {
      * @see Descriptor
      */
     public void setDescriptor(String desc) {
-        if (!desc.equals(getDescriptor()))
-            descriptor = constPool.addUtf8Info(desc);
+        if (!desc.equals(getDescriptor())) {
+          descriptor = constPool.addUtf8Info(desc);
+        }
     }
 
     /**
@@ -183,15 +203,17 @@ public final class FieldInfo extends MemberInfo {
      * @return 0    if a ConstantValue attribute is not found.
      */
     public int getConstantValue() {
-        if ((accessFlags & X_Modifier.STATIC) == 0)
-            return 0;
+        if ((accessFlags & X_Modifier.STATIC) == 0) {
+          return 0;
+        }
 
         ConstantAttribute attr
             = (ConstantAttribute)getAttribute(ConstantAttribute.tag);
-        if (attr == null)
-            return 0;
-        else
-            return attr.getConstantValue();
+        if (attr == null) {
+          return 0;
+        } else {
+          return attr.getConstantValue();
+        }
     }
 
     /**
@@ -204,9 +226,11 @@ public final class FieldInfo extends MemberInfo {
      * @return a list of <code>AttributeInfo</code> objects.
      * @see AttributeInfo
      */
+    @Override
     public List<AttributeInfo> getAttributes() {
-        if (attribute == null)
-            attribute = new ArrayList<AttributeInfo>();
+        if (attribute == null) {
+          attribute = new ArrayList<AttributeInfo>();
+        }
 
         return attribute;
     }
@@ -218,6 +242,7 @@ public final class FieldInfo extends MemberInfo {
      * @param name      attribute name
      * @see #getAttributes()
      */
+    @Override
     public AttributeInfo getAttribute(String name) {
         return AttributeInfo.lookup(attribute, name);
     }
@@ -229,8 +254,9 @@ public final class FieldInfo extends MemberInfo {
      * @see #getAttributes()
      */
     public void addAttribute(AttributeInfo info) {
-        if (attribute == null)
-            attribute = new ArrayList<AttributeInfo>();
+        if (attribute == null) {
+          attribute = new ArrayList<AttributeInfo>();
+        }
 
         AttributeInfo.remove(attribute, info.getName());
         attribute.add(info);
@@ -242,22 +268,24 @@ public final class FieldInfo extends MemberInfo {
         descriptor = in.readUnsignedShort();
         int n = in.readUnsignedShort();
         attribute = new ArrayList<AttributeInfo>();
-        for (int i = 0; i < n; ++i)
-            attribute.add(AttributeInfo.read(constPool, in));
+        for (int i = 0; i < n; ++i) {
+          attribute.add(AttributeInfo.read(constPool, in));
+        }
     }
 
     void write(DataOutputStream out) throws IOException {
         out.writeShort(accessFlags);
         out.writeShort(name);
         out.writeShort(descriptor);
-        if (attribute == null)
-            out.writeShort(0);
-        else {
+        if (attribute == null) {
+          out.writeShort(0);
+        } else {
             out.writeShort(attribute.size());
             AttributeInfo.writeAll(attribute, out);
         }
     }
 
+    @Override
     public Annotation[] getAnnotations() {
       AttributeInfo vis = getAttribute(AnnotationsAttribute.visibleTag);
       AttributeInfo invis = getAttribute(AnnotationsAttribute.invisibleTag);

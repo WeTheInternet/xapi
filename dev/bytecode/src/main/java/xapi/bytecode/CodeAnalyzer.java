@@ -1,3 +1,22 @@
+/*
+ * Javassist, a Java-bytecode translator toolkit.
+ * Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License.  Alternatively, the contents of this file may be used under
+ * the terms of the GNU Lesser General Public License Version 2.1 or later,
+ * or the Apache License Version 2.0.
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * MODIFIED BY James Nelson of We The Internet, 2013.
+ * Repackaged to avoid conflicts with different versions of Javassist,
+ * and modified Javassist APIs to make them more accessible to outside code.
+ */
 package xapi.bytecode;
 
 import xapi.bytecode.api.Opcode;
@@ -29,17 +48,20 @@ public class CodeAnalyzer implements Opcode {
         boolean repeat;
         do {
             repeat = false;
-            for (int i = 0; i < length; ++i)
-                if (stack[i] < 0) {
-                    repeat = true;
-                    visitBytecode(ci, stack, i);
-                }
+            for (int i = 0; i < length; ++i) {
+              if (stack[i] < 0) {
+                  repeat = true;
+                  visitBytecode(ci, stack, i);
+              }
+            }
         } while (repeat);
 
         int maxStack = 1;
-        for (int i = 0; i < length; ++i)
-            if (stack[i] > maxStack)
-                maxStack = stack[i];
+        for (int i = 0; i < length; ++i) {
+          if (stack[i] > maxStack) {
+            maxStack = stack[i];
+          }
+        }
 
         return maxStack - 1;    // the base is 1.
     }
@@ -50,7 +72,9 @@ public class CodeAnalyzer implements Opcode {
         if (et != null) {
             int size = et.size();
             for (int i = 0; i < size; ++i)
-                stack[et.handlerPc(i)] = -2;    // an exception is on stack
+             {
+              stack[et.handlerPc(i)] = -2;    // an exception is on stack
+            }
         }
     }
 
@@ -65,17 +89,21 @@ public class CodeAnalyzer implements Opcode {
             stack[index] = stackDepth;
             int op = ci.byteAt(index);
             stackDepth = visitInst(op, ci, index, stackDepth);
-            if (stackDepth < 1)
-                throw new BadBytecode("stack underflow at " + index);
+            if (stackDepth < 1) {
+              throw new BadBytecode("stack underflow at " + index);
+            }
 
-            if (processBranch(op, ci, index, codeLength, stack, stackDepth))
-                break;
+            if (processBranch(op, ci, index, codeLength, stack, stackDepth)) {
+              break;
+            }
 
-            if (isEnd(op))     // return, ireturn, athrow, ...
-                break;
+            if (isEnd(op)) {
+              break;
+            }
 
-            if (op == JSR || op == JSR_W)
-                --stackDepth;
+            if (op == JSR || op == JSR_W) {
+              --stackDepth;
+            }
         }
     }
 
@@ -101,23 +129,26 @@ public class CodeAnalyzer implements Opcode {
                 return true;
             case JSR :
             case JSR_W :
-                if (opcode == JSR)
-                    target = index + ci.s16bitAt(index + 1);
-                else
-                    target = index + ci.s32bitAt(index + 1);
+                if (opcode == JSR) {
+                  target = index + ci.s16bitAt(index + 1);
+                } else {
+                  target = index + ci.s32bitAt(index + 1);
+                }
 
                 checkTarget(index, target, codeLength, stack, stackDepth);
-                if (stackDepth == 2)    // stackDepth is 1 if empty
-                    return false;
-                else
-                    throw new BadBytecode(
-                        "sorry, cannot compute this data flow due to JSR");
+                if (stackDepth == 2) {
+                  return false;
+                } else {
+                  throw new BadBytecode(
+                      "sorry, cannot compute this data flow due to JSR");
+                }
             case RET :
-                if (stackDepth == 1)    // stackDepth is 1 if empty
-                    return true;
-                else
-                    throw new BadBytecode(
-                        "sorry, cannot compute this data flow due to RET");
+                if (stackDepth == 1) {
+                  return true;
+                } else {
+                  throw new BadBytecode(
+                      "sorry, cannot compute this data flow due to RET");
+                }
             case LOOKUPSWITCH :
             case TABLESWITCH :
                 index2 = (index & ~3) + 4;
@@ -157,15 +188,17 @@ public class CodeAnalyzer implements Opcode {
                              int[] stack, int stackDepth)
         throws BadBytecode
     {
-        if (target < 0 || codeLength <= target)
-            throw new BadBytecode("bad branch offset at " + opIndex);
+        if (target < 0 || codeLength <= target) {
+          throw new BadBytecode("bad branch offset at " + opIndex);
+        }
 
         int d = stack[target];
-        if (d == 0)
-            stack[target] = -stackDepth;
-        else if (d != stackDepth && d != -stackDepth)
-            throw new BadBytecode("verification error (" + stackDepth +
-                                  "," + d + ") at " + opIndex);
+        if (d == 0) {
+          stack[target] = -stackDepth;
+        } else if (d != stackDepth && d != -stackDepth) {
+          throw new BadBytecode("verification error (" + stackDepth +
+                                "," + d + ") at " + opIndex);
+        }
     }
 
     private static boolean isEnd(int opcode) {

@@ -1,3 +1,22 @@
+/*
+ * Javassist, a Java-bytecode translator toolkit.
+ * Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License.  Alternatively, the contents of this file may be used under
+ * the terms of the GNU Lesser General Public License Version 2.1 or later,
+ * or the Apache License Version 2.0.
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * MODIFIED BY James Nelson of We The Internet, 2013.
+ * Repackaged to avoid conflicts with different versions of Javassist,
+ * and modified Javassist APIs to make them more accessible to outside code.
+ */
 package xapi.bytecode.attributes;
 
 import java.io.DataInputStream;
@@ -39,6 +58,7 @@ public class LocalVariableAttribute extends AttributeInfo {
      * @since 3.1
      * @deprecated
      */
+    @Deprecated
     public LocalVariableAttribute(ConstPool cp, String name) {
         super(cp, name, new byte[2]);
         X_Byte.write16bit(0, info, 0);
@@ -68,8 +88,9 @@ public class LocalVariableAttribute extends AttributeInfo {
         int size = info.length;
         byte[] newInfo = new byte[size + 10];
         X_Byte.write16bit(tableLength() + 1, newInfo, 0);
-        for (int i = 2; i < size; ++i)
-            newInfo[i] = info[i];
+        for (int i = 2; i < size; ++i) {
+          newInfo[i] = info[i];
+        }
 
         X_Byte.write16bit(startPc, newInfo, size);
         X_Byte.write16bit(length, newInfo, size + 2);
@@ -79,6 +100,7 @@ public class LocalVariableAttribute extends AttributeInfo {
         info = newInfo;
     }
 
+    @Override
     void renameClass(String oldname, String newname) {
         ConstPool cp = getConstPool();
         int n = tableLength();
@@ -97,6 +119,7 @@ public class LocalVariableAttribute extends AttributeInfo {
         return Descriptor.rename(desc, oldname, newname);
     }
 
+    @Override
     void renameClass(Map<?, ?> classnames) {
         ConstPool cp = getConstPool();
         int n = tableLength();
@@ -126,8 +149,9 @@ public class LocalVariableAttribute extends AttributeInfo {
         int size = info.length;
         for (int i = 2; i < size; i += 10){
             int org = X_Byte.readU16bit(info, i + 8);
-            if (org >= lessThan)
-                X_Byte.write16bit(org + delta, info, i + 8);
+            if (org >= lessThan) {
+              X_Byte.write16bit(org + delta, info, i + 8);
+            }
         }
     }
 
@@ -173,10 +197,11 @@ public class LocalVariableAttribute extends AttributeInfo {
 
             /* if pc == 0, then the local variable is a method parameter.
              */
-            if (pc > where || (exclusive && pc == where && pc != 0))
-                X_Byte.write16bit(pc + gapLength, info, pos);
-            else if (pc + len > where || (exclusive && pc + len == where))
-                X_Byte.write16bit(len + gapLength, info, pos + 2);
+            if (pc > where || (exclusive && pc == where && pc != 0)) {
+              X_Byte.write16bit(pc + gapLength, info, pos);
+            } else if (pc + len > where || (exclusive && pc + len == where)) {
+              X_Byte.write16bit(len + gapLength, info, pos + 2);
+            }
         }
     }
 
@@ -221,7 +246,7 @@ public class LocalVariableAttribute extends AttributeInfo {
      * If this attribute represents a LocalVariableTypeTable attribute,
      * this method should be used instead of <code>descriptorIndex()</code>
      * since the method name is more appropriate.
-     * 
+     *
      * @param i         the i-th entry.
      * @see #descriptorIndex(int)
      * @see SignatureAttribute#toFieldSignature(String)
@@ -277,6 +302,7 @@ public class LocalVariableAttribute extends AttributeInfo {
      * @param newCp     the constant pool table used by the new copy.
      * @param classnames        should be null.
      */
+    @Override
     public AttributeInfo copy(ConstPool newCp, Map<?, ?> classnames) {
         byte[] src = get();
         byte[] dest = new byte[src.length];
@@ -294,8 +320,9 @@ public class LocalVariableAttribute extends AttributeInfo {
 
             X_Byte.write16bit(start, dest, j);
             X_Byte.write16bit(len, dest, j + 2);
-            if (name != 0)
-                name = cp.copy(name, newCp, null);
+            if (name != 0) {
+              name = cp.copy(name, newCp, null);
+            }
 
             X_Byte.write16bit(name, dest, j + 4);
 

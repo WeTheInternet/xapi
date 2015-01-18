@@ -25,4 +25,8 @@ public class X_Html {
   public static <T> HtmlSnippet<T> toSnippet(Class<?> templateClass, Class<? extends T> cls, StyleService<?> context) {
     return X_Inject.singleton(HtmlService.class).toSnippet(templateClass, cls, context);
   }
+
+  public static void injectCss(final Class<?> cls, StyleService<?> context) {
+    X_Inject.singleton(HtmlService.class).injectStyle(cls, context);
+  }
 }

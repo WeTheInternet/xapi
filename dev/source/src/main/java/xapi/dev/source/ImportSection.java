@@ -62,51 +62,58 @@ public class ImportSection {
     boolean hasStatic = importName!=null&&importName.length()>0;
     return tryImport(cls.getCanonicalName()+(hasStatic ? "."+importName : ""), hasStatic, false);
   }
-  
+
   public String addStatic(String importName) {
     return tryImport(importName, true);
   }
 
   public ImportSection addStatics(String... imports) {
-    for (String iport : imports)
+    for (String iport : imports) {
       addStatic(iport);
+    }
     return this;
   }
 
   @Override
   public String toString() {
-    StringBuilder b = new StringBuilder(NEW_LINE);
+    StringBuilder b = new StringBuilder(Character.toString(NEW_LINE));
     for (String importName : imports.values()) {
-      if (importName.length() > 0)
+      if (importName.length() > 0) {
         b.append("import ").append(importName).append(';').append(NEW_LINE);
+      }
     }
     for (String importName : importStatic.values()) {
-      if (importName.length() > 0)
+      if (importName.length() > 0) {
         b.append("import static ").append(importName).append(';')
             .append(NEW_LINE);
+      }
     }
-    return b.toString() + NEW_LINE;
+    return b.toString();
   }
 
   public ImportSection reserveSimpleName(String cls) {
-    if (!imports.containsKey(cls))
+    if (!imports.containsKey(cls)) {
       imports.put(cls, "");
+    }
     return this;
   }
 
   public ImportSection reserveMethodName(String name) {
-    if (!imports.containsKey(name))
+    if (!imports.containsKey(name)) {
       imports.put(name, "");
+    }
     return this;
   }
 
   public String addImport(Class<?> cls) {
-    if (cls.isPrimitive() || "java.lang".equals(cls.getPackage().getName()))
+    if (cls.isPrimitive() || "java.lang".equals(cls.getPackage().getName())) {
       return cls.getSimpleName();
+    }
     String existing = imports.get(cls.getSimpleName());
     if (existing != null) {
-      if (existing.equals(cls.getCanonicalName()))
+      if (existing.equals(cls.getCanonicalName())) {
         return cls.getSimpleName();
+      }
       return cls.getCanonicalName();
     }
     imports.put(cls.getSimpleName(), cls.getCanonicalName());
@@ -132,13 +139,14 @@ public class ImportSection {
   protected String tryImport(String importName, boolean staticImport) {
     return tryImport(importName, staticImport, true);
   }
-  
+
   protected String tryImport(String importName, boolean staticImport, boolean replaceDollarSigns) {
     TreeMap<String, String> map = staticImport ? importStatic : imports;
     int arrayDepth = 0;
     int index = importName.indexOf(".");
-    if (index == -1)
+    if (index == -1) {
       return importName;
+    }
     index = importName.indexOf("[]");
     while (index != -1) {
       importName = importName.substring(0, index)
@@ -150,17 +158,19 @@ public class ImportSection {
     importName = trim(importName);
     index = importName.indexOf('<');
     String suffix;
-    if (index == -1)
+    if (index == -1) {
       suffix = "";
-    else {
+    } else {
       suffix = importName.substring(index);
       // TODO import and strip these generics too.
       importName = importName.substring(0, index);
     }
-    while (arrayDepth-- > 0)
+    while (arrayDepth-- > 0) {
       suffix += "[]";
-    if (skipImports(importName))
+    }
+    if (!staticImport && skipImports(importName)) {
       return importName.replace("java.lang.", "") + suffix;
+    }
     if (replaceDollarSigns) {
       importName = importName.replace('$', '.');
     }
@@ -175,8 +185,9 @@ public class ImportSection {
       map.put(shortname, importName);
       return shortname + suffix;
     }
-    if (existing.equals(importName))
+    if (existing.equals(importName)) {
       return shortname + suffix;
+    }
     // map.put(importName+" "+map.size(), importName);
     return importName + suffix;
   }

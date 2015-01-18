@@ -1,6 +1,24 @@
+/*
+ * Javassist, a Java-bytecode translator toolkit.
+ * Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License.  Alternatively, the contents of this file may be used under
+ * the terms of the GNU Lesser General Public License Version 2.1 or later,
+ * or the Apache License Version 2.0.
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * MODIFIED BY James Nelson of We The Internet, 2013.
+ * Repackaged to avoid conflicts with different versions of Javassist,
+ * and modified Javassist APIs to make them more accessible to outside code.
+ */
 package xapi.bytecode;
 
-import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -162,7 +180,7 @@ public final class ConstPool {
         thisClassInfo = i;
     }
 
-    ConstInfo getItem(int n) {
+    public ConstInfo getItem(int n) {
         return items.elementAt(n);
     }
 
@@ -187,10 +205,11 @@ public final class ConstPool {
      */
     public String getClassInfo(int index) {
         ClassInfo c = (ClassInfo)getItem(index);
-        if (c == null)
-            return null;
-        else
-            return Descriptor.toJavaName(getUtf8Info(c.name));
+        if (c == null) {
+          return null;
+        } else {
+          return Descriptor.toJavaName(getUtf8Info(c.name));
+        }
     }
 
     /**
@@ -260,10 +279,11 @@ public final class ConstPool {
      */
     public String getFieldrefClassName(int index) {
         FieldrefInfo f = (FieldrefInfo)getItem(index);
-        if (f == null)
-            return null;
-        else
-            return getClassInfo(f.classIndex);
+        if (f == null) {
+          return null;
+        } else {
+          return getClassInfo(f.classIndex);
+        }
     }
 
     /**
@@ -286,14 +306,15 @@ public final class ConstPool {
      */
     public String getFieldrefName(int index) {
         FieldrefInfo f = (FieldrefInfo)getItem(index);
-        if (f == null)
-            return null;
-        else {
+        if (f == null) {
+          return null;
+        } else {
             NameAndTypeInfo n = (NameAndTypeInfo)getItem(f.nameAndTypeIndex);
-            if(n == null)
-                return null;
-            else
-                return getUtf8Info(n.memberName);
+            if(n == null) {
+              return null;
+            } else {
+              return getUtf8Info(n.memberName);
+            }
         }
     }
 
@@ -307,14 +328,15 @@ public final class ConstPool {
      */
     public String getFieldrefType(int index) {
         FieldrefInfo f = (FieldrefInfo)getItem(index);
-        if (f == null)
-            return null;
-        else {
+        if (f == null) {
+          return null;
+        } else {
             NameAndTypeInfo n = (NameAndTypeInfo)getItem(f.nameAndTypeIndex);
-            if(n == null)
-                return null;
-            else
-                return getUtf8Info(n.typeDescriptor);
+            if(n == null) {
+              return null;
+            } else {
+              return getUtf8Info(n.typeDescriptor);
+            }
         }
     }
 
@@ -337,10 +359,11 @@ public final class ConstPool {
      */
     public String getMethodrefClassName(int index) {
         MethodrefInfo minfo = (MethodrefInfo)getItem(index);
-        if (minfo == null)
-            return null;
-        else
-            return getClassInfo(minfo.classIndex);
+        if (minfo == null) {
+          return null;
+        } else {
+          return getClassInfo(minfo.classIndex);
+        }
     }
 
     /**
@@ -363,15 +386,16 @@ public final class ConstPool {
      */
     public String getMethodrefName(int index) {
         MethodrefInfo minfo = (MethodrefInfo)getItem(index);
-        if (minfo == null)
-            return null;
-        else {
+        if (minfo == null) {
+          return null;
+        } else {
             NameAndTypeInfo n
                 = (NameAndTypeInfo)getItem(minfo.nameAndTypeIndex);
-            if(n == null)
-                return null;
-            else
-                return getUtf8Info(n.memberName);
+            if(n == null) {
+              return null;
+            } else {
+              return getUtf8Info(n.memberName);
+            }
         }
     }
 
@@ -385,15 +409,16 @@ public final class ConstPool {
      */
     public String getMethodrefType(int index) {
         MethodrefInfo minfo = (MethodrefInfo)getItem(index);
-        if (minfo == null)
-            return null;
-        else {
+        if (minfo == null) {
+          return null;
+        } else {
             NameAndTypeInfo n
                 = (NameAndTypeInfo)getItem(minfo.nameAndTypeIndex);
-            if(n == null)
-                return null;
-            else
-                return getUtf8Info(n.typeDescriptor);
+            if(n == null) {
+              return null;
+            } else {
+              return getUtf8Info(n.typeDescriptor);
+            }
         }
     }
 
@@ -444,15 +469,16 @@ public final class ConstPool {
     public String getInterfaceMethodrefName(int index) {
         InterfaceMethodrefInfo minfo
             = (InterfaceMethodrefInfo)getItem(index);
-        if (minfo == null)
-            return null;
-        else {
+        if (minfo == null) {
+          return null;
+        } else {
             NameAndTypeInfo n
                 = (NameAndTypeInfo)getItem(minfo.nameAndTypeIndex);
-            if(n == null)
-                return null;
-            else
-                return getUtf8Info(n.memberName);
+            if(n == null) {
+              return null;
+            } else {
+              return getUtf8Info(n.memberName);
+            }
         }
     }
 
@@ -468,15 +494,16 @@ public final class ConstPool {
     public String getInterfaceMethodrefType(int index) {
         InterfaceMethodrefInfo minfo
             = (InterfaceMethodrefInfo)getItem(index);
-        if (minfo == null)
-            return null;
-        else {
+        if (minfo == null) {
+          return null;
+        } else {
             NameAndTypeInfo n
                 = (NameAndTypeInfo)getItem(minfo.nameAndTypeIndex);
-            if(n == null)
-                return null;
-            else
-                return getUtf8Info(n.typeDescriptor);
+            if(n == null) {
+              return null;
+            } else {
+              return getUtf8Info(n.typeDescriptor);
+            }
         }
     }
     /**
@@ -491,18 +518,19 @@ public final class ConstPool {
     public Object getLdcValue(int index) {
         ConstInfo constInfo = this.getItem(index);
         Object value = null;
-        if (constInfo instanceof StringInfo)
-            value = this.getStringInfo(index);
-        else if (constInfo instanceof FloatInfo)
-            value = new Float(getFloatInfo(index));
-        else if (constInfo instanceof IntegerInfo)
-            value = new Integer(getIntegerInfo(index));
-        else if (constInfo instanceof LongInfo)
-            value = new Long(getLongInfo(index));
-        else if (constInfo instanceof DoubleInfo)
-            value = new Double(getDoubleInfo(index));
-        else
-            value = null;
+        if (constInfo instanceof StringInfo) {
+          value = this.getStringInfo(index);
+        } else if (constInfo instanceof FloatInfo) {
+          value = new Float(getFloatInfo(index));
+        } else if (constInfo instanceof IntegerInfo) {
+          value = new Integer(getIntegerInfo(index));
+        } else if (constInfo instanceof LongInfo) {
+          value = new Long(getLongInfo(index));
+        } else if (constInfo instanceof DoubleInfo) {
+          value = new Double(getDoubleInfo(index));
+        } else {
+          value = null;
+        }
 
         return value;
     }
@@ -608,8 +636,9 @@ public final class ConstPool {
         if (getClassInfo(minfo.classIndex).equals(classname)) {
             NameAndTypeInfo ntinfo
                 = (NameAndTypeInfo)getItem(minfo.nameAndTypeIndex);
-            if (getUtf8Info(ntinfo.memberName).equals(membername))
-                return ntinfo.typeDescriptor;
+            if (getUtf8Info(ntinfo.memberName).equals(membername)) {
+              return ntinfo.typeDescriptor;
+            }
         }
 
         return 0;       // false
@@ -637,10 +666,12 @@ public final class ConstPool {
         NameAndTypeInfo ntinfo
                 = (NameAndTypeInfo)getItem(minfo.nameAndTypeIndex);
         if (getUtf8Info(ntinfo.memberName).equals(membername)
-            && getUtf8Info(ntinfo.typeDescriptor).equals(desc))
-            return getClassInfo(minfo.classIndex);
-        else
-            return null;       // false
+            && getUtf8Info(ntinfo.typeDescriptor).equals(desc)) {
+          return getClassInfo(minfo.classIndex);
+        }
+        else {
+          return null;       // false
+        }
     }
 
     private int addItem(ConstInfo info) {
@@ -660,8 +691,9 @@ public final class ConstPool {
      * @return the index of the copied item into the destination ClassPool.
      */
     public int copy(int n, ConstPool dest, Map<?, ?> classnames) {
-        if (n == 0)
-            return 0;
+        if (n == 0) {
+          return 0;
+        }
 
         ConstInfo info = getItem(n);
         return info.copy(this, dest, classnames);
@@ -680,11 +712,11 @@ public final class ConstPool {
      * @return          the index of the added entry.
      */
     public int addClassInfo(CtClass c) {
-        if (c == THIS)
-            return thisClassInfo;
-        else if (!c.isArray())
-            return addClassInfo(c.getName());
-        else {
+        if (c == THIS) {
+          return thisClassInfo;
+        } else if (!c.isArray()) {
+          return addClassInfo(c.getName());
+        } else {
             // an array type is recorded in the hashtable with
             // the key "[L<classname>;" instead of "<classname>".
             //
@@ -706,9 +738,9 @@ public final class ConstPool {
      */
     public int addClassInfo(String qname) {
         ClassInfo info = (ClassInfo)classes.get(qname);
-        if (info != null)
-            return info.index;
-        else {
+        if (info != null) {
+          return info.index;
+        } else {
             int utf8 = addUtf8Info(Descriptor.toJvmName(qname));
             info = new ClassInfo(utf8, numOfItems);
             classes.put(qname, info);
@@ -739,9 +771,9 @@ public final class ConstPool {
     public int addNameAndTypeInfo(int name, int type) {
         int h = hashFunc(name, type);
         ConstInfo ci = constInfoCache[h];
-        if (ci != null && ci instanceof NameAndTypeInfo && ci.hashCheck(name, type))
-            return constInfoIndexCache[h];
-        else {
+        if (ci != null && ci instanceof NameAndTypeInfo && ci.hashCheck(name, type)) {
+          return constInfoIndexCache[h];
+        } else {
             NameAndTypeInfo item = new NameAndTypeInfo(name, type);
             constInfoCache[h] = item;
             int i = addItem(item);
@@ -778,9 +810,9 @@ public final class ConstPool {
     public int addFieldrefInfo(int classInfo, int nameAndTypeInfo) {
         int h = hashFunc(classInfo, nameAndTypeInfo);
         ConstInfo ci = constInfoCache[h];
-        if (ci != null && ci instanceof FieldrefInfo && ci.hashCheck(classInfo, nameAndTypeInfo))
-            return constInfoIndexCache[h];
-        else {
+        if (ci != null && ci instanceof FieldrefInfo && ci.hashCheck(classInfo, nameAndTypeInfo)) {
+          return constInfoIndexCache[h];
+        } else {
             FieldrefInfo item = new FieldrefInfo(classInfo, nameAndTypeInfo);
             constInfoCache[h] = item;
             int i = addItem(item);
@@ -817,9 +849,9 @@ public final class ConstPool {
     public int addMethodrefInfo(int classInfo, int nameAndTypeInfo) {
         int h = hashFunc(classInfo, nameAndTypeInfo);
         ConstInfo ci = constInfoCache[h];
-        if (ci != null && ci instanceof MethodrefInfo && ci.hashCheck(classInfo, nameAndTypeInfo))
-            return constInfoIndexCache[h];
-        else {
+        if (ci != null && ci instanceof MethodrefInfo && ci.hashCheck(classInfo, nameAndTypeInfo)) {
+          return constInfoIndexCache[h];
+        } else {
             MethodrefInfo item = new MethodrefInfo(classInfo, nameAndTypeInfo);
             constInfoCache[h] = item;
             int i = addItem(item);
@@ -860,9 +892,9 @@ public final class ConstPool {
                                          int nameAndTypeInfo) {
         int h = hashFunc(classInfo, nameAndTypeInfo);
         ConstInfo ci = constInfoCache[h];
-        if (ci != null && ci instanceof InterfaceMethodrefInfo && ci.hashCheck(classInfo, nameAndTypeInfo))
-            return constInfoIndexCache[h];
-        else {
+        if (ci != null && ci instanceof InterfaceMethodrefInfo && ci.hashCheck(classInfo, nameAndTypeInfo)) {
+          return constInfoIndexCache[h];
+        } else {
             InterfaceMethodrefInfo item =new InterfaceMethodrefInfo(classInfo, nameAndTypeInfo);
             constInfoCache[h] = item;
             int i = addItem(item);
@@ -941,9 +973,9 @@ public final class ConstPool {
      */
     public int addUtf8Info(String utf8) {
         Utf8Info info = (Utf8Info)strings.get(utf8);
-        if (info != null)
-            return info.index;
-        else {
+        if (info != null) {
+          return info.index;
+        } else {
             info = new Utf8Info(utf8, numOfItems);
             strings.put(utf8, info);
             return addItem(info);
@@ -962,8 +994,9 @@ public final class ConstPool {
         int size = numOfItems;
         for (int i = 1; i < size; ++i) {
             String className = v.elementAt(i).getClassName(this);
-            if (className != null)
-               result.add(className);
+            if (className != null) {
+              result.add(className);
+            }
         }
         return result;
     }
@@ -1020,10 +1053,11 @@ public final class ConstPool {
         int i = 1;
         while (true) {
             ConstInfo info = items.elementAt(i++);
-            if (info == null)
-                break;
-            else
-                info.makeHashtable(this);
+            if (info == null) {
+              break;
+            } else {
+              info.makeHashtable(this);
+            }
         }
     }
 
@@ -1081,8 +1115,9 @@ public final class ConstPool {
         out.writeShort(numOfItems);
         LongVector v = items;
         int size = numOfItems;
-        for (int i = 1; i < size; ++i)
-            v.elementAt(i).write(out);
+        for (int i = 1; i < size; ++i) {
+          v.elementAt(i).write(out);
+        }
     }
 
     /**
@@ -1102,508 +1137,5 @@ public final class ConstPool {
             out.print(" ");
             items.elementAt(i).print(out);
         }
-    }
-}
-
-abstract class ConstInfo {
-    public abstract int getTag();
-
-    public String getClassName(ConstPool cp) { return null; }
-    public void renameClass(ConstPool cp, String oldName, String newName) {}
-    public void renameClass(ConstPool cp, Map<?, ?> classnames) {}
-    public abstract int copy(ConstPool src, ConstPool dest, Map<?, ?> classnames);
-                        // ** classnames is a mapping between JVM names.
-
-    public abstract void write(DataOutput out) throws IOException;
-    public abstract void print(PrintWriter out);
-
-    void makeHashtable(ConstPool cp) {}     // called after read() finishes in ConstPool.
-
-    boolean hashCheck(int a, int b) { return false; }
-
-    @Override
-    public String toString() {
-        ByteArrayOutputStream bout = new ByteArrayOutputStream();
-        PrintWriter out = new PrintWriter(bout);
-        print(out);
-        return bout.toString();
-    }
-}
-
-/* padding following DoubleInfo or LongInfo.
- */
-class ConstInfoPadding extends ConstInfo {
-    @Override
-    public int getTag() { return 0; }
-
-    @Override
-    public int copy(ConstPool src, ConstPool dest, Map<?, ?> map) {
-        return dest.addConstInfoPadding();
-    }
-
-    @Override
-    public void write(DataOutput out) throws IOException {}
-
-    @Override
-    public void print(PrintWriter out) {
-        out.println("padding");
-    }
-}
-
-class ClassInfo extends ConstInfo {
-    static final int tag = 7;
-    int name;
-    int index;
-
-    public ClassInfo(int className, int i) {
-        name = className;
-        index = i;
-    }
-
-    public ClassInfo(DataInput in, int i) throws IOException {
-        name = in.readUnsignedShort();
-        index = i;
-    }
-
-    @Override
-    public int getTag() { return tag; }
-
-    @Override
-    public String getClassName(ConstPool cp) {
-        return cp.getUtf8Info(name);
-    };
-
-    @Override
-    public void renameClass(ConstPool cp, String oldName, String newName) {
-        String nameStr = cp.getUtf8Info(name);
-        if (nameStr.equals(oldName))
-            name = cp.addUtf8Info(newName);
-        else if (nameStr.charAt(0) == '[') {
-            String nameStr2 = Descriptor.rename(nameStr, oldName, newName);
-            if (nameStr != nameStr2)
-                name = cp.addUtf8Info(nameStr2);
-        }
-    }
-
-    @Override
-    public void renameClass(ConstPool cp, Map<?, ?> map) {
-        String oldName = cp.getUtf8Info(name);
-        if (oldName.charAt(0) == '[') {
-            String newName = Descriptor.rename(oldName, map);
-            if (oldName != newName)
-                name = cp.addUtf8Info(newName);
-        }
-        else {
-            String newName = (String)map.get(oldName);
-            if (newName != null && !newName.equals(oldName))
-                name = cp.addUtf8Info(newName);
-        }
-    }
-
-    @Override
-    public int copy(ConstPool src, ConstPool dest, Map<?, ?> map) {
-        String classname = src.getUtf8Info(name);
-        if (map != null) {
-            String newname = (String)map.get(classname);
-            if (newname != null)
-                classname = newname;
-        }
-
-        return dest.addClassInfo(classname);
-    }
-
-    @Override
-    public void write(DataOutput out) throws IOException {
-        out.writeByte(tag);
-        out.writeShort(name);
-    }
-
-    @Override
-    public void print(PrintWriter out) {
-        out.print("Class #");
-        out.println(name);
-    }
-
-    @Override
-    void makeHashtable(ConstPool cp) {
-        String name = Descriptor.toJavaName(getClassName(cp));
-        cp.classes.put(name, this);
-    }
-}
-
-class NameAndTypeInfo extends ConstInfo {
-    static final int tag = 12;
-    int memberName;
-    int typeDescriptor;
-
-    public NameAndTypeInfo(int name, int type) {
-        memberName = name;
-        typeDescriptor = type;
-    }
-
-    public NameAndTypeInfo(DataInput in) throws IOException {
-        memberName = in.readUnsignedShort();
-        typeDescriptor = in.readUnsignedShort();
-    }
-
-    @Override
-    boolean hashCheck(int a, int b) { return a == memberName && b == typeDescriptor; }
-
-    @Override
-    public int getTag() { return tag; }
-
-    @Override
-    public void renameClass(ConstPool cp, String oldName, String newName) {
-        String type = cp.getUtf8Info(typeDescriptor);
-        String type2 = Descriptor.rename(type, oldName, newName);
-        if (type != type2)
-            typeDescriptor = cp.addUtf8Info(type2);
-    }
-
-    @Override
-    public void renameClass(ConstPool cp, Map<?, ?> map) {
-        String type = cp.getUtf8Info(typeDescriptor);
-        String type2 = Descriptor.rename(type, map);
-        if (type != type2)
-            typeDescriptor = cp.addUtf8Info(type2);
-    }
-
-    @Override
-    public int copy(ConstPool src, ConstPool dest, Map<?, ?> map) {
-        String mname = src.getUtf8Info(memberName);
-        String tdesc = src.getUtf8Info(typeDescriptor);
-        tdesc = Descriptor.rename(tdesc, map);
-        return dest.addNameAndTypeInfo(dest.addUtf8Info(mname),
-                                       dest.addUtf8Info(tdesc));
-    }
-
-    @Override
-    public void write(DataOutput out) throws IOException {
-        out.writeByte(tag);
-        out.writeShort(memberName);
-        out.writeShort(typeDescriptor);
-    }
-
-    @Override
-    public void print(PrintWriter out) {
-        out.print("NameAndType #");
-        out.print(memberName);
-        out.print(", type #");
-        out.println(typeDescriptor);
-    }
-}
-
-abstract class MemberrefInfo extends ConstInfo {
-    int classIndex;
-    int nameAndTypeIndex;
-
-    public MemberrefInfo(int cindex, int ntindex) {
-        classIndex = cindex;
-        nameAndTypeIndex = ntindex;
-    }
-
-    public MemberrefInfo(DataInput in) throws IOException {
-        classIndex = in.readUnsignedShort();
-        nameAndTypeIndex = in.readUnsignedShort();
-    }
-
-    @Override
-    public int copy(ConstPool src, ConstPool dest, Map<?, ?> map) {
-        int classIndex2 = src.getItem(classIndex).copy(src, dest, map);
-        int ntIndex2 = src.getItem(nameAndTypeIndex).copy(src, dest, map);
-        return copy2(dest, classIndex2, ntIndex2);
-    }
-
-    @Override
-    boolean hashCheck(int a, int b) { return a == classIndex && b == nameAndTypeIndex; }
-
-    abstract protected int copy2(ConstPool dest, int cindex, int ntindex);
-
-    @Override
-    public void write(DataOutput out) throws IOException {
-        out.writeByte(getTag());
-        out.writeShort(classIndex);
-        out.writeShort(nameAndTypeIndex);
-    }
-
-    @Override
-    public void print(PrintWriter out) {
-        out.print(getTagName() + " #");
-        out.print(classIndex);
-        out.print(", name&type #");
-        out.println(nameAndTypeIndex);
-    }
-
-    public abstract String getTagName();
-}
-
-class FieldrefInfo extends MemberrefInfo {
-    static final int tag = 9;
-
-    public FieldrefInfo(int cindex, int ntindex) {
-        super(cindex, ntindex);
-    }
-
-    public FieldrefInfo(DataInput in) throws IOException {
-        super(in);
-    }
-
-    @Override
-    public int getTag() { return tag; }
-
-    @Override
-    public String getTagName() { return "Field"; }
-
-    @Override
-    protected int copy2(ConstPool dest, int cindex, int ntindex) {
-        return dest.addFieldrefInfo(cindex, ntindex);
-    }
-}
-
-class MethodrefInfo extends MemberrefInfo {
-    static final int tag = 10;
-
-    public MethodrefInfo(int cindex, int ntindex) {
-        super(cindex, ntindex);
-    }
-
-    public MethodrefInfo(DataInput in) throws IOException {
-        super(in);
-    }
-
-    @Override
-    public int getTag() { return tag; }
-
-    @Override
-    public String getTagName() { return "Method"; }
-
-    @Override
-    protected int copy2(ConstPool dest, int cindex, int ntindex) {
-        return dest.addMethodrefInfo(cindex, ntindex);
-    }
-}
-
-class InterfaceMethodrefInfo extends MemberrefInfo {
-    static final int tag = 11;
-
-    public InterfaceMethodrefInfo(int cindex, int ntindex) {
-        super(cindex, ntindex);
-    }
-
-    public InterfaceMethodrefInfo(DataInput in) throws IOException {
-        super(in);
-    }
-
-    @Override
-    public int getTag() { return tag; }
-
-    @Override
-    public String getTagName() { return "Interface"; }
-
-    @Override
-    protected int copy2(ConstPool dest, int cindex, int ntindex) {
-        return dest.addInterfaceMethodrefInfo(cindex, ntindex);
-    }
-}
-
-class StringInfo extends ConstInfo {
-    static final int tag = 8;
-    int string;
-
-    public StringInfo(int str) {
-        string = str;
-    }
-
-    public StringInfo(DataInput in) throws IOException {
-        string = in.readUnsignedShort();
-    }
-
-    @Override
-    public int getTag() { return tag; }
-
-    @Override
-    public int copy(ConstPool src, ConstPool dest, Map<?, ?> map) {
-        return dest.addStringInfo(src.getUtf8Info(string));
-    }
-
-    @Override
-    public void write(DataOutput out) throws IOException {
-        out.writeByte(tag);
-        out.writeShort(string);
-    }
-
-    @Override
-    public void print(PrintWriter out) {
-        out.print("String #");
-        out.println(string);
-    }
-}
-
-class IntegerInfo extends ConstInfo {
-    static final int tag = 3;
-    int value;
-
-    public IntegerInfo(int i) {
-        value = i;
-    }
-
-    public IntegerInfo(DataInput in) throws IOException {
-        value = in.readInt();
-    }
-
-    @Override
-    public int getTag() { return tag; }
-
-    @Override
-    public int copy(ConstPool src, ConstPool dest, Map<?, ?> map) {
-        return dest.addIntegerInfo(value);
-    }
-
-    @Override
-    public void write(DataOutput out) throws IOException {
-        out.writeByte(tag);
-        out.writeInt(value);
-    }
-
-    @Override
-    public void print(PrintWriter out) {
-        out.print("Integer ");
-        out.println(value);
-    }
-}
-
-class FloatInfo extends ConstInfo {
-    static final int tag = 4;
-    float value;
-
-    public FloatInfo(float f) {
-        value = f;
-    }
-
-    public FloatInfo(DataInput in) throws IOException {
-        value = in.readFloat();
-    }
-
-    @Override
-    public int getTag() { return tag; }
-
-    @Override
-    public int copy(ConstPool src, ConstPool dest, Map<?, ?> map) {
-        return dest.addFloatInfo(value);
-    }
-
-    @Override
-    public void write(DataOutput out) throws IOException {
-        out.writeByte(tag);
-        out.writeFloat(value);
-    }
-
-    @Override
-    public void print(PrintWriter out) {
-        out.print("Float ");
-        out.println(value);
-    }
-}
-
-class LongInfo extends ConstInfo {
-    static final int tag = 5;
-    long value;
-
-    public LongInfo(long l) {
-        value = l;
-    }
-
-    public LongInfo(DataInput in) throws IOException {
-        value = in.readLong();
-    }
-
-    @Override
-    public int getTag() { return tag; }
-
-    @Override
-    public int copy(ConstPool src, ConstPool dest, Map<?, ?> map) {
-        return dest.addLongInfo(value);
-    }
-
-    @Override
-    public void write(DataOutput out) throws IOException {
-        out.writeByte(tag);
-        out.writeLong(value);
-    }
-
-    @Override
-    public void print(PrintWriter out) {
-        out.print("Long ");
-        out.println(value);
-    }
-}
-
-class DoubleInfo extends ConstInfo {
-    static final int tag = 6;
-    double value;
-
-    public DoubleInfo(double d) {
-        value = d;
-    }
-
-    public DoubleInfo(DataInput in) throws IOException {
-        value = in.readDouble();
-    }
-
-    @Override
-    public int getTag() { return tag; }
-
-    @Override
-    public int copy(ConstPool src, ConstPool dest, Map<?, ?> map) {
-        return dest.addDoubleInfo(value);
-    }
-
-    @Override
-    public void write(DataOutput out) throws IOException {
-        out.writeByte(tag);
-        out.writeDouble(value);
-    }
-
-    @Override
-    public void print(PrintWriter out) {
-        out.print("Double ");
-        out.println(value);
-    }
-}
-
-class Utf8Info extends ConstInfo {
-    static final int tag = 1;
-    String string;
-    int index;
-
-    public Utf8Info(String utf8, int i) {
-        string = utf8;
-        index = i;
-    }
-
-    public Utf8Info(DataInput in, int i) throws IOException {
-        string = in.readUTF();
-        index = i;
-    }
-
-    @Override
-    public int getTag() { return tag; }
-
-    @Override
-    public int copy(ConstPool src, ConstPool dest, Map<?, ?> map) {
-        return dest.addUtf8Info(string);
-    }
-
-    @Override
-    public void write(DataOutput out) throws IOException {
-        out.writeByte(tag);
-        out.writeUTF(string);
-    }
-
-    @Override
-    public void print(PrintWriter out) {
-        out.print("UTF8 \"");
-        out.print(string);
-        out.println("\"");
     }
 }

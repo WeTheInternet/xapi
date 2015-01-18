@@ -1,3 +1,22 @@
+/*
+ * Javassist, a Java-bytecode translator toolkit.
+ * Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License.  Alternatively, the contents of this file may be used under
+ * the terms of the GNU Lesser General Public License Version 2.1 or later,
+ * or the Apache License Version 2.0.
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * MODIFIED BY James Nelson of We The Internet, 2013.
+ * Repackaged to avoid conflicts with different versions of Javassist,
+ * and modified Javassist APIs to make them more accessible to outside code.
+ */
 package xapi.bytecode.annotation;
 
 import java.io.IOException;
@@ -45,26 +64,27 @@ public class ClassMemberValue extends MemberValue {
     Object getValue(ClassLoader cl, ClassPool cp, Method m)
             throws ClassNotFoundException {
         final String classname = getValue();
-        if (classname.equals("void"))
-            return void.class;
-        else if (classname.equals("int"))
-            return int.class;
-        else if (classname.equals("byte"))
-            return byte.class;
-        else if (classname.equals("long"))
-            return long.class;
-        else if (classname.equals("double"))
-            return double.class;
-        else if (classname.equals("float"))
-            return float.class;
-        else if (classname.equals("char"))
-            return char.class;
-        else if (classname.equals("short"))
-            return short.class;
-        else if (classname.equals("boolean"))
-            return boolean.class;
-        else
-            return loadClass(cl, classname);
+        if (classname.equals("void")) {
+          return void.class;
+        } else if (classname.equals("int")) {
+          return int.class;
+        } else if (classname.equals("byte")) {
+          return byte.class;
+        } else if (classname.equals("long")) {
+          return long.class;
+        } else if (classname.equals("double")) {
+          return double.class;
+        } else if (classname.equals("float")) {
+          return float.class;
+        } else if (classname.equals("char")) {
+          return char.class;
+        } else if (classname.equals("short")) {
+          return short.class;
+        } else if (classname.equals("boolean")) {
+          return boolean.class;
+        } else {
+          return loadClass(cl, classname);
+        }
     }
 
     @Override

@@ -1,3 +1,22 @@
+/*
+ * Javassist, a Java-bytecode translator toolkit.
+ * Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License.  Alternatively, the contents of this file may be used under
+ * the terms of the GNU Lesser General Public License Version 2.1 or later,
+ * or the Apache License Version 2.0.
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * MODIFIED BY James Nelson of We The Internet, 2013.
+ * Repackaged to avoid conflicts with different versions of Javassist,
+ * and modified Javassist APIs to make them more accessible to outside code.
+ */
 package xapi.bytecode;
 
 import java.io.BufferedInputStream;
@@ -83,8 +102,9 @@ public class ClassPool {
      */
     public ClassPool(boolean useDefaultPath) {
         this(null);
-        if (useDefaultPath)
-            appendSystemPath();
+        if (useDefaultPath) {
+          appendSystemPath();
+        }
     }
 
     /**
@@ -100,8 +120,9 @@ public class ClassPool {
         this.parent = parent;
         if (parent == null) {
             CtClass[] pt = CtClass.primitiveTypes;
-            for (int i = 0; i < pt.length; ++i)
-                classes.put(pt[i].getName(), pt[i]);
+            for (int i = 0; i < pt.length; ++i) {
+              classes.put(pt[i].getName(), pt[i]);
+            }
         }
 
         this.compressCount = 0;
@@ -192,8 +213,9 @@ public class ClassPool {
         if (compressCount++ > COMPRESS_THRESHOLD) {
             compressCount = 0;
             Enumeration<CtClass> e = classes.elements();
-            while (e.hasMoreElements())
-                ((CtClass)e.nextElement()).compress();
+            while (e.hasMoreElements()) {
+              ((CtClass)e.nextElement()).compress();
+            }
         }
     }
 
@@ -273,11 +295,13 @@ public class ClassPool {
         throws NotFoundException
     {
         CtClass clazz = get0(orgName, false);
-        if (clazz == null)
-            throw new NotFoundException(orgName);
+        if (clazz == null) {
+          throw new NotFoundException(orgName);
+        }
 
-        if (clazz instanceof CtClassType)
-            ((CtClassType)clazz).setClassPool(this);
+        if (clazz instanceof CtClassType) {
+          ((CtClassType)clazz).setClassPool(this);
+        }
 
         clazz.setName(newName);         // indirectly calls
                                         // classNameChanged() in this class
@@ -291,8 +315,10 @@ public class ClassPool {
      */
     synchronized void classNameChanged(String oldname, CtClass clazz) {
         CtClass c = (CtClass)getCached(oldname);
-        if (c == clazz)             // must check this equation.
-            removeCached(oldname);  // see getAndRename().
+        if (c == clazz)
+         {
+          removeCached(oldname);  // see getAndRename().
+        }
 
         String newName = clazz.getName();
         checkNotFrozen(newName);
@@ -317,14 +343,15 @@ public class ClassPool {
      */
     public CtClass get(String classname) throws NotFoundException {
         CtClass clazz;
-        if (classname == null)
-            clazz = null;
-        else
-            clazz = get0(classname, true);
+        if (classname == null) {
+          clazz = null;
+        } else {
+          clazz = get0(classname, true);
+        }
 
-        if (clazz == null)
-            throw new NotFoundException(classname);
-        else {
+        if (clazz == null) {
+          throw new NotFoundException(classname);
+        } else {
             clazz.incGetCounter();
             return clazz;
         }
@@ -346,20 +373,22 @@ public class ClassPool {
      */
     public CtClass getOrNull(String classname) {
         CtClass clazz = null;
-        if (classname == null)
-            clazz = null;
-        else
-            try {
-                /* ClassPool.get0() never throws an exception
-                   but its subclass may implement get0 that
-                   may throw an exception.
-                */
-                clazz = get0(classname, true);
-            }
-            catch (NotFoundException e){}
+        if (classname == null) {
+          clazz = null;
+        } else {
+          try {
+              /* ClassPool.get0() never throws an exception
+                 but its subclass may implement get0 that
+                 may throw an exception.
+              */
+              clazz = get0(classname, true);
+          }
+          catch (NotFoundException e){}
+        }
 
-        if (clazz != null)
-            clazz.incGetCounter();
+        if (clazz != null) {
+          clazz.incGetCounter();
+        }
 
         return clazz;
     }
@@ -385,10 +414,11 @@ public class ClassPool {
      * @since 3.8.1
      */
     public CtClass getCtClass(String classname) throws NotFoundException {
-        if (classname.charAt(0) == '[')
-            return Descriptor.toCtClass(classname, this);
-        else
-            return get(classname);
+        if (classname.charAt(0) == '[') {
+          return Descriptor.toCtClass(classname, this);
+        } else {
+          return get(classname);
+        }
     }
 
     /**
@@ -402,27 +432,31 @@ public class ClassPool {
         CtClass clazz = null;
         if (useCache) {
             clazz = getCached(classname);
-            if (clazz != null)
-                return clazz;
+            if (clazz != null) {
+              return clazz;
+            }
         }
 
         if (!childFirstLookup && parent != null) {
             clazz = parent.get0(classname, useCache);
-            if (clazz != null)
-                return clazz;
+            if (clazz != null) {
+              return clazz;
+            }
         }
 
         clazz = createCtClass(classname, useCache);
         if (clazz != null) {
             // clazz.getName() != classname if classname is "[L<name>;".
-            if (useCache)
-                cacheCtClass(clazz.getName(), clazz, false);
+            if (useCache) {
+              cacheCtClass(clazz.getName(), clazz, false);
+            }
 
             return clazz;
         }
 
-        if (childFirstLookup && parent != null)
-            clazz = parent.get0(classname, useCache);
+        if (childFirstLookup && parent != null) {
+          clazz = parent.get0(classname, useCache);
+        }
 
         return clazz;
     }
@@ -436,21 +470,24 @@ public class ClassPool {
      */
     protected CtClass createCtClass(String classname, boolean useCache) {
         // accept "[L<class name>;" as a class name.
-        if (classname.charAt(0) == '[')
-            classname = Descriptor.toClassName(classname);
+        if (classname.charAt(0) == '[') {
+          classname = Descriptor.toClassName(classname);
+        }
 
         if (classname.endsWith("[]")) {
             String base = classname.substring(0, classname.indexOf('['));
-            if ((!useCache || getCached(base) == null) && find(base) == null)
-                return null;
-            else
-                return new CtArray(classname, this);
+            if ((!useCache || getCached(base) == null) && find(base) == null) {
+              return null;
+            } else {
+              return new CtArray(classname, this);
+            }
         }
         else
-            if (find(classname) == null)
-                return null;
-            else
-                return new CtClassType(classname, this);
+            if (find(classname) == null) {
+              return null;
+            } else {
+              return new CtClassType(classname, this);
+            }
     }
 
     /**
@@ -482,15 +519,17 @@ public class ClassPool {
                     clazz = parent.get0(classname, true);
                 }
                 catch (NotFoundException e) {}
-                if (clazz != null)
-                    throw new RuntimeException(classname
-                            + " is in a parent ClassPool.  Use the parent.");
+                if (clazz != null) {
+                  throw new RuntimeException(classname
+                          + " is in a parent ClassPool.  Use the parent.");
+                }
             }
         }
         else
-            if (clazz.isFrozen())
-                throw new RuntimeException(classname
-                                        + ": frozen class (cannot edit)");
+            if (clazz.isFrozen()) {
+              throw new RuntimeException(classname
+                                      + ": frozen class (cannot edit)");
+            }
     }
 
     /*
@@ -501,13 +540,14 @@ public class ClassPool {
      */
     CtClass checkNotExists(String classname) {
         CtClass clazz = getCached(classname);
-        if (clazz == null)
-            if (!childFirstLookup && parent != null) {
-                try {
-                    clazz = parent.get0(classname, true);
-                }
-                catch (NotFoundException e) {}
-            }
+        if (clazz == null) {
+          if (!childFirstLookup && parent != null) {
+              try {
+                  clazz = parent.get0(classname, true);
+              }
+              catch (NotFoundException e) {}
+          }
+        }
 
         return clazz;
     }
@@ -536,13 +576,15 @@ public class ClassPool {
      * @param classnames        an array of fully-qualified class name.
      */
     public CtClass[] get(String[] classnames) throws NotFoundException {
-        if (classnames == null)
-            return new CtClass[0];
+        if (classnames == null) {
+          return new CtClass[0];
+        }
 
         int num = classnames.length;
         CtClass[] result = new CtClass[num];
-        for (int i = 0; i < num; ++i)
-            result[i] = get(classnames[i]);
+        for (int i = 0; i < num; ++i) {
+          result[i] = get(classnames[i]);
+        }
 
         return result;
     }
@@ -590,8 +632,9 @@ public class ClassPool {
         CtClass clazz = new CtClassType(classfile, this);
         clazz.checkModify();
         String classname = clazz.getName();
-        if (ifNotFrozen)
-            checkNotFrozen(classname);
+        if (ifNotFrozen) {
+          checkNotFrozen(classname);
+        }
 
         cacheCtClass(classname, clazz, true);
         return clazz;
@@ -621,9 +664,9 @@ public class ClassPool {
         clazz.checkModify();
         String classname = clazz.getName();
         CtClass found = checkNotExists(classname);
-        if (found != null)
-            return found;
-        else {
+        if (found != null) {
+          return found;
+        } else {
             cacheCtClass(classname, clazz, true);
             return clazz;
         }

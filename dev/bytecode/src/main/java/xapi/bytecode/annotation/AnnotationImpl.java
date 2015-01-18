@@ -1,3 +1,22 @@
+/*
+ * Javassist, a Java-bytecode translator toolkit.
+ * Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License.  Alternatively, the contents of this file may be used under
+ * the terms of the GNU Lesser General Public License Version 2.1 or later,
+ * or the Apache License Version 2.0.
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * MODIFIED BY James Nelson of We The Internet, 2013.
+ * Repackaged to avoid conflicts with different versions of Javassist,
+ * and modified Javassist APIs to make them more accessible to outside code.
+ */
 package xapi.bytecode.annotation;
 
 import java.lang.reflect.InvocationHandler;
@@ -99,6 +118,7 @@ public class AnnotationImpl implements InvocationHandler {
      * <code>AnnotationImpl</code>.  The <code>annotationType()</code> method
      * is also available on the proxy instance.
      */
+    @Override
     public Object invoke(Object proxy, Method method, Object[] args)
         throws Throwable
     {
@@ -108,21 +128,23 @@ public class AnnotationImpl implements InvocationHandler {
                 Object obj = args[0];
                 return new Boolean(checkEquals(obj));
             }
-            else if ("toString".equals(name))
-                return annotation.toString();
-            else if ("hashCode".equals(name))
-                return new Integer(hashCode());
+            else if ("toString".equals(name)) {
+              return annotation.toString();
+            } else if ("hashCode".equals(name)) {
+              return new Integer(hashCode());
+            }
         }
         else if ("annotationType".equals(name)
-                 && method.getParameterTypes().length == 0)
-           return getAnnotationType();
+                 && method.getParameterTypes().length == 0) {
+          return getAnnotationType();
+        }
 
         MemberValue mv = annotation.getMemberValue(name);
         if (mv == null) {
           return getDefault(name, method);
+        } else {
+          return mv.getValue(classLoader, pool, method);
         }
-        else
-            return mv.getValue(classLoader, pool, method);
     }
 
     private Object getDefault(String name, Method method)
@@ -175,10 +197,12 @@ public class AnnotationImpl implements InvocationHandler {
                 MemberValue mv = annotation.getMemberValue(name);
                 Object value = null;
                 try {
-                   if (mv != null)
-                       value = mv.getValue(classLoader, pool, methods[i]);
-                   if (value == null)
-                       value = getDefault(name, methods[i]);
+                   if (mv != null) {
+                    value = mv.getValue(classLoader, pool, methods[i]);
+                  }
+                   if (value == null) {
+                    value = getDefault(name, methods[i]);
+                  }
                 }
                 catch (RuntimeException e) {
                     throw e;
@@ -189,10 +213,11 @@ public class AnnotationImpl implements InvocationHandler {
 
                 // Calculate the hash code
                 if (value != null) {
-                    if (value.getClass().isArray())
-                        valueHashCode = arrayHashCode(value);
-                    else
-                        valueHashCode = value.hashCode();
+                    if (value.getClass().isArray()) {
+                      valueHashCode = arrayHashCode(value);
+                    } else {
+                      valueHashCode = value.hashCode();
+                    }
                 }
                 hashCode += 127 * name.hashCode() ^ valueHashCode;
             }
@@ -210,8 +235,9 @@ public class AnnotationImpl implements InvocationHandler {
      * @throws Exception for any problem
      */
     private boolean checkEquals(Object obj) throws Exception {
-        if (obj == null)
-            return false;
+        if (obj == null) {
+          return false;
+        }
 
         // Optimization when the other is one of ourselves
         if (obj instanceof Proxy) {
@@ -223,8 +249,9 @@ public class AnnotationImpl implements InvocationHandler {
         }
 
         Class<?> otherAnnotationType = (Class<?>) JDK_ANNOTATION_TYPE_METHOD.invoke(obj, (Object[])null);
-        if (getAnnotationType().equals(otherAnnotationType) == false)
-           return false;
+        if (getAnnotationType().equals(otherAnnotationType) == false) {
+          return false;
+        }
 
         Method[] methods = annotationType.getDeclaredMethods();
         for (int i = 0; i < methods.length; ++ i) {
@@ -235,10 +262,12 @@ public class AnnotationImpl implements InvocationHandler {
             Object value = null;
             Object otherValue = null;
             try {
-               if (mv != null)
-                   value = mv.getValue(classLoader, pool, methods[i]);
-               if (value == null)
-                   value = getDefault(name, methods[i]);
+               if (mv != null) {
+                value = mv.getValue(classLoader, pool, methods[i]);
+              }
+               if (value == null) {
+                value = getDefault(name, methods[i]);
+              }
                otherValue = methods[i].invoke(obj, (Object[])null);
             }
             catch (RuntimeException e) {
@@ -248,10 +277,12 @@ public class AnnotationImpl implements InvocationHandler {
                 throw new RuntimeException("Error retrieving value " + name + " for annotation " + annotation.getTypeName(), e);
             }
 
-            if (value == null && otherValue != null)
-                return false;
-            if (value != null && value.equals(otherValue) == false)
-                return false;
+            if (value == null && otherValue != null) {
+              return false;
+            }
+            if (value != null && value.equals(otherValue) == false) {
+              return false;
+            }
         }
 
         return true;
@@ -266,16 +297,18 @@ public class AnnotationImpl implements InvocationHandler {
      */
     private static int arrayHashCode(Object object)
     {
-       if (object == null)
-          return 0;
+       if (object == null) {
+        return 0;
+      }
 
        int result = 1;
 
        Object[] array = (Object[]) object;
        for (int i = 0; i < array.length; ++i) {
            int elementHashCode = 0;
-           if (array[i] != null)
-              elementHashCode = array[i].hashCode();
+           if (array[i] != null) {
+            elementHashCode = array[i].hashCode();
+          }
            result = 31 * result + elementHashCode;
        }
        return result;

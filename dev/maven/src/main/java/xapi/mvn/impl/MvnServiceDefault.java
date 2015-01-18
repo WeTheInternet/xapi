@@ -19,6 +19,8 @@ import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.connector.basic.BasicRepositoryConnectorFactory;
 import org.eclipse.aether.impl.DefaultServiceLocator;
+import org.eclipse.aether.repository.LocalArtifactRequest;
+import org.eclipse.aether.repository.LocalArtifactResult;
 import org.eclipse.aether.repository.LocalRepository;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.ArtifactRequest;
@@ -78,6 +80,8 @@ public class MvnServiceDefault implements MvnService {
     }
   };
 
+  private LogLevel logLevel;
+
   private final class ResourceMap extends
       AbstractMultiInitMap<Integer, ClasspathResourceMap, ClassLoader> {
     @SuppressWarnings("unchecked")
@@ -92,6 +96,11 @@ public class MvnServiceDefault implements MvnService {
   }
 
   @Override
+  public ArtifactResult loadArtifact(String groupId, String artifactId, String version) {
+    return loadArtifact(groupId, artifactId, "", "jar", version);
+  }
+
+  @Override
   public ArtifactResult loadArtifact(String groupId, String artifactId,
       String classifier, String extension, String version) {
     Moment before = X_Time.now();
@@ -99,14 +108,13 @@ public class MvnServiceDefault implements MvnService {
     RepositorySystemSession session = this.session.get();
 
     DefaultArtifact artifact = new DefaultArtifact( groupId,artifactId,classifier, X_String.isEmpty(extension) ? "jar" : extension, version);
-    RemoteRepository central = new RemoteRepository.Builder( "central", "default", "http://repo1.maven.org/maven2/" ).build();
 
     try {
       ArtifactRequest request = new ArtifactRequest(artifact, remoteRepos(), null);
       return repoSystem.resolveArtifact(session, request);
     } catch (ArtifactResolutionException e) {
-      X_Log.error("Resolved? ", e.getResult().isResolved(), e.getResult().getExceptions());
-      X_Log.error("Could not download " + artifact, e);
+      X_Log.log(getClass(), getLogLevel(), "Resolved? ", e.getResult().isResolved(), e.getResult().getExceptions());
+      X_Log.log(getClass(), getLogLevel(), "Could not download " + artifact, e);
       throw X_Debug.rethrow(e);
     } finally {
       if (X_Log.loggable(LogLevel.DEBUG)) {
@@ -116,9 +124,49 @@ public class MvnServiceDefault implements MvnService {
     }
   }
 
+  @Override
+  public LocalArtifactResult loadLocalArtifact(String groupId, String artifactId, String version) {
+    return loadLocalArtifact(groupId, artifactId, "", "jar", version);
+  }
+
+  @Override
+  public LocalArtifactResult loadLocalArtifact(String groupId, String artifactId,
+      String classifier, String extension, String version) {
+    Moment before = X_Time.now();
+    RepositorySystemSession session = this.session.get();
+    DefaultArtifact artifact = new DefaultArtifact( groupId,artifactId,classifier, X_String.isEmpty(extension) ? "jar" : extension, version);
+
+    try {
+      LocalArtifactRequest request = new LocalArtifactRequest(artifact, null, null);
+      return session.getLocalRepositoryManager().find(session, request);
+    } finally {
+      if (X_Log.loggable(LogLevel.DEBUG)) {
+        X_Log.debug("Resolved: " + artifact.toString() + " in "
+            + X_Time.difference(before));
+      }
+    }
+  }
+
+  protected LogLevel getLogLevel() {
+    return logLevel;
+  }
+
+  @Override
+  public void setLogLevel(LogLevel logLevel) {
+    this.logLevel = logLevel;
+  }
+
   protected RepositorySystemSession initLocalRepo() {
     DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
-    LocalRepository localRepo = new LocalRepository("target/local-repo");
+    String userHome = System.getProperty("user.home");
+    String path = "target/local-repo";
+    if (userHome != null) {
+      File maybeUse = new File(userHome, ".m2/repository");
+      if (maybeUse.exists()) {
+        path = maybeUse.getAbsolutePath();
+      }
+    }
+    LocalRepository localRepo = new LocalRepository(path);
     localRepo.getBasedir().mkdirs();
     session.setLocalRepositoryManager(repoSystem.get()
         .newLocalRepositoryManager(session, localRepo));

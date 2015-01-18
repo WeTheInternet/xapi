@@ -51,6 +51,7 @@ import xapi.source.read.JavaModel.IsParameter;
 import xapi.source.read.JavaModel.IsType;
 import xapi.source.read.JavaVisitor.AnnotationMemberVisitor;
 import xapi.source.read.JavaVisitor.AnnotationVisitor;
+import xapi.source.read.JavaVisitor.ClassBodyVisitor;
 import xapi.source.read.JavaVisitor.ClassVisitor;
 import xapi.source.read.JavaVisitor.GenericVisitor;
 import xapi.source.read.JavaVisitor.JavadocVisitor;
@@ -74,8 +75,9 @@ public class JavaLexer {
     @Override
     public AnnotationMemberVisitor<HasAnnotations> visitAnnotation(String annoName, String annoBody, HasAnnotations receiver) {
       IsAnnotation anno = new IsAnnotation(annoName);
-      if (receiver != null)
+      if (receiver != null) {
         receiver.addAnnotation(anno);
+      }
       return new AnnotationMemberExtractor();
     }
   }
@@ -158,19 +160,98 @@ public class JavaLexer {
     }
   }
 
+  private static final ModifierVisitor NO_OP_MOD_VISITOR = new ModifierVisitor() {
+    @Override
+    public void visitModifier(int modifier, Object receiver) {
+    }
+  };
+
+  private static final GenericVisitor NO_OP_GENERIC_VISITOR = new GenericVisitor() {
+    @Override
+    public void visitGeneric(String generic, Object receiver) {}
+  };
+
+  private static final ClassVisitor NP_OP_CLASS_VISITOR = new ClassVisitor() {
+
+    @Override
+    public AnnotationMemberVisitor visitAnnotation(String annoName, String annoBody, Object receiver) {
+      return null;
+    }
+
+    @Override
+    public void visitGeneric(String generic, Object receiver) {
+    }
+
+    @Override
+    public void visitJavadoc(String javadoc, Object receiver) {
+    }
+
+    @Override
+    public void visitModifier(int modifier, Object receiver) {
+    }
+
+    @Override
+    public void visitImport(String name, boolean isStatic, Object receiver) {
+    }
+
+    @Override
+    public void visitCopyright(String copyright, Object receiver) {
+    }
+
+    @Override
+    public void visitPackage(String pkg, Object receiver) {
+    }
+
+    @Override
+    public void visitName(String name, Object receiver) {
+    }
+
+    @Override
+    public void visitType(String type, Object receiver) {
+    }
+
+    @Override
+    public void visitSuperclass(String superClass, Object receiver) {
+    }
+
+    @Override
+    public void visitInterface(String iface, Object receiver) {
+    }
+
+    @Override
+    public ClassBodyVisitor visitBody(String body, Object receiver) {
+      return null;
+    }
+  };
+
+  protected static final AnnotationMemberVisitor NO_OP_ANNOTATION_MEMBER_VISITOR = new AnnotationMemberVisitor() {
+    @Override
+    public void visitMember(String name, String value, Object receiver) {
+    }
+  };
+
+  private static final AnnotationVisitor NO_OP_ANNOTATION_VISITOR = new AnnotationVisitor() {
+    @Override
+    public AnnotationMemberVisitor visitAnnotation(String annoName, String annoBody, Object receiver) {
+      return NO_OP_ANNOTATION_MEMBER_VISITOR;
+    }
+  };
+
   public static <R> int visitJavadoc
   (JavadocVisitor<R> visitor, R receiver, CharSequence chars, int pos) {
     pos = eatWhitespace(chars, pos);
-    if (pos == chars.length())
+    if (pos == chars.length()) {
       return pos;
+    }
     try {
       if ('/' == chars.charAt(pos)) {
         if (chars.charAt(++pos) == '*') {
           int start = pos + (chars.charAt(pos) == '*' ? 1 : 0);
           // We hava some javadoc. Let's eat it all
           do {
-            while (chars.charAt(++pos) != '*')
+            while (chars.charAt(++pos) != '*') {
               ;
+            }
           } while (chars.charAt(++pos) != '/');
           chars.subSequence(start, pos - 2);
           visitor.visitJavadoc(chars.toString().replaceAll("\n\\s*[*]", "")
@@ -187,8 +268,9 @@ public class JavaLexer {
   public static <R> int visitAnnotation
   (AnnotationVisitor<R> visitor, R receiver, CharSequence chars, int pos) {
     pos = eatWhitespace(chars, pos);
-    if (pos == chars.length())
+    if (pos == chars.length()) {
       return pos;
+    }
     int start = pos;
     try {
       while(chars.charAt(pos) == '@') {
@@ -208,8 +290,9 @@ public class JavaLexer {
           visitAnnotationMembers(bodyVisitor, receiver, annoBody, 0);
         }
         start = pos = eatWhitespace(chars, pos);
-        if (pos == chars.length())
+        if (pos == chars.length()) {
           break;
+        }
       }
     } catch (IndexOutOfBoundsException e) {
       error(
@@ -225,8 +308,9 @@ public class JavaLexer {
     String name = "value";
     boolean nameNext = true;
     while (true) {
-      if (pos == chars.length())
+      if (pos == chars.length()) {
         return pos;
+      }
       pos = eatWhitespace(chars, pos);
       switch (chars.charAt(pos)) {
       case ',':
@@ -248,12 +332,15 @@ public class JavaLexer {
         if (nameNext) {
           nameNext = false;
           int start = pos;
-          while (Character.isJavaIdentifierPart(chars.charAt(pos)))pos++;
+          while (Character.isJavaIdentifierPart(chars.charAt(pos))) {
+            pos++;
+          }
           String maybeName = chars.subSequence(start, pos).toString().trim();
-          if (maybeName.length() == 0)
+          if (maybeName.length() == 0) {
             name = "value";
-          else
+          } else {
             name = maybeName;
+          }
           pos = eatWhitespace(chars, pos);
           switch (chars.charAt(pos)) {
           case '=': // assignment
@@ -285,8 +372,9 @@ public class JavaLexer {
             break;
           case '"':
             pos = eatStringValue(chars, pos);
-            if (chars.charAt(pos) == '"')
+            if (chars.charAt(pos) == '"') {
               pos++;
+            }
             break;
           case '@':
             AnnotationVisitor<HasAnnotations> extractor = new AnnotationExtractor();
@@ -342,6 +430,14 @@ public class JavaLexer {
         if (chars.subSequence(pos, pos+9).equals("abstract ")) {
           pos = eatWhitespace(chars, pos+9);
           visitor.visitModifier(Modifier.ABSTRACT, receiver);
+          continue;
+        }
+        return pos;
+      case 'd':
+        // default
+        if (chars.subSequence(pos, pos+8).equals("default ")) {
+          pos = eatWhitespace(chars, pos+8);
+          visitor.visitModifier(JavaVisitor.MODIFIER_DEFAULT, receiver);
           continue;
         }
         return pos;
@@ -408,8 +504,9 @@ public class JavaLexer {
   public static <R> int visitMethodSignature
   (MethodVisitor<R> visitor, R receiver, CharSequence chars, int pos) {
     pos = eatWhitespace(chars, pos);
-    if (pos == chars.length())
+    if (pos == chars.length()) {
       return pos;
+    }
 
     pos = visitAnnotation(visitor, receiver, chars, pos);
     pos = visitModifier(visitor, receiver, chars, pos);
@@ -451,30 +548,36 @@ public class JavaLexer {
         }
         param.visitType(def, chars.subSequence(start, pos).toString(), varargs, receiver);
         pos = eatWhitespace(chars, pos);
-        if (chars.charAt(pos) == ',')
+        if (chars.charAt(pos) == ',') {
           pos++;
+        }
       }
     }
-    if (pos == chars.length())
+    if (pos == chars.length()) {
       return pos;
+    }
     pos = eatWhitespace(chars, pos+1);
-    if (pos == chars.length())
+    if (pos == chars.length()) {
       return pos;
+    }
     // exceptions
     if (chars.charAt(pos) == 't') {
       if (chars.subSequence(pos, pos+6).equals("throws")) {
         pos = eatWhitespace(chars, pos+7);
         while (pos < chars.length()) {
-          if (chars.charAt(pos)=='{' || chars.charAt(pos) == ';')
+          if (chars.charAt(pos)=='{' || chars.charAt(pos) == ';') {
             return pos;
+          }
           start = pos;
           pos = eatJavaname(chars, pos);
           visitor.visitException(chars.subSequence(start, pos).toString(), receiver);
           pos = eatWhitespace(chars, pos);
-          if (pos == chars.length())
+          if (pos == chars.length()) {
             return pos;
-          if (chars.charAt(pos) == ',')
+          }
+          if (chars.charAt(pos) == ',') {
             pos = eatWhitespace(chars, pos+1);
+          }
         }
       }
     }
@@ -533,8 +636,9 @@ public class JavaLexer {
           if (whitespace > pos && chars.charAt(whitespace+1)=='.') {
             break package_loop;
           }
-          if (lastPeriod != -1)
+          if (lastPeriod != -1) {
             pkg.append('.');
+          }
           lastPeriod = pos = whitespace;
           pkg.append(chars.subSequence(start, pos).toString().trim());
           pos = start = eatWhitespace(chars, pos+1);
@@ -551,8 +655,9 @@ public class JavaLexer {
   }
   TypeDef def;
     if (doneParsing){
-      if (pos == max)
+      if (pos == max) {
         return new TypeDef(chars.subSequence(start, pos+1).toString(), pos);
+      }
       def = new TypeDef(chars.subSequence(start, pos).toString());
     } else {
       StringBuilder typeName = new StringBuilder();
@@ -562,23 +667,27 @@ public class JavaLexer {
         pos = eatWhitespace(chars, pos);
         if (!Character.isJavaIdentifierStart(chars.charAt(pos))){
           if (pos > start) {
-            if (lastPeriod != -1)
+            if (lastPeriod != -1) {
               typeName.append('.');
+            }
             typeName.append(chars.subSequence(start, pos).toString().trim());
           }
           break;
         }
-        while(Character.isJavaIdentifierPart(chars.charAt(++pos)))
+        while(Character.isJavaIdentifierPart(chars.charAt(++pos))) {
           if (pos == max) {
-            if (lastPeriod != -1)
+            if (lastPeriod != -1) {
               typeName.append('.');
+            }
             typeName.append(chars.subSequence(start, pos+1).toString().trim());
             break typeloop;
           }
+        }
         int whitespace = eatWhitespace(chars, pos);
         if (chars.charAt(whitespace) == '.') {
-          if (lastPeriod != -1)
+          if (lastPeriod != -1) {
             typeName.append('.');
+          }
           if (pos != whitespace && chars.charAt(whitespace + 1) == '.') {
             typeName.append(chars.subSequence(start, pos).toString().trim());
             break;
@@ -588,27 +697,33 @@ public class JavaLexer {
           start = pos = eatWhitespace(chars, pos+1);
         } else {
           if (whitespace > pos) {
-            if (lastPeriod != -1)
+            if (lastPeriod != -1) {
               typeName.append('.');
+            }
             typeName.append(chars.subSequence(start, pos).toString().trim());
             break;
           }
         }
       }
       def = new TypeDef(typeName.toString());
-      if (pos == max)pos++;
+      if (pos == max) {
+        pos++;
+      }
     }
     def.pkgName = pkg.toString();
     start = pos = eatWhitespace(chars, pos);
     if (pos < chars.length()) {
       pos = eatGeneric(chars, pos);
-      if (pos != start)
+      if (pos != start) {
         def.generics = chars.subSequence(start, ++pos).toString();
+      }
     }
     pos = eatWhitespace(chars, pos);
     while (pos < max && chars.charAt(pos) == '[') {
       def.arrayDepth ++;
-      while (chars.charAt(++pos)!=']');
+      while (chars.charAt(++pos)!=']') {
+        ;
+      }
       pos = eatWhitespace(chars, pos+1);
     }
     if (pos < chars.length() && chars.charAt(pos) == '.') {
@@ -649,7 +764,9 @@ public class JavaLexer {
       default:
         if (nameNext) {
           nameNext = false;
-          while (Character.isJavaIdentifierPart(chars.charAt(pos)))pos++;
+          while (Character.isJavaIdentifierPart(chars.charAt(pos))) {
+            pos++;
+          }
           pos = eatWhitespace(chars, pos);
           switch (chars.charAt(pos)) {
           case '=': // assignment
@@ -688,10 +805,41 @@ public class JavaLexer {
     }
   }
 
+  protected static <R > int eatWhitespaceAndComments(CharSequence chars, int pos) {
+    int next = eatWhitespace(chars, pos);
+    int comment = eatComments(chars, next);
+    if (comment == pos) {
+      return pos;
+    }
+    return eatWhitespaceAndComments(chars, comment);
+  }
+
+  protected static int eatComments(CharSequence chars, int pos) {
+    if (chars.charAt(pos)=='/') {
+      if (chars.charAt(pos+1)=='/') {
+        // go to the newline
+        while (chars.charAt(++pos) != '\n') {
+          ;
+        }
+        pos++;
+      } else if (chars.charAt(pos+1)== '*') {
+        // go to the */
+        boolean done = false;
+        while (!done) {
+          while (chars.charAt(++pos) != '*') {}
+          done = chars.charAt(++pos) == '/';
+        }
+        pos++;
+      }
+    }
+    return pos;
+  }
+
   protected static <R > int eatWhitespace(CharSequence chars, int pos) {
     try {
-      while (Character. isWhitespace(chars .charAt(pos)))
+      while (Character. isWhitespace(chars .charAt(pos))) {
         pos++;
+      }
     } catch (IndexOutOfBoundsException ignored) {
     }
     return pos;
@@ -699,17 +847,21 @@ public class JavaLexer {
 
   protected static int eatJavaname(CharSequence chars, int pos) {
     try {
-      while (Character.isJavaIdentifierPart(chars.charAt(pos)))
+      while (Character.isJavaIdentifierPart(chars.charAt(pos))) {
         pos++;
-      if (chars.charAt(pos) == '.')
+      }
+      if (chars.charAt(pos) == '.') {
         return eatJavaname(chars, pos + 1);
+      }
     } catch (IndexOutOfBoundsException ignored) {}
     return pos;
   }
 
   protected static <R> int eatGeneric(CharSequence chars, int pos) {
     pos = eatWhitespace(chars, pos);
-    if (pos == chars.length())return pos;
+    if (pos == chars.length()) {
+      return pos;
+    }
     if (chars.charAt(pos) == '<') {
       int genericDepth = 1;
       while (genericDepth > 0) {
@@ -738,8 +890,9 @@ public class JavaLexer {
       case '"':
         boolean escaped = false;
         char c;
-        while ((c = chars.charAt(++pos)) != '"' || escaped)
+        while ((c = chars.charAt(++pos)) != '"' || escaped) {
           escaped = c == '\\' && !escaped;
+        }
       }
     } catch (IndexOutOfBoundsException e) {
 
@@ -769,10 +922,11 @@ public class JavaLexer {
   protected static int eatArrayInitializer(CharSequence chars, int pos) {
     while (true) {
       char c = chars.charAt(++pos);
-      if (c == '"')
+      if (c == '"') {
         pos = eatStringValue(chars, pos);
-      else if (c == '}')
+      } else if (c == '}') {
         return pos;
+      }
     }
   }
 
@@ -789,10 +943,12 @@ public class JavaLexer {
   }
 
   protected static void error(Throwable e, String string) {
-    if (string != null)
+    if (string != null) {
       System.err.println(string);
-    if (e != null)
+    }
+    if (e != null) {
       e.printStackTrace();
+    }
   }
 
   private final int modifier;
@@ -851,12 +1007,14 @@ public class JavaLexer {
     // not bothering with strictfp, transient or volatile just yet
     if (definition.contains("abstract ")) {
       modifier |= Modifier.ABSTRACT;
-      if (Modifier.isFinal(modifier))
+      if (Modifier.isFinal(modifier)) {
         throw new TypeDefinitionException(
             "A class or method cannot be both abstract and final!");
-      if (Modifier.isNative(modifier))
+      }
+      if (Modifier.isNative(modifier)) {
         throw new TypeDefinitionException(
             "A method cannot be both abstract and native!");
+      }
       // can't check static until we know whether we're parsing a class or a
       // method
       definition = definition.replace("abstract ", "");
@@ -955,8 +1113,9 @@ public class JavaLexer {
           } else {
             for (String part : gen.split(" ")) {
               int period = part.lastIndexOf('.');
-              if (period < 0)
+              if (period < 0) {
                 continue;
+              }
               imports.add(part);
               gen = gen.replace(part.substring(0, period + 1), "");
             }
@@ -966,8 +1125,9 @@ public class JavaLexer {
         String prefix = definition.substring(0, index);
         if (end < definition.length() - 1) {
           definition = prefix + definition.substring(end + 1);
-        } else
+        } else {
           definition = prefix;
+        }
       } else {
         isGenerics = false;
       }
@@ -977,16 +1137,19 @@ public class JavaLexer {
 
     definition = definition.trim();
     // some runtime validation
-    if (definition.contains(" ") && isClass)
+    if (definition.contains(" ") && isClass) {
       throw new TypeDefinitionException("Found ambiguous class definition in "
           + original + "; leftover: " + definition);
-    if (definition.length() == 0)
+    }
+    if (definition.length() == 0) {
       throw new TypeDefinitionException(
           "Did not have a class name in class definition " + original);
+    }
     if (Modifier.isStatic(modifier) && Modifier.isAbstract(modifier)
-        && !isClass)
+        && !isClass) {
       throw new TypeDefinitionException(
           "A method cannot be both abstract and static!");
+    }
     className = definition;
   }
 
@@ -998,8 +1161,9 @@ public class JavaLexer {
         opened++;
         break;
       case '>':
-        if (--opened == 0)
+        if (--opened == 0) {
           return index;
+        }
       }
     }
     return -1;
@@ -1064,7 +1228,7 @@ public class JavaLexer {
   public boolean isClass() {
     return isClass;
   }
-  
+
   public boolean isAnnotation() {
     return isAnnotation;
   }
@@ -1089,9 +1253,11 @@ public class JavaLexer {
             if (Character.isJavaIdentifierStart(generic.charAt(pos))){
               // do we have a period before anything else?
               int start = pos;
-              while (Character.isJavaIdentifierPart(generic.charAt(pos)))
-                if (++pos == max)
+              while (Character.isJavaIdentifierPart(generic.charAt(pos))) {
+                if (++pos == max) {
                   return false;
+                }
+              }
               int whitespace = eatWhitespace(generic, pos);
               if (generic.charAt(whitespace) == '.') {
                 // we have a fqcn.  Let's eat it.
@@ -1099,13 +1265,16 @@ public class JavaLexer {
                 pos = whitespace;
                 do{
                   start = pos = eatWhitespace(generic, pos+1);
-                  while (Character.isJavaIdentifierPart(generic.charAt(pos)))
+                  while (Character.isJavaIdentifierPart(generic.charAt(pos))) {
                     if (++pos == max) {
                       break;
                     }
+                  }
                   b.append('.').append(generic.substring(start, pos));
                   pos = eatWhitespace(generic, pos);
-                  if (pos==max)break;
+                  if (pos==max) {
+                    break;
+                  }
                 } while(generic.charAt(pos) == '.');
                 qualifiedName = b.toString();
                 return true;
@@ -1136,11 +1305,13 @@ public class JavaLexer {
 
   protected static String stripTypeMods(String type) {
     int end = type.indexOf('<');
-    if (end != -1)
+    if (end != -1) {
       type = type.substring(0, end);
+    }
     end = type.indexOf('[');
-    if (end != -1)
+    if (end != -1) {
       type = type.substring(0, end);
+    }
     return type;
   }
 
@@ -1171,8 +1342,9 @@ public class JavaLexer {
           if (whitespace > pos && chars.charAt(whitespace+1)=='.') {
             break package_loop;
           }
-          if (lastPeriod != -1)
+          if (lastPeriod != -1) {
             pkg.append('.');
+          }
           lastPeriod = pos = whitespace;
           pkg.append(chars.subSequence(start, pos).toString().trim());
           pos = start = eatWhitespace(chars, pos+1);
@@ -1201,23 +1373,27 @@ public class JavaLexer {
         pos = eatWhitespace(chars, pos);
         if (!Character.isJavaIdentifierStart(chars.charAt(pos))){
           if (pos > start) {
-            if (lastPeriod != -1)
+            if (lastPeriod != -1) {
               typeName.append('.');
+            }
             typeName.append(chars.subSequence(start, pos).toString().trim());
           }
           break;
         }
-        while(Character.isJavaIdentifierPart(chars.charAt(++pos)))
+        while(Character.isJavaIdentifierPart(chars.charAt(++pos))) {
           if (pos == max) {
-            if (lastPeriod != -1)
+            if (lastPeriod != -1) {
               typeName.append('.');
+            }
             typeName.append(chars.subSequence(start, pos+1).toString().trim());
             break typeloop;
           }
+        }
         int whitespace = eatWhitespace(chars, pos);
         if (chars.charAt(whitespace) == '.') {
-          if (lastPeriod != -1)
+          if (lastPeriod != -1) {
             typeName.append('.');
+          }
           if (pos != whitespace && chars.charAt(whitespace + 1) == '.') {
             typeName.append(chars.subSequence(start, pos).toString().trim());
             break;
@@ -1227,28 +1403,34 @@ public class JavaLexer {
           start = pos = eatWhitespace(chars, pos+1);
         } else {
           if (whitespace > pos) {
-            if (lastPeriod != -1)
+            if (lastPeriod != -1) {
               typeName.append('.');
+            }
             typeName.append(chars.subSequence(start, pos).toString().trim());
             break;
           }
         }
       }
       into.setType(pkg.toString(), typeName.toString());
-      if (pos == max)pos++;
+      if (pos == max) {
+        pos++;
+      }
     }
     into.packageName = pkg.toString();
     start = pos = eatWhitespace(chars, pos);
     if (pos < chars.length()) {
       pos = eatGeneric(chars, pos);
-      if (pos != start)
+      if (pos != start) {
         lexGenerics(into.generics, chars.subSequence(start, ++pos), 0);
+      }
     }
     pos = eatWhitespace(chars, pos);
     try{
       while (chars.charAt(pos) == '[') {
         into.arrayDepth ++;
-        while (chars.charAt(++pos)!=']');
+        while (chars.charAt(++pos)!=']') {
+          ;
+        }
         pos = eatWhitespace(chars, pos+1);
       }
     } catch (IndexOutOfBoundsException ignored){}
@@ -1281,7 +1463,7 @@ public class JavaLexer {
     return param;
   }
 
-  public static <Param> void visitClassFile(ClassVisitor<Param> extractor,
+  public static <Param> int visitClassFile(ClassVisitor<Param> extractor,
       Param receiver, CharSequence chars, int pos) {
     pos = eatWhitespace(chars, pos);
     // Check for copyright
@@ -1303,32 +1485,248 @@ public class JavaLexer {
         assert chars.charAt(pos) == ';';
         pos = eatWhitespace(chars, pos+1);
       }
-      // Grab imports
-      while (chars.charAt(pos) == 'i') {
-        // might be "interface"
-        if (chars.charAt(pos+1)=='n')
-          break;
-        assert chars.subSequence(pos, pos+6).toString().endsWith("import");
-        int start = pos = eatWhitespace(chars, pos+6);
-        boolean isStatic = false;
-        pos = eatJavaname(chars, pos);
-        String value = chars.subSequence(start, pos).toString();
-        if ("static".equals(value)) {
-          isStatic = true;
-          start = pos = eatWhitespace(chars, pos);
-          pos = eatJavaname(chars, pos);
-        }
-        if (chars.charAt(pos) == '*')
-          ++pos;
-        extractor.visitImport(chars.subSequence(start, pos).toString(), isStatic, receiver);
-        pos = eatWhitespace(chars, pos);
-        assert chars.charAt(pos)==';';
-        // Not allowed to have multiple ; here
-        pos = eatWhitespace(chars, pos+1);
-      }
-
-      // Visit class definition itself
     }
+    // Grab imports
+    while (chars.charAt(pos) == 'i') {
+      // might be "interface"
+      if (chars.charAt(pos+1)=='n') {
+        break;
+      }
+      assert chars.subSequence(pos, pos+6).toString().endsWith("import");
+      int start = pos = eatWhitespace(chars, pos+6);
+      boolean isStatic = false;
+      pos = eatJavaname(chars, pos);
+      String value = chars.subSequence(start, pos).toString();
+      if ("static".equals(value)) {
+        isStatic = true;
+        start = pos = eatWhitespace(chars, pos);
+        pos = eatJavaname(chars, pos);
+      }
+      if (chars.charAt(pos) == '*') {
+        ++pos;
+      }
+      extractor.visitImport(chars.subSequence(start, pos).toString(), isStatic, receiver);
+      pos = eatWhitespace(chars, pos);
+      assert chars.charAt(pos)==';';
+      // Not allowed to have multiple ; here
+      pos = eatWhitespace(chars, pos+1);
+    }
+    // Visit class definition itself
+    // Start w/ modifiers
+    pos = visitModifier(extractor, receiver, chars, pos);
+    pos = eatWhitespace(chars, pos);
+    // Now check for class / interface / enum / @interface
+    boolean isEnum = false, isInterface = false;
+    switch(chars.charAt(pos)) {
+    case 'c':
+      assert chars.subSequence(pos, pos+5).toString().equals("class");
+      extractor.visitType(chars.subSequence(pos, pos+5).toString(), receiver);
+      pos += 5;
+      break;
+    case 'i':
+      isInterface = true;
+      assert chars.subSequence(pos, pos+9).toString().equals("interface");
+      extractor.visitType(chars.subSequence(pos, pos+9).toString(), receiver);
+      pos += 9;
+      break;
+    case '@':
+      isInterface = true;
+      assert chars.subSequence(pos, pos+10).toString().equals("@interface");
+      extractor.visitType(chars.subSequence(pos, pos+10).toString(), receiver);
+      pos += 10;
+      break;
+    case 'e':
+      isEnum = true;
+      assert chars.subSequence(pos, pos+4).toString().equals("enum");
+      extractor.visitType(chars.subSequence(pos, pos+4).toString(), receiver);
+      pos += 4;
+      break;
+    }
+    pos = eatWhitespace(chars, pos);
+    int name = eatJavaname(chars, pos);
+    extractor.visitName(chars.subSequence(pos, name).toString(), receiver);
+    pos = eatWhitespace(chars, name);
+    if (chars.charAt(pos)=='e') {
+      // extends
+      assert chars.subSequence(pos, pos+7).toString().equals("extends");
+      pos += 7;
+      pos = eatWhitespace(chars, pos);
+      name = eatJavaname(chars, pos);
+      name = eatGeneric(chars, name);
+      String typeName = chars.subSequence(pos, name).toString();
+      if (isInterface) {
+        extractor.visitInterface(typeName, receiver);
+        pos = eatWhitespace(chars, name+1);
+        while (chars.charAt(pos) == ',') {
+          pos = eatWhitespace(chars, pos+1);
+          name = eatJavaname(chars, pos);
+          name = eatGeneric(chars, pos);
+          typeName = chars.subSequence(pos, name).toString();
+          extractor.visitInterface(typeName, receiver);
+          pos = eatWhitespace(chars, name+1);
+        }
+      } else {
+        extractor.visitSuperclass(typeName, receiver);
+        pos = eatWhitespace(chars, name+1);
+      }
+    }
+    pos = eatWhitespaceAndComments(chars, pos);
+    if (chars.charAt(pos) == 'i') {
+      // implements
+        assert chars.subSequence(pos, pos+10).toString().equals("implements");
+        pos += 10;
+        name = eatJavaname(chars, pos);
+        name = eatGeneric(chars, name);
+        String typeName = chars.subSequence(pos, name).toString();
+        extractor.visitInterface(typeName, receiver);
+        pos = eatWhitespace(chars, name+1);
+        while (chars.charAt(pos) == ',') {
+          pos = eatWhitespace(chars, pos+1);
+          name = eatJavaname(chars, pos);
+          name = eatGeneric(chars, pos);
+          typeName = chars.subSequence(pos, name).toString();
+          extractor.visitInterface(typeName, receiver);
+          pos = eatWhitespace(chars, name+1);
+        }
+    }
+    pos = eatWhitespaceAndComments(chars, pos);
+    assert chars.charAt(pos) == '{';
+    pos++;
+    if (isEnum) {
+      pos = eatJavaname(chars, pos);
+      pos = eatWhitespaceAndComments(chars, pos);
+      while (chars.charAt(pos) != ';' && chars.charAt(pos) != '}') {
+        if (chars.charAt(pos) == ',') {
+          pos ++;
+        }
+        pos = eatWhitespaceAndComments(chars, pos);
+        pos = eatJavaname(chars, pos);
+        pos = eatWhitespaceAndComments(chars, pos);
+        if (chars.charAt(pos) == '(') {
+          int depth = 1;
+          while (depth > 0) {
+            pos = eatWhitespace(chars, pos);
+            switch (chars.charAt(pos)) {
+            case '(':
+              depth ++;
+              break;
+            case ')':
+              depth --;
+              break;
+            case '"':
+              pos = eatStringValue(chars, pos);
+              break;
+            case '{':
+              pos = shortcircuitClassBody(chars, pos);
+              break;
+            }
+            pos ++;
+          }
+        }
+        if (chars.charAt(pos) == '{') {
+          pos = shortcircuitClassBody(chars, pos+1);
+        }
+        pos = eatWhitespaceAndComments(chars, pos);
+        if (chars.charAt(pos) == ',') {
+
+        }
+      }
+      if (chars.charAt(pos) == '}') {
+        return pos+1;
+      }
+    }
+    pos = eatWhitespaceAndComments(chars, pos+1);
+
+    return shortcircuitClassBody(chars, pos);
+  }
+
+  protected static int shortcircuitClassBody(CharSequence chars, int pos) {
+ // Short-circuit for now; going to skip over fields, methods and inner types.
+    while (chars.charAt(pos) != '}') {
+      pos = eatWhitespaceAndComments(chars, pos);
+      while (chars.charAt(pos) == '@') {
+        System.out.println(chars.charAt(pos)+"\n"+chars.subSequence(pos, pos + 10));
+        pos = eatJavaname(chars, pos+1);
+        if (chars.charAt(pos)=='(') {
+          pos = eatAnnotationBody(NO_OP_ANNOTATION_VISITOR, null, chars, pos);
+        }
+        pos = eatWhitespaceAndComments(chars, pos);
+        System.out.println(chars.charAt(pos)+"\n"+chars.subSequence(pos, pos + 10)+"\n\n\n");
+      }
+      pos = visitModifier(NO_OP_MOD_VISITOR, null, chars, pos);
+      pos = eatJavaname(chars, pos);
+      pos = eatWhitespaceAndComments(chars, pos+1);
+      pos = visitGeneric(NO_OP_GENERIC_VISITOR, null, chars, pos);
+      pos = eatWhitespaceAndComments(chars, pos+1);
+      pos = eatJavaname(chars, pos);
+      pos = eatWhitespaceAndComments(chars, pos);
+      char c = chars.charAt(pos);
+      switch(c) {
+      case ';':
+        // end of a field declaration, we can continue;
+        pos = eatWhitespaceAndComments(chars, pos+1);
+        continue;
+      case '=':
+        // beginning of a field initializer.  Eat statements until we hit a ;
+        pos = eatStatement(chars, pos+1);
+        pos = eatWhitespaceAndComments(chars, pos);
+        break;
+      case '(':
+        // beginning of a method definition
+        // fast forward to { or ;
+        while(chars.charAt(++pos)!=')') {
+          ;
+        }
+        pos = eatWhitespace(chars, pos+1);
+        if (chars.charAt(pos)==';') {
+          continue;
+        }
+      case 's':
+        if (chars.charAt(pos)=='s') {
+          assert chars.subSequence(pos, pos+6).toString().equals("static");
+          pos = pos+7;
+        }
+        pos = eatWhitespaceAndComments(chars, pos);
+        assert chars.charAt(pos) == '{';
+        while (chars.charAt(pos) != '}') {
+          pos = eatStatement(chars, pos+1);
+          pos = eatWhitespaceAndComments(chars, pos);
+        }
+        pos++;
+        // We are either in a method block or a static block... eat statements until we hit }
+        break;
+      case 'e':
+      case 'i':
+        // beginning of an extends or implements; fast forward to {
+        while (chars.charAt(++pos)!='{') {
+          ;
+        }
+      case '{':
+        // beginning of an inner type
+        pos = visitClassFile(NP_OP_CLASS_VISITOR, null, chars, pos);
+        break;
+      default:
+        System.err.println("Unhandled char: "+c+" @ "+chars.subSequence(pos, Math.min(pos+30, chars.length())));
+      }
+      pos = eatWhitespaceAndComments(chars, pos);
+    }
+    return pos+1;
+  }
+
+  protected static int eatStatement(CharSequence chars, int pos) {
+    pos = eatWhitespaceAndComments(chars, pos);
+    while (chars.charAt(pos) != ';') {
+      if (chars.charAt(pos) == '"') {
+        // eat quoted strings
+        pos = eatStringValue(chars, pos);
+      } else if (chars.charAt(pos) == '/') {
+        pos = eatComments(chars, pos);
+      } else if (chars.charAt(pos) == '{') {
+        pos = shortcircuitClassBody(chars, pos);
+      }
+      pos++;
+    }
+    return pos+1;
   }
 
 }

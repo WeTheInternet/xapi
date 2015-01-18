@@ -1,3 +1,22 @@
+/*
+ * Javassist, a Java-bytecode translator toolkit.
+ * Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License.  Alternatively, the contents of this file may be used under
+ * the terms of the GNU Lesser General Public License Version 2.1 or later,
+ * or the Apache License Version 2.0.
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * MODIFIED BY James Nelson of We The Internet, 2013.
+ * Repackaged to avoid conflicts with different versions of Javassist,
+ * and modified Javassist APIs to make them more accessible to outside code.
+ */
 package xapi.bytecode.annotation;
 
 import java.io.IOException;
@@ -72,9 +91,10 @@ public class Annotation {
         // TODO Enums are not supported right now.
         this(cp.addUtf8Info(Descriptor.of(clazz.getName())), cp);
 
-        if (!clazz.isInterface())
-            throw new RuntimeException(
-                "Only interfaces are allowed for Annotation creation.");
+        if (!clazz.isInterface()) {
+          throw new RuntimeException(
+              "Only interfaces are allowed for Annotation creation.");
+        }
 
         CtMethod methods[] = clazz.getDeclaredMethods();
         if (methods.length > 0) {
@@ -100,27 +120,27 @@ public class Annotation {
     public static MemberValue createMemberValue(ConstPool cp, CtClass type)
         throws NotFoundException
     {
-        if (type == CtClass.booleanType)
-            return new BooleanMemberValue(cp);
-        else if (type == CtClass.byteType)
-            return new ByteMemberValue(cp);
-        else if (type == CtClass.charType)
-            return new CharMemberValue(cp);
-        else if (type == CtClass.shortType)
-            return new ShortMemberValue(cp);
-        else if (type == CtClass.intType)
-            return new IntegerMemberValue(cp);
-        else if (type == CtClass.longType)
-            return new LongMemberValue(cp);
-        else if (type == CtClass.floatType)
-            return new FloatMemberValue(cp);
-        else if (type == CtClass.doubleType)
-            return new DoubleMemberValue(cp);
-        else if (type.getName().equals("java.lang.Class"))
-            return new ClassMemberValue(cp);
-        else if (type.getName().equals("java.lang.String"))
-            return new StringMemberValue(cp);
-        else if (type.isArray()) {
+        if (type == CtClass.booleanType) {
+          return new BooleanMemberValue(cp);
+        } else if (type == CtClass.byteType) {
+          return new ByteMemberValue(cp);
+        } else if (type == CtClass.charType) {
+          return new CharMemberValue(cp);
+        } else if (type == CtClass.shortType) {
+          return new ShortMemberValue(cp);
+        } else if (type == CtClass.intType) {
+          return new IntegerMemberValue(cp);
+        } else if (type == CtClass.longType) {
+          return new LongMemberValue(cp);
+        } else if (type == CtClass.floatType) {
+          return new FloatMemberValue(cp);
+        } else if (type == CtClass.doubleType) {
+          return new DoubleMemberValue(cp);
+        } else if (type.getName().equals("java.lang.Class")) {
+          return new ClassMemberValue(cp);
+        } else if (type.getName().equals("java.lang.String")) {
+          return new StringMemberValue(cp);
+        } else if (type.isArray()) {
             CtClass arrayType = type.getComponentType();
             MemberValue member = createMemberValue(cp, arrayType);
             return new ArrayMemberValue(member, cp);
@@ -165,16 +185,18 @@ public class Annotation {
         Pair p = new Pair();
         p.name = pool.addUtf8Info(name);
         p.value = value;
-        if (members == null)
-            members = new LinkedHashMap<String, Pair>();
+        if (members == null) {
+          members = new LinkedHashMap<String, Pair>();
+        }
 
         members.put(name, p);
     }
 
     private void addMemberValue(Pair pair) {
         String name = pool.getUtf8Info(pair.name);
-        if (members == null)
-            members = new LinkedHashMap<String, Pair>();
+        if (members == null) {
+          members = new LinkedHashMap<String, Pair>();
+        }
 
         members.put(name, pair);
     }
@@ -192,8 +214,9 @@ public class Annotation {
             while (mit.hasNext()) {
                 String name = (String)mit.next();
                 buf.append(name).append("=").append(getMemberValue(name));
-                if (mit.hasNext())
-                    buf.append(", ");
+                if (mit.hasNext()) {
+                  buf.append(", ");
+                }
             }
             buf.append(")");
         }
@@ -216,10 +239,11 @@ public class Annotation {
      * @return null if no members are defined.
      */
     public Set<String> getMemberNames() {
-        if (members == null)
-            return new HashSet<String>();
-        else
-            return members.keySet();
+        if (members == null) {
+          return new HashSet<String>();
+        } else {
+          return members.keySet();
+        }
     }
 
     /**
@@ -238,14 +262,15 @@ public class Annotation {
      * @see javassist.bytecode.AnnotationDefaultAttribute
      */
     public MemberValue getMemberValue(String name) {
-        if (members == null)
-            return null;
-        else {
+        if (members == null) {
+          return null;
+        } else {
             Pair p = (Pair)members.get(name);
-            if (p == null)
-                return null;
-            else
-                return p.value;
+            if (p == null) {
+              return null;
+            } else {
+              return p.value;
+            }
         }
     }
 
@@ -296,25 +321,29 @@ public class Annotation {
      */
     @Override
     public boolean equals(Object obj) {
-        if (obj == this)
-            return true;
-        if (obj == null || obj instanceof Annotation == false)
-            return false;
+        if (obj == this) {
+          return true;
+        }
+        if (obj == null || obj instanceof Annotation == false) {
+          return false;
+        }
 
         Annotation other = (Annotation) obj;
 
-        if (getTypeName().equals(other.getTypeName()) == false)
-            return false;
+        if (getTypeName().equals(other.getTypeName()) == false) {
+          return false;
+        }
 
         LinkedHashMap<String, Pair> otherMembers = other.members;
-        if (members == otherMembers)
-            return true;
-        else if (members == null)
-            return otherMembers == null;
-        else
-            if (otherMembers == null)
-                return false;
-            else
-                return members.equals(otherMembers);
+        if (members == otherMembers) {
+          return true;
+        } else if (members == null) {
+          return otherMembers == null;
+        } else
+            if (otherMembers == null) {
+              return false;
+            } else {
+              return members.equals(otherMembers);
+            }
     }
 }

@@ -1,3 +1,22 @@
+/*
+ * Javassist, a Java-bytecode translator toolkit.
+ * Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License.  Alternatively, the contents of this file may be used under
+ * the terms of the GNU Lesser General Public License Version 2.1 or later,
+ * or the Apache License Version 2.0.
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * MODIFIED BY James Nelson of We The Internet, 2013.
+ * Repackaged to avoid conflicts with different versions of Javassist,
+ * and modified Javassist APIs to make them more accessible to outside code.
+ */
 package xapi.bytecode;
 
 public class ClassMap extends java.util.HashMap<Object, Object> {
@@ -44,13 +63,15 @@ public class ClassMap extends java.util.HashMap<Object, Object> {
      * @see #fix(String)
      */
 	public void put(String oldname, String newname) {
-        if (oldname == newname)
-            return;
+        if (oldname == newname) {
+          return;
+        }
 
         String oldname2 = toJvmName(oldname);
         String s = (String)get(oldname2);
-        if (s == null || !s.equals(oldname2))
-            super.put(oldname2, toJvmName(newname));
+        if (s == null || !s.equals(oldname2)) {
+          super.put(oldname2, toJvmName(newname));
+        }
     }
 
     /**
@@ -63,13 +84,15 @@ public class ClassMap extends java.util.HashMap<Object, Object> {
      * @param newname       the substituted class name.
      */
     public void putIfNone(String oldname, String newname) {
-        if (oldname == newname)
-            return;
+        if (oldname == newname) {
+          return;
+        }
 
         String oldname2 = toJvmName(oldname);
         String s = (String)get(oldname2);
-        if (s == null)
-            super.put(oldname2, toJvmName(newname));
+        if (s == null) {
+          super.put(oldname2, toJvmName(newname));
+        }
     }
 
 	protected final void put0(Object oldname, Object newname) {
@@ -89,10 +112,11 @@ public class ClassMap extends java.util.HashMap<Object, Object> {
     @Override
     public Object get(Object jvmClassName) {
         Object found = super.get(jvmClassName);
-        if (found == null && parent != null)
-            return parent.get(jvmClassName);
-        else
-            return found;
+        if (found == null && parent != null) {
+          return parent.get(jvmClassName);
+        } else {
+          return found;
+        }
     }
 
     /**

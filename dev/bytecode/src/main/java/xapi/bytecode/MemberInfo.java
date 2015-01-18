@@ -1,3 +1,22 @@
+/*
+ * Javassist, a Java-bytecode translator toolkit.
+ * Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License.  Alternatively, the contents of this file may be used under
+ * the terms of the GNU Lesser General Public License Version 2.1 or later,
+ * or the Apache License Version 2.0.
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * MODIFIED BY James Nelson of We The Internet, 2013.
+ * Repackaged to avoid conflicts with different versions of Javassist,
+ * and modified Javassist APIs to make them more accessible to outside code.
+ */
 package xapi.bytecode;
 
 import java.util.ArrayList;
@@ -12,11 +31,11 @@ import xapi.bytecode.attributes.AttributeInfo;
 
 public abstract class MemberInfo implements Annotated {
 
-  private static WeakHashMap<MemberInfo, Map<String, Annotation>> cache = 
+  private static WeakHashMap<MemberInfo, Map<String, Annotation>> cache =
       new WeakHashMap<MemberInfo, Map<String, Annotation>>();
-  
+
   ArrayList<AttributeInfo> attribute; // may be null
-  
+
 
   /**
    * Returns all the attributes.  The returned <code>List</code> object
@@ -29,8 +48,9 @@ public abstract class MemberInfo implements Annotated {
    * @see AttributeInfo
    */
   public List<AttributeInfo> getAttributes() {
-      if (attribute == null)
-          attribute = new ArrayList<AttributeInfo>();
+      if (attribute == null) {
+        attribute = new ArrayList<AttributeInfo>();
+      }
 
       return attribute;
   }
@@ -46,7 +66,7 @@ public abstract class MemberInfo implements Annotated {
   public AttributeInfo getAttribute(String name) {
       return AttributeInfo.lookup(attribute, name);
   }
-  
+
   @Override
   public Annotation[] getAnnotations() {
     if (!cache.containsKey(this)) {
@@ -55,14 +75,15 @@ public abstract class MemberInfo implements Annotated {
     return cache.get(this).values().toArray(new Annotation[0]);
   }
 
+  @Override
   public Annotation getAnnotation(String annoName) {
     Map<String, Annotation> map = cache.get(this);
     if (map == null) {
       map = loadAnnotations();
-    } 
+    }
     return map.get(annoName);
   }
-  
+
   public boolean hasAnnotation(String annoName) {
     return cache.containsKey(this) && cache.get(this).containsKey(annoName);
   }
@@ -84,14 +105,14 @@ public abstract class MemberInfo implements Annotated {
     }
     return annos;
   }
-  
+
   public abstract String getSignature();
-  
+
   @Override
   public boolean equals(Object obj) {
     return obj instanceof MemberInfo && getSignature().equals(((MemberInfo)obj).getSignature());
   }
-  
+
   @Override
   public int hashCode() {
     return getSignature().hashCode();

@@ -18,5 +18,8 @@
   <extend-configuration-property name="gwt.magic.methods" 
     value="xapi.ui.html.X_Html.toSnippet(Ljava/lang/Class;Ljava/lang/Class;Lxapi/ui/api/StyleService;)Lxapi/ui/html/api/HtmlSnippet; *= xapi.dev.ui.html.HtmlSnippetInjector"/>
   
+  <extend-configuration-property name="gwt.magic.methods" 
+    value="xapi.ui.html.X_Html.injectCss(Ljava/lang/Class;Lxapi/ui/api/StyleService;)V *= xapi.dev.ui.html.CssInjector"/>
+  
   
 </module>

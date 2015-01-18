@@ -34,24 +34,27 @@ public class CollectionServiceDefault implements CollectionService{
   static final Comparator<String> STRING_CMP = new Comparator<String>() {
     @Override
     public int compare(String o1, String o2) {
-      if (o1 == null)
+      if (o1 == null) {
         return o2 == null ? 0 : "".compareTo(o2);
+      }
       return o1.compareTo(o2 == null ? "" : o2);
     }
   };
   static final Comparator<Enum<?>> ENUM_CMP = new Comparator<Enum<?>>() {
     @Override
     public int compare(Enum<?> o1, Enum<?> o2) {
-      if (o1 == null)
+      if (o1 == null) {
         return o2 == null ? 0 : -o2.ordinal();
+      }
       return o1.ordinal() - (o2 == null ? 0 : o2.ordinal());
     }
   };
   public static final Comparator<Class<?>> CLASS_CMP = new Comparator<Class<?>>() {
     @Override
     public int compare(Class<?> o1, Class<?> o2) {
-      if (o1 == null)
+      if (o1 == null) {
         return o2 == null ? 0 : -o2.hashCode();
+      }
       return o1.hashCode() - (o2 == null ? 0 : o2.hashCode());
     }
   };
@@ -65,7 +68,9 @@ public class CollectionServiceDefault implements CollectionService{
         o2=0;
       }
       double delta = o1.doubleValue() - o2.doubleValue();
-      if (Math.abs(delta)<0.0000000001)return 0;
+      if (Math.abs(delta)<0.0000000001) {
+        return 0;
+      }
       return delta < 0 ? -1 : 1;
     }
   };
@@ -73,8 +78,9 @@ public class CollectionServiceDefault implements CollectionService{
     @Override
     @SuppressWarnings({"unchecked","rawtypes"})
     public int compare(Object o1, Object o2) {
-      if (o1 instanceof Comparable)
+      if (o1 instanceof Comparable) {
         return ((Comparable)o1).compareTo(o2);
+      }
       return System.identityHashCode(o1) - System.identityHashCode(o2);
     }
   };
@@ -98,11 +104,16 @@ public class CollectionServiceDefault implements CollectionService{
     comparators.entryFor(Double.class).setValue(NUMBER_CMP);
   }
 
-  protected <K, V> Map<K,V> newMap() {
-    if (X_Runtime.isMultithreaded())
+  protected <K, V> Map<K,V> newMap(CollectionOptions opts) {
+    if (opts.insertionOrdered()) {
+      assert !opts.concurrent() : "Concurrent and insertion ordered are not supported at the same time";
+      return new LinkedHashMap<K, V>();
+    }
+    if (X_Runtime.isMultithreaded()) {
       return new ConcurrentHashMap<K,V>();
-    else
+    } else {
       return new HashMap<K,V>();
+    }
   }
 
   @Override
@@ -117,31 +128,33 @@ public class CollectionServiceDefault implements CollectionService{
 
   @Override
   public <K,V> ObjectTo<K,V> newMap(Class<K> key, Class<V> cls, CollectionOptions opts) {
-    return new MapOf<K,V>(this.<K, V>newMap(), key, cls);
+    return new MapOf<K,V>(this.<K, V>newMap(opts), key, cls);
   }
 
 
   @Override
   public <V> ClassTo<V> newClassMap(Class<V> cls, CollectionOptions opts) {
-    return new ClassToDefault<V>(this.<Class<?>, V>newMap(), cls);
+    return new ClassToDefault<V>(this.<Class<?>, V>newMap(opts), cls);
   }
 
   @Override
   public <V> StringTo<V> newStringMap(Class<? extends V> cls, CollectionOptions opts) {
-    return new StringToAbstract<V>();
+    return new StringToAbstract<V>(this.<String, V>newMap(opts));
   }
 
   protected <K, V> CollectionProxy<K,V> newProxy(Class<K> keyType, Class<V> valueType, CollectionOptions opts) {
     if (opts.insertionOrdered()) {
-      if (opts.concurrent())
+      if (opts.concurrent()) {
         return new MapOf<K,V>(new ConcurrentSkipListMap<K,V>(), keyType, valueType);
-      else
+      } else {
         return new MapOf<K,V>(new LinkedHashMap<K,V>(), keyType, valueType);
+      }
     }
-    if (opts.concurrent())
+    if (opts.concurrent()) {
       return new MapOf<K,V>(new ConcurrentHashMap<K,V>(), keyType, valueType);
-    else
+    } else {
       return new MapOf<K,V>(new HashMap<K,V>(), keyType, valueType);
+    }
   }
 
   @SuppressWarnings({

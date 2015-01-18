@@ -1,17 +1,16 @@
 package xapi.dev.source;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-
+import xapi.collect.X_Collect;
+import xapi.collect.api.StringTo;
 import xapi.util.api.ConvertsValue;
 
 public class XmlBuffer extends PrintBuffer {
 
   public static final String QUOTE = "\"", QUOTE_ENTITY = "&quot;";
-  
+
   private String tagName;
   private PrintBuffer attributes, comment, before;
-  private Map<String, StringBuilder> attributeMap;
+  private StringTo<StringBuilder> attributeMap;
   private boolean printNewline = false;
   private boolean abbr = false;
   private ConvertsValue<String, String> escaper;
@@ -73,7 +72,7 @@ public class XmlBuffer extends PrintBuffer {
   protected void ensureAttributes() {
     if (attributes == null) {
       attributes = new PrintBuffer();
-      attributeMap = new LinkedHashMap<String, StringBuilder>();
+      attributeMap = X_Collect.newStringMapInsertionOrdered(StringBuilder.class);
     }
   }
 
@@ -98,7 +97,7 @@ public class XmlBuffer extends PrintBuffer {
     addToBeginning(buffer);
     return buffer;
   }
-  
+
   public XmlBuffer makeTagAtBeginningNoIndent(String name) {
     XmlBuffer buffer = new XmlBuffer(name);
     buffer.setNewLine(false);
@@ -163,7 +162,7 @@ public class XmlBuffer extends PrintBuffer {
   public String escape(String text) {
     return escaper.convert(text);
   }
-  
+
   public XmlBuffer setEscaper(ConvertsValue<String, String> escaper) {
     this.escaper = escaper;
     return this;
@@ -175,7 +174,7 @@ public class XmlBuffer extends PrintBuffer {
     }
     return append;
   }
-  
+
   public XmlBuffer setNewLine(boolean useNewLine) {
     printNewline = useNewLine;
     return this;
@@ -185,126 +184,151 @@ public class XmlBuffer extends PrintBuffer {
     return !"script".equals(tag);
   }
 
+  @Override
   public XmlBuffer append(Object obj) {
     super.append(obj);
     return this;
   }
 
+  @Override
   public XmlBuffer print(String str) {
     super.print(str);
     return this;
   }
-  
+
+  @Override
   public XmlBuffer clearIndent() {
     indent = "";
     return this;
   }
-  
+
+  @Override
   public XmlBuffer append(String str) {
     super.append(str);
     return this;
   }
 
+  @Override
   public XmlBuffer append(CharSequence s) {
     super.append(s);
     return this;
   }
 
+  @Override
   public XmlBuffer append(CharSequence s, int start, int end) {
     super.append(s, start, end);
     return this;
   }
 
+  @Override
   public XmlBuffer append(char[] str) {
     super.append(str);
     return this;
   }
 
+  @Override
   public XmlBuffer append(char[] str, int offset, int len) {
     super.append(str, offset, len);
     return this;
   }
 
+  @Override
   public XmlBuffer append(boolean b) {
     super.append(b);
     return this;
   }
 
+  @Override
   public XmlBuffer append(char c) {
     super.append(c);
     return this;
   }
 
+  @Override
   public XmlBuffer append(int i) {
     super.append(i);
     return this;
   }
 
+  @Override
   public XmlBuffer append(long lng) {
     super.append(lng);
     return this;
   }
 
+  @Override
   public XmlBuffer append(float f) {
     super.append(f);
     return this;
   }
 
+  @Override
   public XmlBuffer append(double d) {
     super.append(d);
     return this;
   }
 
+  @Override
   public XmlBuffer indent() {
     super.indent();
     return this;
   }
 
+  @Override
   public XmlBuffer indentln(Object obj) {
     super.indentln(obj);
     return this;
   }
 
+  @Override
   public XmlBuffer indentln(String str) {
     super.indentln(str);
     return this;
   }
 
+  @Override
   public XmlBuffer indentln(CharSequence s) {
     super.indentln(s);
     return this;
   }
 
+  @Override
   public XmlBuffer indentln(char[] str) {
     super.indentln(str);
     return this;
   }
 
+  @Override
   public XmlBuffer outdent() {
     super.outdent();
     return this;
   }
 
+  @Override
   public XmlBuffer println() {
     super.println();
     return this;
   }
 
+  @Override
   public XmlBuffer println(Object obj) {
     super.println(obj);
     return this;
   }
 
+  @Override
   public XmlBuffer println(String str) {
     super.println(str);
     return this;
   }
 
+  @Override
   public XmlBuffer println(CharSequence s) {
     super.println(s);
     return this;
   }
 
+  @Override
   public XmlBuffer println(char[] str) {
     super.println(str);
     return this;
@@ -318,7 +342,8 @@ public class XmlBuffer extends PrintBuffer {
   public boolean isNoTagName() {
     return tagName == null;
   }
-  
+
+  @Override
   public boolean isEmpty() {
     return super.isEmpty() && isNoTagName() && comment.isEmpty()
         && before.isEmpty();
@@ -336,12 +361,12 @@ public class XmlBuffer extends PrintBuffer {
     StringBuilder id = attributeMap.get("id");
     return id.substring(2, id.length()-2);
   }
-  
+
   public boolean hasAttribute(String name) {
     ensureAttributes();
     return attributeMap.containsKey(name);
   }
-  
+
   public String getAttribute(String name) {
     if (hasAttribute(name)) {
       StringBuilder attr = attributeMap.get(name);

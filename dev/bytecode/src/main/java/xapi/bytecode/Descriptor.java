@@ -1,3 +1,22 @@
+/*
+ * Javassist, a Java-bytecode translator toolkit.
+ * Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License.  Alternatively, the contents of this file may be used under
+ * the terms of the GNU Lesser General Public License Version 2.1 or later,
+ * or the Apache License Version 2.0.
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * MODIFIED BY James Nelson of We The Internet, 2013.
+ * Repackaged to avoid conflicts with different versions of Javassist,
+ * and modified Javassist APIs to make them more accessible to outside code.
+ */
 package xapi.bytecode;
 
 import java.util.Map;
@@ -32,10 +51,11 @@ public class Descriptor {
      * JVM.
      */
     public static String toJvmName(CtClass clazz) {
-        if (clazz.isArray())
-            return of(clazz);
-        else
-            return toJvmName(clazz.getName());
+        if (clazz.isArray()) {
+          return of(clazz);
+        } else {
+          return toJvmName(clazz.getName());
+        }
     }
 
     /**
@@ -58,33 +78,35 @@ public class Descriptor {
             name = descriptor.substring(i, i2).replace('/', '.');
             i = i2;
         }
-        else if (c == 'V')
-            name =  "void";
-        else if (c == 'I')
-            name = "int";
-        else if (c == 'B')
-            name = "byte";
-        else if (c == 'J')
-            name = "long";
-        else if (c == 'D')
-            name = "double";
-        else if (c == 'F')
-            name = "float";
-        else if (c == 'C')
-            name = "char";
-        else if (c == 'S')
-            name = "short";
-        else if (c == 'Z')
-            name = "boolean";
-        else
-            throw new RuntimeException("bad descriptor: " + descriptor);
+        else if (c == 'V') {
+          name =  "void";
+        } else if (c == 'I') {
+          name = "int";
+        } else if (c == 'B') {
+          name = "byte";
+        } else if (c == 'J') {
+          name = "long";
+        } else if (c == 'D') {
+          name = "double";
+        } else if (c == 'F') {
+          name = "float";
+        } else if (c == 'C') {
+          name = "char";
+        } else if (c == 'S') {
+          name = "short";
+        } else if (c == 'Z') {
+          name = "boolean";
+        } else {
+          throw new RuntimeException("bad descriptor: " + descriptor);
+        }
 
-        if (i + 1 != descriptor.length())
-            throw new RuntimeException("multiple descriptors?: " + descriptor);
+        if (i + 1 != descriptor.length()) {
+          throw new RuntimeException("multiple descriptors?: " + descriptor);
+        }
 
-        if (arrayDim == 0)
-            return name;
-        else {
+        if (arrayDim == 0) {
+          return name;
+        } else {
             StringBuffer sbuf = new StringBuffer(name);
             do {
                 sbuf.append("[]");
@@ -98,26 +120,27 @@ public class Descriptor {
      * Converts to a descriptor from a Java class name
      */
     public static String of(String classname) {
-        if (classname.equals("void"))
-            return "V";
-        else if (classname.equals("int"))
-            return "I";
-        else if (classname.equals("byte"))
-            return "B";
-        else if (classname.equals("long"))
-            return "J";
-        else if (classname.equals("double"))
-            return "D";
-        else if (classname.equals("float"))
-            return "F";
-        else if (classname.equals("char"))
-            return "C";
-        else if (classname.equals("short"))
-            return "S";
-        else if (classname.equals("boolean"))
-            return "Z";
-        else
-            return "L" + toJvmName(classname) + ";";
+        if (classname.equals("void")) {
+          return "V";
+        } else if (classname.equals("int")) {
+          return "I";
+        } else if (classname.equals("byte")) {
+          return "B";
+        } else if (classname.equals("long")) {
+          return "J";
+        } else if (classname.equals("double")) {
+          return "D";
+        } else if (classname.equals("float")) {
+          return "F";
+        } else if (classname.equals("char")) {
+          return "C";
+        } else if (classname.equals("short")) {
+          return "S";
+        } else if (classname.equals("boolean")) {
+          return "Z";
+        } else {
+          return "L" + toJvmName(classname) + ";";
+        }
     }
 
     /**
@@ -131,17 +154,18 @@ public class Descriptor {
      * @see Descriptor#toJvmName(String)
      */
     public static String rename(String desc, String oldname, String newname) {
-        if (desc.indexOf(oldname) < 0)
-            return desc;
+        if (desc.indexOf(oldname) < 0) {
+          return desc;
+        }
 
         StringBuffer newdesc = new StringBuffer();
         int head = 0;
         int i = 0;
         for (;;) {
             int j = desc.indexOf('L', i);
-            if (j < 0)
-                break;
-            else if (desc.startsWith(oldname, j + 1)
+            if (j < 0) {
+              break;
+            } else if (desc.startsWith(oldname, j + 1)
                      && desc.charAt(j + oldname.length() + 1) == ';') {
                 newdesc.append(desc.substring(head, j));
                 newdesc.append('L');
@@ -152,16 +176,19 @@ public class Descriptor {
             else {
                 i = desc.indexOf(';', j) + 1;
                 if (i < 1)
-                    break; // ';' was not found.
+                 {
+                  break; // ';' was not found.
+                }
             }
         }
 
-        if (head == 0)
-            return desc;
-        else {
+        if (head == 0) {
+          return desc;
+        } else {
             int len = desc.length();
-            if (head < len)
-                newdesc.append(desc.substring(head, len));
+            if (head < len) {
+              newdesc.append(desc.substring(head, len));
+            }
 
             return newdesc.toString();
         }
@@ -176,20 +203,23 @@ public class Descriptor {
      * @see Descriptor#toJvmName(String)
      */
     public static String rename(String desc, Map<?, ?> map) {
-        if (map == null)
-            return desc;
+        if (map == null) {
+          return desc;
+        }
 
         StringBuffer newdesc = new StringBuffer();
         int head = 0;
         int i = 0;
         for (;;) {
             int j = desc.indexOf('L', i);
-            if (j < 0)
-                break;
+            if (j < 0) {
+              break;
+            }
 
             int k = desc.indexOf(';', j);
-            if (k < 0)
-                break;
+            if (k < 0) {
+              break;
+            }
 
             i = k + 1;
             String name = desc.substring(j + 1, k);
@@ -203,12 +233,13 @@ public class Descriptor {
             }
         }
 
-        if (head == 0)
-            return desc;
-        else {
+        if (head == 0) {
+          return desc;
+        } else {
             int len = desc.length();
-            if (head < len)
-                newdesc.append(desc.substring(head, len));
+            if (head < len) {
+              newdesc.append(desc.substring(head, len));
+            }
 
             return newdesc.toString();
         }
@@ -269,13 +300,15 @@ public class Descriptor {
         desc.append('(');
         if (paramTypes != null) {
             int n = paramTypes.length;
-            for (int i = 0; i < n; ++i)
-                toDescriptor(desc, paramTypes[i]);
+            for (int i = 0; i < n; ++i) {
+              toDescriptor(desc, paramTypes[i]);
+            }
         }
 
         desc.append(')');
-        if (returnType != null)
-            toDescriptor(desc, returnType);
+        if (returnType != null) {
+          toDescriptor(desc, returnType);
+        }
 
         return desc.toString();
     }
@@ -302,9 +335,9 @@ public class Descriptor {
      */
     public static String appendParameter(String classname, String desc) {
         int i = desc.indexOf(')');
-        if (i < 0)
-            return desc;
-        else {
+        if (i < 0) {
+          return desc;
+        } else {
             StringBuffer newdesc = new StringBuffer();
             newdesc.append(desc.substring(0, i));
             newdesc.append('L');
@@ -326,11 +359,12 @@ public class Descriptor {
      * @param desc      descriptor
      */
     public static String insertParameter(String classname, String desc) {
-        if (desc.charAt(0) != '(')
-            return desc;
-        else
-            return "(L" + classname.replace('.', '/') + ';'
-                   + desc.substring(1);
+        if (desc.charAt(0) != '(') {
+          return desc;
+        } else {
+          return "(L" + classname.replace('.', '/') + ';'
+                 + desc.substring(1);
+        }
     }
 
     /**
@@ -343,9 +377,9 @@ public class Descriptor {
      */
     public static String appendParameter(CtClass type, String descriptor) {
         int i = descriptor.indexOf(')');
-        if (i < 0)
-            return descriptor;
-        else {
+        if (i < 0) {
+          return descriptor;
+        } else {
             StringBuffer newdesc = new StringBuffer();
             newdesc.append(descriptor.substring(0, i));
             toDescriptor(newdesc, type);
@@ -364,10 +398,11 @@ public class Descriptor {
      */
     public static String insertParameter(CtClass type,
                                          String descriptor) {
-        if (descriptor.charAt(0) != '(')
-            return descriptor;
-        else
-            return "(" + of(type) + descriptor.substring(1);
+        if (descriptor.charAt(0) != '(') {
+          return descriptor;
+        } else {
+          return "(" + of(type) + descriptor.substring(1);
+        }
     }
 
     /**
@@ -380,9 +415,9 @@ public class Descriptor {
      */
     public static String changeReturnType(String classname, String desc) {
         int i = desc.indexOf(')');
-        if (i < 0)
-            return desc;
-        else {
+        if (i < 0) {
+          return desc;
+        } else {
             StringBuffer newdesc = new StringBuffer();
             newdesc.append(desc.substring(0, i + 1));
             newdesc.append('L');
@@ -403,9 +438,9 @@ public class Descriptor {
     public static CtClass[] getParameterTypes(String desc, ClassPool cp)
         throws NotFoundException
     {
-        if (desc.charAt(0) != '(')
-            return null;
-        else {
+        if (desc.charAt(0) != '(') {
+          return null;
+        } else {
             int num = numOfParameters(desc);
             CtClass[] args = new CtClass[num];
             int n = 0;
@@ -417,22 +452,41 @@ public class Descriptor {
         }
     }
 
+    public static String[] getParameterTypeNames(String desc)
+    {
+      if (desc.charAt(0) != '(') {
+        return null;
+      } else {
+        int num = numOfParameters(desc);
+        String[] args = new String[num];
+        int n = 0;
+        int i = 1;
+        do {
+          i = toClassName(desc, i, args, n++);
+        } while (i > 0);
+        return args;
+      }
+    }
+
     /**
      * Returns true if the list of the parameter types of desc1 is equal to
      * that of desc2.
      * For example, "(II)V" and "(II)I" are equal.
      */
     public static boolean eqParamTypes(String desc1, String desc2) {
-        if (desc1.charAt(0) != '(')
-            return false;
+        if (desc1.charAt(0) != '(') {
+          return false;
+        }
 
         for (int i = 0; true; ++i) {
             char c = desc1.charAt(i);
-            if (c != desc2.charAt(i))
-                return false;
+            if (c != desc2.charAt(i)) {
+              return false;
+            }
 
-            if (c == ')')
-                return true;
+            if (c == ')') {
+              return true;
+            }
         }
     }
 
@@ -457,9 +511,9 @@ public class Descriptor {
         throws NotFoundException
     {
         int i = desc.indexOf(')');
-        if (i < 0)
-            return null;
-        else {
+        if (i < 0) {
+          return null;
+        } else {
             CtClass[] type = new CtClass[1];
             toCtClass(cp, desc, i + 1, type, 0);
             return type[0];
@@ -477,19 +531,22 @@ public class Descriptor {
         int i = 1;
         for (;;) {
             char c = desc.charAt(i);
-            if (c == ')')
-                break;
+            if (c == ')') {
+              break;
+            }
 
-            while (c == '[')
-                c = desc.charAt(++i);
+            while (c == '[') {
+              c = desc.charAt(++i);
+            }
 
             if (c == 'L') {
                 i = desc.indexOf(';', i) + 1;
-                if (i <= 0)
-                    throw new IndexOutOfBoundsException("bad descriptor");
+                if (i <= 0) {
+                  throw new IndexOutOfBoundsException("bad descriptor");
+                }
+            } else {
+              ++i;
             }
-            else
-                ++i;
 
             ++n;
         }
@@ -515,9 +572,9 @@ public class Descriptor {
     {
         CtClass[] clazz = new CtClass[1];
         int res = toCtClass(cp, desc, 0, clazz, 0);
-        if (res >= 0)
-            return clazz[0];
-        else {
+        if (res >= 0) {
+          return clazz[0];
+        } else {
             // maybe, you forgot to surround the class name with
             // L and ;.  It violates the protocol, but I'm tolerant...
             return cp.get(desc.replace('/', '.'));
@@ -545,27 +602,76 @@ public class Descriptor {
         else {
             CtClass type = toPrimitiveClass(c);
             if (type == null)
-                return -1; // error
+             {
+              return -1; // error
+            }
 
             i2 = i + 1;
             if (arrayDim == 0) {
                 args[n] = type;
                 return i2; // neither an array type or a class type
+            } else {
+              name = type.getName();
             }
-            else
-                name = type.getName();
         }
 
         if (arrayDim > 0) {
             StringBuffer sbuf = new StringBuffer(name);
-            while (arrayDim-- > 0)
-                sbuf.append("[]");
+            while (arrayDim-- > 0) {
+              sbuf.append("[]");
+            }
 
             name = sbuf.toString();
         }
 
         args[n] = cp.get(name);
         return i2;
+    }
+
+    private static int toClassName(String desc, int i,
+        String[] args, int n)
+    {
+      int i2;
+      String name;
+
+      int arrayDim = 0;
+      char c = desc.charAt(i);
+      while (c == '[') {
+        ++arrayDim;
+        c = desc.charAt(++i);
+      }
+
+      if (c == 'L') {
+        i2 = desc.indexOf(';', ++i);
+        name = desc.substring(i, i2++).replace('/', '.');
+      }
+      else {
+        CtClass type = toPrimitiveClass(c);
+        if (type == null)
+        {
+          return -1; // error
+        }
+
+        i2 = i + 1;
+        if (arrayDim == 0) {
+          args[n] = type.getName();
+          return i2; // neither an array type or a class type
+        } else {
+          name = type.getName();
+        }
+      }
+
+      if (arrayDim > 0) {
+        StringBuffer sbuf = new StringBuffer(name);
+        while (arrayDim-- > 0) {
+          sbuf.append("[]");
+        }
+
+        name = sbuf.toString();
+      }
+
+      args[n] = name;
+      return i2;
     }
 
     public static CtClass toPrimitiveClass(char c) {
@@ -613,8 +719,9 @@ public class Descriptor {
      */
     public static int arrayDimension(String desc) {
         int dim = 0;
-        while (desc.charAt(dim) == '[')
-            ++dim;
+        while (desc.charAt(dim) == '[') {
+          ++dim;
+        }
 
         return dim;
     }
@@ -680,24 +787,28 @@ public class Descriptor {
 
                 if (c == 'L') {
                     i = desc.indexOf(';', i) + 1;
-                    if (i <= 0)
-                        throw new IndexOutOfBoundsException("bad descriptor");
+                    if (i <= 0) {
+                      throw new IndexOutOfBoundsException("bad descriptor");
+                    }
+                } else {
+                  ++i;
                 }
-                else
-                    ++i;
 
-                if (!array && (c == 'J' || c == 'D'))
-                    n -= 2;
-                else
-                    --n;
+                if (!array && (c == 'J' || c == 'D')) {
+                  n -= 2;
+                } else {
+                  --n;
+                }
             }
         }
 
-        if (withRet)
-            if (c == 'J' || c == 'D')
-                n += 2;
-            else if (c != 'V')
-                ++n;
+        if (withRet) {
+          if (c == 'J' || c == 'D') {
+            n += 2;
+          } else if (c != 'V') {
+            ++n;
+          }
+        }
 
         return n;
     }
@@ -720,16 +831,17 @@ public class Descriptor {
                 int pos = 1;
                 sbuf.append('(');
                 while (desc.charAt(pos) != ')') {
-                    if (pos > 1)
-                        sbuf.append(',');
+                    if (pos > 1) {
+                      sbuf.append(',');
+                    }
 
                     pos = readType(sbuf, pos, desc);
                 }
 
                 sbuf.append(')');
+            } else {
+              readType(sbuf, 0, desc);
             }
-            else
-                readType(sbuf, 0, desc);
 
             return sbuf.toString();
         }
@@ -742,24 +854,27 @@ public class Descriptor {
                 c = desc.charAt(++pos);
             }
 
-            if (c == 'L')
-                while (true) {
-                    c = desc.charAt(++pos);
-                    if (c == ';')
-                        break;
+            if (c == 'L') {
+              while (true) {
+                  c = desc.charAt(++pos);
+                  if (c == ';') {
+                    break;
+                  }
 
-                    if (c == '/')
-                        c = '.';
+                  if (c == '/') {
+                    c = '.';
+                  }
 
-                    sbuf.append(c);
-                }
-            else {
+                  sbuf.append(c);
+              }
+            } else {
                 CtClass t = toPrimitiveClass(c);
                 sbuf.append(t.getName());
             }
 
-            while (arrayDim-- > 0)
-                sbuf.append("[]");
+            while (arrayDim-- > 0) {
+              sbuf.append("[]");
+            }
 
             return pos + 1;
         }
@@ -828,16 +943,18 @@ public class Descriptor {
                 param = false;
             }
 
-            while (c == '[')
-                c = desc.charAt(++nextPos);
+            while (c == '[') {
+              c = desc.charAt(++nextPos);
+            }
 
             if (c == 'L') {
                 nextPos = desc.indexOf(';', nextPos) + 1;
-                if (nextPos <= 0)
-                    throw new IndexOutOfBoundsException("bad descriptor");
+                if (nextPos <= 0) {
+                  throw new IndexOutOfBoundsException("bad descriptor");
+                }
+            } else {
+              ++nextPos;
             }
-            else
-                ++nextPos;
 
             curPos = index;
             index = nextPos;

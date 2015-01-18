@@ -1,3 +1,22 @@
+/*
+ * Javassist, a Java-bytecode translator toolkit.
+ * Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License.  Alternatively, the contents of this file may be used under
+ * the terms of the GNU Lesser General Public License Version 2.1 or later,
+ * or the Apache License Version 2.0.
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * MODIFIED BY James Nelson of We The Internet, 2013.
+ * Repackaged to avoid conflicts with different versions of Javassist,
+ * and modified Javassist APIs to make them more accessible to outside code.
+ */
 package xapi.bytecode;
 
 import java.lang.reflect.Modifier;
@@ -18,7 +37,7 @@ public class CtField extends CtMember {
      * by a <code>CtField.Initializer</code> object.
      *
      * <p>If getter and setter methods are needed,
-     * call <code>CtNewMethod.getter()</code> and 
+     * call <code>CtNewMethod.getter()</code> and
      * <code>CtNewMethod.setter()</code>.
      *
      * @param type              field type
@@ -44,7 +63,7 @@ public class CtField extends CtMember {
      * by a <code>CtField.Initializer</code> object.
      *
      * <p>If getter and setter methods are needed,
-     * call <code>CtNewMethod.getter()</code> and 
+     * call <code>CtNewMethod.getter()</code> and
      * <code>CtNewMethod.setter()</code>.
      *
      * @param src               the original field
@@ -74,9 +93,10 @@ public class CtField extends CtMember {
     {
         super(clazz);
         ClassFile cf = clazz.getClassFile2();
-        if (cf == null)
-            throw new CannotCompileException("bad declaring class: "
-                                             + clazz.getName());
+        if (cf == null) {
+          throw new CannotCompileException("bad declaring class: "
+                                           + clazz.getName());
+        }
 
         fieldInfo = new FieldInfo(cf.getConstPool(), name, typeDesc);
     }
@@ -89,11 +109,13 @@ public class CtField extends CtMember {
     /**
      * Returns a String representation of the object.
      */
+    @Override
     public String toString() {
         return getDeclaringClass().getName() + "." + getName()
                + ":" + fieldInfo.getDescriptor();
     }
 
+    @Override
     protected void extendToString(StringBuffer buffer) {
         buffer.append(' ');
         buffer.append(getName());
@@ -134,6 +156,7 @@ public class CtField extends CtMember {
     /**
      * Returns the class declaring the field.
      */
+    @Override
     public CtClass getDeclaringClass() {
         // this is redundant but for javadoc.
         return super.getDeclaringClass();
@@ -142,6 +165,7 @@ public class CtField extends CtMember {
     /**
      * Returns the name of the field.
      */
+    @Override
     public String getName() {
         return fieldInfo.getName();
     }
@@ -159,6 +183,7 @@ public class CtField extends CtMember {
      *
      * @see Modifier
      */
+    @Override
     public int getModifiers() {
         return fieldInfo.getAccessFlags();
     }
@@ -168,6 +193,7 @@ public class CtField extends CtMember {
      *
      * @see Modifier
      */
+    @Override
     public void setModifiers(int mod) {
         declaringClass.checkModify();
         fieldInfo.setAccessFlags(mod);
@@ -180,12 +206,13 @@ public class CtField extends CtMember {
      * @return <code>true</code> if the annotation is found, otherwise <code>false</code>.
      * @since 3.11
      */
+    @Override
     public boolean hasAnnotation(Class<?> clz) {
         FieldInfo fi = getFieldInfo2();
         AnnotationsAttribute ainfo = (AnnotationsAttribute)
-                    fi.getAttribute(AnnotationsAttribute.invisibleTag);  
+                    fi.getAttribute(AnnotationsAttribute.invisibleTag);
         AnnotationsAttribute ainfo2 = (AnnotationsAttribute)
-                    fi.getAttribute(AnnotationsAttribute.visibleTag);  
+                    fi.getAttribute(AnnotationsAttribute.visibleTag);
         return CtClassType.hasAnnotationType(clz, getDeclaringClass().getClassPool(),
                                              ainfo, ainfo2);
     }
@@ -201,12 +228,13 @@ public class CtField extends CtMember {
      * @return the annotation if found, otherwise <code>null</code>.
      * @since 3.11
      */
+    @Override
     public Object getAnnotation(Class<?> clz) throws ClassNotFoundException {
         FieldInfo fi = getFieldInfo2();
         AnnotationsAttribute ainfo = (AnnotationsAttribute)
-                    fi.getAttribute(AnnotationsAttribute.invisibleTag);  
+                    fi.getAttribute(AnnotationsAttribute.invisibleTag);
         AnnotationsAttribute ainfo2 = (AnnotationsAttribute)
-                    fi.getAttribute(AnnotationsAttribute.visibleTag);  
+                    fi.getAttribute(AnnotationsAttribute.visibleTag);
         return CtClassType.getAnnotationType(clz, getDeclaringClass().getClassPool(),
                                              ainfo, ainfo2);
     }
@@ -218,6 +246,7 @@ public class CtField extends CtMember {
      * @see #getAvailableAnnotations()
      * @since 3.1
      */
+    @Override
     public Object[] getAnnotations() throws ClassNotFoundException {
         return getAnnotations(false);
     }
@@ -231,6 +260,7 @@ public class CtField extends CtMember {
      * @see #getAnnotations()
      * @since 3.3
      */
+    @Override
     public Object[] getAvailableAnnotations(){
         try {
             return getAnnotations(true);
@@ -243,9 +273,9 @@ public class CtField extends CtMember {
     private Object[] getAnnotations(boolean ignoreNotFound) throws ClassNotFoundException {
         FieldInfo fi = getFieldInfo2();
         AnnotationsAttribute ainfo = (AnnotationsAttribute)
-                    fi.getAttribute(AnnotationsAttribute.invisibleTag);  
+                    fi.getAttribute(AnnotationsAttribute.invisibleTag);
         AnnotationsAttribute ainfo2 = (AnnotationsAttribute)
-                    fi.getAttribute(AnnotationsAttribute.visibleTag);  
+                    fi.getAttribute(AnnotationsAttribute.visibleTag);
         return CtClassType.toAnnotationType(ignoreNotFound, getDeclaringClass().getClassPool(),
                                             ainfo, ainfo2);
     }
@@ -259,13 +289,14 @@ public class CtField extends CtMember {
      * contained in the <code>SignatureAttirbute</code>.  It is
      * a descriptor.  To obtain a type signature, call the following
      * methods:
-     * 
+     *
      * <ul><pre>getFieldInfo().getAttribute(SignatureAttribute.tag)
      * </pre></ul>
      *
      * @see javassist.bytecode.Descriptor
      * @see javassist.bytecode.SignatureAttribute
      */
+    @Override
     public String getSignature() {
         return fieldInfo.getDescriptor();
     }
@@ -295,7 +326,7 @@ public class CtField extends CtMember {
      * @return  a <code>Integer</code>, <code>Long</code>, <code>Float</code>,
      *          <code>Double</code>, <code>Boolean</code>,
      *          or <code>String</code> object
-     *          representing the constant value. 
+     *          representing the constant value.
      *          <code>null</code> if it is not a constant field
      *          or if the field type is not a primitive type
      *          or <code>String</code>.
@@ -305,8 +336,9 @@ public class CtField extends CtMember {
         // see also getConstantFieldValue() in TypeChecker.
 
         int index = fieldInfo.getConstantValue();
-        if (index == 0)
-            return null;
+        if (index == 0) {
+          return null;
+        }
 
         ConstPool cp = fieldInfo.getConstPool();
         switch (cp.getTag(index)) {
@@ -319,10 +351,11 @@ public class CtField extends CtMember {
             case ConstPool.CONST_Integer :
                 int value = cp.getIntegerInfo(index);
                 // "Z" means boolean type.
-                if ("Z".equals(fieldInfo.getDescriptor()))
-                    return new Boolean(value != 0);
-                else
-                    return new Integer(value);
+                if ("Z".equals(fieldInfo.getDescriptor())) {
+                  return new Boolean(value != 0);
+                } else {
+                  return new Integer(value);
+                }
             case ConstPool.CONST_String :
                 return cp.getStringInfo(index);
             default :
@@ -342,12 +375,14 @@ public class CtField extends CtMember {
      *
      * @param name              attribute name
      */
+    @Override
     public byte[] getAttribute(String name) {
         AttributeInfo ai = fieldInfo.getAttribute(name);
-        if (ai == null)
-            return null;
-        else
-            return ai.get();
+        if (ai == null) {
+          return null;
+        } else {
+          return ai.get();
+        }
     }
 
     /**
@@ -360,11 +395,11 @@ public class CtField extends CtMember {
      * @param name      attribute name
      * @param data      attribute value
      */
+    @Override
     public void setAttribute(String name, byte[] data) {
         declaringClass.checkModify();
         fieldInfo.addAttribute(new AttributeInfo(fieldInfo.getConstPool(),
                                                  name, data));
     }
-
 
 }

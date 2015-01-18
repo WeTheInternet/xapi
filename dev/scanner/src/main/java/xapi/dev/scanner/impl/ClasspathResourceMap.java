@@ -4,15 +4,19 @@ import java.io.File;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
+import java.net.URL;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.regex.Pattern;
 
 import xapi.bytecode.ClassFile;
+import xapi.bytecode.ClassPool;
 import xapi.bytecode.FieldInfo;
 import xapi.bytecode.MemberInfo;
 import xapi.bytecode.MethodInfo;
+import xapi.bytecode.NotFoundException;
 import xapi.collect.api.Fifo;
 import xapi.collect.impl.MultithreadedStringTrie;
 import xapi.collect.impl.SimpleFifo;
@@ -20,6 +24,7 @@ import xapi.dev.resource.api.ClasspathResource;
 import xapi.dev.resource.impl.ByteCodeResource;
 import xapi.dev.resource.impl.SourceCodeResource;
 import xapi.dev.resource.impl.StringDataResource;
+import xapi.log.X_Log;
 import xapi.source.X_Source;
 import xapi.util.X_Debug;
 import xapi.util.api.MatchesValue;
@@ -37,6 +42,8 @@ public class ClasspathResourceMap {
   private final Fifo<ByteCodeResource> pending;
   private AnnotatedClassIterator allAnnos;
   private AnnotatedMethodIterator allMethodsWithAnnos;
+  private ClassPool pool;
+  private ArrayList<URL> classpath;
 
   public ClasspathResourceMap(ExecutorService executor, Set<Class<? extends Annotation>> annotations,
     Set<Pattern> bytecodeMatchers, Set<Pattern> resourceMatchers, Set<Pattern> sourceMatchers) {
@@ -53,8 +60,9 @@ public class ClasspathResourceMap {
 
   public void addBytecode(final String name, final ByteCodeResource bytecode) {
     this.bytecode.put(X_Source.stripClassExtension(name.replace(File.separatorChar, '.')), bytecode);
-      if (!preloadClasses())
+      if (!preloadClasses()) {
         return;
+      }
       if (pending.isEmpty()) {
         synchronized (pending) {
           // double-checked lock
@@ -188,18 +196,66 @@ public class ClasspathResourceMap {
 
   public boolean includeSourcecode(String name) {
     for (Pattern p : sourceMatchers) {
-      if (p.matcher(name).matches())
+      if (p.matcher(name).matches()) {
         return true;
+      }
     }
     return false;
   }
 
   public boolean includeBytecode(String name) {
     for (Pattern p : bytecodeMatchers) {
-      if (p.matcher(name).matches())
+      if (p.matcher(name).matches()) {
         return true;
+      }
     }
     return false;
+  }
+
+  public final SourceCodeResource findSource(final String name) {
+    return sources.get(name);
+  }
+
+  public final Iterable<SourceCodeResource> findSources(final String prefix, final Pattern ... patterns) {
+    if (patterns.length == 0) {
+      return sources.findPrefixed(prefix);
+    }
+    class Itr implements Iterator<SourceCodeResource> {
+      SourceCodeResource cls;
+      Iterator<SourceCodeResource> iter = sources.findPrefixed(prefix).iterator();
+      @Override
+      public boolean hasNext() {
+        while(iter.hasNext()) {
+          cls = iter.next();
+          for (Pattern pattern : patterns) {
+            if (pattern.matcher(cls.getResourceName()).matches()) {
+              return true;
+            }
+          }
+        }
+        return false;
+      }
+
+      @Override
+      public SourceCodeResource next() {
+        return cls;
+      }
+
+      @Override
+      public void remove() {
+        throw new UnsupportedOperationException();
+      }
+    }
+    return new Iterable<SourceCodeResource>() {
+      @Override
+      public Iterator<SourceCodeResource> iterator() {
+        return new Itr();
+      }
+    };
+  }
+
+  public final StringDataResource findResource(final String name) {
+    return resources.get(name);
   }
 
   public final Iterable<StringDataResource> findResources(final String prefix, final Pattern ... patterns) {
@@ -214,8 +270,9 @@ public class ClasspathResourceMap {
         while(iter.hasNext()) {
           cls = iter.next();
           for (Pattern pattern : patterns) {
-            if (pattern.matcher(cls.getResourceName()).matches())
+            if (pattern.matcher(cls.getResourceName()).matches()) {
               return true;
+            }
           }
         }
         return false;
@@ -240,6 +297,7 @@ public class ClasspathResourceMap {
   }
 
   public final ClassFile findClass(String clsName) {
+    clsName = clsName.replace('.', '/');
     ByteCodeResource resource = bytecode.get(clsName);
     return resource == null ? null : resource.getClassData();
   }
@@ -457,6 +515,38 @@ public final Iterable<ClassFile> findClassWithAnnotatedMethods(
   };
 }
 
+  public ClassPool getClassPool() {
+    if (pool == null) {
+      pool = new ClassPool();
+      for (URL cp : classpath) {
+        String asString = cp.toString();
+        if (asString.endsWith("/")) {
+          asString = asString.substring(0, asString.length()-1);
+        }
+        if (asString.startsWith("jar:")) {
+          asString = asString.substring(4);
+        }
+        if (asString.startsWith("file:/")) {
+          asString = asString.substring(6);
+        }
+        int index = asString.indexOf("jar!");
+        if (index != -1) {
+          asString=asString.substring(0, index+3);
+        }
+        try {
+          pool.appendClassPath(asString);
+        } catch (NotFoundException e) {
+          X_Log.warn(getClass(), "Could not find resource "+cp, e);
+        }
+      }
+    }
+    return pool;
+  }
+
+  public void setClasspath(Set<URL> keySet) {
+    this.classpath = new ArrayList<URL>(keySet);
+  }
+
 }
 
 
@@ -478,8 +568,9 @@ extends MultithreadedStringTrie<ResourceType> {
     @Override
     protected void setValue(ResourceType value) {
       if (this.value != null) {
-        if (this.value.priority() > value.priority())
+        if (this.value.priority() > value.priority()) {
           return;
+        }
       }
       super.setValue(value);
     }

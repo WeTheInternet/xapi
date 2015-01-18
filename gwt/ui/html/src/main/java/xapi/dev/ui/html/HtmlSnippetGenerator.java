@@ -41,7 +41,7 @@ public class HtmlSnippetGenerator extends AbstractHtmlGenerator <HtmlGeneratorRe
   }
 
   @Override
-  protected HtmlGeneratorResult newContext(JClassType winner, String pkgName, String name) {
+  public HtmlGeneratorResult newContext(JClassType winner, String pkgName, String name) {
     return new HtmlGeneratorResult(winner, pkgName, name);
   }
 
@@ -51,7 +51,7 @@ public class HtmlSnippetGenerator extends AbstractHtmlGenerator <HtmlGeneratorRe
 
   private HtmlGeneratorResult generate(TreeLogger logger, UnifyAstView ast, JClassType templateType, String inputHash, String simpleName, JClassType modelType) throws UnableToCompleteException {
 
-    HtmlGeneratorResult existingType = findExisting(ast,
+    HtmlGeneratorResult existingType = findExisting(ast, this,
       templateType.getPackage().getName(),
       X_Source.qualifiedName(templateType.getPackage().getName(), simpleName));
     HtmlGeneratorResult existingResult = existingTypesUnchanged(logger, ast, existingType, inputHash);
@@ -187,8 +187,9 @@ public class HtmlSnippetGenerator extends AbstractHtmlGenerator <HtmlGeneratorRe
       .println("};");
 
     try {
-      return saveGeneratedType(logger, ast, out, existingType, inputHash);
+      return saveGeneratedType(logger, getLogLevel(), getClass(), ast, out, existingType, inputHash);
     } finally {
+      clear();
       ast.getGeneratorContext().finish(logger);
     }
   }

@@ -1,3 +1,22 @@
+/*
+ * Javassist, a Java-bytecode translator toolkit.
+ * Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License.  Alternatively, the contents of this file may be used under
+ * the terms of the GNU Lesser General Public License Version 2.1 or later,
+ * or the Apache License Version 2.0.
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * MODIFIED BY James Nelson of We The Internet, 2013.
+ * Repackaged to avoid conflicts with different versions of Javassist,
+ * and modified Javassist APIs to make them more accessible to outside code.
+ */
 package xapi.bytecode;
 
 import java.lang.reflect.Modifier;
@@ -62,8 +81,9 @@ public abstract class CtMember {
             methodTail.next = method;
             if (methodTail == consTail) {
                 consTail = method;
-                if (methodTail == fieldTail)
-                    fieldTail = method;
+                if (methodTail == fieldTail) {
+                  fieldTail = method;
+                }
             }
 
             methodTail = method;
@@ -74,8 +94,9 @@ public abstract class CtMember {
         void addConstructor(CtMember cons) {
             cons.next = consTail.next;
             consTail.next = cons;
-            if (consTail == fieldTail)
-                fieldTail = cons;
+            if (consTail == fieldTail) {
+              fieldTail = cons;
+            }
 
             consTail = cons;
         }
@@ -102,19 +123,22 @@ public abstract class CtMember {
             while ((node = m.next) != this) {
                 if (node == mem) {
                     m.next = node.next;
-                    if (node == methodTail)
-                        methodTail = m;
+                    if (node == methodTail) {
+                      methodTail = m;
+                    }
 
-                    if (node == consTail)
-                        consTail = m;
+                    if (node == consTail) {
+                      consTail = m;
+                    }
 
-                    if (node == fieldTail)
-                        fieldTail = m;
+                    if (node == fieldTail) {
+                      fieldTail = m;
+                    }
 
                     break;
+                } else {
+                  m = m.next;
                 }
-                else
-                    m = m.next;
             }
         }
     }
@@ -165,21 +189,23 @@ public abstract class CtMember {
      */
     public boolean visibleFrom(CtClass clazz) {
         int mod = getModifiers();
-        if (X_Modifier.isPublic(mod))
-            return true;
-        else if (X_Modifier.isPrivate(mod))
-            return clazz == declaringClass;
-        else {  // package or protected
+        if (X_Modifier.isPublic(mod)) {
+          return true;
+        } else if (X_Modifier.isPrivate(mod)) {
+          return clazz == declaringClass;
+        } else {  // package or protected
             String declName = declaringClass.getPackageName();
             String fromName = clazz.getPackageName();
             boolean visible;
-            if (declName == null)
-                visible = fromName == null;
-            else
-                visible = declName.equals(fromName);
+            if (declName == null) {
+              visible = fromName == null;
+            } else {
+              visible = declName.equals(fromName);
+            }
 
-            if (!visible && X_Modifier.isProtected(mod))
-                return clazz.subclassOf(declaringClass);
+            if (!visible && X_Modifier.isProtected(mod)) {
+              return clazz.subclassOf(declaringClass);
+            }
 
             return visible;
         }

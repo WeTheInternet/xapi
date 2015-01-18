@@ -1,6 +1,7 @@
 package xapi.dev.ui.html;
 
 import static xapi.collect.X_Collect.newStringMap;
+import static xapi.ui.html.api.HtmlSnippet.appendTo;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -24,7 +25,6 @@ import xapi.source.write.ToStringer;
 import xapi.ui.html.api.Css;
 import xapi.ui.html.api.El;
 import xapi.ui.html.api.Html;
-import xapi.ui.html.api.HtmlSnippet;
 import xapi.ui.html.api.HtmlTemplate;
 import xapi.ui.html.api.Style;
 import xapi.util.api.ConvertsValue;
@@ -41,7 +41,7 @@ import com.google.gwt.dev.jjs.UnifyAstView;
 import com.google.gwt.user.server.Base64Utils;
 import com.google.gwt.util.tools.shared.Md5Utils;
 
-public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> {
+public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> implements CreatesContextObject<Ctx> {
 
   protected static final String KEY_FROM = "from";
 
@@ -70,7 +70,6 @@ public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> {
       if (verify.equals(hash))
        {
         return result;
-//      .getSourceType().getQualifiedSourceName();
       }
     } catch (Exception e) {
       logger.log(Type.WARN, "Unknown error calculating change hashes", e);
@@ -278,13 +277,15 @@ public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> {
     }
   }
 
-  protected void fillStyles(Appendable immediateStyle,
-      Appendable sheetStyle, Style[] styles) throws IOException {
+  protected static void fillStyles(Appendable immediateStyle,
+      Appendable sheetStyle, Style ... styles) throws IOException {
     for (Style style : styles) {
       String[] names = style.names();
       if (names.length == 0) {
-        HtmlSnippet.appendTo(immediateStyle, style);
-      } else {
+        if (immediateStyle != null) {
+          appendTo(immediateStyle, style);
+        }
+      } else if (sheetStyle != null){
         for (int i = 0, m = names.length; i < m; i++) {
           if (i > 0) {
             sheetStyle.append(", ");
@@ -292,13 +293,13 @@ public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> {
           sheetStyle.append(names[i]);
         }
         sheetStyle.append("{\n");
-        HtmlSnippet.appendTo(sheetStyle, style);
+        appendTo(sheetStyle, style);
         sheetStyle.append("\n}\n");
       }
     }
   }
 
-  protected Ctx findExisting(UnifyAstView ast, String pkgName, String name) {
+  protected static <Ctx> Ctx findExisting(UnifyAstView ast, CreatesContextObject<Ctx> creator, String pkgName, String name) {
     if (name.indexOf('.') == -1) {
       name = X_Source.qualifiedName(pkgName, name);
     }
@@ -309,9 +310,7 @@ public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> {
       String next = name+pos++;
       existing = ast.getTypeOracle().findType(next);
       if (existing == null) {
-        Ctx ctx = newContext(winner, pkgName, name);
-
-        return ctx;
+        return creator.newContext(winner, pkgName, name);
       }
     }
   }
@@ -358,9 +357,9 @@ public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> {
     }
   }
 
-  protected abstract Ctx newContext(JClassType winner, String pkgName, String name);
-
-  protected Ctx saveGeneratedType(TreeLogger logger, UnifyAstView ast, SourceBuilder<?> out, final Ctx result, String inputHash) throws UnableToCompleteException {
+  protected static <Ctx extends HtmlGeneratorResult> Ctx saveGeneratedType(
+      TreeLogger logger, Type logLevel, Class<?> generatorClass, UnifyAstView ast,
+      SourceBuilder<?> out, final Ctx result, String inputHash) throws UnableToCompleteException {
     String name = result.getFinalName();
     String src = out.toString();
     final String digest =
@@ -379,7 +378,7 @@ public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> {
     out.getClassBuffer().addAnnotation("@"+
     out.getImports().addImport(Generated.class)+"("+
     "date=\""+df.format(new Date())+"\",\n" +
-        "value={\"" + getClass().getName()+"\","+
+        "value={\"" + generatorClass.getName()+"\","+
         "\""+digest+"\", \""+inputHash+"\"})");
     StandardGeneratorContext gen = ast.getGeneratorContext();
     PrintWriter pw = gen.tryCreate(logger, out.getPackage(), out.getClassBuffer().getSimpleName());
@@ -387,13 +386,12 @@ public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> {
     pw.print(src);
     gen.commit(logger, pw);
 
-    if (logger.isLoggable(getLogLevel())) {
-      logger.log(getLogLevel(), src);
+    if (logger.isLoggable(logLevel)) {
+      logger.log(logLevel, src);
     }
     try {
       return result;
     } finally {
-      clear();
       out.destroy();
     }
   }

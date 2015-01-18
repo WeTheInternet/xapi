@@ -12,6 +12,13 @@ public class SourceCodeResource extends DelegateClasspathResource{
     super(source);
   }
 
+  public String getSourceUnfafe() {
+    try {
+      return getSource();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
   public String getSource() throws IOException{
     BufferedReader read = new BufferedReader(new InputStreamReader(open()));
     String next;

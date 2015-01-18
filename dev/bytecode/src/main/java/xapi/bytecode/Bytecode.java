@@ -1,3 +1,22 @@
+/*
+ * Javassist, a Java-bytecode translator toolkit.
+ * Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License.  Alternatively, the contents of this file may be used under
+ * the terms of the GNU Lesser General Public License Version 2.1 or later,
+ * or the Apache License Version 2.0.
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * MODIFIED BY James Nelson of We The Internet, 2013.
+ * Repackaged to avoid conflicts with different versions of Javassist,
+ * and modified Javassist APIs to make them more accessible to outside code.
+ */
 package xapi.bytecode;
 
 import xapi.bytecode.api.Opcode;
@@ -13,6 +32,7 @@ class ByteVector implements Cloneable {
         size = 0;
     }
 
+    @Override
     public Object clone() throws CloneNotSupportedException {
         ByteVector bv = (ByteVector)super.clone();
         bv.buffer = (byte[])buffer.clone();
@@ -28,15 +48,17 @@ class ByteVector implements Cloneable {
     }
 
     public int read(int offset) {
-        if (offset < 0 || size <= offset)
-            throw new ArrayIndexOutOfBoundsException(offset);
+        if (offset < 0 || size <= offset) {
+          throw new ArrayIndexOutOfBoundsException(offset);
+        }
 
         return buffer[offset];
     }
 
     public void write(int offset, int value) {
-        if (offset < 0 || size <= offset)
-            throw new ArrayIndexOutOfBoundsException(offset);
+        if (offset < 0 || size <= offset) {
+          throw new ArrayIndexOutOfBoundsException(offset);
+        }
 
         buffer[offset] = (byte)value;
     }
@@ -63,8 +85,9 @@ class ByteVector implements Cloneable {
     public void addGap(int length) {
         if (size + length > buffer.length) {
             int newSize = size << 1;
-            if (newSize < size + length)
-                newSize = size + length;
+            if (newSize < size + length) {
+              newSize = size + length;
+            }
 
             byte[] newBuf = new byte[newSize];
             System.arraycopy(buffer, 0, newBuf, 0, size);
@@ -133,7 +156,7 @@ public class Bytecode extends ByteVector implements Cloneable, Opcode {
      * Constructs a <code>Bytecode</code> object with an empty bytecode
      * sequence.  The initial values of <code>max_stack</code> and
      * <code>max_locals</code> are zero.
-     * 
+     *
      * @param cp            constant pool table.
      * @see Bytecode#setMaxStack(int)
      * @see Bytecode#setMaxLocals(int)
@@ -147,6 +170,7 @@ public class Bytecode extends ByteVector implements Cloneable, Opcode {
      * The constant pool object is shared between this object
      * and the cloned object.
      */
+    @Override
     public Object clone() {
         try {
             Bytecode bc = (Bytecode)super.clone();
@@ -240,8 +264,9 @@ public class Bytecode extends ByteVector implements Cloneable, Opcode {
      */
     public void setMaxLocals(boolean isStatic, CtClass[] params,
                              int locals) {
-        if (!isStatic)
-            ++locals;
+        if (!isStatic) {
+          ++locals;
+        }
 
         if (params != null) {
             CtClass doubleType = CtClass.doubleType;
@@ -249,10 +274,11 @@ public class Bytecode extends ByteVector implements Cloneable, Opcode {
             int n = params.length;
             for (int i = 0; i < n; ++i) {
                 CtClass type = params[i];
-                if (type == doubleType || type == longType)
-                    locals += 2;
-                else
-                    ++locals;
+                if (type == doubleType || type == longType) {
+                  locals += 2;
+                } else {
+                  ++locals;
+                }
             }
         }
 
@@ -308,6 +334,7 @@ public class Bytecode extends ByteVector implements Cloneable, Opcode {
      *
      * @throws ArrayIndexOutOfBoundsException   if offset is invalid.
      */
+    @Override
     public int read(int offset) {
         return super.read(offset);
     }
@@ -338,6 +365,7 @@ public class Bytecode extends ByteVector implements Cloneable, Opcode {
      *
      * @throws ArrayIndexOutOfBoundsException   if offset is invalid.
      */
+    @Override
     public void write(int offset, int value) {
         super.write(offset, value);
     }
@@ -363,6 +391,7 @@ public class Bytecode extends ByteVector implements Cloneable, Opcode {
     /**
      * Appends an 8bit value to the end of the bytecode sequence.
      */
+    @Override
     public void add(int code) {
         super.add(code);
     }
@@ -379,6 +408,7 @@ public class Bytecode extends ByteVector implements Cloneable, Opcode {
      *
      * @param length    the gap length in byte.
      */
+    @Override
     public void addGap(int length) {
         super.addGap(length);
     }
@@ -424,8 +454,9 @@ public class Bytecode extends ByteVector implements Cloneable, Opcode {
      */
     public void setStackDepth(int depth) {
         stackDepth = depth;
-        if (stackDepth > maxStack)
-            maxStack = stackDepth;
+        if (stackDepth > maxStack) {
+          maxStack = stackDepth;
+        }
     }
 
     /**
@@ -442,9 +473,9 @@ public class Bytecode extends ByteVector implements Cloneable, Opcode {
      * @param n         an index into the local variable array.
      */
     public void addAload(int n) {
-        if (n < 4)
-            addOpcode(42 + n);          // aload_<n>
-        else if (n < 0x100) {
+        if (n < 4) {
+          addOpcode(42 + n);          // aload_<n>
+        } else if (n < 0x100) {
             addOpcode(ALOAD);           // aload
             add(n);
         }
@@ -461,9 +492,9 @@ public class Bytecode extends ByteVector implements Cloneable, Opcode {
      * @param n         an index into the local variable array.
      */
     public void addAstore(int n) {
-        if (n < 4)
-            addOpcode(75 + n);  // astore_<n>
-        else if (n < 0x100) {
+        if (n < 4) {
+          addOpcode(75 + n);  // astore_<n>
+        } else if (n < 0x100) {
             addOpcode(ASTORE);          // astore
             add(n);
         }
@@ -480,9 +511,9 @@ public class Bytecode extends ByteVector implements Cloneable, Opcode {
      * @param n         the pushed integer constant.
      */
     public void addIconst(int n) {
-        if (n < 6 && -2 < n)
-            addOpcode(3 + n);           // iconst_<i>   -1..5
-        else if (n <= 127 && -128 <= n) {
+        if (n < 6 && -2 < n) {
+          addOpcode(3 + n);           // iconst_<i>   -1..5
+        } else if (n <= 127 && -128 <= n) {
             addOpcode(16);              // bipush
             add(n);
         }
@@ -490,9 +521,9 @@ public class Bytecode extends ByteVector implements Cloneable, Opcode {
             addOpcode(17);              // sipush
             add(n >> 8);
             add(n);
+        } else {
+          addLdc(constPool.addIntegerInfo(n));
         }
-        else
-            addLdc(constPool.addIntegerInfo(n));
     }
 
     /**
@@ -503,19 +534,20 @@ public class Bytecode extends ByteVector implements Cloneable, Opcode {
      */
     public void addConstZero(CtClass type) {
         if (type.isPrimitive()) {
-            if (type == CtClass.longType)
-                addOpcode(LCONST_0);
-            else if (type == CtClass.floatType)
-                addOpcode(FCONST_0);
-            else if (type == CtClass.doubleType)
-                addOpcode(DCONST_0);
-            else if (type == CtClass.voidType)
-                throw new RuntimeException("void type?");
-            else
-                addOpcode(ICONST_0);
+            if (type == CtClass.longType) {
+              addOpcode(LCONST_0);
+            } else if (type == CtClass.floatType) {
+              addOpcode(FCONST_0);
+            } else if (type == CtClass.doubleType) {
+              addOpcode(DCONST_0);
+            } else if (type == CtClass.voidType) {
+              throw new RuntimeException("void type?");
+            } else {
+              addOpcode(ICONST_0);
+            }
+        } else {
+          addOpcode(ACONST_NULL);
         }
-        else
-            addOpcode(ACONST_NULL);
     }
 
     /**
@@ -524,9 +556,9 @@ public class Bytecode extends ByteVector implements Cloneable, Opcode {
      * @param n         an index into the local variable array.
      */
     public void addIload(int n) {
-        if (n < 4)
-            addOpcode(26 + n);          // iload_<n>
-        else if (n < 0x100) {
+        if (n < 4) {
+          addOpcode(26 + n);          // iload_<n>
+        } else if (n < 0x100) {
             addOpcode(ILOAD);           // iload
             add(n);
         }
@@ -543,9 +575,9 @@ public class Bytecode extends ByteVector implements Cloneable, Opcode {
      * @param n         an index into the local variable array.
      */
     public void addIstore(int n) {
-        if (n < 4)
-            addOpcode(59 + n);          // istore_<n>
-        else if (n < 0x100) {
+        if (n < 4) {
+          addOpcode(59 + n);          // istore_<n>
+        } else if (n < 0x100) {
             addOpcode(ISTORE);          // istore
             add(n);
         }
@@ -562,10 +594,11 @@ public class Bytecode extends ByteVector implements Cloneable, Opcode {
      * @param n         the pushed long integer constant.
      */
     public void addLconst(long n) {
-        if (n == 0 || n == 1)
-            addOpcode(9 + (int)n);              // lconst_<n>
-        else
-            addLdc2w(n);
+        if (n == 0 || n == 1) {
+          addOpcode(9 + (int)n);              // lconst_<n>
+        } else {
+          addLdc2w(n);
+        }
     }
 
     /**
@@ -574,9 +607,9 @@ public class Bytecode extends ByteVector implements Cloneable, Opcode {
      * @param n         an index into the local variable array.
      */
     public void addLload(int n) {
-        if (n < 4)
-            addOpcode(30 + n);          // lload_<n>
-        else if (n < 0x100) {
+        if (n < 4) {
+          addOpcode(30 + n);          // lload_<n>
+        } else if (n < 0x100) {
             addOpcode(LLOAD);           // lload
             add(n);
         }
@@ -593,9 +626,9 @@ public class Bytecode extends ByteVector implements Cloneable, Opcode {
      * @param n         an index into the local variable array.
      */
     public void addLstore(int n) {
-        if (n < 4)
-            addOpcode(63 + n);          // lstore_<n>
-        else if (n < 0x100) {
+        if (n < 4) {
+          addOpcode(63 + n);          // lstore_<n>
+        } else if (n < 0x100) {
             addOpcode(LSTORE);          // lstore
             add(n);
         }
@@ -605,17 +638,18 @@ public class Bytecode extends ByteVector implements Cloneable, Opcode {
             addIndex(n);
         }
     }
-   
+
     /**
      * Appends DCONST or DCONST_&lt;n&gt;
      *
      * @param d         the pushed double constant.
      */
     public void addDconst(double d) {
-        if (d == 0.0 || d == 1.0)
-            addOpcode(14 + (int)d);             // dconst_<n>
-        else
-            addLdc2w(d);
+        if (d == 0.0 || d == 1.0) {
+          addOpcode(14 + (int)d);             // dconst_<n>
+        } else {
+          addLdc2w(d);
+        }
     }
 
     /**
@@ -624,9 +658,9 @@ public class Bytecode extends ByteVector implements Cloneable, Opcode {
      * @param n         an index into the local variable array.
      */
     public void addDload(int n) {
-        if (n < 4)
-            addOpcode(38 + n);          // dload_<n>
-        else if (n < 0x100) {
+        if (n < 4) {
+          addOpcode(38 + n);          // dload_<n>
+        } else if (n < 0x100) {
             addOpcode(DLOAD);           // dload
             add(n);
         }
@@ -643,9 +677,9 @@ public class Bytecode extends ByteVector implements Cloneable, Opcode {
      * @param n         an index into the local variable array.
      */
     public void addDstore(int n) {
-        if (n < 4)
-            addOpcode(71 + n);          // dstore_<n>
-        else if (n < 0x100) {
+        if (n < 4) {
+          addOpcode(71 + n);          // dstore_<n>
+        } else if (n < 0x100) {
             addOpcode(DSTORE);          // dstore
             add(n);
         }
@@ -662,10 +696,11 @@ public class Bytecode extends ByteVector implements Cloneable, Opcode {
      * @param f         the pushed float constant.
      */
     public void addFconst(float f) {
-        if (f == 0.0f || f == 1.0f || f == 2.0f)
-            addOpcode(11 + (int)f);             // fconst_<n>
-        else
-            addLdc(constPool.addFloatInfo(f));
+        if (f == 0.0f || f == 1.0f || f == 2.0f) {
+          addOpcode(11 + (int)f);             // fconst_<n>
+        } else {
+          addLdc(constPool.addFloatInfo(f));
+        }
     }
 
     /**
@@ -674,9 +709,9 @@ public class Bytecode extends ByteVector implements Cloneable, Opcode {
      * @param n         an index into the local variable array.
      */
     public void addFload(int n) {
-        if (n < 4)
-            addOpcode(34 + n);          // fload_<n>
-        else if (n < 0x100) {
+        if (n < 4) {
+          addOpcode(34 + n);          // fload_<n>
+        } else if (n < 0x100) {
             addOpcode(FLOAD);           // fload
             add(n);
         }
@@ -693,9 +728,9 @@ public class Bytecode extends ByteVector implements Cloneable, Opcode {
      * @param n         an index into the local variable array.
      */
     public void addFstore(int n) {
-        if (n < 4)
-            addOpcode(67 + n);          // fstore_<n>
-        else if (n < 0x100) {
+        if (n < 4) {
+          addOpcode(67 + n);          // fstore_<n>
+        } else if (n < 0x100) {
             addOpcode(FSTORE);          // fstore
             add(n);
         }
@@ -718,23 +753,23 @@ public class Bytecode extends ByteVector implements Cloneable, Opcode {
         if (type.isPrimitive()) {
             if (type == CtClass.booleanType || type == CtClass.charType
                 || type == CtClass.byteType || type == CtClass.shortType
-                || type == CtClass.intType)
-                addIload(n);
-            else if (type == CtClass.longType) {
+                || type == CtClass.intType) {
+              addIload(n);
+            } else if (type == CtClass.longType) {
                 addLload(n);
                 return 2;
             }
-            else if(type == CtClass.floatType)
-                addFload(n);
-            else if(type == CtClass.doubleType) {
+            else if(type == CtClass.floatType) {
+              addFload(n);
+            } else if(type == CtClass.doubleType) {
                 addDload(n);
                 return 2;
+            } else {
+              throw new RuntimeException("void type?");
             }
-            else
-                throw new RuntimeException("void type?");
+        } else {
+          addAload(n);
         }
-        else
-            addAload(n);
 
         return 1;
     }
@@ -751,23 +786,23 @@ public class Bytecode extends ByteVector implements Cloneable, Opcode {
         if (type.isPrimitive()) {
             if (type == CtClass.booleanType || type == CtClass.charType
                 || type == CtClass.byteType || type == CtClass.shortType
-                || type == CtClass.intType)
-                addIstore(n);
-            else if (type == CtClass.longType) {
+                || type == CtClass.intType) {
+              addIstore(n);
+            } else if (type == CtClass.longType) {
                 addLstore(n);
                 return 2;
             }
-            else if (type == CtClass.floatType)
-                addFstore(n);
-            else if (type == CtClass.doubleType) {
+            else if (type == CtClass.floatType) {
+              addFstore(n);
+            } else if (type == CtClass.doubleType) {
                 addDstore(n);
                 return 2;
+            } else {
+              throw new RuntimeException("void type?");
             }
-            else
-                throw new RuntimeException("void type?");
+        } else {
+          addAstore(n);
         }
-        else
-            addAstore(n);
 
         return 1;
     }
@@ -783,8 +818,9 @@ public class Bytecode extends ByteVector implements Cloneable, Opcode {
         int stacksize = 0;
         if (params != null) {
             int n = params.length;
-            for (int i = 0; i < n; ++i)
-                stacksize += addLoad(stacksize + offset, params[i]);
+            for (int i = 0; i < n; ++i) {
+              stacksize += addLoad(stacksize + offset, params[i]);
+            }
         }
 
         return stacksize;
@@ -1244,8 +1280,9 @@ public class Bytecode extends ByteVector implements Cloneable, Opcode {
      */
     public int addMultiNewarray(CtClass clazz, int[] dimensions) {
         int len = dimensions.length;
-        for (int i = 0; i < len; ++i)
-            addIconst(dimensions[i]);
+        for (int i = 0; i < len; ++i) {
+          addIconst(dimensions[i]);
+        }
 
         growStack(len);
         return addMultiNewarray(clazz, len);
@@ -1354,14 +1391,14 @@ public class Bytecode extends ByteVector implements Cloneable, Opcode {
      * @param type      the return type.
      */
     public void addReturn(CtClass type) {
-        if (type == null)
-            addOpcode(RETURN);
-        else if (type.isPrimitive()) {
+        if (type == null) {
+          addOpcode(RETURN);
+        } else if (type.isPrimitive()) {
             CtPrimitiveType ptype = (CtPrimitiveType)type;
             addOpcode(ptype.getReturnOp());
+        } else {
+          addOpcode(ARETURN);
         }
-        else
-            addOpcode(ARETURN);
     }
 
     /**

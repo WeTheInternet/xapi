@@ -1,3 +1,22 @@
+/*
+ * Javassist, a Java-bytecode translator toolkit.
+ * Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License.  Alternatively, the contents of this file may be used under
+ * the terms of the GNU Lesser General Public License Version 2.1 or later,
+ * or the Apache License Version 2.0.
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * MODIFIED BY James Nelson of We The Internet, 2013.
+ * Repackaged to avoid conflicts with different versions of Javassist,
+ * and modified Javassist APIs to make them more accessible to outside code.
+ */
 package xapi.bytecode.attributes;
 
 import java.io.DataInput;
@@ -51,6 +70,7 @@ public class ExceptionsAttribute extends AttributeInfo {
      * @param classnames        pairs of replaced and substituted
      *                          class names.  It can be <code>null</code>.
      */
+    @Override
     public AttributeInfo copy(ConstPool newCp, Map<?, ?> classnames) {
         return new ExceptionsAttribute(newCp, this, classnames);
     }
@@ -86,13 +106,15 @@ public class ExceptionsAttribute extends AttributeInfo {
     public int[] getExceptionIndexes() {
         byte[] blist = info;
         int n = blist.length;
-        if (n <= 2)
-            return null;
+        if (n <= 2) {
+          return null;
+        }
 
         int[] elist = new int[n / 2 - 1];
         int k = 0;
-        for (int j = 2; j < n; j += 2)
-            elist[k++] = ((blist[j] & 0xff) << 8) | (blist[j + 1] & 0xff);
+        for (int j = 2; j < n; j += 2) {
+          elist[k++] = ((blist[j] & 0xff) << 8) | (blist[j + 1] & 0xff);
+        }
 
         return elist;
     }
@@ -103,8 +125,9 @@ public class ExceptionsAttribute extends AttributeInfo {
     public String[] getExceptions() {
         byte[] blist = info;
         int n = blist.length;
-        if (n <= 2)
-            return null;
+        if (n <= 2) {
+          return null;
+        }
 
         String[] elist = new String[n / 2 - 1];
         int k = 0;
@@ -123,8 +146,9 @@ public class ExceptionsAttribute extends AttributeInfo {
         int n = elist.length;
         byte[] blist = new byte[n * 2 + 2];
         X_Byte.write16bit(n, blist, 0);
-        for (int i = 0; i < n; ++i)
-            X_Byte.write16bit(elist[i], blist, i * 2 + 2);
+        for (int i = 0; i < n; ++i) {
+          X_Byte.write16bit(elist[i], blist, i * 2 + 2);
+        }
 
         info = blist;
     }
@@ -136,9 +160,10 @@ public class ExceptionsAttribute extends AttributeInfo {
         int n = elist.length;
         byte[] blist = new byte[n * 2 + 2];
         X_Byte.write16bit(n, blist, 0);
-        for (int i = 0; i < n; ++i)
-            X_Byte.write16bit(constPool.addClassInfo(elist[i]),
-                                 blist, i * 2 + 2);
+        for (int i = 0; i < n; ++i) {
+          X_Byte.write16bit(constPool.addClassInfo(elist[i]),
+                               blist, i * 2 + 2);
+        }
 
         info = blist;
     }

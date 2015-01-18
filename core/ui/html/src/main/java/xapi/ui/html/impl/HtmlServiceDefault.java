@@ -5,9 +5,11 @@ import xapi.inject.X_Inject;
 import xapi.ui.api.StyleService;
 import xapi.ui.autoui.api.BeanValueProvider;
 import xapi.ui.autoui.api.UserInterfaceFactory;
+import xapi.ui.html.api.Css;
 import xapi.ui.html.api.Html;
 import xapi.ui.html.api.HtmlService;
 import xapi.ui.html.api.HtmlSnippet;
+import xapi.ui.html.api.Style;
 
 @SingletonDefault(implFor=HtmlService.class)
 public class HtmlServiceDefault implements HtmlService {
@@ -28,6 +30,26 @@ public class HtmlServiceDefault implements HtmlService {
      */
     BeanValueProvider bean = X_Inject.singleton(UserInterfaceFactory.class).getBeanProvider(cls);
     return new HtmlSnippet<>(templateClass.getAnnotation(Html.class), bean, css);
+  }
+
+  @Override
+  public void injectStyle(Class<?> cls, StyleService<?> context) {
+    Style style = cls.getAnnotation(Style.class);
+    if (style != null) {
+      printStyle(style, context);
+    }
+    Css css = cls.getAnnotation(Css.class);
+    if (css != null) {
+      for (Style s : css.style()) {
+        printStyle(s, context);
+      }
+    }
+  }
+
+  private void printStyle(Style style, StyleService<?> context) {
+    StringBuilder result = new StringBuilder();
+    HtmlSnippet.appendTo(result, style);
+    context.addCss(result.toString(), style.priority());
   }
 
 }

@@ -75,14 +75,18 @@ public class ClasspathScannerDefault implements ClasspathScanner {
     public void run() {
       Thread.currentThread().setUncaughtExceptionHandler(new ThreadsafeUncaughtExceptionHandler(creatorThread));
       creatorThread = null;
-      
+
       // determine if we should run in jar mode or file mode
       File file;
       String path = classpath.toExternalForm();
       boolean jarUrl = path.startsWith("jar:");
-      if (jarUrl) path = path.substring("jar:".length());
+      if (jarUrl) {
+        path = path.substring("jar:".length());
+      }
       boolean fileUrl = path.startsWith("file:");
-      if (fileUrl) path = path.substring("file:".length());
+      if (fileUrl) {
+        path = path.substring("file:".length());
+      }
       boolean jarFile = path.contains(".jar!");
       if (jarFile) {
         path = path.substring(0, path.indexOf(".jar!") + ".jar".length());
@@ -210,8 +214,9 @@ public class ClasspathScannerDefault implements ClasspathScanner {
 @Override
   public ClasspathScanner scanAnnotations(@SuppressWarnings("unchecked")
     Class<? extends Annotation> ... annotations) {
-    for (Class<? extends Annotation> annotation : annotations)
+    for (Class<? extends Annotation> annotation : annotations) {
       this.annotations.add(annotation);
+    }
     return this;
   }
 
@@ -233,13 +238,13 @@ public class ClasspathScannerDefault implements ClasspathScanner {
     return Executors.newFixedThreadPool(
         Runtime.getRuntime().availableProcessors()*3/2);
   }
-  
+
   @Override
   public synchronized Callable<ClasspathResourceMap> scan(ClassLoader loadFrom, ExecutorService executor) {
     // perform the actual scan
     Map<URL,Fifo<String>> classPaths = new LinkedHashMap<URL,Fifo<String>>();
     if (pkgs.size() == 0 || (pkgs.size() == 1 && "".equals(pkgs.iterator().next()))) {
-      
+
       for (String pkg : X_Properties.getProperty(X_Namespace.PROPERTY_RUNTIME_SCANPATH,
         ",META-INF,com,org,net,xapi,java").split(",\\s*")) {
         pkgs.add(pkg);
@@ -260,8 +265,9 @@ public class ClasspathScannerDefault implements ClasspathScanner {
       while (resources.hasMoreElements()) {
         URL resource = resources.nextElement();
         String file = resource.toExternalForm();
-        if (file.contains("gwt-dev.jar"))
+        if (file.contains("gwt-dev.jar")) {
           continue;
+        }
         Fifo<String> fifo = classPaths.get(resource);
         if (fifo == null) {
           fifo = new SimpleFifo<String>();
@@ -276,6 +282,7 @@ public class ClasspathScannerDefault implements ClasspathScanner {
     int pos = 0;
     final ClasspathResourceMap map = new ClasspathResourceMap(executor,
       annotations, bytecodeMatchers, resourceMatchers, sourceMatchers);
+    map.setClasspath(classPaths.keySet());
     final Fifo<Future<?>> jobs = new SimpleFifo<Future<?>>();
     class Finisher implements Callable<ClasspathResourceMap>{
       @Override
@@ -318,8 +325,9 @@ public class ClasspathScannerDefault implements ClasspathScanner {
 
   @Override
   public ClasspathScanner scanPackages(String ... pkgs) {
-    for (String pkg : pkgs)
+    for (String pkg : pkgs) {
       this.pkgs.add(pkg);
+    }
     return this;
   }
 
@@ -342,8 +350,9 @@ public class ClasspathScannerDefault implements ClasspathScanner {
   }
   @Override
   public ClasspathScanner matchResources(String ... regexes) {
-    for (String regex : regexes)
+    for (String regex : regexes) {
       resourceMatchers.add(Pattern.compile(regex));
+    }
     return this;
   }
   @Override
@@ -353,8 +362,9 @@ public class ClasspathScannerDefault implements ClasspathScanner {
   }
   @Override
   public ClasspathScanner matchSourceFiles(String ... regexes) {
-    for (String regex : regexes)
+    for (String regex : regexes) {
       sourceMatchers.add(Pattern.compile(regex));
+    }
     return this;
   }
 

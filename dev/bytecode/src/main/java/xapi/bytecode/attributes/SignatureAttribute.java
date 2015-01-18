@@ -1,3 +1,22 @@
+/*
+ * Javassist, a Java-bytecode translator toolkit.
+ * Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License.  Alternatively, the contents of this file may be used under
+ * the terms of the GNU Lesser General Public License Version 2.1 or later,
+ * or the Apache License Version 2.0.
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * MODIFIED BY James Nelson of We The Internet, 2013.
+ * Repackaged to avoid conflicts with different versions of Javassist,
+ * and modified Javassist APIs to make them more accessible to outside code.
+ */
 package xapi.bytecode.attributes;
 
 import java.io.DataInput;
@@ -86,16 +105,18 @@ public class SignatureAttribute extends AttributeInfo {
     }
 
     static String renameClass(String desc, String oldname, String newname) {
-        if (desc.indexOf(oldname) < 0)
-            return desc;
+        if (desc.indexOf(oldname) < 0) {
+          return desc;
+        }
 
         StringBuffer newdesc = new StringBuffer();
         int head = 0;
         int i = 0;
         for (;;) {
             int j = desc.indexOf('L', i);
-            if (j < 0)
-                break;
+            if (j < 0) {
+              break;
+            }
 
             int k = j;
             int p = 0;
@@ -103,9 +124,11 @@ public class SignatureAttribute extends AttributeInfo {
             boolean match = true;
             try {
                 int len = oldname.length();
-                while (isNamePart(c = desc.charAt(++k)))
-                    if (p >= len || c != oldname.charAt(p++))
-                        match = false;
+                while (isNamePart(c = desc.charAt(++k))) {
+                  if (p >= len || c != oldname.charAt(p++)) {
+                    match = false;
+                  }
+                }
             }
             catch (IndexOutOfBoundsException e) { break; }
             i = k + 1;
@@ -118,35 +141,39 @@ public class SignatureAttribute extends AttributeInfo {
             }
         }
 
-        if (head == 0)
-            return desc;
-        else {
+        if (head == 0) {
+          return desc;
+        } else {
             int len = desc.length();
-            if (head < len)
-                newdesc.append(desc.substring(head, len));
+            if (head < len) {
+              newdesc.append(desc.substring(head, len));
+            }
 
             return newdesc.toString();
         }
     }
 
     static String renameClass(String desc, Map<?, ?> map) {
-        if (map == null)
-            return desc;
+        if (map == null) {
+          return desc;
+        }
 
         StringBuffer newdesc = new StringBuffer();
         int head = 0;
         int i = 0;
         for (;;) {
             int j = desc.indexOf('L', i);
-            if (j < 0)
-                break;
+            if (j < 0) {
+              break;
+            }
 
             StringBuffer nameBuf = new StringBuffer();
             int k = j;
             char c;
             try {
-                while (isNamePart(c = desc.charAt(++k)))
-                    nameBuf.append(c);
+                while (isNamePart(c = desc.charAt(++k))) {
+                  nameBuf.append(c);
+                }
             }
             catch (IndexOutOfBoundsException e) { break; }
             i = k + 1;
@@ -161,12 +188,13 @@ public class SignatureAttribute extends AttributeInfo {
             }
         }
 
-        if (head == 0)
-            return desc;
-        else {
+        if (head == 0) {
+          return desc;
+        } else {
             int len = desc.length();
-            if (head < len)
-                newdesc.append(desc.substring(head, len));
+            if (head < len) {
+              newdesc.append(desc.substring(head, len));
+            }
 
             return newdesc.toString();
         }
@@ -181,9 +209,9 @@ public class SignatureAttribute extends AttributeInfo {
 
         int indexOf(String s, int ch) throws BadBytecode {
             int i = s.indexOf(ch, position);
-            if (i < 0)
-                throw error(s);
-            else {
+            if (i < 0) {
+              throw error(s);
+            } else {
                 position = i + 1;
                 return i;
             }
@@ -347,16 +375,18 @@ public class SignatureAttribute extends AttributeInfo {
         @Override
         public String toString() {
             StringBuffer sbuf = new StringBuffer(getName());
-            if (superClass != null)
-                sbuf.append(" extends ").append(superClass.toString());
+            if (superClass != null) {
+              sbuf.append(" extends ").append(superClass.toString());
+            }
 
             int len = superInterfaces.length;
             if (len > 0) {
                 for (int i = 0; i < len; i++) {
-                    if (i > 0 || superClass != null)
-                        sbuf.append(" & ");
-                    else
-                        sbuf.append(" extends ");
+                    if (i > 0 || superClass != null) {
+                      sbuf.append(" & ");
+                    } else {
+                      sbuf.append(" extends ");
+                    }
 
                     sbuf.append(superInterfaces[i].toString());
                 }
@@ -368,8 +398,9 @@ public class SignatureAttribute extends AttributeInfo {
         static void toString(StringBuffer sbuf, TypeParameter[] tp) {
             sbuf.append('<');
             for (int i = 0; i < tp.length; i++) {
-                if (i > 0)
-                    sbuf.append(", ");
+                if (i > 0) {
+                  sbuf.append(", ");
+                }
 
                 sbuf.append(tp[i]);
             }
@@ -418,16 +449,18 @@ public class SignatureAttribute extends AttributeInfo {
          */
         @Override
         public String toString() {
-            if (wildcard == '*')
-                return "?";
+            if (wildcard == '*') {
+              return "?";
+            }
 
             String type = arg.toString();
-            if (wildcard == ' ')
-                return type;
-            else if (wildcard == '+')
-                return "? extends " + type;
-            else
-                return "? super " + type;
+            if (wildcard == ' ') {
+              return type;
+            } else if (wildcard == '+') {
+              return "? extends " + type;
+            } else {
+              return "? super " + type;
+            }
         }
     }
 
@@ -437,8 +470,9 @@ public class SignatureAttribute extends AttributeInfo {
     public static abstract class Type {
         static void toString(StringBuffer sbuf, Type[] ts) {
             for (int i = 0; i < ts.length; i++) {
-                if (i > 0)
-                    sbuf.append(", ");
+                if (i > 0) {
+                  sbuf.append(", ");
+                }
 
                 sbuf.append(ts[i]);
             }
@@ -490,10 +524,11 @@ public class SignatureAttribute extends AttributeInfo {
 
         static ClassType make(String s, int b, int e,
                               TypeArgument[] targs, ClassType parent) {
-            if (parent == null)
-                return new ClassType(s, b, e, targs);
-            else
-                return new NestedClassType(s, b, e, targs, parent);
+            if (parent == null) {
+              return new ClassType(s, b, e, targs);
+            } else {
+              return new NestedClassType(s, b, e, targs, parent);
+            }
         }
 
         ClassType(String signature, int begin, int end, TypeArgument[] targs) {
@@ -530,16 +565,18 @@ public class SignatureAttribute extends AttributeInfo {
         public String toString() {
             StringBuffer sbuf = new StringBuffer();
             ClassType parent = getDeclaringClass();
-            if (parent != null)
-                sbuf.append(parent.toString()).append('.');
+            if (parent != null) {
+              sbuf.append(parent.toString()).append('.');
+            }
 
             sbuf.append(name);
             if (arguments != null) {
                 sbuf.append('<');
                 int n = arguments.length;
                 for (int i = 0; i < n; i++) {
-                    if (i > 0)
-                        sbuf.append(", ");
+                    if (i > 0) {
+                      sbuf.append(", ");
+                    }
 
                     sbuf.append(arguments[i].toString());
                 }
@@ -600,8 +637,9 @@ public class SignatureAttribute extends AttributeInfo {
         @Override
         public String toString() {
             StringBuffer sbuf = new StringBuffer(componentType.toString());
-            for (int i = 0; i < dim; i++)
-                sbuf.append("[]");
+            for (int i = 0; i < dim; i++) {
+              sbuf.append("[]");
+            }
 
             return sbuf.toString();
         }
@@ -690,8 +728,9 @@ public class SignatureAttribute extends AttributeInfo {
         ClassType superClass = parseClassType(sig, cur);
         int sigLen = sig.length();
         ArrayList<ClassType> ifArray = new ArrayList<ClassType>();
-        while (cur.position < sigLen && sig.charAt(cur.position) == 'L')
-            ifArray.add(parseClassType(sig, cur));
+        while (cur.position < sigLen && sig.charAt(cur.position) == 'L') {
+          ifArray.add(parseClassType(sig, cur));
+        }
 
         ClassType[] ifs
             = (ClassType[])ifArray.toArray(new ClassType[ifArray.size()]);
@@ -703,8 +742,9 @@ public class SignatureAttribute extends AttributeInfo {
     {
         Cursor cur = new Cursor();
         TypeParameter[] tp = parseTypeParams(sig, cur);
-        if (sig.charAt(cur.position++) != '(')
-            throw error(sig);
+        if (sig.charAt(cur.position++) != '(') {
+          throw error(sig);
+        }
 
         ArrayList<Type> params = new ArrayList<Type>();
         while (sig.charAt(cur.position) != ')') {
@@ -719,8 +759,9 @@ public class SignatureAttribute extends AttributeInfo {
         while (cur.position < sigLen && sig.charAt(cur.position) == '^') {
             cur.position++;
             ObjectType t = parseObjectType(sig, cur, false);
-            if (t instanceof ArrayType)
-                throw error(sig);
+            if (t instanceof ArrayType) {
+              throw error(sig);
+            }
 
             exceptions.add(t);
         }
@@ -772,20 +813,22 @@ public class SignatureAttribute extends AttributeInfo {
         case '[' :
             return parseArray(sig, c);
         default :
-            if (dontThrow)
-                return null;
-            else
-                throw error(sig);
+            if (dontThrow) {
+              return null;
+            } else {
+              throw error(sig);
+            }
         }
     }
 
     private static ClassType parseClassType(String sig, Cursor c)
         throws BadBytecode
     {
-        if (sig.charAt(c.position) == 'L')
-            return parseClassType2(sig, c, null);
-        else
-            throw error(sig);
+        if (sig.charAt(c.position) == 'L') {
+          return parseClassType2(sig, c, null);
+        } else {
+          throw error(sig);
+        }
     }
 
     private static ClassType parseClassType2(String sig, Cursor c, ClassType parent)
@@ -801,17 +844,17 @@ public class SignatureAttribute extends AttributeInfo {
         if (t == '<') {
             targs = parseTypeArgs(sig, c);
             t = sig.charAt(c.position++);
+        } else {
+          targs = null;
         }
-        else
-            targs = null;
 
         ClassType thisClass = ClassType.make(sig, start, end, targs, parent);
         if (t == '$') {
             c.position--;
             return parseClassType2(sig, c, thisClass);
+        } else {
+          return thisClass;
         }
-        else
-            return thisClass;
     }
 
     private static TypeArgument[] parseTypeArgs(String sig, Cursor c) throws BadBytecode {
@@ -819,9 +862,9 @@ public class SignatureAttribute extends AttributeInfo {
         char t;
         while ((t = sig.charAt(c.position++)) != '>') {
             TypeArgument ta;
-            if (t == '*' )
-                ta = new TypeArgument(null, '*');
-            else {
+            if (t == '*' ) {
+              ta = new TypeArgument(null, '*');
+            } else {
                 if (t != '+' && t != '-') {
                     t = ' ';
                     c.position--;
@@ -838,16 +881,18 @@ public class SignatureAttribute extends AttributeInfo {
 
     private static ObjectType parseArray(String sig, Cursor c) throws BadBytecode {
         int dim = 1;
-        while (sig.charAt(++c.position) == '[')
-            dim++;
+        while (sig.charAt(++c.position) == '[') {
+          dim++;
+        }
 
         return new ArrayType(dim, parseType(sig, c));
     }
 
     private static Type parseType(String sig, Cursor c) throws BadBytecode {
         Type t = parseObjectType(sig, c, true);
-        if (t == null)
-            t = new BaseType(sig.charAt(c.position++));
+        if (t == null) {
+          t = new BaseType(sig.charAt(c.position++));
+        }
 
         return t;
     }

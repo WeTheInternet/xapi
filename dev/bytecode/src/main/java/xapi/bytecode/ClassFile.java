@@ -1,3 +1,22 @@
+/*
+ * Javassist, a Java-bytecode translator toolkit.
+ * Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License.  Alternatively, the contents of this file may be used under
+ * the terms of the GNU Lesser General Public License Version 2.1 or later,
+ * or the Apache License Version 2.0.
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * MODIFIED BY James Nelson of We The Internet, 2013.
+ * Repackaged to avoid conflicts with different versions of Javassist,
+ * and modified Javassist APIs to make them more accessible to outside code.
+ */
 package xapi.bytecode;
 
 import java.io.DataInput;
@@ -113,10 +132,11 @@ public final class ClassFile implements Annotated {
         minor = 0; // JDK 1.3 or later
         constPool = new ConstPool(classname);
         thisClass = constPool.getThisClassInfo();
-        if (isInterface)
-            accessFlags = X_Modifier.INTERFACE | X_Modifier.ABSTRACT;
-        else
-            accessFlags = X_Modifier.SUPER;
+        if (isInterface) {
+          accessFlags = X_Modifier.INTERFACE | X_Modifier.ABSTRACT;
+        } else {
+          accessFlags = X_Modifier.SUPER;
+        }
 
         initSuperclass(superclass);
         interfaces = null;
@@ -142,8 +162,9 @@ public final class ClassFile implements Annotated {
 
     private static String getSourcefileName(String qname) {
         int index = qname.lastIndexOf('.');
-        if (index >= 0)
-            qname = qname.substring(index + 1);
+        if (index >= 0) {
+          qname = qname.substring(index + 1);
+        }
 
         return qname + ".java";
     }
@@ -175,14 +196,16 @@ public final class ClassFile implements Annotated {
         ConstPool cp = new ConstPool(thisclassname);
         thisClass = cp.getThisClassInfo();
         String sc = getSuperclass();
-        if (sc != null)
-            superClass = cp.addClassInfo(getSuperclass());
+        if (sc != null) {
+          superClass = cp.addClassInfo(getSuperclass());
+        }
 
         if (interfaces != null) {
             int n = interfaces.length;
-            for (int i = 0; i < n; ++i)
-                interfaces[i]
-                    = cp.addClassInfo(constPool.getClassInfo(interfaces[i]));
+            for (int i = 0; i < n; ++i) {
+              interfaces[i]
+                  = cp.addClassInfo(constPool.getClassInfo(interfaces[i]));
+            }
         }
 
         return cp;
@@ -277,8 +300,9 @@ public final class ClassFile implements Annotated {
      * @see javassist.bytecode.AccessFlag
      */
     public void setAccessFlags(int acc) {
-        if ((acc & X_Modifier.INTERFACE) == 0)
-            acc |= X_Modifier.SUPER;
+        if ((acc & X_Modifier.INTERFACE) == 0) {
+          acc |= X_Modifier.SUPER;
+        }
 
         accessFlags = acc;
     }
@@ -294,14 +318,17 @@ public final class ClassFile implements Annotated {
     public int getInnerAccessFlags() {
         InnerClassesAttribute ica
             = (InnerClassesAttribute)getAttribute(InnerClassesAttribute.tag);
-        if (ica == null)
-            return -1;
+        if (ica == null) {
+          return -1;
+        }
 
         String name = getName();
         int n = ica.tableLength();
-        for (int i = 0; i < n; ++i)
-            if (name.equals(ica.innerClass(i)))
-                return ica.accessFlags(i);
+        for (int i = 0; i < n; ++i) {
+          if (name.equals(ica.innerClass(i))) {
+            return ica.accessFlags(i);
+          }
+        }
 
         return -1;
     }
@@ -325,8 +352,9 @@ public final class ClassFile implements Annotated {
      * Returns the super class name.
      */
     public String getSuperclass() {
-        if (cachedSuperclass == null)
-            cachedSuperclass = constPool.getClassInfo(superClass);
+        if (cachedSuperclass == null) {
+          cachedSuperclass = constPool.getClassInfo(superClass);
+        }
 
         return cachedSuperclass;
     }
@@ -348,8 +376,9 @@ public final class ClassFile implements Annotated {
      * in the new super class.
      */
     public void setSuperclass(String superclass) {
-        if (superclass == null)
-            superclass = "java.lang.Object";
+        if (superclass == null) {
+          superclass = "java.lang.Object";
+        }
 
 //        try {
             this.superClass = constPool.addClassInfo(superclass);
@@ -383,11 +412,13 @@ public final class ClassFile implements Annotated {
     public final void renameClass(String oldname, String newname) {
         int n;
 
-        if (oldname.equals(newname))
-            return;
+        if (oldname.equals(newname)) {
+          return;
+        }
 
-        if (oldname.equals(thisclassname))
-            thisclassname = newname;
+        if (oldname.equals(thisclassname)) {
+          thisclassname = newname;
+        }
 
         oldname = Descriptor.toJvmName(oldname);
         newname = Descriptor.toJvmName(newname);
@@ -423,8 +454,9 @@ public final class ClassFile implements Annotated {
     public final void renameClass(Map<?, ?> classnames) {
         String jvmNewThisName = (String)classnames.get(Descriptor
                 .toJvmName(thisclassname));
-        if (jvmNewThisName != null)
-            thisclassname = Descriptor.toJavaName(jvmNewThisName);
+        if (jvmNewThisName != null) {
+          thisclassname = Descriptor.toJavaName(jvmNewThisName);
+        }
 
         constPool.renameClass(classnames);
 
@@ -451,17 +483,19 @@ public final class ClassFile implements Annotated {
      * The returned array is read only.
      */
     public String[] getInterfaces() {
-        if (cachedInterfaces != null)
-            return cachedInterfaces;
+        if (cachedInterfaces != null) {
+          return cachedInterfaces;
+        }
 
         String[] rtn = null;
-        if (interfaces == null)
-            rtn = new String[0];
-        else {
+        if (interfaces == null) {
+          rtn = new String[0];
+        } else {
             int n = interfaces.length;
             String[] list = new String[n];
-            for (int i = 0; i < n; ++i)
-                list[i] = constPool.getClassInfo(interfaces[i]);
+            for (int i = 0; i < n; ++i) {
+              list[i] = constPool.getClassInfo(interfaces[i]);
+            }
 
             rtn = list;
         }
@@ -481,8 +515,9 @@ public final class ClassFile implements Annotated {
         if (nameList != null) {
             int n = nameList.length;
             interfaces = new int[n];
-            for (int i = 0; i < n; ++i)
-                interfaces[i] = constPool.addClassInfo(nameList[i]);
+            for (int i = 0; i < n; ++i) {
+              interfaces[i] = constPool.addClassInfo(nameList[i]);
+            }
         }
     }
 
@@ -543,8 +578,9 @@ public final class ClassFile implements Annotated {
         int n = methods.size();
         for (int i = 0; i < n; ++i) {
             MethodInfo minfo = (MethodInfo)methods.get(i);
-            if (minfo.getName().equals(name))
-                return minfo;
+            if (minfo.getName().equals(name)) {
+              return minfo;
+            }
         }
 
         return null;
@@ -589,8 +625,9 @@ public final class ClassFile implements Annotated {
         int n = list.size();
         for (int i = 0; i < n; ++i) {
             AttributeInfo ai = (AttributeInfo)list.get(i);
-            if (ai.getName().equals(name))
-                return ai;
+            if (ai.getName().equals(name)) {
+              return ai;
+            }
         }
 
         return null;
@@ -615,17 +652,19 @@ public final class ClassFile implements Annotated {
     public String getSourceFile() {
         SourceFileAttribute sf
             = (SourceFileAttribute)getAttribute(SourceFileAttribute.tag);
-        if (sf == null)
-            return null;
-        else
-            return sf.getFileName();
+        if (sf == null) {
+          return null;
+        } else {
+          return sf.getFileName();
+        }
     }
 
     private void read(DataInput in) throws IOException {
         int i, n;
         int magic = in.readInt();
-        if (magic != 0xCAFEBABE)
-            throw new IOException("bad magic number: " + Integer.toHexString(magic));
+        if (magic != 0xCAFEBABE) {
+          throw new IOException("bad magic number: " + Integer.toHexString(magic));
+        }
 
         minor = in.readUnsignedShort();
         major = in.readUnsignedShort();
@@ -635,29 +674,33 @@ public final class ClassFile implements Annotated {
         constPool.setThisClassInfo(thisClass);
         superClass = in.readUnsignedShort();
         n = in.readUnsignedShort();
-        if (n == 0)
-            interfaces = null;
-        else {
+        if (n == 0) {
+          interfaces = null;
+        } else {
             interfaces = new int[n];
-            for (i = 0; i < n; ++i)
-                interfaces[i] = in.readUnsignedShort();
+            for (i = 0; i < n; ++i) {
+              interfaces[i] = in.readUnsignedShort();
+            }
         }
 
         ConstPool cp = constPool;
         n = in.readUnsignedShort();
         fields = new ArrayList<FieldInfo>();
-        for (i = 0; i < n; ++i)
-            addField(new FieldInfo(cp, in));
+        for (i = 0; i < n; ++i) {
+          addField(new FieldInfo(cp, in));
+        }
 
         n = in.readUnsignedShort();
         methods = new ArrayList<MethodInfo>();
-        for (i = 0; i < n; ++i)
-            addMethod(new MethodInfo(cp, in));
+        for (i = 0; i < n; ++i) {
+          addMethod(new MethodInfo(cp, in));
+        }
 
         attributes = new ArrayList<AttributeInfo>();
         n = in.readUnsignedShort();
-        for (i = 0; i < n; ++i)
-            addAttribute(AttributeInfo.read(cp, in));
+        for (i = 0; i < n; ++i) {
+          addAttribute(AttributeInfo.read(cp, in));
+        }
 
         thisclassname = constPool.getClassInfo(thisClass);
     }
@@ -676,14 +719,16 @@ public final class ClassFile implements Annotated {
         out.writeShort(thisClass);
         out.writeShort(superClass);
 
-        if (interfaces == null)
-            n = 0;
-        else
-            n = interfaces.length;
+        if (interfaces == null) {
+          n = 0;
+        } else {
+          n = interfaces.length;
+        }
 
         out.writeShort(n);
-        for (i = 0; i < n; ++i)
-            out.writeShort(interfaces[i]);
+        for (i = 0; i < n; ++i) {
+          out.writeShort(interfaces[i]);
+        }
 
         n = fields.size();
         out.writeShort(n);
@@ -763,6 +808,7 @@ public final class ClassFile implements Annotated {
      * @param name - The fully qualified annotation name
      * @return - An annotation descriptor of the type you want.
      */
+    @Override
     public Annotation getAnnotation(String name) {
       AttributeInfo attr = getAttribute(AnnotationsAttribute.visibleTag);
       if (attr != null) {
@@ -772,15 +818,17 @@ public final class ClassFile implements Annotated {
         }
       }
       attr = getAttribute(AnnotationsAttribute.invisibleTag);
-      if (attr == null)
+      if (attr == null) {
         return null;
+      }
       return ((AnnotationsAttribute)attr).getAnnotation(name);
     }
 
     public Annotation getAnnotation(Class<?> annoClass) {
       Annotation anno = getAnnotation(annoClass.getName());
-      if (anno == null)
+      if (anno == null) {
         return null;
+      }
       return anno;
     }
 
@@ -800,6 +848,7 @@ public final class ClassFile implements Annotated {
     /**
      * @return all compiletime and runtime annotations present on this class file.
      */
+    @Override
     public Annotation[] getAnnotations() {
       AttributeInfo vis = getAttribute(AnnotationsAttribute.visibleTag);
       AttributeInfo invis = getAttribute(AnnotationsAttribute.invisibleTag);
@@ -814,8 +863,9 @@ public final class ClassFile implements Annotated {
      */
     public Annotation getRuntimeAnnotation(String name) {
       AttributeInfo attr = getAttribute(AnnotationsAttribute.visibleTag);
-      if (attr == null)
+      if (attr == null) {
         return null;
+      }
       return ((AnnotationsAttribute)attr).getAnnotation(name);
     }
 
@@ -826,11 +876,13 @@ public final class ClassFile implements Annotated {
      * @return - An annotation descriptor of the type you want.
      */
     public Annotation getCompileAnnotation(String name) {
-      if (name.charAt(0) != '@')
+      if (name.charAt(0) != '@') {
         name = '@' + name;
+      }
       AttributeInfo attr = getAttribute(AnnotationsAttribute.invisibleTag);
-      if (attr == null)
+      if (attr == null) {
         return null;
+      }
       return ((AnnotationsAttribute)attr).getAnnotation(name);
     }
 
@@ -859,11 +911,13 @@ public final class ClassFile implements Annotated {
 
     @Override
     public boolean equals(Object obj) {
-      if (!(obj instanceof ClassFile))
+      if (!(obj instanceof ClassFile)) {
         return false;
+      }
       ClassFile other = (ClassFile)obj;
-      if (!getName().equals(other.getName()))
+      if (!getName().equals(other.getName())) {
         return false;
+      }
       // Classes of the same name and different location are not equal
       return X_Util.equal(getSourceFile(), other.getSourceFile());
 

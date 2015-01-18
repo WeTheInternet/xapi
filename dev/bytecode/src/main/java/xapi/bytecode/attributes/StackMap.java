@@ -1,3 +1,22 @@
+/*
+ * Javassist, a Java-bytecode translator toolkit.
+ * Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License.  Alternatively, the contents of this file may be used under
+ * the terms of the GNU Lesser General Public License Version 2.1 or later,
+ * or the Apache License Version 2.0.
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * MODIFIED BY James Nelson of We The Internet, 2013.
+ * Repackaged to avoid conflicts with different versions of Javassist,
+ * and modified Javassist APIs to make them more accessible to outside code.
+ */
 package xapi.bytecode.attributes;
 
 import java.io.ByteArrayOutputStream;
@@ -146,8 +165,9 @@ public class StackMap extends AttributeInfo {
          *                  false if it is for <code>stack</code>.
          */
         public int typeInfoArray(int pos, int offset, int num, boolean isLocals) {
-            for (int k = 0; k < num; k++)
-                pos = typeInfoArray2(k, pos);
+            for (int k = 0; k < num; k++) {
+              pos = typeInfoArray2(k, pos);
+            }
 
             return pos;
         }
@@ -331,30 +351,34 @@ public class StackMap extends AttributeInfo {
 
         @Override
         public int typeInfoArray(int pos, int offset, int num, boolean isLocals) {
-            if (!isLocals || num < varIndex)
-                return super.typeInfoArray(pos, offset, num, isLocals);
+            if (!isLocals || num < varIndex) {
+              return super.typeInfoArray(pos, offset, num, isLocals);
+            }
 
             writer.write16bit(num + 1);
             for (int k = 0; k < num; k++) {
-                if (k == varIndex)
-                    writeVarTypeInfo();
+                if (k == varIndex) {
+                  writeVarTypeInfo();
+                }
 
                 pos = typeInfoArray2(k, pos);
             }
 
-            if (num == varIndex)
-                writeVarTypeInfo();
+            if (num == varIndex) {
+              writeVarTypeInfo();
+            }
 
             return pos;
         }
 
         private void writeVarTypeInfo() {
-            if (varTag == OBJECT)
-                writer.writeVerifyTypeInfo(OBJECT, varData);
-            else if (varTag == UNINIT)
-                writer.writeVerifyTypeInfo(UNINIT, varData);
-            else
-                writer.writeVerifyTypeInfo(varTag, 0);
+            if (varTag == OBJECT) {
+              writer.writeVerifyTypeInfo(OBJECT, varData);
+            } else if (varTag == UNINIT) {
+              writer.writeVerifyTypeInfo(UNINIT, varData);
+            } else {
+              writer.writeVerifyTypeInfo(varTag, 0);
+            }
         }
     }
 
@@ -380,8 +404,9 @@ public class StackMap extends AttributeInfo {
 
         @Override
         public int locals(int pos, int offset, int num) {
-            if (exclusive ? where <= offset : where < offset)
-                X_Byte.write16bit(offset + gap, info, pos - 4);
+            if (exclusive ? where <= offset : where < offset) {
+              X_Byte.write16bit(offset + gap, info, pos - 4);
+            }
 
             return super.locals(pos, offset, num);
         }
@@ -420,17 +445,18 @@ public class StackMap extends AttributeInfo {
             int count = 0;
             for (int k = 0; k < num; k++) {
                 byte tag = info[p];
-                if (tag == OBJECT)
-                    p += 3;
-                else if (tag == UNINIT) {
+                if (tag == OBJECT) {
+                  p += 3;
+                } else if (tag == UNINIT) {
                     int offsetOfNew = X_Byte.readU16bit(info, p + 1);
-                    if (offsetOfNew == posOfNew)
-                        count++;
+                    if (offsetOfNew == posOfNew) {
+                      count++;
+                    }
 
                     p += 3;
+                } else {
+                  p++;
                 }
-                else
-                    p++;
             }
 
             writer.write16bit(num - count);
@@ -443,8 +469,9 @@ public class StackMap extends AttributeInfo {
                 }
                 else if (tag == UNINIT) {
                     int offsetOfNew = X_Byte.readU16bit(info, pos + 1);
-                    if (offsetOfNew != posOfNew)
-                        uninitialized(pos, offsetOfNew);
+                    if (offsetOfNew != posOfNew) {
+                      uninitialized(pos, offsetOfNew);
+                    }
 
                     pos += 3;
                 }
@@ -522,8 +549,9 @@ public class StackMap extends AttributeInfo {
          */
         public void writeVerifyTypeInfo(int tag, int data) {
             output.write(tag);
-            if (tag == StackMap.OBJECT || tag == StackMap.UNINIT)
-                write16bit(data);
+            if (tag == StackMap.OBJECT || tag == StackMap.UNINIT) {
+              write16bit(data);
+            }
         }
 
         /**

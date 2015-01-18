@@ -8,6 +8,7 @@ import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Model;
 import org.apache.maven.project.MavenProject;
+import org.eclipse.aether.repository.LocalArtifactResult;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.ArtifactResult;
 
@@ -66,6 +67,22 @@ public class X_Maven {
       String classifier, String extension, String version) {
     return service.loadArtifact(groupId, artifactId, classifier, extension,
         version);
+  }
+
+  public static LocalArtifactResult loadLocalArtifact(String groupId, String artifactId,
+      String version) {
+    return loadLocalArtifact(groupId, artifactId, "jar", version);
+  }
+
+  public static LocalArtifactResult loadLocalArtifact(String groupId, String artifactId,
+      String extension, String version) {
+    return loadLocalArtifact(groupId, artifactId, "", extension, version);
+  }
+
+  public static LocalArtifactResult loadLocalArtifact(String groupId, String artifactId,
+      String classifier, String extension, String version) {
+    return service.loadLocalArtifact(groupId, artifactId, classifier, extension,
+      version);
   }
 
   public static String toDescriptor(Model model, boolean verbose) {

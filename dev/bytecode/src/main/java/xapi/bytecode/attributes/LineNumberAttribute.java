@@ -1,3 +1,22 @@
+/*
+ * Javassist, a Java-bytecode translator toolkit.
+ * Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License.  Alternatively, the contents of this file may be used under
+ * the terms of the GNU Lesser General Public License Version 2.1 or later,
+ * or the Apache License Version 2.0.
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * MODIFIED BY James Nelson of We The Internet, 2013.
+ * Repackaged to avoid conflicts with different versions of Javassist,
+ * and modified Javassist APIs to make them more accessible to outside code.
+ */
 package xapi.bytecode.attributes;
 
 import java.io.DataInputStream;
@@ -61,12 +80,15 @@ public class LineNumberAttribute extends AttributeInfo {
     public int toLineNumber(int pc) {
         int n = tableLength();
         int i = 0;
-        for (; i < n; ++i)
-            if (pc < startPc(i))
-                if (i == 0)
-                    return lineNumber(0);
-                else
-                    break;
+        for (; i < n; ++i) {
+          if (pc < startPc(i)) {
+            if (i == 0) {
+              return lineNumber(0);
+            } else {
+              break;
+            }
+          }
+        }
 
         return lineNumber(i - 1);
     }
@@ -80,9 +102,11 @@ public class LineNumberAttribute extends AttributeInfo {
      */
     public int toStartPc(int line) {
         int n = tableLength();
-        for (int i = 0; i < n; ++i)
-            if (line == lineNumber(i))
-                return startPc(i);
+        for (int i = 0; i < n; ++i) {
+          if (line == lineNumber(i)) {
+            return startPc(i);
+          }
+        }
 
         return -1;
     }
@@ -93,7 +117,7 @@ public class LineNumberAttribute extends AttributeInfo {
     static public class Pc {
         /**
          * The index into the code array.
-         */ 
+         */
         public int index;
         /**
          * The line number.
@@ -122,7 +146,7 @@ public class LineNumberAttribute extends AttributeInfo {
         for (int i = 1; i < n; ++i) {
             int d = lineNumber(i) - line;
             if ((d < 0 && d > distance)
-                || (d >= 0 && (d < distance || distance < 0))) { 
+                || (d >= 0 && (d < distance || distance < 0))) {
                     distance = d;
                     nearPc = startPc(i);
             }
@@ -140,12 +164,14 @@ public class LineNumberAttribute extends AttributeInfo {
      * @param newCp     the constant pool table used by the new copy.
      * @param classnames        should be null.
      */
+    @Override
     public AttributeInfo copy(ConstPool newCp, Map<?, ?> classnames) {
         byte[] src = info;
         int num = src.length;
         byte[] dest = new byte[num];
-        for (int i = 0; i < num; ++i)
-            dest[i] = src[i];
+        for (int i = 0; i < num; ++i) {
+          dest[i] = src[i];
+        }
 
         LineNumberAttribute attr = new LineNumberAttribute(newCp, dest);
         return attr;
@@ -159,8 +185,9 @@ public class LineNumberAttribute extends AttributeInfo {
         for (int i = 0; i < n; ++i) {
             int pos = i * 4 + 2;
             int pc = X_Byte.readU16bit(info, pos);
-            if (pc > where || (exclusive && pc == where))
-                X_Byte.write16bit(pc + gapLength, info, pos);
+            if (pc > where || (exclusive && pc == where)) {
+              X_Byte.write16bit(pc + gapLength, info, pos);
+            }
         }
     }
 }

@@ -35,6 +35,8 @@
 
 package xapi.dev.source;
 
+import static xapi.source.read.JavaVisitor.MODIFIER_DEFAULT;
+
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
@@ -74,7 +76,7 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
 
   @Override
   public String toString() {
-    StringBuilder b = new StringBuilder(NEW_LINE);
+    StringBuilder b = new StringBuilder(Character.toString(NEW_LINE));
     if (javaDoc != null && javaDoc.isNotEmpty()) {
       b.append(javaDoc.toString());
     }
@@ -85,6 +87,9 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
       }
     }
     b.append(Modifier.toString(modifier));
+    if ((modifier & MODIFIER_DEFAULT) == MODIFIER_DEFAULT) {
+      b.append(" default");
+    }
     b.append(" ");
     // generics
     if (generics.size() > 0) {

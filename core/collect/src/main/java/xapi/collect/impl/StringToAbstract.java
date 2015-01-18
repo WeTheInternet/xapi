@@ -1,5 +1,6 @@
 package xapi.collect.impl;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -22,6 +23,9 @@ public class StringToAbstract <V> implements StringTo<V>{
     } else {
       map = new HashMap<String,V>();
     }
+  }
+  public StringToAbstract(java.util.Map<String, V> map) {
+    this.map = map;
   }
 
   protected boolean isMultithreaded() {
@@ -94,10 +98,11 @@ public class StringToAbstract <V> implements StringTo<V>{
 
   @Override
   public V put(String key, V value) {
-    if (value == null)
+    if (value == null) {
       return map.remove(key);
-    else
+    } else {
       return map.put(key, value);
+    }
   }
 
   @Override
@@ -113,6 +118,10 @@ public class StringToAbstract <V> implements StringTo<V>{
   @Override
   public String toString() {
     return map.toString();
+  }
+
+  protected Collection<V> valueSet() {
+    return map.values();
   }
 
 }

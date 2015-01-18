@@ -59,13 +59,14 @@ public class SourceBuilder<Payload> {
   }
 
   public ClassBuffer getClassBuffer() {
-    if (classDef == null)
+    if (classDef == null) {
       throw new TypeDefinitionException(
           "setClassDefinition() has not been called yet.\n"
               + "If you are running the template generator, your template "
               + "does include a //@classDefinition()// declaration,\n"
               + "or your generator is attempting to access the class "
               + "definition before it is parsed.");
+    }
     return classDef;
   }
 
@@ -96,8 +97,9 @@ public class SourceBuilder<Payload> {
   }
 
   protected SourceBuilder<Payload> addBuffer(PrintBuffer newBuffer) {
-    if (newBuffer == buffer)
+    if (newBuffer == buffer) {
       return this;
+    }
     head.addToEnd(newBuffer);
     head.setNotIndent();
     buffer = newBuffer;
@@ -117,8 +119,9 @@ public class SourceBuilder<Payload> {
     if (pkgName.endsWith(";")) {
       pkgName = pkgName.substring(0, pkgName.length() - 1);
     }
-    if (pkgName.startsWith("package "))
+    if (pkgName.startsWith("package ")) {
       pkgName = pkgName.substring(8);
+    }
     this.pkgName = pkgName;
     return this;
   }
@@ -147,8 +150,9 @@ public class SourceBuilder<Payload> {
       }
       source.append("package " + pkgName + ";\n\n");
     }
-    if (imports != null)
+    if (imports != null) {
       source.append(imports.toString());
+    }
     source.append(body);
     return source.toString();
   }
@@ -156,7 +160,7 @@ public class SourceBuilder<Payload> {
   public String getQualifiedName() {
     return getClassBuffer().getQualifiedName();
   }
-  
+
   public String getSimpleName() {
     return getClassBuffer().getSimpleName();
   }

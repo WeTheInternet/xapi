@@ -3,10 +3,9 @@
  */
 package xapi.elemental.api;
 
-import elemental.dom.Element;
-
 import xapi.ui.api.StyleService;
 import xapi.util.api.ConvertsValue;
+import elemental.dom.Element;
 
 
 /**

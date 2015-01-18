@@ -21,6 +21,7 @@ import xapi.collect.api.StringDictionary;
 import xapi.collect.api.StringTo;
 import xapi.collect.impl.ArrayIterable;
 import xapi.collect.impl.HashComparator;
+import xapi.collect.impl.IntToManyList;
 import xapi.collect.impl.SingletonIterator;
 import xapi.collect.impl.StringToDeepMap;
 import xapi.collect.impl.StringToManyList;
@@ -37,6 +38,7 @@ public class X_Collect {
   public static final CollectionOptions IMMUTABLE_LIST = asImmutableList().build();
   public static final CollectionOptions IMMUTABLE_SET = asImmutableSet().build();
   public static final CollectionOptions MUTABLE = asMutable(true).build();
+  public static final CollectionOptions MUTABLE_INSERTION_ORDERED = asMutable(true).insertionOrdered(true).build();
   public static final CollectionOptions MUTABLE_LIST = asMutableList().build();
   public static final CollectionOptions MUTABLE_SET = asMutableSet().build();
 
@@ -47,8 +49,9 @@ public class X_Collect {
   public static <V> IntTo<V> asList(@SuppressWarnings("unchecked") V ... elements) {
     @SuppressWarnings("unchecked")
     IntTo<V> list = (IntTo<V>)newList(elements.getClass().getComponentType());
-    for (V item : elements)
+    for (V item : elements) {
       list.push(item);
+    }
     return list;
   }
 
@@ -67,6 +70,10 @@ public class X_Collect {
     return service.newStringMap(valueCls, MUTABLE);
   }
 
+  public static <V> StringTo<V> newStringMapInsertionOrdered(Class<V> valueCls) {
+    return service.newStringMap(valueCls, MUTABLE_INSERTION_ORDERED);
+  }
+
   public static StringDictionary<String> newStringDictionary() {
     return service.newDictionary();
   }
@@ -78,8 +85,9 @@ public class X_Collect {
   public static <V> IntTo<V> asSet(@SuppressWarnings("unchecked") V ... elements) {
     @SuppressWarnings("unchecked")
     IntTo<V> list = (IntTo<V>)newSet(elements.getClass().getComponentType());
-    for (V item : elements)
+    for (V item : elements) {
       list.push(item);
+    }
     return list;
   }
 
@@ -113,6 +121,14 @@ public class X_Collect {
 
   public static <X> StringTo.Many<X> newStringMultiMap(Class<X> component) {
     return new StringToManyList<X>(component);
+  }
+
+  public static <X> StringTo.Many<X> newStringMultiMap(Class<X> component, java.util.Map<String, IntTo<X>> map) {
+    return new StringToManyList<X>(component, map);
+  }
+
+  public static <X> IntTo.Many<X> newIntMultiMap(Class<X> component) {
+    return new IntToManyList<X>(component);
   }
 
   public static <X> StringTo<StringTo<X>> newStringDeepMap(Class<? extends X> component) {

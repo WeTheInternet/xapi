@@ -89,7 +89,7 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
 
   @Override
   public String toString() {
-    StringBuilder b = new StringBuilder(NEW_LINE);
+    StringBuilder b = new StringBuilder(Character.toString(NEW_LINE));
     if (javaDoc != null && javaDoc.isNotEmpty()) {
       b.append(javaDoc.toString());
     }
@@ -219,12 +219,14 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
       }
     }
 
-    if (definition.contains(" "))
+    if (definition.contains(" ")) {
       throw new TypeDefinitionException("Found ambiguous class definition in "
           + definition);
-    if (definition.length() == 0)
+    }
+    if (definition.length() == 0) {
       throw new TypeDefinitionException(
           "Did not have a class name in class definition " + definition);
+    }
     simpleName = definition;
     return this;
   }
@@ -269,10 +271,11 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
   @Override
   public String addImport(String importName) {
     // Don't import types in the same package as us.
-    if (getPackage() == null)
+    if (getPackage() == null) {
       throw new NullPointerException(
           "ClassBuffer package not yet set; use .setPackage() on your SourceBuilder for "
               + this);
+    }
     if (importName.startsWith(getPackage())) {
       // Make sure it's not in a sub-package
       String stripped = importName.substring(getPackage().length() + 1);
@@ -283,8 +286,9 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
           context.getImports().reserveSimpleName(
               stripped.substring(stripped.lastIndexOf('.') + 1));
           return stripped;
-        } else
+        } else {
           return importName;
+        }
       }
     }
     return context.getImports().addImport(importName);
@@ -324,8 +328,9 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
 
   public String getQualifiedName() {
     String pkg = context.getPackage();
-    if (pkg.length() == 0)
+    if (pkg.length() == 0) {
       return getSimpleName();
+    }
     return pkg + "." + getSimpleName();
   }
 

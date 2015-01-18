@@ -2,6 +2,8 @@ package xapi.source.read;
 
 
 public class JavaVisitor {
+  // There is not a java.lang.reflect.Modifier field for default methods, so we use this unused value instead.
+  public static final int MODIFIER_DEFAULT = 0x00010000;
 
   /**
    * The default TypeData object is used to deserialize source-compatible type names.
@@ -28,10 +30,11 @@ public class JavaVisitor {
     public TypeData(String className) {
       clsName = className;
       int end = className.lastIndexOf('.');
-      if (end == -1)
+      if (end == -1) {
         simpleName = clsName;
-      else
+      } else {
         simpleName = clsName.substring(end+1);
+      }
     }
 
     /**
@@ -60,8 +63,9 @@ public class JavaVisitor {
     @Override
     public String toString() {
       StringBuilder b = new StringBuilder();
-      if (pkgName.length() > 0)
+      if (pkgName.length() > 0) {
         b.append(pkgName).append('.');
+      }
       b.append(clsName).append(generics);
       b.append(getArrayDefinition());
       return b.toString();
@@ -70,8 +74,9 @@ public class JavaVisitor {
     protected String getArrayDefinition() {
       StringBuilder b = new StringBuilder();
       int i = arrayDepth;
-      while (i --> 0)
+      while (i --> 0) {
         b.append("[]");
+      }
       return b.toString();
     }
 
@@ -168,6 +173,7 @@ public class JavaVisitor {
     void visitCopyright(String copyright, Param receiver);
     void visitPackage(String pkg, Param receiver);
     void visitName(String name, Param receiver);
+    void visitType(String type, Param receiver);
     void visitSuperclass(String superClass, Param receiver);
     void visitInterface(String iface, Param receiver);
     ClassBodyVisitor<Param> visitBody(String body, Param receiver);
@@ -181,6 +187,7 @@ public class JavaVisitor {
   public static interface EnumDefinitionVisitor <Param>
   extends ClassVisitor<Param> {
     ParameterVisitor<Param> visitParams(String params, Param param);
+    @Override
     ClassBodyVisitor<Param> visitBody(String body, Param param);
   }
 

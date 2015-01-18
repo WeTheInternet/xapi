@@ -1,6 +1,25 @@
+/*
+ * Javassist, a Java-bytecode translator toolkit.
+ * Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License.  Alternatively, the contents of this file may be used under
+ * the terms of the GNU Lesser General Public License Version 2.1 or later,
+ * or the Apache License Version 2.0.
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * MODIFIED BY James Nelson of We The Internet, 2013.
+ * Repackaged to avoid conflicts with different versions of Javassist,
+ * and modified Javassist APIs to make them more accessible to outside code.
+ */
 package xapi.bytecode.attributes;
 
-import java.io.DataInputStream;
+import java.io.DataInput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -74,11 +93,11 @@ public class CodeAttribute extends AttributeInfo implements Opcode {
         info = src.copyCode(cp, classnames, exceptions, this);
     }
 
-    CodeAttribute(ConstPool cp, int name_id, DataInputStream in)
+    public CodeAttribute(ConstPool cp, int name_id, DataInput in)
         throws IOException
     {
         super(cp, name_id, (byte[])null);
-//        int attr_len = 
+//        int attr_len =
             in.readInt();
 
         maxStack = in.readUnsignedShort();
@@ -92,8 +111,9 @@ public class CodeAttribute extends AttributeInfo implements Opcode {
 
         attributes = new ArrayList<AttributeInfo>();
         int num = in.readUnsignedShort();
-        for (int i = 0; i < num; ++i)
-            attributes.add(AttributeInfo.read(cp, in));
+        for (int i = 0; i < num; ++i) {
+          attributes.add(AttributeInfo.read(cp, in));
+        }
     }
 
     /**
@@ -110,6 +130,7 @@ public class CodeAttribute extends AttributeInfo implements Opcode {
      *
      * @return <code>CodeAttribute</code> object.
      */
+    @Override
     public AttributeInfo copy(ConstPool newCp, Map<?, ?> classnames)
         throws RuntimeCopyException
     {
@@ -141,11 +162,13 @@ public class CodeAttribute extends AttributeInfo implements Opcode {
      * structure.
      * The returned value is <code>attribute_length + 6</code>.
      */
+    @Override
     public int length() {
         return 18 + info.length + exceptions.size() * 8
                + AttributeInfo.getLength(attributes);
     }
 
+    @Override
     void write(DataOutputStream out) throws IOException {
         out.writeShort(name);           // attribute_name_index
         out.writeInt(length() - 6);     // attribute_length
@@ -163,7 +186,8 @@ public class CodeAttribute extends AttributeInfo implements Opcode {
      *
      * @throws java.lang.UnsupportedOperationException  always thrown.
      */
-    public byte[] get() { 
+    @Override
+    public byte[] get() {
         throw new UnsupportedOperationException("CodeAttribute.get()");
     }
 
@@ -172,14 +196,17 @@ public class CodeAttribute extends AttributeInfo implements Opcode {
      *
      * @throws java.lang.UnsupportedOperationException  always thrown.
      */
+    @Override
     public void set(byte[] newinfo) {
         throw new UnsupportedOperationException("CodeAttribute.set()");
     }
 
+    @Override
     void renameClass(String oldname, String newname) {
         AttributeInfo.renameClass(attributes, oldname, newname);
     }
 
+    @Override
     void renameClass(Map<?, ?> classnames) {
         AttributeInfo.renameClass(attributes, classnames);
     }
@@ -291,12 +318,13 @@ public class CodeAttribute extends AttributeInfo implements Opcode {
      *
      * @param smt       the stack map table added to this code attribute.
      *                  If it is null, a new stack map is not added.
-     *                  Only the old stack map is removed. 
+     *                  Only the old stack map is removed.
      */
     public void setAttribute(StackMapTable smt) {
         AttributeInfo.remove(attributes, StackMapTable.tag);
-        if (smt != null)
-            attributes.add(smt);
+        if (smt != null) {
+          attributes.add(smt);
+        }
     }
 
     /**
@@ -310,8 +338,9 @@ public class CodeAttribute extends AttributeInfo implements Opcode {
      */
     public void setAttribute(StackMap sm) {
         AttributeInfo.remove(attributes, StackMap.tag);
-        if (sm != null)
-            attributes.add(sm);
+        if (sm != null) {
+          attributes.add(sm);
+        }
     }
 
     /**
@@ -361,9 +390,9 @@ public class CodeAttribute extends AttributeInfo implements Opcode {
             case LDC :
                 index = code[i + 1] & 0xff;
                 index = srcCp.copy(index, destCp, classnameMap);
-                if (index < 0x100)
-                    newcode[i + 1] = (byte)index;
-                else {
+                if (index < 0x100) {
+                  newcode[i + 1] = (byte)index;
+                } else {
                     newcode[i] = NOP;
                     newcode[i + 1] = NOP;
                     LdcEntry ldc = new LdcEntry();
@@ -385,8 +414,9 @@ public class CodeAttribute extends AttributeInfo implements Opcode {
                 newcode[i + 3] = code[i + 3];
                 break;
             default :
-                while (++i < i2)
-                    newcode[i] = code[i];
+                while (++i < i2) {
+                  newcode[i] = code[i];
+                }
 
                 break;
             }
@@ -413,8 +443,9 @@ public class CodeAttribute extends AttributeInfo implements Opcode {
                            CodeAttribute ca)
             throws BadBytecode
         {
-            if (ldc != null)
-                code = CodeIterator.changeLdcToLdcW(code, etable, ca, ldc);
+            if (ldc != null) {
+              code = CodeIterator.changeLdcToLdcW(code, etable, ca, ldc);
+            }
 
             /* The original code was the following:
 
@@ -449,8 +480,9 @@ public class CodeAttribute extends AttributeInfo implements Opcode {
      */
     public void insertLocalVar(int where, int size) throws BadBytecode {
         CodeIterator ci = iterator();
-        while (ci.hasNext())
-            shiftIndex(ci, where, size);
+        while (ci.hasNext()) {
+          shiftIndex(ci, where, size);
+        }
 
         setMaxLocals(getMaxLocals() + size);
     }
@@ -465,9 +497,9 @@ public class CodeAttribute extends AttributeInfo implements Opcode {
     private static void shiftIndex(CodeIterator ci, int lessThan, int delta) throws BadBytecode {
         int index = ci.next();
         int opcode = ci.byteAt(index);
-        if (opcode < ILOAD)
-            return;
-        else if (opcode < IASTORE) {
+        if (opcode < ILOAD) {
+          return;
+        } else if (opcode < IASTORE) {
             if (opcode < ILOAD_0) {
                 // iload, lload, fload, dload, aload
                 shiftIndex8(ci, index, opcode, lessThan, delta);
@@ -476,9 +508,9 @@ public class CodeAttribute extends AttributeInfo implements Opcode {
                 // iload_0, ..., aload_3
                 shiftIndex0(ci, index, opcode, lessThan, delta, ILOAD_0, ILOAD);
             }
-            else if (opcode < ISTORE)
-                return;
-            else if (opcode < ISTORE_0) {
+            else if (opcode < ISTORE) {
+              return;
+            } else if (opcode < ISTORE_0) {
                 // istore, lstore, ...
                 shiftIndex8(ci, index, opcode, lessThan, delta);
             }
@@ -489,13 +521,14 @@ public class CodeAttribute extends AttributeInfo implements Opcode {
         }
         else if (opcode == IINC) {
             int var = ci.byteAt(index + 1);
-            if (var < lessThan)
-                return;
+            if (var < lessThan) {
+              return;
+            }
 
             var += delta;
-            if (var < 0x100)
-                ci.writeByte(var, index + 1);
-            else {
+            if (var < 0x100) {
+              ci.writeByte(var, index + 1);
+            } else {
                 int plus = (byte)ci.byteAt(index + 2);
                 int pos = ci.insertExGap(3);
                 ci.writeByte(WIDE, pos - 3);
@@ -504,12 +537,13 @@ public class CodeAttribute extends AttributeInfo implements Opcode {
                 ci.write16bit(plus, pos + 1);
             }
         }
-        else if (opcode == RET)
-            shiftIndex8(ci, index, opcode, lessThan, delta);
-        else if (opcode == WIDE) {
+        else if (opcode == RET) {
+          shiftIndex8(ci, index, opcode, lessThan, delta);
+        } else if (opcode == WIDE) {
             int var = ci.u16bitAt(index + 2);
-            if (var < lessThan)
-                return;
+            if (var < lessThan) {
+              return;
+            }
 
             var += delta;
             ci.write16bit(var, index + 2);
@@ -521,13 +555,14 @@ public class CodeAttribute extends AttributeInfo implements Opcode {
          throws BadBytecode
     {
         int var = ci.byteAt(index + 1);
-        if (var < lessThan)
-            return;
+        if (var < lessThan) {
+          return;
+        }
 
         var += delta;
-        if (var < 0x100)
-            ci.writeByte(var, index + 1);
-        else {
+        if (var < 0x100) {
+          ci.writeByte(var, index + 1);
+        } else {
             int pos = ci.insertExGap(2);
             ci.writeByte(WIDE, pos - 2);
             ci.writeByte(opcode, pos - 1);
@@ -541,13 +576,14 @@ public class CodeAttribute extends AttributeInfo implements Opcode {
         throws BadBytecode
     {
         int var = (opcode - opcode_i_0) % 4;
-        if (var < lessThan)
-            return;
+        if (var < lessThan) {
+          return;
+        }
 
         var += delta;
-        if (var < 4)
-            ci.writeByte(opcode + delta, index);
-        else {
+        if (var < 4) {
+          ci.writeByte(opcode + delta, index);
+        } else {
             opcode = (opcode - opcode_i_0) / 4 + opcode_i;
             if (var < 0x100) {
                 int pos = ci.insertExGap(1);

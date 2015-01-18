@@ -3,8 +3,6 @@
  */
 package xapi.dev.elemental;
 
-import static xapi.util.X_String.join;
-
 import java.lang.reflect.Modifier;
 import java.util.HashSet;
 import java.util.Set;
@@ -98,7 +96,8 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
       ElementalGeneratorContext ctx) throws UnableToCompleteException {
 
     String implName = toImplName(logger, modelType, templateType);
-    ElementalGeneratorResult existing = ctx.findExistingProvider(implName);
+    String packaged = X_Source.qualifiedName(modelType.getPackage().getName(), implName);
+    ElementalGeneratorResult existing = ctx.findExistingProvider(packaged);
     if (existing != null) {
       return existing;
     }
@@ -112,7 +111,7 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
 
     boolean modelIsTemplate = modelType.getQualifiedSourceName().equals(templateType.getQualifiedSourceName());
     String inputHash = toHash(ast, modelIsTemplate ? templateType : modelType , templateType);
-    ElementalGeneratorResult existingType = findExisting(ast, out.getPackage(), out.getQualifiedName());
+    ElementalGeneratorResult existingType = findExisting(ast, this, out.getPackage(), out.getQualifiedName());
     existingType.setSourceType(templateType);
     ElementalGeneratorResult existingResult = existingTypesUnchanged(logger, ast, existingType, inputHash);
     // Check if there is an existing type, and that it's generated hashes match our input type.
@@ -193,10 +192,11 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
     // Check the type of the class we are implementing.
 
     existingType.setTemplateName(templateGen.getFinalName());
-    ElementalGeneratorResult type = saveGeneratedType(logger, ast, src, existingType, inputHash);
-
-
-    return type;
+    try {
+      return saveGeneratedType(logger, getLogLevel(), getClass(), ast, src, existingType, inputHash);
+    } finally {
+      clear();
+    }
 
   }
 
@@ -217,7 +217,7 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
     }
     inputHash = toHash(ast, type);
     final ElementalGeneratorResult
-      templateType = findExisting(ast, type.getPackage().getName(), templateName),
+      templateType = findExisting(ast, this, type.getPackage().getName(), templateName),
       existingResult = existingTypesUnchanged(logger, ast, templateType, inputHash);
 
     // Check if there is an existing type, and that it's generated hashes match our input type.
@@ -250,6 +250,7 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
       element = out.addImport(Element.class),
       potentialElement = potential + "<" + element + ">",
       classElemental = out.addImport(ElementalService.class),
+      classXHtml = out.addImport(X_Html.class),
       classReceiver = out.addImport(ReceivesValue.class),
       receivesElemental = classReceiver + "<"+classElemental+">",
       classRunOnce = out.addImport(RunOnce.class),
@@ -272,7 +273,8 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
               .indent();
 
     // We tear off a pointer inside the current method
-    PrintBuffer styleInit = new PrintBuffer();
+    PrintBuffer styleInit = new PrintBuffer(5);
+    styleInit.println(classXHtml+".injectCss("+classTemplate+".class, "+KEY_SERVICE+");");
     stylizeField.addToEnd(styleInit);
 
     stylizeField .outdent()
@@ -363,7 +365,7 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
 
     StringBuilder localStyle = new StringBuilder();
     for (Style style : root.getStyles()) {
-      printStyle(logger, style, localStyle, styleInit);
+      printStyle(logger, style, localStyle);
     }
     if (localStyle.length() > 0){
       // Apply the given style to the potential element.
@@ -431,6 +433,9 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
       });
     final String messagesQname = templateType.getQualifiedSourceName();
     for (JClassType type : templateType.getFlattenedSupertypeHierarchy()) {
+      if ("java.lang.Object".equals(type.getQualifiedSourceName())) {
+        continue;
+      }
       for (JMethod method : type.getMethods()) {
         if (method.isAnnotationPresent(NoUi.class)) {
           continue;
@@ -508,7 +513,11 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
     toHtml.returnValue(KEY_ELEMENT + ";");
     toElement.returnValue(KEY_ELEMENT);
 
-    return saveGeneratedType(logger, ast, src, res, hash);
+    try {
+      return saveGeneratedType(logger, getLogLevel(), getClass(), ast, src, res, hash);
+    } finally {
+      clear();
+    }
   }
 
   private String printElement(
@@ -623,7 +632,7 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
     StringBuilder localStyle = new StringBuilder();
 
     for (Style style : node.getStyles()) {
-      printStyle(logger, style, localStyle, styleInit);
+      printStyle(logger, style, localStyle);
     }
     if (localStyle.length() > 0){
       // Apply the given style to the potential element.
@@ -636,43 +645,17 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
     return newKey;
   }
 
-  private void printStyle(
-      TreeLogger logger,
-      Style style,
-      StringBuilder localStyle,
-      PrintBuffer styleInit) {
+  private void printStyle(TreeLogger logger, Style style, StringBuilder localStyle) {
     boolean isLocal = style.names().length == 0;
-    if (!isLocal && styleInit == null) {
+    if (!isLocal) {
       return;
     }
-    StringBuilder styleOut = isLocal ? localStyle : new StringBuilder();
-    HtmlSnippet.appendTo(styleOut, style);
-    if (!isLocal) {
-
-      styleInit.println(KEY_SERVICE+".addCss("
-          + "\""+Generator.escape(
-              join(",",style.names())+"{"+
-              styleOut.toString()
-              +"}\n"
-          )+"\""
-          + ", " + style.priority()+");");
-    }
+    HtmlSnippet.appendTo(localStyle, style);
   }
 
   @Override
   protected Type getLogLevel() {
-    return Type.TRACE;
-  }
-
-  @Override
-  protected ElementalGeneratorResult saveGeneratedType(
-    TreeLogger logger,
-    UnifyAstView ast,
-    SourceBuilder<?> out,
-    ElementalGeneratorResult result,
-    String inputHash) throws UnableToCompleteException {
-    logger.log(Type.INFO, "Saving generated type "+ out.getQualifiedName());
-    return super.saveGeneratedType(logger, ast, out, result, inputHash);
+    return Type.DEBUG;
   }
 
   private static String toImplName(TreeLogger logger, JClassType modelType, JClassType templateType) {
@@ -691,9 +674,8 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
   }
 
   @Override
-  protected ElementalGeneratorResult newContext(JClassType winner, String pkgName, String name) {
-    ElementalGeneratorResult result =
-      new ElementalGeneratorResult(winner, pkgName, name);
+  public ElementalGeneratorResult newContext(JClassType winner, String pkgName, String name) {
+    ElementalGeneratorResult result = new ElementalGeneratorResult(winner, pkgName, name);
     ctx.setExistingProvider(name, result);
     return result;
   }

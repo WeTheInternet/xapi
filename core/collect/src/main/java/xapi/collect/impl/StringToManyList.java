@@ -12,6 +12,11 @@ public class StringToManyList <X> extends StringToAbstract<IntTo<X>> implements 
     this.componentClass = componentClass;
   }
 
+  public StringToManyList(Class<X> componentClass, java.util.Map<String, IntTo<X>> map) {
+    super(map);
+    this.componentClass = componentClass;
+  }
+
   @Override
   public final IntTo<X> get(String key) {
     IntTo<X> list = super.get(key);

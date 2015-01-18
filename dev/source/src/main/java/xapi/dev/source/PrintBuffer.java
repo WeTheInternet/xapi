@@ -46,11 +46,13 @@ public class PrintBuffer {
   }
 
   protected static String join(String sep, String[] args) {
-    if (args.length == 0)
+    if (args.length == 0) {
       return "";
+    }
     StringBuilder b = new StringBuilder(args[0]);
-    for (int i = 1, m = args.length; i < m; i++)
+    for (int i = 1, m = args.length; i < m; i++) {
       b.append(sep).append(args[i]);
+    }
     return b.toString();
   }
 
@@ -62,6 +64,13 @@ public class PrintBuffer {
 
   public PrintBuffer() {
     this(new StringBuilder());
+  }
+
+  public PrintBuffer(int indent) {
+    this(new StringBuilder());
+    while(indent-->0) {
+      indent();
+    }
   }
 
   public PrintBuffer(PrintBuffer preamble) {
@@ -206,10 +215,11 @@ public class PrintBuffer {
 
   public PrintBuffer outdent() {
     int end = Math.max(0, indent.length() - INDENT.length());
-    if (end > 0)
+    if (end > 0) {
       indent = indent.substring(0, end);
-    else
+    } else {
       indent = "";
+    }
     return this;
   }
 
@@ -254,7 +264,7 @@ public class PrintBuffer {
 
   /**
    * Prepend the given string, and return a printbuffer to append to this point.
-   * 
+   *
    * @param prefix
    *          - The text to prepend
    * @return - A buffer pointed at this text, capable of further before/after
@@ -276,7 +286,7 @@ public class PrintBuffer {
 
   /**
    * Append the given string, and return a printbuffer to append to this point.
-   * 
+   *
    * @param suffix
    *          - The text to append
    * @return - A buffer pointed at this text, capable of further before/after
@@ -287,7 +297,7 @@ public class PrintBuffer {
     addToEnd(buffer);
     return buffer;
   }
-  
+
   public PrintBuffer clear() {
     tail = head = new PrintStack();
     target.setLength(0);

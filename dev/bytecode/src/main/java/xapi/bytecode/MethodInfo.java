@@ -1,3 +1,22 @@
+/*
+ * Javassist, a Java-bytecode translator toolkit.
+ * Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License.  Alternatively, the contents of this file may be used under
+ * the terms of the GNU Lesser General Public License Version 2.1 or later,
+ * or the Apache License Version 2.0.
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * MODIFIED BY James Nelson of We The Internet, 2013.
+ * Repackaged to avoid conflicts with different versions of Javassist,
+ * and modified Javassist APIs to make them more accessible to outside code.
+ */
 package xapi.bytecode;
 
 import java.io.DataInput;
@@ -14,7 +33,6 @@ import xapi.bytecode.attributes.ExceptionsAttribute;
 import xapi.bytecode.attributes.LineNumberAttribute;
 import xapi.bytecode.attributes.ParameterAnnotationsAttribute;
 import xapi.bytecode.attributes.SignatureAttribute;
-import xapi.source.api.AccessFlag;
 import xapi.util.X_Byte;
 
 public class MethodInfo extends MemberInfo {
@@ -104,7 +122,7 @@ public class MethodInfo extends MemberInfo {
     public String toString() {
         return getSignature();
     }
-    
+
     @Override
     public String getSignature() {
       return getName() + " " + getDescriptor();
@@ -158,12 +176,14 @@ public class MethodInfo extends MemberInfo {
 
         AnnotationDefaultAttribute defaultAttribute
              = (AnnotationDefaultAttribute) getAttribute(AnnotationDefaultAttribute.tag);
-        if (defaultAttribute != null)
-            newAttributes.add(defaultAttribute);
+        if (defaultAttribute != null) {
+          newAttributes.add(defaultAttribute);
+        }
 
         ExceptionsAttribute ea = getExceptionsAttribute();
-        if (ea != null)
-            newAttributes.add(ea);
+        if (ea != null) {
+          newAttributes.add(ea);
+        }
 
         AttributeInfo signature
             = getAttribute(SignatureAttribute.tag);
@@ -182,8 +202,9 @@ public class MethodInfo extends MemberInfo {
      * Returns a method name.
      */
     public String getName() {
-       if (cachedName == null)
-           cachedName = constPool.getUtf8Info(name);
+       if (cachedName == null) {
+        cachedName = constPool.getUtf8Info(name);
+      }
 
        return cachedName;
     }
@@ -259,8 +280,9 @@ public class MethodInfo extends MemberInfo {
      * @see Descriptor
      */
     public void setDescriptor(String desc) {
-        if (!desc.equals(getDescriptor()))
-            descriptor = constPool.addUtf8Info(desc);
+        if (!desc.equals(getDescriptor())) {
+          descriptor = constPool.addUtf8Info(desc);
+        }
     }
 
     /**
@@ -270,8 +292,9 @@ public class MethodInfo extends MemberInfo {
      * @see #getAttributes()
      */
     public void addAttribute(AttributeInfo info) {
-        if (attribute == null)
-            attribute = new ArrayList<AttributeInfo>();
+        if (attribute == null) {
+          attribute = new ArrayList<AttributeInfo>();
+        }
 
         AttributeInfo.remove(attribute, info.getName());
         attribute.add(info);
@@ -314,8 +337,9 @@ public class MethodInfo extends MemberInfo {
      */
     public void setExceptionsAttribute(ExceptionsAttribute cattr) {
         removeExceptionsAttribute();
-        if (attribute == null)
-            attribute = new ArrayList<AttributeInfo>();
+        if (attribute == null) {
+          attribute = new ArrayList<AttributeInfo>();
+        }
 
         attribute.add(cattr);
     }
@@ -336,8 +360,9 @@ public class MethodInfo extends MemberInfo {
      */
     public void setCodeAttribute(CodeAttribute cattr) {
         removeCodeAttribute();
-        if (attribute == null)
-            attribute = new ArrayList<AttributeInfo>();
+        if (attribute == null) {
+          attribute = new ArrayList<AttributeInfo>();
+        }
 
         attribute.add(cattr);
     }
@@ -409,13 +434,15 @@ public class MethodInfo extends MemberInfo {
      */
     public int getLineNumber(int pos) {
         CodeAttribute ca = getCodeAttribute();
-        if (ca == null)
-            return -1;
+        if (ca == null) {
+          return -1;
+        }
 
         LineNumberAttribute ainfo = (LineNumberAttribute)ca
                 .getAttribute(LineNumberAttribute.tag);
-        if (ainfo == null)
-            return -1;
+        if (ainfo == null) {
+          return -1;
+        }
 
         return ainfo.toLineNumber(pos);
     }
@@ -442,8 +469,9 @@ public class MethodInfo extends MemberInfo {
      *            the new super class
      */
     public void setSuperclass(String superclass) throws BadBytecode {
-        if (!isConstructor())
-            return;
+        if (!isConstructor()) {
+          return;
+        }
 
         CodeAttribute ca = getCodeAttribute();
         byte[] code = ca.getCode();
@@ -475,12 +503,14 @@ public class MethodInfo extends MemberInfo {
 
         attribute = new ArrayList<AttributeInfo>();
         ExceptionsAttribute eattr = src.getExceptionsAttribute();
-        if (eattr != null)
-            attribute.add(eattr.copy(destCp, classnames));
+        if (eattr != null) {
+          attribute.add(eattr.copy(destCp, classnames));
+        }
 
         CodeAttribute cattr = src.getCodeAttribute();
-        if (cattr != null)
-            attribute.add(cattr.copy(destCp, classnames));
+        if (cattr != null) {
+          attribute.add(cattr.copy(destCp, classnames));
+        }
     }
 
     private void read(DataInput in) throws IOException {
@@ -489,8 +519,9 @@ public class MethodInfo extends MemberInfo {
         descriptor = in.readUnsignedShort();
         int n = in.readUnsignedShort();
         attribute = new ArrayList<AttributeInfo>();
-        for (int i = 0; i < n; ++i)
-            attribute.add(AttributeInfo.read(constPool, in));
+        for (int i = 0; i < n; ++i) {
+          attribute.add(AttributeInfo.read(constPool, in));
+        }
     }
 
     void write(DataOutputStream out) throws IOException {
@@ -498,22 +529,22 @@ public class MethodInfo extends MemberInfo {
         out.writeShort(name);
         out.writeShort(descriptor);
 
-        if (attribute == null)
-            out.writeShort(0);
-        else {
+        if (attribute == null) {
+          out.writeShort(0);
+        } else {
             out.writeShort(attribute.size());
             AttributeInfo.writeAll(attribute, out);
         }
     }
-    
+
     @Override
     public boolean equals(Object obj) {
       return obj instanceof MethodInfo && getName().equals(((MethodInfo)obj).getName());
     }
-    
+
     @Override
     public int hashCode() {
       return getName().hashCode();
     }
-    
+
 }

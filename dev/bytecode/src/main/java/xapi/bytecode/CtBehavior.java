@@ -1,8 +1,28 @@
+/*
+ * Javassist, a Java-bytecode translator toolkit.
+ * Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License.  Alternatively, the contents of this file may be used under
+ * the terms of the GNU Lesser General Public License Version 2.1 or later,
+ * or the Apache License Version 2.0.
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * MODIFIED BY James Nelson of We The Internet, 2013.
+ * Repackaged to avoid conflicts with different versions of Javassist,
+ * and modified Javassist APIs to make them more accessible to outside code.
+ */
 package xapi.bytecode;
 
 import xapi.bytecode.annotation.AnnotationsAttribute;
 import xapi.bytecode.attributes.AttributeInfo;
 import xapi.bytecode.attributes.CodeAttribute;
+import xapi.bytecode.attributes.ExceptionTable;
 import xapi.bytecode.attributes.ExceptionsAttribute;
 import xapi.bytecode.attributes.LocalVariableAttribute;
 import xapi.bytecode.attributes.ParameterAnnotationsAttribute;
@@ -39,17 +59,20 @@ public abstract class CtBehavior extends CtMember {
             if (srcSuper != null && destSuper != null) {
                 String srcSuperName = srcSuper.getName();
                 destSuperName = destSuper.getName();
-                if (!srcSuperName.equals(destSuperName))
-                    if (srcSuperName.equals(CtClass.javaLangObject))
-                        patch = true;
-                    else
-                        map.putIfNone(srcSuperName, destSuperName);
+                if (!srcSuperName.equals(destSuperName)) {
+                  if (srcSuperName.equals(CtClass.javaLangObject)) {
+                    patch = true;
+                  } else {
+                    map.putIfNone(srcSuperName, destSuperName);
+                  }
+                }
             }
 
             // a stack map table is copied from srcInfo.
             methodInfo = new MethodInfo(cp, srcInfo.getName(), srcInfo, map);
-            if (isCons && patch)
-                methodInfo.setSuperclass(destSuperName);
+            if (isCons && patch) {
+              methodInfo.setSuperclass(destSuperName);
+            }
         }
         catch (NotFoundException e) {
             throw new CannotCompileException(e);
@@ -319,10 +342,11 @@ public abstract class CtBehavior extends CtMember {
     public CtClass[] getExceptionTypes() throws NotFoundException {
         String[] exceptions;
         ExceptionsAttribute ea = methodInfo.getExceptionsAttribute();
-        if (ea == null)
-            exceptions = null;
-        else
-            exceptions = ea.getExceptions();
+        if (ea == null) {
+          exceptions = null;
+        } else {
+          exceptions = ea.getExceptions();
+        }
 
         return declaringClass.getClassPool().get(exceptions);
     }
@@ -339,8 +363,9 @@ public abstract class CtBehavior extends CtMember {
         }
 
         String[] names = new String[types.length];
-        for (int i = 0; i < types.length; ++i)
-            names[i] = types[i].getName();
+        for (int i = 0; i < types.length; ++i) {
+          names[i] = types[i].getName();
+        }
 
         ExceptionsAttribute ea = methodInfo.getExceptionsAttribute();
         if (ea == null) {
@@ -448,10 +473,11 @@ public abstract class CtBehavior extends CtMember {
     @Override
     public byte[] getAttribute(String name) {
         AttributeInfo ai = methodInfo.getAttribute(name);
-        if (ai == null)
-            return null;
-        else
-            return ai.get();
+        if (ai == null) {
+          return null;
+        } else {
+          return ai.get();
+        }
     }
 
     /**
@@ -467,8 +493,14 @@ public abstract class CtBehavior extends CtMember {
     @Override
     public void setAttribute(String name, byte[] data) {
         declaringClass.checkModify();
-        methodInfo.addAttribute(new AttributeInfo(methodInfo.getConstPool(),
-                                                  name, data));
+        switch (name) {
+          case CodeAttribute.tag:
+            methodInfo.addAttribute(new
+              CodeAttribute(methodInfo.getConstPool(), 0, 0, data, new ExceptionTable(methodInfo.getConstPool())));
+            break;
+          default:
+            methodInfo.addAttribute(new AttributeInfo(methodInfo.getConstPool(), name, data));
+        }
     }
 
 //    /**
@@ -540,8 +572,9 @@ public abstract class CtBehavior extends CtMember {
         declaringClass.checkModify();
         ConstPool cp = methodInfo.getConstPool();
         CodeAttribute ca = methodInfo.getCodeAttribute();
-        if (ca == null)
-            throw new CannotCompileException("no method body");
+        if (ca == null) {
+          throw new CannotCompileException("no method body");
+        }
 
         LocalVariableAttribute va = (LocalVariableAttribute)ca.getAttribute(
                                                 LocalVariableAttribute.tag);
@@ -608,24 +641,27 @@ public abstract class CtBehavior extends CtMember {
                 CtPrimitiveType cpt = (CtPrimitiveType)type;
                 size = cpt.getDataSize();
                 typeDesc = cpt.getDescriptor();
+            } else {
+              classInfo = methodInfo.getConstPool().addClassInfo(type);
             }
-            else
-                classInfo = methodInfo.getConstPool().addClassInfo(type);
 
             ca.insertLocalVar(where, size);
             LocalVariableAttribute va
                             = (LocalVariableAttribute)
                               ca.getAttribute(LocalVariableAttribute.tag);
-            if (va != null)
-                va.shiftIndex(where, size);
+            if (va != null) {
+              va.shiftIndex(where, size);
+            }
 
             StackMapTable smt = (StackMapTable)ca.getAttribute(StackMapTable.tag);
-            if (smt != null)
-                smt.insertLocal(where, StackMapTable.typeTagOf(typeDesc), classInfo);
+            if (smt != null) {
+              smt.insertLocal(where, StackMapTable.typeTagOf(typeDesc), classInfo);
+            }
 
             StackMap sm = (StackMap)ca.getAttribute(StackMap.tag);
-            if (sm != null)
-                sm.insertLocal(where, StackMapTable.typeTagOf(typeDesc), classInfo);
+            if (sm != null) {
+              sm.insertLocal(where, StackMapTable.typeTagOf(typeDesc), classInfo);
+            }
         }
     }
 

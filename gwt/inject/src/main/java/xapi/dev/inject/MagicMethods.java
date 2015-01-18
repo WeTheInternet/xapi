@@ -126,7 +126,7 @@ public class MagicMethods {
       return null;
     }
 
-    logger.log(Type.INFO,
+    logger.log(logLevel(),
       receiverParam.toString() + " : " + receiverParam.getClass() + " : " + receiverParam.toSource());
     JClassLiteral classLiteral = (JClassLiteral)classParam;
     JDeclaredType answerType = injectSingletonAsync(logger, classLiteral, methodCall, ast);
@@ -145,16 +145,20 @@ public class MagicMethods {
         }
         JMethodCall call = new JMethodCall(info, result, method);
         call.addArg(receiverParam);
-        if (logger.isLoggable(Type.TRACE)) {
-          TreeLogger branch = logger.branch(Type.TRACE, "Generated asynchronous magic singleton: ");
+        if (logger.isLoggable(logLevel())) {
+          TreeLogger branch = logger.branch(logLevel(), "Generated asynchronous magic singleton: ");
           for (String str : call.toSource().split("\n")) {
-            branch.log(Type.TRACE, str);
+            branch.log(logLevel(), str);
           }
         }
         return call;
       }
     }
     throw new InternalCompilerException("Unable to generate asynchronous class injector");
+  }
+
+  private static Type logLevel() {
+    return Type.DEBUG;
   }
 
   private static JDeclaredType injectSingletonAsync(TreeLogger logger, JClassLiteral classLiteral,
@@ -211,7 +215,7 @@ public class MagicMethods {
       ast.error(methodCall, "Rebind result '" + answer + "' cannot be abstract");
       throw new UnableToCompleteException();
     }
-    logger.log(Type.TRACE, "Injecting asynchronous singleton for " + type.getName() + " -> " + answerType);
+    logger.log(logLevel(), "Injecting asynchronous singleton for " + type.getName() + " -> " + answerType);
     return answerType;
   }
 
@@ -240,7 +244,7 @@ public class MagicMethods {
           classParam.getClass() + " - " + classParam);
       return null;
     }
-    logger.log(Type.INFO,
+    logger.log(logLevel(),
       receiveParam.toString() + " : " + receiveParam.getClass() + " : " + receiveParam.toSource());
     JClassLiteral classLiteral = (JClassLiteral)classParam;
     JClassLiteral receiverLiteral = (JClassLiteral)receiveParam;
@@ -267,13 +271,13 @@ public class MagicMethods {
       // currentMethod.getEnclosingType());
     } else {// we need to generate the singleton on the fly, without updating rebind cache
       // make sure the requested interface is compiled for the generator
-      logger.log(Type.INFO, "Rebinding singleton w/ callback: " + type + " -> " + provider.getName());
+      logger.log(logLevel(), "Rebinding singleton w/ callback: " + type + " -> " + provider.getName());
       ast.searchForTypeBySource(type.getName());
       ast.searchForTypeBySource(BinaryName.toSourceName(provider.getName()));
       try {
         InjectionCallbackArtifact rebindResult;
         try {
-          logger.log(Type.INFO, "Loading injected result: " + provider.getName());
+          logger.log(logLevel(), "Loading injected result: " + provider.getName());
           rebindResult = AsyncProxyGenerator.setupAsyncCallback(logger, ctx,
             ctx.getTypeOracle().findType(BinaryName.toSourceName(type.getName())),
             ((JDeclaredType)receiverLiteral.getRefType()));
@@ -376,7 +380,7 @@ public class MagicMethods {
         // commit the generator result, w/out updating rebind cache (to allow GWT.create() rebinds)
         ctx.finish(logger);
         // pull back the LazySingeton provider
-        logger.log(Type.TRACE, "Loading injected result: " + result.getResultTypeName());
+        logger.log(logLevel(), "Loading injected result: " + result.getResultTypeName());
         answerType = ast.searchForTypeBySource(result.getResultTypeName());
         // sanity check
         if (answerType == null) {
@@ -399,7 +403,7 @@ public class MagicMethods {
       ast.error(x, "Rebind result '" + answer + "' cannot be abstract");
       return null;
     }
-    logger.log(Type.TRACE, "Injecting lazy singleton for " + type.getName() + " -> " + answerType);
+    logger.log(logLevel(), "Injecting lazy singleton for " + type.getName() + " -> " + answerType);
     JExpression result = JGwtCreate.createInstantiationExpression(x.getSourceInfo(), (JClassType)answerType);
     if (result == null) {
       ast.error(x, "Rebind result '" + answer + "' has no default (zero argument) constructors");
@@ -470,7 +474,7 @@ public class MagicMethods {
           if (existingMethod.getName().equals(existingMethod)) {
             getSingleton = existingMethod;
             info = getSingleton.getSourceInfo();
-            logger.log(Type.TRACE, "Reusing generated method " + getSingleton.toSource());
+            logger.log(logLevel(), "Reusing generated method " + getSingleton.toSource());
             break;
           }
         }
@@ -605,7 +609,7 @@ public class MagicMethods {
       // commit the generator result, w/out updating rebind cache (to allow GWT.create() rebinds)
       ctx.finish(logger);
       // pull back the LazySingeton provider
-      logger.log(Type.INFO, "Loading injected result: " + result.getResultTypeName());
+      logger.log(logLevel(), "Loading injected result: " + result.getResultTypeName());
       injectedInstance = ast.searchForTypeBySource(result.getResultTypeName());
       // sanity check
       if (injectedInstance == null) {

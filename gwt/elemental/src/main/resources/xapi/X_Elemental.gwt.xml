@@ -10,6 +10,9 @@
   <source path="elemental/impl" />
 
   <extend-configuration-property name="gwt.magic.methods" 
+    value="xapi.elemental.X_Elemental.injectCss(Ljava/lang/Class;)V *= xapi.dev.ui.html.CssInjector"/>
+
+  <extend-configuration-property name="gwt.magic.methods" 
     value="xapi.elemental.X_Elemental.toElement(Ljava/lang/Class;Ljava/lang/Object;)Lelemental/dom/Element; *= xapi.dev.elemental.ElementalInjector"/>
 
   <extend-configuration-property name="gwt.magic.methods" 

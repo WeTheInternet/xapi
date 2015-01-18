@@ -1,3 +1,22 @@
+/*
+ * Javassist, a Java-bytecode translator toolkit.
+ * Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License.  Alternatively, the contents of this file may be used under
+ * the terms of the GNU Lesser General Public License Version 2.1 or later,
+ * or the Apache License Version 2.0.
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * MODIFIED BY James Nelson of We The Internet, 2013.
+ * Repackaged to avoid conflicts with different versions of Javassist,
+ * and modified Javassist APIs to make them more accessible to outside code.
+ */
 package xapi.bytecode.annotation;
 
 import java.io.ByteArrayOutputStream;
@@ -92,8 +111,9 @@ public class AnnotationsAttribute extends AttributeInfo {
   public Annotation getAnnotation(String type) {
       Annotation[] annotations = getAnnotations();
       for (int i = 0; i < annotations.length; i++) {
-          if (annotations[i].getTypeName().equals(type))
-              return annotations[i];
+          if (annotations[i].getTypeName().equals(type)) {
+            return annotations[i];
+          }
       }
 
       return null;
@@ -153,8 +173,9 @@ public class AnnotationsAttribute extends AttributeInfo {
       try {
           int n = annotations.length;
           writer.numAnnotations(n);
-          for (int i = 0; i < n; ++i)
-              annotations[i].write(writer);
+          for (int i = 0; i < n; ++i) {
+            annotations[i].write(writer);
+          }
 
           writer.close();
       }
@@ -186,8 +207,9 @@ public class AnnotationsAttribute extends AttributeInfo {
       int i = 0;
       while (i < a.length) {
           sbuf.append(a[i++].toString());
-          if (i != a.length)
-              sbuf.append(", ");
+          if (i != a.length) {
+            sbuf.append(", ");
+          }
       }
 
       return sbuf.toString();
@@ -206,8 +228,9 @@ public class AnnotationsAttribute extends AttributeInfo {
       }
 
       public void parameters(int numParam, int pos) throws Exception {
-          for (int i = 0; i < numParam; ++i)
-              pos = annotationArray(pos);
+          for (int i = 0; i < numParam; ++i) {
+            pos = annotationArray(pos);
+          }
       }
 
       public final void annotationArray() throws Exception {
@@ -220,8 +243,9 @@ public class AnnotationsAttribute extends AttributeInfo {
       }
 
       int annotationArray(int pos, int num) throws Exception {
-          for (int i = 0; i < num; ++i)
-              pos = annotation(pos);
+          for (int i = 0; i < num; ++i) {
+            pos = annotation(pos);
+          }
 
           return pos;
       }
@@ -233,8 +257,9 @@ public class AnnotationsAttribute extends AttributeInfo {
       }
 
       int annotation(int pos, int type, int numPairs) throws Exception {
-          for (int j = 0; j < numPairs; ++j)
-              pos = memberValuePair(pos);
+          for (int j = 0; j < numPairs; ++j) {
+            pos = memberValuePair(pos);
+          }
 
           return pos;
       }
@@ -261,9 +286,9 @@ public class AnnotationsAttribute extends AttributeInfo {
               classMemberValue(index);
               return pos + 3;
           }
-          else if (tag == '@')
-              return annotationMemberValue(pos + 1);
-          else if (tag == '[') {
+          else if (tag == '@') {
+            return annotationMemberValue(pos + 1);
+          } else if (tag == '[') {
               int num = X_Byte.readU16bit(info, pos + 1);
               return arrayMemberValue(pos + 3, num);
           }

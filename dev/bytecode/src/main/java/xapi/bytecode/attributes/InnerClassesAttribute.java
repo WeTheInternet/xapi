@@ -1,3 +1,22 @@
+/*
+ * Javassist, a Java-bytecode translator toolkit.
+ * Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License.  Alternatively, the contents of this file may be used under
+ * the terms of the GNU Lesser General Public License Version 2.1 or later,
+ * or the Apache License Version 2.0.
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * MODIFIED BY James Nelson of We The Internet, 2013.
+ * Repackaged to avoid conflicts with different versions of Javassist,
+ * and modified Javassist APIs to make them more accessible to outside code.
+ */
 package xapi.bytecode.attributes;
 
 import java.io.DataInput;
@@ -53,10 +72,11 @@ public class InnerClassesAttribute extends AttributeInfo {
      */
     public String innerClass(int nth) {
         int i = innerClassIndex(nth);
-        if (i == 0)
-            return null;
-        else
-            return constPool.getClassInfo(i);
+        if (i == 0) {
+          return null;
+        } else {
+          return constPool.getClassInfo(i);
+        }
     }
 
     /**
@@ -82,10 +102,11 @@ public class InnerClassesAttribute extends AttributeInfo {
      */
     public String outerClass(int nth) {
         int i = outerClassIndex(nth);
-        if (i == 0)
-            return null;
-        else
-            return constPool.getClassInfo(i);
+        if (i == 0) {
+          return null;
+        } else {
+          return constPool.getClassInfo(i);
+        }
     }
 
     /**
@@ -111,10 +132,11 @@ public class InnerClassesAttribute extends AttributeInfo {
      */
     public String innerName(int nth) {
         int i = innerNameIndex(nth);
-        if (i == 0)
-            return null;
-        else
-            return constPool.getUtf8Info(i);
+        if (i == 0) {
+          return null;
+        } else {
+          return constPool.getUtf8Info(i);
+        }
     }
 
     /**
@@ -167,8 +189,9 @@ public class InnerClassesAttribute extends AttributeInfo {
         byte[] data = get();
         int len = data.length;
         byte[] newData = new byte[len + 8];
-        for (int i = 2; i < len; ++i)
-            newData[i] = data[i];
+        for (int i = 2; i < len; ++i) {
+          newData[i] = data[i];
+        }
 
         int n = X_Byte.readU16bit(data, 0);
         X_Byte.write16bit(n + 1, newData, 0);
@@ -204,18 +227,21 @@ public class InnerClassesAttribute extends AttributeInfo {
             int innerName = X_Byte.readU16bit(src, j + 4);
             int innerAccess = X_Byte.readU16bit(src, j + 6);
 
-            if (innerClass != 0)
-                innerClass = cp.copy(innerClass, newCp, classnames);
+            if (innerClass != 0) {
+              innerClass = cp.copy(innerClass, newCp, classnames);
+            }
 
             X_Byte.write16bit(innerClass, dest, j);
 
-            if (outerClass != 0)
-                outerClass = cp.copy(outerClass, newCp, classnames);
+            if (outerClass != 0) {
+              outerClass = cp.copy(outerClass, newCp, classnames);
+            }
 
             X_Byte.write16bit(outerClass, dest, j + 2);
 
-            if (innerName != 0)
-                innerName = cp.copy(innerName, newCp, classnames);
+            if (innerName != 0) {
+              innerName = cp.copy(innerName, newCp, classnames);
+            }
 
             X_Byte.write16bit(innerName, dest, j + 4);
             X_Byte.write16bit(innerAccess, dest, j + 6);
