@@ -45,23 +45,35 @@ public class IntToInjector implements MagicMethodGenerator {
 
         method = ast.translate(method);
 
-        String typeName = classLit.getRefType().getName();
-        String providerName = typeName+"_ArrayProvider";
+        String
+            binaryName = classLit.getRefType().getName(),
+            typeName = binaryName.replace('$', '_');
+        final String providerName = typeName+"_ArrayProvider";
         JDeclaredType providerType;
         try {
-          providerType = ast.searchForTypeBySource(providerName);
-        } catch (NoClassDefFoundError e) {
+          try {
+            providerType = ast.searchForTypeBySource(providerName);
+          } catch (NoClassDefFoundError e) {
+            throw new UnableToCompleteException();
+          }
+          if (providerType == null) {
+            throw new UnableToCompleteException();
+          }
+        } catch (UnableToCompleteException e) {
 
-          String[] names = X_Source.splitClassName(typeName);
+          String[] names = X_Source.splitClassName(binaryName);
           if ("java".equals(names[0])) {
             names[0] = "javax";
           }
+
+          String componentType = names[1].replace('$', '.');
+          names[1] = names[1].replace('$', '_');
 
           SourceBuilder<Object> builder = new SourceBuilder<>("public final class "+names[1]+"_ArrayProvider");
 
           String simpleType = builder.getImports()
               .addImports(Provider.class)
-              .addImport(X_Source.qualifiedName(names[0], names[1]));
+              .addImport(X_Source.qualifiedName(names[0], componentType));
 
           builder.setPackage(names[0]);
 
