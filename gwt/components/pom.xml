@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>net.wetheinter</groupId>
+		<artifactId>xapi-gwt-parent</artifactId>
+		<version>0.5-SNAPSHOT</version>
+	</parent>
+	<artifactId>xapi-components</artifactId>
+	<packaging>jar</packaging>
+	<name>XApi - Web Component Implementation</name>
+	<url>WeTheInter.net</url>
+	<description>
+    A web component API for manually building web components via WebComponentBuilder, or generating them from interfaces via WebComponentFactory
+  </description>
+  
+  <properties>
+   <java.version>1.8</java.version>
+  </properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>net.wetheinter</groupId>
+			<artifactId>xapi-elemental</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>com.google.gwt</groupId>
+			<artifactId>gwt-elemental</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>com.google.gwt</groupId>
+			<artifactId>gwt-dev</artifactId>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.google.gwt</groupId>
+			<artifactId>gwt-user</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+</project>

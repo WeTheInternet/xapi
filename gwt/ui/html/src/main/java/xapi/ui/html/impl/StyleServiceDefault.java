@@ -1,7 +1,7 @@
 /**
  *
  */
-package xapi.elemental.impl;
+package xapi.ui.html.impl;
 
 import static xapi.collect.X_Collect.newStringMap;
 

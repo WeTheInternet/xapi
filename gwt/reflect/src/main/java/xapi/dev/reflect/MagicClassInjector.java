@@ -4,10 +4,6 @@ import static xapi.inject.X_Inject.singletonLazy;
 
 import javax.inject.Provider;
 
-import xapi.annotation.inject.SingletonDefault;
-import xapi.collect.impl.AbstractMultiInitMap;
-import xapi.source.read.SourceUtil;
-
 import com.google.gwt.core.ext.Generator;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;
@@ -24,6 +20,10 @@ import com.google.gwt.dev.jjs.ast.JMethodCall;
 import com.google.gwt.dev.util.Name.BinaryName;
 import com.google.gwt.reflect.rebind.ReflectionUtilJava;
 import com.google.gwt.reflect.rebind.generators.ReflectionGeneratorContext;
+
+import xapi.annotation.inject.SingletonDefault;
+import xapi.collect.impl.AbstractMultiInitMap;
+import xapi.source.read.SourceUtil;
 
 @SingletonDefault(implFor = MagicClassInjector.class)
 public class MagicClassInjector implements MagicMethodGenerator {
@@ -57,9 +57,8 @@ public class MagicClassInjector implements MagicMethodGenerator {
       try {
         return doRebind(clsName, params);
       } catch (Exception e) {
-        if (e instanceof RuntimeException) {
+        if (e instanceof RuntimeException)
           throw (RuntimeException) e;
-        }
         throw new RuntimeException("Could not initialize magic class for " + clsName, e);
       }
     }
@@ -76,7 +75,7 @@ public class MagicClassInjector implements MagicMethodGenerator {
       String typeName = BinaryName.toSourceName(type.getName());
       String generatedName = ReflectionUtilJava.generatedMagicClassName(typeName);
         params.getAst().searchForTypeBySource(generatedName);
-      } catch (UnableToCompleteException | NoClassDefFoundError e) {
+      } catch (NoClassDefFoundError e) {
         removeValue(key);
       }
       return super.get(key, params);

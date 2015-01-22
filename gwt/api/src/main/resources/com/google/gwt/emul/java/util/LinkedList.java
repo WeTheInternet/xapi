@@ -271,7 +271,7 @@ public class LinkedList<E> extends AbstractSequentialList<E> implements List<E>,
   @Override
   public ListIterator<E> listIterator(final int index) {
     if (index < 0 || index > size) {
-      indexOutOfBounds(index, size);
+      throw new IndexOutOfBoundsException("Index: "+index+", Size: "+size);
     }
 
     Node<E> node;

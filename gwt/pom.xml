@@ -61,8 +61,8 @@
 
   <modules>
 
-    <!-- Implementation of magic method injection. -->
-    <module>gwt-method-inject</module>
+    <!-- Implementation of magic method injection; moved to a fork of GWT -->
+    <!--<module>gwt-method-inject</module>-->
     <!-- Implementation of gwt reflection. -->
     <module>gwt-reflect</module>
 
@@ -119,7 +119,13 @@
 
     <!-- A set of widgets and generators for use in GWT -->
     <module>ui</module>
-    
+
+    <!-- A set of web component apis, a WebComponentBuilder and a generator for WebComponentFactory -->
+    <module>components</module>
+
+    <!-- A collection of simple web component wrappers of polymer components -->
+    <module>polymer</module>
+
     <!-- This uber jar module is here simply to bundle all our dependencies into a single jar for easier deployment. 
       Currently it only contains xapi-core-inject, xapi-gwt-inject and xapi-gwt-reflect, but it will grow to include 
       all gwt-friendly, production-ready modules. To inherit the uber jar, you must use the following dependency: groupId: 

@@ -60,9 +60,8 @@ public class ClasspathResourceMap {
 
   public void addBytecode(final String name, final ByteCodeResource bytecode) {
     this.bytecode.put(X_Source.stripClassExtension(name.replace(File.separatorChar, '.')), bytecode);
-      if (!preloadClasses()) {
+      if (!preloadClasses())
         return;
-      }
       if (pending.isEmpty()) {
         synchronized (pending) {
           // double-checked lock
@@ -184,30 +183,26 @@ public class ClasspathResourceMap {
 
   public boolean includeResource(String name) {
     for (Pattern p : resourceMatchers) {
-      if (p.matcher(name).matches()) {
+      if (p.matcher(name).matches())
         return true;
-      }
-      if (p.matcher(name.substring(name.lastIndexOf('/')+1)).matches()) {
+      if (p.matcher(name.substring(name.lastIndexOf('/')+1)).matches())
         return true;
-      }
     }
     return false;
   }
 
   public boolean includeSourcecode(String name) {
     for (Pattern p : sourceMatchers) {
-      if (p.matcher(name).matches()) {
+      if (p.matcher(name).matches())
         return true;
-      }
     }
     return false;
   }
 
   public boolean includeBytecode(String name) {
     for (Pattern p : bytecodeMatchers) {
-      if (p.matcher(name).matches()) {
+      if (p.matcher(name).matches())
         return true;
-      }
     }
     return false;
   }
@@ -217,9 +212,8 @@ public class ClasspathResourceMap {
   }
 
   public final Iterable<SourceCodeResource> findSources(final String prefix, final Pattern ... patterns) {
-    if (patterns.length == 0) {
+    if (patterns.length == 0)
       return sources.findPrefixed(prefix);
-    }
     class Itr implements Iterator<SourceCodeResource> {
       SourceCodeResource cls;
       Iterator<SourceCodeResource> iter = sources.findPrefixed(prefix).iterator();
@@ -228,9 +222,8 @@ public class ClasspathResourceMap {
         while(iter.hasNext()) {
           cls = iter.next();
           for (Pattern pattern : patterns) {
-            if (pattern.matcher(cls.getResourceName()).matches()) {
+            if (pattern.matcher(cls.getResourceName()).matches())
               return true;
-            }
           }
         }
         return false;
@@ -259,9 +252,8 @@ public class ClasspathResourceMap {
   }
 
   public final Iterable<StringDataResource> findResources(final String prefix, final Pattern ... patterns) {
-    if (patterns.length == 0) {
+    if (patterns.length == 0)
       return resources.findPrefixed(prefix);
-    }
     class Itr implements Iterator<StringDataResource> {
       StringDataResource cls;
       Iterator<StringDataResource> iter = resources.findPrefixed(prefix).iterator();
@@ -270,9 +262,8 @@ public class ClasspathResourceMap {
         while(iter.hasNext()) {
           cls = iter.next();
           for (Pattern pattern : patterns) {
-            if (pattern.matcher(cls.getResourceName()).matches()) {
+            if (pattern.matcher(cls.getResourceName()).matches())
               return true;
-            }
           }
         }
         return false;
@@ -297,7 +288,7 @@ public class ClasspathResourceMap {
   }
 
   public final ClassFile findClass(String clsName) {
-    clsName = clsName.replace('.', '/');
+    clsName = clsName.replace('/', '.');
     ByteCodeResource resource = bytecode.get(clsName);
     return resource == null ? null : resource.getClassData();
   }
@@ -361,9 +352,8 @@ public class ClasspathResourceMap {
       public boolean hasNext() {
         while(iter.hasNext()) {
           cls = iter.next().getClassData();
-          if (matcher.matches(cls)) {
+          if (matcher.matches(cls))
             return true;
-          }
         }
         return false;
       }
@@ -401,9 +391,8 @@ public class ClasspathResourceMap {
       public boolean hasNext() {
         while(iter.hasNext()) {
           cls = iter.next().getClassData();
-          if (matcher.matches(cls)) {
+          if (matcher.matches(cls))
             return true;
-          }
         }
 
         return false;
@@ -442,9 +431,8 @@ public class ClasspathResourceMap {
         while(iter.hasNext()) {
           cls = iter.next();
           for (Class<?> annotation : annotations) {
-            if (cls.getAnnotation(annotation.getName())!=null) {
+            if (cls.getAnnotation(annotation.getName())!=null)
               return true;
-            }
           }
         }
         return false;
@@ -486,9 +474,8 @@ public final Iterable<ClassFile> findClassWithAnnotatedMethods(
         for (MethodInfo method : cls.getMethods()) {
           if (allMethodsWithAnnos.scanMethod(method)) {
             for (Class<?> annotation : annotations) {
-              if (method.getAnnotation(annotation.getName()) != null) {
+              if (method.getAnnotation(annotation.getName()) != null)
                 return true;
-              }
             }
           }
         }
@@ -568,9 +555,8 @@ extends MultithreadedStringTrie<ResourceType> {
     @Override
     protected void setValue(ResourceType value) {
       if (this.value != null) {
-        if (this.value.priority() > value.priority()) {
+        if (this.value.priority() > value.priority())
           return;
-        }
       }
       super.setValue(value);
     }

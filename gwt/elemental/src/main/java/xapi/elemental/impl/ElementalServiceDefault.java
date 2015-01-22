@@ -4,6 +4,7 @@
 package xapi.elemental.impl;
 
 import elemental.dom.Element;
+
 import xapi.annotation.inject.SingletonDefault;
 import xapi.elemental.api.ElementalService;
 import xapi.elemental.api.PotentialNode;
@@ -11,6 +12,7 @@ import xapi.source.api.Lexer;
 import xapi.source.impl.LexerForWords;
 import xapi.source.impl.StringCharIterator;
 import xapi.ui.html.X_Html;
+import xapi.ui.html.impl.StyleServiceDefault;
 import xapi.util.api.ConvertsValue;
 
 /**

@@ -1,6 +1,7 @@
 package xapi.dev.ui.html;
 
 import static com.google.gwt.reflect.rebind.ReflectionUtilType.findType;
+
 import static xapi.dev.ui.html.AbstractHtmlGenerator.existingTypesUnchanged;
 import static xapi.dev.ui.html.AbstractHtmlGenerator.findExisting;
 import static xapi.dev.ui.html.AbstractHtmlGenerator.saveGeneratedType;
@@ -9,6 +10,17 @@ import static xapi.dev.ui.html.AbstractHtmlGenerator.toHash;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
+
+import com.google.gwt.core.ext.Generator;
+import com.google.gwt.core.ext.TreeLogger;
+import com.google.gwt.core.ext.TreeLogger.Type;
+import com.google.gwt.core.ext.UnableToCompleteException;
+import com.google.gwt.core.ext.typeinfo.JClassType;
+import com.google.gwt.core.ext.typeinfo.JMethod;
+import com.google.gwt.core.shared.GWT;
+import com.google.gwt.dev.jjs.UnifyAstView;
+import com.google.gwt.resources.client.ClientBundle;
+import com.google.gwt.resources.client.CssResource;
 
 import xapi.annotation.compile.Import;
 import xapi.collect.X_Collect;
@@ -29,17 +41,6 @@ import xapi.ui.html.api.HtmlTemplate;
 import xapi.ui.html.api.Style;
 import xapi.util.api.ReceivesValue;
 
-import com.google.gwt.core.ext.Generator;
-import com.google.gwt.core.ext.TreeLogger;
-import com.google.gwt.core.ext.TreeLogger.Type;
-import com.google.gwt.core.ext.UnableToCompleteException;
-import com.google.gwt.core.ext.typeinfo.JClassType;
-import com.google.gwt.core.ext.typeinfo.JMethod;
-import com.google.gwt.core.shared.GWT;
-import com.google.gwt.dev.jjs.UnifyAstView;
-import com.google.gwt.resources.client.ClientBundle;
-import com.google.gwt.resources.client.CssResource;
-
 public class CssInjectorGenerator implements CreatesContextObject<HtmlGeneratorResult>{
 
   static final String GENERATED_SUFFIX = "_InjectCss";
@@ -52,7 +53,7 @@ public class CssInjectorGenerator implements CreatesContextObject<HtmlGeneratorR
     String simpleName = templateType.getSimpleSourceName()+GENERATED_SUFFIX;
 
     // Check if there is an existing type, and that it's generated hashes match our input type.
-    String inputHash = toHash(ast, templateType);
+    String inputHash = toHash(ast, templateType.getQualifiedSourceName());
 
     // Generate a new result
     CssInjectorGenerator ctx = new CssInjectorGenerator(simpleName, ast, templateType);
@@ -79,10 +80,9 @@ public class CssInjectorGenerator implements CreatesContextObject<HtmlGeneratorR
       injectionType.getPackage().getName(),
       X_Source.qualifiedName(injectionType.getPackage().getName(), simpleName));
     HtmlGeneratorResult existingResult = existingTypesUnchanged(logger, ast, existingType, inputHash);
-    if (existingResult != null) {
+    if (existingResult != null)
       // If our inputs are unchanged, and the target type exists, just reuse it w/out regenerating
       return existingResult;
-    }
 
     clsName = existingType.getFinalName();
     ClassBuffer cls = out.getClassBuffer();
@@ -192,38 +192,31 @@ public class CssInjectorGenerator implements CreatesContextObject<HtmlGeneratorR
 
   private boolean hasStyle(JClassType superType) {
     Css css = superType.getAnnotation(Css.class);
-    if (css != null) {
+    if (css != null)
       return true;
-    }
     Style style = superType.getAnnotation(Style.class);
-    if (style != null && style.names().length > 0) {
+    if (style != null && style.names().length > 0)
       return true;
-    }
     Html html = superType.getAnnotation(Html.class);
     if (html != null) {
-      if (html.css().length > 0) {
+      if (html.css().length > 0)
         return true;
-      }
-      if (hasStyle(html.body())) {
+      if (hasStyle(html.body()))
         return true;
-      }
-      if (hasStyle(html.templates())) {
+      if (hasStyle(html.templates()))
         return true;
-      }
     }
     HtmlTemplate template = superType.getAnnotation(HtmlTemplate.class);
-    if (template != null && hasStyle(template)) {
+    if (template != null && hasStyle(template))
       return true;
-    }
     El el = superType.getAnnotation(El.class);
     return el != null && hasStyle(el);
   }
 
   private boolean hasStyle(HtmlTemplate ... templates) {
     for (HtmlTemplate template : templates) {
-      if (template.imports().length > 0 || template.references().length > 0) {
+      if (template.imports().length > 0 || template.references().length > 0)
         return true;
-      }
     }
     return false;
   }
@@ -231,13 +224,11 @@ public class CssInjectorGenerator implements CreatesContextObject<HtmlGeneratorR
   private boolean hasStyle(El ... body) {
     for (El el : body) {
       for (Style style : el.style()) {
-        if (style.names().length > 0) {
+        if (style.names().length > 0)
           return true;
-        }
       }
-      if (el.imports().length > 0) {
+      if (el.imports().length > 0)
         return true;
-      }
     }
     return false;
   }

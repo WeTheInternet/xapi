@@ -4,6 +4,8 @@
   <inherits name="xapi.X_Inject"/>
   <inherits name="xapi.X_Reflect"/>
   <inherits name="xapi.X_Source"/>
+  <inherits name="xapi.X_Collect"/>
+  <inherits name="xapi.X_Ui"/>
 <!--   <inherits name="com.google.gwt.reflect.Reflect"/> -->
   <source path="ui/autoui/" />
   <source path="ui/autoui/api" />

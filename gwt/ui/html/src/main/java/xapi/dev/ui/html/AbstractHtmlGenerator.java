@@ -12,6 +12,17 @@ import java.util.TimeZone;
 
 import javax.inject.Provider;
 
+import com.google.gwt.core.ext.Generator;
+import com.google.gwt.core.ext.TreeLogger;
+import com.google.gwt.core.ext.TreeLogger.Type;
+import com.google.gwt.core.ext.UnableToCompleteException;
+import com.google.gwt.core.ext.typeinfo.JClassType;
+import com.google.gwt.core.ext.typeinfo.JMethod;
+import com.google.gwt.dev.javac.StandardGeneratorContext;
+import com.google.gwt.dev.jjs.UnifyAstView;
+import com.google.gwt.user.server.Base64Utils;
+import com.google.gwt.util.tools.shared.Md5Utils;
+
 import xapi.annotation.compile.Generated;
 import xapi.annotation.compile.Import;
 import xapi.collect.X_Collect;
@@ -30,17 +41,6 @@ import xapi.ui.html.api.Style;
 import xapi.util.api.ConvertsValue;
 import xapi.util.impl.LazyProvider;
 
-import com.google.gwt.core.ext.Generator;
-import com.google.gwt.core.ext.TreeLogger;
-import com.google.gwt.core.ext.TreeLogger.Type;
-import com.google.gwt.core.ext.UnableToCompleteException;
-import com.google.gwt.core.ext.typeinfo.JClassType;
-import com.google.gwt.core.ext.typeinfo.JMethod;
-import com.google.gwt.dev.javac.StandardGeneratorContext;
-import com.google.gwt.dev.jjs.UnifyAstView;
-import com.google.gwt.user.server.Base64Utils;
-import com.google.gwt.util.tools.shared.Md5Utils;
-
 public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> implements CreatesContextObject<Ctx> {
 
   protected static final String KEY_FROM = "from";
@@ -54,23 +54,18 @@ public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> im
 
   protected static <Ctx extends HtmlGeneratorResult> Ctx existingTypesUnchanged(TreeLogger logger,
       UnifyAstView ast, Ctx result, String verify) {
-    if (isDev.get()) {
+    if (isDev.get())
       // During development, never reuse existing types, as we're likely changing generators
       return null;
-    }
     try {
-      if (result.getSourceType() == null) {
+      if (result.getSourceType() == null)
         return null;
-      }
       Generated gen = result.getSourceType().getAnnotation(Generated.class);
-      if (gen == null) {
+      if (gen == null)
         return null;
-      }
       String hash = gen.value()[gen.value().length-1];
       if (verify.equals(hash))
-       {
         return result;
-      }
     } catch (Exception e) {
       logger.log(Type.WARN, "Unknown error calculating change hashes", e);
     }
@@ -109,9 +104,8 @@ public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> im
   }
 
   protected void addHtml(String name, Html html, IntTo<String> elOrder) {
-    if (html == null) {
+    if (html == null)
       return;
-    }
     elOrder.add(name);
   }
 
@@ -138,12 +132,11 @@ public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> im
       return new ConvertsValue<String, String>() {
         @Override
         public String convert(String from) {
-          if (accessor.equals(El.DEFAULT_ACCESSOR)) {
+          if (accessor.equals(El.DEFAULT_ACCESSOR))
             return "".equals(key) ? KEY_FROM :
               KEY_FROM+"."+key+(key.endsWith("()") ? "" : "()");
-          } else {
+          else
             return accessor;
-          }
         }
       };
     default:
@@ -173,9 +166,8 @@ public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> im
 
   @SuppressWarnings("unchecked")
   protected String escape(String text, String key, String accessor) {
-    if (text.length() == 0) {
+    if (text.length() == 0)
       return "";
-    }
 
     HtmlGeneratorNode node = htmlGen.allNodes.get(key);
     if (node.hasTemplates()) {
@@ -214,9 +206,8 @@ public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> im
   protected String replace$value(String text, String key, String accessor) {
     String ref = null;
     int ind = text.indexOf("$value");
-    if (ind == -1) {
+    if (ind == -1)
       return "\""+escape(text)+"\"";
-    }
     StringBuilder b = new StringBuilder("\"");
     int was;
     for (;;){
@@ -309,9 +300,8 @@ public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> im
       winner = existing;
       String next = name+pos++;
       existing = ast.getTypeOracle().findType(next);
-      if (existing == null) {
+      if (existing == null)
         return creator.newContext(winner, pkgName, name);
-      }
     }
   }
 
@@ -368,9 +358,8 @@ public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> im
     if (result.getSourceType() != null) {
       // Only use the existing class if the generated source exactly matches what we just generated.
       Generated gen = result.getSourceType().getAnnotation(Generated.class);
-      if (gen != null && gen.value()[1].equals(digest)) {
+      if (gen != null && gen.value()[1].equals(digest))
         return result;
-      }
     }
     DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mmZ");
     df.setTimeZone(TimeZone.getTimeZone("UTC"));

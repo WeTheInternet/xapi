@@ -3,7 +3,6 @@ package xapi.dev.test.gwt.rebind;
 import java.util.Queue;
 
 import junit.framework.Assert;
-import xapi.dev.test.gwt.MagicMethodGwtTest;
 
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
@@ -22,6 +21,8 @@ import com.google.gwt.dev.jjs.ast.JMethodBody;
 import com.google.gwt.dev.jjs.ast.JMethodCall;
 import com.google.gwt.dev.jjs.ast.js.JsniMethodBody;
 import com.google.gwt.dev.jjs.impl.UnifyAst.UnifyVisitor;
+
+import xapi.dev.test.gwt.MagicMethodGwtTest;
 
 /**
  * A reference implementation of a magic method generator.
@@ -43,9 +44,8 @@ public class MagicMethodTestGenerator implements MagicMethodGenerator, UnifyAstL
     Context context, UnifyAstView ast) throws UnableToCompleteException {
     JDeclaredType testClass = enclosingMethod.getEnclosingType();
     for (JField field : testClass.getFields()) {
-      if (field.getName().equals("prodMode")) {
+      if (field.getName().equals("prodMode"))
         return new JFieldRef(field.getSourceInfo(), methodCall.getInstance(), field, testClass);
-      }
     }
     Assert.fail("Did not find field named prodMode in test class " + testClass);
     return null;
@@ -63,11 +63,7 @@ public class MagicMethodTestGenerator implements MagicMethodGenerator, UnifyAstL
 
     // Grab our test class
     JDeclaredType type;
-    try {
-      type = ast.searchForTypeBySource(MagicMethodGwtTest.class.getName());
-    } catch (UnableToCompleteException e) {
-      throw new RuntimeException(e);
-    }
+    type = ast.searchForTypeBySource(MagicMethodGwtTest.class.getName());
     // Find the method we want to call
     for (JMethod method : type.getMethods()) {
       if (method.getName().equals("callFromGenerator")) {

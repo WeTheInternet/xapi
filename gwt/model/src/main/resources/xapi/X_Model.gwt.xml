@@ -2,6 +2,9 @@
 <!DOCTYPE module PUBLIC "-//Google Inc.//DTD Google Web Toolkit 2.5.1//EN" "http://google-web-toolkit.googlecode.com/svn/tags/2.5.1/distro-source/core/src/gwt-module.dtd">
 <module>
     <source path="model" />
+    <source path="model/api" />
+    <source path="model/impl" />
+    <source path="model/service" />
     <inherits name="xapi.X_Collect" />
     <!-- For users of magic-method injection -->
       <extend-configuration-property name="gwt.magic.methods" 

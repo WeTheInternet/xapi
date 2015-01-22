@@ -1,12 +1,12 @@
 package xapi.gwt.ui.autoui.client;
 
+import com.google.gwt.junit.client.GWTTestCase;
+
 import xapi.ui.autoui.X_AutoUi;
 import xapi.ui.autoui.api.UserInterface;
 import xapi.ui.autoui.client.User;
 import xapi.ui.autoui.client.UserModel;
 import xapi.ui.autoui.impl.ToStringUserInterface;
-
-import com.google.gwt.junit.client.GWTTestCase;
 
 public class GwtUserInterfaceTest extends GWTTestCase {
 

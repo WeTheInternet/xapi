@@ -80,7 +80,7 @@ public class MvnServiceDefault implements MvnService {
     }
   };
 
-  private LogLevel logLevel;
+  private LogLevel logLevel = LogLevel.INFO;
 
   private final class ResourceMap extends
       AbstractMultiInitMap<Integer, ClasspathResourceMap, ClassLoader> {

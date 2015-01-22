@@ -142,7 +142,7 @@ public class XmlBuffer extends PrintBuffer {
       tag = tagName;
     }
     b.append(tag);
-    if (attributes != null) {
+    if (attributes != null && !attributes.isEmpty()) {
       b.append(" ").append(attributes);
     }
     String body = super.toString();

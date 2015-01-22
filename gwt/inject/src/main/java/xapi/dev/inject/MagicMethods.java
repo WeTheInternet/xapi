@@ -39,16 +39,6 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
-import xapi.dev.generators.AsyncInjectionGenerator;
-import xapi.dev.generators.AsyncProxyGenerator;
-import xapi.dev.generators.InstanceInjectionGenerator;
-import xapi.dev.generators.SyncInjectionGenerator;
-import xapi.dev.util.InjectionCallbackArtifact;
-import xapi.inject.AsyncProxy;
-import xapi.inject.X_Inject;
-import xapi.inject.impl.SingletonProvider;
-import xapi.source.X_Source;
-
 import com.google.gwt.core.ext.Generator;
 import com.google.gwt.core.ext.RebindResult;
 import com.google.gwt.core.ext.TreeLogger;
@@ -77,7 +67,15 @@ import com.google.gwt.dev.jjs.ast.JVariableRef;
 import com.google.gwt.dev.jjs.impl.UnifyAst;
 import com.google.gwt.dev.util.Name.BinaryName;
 import com.google.gwt.dev.util.collect.Lists;
-import com.google.gwt.reflect.rebind.ReflectionUtilAst;
+
+import xapi.dev.generators.AsyncInjectionGenerator;
+import xapi.dev.generators.AsyncProxyGenerator;
+import xapi.dev.generators.InstanceInjectionGenerator;
+import xapi.dev.generators.SyncInjectionGenerator;
+import xapi.dev.util.InjectionCallbackArtifact;
+import xapi.inject.AsyncProxy;
+import xapi.inject.X_Inject;
+import xapi.inject.impl.SingletonProvider;
 
 /**
  * A collection of magic method providers used for gwt production mode. These methods are mapped over top of
@@ -176,9 +174,9 @@ public class MagicMethods {
     JDeclaredType answerType = null;
     JDeclaredType knownType = ast.getProgram().getFromTypeMap(answer);
 
-    if (knownType != null) {// if the singleton already exists, just use it
+    if (knownType != null)
       return ast.searchForTypeBySource(answer);
-    } else {// we need to generate the singleton on the fly, without updating rebind cache
+    else {// we need to generate the singleton on the fly, without updating rebind cache
       StandardGeneratorContext ctx = ast.getRebindPermutationOracle().getGeneratorContext();
       // make sure the requested interface is compiled for the generator
       ast.searchForTypeBySource(type.getName());
@@ -311,11 +309,10 @@ public class MagicMethods {
     }
 
     for (JMethod method : answerType.getMethods()) {
-      if (method.getName().equals("go")) {
+      if (method.getName().equals("go"))
         // JExpression inst = JGwtCreate.createInstantiationExpression(answerType.getSourceInfo(),
         // (JClassType)answerType, answerType.getEnclosingType());
         return new JMethodCall(method.getSourceInfo(), null, method);
-      }
     }
     throw new InternalCompilerException("Did not generate async proxy for " + answerType);
   }
@@ -454,9 +451,8 @@ public class MagicMethods {
 
     // inject our provider class
     JDeclaredType type = (JDeclaredType)classLiteral.getRefType();
-    if (cachedProviders.containsKey(type)) {
+    if (cachedProviders.containsKey(type))
       return cachedProviders.get(type);
-    }
     JExpression expr = injectLazySingleton(logger, classLiteral, x, type, ast);
     String[] names = type.getShortName().split("[$]");
 
@@ -673,12 +669,11 @@ public class MagicMethods {
       instantiationExpressions.add(result);
     }
     assert answers.size() == instantiationExpressions.size();
-    if (answers.size() == 1) {
+    if (answers.size() == 1)
       return instantiationExpressions.get(0);
-    } else {
+    else
       return new JGwtCreate(x.getSourceInfo(), reqType, answers, ast.getProgram().getTypeJavaLangObject(),
         instantiationExpressions);
-    }
 
     // TODO: cache each injection to detect the first time a class is injected,
     // then see if the given injection target is Preloadable,
@@ -690,9 +685,8 @@ public class MagicMethods {
 
   public static String toSourceName(JDeclaredType type) {
     JDeclaredType enclosing = type.getEnclosingType();
-    if (enclosing == null) {
+    if (enclosing == null)
       return type.getName();
-    }
     return toSourceName(enclosing) + "." + type.getShortName();
   }
 

@@ -15,6 +15,7 @@ import xapi.ui.api.StyleService;
 import xapi.ui.autoui.api.BeanValueProvider;
 import xapi.ui.html.api.Style.AlignHorizontal;
 import xapi.ui.html.api.Style.AlignVertical;
+import xapi.ui.html.api.Style.BorderStyle;
 import xapi.ui.html.api.Style.BoxSizing;
 import xapi.ui.html.api.Style.Clear;
 import xapi.ui.html.api.Style.Cursor;
@@ -244,6 +245,37 @@ public class HtmlSnippet <T> implements ConvertsValue<T, String> {
       append("overflow-y", sheet, style.overflowY().styleName());
     }
 
+    for (Property prop : style.properties()) {
+      append(prop.name(), sheet, prop.value());
+    }
+
+    Unit[] borderRadius = style.borderRadius();
+    if (borderRadius.length > 0) {
+      sheet.append("border-radius:");
+      for (Unit unit : borderRadius) {
+        sheet.append(" ").append(toString(unit));
+      }
+      sheet.append(";");
+    }
+
+    append("border", "width", sheet, style.borderWidth(), style.borderWidthTop(),
+      style.borderWidthRight(), style.borderWidthBottom(), style.borderWidthLeft());
+
+    if (style.borderStyle().length > 0) {
+      sheet.append("border-style: ");
+      for (BorderStyle borderStyle : style.borderStyle()) {
+        sheet.append(borderStyle.styleName()).append(' ');
+      }
+      sheet.append(";");
+    }
+
+    if (style.borderColor().length > 0) {
+      sheet.append("border-color: ");
+      for (Rgb borderColor : style.borderColor()) {
+        sheet.append(toColor(borderColor)).append(' ');
+      }
+      sheet.append(";");
+    }
   }
 
   private static void append(String type, Appendable sheet, String value) throws IOException {
@@ -252,6 +284,13 @@ public class HtmlSnippet <T> implements ConvertsValue<T, String> {
         .append(":")
         .append(value)
         .append(";");
+  }
+
+  private static String toColor(Rgb rgb) {
+    if (rgb.opacity() == 0xff)
+      return "#"+toHexString(rgb.r())+toHexString(rgb.g())+toHexString(rgb.b());
+    else
+      return "rgba("+rgb.r()+","+rgb.g()+","+rgb.b()+","+rgb.opacity()+")";
   }
 
   private static void appendColor(String type, Appendable sheet, Rgb rgb) throws IOException {
@@ -286,6 +325,11 @@ public class HtmlSnippet <T> implements ConvertsValue<T, String> {
 
   private static void append(String type, Appendable sheet, Unit[] all,
       Unit top, Unit right, Unit bottom, Unit left) throws IOException {
+      append(type, "", sheet, all, top, right, bottom, left);
+  }
+
+  private static void append(String type, String typeSuffix, Appendable sheet, Unit[] all,
+      Unit top, Unit right, Unit bottom, Unit left) throws IOException {
     if (all.length > 0) {
       sheet.append(type).append(":");
       for (Unit unit : all) {
@@ -293,10 +337,13 @@ public class HtmlSnippet <T> implements ConvertsValue<T, String> {
       }
       sheet.append(";");
     }
-    append(type,"-top", sheet, top);
-    append(type,"-right", sheet, right);
-    append(type,"-bottom", sheet, bottom);
-    append(type,"-left", sheet, left);
+    if (typeSuffix.length() > 0 && typeSuffix.charAt(0) != '-') {
+      typeSuffix="-"+typeSuffix;
+    }
+    append(type,"-top"+typeSuffix, sheet, top);
+    append(type,"-right"+typeSuffix, sheet, right);
+    append(type,"-bottom"+typeSuffix, sheet, bottom);
+    append(type,"-left"+typeSuffix, sheet, left);
   }
 
   private static void append(String type, Appendable sheet, Unit unit) throws IOException {

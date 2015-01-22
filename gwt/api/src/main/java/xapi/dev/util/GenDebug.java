@@ -35,6 +35,7 @@
 package xapi.dev.util;
 
 import java.lang.reflect.Field;
+import java.util.Arrays;
 
 import com.google.gwt.core.ext.PropertyOracle;
 import com.google.gwt.core.ext.SubsetFilteringPropertyOracle;
@@ -43,9 +44,6 @@ import com.google.gwt.dev.cfg.ConfigurationProperty;
 import com.google.gwt.dev.cfg.DynamicPropertyOracle;
 import com.google.gwt.dev.cfg.Properties;
 import com.google.gwt.dev.shell.ModuleSpacePropertyOracle;
-
-import java.lang.reflect.Field;
-import java.util.Arrays;
 
 /**
  * A place to put general-purpose debugging tools for use during code

@@ -4,6 +4,13 @@ import java.lang.reflect.Modifier;
 
 import javax.inject.Provider;
 
+import com.google.gwt.core.ext.Generator;
+import com.google.gwt.core.ext.TreeLogger;
+import com.google.gwt.core.ext.TreeLogger.Type;
+import com.google.gwt.core.ext.UnableToCompleteException;
+import com.google.gwt.core.ext.typeinfo.JClassType;
+import com.google.gwt.dev.jjs.UnifyAstView;
+
 import xapi.annotation.common.Property;
 import xapi.annotation.compile.Import;
 import xapi.dev.source.ClassBuffer;
@@ -16,13 +23,6 @@ import xapi.ui.html.api.El;
 import xapi.ui.html.api.Html;
 import xapi.ui.html.api.HtmlSnippet;
 import xapi.util.api.ConvertsValue;
-
-import com.google.gwt.core.ext.Generator;
-import com.google.gwt.core.ext.TreeLogger;
-import com.google.gwt.core.ext.TreeLogger.Type;
-import com.google.gwt.core.ext.UnableToCompleteException;
-import com.google.gwt.core.ext.typeinfo.JClassType;
-import com.google.gwt.dev.jjs.UnifyAstView;
 
 public class HtmlSnippetGenerator extends AbstractHtmlGenerator <HtmlGeneratorResult> {
 
@@ -55,10 +55,9 @@ public class HtmlSnippetGenerator extends AbstractHtmlGenerator <HtmlGeneratorRe
       templateType.getPackage().getName(),
       X_Source.qualifiedName(templateType.getPackage().getName(), simpleName));
     HtmlGeneratorResult existingResult = existingTypesUnchanged(logger, ast, existingType, inputHash);
-    if (existingResult != null) {
+    if (existingResult != null)
       // If our inputs are unchanged, and the target type exists, just reuse it w/out regenerating
       return existingResult;
-    }
 
     initialize();
     clsName = existingType.getFinalName();
@@ -196,6 +195,6 @@ public class HtmlSnippetGenerator extends AbstractHtmlGenerator <HtmlGeneratorRe
 
   @Override
   protected Type getLogLevel() {
-    return Type.TRACE;
+    return Type.DEBUG;
   }
 }

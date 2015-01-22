@@ -1,5 +1,6 @@
 package xapi.ui.html.api;
 
+import xapi.annotation.common.Property;
 import xapi.ui.api.Stylizer;
 
 public @interface Style {
@@ -14,6 +15,11 @@ public @interface Style {
     double time() default 0.25;
     String unit() default "s";
     String value();
+  }
+
+  public static @interface Color {
+    String asString() default "";
+    Rgb asRgb() default @Rgb(r=0,g=0,b=0);
   }
 
   public static @interface Rgb {
@@ -130,6 +136,14 @@ public @interface Style {
     }
   }
 
+  public static enum BorderStyle {
+    None, Hidden, Dotted, Dashed, Solid, Double,
+    Groove, Ridge, Inset, Outset, Initial, Inherit;
+    public String styleName() {
+      return name().toLowerCase();
+    }
+  }
+
   public static enum Display {
     None("none"), Block("block"), Inline("inline"),
     InlineBlock("inline-block"), Inherit("inherit"),
@@ -229,10 +243,20 @@ public @interface Style {
   Unit minWidth() default @Unit(type=UnitType.Auto);
   Unit minHeight() default @Unit(type=UnitType.Auto);
 
+  Rgb[] borderColor() default {};
+  BorderStyle[] borderStyle() default {};
+  Unit[] borderWidth() default {};
+  Unit borderWidthLeft() default @Unit(type=UnitType.Auto);
+  Unit borderWidthRight() default @Unit(type=UnitType.Auto);
+  Unit borderWidthTop() default @Unit(type=UnitType.Auto);
+  Unit borderWidthBottom() default @Unit(type=UnitType.Auto);
+  Unit[] borderRadius() default {};
+
   Overflow overflow() default Overflow.Inherit;
   Overflow overflowX() default Overflow.Inherit;
   Overflow overflowY() default Overflow.Inherit;
 
+  Property[] properties() default {};
   Class<? extends Stylizer<?>>[] stylizers() default {};
   /**
    * The insertion-order priority in which to insert the style.
