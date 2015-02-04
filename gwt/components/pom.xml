@@ -21,7 +21,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>net.wetheinter</groupId>
-			<artifactId>xapi-elemental</artifactId>
+			<artifactId>xapi-core-ui-html</artifactId>
 		</dependency>
 
 		<dependency>

@@ -24,6 +24,11 @@
 			<artifactId>xapi-components</artifactId>
 		</dependency>
 
+        <dependency>
+            <groupId>net.wetheinter</groupId>
+            <artifactId>xapi-elemental</artifactId>
+        </dependency>
+        
 		<dependency>
 			<groupId>com.google.gwt</groupId>
 			<artifactId>gwt-elemental</artifactId>
