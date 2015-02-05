@@ -333,6 +333,9 @@ public final class ClassFile implements Annotated {
         return -1;
     }
 
+    public int getThisClassIndex() {
+      return thisClass;
+    }
     /**
      * Returns the class name.
      */
@@ -706,7 +709,7 @@ public final class ClassFile implements Annotated {
     }
 
     /**
-     * Writes a class file represened by this object into an output stream.
+     * Writes a class file represented by this object into an output stream.
      */
     public void write(DataOutputStream out) throws IOException {
         int i, n;
