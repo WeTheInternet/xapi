@@ -24,13 +24,13 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>com.google.gwt</groupId>
+      <groupId>${gwt.groupId}</groupId>
       <artifactId>gwt-dev</artifactId>
       <version>${gwt.version}</version><!--$NO-MVN-MAN-VER$-->
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>com.google.gwt</groupId>
+      <groupId>${gwt.groupId}</groupId>
       <artifactId>gwt-user</artifactId>
       <version>${gwt.version}</version><!--$NO-MVN-MAN-VER$-->
       <scope>test</scope>

@@ -26,7 +26,11 @@
    <artifactId>xapi-core-collect</artifactId>
   </dependency>
   <dependency>
-   <groupId>com.google.gwt</groupId>
+   <groupId>net.wetheinter</groupId>
+   <artifactId>gwt-reflect</artifactId>
+  </dependency>
+  <dependency>
+   <groupId>${gwt.groupId}</groupId>
    <artifactId>gwt-servlet</artifactId>
    <optional>true</optional>
   </dependency>

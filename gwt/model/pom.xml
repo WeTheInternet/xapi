@@ -48,7 +48,7 @@
       <scope>test</scope>
      </dependency>
     <dependency>
-      <groupId>com.google.gwt</groupId>
+      <groupId>${gwt.groupId}</groupId>
       <artifactId>gwt-dev</artifactId>
       <scope>provided</scope>
     </dependency>

@@ -25,17 +25,17 @@
 		</dependency>
 
 		<dependency>
-			<groupId>com.google.gwt</groupId>
+			<groupId>${gwt.groupId}</groupId>
 			<artifactId>gwt-elemental</artifactId>
 		</dependency>
 
 		<dependency>
-			<groupId>com.google.gwt</groupId>
+			<groupId>${gwt.groupId}</groupId>
 			<artifactId>gwt-dev</artifactId>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
-			<groupId>com.google.gwt</groupId>
+			<groupId>${gwt.groupId}</groupId>
 			<artifactId>gwt-user</artifactId>
 		</dependency>
 		<dependency>

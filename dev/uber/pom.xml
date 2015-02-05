@@ -52,11 +52,11 @@
 			<artifactId>xapi-gwtc-impl</artifactId>
 			<exclusions>
 			 <exclusion>
-          <groupId>com.google.gwt</groupId>
+          <groupId>${gwt.groupId}</groupId>
           <artifactId>gwt-dev</artifactId>
         </exclusion>
 			 <exclusion>
-          <groupId>com.google.gwt</groupId>
+          <groupId>${gwt.groupId}</groupId>
           <artifactId>gwt-user</artifactId>
         </exclusion>
 			</exclusions>

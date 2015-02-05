@@ -27,6 +27,14 @@
  </properties>
 
  <dependencies>
+ 
+ 
+  <dependency>
+   <groupId>${gwt.groupId}</groupId>
+   <artifactId>gwt-dev</artifactId>
+   <scope>test</scope>
+  </dependency>
+ 
   <dependency>
    <groupId>net.wetheinter</groupId>
    <artifactId>xapi-dev-source</artifactId>
@@ -102,12 +110,7 @@
   </dependency>
   
   <dependency>
-   <groupId>com.google.gwt</groupId>
-   <artifactId>gwt-dev</artifactId>
-   <scope>test</scope>
-  </dependency>
-  <dependency>
-   <groupId>com.google.gwt</groupId>
+   <groupId>${gwt.groupId}</groupId>
    <artifactId>gwt-user</artifactId>
    <scope>test</scope>
   </dependency>
@@ -153,7 +156,7 @@
      <systemProperties>
       <property>
        <name>gwt.args</name>
-       <value>-ea -userAgents gecko1_8 -out
+       <value>-noincremental -nodevMode -ea -userAgents gecko1_8 -out
         ${project.build.directory}/www-test</value>
       </property>
      </systemProperties>

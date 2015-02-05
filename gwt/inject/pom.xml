@@ -45,22 +45,22 @@
       <artifactId>gwt-method-inject</artifactId>
       <exclusions>
         <exclusion>
-          <groupId>com.google.gwt</groupId>
+          <groupId>${gwt.groupId}</groupId>
           <artifactId>gwt-dev</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>com.google.gwt</groupId>
+          <groupId>${gwt.groupId}</groupId>
           <artifactId>gwt-user</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>com.google.gwt</groupId>
+      <groupId>${gwt.groupId}</groupId>
       <artifactId>gwt-dev</artifactId>
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>com.google.gwt</groupId>
+      <groupId>${gwt.groupId}</groupId>
       <artifactId>gwt-user</artifactId>
       <scope>provided</scope>
     </dependency>

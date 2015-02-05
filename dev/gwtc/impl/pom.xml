@@ -56,12 +56,12 @@
     <!-- Note that you can take xapi-gwtc-api for your client code, -->
     <!-- and only reference xapi-gwtc-impl when you run compiles -->
     <dependency>
-      <groupId>com.google.gwt</groupId>
+      <groupId>${gwt.groupId}</groupId>
       <artifactId>gwt-dev</artifactId>
       <scope>compile</scope>
     </dependency>
     <dependency>
-      <groupId>com.google.gwt</groupId>
+      <groupId>${gwt.groupId}</groupId>
       <artifactId>gwt-user</artifactId>
     </dependency>
     <!-- Must declare compile dependency on JUnit, as we look at JUnit classes

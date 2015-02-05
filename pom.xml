@@ -45,7 +45,8 @@
   <xapi.version>0.5-SNAPSHOT</xapi.version>
   <xapi.test.version>0.5-SNAPSHOT</xapi.test.version>
   <xapi.log.level>INFO</xapi.log.level>
-  <gwt.version>2.7.1</gwt.version>
+  <gwt.groupId>net.wetheinter</gwt.groupId>
+  <gwt.version>2.7.0</gwt.version>
   <gwt.plugin.version>2.6.0</gwt.plugin.version>
   <xapi.gwt.version>${gwt.version}</xapi.gwt.version>
   <playn.version>1.5.1</playn.version>
@@ -570,27 +571,27 @@
 
    <!-- Google modules -->
    <dependency>
-    <groupId>com.google.gwt</groupId>
+    <groupId>${gwt.groupId}</groupId>
     <artifactId>gwt-user</artifactId>
     <version>${gwt.version}</version>
    </dependency>
    <dependency>
-    <groupId>com.google.gwt</groupId>
+    <groupId>${gwt.groupId}</groupId>
     <artifactId>gwt-dev</artifactId>
     <version>${gwt.version}</version>
    </dependency>
    <dependency>
-    <groupId>com.google.gwt</groupId>
+    <groupId>${gwt.groupId}</groupId>
     <artifactId>gwt-servlet</artifactId>
     <version>${gwt.version}</version>
    </dependency>
    <dependency>
-    <groupId>com.google.gwt</groupId>
+    <groupId>${gwt.groupId}</groupId>
     <artifactId>gwt-elemental</artifactId>
     <version>${gwt.version}</version>
    </dependency>
    <dependency>
-    <groupId>com.google.gwt</groupId>
+    <groupId>${gwt.groupId}</groupId>
     <artifactId>gwt-codeserver</artifactId>
     <version>${gwt.version}</version>
    </dependency>

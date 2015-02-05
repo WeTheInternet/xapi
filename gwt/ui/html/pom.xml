@@ -35,7 +35,7 @@
    <artifactId>xapi-gwt-ui-autoui</artifactId>
   </dependency>
   <dependency>
-   <groupId>com.google.gwt</groupId>
+   <groupId>${gwt.groupId}</groupId>
    <artifactId>gwt-elemental</artifactId>
   </dependency>
   
@@ -68,17 +68,17 @@
     <artifactId>xapi-jre-inject</artifactId>
   </dependency>
   <dependency>
-   <groupId>com.google.gwt</groupId>
+   <groupId>${gwt.groupId}</groupId>
    <artifactId>gwt-dev</artifactId>
    <scope>provided</scope>
   </dependency>
   <dependency>
-   <groupId>com.google.gwt</groupId>
+   <groupId>${gwt.groupId}</groupId>
    <artifactId>gwt-codeserver</artifactId>
    <scope>provided</scope>
   </dependency>
   <dependency>
-   <groupId>com.google.gwt</groupId>
+   <groupId>${gwt.groupId}</groupId>
    <artifactId>gwt-user</artifactId>
    <scope>provided</scope>
   </dependency>
@@ -86,6 +86,24 @@
 
   <build>
    <plugins>
+		<plugin>
+			<artifactId>maven-surefire-plugin</artifactId>
+			<configuration>
+				<additionalClasspathElements>
+					<additionalClasspathElement>${project.build.sourceDirectory}</additionalClasspathElement>
+					<additionalClasspathElement>${project.build.testSourceDirectory}</additionalClasspathElement>
+				</additionalClasspathElements>
+				<useManifestOnlyJar>false</useManifestOnlyJar>
+				<forkMode>always</forkMode>
+				<systemProperties>
+					<property>
+						<name>gwt.args</name>
+						<value>-nodevMode -ea -userAgents gecko1_8 -out
+							${project.build.directory}/www-test</value>
+					</property>
+				</systemProperties>
+			</configuration>
+		</plugin>
     <plugin>
      <groupId>org.apache.maven.plugins</groupId>
      <artifactId>maven-source-plugin</artifactId>
