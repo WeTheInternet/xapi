@@ -6,6 +6,8 @@ import java.io.IOException;
 
 import javax.inject.Provider;
 
+import com.google.gwt.reflect.shared.GwtReflect;
+
 import xapi.annotation.common.Property;
 import xapi.collect.api.StringTo;
 import xapi.dev.source.DomBuffer;
@@ -34,98 +36,14 @@ import xapi.util.impl.LazyProvider;
 
 public class HtmlSnippet <T> implements ConvertsValue<T, String> {
 
-  protected static final Runnable NO_OP = new Runnable() {
-    @Override public void run() {}
-  };
-  private final Provider<ConvertsValue<T, DomBuffer>> generator;
-
-  public HtmlSnippet(Provider<ConvertsValue<T, DomBuffer>> generator) {
-    this.generator = new LazyProvider<>(generator);
-  }
-
-  public HtmlSnippet(
-      final Html html,
-      final BeanValueProvider values,
-      final StyleService<?> context
-    ) {
-    assert html != null : "Do not send null @Html to HtmlSnippet!";
-    assert values != null : "Do not send null BeanValueProvider to HtmlSnippet!";
-    generator = new LazyProvider<>(new Provider<ConvertsValue<T, DomBuffer>>() {
-      @Override
-      public ConvertsValue<T, DomBuffer> get() {
-        return new ConvertsValue<T, DomBuffer>() {
-          @Override
-          public DomBuffer convert(T from) {
-            DomBuffer buffer = newBuffer(html, from);
-            Iterable<String> keys = values.getChildKeys();
-            for (El el : html.body()) {
-              DomBuffer child = newChild(buffer, el);
-              for (Property prop : el.properties()) {
-                child.setAttribute(prop.name(), toValue(values, keys, prop.value(), from));
-              }
-              for (Style style : el.style()) {
-                toStyleSheet(style, context);
-              }
-              for (String clsName : el.className()) {
-                child.addClassName(toValue(values, keys, clsName, from));
-              }
-
-              for (String html : el.html()) {
-                MappedTemplate m = new MappedTemplate(html, keys);
-                StringTo<Object> vals = newStringMap(Object.class);
-                values.fillMap("", m, vals, from);
-                child.append(m.applyMap(vals.entries()));
-              }
-            }
-
-            return buffer;
-          }
-
-
-
-        };
-      }
-    });
-  }
-
-  protected String toValue(BeanValueProvider values, Iterable<String> keys, String template, T from) {
-    MappedTemplate m = new MappedTemplate(template, keys);
-    StringTo<Object> vals = newStringMap(Object.class);
-    values.fillMap("", m, vals, from);
-    return m.applyMap(vals.entries());
-  }
-
-  private void toStyleSheet(Style style, StyleService<?> context) {
-    StringBuilder sheet = new StringBuilder();
-
-    String[] names = style.names();
-    for (int i = 0, m = names.length; i < m; ++i) {
-      if (i > 0) {
-        sheet.append(", ");
-      }
-      sheet.append(names[i]);
-    }
-    if (names.length > 0) {
-      sheet.append("{\n");
-    }
-
-    appendTo(sheet, style);
-
-    if (names.length > 0) {
-      sheet.append("}\n");
-    }
-    context.addCss(sheet.toString(), style.priority());
-  }
-
-  public static void appendTo(Appendable sheet, Style style) {
+  public static void appendTo(final Appendable sheet, final Style style) {
     try {
       doAppend(sheet, style);
-    } catch (IOException e) {
+    } catch (final IOException e) {
       X_Log.error(HtmlSnippet.class, "Error rendering",style,e);
     }
   }
-
-  public static void doAppend(Appendable sheet, Style style) throws IOException {
+  public static void doAppend(final Appendable sheet, final Style style) throws IOException {
 
     append("left", sheet, style.left());
     append("right", sheet, style.right());
@@ -183,34 +101,39 @@ public class HtmlSnippet <T> implements ConvertsValue<T, String> {
     }
 
     if (style.fontFamily().length > 0) {
-      Class<? extends FontFamily>[] fonts = style.fontFamily();
-      StringBuilder b = new StringBuilder();
+      final Class<? extends FontFamily>[] fonts = style.fontFamily();
+      final StringBuilder b = new StringBuilder();
       for (int i = 0, m = fonts.length; i < m; i ++ ) {
         if (i > 0) {
           b.append(", ");
         }
         try {
-          b.append(fonts[i].newInstance().name());
-        } catch (Exception e) {
+          if (fonts[i].isInterface()) {
+            final Object value = GwtReflect.invoke(fonts[i], "name", new Class<?>[0], null);
+            b.append(value);
+          } else {
+            b.append(fonts[i].newInstance().name());
+          }
+        } catch (final Throwable e) {
           X_Log.warn(HtmlSnippet.class, "Error loading font family for "+fonts[i], e);
         }
       }
       sheet.append("font-family").append(":").append(b).append(";");
     }
 
-    Transition[] transitions = style.transition();
+    final Transition[] transitions = style.transition();
     if (transitions.length > 0) {
-      StringBuilder b = new StringBuilder();
+      final StringBuilder b = new StringBuilder();
       for (int i = 0, m = transitions.length; i < m; i ++) {
         if (i > 0) {
           b.append(", ");
         }
-        Transition transition = transitions[i];
+        final Transition transition = transitions[i];
         b
-          .append(transition.value())
-          .append(" ")
-          .append(transition.time())
-          .append(transition.unit())
+        .append(transition.value())
+        .append(" ")
+        .append(transition.time())
+        .append(transition.unit())
         ;
       }
       append("transition", sheet, b.toString());
@@ -245,25 +168,25 @@ public class HtmlSnippet <T> implements ConvertsValue<T, String> {
       append("overflow-y", sheet, style.overflowY().styleName());
     }
 
-    for (Property prop : style.properties()) {
+    for (final Property prop : style.properties()) {
       append(prop.name(), sheet, prop.value());
     }
 
-    Unit[] borderRadius = style.borderRadius();
+    final Unit[] borderRadius = style.borderRadius();
     if (borderRadius.length > 0) {
       sheet.append("border-radius:");
-      for (Unit unit : borderRadius) {
+      for (final Unit unit : borderRadius) {
         sheet.append(" ").append(toString(unit));
       }
       sheet.append(";");
     }
 
     append("border", "width", sheet, style.borderWidth(), style.borderWidthTop(),
-      style.borderWidthRight(), style.borderWidthBottom(), style.borderWidthLeft());
+        style.borderWidthRight(), style.borderWidthBottom(), style.borderWidthLeft());
 
     if (style.borderStyle().length > 0) {
       sheet.append("border-style: ");
-      for (BorderStyle borderStyle : style.borderStyle()) {
+      for (final BorderStyle borderStyle : style.borderStyle()) {
         sheet.append(borderStyle.styleName()).append(' ');
       }
       sheet.append(";");
@@ -271,68 +194,52 @@ public class HtmlSnippet <T> implements ConvertsValue<T, String> {
 
     if (style.borderColor().length > 0) {
       sheet.append("border-color: ");
-      for (Rgb borderColor : style.borderColor()) {
+      for (final Rgb borderColor : style.borderColor()) {
         sheet.append(toColor(borderColor)).append(' ');
       }
       sheet.append(";");
     }
   }
 
-  private static void append(String type, Appendable sheet, String value) throws IOException {
+  private static void append(final String type, final Appendable sheet, final String value) throws IOException {
     sheet
-        .append(type)
-        .append(":")
-        .append(value)
-        .append(";");
+    .append(type)
+    .append(":")
+    .append(value)
+    .append(";");
   }
 
-  private static String toColor(Rgb rgb) {
-    if (rgb.opacity() == 0xff)
-      return "#"+toHexString(rgb.r())+toHexString(rgb.g())+toHexString(rgb.b());
-    else
-      return "rgba("+rgb.r()+","+rgb.g()+","+rgb.b()+","+rgb.opacity()+")";
-  }
-
-  private static void appendColor(String type, Appendable sheet, Rgb rgb) throws IOException {
-    sheet.append(type).append(":");
-    if (rgb.opacity() == 0xff) {
+  private static void append(final String type, final Appendable sheet, final Unit unit) throws IOException {
+    if (unit.type() != UnitType.Auto) {
       sheet
-        .append("#")
-        .append(toHexString(rgb.r()))
-        .append(toHexString(rgb.g()))
-        .append(toHexString(rgb.b()))
-      ;
-    } else {
-      sheet
-        .append("rgba(")
-        .append(Integer.toString(rgb.r()))
-        .append(",")
-        .append(Integer.toString(rgb.g()))
-        .append(",")
-        .append(Integer.toString(rgb.b()))
-        .append(",")
-        .append(Integer.toString(rgb.opacity()))
-        .append(")")
-      ;
+      .append(type)
+      .append(":")
+      .append(toString(unit))
+      .append(";");
     }
-    sheet.append(";");
   }
 
-  private static String toHexString(int r) {
-    String s = Integer.toHexString(r);
-    return s.length() == 1 ? "0"+s: s;
+  private static void append(final String type, final Appendable sheet, final Unit[] all,
+      final Unit top, final Unit right, final Unit bottom, final Unit left) throws IOException {
+    append(type, "", sheet, all, top, right, bottom, left);
   }
 
-  private static void append(String type, Appendable sheet, Unit[] all,
-      Unit top, Unit right, Unit bottom, Unit left) throws IOException {
-      append(type, "", sheet, all, top, right, bottom, left);
+  private static void append(final String type0, final String type1, final Appendable sheet, final Unit unit) throws IOException {
+    if (unit.type() != UnitType.Auto) {
+      sheet
+      .append(type0)
+      .append(type1)
+      .append(":")
+      .append(toString(unit))
+      .append(";");
+    }
   }
 
-  private static void append(String type, String typeSuffix, Appendable sheet, Unit[] all,
-      Unit top, Unit right, Unit bottom, Unit left) throws IOException {
+  private static void append(final String type, String typeSuffix, final Appendable sheet, final Unit[] all,
+      final Unit top, final Unit right, final Unit bottom, final Unit left) throws IOException {
     if (all.length > 0) {
       sheet.append(type).append(":");
-      for (Unit unit : all) {
+      for (final Unit unit : all) {
         sheet.append(toString(unit));
       }
       sheet.append(";");
@@ -346,29 +253,46 @@ public class HtmlSnippet <T> implements ConvertsValue<T, String> {
     append(type,"-left"+typeSuffix, sheet, left);
   }
 
-  private static void append(String type, Appendable sheet, Unit unit) throws IOException {
-    if (unit.type() != UnitType.Auto) {
+  private static void appendColor(final String type, final Appendable sheet, final Rgb rgb) throws IOException {
+    sheet.append(type).append(":");
+    if (rgb.opacity() == 0xff) {
       sheet
-        .append(type)
-        .append(":")
-        .append(toString(unit))
-        .append(";");
+      .append("#")
+      .append(toHexString(rgb.r()))
+      .append(toHexString(rgb.g()))
+      .append(toHexString(rgb.b()))
+      ;
+    } else {
+      sheet
+      .append("rgba(")
+      .append(Integer.toString(rgb.r()))
+      .append(",")
+      .append(Integer.toString(rgb.g()))
+      .append(",")
+      .append(Integer.toString(rgb.b()))
+      .append(",")
+      .append(Integer.toString(rgb.opacity()))
+      .append(")")
+      ;
+    }
+    sheet.append(";");
+  }
+
+  private static String toColor(final Rgb rgb) {
+    if (rgb.opacity() == 0xff) {
+      return "#"+toHexString(rgb.r())+toHexString(rgb.g())+toHexString(rgb.b());
+    } else {
+      return "rgba("+rgb.r()+","+rgb.g()+","+rgb.b()+","+rgb.opacity()+")";
     }
   }
 
-  private static void append(String type0, String type1, Appendable sheet, Unit unit) throws IOException {
-    if (unit.type() != UnitType.Auto) {
-      sheet
-      .append(type0)
-      .append(type1)
-      .append(":")
-      .append(toString(unit))
-      .append(";");
-    }
+  private static String toHexString(final int r) {
+    final String s = Integer.toHexString(r);
+    return s.length() == 1 ? "0"+s: s;
   }
 
-  private static String toString(Unit unit) {
-    String important = unit.important() ? " !important" : "";
+  private static String toString(final Unit unit) {
+    final String important = unit.important() ? " !important" : "";
     switch (unit.type()) {
     case Auto:
       return "auto" + important;
@@ -383,21 +307,103 @@ public class HtmlSnippet <T> implements ConvertsValue<T, String> {
     }
   }
 
-  protected DomBuffer newChild(DomBuffer buffer, El el) {
-    return buffer.makeTag(el.tag()).setNewLine(false);
+  protected static final Runnable NO_OP = new Runnable() {
+    @Override public void run() {}
+  };
+
+  private final Provider<ConvertsValue<T, DomBuffer>> generator;
+
+  public HtmlSnippet(
+      final Html html,
+      final BeanValueProvider values,
+      final StyleService<?> context
+      ) {
+    assert html != null : "Do not send null @Html to HtmlSnippet!";
+    assert values != null : "Do not send null BeanValueProvider to HtmlSnippet!";
+    generator = new LazyProvider<>(new Provider<ConvertsValue<T, DomBuffer>>() {
+      @Override
+      public ConvertsValue<T, DomBuffer> get() {
+        return new ConvertsValue<T, DomBuffer>() {
+          @Override
+          public DomBuffer convert(final T from) {
+            final DomBuffer buffer = newBuffer(html, from);
+            final Iterable<String> keys = values.getChildKeys();
+            for (final El el : html.body()) {
+              final DomBuffer child = newChild(buffer, el);
+              for (final Property prop : el.properties()) {
+                child.setAttribute(prop.name(), toValue(values, keys, prop.value(), from));
+              }
+              for (final Style style : el.style()) {
+                toStyleSheet(style, context);
+              }
+              for (final String clsName : el.className()) {
+                child.addClassName(toValue(values, keys, clsName, from));
+              }
+
+              for (final String html : el.html()) {
+                final MappedTemplate m = new MappedTemplate(html, keys);
+                final StringTo<Object> vals = newStringMap(Object.class);
+                values.fillMap("", m, vals, from);
+                child.append(m.applyMap(vals.entries()));
+              }
+            }
+
+            return buffer;
+          }
+
+        };
+      }
+    });
   }
 
-  protected DomBuffer newBuffer(Html html, T from) {
-    return new DomBuffer();
+  public HtmlSnippet(final Provider<ConvertsValue<T, DomBuffer>> generator) {
+    this.generator = new LazyProvider<>(generator);
   }
 
   @Override
-  public String convert(T from) {
+  public String convert(final T from) {
     return toBuffer(from).toString();
   }
 
-  public DomBuffer toBuffer(T from) {
+  public DomBuffer toBuffer(final T from) {
     return generator.get().convert(from);
+  }
+
+  protected DomBuffer newBuffer(final Html html, final T from) {
+    return new DomBuffer();
+  }
+
+  protected DomBuffer newChild(final DomBuffer buffer, final El el) {
+    return buffer.makeTag(el.tag()).setNewLine(false);
+  }
+
+  protected String toValue(final BeanValueProvider values, final Iterable<String> keys, final String template, final T from) {
+    final MappedTemplate m = new MappedTemplate(template, keys);
+    final StringTo<Object> vals = newStringMap(Object.class);
+    values.fillMap("", m, vals, from);
+    return m.applyMap(vals.entries());
+  }
+
+  private void toStyleSheet(final Style style, final StyleService<?> context) {
+    final StringBuilder sheet = new StringBuilder();
+
+    final String[] names = style.names();
+    for (int i = 0, m = names.length; i < m; ++i) {
+      if (i > 0) {
+        sheet.append(", ");
+      }
+      sheet.append(names[i]);
+    }
+    if (names.length > 0) {
+      sheet.append("{\n");
+    }
+
+    appendTo(sheet, style);
+
+    if (names.length > 0) {
+      sheet.append("}\n");
+    }
+    context.addCss(sheet.toString(), style.priority());
   }
 
 }

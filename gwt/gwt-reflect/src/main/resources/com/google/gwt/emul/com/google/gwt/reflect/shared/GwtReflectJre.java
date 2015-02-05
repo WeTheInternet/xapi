@@ -4,6 +4,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URL;
 
+import com.google.gwt.core.shared.GwtIncompatible;
+
 public final class GwtReflectJre {
 
   public static Package getPackage(final String name) {
@@ -25,30 +27,8 @@ public final class GwtReflectJre {
     return pkg;
   }
 
-  /**
-   * @param method
-   * @param params
-   * @return
-   * @throws Throwable
-   */
   public static Object invokeDefaultMethod(final Method method, final Object[] params) throws Throwable {
-    final Object t=  java.lang.reflect.Proxy.newProxyInstance(Thread.currentThread().getContextClassLoader(),
-        new Class<?>[]{method.getDeclaringClass()},new java.lang.reflect.InvocationHandler() {
-      @Override
-      public Object invoke(final Object proxy, final Method method, final Object[] args)
-          throws Throwable {
-        return null;
-      }
-    });
-
-    final Field field = java.lang.invoke.MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
-    field.setAccessible(true);
-    final java.lang.invoke.MethodHandles.Lookup lookup = (java.lang.invoke.MethodHandles.Lookup) field.get(null);
-    final Object value = lookup
-        .unreflectSpecial(method, method.getDeclaringClass())
-        .bindTo(t)
-        .invokeWithArguments();
-    return value;
+    throw new UnsupportedOperationException("Cannot invoke default methods in GWT using a null instance");
   }
 
   private GwtReflectJre() {}

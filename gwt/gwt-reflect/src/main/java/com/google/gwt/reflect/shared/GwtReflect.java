@@ -6,6 +6,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 
 import com.google.gwt.core.client.UnsafeNativeLong;
 import com.google.gwt.core.shared.GWT;
@@ -28,13 +29,12 @@ import com.google.gwt.core.shared.GWT;
  */
 public class GwtReflect {
 
-  private GwtReflect() {}
-
-  public static Object arrayGet(Object array, int index) {
-    if (GWT.isProdMode())
+  public static Object arrayGet(final Object array, final int index) {
+    if (GWT.isProdMode()) {
       return jsniGet(array, index);
-    else
+    } else {
       return Array.get(array, index);
+    }
   }
 
   /**
@@ -45,13 +45,24 @@ public class GwtReflect {
    * @param array - Any array[] instance; java or js
    * @return - The number of elements in the [].
    */
-  public static int arrayLength(Object array) {
-    if (GWT.isProdMode())
+  public static int arrayLength(final Object array) {
+    if (GWT.isProdMode()) {
       return jsniLength(array);
-    else
+    } else {
       return Array.getLength(array);
+    }
   }
-  
+
+  /**
+   * @param  a unique int identified for the class;
+   * in this jvm, though hotswapped classes that should == will have different constIds.
+   * GWT prod overrides this method to return a field we added to Class in supersource.
+   *
+   */
+  public static int constId(final Class<?> c) {
+    return c.hashCode();
+  }
+
   /**
    *
    * In gwt dev and standard jvms, this just calls cls.getConstructor(...).newInstance(...);
@@ -71,24 +82,14 @@ public class GwtReflect {
    * InvocationTargetExceptions are unwrapped for you.  This also forces you to catch Errors,
    * which may very well be thrown by gwt, or by the jvm
    */
-  public static <T> T construct(Class<? extends T> cls, Class<?>[] paramSignature, Object ... params)
-    throws Throwable {
+  public static <T> T construct(final Class<? extends T> cls, final Class<?>[] paramSignature, final Object ... params)
+      throws Throwable {
     assert isAssignable(paramSignature, params) : formatUnassignableError(cls, paramSignature, params);
     try {
       return makeAccessible(magicClass(cls).getDeclaredConstructor(paramSignature)).newInstance(params);
-    } catch (InvocationTargetException e) {
+    } catch (final InvocationTargetException e) {
       throw e.getCause();
     }
-  }
-
-  /**
-   * @param  a unique int identified for the class;
-   * in this jvm, though hotswapped classes that should == will have different constIds.
-   * GWT prod overrides this method to return a field we added to Class in supersource.
-   * 
-   */
-  public static int constId(Class<?> c) {
-    return c.hashCode();
   }
 
   /**
@@ -98,17 +99,17 @@ public class GwtReflect {
    * @return an escaped version of <code>unescaped</code>, suitable for being
    *         enclosed in double quotes in Java source
    */
-  public static String escape(String unescaped) {
+  public static String escape(final String unescaped) {
     int extra = 0;
     for (int in = 0, n = unescaped.length(); in < n; ++in) {
       switch (unescaped.charAt(in)) {
-        case '\0':
-        case '\n':
-        case '\r':
-        case '\"':
-        case '\\':
-          ++extra;
-          break;
+      case '\0':
+      case '\n':
+      case '\r':
+      case '\"':
+      case '\\':
+        ++extra;
+        break;
       }
     }
 
@@ -116,137 +117,48 @@ public class GwtReflect {
       return unescaped;
     }
 
-    char[] oldChars = unescaped.toCharArray();
-    char[] newChars = new char[oldChars.length + extra];
+    final char[] oldChars = unescaped.toCharArray();
+    final char[] newChars = new char[oldChars.length + extra];
     for (int in = 0, out = 0, n = oldChars.length; in < n; ++in, ++out) {
       char c = oldChars[in];
       switch (c) {
-        case '\0':
-          newChars[out++] = '\\';
-          c = '0';
-          break;
-        case '\n':
-          newChars[out++] = '\\';
-          c = 'n';
-          break;
-        case '\r':
-          newChars[out++] = '\\';
-          c = 'r';
-          break;
-        case '\"':
-          newChars[out++] = '\\';
-          c = '"';
-          break;
-        case '\\':
-          newChars[out++] = '\\';
-          c = '\\';
-          break;
+      case '\0':
+        newChars[out++] = '\\';
+        c = '0';
+        break;
+      case '\n':
+        newChars[out++] = '\\';
+        c = 'n';
+        break;
+      case '\r':
+        newChars[out++] = '\\';
+        c = 'r';
+        break;
+      case '\"':
+        newChars[out++] = '\\';
+        c = '"';
+        break;
+      case '\\':
+        newChars[out++] = '\\';
+        c = '\\';
+        break;
       }
       newChars[out] = c;
     }
     return String.valueOf(newChars);
- }
-
-  public static <T> Constructor<T> getDeclaredConstructor(Class<T> c, Class<?> ... params) {
-    try {
-      return makeAccessible(c.getDeclaredConstructor(params));
-    } catch (NoSuchMethodException e) {
-      log("Could not retrieve "+c+"("+ReflectUtil.joinClasses(", ", params),e);
-      throw new RuntimeException(e);
-    }
-  }
-
-  @SuppressWarnings("unchecked")
-  public static <T> Constructor<T>[] getDeclaredConstructors(Class<T> c) {
-    return Constructor[].class.cast(makeAccessible(c.getDeclaredConstructors()));
-  }
-
-
-  public static Field getDeclaredField(Class<?> c, String name) {
-    try {
-      return makeAccessible(c.getDeclaredField(name));
-    } catch (NoSuchFieldException e) {
-      log("Could not retrieve "+c+"."+name,e);
-      throw new RuntimeException(e);
-    }
-  }
-
-  public static Field[] getDeclaredFields(Class<?> c) {
-    return makeAccessible(c.getDeclaredFields());
-  }
-
-  public static Method getDeclaredMethod(Class<?> c, String name, Class<?> ... params) {
-    try {
-      return makeAccessible(c.getDeclaredMethod(name, params));
-    } catch (NoSuchMethodException e) {
-      log("Could not retrieve "+c+"."+name+"("+ReflectUtil.joinClasses(", ", params),e);
-      throw new RuntimeException(e);
-    }
-  }
-
-  public static Method[] getDeclaredMethods(Class<?> c) {
-    return makeAccessible(c.getDeclaredMethods());
-  }
-  
-  public static Package getPackage(String name) {
-    if (GWT.isProdMode()) {
-      return Package.getPackage(name);
-    } else {
-      return GwtReflectJre.getPackage(name);
-    }
-  }
-  
-  public static <T> Constructor<T> getPublicConstructor(Class<T> c, Class<?> ... params) {
-    try {
-      return c.getConstructor(params);
-    } catch (NoSuchMethodException e) {
-      log("Could not retrieve "+c+"("+ReflectUtil.joinClasses(", ", params),e);
-      throw new RuntimeException(e);
-    }
-  }
-
-  @SuppressWarnings("unchecked")
-  public static <T> Constructor<T>[] getPublicConstructors(Class<T> c) {
-    return Constructor[].class.cast(c.getConstructors());
-  }
-
-    public static Field getPublicField(Class<?> c, String name) {
-      try {
-        return c.getField(name);
-      } catch (NoSuchFieldException e) {
-        log("Could not retrieve "+c+"."+name,e);
-        throw new RuntimeException(e);
-      }
-    }
-  
-  public static Field[] getPublicFields(Class<?> c) {
-    return c.getFields();
-  }
-  
-  public static Method getPublicMethod(Class<?> c, String name, Class<?> ... params) {
-    try {
-      return c.getMethod(name, params);
-    } catch (NoSuchMethodException e) {
-      log("Could not retrieve "+c+"."+name+"("+ReflectUtil.joinClasses(", ", params),e);
-      throw new RuntimeException(e);
-    }
-  }
-  
-  public static Method[] getPublicMethods(Class<?> c) {
-    return c.getMethods();
   }
 
   /**
    * Uses reflection to invoke a field getter for you; using this method will net you convenience
    * in a JRE environment, and maximal efficiency in a GWT environment.
-   * 
-   * By directly using this method, GWT will avoid creating an actual Field object full of 
-   * extra metadata you probably don't need, and will simply generate the jsni accessor 
+   *
+   * By directly using this method, GWT will avoid creating an actual Field object full of
+   * extra metadata you probably don't need, and will simply generate the jsni accessor
    * method needed to "reflectively" get objects from your objects. :D
-   * 
+   *
    * All parameters with descriptions starting with a * will only work in GWT if they
    * are either class literals, or directly traceable to class literal fields.
-   * 
+   *
    * @param cls - * The class on which to invoke a field get.
    * @param name - * The name of the field to get from.
    * @param inst - The instance object to get from (null for static fields)
@@ -258,22 +170,22 @@ public class GwtReflect {
    * @throws IllegalAccessException
    */
   @SuppressWarnings("unchecked")
-  public static <T> T fieldGet(Class<?> cls, String name, Object inst) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
-    Field field = jvmGetField(cls, name);
+  public static <T> T fieldGet(final Class<?> cls, final String name, final Object inst) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
+    final Field field = jvmGetField(cls, name);
     return (T)field.get(inst);
   }
-  
+
   /**
    * Uses reflection to invoke a field getter for you; using this method will net you convenience
    * in a JRE environment, and maximal efficiency in a GWT environment.
-   * 
-   * By directly using this method, GWT will avoid creating an actual Field object full of 
-   * extra metadata you probably don't need, and will simply generate the jsni accessor 
+   *
+   * By directly using this method, GWT will avoid creating an actual Field object full of
+   * extra metadata you probably don't need, and will simply generate the jsni accessor
    * method needed to "reflectively" get objects from your objects. :D
-   * 
+   *
    * All parameters with descriptions starting with a * will only work in GWT if they
    * are either class literals, or directly traceable to class literal fields.
-   * 
+   *
    * @param cls - * The class on which to invoke a field get.
    * @param name - * The name of the field to get from.
    * @param inst - The instance object to get from (null for static fields)
@@ -283,22 +195,22 @@ public class GwtReflect {
    * @throws IllegalArgumentException
    * @throws IllegalAccessException
    */
-  public static boolean fieldGetBoolean(Class<?> cls, String name, Object inst) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
-    Field field = jvmGetField(cls, name);
+  public static boolean fieldGetBoolean(final Class<?> cls, final String name, final Object inst) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
+    final Field field = jvmGetField(cls, name);
     return field.getBoolean(inst);
   }
-  
+
   /**
    * Uses reflection to invoke a field getter for you; using this method will net you convenience
    * in a JRE environment, and maximal efficiency in a GWT environment.
-   * 
-   * By directly using this method, GWT will avoid creating an actual Field object full of 
-   * extra metadata you probably don't need, and will simply generate the jsni accessor 
+   *
+   * By directly using this method, GWT will avoid creating an actual Field object full of
+   * extra metadata you probably don't need, and will simply generate the jsni accessor
    * method needed to "reflectively" get objects from your objects. :D
-   * 
+   *
    * All parameters with descriptions starting with a * will only work in GWT if they
    * are either class literals, or directly traceable to class literal fields.
-   * 
+   *
    * @param cls - * The class on which to invoke a field get.
    * @param name - * The name of the field to get from.
    * @param inst - The instance object to get from (null for static fields)
@@ -308,22 +220,23 @@ public class GwtReflect {
    * @throws IllegalArgumentException
    * @throws IllegalAccessException
    */
-  public static byte fieldGetByte(Class<?> cls, String name, Object inst) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
-    Field field = jvmGetField(cls, name);
+  public static byte fieldGetByte(final Class<?> cls, final String name, final Object inst) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
+    final Field field = jvmGetField(cls, name);
     return field.getByte(inst);
   }
-  
+
+
   /**
    * Uses reflection to invoke a field getter for you; using this method will net you convenience
    * in a JRE environment, and maximal efficiency in a GWT environment.
-   * 
-   * By directly using this method, GWT will avoid creating an actual Field object full of 
-   * extra metadata you probably don't need, and will simply generate the jsni accessor 
+   *
+   * By directly using this method, GWT will avoid creating an actual Field object full of
+   * extra metadata you probably don't need, and will simply generate the jsni accessor
    * method needed to "reflectively" get objects from your objects. :D
-   * 
+   *
    * All parameters with descriptions starting with a * will only work in GWT if they
    * are either class literals, or directly traceable to class literal fields.
-   * 
+   *
    * @param cls - * The class on which to invoke a field get.
    * @param name - * The name of the field to get from.
    * @param inst - The instance object to get from (null for static fields)
@@ -333,22 +246,22 @@ public class GwtReflect {
    * @throws IllegalArgumentException
    * @throws IllegalAccessException
    */
-  public static char fieldGetChar(Class<?> cls, String name, Object inst) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
-    Field field = jvmGetField(cls, name);
+  public static char fieldGetChar(final Class<?> cls, final String name, final Object inst) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
+    final Field field = jvmGetField(cls, name);
     return field.getChar(inst);
   }
-  
+
   /**
    * Uses reflection to invoke a field getter for you; using this method will net you convenience
    * in a JRE environment, and maximal efficiency in a GWT environment.
-   * 
-   * By directly using this method, GWT will avoid creating an actual Field object full of 
-   * extra metadata you probably don't need, and will simply generate the jsni accessor 
+   *
+   * By directly using this method, GWT will avoid creating an actual Field object full of
+   * extra metadata you probably don't need, and will simply generate the jsni accessor
    * method needed to "reflectively" get objects from your objects. :D
-   * 
+   *
    * All parameters with descriptions starting with a * will only work in GWT if they
    * are either class literals, or directly traceable to class literal fields.
-   * 
+   *
    * @param cls - * The class on which to invoke a field get.
    * @param name - * The name of the field to get from.
    * @param inst - The instance object to get from (null for static fields)
@@ -358,22 +271,22 @@ public class GwtReflect {
    * @throws IllegalArgumentException
    * @throws IllegalAccessException
    */
-  public static double fieldGetDouble(Class<?> cls, String name, Object inst) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
-    Field field = jvmGetField(cls, name);
+  public static double fieldGetDouble(final Class<?> cls, final String name, final Object inst) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
+    final Field field = jvmGetField(cls, name);
     return field.getDouble(inst);
   }
-  
+
   /**
    * Uses reflection to invoke a field getter for you; using this method will net you convenience
    * in a JRE environment, and maximal efficiency in a GWT environment.
-   * 
-   * By directly using this method, GWT will avoid creating an actual Field object full of 
-   * extra metadata you probably don't need, and will simply generate the jsni accessor 
+   *
+   * By directly using this method, GWT will avoid creating an actual Field object full of
+   * extra metadata you probably don't need, and will simply generate the jsni accessor
    * method needed to "reflectively" get objects from your objects. :D
-   * 
+   *
    * All parameters with descriptions starting with a * will only work in GWT if they
    * are either class literals, or directly traceable to class literal fields.
-   * 
+   *
    * @param cls - * The class on which to invoke a field get.
    * @param name - * The name of the field to get from.
    * @param inst - The instance object to get from (null for static fields)
@@ -383,21 +296,22 @@ public class GwtReflect {
    * @throws IllegalArgumentException
    * @throws IllegalAccessException
    */
-  public static float fieldGetFloat(Class<?> cls, String name, Object inst) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
-    Field field = jvmGetField(cls, name);
+  public static float fieldGetFloat(final Class<?> cls, final String name, final Object inst) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
+    final Field field = jvmGetField(cls, name);
     return field.getFloat(inst);
   }
+
   /**
    * Uses reflection to invoke a field getter for you; using this method will net you convenience
    * in a JRE environment, and maximal efficiency in a GWT environment.
-   * 
-   * By directly using this method, GWT will avoid creating an actual Field object full of 
-   * extra metadata you probably don't need, and will simply generate the jsni accessor 
+   *
+   * By directly using this method, GWT will avoid creating an actual Field object full of
+   * extra metadata you probably don't need, and will simply generate the jsni accessor
    * method needed to "reflectively" get objects from your objects. :D
-   * 
+   *
    * All parameters with descriptions starting with a * will only work in GWT if they
    * are either class literals, or directly traceable to class literal fields.
-   * 
+   *
    * @param cls - * The class on which to invoke a field get.
    * @param name - * The name of the field to get from.
    * @param inst - The instance object to get from (null for static fields)
@@ -407,22 +321,22 @@ public class GwtReflect {
    * @throws IllegalArgumentException
    * @throws IllegalAccessException
    */
-  public static int fieldGetInt(Class<?> cls, String name, Object inst) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
-    Field field = jvmGetField(cls, name);
+  public static int fieldGetInt(final Class<?> cls, final String name, final Object inst) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
+    final Field field = jvmGetField(cls, name);
     return field.getInt(inst);
   }
-  
+
   /**
    * Uses reflection to invoke a field getter for you; using this method will net you convenience
    * in a JRE environment, and maximal efficiency in a GWT environment.
-   * 
-   * By directly using this method, GWT will avoid creating an actual Field object full of 
-   * extra metadata you probably don't need, and will simply generate the jsni accessor 
+   *
+   * By directly using this method, GWT will avoid creating an actual Field object full of
+   * extra metadata you probably don't need, and will simply generate the jsni accessor
    * method needed to "reflectively" get objects from your objects. :D
-   * 
+   *
    * All parameters with descriptions starting with a * will only work in GWT if they
    * are either class literals, or directly traceable to class literal fields.
-   * 
+   *
    * @param cls - * The class on which to invoke a field get.
    * @param name - * The name of the field to get from.
    * @param inst - The instance object to get from (null for static fields)
@@ -432,22 +346,48 @@ public class GwtReflect {
    * @throws IllegalArgumentException
    * @throws IllegalAccessException
    */
-  public static long fieldGetLong(Class<?> cls, String name, Object inst) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
-    Field field = jvmGetField(cls, name);
+  public static long fieldGetLong(final Class<?> cls, final String name, final Object inst) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
+    final Field field = jvmGetField(cls, name);
     return field.getLong(inst);
   }
-  
+
+  /**
+   * Uses reflection to invoke a field setter for you; using this method will net you convenience
+   * in a JRE environment, and maximal efficiency in a GWT environment.
+   *
+   * By directly using this method, GWT will avoid creating an actual Field object full of
+   * extra metadata you probably don't need, and will simply generate the jsni accessor
+   * method needed to "reflectively" get objects from your objects. :D
+   *
+   * All parameters with descriptions starting with a * will only work in GWT if they
+   * are either class literals, or directly traceable to class literal fields.
+   *
+   * @param cls - * The class on which to invoke a field get.
+   * @param name - * The name of the field to get from.
+   * @param inst - The instance object to get from (null for static fields)
+   * @param value - The long value to set to the field.
+   * Calls: cls.get(Declared)Field(name).setLong(inst, value); // Checks for declared methods first
+   * @throws SecurityException
+   * @throws NoSuchFieldException
+   * @throws IllegalArgumentException
+   * @throws IllegalAccessException
+   */
+  public static void fieldGetLong(final Class<?> cls, final String name, final Object inst, final long value) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
+    final Field field = jvmGetField(cls, name);
+    field.setLong(inst, value);
+  }
+
   /**
    * Uses reflection to invoke a field getter for you; using this method will net you convenience
    * in a JRE environment, and maximal efficiency in a GWT environment.
-   * 
-   * By directly using this method, GWT will avoid creating an actual Field object full of 
-   * extra metadata you probably don't need, and will simply generate the jsni accessor 
+   *
+   * By directly using this method, GWT will avoid creating an actual Field object full of
+   * extra metadata you probably don't need, and will simply generate the jsni accessor
    * method needed to "reflectively" get objects from your objects. :D
-   * 
+   *
    * All parameters with descriptions starting with a * will only work in GWT if they
    * are either class literals, or directly traceable to class literal fields.
-   * 
+   *
    * @param cls - * The class on which to invoke a field get.
    * @param name - * The name of the field to get from.
    * @param inst - The instance object to get from (null for static fields)
@@ -457,22 +397,22 @@ public class GwtReflect {
    * @throws IllegalArgumentException
    * @throws IllegalAccessException
    */
-  public static short fieldGetShort(Class<?> cls, String name, Object inst) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
-    Field field = jvmGetField(cls, name);
+  public static short fieldGetShort(final Class<?> cls, final String name, final Object inst) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
+    final Field field = jvmGetField(cls, name);
     return field.getShort(inst);
   }
-  
+
   /**
    * Uses reflection to invoke a field setter for you; using this method will net you convenience
    * in a JRE environment, and maximal efficiency in a GWT environment.
-   * 
-   * By directly using this method, GWT will avoid creating an actual Field object full of 
-   * extra metadata you probably don't need, and will simply generate the jsni accessor 
+   *
+   * By directly using this method, GWT will avoid creating an actual Field object full of
+   * extra metadata you probably don't need, and will simply generate the jsni accessor
    * method needed to "reflectively" get objects from your objects. :D
-   * 
+   *
    * All parameters with descriptions starting with a * will only work in GWT if they
    * are either class literals, or directly traceable to class literal fields.
-   * 
+   *
    * @param cls - * The class on which to invoke a field get.
    * @param name - * The name of the field to get from.
    * @param inst - The instance object to get from (null for static fields)
@@ -484,22 +424,22 @@ public class GwtReflect {
    * @throws IllegalArgumentException
    * @throws IllegalAccessException
    */
-  public static void fieldSet(Class<?> cls, String name, Object inst, Object value) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
-    Field field = jvmGetField(cls, name);
+  public static void fieldSet(final Class<?> cls, final String name, final Object inst, final Object value) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
+    final Field field = jvmGetField(cls, name);
     field.set(inst, value);
   }
-  
+
   /**
    * Uses reflection to invoke a field setter for you; using this method will net you convenience
    * in a JRE environment, and maximal efficiency in a GWT environment.
-   * 
-   * By directly using this method, GWT will avoid creating an actual Field object full of 
-   * extra metadata you probably don't need, and will simply generate the jsni accessor 
+   *
+   * By directly using this method, GWT will avoid creating an actual Field object full of
+   * extra metadata you probably don't need, and will simply generate the jsni accessor
    * method needed to "reflectively" get objects from your objects. :D
-   * 
+   *
    * All parameters with descriptions starting with a * will only work in GWT if they
    * are either class literals, or directly traceable to class literal fields.
-   * 
+   *
    * @param cls - * The class on which to invoke a field get.
    * @param name - * The name of the field to get from.
    * @param inst - The instance object to get from (null for static fields)
@@ -510,22 +450,22 @@ public class GwtReflect {
    * @throws IllegalArgumentException
    * @throws IllegalAccessException
    */
-  public static void fieldSetBoolean(Class<?> cls, String name, Object inst, boolean value) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
-    Field field = jvmGetField(cls, name);
+  public static void fieldSetBoolean(final Class<?> cls, final String name, final Object inst, final boolean value) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
+    final Field field = jvmGetField(cls, name);
     field.setBoolean(inst, value);
   }
-  
+
   /**
    * Uses reflection to invoke a field setter for you; using this method will net you convenience
    * in a JRE environment, and maximal efficiency in a GWT environment.
-   * 
-   * By directly using this method, GWT will avoid creating an actual Field object full of 
-   * extra metadata you probably don't need, and will simply generate the jsni accessor 
+   *
+   * By directly using this method, GWT will avoid creating an actual Field object full of
+   * extra metadata you probably don't need, and will simply generate the jsni accessor
    * method needed to "reflectively" get objects from your objects. :D
-   * 
+   *
    * All parameters with descriptions starting with a * will only work in GWT if they
    * are either class literals, or directly traceable to class literal fields.
-   * 
+   *
    * @param cls - * The class on which to invoke a field get.
    * @param name - * The name of the field to get from.
    * @param inst - The instance object to get from (null for static fields)
@@ -536,22 +476,22 @@ public class GwtReflect {
    * @throws IllegalArgumentException
    * @throws IllegalAccessException
    */
-  public static void fieldSetByte(Class<?> cls, String name, Object inst, byte value) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
-    Field field = jvmGetField(cls, name);
+  public static void fieldSetByte(final Class<?> cls, final String name, final Object inst, final byte value) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
+    final Field field = jvmGetField(cls, name);
     field.setByte(inst, value);
   }
-  
+
   /**
    * Uses reflection to invoke a field setter for you; using this method will net you convenience
    * in a JRE environment, and maximal efficiency in a GWT environment.
-   * 
-   * By directly using this method, GWT will avoid creating an actual Field object full of 
-   * extra metadata you probably don't need, and will simply generate the jsni accessor 
+   *
+   * By directly using this method, GWT will avoid creating an actual Field object full of
+   * extra metadata you probably don't need, and will simply generate the jsni accessor
    * method needed to "reflectively" get objects from your objects. :D
-   * 
+   *
    * All parameters with descriptions starting with a * will only work in GWT if they
    * are either class literals, or directly traceable to class literal fields.
-   * 
+   *
    * @param cls - * The class on which to invoke a field get.
    * @param name - * The name of the field to get from.
    * @param inst - The instance object to get from (null for static fields)
@@ -562,22 +502,22 @@ public class GwtReflect {
    * @throws IllegalArgumentException
    * @throws IllegalAccessException
    */
-  public static void fieldSetChar(Class<?> cls, String name, Object inst, char value) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
-    Field field = jvmGetField(cls, name);
+  public static void fieldSetChar(final Class<?> cls, final String name, final Object inst, final char value) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
+    final Field field = jvmGetField(cls, name);
     field.setChar(inst, value);
   }
-  
+
   /**
    * Uses reflection to invoke a field setter for you; using this method will net you convenience
    * in a JRE environment, and maximal efficiency in a GWT environment.
-   * 
-   * By directly using this method, GWT will avoid creating an actual Field object full of 
-   * extra metadata you probably don't need, and will simply generate the jsni accessor 
+   *
+   * By directly using this method, GWT will avoid creating an actual Field object full of
+   * extra metadata you probably don't need, and will simply generate the jsni accessor
    * method needed to "reflectively" get objects from your objects. :D
-   * 
+   *
    * All parameters with descriptions starting with a * will only work in GWT if they
    * are either class literals, or directly traceable to class literal fields.
-   * 
+   *
    * @param cls - * The class on which to invoke a field get.
    * @param name - * The name of the field to get from.
    * @param inst - The instance object to get from (null for static fields)
@@ -588,22 +528,22 @@ public class GwtReflect {
    * @throws IllegalArgumentException
    * @throws IllegalAccessException
    */
-  public static void fieldSetDouble(Class<?> cls, String name, Object inst, double value) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
-    Field field = jvmGetField(cls, name);
+  public static void fieldSetDouble(final Class<?> cls, final String name, final Object inst, final double value) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
+    final Field field = jvmGetField(cls, name);
     field.setDouble(inst, value);
   }
-  
+
   /**
    * Uses reflection to invoke a field setter for you; using this method will net you convenience
    * in a JRE environment, and maximal efficiency in a GWT environment.
-   * 
-   * By directly using this method, GWT will avoid creating an actual Field object full of 
-   * extra metadata you probably don't need, and will simply generate the jsni accessor 
+   *
+   * By directly using this method, GWT will avoid creating an actual Field object full of
+   * extra metadata you probably don't need, and will simply generate the jsni accessor
    * method needed to "reflectively" get objects from your objects. :D
-   * 
+   *
    * All parameters with descriptions starting with a * will only work in GWT if they
    * are either class literals, or directly traceable to class literal fields.
-   * 
+   *
    * @param cls - * The class on which to invoke a field get.
    * @param name - * The name of the field to get from.
    * @param inst - The instance object to get from (null for static fields)
@@ -614,21 +554,22 @@ public class GwtReflect {
    * @throws IllegalArgumentException
    * @throws IllegalAccessException
    */
-  public static void fieldSetFloat(Class<?> cls, String name, Object inst, float value) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
-    Field field = jvmGetField(cls, name);
+  public static void fieldSetFloat(final Class<?> cls, final String name, final Object inst, final float value) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
+    final Field field = jvmGetField(cls, name);
     field.setFloat(inst, value);
   }
+
   /**
    * Uses reflection to invoke a field setter for you; using this method will net you convenience
    * in a JRE environment, and maximal efficiency in a GWT environment.
-   * 
-   * By directly using this method, GWT will avoid creating an actual Field object full of 
-   * extra metadata you probably don't need, and will simply generate the jsni accessor 
+   *
+   * By directly using this method, GWT will avoid creating an actual Field object full of
+   * extra metadata you probably don't need, and will simply generate the jsni accessor
    * method needed to "reflectively" get objects from your objects. :D
-   * 
+   *
    * All parameters with descriptions starting with a * will only work in GWT if they
    * are either class literals, or directly traceable to class literal fields.
-   * 
+   *
    * @param cls - * The class on which to invoke a field get.
    * @param name - * The name of the field to get from.
    * @param inst - The instance object to get from (null for static fields)
@@ -639,48 +580,22 @@ public class GwtReflect {
    * @throws IllegalArgumentException
    * @throws IllegalAccessException
    */
-  public static void fieldSetInt(Class<?> cls, String name, Object inst, int value) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
-    Field field = jvmGetField(cls, name);
+  public static void fieldSetInt(final Class<?> cls, final String name, final Object inst, final int value) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
+    final Field field = jvmGetField(cls, name);
     field.setInt(inst, value);
   }
-  
+
   /**
    * Uses reflection to invoke a field setter for you; using this method will net you convenience
    * in a JRE environment, and maximal efficiency in a GWT environment.
-   * 
-   * By directly using this method, GWT will avoid creating an actual Field object full of 
-   * extra metadata you probably don't need, and will simply generate the jsni accessor 
+   *
+   * By directly using this method, GWT will avoid creating an actual Field object full of
+   * extra metadata you probably don't need, and will simply generate the jsni accessor
    * method needed to "reflectively" get objects from your objects. :D
-   * 
+   *
    * All parameters with descriptions starting with a * will only work in GWT if they
    * are either class literals, or directly traceable to class literal fields.
-   * 
-   * @param cls - * The class on which to invoke a field get.
-   * @param name - * The name of the field to get from.
-   * @param inst - The instance object to get from (null for static fields)
-   * @param value - The long value to set to the field.
-   * Calls: cls.get(Declared)Field(name).setLong(inst, value); // Checks for declared methods first
-   * @throws SecurityException
-   * @throws NoSuchFieldException
-   * @throws IllegalArgumentException
-   * @throws IllegalAccessException
-   */
-  public static void fieldGetLong(Class<?> cls, String name, Object inst, long value) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
-    Field field = jvmGetField(cls, name);
-    field.setLong(inst, value);
-  }
-  
-  /**
-   * Uses reflection to invoke a field setter for you; using this method will net you convenience
-   * in a JRE environment, and maximal efficiency in a GWT environment.
-   * 
-   * By directly using this method, GWT will avoid creating an actual Field object full of 
-   * extra metadata you probably don't need, and will simply generate the jsni accessor 
-   * method needed to "reflectively" get objects from your objects. :D
-   * 
-   * All parameters with descriptions starting with a * will only work in GWT if they
-   * are either class literals, or directly traceable to class literal fields.
-   * 
+   *
    * @param cls - * The class on which to invoke a field get.
    * @param name - * The name of the field to get from.
    * @param inst - The instance object to get from (null for static fields)
@@ -691,22 +606,108 @@ public class GwtReflect {
    * @throws IllegalArgumentException
    * @throws IllegalAccessException
    */
-  public static void fieldSetShort(Class<?> cls, String name, Object inst, short value) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
-    Field field = jvmGetField(cls, name);
+  public static void fieldSetShort(final Class<?> cls, final String name, final Object inst, final short value) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
+    final Field field = jvmGetField(cls, name);
     field.setShort(inst, value);
   }
-  
+
+  public static <T> Constructor<T> getDeclaredConstructor(final Class<T> c, final Class<?> ... params) {
+    try {
+      return makeAccessible(c.getDeclaredConstructor(params));
+    } catch (final NoSuchMethodException e) {
+      log("Could not retrieve "+c+"("+ReflectUtil.joinClasses(", ", params),e);
+      throw new RuntimeException(e);
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  public static <T> Constructor<T>[] getDeclaredConstructors(final Class<T> c) {
+    return Constructor[].class.cast(makeAccessible(c.getDeclaredConstructors()));
+  }
+  public static Field getDeclaredField(final Class<?> c, final String name) {
+    try {
+      return makeAccessible(c.getDeclaredField(name));
+    } catch (final NoSuchFieldException e) {
+      log("Could not retrieve "+c+"."+name,e);
+      throw new RuntimeException(e);
+    }
+  }
+
+  public static Field[] getDeclaredFields(final Class<?> c) {
+    return makeAccessible(c.getDeclaredFields());
+  }
+
+  public static Method getDeclaredMethod(final Class<?> c, final String name, final Class<?> ... params) {
+    try {
+      return makeAccessible(c.getDeclaredMethod(name, params));
+    } catch (final NoSuchMethodException e) {
+      log("Could not retrieve "+c+"."+name+"("+ReflectUtil.joinClasses(", ", params),e);
+      throw new RuntimeException(e);
+    }
+  }
+
+  public static Method[] getDeclaredMethods(final Class<?> c) {
+    return makeAccessible(c.getDeclaredMethods());
+  }
+
+  public static Package getPackage(final String name) {
+    if (GWT.isProdMode()) {
+      return Package.getPackage(name);
+    } else {
+      return GwtReflectJre.getPackage(name);
+    }
+  }
+
+  public static <T> Constructor<T> getPublicConstructor(final Class<T> c, final Class<?> ... params) {
+    try {
+      return c.getConstructor(params);
+    } catch (final NoSuchMethodException e) {
+      log("Could not retrieve "+c+"("+ReflectUtil.joinClasses(", ", params),e);
+      throw new RuntimeException(e);
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  public static <T> Constructor<T>[] getPublicConstructors(final Class<T> c) {
+    return Constructor[].class.cast(c.getConstructors());
+  }
+
+  public static Field getPublicField(final Class<?> c, final String name) {
+    try {
+      return c.getField(name);
+    } catch (final NoSuchFieldException e) {
+      log("Could not retrieve "+c+"."+name,e);
+      throw new RuntimeException(e);
+    }
+  }
+
+  public static Field[] getPublicFields(final Class<?> c) {
+    return c.getFields();
+  }
+  public static Method getPublicMethod(final Class<?> c, final String name, final Class<?> ... params) {
+    try {
+      return c.getMethod(name, params);
+    } catch (final NoSuchMethodException e) {
+      log("Could not retrieve "+c+"."+name+"("+ReflectUtil.joinClasses(", ", params),e);
+      throw new RuntimeException(e);
+    }
+  }
+
+  public static Method[] getPublicMethods(final Class<?> c) {
+    return c.getMethods();
+  }
+
   /**
    * Uses reflection to invoke a method for you; using this method will net you convenience
    * in a JRE environment, and maximal efficiency in a GWT environment.
-   * 
-   * By directly using this method, GWT will avoid creating an actual Method object full of 
-   * extra metadata you probably don't need, and will simply generate the jsni accessor 
+   *
+   * By directly using this method, GWT will avoid creating an actual Method object full of
+   * extra metadata you probably don't need, and will simply generate the jsni accessor
    * method needed to "reflectively" access your objects.
-   * 
+   *
    * All parameters with descriptions starting with a * will only work in GWT if they
    * are either class literals, or directly traceable to class literal fields.
-   * 
+   *
    * @param cls - * The class on which to invoke a method.
    * @param name - * The name of the method to invoke
    * @param paramTypes - * An array of classes matching that of the method to invoke
@@ -715,37 +716,46 @@ public class GwtReflect {
    * @return - null for void methods, Objects or boxed primitives for everything else.
    * @throws Throwable - Throws throwable because InvocationTargetException is unwrapped for you.
    */
-  public static Object invoke(Class<?> cls, String name, Class<?>[] paramTypes, 
-      Object inst, Object ... params) throws Throwable {
+  public static Object invoke(final Class<?> cls, final String name, final Class<?>[] paramTypes,
+      final Object inst, final Object ... params) throws Throwable {
     assert isAssignable(paramTypes, params) : formatUnassignableError(cls, paramTypes, params)
-      +" for method named "+name;
+    +" for method named "+name;
     Method method;
     try {
       method = makeAccessible(cls.getDeclaredMethod(name, paramTypes));
-    } catch (NoSuchMethodException e) {
+    } catch (final NoSuchMethodException e) {
       method = cls.getMethod(name, paramTypes);
     }
     try {
+      if (
+          !GWT.isScript() &&
+          inst == null &&
+          method.getDeclaringClass().isInterface() &&
+          !Modifier.isAbstract(method.getModifiers())) {
+        return GwtReflectJre.invokeDefaultMethod(method, params);
+      }
       if (method.getReturnType() == void.class) {
         method.invoke(inst, params);
         return null;
       }
-      else return method.invoke(inst, params);
-    } catch (InvocationTargetException e) {
+      else {
+        return method.invoke(inst, params);
+      }
+    } catch (final InvocationTargetException e) {
       throw e.getCause();
     }
   }
-    
+
   public static native Object jsniGet(Object array, int index)
   /*-{
     return array[index];
   }-*/;
-  
+
   public static native int jsniLength(Object array)
   /*-{
     return array.length;
   }-*/;
-  
+
   /**
    * Ensures that a given class has all its reflection data filled in.
    *
@@ -766,11 +776,11 @@ public class GwtReflect {
    * @return - The same class, casted to a compatible generic supertype.
    */
   @SuppressWarnings("unchecked")
-  public static <T> Class<T> magicClass(Class<? extends T> cls) {
+  public static <T> Class<T> magicClass(final Class<? extends T> cls) {
     assert cls != null;
     return Class.class.cast(cls);
   }
-  
+
   /**
    * For the time being you MUST send only class literals to this method.
    * <p>
@@ -795,10 +805,10 @@ public class GwtReflect {
    * @return new T[dimension]
    */
   @SuppressWarnings("unchecked")
-  public static <T> T[] newArray(Class<?> classLit, int size) {
+  public static <T> T[] newArray(final Class<?> classLit, final int size) {
     return (T[])Array.newInstance(classLit, size);
   }
-  
+
   /**
    * For the time being you MUST send only class literals to this method.
    * <p>
@@ -826,27 +836,31 @@ public class GwtReflect {
    * @return new T[dim1][dim2];
    */
   @SuppressWarnings("unchecked")
-  public static <T> T[][] newArray(Class<T> classLit, int dim1, int dim2) {
+  public static <T> T[][] newArray(final Class<T> classLit, final int dim1, final int dim2) {
     return (T[][])Array.newInstance(classLit, dim1, dim2);
   }
-  
-  private static int assignableDepth(Class<?>[] paramSignature, Object[] params) {
-    if (paramSignature.length != params.length)
-    return 0;
+
+  private static int assignableDepth(final Class<?>[] paramSignature, final Object[] params) {
+    if (paramSignature.length != params.length) {
+      return 0;
+    }
     for (int i = paramSignature.length; i-->0;) {
-      Class<?> sig = paramSignature[i];
-      Object param = params[i];
+      final Class<?> sig = paramSignature[i];
+      final Object param = params[i];
       if (sig.isPrimitive()) {
         if (param == null) {
           return i;
         }
         // Gwt dev gets a crack at handling boxing.
-        if (sig.getName().equalsIgnoreCase(param.getClass().getSimpleName()))
+        if (sig.getName().equalsIgnoreCase(param.getClass().getSimpleName())) {
           continue;
-        if (sig == int.class && param instanceof Integer)
+        }
+        if (sig == int.class && param instanceof Integer) {
           continue;
-        if (sig == char.class && param instanceof Character)
+        }
+        if (sig == char.class && param instanceof Character) {
           continue;
+        }
         return i;
       } else {
         if (!sig.isAssignableFrom(param.getClass())) {
@@ -856,37 +870,37 @@ public class GwtReflect {
     }
     return -1;
   }
-  
+
   @UnsafeNativeLong
-  private static Long boxLong(long l) {return new Long(l);}
-  
-  private static String formatUnassignableError(Class<?> cls, Class<?>[] paramSignature, Object ... params){
-    int depth = assignableDepth(paramSignature, params);
+  private static Long boxLong(final long l) {return new Long(l);}
+
+  private static String formatUnassignableError(final Class<?> cls, final Class<?>[] paramSignature, final Object ... params){
+    final int depth = assignableDepth(paramSignature, params);
     return "Unassignable parameter signature for class "+cls.getName()+"; mismatch on parameter "+depth
         +"\n Signature type was "+paramSignature[depth].getName()+"; object was "+
         (params[depth]==null?"null":" a "+params[depth].getClass().getName()+" : "+params[depth]);
   }
-  
-  private static boolean isAssignable(Class<?>[] paramSignature, Object[] params) {
+
+  private static boolean isAssignable(final Class<?>[] paramSignature, final Object[] params) {
     return assignableDepth(paramSignature, params) == -1;
   }
 
-  private static Field jvmGetField(Class<?> cls, String name) throws NoSuchFieldException {
+  private static Field jvmGetField(Class<?> cls, final String name) throws NoSuchFieldException {
     try {
       // Prefer the declared, unaccesible field
       return makeAccessible(cls.getDeclaredField(name));
-    } catch (NoSuchFieldException e0) {
+    } catch (final NoSuchFieldException e0) {
       try {
         // Next, check superclasses for public fields
         return cls.getField(name);
-      } catch (NoSuchFieldException e1) {
+      } catch (final NoSuchFieldException e1) {
         // Finally, check all superclasses for private/protected fields
         while (true) {
           cls = cls.getSuperclass();
           if (cls == Object.class || cls == null) {throw new NoSuchFieldException("No field "+name+" in "+cls);}
           try {
             return makeAccessible(cls.getDeclaredField(name));
-          } catch (NoSuchFieldException e2) {
+          } catch (final NoSuchFieldException e2) {
             continue;
           }
         }
@@ -894,31 +908,36 @@ public class GwtReflect {
     }
   }
 
-  private static void log(String string, Throwable e) {
+  private static void log(final String string, final Throwable e) {
     GWT.log(string, e);
   }
 
-  private static <T extends AccessibleObject> T makeAccessible(T member) {
+  private static <T extends AccessibleObject> T makeAccessible(final T member) {
     // TODO use security manager
-    if (!member.isAccessible())
+    if (!member.isAccessible()) {
       member.setAccessible(true);
+    }
     return member;
   }
 
-  private static <T extends AccessibleObject> T[] makeAccessible(T[] members) {
-    for (T member : members)
+  private static <T extends AccessibleObject> T[] makeAccessible(final T[] members) {
+    for (final T member : members) {
       makeAccessible(member);
+    }
     return members;
   }
-  
-  private static void nullCheck(Object o) {
-    if (o == null)
+
+  private static void nullCheck(final Object o) {
+    if (o == null) {
       throw new NullPointerException("Null is not allowed");
+    }
   }
 
   @UnsafeNativeLong
-  private static long unboxLong(Number l) {
+  private static long unboxLong(final Number l) {
     return l.longValue();
   }
-  
+
+  private GwtReflect() {}
+
 }
