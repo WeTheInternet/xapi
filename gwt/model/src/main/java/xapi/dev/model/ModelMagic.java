@@ -99,10 +99,8 @@ public class ModelMagic implements UnifyAstListener, MagicMethodGenerator {
     String simpleName = mangleName(classLit.getRefType().getName().replace('$', '.'), false);
     String modelName = "xapi.model."+simpleName;
 
-    JDeclaredType existing;
-    try {
-      existing = ast.searchForTypeBySource(modelName);
-    } catch (NoClassDefFoundError e) {
+    JDeclaredType existing = ast.searchForTypeBySource(modelName);
+    if (null == existing) {
       // Type does not yet exist, let's create one!
       StandardGeneratorContext ctx = ast.getRebindPermutationOracle().getGeneratorContext();
       RebindResult result = ModelGeneratorGwt.execImpl(logger,
