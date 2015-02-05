@@ -1,5 +1,8 @@
 package xapi.collect.impl;
 
+import static java.util.Collections.synchronizedMap;
+
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -106,8 +109,12 @@ public class CollectionServiceDefault implements CollectionService{
 
   protected <K, V> Map<K,V> newMap(CollectionOptions opts) {
     if (opts.insertionOrdered()) {
-      assert !opts.concurrent() : "Concurrent and insertion ordered are not supported at the same time";
-      return new LinkedHashMap<K, V>();
+      if (opts.concurrent()) {
+        // TODO: something with better performance...
+        return synchronizedMap(new LinkedHashMap<K, V>());
+      } else {
+        return new LinkedHashMap<K, V>();
+      }
     }
     if (X_Runtime.isMultithreaded()) {
       return new ConcurrentHashMap<K,V>();
