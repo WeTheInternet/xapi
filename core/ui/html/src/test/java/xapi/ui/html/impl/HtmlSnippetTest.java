@@ -16,11 +16,10 @@ import xapi.ui.html.api.Html;
 import xapi.ui.html.api.HtmlSnippet;
 
 @Html(
-  body=@El(
-    className="$name",
-    html="Hello World"
-  )
-)
+  body = @El(
+    className = "$name",
+    html = "Hello World"
+    ))
 @Named(HtmlSnippetTest.NAME)
 public class HtmlSnippetTest {
 
@@ -29,41 +28,50 @@ public class HtmlSnippetTest {
   private StyleService<?> ctx;
 
   @SuppressWarnings("rawtypes")
-  @Before public void setup () {
+  @Before
+  public void setup() {
     ctx = new StyleService<StyleService>() {
-    @Override
-    public StyleService addCss(String css, int priority) {
+      @Override
+      public StyleService addCss(final String css, final int priority) {
 
-      return this;
-    }
+        return this;
+      }
+
+      @Override
+      public void flushCss() {
+      }
     };
   }
 
   @Test
   public void testHelloWorld() {
 
-    HtmlSnippet<HtmlSnippetTest> snippet = createSnippet(this);
+    final HtmlSnippet<HtmlSnippetTest> snippet = createSnippet(this);
 
-    String result = snippet.convert(this);
+    final String result = snippet.convert(this);
 
-    Assert.assertEquals("<div class=\"" + NAME + "\" >Hello World</div>", result);
+    Assert.assertEquals("<div class=\"" + NAME + "\" >Hello World</div>",
+      result);
   }
 
   @Test
   public void testHelloWorld_Static() {
 
-    String result = X_Html.toHtml(HtmlSnippetTest.class, this, ctx);
+    final String result = X_Html.toHtml(HtmlSnippetTest.class, this, ctx);
 
-    Assert.assertEquals("<div class=\"" + NAME + "\" >Hello World</div>", result);
+    Assert.assertEquals("<div class=\"" + NAME + "\" >Hello World</div>",
+      result);
   }
 
   private HtmlSnippet<HtmlSnippetTest> createSnippet(
-      HtmlSnippetTest test) {
-    return new HtmlSnippet<>(test.getClass().getAnnotation(Html.class), toValues(test), ctx );
+    final HtmlSnippetTest test) {
+    return new HtmlSnippet<>(test.getClass().getAnnotation(Html.class),
+      toValues(test), ctx);
   }
 
-  private BeanValueProvider toValues(HtmlSnippetTest test) {
-    UserInterfaceFactory factory = X_Inject.singleton(UserInterfaceFactory.class);
+  private BeanValueProvider toValues(final HtmlSnippetTest test) {
+    final UserInterfaceFactory factory = X_Inject
+      .singleton(UserInterfaceFactory.class);
     return factory.getBeanProvider(test.getClass());
   }
 

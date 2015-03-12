@@ -106,7 +106,7 @@ public class MagicClassInjector implements MagicMethodGenerator, UnifyAstListene
 
     params.getLogger().log(logLevel, "Generated Class Enhancer: " + result);
     JDeclaredType success = params.getAst().searchForTypeBySource(result);
-
+    success = params.getAst().translate(success);
     //Okay, we've generated the correct magic class subtype;
     //Now pull off its static accessor method to enhance and return our class.
 

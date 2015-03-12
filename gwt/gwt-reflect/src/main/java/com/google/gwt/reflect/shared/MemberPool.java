@@ -12,26 +12,26 @@ public interface MemberPool <T> {
 
   <A extends Annotation> A getAnnotation(Class<A> annoCls);
   Annotation[] getAnnotations();
-  Annotation[] getDeclaredAnnotations();
+  Class<?>[] getClasses();
 
   Constructor<T> getConstructor(Class<?> ... params) throws NoSuchMethodException;
-  Constructor<T> getDeclaredConstructor(Class<?> ... params) throws NoSuchMethodException;
   Constructor<T>[] getConstructors();
-  Constructor<T>[] getDeclaredConstructors();
+  Annotation[] getDeclaredAnnotations();
+  Constructor<T> getDeclaredConstructor(Class<?> ... params) throws NoSuchMethodException;
 
-  Field getField(String name) throws NoSuchFieldException;
+  Constructor<T>[] getDeclaredConstructors();
   Field getDeclaredField(String name) throws NoSuchFieldException;
-  Field[] getFields();
   Field[] getDeclaredFields();
+  Method getDeclaredMethod(String name, Class<?> ... params) throws NoSuchMethodException;
+
+  Method[] getDeclaredMethods();
+  Field getField(String name) throws NoSuchFieldException;
+  Field[] getFields();
+  Class<?>[] getInterfaces();
 
   Method getMethod(String name, Class<?> ... params) throws NoSuchMethodException;
-  Method getDeclaredMethod(String name, Class<?> ... params) throws NoSuchMethodException;
   Method[] getMethods();
-  Method[] getDeclaredMethods();
-
   MemberPool<? super T> getSuperclass();
-  Class<?>[] getInterfaces();
-  Class<?>[] getClasses();
   Class<T> getType();
 
 }

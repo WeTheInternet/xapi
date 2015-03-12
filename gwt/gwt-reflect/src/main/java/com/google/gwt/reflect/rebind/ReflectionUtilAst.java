@@ -44,14 +44,20 @@ public final class ReflectionUtilAst {
   }
 
   public static JClassLiteral extractClassLiteral(TreeLogger logger, JMethodCall methodCall, int paramPosition, UnifyAstView ast) throws UnableToCompleteException {
+    return extractClassLiteral(logger, methodCall, paramPosition, ast, true);
+  }
+  
+  public static JClassLiteral extractClassLiteral(TreeLogger logger, 
+      JMethodCall methodCall, int paramPosition, UnifyAstView ast,
+      boolean strict) throws UnableToCompleteException {
     List<JExpression> args = methodCall.getArgs();
     JExpression arg = args.get(paramPosition);
     JClassLiteral classLit = extractClassLiteral(logger, arg, ast, false);
-    if (classLit == null) {
+    if (strict && classLit == null) {
       logger.log(Type.ERROR, "The method " +
         methodCall.getTarget().toSource() + " only accepts class literals." +
         " You sent a " + arg.getClass() + " : " + arg.toSource()+" from method "
-            + methodCall.toSource()+ " with argumetsn "
+            + methodCall.toSource()+ " with arguments "
                 + methodCall.getArgs()+ ";");
       throw new UnableToCompleteException();
     }
@@ -153,7 +159,7 @@ public final class ReflectionUtilAst {
   }
 
   public static String debug(JExpression inst) {
-    return inst.getClass()+" ["+inst.toSource()+"] @"+inst.getSourceInfo();
+    return inst == null ? "null" : inst.getClass()+" ["+inst.toSource()+"] @"+inst.getSourceInfo();
   }
 
   private static void failIfStrict(TreeLogger logger, boolean strict,
