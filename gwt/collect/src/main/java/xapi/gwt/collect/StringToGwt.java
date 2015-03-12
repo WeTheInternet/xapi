@@ -190,7 +190,7 @@ public class StringToGwt <V> extends JavaScriptObject implements StringTo<V>{
     var value = this[key];
     delete this[key];
     this._k.splice(index, 1);
-    return value;
+    return value.v;
   }-*/;
 
   public final void putAll(Iterable<Entry<String,V>> items) {
