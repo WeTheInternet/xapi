@@ -92,7 +92,7 @@
    <groupId>net.wetheinter</groupId>
    <artifactId>gwt-reflect</artifactId>
    <classifier>tests</classifier>
-   <version>2.6.0-SNAPSHOT</version><!--$NO-MVN-MAN-VER$-->
+   <version>2.7.0-SNAPSHOT</version>
   </dependency>
   <!--
   Yes, we're including gwt-test as compile dependency;
