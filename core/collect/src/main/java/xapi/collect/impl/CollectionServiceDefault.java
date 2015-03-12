@@ -111,6 +111,8 @@ public class CollectionServiceDefault implements CollectionService{
     if (opts.insertionOrdered()) {
       if (opts.concurrent()) {
         // TODO: something with better performance...
+        // Perhaps supersource ConcurrentSkipListMap,
+        // and remove all the contention-worries that plague its implementation
         return synchronizedMap(new LinkedHashMap<K, V>());
       } else {
         return new LinkedHashMap<K, V>();
