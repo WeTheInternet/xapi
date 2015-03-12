@@ -1,5 +1,6 @@
 package com.google.gwt.reflect.shared;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -29,6 +30,14 @@ public final class GwtReflectJre {
 
   public static Object invokeDefaultMethod(final Method method, final Object[] params) throws Throwable {
     throw new UnsupportedOperationException("Cannot invoke default methods in GWT using a null instance");
+  }
+  
+  public static <T> T[] newArray(final Class<?> classLit, final int size) {
+    throw new UnsupportedOperationException("Cannot dynamically create arrays in GWT");
+  }
+
+  public static <T> T[][] newArray(final Class<T> classLit, final int dim1, final int dim2) {
+    throw new UnsupportedOperationException("Cannot dynamically create arrays in GWT");
   }
 
   private GwtReflectJre() {}

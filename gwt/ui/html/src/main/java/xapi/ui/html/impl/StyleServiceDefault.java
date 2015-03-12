@@ -23,87 +23,90 @@ import xapi.ui.api.StyleService;
  *
  */
 @SuppressWarnings("rawtypes")
-@SingletonDefault(implFor=StyleService.class)
-public class StyleServiceDefault <T extends StyleService> implements StyleService<T>{
+@SingletonDefault(
+  implFor = StyleService.class)
+public class StyleServiceDefault<T extends StyleService> implements
+StyleService<T> {
 
   private ScheduledCommand printPendingCss;
-  private StringTo<String> pendingCss = newStringMap(String.class);
-  private StringTo<StyleElement> liveCss = newStringMap(StyleElement.class);
+  private final StringTo<String> pendingCss = newStringMap(String.class);
+  private final StringTo<StyleElement> liveCss = newStringMap(StyleElement.class);
 
   @Override
   @SuppressWarnings("unchecked")
-  public T addCss(String css, int priority) {
+  public T addCss(final String css, final int priority) {
     if (printPendingCss == null) {
       css(css);
     }
-    String key = Integer.toString(priority);
-    String was = pendingCss.get(key);
+    final String key = Integer.toString(priority);
+    final String was = pendingCss.get(key);
     if (was == null) {
       pendingCss.put(key, css);
     } else {
-      pendingCss.put(key, was+"\n"+css);
+      pendingCss.put(key, was + "\n" + css);
     }
     return (T) this;
   }
 
-  protected void css(String css) {
+  protected void css(final String css) {
     printPendingCss = new ScheduledCommand() {
       @Override
       public void execute() {
-        printCss();
+        flushCss();
       }
     };
     Scheduler.get().scheduleFinally(printPendingCss);
   }
 
-  private void printCss() {
+  @Override
+  public void flushCss() {
     printPendingCss = null;
-    StringTo<String> pending = pendingCss;
-    synchronized(pendingCss) {
-      String[] keys = pending.keyArray();
+    final StringTo<String> pending = pendingCss;
+    synchronized (pendingCss) {
+      final String[] keys = pending.keyArray();
       Arrays.sort(keys);
-      for (String key : keys) {
-        String css = pending.get(key);
-        StyleElement style = getStyleElement(key);
+      for (final String key : keys) {
+        final String css = pending.get(key);
+        final StyleElement style = getStyleElement(key);
         appendStyle(style, css);
       }
     }
     pendingCss.clear();
   }
 
-
   private native void appendStyle(StyleElement style, String css)
   /*-{
-    if(style.styleSheet){// IE
-      style.styleSheet.cssText = style.styleSheet.cssText + css;
-    } else {
-      style.appendChild($doc.createTextNode(css));
-    }
+		if (style.styleSheet) {// IE
+			style.styleSheet.cssText = style.styleSheet.cssText + css;
+		} else {
+			style.appendChild($doc.createTextNode(css));
+		}
   }-*/;
 
-  private StyleElement getStyleElement(String priority) {
+  private StyleElement getStyleElement(final String priority) {
     StyleElement style = liveCss.get(priority);
     if (style == null) {
-      Node head = Browser.getDocument().getElementsByTagName("head").item(0);
+      final Node head = Browser.getDocument().getElementsByTagName("head")
+        .item(0);
       assert head != null : "The host HTML page does not have a <head> element"
-          + " which is required by CssService";
+        + " which is required by CssService";
       style = Browser.getDocument().createStyleElement();
       style.setAttribute("language", "text/css");
       // need to insert a new element
-      String[] keys = liveCss.keyArray();
+      final String[] keys = liveCss.keyArray();
       try {
         if (keys.length == 0) {
           head.appendChild(style);
         } else {
           Arrays.sort(keys);
-          String largest = keys[keys.length-1];
-          int distanceFromEnd = largest.compareTo(priority);
+          final String largest = keys[keys.length - 1];
+          final int distanceFromEnd = largest.compareTo(priority);
           if (distanceFromEnd < 0) {
             head.appendChild(style);
           } else {
             // Find the tag ahead of our priority so we can insert before it
             String current = keys[0];
-            int distanceFromBeginning = priority.compareTo(current);
+            final int distanceFromBeginning = priority.compareTo(current);
             if (distanceFromBeginning < 0) {
               head.insertBefore(style, liveCss.get(current));
             } else {
@@ -111,32 +114,36 @@ public class StyleServiceDefault <T extends StyleService> implements StyleServic
               if (distanceFromBeginning > distanceFromEnd) {
                 // search backwards
                 current = largest;
-                for (int i = keys.length; --i>0;) {
-                  String next = keys[i];
+                for (int i = keys.length; --i > 0;) {
+                  final String next = keys[i];
                   if (next.compareTo(priority) < 0) {
-                    StyleElement winner = liveCss.get(current);
+                    final StyleElement winner = liveCss.get(current);
                     head.insertBefore(style, winner);
                     return style;
                   }
                   current = next;
                 }
-                throw new RuntimeException("Failed to inject stylesheet @ priority "+priority+" into "+liveCss);
+                throw new RuntimeException(
+                  "Failed to inject stylesheet @ priority " + priority
+                  + " into " + liveCss);
               } else {
                 // search forwards
-                for (int i = 1, m = keys.length; i<m;++i) {
+                for (int i = 1, m = keys.length; i < m; ++i) {
                   current = keys[i];
                   if (current.compareTo(priority) > 0) {
-                    StyleElement winner = liveCss.get(current);
+                    final StyleElement winner = liveCss.get(current);
                     head.insertBefore(style, winner);
                     return style;
                   }
                 }
-                throw new RuntimeException("Failed to inject stylesheet @ priority "+priority+" into "+liveCss);
+                throw new RuntimeException(
+                  "Failed to inject stylesheet @ priority " + priority
+                  + " into " + liveCss);
               }
             }
           }
         }
-      }finally {
+      } finally {
         liveCss.put(priority, style);
       }
     }

@@ -37,8 +37,13 @@
  */
 package xapi.inject;
 
+import static xapi.util.X_Runtime.isJava;
+
+import java.util.ServiceLoader;
+
 import javax.inject.Provider;
 
+import xapi.annotation.gwt.MagicMethod;
 import xapi.annotation.inject.SingletonDefault;
 import xapi.annotation.inject.SingletonOverride;
 import xapi.annotation.reflect.KeepMethod;
@@ -46,7 +51,6 @@ import xapi.except.NotConfiguredCorrectly;
 import xapi.inject.api.Injector;
 import xapi.inject.impl.JavaInjector;
 import xapi.util.api.ReceivesValue;
-import static xapi.util.X_Runtime.*;
 
 /**
  * A static accessor class for in an instance of {@link Injector}.
@@ -113,16 +117,20 @@ import static xapi.util.X_Runtime.*;
 @KeepMethod
 public class X_Inject{
 
-  private X_Inject() {}
+  public static void initialize(final Object o) {
+//      JavaInjector.initialize(o);
+  }
 
   @KeepMethod
-  public static <T> T instance(Class<? super T> cls){
+  @MagicMethod(doNotVisit=true)
+  public static <T> T instance(final Class<? super T> cls){
     if (isJava()) {
-      return JavaInjector.instance(cls);
-    } else
+      return xapi.inject.impl.JavaInjector.instance(cls);
+    } else {
       throw notConfiguredCorrectly();
+    }
   }
- /**
+  /**
    * Returns an injected singleton service implementation object.
    *
    * WARNING: When running in compiled gwt mode with code splitting,
@@ -158,13 +166,36 @@ public class X_Inject{
    *
    */
   @KeepMethod
-  public static <T> T singleton(Class<? super T> cls){
+  @MagicMethod(doNotVisit=true)
+  public static <T> T singleton(final Class<? super T> cls){
     if (isJava()) {
-      Provider<T> provider = JavaInjector.singletonLazy(cls);
+      final Provider<T> provider = xapi.inject.impl.JavaInjector.singletonLazy(cls);
       return provider.get();
-    } else
+    } else {
       throw notConfiguredCorrectly();
+    }
   }
+  @KeepMethod
+  @MagicMethod(doNotVisit=true)
+  public static <T> void singletonAsync(final Class<? super T> cls,final Class<? extends ReceivesValue<T>> callback){
+    if (isJava()){
+      // We expose a Class<? super T> api for all injection methods,
+      // but in the case of async callback injection, we have to allow
+      // extensions of ReceivesValue, so concrete classes will map correctly.
+      // Thus, we must coerce the bounds of the callback class (mostly for gwt)
+      @SuppressWarnings("unchecked")
+      final
+      Class<? super ReceivesValue<T>> receiverCls = Class.class.cast(callback);
+      // we normally enforce "give supertype, get subtype", but in the case of callbacks,
+      // it's "give supertype<T> and a concrete subclass of ReceivesValue<T>,
+      // and we'll inject the callback and the singleton.
+      final ReceivesValue<T> receiver = singleton(receiverCls);
+      singletonAsync(cls, receiver);
+    } else {
+      throw  notConfiguredCorrectly();
+    }
+  }
+
   /**
    *
    * Asynchronously loads an injected singleton service implementation object.
@@ -209,31 +240,14 @@ public class X_Inject{
    *
    */
   @KeepMethod
-  public static <T> void singletonAsync(Class<? super T> cls, ReceivesValue<T> callback){
+  @MagicMethod(doNotVisit=true)
+  public static <T> void singletonAsync(final Class<? super T> cls, final ReceivesValue<T> callback){
     if (isJava()) {
-      Provider<T> provider = JavaInjector.singletonLazy(cls);
+      final Provider<T> provider = xapi.inject.impl.JavaInjector.singletonLazy(cls);
       callback.set(provider.get());
-    } else
+    } else {
       throw notConfiguredCorrectly();
-  }
-
-  @KeepMethod
-  public static <T> void singletonAsync(Class<? super T> cls,Class<? extends ReceivesValue<T>> callback){
-    if (isJava()){
-      // We expose a Class<? super T> api for all injection methods,
-      // but in the case of async callback injection, we have to allow
-      // extensions of ReceivesValue, so concrete classes will map correctly.
-      // Thus, we must coerce the bounds of the callback class (mostly for gwt)
-      @SuppressWarnings("unchecked")
-      Class<? super ReceivesValue<T>> receiverCls = Class.class.cast(callback);
-      // we normally enforce "give supertype, get subtype", but in the case of callbacks,
-      // it's "give supertype<T> and a concrete subclass of ReceivesValue<T>,
-      // and we'll inject the callback and the singleton.
-      ReceivesValue<T> receiver = singleton(receiverCls);
-      singletonAsync(cls, receiver);
     }
-    else
-      throw  notConfiguredCorrectly();
   }
   /**
    * This is a magic method, like gwt.create.
@@ -255,19 +269,19 @@ public class X_Inject{
    *
    */
   @KeepMethod
-  public static <T> Provider<T> singletonLazy(Class<? super T> cls) {
-    if (isJava())
-      return JavaInjector.singletonLazy(cls);
-    else
+  @MagicMethod(doNotVisit=true)
+  public static <T> Provider<T> singletonLazy(final Class<? super T> cls) {
+    if (isJava()) {
+      return xapi.inject.impl.JavaInjector.singletonLazy(cls);
+    } else {
       throw  notConfiguredCorrectly();
+    }
   }
 
-  public static void initialize(Object o) {
-//      JavaInjector.initialize(o);
-  }
   private static NotConfiguredCorrectly  notConfiguredCorrectly() {
     return new NotConfiguredCorrectly("xapi-gwt(-api) must be above gwt-dev on classpath");
   }
+  private X_Inject() {}
 
   /** TODO: use well-known scopes, like UserAgent or Language to create "scope worlds".
 
@@ -276,8 +290,6 @@ public class X_Inject{
     // You are free to use any scope you want;
     // the Global scope will be checked by default if there is no match
     // in the requested scope.
-//     DO NOT USE A PLATFORM ANNOTATION class, LIKE JreAnnotion, UNLESS YOU
-//     REALLY WANT TO HAVE A BINDING THAT ONLY EXISTS IN THAT PLATFORM.
     UserAgent, Language, Authenticated, Request, User, Global;
   }
   // public static <T> T scopedInject(Class scope, Class<T> type);

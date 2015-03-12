@@ -25,7 +25,7 @@ import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
-import com.google.gwt.reflect.shared.GwtReflectJre;
+import com.google.gwt.reflect.shared.GwtReflect;
 
 public class MonolithReflectionGenerator extends IncrementalGenerator{
 
@@ -133,7 +133,7 @@ public class MonolithReflectionGenerator extends IncrementalGenerator{
     
     buffer.createMethod(
       "public Package getPackage(String name, ClassLoader cl)")
-      .returnValue(buffer.addImport(GwtReflectJre.class)+".getPackage(name, cl);")
+      .returnValue(buffer.addImport(GwtReflect.class.getName()+"Jre")+".getPackage(name, cl);")
     ;
     
     // Now, let's generate support for arrays!

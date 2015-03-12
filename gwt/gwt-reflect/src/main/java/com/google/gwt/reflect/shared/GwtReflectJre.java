@@ -1,5 +1,6 @@
 package com.google.gwt.reflect.shared;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -49,6 +50,16 @@ public final class GwtReflectJre {
         .bindTo(t)
         .invokeWithArguments();
     return value;
+  }
+
+  public static <T> T[] newArray(final Class<T> classLit, final int size) {
+    return (T[])Array.newInstance(classLit, size);
+  }
+
+
+  @SuppressWarnings("unchecked")
+  public static <T> T[][] newArray(final Class<T> classLit, final int dim1, final int dim2) {
+    return (T[][])Array.newInstance(classLit, dim1, dim2);
   }
 
   private GwtReflectJre() {}

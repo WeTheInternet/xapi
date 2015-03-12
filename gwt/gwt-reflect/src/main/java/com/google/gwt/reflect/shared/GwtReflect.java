@@ -86,7 +86,7 @@ public class GwtReflect {
       throws Throwable {
     assert isAssignable(paramSignature, params) : formatUnassignableError(cls, paramSignature, params);
     try {
-      return makeAccessible(magicClass(cls).getDeclaredConstructor(paramSignature)).newInstance(params);
+      return makeAccessible(cls.getDeclaredConstructor(paramSignature)).newInstance(params);
     } catch (final InvocationTargetException e) {
       throw e.getCause();
     }
@@ -804,9 +804,8 @@ public class GwtReflect {
    * @param size - The size of the new array.
    * @return new T[dimension]
    */
-  @SuppressWarnings("unchecked")
-  public static <T> T[] newArray(final Class<?> classLit, final int size) {
-    return (T[])Array.newInstance(classLit, size);
+  public static <T> T[] newArray(final Class<T> classLit, final int size) {
+    return GwtReflectJre.newArray(classLit, size);
   }
 
   /**
@@ -835,9 +834,8 @@ public class GwtReflect {
    * @param dim1 - The size of the new array's outer dimension.
    * @return new T[dim1][dim2];
    */
-  @SuppressWarnings("unchecked")
   public static <T> T[][] newArray(final Class<T> classLit, final int dim1, final int dim2) {
-    return (T[][])Array.newInstance(classLit, dim1, dim2);
+    return GwtReflectJre.newArray(classLit, dim1, dim2);
   }
 
   private static int assignableDepth(final Class<?>[] paramSignature, final Object[] params) {

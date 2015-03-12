@@ -3,6 +3,8 @@
  */
 package xapi.elemental.impl;
 
+import com.google.gwt.core.shared.GwtIncompatible;
+
 import elemental.dom.Element;
 
 import xapi.annotation.inject.SingletonDefault;
@@ -39,13 +41,22 @@ implements ElementalService {
     return toElementBuilder(cls, cls);
   }
 
+  static class UnsupportedConverter <T, E> implements ConvertsValue<T, E> {
+
+    @Override
+    public E convert(T from) {
+      throw new UnsupportedOperationException();
+    }
+    
+  }
   @Override
   public <T, E extends Element> ConvertsValue<T, PotentialNode<E>> toElementBuilder(final Class<? super T> cls, Class<?> template) {
-    return new ConvertsValue<T, PotentialNode<E>>() {
+    return new UnsupportedConverter<T, PotentialNode<E>>() {
       @SuppressWarnings({
           "unchecked", "rawtypes"
       } )
       @Override
+      @GwtIncompatible
       public PotentialNode<E> convert(T from) {
         Class c = cls;// Erase generics; gwt doesn't like them much
         return new PotentialNode<E>(X_Html.toHtml(template, c, from, ElementalServiceDefault.this));

@@ -8,8 +8,10 @@ package xapi.ui.api;
  *
  */
 @SuppressWarnings("rawtypes")
-public interface StyleService <T extends StyleService> {
+public interface StyleService<T extends StyleService> {
 
   T addCss(String css, int priority);
+
+  void flushCss();
 
 }
