@@ -54,7 +54,7 @@ public class WebComponentBuilder {
     return new WebComponentBuilder(htmlElementPrototype());
   }
 
-  public static WebComponentBuilder create(JavaScriptObject proto) {
+  public static WebComponentBuilder create(final JavaScriptObject proto) {
     return new WebComponentBuilder(proto);
   }
 
@@ -64,6 +64,7 @@ public class WebComponentBuilder {
    }-*/;
 
   private final WebComponentPrototype prototype;
+  private String superTag;
 
   public WebComponentBuilder(JavaScriptObject prototype) {
     if (prototype == null) {
@@ -72,16 +73,16 @@ public class WebComponentBuilder {
     this.prototype = (WebComponentPrototype) prototype;
   }
 
-  public WebComponentBuilder attachedCallback(Runnable function) {
+  public WebComponentBuilder attachedCallback(final Runnable function) {
     return attachedCallback(wrapRunnable(function));
   }
 
   public <E extends Element> WebComponentBuilder attachedCallback(
-      Consumer<E> function) {
+    final Consumer<E> function) {
     return attachedCallback(wrapConsumerOfThis(function));
   }
 
-  public WebComponentBuilder attachedCallback(JavaScriptObject function) {
+  public WebComponentBuilder attachedCallback(final JavaScriptObject function) {
     if (prototype.attachedCallback() == null) {
       prototype.attachedCallback(function);
     } else {
@@ -93,11 +94,11 @@ public class WebComponentBuilder {
   }
 
   public <E extends Element> WebComponentBuilder attributeChangedCallback(
-      OnWebComponentAttributeChanged function) {
+    final OnWebComponentAttributeChanged function) {
     return attachedCallback(wrapWebComponentChangeHandler(function));
   }
 
-  public WebComponentBuilder attributeChangedCallback(JavaScriptObject function) {
+  public WebComponentBuilder attributeChangedCallback(final JavaScriptObject function) {
     if (prototype.attributeChangedCallback() == null) {
       prototype.attributeChangedCallback(function);
     } else {
@@ -108,12 +109,12 @@ public class WebComponentBuilder {
     return this;
   }
 
-  public WebComponentBuilder createdCallback(Runnable function) {
+  public WebComponentBuilder createdCallback(final Runnable function) {
     return createdCallback(wrapRunnable(function));
   }
 
   public <E extends Element> WebComponentBuilder createdCallback(
-      Consumer<E> function) {
+    final Consumer<E> function) {
     return createdCallback(wrapConsumerOfThis(function));
   }
 
@@ -126,7 +127,7 @@ public class WebComponentBuilder {
       prototype.createdCallback(JsFunctionSupport.merge(
         function,
         prototype.createdCallback()
-      ));
+        ));
     }
     return this;
   }
@@ -138,16 +139,16 @@ public class WebComponentBuilder {
     };
   }-*/;
 
-  public WebComponentBuilder detachedCallback(Runnable function) {
+  public WebComponentBuilder detachedCallback(final Runnable function) {
     return detachedCallback(wrapRunnable(function));
   }
 
   public <E extends Element> WebComponentBuilder detachedCallback(
-      Consumer<E> function) {
+    final Consumer<E> function) {
     return detachedCallback(wrapConsumerOfThis(function));
   }
 
-  public WebComponentBuilder detachedCallback(JavaScriptObject function) {
+  public WebComponentBuilder detachedCallback(final JavaScriptObject function) {
     if (prototype.detachedCallback() == null) {
       prototype.detachedCallback(function);
     } else {
@@ -160,28 +161,38 @@ public class WebComponentBuilder {
 
   public native JavaScriptObject build()
   /*-{
-		return {
-			prototype : this.@xapi.components.impl.WebComponentBuilder::prototype
-		};
+  	var p = {
+  		prototype : this.@xapi.components.impl.WebComponentBuilder::prototype
+  	};
+  	if (this.@xapi.components.impl.WebComponentBuilder::superTag != null) {
+  	  p['extends'] = this.@xapi.components.impl.WebComponentBuilder::superTag;
+  	}
+  	return p;
   }-*/;
 
   public WebComponentBuilder extend() {
     return new WebComponentBuilder(copy(prototype));
   }
 
-  public WebComponentBuilder addValue(String name, JavaScriptObject value) {
+  public WebComponentBuilder setExtends(final String tagName) {
+
+    this.superTag = tagName;
+    return this;
+  }
+
+  public WebComponentBuilder addValue(final String name, final JavaScriptObject value) {
     return addValue(name, value, false, true, true);
   }
 
-  public WebComponentBuilder addValueReadOnly(String name,
-      JavaScriptObject value) {
+  public WebComponentBuilder addValueReadOnly(final String name,
+    final JavaScriptObject value) {
     return addValue(name, value, false, true, false);
   }
 
   public native WebComponentBuilder addValue(String name,
-      JavaScriptObject value, boolean enumerable, boolean configurable,
-      boolean writeable)
-  /*-{
+    JavaScriptObject value, boolean enumerable, boolean configurable,
+    boolean writeable)
+    /*-{
 		Object
 				.defineProperty(
 						this.@xapi.components.impl.WebComponentBuilder::prototype,
@@ -194,24 +205,24 @@ public class WebComponentBuilder {
 		return this;
   }-*/;
 
-  public <T> WebComponentBuilder addProperty(String name, Supplier<T> get,
-      Consumer<T> set) {
+  public <T> WebComponentBuilder addProperty(final String name, final Supplier<T> get,
+    final Consumer<T> set) {
     return addProperty(name, get, set, true, false);
   }
 
-  public <T> WebComponentBuilder addPropertyReadOnly(String name,
-      Supplier<T> get) {
+  public <T> WebComponentBuilder addPropertyReadOnly(final String name,
+    final Supplier<T> get) {
     return addProperty(name, get, null, true, false);
   }
 
-  public <T> WebComponentBuilder addPropertyWriteOnly(String name,
-      Consumer<T> set) {
+  public <T> WebComponentBuilder addPropertyWriteOnly(final String name,
+    final Consumer<T> set) {
     return addProperty(name, null, set, true, false);
   }
 
   public native <T> WebComponentBuilder addProperty(String name,
-      Supplier<T> get, Consumer<T> set, boolean enumerable, boolean configurable)
-  /*-{
+    Supplier<T> get, Consumer<T> set, boolean enumerable, boolean configurable)
+    /*-{
 		var proto = {
 			enumerable : enumerable,
 			configurable : configurable,
@@ -235,23 +246,23 @@ public class WebComponentBuilder {
 		return this;
   }-*/;
 
-  public WebComponentBuilder addPropertyInt(String name, IntSupplier get,
-      IntConsumer set) {
+  public WebComponentBuilder addPropertyInt(final String name, final IntSupplier get,
+    final IntConsumer set) {
     return addPropertyInt(name, get, set, true, false);
   }
 
-  public WebComponentBuilder addPropertyIntReadOnly(String name, IntSupplier get) {
+  public WebComponentBuilder addPropertyIntReadOnly(final String name, final IntSupplier get) {
     return addPropertyInt(name, get, null, true, false);
   }
 
-  public WebComponentBuilder addPropertyIntWriteOnly(String name,
-      IntConsumer set) {
+  public WebComponentBuilder addPropertyIntWriteOnly(final String name,
+    final IntConsumer set) {
     return addPropertyInt(name, null, set, true, false);
   }
 
   public native WebComponentBuilder addPropertyInt(String name,
-      IntSupplier get, IntConsumer set, boolean enumerable, boolean configurable)
-  /*-{
+    IntSupplier get, IntConsumer set, boolean enumerable, boolean configurable)
+    /*-{
 		var proto = {
 			enumerable : enumerable,
 			configurable : configurable,
@@ -277,26 +288,26 @@ public class WebComponentBuilder {
 		return this;
   }-*/;
 
-  public WebComponentBuilder addPropertyLong(String name, LongSupplier get,
-      LongConsumer set) {
+  public WebComponentBuilder addPropertyLong(final String name, final LongSupplier get,
+    final LongConsumer set) {
     return addPropertyLong(name, get, set, true, false);
   }
 
-  public WebComponentBuilder addPropertyLongReadOnly(String name,
-      LongSupplier get) {
+  public WebComponentBuilder addPropertyLongReadOnly(final String name,
+    final LongSupplier get) {
     return addPropertyLong(name, get, null, true, false);
   }
 
-  public WebComponentBuilder addPropertyLongWriteOnly(String name,
-      LongConsumer set) {
+  public WebComponentBuilder addPropertyLongWriteOnly(final String name,
+    final LongConsumer set) {
     return addPropertyLong(name, null, set, true, false);
   }
 
   @UnsafeNativeLong
   public native WebComponentBuilder addPropertyLong(String name,
-      LongSupplier get, LongConsumer set, boolean enumerable,
-      boolean configurable)
-  /*-{
+    LongSupplier get, LongConsumer set, boolean enumerable,
+    boolean configurable)
+    /*-{
 		var proto = {
 			enumerable : enumerable,
 			configurable : configurable,
@@ -322,26 +333,26 @@ public class WebComponentBuilder {
 		return this;
   }-*/;
 
-  public WebComponentBuilder addPropertyLongNativeUnbox(String name,
-      LongSupplier get, LongConsumer set) {
+  public WebComponentBuilder addPropertyLongNativeUnbox(final String name,
+    final LongSupplier get, final LongConsumer set) {
     return addPropertyLongNativeUnbox(name, get, set, true, false);
   }
 
-  public WebComponentBuilder addPropertyLongNativeUnboxReadOnly(String name,
-      LongSupplier get) {
+  public WebComponentBuilder addPropertyLongNativeUnboxReadOnly(final String name,
+    final LongSupplier get) {
     return addPropertyLongNativeUnbox(name, get, null, true, false);
   }
 
-  public WebComponentBuilder addPropertyLongNativeUnboxWriteOnly(String name,
-      LongConsumer set) {
+  public WebComponentBuilder addPropertyLongNativeUnboxWriteOnly(final String name,
+    final LongConsumer set) {
     return addPropertyLongNativeUnbox(name, null, set, true, false);
   }
 
   @UnsafeNativeLong
   public native WebComponentBuilder addPropertyLongNativeUnbox(String name,
-      LongSupplier get, LongConsumer set, boolean enumerable,
-      boolean configurable)
-  /*-{
+    LongSupplier get, LongConsumer set, boolean enumerable,
+    boolean configurable)
+    /*-{
 		var proto = {
 			enumerable : enumerable,
 			configurable : configurable,

@@ -116,27 +116,27 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
   private JClassType           webComponentCallback;
 
   private static final String BOX_HELPER = "@" + JsSupport.class.getName()
-      + "::";
+    + "::";
 
   private static final String JSO_PARAM  =
-      "Lcom/google/gwt/core/client/JavaScriptObject;";
+    "Lcom/google/gwt/core/client/JavaScriptObject;";
 
   @Override
   public RebindResult generateIncrementally(final TreeLogger logger,
-      final GeneratorContext context, final String typeName)
-          throws UnableToCompleteException {
+    final GeneratorContext context, final String typeName)
+      throws UnableToCompleteException {
     final JClassType type = context.getTypeOracle().findType(typeName);
     final WebComponent component = type.getAnnotation(WebComponent.class);
     if (component == null) {
       logger.log(Type.ERROR, "Type " + type.getQualifiedSourceName()
-          + " missing required annotation, " + WebComponent.class.getName());
+        + " missing required annotation, " + WebComponent.class.getName());
       throw new UnableToCompleteException();
     }
     if (component.tagName().indexOf('-') == -1) {
       logger.log(Type.ERROR,
-          "WebCompoenent for " + type.getQualifiedSourceName()
-          + " has invalid tag name " + component.tagName() + "; "
-          + "Custom elements must contain the - character");
+        "WebCompoenent for " + type.getQualifiedSourceName()
+        + " has invalid tag name " + component.tagName() + "; "
+        + "Custom elements must contain the - character");
       throw new UnableToCompleteException();
     }
     final String pkg = type.getPackage().getName();
@@ -159,9 +159,9 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
     ("public final class " + factoryName)
     .setPackage(pkg);
     final ClassBuffer out =
-        sourceBuilder.getClassBuffer()
-        .addInterface(
-            WebComponentFactory.class.getCanonicalName() + "<" + simple + ">");
+      sourceBuilder.getClassBuffer()
+      .addInterface(
+        WebComponentFactory.class.getCanonicalName() + "<" + simple + ">");
     final String builder = out.addImport(WebComponentBuilder.class);
     final String support = out.addImport(WebComponentSupport.class);
     final String jso = out.addImport(JavaScriptObject.class);
@@ -195,6 +195,10 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
     out
     .println(builder + " builder = " + builder + ".create(" + proto + ");");
 
+    if (component.extendProto().length > 1) {
+      out
+        .println("builder.setExtends(\"" + component.extendProto()[1] + "\");");
+    }
     final Set<String> seen = new HashSet<>();
     for (int i = flattened.size(); i --> 0; ) {
       final JClassType key = flattened.get(i);
@@ -214,8 +218,8 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
     .outdent()
     .println("}")
     .createMethod(
-        "public " + simpleName(type) + " newComponent()")
-        .returnValue("ctor.get()");
+      "public " + simpleName(type) + " newComponent()")
+      .returnValue("ctor.get()");
     ;
     final String src = sourceBuilder.toString();
     logger.log(logLevel(typeName), "\nWeb Component Factory: \n" + src);
@@ -233,8 +237,8 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
 
   protected Type logLevel(final String typeName) {
     return
-        //        BooleanPickerElement.class.getName().equals(typeName) ? Type.INFO : Type.TRACE;
-        Type.DEBUG;
+      //        BooleanPickerElement.class.getName().equals(typeName) ? Type.INFO : Type.TRACE;
+      Type.DEBUG;
   }
 
   private String accessorName(final JMethod method) {
@@ -255,18 +259,18 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
   }
 
   private void generateDefaultFunctionAccessor(final TreeLogger logger,
-      final JMethod method, final MethodData data, final ClassBuffer cls, final Set<String> helpers) {
+    final JMethod method, final MethodData data, final ClassBuffer cls, final Set<String> helpers) {
     final String qualified = method.getEnclosingType().getQualifiedSourceName();
     final String typeName = cls.addImport(qualified);
     cls.addImport(JavaScriptObject.class);
     final MethodBuffer out =
-        cls
-        .createMethod(
-            "public static JavaScriptObject " + data.accessorName + "()")
-            .addParameters(typeName + " o")
-            .makeJsni()
-            .addImports(JavaScriptObject.class)
-            .print("var func = o.@" + qualified + "::" + method.getName() + "(");
+      cls
+      .createMethod(
+        "public static JavaScriptObject " + data.accessorName + "()")
+        .addParameters(typeName + " o")
+        .makeJsni()
+        .addImports(JavaScriptObject.class)
+        .print("var func = o.@" + qualified + "::" + method.getName() + "(");
     if (data.useJsniWildcard) {
       out.print("*");
     } else {
@@ -305,7 +309,21 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
     out
     .println("func(this");
     for (final Character c : boxers.keySet()) {
-      out.print(", ").println(boxers.get(c));
+      BuiltInType type = data.type;
+      if (type == null) {
+        type = BuiltInType.attributeChanged;
+      }
+      out.print(", ");
+      switch (type) {
+      case attributeChanged:
+        out.println(boxers.get(c));
+        break;
+      default:
+        // for onCreated, onAttached and onDetached, we supply this reference
+        // as the element argument to the method, as a convenience
+        out.println("this");
+        break;
+      }
     }
     out.print(")");
     if (hasReturn) {
@@ -321,8 +339,8 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
   }
 
   private void generateFunctionAccessors(final TreeLogger logger,
-      final GeneratorContext context, final JClassType iface,
-      final Multimap<String, MethodData> results, final boolean hasCallbacks) throws UnableToCompleteException {
+    final GeneratorContext context, final JClassType iface,
+    final Multimap<String, MethodData> results, final boolean hasCallbacks) throws UnableToCompleteException {
     if (iface.getMethods().length == 0) {
       return;
     }
@@ -349,6 +367,9 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
     }
     final Set<String> helpers = new HashSet<String>();
     for (final JMethod method : iface.getMethods()) {
+      if (method.isStatic()) {
+        continue;
+      }
       if (method.getAnnotation(NativelySupported.class) != null) {
         // Do not blow away natively supported methods!
         continue;
@@ -360,7 +381,7 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
           data.type = BuiltInType.find(method);
         }
         final WebComponentMethod metaData =
-            method.getAnnotation(WebComponentMethod.class);
+          method.getAnnotation(WebComponentMethod.class);
         if (metaData != null) {
           if (!metaData.name().isEmpty()) {
             data.name = metaData.name();
@@ -393,8 +414,8 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
                 data = previous;
               } else {
                 logger.log(Type.ERROR, "Duplicate property definitions found for web component member with "
-                    + "name [" + previous.name + "].  Conflict between " + previous.accessorName + " and "
-                    + data.accessorName);
+                  + "name [" + previous.name + "].  Conflict between " + previous.accessorName + " and "
+                  + data.accessorName);
                 throw new UnableToCompleteException();
               }
             }
@@ -422,10 +443,10 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
             results.putAll(name, existing);
           } else {
             logger.log(Type.WARN, "Unable to generate web component implementation for "
-                + method.getReadableDeclaration() +
-                " of " + method.getEnclosingType().getQualifiedSourceName()
-                + ".  The underlying method will only work correctly "
-                + "if supplied by the underlying native element");
+              + method.getReadableDeclaration() +
+              " of " + method.getEnclosingType().getQualifiedSourceName()
+              + ".  The underlying method will only work correctly "
+              + "if supplied by the underlying native element");
           }
         }
       }
@@ -440,11 +461,11 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
   }
 
   private void generateGetter(final TreeLogger logger, final String debeaned, final MethodData data, final JMethod method,
-      final SourceBuilder<PrintWriter> source, final Set<String> helpers) {
+    final SourceBuilder<PrintWriter> source, final Set<String> helpers) {
     final MethodBuffer out = source.getClassBuffer()
-        .createMethod("public static JavaScriptObject get_" + method.getName())
-        .addImports(JavaScriptObject.class)
-        .makeJsni();
+      .createMethod("public static JavaScriptObject get_" + method.getName())
+      .addImports(JavaScriptObject.class)
+      .makeJsni();
     final String boxingPrefix = maybeBoxPrefix(logger, method.getReturnType(), true, out, source.getClassBuffer(), helpers);
     final String boxingSuffix = maybeBoxSuffix(logger, method.getReturnType(), true, out);
     out
@@ -468,21 +489,22 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
 
   }
 
-  private String generatePrototypeAccessor(final ClassBuffer out, final String extendProto,
-      final String jso) {
+  private String generatePrototypeAccessor(final ClassBuffer out,
+    final String[] extendProto,
+    final String jso) {
     out
     .createMethod("private static native " + jso + " proto()")
     .setUseJsni(true)
-    .println("return Object.create(" + extendProto + ".prototype);");
+    .println("return Object.create(" + extendProto[0] + ".prototype);");
     return "proto()";
   }
 
   private void generateSetter(final TreeLogger logger, final String debeaned, final MethodData data, final JMethod method,
-      final SourceBuilder<PrintWriter> source, final Set<String> helpers) {
+    final SourceBuilder<PrintWriter> source, final Set<String> helpers) {
     final MethodBuffer out = source.getClassBuffer()
-        .createMethod("public static JavaScriptObject set_" + method.getName())
-        .addImports(JavaScriptObject.class)
-        .makeJsni();
+      .createMethod("public static JavaScriptObject set_" + method.getName())
+      .addImports(JavaScriptObject.class)
+      .makeJsni();
     final String boxingPrefix = maybeBoxPrefix(logger, method.getParameterTypes()[0], false, out, source.getClassBuffer(), helpers);
     final String boxingSuffix = maybeBoxSuffix(logger, method.getParameterTypes()[0], false, out);
     final boolean fluent = method.getReturnType() != JPrimitiveType.VOID;
@@ -583,34 +605,34 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
       case "elemental.js.util.JsArrayOfString":
         if (jsToJava) {
           return BOX_HELPER + "unboxArrayOfString("
-              + JSO_PARAM + "Ljava/lang/String;)(";
+            + JSO_PARAM + "Ljava/lang/String;)(";
         } else {
           return BOX_HELPER + "boxArray("
-              + JSO_PARAM + "Ljava/lang/String;)(";
+            + JSO_PARAM + "Ljava/lang/String;)(";
         }
       case "elemental.js.util.JsArrayOfInt":
         if (jsToJava) {
           return BOX_HELPER + "unboxArrayOfInt("
-              + JSO_PARAM + "Ljava/lang/String;)(";
+            + JSO_PARAM + "Ljava/lang/String;)(";
         } else {
           return BOX_HELPER + "boxArray("
-              + JSO_PARAM + "Ljava/lang/String;)(";
+            + JSO_PARAM + "Ljava/lang/String;)(";
         }
       case "elemental.js.util.JsArrayOfNumber":
         if (jsToJava) {
           return BOX_HELPER + "unboxArrayOfNumber("
-              + JSO_PARAM + "Ljava/lang/String;)(";
+            + JSO_PARAM + "Ljava/lang/String;)(";
         } else {
           return BOX_HELPER + "boxArray("
-              + JSO_PARAM + "Ljava/lang/String;)(";
+            + JSO_PARAM + "Ljava/lang/String;)(";
         }
       case "elemental.js.util.JsArrayOfBoolean":
         if (jsToJava) {
           return BOX_HELPER + "unboxArrayOfNumber("
-              + JSO_PARAM + "Ljava/lang/String;)(";
+            + JSO_PARAM + "Ljava/lang/String;)(";
         } else {
           return BOX_HELPER + "boxArray("
-              + JSO_PARAM + "Ljava/lang/String;)(";
+            + JSO_PARAM + "Ljava/lang/String;)(";
         }
       case "java.lang.Long":
       case "java.lang.Boolean":
@@ -647,9 +669,9 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
               if (helpers.add(methodName)) {
 
                 final MethodBuffer helper = enclosing.createMethod
-                    ("private static "+typeName+" "+methodName+"(String value)")
-                    .makeJsni()
-                    .print("return value == null ? null : ");
+                  ("private static "+typeName+" "+methodName+"(String value)")
+                  .makeJsni()
+                  .print("return value == null ? null : ");
 
                 if (valueOf.isStatic()) {
                   // if valueOf is static, we can just invoke it directly
@@ -659,18 +681,18 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
                   // new instance
                   if (asClass.getConstructor(new JType[0]) == null) {
                     logger.log(
-                        Type.WARN,
-                        "Found method "+valueOf.getName()+"(String) in type "
-                            + asClass.getQualifiedSourceName()
-                            + ",  but could not use it for autoboxing because the method is "
-                            + "instance level and there is no zero-arg constructor available "
-                            + "to instantiate the given type");
+                      Type.WARN,
+                      "Found method "+valueOf.getName()+"(String) in type "
+                        + asClass.getQualifiedSourceName()
+                        + ",  but could not use it for autoboxing because the method is "
+                        + "instance level and there is no zero-arg constructor available "
+                        + "to instantiate the given type");
                     helper.println("null;");
                     return "";
                   } else {
                     // we only support 0-arg constructors here
                     helper.println("@" + asClass.getQualifiedSourceName() + "::new()().@"
-                        + asClass.getQualifiedSourceName() + "::"+valueOf.getName()+"(Ljava/lang/String;)(value)");
+                      + asClass.getQualifiedSourceName() + "::"+valueOf.getName()+"(Ljava/lang/String;)(value)");
                   }
                 }
               }
@@ -766,7 +788,7 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
                 // if name is static, we can't invoke it as a suffix, and, it
                 // really should never be static
                 logger.log(Type.WARN, "Unable to use method "+name.getName()+"() from " + asClass.getQualifiedSourceName() +
-                    " in web component factory");
+                  " in web component factory");
                 return "";
               } else {
                 return ".@" + asClass.getQualifiedSourceName() + "::"+name.getName()+"()()";
@@ -810,7 +832,7 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
 
     name = "applyProperty_"+method.name;
     final MethodBuffer out = staticOut.createMethod("private static " + builder + " " + name)
-        .addParameters(builder+" builder");
+      .addParameters(builder+" builder");
     staticOut.println(name+"(builder);");
     out
     .print("builder.addProperty(")
@@ -852,7 +874,7 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
       if (method.type == null) {
         // built-ins it's ok to have multiples
         logger.log(Type.WARN, "Found duplicate key for "+method.name+" in "+staticOut.getQualifiedName()+"; "
-            + "one of these methods will be overridden an discarded.");
+          + "one of these methods will be overridden an discarded.");
         // TODO: fix all warnings and escalate this to a compile-breaking error
       }
       int suffix = 0;
@@ -864,7 +886,7 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
     }
     name = "applyValue_"+name;
     final MethodBuffer out = staticOut.createMethod("private static " + builder + " " + name)
-        .addParameters(builder+" builder");
+      .addParameters(builder+" builder");
     staticOut.println(name+"(builder);");
 
 

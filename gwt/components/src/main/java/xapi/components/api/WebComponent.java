@@ -11,11 +11,16 @@ public @interface WebComponent {
   Class<?> extendClass() default WebComponent.class;
 
   /**
-   * If you do not supply a class to extend via {@link #extendClass()},
-   * then the string value of this method will be used to determine the native
-   * DOM prototype to extend.  The default is HTMLElement.
+   * If you do not supply a class to extend via {@link #extendClass()}, then the
+   * string value of this method will be used to determine the native DOM
+   * prototype to extend. The default is HTMLElement. <br/>
+   * If you wish to extend any other element, the first String should be the
+   * name of the prototype to extend, and the second argument should be the
+   * tagname of the element. Example: {"HTMLAnchorElement", "a"}
    */
-  String extendProto() default "HTMLElement";
+  String[] extendProto() default {
+    "HTMLElement"
+  };
 
   /**
    * The tagName of the WebComponent to use.
