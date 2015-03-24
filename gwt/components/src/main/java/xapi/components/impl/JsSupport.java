@@ -344,7 +344,12 @@ public class JsSupport {
 
   private static native String randomId()
   /*-{
-    return Math.random().toString(36).substr(2);
+    // We want a random number that starts with a letter.
+    // We will do this using base 36 toString method,
+    // and we will use a number between 0.3 and 0.99999
+    var i = 0.3 + 0.7 * Math.random();
+    // Ditch the leading "0."
+    return i.toString(36).substr(2);
   }-*/;
 
   public static <E extends Element> E newElement(String tagName) {
