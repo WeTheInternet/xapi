@@ -28,10 +28,6 @@
 			<artifactId>xapi-dev-source</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>net.wetheinter</groupId>
-			<artifactId>gwt-method-inject</artifactId>
-		</dependency>
-		<dependency>
 			<groupId>${gwt.groupId}</groupId>
 			<artifactId>gwt-dev</artifactId>
 			<scope>provided</scope>
