@@ -22,11 +22,11 @@
     <relative.output>target</relative.output>
 	</properties>
 
-	<dependencies>
+	<dependencies><!-- 
 		<dependency>
 			<groupId>net.wetheinter</groupId>
 			<artifactId>xapi-dev-source</artifactId>
-		</dependency>
+		</dependency> -->
 		<dependency>
 			<groupId>${gwt.groupId}</groupId>
 			<artifactId>gwt-dev</artifactId>
