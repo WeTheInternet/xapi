@@ -17,11 +17,6 @@ import java.util.TreeSet;
 
 import javax.validation.Payload;
 
-import xapi.dev.source.ClassBuffer;
-import xapi.dev.source.MemberBuffer;
-import xapi.dev.source.PrintBuffer;
-import xapi.dev.source.SourceBuilder;
-
 import com.google.gwt.core.ext.Generator;
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
@@ -38,6 +33,10 @@ import com.google.gwt.reflect.rebind.ReflectionUtilJava;
 import com.google.gwt.reflect.rebind.generators.GwtAnnotationGenerator.GeneratedAnnotation;
 import com.google.gwt.reflect.shared.GwtReflect;
 import com.google.gwt.thirdparty.guava.common.collect.Maps;
+import com.google.gwt.thirdparty.xapi.dev.source.ClassBuffer;
+import com.google.gwt.thirdparty.xapi.dev.source.MemberBuffer;
+import com.google.gwt.thirdparty.xapi.dev.source.PrintBuffer;
+import com.google.gwt.thirdparty.xapi.dev.source.SourceBuilder;
 
 public class ConstPoolGenerator {
 

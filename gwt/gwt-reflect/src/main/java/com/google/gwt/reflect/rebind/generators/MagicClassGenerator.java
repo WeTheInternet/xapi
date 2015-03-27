@@ -17,11 +17,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import xapi.dev.source.ClassBuffer;
-import xapi.dev.source.MethodBuffer;
-import xapi.dev.source.SourceBuilder;
-import xapi.source.read.SourceUtil;
-
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.UnsafeNativeLong;
@@ -47,6 +42,10 @@ import com.google.gwt.reflect.rebind.ReflectionUtilJava;
 import com.google.gwt.reflect.shared.ClassMap;
 import com.google.gwt.reflect.shared.GwtReflect;
 import com.google.gwt.reflect.shared.ReflectUtil;
+import com.google.gwt.thirdparty.xapi.dev.source.ClassBuffer;
+import com.google.gwt.thirdparty.xapi.dev.source.MethodBuffer;
+import com.google.gwt.thirdparty.xapi.dev.source.SourceBuilder;
+import com.google.gwt.thirdparty.xapi.source.read.SourceUtil;
 
 @ReflectionStrategy
 public class MagicClassGenerator {
@@ -424,8 +423,8 @@ public class MagicClassGenerator {
         logOnce  = false;
         logger.log(Type.ERROR, "Unable to call "+injectionType.getClass().getName()+".getLocation on "+injectionType.getJNISignature());
         logger.log(Type.ERROR, "Ensure that you have the jar/artifact net.wetheinter:gwt-reflect before gwt-dev on your classpath.");
-        logger.log(Type.TRACE, "The artifact net.wetheinter:xapi-gwt-api contains a class, ClasspathFixer, which can help you.");
-        logger.log(Type.TRACE, "For unit tests, xapi-gwt-test overrides JUnitShell to fix the classpath for you.", e);
+        logger.log(Type.TRACE, "The artifact net.wetheinter:com.google.gwt.thirdparty.xapi-gwt-api contains a class, ClasspathFixer, which can help you.");
+        logger.log(Type.TRACE, "For unit tests, com.google.gwt.thirdparty.xapi-gwt-test overrides JUnitShell to fix the classpath for you.", e);
       }
       return;
     }

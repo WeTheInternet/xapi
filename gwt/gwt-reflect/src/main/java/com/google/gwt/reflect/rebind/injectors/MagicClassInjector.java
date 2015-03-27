@@ -30,8 +30,7 @@ import com.google.gwt.reflect.rebind.generators.GwtAnnotationGenerator;
 import com.google.gwt.reflect.rebind.generators.MagicClassGenerator;
 import com.google.gwt.reflect.rebind.generators.MemberGenerator;
 import com.google.gwt.reflect.rebind.generators.ReflectionGeneratorContext;
-
-import xapi.source.read.SourceUtil;
+import com.google.gwt.thirdparty.xapi.source.read.SourceUtil;
 
 public class MagicClassInjector implements MagicMethodGenerator, UnifyAstListener {
 

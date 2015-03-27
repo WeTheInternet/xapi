@@ -106,13 +106,6 @@ public abstract class ConstructorGenerator extends MemberGenerator implements Ma
   
   public JMethodCall getConstructorProvider(TreeLogger logger, ReflectionGeneratorContext ctx,
       JConstructor ctor, boolean declared) throws UnableToCompleteException {
-//    // TODO Auto-generated method stub
-//    return null;
-//  }
-//
-//  public JMethodCall getConstructorProvider(TreeLogger logger, UnifyAstView ast, 
-//      JConstructor ctor,
-//      JClassLiteral classLit, boolean declaredOnly) throws UnableToCompleteException {
     JClassLiteral classLit = ctx.getClazz();
     UnifyAstView ast = ctx.getAst();
     String clsName = classLit.getRefType().getName();

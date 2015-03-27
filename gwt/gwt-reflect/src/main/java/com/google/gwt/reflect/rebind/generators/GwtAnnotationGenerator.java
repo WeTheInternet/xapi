@@ -10,12 +10,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
-import xapi.dev.source.ClassBuffer;
-import xapi.dev.source.FieldBuffer;
-import xapi.dev.source.MethodBuffer;
-import xapi.dev.source.SourceBuilder;
-import xapi.source.read.JavaModel.IsNamedType;
-
 import com.google.gwt.core.client.UnsafeNativeLong;
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
@@ -28,6 +22,11 @@ import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.dev.jjs.UnifyAstListener;
 import com.google.gwt.reflect.rebind.ReflectionUtilJava;
 import com.google.gwt.reflect.shared.GwtReflect;
+import com.google.gwt.thirdparty.xapi.dev.source.ClassBuffer;
+import com.google.gwt.thirdparty.xapi.dev.source.FieldBuffer;
+import com.google.gwt.thirdparty.xapi.dev.source.MethodBuffer;
+import com.google.gwt.thirdparty.xapi.dev.source.SourceBuilder;
+import com.google.gwt.thirdparty.xapi.source.read.JavaModel.IsNamedType;
 
 
 public class GwtAnnotationGenerator {

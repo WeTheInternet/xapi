@@ -5,8 +5,6 @@ import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
 
-import xapi.dev.source.SourceBuilder;
-
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.dev.javac.StandardGeneratorContext;
@@ -15,6 +13,7 @@ import com.google.gwt.dev.jjs.ast.Context;
 import com.google.gwt.dev.jjs.ast.JClassLiteral;
 import com.google.gwt.dev.jjs.ast.JMethod;
 import com.google.gwt.dev.jjs.ast.JMethodCall;
+import com.google.gwt.thirdparty.xapi.dev.source.SourceBuilder;
 
 public class ReflectionGeneratorContext {
 

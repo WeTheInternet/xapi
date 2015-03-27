@@ -36,27 +36,39 @@ import com.google.gwt.reflect.rebind.generators.ReflectionGeneratorContext;
 import com.google.gwt.reflect.shared.GwtReflect;
 
 @ReflectionStrategy
-public class ConstPoolInjector implements MagicMethodGenerator, UnifyAstListener{
+public class ConstPoolInjector implements MagicMethodGenerator,
+  UnifyAstListener {
 
   private static final Type logLevel = Type.TRACE;
-  private JMethodCall rememberClass;
 
   @Override
-  public JExpression injectMagic(TreeLogger logger, JMethodCall methodCall, JMethod enclosingMethod,
-    Context context, UnifyAstView ast) throws UnableToCompleteException {
+  public void destroy(final TreeLogger logger) {
+    ConstPoolGenerator.cleanup();
+  }
 
-    ReflectionGeneratorContext ctx = new ReflectionGeneratorContext(logger, null, methodCall, enclosingMethod, context, ast);
+  @Override
+  public JExpression injectMagic(TreeLogger logger,
+    final JMethodCall methodCall, final JMethod enclosingMethod,
+    final Context context, final UnifyAstView ast)
+    throws UnableToCompleteException {
 
-    HashMap<String,JPackage> packages = new HashMap<String,JPackage>();
-    LinkedHashMap<JClassType,ReflectionStrategy> retained = new LinkedHashMap<JClassType,ReflectionStrategy>();
-    ReflectionStrategy defaultStrategy = ConstPoolInjector.class.getAnnotation(ReflectionStrategy.class);
-    TypeOracle oracle = ctx.getTypeOracle();
-    boolean doLog = logger.isLoggable(logLevel);
+    final ReflectionGeneratorContext ctx = new ReflectionGeneratorContext(
+      logger, null, methodCall, enclosingMethod, context, ast);
+
+    final HashMap<String, JPackage> packages = new HashMap<String, JPackage>();
+    final LinkedHashMap<JClassType, ReflectionStrategy> retained = new LinkedHashMap<JClassType, ReflectionStrategy>();
+    final ReflectionStrategy defaultStrategy = ConstPoolInjector.class
+      .getAnnotation(ReflectionStrategy.class);
+    final TypeOracle oracle = ctx.getTypeOracle();
+    final boolean doLog = logger.isLoggable(logLevel);
     if (doLog) {
-      logger = logger.branch(logLevel, "Injecting all remaining members into ClassPool");
+      logger = logger.branch(logLevel,
+        "Injecting all remaining members into ClassPool");
     }
-    for (com.google.gwt.core.ext.typeinfo.JClassType type : oracle.getTypes()) {
-      ReflectionStrategy strategy = type.getAnnotation(ReflectionStrategy.class);
+    for (final com.google.gwt.core.ext.typeinfo.JClassType type : oracle
+      .getTypes()) {
+      ReflectionStrategy strategy = type
+        .getAnnotation(ReflectionStrategy.class);
       if (strategy == null) {
         JPackage pkg = packages.get(type.getPackage().getName());
         if (pkg == null) {
@@ -72,14 +84,16 @@ public class ConstPoolInjector implements MagicMethodGenerator, UnifyAstListener
       }
       if (strategy != null) {
         if (doLog) {
-          logger.log(logLevel, "Adding type to ConstPool: "+type.getJNISignature());
+          logger.log(logLevel,
+            "Adding type to ConstPool: " + type.getJNISignature());
         }
         retained.put(type, strategy);
       }
     }
-    JDeclaredType gwtReflect = ast.searchForTypeBySource(GwtReflect.class.getName());
+    final JDeclaredType gwtReflect = ast.searchForTypeBySource(GwtReflect.class
+      .getName());
     JMethod magicClass = null;
-    for (JMethod method : gwtReflect.getMethods()) {
+    for (final JMethod method : gwtReflect.getMethods()) {
       if (method.getName().equals("magicClass")) {
         magicClass = method;
         break;
@@ -90,60 +104,66 @@ public class ConstPoolInjector implements MagicMethodGenerator, UnifyAstListener
       throw new UnableToCompleteException();
     }
 
-    SourceInfo methodSource = methodCall.getSourceInfo().makeChild(SourceOrigin.UNKNOWN);
+    final SourceInfo methodSource = methodCall.getSourceInfo().makeChild(
+      SourceOrigin.UNKNOWN);
 
-    JMethod newMethod = new JMethod(methodSource, "enhanceAll", methodCall.getTarget().getEnclosingType(), ast.getProgram().getTypeVoid(),
-        false, true, true, AccessModifier.PUBLIC);
+    final JMethod newMethod = new JMethod(methodSource, "enhanceAll",
+      methodCall.getTarget().getEnclosingType(),
+      ast.getProgram().getTypeVoid(),
+      false, true, true, AccessModifier.PUBLIC);
 
-    newMethod.setOriginalTypes(ast.getProgram().getTypeVoid(), methodCall.getTarget().getOriginalParamTypes());
-    JMethodBody body = new JMethodBody(methodSource);
+    newMethod.setOriginalTypes(ast.getProgram().getTypeVoid(), methodCall
+      .getTarget().getOriginalParamTypes());
+    final JMethodBody body = new JMethodBody(methodSource);
     newMethod.setBody(body);
-    JBlock block = body.getBlock();
-    for (Entry<JClassType,ReflectionStrategy> type : retained.entrySet()) {
-      JClassType cls = type.getKey();
+    final JBlock block = body.getBlock();
+    for (final Entry<JClassType, ReflectionStrategy> type : retained.entrySet()) {
+      final JClassType cls = type.getKey();
       if (cls.isPrivate())
-       {
+      {
         continue;//use a jsni helper instead here.
       }
       if (cls.getName().endsWith(ReflectionUtilJava.MAGIC_CLASS_SUFFIX)
-          || cls.getName().contains(MemberGenerator.METHOD_SPACER)
-          || cls.getName().contains(MemberGenerator.FIELD_SPACER)
-          || cls.getName().contains(MemberGenerator.CONSTRUCTOR_SPACER)
-          ) {
+        || cls.getName().contains(MemberGenerator.METHOD_SPACER)
+        || cls.getName().contains(MemberGenerator.FIELD_SPACER)
+        || cls.getName().contains(MemberGenerator.CONSTRUCTOR_SPACER)) {
         continue;
       }
-      JType asType = ast.getProgram().getFromTypeMap(cls.getQualifiedSourceName());
+      final JType asType = ast.getProgram().getFromTypeMap(
+        cls.getQualifiedSourceName());
       if (asType == null) {
         continue;
       }
-      JMethodCall call = new JMethodCall(methodSource.makeChild(SourceOrigin.UNKNOWN), null, magicClass);
-      call.addArg(new JClassLiteral(methodSource.makeChild(SourceOrigin.UNKNOWN), asType));
-      JExpression invoke = MagicClassInjector.injectMagicClass(logger, call, magicClass, context, ast);
+      final JMethodCall call = new JMethodCall(
+        methodSource.makeChild(SourceOrigin.UNKNOWN), null, magicClass);
+      call.addArg(new JClassLiteral(methodSource
+        .makeChild(SourceOrigin.UNKNOWN), asType));
+      final JExpression invoke = MagicClassInjector.injectMagicClass(logger,
+        call, magicClass, context, ast);
       if (invoke != null) {
         block.addStmt(invoke.makeStatement());
       }
     }
-    block.addStmts(((JMethodBody)methodCall.getTarget().getBody()).getStatements());
+    block.addStmts(((JMethodBody) methodCall.getTarget().getBody())
+      .getStatements());
     methodCall.getTarget().getEnclosingType().addMethod(newMethod);
-    JMethodCall call = new JMethodCall(methodSource, null, newMethod);
+    final JMethodCall call = new JMethodCall(methodSource, null, newMethod);
 
     ast.getRebindPermutationOracle().getGeneratorContext().finish(logger);
     return call.makeStatement().getExpr();
   }
 
   @Override
-  public void onUnifyAstStart(TreeLogger logger, UnifyAstView ast, UnifyVisitor visitor, Queue<JMethod> todo) {
-
-  }
-
-  @Override
-  public boolean onUnifyAstPostProcess(TreeLogger logger, UnifyAstView ast, UnifyVisitor visitor, Queue<JMethod> todo) {
+  public boolean onUnifyAstPostProcess(final TreeLogger logger,
+    final UnifyAstView ast, final UnifyVisitor visitor,
+    final Queue<JMethod> todo) {
     return false;
   }
 
   @Override
-  public void destroy(TreeLogger logger) {
-    ConstPoolGenerator.cleanup();
+  public void onUnifyAstStart(final TreeLogger logger, final UnifyAstView ast,
+    final UnifyVisitor visitor, final Queue<JMethod> todo) {
+
   }
 
 }
