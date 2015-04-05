@@ -41,20 +41,6 @@
       <artifactId>xapi-dev-source</artifactId>
     </dependency>
     <dependency>
-      <groupId>net.wetheinter</groupId>
-      <artifactId>gwt-method-inject</artifactId>
-      <exclusions>
-        <exclusion>
-          <groupId>${gwt.groupId}</groupId>
-          <artifactId>gwt-dev</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>${gwt.groupId}</groupId>
-          <artifactId>gwt-user</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
       <groupId>${gwt.groupId}</groupId>
       <artifactId>gwt-dev</artifactId>
       <scope>provided</scope>

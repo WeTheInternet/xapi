@@ -223,6 +223,22 @@
 
 				</configuration>
 			</plugin>
+			<plugin>
+				<groupId>net.wetheinter</groupId>
+				<artifactId>gwt-maven-plugin</artifactId>
+				<version>${gwt.version}</version>
+				<configuration>
+				  <module>com.google.gwt.reflect.ReflectTest</module>
+				  <runTarget>ReflectTest.html</runTarget>
+				  <style>PRETTY</style>
+				  <logLevel>INFO</logLevel>
+				  <extraSources>
+				    <extraSource>${project.basedir}/src/test/java</extraSource>
+				    <extraSource>${project.basedir}/src/test/resources</extraSource>
+				    <extraSource>${project.build.directory}/test-classes</extraSource>
+				  </extraSources>
+				</configuration>
+			</plugin>
 		</plugins>
 		<pluginManagement>
 			<plugins>
@@ -298,7 +314,7 @@
 				</plugin>
 			</plugins>
 		</pluginManagement>
-	</build>
+	</build> 
 
 	<profiles>
 		<profile>
