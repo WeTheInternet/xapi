@@ -15,15 +15,13 @@
  */
 package com.google.gwt.user.rebind;
 
+import com.google.gwt.core.ext.GeneratorContext;
+
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-
-import com.google.gwt.core.ext.GeneratorContext;
 
 /**
  * Factory clas to create <code>SourceFileComposer</code> instances.
@@ -42,44 +40,44 @@ public class ClassSourceFileComposerFactory {
 
     private String key;
 
-    private JavaSourceCategory(String key) {
+    private JavaSourceCategory(final String key) {
       this.key = key;
     }
   }
 
-  private List<String> annotations = new ArrayList<String>();
+  private final List<String> annotations = new ArrayList<String>();
 
   private JavaSourceCategory classCategory = JavaSourceCategory.CLASS;
 
   private String classComment;
 
-  private String className;
+  private final String className;
 
-  private Set<String> imports = new LinkedHashSet<String>();
+  private final Set<String> imports = new LinkedHashSet<String>();
 
-  private Set<String> interfaceNames = new LinkedHashSet<String>();
+  private final Set<String> interfaceNames = new LinkedHashSet<String>();
 
-  private String packageName;
+  private final String packageName;
 
   private String superClassName;
 
   private String privacy;
-  
-  public ClassSourceFileComposerFactory(String packageName, String className) {
+
+  public ClassSourceFileComposerFactory(final String packageName, final String className) {
     this.packageName = packageName;
     this.className = className;
     this.privacy = "public";
   }
 
-  public void addAnnotationDeclaration(String declaration) {
+  public void addAnnotationDeclaration(final String declaration) {
     annotations.add(declaration);
   }
 
-  public void addImplementedInterface(String intfName) {
+  public void addImplementedInterface(final String intfName) {
     interfaceNames.add(intfName);
   }
 
-  public void addImport(String typeName) {
+  public void addImport(final String typeName) {
     imports.add(typeName);
   }
 
@@ -91,8 +89,8 @@ public class ClassSourceFileComposerFactory {
    * @throws RuntimeException If the settings on this factory are inconsistent
    *           or invalid
    */
-  public SourceWriter createSourceWriter(GeneratorContext ctx,
-      PrintWriter printWriter) {
+  public SourceWriter createSourceWriter(final GeneratorContext ctx,
+      final PrintWriter printWriter) {
     return new ClassSourceFileComposer(ctx, printWriter, getCreatedPackage(),
         getAnnotationDeclarations(), getCreatedClassShortName(),
         getSuperclassName(), getInterfaceNames(), getImports(), classCategory,
@@ -109,7 +107,7 @@ public class ClassSourceFileComposerFactory {
    * @throws RuntimeException If the settings on this factory are inconsistent
    *           or invalid
    */
-  public SourceWriter createSourceWriter(PrintWriter printWriter) {
+  public SourceWriter createSourceWriter(final PrintWriter printWriter) {
     return new ClassSourceFileComposer(null, printWriter, getCreatedPackage(),
         getAnnotationDeclarations(), getCreatedClassShortName(),
         getSuperclassName(), getInterfaceNames(), getImports(), classCategory,
@@ -156,15 +154,15 @@ public class ClassSourceFileComposerFactory {
    *
    * @param comment java doc comment.
    */
-  public void setJavaDocCommentForClass(String comment) {
+  public void setJavaDocCommentForClass(final String comment) {
     classComment = comment;
   }
 
-  public void setSuperclass(String superclassName) {
+  public void setSuperclass(final String superclassName) {
     superClassName = superclassName;
   }
 
-  public void setPrivacy(String privacy) {
+  public void setPrivacy(final String privacy) {
     this.privacy = privacy;
   }
 

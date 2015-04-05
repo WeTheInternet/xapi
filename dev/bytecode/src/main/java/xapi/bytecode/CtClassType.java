@@ -47,6 +47,7 @@ import xapi.bytecode.attributes.InnerClassesAttribute;
 import xapi.bytecode.attributes.ParameterAnnotationsAttribute;
 import xapi.source.X_Modifier;
 
+@SuppressWarnings({"unchecked", "rawtypes"})
 public class CtClassType extends CtClass {
   ClassPool classPool;
   boolean wasChanged;

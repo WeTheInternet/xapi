@@ -26,6 +26,7 @@ class MethodHandleInfo extends ConstInfo {
   }
 
   @Override
+  @SuppressWarnings("rawtypes")
   public int copy(final ConstPool src, final ConstPool dest, final Map map) {
     return dest.addMethodHandleInfo(refKind,
         src.getItem(refIndex).copy(src, dest, map));

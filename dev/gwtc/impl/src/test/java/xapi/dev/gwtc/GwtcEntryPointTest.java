@@ -20,32 +20,38 @@ public class GwtcEntryPointTest {
   static {
     X_Properties.setProperty(X_Namespace.PROPERTY_MULTITHREADED, "10");
   }
-  
+
   private static boolean beforeClass;
   private boolean before;
 
-  public static void main(String ... args) {
+  public static void main(final String ... args) {
     new GwtcEntryPointTest().testEntryPointCompiles();
   }
-  
+
   @BeforeClass
   public static void beforeClass() {
     beforeClass = true;
   }
-  
+
   @AfterClass
   public static void afterClass() {
     beforeClass = false;
   }
-  
+
   @Before
   public void before() {
     before = true;
   }
-  
+
   @After
   public void after() {
     before = false;
+  }
+
+  @Test
+  public void testBeforeAfter() {
+    Assert.assertTrue(before);
+    Assert.assertTrue(beforeClass);
   }
 
   @Test(expected=IllegalArgumentException.class)
@@ -57,9 +63,9 @@ public class GwtcEntryPointTest {
     if ("true".equals(System.getProperty("xapi.build.quick"))) {
       return;
     }
-    Package pkg = CaseEntryPoint.class.getPackage();
-    GwtcService gwtc = X_Gwtc.getServiceFor(pkg, false);
-    GwtManifest manifest = new GwtManifest("Gwtc_"+pkg.getName().replace('.', '_'));
+    final Package pkg = CaseEntryPoint.class.getPackage();
+    final GwtcService gwtc = X_Gwtc.getServiceFor(pkg, false);
+    final GwtManifest manifest = new GwtManifest("Gwtc_"+pkg.getName().replace('.', '_'));
     manifest.addSystemProp("gwt.usearchives=false");
     Assert.assertEquals(0, gwtc.compile(manifest));
   }
@@ -68,11 +74,11 @@ public class GwtcEntryPointTest {
     if ("true".equals(System.getProperty("xapi.build.quick"))) {
       return;
     }
-    GwtcService gwtc = X_Gwtc.getServiceFor(CaseEntryPoint.class);
+    final GwtcService gwtc = X_Gwtc.getServiceFor(CaseEntryPoint.class);
     gwtc.addJUnitClass(GwtcCaseJunit4.class);
-    GwtManifest manifest = new GwtManifest(gwtc.getModuleName());
+    final GwtManifest manifest = new GwtManifest(gwtc.getModuleName());
     manifest.addSystemProp("gwt.usearchives=false");
     Assert.assertEquals(0, gwtc.compile(manifest));
   }
-  
+
 }

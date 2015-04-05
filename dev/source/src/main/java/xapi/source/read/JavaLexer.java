@@ -60,12 +60,13 @@ import xapi.source.read.JavaVisitor.ModifierVisitor;
 import xapi.source.read.JavaVisitor.ParameterVisitor;
 import xapi.source.read.JavaVisitor.TypeData;
 
+@SuppressWarnings("rawtypes")
 public class JavaLexer {
 
   public static class ModifierExtractor implements ModifierVisitor<HasModifier> {
 
     @Override
-    public void visitModifier(int modifier, HasModifier receiver) {
+    public void visitModifier(final int modifier, final HasModifier receiver) {
       receiver.modifier |= modifier;
     }
 
@@ -73,8 +74,8 @@ public class JavaLexer {
   public static class AnnotationExtractor implements AnnotationVisitor<HasAnnotations> {
 
     @Override
-    public AnnotationMemberVisitor<HasAnnotations> visitAnnotation(String annoName, String annoBody, HasAnnotations receiver) {
-      IsAnnotation anno = new IsAnnotation(annoName);
+    public AnnotationMemberVisitor<HasAnnotations> visitAnnotation(final String annoName, final String annoBody, final HasAnnotations receiver) {
+      final IsAnnotation anno = new IsAnnotation(annoName);
       if (receiver != null) {
         receiver.addAnnotation(anno);
       }
@@ -84,7 +85,7 @@ public class JavaLexer {
 
   public static class JavadocExtractor implements JavadocVisitor<StringBuilder> {
     @Override
-    public void visitJavadoc(String javadoc, StringBuilder receiver) {
+    public void visitJavadoc(final String javadoc, final StringBuilder receiver) {
       // TODO: remove *s
       receiver.append(javadoc);
     }
@@ -93,7 +94,7 @@ public class JavaLexer {
   public static class AnnotationMemberExtractor implements AnnotationMemberVisitor<HasAnnotations> {
 
     @Override
-    public void visitMember(String name, String value, HasAnnotations receiver) {
+    public void visitMember(final String name, final String value, final HasAnnotations receiver) {
       assert !receiver.annotations.isEmpty() :
         "You must visit an annotation before visiting an annotation member";
       receiver.annotations.tail().members.add(new AnnotationMember(name, value));
@@ -103,7 +104,7 @@ public class JavaLexer {
 
   public static class GenericsExtractor implements GenericVisitor<SimpleStack<IsGeneric>> {
     @Override
-    public void visitGeneric(String generic, SimpleStack<IsGeneric> receiver) {
+    public void visitGeneric(String generic, final SimpleStack<IsGeneric> receiver) {
       if (generic.charAt(0) == '<') {
         generic = generic.substring(1, generic.length()-1);
       }
@@ -124,11 +125,11 @@ public class JavaLexer {
     int index;
     public boolean varargs;
 
-    public TypeDef(String name) {
+    public TypeDef(final String name) {
       super(name);
     }
 
-    public TypeDef(String name, int index) {
+    public TypeDef(final String name, final int index) {
       super(name);
       this.index = index;
     }
@@ -148,8 +149,8 @@ public class JavaLexer {
     protected final Set<String> imports;
     protected final Set<String> annotations;
 
-    protected MemberData(int modifier, String simpleName, String typeName,
-        String javaDoc) {
+    protected MemberData(final int modifier, final String simpleName, final String typeName,
+        final String javaDoc) {
       this.modifier = modifier;
       this.simpleName = simpleName;
       this.typeName = typeName;
@@ -162,83 +163,83 @@ public class JavaLexer {
 
   private static final ModifierVisitor NO_OP_MOD_VISITOR = new ModifierVisitor() {
     @Override
-    public void visitModifier(int modifier, Object receiver) {
+    public void visitModifier(final int modifier, final Object receiver) {
     }
   };
 
   private static final GenericVisitor NO_OP_GENERIC_VISITOR = new GenericVisitor() {
     @Override
-    public void visitGeneric(String generic, Object receiver) {}
+    public void visitGeneric(final String generic, final Object receiver) {}
   };
 
   private static final ClassVisitor NP_OP_CLASS_VISITOR = new ClassVisitor() {
 
     @Override
-    public AnnotationMemberVisitor visitAnnotation(String annoName, String annoBody, Object receiver) {
+    public AnnotationMemberVisitor visitAnnotation(final String annoName, final String annoBody, final Object receiver) {
       return null;
     }
 
     @Override
-    public void visitGeneric(String generic, Object receiver) {
+    public void visitGeneric(final String generic, final Object receiver) {
     }
 
     @Override
-    public void visitJavadoc(String javadoc, Object receiver) {
+    public void visitJavadoc(final String javadoc, final Object receiver) {
     }
 
     @Override
-    public void visitModifier(int modifier, Object receiver) {
+    public void visitModifier(final int modifier, final Object receiver) {
     }
 
     @Override
-    public void visitImport(String name, boolean isStatic, Object receiver) {
+    public void visitImport(final String name, final boolean isStatic, final Object receiver) {
     }
 
     @Override
-    public void visitCopyright(String copyright, Object receiver) {
+    public void visitCopyright(final String copyright, final Object receiver) {
     }
 
     @Override
-    public void visitPackage(String pkg, Object receiver) {
+    public void visitPackage(final String pkg, final Object receiver) {
     }
 
     @Override
-    public void visitName(String name, Object receiver) {
+    public void visitName(final String name, final Object receiver) {
     }
 
     @Override
-    public void visitType(String type, Object receiver) {
+    public void visitType(final String type, final Object receiver) {
     }
 
     @Override
-    public void visitSuperclass(String superClass, Object receiver) {
+    public void visitSuperclass(final String superClass, final Object receiver) {
     }
 
     @Override
-    public void visitInterface(String iface, Object receiver) {
+    public void visitInterface(final String iface, final Object receiver) {
     }
 
     @Override
-    public ClassBodyVisitor visitBody(String body, Object receiver) {
+    public ClassBodyVisitor visitBody(final String body, final Object receiver) {
       return null;
     }
   };
 
   protected static final AnnotationMemberVisitor NO_OP_ANNOTATION_MEMBER_VISITOR = new AnnotationMemberVisitor() {
     @Override
-    public void visitMember(String name, String value, Object receiver) {
+    public void visitMember(final String name, final String value, final Object receiver) {
     }
   };
 
   private static final AnnotationVisitor NO_OP_ANNOTATION_VISITOR = new AnnotationVisitor() {
     @Override
-    public AnnotationMemberVisitor visitAnnotation(String annoName, String annoBody, Object receiver) {
+    public AnnotationMemberVisitor visitAnnotation(final String annoName, final String annoBody, final Object receiver) {
       return NO_OP_ANNOTATION_MEMBER_VISITOR;
     }
   };
 
   public static <R> int visitJavadoc
-  (JavadocVisitor<R> visitor, R receiver, CharSequence chars, int pos) {
+  (final JavadocVisitor<R> visitor, final R receiver, final CharSequence chars, int pos) {
     pos = eatWhitespace(chars, pos);
     if (pos == chars.length()) {
       return pos;
@@ -246,7 +247,7 @@ public class JavaLexer {
     try {
       if ('/' == chars.charAt(pos)) {
         if (chars.charAt(++pos) == '*') {
-          int start = pos + (chars.charAt(pos) == '*' ? 1 : 0);
+          final int start = pos + (chars.charAt(pos) == '*' ? 1 : 0);
           // We hava some javadoc. Let's eat it all
           do {
             while (chars.charAt(++pos) != '*') {
@@ -259,14 +260,14 @@ public class JavaLexer {
               , receiver);
         }
       }
-    } catch (IndexOutOfBoundsException e) {
+    } catch (final IndexOutOfBoundsException e) {
       error(e, "Error parsing javadoc on: " + chars.toString());
     }
     return pos;
   }
 
   public static <R> int visitAnnotation
-  (AnnotationVisitor<R> visitor, R receiver, CharSequence chars, int pos) {
+  (final AnnotationVisitor<R> visitor, final R receiver, final CharSequence chars, int pos) {
     pos = eatWhitespace(chars, pos);
     if (pos == chars.length()) {
       return pos;
@@ -275,17 +276,17 @@ public class JavaLexer {
     try {
       while(chars.charAt(pos) == '@') {
         pos = eatJavaname(chars, pos + 1);
-        String annoName = chars.subSequence(start + 1, pos).toString();
+        final String annoName = chars.subSequence(start + 1, pos).toString();
         String annoBody = "";
         pos = eatWhitespace(chars, pos);
         if (pos < chars.length() && chars.charAt(pos) == '(') {
           // Annotation has a body
-          int bodyStart = pos+1;
+          final int bodyStart = pos+1;
           pos = eatAnnotationBody(visitor, receiver, chars, pos);
           annoBody = chars.subSequence(bodyStart, pos).toString();
           pos ++;
         }
-        AnnotationMemberVisitor<R> bodyVisitor = visitor.visitAnnotation(annoName, annoBody, receiver);
+        final AnnotationMemberVisitor<R> bodyVisitor = visitor.visitAnnotation(annoName, annoBody, receiver);
         if (bodyVisitor != null && annoBody.length() > 0) {
           visitAnnotationMembers(bodyVisitor, receiver, annoBody, 0);
         }
@@ -294,7 +295,7 @@ public class JavaLexer {
           break;
         }
       }
-    } catch (IndexOutOfBoundsException e) {
+    } catch (final IndexOutOfBoundsException e) {
       error(
           e,
           "Error parsing annotation on: "
@@ -304,7 +305,7 @@ public class JavaLexer {
   }
 
   public static <R> int visitAnnotationMembers
-  (AnnotationMemberVisitor<R> visitor, R receiver, CharSequence chars, int pos) {
+  (final AnnotationMemberVisitor<R> visitor, final R receiver, final CharSequence chars, int pos) {
     String name = "value";
     boolean nameNext = true;
     while (true) {
@@ -331,11 +332,11 @@ public class JavaLexer {
       default:
         if (nameNext) {
           nameNext = false;
-          int start = pos;
+          final int start = pos;
           while (Character.isJavaIdentifierPart(chars.charAt(pos))) {
             pos++;
           }
-          String maybeName = chars.subSequence(start, pos).toString().trim();
+          final String maybeName = chars.subSequence(start, pos).toString().trim();
           if (maybeName.length() == 0) {
             name = "value";
           } else {
@@ -364,7 +365,7 @@ public class JavaLexer {
           }
         } else {
           // there's a variable to read
-          int start = pos;
+          final int start = pos;
           switch (chars.charAt(pos)) {
           case '{':
             pos = eatArrayInitializer(chars, pos);
@@ -377,7 +378,7 @@ public class JavaLexer {
             }
             break;
           case '@':
-            AnnotationVisitor<HasAnnotations> extractor = new AnnotationExtractor();
+            final AnnotationVisitor<HasAnnotations> extractor = new AnnotationExtractor();
             pos = visitAnnotation(extractor, null, chars, pos);
             break;
           default:
@@ -393,11 +394,11 @@ public class JavaLexer {
   }
 
   public static <R> int visitModifier
-  (ModifierVisitor<R> visitor, R receiver, CharSequence chars, int pos) {
+  (final ModifierVisitor<R> visitor, final R receiver, final CharSequence chars, int pos) {
     pos = eatWhitespace(chars, pos);
     while(true) {
 
-      char c = chars.charAt(pos);
+      final char c = chars.charAt(pos);
       switch (c){
       case 'p':
         // public, protected, private
@@ -490,11 +491,11 @@ public class JavaLexer {
   }
 
   public static <R> int visitGeneric
-  (GenericVisitor<R> visitor, R receiver,
-      CharSequence chars, int pos) {
+  (final GenericVisitor<R> visitor, final R receiver,
+      final CharSequence chars, int pos) {
     pos = eatWhitespace(chars, pos);
     if (chars.charAt(pos) == '<') {
-      int start = pos;
+      final int start = pos;
       pos = eatGeneric(chars, pos)+1;
       visitor.visitGeneric(chars.subSequence(start, pos).toString(), receiver);
     }
@@ -502,7 +503,7 @@ public class JavaLexer {
   }
 
   public static <R> int visitMethodSignature
-  (MethodVisitor<R> visitor, R receiver, CharSequence chars, int pos) {
+  (final MethodVisitor<R> visitor, final R receiver, final CharSequence chars, int pos) {
     pos = eatWhitespace(chars, pos);
     if (pos == chars.length()) {
       return pos;
@@ -511,7 +512,7 @@ public class JavaLexer {
     pos = visitAnnotation(visitor, receiver, chars, pos);
     pos = visitModifier(visitor, receiver, chars, pos);
     pos = visitGeneric(visitor, receiver, chars, pos);
-    TypeDef returnType = extractType(chars, pos);
+    final TypeDef returnType = extractType(chars, pos);
     visitor.visitReturnType(returnType, receiver);
     int start = pos = eatWhitespace(chars, returnType.index);
     if (chars.charAt(pos) == '.' && chars.charAt(pos+1) == '.') {
@@ -529,11 +530,11 @@ public class JavaLexer {
       pos = eatWhitespace(chars, pos + 1);
       while (chars.charAt(pos) != ')') {
         // TODO grab parameter annotations here.
-        ParameterVisitor<R> param = visitor.visitParameter();
+        final ParameterVisitor<R> param = visitor.visitParameter();
         pos = visitAnnotation(param, receiver, chars, pos);
         pos = visitModifier(param, receiver, chars, pos);
 
-        TypeDef def = extractType(chars, pos);
+        final TypeDef def = extractType(chars, pos);
         start = pos = eatWhitespace(chars, def.index);
         boolean varargs = false;
         if (chars.charAt(pos) == '.') {
@@ -607,12 +608,13 @@ public class JavaLexer {
    * instead use {@link #extractStatement(CharSequence, int)}
    *
    */
-  public static TypeDef extractType(CharSequence chars, int pos)
+  public static TypeDef extractType(final CharSequence chars, int pos)
   {
     int start = pos = eatWhitespace(chars, pos);
-    int lastPeriod = -1, max = chars.length()-1;
+    int lastPeriod = -1;
+    final int max = chars.length()-1;
     boolean doneParsing = false;
-    StringBuilder pkg = new StringBuilder();
+    final StringBuilder pkg = new StringBuilder();
     package_loop:
     if (Character.isLowerCase(chars.charAt(pos))) {
       // We may have package names to read.
@@ -630,8 +632,8 @@ public class JavaLexer {
             break package_loop;
           }
         }
-        int whitespace = eatWhitespace(chars, pos);
-        int next = chars.charAt(whitespace);
+        final int whitespace = eatWhitespace(chars, pos);
+        final int next = chars.charAt(whitespace);
         if (next == '.') {
           if (whitespace > pos && chars.charAt(whitespace+1)=='.') {
             break package_loop;
@@ -660,7 +662,7 @@ public class JavaLexer {
       }
       def = new TypeDef(chars.subSequence(start, pos).toString());
     } else {
-      StringBuilder typeName = new StringBuilder();
+      final StringBuilder typeName = new StringBuilder();
       lastPeriod = -1;
       typeloop:
       while (true) {
@@ -683,7 +685,7 @@ public class JavaLexer {
             break typeloop;
           }
         }
-        int whitespace = eatWhitespace(chars, pos);
+        final int whitespace = eatWhitespace(chars, pos);
         if (chars.charAt(whitespace) == '.') {
           if (lastPeriod != -1) {
             typeName.append('.');
@@ -737,14 +739,14 @@ public class JavaLexer {
     return def;
   }
 
-  public static SimpleStack<IsGeneric> extractGenerics (CharSequence chars, int pos) {
-    SimpleStack<IsGeneric> stack = new SimpleStack<IsGeneric>();
+  public static SimpleStack<IsGeneric> extractGenerics (final CharSequence chars, final int pos) {
+    final SimpleStack<IsGeneric> stack = new SimpleStack<IsGeneric>();
     visitGeneric(new GenericsExtractor(), stack, chars, pos);
     return stack;
   }
 
   protected static <R> int eatAnnotationBody
-  (AnnotationVisitor<R> visitor,R receiver, CharSequence chars, int pos) {
+  (final AnnotationVisitor<R> visitor,final R receiver, final CharSequence chars, int pos) {
     pos = eatWhitespace(chars, pos);
     boolean nameNext = true;
     while (true) {
@@ -805,16 +807,16 @@ public class JavaLexer {
     }
   }
 
-  protected static <R > int eatWhitespaceAndComments(CharSequence chars, int pos) {
-    int next = eatWhitespace(chars, pos);
-    int comment = eatComments(chars, next);
+  protected static <R > int eatWhitespaceAndComments(final CharSequence chars, final int pos) {
+    final int next = eatWhitespace(chars, pos);
+    final int comment = eatComments(chars, next);
     if (comment == pos) {
       return pos;
     }
     return eatWhitespaceAndComments(chars, comment);
   }
 
-  protected static int eatComments(CharSequence chars, int pos) {
+  protected static int eatComments(final CharSequence chars, int pos) {
     if (chars.charAt(pos)=='/') {
       if (chars.charAt(pos+1)=='/') {
         // go to the newline
@@ -835,17 +837,17 @@ public class JavaLexer {
     return pos;
   }
 
-  protected static <R > int eatWhitespace(CharSequence chars, int pos) {
+  protected static <R > int eatWhitespace(final CharSequence chars, int pos) {
     try {
       while (Character. isWhitespace(chars .charAt(pos))) {
         pos++;
       }
-    } catch (IndexOutOfBoundsException ignored) {
+    } catch (final IndexOutOfBoundsException ignored) {
     }
     return pos;
   }
 
-  protected static int eatJavaname(CharSequence chars, int pos) {
+  protected static int eatJavaname(final CharSequence chars, int pos) {
     try {
       while (Character.isJavaIdentifierPart(chars.charAt(pos))) {
         pos++;
@@ -853,11 +855,11 @@ public class JavaLexer {
       if (chars.charAt(pos) == '.') {
         return eatJavaname(chars, pos + 1);
       }
-    } catch (IndexOutOfBoundsException ignored) {}
+    } catch (final IndexOutOfBoundsException ignored) {}
     return pos;
   }
 
-  protected static <R> int eatGeneric(CharSequence chars, int pos) {
+  protected static <R> int eatGeneric(final CharSequence chars, int pos) {
     pos = eatWhitespace(chars, pos);
     if (pos == chars.length()) {
       return pos;
@@ -878,7 +880,7 @@ public class JavaLexer {
     return eatWhitespace(chars, pos);
   }
 
-  protected static int eatStringValue(CharSequence chars, int pos) {
+  protected static int eatStringValue(final CharSequence chars, int pos) {
     pos = eatWhitespace(chars, pos);
     try {
       switch (chars.charAt(pos)) {
@@ -894,16 +896,16 @@ public class JavaLexer {
           escaped = c == '\\' && !escaped;
         }
       }
-    } catch (IndexOutOfBoundsException e) {
+    } catch (final IndexOutOfBoundsException e) {
 
     }
     return pos;
   }
 
-  protected static int eatArrayValue(CharSequence chars, int pos) {
+  protected static int eatArrayValue(final CharSequence chars, int pos) {
     int arrayDepth = 1;
     while (arrayDepth > 0) {
-      char c = chars.charAt(++pos);
+      final char c = chars.charAt(++pos);
       switch (c) {
       case '"':
         pos = eatStringValue(chars, pos);
@@ -919,9 +921,9 @@ public class JavaLexer {
     return pos + 1;
   }
 
-  protected static int eatArrayInitializer(CharSequence chars, int pos) {
+  protected static int eatArrayInitializer(final CharSequence chars, int pos) {
     while (true) {
-      char c = chars.charAt(++pos);
+      final char c = chars.charAt(++pos);
       if (c == '"') {
         pos = eatStringValue(chars, pos);
       } else if (c == '}') {
@@ -930,7 +932,7 @@ public class JavaLexer {
     }
   }
 
-  protected static boolean isQualified(String typeName) {
+  protected static boolean isQualified(final String typeName) {
     // In order to avoid trying to import enclosed type names, like
     // Cls.InnerCls,
     // we require that recognized package names begin w/ a lowercase letter.
@@ -942,7 +944,7 @@ public class JavaLexer {
         && typeName.indexOf('.') != -1;
   }
 
-  protected static void error(Throwable e, String string) {
+  protected static void error(final Throwable e, final String string) {
     if (string != null) {
       System.err.println(string);
     }
@@ -968,7 +970,7 @@ public class JavaLexer {
     interfaces = new TreeSet<String>();
     generics = new TreeSet<String>();
     imports = new TreeSet<String>();
-    String original = definition;
+    final String original = definition;
     int modifier = 0;
     if (definition.contains("public ")) {
       definition = definition.replace("public ", "");
@@ -1063,7 +1065,7 @@ public class JavaLexer {
         // extends applies to superclass
         index = definition.indexOf("extends ");
         if (index > 0) {
-          int endIndex = definition.indexOf(' ', index+8);
+          final int endIndex = definition.indexOf(' ', index+8);
           if (endIndex == -1) {
             superClass = definition.substring(index+8);
             definition = definition.replace("extends "+superClass, "");
@@ -1078,10 +1080,10 @@ public class JavaLexer {
         if (index > 0) {
           for (String iface : definition.substring(index + 11).split(",")) {
             iface = iface.trim();
-            int period = iface.lastIndexOf('.');
+            final int period = iface.lastIndexOf('.');
             if (period > 0) {
               // we have to pull generics off this iface as well
-              int generic = iface.indexOf('<');
+              final int generic = iface.indexOf('<');
               if (generic == -1) {
                 imports.add(iface);
               } else {
@@ -1100,19 +1102,19 @@ public class JavaLexer {
 
     index = definition.indexOf('<');
     if (index > -1) {
-      int methodLim = definition.indexOf('(');
+      final int methodLim = definition.indexOf('(');
       if (methodLim < 0 || methodLim > index) {
         isGenerics = true;
-        int end = findEnd(definition, index);
-        String generic = definition.substring(index + 1, end);
+        final int end = findEnd(definition, index);
+        final String generic = definition.substring(index + 1, end);
         for (String gen : generic.split(",")) {
           gen = gen.trim();
-          boolean noImport = gen.contains("!");
+          final boolean noImport = gen.contains("!");
           if (noImport) {
             gen = gen.replaceAll("[!]", "");
           } else {
-            for (String part : gen.split(" ")) {
-              int period = part.lastIndexOf('.');
+            for (final String part : gen.split(" ")) {
+              final int period = part.lastIndexOf('.');
               if (period < 0) {
                 continue;
               }
@@ -1122,7 +1124,7 @@ public class JavaLexer {
           }
           generics.add(gen);
         }
-        String prefix = definition.substring(0, index);
+        final String prefix = definition.substring(0, index);
         if (end < definition.length() - 1) {
           definition = prefix + definition.substring(end + 1);
         } else {
@@ -1153,7 +1155,7 @@ public class JavaLexer {
     className = definition;
   }
 
-  private int findEnd(String definition, int index) {
+  private int findEnd(final String definition, int index) {
     int opened = 1;
     while (index < definition.length()) {
       switch (definition.charAt(++index)) {
@@ -1258,10 +1260,10 @@ public class JavaLexer {
                   return false;
                 }
               }
-              int whitespace = eatWhitespace(generic, pos);
+              final int whitespace = eatWhitespace(generic, pos);
               if (generic.charAt(whitespace) == '.') {
                 // we have a fqcn.  Let's eat it.
-                StringBuilder b = new StringBuilder(generic.substring(start, pos));
+                final StringBuilder b = new StringBuilder(generic.substring(start, pos));
                 pos = whitespace;
                 do{
                   start = pos = eatWhitespace(generic, pos+1);
@@ -1315,11 +1317,12 @@ public class JavaLexer {
     return type;
   }
 
-  protected static int lexType(final IsType into, CharSequence chars, int pos) {
+  protected static int lexType(final IsType into, final CharSequence chars, int pos) {
     int start = pos = eatWhitespace(chars, pos);
-    int lastPeriod = -1, max = chars.length()-1;
+    int lastPeriod = -1;
+    final int max = chars.length()-1;
     boolean doneParsing = false;
-    StringBuilder pkg = new StringBuilder();
+    final StringBuilder pkg = new StringBuilder();
     package_loop:
     if (Character.isLowerCase(chars.charAt(pos))) {
       // We may have package names to read.
@@ -1337,7 +1340,7 @@ public class JavaLexer {
             break package_loop;
           }
         }
-        int whitespace = eatWhitespace(chars, pos);
+        final int whitespace = eatWhitespace(chars, pos);
         if (chars.charAt(whitespace) == '.') {
           if (whitespace > pos && chars.charAt(whitespace+1)=='.') {
             break package_loop;
@@ -1366,7 +1369,7 @@ public class JavaLexer {
       }
       into.setType(pkg.toString(), chars.subSequence(start, pos).toString());
     } else {
-      StringBuilder typeName = new StringBuilder();
+      final StringBuilder typeName = new StringBuilder();
       lastPeriod = -1;
       typeloop:
       while (true) {
@@ -1389,7 +1392,7 @@ public class JavaLexer {
             break typeloop;
           }
         }
-        int whitespace = eatWhitespace(chars, pos);
+        final int whitespace = eatWhitespace(chars, pos);
         if (chars.charAt(whitespace) == '.') {
           if (lastPeriod != -1) {
             typeName.append('.');
@@ -1433,7 +1436,7 @@ public class JavaLexer {
         }
         pos = eatWhitespace(chars, pos+1);
       }
-    } catch (IndexOutOfBoundsException ignored){}
+    } catch (final IndexOutOfBoundsException ignored){}
     if (pos < chars.length() && chars.charAt(pos) == '.') {
       assert chars.charAt(pos+1) == '.';
       assert chars.charAt(pos+2) == '.';
@@ -1444,31 +1447,31 @@ public class JavaLexer {
   }
 
   private static void lexGenerics(
-      SimpleStack<IsGeneric> into, CharSequence chars, int pos) {
+      final SimpleStack<IsGeneric> into, final CharSequence chars, final int pos) {
 
   }
 
-  public static IsParameter lexParam(CharSequence chars) {
+  public static IsParameter lexParam(final CharSequence chars) {
     int pos = eatWhitespace(chars, 0);
-    HasModifier mods = new HasModifier();
-    HasAnnotations annos = new HasAnnotations();
+    final HasModifier mods = new HasModifier();
+    final HasAnnotations annos = new HasAnnotations();
     pos = visitModifier(new ModifierExtractor(), mods, chars, pos);
     pos = visitAnnotation(new AnnotationExtractor(), annos, chars, pos);
-    TypeDef type = extractType(chars, pos);
-    int start = eatWhitespace(chars, type.index);
+    final TypeDef type = extractType(chars, pos);
+    final int start = eatWhitespace(chars, type.index);
     pos = eatJavaname(chars, start);
-    IsParameter param = new IsParameter(chars.subSequence(start, pos).toString(), type.toString());
+    final IsParameter param = new IsParameter(chars.subSequence(start, pos).toString(), type.toString());
     param.annotations = annos;
     param.modifier = mods.modifier;
     return param;
   }
 
-  public static <Param> int visitClassFile(ClassVisitor<Param> extractor,
-      Param receiver, CharSequence chars, int pos) {
+  public static <Param> int visitClassFile(final ClassVisitor<Param> extractor,
+      final Param receiver, final CharSequence chars, int pos) {
     pos = eatWhitespace(chars, pos);
     // Check for copyright
     if (chars.charAt(pos) == '/') {
-      StringBuilder b = new StringBuilder();
+      final StringBuilder b = new StringBuilder();
       pos = visitJavadoc(new JavadocExtractor(), b, chars, pos);
       extractor.visitCopyright(b.toString(), receiver);
       pos = eatWhitespace(chars, pos);
@@ -1478,7 +1481,7 @@ public class JavaLexer {
       // maybe package statement
       if (chars.charAt(pos+1) == 'a') {
         assert chars.subSequence(pos, pos+7).toString().equals("package");
-        int start = pos = eatWhitespace(chars, pos+7);
+        final int start = pos = eatWhitespace(chars, pos+7);
         pos = eatJavaname(chars, pos);
         extractor.visitPackage(chars.subSequence(start, pos).toString(), receiver);
         pos = eatWhitespace(chars, pos);
@@ -1496,7 +1499,7 @@ public class JavaLexer {
       int start = pos = eatWhitespace(chars, pos+6);
       boolean isStatic = false;
       pos = eatJavaname(chars, pos);
-      String value = chars.subSequence(start, pos).toString();
+      final String value = chars.subSequence(start, pos).toString();
       if ("static".equals(value)) {
         isStatic = true;
         start = pos = eatWhitespace(chars, pos);
@@ -1640,7 +1643,8 @@ public class JavaLexer {
     return shortcircuitClassBody(chars, pos);
   }
 
-  protected static int shortcircuitClassBody(CharSequence chars, int pos) {
+  @SuppressWarnings("unchecked")
+  protected static int shortcircuitClassBody(final CharSequence chars, int pos) {
  // Short-circuit for now; going to skip over fields, methods and inner types.
     while (chars.charAt(pos) != '}') {
       pos = eatWhitespaceAndComments(chars, pos);
@@ -1660,7 +1664,7 @@ public class JavaLexer {
       pos = eatWhitespaceAndComments(chars, pos+1);
       pos = eatJavaname(chars, pos);
       pos = eatWhitespaceAndComments(chars, pos);
-      char c = chars.charAt(pos);
+      final char c = chars.charAt(pos);
       switch(c) {
       case ';':
         // end of a field declaration, we can continue;
@@ -1713,7 +1717,7 @@ public class JavaLexer {
     return pos+1;
   }
 
-  protected static int eatStatement(CharSequence chars, int pos) {
+  protected static int eatStatement(final CharSequence chars, int pos) {
     pos = eatWhitespaceAndComments(chars, pos);
     while (chars.charAt(pos) != ';') {
       if (chars.charAt(pos) == '"') {

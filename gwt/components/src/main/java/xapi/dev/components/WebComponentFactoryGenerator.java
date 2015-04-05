@@ -2,18 +2,6 @@ package xapi.dev.components;
 
 import static java.lang.reflect.Modifier.PRIVATE;
 
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Supplier;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.UnsafeNativeLong;
 import com.google.gwt.core.client.js.JsProperty;
@@ -35,6 +23,18 @@ import com.google.gwt.core.ext.typeinfo.NotFoundException;
 import com.google.gwt.dev.util.collect.Sets;
 import com.google.gwt.thirdparty.guava.common.collect.HashMultimap;
 import com.google.gwt.thirdparty.guava.common.collect.Multimap;
+
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Supplier;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import xapi.components.api.JsoConsumer;
 import xapi.components.api.JsoSupplier;
@@ -95,10 +95,6 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
     public String        valueClass;
     public boolean       mapToAttribute;
     public boolean useJsniWildcard;
-
-    public MethodData(final String name) {
-      this.accessorName = this.name = name;
-    }
 
     public MethodData(final String accessorName, final String name) {
       this.accessorName = accessorName;

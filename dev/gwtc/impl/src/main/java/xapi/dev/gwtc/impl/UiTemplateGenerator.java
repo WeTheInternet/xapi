@@ -28,18 +28,18 @@ public class UiTemplateGenerator {
     boolean wrapsAll();
   }
   protected static class WrapsElements implements WrapElements {
-    
+
     private final GwtcUnitType type;
-    
-    public WrapsElements(GwtcUnitType type) {
+
+    public WrapsElements(final GwtcUnitType type) {
       this.type = type;
     }
-    
+
     @Override
     public GwtcUnitType type() {
       return type;
     }
-    
+
     @Override
     public boolean wrapsAll() {
       return false;
@@ -47,7 +47,7 @@ public class UiTemplateGenerator {
   }
   protected static class WrapsAllElements extends WrapsElements {
 
-    public WrapsAllElements(GwtcUnitType type) {
+    public WrapsAllElements(final GwtcUnitType type) {
       super(type);
     }
 
@@ -86,32 +86,32 @@ public class UiTemplateGenerator {
       super(GwtcUnitType.Class);
     }
   }
-  
+
   protected class UiContext {
-    
+
     private final EmbedStrategy strategy;
     WrapsAllElements all;
     WrapsElements each;
-    
 
-    public UiContext(EmbedStrategy strategy) {
+
+    public UiContext(final EmbedStrategy strategy) {
       this.strategy = strategy;
     }
-    
-    private StringBuilder before = new StringBuilder();
-    private StringBuilder after = new StringBuilder();
-    private List<UiContext> children = new ArrayList<UiContext>();
-    
-    protected void addBefore(String txt) {
+
+    private final StringBuilder before = new StringBuilder();
+    private final StringBuilder after = new StringBuilder();
+    private final List<UiContext> children = new ArrayList<UiContext>();
+
+    protected void addBefore(final String txt) {
       before.append(txt);
     }
-    
-    protected UiContext wrap(UiTemplateGenerator generator) {
-      UiContext ctx = generator.new UiContext(strategy);
+
+    protected UiContext wrap(final UiTemplateGenerator generator) {
+      final UiContext ctx = generator.new UiContext(strategy);
       if (matchesStrategy(generator)) {
         // When our UiContext matches for a supplied child,
         // we should return a new UiContext which wraps this child.
-        
+
         ctx.addBefore(before.toString());
         ctx.addAfter(after.toString());
         children.add(ctx);
@@ -119,12 +119,12 @@ public class UiTemplateGenerator {
       return ctx;
     }
 
-    private boolean matchesStrategy(UiTemplateGenerator generator) {
+    private boolean matchesStrategy(final UiTemplateGenerator generator) {
       switch (strategy) {
         case Insert:
           return false;
         case WrapAllClasses:
-          return generator.type == GwtcUnitType.Class && 
+          return generator.type == GwtcUnitType.Class &&
             (generator.parent == null || generator.parent.type == GwtcUnitType.Package);
         case WrapAllPackages:
           if (parent != null) {
@@ -140,33 +140,32 @@ public class UiTemplateGenerator {
       return false;
     }
 
-    protected void addAfter(String txt) {
+    protected void addAfter(final String txt) {
       after.append(txt);
     }
-    
+
     @Override
     public String toString() {
       if (children.isEmpty()) {
         return before + after.toString();
       } else {
-        StringBuilder b = new StringBuilder();
-        for (UiContext child : children) {
+        final StringBuilder b = new StringBuilder();
+        for (final UiContext child : children) {
           b.append(child.toString());
         }
         return b.toString();
       }
     }
-    
+
   }
-  
+
   protected UiTemplateGenerator parent;
 
-  @SuppressWarnings("unchecked")
   private final Fifo<UiTemplateGenerator> children = X_Inject.instance(Fifo.class);
 
   // Rather than null-check all six insertion points, we just use lazy providers
   // which will create collections only on demand.
-  LazyList<UiTemplate> 
+  LazyList<UiTemplate>
     htmlBodyBefore = newList(),
     htmlBody = newList(),
     htmlBodyAfter = newList(),
@@ -176,16 +175,16 @@ public class UiTemplateGenerator {
 
   protected final GwtcUnitType type;
 
-  private WrapsAllPackages allPackages = new WrapsAllPackages();
-  private WrapsAllClasses allClasses = new WrapsAllClasses();
-  private WrapsAllMethods allMethods = new WrapsAllMethods();
-  private WrapsPackages packages = new WrapsPackages();
-  private WrapsClasses classes = new WrapsClasses();
-  private WrapsMethods methods = new WrapsMethods();
-  
-  public UiTemplateGenerator(GwtcUnit root) {
+  private final WrapsAllPackages allPackages = new WrapsAllPackages();
+  private final WrapsAllClasses allClasses = new WrapsAllClasses();
+  private final WrapsAllMethods allMethods = new WrapsAllMethods();
+  private final WrapsPackages packages = new WrapsPackages();
+  private final WrapsClasses classes = new WrapsClasses();
+  private final WrapsMethods methods = new WrapsMethods();
+
+  public UiTemplateGenerator(final GwtcUnit root) {
     this.type = root.getType();
-    for (UiTemplate template : root.gwtc.includeHostHtml()) {
+    for (final UiTemplate template : root.gwtc.includeHostHtml()) {
       switch (template.location()) {
         case Body_Prefix:
         case Body_Insert:
@@ -196,7 +195,7 @@ public class UiTemplateGenerator {
       }
       addTemplate(template);
     }
-    for (GwtcUnit child : root.getChildren()) {
+    for (final GwtcUnit child : root.getChildren()) {
       addChild(new UiTemplateGenerator(child));
     }
   }
@@ -207,11 +206,11 @@ public class UiTemplateGenerator {
   private final LazyList<UiTemplate> newList() {
     return new LazyList<UiTemplate>();
   }
-  
-  
 
 
-  public UiTemplateGenerator addTemplate(UiTemplate template) {
+
+
+  public UiTemplateGenerator addTemplate(final UiTemplate template) {
     final ArrayList<UiTemplate> list;
     switch (template.location()) {
       case Body_Insert:
@@ -239,11 +238,11 @@ public class UiTemplateGenerator {
     return this;
   }
 
-  protected void addChild(UiTemplateGenerator child) {
+  protected void addChild(final UiTemplateGenerator child) {
     children.give(child);
   }
 
-  public void generate(XmlBuffer head, XmlBuffer body) {
+  public void generate(final XmlBuffer head, final XmlBuffer body) {
     final PrintBuffer headBefore = new PrintBuffer();
     final PrintBuffer headInsert = new PrintBuffer();
     final PrintBuffer headAfter = new PrintBuffer();
@@ -251,10 +250,10 @@ public class UiTemplateGenerator {
     final PrintBuffer bodyInsert = new PrintBuffer();
     final PrintBuffer bodyAfter = new PrintBuffer();
 
-    
+
     doGenerate(new HashSet<UiTemplateGenerator>(), headBefore, headInsert, headAfter,
         bodyBefore, bodyInsert, bodyAfter);
-    
+
 
     if (!headBefore.isEmpty()) {
       head.addToBeginning(headBefore);
@@ -274,53 +273,53 @@ public class UiTemplateGenerator {
     if (!bodyAfter.isEmpty()) {
       body.addToEnd(headAfter);
     }
-    
+
   }
-  public void doGenerate(HashSet<UiTemplateGenerator> finished,
-      PrintBuffer headBefore, PrintBuffer head, PrintBuffer headAfter, 
-      PrintBuffer bodyBefore, PrintBuffer body, PrintBuffer bodyAfter) {
-    
+  public void doGenerate(final HashSet<UiTemplateGenerator> finished,
+      final PrintBuffer headBefore, final PrintBuffer head, final PrintBuffer headAfter,
+      final PrintBuffer bodyBefore, final PrintBuffer body, final PrintBuffer bodyAfter) {
+
     if (htmlHeadBefore.isSet()) {
-      for (UiTemplate headResource : htmlHeadBefore.get()) {
+      for (final UiTemplate headResource : htmlHeadBefore.get()) {
         printResource(headBefore, headResource);
       }
     }
     if (htmlHead.isSet()) {
-      for (UiTemplate headResource : htmlHead.get()) {
+      for (final UiTemplate headResource : htmlHead.get()) {
         printResource(head, headResource);
       }
     }
     if (htmlBodyBefore.isSet()) {
-      for (UiTemplate headResource : htmlBodyBefore.get()) {
+      for (final UiTemplate headResource : htmlBodyBefore.get()) {
         printResource(bodyBefore, headResource);
       }
     }
     if (htmlBody.isSet()) {
-      for (UiTemplate headResource : htmlBody.get()) {
+      for (final UiTemplate headResource : htmlBody.get()) {
         printResource(body, headResource);
       }
     }
-    
-    for (UiTemplateGenerator child : children.forEach()) {
+
+    for (final UiTemplateGenerator child : children.forEach()) {
       if (finished.add(child)) {
         child.doGenerate(finished, headBefore, head, headAfter, bodyBefore, body, bodyAfter);
       }
     }
-    
+
     if (htmlHeadAfter.isSet()) {
-      for (UiTemplate headResource : htmlHeadAfter.get()) {
+      for (final UiTemplate headResource : htmlHeadAfter.get()) {
         printResource(headAfter, headResource);
       }
     }
     if (htmlBodyAfter.isSet()) {
-      for (UiTemplate headResource : htmlBodyAfter.get()) {
+      for (final UiTemplate headResource : htmlBodyAfter.get()) {
         printResource(bodyAfter, headResource);
       }
     }
   }
-  
-  protected String getResource(UiTemplate body) {
-    String value = body.value();
+
+  protected String getResource(final UiTemplate body) {
+    final String value = body.value();
     final String contents;
     try {
       InputStream resource;
@@ -340,18 +339,18 @@ public class UiTemplateGenerator {
           throw new UnsupportedOperationException(getClass()+" does not support "+body.type());
       }
       return contents;
-    } catch (Exception e) { 
+    } catch (final Exception e) {
       X_Log.warn(getClass(), e, "failure while loading resource",body);
       if (body.required()) {
         throw X_Util.rethrow(e);
       }
       return value;
     }
-    
+
   }
   @SuppressWarnings("incomplete-switch")
-  public void printResource(PrintBuffer el, UiTemplate body) {// TODO
-    String contents = resolveTemplate(getResource(body), body);
+  public void printResource(final PrintBuffer el, final UiTemplate body) {// TODO
+    final String contents = resolveTemplate(getResource(body), body);
     switch(body.embedStrategy()) {
       case Insert:
         break;
@@ -362,11 +361,11 @@ public class UiTemplateGenerator {
 //    X_Log.error(getClass(), "Test render\n\n",t.apply(values));
     el.println(contents);
   }
-  
 
-  private Object[] getValues(UiContext ctx, Location location, String[] keys) {
+
+  private Object[] getValues(final UiContext ctx, final Location location, final String[] keys) {
     int i = keys.length;
-    Object[] values = new Object[i];
+    final Object[] values = new Object[i];
     while (i-->0) {
       values[i] = keys[i];
       switch (keys[i]) {
@@ -382,12 +381,12 @@ public class UiTemplateGenerator {
   }
   /**
    * A hook used to allow subclasses to perform custom manipulations on a given template.
-   * 
+   *
    * @param contents - The resolved plaintext UTF-8 encoded text content of the supplied {@link UiTemplate}
    * @param body  - The {@link UiTemplate} from which the contents were resolved
    * @return - A manipulated form of the contents
    */
-  protected String resolveTemplate(String contents, UiTemplate body) {
+  protected String resolveTemplate(final String contents, final UiTemplate body) {
     return contents;
   }
 

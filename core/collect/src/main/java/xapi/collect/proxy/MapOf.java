@@ -169,6 +169,7 @@ implements CollectionProxy<K,V>, Map<K,V>, HasValues<K,V>, ObjectTo<K,V>
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public V[] toArray() {
     final V[] values = (V[]) Array.newInstance(valueClass, map.size());
     map.values().toArray(values);

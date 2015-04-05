@@ -2,7 +2,6 @@ package xapi.collect.impl;
 
 import static java.util.Collections.synchronizedMap;
 
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -36,7 +35,7 @@ public class CollectionServiceDefault implements CollectionService{
 
   static final Comparator<String> STRING_CMP = new Comparator<String>() {
     @Override
-    public int compare(String o1, String o2) {
+    public int compare(final String o1, final String o2) {
       if (o1 == null) {
         return o2 == null ? 0 : "".compareTo(o2);
       }
@@ -45,7 +44,7 @@ public class CollectionServiceDefault implements CollectionService{
   };
   static final Comparator<Enum<?>> ENUM_CMP = new Comparator<Enum<?>>() {
     @Override
-    public int compare(Enum<?> o1, Enum<?> o2) {
+    public int compare(final Enum<?> o1, final Enum<?> o2) {
       if (o1 == null) {
         return o2 == null ? 0 : -o2.ordinal();
       }
@@ -54,7 +53,7 @@ public class CollectionServiceDefault implements CollectionService{
   };
   public static final Comparator<Class<?>> CLASS_CMP = new Comparator<Class<?>>() {
     @Override
-    public int compare(Class<?> o1, Class<?> o2) {
+    public int compare(final Class<?> o1, final Class<?> o2) {
       if (o1 == null) {
         return o2 == null ? 0 : -o2.hashCode();
       }
@@ -70,7 +69,7 @@ public class CollectionServiceDefault implements CollectionService{
       if (o2==null) {
         o2=0;
       }
-      double delta = o1.doubleValue() - o2.doubleValue();
+      final double delta = o1.doubleValue() - o2.doubleValue();
       if (Math.abs(delta)<0.0000000001) {
         return 0;
       }
@@ -80,7 +79,7 @@ public class CollectionServiceDefault implements CollectionService{
   static final Comparator<Object> OBJECT_CMP = new Comparator<Object>() {
     @Override
     @SuppressWarnings({"unchecked","rawtypes"})
-    public int compare(Object o1, Object o2) {
+    public int compare(final Object o1, final Object o2) {
       if (o1 instanceof Comparable) {
         return ((Comparable)o1).compareTo(o2);
       }
@@ -107,7 +106,7 @@ public class CollectionServiceDefault implements CollectionService{
     comparators.entryFor(Double.class).setValue(NUMBER_CMP);
   }
 
-  protected <K, V> Map<K,V> newMap(CollectionOptions opts) {
+  protected <K, V> Map<K,V> newMap(final CollectionOptions opts) {
     if (opts.insertionOrdered()) {
       if (opts.concurrent()) {
         // TODO: something with better performance...
@@ -126,32 +125,32 @@ public class CollectionServiceDefault implements CollectionService{
   }
 
   @Override
-  public <V> IntTo<V> newList(Class<? extends V> cls, CollectionOptions opts) {
+  public <V> IntTo<V> newList(final Class<? extends V> cls, final CollectionOptions opts) {
     return new IntToList<V>(cls);
   }
 
   @Override
-  public <V> IntTo<V> newSet(Class<V> cls, CollectionOptions opts) {
+  public <V> IntTo<V> newSet(final Class<V> cls, final CollectionOptions opts) {
     throw new NotYetImplemented("IntToSet not yet implemented");
   }
 
   @Override
-  public <K,V> ObjectTo<K,V> newMap(Class<K> key, Class<V> cls, CollectionOptions opts) {
+  public <K,V> ObjectTo<K,V> newMap(final Class<K> key, final Class<V> cls, final CollectionOptions opts) {
     return new MapOf<K,V>(this.<K, V>newMap(opts), key, cls);
   }
 
 
   @Override
-  public <V> ClassTo<V> newClassMap(Class<V> cls, CollectionOptions opts) {
+  public <V> ClassTo<V> newClassMap(final Class<V> cls, final CollectionOptions opts) {
     return new ClassToDefault<V>(this.<Class<?>, V>newMap(opts), cls);
   }
 
   @Override
-  public <V> StringTo<V> newStringMap(Class<? extends V> cls, CollectionOptions opts) {
+  public <V> StringTo<V> newStringMap(final Class<? extends V> cls, final CollectionOptions opts) {
     return new StringToAbstract<V>(this.<String, V>newMap(opts));
   }
 
-  protected <K, V> CollectionProxy<K,V> newProxy(Class<K> keyType, Class<V> valueType, CollectionOptions opts) {
+  protected <K, V> CollectionProxy<K,V> newProxy(final Class<K> keyType, final Class<V> valueType, final CollectionOptions opts) {
     if (opts.insertionOrdered()) {
       if (opts.concurrent()) {
         return new MapOf<K,V>(new ConcurrentSkipListMap<K,V>(), keyType, valueType);
@@ -178,18 +177,18 @@ public class CollectionServiceDefault implements CollectionService{
   }
 
   @Override
-  public <K,V> Many<K,V> newMultiMap(Class<K> key, Class<V> cls, CollectionOptions opts) {
+  public <K,V> Many<K,V> newMultiMap(final Class<K> key, final Class<V> cls, final CollectionOptions opts) {
     throw new NotYetImplemented("Multi-map not yet implemented");
   }
 
   @Override
-  public <V> xapi.collect.api.ClassTo.Many<V> newClassMultiMap(Class<V> cls, CollectionOptions opts) {
+  public <V> xapi.collect.api.ClassTo.Many<V> newClassMultiMap(final Class<V> cls, final CollectionOptions opts) {
     throw new NotYetImplemented("Multi-map not yet implemented");
   }
 
   @Override
-  public <V> xapi.collect.api.StringTo.Many<V> newStringMultiMap(Class<V> cls,
-    CollectionOptions opts) {
+  public <V> xapi.collect.api.StringTo.Many<V> newStringMultiMap(final Class<V> cls,
+    final CollectionOptions opts) {
     throw new NotYetImplemented("Multi-map not yet implemented");
   }
 

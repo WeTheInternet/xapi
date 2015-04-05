@@ -10,7 +10,7 @@ import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
 
-
+@SuppressWarnings({"unchecked", "rawtypes"})
 class MethodTypeInfo extends ConstInfo {
   static final int tag = 16;
   int descriptor;

@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Map;
 
-
 class InvokeDynamicInfo extends ConstInfo {
   static final int tag = 18;
   int bootstrap, nameAndType;
@@ -24,6 +23,8 @@ class InvokeDynamicInfo extends ConstInfo {
     nameAndType = ntIndex;
   }
 
+  @Override
+  @SuppressWarnings("rawtypes")
   public int copy(final ConstPool src, final ConstPool dest, final Map map) {
     return dest.addInvokeDynamicInfo(bootstrap,
         src.getItem(nameAndType).copy(src, dest, map));
@@ -45,6 +46,7 @@ class InvokeDynamicInfo extends ConstInfo {
   @Override
   public int hashCode() { return bootstrap << 16 ^ nameAndType; }
 
+  @Override
   public void print(final PrintWriter out) {
     out.print("InvokeDynamic #");
     out.print(bootstrap);
@@ -52,6 +54,7 @@ class InvokeDynamicInfo extends ConstInfo {
     out.println(nameAndType);
   }
 
+  @Override
   public void write(final DataOutput out) throws IOException {
     out.writeByte(tag);
     out.writeShort(bootstrap);
