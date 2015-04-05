@@ -16,6 +16,21 @@ import static com.google.gwt.reflect.test.annotations.AbstractAnnotation.MemberT
 import static com.google.gwt.reflect.test.annotations.AbstractAnnotation.MemberType.String;
 import static com.google.gwt.reflect.test.annotations.AbstractAnnotation.MemberType.String_Array;
 
+import com.google.gwt.core.client.UnsafeNativeLong;
+import com.google.gwt.core.shared.GWT;
+import com.google.gwt.reflect.client.strategy.GwtRetention;
+import com.google.gwt.reflect.client.strategy.ReflectionStrategy;
+import com.google.gwt.reflect.test.annotations.AbstractAnnotation;
+import com.google.gwt.reflect.test.annotations.CompileRetention;
+import com.google.gwt.reflect.test.annotations.ComplexAnnotation;
+import com.google.gwt.reflect.test.annotations.InheritedAnnotation;
+import com.google.gwt.reflect.test.annotations.RuntimeRetention;
+import com.google.gwt.reflect.test.annotations.SimpleAnnotation;
+import com.google.gwt.reflect.test.annotations.UninheritedAnnotation;
+import com.google.gwt.reflect.test.cases.ReflectionCaseHasAllAnnos;
+import com.google.gwt.reflect.test.cases.ReflectionCaseSimple;
+import com.google.gwt.reflect.test.cases.ReflectionCaseSubclass;
+
 import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
 import java.lang.reflect.Constructor;
@@ -24,21 +39,16 @@ import java.lang.reflect.Method;
 
 import org.junit.Test;
 
-import com.google.gwt.core.client.UnsafeNativeLong;
-import com.google.gwt.core.shared.GWT;
-import com.google.gwt.reflect.client.strategy.ReflectionStrategy;
-import com.google.gwt.reflect.test.annotations.AbstractAnnotation;
-import com.google.gwt.reflect.test.annotations.CompileRetention;
-import com.google.gwt.reflect.test.annotations.ComplexAnnotation;
-import com.google.gwt.reflect.test.annotations.RuntimeRetention;
-import com.google.gwt.reflect.test.annotations.SimpleAnnotation;
-import com.google.gwt.reflect.test.cases.ReflectionCaseHasAllAnnos;
-import com.google.gwt.reflect.test.cases.ReflectionCaseSimple;
-import com.google.gwt.user.client.Window;
-
 @ComplexAnnotation
 @SuppressWarnings("all")
-@ReflectionStrategy(annotationRetention=ReflectionStrategy.COMPILE|ReflectionStrategy.RUNTIME)
+@ReflectionStrategy(
+    // Keep all annotations on this type
+    annotationRetention=ReflectionStrategy.ALL_ANNOTATIONS,
+    // Keep all annotations on this type's members
+    memberRetention=@GwtRetention(
+      annotationRetention=ReflectionStrategy.ALL_ANNOTATIONS
+    )
+)
 public class AnnotationTests extends AbstractReflectionTest{
 
   static class ValueImpl extends AbstractAnnotation implements SimpleAnnotation {
@@ -46,7 +56,7 @@ public class AnnotationTests extends AbstractReflectionTest{
     public ValueImpl() {
       this("1");
     }
-    public ValueImpl(String value) {
+    public ValueImpl(final String value) {
       setValue("value", value);
     }
 
@@ -132,7 +142,7 @@ public class AnnotationTests extends AbstractReflectionTest{
       long singleLong,
       String singleString,
       Enum<?> singleEnum,
-      Annotation singleAnnotation,
+      SimpleAnnotation singleAnnotation,
       Class<?> singleClass,
       boolean[] multiBool,
       int[] multiInt,
@@ -263,23 +273,30 @@ public class AnnotationTests extends AbstractReflectionTest{
 
   }
 
+  @SimpleAnnotation
+  Object field;
+
+  @SimpleAnnotation
+  void method(){}
+
   @Test
   public void testAnnotationMethods() {
     if (!GWT.isClient())
+     {
       return;// Don't let jvms try to load jsni; this @Test is gwt only
-    TestCaseImpl impl1 = new TestCaseImpl();
-    TestCaseImpl impl2 = new TestCaseImpl();
+    }
+    final TestCaseImpl impl1 = new TestCaseImpl();
+    final TestCaseImpl impl2 = new TestCaseImpl();
     assertEquals(impl1, impl2);
     assertEquals(impl1.toString(), impl2.toString());
     assertEquals(impl1.hashCode(), impl2.hashCode());
   }
 
-
   @Test
   public void testSimpleReflection() throws Exception {
     final Class<ReflectionCaseSimple> c = ReflectionCaseSimple.class;
-    ReflectionCaseSimple inst = testNewInstance(magicClass(c));
-    ReflectionCaseSimple anon = new ReflectionCaseSimple() {};
+    final ReflectionCaseSimple inst = testNewInstance(magicClass(c));
+    final ReflectionCaseSimple anon = new ReflectionCaseSimple() {};
     testAssignable(inst, anon);
 
     testHasNoArgDeclaredMethods(c, "privatePrimitive", "privateObject", "publicPrimitive", "publicObject");
@@ -289,11 +306,26 @@ public class AnnotationTests extends AbstractReflectionTest{
   }
 
   @Test
+  public void testSelfEquals() {
+    final ComplexAnnotation self = AnnotationTests.class.getAnnotation(ComplexAnnotation.class);
+    assertEquals(self, self);
+  }
+
+  @Test
+  @ComplexAnnotation
+  public void testOtherEquals() throws Throwable {
+    final ComplexAnnotation onType = AnnotationTests.class.getAnnotation(ComplexAnnotation.class);
+    final Method method = AnnotationTests.class.getMethod("testOtherEquals");
+    final ComplexAnnotation onMethod = method.getAnnotation(ComplexAnnotation.class);
+    assertTrue(onType.equals(onMethod));
+  }
+
+  @Test
   public void testAnnotationsKeepAll() throws Exception {
-    Class<?> testCase = magicClass(ReflectionCaseHasAllAnnos.class);
-    Field field = testCase.getDeclaredField("field");
-    Method method = testCase.getDeclaredMethod("method", Long.class);
-    Constructor<?> ctor = testCase.getDeclaredConstructor(long.class);
+    final Class<?> testCase = magicClass(ReflectionCaseHasAllAnnos.class);
+    final Field field = testCase.getDeclaredField("field");
+    final Method method = testCase.getDeclaredMethod("method", Long.class);
+    final Constructor<?> ctor = testCase.getDeclaredConstructor(long.class);
     Annotation[] annos = testCase.getAnnotations();
     assertHasAnno(testCase, annos, RuntimeRetention.class);
     if (GWT.isScript()) {
@@ -323,54 +355,82 @@ public class AnnotationTests extends AbstractReflectionTest{
 
   }
 
-  private void assertHasAnno(Class<?> cls, Annotation[] annos, Class<? extends Annotation> annoClass) {
-    for (Annotation anno : annos) {
-      if (anno.annotationType() == annoClass)
+  @Test
+  public void testAnnotationOnField() throws Throwable {
+    final Field f = AnnotationTests.class.getDeclaredField("field");
+    final SimpleAnnotation anno = f.getAnnotation(SimpleAnnotation.class);
+    assertNotNull(anno);
+  }
+
+  @Test
+  public void testInheritsAnnotations() throws Throwable {
+    final InheritedAnnotation inherited = ReflectionCaseHasAllAnnos.class.getAnnotation(InheritedAnnotation.class);
+    final UninheritedAnnotation uninherited = ReflectionCaseHasAllAnnos.class.getAnnotation(UninheritedAnnotation.class);
+    assertNotNull(inherited);
+    assertNull(uninherited);
+  }
+
+  @Test
+  public void testInheritsAnnotationsFilter() throws Throwable {
+    // In order to use a class reference here and bypass the injector, which will ignore any sort
+    // of reflection strategy restrictions, we must ensure that our class reference is not tracable
+    // to a constant literal expression.  Thus, we obscure it with an opaque conditional guaranteed to be false
+    final Class<ReflectionCaseSubclass> cls = Math.random() == -1 ? null : ReflectionCaseSubclass.class;
+    final InheritedAnnotation inherited = cls.getAnnotation(InheritedAnnotation.class);
+    final UninheritedAnnotation uninherited = cls.getAnnotation(UninheritedAnnotation.class);
+    assertNull(inherited);
+    assertNull(uninherited);
+  }
+
+  private void assertHasAnno(final Class<?> cls, final Annotation[] annos, final Class<? extends Annotation> annoClass) {
+    for (final Annotation anno : annos) {
+      if (anno.annotationType() == annoClass) {
         return;
+      }
     }
     fail(cls.getName()+" did not have required annotation "+annoClass);
   }
 
-  private void testCantAccessNonPublicMethods(Class<?> c, String ... methods) {
-    for (String method : methods) {
+  private void testCantAccessNonPublicMethods(final Class<?> c, final String ... methods) {
+    for (final String method : methods) {
       try {
         c.getMethod(method);
         fail("Could erroneously access non-public method "+method+" in "+c.getName());
-      } catch (NoSuchMethodException e) {}
+      } catch (final NoSuchMethodException e) {}
     }
   }
 
-  private void testCantAccessNonDeclaredMethods(Class<?> c, String ... methods) {
-    for (String method : methods) {
+  private void testCantAccessNonDeclaredMethods(final Class<?> c, final String ... methods) {
+    for (final String method : methods) {
       try {
         c.getDeclaredMethod(method);
         fail("Could erroneously access non-declared method "+method+" in "+c.getName());
-      } catch (NoSuchMethodException e) {}
+      } catch (final NoSuchMethodException e) {}
     }
   }
 
-  private void testHasNoArgDeclaredMethods(Class<?> c, String ... methods) throws Exception{
-    for (String method : methods) {
+  private void testHasNoArgDeclaredMethods(final Class<?> c, final String ... methods) throws Exception{
+    for (final String method : methods) {
       assertNotNull(c.getDeclaredMethod(method));
     }
   }
-    private void testHasNoArgPublicMethods(Class<?> c, String ... methods) throws Exception{
-      for (String method : methods) {
+    private void testHasNoArgPublicMethods(final Class<?> c, final String ... methods) throws Exception{
+      for (final String method : methods) {
         assertNotNull(c.getMethod(method));
       }
   }
 
-  private void testAssignable(Object inst, Object anon) {
+  private void testAssignable(final Object inst, final Object anon) {
     assertTrue(inst.getClass().isAssignableFrom(anon.getClass()));
     assertFalse(anon.getClass().isAssignableFrom(inst.getClass()));
   }
 
-  private <T> T testNewInstance(Class<T> c) throws Exception {
-    T newInst = c.newInstance();
+  private <T> T testNewInstance(final Class<T> c) throws Exception {
+    final T newInst = c.newInstance();
     assertNotNull(c.getName()+" returned null instead of a new instance", newInst);
     assertTrue(c.isAssignableFrom(newInst.getClass()));
     return newInst;
   }
 
-  
+
 }

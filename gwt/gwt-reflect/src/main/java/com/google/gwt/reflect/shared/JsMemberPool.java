@@ -1,17 +1,18 @@
 package com.google.gwt.reflect.shared;
 
+import com.google.gwt.core.client.JavaScriptObject;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
-import com.google.gwt.core.client.JavaScriptObject;
-
 public final class JsMemberPool <T> extends JavaScriptObject implements MemberPool <T>{
 
   public static native int constId(Class<?> cls)
   /*-{
+     cls.@java.lang.Class::getName()(); // ensures constId is initialized
      return cls.@java.lang.Class::constId;
    }-*/;
 
@@ -53,6 +54,11 @@ public final class JsMemberPool <T> extends JavaScriptObject implements MemberPo
   static void addMethod(final Class<?> cls, final Method m) {
     final JsMemberPool<?> pool = getMembers(cls);
     pool.addMethod(m);
+  }
+
+  static void addAnnotation(final Class<?> cls, final Annotation a, final boolean declared) {
+    final JsMemberPool<?> pool = getMembers(cls);
+    pool.addAnnotation(a, declared);
   }
 
   static native int getSeedId(Class<?> cls)
@@ -109,7 +115,7 @@ public final class JsMemberPool <T> extends JavaScriptObject implements MemberPo
   }-*/;
   private static native <T> JsMemberPool<T> findMembers(int constId)
   /*-{
-    return $wnd.Reflect.$$[constId];
+    return $wnd.GwtReflect.$$[constId];
   }-*/;
 
   private static native Method findMethod(JsMemberPool<?> pool, String id)
@@ -126,10 +132,14 @@ public final class JsMemberPool <T> extends JavaScriptObject implements MemberPo
 
   private static native <T> void setMembers(int constId, JsMemberPool<T> members)
   /*-{
-    $wnd.Reflect.$$[constId]=members;
+    $wnd.GwtReflect.$$[constId]=members;
   }-*/;
 
   protected JsMemberPool() {}
+
+  public final void addAnnotation(final Annotation a, final boolean declared) {
+    addAnnotation(a.annotationType().getName(), a, declared);
+  }
 
   @SuppressWarnings("rawtypes")
   public final void addConstructor(final Constructor c) {
@@ -157,7 +167,7 @@ public final class JsMemberPool <T> extends JavaScriptObject implements MemberPo
     var array = @com.google.gwt.reflect.shared.JsMemberPool::annoArray()();
     for (var i in this.a) {
       if (this.a.hasOwnProperty(i))
-        array.push(this.a[i]());
+        array.push(this.a[i]);
     }
     return array;
   }-*/;
@@ -199,10 +209,22 @@ public final class JsMemberPool <T> extends JavaScriptObject implements MemberPo
   }
 
   @Override
-  public final Annotation[] getDeclaredAnnotations() {
-    // we currently don't differentiate between declared and public annotations
-    return getAnnotations();
-  }
+  public final native <A extends Annotation> A getDeclaredAnnotation(Class<A> annoCls)
+  /*-{
+    var anno = this.a[annoCls.@java.lang.Class::getName()()];
+    return anno && anno.declared && anno || null;
+  }-*/;
+
+  @Override
+  public final native Annotation[] getDeclaredAnnotations()
+  /*-{
+    var array = @com.google.gwt.reflect.shared.JsMemberPool::annoArray()();
+    for (var i in this.a) {
+      if (this.a.hasOwnProperty(i) && this.a[i].declared)
+        array.push(this.a[i]);
+    }
+    return array;
+  }-*/;
 
   @Override
   public final Constructor<T> getDeclaredConstructor(final Class<?> ... params) throws NoSuchMethodException {
@@ -363,6 +385,14 @@ public final class JsMemberPool <T> extends JavaScriptObject implements MemberPo
       return this.$.@java.lang.Class::getName()();
     }catch(e) {
       return "<unknown type>";
+    }
+  }-*/;
+
+  private final native void addAnnotation(String key, Annotation a, boolean declared)
+  /*-{
+    this.a[key] = a;
+    if (declared) {
+      a.declared = true;
     }
   }-*/;
 

@@ -1,12 +1,5 @@
 package com.google.gwt.reflect.client;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collection;
-
 import com.google.gwt.core.client.Callback;
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.MagicMethod;
@@ -18,6 +11,13 @@ import com.google.gwt.reflect.client.strategy.ReflectionStrategy;
 import com.google.gwt.reflect.shared.ClassMap;
 import com.google.gwt.reflect.shared.GwtReflect;
 import com.google.gwt.reflect.shared.MemberPool;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collection;
 
 public class ConstPool extends JavaScriptObject {
 
@@ -351,17 +351,20 @@ public class ConstPool extends JavaScriptObject {
 
   public final native Iterable<Class<?>> getAllClasses()
   /*-{
-		return this.a[id];
+    return @com.google.gwt.reflect.client.ConstPool::fillArray(Ljava/util/ArrayList;Lcom/google/gwt/core/client/JavaScriptObject;)
+      (@java.util.ArrayList::new()(), this.c);
   }-*/;
 
   public final native Iterable<ClassMap<?>> getAllEnhancedClasses()
   /*-{
-		return this.c[id];
+    return @com.google.gwt.reflect.client.ConstPool::fillArray(Ljava/util/ArrayList;Lcom/google/gwt/core/client/JavaScriptObject;)
+      (@java.util.ArrayList::new()(), this.$);
   }-*/;
 
   public final native Iterable<MemberPool<?>> getAllReflectionData()
   /*-{
-		return this.n[className];
+    return @com.google.gwt.reflect.client.ConstPool::fillArray(Ljava/util/ArrayList;Lcom/google/gwt/core/client/JavaScriptObject;)
+      (@java.util.ArrayList::new()(), this.$$);
   }-*/;
 
   public final native <T> T getAnnotation(int id)

@@ -1,4 +1,4 @@
-package com.google.gwt.reflect.test;
+package com.google.gwt.reflect.legacy;
 
 import java.lang.reflect.Method;
 
@@ -10,7 +10,7 @@ import com.google.gwt.junit.client.GWTTestCase;
 import com.google.gwt.reflect.client.strategy.ReflectionStrategy;
 import com.google.gwt.reflect.shared.GwtReflect;
 
-@ReflectionStrategy(debug=ReflectionStrategy.ALL, annotationRetention=ReflectionStrategy.ALL)
+@ReflectionStrategy(debug=ReflectionStrategy.ALL_MEMBERS, annotationRetention=ReflectionStrategy.ALL_MEMBERS)
 public class DemoTest extends GWTTestCase {
 
   private static final int finalField = 1;
@@ -52,7 +52,7 @@ public class DemoTest extends GWTTestCase {
     GwtReflect.magicClass(DemoTest.class);
     ReflectionStrategy strategy = DemoTest.class.getAnnotation(ReflectionStrategy.class);
     assertNotNull(strategy);
-    assertEquals(strategy.debug(), ReflectionStrategy.ALL);
+    assertEquals(strategy.debug(), ReflectionStrategy.ALL_MEMBERS);
   }
   
   @Test

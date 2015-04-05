@@ -1,22 +1,22 @@
 package com.google.gwt.reflect.rebind;
 
+import com.google.gwt.reflect.shared.MemberPool;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
-import com.google.gwt.reflect.shared.MemberPool;
-
 public class JvmMemberPool <T> implements MemberPool<T>{
 
   private final Class<T> type;
 
-  public JvmMemberPool(Class<T> type) {
+  public JvmMemberPool(final Class<T> type) {
     this.type = type;
   }
 
   @Override
-  public <A extends Annotation> A getAnnotation(Class<A> annoCls) {
+  public <A extends Annotation> A getAnnotation(final Class<A> annoCls) {
     return type.getAnnotation(annoCls);
   }
 
@@ -31,12 +31,17 @@ public class JvmMemberPool <T> implements MemberPool<T>{
   }
 
   @Override
-  public Constructor<T> getConstructor(Class<?> ... params) throws NoSuchMethodException {
+  public <A extends Annotation> A getDeclaredAnnotation(final Class<A> annoCls) {
+    return type.getDeclaredAnnotation(annoCls);
+  }
+
+  @Override
+  public Constructor<T> getConstructor(final Class<?> ... params) throws NoSuchMethodException {
     return type.getConstructor(params);
   }
 
   @Override
-  public Constructor<T> getDeclaredConstructor(Class<?> ... params) throws NoSuchMethodException {
+  public Constructor<T> getDeclaredConstructor(final Class<?> ... params) throws NoSuchMethodException {
     return type.getDeclaredConstructor(params);
   }
 
@@ -53,12 +58,12 @@ public class JvmMemberPool <T> implements MemberPool<T>{
   }
 
   @Override
-  public Field getField(String name) throws NoSuchFieldException {
+  public Field getField(final String name) throws NoSuchFieldException {
     return type.getField(name);
   }
 
   @Override
-  public Field getDeclaredField(String name) throws NoSuchFieldException {
+  public Field getDeclaredField(final String name) throws NoSuchFieldException {
     return type.getDeclaredField(name);
   }
 
@@ -73,12 +78,12 @@ public class JvmMemberPool <T> implements MemberPool<T>{
   }
 
   @Override
-  public Method getMethod(String name, Class<?> ... params) throws NoSuchMethodException {
+  public Method getMethod(final String name, final Class<?> ... params) throws NoSuchMethodException {
     return type.getMethod(name, params);
   }
 
   @Override
-  public Method getDeclaredMethod(String name, Class<?> ... params) throws NoSuchMethodException {
+  public Method getDeclaredMethod(final String name, final Class<?> ... params) throws NoSuchMethodException {
     return type.getDeclaredMethod(name, params);
   }
 

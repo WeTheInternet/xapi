@@ -2,10 +2,6 @@ package com.google.gwt.reflect.rebind.injectors;
 
 import static com.google.gwt.reflect.rebind.ReflectionUtilAst.extractClassLiteral;
 
-import java.lang.reflect.Array;
-import java.util.List;
-import java.util.Queue;
-
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.dev.jjs.MagicMethodGenerator;
@@ -26,6 +22,10 @@ import com.google.gwt.dev.jjs.ast.JType;
 import com.google.gwt.dev.jjs.impl.UnifyAst.UnifyVisitor;
 import com.google.gwt.dev.util.collect.Lists;
 import com.google.gwt.reflect.rebind.ReflectionUtilAst;
+
+import java.lang.reflect.Array;
+import java.util.List;
+import java.util.Queue;
 
 public class SingleDimArrayInjector implements MagicMethodGenerator,
 UnifyAstListener {
@@ -76,14 +76,14 @@ UnifyAstListener {
     JClassLiteral classLit = null;
     cur = arrayType;
     while (cur instanceof JArrayType) {
-      classLit = new JClassLiteral(info.makeChild(), cur);
       cur = ((JArrayType) cur).getElementType();
     }
+    classLit = new JClassLiteral(info.makeChild(), cur);
 
     // Define new array[n]...[]; statement
     final JNewArray newArr = new JNewArray(info, arrayType, dims, null,
       classLit);
-    return new JMethodCall(info, null, registerArray, newArr);
+    return new JMethodCall(info, null, registerArray, newArr, new JClassLiteral(info.makeChild(), arrayType));
   }
 
   @Override

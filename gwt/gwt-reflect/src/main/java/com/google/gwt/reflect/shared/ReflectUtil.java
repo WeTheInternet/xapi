@@ -1,40 +1,46 @@
 package com.google.gwt.reflect.shared;
 
-import java.lang.annotation.Annotation;
-
 import com.google.gwt.core.client.GwtScriptOnly;
 import com.google.gwt.core.client.JavaScriptObject;
+
+import java.lang.annotation.Annotation;
 
 public final class ReflectUtil {
 
   private ReflectUtil(){}
-  
-  public static String joinClasses(String separator, Class<?> ... vals) {
+
+  public static String joinClasses(final String separator, final Class<?> ... vals) {
     int ind = vals.length;
-    if (ind == 0) return "";// zero elements?  zero-length string for you!
+    if (ind == 0)
+     {
+      return "";// zero elements?  zero-length string for you!
+    }
     final String[] values = new String[ind];
     for(;ind-->0;){
-      Class<?> cls = vals[ind];
-      if (cls != null)
+      final Class<?> cls = vals[ind];
+      if (cls != null) {
         values[ind] = cls.getCanonicalName();
+      }
     }
     // all string operations use a new array, so minimize all calls possible
     final char[] sep = separator.toCharArray();
-  
+
     // determine final size and normalize nulls
     int totalSize = (values.length - 1) * sep.length;// separator size
     for (int i = 0; i < values.length; i++) {
-      if (values[i] == null)
+      if (values[i] == null) {
         values[i] = "";
-      else
+      } else {
         totalSize += values[i].length();
+      }
     }
-  
+
     // exact size; no bounds checks or resizes
     final char[] joined = new char[totalSize];
     ind = 0;
     // note, we are iterating all the elements except the last one
-    int i = 0, end = values.length - 1;
+    int i = 0;
+    final int end = values.length - 1;
     for (; i < end; i++) {
       System.arraycopy(values[i].toCharArray(), 0, joined, ind, values[i].length());
       ind += values[i].length();
@@ -45,7 +51,7 @@ public final class ReflectUtil {
     // this is why we checked values.length == 0 off the hop
     final String last = values[end];
     System.arraycopy(last.toCharArray(), 0, joined, ind, last.length());
-  
+
     return new String(joined);
   }
 
@@ -70,6 +76,11 @@ public final class ReflectUtil {
     return map[key] && map[key].declared && map[key]();
   }-*/;
 
+  public static native <T> T getOrMakeMember(String key, JavaScriptObject map)
+  /*-{
+    return map[key] && map[key]();
+  }-*/;
+
   public static native <T> T[] getPublicMembers(JavaScriptObject map, T[] members)
   /*-{
     for (var i in map) {
@@ -83,6 +94,15 @@ public final class ReflectUtil {
   /*-{
     for (var i in map) {
       if (map.hasOwnProperty(i) && map[i].declared)
+        members.push(map[i]());
+    }
+    return members;
+  }-*/;
+
+  public static native <T> T[] getMembers(JavaScriptObject map, T[] members)
+  /*-{
+    for (var i in map) {
+      if (map.hasOwnProperty(i))
         members.push(map[i]());
     }
     return members;

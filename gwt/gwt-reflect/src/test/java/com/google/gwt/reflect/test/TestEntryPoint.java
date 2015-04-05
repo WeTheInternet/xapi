@@ -2,12 +2,6 @@ package com.google.gwt.reflect.test;
 
 import static com.google.gwt.reflect.shared.GwtReflect.magicClass;
 
-import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import com.google.gwt.core.client.Callback;
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
@@ -30,6 +24,12 @@ import com.google.gwt.user.client.Event;
 import com.google.gwt.user.client.EventListener;
 import com.google.gwt.user.client.Timer;
 
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+
 @SuppressWarnings("deprecation" )
 public class TestEntryPoint implements EntryPoint {
 
@@ -39,7 +39,7 @@ public class TestEntryPoint implements EntryPoint {
 
   @Override
   public void onModuleLoad() {
-    String module = GWT.getModuleName(), host = GWT.getHostPageBaseURL().replace("/"+module, "");
+    final String module = GWT.getModuleName(), host = GWT.getHostPageBaseURL().replace("/"+module, "");
     print("<a href='#' onclick=\""
           + "window.__gwt_bookmarklet_params = "
             + "{server_url:'" + host+ "', "
@@ -72,7 +72,7 @@ public class TestEntryPoint implements EntryPoint {
       public void onSuccess() {
         try {
           String.class.getMethod("equals", Object.class).invoke("!", "!");
-        } catch (Exception e) {print("Basic string reflection not working; "
+        } catch (final Exception e) {print("Basic string reflection not working; "
             + "expect failures...", e);
         }
         // Do not change the order of the following calls unless you also
@@ -85,14 +85,14 @@ public class TestEntryPoint implements EntryPoint {
         addFieldTests();
         ConstPool.loadConstPool(new Callback<ConstPool, Throwable>() {
           @Override
-          public void onSuccess(ConstPool result) {
-            for (MemberPool<?> m : result.getAllReflectionData()) {
+          public void onSuccess(final ConstPool result) {
+            for (final MemberPool<?> m : result.getAllReflectionData()) {
               try {
-                Class<?> c = m.getType();
+                final Class<?> c = m.getType();
                 if (!testClasses.containsKey(c)) {
                   addTests(c);
                 }
-              } catch (Throwable e) {
+              } catch (final Throwable e) {
                 print("Error adding tests", e);
               }
             }
@@ -100,7 +100,7 @@ public class TestEntryPoint implements EntryPoint {
           }
 
           @Override
-          public void onFailure(Throwable caught) {
+          public void onFailure(final Throwable caught) {
             print("Error loading ConstPool", caught);
           }
         });
@@ -109,7 +109,7 @@ public class TestEntryPoint implements EntryPoint {
       }
 
       @Override
-      public void onFailure(Throwable reason) {
+      public void onFailure(final Throwable reason) {
         print("Error loading TestEntryPoint", reason);
       }
     });
@@ -128,7 +128,7 @@ public class TestEntryPoint implements EntryPoint {
       }
 
       @Override
-      public void onFailure(Throwable reason) {
+      public void onFailure(final Throwable reason) {
 
       }
     });
@@ -141,13 +141,13 @@ public class TestEntryPoint implements EntryPoint {
         magicClass(AnnotationTests.class);
         try {
           addTests(AnnotationTests.class);
-        } catch (Throwable e) {
+        } catch (final Throwable e) {
           print("Error adding AnnotationTests", e);
         }
       }
 
       @Override
-      public void onFailure(Throwable reason) {
+      public void onFailure(final Throwable reason) {
         print("Error loading AnnotationTests", reason);
       }
     });
@@ -160,13 +160,13 @@ public class TestEntryPoint implements EntryPoint {
         magicClass(ArrayTests.class);
         try {
           addTests(ArrayTests.class);
-        } catch (Throwable e) {
+        } catch (final Throwable e) {
           print("Error adding ArrayTests", e);
         }
       }
 
       @Override
-      public void onFailure(Throwable reason) {
+      public void onFailure(final Throwable reason) {
         print("Error loading ArrayTests", reason);
       }
     });
@@ -179,13 +179,13 @@ public class TestEntryPoint implements EntryPoint {
         magicClass(ConstructorTests.class);
         try {
           addTests(ConstructorTests.class);
-        } catch (Throwable e) {
+        } catch (final Throwable e) {
           print("Error adding ConstructorTests", e);
         }
       }
 
       @Override
-      public void onFailure(Throwable reason) {
+      public void onFailure(final Throwable reason) {
         print("Error loading ConstructorTests", reason);
       }
     });
@@ -198,13 +198,13 @@ public class TestEntryPoint implements EntryPoint {
         magicClass(FieldTests.class);
         try {
           addTests(FieldTests.class);
-        } catch (Throwable e) {
+        } catch (final Throwable e) {
           print("Error adding FieldTests", e);
         }
       }
 
       @Override
-      public void onFailure(Throwable reason) {
+      public void onFailure(final Throwable reason) {
         print("Error loading FieldTests", reason);
       }
     });
@@ -217,34 +217,34 @@ public class TestEntryPoint implements EntryPoint {
         magicClass(MethodTests.class).getMethods();
         try {
           addTests(MethodTests.class);
-        } catch (Throwable e) {
+        } catch (final Throwable e) {
           print("Error adding MethodTests", e);
         }
       }
 
       @Override
-      public void onFailure(Throwable reason) {
+      public void onFailure(final Throwable reason) {
         print("Error loading MethodTests", reason);
       }
     });
   }
 
-  public void addTests(Class<?> cls) throws Throwable {
-    Method[] allTests = JUnit4Test.findTests(cls);
+  public void addTests(final Class<?> cls) throws Throwable {
+    final Method[] allTests = JUnit4Test.findTests(cls);
     if (allTests.length > 0) {
       testClasses.put(cls, allTests);
-      Object inst = cls.newInstance();
-      for (Method method : allTests) {
+      final Object inst = cls.newInstance();
+      for (final Method method : allTests) {
         tests.put(method, inst);
       }
     }
   }
 
   private void displayTests() {
-    BodyElement body = Document.get().getBody();
+    final BodyElement body = Document.get().getBody();
 
     for (final Class<?> c : testClasses.keySet()) {
-      DivElement div = Document.get().createDivElement();
+      final DivElement div = Document.get().createDivElement();
       div.getStyle().setDisplay(Display.INLINE_BLOCK);
       div.getStyle().setVerticalAlign(VerticalAlign.TOP);
       div.getStyle().setMarginRight(2, Unit.EM);
@@ -260,11 +260,11 @@ public class TestEntryPoint implements EntryPoint {
           .append("<div class='results' id='"+TEST_RESULTS+id+"'> </div>")
       ;
       try {
-        String path = c.getProtectionDomain().getCodeSource().getLocation().getPath();
+        final String path = c.getProtectionDomain().getCodeSource().getLocation().getPath();
         b.append("<sup><a href='file://"+path+"'>")
         .append(path)
         .append("</a></sup>");
-      } catch (Exception ignored) {}
+      } catch (final Exception ignored) {}
       div.setInnerHTML(b.toString());
       for (final Method m : testClasses.get(c)) {
         final String methodId = m.getName()+c.hashCode();
@@ -278,11 +278,11 @@ public class TestEntryPoint implements EntryPoint {
         b.append(')');
         b.append("</pre>");
         b.append("<div id='"+methodId+"'> </div>");
-        Element el = Document.get().createDivElement().cast();
+        final Element el = Document.get().createDivElement().cast();
         el.setInnerHTML(b.toString());
         DOM.setEventListener(el, new EventListener() {
           @Override
-          public void onBrowserEvent(Event event) {
+          public void onBrowserEvent(final Event event) {
             if (event.getTypeInt() == Event.ONCLICK) {
               runTest(m);
             }
@@ -292,11 +292,11 @@ public class TestEntryPoint implements EntryPoint {
         div.appendChild(el);
       }
       body.appendChild(div);
-      Element anchor = Document.get().getElementById(id).cast();
+      final Element anchor = Document.get().getElementById(id).cast();
       DOM.setEventListener(anchor, new EventListener() {
         @Override
-        public void onBrowserEvent(Event event) {
-          Map<Method, Boolean> res = testResults.get(c);
+        public void onBrowserEvent(final Event event) {
+          final Map<Method, Boolean> res = testResults.get(c);
 
           for (final Method m : res.keySet().toArray(new Method[res.size()])) {
             res.put(m, null);
@@ -323,7 +323,7 @@ public class TestEntryPoint implements EntryPoint {
     $wnd.console && $wnd.console.log(o);
   }-*/;
 
-  private String toId(Class<?> c) {
+  private String toId(final Class<?> c) {
     return c.getName().replace('.', '_');
   }
 
@@ -346,17 +346,18 @@ public class TestEntryPoint implements EntryPoint {
         }
       }.schedule(delay += 5);
     }
-    for (Class<?> testClass : testResults.keySet()) {
+    for (final Class<?> testClass : testResults.keySet()) {
       updateTestClass(testClass);
     }
   }
 
-  private void updateTestClass(Class<?> cls) {
-    String id = toId(cls);
-    Element el = DOM.getElementById(TEST_RESULTS+id);
-    Map<Method, Boolean> results = testResults.get(cls);
-    int success = 0, fail = 0, total = results.size();
-    for (Entry<Method, Boolean> e : results.entrySet()) {
+  private void updateTestClass(final Class<?> cls) {
+    final String id = toId(cls);
+    final Element el = DOM.getElementById(TEST_RESULTS+id);
+    final Map<Method, Boolean> results = testResults.get(cls);
+    int success = 0, fail = 0;
+    final int total = results.size();
+    for (final Entry<Method, Boolean> e : results.entrySet()) {
       if (e.getValue() != null) {
         if (e.getValue()) {
           success ++;
@@ -365,7 +366,7 @@ public class TestEntryPoint implements EntryPoint {
         }
       }
     }
-    StringBuilder b = new StringBuilder("<span class='success'>Passed: ")
+    final StringBuilder b = new StringBuilder("<span class='success'>Passed: ")
     .append(success).append("/").append(total).append("</span>; ")
     .append("<span");
     if (fail > 0) {
@@ -379,23 +380,24 @@ public class TestEntryPoint implements EntryPoint {
     final String id = m.getName()+m.getDeclaringClass().hashCode();
     final com.google.gwt.dom.client.Element el = Document.get().getElementById(id);
     el.setInnerHTML("");
-    Map<Method, Boolean> results = testResults.get(m.getDeclaringClass());
+    final Map<Method, Boolean> results = testResults.get(m.getDeclaringClass());
     try {
       JUnit4Test.runTest(tests.get(m), m);
       results.put(m, true);
       debug(el, "<div style='color:green'>" + m.getName() + " passes!</div>", null);
     } catch (Throwable e) {
       results.put(m, false);
-      String error = m.getDeclaringClass().getName() + "." + m.getName() + " failed";
-      while (e.getClass() == RuntimeException.class && e.getCause() != null)
+      final String error = m.getDeclaringClass().getName() + "." + m.getName() + " failed";
+      while (e.getClass() == RuntimeException.class && e.getCause() != null) {
         e = e.getCause();
+      }
       debug(el, error, e);
       try {
         // Move the element up to the top of the results list.
-        com.google.gwt.dom.client.Element result = el.getParentElement();
-        com.google.gwt.dom.client.Element parent = result.getParentElement();
+        final com.google.gwt.dom.client.Element result = el.getParentElement();
+        final com.google.gwt.dom.client.Element parent = result.getParentElement();
         parent.insertAfter(result, parent.getChild(2));
-      } catch(Exception ignored){}
+      } catch(final Exception ignored){}
       if (e instanceof Error) {
         throw (Error)e;
       }
@@ -408,21 +410,21 @@ public class TestEntryPoint implements EntryPoint {
     }
   }
 
-  private void print(String string, Throwable e) {
-    DivElement el = Document.get().createDivElement();
+  private void print(final String string, final Throwable e) {
+    final DivElement el = Document.get().createDivElement();
     debug(el, string, e);
     Document.get().getBody().appendChild(el);
   }
 
-  private void debug(com.google.gwt.dom.client.Element el, String string, Throwable e) {
-    StringBuilder b = new StringBuilder();
+  private void debug(final com.google.gwt.dom.client.Element el, final String string, Throwable e) {
+    final StringBuilder b = new StringBuilder();
     b.append(string);
     b.append('\n');
     b.append("<pre style='color:red;'>");
     while (e != null) {
       b.append(e);
       b.append('\n');
-      for (StackTraceElement trace : e.getStackTrace()) {
+      for (final StackTraceElement trace : e.getStackTrace()) {
         b.append('\t')
           .append(trace.getClassName())
           .append('.')

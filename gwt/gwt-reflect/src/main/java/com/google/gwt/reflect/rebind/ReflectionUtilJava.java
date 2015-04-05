@@ -1,5 +1,10 @@
 package com.google.gwt.reflect.rebind;
 
+import com.google.gwt.core.shared.GWT;
+import com.google.gwt.dev.jjs.ast.JClassLiteral;
+import com.google.gwt.reflect.shared.GwtReflect;
+import com.google.gwt.thirdparty.xapi.source.read.JavaModel.IsQualified;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Method;
@@ -9,21 +14,18 @@ import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
 
-import com.google.gwt.core.shared.GWT;
-import com.google.gwt.reflect.shared.GwtReflect;
-
 public class ReflectionUtilJava {
 
   public static final String MAGIC_CLASS_SUFFIX = "_MC";
-  
-  public static String generatedMagicClassName(String simpleName) {
+
+  public static String generatedMagicClassName(final String simpleName) {
     return simpleName+MAGIC_CLASS_SUFFIX;
   }
 
-  public static Method[] getMethods(Annotation anno) {
-    ArrayList<Method> methods = new ArrayList<Method>();
-    Class<? extends Annotation> cls = anno.annotationType();
-    for (Method method : cls.getDeclaredMethods()) {
+  public static Method[] getMethods(final Annotation anno) {
+    final ArrayList<Method> methods = new ArrayList<Method>();
+    final Class<? extends Annotation> cls = anno.annotationType();
+    for (final Method method : cls.getDeclaredMethods()) {
       if (Modifier.isPublic(method.getModifiers()) && method.getDeclaringClass() == cls) {
         methods.add(method);
       }
@@ -31,10 +33,10 @@ public class ReflectionUtilJava {
     return methods.toArray(new Method[methods.size()]);
   }
 
-  public static String sourceName(Object defaultValue) {
-    StringBuilder b = new StringBuilder();
+  public static String sourceName(final Object defaultValue) {
+    final StringBuilder b = new StringBuilder();
     if (defaultValue instanceof Enum<?>) {
-      Enum<?> e = (Enum<?>)defaultValue;
+      final Enum<?> e = (Enum<?>)defaultValue;
       b.append(e.getDeclaringClass().getCanonicalName());
       b.append('.');
       b.append(e.name());
@@ -43,11 +45,11 @@ public class ReflectionUtilJava {
     } else if (defaultValue instanceof Annotation) {
       b.append(ReflectionUtilJava.annotationToString((Annotation)defaultValue));
     } else if (defaultValue.getClass().isArray()) {
-      Class<?> c = defaultValue.getClass().getComponentType();
+      final Class<?> c = defaultValue.getClass().getComponentType();
       b.append("new ");
       b.append(c.getCanonicalName());
       b.append("[]{ ");
-      int length = GwtReflect.arrayLength(defaultValue);
+      final int length = GwtReflect.arrayLength(defaultValue);
       if (length > 0) {
         b.append(sourceName(GwtReflect.arrayGet(defaultValue, 0)));
       }
@@ -72,10 +74,10 @@ public class ReflectionUtilJava {
     return b.toString();
   }
 
-  public static String toSourceName(java.lang.reflect.Type type) {
+  public static String toSourceName(final java.lang.reflect.Type type) {
     return toSourceName(type, true);
   }
-  private static String toSourceName(java.lang.reflect.Type type, boolean keepGenericNames) {
+  private static String toSourceName(final java.lang.reflect.Type type, final boolean keepGenericNames) {
     if (type instanceof Class) {
       return toSourceName((Class<?>)type, keepGenericNames);
     } else if (type instanceof TypeVariable) {
@@ -92,30 +94,33 @@ public class ReflectionUtilJava {
     }
   }
 
-  private static String annotationToString(Annotation defaultValue) {
+  private static String annotationToString(final Annotation defaultValue) {
     if (GWT.isScript()) {
       return defaultValue.toString();
     } else {
       // dev mode has to dig for the serialized annotation.
-      StringBuilder b = new StringBuilder("@");
-      Class<? extends Annotation> cls = defaultValue.annotationType();
+      final StringBuilder b = new StringBuilder("@");
+      final Class<? extends Annotation> cls = defaultValue.annotationType();
       b.append(cls.getCanonicalName());
-      Method[] methods = cls.getMethods();
+      final Method[] methods = cls.getMethods();
       if (methods.length > 0) {
         b.append('(');
         for (int i = 0, m = methods.length; i < m; i ++) {
-          Method method = methods[i];
-          if (method.getDeclaringClass().getName().equals("java.lang.Object"))
+          final Method method = methods[i];
+          if (method.getDeclaringClass().getName().equals("java.lang.Object")) {
             continue;
-          if (method.getName().equals("annotationType"))
+          }
+          if (method.getName().equals("annotationType")) {
             continue;
-          if (i > 0)
+          }
+          if (i > 0) {
             b.append(", ");
+          }
           b.append(method.getName());
           b.append('=');
           try {
             b.append(sourceName(method.invoke(defaultValue)));
-          } catch (Exception e) {
+          } catch (final Exception e) {
             e.printStackTrace();
             throw new RuntimeException(e);
           }
@@ -126,15 +131,15 @@ public class ReflectionUtilJava {
     }
   }
 
-  private static String toSourceName(Class<?> returnType, boolean keepGenericTypeName) {
-    StringBuilder b = new StringBuilder();
+  private static String toSourceName(Class<?> returnType, final boolean keepGenericTypeName) {
+    final StringBuilder b = new StringBuilder();
     int arrayDepth = 0;
     while (returnType.getComponentType() != null) {
       arrayDepth ++;
       returnType = returnType.getComponentType();
     }
     b.append(returnType.getCanonicalName());
-    TypeVariable<?>[] params = returnType.getTypeParameters();
+    final TypeVariable<?>[] params = returnType.getTypeParameters();
     if (params.length > 0) {
       b.append('<');
       b.append(toSourceName(params[0], keepGenericTypeName));
@@ -149,11 +154,11 @@ public class ReflectionUtilJava {
     return b.toString();
   }
 
-  private static String toSourceName(GenericArrayType type) {
+  private static String toSourceName(final GenericArrayType type) {
     return toSourceName(type.getGenericComponentType())+"[]";
   }
-  private static String toSourceName(ParameterizedType returnType) {
-    StringBuilder b = new StringBuilder();
+  private static String toSourceName(final ParameterizedType returnType) {
+    final StringBuilder b = new StringBuilder();
     Class<?> c = (Class<?>)returnType.getRawType();
     int arrayDepth = 0;
 
@@ -162,7 +167,7 @@ public class ReflectionUtilJava {
       c = c.getComponentType();
     }
     b.append(c.getCanonicalName());
-    java.lang.reflect.Type[] params = returnType.getActualTypeArguments();
+    final java.lang.reflect.Type[] params = returnType.getActualTypeArguments();
     if (params.length > 0) {
       b.append('<');
       b.append(toSourceName(params[0]));
@@ -177,12 +182,12 @@ public class ReflectionUtilJava {
     return b.toString();
   }
 
-  private static String toSourceName(TypeVariable<?> typeVariable, boolean keepGenericTypeName) {
-    StringBuilder b = new StringBuilder();
+  private static String toSourceName(final TypeVariable<?> typeVariable, final boolean keepGenericTypeName) {
+    final StringBuilder b = new StringBuilder();
     if (keepGenericTypeName) {
       b.append(typeVariable.getName());
     }
-    java.lang.reflect.Type[] bounds = typeVariable.getBounds();
+    final java.lang.reflect.Type[] bounds = typeVariable.getBounds();
     if (bounds.length > 0) {
       if (keepGenericTypeName) {
         b.append(" extends ");
@@ -195,8 +200,8 @@ public class ReflectionUtilJava {
     return b.toString();
   }
 
-  private static String toSourceName(WildcardType type) {
-    StringBuilder b = new StringBuilder("?");
+  private static String toSourceName(final WildcardType type) {
+    final StringBuilder b = new StringBuilder("?");
     java.lang.reflect.Type[] bounds;
     if (type.getUpperBounds().length > 0) {
       b.append(" extends ");
@@ -213,7 +218,39 @@ public class ReflectionUtilJava {
     }
     return b.toString();
   }
-  
+
   private ReflectionUtilJava() {}
+
+  public static String toFlatSimpleName(final JClassLiteral classLit) {
+    final StringBuilder b = new StringBuilder();
+    final String[] compound = classLit.getRefType().getCompoundName();
+    for (int i = 0; i < compound.length; i++) {
+      if (i > 0) {
+        b.append('_');
+      }
+      b.append(compound[i]);
+    }
+    return b.toString();
+  }
+
+  public static String toFlatName(final String pkg) {
+    return pkg.replace('.', '_');
+  }
+
+  public static IsQualified generatedAnnotationProviderName(
+      final JClassLiteral classLit, final JClassLiteral annoLit) {
+    return new IsQualified(classLit.getRefType().getPackageName(),
+        toFlatSimpleName(classLit)+"__"+toFlatName(annoLit.getRefType().getName()));
+  }
+
+  /**
+   * @param pkg -> The package name, possibly empty
+   * @param name -> The type name, never empty.
+   * @return pkg+"."+name, unless pkg is empty, in which case we return proxyName
+   */
+  public static String qualifiedName(final String pkg, final String name) {
+    return (pkg.length()==0 ? "" : pkg + ".")+ name;
+
+  }
 
 }

@@ -2,10 +2,6 @@ package com.google.gwt.reflect.rebind.injectors;
 
 import static com.google.gwt.reflect.rebind.ReflectionUtilAst.extractImmutableNode;
 
-import java.lang.reflect.Array;
-import java.util.List;
-import java.util.Queue;
-
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.dev.jjs.MagicMethodGenerator;
@@ -27,6 +23,10 @@ import com.google.gwt.dev.jjs.ast.JType;
 import com.google.gwt.dev.jjs.impl.UnifyAst.UnifyVisitor;
 import com.google.gwt.dev.util.collect.Lists;
 import com.google.gwt.reflect.rebind.ReflectionUtilAst;
+
+import java.lang.reflect.Array;
+import java.util.List;
+import java.util.Queue;
 
 public class MultiDimArrayInjector implements MagicMethodGenerator, UnifyAstListener {
 
@@ -91,13 +91,12 @@ public class MultiDimArrayInjector implements MagicMethodGenerator, UnifyAstList
     cur = type;
     while (cur instanceof JArrayType) {
       // Add array type wrappers for the number of requested dimensions
-      classLiteral = new JClassLiteral(info.makeChild(), cur);
       cur = ((JArrayType) cur).getElementType();
     }
+    classLiteral = new JClassLiteral(info.makeChild(), cur);
     final List<JExpression> dims = Lists.addAll(sizedDims, emptyDims);
     final JNewArray newArr = new JNewArray(info, (JArrayType)type, dims, null, classLiteral);
-//  return newArr.makeStatement().getExpr();
-    return new JMethodCall(info, null, registerArray, newArr);
+    return new JMethodCall(info, null, registerArray, newArr, new JClassLiteral(info.makeChild(), type));
   }
 
   @Override

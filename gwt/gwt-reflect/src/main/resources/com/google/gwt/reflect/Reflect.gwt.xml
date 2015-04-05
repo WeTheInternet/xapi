@@ -77,6 +77,10 @@
   <extend-configuration-property name="gwt.magic.methods" 
     value="com.google.gwt.reflect.shared.GwtReflect.construct(Ljava/lang/Class;[Ljava/lang/Class;[Ljava/lang/Object;)Ljava/lang/Object; *= com.google.gwt.reflect.rebind.injectors.ConstructInjector"/>
 
+  <!-- Annotations -->
+  <extend-configuration-property name="gwt.magic.methods" 
+    value="java.lang.Class.getAnnotation(Ljava/lang/Class;)Ljava/lang/annotation/Annotation; *= com.google.gwt.reflect.rebind.injectors.PublicAnnotationInjector"/>
+
 
   <source path="client" />
   <source path="shared" />

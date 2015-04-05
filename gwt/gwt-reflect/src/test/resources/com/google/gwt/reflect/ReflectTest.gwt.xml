@@ -11,7 +11,7 @@
 -->
 
   <!-- Our test is explicitly running HtmlUnit as FF3 (via pom.xml). -->
-  <set-property name="user.agent" value="gecko1_8" />
+  <set-property name="user.agent" value="gecko1_8,safari" />
   
   <!-- Tell the generator not to bail on missing references, so we can test miss member exceptions  -->
   <set-configuration-property name="gwt.reflect.never.fail" value="true" />

@@ -1,7 +1,5 @@
 package com.google.gwt.reflect.rebind.injectors;
 
-import java.lang.reflect.Method;
-
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.core.ext.UnableToCompleteException;
@@ -12,13 +10,15 @@ import com.google.gwt.dev.jjs.ast.JExpression;
 import com.google.gwt.dev.jjs.ast.JMethod;
 import com.google.gwt.dev.jjs.ast.JMethodCall;
 
+import java.lang.reflect.Method;
+
 public class InvokeInjector extends DeclaredMethodInjector {
 
   @Override
-  public JExpression injectMagic(TreeLogger logger, JMethodCall methodCall,
-      JMethod enclosingMethod, Context context, UnifyAstView ast) throws UnableToCompleteException {
-    JExpression methodProvider = super.injectMagic(logger, methodCall, enclosingMethod, context, ast);
-    
+  public JExpression injectMagic(final TreeLogger logger, final JMethodCall methodCall,
+      final JMethod enclosingMethod, final Context context, final UnifyAstView ast) throws UnableToCompleteException {
+    final JExpression methodProvider = super.injectMagic(logger, methodCall, enclosingMethod, context, ast);
+
     if (methodCall.getArgs().size() != 5) {
       logger.log(Type.ERROR, "Method call provided to replace GwtReflect.invoke("
           + "Class<?> cls, String name, Class<?>[] paramTypes, Object inst, Object ... params"
@@ -27,10 +27,10 @@ public class InvokeInjector extends DeclaredMethodInjector {
       throw new UnableToCompleteException();
     }
     // call the invoke method on the result of our methodProvider
-    JDeclaredType ctor = ast.searchForTypeBySource(Method.class.getName());
-    for (JMethod method : ctor.getMethods()) {
+    final JDeclaredType ctor = ast.searchForTypeBySource(Method.class.getName());
+    for (final JMethod method : ctor.getMethods()) {
       if (method.getName().equals("invoke")) {
-        JMethodCall call = new JMethodCall(method.getSourceInfo(), methodProvider, method);
+        final JMethodCall call = new JMethodCall(method.getSourceInfo(), methodProvider, method);
         call.addArg(methodCall.getArgs().get(3));
         call.addArg(methodCall.getArgs().get(4));
         return call;
@@ -38,11 +38,6 @@ public class InvokeInjector extends DeclaredMethodInjector {
     }
     logger.log(Type.ERROR, "Unable to implement GwtReflect.invoke from "+methodCall.toSource());
     throw new UnableToCompleteException();
-  }
-  
-  @Override
-  protected Type logLevel() {
-    return Type.INFO;
   }
 
 }

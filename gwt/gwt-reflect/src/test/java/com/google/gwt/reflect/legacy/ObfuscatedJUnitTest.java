@@ -1,4 +1,4 @@
-package com.google.gwt.reflect.test;
+package com.google.gwt.reflect.legacy;
 
 import com.google.gwt.core.client.Duration;
 import com.google.gwt.core.client.Scheduler;

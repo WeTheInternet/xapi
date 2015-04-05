@@ -1,8 +1,5 @@
 package com.google.gwt.reflect.rebind.injectors;
 
-import java.util.HashMap;
-import java.util.Queue;
-
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.core.ext.UnableToCompleteException;
@@ -24,6 +21,7 @@ import com.google.gwt.dev.jjs.impl.UnifyAst;
 import com.google.gwt.dev.jjs.impl.UnifyAst.UnifyVisitor;
 import com.google.gwt.dev.util.Name.BinaryName;
 import com.google.gwt.reflect.client.strategy.ReflectionStrategy;
+import com.google.gwt.reflect.rebind.ReflectionManifest;
 import com.google.gwt.reflect.rebind.ReflectionUtilAst;
 import com.google.gwt.reflect.rebind.ReflectionUtilJava;
 import com.google.gwt.reflect.rebind.generators.GwtAnnotationGenerator;
@@ -31,6 +29,9 @@ import com.google.gwt.reflect.rebind.generators.MagicClassGenerator;
 import com.google.gwt.reflect.rebind.generators.MemberGenerator;
 import com.google.gwt.reflect.rebind.generators.ReflectionGeneratorContext;
 import com.google.gwt.thirdparty.xapi.source.read.SourceUtil;
+
+import java.util.HashMap;
+import java.util.Queue;
 
 public class MagicClassInjector implements MagicMethodGenerator, UnifyAstListener {
 
@@ -75,6 +76,8 @@ public class MagicClassInjector implements MagicMethodGenerator, UnifyAstListene
     // can examine cached, generated types, and avoid needless regeneration.
     GwtAnnotationGenerator.cleanup();
 
+    ReflectionManifest.cleanup();
+
 
     injector.remove();
   }
@@ -89,6 +92,7 @@ public class MagicClassInjector implements MagicMethodGenerator, UnifyAstListene
    * @throws UnableToCompleteException
    */
   public JMethodCall doRebind(final String clsName, final ReflectionGeneratorContext params) throws UnableToCompleteException {
+    params.getAst().getGeneratorContext().setCurrentRebindBinaryTypeName(clsName);
     // generate
     params.getLogger().log(logLevel, "Binding magic class for " + clsName);
     final String srcName = SourceUtil.toSourceName(params.getClazz().getRefType().getName());
@@ -113,6 +117,11 @@ public class MagicClassInjector implements MagicMethodGenerator, UnifyAstListene
       if (method.isStatic() && method.getName().equals("enhanceClass")) {
         final JMethodCall call = new JMethodCall(method.getSourceInfo().makeChild(SourceOrigin.UNKNOWN), null, method);
         call.addArg(params.getClazz().makeStatement().getExpr());
+
+        // Mark that the enclosing type (GwtReflect) has caused this class enhancer to be generated.
+        final JDeclaredType enclosingType = params.getMethodCall().getTarget().getEnclosingType();
+        params.getAst().recordRebinderTypeForReboundType(clsName, enclosingType.getName());
+
         return call;
       }
     }

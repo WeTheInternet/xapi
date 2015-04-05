@@ -1,17 +1,17 @@
 package com.google.gwt.reflect.test.annotations;
 
-import java.lang.annotation.Annotation;
-import java.util.Arrays;
-
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.reflect.shared.GwtReflect;
 
+import java.lang.annotation.Annotation;
+import java.util.Arrays;
+
 /**
  * A somewhat ugly, but functional implementation of an annotation;
- * it should never be used in production, but it exposes a relatively simple 
+ * it should never be used in production, but it exposes a relatively simple
  * and correct api for "how an annotation should behave".
  * <p>
- * 
+ *
  * @author "james@wetheinter.net"
  *
  */
@@ -29,7 +29,7 @@ public abstract class AbstractAnnotation extends SourceVisitor{
     this(JavaScriptObject.createObject());
   }
 
-  public AbstractAnnotation(JavaScriptObject memberMap) {
+  public AbstractAnnotation(final JavaScriptObject memberMap) {
     this.memberMap = memberMap;
   }
 
@@ -51,11 +51,11 @@ public abstract class AbstractAnnotation extends SourceVisitor{
 
   @Override
   public final int hashCode() {
-    String[] members = members();
-    MemberType[] types = memberTypes();
+    final String[] members = members();
+    final MemberType[] types = memberTypes();
     int hash = 0, i = members.length;
     for (; i-- > 0;) {
-      String member = members[i];
+      final String member = members[i];
       switch (types[i]) {
       case Annotation:
       case Class:
@@ -99,15 +99,15 @@ public abstract class AbstractAnnotation extends SourceVisitor{
 
   @Override
   public String toString() {
-    StringBuilder b = new StringBuilder("@");
+    final StringBuilder b = new StringBuilder("@");
     b.append(annotationType().getName());
     b.append(" (");
-    String[] members = members();
+    final String[] members = members();
     if (members.length == 0) {
       b.append(")");
       return b.toString();
     }
-    MemberType[] types = memberTypes();
+    final MemberType[] types = memberTypes();
     b.append(members[0]);
     b.append(" = ");
     b.append(toString(members[0], types[0]));
@@ -147,28 +147,36 @@ public abstract class AbstractAnnotation extends SourceVisitor{
    * otherwise false
    */
   @Override
-  public final boolean equals(Object o) {
-    if (o == this) return true;
+  public final boolean equals(final Object o) {
+    if (o == this) {
+      return true;
+    }
     if (o instanceof AbstractAnnotation) {
-      AbstractAnnotation you = (AbstractAnnotation)o;
-      MemberType[] myTypes = memberTypes();
-      if (!Arrays.equals(myTypes, you.memberTypes())) return false;
+      final AbstractAnnotation you = (AbstractAnnotation)o;
+      final MemberType[] myTypes = memberTypes();
+      if (!Arrays.equals(myTypes, you.memberTypes())) {
+        return false;
+      }
 
-      String[] myMembers = members();
-      String[] yourMembers = you.members();
+      final String[] myMembers = members();
+      final String[] yourMembers = you.members();
       // These member lists are generated, so they will always be in the same order for the same type
       if (myMembers.length == yourMembers.length) {
         for (int i = myMembers.length; i-- > 0;) {
-          String key = myMembers[i];
-          if (!key.equals(yourMembers[i])) return false;
-          MemberType type = myTypes[i];
+          final String key = myMembers[i];
+          if (!key.equals(yourMembers[i])) {
+            return false;
+          }
+          final MemberType type = myTypes[i];
 
           assert !isNull(key);
           assert !you.isNull(key);
 
           switch (type) {
           case Annotation:
-            if (getValue(key).equals(you.getValue(key))) continue;
+            if (getValue(key).equals(you.getValue(key))) {
+              continue;
+            }
             return false;
           case Class:
           case Enum:
@@ -179,19 +187,22 @@ public abstract class AbstractAnnotation extends SourceVisitor{
           case Short:
           case Float:
           case Double:
-            if (quickEquals(key, you.memberMap))
+            if (quickEquals(key, you.memberMap)) {
               continue;
+            }
             return false;
           case Long:
-            if (getLong(memberMap, key) == getLong(you.memberMap, key))
+            if (getLong(memberMap, key) == getLong(you.memberMap, key)) {
               continue;
+            }
             return false;
           case Annotation_Array:
           case Class_Array:
           case Enum_Array:
           case String_Array:
-            if (arraysEqualObject(getValue(key), you.getValue(key)))
+            if (arraysEqualObject(getValue(key), you.getValue(key))) {
               continue;
+            }
             return false;
           case Boolean_Array:
           case Byte_Array:
@@ -199,12 +210,14 @@ public abstract class AbstractAnnotation extends SourceVisitor{
           case Short_Array:
           case Float_Array:
           case Double_Array:
-            if (arraysEqualPrimitive(getValue(key), you.getValue(key)))
+            if (arraysEqualPrimitive(getValue(key), you.getValue(key))) {
               continue;
+            }
             return false;
           case Long_Array:
-            if (arraysEqualLong(getValue(key), you.getValue(key)))
+            if (arraysEqualLong(getValue(key), you.getValue(key))) {
               continue;
+            }
             return false;
           }
         }// end for loop
@@ -214,13 +227,13 @@ public abstract class AbstractAnnotation extends SourceVisitor{
     return false;
   }
 
-  private String toString(String key, MemberType memberType) {
+  private String toString(final String key, final MemberType memberType) {
     switch (memberType) {
     case Class:
-      Class<?> c = getValue(key);
+      final Class<?> c = getValue(key);
       return c.getName() + ".class";
     case Enum:
-      Enum<?> e = getValue(key);
+      final Enum<?> e = getValue(key);
       return e.getDeclaringClass().getName() + "." + e.name();
     case Boolean:
     case Byte:
@@ -233,7 +246,7 @@ public abstract class AbstractAnnotation extends SourceVisitor{
       return String.valueOf(getLong(memberMap, key));
     case Class_Array:
       StringBuilder b = new StringBuilder("{ ");
-      Class<?>[] classes = this.<Class<?>[]>getValue(key);
+      final Class<?>[] classes = this.<Class<?>[]>getValue(key);
       if (classes.length > 0) {
         b.append(classes[0].getName()).append(".class");
         for (int i = 1, m = classes.length; i < m; i++) {
@@ -244,7 +257,7 @@ public abstract class AbstractAnnotation extends SourceVisitor{
       return b.toString();
     case Enum_Array:
       b = new StringBuilder("{ ");
-      Enum<?>[] enums = this.<Enum<?>[]>getValue(key);
+      final Enum<?>[] enums = this.<Enum<?>[]>getValue(key);
       if (enums.length > 0) {
         b.append(enums[0].getDeclaringClass().getName()).append(".").append(enums[0].name());
         for (int i = 1, m = enums.length; i < m; i++) {
@@ -255,7 +268,7 @@ public abstract class AbstractAnnotation extends SourceVisitor{
       return b.toString();
     case String_Array:
       b = new StringBuilder("{ ");
-      String[] strings = this.<String[]>getValue(key);
+      final String[] strings = this.<String[]>getValue(key);
       if (strings.length > 0) {
         b.append('"').append(strings[0]).append('"');
         for (int i = 1, m = strings.length; i < m; i++) {
@@ -266,15 +279,17 @@ public abstract class AbstractAnnotation extends SourceVisitor{
       return b.toString();
     case Long_Array:
       b = new StringBuilder("{ ");
-      long[] longs = this.<long[]>getValue(key);
+      final long[] longs = this.<long[]>getValue(key);
       if (longs.length > 0) {
         b.append(longs[0]);
-        if (longs[0] > Integer.MAX_VALUE)
+        if (longs[0] > Integer.MAX_VALUE) {
           b.append('L');
+        }
         for (int i = 1, m = longs.length; i < m; i++) {
           b.append(", ").append(longs[i]);
-          if (longs[i] > Integer.MAX_VALUE)
+          if (longs[i] > Integer.MAX_VALUE) {
             b.append('L');
+          }
         }
       }
       b.append(" }");
@@ -294,7 +309,8 @@ public abstract class AbstractAnnotation extends SourceVisitor{
       return "\"" + GwtReflect.escape(this.<String>getValue(key)) + "\"";
     case Annotation:
     default:
-      return String.valueOf(getValue(key));
+      final Object o = getValue(key);
+      return String.valueOf(o);
     }
   }
 
@@ -335,8 +351,8 @@ public abstract class AbstractAnnotation extends SourceVisitor{
     return this.@com.google.gwt.reflect.test.annotations.AbstractAnnotation::memberMap[member] ? 1 : 0;
   }-*/;
 
-  private final int getObjectHash(String member) {
-    Object value = getValue(member);
+  private final int getObjectHash(final String member) {
+    final Object value = getValue(member);
     assert value != null : "Annotations can never have null values.  No member " + member + " in " + this;
     return value.hashCode();
   }

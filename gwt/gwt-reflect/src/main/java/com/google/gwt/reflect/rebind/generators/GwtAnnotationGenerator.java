@@ -1,16 +1,7 @@
 package com.google.gwt.reflect.rebind.generators;
 
-import java.io.PrintWriter;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
+import static com.google.gwt.reflect.rebind.ReflectionUtilJava.qualifiedName;
 
-import com.google.gwt.core.client.UnsafeNativeLong;
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;
@@ -19,14 +10,30 @@ import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.JParameter;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
+import com.google.gwt.dev.javac.StandardGeneratorContext;
 import com.google.gwt.dev.jjs.UnifyAstListener;
+import com.google.gwt.dev.jjs.UnifyAstView;
 import com.google.gwt.reflect.rebind.ReflectionUtilJava;
+import com.google.gwt.reflect.rebind.model.GeneratedAnnotation;
 import com.google.gwt.reflect.shared.GwtReflect;
+import com.google.gwt.reflect.shared.JsMemberPool;
 import com.google.gwt.thirdparty.xapi.dev.source.ClassBuffer;
 import com.google.gwt.thirdparty.xapi.dev.source.FieldBuffer;
 import com.google.gwt.thirdparty.xapi.dev.source.MethodBuffer;
 import com.google.gwt.thirdparty.xapi.dev.source.SourceBuilder;
 import com.google.gwt.thirdparty.xapi.source.read.JavaModel.IsNamedType;
+
+import java.io.PrintWriter;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 public class GwtAnnotationGenerator {
@@ -62,81 +69,6 @@ public class GwtAnnotationGenerator {
     = new ConcurrentHashMap<Class<? extends Annotation>,GeneratedAnnotation>();
 
   /**
-   * An instance of a GeneratedAnnotation is used to cache two important bits of data we need:
-   * <br>
-   * 1) Mappings from a given instance of an annotation to a static noArg constructor method
-   * <br>
-   * 2) The class type of the annotation proxy, so we can verify generated source matches
-   * the known source of the generated type name we want to use.
-   * <p>
-   * We cache these objects statically during the UnifyAst phase of the gwt compile;
-   * This allows us to detect when we have already generated a proxy type for a given
-   * annotation class, and more importantly, to detect if it changes, and rename
-   * our proxy class accordingly.
-   *
-   * @author james.nelson
-   *
-   */
-  public static class GeneratedAnnotation {
-    public GeneratedAnnotation(Annotation anno, String proxyName) {
-      this.anno = anno;
-      this.proxyName = proxyName;
-    }
-    final String proxyName;
-    final Annotation anno;
-
-    /**
-     * The latest generated annotation provider
-     */
-    IsNamedType latest;
-
-    /**
-     * A map from a configured instance of an annotation to a public static factory method.
-     * <p>
-     * These methods will be generated ad-hoc, and reused instead of regenerated.
-     * <p>
-     * They will also be placed into new classes, so we don't accidentally
-     * reuse a method that will have to load an unrelated class full of dependencies.
-     */
-    final Map<Annotation, IsNamedType> knownInstances = new HashMap<Annotation, IsNamedType>();
-
-    /**
-     * The actual source type of the annotation proxy.
-     * <p>
-     * Whenever an annotation class is first seen, we will have to generate the source
-     * for its proxy class (once per gwt compile).  Then, when we ask gwt for the
-     * PrintWriter to save this class, it may return null because a class w/ that name
-     * already exists.  So, then we would try to look that type up in the TypeOracle,
-     * and then use it's .toSource() method to check what we have generated.
-     * <p>
-     * If our new source is different, the annotation has changed across compiles
-     * (common for super dev mode), so we must update our proxy class.
-     */
-    JClassType proxy;
-
-    public String getAnnoName() {
-      return anno.annotationType().getCanonicalName();
-    }
-    
-    public String providerPackage() {
-      return latest.getPackage();
-    }
-
-    public String providerClass() {
-      return latest.getSimpleName();
-    }
-    
-    public String providerMethod() {
-      return latest.getName();
-    }
-
-    public String providerQualifiedName() {
-      return latest.getQualifiedName();
-    }
-
-  }
-
-  /**
    * Called when the {@link UnifyAstListener#destroy()} methods are called.
    *
    */
@@ -145,140 +77,144 @@ public class GwtAnnotationGenerator {
   }
 
 
-  static void generateEmptyAnnotations(SourceBuilder<?> out) {
-    final MethodBuffer initAnnos = out.getClassBuffer()
-        .createMethod("private static void enhanceAnnotations" +
-            "(final Class<?> cls)");
-
-      initAnnos
-        .setUseJsni(true)
-        .println("var map = cls.@java.lang.Class::annotations;")
-        .println("if (map) return;")
-        .println("map = cls.@java.lang.Class::annotations = {};");
-  }
   /**
-   * @throws UnableToCompleteException
+   * Print a method to fill in a {@link JsMemberPool} with the annotations being retained for
+   * the supplied type.
+   *
+   * @param logger -> The {@link TreeLogger}
+   * @param sourceBuilder -> The {@link SourceBuilder} used to print source into
+   * @param injectionType -> The {@link JClassType} that was are generating annotation proxies for
+   * @param ast -> The {@link UnifyAstView} for looking up annotations from JJS AST nodes
+   * @param annotations -> The array of {@link Annotation}s to generate
+   * @return -> An array of {@link GeneratedAnnotation}s produced from running this generator
+   *
+   * @throws UnableToCompleteException if any fatal error occurs.
    */
-  static GeneratedAnnotation[] generateAnnotations(
-    TreeLogger logger, SourceBuilder<?> out, GeneratorContext context, Annotation ... annotations
+  static GeneratedAnnotation[] printAnnotationEnhancer(
+    final TreeLogger logger, final SourceBuilder<?> sourceBuilder,
+    final JClassType injectionType, final UnifyAstView ast,
+    final Annotation ... annotations
   ) throws UnableToCompleteException {
-//    logger.log(Type.INFO, "Generating annotations "+Arrays.asList(annotations));
-    final MethodBuffer initAnnos = out.getClassBuffer()
-      .createMethod("private static void enhanceAnnotations" +
-          "(final Class<?> cls)");
 
-
-    initAnnos
-      .setUseJsni(true)
-      .addAnnotation(UnsafeNativeLong.class)
-      .println("var map = cls.@java.lang.Class::annotations;")
-      .println("if (map) return;")
-      .println("map = cls.@java.lang.Class::annotations = {};");
+    final ClassBuffer out = sourceBuilder.getClassBuffer();
+    final String memberPool = out.addImport(JsMemberPool.class);
+    final MethodBuffer initAnnos = out
+      .createMethod("private static void enhanceAnnotations("+memberPool+" pool)");
 
     if (annotations.length == 0){
+      // Short circuit for annotationless types
       return new GeneratedAnnotation[0];
     }
 
-    Map<GeneratedAnnotation, IsNamedType> results = new LinkedHashMap<GeneratedAnnotation, IsNamedType>();
+    final List<GeneratedAnnotation> results = new ArrayList<GeneratedAnnotation>();
     for (int i = 0, max = annotations.length; i < max; i++ ) {
-      Annotation anno = annotations[i];
-      GeneratedAnnotation gen = generateAnnotation(logger, context, anno);
+
+      final Annotation annotation = annotations[i];
+      // Generate a proxy class
+      final GeneratedAnnotation generated = generateAnnotationProxy(logger, annotation, ast);
+      // Check for a provider method to create the supplied configuration of an annotation
       IsNamedType providerMethod;
-      if (gen.knownInstances.containsKey(anno)) {
+      if (generated.hasProviderMethod(annotation)) {
         // Reuse existing method
-        providerMethod = gen.knownInstances.get(anno);
+        providerMethod = generated.getProviderMethod(annotation);
       } else {
         // Create new factory method.
-        providerMethod = generateProvider(logger, out, anno, gen, context);
-        initAnnos.addImport(providerMethod.getQualifiedName());
+        providerMethod = generateProvider(logger, sourceBuilder, annotation, generated, ast);
+        // Save the factory method for reuse if the exact same annotation is reused
+        generated.addProviderMethod(annotation, providerMethod);
       }
-      results.put(gen, providerMethod);
-      gen.knownInstances.put(anno, providerMethod);
-      String annoCls = anno.annotationType().getCanonicalName();
-      out.getImports().addImport(annoCls+"Proxy");
-      initAnnos
-        .println("var key" +i + " = @"+annoCls+"::class.@java.lang.Class::getName()();")
-        .println("map[key" +i + "] = function(){")
-        .indent()
-        .print("var anno = @")
-        .print(providerMethod.getQualifiedName())
-        .print("::")
-        .print(providerMethod.getName())
-        .println("()();")
-        .println("map[key"+i+"] = function() { return anno; };")
-        .println("map[key"+i+"].pub = true;")
-        .println("return anno;")
-        .outdent()
-        .println("};")
-        .println("map[key" +i + "].pub = true;");
+      results.add(generated);
+      // Use a static import on the factory method
+      final String getAnno = out.addImportStatic(providerMethod.getQualifiedName() + "." + providerMethod.getName());
+      final boolean isDeclared = injectionType.getAnnotation(annotation.annotationType()) != null;
+      // Record the annotation instance in the member pool
+      initAnnos.println("pool.addAnnotation("+getAnno+"(), "+isDeclared + ");");
     }// end for
 
-    // We don't set the providers for a given annotation type until after our loop;
-    // because annotation can contain other annotations, this method can be
-    // called recursively, AND we are running on multiple annotations at once,
-    // the only way to avoid overwriting the .latest field is to set it just before return;
-    for (Entry<GeneratedAnnotation,IsNamedType> anno : results.entrySet()) {
-      anno.getKey().latest = anno.getValue();
-    }
-    return results.keySet().toArray(new GeneratedAnnotation[results.size()]);
+    return results.toArray(new GeneratedAnnotation[results.size()]);
   }
 
-  protected static GeneratedAnnotation generateAnnotation(TreeLogger logger, GeneratorContext context,
-    Annotation anno) throws UnableToCompleteException {
-    final TypeOracle oracle = context.getTypeOracle();
-    final boolean doLog = logger.isLoggable(logLevel);
-    Class<? extends Annotation> annoType = anno.annotationType();
+  /**
+   * Generates an annotation proxy class which implements the supplied annotation.
+   * <p>
+   * The created class is immutable, takes all values as constructor arguments, and implements
+   * hashCode, equals and toString.  The equals method makes optimizing assumptions that the
+   * annotation it will be compared to was also emitted by this generator.
+   *
+   * @param logger -> The {@link TreeLogger}
+   * @param anno -> The {@link Annotation} we are generating a proxy for
+   * @param ast -> The {@link UnifyAstView}, necessary to load annotations from JJS AST nodes
+   * @return -> A {@link GeneratedAnnotation} instance used to map instances of the given annotation
+   *
+   * @throws UnableToCompleteException -> If a fatal error occurs
+   */
+  protected static GeneratedAnnotation generateAnnotationProxy(TreeLogger logger,
+    final Annotation anno, final UnifyAstView ast) throws UnableToCompleteException {
 
+    final boolean doLog = logger.isLoggable(logLevel);
+    final Class<? extends Annotation> annoType = anno.annotationType();
+    final TypeOracle oracle = ast.getTypeOracle();
+
+    // Check to see if the proxy class has already been generated
     GeneratedAnnotation gen = finished.get(annoType);
     if (gen == null) {
 
       // Step one is to generate a class implementing the annotation.
       // This annotation type will likely have been seen before,
       // but it may have changed (across gwt compiles in super dev mode).
-      String proxyPkg = annoType.getPackage().getName();
-      String proxyName = annoType.getCanonicalName().replace(proxyPkg+".", "").replace('.', '_')+"Proxy";
-      String proxyFQCN = (proxyPkg.length()==0 ? "" : proxyPkg + ".")+ proxyName;
-      if (doLog)
+      final String proxyPkg = annoType.getPackage().getName();
+      String proxyName = toProxyName(annoType.getCanonicalName(), proxyPkg);
+      String proxyFQCN = qualifiedName(proxyPkg, proxyName);
+
+      // Check if the proxy type already exists
+      if (doLog) {
         logger = logger.branch(logLevel, "Checking for existing "+proxyFQCN+" on classpath");
-      JClassType exists = oracle.findType(proxyFQCN);
+      }
+      final JClassType exists = oracle.findType(proxyFQCN);
       boolean mustGenerate = exists == null;
 
-      // Now, just because the class exists does not mean it is correct.
-      if (doLog)
+      // Now, just because the class exists does not mean it is correct. Lets check its structure
+      if (doLog) {
         logger = logger.branch(logLevel,
           mustGenerate ? "No existing type "+ proxyFQCN+" on classpath; " :
           "Checking if existing "+proxyFQCN+" matches "+anno);
+      }
       if (!mustGenerate) {
         // If a type exists, make sure the method patterns match.
-        mustGenerate = typeMatches(logger, anno, exists);
+        final JClassType annoJClass = oracle.findType(anno.annotationType().getCanonicalName());
+        mustGenerate = typeMatches(logger, exists, annoJClass);
       }
 
       if (mustGenerate) {
         // Create a proxy type matching our annotation
 
+        final StandardGeneratorContext context = ast.getGeneratorContext();
         // Step one is to get a printwriter from the gwt generator context
         PrintWriter pw = context.tryCreate(logger, proxyPkg, proxyName);
         int inc=-1;
         if (pw == null) {
           // null means name's taken.  Increment and try again.
           while (inc < 100) {
-            if (doLog)
+            if (doLog) {
               logger.log(logLevel, "PrintWriter for "+proxyFQCN+" not available.  Incrementing name");
-            String attempt = proxyName+"_"+(++inc);
+            }
+            final String attempt = proxyName+"_"+(++inc);
             pw = context.tryCreate(logger, proxyPkg, attempt);
             if (pw != null) {
               proxyName = attempt;
               proxyFQCN = proxyFQCN+"_"+inc;
               break;
             }
+          throw new UnableToCompleteException();
           }
         }
-        if (doLog)
+        if (doLog) {
           logger.log(logLevel, "Generating new annotation proxy "+proxyFQCN+".");
+        }
 
         // We've got our class name, now create the proxy class implementation
         gen = new GeneratedAnnotation(anno, proxyFQCN);
-        SourceBuilder<GeneratedAnnotation> sw = new SourceBuilder<GeneratedAnnotation>(
+        final SourceBuilder<GeneratedAnnotation> sw = new SourceBuilder<GeneratedAnnotation>(
           "public class "+proxyName
           ).setPackage(proxyPkg);
         sw.setPayload(gen);// allow the source builder to access GeneratedAnnotation
@@ -291,9 +227,10 @@ public class GwtAnnotationGenerator {
         generateProxy(logger, anno, sw.getClassBuffer(), proxyPkg, proxyName);
 
         // maybe log our generated contents
-        String src = sw.toString();
-        if (logger.isLoggable(Type.DEBUG))
+        final String src = sw.toString();
+        if (logger.isLoggable(Type.DEBUG)) {
           logger.log(Type.DEBUG, "Debug dump of generated annotation:\n"+src);
+        }
 
         // Actually save the file
         pw.println(src);
@@ -305,121 +242,151 @@ public class GwtAnnotationGenerator {
         gen = new GeneratedAnnotation(anno, exists.getQualifiedSourceName());
         finished.put(annoType, gen);
       }
-      gen.proxy = exists;
+      gen.setProxyClassType(exists);
     }
     return gen;
   }
 
-  public static GeneratedAnnotation generateAnnotationProvider(TreeLogger logger, SourceBuilder<?> out
-    , Annotation anno, GeneratorContext context) throws UnableToCompleteException {
-    GeneratedAnnotation gen = generateAnnotation(logger, context, anno);
-    IsNamedType provider = generateProvider(logger, out, anno, gen, context);
-    gen.latest = provider;
+  private static String toProxyName(final String canonicalName, final String pkg) {
+    return canonicalName.replace(pkg+".", "").replace('.', '_')+"Proxy";
+  }
+
+  static String toUniqueName(final Class<?> cls) {
+    return cls.getCanonicalName().replace('.', '_');
+  }
+
+  public static IsNamedType findExisting(final TreeLogger logger, final Annotation anno, final UnifyAstView ast) throws UnableToCompleteException {
+    final GeneratedAnnotation gen = finished.get(anno.annotationType());
+    if (gen != null) {
+      final TypeOracle oracle = ast.getTypeOracle();
+      final JClassType existing = oracle.findType(gen.getProxyName());
+      final JClassType original = oracle.findType(anno.annotationType().getCanonicalName());
+      if (typeMatches(logger, existing, original)) {
+        return gen.getProviderMethod(anno);
+      }
+    }
+    return null;
+  }
+
+  public static IsNamedType generateAnnotationProvider(final TreeLogger logger, final SourceBuilder<?> out
+    , final Annotation anno, final UnifyAstView ast) throws UnableToCompleteException {
+    final GeneratedAnnotation gen = generateAnnotationProxy(logger, anno, ast);
+    final IsNamedType provider = generateProvider(logger, out, anno, gen, ast);
     if (logger.isLoggable(logLevel)) {
-      logger.log(logLevel, "Generating annotation proxy "+gen.providerQualifiedName()+" for "+gen.getAnnoName());
+      logger.log(logLevel, "Generating annotation proxy "+provider.getQualifiedMemberName()+" for "+gen.getAnnoName());
     }
-    return gen;
+    return provider;
   }
-  private static IsNamedType generateProvider(TreeLogger logger, SourceBuilder<?> out
-    , Annotation anno, GeneratedAnnotation gen, GeneratorContext context) throws UnableToCompleteException {
-    if (gen.knownInstances.containsKey(anno))
-      return gen.knownInstances.get(anno);
+  private static IsNamedType generateProvider(final TreeLogger logger, final SourceBuilder<?> out
+    , final Annotation anno, final GeneratedAnnotation gen, final UnifyAstView ast) throws UnableToCompleteException {
+    final GeneratorContext context = ast.getGeneratorContext();
+    if (gen.hasProviderMethod(anno)) {
+      return gen.getProviderMethod(anno);
+    }
 
-    String method = anno.annotationType().getCanonicalName().replace('.', '_') +
-      gen.knownInstances.size();
+    final String method = gen.getMethodName(anno);
     // Cache the method name we're going to use, before we use it.
-    IsNamedType type = new IsNamedType(method, out.getQualifiedName());
-    gen.knownInstances.put(anno, type);
+    final IsNamedType type = new IsNamedType(method, out.getQualifiedName());
+    gen.addProviderMethod(anno, type);
 
-    String proxyName = anno.annotationType().getSimpleName()+"Proxy";
+    final String proxyName = anno.annotationType().getSimpleName()+"Proxy";
+    final ConstPoolGenerator constGenerator = null;
     out.getImports().addImport(anno.annotationType().getCanonicalName()+"Proxy");
-    MethodBuffer mb = out.getClassBuffer()
+    final MethodBuffer mb = out.getClassBuffer()
       .createMethod("public static "+proxyName+" "+method+"()")
       .print("return new "+proxyName+"(");
 
-      Method[] methods = ReflectionUtilJava.getMethods(anno);
-      int len = methods.length;
-      for (int i = 0; i < len; i ++ ) {
-        Method m = methods[i];
-        Class<?> returnType = m.getReturnType();
-        Object value;
-        try {
-          value = m.invoke(anno);
-        } catch (Exception e) {
-          logger.log(Type.ERROR, "Error generating annotation proxy provider method." +
-            "\nCould not invoke "+m+" on "+anno, e);
-          throw new UnableToCompleteException();
-        }
-        if (i > 0)
-          mb.print(", ");
-        if (Annotation.class.isAssignableFrom(returnType)) {
-          Annotation asAnno = (Annotation)value;
-          GeneratedAnnotation result = generateAnnotation(logger, context, asAnno);
-          IsNamedType provider = generateProvider(logger, out, asAnno, result, context);
-          mb.print(provider.getQualifiedName()+"."+provider.getName()+"()");
-          mb.addImport(asAnno.annotationType().getCanonicalName()+"Proxy");
-        } else if (returnType.isArray() && Annotation.class.isAssignableFrom(returnType.getComponentType())) {
+    final Method[] methods = ReflectionUtilJava.getMethods(anno);
+    final int len = methods.length;
+    for (int i = 0; i < len; i ++ ) {
+      final Method m = methods[i];
+      final Class<?> returnType = m.getReturnType();
+      Object value;
+      try {
+        value = m.invoke(anno);
+      } catch (final Exception e) {
+        logger.log(Type.ERROR, "Error generating annotation proxy provider method." +
+          "\nCould not invoke "+m+" on "+anno, e);
+        throw new UnableToCompleteException();
+      }
+      if (i > 0) {
+        mb.print(", ");
+      }
+      if (Annotation.class.isAssignableFrom(returnType)) {
+        final Annotation asAnno = (Annotation)value;
+        final GeneratedAnnotation result = generateAnnotationProxy(logger, asAnno, ast);
+        final IsNamedType provider = generateProvider(logger, out, asAnno, result, ast);
+        final String methodName = mb.addImportStatic(provider.getQualifiedMemberName());
+        mb.print(methodName+"()");
+        mb.addImport(asAnno.annotationType().getCanonicalName()+"Proxy");
+      } else if (returnType.isArray()){
+        if (Annotation.class.isAssignableFrom(returnType.getComponentType())) {
           mb.println("new "+returnType.getComponentType().getCanonicalName()+"[]{");
           for (int ind = 0, length = GwtReflect.arrayLength(value); ind < length; ind++ ) {
-            if (ind > 0)
+            if (ind > 0) {
               mb.print(", ");
-            Annotation asAnno = (Annotation)GwtReflect.arrayGet(value, ind);
-            GeneratedAnnotation result = generateAnnotation(logger, context, asAnno);
-            IsNamedType provider = generateProvider(logger, out, asAnno, result, context);
+            }
+            final Annotation asAnno = (Annotation)GwtReflect.arrayGet(value, ind);
+            final GeneratedAnnotation result = generateAnnotationProxy(logger, asAnno, ast);
+            final IsNamedType provider = generateProvider(logger, out, asAnno, result, ast);
             mb.addImport(asAnno.annotationType().getCanonicalName()+"Proxy");
             mb.print(provider.getQualifiedName()+"."+provider.getName()+"()");
           }
           mb.println("}");
         } else {
-          // any other type, we can just generate raw source for now.
+          // TODO generate ConstPool array references
           mb.print(ReflectionUtilJava.sourceName(value));
         }
+      } else if (value instanceof Long){
+        // Longs must, unfortunately, be generated as ConstPool references in order for == comparisons
+        // to function correctly
+
+        mb.print(ReflectionUtilJava.sourceName(value));
+      } else {
+        // Enums and primitives, we will simply generate a reference to the fields,
+        // as they will all be safe to perform == comparisons in javascript
+        mb.print(ReflectionUtilJava.sourceName(value));
       }
+    }
 
     mb.println(");");
+
+    if (constGenerator != null) {
+      constGenerator.commit(logger, context);
+    }
+
     return type;
   }
 
 
-  private static void generateProxy(TreeLogger logger, Annotation anno,
-  ClassBuffer cw, String proxyPkg, String proxyName) {
+  private static void generateProxy(final TreeLogger logger, final Annotation anno,
+  final ClassBuffer cw, final String proxyPkg, final String proxyName) {
     assert proxyPkg.equals(anno.annotationType().getPackage().getName());
     assert proxyName.equals(anno.annotationType().getCanonicalName().replace(
         anno.annotationType().getPackage().getName()+".","").replace('.','_')+"Proxy");
     cw.addImport(Annotation.class);
     cw.addInterface(anno.annotationType());
-    MethodBuffer ctor = cw.createConstructor(Modifier.PUBLIC);
+    final MethodBuffer ctor = cw.createConstructor(Modifier.PUBLIC);
     // All public methods, include those from Object
-    Method[] methods = anno.annotationType().getMethods();
-    Object[] defaults = new Object[methods.length];
+    final Method[] methods = anno.annotationType().getMethods();
+    final Object[] defaults = new Object[methods.length];
+    final Map<String, Method> valueMethods = new HashMap<String, Method>();
     for (int i = 0, m = methods.length; i < m; i++) {
-      Method method = methods[i];
-      String clsName = method.getDeclaringClass().getName();
-      if (clsName.equals("java.lang.Object"))
+      final Method method = methods[i];
+      final String clsName = method.getDeclaringClass().getName();
+      if (clsName.equals("java.lang.Object")) {
         continue;
-      if (clsName.equals("java.lang.annotation.Annotation")) {
-        String name = method.getName();
-        if (name.equals("equals")) {
-          // TODO copy basic structure from AbstractAnnotation
-        } else if (name.equals("hashCode")) {
-
-        } else if (name.equals("toString")) {
-
-        } else if (name.equals("annotationType")) {
-          cw
-          .createMethod("public final Class<? extends Annotation> annotationType()")
-          .returnValue(anno.annotationType().getCanonicalName()+".class")
-          ;
-        }
-      } else {
+      }
+      if (!clsName.equals("java.lang.annotation.Annotation")) {
         // A method the client has declared
-        Class<?> returnType = (Class<?>)method.getReturnType();
-        String simpleName = method.getName();
-        String paramName = ReflectionUtilJava.toSourceName(method.getGenericReturnType())
+        final Class<?> returnType = method.getReturnType();
+        final String simpleName = method.getName();
+        final String paramName = ReflectionUtilJava.toSourceName(method.getGenericReturnType())
           +" "+simpleName;
-        Object defaultValue = defaults[i] = method.getDefaultValue();
+        final Object defaultValue = defaults[i] = method.getDefaultValue();
+        valueMethods.put(simpleName, method);
 
-        FieldBuffer field = cw.createField(returnType, method.getName())
+        final FieldBuffer field = cw.createField(returnType, method.getName())
           .setExactName(true)
           .makePrivate()
           .makeFinal()
@@ -441,10 +408,98 @@ public class GwtAnnotationGenerator {
       }
 
     }// end for loop
+
+    // Now, generate the basic Object methods, equals, toString, hashCode and Annotation.annotationType.
+    final String shortName = cw.addImport(anno.annotationType());
+    cw
+      .createMethod("public final Class<? extends Annotation> annotationType()")
+      .returnValue(shortName+".class")
+    ;
+
+    final MethodBuffer
+      equals = cw.createMethod("public final boolean equals(Object other)"),
+      hashCode = cw.createMethod("public final int hashCode()"),
+      toString = cw.createMethod("public final String toString()")
+    ;
+
+    // Prepare the equals method
+    if (valueMethods.isEmpty()) {
+      equals.returnValue("other instanceof "+shortName);
+    } else {
+      equals
+        .println("if (other == this) { return true; }")
+        .println("if (!(other instanceof "+shortName+")) { return false; }")
+        .println(shortName+" o = ("+shortName+")other;")
+        .println("return ")
+        .indent()
+      ;
+    }
+
+    // Prepare the toString method
+    toString
+      .print("return \"@"+anno.annotationType().getCanonicalName())
+    ;
+    if (!valueMethods.isEmpty()) {
+      toString.print("(");
+    }
+    toString.indent().println("\" +");
+
+    // Prepare the hashCode method
+    hashCode
+      .println("int hash = 37;")
+    ;
+
+    for (final Method method : valueMethods.values()) {
+      if (Annotation.class.isAssignableFrom(method.getReturnType())) {
+        equals.println("this."+method.getName()+"().equals(o."+method.getName()+"()) && ");
+      } else if (method.getReturnType().isArray()){
+        final String arrays = equals.addImport(Arrays.class);
+        equals.println(arrays+".equals(this."+method.getName()+"(), o."+method.getName()+"()) && ");
+      } else {
+        equals.println("this."+method.getName()+"() == o."+method.getName()+"() && ");
+      }
+      toString.println(method.getName()+"() + \", \" + ");
+      final Class<?> type = method.getReturnType();
+      if (type.isPrimitive()) {
+        if (type == float.class || type == double.class) {
+          hashCode.println("hash = hash + (int)(hash * ("+method.getName()+"()));");
+        } else if (type == boolean.class){
+          hashCode.println("hash += "+method.getName()+"() ? 1231 : 1237;");
+        } else if (type == long.class){
+          hashCode.println("long "+method.getName()+ " = " + method.getName()+"();");
+          hashCode.println("hash = hash + (int)(("+ method.getName()+ " ^ ("+method.getName()+" >>> 32)));");
+        } else if (type == int.class){
+          hashCode.println("hash = hash ^ "+method.getName()+"();");
+        } else {
+          // char, byte, short
+          hashCode.println("hash = hash ^ (int)"+method.getName()+"();");
+        }
+      } else {
+        // TODO include proper support for array types
+        hashCode.println("hash = hash ^ "+method.getName()+"().hashCode();");
+      }
+    }
+
+    // Finish off the methods.
+
+    // Equals method we will finish off with true, so each method can do
+    // this.method() == o.method() &&, and we can just finish it off with a true
+    if (!valueMethods.isEmpty()) {
+      equals.println("true;");
+    }
+
+    hashCode.returnValue("hash");
+
+    toString.print("\"");
+    if (!valueMethods.isEmpty()) {
+      toString.print(")");
+    }
+    toString.println("\";");
   }
 
 
-  private static boolean typeMatches(TreeLogger logger, Annotation anno, JClassType exists) throws UnableToCompleteException {
+  private static boolean typeMatches(final TreeLogger logger,
+      final JClassType exists, final JClassType anno) throws UnableToCompleteException {
     final boolean doLog = logger.isLoggable(logLevel);
     if (doLog) {
       logger.log(logLevel, "Checking if annotation "+anno.getClass().getName()+" equals "+exists.getQualifiedSourceName());
@@ -452,53 +507,59 @@ public class GwtAnnotationGenerator {
       logger.log(logLevel, exists.getQualifiedSourceName()+": "+ exists.toString());
     }
     try {
-      Method[] annoMethods = anno.annotationType().getDeclaredMethods();
+      final JMethod[] annoMethods = anno.getMethods();
       // Filter and map existing types.
-      Map<String, JMethod> existingMethods = new LinkedHashMap<String,JMethod>();
-      for (JMethod existingMethod : exists.getMethods()) {
+      final Map<String, JMethod> existingMethods = new LinkedHashMap<String,JMethod>();
+      for (final JMethod existingMethod : exists.getMethods()) {
         if (existingMethod.isPublic() && existingMethod.getEnclosingType() == exists) {
           existingMethods.put(existingMethod.getName(), existingMethod);
         }
       }
       // Now, our annotation methods must match our declared methods.
-      for (Method m : annoMethods) {
-        JMethod existing = existingMethods.get(m.getName());
+      for (final JMethod m : annoMethods) {
+        final JMethod existing = existingMethods.get(m.getName());
+        if (existing == null) {
+          return false;
+        }
         if (!m.getName().equals(existing.getName())) {
           if (doLog) {
-            logger.log(logLevel, "Annotations don't match for " +anno.annotationType().getName()+ "; "+
+            logger.log(logLevel, "Annotations don't match for " +anno.getName()+ "; "+
               m.getName() +" != "+existing.getName());
           }
           return false;
         }
-        JParameter[] existingParams = existing.getParameters();
-        Class<?>[] annoParams = m.getParameterTypes();
+        final JParameter[] existingParams = existing.getParameters();
+        final JParameter[] annoParams = m.getParameters();
         if (existingParams.length != annoParams.length) {
           if (doLog) {
-            logger.log(logLevel, "Annotations don't match for " +anno.annotationType().getName()+ "; "+
+            logger.log(logLevel, "Annotations don't match for " +anno.getName()+ "; "+
               "parameters for "+ m.getName() +" have changed.");
           }
           return false;
         }
         for (int i = existingParams.length; i --> 0; ) {
-          JParameter existingParam = existingParams[i];
-          Class<?> annoParam = annoParams[i];
+          final JParameter existingParam = existingParams[i];
+          final JParameter annoParam = annoParams[i];
+          if (annoParam == null) {
+            return false;
+          }
           if (!existingParam.getType().getQualifiedSourceName()
-            .equals(annoParam.getCanonicalName())) {
+            .equals(annoParam.getType().getQualifiedSourceName())) {
             if (doLog) {
               logger.log(logLevel, "Annotations don't match for " +
-                anno.annotationType().getName()+ "." + m.getName()+"(); "+
+                anno.getName()+ "." + m.getName()+"(); "+
                 "parameter "+ existingParam.getName() +" type has changed " +
                 "from " +existingParam.getType().getQualifiedSourceName()+" to " +
-                annoParam.getCanonicalName()+".");
+                annoParam.getName()+".");
             }
             return false;
           }
         }
       }
       logger.log(logLevel, "Annotations match for " +
-        anno.annotationType().getName()+ "; reusing type.");
+        anno.getName()+ "; reusing type.");
       return true;
-    } catch (Exception e) {
+    } catch (final Exception e) {
       logger.log(Type.ERROR, "Error encountering comparing annotation class to generated proxy;");
       logger.log(Type.ERROR, anno.getClass().getName() +" or "+exists.getName()+" is causing this error.", e);
       throw new UnableToCompleteException();

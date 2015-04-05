@@ -1,9 +1,9 @@
 package com.google.gwt.thirdparty.xapi.source.read;
 
+import com.google.gwt.thirdparty.xapi.collect.impl.SimpleStack;
+
 import java.lang.reflect.Modifier;
 import java.util.Iterator;
-
-import com.google.gwt.thirdparty.xapi.collect.impl.SimpleStack;
 
 public final class JavaModel {
   private JavaModel() {}
@@ -16,33 +16,34 @@ public final class JavaModel {
 
     public IsQualified() {}
 
-    public IsQualified(String type) {
+    public IsQualified(final String type) {
       qualifiedName = simpleName = type;
       packageName = "";
     }
-    public IsQualified(String pkg, String cls) {
+    public IsQualified(final String pkg, final String cls) {
       setType(pkg, cls);
     }
 
     public String getQualifiedName() {
       return qualifiedName;
     }
-    
+
     public String getPackage() {
       return packageName;
     }
-    
+
     public String getSimpleName() {
       return simpleName;
     }
 
-    public void setType(String pkg, String cls) {
+    public void setType(final String pkg, final String cls) {
       simpleName = cls;
       packageName = pkg;
-      if (packageName.length() > 0)
+      if (packageName.length() > 0) {
         qualifiedName = packageName + "." + cls;
-      else
+      } else {
         qualifiedName = cls;
+      }
     }
 
     @Override
@@ -76,11 +77,11 @@ public final class JavaModel {
 
     @Override
     public String toString() {
-      StringBuilder b = new StringBuilder();
+      final StringBuilder b = new StringBuilder();
       b.append(super.toString());
       if (!generics.isEmpty()) {
         b.append("<");
-        for (IsGeneric generic : generics) {
+        for (final IsGeneric generic : generics) {
           b.append(generic.toString());
         }
         b.append(">");
@@ -93,7 +94,7 @@ public final class JavaModel {
   }
   public static class IsNamedType extends IsType {
     public IsNamedType() {}
-    public IsNamedType(String name, String type) {
+    public IsNamedType(final String name, final String type) {
       super(type);
       this.name = name;
     }
@@ -108,6 +109,10 @@ public final class JavaModel {
       return super.toString();
     }
 
+    public String getQualifiedMemberName() {
+      return getQualifiedName() + "." + getName();
+    }
+
     @Override
     public String toString() {
       return typeName()+" "+name;
@@ -115,14 +120,14 @@ public final class JavaModel {
   }
   public static class IsVariable extends IsNamedType {
     public String initializer;
-    public IsVariable(String name, String type, String initializer) {
+    public IsVariable(final String name, final String type, final String initializer) {
       super(name, type);
       this.initializer = initializer;
     }
 
   }
   public static class IsGeneric extends IsNamedType {
-    public IsGeneric(String name, String type) {
+    public IsGeneric(final String name, final String type) {
       super(name, type);
     }
     public static final int SUPER = -1;
@@ -132,14 +137,16 @@ public final class JavaModel {
 
     @Override
     public String toString() {
-      StringBuilder b = new StringBuilder();
+      final StringBuilder b = new StringBuilder();
       b.append(name);
       if (bounds != CONCRETE) {
-        if (bounds == SUPER)
+        if (bounds == SUPER) {
           b.append(" super ");
-        else if (bounds == EXTENDS)
+        } else if (bounds == EXTENDS) {
           b.append(" extends ");
-        else assert false : "Generic bounds > 1 and < -1 not allowed. You supplied " + bounds;
+        } else {
+          assert false : "Generic bounds > 1 and < -1 not allowed. You supplied " + bounds;
+        }
       }
       b.append(qualifiedName);
       return b.toString();
@@ -148,10 +155,13 @@ public final class JavaModel {
   }
 
   public static class AnnotationMember{
-    public AnnotationMember(String name, String initializer) {
+    public AnnotationMember(final String name, String initializer) {
       this.name = name;
-      if (initializer == null)initializer = "";
-      else initializer = initializer.trim();
+      if (initializer == null) {
+        initializer = "";
+      } else {
+        initializer = initializer.trim();
+      }
       this.value = initializer;
       this.isArray = initializer.lastIndexOf('}') != -1;
     }
@@ -161,7 +171,7 @@ public final class JavaModel {
 
     @Override
     public String toString() {
-      StringBuilder b = new StringBuilder();
+      final StringBuilder b = new StringBuilder();
       b.append(name);
       if (value.length() > 0) {
         b.append(" = ");
@@ -172,34 +182,39 @@ public final class JavaModel {
   }
   public static class IsAnnotation extends IsQualified {
 
-    public IsAnnotation(String type) {
+    public IsAnnotation(final String type) {
       super(type);
     }
 
     public final SimpleStack<AnnotationMember> members = new SimpleStack<AnnotationMember>();
 
-    public void addMember(AnnotationMember member) {
+    public void addMember(final AnnotationMember member) {
       assert member != null;
       members.add(member);
     }
 
-    public void addMember(String name, String initializer) {
-      if (name == null)name = "value";
+    public void addMember(String name, final String initializer) {
+      if (name == null) {
+        name = "value";
+      }
       name = name.trim();
-      if (name.length() == 0) name = "value";
+      if (name.length() == 0) {
+        name = "value";
+      }
       addMember(new AnnotationMember(name, initializer));
     }
 
     @Override
     public String toString() {
-      StringBuilder b = new StringBuilder("@");
+      final StringBuilder b = new StringBuilder("@");
       b.append(qualifiedName);
       if (!members.isEmpty()) {
         b.append("(");
-        for (Iterator<AnnotationMember> iter = members.iterator(); iter.hasNext(); ) {
+        for (final Iterator<AnnotationMember> iter = members.iterator(); iter.hasNext(); ) {
           b.append(iter.next());
-          if (iter.hasNext())
+          if (iter.hasNext()) {
             b.append(", ");
+          }
         }
         b.append(")");
       }
@@ -212,7 +227,7 @@ public final class JavaModel {
   }
   public static class HasAnnotations {
     public final SimpleStack<IsAnnotation> annotations = new SimpleStack<IsAnnotation>();
-    public void addAnnotation(IsAnnotation annotation) {
+    public void addAnnotation(final IsAnnotation annotation) {
       annotations.add(annotation);
     }
     public Iterable<IsAnnotation> getAnnotations() {
@@ -227,7 +242,7 @@ public final class JavaModel {
 
   public static class IsParameter {
 
-    public IsParameter(String name, String type) {
+    public IsParameter(final String name, final String type) {
       this.type = new IsNamedType(name, type);
     }
 
@@ -246,17 +261,18 @@ public final class JavaModel {
 
     @Override
     public String toString() {
-      StringBuilder b = new StringBuilder();
-      String modifiers = Modifier.toString(modifier);
-      if (modifiers.length() > 0)
+      final StringBuilder b = new StringBuilder();
+      final String modifiers = Modifier.toString(modifier);
+      if (modifiers.length() > 0) {
         b.append(modifiers).append(" ");
+      }
       if (annotations != null) {
         b.append(annotations);
       }
       b.append(getType());
-      if (varargs)
+      if (varargs) {
         b.append(" ... ");
-      else {
+      } else {
         b.append(" ");
       }
       b.append(getName());

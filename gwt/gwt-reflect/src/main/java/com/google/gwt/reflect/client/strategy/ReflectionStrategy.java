@@ -11,13 +11,15 @@ import java.lang.annotation.Target;
 public @interface ReflectionStrategy {
 
   // Annotation retention
-  final int 
+  final int
       NONE = 0,
       COMPILE = 1,
-      RUNTIME = 2;
-  
+      RUNTIME = 2,
+      INHERITED = 4,
+      ALL_ANNOTATIONS = COMPILE | RUNTIME | INHERITED;
+
   // Member/type ids
-  final int 
+  final int
     TYPE = 1,
     CONSTRUCTOR = 2,
     FIELD = 4,
@@ -25,7 +27,7 @@ public @interface ReflectionStrategy {
     ANNOTATION = 0x10,
     META = 0x20,
     SOURCE = 0x40,
-    ALL = 0x7f;
+    ALL_MEMBERS = 0x7f;
 
   /**
    * Set to true to retain all ancestors' public fields.
@@ -34,7 +36,7 @@ public @interface ReflectionStrategy {
    * and will have reflection data written for those members (via clinit on
    * supertypes) when the direct .getMethod(), .getMethods(), etc is called
    * (versus the more precise .getDeclaredMethod(), .getDeclaredMethods()).
-   * 
+   *
    * @return true to cause all superclasses to be enhanced.
    */
   boolean magicSupertypes() default false;
@@ -58,7 +60,7 @@ public @interface ReflectionStrategy {
    * just set this to true (but do try to avoid doing so at the package level).
    */
   boolean keepEverything() default false;
-  
+
   /**
    * Whether or not to include the file url to the source file, as returned by
    * Class.class.getProtectionDomain().getCodeSource().getLocation().getPath();
@@ -109,24 +111,38 @@ public @interface ReflectionStrategy {
   GwtRetention typeRetention() default @GwtRetention();
 
   /**
+   * If you return any retention level here, it will override the defaults in {@link #methodRetention()},
+   * {@link #constructorRetention()}, {@link #fieldRetention()} and {@link #typeRetention()}.
+   * <p>
+   * This is a convenience method so you do not have to type a pile of code to retain all annotations.
+   * <p>
+   * Only the first value in the array is returned. An array is merely used to provide the concept of null.
+   */
+  GwtRetention[] memberRetention() default {};
+  /**
    * An int register of annotation-retention level;
-   * this sets the default for members within a given type;
-   * you can annotate individual members with @GwtRetention.
+   * if set to {@link #NONE}, no annotations will be kept for any members,
+   * otherwise, this sets the retention level for this type only;
+   * to set member-level return, you can set global member retention via {@link #memberRetention()},
+   * member-type level retention via {@link #methodRetention()}, {@link #constructorRetention()},
+   * {@link #typeRetention()} and {@link #fieldRetention()}.
+   * <p>
+   * You may override any defaults by annotating individual members with @GwtRetention.
    *
    * @return {@link #NONE} | {@link #COMPILE} | {@link #RUNTIME}
    */
   int annotationRetention() default NONE;
   /**
    * An int register of member types that should emit debug data.
-   * 
+   *
    * @return an non-empty string causes the compiler to dump the generated reflection
    * source for this class.
-   * 
-   * Valid values are OR'd combinations of 
+   *
+   * Valid values are OR'd combinations of
    * {@link ReflectionStrategy#TYPE}, {@link #CONSTRUCTOR}, {@link #FIELD}, {@link #METHOD} and {@link #ANNOTATION}
    */
   int debug() default NONE;
-  
+
   /**
    * @return true to keep the package, false to elide
    */

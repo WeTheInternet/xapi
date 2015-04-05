@@ -1,5 +1,6 @@
 package com.google.gwt.reflect.test.cases;
 
+import static com.google.gwt.reflect.client.strategy.ReflectionStrategy.ALL_ANNOTATIONS;
 import static com.google.gwt.reflect.client.strategy.ReflectionStrategy.COMPILE;
 import static com.google.gwt.reflect.client.strategy.ReflectionStrategy.RUNTIME;
 
@@ -14,13 +15,13 @@ import com.google.gwt.reflect.test.annotations.SourceRetention;
 @CompileRetention
 @RuntimeRetention
 @ReflectionStrategy(
-    annotationRetention=COMPILE|RUNTIME
+    annotationRetention=ALL_ANNOTATIONS
     ,methodRetention=@GwtRetention(annotationRetention=COMPILE|RUNTIME)
     ,fieldRetention=@GwtRetention(annotationRetention=COMPILE|RUNTIME)
     ,constructorRetention=@GwtRetention(annotationRetention=COMPILE|RUNTIME)
     ,typeRetention=@GwtRetention(annotationRetention=COMPILE|RUNTIME)
 )
-public class ReflectionCaseHasAllAnnos {
+public class ReflectionCaseHasAllAnnos extends ReflectionCaseSuperclass {
 
   protected ReflectionCaseHasAllAnnos() {}
 
@@ -31,6 +32,7 @@ public class ReflectionCaseHasAllAnnos {
     @SourceRetention
     @CompileRetention
     @RuntimeRetention
+    final
     long param
   ) { }
 
@@ -46,6 +48,7 @@ public class ReflectionCaseHasAllAnnos {
     @SourceRetention
     @CompileRetention
     @RuntimeRetention
+    final
     Long param
   ) { return field; }
 

@@ -37,38 +37,40 @@ package com.google.gwt.thirdparty.xapi.dev.source;
 
 import static com.google.gwt.thirdparty.xapi.dev.source.PrintBuffer.NEW_LINE;
 
-import java.util.TreeMap;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ImportSection {
 
-  private final TreeMap<String, String> imports = new TreeMap<String, String>();
-  private final TreeMap<String, String> importStatic = new TreeMap<String, String>();
+  private final Map<String, String> imports = new HashMap<String, String>();
+  private final Map<String, String> importStatic = new HashMap<String, String>();
 
   public ImportSection() {
   }
 
-  public ImportSection addImports(String... imports) {
-    for (String iport : imports) {
+  public ImportSection addImports(final String... imports) {
+    for (final String iport : imports) {
       addImport(iport);
     }
     return this;
   }
 
-  public String addImport(String importName) {
+  public String addImport(final String importName) {
     return tryImport(importName, importName.contains("static "));
   }
 
-  public String addStatic(Class<?> cls, String importName) {
-    boolean hasStatic = importName!=null&&importName.length()>0;
+  public String addStatic(final Class<?> cls, final String importName) {
+    final boolean hasStatic = importName!=null&&importName.length()>0;
     return tryImport(cls.getCanonicalName()+(hasStatic ? "."+importName : ""), hasStatic, false);
   }
 
-  public String addStatic(String importName) {
+  public String addStatic(final String importName) {
     return tryImport(importName, true);
   }
 
-  public ImportSection addStatics(String... imports) {
-    for (String iport : imports) {
+  public ImportSection addStatics(final String... imports) {
+    for (final String iport : imports) {
       addStatic(iport);
     }
     return this;
@@ -76,40 +78,64 @@ public class ImportSection {
 
   @Override
   public String toString() {
-    StringBuilder b = new StringBuilder(Character.toString(NEW_LINE));
-    for (String importName : imports.values()) {
-      if (importName.length() > 0) {
-        b.append("import ").append(importName).append(';').append(NEW_LINE);
-      }
+    final StringBuilder b = new StringBuilder();
+
+    // Print static imports first
+    String[] values = importStatic.values().toArray(new String[importStatic.size()]);
+    // nicely sorted
+    Arrays.sort(values);
+    printImports(b, values, "import static ");
+    if (values.length > 0) {
+      b.append(NEW_LINE);
     }
-    for (String importName : importStatic.values()) {
-      if (importName.length() > 0) {
-        b.append("import static ").append(importName).append(';')
-            .append(NEW_LINE);
-      }
-    }
+
+    values = imports.values().toArray(new String[imports.size()]);
+    Arrays.sort(values);
+    printImports(b, values, "import ");
     return b.toString();
   }
 
-  public ImportSection reserveSimpleName(String cls) {
+  private void printImports(final StringBuilder b, final String[] values, final String importType) {
+    if (values.length == 0) {
+      return;
+    }
+    String prefix = prefixOf(values[0]);
+    for (final String importName : values) {
+      if (importName.length() > 0) {
+        final String newPrefix = prefixOf(importName);
+        if (!newPrefix.equals(prefix)) {
+          b.append(NEW_LINE);
+          prefix = newPrefix;
+        }
+        b.append(importType).append(importName).append(';').append(NEW_LINE);
+      }
+    }
+  }
+
+  private String prefixOf(final String string) {
+    final int ind = string.indexOf('.');
+    return ind == -1 ? string : string.substring(0, ind);
+  }
+
+  public ImportSection reserveSimpleName(final String cls) {
     if (!imports.containsKey(cls)) {
       imports.put(cls, "");
     }
     return this;
   }
 
-  public ImportSection reserveMethodName(String name) {
+  public ImportSection reserveMethodName(final String name) {
     if (!imports.containsKey(name)) {
       imports.put(name, "");
     }
     return this;
   }
 
-  public String addImport(Class<?> cls) {
+  public String addImport(final Class<?> cls) {
     if (cls.isPrimitive() || "java.lang".equals(cls.getPackage().getName())) {
       return cls.getSimpleName();
     }
-    String existing = imports.get(cls.getSimpleName());
+    final String existing = imports.get(cls.getSimpleName());
     if (existing != null) {
       if (existing.equals(cls.getCanonicalName())) {
         return cls.getSimpleName();
@@ -120,28 +146,28 @@ public class ImportSection {
     return cls.getSimpleName();
   }
 
-  public ImportSection addImports(Class<?>... imports) {
-    for (Class<?> cls : imports) {
+  public ImportSection addImports(final Class<?>... imports) {
+    for (final Class<?> cls : imports) {
       addImport(cls);
     }
     return this;
   }
 
-  protected boolean canMinimize(String importName) {
-    String simpleName = importName.substring(importName.lastIndexOf('.') + 1);
-    String existing = imports.get(simpleName);
+  protected boolean canMinimize(final String importName) {
+    final String simpleName = importName.substring(importName.lastIndexOf('.') + 1);
+    final String existing = imports.get(simpleName);
 
     return existing == null || // No type for this simple name
         "".equals(existing) || // This simple name was reserved
         existing.equals(importName); // This type is already imported
   }
 
-  protected String tryImport(String importName, boolean staticImport) {
+  protected String tryImport(final String importName, final boolean staticImport) {
     return tryImport(importName, staticImport, true);
   }
 
-  protected String tryImport(String importName, boolean staticImport, boolean replaceDollarSigns) {
-    TreeMap<String, String> map = staticImport ? importStatic : imports;
+  protected String tryImport(String importName, final boolean staticImport, final boolean replaceDollarSigns) {
+    final Map<String, String> map = staticImport ? importStatic : imports;
     int arrayDepth = 0;
     int index = importName.indexOf(".");
     if (index == -1) {
@@ -174,13 +200,13 @@ public class ImportSection {
     if (replaceDollarSigns) {
       importName = importName.replace('$', '.');
     }
-    String shortname = importName.substring(1 + importName.lastIndexOf('.'));
+    final String shortname = importName.substring(1 + importName.lastIndexOf('.'));
     if ("*".equals(shortname)) {
       map.put(importName, importName);
       return importName + suffix;
     }
 
-    String existing = map.get(shortname);
+    final String existing = map.get(shortname);
     if (existing == null) {
       map.put(shortname, importName);
       return shortname + suffix;
@@ -192,7 +218,7 @@ public class ImportSection {
     return importName + suffix;
   }
 
-  private boolean skipImports(String importName) {
+  private boolean skipImports(final String importName) {
     return importName.matches("("
         + "(java[.]lang.[^.]*)" + // discard java.lang, but keep java.lang.reflect
         "|" +  // also discard primitives
@@ -201,7 +227,7 @@ public class ImportSection {
         + ")" + "[;]*");
   }
 
-  private String trim(String importName) {
+  private String trim(final String importName) {
     return importName.replaceAll("(\\[\\])|(\\s*import\\s+)|(static\\s+)|(\\s*;\\s*)", "");
   }
 }

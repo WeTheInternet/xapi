@@ -1,12 +1,5 @@
 package com.google.gwt.reflect.rebind;
 
-import java.lang.annotation.Annotation;
-import java.lang.annotation.Retention;
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.core.ext.typeinfo.HasAnnotations;
@@ -20,15 +13,21 @@ import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.reflect.client.strategy.ReflectionStrategy;
 
+import java.lang.annotation.Annotation;
+import java.lang.annotation.Retention;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+
 public class ReflectionUtilType {
 
-  public static Annotation[] extractAnnotations(int annotationRetention,
-      HasAnnotations method) {
-    ArrayList<Annotation> annos = new ArrayList<Annotation>();
-    boolean keepClass = (annotationRetention | ReflectionStrategy.COMPILE) == annotationRetention;
-    boolean keepRuntime = (annotationRetention | ReflectionStrategy.RUNTIME) == annotationRetention;
-    for (Annotation anno : method.getAnnotations()) {
-      Retention retention = anno.annotationType().getAnnotation(Retention.class);
+  public static Annotation[] extractAnnotations(final int annotationRetention, final HasAnnotations annoProvider) {
+    final ArrayList<Annotation> annos = new ArrayList<Annotation>();
+    final boolean keepClass = (annotationRetention | ReflectionStrategy.COMPILE) == annotationRetention;
+    final boolean keepRuntime = (annotationRetention | ReflectionStrategy.RUNTIME) == annotationRetention;
+    for (final Annotation anno : annoProvider.getDeclaredAnnotations()) {
+      final Retention retention = anno.annotationType().getAnnotation(Retention.class);
       if (retention == null) {
         if (keepClass) {
           annos.add(anno);
@@ -44,6 +43,7 @@ public class ReflectionUtilType {
             if (keepRuntime) {
               annos.add(anno);
             }
+            break;
           default:
         }
       }
@@ -51,9 +51,9 @@ public class ReflectionUtilType {
     return annos.toArray(new Annotation[annos.size()]);
   }
 
-  public static JField findField(TreeLogger logger,
-      JClassType type, String name, boolean declared) {
-    for (JField field : type.getFields()) {
+  public static JField findField(final TreeLogger logger,
+      final JClassType type, final String name, final boolean declared) {
+    for (final JField field : type.getFields()) {
       if (field.getName().equals(name)) {
         if (declared){
           if (!field.getEnclosingType().getQualifiedSourceName().equals(type.getQualifiedSourceName())) {
@@ -75,10 +75,10 @@ public class ReflectionUtilType {
     return declared || type.getSuperclass() == null ? null: findField(logger, type.getSuperclass(), name, declared);
   }
 
-  public static JMethod findMethod(TreeLogger logger,
-      JClassType type, String name, List<String> params, boolean declared) {
+  public static JMethod findMethod(final TreeLogger logger,
+      final JClassType type, final String name, final List<String> params, final boolean declared) {
     loop:
-    for (JMethod method : type.getMethods()) {
+    for (final JMethod method : type.getMethods()) {
       if (method.getName().equals(name)) {
         if (declared){
           if (!method.getEnclosingType().getQualifiedSourceName().equals(type.getQualifiedSourceName())) {
@@ -94,7 +94,7 @@ public class ReflectionUtilType {
             continue;
           }
         }
-        JType[] types = method.getParameterTypes();
+        final JType[] types = method.getParameterTypes();
         if (types.length == params.size()) {
           for (int i = 0, m = types.length; i < m; i++ ) {
             String typeName = types[i].getErasedType().getQualifiedBinaryName();
@@ -114,11 +114,11 @@ public class ReflectionUtilType {
     return declared || type.getSuperclass() == null ? null: findMethod(logger, type.getSuperclass(), name, params, declared);
   }
 
-  public static JConstructor findConstructor(TreeLogger logger,
-      JClassType type, List<String> params, boolean declared) {
+  public static JConstructor findConstructor(final TreeLogger logger,
+      final JClassType type, final List<String> params, final boolean declared) {
     loop:
-      for (JConstructor ctor : type.getConstructors()) {
-          JType[] types = ctor.getParameterTypes();
+      for (final JConstructor ctor : type.getConstructors()) {
+          final JType[] types = ctor.getParameterTypes();
           if (types.length == params.size()) {
             for (int i = 0, m = types.length; i < m; i++ ) {
               String typeName = types[i].getErasedType().getQualifiedBinaryName();
@@ -137,7 +137,7 @@ public class ReflectionUtilType {
         return declared || type.getSuperclass() == null ? null: findConstructor(logger, type.getSuperclass(), params, declared);
   }
 
-  public static int getModifiers(JConstructor ctor) {
+  public static int getModifiers(final JConstructor ctor) {
     int mod;
 
     if (ctor.isPublic()) {
@@ -158,7 +158,7 @@ public class ReflectionUtilType {
     return mod;
   }
 
-  public static int getModifiers(JField field) {
+  public static int getModifiers(final JField field) {
     int mod;
 
     if (field.isPublic()) {
@@ -188,7 +188,7 @@ public class ReflectionUtilType {
     return mod;
   }
 
-  public static int getModifiers(JMethod method) {
+  public static int getModifiers(final JMethod method) {
     int mod;
     if (method.isPublic()) {
       mod = Modifier.PUBLIC;
@@ -225,8 +225,8 @@ public class ReflectionUtilType {
     return mod;
   }
 
-  public static <T extends JType> String toJsniClassLits(T[] types) {
-    StringBuilder b = new StringBuilder("[");
+  public static <T extends JType> String toJsniClassLits(final T[] types) {
+    final StringBuilder b = new StringBuilder("[");
     for (int i = 0; i < types.length; i++) {
       b.append(toJsniClassLit(types[i]));
       if (i < types.length-1) {
@@ -236,10 +236,10 @@ public class ReflectionUtilType {
     return b + "]";
   }
 
-  public static String toUniqueFactory(JParameter params[], JConstructor[] ctors) {
-    int length = params.length;
-    ArrayList<JConstructor> sameSize = new ArrayList<JConstructor>();
-    for (JConstructor ctor : ctors) {
+  public static String toUniqueFactory(final JParameter params[], final JConstructor[] ctors) {
+    final int length = params.length;
+    final ArrayList<JConstructor> sameSize = new ArrayList<JConstructor>();
+    for (final JConstructor ctor : ctors) {
       if (ctor.getParameters().length == length) {
         sameSize.add(ctor);
       }
@@ -247,9 +247,9 @@ public class ReflectionUtilType {
     if (sameSize.size() == 1) {
       return ReflectionUtilType.simplify(params);
     }
-    HashSet<String> unique = new HashSet<String>();
-    for (JConstructor method : sameSize) {
-      String simple = ReflectionUtilType.simplify(method.getParameters());
+    final HashSet<String> unique = new HashSet<String>();
+    for (final JConstructor method : sameSize) {
+      final String simple = ReflectionUtilType.simplify(method.getParameters());
       unique.add(simple);
     }
     if (unique.size() == sameSize.size()) {
@@ -258,10 +258,10 @@ public class ReflectionUtilType {
     return ReflectionUtilType.verboseParams(params);
   }
 
-  public static String toUniqueFactory(JParameter params[], JMethod[] methods) {
-    int length = params.length;
-    ArrayList<JMethod> sameSize = new ArrayList<JMethod>();
-    for (JMethod method : methods) {
+  public static String toUniqueFactory(final JParameter params[], final JMethod[] methods) {
+    final int length = params.length;
+    final ArrayList<JMethod> sameSize = new ArrayList<JMethod>();
+    for (final JMethod method : methods) {
       if (method.getParameters().length == length) {
         sameSize.add(method);
       }
@@ -269,9 +269,9 @@ public class ReflectionUtilType {
     if (sameSize.size() == 1) {
       return ReflectionUtilType.simplify(params);
     }
-    HashSet<String> unique = new HashSet<String>();
-    for (com.google.gwt.core.ext.typeinfo.JMethod method : sameSize) {
-      String simple = ReflectionUtilType.simplify(method.getParameters());
+    final HashSet<String> unique = new HashSet<String>();
+    for (final com.google.gwt.core.ext.typeinfo.JMethod method : sameSize) {
+      final String simple = ReflectionUtilType.simplify(method.getParameters());
       unique.add(simple);
     }
     if (unique.size() == sameSize.size()) {
@@ -280,34 +280,34 @@ public class ReflectionUtilType {
     return ReflectionUtilType.verboseParams(params);
   }
 
-  public static JClassType findType(TypeOracle oracle, Class<?> cls) {
-    String pkg = cls.getPackage().getName();
+  public static JClassType findType(final TypeOracle oracle, final Class<?> cls) {
+    final String pkg = cls.getPackage().getName();
     return oracle.findType(pkg, cls.getCanonicalName().replace(pkg+".", ""));
   }
 
-  private static String simpleParams(com.google.gwt.core.ext.typeinfo.JParameter[] params) {
-    StringBuilder b = new StringBuilder();
-    for (com.google.gwt.core.ext.typeinfo.JParameter param : params) {
+  private static String simpleParams(final com.google.gwt.core.ext.typeinfo.JParameter[] params) {
+    final StringBuilder b = new StringBuilder();
+    for (final com.google.gwt.core.ext.typeinfo.JParameter param : params) {
       b.append(param.getType().getErasedType().getQualifiedSourceName().charAt(0));
     }
     return b.toString();
   }
 
-  private static String simplify(com.google.gwt.core.ext.typeinfo.JParameter[] params) {
-    StringBuilder b = new StringBuilder();
-    for (com.google.gwt.core.ext.typeinfo.JParameter param : params) {
+  private static String simplify(final com.google.gwt.core.ext.typeinfo.JParameter[] params) {
+    final StringBuilder b = new StringBuilder();
+    for (final com.google.gwt.core.ext.typeinfo.JParameter param : params) {
       b.append(param.getType().getErasedType().getQualifiedSourceName().charAt(0));
     }
     return b.toString();
   }
 
-  private static String toJsniClassLit(JType type) {
+  private static String toJsniClassLit(final JType type) {
     return "@"+type.getErasedType().getQualifiedSourceName()+"::class";
   }
 
-  private static String verboseParams(com.google.gwt.core.ext.typeinfo.JParameter[] params) {
-    StringBuilder b = new StringBuilder();
-    for (com.google.gwt.core.ext.typeinfo.JParameter param : params) {
+  private static String verboseParams(final com.google.gwt.core.ext.typeinfo.JParameter[] params) {
+    final StringBuilder b = new StringBuilder();
+    for (final com.google.gwt.core.ext.typeinfo.JParameter param : params) {
       String name = param.getType().getErasedType().getSimpleSourceName();
       name = name.replaceAll("\\[\\]", "");
       b.append(name).append('_');
@@ -315,7 +315,7 @@ public class ReflectionUtilType {
     return b.toString();
   }
 
-  public static JPrimitiveType isPrimitiveWrapper(JType type) {
+  public static JPrimitiveType isPrimitiveWrapper(final JType type) {
     if (type.getQualifiedSourceName().startsWith("java.lang")) {
       if ("Integer".equals(type.getSimpleSourceName())) {
         return JPrimitiveType.INT;

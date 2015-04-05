@@ -52,6 +52,7 @@ public final class GwtReflectJre {
     return value;
   }
 
+  @SuppressWarnings("unchecked")
   public static <T> T[] newArray(final Class<T> classLit, final int size) {
     return (T[])Array.newInstance(classLit, size);
   }

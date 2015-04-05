@@ -15,7 +15,7 @@ import com.google.gwt.reflect.shared.GwtReflect;
 public @interface DefaultValue {
 
   @ReflectionStrategy(
-      methodRetention=@GwtRetention(annotationRetention=ReflectionStrategy.ALL),
+      methodRetention=@GwtRetention(annotationRetention=ReflectionStrategy.ALL_MEMBERS),
       keepCodeSource=false,
       keepPackage=false
   )
