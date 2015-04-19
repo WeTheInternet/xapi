@@ -5,5 +5,6 @@
                             Before.java,
                             BeforeClass.java,
                             After.java,
-                            AfterClass.java" />
+                            AfterClass.java,
+                            JUnit4Test.java" />
 </module>
