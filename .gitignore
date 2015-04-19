@@ -4,5 +4,6 @@
 .DS_Store
 target
 war
+bin
 gwt-unitCache
 *.iml
