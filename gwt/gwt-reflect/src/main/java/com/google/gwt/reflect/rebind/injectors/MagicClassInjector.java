@@ -105,7 +105,7 @@ public class MagicClassInjector implements MagicMethodGenerator, UnifyAstListene
 
     final StandardGeneratorContext ctx = params.getGeneratorContext();
     final String result = MagicClassGenerator.generate(params.getLogger(), params, type);
-    ctx.finish(params.getLogger());
+    params.getAst().finish(params.getLogger());
 
     params.getLogger().log(logLevel, "Generated Class Enhancer: " + result);
     JDeclaredType success = params.getAst().searchForTypeBySource(result);
@@ -119,8 +119,8 @@ public class MagicClassInjector implements MagicMethodGenerator, UnifyAstListene
         call.addArg(params.getClazz().makeStatement().getExpr());
 
         // Mark that the enclosing type (GwtReflect) has caused this class enhancer to be generated.
-        final JDeclaredType enclosingType = params.getMethodCall().getTarget().getEnclosingType();
-        params.getAst().recordRebinderTypeForReboundType(clsName, enclosingType.getName());
+//        final JDeclaredType enclosingType = params.getMethodCall().getTarget().getEnclosingType();
+//        params.getAst().recordRebinderTypeForReboundType(clsName, enclosingType.getName());
 
         return call;
       }
@@ -202,6 +202,7 @@ public class MagicClassInjector implements MagicMethodGenerator, UnifyAstListene
       return previous.makeStatement().getExpr();
     }
     final JMethodCall expr = initialize(key, params);
+
     classEnhancers.put(key, expr);
     expr.setArg(0, params.getClazz().makeStatement().getExpr());
     return expr.makeStatement().getExpr();

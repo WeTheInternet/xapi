@@ -4,6 +4,7 @@
 package com.google.gwt.reflect.rebind.model;
 
 import com.google.gwt.core.ext.typeinfo.JClassType;
+import com.google.gwt.reflect.rebind.ReflectionUtilJava;
 import com.google.gwt.thirdparty.xapi.source.read.JavaModel.IsNamedType;
 
 import java.lang.annotation.Annotation;
@@ -28,11 +29,13 @@ import java.util.Map;
  *
  */
 public class GeneratedAnnotation {
-  public GeneratedAnnotation(final Annotation anno, final String proxyName) {
+  public GeneratedAnnotation(final Annotation anno, final String proxyPackage, final String proxySimpleName) {
     this.anno = anno;
-    this.proxyName = proxyName;
+    this.proxyPackage = proxyPackage;
+    this.proxySimpleName = proxySimpleName;
   }
-  final String proxyName;
+  final String proxyPackage;
+  final String proxySimpleName;
   final Annotation anno;
 
   /**
@@ -97,7 +100,15 @@ public class GeneratedAnnotation {
   }
 
   public String getProxyName() {
-    return proxyName;
+    return ReflectionUtilJava.qualifiedName(proxyPackage, proxySimpleName);
+  }
+
+  public String getProxyPackage() {
+    return proxyPackage;
+  }
+
+  public String getProxySimpleName() {
+    return proxySimpleName;
   }
 
 }

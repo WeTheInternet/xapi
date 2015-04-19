@@ -1,10 +1,17 @@
 package com.google.gwt.reflect.rebind.generators;
 
+import static java.lang.reflect.Modifier.FINAL;
+import static java.lang.reflect.Modifier.PRIVATE;
+import static java.lang.reflect.Modifier.PUBLIC;
+import static java.lang.reflect.Modifier.STATIC;
+
+import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JConstructor;
+import com.google.gwt.core.ext.typeinfo.JParameter;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.dev.jjs.MagicMethodGenerator;
 import com.google.gwt.dev.jjs.UnifyAstView;
@@ -16,10 +23,19 @@ import com.google.gwt.dev.jjs.ast.JMethod;
 import com.google.gwt.dev.jjs.ast.JMethodCall;
 import com.google.gwt.dev.jjs.ast.JNewArray;
 import com.google.gwt.dev.jjs.ast.JType;
+import com.google.gwt.reflect.client.strategy.GwtRetention;
+import com.google.gwt.reflect.client.strategy.ReflectionStrategy;
 import com.google.gwt.reflect.rebind.ReflectionManifest;
 import com.google.gwt.reflect.rebind.ReflectionUtilAst;
 import com.google.gwt.reflect.rebind.ReflectionUtilType;
+import com.google.gwt.reflect.shared.GwtReflect;
+import com.google.gwt.thirdparty.xapi.dev.source.ClassBuffer;
+import com.google.gwt.thirdparty.xapi.dev.source.MethodBuffer;
+import com.google.gwt.thirdparty.xapi.dev.source.SourceBuilder;
+import com.google.gwt.thirdparty.xapi.source.read.JavaModel.IsQualified;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,7 +64,6 @@ public abstract class ConstructorGenerator extends MemberGenerator implements Ma
     }
 
     final JClassLiteral classLit = ReflectionUtilAst.extractClassLiteral(logger, inst, ast, false);
-    final ReflectionGeneratorContext ctx = new ReflectionGeneratorContext(logger, classLit, callSite, enclosingMethod, context, ast);
     final List<JExpression> args = callSite.getArgs();
     final JExpression arg0 = args.get(isFromGwtReflect?1:0);
 
@@ -98,6 +113,7 @@ public abstract class ConstructorGenerator extends MemberGenerator implements Ma
 
     // We got all our literals; the class and parameter classes
     // now get the requested constructor
+    final ReflectionGeneratorContext ctx = new ReflectionGeneratorContext(logger, classLit, callSite, enclosingMethod, context, ast);
     final JClassType oracleType = ast.getTypeOracle().findType(classLit.getRefType().getName().replace('$', '.'));
     final JConstructor ctor = ReflectionUtilType.findConstructor(logger, oracleType,
         ReflectionUtilAst.getTypeNames(params), isDeclared());
@@ -125,7 +141,7 @@ public abstract class ConstructorGenerator extends MemberGenerator implements Ma
     final String clsName = classLit.getRefType().getName();
     final ReflectionManifest manifest = ReflectionManifest.getReflectionManifest(logger, clsName, ast.getGeneratorContext());
     final String factoryCls = getOrMakeConstructorFactory(logger, ctx, ctor, ctor.getEnclosingType(), manifest, declared);
-    ast.getRebindPermutationOracle().getGeneratorContext().finish(logger);
+    ctx.finish(logger);
     final JDeclaredType factory = ast.searchForTypeBySource(factoryCls);
     // pull out the static accessor method
     for (final JMethod factoryMethod : factory.getMethods()) {
@@ -149,7 +165,7 @@ public abstract class ConstructorGenerator extends MemberGenerator implements Ma
       throw new UnableToCompleteException();
     }
 
-    final String constructorFactoryName = getConstructorFactoryName(cls, ctor.getParameters());
+    final String constructorFactoryName = ConstructorGenerator.getConstructorFactoryName(cls, ctor.getParameters());
     JClassType factory;
     final String pkgName = ctor.getEnclosingType().getPackage().getName();
     factory = oracle.findType(pkgName, constructorFactoryName);
@@ -163,5 +179,88 @@ public abstract class ConstructorGenerator extends MemberGenerator implements Ma
   @Override
   protected String memberGetter() {
     return "get"+(isDeclared()?"Declared":"")+"Constructor";
+  }
+
+  public static String getConstructorFactoryName(final JClassType type,
+    final JParameter[] list) {
+    final StringBuilder b = new StringBuilder(type.getName());
+    b.append(MemberGenerator.CONSTRUCTOR_SPACER).append(
+      ReflectionUtilType.toUniqueFactory(list, type.getConstructors()));
+    return b.toString();
+  }
+
+  public String generateConstructorFactory(final TreeLogger logger,
+    final ReflectionGeneratorContext ctx,
+    final JConstructor ctor, String factory, final ReflectionManifest manifest)
+      throws UnableToCompleteException {
+
+    final JClassType type = ctor.getEnclosingType();
+    final String pkg = type.getPackage().getName();
+    factory = factory.replace('.', '_');
+    final SourceBuilder<?> out = ctx.tryCreate(PUBLIC | FINAL, pkg, factory);
+
+    if (out == null) {
+      // TODO some kind of test to see if structure has changed...
+      return pkg + "." + factory;
+    }
+
+    final String simpleName = out.getImports().addImport(type.getQualifiedSourceName());
+
+    final ClassBuffer cb = out.getClassBuffer();
+
+    cb.createConstructor(Modifier.PRIVATE);
+    cb.createField("Constructor <" + simpleName + ">", "ctor", PRIVATE | STATIC);
+
+    final MethodBuffer instantiator = cb
+      .addImports(Constructor.class, GwtReflect.class, JavaScriptObject.class)
+      .createMethod(
+        "public static Constructor <" + simpleName + "> instantiate()")
+        .println("if (ctor == null) {")
+        .indent()
+        .println("ctor = new Constructor<" + simpleName + ">(")
+        .print(simpleName + ".class, ")
+        .print(ReflectionUtilType.getModifiers(ctor) + ", ")
+        .println("invoker(), ");
+
+
+    // Print an array of all annotations retained on this constructor
+    final GwtRetention retention = manifest.getRetention(ctor);
+    appendAnnotationSupplier(logger, instantiator, ctor, retention, ctx);
+    instantiator.print(", ");
+
+    // Print the parameter array (also a reference to a constant array)
+    appendClassArray(instantiator, ctor.getParameters(), ctx);
+    instantiator.print(", ");
+
+    // Include the throw exceptions
+    appendClassArray(instantiator, ctor.getThrows(), ctx);
+
+    // Finish up the instantiator method
+    instantiator
+      .println(");")
+      .outdent()
+      .println("}")
+      .returnValue("ctor");
+
+    // Construct an invoker method
+    createInvokerMethod(cb, type, type, "new", ctor.getParameters(), true, ctor.isPublic());
+
+    // Possibly log the source we have generated thus far
+    if (isDebug(type, ReflectionStrategy.CONSTRUCTOR)) {
+      logger.log(Type.INFO, out.toString());
+    }
+
+    // Commit the generator context (saves the provider class, and any constants we created)
+    ctx.commit(logger);
+
+    return out.getQualifiedName();
+  }
+
+  /**
+   * @see com.google.gwt.reflect.rebind.generators.MemberGenerator#getNotFoundExceptionType()
+   */
+  @Override
+  protected IsQualified getNotFoundExceptionType() {
+    return new IsQualified("java.lang", NoSuchMethodException.class.getSimpleName());
   }
 }

@@ -37,11 +37,6 @@ package com.google.gwt.thirdparty.xapi.dev.source;
 
 import static com.google.gwt.thirdparty.xapi.source.read.JavaVisitor.MODIFIER_DEFAULT;
 
-import java.lang.reflect.Modifier;
-import java.util.Arrays;
-import java.util.LinkedHashSet;
-import java.util.Map.Entry;
-
 import com.google.gwt.thirdparty.xapi.collect.impl.SimpleStack;
 import com.google.gwt.thirdparty.xapi.source.read.JavaLexer;
 import com.google.gwt.thirdparty.xapi.source.read.JavaModel.IsParameter;
@@ -49,6 +44,11 @@ import com.google.gwt.thirdparty.xapi.source.read.JavaVisitor.AnnotationMemberVi
 import com.google.gwt.thirdparty.xapi.source.read.JavaVisitor.MethodVisitor;
 import com.google.gwt.thirdparty.xapi.source.read.JavaVisitor.ParameterVisitor;
 import com.google.gwt.thirdparty.xapi.source.read.JavaVisitor.TypeData;
+
+import java.lang.reflect.Modifier;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.Map.Entry;
 
 public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
     MethodVisitor<SourceBuilder<?>> {
@@ -62,11 +62,11 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
   private TypeData                    returnType;
   private int                         tryDepth;
 
-  public MethodBuffer(SourceBuilder<?> context) {
+  public MethodBuffer(final SourceBuilder<?> context) {
     this(context, INDENT);
   }
 
-  public MethodBuffer(SourceBuilder<?> context, String indent) {
+  public MethodBuffer(final SourceBuilder<?> context, final String indent) {
     super(indent);
     this.context = context;
     this.indent = indent + INDENT;
@@ -76,13 +76,13 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
 
   @Override
   public String toString() {
-    StringBuilder b = new StringBuilder(Character.toString(NEW_LINE));
+    final StringBuilder b = new StringBuilder(Character.toString(NEW_LINE));
     if (javaDoc != null && javaDoc.isNotEmpty()) {
       b.append(javaDoc.toString());
     }
     b.append(origIndent);
     if (annotations.size() > 0) {
-      for (String anno : annotations) {
+      for (final String anno : annotations) {
         b.append('@').append(anno).append(NEW_LINE).append(origIndent);
       }
     }
@@ -90,12 +90,14 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
     if ((modifier & MODIFIER_DEFAULT) == MODIFIER_DEFAULT) {
       b.append(" default");
     }
-    b.append(" ");
+    if (returnType.simpleName.length() > 0) {
+      b.append(" ");
+    }
     // generics
     if (generics.size() > 0) {
       b.append("<");
       String prefix = "";
-      for (String generic : generics) {
+      for (final String generic : generics) {
         b.append(prefix);
         b.append(generic);
         prefix = ", ";
@@ -103,13 +105,16 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
       b.append("> ");
     }
     // return type
-    b.append(returnType).append(" ");
-    // method name
-    b.append(methodName);
+    b.append(returnType);
+    b.append(" ");
+    if (methodName.length() > 0) {
+      // method name
+      b.append(methodName);
+    }
     // parameters
     b.append(" (");
     String prefix = "";
-    for (String parameter : parameters) {
+    for (final String parameter : parameters) {
       b.append(prefix).append(parameter);
       prefix = ", ";
     }
@@ -117,7 +122,7 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
     if (!exceptions.isEmpty()) {
       b.append("\n" + indent + "  throws ");
       prefix = "";
-      for (String exception : exceptions) {
+      for (final String exception : exceptions) {
         b.append(prefix).append(exception);
         prefix = ", ";
       }
@@ -141,19 +146,19 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
     return b.toString() + prefix + super.toString() + suffix;
   }
 
-  public MethodBuffer addExceptions(String... exceptions) {
+  public MethodBuffer addExceptions(final String... exceptions) {
     addTypes(this.exceptions, exceptions);
     return this;
   }
 
   @Override
-  public String addImport(Class<?> cls) {
+  public String addImport(final Class<?> cls) {
     return context.getImports().addImport(cls);
   }
 
   @Override
-  public String addImport(String cls) {
-    String noPkg = cls.replace(context.getPackage() + ".", "");
+  public String addImport(final String cls) {
+    final String noPkg = cls.replace(context.getPackage() + ".", "");
     if (noPkg.indexOf('.') == -1) {
       return noPkg;
     }
@@ -161,57 +166,57 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
   }
 
   @Override
-  public String addImportStatic(Class<?> cls, String name) {
+  public String addImportStatic(final Class<?> cls, final String name) {
     return context.getImports().addStatic(cls, name);
   }
 
   @Override
-  public String addImportStatic(String cls) {
+  public String addImportStatic(final String cls) {
     return context.getImports().addStatic(cls);
   }
 
-  public MethodBuffer addParameters(String... parameters) {
-    for (String parameter : parameters) {
-      IsParameter param = JavaLexer.lexParam(parameter);
+  public MethodBuffer addParameters(final String... parameters) {
+    for (final String parameter : parameters) {
+      final IsParameter param = JavaLexer.lexParam(parameter);
       this.parameters.add(param.toString());
     }
     return this;
   }
 
-  public MethodBuffer addParameter(Class<?> type, String name) {
-    String typeName = addImport(type);
+  public MethodBuffer addParameter(final Class<?> type, final String name) {
+    final String typeName = addImport(type);
     this.parameters.add(typeName + " " + name);
     return this;
   }
 
-  public MethodBuffer addParameter(String type, String name) {
-    String typeName = addImport(type);
+  public MethodBuffer addParameter(final String type, final String name) {
+    final String typeName = addImport(type);
     this.parameters.add(typeName + " " + name);
     return this;
   }
 
   @SuppressWarnings("unchecked")
-  public MethodBuffer addParameters(Entry<String, Class<?>>... parameters) {
+  public MethodBuffer addParameters(final Entry<String, Class<?>>... parameters) {
     return addParameters(Arrays.asList(parameters));
   }
 
-  public MethodBuffer addParameters(Iterable<Entry<String, Class<?>>> parameters) {
+  public MethodBuffer addParameters(final Iterable<Entry<String, Class<?>>> parameters) {
     addNamedTypes(this.parameters, parameters);
     return this;
   }
 
-  public MethodBuffer addExceptions(Class<?>... exceptions) {
+  public MethodBuffer addExceptions(final Class<?>... exceptions) {
     addTypes(this.exceptions, exceptions);
     return this;
   }
 
-  public MethodBuffer setExceptions(Class<?>... exceptions) {
+  public MethodBuffer setExceptions(final Class<?>... exceptions) {
     this.exceptions.clear();
     addTypes(this.exceptions, exceptions);
     return this;
   }
 
-  public MethodBuffer setExceptions(String... exceptions) {
+  public MethodBuffer setExceptions(final String... exceptions) {
     this.exceptions.clear();
     addTypes(this.exceptions, exceptions);
     return this;
@@ -231,35 +236,35 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
    *         Report any parsing errors to github.com/WeTheInternet/com.google.gwt.thirdparty.xapi and/or
    *         james@wetheinter.net
    */
-  public MethodBuffer setDefinition(String definition) {
+  public MethodBuffer setDefinition(final String definition) {
     // JavaMetadata will extract all modifiers for us
     JavaLexer.visitMethodSignature(this, context, definition, 0);
     return this;
   }
 
-  public MethodBuffer setName(String name) {
+  public MethodBuffer setName(final String name) {
     methodName = name;
     return this;
   }
 
-  public MethodBuffer setParameters(String... parameters) {
+  public MethodBuffer setParameters(final String... parameters) {
     this.parameters.clear();
     return addParameters(parameters);
   }
 
   @SuppressWarnings("unchecked")
-  public MethodBuffer setParameters(Entry<String, Class<?>>... parameters) {
+  public MethodBuffer setParameters(final Entry<String, Class<?>>... parameters) {
     this.parameters.clear();
     return addParameters(Arrays.asList(parameters));
   }
 
-  public MethodBuffer setParameters(Iterable<Entry<String, Class<?>>> parameters) {
+  public MethodBuffer setParameters(final Iterable<Entry<String, Class<?>>> parameters) {
     this.parameters.clear();
     return addParameters(parameters);
   }
 
-  public MethodBuffer setReturnType(Class<?> cls) {
-    String pkgName = cls.getPackage().getName();
+  public MethodBuffer setReturnType(final Class<?> cls) {
+    final String pkgName = cls.getPackage().getName();
     if (pkgName.length() == 0) {
       returnType = new TypeData("", cls.getCanonicalName());
     } else {
@@ -269,12 +274,12 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
     return this;
   }
 
-  public MethodBuffer setReturnType(String pkgName, String enclosedClassName) {
+  public MethodBuffer setReturnType(final String pkgName, final String enclosedClassName) {
     returnType = new TypeData(pkgName, enclosedClassName);
     return this;
   }
 
-  public MethodBuffer setReturnType(String canonicalName) {
+  public MethodBuffer setReturnType(final String canonicalName) {
     if ("".equals(canonicalName)) {
       returnType = new TypeData("");
     } else {
@@ -283,8 +288,8 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
     return this;
   }
 
-  public ClassBuffer createLocalClass(String classDef) {
-    ClassBuffer cls = new ClassBuffer(context, indent);
+  public ClassBuffer createLocalClass(final String classDef) {
+    final ClassBuffer cls = new ClassBuffer(context, indent);
     cls.setDefinition(classDef, classDef.trim().endsWith("{"));
     assert cls.privacy == 0 : "A local class cannot be "
       + Modifier.toString(cls.privacy);
@@ -311,7 +316,7 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
    *          - Whether to encapsulate native methods with /*-{ }-* /
    * @return
    */
-  public MethodBuffer setUseJsni(boolean useJsni) {
+  public MethodBuffer setUseJsni(final boolean useJsni) {
     this.useJsni = useJsni;
     modifier = modifier | Modifier.NATIVE;
     return this;
@@ -347,7 +352,7 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
    * @param name
    * @return
    */
-  public MethodBuffer returnValue(String name) {
+  public MethodBuffer returnValue(final String name) {
     return println((name.matches("\\s*(throw|return)\\s.*") ? "" : "return ")
       + name + (name.endsWith(";") ? "" : ";"));
   }
@@ -357,11 +362,11 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
     return new ParameterVisitor<SourceBuilder<?>>() {
 
       int                         modifier;
-      private SimpleStack<String> annotations = new SimpleStack<String>();
+      private final SimpleStack<String> annotations = new SimpleStack<String>();
 
       @Override
       public AnnotationMemberVisitor<SourceBuilder<?>> visitAnnotation(
-          String annoName, String annoBody, SourceBuilder<?> receiver) {
+          String annoName, final String annoBody, final SourceBuilder<?> receiver) {
         annoName = addImport(annoName.startsWith("@") ? annoName.substring(1)
           : annoName);
         annotations.add("@" + annoName
@@ -370,21 +375,21 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
       }
 
       @Override
-      public void visitModifier(int modifier, SourceBuilder<?> receiver) {
+      public void visitModifier(final int modifier, final SourceBuilder<?> receiver) {
         this.modifier |= modifier;
       }
 
       @Override
-      public void visitType(TypeData type, String name, boolean varargs,
-          SourceBuilder<?> receiver) {
+      public void visitType(final TypeData type, final String name, final boolean varargs,
+          final SourceBuilder<?> receiver) {
         if (type.pkgName.length() > 0) {
           receiver.getImports().addImport(type.getImportName());
         }
-        StringBuilder b = new StringBuilder();
-        for (String anno : annotations) {
+        final StringBuilder b = new StringBuilder();
+        for (final String anno : annotations) {
           b.append(anno).append(' ');
         }
-        String mod = Modifier.toString(modifier);
+        final String mod = Modifier.toString(modifier);
         if (mod.length() > 0) {
           b.append(mod).append(" ");
         }
@@ -400,25 +405,25 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
   }
 
   @Override
-  public void visitException(String type, SourceBuilder<?> receiver) {
+  public void visitException(final String type, final SourceBuilder<?> receiver) {
     exceptions.add(type);
   }
 
   @Override
   public AnnotationMemberVisitor<SourceBuilder<?>> visitAnnotation(
-      String annoName, String annoBody, SourceBuilder<?> receiver) {
+      final String annoName, final String annoBody, final SourceBuilder<?> receiver) {
     addAnnotation("@" + annoName
       + (annoBody.trim().length() > 0 ? "(" + annoBody + ")" : ""));
     return null;
   }
 
   @Override
-  public void visitModifier(int modifier, SourceBuilder<?> receiver) {
+  public void visitModifier(final int modifier, final SourceBuilder<?> receiver) {
     assert validModification(this.modifier, modifier);
     setModifier(modifier);
   }
 
-  private boolean validModification(int modifier, int change) {
+  private boolean validModification(final int modifier, final int change) {
     if ((change & Modifier.ABSTRACT) > 0) {
       if ((modifier & Modifier.STATIC) > 0) {
         throw new AssertionError("You cannot make a static method abstract.\n"
@@ -443,13 +448,13 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
   }
 
   @Override
-  public void visitGeneric(String generic, SourceBuilder<?> receiver) {
+  public void visitGeneric(String generic, final SourceBuilder<?> receiver) {
     generic = generic.trim();
     if (generic.charAt(0) == '<') {
       generic = generic.substring(1, generic.length() - 1);
     }
-    for (String importable : JavaLexer.findImportsInGeneric(generic)) {
-      String imported = receiver.getImports().addImport(importable);
+    for (final String importable : JavaLexer.findImportsInGeneric(generic)) {
+      final String imported = receiver.getImports().addImport(importable);
       if (importable.length() != imported.length()) {
         int len = -1;
         while (len != generic.length()) {
@@ -462,12 +467,12 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
   }
 
   @Override
-  public void visitJavadoc(String javadoc, SourceBuilder<?> receiver) {
+  public void visitJavadoc(final String javadoc, final SourceBuilder<?> receiver) {
 
   }
 
   @Override
-  public void visitReturnType(TypeData returnType, SourceBuilder<?> receiver) {
+  public void visitReturnType(final TypeData returnType, final SourceBuilder<?> receiver) {
     this.returnType = returnType;
     if (returnType.pkgName.length() > 0) {
       receiver.getImports().addImport(returnType.getImportName());
@@ -475,7 +480,7 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
   }
 
   @Override
-  public void visitName(String name, SourceBuilder<?> receiver) {
+  public void visitName(final String name, final SourceBuilder<?> receiver) {
     methodName = name;
   }
 
@@ -486,14 +491,14 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
     return this;
   }
 
-  public MethodBuffer startTry(String withResources) {
+  public MethodBuffer startTry(final String withResources) {
     tryDepth++;
     println("try (" + withResources + ") {");
     indent();
     return this;
   }
 
-  public MethodBuffer startCatch(String exceptionType, String exceptionName) {
+  public MethodBuffer startCatch(final String exceptionType, final String exceptionName) {
     outdent();
     println("} catch (" + exceptionType + " " + exceptionName + ") {");
     indent();
@@ -502,7 +507,7 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
 
   public String startCatch(String exceptionType) {
     outdent();
-    int ind = exceptionType.lastIndexOf(' ');
+    final int ind = exceptionType.lastIndexOf(' ');
     String name;
     if (ind == -1) {
       name = "e" + tryDepth;

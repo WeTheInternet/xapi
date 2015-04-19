@@ -1,10 +1,5 @@
 package com.google.gwt.reflect.rebind.injectors;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map.Entry;
-import java.util.Queue;
-
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.core.ext.UnableToCompleteException;
@@ -34,6 +29,11 @@ import com.google.gwt.reflect.rebind.generators.ConstPoolGenerator;
 import com.google.gwt.reflect.rebind.generators.MemberGenerator;
 import com.google.gwt.reflect.rebind.generators.ReflectionGeneratorContext;
 import com.google.gwt.reflect.shared.GwtReflect;
+
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map.Entry;
+import java.util.Queue;
 
 @ReflectionStrategy
 public class ConstPoolInjector implements MagicMethodGenerator,
@@ -149,7 +149,7 @@ public class ConstPoolInjector implements MagicMethodGenerator,
     methodCall.getTarget().getEnclosingType().addMethod(newMethod);
     final JMethodCall call = new JMethodCall(methodSource, null, newMethod);
 
-    ast.getRebindPermutationOracle().getGeneratorContext().finish(logger);
+    ast.finish(logger);
     return call.makeStatement().getExpr();
   }
 

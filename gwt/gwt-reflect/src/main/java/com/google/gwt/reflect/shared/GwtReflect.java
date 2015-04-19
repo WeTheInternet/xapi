@@ -135,6 +135,9 @@ public class GwtReflect {
    * enclosed in double quotes in Java source
    */
   public static String escape(final String unescaped) {
+    if (GWT.isProdMode()) {
+      return nativeEscape(unescaped);
+    }
     int extra = 0;
     for (int in = 0, n = unescaped.length(); in < n; ++in) {
       switch (unescaped.charAt(in)) {
@@ -182,6 +185,11 @@ public class GwtReflect {
     }
     return String.valueOf(newChars);
   }
+
+  private native static String nativeEscape(String unescaped)
+  /*-{
+    return unescaped.replace(/(["'\\])/g, "\\$1").replace(/\n/g,"\\n");
+  }-*/;
 
   /**
    * Uses reflection to invoke a field getter for you; using this method will
@@ -999,6 +1007,10 @@ public class GwtReflect {
   public static <T> T[][] newArray(final Class<T> classLit, final int dim1,
       final int dim2) {
     return GwtReflectJre.newArray(classLit, dim1, dim2);
+  }
+
+  public static <T extends Throwable> T doThrow(final T exception) throws T {
+    throw exception;
   }
 
   private static int assignableDepth(final Class<?>[] paramSignature,

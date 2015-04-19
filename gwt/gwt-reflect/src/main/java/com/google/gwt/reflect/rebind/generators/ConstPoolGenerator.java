@@ -8,11 +8,9 @@ import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.typeinfo.JClassType;
-import com.google.gwt.dev.jjs.UnifyAstView;
 import com.google.gwt.dev.jjs.ast.JClassLiteral;
 import com.google.gwt.dev.jjs.ast.JNullLiteral;
 import com.google.gwt.dev.util.collect.HashMap;
-import com.google.gwt.reflect.client.ConstPool;
 import com.google.gwt.reflect.client.ConstPool.ArrayConsts;
 import com.google.gwt.reflect.client.ConstPool.ClassConsts;
 import com.google.gwt.reflect.rebind.ReflectionUtilJava;
@@ -20,9 +18,12 @@ import com.google.gwt.reflect.rebind.model.GeneratedAnnotation;
 import com.google.gwt.reflect.shared.GwtReflect;
 import com.google.gwt.thirdparty.guava.common.collect.Maps;
 import com.google.gwt.thirdparty.xapi.dev.source.ClassBuffer;
+import com.google.gwt.thirdparty.xapi.dev.source.ImportSection;
 import com.google.gwt.thirdparty.xapi.dev.source.MemberBuffer;
 import com.google.gwt.thirdparty.xapi.dev.source.PrintBuffer;
 import com.google.gwt.thirdparty.xapi.dev.source.SourceBuilder;
+import com.google.gwt.thirdparty.xapi.source.read.JavaModel.IsNamedType;
+import com.google.gwt.thirdparty.xapi.source.read.JavaModel.IsQualified;
 
 import java.io.PrintWriter;
 import java.lang.annotation.Annotation;
@@ -30,14 +31,11 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
-
-import javax.validation.Payload;
+import java.util.function.Supplier;
 
 /**
  * This generator is used to contruct interfaces which contain references to constant values, and to also
@@ -101,8 +99,10 @@ public class ConstPoolGenerator {
     private int iteration;
     @Override
     protected ConstPoolGenerator initialValue() {
+//      return new ConstPoolGenerator(iteration);
       return new ConstPoolGenerator(iteration++);
     };
+
   };
 
   public static void cleanup() {
@@ -113,131 +113,17 @@ public class ConstPoolGenerator {
     return generator.get();
   }
 
-  public int generateReference(final TreeLogger logger,
-    final GeneratorContext context, Object value) throws UnableToCompleteException {
-    initBuffer();
-
-    if (value instanceof String) {
-
-    } else if (value instanceof Long) {
-    } else if (value instanceof Float || value instanceof Double) {
-        final Double val = ((Float)value).doubleValue();
-        Integer key = doubles.get(val);
-        if (key == null) {
-          key = doubles.size();
-          doubles.put(val, key);
-        }
-        return key;
-    } else if (value instanceof Number) {
-      // Any non-floating point, non-long, is passed around as int
-      return ((Number)value).intValue();
-    } else if (value instanceof Class) {
-    } else if (value.getClass().isArray()) {
-      Class<?> type = value.getClass().getComponentType();
-      if (type == boolean.class) {
-        // because booleans aren't stored in singular format,
-        // arrays of booleans are converted to int[],
-        // and turned back into boolean[] when retrieved from ConstPool
-        final boolean[] bools = (boolean[])value;
-        int len = bools.length;
-        final int[] ints = new int[len];
-        for (;len-->0;) {
-          ints[len] = bools[len] ? 1 : 0;
-        }
-        value = ints;
-        type = int.class;
-      }
-      if (type == int.class) {
-        // int[] is handled specially; all other array types boil down to an int[],
-        // whose values points to the instance of each element in a returned array.
-        Integer existing = intArrays.get(value);
-        if (existing == null) {
-          existing = intArrays.size();
-          intArrays.put((int[])value, existing);
-          out.getClassBuffer()
-            .createField(int[].class, "ints"+existing)
-            .makeFinal().makePublic().makeStatic()
-          ;
-        }
-        return existing;
-      }
-      if (type.isPrimitive()) {
-        value = boxArray(value, type);
-      }
-      final int length = GwtReflect.arrayLength(value);
-      final int[] values = new int[length];
-      for (int i = 0; i < length; i++ ) {
-        final Object item = GwtReflect.arrayGet(value, i);
-        values[i] = generateReference(logger, context, item);
-      }
-      return generateReference(logger, context, values);
-    } else if (value instanceof Character) {
-
-    } else if (value instanceof Enum) {
-
-    } else if (value instanceof Annotation) {
-
-    } else {
-      logger.log(Type.ERROR, "ConstPoolGenerator encountered a type it cannot handle");
-      logger.log(Type.ERROR, "value type "+value.getClass()+" ");
-      throw new UnableToCompleteException();
-    }
-    return 0;
-  }
-
-  private Object boxArray(final Object value, final Class<?> type) {
-    int len = Array.getLength(value);
-    if (type == double.class) {
-      final Double[] arr = new Double[len];
-      for (; len --> 0;) {
-        arr[len] = Array.getDouble(value, len);
-      }
-      return arr;
-    } else if (type == float.class) {
-      final Float[] arr = new Float[len];
-      for (; len --> 0;) {
-        arr[len] = Array.getFloat(value, len);
-      }
-      return arr;
-    } else if (type == long.class) {
-      final Long[] arr = new Long[len];
-      for (; len --> 0;) {
-        arr[len] = Array.getLong(value, len);
-      }
-      return arr;
-    } else if (type == short.class) {
-      final Short[] arr = new Short[len];
-      for (; len --> 0;) {
-        arr[len] = Array.getShort(value, len);
-      }
-      return arr;
-    } else if (type == byte.class) {
-      final Byte[] arr = new Byte[len];
-      for (; len --> 0;) {
-        arr[len] = Array.getByte(value, len);
-      }
-      return arr;
-    } else if (type == char.class) {
-      final Character[] arr = new Character[len];
-      for (; len --> 0;) {
-        arr[len] = Array.getChar(value, len);
-      }
-      return arr;
-    }
-    return null;
-  }
-
   private final int iteration;
-  private final int start;
 
-
-  private final Map<Double,Integer> doubles = Maps.newHashMap();
+  private final Map<Long,String> longs = Maps.newHashMap();
   private final Map<String,String> strings = Maps.newHashMap();
   private final Map<String,String> classes = Maps.newHashMap();
   private final Map<String,String> classArrays = Maps.newHashMap();
-  private final Map<Annotation,String> annos = Maps.newHashMap();
-  private final Map<String,String> annoArrays = Maps.newHashMap();
-  private final Set<String> dependencies = new HashSet<String>();
+  private final Map<String,String> stringArrays = Maps.newHashMap();
+  private final Map<String,String> enumArrays = Maps.newHashMap();
+  private final Map<Annotation,IsNamedType> annotations = Maps.newHashMap();
+  private final Map<String,String> annotationArrays = Maps.newHashMap();
+  private final Map<String,IsQualified> annotationArraySuppliers = Maps.newHashMap();
 
   private static Map<String,String> wellKnownClasses = Maps.newHashMap();
   static {
@@ -252,23 +138,6 @@ public class ConstPoolGenerator {
     }
   }
 
-  private final Map<int[],Integer> intArrays = new TreeMap<int[], Integer>(new Comparator<int[]>() {
-    @Override
-    public int compare(final int[] o1, final int[] o2) {
-      int l1 = o1.length, l2 = o2.length;
-      if (l1 != l2) {
-        return l1 - l2;
-      }
-      for(;l1 --> 0;) {
-        l2 = o1[l1] - o2[l1];
-        if (l2 != 0) {
-          return l2;
-        }
-      }
-      return 0;
-    }
-  });
-
   private final HashMap<Object,int[]> arraySeeds = new HashMap<Object,int[]>();
 
   private transient ArrayList<SourceBuilder<?>> sourceClasses = new ArrayList<SourceBuilder<?>>();
@@ -276,15 +145,20 @@ public class ConstPoolGenerator {
 
   private ConstPoolGenerator(final int iteration) {
     this.iteration = iteration;
-    this.start = sourceClasses.size();
   }
 
   public void commit(final TreeLogger logger, final GeneratorContext ctx) {
     int pos = sourceClasses.size()-1;
+    final Type logLevel = logLevel();
+    final boolean doLog = logger.isLoggable(logLevel);
     while (out != null) {
       // commit const pool(s)
       final PrintWriter pw = ctx.tryCreate(logger, out.getPackage(), out.getClassBuffer().getSimpleName());
-      pw.println(out.toString());
+      final String src = out.toString();
+      if (doLog) {
+        logger.log(logLevel, "Generating constPool: \n"+src);
+      }
+      pw.println(src);
       ctx.commit(logger, pw);
       // erase our writer
       sourceClasses.set(pos--, null);
@@ -296,16 +170,9 @@ public class ConstPoolGenerator {
     }
   }
 
-  public void addDependencies(final TreeLogger logger, final ClassBuffer out) {
-    for (int i = start, m = sourceClasses.size(); i < m; i++) {
-      final String dependency = "constants.Const"+iteration+"_"+i;
-      out.addInterface(dependency);
-      dependencies.remove(dependency);
-    }
-    for (final String dependency : dependencies) {
-      out.addInterface(dependency);
-    }
-    dependencies.clear();
+  private Type logLevel() {
+    return Type.DEBUG;
+
   }
 
   public void printNewArray(final TreeLogger logger, final PrintBuffer out, final JClassLiteral classLit, final boolean jsni) {
@@ -340,10 +207,8 @@ public class ConstPoolGenerator {
 
   private synchronized int initBuffer() {
     if (out == null) {
-      out = new SourceBuilder<Payload>("public interface Const"+iteration+"_"+sourceClasses.size());
+      out = new SourceBuilder<Object>("public interface Const"+iteration+"_"+sourceClasses.size());
       out.setPackage("constants");
-      out.getImports().addStatic(ConstPool.class.getName()+".setArray");
-      out.getImports().addStatic(ConstPool.class.getName()+".setPrimitiveArray");
       sourceClasses.add(out);
     }
     return sourceClasses.size() - 1;
@@ -361,6 +226,10 @@ public class ConstPoolGenerator {
     return rememberClass(type.getQualifiedSourceName());
   }
 
+  public String rememberClass(final Class<?> type) {
+    return rememberClass(type.getCanonicalName());
+  }
+
   public String rememberClass(final String type) {
     String name = classes.get(type);
     if (name == null) {
@@ -376,7 +245,8 @@ public class ConstPoolGenerator {
         .setInitializer(shortType+".class")
         .setModifier(FINAL)
         .makePackageProtected();
-      classes.put(type, "constants."+cls+"."+name);
+      name = "constants."+cls+"."+name;
+      classes.put(type, name);
     }
     return name;
   }
@@ -393,26 +263,22 @@ public class ConstPoolGenerator {
         .setInitializer("\""+Generator.escape(value)+"\"")
         .setModifier(FINAL)
         .makePublic();
-      strings.put(value, "constants."+cls+"."+name);
-    } else {
-      String constName = "constants."+cls+".";
-      if (name.startsWith(constName)) {
-        return name.substring(constName.length());
-      } else {
-        constName = name.substring(0, name.lastIndexOf('.'));
-        dependencies.add(constName);
-      }
+      name = "constants."+cls+"."+name;
+      strings.put(value, name);
     }
     return name;
   }
 
-  public void arrayOfClasses(final TreeLogger logger, final MemberBuffer<?> out, final String ... names) {
+  public void arrayOfClasses(final TreeLogger logger, final MemberBuffer<?> buffer, final String ... names) {
+    buffer.print(
+      buffer.addImportStatic(rememberArrayOfClasses(logger, names) )
+    );
+  }
+
+  public String rememberArrayOfClasses(final TreeLogger logger, final String ... names) {
 
     if (names.length == 0) {
-      out.print(
-          out.addImportStatic(ArrayConsts.class, "EMPTY_CLASSES")
-      );
-      return;
+      return ArrayConsts.class.getCanonicalName()+".EMPTY_CLASSES";
     }
 
     String shortName;
@@ -451,33 +317,123 @@ public class ConstPoolGenerator {
       existing = "constants."+constName+"."+name;
       classArrays.put(shortName, existing);
     }
-    out.print(
-      out.addImportStatic(existing)
+    return existing;
+  }
+  public String rememberArrayOfStrings(final TreeLogger logger, final String ... strs) {
+
+    if (strs.length == 0) {
+      return ArrayConsts.class.getCanonicalName()+".EMPTY_STRINGS";
+    }
+
+    String shortName;
+    {
+      final StringBuilder b = new StringBuilder();
+      for (int i = strs.length; i --> 0; ) {
+        b.append(strs[i]).append(',');
+        strs[i] = rememberString(strs[i]);
+      }
+      shortName = b.toString();
+    }
+
+    String existing = stringArrays.get(shortName);
+    if (existing == null) {
+      final int pool = initBuffer();
+      final String constName = getConstName(pool);
+      final String name = "STRING_ARR_"+stringArrays.size();
+      existing = "constants."+constName+"."+name;
+      stringArrays.put(shortName, existing);
+
+      final ClassBuffer b = this.out.getClassBuffer();
+      final PrintBuffer init = b
+          .createField("String[]",name)
+          .setModifier(FINAL)
+          .makePackageProtected()
+          .getInitializer();
+
+      init
+      .println("new String[]{")
+      .indent();
+      String prefix = "";
+      for (final String str : strs) {
+        init.print(prefix).println(out.getImports().addStatic(str));
+        prefix = ", ";
+      }
+      init.outdent();
+      init.print("}");
+
+    }
+    return existing;
+  }
+
+  public String rememberLong(final TreeLogger logger, final long longValue) {
+    String existing = longs.get(longValue);
+    if (existing == null) {
+      final int pool = initBuffer();
+      final String constName = getConstName(pool);
+      final String name = "LONG_"+longs.size();
+      existing = "constants."+constName+"."+name;
+      longs.put(longValue, existing);
+
+      this.out.getClassBuffer()
+        .createField("long",name)
+        .setModifier(FINAL)
+        .makePackageProtected()
+        .getInitializer()
+        .println(longValue+"L");
+    }
+    return existing;
+  }
+
+  public void arrayOfPrimitives(final TreeLogger logger, final MemberBuffer<?> buffer, final Object primitives) throws UnableToCompleteException {
+    buffer.print(
+      buffer.addImportStatic(rememberPrimitiveArray(logger, primitives))
     );
   }
 
-  public void arrayOfAnnotations(final TreeLogger logger, final GeneratorContext ctx, final MemberBuffer<?> buffer, final UnifyAstView ast, final Annotation ... annos) throws UnableToCompleteException {
-    if (annos.length == 0) {
-      buffer.print(
-          buffer.addImportStatic(ArrayConsts.class, "EMPTY_ANNOTATIONS")
-          );
-      return;
-    }
-    String flatName;
-    {
-      final TreeSet<String> ordered = new TreeSet<String>();
-      for (final Annotation anno : annos) {
-        ordered.add(anno.toString());
-      }
-      flatName = ordered.toString();
-    }
+  public void arrayOfObjects(final TreeLogger logger, final GeneratorContext ctx, final MemberBuffer<?> buffer, final Object ... objects) throws UnableToCompleteException {
+    buffer.print(
+      buffer.addImportStatic(rememberObjectArray(logger, ctx, objects))
+    );
+  }
 
-    final String existing = annoArrays.get(flatName);
+  public void arrayOfAnnotations(final TreeLogger logger, final GeneratorContext ctx, final MemberBuffer<?> buffer, final Annotation ... annos) throws UnableToCompleteException {
+    buffer.print(
+      buffer.addImportStatic(rememberArrayOfAnnotations(logger, ctx, annos))
+    );
+  }
+
+  public IsQualified annotationArraySupplier(final TreeLogger logger, final GeneratorContext ctx, final MemberBuffer<?> buffer, final Annotation ... annos) throws UnableToCompleteException {
+    final String constant = rememberArrayOfAnnotations(logger, ctx, annos);
+    IsQualified supplier = annotationArraySuppliers.get(constant);
+    if (supplier == null) {
+      final String simpleName = "AnnotationSupplier"+iteration+"_"+annotationArraySuppliers.size();
+      final String pkgName = "constants";
+      supplier = new IsQualified(pkgName, simpleName);
+      final PrintWriter pw = ctx.tryCreate(logger, pkgName, simpleName);
+      final SourceBuilder<Object> sb = new SourceBuilder<Object>("public class "+simpleName);
+      sb.setPackage(pkgName);
+      final ClassBuffer out = sb.getClassBuffer();
+
+      final String supplierClass = out.addImport(Supplier.class);
+      final String annotationClass = out.addImport(Annotation.class);
+      out.addInterface(supplierClass+"<"+annotationClass+"[]>");
+
+      out.createMethod("public "+annotationClass+"[] get()")
+        .returnValue(constant);
+
+      pw.print(sb.toString());
+      ctx.commit(logger, pw);
+      annotationArraySuppliers.put(constant, supplier);
+    }
+    return supplier;
+  }
+
+  @SuppressWarnings("unchecked")
+  public <A extends Annotation> String rememberArrayOfAnnotations(final TreeLogger logger, final GeneratorContext ctx, final A ... annos) throws UnableToCompleteException {
+    final String flatName = getFlatName(annos);
+    final String existing = annotationArrays.get(flatName);
     if (existing != null) {
-      buffer.print(
-          buffer.addImportStatic(existing)
-          );
-      return;
+      return existing;
     }
 
     String[] items;
@@ -485,80 +441,158 @@ public class ConstPoolGenerator {
       int i = annos.length;
       items = new String[i];
       for (; i-->0;) {
-        items[i] = rememberAnnotation(logger, ctx, annos[i], ast);
+        items[i] = rememberAnnotation(logger, ctx, annos[i]).getQualifiedMemberName();
       }
     }
 
+    out = null;
     final int pool = initBuffer();
     final String constName = getConstName(pool);
-    final String arrayName = "ANNO_ARR_"+annoArrays.size();
+    final String arrayName = "ANNO_ARR_"+annotationArrays.size();
     final String finalName = "constants."+constName+"."+arrayName;
-    annoArrays.put(flatName, finalName);
+    annotationArrays.put(flatName, finalName);
 
 
     final PrintBuffer init = out
       .getClassBuffer()
-      .createField(Annotation[].class, arrayName)
+      .createField(annos.getClass(), arrayName)
       .makePackageProtected()
       .makeFinal()
       .getInitializer()
     ;
-    buffer.addImport(Annotation.class);
-    init.print("new Annotation[]{");
-    if (items.length == 1) {
+    final ImportSection imports = out.getImports();
+    final String typeName = imports.addImport(annos.getClass().getComponentType());
+    init.print("new " + typeName + "[]{");
+    if (items.length > 0) {
       init
-        .print(" ")
-        .print(buffer.addImportStatic(items[0]))
-        .print(" }")
-      ;
-    } else {
-      init
-        .indent()
-        .println()
-        .println(buffer.addImportStatic(items[0]));
+      .indent()
+      .println()
+      .println(imports.addStatic(items[0]));
       for (int i = 1; i < items.length; i++) {
-        init.print(",").println(buffer.addImportStatic(items[i]));
+        init.print(",").println(imports.addStatic(items[i]));
       }
-      init
-        .outdent()
-        .print("}");
     }
+    init
+      .outdent()
+      .print("}");
 
-    buffer.print(
-        buffer.addImportStatic(finalName)
-    );
+    return finalName;
   }
 
-  private String rememberAnnotation(final TreeLogger logger, final GeneratorContext ctx, final Annotation anno, final UnifyAstView ast) throws UnableToCompleteException {
-    String existing = annos.get(anno);
+  @SuppressWarnings("unchecked")
+  public <E extends Enum<E>> String rememberArrayOfEnums(final TreeLogger logger, final E ... enums) throws UnableToCompleteException {
+    final String flatName = getFlatName(enums);
+    final String existing = enumArrays.get(flatName);
     if (existing != null) {
       return existing;
     }
-    final String constName = getConstName(initBuffer());
-    final String annoName = "ANNO_"+annos.size();
 
-    existing = "constants."+constName+"."+annoName;
-    annos.put(anno, existing);
+    final int pool = initBuffer();
+    final String constName = getConstName(pool);
+    final String arrayName = "ENUM_ARR_"+enumArrays.size();
+    final String finalName = "constants."+constName+"."+arrayName;
+    enumArrays.put(flatName, finalName);
+
+
+    final PrintBuffer init = out
+        .getClassBuffer()
+        .createField(enums.getClass(), arrayName)
+        .makePackageProtected()
+        .makeFinal()
+        .getInitializer()
+        ;
+    final Class<?> enumType = enums.getClass().getComponentType();
+    final ImportSection imports = out.getImports();
+    final String type = imports.addImport(enumType);
+    init.print("new "+type+"[]{");
+    if (enums.length > 0) {
+      init
+        .indent()
+        .println()
+        .println(imports.addStatic(enumType, enums[0].name()));
+      for (int i = 0; i < enums.length; i++) {
+        init.print(",").println(imports.addStatic(enumType, enums[i].name()));
+      }
+    }
+      init
+      .outdent()
+      .print("}");
+
+    return finalName;
+  }
+
+  private String getFlatName(final Annotation[] annos) {
+    final TreeSet<String> ordered = new TreeSet<String>();
+    ordered.add(annos.getClass().getComponentType().getCanonicalName());
+    for (final Annotation anno : annos) {
+      ordered.add(anno.toString());
+    }
+    return ordered.toString();
+  }
+
+  private <E extends Enum<E>> String getFlatName(final E[] enums) {
+    final TreeSet<String> ordered = new TreeSet<String>();
+    ordered.add(enums.getClass().getComponentType().getCanonicalName());
+    for (final E enumItem : enums) {
+      ordered.add(enumItem.name());
+    }
+    return ordered.toString();
+  }
+
+  public String[] getSourceNames(final Class<?> ... classes) {
+    final String[] names = new String[classes.length];
+    for (int i = classes.length; i --> 0; ) {
+      assert classes[i] != null : "Null classes are not supported";
+      names[i] = classes[i].getCanonicalName();
+    }
+    return names;
+  }
+
+  public IsNamedType rememberAnnotation(final TreeLogger logger, final GeneratorContext ctx, final Annotation anno) throws UnableToCompleteException {
+    IsNamedType existing = annotations.get(anno);
+    if (existing != null) {
+      return existing;
+    }
+
+    // Whenever we start an annotation, we want to do so in a fresh class, so, we null out our sourceBuilder
+    // to force the initBuffer() to add a new class
+    out = null;
+    final String constName = getConstName(initBuffer());
+    final String annoName = "ANNO_"+annotations.size();
+    final SourceBuilder<?> sb = out;
+
+    existing = new IsNamedType("constants."+constName, annoName);
+    annotations.put(anno, existing);
 
     final Method[] methods = ReflectionUtilJava.getMethods(anno);
     final String[] values = new String[methods.length];
     for (int i = 0, m = methods.length; i < m; i++) {
       try {
       final Object value = methods[i].invoke(anno);
-      if (value instanceof Annotation) {
-        values[i] = out.getImports().addStatic(rememberAnnotation(logger, ctx, (Annotation) value, ast));
-      } else if (value instanceof Class){
-        values[i] =
-            out.getImports().addImport(((Class<?>)value).getCanonicalName())
-            +".class";
-      } else if (value instanceof Enum) {
-        final Enum<?> e = (Enum<?>) value;
-        values[i] =
-            out.getImports().addStatic(e.getDeclaringClass().getCanonicalName()+"."+e.name());
-      } else if (value instanceof String) {
-        values[i] = "\""+GwtReflect.escape((String)value)+"\"";
+      if (value.getClass().isArray()) {
+        // Arrays need extra-special lovin'
+        if (value.getClass().getComponentType().isPrimitive()) {
+          values[i] = rememberPrimitiveArray(logger, value);
+        } else {
+          values[i] = rememberObjectArray(logger, ctx, (Object[])value);
+        }
       } else {
-        values[i] = String.valueOf(value);
+        if (value instanceof Annotation) {
+          final IsNamedType provider = rememberAnnotation(logger, ctx, (Annotation) value);
+          values[i] = sb.getImports().addStatic(provider.getQualifiedMemberName());
+        } else if (value instanceof Class){
+          values[i] =
+              sb.getImports().addImport(((Class<?>)value).getCanonicalName())
+              +".class";
+        } else if (value instanceof Enum) {
+          final Enum<?> e = (Enum<?>) value;
+          values[i] =
+              sb.getImports().addStatic(e.getDeclaringClass().getCanonicalName()+"."+e.name());
+        } else if (value instanceof String) {
+          values[i] = "\""+GwtReflect.escape((String)value)+"\"";
+        } else {
+          values[i] = String.valueOf(value);
+        }
       }
       } catch (final Exception e) {
         logger.log(Type.ERROR, "Fatal error reading values reflectively from annotation "+anno);
@@ -566,20 +600,17 @@ public class ConstPoolGenerator {
       }
     }
 
-    final PrintBuffer init = out
+    final PrintBuffer init = sb
         .getClassBuffer()
         .createField(anno.annotationType(), annoName)
         .makeFinal()
         .makePackageProtected()
         .getInitializer();
 
-    final GeneratedAnnotation gen = GwtAnnotationGenerator.generateAnnotationProxy(logger, anno, ast);
-//    IsNamedType known = gen.knownInstances.get(anno);
-//    if (known != null) {
-//    }
+    final GeneratedAnnotation gen = GwtAnnotationGenerator.generateAnnotationProxy(logger, anno, ctx);
     init
       .print("new ")
-      .print(out.getImports().addImport(gen.getProxyName()))
+      .print(sb.getImports().addImport(gen.getProxyName()))
       .print("(");
 
     if (values.length > 0) {
@@ -593,6 +624,69 @@ public class ConstPoolGenerator {
 
 
     return existing;
+  }
+
+  private String rememberPrimitiveArray(final TreeLogger logger, final Object array) throws UnableToCompleteException {
+    final Class<?> componentType = array.getClass().getComponentType();
+    // Primitives
+    final String name = componentType.getName();
+    final StringBuilder b = new StringBuilder("new "+name+"[]{");
+    String prefix = "";
+    for (int i = 0, m = Array.getLength(array); i < m; i ++ ) {
+      switch (name) {
+        case "boolean":
+          b.append(prefix).append(Array.getBoolean(array, i));
+          break;
+        case "byte":
+          b.append(prefix).append(Array.getByte(array, i));
+          break;
+        case "short":
+          b.append(prefix).append(Array.getShort(array, i));
+          break;
+        case "char":
+          b.append(prefix).append(Array.getChar(array, i));
+          break;
+        case "int":
+          b.append(prefix).append(Array.getInt(array, i));
+          break;
+        case "long":
+          b.append(prefix).append(Array.getLong(array, i));
+          break;
+        case "float":
+          b.append(prefix).append(Array.getFloat(array, i));
+          break;
+        case "double":
+          b.append(prefix).append(Array.getDouble(array, i));
+          break;
+        default:
+          throw new UnsupportedOperationException();
+      }
+      prefix = ", ";
+    }
+    b.append("}");
+    return b.toString();
+
+  }
+
+  @SuppressWarnings("unchecked")
+  private <T> String rememberObjectArray(final TreeLogger logger, final GeneratorContext ctx, final T ... values) throws UnableToCompleteException {
+    final Class<?> componentType = values.getClass().getComponentType();
+    if (componentType.isAnnotation()) {
+      return rememberArrayOfAnnotations(logger, ctx, (Annotation[])values);
+    } else if (componentType == Class.class) {
+      return rememberArrayOfClasses(logger, getSourceNames((Class<?>[])values));
+    } else if (componentType.isEnum()) {
+      return rememberArrayOfEnums(logger, (Enum[])values);
+    } else if (componentType == String.class) {
+      return rememberArrayOfStrings(logger, (String[])values);
+    } else {
+      throw new UnsupportedOperationException("Cannot call rememberObjectArray on a array of type "+componentType+".  You want rememberPrimitiveArray instead.\n"
+          + "\nFailure on: "+Arrays.asList(values));
+    }
+  }
+
+  public static void maybeCommit(final TreeLogger logger, final GeneratorContext ctx) {
+    getGenerator().commit(logger, ctx);
   }
 
 }

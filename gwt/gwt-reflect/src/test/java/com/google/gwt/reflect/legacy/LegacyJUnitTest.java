@@ -6,11 +6,13 @@ import com.google.gwt.junit.client.GWTTestCase;
 import com.google.gwt.reflect.test.AnnotationTests;
 import com.google.gwt.reflect.test.ConstructorTests;
 import com.google.gwt.reflect.test.FieldTests;
-import com.google.gwt.reflect.test.JUnit4Test;
 import com.google.gwt.reflect.test.MethodTests;
+
+import org.junit.JUnit4Test;
 
 public class LegacyJUnitTest extends GWTTestCase {
 
+  @Override
   public String getModuleName() {
     return "com.google.gwt.reflect.ReflectTest";
   }

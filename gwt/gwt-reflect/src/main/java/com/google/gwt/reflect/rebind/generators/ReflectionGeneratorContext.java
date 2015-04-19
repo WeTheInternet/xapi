@@ -1,11 +1,7 @@
 package com.google.gwt.reflect.rebind.generators;
 
-import java.io.PrintWriter;
-import java.lang.reflect.Modifier;
-import java.util.HashMap;
-import java.util.Map;
-
 import com.google.gwt.core.ext.TreeLogger;
+import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.dev.javac.StandardGeneratorContext;
 import com.google.gwt.dev.jjs.UnifyAstView;
@@ -14,6 +10,11 @@ import com.google.gwt.dev.jjs.ast.JClassLiteral;
 import com.google.gwt.dev.jjs.ast.JMethod;
 import com.google.gwt.dev.jjs.ast.JMethodCall;
 import com.google.gwt.thirdparty.xapi.dev.source.SourceBuilder;
+
+import java.io.PrintWriter;
+import java.lang.reflect.Modifier;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ReflectionGeneratorContext {
 
@@ -26,8 +27,8 @@ public class ReflectionGeneratorContext {
   private final Map<String, SourceBuilder<PrintWriter>> builders;
   private ConstPoolGenerator constPool;
 
-  public ReflectionGeneratorContext(TreeLogger logger, JClassLiteral clazz,
-    JMethodCall methodCall, JMethod enclosingMethod, Context context, UnifyAstView ast) {
+  public ReflectionGeneratorContext(final TreeLogger logger, final JClassLiteral clazz,
+    final JMethodCall methodCall, final JMethod enclosingMethod, final Context context, final UnifyAstView ast) {
     this.ast = ast;
     this.clazz = clazz;
     this.context = context;
@@ -87,12 +88,12 @@ public class ReflectionGeneratorContext {
     return getGeneratorContext().getTypeOracle();
   }
 
-  public SourceBuilder<?> tryCreate(int modifier, String pkg, String clsName) {
-    String fqcn = pkg + "." + clsName;
+  public SourceBuilder<?> tryCreate(final int modifier, final String pkg, final String clsName) {
+    final String fqcn = pkg + "." + clsName;
     SourceBuilder<PrintWriter> builder = builders.get(fqcn);
     if (builder == null) {
-      StandardGeneratorContext ctx = getGeneratorContext();
-      PrintWriter writer = ctx.tryCreate(getLogger(), pkg, clsName);
+      final StandardGeneratorContext ctx = getGeneratorContext();
+      final PrintWriter writer = ctx.tryCreate(getLogger(), pkg, clsName);
       if (writer == null) {
         return null;
       }
@@ -104,12 +105,14 @@ public class ReflectionGeneratorContext {
     }
     return builder;
   }
-  
+
   public void commit(TreeLogger logger) {
-    if (logger == null) logger = this.logger;
-    StandardGeneratorContext ctx = getGeneratorContext();
-    for (SourceBuilder<PrintWriter> builder : builders.values()) {
-      PrintWriter pw = builder.getPayload();
+    if (logger == null) {
+      logger = this.logger;
+    }
+    final StandardGeneratorContext ctx = getGeneratorContext();
+    for (final SourceBuilder<PrintWriter> builder : builders.values()) {
+      final PrintWriter pw = builder.getPayload();
       pw.print(builder.toString());
       ctx.commit(logger, pw);
     }
@@ -125,6 +128,10 @@ public class ReflectionGeneratorContext {
       constPool = ConstPoolGenerator.getGenerator();
     }
     return constPool;
+  }
+
+  public void finish(final TreeLogger logger) throws UnableToCompleteException {
+    getAst().finish(logger);
   }
 
 

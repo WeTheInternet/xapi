@@ -34,11 +34,6 @@
  */
 package xapi.dev.inject;
 
-import java.util.ArrayList;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.google.gwt.core.ext.Generator;
 import com.google.gwt.core.ext.RebindResult;
 import com.google.gwt.core.ext.TreeLogger;
@@ -67,6 +62,11 @@ import com.google.gwt.dev.jjs.ast.JVariableRef;
 import com.google.gwt.dev.jjs.impl.UnifyAst;
 import com.google.gwt.dev.util.Name.BinaryName;
 import com.google.gwt.dev.util.collect.Lists;
+
+import java.util.ArrayList;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
 
 import xapi.dev.generators.AsyncInjectionGenerator;
 import xapi.dev.generators.AsyncProxyGenerator;
@@ -113,11 +113,11 @@ public class MagicMethods {
    * @return - A JExpression to replace this method call with
    * @throws UnableToCompleteException
    */
-  public static JExpression rebindSingletonAsync(TreeLogger logger, JMethodCall methodCall,
-    JMethod currentMethod, Context context, UnifyAstView ast) throws UnableToCompleteException {
+  public static JExpression rebindSingletonAsync(final TreeLogger logger, final JMethodCall methodCall,
+    final JMethod currentMethod, final Context context, final UnifyAstView ast) throws UnableToCompleteException {
     assert (methodCall.getArgs().size() == 2);
-    JExpression classParam = methodCall.getArgs().get(0);
-    JExpression receiverParam = methodCall.getArgs().get(1);
+    final JExpression classParam = methodCall.getArgs().get(0);
+    final JExpression receiverParam = methodCall.getArgs().get(1);
     if (!(classParam instanceof JClassLiteral)) {
       ast.error(
         methodCall,
@@ -128,14 +128,14 @@ public class MagicMethods {
 
     logger.log(logLevel(),
       receiverParam.toString() + " : " + receiverParam.getClass() + " : " + receiverParam.toSource());
-    JClassLiteral classLiteral = (JClassLiteral)classParam;
-    JDeclaredType answerType = injectSingletonAsync(logger, classLiteral, methodCall, ast);
+    final JClassLiteral classLiteral = (JClassLiteral)classParam;
+    final JDeclaredType answerType = injectSingletonAsync(logger, classLiteral, methodCall, ast);
 
-    JDeclaredType receiverType = ast.searchForTypeBySource("xapi.util.api.ReceivesValue");
-    for (JMethod method : receiverType.getMethods()) {
+    final JDeclaredType receiverType = ast.searchForTypeBySource("xapi.util.api.ReceivesValue");
+    for (final JMethod method : receiverType.getMethods()) {
       if (method.getName().equals("set")) {
 
-        SourceInfo info = methodCall.getSourceInfo().makeChild(SourceOrigin.UNKNOWN);
+        final SourceInfo info = methodCall.getSourceInfo().makeChild(SourceOrigin.UNKNOWN);
         JExpression result;
         result = JGwtCreate.createInstantiationExpression(methodCall.getSourceInfo(), (JClassType)answerType);
         if (result == null) {
@@ -143,11 +143,11 @@ public class MagicMethods {
             "' has no default (zero argument) constructors");
           return null;
         }
-        JMethodCall call = new JMethodCall(info, result, method);
+        final JMethodCall call = new JMethodCall(info, result, method);
         call.addArg(receiverParam);
         if (logger.isLoggable(logLevel())) {
-          TreeLogger branch = logger.branch(logLevel(), "Generated asynchronous magic singleton: ");
-          for (String str : call.toSource().split("\n")) {
+          final TreeLogger branch = logger.branch(logLevel(), "Generated asynchronous magic singleton: ");
+          for (final String str : call.toSource().split("\n")) {
             branch.log(logLevel(), str);
           }
         }
@@ -161,34 +161,34 @@ public class MagicMethods {
     return Type.DEBUG;
   }
 
-  private static JDeclaredType injectSingletonAsync(TreeLogger logger, JClassLiteral classLiteral,
-    JMethodCall methodCall, UnifyAstView ast) throws UnableToCompleteException {
+  private static JDeclaredType injectSingletonAsync(final TreeLogger logger, final JClassLiteral classLiteral,
+    final JMethodCall methodCall, final UnifyAstView ast) throws UnableToCompleteException {
 
-    JDeclaredType type = (JDeclaredType)classLiteral.getRefType();
-    String[] names = type.getShortName().split("[$]");
+    final JDeclaredType type = (JDeclaredType)classLiteral.getRefType();
+    final String[] names = type.getShortName().split("[$]");
     // TODO: stop stripping the enclosing class name (need to update generators)
     // String reqType = JGwtCreate.nameOf(type);
 
     String answer = classLiteral.getRefType().getName();
     answer = answer.substring(0, answer.lastIndexOf('.') + 1) + "impl.AsyncFor_" + names[names.length - 1];
     JDeclaredType answerType = null;
-    JDeclaredType knownType = ast.getProgram().getFromTypeMap(answer);
+    final JDeclaredType knownType = ast.getProgram().getFromTypeMap(answer);
 
-    if (knownType != null)
+    if (knownType != null) {
       return ast.searchForTypeBySource(answer);
-    else {// we need to generate the singleton on the fly, without updating rebind cache
-      StandardGeneratorContext ctx = ast.getRebindPermutationOracle().getGeneratorContext();
+    } else {// we need to generate the singleton on the fly, without updating rebind cache
+      final StandardGeneratorContext ctx = ast.getRebindPermutationOracle().getGeneratorContext();
       // make sure the requested interface is compiled for the generator
       ast.searchForTypeBySource(type.getName());
       try {
         // our hardcoded class is definitely a generator ;-}
-        Class<? extends Generator> generator = AsyncInjectionGenerator.class;
+        final Class<? extends Generator> generator = AsyncInjectionGenerator.class;
         // (Class<? extends Generator>) Class
         // .forName("xapi.dev.generators.AsyncInjectionGenerator");
         // creates the singleton and provider
-        RebindResult rebindResult = ctx.runGeneratorIncrementally(logger, generator, type.getName());
+        final RebindResult rebindResult = ctx.runGeneratorIncrementally(logger, generator, type.getName());
         // commit the generator result, w/out updating rebind cache (to allow GWT.create() rebinds)
-        ctx.finish(logger);
+        ast.finish(logger);
         // pull back the LazySingeton provider
         answerType = ast.searchForTypeBySource(rebindResult.getResultTypeName());
         // sanity check
@@ -199,7 +199,7 @@ public class MagicMethods {
           throw new UnableToCompleteException();
         }
 
-      } catch (UnableToCompleteException e) {
+      } catch (final UnableToCompleteException e) {
         logger.log(Type.ERROR, "Error trying to generator provider for " + type.getName() + ". " +
           "\nPlease make sure this class is non-abstract, or that a concrete class on the classpath " +
           "is annotated with @SingletonOverride or @SingletonDefault", e);
@@ -232,11 +232,11 @@ public class MagicMethods {
    * @return - A JExpression to replace this method call with
    * @throws UnableToCompleteException
    */
-  public static JExpression rebindSingletonAndCallback(TreeLogger logger, JMethodCall methodCall,
-    JMethod currentMethod, Context context, UnifyAstView ast) throws UnableToCompleteException {
+  public static JExpression rebindSingletonAndCallback(final TreeLogger logger, final JMethodCall methodCall,
+    final JMethod currentMethod, final Context context, final UnifyAstView ast) throws UnableToCompleteException {
     assert (methodCall.getArgs().size() == 2);
-    JExpression classParam = methodCall.getArgs().get(0);
-    JExpression receiveParam = methodCall.getArgs().get(1);
+    final JExpression classParam = methodCall.getArgs().get(0);
+    final JExpression receiveParam = methodCall.getArgs().get(1);
     if (!(classParam instanceof JClassLiteral)) {
       ast.error(
         methodCall,
@@ -246,22 +246,22 @@ public class MagicMethods {
     }
     logger.log(logLevel(),
       receiveParam.toString() + " : " + receiveParam.getClass() + " : " + receiveParam.toSource());
-    JClassLiteral classLiteral = (JClassLiteral)classParam;
-    JClassLiteral receiverLiteral = (JClassLiteral)receiveParam;
+    final JClassLiteral classLiteral = (JClassLiteral)classParam;
+    final JClassLiteral receiverLiteral = (JClassLiteral)receiveParam;
 
-    JDeclaredType type = (JDeclaredType)classLiteral.getRefType();
-    String[] names = type.getShortName().split("[$]");
+    final JDeclaredType type = (JDeclaredType)classLiteral.getRefType();
+    final String[] names = type.getShortName().split("[$]");
     // TODO: stop stripping the enclosing class name (need to update generators)
     // String reqType = JGwtCreate.nameOf(type);
 
     String answer = receiverLiteral.getRefType().getName();
     answer = answer.substring(0, answer.lastIndexOf('.') + 1) + "impl.AsyncProxy_" + names[names.length - 1];
     JDeclaredType answerType = null;
-    JDeclaredType knownType = ast.getProgram().getFromTypeMap(answer);
+    final JDeclaredType knownType = ast.getProgram().getFromTypeMap(answer);
 
     // ensure we have a service provider
-    JDeclaredType provider = injectSingletonAsync(logger, classLiteral, methodCall, ast);
-    StandardGeneratorContext ctx = ast.getRebindPermutationOracle().getGeneratorContext();
+    final JDeclaredType provider = injectSingletonAsync(logger, classLiteral, methodCall, ast);
+    final StandardGeneratorContext ctx = ast.getRebindPermutationOracle().getGeneratorContext();
     // ctx.finish(logger);
 
     if (knownType != null) {// if the singleton already exists, just use it
@@ -281,7 +281,7 @@ public class MagicMethods {
           rebindResult = AsyncProxyGenerator.setupAsyncCallback(logger, ctx,
             ctx.getTypeOracle().findType(BinaryName.toSourceName(type.getName())),
             ((JDeclaredType)receiverLiteral.getRefType()));
-        } catch (ClassNotFoundException e) {
+        } catch (final ClassNotFoundException e) {
           e.printStackTrace();
           throw new UnableToCompleteException();
         }
@@ -289,7 +289,7 @@ public class MagicMethods {
         // RebindResult rebindResult =
         // ctx.runGeneratorIncrementally(logger, generator, type.getName());
         // commit the generator result, w/out updating rebind cache (to allow GWT.create() rebinds)
-        ctx.finish(logger);
+        ast.finish(logger);
         // pull back the LazySingeton provider
         answerType = ast.searchForTypeBySource(rebindResult.getAsyncInjectionName());
         // sanity check
@@ -299,7 +299,7 @@ public class MagicMethods {
             " has a subclass on the classpath which contains @SingletonOverride or @SingletonDefault annotations.");
           return null;
         }
-      } catch (UnableToCompleteException e) {
+      } catch (final UnableToCompleteException e) {
         logger.log(Type.ERROR, "Error trying to generator provider for " + type.getName() + ". " +
           "\nPlease make sure this class is non-abstract, or that a concrete class on the classpath " +
           "is annotated with @SingletonOverride or @SingletonDefault", e);
@@ -308,11 +308,12 @@ public class MagicMethods {
       }
     }
 
-    for (JMethod method : answerType.getMethods()) {
-      if (method.getName().equals("go"))
+    for (final JMethod method : answerType.getMethods()) {
+      if (method.getName().equals("go")) {
         // JExpression inst = JGwtCreate.createInstantiationExpression(answerType.getSourceInfo(),
         // (JClassType)answerType, answerType.getEnclosingType());
         return new JMethodCall(method.getSourceInfo(), null, method);
+      }
     }
     throw new InternalCompilerException("Did not generate async proxy for " + answerType);
   }
@@ -335,17 +336,17 @@ public class MagicMethods {
    * @throws UnableToCompleteException
    */
 
-  public static JExpression rebindSingletonLazy(TreeLogger logger, JMethodCall x, JMethod currentMethod,
-    Context context, UnifyAstView ast) throws UnableToCompleteException {
+  public static JExpression rebindSingletonLazy(final TreeLogger logger, final JMethodCall x, final JMethod currentMethod,
+    final Context context, final UnifyAstView ast) throws UnableToCompleteException {
     assert (x.getArgs().size() == 1);
-    JExpression arg = x.getArgs().get(0);
+    final JExpression arg = x.getArgs().get(0);
     if (!(arg instanceof JClassLiteral)) {
       ast.error(x,
         "Only class literals may be used as arguments to X_Inject.lazySingleton; you sent " + arg.getClass() +
           " - " + arg);
       return null;
     }
-    JClassLiteral classLiteral = (JClassLiteral)arg;
+    final JClassLiteral classLiteral = (JClassLiteral)arg;
     if (!(classLiteral.getRefType() instanceof JDeclaredType)) {
       ast.error(x, "Only classes and interfaces may be used as arguments to X_Inject.singletonLazy()");
       return null;
@@ -353,10 +354,10 @@ public class MagicMethods {
     return injectLazySingleton(logger, classLiteral, x, currentMethod.getEnclosingType(), ast);
   }
 
-  private static JExpression injectLazySingleton(TreeLogger logger, JClassLiteral classLiteral, JNode x,
-    JDeclaredType enclosingType, UnifyAstView ast) throws UnableToCompleteException {
-    JDeclaredType type = (JDeclaredType)classLiteral.getRefType();
-    String[] names = type.getShortName().split("[$]");
+  private static JExpression injectLazySingleton(final TreeLogger logger, final JClassLiteral classLiteral, final JNode x,
+    final JDeclaredType enclosingType, final UnifyAstView ast) throws UnableToCompleteException {
+    final JDeclaredType type = (JDeclaredType)classLiteral.getRefType();
+    final String[] names = type.getShortName().split("[$]");
     // TODO: stop stripping the enclosing class name (need to update generators)
     // String reqType = JGwtCreate.nameOf(type);
 
@@ -364,20 +365,20 @@ public class MagicMethods {
     answer = answer.substring(0, answer.lastIndexOf('.') + 1) + "impl.SingletonFor_" +
       names[names.length - 1];
     JDeclaredType answerType = null;
-    JDeclaredType knownType = ast.getProgram().getFromTypeMap(answer);
+    final JDeclaredType knownType = ast.getProgram().getFromTypeMap(answer);
     if (knownType != null) {// if the singleton already exists, just use it
       answerType = ast.searchForTypeBySource(answer);
     } else {// we need to generate the singleton on the fly, without updating rebind cache
-      StandardGeneratorContext ctx = ast.getRebindPermutationOracle().getGeneratorContext();
+      final StandardGeneratorContext ctx = ast.getRebindPermutationOracle().getGeneratorContext();
       // make sure the requested interface is compiled for the generator
       ast.searchForTypeBySource(type.getName());
       try {
         // our hardcoded class is definitely a generator ;-}
-        Class<? extends Generator> generator = SyncInjectionGenerator.class;
+        final Class<? extends Generator> generator = SyncInjectionGenerator.class;
         // creates the singleton and provider
-        RebindResult result = ctx.runGeneratorIncrementally(logger, generator, type.getName());
+        final RebindResult result = ctx.runGeneratorIncrementally(logger, generator, type.getName());
         // commit the generator result, w/out updating rebind cache (to allow GWT.create() rebinds)
-        ctx.finish(logger);
+        ast.finish(logger);
         // pull back the LazySingeton provider
         logger.log(logLevel(), "Loading injected result: " + result.getResultTypeName());
         answerType = ast.searchForTypeBySource(result.getResultTypeName());
@@ -386,7 +387,7 @@ public class MagicMethods {
           ast.error(x, "Rebind result '" + answer + "' could not be found");
           return null;
         }
-      } catch (UnableToCompleteException e) {
+      } catch (final UnableToCompleteException e) {
         logger.log(Type.ERROR, "Error trying to generator provider for " + type.getName() + ". " +
           "\nPlease make sure this class is non-abstract, or that a concrete class on the classpath " +
           "is annotated with @SingletonOverride or @SingletonDefault", e);
@@ -403,7 +404,7 @@ public class MagicMethods {
       return null;
     }
     logger.log(logLevel(), "Injecting lazy singleton for " + type.getName() + " -> " + answerType);
-    JExpression result = JGwtCreate.createInstantiationExpression(x.getSourceInfo(), (JClassType)answerType);
+    final JExpression result = JGwtCreate.createInstantiationExpression(x.getSourceInfo(), (JClassType)answerType);
     if (result == null) {
       ast.error(x, "Rebind result '" + answer + "' has no default (zero argument) constructors");
       return null;
@@ -429,46 +430,47 @@ public class MagicMethods {
    * @return - A JExpression to replace this method call with
    * @throws UnableToCompleteException
    */
-  public static JExpression rebindSingleton(TreeLogger logger, JMethodCall x, JMethod currentMethod,
-    Context context, UnifyAstView ast) throws UnableToCompleteException {
+  public static JExpression rebindSingleton(final TreeLogger logger, final JMethodCall x, final JMethod currentMethod,
+    final Context context, final UnifyAstView ast) throws UnableToCompleteException {
     assert (x.getArgs().size() == 1);
-    JExpression arg = x.getArgs().get(0);
+    final JExpression arg = x.getArgs().get(0);
     if (!(arg instanceof JClassLiteral)) {
       ast.error(x,
         "Only class literals may be used as arguments to X_Inject.lazySingleton; you sent " + arg.getClass() +
           " - " + arg);
       return null;
     }
-    JClassLiteral classLiteral = (JClassLiteral)arg;
+    final JClassLiteral classLiteral = (JClassLiteral)arg;
     return injectSingleton(logger, classLiteral, x, ast);
   }
 
   private static final Map<JDeclaredType,JExpression> cachedProviders = new IdentityHashMap<JDeclaredType,JExpression>();
 
-  private static JExpression injectSingleton(TreeLogger logger, JClassLiteral classLiteral, JNode x,
-    UnifyAstView ast) throws UnableToCompleteException {
+  private static JExpression injectSingleton(TreeLogger logger, final JClassLiteral classLiteral, final JNode x,
+    final UnifyAstView ast) throws UnableToCompleteException {
     // check for cached result.
 
     // inject our provider class
-    JDeclaredType type = (JDeclaredType)classLiteral.getRefType();
-    if (cachedProviders.containsKey(type))
+    final JDeclaredType type = (JDeclaredType)classLiteral.getRefType();
+    if (cachedProviders.containsKey(type)) {
       return cachedProviders.get(type);
+    }
     JExpression expr = injectLazySingleton(logger, classLiteral, x, type, ast);
-    String[] names = type.getShortName().split("[$]");
+    final String[] names = type.getShortName().split("[$]");
 
     String answer = classLiteral.getRefType().getName();
     answer = answer.substring(0, answer.lastIndexOf('.') + 1) + "impl.SingletonFor_" +
       names[names.length - 1];
 
-    JDeclaredType enclosing = ast.searchForTypeBySource(answer);
-    JDeclaredType lazyProvider = ast.searchForTypeBySource(SingletonProvider.class.getName());
-    for (JMethod method : lazyProvider.getMethods()) {
+    final JDeclaredType enclosing = ast.searchForTypeBySource(answer);
+    final JDeclaredType lazyProvider = ast.searchForTypeBySource(SingletonProvider.class.getName());
+    for (final JMethod method : lazyProvider.getMethods()) {
       if (method.getName().equals("get")) {
         // Create a new method for each singleton to access the desired provider
         SourceInfo info = null;
         JMethod getSingleton = null;
-        String targetName = "singleton" + type.getShortName().replaceAll("[$]", "_");
-        for (JMethod existingMethod : enclosing.getMethods()) {
+        final String targetName = "singleton" + type.getShortName().replaceAll("[$]", "_");
+        for (final JMethod existingMethod : enclosing.getMethods()) {
           if (existingMethod.getName().equals(existingMethod)) {
             getSingleton = existingMethod;
             info = getSingleton.getSourceInfo();
@@ -479,7 +481,7 @@ public class MagicMethods {
         if (getSingleton == null) {
 
           info = expr.getSourceInfo().makeChild(SourceOrigin.UNKNOWN);
-          JMethodBody body = new JMethodBody(info);
+          final JMethodBody body = new JMethodBody(info);
           getSingleton = new JMethod(info, targetName, enclosing, type, false, true, true,
             AccessModifier.PRIVATE);
           // insert our generated method into the enclosing type; needed for super dev mode
@@ -491,19 +493,19 @@ public class MagicMethods {
           getSingleton.setSynthetic();
           info.addCorrelation(info.getCorrelator().by(getSingleton));
 
-          JMethodCall call = new JMethodCall(info, expr, method);
-          JReturnStatement value = new JReturnStatement(x.getSourceInfo(), call);
+          final JMethodCall call = new JMethodCall(info, expr, method);
+          final JReturnStatement value = new JReturnStatement(x.getSourceInfo(), call);
           if (enclosing.getClinitTarget() != null) {
-            JDeclaredType clinit = enclosing.getClinitTarget();
-            JMethod clinitMethod = clinit.getMethods().get(0);
+            final JDeclaredType clinit = enclosing.getClinitTarget();
+            final JMethod clinitMethod = clinit.getMethods().get(0);
             assert (JProgram.isClinit(clinitMethod));
-            JMethodCall doClinit = new JMethodCall(clinit.getSourceInfo(), null, clinitMethod);
+            final JMethodCall doClinit = new JMethodCall(clinit.getSourceInfo(), null, clinitMethod);
             body.getBlock().addStmt(doClinit.makeStatement());
           }
           body.getBlock().addStmt(value);
           if (logger.isLoggable(Type.DEBUG)) {
             logger = logger.branch(Type.DEBUG, "Generated magic singleton: ");
-            for (String str : getSingleton.toSource().split("\n")) {
+            for (final String str : getSingleton.toSource().split("\n")) {
               logger.branch(Type.DEBUG, str);
             }
           }
@@ -516,8 +518,8 @@ public class MagicMethods {
     throw new InternalCompilerException("Unable to generate synchronous injected class access");
   }
 
-  public static <T> JExpression rebindNewInstance(TreeLogger logger, JMethodCall x, JMethod currentMethod,
-    Context context, final UnifyAstView ast) {
+  public static <T> JExpression rebindNewInstance(final TreeLogger logger, final JMethodCall x, final JMethod currentMethod,
+    final Context context, final UnifyAstView ast) {
 //    JExpression instance = x.getInstance();
 //    JMethod target = x.getTarget();
 //    JExpressionStatement type = instance.makeStatement();
@@ -546,8 +548,8 @@ public class MagicMethods {
    * @throws UnableToCompleteException
    */
 
-  public static JExpression rebindInstance(TreeLogger logger, JMethodCall x,
-      JMethod currentMethod, Context context, final UnifyAstView ast) throws UnableToCompleteException {
+  public static JExpression rebindInstance(final TreeLogger logger, final JMethodCall x,
+      final JMethod currentMethod, final Context context, final UnifyAstView ast) throws UnableToCompleteException {
     assert (x.getArgs().size() == 1);
     JExpression arg = x.getArgs().get(0);
 
@@ -562,11 +564,11 @@ public class MagicMethods {
       //if not, throw UnableToComplete (TODO a xinject.strict flag to disallow type search)
 
       if (arg instanceof JVariableRef) {
-        JVariableRef local = (JVariableRef)arg;
-        JExpression init = local.getTarget().getDeclarationStatement().initializer;
+        final JVariableRef local = (JVariableRef)arg;
+        final JExpression init = local.getTarget().getDeclarationStatement().initializer;
         if (init instanceof JVariableRef) {
-          JVariableRef ref = (JVariableRef)init;
-          String fromSourceInfo = ref.getSourceInfo().getFileName()
+          final JVariableRef ref = (JVariableRef)init;
+          final String fromSourceInfo = ref.getSourceInfo().getFileName()
             .replace("gen/","").replace("_MC.java", "")
             .replaceAll("/",".");
 
@@ -576,7 +578,7 @@ public class MagicMethods {
           arg = new JClassLiteral(type.getSourceInfo(), type);
         }
       } else if (arg instanceof JMethodCall) {
-        JMethodCall call = (JMethodCall)arg;
+        final JMethodCall call = (JMethodCall)arg;
         System.out.println(call.getType());
         arg = call.getArgs().get(0);
       }
@@ -584,28 +586,28 @@ public class MagicMethods {
         logger.log(Type.ERROR, "Could not generate X_Inject.instance for "+arg.getType().getName());
       }
     }
-    JClassLiteral classLiteral = (JClassLiteral) arg;
+    final JClassLiteral classLiteral = (JClassLiteral) arg;
     return injectInstance(logger, classLiteral, x, currentMethod, ast);
   }
 
-  private static JExpression injectInstance(TreeLogger logger, JClassLiteral classLiteral,
-    JMethodCall x, JMethod method, UnifyAstView ast) throws UnableToCompleteException {
-    JDeclaredType type = (JDeclaredType)classLiteral.getRefType();
+  private static JExpression injectInstance(final TreeLogger logger, final JClassLiteral classLiteral,
+    final JMethodCall x, final JMethod method, final UnifyAstView ast) throws UnableToCompleteException {
+    final JDeclaredType type = (JDeclaredType)classLiteral.getRefType();
     // JExpression expr = injectLazySingleton(logger, classLiteral, x, type, ast);
     // String[] names = type.getShortName().split("[$]");
 
-    String instanceType = classLiteral.getRefType().getName();
-    StandardGeneratorContext ctx = ast.getRebindPermutationOracle().getGeneratorContext();
+    final String instanceType = classLiteral.getRefType().getName();
+    final StandardGeneratorContext ctx = ast.getRebindPermutationOracle().getGeneratorContext();
     // make sure the requested interface is compiled for the generator
     ast.searchForTypeBySource(type.getName());
     JDeclaredType injectedInstance;
     try {
       // our hardcoded class is definitely a generator ;-}
-      Class<? extends Generator> generator = InstanceInjectionGenerator.class;
+      final Class<? extends Generator> generator = InstanceInjectionGenerator.class;
       // creates the singleton and provider
-      RebindResult result = ctx.runGeneratorIncrementally(logger, generator, type.getName());
+      final RebindResult result = ctx.runGeneratorIncrementally(logger, generator, type.getName());
       // commit the generator result, w/out updating rebind cache (to allow GWT.create() rebinds)
-      ctx.finish(logger);
+      ast.finish(logger);
       // pull back the LazySingeton provider
       logger.log(logLevel(), "Loading injected result: " + result.getResultTypeName());
       injectedInstance = ast.searchForTypeBySource(result.getResultTypeName());
@@ -614,7 +616,7 @@ public class MagicMethods {
         ast.error(x, "Rebind result '" + instanceType + "' could not be found");
         throw new InternalCompilerException("Unable to generate instance provider");
       }
-    } catch (UnableToCompleteException e) {
+    } catch (final UnableToCompleteException e) {
       logger.log(Type.ERROR, "Error trying to generate provider for " + type.getName() + ". " +
         "\nPlease make sure this class is non-abstract, or that a concrete class on the classpath " +
         "is annotated with @SingletonOverride or @SingletonDefault", e);
@@ -633,18 +635,18 @@ public class MagicMethods {
     // let's run it through normal gwt deferred binding as well
 
     // copied from UnifyAst#handleGwtCreate
-    String reqType = BinaryName.toSourceName(injectedInstance.getName());
+    final String reqType = BinaryName.toSourceName(injectedInstance.getName());
     List<String> answers;
     try {
       answers = Lists.create(ast.getRebindPermutationOracle().getAllPossibleRebindAnswers(logger, reqType));
-      ast.getRebindPermutationOracle().getGeneratorContext().finish(logger);
-    } catch (UnableToCompleteException e) {
+      ast.finish(logger);
+    } catch (final UnableToCompleteException e) {
       ast.error(x, "Failed to resolve '" + reqType + "' via deferred binding");
       return null;
     }
-    ArrayList<JExpression> instantiationExpressions = new ArrayList<JExpression>(answers.size());
-    for (String answer : answers) {
-      JDeclaredType answerType = ast.searchForTypeBySource(answer);
+    final ArrayList<JExpression> instantiationExpressions = new ArrayList<JExpression>(answers.size());
+    for (final String answer : answers) {
+      final JDeclaredType answerType = ast.searchForTypeBySource(answer);
       if (answerType == null) {
         ast.error(x, "Rebind result '" + answer + "' could not be found");
         return null;
@@ -661,7 +663,7 @@ public class MagicMethods {
       if (enclosing == null) {
         enclosing = method.getEnclosingType();
       }
-      JExpression result = JGwtCreate.createInstantiationExpression(x.getSourceInfo(), (JClassType)answerType);
+      final JExpression result = JGwtCreate.createInstantiationExpression(x.getSourceInfo(), (JClassType)answerType);
       if (result == null) {
         ast.error(x, "Rebind result '" + answer + "' has no default (zero argument) constructors");
         return null;
@@ -669,11 +671,12 @@ public class MagicMethods {
       instantiationExpressions.add(result);
     }
     assert answers.size() == instantiationExpressions.size();
-    if (answers.size() == 1)
+    if (answers.size() == 1) {
       return instantiationExpressions.get(0);
-    else
+    } else {
       return new JGwtCreate(x.getSourceInfo(), reqType, answers, ast.getProgram().getTypeJavaLangObject(),
         instantiationExpressions);
+    }
 
     // TODO: cache each injection to detect the first time a class is injected,
     // then see if the given injection target is Preloadable,
@@ -683,10 +686,11 @@ public class MagicMethods {
 
   }
 
-  public static String toSourceName(JDeclaredType type) {
-    JDeclaredType enclosing = type.getEnclosingType();
-    if (enclosing == null)
+  public static String toSourceName(final JDeclaredType type) {
+    final JDeclaredType enclosing = type.getEnclosingType();
+    if (enclosing == null) {
       return type.getName();
+    }
     return toSourceName(enclosing) + "." + type.getShortName();
   }
 

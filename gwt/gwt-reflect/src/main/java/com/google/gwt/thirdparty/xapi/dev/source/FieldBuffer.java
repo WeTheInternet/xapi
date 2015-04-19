@@ -1,10 +1,10 @@
 package com.google.gwt.thirdparty.xapi.dev.source;
 
-import java.lang.reflect.Modifier;
-
 import com.google.gwt.thirdparty.xapi.source.read.JavaLexer;
 import com.google.gwt.thirdparty.xapi.source.read.JavaLexer.TypeDef;
 import com.google.gwt.thirdparty.xapi.source.read.JavaVisitor.TypeData;
+
+import java.lang.reflect.Modifier;
 
 /**
  * A field buffer is used to add a field to a generated class.
@@ -60,26 +60,26 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
     this.fieldType = initGenerator(this.methodType);
   }
 
-  public FieldBuffer addAdder() {
+  public MethodBuffer addAdder() {
     if (add == null) {
       add = initAdder();
     }
-    return this;
+    return add;
   }
 
-  public FieldBuffer addClearer() {
+  public MethodBuffer addClearer() {
     if (clear == null) {
       clear = initClearer();
     }
-    return this;
+    return clear;
   }
 
-  public FieldBuffer addGetter(final int modifiers) {
+  public MethodBuffer addGetter(final int modifiers) {
     if (get == null) {
       get = initGetter();
     }
     get.visitModifier(modifiers, cls.context);
-    return this;
+    return get;
   }
 
   @Override
@@ -105,12 +105,12 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
     return this.cls.addImportStatic(cls);
   }
 
-  public FieldBuffer addSetter(final int modifier) {
+  public MethodBuffer addSetter(final int modifier) {
     if (set == null) {
       set = initSetter();
     }
     set.visitModifier(modifier, cls.context);
-    return this;
+    return set;
   }
 
   public PrintBuffer getInitializer() {

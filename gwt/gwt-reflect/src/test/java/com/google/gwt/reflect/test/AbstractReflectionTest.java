@@ -12,7 +12,7 @@ import com.google.gwt.reflect.test.cases.ReflectionCaseNoMagic;
 public class AbstractReflectionTest {
 
   protected static final Class CLASS_OBJECT = magicClass(Object.class);
-  
+
   protected static final String METHOD_EQUALS = "equals";
   protected static final String METHOD_HASHCODE = "hashCode";
   protected static final String METHOD_TOSTRING = "toString";
@@ -20,14 +20,14 @@ public class AbstractReflectionTest {
   protected static final String PRIVATE_MEMBER = "privateCall";
   protected static final String PUBLIC_MEMBER = "publicCall";
   protected static final String OVERRIDE_FIELD = "overrideField";
-  
+
   static final Class<ReflectionCaseNoMagic> NO_MAGIC = ReflectionCaseNoMagic.class;
   static final Class<ReflectionCaseNoMagic.Subclass> NO_MAGIC_SUBCLASS = ReflectionCaseNoMagic.Subclass.class;
   static final Class<ReflectionCaseKeepsEverything> KEEPS_EVERYTHING = magicClass(ReflectionCaseKeepsEverything.class);
   static final Class<ReflectionCaseKeepsNothing> KEEPS_NONE = magicClass(ReflectionCaseKeepsNothing.class);
- 
 
-  static public void fail(String message) {
+
+  static public void fail(final String message) {
       if (message == null) {
           throw new AssertionError();
       }
@@ -38,7 +38,7 @@ public class AbstractReflectionTest {
    * Asserts that a condition is true. If it isn't it throws
    * an AssertionFailedError with the given message.
    */
-  static public void assertTrue(String message, boolean condition) {
+  static public void assertTrue(final String message, final boolean condition) {
       if (!condition) {
           fail(message);
       }
@@ -48,7 +48,7 @@ public class AbstractReflectionTest {
    * Asserts that a condition is true. If it isn't it throws
    * an AssertionFailedError.
    */
-  static public void assertTrue(boolean condition) {
+  static public void assertTrue(final boolean condition) {
       assertTrue(null, condition);
   }
 
@@ -56,7 +56,7 @@ public class AbstractReflectionTest {
    * Asserts that a condition is false. If it isn't it throws
    * an AssertionFailedError with the given message.
    */
-  static public void assertFalse(String message, boolean condition) {
+  static public void assertFalse(final String message, final boolean condition) {
       assertTrue(message, !condition);
   }
 
@@ -64,7 +64,7 @@ public class AbstractReflectionTest {
    * Asserts that a condition is false. If it isn't it throws
    * an AssertionFailedError.
    */
-  static public void assertFalse(boolean condition) {
+  static public void assertFalse(final boolean condition) {
       assertFalse(null, condition);
   }
 
@@ -72,14 +72,14 @@ public class AbstractReflectionTest {
    * Asserts that an object isn't null. If it is
    * an AssertionFailedError is thrown with the given message.
    */
-  static public void assertNotNull(String message, Object object) {
+  static public void assertNotNull(final String message, final Object object) {
       assertTrue(message, object != null);
   }
 
   /**
    * Asserts that an object isn't null.
    */
-  static public void assertNotNull(Object object) {
+  static public void assertNotNull(final Object object) {
       assertNotNull(null, object);
   }
 
@@ -90,7 +90,7 @@ public class AbstractReflectionTest {
    *
    * @param object Object to check or <code>null</code>
    */
-  static public void assertNull(Object object) {
+  static public void assertNull(final Object object) {
       if (object != null) {
           assertNull("Expected: <null> but was: " + object.toString(), object);
       }
@@ -100,7 +100,7 @@ public class AbstractReflectionTest {
    * Asserts that an object is null.  If it is not
    * an AssertionFailedError is thrown with the given message.
    */
-  static public void assertNull(String message, Object object) {
+  static public void assertNull(final String message, final Object object) {
       assertTrue(message, object == null);
   }
 
@@ -109,7 +109,7 @@ public class AbstractReflectionTest {
    * Asserts that two objects are equal. If they are not
    * an AssertionFailedError is thrown with the given message.
    */
-  static public void assertEquals(String message, Object expected, Object actual) {
+  static public void assertEquals(final String message, final Object expected, final Object actual) {
       if (expected == null && actual == null) {
           return;
       }
@@ -123,28 +123,28 @@ public class AbstractReflectionTest {
    * Asserts that two objects are equal. If they are not
    * an AssertionFailedError is thrown.
    */
-  static public void assertEquals(Object expected, Object actual) {
+  static public void assertEquals(final Object expected, final Object actual) {
       assertEquals(null, expected, actual);
   }
 
   /**
    * Asserts that two Strings are equal.
    */
-  static public void assertEquals(String message, String expected, String actual) {
+  static public void assertEquals(final String message, final String expected, final String actual) {
       if (expected == null && actual == null) {
           return;
       }
       if (expected != null && expected.equals(actual)) {
           return;
       }
-      String cleanMessage = message == null ? "" : message;
+      final String cleanMessage = message == null ? "" : message;
       throw new ComparisonFailure(cleanMessage, expected, actual);
   }
 
   /**
    * Asserts that two Strings are equal.
    */
-  static public void assertEquals(String expected, String actual) {
+  static public void assertEquals(final String expected, final String actual) {
       assertEquals(null, expected, actual);
   }
 
@@ -153,7 +153,7 @@ public class AbstractReflectionTest {
    * an AssertionFailedError is thrown with the given message.  If the expected
    * value is infinity then the delta value is ignored.
    */
-  static public void assertEquals(String message, double expected, double actual, double delta) {
+  static public void assertEquals(final String message, final double expected, final double actual, final double delta) {
       if (Double.compare(expected, actual) == 0) {
           return;
       }
@@ -166,7 +166,7 @@ public class AbstractReflectionTest {
    * Asserts that two doubles are equal concerning a delta. If the expected
    * value is infinity then the delta value is ignored.
    */
-  static public void assertEquals(double expected, double actual, double delta) {
+  static public void assertEquals(final double expected, final double actual, final double delta) {
       assertEquals(null, expected, actual, delta);
   }
 
@@ -175,7 +175,7 @@ public class AbstractReflectionTest {
    * are not an AssertionFailedError is thrown with the given message. If the
    * expected value is infinity then the delta value is ignored.
    */
-  static public void assertEquals(String message, float expected, float actual, float delta) {
+  static public void assertEquals(final String message, final float expected, final float actual, final float delta) {
       if (Float.compare(expected, actual) == 0) {
           return;
       }
@@ -188,7 +188,7 @@ public class AbstractReflectionTest {
    * Asserts that two floats are equal concerning a delta. If the expected
    * value is infinity then the delta value is ignored.
    */
-  static public void assertEquals(float expected, float actual, float delta) {
+  static public void assertEquals(final float expected, final float actual, final float delta) {
       assertEquals(null, expected, actual, delta);
   }
 
@@ -196,14 +196,14 @@ public class AbstractReflectionTest {
    * Asserts that two longs are equal. If they are not
    * an AssertionFailedError is thrown with the given message.
    */
-  static public void assertEquals(String message, long expected, long actual) {
+  static public void assertEquals(final String message, final long expected, final long actual) {
       assertEquals(message, new Long(expected), new Long(actual));
   }
 
   /**
    * Asserts that two longs are equal.
    */
-  static public void assertEquals(long expected, long actual) {
+  static public void assertEquals(final long expected, final long actual) {
       assertEquals(null, expected, actual);
   }
 
@@ -211,14 +211,14 @@ public class AbstractReflectionTest {
    * Asserts that two booleans are equal. If they are not
    * an AssertionFailedError is thrown with the given message.
    */
-  static public void assertEquals(String message, boolean expected, boolean actual) {
+  static public void assertEquals(final String message, final boolean expected, final boolean actual) {
       assertEquals(message, Boolean.valueOf(expected), Boolean.valueOf(actual));
   }
 
   /**
    * Asserts that two booleans are equal.
    */
-  static public void assertEquals(boolean expected, boolean actual) {
+  static public void assertEquals(final boolean expected, final boolean actual) {
       assertEquals(null, expected, actual);
   }
 
@@ -226,14 +226,14 @@ public class AbstractReflectionTest {
    * Asserts that two bytes are equal. If they are not
    * an AssertionFailedError is thrown with the given message.
    */
-  static public void assertEquals(String message, byte expected, byte actual) {
+  static public void assertEquals(final String message, final byte expected, final byte actual) {
       assertEquals(message, new Byte(expected), new Byte(actual));
   }
 
   /**
    * Asserts that two bytes are equal.
    */
-  static public void assertEquals(byte expected, byte actual) {
+  static public void assertEquals(final byte expected, final byte actual) {
       assertEquals(null, expected, actual);
   }
 
@@ -241,14 +241,14 @@ public class AbstractReflectionTest {
    * Asserts that two chars are equal. If they are not
    * an AssertionFailedError is thrown with the given message.
    */
-  static public void assertEquals(String message, char expected, char actual) {
+  static public void assertEquals(final String message, final char expected, final char actual) {
       assertEquals(message, new Character(expected), new Character(actual));
   }
 
   /**
    * Asserts that two chars are equal.
    */
-  static public void assertEquals(char expected, char actual) {
+  static public void assertEquals(final char expected, final char actual) {
       assertEquals(null, expected, actual);
   }
 
@@ -256,14 +256,14 @@ public class AbstractReflectionTest {
    * Asserts that two shorts are equal. If they are not
    * an AssertionFailedError is thrown with the given message.
    */
-  static public void assertEquals(String message, short expected, short actual) {
+  static public void assertEquals(final String message, final short expected, final short actual) {
       assertEquals(message, new Short(expected), new Short(actual));
   }
 
   /**
    * Asserts that two shorts are equal.
    */
-  static public void assertEquals(short expected, short actual) {
+  static public void assertEquals(final short expected, final short actual) {
       assertEquals(null, expected, actual);
   }
 
@@ -271,29 +271,29 @@ public class AbstractReflectionTest {
    * Asserts that two ints are equal. If they are not
    * an AssertionFailedError is thrown with the given message.
    */
-  static public void assertEquals(String message, int expected, int actual) {
+  static public void assertEquals(final String message, final int expected, final int actual) {
       assertEquals(message, new Integer(expected), new Integer(actual));
   }
-  
+
   /**
    * Asserts that two ints are equal.
    */
-  static public void assertEquals(int expected, int actual) {
+  static public void assertEquals(final int expected, final int actual) {
       assertEquals(null, expected, actual);
   }
 
-  private static boolean isEquals(Object expected, Object actual) {
+  private static boolean isEquals(final Object expected, final Object actual) {
     return expected.equals(actual);
   }
-  
-  private static boolean equalsRegardingNull(Object expected, Object actual) {
+
+  private static boolean equalsRegardingNull(final Object expected, final Object actual) {
       if (expected == null) {
           return actual == null;
       }
 
       return isEquals(expected, actual);
   }
-  
+
   /**
    * Asserts that two objects are <b>not</b> equals. If they are, an
    * {@link AssertionError} is thrown with the given message. If
@@ -305,8 +305,8 @@ public class AbstractReflectionTest {
    * @param first first value to check
    * @param second the value to check against <code>first</code>
    */
-  static public void assertNotEquals(String message, Object first,
-          Object second) {
+  static public void assertNotEquals(final String message, final Object first,
+          final Object second) {
       if (equalsRegardingNull(first, second)) {
           failEquals(message, first);
       }
@@ -321,12 +321,12 @@ public class AbstractReflectionTest {
    * @param first first value to check
    * @param second the value to check against <code>first</code>
    */
-  static public void assertNotEquals(Object first, Object second) {
+  static public void assertNotEquals(final Object first, final Object second) {
       assertNotEquals(null, first, second);
   }
 
 
-  private static void failEquals(String message, Object actual) {
+  private static void failEquals(final String message, final Object actual) {
       String formatted = "Values should be different. ";
       if (message != null) {
           formatted = message + ". ";
@@ -345,7 +345,7 @@ public class AbstractReflectionTest {
    * @param first first value to check
    * @param second the value to check against <code>first</code>
    */
-  static public void assertNotEquals(String message, long first, long second) {
+  static public void assertNotEquals(final String message, final long first, final long second) {
       assertNotEquals(message, (Long) first, (Long) second);
   }
 
@@ -356,7 +356,7 @@ public class AbstractReflectionTest {
    * @param first first value to check
    * @param second the value to check against <code>first</code>
    */
-  static public void assertNotEquals(long first, long second) {
+  static public void assertNotEquals(final long first, final long second) {
       assertNotEquals(null, first, second);
   }
 
@@ -375,8 +375,8 @@ public class AbstractReflectionTest {
    * <code>actual</code> for which both numbers are still
    * considered equal.
    */
-  static public void assertNotEquals(String message, double first,
-          double second, double delta) {
+  static public void assertNotEquals(final String message, final double first,
+          final double second, final double delta) {
       if (!doubleIsDifferent(first, second, delta)) {
           failEquals(message, new Double(first));
       }
@@ -394,27 +394,27 @@ public class AbstractReflectionTest {
    * <code>actual</code> for which both numbers are still
    * considered equal.
    */
-  static public void assertNotEquals(double first, double second, double delta) {
+  static public void assertNotEquals(final double first, final double second, final double delta) {
       assertNotEquals(null, first, second, delta);
   }
 
-  
-  static private boolean doubleIsDifferent(double d1, double d2, double delta) {
+
+  static private boolean doubleIsDifferent(final double d1, final double d2, final double delta) {
       if (Double.compare(d1, d2) == 0) {
           return false;
       }
       if ((Math.abs(d1 - d2) <= delta)) {
           return false;
       }
-  
+
       return true;
   }
 
-  static public void failNotEquals(String message, Object expected, Object actual) {
+  static public void failNotEquals(final String message, final Object expected, final Object actual) {
     fail(format(message, expected, actual));
 }
 
-public static String format(String message, Object expected, Object actual) {
+public static String format(final String message, final Object expected, final Object actual) {
     String formatted = "";
     if (message != null && message.length() > 0) {
         formatted = message + " ";
@@ -443,8 +443,8 @@ class ComparisonFailure extends AssertionError {
     private static final int MAX_CONTEXT_LENGTH = 20;
     private static final long serialVersionUID = 1L;
 
-    private String fExpected;
-    private String fActual;
+    private final String fExpected;
+    private final String fActual;
 
     /**
      * Constructs a comparison failure.
@@ -453,7 +453,7 @@ class ComparisonFailure extends AssertionError {
      * @param expected the expected string value
      * @param actual the actual string value
      */
-    public ComparisonFailure(String message, String expected, String actual) {
+    public ComparisonFailure(final String message, final String expected, final String actual) {
         super(message);
         fExpected = expected;
         fActual = actual;
@@ -497,9 +497,9 @@ class ComparisonFailure extends AssertionError {
          * The maximum length for <code>expected</code> and <code>actual</code>. When <code>contextLength</code>
          * is exceeded, the Strings are shortened
          */
-        private int fContextLength;
-        private String fExpected;
-        private String fActual;
+        private final int fContextLength;
+        private final String fExpected;
+        private final String fActual;
         private int fPrefix;
         private int fSuffix;
 
@@ -509,25 +509,25 @@ class ComparisonFailure extends AssertionError {
          * @param expected the expected string value
          * @param actual the actual string value
          */
-        public ComparisonCompactor(int contextLength, String expected, String actual) {
+        public ComparisonCompactor(final int contextLength, final String expected, final String actual) {
             fContextLength = contextLength;
             fExpected = expected;
             fActual = actual;
         }
 
-        private String compact(String message) {
+        private String compact(final String message) {
             if (fExpected == null || fActual == null || areStringsEqual()) {
                 return AbstractReflectionTest.format(message, fExpected, fActual);
             }
 
             findCommonPrefix();
             findCommonSuffix();
-            String expected = compactString(fExpected);
-            String actual = compactString(fActual);
+            final String expected = compactString(fExpected);
+            final String actual = compactString(fActual);
             return AbstractReflectionTest.format(message, expected, actual);
         }
 
-        private String compactString(String source) {
+        private String compactString(final String source) {
             String result = DELTA_START + source.substring(fPrefix, source.length() - fSuffix + 1) + DELTA_END;
             if (fPrefix > 0) {
                 result = computeCommonPrefix() + result;
@@ -540,7 +540,7 @@ class ComparisonFailure extends AssertionError {
 
         private void findCommonPrefix() {
             fPrefix = 0;
-            int end = Math.min(fExpected.length(), fActual.length());
+            final int end = Math.min(fExpected.length(), fActual.length());
             for (; fPrefix < end; fPrefix++) {
                 if (fExpected.charAt(fPrefix) != fActual.charAt(fPrefix)) {
                     break;
@@ -564,7 +564,7 @@ class ComparisonFailure extends AssertionError {
         }
 
         private String computeCommonSuffix() {
-            int end = Math.min(fExpected.length() - fSuffix + 1 + fContextLength, fExpected.length());
+            final int end = Math.min(fExpected.length() - fSuffix + 1 + fContextLength, fExpected.length());
             return fExpected.substring(fExpected.length() - fSuffix + 1, end) + (fExpected.length() - fSuffix + 1 < fExpected.length() - fContextLength ? ELLIPSIS : "");
         }
 

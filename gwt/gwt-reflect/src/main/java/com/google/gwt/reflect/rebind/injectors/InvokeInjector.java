@@ -19,6 +19,9 @@ public class InvokeInjector extends DeclaredMethodInjector {
       final JMethod enclosingMethod, final Context context, final UnifyAstView ast) throws UnableToCompleteException {
     final JExpression methodProvider = super.injectMagic(logger, methodCall, enclosingMethod, context, ast);
 
+    if (isThrowStatement(methodProvider)) {
+      return methodProvider;
+    }
     if (methodCall.getArgs().size() != 5) {
       logger.log(Type.ERROR, "Method call provided to replace GwtReflect.invoke("
           + "Class<?> cls, String name, Class<?>[] paramTypes, Object inst, Object ... params"

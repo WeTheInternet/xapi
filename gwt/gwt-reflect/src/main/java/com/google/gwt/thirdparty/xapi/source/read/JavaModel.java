@@ -94,7 +94,7 @@ public final class JavaModel {
   }
   public static class IsNamedType extends IsType {
     public IsNamedType() {}
-    public IsNamedType(final String name, final String type) {
+    public IsNamedType(final String type, final String name) {
       super(type);
       this.name = name;
     }
@@ -120,15 +120,15 @@ public final class JavaModel {
   }
   public static class IsVariable extends IsNamedType {
     public String initializer;
-    public IsVariable(final String name, final String type, final String initializer) {
-      super(name, type);
+    public IsVariable(final String type, final String name, final String initializer) {
+      super(type, name);
       this.initializer = initializer;
     }
 
   }
   public static class IsGeneric extends IsNamedType {
-    public IsGeneric(final String name, final String type) {
-      super(name, type);
+    public IsGeneric(final String type, final String name) {
+      super(type, name);
     }
     public static final int SUPER = -1;
     public static final int CONCRETE = 0;
@@ -242,8 +242,8 @@ public final class JavaModel {
 
   public static class IsParameter {
 
-    public IsParameter(final String name, final String type) {
-      this.type = new IsNamedType(name, type);
+    public IsParameter(final String type, final String name) {
+      this.type = new IsNamedType(type, name);
     }
 
     HasAnnotations annotations;

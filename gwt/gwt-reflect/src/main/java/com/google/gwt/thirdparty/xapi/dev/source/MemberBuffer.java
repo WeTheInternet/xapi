@@ -1,13 +1,13 @@
 package com.google.gwt.thirdparty.xapi.dev.source;
 
+import com.google.gwt.thirdparty.xapi.source.read.JavaLexer;
+import com.google.gwt.thirdparty.xapi.source.read.JavaVisitor.TypeData;
+
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
-
-import com.google.gwt.thirdparty.xapi.source.read.JavaLexer;
-import com.google.gwt.thirdparty.xapi.source.read.JavaVisitor.TypeData;
 
 public abstract class MemberBuffer<Self extends MemberBuffer<Self>> extends
     PrintBuffer {
@@ -23,7 +23,7 @@ public abstract class MemberBuffer<Self extends MemberBuffer<Self>> extends
     this("");
   }
 
-  public MemberBuffer(String indent) {
+  public MemberBuffer(final String indent) {
     this.indent = indent;
     origIndent = indent;
     annotations = new TreeSet<String>();
@@ -35,18 +35,18 @@ public abstract class MemberBuffer<Self extends MemberBuffer<Self>> extends
     return (Self) this;
   }
 
-  public final Self addGenerics(String... generics) {
+  public final Self addGenerics(final String... generics) {
     for (String generic : generics) {
       generic = generic.trim();
-      boolean noImport = generic.contains("!");
+      final boolean noImport = generic.contains("!");
       if (noImport) {
         this.generics.add(generic.replace("!", ""));
       } else {
         // pull fqcn into import statements and shorten them
-        for (String part : generic.split(" ")) {
-          int index = generic.lastIndexOf(".");
+        for (final String part : generic.split(" ")) {
+          final int index = generic.lastIndexOf(".");
           if (index > 0) {
-            String shortened = addImport(part);
+            final String shortened = addImport(part);
             if (shortened.length() != part.trim().length()) {
               // We can safely strip package names.
               generic = generic.replace(
@@ -68,43 +68,44 @@ public abstract class MemberBuffer<Self extends MemberBuffer<Self>> extends
 
   public abstract String addImportStatic(Class<?> cls, String name);
 
-  public final Self addImports(String... clses) {
-    for (String cls : clses) {
+  public final Self addImports(final String... clses) {
+    for (final String cls : clses) {
       addImport(cls);
     }
     return self();
   }
 
-  public final Self addImports(Class<?>... clses) {
-    for (Class<?> cls : clses) {
+  public final Self addImports(final Class<?>... clses) {
+    for (final Class<?> cls : clses) {
       addImport(cls);
     }
     return self();
   }
 
-  public final Self addAnnotation(Class<?> anno) {
+  public final Self addAnnotation(final Class<?> anno) {
     this.annotations.add(addImport(anno));
     return self();
   }
 
   public final Self addAnnotation(String anno) {
-    if (anno.charAt(0) == '@')
+    if (anno.charAt(0) == '@') {
       anno = anno.substring(1);
+    }
     anno = anno.trim();// never trust user input :)
 
-    int openParen = anno.indexOf('(');
+    final int openParen = anno.indexOf('(');
     if (openParen == -1) {
-      int hasPeriod = anno.lastIndexOf('.');
+      final int hasPeriod = anno.lastIndexOf('.');
       if (hasPeriod != -1) {
         // fqcn is the whole string.
         anno = addImport(anno);
       }
     } else {
       // Need to check fqcn for imports
-      int hasPeriod = anno.lastIndexOf('.', openParen);
+      final int hasPeriod = anno.lastIndexOf('.', openParen);
       if (hasPeriod != -1) {
         // fqcn is the whole string.
-        String annoName = addImport(anno.substring(0, openParen));
+        final String annoName = addImport(anno.substring(0, openParen));
         anno = annoName + anno.substring(openParen);
       }
 
@@ -120,8 +121,8 @@ public abstract class MemberBuffer<Self extends MemberBuffer<Self>> extends
     return javaDoc;
   }
 
-  public final Self setJavadoc(String doc) {
-    String[] bits = doc.split("\n");
+  public final Self setJavadoc(final String doc) {
+    final String[] bits = doc.split("\n");
     if (bits.length > 0) {
       javaDoc = new PrintBuffer();
       javaDoc.indent = origIndent;
@@ -129,7 +130,7 @@ public abstract class MemberBuffer<Self extends MemberBuffer<Self>> extends
         javaDoc.println("/** " + doc + " */");
       } else {
         javaDoc.println("/**");
-        for (String bit : bits) {
+        for (final String bit : bits) {
           javaDoc.print("* ");
           if ("".equals(bit)) {
             javaDoc.println("<br/>");
@@ -145,7 +146,9 @@ public abstract class MemberBuffer<Self extends MemberBuffer<Self>> extends
 
   public final Self makeFinal() {
     if ((modifier & Modifier.ABSTRACT) > 0)
+     {
       modifier &= ~Modifier.ABSTRACT;// "Cannot be both final and abstract";
+    }
     modifier = modifier | Modifier.FINAL;
     return self();
   }
@@ -160,16 +163,22 @@ public abstract class MemberBuffer<Self extends MemberBuffer<Self>> extends
 
   protected Self makeAbstract() {
     if ((modifier & Modifier.FINAL) > 0)
+     {
       modifier &= ~Modifier.FINAL;// "Cannot be both final and abstract";
+    }
     if ((modifier & Modifier.STATIC) > 0)
+     {
       modifier &= ~Modifier.STATIC;// "Cannot be both static and abstract";
+    }
     modifier = modifier | Modifier.ABSTRACT;
     return self();
   }
 
   public final Self makeStatic() {
     if ((modifier & Modifier.ABSTRACT) > 0)
+     {
       modifier &= ~Modifier.ABSTRACT; // "Cannot be both static and abstract";
+    }
     modifier = modifier | Modifier.STATIC;
     return self();
   }
@@ -180,17 +189,17 @@ public abstract class MemberBuffer<Self extends MemberBuffer<Self>> extends
   }
 
   public final Self makePublic() {
-    modifier = modifier & 0xFFF8 + Modifier.PUBLIC;
+    modifier = (modifier & 0xFFF8) + Modifier.PUBLIC;
     return self();
   }
 
   public final Self makeProtected() {
-    modifier = modifier & 0xFFF8 + Modifier.PROTECTED;
+    modifier = (modifier & 0xFFF8) + Modifier.PROTECTED;
     return self();
   }
 
   public final Self makePrivate() {
-    modifier = modifier & 0xFFF8 + Modifier.PRIVATE;
+    modifier = (modifier & 0xFFF8) + Modifier.PRIVATE;
     return self();
   }
 
@@ -211,8 +220,8 @@ public abstract class MemberBuffer<Self extends MemberBuffer<Self>> extends
     return (modifier & Modifier.ABSTRACT) > 0;
   }
 
-  public Self setModifier(int modifier) {
-    if ((modifier & 7) > 0)
+  public Self setModifier(final int modifier) {
+    if ((modifier & 7) > 0) {
       switch (modifier & 7) {
       case Modifier.PUBLIC:
         makePublic();
@@ -224,78 +233,79 @@ public abstract class MemberBuffer<Self extends MemberBuffer<Self>> extends
         makeProtected();
         break;
       }
+    }
     this.modifier |= modifier;
     return self();
   }
 
   @Override
-  public final Self append(boolean b) {
+  public final Self append(final boolean b) {
     super.append(b);
     return self();
   }
 
   @Override
-  public final Self append(char c) {
+  public final Self append(final char c) {
     super.append(c);
     return self();
   }
 
   @Override
-  public final Self append(char[] str) {
+  public final Self append(final char[] str) {
     super.append(str);
     return self();
   }
 
   @Override
-  public final Self append(char[] str, int offset, int len) {
+  public final Self append(final char[] str, final int offset, final int len) {
     super.append(str, offset, len);
     return self();
   }
 
   @Override
-  public final Self append(CharSequence s) {
+  public final Self append(final CharSequence s) {
     super.append(s);
     return self();
   }
 
   @Override
-  public final Self append(CharSequence s, int start, int end) {
+  public final Self append(final CharSequence s, final int start, final int end) {
     super.append(s, start, end);
     return self();
   }
 
   @Override
-  public final Self append(double d) {
+  public final Self append(final double d) {
     super.append(d);
     return self();
   }
 
   @Override
-  public final Self append(float f) {
+  public final Self append(final float f) {
     super.append(f);
     return self();
   }
 
   @Override
-  public final Self append(int i) {
+  public final Self append(final int i) {
     super.append(i);
     return self();
   }
 
   @Override
-  public final Self append(long lng) {
+  public final Self append(final long lng) {
     super.append(lng);
     return self();
   }
 
   @Override
-  public final Self append(Object obj) {
+  public final Self append(final Object obj) {
     super.append(obj);
     return self();
   }
 
   @Override
-  public final Self append(String str) {
+  public final Self append(final String str) {
     super.append(str);
     return self();
   }
@@ -307,25 +317,25 @@ public abstract class MemberBuffer<Self extends MemberBuffer<Self>> extends
   }
 
   @Override
-  public final Self indentln(char[] str) {
+  public final Self indentln(final char[] str) {
     super.indentln(str);
     return self();
   }
 
   @Override
-  public final Self indentln(CharSequence s) {
+  public final Self indentln(final CharSequence s) {
     super.indentln(s);
     return self();
   }
 
   @Override
-  public final Self indentln(Object obj) {
+  public final Self indentln(final Object obj) {
     super.indentln(obj);
     return self();
   }
 
   @Override
-  public final Self indentln(String str) {
+  public final Self indentln(final String str) {
     super.indentln(str);
     return self();
   }
@@ -343,67 +353,67 @@ public abstract class MemberBuffer<Self extends MemberBuffer<Self>> extends
   }
 
   @Override
-  public final Self println(char[] str) {
+  public final Self println(final char[] str) {
     super.println(str);
     return self();
   }
 
   @Override
-  public final Self println(CharSequence s) {
+  public final Self println(final CharSequence s) {
     super.println(s);
     return self();
   }
 
   @Override
-  public final Self println(Object obj) {
+  public final Self println(final Object obj) {
     super.println(obj);
     return self();
   }
 
   @Override
-  public final Self println(String str) {
+  public final Self println(final String str) {
     super.println(str);
     return self();
   }
 
   @Override
-  public Self print(String str) {
+  public Self print(final String str) {
     super.print(str);
     return self();
   }
 
-  protected void addNamedTypes(Set<String> result,
-      Iterable<Entry<String, Class<?>>> types) {
-    for (Entry<String, Class<?>> type : types) {
-      String shortName = addImport(type.getValue());
+  protected void addNamedTypes(final Set<String> result,
+      final Iterable<Entry<String, Class<?>>> types) {
+    for (final Entry<String, Class<?>> type : types) {
+      final String shortName = addImport(type.getValue());
       result.add(shortName + " " + type.getKey());
     }
   }
 
-  protected void addNamedTypes(Set<String> result, String... types) {
+  protected void addNamedTypes(final Set<String> result, final String... types) {
     for (String parameter : types) {
       parameter = parameter.trim();
-      int index = parameter.lastIndexOf(' ');
+      final int index = parameter.lastIndexOf(' ');
       assert index > 0 : "Malformed named parameter missing ' ': " + parameter
           + "; from " + Arrays.asList(types);
-      TypeData type = JavaLexer.extractType(parameter, 0);
-      String shortName = addImport(type.getImportName());
+      final TypeData type = JavaLexer.extractType(parameter, 0);
+      final String shortName = addImport(type.getImportName());
       result.add(shortName + " " + parameter.substring(index + 1).trim());
     }
   }
 
-  protected void addTypes(Set<String> result, Class<?>... types) {
-    for (Class<?> type : types) {
+  protected void addTypes(final Set<String> result, final Class<?>... types) {
+    for (final Class<?> type : types) {
       result.add(addImport(type.getCanonicalName()));
     }
   }
 
-  protected void addTypes(Set<String> result, String... types) {
+  protected void addTypes(final Set<String> result, final String... types) {
     for (String typeName : types) {
       typeName = typeName.trim();
-      TypeData type = JavaLexer.extractType(typeName, 0);
+      final TypeData type = JavaLexer.extractType(typeName, 0);
       if (type.pkgName.length() > 0) {
-        String shortName = addImport(type.getImportName());
+        final String shortName = addImport(type.getImportName());
         result.add(shortName);
       }
       result.add(typeName);

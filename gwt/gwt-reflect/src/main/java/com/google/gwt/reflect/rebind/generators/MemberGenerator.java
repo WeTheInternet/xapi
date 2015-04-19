@@ -1,477 +1,340 @@
 package com.google.gwt.reflect.rebind.generators;
 
-import static java.lang.reflect.Modifier.FINAL;
-import static java.lang.reflect.Modifier.PRIVATE;
-import static java.lang.reflect.Modifier.PUBLIC;
-import static java.lang.reflect.Modifier.STATIC;
+import static com.google.gwt.reflect.rebind.ReflectionUtilType.extractAnnotations;
 
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.UnsafeNativeLong;
 import com.google.gwt.core.ext.BadPropertyValueException;
 import com.google.gwt.core.ext.ConfigurationProperty;
-import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.PropertyOracle;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.core.ext.UnableToCompleteException;
+import com.google.gwt.core.ext.typeinfo.HasAnnotations;
 import com.google.gwt.core.ext.typeinfo.JClassType;
-import com.google.gwt.core.ext.typeinfo.JConstructor;
-import com.google.gwt.core.ext.typeinfo.JField;
 import com.google.gwt.core.ext.typeinfo.JParameter;
 import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
 import com.google.gwt.core.ext.typeinfo.JType;
+import com.google.gwt.dev.jjs.SourceInfo;
 import com.google.gwt.dev.jjs.UnifyAstView;
+import com.google.gwt.dev.jjs.ast.JConstructor;
 import com.google.gwt.dev.jjs.ast.JDeclaredType;
 import com.google.gwt.dev.jjs.ast.JExpression;
 import com.google.gwt.dev.jjs.ast.JMethod;
 import com.google.gwt.dev.jjs.ast.JMethodCall;
-import com.google.gwt.reflect.client.ConstPool.ArrayConsts;
+import com.google.gwt.dev.jjs.ast.JNewInstance;
 import com.google.gwt.reflect.client.strategy.GwtRetention;
 import com.google.gwt.reflect.client.strategy.ReflectionStrategy;
-import com.google.gwt.reflect.rebind.ReflectionManifest;
-import com.google.gwt.reflect.rebind.ReflectionUtilType;
 import com.google.gwt.reflect.shared.GwtReflect;
+import com.google.gwt.reflect.shared.JsMemberPool;
 import com.google.gwt.thirdparty.xapi.dev.source.ClassBuffer;
+import com.google.gwt.thirdparty.xapi.dev.source.MemberBuffer;
 import com.google.gwt.thirdparty.xapi.dev.source.MethodBuffer;
 import com.google.gwt.thirdparty.xapi.dev.source.PrintBuffer;
-import com.google.gwt.thirdparty.xapi.dev.source.SourceBuilder;
-import com.google.gwt.thirdparty.xapi.source.read.JavaModel.IsNamedType;
+import com.google.gwt.thirdparty.xapi.source.read.JavaModel.IsQualified;
 
-import java.io.PrintWriter;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.HashMap;
 
+/**
+ * The base class of all constructor, method and field generators,
+ * and also of almost all injectors used for reflection.
+ * <p>
+ * This rather large class is used to encapsulate all of the low-level generator details
+ * used by all other generator / injector implementations.
+ *
+ * @author James X. Nelson (james@wetheinter.net, @james)
+ *
+ */
 @ReflectionStrategy
-public class MemberGenerator {
+public abstract class MemberGenerator {
 
-  private static class ManifestMap {
-    private final HashMap<String, JMethod> getters =
-      new HashMap<String, JMethod>();
-    private JMethod initMethod;
+  private static class MemberPoolMethods {
 
-    public JMethod findGetterFor(
-      final UnifyAstView ast, final String memberGetter)
+    /**
+     * A mapping to one of the various getter methods on the {@link JsMemberPool} class.
+     * <p>
+     * These getters are used for runtime lookups of members, when reflection is performed
+     * on reference objects, rather than literals.
+     */
+    private final HashMap<String, JMethod> getters = new HashMap<String, JMethod>();
+
+    /**
+     * A mapping of constructors that we may want to cache and reuse.
+     */
+    private final HashMap<String, JConstructor> constructors = new HashMap<String, JConstructor>();
+
+    private JMethod doThrow;
+
+    /**
+     * The {@link JMethod} for {@link JsMemberPool#getMembers(Class)}, used so we can create invocations
+     * that will translate a {@link Class} into a {@link JsMemberPool}.
+     */
+    private JMethod getMembers;
+
+    /**
+     * Whether or not we should fail-fast when trying to perform runtime reflection.
+     * <p>
+     * If gwt.reflect.never.fail is set to false, then this boolean will be true,
+     * and we should fail the compile instead of generating references to runtime lookup methods.
+     */
+    public Boolean shouldFail;
+
+    /**
+     * Finds the requested getter method from the {@link JsMemberPool} class.
+     *
+     * @param ast -> The {@link UnifyAstView} for looking up {@link JMethod}s
+     * @param memberGetter -> The name of the getter to find
+     * @return -> The {@link JMethod} needed to create a runtime invocation of the requested method.
+     *
+     * @throws UnableToCompleteException -> If any fatal error occurs
+     */
+    public JMethod findGetterFor(final UnifyAstView ast, final String memberGetter)
         throws UnableToCompleteException {
-      final JMethod getter = getters
-        .get(memberGetter);
-      if (getter == null) {
-        initMethod(ast);
-        final JDeclaredType type = ast.translate((JDeclaredType) initMethod
-          .getOriginalReturnType());
-        for (final JMethod method : type
-          .getMethods()) {
-          if (method.getName().endsWith(memberGetter)) {
-            getters.put(memberGetter, method);
-            return method;
-          }
-        }
-        ast.error(type, "Type " + type.getName()
-          + " does not have member getter method " + memberGetter);
-        throw new UnableToCompleteException();
+
+      // First, check the cache
+      final JMethod getter = getters.get(memberGetter);
+      if (getter != null) {
+        return getter;
       }
-      return getter;
+
+      // Ensure we have a valid reference to the getMembers method.
+      findGetMembersMethod(ast);
+
+      // Use the method to grab the JClassType of JsMemberPool
+      final JDeclaredType type = ast.translate((JDeclaredType) getMembers.getOriginalReturnType());
+
+      // Search the type for the method that matches the requested name
+      for (final JMethod method : type.getMethods()) {
+        if (method.getName().equals(memberGetter)) {
+          // Save the method so we don't waste time looking it up again
+          getters.put(memberGetter, method);
+          return method;
+        }
+      }
+
+      // If the method was not found, abort
+      ast.error(type, "Type " + type.getName()
+        + " does not have member getter method " + memberGetter);
+      throw new UnableToCompleteException();
+
     }
 
-    public JMethod initMethod(final UnifyAstView ast)
-      throws UnableToCompleteException {
-      if (initMethod == null) {
-        final JDeclaredType type = ast
-          .searchForTypeBySource("com.google.gwt.reflect.shared.JsMemberPool");
-        for (final JMethod method : type
-          .getMethods()) {
+    /**
+     * Search for the method {@link JsMemberPool#getMembers(Class)}.  This method is used to load
+     * the {@link JsMemberPool} for a given class, to perform runtime reflection lookups.
+     *
+     * @param ast -> The {@link UnifyAstView} used to find the {@link JMethod} we want.
+     * @return -> The JMethod used to invoke {@link JsMemberPool#getMembers(Class)}
+     */
+    public JMethod findGetMembersMethod(final UnifyAstView ast) {
+      if (getMembers == null) {
+        // First, get the type
+        final JDeclaredType type = ast.searchForTypeBySource(JsMemberPool.class.getCanonicalName());
+        // Then, iterate through the methers to find .getMembers().  We do not overload this method,
+        // so we don't bother checking the signature.
+        for (final JMethod method : type.getMethods()) {
           if (method.getName().equals("getMembers")) {
-            initMethod = method;
+            getMembers = method;
             break;
           }
         }
       }
-      return initMethod;
+      return getMembers;
+    }
+
+    /**
+     * This method checks if we should fail fast when a reflection method is referenced without all-literal
+     * parameters, or if we should allow runtime lookups of reflection objects.  Defaults to false.
+     *
+     * @param logger -> The {@link TreeLogger} for logging
+     * @param ast -> The {@link UnifyAstView} where we will retrieve our property oracle from.
+     * @return  -> true if the compile should break if attempting to do reflection without using all
+     * compile-time literals.
+     */
+    public boolean shouldFail(final TreeLogger logger, final UnifyAstView ast) {
+      // Use the existing cached values
+      if (shouldFail != null) {
+        return shouldFail;
+      }
+      // Grab our property from the oracle
+      final PropertyOracle properties = ast.getRebindPermutationOracle().getConfigurationPropertyOracle();
+      try {
+        final ConfigurationProperty config = properties
+            .getConfigurationProperty("gwt.reflect.never.fail");
+
+        if (config == null) {
+          // We may want to change the default fail level to true
+          shouldFail = false;
+        } else {
+          shouldFail = !"true".equals(config.getValues().get(0));
+        }
+
+      } catch (final BadPropertyValueException e) {
+        logger.log(Type.WARN, "Could not find configuration property gwt.reflect.never.fail; "
+            + "did you remember to inherit com.google.gwt.reflect.Reflect?", e);
+        shouldFail = false;
+      }
+      return shouldFail;
+    }
+
+    public JConstructor findConstructor(final TreeLogger logger, final String sourceTypeName, final String signature, final UnifyAstView ast) throws UnableToCompleteException {
+      JConstructor constructor = constructors.get(signature);
+      if (constructor != null) {
+        return constructor;
+      }
+      final JDeclaredType clazz = ast.searchForTypeBySource(sourceTypeName);
+      if (clazz == null) {
+        logger.log(Type.ERROR, "Unable to find type "+sourceTypeName+" using source name lookup for constructor "+signature);
+        throw new UnableToCompleteException();
+      }
+      constructor = (JConstructor) clazz.findMethod(signature, false);
+      if (constructor == null) {
+        logger.log(Type.ERROR, "Unable to find constructor " + signature + " in "+sourceTypeName+"\n"+clazz.getMethods());
+        for (final JMethod method : clazz.getMethods()) {
+          logger.log(Type.ERROR, "Meow "+method.getSignature());
+        }
+        throw new UnableToCompleteException();
+      }
+      constructors.put(signature, constructor);
+      return constructor;
+    }
+
+    public JMethod getThrowMethod(final TreeLogger logger, final UnifyAstView ast) {
+      if (doThrow == null) {
+        final JDeclaredType gwtReflect = ast.searchForTypeBySource(GwtReflect.class.getName());
+        for (final JMethod method : gwtReflect.getMethods()) {
+          if (method.getName().equals("doThrow")) {
+            doThrow = method;
+            break;
+          }
+        }
+      }
+      return doThrow;
     }
   }
 
-  public static void cleanup() {
-    manifests.remove();
-    shouldFail = null;
-  }
+  /**
+   * A default instance of {@link ReflectionStrategy}, to be used if a type does not specify an instance
+   * of its own to use.
+   */
+  public static final ReflectionStrategy DEFAULT_STRATEGY =
+      MemberGenerator.class.getAnnotation(ReflectionStrategy.class);
 
-  public static String getConstructorFactoryName(final JClassType type,
-    final JParameter[] list) {
-    final StringBuilder b = new StringBuilder(type.getName());
-    b.append(CONSTRUCTOR_SPACER).append(
-      ReflectionUtilType.toUniqueFactory(list, type.getConstructors()));
-    return b.toString();
-  }
+  /**
+   * A unique string to be placed between the canonical name of the type that sourced a method we want to
+   * generate a provider for, and the name of the method itself, followed by the parameter types.
+   * <p>
+   * Example:
+   * com.foo.Type::myMethod(Class) will have a provider class:
+   * com.foo.Type_mthd_myMethod_java_lang_Class
+   */
+  public static final String METHOD_SPACER = "_mthd_";
 
-  public static String getFieldFactoryName(final JClassType type,
-    final String name) {
-    final StringBuilder b = new StringBuilder(type.getName());
-    b.append(FIELD_SPACER).append(name);
-    return b.toString();
-  }
+  /**
+   * A unique string to be placed between the canonical name of the type that sourced a field we want to
+   * generate a provider for, and the name of the field itself.
+   * <p>
+   * Example:
+   * com.foo.Type::myField will have a provider class:
+   * com.foo.Type_fld_myField
+   */
+  public static final String FIELD_SPACER = "_fld_";
 
-  public static String getMethodFactoryName(final JClassType type,
-    final String name,
-    final JParameter[] list) {
-    final StringBuilder b = new StringBuilder(type.getName());
-    b.append(METHOD_SPACER).append(name);
-    // Check for polymorphism
-    final com.google.gwt.core.ext.typeinfo.JMethod[] overloads = type
-      .getOverloads(name);
-    if (overloads.length > 1) {
-      // Have to use the parameters to make a unique name.
-      // Might be worth it to move this method to instance level, and use a count
-      final String uniqueName = ReflectionUtilType.toUniqueFactory(list,
-        overloads);
-      b.append('_').append(uniqueName);
-    }
-    return b.toString();
-  }
+  /**
+   * A unique string to be placed between the canonical name of the type that sourced a constructor we want to
+   * generate a provider for, and the types of the parameters of that constructor.
+   * <p>
+   * Example:
+   * com.foo.Type::new(Class) will have a provider class:
+   * com.foo.Type_ctr_java_lang_Class
+   */
+  public static final String CONSTRUCTOR_SPACER = "_ctr_";
 
-  public static final ReflectionStrategy DEFAULT_STRATEGY = MemberGenerator.class
-    .getAnnotation(ReflectionStrategy.class);
-  public static final String
-  METHOD_SPACER = "_mthd_",
-  FIELD_SPACER = "_fld_",
-  CONSTRUCTOR_SPACER = "_ctr_";
+  /**
+   * A handy string for the fully qualified name of the {@link GwtReflect} class
+   */
+  private static final String GWT_REFLECT = GwtReflect.class.getName();
 
-  private static final String
-  GWT_REFLECT = GwtReflect.class.getName(),
-  JSO = JavaScriptObject.class.getSimpleName(),
-  NULL_CHECK = "@" + GWT_REFLECT + "::nullCheck(*)(o);";
+  /**
+   * A handy string for the fully qualified name of the {@link JavaScriptObject} class
+   */
+  private static final String JSO = JavaScriptObject.class.getSimpleName();
 
-  private static final Type logLevel = Type.TRACE;
+  /**
+   * A handy string for the fully qualified name of the {@link GwtReflect#nullCheck(Object)} method
+   */
+  protected static final String NULL_CHECK = "@" + GWT_REFLECT + "::nullCheck(*)(o);";
 
-  private static Boolean shouldFail;
+  /**
+   * The default logLevel, {@link Type#DEBUG}, for all subclasses.
+   */
+  private static final Type logLevel = Type.DEBUG;
 
-  private static final ThreadLocal<ManifestMap> manifests = new ThreadLocal<ManifestMap>() {
+  /**
+   * A ThreadLocal for safely storing an instance of {@link MemberPoolMethods} during a compile.
+   */
+  private static final ThreadLocal<MemberPoolMethods> memberPoolMethods = new ThreadLocal<MemberPoolMethods>() {
     @Override
-    protected ManifestMap initialValue() {
-      return new ManifestMap();
+    protected MemberPoolMethods initialValue() {
+      return new MemberPoolMethods();
     };
   };
 
-  public String generateConstructorFactory(final TreeLogger logger,
-    final ReflectionGeneratorContext ctx,
-    final JConstructor ctor, String factory, final ReflectionManifest manifest)
-      throws UnableToCompleteException {
-    final JClassType type = ctor.getEnclosingType();
-    final String pkg = type.getPackage().getName();
-    factory = factory.replace('.', '_');
-    final SourceBuilder<?> out = ctx.tryCreate(PUBLIC | FINAL, pkg, factory);
-
-    if (out == null) {
-      // TODO some kind of test to see if structure has changed...
-      return pkg + "." + factory;
-    }
-
-    final String simpleName = out.getImports().addImport(
-      type.getQualifiedSourceName());
-
-    final ClassBuffer cb = out.getClassBuffer();
-
-    cb.createConstructor(Modifier.PRIVATE);
-    cb.createField("Constructor <" + simpleName + ">", "ctor", PRIVATE | STATIC);
-
-    final MethodBuffer instantiator = cb
-      .addImports(Constructor.class, GwtReflect.class)
-      .createMethod(
-        "public static Constructor <" + simpleName + "> instantiate()")
-        .println("if (ctor == null) {")
-        .indent()
-        .println("ctor = new Constructor<" + simpleName + ">(")
-        .print(ctor.getEnclosingType().getQualifiedSourceName() + ".class, ")
-        .print(ReflectionUtilType.getModifiers(ctor) + ", ")
-        .println("invoker(), ");
-    ConstPoolGenerator.getGenerator();
-    final GwtRetention retention = manifest.getRetention(ctor);
-
-    out.getImports().addStatic(
-      ArrayConsts.class.getCanonicalName() + ".EMPTY_CLASSES");
-    final JParameter[] params = ctor.getParameters();
-    instantiator
-    .addImports(JavaScriptObject.class)
-    .addImports(ArrayConsts.class);
-
-    if (retention.annotationRetention() > 0) {
-      final Annotation[] annos = ReflectionUtilType.extractAnnotations(
-        retention.annotationRetention(), ctor);
-      if (annos.length == 0) {
-        out.getImports().addStatic(
-          ArrayConsts.class.getCanonicalName() + ".EMPTY_ANNOTATIONS");
-        instantiator.print("EMPTY_ANNOTATIONS, ");
-      } else {
-        ctx.getConstPool().arrayOfAnnotations(logger,
-          ctx.getGeneratorContext(), instantiator, ctx.getAst(), annos);
-        instantiator.print(", ");
-      }
-    } else {
-      out.getImports().addStatic(
-        ArrayConsts.class.getCanonicalName() + ".EMPTY_ANNOTATIONS");
-      instantiator.print("EMPTY_ANNOTATIONS, ");
-    }
-    appendClassArray(instantiator, params, ctx);
-
-    instantiator
-    .print(", EMPTY_CLASSES ")
-    .println(");")
-    .outdent()
-    .println("}")
-    .returnValue("ctor");
-
-    createInvokerMethod(cb, type, type, "new", ctor.getParameters(), true, ctor.isPublic());
-
-    if (isDebug(type, ReflectionStrategy.CONSTRUCTOR)) {
-      logger.log(Type.INFO, out.toString());
-    }
-
-    ctx.commit(logger);
-
-    return out.getQualifiedName();
+  /**
+   * Cleans up our thread local which stores {@link JMethod} that will no longer be valid on the next recompile.
+   */
+  public static void cleanup() {
+    memberPoolMethods.remove();
   }
 
-  public String generateFieldFactory(final TreeLogger logger,
-    final UnifyAstView ast,
-    final JField field, String factoryName, final ReflectionManifest manifest)
-      throws UnableToCompleteException {
-    final String pkg = field.getEnclosingType().getPackage().getName();
-    final JClassType enclosingType = field.getEnclosingType();
-    final JType fieldType = field.getType().getErasedType();
-    final String jni = field.getType().getJNISignature();
-    factoryName = factoryName.replace('.', '_');
-
-    final SourceBuilder<JField> out = new SourceBuilder<JField>
-    ("public final class " + factoryName).setPackage(pkg);
-
-    out.getClassBuffer().createConstructor(PRIVATE);
-
-    final GeneratorContext ctx = ast.getGeneratorContext();
-    final PrintWriter pw = ctx.tryCreate(logger, pkg, factoryName);
-    if (pw == null) {
-      if (isDebug(enclosingType, ReflectionStrategy.FIELD)) {
-        logger.log(Type.INFO, "Skipped writing field for " + factoryName
-          + ", as factory already exists");
-      }
-      return out.getQualifiedName();
+  /**
+   * If the configuration property gwt.reflect.never.fail is true or missing, then
+   * this method will return an expression that checks the JsMemberPool at runtime
+   * for an enhanced member as defined by the {@link #memberGetter()} method name.
+   * <p>
+   * If gwt.reflect.never.fail is set to the default of false, this will throw
+   * an {@link UnableToCompleteException}, thus, you are encouraged to log a warning
+   * at the logLevel of {@link #warnLevel(TreeLogger, UnifyAstView)} before invoking this method.
+   */
+  protected JExpression maybeCheckConstPool(final TreeLogger logger, final UnifyAstView ast,
+    final JMethodCall callSite, final JExpression inst, final JExpression ... params) throws UnableToCompleteException {
+    if (shouldFailIfMissing(logger, ast)) {
+      throw new UnableToCompleteException();
     }
-
-    final ClassBuffer cb = out.getClassBuffer();
-
-    final GwtRetention retention = manifest.getRetention(field);
-    final boolean hasAnnos = retention.annotationRetention() > 0;
-    final Annotation[] annos;
-    if (hasAnnos) {
-      annos = ReflectionUtilType.extractAnnotations(
-        retention.annotationRetention(), field);
-      generateGetAnnos(logger, out, annos, ast);
-    } else {
-      annos = new Annotation[0];
-      generateGetAnnos(logger, out, new Annotation[0], ast);
-    }
-
-    final String ref = (field.isStatic() ? "" : "o.") + "@"
-      + enclosingType.getQualifiedSourceName() + "::" + field.getName();
-    final MethodBuffer accessor = cb
-      .createMethod("private static JavaScriptObject getAccessor()")
-      .setUseJsni(true)
-      .println("return {").indent();
-    if (hasAnnos) {
-      accessor
-      .println("annos: function() {")
-      .indent()
-      .print("return ");
-      if (annos.length == 0) {
-        accessor.println("{};");
-      } else {
-        accessor
-        .print("@")
-        .print(out.getQualifiedName())
-        .println("::allAnnos()();");
-
-      }
-      accessor.outdent().println("},");
-    }
-    accessor
-    .println("getter: function(o) {");
-    if (!field.isStatic()) {
-      accessor.indentln(NULL_CHECK);
-    }
-    final boolean isPrimitive = field.getType().isPrimitive() != null;
-
-    accessor.indent().print("return ");
-    accessor.append(ref);
-
-    accessor
-    .println(";")
-    .outdent()
-    .print("}");
-    if (field.isFinal()) {
-      accessor.println().outdent().println("};");
-    } else {
-      accessor.println(", setter: function(o, v) {");
-      if (!field.isStatic()) {
-        accessor.indentln(NULL_CHECK);
-      }
-      accessor.indentln(ref + " = ");
-
-      final StringBuilder unboxer = new StringBuilder();
-      unboxer.append("v");
-
-      accessor
-      .indentln(unboxer + ";")
-      .println("}")
-      .outdent().println("};");
-    }
-
-    final MethodBuffer instantiate = cb
-      .createMethod("public static Field instantiate()")
-      .print("return new ")
-      .addImports(Field.class, JavaScriptObject.class);
-
-    if (isPrimitive) {
-      switch (jni.charAt(0)) {
-      case 'Z':
-        instantiate.addImport("java.lang.reflect.Boolean_Field");
-        instantiate.print("Boolean_Field(");
-        break;
-      case 'B':
-        instantiate.addImport("java.lang.reflect.Byte_Field");
-        instantiate.print("Byte_Field(");
-        break;
-      case 'S':
-        instantiate.addImport("java.lang.reflect.Short_Field");
-        instantiate.print("Short_Field(");
-        break;
-      case 'C':
-        instantiate.addImport("java.lang.reflect.Char_Field");
-        instantiate.print("Char_Field(");
-        break;
-      case 'I':
-        instantiate.addImport("java.lang.reflect.Int_Field");
-        instantiate.print("Int_Field(");
-        break;
-      case 'J':
-        accessor.addAnnotation(UnsafeNativeLong.class);
-        instantiate.addImport("java.lang.reflect.Long_Field");
-        instantiate.print("Long_Field(");
-        break;
-      case 'F':
-        instantiate.addImport("java.lang.reflect.Float_Field");
-        instantiate.print("Float_Field(");
-        break;
-      case 'D':
-        instantiate.addImport("java.lang.reflect.Double_Field");
-        instantiate.print("Double_Field(");
-        break;
-      default:
-        logger.log(Type.ERROR, "Bad primitive type in field generator "
-          + fieldType.getQualifiedSourceName());
-        throw new UnableToCompleteException();
-      }
-    } else {
-      final String imported = instantiate.addImport(fieldType
-        .getQualifiedSourceName());
-      instantiate.print("Field(" + imported + ".class, ");
-    }
-
-    final String enclosing = instantiate.addImport(field.getEnclosingType()
-      .getQualifiedSourceName());
-    instantiate
-    .print(enclosing + ".class, ")
-    .print("\"" + field.getName() + "\", ")
-    .print(ReflectionUtilType.getModifiers(field) + ", getAccessor());");
-
-    final String src = out.toString();
-    pw.println(src);
-    if (isDebug(enclosingType, ReflectionStrategy.FIELD)) {
-      logger.log(Type.INFO, "Field provider for " + field.toString() + "\n"
-        + src);
-    }
-
-    ctx.commit(logger, pw);
-    return out.getQualifiedName();
+    return checkConstPool(ast, callSite, inst, params);
   }
 
-  public String generateMethodFactory(final TreeLogger logger,
-    final UnifyAstView ast,
-    final com.google.gwt.core.ext.typeinfo.JMethod method,
-    String factoryName, final ReflectionManifest manifest)
-      throws UnableToCompleteException {
-    final JClassType type = method.getEnclosingType();
-    final String pkg = type.getPackage().getName();
-    factoryName = factoryName.replace('.', '_');
+  protected void appendAnnotationSupplier(final TreeLogger logger, final MemberBuffer<?> out,
+      final HasAnnotations member, final GwtRetention retention, final ReflectionGeneratorContext ctx)
+          throws UnableToCompleteException {
 
-    final GeneratorContext ctx = ast.getGeneratorContext();
-    final PrintWriter pw = ctx.tryCreate(logger, pkg, factoryName);
-    if (pw == null) {
-      return (pkg.length() == 0 ? "" : pkg + ".") + factoryName;
-    }
+    final Annotation[] annos = extractAnnotations(retention.annotationRetention(), member);
 
-    final SourceBuilder<JMethod> out = new SourceBuilder<JMethod>
-    ("public final class " + factoryName).setPackage(pkg);
-    final ClassBuffer cb = out.getClassBuffer().addImports(Method.class);
-
-    createInvokerMethod(cb, type, method.getReturnType(), method.getName(),
-      method.getParameters(), method.isStatic(), method.isPublic());
-
-    cb
-    .createMethod("public static Method instantiate()")
-    .returnValue("new Method("
-        + cb.addImport(type.getErasedType().getQualifiedSourceName())+".class, "
-        + "\""+method.getName()+"\", "
-        + "getParameterTypes(), "
-        + cb.addImport(method.getReturnType().getErasedType().getQualifiedSourceName()) + ".class, "
-        + "getExceptionTypes(), "
-        + ReflectionUtilType.getModifiers(method)+", "
-        + "invoker(),"
-        + "allAnnos()"
-        + ")");
-
-    /**
-     Class returnType, Class[] checkedExceptions,
-    int modifiers, JavaScriptObject method, JavaScriptObject annos
-     */
-
-    final GwtRetention retention = manifest.getRetention(method);
-
-    if (retention.annotationRetention() > 0) {
-      final Annotation[] annos = ReflectionUtilType.extractAnnotations(
-        retention.annotationRetention(), method);
-      generateGetAnnos(logger, out, annos, ast);
-    } else {
-      generateGetAnnos(logger, out, new Annotation[0], ast);
-    }
-
-    generateGetParams(logger, cb, method.getParameters());
-    generateGetExceptions(logger, cb, method.getThrows());
-    generateGetReturnType(logger, cb, method);
-    generateGetName(logger, cb, method);
-    generateGetModifier(logger, cb, ReflectionUtilType.getModifiers(method));
-    generateGetDeclaringClass(logger, cb, method.getEnclosingType(), "?");
-
-    final String src = out.toString();
-    if (isDebug(type, ReflectionStrategy.METHOD)) {
-      logger.log(Type.INFO,
-        "Method provider for " + method.getReadableDeclaration() + "\n" + src);
-    }
-
-    pw.println(src);
-
-    ctx.commit(logger, pw);
-
-    return out.getQualifiedName();
+      // Print a call to new AnnotationSupplierX, which returns the constant annotation array for the supplied annos
+    final IsQualified supplier = ctx.getConstPool().annotationArraySupplier(logger,
+          ctx.getGeneratorContext(), out, annos);
+    final String supplierClass = out.addImport(supplier.getQualifiedName());
+    out.println("new "+supplierClass+"()");
   }
 
   protected void appendClassArray(final MethodBuffer out,
     final JParameter[] params,
     final ReflectionGeneratorContext ctx) {
-    int i = params.length;
+    final JType[] types = new JType[params.length];
+    for (int i = params.length; i --> 0;) {
+      types[i] = params[i].getType();
+    }
+    appendClassArray(out, types, ctx);
+  }
+
+  protected <T extends JType> void appendClassArray(final MethodBuffer out,
+      final T[] types,
+      final ReflectionGeneratorContext ctx) {
+    int i = types.length;
     final String[] names = new String[i];
     for (; i-- > 0;) {
-      names[i] = params[i].getType().getErasedType().getQualifiedSourceName();
+      names[i] = types[i].getErasedType().getQualifiedSourceName();
     }
     final ConstPoolGenerator constPool = ctx.getConstPool();
     constPool.arrayOfClasses(ctx.getLogger(), out, names);
@@ -486,7 +349,7 @@ public class MemberGenerator {
       null, initPool);
     getMemberPool.addArg(classRef);
 
-    final ManifestMap map = manifests.get();
+    final MemberPoolMethods map = memberPoolMethods.get();
     final JMethod getter = map.findGetterFor(ast,
       memberGetter());
 
@@ -501,7 +364,7 @@ public class MemberGenerator {
 
   protected void createInvokerMethod(final ClassBuffer cb,
     final JClassType type, final JType returnType,
-    final String methodName, final JParameter[] params, final boolean isStatic, final boolean isPublic) {
+    final String methodName, final JParameter[] params, final boolean isStatic, final boolean isNotPrivate) {
     boolean hasLong = returnType.getJNISignature().equals("J");
 
     final StringBuilder functionSig = new StringBuilder();
@@ -561,7 +424,8 @@ public class MemberGenerator {
     String typeName = type.getQualifiedSourceName();
     String invokeName = methodName;
     final boolean returns = isReturnable(returnType);
-    final boolean staticDispatch = !isStatic && isPublic && !"new".equals(methodName);
+    final boolean useStaticDispatch = !isStatic && isNotPrivate;
+    final boolean isConstructor = "new".equals(methodName);
 
     if (returns) {
       invoker.print("return ");
@@ -569,18 +433,33 @@ public class MemberGenerator {
     maybeStartBoxing(invoker, returnType);
 
     if (!isStatic) {
-      // Due to a bug with accessing instance methods on String, we add an
+      // Due to a bug with accessing instance methods on Strings and JSOs, we add an
       // extra layer of "staticifying" to public instance methods.
-      if (staticDispatch) {
+      // This is because these methods are not translated correctly from JSNI,
+      // so we instead make a static method that we can safely reference in JSNI.
+      if (useStaticDispatch) {
         jsniSig = new StringBuilder(type.getJNISignature()).append(jsniSig);
-        arguments = new StringBuilder("o").append(arguments.length() == 0 ? "" : ",").append(arguments);
+        final String args = arguments.toString();
+        arguments = new StringBuilder();
+        if (!isConstructor) {
+          arguments.append("o").append(args.length() == 0 ? "" : ",");
+        }
+        arguments.append(args);
         invokeName = methodName+"$$$";
-        final MethodBuffer staticMethod = cb.createMethod("private static "+returnType.getErasedType().getQualifiedSourceName()+" "+invokeName+"()");
-        staticMethod.addParameter(typeName, "_");
+        final String returnName = cb.addImport(returnType.getErasedType().getQualifiedSourceName());
+        final MethodBuffer staticMethod = cb.createMethod("private static "+returnName+" "+invokeName+"()");
+        if (!isConstructor) {
+          staticMethod.addParameter(typeName, "_");
+        }
         if (returns) {
           staticMethod.print("return ");
         }
-        staticMethod.print("_.").print(methodName).print("(");
+        if (isConstructor) {
+          staticMethod.print("new "+returnName);
+        } else {
+          staticMethod.print("_.");
+        }
+        staticMethod.print(methodName).print("(");
         staticMethod.addExceptions(Throwable.class);// Let exceptions bubble
         for (int i = 0, m = params.length; i < m; i++) {
           final JParameter param = params[i];
@@ -617,20 +496,10 @@ public class MemberGenerator {
 
   }
 
-  private String toParamName(int i) {
-    final StringBuilder b = new StringBuilder();
-    do {
-      b.append((char)('a'+(i%26)));
-      i = i / 26;
-    } while (i > 0);
-
-    return b.toString();
-  }
-
   protected JMethod getMemberPoolInit(
     final UnifyAstView ast) throws UnableToCompleteException {
-    final ManifestMap map = manifests.get();
-    return map.initMethod(ast);
+    final MemberPoolMethods map = memberPoolMethods.get();
+    return map.findGetMembersMethod(ast);
   }
 
   protected boolean isDebug(final JClassType type, final int memberType) {
@@ -648,42 +517,18 @@ public class MemberGenerator {
     return !"V".equals(returnType.getJNISignature());
   }
 
-  protected String memberGetter() {
-    throw new UnsupportedOperationException("memberGetting not implemented by "
-      + getClass().getName());
-  }
-
-  protected boolean shouldFailIfMissing(final TreeLogger logger, final UnifyAstView ast) {
-    if (shouldFail != null) {
-      return shouldFail;
-    }
-    final PropertyOracle properties = ast.getRebindPermutationOracle().getConfigurationPropertyOracle();
-    try {
-      final ConfigurationProperty config = properties
-          .getConfigurationProperty("gwt.reflect.never.fail");
-      if (config == null) {
-        // We may want to change the default fail level to true
-        shouldFail = false;
-      } else {
-        shouldFail = !"true".equals(config.getValues().get(0));
-      }
-    } catch (final BadPropertyValueException e) {
-      e.printStackTrace();
-      shouldFail = false;
-    }
-    return shouldFail;
-  }
-
-  protected String toClass(final JClassType param) {
-    return param.getErasedType().getQualifiedSourceName() + ".class";
-  }
-
-  protected String toClass(final JParameter param) {
-    return param.getType().getErasedType().getQualifiedSourceName() + ".class";
-  }
-
   protected Type logLevel() {
     return logLevel;
+  }
+
+  protected abstract String memberGetter();
+
+  protected boolean shouldFailIfMissing(final TreeLogger logger, final UnifyAstView ast) {
+    return memberPoolMethods.get().shouldFail(logger, ast);
+  }
+
+  protected String toString(final JExpression inst) {
+    return inst == null ? "null" : inst.getClass().getName()+": "+inst;
   }
 
   protected Type warnLevel(final TreeLogger logger, final UnifyAstView ast) {
@@ -691,104 +536,6 @@ public class MemberGenerator {
      return Type.ERROR;
     }
     return Type.WARN;
-  }
-
-  private void generateGetAnnos(final TreeLogger logger,
-    final SourceBuilder<?> sb, final Annotation[] annos,
-    final UnifyAstView ast) throws UnableToCompleteException {
-
-    final ClassBuffer out = sb.getClassBuffer();
-
-    // Start the method to retrive all annotation in an array.  Note we always return a new array,
-    // to prevent modifications from corrupting future invocation.
-    final String jso = out.addImport(JavaScriptObject.class);
-    final MethodBuffer getAnnos = out.createMethod(
-        "private static native "+jso+" allAnnos()")
-        .setUseJsni(true)
-        .println("var annos = {};");
-
-    // Short circuit when there are no annotations to provide
-    if (annos.length == 0) {
-      getAnnos.returnValue("annos");
-      return;
-    }
-
-    getAnnos.println("var name;");
-    final String cls = Class.class.getName();
-    for (int i = 0, m = annos.length; i < m; i++) {
-      // First, generate the annotation provider method, which returns the runtime instance of this annotation
-      final Annotation anno = annos[i];
-      final IsNamedType gen = GwtAnnotationGenerator.generateAnnotationProvider(logger, sb, anno, ast);
-
-      // Then, print an entry in the method which returns all annotations in an array.
-      getAnnos.println("name = @"+anno.annotationType().getCanonicalName()+"::class.@"+cls+"::getName()();");
-      getAnnos.println("annos[name] = @"+gen.getQualifiedName()+"::"+gen.getName()+"()();");
-      getAnnos.println("annos[name].declared = true;");
-
-    }// end loop
-
-    getAnnos.returnValue("annos");
-  }
-
-  private void generateGetDeclaringClass(final TreeLogger logger,
-    final ClassBuffer cb, final JClassType type, final String generic) {
-    final MethodBuffer getDeclaringClass = cb.createMethod("public Class<"
-      + generic + "> getDeclaringClass()");
-    if (type.isPrivate()) {
-      getDeclaringClass
-      .setUseJsni(true)
-      .returnValue("@" + type.getQualifiedSourceName() + "::class");
-    } else {
-      getDeclaringClass
-      .returnValue(type.getQualifiedSourceName() + ".class");
-    }
-  }
-
-  private void generateGetExceptions(final TreeLogger logger,
-    final ClassBuffer cb, final JClassType[] exceptions) {
-    final MethodBuffer getExceptions = cb
-      .createMethod("public static Class<?>[] getExceptionTypes()")
-      .println("return new Class<?>[]{");
-    if (exceptions.length > 0) {
-      getExceptions.println(toClass(exceptions[0]));
-      for (int i = 1, m = exceptions.length; i < m; i++) {
-        getExceptions.println(", " + toClass(exceptions[i]));
-      }
-    }
-    getExceptions.println("};");
-  }
-
-  private void generateGetModifier(final TreeLogger logger,
-    final ClassBuffer cb, final int mod) {
-    cb.createMethod("public int getModifiers()").returnValue(
-      Integer.toString(mod));
-  }
-
-  private void generateGetName(final TreeLogger logger, final ClassBuffer cb,
-    final com.google.gwt.core.ext.typeinfo.JMethod method) {
-    cb.createMethod("public String getName()").returnValue(
-      "\"" + method.getName() + "\"");
-  }
-
-  private void generateGetParams(final TreeLogger logger, final ClassBuffer cb,
-    final JParameter[] params) {
-    final MethodBuffer getParameters = cb
-      .createMethod("public static Class<?>[] getParameterTypes()")
-      .println("return new Class<?>[]{");
-    if (params.length > 0) {
-      getParameters.println(toClass(params[0]));
-      for (int i = 1, m = params.length; i < m; i++) {
-        getParameters.println(", " + toClass(params[i]));
-      }
-    }
-    getParameters.println("};");
-  }
-
-  private void generateGetReturnType(final TreeLogger logger,
-    final ClassBuffer cb, final com.google.gwt.core.ext.typeinfo.JMethod method) {
-    cb.createMethod("public Class<?> getReturnType()").returnValue(
-      method.getReturnType().getErasedType().getQualifiedSourceName()
-      + ".class");
   }
 
   private void maybeFinishBoxing(final PrintBuffer invoke,
@@ -867,26 +614,45 @@ public class MemberGenerator {
     }
   }
 
-  protected String toString(final JExpression inst) {
-    return inst == null ? "null" : inst.getClass().getName()+": "+inst;
+  private String toParamName(int i) {
+    final StringBuilder b = new StringBuilder();
+    do {
+      b.append((char)('a'+(i%26)));
+      i = i / 26;
+    } while (i > 0);
 
+    return b.toString();
   }
 
   /**
-   * If the configuration property gwt.reflect.never.fail is true or missing, then
-   * this method will return an expression that checks the JsMemberPool at runtime
-   * for an enhanced member as defined by the {@link #memberGetter()} method name.
-   * <p>
-   * If gwt.reflect.never.fail is set to the default of false, this will throw
-   * an {@link UnableToCompleteException}, thus, you are encouraged to log a warning
-   * at the logLevel of {@link #warnLevel(TreeLogger, UnifyAstView)} before invoking this method.
+   * @param ast
+   * @param logger
+   * @param callSite
+   * @return
+   * @throws UnableToCompleteException
    */
-  public JExpression maybeCheckConstPool(final TreeLogger logger, final UnifyAstView ast,
-    final JMethodCall callSite, final JExpression inst, final JExpression ... params) throws UnableToCompleteException {
-    if (shouldFailIfMissing(logger, ast)) {
-      throw new UnableToCompleteException();
+  public JExpression throwNotFoundException(final TreeLogger logger, final JMethodCall callSite, final UnifyAstView ast) throws UnableToCompleteException {
+    final SourceInfo sourceInfo = callSite.getSourceInfo().makeChild();
+    final MemberPoolMethods memberMap = memberPoolMethods.get();
+    final IsQualified exceptionType = getNotFoundExceptionType();
+    final JConstructor ctor = memberMap.findConstructor(logger, exceptionType.getQualifiedName(), exceptionType.getSimpleName()+"() <init>", ast);
+    final JNewInstance newThrowable = new JNewInstance(sourceInfo, ctor);
+    final JMethod throwMethod = memberMap.getThrowMethod(logger, ast);
+    return new JMethodCall(sourceInfo, null, throwMethod, newThrowable);
+  }
+
+  protected abstract IsQualified getNotFoundExceptionType();
+
+  /**
+   * @param methodProvider
+   * @return
+   */
+  public boolean isThrowStatement(final JExpression methodProvider) {
+    if (methodProvider instanceof JMethodCall) {
+      final JMethod method = ((JMethodCall)methodProvider).getTarget();
+      return method.getType().getName().equals(GwtReflect.class.getName()) && method.getName().equals("doThrow");
     }
-    return checkConstPool(ast, callSite, inst, params);
+    return false;
   }
 
 }

@@ -31,6 +31,9 @@ import com.google.gwt.reflect.client.strategy.UseGwtCreate;
 import com.google.gwt.reflect.rebind.ReflectionManifest;
 import com.google.gwt.reflect.rebind.ReflectionUnit;
 import com.google.gwt.reflect.rebind.ReflectionUtilJava;
+import com.google.gwt.reflect.rebind.injectors.DeclaredConstructorInjector;
+import com.google.gwt.reflect.rebind.injectors.DeclaredFieldInjector;
+import com.google.gwt.reflect.rebind.injectors.DeclaredMethodInjector;
 import com.google.gwt.reflect.shared.ClassMap;
 import com.google.gwt.reflect.shared.GwtReflect;
 import com.google.gwt.reflect.shared.JsMemberPool;
@@ -88,9 +91,9 @@ public class MagicClassGenerator {
 
   }
 
-  protected class ManifestMap extends MemberGenerator {}
-
-  private final ManifestMap manifests = newManifestMap();
+  private final ConstructorGenerator constructorGenerator = newConstructorGenerator();
+  private final MethodGenerator methodGenerator = newMethodGenerator();
+  private final FieldGenerator fieldGenerator = newFieldGenerator();
 
   private final HashMap<String, NewInstanceStrategy> newInstanceStrategies = new HashMap<String, NewInstanceStrategy>();
   private static final ThreadLocal<MagicClassGenerator> GENERATOR = new ThreadLocal<MagicClassGenerator>() {
@@ -103,8 +106,16 @@ public class MagicClassGenerator {
     GENERATOR.remove();
   }
 
-  protected ManifestMap newManifestMap() {
-    return new ManifestMap();
+  protected ConstructorGenerator newConstructorGenerator() {
+    return new DeclaredConstructorInjector();
+  }
+
+  protected MethodGenerator newMethodGenerator() {
+    return new DeclaredMethodInjector();
+  }
+
+  protected FieldGenerator newFieldGenerator() {
+    return new DeclaredFieldInjector();
   }
 
   private boolean logOnce = true;
@@ -227,12 +238,12 @@ public class MagicClassGenerator {
     }
 
     // keep any declared methods
-    if (generateMethods(logger, manifest, classBuilder, ast)) {
+    if (generateMethods(logger, manifest, classBuilder, reflectionCtx)) {
       enhanceMethod.println("enhanceMethods(toEnhance);");
     }
 
     // now, do the fields
-    if (generateFields(logger, manifest, classBuilder, ast)) {
+    if (generateFields(logger, manifest, classBuilder, reflectionCtx)) {
       enhanceMethod.println("enhanceFields(toEnhance);");
     }
 
@@ -246,7 +257,7 @@ public class MagicClassGenerator {
     }
     if (keepAnnos) {
       final Annotation[] allAnnotations = extractAnnotations(strategy, injectionType);
-      GwtAnnotationGenerator.printAnnotationEnhancer(logger, classBuilder, injectionType, ast, allAnnotations);
+      GwtAnnotationGenerator.printAnnotationEnhancer(logger, classBuilder, injectionType, ast.getGeneratorContext(), allAnnotations);
       enhanceMethod.println("enhanceAnnotations(members);");
     }
 
@@ -302,6 +313,7 @@ public class MagicClassGenerator {
 
     // Actually write the file
     printWriter.append(classBuilder.toString());
+    ConstPoolGenerator.maybeCommit(logger, context);
     context.commit(logger, printWriter);
 
     if (keepHierarchy) {
@@ -372,7 +384,10 @@ public class MagicClassGenerator {
   }
 
   private boolean generateMethods(final TreeLogger logger,
-      final ReflectionManifest manifest, final SourceBuilder<Object> classBuilder, final UnifyAstView ast) throws UnableToCompleteException {
+      final ReflectionManifest manifest,
+      final SourceBuilder<Object> classBuilder,
+      final ReflectionGeneratorContext ctx
+    ) throws UnableToCompleteException {
     final Collection<ReflectionUnit<JMethod>> methods = manifest.getMethods();
     if (methods.size() > 0) {
       final MethodBuffer initMethod =
@@ -381,18 +396,18 @@ public class MagicClassGenerator {
         initMethod
           .println("JsMemberPool map = JsMemberPool.getMembers(cls);")
           .addImport("com.google.gwt.reflect.shared.JsMemberPool");
-        final GeneratorContext context = ast.getGeneratorContext();
+        final GeneratorContext context = ctx.getGeneratorContext();
         final TypeOracle oracle = context.getTypeOracle();
         for (final ReflectionUnit<JMethod> unit : methods) {
           final JMethod method = unit.getNode();
-          final String methodFactoryName = MemberGenerator.getMethodFactoryName(method.getEnclosingType(), method.getName(), method.getParameters());
+          final String methodFactoryName = MethodGenerator.getMethodFactoryName(method.getEnclosingType(), method.getName(), method.getParameters());
           JClassType existing;
 
           String factory;
           synchronized (GENERATOR) {
             existing = oracle.findType(method.getEnclosingType().getPackage().getName(), methodFactoryName);
             if (existing == null) {
-              factory = manifests.generateMethodFactory(logger, ast, method, methodFactoryName, manifest);
+              factory = methodGenerator.generateMethodFactory(logger, ctx, method, methodFactoryName, manifest);
             } else {
               factory = existing.getQualifiedSourceName();
             }
@@ -406,7 +421,8 @@ public class MagicClassGenerator {
   }
 
   private boolean generateConstructors(final TreeLogger logger,
-      final ReflectionManifest manifest, final SourceBuilder<Object> classBuilder, final ReflectionGeneratorContext context) throws UnableToCompleteException {
+      final ReflectionManifest manifest, final SourceBuilder<Object> classBuilder,
+      final ReflectionGeneratorContext context) throws UnableToCompleteException {
     final Collection<ReflectionUnit<JConstructor>> ctors = manifest.getConstructors();
     if (ctors.size() > 0) {
       final MethodBuffer initMethod = classBuilder.getClassBuffer()
@@ -416,12 +432,12 @@ public class MagicClassGenerator {
       final TypeOracle oracle = context.getTypeOracle();
       for (final ReflectionUnit<JConstructor> unit : ctors) {
         final JConstructor ctor = unit.getNode();
-        final String ctorFactoryName = MemberGenerator.getConstructorFactoryName(ctor.getEnclosingType(), ctor.getParameters());
+        final String ctorFactoryName = ConstructorGenerator.getConstructorFactoryName(ctor.getEnclosingType(), ctor.getParameters());
         JClassType existing;
         String factory;
         existing = oracle.findType(ctor.getEnclosingType().getPackage().getName(), ctorFactoryName);
         if (existing == null) {
-          factory = manifests.generateConstructorFactory(logger, context, ctor, ctorFactoryName, manifest);
+          factory = constructorGenerator.generateConstructorFactory(logger, context, ctor, ctorFactoryName, manifest);
         } else {
           factory = existing.getQualifiedSourceName();
         }
@@ -434,24 +450,23 @@ public class MagicClassGenerator {
   }
 
   private boolean generateFields(final TreeLogger logger,
-      final ReflectionManifest manifest, final SourceBuilder<Object> classBuilder, final UnifyAstView ast) throws UnableToCompleteException {
+      final ReflectionManifest manifest, final SourceBuilder<Object> classBuilder, final ReflectionGeneratorContext ctx) throws UnableToCompleteException {
     final Collection<ReflectionUnit<JField>> fields = manifest.getFields();
     if (fields.size() > 0) {
       final MethodBuffer initMethod = classBuilder.getClassBuffer()
           .createMethod("public static void enhanceFields(Class<?> cls)")
           .println("JsMemberPool map = JsMemberPool.getMembers(cls);")
-          .addImports("com.google.gwt.reflect.shared.JsMemberPool");
-      final GeneratorContext context = ast.getGeneratorContext();
-      final TypeOracle oracle = context.getTypeOracle();
+          .addImports(JsMemberPool.class);
+      final TypeOracle oracle = ctx.getTypeOracle();
       for (final ReflectionUnit<JField> unit : fields) {
         final JField field = unit.getNode();
-        final String fieldFactoryName = MemberGenerator.getFieldFactoryName(field.getEnclosingType(), field.getName());
+        final String fieldFactoryName = FieldGenerator.getFieldFactoryName(field.getEnclosingType(), field.getName());
         JClassType existing;
         String factory;
         synchronized(GENERATOR) {
           existing = oracle.findType(field.getEnclosingType().getPackage().getName(), fieldFactoryName);
           if (existing == null) {
-            factory = manifests.generateFieldFactory(logger, ast, field, fieldFactoryName, manifest);
+            factory = fieldGenerator.generateFieldFactory(logger, ctx, field, fieldFactoryName, manifest);
           } else {
             factory = existing.getQualifiedSourceName();
           }

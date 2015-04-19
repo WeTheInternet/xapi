@@ -3,29 +3,29 @@ package com.google.gwt.reflect.test.cases;
 import com.google.gwt.reflect.test.annotations.RuntimeRetention;
 
 public class ReflectionCaseNoMagic {
-  
+
   public static class Subclass extends ReflectionCaseNoMagic {
     protected boolean overrideField;// shadows the superclass field
-    
-    public static boolean getOverrideField(Subclass s) {
+
+    public static boolean getOverrideField(final Subclass s) {
       return s.overrideField;
     }
     public Subclass() {}
-    
-    protected Subclass(String s) {
+
+    protected Subclass(final String s) {
       super(s+"1");
     }
 
-    public Subclass(long l) {
+    public Subclass(final long l) {
       super(l+1);
     }
   }
-  
+
   public ReflectionCaseNoMagic() {}
-  protected ReflectionCaseNoMagic(String s) {
+  protected ReflectionCaseNoMagic(final String s) {
     _String = s;
   }
-  private ReflectionCaseNoMagic(long l) {
+  private ReflectionCaseNoMagic(final long l) {
     this._long = l;
   }
 
@@ -43,15 +43,17 @@ public class ReflectionCaseNoMagic {
   float _float;
   double _double;
   public String _String;
-  
+
+  public static final String PUBLIC_CALL = "publicCall";
+
   @SuppressWarnings("unused")
   private void privateCall() { privateCall = true; }
   public void publicCall() { publicCall = true; }
 
   public boolean wasPrivateCalled(){return privateCall;}
-  
+
   public boolean overrideField() {
     return this.overrideField;
   }
-  
+
 }

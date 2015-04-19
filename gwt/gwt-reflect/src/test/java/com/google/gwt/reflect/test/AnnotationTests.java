@@ -318,7 +318,16 @@ public class AnnotationTests extends AbstractReflectionTest{
     final Method method = AnnotationTests.class.getMethod("testOtherEquals");
     final ComplexAnnotation onMethod = method.getAnnotation(ComplexAnnotation.class);
     assertTrue(onType.equals(onMethod));
+    log(onType.toString());
   }
+
+  /**
+   * @param onType
+   */
+  private native void log(String onType)
+  /*-{
+     $wnd.console.log(onType);
+  }-*/;
 
   @Test
   public void testAnnotationsKeepAll() throws Exception {

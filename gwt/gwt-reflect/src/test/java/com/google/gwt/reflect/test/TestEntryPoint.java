@@ -30,6 +30,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.junit.JUnit4Test;
+
 @SuppressWarnings("deprecation" )
 public class TestEntryPoint implements EntryPoint {
 
@@ -39,6 +41,16 @@ public class TestEntryPoint implements EntryPoint {
 
   @Override
   public void onModuleLoad() {
+    new Timer() {
+
+      @Override
+      public void run() {
+        go();
+      }
+    }.schedule(10);
+  }
+
+  public void go() {
     final String module = GWT.getModuleName(), host = GWT.getHostPageBaseURL().replace("/"+module, "");
     print("<a href='#' onclick=\""
           + "window.__gwt_bookmarklet_params = "

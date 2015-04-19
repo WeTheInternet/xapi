@@ -23,6 +23,9 @@ import java.util.List;
 public class ReflectionUtilType {
 
   public static Annotation[] extractAnnotations(final int annotationRetention, final HasAnnotations annoProvider) {
+    if (annotationRetention == 0) {
+      return new Annotation[0];
+    }
     final ArrayList<Annotation> annos = new ArrayList<Annotation>();
     final boolean keepClass = (annotationRetention | ReflectionStrategy.COMPILE) == annotationRetention;
     final boolean keepRuntime = (annotationRetention | ReflectionStrategy.RUNTIME) == annotationRetention;

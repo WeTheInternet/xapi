@@ -2,6 +2,8 @@ package com.google.gwt.reflect.shared;
 
 import com.google.gwt.core.client.GwtScriptOnly;
 import com.google.gwt.core.client.JavaScriptObject;
+import com.google.gwt.core.client.UnsafeNativeLong;
+import com.google.gwt.core.shared.GWT;
 
 import java.lang.annotation.Annotation;
 
@@ -9,7 +11,37 @@ public final class ReflectUtil {
 
   private ReflectUtil(){}
 
+  @UnsafeNativeLong
+  public static native String nativeToString(Object o)
+  /*-{
+    if (o == null) {
+      return "";
+    }
+    var s = "";
+    for (var i in o) {
+      if (o.hasOwnProperty(i)) {
+        var val = o[i];
+        if (val.l != undefined && val.m != undefined && val.h != undefined) {
+          val = @java.lang.Long::toString(J)(val);
+        } else if (val.length) {
+          var copy = val.slice(0, val.length);
+          for (var v in val) {
+            if (val[v].l != undefined && val[v].m != undefined && val[v].h != undefined) {
+              copy[v] = @java.lang.Long::toString(J)(val[v]);
+            }
+          }
+          val = "{"+copy+"}";
+        }
+        s += i.replace(/_[0-9]+_[a-z][$]$/, '') +" = " + val + ", ";
+      }
+    }
+    return s.replace(/, $/, '');
+  }-*/;
+
   public static String joinClasses(final String separator, final Class<?> ... vals) {
+    if (GWT.isProdMode()) {
+      return joinClassesJs(separator, vals);
+    }
     int ind = vals.length;
     if (ind == 0)
      {
@@ -53,6 +85,26 @@ public final class ReflectUtil {
     System.arraycopy(last.toCharArray(), 0, joined, ind, last.length());
 
     return new String(joined);
+  }
+
+  private static String joinClassesJs(final String separator, final Class<?> ... vals) {
+    // In javascript, we are far better off to just do String += than relying on char arrays,
+    // as JS has to do some nasty charCode functions to make the String(char[]) constructor work.
+    final int ind = vals.length;
+    String value = "";
+    if (ind == 0) {
+      return value;// zero elements?  zero-length string for you!
+    }
+    for(int i = 0;i < ind; i ++){
+      final Class<?> cls = vals[ind];
+      if (i > 0) {
+        value += separator;
+      }
+      if (cls != null) {
+        value += cls.getCanonicalName();
+      }
+    }
+    return value;
   }
 
   @GwtScriptOnly

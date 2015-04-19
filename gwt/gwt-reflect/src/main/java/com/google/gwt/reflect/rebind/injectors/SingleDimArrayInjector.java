@@ -58,7 +58,7 @@ UnifyAstListener {
       return new JMethodCall(info, null, newArrayMethod, args);
     }
     JType cur;
-    final JType type = cur = clazz.getRefType();
+    final JType type = cur = ast.translate(clazz.getRefType());
     final JIntLiteral size = ReflectionUtilAst.extractImmutableNode(logger,
       JIntLiteral.class, methodCall.getArgs().get(1), ast, false);
 

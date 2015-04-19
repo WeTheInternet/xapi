@@ -58,7 +58,7 @@ public class MultiDimArrayInjector implements MagicMethodGenerator, UnifyAstList
     final JProgram prog = ast.getProgram();
     final List<JExpression> args = methodCall.getArgs();
     List<JExpression> emptyDims = Lists.create(), sizedDims;
-    JType type = clazz.getRefType();
+    JType type = ast.translate(clazz.getRefType());
 
     JType cur = type;
     while (cur instanceof JArrayType) {
