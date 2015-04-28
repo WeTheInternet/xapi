@@ -49,19 +49,23 @@ import com.google.gwt.dev.jjs.ast.AccessModifier;
 import com.google.gwt.dev.jjs.ast.Context;
 import com.google.gwt.dev.jjs.ast.JClassLiteral;
 import com.google.gwt.dev.jjs.ast.JClassType;
+import com.google.gwt.dev.jjs.ast.JConstructor;
 import com.google.gwt.dev.jjs.ast.JDeclaredType;
 import com.google.gwt.dev.jjs.ast.JExpression;
-import com.google.gwt.dev.jjs.ast.JGwtCreate;
 import com.google.gwt.dev.jjs.ast.JMethod;
 import com.google.gwt.dev.jjs.ast.JMethodBody;
 import com.google.gwt.dev.jjs.ast.JMethodCall;
+import com.google.gwt.dev.jjs.ast.JNewInstance;
 import com.google.gwt.dev.jjs.ast.JNode;
+import com.google.gwt.dev.jjs.ast.JPermutationDependentValue;
 import com.google.gwt.dev.jjs.ast.JProgram;
 import com.google.gwt.dev.jjs.ast.JReturnStatement;
 import com.google.gwt.dev.jjs.ast.JVariableRef;
 import com.google.gwt.dev.jjs.impl.UnifyAst;
 import com.google.gwt.dev.util.Name.BinaryName;
 import com.google.gwt.dev.util.collect.Lists;
+import com.google.gwt.thirdparty.guava.common.base.Optional;
+import com.google.gwt.thirdparty.guava.common.collect.FluentIterable;
 
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
@@ -136,22 +140,22 @@ public class MagicMethods {
       if (method.getName().equals("set")) {
 
         final SourceInfo info = methodCall.getSourceInfo().makeChild(SourceOrigin.UNKNOWN);
-        JExpression result;
-        result = JGwtCreate.createInstantiationExpression(methodCall.getSourceInfo(), (JClassType)answerType);
-        if (result == null) {
+        final Optional<JNewInstance> result = newInstance(logger, info, ast, answerType);
+        if (result.isPresent()) {
+          final JMethodCall call = new JMethodCall(info, result.get(), method);
+          call.addArg(receiverParam);
+          if (logger.isLoggable(logLevel())) {
+            final TreeLogger branch = logger.branch(logLevel(), "Generated asynchronous magic singleton: ");
+            for (final String str : call.toSource().split("\n")) {
+              branch.log(logLevel(), str);
+            }
+          }
+          return call;
+        } else {
           ast.error(methodCall, "Rebind result '" + answerType +
             "' has no default (zero argument) constructors");
           return null;
         }
-        final JMethodCall call = new JMethodCall(info, result, method);
-        call.addArg(receiverParam);
-        if (logger.isLoggable(logLevel())) {
-          final TreeLogger branch = logger.branch(logLevel(), "Generated asynchronous magic singleton: ");
-          for (final String str : call.toSource().split("\n")) {
-            branch.log(logLevel(), str);
-          }
-        }
-        return call;
       }
     }
     throw new InternalCompilerException("Unable to generate asynchronous class injector");
@@ -188,7 +192,7 @@ public class MagicMethods {
         // creates the singleton and provider
         final RebindResult rebindResult = ctx.runGeneratorIncrementally(logger, generator, type.getName());
         // commit the generator result, w/out updating rebind cache (to allow GWT.create() rebinds)
-        ast.finish(logger);
+        ctx.finish(logger);
         // pull back the LazySingeton provider
         answerType = ast.searchForTypeBySource(rebindResult.getResultTypeName());
         // sanity check
@@ -289,7 +293,7 @@ public class MagicMethods {
         // RebindResult rebindResult =
         // ctx.runGeneratorIncrementally(logger, generator, type.getName());
         // commit the generator result, w/out updating rebind cache (to allow GWT.create() rebinds)
-        ast.finish(logger);
+        ctx.finish(logger);
         // pull back the LazySingeton provider
         answerType = ast.searchForTypeBySource(rebindResult.getAsyncInjectionName());
         // sanity check
@@ -378,7 +382,7 @@ public class MagicMethods {
         // creates the singleton and provider
         final RebindResult result = ctx.runGeneratorIncrementally(logger, generator, type.getName());
         // commit the generator result, w/out updating rebind cache (to allow GWT.create() rebinds)
-        ast.finish(logger);
+        ctx.finish(logger);
         // pull back the LazySingeton provider
         logger.log(logLevel(), "Loading injected result: " + result.getResultTypeName());
         answerType = ast.searchForTypeBySource(result.getResultTypeName());
@@ -404,13 +408,13 @@ public class MagicMethods {
       return null;
     }
     logger.log(logLevel(), "Injecting lazy singleton for " + type.getName() + " -> " + answerType);
-    final JExpression result = JGwtCreate.createInstantiationExpression(x.getSourceInfo(), (JClassType)answerType);
-    if (result == null) {
+    final Optional<JNewInstance> result = newInstance(logger, x.getSourceInfo(), ast, answerType);
+    if (result.isPresent()) {
+      return result.get();
+    } else {
       ast.error(x, "Rebind result '" + answer + "' has no default (zero argument) constructors");
       return null;
     }
-    return result;
-
   }
 
   /**
@@ -607,7 +611,7 @@ public class MagicMethods {
       // creates the singleton and provider
       final RebindResult result = ctx.runGeneratorIncrementally(logger, generator, type.getName());
       // commit the generator result, w/out updating rebind cache (to allow GWT.create() rebinds)
-      ast.finish(logger);
+      ctx.finish(logger);
       // pull back the LazySingeton provider
       logger.log(logLevel(), "Loading injected result: " + result.getResultTypeName());
       injectedInstance = ast.searchForTypeBySource(result.getResultTypeName());
@@ -639,7 +643,7 @@ public class MagicMethods {
     List<String> answers;
     try {
       answers = Lists.create(ast.getRebindPermutationOracle().getAllPossibleRebindAnswers(logger, reqType));
-      ast.finish(logger);
+      ctx.finish(logger);
     } catch (final UnableToCompleteException e) {
       ast.error(x, "Failed to resolve '" + reqType + "' via deferred binding");
       return null;
@@ -663,19 +667,21 @@ public class MagicMethods {
       if (enclosing == null) {
         enclosing = method.getEnclosingType();
       }
-      final JExpression result = JGwtCreate.createInstantiationExpression(x.getSourceInfo(), (JClassType)answerType);
-      if (result == null) {
+      final Optional<JNewInstance> ctor = newInstance(logger, x.getSourceInfo(), ast, answerType);
+      if (ctor.isPresent()) {
+        instantiationExpressions.add(ctor.get());
+      } else {
         ast.error(x, "Rebind result '" + answer + "' has no default (zero argument) constructors");
         return null;
       }
-      instantiationExpressions.add(result);
     }
     assert answers.size() == instantiationExpressions.size();
     if (answers.size() == 1) {
       return instantiationExpressions.get(0);
     } else {
-      return new JGwtCreate(x.getSourceInfo(), reqType, answers, ast.getProgram().getTypeJavaLangObject(),
-        instantiationExpressions);
+      return JPermutationDependentValue.createTypeRebind(ast.getProgram(),
+          x.getSourceInfo(), reqType, answers, instantiationExpressions);
+
     }
 
     // TODO: cache each injection to detect the first time a class is injected,
@@ -684,6 +690,17 @@ public class MagicMethods {
     // to reduce the bloat of clinits by visiting preloadable methods before
     // any client code can possibly access them (less clinit in runtime code)
 
+  }
+
+  private static Optional<JNewInstance> newInstance(final TreeLogger logger, final SourceInfo sourceInfo, final UnifyAstView ast,
+      final JDeclaredType answerType) {
+    final Optional<JMethod> ctor = FluentIterable.from(answerType.getMethods()).firstMatch((m)->m.isConstructor() && m.getParams().size() == 0);
+    if (ctor.isPresent()) {
+      final JNewInstance result = new JNewInstance(sourceInfo, (JConstructor)ctor.get());
+      return Optional.of(result);
+    } else {
+      return Optional.absent();
+    }
   }
 
   public static String toSourceName(final JDeclaredType type) {

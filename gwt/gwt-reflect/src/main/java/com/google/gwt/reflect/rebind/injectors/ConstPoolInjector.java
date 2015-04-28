@@ -149,7 +149,7 @@ public class ConstPoolInjector implements MagicMethodGenerator,
     methodCall.getTarget().getEnclosingType().addMethod(newMethod);
     final JMethodCall call = new JMethodCall(methodSource, null, newMethod);
 
-    ast.finish(logger);
+    ast.getGeneratorContext().finish(logger);
     return call.makeStatement().getExpr();
   }
 

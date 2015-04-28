@@ -105,7 +105,7 @@ public class MagicClassInjector implements MagicMethodGenerator, UnifyAstListene
 
     final StandardGeneratorContext ctx = params.getGeneratorContext();
     final String result = MagicClassGenerator.generate(params.getLogger(), params, type);
-    params.getAst().finish(params.getLogger());
+    ctx.finish(params.getLogger());
 
     final UnifyAstView ast = params.getAst();
     params.getLogger().log(logLevel, "Generated Class Enhancer: " + result);

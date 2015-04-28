@@ -131,7 +131,7 @@ public class ReflectionGeneratorContext {
   }
 
   public void finish(final TreeLogger logger) throws UnableToCompleteException {
-    getAst().finish(logger);
+    getAst().getGeneratorContext().finish(logger);
   }
 
 

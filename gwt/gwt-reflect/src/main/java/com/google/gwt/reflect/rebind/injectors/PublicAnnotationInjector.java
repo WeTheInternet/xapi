@@ -102,7 +102,7 @@ public class PublicAnnotationInjector extends MemberGenerator implements MagicMe
           provider = constGenerator.rememberAnnotation(logger, ast.getGeneratorContext(), annotation);
 
           ConstPoolGenerator.maybeCommit(logger, ast.getGeneratorContext());
-          ast.finish(logger);
+          ast.getGeneratorContext().finish(logger);
 
           type = ast.searchForTypeBySource(provider.getQualifiedName());
           if (type == null) {

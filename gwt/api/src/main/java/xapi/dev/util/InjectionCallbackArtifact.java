@@ -1,16 +1,16 @@
 package xapi.dev.util;
 import static xapi.dev.util.InjectionUtils.generatedAsyncProviderName;
 
+import com.google.gwt.core.ext.linker.Artifact;
+import com.google.gwt.core.ext.linker.Transferable;
+import com.google.gwt.core.ext.linker.impl.StandardLinkerContext;
+
 import java.util.LinkedHashSet;
 import java.util.Set;
 
 import javax.annotation.Nonnull;
 
 import xapi.source.read.SourceUtil;
-
-import com.google.gwt.core.ext.linker.Artifact;
-import com.google.gwt.core.ext.linker.Transferable;
-import com.google.gwt.core.ext.linker.impl.StandardLinkerContext;
 
 @Transferable
 public class InjectionCallbackArtifact extends Artifact<InjectionCallbackArtifact>{
@@ -26,7 +26,9 @@ public class InjectionCallbackArtifact extends Artifact<InjectionCallbackArtifac
 
   private final Set<String> callbacks = new LinkedHashSet<String>();
 
-  public InjectionCallbackArtifact(@Nonnull String packageName, @Nonnull String className) {
+  public InjectionCallbackArtifact(@Nonnull
+  final String packageName, @Nonnull
+  final String className) {
     super(StandardLinkerContext.class);
     this.packageName = packageName;
     //TODO: allow package crunching
@@ -34,7 +36,7 @@ public class InjectionCallbackArtifact extends Artifact<InjectionCallbackArtifac
     this.className = SourceUtil.toSourceName(className.replace(packageName+".", ""));
     this.canonicalName = packageName+"."+this.className;
     this.generatedName = SourceUtil.toFlatName(this.className);
-    int lastPeriod = this.className.lastIndexOf('.');
+    final int lastPeriod = this.className.lastIndexOf('.');
     if (lastPeriod==-1){
       this.simpleName = this.className;
     }else{
@@ -49,7 +51,7 @@ public class InjectionCallbackArtifact extends Artifact<InjectionCallbackArtifac
   }
 
   @Override
-  protected int compareToComparableArtifact(InjectionCallbackArtifact o) {
+  protected int compareToComparableArtifact(final InjectionCallbackArtifact o) {
     return canonicalName.compareTo(canonicalName);
   }
 
@@ -59,10 +61,10 @@ public class InjectionCallbackArtifact extends Artifact<InjectionCallbackArtifac
     return InjectionCallbackArtifact.class;
   }
 
-  public void addCallback(String packageName, String className) {
+  public void addCallback(final String packageName, final String className) {
     callbacks.add(packageName+"."+className);
   }
-  public void addCallback(String qualifiedClassName) {
+  public void addCallback(final String qualifiedClassName) {
     callbacks.add(qualifiedClassName);
   }
   @Override
@@ -125,7 +127,7 @@ public class InjectionCallbackArtifact extends Artifact<InjectionCallbackArtifac
   /**
    * @param boundTarget the boundTarget to set
    */
-  public void bindTo(String boundTarget) {
+  public void bindTo(final String boundTarget) {
     this.boundTarget = boundTarget.replaceAll("[$]", ".");
   }
 
