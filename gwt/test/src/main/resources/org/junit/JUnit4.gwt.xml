@@ -6,5 +6,6 @@
                             BeforeClass.java,
                             After.java,
                             AfterClass.java,
-                            JUnit4Test.java" />
+                            JUnit4Test.java,
+                            TestsFailed.java" />
 </module>

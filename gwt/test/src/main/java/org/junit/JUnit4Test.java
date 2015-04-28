@@ -2,7 +2,6 @@ package org.junit;
 
 import com.google.gwt.core.shared.GWT;
 import com.google.gwt.reflect.shared.JsMemberPool;
-import com.google.gwt.reflect.test.TestsFailed;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

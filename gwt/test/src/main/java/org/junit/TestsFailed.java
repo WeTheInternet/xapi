@@ -1,4 +1,4 @@
-package com.google.gwt.reflect.test;
+package org.junit;
 
 import java.lang.reflect.Method;
 import java.util.Map;
