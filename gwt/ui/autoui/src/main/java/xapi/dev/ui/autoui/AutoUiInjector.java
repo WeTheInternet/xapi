@@ -19,7 +19,7 @@ import com.google.gwt.dev.jjs.ast.JDeclaredType;
 import com.google.gwt.dev.jjs.ast.JExpression;
 import com.google.gwt.dev.jjs.ast.JMethod;
 import com.google.gwt.dev.jjs.ast.JMethodCall;
-import com.google.gwt.dev.jjs.ast.JNullType;
+import com.google.gwt.dev.jjs.ast.JNullLiteral;
 import com.google.gwt.reflect.rebind.ReflectionUtilAst;
 
 /**
@@ -89,7 +89,7 @@ public class AutoUiInjector implements MagicMethodGenerator {
     }
     
     // Possible render the ui immediately, if a non-null model was supplied
-    if (!(args.get(0).getType() instanceof JNullType)) {
+    if (args.get(0) != JNullLiteral.INSTANCE) {
       // We need to call renderUi on the new instance.
       JDeclaredType uiCls = ast.searchForTypeBySource(UserInterface.class.getName());
       for (JMethod method : uiCls.getMethods()) {

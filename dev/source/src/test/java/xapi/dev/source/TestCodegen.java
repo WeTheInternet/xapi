@@ -7,7 +7,7 @@ public class TestCodegen {
 
   @Test
   public void testGenericImports() {
-    SourceBuilder<Object> b = new SourceBuilder<Object>(
+    final SourceBuilder<Object> b = new SourceBuilder<Object>(
       "public static abstract class xapi.Test");
     b.setPackage("xapi.test");
     b.getClassBuffer()
@@ -18,7 +18,7 @@ public class TestCodegen {
   }
   @Test
   public void testMethodWriter() {
-    SourceBuilder<Object> b = new SourceBuilder<Object>(
+    final SourceBuilder<Object> b = new SourceBuilder<Object>(
       "public static abstract class Test");
     b.setPackage("xapi.test");
     b.getClassBuffer()
@@ -39,7 +39,7 @@ public class TestCodegen {
 
   @Test
   public void testMethodWithSimpleGeneric() {
-    SourceBuilder<Object> b = new SourceBuilder<Object>(
+    final SourceBuilder<Object> b = new SourceBuilder<Object>(
         "public static abstract class Test");
     b.getClassBuffer().createMethod(
         "public native <T> Class<T> magicClass(Class<T> ... cls)");
@@ -47,14 +47,13 @@ public class TestCodegen {
 
   @Test
   public void testFieldWriter() {
-    SourceBuilder<Object> b = new SourceBuilder<Object>(
+    final SourceBuilder<Object> b = new SourceBuilder<Object>(
         "public static abstract class Test");
     b.setPackage("xapi.test");
-    b.getClassBuffer()
-    .createField("int", "theInt")
-    .addGetter(0)
-    .addSetter(0)
-    ;
+    final FieldBuffer f = b.getClassBuffer()
+    .createField("int", "theInt");
+    f.addGetter(0);
+    f.addSetter(0);
 //    System.out.println(b);
   }
 

@@ -1,15 +1,15 @@
 package xapi.dev.ui.html;
 
-import java.lang.reflect.Modifier;
-
-import javax.inject.Provider;
-
 import com.google.gwt.core.ext.Generator;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.dev.jjs.UnifyAstView;
+
+import java.lang.reflect.Modifier;
+
+import javax.inject.Provider;
 
 import xapi.annotation.common.Property;
 import xapi.annotation.compile.Import;
@@ -28,61 +28,62 @@ public class HtmlSnippetGenerator extends AbstractHtmlGenerator <HtmlGeneratorRe
 
   int ctxCnt;
 
-  public static final HtmlGeneratorResult generateSnippetProvider(TreeLogger logger, UnifyAstView ast, JClassType templateType, JClassType modelType) throws UnableToCompleteException {
-    String simpleName = templateType.getSimpleSourceName()+"_"+modelType.getSimpleSourceName()+"_ToHtml";
+  public static final HtmlGeneratorResult generateSnippetProvider(final TreeLogger logger, final UnifyAstView ast, final JClassType templateType, final JClassType modelType) throws UnableToCompleteException {
+    final String simpleName = templateType.getSimpleSourceName()+"_"+modelType.getSimpleSourceName()+"_ToHtml";
 
     // Check if there is an existing type, and that it's generated hashes match our input type.
-    String inputHash = toHash(ast, templateType.getQualifiedSourceName(), modelType.getQualifiedSourceName());
+    final String inputHash = toHash(ast, templateType.getQualifiedSourceName(), modelType.getQualifiedSourceName());
 
     // Generate a new result
-    HtmlSnippetGenerator ctx = new HtmlSnippetGenerator(simpleName, ast, templateType);
+    final HtmlSnippetGenerator ctx = new HtmlSnippetGenerator(simpleName, ast, templateType);
     // Save the result, possibly to a new file if there are existing implementations using our default name
     return ctx.generate(logger, ast, templateType, inputHash, simpleName, modelType);
   }
 
   @Override
-  public HtmlGeneratorResult newContext(JClassType winner, String pkgName, String name) {
+  public HtmlGeneratorResult newContext(final JClassType winner, final String pkgName, final String name) {
     return new HtmlGeneratorResult(winner, pkgName, name);
   }
 
-  private HtmlSnippetGenerator(String className, UnifyAstView ast, JClassType templateType) throws UnableToCompleteException {
+  private HtmlSnippetGenerator(final String className, final UnifyAstView ast, final JClassType templateType) throws UnableToCompleteException {
     super(className, templateType, ast);
   }
 
-  private HtmlGeneratorResult generate(TreeLogger logger, UnifyAstView ast, JClassType templateType, String inputHash, String simpleName, JClassType modelType) throws UnableToCompleteException {
+  private HtmlGeneratorResult generate(final TreeLogger logger, final UnifyAstView ast, final JClassType templateType, final String inputHash, final String simpleName, final JClassType modelType) throws UnableToCompleteException {
 
-    HtmlGeneratorResult existingType = findExisting(ast, this,
+    final HtmlGeneratorResult existingType = findExisting(ast, this,
       templateType.getPackage().getName(),
       X_Source.qualifiedName(templateType.getPackage().getName(), simpleName));
-    HtmlGeneratorResult existingResult = existingTypesUnchanged(logger, ast, existingType, inputHash);
-    if (existingResult != null)
+    final HtmlGeneratorResult existingResult = existingTypesUnchanged(logger, ast, existingType, inputHash);
+    if (existingResult != null) {
       // If our inputs are unchanged, and the target type exists, just reuse it w/out regenerating
       return existingResult;
+    }
 
     initialize();
     clsName = existingType.getFinalName();
-    ClassBuffer cls = out.getClassBuffer();
-    String modelName = out.getImports().addImport(modelType.getQualifiedSourceName());
+    final ClassBuffer cls = out.getClassBuffer();
+    final String modelName = out.getImports().addImport(modelType.getQualifiedSourceName());
     cls.setSuperClass(
       out.getImports().addImport(HtmlSnippet.class)
       + "<" + modelName + ">"
     );
 
-    String buffer = cls.addImport(DomBuffer.class);
-    String cssService = cls.addImport(StyleService.class);
+    final String buffer = cls.addImport(DomBuffer.class);
+    final String cssService = cls.addImport(StyleService.class);
 
-    String sig = cls.addImport(ConvertsValue.class) + "<" +
+    final String sig = cls.addImport(ConvertsValue.class) + "<" +
       modelName+", " + buffer +
     ">";
 
-    ClassBuffer provider = cls.createInnerClass("private static final class SnippetProvider")
+    final ClassBuffer provider = cls.createInnerClass("private static final class SnippetProvider")
        .addInterface(cls.addImport(Provider.class) + " <" + sig + ">");
 
     cls
       .createConstructor(Modifier.PUBLIC, cssService+" cssService")
       .println("super(new SnippetProvider(cssService));");
 
-    MethodBuffer ctor = provider.createConstructor(Modifier.PRIVATE, "final "+cssService+" cssService");
+    final MethodBuffer ctor = provider.createConstructor(Modifier.PRIVATE, "final "+cssService+" cssService");
 
     provider.createField(Runnable.class, "init");
     ctor.println("this.init = new "+cls.addImport(Runnable.class)+"() {")
@@ -90,7 +91,7 @@ public class HtmlSnippetGenerator extends AbstractHtmlGenerator <HtmlGeneratorRe
       .println("@Override public void run() {")
       .indent()
       .println("init = NO_OP;");
-    PrintBuffer init = new PrintBuffer();
+    final PrintBuffer init = new PrintBuffer();
     ctor.addToEnd(init);
     ctor
       .outdent()
@@ -98,7 +99,7 @@ public class HtmlSnippetGenerator extends AbstractHtmlGenerator <HtmlGeneratorRe
       .outdent()
       .println("};");
 
-    MethodBuffer converter = provider.createMethod("public "+sig+" get()");
+    final MethodBuffer converter = provider.createMethod("public "+sig+" get()");
 
     converter
       .println("return new "+sig+"() {")
@@ -117,15 +118,15 @@ public class HtmlSnippetGenerator extends AbstractHtmlGenerator <HtmlGeneratorRe
     }
     converter.println( ");");
 
-    DomBuffer variables = new DomBuffer().println("init.run();");
+    final DomBuffer variables = new DomBuffer().println("init.run();");
     converter.addToEnd(variables);
 
-    for (String key : renderOrder) {
-      for (El el : htmlGen.getElements(key)) {
-        for (Import importType : el.imports()) {
+    for (final String key : renderOrder) {
+      for (final El el : htmlGen.getElements(key)) {
+        for (final Import importType : el.imports()) {
           addImport(importType);
         }
-        String name = el.tag();
+        final String name = el.tag();
         converter.println("out").indent();
         if (name.length()>0) {
           if (name.charAt(0)=='#') {
@@ -137,15 +138,15 @@ public class HtmlSnippetGenerator extends AbstractHtmlGenerator <HtmlGeneratorRe
           }
         }
 
-        for (String clsName : el.className()) {
+        for (final String clsName : el.className()) {
           converter.println(".addClassName(\""+clsName+"\")");
         }
 
-        StringBuilder immediateStyle = new StringBuilder();
-        StringBuilder sheetStyle = new StringBuilder();
+        final StringBuilder immediateStyle = new StringBuilder();
+        final StringBuilder sheetStyle = new StringBuilder();
         try {
           fillStyles(immediateStyle, sheetStyle, el.style());
-        } catch (Exception e) {
+        } catch (final Exception e) {
           logger.log(Type.ERROR, "Error calculating styles", e);
           throw new UnableToCompleteException();
         }
@@ -157,7 +158,7 @@ public class HtmlSnippetGenerator extends AbstractHtmlGenerator <HtmlGeneratorRe
           init.println("cssService.addCss(\""+Generator.escape(sheetStyle.toString())+"\", 0);");
         }
 
-        for (Property prop : el.properties()) {
+        for (final Property prop : el.properties()) {
           String val = prop.value();
           if (val.startsWith("//")) {
             val = val.substring(2);
@@ -167,8 +168,8 @@ public class HtmlSnippetGenerator extends AbstractHtmlGenerator <HtmlGeneratorRe
           converter.println(".setAttribute(\""+prop.name()+"\", "+val+ ")");
         }
 
-        for (String html : el.html()) {
-          String escaped = escape(html, key, el.accessor());
+        for (final String html : el.html()) {
+          final String escaped = escape(html, key, el.accessor());
           if (escaped.length() > 0) {
             converter.println(".println("+ escaped + ")");
           }

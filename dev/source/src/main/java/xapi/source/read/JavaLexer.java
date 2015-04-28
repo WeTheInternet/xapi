@@ -108,7 +108,7 @@ public class JavaLexer {
       if (generic.charAt(0) == '<') {
         generic = generic.substring(1, generic.length()-1);
       }
-      receiver.add(new IsGeneric(generic, ""));
+      receiver.add(new IsGeneric("", generic));
     }
   }
 
@@ -1460,7 +1460,7 @@ public class JavaLexer {
     final TypeDef type = extractType(chars, pos);
     final int start = eatWhitespace(chars, type.index);
     pos = eatJavaname(chars, start);
-    final IsParameter param = new IsParameter(chars.subSequence(start, pos).toString(), type.toString());
+    final IsParameter param = new IsParameter(type.toString(), chars.subSequence(start, pos).toString());
     param.annotations = annos;
     param.modifier = mods.modifier;
     return param;

@@ -5,7 +5,6 @@ import java.lang.reflect.Modifier;
 import xapi.source.read.JavaLexer;
 import xapi.source.read.JavaLexer.TypeDef;
 import xapi.source.read.JavaVisitor.TypeData;
-import xapi.source.write.Template;
 
 /**
  * A field buffer is used to add a field to a generated class.
@@ -25,23 +24,6 @@ import xapi.source.write.Template;
  */
 public class FieldBuffer extends MemberBuffer<FieldBuffer> {
 
-  public static interface TypeDataGenerator {
-    public String generate(TypeData type, String name);
-  }
-
-  protected static class TypeDataTemplateGenerator extends Template implements
-      TypeDataGenerator {
-    public TypeDataTemplateGenerator(String template) {
-      super(template, "<>", "$");
-    }
-
-    @Override
-    public String generate(TypeData type, String name) {
-      return apply(type.getSimpleName(), name);
-    }
-
-  }
-
   private final ClassBuffer cls;
   private final TypeData fieldType;// The type of the field itself
   private final TypeDef methodType;// The type to expose on methods
@@ -58,17 +40,19 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
   private boolean fluent = true;
   private boolean exact;
 
-  public FieldBuffer(ClassBuffer enclosingClass, String type, String name) {
+  public FieldBuffer(final ClassBuffer enclosingClass, final String type,
+    final String name) {
     this(enclosingClass, type, name, INDENT);
   }
 
-  public FieldBuffer(ClassBuffer enclosingClass, String type, String name,
-      String indent) {
+  public FieldBuffer(final ClassBuffer enclosingClass, final String type,
+    final String name,
+    final String indent) {
     super(indent);
     this.cls = enclosingClass;
     this.fieldName = name;
     this.methodFragment = Character.toUpperCase(name.charAt(0))
-        + (name.length() == 0 ? "" : name.substring(1));
+      + (name.length() == 0 ? "" : name.substring(1));
     this.indent = indent + INDENT;
     // The type to expose on methods; usually == fieldType, unless exposing []
     this.simpleType = cls.addImport(type);
@@ -76,17 +60,57 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
     this.fieldType = initGenerator(this.methodType);
   }
 
-  protected TypeData initGenerator(TypeData originalType) {
-    if (originalType.arrayDepth > 0) {
-      //
+  public MethodBuffer addAdder() {
+    if (add == null) {
+      add = initAdder();
     }
-    return originalType;
+    return add;
   }
 
-  public FieldBuffer setInitializer(String initializer) {
-    this.initializer = new PrintBuffer();
-    this.initializer.print(initializer);
-    return this;
+  public MethodBuffer addClearer() {
+    if (clear == null) {
+      clear = initClearer();
+    }
+    return clear;
+  }
+
+  public MethodBuffer addGetter(final int modifiers) {
+    if (get == null) {
+      get = initGetter();
+    }
+    get.visitModifier(modifiers, cls.context);
+    return get;
+  }
+
+  @Override
+  public String addImport(final Class<?> cls) {
+    return this.cls.addImport(cls);
+  }
+
+  @Override
+  public String addImport(final String cls) {
+    if (cls.replace(this.cls.getPackage() + ".", "").indexOf('.') == -1) {
+      return cls;
+    }
+    return this.cls.addImport(cls);
+  }
+
+  @Override
+  public String addImportStatic(final Class<?> cls, final String name) {
+    return this.cls.addImportStatic(cls, name);
+  }
+
+  @Override
+  public String addImportStatic(final String cls) {
+    return this.cls.addImportStatic(cls);
+  }
+
+  public MethodBuffer addSetter(final int modifier) {
+    if (set == null) {
+      set = initSetter();
+    }
+    set.visitModifier(modifier, cls.context);
+    return set;
   }
 
   public PrintBuffer getInitializer() {
@@ -98,83 +122,16 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
     return initializer;
   }
 
-  public FieldBuffer addGetter(int modifiers) {
-    if (get == null) {
-      get = initGetter();
-    }
-    get.visitModifier(modifiers, cls.context);
-    return this;
+  public String getName() {
+    return fieldName;
   }
 
-  protected MethodBuffer initGetter() {
-    return cls.createMethod("public " + methodType + " " + getterName() + "()")
-        .returnValue(fieldName);
+  public String getSimpleType() {
+    return simpleType;
   }
 
-  protected TypeDataTemplateGenerator generateGetter() {
-    if (methodType.isArray()) {
-
-    }
-    return new TypeDataTemplateGenerator("return $;");
-
-  }
-
-  protected String getterName() {
-    return exact ? fieldName
-        : (fieldType.clsName.equalsIgnoreCase("boolean") ? "is" : "get")
-            + methodFragment;
-  }
-
-  public FieldBuffer addClearer() {
-    if (clear == null) {
-      clear = initClearer();
-    }
-    return this;
-  }
-
-  protected MethodBuffer initClearer() {
-    return cls.createMethod(
-        "public " + simpleType + " get" + methodFragment + "()").returnValue(
-        fieldName);
-  }
-
-  public FieldBuffer addSetter(int modifier) {
-    if (set == null) {
-      set = initSetter();
-    }
-    set.visitModifier(modifier, cls.context);
-    return this;
-  }
-
-  protected MethodBuffer initSetter() {
-    MethodBuffer setter = cls.createMethod(
-        "public " + fluentReturnType() + " " + setterName() + "(" + simpleType
-            + " " + fieldName + ")").println(
-        "this." + fieldName + " = " + fieldName + ";");
-    if (isFluent()) {
-      setter.returnValue(fluentReturnValue());
-    }
-    return setter;
-  }
-
-  protected String setterName() {
-    return exact ? fieldName : "set" + methodFragment;
-  }
-
-  public FieldBuffer addAdder() {
-    if (add == null) {
-      add = initAdder();
-    }
-    return this;
-  }
-
-  protected MethodBuffer initAdder() {
-    return cls
-        .createMethod(
-            "public " + fluentReturnType() + " add" + methodFragment + "("
-                + simpleType + " " + fieldName + ")")
-        .println("this." + fieldName + " = " + fieldName + ";")
-        .returnValue(fluentReturnValue());
+  public boolean isFluent() {
+    return fluent;
   }
 
   public FieldBuffer remover() {
@@ -184,53 +141,20 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
     return this;
   }
 
-  protected MethodBuffer initRemover() {
-    return cls
-        .createMethod(
-            "public " + fluentReturnType() + " remove" + methodFragment + "("
-                + simpleType + " " + fieldName + ")")
-        .println("this." + fieldName + " = null;")
-        .returnValue(fluentReturnValue());
+  public FieldBuffer setExactName(final boolean exact) {
+    this.exact = exact;
+    return this;
   }
 
-  protected String fluentReturnType() {
-    return (fluent ? cls.getSimpleName() : "void");
-  }
-
-  protected String fluentReturnValue() {
-    return (fluent ? "this" : "");
-  }
-
-  public boolean isFluent() {
-    return fluent;
-  }
-
-  public FieldBuffer setFluent(boolean fluent) {
+  public FieldBuffer setFluent(final boolean fluent) {
     this.fluent = fluent;
     return this;
   }
 
-  @Override
-  public String addImport(Class<?> cls) {
-    return this.cls.addImport(cls);
-  }
-
-  @Override
-  public String addImport(String cls) {
-    if (cls.replace(this.cls.getPackage() + ".", "").indexOf('.') == -1) {
-      return cls;
-    }
-    return this.cls.addImport(cls);
-  };
-
-  @Override
-  public String addImportStatic(Class<?> cls, String name) {
-    return this.cls.addImportStatic(cls, name);
-  }
-
-  @Override
-  public String addImportStatic(String cls) {
-    return this.cls.addImportStatic(cls);
+  public FieldBuffer setInitializer(final String initializer) {
+    this.initializer = new PrintBuffer();
+    this.initializer.print(initializer);
+    return this;
   }
 
   @Override
@@ -239,17 +163,17 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
       return super.toString();
     }
 
-    StringBuilder b = new StringBuilder(Character.toString(NEW_LINE));
+    final StringBuilder b = new StringBuilder(Character.toString(NEW_LINE));
     if (javaDoc != null && javaDoc.isNotEmpty()) {
       b.append(javaDoc.toString());
     }
     b.append(origIndent);
     if (annotations.size() > 0) {
-      for (String anno : annotations) {
+      for (final String anno : annotations) {
         b.append('@').append(anno).append(NEW_LINE + origIndent);
       }
     }
-    String mods = Modifier.toString(modifier);
+    final String mods = Modifier.toString(modifier);
     if (mods.length() > 0) {
       b.append(mods).append(" ");
     }
@@ -257,7 +181,7 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
     if (generics.size() > 0) {
       b.append("<");
       String prefix = "";
-      for (String generic : generics) {
+      for (final String generic : generics) {
         b.append(prefix);
         b.append(generic);
         prefix = ", ";
@@ -268,7 +192,7 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
     b.append(simpleType).append(" ");
     // field name
     b.append(fieldName);
-    String init = initializer == null ? "" : initializer.toString();
+    final String init = initializer == null ? "" : initializer.toString();
     if (init.length() > 0) {
       b.append(" = ").append(init);
       if (!init.trim().endsWith(";")) {
@@ -281,17 +205,69 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
     return b.toString() + super.toString();
   }
 
-  public FieldBuffer setExactName(boolean exact) {
-    this.exact = exact;
-    return this;
+  protected String fluentReturnType() {
+    return fluent ? cls.getSimpleName() : "void";
   }
 
-  public String getSimpleType() {
-    return simpleType;
+  protected String fluentReturnValue() {
+    return fluent ? "this" : "";
   }
 
-  public String getName() {
-    return fieldName;
+  protected String getterName() {
+    return exact ? fieldName
+      : (fieldType.clsName.equalsIgnoreCase("boolean") ? "is" : "get")
+        + methodFragment;
+  }
+
+  protected MethodBuffer initAdder() {
+    return cls
+      .createMethod(
+        "public " + fluentReturnType() + " add" + methodFragment + "("
+          + simpleType + " " + fieldName + ")")
+      .println("this." + fieldName + " = " + fieldName + ";")
+      .returnValue(fluentReturnValue());
+  };
+
+  protected MethodBuffer initClearer() {
+    return cls.createMethod(
+      "public " + simpleType + " get" + methodFragment + "()").returnValue(
+      fieldName);
+  }
+
+  protected TypeData initGenerator(final TypeData originalType) {
+    if (originalType.arrayDepth > 0) {
+      //
+    }
+    return originalType;
+  }
+
+  protected MethodBuffer initGetter() {
+    return cls.createMethod("public " + methodType + " " + getterName() + "()")
+      .returnValue(fieldName);
+  }
+
+  protected MethodBuffer initRemover() {
+    return cls
+      .createMethod(
+        "public " + fluentReturnType() + " remove" + methodFragment + "("
+          + simpleType + " " + fieldName + ")")
+      .println("this." + fieldName + " = null;")
+      .returnValue(fluentReturnValue());
+  }
+
+  protected MethodBuffer initSetter() {
+    final MethodBuffer setter = cls.createMethod(
+      "public " + fluentReturnType() + " " + setterName() + "(" + simpleType
+        + " " + fieldName + ")").println(
+      "this." + fieldName + " = " + fieldName + ";");
+    if (isFluent()) {
+      setter.returnValue(fluentReturnValue());
+    }
+    return setter;
+  }
+
+  protected String setterName() {
+    return exact ? fieldName : "set" + methodFragment;
   }
 
 }

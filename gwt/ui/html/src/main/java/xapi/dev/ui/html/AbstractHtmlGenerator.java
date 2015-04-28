@@ -3,15 +3,6 @@ package xapi.dev.ui.html;
 import static xapi.collect.X_Collect.newStringMap;
 import static xapi.ui.html.api.HtmlSnippet.appendTo;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.TimeZone;
-
-import javax.inject.Provider;
-
 import com.google.gwt.core.ext.Generator;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;
@@ -22,6 +13,15 @@ import com.google.gwt.dev.javac.StandardGeneratorContext;
 import com.google.gwt.dev.jjs.UnifyAstView;
 import com.google.gwt.user.server.Base64Utils;
 import com.google.gwt.util.tools.shared.Md5Utils;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
+
+import javax.inject.Provider;
 
 import xapi.annotation.compile.Generated;
 import xapi.annotation.compile.Import;
@@ -52,29 +52,33 @@ public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> im
     }
   });
 
-  protected static <Ctx extends HtmlGeneratorResult> Ctx existingTypesUnchanged(TreeLogger logger,
-      UnifyAstView ast, Ctx result, String verify) {
-    if (isDev.get())
+  protected static <Ctx extends HtmlGeneratorResult> Ctx existingTypesUnchanged(final TreeLogger logger,
+      final UnifyAstView ast, final Ctx result, final String verify) {
+    if (isDev.get()) {
       // During development, never reuse existing types, as we're likely changing generators
       return null;
+    }
     try {
-      if (result.getSourceType() == null)
+      if (result.getSourceType() == null) {
         return null;
-      Generated gen = result.getSourceType().getAnnotation(Generated.class);
-      if (gen == null)
+      }
+      final Generated gen = result.getSourceType().getAnnotation(Generated.class);
+      if (gen == null) {
         return null;
-      String hash = gen.value()[gen.value().length-1];
-      if (verify.equals(hash))
+      }
+      final String hash = gen.value()[gen.value().length-1];
+      if (verify.equals(hash)) {
         return result;
-    } catch (Exception e) {
+      }
+    } catch (final Exception e) {
       logger.log(Type.WARN, "Unknown error calculating change hashes", e);
     }
     return null;
   }
 
-  protected static String toHash(UnifyAstView ast, String ... types) throws UnableToCompleteException {
-    StringBuilder b = new StringBuilder();
-    for (String type : types) {
+  protected static String toHash(final UnifyAstView ast, final String ... types) throws UnableToCompleteException {
+    final StringBuilder b = new StringBuilder();
+    for (final String type : types) {
       b.append(ast.searchForTypeBySource(type).toSource());
     }
     return Base64Utils.toBase64(Md5Utils.getMd5Digest(b.toString().getBytes()));
@@ -92,24 +96,25 @@ public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> im
 
   protected String[] renderOrder;
 
-  public AbstractHtmlGenerator(String clsName, JClassType templateType, UnifyAstView ast) {
+  public AbstractHtmlGenerator(final String clsName, final JClassType templateType, final UnifyAstView ast) {
     this.clsName = clsName;
     htmlGen = new HtmlGeneratorContext(templateType);
     this.out = new SourceBuilder<UnifyAstView>("public class "+clsName)
       .setPackage(templateType.getPackage().getName())
       .setPayload(ast);
   }
-  protected void addEl(String name, El el) {
+  protected void addEl(final String name, final El el) {
     htmlGen.addEl(name, el);
   }
 
-  protected void addHtml(String name, Html html, IntTo<String> elOrder) {
-    if (html == null)
+  protected void addHtml(final String name, final Html html, final IntTo<String> elOrder) {
+    if (html == null) {
       return;
+    }
     elOrder.add(name);
   }
 
-  public void addImport(Import importType) {
+  public void addImport(final Import importType) {
     if (importType.staticImport().length()==0) {
       out.getImports().addImport(importType.value());
     } else {
@@ -131,18 +136,19 @@ public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> im
     case HtmlTemplate.KEY_VALUE:
       return new ConvertsValue<String, String>() {
         @Override
-        public String convert(String from) {
-          if (accessor.equals(El.DEFAULT_ACCESSOR))
+        public String convert(final String from) {
+          if (accessor.equals(El.DEFAULT_ACCESSOR)) {
             return "".equals(key) ? KEY_FROM :
               KEY_FROM+"."+key+(key.endsWith("()") ? "" : "()");
-          else
+          } else {
             return accessor;
+          }
         }
       };
     default:
       return new ConvertsValue<String, String>() {
         @Override
-        public String convert(String from) {
+        public String convert(final String from) {
           return from.startsWith(key) ?
             from.substring(key.length()) :
               from;
@@ -160,20 +166,21 @@ public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> im
    * @param text
    * @return
    */
-  protected String escape(String text) {
+  protected String escape(final String text) {
     return Generator.escape(text);
   }
 
   @SuppressWarnings("unchecked")
-  protected String escape(String text, String key, String accessor) {
-    if (text.length() == 0)
+  protected String escape(String text, final String key, final String accessor) {
+    if (text.length() == 0) {
       return "";
+    }
 
-    HtmlGeneratorNode node = htmlGen.allNodes.get(key);
+    final HtmlGeneratorNode node = htmlGen.allNodes.get(key);
     if (node.hasTemplates()) {
-      StringTo<Object> references = newStringMap(Object.class);
-      for(HtmlTemplate template : node.getTemplates()) {
-        String name = template.name();
+      final StringTo<Object> references = newStringMap(Object.class);
+      for(final HtmlTemplate template : node.getTemplates()) {
+        final String name = template.name();
         if (template.inherit() && template.name().length() == 0) {
           continue;
         }
@@ -183,16 +190,16 @@ public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> im
         }
       }
       if (!references.isEmpty()) {
-        MappedTemplate apply = new MappedTemplate(text, references.keyArray()) {
+        final MappedTemplate apply = new MappedTemplate(text, references.keyArray()) {
           @Override
-          protected Object retrieve(String key, Object object) {
-            ConvertsValue<String, String> converter = (ConvertsValue<String, String>) object;
+          protected Object retrieve(final String key, final Object object) {
+            final ConvertsValue<String, String> converter = (ConvertsValue<String, String>) object;
             return converter.convert(key);
           }
         };
         apply.setToStringer(new ToStringer() {
           @Override
-          public String toString(Object o) {
+          public String toString(final Object o) {
             return escape(String.valueOf(o));
           }
         });
@@ -203,12 +210,13 @@ public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> im
     return replace$value(text, key, accessor);
   }
 
-  protected String replace$value(String text, String key, String accessor) {
+  protected String replace$value(String text, final String key, final String accessor) {
     String ref = null;
     int ind = text.indexOf("$value");
-    if (ind == -1)
+    if (ind == -1) {
       return "\""+escape(text)+"\"";
-    StringBuilder b = new StringBuilder("\"");
+    }
+    final StringBuilder b = new StringBuilder("\"");
     int was;
     for (;;){
       was = ind;
@@ -244,11 +252,11 @@ public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> im
     return KEY_FROM;
   }
 
-  protected void fillMembers(JClassType templateType, IntTo<String> elOrder) {
-    for (JClassType type : templateType.getFlattenedSupertypeHierarchy()) {
-      for (JMethod method : type.getMethods()) {
+  protected void fillMembers(JClassType templateType, final IntTo<String> elOrder) {
+    for (final JClassType type : templateType.getFlattenedSupertypeHierarchy()) {
+      for (final JMethod method : type.getMethods()) {
         if (method.isAnnotationPresent(Html.class) || method.isAnnotationPresent(El.class)) {
-          String name = toSimpleName(method);
+          final String name = toSimpleName(method);
           if (!elOrder.contains(name)) {
             elOrder.add(name);
 //            Html html = method.getAnnotation(Html.class);
@@ -268,10 +276,10 @@ public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> im
     }
   }
 
-  protected static void fillStyles(Appendable immediateStyle,
-      Appendable sheetStyle, Style ... styles) throws IOException {
-    for (Style style : styles) {
-      String[] names = style.names();
+  protected static void fillStyles(final Appendable immediateStyle,
+      final Appendable sheetStyle, final Style ... styles) throws IOException {
+    for (final Style style : styles) {
+      final String[] names = style.names();
       if (names.length == 0) {
         if (immediateStyle != null) {
           appendTo(immediateStyle, style);
@@ -290,7 +298,7 @@ public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> im
     }
   }
 
-  protected static <Ctx> Ctx findExisting(UnifyAstView ast, CreatesContextObject<Ctx> creator, String pkgName, String name) {
+  protected static <Ctx> Ctx findExisting(final UnifyAstView ast, final CreatesContextObject<Ctx> creator, final String pkgName, String name) {
     if (name.indexOf('.') == -1) {
       name = X_Source.qualifiedName(pkgName, name);
     }
@@ -298,14 +306,15 @@ public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> im
     int pos = 0;
     while (true) {
       winner = existing;
-      String next = name+pos++;
+      final String next = name+pos++;
       existing = ast.getTypeOracle().findType(next);
-      if (existing == null)
+      if (existing == null) {
         return creator.newContext(winner, pkgName, name);
+      }
     }
   }
 
-  public Iterable<El> getElements(String key) {
+  public Iterable<El> getElements(final String key) {
     return htmlGen.allNodes.get(key).getElements();
   }
 
@@ -313,7 +322,7 @@ public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> im
     return Type.DEBUG;
   }
 
-  public Iterable<HtmlTemplate> getTemplates(String key) {
+  public Iterable<HtmlTemplate> getTemplates(final String key) {
     return htmlGen.allNodes.get(key).getTemplates();
   }
 
@@ -324,9 +333,9 @@ public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> im
     renderAllChildren = true;
     renderOrder = new String[0];
     documentType = Html.ROOT_ELEMENT;
-    IntTo<String> elOrder = X_Collect.newList(String.class);
+    final IntTo<String> elOrder = X_Collect.newList(String.class);
     Html html = null;
-    for (JClassType type : htmlGen.cls.getFlattenedSupertypeHierarchy()) {
+    for (final JClassType type : htmlGen.cls.getFlattenedSupertypeHierarchy()) {
       if (html == null && type.isAnnotationPresent(Html.class)) {
         html = type.getAnnotation(Html.class);
       }
@@ -348,20 +357,21 @@ public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> im
   }
 
   protected static <Ctx extends HtmlGeneratorResult> Ctx saveGeneratedType(
-      TreeLogger logger, Type logLevel, Class<?> generatorClass, UnifyAstView ast,
-      SourceBuilder<?> out, final Ctx result, String inputHash) throws UnableToCompleteException {
-    String name = result.getFinalName();
+      final TreeLogger logger, final Type logLevel, final Class<?> generatorClass, final UnifyAstView ast,
+      final SourceBuilder<?> out, final Ctx result, final String inputHash) throws UnableToCompleteException {
+    final String name = result.getFinalName();
     String src = out.toString();
     final String digest =
         Base64Utils.toBase64(Md5Utils.getMd5Digest(src.getBytes()));
 
     if (result.getSourceType() != null) {
       // Only use the existing class if the generated source exactly matches what we just generated.
-      Generated gen = result.getSourceType().getAnnotation(Generated.class);
-      if (gen != null && gen.value()[1].equals(digest))
+      final Generated gen = result.getSourceType().getAnnotation(Generated.class);
+      if (gen != null && gen.value()[1].equals(digest)) {
         return result;
+      }
     }
-    DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mmZ");
+    final DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mmZ");
     df.setTimeZone(TimeZone.getTimeZone("UTC"));
     out.getClassBuffer().setSimpleName(name.replace(out.getPackage()+".", ""));
     out.getClassBuffer().addAnnotation("@"+
@@ -369,8 +379,8 @@ public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> im
     "date=\""+df.format(new Date())+"\",\n" +
         "value={\"" + generatorClass.getName()+"\","+
         "\""+digest+"\", \""+inputHash+"\"})");
-    StandardGeneratorContext gen = ast.getGeneratorContext();
-    PrintWriter pw = gen.tryCreate(logger, out.getPackage(), out.getClassBuffer().getSimpleName());
+    final StandardGeneratorContext gen = ast.getGeneratorContext();
+    final PrintWriter pw = gen.tryCreate(logger, out.getPackage(), out.getClassBuffer().getSimpleName());
     src = out.toString();
     pw.print(src);
     gen.commit(logger, pw);
@@ -385,13 +395,13 @@ public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> im
     }
   }
 
-  protected String toSimpleName(JMethod method) {
+  protected String toSimpleName(final JMethod method) {
 //    if (method.isAnnotationPresent(Named.class))
 //      return method.getAnnotation(Named.class).value();
     return method.getName();
   }
 
-  protected String toSimpleName(String name) {
+  protected String toSimpleName(final String name) {
 //    if (name.startsWith("get") || name.startsWith("has")) {
 //      if (name.length() > 3 && Character.isUpperCase(name.charAt(3)))
 //        return Character.toLowerCase(name.charAt(3)) +

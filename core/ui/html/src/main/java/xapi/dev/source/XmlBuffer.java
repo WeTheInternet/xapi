@@ -9,7 +9,11 @@ public class XmlBuffer extends PrintBuffer {
   public static final String QUOTE = "\"", QUOTE_ENTITY = "&quot;";
 
   private String tagName;
-  private PrintBuffer attributes, comment, before;
+  private PrintBuffer attributes;
+
+  private final PrintBuffer comment;
+
+  private final PrintBuffer before;
   private StringTo<StringBuilder> attributeMap;
   private boolean printNewline = false;
   private boolean abbr = false;
@@ -23,12 +27,12 @@ public class XmlBuffer extends PrintBuffer {
     escaper = ConvertsValue.PASS_THRU;
   }
 
-  public XmlBuffer(String tagName) {
+  public XmlBuffer(final String tagName) {
     this();
     setTagName(tagName);
   }
 
-  public XmlBuffer setTagName(String name) {
+  public XmlBuffer setTagName(final String name) {
     if (tagName != null) {
       indent();
     }
@@ -36,14 +40,14 @@ public class XmlBuffer extends PrintBuffer {
     return this;
   }
 
-  public XmlBuffer setAttribute(String name, String value) {
+  public XmlBuffer setAttribute(final String name, final String value) {
     ensureAttributes();
-    String val = escapeAttribute(value);
+    final String val = escapeAttribute(value);
     setRawAttribute(name, val);
     return this;
   }
 
-  protected String escapeAttribute(String value) {
+  protected String escapeAttribute(final String value) {
     if (value == null) {
       return " ";
     } else {
@@ -55,13 +59,13 @@ public class XmlBuffer extends PrintBuffer {
     }
   }
 
-  protected void setRawAttribute(String name, String val) {
+  protected void setRawAttribute(final String name, final String val) {
     StringBuilder attr = attributeMap.get(name);
     if (attr == null) {
       attributes.print(name);
       attr = new StringBuilder(val);
       attributeMap.put(name, attr);
-      PrintBuffer attrBuf = new PrintBuffer(attr);
+      final PrintBuffer attrBuf = new PrintBuffer(attr);
       attributes.addToEnd(attrBuf);
     } else {
       attr.setLength(0);
@@ -76,30 +80,30 @@ public class XmlBuffer extends PrintBuffer {
     }
   }
 
-  public XmlBuffer makeTag(String name) {
-    XmlBuffer buffer = new XmlBuffer(name);
+  public XmlBuffer makeTag(final String name) {
+    final XmlBuffer buffer = new XmlBuffer(name);
     buffer.indent = indent + INDENT;
     addToEnd(buffer);
     return buffer;
   }
 
-  public XmlBuffer makeTagNoIndent(String name) {
-    XmlBuffer buffer = new XmlBuffer(name);
+  public XmlBuffer makeTagNoIndent(final String name) {
+    final XmlBuffer buffer = new XmlBuffer(name);
     buffer.indent = indent + INDENT;
     buffer.setNewLine(false);
     addToEnd(buffer);
     return buffer;
   }
 
-  public XmlBuffer makeTagAtBeginning(String name) {
-    XmlBuffer buffer = new XmlBuffer(name);
+  public XmlBuffer makeTagAtBeginning(final String name) {
+    final XmlBuffer buffer = new XmlBuffer(name);
     buffer.indent = indent + INDENT;
     addToBeginning(buffer);
     return buffer;
   }
 
-  public XmlBuffer makeTagAtBeginningNoIndent(String name) {
-    XmlBuffer buffer = new XmlBuffer(name);
+  public XmlBuffer makeTagAtBeginningNoIndent(final String name) {
+    final XmlBuffer buffer = new XmlBuffer(name);
     buffer.setNewLine(false);
     buffer.indent = indent + INDENT;
     addToBeginning(buffer);
@@ -113,8 +117,8 @@ public class XmlBuffer extends PrintBuffer {
           + "\nAttributes: " + attributes + "\nBody: " + super.toString();
       return super.toString();
     }
-    String origIndent = indent.replaceFirst(INDENT, "");
-    StringBuilder b = new StringBuilder(origIndent);
+    final String origIndent = indent.replaceFirst(INDENT, "");
+    final StringBuilder b = new StringBuilder(origIndent);
 
     String text;
     text = this.before.toString();
@@ -145,7 +149,7 @@ public class XmlBuffer extends PrintBuffer {
     if (attributes != null && !attributes.isEmpty()) {
       b.append(" ").append(attributes);
     }
-    String body = super.toString();
+    final String body = super.toString();
     if (abbr && body.length() == 0) {
       if (shouldShortenEmptyTag(tagName)) {
         newline(b.append("/>"));
@@ -159,39 +163,39 @@ public class XmlBuffer extends PrintBuffer {
     return b.toString();
   }
 
-  public String escape(String text) {
+  public String escape(final String text) {
     return escaper.convert(text);
   }
 
-  public XmlBuffer setEscaper(ConvertsValue<String, String> escaper) {
+  public XmlBuffer setEscaper(final ConvertsValue<String, String> escaper) {
     this.escaper = escaper;
     return this;
   }
 
-  private StringBuilder newline(StringBuilder append) {
+  private StringBuilder newline(final StringBuilder append) {
     if (printNewline) {
       append.append("\n");
     }
     return append;
   }
 
-  public XmlBuffer setNewLine(boolean useNewLine) {
+  public XmlBuffer setNewLine(final boolean useNewLine) {
     printNewline = useNewLine;
     return this;
   }
 
-  protected boolean shouldShortenEmptyTag(String tag) {
+  protected boolean shouldShortenEmptyTag(final String tag) {
     return !"script".equals(tag);
   }
 
   @Override
-  public XmlBuffer append(Object obj) {
+  public XmlBuffer append(final Object obj) {
     super.append(obj);
     return this;
   }
 
   @Override
-  public XmlBuffer print(String str) {
+  public XmlBuffer print(final String str) {
     super.print(str);
     return this;
   }
@@ -203,67 +207,67 @@ public class XmlBuffer extends PrintBuffer {
   }
 
   @Override
-  public XmlBuffer append(String str) {
+  public XmlBuffer append(final String str) {
     super.append(str);
     return this;
   }
 
   @Override
-  public XmlBuffer append(CharSequence s) {
+  public XmlBuffer append(final CharSequence s) {
     super.append(s);
     return this;
   }
 
   @Override
-  public XmlBuffer append(CharSequence s, int start, int end) {
+  public XmlBuffer append(final CharSequence s, final int start, final int end) {
     super.append(s, start, end);
     return this;
   }
 
   @Override
-  public XmlBuffer append(char[] str) {
+  public XmlBuffer append(final char[] str) {
     super.append(str);
     return this;
   }
 
   @Override
-  public XmlBuffer append(char[] str, int offset, int len) {
+  public XmlBuffer append(final char[] str, final int offset, final int len) {
     super.append(str, offset, len);
     return this;
   }
 
   @Override
-  public XmlBuffer append(boolean b) {
+  public XmlBuffer append(final boolean b) {
     super.append(b);
     return this;
   }
 
   @Override
-  public XmlBuffer append(char c) {
+  public XmlBuffer append(final char c) {
     super.append(c);
     return this;
   }
 
   @Override
-  public XmlBuffer append(int i) {
+  public XmlBuffer append(final int i) {
     super.append(i);
     return this;
   }
 
   @Override
-  public XmlBuffer append(long lng) {
+  public XmlBuffer append(final long lng) {
     super.append(lng);
     return this;
   }
 
   @Override
-  public XmlBuffer append(float f) {
+  public XmlBuffer append(final float f) {
     super.append(f);
     return this;
   }
 
   @Override
-  public XmlBuffer append(double d) {
+  public XmlBuffer append(final double d) {
     super.append(d);
     return this;
   }
@@ -275,25 +279,25 @@ public class XmlBuffer extends PrintBuffer {
   }
 
   @Override
-  public XmlBuffer indentln(Object obj) {
+  public XmlBuffer indentln(final Object obj) {
     super.indentln(obj);
     return this;
   }
 
   @Override
-  public XmlBuffer indentln(String str) {
+  public XmlBuffer indentln(final String str) {
     super.indentln(str);
     return this;
   }
 
   @Override
-  public XmlBuffer indentln(CharSequence s) {
+  public XmlBuffer indentln(final CharSequence s) {
     super.indentln(s);
     return this;
   }
 
   @Override
-  public XmlBuffer indentln(char[] str) {
+  public XmlBuffer indentln(final char[] str) {
     super.indentln(str);
     return this;
   }
@@ -311,31 +315,31 @@ public class XmlBuffer extends PrintBuffer {
   }
 
   @Override
-  public XmlBuffer println(Object obj) {
+  public XmlBuffer println(final Object obj) {
     super.println(obj);
     return this;
   }
 
   @Override
-  public XmlBuffer println(String str) {
+  public XmlBuffer println(final String str) {
     super.println(str);
     return this;
   }
 
   @Override
-  public XmlBuffer println(CharSequence s) {
+  public XmlBuffer println(final CharSequence s) {
     super.println(s);
     return this;
   }
 
   @Override
-  public XmlBuffer println(char[] str) {
+  public XmlBuffer println(final char[] str) {
     super.println(str);
     return this;
   }
 
   @Override
-  public PrintBuffer printBefore(String prefix) {
+  public PrintBuffer printBefore(final String prefix) {
     return before.printBefore(prefix);
   }
 
@@ -349,7 +353,7 @@ public class XmlBuffer extends PrintBuffer {
         && before.isEmpty();
   }
 
-  public XmlBuffer setId(String id) {
+  public XmlBuffer setId(final String id) {
     setAttribute("id", id);
     return this;
   }
@@ -358,18 +362,18 @@ public class XmlBuffer extends PrintBuffer {
     if (!attributeMap.containsKey("id")) {
       setId("x-"+hashCode());
     }
-    StringBuilder id = attributeMap.get("id");
+    final StringBuilder id = attributeMap.get("id");
     return id.substring(2, id.length()-2);
   }
 
-  public boolean hasAttribute(String name) {
+  public boolean hasAttribute(final String name) {
     ensureAttributes();
     return attributeMap.containsKey(name);
   }
 
-  public String getAttribute(String name) {
+  public String getAttribute(final String name) {
     if (hasAttribute(name)) {
-      StringBuilder attr = attributeMap.get(name);
+      final StringBuilder attr = attributeMap.get(name);
       if (isRemoveQuotes(attr)) {
         return attr.substring(2, attr.length()-2);
       }
@@ -378,11 +382,11 @@ public class XmlBuffer extends PrintBuffer {
     return null;
   }
 
-  protected boolean isRemoveQuotes(StringBuilder attr) {
+  protected boolean isRemoveQuotes(final StringBuilder attr) {
     return attr.charAt(1) == '"';
   }
 
-  public XmlBuffer allowAbbreviation(boolean abbr) {
+  public XmlBuffer allowAbbreviation(final boolean abbr) {
     this.abbr = abbr;
     return this;
   }

@@ -83,11 +83,11 @@ public class AnnotationMirrorProcessor extends AbstractProcessor {
   private TypeMirror enumType;
 
   @Override
-  public final synchronized void init(ProcessingEnvironment processingEnv) {
+  public final synchronized void init(final ProcessingEnvironment processingEnv) {
     super.init(processingEnv);
     filer = processingEnv.getFiler();
-    Elements elements = processingEnv.getElementUtils();
-    Types types = processingEnv.getTypeUtils();
+    final Elements elements = processingEnv.getElementUtils();
+    final Types types = processingEnv.getTypeUtils();
     annoType = elements.getTypeElement(Annotation.class.getName()).asType();
     stringType = elements.getTypeElement(String.class.getName()).asType();
     classType = types.erasure(elements.getTypeElement(Class.class.getName())
@@ -97,12 +97,12 @@ public class AnnotationMirrorProcessor extends AbstractProcessor {
   }
 
   @Override
-  public boolean process(Set<? extends TypeElement> annotations,
-      RoundEnvironment roundEnv) {
-    for (TypeElement anno : annotations) {
-      for (Element el : roundEnv.getElementsAnnotatedWith(anno)) {
-        MirroredAnnotation mirrorSettings = el.getAnnotation(MirroredAnnotation.class);
-        AnnotationManifest manifest = addAnnotation((TypeElement) el);
+  public boolean process(final Set<? extends TypeElement> annotations,
+      final RoundEnvironment roundEnv) {
+    for (final TypeElement anno : annotations) {
+      for (final Element el : roundEnv.getElementsAnnotatedWith(anno)) {
+        final MirroredAnnotation mirrorSettings = el.getAnnotation(MirroredAnnotation.class);
+        final AnnotationManifest manifest = addAnnotation((TypeElement) el);
           if (mirrorSettings.generateJavaxLangModelFactory()) {
             generateJavaxFactory((TypeElement)el, manifest);
           }
@@ -113,40 +113,40 @@ public class AnnotationMirrorProcessor extends AbstractProcessor {
         }
       }
     }
-    for (String key : generatedMirrors.keySet().toArray(
+    for (final String key : generatedMirrors.keySet().toArray(
         new String[generatedMirrors.size()])) {
       try {
-        AnnotationManifest mirror = generatedMirrors.get(key);
+        final AnnotationManifest mirror = generatedMirrors.get(key);
         if (mirror == null) {
           continue;
         }
-        String code = mirror.generated;
+        final String code = mirror.generated;
         log("Generating " + key);
-        String genClass = key + "Builder";
+        final String genClass = key + "Builder";
 
         // Delete previous class, or build will break.
         try {
-          int ind = genClass.lastIndexOf('.');
-          String pkg = genClass.substring(0, ind);
-          String name = genClass.substring(ind+1)+".class";
-          FileObject file = filer.getResource(StandardLocation.CLASS_OUTPUT, pkg, name);
-          CharSequence content = file.getCharContent(true);
+          final int ind = genClass.lastIndexOf('.');
+          final String pkg = genClass.substring(0, ind);
+          final String name = genClass.substring(ind+1)+".class";
+          final FileObject file = filer.getResource(StandardLocation.CLASS_OUTPUT, pkg, name);
+          final CharSequence content = file.getCharContent(true);
           if (code.equals(content.toString())) {
             continue;
           } else {
             file.delete();
           }
-        } catch (Exception e) {
+        } catch (final Exception e) {
           e.printStackTrace();
         }
 
-        JavaFileObject src = filer.createSourceFile(genClass);
+        final JavaFileObject src = filer.createSourceFile(genClass);
 
-        Writer out = src.openWriter();
+        final Writer out = src.openWriter();
         out.write(code);
         generatedMirrors.put(key, null);
         out.close();
-      } catch (Exception e) {
+      } catch (final Exception e) {
         e.printStackTrace();
         log("Unable to write annotation reflection for " + key + ";");
       }
@@ -155,34 +155,34 @@ public class AnnotationMirrorProcessor extends AbstractProcessor {
     return roundEnv.processingOver();
   }
 
-  private void generateJavaxFactory(TypeElement el, AnnotationManifest manifest) {
+  private void generateJavaxFactory(final TypeElement el, final AnnotationManifest manifest) {
 
   }
 
-  private void generateXapiFactory(TypeElement el, AnnotationManifest manifest) {
+  private void generateXapiFactory(final TypeElement el, final AnnotationManifest manifest) {
 
   }
 
-  private AnnotationManifest addAnnotation(TypeElement element) {
-    String annoName = element.getQualifiedName().toString();
+  private AnnotationManifest addAnnotation(final TypeElement element) {
+    final String annoName = element.getQualifiedName().toString();
     if (generatedMirrors.containsKey(annoName)) {
       return generatedMirrors.get(annoName);
     }
-    AnnotationManifest manifest = new AnnotationManifest(annoName);
+    final AnnotationManifest manifest = new AnnotationManifest(annoName);
     generatedMirrors.put(annoName, manifest);
-    PackageElement pkg = processingEnv.getElementUtils().getPackageOf(element);
-    String simpleName = element.getSimpleName().toString();
-    String builderName = simpleName + "Builder";
+    final PackageElement pkg = processingEnv.getElementUtils().getPackageOf(element);
+    final String simpleName = element.getSimpleName().toString();
+    final String builderName = simpleName + "Builder";
 
-    SourceBuilder<Object> sb = new SourceBuilder<Object>(
+    final SourceBuilder<Object> sb = new SourceBuilder<Object>(
         "public class " + builderName);
-    ClassBuffer annoBuilder = sb.getClassBuffer();
+    final ClassBuffer annoBuilder = sb.getClassBuffer();
     if (!pkg.isUnnamed()) {
       sb.setPackage(pkg.getQualifiedName().toString());
     }
 
     // Create an immutable, private class that implements the annotation.
-    ClassBuffer immutableAnno = annoBuilder
+    final ClassBuffer immutableAnno = annoBuilder
         .addAnnotation("@SuppressWarnings(\"all\")")
         .createInnerClass("private static class Immutable" + simpleName)
         .addInterfaces(annoName).makeFinal();
@@ -190,30 +190,30 @@ public class AnnotationMirrorProcessor extends AbstractProcessor {
         .createMethod(
             "public Class<? extends java.lang.annotation.Annotation> annotationType()")
         .returnValue(annoName + ".class");
-    Fifo<String> requiredFields = new SimpleFifo<String>();
-    Fifo<String> ctorParams = new SimpleFifo<String>();
-    Types types = processingEnv.getTypeUtils();
-    for (ExecutableElement method : ElementFilter.methodsIn(element
+    final Fifo<String> requiredFields = new SimpleFifo<String>();
+    final Fifo<String> ctorParams = new SimpleFifo<String>();
+    final Types types = processingEnv.getTypeUtils();
+    for (final ExecutableElement method : ElementFilter.methodsIn(element
         .getEnclosedElements())) {
-      String fieldName = method.getSimpleName().toString();
-      AnnotationValue dflt = method.getDefaultValue();
-      TypeMirror returnMirror = method.getReturnType();
+      final String fieldName = method.getSimpleName().toString();
+      final AnnotationValue dflt = method.getDefaultValue();
+      final TypeMirror returnMirror = method.getReturnType();
       manifest.addMethod(method.getSimpleName(), returnMirror, dflt);
-      annoBuilder
+      final FieldBuffer annoField = annoBuilder
           .createField(returnMirror.toString(),
               method.getSimpleName().toString(),
-              Modifier.PRIVATE)
-          .addGetter(Modifier.PUBLIC | Modifier.FINAL)
-          .addSetter(Modifier.PUBLIC | Modifier.FINAL);
+              Modifier.PRIVATE);
+      annoField.addGetter(Modifier.PUBLIC | Modifier.FINAL);
+      annoField.addSetter(Modifier.PUBLIC | Modifier.FINAL);
 
-      FieldBuffer field = immutableAnno
+      final FieldBuffer field = immutableAnno
           .createField(returnMirror.toString(),
               method.getSimpleName().toString(),
               Modifier.PRIVATE | Modifier.FINAL)
-          .setExactName(true)
-          .addGetter(Modifier.PUBLIC | Modifier.FINAL);
+          .setExactName(true);
+      field.addGetter(Modifier.PUBLIC | Modifier.FINAL);
 
-      String param = field.getSimpleType() + " " + field.getName();
+      final String param = field.getSimpleType() + " " + field.getName();
       ctorParams.give(param);
       if (dflt == null) {
         requiredFields.give(param);
@@ -224,7 +224,7 @@ public class AnnotationMirrorProcessor extends AbstractProcessor {
           addAnnotation((TypeElement) ((DeclaredType) returnMirror).asElement());
 
           if (dflt != null) {
-            AnnotationMirror value = (AnnotationMirror) dflt.getValue();
+            final AnnotationMirror value = (AnnotationMirror) dflt.getValue();
             // use this annotation mirror to create a suitable factory for defaults
           }
           manifest.setAnnoType(annoName, fieldName);
@@ -237,7 +237,7 @@ public class AnnotationMirrorProcessor extends AbstractProcessor {
         }
         break;
       case ARRAY:
-        TypeMirror component = ((ArrayType) returnMirror).getComponentType();
+        final TypeMirror component = ((ArrayType) returnMirror).getComponentType();
         // System.out.println(component);
         // System.out.println(classType);
         if (types.isAssignable(component, annoType)) {
@@ -290,8 +290,8 @@ public class AnnotationMirrorProcessor extends AbstractProcessor {
           .returnValue("new " + builderName + "()");
       annoBuilder.createMethod("private " + builderName + "()");
     } else {
-      SimpleFifo<String> joinable = new SimpleFifo<String>();
-      MethodBuffer ctor = annoBuilder.createMethod("private " + builderName
+      final SimpleFifo<String> joinable = new SimpleFifo<String>();
+      final MethodBuffer ctor = annoBuilder.createMethod("private " + builderName
           + "(" + requiredFields.join(", ") + ")");
       for (String field : requiredFields.forEach()) {
         field = field.substring(field.lastIndexOf(' ') + 1);
@@ -304,15 +304,15 @@ public class AnnotationMirrorProcessor extends AbstractProcessor {
           "new " + builderName + "(" + joinable.join(", ") + ")");
     }
     if (ctorParams.size() > 0) {
-      MethodBuffer ctor = immutableAnno.createMethod("private "
+      final MethodBuffer ctor = immutableAnno.createMethod("private "
           + immutableAnno.getSimpleName() + "()");
-      MethodBuffer build = annoBuilder.createMethod("public " + simpleName
+      final MethodBuffer build = annoBuilder.createMethod("public " + simpleName
           + " build()");
-      SimpleFifo<String> fieldRefs = new SimpleFifo<String>();
-      for (String param : ctorParams.forEach()) {
-        int end = param.lastIndexOf(' ');
+      final SimpleFifo<String> fieldRefs = new SimpleFifo<String>();
+      for (final String param : ctorParams.forEach()) {
+        final int end = param.lastIndexOf(' ');
         ctor.addParameters(param);
-        String paramName = param.substring(end + 1);
+        final String paramName = param.substring(end + 1);
         fieldRefs.give(paramName);
         ctor.println("this." + paramName + " = " + paramName + ";");
       }
@@ -324,7 +324,7 @@ public class AnnotationMirrorProcessor extends AbstractProcessor {
     return manifest;
   }
 
-  private void log(String string) {
+  private void log(final String string) {
 //    if (X_Runtime.isDebug()) {
       System.out.println(string);
 //    }
@@ -349,17 +349,17 @@ public class AnnotationMirrorProcessor extends AbstractProcessor {
  *
  */
 class AnnotationManifest {
-  AnnotationManifest(String name) {
+  AnnotationManifest(final String name) {
     this.name = name;
   }
-  public void setAnnoType(String annoName, String fieldName) {
+  public void setAnnoType(final String annoName, final String fieldName) {
     if (annotationFields == null) {
       annotationFields = new HashMap<String, String>();
     }
     annotationFields.put(fieldName, annoName);
   }
-  public void addMethod(Name simpleName, TypeMirror returnMirror,
-      AnnotationValue dflt) {
+  public void addMethod(final Name simpleName, final TypeMirror returnMirror,
+      final AnnotationValue dflt) {
     if (dflt != null) {
       defaultValues.put(simpleName.toString(), dflt);
     }
