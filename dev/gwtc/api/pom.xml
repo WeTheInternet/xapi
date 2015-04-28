@@ -29,10 +29,6 @@
 			<artifactId>xapi-jre-inject</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>net.wetheinter</groupId>
-			<artifactId>gwt-reflect</artifactId>
-		</dependency>
-		<dependency>
 			<groupId>${gwt.groupId}</groupId>
 			<artifactId>gwt-user</artifactId>
 		</dependency>

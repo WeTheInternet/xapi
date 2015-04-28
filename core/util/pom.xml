@@ -16,10 +16,7 @@
     This module contains static services and default implementations for other core services.
 
     In order to keep core dependencies as clean as possible,  
-    we avoid accessing helpers like X_Inject or X_Reflect unless they are needed to perform a task.
-    For example, ReflectionService and it's default implementation don't have to know about X_Inject,
-    but it's public service X_Reflect does.  So, the implementation goes in xapi-core-reflect,
-    and the static accessor goes in xapi-core-util.
+    we avoid accessing helpers like X_Inject so users can choose when / if they inherit larger dependencies.
   </description>
 
   <dependencies>

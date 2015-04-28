@@ -46,10 +46,6 @@
   </dependency>
   <dependency>
    <groupId>net.wetheinter</groupId>
-   <artifactId>xapi-gwt-reflect</artifactId>
-  </dependency>
-  <dependency>
-   <groupId>net.wetheinter</groupId>
    <artifactId>xapi-dev-source</artifactId>
   </dependency>
   <dependency>

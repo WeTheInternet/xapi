@@ -8,9 +8,11 @@
   <source path="test/gwt/reflect"/>
   <source path="test/gwt/reflect/cases"/>
   
+  <inherits name="xapi.X_Inject"/>
+  
   <inherits name="com.google.gwt.core.Core"/>
   <inherits name="com.google.gwt.http.HTTP"/>
-  <inherits name="xapi.X_ReflectNoInject"/>
+  <inherits name="com.google.gwt.reflect.Reflect"/>
   <inherits name="com.google.gwt.junit.JUnit"/>
   
   <script src="forceload.js" />

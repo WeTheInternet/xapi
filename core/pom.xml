@@ -37,12 +37,9 @@
   <module>log</module>
 
   <!-- The reflect module is where we keep our code-mirroring interfaces. 
-   It's only dependency is xapi-api, and it is capable of classpath scanning, 
-   and reading in class structure + annotations directly from bytecode. It also 
-   includes a read-only abstraction api of java language semantics, to abstract 
-   away the source of said structure (bytecode, programmatic, ast, etc) This 
-   module also exposes the X_Reflect service, which is primarily used to achieve 
-   reflection in GWT. See wetheinter.net:xapi-gwt-reflect -->
+   It's only dependency is xapi-api, and it includes a read-only abstraction api
+   of java language semantics, to abstract away the source of said structure
+   (bytecode, programmatic, ast, etc). -->
 
   <module>reflect</module>
 

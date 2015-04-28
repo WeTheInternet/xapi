@@ -61,11 +61,6 @@
 
   <modules>
 
-    <!-- Implementation of magic method injection; moved to a fork of GWT -->
-    <!--<module>gwt-method-inject</module>-->
-    <!-- Implementation of gwt reflection. -->
-    <module>gwt-reflect</module>
-
     <!-- All super-source, gwt-compiler hacks and shared gwt-only code go here. Must come before gwt-dev during 
       gwt compiles! Your runtime dependency ordering doesn't matter, but your classpath ordering in gwt-maven-plugin 
       or ant build script, etc is important. See ClasspathFixer to fix jenkins and eclipse runtimes to auto-add gwt source 
@@ -85,17 +80,6 @@
       assemble a splitpoint with both classes cleanly placed on the other side. Only the class literal, a tiny object, 
       is referenced from the caller island. This is used with X_Inject.singletonAsync(ServiceClass.class, CallbackClass.class). -->
     <module>inject</module>
-    <!-- One is to attach the codesource of each classpath to all JRealClassTypes; that is, every real class in 
-      the TypeOracle can return the source file. We use this to implement class.getProtectionDomain().getCodeSource().getLocation() 
-      This is primarily intended for collIDE integration; as you are editing the source file in collIDE, the server can 
-      recompile the class, serializes it (or its error messages), then sends it back to the client, who then reflects 
-      upon it to provide runtime IDE markup, like hyperlinking, or error / warning markup. What better transport object 
-      than an actual java.lang.Class? A labs module is in progress to rip apart an annotated method block into a series 
-      of calls of reflection, which, in gwt will be very fast (no security manager, no layers of indirection, just js 
-      functions and field accessors). This would allow a block of code to be translated such that the method calls are 
-      accessed from the class object, instead of arbitrary static methods. Whenever a class calls out to another class 
-      on an object, the Provider<> of that class reference can start out with the hardcoded initial version. Then, when a class is updated to contain new sets of instructions, our gwt recompiler on the server can add a new impl class in a new split point, recompile, send back url, and when that class loads, it updates the providers to point to it instead of the old class. The goal is to be able to live hotswap gwt code indefinitely (that is, until your tab runs out of memory). -->
-    <module>reflect</module>
 
     <!-- Contains the gwt-only implementation of our collections library. This module is VERY experimental, and 
       the apis will likely change. -->
@@ -127,11 +111,10 @@
     <module>polymer</module>
 
     <!-- This uber jar module is here simply to bundle all our dependencies into a single jar for easier deployment. 
-      Currently it only contains xapi-core-inject, xapi-gwt-inject and xapi-gwt-reflect, but it will grow to include 
-      all gwt-friendly, production-ready modules. To inherit the uber jar, you must use the following dependency: groupId: 
-      wetheinter.net artifactId: xapi-gwt classifier: uber Of course, you should probably just inherit the modules you 
-      want directly, as this jar will contain duplicates of any other gwt jars you inherit (as well as the core xapi-core-inject 
-      module). -->
+      This module creates an artifact with coordinates net.wetheinter:xapi-gwt, and it will contain all of the other
+      GWT modules bundled into one standalone jar.  If you use this jar, you should not likely depend on any other
+      xapi-gwt-* jars.  If you do want to pick and choose dependencies, then you should forego the uber jar.
+    -->
     <module>uber</module>
 
     <!-- Some common testing utilities -->
@@ -159,7 +142,6 @@
       <modules>
         <module>api</module>
         <module>inject</module>
-        <module>reflect</module>
         <module>collect</module>
         <module>process</module>
         <module>model</module>

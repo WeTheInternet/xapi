@@ -35,6 +35,15 @@
  <dependencies>
   <dependency>
    <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-dev-source</artifactId>
+   <classifier>sources</classifier>
+  </dependency>
+  <dependency>
+   <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-dev-source</artifactId>
+  </dependency>
+  <dependency>
+   <groupId>net.wetheinter</groupId>
    <artifactId>xapi-core-api</artifactId>
    <classifier>sources</classifier>
   </dependency>
@@ -59,10 +68,6 @@
   <dependency>
    <groupId>net.wetheinter</groupId>
    <artifactId>xapi-core-util</artifactId>
-  </dependency>
-  <dependency>
-   <groupId>net.wetheinter</groupId>
-   <artifactId>gwt-reflect</artifactId>
   </dependency>
   <dependency>
    <groupId>${gwt.groupId}</groupId>

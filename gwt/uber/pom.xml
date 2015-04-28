@@ -45,16 +45,17 @@
    <classifier>sources</classifier>
   </dependency>
   <dependency>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-core-reflect</artifactId>
+    <classifier>sources</classifier>
+  </dependency>
+  <dependency>
    <groupId>net.wetheinter</groupId>
    <artifactId>xapi-elemental</artifactId>
   </dependency>
   <dependency>
    <groupId>net.wetheinter</groupId>
    <artifactId>xapi-gwt-inject</artifactId>
-  </dependency>
-  <dependency>
-   <groupId>net.wetheinter</groupId>
-   <artifactId>xapi-gwt-reflect</artifactId>
   </dependency>
   <dependency>
    <groupId>net.wetheinter</groupId>
@@ -75,16 +76,6 @@
   <dependency>
    <groupId>net.wetheinter</groupId>
    <artifactId>xapi-gwtc-api</artifactId>
-  </dependency>
-  <dependency>
-   <groupId>net.wetheinter</groupId>
-   <artifactId>gwt-reflect</artifactId>
-  </dependency>
-  <dependency>
-   <groupId>net.wetheinter</groupId>
-   <artifactId>gwt-reflect</artifactId>
-   <classifier>tests</classifier>
-   <version>2.7.0-SNAPSHOT</version>
   </dependency>
   <!--
   Yes, we're including gwt-test as compile dependency;

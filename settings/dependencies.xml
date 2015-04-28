@@ -221,11 +221,6 @@
    <!-- XApi GWT modules -->
    <dependency>
     <groupId>net.wetheinter</groupId>
-    <artifactId>gwt-reflect</artifactId>
-    <version>2.5.1</version>
-   </dependency>
-   <dependency>
-    <groupId>net.wetheinter</groupId>
     <artifactId>gwt-method-inject</artifactId>
     <version>2.5.1</version>
    </dependency>
@@ -237,11 +232,6 @@
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-gwt-inject</artifactId>
-    <version>${xapi.version}</version>
-   </dependency>
-   <dependency>
-    <groupId>net.wetheinter</groupId>
-    <artifactId>xapi-gwt-reflect</artifactId>
     <version>${xapi.version}</version>
    </dependency>
    <dependency>

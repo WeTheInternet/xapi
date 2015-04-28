@@ -26,12 +26,8 @@
    <artifactId>xapi-core-collect</artifactId>
   </dependency>
   <dependency>
-   <groupId>net.wetheinter</groupId>
-   <artifactId>gwt-reflect</artifactId>
-  </dependency>
-  <dependency>
    <groupId>${gwt.groupId}</groupId>
-   <artifactId>gwt-servlet</artifactId>
+   <artifactId>gwt-user</artifactId>
    <optional>true</optional>
   </dependency>
 
