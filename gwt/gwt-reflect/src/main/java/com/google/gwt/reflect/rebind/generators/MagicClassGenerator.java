@@ -145,6 +145,7 @@ public class MagicClassGenerator {
     while(printWriter == null){
       next = generatedName+"_"+unique++;
       printWriter = context.tryCreate(logger, packageName, next);
+      System.err.println("Trying for new name: "+packageName+"."+next);
     }
     generatedName = next;
 

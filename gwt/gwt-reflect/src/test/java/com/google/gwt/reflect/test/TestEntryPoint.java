@@ -16,7 +16,7 @@ import com.google.gwt.dom.client.Style.Overflow;
 import com.google.gwt.dom.client.Style.Unit;
 import com.google.gwt.dom.client.Style.VerticalAlign;
 import com.google.gwt.reflect.client.ConstPool;
-import com.google.gwt.reflect.shared.MemberPool;
+import com.google.gwt.reflect.shared.JsMemberPool;
 import com.google.gwt.reflect.shared.ReflectUtil;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Element;
@@ -98,7 +98,7 @@ public class TestEntryPoint implements EntryPoint {
         ConstPool.loadConstPool(new Callback<ConstPool, Throwable>() {
           @Override
           public void onSuccess(final ConstPool result) {
-            for (final MemberPool<?> m : result.getAllReflectionData()) {
+            for (final JsMemberPool<?> m : result.getAllReflectionData()) {
               try {
                 final Class<?> c = m.getType();
                 if (!testClasses.containsKey(c)) {

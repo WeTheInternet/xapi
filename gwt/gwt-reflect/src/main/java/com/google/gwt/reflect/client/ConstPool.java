@@ -10,7 +10,7 @@ import com.google.gwt.reflect.client.strategy.GwtRetention;
 import com.google.gwt.reflect.client.strategy.ReflectionStrategy;
 import com.google.gwt.reflect.shared.ClassMap;
 import com.google.gwt.reflect.shared.GwtReflect;
-import com.google.gwt.reflect.shared.MemberPool;
+import com.google.gwt.reflect.shared.JsMemberPool;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
@@ -361,7 +361,7 @@ public class ConstPool extends JavaScriptObject {
       (@java.util.ArrayList::new()(), this.$);
   }-*/;
 
-  public final native Iterable<MemberPool<?>> getAllReflectionData()
+  public final native Iterable<JsMemberPool<?>> getAllReflectionData()
   /*-{
     return @com.google.gwt.reflect.client.ConstPool::fillArray(Ljava/util/ArrayList;Lcom/google/gwt/core/client/JavaScriptObject;)
       (@java.util.ArrayList::new()(), this.$$);

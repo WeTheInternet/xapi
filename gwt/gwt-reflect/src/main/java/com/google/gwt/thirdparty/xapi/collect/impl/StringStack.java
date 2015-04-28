@@ -1,5 +1,6 @@
 package com.google.gwt.thirdparty.xapi.collect.impl;
 
+
 public class StringStack <T> {
   
   public StringStack<T> next;

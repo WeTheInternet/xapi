@@ -1,5 +1,6 @@
 package com.google.gwt.thirdparty.xapi.collect.impl;
 
+
 /**
  * A very simple, but useful stack (linked list).
  * <p>

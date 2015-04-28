@@ -8,7 +8,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
-public final class JsMemberPool <T> extends JavaScriptObject implements MemberPool <T>{
+public final class JsMemberPool <T> extends JavaScriptObject {
 
   public static native int constId(Class<?> cls)
   /*-{
@@ -155,13 +155,11 @@ public final class JsMemberPool <T> extends JavaScriptObject implements MemberPo
     addMethod(name, m);
   }
 
-  @Override
   public final native <A extends Annotation> A getAnnotation(Class<A> annoCls)
   /*-{
     return this.a[annoCls.@java.lang.Class::getName()()];
   }-*/;
 
-  @Override
   public final native Annotation[] getAnnotations()
   /*-{
     var array = @com.google.gwt.reflect.shared.JsMemberPool::annoArray()();
@@ -172,12 +170,10 @@ public final class JsMemberPool <T> extends JavaScriptObject implements MemberPo
     return array;
   }-*/;
 
-  @Override
   public final Class<?>[] getClasses() {
     return getType().getClasses();
   }
 
-  @Override
   @SuppressWarnings({"rawtypes", "unchecked"})
   public final Constructor <T> getConstructor(final Class<?> ... params) throws NoSuchMethodException {
     final String id = getSignature(params);
@@ -192,7 +188,6 @@ public final class JsMemberPool <T> extends JavaScriptObject implements MemberPo
       "("+ReflectUtil.joinClasses(",",  params)+")");
   }
 
-  @Override
   @SuppressWarnings({"rawtypes", "unchecked"})
   public final Constructor<T>[] getConstructors() {
     final Constructor<T>[] ctors = constructorArray();
@@ -208,14 +203,12 @@ public final class JsMemberPool <T> extends JavaScriptObject implements MemberPo
     return ctors;
   }
 
-  @Override
   public final native <A extends Annotation> A getDeclaredAnnotation(Class<A> annoCls)
   /*-{
     var anno = this.a[annoCls.@java.lang.Class::getName()()];
     return anno && anno.declared && anno || null;
   }-*/;
 
-  @Override
   public final native Annotation[] getDeclaredAnnotations()
   /*-{
     var array = @com.google.gwt.reflect.shared.JsMemberPool::annoArray()();
@@ -226,7 +219,6 @@ public final class JsMemberPool <T> extends JavaScriptObject implements MemberPo
     return array;
   }-*/;
 
-  @Override
   public final Constructor<T> getDeclaredConstructor(final Class<?> ... params) throws NoSuchMethodException {
     final String id = getSignature(params);
     final Constructor<T> ctor = findConstructor(this, id);
@@ -237,14 +229,12 @@ public final class JsMemberPool <T> extends JavaScriptObject implements MemberPo
       "("+ReflectUtil.joinClasses(",",  params)+") in "+getType());
   }
 
-  @Override
   public final Constructor<T>[] getDeclaredConstructors() {
     final Constructor<T>[] ctors = constructorArray();
     fillConstructors(this, ctors);
     return ctors;
   }
 
-  @Override
   public final Field getDeclaredField(final String name) throws NoSuchFieldException {
     final Field field = findField(this, name);
     if (field != null) {
@@ -253,14 +243,12 @@ public final class JsMemberPool <T> extends JavaScriptObject implements MemberPo
     throw new NoSuchFieldException("Could not find declared field "+name+" in "+getTypeName());
   }
 
-  @Override
   public final Field[] getDeclaredFields() {
     final Field[] fields = fieldArray();
     fillFields(this, fields);
     return fields;
   }
 
-  @Override
   public final Method getDeclaredMethod(final String name, final Class<?> ... params) throws NoSuchMethodException {
     final String id = name + getSignature(params);
     final Method method = findMethod(this, id);
@@ -271,14 +259,12 @@ public final class JsMemberPool <T> extends JavaScriptObject implements MemberPo
       "("+ReflectUtil.joinClasses(",",  params)+") in "+getType());
   }
 
-  @Override
   public final Method[] getDeclaredMethods() {
     final Method[] methods = methodArray();
     fillMethods(this, methods);
     return methods;
   }
 
-  @Override
   public final Field getField(final String name) throws NoSuchFieldException {
     JsMemberPool<? super T> pool = this;
     while (pool != null) {
@@ -295,7 +281,6 @@ public final class JsMemberPool <T> extends JavaScriptObject implements MemberPo
     throw new NoSuchFieldException("Could not find public field "+name+ " in "+getTypeName());
   }
 
-  @Override
   public final Field[] getFields() {
     final Field[] fields = fieldArray();
     JsMemberPool<? super T> pool = this;
@@ -312,12 +297,10 @@ public final class JsMemberPool <T> extends JavaScriptObject implements MemberPo
     return fields;
   }
 
-  @Override
   public final Class<?>[] getInterfaces() {
     return getType().getInterfaces();
   }
 
-  @Override
   public final Method getMethod(final String name, final Class<?> ... params) throws NoSuchMethodException {
     final String id = name + getSignature(params);
     JsMemberPool<? super T> pool = this;
@@ -336,7 +319,6 @@ public final class JsMemberPool <T> extends JavaScriptObject implements MemberPo
       "("+ReflectUtil.joinClasses(",",  params)+") in "+getType());
   }
 
-  @Override
   @SuppressWarnings("rawtypes")
   public final Method[] getMethods() {
     final Method[] methods = methodArray();
@@ -366,14 +348,12 @@ public final class JsMemberPool <T> extends JavaScriptObject implements MemberPo
     return methods;
   }
 
-  @Override
   public final JsMemberPool<? super T> getSuperclass() {
     final Class<? super T> superClass = getType().getSuperclass();
     assert superClass != getType();
     return superClass == null ? null : getMembers(superClass);
   }
 
-  @Override
   public final native Class<T> getType()
   /*-{
     return this.$;

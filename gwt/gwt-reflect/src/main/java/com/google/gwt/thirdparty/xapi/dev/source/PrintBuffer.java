@@ -45,11 +45,11 @@ public class PrintBuffer {
   protected static final class PrintStack extends StringStack<PrintBuffer> {
   }
 
-  protected static String join(String sep, String[] args) {
+  protected static String join(final String sep, final String[] args) {
     if (args.length == 0) {
       return "";
     }
-    StringBuilder b = new StringBuilder(args[0]);
+    final StringBuilder b = new StringBuilder(args[0]);
     for (int i = 1, m = args.length; i < m; i++) {
       b.append(sep).append(args[i]);
     }
@@ -73,12 +73,12 @@ public class PrintBuffer {
     }
   }
 
-  public PrintBuffer(PrintBuffer preamble) {
+  public PrintBuffer(final PrintBuffer preamble) {
     this(new StringBuilder());
     head.setValue(preamble);
   }
 
-  public PrintBuffer(StringBuilder target) {
+  public PrintBuffer(final StringBuilder target) {
     this.target = target;
     tail = head = new PrintStack();
   }
@@ -87,79 +87,79 @@ public class PrintBuffer {
 
   }
 
-  public PrintBuffer append(Object obj) {
+  public PrintBuffer append(final Object obj) {
     onAppend();
     target.append(obj);
     return this;
   }
 
-  public PrintBuffer print(String str) {
+  public PrintBuffer print(final String str) {
     printIndent();
     append(str);
     return this;
   }
 
-  public PrintBuffer append(String str) {
+  public PrintBuffer append(final String str) {
     onAppend();
     target.append(str);
     return this;
   }
 
-  public PrintBuffer append(CharSequence s) {
+  public PrintBuffer append(final CharSequence s) {
     onAppend();
     target.append(s);
     return this;
   }
 
-  public PrintBuffer append(CharSequence s, int start, int end) {
+  public PrintBuffer append(final CharSequence s, final int start, final int end) {
     onAppend();
     target.append(s, start, end);
     return this;
   }
 
-  public PrintBuffer append(char[] str) {
+  public PrintBuffer append(final char[] str) {
     onAppend();
     target.append(str);
     return this;
   }
 
-  public PrintBuffer append(char[] str, int offset, int len) {
+  public PrintBuffer append(final char[] str, final int offset, final int len) {
     onAppend();
     target.append(str, offset, len);
     return this;
   }
 
-  public PrintBuffer append(boolean b) {
+  public PrintBuffer append(final boolean b) {
     onAppend();
     target.append(b);
     return this;
   }
 
-  public PrintBuffer append(char c) {
+  public PrintBuffer append(final char c) {
     onAppend();
     target.append(c);
     return this;
   }
 
-  public PrintBuffer append(int i) {
+  public PrintBuffer append(final int i) {
     onAppend();
     target.append(i);
     return this;
   }
 
-  public PrintBuffer append(long lng) {
+  public PrintBuffer append(final long lng) {
     onAppend();
     target.append(lng);
     return this;
   }
 
-  public PrintBuffer append(float f) {
+  public PrintBuffer append(final float f) {
     onAppend();
     target.append(f);
     return this;
   }
 
-  public PrintBuffer append(double d) {
+  public PrintBuffer append(final double d) {
     onAppend();
     target.append(d);
     return this;
@@ -177,7 +177,7 @@ public class PrintBuffer {
     }
   }
 
-  public PrintBuffer indentln(Object obj) {
+  public PrintBuffer indentln(final Object obj) {
     printIndent();
     onAppend();
     target.append(INDENT);
@@ -186,7 +186,7 @@ public class PrintBuffer {
     return this;
   }
 
-  public PrintBuffer indentln(String str) {
+  public PrintBuffer indentln(final String str) {
     printIndent();
     onAppend();
     target.append(INDENT);
@@ -195,7 +195,7 @@ public class PrintBuffer {
     return this;
   }
 
-  public PrintBuffer indentln(CharSequence s) {
+  public PrintBuffer indentln(final CharSequence s) {
     printIndent();
     onAppend();
     target.append(INDENT);
@@ -204,7 +204,7 @@ public class PrintBuffer {
     return this;
   }
 
-  public PrintBuffer indentln(char[] str) {
+  public PrintBuffer indentln(final char[] str) {
     printIndent();
     onAppend();
     target.append(INDENT);
@@ -214,7 +214,7 @@ public class PrintBuffer {
   }
 
   public PrintBuffer outdent() {
-    int end = Math.max(0, indent.length() - INDENT.length());
+    final int end = Math.max(0, indent.length() - INDENT.length());
     if (end > 0) {
       indent = indent.substring(0, end);
     } else {
@@ -230,7 +230,7 @@ public class PrintBuffer {
     return this;
   }
 
-  public PrintBuffer println(Object obj) {
+  public PrintBuffer println(final Object obj) {
     printIndent();
     onAppend();
     target.append(obj);
@@ -238,7 +238,7 @@ public class PrintBuffer {
     return this;
   }
 
-  public PrintBuffer println(String str) {
+  public PrintBuffer println(final String str) {
     printIndent();
     onAppend();
     append(str);
@@ -246,7 +246,7 @@ public class PrintBuffer {
     return this;
   }
 
-  public PrintBuffer println(CharSequence s) {
+  public PrintBuffer println(final CharSequence s) {
     printIndent();
     onAppend();
     target.append(s);
@@ -254,7 +254,7 @@ public class PrintBuffer {
     return this;
   }
 
-  public PrintBuffer println(char[] str) {
+  public PrintBuffer println(final char[] str) {
     printIndent();
     onAppend();
     target.append(str);
@@ -270,15 +270,15 @@ public class PrintBuffer {
    * @return - A buffer pointed at this text, capable of further before/after
    *         branching
    */
-  public PrintBuffer printBefore(String prefix) {
-    PrintBuffer buffer = new PrintBuffer(new StringBuilder(prefix));
+  public PrintBuffer printBefore(final String prefix) {
+    final PrintBuffer buffer = new PrintBuffer(new StringBuilder(prefix));
     addToBeginning(buffer);
     return buffer;
   }
 
-  public void addToBeginning(PrintBuffer buffer) {
+  public void addToBeginning(final PrintBuffer buffer) {
     assert notContained(buffer) : "Infinite recursion!";
-    PrintStack newHead = new PrintStack();
+    final PrintStack newHead = new PrintStack();
     newHead.next = head;
     newHead.setValue(buffer);
     head = newHead;
@@ -292,8 +292,8 @@ public class PrintBuffer {
    * @return - A buffer pointed at this text, capable of further before/after
    *         branching
    */
-  public PrintBuffer printAfter(String suffix) {
-    PrintBuffer buffer = new PrintBuffer(new StringBuilder(suffix));
+  public PrintBuffer printAfter(final String suffix) {
+    final PrintBuffer buffer = new PrintBuffer(new StringBuilder(suffix));
     addToEnd(buffer);
     return buffer;
   }
@@ -304,10 +304,10 @@ public class PrintBuffer {
     return this;
   }
 
-  public void addToEnd(PrintBuffer buffer) {
+  public void addToEnd(final PrintBuffer buffer) {
     assert notContained(buffer) : "Infinite recursion! On [" + buffer + "] in "
         + this;
-    PrintStack newTail = new PrintStack();
+    final PrintStack newTail = new PrintStack();
     newTail.setValue(buffer);
     newTail.setPrefix(target.toString());
     target.setLength(0);
@@ -320,7 +320,7 @@ public class PrintBuffer {
    *
    * Only called when -ea [enable assertions = true]
    */
-  private boolean notContained(PrintBuffer buffer) {
+  private boolean notContained(final PrintBuffer buffer) {
     if (buffer == this) {
       System.err.println("Trying to add a buffer to itself");
       return false;
@@ -363,7 +363,7 @@ public class PrintBuffer {
 
   @Override
   public String toString() {
-    StringBuilder body = new StringBuilder(header());
+    final StringBuilder body = new StringBuilder(header());
     body.append(head);
     body.append(target.toString());
     return body + footer();

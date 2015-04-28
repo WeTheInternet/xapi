@@ -35,6 +35,7 @@
 
 package com.google.gwt.thirdparty.xapi.dev.source;
 
+
 public class SourceBuilder<Payload> {
 
   private final PrintBuffer head;

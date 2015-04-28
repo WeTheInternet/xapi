@@ -107,15 +107,16 @@ public class MagicClassInjector implements MagicMethodGenerator, UnifyAstListene
     final String result = MagicClassGenerator.generate(params.getLogger(), params, type);
     params.getAst().finish(params.getLogger());
 
+    final UnifyAstView ast = params.getAst();
     params.getLogger().log(logLevel, "Generated Class Enhancer: " + result);
-    JDeclaredType success = params.getAst().searchForTypeBySource(result);
-    success = params.getAst().translate(success);
+    JDeclaredType success = ast.searchForTypeBySource(result);
+    success = ast.translate(success);
     //Okay, we've generated the correct magic class subtype;
     //Now pull off its static accessor method to enhance and return our class.
 
     for (final JMethod method : success.getMethods()) {
       if (method.isStatic() && method.getName().equals("enhanceClass")) {
-        final JMethodCall call = new JMethodCall(method.getSourceInfo().makeChild(SourceOrigin.UNKNOWN), null, method);
+        final JMethodCall call = new JMethodCall(method.getSourceInfo().makeChild(SourceOrigin.UNKNOWN), null, ast.translate(method));
         call.addArg(params.getClazz().makeStatement().getExpr());
 
         // Mark that the enclosing type (GwtReflect) has caused this class enhancer to be generated.

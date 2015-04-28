@@ -113,7 +113,8 @@ public abstract class FieldGenerator extends MemberGenerator implements MagicMet
     final ReflectionManifest manifest = ReflectionManifest.getReflectionManifest(logger, clsName, ctx.getGeneratorContext());
     final String factoryCls = getOrMakeFieldFactory(logger, ctx, field, field.getEnclosingType(), manifest, declaredOnly);
     ctx.finish(logger);
-    final JDeclaredType factory = ctx.getAst().searchForTypeBySource(factoryCls);
+    final UnifyAstView ast = ctx.getAst();
+    final JDeclaredType factory = ast.searchForTypeBySource(factoryCls);
     // pull out the static accessor method
     for (final JMethod factoryMethod : factory.getMethods()) {
       if (factoryMethod.isStatic() && factoryMethod.getName().equals("instantiate")) {

@@ -135,7 +135,7 @@ public abstract class MemberGenerator {
         // so we don't bother checking the signature.
         for (final JMethod method : type.getMethods()) {
           if (method.getName().equals("getMembers")) {
-            getMembers = method;
+            getMembers = ast.translate(method);
             break;
           }
         }

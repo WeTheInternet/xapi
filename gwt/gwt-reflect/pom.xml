@@ -232,6 +232,9 @@
 				  <runTarget>ReflectTest.html</runTarget>
 				  <style>PRETTY</style>
 				  <logLevel>INFO</logLevel>
+				  <extraJvmArgs>-ea</extraJvmArgs>
+				  <jsInteropMode>NONE</jsInteropMode>
+<!-- 				  <methodNameDisplayMode>FULL</methodNameDisplayMode> --> 
 				  <extraSources>
 				    <extraSource>${project.basedir}/src/test/java</extraSource>
 				    <extraSource>${project.basedir}/src/test/resources</extraSource>

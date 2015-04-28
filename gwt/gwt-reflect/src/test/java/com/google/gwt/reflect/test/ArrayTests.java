@@ -20,7 +20,7 @@ public class ArrayTests extends AbstractReflectionTest {
     long[] longs = (long[])Array.newInstance(long.class, 5);
     assertEquals(longs.length, 5);
     assertEquals(longs.getClass(), long[].class);
-    longs[0] = 1;
+    longs[0] = 1;   
     Array.setLong(longs, 1, 2);
     Array.setLong(longs, 2, longs[0] + 2);
     Array.setLong(longs, 3, Array.getLong(longs, 2) +1);

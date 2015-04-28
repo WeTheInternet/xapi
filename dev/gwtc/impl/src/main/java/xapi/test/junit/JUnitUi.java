@@ -1,17 +1,5 @@
 package xapi.test.junit;
 
-import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import javax.inject.Provider;
-
-import xapi.annotation.compile.Resource;
-import xapi.gwtc.api.Gwtc;
-import xapi.util.X_Debug;
-
 import com.google.gwt.core.client.Callback;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.RunAsyncCallback;
@@ -25,13 +13,25 @@ import com.google.gwt.dom.client.Style.Overflow;
 import com.google.gwt.dom.client.Style.Unit;
 import com.google.gwt.dom.client.Style.VerticalAlign;
 import com.google.gwt.reflect.client.ConstPool;
-import com.google.gwt.reflect.shared.MemberPool;
+import com.google.gwt.reflect.shared.JsMemberPool;
 import com.google.gwt.reflect.shared.ReflectUtil;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Element;
 import com.google.gwt.user.client.Event;
 import com.google.gwt.user.client.EventListener;
 import com.google.gwt.user.client.Timer;
+
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import javax.inject.Provider;
+
+import xapi.annotation.compile.Resource;
+import xapi.gwtc.api.Gwtc;
+import xapi.util.X_Debug;
 
 @Gwtc(
     includeGwtXml={
@@ -47,26 +47,26 @@ public class JUnitUi {
   private final Map<Class<?>, Method[]> testClasses = new LinkedHashMap<Class<?>, Method[]>();
 
   public void onModuleLoad() {
-    String module = GWT.getModuleName(), host = GWT.getHostPageBaseURL().replace("/" + module, "");
+    final String module = GWT.getModuleName(), host = GWT.getHostPageBaseURL().replace("/" + module, "");
 //    print("<a href='#' onclick=\"" + "window.__gwt_bookmarklet_params = " + "{server_url:'" + host
 //        + "', " + "module_name:'" + module + "'}; " + "var s = document.createElement('script'); "
 //        + "s.src = 'http://localhost:1337/dev_mode_on.js'; "
 //        + "document.getElementsByTagName('head')[0].appendChild(s); " + "return true;"
 //        + "\">Recompile</a>", null);
-    print("<style>" + 
-          "h3 {" + 
-            "margin-bottom: 5px; padding-right: 15px;" + 
-           "}" + 
+    print("<style>" +
+          "h3 {" +
+            "margin-bottom: 5px; padding-right: 15px;" +
+           "}" +
           ".results {" +
             "color: grey;" +
             " margin-bottom: 5px;" +
             " text-align: center;" +
             " width: 350px;" +
-          "}" + 
-          ".success {" + 
+          "}" +
+          ".success {" +
             "color: green;" +
           "}" +
-          ".fail {" + 
+          ".fail {" +
             "color: red;" +
           "}" +
           "</style>", null);
@@ -77,7 +77,7 @@ public class JUnitUi {
       public void onSuccess() {
         try {
           String.class.getMethod("equals", Object.class).invoke("!", "!");
-        } catch (Exception e) {
+        } catch (final Exception e) {
           print("Basic string reflection not working; " + "expect failures...", e);
         }
         // Do not change the order of the following calls unless you also
@@ -86,14 +86,14 @@ public class JUnitUi {
         loadAllTests();
         ConstPool.loadConstPool(new Callback<ConstPool, Throwable>() {
           @Override
-          public void onSuccess(ConstPool result) {
-            for (MemberPool<?> m : result.getAllReflectionData()) {
+          public void onSuccess(final ConstPool result) {
+            for (final JsMemberPool<?> m : result.getAllReflectionData()) {
               try {
-                Class<?> c = m.getType();
+                final Class<?> c = m.getType();
                 if (!testClasses.containsKey(c)) {
                   addTests(c);
                 }
-              } catch (Throwable e) {
+              } catch (final Throwable e) {
                 print("Error adding tests", e);
               }
             }
@@ -101,7 +101,7 @@ public class JUnitUi {
           }
 
           @Override
-          public void onFailure(Throwable caught) {
+          public void onFailure(final Throwable caught) {
             print("Error loading ConstPool", caught);
           }
         });
@@ -109,7 +109,7 @@ public class JUnitUi {
       }
 
       @Override
-      public void onFailure(Throwable reason) {
+      public void onFailure(final Throwable reason) {
         print("Error loading TestEntryPoint", reason);
       }
     });
@@ -117,7 +117,7 @@ public class JUnitUi {
   }
 
   protected void loadAllTests() {
-    
+
   }
 
   protected void loadTests(final boolean forReal) {
@@ -132,37 +132,37 @@ public class JUnitUi {
       }
 
       @Override
-      public void onFailure(Throwable reason) {
+      public void onFailure(final Throwable reason) {
 
       }
     });
   }
 
   public void addTests(final Class<?> cls) throws Throwable {
-    Method[] allTests = JUnit4Runner.findTests(cls);
-    Provider<Object> provider = new Provider<Object> () {
+    final Method[] allTests = JUnit4Runner.findTests(cls);
+    final Provider<Object> provider = new Provider<Object> () {
       @Override
       public Object get() {
         try {
           return cls.newInstance();
-        } catch(Exception e) {
+        } catch(final Exception e) {
           throw X_Debug.rethrow(e);
         }
       }
     };
     if (allTests.length > 0) {
       testClasses.put(cls, allTests);
-      for (Method method : allTests) {
+      for (final Method method : allTests) {
         tests.put(method, provider);
       }
     }
   }
 
   private void displayTests() {
-    BodyElement body = Document.get().getBody();
+    final BodyElement body = Document.get().getBody();
 
     for (final Class<?> c : testClasses.keySet()) {
-      DivElement div = Document.get().createDivElement();
+      final DivElement div = Document.get().createDivElement();
       div.getStyle().setDisplay(Display.INLINE_BLOCK);
       div.getStyle().setVerticalAlign(VerticalAlign.TOP);
       div.getStyle().setMarginRight(2, Unit.EM);
@@ -174,9 +174,9 @@ public class JUnitUi {
       b.append("<h3><a id='" + id + "' href='#run:" + id + "'>").append(c.getName()).append(
           "</a></h3>").append("<div class='results' id='" + TEST_RESULTS + id + "'> </div>");
       try {
-        String path = c.getProtectionDomain().getCodeSource().getLocation().getPath();
+        final String path = c.getProtectionDomain().getCodeSource().getLocation().getPath();
         b.append("<sup><a href='file://" + path + "'>").append(path).append("</a></sup>");
-      } catch (Exception ignored) {
+      } catch (final Exception ignored) {
       }
       div.setInnerHTML(b.toString());
       for (final Method m : testClasses.get(c)) {
@@ -191,11 +191,11 @@ public class JUnitUi {
         b.append(')');
         b.append("</pre>");
         b.append("<div id='" + methodId + "'> </div>");
-        Element el = Document.get().createDivElement().cast();
+        final Element el = Document.get().createDivElement().cast();
         el.setInnerHTML(b.toString());
         DOM.setEventListener(el, new EventListener() {
           @Override
-          public void onBrowserEvent(Event event) {
+          public void onBrowserEvent(final Event event) {
             if (event.getTypeInt() == Event.ONCLICK) {
               runTest(m);
             }
@@ -205,11 +205,11 @@ public class JUnitUi {
         div.appendChild(el);
       }
       body.appendChild(div);
-      Element anchor = Document.get().getElementById(id).cast();
+      final Element anchor = Document.get().getElementById(id).cast();
       DOM.setEventListener(anchor, new EventListener() {
         @Override
-        public void onBrowserEvent(Event event) {
-          Map<Method, Boolean> res = testResults.get(c);
+        public void onBrowserEvent(final Event event) {
+          final Map<Method, Boolean> res = testResults.get(c);
 
           for (final Method m : res.keySet().toArray(new Method[res.size()])) {
             res.put(m, null);
@@ -236,7 +236,7 @@ public class JUnitUi {
 		$wnd.console && $wnd.console.log(o);
   }-*/;
 
-  private String toId(Class<?> c) {
+  private String toId(final Class<?> c) {
     return c.getName().replace('.', '_');
   }
 
@@ -261,17 +261,18 @@ public class JUnitUi {
         }
       }.schedule(delay += 5);
     }
-    for (Class<?> testClass : testResults.keySet()) {
+    for (final Class<?> testClass : testResults.keySet()) {
       updateTestClass(testClass);
     }
   }
 
-  private void updateTestClass(Class<?> cls) {
-    String id = toId(cls);
-    Element el = DOM.getElementById(TEST_RESULTS + id);
-    Map<Method, Boolean> results = testResults.get(cls);
-    int success = 0, fail = 0, total = results.size();
-    for (Entry<Method, Boolean> e : results.entrySet()) {
+  private void updateTestClass(final Class<?> cls) {
+    final String id = toId(cls);
+    final Element el = DOM.getElementById(TEST_RESULTS + id);
+    final Map<Method, Boolean> results = testResults.get(cls);
+    int success = 0, fail = 0;
+    final int total = results.size();
+    for (final Entry<Method, Boolean> e : results.entrySet()) {
       if (e.getValue() != null) {
         if (e.getValue()) {
           success++;
@@ -280,7 +281,7 @@ public class JUnitUi {
         }
       }
     }
-    StringBuilder b =
+    final StringBuilder b =
         new StringBuilder("<span class='success'>Passed: ").append(success).append("/").append(
             total).append("</span>; ").append("<span");
     if (fail > 0) {
@@ -294,23 +295,24 @@ public class JUnitUi {
     final String id = m.getName() + m.getDeclaringClass().hashCode();
     final com.google.gwt.dom.client.Element el = Document.get().getElementById(id);
     el.setInnerHTML("");
-    Map<Method, Boolean> results = testResults.get(m.getDeclaringClass());
+    final Map<Method, Boolean> results = testResults.get(m.getDeclaringClass());
     try {
       JUnit4Runner.runTest(tests.get(m), m);
       results.put(m, true);
       debug(el, "<div style='color:green'>" + m.getName() + " passes!</div>", null);
     } catch (Throwable e) {
       results.put(m, false);
-      String error = m.getDeclaringClass().getName() + "." + m.getName() + " failed";
-      while (e.getClass() == RuntimeException.class && e.getCause() != null)
+      final String error = m.getDeclaringClass().getName() + "." + m.getName() + " failed";
+      while (e.getClass() == RuntimeException.class && e.getCause() != null) {
         e = e.getCause();
+      }
       debug(el, error, e);
       try {
         // Move the element up to the top of the results list.
-        com.google.gwt.dom.client.Element result = el.getParentElement();
-        com.google.gwt.dom.client.Element parent = result.getParentElement();
+        final com.google.gwt.dom.client.Element result = el.getParentElement();
+        final com.google.gwt.dom.client.Element parent = result.getParentElement();
         parent.insertAfter(result, parent.getChild(2));
-      } catch (Exception ignored) {
+      } catch (final Exception ignored) {
       }
       if (e instanceof Error) {
         throw (Error) e;
@@ -324,21 +326,21 @@ public class JUnitUi {
     }
   }
 
-  public void print(String string, Throwable e) {
-    DivElement el = Document.get().createDivElement();
+  public void print(final String string, final Throwable e) {
+    final DivElement el = Document.get().createDivElement();
     debug(el, string, e);
     Document.get().getBody().appendChild(el);
   }
 
-  private void debug(com.google.gwt.dom.client.Element el, String string, Throwable e) {
-    StringBuilder b = new StringBuilder();
+  private void debug(final com.google.gwt.dom.client.Element el, final String string, Throwable e) {
+    final StringBuilder b = new StringBuilder();
     b.append(string);
     b.append('\n');
     b.append("<pre style='color:red;'>");
     while (e != null) {
       b.append(e);
       b.append('\n');
-      for (StackTraceElement trace : e.getStackTrace()) {
+      for (final StackTraceElement trace : e.getStackTrace()) {
         b.append('\t').append(trace.getClassName()).append('.').append(trace.getMethodName())
             .append(' ').append(trace.getFileName()).append(':').append(trace.getLineNumber())
             .append('\n');

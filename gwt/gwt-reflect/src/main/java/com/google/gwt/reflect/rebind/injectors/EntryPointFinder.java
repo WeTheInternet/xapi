@@ -7,13 +7,13 @@ import com.google.gwt.dev.jjs.ast.Context;
 import com.google.gwt.dev.jjs.ast.JClassLiteral;
 import com.google.gwt.dev.jjs.ast.JClassType;
 import com.google.gwt.dev.jjs.ast.JConstructor;
-import com.google.gwt.dev.jjs.ast.JGwtCreate;
 import com.google.gwt.dev.jjs.ast.JIfStatement;
 import com.google.gwt.dev.jjs.ast.JInterfaceType;
 import com.google.gwt.dev.jjs.ast.JMethod;
 import com.google.gwt.dev.jjs.ast.JMethodBody;
 import com.google.gwt.dev.jjs.ast.JNewInstance;
 import com.google.gwt.dev.jjs.ast.JNode;
+import com.google.gwt.dev.jjs.ast.JPermutationDependentValue;
 import com.google.gwt.dev.jjs.ast.JStatement;
 import com.google.gwt.dev.jjs.ast.JType;
 import com.google.gwt.dev.jjs.ast.JVisitor;
@@ -59,7 +59,7 @@ final class EntryPointFinder extends JVisitor {
   }
 
   @Override
-  public boolean visit(JGwtCreate x, Context ctx) {
+  public boolean visit(JPermutationDependentValue x, Context ctx) {
     JType type = x.getType();
     if (type instanceof JClassType) {
       for (JInterfaceType iface : ((JClassType)type).getImplements()) {
