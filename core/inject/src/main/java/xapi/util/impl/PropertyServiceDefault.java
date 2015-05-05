@@ -3,6 +3,7 @@ package xapi.util.impl;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
+import xapi.annotation.gwt.MagicMethod;
 import xapi.annotation.inject.SingletonDefault;
 import xapi.util.X_Namespace;
 import xapi.util.service.PropertyService;
@@ -11,20 +12,22 @@ import xapi.util.service.PropertyService;
 public class PropertyServiceDefault implements PropertyService{
 
   @Override
-  public String getProperty(String key) {
+  @MagicMethod(doNotVisit=true)
+  public String getProperty(final String key) {
     return System.getProperty(key, null);
   }
 
   @Override
-  public String getProperty(String key, String dflt) {
+  @MagicMethod(doNotVisit=true)
+  public String getProperty(final String key, final String dflt) {
     return System.getProperty(key, dflt);
   }
 
   @Override
   public void setProperty(final String key, final String value) {
-    if (System.getSecurityManager()==null)
+    if (System.getSecurityManager()==null) {
       System.setProperty(key, value);
-    else
+    } else {
       AccessController.doPrivileged(new PrivilegedAction<Void>() {
         @Override
         public Void run() {
@@ -32,6 +35,7 @@ public class PropertyServiceDefault implements PropertyService{
           return null;
         }
       });
+    }
   }
 
   @Override

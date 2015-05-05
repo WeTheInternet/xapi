@@ -35,8 +35,8 @@
 
 package xapi.util;
 
+import xapi.annotation.gwt.MagicMethod;
 import xapi.inject.impl.SingletonProvider;
-import xapi.platform.JrePlatform;
 import xapi.util.impl.PropertyServiceDefault;
 import xapi.util.service.PropertyService;
 
@@ -55,7 +55,7 @@ public final class X_Properties {
 	public static final SingletonProvider<String> platform = new SingletonProvider<String>(){
 	  @Override
 	  protected String initialValue() {
-	    return getProperty(X_Namespace.PROPERTY_PLATFORM, JrePlatform.class.getName());
+	    return getProperty(X_Namespace.PROPERTY_PLATFORM, "xapi.platform.JrePlatform");
 	  };
 	};
 
@@ -63,43 +63,46 @@ public final class X_Properties {
 	static {
 	  // We cannot use our normal injection service to provide the properties
 	  // service, as our injection behavior is configurable by these properties.
-	  String propClass = System.getProperty(X_Namespace.PROPERTY_PROVIDER,
-	    PropertyServiceDefault.class.getName());
+	  final String propClass = System.getProperty(X_Namespace.PROPERTY_PROVIDER,
+	    "xapi.util.impl.PropertyServiceDefault");
 	  PropertyService instance = null;
 	  ClassLoader cl = null;
 	  try {
 	    cl = X_Properties.class.getClassLoader();
-	  } catch (Exception e) {}
+	  } catch (final Exception e) {}
 	  try {
-	    Class<?> cls =
+	    final Class<?> cls =
 	      Class.forName(propClass, true, cl);
 	    instance = (PropertyService)cls.newInstance();
-	  }catch(ClassCastException e) {
+	  }catch(final ClassCastException e) {
 	    // No hope of getting a logger at this point...
 	    System.err.println("Could not load "+propClass+";" +
 	    		(X_Runtime.isDebug()?" it does not implement " +
 	    		"PropertyService, or the classloader which loaded X_Properties is " +
 	    		"unable to load this class.":""));
-	  }catch(Throwable e) {
+	  }catch(final Throwable e) {
 	    e.printStackTrace();
 	    System.err.println("Unknown error loading "+propClass+": "+e);
 	  }
-	  if (instance == null)
-	    service = new PropertyServiceDefault();
-	  else
-	    service = instance;
+	  if (instance == null) {
+      service = new PropertyServiceDefault();
+    } else {
+      service = instance;
+    }
 	}
 
-	public static String getProperty(String property) {
+	@MagicMethod(doNotVisit=true)
+	public static String getProperty(final String property) {
 	  return service.getProperty(property);
 	}
 
-	public static String getProperty(String property, String dflt) {
+  @MagicMethod(doNotVisit=true)
+	public static String getProperty(final String property, final String dflt) {
 	  return service.getProperty(property, dflt);
 	}
 
-	public static void setProperty(String property, String value) {
+	public static void setProperty(final String property, final String value) {
 	  service.setProperty(property, value);
 	}
-	
+
 }
