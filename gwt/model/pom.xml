@@ -22,6 +22,10 @@
     </dependency>
     <dependency>
       <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-gwt-io</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
       <artifactId>xapi-core-model</artifactId>
     </dependency>
     <dependency>

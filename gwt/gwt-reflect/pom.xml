@@ -26,7 +26,10 @@
 		<dependency>
 			<groupId>net.wetheinter</groupId>
 			<artifactId>xapi-gwt-test</artifactId>
-			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>net.wetheinter</groupId>
+			<artifactId>xapi-gwt-inject</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>${gwt.groupId}</groupId>
