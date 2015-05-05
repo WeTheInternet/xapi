@@ -1,5 +1,13 @@
 package xapi.dev.model;
 
+import static xapi.dev.model.ModelGeneratorGwt.allAbstract;
+import static xapi.dev.model.ModelGeneratorGwt.canBeSupertype;
+import static xapi.dev.model.ModelGeneratorGwt.fieldName;
+import static xapi.dev.model.ModelGeneratorGwt.toSignature;
+import static xapi.dev.model.ModelGeneratorGwt.toTypes;
+import static xapi.dev.model.ModelGeneratorGwt.typeToParameterString;
+import static xapi.source.X_Source.binaryToSource;
+
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.RebindResult;
 import com.google.gwt.core.ext.TreeLogger;
@@ -106,13 +114,13 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
     final Map<String,JMethod> uniqueMethods = new LinkedHashMap<String,JMethod>();
     JMethod[] existing = type.getInheritableMethods();
     final Set<? extends JClassType> hierarchy = type.getFlattenedSupertypeHierarchy();
-    if (ModelGeneratorGwt.allAbstract(existing)) {
+    if (type.isInterface() != null || allAbstract(existing)) {
       // still an interface; grab our root type.
       existing = models.getRootType(logger, ctx).getInheritableMethods();
     }
     for (final JMethod method : existing) {
       if (!method.isAbstract()) {
-        uniqueMethods.put(xapi.dev.model.ModelGeneratorGwt.toSignature(method), method);
+        uniqueMethods.put(toSignature(method), method);
       }
     }
     final boolean debug = logger.isLoggable(Type.DEBUG);
@@ -120,14 +128,14 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
       if (next.isInterface() != null) {
         sb.getClassBuffer().addInterfaces(next.getQualifiedSourceName());
         for (final JMethod method : next.getMethods()) {
-          final String sig = ModelGeneratorGwt.toSignature(method);
+          final String sig = toSignature(method);
           if (!uniqueMethods.containsKey(sig)) {
             uniqueMethods.put(sig, method);
           }
         }
       } else {
         for (final JMethod method : next.getMethods()) {
-          final String sig = ModelGeneratorGwt.toSignature(method);
+          final String sig = toSignature(method);
           if (uniqueMethods.containsKey(sig)) {
             if (debug) {
               logger.log(Type.WARN, "Found multiple model methods for " + type.getName() + "::" + sig +
@@ -172,7 +180,7 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
         concrete = model;
         for (final JClassType supertype : concrete.getFlattenedSupertypeHierarchy()) {
           // Only interfaces explicitly extending Model become concrete.
-          if (ModelGeneratorGwt.canBeSupertype(type, supertype)) {
+          if (canBeSupertype(type, supertype)) {
             // prefer the concrete type with the most methods in common.
             concrete = supertype;
           }
@@ -197,7 +205,7 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
     fieldMap.setDefaultSerializable(type.getAnnotation(Serializable.class));
 
     for (final JMethod method : methods.keySet()) {
-        if (!toGenerate.contains(ModelGeneratorGwt.toSignature(method))) {
+        if (!toGenerate.contains(toSignature(method))) {
           logger.log(Type.TRACE, "Skipping method defined in supertype: "+method.getJsniSignature());
           continue;
         }
@@ -206,12 +214,12 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
       final Annotation[] annos = methods.get(method);
       final String methodName = method.getName();
       String returnType = method.getReturnType().getQualifiedSourceName();
-      final String params = ModelGeneratorGwt.typeToParameterString(method.getParameterTypes());
+      final String params = typeToParameterString(method.getParameterTypes());
 
       // TODO: check imports if we are safe to use simple name.
       returnType = method.getReturnType().getSimpleSourceName();
-      final IsType returns = X_Source.binaryToSource(method.getReturnType().getQualifiedBinaryName());
-      final IsType[] parameters = ModelGeneratorGwt.toTypes(method.getParameterTypes());
+      final IsType returns = binaryToSource(method.getReturnType().getQualifiedBinaryName());
+      final IsType[] parameters = toTypes(method.getParameterTypes());
 
       final GetterFor getter = method.getAnnotation(GetterFor.class);
       if (getter != null) {
@@ -337,12 +345,12 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
 
     String fieldName;
     if (name == null) {
-      fieldName = ModelGeneratorGwt.fieldName(method, models);
+      fieldName = fieldName(method, models);
     } else {
       fieldName = name.value();
       if (X_Runtime.isDebug()) {
         logger.log(Type.TRACE, "Named method "+method.getJsniSignature()+" "
-          +fieldName+", from @Named attribute.  Heuristic name: "+ModelGeneratorGwt.fieldName(method, models));
+          +fieldName+", from @Named attribute.  Heuristic name: "+fieldName(method, models));
       }
     }
     if ("".equals(fieldName)) {

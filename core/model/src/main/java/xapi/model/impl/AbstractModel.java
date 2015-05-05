@@ -1,8 +1,6 @@
 package xapi.model.impl;
 
-
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Map.Entry;
 
 import xapi.annotation.inject.InstanceDefault;
 import xapi.collect.X_Collect;
@@ -34,36 +32,30 @@ public class AbstractModel implements Model, PersistentModel, NestedModel{
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T> T getProperty(String key) {
+  public <T> T getProperty(final String key) {
     return (T)map.get(key);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T> T getProperty(String key, T dflt) {
-    Object o = getProperty(key);
-    if (o == null)
+  public <T> T getProperty(final String key, final T dflt) {
+    final Object o = getProperty(key);
+    if (o == null) {
       return dflt;
+    }
     return (T)o;
   }
 
   @Override
-  public Map<String, Object> getProperties() {
-    Map<String,Object> props = emptyMap();
-    for (String key : map.keys())
-      props.put(key, map.get(key));
-    return props;
-  }
-
-  protected Map<String,Object> emptyMap() {
-    return new HashMap<String, Object>();
+  public Iterable<Entry<String, Object>> getProperties() {
+    return map.entries();
   }
 
   @Override
-  public Model setProperty(String key, Object value) {
+  public Model setProperty(final String key, final Object value) {
     try {
       map.put(key, value);
-    } catch (Throwable e) {
+    } catch (final Throwable e) {
       X_Log.error(e);
     }
     return this;
@@ -73,19 +65,19 @@ public class AbstractModel implements Model, PersistentModel, NestedModel{
     return new AbstractModel();
   }
   @Override
-  public Model removeProperty(String key) {
+  public Model removeProperty(final String key) {
     map.remove(key);
     return this;
   }
 
   @Override
-  public Model child(String propName) {
+  public Model child(final String propName) {
     Object existing = map.get(propName);
     assert existing == null || existing instanceof Model :
       "You requested a child model with property name "+propName+", but an object of type "
         +existing.getClass()+" already existed in this location: "+existing;
     if (existing == null){
-      AbstractModel child = createNew();//ensures subclasses can control child classes.
+      final AbstractModel child = createNew();//ensures subclasses can control child classes.
       child.parent = this;
       existing = child;
       map.put(propName, existing);
@@ -100,32 +92,33 @@ public class AbstractModel implements Model, PersistentModel, NestedModel{
   }
 
   @Override
-  public Model cache(SuccessHandler<Model> callback) {
+  public Model cache(final SuccessHandler<Model> callback) {
     X_Model.cache().cacheModel(this,callback);
     return this;
   }
 
   @Override
-  public Model persist(SuccessHandler<Model> callback) {
+  public Model persist(final SuccessHandler<Model> callback) {
     X_Model.persist(this, callback);
     return this;
   }
 
   @Override
-  public Model delete(SuccessHandler<Model> callback) {
+  public Model delete(final SuccessHandler<Model> callback) {
     X_Model.cache().deleteModel(this,callback);
     return this;
   }
 
   @Override
   @SuppressWarnings({"unchecked", "rawtypes"})
-  public Model load(SuccessHandler<Model> callback, boolean useCache) {
+  public Model load(final SuccessHandler<Model> callback, final boolean useCache) {
     try{
-      Model model = X_Model.cache().getModel(getKey().toString());
+      final Model model = X_Model.cache().getModel(getKey().toString());
       callback.onSuccess(model);
-    }catch(Exception e){
-      if (callback instanceof ErrorHandler)
+    }catch(final Exception e){
+      if (callback instanceof ErrorHandler) {
         ((ErrorHandler) callback).onError(e);
+      }
     }
     return this;
   }

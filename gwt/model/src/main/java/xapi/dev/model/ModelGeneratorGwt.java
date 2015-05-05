@@ -138,7 +138,7 @@ public class ModelGeneratorGwt extends IncrementalGenerator{
   }
 
   public static String toSignature(final JMethod method) {
-    return method.getName()+"("+ModelGeneratorGwt.typeToSignature(method.getParameterTypes())+")";
+    return method.getName()+"("+typeToSignature(method.getParameterTypes())+")";
   }
 
   public static RebindResult execImpl(final TreeLogger logger, final GeneratorContext ctx,

@@ -9,6 +9,8 @@
     <!-- For users of magic-method injection -->
       <extend-configuration-property name="gwt.magic.methods" 
     value="xapi.model.X_Model.create(Ljava/lang/Class;)Lxapi/model/api/Model; *= xapi.dev.model.ModelMagic::rebindInstance"/>
+      <extend-configuration-property name="gwt.magic.methods" 
+    value="xapi.gwt.model.service.GwtModelService.create(Ljava/lang/Class;)Lxapi/model/api/Model; *= xapi.dev.model.ModelMagic::rebindInstance"/>
     
     <!-- For users of gwt dev, or without X_Inject -->
     <generate-with class="xapi.dev.model.ModelGeneratorGwt">

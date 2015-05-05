@@ -1,17 +1,5 @@
 package xapi.dev.model;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.StringTokenizer;
-
-import xapi.gwt.model.ModelGwt;
-import xapi.inject.X_Inject;
-import xapi.util.X_Namespace;
-import xapi.util.X_Properties;
-
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.RebindResult;
 import com.google.gwt.core.ext.TreeLogger;
@@ -29,6 +17,18 @@ import com.google.gwt.dev.jjs.ast.JExpression;
 import com.google.gwt.dev.jjs.ast.JMethod;
 import com.google.gwt.dev.jjs.ast.JMethodCall;
 import com.google.gwt.dev.jjs.impl.UnifyAst.UnifyVisitor;
+
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.StringTokenizer;
+
+import xapi.gwt.model.ModelGwt;
+import xapi.inject.X_Inject;
+import xapi.util.X_Namespace;
+import xapi.util.X_Properties;
 
 public class ModelMagic implements UnifyAstListener, MagicMethodGenerator {
 
@@ -49,9 +49,9 @@ public class ModelMagic implements UnifyAstListener, MagicMethodGenerator {
   }
 
   public static JExpression rebindInstance(
-    TreeLogger logger, JMethodCall call, JMethod method, Context context, UnifyAstView ast) throws UnableToCompleteException {
+    final TreeLogger logger, final JMethodCall call, final JMethod method, final Context context, final UnifyAstView ast) throws UnableToCompleteException {
 
-    ModelMagic instance = active.get();
+    final ModelMagic instance = active.get();
     if (instance == null) {
       logger.log(Type.ERROR, "Null static instance of ModelMagic");
       throw new UnableToCompleteException();
@@ -60,17 +60,17 @@ public class ModelMagic implements UnifyAstListener, MagicMethodGenerator {
   }
 
   @Override
-  public void onUnifyAstStart(TreeLogger logger, UnifyAstView ast, UnifyVisitor visitor, Queue<JMethod> todo) {
+  public void onUnifyAstStart(final TreeLogger logger, final UnifyAstView ast, final UnifyVisitor visitor, final Queue<JMethod> todo) {
 
   }
 
   @Override
-  public boolean onUnifyAstPostProcess(TreeLogger logger, UnifyAstView ast, UnifyVisitor visitor, Queue<JMethod> todo) {
+  public boolean onUnifyAstPostProcess(final TreeLogger logger, final UnifyAstView ast, final UnifyVisitor visitor, final Queue<JMethod> todo) {
     return false;
   }
 
   @Override
-  public void destroy(TreeLogger logger) {
+  public void destroy(final TreeLogger logger) {
     // clean up our static reference
     // this is necessary to allow super-dev-mode to recompile correctly.
     // without scope on when we are recompiling versus when we are doing an
@@ -79,43 +79,43 @@ public class ModelMagic implements UnifyAstListener, MagicMethodGenerator {
   }
 
   @Override
-  public JExpression injectMagic(TreeLogger logger, JMethodCall call, JMethod currentMethod, Context context,
-    UnifyAstView ast) throws UnableToCompleteException {
-    List<JExpression> args = call.getArgs();
+  public JExpression injectMagic(final TreeLogger logger, final JMethodCall call, final JMethod currentMethod, final Context context,
+    final UnifyAstView ast) throws UnableToCompleteException {
+    final List<JExpression> args = call.getArgs();
     if (args.size() != 1) {
       logger.log(Type.ERROR, "X_Model.create() expects one and only one parameter; a class literal.");
       throw new UnableToCompleteException();
     }
-    JExpression arg0 = args.get(0);
+    final JExpression arg0 = args.get(0);
     if (!(arg0 instanceof JClassLiteral)) {
       logger.log(Type.ERROR, "X_Model.create() expects a class literal as argument; you sent a "
         + arg0.getClass()+" : "+arg0);
       throw new UnableToCompleteException();
     }
-    JClassLiteral classLit = (JClassLiteral)arg0;
+    final JClassLiteral classLit = (JClassLiteral)arg0;
 
     // from our classLiteral, generate a Model class.
     // TODO see if we can detect package protected type and adjust package accordingly
-    String simpleName = mangleName(classLit.getRefType().getName().replace('$', '.'), false);
-    String modelName = "xapi.model."+simpleName;
+    final String simpleName = mangleName(classLit.getRefType().getName().replace('$', '.'), false);
+    final String modelName = "xapi.model."+simpleName;
 
     JDeclaredType existing = ast.searchForTypeBySource(modelName);
     if (null == existing) {
       // Type does not yet exist, let's create one!
-      StandardGeneratorContext ctx = ast.getRebindPermutationOracle().getGeneratorContext();
-      RebindResult result = ModelGeneratorGwt.execImpl(logger,
+      final StandardGeneratorContext ctx = ast.getRebindPermutationOracle().getGeneratorContext();
+      final RebindResult result = ModelGeneratorGwt.execImpl(logger,
         ctx, classLit.getRefType().getName());
       ctx.finish(logger);
       existing = ast.searchForTypeBySource(result.getResultTypeName());
     }
-    JClassType asCls = (JClassType)existing;
-    for (JMethod method : asCls.getMethods()) {
+    final JClassType asCls = (JClassType)existing;
+    for (final JMethod method : asCls.getMethods()) {
       if (method.getName().equals("newInstance")) {
         // static method call.
         return new JMethodCall(method.getSourceInfo(), null, method);
       }
     }
-    logger.log(Type.ERROR, "Unable to find .newModel() in generated model " +
+    logger.log(Type.ERROR, "Unable to find .newInstance() in generated model " +
         "class "+modelName);
     throw new UnableToCompleteException();
   }
@@ -128,14 +128,14 @@ public class ModelMagic implements UnifyAstListener, MagicMethodGenerator {
 
 
 
-  public String mangleName(String fqcn, boolean minify) {
+  public String mangleName(final String fqcn, final boolean minify) {
     String minified = nameMap.get(fqcn);
     if (minified == null) {
       if (minify) {
         minified = nextId();
       } else {
-        StringTokenizer tokens = new StringTokenizer(fqcn, ".");
-        StringBuilder b = new StringBuilder('M');
+        final StringTokenizer tokens = new StringTokenizer(fqcn, ".");
+        final StringBuilder b = new StringBuilder('M');
         while (tokens.hasMoreElements()) {
           b.append(tokens.nextToken().charAt(0)).append('_');
         }
@@ -146,12 +146,12 @@ public class ModelMagic implements UnifyAstListener, MagicMethodGenerator {
     return minified;
   }
 
-  public boolean hasModel(String typeName) {
+  public boolean hasModel(final String typeName) {
     return models.containsKey(typeName);
   }
 
-  public ModelArtifact getOrMakeModel(TreeLogger logger,
-    GeneratorContext ctx, com.google.gwt.core.ext.typeinfo.JClassType type) {
+  public ModelArtifact getOrMakeModel(final TreeLogger logger,
+    final GeneratorContext ctx, final com.google.gwt.core.ext.typeinfo.JClassType type) {
     ModelArtifact model = models.get(type.getName());
     if (model == null) {
       model = new ModelArtifact(type.getName());
@@ -162,11 +162,11 @@ public class ModelMagic implements UnifyAstListener, MagicMethodGenerator {
 
   private com.google.gwt.core.ext.typeinfo.JClassType root;
   public com.google.gwt.core.ext.typeinfo.JClassType getRootType
-    (TreeLogger logger, GeneratorContext ctx) throws UnableToCompleteException {
+    (final TreeLogger logger, final GeneratorContext ctx) throws UnableToCompleteException {
     if (root != null) {
       return root;
     }
-    String rootType = X_Properties.getProperty(X_Namespace.PROPERTY_MODEL_ROOT,
+    final String rootType = X_Properties.getProperty(X_Namespace.PROPERTY_MODEL_ROOT,
       ModelGwt.class.getName());
     root = ctx.getTypeOracle().findType(rootType);
     if (root == null) {
@@ -183,7 +183,7 @@ public class ModelMagic implements UnifyAstListener, MagicMethodGenerator {
     return root;
   }
 
-  private void bailNoGwtModel(TreeLogger logger) throws UnableToCompleteException {
+  private void bailNoGwtModel(final TreeLogger logger) throws UnableToCompleteException {
     logger.log(Type.ERROR, "Could not find "+ModelGwt.class.getName()+" on " +
     		"source lookup path for gwt compile.  Ensure you inherit xapi-gwt-model:sources.");
     throw new UnableToCompleteException();
