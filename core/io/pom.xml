@@ -25,6 +25,14 @@
       <artifactId>xapi-core-test</artifactId>
       <scope>test</scope>
     </dependency>
+    
+    <dependency>
+      <groupId>org.json</groupId>
+      <artifactId>json</artifactId>
+      <version>20141113</version>
+      <scope>test</scope>
+    </dependency>
+    
   </dependencies>
 
 </project>

@@ -5,11 +5,12 @@ import xapi.time.api.Moment;
 import xapi.time.impl.ImmutableMoment;
 import xapi.time.service.TimeService;
 import xapi.util.X_String;
+import xapi.util.impl.RunUnsafe;
 
 public class X_Time {
 
   private X_Time() {}
-  
+
   private static final TimeService
       service = singleton(TimeService.class);
 
@@ -52,7 +53,7 @@ public class X_Time {
    * @param moment
    * @return
    */
-  public static Moment clone(Moment moment) {
+  public static Moment clone(final Moment moment) {
     return service.clone(moment);
   }
 
@@ -64,39 +65,43 @@ public class X_Time {
     return service.birth();
   }
 
-  public static void runLater(Runnable runnable) {
+  public static void runLater(final Runnable runnable) {
     service.runLater(runnable);
   }
 
-  public static String difference(Moment start, Moment finish) {
+  public static void runUnsafe(final RunUnsafe runnable) {
+    service.runLater(runnable.asRunnable());
+  }
+
+  public static String difference(final Moment start, final Moment finish) {
     return X_String.toMetricSuffix((finish.millis() - start.millis())/1000.0)+"seconds";
   }
-  public static String difference(Moment start) {
+  public static String difference(final Moment start) {
     return difference(start, now());
   }
 
-  public static void trySleep(int millis, int nanos) {
+  public static void trySleep(final int millis, final int nanos) {
     assert millis > 0 || nanos > 0;
     if (Thread.interrupted()){
       Thread.currentThread().interrupt();
-    }
-    else
-    try {
-      Thread.sleep(millis, nanos);
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
+    } else {
+      try {
+        Thread.sleep(millis, nanos);
+      } catch (final InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
     }
   }
 
-  public static double nowPlus(double millis) {
+  public static double nowPlus(final double millis) {
     return now().millis()+millis;
   }
 
-  public static boolean isPast(double millis) {
+  public static boolean isPast(final double millis) {
     return millis < now().millis();
   }
 
-  public static boolean isFuture(double millis) {
+  public static boolean isFuture(final double millis) {
     return millis > now().millis();
   }
 

@@ -3,6 +3,7 @@ package xapi.io.service;
 import xapi.collect.api.StringDictionary;
 import xapi.io.api.IOCallback;
 import xapi.io.api.IOMessage;
+import xapi.io.api.IORequest;
 import xapi.io.api.IORequestBuilder;
 import xapi.util.api.ConvertsValue;
 import xapi.util.api.RemovalHandler;
@@ -58,10 +59,10 @@ public interface IOService {
   void put(String url, byte[] body, StringDictionary<String> headers,
     IOCallback<IOMessage<String>> callback);
 
-  void get(String url, StringDictionary<String> headers,
+  IORequest<String> get(String url, StringDictionary<String> headers,
     IOCallback<IOMessage<String>> callback);
 
-  void post(String url, String body, StringDictionary<String> headers,
+  IORequest<String> post(String url, String body, StringDictionary<String> headers,
     IOCallback<IOMessage<String>> callback);
 
   void delete(String url, StringDictionary<String> headers,

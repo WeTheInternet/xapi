@@ -1,6 +1,5 @@
 package xapi.test.server;
 
-import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.server.handler.DefaultHandler;
@@ -29,7 +28,7 @@ public class TestServer
   Server server;
 
   public static final int TEST_PORT = 13113;
-  private int port = TEST_PORT;
+  private final int port = TEST_PORT;
 
   public TestServer() {
     X_Properties.setProperty(X_Namespace.PROPERTY_SERVER_PORT, Integer.toString(getPort()));
@@ -49,19 +48,19 @@ public class TestServer
   protected void scanForServlets() {
 
     if (X_Runtime.isRuntimeInjection()) {
-      ClasspathResourceMap resources = X_Inject.instance(ClasspathScanner.class)
+      final ClassLoader cl = getClassloader();
+      final ClasspathResourceMap resources = X_Inject.instance(ClasspathScanner.class)
         .scanAnnotation(XapiServlet.class)
         .matchClassFile(".*")
-      .scan(getClassloader());
-      boolean debug = X_Runtime.isDebug();
-      ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
+      .scan(cl);
+      final boolean debug = X_Runtime.isDebug();
+      final ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
       context.setContextPath("/xapi");
-      ClassLoader cl = getClassloader();
       context.setClassLoader(cl);
-      Moment start = X_Time.now();
-      for (ClassFile cls : resources.findClassAnnotatedWith(XapiServlet.class)) {
-        Annotation a = cls.getAnnotation(XapiServlet.class.getName());
-        StringMemberValue prefix = (StringMemberValue)a.getMemberValue("prefix");
+      final Moment start = X_Time.now();
+      for (final ClassFile cls : resources.findClassAnnotatedWith(XapiServlet.class)) {
+        final Annotation a = cls.getAnnotation(XapiServlet.class.getName());
+        final StringMemberValue prefix = (StringMemberValue)a.getMemberValue("prefix");
         if (debug) {
           X_Log.info("Found XapiServlet "+cls.getName()+" mounted at /xapi/"+prefix.getValue());
         }
@@ -72,17 +71,19 @@ public class TestServer
         // TODO: run injection on the servlet types
         // TODO check if this servlet is registered in xapi.xml or not.
         try {
-          context.addServlet(cls.getName(), "/*"); //fragment);
-        } catch (Throwable e) {
+          context.addServlet(cls.getName(), fragment);
+        } catch (final Throwable e) {
           X_Log.error("Error starting servlet "+cls.getName()+" @ "+fragment);
         }
 
       }
-      ContextHandlerCollection all = new ContextHandlerCollection();
-      all.setHandlers(new Handler[] {context, new DefaultHandler()});
+      final ContextHandlerCollection all = new ContextHandlerCollection();
+      all.addHandler(context);
+      all.addHandler(new DefaultHandler());
       server.setHandler(all);
-      if (X_Log.loggable(LogLevel.DEBUG))
+      if (X_Log.loggable(LogLevel.DEBUG)) {
         X_Log.trace("Scanned XApiServlet annotations in "+X_Time.difference(start)+" ");
+      }
     }
   }
 
@@ -102,11 +103,12 @@ public class TestServer
   }
 
   public void start() {
-    if (server.isStarted())
+    if (server.isStarted()) {
       return;
+    }
     try {
       server.start();
-    } catch (Exception e) {
+    } catch (final Exception e) {
       X_Log.error("Test server could not start", e);
       throw X_Util.rethrow(e);
     }
@@ -116,7 +118,7 @@ public class TestServer
 
     try {
       server.stop();
-    } catch (Exception e) {
+    } catch (final Exception e) {
       X_Log.warn("Failure stopping server: ", e);
       Thread.currentThread().interrupt();
     } finally {

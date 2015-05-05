@@ -46,17 +46,17 @@ public class X_IO {
       @SuppressWarnings({ "unchecked", "rawtypes" })
       @Override
       public void run() {
-        boolean log = info != null && X_Log.loggable(info), trace = X_Log.loggable(LogLevel.TRACE);
+        final boolean log = info != null && X_Log.loggable(info), trace = X_Log.loggable(LogLevel.TRACE);
         int delay = 20;
         int read = 1;
         int loops = 20000;
-        Moment birth = X_Time.now();
+        final Moment birth = X_Time.now();
         try {
           boolean hadBytes = false;
           top: while (read >= 0 && loops-- > 0) {
-            Moment start = X_Time.now();
+            final Moment start = X_Time.now();
             do {
-              int avail = in.available();
+              final int avail = in.available();
               if (avail == 0) {
                 // Maybe process is dead...
                 if (!liveCheck.isAlive()){
@@ -86,14 +86,14 @@ public class X_IO {
                 hadBytes = true;
                 bytes = null;
                 if (log){
-                  String asStr = new String(buffer.toByteArray(), "UTF-8");
+                  final String asStr = new String(buffer.toByteArray(), "UTF-8");
                   X_Log.log(info, new SimpleFifo<Object>().give(getClass()).give(asStr));
                 }
-              } 
+              }
               else{
                 if (hadBytes) {
                   hadBytes = false;
-                  String asStr = new String(buffer.toByteArray(), "UTF-8");
+                  final String asStr = new String(buffer.toByteArray(), "UTF-8");
                   sendString(successHandler, asStr);
                   buffer.reset();
                 }
@@ -110,14 +110,14 @@ public class X_IO {
             }
           }
           if (buffer.size() > 0) {
-            String res = new String(buffer.toByteArray(), "UTF-8");
+            final String res = new String(buffer.toByteArray(), "UTF-8");
             sendString(successHandler, res);
             buffer.reset();
           }
           else if (read != -1){
             throw new RuntimeException("Input stream not cleared "+read+"; left: `"+new String(buffer.toByteArray())+"`");
           }
-        } catch (Exception e) {
+        } catch (final Exception e) {
           if (successHandler instanceof ErrorHandler) {
             ((ErrorHandler)successHandler).onError(e);
           }
@@ -131,7 +131,7 @@ public class X_IO {
     });
   }
 
-  protected static void sendString(StringReader successHandler, String res) {
+  protected static void sendString(final StringReader successHandler, String res) {
     res = res.replaceAll("\r\n", "\n").replace('\r', '\n');
     int pos = 0, ind = res.indexOf('\n');
     while (ind > -1) {
@@ -142,27 +142,27 @@ public class X_IO {
     successHandler.onLine(res.substring(pos));
   }
 
-  private static void start(Runnable runnable) {
+  private static void start(final Runnable runnable) {
     new Thread(runnable).start();
   }
 
-  public static void close(InputStream in) {
+  public static void close(final InputStream in) {
     try {
       in.close();
-    } catch (IOException ignored){ignored.printStackTrace();}
+    } catch (final IOException ignored){ignored.printStackTrace();}
   }
 
   public static boolean isOffline() {
     final boolean[] failure = new boolean[]{false};
     getIOService().get("http://google.com", null, new IOCallbackDefault<IOMessage<String>>() {
       @Override
-      public void onError(Throwable e) {
-        Throwable unwrapped = X_Util.unwrap(e);
-        if (unwrapped instanceof UnknownHostException)
+      public void onError(final Throwable e) {
+        final Throwable unwrapped = X_Util.unwrap(e);
+        if (unwrapped instanceof UnknownHostException) {
           failure[0] = true;
-        else if (unwrapped instanceof SocketException)
+        } else if (unwrapped instanceof SocketException) {
           failure[0] = true;
-        else {
+        } else {
           e.printStackTrace();
           X_Util.rethrow(e);
         }
@@ -171,7 +171,7 @@ public class X_IO {
     return failure[0];
   }
 
-  public static void drain(OutputStream out, InputStream in) throws IOException {
+  public static void drain(final OutputStream out, final InputStream in) throws IOException {
     int size = 4096;
     byte[] buffer = new byte[size];
     int read;
@@ -179,7 +179,7 @@ public class X_IO {
       if (read == 0) {
         try {
           Thread.sleep(0, 10000);
-        } catch (InterruptedException e) {
+        } catch (final InterruptedException e) {
           Thread.currentThread().interrupt();
           X_Log.warn("Interrupted while draining input stream",in,"to output stream",out);
           return;
@@ -194,8 +194,8 @@ public class X_IO {
     }
   }
 
-  public static String toStringUtf8(InputStream in) throws IOException {
-    StringBufferOutputStream b = new StringBufferOutputStream();
+  public static String toStringUtf8(final InputStream in) throws IOException {
+    final StringBufferOutputStream b = new StringBufferOutputStream();
     drain(b, in);
     try {
       return b.toString();
@@ -203,11 +203,11 @@ public class X_IO {
       b.close();
     }
   }
-  
-  public static InputStream toStreamUtf8(String in) {
+
+  public static InputStream toStreamUtf8(final String in) {
     try {
       return new ByteArrayInputStream(in.getBytes("utf-8"));
-    } catch (UnsupportedEncodingException e) {
+    } catch (final UnsupportedEncodingException e) {
       X_Debug.debug(e);
       return new ByteArrayInputStream(in.getBytes());
     }

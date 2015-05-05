@@ -1,5 +1,7 @@
 package xapi.test.server;
 
+import static org.junit.Assert.assertTrue;
+
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -11,14 +13,23 @@ import xapi.io.service.IOService;
 import xapi.log.X_Log;
 import xapi.time.X_Time;
 import xapi.util.api.ConvertsValue;
+import xapi.util.api.ErrorHandler;
+import xapi.util.api.Pointer;
 import xapi.util.api.SuccessHandler;
 
 public class BasicIOTest {
 
+  private static abstract class Handler implements SuccessHandler<String>, ErrorHandler<Throwable> {
+    @Override
+    public void onError(final Throwable e) {
+      X_Log.error("Error encountered", e);
+    }
+  }
+
   protected static TestServer server;
   private static final ConvertsValue<String,String> pass_thru = new ConvertsValue<String,String>() {
     @Override
-    public String convert(String from) {
+    public String convert(final String from) {
       return from;
     }
   };
@@ -35,21 +46,22 @@ public class BasicIOTest {
 
   @Test
   public void testRequests() {
-    IOService service = X_IO.getIOService();
+    final IOService service = X_IO.getIOService();
     service.registerParser(String.class, pass_thru, pass_thru);
-    IORequestBuilder<String> req = service.request(String.class,
-      "http://localhost:" +	TestServer.TEST_PORT+
-      "/xapi/debug/");
-    IORequest<String> state = req.send(new SuccessHandler<String>() {
+    final IORequestBuilder<String> req = service.request(String.class,
+      "http://127.0.0.1:" +	TestServer.TEST_PORT+
+      "/xapi/debug");
+    final Pointer<Boolean> success = new Pointer<Boolean>(false);
+    final IORequest<String> state = req.send(new Handler() {
       @Override
-      public void onSuccess(String t) {
-        System.out.println(t);
+      public void onSuccess(final String t) {
+        success.set("GET".equals(t));
       }
     });
-    X_Log.info(state.isPending());
     while (state.isPending()) {
       X_Time.trySleep(10, 0);
     }
+    assertTrue(success.get());
 
   }
 

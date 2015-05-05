@@ -1,6 +1,6 @@
 package xapi.io.api;
 
-import xapi.collect.api.StringDictionary;
+import xapi.collect.api.StringTo.Many;
 
 public interface IOMessage <B> {
 
@@ -8,8 +8,12 @@ public interface IOMessage <B> {
 
   String url();
 
-  StringDictionary<String> headers();
+  Many<String> headers();
 
   B body();
+
+  int statusCode();
+
+  String statusMessage();
 
 }
