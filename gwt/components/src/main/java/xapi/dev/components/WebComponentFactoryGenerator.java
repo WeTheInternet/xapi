@@ -217,6 +217,16 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
       "public " + simpleName(type) + " newComponent()")
       .returnValue("ctor.get()");
     ;
+
+    // Print the querySelector method.
+    final MethodBuffer querySelector = out.createMethod("public String querySelector()");
+    if (component.extendProto().length > 1) {
+      // We are extending an existing method.
+      querySelector.returnValue("\""+component.extendProto()[1]+"[is="+component.tagName()+"]\"");
+    } else {
+      querySelector.returnValue("\""+component.tagName()+"\"");
+    }
+
     final String src = sourceBuilder.toString();
     logger.log(logLevel(typeName), "\nWeb Component Factory: \n" + src);
 

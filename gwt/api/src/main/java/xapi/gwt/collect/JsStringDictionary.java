@@ -76,7 +76,7 @@ public class JsStringDictionary <V> extends JavaScriptObject implements StringDi
   public final native void forKeys(ReceivesValue<String> receiver)
   /*-{
     for (var i in this) {
-      if (Object.prototype.hasOwnProperty.apply(this, i))
+      if (Object.prototype.hasOwnProperty.call(this, i))
         receiver.@xapi.util.api.ReceivesValue::set(Ljava/lang/Object;)(i);
     }
   }-*/;

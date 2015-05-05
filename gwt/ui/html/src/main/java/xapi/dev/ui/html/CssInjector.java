@@ -1,10 +1,5 @@
 package xapi.dev.ui.html;
 
-import java.util.List;
-
-import xapi.ui.api.StyleService;
-import xapi.ui.html.X_Html;
-
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.core.ext.UnableToCompleteException;
@@ -21,6 +16,11 @@ import com.google.gwt.dev.jjs.ast.JExpression;
 import com.google.gwt.dev.jjs.ast.JMethod;
 import com.google.gwt.dev.jjs.ast.JMethodCall;
 import com.google.gwt.reflect.rebind.ReflectionUtilAst;
+
+import java.util.List;
+
+import xapi.ui.api.StyleService;
+import xapi.ui.html.X_Html;
 
 /**
  * A magic method injector for {@link X_Html#injectCss(Class, xapi.ui.api.StyleService)}
@@ -39,23 +39,23 @@ import com.google.gwt.reflect.rebind.ReflectionUtilAst;
 public class CssInjector implements MagicMethodGenerator {
 
   @Override
-  public JExpression injectMagic(TreeLogger logger, JMethodCall methodCall,
-      JMethod enclosingMethod, Context context, UnifyAstView ast)
+  public JExpression injectMagic(final TreeLogger logger, final JMethodCall methodCall,
+      final JMethod enclosingMethod, final Context context, final UnifyAstView ast)
       throws UnableToCompleteException {
-    List<JExpression> args = methodCall.getArgs();
-    JClassLiteral typeLiteral = ReflectionUtilAst.extractClassLiteral(logger, args.get(0), ast, true);
+    final List<JExpression> args = methodCall.getArgs();
+    final JClassLiteral typeLiteral = ReflectionUtilAst.extractClassLiteral(logger, args.get(0), ast, true);
 
     logger.log(Type.TRACE, "Injecting css for "+typeLiteral.getRefType().getName());
 
     // Ensure the type is loaded by the type oracle.
-    TypeOracle oracle = ast.getTypeOracle();
+    final TypeOracle oracle = ast.getTypeOracle();
     ast.translate(typeLiteral.getRefType());
 
     // Load the type from the type oracle
     com.google.gwt.core.ext.typeinfo.JClassType templateType;
     try {
       templateType = oracle.getType(typeLiteral.getRefType().getName().replace('$', '.'));
-    } catch (NotFoundException e) {
+    } catch (final NotFoundException e) {
       logger.log(Type.ERROR, "Unable to load "+typeLiteral.getRefType()+" from the type oracle");
       throw new UnableToCompleteException();
     }
@@ -66,9 +66,9 @@ public class CssInjector implements MagicMethodGenerator {
     ast.getTypeOracle().findType(provider.getFinalName());
 
     // Grab the type from the jjs ast
-    JClassType injectorType = (JClassType) ast.searchForTypeBySource(provider.getFinalName());
-    SourceInfo info = methodCall.getSourceInfo().makeChild();
-    for (JMethod method : injectorType.getMethods()) {
+    final JClassType injectorType = (JClassType) ast.searchForTypeBySource(provider.getFinalName());
+    final SourceInfo info = methodCall.getSourceInfo().makeChild();
+    for (final JMethod method : injectorType.getMethods()) {
       if (method.getName().equals("inject")) {
         JExpression arg;
         if (args.size() > 1) {
@@ -76,9 +76,9 @@ public class CssInjector implements MagicMethodGenerator {
           arg = args.get(1);
         } else {
           // The X_Element method does not take a StyleService, and instead uses it's own default
-          JDeclaredType elemental = ast.searchForTypeBySource("xapi.elemental.X_Elemental");
-          String serviceType = "Lxapi/elemental/api/ElementalService;";
-          JMethod getService = elemental.findMethod("getElementalService()"+serviceType, false);
+          final JDeclaredType elemental = ast.searchForTypeBySource("xapi.elemental.X_Elemental");
+          final String serviceType = "Lxapi/elemental/api/ElementalService;";
+          final JMethod getService = elemental.findMethod("getElementalService()"+serviceType, false);
           arg = new JMethodCall(method.getSourceInfo(), null, getService);
         }
         return new JMethodCall(info, null, method, arg);

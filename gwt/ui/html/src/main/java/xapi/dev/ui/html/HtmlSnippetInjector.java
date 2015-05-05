@@ -1,7 +1,5 @@
 package xapi.dev.ui.html;
 
-import java.util.List;
-
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.core.ext.UnableToCompleteException;
@@ -20,6 +18,8 @@ import com.google.gwt.dev.jjs.ast.JMethod;
 import com.google.gwt.dev.jjs.ast.JMethodCall;
 import com.google.gwt.dev.jjs.ast.JNewInstance;
 import com.google.gwt.reflect.rebind.ReflectionUtilAst;
+
+import java.util.List;
 
 import xapi.ui.html.api.HtmlSnippet;
 
@@ -41,23 +41,23 @@ import xapi.ui.html.api.HtmlSnippet;
 public class HtmlSnippetInjector implements MagicMethodGenerator {
 
   @Override
-  public JExpression injectMagic(TreeLogger logger, JMethodCall methodCall,
-      JMethod enclosingMethod, Context context, UnifyAstView ast)
+  public JExpression injectMagic(final TreeLogger logger, final JMethodCall methodCall,
+      final JMethod enclosingMethod, final Context context, final UnifyAstView ast)
       throws UnableToCompleteException {
-    List<JExpression> args = methodCall.getArgs();
-    JClassLiteral typeLiteral = ReflectionUtilAst.extractClassLiteral(logger, args.get(0), ast, true);
-    boolean isToHtml = "toHtml".equals(methodCall.getTarget().getName());
-    int instanceIndex = args.size() - 2;
+    final List<JExpression> args = methodCall.getArgs();
+    final JClassLiteral typeLiteral = ReflectionUtilAst.extractClassLiteral(logger, args.get(0), ast, true);
+    final boolean isToHtml = "toHtml".equals(methodCall.getTarget().getName());
+    final int instanceIndex = args.size() - 2;
 
     logger.log(Type.DEBUG, "Injecting "+methodCall.getTarget().getName()+" for "+typeLiteral.getRefType().getName());
 
-    TypeOracle oracle = ast.getTypeOracle();
+    final TypeOracle oracle = ast.getTypeOracle();
     ast.translate(typeLiteral.getRefType());
 
     com.google.gwt.core.ext.typeinfo.JClassType templateType;
     try {
       templateType = oracle.getType(typeLiteral.getRefType().getName().replace('$', '.'));
-    } catch (NotFoundException e) {
+    } catch (final NotFoundException e) {
       logger.log(Type.ERROR, "Unable to load "+typeLiteral.getRefType()+" from the type oracle");
       throw new UnableToCompleteException();
     }
@@ -67,11 +67,11 @@ public class HtmlSnippetInjector implements MagicMethodGenerator {
       if (args.size() == (isToHtml ? 3 : 2)) {
         modelType = templateType;
       } else {
-        JClassLiteral modelLiteral = ReflectionUtilAst.extractClassLiteral(logger, args.get(1), ast, true);
+        final JClassLiteral modelLiteral = ReflectionUtilAst.extractClassLiteral(logger, args.get(1), ast, true);
         ast.translate(modelLiteral.getRefType());
         modelType = oracle.getType(modelLiteral.getRefType().getName().replace('$', '.'));
       }
-    } catch (NotFoundException e) {
+    } catch (final NotFoundException e) {
       logger.log(Type.ERROR, "Unable to load "+typeLiteral.getRefType()+" from the type oracle");
       throw new UnableToCompleteException();
     }
@@ -83,21 +83,22 @@ public class HtmlSnippetInjector implements MagicMethodGenerator {
 
     // Grab the type from the jjs ast
 
-    JClassType uiType = (JClassType) ast.searchForTypeBySource(provider.getFinalName());
-    SourceInfo info = methodCall.getSourceInfo().makeChild();
+    final JClassType uiType = (JClassType) ast.searchForTypeBySource(provider.getFinalName());
+    final SourceInfo info = methodCall.getSourceInfo().makeChild();
     JExpression inst = null;
-    for (JMethod method : uiType.getMethods()) {
+    for (final JMethod method : uiType.getMethods()) {
       if (method instanceof JConstructor) {
-        JNewInstance newInst = new JNewInstance(info, (JConstructor) method, args.get(args.size()-1).makeStatement().getExpr());
+        final JNewInstance newInst = new JNewInstance(info, (JConstructor) method, args.get(args.size()-1).makeStatement().getExpr());
         inst = newInst;
         break;
       }
     }
     if (isToHtml) {
-      JDeclaredType snippet = ast.searchForTypeBySource(HtmlSnippet.class.getName());
-      for (JMethod method : snippet.getMethods()) {
-        if (method.getName().equals("convert"))
+      final JDeclaredType snippet = ast.searchForTypeBySource(HtmlSnippet.class.getName());
+      for (final JMethod method : snippet.getMethods()) {
+        if (method.getName().equals("convert")) {
           return new JMethodCall(info, inst, method, args.get(instanceIndex));
+        }
       }
     }
     if (inst == null) {

@@ -23,4 +23,16 @@ public interface WebComponentFactory<W extends IsWebComponent<?>> {
    */
   W newComponent();
 
+  /**
+   * @return a query selector that can be used to locate elements of the correct instance.
+   * This is primarily useful for abstracting away the differences when an element extends
+   * an existing DOM element.
+   * <p>
+   * For example, a custom element which does not extend another element will have a query
+   * selector of "my-custom-element", whereas if it extends an anchor, it would have a query
+   * selector of "a[is=my-custom-element]".
+   */
+  default String querySelector() {
+    throw new UnsupportedOperationException();
+  }
 }

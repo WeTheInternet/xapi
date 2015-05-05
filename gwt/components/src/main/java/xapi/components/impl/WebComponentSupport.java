@@ -23,7 +23,7 @@ public class WebComponentSupport {
 
   public void ensureWebComponentApi(ScheduledCommand onLoaded) {
     // Check if document.register exists
-    if (JsSupport.doc().registerElement() == null) {
+    if (JsSupport.doc().getRegisterElement() == null) {
       // Nope... Lets inject our polyfill
       ScriptInjector
         .fromUrl(getPolyfillUrl())
@@ -57,7 +57,7 @@ public class WebComponentSupport {
   public static <E extends IsWebComponent<? extends Element>> Supplier<E> register(String tagName,
       JavaScriptObject build) {
     Document doc = JsSupport.doc();
-    JavaScriptObject jso = doc.registerElement().call(doc, tagName, build);
+    JavaScriptObject jso = doc.getRegisterElement().call(doc, tagName, build);
     return new JsoConstructorSupplier<E>(jso);
   }
 

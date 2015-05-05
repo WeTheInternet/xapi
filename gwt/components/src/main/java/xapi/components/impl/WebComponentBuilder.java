@@ -26,28 +26,28 @@ public class WebComponentBuilder {
   @JsType
   static interface WebComponentPrototype {
     @JsProperty
-    void attachedCallback(JavaScriptObject callback);
+    void setAttachedCallback(JavaScriptObject callback);
 
     @JsProperty
-    JavaScriptObject attachedCallback();
+    JavaScriptObject getAttachedCallback();
 
     @JsProperty
-    void createdCallback(JavaScriptObject callback);
+    void setCreatedCallback(JavaScriptObject callback);
 
     @JsProperty
-    JavaScriptObject createdCallback();
+    JavaScriptObject getCreatedCallback();
 
     @JsProperty
-    void detachedCallback(JavaScriptObject callback);
+    void setDetachedCallback(JavaScriptObject callback);
 
     @JsProperty
-    JavaScriptObject detachedCallback();
+    JavaScriptObject getDetachedCallback();
 
     @JsProperty
-    void attributeChangedCallback(JavaScriptObject callback);
+    void setAttributeChangedCallback(JavaScriptObject callback);
 
     @JsProperty
-    JavaScriptObject attributeChangedCallback();
+    JavaScriptObject getAttributeChangedCallback();
   }
 
   public static WebComponentBuilder create() {
@@ -83,12 +83,12 @@ public class WebComponentBuilder {
   }
 
   public WebComponentBuilder attachedCallback(final JavaScriptObject function) {
-    if (prototype.attachedCallback() == null) {
-      prototype.attachedCallback(function);
+    if (prototype.getAttachedCallback() == null) {
+      prototype.setAttachedCallback(function);
     } else {
       // append the functions together
-      prototype.attachedCallback(JsFunctionSupport.merge(prototype
-        .attachedCallback(), function));
+      prototype.setAttachedCallback(JsFunctionSupport.merge(prototype
+        .getAttachedCallback(), function));
     }
     return this;
   }
@@ -99,12 +99,12 @@ public class WebComponentBuilder {
   }
 
   public WebComponentBuilder attributeChangedCallback(final JavaScriptObject function) {
-    if (prototype.attributeChangedCallback() == null) {
-      prototype.attributeChangedCallback(function);
+    if (prototype.getAttributeChangedCallback() == null) {
+      prototype.setAttributeChangedCallback(function);
     } else {
       // append the functions together
-      prototype.attributeChangedCallback(JsFunctionSupport.merge(prototype
-        .attributeChangedCallback(), function));
+      prototype.setAttributeChangedCallback(JsFunctionSupport.merge(prototype
+        .getAttributeChangedCallback(), function));
     }
     return this;
   }
@@ -120,13 +120,13 @@ public class WebComponentBuilder {
 
   public WebComponentBuilder createdCallback(JavaScriptObject function) {
     function = reapplyThis(function);
-    if (prototype.createdCallback() == null) {
-      prototype.createdCallback(function);
+    if (prototype.getCreatedCallback() == null) {
+      prototype.setCreatedCallback(function);
     } else {
       // append the functions together
-      prototype.createdCallback(JsFunctionSupport.merge(
+      prototype.setCreatedCallback(JsFunctionSupport.merge(
         function,
-        prototype.createdCallback()
+        prototype.getCreatedCallback()
         ));
     }
     return this;
@@ -149,12 +149,12 @@ public class WebComponentBuilder {
   }
 
   public WebComponentBuilder detachedCallback(final JavaScriptObject function) {
-    if (prototype.detachedCallback() == null) {
-      prototype.detachedCallback(function);
+    if (prototype.getDetachedCallback() == null) {
+      prototype.setDetachedCallback(function);
     } else {
       // append the functions together
-      prototype.detachedCallback(JsFunctionSupport.merge(prototype
-        .detachedCallback(), function));
+      prototype.setDetachedCallback(JsFunctionSupport.merge(prototype
+        .getDetachedCallback(), function));
     }
     return this;
   }

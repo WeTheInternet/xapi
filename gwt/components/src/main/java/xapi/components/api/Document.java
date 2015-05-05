@@ -15,12 +15,12 @@ public interface Document {
   }
 
   @JsProperty
-  Document.RegisterElement registerElement();
+  Document.RegisterElement getRegisterElement();
 
   <E extends Element> E createElement(String string);
 
   <E extends Element> E getElementById(String id);
 
   @JsProperty
-  BodyElement body();
+  BodyElement getBody();
 }
