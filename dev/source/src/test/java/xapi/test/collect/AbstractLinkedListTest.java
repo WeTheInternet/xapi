@@ -36,9 +36,9 @@ public abstract class AbstractLinkedListTest<L extends AbstractLinkedList<String
     assertTrue(stack.isEmpty());
     final Iterator<String> iter = stack.iterator();
     assertFalse(iter.hasNext());
-    stack.forEach(s -> {
+    for (final String v : stack) {
       fail();
-    });
+    };
   }
 
   @Test
@@ -59,10 +59,10 @@ public abstract class AbstractLinkedListTest<L extends AbstractLinkedList<String
     final String[] expected = new String[] {
         "one"
     };
-    stack.forEach(s -> {
+    for (final String s : stack) {
       assertEquals(expected[0], s);
       expected[0] = "two";
-    });
+    };
   }
 
   @Test

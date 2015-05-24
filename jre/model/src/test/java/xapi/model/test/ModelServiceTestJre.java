@@ -15,6 +15,7 @@ import xapi.model.content.ModelText;
 import xapi.model.impl.ModelUtil;
 import xapi.time.X_Time;
 import xapi.util.api.Pointer;
+import xapi.util.api.SuccessHandler;
 
 public class ModelServiceTestJre {
 
@@ -112,12 +113,21 @@ public class ModelServiceTestJre {
     content.setRelated(new ModelContent[]{X_Model.create(ModelContent.class)});
     content.setKey(X_Model.newKey(content.getType()));
     final Pointer<Boolean> waiting = new Pointer<>(true);
-    X_Model.persist(content, m -> {
-      X_Model.load(ModelContent.class, m.getKey(), loaded -> {
-        Assert.assertFalse(loaded == m);
-        Assert.assertTrue(loaded.equals(m));
-        waiting.set(false);
-      });
+    X_Model.persist(content,
+    new SuccessHandler<ModelContent>() {
+
+      @Override
+      public void onSuccess(final ModelContent m) {
+        X_Model.load(ModelContent.class, m.getKey(),
+            new SuccessHandler<ModelContent>() {
+          @Override
+          public void onSuccess(final ModelContent loaded) {
+            Assert.assertFalse(loaded == m);
+            Assert.assertTrue(loaded.equals(m));
+            waiting.set(false);
+          }
+        });
+      }
     });
     final long deadline = System.currentTimeMillis()+3000;
     while (waiting.get()) {

@@ -278,7 +278,7 @@ public class ModelManifest {
 
       int numValidators = primitives.deserializeInt(chars);
       while(numValidators --> 0) {
-        data.validators.add(primitives.deserializeClass(chars));
+        data.validators.add(primitives.<ValidatesValue<?>>deserializeClass(chars));
       }
       int numMethods = primitives.deserializeInt(chars);
       while (numMethods --> 0) {

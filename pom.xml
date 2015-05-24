@@ -39,7 +39,7 @@
  <properties>
   <github.account>WeTheInternet</github.account>
   <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  <java.version>1.8</java.version>
+  <java.version>1.7</java.version>
   <maven.compiler.source>${java.version}</maven.compiler.source>
   <maven.compiler.target>${java.version}</maven.compiler.target>
   <xapi.version>0.5-SNAPSHOT</xapi.version>

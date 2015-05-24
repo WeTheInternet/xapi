@@ -33,7 +33,7 @@ public class ModelServiceTestImpl extends AbstractModelService {
   private final HashMap<ModelKey, Model> ramCache = new HashMap<>();
 
   @Override
-  protected void doPersist(final String type, final Model model, final SuccessHandler<Model> callback) {
+  protected <M extends Model> void doPersist(final String type, final M model, final SuccessHandler<M> callback) {
     X_Log.info(getClass(), "Persist",type,"as\n",model);
     ModelKey key = model.getKey();
     if (key == null) {

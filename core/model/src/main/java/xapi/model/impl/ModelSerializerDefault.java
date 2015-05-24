@@ -26,7 +26,7 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
   private final Map<Class<?>, PrimitiveReader> primitiveReaders;
 
   public ModelSerializerDefault() {
-    this(new HashMap<>());
+    this(new HashMap<Class<?>, PrimitiveReader>());
   }
 
   public ModelSerializerDefault(final Map<Class<?>, PrimitiveReader> primitiveReaders) {
@@ -346,21 +346,21 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
     PrimitiveReader reader = primitiveReaders.get(componentType);
     if (reader == null) {
       if (componentType == int.class) {
-        reader = (cls, src, primitives) -> primitives.deserializeInt(src);
+        reader = PrimitiveReaders.forInt();
       } else if (componentType == float.class) {
-        reader = (cls, src, primitives) -> primitives.deserializeFloat(src);
+        reader = PrimitiveReaders.forFloat();
       } else if (componentType == boolean.class) {
-        reader = (cls, src, primitives) -> primitives.deserializeBoolean(src);
+        reader = PrimitiveReaders.forBoolean();
       } else if (componentType == char.class) {
-        reader = (cls, src, primitives) -> primitives.deserializeChar(src);
+        reader = PrimitiveReaders.forChar();
       } else if (componentType == double.class) {
-        reader = (cls, src, primitives) -> primitives.deserializeDouble(src);
+        reader = PrimitiveReaders.forDouble();
       } else if (componentType == long.class) {
-        reader = (cls, src, primitives) -> primitives.deserializeLong(src);
+        reader = PrimitiveReaders.forLong();
       } else if (componentType == short.class) {
-        reader = (cls, src, primitives) -> primitives.deserializeShort(src);
+        reader = PrimitiveReaders.forShort();
       } else if (componentType == byte.class) {
-        reader = (cls, src, primitives) -> primitives.deserializeByte(src);
+        reader = PrimitiveReaders.forByte();
       } else {
         throw new UnsupportedOperationException("Unsupported primitive type "+componentType);
       }

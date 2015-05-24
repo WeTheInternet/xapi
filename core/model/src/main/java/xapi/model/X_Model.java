@@ -36,7 +36,7 @@ public class X_Model {
     return service.get().register(modelClass);
   }
 
-  public static void persist(final Model model, final SuccessHandler<Model> callback) {
+  public static <M extends Model> void persist(final M model, final SuccessHandler<M> callback) {
     // TODO: return a Promises-like object
     service.get().persist(model, callback);
   }

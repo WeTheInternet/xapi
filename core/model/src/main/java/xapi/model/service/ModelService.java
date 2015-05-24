@@ -12,7 +12,7 @@ public interface ModelService {
 
   String register(Class<? extends Model> model);
   <T extends Model> T create(Class<T> key);
-  void persist(Model model, SuccessHandler<Model> callback);
+  <M extends Model> void persist(M model, SuccessHandler<M> callback);
   <M extends Model> CharBuffer serialize(final Class<M> cls, final M model);
   <M extends Model> CharBuffer serialize(final ModelManifest manifest, final M model);
   <M extends Model> M deserialize(final Class<M> cls, final CharIterator model);

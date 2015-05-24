@@ -41,6 +41,7 @@ import xapi.time.api.Moment;
 import xapi.util.X_Runtime;
 import xapi.util.X_Util;
 import xapi.util.api.ReceivesValue;
+import xapi.util.impl.RunUnsafe;
 
 /**
  * @author James X. Nelson (james@wetheinter.net, @james)
@@ -188,133 +189,136 @@ public class IOServiceDefault extends AbstractIOService <URLConnection> {
   protected void sendRequest(final URLConnection connect, final IORequestDefault request, final IOCallback<IOMessage<String>> callback, final String url, final StringDictionary<String> headers, final String body) {
     final LogLevel logLevel = logLevel();
     final Moment before = X_Time.now();
-    X_Time.runUnsafe(()->{
-      if (X_Log.loggable(logLevel)) {
-        X_Log.log(getClass(), logLevel, "Starting IO for ",url,"took",X_Time.difference(before));
-      }
-      if (request.isCancelled()) {
-        callback.onError(new CancelledException(request));
-        return;
-      }
-      request.setConnectionThread(Thread.currentThread());
-      synchronized (request) {
-        request.start();
-        request.notifyAll();
-      }
-      InputStream in;
-      String res;
-      try {
-        if (body != null) {
-          // We need to send data on the output stream first
-          final Moment start = X_Time.now();
-          try(
-            final OutputStream out = connect.getOutputStream();
-          ) {
-            in = toStream(body, headers);
-            X_IO.drain(out, in);
-            if (X_Log.loggable(logLevel)) {
-              X_Log.log(getClass(), logLevel, "Sending data for ",url,"took",X_Time.difference(start));
-            }
-          }
-        }
-        final Moment start = X_Time.now();
-        try {
-          in = connect.getInputStream();
-          try {
-            res = drainInput(in, callback);
-          } finally {
-            in.close();
-          }
-        } catch (final SocketException e) {
-          in = connect.getInputStream();
-          if (request.isCancelled()) {
-            callback.onError(new CancelledException(request));
-            return;
-          }
-          try {
-            res = drainInput(in, callback);
-          } finally {
-            in.close();
-          }
-        }
+    X_Time.runUnsafe(new RunUnsafe() {
+      @Override
+      protected void doRun() throws Throwable {
         if (X_Log.loggable(logLevel)) {
-          X_Log.log(getClass(), logLevel, "Receiving data for ",url,"took",X_Time.difference(start));
+          X_Log.log(getClass(), logLevel, "Starting IO for ",url,"took",X_Time.difference(before));
         }
         if (request.isCancelled()) {
           callback.onError(new CancelledException(request));
           return;
         }
-
-        final Provider<Many<String>> resultHeaders = new SingletonProvider<Many<String>>() {
-
-          @Override
-          protected Many<String> initialValue() {
-            final Many<String> headers = X_Collect.newStringMultiMap(String.class);
-            for (final Entry<String, List<String>> entry : connect.getHeaderFields().entrySet()) {
-              for (final String value : entry.getValue()) {
-                headers.add(entry.getKey(), value);
+        request.setConnectionThread(Thread.currentThread());
+        synchronized (request) {
+          request.start();
+          request.notifyAll();
+        }
+        InputStream in;
+        String res;
+        try {
+          if (body != null) {
+            // We need to send data on the output stream first
+            final Moment start = X_Time.now();
+            try(
+              final OutputStream out = connect.getOutputStream();
+            ) {
+              in = toStream(body, headers);
+              X_IO.drain(out, in);
+              if (X_Log.loggable(logLevel)) {
+                X_Log.log(getClass(), logLevel, "Sending data for ",url,"took",X_Time.difference(start));
               }
             }
-            return headers;
           }
-        };
-        request.setValue(res);
-        request.setResultHeaders(resultHeaders);
-        if (connect instanceof HttpURLConnection) {
-          final int status = ((HttpURLConnection)connect).getResponseCode();
-          final String message = ((HttpURLConnection)connect).getResponseMessage();
-          request.setStatus(status, message);
-        } else {
-          request.setStatus(IORequest.STATUS_NOT_HTTP, "Request not using http: "+connect.getClass());
-        }
-
-        final Moment callbackTime = X_Time.now();
-        try {
-          callback.onSuccess(new IOMessage<String>() {
-            @Override
-            public String body() {
-              return request.getValue();
+          final Moment start = X_Time.now();
+          try {
+            in = connect.getInputStream();
+            try {
+              res = drainInput(in, callback);
+            } finally {
+              in.close();
             }
-
-            @Override
-            public int modifier() {
-              return IOConstants.METHOD_GET;
+          } catch (final SocketException e) {
+            in = connect.getInputStream();
+            if (request.isCancelled()) {
+              callback.onError(new CancelledException(request));
+              return;
             }
-
-            @Override
-            public String url() {
-              return url;
+            try {
+              res = drainInput(in, callback);
+            } finally {
+              in.close();
             }
+          }
+          if (X_Log.loggable(logLevel)) {
+            X_Log.log(getClass(), logLevel, "Receiving data for ",url,"took",X_Time.difference(start));
+          }
+          if (request.isCancelled()) {
+            callback.onError(new CancelledException(request));
+            return;
+          }
 
-            @Override
-            public StringTo.Many<String> headers() {
-              return resultHeaders.get();
-            }
+          final Provider<Many<String>> resultHeaders = new SingletonProvider<Many<String>>() {
 
             @Override
-            public int statusCode() {
-              return request.getStatusCode();
+            protected Many<String> initialValue() {
+              final Many<String> headers = X_Collect.newStringMultiMap(String.class);
+              for (final Entry<String, List<String>> entry : connect.getHeaderFields().entrySet()) {
+                for (final String value : entry.getValue()) {
+                  headers.add(entry.getKey(), value);
+                }
+              }
+              return headers;
             }
+          };
+          request.setValue(res);
+          request.setResultHeaders(resultHeaders);
+          if (connect instanceof HttpURLConnection) {
+            final int status = ((HttpURLConnection)connect).getResponseCode();
+            final String message = ((HttpURLConnection)connect).getResponseMessage();
+            request.setStatus(status, message);
+          } else {
+            request.setStatus(IORequest.STATUS_NOT_HTTP, "Request not using http: "+connect.getClass());
+          }
 
-            @Override
-            public String statusMessage() {
-              return request.getStatusText();
-            }
-          });
+          final Moment callbackTime = X_Time.now();
+          try {
+            callback.onSuccess(new IOMessage<String>() {
+              @Override
+              public String body() {
+                return request.getValue();
+              }
+
+              @Override
+              public int modifier() {
+                return IOConstants.METHOD_GET;
+              }
+
+              @Override
+              public String url() {
+                return url;
+              }
+
+              @Override
+              public StringTo.Many<String> headers() {
+                return resultHeaders.get();
+              }
+
+              @Override
+              public int statusCode() {
+                return request.getStatusCode();
+              }
+
+              @Override
+              public String statusMessage() {
+                return request.getStatusText();
+              }
+            });
+          } catch (final Throwable t) {
+            X_Log.error("Error invoking IO callback on",callback,"for request",url, t);
+            callback.onError(X_Util.unwrap(t));
+          }
+          if (X_Log.loggable(logLevel)) {
+            X_Log.log(getClass(), logLevel, "Callback time for ",url,"took",X_Time.difference(callbackTime));
+          }
         } catch (final Throwable t) {
-          X_Log.error("Error invoking IO callback on",callback,"for request",url, t);
+          request.cancel();
           callback.onError(X_Util.unwrap(t));
+        } finally {
+          request.connectionThread = null;
         }
-        if (X_Log.loggable(logLevel)) {
-          X_Log.log(getClass(), logLevel, "Callback time for ",url,"took",X_Time.difference(callbackTime));
-        }
-      } catch (final Throwable t) {
-        request.cancel();
-        callback.onError(X_Util.unwrap(t));
-      } finally {
-        request.connectionThread = null;
-      }
 
+      }
     });
 
   }

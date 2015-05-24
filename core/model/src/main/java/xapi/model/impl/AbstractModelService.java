@@ -46,12 +46,12 @@ public abstract class AbstractModelService implements ModelService
   }
 
   @Override
-  public void persist(final Model model, final SuccessHandler<Model> callback) {
+  public <M extends Model> void persist(final M model, final SuccessHandler<M> callback) {
     assert Objects.nonNull(model) : "Cannot persist a null model";
     doPersist(model.getType(), model, callback);
   }
 
-  protected abstract void doPersist(String type, Model model, SuccessHandler<Model> callback);
+  protected abstract <M extends Model> void doPersist(String type, M model, SuccessHandler<M> callback);
 
   protected <M extends Model> M deserialize(final String cls, final CharIterator model) {
     return deserialize((Class<M>)typeNameToClass.get(cls), model);

@@ -36,7 +36,6 @@
     <dependency>
       <groupId>net.wetheinter</groupId>
       <artifactId>xapi-core-io</artifactId>
-      <scope>test</scope>
     </dependency>
      <dependency>
       <groupId>net.wetheinter</groupId>

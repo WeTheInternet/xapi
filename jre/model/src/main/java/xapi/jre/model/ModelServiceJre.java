@@ -262,7 +262,7 @@ public class ModelServiceJre extends AbstractModelService {
   @SuppressWarnings({
       "unchecked", "rawtypes"
   })
-  protected void doPersist(final String type, final Model model, final SuccessHandler<Model> callback) {
+  protected <M extends Model> void doPersist(final String type, final M model, final SuccessHandler<M> callback) {
     // For simplicity sake, lets use the file system to save our models.
     ModelKey key = model.getKey();
     if (key == null) {

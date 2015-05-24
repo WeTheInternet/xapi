@@ -25,6 +25,7 @@ import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.gwt.core.ext.typeinfo.NotFoundException;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Array;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -47,6 +48,7 @@ import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.except.NotConfiguredCorrectly;
 import xapi.gwt.model.service.ModelServiceGwt;
+import xapi.model.X_Model;
 import xapi.model.api.Model;
 import xapi.model.api.ModelMethodType;
 import xapi.model.impl.ModelNameUtil;
@@ -171,7 +173,7 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
     return uniqueMethods.values();
   }
 
-  public void build(final TreeLogger logger, final SourceBuilder<ModelMagic> builder, final GeneratorContext ctx,
+  public void generateModelClass(final TreeLogger logger, final SourceBuilder<ModelMagic> builder, final GeneratorContext ctx,
     final JClassType type) throws UnableToCompleteException {
 
     final ModelMagic models = builder.getPayload();
@@ -237,7 +239,7 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
       );
 
     out.createMethod("public static String register()")
-      .print("return MODEL_TYPE;");
+      .println("return MODEL_TYPE;");
 
     final MethodBuffer getPropertyType = out
         .createMethod("public Class<?> getPropertyType(String name)")
@@ -247,7 +249,10 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
         .createMethod("public String[] getPropertyNames()")
         .println("return new String[]{")
         .indent();
+
+    final JClassType modelInterface = ctx.getTypeOracle().findType(Model.class.getPackage().getName(), Model.class.getSimpleName());
     final Set<String> propertyNames = new LinkedHashSet<String>();
+    final Set<JType> interestingTypes = new HashSet<JType>();
     for (final JMethod method : methods.keySet()) {
       final String propName = ModelMethodType.deducePropertyName(method.getName(), method.getAnnotation(GetterFor.class),
           method.getAnnotation(SetterFor.class), method.getAnnotation(DeleterFor.class));
@@ -265,6 +270,10 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
       final String simpleReturnType = out.addImport(method.getReturnType().getQualifiedSourceName());
       final IsType returns = binaryToSource(method.getReturnType().getQualifiedBinaryName());
       final IsType[] parameters = toTypes(method.getParameterTypes());
+
+      if (isInteresting(method.getReturnType(), modelInterface)) {
+        interestingTypes.add(method.getReturnType());
+      }
 
       final GetterFor getter = method.getAnnotation(GetterFor.class);
       if (getter != null) {
@@ -368,7 +377,80 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
       .outdent()
       .println("}")
       .println("return super.getPropertyType(name);");
+
+    // The type we are currently generating is not considered interesting, as we have already seen it.
+    implementInterestingTypes(type, out, modelInterface, interestingTypes);
+
     generator.generateModel(X_Source.toType(builder.getPackage(), builder.getClassBuffer().getSimpleName()), fieldMap);
+  }
+
+  /**
+   * Print magic method initialization for all interesting types;
+   * <p>
+   * Currently, this will call Array.newInstance(Component.class, 0) for all array types,
+   * thus initializing the model Class's ability to instantiate the arrays it requires,
+   * plus calls X_Model.register(DependentModel.class) on all model types used as fields of
+   * the current model type; thus ensuring all children will be fully de/serializable.
+   *
+   */
+  private void implementInterestingTypes(final JClassType type, final ClassBuffer out, final JClassType modelInterface,
+      final Set<JType> interestingTypes) {
+    interestingTypes.remove(type);
+    if (interestingTypes.isEmpty()) {
+      return;
+    }
+    out
+      .outdent()
+      .println("// Initialize our referenced array / model types")
+      .println("static {")
+      .indent();
+    for (JType interestingType : interestingTypes) {
+      if (interestingType.isArray() != null) {
+        // Print a primer for runtime array reflection.
+        final JType componentType = interestingType.isArray().getComponentType();
+        final String array = out.addImport(Array.class);
+        String component = out.addImport(componentType.getQualifiedSourceName());
+        interestingType = componentType;
+        while (interestingType.isArray() != null) {
+          interestingType = interestingType.isArray().getComponentType();
+          component += "[]";
+        }
+
+        out.println(array+".newInstance("+component+".class, 0);");
+      }
+      final JClassType asClass = interestingType.isClassOrInterface();
+      if (asClass != null) {
+        if (asClass.isAssignableTo(modelInterface)) {
+          // We have a model type; so long as it is not the same type that we are currently generating,
+          // we want to print X_Model.register() for the given type, so we can inherit all model types
+          // that are referenced as fields of the current model type.
+          if (!type.getName().equals(asClass.getName())) {
+            final String referencedModel = out.addImport(asClass.getQualifiedSourceName());
+            final String X_Model = out.addImport(X_Model.class);
+            out.println(X_Model+".register("+referencedModel+".class);");
+          }
+        }
+      }
+    }
+    out.outdent().println("}");
+  }
+
+  /**
+   * @param returnType
+   * @param modelInterface
+   * @return
+   */
+  private boolean isInteresting(final JType returnType, final JClassType modelInterface) {
+    if (returnType.isArray() != null) {
+      // All arrays are interesting, as we must prime java.lang.reflect.Array for runtime support
+      return true;
+    }
+    final JClassType asClass = returnType.isClassOrInterface();
+    if (asClass == null) {
+      return false;
+    }
+    // All model classes are interesting.
+    return asClass.isAssignableTo(modelInterface);
   }
 
   /**

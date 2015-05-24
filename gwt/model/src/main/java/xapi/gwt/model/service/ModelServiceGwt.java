@@ -9,6 +9,7 @@ import xapi.collect.api.StringDictionary;
 import xapi.dev.source.CharBuffer;
 import xapi.except.NotConfiguredCorrectly;
 import xapi.io.X_IO;
+import xapi.io.api.DelegatingIOCallback;
 import xapi.log.X_Log;
 import xapi.model.X_Model;
 import xapi.model.api.Model;
@@ -87,15 +88,15 @@ public class ModelServiceGwt extends AbstractModelService
   }
 
   @Override
-  protected void doPersist(final String type, final Model model, final SuccessHandler<Model> callback) {
+  protected <M extends Model> void doPersist(final String type, final M model, final SuccessHandler<M> callback) {
     final String url = getUrlBase()+"model/persist";
     final StringDictionary<String> headers = X_Collect.newDictionary();
     headers.setValue("X-Model-Type", model.getType());
     final CharBuffer serialized =  serialize(type, model);
-    X_IO.getIOService().post(url, serialized.toString(), headers, (resp) -> {
-      final Model deserialized = deserialize(type, new StringCharIterator(resp.body()));
+    X_IO.getIOService().post(url, serialized.toString(), headers, new DelegatingIOCallback<>((resp) -> {
+      final M deserialized = deserialize(type, new StringCharIterator(resp.body()));
       callback.onSuccess(deserialized);
-    });
+    }));
   }
 
   protected String getUrlBase() {
@@ -116,11 +117,11 @@ public class ModelServiceGwt extends AbstractModelService
     final String kind = modelKey.getKind();
     final String id = primitives.serializeInt(modelKey.getKeyType()) + modelKey.getId();
     final String serialized = "/" + ns + "/"+kind+"/"+id;
-    X_IO.getIOService().get(url+""+serialized, headers, (resp) -> {
+    X_IO.getIOService().get(url+""+serialized, headers, new DelegatingIOCallback<>(resp -> {
       X_Log.error("Got response! "+resp.body());
       final M deserialized = deserialize(type, new StringCharIterator(resp.body()));
       callback.onSuccess(deserialized);
-    });
+    }));
 
   }
 

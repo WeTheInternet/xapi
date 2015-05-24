@@ -26,6 +26,7 @@ import xapi.source.impl.StringCharIterator;
 import xapi.time.X_Time;
 import xapi.util.X_Properties;
 import xapi.util.api.Pointer;
+import xapi.util.api.SuccessHandler;
 
 /**
  * @author James X. Nelson (james@wetheinter.net, @james)
@@ -54,6 +55,7 @@ public class ModelPersistServlet extends HttpServlet {
     }
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
     final String type = req.getHeader("X-Model-Type");
@@ -75,13 +77,18 @@ public class ModelPersistServlet extends HttpServlet {
 
     final ModelKey key = X_Model.newKey(namespace, kind, id).setKeyType(keyType);
     final Pointer<Boolean> wait = new Pointer<>(true);
-    X_Model.load(manifest.getModelType(), key, m->{
-      final String serialized = X_Model.serialize(manifest, m);
-      try {
-        X_IO.drain(resp.getOutputStream(), X_IO.toStreamUtf8(serialized));
-        wait.set(false);
-      } catch (final Exception e) {
-        X_Log.error(getClass(), "Error saving model",e);
+    final Class<Model> modelType = (Class<Model>) manifest.getModelType();
+    X_Model.load(modelType, key,
+        new SuccessHandler<Model>() {
+      @Override
+      public void onSuccess(final Model m) {
+        final String serialized = X_Model.serialize(manifest, m);
+        try {
+          X_IO.drain(resp.getOutputStream(), X_IO.toStreamUtf8(serialized));
+          wait.set(false);
+        } catch (final Exception e) {
+          X_Log.error(getClass(), "Error saving model",e);
+        }
       }
     });
 
@@ -104,13 +111,17 @@ public class ModelPersistServlet extends HttpServlet {
     final ModelManifest manifest = module.getManifest(type);
     final Model model = X_Model.deserialize(manifest, asString);
     final Pointer<Boolean> wait = new Pointer<>(true);
-    X_Model.persist(model, m->{
-      final String serialized = X_Model.serialize(manifest, m);
-      try {
-        X_IO.drain(resp.getOutputStream(), X_IO.toStreamUtf8(serialized));
-        wait.set(false);
-      } catch (final Exception e) {
-        X_Log.error(getClass(), "Error saving model",e);
+    X_Model.persist(model,
+        new SuccessHandler<Model>() {
+      @Override
+      public void onSuccess(final Model m) {
+        final String serialized = X_Model.serialize(manifest, m);
+        try {
+          X_IO.drain(resp.getOutputStream(), X_IO.toStreamUtf8(serialized));
+          wait.set(false);
+        } catch (final Exception e) {
+          X_Log.error(getClass(), "Error saving model",e);
+        }
       }
     });
 

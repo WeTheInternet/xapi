@@ -207,7 +207,7 @@ public class ModelGeneratorGwt extends IncrementalGenerator{
     generateSerializers(logger, ctx, typeName, type, magic, model, builder);
 
     // Step four, determine the fields we'll need to generate
-    model.build(logger, builder, ctx, type);
+    model.generateModelClass(logger, builder, ctx, type);
     final String src = builder.toString();
     final Type logLevel = logLevel();
     if (logger.isLoggable(logLevel)) {

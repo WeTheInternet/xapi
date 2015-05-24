@@ -9,16 +9,19 @@ import static xapi.util.X_Debug.rethrow;
  * @author James X. Nelson (james@wetheinter.net, @james)
  *
  */
-public interface RunUnsafe {
+public abstract class RunUnsafe {
 
-  void doRun() throws Throwable;
+  protected abstract void doRun() throws Throwable;
 
-  default Runnable asRunnable() {
-    return () -> {
-      try {
-        doRun();
-      } catch(final Throwable e) {
-        throw rethrow(e);
+  public Runnable asRunnable() {
+    return new Runnable() {
+      @Override
+      public void run() {
+        try {
+          doRun();
+        } catch(final Throwable e) {
+          throw rethrow(e);
+        }
       }
     };
   }

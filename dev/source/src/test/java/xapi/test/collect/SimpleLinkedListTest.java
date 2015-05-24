@@ -6,6 +6,7 @@ package xapi.test.collect;
 import static org.junit.Assert.assertEquals;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
@@ -153,10 +154,13 @@ AbstractLinkedListTest<SimpleLinkedList<String>> {
     final String[] expected = new String[] {
         "two"
     };
-    stack.forEachReverse(s -> {
+    final Iterator<String> reverse = stack.iteratorReverse();
+    while (reverse.hasNext()) {
+      final String s = reverse.next();
       assertEquals(expected[0], s);
       expected[0] = "one";
-    });
+    }
+
   }
 
   @Test

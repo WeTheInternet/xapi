@@ -63,7 +63,6 @@ public class ModelMagic implements UnifyAstListener, MagicMethodGenerator {
 
   @Override
   public void onUnifyAstStart(final TreeLogger logger, final UnifyAstView ast, final UnifyVisitor visitor, final Queue<JMethod> todo) {
-
   }
 
   @Override
@@ -201,7 +200,7 @@ public class ModelMagic implements UnifyAstListener, MagicMethodGenerator {
 
   private void bailNoGwtModel(final TreeLogger logger) throws UnableToCompleteException {
     logger.log(Type.ERROR, "Could not find "+ModelGwt.class.getName()+" on " +
-    		"source lookup path for gwt compile.  Ensure you inherit xapi-gwt-model:sources.");
+    		"source lookup path for gwt compile.  Ensure you inherit artifact xapi-gwt-model.");
     throw new UnableToCompleteException();
   }
 

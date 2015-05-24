@@ -54,7 +54,7 @@ public class ModelGenerator {
         throw new RuntimeException();
       }
       for (final GetterMethod getter : field.getGetters()) {
-        final String datatype = getter.returnType.getQualifiedName();
+        final String datatype = cb.addImport(getter.returnType.getQualifiedName());
         final MethodBuffer mb = createMethod(datatype,
           getter.methodName, "");
         final IsType returnType = getter.returnType;

@@ -21,6 +21,7 @@ import org.junit.Ignore;
 
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringDictionary;
+import xapi.io.api.DelegatingIOCallback;
 import xapi.io.api.IORequest;
 import xapi.io.service.IOService;
 import xapi.log.X_Log;
@@ -118,11 +119,12 @@ public class IOServiceGwtTest extends GWTTestCase{
       final Pointer<Boolean> success = new Pointer<Boolean>(false);
       IORequest<String> response;
       try{
-      response = service().get("http://httpbin.org/get", null, t -> {
+      response = service().get("http://httpbin.org/get", null,
+          new DelegatingIOCallback<>(t -> {
         assertNotNull(t.body());
         assertNotSame(0, t.body().length());
         success.set(true);
-      });
+      }));
       } catch (final Throwable e){
         throw X_Util.rethrow(e);
       }
@@ -140,14 +142,16 @@ public class IOServiceGwtTest extends GWTTestCase{
       try{
         response = service().post("http://httpbin.org/post",
             "test=success",
-            null, t -> {
+            null,
+            new DelegatingIOCallback<>(
+                t -> {
           assertNotNull(t.body());
           assertNotSame(0, t.body().length());
           final JSONValue asJson = JSONParser.parse(t.body());
           X_Log.info(t.body());
           assertEquals("test=success", asJson.isObject().get("data").isString().stringValue());
           success.set(true);
-        });
+        }));
       } catch (final Throwable e){
         throw X_Util.rethrow(e);
       }
@@ -166,7 +170,7 @@ public class IOServiceGwtTest extends GWTTestCase{
       try{
         final StringDictionary<String> headers = X_Collect.newDictionary();
         headers.setValue("test", "success");
-        response = service().get("http://headers.jsontest.com", headers, t -> {
+        response = service().get("http://headers.jsontest.com", headers, new DelegatingIOCallback<>(t -> {
           X_Log.error("Got response! ",t.body());
           assertNotNull(t.body());
           assertNotSame(0, t.body().length());
@@ -174,7 +178,7 @@ public class IOServiceGwtTest extends GWTTestCase{
           assertEquals("success", asJson.get("test").isString().stringValue());
           assertEquals("*", t.headers().get("Access-Control-Allow-Origin").at(0));
           success.set(true);
-        });
+        }));
       } catch (final Throwable e){
         throw X_Util.rethrow(e);
       }
