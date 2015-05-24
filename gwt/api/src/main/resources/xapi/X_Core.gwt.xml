@@ -74,4 +74,6 @@ You may set it back to false if you wish to use monolithic factory generators in
  <extend-configuration-property name="xapi.platform.dev" value="xapi.platform.GwtDevPlatform"/>
  <set-configuration-property name="xapi.platform.dev" value="xapi.platform.GwtDevPlatform"/>
 
+ <define-linker name="StrongName" class="xapi.dev.gwt.linker.StrongNameLinker"/>
+ <add-linker name="StrongName"/>
 </module>
