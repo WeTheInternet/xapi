@@ -1,6 +1,8 @@
 package xapi.source.api;
 
-public interface HasQualifiedName
+import java.io.Serializable;
+
+public interface HasQualifiedName extends Serializable
 {
   /**
    * @return the package in which this resource lives.
