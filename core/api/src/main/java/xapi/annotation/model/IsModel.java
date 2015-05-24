@@ -12,11 +12,11 @@ import xapi.annotation.reflect.MirroredAnnotation;
 
 /**
  * The annotation used to trigger the model generator.
- * 
+ *
  * This can be placed on an interface that extends {@link xapi.IsModel.api.Model},
  * to get the full persistence layer support, or on any interface or abstract class
  * to have X_Model.create() produce a filled in, fully functional subclass
- * 
+ *
  * @author "James X. Nelson (james@wetheinter.net)"
  *
  */
@@ -27,9 +27,12 @@ import xapi.annotation.reflect.MirroredAnnotation;
 public @interface IsModel {
 
   Key key() default @Key("id");
-  
+
   Persistent persistence() default @Persistent;
-  
+
   Serializable serializable() default @Serializable;
-  
+
+  String modelType();
+
+  String[] propertyOrder() default {};
 }

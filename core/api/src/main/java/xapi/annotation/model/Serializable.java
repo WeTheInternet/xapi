@@ -15,8 +15,8 @@ import java.lang.annotation.Target;
  * By default, all non-android JRE environments are considered servers.
  * See {@link xapi.util.X_Properties#isServer} for details on determining if a runtime is a server or not.
  *
- * Note that it is redundant to set both {@link #clientToServer()} and {@link #serverToClient()} to false;
- * if you do not include this annotation, your field will not be serializable at all.
+ * If you wish to make a non-serializable field;
+ * set both {@link #clientToServer()} and {@link #serverToClient()} to false;
  *
  * @author James X. Nelson (james@wetheinter.net)
  *
@@ -31,9 +31,9 @@ public @interface Serializable {
    * The default obfuscator will use a one-time pad to hash your values.
    */
   public boolean obfuscated() default false;
-  
+
   ClientToServer clientToServer() default @ClientToServer;
-  
+
   ServerToClient serverToClient() default @ServerToClient;
 
 }

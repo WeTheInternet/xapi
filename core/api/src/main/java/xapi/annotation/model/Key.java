@@ -19,12 +19,12 @@ public @interface Key {
    *
    * You are recommended to avoid the use of Long keys;
    * not only are they emulated and thus slow on the client,
-   * they also require your server to lock on a key range to provide you keys.
+   * they also require Appengine servers to lock on a key range to provide you keys.
    *
-   * Prefer instead to use deterministic keys that you can contruct from runtime data.
+   * Prefer instead to use deterministic keys that you can construct from runtime data.
    */
   public Class<?> keyType() default String.class;
-  
+
   public String value();
 
 }

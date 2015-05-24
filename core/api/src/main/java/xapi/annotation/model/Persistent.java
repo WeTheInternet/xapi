@@ -12,7 +12,7 @@ import java.lang.annotation.Target;
  *
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(value= {ElementType.FIELD, ElementType.METHOD})
+@Target(value= {ElementType.METHOD})
 public @interface Persistent {
   /**
    * @return true if a given field is patchable;
@@ -22,8 +22,10 @@ public @interface Persistent {
    * is already aware of the current variable's value or not.
    *
    * Setting to false will cause the value to be serialized upon every request.
+   *
+   * Note that patching is not currently supported.
    */
-  boolean patchable() default true;
+  boolean patchable() default false;
 
   PersistenceStrategy strategy() default PersistenceStrategy.Ram;
 
