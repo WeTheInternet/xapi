@@ -7,7 +7,7 @@ public class StringCharIterator implements CharIterator {
   final int length;
   int current = 0;
 
-  public StringCharIterator(String content) {
+  public StringCharIterator(final String content) {
     this.content = content;
     this.length = content.length();
   }
@@ -34,5 +34,17 @@ public class StringCharIterator implements CharIterator {
   @Override
   public String toString() {
     return current == length ? "" : content.substring(current);
+  }
+
+  @Override
+  public CharSequence consume(final int size) {
+    final int was = current;
+    current += size;
+    return content.substring(was, current);
+  }
+
+  @Override
+  public CharSequence consumeAll() {
+    return consume(content.length()-current);
   }
 }

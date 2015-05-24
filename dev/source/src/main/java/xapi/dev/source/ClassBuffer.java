@@ -187,7 +187,7 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
   }
 
   @Override
-  public void addToBeginning(final PrintBuffer buffer) {
+  public void addToBeginning(final CharBuffer buffer) {
     if (prefix == null) {
       prefix = new PrintBuffer();
     }
@@ -379,7 +379,8 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
   }
 
   @Override
-  public void addToEnd(final PrintBuffer buffer) {
+  @SuppressWarnings("rawtypes")
+  public void addToEnd(final CharBuffer buffer) {
     super.addToEnd(buffer);
     setNotIndent();
   }

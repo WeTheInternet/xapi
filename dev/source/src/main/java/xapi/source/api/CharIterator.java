@@ -8,5 +8,6 @@ public interface CharIterator {
   boolean hasNext();
   char next();
   char peek();
-
+  CharSequence consume(int size);
+  CharSequence consumeAll();
 }
