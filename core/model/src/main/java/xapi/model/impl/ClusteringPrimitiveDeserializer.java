@@ -40,12 +40,18 @@ public class ClusteringPrimitiveDeserializer extends DelegatingPrimitiveSerializ
   @Override
   public String deserializeString(final CharIterator s) {
     final int pos = deserializeInt(s);
+    if (pos == -1) {
+      return null;
+    }
     return values.at(pos);
   }
 
   @Override
   public <C> Class<C> deserializeClass(final CharIterator c) {
     final int pos = deserializeInt(c);
+    if (pos == -1) {
+      return null;
+    }
     final String value = values.at(pos);
     return loadClass(value);
   }

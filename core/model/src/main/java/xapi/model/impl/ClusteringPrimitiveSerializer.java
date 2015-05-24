@@ -16,7 +16,7 @@ import xapi.source.api.CharIterator;
 public class ClusteringPrimitiveSerializer extends DelegatingPrimitiveSerializer {
 
   private final CharBuffer out;
-  private final StringTo<Integer> classes;
+  private final StringTo<Integer> strings;
   private final CharBuffer size;
 
   public ClusteringPrimitiveSerializer(final PrimitiveSerializer primitives, final CharBuffer out) {
@@ -25,7 +25,7 @@ public class ClusteringPrimitiveSerializer extends DelegatingPrimitiveSerializer
     this.out = new CharBuffer();
     out.addToEnd(this.size);
     out.addToEnd(this.out);
-    classes = X_Collect.newStringMap(Integer.class);
+    strings = X_Collect.newStringMap(Integer.class);
   }
 
   @Override
@@ -42,10 +42,14 @@ public class ClusteringPrimitiveSerializer extends DelegatingPrimitiveSerializer
 
   @Override
   public String serializeString(final String s) {
-    Integer position = classes.get(s);
+    // Null handling remains the same
+    if (s == null) {
+      return super.serializeInt(-1);
+    }
+    Integer position = strings.get(s);
     if (position == null) {
-      position = classes.size();
-      classes.put(s, position);
+      position = strings.size();
+      strings.put(s, position);
       out.append(super.serializeString(s));
       size.clear();
       size.append(serializeInt(position+1));
@@ -54,6 +58,10 @@ public class ClusteringPrimitiveSerializer extends DelegatingPrimitiveSerializer
   }
   @Override
   public String serializeClass(final Class<?> c) {
+    // Null handling remains the same
+    if (c == null) {
+      return super.serializeInt(-1);
+    }
     return serializeString(c.getName());
   }
 
