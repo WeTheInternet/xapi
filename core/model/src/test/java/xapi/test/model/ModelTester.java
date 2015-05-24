@@ -7,13 +7,13 @@ import xapi.annotation.model.IsModel;
 import xapi.annotation.model.Key;
 import xapi.dev.model.HasModelFields;
 import xapi.dev.model.ModelField;
-import xapi.dev.model.ModelUtil;
 import xapi.inject.X_Inject;
 import xapi.model.api.Model;
+import xapi.model.impl.ModelNameUtil;
 
 public class ModelTester {
 
-  @IsModel(key=@Key("id"))
+  @IsModel(key=@Key("id"), modelType="test")
   public interface TestModel extends Model {
     String id();
 
@@ -25,34 +25,34 @@ public class ModelTester {
 
   @Test
   public void testStringManipulation() throws Exception {
-    String item = ModelUtil.stripGetter("getItem");
+    String item = ModelNameUtil.stripGetter("getItem");
     Assert.assertTrue(item, "item".equals(item));
-    item = ModelUtil.stripGetter("item");
+    item = ModelNameUtil.stripGetter("item");
     Assert.assertTrue(item, "item".equals(item));
-    item = ModelUtil.stripGetter("isItem");
+    item = ModelNameUtil.stripGetter("isItem");
     Assert.assertTrue(item, "item".equals(item));
-    item = ModelUtil.stripGetter("hasItem");
+    item = ModelNameUtil.stripGetter("hasItem");
     Assert.assertTrue(item, "item".equals(item));
 
-    item = ModelUtil.stripSetter("setItem");
+    item = ModelNameUtil.stripSetter("setItem");
     Assert.assertTrue(item, "item".equals(item));
-    item = ModelUtil.stripSetter("putItem");
+    item = ModelNameUtil.stripSetter("putItem");
     Assert.assertTrue(item, "item".equals(item));
-    item = ModelUtil.stripSetter("putAllItem");
+    item = ModelNameUtil.stripSetter("putAllItem");
     Assert.assertTrue(item, "item".equals(item));
-    item = ModelUtil.stripSetter("setAllItem");
+    item = ModelNameUtil.stripSetter("setAllItem");
     Assert.assertTrue(item, "item".equals(item));
   }
   @Test
   public void testModel() throws Exception {
-    HasModelFields model = generateModel();
+    final HasModelFields model = generateModel();
 
     System.out.println(model);
   }
 
   private HasModelFields generateModel() throws Exception {
-    HasModelFields fields = X_Inject.instance(HasModelFields.class);
-    ModelField id = fields.getOrMakeField("id");
+    final HasModelFields fields = X_Inject.instance(HasModelFields.class);
+    final ModelField id = fields.getOrMakeField("id");
     id.setKey(TestModel.class.getMethod("id").getAnnotation(Key.class));
 
     return fields;

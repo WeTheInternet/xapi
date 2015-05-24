@@ -5,9 +5,9 @@ import xapi.model.api.Model;
 public interface ModelText extends Model{
 
   String getText();
-  ModelContent setText(String text);
+  ModelText setText(String text);
 
   double getTime();
-  ModelContent setTime(double time);
+  ModelText setTime(double time);
 
 }

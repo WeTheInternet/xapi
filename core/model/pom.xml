@@ -30,6 +30,13 @@
       <groupId>net.wetheinter</groupId>
       <artifactId>xapi-dev-bytecode</artifactId>
     </dependency>
+    
+    <!-- Test dependencies -->
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-jre-inject</artifactId>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>

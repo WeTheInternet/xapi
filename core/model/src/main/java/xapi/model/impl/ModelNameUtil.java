@@ -1,9 +1,16 @@
-package xapi.dev.model;
+/**
+ *
+ */
+package xapi.model.impl;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class ModelUtil {
+/**
+ * @author James X. Nelson (james@wetheinter.net, @james)
+ *
+ */
+public class ModelNameUtil {
 
   private static final Pattern GETTER_MATCHER = Pattern.compile(
     "(?:get|has|is)(\\w+)"
@@ -18,7 +25,7 @@ public class ModelUtil {
     );
 
   public static String stripGetter (String name) {
-    Matcher matcher = GETTER_MATCHER.matcher(name);
+    final Matcher matcher = GETTER_MATCHER.matcher(name);
     if (matcher.matches()) {
       name = matcher.group(1);
     }
@@ -26,7 +33,7 @@ public class ModelUtil {
   }
 
   public static String stripSetter(String name) {
-    Matcher matcher = SETTER_MATCHER.matcher(name);
+    final Matcher matcher = SETTER_MATCHER.matcher(name);
     if (matcher.matches()) {
       name = matcher.group(1);
     }
@@ -34,7 +41,7 @@ public class ModelUtil {
   }
 
   public static String stripRemover (String name) {
-    Matcher matcher = REMOVER_MATCHER.matcher(name);
+    final Matcher matcher = REMOVER_MATCHER.matcher(name);
     if (matcher.matches()) {
       name = matcher.group(1);
     }

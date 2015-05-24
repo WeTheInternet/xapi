@@ -5,6 +5,6 @@ import xapi.model.user.ModelUser;
 public interface HasAuthor {
 
   ModelUser getAuthor();
-  ModelContent setAuthor(ModelUser user);
+  HasAuthor setAuthor(ModelUser user);
 
 }

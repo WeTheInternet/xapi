@@ -14,7 +14,7 @@ import xapi.model.api.NestedModel;
 import xapi.model.api.PersistentModel;
 import xapi.source.api.HasQualifiedName;
 
-public class HasModelFields {
+public class HasModelFields implements java.io.Serializable {
 
 //  private Serializable defaultSerializable;
   private ClientToServer defaultToServer;
@@ -24,7 +24,7 @@ public class HasModelFields {
   private Persistent defaultPersistence;
   private Key key;
 
-  public ModelField getOrMakeField(String field) {
+  public ModelField getOrMakeField(final String field) {
     assert field.length() > 0 : "Cannot have a field named \"\"";
     ModelField f = fields.get(field);
     if (f == null) {
@@ -38,50 +38,17 @@ public class HasModelFields {
     return fields.values();
   }
 
-  public Iterable<ModelField> getAllPublicSetters() {
-    Fifo<ModelField> fifo = X_Collect.newFifo();
-    for (ModelField field : fields.values())
-      if (field.isPublicSetter())
-        fifo.give(field);
-    return fifo.forEach();
-  }
-
-  public Iterable<ModelField> getAllPublicAdders() {
-    Fifo<ModelField> fifo = X_Collect.newFifo();
-    for (ModelField field : fields.values())
-      if (field.isPublicAdder())
-        fifo.give(field);
-    return fifo.forEach();
-  }
-
-  public Iterable<ModelField> getAllPublicRemovers(){
-    Fifo<ModelField> fifo = X_Collect.newFifo();
-    for (ModelField field : fields.values())
-      if (field.isPublicRemover())
-        fifo.give(field);
-    return fifo.forEach();
-  }
-
-  public Iterable<ModelField> getAllPublicClears() {
-    Fifo<ModelField> fifo = X_Collect.newFifo();
-    for (ModelField field : fields.values())
-      if (field.isPublicClear())
-        fifo.give(field);
-    return fifo.forEach();
-  }
-
-
   public Iterable<ModelField> getAllSerializable() {
-    Fifo<ModelField> fifo = X_Collect.newFifo();
-    for (ModelField field : fields.values()) {
-      Serializable serial = field.getSerializable();
+    final Fifo<ModelField> fifo = X_Collect.newFifo();
+    for (final ModelField field : fields.values()) {
+      final Serializable serial = field.getSerializable();
       if (serial == null) {
-        ClientToServer c2s = field.getClientToServer();
+        final ClientToServer c2s = field.getClientToServer();
         if (c2s != null && c2s.enabled()) {
           fifo.give(field);
           continue;
         }
-        ServerToClient s2c = field.getServerToClient();
+        final ServerToClient s2c = field.getServerToClient();
         if (s2c != null && s2c.enabled()) {
           fifo.give(field);
           continue;
@@ -98,7 +65,7 @@ public class HasModelFields {
   /**
    * @param defaultSerializable the default Serializable policy to set
    */
-  public void setDefaultSerializable(Serializable defaultSerializable) {
+  public void setDefaultSerializable(final Serializable defaultSerializable) {
     if (defaultSerializable == null) {
       defaultToClient = null;
       defaultToServer = null;
@@ -123,21 +90,21 @@ public class HasModelFields {
     return defaultToClient;
   }
 
-  public void setDefaultPersistence(Persistent persist) {
+  public void setDefaultPersistence(final Persistent persist) {
     this.defaultPersistence = persist;
   }
 
-  public void setKey(Key key) {
+  public void setKey(final Key key) {
     this.key = key;
   }
 
-  public static boolean isPersistentModel(HasQualifiedName type) {
+  public static boolean isPersistentModel(final HasQualifiedName type) {
     return type.getQualifiedName().equals(PersistentModel.class.getName());
   }
-  public static boolean isNestedModel(HasQualifiedName type) {
+  public static boolean isNestedModel(final HasQualifiedName type) {
     return type.getQualifiedName().equals(NestedModel.class.getName());
   }
-  public static boolean isModel(HasQualifiedName type) {
+  public static boolean isModel(final HasQualifiedName type) {
     return type.getQualifiedName().equals(Model.class.getName())
         ||isPersistentModel(type)||isNestedModel(type);
   }

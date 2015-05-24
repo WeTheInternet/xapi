@@ -5,8 +5,11 @@ import javax.inject.Provider;
 import xapi.annotation.gwt.MagicMethod;
 import xapi.inject.X_Inject;
 import xapi.model.api.Model;
+import xapi.model.api.ModelKey;
+import xapi.model.api.ModelManifest;
 import xapi.model.service.ModelCache;
 import xapi.model.service.ModelService;
+import xapi.source.impl.StringCharIterator;
 import xapi.util.api.SuccessHandler;
 
 public class X_Model {
@@ -20,9 +23,17 @@ public class X_Model {
     return cache.get();
   }
 
-  @MagicMethod(doNotVisit=true, documentation="This magic method re-routes to the same provider as X_Inject.instance()")
+  @MagicMethod(doNotVisit=true,
+      documentation="This magic method generates the model class and all of its dependent models, "
+        + "then re-routes to the same provider as X_Inject.instance()")
   public static <M extends Model> M create(final Class<M> modelClass) {
     return service.get().create(modelClass);
+  }
+
+  @MagicMethod(doNotVisit=true,
+      documentation="This magic method generates the model class and all of its dependent models")
+  public static <M extends Model> String register(final Class<M> modelClass) {
+    return service.get().register(modelClass);
   }
 
   public static void persist(final Model model, final SuccessHandler<Model> callback) {
@@ -30,12 +41,49 @@ public class X_Model {
     service.get().persist(model, callback);
   }
 
+  public static <M extends Model> void load(final Class<M> modelClass, final ModelKey modelKey, final SuccessHandler<M> callback) {
+    // TODO: return a Promises-like object
+    service.get().load(modelClass, modelKey, callback);
+  }
+
   public static <M extends Model> String serialize(final Class<M> cls, final M model) {
-    return service.get().serialize(cls, model);
+    return service.get().serialize(cls, model).toString();
   }
 
   public static <M extends Model> M deserialize(final Class<M> cls, final String model) {
-    return service.get().deserialize(cls, model);
+    return service.get().deserialize(cls, new StringCharIterator(model));
+  }
+
+  public static <M extends Model> String serialize(final ModelManifest manifest, final M model) {
+    return service.get().serialize(manifest, model).toString();
+  }
+
+  public static <M extends Model> M deserialize(final ModelManifest manifest, final String model) {
+    return service.get().deserialize(manifest, new StringCharIterator(model));
+  }
+
+  public static ModelService getService() {
+    return service.get();
+  }
+
+  public static String keyToString(final ModelKey key) {
+    return service.get().keyToString(key);
+  }
+
+  public static ModelKey keyFromString(final String key) {
+    return service.get().keyFromString(key);
+  }
+
+  public static ModelKey newKey(final String kind) {
+    return service.get().newKey("", kind);
+  }
+
+  public static ModelKey newKey(final String namespace, final String kind) {
+    return service.get().newKey(namespace, kind);
+  }
+
+  public static ModelKey newKey(final String namespace, final String kind, final String id) {
+    return service.get().newKey(namespace, kind, id);
   }
 
 }

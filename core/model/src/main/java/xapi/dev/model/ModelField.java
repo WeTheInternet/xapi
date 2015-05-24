@@ -1,23 +1,35 @@
 package xapi.dev.model;
 
+import java.lang.annotation.Annotation;
+import java.util.ArrayList;
+
 import xapi.annotation.model.ClientToServer;
+import xapi.annotation.model.FieldValidator;
 import xapi.annotation.model.Key;
+import xapi.annotation.model.PersistenceStrategy;
 import xapi.annotation.model.Persistent;
 import xapi.annotation.model.Serializable;
+import xapi.annotation.model.SerializationStrategy;
 import xapi.annotation.model.ServerToClient;
-import xapi.collect.X_Collect;
-import xapi.collect.api.Fifo;
+import xapi.collect.impl.SimpleFifo;
+import xapi.log.X_Log;
 import xapi.source.api.IsType;
+import xapi.util.api.ValidatesValue;
 
-public class ModelField {
+public class ModelField implements java.io.Serializable {
 
-  class ModelMethod {
+  private static final long serialVersionUID = -1697272589093249083L;
+
+
+  class ModelMethod implements java.io.Serializable {
+    private static final long serialVersionUID = -7865206427761038557L;
     String fieldName;
     IsType returnType;
     String methodName;
   }
 
   class GetterMethod extends ModelMethod{
+    private static final long serialVersionUID = -7494752742665409918L;
    boolean toArray;
    boolean toCollection;
    boolean toMap;
@@ -26,6 +38,7 @@ public class ModelField {
   }
 
   class SetterMethod extends ModelMethod{
+    private static final long serialVersionUID = -345008117582324787L;
     IsType[] params;
     public boolean fluent;
     boolean fromArray;
@@ -37,6 +50,7 @@ public class ModelField {
   }
 
   class DeleterMethod extends ModelMethod{
+    private static final long serialVersionUID = 7402005778480651359L;
     IsType[] params;
     public boolean fluent;
     boolean fromArray;
@@ -48,6 +62,7 @@ public class ModelField {
   }
 
   class QueryMethod extends ModelMethod{
+    private static final long serialVersionUID = -4769829367905793190L;
     IsType[] params;
     public boolean fluent;
     boolean fromArray;
@@ -58,9 +73,10 @@ public class ModelField {
     boolean firesEvents;
   }
 
-  class ActionMethod {
+  class ActionMethod implements java.io.Serializable {
     IsType returnType;
     String methodName;
+    String fieldName;
     IsType[] params;
   }
 
@@ -79,16 +95,26 @@ public class ModelField {
   private boolean publicAdder;
   private boolean publicRemover;
   private boolean publicClear;
+  private boolean c2sEnabled = true;
+  private boolean s2cEnabled = true;
+  private boolean c2sEncrypted = false;
+  private boolean s2cEncrypted = false;
+  private boolean obfuscated = false;
+  private SerializationStrategy c2sSerializer = SerializationStrategy.ProtoStream;
+  private SerializationStrategy s2cSerializer = SerializationStrategy.ProtoStream;
+  private PersistenceStrategy persistenceStrategy;
+  private final ArrayList<Class<? extends ValidatesValue<?>>> validators = new ArrayList<>();
 
-  private final Fifo<GetterMethod> getters;
-  private final Fifo<SetterMethod> setters;
-  private final Fifo<ActionMethod> actions;
 
-  public ModelField(String name) {
+  private final SimpleFifo<GetterMethod> getters;
+  private final SimpleFifo<SetterMethod> setters;
+  private final SimpleFifo<ActionMethod> actions;
+
+  public ModelField(final String name) {
     this.name = name;
-    getters = X_Collect.newFifo();
-    setters = X_Collect.newFifo();
-    actions = X_Collect.newFifo();
+    getters = new SimpleFifo<>();
+    setters = new SimpleFifo<>();
+    actions = new SimpleFifo<>();
   }
 
   /**
@@ -101,8 +127,13 @@ public class ModelField {
    * @param clientToServer the clientToServer to set
    * @return
    */
-  public ModelField setClientToServer(ClientToServer clientToServer) {
+  public ModelField setClientToServer(final ClientToServer clientToServer) {
     this.clientToServer = clientToServer;
+    if (clientToServer != null) {
+      c2sEnabled = clientToServer.enabled();
+      c2sEncrypted = clientToServer.enabled();
+      c2sSerializer = clientToServer.serializer();
+    }
     return this;
   }
   /**
@@ -115,7 +146,7 @@ public class ModelField {
    * @param key the key to set
    * @return
    */
-  public ModelField setKey(Key key) {
+  public ModelField setKey(final Key key) {
     this.key = key;
     return this;
   }
@@ -135,8 +166,13 @@ public class ModelField {
    * @param serverToClient the serverToClient to set
    * @return
    */
-  public ModelField setServerToClient(ServerToClient serverToClient) {
+  public ModelField setServerToClient(final ServerToClient serverToClient) {
     this.serverToClient = serverToClient;
+    if (serverToClient != null) {
+      s2cEnabled = serverToClient.enabled();
+      s2cEncrypted = serverToClient.encrypted();
+      s2cSerializer = serverToClient.serializer();
+    }
     return this;
   }
   /**
@@ -149,8 +185,13 @@ public class ModelField {
    * @param serializable the serializable to set
    * @return
    */
-  public ModelField setSerializable(Serializable serializable) {
+  public ModelField setSerializable(final Serializable serializable) {
     this.serializable = serializable;
+    if (serializable != null) {
+      obfuscated = serializable.obfuscated();
+      setClientToServer(serializable.clientToServer());
+      setServerToClient(serializable.serverToClient());
+    }
     return this;
   }
   /**
@@ -163,115 +204,22 @@ public class ModelField {
    * @param persistent the persistent to set
    * @return
    */
-  public ModelField setPersistent(Persistent persistent) {
+  public ModelField setPersistent(final Persistent persistent) {
     this.persistent = persistent;
+    if (persistent != null) {
+      persistenceStrategy = persistent.strategy();
+    }
     return this;
   }
 
   @Override
-  public boolean equals(Object obj) {
+  public boolean equals(final Object obj) {
     return obj == this ? true :
       obj instanceof ModelField ? name.equals(((ModelField)obj).name) : false;
   }
   @Override
   public int hashCode() {
     return name.hashCode();
-  }
-
-  /**
-   * @return the publicClear
-   */
-  public boolean isPublicClear() {
-    return publicClear;
-  }
-
-  /**
-   * @param publicClear the publicClear to set
-   * @return
-   */
-  public ModelField setPublicClear(boolean publicClear) {
-    this.publicClear = publicClear;
-    return this;
-  }
-
-  /**
-   * @return the publicRemover
-   */
-  public boolean isPublicRemover() {
-    return publicRemover;
-  }
-
-  /**
-   * @param publicRemover the publicRemover to set
-   * @return
-   */
-  public ModelField setPublicRemover(boolean publicRemover) {
-    this.publicRemover = publicRemover;
-    return this;
-  }
-
-  /**
-   * @return the publicAdder
-   */
-  public boolean isPublicAdder() {
-    return publicAdder;
-  }
-
-  /**
-   * @param publicAdder the publicAdder to set
-   * @return
-   */
-  public ModelField setPublicAdder(boolean publicAdder) {
-    this.publicAdder = publicAdder;
-    return this;
-  }
-
-  /**
-   * @return the publicSetter
-   */
-  public boolean isPublicSetter() {
-    return publicSetter;
-  }
-
-  /**
-   * @param publicSetter the publicSetter to set
-   * @return
-   */
-  public ModelField setPublicSetter(boolean publicSetter) {
-    this.publicSetter = publicSetter;
-    return this;
-  }
-
-  /**
-   * @return the mapType
-   */
-  public boolean isMapType() {
-    return mapType;
-  }
-
-  /**
-   * @param mapType the mapType to set
-   * @return
-   */
-  public ModelField setMapType(boolean mapType) {
-    this.mapType = mapType;
-    return this;
-  }
-
-  /**
-   * @return the listType
-   */
-  public boolean isListType() {
-    return listType;
-  }
-
-  /**
-   * @param listType the listType to set
-   * @return
-   */
-  public ModelField setListType(boolean listType) {
-    this.listType = listType;
-    return this;
   }
 
   /**
@@ -284,46 +232,143 @@ public class ModelField {
   /**
    * @param type the type to set
    */
-  public void setType(String type) {
+  public void setType(final String type) {
     this.type = type;
   }
 
-
-
-  public GetterMethod addGetter(IsType returns, String methodName) {
-    GetterMethod mthd = new GetterMethod();
+  public GetterMethod addGetter(final IsType returns, final String propertyName,
+      final String methodName, final Annotation[] annotations) {
+    final GetterMethod mthd = new GetterMethod();
     mthd.returnType = returns;
+    mthd.fieldName = propertyName;
     mthd.methodName = methodName;
     getters.give(mthd);
+    addAnnotations(annotations);
     return mthd;
   }
 
-  public SetterMethod addSetter(IsType returns, String methodName, IsType[] parameters) {
-    SetterMethod mthd = new SetterMethod();
+  /**
+   * @param annotaitons
+   */
+  private void addAnnotations(final Annotation[] annotations) {
+    for (final Annotation anno : annotations) {
+      if (anno instanceof Serializable) {
+        final Serializable serializable = (Serializable) anno;
+
+        obfuscated = serializable.obfuscated();
+
+        final ClientToServer c2s = serializable.clientToServer();
+        c2sSerializer = c2s.serializer();
+        c2sEnabled = c2s.enabled();
+        c2sEncrypted = c2s.encrypted();
+
+        final ServerToClient s2c = serializable.serverToClient();
+        s2cSerializer = s2c.serializer();
+        s2cEnabled = s2c.enabled();
+        s2cEncrypted = s2c.encrypted();
+
+      } else if (anno instanceof Persistent) {
+        final Persistent persistent = (Persistent) anno;
+        persistenceStrategy = persistent.strategy();
+      } else if (anno instanceof FieldValidator) {
+        final FieldValidator validator = (FieldValidator) anno;
+        for (final Class<? extends ValidatesValue<?>> validatesValue : validator.validators()) {
+          validators.add(validatesValue);
+        }
+      } else {
+        X_Log.trace(getClass(), "Unhandled annotation ",anno+" in ModelManifest.MethodData.addAnnotatons");
+      }
+    }
+  }
+
+  public SetterMethod addSetter(final IsType returns, final String propertyName,
+      final String methodName, final Annotation[] annotations, final IsType[] parameters) {
+    final SetterMethod mthd = new SetterMethod();
     mthd.returnType = returns;
+    mthd.fieldName = propertyName;
     mthd.methodName = methodName;
     mthd.params = parameters;
     setters.give(mthd);
     mthd.fluent = mthd.returnType.getQualifiedName().equals(type);
+    addAnnotations(annotations);
     return mthd;
   }
 
-  public void addAction(IsType returns, String methodName, IsType[] parameters) {
-    ActionMethod mthd = new ActionMethod();
+  public void addAction(final IsType returns, final String propertyName,
+      final String methodName, final Annotation[] annotations, final IsType[] parameters) {
+    final ActionMethod mthd = new ActionMethod();
     mthd.returnType = returns;
+    mthd.fieldName = propertyName;
     mthd.methodName = methodName;
     mthd.params = parameters;
     actions.give(mthd);
+    addAnnotations(annotations);
   }
 
   public Iterable<GetterMethod> getGetters() {
     return getters.forEach();
   }
 
-  
+  public Iterable<SetterMethod> getSetters() {
+    return setters.forEach();
+  }
+
+  public Iterable<ActionMethod> getActions() {
+    return actions.forEach();
+  }
+
+  public boolean isC2sEnabled() {
+    return c2sEnabled;
+  }
+
+  public boolean isS2cEnabled() {
+    return s2cEnabled;
+  }
+
+  public boolean isC2sEncrypted() {
+    return c2sEncrypted;
+  }
+
+  public boolean isS2cEncrypted() {
+    return s2cEncrypted;
+  }
+
+  public boolean isObfuscated() {
+    return obfuscated;
+  }
+
   @Override
   public String toString() {
     return type+" "+name;
+  }
+
+  /**
+   * @return -> c2sSerializer
+   */
+  public SerializationStrategy getC2sSerializer() {
+    return c2sSerializer;
+  }
+
+  /**
+   * @return -> s2cSerializer
+   */
+  public SerializationStrategy getS2cSerializer() {
+    return s2cSerializer;
+  }
+
+  /**
+   * @return -> persistenceStrategy
+   */
+  public PersistenceStrategy getPersistenceStrategy() {
+    return persistenceStrategy;
+  }
+
+  /**
+   * @return -> validators
+   */
+  @SuppressWarnings("unchecked")
+  public Class<? extends ValidatesValue<?>>[] getValidators() {
+    return validators.toArray(new Class[validators.size()]);
   }
 
 }

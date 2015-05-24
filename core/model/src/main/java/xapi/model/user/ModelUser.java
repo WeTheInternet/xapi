@@ -12,7 +12,8 @@ import xapi.model.api.Model;
 import xapi.util.validators.ChecksStringNotEmpty;
 
 @IsModel(
-    persistence = @Persistent(strategy=PersistenceStrategy.Remote)
+    modelType = "user"
+    ,persistence = @Persistent(strategy=PersistenceStrategy.Remote)
     ,serializable = @Serializable(
         clientToServer=@ClientToServer(encrypted=true)
         ,serverToClient = @ServerToClient(encrypted=true)
@@ -30,7 +31,7 @@ public interface ModelUser extends Model {
 
   @FieldValidator(validators=ChecksStringNotEmpty.class)
   String getFirstName();
-  
+
   @FieldValidator(validators=ChecksStringNotEmpty.class)
   String getLastName();
 
