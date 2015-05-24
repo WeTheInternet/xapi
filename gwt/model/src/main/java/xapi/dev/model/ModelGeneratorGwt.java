@@ -294,7 +294,7 @@ public class ModelGeneratorGwt extends IncrementalGenerator{
   }
 
   private static Type logLevel() {
-    return Type.WARN;
+    return Type.DEBUG;
   }
 
   /**
