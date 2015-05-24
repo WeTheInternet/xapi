@@ -22,7 +22,19 @@
     </dependency>
     <dependency>
       <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-core-io</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
       <artifactId>xapi-dev-template</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-jre-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-jre-inject</artifactId>
     </dependency>
      <dependency>
       <groupId>junit</groupId>
