@@ -5,23 +5,25 @@ import xapi.util.api.ReceivesValue;
 
 public class StringDictionaryDefault <V> extends StringToAbstract<V> implements StringDictionary<V>{
 
+  private static final long serialVersionUID = 7852257257033178551L;
+
   @Override
-  public boolean hasKey(String key) {
+  public boolean hasKey(final String key) {
     return containsKey(key);
   }
 
   @Override
-  public V getValue(String key) {
+  public V getValue(final String key) {
     return get(key);
   }
 
   @Override
-  public V setValue(String key, V value) {
+  public V setValue(final String key, final V value) {
     return put(key, value);
   }
 
   @Override
-  public V removeValue(String key) {
+  public V removeValue(final String key) {
     return remove(key);
   }
 
@@ -31,8 +33,8 @@ public class StringDictionaryDefault <V> extends StringToAbstract<V> implements 
   }
 
   @Override
-  public void forKeys(ReceivesValue<String> receiver) {
-    for (String key : keyArray()) {
+  public void forKeys(final ReceivesValue<String> receiver) {
+    for (final String key : keyArray()) {
       receiver.set(key);
     }
   }

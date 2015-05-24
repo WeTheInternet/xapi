@@ -6,6 +6,7 @@ import xapi.collect.api.StringTo;
 
 public class StringToManyList <X> extends StringToAbstract<IntTo<X>> implements StringTo.Many<X>{
 
+  private static final long serialVersionUID = 681636065098625160L;
   private final Class<X> componentClass;
 
   public StringToManyList(final Class<X> componentClass) {

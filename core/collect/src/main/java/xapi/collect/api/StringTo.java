@@ -1,5 +1,7 @@
 package xapi.collect.api;
 
+import java.io.Serializable;
+
 /**
  * StringTo is a special mapping interface,
  * since it has the best possible native support in dictionary-oriented
@@ -12,7 +14,7 @@ package xapi.collect.api;
  * @param <V>
  */
 public interface StringTo <V>
-extends HasValues<String,V>
+extends HasValues<String,V>, Serializable
 {
 
   V get(String key);

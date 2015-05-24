@@ -104,7 +104,7 @@ public class X_Collect {
     return new StringToDeepMap<X>(component);
   }
 
-  public static StringDictionary<String> newStringDictionary() {
+  public static <V> StringDictionary<V> newDictionary() {
     return service.newDictionary();
   }
 

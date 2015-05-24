@@ -1,5 +1,7 @@
 package xapi.collect;
 
+import xapi.annotation.gwt.GwtIncompatible;
+
 
 /**
  * An optimized mapping structure for java packages; we are avoiding java.util
@@ -16,6 +18,7 @@ package xapi.collect;
  *
  * @author "James X. Nelson (james@wetheinter.net)"
  */
+@GwtIncompatible
 public class PackageMap<T> {
 
 //  @KeepClass(arrayDepth=1, debugData="DEBUG", newInstance=NewInstanceStrategy.NONE)
@@ -26,39 +29,42 @@ public class PackageMap<T> {
     private T value;
 
 
-    protected PackageNode(PackageNode parent) {
+    protected PackageNode(final PackageNode parent) {
       this.parent = parent;
     }
-    private PackageNode(String fragment) {
+    private PackageNode(final String fragment) {
       this.parent = this;
       this.fragment = fragment;
     }
 
     @Override
     public String toString() {
-      if (parent == root)
+      if (parent == root) {
         return fragment;
-      else
+      } else {
         return parent.toString()+"."+fragment;
+      }
     }
   }
 
   @SuppressWarnings("unchecked")
-  private PackageMap<T>.PackageNode[] newArr(int len) {
+  private PackageMap<T>.PackageNode[] newArr(final int len) {
     return new PackageMap.PackageNode[len];
 //    return X_Reflect.newArray(PackageNode.class, len);
   }
 
   protected final PackageMap<T>.PackageNode root = this.new PackageNode("");
 
-  public void add(String pkg, T item) {
-    if (pkg == null) throw new NullPointerException();
-    String[] keys = pkg.split("[.]");
+  public void add(final String pkg, final T item) {
+    if (pkg == null) {
+      throw new NullPointerException();
+    }
+    final String[] keys = pkg.split("[.]");
     doAdd(0, keys, root, item);
   }
 
   @SuppressWarnings("unchecked")
-  private void doAdd(int pos, String[] keys, PackageMap<T>.PackageNode node, T item) {
+  private void doAdd(int pos, final String[] keys, PackageMap<T>.PackageNode node, final T item) {
     if (pos < keys.length) {
       PackageMap<T>.PackageNode into;
       int insert;
@@ -71,7 +77,7 @@ public class PackageMap<T> {
           node.subnodes = newArr(1);
           insert = 0;
         } else {
-          String key = keys[pos];
+          final String key = keys[pos];
           if (key.length() == 0) {
             into = node;
             break synchro; //eat empty .. or ./ keys
@@ -80,7 +86,7 @@ public class PackageMap<T> {
 
           // this package has nodes, so we need to do a get-or-create
           for (int i = 0; i < node.subnodes.length; i++) {
-            PackageMap<T>.PackageNode subnode = node.subnodes[i];
+            final PackageMap<T>.PackageNode subnode = node.subnodes[i];
             if (subnode == null) {
               insert = i;
               break;
@@ -94,7 +100,7 @@ public class PackageMap<T> {
           }
           // no matches made, we need to extend our array and create the
           //rest of the package chain w/out checks, as we know its empty
-          PackageMap<T>.PackageNode[] newnodes = new PackageMap.PackageNode[insert * 2];
+          final PackageMap<T>.PackageNode[] newnodes = new PackageMap.PackageNode[insert * 2];
           System.arraycopy(node.subnodes, 0, newnodes, 0, insert);
           node.subnodes = newnodes;
         }
@@ -129,12 +135,12 @@ public class PackageMap<T> {
 
   }
 
-  public T get(String pkg) {
+  public T get(final String pkg) {
     assert pkg != null : "Do not send nulls to PackageMap!";
     PackageMap<T>.PackageNode node = root;
-    for (String key : pkg.split("[.]")) {
+    for (final String key : pkg.split("[.]")) {
       loop: {
-        for (PackageMap<T>.PackageNode subnode : node.subnodes) {
+        for (final PackageMap<T>.PackageNode subnode : node.subnodes) {
           if (subnode.fragment.equals(key)) {
             node = subnode;
             break loop;
