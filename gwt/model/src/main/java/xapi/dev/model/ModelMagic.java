@@ -25,8 +25,10 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.StringTokenizer;
 
+import xapi.annotation.model.IsModel;
 import xapi.gwt.model.ModelGwt;
 import xapi.inject.X_Inject;
+import xapi.model.impl.ModelUtil;
 import xapi.util.X_Namespace;
 import xapi.util.X_Properties;
 
@@ -82,13 +84,14 @@ public class ModelMagic implements UnifyAstListener, MagicMethodGenerator {
   public JExpression injectMagic(final TreeLogger logger, final JMethodCall call, final JMethod currentMethod, final Context context,
     final UnifyAstView ast) throws UnableToCompleteException {
     final List<JExpression> args = call.getArgs();
+    final String methodName = call.getTarget().getName();
     if (args.size() != 1) {
-      logger.log(Type.ERROR, "X_Model.create() expects one and only one parameter; a class literal.");
+      logger.log(Type.ERROR, "X_Model."+methodName+"() expects one and only one parameter; a class literal.");
       throw new UnableToCompleteException();
     }
     final JExpression arg0 = args.get(0);
     if (!(arg0 instanceof JClassLiteral)) {
-      logger.log(Type.ERROR, "X_Model.create() expects a class literal as argument; you sent a "
+      logger.log(Type.ERROR, "X_Model."+methodName+"() expects a class literal as argument; you sent a "
         + arg0.getClass()+" : "+arg0);
       throw new UnableToCompleteException();
     }
@@ -107,10 +110,15 @@ public class ModelMagic implements UnifyAstListener, MagicMethodGenerator {
         ctx, classLit.getRefType().getName());
       ctx.finish(logger);
       existing = ast.searchForTypeBySource(result.getResultTypeName());
+      if (existing == null) {
+        logger.log(Type.ERROR, "Unable to find model "+result.getResultTypeName()+"; perhaps it has compile errors?");
+        throw new UnableToCompleteException();
+      }
     }
     final JClassType asCls = (JClassType)existing;
+    final String targetMethod = "create".equals(methodName) ? "newInstance" : "register";
     for (final JMethod method : asCls.getMethods()) {
-      if (method.getName().equals("newInstance")) {
+      if (method.getName().equals(targetMethod)) {
         // static method call.
         return new JMethodCall(method.getSourceInfo(), null, method);
       }
@@ -125,8 +133,6 @@ public class ModelMagic implements UnifyAstListener, MagicMethodGenerator {
       active.set(X_Inject.instance(ModelMagic.class));
     }
   }
-
-
 
   public String mangleName(final String fqcn, final boolean minify) {
     String minified = nameMap.get(fqcn);
@@ -154,8 +160,18 @@ public class ModelMagic implements UnifyAstListener, MagicMethodGenerator {
     final GeneratorContext ctx, final com.google.gwt.core.ext.typeinfo.JClassType type) {
     ModelArtifact model = models.get(type.getName());
     if (model == null) {
-      model = new ModelArtifact(type.getName());
+      final IsModel isModel = type.getAnnotation(IsModel.class);
+      final String name;
+      if (isModel == null) {
+        name = ModelUtil.guessModelType(type.getSimpleSourceName());
+      } else {
+        name = isModel.modelType();
+      }
+      model = new ModelArtifact(name, type.getQualifiedBinaryName());
+      model.applyDefaultAnnotations(logger, type);
       models.put(type.getName(), model);
+    } else {
+      model.setReused();
     }
     return model;
   }

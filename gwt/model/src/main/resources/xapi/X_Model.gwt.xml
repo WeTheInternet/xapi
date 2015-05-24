@@ -1,16 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE module PUBLIC "-//Google Inc.//DTD Google Web Toolkit 2.5.1//EN" "http://google-web-toolkit.googlecode.com/svn/tags/2.5.1/distro-source/core/src/gwt-module.dtd">
+<!DOCTYPE module PUBLIC "-//Google Inc.//DTD Google Web Toolkit 2.7.0//EN" "http://gwtproject.org/doctype/2.7.0/gwt-module.dtd">
 <module>
+    <source path="gwt/model" />
     <source path="model" />
     <source path="model/api" />
     <source path="model/impl" />
     <source path="model/service" />
+    <inherits name="xapi.X_Source" />
     <inherits name="xapi.X_Collect" />
+    <inherits name="xapi.X_IO" />
+    <inherits name="com.google.gwt.reflect.Reflect" />
+    <super-source path="emul" />
     <!-- For users of magic-method injection -->
       <extend-configuration-property name="gwt.magic.methods" 
     value="xapi.model.X_Model.create(Ljava/lang/Class;)Lxapi/model/api/Model; *= xapi.dev.model.ModelMagic::rebindInstance"/>
       <extend-configuration-property name="gwt.magic.methods" 
-    value="xapi.gwt.model.service.GwtModelService.create(Ljava/lang/Class;)Lxapi/model/api/Model; *= xapi.dev.model.ModelMagic::rebindInstance"/>
+    value="xapi.gwt.model.service.ModelServiceGwt.create(Ljava/lang/Class;)Lxapi/model/api/Model; *= xapi.dev.model.ModelMagic::rebindInstance"/>
+      <extend-configuration-property name="gwt.magic.methods" 
+    value="xapi.model.X_Model.register(Ljava/lang/Class;)Ljava/lang/String; *= xapi.dev.model.ModelMagic::rebindInstance"/>
     
     <!-- For users of gwt dev, or without X_Inject -->
     <generate-with class="xapi.dev.model.ModelGeneratorGwt">
@@ -20,4 +27,6 @@
       </all>
     </generate-with>
     
+    <define-linker name="XapiModelLinker" class="xapi.dev.model.ModelLinker"/>
+    <add-linker name="XapiModelLinker"/>
 </module>

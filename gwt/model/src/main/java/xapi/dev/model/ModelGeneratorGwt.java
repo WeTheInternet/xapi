@@ -14,15 +14,22 @@ import com.google.gwt.core.ext.typeinfo.NotFoundException;
 
 import java.io.PrintWriter;
 import java.lang.annotation.Annotation;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import xapi.annotation.model.DeleterFor;
 import xapi.annotation.model.FieldName;
 import xapi.annotation.model.GetterFor;
+import xapi.annotation.model.Serializable;
 import xapi.annotation.model.SetterFor;
+import xapi.annotation.reflect.Fluent;
+import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
+import xapi.model.api.ModelSerializer;
 import xapi.source.X_Source;
 import xapi.source.api.IsType;
 import xapi.util.X_Properties;
@@ -47,8 +54,26 @@ public class ModelGeneratorGwt extends IncrementalGenerator{
 
   static boolean isFluent(final JMethod method) {
     final JClassType iface = method.getReturnType().isClassOrInterface();
-    return iface == null ? false :
-      method.getEnclosingType().isAssignableTo(method.getReturnType().isClassOrInterface());
+    if (iface == null) {
+      return false;
+    }
+    if (
+        method.getEnclosingType().isAssignableTo(iface)
+        || iface.isAssignableTo(method.getEnclosingType())
+        ) {
+      // Returning this would be allowed.
+      // However, we should guard against methods that may actually want to return a field
+      // that is the same type as itself.
+      final Fluent fluent = method.getAnnotation(Fluent.class);
+      if (fluent != null) {
+        return fluent.value();
+      }
+      // TODO: check if there is a single parameter type which is also compatible,
+      // and throw an error telling the user that they must specify @Fluent(true) or @Fluent(false)
+      // Because the method signature is ambiguous
+      return true;
+    }
+    return false;
   }
 
   static String returnType(final JMethod method, final ModelMagic models) {
@@ -157,8 +182,14 @@ public class ModelGeneratorGwt extends IncrementalGenerator{
     if (ctx.isGeneratorResultCachingEnabled() && ctx.tryReuseTypeFromCache(typeName)) {
       return new RebindResult(RebindMode.USE_PARTIAL_CACHED, fqcn);
     }
+    if (!type.isAbstract()) {
+      // TODO Only generate a provider class if the type itself is not concrete
+      return new RebindResult(RebindMode.USE_EXISTING, typeName);
+    }
     final PrintWriter pw = ctx.tryCreate(logger, MODEL_PACKAGE, mangledName);
     if (pw == null) {
+      // TODO for injectors this type may exist but be stale.
+      // Use an @Generated annotation to do a freshness check.
       return new RebindResult(RebindMode.USE_EXISTING, fqcn);
     }
     final ModelArtifact model = magic.getOrMakeModel(logger, ctx, type);
@@ -170,6 +201,115 @@ public class ModelGeneratorGwt extends IncrementalGenerator{
     builder.setPackage(MODEL_PACKAGE);
 
     // Step two; transverse type model.
+    visitModelStructure(logger, ctx, typeName, type, magic, model, builder);
+
+    // Step three, generate serialization protocols for this model type.
+    generateSerializers(logger, ctx, typeName, type, magic, model, builder);
+
+    // Step four, determine the fields we'll need to generate
+    model.build(logger, builder, ctx, type);
+    final String src = builder.toString();
+    final Type logLevel = logLevel();
+    if (logger.isLoggable(logLevel)) {
+      logger.log(logLevel, "Generated model class:\n"+src);
+    }
+    pw.println(src);
+    ctx.commit(logger, pw);
+    if (!model.isReused()) {
+      ctx.commitArtifact(logger, model);
+    }
+
+    return new RebindResult(RebindMode.USE_ALL_NEW, MODEL_PACKAGE + "." + mangledName);
+  }
+
+  /**
+   * @param logger
+   * @param ctx
+   * @param typeName
+   * @param type
+   * @param magic
+   * @param model
+   * @param builder
+   */
+  private static void generateSerializers(final TreeLogger logger, final GeneratorContext ctx, final String typeName, final JClassType type,
+      final ModelMagic magic, final ModelArtifact model, final SourceBuilder<ModelMagic> builder) {
+    final List<JMethod> toClient = new ArrayList<JMethod>();
+    final List<JMethod> toServer = new ArrayList<JMethod>();
+    for (final Entry<JMethod, Annotation[]> method : model.methods.entrySet()) {
+      for (final Annotation anno : method.getValue()) {
+        if (anno instanceof Serializable) {
+          final Serializable serializable = (Serializable) anno;
+          if (serializable.clientToServer().enabled()) {
+            toServer.add(method.getKey());
+          }
+          if (serializable.serverToClient().enabled()) {
+            toClient.add(method.getKey());
+          }
+        }
+      }
+    }
+    if (toClient.isEmpty() && toServer.isEmpty()) {
+      // TODO signal to use an empty serializer, ModelSerializer.DO_NOTHING
+    }
+    final String name = builder.getSimpleName()+"_Serializer";
+    final PrintWriter pw = ctx.tryCreate(logger, builder.getPackage(), name);
+    if (pw == null) {
+      // Assume the result is not stale. Will need to be more careful when injected
+      return;
+    }
+
+    final SourceBuilder out = new SourceBuilder("public final class "+name);
+    out.setPackage(builder.getPackage());
+    final String simpleType = out.getClassBuffer().addImport(typeName);
+    final String serializerType = out.getClassBuffer().addImport(ModelSerializer.class);
+    out.getClassBuffer().addInterface(serializerType+"<"+simpleType+">");
+
+    final MethodBuffer modelToString = out.getClassBuffer()
+          .createMethod("public String modelToString(" + simpleType+" model)");
+    final MethodBuffer stringToModel = out.getClassBuffer()
+        .createMethod("public " + simpleType + " stringToModel(String model)");
+
+    if (toClient.isEmpty()) {
+      stringToModel.returnValue("throw new " + out.getClassBuffer().addImport(UnsupportedOperationException.class)+"();");
+    } else {
+      // Print a deserializer for the model
+
+      stringToModel.returnValue("null");
+    }
+
+    if (toServer.isEmpty()) {
+      modelToString.returnValue("throw new " + out.getClassBuffer().addImport(UnsupportedOperationException.class)+"();");
+    } else {
+      // Print a serializer for the model
+
+      modelToString.returnValue("null");
+    }
+    final String src = out.toString();
+    final Type logLevel = logLevel();
+    if (logger.isLoggable(logLevel)) {
+      logger.log(logLevel, "Generated model serializer:\n"+src);
+    }
+    pw.append(src);
+    ctx.commit(logger, pw);
+  }
+
+  private static Type logLevel() {
+    return Type.WARN;
+  }
+
+  /**
+   * @param logger
+   * @param ctx
+   * @param typeName
+   * @param type
+   * @param magic
+   * @param model
+   * @param builder
+   * @throws UnableToCompleteException
+   */
+  private static void visitModelStructure(final TreeLogger logger, final GeneratorContext ctx, final String typeName,
+      final JClassType type, final ModelMagic magic, final ModelArtifact model, final SourceBuilder<ModelMagic> builder)
+      throws UnableToCompleteException {
     if (type.isInterface() == null) {
       // Client has specified their own base type.
       // Let's see if we're expected to generate any methods.
@@ -190,10 +330,7 @@ public class ModelGeneratorGwt extends IncrementalGenerator{
           }
         }
       } else {
-        // Type is concrete.  Just return requested type.
-        // TODO(james): throw in instance injection lookup and/or delegate type wrapping...
-        return
-          new RebindResult(RebindMode.USE_EXISTING, typeName);
+        assert false : "Concrete types do not need to be filled in with generated types.";
       }
     } else {
       final JClassType root = magic.getRootType(logger, ctx);
@@ -204,19 +341,6 @@ public class ModelGeneratorGwt extends IncrementalGenerator{
         }
       }
     }
-
-    logger.log(Type.ERROR, builder.toString());
-
-    // Step three, determine the fields we'll need to generate
-    model.build(logger, builder, ctx, type);
-    pw.println(builder.toString());
-    ctx.commit(logger, pw);
-//    ctx.commitArtifact(logger, model);
-
-    // Step four, generate serialization protocols for this model type.
-
-
-    return new RebindResult(RebindMode.USE_ALL_NEW, MODEL_PACKAGE + "." + mangledName);
   }
 
   static Set<String> getImplementedSignatures(final JMethod[] inheritableMethods) {

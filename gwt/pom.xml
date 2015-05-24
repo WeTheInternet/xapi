@@ -208,7 +208,7 @@
               <systemProperties>
                 <property>
                   <name>gwt.args</name>
-                  <value>-out /tmp/gwtc</value>
+                  <value>-war /tmp/gwtc -logLevel TRACE</value>
                 </property>
                 <property>
                   <name>java.specification.version</name>

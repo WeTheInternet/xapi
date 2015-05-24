@@ -6,6 +6,7 @@ import static xapi.dev.model.ModelGeneratorGwt.fieldName;
 import static xapi.dev.model.ModelGeneratorGwt.toSignature;
 import static xapi.dev.model.ModelGeneratorGwt.toTypes;
 import static xapi.dev.model.ModelGeneratorGwt.typeToParameterString;
+import static xapi.gwt.model.service.ModelServiceGwt.REGISTER_CREATOR_METHOD;
 import static xapi.source.X_Source.binaryToSource;
 
 import com.google.gwt.core.ext.GeneratorContext;
@@ -14,17 +15,20 @@ import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.linker.Artifact;
+import com.google.gwt.core.ext.linker.Transferable;
 import com.google.gwt.core.ext.linker.impl.StandardLinkerContext;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.JParameter;
 import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
+import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.gwt.core.ext.typeinfo.NotFoundException;
 
 import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -33,29 +37,46 @@ import javax.inject.Named;
 import xapi.annotation.model.ClientToServer;
 import xapi.annotation.model.DeleterFor;
 import xapi.annotation.model.GetterFor;
+import xapi.annotation.model.IsModel;
 import xapi.annotation.model.Persistent;
 import xapi.annotation.model.Serializable;
 import xapi.annotation.model.ServerToClient;
 import xapi.annotation.model.SetterFor;
+import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.except.NotConfiguredCorrectly;
+import xapi.gwt.model.service.ModelServiceGwt;
 import xapi.model.api.Model;
+import xapi.model.api.ModelMethodType;
+import xapi.model.impl.ModelNameUtil;
 import xapi.source.X_Source;
 import xapi.source.api.IsType;
 import xapi.util.X_Runtime;
 
+@Transferable
 public class ModelArtifact extends Artifact<ModelArtifact> {
 
   private static final long serialVersionUID = -4122808053849540655L;
 
   final Map<JMethod,Annotation[]> methods = new LinkedHashMap<JMethod,Annotation[]>();
-  final String typeName;
+  String typeName;
+  String typeClass;
   final Set<String> toGenerate = new HashSet<String>();
+  final HasModelFields fieldMap = new HasModelFields();
 
-  protected ModelArtifact(final String typeName) {
+  private boolean reused;
+
+  private String[] properties;
+
+  private Persistent defaultPersistence;
+
+  private Serializable defaultSerialization;
+
+  protected ModelArtifact(final String typeName, final String typeClass) {
     super(StandardLinkerContext.class);
     this.typeName = typeName;
+    this.typeClass = typeClass;
   }
 
   @Override
@@ -158,11 +179,11 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
     // Step one; determine if we already have a concrete type or not.
     // TODO if JClassType is final, we need to wrap it using a delegate model.
     JClassType concrete;
-//    ClassBuffer cb = builder.getClassBuffer();
     final JClassType root = models.getRootType(logger, ctx);
+    final String modelType = type.getQualifiedSourceName();
     if (type.isInterface() == null && type != root) {
       concrete = type;
-      generator.setSuperClass(type.getQualifiedSourceName());
+      generator.setSuperClass(modelType);
     } else {
         // We have an interface on our hands; search for an existing or
         // buildable model.
@@ -201,23 +222,47 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
     //This will probably become jsni, if we can avoid jso interface sickness...
     generator.createFactory(type.getQualifiedSourceName());
 
-    final HasModelFields fieldMap = new HasModelFields();
     fieldMap.setDefaultSerializable(type.getAnnotation(Serializable.class));
 
+    final ClassBuffer out = builder.getClassBuffer();
+
+    final String register = out.addImportStatic(ModelServiceGwt.class, REGISTER_CREATOR_METHOD);
+
+    out.createField(String.class, "MODEL_TYPE")
+      .makePublic()
+      .makeStatic()
+      .makeFinal()
+      .setInitializer(register+"("+
+          modelType+".class, "+ out.getSimpleName()+".class, "+ out.getSimpleName()+"::newInstance);"
+      );
+
+    out.createMethod("public static String register()")
+      .print("return MODEL_TYPE;");
+
+    final MethodBuffer getPropertyType = out
+        .createMethod("public Class<?> getPropertyType(String name)")
+        .println("switch (name) {")
+        .indent();
+    final MethodBuffer getPropertyNames = out
+        .createMethod("public String[] getPropertyNames()")
+        .println("return new String[]{")
+        .indent();
+    final Set<String> propertyNames = new LinkedHashSet<String>();
     for (final JMethod method : methods.keySet()) {
+      final String propName = ModelMethodType.deducePropertyName(method.getName(), method.getAnnotation(GetterFor.class),
+          method.getAnnotation(SetterFor.class), method.getAnnotation(DeleterFor.class));
+        propertyNames.add(propName);
         if (!toGenerate.contains(toSignature(method))) {
           logger.log(Type.TRACE, "Skipping method defined in supertype: "+method.getJsniSignature());
           continue;
         }
 
-
       final Annotation[] annos = methods.get(method);
       final String methodName = method.getName();
-      String returnType = method.getReturnType().getQualifiedSourceName();
+      final String returnType = getLoadableTypeName(method.getReturnType());
       final String params = typeToParameterString(method.getParameterTypes());
 
-      // TODO: check imports if we are safe to use simple name.
-      returnType = method.getReturnType().getSimpleSourceName();
+      final String simpleReturnType = out.addImport(method.getReturnType().getQualifiedSourceName());
       final IsType returns = binaryToSource(method.getReturnType().getQualifiedBinaryName());
       final IsType[] parameters = toTypes(method.getParameterTypes());
 
@@ -225,21 +270,25 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
       if (getter != null) {
         String name = getter.value();
         if (name.length() == 0) {
-          name = ModelUtil.stripGetter(method.getName());
+          name = ModelNameUtil.stripGetter(method.getName());
         }
         final ModelField field = fieldMap.getOrMakeField(name);
         field.setType(returnType);
         assert parameters.length == 0 : "A getter method cannot have parameters. " +
         		"Generated code requires using getter methods without args.  You provided "+method.getJsniSignature();
         grabAnnotations(logger, models, fieldMap, method, annos, type);
-        field.addGetter(returns, methodName);
+        field.addGetter(returns, name, methodName, method.getAnnotations());
+
+        getPropertyType.println("case \""+propName+"\":")
+          .indentln("return "+out.addImport(method.getReturnType().getQualifiedSourceName())+".class;");
+
         continue;
       }
       final SetterFor setter = method.getAnnotation(SetterFor.class);
       if (setter != null) {
         String name = setter.value();
         if (name.length() == 0) {
-          name = ModelUtil.stripSetter(method.getName());
+          name = ModelNameUtil.stripSetter(method.getName());
         }
         grabAnnotations(logger, models, fieldMap, method, annos, type);
         continue;
@@ -262,6 +311,10 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
             methodName+"; getter prefixes get(), is() and has() must return a type.";
         isSetter = false;
         isAction = false;
+
+        getPropertyType.println("case \""+propName+"\":")
+          .indentln("return "+out.addImport(method.getReturnType().getQualifiedSourceName())+".class;");
+
       } else {
         isSetter = methodName.startsWith("set")
           || methodName.startsWith("add")
@@ -278,33 +331,64 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
       if (isVoid) {
         // definitely a setter / action method.
         if (isSetter) {
-          final MethodBuffer mb = generator.createMethod(returnType, methodName, params);
+          final MethodBuffer mb = generator.createMethod(simpleReturnType, methodName, params);
           implementSetter(logger, mb, method, models, fieldMap, annos);
         } else  if (isAction) {
           implementAction(logger,generator, method, models, annos);
         } else {
-          final MethodBuffer mb = generator.createMethod(returnType, methodName, params);
+          final MethodBuffer mb = generator.createMethod(simpleReturnType, methodName, params);
           implementException(logger, mb, method);
         }
       } else {
         if (isGetter) {
-          final String name = ModelUtil.stripGetter(method.getName());
+          final String name = ModelNameUtil.stripGetter(method.getName());
           final ModelField field = fieldMap.getOrMakeField(name);
           field.setType(returnType);
-          field.addGetter(returns, methodName);
+          field.addGetter(returns, name, methodName, method.getAnnotations());
           grabAnnotations(logger, models, fieldMap, method, annos, type);
         } else if (isSetter) {
-          final MethodBuffer mb = generator.createMethod(returnType, methodName, params);
+          final MethodBuffer mb = generator.createMethod(simpleReturnType, methodName, params);
           implementSetter(logger, mb, method, models, fieldMap, annos);
         } else if (isAction){
           implementAction(logger,generator, method, models, annos);
         } else {
-          final MethodBuffer mb = generator.createMethod(returnType, methodName, params);
+          final MethodBuffer mb = generator.createMethod(simpleReturnType, methodName, params);
           implementException(logger, mb, method);
         }
       }
     }
+    for (final String propName : propertyNames) {
+      getPropertyNames.println("\""+propName+"\",");
+    }
+    if (properties == null) {
+      this.properties = propertyNames.toArray(new String[propertyNames.size()]);
+    }
+    getPropertyNames.outdent().println("};");
+    getPropertyType
+      .outdent()
+      .println("}")
+      .println("return super.getPropertyType(name);");
     generator.generateModel(X_Source.toType(builder.getPackage(), builder.getClassBuffer().getSimpleName()), fieldMap);
+  }
+
+  /**
+   * @param returnType
+   * @return
+   */
+  private String getLoadableTypeName(JType returnType) {
+    if (returnType.isArray() != null) {
+      final StringBuilder b = new StringBuilder();
+      while(returnType.isArray() != null) {
+        b.append("[");
+        returnType = returnType.isArray().getComponentType();
+      }
+      return b
+            .append("L")
+            .append(returnType.getQualifiedSourceName())
+            .append(";")
+            .toString();
+    }
+    return returnType.getQualifiedSourceName();
   }
 
   private void implementException(final TreeLogger logger, final MethodBuffer mb, final JMethod method) {
@@ -332,6 +416,12 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
         getter = (GetterFor)annotation;
       } else if (serial == null && annotation.annotationType() == Serializable.class) {
         serial = (Serializable)annotation;
+        if (c2s == null) {
+          c2s = serial.clientToServer();
+        }
+        if (s2c == null) {
+          s2c = serial.serverToClient();
+        }
       } else if (persist == null && annotation.annotationType() == Persistent.class) {
         persist = (Persistent)annotation;
       } else if (c2s == null && annotation.annotationType() == ClientToServer.class) {
@@ -356,13 +446,22 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
     if ("".equals(fieldName)) {
       fieldName = method.getName();
     }
+    final boolean exists = fields.fields.containsKey(fieldName);
     final ModelField field = fields.getOrMakeField(fieldName);
+    if (!exists) {
+      field.setPersistent(defaultPersistence);
+      field.setSerializable(defaultSerialization);
+    }
 
 
     if (field.getPersistent() == null) {
       field.setPersistent(persist);
     } else {
-      assert persist == null || (persist.patchable() == field.getPersistent().patchable()):
+      assert persist == null || persist == defaultPersistence ||
+          (
+              persist.strategy() == field.getPersistent().strategy() &&
+              persist.patchable() == field.getPersistent().patchable()
+          ):
       "Model annotation mismatch! Field "+field.getName()+" of type " + type.getQualifiedSourceName() +
       " contained multiple @Persistent annotations which did not match.  " +
       "You may have to override an annotated supertype method with the correct " +
@@ -372,7 +471,7 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
     if (field.getSerializable() == null) {
       field.setSerializable(serial);
     } else {
-//      assert serial == null ||
+//      assert serial == null || serial == defaultSerialization ||
 //        ( // this block is all assert, so it will compile out of production.
 //          serial.clientToServer() == field.getSerializable().clientToServer() &&
 //          serial.serverToClient() == field.getSerializable().serverToClient() &&
@@ -438,12 +537,13 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
     final String name = ModelGeneratorGwt.fieldName(method, manifest);
     final ModelField field = models.getOrMakeField(name);
     field.addSetter(
-      X_Source.binaryToSource(method.getReturnType().getQualifiedBinaryName())
-      , name,
+      X_Source.binaryToSource(method.getReturnType().getQualifiedBinaryName()),
+      name, method.getName(),
+      method.getAnnotations(),
       ModelGeneratorGwt.toTypes(method.getParameterTypes())
       ).fluent = isFluent;
     if (!isFluent && !isVoid) {
-      mb.println("var value = getProperty(\""+name+"\");");
+      mb.println(mb.addImport(field.getType())+" value = getProperty(\""+name+"\");");
     }
     final JParameter[] params = method.getParameters();
     if (params.length != 1) {
@@ -452,6 +552,48 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
     mb.println("setProperty(\""+name+"\", A);");
     if (!isVoid) {
       mb.println("return "+(isFluent ? "this;" : "value;"));
+    }
+  }
+
+  public void setReused() {
+    this.reused = true;
+  }
+
+  /**
+   * @return -> reused
+   */
+  public boolean isReused() {
+    return reused;
+  }
+
+  public String getTypeName() {
+    return typeName;
+  }
+
+  public String getTypeClass() {
+    return typeClass;
+  }
+
+  /**
+   * @return -> properties
+   */
+  public String[] getProperties() {
+    return properties;
+  }
+
+  /**
+   * @param logger
+   * @param type
+   */
+  public void applyDefaultAnnotations(final TreeLogger logger, final com.google.gwt.core.ext.typeinfo.JClassType type) {
+    final IsModel isModel = type.getAnnotation(IsModel.class);
+    if (isModel != null) {
+      typeName = isModel.modelType();
+      defaultPersistence = isModel.persistence();
+      defaultSerialization = isModel.serializable();
+      if (isModel.propertyOrder().length > 0) {
+        properties = isModel.propertyOrder();
+      }
     }
   }
 
