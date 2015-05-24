@@ -195,12 +195,11 @@ public class X_IO {
   }
 
   public static String toStringUtf8(final InputStream in) throws IOException {
-    final StringBufferOutputStream b = new StringBufferOutputStream();
-    drain(b, in);
-    try {
+    try (
+        final StringBufferOutputStream b = new StringBufferOutputStream();
+    ) {
+      drain(b, in);
       return b.toString();
-    } finally {
-      b.close();
     }
   }
 

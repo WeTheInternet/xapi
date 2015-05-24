@@ -4,6 +4,7 @@ import java.net.UnknownHostException;
 
 import org.json.JSONObject;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import xapi.collect.X_Collect;
@@ -76,12 +77,13 @@ public class IOServiceTest {
   }
 
   @Test
+  @Ignore("Use a local server instead of flaky jsontest.com")
   public void testHeaders() {
     final Moment now = X_Time.now();
     final Pointer<Boolean> success = new Pointer<Boolean>(false);
     IORequest<String> response;
     try{
-      final StringDictionary<String> headers = X_Collect.newStringDictionary();
+      final StringDictionary<String> headers = X_Collect.newDictionary();
       headers.setValue("test", "success");
       response = service().get("http://headers.jsontest.com", headers, t -> {
         Assert.assertNotNull(t.body());

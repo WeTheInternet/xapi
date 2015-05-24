@@ -209,7 +209,7 @@ public abstract class AbstractIOService <Transport> implements IOService{
 
   }
 
-  private String uriBase() {
+  protected String uriBase() {
     final String port = X_Properties.getProperty(X_Namespace.PROPERTY_SERVER_PORT, "");
     return System.getProperty(X_Namespace.PROPERTY_SERVER_HOST, "0.0.0.0")
       + (port.length()==0?"":":"+port);
@@ -227,7 +227,7 @@ public abstract class AbstractIOService <Transport> implements IOService{
 
   protected String normalize(String uri) {
     if (uri.charAt(0) == '/') {
-      uri = uriBase();
+      uri = uriBase() + uri;
     }
     if (!uri.contains("://")) {
       uri = "http://"+uri;

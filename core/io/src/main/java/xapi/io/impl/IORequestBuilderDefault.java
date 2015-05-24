@@ -1,7 +1,7 @@
 package xapi.io.impl;
 
 import static xapi.collect.X_Collect.copyDictionary;
-import static xapi.collect.X_Collect.newStringDictionary;
+import static xapi.collect.X_Collect.newDictionary;
 import static xapi.io.IOConstants.METHOD_DELETE;
 import static xapi.io.IOConstants.METHOD_GET;
 import static xapi.io.IOConstants.METHOD_HEAD;
@@ -215,7 +215,7 @@ public class IORequestBuilderDefault <Out> implements IORequestBuilder<Out>{
   }
 
   protected StringDictionary<String> initHeaders() {
-    return newStringDictionary();
+    return newDictionary();
   }
 
   @Override

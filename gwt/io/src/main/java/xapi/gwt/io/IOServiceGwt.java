@@ -3,6 +3,7 @@
  */
 package xapi.gwt.io;
 
+import com.google.gwt.core.client.GWT;
 import com.google.gwt.http.client.Header;
 import com.google.gwt.http.client.Request;
 import com.google.gwt.http.client.RequestBuilder;
@@ -14,6 +15,7 @@ import javax.inject.Provider;
 
 import xapi.annotation.inject.SingletonOverride;
 import xapi.collect.X_Collect;
+import xapi.collect.api.Dictionary;
 import xapi.collect.api.StringDictionary;
 import xapi.collect.api.StringTo;
 import xapi.collect.api.StringTo.Many;
@@ -80,15 +82,13 @@ public class IOServiceGwt extends AbstractIOService <RequestBuilder> {
     }
     try {
       final RequestBuilder request = newRequest(RequestBuilder.GET, url);
-      if (headers != null) {
-        headers.forKeys(new ReceivesValue<String>() {
-          @Override
-          public void set(final String key) {
-            final String value = headers.getValue(key);
-            request.setHeader(key, value);
-          }
-        });
-      }
+      normalizeHeaders(headers).forKeys(new ReceivesValue<String>() {
+        @Override
+        public void set(final String key) {
+          final String value = headers.getValue(key);
+          request.setHeader(key, value);
+        }
+      });
       applySettings(request, IOConstants.METHOD_GET);
       final IORequestGwt req = createRequest();
       sendRequest(request, req, callback, url, headers, IOConstants.METHOD_GET, null);
@@ -114,16 +114,14 @@ public class IOServiceGwt extends AbstractIOService <RequestBuilder> {
     }
     try {
       final RequestBuilder request = newRequest(RequestBuilder.POST, url);
-      if (headers != null) {
-        headers.forKeys(new ReceivesValue<String>() {
-          @Override
-          public void set(final String key) {
-            final String value = headers.getValue(key);
-            assert value != null : "Cannot set a null header value for "+key+"; url: "+url;
-            request.setHeader(key, value);
-          }
-        });
-      }
+      normalizeHeaders(headers).forKeys(new ReceivesValue<String>() {
+        @Override
+        public void set(final String key) {
+          final String value = headers.getValue(key);
+          assert value != null : "Cannot set a null header value for "+key+"; url: "+url;
+          request.setHeader(key, value);
+        }
+      });
       applySettings(request, IOConstants.METHOD_POST);
       final IORequestGwt req = createRequest();
       sendRequest(request, req, callback, url, headers, IOConstants.METHOD_POST, body);
@@ -137,6 +135,18 @@ public class IOServiceGwt extends AbstractIOService <RequestBuilder> {
     }
   }
 
+  protected Dictionary<String, String> normalizeHeaders(StringDictionary<String> headers) {
+    if (headers == null) {
+      headers = X_Collect.newDictionary();
+    }
+    if (!headers.hasKey("X-Gwt-Version")) {
+      headers.setValue("X-Gwt-Version", GWT.getPermutationStrongName());
+    }
+    if (!headers.hasKey("X-Gwt-Module")) {
+      headers.setValue("X-Gwt-Module", GWT.getModuleName());
+    }
+    return headers;
+  }
 
   protected void sendRequest(final RequestBuilder req, final IORequestGwt request, final IOCallback<IOMessage<String>> callback, final String url, final StringDictionary<String> headers, final int method, final String body) {
     final LogLevel logLevel = logLevel();
@@ -227,5 +237,18 @@ public class IOServiceGwt extends AbstractIOService <RequestBuilder> {
   protected IORequestGwt createRequest() {
     return new IORequestGwt();
   }
+
+  @Override
+  protected native String uriBase()
+  /*-{
+    if (!$wnd.location.origin) {
+      if ($wnd.location.port === 80 || $wnd.location.port === 443) {
+        $wnd.location.origin = $wnd.location.host;
+      } else {
+        $wnd.location.origin = $wnd.location.host + ":" + $wnd.location.port;
+      }
+    }
+    return $wnd.location.origin;
+  }-*/;
 
 }
