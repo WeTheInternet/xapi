@@ -17,10 +17,6 @@
   <dependencies>
   <dependency>
       <groupId>net.wetheinter</groupId>
-      <artifactId>gwt-reflect</artifactId>
-    </dependency>
-  <dependency>
-      <groupId>net.wetheinter</groupId>
       <artifactId>xapi-core-reflect</artifactId>
       <classifier>sources</classifier>
     </dependency>
