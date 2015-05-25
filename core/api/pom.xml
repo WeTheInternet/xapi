@@ -4,12 +4,12 @@
 	<parent>
 		<groupId>net.wetheinter</groupId>
 		<artifactId>xapi-core-parent</artifactId>
-		<version>0.5-SNAPSHOT</version>
+		<version>0.5</version>
 	</parent>
 
 	<groupId>net.wetheinter</groupId>
 	<artifactId>xapi-core-api</artifactId>
-	<version>0.5-SNAPSHOT</version>
+	<version>0.5</version>
 	<packaging>jar</packaging>
 	<name>XApi - Core Interfaces and Annotations</name>
 	<url>WeTheInter.net</url>

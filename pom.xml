@@ -4,7 +4,7 @@
 
  <groupId>net.wetheinter</groupId>
  <artifactId>xapi</artifactId>
- <version>0.5-SNAPSHOT</version>
+ <version>0.5</version>
  <packaging>pom</packaging>
 
   <name>XApi (Extremely Extensible Cross-Platform API)</name>
@@ -89,7 +89,7 @@
    <url>http://github.com/${github.account}/xapi</url>
   <connection>scm:git:git@github.com:${github.account}/xapi.git</connection>
   <developerConnection>scm:git:git@github.com:${github.account}/xapi.git</developerConnection>
-   <tag>HEAD</tag>
+   <tag>xapi-0.5</tag>
   </scm>
  <licenses>
   <license>
