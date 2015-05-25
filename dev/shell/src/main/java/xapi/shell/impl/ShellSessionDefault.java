@@ -49,14 +49,14 @@ class ShellSessionDefault implements ShellSession, Runnable {
   PipeOut out;
   private Integer status;
 
-  public ShellSessionDefault(ShellCommandDefault cmd, 
-      ArgumentProcessor argProcessor, SuccessHandler<ShellSession> onSuccess, ErrorHandler<Throwable> onError) {
+  public ShellSessionDefault(final ShellCommandDefault cmd,
+      final ArgumentProcessor argProcessor, final SuccessHandler<ShellSession> onSuccess, final ErrorHandler<Throwable> onError) {
     this.command = cmd;
     this.callback = onSuccess;
     this.err = onError;
     this.processor = argProcessor;
   }
-  
+
   @SuppressWarnings({"unchecked", "rawtypes"})
   @Override
   public void run() {
@@ -70,7 +70,7 @@ class ShellSessionDefault implements ShellSession, Runnable {
           process = command.doRun(processor);
           o = process.getInputStream();
           e = process.getErrorStream();
-        } catch (Throwable ex) {
+        } catch (final Throwable ex) {
           X_Log.error(getClass(), "Could not start command " + command.commands(), ex);
           err.onError(ex);
         }
@@ -86,7 +86,7 @@ class ShellSessionDefault implements ShellSession, Runnable {
     if (stdOut != null) {
       onStdOut.onStart();
       onStdErr.onStart();
-      HasLiveness check = new HasLiveness() {
+      final HasLiveness check = new HasLiveness() {
         @Override
         public boolean isAlive() {
           return !finished;
@@ -97,15 +97,11 @@ class ShellSessionDefault implements ShellSession, Runnable {
     }
     join();
     drainStreams();
-    if (status == 0) {
-      if (callback != null) {
-        callback.onSuccess(this);
-      } else {
-        if (callback instanceof ErrorHandler) {
-          ((ErrorHandler)callback).onError(new RuntimeException("Exit status "+status+" for "+command.commands));
-        }
-        X_Log.error("Exit status",status,"for ",command.commands);
+    if (status != 0) {
+      if (callback instanceof ErrorHandler) {
+        ((ErrorHandler)callback).onError(new RuntimeException("Exit status "+status+" for "+command.commands));
       }
+      X_Log.error("Exit status",status,"for ",command.commands);
     }
     destroy();
     synchronized (this) {
@@ -137,7 +133,7 @@ class ShellSessionDefault implements ShellSession, Runnable {
         synchronized (ShellSessionDefault.this) {
           try {
             ShellSessionDefault.this.wait(seconds.toMillis(i), 0);
-          } catch (InterruptedException e) {
+          } catch (final InterruptedException e) {
             Thread.currentThread().interrupt();
             waiting.interrupt();
             return;
@@ -150,7 +146,7 @@ class ShellSessionDefault implements ShellSession, Runnable {
     }).start();
     return join();
   }
-  
+
   @Override
   public int join() {
     if (status != null) {
@@ -174,7 +170,7 @@ class ShellSessionDefault implements ShellSession, Runnable {
         X_Log.debug(getClass(), "Joining from",new Throwable());
         return (status = process.waitFor());
       }
-    } catch (InterruptedException e) {
+    } catch (final InterruptedException e) {
       X_Log.info(getClass(), "Interrupted while joining process",process);
       finished = true;
       try {
@@ -200,8 +196,8 @@ class ShellSessionDefault implements ShellSession, Runnable {
         // The scripts need chmod +x
         X_Log.warn(getClass(), "The script you are trying to run requires chmod +x\n",command.commands);
         X_Log.info(getClass(), "Attempting to make files executable");
-        for (String command : this.command.commands.forEach()) {
-          File f = new File(command);
+        for (final String command : this.command.commands.forEach()) {
+          final File f = new File(command);
           if (f.exists()) {
             if (!f.canExecute()) {
               X_Log.info(getClass(), "Setting file",f,"to be executable.  Result: ", f.setExecutable(true, false));
@@ -231,7 +227,7 @@ class ShellSessionDefault implements ShellSession, Runnable {
     });
     finish();
   }
-  
+
   protected void drainStreams() {
     try {
       X_Log.trace(getClass(), "Process ended; Waiting for stdErr");
@@ -239,7 +235,7 @@ class ShellSessionDefault implements ShellSession, Runnable {
       X_Log.trace(getClass(), "Blocking on stdOut");
       onStdOut.waitToEnd();
       X_Log.trace(getClass(), "Done");
-    } catch (InterruptedException e) {
+    } catch (final InterruptedException e) {
       Thread.interrupted();
       throw X_Debug.rethrow(e);
     }
@@ -248,7 +244,7 @@ class ShellSessionDefault implements ShellSession, Runnable {
   protected void finish () {
     boolean shouldRun = false;
     synchronized (once) {
-      for (RemovalHandler clear : clears.forEach()) {
+      for (final RemovalHandler clear : clears.forEach()) {
         clear.remove();
       }
       clears.clear();
@@ -277,26 +273,27 @@ class ShellSessionDefault implements ShellSession, Runnable {
   }
 
   @Override
-  public ShellSessionDefault stdOut(LineReader stdReader) {
+  public ShellSessionDefault stdOut(final LineReader stdReader) {
     onStdOut.forwardTo(stdReader);
     return this;
   }
 
   @Override
-  public ShellSessionDefault stdErr(LineReader errReader) {
+  public ShellSessionDefault stdErr(final LineReader errReader) {
     onStdErr.forwardTo(errReader);
     return this;
   }
-  
+
   @Override
-  public boolean stdIn(String string) {
-    if (!isRunning())
+  public boolean stdIn(final String string) {
+    if (!isRunning()) {
       throw new IllegalStateException("The command "+command.commands()+" is not running to receive " +
             "your input of "+string);
-    boolean immediate = stdIns.isEmpty();
+    }
+    final boolean immediate = stdIns.isEmpty();
     stdIns.give(string);
     if (immediate) {
-      // maybe have to init 
+      // maybe have to init
       synchronized (stdIns) {
         // don't want to init twice!
         if (out == null) {
@@ -306,7 +303,7 @@ class ShellSessionDefault implements ShellSession, Runnable {
           out.ping();
         }
       }
-      
+
     } else {
       if (out == null) {
         X_Log.error(getClass(), "Attempting to send message to closed process, ",string,"will be ignored");
@@ -323,13 +320,15 @@ class ShellSessionDefault implements ShellSession, Runnable {
     }
     void ping(){
       // Called when more stdIn shows up.  If we're blocking now, don't bother.
-      if (blocking.get())
+      if (blocking.get()) {
         return;
+      }
       synchronized (blocking) {
         blocking.notify();
       }
     }
     OutputStream os;
+    @Override
     public void run() {
       X_Log.info(getClass(), "Running process", command.commands);
       try {
@@ -344,7 +343,7 @@ class ShellSessionDefault implements ShellSession, Runnable {
             blocking.set(false);
             try {
               blocking.wait(timeout);
-            } catch (InterruptedException e) {
+            } catch (final InterruptedException e) {
               Thread.currentThread().interrupt();
               X_Log.error(getClass(), "Shell command $" +
                     command.commands()+" thread interrupted; bailing now.");
@@ -355,7 +354,7 @@ class ShellSessionDefault implements ShellSession, Runnable {
           timeout = 50;
           try {
             blocking.set(true);
-            String line = stdIns.take();
+            final String line = stdIns.take();
             X_Log.trace(getClass(), "Sending command to process stdIn",line);
             try {
               if (os == null){
@@ -368,14 +367,14 @@ class ShellSessionDefault implements ShellSession, Runnable {
                 os.write((line+"\n").getBytes());
                 os.flush();
               }
-            } catch (IOException e) {
+            } catch (final IOException e) {
               X_Log.warn(getClass(), "Command ",command.commands()," received IO error sending ",line,"\n", e);
               // TODO perhaps put command back on stack; though recursion sickness would suck
             }
           }finally {
             blocking.set(false);
           }
-          
+
         }
       }
       if (!stdIns.isEmpty()){
@@ -410,7 +409,7 @@ class ShellSessionDefault implements ShellSession, Runnable {
     Thread waiting;
 
     @Override
-    public T get(long timeout, TimeUnit unit) throws InterruptedException,
+    public T get(final long timeout, final TimeUnit unit) throws InterruptedException,
         ExecutionException, TimeoutException {
       assert waiting == null || waiting == Thread.currentThread() : "Should not make more than"
           + " one thread wait on a process at once.";
@@ -429,7 +428,7 @@ class ShellSessionDefault implements ShellSession, Runnable {
     protected abstract T getValue();
 
     @Override
-    public boolean cancel(boolean mayInterruptIfRunning) {
+    public boolean cancel(final boolean mayInterruptIfRunning) {
       try {
         destroy();
       } finally {
