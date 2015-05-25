@@ -139,155 +139,155 @@
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-api</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-api</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
     <classifier>sources</classifier>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-log</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-log</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
     <classifier>sources</classifier>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-inject</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-inject</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
     <classifier>sources</classifier>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-reflect</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-reflect</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
     <classifier>sources</classifier>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-util</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-util</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
     <classifier>sources</classifier>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-collect</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-args</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-args</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
     <classifier>sources</classifier>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-collect</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
     <classifier>sources</classifier>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-process</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-process</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
     <classifier>sources</classifier>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-model</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-model</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
     <classifier>sources</classifier>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-io</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-io</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
     <classifier>sources</classifier>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-ui-api</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-ui-api</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
     <classifier>sources</classifier>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-ui-autoui</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-ui-autoui</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
     <classifier>sources</classifier>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-ui-html</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-ui-html</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
     <classifier>sources</classifier>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-test</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-test</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
     <classifier>sources</classifier>
    </dependency>
 
@@ -296,47 +296,47 @@
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-jre-api</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-jre-inject</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-jre-reflect</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-jre-collect</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-jre-model</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-jre-io</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-jre-process</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-jre-test</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-jre</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
 
    <!-- XApi GWT modules -->
@@ -348,182 +348,182 @@
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-gwt-api</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-gwt-inject</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-gwt-process</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-gwt-collect</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-gwt-model</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-gwt-io</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-gwt-ui-autoui</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-gwt-ui-html</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-elemental</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-components</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-polymer</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-gwt-test</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-gwt-inspect-parent</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-gwt-inspect-generator</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-gwt-inspect-api</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-gwt-inspect-impl</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-gwt</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
 
    <!-- Dev stuff -->
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-dev-api</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-dev-source</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-dev-source</artifactId>
     <classifier>sources</classifier>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-dev-file</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-dev-bytecode</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-dev-scanner</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-dev-template</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-dev-maven</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-dev-shell</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
 
    <!-- Gwtc module -->
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-dev-gwtc</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-gwtc-api</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-gwtc-api</artifactId>
     <classifier>sources</classifier>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-gwtc-impl</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-gwtc-gwt</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-gwtc-jre</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
    
    <!-- Maven plugin -->
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-maven-plugin</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
 
    <!-- XApi Server Modules -->
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-server-api</artifactId>
-    <version>${xapi.version}</version>
+    <version>${project.version}</version>
    </dependency>
 
    <!-- Maven dependencies -->
@@ -696,7 +696,7 @@
     <plugin>
      <groupId>net.wetheinter</groupId>
      <artifactId>xapi-maven-plugin</artifactId>
-     <version>${xapi.version}</version>
+     <version>${project.version}</version>
     </plugin>
     <plugin>
      <artifactId>maven-surefire-plugin</artifactId>

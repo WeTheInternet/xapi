@@ -38,7 +38,7 @@
   <dependency>
    <groupId>net.wetheinter</groupId>
    <artifactId>xapi-gwt-collect</artifactId>
-   <version>${xapi.version}</version><!--$NO-MVN-MAN-VER$-->
+   <version>${project.version}</version><!--$NO-MVN-MAN-VER$-->
   </dependency>
   <dependency>
    <groupId>net.wetheinter</groupId>
@@ -61,7 +61,7 @@
    <artifactId>xapi-core-ui-autoui</artifactId>
    <classifier>tests</classifier>
    <scope>test</scope>
-   <version>${xapi.version}</version><!--$NO-MVN-MAN-VER$-->
+   <version>${project.version}</version><!--$NO-MVN-MAN-VER$-->
   </dependency>
   <dependency>
    <groupId>junit</groupId>
