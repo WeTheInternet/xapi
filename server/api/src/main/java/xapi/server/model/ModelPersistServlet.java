@@ -14,6 +14,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import xapi.io.X_IO;
+import xapi.jre.model.ModelServiceJre;
 import xapi.log.X_Log;
 import xapi.model.X_Model;
 import xapi.model.api.Model;
@@ -26,6 +27,7 @@ import xapi.source.impl.StringCharIterator;
 import xapi.time.X_Time;
 import xapi.util.X_Properties;
 import xapi.util.api.Pointer;
+import xapi.util.api.RemovalHandler;
 import xapi.util.api.SuccessHandler;
 
 /**
@@ -61,44 +63,49 @@ public class ModelPersistServlet extends HttpServlet {
     final String type = req.getHeader("X-Model-Type");
     final String moduleName = req.getHeader("X-Gwt-Module");
     final ModelModule module = ModelModuleLoader.get().loadModule(context, moduleName);
-    final ModelManifest manifest = module.getManifest(type);
-    String encoding = req.getCharacterEncoding();
-    if (encoding == null) {
-      encoding = "UTF-8";
-    }
-    final String[] keySections = URLDecoder.decode(req.getRequestURI(), encoding).split("/");
-    final PrimitiveSerializer primitives = X_Model.getService().primitiveSerializer();
-    String namespace = keySections[keySections.length-3];
-    namespace = primitives.deserializeString(new StringCharIterator(namespace));
-    final String kind = keySections[keySections.length-2];
-    final CharIterator ident = new StringCharIterator(keySections[keySections.length-1]);
-    final int keyType = primitives.deserializeInt(ident);
-    final String id = ident.consumeAll().toString();
+    final RemovalHandler handler = ModelServiceJre.registerModule(module);
+    try {
+      final ModelManifest manifest = module.getManifest(type);
+      String encoding = req.getCharacterEncoding();
+      if (encoding == null) {
+        encoding = "UTF-8";
+      }
+      final String[] keySections = URLDecoder.decode(req.getRequestURI(), encoding).split("/");
+      final PrimitiveSerializer primitives = X_Model.getService().primitiveSerializer();
+      String namespace = keySections[keySections.length-3];
+      namespace = primitives.deserializeString(new StringCharIterator(namespace));
+      final String kind = keySections[keySections.length-2];
+      final CharIterator ident = new StringCharIterator(keySections[keySections.length-1]);
+      final int keyType = primitives.deserializeInt(ident);
+      final String id = ident.consumeAll().toString();
 
-    final ModelKey key = X_Model.newKey(namespace, kind, id).setKeyType(keyType);
-    final Pointer<Boolean> wait = new Pointer<>(true);
-    final Class<Model> modelType = (Class<Model>) manifest.getModelType();
-    X_Model.load(modelType, key,
-        new SuccessHandler<Model>() {
-      @Override
-      public void onSuccess(final Model m) {
-        final String serialized = X_Model.serialize(manifest, m);
-        try {
-          X_IO.drain(resp.getOutputStream(), X_IO.toStreamUtf8(serialized));
-          wait.set(false);
-        } catch (final Exception e) {
-          X_Log.error(getClass(), "Error saving model",e);
+      final ModelKey key = X_Model.newKey(namespace, kind, id).setKeyType(keyType);
+      final Pointer<Boolean> wait = new Pointer<>(true);
+      final Class<Model> modelType = (Class<Model>) manifest.getModelType();
+      X_Model.load(modelType, key,
+          new SuccessHandler<Model>() {
+        @Override
+        public void onSuccess(final Model m) {
+          final String serialized = X_Model.serialize(manifest, m);
+          try {
+            X_IO.drain(resp.getOutputStream(), X_IO.toStreamUtf8(serialized));
+            wait.set(false);
+          } catch (final Exception e) {
+            X_Log.error(getClass(), "Error saving model",e);
+          }
+        }
+      });
+
+      final long deadline = System.currentTimeMillis() + 5000;
+      while (wait.get()) {
+        X_Time.trySleep(30, 0);
+        if (X_Time.isPast(deadline)) {
+          X_Log.error(getClass(), "Timeout while loading model",key);
+          return;
         }
       }
-    });
-
-    final long deadline = System.currentTimeMillis() + 5000;
-    while (wait.get()) {
-      X_Time.trySleep(30, 0);
-      if (X_Time.isPast(deadline)) {
-        X_Log.error(getClass(), "Timeout while loading model",key);
-        return;
-      }
+    } finally {
+      handler.remove();
     }
   }
 
@@ -108,30 +115,54 @@ public class ModelPersistServlet extends HttpServlet {
     final String type = req.getHeader("X-Model-Type");
     final String moduleName = req.getHeader("X-Gwt-Module");
     final ModelModule module = ModelModuleLoader.get().loadModule(context, moduleName);
-    final ModelManifest manifest = module.getManifest(type);
-    final Model model = X_Model.deserialize(manifest, asString);
-    final Pointer<Boolean> wait = new Pointer<>(true);
-    X_Model.persist(model,
-        new SuccessHandler<Model>() {
-      @Override
-      public void onSuccess(final Model m) {
-        final String serialized = X_Model.serialize(manifest, m);
+    final RemovalHandler handler = ModelServiceJre.registerModule(module);
+    try {
+      final ModelManifest manifest = module.getManifest(type);
+      final Model model;
+      try {
+        model = X_Model.deserialize(manifest, asString);
+      } catch (final Throwable e) {
+        String moduleText, manifestText;
         try {
-          X_IO.drain(resp.getOutputStream(), X_IO.toStreamUtf8(serialized));
-          wait.set(false);
-        } catch (final Exception e) {
-          X_Log.error(getClass(), "Error saving model",e);
+          moduleText = ModelModule.serialize(module);
+        } catch (final Throwable e1) {
+          moduleText = String.valueOf(module);
+        }
+        try {
+          manifestText = ModelManifest.serialize(manifest);
+        } catch (final Throwable e1) {
+          manifestText = String.valueOf(manifest);
+        }
+        X_Log.error(getClass(), "Error trying to deserialize model; ",e,"source: ","|"+asString+"|"
+            , "\nManifest: ","|"+manifestText+"|"
+            , "\nModule: ","|"+moduleText+"|");
+        throw new ServletException(e);
+      }
+      final Pointer<Boolean> wait = new Pointer<>(true);
+      X_Model.persist(model,
+          new SuccessHandler<Model>() {
+        @Override
+        public void onSuccess(final Model m) {
+          final String serialized = X_Model.serialize(manifest, m);
+          try {
+            X_IO.drain(resp.getOutputStream(), X_IO.toStreamUtf8(serialized));
+            wait.set(false);
+          } catch (final Exception e) {
+            X_Log.error(getClass(), "Error saving model",e);
+          }
+        }
+      });
+
+      final long deadline = System.currentTimeMillis() + 5000;
+      while (wait.get()) {
+        X_Time.trySleep(30, 0);
+        if (X_Time.isPast(deadline)) {
+          X_Log.error(getClass(), "Timeout while saving model",model);
+          return;
         }
       }
-    });
-
-    final long deadline = System.currentTimeMillis() + 5000;
-    while (wait.get()) {
-      X_Time.trySleep(30, 0);
-      if (X_Time.isPast(deadline)) {
-        X_Log.error(getClass(), "Timeout while saving model",model);
-        return;
-      }
+    } finally {
+      handler.remove();
     }
   }
 }

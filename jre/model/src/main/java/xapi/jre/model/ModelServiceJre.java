@@ -29,6 +29,7 @@ import xapi.model.api.ModelKey;
 import xapi.model.api.ModelManifest;
 import xapi.model.api.ModelManifest.MethodData;
 import xapi.model.api.ModelMethodType;
+import xapi.model.api.ModelModule;
 import xapi.model.api.ModelNotFoundException;
 import xapi.model.impl.AbstractModel;
 import xapi.model.impl.AbstractModelService;
@@ -40,6 +41,7 @@ import xapi.time.X_Time;
 import xapi.util.api.ConvertsValue;
 import xapi.util.api.ErrorHandler;
 import xapi.util.api.ProvidesValue;
+import xapi.util.api.RemovalHandler;
 import xapi.util.api.SuccessHandler;
 
 /**
@@ -49,6 +51,41 @@ import xapi.util.api.SuccessHandler;
 @JrePlatform
 @SingletonDefault(implFor=ModelService.class)
 public class ModelServiceJre extends AbstractModelService {
+
+  private static ThreadLocal<ModelModule> currentModule = new ThreadLocal<>();
+
+  public static RemovalHandler registerModule(final ModelModule module) {
+    currentModule.set(module);
+    return new RemovalHandler() {
+      @Override
+      public void remove() {
+        currentModule.remove();
+      }
+    };
+  }
+
+  public static ProvidesValue<RemovalHandler> captureScope() {
+    final ModelModule module = currentModule.get();
+    return new ProvidesValue<RemovalHandler>() {
+      @Override
+      public RemovalHandler get() {
+        final ModelModule was = currentModule.get();
+        currentModule.set(module);
+        return new RemovalHandler() {
+          @Override
+          public void remove() {
+            if (module == currentModule.get()) {
+              if (was == null) {
+                currentModule.remove();
+              } else {
+                currentModule.set(was);
+              }
+            }
+          }
+        };
+      }
+    };
+  }
 
   /**
    * @author James X. Nelson (james@wetheinter.net, @james)
@@ -348,10 +385,12 @@ public class ModelServiceJre extends AbstractModelService {
       }
     } else {
       final File file = f;
+      final ProvidesValue<RemovalHandler> scope = captureScope();
       X_Time.runLater(new Runnable() {
 
         @Override
         public void run() {
+          final RemovalHandler handler = scope.get();
           String result;
           try {
             result = X_IO.toStringUtf8(new FileInputStream(file));
@@ -362,6 +401,8 @@ public class ModelServiceJre extends AbstractModelService {
             if (callback instanceof ErrorHandler) {
               ((ErrorHandler) callback).onError(new ModelNotFoundException(modelKey));
             }
+          } finally {
+            handler.remove();
           }
         }
       });
@@ -436,6 +477,11 @@ public class ModelServiceJre extends AbstractModelService {
   }
 
   protected ModelManifest getOrMakeModelManifest(final Class<? extends Model> cls) {
+    final ModelModule module = currentModule.get();
+    if (module != null) {
+      final String typeName = getTypeName(cls);
+      return module.getManifest(typeName);
+    }
     ModelManifest manifest = modelManifests.get(cls);
     if (manifest == null) {
       manifest = ModelUtil.createManifest(cls);

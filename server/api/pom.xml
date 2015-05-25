@@ -24,7 +24,7 @@
   <dependencies>
     <dependency>
       <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-core-model</artifactId>
+      <artifactId>xapi-jre-model</artifactId>
     </dependency>
     <dependency>
       <groupId>javax.servlet</groupId>
