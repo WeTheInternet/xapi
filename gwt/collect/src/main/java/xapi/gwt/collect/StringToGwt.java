@@ -1,5 +1,8 @@
 package xapi.gwt.collect;
 
+import com.google.gwt.core.client.GwtScriptOnly;
+import com.google.gwt.core.client.JavaScriptObject;
+
 import java.util.Iterator;
 import java.util.Map.Entry;
 
@@ -10,12 +13,10 @@ import xapi.collect.impl.EntryValueAdapter;
 import xapi.collect.impl.IteratorWrapper;
 import xapi.platform.GwtPlatform;
 
-import com.google.gwt.core.client.GwtScriptOnly;
-import com.google.gwt.core.client.JavaScriptObject;
-
-@GwtPlatform
 @InstanceOverride(implFor=StringTo.class)
+@SuppressWarnings("serial")
 @GwtScriptOnly
+@GwtPlatform
 public class StringToGwt <V> extends JavaScriptObject implements StringTo<V>{
 
   protected StringToGwt() {
@@ -34,7 +35,7 @@ public class StringToGwt <V> extends JavaScriptObject implements StringTo<V>{
   /*-{
    return {_k: @xapi.gwt.collect.StringToGwt::newStringArray()() };
   }-*/;
-  
+
   public static native <T> StringToGwt<T> fromJso(JavaScriptObject o)
   /*-{
      var m = @xapi.gwt.collect.StringToGwt::create()();
@@ -44,7 +45,7 @@ public class StringToGwt <V> extends JavaScriptObject implements StringTo<V>{
        m[i] = slot;
      }
    }-*/;
-  
+
 
   private static String[] newStringArray() {
     return new String[0];
@@ -56,7 +57,7 @@ public class StringToGwt <V> extends JavaScriptObject implements StringTo<V>{
       super(keyArray());
     }
     @Override
-    protected void remove(String key) {
+    protected void remove(final String key) {
       StringToGwt.this.remove(key);
     }
   }
@@ -64,7 +65,8 @@ public class StringToGwt <V> extends JavaScriptObject implements StringTo<V>{
   class EntryItr implements Iterator<Entry<String, V>> {
 
     int pos = 0;
-    int max = keyArray().length;
+    String[] keys = keyArray();
+    int max = keys.length;
     Entry<String, V> entry;
 
     @Override
@@ -74,7 +76,7 @@ public class StringToGwt <V> extends JavaScriptObject implements StringTo<V>{
 
     @Override
     public Entry<String,V> next() {
-      final String key = keyArray()[pos++];
+      final String key = keys[pos++];
       final V next = get(key);
       entry = new Entry<String,V>() {
 
@@ -89,12 +91,12 @@ public class StringToGwt <V> extends JavaScriptObject implements StringTo<V>{
         }
 
         @Override
-        public V setValue(V value) {
+        public V setValue(final V value) {
           if (value == null) {
             return StringToGwt.this.remove(key);
-          }
-          else
+          } else {
             return StringToGwt.this.put(key, value);
+          }
         }
       };
       return entry;
@@ -117,36 +119,47 @@ public class StringToGwt <V> extends JavaScriptObject implements StringTo<V>{
     }
     return out;
   }-*/;
-  
-  
+
+
+  @Override
   public final native String[] keyArray()
+  /*-{
+   return @com.google.gwt.lang.Array::clone([Ljava/lang/Object;)(this._k);
+   }-*/;
+
+  private final native String[] nativeKeys()
   /*-{
    return this._k;
    }-*/;
 
+  @Override
   public final native boolean containsKey(Object key)
   /*-{
     return this.hasOwnProperty(key)&&this[key] != undefined;
   }-*/;
 
-  public final boolean containsValue(Object value) {
-    String[] keys = keyArray();
+  @Override
+  public final boolean containsValue(final Object value) {
+    final String[] keys = nativeKeys();
     int i = keys.length;
 
     if (value == null) {
       for (;i-->0;) {
-        if (get(keys[i]) == null)
-         return true;
+        if (get(keys[i]) == null) {
+          return true;
+        }
       }
     } else {
       for (;i-->0;) {
-        if (value.equals(get(keys[i])))
+        if (value.equals(get(keys[i]))) {
           return true;
+        }
       }
     }
     return false;
   }
 
+  @Override
   public final native V get(String key)
   /*-{
     return this.hasOwnProperty(key) ? this[key].v : null;
@@ -168,11 +181,13 @@ public class StringToGwt <V> extends JavaScriptObject implements StringTo<V>{
     return v;
   }-*/;
 
+  @Override
   public final native boolean isEmpty()
   /*-{
     return this._k.length == 0;
   }-*/;
 
+  @Override
   public final native void clear()
   /*-{
     for (
@@ -183,6 +198,7 @@ public class StringToGwt <V> extends JavaScriptObject implements StringTo<V>{
     this._k.length = 0;
   }-*/;
 
+  @Override
   public final native V remove(String key)
   /*-{
     var index = this._k.indexOf(key);
@@ -193,31 +209,38 @@ public class StringToGwt <V> extends JavaScriptObject implements StringTo<V>{
     return value.v;
   }-*/;
 
-  public final void putAll(Iterable<Entry<String,V>> items) {
-    for (Entry<String, V> item : items)
+  @Override
+  public final void putAll(final Iterable<Entry<String,V>> items) {
+    for (final Entry<String, V> item : items) {
       put(item.getKey(), item.getValue());
+    }
   }
 
-  public final void removeAll(Iterable<String> items) {
-    for (String item : items) {
+  @Override
+  public final void removeAll(final Iterable<String> items) {
+    for (final String item : items) {
       remove(item);
     }
   }
 
+  @Override
   public final Iterable<String> keys() {
     return new KeyItr();
   }
 
+  @Override
   public final Iterable<V> values() {
     return new EntryValueAdapter<String, V>(entries());
   }
 
+  @Override
   public final Iterable<Entry<String,V>> entries() {
     return new IteratorWrapper<Entry<String, V>>(new EntryItr());
   }
 
+  @Override
   public final int size() {
-    return keyArray().length;
+    return nativeKeys().length;
   }
 
 }
