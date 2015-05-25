@@ -39,10 +39,18 @@ public class ModelServiceGwt extends AbstractModelService
   public static String REGISTER_CREATOR_METHOD = "registerCreator";
 
   private static Class<? extends Model> implClassRef;
-  public static <M extends Model> String registerCreator(final Class<M> cls, final Class<? extends M> implClass, final ProvidesValue<M> provider) {
+  public static <M extends Model> String registerCreator(final Class<M> cls, final String type, final Class<? extends M> implClass, final ProvidesValue<M> provider) {
     PROVIDERS.put(cls, provider);
     implClassRef = implClass;
-    final String type = X_Model.getService().register(cls);
+    final ModelService modelService = X_Model.getService();
+    if (modelService instanceof ModelServiceGwt) {
+      final ModelServiceGwt service = (ModelServiceGwt) modelService;
+      service.classToTypeName.put(cls, type);
+      service.classToTypeName.put(implClass, type);
+      service.typeNameToClass.put(type, cls);
+    } else {
+      return modelService.register(cls);
+    }
     implClassRef = null;
     return type;
   }

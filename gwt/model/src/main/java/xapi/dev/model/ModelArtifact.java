@@ -52,6 +52,7 @@ import xapi.model.X_Model;
 import xapi.model.api.Model;
 import xapi.model.api.ModelMethodType;
 import xapi.model.impl.ModelNameUtil;
+import xapi.model.impl.ModelUtil;
 import xapi.source.X_Source;
 import xapi.source.api.IsType;
 import xapi.util.X_Runtime;
@@ -230,12 +231,18 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
 
     final String register = out.addImportStatic(ModelServiceGwt.class, REGISTER_CREATOR_METHOD);
 
+    final String typeName = guessTypeName(type);
+
     out.createField(String.class, "MODEL_TYPE")
       .makePublic()
       .makeStatic()
       .makeFinal()
       .setInitializer(register+"("+
-          modelType+".class, "+ out.getSimpleName()+".class, "+ out.getSimpleName()+"::newInstance);"
+          modelType+".class, "
+          + "\""  + typeName + "\", "
+          + out.getSimpleName()+".class, "
+          + out.getSimpleName()+"::newInstance"
+      + ");"
       );
 
     out.createMethod("public static String register()")
@@ -382,6 +389,18 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
     implementInterestingTypes(type, out, modelInterface, interestingTypes);
 
     generator.generateModel(X_Source.toType(builder.getPackage(), builder.getClassBuffer().getSimpleName()), fieldMap);
+  }
+
+  /**
+   * @param type
+   * @return
+   */
+  private String guessTypeName(final JClassType type) {
+    final IsModel model = type.getAnnotation(IsModel.class);
+    if (model != null && model.modelType().length() > 0) {
+      return model.modelType();
+    }
+    return ModelUtil.guessModelType(type.getSimpleSourceName());
   }
 
   /**
