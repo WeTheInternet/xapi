@@ -4,7 +4,7 @@
 package xapi.model.api;
 
 import java.io.Serializable;
-import java.nio.charset.Charset;
+import java.io.UnsupportedEncodingException;
 import java.util.Map.Entry;
 import java.util.Objects;
 
@@ -18,6 +18,7 @@ import xapi.model.impl.ClusteringPrimitiveDeserializer;
 import xapi.model.impl.ClusteringPrimitiveSerializer;
 import xapi.source.api.CharIterator;
 import xapi.source.impl.StringCharIterator;
+import xapi.util.X_Debug;
 import xapi.util.api.Digester;
 
 /**
@@ -101,7 +102,12 @@ public class ModelModule implements Serializable {
     // which will then be appended before the policy itself.
     final String result = calculateSerialization(primitives);
     final Digester digest = X_Inject.instance(Digester.class);
-    final byte[] asBytes = result.getBytes(Charset.forName("UTF-8"));
+    byte[] asBytes;
+    try {
+      asBytes = result.getBytes("UTF-8");
+    } catch (final UnsupportedEncodingException e) {
+      throw X_Debug.rethrow(e);
+    }
     final byte[] uuid = digest.digest(asBytes);
     return digest.toString(uuid);
   }
