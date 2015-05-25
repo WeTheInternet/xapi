@@ -43,14 +43,14 @@
   <maven.compiler.source>${java.version}</maven.compiler.source>
   <maven.compiler.target>${java.version}</maven.compiler.target>
   <xapi.version>0.5-SNAPSHOT</xapi.version>
-  <xapi.test.version>0.5-SNAPSHOT</xapi.test.version>
+  <xapi.test.version>0.5</xapi.test.version>
   <xapi.log.level>INFO</xapi.log.level>
   <gwt.groupId>net.wetheinter</gwt.groupId>
   <gwt.version>2.7.0</gwt.version>
-  <gwt.plugin.version>2.6.0</gwt.plugin.version>
+  <gwt.plugin.version>2.7.0</gwt.plugin.version>
   <xapi.gwt.version>${gwt.version}</xapi.gwt.version>
   <playn.version>1.5.1</playn.version>
-  <appengine.version>1.7.6</appengine.version>
+  <appengine.version>1.9.19</appengine.version>
   <guava.version>13.0.1</guava.version>
   <android.maven.version>3.4.0</android.maven.version>
   <maven.version>3.2.5</maven.version>
@@ -61,6 +61,7 @@
   <xapi.release>true</xapi.release>
   <source.forceCreation>${xapi.release}</source.forceCreation>
   <source.includePom>${xapi.release}</source.includePom>
+  <additionalparam>-Xdoclint:none</additionalparam>
  </properties>
 
  <modules>
@@ -907,6 +908,8 @@
         </goals>
         <configuration>
           <forceCreation>true</forceCreation>
+          <failOnError>false</failOnError>
+          <force>true</force>
         </configuration>
        </execution>
       </executions>
