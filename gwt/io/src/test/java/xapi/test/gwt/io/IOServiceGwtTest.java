@@ -1,7 +1,7 @@
 /**
  *
  */
-package xapi.gwt.io;
+package xapi.test.gwt.io;
 
 import com.google.gwt.core.client.JavaScriptException;
 import com.google.gwt.http.client.Request;
@@ -21,6 +21,7 @@ import org.junit.Ignore;
 
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringDictionary;
+import xapi.gwt.io.IOServiceGwt;
 import xapi.io.api.DelegatingIOCallback;
 import xapi.io.api.IORequest;
 import xapi.io.service.IOService;
@@ -148,7 +149,6 @@ public class IOServiceGwtTest extends GWTTestCase{
           assertNotNull(t.body());
           assertNotSame(0, t.body().length());
           final JSONValue asJson = JSONParser.parse(t.body());
-          X_Log.info(t.body());
           assertEquals("test=success", asJson.isObject().get("data").isString().stringValue());
           success.set(true);
         }));
@@ -192,7 +192,7 @@ public class IOServiceGwtTest extends GWTTestCase{
      */
     @Override
     public String getModuleName() {
-      return "xapi.X_IO";
+      return "xapi.test.gwt.io.TestIO";
     }
 
 }
