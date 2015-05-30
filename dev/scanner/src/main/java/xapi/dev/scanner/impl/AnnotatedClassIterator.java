@@ -25,14 +25,14 @@ class AnnotatedClassIterator implements Iterable<ClassFile>, MatchesValue<ClassF
   Fifo<ClassFile> results = new SimpleFifo<ClassFile>();
   boolean working = true, waiting = false;
 
-  public AnnotatedClassIterator(ExecutorService executor, HasPrefixed<ByteCodeResource> bytecode) {
+  public AnnotatedClassIterator(final ExecutorService executor, final HasPrefixed<ByteCodeResource> bytecode) {
     allClasses = new ClassFileIterator(this, bytecode).iterator();
     executor.submit(new Runnable() {
       @Override
       public void run() {
         try {
           while (allClasses.hasNext()) {
-            ClassFile next = allClasses.next();
+            final ClassFile next = allClasses.next();
             results.give(next);
             if (waiting) {
               synchronized(allClasses) {
@@ -62,14 +62,15 @@ class AnnotatedClassIterator implements Iterable<ClassFile>, MatchesValue<ClassF
     @Override
     public boolean hasNext() {
       while (working) {
-        if (itr.hasNext())
+        if (itr.hasNext()) {
           return true;
+        }
         try {
           synchronized (allClasses) {
             waiting = true;
-            allClasses.wait(0, 5000);
+            allClasses.wait(0, 25000);
           }
-        } catch (InterruptedException e) {
+        } catch (final InterruptedException e) {
           Thread.currentThread().interrupt();
           break;
         }
@@ -94,7 +95,7 @@ class AnnotatedClassIterator implements Iterable<ClassFile>, MatchesValue<ClassF
   }
 
   @Override
-  public boolean matches(ClassFile value) {
+  public boolean matches(final ClassFile value) {
     return value.getAnnotations().length > 0;
   }
 }

@@ -60,7 +60,7 @@ public class MethodInfo extends MemberInfo {
      */
     public static final String nameClinit = "<clinit>";
 
-    private MethodInfo(ConstPool cp) {
+    private MethodInfo(final ConstPool cp) {
         constPool = cp;
         attribute = null;
     }
@@ -77,7 +77,7 @@ public class MethodInfo extends MemberInfo {
      *            method descriptor
      * @see Descriptor
      */
-    public MethodInfo(ConstPool cp, String methodname, String desc) {
+    public MethodInfo(final ConstPool cp, final String methodname, final String desc) {
         this(cp);
         accessFlags = 0;
         name = cp.addUtf8Info(methodname);
@@ -85,7 +85,7 @@ public class MethodInfo extends MemberInfo {
         descriptor = constPool.addUtf8Info(desc);
     }
 
-    MethodInfo(ConstPool cp, DataInput in) throws IOException {
+    MethodInfo(final ConstPool cp, final DataInput in) throws IOException {
         this(cp);
         read(in);
     }
@@ -109,8 +109,8 @@ public class MethodInfo extends MemberInfo {
      *            specifies pairs of replaced and substituted name.
      * @see Descriptor
      */
-    public MethodInfo(ConstPool cp, String methodname, MethodInfo src,
-            Map<?, ?> classnameMap) throws BadBytecode {
+    public MethodInfo(final ConstPool cp, final String methodname, final MethodInfo src,
+            final Map<?, ?> classnameMap) throws BadBytecode {
         this(cp);
         read(src, methodname, classnameMap);
     }
@@ -136,15 +136,15 @@ public class MethodInfo extends MemberInfo {
      *
      * @param cp    the destination
      */
-    void compact(ConstPool cp) {
+    void compact(final ConstPool cp) {
         name = cp.addUtf8Info(getName());
         descriptor = cp.addUtf8Info(getDescriptor());
         attribute = AttributeInfo.copyAll(attribute, cp);
         constPool = cp;
     }
 
-    void prune(ConstPool cp) {
-        ArrayList<AttributeInfo> newAttributes = new ArrayList<AttributeInfo>();
+    void prune(final ConstPool cp) {
+        final ArrayList<AttributeInfo> newAttributes = new ArrayList<AttributeInfo>();
 
         AttributeInfo invisibleAnnotations
             = getAttribute(AnnotationsAttribute.invisibleTag);
@@ -174,13 +174,13 @@ public class MethodInfo extends MemberInfo {
             newAttributes.add(parameterVisibleAnnotations);
         }
 
-        AnnotationDefaultAttribute defaultAttribute
+        final AnnotationDefaultAttribute defaultAttribute
              = (AnnotationDefaultAttribute) getAttribute(AnnotationDefaultAttribute.tag);
         if (defaultAttribute != null) {
           newAttributes.add(defaultAttribute);
         }
 
-        ExceptionsAttribute ea = getExceptionsAttribute();
+        final ExceptionsAttribute ea = getExceptionsAttribute();
         if (ea != null) {
           newAttributes.add(ea);
         }
@@ -212,7 +212,7 @@ public class MethodInfo extends MemberInfo {
     /**
      * Sets a method name.
      */
-    public void setName(String newName) {
+    public void setName(final String newName) {
         name = constPool.addUtf8Info(newName);
         cachedName = newName;
     }
@@ -222,7 +222,7 @@ public class MethodInfo extends MemberInfo {
      * initializer).
      */
     public boolean isMethod() {
-        String n = getName();
+        final String n = getName();
         return !n.equals(nameInit) && !n.equals(nameClinit);
     }
 
@@ -261,7 +261,7 @@ public class MethodInfo extends MemberInfo {
      *
      * @see AccessFlag
      */
-    public void setAccessFlags(int acc) {
+    public void setAccessFlags(final int acc) {
         accessFlags = acc;
     }
 
@@ -279,7 +279,7 @@ public class MethodInfo extends MemberInfo {
      *
      * @see Descriptor
      */
-    public void setDescriptor(String desc) {
+    public void setDescriptor(final String desc) {
         if (!desc.equals(getDescriptor())) {
           descriptor = constPool.addUtf8Info(desc);
         }
@@ -291,7 +291,7 @@ public class MethodInfo extends MemberInfo {
      *
      * @see #getAttributes()
      */
-    public void addAttribute(AttributeInfo info) {
+    public void addAttribute(final AttributeInfo info) {
         if (attribute == null) {
           attribute = new ArrayList<AttributeInfo>();
         }
@@ -306,7 +306,7 @@ public class MethodInfo extends MemberInfo {
      * @return an Exceptions attribute or null if it is not specified.
      */
     public ExceptionsAttribute getExceptionsAttribute() {
-        AttributeInfo info = AttributeInfo.lookup(attribute,
+        final AttributeInfo info = AttributeInfo.lookup(attribute,
                 ExceptionsAttribute.tag);
         return (ExceptionsAttribute)info;
     }
@@ -317,7 +317,7 @@ public class MethodInfo extends MemberInfo {
      * @return a Code attribute or null if it is not specified.
      */
     public CodeAttribute getCodeAttribute() {
-        AttributeInfo info = AttributeInfo.lookup(attribute, CodeAttribute.tag);
+        final AttributeInfo info = AttributeInfo.lookup(attribute, CodeAttribute.tag);
         return (CodeAttribute)info;
     }
 
@@ -335,7 +335,7 @@ public class MethodInfo extends MemberInfo {
      * The added attribute must share the same constant pool table as this
      * <code>method_info</code> structure.
      */
-    public void setExceptionsAttribute(ExceptionsAttribute cattr) {
+    public void setExceptionsAttribute(final ExceptionsAttribute cattr) {
         removeExceptionsAttribute();
         if (attribute == null) {
           attribute = new ArrayList<AttributeInfo>();
@@ -358,7 +358,7 @@ public class MethodInfo extends MemberInfo {
      * The added attribute must share the same constant pool table as this
      * <code>method_info</code> structure.
      */
-    public void setCodeAttribute(CodeAttribute cattr) {
+    public void setCodeAttribute(final CodeAttribute cattr) {
         removeCodeAttribute();
         if (attribute == null) {
           attribute = new ArrayList<AttributeInfo>();
@@ -432,13 +432,13 @@ public class MethodInfo extends MemberInfo {
      *            array.
      * @return -1 if this information is not available.
      */
-    public int getLineNumber(int pos) {
-        CodeAttribute ca = getCodeAttribute();
+    public int getLineNumber(final int pos) {
+        final CodeAttribute ca = getCodeAttribute();
         if (ca == null) {
           return -1;
         }
 
-        LineNumberAttribute ainfo = (LineNumberAttribute)ca
+        final LineNumberAttribute ainfo = (LineNumberAttribute)ca
                 .getAttribute(LineNumberAttribute.tag);
         if (ainfo == null) {
           return -1;
@@ -468,21 +468,21 @@ public class MethodInfo extends MemberInfo {
      * @param superclass
      *            the new super class
      */
-    public void setSuperclass(String superclass) throws BadBytecode {
+    public void setSuperclass(final String superclass) throws BadBytecode {
         if (!isConstructor()) {
           return;
         }
 
-        CodeAttribute ca = getCodeAttribute();
-        byte[] code = ca.getCode();
-        CodeIterator iterator = ca.iterator();
-        int pos = iterator.skipSuperConstructor();
+        final CodeAttribute ca = getCodeAttribute();
+        final byte[] code = ca.getCode();
+        final CodeIterator iterator = ca.iterator();
+        final int pos = iterator.skipSuperConstructor();
         if (pos >= 0) { // not this()
-            ConstPool cp = constPool;
-            int mref = X_Byte.readU16bit(code, pos + 1);
-            int nt = cp.getMethodrefNameAndType(mref);
-            int sc = cp.addClassInfo(superclass);
-            int mref2 = cp.addMethodrefInfo(sc, nt);
+            final ConstPool cp = constPool;
+            final int mref = X_Byte.readU16bit(code, pos + 1);
+            final int nt = cp.getMethodrefNameAndType(mref);
+            final int sc = cp.addClassInfo(superclass);
+            final int mref2 = cp.addMethodrefInfo(sc, nt);
             X_Byte.write16bit(mref2, code, pos + 1);
         }
     }
@@ -490,41 +490,41 @@ public class MethodInfo extends MemberInfo {
     /**
      * @throws BadBytecode
      */
-    private void read(MethodInfo src, String methodname, Map<?, ?> classnames)
+    private void read(final MethodInfo src, final String methodname, final Map<?, ?> classnames)
             throws BadBytecode {
-        ConstPool destCp = constPool;
+        final ConstPool destCp = constPool;
         accessFlags = src.accessFlags;
         name = destCp.addUtf8Info(methodname);
         cachedName = methodname;
-        ConstPool srcCp = src.constPool;
-        String desc = srcCp.getUtf8Info(src.descriptor);
-        String desc2 = Descriptor.rename(desc, classnames);
+        final ConstPool srcCp = src.constPool;
+        final String desc = srcCp.getUtf8Info(src.descriptor);
+        final String desc2 = Descriptor.rename(desc, classnames);
         descriptor = destCp.addUtf8Info(desc2);
 
         attribute = new ArrayList<AttributeInfo>();
-        ExceptionsAttribute eattr = src.getExceptionsAttribute();
+        final ExceptionsAttribute eattr = src.getExceptionsAttribute();
         if (eattr != null) {
           attribute.add(eattr.copy(destCp, classnames));
         }
 
-        CodeAttribute cattr = src.getCodeAttribute();
+        final CodeAttribute cattr = src.getCodeAttribute();
         if (cattr != null) {
           attribute.add(cattr.copy(destCp, classnames));
         }
     }
 
-    private void read(DataInput in) throws IOException {
+    private void read(final DataInput in) throws IOException {
         accessFlags = in.readUnsignedShort();
         name = in.readUnsignedShort();
         descriptor = in.readUnsignedShort();
-        int n = in.readUnsignedShort();
+        final int n = in.readUnsignedShort();
         attribute = new ArrayList<AttributeInfo>();
         for (int i = 0; i < n; ++i) {
           attribute.add(AttributeInfo.read(constPool, in));
         }
     }
 
-    void write(DataOutputStream out) throws IOException {
+    void write(final DataOutputStream out) throws IOException {
         out.writeShort(accessFlags);
         out.writeShort(name);
         out.writeShort(descriptor);
@@ -535,16 +535,6 @@ public class MethodInfo extends MemberInfo {
             out.writeShort(attribute.size());
             AttributeInfo.writeAll(attribute, out);
         }
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-      return obj instanceof MethodInfo && getName().equals(((MethodInfo)obj).getName());
-    }
-
-    @Override
-    public int hashCode() {
-      return getName().hashCode();
     }
 
 }
