@@ -819,6 +819,8 @@
         <goal>shade</goal>
        </goals>
        <configuration>
+        <createSourcesJar>true</createSourcesJar>
+        <shadedArtifactAttached>false</shadedArtifactAttached>
         <filters>
          <filter>
           <artifact>net.wetheinter:*</artifact>
@@ -996,7 +998,7 @@
      <plugin>
       <groupId>org.apache.maven.plugins</groupId>
       <artifactId>maven-gpg-plugin</artifactId>
-      <version>1.1</version>
+      <version>1.6</version>
       <executions>
        <execution>
         <id>sign-artifacts</id>

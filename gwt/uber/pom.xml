@@ -111,6 +111,13 @@
     <artifactId>maven-shade-plugin</artifactId>
    </plugin>
    <plugin>
+     <artifactId>maven-javadoc-plugin</artifactId>
+     <configuration>
+       <includeDependencySources>true</includeDependencySources>
+       <includeTransitiveDependencySources>true</includeTransitiveDependencySources>
+     </configuration>
+   </plugin>
+   <plugin>
     <groupId>org.apache.maven.plugins</groupId>
     <artifactId>maven-jar-plugin</artifactId>
     <executions>
