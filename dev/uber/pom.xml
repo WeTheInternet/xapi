@@ -85,6 +85,26 @@
     <plugins>
       <plugin>
         <artifactId>maven-shade-plugin</artifactId>
+        <configuration>
+          <keepDependenciesWithProvidedScope>false</keepDependenciesWithProvidedScope>
+          <createSourcesJar>true</createSourcesJar>
+          <shadedArtifactAttached>false</shadedArtifactAttached>
+          <artifactSet>
+            <excludes>
+              <exclude>net.wetheinter:gwt-dev</exclude>
+              <exclude>net.wetheinter:gwt-user</exclude>
+              <exclude>net.wetheinter:elemental</exclude>
+              <exclude>org.apache.maven:*</exclude>
+              <exclude>org.apache.*:*</exclude>
+              <exclude>org.codehaus.plexus:*</exclude>
+              <exclude>org.*:*</exclude>
+              <exclude>javax.*:*</exclude>
+              <exclude>commons-codec.*:*</exclude>
+              <exclude>com.google.guava:*</exclude>
+              <exclude>org.slf4j:*</exclude>
+            </excludes>
+          </artifactSet>
+        </configuration>
       </plugin>
       <plugin>
         <artifactId>maven-javadoc-plugin</artifactId>
