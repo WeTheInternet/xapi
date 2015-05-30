@@ -7,3 +7,5 @@ war
 bin
 gwt-unitCache
 *.iml
+*.versionsBackup
+dependency-reduced-pom.xml

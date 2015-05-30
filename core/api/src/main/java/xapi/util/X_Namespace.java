@@ -18,7 +18,7 @@ public class X_Namespace {
    * but it's faster at runtime to use a constant field.
    *
    */
-  public static final String XAPI_VERSION = "0.5-SNAPSHOT";
+  public static final String XAPI_VERSION = "0.6-SNAPSHOT";
 
   /**
    * The groupId used for the xapi project.  This is used to

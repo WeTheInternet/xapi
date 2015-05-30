@@ -4,7 +4,7 @@
 
  <groupId>net.wetheinter</groupId>
  <artifactId>xapi</artifactId>
- <version>0.5</version>
+ <version>0.6-SNAPSHOT</version>
  <packaging>pom</packaging>
 
   <name>XApi (Extremely Extensible Cross-Platform API)</name>
@@ -42,7 +42,7 @@
   <java.version>1.7</java.version>
   <maven.compiler.source>${java.version}</maven.compiler.source>
   <maven.compiler.target>${java.version}</maven.compiler.target>
-  <xapi.version>0.5-SNAPSHOT</xapi.version>
+  <xapi.version>0.5</xapi.version>
   <xapi.test.version>0.5</xapi.test.version>
   <xapi.log.level>INFO</xapi.log.level>
   <gwt.groupId>net.wetheinter</gwt.groupId>
