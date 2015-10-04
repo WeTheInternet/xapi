@@ -3,8 +3,10 @@
  */
 package xapi.test.model.content;
 
+import xapi.model.content.HasAuthor;
 import xapi.model.content.ModelContent;
 import xapi.model.content.ModelRating;
+import xapi.model.user.ModelUser;
 
 /**
  * @author James X. Nelson (james@wetheinter.net, @james)
@@ -63,6 +65,35 @@ public class ModelContentTest extends ModelTextTest implements ModelContent {
     return this;
   }
 
+  /**
+   * @see xapi.model.content.ModelContent#getChildren()
+   */
+  @Override
+  public ModelContent[] getChildren() {
+    return getProperty("children");
+  }
+
+  /**
+   * @see xapi.model.content.ModelContent#setChildren(xapi.model.content.ModelContent[])
+   */
+  @Override
+  public ModelContent setChildren(final ModelContent[] children) {
+    setProperty("children", children);
+    return this;
+  }
+
+  @Override
+  public String getPermaLink() {
+    return getProperty("permalink");
+  }
+
+  @Override
+  public ModelContent setPermaLink(String permalink) {
+    setProperty("permalink", permalink);
+    return this;
+  }
+
+
   @Override
   public Class<?> getPropertyType(final String key) {
     switch (key) {
@@ -78,5 +109,15 @@ public class ModelContentTest extends ModelTextTest implements ModelContent {
   @Override
   public String[] getPropertyNames() {
     return new String[]{"related", "text", "time", "downvotes", "upvotes"};
+  }
+
+  @Override
+  public ModelUser getAuthor() {
+    return null;
+  }
+
+  @Override
+  public HasAuthor setAuthor(ModelUser user) {
+    return null;
   }
 }

@@ -2,11 +2,11 @@ package xapi.ui.html.api;
 
 import static xapi.collect.X_Collect.newStringMap;
 
+import com.google.gwt.reflect.shared.GwtReflect;
+
 import java.io.IOException;
 
 import javax.inject.Provider;
-
-import com.google.gwt.reflect.shared.GwtReflect;
 
 import xapi.annotation.common.Property;
 import xapi.collect.api.StringTo;
@@ -15,6 +15,8 @@ import xapi.log.X_Log;
 import xapi.source.write.MappedTemplate;
 import xapi.ui.api.StyleService;
 import xapi.ui.autoui.api.BeanValueProvider;
+import xapi.ui.html.X_Html;
+import xapi.ui.html.api.FontFamily.HasGoogleFont;
 import xapi.ui.html.api.Style.AlignHorizontal;
 import xapi.ui.html.api.Style.AlignVertical;
 import xapi.ui.html.api.Style.BorderStyle;
@@ -31,19 +33,21 @@ import xapi.ui.html.api.Style.Rgb;
 import xapi.ui.html.api.Style.Transition;
 import xapi.ui.html.api.Style.Unit;
 import xapi.ui.html.api.Style.UnitType;
+import xapi.util.X_String;
 import xapi.util.api.ConvertsValue;
 import xapi.util.impl.LazyProvider;
 
 public class HtmlSnippet <T> implements ConvertsValue<T, String> {
 
-  public static void appendTo(final Appendable sheet, final Style style) {
+  public static String appendTo(final Appendable sheet, final Style style) {
     try {
-      doAppend(sheet, style);
+      return doAppend(sheet, style);
     } catch (final IOException e) {
       X_Log.error(HtmlSnippet.class, "Error rendering",style,e);
+      return "";
     }
   }
-  public static void doAppend(final Appendable sheet, final Style style) throws IOException {
+  public static String doAppend(final Appendable sheet, final Style style) throws IOException {
 
     append("left", sheet, style.left());
     append("right", sheet, style.right());
@@ -100,6 +104,7 @@ public class HtmlSnippet <T> implements ConvertsValue<T, String> {
       append("opacity", sheet,Double.toString(style.opacity()));
     }
 
+    StringBuilder extra = new StringBuilder();
     if (style.fontFamily().length > 0) {
       final Class<? extends FontFamily>[] fonts = style.fontFamily();
       final StringBuilder b = new StringBuilder();
@@ -109,10 +114,19 @@ public class HtmlSnippet <T> implements ConvertsValue<T, String> {
         }
         try {
           if (fonts[i].isInterface()) {
-            final Object value = GwtReflect.invoke(fonts[i], "name", new Class<?>[0], null);
+            Object value = GwtReflect.invoke(fonts[i], "name", new Class<?>[0], null);
             b.append(value);
+            if (HasGoogleFont.class.isAssignableFrom(fonts[i])) {
+              value = GwtReflect.invoke(fonts[i], "googleFont", new Class<?>[0], null);
+              extra.append(X_Html.toGoogleFontUrl((String)value));
+            }
           } else {
-            b.append(fonts[i].newInstance().name());
+            FontFamily fontInstance = fonts[i].newInstance();
+            b.append(fontInstance.name());
+            if (fontInstance instanceof HasGoogleFont) {
+              String font = ((HasGoogleFont) fontInstance).googleFont();
+              extra.append(X_Html.toGoogleFontUrl(font));
+            }
           }
         } catch (final Throwable e) {
           X_Log.warn(HtmlSnippet.class, "Error loading font family for "+fonts[i], e);
@@ -199,6 +213,8 @@ public class HtmlSnippet <T> implements ConvertsValue<T, String> {
       }
       sheet.append(";");
     }
+
+    return extra.toString();
   }
 
   private static void append(final String type, final Appendable sheet, final String value) throws IOException {
@@ -210,7 +226,7 @@ public class HtmlSnippet <T> implements ConvertsValue<T, String> {
   }
 
   private static void append(final String type, final Appendable sheet, final Unit unit) throws IOException {
-    if (unit.type() != UnitType.Auto) {
+    if (unit.type() != UnitType.Unset) {
       sheet
       .append(type)
       .append(":")
@@ -225,7 +241,7 @@ public class HtmlSnippet <T> implements ConvertsValue<T, String> {
   }
 
   private static void append(final String type0, final String type1, final Appendable sheet, final Unit unit) throws IOException {
-    if (unit.type() != UnitType.Auto) {
+    if (unit.type() != UnitType.Unset) {
       sheet
       .append(type0)
       .append(type1)
@@ -240,7 +256,7 @@ public class HtmlSnippet <T> implements ConvertsValue<T, String> {
     if (all.length > 0) {
       sheet.append(type).append(":");
       for (final Unit unit : all) {
-        sheet.append(toString(unit));
+        sheet.append(toString(unit)).append(' ');
       }
       sheet.append(";");
     }
@@ -398,12 +414,16 @@ public class HtmlSnippet <T> implements ConvertsValue<T, String> {
       sheet.append("{\n");
     }
 
-    appendTo(sheet, style);
+    String extra = appendTo(sheet, style);
 
     if (names.length > 0) {
       sheet.append("}\n");
     }
     context.addCss(sheet.toString(), style.priority());
+
+    if (X_String.isNotEmpty(extra)) {
+      context.addCss(extra, Integer.MIN_VALUE);
+    }
   }
 
 }

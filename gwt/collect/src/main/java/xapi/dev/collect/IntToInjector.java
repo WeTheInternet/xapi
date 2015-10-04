@@ -78,11 +78,12 @@ public class IntToInjector implements MagicMethodGenerator, UnifyAstListener {
       } catch (final NoClassDefFoundError e) {
         throw new UnableToCompleteException();
       }
-      if (providerType == null) {
-        throw new UnableToCompleteException();
-      }
-    } catch (final UnableToCompleteException e) {
+    } catch (final UnableToCompleteException ignored) {
+      providerType = null;
+    }
 
+
+    if (providerType == null) {
       final String[] names = X_Source.splitClassName(binaryName);
       if ("java".equals(names[0])) {
         names[0] = "javax";

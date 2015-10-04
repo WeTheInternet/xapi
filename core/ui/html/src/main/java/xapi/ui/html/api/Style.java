@@ -5,34 +5,34 @@ import xapi.ui.api.Stylizer;
 
 public @interface Style {
 
-  public static @interface Unit {
+  @interface Unit {
     UnitType type() default UnitType.Px;
     double value() default 1;
     boolean important() default false;
   }
 
-  public static @interface Transition {
+  @interface Transition {
     double time() default 0.25;
     String unit() default "s";
     String value();
   }
 
-  public static @interface Color {
+  @interface Color {
     String asString() default "";
     Rgb asRgb() default @Rgb(r=0,g=0,b=0);
   }
 
-  public static @interface Rgb {
+  @interface Rgb {
     int r();
     int g();
     int b();
     int opacity() default 0xff;
   }
 
-  public static enum AlignHorizontal {
+  enum AlignHorizontal {
     Left("left"), Center("center"), Right("right"), Justify("justify"), Auto("auto");
     String styleName;
-    private AlignHorizontal(String styleName) {
+    AlignHorizontal(String styleName) {
       this.styleName = styleName;
     }
     public String styleName() {
@@ -40,10 +40,10 @@ public @interface Style {
     }
   }
 
-  public static enum AlignVertical {
+  enum AlignVertical {
     Top("top"), Middle("middle"), Bottom("bottom"), Auto("auto");
     String styleName;
-    private AlignVertical(String styleName) {
+    AlignVertical(String styleName) {
       this.styleName = styleName;
     }
     public String styleName() {
@@ -51,14 +51,14 @@ public @interface Style {
     }
   }
 
-  public static enum Cursor {
+  enum Cursor {
     Pointer("pointer"), Progress("progress"), Crosshair("crosshair"),
     ResizeN("n-resize"), ResizeE("e-resize"), ResizeS("s-resize"), ResizeW("w-resize"),
     ResizeNE("ne-resize"), ResizeSE("se-resize"), ResizeSW("sw-resize"), ResizeNW("nw-resize"),
     ResizeEW("ew-resize"), ResizeNS("ns-resize"),
     Help("help"), Move("move"), Default("default"), Inherit("inherit");
     String styleName;
-    private Cursor(String styleName) {
+    Cursor(String styleName) {
       this.styleName = styleName;
     }
     public String styleName() {
@@ -66,10 +66,10 @@ public @interface Style {
     }
   }
 
-  public static enum Overflow {
+  enum Overflow {
     Hidden("hidden"), Scroll("scroll"), Auto("auto"), Inherit("inherit");
     String styleName;
-    private Overflow(String styleName) {
+    Overflow(String styleName) {
       this.styleName = styleName;
     }
     public String styleName() {
@@ -77,10 +77,10 @@ public @interface Style {
     }
   }
 
-  public static enum FontStyle {
+  enum FontStyle {
     Italic("italic"), Oblique("oblique"), Normal("normal"), Inherit("inherit");
     String styleName;
-    private FontStyle(String styleName) {
+    FontStyle(String styleName) {
       this.styleName = styleName;
     }
     public String styleName() {
@@ -88,10 +88,10 @@ public @interface Style {
     }
   }
 
-  public static enum FontWeight {
+  enum FontWeight {
     Bold("bold"), Bolder("bolder"), Normal("normal"), Inherit("inherit");
     String styleName;
-    private FontWeight(String styleName) {
+    FontWeight(String styleName) {
       this.styleName = styleName;
     }
     public String styleName() {
@@ -99,10 +99,10 @@ public @interface Style {
     }
   }
 
-  public static enum Floats {
+  enum Floats {
     Left("left"), Right("right"), None("none"), Auto("auto");
     String styleName;
-    private Floats(String styleName) {
+    Floats(String styleName) {
       this.styleName = styleName;
     }
     public String styleName() {
@@ -110,10 +110,10 @@ public @interface Style {
     }
   }
 
-  public static enum Clear {
+  enum Clear {
     Left("left"), Right("right"), None("none"), Both("both"), Auto("auto");
     String styleName;
-    private Clear(String styleName) {
+    Clear(String styleName) {
       this.styleName = styleName;
     }
     public String styleName() {
@@ -121,14 +121,14 @@ public @interface Style {
     }
   }
 
-  public static enum UnitType {
-    Px, Pct, Em, Auto;
+  enum UnitType {
+    Px, Pct, Em, Auto, Unset
   }
 
-  public static enum BoxSizing {
+  enum BoxSizing {
     BorderBox("border-box"), ContentBox("content-box"), PaddingBox("padding-box"), Inherit("inherit");
     String styleName;
-    private BoxSizing(String styleName) {
+    BoxSizing(String styleName) {
       this.styleName = styleName;
     }
     public String styleName() {
@@ -136,7 +136,7 @@ public @interface Style {
     }
   }
 
-  public static enum BorderStyle {
+  enum BorderStyle {
     None, Hidden, Dotted, Dashed, Solid, Double,
     Groove, Ridge, Inset, Outset, Initial, Inherit;
     public String styleName() {
@@ -144,7 +144,7 @@ public @interface Style {
     }
   }
 
-  public static enum Display {
+  enum Display {
     None("none"), Block("block"), Inline("inline"),
     InlineBlock("inline-block"), Inherit("inherit"),
     Table("table"), TableRow("table-row"), TableColumn("table-column"),
@@ -154,7 +154,7 @@ public @interface Style {
     Flex("flex"), InlineFlex("inline-flex")
     ;
     String styleName;
-    private Display(String styleName) {
+    Display(String styleName) {
       this.styleName = styleName;
     }
     public String styleName() {
@@ -162,18 +162,18 @@ public @interface Style {
     }
   }
 
-  public static enum Position {
+  enum Position {
     Static("static"), Relative("relative"), Absolute("absolute"),
     Fixed("fixed"), Sticky("sticky",Position.Fixed), Inherit("inherited");
 
     private final Position fallback;
     private final String styleName;
 
-    private Position(String styleName){
+    Position(String styleName){
       this.styleName = styleName;
       fallback = this;}
 
-    private Position(String styleName, Position fallback) {
+    Position(String styleName, Position fallback) {
       this.styleName = styleName;
       this.fallback = fallback;
     }
@@ -216,40 +216,40 @@ public @interface Style {
 
   Transition[] transition() default {};
 
-  Unit fontSize() default @Unit(type=UnitType.Auto);
+  Unit fontSize() default @Unit(type=UnitType.Unset);
 
-  Unit lineHeight() default @Unit(type=UnitType.Auto);
+  Unit lineHeight() default @Unit(type=UnitType.Unset);
 
   Unit[] padding() default {};
-  Unit paddingLeft() default @Unit(type=UnitType.Auto);
-  Unit paddingRight() default @Unit(type=UnitType.Auto);
-  Unit paddingTop() default @Unit(type=UnitType.Auto);
-  Unit paddingBottom() default @Unit(type=UnitType.Auto);
+  Unit paddingLeft() default @Unit(type=UnitType.Unset);
+  Unit paddingRight() default @Unit(type=UnitType.Unset);
+  Unit paddingTop() default @Unit(type=UnitType.Unset);
+  Unit paddingBottom() default @Unit(type=UnitType.Unset);
 
   Unit[] margin() default {};
-  Unit marginLeft() default @Unit(type=UnitType.Auto);
-  Unit marginRight() default @Unit(type=UnitType.Auto);
-  Unit marginTop() default @Unit(type=UnitType.Auto);
-  Unit marginBottom() default @Unit(type=UnitType.Auto);
+  Unit marginLeft() default @Unit(type=UnitType.Unset);
+  Unit marginRight() default @Unit(type=UnitType.Unset);
+  Unit marginTop() default @Unit(type=UnitType.Unset);
+  Unit marginBottom() default @Unit(type=UnitType.Unset);
 
-  Unit left() default @Unit(type=UnitType.Auto);
-  Unit right() default @Unit(type=UnitType.Auto);
-  Unit top() default @Unit(type=UnitType.Auto);
-  Unit bottom() default @Unit(type=UnitType.Auto);
-  Unit width() default @Unit(type=UnitType.Auto);
-  Unit height() default @Unit(type=UnitType.Auto);
-  Unit maxWidth() default @Unit(type=UnitType.Auto);
-  Unit maxHeight() default @Unit(type=UnitType.Auto);
-  Unit minWidth() default @Unit(type=UnitType.Auto);
-  Unit minHeight() default @Unit(type=UnitType.Auto);
+  Unit left() default @Unit(type=UnitType.Unset);
+  Unit right() default @Unit(type=UnitType.Unset);
+  Unit top() default @Unit(type=UnitType.Unset);
+  Unit bottom() default @Unit(type=UnitType.Unset);
+  Unit width() default @Unit(type=UnitType.Unset);
+  Unit height() default @Unit(type=UnitType.Unset);
+  Unit maxWidth() default @Unit(type=UnitType.Unset);
+  Unit maxHeight() default @Unit(type=UnitType.Unset);
+  Unit minWidth() default @Unit(type=UnitType.Unset);
+  Unit minHeight() default @Unit(type=UnitType.Unset);
 
   Rgb[] borderColor() default {};
   BorderStyle[] borderStyle() default {};
   Unit[] borderWidth() default {};
-  Unit borderWidthLeft() default @Unit(type=UnitType.Auto);
-  Unit borderWidthRight() default @Unit(type=UnitType.Auto);
-  Unit borderWidthTop() default @Unit(type=UnitType.Auto);
-  Unit borderWidthBottom() default @Unit(type=UnitType.Auto);
+  Unit borderWidthLeft() default @Unit(type=UnitType.Unset);
+  Unit borderWidthRight() default @Unit(type=UnitType.Unset);
+  Unit borderWidthTop() default @Unit(type=UnitType.Unset);
+  Unit borderWidthBottom() default @Unit(type=UnitType.Unset);
   Unit[] borderRadius() default {};
 
   Overflow overflow() default Overflow.Inherit;

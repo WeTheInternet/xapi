@@ -34,6 +34,7 @@ import xapi.util.X_Debug;
 import xapi.util.X_Namespace;
 import xapi.util.X_Properties;
 import xapi.util.X_Util;
+import xapi.util.api.ProvidesValue;
 
 @InstanceDefault(implFor = ClasspathScanner.class)
 public class ClasspathScannerDefault implements ClasspathScanner {
@@ -62,8 +63,8 @@ public class ClasspathScannerDefault implements ClasspathScanner {
     private final Iterable<String> pathRoot;
     private Thread creatorThread;
 
-    public ScanRunner(URL classpath, Iterable<String> pkgs,
-      ClasspathResourceMap map, int priority) {
+    public ScanRunner(final URL classpath, final Iterable<String> pkgs,
+      final ClasspathResourceMap map, final int priority) {
       this.classpath = classpath;
       this.map = map;
       this.priority = priority;
@@ -79,11 +80,11 @@ public class ClasspathScannerDefault implements ClasspathScanner {
       // determine if we should run in jar mode or file mode
       File file;
       String path = classpath.toExternalForm();
-      boolean jarUrl = path.startsWith("jar:");
+      final boolean jarUrl = path.startsWith("jar:");
       if (jarUrl) {
         path = path.substring("jar:".length());
       }
-      boolean fileUrl = path.startsWith("file:");
+      final boolean fileUrl = path.startsWith("file:");
       if (fileUrl) {
         path = path.substring("file:".length());
       }
@@ -118,20 +119,20 @@ public class ClasspathScannerDefault implements ClasspathScanner {
             delta = -1;
             fileRoot += "/";
           }
-          for (String pkg : pathRoot) {
+          for (final String pkg : pathRoot) {
             if (fileRoot.replace('/', '.').endsWith(pkg.endsWith(".")?pkg:pkg+".")) {
               scan(file, fileRoot.substring(0, fileRoot.length() - pkg.length() + delta));
               break;
             }
           }
         }
-      } catch (Exception e) {
-        Thread t = Thread.currentThread();
+      } catch (final Exception e) {
+        final Thread t = Thread.currentThread();
         t.getUncaughtExceptionHandler().uncaughtException(t, e);
       }
     }
 
-    private final void scan(File file, String pathRoot) throws IOException {
+    private final void scan(final File file, final String pathRoot) throws IOException {
       if (file.isDirectory()) {
         scan(file.listFiles(), pathRoot);
       } else {
@@ -139,23 +140,23 @@ public class ClasspathScannerDefault implements ClasspathScanner {
       }
     }
 
-    private void scan(File[] listFiles, String pathRoot) throws IOException {
-      for (File file : listFiles) {
+    private void scan(final File[] listFiles, final String pathRoot) throws IOException {
+      for (final File file : listFiles) {
         scan(file, pathRoot);
       }
     }
 
-    private final void scan(JarFile jarFile) {
+    private final void scan(final JarFile jarFile) {
       if (activeJars.add(jarFile.getName())) {
-        Enumeration<JarEntry> entries = jarFile.entries();
+        final Enumeration<JarEntry> entries = jarFile.entries();
         while (entries.hasMoreElements()) {
-          JarEntry next = entries.nextElement();
+          final JarEntry next = entries.nextElement();
           addEntry(jarFile, next);
         }
       }
     }
 
-    protected void addFile(File file, String pathRoot) throws IOException {
+    protected void addFile(final File file, final String pathRoot) throws IOException {
       String name = file.getCanonicalPath().substring(pathRoot.length());
       if (name.startsWith(File.separator)) {
         name = name.substring(1);
@@ -178,9 +179,9 @@ public class ClasspathScannerDefault implements ClasspathScanner {
       }
     }
 
-    protected void addEntry(JarFile file, JarEntry entry) {
-      String name = entry.getName();
-      for (String pkg : pkgs) {
+    protected void addEntry(final JarFile file, final JarEntry entry) {
+      final String name = entry.getName();
+      for (final String pkg : pkgs) {
         if (name.startsWith(pkg)) {
           if (name.endsWith(".class")) {
             if (map.includeBytecode(name)) {
@@ -206,51 +207,53 @@ public class ClasspathScannerDefault implements ClasspathScanner {
   }
 
   @Override
-  public ClasspathScanner scanAnnotation(Class<? extends Annotation> annotation) {
+  public ClasspathScanner scanAnnotation(final Class<? extends Annotation> annotation) {
     annotations.add(annotation);
     return this;
   }
 
 @Override
   public ClasspathScanner scanAnnotations(@SuppressWarnings("unchecked")
+  final
     Class<? extends Annotation> ... annotations) {
-    for (Class<? extends Annotation> annotation : annotations) {
+    for (final Class<? extends Annotation> annotation : annotations) {
       this.annotations.add(annotation);
     }
     return this;
   }
 
   @Override
-  public ClasspathResourceMap scan(ClassLoader loaders) {
-    ExecutorService executor = newExecutor();
+  public ClasspathResourceMap scan(final ClassLoader loaders) {
+    final ExecutorService executor = newExecutor();
     try {
-      ClasspathResourceMap map = scan(loaders, executor).call();
+      final ClasspathResourceMap map = scan(loaders, executor).call();
       synchronized (map) {
         return map;
       }
-    } catch (Exception e) {
+    } catch (final Exception e) {
       throw X_Debug.rethrow(e);
     }
   }
 
   @Override
   public ExecutorService newExecutor() {
+    final int threads = Runtime.getRuntime().availableProcessors()*3/2;
     return Executors.newFixedThreadPool(
         Runtime.getRuntime().availableProcessors()*3/2);
   }
 
   @Override
-  public synchronized Callable<ClasspathResourceMap> scan(ClassLoader loadFrom, ExecutorService executor) {
+  public synchronized Callable<ClasspathResourceMap> scan(final ClassLoader loadFrom, final ExecutorService executor) {
     // perform the actual scan
-    Map<URL,Fifo<String>> classPaths = new LinkedHashMap<URL,Fifo<String>>();
+    final Map<URL,Fifo<String>> classPaths = new LinkedHashMap<URL,Fifo<String>>();
     if (pkgs.size() == 0 || (pkgs.size() == 1 && "".equals(pkgs.iterator().next()))) {
 
-      for (String pkg : X_Properties.getProperty(X_Namespace.PROPERTY_RUNTIME_SCANPATH,
+      for (final String pkg : X_Properties.getProperty(X_Namespace.PROPERTY_RUNTIME_SCANPATH,
         ",META-INF,com,org,net,xapi,java").split(",\\s*")) {
         pkgs.add(pkg);
       }
     }
-    for (String pkg : pkgs) {
+    for (final String pkg : pkgs) {
 
       final Enumeration<URL> resources;
       try {
@@ -258,13 +261,13 @@ public class ClasspathScannerDefault implements ClasspathScanner {
           pkg.equals(".*")//||pkg.equals("")
             ?"":pkg.replace('.', '/')
           );
-      } catch (Exception e) {
+      } catch (final Exception e) {
         e.printStackTrace();
         continue;
       }
       while (resources.hasMoreElements()) {
-        URL resource = resources.nextElement();
-        String file = resource.toExternalForm();
+        final URL resource = resources.nextElement();
+        final String file = resource.toExternalForm();
         if (file.contains("gwt-dev.jar")) {
           continue;
         }
@@ -279,8 +282,18 @@ public class ClasspathScannerDefault implements ClasspathScanner {
         }
       }
     }
-    int pos = 0;
-    final ClasspathResourceMap map = new ClasspathResourceMap(executor,
+    final int pos = 0;
+    final ProvidesValue<ExecutorService> exe = new ProvidesValue<ExecutorService>() {
+      ExecutorService exe = executor;
+      @Override
+      public ExecutorService get() {
+        if (exe.isShutdown()) {
+          exe = newExecutor();
+        }
+        return exe;
+      }
+    };
+    final ClasspathResourceMap map = new ClasspathResourceMap(exe,
       annotations, bytecodeMatchers, resourceMatchers, sourceMatchers);
     map.setClasspath(classPaths.keySet());
     final Fifo<Future<?>> jobs = new SimpleFifo<Future<?>>();
@@ -289,7 +302,7 @@ public class ClasspathScannerDefault implements ClasspathScanner {
       public ClasspathResourceMap call() throws Exception {
         while (!jobs.isEmpty()) {
           // drain the work pool
-          Iterator<Future<?>> iter = jobs.forEach().iterator();
+          final Iterator<Future<?>> iter = jobs.forEach().iterator();
           while (iter.hasNext()) {
             if (iter.next().isDone()) {
               iter.remove();
@@ -297,72 +310,74 @@ public class ClasspathScannerDefault implements ClasspathScanner {
           }
           try {
             Thread.sleep(0, 500);
-          } catch (InterruptedException e) {
+          } catch (final InterruptedException e) {
+            Thread.interrupted();
             throw X_Debug.rethrow(e);
           }
         }
+        executor.shutdown();
         return map;
       }
     }
-    for (URL url : classPaths.keySet()) {
-      Fifo<String> packages = classPaths.get(url);
-      ScanRunner scanner = newScanRunner(url, map, executor, packages.forEach(), pos);
+    for (final URL url : classPaths.keySet()) {
+      final Fifo<String> packages = classPaths.get(url);
+      final ScanRunner scanner = newScanRunner(url, map, executor, packages.forEach(), pos);
       jobs.give(executor.submit(scanner));
     }
     return new Finisher();
   }
 
-  private ScanRunner newScanRunner(URL classPath, ClasspathResourceMap map, ExecutorService executor,
-    Iterable<String> pkgs, int priority) {
+  private ScanRunner newScanRunner(final URL classPath, final ClasspathResourceMap map, final ExecutorService executor,
+    final Iterable<String> pkgs, final int priority) {
     return new ScanRunner(classPath, pkgs, map, priority);
   }
 
   @Override
-  public ClasspathScanner scanPackage(String pkg) {
+  public ClasspathScanner scanPackage(final String pkg) {
     pkgs.add(pkg);
     return this;
   }
 
   @Override
-  public ClasspathScanner scanPackages(String ... pkgs) {
-    for (String pkg : pkgs) {
+  public ClasspathScanner scanPackages(final String ... pkgs) {
+    for (final String pkg : pkgs) {
       this.pkgs.add(pkg);
     }
     return this;
   }
 
   @Override
-  public ClasspathScanner matchClassFile(String regex) {
+  public ClasspathScanner matchClassFile(final String regex) {
     bytecodeMatchers.add(Pattern.compile(regex));
     return this;
   }
   @Override
-  public ClasspathScanner matchClassFiles(String ... regexes) {
-    for (String regex : regexes) {
+  public ClasspathScanner matchClassFiles(final String ... regexes) {
+    for (final String regex : regexes) {
       bytecodeMatchers.add(Pattern.compile(regex));
     }
     return this;
   }
   @Override
-  public ClasspathScanner matchResource(String regex) {
+  public ClasspathScanner matchResource(final String regex) {
     resourceMatchers.add(Pattern.compile(regex));
     return this;
   }
   @Override
-  public ClasspathScanner matchResources(String ... regexes) {
-    for (String regex : regexes) {
+  public ClasspathScanner matchResources(final String ... regexes) {
+    for (final String regex : regexes) {
       resourceMatchers.add(Pattern.compile(regex));
     }
     return this;
   }
   @Override
-  public ClasspathScanner matchSourceFile(String regex) {
+  public ClasspathScanner matchSourceFile(final String regex) {
     sourceMatchers.add(Pattern.compile(regex));
     return this;
   }
   @Override
-  public ClasspathScanner matchSourceFiles(String ... regexes) {
-    for (String regex : regexes) {
+  public ClasspathScanner matchSourceFiles(final String ... regexes) {
+    for (final String regex : regexes) {
       sourceMatchers.add(Pattern.compile(regex));
     }
     return this;

@@ -144,8 +144,9 @@ public class HtmlSnippetGenerator extends AbstractHtmlGenerator <HtmlGeneratorRe
 
         final StringBuilder immediateStyle = new StringBuilder();
         final StringBuilder sheetStyle = new StringBuilder();
+        final StringBuilder extraStyle = new StringBuilder();
         try {
-          fillStyles(immediateStyle, sheetStyle, el.style());
+          fillStyles(immediateStyle, sheetStyle, extraStyle, el.style());
         } catch (final Exception e) {
           logger.log(Type.ERROR, "Error calculating styles", e);
           throw new UnableToCompleteException();
@@ -156,6 +157,9 @@ public class HtmlSnippetGenerator extends AbstractHtmlGenerator <HtmlGeneratorRe
         }
         if (sheetStyle.length() > 0) {
           init.println("cssService.addCss(\""+Generator.escape(sheetStyle.toString())+"\", 0);");
+        }
+        if (extraStyle.length() > 0) {
+          init.println("cssService.addCss(\""+Generator.escape(extraStyle.toString())+"\", Integer.MIN_VALUE);");
         }
 
         for (final Property prop : el.properties()) {

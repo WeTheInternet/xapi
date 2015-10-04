@@ -14,4 +14,6 @@ public interface StyleService<T extends StyleService> {
 
   void flushCss();
 
+  void loadGoogleFonts(String ... fonts);
+
 }

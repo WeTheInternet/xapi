@@ -69,7 +69,7 @@ WebComponentWithCallbacks<E> {
     addClassName(element, "xapi");
     Element container = getLabelContainer();
     if (container == null) {
-      container = shadowRoot();
+      container = attachRoot();
     }
     Element title = newElement("h3");
     container.appendChild(title);
@@ -79,8 +79,8 @@ WebComponentWithCallbacks<E> {
     container.appendChild(instructions);
     setInstructionsElement(instructions);
 
-    if (container != shadowRoot() && container.getParentElement() == null) {
-      shadowRoot().appendChild(container);
+    if (container != attachRoot() && container.getParentElement() == null) {
+      attachRoot().appendChild(container);
     }
 
   }
@@ -96,7 +96,7 @@ WebComponentWithCallbacks<E> {
     PolymerInput input = newInput().tagName(inputTag);
     PolymerLabel label = newLabel().input(input);
     Element el = label.build();
-    shadowRoot().appendChild(el);
+    attachRoot().appendChild(el);
     setLabelContainer(el.querySelector(".label"));
     setPolymer((PolymerElement)el.querySelector(inputTag));
     setCoreLabel(el);
@@ -109,7 +109,7 @@ WebComponentWithCallbacks<E> {
   @JsProperty
   void setShadowRoot(Element e);
 
-  default Element shadowRoot() {
+  default Element attachRoot() {
     // disabling shadow root for now as it doesn't really add any value...
 //    Element shadow = getShadowRoot();
 //    if (shadow == null) {

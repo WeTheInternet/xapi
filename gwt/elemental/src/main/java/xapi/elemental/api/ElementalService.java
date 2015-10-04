@@ -28,8 +28,6 @@ public interface ElementalService extends StyleService<ElementalService> {
 
   <E extends Element> E initialize(E element);
 
-  void loadGoogleFonts(String ... fonts);
-
   <E extends Element> PotentialNode<E> newNode();
 
   <E extends Element> PotentialNode<E> newNode(E node);

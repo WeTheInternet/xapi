@@ -5,13 +5,8 @@ import static java.lang.reflect.Modifier.PRIVATE;
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.UnsafeNativeLong;
 import com.google.gwt.core.client.js.JsProperty;
-import com.google.gwt.core.ext.GeneratorContext;
-import com.google.gwt.core.ext.IncrementalGenerator;
-import com.google.gwt.core.ext.RebindMode;
-import com.google.gwt.core.ext.RebindResult;
-import com.google.gwt.core.ext.TreeLogger;
+import com.google.gwt.core.ext.*;
 import com.google.gwt.core.ext.TreeLogger.Type;
-import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.typeinfo.HasAnnotations;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JMethod;
@@ -20,10 +15,13 @@ import com.google.gwt.core.ext.typeinfo.JParameterizedType;
 import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
 import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.gwt.core.ext.typeinfo.NotFoundException;
+import com.google.gwt.dev.resource.Resource;
 import com.google.gwt.dev.util.collect.Sets;
 import com.google.gwt.thirdparty.guava.common.collect.HashMultimap;
 import com.google.gwt.thirdparty.guava.common.collect.Multimap;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -43,12 +41,15 @@ import xapi.components.api.WebComponent;
 import xapi.components.api.WebComponentCallback;
 import xapi.components.api.WebComponentFactory;
 import xapi.components.api.WebComponentMethod;
+import xapi.components.impl.JsFunctionSupport;
 import xapi.components.impl.JsSupport;
 import xapi.components.impl.WebComponentBuilder;
 import xapi.components.impl.WebComponentSupport;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
+import xapi.io.X_IO;
+import xapi.log.api.LogLevel;
 import xapi.ui.html.api.Css;
 import xapi.ui.html.api.El;
 import xapi.ui.html.api.Html;
@@ -130,7 +131,7 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
     }
     if (component.tagName().indexOf('-') == -1) {
       logger.log(Type.ERROR,
-        "WebCompoenent for " + type.getQualifiedSourceName()
+        "WebComponent for " + type.getQualifiedSourceName()
         + " has invalid tag name " + component.tagName() + "; "
         + "Custom elements must contain the - character");
       throw new UnableToCompleteException();
@@ -206,17 +207,54 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
         }
       }
     }
-    out
-    .print("ctor = " + support + ".register(")
-    .print("\"" + component.tagName() + "\"")
-    .println(", builder.build());")
 
-    .outdent()
-    .println("}")
-    .createMethod(
-      "public " + simpleName(type) + " newComponent()")
-      .returnValue("ctor.get()");
-    ;
+    String shadowDom = component.shadowDom();
+    String[] templates = component.shadowDomTemplates();
+    if (shadowDom.length() > 0) {
+      // The user has specified some shadow dom html directly
+      // TODO check templates and mix them based on presence of "<shadow"
+      out.println("builder.addShadowRoot(\""+ Generator.escape(shadowDom)+"\");");
+    } else {
+      if (templates.length == 0) {
+        // No shadow DOM.  Just return the new instance
+      } else {
+        // There are shadow dom resource to inject...
+        for (String template : templates) {
+          if (!template.startsWith("/")) {
+            // Relative resource
+            template = "/"+type.getPackage().getName().replace('.', '/')+"/"+template;
+          }
+          try (
+          InputStream resource = context.getResourcesOracle().getResourceAsStream(template.substring(1));
+              ) {
+              if (resource == null) {
+                logger.log(Type.ERROR, "Unable to find shadow root resource "+template);
+                throw new UnableToCompleteException();
+              }
+              String asString = X_IO.toStringUtf8(resource);
+              // TODO: pre-process this shadow root...
+              out.println("builder.addShadowRoot(\""+ Generator.escape(asString)+"\");");
+          } catch (IOException e) {
+                logger.log(Type.ERROR, "Error generating shadow root resource "+template, e);
+          }
+
+        }
+
+      }
+    }
+
+
+
+    out
+        .print("ctor = " + support + ".register(")
+        .print("\"" + component.tagName() + "\"")
+        .println(", builder.build());")
+
+        .outdent()
+        .println("}")
+        .createMethod(
+            "public " + simpleName(type) + " newComponent()")
+              .returnValue("ctor.get()");
 
     // Print the querySelector method.
     final MethodBuffer querySelector = out.createMethod("public String querySelector()");
@@ -300,7 +338,10 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
     }
     out
     .println(");")
-    .println("return $entry(function(" + params + "){")
+    .print("return @")
+    .print(JsFunctionSupport.class.getName())
+    .print("::maybeEnter(*)")
+    .println("(function(" + params + "){")
     .indent();
     final String boxReturnPrefix = maybeBoxPrefix(logger, method.getReturnType(), true, out, cls, helpers);
     final String boxReturnSuffix = maybeBoxSuffix(logger, method.getReturnType(), true, out);
@@ -880,7 +921,7 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
       if (method.type == null) {
         // built-ins it's ok to have multiples
         logger.log(Type.WARN, "Found duplicate key for "+method.name+" in "+staticOut.getQualifiedName()+"; "
-          + "one of these methods will be overridden an discarded.");
+          + "one of these methods will be overridden and discarded.");
         // TODO: fix all warnings and escalate this to a compile-breaking error
       }
       int suffix = 0;

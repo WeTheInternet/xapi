@@ -12,19 +12,19 @@ import xapi.model.content.ModelComment;
 public class ModelCommentTest extends ModelContentTest implements ModelComment {
 
   /**
-   * @see xapi.model.content.ModelComment#getHref()
+   * @see xapi.model.content.ModelComment#getContentId()
    */
   @Override
-  public String getHref() {
-    return getProperty("href");
+  public String getContentId() {
+    return getProperty("contentId");
   }
 
   /**
-   * @see xapi.model.content.ModelComment#setHref(java.lang.String)
+   * @see xapi.model.content.ModelComment#setContentId(java.lang.String)
    */
   @Override
-  public ModelComment setHref(final String href) {
-    setProperty("href", href);
+  public ModelComment setContentId(final String ContentId) {
+    setProperty("contentId", ContentId);
     return this;
   }
 
@@ -33,7 +33,7 @@ public class ModelCommentTest extends ModelContentTest implements ModelComment {
    */
   @Override
   public String[] getPropertyNames() {
-    return new String[]{"downvotes", "href", "related", "text", "time", "upvotes"};
+    return new String[]{"downvotes", "contentId", "children", "related", "text", "time", "upvotes"};
   }
 
   /**
@@ -41,7 +41,7 @@ public class ModelCommentTest extends ModelContentTest implements ModelComment {
    */
   @Override
   public Class<?> getPropertyType(final String key) {
-    if ("href".equals(key)) {
+    if ("ContentId".equals(key)) {
       return String.class;
     }
     return super.getPropertyType(key);

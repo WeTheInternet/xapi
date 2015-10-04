@@ -51,7 +51,8 @@ public class ModelGenerator {
     // Write getters for all fields.
     for (final ModelField field : fields.getAllFields()) {
       if (field.getType() == null) {
-        throw new RuntimeException();
+        throw new RuntimeException("No type found for field "+field.getName()+" in "+type+".  " +
+            "Perhaps you are lacking a getter/model annotation?  Check that get/set method names match.");
       }
       for (final GetterMethod getter : field.getGetters()) {
         final String datatype = cb.addImport(getter.returnType.getQualifiedName());

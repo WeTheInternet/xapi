@@ -28,6 +28,7 @@ import xapi.log.X_Log;
 import xapi.source.X_Source;
 import xapi.util.X_Debug;
 import xapi.util.api.MatchesValue;
+import xapi.util.api.ProvidesValue;
 
 public class ClasspathResourceMap {
 
@@ -36,17 +37,17 @@ public class ClasspathResourceMap {
   private final ResourceTrie<StringDataResource> resources;
   private final Set<Class<? extends Annotation>> annotations;
   private final Set<Pattern> bytecodeMatchers;
-  private final ExecutorService executor;
   private final Set<Pattern> resourceMatchers;
   private final Set<Pattern> sourceMatchers;
   private final Fifo<ByteCodeResource> pending;
+  private final ProvidesValue<ExecutorService> executor;
   private AnnotatedClassIterator allAnnos;
   private AnnotatedMethodIterator allMethodsWithAnnos;
   private ClassPool pool;
   private ArrayList<URL> classpath;
 
-  public ClasspathResourceMap(ExecutorService executor, Set<Class<? extends Annotation>> annotations,
-    Set<Pattern> bytecodeMatchers, Set<Pattern> resourceMatchers, Set<Pattern> sourceMatchers) {
+  public ClasspathResourceMap(final ProvidesValue<ExecutorService> executor, final Set<Class<? extends Annotation>> annotations,
+    final Set<Pattern> bytecodeMatchers, final Set<Pattern> resourceMatchers, final Set<Pattern> sourceMatchers) {
     this.annotations = annotations;
     this.bytecodeMatchers = bytecodeMatchers;
     this.executor = executor;
@@ -60,18 +61,19 @@ public class ClasspathResourceMap {
 
   public void addBytecode(final String name, final ByteCodeResource bytecode) {
     this.bytecode.put(X_Source.stripClassExtension(name.replace(File.separatorChar, '.')), bytecode);
-      if (!preloadClasses())
+      if (!preloadClasses()) {
         return;
+      }
       if (pending.isEmpty()) {
         synchronized (pending) {
           // double-checked lock
           if (pending.isEmpty()) {
-            executor.submit(new Runnable() {
+            getExecutor().submit(new Runnable() {
               // We use one thread to iterate and preload class files
               @Override
               public void run() {
                 while (!pending.isEmpty()) {
-                  Iterator<ByteCodeResource> iter = pending.iterator();
+                  final Iterator<ByteCodeResource> iter = pending.iterator();
                   while (iter.hasNext()) {
                     // Preload classes
                     addSubclasses(iter.next().getClassData());
@@ -88,7 +90,7 @@ public class ClasspathResourceMap {
       }
   }
 
-  protected void addSubclasses(ClassFile classData) {
+  protected void addSubclasses(final ClassFile classData) {
     // TODO reenable or delete this
 //    if (classData.getEnclosedName().indexOf('.')>-1) {
 //      bytecode.put(classData.getQualifiedName(), classData);
@@ -99,33 +101,33 @@ public class ClasspathResourceMap {
     return !annotations.isEmpty() || !bytecodeMatchers.isEmpty();
   }
 
-  protected void accept(String name, ByteCodeResource bytecode, Iterable<Class<? extends Annotation>> classAnnotations) {
-    ClassFile classFile = bytecode.getClassData();
-    for (Class<? extends Annotation> annoClass : classAnnotations) {
+  protected void accept(final String name, final ByteCodeResource bytecode, final Iterable<Class<? extends Annotation>> classAnnotations) {
+    final ClassFile classFile = bytecode.getClassData();
+    for (final Class<? extends Annotation> annoClass : classAnnotations) {
       maybeAccept(name, bytecode, classFile, annoClass);
     }
   }
 
-  protected void maybeAccept(String name, ByteCodeResource bytecode,
-      ClassFile classFile, Class<? extends Annotation> annoClass) {
-    xapi.bytecode.annotation.Annotation anno = classFile.getAnnotation(annoClass.getName());
+  protected void maybeAccept(final String name, final ByteCodeResource bytecode,
+      final ClassFile classFile, final Class<? extends Annotation> annoClass) {
+    final xapi.bytecode.annotation.Annotation anno = classFile.getAnnotation(annoClass.getName());
     if (anno != null) {
       this.bytecode.put(name, bytecode);
       return;
     }
     // check the target retention of these annotations, and scan methods or fields
     try {
-      Target target = annoClass.getAnnotation(Target.class);
+      final Target target = annoClass.getAnnotation(Target.class);
       ElementType[] targets;
       if (target == null) {
         targets = getDefaultAnnotationTargets();
       } else {
         targets = target.value();
       }
-      for (ElementType type : targets) {
+      for (final ElementType type : targets) {
         switch (type) {
           case METHOD:
-            for (MethodInfo method : classFile.getMethods()) {
+            for (final MethodInfo method : classFile.getMethods()) {
               if (accepts(method, annoClass)) {
                 this.bytecode.put(name, bytecode);
                 return;
@@ -133,7 +135,7 @@ public class ClasspathResourceMap {
             }
             break;
           case FIELD:
-            for (FieldInfo field : classFile.getFields()) {
+            for (final FieldInfo field : classFile.getFields()) {
               if (accepts(field, annoClass)) {
                 this.bytecode.put(name, bytecode);
                 return;
@@ -141,7 +143,7 @@ public class ClasspathResourceMap {
             }
             break;
           case CONSTRUCTOR:
-            for (MethodInfo method : classFile.getMethods()) {
+            for (final MethodInfo method : classFile.getMethods()) {
               if (method.getName().contains("<init>") && accepts(method, annoClass)) {
                 this.bytecode.put(name, bytecode);
                 return;
@@ -152,13 +154,13 @@ public class ClasspathResourceMap {
             break;
         }
       }
-    } catch (Throwable e) {
+    } catch (final Throwable e) {
       throw X_Debug.rethrow(e);
     }
 
   }
 
-  private boolean accepts(MemberInfo method, Class<? extends Annotation> annoClass) {
+  private boolean accepts(final MemberInfo method, final Class<? extends Annotation> annoClass) {
       return method.getAnnotation(annoClass.getName()) != null;
   }
 
@@ -173,36 +175,40 @@ public class ClasspathResourceMap {
     return allMethodsWithAnnos != null;
   }
 
-  public void addSourcecode(String name, SourceCodeResource sourcecode) {
+  public void addSourcecode(final String name, final SourceCodeResource sourcecode) {
     this.sources.put(name, sourcecode);
   }
 
-  public void addResource(String name, StringDataResource resource) {
+  public void addResource(final String name, final StringDataResource resource) {
     this.resources.put(name, resource);
   }
 
-  public boolean includeResource(String name) {
-    for (Pattern p : resourceMatchers) {
-      if (p.matcher(name).matches())
+  public boolean includeResource(final String name) {
+    for (final Pattern p : resourceMatchers) {
+      if (p.matcher(name).matches()) {
         return true;
-      if (p.matcher(name.substring(name.lastIndexOf('/')+1)).matches())
+      }
+      if (p.matcher(name.substring(name.lastIndexOf('/')+1)).matches()) {
         return true;
+      }
     }
     return false;
   }
 
-  public boolean includeSourcecode(String name) {
-    for (Pattern p : sourceMatchers) {
-      if (p.matcher(name).matches())
+  public boolean includeSourcecode(final String name) {
+    for (final Pattern p : sourceMatchers) {
+      if (p.matcher(name).matches()) {
         return true;
+      }
     }
     return false;
   }
 
-  public boolean includeBytecode(String name) {
-    for (Pattern p : bytecodeMatchers) {
-      if (p.matcher(name).matches())
+  public boolean includeBytecode(final String name) {
+    for (final Pattern p : bytecodeMatchers) {
+      if (p.matcher(name).matches()) {
         return true;
+      }
     }
     return false;
   }
@@ -212,8 +218,9 @@ public class ClasspathResourceMap {
   }
 
   public final Iterable<SourceCodeResource> findSources(final String prefix, final Pattern ... patterns) {
-    if (patterns.length == 0)
+    if (patterns.length == 0) {
       return sources.findPrefixed(prefix);
+    }
     class Itr implements Iterator<SourceCodeResource> {
       SourceCodeResource cls;
       Iterator<SourceCodeResource> iter = sources.findPrefixed(prefix).iterator();
@@ -221,9 +228,10 @@ public class ClasspathResourceMap {
       public boolean hasNext() {
         while(iter.hasNext()) {
           cls = iter.next();
-          for (Pattern pattern : patterns) {
-            if (pattern.matcher(cls.getResourceName()).matches())
+          for (final Pattern pattern : patterns) {
+            if (pattern.matcher(cls.getResourceName()).matches()) {
               return true;
+            }
           }
         }
         return false;
@@ -252,8 +260,9 @@ public class ClasspathResourceMap {
   }
 
   public final Iterable<StringDataResource> findResources(final String prefix, final Pattern ... patterns) {
-    if (patterns.length == 0)
+    if (patterns.length == 0) {
       return resources.findPrefixed(prefix);
+    }
     class Itr implements Iterator<StringDataResource> {
       StringDataResource cls;
       Iterator<StringDataResource> iter = resources.findPrefixed(prefix).iterator();
@@ -261,9 +270,10 @@ public class ClasspathResourceMap {
       public boolean hasNext() {
         while(iter.hasNext()) {
           cls = iter.next();
-          for (Pattern pattern : patterns) {
-            if (pattern.matcher(cls.getResourceName()).matches())
+          for (final Pattern pattern : patterns) {
+            if (pattern.matcher(cls.getResourceName()).matches()) {
               return true;
+            }
           }
         }
         return false;
@@ -289,7 +299,7 @@ public class ClasspathResourceMap {
 
   public final ClassFile findClass(String clsName) {
     clsName = clsName.replace('/', '.');
-    ByteCodeResource resource = bytecode.get(clsName);
+    final ByteCodeResource resource = bytecode.get(clsName);
     return resource == null ? null : resource.getClassData();
   }
 
@@ -301,7 +311,7 @@ public class ClasspathResourceMap {
   public Iterable<ClassFile> findClassesInPackage(final String name) {
     return new ClassFileIterator(new MatchesValue<ClassFile>() {
       @Override
-      public boolean matches(ClassFile value) {
+      public boolean matches(final ClassFile value) {
         return !"package-info".equals(value.getEnclosedName()) && value.getPackage().equals(name);
       }
     }, bytecode);
@@ -310,7 +320,7 @@ public class ClasspathResourceMap {
   public Iterable<ClassFile> findClassesBelowPackage(final String name) {
     return new ClassFileIterator(new MatchesValue<ClassFile>() {
       @Override
-      public boolean matches(ClassFile value) {
+      public boolean matches(final ClassFile value) {
         return !"package-info".equals(value.getEnclosedName()) && value.getPackage().startsWith(name);
       }
     }, bytecode);
@@ -319,7 +329,7 @@ public class ClasspathResourceMap {
   public Iterable<ClassFile> findPackagesBelowPackage(final String name) {
     return new ClassFileIterator(new MatchesValue<ClassFile>() {
       @Override
-      public boolean matches(ClassFile value) {
+      public boolean matches(final ClassFile value) {
         return "package-info".equals(value.getEnclosedName()) && value.getPackage().startsWith(name+".");
       }
     }, bytecode);
@@ -352,8 +362,9 @@ public class ClasspathResourceMap {
       public boolean hasNext() {
         while(iter.hasNext()) {
           cls = iter.next().getClassData();
-          if (matcher.matches(cls))
+          if (matcher.matches(cls)) {
             return true;
+          }
         }
         return false;
       }
@@ -391,8 +402,9 @@ public class ClasspathResourceMap {
       public boolean hasNext() {
         while(iter.hasNext()) {
           cls = iter.next().getClassData();
-          if (matcher.matches(cls))
+          if (matcher.matches(cls)) {
             return true;
+          }
         }
 
         return false;
@@ -420,7 +432,7 @@ public class ClasspathResourceMap {
      @SuppressWarnings("unchecked")
      final Class<? extends Annotation> ... annotations) {
     if (allAnnos == null) {
-      allAnnos = new AnnotatedClassIterator(executor, bytecode);
+      allAnnos = new AnnotatedClassIterator(getExecutor(), bytecode);
     }
     // Local class to capture the final method parameter
     class Itr implements Iterator<ClassFile> {
@@ -430,9 +442,10 @@ public class ClasspathResourceMap {
       public boolean hasNext() {
         while(iter.hasNext()) {
           cls = iter.next();
-          for (Class<?> annotation : annotations) {
-            if (cls.getAnnotation(annotation.getName())!=null)
+          for (final Class<?> annotation : annotations) {
+            if (cls.getAnnotation(annotation.getName())!=null) {
               return true;
+            }
           }
         }
         return false;
@@ -461,7 +474,7 @@ public final Iterable<ClassFile> findClassWithAnnotatedMethods(
     @SuppressWarnings("unchecked")
     final Class<? extends Annotation> ... annotations) {
   if (allMethodsWithAnnos == null) {
-    allMethodsWithAnnos = new AnnotatedMethodIterator(executor, bytecode);
+    allMethodsWithAnnos = new AnnotatedMethodIterator(getExecutor(), bytecode);
   }
   // Local class to capture the final method parameter
   class Itr implements Iterator<ClassFile> {
@@ -471,11 +484,12 @@ public final Iterable<ClassFile> findClassWithAnnotatedMethods(
     public boolean hasNext() {
       while(iter.hasNext()) {
         cls = iter.next();
-        for (MethodInfo method : cls.getMethods()) {
+        for (final MethodInfo method : cls.getMethods()) {
           if (allMethodsWithAnnos.scanMethod(method)) {
-            for (Class<?> annotation : annotations) {
-              if (method.getAnnotation(annotation.getName()) != null)
+            for (final Class<?> annotation : annotations) {
+              if (method.getAnnotation(annotation.getName()) != null) {
                 return true;
+              }
             }
           }
         }
@@ -502,10 +516,14 @@ public final Iterable<ClassFile> findClassWithAnnotatedMethods(
   };
 }
 
+  protected ExecutorService getExecutor() {
+    return executor.get();
+  }
+
   public ClassPool getClassPool() {
     if (pool == null) {
       pool = new ClassPool();
-      for (URL cp : classpath) {
+      for (final URL cp : classpath) {
         String asString = cp.toString();
         if (asString.endsWith("/")) {
           asString = asString.substring(0, asString.length()-1);
@@ -516,13 +534,13 @@ public final Iterable<ClassFile> findClassWithAnnotatedMethods(
         if (asString.startsWith("file:/")) {
           asString = asString.substring(6);
         }
-        int index = asString.indexOf("jar!");
+        final int index = asString.indexOf("jar!");
         if (index != -1) {
           asString=asString.substring(0, index+3);
         }
         try {
           pool.appendClassPath(asString);
-        } catch (NotFoundException e) {
+        } catch (final NotFoundException e) {
           X_Log.warn(getClass(), "Could not find resource "+cp, e);
         }
       }
@@ -530,7 +548,7 @@ public final Iterable<ClassFile> findClassWithAnnotatedMethods(
     return pool;
   }
 
-  public void setClasspath(Set<URL> keySet) {
+  public void setClasspath(final Set<URL> keySet) {
     this.classpath = new ArrayList<URL>(keySet);
   }
 
@@ -547,16 +565,17 @@ extends MultithreadedStringTrie<ResourceType> {
     public PrioritizedEdge() {
     }
 
-    public PrioritizedEdge(char[] key, int index, int end, ResourceType value) {
+    public PrioritizedEdge(final char[] key, final int index, final int end, final ResourceType value) {
       super(key, index, end);
       this.value = value;
     }
 
     @Override
-    protected void setValue(ResourceType value) {
+    protected void setValue(final ResourceType value) {
       if (this.value != null) {
-        if (this.value.priority() > value.priority())
+        if (this.value.priority() > value.priority()) {
           return;
+        }
       }
       super.setValue(value);
     }
@@ -568,7 +587,7 @@ extends MultithreadedStringTrie<ResourceType> {
   }
 
   @Override
-  protected Edge newEdge(char[] key, int index, int end, ResourceType value) {
+  protected Edge newEdge(final char[] key, final int index, final int end, final ResourceType value) {
     return new PrioritizedEdge(key, index, end, value);
   }
 }

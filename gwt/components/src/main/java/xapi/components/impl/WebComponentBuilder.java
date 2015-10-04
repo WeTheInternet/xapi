@@ -17,9 +17,12 @@ import com.google.gwt.core.client.UnsafeNativeLong;
 import com.google.gwt.core.client.js.JsProperty;
 import com.google.gwt.core.client.js.JsType;
 
+import elemental.client.Browser;
 import elemental.dom.Element;
 
+import elemental.html.DivElement;
 import xapi.components.api.OnWebComponentAttributeChanged;
+import xapi.util.X_String;
 
 public class WebComponentBuilder {
 
@@ -112,6 +115,37 @@ public class WebComponentBuilder {
   public WebComponentBuilder createdCallback(final Runnable function) {
     return createdCallback(wrapRunnable(function));
   }
+
+  private static final DivElement templateHost = Browser.getDocument().createDivElement();
+  public WebComponentBuilder addShadowRoot(String html) {
+    if (html.contains("<template")) {
+      templateHost.setInnerHTML(html);
+      Element template = templateHost.getFirstElementChild();
+      String id = template.getId();
+      if (X_String.isEmpty(id)) {
+        id = JsSupport.newId();
+        template.setId(id);
+      }
+      templateHost.setInnerHTML("");
+//      Browser.getDocument().appendChild(template);
+      return createdCallback(element->setShadowRootTemplate(element, template));
+    } else {
+      return createdCallback(element->setShadowRoot(element, html));
+    }
+  }
+
+  private native void setShadowRootTemplate(Element element, Element template)
+  /*-{
+    var root = element.createShadowRoot();
+    var clone = document.importNode(template.content, true);
+    root.appendChild(clone);
+  }-*/;
+
+  private native void setShadowRoot(Element element, String html)
+  /*-{
+    var root = element.createShadowRoot();
+    root.innerHTML = html;
+  }-*/;
 
   public <E extends Element> WebComponentBuilder createdCallback(
     final Consumer<E> function) {

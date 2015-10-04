@@ -30,6 +30,8 @@ import xapi.model.impl.ClusteringPrimitiveSerializer;
 import xapi.util.api.Digester;
 import xapi.util.api.ValidatesValue;
 
+import static com.google.gwt.core.ext.TreeLogger.Type.WARN;
+
 /**
  * @author James X. Nelson (james@wetheinter.net, @james)
  *
@@ -48,7 +50,12 @@ public class ModelLinker extends Linker {
       throws UnableToCompleteException {
     if (!onePermutation) {
 
-      final StrongNameArtifact strongNames = artifacts.find(StrongNameArtifact.class).first();
+      SortedSet<StrongNameArtifact> all = artifacts.find(StrongNameArtifact.class);
+      if (all.isEmpty()) {
+        logger.log(WARN, "No strongname artifacts found!");
+        return artifacts;
+      }
+      final StrongNameArtifact strongNames = all.first();
       final SortedSet<ModelArtifact> models = artifacts.find(ModelArtifact.class);
       final CharBuffer out = new CharBuffer();
       final PrimitiveSerializer primitives = X_Inject.instance(PrimitiveSerializer.class);

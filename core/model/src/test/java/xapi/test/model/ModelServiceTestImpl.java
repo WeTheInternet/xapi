@@ -3,12 +3,20 @@
  */
 package xapi.test.model;
 
+import java.lang.reflect.Array;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Objects;
 
 import xapi.annotation.inject.SingletonOverride;
 import xapi.log.X_Log;
 import xapi.model.api.Model;
 import xapi.model.api.ModelKey;
+import xapi.model.api.ModelQuery;
+import xapi.model.api.ModelQuery.QueryParameter;
+import xapi.model.api.ModelQueryResult;
 import xapi.model.content.ModelComment;
 import xapi.model.content.ModelContent;
 import xapi.model.content.ModelRating;
@@ -51,6 +59,148 @@ public class ModelServiceTestImpl extends AbstractModelService {
     callback.onSuccess((M) ramCache.get(modelKey));
   }
 
+  /**
+   * @see xapi.model.service.ModelService#query(java.lang.Class, xapi.model.api.ModelQuery, xapi.util.api.SuccessHandler)
+   */
+  @Override
+  public <M extends Model> void query(final Class<M> modelClass, final ModelQuery<M> query,
+      final SuccessHandler<ModelQueryResult<M>> callback) {
+    // The ramCache version of the service is going to be quite poor.
+    final ModelQueryResult<M> result = new ModelQueryResult<>(modelClass);
+    final ModelKey cursorKey = getCursorKey(query);
+    for (final Entry<ModelKey, Model> entry : ramCache.entrySet()) {
+      final ModelKey key = entry.getKey();
+      if (query.getNamespace().equals(key.getNamespace()) && modelClass == typeNameToClass.get(key.getKind())) {
+        if (doesMatch(modelClass, query, cursorKey, entry.getValue())) {
+          result.addModel((M) entry.getValue());
+          if (result.getSize() == query.getPageSize()) {
+            break;
+          }
+        }
+      }
+    }
+    if (result.getSize() > 0) {
+      final List<M> list = result.getModelList();
+      result.setCursor(keyToString(list.get(list.size()-1).getKey()));
+    } else {
+      result.setCursor(query.getCursor());
+    }
+    callback.onSuccess(result);
+  }
+
+  @Override
+  public void query(final ModelQuery<Model> query, final SuccessHandler<ModelQueryResult<Model>> callback) {
+    // The ramCache version of the service is going to be quite poor.
+    final ModelQueryResult<Model> result = new ModelQueryResult<>(Model.class);
+    final ModelKey cursorKey = getCursorKey(query);
+    for (final Entry<ModelKey, Model> entry : ramCache.entrySet()) {
+      final ModelKey key = entry.getKey();
+      if (query.getNamespace().equals(key.getNamespace())) {
+        if (doesMatch(null, query, cursorKey, entry.getValue())) {
+          result.addModel(entry.getValue());
+          if (result.getSize() == query.getPageSize()) {
+            break;
+          }
+        }
+      }
+    }
+    if (result.getSize() > 0) {
+      final List<Model> list = result.getModelList();
+      result.setCursor(keyToString(list.get(list.size()-1).getKey()));
+    } else {
+      result.setCursor(query.getCursor());
+    }
+    callback.onSuccess(result);
+  }
+
+  protected ModelKey getCursorKey(final ModelQuery<? extends Model> query) {
+    if (query.getCursor() == null) {
+      return null;
+    } else {
+      return keyFromString(query.getCursor());
+    }
+  }
+
+  protected boolean doesMatch(final Class<? extends Model> modelClass, final ModelQuery<? extends Model> query, final ModelKey cursorKey, final Model model) {
+    final ModelKey key = model.getKey();
+    if (!query.getNamespace().equals(key.getNamespace())) {
+      return false;
+    }
+    if (modelClass != null && !modelClass.isAssignableFrom(model.getClass())) {
+      return false;
+    }
+    if (cursorKey != null) {
+      // Make sure the model's key is greater than our cursor
+      if (key.getId().compareTo(cursorKey.getId()) < 1) {
+        return false;
+      }
+    }
+    for (final QueryParameter param : query.getParameters()) {
+      if (!matches(param, model)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * @param param
+   * @param model
+   * @return
+   */
+  private boolean matches(final QueryParameter param, final Model model) {
+    final Object value = model.getProperty(param.getParameterName());
+    assert typesEqual(value, param.getFilterValue());
+    switch (param.getFilterType()) {
+      case EQUALS:
+        return Objects.deepEquals(value, param.getFilterValue());
+      case CONTAINS:
+        if (value == null) {
+          return param.getFilterValue() == null;
+        }
+        if (value instanceof String) {
+          return ((String)value).contains(String.valueOf(param.getFilterValue()));
+        }
+        // else do array / map / container matching...
+        if (value.getClass().isArray()) {
+          if (param.getFilterValue() instanceof Comparable) {
+            return Arrays.binarySearch((Object[])value, param.getFilterValue()) != -1;
+          }
+          for (int i = 0, m = Array.getLength(value); i < m; i++) {
+            if (Objects.equals(Array.get(value, i), param.getFilterValue())) {
+              return true;
+            }
+          }
+        }
+        // We can do lists/maps later...
+        throw new UnsupportedOperationException("Contains queries not yet supported for "+value.getClass()+" types.");
+      case GREATER_THAN:
+        if (value == null) {
+          return false;
+        }
+        return ((Comparable)value).compareTo(param.getFilterValue()) > 0;
+      case LESS_THAN:
+        if (value == null) {
+          return false;
+        }
+        return ((Comparable)value).compareTo(param.getFilterValue()) < 0;
+    }
+    return false;
+  }
+
+  private boolean typesEqual(final Object value1, final Object value2) {
+    if (value1 == null || value2 == null) {
+      return true;
+    }
+    if (value1.getClass().isAssignableFrom(value2.getClass())) {
+      return true;
+    }
+    if (value2.getClass().isAssignableFrom(value1.getClass())) {
+      return true;
+    }
+    return false;
+  }
+
   @Override
   @SuppressWarnings("unchecked")
   public <T extends Model> T create(final Class<T> key) {
@@ -70,6 +220,11 @@ public class ModelServiceTestImpl extends AbstractModelService {
       return (T) new ModelCommentTest();
     }
     return super.create(key);
+  }
+
+  @Override
+  public <M extends Model> Class<M> typeToClass(final String kind) {
+    throw new UnsupportedOperationException("Test Model Service does not support .typeToClass()");
   }
 
 }

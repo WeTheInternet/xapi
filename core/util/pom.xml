@@ -67,6 +67,23 @@
           </execution>
         </executions>
       </plugin>
+        <plugin>
+            <groupId>net.wetheinter</groupId>
+            <artifactId>xapi-maven-plugin</artifactId>
+            <version>${xapi.plugin.version}</version>
+            <executions>
+                <execution>
+                    <id>annogen</id>
+                    <goals>
+                        <goal>annogen</goal>
+                    </goals>
+                    <phase>generate-sources</phase>
+                </execution>
+            </executions>
+            <configuration>
+                <targetProject>net.wetheinter:xapi-core-api:jar:${xapi.version}</targetProject>
+            </configuration>
+        </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>build-helper-maven-plugin</artifactId>

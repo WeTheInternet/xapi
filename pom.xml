@@ -42,8 +42,9 @@
   <java.version>1.7</java.version>
   <maven.compiler.source>${java.version}</maven.compiler.source>
   <maven.compiler.target>${java.version}</maven.compiler.target>
-  <xapi.version>0.5</xapi.version>
+  <xapi.version>0.6-SNAPSHOT</xapi.version>
   <xapi.test.version>0.5</xapi.test.version>
+  <xapi.plugin.version>0.5</xapi.plugin.version>
   <xapi.log.level>INFO</xapi.log.level>
   <gwt.groupId>net.wetheinter</gwt.groupId>
   <gwt.version>2.7.0</gwt.version>

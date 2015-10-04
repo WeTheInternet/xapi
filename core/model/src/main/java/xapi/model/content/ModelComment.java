@@ -1,8 +1,9 @@
 package xapi.model.content;
 
+import xapi.model.user.ModelUser;
+
 public interface ModelComment extends ModelContent{
 
-  String getHref();
-  ModelComment setHref(String href);
-
+  String getContentId();
+  ModelComment setContentId(String contentId);
 }

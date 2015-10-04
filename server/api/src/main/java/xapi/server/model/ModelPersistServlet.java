@@ -21,11 +21,15 @@ import xapi.model.api.Model;
 import xapi.model.api.ModelKey;
 import xapi.model.api.ModelManifest;
 import xapi.model.api.ModelModule;
+import xapi.model.api.ModelQuery;
+import xapi.model.api.ModelQueryResult;
 import xapi.model.api.PrimitiveSerializer;
+import xapi.model.service.ModelService;
 import xapi.source.api.CharIterator;
 import xapi.source.impl.StringCharIterator;
 import xapi.time.X_Time;
 import xapi.util.X_Properties;
+import xapi.util.X_String;
 import xapi.util.api.Pointer;
 import xapi.util.api.RemovalHandler;
 import xapi.util.api.SuccessHandler;
@@ -60,22 +64,25 @@ public class ModelPersistServlet extends HttpServlet {
   @SuppressWarnings("unchecked")
   @Override
   protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
-    final String type = req.getHeader("X-Model-Type");
     final String moduleName = req.getHeader("X-Gwt-Module");
     final ModelModule module = ModelModuleLoader.get().loadModule(context, moduleName);
     final RemovalHandler handler = ModelServiceJre.registerModule(module);
     try {
-      final ModelManifest manifest = module.getManifest(type);
-      String encoding = req.getCharacterEncoding();
-      if (encoding == null) {
-        encoding = "UTF-8";
-      }
+      final String encoding = X_String.firstNotEmpty(req.getCharacterEncoding(), "UTF-8");
       final String[] keySections = URLDecoder.decode(req.getRequestURI(), encoding).split("/");
+      final String requestType = keySections[keySections.length-4];
       final PrimitiveSerializer primitives = X_Model.getService().primitiveSerializer();
       String namespace = keySections[keySections.length-3];
       namespace = primitives.deserializeString(new StringCharIterator(namespace));
-      final String kind = keySections[keySections.length-2];
+      String kind = keySections[keySections.length-2];
       final CharIterator ident = new StringCharIterator(keySections[keySections.length-1]);
+      if (requestType.equals("query")) {
+        kind = primitives.deserializeString(new StringCharIterator(kind));
+        runQuery(resp, module, primitives, namespace, kind, ident, encoding);
+        return;
+      }
+      final String type = req.getHeader("X-Model-Type");
+      final ModelManifest manifest = module.getManifest(type);
       final int keyType = primitives.deserializeInt(ident);
       final String id = ident.consumeAll().toString();
 
@@ -88,25 +95,56 @@ public class ModelPersistServlet extends HttpServlet {
         public void onSuccess(final Model m) {
           final String serialized = X_Model.serialize(manifest, m);
           try {
-            X_IO.drain(resp.getOutputStream(), X_IO.toStreamUtf8(serialized));
+            X_IO.drain(resp.getOutputStream(), X_IO.toStream(serialized, encoding));
             wait.set(false);
           } catch (final Exception e) {
             X_Log.error(getClass(), "Error saving model",e);
           }
         }
       });
-
-      final long deadline = System.currentTimeMillis() + 5000;
-      while (wait.get()) {
-        X_Time.trySleep(30, 0);
-        if (X_Time.isPast(deadline)) {
-          X_Log.error(getClass(), "Timeout while loading model",key);
-          return;
-        }
-      }
+      blockUntilTrue(wait, key);
     } finally {
       handler.remove();
     }
+  }
+
+  private void blockUntilTrue(final Pointer<Boolean> wait, final Object debugInfo) {
+    final long deadline = System.currentTimeMillis() + 5000;
+    while (wait.get()) {
+      X_Time.trySleep(30, 0);
+      if (X_Time.isPast(deadline)) {
+        X_Log.error(getClass(), "Timeout while loading model(s)",debugInfo);
+        return;
+      }
+    }
+  }
+
+  protected void runQuery(final HttpServletResponse resp, final ModelModule module, final PrimitiveSerializer primitives, final String namespace, final String kind,
+      final CharIterator queryString, final String encoding) {
+    final ModelService service = X_Model.getService();
+    final ModelQuery query = ModelQuery.deserialize(service, primitives, queryString);
+    final Pointer<Boolean> wait = new Pointer<>(true);
+    final SuccessHandler callback = new SuccessHandler<ModelQueryResult>() {
+      @Override
+      public void onSuccess(final ModelQueryResult t) {
+        try {
+          final String serialized = t.serialize(service, primitives);
+          X_IO.drain(resp.getOutputStream(), X_IO.toStream(serialized, encoding));
+          wait.set(false);
+        } catch (final Exception e) {
+          X_Log.error(getClass(), "Error saving model",e);
+        }
+      }
+    };
+
+    if ("".equals(kind)) {
+      service.query(query, callback);
+    } else {
+      final Class<? extends Model> modelClass = service.typeToClass(kind);
+      service.query(modelClass, query, callback);
+    }
+
+    blockUntilTrue(wait, query);
   }
 
   @Override

@@ -147,12 +147,13 @@ public class CssInjectorGenerator implements CreatesContextObject<HtmlGeneratorR
 
       // Print all our manually defined @Style attribute
       for (final IntTo<Style> styleSet : styles.forEach()) {
-        int priority = 0;
+        int priority = Integer.MAX_VALUE;
         final StringBuilder sheetStyle = new StringBuilder();
+        final StringBuilder extraStyle = new StringBuilder();
         for (final Style style : styleSet.forEach()) {
-          priority = style.priority();
           try {
-            AbstractHtmlGenerator.fillStyles(null, sheetStyle, style);
+            int pos = AbstractHtmlGenerator.fillStyles(null, sheetStyle, extraStyle, style);
+            priority = Math.min(pos, priority);
           } catch (final Exception e) {
             logger.log(Type.ERROR, "Error calculating styles", e);
             throw new UnableToCompleteException();
@@ -160,6 +161,9 @@ public class CssInjectorGenerator implements CreatesContextObject<HtmlGeneratorR
         }
         if (sheetStyle.length() > 0) {
           body.println("serv.addCss(\""+Generator.escape(sheetStyle.toString())+"\", "+priority+");");
+        }
+        if (extraStyle.length() > 0) {
+          body.println("serv.addCss(\""+Generator.escape(extraStyle.toString())+"\", Integer.MIN_VALUE);");
         }
       }
 

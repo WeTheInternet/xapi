@@ -266,7 +266,6 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
 
     final PrintBuffer stylizeField = out
         .createField(receivesElemental, FIELD_STYLIZE)
-        .makePrivate()
         .makeStatic()
         .makeFinal()
         .getInitializer()
@@ -733,15 +732,15 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
       .toSource());
   }
 
-  private void printStyle(
+  private String printStyle(
       final TreeLogger logger,
       final Style style,
       final StringBuilder localStyle) {
     final boolean isLocal = style.names().length == 0;
     if (!isLocal) {
-      return;
+      return "";
     }
-    HtmlSnippet.appendTo(localStyle, style);
+    return HtmlSnippet.appendTo(localStyle, style);
   }
 
   @Override

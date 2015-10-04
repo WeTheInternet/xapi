@@ -10,6 +10,7 @@ import xapi.ui.html.api.Html;
 import xapi.ui.html.api.HtmlService;
 import xapi.ui.html.api.HtmlSnippet;
 import xapi.ui.html.api.Style;
+import xapi.util.X_String;
 
 @SingletonDefault(implFor=HtmlService.class)
 public class HtmlServiceDefault implements HtmlService {
@@ -48,8 +49,11 @@ public class HtmlServiceDefault implements HtmlService {
 
   private void printStyle(Style style, StyleService<?> context) {
     StringBuilder result = new StringBuilder();
-    HtmlSnippet.appendTo(result, style);
+    String extra = HtmlSnippet.appendTo(result, style);
     context.addCss(result.toString(), style.priority());
+    if (X_String.isNotEmpty(extra)) {
+      context.addCss(extra, Integer.MIN_VALUE);
+    }
   }
 
 }

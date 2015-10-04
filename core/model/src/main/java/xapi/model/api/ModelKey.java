@@ -3,6 +3,10 @@ package xapi.model.api;
 
 public interface ModelKey {
 
+  String DEFAULT_NAMESPACE = "";
+  String DEFAULT_ID = "_theOne_"; // for application-wide singletons
+  String DEFAULT_KIND = "_model_";
+
   int KEY_TYPE_STRING = 0;
   int KEY_TYPE_LONG = 1;
   // All other ints are usable to denote custom key types that end users may

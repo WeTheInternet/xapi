@@ -212,4 +212,13 @@ public class X_IO {
     }
   }
 
+  public static InputStream toStream(final String in, final String charset) {
+    try {
+      return new ByteArrayInputStream(in.getBytes(charset));
+    } catch (final UnsupportedEncodingException e) {
+      X_Debug.debug(e);
+      return new ByteArrayInputStream(in.getBytes());
+    }
+  }
+
 }

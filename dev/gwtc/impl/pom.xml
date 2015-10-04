@@ -71,6 +71,12 @@
     	<groupId>junit</groupId>
     	<artifactId>junit</artifactId>
     </dependency>
+
+      <dependency>
+          <groupId>net.wetheinter</groupId>
+          <artifactId>xapi-core-test</artifactId>
+          <scope>compile</scope>
+      </dependency>
   </dependencies>
 
   <build>

@@ -17,6 +17,7 @@ import elemental.html.StyleElement;
 import xapi.annotation.inject.SingletonDefault;
 import xapi.collect.api.StringTo;
 import xapi.ui.api.StyleService;
+import xapi.ui.html.X_Html;
 
 /**
  * @author "James X. Nelson (james@wetheinter.net)"
@@ -49,12 +50,7 @@ StyleService<T> {
   }
 
   protected void css(final String css) {
-    printPendingCss = new ScheduledCommand() {
-      @Override
-      public void execute() {
-        flushCss();
-      }
-    };
+    printPendingCss = this::flushCss;
     Scheduler.get().scheduleFinally(printPendingCss);
   }
 
@@ -148,6 +144,12 @@ StyleService<T> {
       }
     }
     return style;
+  }
+
+
+  @Override
+  public void loadGoogleFonts(String ... fonts) {
+    addCss(X_Html.toGoogleFontUrl(fonts), 0);
   }
 
 }

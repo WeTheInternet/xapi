@@ -4,6 +4,10 @@ public interface FontFamily {
 
   String name();
 
+  interface HasGoogleFont {
+    String googleFont();
+  }
+
   public static class Cursive implements FontFamily{
     @Override
     public String name() {

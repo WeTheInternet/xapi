@@ -41,30 +41,32 @@ import xapi.util.api.ReceivesValue;
 public class RuntimeInjector implements ReceivesValue<String> {
 
   @Override
-  public void set(String targetDir) {
-    String prefix = "META-INF"+File.separator;
+  public void set(final String targetDir) {
+    final String prefix = "META-INF"+File.separator;
     writeMetaInfo(targetDir, prefix+"singletons", prefix+"instances");
   }
 
   @SuppressWarnings("unchecked")
-  public void writeMetaInfo(String targetDir, String singletonDir, String instanceDir){
+  public void writeMetaInfo(String targetDir, final String singletonDir, final String instanceDir){
     if (!targetDir.endsWith(File.separator)) {
       targetDir += File.separator;
     }
-    File target = new File(targetDir).getAbsoluteFile();
-    if (!target.isDirectory())
-      if (!target.mkdirs())
+    final File target = new File(targetDir).getAbsoluteFile();
+    if (!target.isDirectory()) {
+      if (!target.mkdirs()) {
         throw new RuntimeException("Unable to get or make jre injection generator output directory: "+
             target.getAbsolutePath());
+      }
+    }
 
     ClasspathScanner scanner;
     try {
       scanner = X_Inject.instance(ClasspathScanner.class);
-    } catch (Exception e) {
+    } catch (final Exception e) {
       scanner = new ClasspathScannerDefault();
     }
-    Moment start = now();
-	ClasspathResourceMap resources = scanner
+    final Moment start = now();
+	final ClasspathResourceMap resources = scanner
       .scanAnnotations(
         Platform.class,
         SingletonDefault.class, SingletonOverride.class,
@@ -75,22 +77,22 @@ public class RuntimeInjector implements ReceivesValue<String> {
       .scan(targetClassloader())
       ;
     // Only collect platform types if we are not running in a known platform.
-    String runtime[] = X_Properties.platform.get().split(",");
+    final String runtime[] = X_Properties.platform.get().split(",");
 
-    Fifo<ClassFile> defaultSingletons = new SimpleFifo<ClassFile>();
-    Fifo<ClassFile> defaultInstances = new SimpleFifo<ClassFile>();
-    Fifo<ClassFile> singletonImpls = new SimpleFifo<ClassFile>();
-    Fifo<ClassFile> instanceImpls = new SimpleFifo<ClassFile>();
+    final Fifo<ClassFile> defaultSingletons = new SimpleFifo<ClassFile>();
+    final Fifo<ClassFile> defaultInstances = new SimpleFifo<ClassFile>();
+    final Fifo<ClassFile> singletonImpls = new SimpleFifo<ClassFile>();
+    final Fifo<ClassFile> instanceImpls = new SimpleFifo<ClassFile>();
 
     ClassFile bestMatch = null;
-    HashMap<String,ClassFile> platformMap = new HashMap<String, ClassFile>();
+    final HashMap<String,ClassFile> platformMap = new HashMap<String, ClassFile>();
     String shortName = null;
-    Set<String> scopes = new LinkedHashSet<String>();
-    ArrayList<ClassFile> platforms = new ArrayList<ClassFile>();
-    Moment prepped = now();
-    for (ClassFile file : resources.findClassAnnotatedWith(Platform.class)) {
+    final Set<String> scopes = new LinkedHashSet<String>();
+    final ArrayList<ClassFile> platforms = new ArrayList<ClassFile>();
+    final Moment prepped = now();
+    for (final ClassFile file : resources.findClassAnnotatedWith(Platform.class)) {
       platforms.add(file);
-      for (String platform : runtime) {
+      for (final String platform : runtime) {
         scopes.add(platform);
         shortName = platform.substring(platform.lastIndexOf('.')+1);
         platformMap.put(file.getName(), file);
@@ -100,25 +102,27 @@ public class RuntimeInjector implements ReceivesValue<String> {
         if (bestMatch == null && file.getName().endsWith(shortName)) {
           bestMatch = file;
         }
-          }
+      }
     }
-    Moment scanned = now();
-    if (bestMatch == null)
+    final Moment scanned = now();
+    if (bestMatch == null) {
       throw platformMisconfigured(shortName);
+    }
     MemberValue fallbacks;
-    LinkedHashSet<ClassFile> remainder = new LinkedHashSet<ClassFile>();
+    final LinkedHashSet<ClassFile> remainder = new LinkedHashSet<ClassFile>();
     remainder.add(bestMatch);
     while (remainder.size()>0) {
-      ClassFile next = remainder.iterator().next();
-      Annotation anno = next.getAnnotation("xapi.platform.Platform");
-      if (anno == null)
+      final ClassFile next = remainder.iterator().next();
+      final Annotation anno = next.getAnnotation("xapi.platform.Platform");
+      if (anno == null) {
         throw platformMisconfigured(next.getName());
+      }
       fallbacks = anno.getMemberValue("fallback");
       if (fallbacks != null) {
-        ArrayMemberValue arr = (ArrayMemberValue)fallbacks;
-        for (MemberValue v : arr.getValue()) {
-          String name = ((ClassMemberValue)v).getValue();
-          ClassFile fallback = platformMap.get(name);
+        final ArrayMemberValue arr = (ArrayMemberValue)fallbacks;
+        for (final MemberValue v : arr.getValue()) {
+          final String name = ((ClassMemberValue)v).getValue();
+          final ClassFile fallback = platformMap.get(name);
           if (fallback != null) {
             if (scopes.add(fallback.getName())) {
               remainder.add(fallback);
@@ -128,8 +132,8 @@ public class RuntimeInjector implements ReceivesValue<String> {
       }
       remainder.remove(next);
     }
-    Moment checked = now();
-    for (ClassFile cls : resources.findClassAnnotatedWith(
+    final Moment checked = now();
+    for (final ClassFile cls : resources.findClassAnnotatedWith(
       SingletonDefault.class, SingletonOverride.class,
       InstanceDefault.class, InstanceOverride.class
       )) {
@@ -150,40 +154,40 @@ public class RuntimeInjector implements ReceivesValue<String> {
         instanceImpls.give(cls);
       }
     }
-    Moment mapped = now();
+    final Moment mapped = now();
 
-    Map<String, ClassFile> injectionTargets = new HashMap<String,ClassFile>();
+    final Map<String, ClassFile> injectionTargets = new HashMap<String,ClassFile>();
     //determine injection by priority.  Defaults first
-    for (ClassFile cls : defaultSingletons.forEach()){
-      Annotation impl = cls.getAnnotation(SingletonDefault.class.getName());
-      ClassMemberValue value = (ClassMemberValue)impl.getMemberValue("implFor");
+    for (final ClassFile cls : defaultSingletons.forEach()){
+      final Annotation impl = cls.getAnnotation(SingletonDefault.class.getName());
+      final ClassMemberValue value = (ClassMemberValue)impl.getMemberValue("implFor");
       injectionTargets.put(value.getValue(), cls);
     }
     //now scan overrides
-    for (ClassFile cls : singletonImpls.forEach()){
-      Annotation impl = cls.getAnnotation(SingletonOverride.class.getName());
-      ClassMemberValue value = (ClassMemberValue)impl.getMemberValue("implFor");
-      String clsName = value.getValue();
-      ClassFile existing  = injectionTargets.get(value.getValue());
+    for (final ClassFile cls : singletonImpls.forEach()){
+      final Annotation impl = cls.getAnnotation(SingletonOverride.class.getName());
+      final ClassMemberValue value = (ClassMemberValue)impl.getMemberValue("implFor");
+      final String clsName = value.getValue();
+      final ClassFile existing  = injectionTargets.get(value.getValue());
       if (existing  == null){
         injectionTargets.put(clsName, cls);
         continue;
       }
 
 
-      ClassFile previous = injectionTargets.get(clsName);
+      final ClassFile previous = injectionTargets.get(clsName);
       // previous value was a default
       if (previous == null){
         injectionTargets.put(clsName, cls);
         continue;
       }
-      Annotation oldOverride = previous.getAnnotation(SingletonOverride.class.getName());
+      final Annotation oldOverride = previous.getAnnotation(SingletonOverride.class.getName());
       if (oldOverride == null) {
         injectionTargets.put(clsName, cls);
         continue;
       }
-      IntegerMemberValue oldPriority = (IntegerMemberValue)oldOverride.getMemberValue("priority");
-      IntegerMemberValue newPriority = (IntegerMemberValue)impl.getMemberValue("priority");
+      final IntegerMemberValue oldPriority = (IntegerMemberValue)oldOverride.getMemberValue("priority");
+      final IntegerMemberValue newPriority = (IntegerMemberValue)impl.getMemberValue("priority");
       if (newPriority == null) {
         continue;
       }
@@ -191,58 +195,58 @@ public class RuntimeInjector implements ReceivesValue<String> {
         injectionTargets.put(clsName, cls);
       }
     }
-    Moment startInject = now();
-    for (String iface : injectionTargets.keySet()) {
+    final Moment startInject = now();
+    for (final String iface : injectionTargets.keySet()) {
       JavaInjector.registerSingletonProvider(iface, injectionTargets.get(iface).getName());
     }
     try {
       writeMeta(injectionTargets, new File(target, singletonDir));
-    } catch( Exception e) {e.printStackTrace();}
+    } catch( final Exception e) {e.printStackTrace();}
 
     injectionTargets.clear();
 
     //determine injection by priority
-    for (ClassFile cls : defaultInstances.forEach()){
-      Annotation impl = cls.getAnnotation(InstanceDefault.class.getName());
-      ClassMemberValue value = (ClassMemberValue)impl.getMemberValue("implFor");
+    for (final ClassFile cls : defaultInstances.forEach()){
+      final Annotation impl = cls.getAnnotation(InstanceDefault.class.getName());
+      final ClassMemberValue value = (ClassMemberValue)impl.getMemberValue("implFor");
       injectionTargets.put(value.getValue(), cls);
     }
-    for (ClassFile cls : instanceImpls.forEach()){
-      Annotation impl = cls.getAnnotation(InstanceOverride.class.getName());
-      ClassMemberValue value = (ClassMemberValue)impl.getMemberValue("implFor");
-      String clsName = value.getValue();
-      ClassFile existing  = injectionTargets.get(value.getValue());
+    for (final ClassFile cls : instanceImpls.forEach()){
+      final Annotation impl = cls.getAnnotation(InstanceOverride.class.getName());
+      final ClassMemberValue value = (ClassMemberValue)impl.getMemberValue("implFor");
+      final String clsName = value.getValue();
+      final ClassFile existing  = injectionTargets.get(value.getValue());
       if (existing  == null){
         injectionTargets.put(clsName, cls);
         continue;
       }
-      ClassFile previous = injectionTargets.get(clsName);
+      final ClassFile previous = injectionTargets.get(clsName);
       // previous value was a default
       if (previous == null){
         injectionTargets.put(clsName, cls);
         continue;
       }
-      Annotation oldOverride = previous.getAnnotation(InstanceOverride.class.getName());
+      final Annotation oldOverride = previous.getAnnotation(InstanceOverride.class.getName());
       if (oldOverride == null) {
         injectionTargets.put(clsName, cls);
         continue;
       }
-      IntegerMemberValue oldPriority = (IntegerMemberValue)oldOverride.getMemberValue("priority");
-      IntegerMemberValue newPriority = (IntegerMemberValue)impl.getMemberValue("priority");
+      final IntegerMemberValue oldPriority = (IntegerMemberValue)oldOverride.getMemberValue("priority");
+      final IntegerMemberValue newPriority = (IntegerMemberValue)impl.getMemberValue("priority");
 
       if (newPriority.getValue() > oldPriority.getValue()){
         injectionTargets.put(clsName, cls);
       }
     }
-    for (String iface : injectionTargets.keySet()) {
+    for (final String iface : injectionTargets.keySet()) {
       JavaInjector.registerInstanceProvider(iface, injectionTargets.get(iface).getName());
     }
     try{
       writeMeta(injectionTargets, new File(target, instanceDir));
-    } catch (Throwable e) {
+    } catch (final Throwable e) {
       X_Log.warn("Trouble encountered writing instance meta to ",new File(target, instanceDir),e);
     }
-    Moment finished = now();
+    final Moment finished = now();
 
     if (X_Runtime.isDebug()) {
       X_Log.info("Multithreaded? ", X_Runtime.isMultithreaded());
@@ -267,14 +271,15 @@ public class RuntimeInjector implements ReceivesValue<String> {
   private Moment now() {
     return new ImmutableMoment(System.currentTimeMillis()+ Math.abs(System.nanoTime()-init)/100000000.0);
   }
-  private boolean allowedPlatform(ClassFile cls, Set<String> scopes, Iterable<ClassFile> platforms) {
+  private boolean allowedPlatform(final ClassFile cls, final Set<String> scopes, final Iterable<ClassFile> platforms) {
     // first, if the given class file has a platform we are using, return true
-    for (String allowed : scopes) {
-      if (cls.getAnnotation(allowed) != null)
+    for (final String allowed : scopes) {
+      if (cls.getAnnotation(allowed) != null) {
         return true;
+      }
     }
     // next, check if the type has any known platforms
-    for (ClassFile platform : platforms) {
+    for (final ClassFile platform : platforms) {
       if (cls.getAnnotation(platform.getName())!=null) {
         System.out.println("Skipping "+cls.getName()+" for having a platform " +
         		"the does not match the current runtime.");
@@ -284,30 +289,32 @@ public class RuntimeInjector implements ReceivesValue<String> {
     // this is a universal class (no platform specified)
     return true;
   }
-  private NotConfiguredCorrectly platformMisconfigured(String platform) {
+  private NotConfiguredCorrectly platformMisconfigured(final String platform) {
     return new NotConfiguredCorrectly("Could not find platform annotation for " +
       "current runtime "+platform+"; please ensure this class is on the " +
       "classpath, and that it is annotated with @Platform");
   }
-  protected void writeMeta(Map<String, ClassFile> injectables,
-      File target) {
+  protected void writeMeta(final Map<String, ClassFile> injectables,
+      final File target) {
     X_Log.info("Writing meta to ",target.getAbsoluteFile());
 
-    if (!target.exists())
-      if (!target.mkdirs())
+    if (!target.exists()) {
+      if (!target.mkdirs()) {
         throw new RuntimeException("Unable to create meta info directory for "+target.getAbsolutePath());
+      }
+    }
 
     mainLoop:
-    for (String iface : injectables.keySet()){
-      File metaInf = new File(target, iface);
-      String impl = injectables.get(iface).getName();
+    for (final String iface : injectables.keySet()){
+      final File metaInf = new File(target, iface);
+      final String impl = injectables.get(iface).getName();
       X_Log.debug("Injecting ",iface," -> ",impl);
       try{
         if (metaInf.exists()){
           // when the file exists, we must append to the top of it,
           // but only if it doesn't already contain our target.
-          BufferedReader reader = new BufferedReader(new FileReader(metaInf));
-          ArrayList<String> lines = new ArrayList<String>();
+          final BufferedReader reader = new BufferedReader(new FileReader(metaInf));
+          final ArrayList<String> lines = new ArrayList<String>();
           try {
             String line;
             while((line = reader.readLine()) != null){
@@ -318,12 +325,12 @@ public class RuntimeInjector implements ReceivesValue<String> {
           }finally {
             reader.close();
           }
-          BufferedWriter writer = new BufferedWriter(new FileWriter(metaInf));
+          final BufferedWriter writer = new BufferedWriter(new FileWriter(metaInf));
           try {
 
           writer.append(impl);
           writer.append("\n");
-          for (String line : lines){
+          for (final String line : lines){
             writer.append(line);
             writer.append("\n");
           }
@@ -332,10 +339,11 @@ public class RuntimeInjector implements ReceivesValue<String> {
             writer.close();
           }
         }else{
-          if (!metaInf.createNewFile())
+          if (!metaInf.createNewFile()) {
             throw new RuntimeException("Unable to create meta info for "+metaInf.getAbsolutePath()+".  " +
                 "Please ensure java has write permissions for "+metaInf.getParent());
-          FileWriter writer = new FileWriter(metaInf);
+          }
+          final FileWriter writer = new FileWriter(metaInf);
           try {
             writer.append(impl);
             writer.flush();
@@ -343,7 +351,7 @@ public class RuntimeInjector implements ReceivesValue<String> {
             writer.close();
           }
         }
-      }catch(Exception e){
+      }catch(final Exception e){
         throw new RuntimeException("Unable to create meta info for "+metaInf.getAbsolutePath(), e);
       }
     }

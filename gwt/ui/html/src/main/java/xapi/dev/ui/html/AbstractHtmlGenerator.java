@@ -38,6 +38,8 @@ import xapi.ui.html.api.El;
 import xapi.ui.html.api.Html;
 import xapi.ui.html.api.HtmlTemplate;
 import xapi.ui.html.api.Style;
+import xapi.util.X_String;
+import xapi.util.api.ApplyMethod;
 import xapi.util.api.ConvertsValue;
 import xapi.util.impl.LazyProvider;
 
@@ -276,13 +278,18 @@ public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> im
     }
   }
 
-  protected static void fillStyles(final Appendable immediateStyle,
-      final Appendable sheetStyle, final Style ... styles) throws IOException {
+  protected static int fillStyles(final Appendable immediateStyle,
+                                  final Appendable sheetStyle, final Appendable extraStyle, final Style... styles) throws IOException {
+    int priority = Integer.MAX_VALUE;
     for (final Style style : styles) {
+      priority = Math.min(priority, style.priority());
       final String[] names = style.names();
       if (names.length == 0) {
         if (immediateStyle != null) {
-          appendTo(immediateStyle, style);
+          String extra = appendTo(immediateStyle, style);
+          if (X_String.isNotEmpty(extra)) {
+            extraStyle.append(extra).append("\n");
+          }
         }
       } else if (sheetStyle != null){
         for (int i = 0, m = names.length; i < m; i++) {
@@ -292,10 +299,14 @@ public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> im
           sheetStyle.append(names[i]);
         }
         sheetStyle.append("{\n");
-        appendTo(sheetStyle, style);
+        String extra = appendTo(sheetStyle, style);
         sheetStyle.append("\n}\n");
+        if (X_String.isNotEmpty(extra)) {
+          extraStyle.append(extra).append("\n");
+        }
       }
     }
+    return priority;
   }
 
   protected static <Ctx> Ctx findExisting(final UnifyAstView ast, final CreatesContextObject<Ctx> creator, final String pkgName, String name) {

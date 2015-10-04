@@ -23,6 +23,19 @@ public @interface WebComponent {
   };
 
   /**
+   * @return An arbitrary string of HTML to put in the shadow root
+   */
+  String shadowDom() default "";
+
+  /**
+   * @return an array of locations of template files to load as resources.
+   *
+   * The files referenced must be on the classpath,
+   * with relative uris loaded from the package of the class this annotation is applied to.
+   */
+  String[] shadowDomTemplates() default {};
+
+  /**
    * The tagName of the WebComponent to use.
    */
   String tagName();

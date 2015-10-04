@@ -141,22 +141,22 @@ public class Assert {
   /**
    * Asserts that two object arrays are equal. If they are not, an
    * {@link AssertionError} is thrown with the given message. If
-   * <code>expecteds</code> and <code>actuals</code> are <code>null</code>,
+   * <code>expected</code> and <code>actual</code> are <code>null</code>,
    * they are considered equal.
    *
    * @param message
    *            the identifying message for the {@link AssertionError} (<code>null</code>
    *            okay)
-   * @param expecteds
+   * @param expected
    *            Object array or array of arrays (multi-dimensional array) with
    *            expected values.
-   * @param actuals
+   * @param actual
    *            Object array or array of arrays (multi-dimensional array) with
    *            actual values
    */
-  public static void assertArrayEquals(String message, Object[] expecteds,
-      Object[] actuals) throws AssertionError {
-    internalArrayEquals(message, expecteds, actuals);
+  public static void assertArrayEquals(String message, Object[] expected,
+      Object[] actual) throws AssertionError {
+    internalArrayEquals(message, expected, actual);
   }
 
   /**
@@ -165,15 +165,15 @@ public class Assert {
    * <code>actual</code> are <code>null</code>, they are considered
    * equal.
    *
-   * @param expecteds
+   * @param expected
    *            Object array or array of arrays (multi-dimensional array) with
    *            expected values
-   * @param actuals
+   * @param actual
    *            Object array or array of arrays (multi-dimensional array) with
    *            actual values
    */
-  public static void assertArrayEquals(Object[] expecteds, Object[] actuals) {
-    assertArrayEquals(null, expecteds, actuals);
+  public static void assertArrayEquals(Object[] expected, Object[] actual) {
+    assertArrayEquals(null, expected, actual);
   }
 
   /**
@@ -183,9 +183,9 @@ public class Assert {
    * @param message
    *            the identifying message for the {@link AssertionError} (<code>null</code>
    *            okay)
-   * @param expecteds
+   * @param expected
    *            byte array with expected values.
-   * @param actuals
+   * @param actual
    *            byte array with actual values
    */
   public static void assertArrayEquals(String message, byte[] expected,
@@ -205,13 +205,13 @@ public class Assert {
    * Asserts that two byte arrays are equal. If they are not, an
    * {@link AssertionError} is thrown.
    *
-   * @param expecteds
+   * @param expected
    *            byte array with expected values.
-   * @param actuals
+   * @param actual
    *            byte array with actual values
    */
-  public static void assertArrayEquals(byte[] expecteds, byte[] actuals) {
-    assertArrayEquals(null, expecteds, actuals);
+  public static void assertArrayEquals(byte[] expected, byte[] actual) {
+    assertArrayEquals(null, expected, actual);
   }
 
   /**
@@ -221,9 +221,9 @@ public class Assert {
    * @param message
    *            the identifying message for the {@link AssertionError} (<code>null</code>
    *            okay)
-   * @param expecteds
+   * @param expected
    *            char array with expected values.
-   * @param actuals
+   * @param actual
    *            char array with actual values
    */
   public static void assertArrayEquals(String message, char[] expected,
@@ -243,13 +243,13 @@ public class Assert {
    * Asserts that two char arrays are equal. If they are not, an
    * {@link AssertionError} is thrown.
    *
-   * @param expecteds
+   * @param expected
    *            char array with expected values.
-   * @param actuals
+   * @param actual
    *            char array with actual values
    */
-  public static void assertArrayEquals(char[] expecteds, char[] actuals) {
-    assertArrayEquals(null, expecteds, actuals);
+  public static void assertArrayEquals(char[] expected, char[] actual) {
+    assertArrayEquals(null, expected, actual);
   }
 
   /**
@@ -259,9 +259,9 @@ public class Assert {
    * @param message
    *            the identifying message for the {@link AssertionError} (<code>null</code>
    *            okay)
-   * @param expecteds
+   * @param expected
    *            short array with expected values.
-   * @param actuals
+   * @param actual
    *            short array with actual values
    */
   public static void assertArrayEquals(String message, short[] expected,
@@ -281,13 +281,13 @@ public class Assert {
    * Asserts that two short arrays are equal. If they are not, an
    * {@link AssertionError} is thrown.
    *
-   * @param expecteds
+   * @param expected
    *            short array with expected values.
-   * @param actuals
+   * @param actual
    *            short array with actual values
    */
-  public static void assertArrayEquals(short[] expecteds, short[] actuals) {
-    assertArrayEquals(null, expecteds, actuals);
+  public static void assertArrayEquals(short[] expected, short[] actual) {
+    assertArrayEquals(null, expected, actual);
   }
 
   /**
@@ -297,9 +297,9 @@ public class Assert {
    * @param message
    *            the identifying message for the {@link AssertionError} (<code>null</code>
    *            okay)
-   * @param expecteds
+   * @param expected
    *            int array with expected values.
-   * @param actuals
+   * @param actual
    *            int array with actual values
    */
   public static void assertArrayEquals(String message, int[] expected,
@@ -319,13 +319,13 @@ public class Assert {
    * Asserts that two int arrays are equal. If they are not, an
    * {@link AssertionError} is thrown.
    *
-   * @param expecteds
+   * @param expected
    *            int array with expected values.
-   * @param actuals
+   * @param actual
    *            int array with actual values
    */
-  public static void assertArrayEquals(int[] expecteds, int[] actuals) {
-    assertArrayEquals(null, expecteds, actuals);
+  public static void assertArrayEquals(int[] expected, int[] actual) {
+    assertArrayEquals(null, expected, actual);
   }
 
   /**
@@ -335,9 +335,9 @@ public class Assert {
    * @param message
    *            the identifying message for the {@link AssertionError} (<code>null</code>
    *            okay)
-   * @param expecteds
+   * @param expected
    *            long array with expected values.
-   * @param actuals
+   * @param actual
    *            long array with actual values
    */
   public static void assertArrayEquals(String message, long[] expected,
@@ -357,26 +357,26 @@ public class Assert {
    * Asserts that two long arrays are equal. If they are not, an
    * {@link AssertionError} is thrown.
    *
-   * @param expecteds
+   * @param expected
    *            long array with expected values.
-   * @param actuals
+   * @param actual
    *            long array with actual values
    */
-  public static void assertArrayEquals(long[] expecteds, long[] actuals) {
-    assertArrayEquals(null, expecteds, actuals);
+  public static void assertArrayEquals(long[] expected, long[] actual) {
+    assertArrayEquals(null, expected, actual);
   }
 
   /**
    * Asserts that two double arrays are equal. If they are not, an
    * {@link AssertionError} is thrown.
    *
-   * @param expecteds
+   * @param expected
    *            double array with expected values.
-   * @param actuals
+   * @param actual
    *            double array with actual values
    */
-  public static void assertArrayEquals(double[] expecteds, double[] actuals) {
-    assertArrayEquals(null, expecteds, actuals);
+  public static void assertArrayEquals(double[] expected, double[] actual) {
+    assertArrayEquals(null, expected, actual);
   }
 
   /**
@@ -384,9 +384,9 @@ public class Assert {
    * {@link AssertionError} is thrown.
    * @param message
    *        debug message
-   * @param expecteds
+   * @param expected
    *            double array with expected values.
-   * @param actuals
+   * @param actual
    *            double array with actual values
    */
   public static void assertArrayEquals(String message, double[] expected, double[] actual) {
@@ -406,13 +406,13 @@ public class Assert {
    * Asserts that two float arrays are equal. If they are not, an
    * {@link AssertionError} is thrown.
    *
-   * @param expecteds
+   * @param expected
    *            float array with expected values.
-   * @param actuals
+   * @param actual
    *            float array with actual values
    */
-  public static void assertArrayEquals(float[] expecteds, float[] actuals) {
-    assertArrayEquals(null, expecteds, actuals);
+  public static void assertArrayEquals(float[] expected, float[] actual) {
+    assertArrayEquals(null, expected, actual);
   }
 
   /**
@@ -420,9 +420,9 @@ public class Assert {
    * {@link AssertionError} is thrown.
    * @param message
    *            debug message
-   * @param expecteds
+   * @param expected
    *            float array with expected values.
-   * @param actuals
+   * @param actual
    *            float array with actual values
    */
   public static void assertArrayEquals(String message, float[] expected, float[] actual) {
@@ -441,16 +441,16 @@ public class Assert {
   /**
    * Asserts that two object arrays are equal. If they are not, an
    * {@link AssertionError} is thrown with the given message. If
-   * <code>expecteds</code> and <code>actuals</code> are <code>null</code>,
+   * <code>expected</code> and <code>actual</code> are <code>null</code>,
    * they are considered equal.
    *
    * @param message
    *            the identifying message for the {@link AssertionError} (<code>null</code>
    *            okay)
-   * @param expecteds
+   * @param expected
    *            Object array or array of arrays (multi-dimensional array) with
    *            expected values.
-   * @param actuals
+   * @param actual
    *            Object array or array of arrays (multi-dimensional array) with
    *            actual values
    */
@@ -715,15 +715,15 @@ public class Assert {
     String formatted= "";
     if (message != null && !message.equals(""))
       formatted= message + " ";
-    String expectedString= String.valueOf(expected);
-    String actualString= String.valueOf(actual);
-    if (expectedString.equals(actualString))
+    String expectedtring= String.valueOf(expected);
+    String actualtring= String.valueOf(actual);
+    if (expectedtring.equals(actualtring))
       return formatted + "expected: "
-          + formatClassAndValue(expected, expectedString)
-          + " but was: " + formatClassAndValue(actual, actualString);
+          + formatClassAndValue(expected, expectedtring)
+          + " but was: " + formatClassAndValue(actual, actualtring);
     else
-      return formatted + "expected:<" + expectedString + "> but was:<"
-          + actualString + ">";
+      return formatted + "expected:<" + expectedtring + "> but was:<"
+          + actualtring + ">";
   }
 
   private static String formatClassAndValue(Object value, String valueString) {
@@ -734,24 +734,24 @@ public class Assert {
   /**
    * Asserts that two object arrays are equal. If they are not, an
    * {@link AssertionError} is thrown with the given message. If
-   * <code>expecteds</code> and <code>actuals</code> are <code>null</code>,
+   * <code>expected</code> and <code>actual</code> are <code>null</code>,
    * they are considered equal.
    *
    * @param message
    *            the identifying message for the {@link AssertionError} (<code>null</code>
    *            okay)
-   * @param expecteds
+   * @param expected
    *            Object array or array of arrays (multi-dimensional array) with
    *            expected values.
-   * @param actuals
+   * @param actual
    *            Object array or array of arrays (multi-dimensional array) with
    *            actual values
    * @deprecated use assertArrayEquals
    */
   @Deprecated
-  public static void assertEquals(String message, Object[] expecteds,
-      Object[] actuals) {
-    assertArrayEquals(message, expecteds, actuals);
+  public static void assertEquals(String message, Object[] expected,
+      Object[] actual) {
+    assertArrayEquals(message, expected, actual);
   }
 
   /**
@@ -760,17 +760,17 @@ public class Assert {
    * <code>actual</code> are <code>null</code>, they are considered
    * equal.
    *
-   * @param expecteds
+   * @param expected
    *            Object array or array of arrays (multi-dimensional array) with
    *            expected values
-   * @param actuals
+   * @param actual
    *            Object array or array of arrays (multi-dimensional array) with
    *            actual values
    * @deprecated use assertArrayEquals
    */
   @Deprecated
-  public static void assertEquals(Object[] expecteds, Object[] actuals) {
-    assertArrayEquals(expecteds, actuals);
+  public static void assertEquals(Object[] expected, Object[] actual) {
+    assertArrayEquals(expected, actual);
   }
 
   /**
@@ -792,7 +792,7 @@ public class Assert {
    * @param actual
    *            the computed value being compared
    * @param matcher
-   *            an expression, built of {@link Matcher}s, specifying allowed
+   *            an expression, built of {@link org.hamcrest.Matcher}s, specifying allowed
    *            values
    *
    * @see org.hamcrest.CoreMatchers
@@ -825,7 +825,7 @@ public class Assert {
    * @param actual
    *            the computed value being compared
    * @param matcher
-   *            an expression, built of {@link Matcher}s, specifying allowed
+   *            an expression, built of {@link org.hamcrest.Matcher}s, specifying allowed
    *            values
    *
    * @see org.hamcrest.CoreMatchers

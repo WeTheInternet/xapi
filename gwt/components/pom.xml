@@ -24,6 +24,11 @@
 			<artifactId>xapi-core-ui-html</artifactId>
 		</dependency>
 
+        <dependency>
+            <groupId>net.wetheinter</groupId>
+            <artifactId>xapi-jre-io</artifactId>
+        </dependency>
+
 		<dependency>
 			<groupId>${gwt.groupId}</groupId>
 			<artifactId>gwt-elemental</artifactId>

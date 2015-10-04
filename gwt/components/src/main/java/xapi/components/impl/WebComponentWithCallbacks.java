@@ -5,45 +5,46 @@ package xapi.components.impl;
 
 import static xapi.components.impl.JsFunctionSupport.mergeConsumer;
 
-import java.util.function.Consumer;
-
 import com.google.gwt.core.client.js.JsProperty;
+import com.google.gwt.core.client.js.JsType;
 
-import elemental.dom.Element;
+import java.util.function.Consumer;
 
 import xapi.components.api.IsWebComponent;
 import xapi.components.api.OnWebComponentCreated;
+import elemental.dom.Element;
 
 /**
  * @author "James X. Nelson (james@wetheinter.net)"
  *
  */
+@JsType
 public interface WebComponentWithCallbacks <E extends Element> extends
 IsWebComponent<E>,
 OnWebComponentCreated<E>{
 
   @Override
-  default void onCreated(Element element) {
-    Consumer<Element> callback = afterCreated();
+  default void onCreated(final Element element) {
+    final Consumer<Element> callback = getAfterCreated();
     if (callback != null) {
       callback.accept(element);
     }
   }
 
   @JsProperty
-  Consumer<Element> afterCreated();
+  Consumer<Element> getAfterCreated();
 
   @JsProperty
-  void afterCreated(Consumer<Element> callback);
+  void setAfterCreated(Consumer<Element> callback);
 
-  default void onAfterCreated(Consumer<Element> callback, boolean prepend) {
-    Consumer<Element> existing = afterCreated();
+  default void onAfterCreated(final Consumer<Element> callback, final boolean prepend) {
+    final Consumer<Element> existing = getAfterCreated();
     if (existing == null) {
-      afterCreated(callback);
+      setAfterCreated(callback);
     } else if (prepend){
-      afterCreated(mergeConsumer(callback, existing));
+      setAfterCreated(mergeConsumer(callback, existing));
     } else {
-      afterCreated(mergeConsumer(existing, callback));
+      setAfterCreated(mergeConsumer(existing, callback));
     }
   }
 

@@ -14,6 +14,8 @@ import xapi.log.X_Log;
 import xapi.model.X_Model;
 import xapi.model.api.Model;
 import xapi.model.api.ModelKey;
+import xapi.model.api.ModelQuery;
+import xapi.model.api.ModelQueryResult;
 import xapi.model.api.ModelSerializer;
 import xapi.model.api.PrimitiveSerializer;
 import xapi.model.impl.AbstractModelService;
@@ -125,10 +127,68 @@ public class ModelServiceGwt extends AbstractModelService
     final String kind = modelKey.getKind();
     final String id = primitives.serializeInt(modelKey.getKeyType()) + modelKey.getId();
     final String serialized = "/" + ns + "/"+kind+"/"+id;
-    X_IO.getIOService().get(url+""+serialized, headers, new DelegatingIOCallback<>(resp -> {
+    X_IO.getIOService().get(url+serialized, headers, new DelegatingIOCallback<>(resp -> {
       X_Log.error("Got response! "+resp.body());
       final M deserialized = deserialize(type, new StringCharIterator(resp.body()));
       callback.onSuccess(deserialized);
+    }));
+
+  }
+
+  @Override
+  public <M extends Model> void query(final Class<M> modelClass, final ModelQuery<M> query,
+      final SuccessHandler<ModelQueryResult<M>> callback) {
+    final String url = getUrlBase()+"model/query";
+    final String typeName = getTypeName(modelClass);
+    final StringDictionary<String> headers = X_Collect.newDictionary();
+    headers.setValue("X-Model-Type", typeName);
+    final PrimitiveSerializer primitives = primitiveSerializer();
+    String ns = query.getNamespace().length() == 0 ? "" : query.getNamespace();
+    // The namespace might be empty, so we use the serialized form that can transmit "" without
+    // constructing an invalid uri.
+    ns = primitives.serializeString(ns);
+    final String kind = primitives.serializeString(typeName);
+    final String serialized = "/" + ns + "/"+kind+"/"+query.serialize(this, primitives);
+    X_IO.getIOService().get(url+serialized, headers, new DelegatingIOCallback<>(resp -> {
+      X_Log.error("Got response! "+resp.body());
+      final StringCharIterator chars = new StringCharIterator(resp.body());
+      final String cursor = primitives.deserializeString(chars);
+      int numResults = primitives.deserializeInt(chars);
+      final ModelQueryResult<M> result = new ModelQueryResult<>(modelClass);
+      result.setCursor(cursor);
+      while (numResults --> 0) {
+        final M deserialized = deserialize(typeName, chars);
+        result.addModel(deserialized);
+      }
+      callback.onSuccess(result);
+    }));
+
+  }
+
+  @Override
+  public void query(final ModelQuery<Model> query, final SuccessHandler<ModelQueryResult<Model>> callback) {
+    final String url = getUrlBase()+"model/query";
+    final StringDictionary<String> headers = X_Collect.newDictionary();
+    final PrimitiveSerializer primitives = primitiveSerializer();
+    String ns = query.getNamespace().length() == 0 ? "" : query.getNamespace();
+    // The namespace might be empty, so we use the serialized form that can transmit "" without
+    // constructing an invalid uri.
+    ns = primitives.serializeString(ns);
+    final String kind = primitives.serializeString("");
+    final String serialized = "/" + ns + "/" + kind + "/" + query.serialize(this, primitives);
+    X_IO.getIOService().get(url+serialized, headers, new DelegatingIOCallback<>(resp -> {
+      X_Log.error("Got response! "+resp.body());
+      final StringCharIterator chars = new StringCharIterator(resp.body());
+      final String cursor = primitives.deserializeString(chars);
+      int numResults = primitives.deserializeInt(chars);
+      final ModelQueryResult<Model> result = new ModelQueryResult<>(Model.class);
+      result.setCursor(cursor);
+      while (numResults --> 0) {
+        final String typeName = primitives.deserializeString(chars);
+        final Model deserialized = deserialize(typeName, chars);
+        result.addModel(deserialized);
+      }
+      callback.onSuccess(result);
     }));
 
   }
@@ -138,4 +198,9 @@ public class ModelServiceGwt extends AbstractModelService
     return true;
   }
 
+  @Override
+  @SuppressWarnings("unchecked")
+  public <M extends Model> Class<M> typeToClass(final String kind) {
+    return (Class<M>) typeNameToClass.get(kind);
+  }
 }

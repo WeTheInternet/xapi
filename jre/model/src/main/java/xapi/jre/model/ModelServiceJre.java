@@ -8,10 +8,12 @@ import static xapi.util.impl.PairBuilder.entryOf;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -31,6 +33,9 @@ import xapi.model.api.ModelManifest.MethodData;
 import xapi.model.api.ModelMethodType;
 import xapi.model.api.ModelModule;
 import xapi.model.api.ModelNotFoundException;
+import xapi.model.api.ModelQuery;
+import xapi.model.api.ModelQuery.QueryParameter;
+import xapi.model.api.ModelQueryResult;
 import xapi.model.impl.AbstractModel;
 import xapi.model.impl.AbstractModelService;
 import xapi.model.impl.ModelUtil;
@@ -306,14 +311,8 @@ public class ModelServiceJre extends AbstractModelService {
       key = newKey(null, type);
       model.setKey(key);
     }
-    File f;
-    try {
-      f = getFilesystemRoot();
-    } catch (final IOException e) {
-      X_Log.error(getClass(), "Unable to load filesystem root", e);
-      if (callback instanceof ErrorHandler) {
-        ((ErrorHandler) callback).onError(e);
-      }
+    File f = getRoot(callback);
+    if (f == null) {
       return;
     }
     if (key.getNamespace().length() > 0) {
@@ -363,14 +362,8 @@ public class ModelServiceJre extends AbstractModelService {
   @SuppressWarnings("unchecked")
   @Override
   public <M extends Model> void load(final Class<M> modelClass, final ModelKey modelKey, final SuccessHandler<M> callback) {
-    File f;
-    try {
-      f = getFilesystemRoot();
-    } catch (final IOException e) {
-      X_Log.error(getClass(), "Unable to load filesystem root", e);
-      if (callback instanceof ErrorHandler) {
-        ((ErrorHandler) callback).onError(e);
-      }
+    File f = getRoot(callback);
+    if (f == null) {
       return;
     }
     if (modelKey.getNamespace().length() > 0) {
@@ -407,6 +400,163 @@ public class ModelServiceJre extends AbstractModelService {
         }
       });
     }
+  }
+
+  @SuppressWarnings({
+      "unchecked", "rawtypes"
+  })
+  public File getRoot(final SuccessHandler<?> callback) {
+    try {
+      return getFilesystemRoot();
+    } catch (final IOException e) {
+      X_Log.error(getClass(), "Unable to load filesystem root", e);
+      if (callback instanceof ErrorHandler) {
+        ((ErrorHandler) callback).onError(e);
+      }
+      return null;
+    }
+  }
+
+  @Override
+  public <M extends Model> void query(final Class<M> modelClass, final ModelQuery<M> query,
+      final SuccessHandler<ModelQueryResult<M>> callback) {
+    for (final QueryParameter param : query.getParameters()) {
+      throw new UnsupportedOperationException("The basic, file-backed "+getClass().getName()+" does not support any complex queries");
+    }
+    // The only query we will support is a parameterless "get all" query
+
+    File f = getRoot(callback);
+    if (query.getNamespace().length() > 0) {
+      f = new File(f, query.getNamespace());
+    }
+
+    final String typeName = getTypeName(modelClass);
+
+    f = new File(f, typeName);
+
+    File[] allFiles;
+    if (query.getCursor() == null) {
+      // Yes, listing all files is not going to be very performant; however, this implementation is
+      // far too naive to be used for a production system. It is primarily a proof-of-concept that can
+      // be usable for developing APIs against something that is simple to use and debug
+      allFiles = f.listFiles();
+    } else {
+      // If there is a cursor, we are continuing a query.
+      allFiles = f.listFiles(new FilenameFilter() {
+
+        @Override
+        public boolean accept(final File dir, final String name) {
+          return name.compareTo(query.getCursor()) > -1;
+        }
+      });
+    }
+    final int size = Math.min(query.getPageSize(), allFiles.length);
+    final ArrayList<File> files = new ArrayList<File>(size);
+    for (int i = 0; i < size; i++) {
+      files.add(allFiles[i]);
+    }
+    final ModelQueryResult<M> result = new ModelQueryResult<>(modelClass);
+    if (size < allFiles.length) {
+      result.setCursor(allFiles[size].getName());
+    }
+    allFiles = null;
+
+    final ProvidesValue<RemovalHandler> scope = captureScope();
+    X_Time.runLater(new Runnable() {
+
+      @Override
+      public void run() {
+        final RemovalHandler handler = scope.get();
+        String fileResult;
+        try {
+          for (final File file : files) {
+            fileResult = X_IO.toStringUtf8(new FileInputStream(file));
+            final M model = deserialize(modelClass, new StringCharIterator(fileResult));
+            result.addModel(model);
+          }
+          callback.onSuccess(result);
+        } catch (final Exception e) {
+          X_Log.error(getClass(), "Unable to load files for query "+query);
+          if (callback instanceof ErrorHandler) {
+            ((ErrorHandler) callback).onError(new RuntimeException("Unable to load files for query "+query));
+          }
+        } finally {
+          handler.remove();
+        }
+      }
+    });
+  }
+
+  @Override
+  @SuppressWarnings("rawtypes")
+  public void query(final ModelQuery<Model> query, final SuccessHandler<ModelQueryResult<Model>> callback) {
+    for (final QueryParameter param : query.getParameters()) {
+      throw new UnsupportedOperationException("The basic, file-backed "+getClass().getName()+" does not support any complex queries");
+    }
+    // The only query we will support is a parameterless "get all" query
+    // This implementation generally sucks, and only exists for very basic usage.
+    // If a file-backed API is truly desired, one should be implemented using proper
+    // indexing, filtering, sorting, etc. And it should use java.nio.File...
+
+    File f = getRoot(callback);
+    if (query.getNamespace().length() > 0) {
+      f = new File(f, query.getNamespace());
+    }
+
+    final ArrayList<File> files = new ArrayList<File>();
+    final ModelQueryResult<Model> result = new ModelQueryResult<>(null);
+
+    for (final File type : f.listFiles()) {
+      File[] allFiles;
+      if (query.getCursor() == null) {
+        // Yes, listing all files is not going to be very performant; however, this implementation is
+        // far too naive to be used for a production system. It is primarily a proof-of-concept that can
+        // be usable for developing APIs against something that is simple to use and debug
+        allFiles = type.listFiles();
+      } else {
+        // If there is a cursor, we are continuing a query.
+        allFiles = type.listFiles(new FilenameFilter() {
+
+          @Override
+          public boolean accept(final File dir, final String name) {
+            return name.compareTo(query.getCursor()) > -1;
+          }
+        });
+      }
+      for (int i = 0, m = allFiles.length; i < m; i++) {
+        if (files.size() >= query.getLimit()) {
+          result.setCursor(allFiles[i].getName());
+          break;
+        }
+        files.add(allFiles[i]);
+      }
+    }
+
+    final ProvidesValue<RemovalHandler> scope = captureScope();
+    X_Time.runLater(new Runnable() {
+
+      @Override
+      public void run() {
+        final RemovalHandler handler = scope.get();
+        String fileResult;
+        try {
+          for (final File file : files) {
+            fileResult = X_IO.toStringUtf8(new FileInputStream(file));
+            final Class<? extends Model> type = typeNameToClass.get(file.getParent());
+            final Model model = deserialize(type, new StringCharIterator(fileResult));
+            result.addModel(model);
+          }
+          callback.onSuccess(result);
+        } catch (final Exception e) {
+          X_Log.error(getClass(), "Unable to load files for query "+query);
+          if (callback instanceof ErrorHandler) {
+            ((ErrorHandler) callback).onError(new RuntimeException("Unable to load files for query "+query));
+          }
+        } finally {
+          handler.remove();
+        }
+      }
+    });
   }
 
   /**
@@ -488,6 +638,16 @@ public class ModelServiceJre extends AbstractModelService {
       modelManifests.put(cls, manifest);
     }
     return manifest;
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public <M extends Model> Class<M> typeToClass(final String kind) {
+    return (Class<M>) typeNameToClass.get(kind);
+  }
+
+  public ModelModule getModelModule() {
+    return currentModule.get();
   }
 
 }

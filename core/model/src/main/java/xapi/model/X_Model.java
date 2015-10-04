@@ -7,6 +7,8 @@ import xapi.inject.X_Inject;
 import xapi.model.api.Model;
 import xapi.model.api.ModelKey;
 import xapi.model.api.ModelManifest;
+import xapi.model.api.ModelQuery;
+import xapi.model.api.ModelQueryResult;
 import xapi.model.service.ModelCache;
 import xapi.model.service.ModelService;
 import xapi.source.impl.StringCharIterator;
@@ -31,7 +33,7 @@ public class X_Model {
   }
 
   @MagicMethod(doNotVisit=true,
-      documentation="This magic method generates the model class and all of its dependent models")
+      documentation="This magic method generates the model class, and returns the internal table name of the modelClass")
   public static <M extends Model> String register(final Class<M> modelClass) {
     return service.get().register(modelClass);
   }
@@ -84,6 +86,15 @@ public class X_Model {
 
   public static ModelKey newKey(final String namespace, final String kind, final String id) {
     return service.get().newKey(namespace, kind, id);
+  }
+
+  public static <M extends Model> void query(final Class<M> modelClass, final ModelQuery<M> query, final SuccessHandler<ModelQueryResult<M>> callback) {
+    assert modelClass != null : "A typed query -must- supply a modelClass";
+    service.get().query(modelClass, query, callback);
+  }
+
+  public static void queryAll(final ModelQuery<Model> query, final SuccessHandler<ModelQueryResult<Model>> callback) {
+    service.get().query(query, callback);
   }
 
 }

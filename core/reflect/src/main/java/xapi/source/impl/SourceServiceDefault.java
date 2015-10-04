@@ -9,23 +9,28 @@ import xapi.source.service.SourceService;
 @SingletonDefault(implFor=SourceService.class)
 public class SourceServiceDefault implements SourceService  {
 
-  private final TypeMap types = new TypeMap();
+  private final TypeMap types = newTypeMap();
+
+  protected TypeMap newTypeMap() {
+    return new TypeMap();
+  }
 
   @Override
-  public IsClass parseClass(byte[] bytecode) {
+  public IsClass parseClass(final byte[] bytecode) {
     throw new NotYetImplemented("You must inherit wetheinter.net:xapi-jre-reflect for bytecode parsing");
   }
 
   @Override
-  public IsClass parseClass(String source) {
+  public IsClass parseClass(final String source) {
     throw new NotYetImplemented("Source code parser is not yet implemented");
   }
 
   @Override
-  public IsType toType(Class<?> cls) {
-    Class<?> enclosing = cls.getEnclosingClass();
-    if (enclosing == null)
+  public IsType toType(final Class<?> cls) {
+    final Class<?> enclosing = cls.getEnclosingClass();
+    if (enclosing == null) {
       return types.getType(getPackage(cls), cls.getSimpleName());
+    }
     return types.getType(toType(enclosing), cls.getSimpleName());
   }
 
@@ -35,15 +40,16 @@ public class SourceServiceDefault implements SourceService  {
    * @param cls - The class to get the package name of
    * @return - cls.getPackage().getName() -> Works for all platforms but gwt dev.
    */
-  protected String getPackage(Class<?> cls) {
+  protected String getPackage(final Class<?> cls) {
     return cls.getPackage().getName();
   }
 
   @Override
-  public IsType toType(String pkg, String enclosedName) {
+  public IsType toType(final String pkg, String enclosedName) {
     int ind = enclosedName.indexOf('.');
-    if (ind == -1)
+    if (ind == -1) {
       return types.getType(pkg, enclosedName);
+    }
     IsType type = types.getType(pkg, enclosedName.substring(0, ind));
     while (true) {
       // eat the previous type
