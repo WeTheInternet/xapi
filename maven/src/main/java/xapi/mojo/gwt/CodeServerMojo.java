@@ -1,17 +1,5 @@
 package xapi.mojo.gwt;
 
-import java.io.File;
-import java.io.FileFilter;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.Map;
-
-import javax.swing.SwingUtilities;
-
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.DefaultArtifact;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
@@ -33,7 +21,6 @@ import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.codehaus.plexus.util.xml.Xpp3DomBuilder;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.eclipse.aether.resolution.ArtifactResult;
-
 import xapi.dev.gwt.gui.CodeServerGui;
 import xapi.inject.impl.SingletonProvider;
 import xapi.log.X_Log;
@@ -46,6 +33,17 @@ import xapi.util.api.Pair;
 import xapi.util.impl.PairBuilder;
 
 import com.google.gwt.core.shared.GWT;
+
+import javax.swing.*;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.Map;
 
 /**
  * Goal which launches a gui which runs the gwt 2.5 codeserver from maven
@@ -109,6 +107,15 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
   @Parameter(property="xapi.include.test", defaultValue="false")
   private Boolean includeTestSource;
 
+  @Parameter(property = "gwt.js.interop", defaultValue = "JS")
+  private String jsInteropMode;
+
+  @Parameter(property = "gwt.log.level", defaultValue = "INFO")
+  private String logLevel;
+
+  public String getLogLevel() {
+    return logLevel;
+  }
 
   private Log log;
   @SuppressWarnings("rawtypes")
@@ -154,7 +161,7 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
 //      version = GWT.getVersion();
 //      if (version != null)
 //        return version;
-      return superGuess("com.google.gwt", "2.6.1");
+      return superGuess("com.google.gwt", "2.7.0");
     };
   };
 
@@ -267,7 +274,6 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
         try {
           if (isUseTestSources()) {
             for (Object o : project.getTestClasspathElements()) {
-              getLog().info(o.toString());
               File f = new File(String.valueOf(o));
               if (f.exists()) {
                 if (f.isDirectory()) {
@@ -280,15 +286,16 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
                 X_Log.warn(getClass(), "Test classpath element does not exist",f,"from "+o);
               }
             }
-          }
-          for (Object o : project.getCompileClasspathElements()) {
-            File f = new File(String.valueOf(o));
-            if (f.exists()) {
-              if (f.isDirectory()) {
-                // directories are to be handled differently
-                addToClasspath(f);
-              } else {
-                addSource(f);
+          } else {
+            for (Object o : project.getCompileClasspathElements()) {
+              File f = new File(String.valueOf(o));
+              if (f.exists()) {
+                if (f.isDirectory()) {
+                  // directories are to be handled differently
+                  addToClasspath(f);
+                } else {
+                  addSource(f);
+                }
               }
             }
           }
@@ -315,7 +322,7 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
             // Missing gwt-user means we're probably missing org.json and validation apis...
           }
           if (autoCompile) {
-            launchServer(includeTestSource);
+            launchServer(includeTestSource, jsInteropMode, logLevel);
           }
         }
         });
@@ -380,15 +387,15 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
     protected Collection<String> findModules(File f) throws FileNotFoundException,
     XmlPullParserException, IOException {
       ArrayList<String> list = new ArrayList<String>();
-      findModules(f, list);
+      findModules(f, f, list);
       return list;
     }
 
-    private void findModules(File f, Collection<String> into) throws FileNotFoundException,
+    private void findModules(File rootFile, File f, Collection<String> into) throws FileNotFoundException,
       XmlPullParserException, IOException {
       if (f.isDirectory()) {
         for (File child : f.listFiles(gwt_xml_filter)) {
-          findModules(child, into);
+          findModules(rootFile, child, into);
         }
       } else if (f.getName().endsWith(".gwt.xml")) {
         getLog().debug("Checking for entry points in " + f);
@@ -398,9 +405,11 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
         for (Xpp3Dom entry : dom.getChildren("entry-point")) {
           String attr = entry.getAttribute("class");
           if (null != attr && attr.length() > 0) {
-            into.add(attr.substring(0,
-                attr.lastIndexOf('.', attr.lastIndexOf('.') - 1))
-                + "." + f.getName().replace(".gwt.xml", ""));
+//            into.add(attr.substring(0,
+//                attr.lastIndexOf('.', attr.lastIndexOf('.') - 1))
+//                + "." + f.getName().replace(".gwt.xml", ""));
+            String mod = f.getAbsolutePath().substring(rootFile.getAbsolutePath().length()+1);
+            into.add(mod.replace('/', '.').replace(".gwt.xml", ""));
           }
         }
       }

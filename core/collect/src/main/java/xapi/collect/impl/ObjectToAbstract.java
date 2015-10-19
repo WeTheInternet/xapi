@@ -1,18 +1,18 @@
 package xapi.collect.impl;
 
+import xapi.collect.api.CollectionOptions;
+import xapi.collect.api.IntTo;
+import xapi.collect.api.ObjectTo;
+import xapi.collect.proxy.CollectionProxy;
+import xapi.util.api.ConvertsValue;
+
+import javax.inject.Provider;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import javax.inject.Provider;
-
-import xapi.collect.api.CollectionOptions;
-import xapi.collect.api.IntTo;
-import xapi.collect.api.ObjectTo;
-import xapi.collect.proxy.CollectionProxy;
 
 public abstract class ObjectToAbstract<K,V> implements ObjectTo<K,V> {
   public static abstract class ManyAbstract<K,V> extends ObjectToAbstract<K,IntTo<V>> implements ObjectTo.Many<K,V> {
@@ -27,6 +27,16 @@ public abstract class ObjectToAbstract<K,V> implements ObjectTo<K,V> {
       super(keyType, Class.class.cast(IntTo.class),// ya, that's what java generics require...
         store, iteratorProvider, keyComparator, valueComparator);
       this.componentType = valueType;
+    }
+
+    @Override
+    public IntTo<V> getOrCompute(K key, ConvertsValue<K, IntTo<V>> factory) {
+      IntTo<V> existing = get(key);
+      if (existing == null) {
+        existing = factory.convert(key);
+        put(key, existing);
+      }
+      return existing;
     }
 
     @Override
@@ -86,7 +96,7 @@ public abstract class ObjectToAbstract<K,V> implements ObjectTo<K,V> {
   }
   /**
    * @return - The class of the root component type of values.
-   * Where {@link ObjectTo.Many#getValueType()} returns IntTo<V>.class,
+   * Where {@link ObjectTo.Many#valueType()} returns IntTo<V>.class,
    * getComponentType() will return V.class
    */
   @Override

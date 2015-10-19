@@ -1,127 +1,129 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<parent>
-		<groupId>net.wetheinter</groupId>
-		<artifactId>xapi-gwt-parent</artifactId>
-		<version>0.6-SNAPSHOT</version>
-	</parent>
-	<artifactId>xapi-elemental</artifactId>
-	<packaging>jar</packaging>
-	<name>XApi - Elemental Implementations</name>
-	<url>WeTheInter.net</url>
-	<description>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-gwt-parent</artifactId>
+    <version>0.6-SNAPSHOT</version>
+  </parent>
+  <artifactId>xapi-elemental</artifactId>
+  <packaging>jar</packaging>
+  <name>XApi - Elemental Implementations</name>
+  <url>WeTheInter.net</url>
+  <description>
     An advanced elemental-based auto-generating template / widget framework
   </description>
-  
+
   <properties>
-   <java.version>1.8</java.version>
+    <java.version>1.8</java.version>
   </properties>
 
-	<dependencies>
-		<dependency>
-			<groupId>net.wetheinter</groupId>
-			<artifactId>xapi-gwt-ui-html</artifactId>
-		</dependency>
+  <dependencies>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-gwt-ui-html</artifactId>
+    </dependency>
 
-		<dependency>
-			<groupId>${gwt.groupId}</groupId>
-			<artifactId>gwt-elemental</artifactId>
-		</dependency>
+    <dependency>
+      <groupId>${gwt.groupId}</groupId>
+      <artifactId>gwt-elemental</artifactId>
+    </dependency>
 
-		<dependency>
-			<groupId>${gwt.groupId}</groupId>
-			<artifactId>gwt-dev</artifactId>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>${gwt.groupId}</groupId>
-			<artifactId>gwt-user</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<scope>test</scope>
-		</dependency>
-	</dependencies>
+    <dependency>
+      <groupId>${gwt.groupId}</groupId>
+      <artifactId>gwt-dev</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>${gwt.groupId}</groupId>
+      <artifactId>gwt-user</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
 
-	<profiles>
+  <profiles>
 
-  <profile>
-    <id>jdk7</id>
-    <activation>
-      <jdk>!1.8</jdk>
-    </activation>
-    <properties>
-      <gwt.version>2.7.0</gwt.version>
-    </properties>
-  </profile>
-		<profile>
-		  <id>launch</id>
-			<activation>
-			 <property>
-			   <name>launch</name>
-			 </property>
-			</activation>
+    <profile>
+      <id>jdk7</id>
+      <activation>
+        <jdk>!1.8</jdk>
+      </activation>
+      <properties>
+        <gwt.version>2.7.0</gwt.version>
+      </properties>
+    </profile>
+    <profile>
+      <id>launch</id>
+      <activation>
+        <property>
+          <name>launch</name>
+        </property>
+      </activation>
 
-			<build>
-				<plugins>
-					<plugin>
-						<groupId>net.wetheinter</groupId>
-						<artifactId>xapi-maven-plugin</artifactId>
-						<executions>
-						  <execution>
-            <id>launch</id>
-            <phase>test</phase>
-            <goals>
-              <goal>codeserver</goal>
-            </goals>
-            <inherited>false</inherited>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>net.wetheinter</groupId>
+            <artifactId>xapi-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>launch</id>
+                <phase>test</phase>
+                <goals>
+                  <goal>codeserver</goal>
+                </goals>
+                <inherited>false</inherited>
+                <configuration>
+                  <includeTestSource>true</includeTestSource>
+                  <!-- 	<debugPort>7311</debugPort> -->
+                  <debugDelay>${debug.delay}</debugDelay>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+      <properties>
+        <debug.delay>0</debug.delay>
+        <xapi.log.level>TRACE</xapi.log.level>
+      </properties>
+    </profile>
+    <profile>
+      <id>test</id>
+      <activation>
+        <property>
+          <name>xapi.test</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-surefire-plugin</artifactId>
             <configuration>
-							<includeTestSource>true</includeTestSource>
-						<!-- 	<debugPort>7311</debugPort> -->
-							<debugDelay>${debug.delay}</debugDelay>
+              <additionalClasspathElements>
+                <additionalClasspathElement>${project.build.sourceDirectory}</additionalClasspathElement>
+                <additionalClasspathElement>${project.build.testSourceDirectory}</additionalClasspathElement>
+              </additionalClasspathElements>
+              <useManifestOnlyJar>false</useManifestOnlyJar>
+              <forkMode>always</forkMode>
+              <systemProperties>
+                <property>
+                  <name>gwt.args</name>
+                  <value>-ea -userAgents gecko1_8 -out
+                    ${project.build.directory}/www-test
+                  </value>
+                </property>
+              </systemProperties>
             </configuration>
-          </execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-			<properties>
-			 <debug.delay>0</debug.delay>
-			 <xapi.log.level>TRACE</xapi.log.level>
-			</properties>
-		</profile>
-		<profile>
-		  <id>test</id>
-			<activation>
-				<property>
-					<name>xapi.test</name>
-				</property>
-			</activation>
-			<build>
-				<plugins>
-					<plugin>
-						<artifactId>maven-surefire-plugin</artifactId>
-						<configuration>
-							<additionalClasspathElements>
-								<additionalClasspathElement>${project.build.sourceDirectory}</additionalClasspathElement>
-								<additionalClasspathElement>${project.build.testSourceDirectory}</additionalClasspathElement>
-							</additionalClasspathElements>
-							<useManifestOnlyJar>false</useManifestOnlyJar>
-							<forkMode>always</forkMode>
-							<systemProperties>
-								<property>
-									<name>gwt.args</name>
-									<value>-ea -userAgents gecko1_8 -out
-										${project.build.directory}/www-test</value>
-								</property>
-							</systemProperties>
-						</configuration>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-	</profiles>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
 </project>

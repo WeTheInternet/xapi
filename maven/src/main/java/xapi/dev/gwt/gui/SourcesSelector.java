@@ -1,28 +1,16 @@
 package xapi.dev.gwt.gui;
 
-import java.awt.BorderLayout;
-import java.awt.Component;
-import java.awt.GridLayout;
-import java.awt.Label;
+import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.filechooser.FileFilter;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.Set;
-
-import javax.swing.AbstractAction;
-import javax.swing.DefaultListCellRenderer;
-import javax.swing.DefaultListModel;
-import javax.swing.JButton;
-import javax.swing.JFileChooser;
-import javax.swing.JList;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JSplitPane;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.filechooser.FileFilter;
 
 @SuppressWarnings("all")
 public class SourcesSelector extends JPanel{
@@ -207,7 +195,7 @@ public class SourcesSelector extends JPanel{
     int size = dir.getSize();
     StringBuilder b = new StringBuilder();
     String prefix = "";
-    for(int i = -1;++i < size;){
+    for(int i = 0;i < size; i++){
       File item = (File)dir.get(i);
       if (!includeTestSource){
         if (testSources.contains(item))

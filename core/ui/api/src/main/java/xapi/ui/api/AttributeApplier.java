@@ -1,4 +1,4 @@
-package xapi.elemental.api;
+package xapi.ui.api;
 
 public interface AttributeApplier {
 

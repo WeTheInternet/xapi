@@ -1,16 +1,17 @@
 package xapi.collect.proxy;
 
+import xapi.collect.X_Collect;
+import xapi.collect.api.CollectionOptions;
+import xapi.collect.api.HasValues;
+import xapi.collect.api.ObjectTo;
+import xapi.util.api.ConvertsValue;
+
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
-
-import xapi.collect.X_Collect;
-import xapi.collect.api.CollectionOptions;
-import xapi.collect.api.HasValues;
-import xapi.collect.api.ObjectTo;
 
 public class MapOf <K, V>
 implements CollectionProxy<K,V>, Map<K,V>, HasValues<K,V>, ObjectTo<K,V>
@@ -202,6 +203,16 @@ implements CollectionProxy<K,V>, Map<K,V>, HasValues<K,V>, ObjectTo<K,V>
   @Override
   public Class<V> valueType() {
     return valueClass;
+  }
+
+  @Override
+  public V getOrCompute(K key, ConvertsValue<K, V> factory) {
+    V existing = get(key);
+    if (existing == null) {
+      existing = factory.convert(key);
+      put(key, existing);
+    }
+    return existing;
   }
 
 }

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE module PUBLIC "-//Google Inc.//DTD Google Web Toolkit 2.7.0//EN"
+    "http://gwtproject.org/doctype/2.7.0/gwt-module.dtd">
+<module>
+
+  <source path="gwt/junit" excludes="dev, server"/>
+
+  <inherits name="xapi.X_Elemental"/>
+  <inherits name="org.junit.JUnit4"/>
+<!--  Experimental: full junit emulation.  It is surprisingly less work than one might expect.
+ <inherits name="junit"/>
+-->
+  <inherits name="elemental.Elemental"/>
+  <inherits name="com.google.gwt.core.Core"/>
+  <inherits name="com.google.gwt.reflect.Reflect"/>
+
+  <!-- Tell the generator not to bail on missing references, so we can test miss member exceptions  -->
+  <set-configuration-property name="gwt.reflect.never.fail" value="true"/>
+
+  <define-configuration-property name="gwt.test.wholeWorld" is-multi-valued="false"/>
+  <set-configuration-property name="gwt.test.wholeWorld" value="wholeWorld"/>
+
+  <!--
+  Re-enable this if test cases start to hang :-/
+  <script src="forceload.js" />
+  -->
+  <servlet class="xapi.server.DebugServlet" path="/debug"/>
+</module>

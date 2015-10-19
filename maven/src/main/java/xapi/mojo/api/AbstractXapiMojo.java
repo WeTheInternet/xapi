@@ -1,18 +1,6 @@
 package xapi.mojo.api;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import javax.annotation.Generated;
-import javax.inject.Provider;
-import javax.tools.JavaCompiler;
-import javax.tools.ToolProvider;
-
+import com.google.common.base.Preconditions;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.plugin.AbstractMojo;
@@ -30,10 +18,10 @@ import org.apache.maven.project.ProjectBuildingResult;
 import org.codehaus.plexus.component.repository.ComponentDependency;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.repository.WorkspaceReader;
-
 import xapi.dev.X_Dev;
 import xapi.inject.impl.SingletonProvider;
 import xapi.log.X_Log;
+import xapi.log.api.LogLevel;
 import xapi.mojo.gwt.MavenServiceMojo;
 import xapi.mvn.X_Maven;
 import xapi.time.X_Time;
@@ -42,7 +30,17 @@ import xapi.util.X_GC;
 import xapi.util.X_Namespace;
 import xapi.util.X_String;
 
-import com.google.common.base.Preconditions;
+import javax.annotation.Generated;
+import javax.inject.Provider;
+import javax.tools.JavaCompiler;
+import javax.tools.ToolProvider;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * @requiresProject true
@@ -75,6 +73,12 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
    */
   @Parameter(property = "xapi.version", defaultValue = X_Namespace.XAPI_VERSION)
   private String xapiVersion;
+
+  /**
+   * The loglevel to use by default
+   */
+  @Parameter(property = "xapi.log.level", defaultValue = "WARN")
+  private String xapiLogLevel;
 
   /**
    * The runtime platform this mojo execution is targeting.
@@ -118,6 +122,9 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
   @Parameter(property = "target.project", defaultValue = "${project.basedir}")
   private String targetProject;
 
+  @Parameter(property = "output.directory", defaultValue = "${project.build.directory}/generated-sources/xapi")
+  private String outputDirectory;
+
   public ProjectBuilder getBuilder() {
     return builder;
   }
@@ -158,6 +165,10 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
   @Override
   @SuppressWarnings("unchecked")
   public void execute() throws MojoExecutionException, MojoFailureException {
+    try {
+      X_Log.logLevel(LogLevel.valueOf(xapiLogLevel));
+    } catch (Throwable e){getLog().warn("Could not set xapi.log.level to "+xapiLogLevel, e);}
+
     MavenServiceMojo.init(this);
     doExecute();
     X_GC.deepDestroy(Class.class.cast(getClass()), this);
@@ -168,6 +179,12 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
   private final Provider<File> generateDirectoryProvider = new SingletonProvider<File>() {
     @Override
     protected File initialValue() {
+      if (outputDirectory != null) {
+        File f = new File(outputDirectory);
+        if (f.exists()) {
+          return f;
+        }
+      }
       if (targetProject == null) {
         return new File(getSourceRoot(), generateDirectory);
       }
@@ -234,8 +251,8 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
         // resolve artifacts
         if (workspace != null) {
           File result = workspace.findArtifact(artifact);
-          X_Log.warn(getClass(), "Searching for target project directory from",result
-              ,"derived from artifact",artifact, getSession());
+          X_Log.info(getClass(), "Searching for target project directory from",result
+              ,"derived from artifact",artifact);
           if (result != null) {
             return result.getParentFile().getParentFile();
           }
@@ -301,7 +318,7 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
   public File saveModel(final String javaName, final String source,
       boolean overwrite) {
     File genDir = getGenerateDirectory();
-    X_Log.info(getClass(),"Preparing compile", getTargetProjectDirectory(), genDir);
+    X_Log.trace(getClass(),"Preparing compile", getTargetProjectDirectory(), genDir);
     genDir.mkdirs();
     String sourceName;
     if (javaName.endsWith(".java")) {

@@ -1,10 +1,8 @@
 package xapi.util;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ExecutionException;
-
-
-
 
 /**
  * Generic purpose utility methods;
@@ -90,4 +88,14 @@ public final class X_Util{
     return e;
   }
 
+  public static <T> T[] pushOnto(T[] beforeFinished, T t) {
+    if (X_Runtime.isJavaScript()) {
+      beforeFinished[beforeFinished.length] = t;
+      return beforeFinished;
+    } else {
+      T[] copy = (T[]) Array.newInstance(beforeFinished.getClass(), beforeFinished.length+1);
+      copy[beforeFinished.length] = t;
+      return copy;
+    }
+  }
 }

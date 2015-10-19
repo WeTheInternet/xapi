@@ -1,8 +1,14 @@
 package xapi.dev.gwt.gui;
 
-import java.awt.BorderLayout;
-import java.awt.FlowLayout;
-import java.awt.Rectangle;
+import xapi.collect.impl.AbstractMultiInitMap;
+import xapi.dev.gwt.CodeServerGuiOptions;
+import xapi.log.X_Log;
+import xapi.log.api.LogLevel;
+import xapi.util.api.Pair;
+import xapi.util.impl.PairBuilder;
+
+import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
@@ -11,23 +17,6 @@ import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.Set;
-
-import javax.swing.AbstractAction;
-import javax.swing.JButton;
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JSplitPane;
-import javax.swing.SwingUtilities;
-
-import xapi.collect.impl.AbstractMultiInitMap;
-import xapi.dev.gwt.CodeServerGuiOptions;
-import xapi.log.X_Log;
-import xapi.log.api.LogLevel;
-import xapi.util.api.Pair;
-import xapi.util.impl.PairBuilder;
 
 @SuppressWarnings("serial")
 public class CodeServerGui extends JFrame{
@@ -57,12 +46,16 @@ public class CodeServerGui extends JFrame{
     test = new SingleFileSelector("Set Work Directory");
     test.setToolTipText("The working directory where gwt codeserver will write compiles.  Defaults to "+tmpConfig.getParent());
     test.setChooserType(JFileChooser.DIRECTORIES_ONLY);
-    test.setFile(tmpConfig.getParentFile());
+    try {
+      test.setFile(tmpConfig.getParentFile());
+    } catch (Exception e) {
+      X_Log.warn(getClass(), "Error loading file ", tmpConfig.getParentFile(), e);
+    }
     add(test,BorderLayout.NORTH);
     controls = new CodeServerControls(new Runnable() {
       @Override
       public void run() {
-        launchServer(isUseTestSources());
+        launchServer(isUseTestSources(), "JS", getLogLevel());
       }
     });
     add(controls,BorderLayout.SOUTH);
@@ -94,12 +87,16 @@ public class CodeServerGui extends JFrame{
 //    add(logger,BorderLayout.EAST);
   }
 
+  protected String getLogLevel() {
+    return "INFO";
+  }
+
   protected boolean isUseTestSources() {
     return false;
   }
 
 
-  protected void launchServer(boolean includeTestSources) {
+  protected void launchServer(boolean includeTestSources, String jsInteropMode, String logLevel) {
     try{
       String cpSep = File.pathSeparator;
     String cp = getClasspath(includeTestSources, cpSep);
@@ -127,7 +124,7 @@ public class CodeServerGui extends JFrame{
     X_Log.debug("Codeserver classpath",cp);
     
     int debugPort = debugPort();
-    int len = debugPort > 0 ? 8 : 6;
+    int len = debugPort > 0 ? 12 : 10;
     final String[] cmdArray = new String[len];
     cmdArray[0] = //path to java executable
       System.getProperty("java.home")+File.separator+"bin" +File.separator+"java";
@@ -146,6 +143,10 @@ public class CodeServerGui extends JFrame{
     cmdArray[pos++] = "com.google.gwt.dev.codeserver.CodeServer";
     cmdArray[pos++] = "-port";
     cmdArray[pos++] = Integer.toString(getPort());
+    cmdArray[pos++] = "-XjsInteropMode";
+    cmdArray[pos++] = jsInteropMode;
+    cmdArray[pos++] = "-logLevel";
+    cmdArray[pos++] = logLevel;
 
     String [] srcArray = toCli(paths);
 

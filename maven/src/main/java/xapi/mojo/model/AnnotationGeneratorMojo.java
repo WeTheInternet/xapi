@@ -1,19 +1,11 @@
 package xapi.mojo.model;
 
-import java.io.File;
-import java.lang.annotation.Annotation;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Execute;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.ResolutionScope;
-
 import xapi.annotation.reflect.MirroredAnnotation;
 import xapi.bytecode.ClassFile;
 import xapi.bytecode.impl.BytecodeAdapterService;
@@ -33,6 +25,13 @@ import xapi.source.api.IsType;
 import xapi.source.api.Primitives;
 import xapi.util.X_Debug;
 import xapi.util.X_Namespace;
+
+import java.io.File;
+import java.lang.annotation.Annotation;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 
 /**
@@ -90,9 +89,6 @@ public class AnnotationGeneratorMojo extends AbstractXapiMojo{
       for (IsMethod method : cls.getMethods()) {
         if (method.getEnclosingType().getQualifiedName().equals("java.lang.Object")) {
           continue;
-        }
-        if (method.getName().equals("type")) {
-          X_Log.error("\n\n\n\n\n", method.getReturnType().toString(), "   ",method.getQualifiedName());
         }
         String returnType = out.addImport(method.getReturnType().toString());
         IsClass returnClass = adapter.toClass(method.getReturnType().getQualifiedName().replace("[]", ""));

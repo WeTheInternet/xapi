@@ -29,11 +29,6 @@
       <classifier>sources</classifier>
     </dependency>
     <dependency>
-      <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-gwt-test</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>${gwt.groupId}</groupId>
       <artifactId>gwt-dev</artifactId>
       <scope>provided</scope>

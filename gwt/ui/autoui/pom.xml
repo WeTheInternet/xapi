@@ -70,11 +70,6 @@
   </dependency>
   <dependency>
     <groupId>net.wetheinter</groupId>
-    <artifactId>xapi-gwt-test</artifactId>
-    <scope>test</scope>
-  </dependency>
-  <dependency>
-    <groupId>net.wetheinter</groupId>
     <artifactId>xapi-jre-inject</artifactId>
   </dependency>
   <dependency>

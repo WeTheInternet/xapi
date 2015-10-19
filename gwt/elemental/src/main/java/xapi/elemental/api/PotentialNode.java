@@ -1,43 +1,19 @@
 package xapi.elemental.api;
 
-import static xapi.collect.X_Collect.newStringMap;
-import xapi.collect.api.StringTo;
+import elemental.client.Browser;
+import elemental.dom.Element;
 import xapi.elemental.X_Elemental;
+import xapi.ui.api.AttributeApplier;
+import xapi.ui.api.ElementBuilder;
 import xapi.ui.api.NodeBuilder;
-import xapi.ui.api.Stylizer;
 import xapi.ui.api.Widget;
 import xapi.util.X_String;
-import xapi.util.impl.LazyProvider;
-import elemental.dom.Element;
+import xapi.util.impl.ImmutableProvider;
 
-public class PotentialNode <E extends Element> extends NodeBuilder <E>{
-
-  public class ClassnameBuilder extends
-      AttributeBuilder {
-
-    private final StringTo<String> existing;
-    public ClassnameBuilder() {
-      super("class");
-      existing = newStringMap(String.class);
-    }
-
-    @Override
-    public <C extends NodeBuilder<String>> C addChild(C child) {
-      String value = child.getElement();
-      for (String part : value.split("\\s+")) {
-        if (part.length() > 0) {
-          if (existing.put(part, part) == null) {
-            if (existing.size() > 1) {
-              part = part + " ";
-            }
-            super.addChild(wrapChars(part));
-          }
-        }
-      }
-      return child;
-    }
-
-  }
+/**
+ * TODO: rename this to ElementalBuilder?
+ */
+public class PotentialNode <E extends Element> extends ElementBuilder<E> {
 
   public class ApplyLiveAttribute implements AttributeApplier {
 
@@ -74,225 +50,62 @@ public class PotentialNode <E extends Element> extends NodeBuilder <E>{
 
   }
 
-  public class ApplyPendingAttribute implements AttributeApplier {
-
-    @Override
-    public void addAttribute(String name, String value) {
-      AttributeBuilder attr = attributes.get(name);
-      if (attr == null) {
-        setAttribute(name, value);
-      } else {
-        concat(attr, value);
-      }
-    }
-
-    protected void concat(AttributeBuilder attr, String value) {
-      attr.addChild(attr.wrapChars(value));
-    }
-
-    @Override
-    public void setAttribute(String name, String value) {
-      attributes.put(name, new AttributeBuilder(value));
-    }
-
-    @Override
-    public String getAttribute(String name) {
-      AttributeBuilder attr = attributes.get(name);
-      if (attr == null) {
-        return EMPTY;
-      }
-      return attr.getElement();
-    }
-
-    @Override
-    public void removeAttribute(String name) {
-      attributes.remove(name);
-    }
-  }
-
-  private class StyleApplier extends AttributeBuilder implements Stylizer<PotentialNode<E>> {
-
-    private final StringTo<AttributeBuilder> styles;
-
-    public StyleApplier() {
-      super("style");
-      styles = newStringMap(AttributeBuilder.class);
-    }
-
-    @Override
-    protected void toHtml(Appendable out) {
-      for (AttributeBuilder style : styles.values()) {
-        style.toHtml(out);
-      }
-    }
-
-    @Override
-    public Stylizer<PotentialNode<E>> applyStyle(
-        PotentialNode<E> element,
-        String key,
-        String value) {
-      if (element.el == null) {
-        StyleApplier attr = init();
-        attr.setStyle(key, value);
-      } else {
-        if (value == null) {
-          element.el.getStyle().removeProperty(key);
-        } else {
-          element.el.getStyle().setProperty(key, value);
-        }
-      }
-      return this;
-    }
-
-    private void setStyle(String key, String value) {
-      if (value == null) {
-        styles.remove(key);
-      } else {
-        init();
-        styles.put(key, new AttributeBuilder(key+":"+value+";"));
-      }
-    }
-
-    @SuppressWarnings("unchecked" )
-    private StyleApplier init() {
-      el = null;
-      AttributeBuilder attr = attributes.get("style");
-      if (attr == null) {
-        attributes.put("style", (attr=this));
-      } else {
-        assert attr instanceof PotentialNode.StyleApplier;
-      }
-      return (PotentialNode<E>.StyleApplier) attr;
-    }
-
-    public void setValue(String value) {
-      E element = PotentialNode.this.el;
-      if (element == null) {
-        init();
-        clearAll();
-        styles.clear();
-        addValue(value);
-      } else {
-        element.setAttribute("style", value);
-      }
-    }
-
-    public void addValue(String value) {
-      E element = PotentialNode.this.el;
-      for (String part : value.split(";")) {
-        String[] parts = part.trim().split(":");
-        assert parts.length == 2 : "Malformed style string: "+value
-            +"; expected format: key:value;key:value;...";
-        if (element == null) {
-          setStyle(parts[0], parts[1]);
-        } else {
-          element.getStyle().setProperty(parts[0], parts[1]);
-        }
-      }
-    }
-
-  }
-
-  private static class AttributeBuilder extends NodeBuilder<String> {
-
-    public AttributeBuilder(CharSequence value) {
-      append(value);
-    }
-
-    @Override
-    public void append(Widget<String> child) {
-      append(child.getElement());
-    }
-
-    @Override
-    protected String create(CharSequence node) {
-      return node.toString();
-    }
-
-    @Override
-    protected NodeBuilder<String> wrapChars(CharSequence body) {
-      return new AttributeBuilder(body);
-    }
-
-    @Override
-    protected void toHtml(Appendable out) {
-      super.toHtml(out);
-    }
-
-  }
-
   private String tagName;
-  private final StringTo<AttributeBuilder> attributes;
-  private AttributeApplier attributeApplier;
-  private LazyProvider<StyleApplier> stylizer;
+
+  private static int idSeed = 1;
+  private int seed;
 
   public PotentialNode() {
-    attributes = newStringMap(AttributeBuilder.class);
-    attributeApplier = new ApplyPendingAttribute();
-    stylizer = new LazyProvider<StyleApplier>(()-> new StyleApplier());
   }
+
+  @Override
+  protected void toHtml(Appendable out) {
+    if (tagName != null) {
+      // If we have a tagname, then we might expect our element to be addressable.
+      // In which case, we want to ensure it has an id
+      if (!attributes.containsKey("id")) {
+        seed = idSeed++;
+        setAttribute("id", "ele_"+seed);
+      }
+    }
+    super.toHtml(out);
+  }
+
   public PotentialNode(String tagName) {
     this();
     setTagName(tagName);
   }
 
   public PotentialNode(E element) {
-    attributes = newStringMap(AttributeBuilder.class);
-    attributeApplier = new ApplyLiveAttribute();
-    stylizer = new LazyProvider<StyleApplier>(()-> new StyleApplier());
+    super();
     el = element;
     onInitialize(el);
   }
 
-  public void setAttribute(String name, String value) {
-    if ("style".equals(name)) {
-      stylizer.get().setValue(value);
-    } else {
-      attributeApplier.setAttribute(name, value);
-    }
+  @Override
+  protected AttributeApplier createAttributeApplier() {
+    return el == null ? new ApplyPendingAttribute() : new ApplyLiveAttribute();
   }
 
-  public void setClass(String value) {
-    setAttribute("class", value);
+  @Override
+  public PotentialNode<E> createChild(String tagName) {
+    final PotentialNode<E> child = new PotentialNode<>(tagName);
+    addChild(child);
+    return child;
   }
 
-  public void addAttribute(String name, String value) {
-    switch(name) {
-      case "style":
-        stylizer.get().addValue(value);
-        break;
-      case "class":
-        AttributeBuilder was = attributes.get(name);
-        if (was == null) {
-          attributes.put(name, new ClassnameBuilder());
-        }
-      default:
-        attributeApplier.addAttribute(name, value);
-    }
-  }
-
-  public void removeAttribute(String name) {
-    attributeApplier.removeAttribute(name);
-  }
-
-  public void setStyle(String name, String value) {
-    stylizer.get().applyStyle(this, name, value);
-  }
-
-  public void setStyle(String value) {
-    setAttribute("style", value);
-  }
-
-  public void removeStyle(String name) {
-    stylizer.get().applyStyle(this, name, null);
+  @Override
+  protected StyleApplier createStyleApplier() {
+    return new Styler();
   }
 
   @Override
   protected E create(CharSequence csq) {
     try {
-      return build(csq.toString());
+      E e = build(csq.toString());
+      return e;
     } finally {
-      attributeApplier = new ApplyLiveAttribute();
+      attributeApplier = new ImmutableProvider<>(new ApplyLiveAttribute());
     }
   }
 
@@ -329,11 +142,14 @@ public class PotentialNode <E extends Element> extends NodeBuilder <E>{
     return b.length() == 0 ? EMPTY : b.toString();
   }
 
+  @Override
   protected boolean isEmpty() {
-    if (super.isChildrenEmpty()) {
+    if (super.isEmpty()) {
       switch(tagName.toLowerCase()) {
         case "br":
         case "img":
+        case "input":
+          // Any elements which should not be created with closing tags
           return true;
       }
     }
@@ -382,13 +198,50 @@ public class PotentialNode <E extends Element> extends NodeBuilder <E>{
   }
 
   @Override
-  public E getElement() {
-    return super.getElement();
-  }
-
-  @Override
   public String toString() {
     return getElement().getOuterHTML();
   }
 
+  class Styler extends StyleApplier {
+
+    @Override
+    protected void removeStyle(E element, String key) {
+      element.getStyle().removeProperty(key);
+    }
+
+    @Override
+    protected void setStyle(E element, String key, String value) {
+      element.getStyle().setProperty(key, value);
+    }
+  }
+
+  @Override
+  protected E findSelf(E parent) {
+    if (el != null) {
+      return el;
+    }
+    // First, look on the document.  This is the fastest, IF we are attached
+    String id = attributes.get("id").getElement();
+    el = (E) Browser.getDocument().getElementById(id);
+    if (el == null) {
+      // If we aren't attached, fallback to the slower querySelector
+      el = (E) parent.querySelector("#"+id);
+    }
+    if (el != null) {
+      return el;
+    }
+    return super.findSelf(parent);
+  }
+
+  @Override
+  protected void startInitialize(E el) {
+    Browser.getDocument().getBody().appendChild(el);
+    super.startInitialize(el);
+  }
+
+  @Override
+  protected void finishInitialize(E el) {
+    Browser.getDocument().getBody().removeChild(el);
+    super.finishInitialize(el);
+  }
 }

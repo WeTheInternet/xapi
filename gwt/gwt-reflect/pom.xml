@@ -23,10 +23,12 @@
 	</properties>
 
 	<dependencies>
+		<!--
 		<dependency>
 			<groupId>net.wetheinter</groupId>
 			<artifactId>xapi-gwt-test</artifactId>
 		</dependency>
+		-->
 		<dependency>
 			<groupId>net.wetheinter</groupId>
 			<artifactId>xapi-gwt-inject</artifactId>

@@ -1,8 +1,8 @@
 package xapi.util.impl;
 
-import javax.inject.Provider;
-
 import xapi.inject.impl.SingletonProvider;
+
+import javax.inject.Provider;
 
 public class LazyProvider <T> extends SingletonProvider<T> {
 
@@ -22,5 +22,13 @@ public class LazyProvider <T> extends SingletonProvider<T> {
   @Override
   protected final T initialValue() {
     return provider.get();
+  }
+
+  public static <T> LazyProvider<T> of(Provider<T> provider) {
+    return new LazyProvider<>(provider);
+  }
+
+  public static <T> LazyProvider<T> of(T maybeNull, Provider<T> provider) {
+    return new LazyProvider<>(maybeNull, provider);
   }
 }

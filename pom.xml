@@ -670,6 +670,12 @@
     <version>4.12</version>
    </dependency>
    <dependency>
+    <groupId>junit</groupId>
+    <artifactId>junit</artifactId>
+    <classifier>sources</classifier>
+    <version>4.12</version>
+   </dependency>
+   <dependency>
     <groupId>org.seleniumhq.selenium</groupId>
     <artifactId>selenium-java</artifactId>
     <version>${selenium.version}</version>
@@ -704,7 +710,6 @@
      <version>2.16</version>
      <configuration>
       <forkCount>1.5C</forkCount>
-      <skip>${xapi.skip.test}</skip>
      </configuration>
     </plugin>
     <plugin>
@@ -911,8 +916,6 @@
         </goals>
         <configuration>
           <forceCreation>true</forceCreation>
-          <failOnError>false</failOnError>
-          <force>true</force>
         </configuration>
        </execution>
       </executions>

@@ -7,6 +7,8 @@ import xapi.test.Assert;
 public class NodeBuilderTest {
 
   private static class TestNode extends NodeBuilder<String> {
+    private TestNode() {}
+
     @Override
     public void append(Widget<String> child) {
       throw new UnsupportedOperationException();

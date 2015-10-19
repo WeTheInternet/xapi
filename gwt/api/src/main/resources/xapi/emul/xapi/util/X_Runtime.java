@@ -33,7 +33,7 @@ public class X_Runtime {
   /**
    * Are we running in javascript?
    */
-  public static boolean isJavascript() {
+  public static boolean isJavaScript() {
     return GWT.isScript();
   }
   /**

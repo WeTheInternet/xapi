@@ -1,9 +1,5 @@
 package xapi.mvn;
 
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.List;
-
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Model;
@@ -11,7 +7,6 @@ import org.apache.maven.project.MavenProject;
 import org.eclipse.aether.repository.LocalArtifactResult;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.ArtifactResult;
-
 import xapi.bytecode.impl.BytecodeAdapterService;
 import xapi.dev.X_Dev;
 import xapi.dev.scanner.X_Scanner;
@@ -23,6 +18,10 @@ import xapi.mvn.service.MvnService;
 import xapi.util.X_Debug;
 import xapi.util.X_Runtime;
 import xapi.util.X_String;
+
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.List;
 
 public class X_Maven {
 
@@ -108,7 +107,7 @@ public class X_Maven {
   public static ClasspathResourceMap compileScopeScanner(MavenProject project,
       MavenSession session) {
     URL[] urls = compileScopeUrls(project, session);
-    X_Log.trace(X_Maven.class,"Compile scope URLS",urls);
+    X_Log.debug(X_Maven.class,"Compile scope URLS",urls);
     return X_Scanner.scanClassloader(URLClassLoader.newInstance(urls));
   }
 
@@ -116,8 +115,8 @@ public class X_Maven {
       MavenSession session) {
     try {
       List<String> compile = project.getCompileClasspathElements();
-      X_Log.info(X_Maven.class,"Compile classpath",compile);
-      X_Log.info(X_Maven.class,"Runtime classpath",project.getRuntimeClasspathElements());
+      X_Log.debug(X_Maven.class,"Compile classpath",compile);
+      X_Log.debug(X_Maven.class,"Runtime classpath",project.getRuntimeClasspathElements());
       if (project.hasLifecyclePhase("test-classes")) {
         List<String> testElements = project.getTestClasspathElements();
         testElements.addAll(compile);

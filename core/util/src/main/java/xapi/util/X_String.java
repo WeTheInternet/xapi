@@ -1,9 +1,10 @@
 package xapi.util;
 
-import static xapi.util.service.StringService.binarySuffix;
-import static xapi.util.service.StringService.metricSuffix;
 import xapi.collect.api.CharPool;
 import xapi.inject.X_Inject;
+
+import static xapi.util.service.StringService.binarySuffix;
+import static xapi.util.service.StringService.metricSuffix;
 
 public class X_String {
 
@@ -18,7 +19,7 @@ public class X_String {
   }
 
   public static String toMetricSuffix(double val) {
-    String suffix = "";
+    String suffix;
     int index = 3; //we go from nano to giga; up three and down three.
     if (val > 1) {
       //count up
@@ -54,7 +55,7 @@ public class X_String {
     }
   }
   public static String toBinarySuffix(double val) {
-    String suffix = "";
+    String suffix;
     boolean neg = val < 0;
     if (neg)val = val*-1;
     int index = 0;
@@ -66,11 +67,14 @@ public class X_String {
     return (neg?"-":"")+((int)(10*val))/10.0+suffix;
   }
 
+  @SafeVarargs
   public static <T> String joinObjects(
       @SuppressWarnings("unchecked") T ... values
       ) {
     return joinObjects(", ", values);
   }
+
+  @SafeVarargs
   public static <T> String joinObjects(
     String separator,
     @SuppressWarnings("unchecked") T ... values
