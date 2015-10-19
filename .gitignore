@@ -2,6 +2,7 @@
 .settings
 .project
 .DS_Store
+.idea
 target
 war
 bin
