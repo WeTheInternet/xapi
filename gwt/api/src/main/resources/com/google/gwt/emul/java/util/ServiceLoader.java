@@ -3,13 +3,14 @@ package java.util;
 
 import javax.inject.Provider;
 
-import xapi.util.api.ReceivesValue;
+// import xapi.util.api.ReceivesValue;
+// implements , ReceivesValue<Class<S>>
 
 import com.google.gwt.core.shared.GWT;
 
 
-public  class ServiceLoader<S>
-    implements Iterable<S>, ReceivesValue<Class<S>>
+public class ServiceLoader<S>
+    implements Iterable<S>
 {
 
     protected Provider<S> theProvider;
