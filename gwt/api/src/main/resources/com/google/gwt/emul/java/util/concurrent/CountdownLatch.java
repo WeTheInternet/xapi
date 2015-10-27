@@ -1,20 +1,23 @@
 package java.util.concurrent;
 
-import xapi.log.X_Log;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class CountdownLatch {
 
   private long count;
+  private Logger gwtLogger = null;
 
   public CountdownLatch(int count) {
     this.count = count;
+    gwtLogger = Logger.getLogger("xapi");
   }
   
   public void await(){
-    X_Log.warn("Do not call CountdownLatch.await() in gwt; instead use X_Concurrent.await(latch, callback);");
+    gwtLogger.log(Level.WARNING, "Do not call CountdownLatch.await() in gwt; instead use X_Concurrent.await(latch, callback);");
   }
   public void await(double time, TimeUnit unit){
-    X_Log.warn("Do not call CountdownLatch.await(time, unit) in gwt; instead use X_Concurrent.await(latch, time, unit, callback);");
+    gwtLogger.log(Level.WARNING, "Do not call CountdownLatch.await(time, unit) in gwt; instead use X_Concurrent.await(latch, time, unit, callback);");
   }
 
   /**
