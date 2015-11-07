@@ -35,14 +35,24 @@
 
 package xapi.dev.source;
 
+import xapi.collect.impl.SimpleStack;
+import xapi.source.read.JavaLexer;
+
 import java.lang.reflect.Modifier;
 import java.util.Set;
 import java.util.TreeSet;
 
-import xapi.collect.impl.SimpleStack;
-import xapi.source.read.JavaLexer;
-
 public class ClassBuffer extends MemberBuffer<ClassBuffer> {
+
+  public enum FieldOrder {
+    StaticTypes,
+    InnerTypes,
+    StaticFields,
+    StaticMethods,
+    Fields,
+    Constructors,
+    Methods
+  }
 
   protected int privacy;
   private boolean isClass;
@@ -63,6 +73,36 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
   private PrintBuffer staticMethods;
   private PrintBuffer staticClasses;
   private final PrintBuffer statics;
+
+  private ClassBuffer(ClassBuffer from, StringBuilder target) {
+    this(from);
+    this.target = target;
+  }
+  private ClassBuffer(ClassBuffer from) {
+    // TODO reduce the common classbuffer operations to a supertype "TypeBuffer",
+    // where we include all the wiring to add fields and methods, but none of the
+    // wrapping where we print things like "public class MyName"
+    this.isWellFormatted = false;
+    this.prefix = from.prefix;
+    this.isClass = from.isClass;
+    this.privacy = from.privacy;
+    this.isClass = from.isClass;
+    this.isAnnotation = from.isAnnotation;
+    this.isEnum = from.isEnum;
+    this.superClass = from.superClass;
+    this.simpleName = from.simpleName;
+    this.interfaces = from.interfaces;
+    this.ctors = from.ctors;
+    this.context = from.context;
+    this.classes = from.classes;
+    this.fields = from.fields;
+    this.methods = from.methods;
+    this.constructors = from.constructors;
+    this.staticFields = from.staticFields;
+    this.staticMethods = from.staticMethods;
+    this.staticClasses = from.staticClasses;
+    this.statics = from.statics;
+  }
 
   public ClassBuffer() {
     this(new SourceBuilder<Object>());
@@ -325,6 +365,11 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
     return this;
   }
 
+  public ClassBuffer setSuperClass(final Class<?> superClass) {
+    this.superClass = addImport(superClass);
+    return this;
+  }
+
   public String getPackage() {
     return context.getPackage();
   }
@@ -501,6 +546,25 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
   @Override
   public final ClassBuffer makeAbstract() {
     return super.makeAbstract();
+  }
+
+  protected ClassBuffer newChild() {
+    return new ClassBuffer(this);
+  }
+
+  protected ClassBuffer newChild(final StringBuilder suffix) {
+    return new ClassBuffer(this, suffix);
+  }
+
+  @Override
+  protected ClassBuffer makeChild() {
+    return (ClassBuffer) super.makeChild();
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public ClassBuffer printAfter(String suffix) {
+    return (ClassBuffer) super.printAfter(suffix);
   }
 
 }

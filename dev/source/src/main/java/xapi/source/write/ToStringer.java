@@ -8,7 +8,7 @@ package xapi.source.write;
  */
 public interface ToStringer {
 
-  final ToStringer DEFAULT_TO_STRINGER = new DefaultToStringer();
+  ToStringer DEFAULT_TO_STRINGER = new DefaultToStringer();
   
   String toString(Object o);
   

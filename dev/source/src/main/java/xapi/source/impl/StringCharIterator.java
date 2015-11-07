@@ -5,7 +5,7 @@ import xapi.source.api.CharIterator;
 public class StringCharIterator implements CharIterator {
   final String content;
   final int length;
-  int current = 0;
+  int current;
 
   public StringCharIterator(final String content) {
     this.content = content;

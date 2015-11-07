@@ -1,10 +1,10 @@
 package xapi.dev.source;
 
-import java.lang.reflect.Modifier;
-
 import xapi.source.read.JavaLexer;
 import xapi.source.read.JavaLexer.TypeDef;
 import xapi.source.read.JavaVisitor.TypeData;
+
+import java.lang.reflect.Modifier;
 
 /**
  * A field buffer is used to add a field to a generated class.

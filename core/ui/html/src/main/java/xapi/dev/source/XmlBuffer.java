@@ -15,9 +15,10 @@ public class XmlBuffer extends PrintBuffer {
 
   private final PrintBuffer before;
   private StringTo<StringBuilder> attributeMap;
-  private boolean printNewline = false;
+  protected boolean printNewline = false;
   private boolean abbr = false;
   private ConvertsValue<String, String> escaper;
+  protected boolean trimWhitespace;
 
   @SuppressWarnings("unchecked")
   public XmlBuffer() {
@@ -82,6 +83,7 @@ public class XmlBuffer extends PrintBuffer {
 
   public XmlBuffer makeTag(final String name) {
     final XmlBuffer buffer = new XmlBuffer(name);
+    buffer.setTrimWhitespace(true);
     buffer.indent = indent + INDENT;
     addToEnd(buffer);
     return buffer;
@@ -89,6 +91,7 @@ public class XmlBuffer extends PrintBuffer {
 
   public XmlBuffer makeTagNoIndent(final String name) {
     final XmlBuffer buffer = new XmlBuffer(name);
+    buffer.setTrimWhitespace(trimWhitespace);
     buffer.indent = indent + INDENT;
     buffer.setNewLine(false);
     addToEnd(buffer);
@@ -97,6 +100,7 @@ public class XmlBuffer extends PrintBuffer {
 
   public XmlBuffer makeTagAtBeginning(final String name) {
     final XmlBuffer buffer = new XmlBuffer(name);
+    buffer.setTrimWhitespace(trimWhitespace);
     buffer.indent = indent + INDENT;
     addToBeginning(buffer);
     return buffer;
@@ -105,18 +109,19 @@ public class XmlBuffer extends PrintBuffer {
   public XmlBuffer makeTagAtBeginningNoIndent(final String name) {
     final XmlBuffer buffer = new XmlBuffer(name);
     buffer.setNewLine(false);
+    buffer.setTrimWhitespace(trimWhitespace);
     buffer.indent = indent + INDENT;
     addToBeginning(buffer);
     return buffer;
   }
 
-  @Override
   public String toString() {
     if (tagName == null) {
       assert attributes == null || attributes.isEmpty() : "Cannot add attributes to an XmlBuffer with no tag name: "
           + "\nAttributes: " + attributes + "\nBody: " + super.toString();
       return super.toString();
     }
+    String indent = trimWhitespace ? "" : this.indent;
     final String origIndent = indent.replaceFirst(INDENT, "");
     final StringBuilder b = new StringBuilder(origIndent);
 
@@ -158,7 +163,7 @@ public class XmlBuffer extends PrintBuffer {
       }
     } else {
       newline(newline(b.append(">")).append(escape(body)).append(printNewline ? origIndent : "").append("</")
-          .append(tag).append(">"));
+                  .append(tag).append(">"));
     }
     return b.toString();
   }
@@ -173,7 +178,7 @@ public class XmlBuffer extends PrintBuffer {
   }
 
   private StringBuilder newline(final StringBuilder append) {
-    if (printNewline) {
+    if (printNewline && !trimWhitespace) {
       append.append("\n");
     }
     return append;
@@ -382,6 +387,17 @@ public class XmlBuffer extends PrintBuffer {
     return null;
   }
 
+  public XmlBuffer add(Object ... values) {
+    super.add(values);
+    return this;
+  }
+
+  @Override
+  public XmlBuffer ln() {
+    super.ln();
+    return this;
+  }
+
   protected boolean isRemoveQuotes(final StringBuilder attr) {
     return attr.charAt(1) == '"';
   }
@@ -391,4 +407,8 @@ public class XmlBuffer extends PrintBuffer {
     return this;
   }
 
+  public XmlBuffer setTrimWhitespace(boolean trimWhitespace) {
+    this.trimWhitespace = trimWhitespace;
+    return this;
+  }
 }

@@ -11,6 +11,14 @@ public class DomBuffer extends XmlBuffer {
     super(name);
   }
 
+  public DomBuffer(final String name, boolean compact) {
+    super(name);
+    if (compact) {
+      setTrimWhitespace(true);
+      setNewLine(false);
+    }
+  }
+
   public DomBuffer setClassName(final String clsName) {
     setAttribute("class", clsName);
     return this;
@@ -171,6 +179,8 @@ public class DomBuffer extends XmlBuffer {
   @Override
   public DomBuffer makeTag(final String name) {
     final DomBuffer buffer = new DomBuffer(name);
+    buffer.setNewLine(printNewline);
+    buffer.setTrimWhitespace(trimWhitespace);
     buffer.indent = isNoTagName() ? indent : indent + INDENT;
     addToEnd(buffer);
     return buffer;
@@ -179,6 +189,8 @@ public class DomBuffer extends XmlBuffer {
   @Override
   public DomBuffer makeTagNoIndent(final String name) {
     final DomBuffer buffer = new DomBuffer(name);
+    buffer.setNewLine(printNewline);
+    buffer.setTrimWhitespace(trimWhitespace);
     buffer.indent = indent + INDENT;
     buffer.setNewLine(false);
     addToEnd(buffer);
@@ -188,6 +200,7 @@ public class DomBuffer extends XmlBuffer {
   @Override
   public DomBuffer makeTagAtBeginning(final String name) {
     final DomBuffer buffer = new DomBuffer(name);
+    buffer.setTrimWhitespace(trimWhitespace);
     buffer.indent = indent + INDENT;
     addToBeginning(buffer);
     return buffer;
@@ -196,6 +209,7 @@ public class DomBuffer extends XmlBuffer {
   @Override
   public DomBuffer makeTagAtBeginningNoIndent(final String name) {
     final DomBuffer buffer = new DomBuffer(name);
+    buffer.setTrimWhitespace(trimWhitespace);
     buffer.setNewLine(false);
     buffer.indent = indent + INDENT;
     addToBeginning(buffer);
@@ -205,6 +219,12 @@ public class DomBuffer extends XmlBuffer {
   @Override
   public DomBuffer setNewLine(final boolean useNewLine) {
     super.setNewLine(useNewLine);
+    return this;
+  }
+
+  @Override
+  public DomBuffer setTrimWhitespace(boolean trimWhitespace) {
+    super.setTrimWhitespace(trimWhitespace);
     return this;
   }
 
@@ -389,6 +409,17 @@ public class DomBuffer extends XmlBuffer {
   @Override
   public DomBuffer setEscaper(final ConvertsValue<String, String> escaper) {
     super.setEscaper(escaper);
+    return this;
+  }
+
+  public DomBuffer add(Object ... values) {
+    super.add(values);
+    return this;
+  }
+
+  @Override
+  public XmlBuffer ln() {
+    super.ln();
     return this;
   }
 

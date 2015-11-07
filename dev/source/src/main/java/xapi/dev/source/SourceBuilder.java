@@ -126,6 +126,52 @@ public class SourceBuilder<Payload> {
     return this;
   }
 
+  public String addImport(Class<?> cls) {
+    return getClassBuffer().addImport(cls);
+  }
+
+  public String addImport(String cls) {
+    return getClassBuffer().addImport(cls);
+  }
+
+  public String addImportStatic(Class<?> cls, String name) {
+    return getClassBuffer().addImportStatic(cls, name);
+  }
+
+  public String addImportStatic(String cls) {
+    return getClassBuffer().addImportStatic(cls);
+  }
+
+  public SourceBuilder<Payload> addImports(Class<?>... cls) {
+    getClassBuffer().addImports(cls);
+    return this;
+  }
+
+  public SourceBuilder<Payload> addImports(String... cls) {
+    getClassBuffer().addImports(cls);
+    return this;
+  }
+
+  public SourceBuilder<Payload> addInterfaces(Class<?>... cls) {
+    getClassBuffer().addInterfaces(cls);
+    return this;
+  }
+
+  public SourceBuilder<Payload> addInterfaces(String... cls) {
+    getClassBuffer().addInterfaces(cls);
+    return this;
+  }
+
+  public SourceBuilder<Payload> setSuperClass(Class<?> cls) {
+    getClassBuffer().setSuperClass(cls);
+    return this;
+  }
+
+  public SourceBuilder<Payload> setSuperClass(String cls) {
+    getClassBuffer().setSuperClass(cls);
+    return this;
+  }
+
   public SourceBuilder<Payload> setLinesToSkip(int i) {
     this.skip = i;
     return this;

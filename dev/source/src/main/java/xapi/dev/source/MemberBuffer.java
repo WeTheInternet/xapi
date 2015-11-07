@@ -1,13 +1,13 @@
 package xapi.dev.source;
 
+import xapi.source.read.JavaLexer;
+import xapi.source.read.JavaVisitor.TypeData;
+
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
-
-import xapi.source.read.JavaLexer;
-import xapi.source.read.JavaVisitor.TypeData;
 
 public abstract class MemberBuffer<Self extends MemberBuffer<Self>> extends
     PrintBuffer {
@@ -21,6 +21,13 @@ public abstract class MemberBuffer<Self extends MemberBuffer<Self>> extends
 
   public MemberBuffer() {
     this("");
+  }
+
+  protected MemberBuffer(StringBuilder target) {
+    super(target);
+    origIndent = indent;
+    annotations = new TreeSet<String>();
+    generics = new TreeSet<String>();
   }
 
   public MemberBuffer(final String indent) {
@@ -420,4 +427,29 @@ public abstract class MemberBuffer<Self extends MemberBuffer<Self>> extends
     }
   }
 
+  @Override
+  protected String coerce(Object obj) {
+    if (obj instanceof Class) {
+      return addImport((Class) obj);
+    } else if (obj instanceof Enum){
+      final Enum e = (Enum) obj;
+      // Important: .getClass() will return the enum instance's class, which may actually be
+      // a subclass of the enum type, if that enum has a body:
+      // enum Type {
+      //    Type,
+      //    Subtype { void overrides(); }
+      //    ;
+      //    void overrides(){}
+      // }
+      String cls = addImport(e.getDeclaringClass());
+      return cls+"."+e.name();
+    }
+    return super.coerce(obj);
+  }
+
+  @Override
+  public Self add(Object... values) {
+    super.add(values);
+    return self();
+  }
 }

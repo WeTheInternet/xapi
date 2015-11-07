@@ -267,6 +267,17 @@ public class PrintBuffer extends CharBuffer{
     return this;
   }
 
+  public PrintBuffer add(Object ... values) {
+    super.add(values);
+    return this;
+  }
+
+  @Override
+  public PrintBuffer ln() {
+    println();
+    return this;
+  }
+
   @Override
   public String toString() {
     final StringBuilder body = new StringBuilder(header());
@@ -281,5 +292,24 @@ public class PrintBuffer extends CharBuffer{
 
   public boolean isNotEmpty() {
     return target.length() > 0 || head.next != null;
+  }
+
+  protected PrintBuffer newChild() {
+    return new PrintBuffer();
+  }
+
+  protected PrintBuffer newChild(final StringBuilder suffix) {
+    return new PrintBuffer(suffix);
+  }
+
+  @Override
+  protected PrintBuffer makeChild() {
+    return (PrintBuffer) super.makeChild();
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public PrintBuffer printAfter(String suffix) {
+    return (PrintBuffer) super.printAfter(suffix);
   }
 }

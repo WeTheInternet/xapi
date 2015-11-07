@@ -35,13 +35,6 @@
 
 package xapi.dev.source;
 
-import static xapi.source.read.JavaVisitor.MODIFIER_DEFAULT;
-
-import java.lang.reflect.Modifier;
-import java.util.Arrays;
-import java.util.LinkedHashSet;
-import java.util.Map.Entry;
-
 import xapi.collect.impl.SimpleStack;
 import xapi.source.read.JavaLexer;
 import xapi.source.read.JavaModel.IsParameter;
@@ -49,6 +42,13 @@ import xapi.source.read.JavaVisitor.AnnotationMemberVisitor;
 import xapi.source.read.JavaVisitor.MethodVisitor;
 import xapi.source.read.JavaVisitor.ParameterVisitor;
 import xapi.source.read.JavaVisitor.TypeData;
+
+import static xapi.source.read.JavaVisitor.MODIFIER_DEFAULT;
+
+import java.lang.reflect.Modifier;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.Map.Entry;
 
 public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
     MethodVisitor<SourceBuilder<?>> {
@@ -64,6 +64,27 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
 
   public MethodBuffer(final SourceBuilder<?> context) {
     this(context, INDENT);
+  }
+
+  private MethodBuffer(MethodBuffer from) {
+    super(from.indent);
+    this.context = from.context;
+    this.methodName = from.methodName;
+    this.parameters = from.parameters;
+    this.exceptions = from.exceptions;
+    this.returnType = from.returnType;
+    this.tryDepth = from.tryDepth;
+  }
+
+  private MethodBuffer(MethodBuffer from, StringBuilder target) {
+    super(target);
+    this.indent = from.indent;
+    this.context = from.context;
+    this.methodName = from.methodName;
+    this.parameters = from.parameters;
+    this.exceptions = from.exceptions;
+    this.returnType = from.returnType;
+    this.tryDepth = from.tryDepth;
   }
 
   public MethodBuffer(final SourceBuilder<?> context, final String indent) {
@@ -534,4 +555,22 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
     return this;
   }
 
+  protected MethodBuffer newChild() {
+    return new MethodBuffer(this);
+  }
+
+  protected MethodBuffer newChild(final StringBuilder suffix) {
+    return new MethodBuffer(this, suffix);
+  }
+
+  @Override
+  protected MethodBuffer makeChild() {
+    return (MethodBuffer) super.makeChild();
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public MethodBuffer printAfter(String suffix) {
+    return (MethodBuffer) super.printAfter(suffix);
+  }
 }
