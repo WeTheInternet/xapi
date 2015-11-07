@@ -16,10 +16,8 @@ extends EntryIterable<K,V>, CollectionProxy<K,V>, HasValues<K,V>
 // Inherited from CollectionProxy
 //  V get(K key);
 //  boolean remove(K key);
-  V put(K key, V value);
 
-  Class<K> keyType();
-  Class<V> valueType();
+  V put(K key, V value);
 
   Class<?> componentType();
 

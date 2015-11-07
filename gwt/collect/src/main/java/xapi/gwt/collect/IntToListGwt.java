@@ -1,5 +1,19 @@
 package xapi.gwt.collect;
 
+import xapi.annotation.inject.InstanceOverride;
+import xapi.collect.api.CollectionOptions;
+import xapi.collect.api.IntTo;
+import xapi.collect.api.ObjectTo;
+import xapi.except.NotYetImplemented;
+import xapi.platform.GwtPlatform;
+import xapi.util.X_Util;
+import xapi.util.api.ConvertsTwoValues;
+import xapi.util.impl.AbstractPair;
+
+import com.google.gwt.core.client.GwtScriptOnly;
+import com.google.gwt.core.client.JavaScriptObject;
+
+import javax.inject.Provider;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -11,20 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-
-import javax.inject.Provider;
-
-import com.google.gwt.core.client.GwtScriptOnly;
-import com.google.gwt.core.client.JavaScriptObject;
-
-import xapi.annotation.inject.InstanceOverride;
-import xapi.collect.api.CollectionOptions;
-import xapi.collect.api.IntTo;
-import xapi.collect.api.ObjectTo;
-import xapi.except.NotYetImplemented;
-import xapi.platform.GwtPlatform;
-import xapi.util.X_Util;
-import xapi.util.impl.AbstractPair;
 
 
 @GwtPlatform
@@ -264,13 +264,33 @@ public class IntToListGwt <E> extends JavaScriptObject implements IntTo<E>{
   /*-{
     if (this.toArray) {
       var arr = this.toArray();
-      this.forEach(function(i) {
-        arr[arr.length] = i;
-      });
+      for (var i in this) {
+        if (i !== '_v$') {
+          arr[i] = this[i];
+        }
+      }
       return arr;
     }
     throw "toArray not supported";
   }-*/;
+
+
+  public final Class<Integer> keyType() {
+    return Integer.class;
+  }
+
+  public final native Class<E> valueType()
+  /*-{
+    if (this._v$) {
+        return this._v$;
+    }
+    return @IntToListGwt::guessValueClass(*)(this);
+  }-*/;
+
+  private static final <E> Class<E> guessValueClass(IntToListGwt<E> from) {
+    // Brutal, but effective
+    return Class.class.cast(from.toArray().getClass().getComponentType());
+  }
 
   @Override
   public final Collection<E> toCollection(Collection<E> into) {
@@ -292,6 +312,16 @@ public class IntToListGwt <E> extends JavaScriptObject implements IntTo<E>{
       into.put(i, getValue(i));
     }
     return into;
+  }
+
+  @Override
+  public final boolean forEach(ConvertsTwoValues<Integer, E, Boolean> callback) {
+    for (int i = 0, m = size(); i < m; i++ ) {
+      if (!callback.convert(i, get(i))) {
+        return false;
+      }
+    }
+    return true;
   }
 
 }

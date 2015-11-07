@@ -8,6 +8,7 @@ public class StringToDeepMap <X> extends StringToAbstract<StringTo<X>>{
   private final Class<? extends X> componentClass;
 
   public StringToDeepMap(final Class<? extends X> componentClass) {
+    super(Class.class.cast(StringTo.class));
     this.componentClass = componentClass;
   }
 

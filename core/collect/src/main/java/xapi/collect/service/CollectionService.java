@@ -26,7 +26,7 @@ public interface CollectionService {
 
   <V> StringTo.Many<V> newStringMultiMap(Class<V> cls, CollectionOptions opts);
 
-  <V> StringDictionary<V> newDictionary();
+  <V> StringDictionary<V> newDictionary(Class<V> cls);
 
   <V> Fifo<V> newFifo();
 

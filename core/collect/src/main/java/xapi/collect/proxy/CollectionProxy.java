@@ -1,11 +1,12 @@
 package xapi.collect.proxy;
 
+import xapi.collect.api.CollectionOptions;
+import xapi.collect.api.ObjectTo;
+import xapi.util.api.ConvertsTwoValues;
+
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import xapi.collect.api.CollectionOptions;
-import xapi.collect.api.ObjectTo;
 
 public interface CollectionProxy <K, V>
 {
@@ -34,4 +35,9 @@ public interface CollectionProxy <K, V>
 
   void clear();
 
+  Class<K> keyType();
+
+  Class<V> valueType();
+
+   boolean forEach(ConvertsTwoValues<K, V, Boolean> callback);
 }

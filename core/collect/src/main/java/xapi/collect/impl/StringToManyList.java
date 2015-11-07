@@ -10,11 +10,12 @@ public class StringToManyList <X> extends StringToAbstract<IntTo<X>> implements 
   private final Class<X> componentClass;
 
   public StringToManyList(final Class<X> componentClass) {
+    super(Class.class.cast(IntTo.class));
     this.componentClass = componentClass;
   }
 
   public StringToManyList(final Class<X> componentClass, final java.util.Map<String, IntTo<X>> map) {
-    super(map);
+    super(Class.class.cast(IntTo.class), map);
     this.componentClass = componentClass;
   }
 

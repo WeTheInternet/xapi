@@ -1,14 +1,5 @@
 package xapi.collect.impl;
 
-import static java.util.Collections.synchronizedMap;
-
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentSkipListMap;
-
 import xapi.annotation.inject.SingletonDefault;
 import xapi.collect.api.ClassTo;
 import xapi.collect.api.CollectionOptions;
@@ -26,6 +17,15 @@ import xapi.platform.AndroidPlatform;
 import xapi.platform.GwtDevPlatform;
 import xapi.platform.JrePlatform;
 import xapi.util.X_Runtime;
+
+import static java.util.Collections.synchronizedMap;
+
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 @GwtDevPlatform
 @JrePlatform
@@ -147,7 +147,7 @@ public class CollectionServiceDefault implements CollectionService{
 
   @Override
   public <V> StringTo<V> newStringMap(final Class<? extends V> cls, final CollectionOptions opts) {
-    return new StringToAbstract<V>(this.<String, V>newMap(opts));
+    return new StringToAbstract<>(Class.class.cast(cls), this.<String, V>newMap(opts));
   }
 
   protected <K, V> CollectionProxy<K,V> newProxy(final Class<K> keyType, final Class<V> valueType, final CollectionOptions opts) {
@@ -178,23 +178,24 @@ public class CollectionServiceDefault implements CollectionService{
 
   @Override
   public <K,V> Many<K,V> newMultiMap(final Class<K> key, final Class<V> cls, final CollectionOptions opts) {
-    throw new NotYetImplemented("Multi-map not yet implemented");
+    return new ObjectToManyList<>(key, cls, this.<K, IntTo<V>>newMap(opts));
   }
 
   @Override
-  public <V> xapi.collect.api.ClassTo.Many<V> newClassMultiMap(final Class<V> cls, final CollectionOptions opts) {
-    throw new NotYetImplemented("Multi-map not yet implemented");
+  public <V> ClassTo.Many<V> newClassMultiMap(final Class<V> cls, final CollectionOptions opts) {
+    return new ClassToManyList<>(cls, this.<Class<?>, IntTo<V>>newMap(opts));
   }
 
   @Override
-  public <V> xapi.collect.api.StringTo.Many<V> newStringMultiMap(final Class<V> cls,
+  public <V> StringTo.Many<V> newStringMultiMap(final Class<V> cls,
     final CollectionOptions opts) {
-    throw new NotYetImplemented("Multi-map not yet implemented");
+    // TODO honor opts
+    return new StringToManyList<V>(cls);
   }
 
   @Override
-  public <V> StringDictionary<V> newDictionary() {
-    return new StringDictionaryDefault<V>();
+  public <V> StringDictionary<V> newDictionary(Class<V> cls) {
+    return new StringDictionaryDefault<V>(cls);
   }
 
   @Override

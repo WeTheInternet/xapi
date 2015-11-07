@@ -4,6 +4,7 @@ import xapi.collect.api.CollectionOptions;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.ObjectTo;
 import xapi.collect.proxy.CollectionProxy;
+import xapi.util.api.ConvertsTwoValues;
 import xapi.util.api.ConvertsValue;
 
 import javax.inject.Provider;
@@ -222,6 +223,17 @@ public abstract class ObjectToAbstract<K,V> implements ObjectTo<K,V> {
   @Override
   public boolean isEmpty() {
     return store.isEmpty();
+  }
+
+
+  @Override
+  public boolean forEach(ConvertsTwoValues<K, V, Boolean> callback) {
+    for (Entry<K, V> e : entries()) {
+      if (!callback.convert(e.getKey(), e.getValue())) {
+        return false;
+      }
+    }
+    return true;
   }
 
 }

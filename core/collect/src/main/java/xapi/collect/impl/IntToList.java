@@ -1,5 +1,13 @@
 package xapi.collect.impl;
 
+import xapi.collect.api.CollectionOptions;
+import xapi.collect.api.IntTo;
+import xapi.collect.api.ObjectTo;
+import xapi.except.NotYetImplemented;
+import xapi.util.X_Util;
+import xapi.util.api.ConvertsTwoValues;
+import xapi.util.impl.AbstractPair;
+
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -13,20 +21,13 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import xapi.collect.api.CollectionOptions;
-import xapi.collect.api.IntTo;
-import xapi.collect.api.ObjectTo;
-import xapi.except.NotYetImplemented;
-import xapi.util.X_Util;
-import xapi.util.impl.AbstractPair;
-
-public class IntToList<E> implements IntTo<E> {
+class IntToList<E> implements IntTo<E> {
 
   private final ArrayList<E> list = new ArrayList<E>(10);
-  private final Class<? extends E> type;
+  private final Class<E> type;
   
   public IntToList(Class<? extends E> cls) {
-    this.type = cls;
+    this.type = Class.class.cast(cls);
   }
 
   @Override
@@ -123,6 +124,7 @@ public class IntToList<E> implements IntTo<E> {
 
   @Override
   public boolean add(E item) {
+    assert item == null || valueType() == null || valueType().isAssignableFrom(item.getClass());
     return list.add(item);
   }
   
@@ -247,4 +249,21 @@ public class IntToList<E> implements IntTo<E> {
     return list.toString();
   }
 
+  public Class<Integer> keyType() {
+    return Integer.class;
+  }
+
+  public Class<E> valueType() {
+    return type;
+  }
+
+  @Override
+  public boolean forEach(ConvertsTwoValues<Integer, E, Boolean> callback) {
+    for (int i = 0, m = size(); i < m; i++ ) {
+      if (!callback.convert(i, get(i))) {
+        return false;
+      }
+    }
+    return true;
+  }
 }

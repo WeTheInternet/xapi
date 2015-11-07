@@ -1,17 +1,17 @@
 package xapi.gwt.collect;
 
-import com.google.gwt.core.client.GwtScriptOnly;
-import com.google.gwt.core.client.JavaScriptObject;
-
-import java.util.Iterator;
-import java.util.Map.Entry;
-
 import xapi.annotation.inject.InstanceOverride;
 import xapi.collect.api.StringTo;
 import xapi.collect.impl.ArrayIterable;
 import xapi.collect.impl.EntryValueAdapter;
 import xapi.collect.impl.IteratorWrapper;
 import xapi.platform.GwtPlatform;
+
+import com.google.gwt.core.client.GwtScriptOnly;
+import com.google.gwt.core.client.JavaScriptObject;
+
+import java.util.Iterator;
+import java.util.Map.Entry;
 
 @InstanceOverride(implFor=StringTo.class)
 @SuppressWarnings("serial")
@@ -52,22 +52,34 @@ public class StringToGwt <V> extends JavaScriptObject implements StringTo<V>{
   }
 
 
-  class KeyItr extends ArrayIterable<String>{
-    public KeyItr() {
-      super(keyArray());
+  static class KeyItr extends ArrayIterable<String>{
+
+    private final StringToGwt src;
+
+    public KeyItr(StringToGwt from) {
+      super(from.keyArray());
+      this.src = from;
     }
+
     @Override
     protected void remove(final String key) {
-      StringToGwt.this.remove(key);
+      src.remove(key);
     }
   }
 
-  class EntryItr implements Iterator<Entry<String, V>> {
+  static class EntryItr <V> implements Iterator<Entry<String, V>> {
+
+    final StringToGwt<V> src;
 
     int pos = 0;
-    String[] keys = keyArray();
+    String[] keys;
     int max = keys.length;
     Entry<String, V> entry;
+
+    EntryItr(StringToGwt<V> src) {
+      this.src = src;
+      keys = src.keyArray();
+    }
 
     @Override
     public boolean hasNext() {
@@ -77,7 +89,7 @@ public class StringToGwt <V> extends JavaScriptObject implements StringTo<V>{
     @Override
     public Entry<String,V> next() {
       final String key = keys[pos++];
-      final V next = get(key);
+      final V next = src.get(key);
       entry = new Entry<String,V>() {
 
         @Override
@@ -93,9 +105,9 @@ public class StringToGwt <V> extends JavaScriptObject implements StringTo<V>{
         @Override
         public V setValue(final V value) {
           if (value == null) {
-            return StringToGwt.this.remove(key);
+            return src.remove(key);
           } else {
-            return StringToGwt.this.put(key, value);
+            return src.put(key, value);
           }
         }
       };
@@ -105,7 +117,7 @@ public class StringToGwt <V> extends JavaScriptObject implements StringTo<V>{
     @Override
     public void remove() {
       assert entry != null : "You must call next() before remove() in StringToGwt.entries()";
-      StringToGwt.this.remove(entry.getKey());
+      src.remove(entry.getKey());
     }
 
   }
@@ -225,7 +237,7 @@ public class StringToGwt <V> extends JavaScriptObject implements StringTo<V>{
 
   @Override
   public final Iterable<String> keys() {
-    return new KeyItr();
+    return new KeyItr(this);
   }
 
   @Override
@@ -234,8 +246,19 @@ public class StringToGwt <V> extends JavaScriptObject implements StringTo<V>{
   }
 
   @Override
+  public final Class<String> keyType() {
+    return String.class;
+  }
+
+  @Override
+  public final native Class<V> valueType()
+  /*-{
+    return this._v$;
+  }-*/;
+
+  @Override
   public final Iterable<Entry<String,V>> entries() {
-    return new IteratorWrapper<Entry<String, V>>(new EntryItr());
+    return new IteratorWrapper<Entry<String, V>>(new EntryItr(this));
   }
 
   @Override

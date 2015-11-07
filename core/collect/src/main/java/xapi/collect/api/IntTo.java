@@ -1,22 +1,22 @@
 package xapi.collect.api;
 
+import xapi.collect.proxy.CollectionProxy;
+
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-
-import xapi.collect.proxy.CollectionProxy;
 
 
 public interface IntTo <T>
 extends CollectionProxy<Integer,T>
 {
 
-  static interface Many <T> extends IntTo<IntTo<T>> {
+  interface Many <T> extends IntTo<IntTo<T>> {
     void add(int key, T item);
   }
 
-  static class IntToIterable <T> implements Iterable <T> {
+  class IntToIterable <T> implements Iterable <T> {
     private final IntTo<T> self;
     public IntToIterable(IntTo<T> self) {
       this.self = self;
@@ -26,7 +26,7 @@ extends CollectionProxy<Integer,T>
       return new IntToIterator<T>(self);
     }
   }
-  static class IntToIterator <T> implements Iterator <T> {
+  class IntToIterator <T> implements Iterator <T> {
     private IntTo<T> source;
     int pos = 0;
     public IntToIterator(IntTo<T> source) {

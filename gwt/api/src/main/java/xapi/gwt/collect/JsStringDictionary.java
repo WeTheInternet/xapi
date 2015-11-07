@@ -1,9 +1,9 @@
 package xapi.gwt.collect;
 
-import com.google.gwt.core.client.JavaScriptObject;
-
 import xapi.collect.api.StringDictionary;
 import xapi.util.api.ReceivesValue;
+
+import com.google.gwt.core.client.JavaScriptObject;
 
 public class JsStringDictionary <V> extends JavaScriptObject implements StringDictionary<V>{
 
@@ -13,6 +13,11 @@ public class JsStringDictionary <V> extends JavaScriptObject implements StringDi
   public static native <V> JsStringDictionary<V> create()
   /*-{
     return {};
+  }-*/;
+
+  public static native <V> JsStringDictionary<V> create(Class<V> cls)
+  /*-{
+    return {_v$: cls};
   }-*/;
 
   public final native <Unsafe> Unsafe getUnsafe(String key)
@@ -76,7 +81,7 @@ public class JsStringDictionary <V> extends JavaScriptObject implements StringDi
   public final native void forKeys(ReceivesValue<String> receiver)
   /*-{
     for (var i in this) {
-      if (Object.prototype.hasOwnProperty.call(this, i))
+      if (i !== '_v$' && Object.prototype.hasOwnProperty.call(this, i))
         receiver.@xapi.util.api.ReceivesValue::set(Ljava/lang/Object;)(i);
     }
   }-*/;

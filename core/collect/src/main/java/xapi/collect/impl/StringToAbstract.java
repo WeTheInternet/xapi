@@ -1,15 +1,15 @@
 package xapi.collect.impl;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import xapi.annotation.inject.InstanceDefault;
 import xapi.collect.api.StringTo;
 import xapi.platform.GwtDevPlatform;
 import xapi.platform.JrePlatform;
 import xapi.util.X_Runtime;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @JrePlatform
 @GwtDevPlatform
@@ -18,15 +18,19 @@ public class StringToAbstract <V> implements StringTo<V>{
 
   private static final long serialVersionUID = 7743120861632536635L;
   private final java.util.Map<String,V> map;
+  private final Class<V> valueType;
 
-  public StringToAbstract() {
+  public StringToAbstract(Class<V> valueType) {
+    this.valueType = valueType;
     if (isMultithreaded()) {
       map = new ConcurrentHashMap<String,V>();
     } else {
       map = new HashMap<String,V>();
     }
   }
-  public StringToAbstract(final Map<String, V> map) {
+
+  public StringToAbstract(Class<V> valueType, final Map<String, V> map) {
+    this.valueType = valueType;
     this.map = map;
   }
 
@@ -86,6 +90,16 @@ public class StringToAbstract <V> implements StringTo<V>{
   @Override
   public Iterable<V> values() {
     return map.values();
+  }
+
+  @Override
+  public Class<String> keyType() {
+    return String.class;
+  }
+
+  @Override
+  public Class<V> valueType() {
+    return valueType;
   }
 
   @Override

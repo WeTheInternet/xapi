@@ -7,6 +7,12 @@ public class StringDictionaryDefault <V> extends StringToAbstract<V> implements 
 
   private static final long serialVersionUID = 7852257257033178551L;
 
+  public StringDictionaryDefault() {
+    super(Class.class.cast(Object.class)); // a filthy lie... :-/
+  }
+
+  public StringDictionaryDefault(Class<V> cls) {super(cls);}
+
   @Override
   public boolean hasKey(final String key) {
     return containsKey(key);

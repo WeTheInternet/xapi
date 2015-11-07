@@ -1,8 +1,8 @@
 package xapi.collect.api;
 
-import java.util.Map.Entry;
-
 import xapi.collect.impl.EntryIterable;
+
+import java.util.Map.Entry;
 
 
 public interface HasValues<K,V> extends EntryIterable<K,V> {
@@ -31,4 +31,9 @@ public interface HasValues<K,V> extends EntryIterable<K,V> {
   Iterable<K> keys();
 
   Iterable<V> values();
+
+  Class<K> keyType();
+
+  Class<V> valueType();
+
 }

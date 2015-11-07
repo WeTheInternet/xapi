@@ -9,9 +9,16 @@ import xapi.collect.api.ObjectTo;
 import xapi.collect.api.ObjectTo.Many;
 import xapi.collect.api.StringDictionary;
 import xapi.collect.api.StringTo;
+import xapi.collect.impl.ClassToManyList;
+import xapi.collect.impl.ObjectToManyList;
+import xapi.collect.impl.StringToManyList;
 import xapi.collect.service.CollectionService;
 import xapi.except.NotYetImplemented;
 import xapi.platform.GwtPlatform;
+
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @GwtPlatform
 @SingletonOverride(implFor=CollectionService.class)
@@ -24,17 +31,26 @@ public class CollectionServiceGwt implements CollectionService{
 
   @Override
   public <V> IntTo<V> newSet(Class<V> cls, CollectionOptions opts) {
-    throw new NotYetImplemented("IntTo not yet implemented");
+    throw new NotYetImplemented("Set "+"not yet implemented");
   }
 
   @Override
   public <K,V> ObjectTo<K,V> newMap(Class<K> key, Class<V> cls, CollectionOptions opts) {
-    return new xapi.collect.proxy.MapOf<K, V>(new java.util.HashMap<K, V>(), key, cls);
+    return new xapi.collect.proxy.MapOf<K, V>(newMap(opts), key, cls);
+  }
+
+  private <K, V> Map<K, V> newMap(CollectionOptions opts) {
+    if (opts.insertionOrdered()) {
+      return new LinkedHashMap<>();
+    } else {
+      return new HashMap<>();
+    }
+    // No need for concurrent map types in Gwt
   }
 
   @Override
   public <V> ClassTo<V> newClassMap(Class<V> cls, CollectionOptions opts) {
-    return new xapi.collect.impl.ClassToDefault<V>(new java.util.HashMap<Class<?>, V>(), cls);
+    return new xapi.collect.impl.ClassToDefault<V>(newMap(opts), cls);
   }
 
   @Override
@@ -46,24 +62,24 @@ public class CollectionServiceGwt implements CollectionService{
   }
 
   @Override
-  public <V> StringDictionary<V> newDictionary() {
-    return JsStringDictionary.create();
+  public <V> StringDictionary<V> newDictionary(Class<V> cls) {
+    return JsStringDictionary.create(cls);
   }
 
   @Override
-  public <K,V> Many<K,V> newMultiMap(Class<K> key, Class<V> cls, CollectionOptions opts) {
-    throw new NotYetImplemented("MultiMap not yet implemented");
+  public <K,V> Many<K,V> newMultiMap(final Class<K> key, final Class<V> cls, final CollectionOptions opts) {
+    return new ObjectToManyList<>(key, cls, newMap(opts));
   }
 
   @Override
-  public <V> xapi.collect.api.ClassTo.Many<V> newClassMultiMap(Class<V> cls, CollectionOptions opts) {
-    throw new NotYetImplemented("MultiMap not yet implemented");
+  public <V> ClassTo.Many<V> newClassMultiMap(final Class<V> cls, final CollectionOptions opts) {
+    return new ClassToManyList<>(cls, newMap(opts));
   }
 
   @Override
   public <V> xapi.collect.api.StringTo.Many<V> newStringMultiMap(Class<V> cls,
     CollectionOptions opts) {
-    throw new NotYetImplemented("MultiMap not yet implemented");
+    return new StringToManyList<V>(cls);
   }
 
   @Override

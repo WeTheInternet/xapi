@@ -1,5 +1,12 @@
 package xapi.collect.impl;
 
+import xapi.collect.X_Collect;
+import xapi.collect.api.CollectionOptions;
+import xapi.collect.api.IntTo;
+import xapi.collect.api.ObjectTo;
+import xapi.collect.api.StringTo;
+import xapi.util.api.ConvertsTwoValues;
+
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -12,24 +19,28 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 
-import xapi.collect.X_Collect;
-import xapi.collect.api.CollectionOptions;
-import xapi.collect.api.IntTo;
-import xapi.collect.api.ObjectTo;
-import xapi.collect.api.StringTo;
-
 public class IntToManyList <X> implements IntTo.Many<X>{
 
   private final StringTo.Many<X> map;
+  private final Class<X> componentClass;
   private int max;
 
   public IntToManyList(final Class<X> componentClass) {
     this.map = X_Collect.newStringMultiMap(componentClass, new TreeMap<String, IntTo<X>>());
+    this.componentClass = componentClass;
   }
 
   @Override
   public Iterable<IntTo<X>> forEach() {
     return map.values();
+  }
+
+  public Class<Integer> keyType() {
+    return Integer.class;
+  }
+
+  public Class<IntTo<X>> valueType() {
+    return Class.class.cast(IntTo.class);
   }
 
   @Override
@@ -40,6 +51,7 @@ public class IntToManyList <X> implements IntTo.Many<X>{
   }
 
   private void updateMax() {
+    // TODO limit this brute force approach so that sparse arrays don't suffer
     while (map.containsKey(Integer.toString(max++))) {
       ;
     }
@@ -47,6 +59,7 @@ public class IntToManyList <X> implements IntTo.Many<X>{
 
   @Override
   public void add(final int key, final X item) {
+    assert item == null || componentClass == null || componentClass.isAssignableFrom(item.getClass());
     map.get(Integer.toString(key)).add(item);
   }
 
@@ -369,5 +382,15 @@ public class IntToManyList <X> implements IntTo.Many<X>{
     max = 0;
   }
 
+
+  @Override
+  public boolean forEach(ConvertsTwoValues<Integer, IntTo<X>, Boolean> callback) {
+    for (int i = 0, m = size(); i < m; i++ ) {
+      if (!callback.convert(i, get(i))) {
+        return false;
+      }
+    }
+    return true;
+  }
 
 }

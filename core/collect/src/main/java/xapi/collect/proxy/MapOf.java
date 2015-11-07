@@ -4,6 +4,7 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.CollectionOptions;
 import xapi.collect.api.HasValues;
 import xapi.collect.api.ObjectTo;
+import xapi.util.api.ConvertsTwoValues;
 import xapi.util.api.ConvertsValue;
 
 import java.lang.reflect.Array;
@@ -215,4 +216,13 @@ implements CollectionProxy<K,V>, Map<K,V>, HasValues<K,V>, ObjectTo<K,V>
     return existing;
   }
 
+  @Override
+  public boolean forEach(ConvertsTwoValues<K, V, Boolean> callback) {
+    for (Entry<K, V> entry : entries()) {
+      if (!callback.convert(entry.getKey(), entry.getValue())) {
+        return false;
+      }
+    }
+    return true;
+  }
 }

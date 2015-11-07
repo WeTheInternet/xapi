@@ -1,5 +1,11 @@
 package xapi.collect.impl;
 
+import xapi.collect.api.CollectionOptions;
+import xapi.collect.api.IntTo;
+import xapi.collect.api.ObjectTo;
+import xapi.collect.proxy.CollectionProxy;
+import xapi.util.api.ConvertsTwoValues;
+
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Deque;
@@ -8,11 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-
-import xapi.collect.api.CollectionOptions;
-import xapi.collect.api.IntTo;
-import xapi.collect.api.ObjectTo;
-import xapi.collect.proxy.CollectionProxy;
 
 public class IntToAbstract <V> implements IntTo<V> {
 
@@ -48,6 +49,7 @@ public class IntToAbstract <V> implements IntTo<V> {
 
   @Override
   public boolean add(V item) {
+    assert valueType() == null || item == null || valueType().isAssignableFrom(item.getClass());
     return store.put(newEntry(size(), item)) == null;
   }
   
@@ -230,4 +232,21 @@ public class IntToAbstract <V> implements IntTo<V> {
     return true;
   }
 
+  public Class<Integer> keyType() {
+    return Integer.class;
+  }
+
+  public Class<V> valueType() {
+    return store.valueType();
+  }
+
+  @Override
+  public boolean forEach(ConvertsTwoValues<Integer, V, Boolean> callback) {
+    for (int i = 0, m = size(); i < m; i++ ) {
+      if (!callback.convert(i, get(i))) {
+        return false;
+      }
+    }
+    return true;
+  }
 }
