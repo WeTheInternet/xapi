@@ -24,6 +24,11 @@
  </description>
 
  <modules>
+  <!-- 
+  The fu module contains a collection of lambda-friendly interfaces 
+  which enable useful functional apis for composing streamlined processes in java 8 environments.
+  -->
+  <module>fu</module>
   <!-- The api module is the root dependency of all xapi modules, artifactId: 
    xapi-core. It consists mostly of interfaces, annotations, and a few implementation 
    classes; the annotations used for injection are stored here, for modules 

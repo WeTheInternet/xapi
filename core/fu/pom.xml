@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-core-parent</artifactId>
+    <version>0.6-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>xapi-fu</artifactId>
+  <packaging>jar</packaging>
+  <name>XApi - FuJustu: Functional objects, helpers and composers</name>
+  <url>WeTheInter.net</url>
+
+  <properties>
+    <java.version>1.8</java.version>
+  </properties>
+
+  <description>
+  Contains useful functional apis for use in a java 8 environment,
+  and convenient apis for composing streamlined processes.
+  </description>
+  
+  <dependencies>
+
+    <dependency>
+      <groupId>javax.inject</groupId>
+      <artifactId>javax.inject</artifactId>
+      <optional>true</optional>
+      <version>1</version>
+    </dependency>
+  </dependencies>
+
+</project>
