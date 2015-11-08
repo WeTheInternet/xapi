@@ -2,14 +2,13 @@ package xapi.gwt.junit.gui;
 
 import elemental.client.Browser;
 import elemental.dom.Element;
-import elemental.util.Timer;
 import xapi.elemental.X_Elemental;
 import xapi.elemental.api.PotentialNode;
 import xapi.gwt.junit.impl.JUnit4Executor;
+import xapi.util.X_Debug;
 import xapi.util.impl.LazyProvider;
 
 import com.google.gwt.core.client.Callback;
-import com.google.gwt.core.client.Scheduler;
 import com.google.gwt.reflect.client.ConstPool;
 import com.google.gwt.reflect.shared.JsMemberPool;
 import com.google.gwt.reflect.shared.ReflectUtil;
@@ -25,8 +24,7 @@ import java.util.Map;
 public abstract class JUnitGui {
 
   private static final String TEST_RESULTS = "test.result";
-  private static final Throwable SUCCESS = new Throwable();
-  private final Map<Method, Object> tests = new LinkedHashMap<>();
+  private final Map<Class<?>, Object> tests = new LinkedHashMap<>();
   private final Map<Class<?>, Method[]> testClasses = new LinkedHashMap<>();
   Map<Class<?>, Map<Method, Throwable>> testResults = new LinkedHashMap<>();
 
@@ -124,14 +122,16 @@ public abstract class JUnitGui {
       testClasses.putIfAbsent(cls, allTests);
       // TODO verify that it is correct to only instantiate one instance and share it across methods.
       final Object inst = instantiate(cls);
-      for (final Method method : allTests) {
-        tests.put(method, inst);
-      }
+      tests.put(cls, inst);
     }
   }
 
-  protected Object instantiate(Class<?> cls) throws Throwable {
-    return cls.newInstance();
+  protected Object instantiate(Class<?> cls) {
+    try {
+      return cls.newInstance();
+    } catch (Exception e) {
+      throw X_Debug.rethrow(e);
+    }
   }
 
   protected void displayTests() {
@@ -207,7 +207,7 @@ public abstract class JUnitGui {
   }
 
   protected PotentialNode<Element> newClassBlock(Class<?> c) {
-    return new PotentialNode<>("div");
+    return new PotentialNode<>("div", true);
   }
 
   protected void buildHeader(PotentialNode<Element> b, Class<?> c, String id) {
@@ -241,16 +241,15 @@ public abstract class JUnitGui {
   }
 
   public void runTests() {
-    int delay = 1;
     testResults.clear();
-    for (final Method method : tests.keySet()) {
-      Map<Method, Throwable> results = testResults.get(method.getDeclaringClass());
+    for (final Class<?> cls : tests.keySet()) {
+      Map<Method, Throwable> results = testResults.get(cls);
       if (results == null) {
         results = new LinkedHashMap<>();
-        testResults.put(method.getDeclaringClass(), results);
+        testResults.put(cls, results);
       }
-      results.put(method, null);
-      scheduleRun(method, delay += 5);
+      results.clear();
+      runTests(cls);
     }
     testResults.keySet().forEach(this::updateTestClass);
   }
@@ -263,19 +262,30 @@ public abstract class JUnitGui {
     }
     updateTestClass(c);
 
-    for (final Method m : testClasses.get(c)) {
-      Scheduler.get().scheduleDeferred(() -> runTest(m));
+    final Object inst = instantiate(c);
+    tests.put(c, inst);
+
+    JUnitGuiController controller;
+    if (inst instanceof JUnitGuiController) {
+      controller = (JUnitGuiController) inst;
+    } else {
+      controller = new JUnitGuiController(()->updateTestClass(c));
     }
-  }
 
-  private void scheduleRun(final Method method, int delay) {
-    new Timer() {
-
-      @Override
-      public void run() {
-        runTest(method);
-      }
-    }.schedule(delay);
+    Element[] view = new Element[0];
+    final Provider<Element> stageProvider = () -> {
+      view[0] = X_Elemental.newDiv();
+      final Element result = initialize(view[0], controller, inst);
+      return result;
+    };
+    if (controller.onTestStart(LazyProvider.of(stageProvider), inst)) {
+      controller.runAll(
+          c, inst, fin -> {
+            res.putAll(fin);
+            updateTestClass(c);
+          }
+      );
+    }
   }
 
   protected Element elementForClass(Class<?> cls) {
@@ -290,7 +300,7 @@ public abstract class JUnitGui {
     final int total = results.size();
     for (final Map.Entry<Method, Throwable> e : results.entrySet()) {
       if (e.getValue() != null) {
-        if (e.getValue() == SUCCESS) {
+        if (e.getValue() == JUnit4Executor.SUCCESS) {
           success++;
         } else {
           fail++;
@@ -310,40 +320,38 @@ public abstract class JUnitGui {
   protected void runTest(final Method m) {
     final String id = m.getName() + m.getDeclaringClass().hashCode();
     final Element stage = Browser.getDocument().getElementById(id);
-    stage.setInnerHTML("Running...");
+    stage.setInnerHTML("");
     final Map<Method, Throwable> results = testResults.get(m.getDeclaringClass());
     try {
-      final Object inst = tests.get(m);
+      final Object inst = tests.get(m.getDeclaringClass());
       JUnitGuiController controller;
       if (inst instanceof JUnitGuiController) {
         controller = (JUnitGuiController) inst;
       } else {
-        controller = JUnitGuiController.DEFAULT_CONTROLLER;
+        controller = new JUnitGuiController(()->updateTestClass(m.getDeclaringClass()));
       }
       Element[] view = new Element[0];
       final Provider<Element> stageProvider = () -> {
         view[0] = X_Elemental.newDiv();
-        final Element result = initialize(view[0], controller, inst, m, id);
+        final Element result = initialize(view[0], controller, inst);
         if (result.getParentElement() == null) {
           stage.appendChild(result);
         }
         return result;
       };
-      if (controller.onTestStart(LazyProvider.of(stageProvider), inst, m)) {
-        //        final JUnitGuiExecution exe = newExecution(inst, m);
-        //        controller.setExecution(exe);
-        controller.runTest(
-            inst, m, e -> {
-              results.put(m, e == null ? SUCCESS : e);
-              stage.setInnerHTML(debug("<div style='color:green'>" + m.getName() + " passes!</div>", null));
+      if (controller.onTestStart(LazyProvider.of(stageProvider), inst)) {
 
+        controller.run(
+            inst, m, e -> {
+              e = e == null ? JUnit4Executor.SUCCESS : e;
+              results.put(m, e);
               updateTestClass(m.getDeclaringClass());
             }
         );
       }
     } catch (Throwable e) {
       results.put(m, e);
-    } finally {
+      stage.setInnerHTML(debug("<div style='color:red'>" + m.getName() + " fails!</div>", e));
     }
   }
 
@@ -354,9 +362,7 @@ public abstract class JUnitGui {
   protected Element initialize(
       Element element,
       JUnitGuiController controller,
-      Object inst,
-      Method method,
-      String id
+      Object inst
   ) {
     return element == null ? X_Elemental.newDiv() : element;
   }
@@ -376,32 +382,12 @@ public abstract class JUnitGui {
   }
 
   protected String debug(final Object message, Throwable e) {
-    final StringBuilder b = new StringBuilder();
-    b.append(message);
-    b.append('\n');
-    b.append("<pre style='color:red;'>");
-    while (e != null) {
-      b.append(e);
-      b.append('\n');
-      for (final StackTraceElement trace : e.getStackTrace()) {
-        b.append('\t')
-            .append(trace.getClassName())
-            .append('.')
-            .append(trace.getMethodName())
-            .append(' ')
-            .append(trace.getFileName())
-            .append(':')
-            .append(trace.getLineNumber())
-            .append('\n');
-      }
-      e = e.getCause();
-    }
-    b.append("</pre>");
+    String debug = JUnit4Executor.debug(message, e);
 
     log(message);
     log(e);
 
-    return b.toString();
+    return debug;
   }
 
 }

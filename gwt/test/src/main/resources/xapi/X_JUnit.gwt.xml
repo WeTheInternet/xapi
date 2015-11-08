@@ -6,7 +6,7 @@
   <source path="gwt/junit" excludes="dev, server"/>
 
   <inherits name="xapi.X_Elemental"/>
-  <inherits name="org.junit.JUnit4"/>
+  <inherits name="org.JUnit4Lite"/>
 <!--  Experimental: full junit emulation.  It is surprisingly less work than one might expect.
  <inherits name="junit"/>
 -->

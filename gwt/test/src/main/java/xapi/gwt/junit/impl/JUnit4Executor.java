@@ -9,14 +9,16 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
 import xapi.collect.api.IntTo;
 import xapi.gwt.junit.api.JUnitExecution;
+import xapi.log.X_Log;
 import xapi.time.X_Time;
-import xapi.util.X_Debug;
 import xapi.util.api.ReceivesValue;
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.GWT.UncaughtExceptionHandler;
 import com.google.gwt.core.client.Scheduler.RepeatingCommand;
+import com.google.gwt.reflect.shared.GwtReflect;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -29,9 +31,11 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Predicate;
 
 public class JUnit4Executor {
 
+  public static final Throwable SUCCESS = new Throwable();
   private static JUnitExecution execution;
 
   private ClassTo<Lifecycle> lifecycles;
@@ -45,16 +49,6 @@ public class JUnit4Executor {
 
   public static Method[] findTests(final Class<?> testClass) throws Throwable {
     return new JUnit4Executor().findAnnotated(testClass);
-  }
-
-  public static void runTest(final Object inst, final Method m, ReceivesValue<Throwable> callback) throws Throwable {
-    final JUnit4Executor exe = new JUnit4Executor();
-    exe.run(inst, m, callback);
-
-  }
-
-  public static void runTests(final Class<?> testClass, ReceivesValue<Map<Method, Throwable>> callback) throws Throwable {
-    new JUnit4Executor().runAll(testClass, callback);
   }
 
   private native JUnitExecution initializeSystem()
@@ -137,6 +131,8 @@ public class JUnit4Executor {
 
       JUnitExecution controls = prepareToExecute(inst, lifecycle.tests);
 
+      setExecution(controls, inst);
+
       IntTo<Callable<Boolean>> tasks = X_Collect.newList(Class.class.cast(Callable.class));
       tasks.add(lifecycle.beforeClassInvoker(controls));
 
@@ -146,6 +142,7 @@ public class JUnit4Executor {
         tasks.add(
             () -> {
               controls.normalizeLimits();
+              controls. startMethod(method);
               final double timeout = t == null || t.timeout() == 0 ? getDefaultTimeout() : t.timeout();
               final double deadline = X_Time.nowPlus(timeout);
               final UncaughtExceptionHandler oldHandler = GWT.getUncaughtExceptionHandler();
@@ -153,7 +150,7 @@ public class JUnit4Executor {
               tasks.insert(
                   0, () -> {
                     try {
-                      controls.finish();
+                      controls.finishMethod(method, result.get(method));
                     } finally {
                       GWT.setUncaughtExceptionHandler(oldHandler);
                       if (execution == controls) {
@@ -234,27 +231,27 @@ public class JUnit4Executor {
         return false;
       };
 
-      while (command.execute()) {
-        if (controls.isFinished()) {
-          // We got lucky.  Nothing deferred occurred.
-          finishExecution(controls, result, callback, inst, lifecycle.tests);
-        } else {
-          // There is a timer.
-          Runnable[] wait = new Runnable[1];
-          wait[0] = () -> {
-            int max = 10000;
-            while (command.execute() && max-- > 0)
-              ;
-            assert max > 0 : "Infinite loop detected in junit execution of " + lifecycle + " on " + inst + ".";
-            if (controls.isFinished()) {
-              wait[0] = null;
-              finishExecution(controls, result, callback, inst, lifecycle.tests);
-            } else {
-              X_Time.runLater(wait[0]);
-            }
-          };
-          X_Time.runLater(wait[0]);
-        }
+      while (command.execute())
+        ;
+      if (controls.isFinished()) {
+        // We got lucky.  Nothing deferred occurred.
+        finishExecution(controls, result, callback, inst, lifecycle.tests);
+      } else {
+        // There is a timer.
+        Runnable[] wait = new Runnable[1];
+        wait[0] = () -> {
+          int max = 10000;
+          while (command.execute() && max-- > 0)
+            ;
+          assert max > 0 : "Infinite loop detected in junit execution of " + lifecycle + " on " + inst + ".";
+          if (controls.isFinished()) {
+            wait[0] = null;
+            finishExecution(controls, result, callback, inst, lifecycle.tests);
+          } else {
+            X_Time.runLater(wait[0]);
+          }
+        };
+        X_Time.runLater(wait[0]);
       }
     };
   }
@@ -262,46 +259,6 @@ public class JUnit4Executor {
   protected long getDefaultTimeout() {
     return 30000;
   }
-//
-//  protected void execute(
-//      final Object inst,
-//      final Map<String, Method> tests,
-//      final List<Method> beforeClass,
-//      final List<Method> before,
-//      final List<Method> after,
-//      final List<Method> afterClass,
-//      ReceivesValue<Map<String, Throwable>> callback
-//  )
-//  throws TestsFailed, IllegalArgumentException, IllegalAccessException, InvocationTargetException, NoSuchMethodError {
-//    final Map<Method, Throwable> result = new LinkedHashMap<Method, Throwable>();
-//    JUnitExecution controls = prepareToExecute(inst, tests);
-//
-//    try {
-//
-//      for (final Method m : beforeClass) {
-//        m.invoke(null);
-//      }
-//
-//      for (final Entry<String, Method> test : tests.entrySet()) {
-//        result.put(test.getValue(), runTest(inst, test.getValue(), before, after));
-//      }
-//
-//    } finally {
-//
-//      for (final Method m : afterClass) {
-//        m.invoke(null);
-//      }
-//      finishExecution(controls, result, callback, inst, tests);
-//    }
-//
-//    for (final Entry<Method, Throwable> e : result.entrySet()) {
-//      if (e.getValue() != null) {
-//        final TestsFailed failure = new TestsFailed(result);
-//        debug("Tests Failed;\n", failure);
-//        throw new AssertionError(failure.toString());
-//      }
-//    }
-//  }
 
   protected void finishExecution(
       JUnitExecution controls,
@@ -309,14 +266,14 @@ public class JUnit4Executor {
       ReceivesValue<Map<Method, Throwable>> callback,
       Object inst, Map<String, Method> tests
   ) {
-    controls.finish();
+    controls.finishClass(result);
     callback.set(result);
   }
 
   protected JUnitExecution prepareToExecute(Object inst, Map<String, Method> tests) {
     final JUnitExecution oldExecution = execution;
     final JUnitExecution newExecution = execution = newExecution();
-    execution.onFinished(
+    execution.onFinishedClass(
         e -> {
           if (execution == newExecution) {
             execution = oldExecution;
@@ -350,14 +307,13 @@ public class JUnit4Executor {
     return new LinkedHashMap<>();
   }
 
-  protected void run(final Object inst, final Method m, ReceivesValue<Throwable> callback) throws Throwable {
+  public void run(final Object inst, final Method m, ReceivesValue<Throwable> callback) throws Throwable {
     final Lifecycle lifecycle = newLifecycle(m.getDeclaringClass())
         .withOnlyOneMethod(m);
     final ReceivesValue<ReceivesValue<Map<Method, Throwable>>> exe = prepareExecution(inst, lifecycle);
     final ReceivesValue<Map<Method, Throwable>> delegate =
         map -> callback.set(map.values().iterator().next());
     scheduleExecution(exe, delegate);
-    exe.set(delegate);
   }
 
   private void scheduleExecution(
@@ -379,49 +335,11 @@ public class JUnit4Executor {
     return lifecycle;
   }
 
-  protected void runAll(final Class<?> testClass, ReceivesValue<Map<Method, Throwable>> callback) throws Throwable {
+  public void runAll(final Class<?> testClass, Object inst, ReceivesValue<Map<Method, Throwable>> callback) {
     final Lifecycle lifecycle = newLifecycle(testClass);
     if (lifecycle.tests.size() > 0) {
-      final Object inst = testClass.newInstance();
       final ReceivesValue<ReceivesValue<Map<Method, Throwable>>> exe = prepareExecution(inst, lifecycle);
       exe.set(callback);
-    }
-  }
-
-  protected Throwable runTest(
-      final Object inst,
-      final Method value,
-      final List<Method> before,
-      final List<Method> after
-  ) {
-
-    Test test = null;
-    try {
-      test = value.getAnnotation(Test.class);
-    } catch (final Exception e) {
-      debug("Error getting @Test annotation", e);
-    }
-
-    try {
-
-      debug("Executing " + value + " on " + inst, null);
-      for (final Method m : before) {
-        try {
-          m.invoke(inst);
-        } catch (Throwable e) {
-          X_Debug.rethrow(e);
-        }
-      }
-      return execute(test, inst, value);
-    } finally {
-      for (final Method m : after) {
-        try {
-          m.invoke(inst);
-        } catch (final Throwable e) {
-          debug("Error calling after methods", e);
-          return e;
-        }
-      }
     }
   }
 
@@ -432,7 +350,7 @@ public class JUnit4Executor {
       try {
         value.invoke(inst);
       } catch (final InvocationTargetException e) {
-        return e.getCause();
+        throw e.getCause();
       }
 
       if (expected != Test.None.class) {
@@ -441,15 +359,82 @@ public class JUnit4Executor {
                 + ", but failed to do so"
         );
       }
-      return null;
+      return SUCCESS;
     } catch (final Throwable e) {
       // Allow user to `throw null;` if they want to "short circuit to success".
       // TODO make this only work as an opt in...
       if (e == null) {
-        return null;
+        return SUCCESS;
       }
-      return expected.isAssignableFrom(e.getClass()) ? null : e;
+      return expected.isAssignableFrom(e.getClass()) ? SUCCESS : e;
     }
+  }
+
+  protected void findAndSetField(Predicate<Class> matcher, Object value, Object inst, boolean forceSet) {
+    Class<?> declaringClass = inst.getClass();
+    Field[] fields = GwtReflect.getPublicFields(declaringClass);
+    for (Field field : fields) {
+      if (matcher.test(field.getType())) {
+        try {
+          if (forceSet || field.get(inst) == null) {
+            field.set(inst, value);
+          }
+        } catch (Throwable e) {
+          X_Log.warn(
+              getClass(),
+              "findAndSetField for " + matcher + " on " + declaringClass + " (" + inst + ") encountered an error",
+              e
+          );
+        }
+      }
+    }
+    while (declaringClass != null && declaringClass != Object.class) {
+      fields = GwtReflect.getDeclaredFields(declaringClass);
+      for (Field field : fields) {
+        if (matcher.test(field.getType())) {
+          try {
+            field.setAccessible(true);
+            if (forceSet || field.get(inst) == null) {
+              field.set(inst, value);
+            }
+          } catch (Throwable e) {
+            X_Log.warn(getClass(), "findAndSetField for "+matcher+" on "+declaringClass+" ("+inst+") encountered an error", e);
+          }
+        }
+      }
+      declaringClass = declaringClass.getSuperclass();
+    }
+  }
+
+
+  protected void setExecution(JUnitExecution execution, Object inst) {
+    execution.autoClean();
+    findAndSetField(execution.getClass()::isAssignableFrom, execution, inst, true);
+  }
+
+  public static String debug(Object message, Throwable e) {
+    final StringBuilder b = new StringBuilder();
+    b.append(message);
+    b.append('\n');
+    b.append("<pre style='color:red;'>");
+    while (e != null) {
+      b.append(e);
+      b.append('\n');
+      for (final StackTraceElement trace : e.getStackTrace()) {
+        b.append('\t')
+            .append(trace.getClassName())
+            .append('.')
+            .append(trace.getMethodName())
+            .append(' ')
+            .append(trace.getFileName())
+            .append(':')
+            .append(trace.getLineNumber())
+            .append('\n');
+      }
+      e = e.getCause();
+    }
+    b.append("</pre>");
+    return b.toString();
   }
 
   protected class Lifecycle {

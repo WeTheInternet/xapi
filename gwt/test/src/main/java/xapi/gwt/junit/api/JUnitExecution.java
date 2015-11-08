@@ -4,8 +4,11 @@ import xapi.log.X_Log;
 import xapi.time.X_Time;
 import xapi.util.X_Util;
 import xapi.util.api.ProvidesValue;
+import xapi.util.api.ReceivesTwoValues;
 import xapi.util.api.ReceivesValue;
 
+import java.lang.reflect.Method;
+import java.util.Map;
 import java.util.function.BooleanSupplier;
 
 /**
@@ -19,7 +22,9 @@ public class JUnitExecution<Context> {
   private int maxIntervalsLeft;
 
   private BooleanSupplier[] beforeFinished;
-  private ReceivesValue<Throwable>[] onFinished;
+  private ReceivesTwoValues<Method, Throwable>[] onFinishedMethod;
+  private ReceivesValue<Method>[] onStartMethod;
+  private ReceivesValue<Map<Method, Throwable>>[] onFinishedClass;
 
   private Throwable error;
   private Double deadline;
@@ -52,14 +57,23 @@ public class JUnitExecution<Context> {
     return this;
   }
 
+  public JUnitExecution<Context> onFinished(ReceivesTwoValues<Method, Throwable> callback) {
+    onFinishedMethod = X_Util.pushOnto(onFinishedMethod, callback);
+    return this;
+  }
 
-  public JUnitExecution<Context> onFinished(ReceivesValue<Throwable> callback) {
-    onFinished = X_Util.pushOnto(onFinished, callback);
+  public JUnitExecution<Context> onStartMethod(ReceivesValue<Method> callback) {
+    onStartMethod = X_Util.pushOnto(onStartMethod, callback);
+    return this;
+  }
+
+  public JUnitExecution<Context> onFinishedClass(ReceivesValue<Map<Method,Throwable>> callback) {
+    onFinishedClass = X_Util.pushOnto(onFinishedClass, callback);
     return this;
   }
 
   public void autoClean() {
-    onFinished(e->this.clear());
+    onFinishedClass(e -> this.clear());
   }
 
   protected boolean isErrorState() {
@@ -86,9 +100,14 @@ public class JUnitExecution<Context> {
     clearDeadline();
     error = null;
     context = null;
-    kill(timeouts, intervals);
+    if (timeouts != null) {
+      kill(timeouts, intervals);
+    }
     timeouts = new int[0];
     intervals = new int[0];
+    onFinishedMethod = new ReceivesTwoValues[0];
+    onStartMethod = new ReceivesValue[0];
+    onFinishedClass = new ReceivesValue[0];
     beforeFinished = new BooleanSupplier[]{
         // The default test is that the timeouts and intervals are cleared.
         this::isTimeoutsClear
@@ -146,16 +165,28 @@ public class JUnitExecution<Context> {
     this.context = context;
   }
 
-  public void finish() {
-    final ReceivesValue<Throwable>[] copy = onFinished;
-    onFinished = new ReceivesValue[0];
-    for (ReceivesValue<Throwable> callback : copy) {
-      callback.set(error);
+  public void finishClass(Map<Method, Throwable> results) {
+    final ReceivesValue<Map<Method, Throwable>>[] copy = onFinishedClass;
+    onFinishedClass = new ReceivesValue[0];
+    for (ReceivesValue<Map<Method, Throwable>> callback : copy) {
+      callback.set(results);
+    }
+  }
+
+  public void finishMethod(Method m, Throwable e) {
+    for (ReceivesTwoValues<Method, Throwable> callback : onFinishedMethod) {
+      callback.receiveValues(m, e);
     }
   }
 
   public void normalizeLimits() {
     maxIntervalsLeft = intervals.length;
     maxTimeoutsLeft = timeouts.length;
+  }
+
+  public void startMethod(Method method) {
+    for (ReceivesValue<Method> callback : onStartMethod) {
+      callback.set(method);
+    }
   }
 }
