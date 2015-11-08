@@ -1,29 +1,36 @@
 package xapi.process.impl;
 
+import xapi.process.X_Process;
+import xapi.process.api.AsyncLock;
+import xapi.util.api.SuccessHandler;
+
+import java.lang.reflect.Array;
 import java.util.AbstractQueue;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-import xapi.process.X_Process;
-import xapi.process.api.AsyncLock;
-import xapi.reflect.X_Reflect;
-import xapi.util.api.SuccessHandler;
-
-public abstract class ProcessQueueAbstract <T> extends AbstractQueue<T> {
+public abstract class ProcessQueueAbstract<T> extends AbstractQueue<T> {
 
   private final int size;
-  private int writeIndex;
-  private int readIndex;
   private final T[] all;
   private final AsyncLock lock;
+  private int writeIndex;
+  private int readIndex;
 
   public ProcessQueueAbstract(int knownSize) {
     this.size = knownSize;
     Class<T> cls = typeClass();
-    all = X_Reflect.newArray(cls, knownSize);
+    all = (T[]) Array.newInstance(cls, knownSize);
     lock = X_Process.newLock();
   }
 
+  /**
+   * @return The class of components to be used in the process queue.
+   * <p>
+   * If you wish to have Gwt support, be sure that this class has been enhanced
+   * with array reflection support.  Simply calling static { Array.newInstance(MyClass.class, 0); }
+   * using a class literal will then allow later calls using a class reference to succeed.
+   */
   protected abstract Class<T> typeClass();
 
   @Override
@@ -36,16 +43,18 @@ public abstract class ProcessQueueAbstract <T> extends AbstractQueue<T> {
         lock.unlock();
       }
     } else {
-      lock.lock(new SuccessHandler<AsyncLock>() {
-        @Override
-        public void onSuccess(AsyncLock t) {
-          try {
-            doPut(e);
-          } finally {
-            t.unlock();
+      lock.lock(
+          new SuccessHandler<AsyncLock>() {
+            @Override
+            public void onSuccess(AsyncLock t) {
+              try {
+                doPut(e);
+              } finally {
+                t.unlock();
+              }
+            }
           }
-        }
-      });
+      );
     }
     return true;
   }

@@ -4,7 +4,7 @@ package xapi.collect.impl;
  * A very simple, but useful stack (linked list).
  * <p>
  * It's one-way, threadsafe, fast, toString friendly, and can merge with other
- * SimpleStacks easily via {@link #consume(SimpleStack)}
+ * SimpleStacks easily via {@link #consume(AbstractLinkedList)}
  * <p>
  * Note that neither remove() nor size() are not supported.
  * <p>

@@ -3,16 +3,6 @@
  */
 package xapi.gwt.io;
 
-import com.google.gwt.core.client.GWT;
-import com.google.gwt.http.client.Header;
-import com.google.gwt.http.client.Request;
-import com.google.gwt.http.client.RequestBuilder;
-import com.google.gwt.http.client.RequestBuilder.Method;
-import com.google.gwt.http.client.RequestCallback;
-import com.google.gwt.http.client.Response;
-
-import javax.inject.Provider;
-
 import xapi.annotation.inject.SingletonOverride;
 import xapi.collect.X_Collect;
 import xapi.collect.api.Dictionary;
@@ -34,6 +24,16 @@ import xapi.time.X_Time;
 import xapi.time.api.Moment;
 import xapi.util.X_Runtime;
 import xapi.util.api.ReceivesValue;
+
+import com.google.gwt.core.client.GWT;
+import com.google.gwt.http.client.Header;
+import com.google.gwt.http.client.Request;
+import com.google.gwt.http.client.RequestBuilder;
+import com.google.gwt.http.client.RequestBuilder.Method;
+import com.google.gwt.http.client.RequestCallback;
+import com.google.gwt.http.client.Response;
+
+import javax.inject.Provider;
 
 /**
  * @author James X. Nelson (james@wetheinter.net, @james)
@@ -210,8 +210,8 @@ public class IOServiceGwt extends AbstractIOService <RequestBuilder> {
               }
             });
           } catch (final Throwable t) {
-            t.printStackTrace();
-            X_Log.error("Error invoking IO callback on",callback,"for request",url, t);
+            X_Log.error("Error invoking IO callback on",callback,"for request",url, t, t.getStackTrace());
+            callback.onError(t);
           }
           if (X_Log.loggable(logLevel)) {
             X_Log.log(getClass(), logLevel, "Callback time for ",url,"took",X_Time.difference(callbackTime));

@@ -56,6 +56,11 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> {
   private int seed;
 
   public PotentialNode() {
+    super(false);
+  }
+
+  public PotentialNode(boolean searchableChildren) {
+    super(searchableChildren);
   }
 
   @Override
@@ -63,7 +68,7 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> {
     if (tagName != null) {
       // If we have a tagname, then we might expect our element to be addressable.
       // In which case, we want to ensure it has an id
-      if (!attributes.containsKey("id")) {
+      if (searchableChildren && !attributes.containsKey("id")) {
         seed = idSeed++;
         setAttribute("id", "ele_"+seed);
       }
@@ -76,8 +81,13 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> {
     setTagName(tagName);
   }
 
+  public PotentialNode(String tagName, boolean searchableChildren) {
+    super(searchableChildren);
+    setTagName(tagName);
+  }
+
   public PotentialNode(E element) {
-    super();
+    super(false);
     el = element;
     onInitialize(el);
   }
@@ -89,7 +99,7 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> {
 
   @Override
   public PotentialNode<E> createChild(String tagName) {
-    final PotentialNode<E> child = new PotentialNode<>(tagName);
+    final PotentialNode<E> child = new PotentialNode<>(tagName, searchableChildren);
     addChild(child);
     return child;
   }
@@ -221,7 +231,11 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> {
       return el;
     }
     // First, look on the document.  This is the fastest, IF we are attached
-    String id = attributes.get("id").getElement();
+    final AttributeBuilder idAttr = attributes.get("id");
+    if (idAttr == null) {
+      return super.findSelf(parent);
+    }
+    String id = idAttr.getElement();
     el = (E) Browser.getDocument().getElementById(id);
     if (el == null) {
       // If we aren't attached, fallback to the slower querySelector

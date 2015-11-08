@@ -73,12 +73,13 @@ public class StringToGwt <V> extends JavaScriptObject implements StringTo<V>{
 
     int pos = 0;
     String[] keys;
-    int max = keys.length;
+    int max;
     Entry<String, V> entry;
 
     EntryItr(StringToGwt<V> src) {
       this.src = src;
       keys = src.keyArray();
+      max = keys.length;
     }
 
     @Override
