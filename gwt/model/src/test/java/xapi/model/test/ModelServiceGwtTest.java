@@ -1,19 +1,26 @@
 package xapi.model.test;
 
-import static xapi.model.X_Model.newKey;
-
-import com.google.gwt.junit.client.GWTTestCase;
-import com.google.gwt.reflect.shared.GwtReflect;
-
+import org.junit.Assert;
 import org.junit.Test;
-
+import xapi.collect.api.IntTo;
 import xapi.log.X_Log;
 import xapi.model.X_Model;
 import xapi.model.api.ModelKey;
 import xapi.model.content.ModelContent;
 import xapi.model.content.ModelText;
+import xapi.time.X_Time;
 
-public class ModelServiceGwtTest extends GWTTestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static xapi.model.X_Model.newKey;
+
+import com.google.gwt.reflect.shared.GwtReflect;
+
+import java.util.Arrays;
+
+public class ModelServiceGwtTest
+//    extends GWTTestCase
+{
 
   @Test
   public void testKeySerialization_Empty() {
@@ -106,25 +113,78 @@ public class ModelServiceGwtTest extends GWTTestCase {
 
   @Test
   public void testModelPersistence() {
-    final ModelText content = X_Model.create(ModelText.class);
+    final ModelContent content = X_Model.create(ModelContent.class);
     final long time = System.currentTimeMillis();
     content.setText("Hello World");
     content.setTime(time);
     content.setKey(newKey("content"));
-    X_Log.error(getClass(), "Original: "+content);
-    X_Log.error(getClass(), "Serialized: "+X_Model.serialize(ModelText.class, content));
-    X_Log.error(getClass(), "Deserialized: "+X_Model.deserialize(ModelText.class, X_Model.serialize(ModelText.class, content)));
-    X_Model.persist(content, m -> {
-      assertNotNull(m.getKey().getId());
+    X_Log.error(getClass(), "Original: ",content);
+    final String serialized = X_Model.serialize(ModelContent.class, content);
+    X_Log.error(getClass(), "Serialized: ",serialized);
+    final ModelContent deserialized = X_Model.deserialize(ModelContent.class, serialized);
+    X_Log.error(getClass(), "Deserialized: ",deserialized);
+    X_Model.persist(content, received -> {
+          try {
+            X_Log.error("Received: ", received);
+            X_Log.error("Sent: ", content);
+            assertNotNull(received.getKey().getId());
+
+            content.setKey(received.getKey());
+
+            assertArrayEquals(content.getChildren(), received.getChildren());
+            assertArrayEquals(content.getRelated(), received.getRelated());
+            assertArrayEquals(content.getUpvotes(), received.getUpvotes());
+            assertArrayEquals(content.getDownvotes(), received.getDownvotes());
+
+            assertEquals(content.getPermaLink(), received.getPermaLink());
+            assertEquals(0, content.getTime(), received.getTime());
+            assertEquals(content.getText(), received.getText());
+            assertEquals(content.getAuthor(), received.getAuthor());
+
+            final String reserialized = X_Model.serialize(ModelContent.class, received);
+            final String withKey = X_Model.serialize(ModelContent.class, content);
+            assertEquals(withKey, reserialized);
+
+          } finally {
+//            finishTest();
+          }
     });
+    X_Time.trySleep(2000, 0);
+//    delayTestFinish(5000);
   }
 
-  /**
-   * @see com.google.gwt.junit.client.GWTTestCase#getModuleName()
-   */
-  @Override
-  public String getModuleName() {
-    return "xapi.test.ModelTest";
+  private <T> void assertArrayEquals(T[] expected, T[] received) {
+    assertEquals(Arrays.asList(expected), Arrays.asList(received));
   }
+
+  @Test
+  public void testModelWithEverything() {
+    final ModelWithEverything model = X_Model.create(ModelWithEverything.class);
+    assertNotNull(model.getModelArray());
+    assertNotNull(model.getIntTo());
+    final IntTo intTo = model.getIntTo();
+    // Lets make sure the IntTo generated has the correct component type.
+    intTo.add("String");
+    try {
+      intTo.add(1);
+      Assert.fail("Expected assertion error; either you are not running with assertions enabled; -ea, " +
+              "or the IntTo created for this model does not have the correct component type");
+    } catch (AssertionError expected){
+
+    }
+
+//    for (String property : model.getPropertyNames()) {
+//      X_Log.error(getClass(), property, model.getProperty(property));
+//    }
+  }
+
+//
+//  /**
+//   * @see com.google.gwt.junit.client.GWTTestCase#getModuleName()
+//   */
+//  @Override
+//  public String getModuleName() {
+//    return "xapi.test.ModelTest";
+//  }
 
 }

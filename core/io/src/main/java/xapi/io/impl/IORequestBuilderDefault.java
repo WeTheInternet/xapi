@@ -1,13 +1,5 @@
 package xapi.io.impl;
 
-import static xapi.collect.X_Collect.copyDictionary;
-import static xapi.collect.X_Collect.newDictionary;
-import static xapi.io.IOConstants.METHOD_DELETE;
-import static xapi.io.IOConstants.METHOD_GET;
-import static xapi.io.IOConstants.METHOD_HEAD;
-import static xapi.io.IOConstants.METHOD_PATCH;
-import static xapi.io.IOConstants.METHOD_POST;
-import static xapi.io.IOConstants.METHOD_PUT;
 import xapi.collect.api.StringDictionary;
 import xapi.collect.api.StringTo.Many;
 import xapi.except.NotYetImplemented;
@@ -18,12 +10,22 @@ import xapi.io.api.IORequest;
 import xapi.io.api.IORequestBuilder;
 import xapi.io.service.IOService;
 import xapi.log.X_Log;
+import xapi.util.X_Debug;
 import xapi.util.X_Runtime;
 import xapi.util.X_String;
 import xapi.util.api.ConvertsValue;
 import xapi.util.api.ErrorHandler;
 import xapi.util.api.Pointer;
 import xapi.util.api.SuccessHandler;
+
+import static xapi.collect.X_Collect.copyDictionary;
+import static xapi.collect.X_Collect.newDictionary;
+import static xapi.io.IOConstants.METHOD_DELETE;
+import static xapi.io.IOConstants.METHOD_GET;
+import static xapi.io.IOConstants.METHOD_HEAD;
+import static xapi.io.IOConstants.METHOD_PATCH;
+import static xapi.io.IOConstants.METHOD_POST;
+import static xapi.io.IOConstants.METHOD_PUT;
 
 public class IORequestBuilderDefault <Out> implements IORequestBuilder<Out>{
 
@@ -189,6 +191,8 @@ public class IORequestBuilderDefault <Out> implements IORequestBuilder<Out>{
         request.pending = false;
         if (handler instanceof ErrorHandler) {
           ((ErrorHandler<Throwable>)handler).onError(e);
+        } else {
+          X_Debug.rethrow(e);
         }
       }
 

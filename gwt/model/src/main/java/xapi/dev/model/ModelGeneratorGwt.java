@@ -1,5 +1,18 @@
 package xapi.dev.model;
 
+import xapi.annotation.model.DeleterFor;
+import xapi.annotation.model.FieldName;
+import xapi.annotation.model.GetterFor;
+import xapi.annotation.model.Serializable;
+import xapi.annotation.model.SetterFor;
+import xapi.annotation.reflect.Fluent;
+import xapi.dev.source.MethodBuffer;
+import xapi.dev.source.SourceBuilder;
+import xapi.model.api.ModelSerializer;
+import xapi.source.X_Source;
+import xapi.source.api.IsType;
+import xapi.util.X_Properties;
+
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.IncrementalGenerator;
 import com.google.gwt.core.ext.RebindMode;
@@ -20,19 +33,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
-
-import xapi.annotation.model.DeleterFor;
-import xapi.annotation.model.FieldName;
-import xapi.annotation.model.GetterFor;
-import xapi.annotation.model.Serializable;
-import xapi.annotation.model.SetterFor;
-import xapi.annotation.reflect.Fluent;
-import xapi.dev.source.MethodBuffer;
-import xapi.dev.source.SourceBuilder;
-import xapi.model.api.ModelSerializer;
-import xapi.source.X_Source;
-import xapi.source.api.IsType;
-import xapi.util.X_Properties;
 
 public class ModelGeneratorGwt extends IncrementalGenerator{
 

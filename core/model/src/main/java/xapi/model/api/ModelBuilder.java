@@ -2,7 +2,6 @@ package xapi.model.api;
 
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringDictionary;
-import xapi.collect.api.StringTo;
 import xapi.util.api.ReceivesValue;
 
 import java.util.function.Supplier;

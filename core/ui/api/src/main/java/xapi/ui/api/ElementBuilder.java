@@ -13,7 +13,6 @@ import javax.inject.Provider;
  */
 public abstract class ElementBuilder <E> extends NodeBuilder<E> {
 
-
   @SuppressWarnings("unused")
   public abstract class StyleApplier extends AttributeBuilder implements Stylizer<NodeBuilder<E>> {
 
@@ -409,19 +408,24 @@ public abstract class ElementBuilder <E> extends NodeBuilder<E> {
   protected final StringTo<AttributeBuilder> attributes;
 
   public ElementBuilder() {
-      attributes = X_Collect.newStringMap(AttributeBuilder.class);
-      attributeApplier = new LazyProvider<>(new Provider<AttributeApplier>() {
-        @Override
-        public AttributeApplier get() {
-          return createAttributeApplier();
-        }
-      });
-      stylizer = new LazyProvider<>(new Provider<StyleApplier>() {
-        @Override
-        public StyleApplier get() {
-          return createStyleApplier();
-        }
-      });
+      this(false);
+  }
+
+  public ElementBuilder(boolean searchableChildren) {
+    super(searchableChildren);
+    attributes = X_Collect.newStringMap(AttributeBuilder.class);
+    attributeApplier = new LazyProvider<>(new Provider<AttributeApplier>() {
+      @Override
+      public AttributeApplier get() {
+        return createAttributeApplier();
+      }
+    });
+    stylizer = new LazyProvider<>(new Provider<StyleApplier>() {
+      @Override
+      public StyleApplier get() {
+        return createStyleApplier();
+      }
+    });
   }
 
   @Override

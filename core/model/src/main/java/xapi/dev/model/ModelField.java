@@ -1,8 +1,5 @@
 package xapi.dev.model;
 
-import java.lang.annotation.Annotation;
-import java.util.ArrayList;
-
 import xapi.annotation.model.ClientToServer;
 import xapi.annotation.model.FieldValidator;
 import xapi.annotation.model.Key;
@@ -16,6 +13,10 @@ import xapi.log.X_Log;
 import xapi.source.api.IsType;
 import xapi.util.api.ValidatesValue;
 
+import java.lang.annotation.Annotation;
+import java.util.ArrayList;
+import java.util.List;
+
 public class ModelField implements java.io.Serializable {
 
   private static final long serialVersionUID = -1697272589093249083L;
@@ -26,6 +27,7 @@ public class ModelField implements java.io.Serializable {
     String fieldName;
     IsType returnType;
     String methodName;
+    public IsType[] generics;
   }
 
   class GetterMethod extends ModelMethod{
@@ -236,10 +238,13 @@ public class ModelField implements java.io.Serializable {
     this.type = type;
   }
 
-  public GetterMethod addGetter(final IsType returns, final String propertyName,
-      final String methodName, final Annotation[] annotations) {
+  public GetterMethod addGetter(
+      final IsType returns, final String propertyName,
+      final String methodName, final Annotation[] annotations, List<IsType> generics
+  ) {
     final GetterMethod mthd = new GetterMethod();
     mthd.returnType = returns;
+    mthd.generics = generics.toArray(new IsType[generics.size()]);
     mthd.fieldName = propertyName;
     mthd.methodName = methodName;
     getters.give(mthd);
@@ -248,7 +253,7 @@ public class ModelField implements java.io.Serializable {
   }
 
   /**
-   * @param annotaitons
+   * @param annotations
    */
   private void addAnnotations(final Annotation[] annotations) {
     for (final Annotation anno : annotations) {

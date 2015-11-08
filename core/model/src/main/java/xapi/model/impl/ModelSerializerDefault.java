@@ -3,11 +3,13 @@
  */
 package xapi.model.impl;
 
-import java.lang.reflect.Array;
-import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Map;
-
+import xapi.collect.X_Collect;
+import xapi.collect.api.ClassTo;
+import xapi.collect.api.IntTo;
+import xapi.collect.api.ObjectTo;
+import xapi.collect.api.StringTo;
+import xapi.collect.proxy.CollectionProxy;
+import xapi.collect.proxy.MapOf;
 import xapi.dev.source.CharBuffer;
 import xapi.log.X_Log;
 import xapi.model.api.Model;
@@ -20,17 +22,26 @@ import xapi.model.api.PrimitiveReader;
 import xapi.model.api.PrimitiveSerializer;
 import xapi.source.api.CharIterator;
 import xapi.util.X_Debug;
+import xapi.util.api.ConvertsTwoValues;
+
+import java.lang.reflect.Array;
+import java.lang.reflect.Method;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class ModelSerializerDefault <M extends Model> implements ModelSerializer<M>{
 
-  private final Map<Class<?>, PrimitiveReader> primitiveReaders;
+  private final ClassTo<PrimitiveReader> primitiveReaders;
+
+  private final ClassTo<ConvertsTwoValues<Class, Class, Object>> collectionFactories;
 
   public ModelSerializerDefault() {
-    this(new HashMap<Class<?>, PrimitiveReader>());
+    this(X_Collect.newClassMap(PrimitiveReader.class));
   }
 
-  public ModelSerializerDefault(final Map<Class<?>, PrimitiveReader> primitiveReaders) {
+  public ModelSerializerDefault(final ClassTo<PrimitiveReader> primitiveReaders) {
     this.primitiveReaders = primitiveReaders;
+    collectionFactories = X_Collect.newClassMap(Class.class.cast(ConvertsTwoValues.class));
   }
 
   @Override
@@ -60,52 +71,7 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
       }
       final Object value = model.getProperty(key);
       final Class<?> propertyType = model.getPropertyType(key);
-      if (propertyType.isArray()) {
-        // write an array
-        writeArray(out, propertyType, value, primitives, ctx);
-      } else if (propertyType == String.class) {
-        final String asString = (String) value;
-        writeString(out, asString, primitives);
-      } else if (propertyType.isPrimitive()) {
-        // write a primitive
-        if (propertyType == double.class) {
-          Double asDouble = (Double) value;
-          if (asDouble == null) {
-            asDouble = 0.;
-          }
-          out.append(primitives.serializeDouble(asDouble.doubleValue()));
-        } else if (propertyType == float.class) {
-          Float asFloat = (Float) value;
-          if (asFloat == null) {
-            asFloat = 0f;
-          }
-          out.append(primitives.serializeFloat(asFloat.floatValue()));
-        } else if (propertyType == long.class) {
-          Long asLong  = (Long) value;
-          if (asLong == null) {
-            asLong = 0L;
-          }
-          out.append(primitives.serializeLong(asLong.longValue()));
-        } else {
-          Number asNumber  = (Number) value;
-          if (asNumber == null) {
-            asNumber = 0;
-          }
-          // all int types
-          out.append(primitives.serializeInt(asNumber.intValue()));
-        }
-      } else if (isModelType(propertyType)) {
-        writeModel(out, propertyType, (Model)value, primitives, ctx);
-      } else if (isSupportedEnumType(propertyType)) {
-        if (value == null) {
-          out.append(primitives.serializeInt(-1));
-        } else {
-          final Enum asEnum = (Enum) value;
-          out.append(primitives.serializeInt(asEnum.ordinal()));
-        }
-      } else {
-        assert false : "Unserializable field type: "+propertyType;
-      }
+      writeObject(out, propertyType, value, primitives, ctx);
     }
   }
 
@@ -146,6 +112,9 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
    */
   protected boolean isModelType(final Class<?> propertyType) {
     return Model.class.isAssignableFrom(propertyType);
+  }
+  protected boolean isIterableType(final Class<?> propertyType) {
+    return CollectionProxy.class.isAssignableFrom(propertyType);
   }
 
   protected void writeArray(final CharBuffer out, final Class<?> propertyType, final Object array, final PrimitiveSerializer primitives, final ModelSerializationContext ctx) {
@@ -212,6 +181,283 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
       }
     } else {
       throw new UnsupportedOperationException("Unable to serialize unsupported array type "+childType);
+    }
+  }
+  protected void writeIterable(final CharBuffer out, final CollectionProxy collection, final PrimitiveSerializer primitives, final ModelSerializationContext ctx) {
+    final Class keyType = collection.keyType();
+    final Class valueType = collection.valueType();
+
+    out.append(primitives.serializeClass(keyType));
+    out.append(primitives.serializeClass(valueType));
+    if (collection == null) {
+      out.append(primitives.serializeInt(-1));
+      return;
+    }
+    int len = collection.size();
+    final String length = primitives.serializeInt(len);
+    out.append(length);
+    if (len == 0) {
+      return;
+    }
+    if (keyType == Integer.class) {
+//      integer collection.  If it is dense, we can just write the length and then the items.
+      if (collection.forEach(new ConvertsTwoValues() {
+         int was;
+         @Override
+         public Boolean convert(Object key, Object value) {
+           final Integer k = (Integer) key;
+           if (++was==k) {
+             return true;
+           }
+           return false;
+         }
+       })) {
+        // It is a dense array.  We can write out the values
+        out.append(primitives.serializeBoolean(true));
+        collection.forEach(new ConvertsTwoValues() {
+           @Override
+           public Boolean convert(Object key, Object value) {
+             writeObject(out, valueType, value, primitives, ctx);
+             return true;
+           }
+         });
+      } else {
+        // it is a sparse array. write out w/ nulls
+        out.append(primitives.serializeBoolean(false));
+        collection.forEach(
+            new ConvertsTwoValues() {
+              @Override
+              public Boolean convert(Object key, Object value) {
+                out.append(primitives.serializeInt((Integer) key));
+                writeObject(out, valueType, value, primitives, ctx);
+                return true;
+              }
+            }
+        );
+      }
+    } else if (keyType == Class.class) {
+        collection.forEach(new ConvertsTwoValues() {
+           @Override
+           public Boolean convert(Object key, Object value) {
+             out.append(primitives.serializeClass((Class) key));
+             writeObject(out, valueType, value, primitives, ctx);
+             return true;
+           }
+         });
+    } else if (keyType == String.class) {
+        collection.forEach(new ConvertsTwoValues() {
+           @Override
+           public Boolean convert(Object key, Object value) {
+             out.append(primitives.serializeString((String) key));
+             writeObject(out, valueType, value, primitives, ctx);
+             return true;
+           }
+         });
+    } else if (keyType.isEnum()) {
+        collection.forEach(new ConvertsTwoValues() {
+           @Override
+           public Boolean convert(Object key, Object value) {
+             out.append(primitives.serializeString(((Enum) key).name()));
+             writeObject(out, valueType, value, primitives, ctx);
+             return true;
+           }
+         });
+    } else {
+      assert false : "Unsupported key type "+keyType+" in model serializer: "+getClass();
+    }
+  }
+
+
+  protected Object readIterable(
+      Class propertyType,
+      CharIterator src,
+      PrimitiveSerializer primitives,
+      ModelDeserializationContext ctx
+  ) {
+
+    final Class keyType = primitives.deserializeClass(src);
+    final Class valueType = primitives.deserializeClass(src);
+
+    int length = primitives.deserializeInt(src);
+    if (length == -1) {
+      // We are null
+      return null; // TODO: consider automatic never-nullness?
+    }
+    CollectionProxy result = newResult(propertyType, keyType, valueType);
+    if (length == 0) {
+      return result;
+    }
+
+    if (keyType == Integer.class) {
+      boolean dense = primitives.deserializeBoolean(src);
+      if (dense) {
+        // We can just push onto the array
+        for (int i = 0; i < length; i++) {
+          Object value = readObject(valueType, src, primitives, ctx);
+          result.setValue(i, value);
+        }
+      } else {
+        // we need to actually read the keys and set as appropriate
+        for (int i = 0; i < length; i++) {
+          int key = primitives.deserializeInt(src);
+          Object value = readObject(valueType, src, primitives, ctx);
+          result.setValue(key, value);
+        }
+      }
+    } else if (keyType == Class.class) {
+        for (int i = 0; i < length; i++) {
+          Class key = primitives.deserializeClass(src);
+          Object value = readObject(valueType, src, primitives, ctx);
+          result.setValue(key, value);
+        }
+    } else if (keyType == String.class) {
+        for (int i = 0; i < length; i++) {
+          String key = primitives.deserializeString(src);
+          Object value = readObject(valueType, src, primitives, ctx);
+          result.setValue(key, value);
+        }
+    } else if (keyType.isEnum()) {
+        for (int i = 0; i < length; i++) {
+          String key = primitives.deserializeString(src);
+          Object value = readObject(valueType, src, primitives, ctx);
+          final Enum enumKey = Enum.valueOf(valueType, key);
+          result.setValue(enumKey, value);
+        }
+    } else {
+      assert false : "Unsupported key type "+keyType+" in model serializer: "+getClass();
+    }
+
+    return result;
+  }
+
+  protected CollectionProxy newResult(Class collectionType, Class keyType, Class<?> valueType) {
+    if (collectionFactories.isEmpty()) {
+      initializeCollectionFactories(collectionFactories);
+    }
+    final ConvertsTwoValues<Class, Class, Object> factory = collectionFactories.get(collectionType);
+    return (CollectionProxy) factory.convert(keyType, valueType);
+  }
+
+  protected void initializeCollectionFactories(ClassTo<ConvertsTwoValues<Class,Class,Object>> factories) {
+    // TODO use whole-world compiler knowledge to erase factories we will never use, as this likely sucks in a lot of code.
+    // This would likely be best done in a ModelSerializerGwt that is generated and injected in place of this serializer
+    factories.put(IntTo.class, new ConvertsTwoValues<Class, Class, Object>() {
+      @Override
+      public Object convert(Class key, Class value) {
+        return X_Collect.newList(value);
+      }
+    });
+    factories.put(StringTo.class, new ConvertsTwoValues<Class, Class, Object>() {
+      @Override
+      public Object convert(Class key, Class value) {
+        if (value == StringTo.class) {
+          return X_Collect.newStringDeepMap(value);
+        }
+        return X_Collect.newStringMap(value);
+      }
+    });
+    factories.put(MapOf.class, new ConvertsTwoValues<Class, Class, Object>() {
+      @Override
+      public Object convert(Class key, Class value) {
+        return new MapOf(newMap(key, value), key, value);
+      }
+    });
+    factories.put(ObjectTo.class, new ConvertsTwoValues<Class, Class, Object>() {
+      @Override
+      public Object convert(Class key, Class value) {
+        return X_Collect.newMap(key, value);
+      }
+    });
+    factories.put(ClassTo.class, new ConvertsTwoValues<Class, Class, Object>() {
+      @Override
+      public Object convert(Class key, Class value) {
+        return X_Collect.newClassMap(value);
+      }
+    });
+    factories.put(IntTo.Many.class, new ConvertsTwoValues<Class, Class, Object>() {
+      @Override
+      public Object convert(Class key, Class value) {
+        return X_Collect.newIntMultiMap(value);
+      }
+    });
+    factories.put(StringTo.Many.class, new ConvertsTwoValues<Class, Class, Object>() {
+      @Override
+      public Object convert(Class key, Class value) {
+        return X_Collect.newStringMultiMap(value);
+      }
+    });
+    factories.put(ObjectTo.Many.class, new ConvertsTwoValues<Class, Class, Object>() {
+      @Override
+      public Object convert(Class key, Class value) {
+        return X_Collect.newMultiMap(key, value);
+      }
+    });
+    factories.put(ClassTo.Many.class, new ConvertsTwoValues<Class, Class, Object>() {
+      @Override
+      public Object convert(Class key, Class value) {
+        return X_Collect.newClassMultiMap(value);
+      }
+    });
+  }
+
+  protected Map newMap(Class key, Class value) {
+    return new LinkedHashMap();
+  }
+
+  protected void writeObject(
+      CharBuffer out,
+      Class valueType,
+      Object value,
+      PrimitiveSerializer primitives,
+      ModelSerializationContext ctx
+  ) {
+    if (valueType.isArray()) {
+      // write an array
+      writeArray(out, valueType, value, primitives, ctx);
+    } else if (valueType == String.class) {
+      final String asString = (String) value;
+      writeString(out, asString, primitives);
+    } else if (valueType.isPrimitive()) {
+      // write a primitive
+      if (valueType == double.class) {
+        Double asDouble = (Double) value;
+        if (asDouble == null) {
+          asDouble = 0.;
+        }
+        out.append(primitives.serializeDouble(asDouble.doubleValue()));
+      } else if (valueType == float.class) {
+        Float asFloat = (Float) value;
+        if (asFloat == null) {
+          asFloat = 0f;
+        }
+        out.append(primitives.serializeFloat(asFloat.floatValue()));
+      } else if (valueType == long.class) {
+        Long asLong  = (Long) value;
+        if (asLong == null) {
+          asLong = 0L;
+        }
+        out.append(primitives.serializeLong(asLong.longValue()));
+      } else {
+        Number asNumber  = (Number) value;
+        if (asNumber == null) {
+          asNumber = 0;
+        }
+        // all int types
+        out.append(primitives.serializeInt(asNumber.intValue()));
+      }
+    } else if (isModelType(valueType)) {
+      writeModel(out, valueType, (Model)value, primitives, ctx);
+    } else if (isIterableType(valueType)) {
+      writeIterable(out, (CollectionProxy)value, primitives, ctx);
+    } else if (isSupportedEnumType(valueType)) {
+      if (value == null) {
+        out.append(primitives.serializeInt(-1));
+      } else {
+        final Enum asEnum = (Enum) value;
+        out.append(primitives.serializeInt(asEnum.ordinal()));
+      }
+    } else {
+      assert false : "Unserializable field type: "+valueType;
     }
   }
 
@@ -342,7 +588,7 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
     return reader.readPrimitive(componentType, src, primitives);
   }
 
-  protected PrimitiveReader getPrimitiveReader(final Class<?> componentType, final Map<Class<?>, PrimitiveReader> primitiveReaders) {
+  protected PrimitiveReader getPrimitiveReader(final Class<?> componentType, final ClassTo<PrimitiveReader> primitiveReaders) {
     PrimitiveReader reader = primitiveReaders.get(componentType);
     if (reader == null) {
       if (componentType == int.class) {
@@ -392,6 +638,8 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
       return modelFromString(src, context);
     } else if (propertyType.isArray()) {
       return readArray(propertyType.getComponentType(), src, primitives, ctx);
+    } else if (isIterableType(propertyType)) {
+      return readIterable(propertyType, src, primitives, ctx);
     } else if (propertyType.isEnum()) {
       // No great way to deserialize enums without reflection, so lets leave a hook for environments
       // where reflection is not possible or preferable can implement a mapping of enum class to enum values[]...

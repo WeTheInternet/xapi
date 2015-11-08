@@ -1,6 +1,7 @@
 package xapi.model.api;
 
 import xapi.model.X_Model;
+import xapi.util.api.ProvidesValue;
 
 /**
  * Created by james on 03/10/15.
@@ -85,5 +86,14 @@ public class KeyBuilder {
       this.parent = new KeyBuilder().fromBuilder(other.parent);
     }
     return this;
+  }
+
+  public static ProvidesValue<KeyBuilder> forType(final String type) {
+    return new ProvidesValue<KeyBuilder>() {
+      @Override
+      public KeyBuilder get() {
+        return KeyBuilder.build(type);
+      }
+    };
   }
 }

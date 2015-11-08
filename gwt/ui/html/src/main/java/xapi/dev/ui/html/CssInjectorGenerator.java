@@ -1,5 +1,24 @@
 package xapi.dev.ui.html;
 
+import xapi.annotation.compile.Import;
+import xapi.collect.X_Collect;
+import xapi.collect.api.IntTo;
+import xapi.collect.api.IntTo.Many;
+import xapi.dev.source.ClassBuffer;
+import xapi.dev.source.MethodBuffer;
+import xapi.dev.source.PrintBuffer;
+import xapi.dev.source.SourceBuilder;
+import xapi.source.X_Source;
+import xapi.time.impl.RunOnce;
+import xapi.ui.api.StyleService;
+import xapi.ui.html.X_Html;
+import xapi.ui.html.api.Css;
+import xapi.ui.html.api.El;
+import xapi.ui.html.api.Html;
+import xapi.ui.html.api.HtmlTemplate;
+import xapi.ui.html.api.Style;
+import xapi.util.api.ReceivesValue;
+
 import static com.google.gwt.reflect.rebind.ReflectionUtilType.findType;
 import static xapi.dev.ui.html.AbstractHtmlGenerator.existingTypesUnchanged;
 import static xapi.dev.ui.html.AbstractHtmlGenerator.findExisting;
@@ -20,25 +39,6 @@ import com.google.gwt.resources.client.CssResource;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
-
-import xapi.annotation.compile.Import;
-import xapi.collect.X_Collect;
-import xapi.collect.api.IntTo;
-import xapi.collect.api.IntTo.Many;
-import xapi.dev.source.ClassBuffer;
-import xapi.dev.source.MethodBuffer;
-import xapi.dev.source.PrintBuffer;
-import xapi.dev.source.SourceBuilder;
-import xapi.source.X_Source;
-import xapi.time.impl.RunOnce;
-import xapi.ui.api.StyleService;
-import xapi.ui.html.X_Html;
-import xapi.ui.html.api.Css;
-import xapi.ui.html.api.El;
-import xapi.ui.html.api.Html;
-import xapi.ui.html.api.HtmlTemplate;
-import xapi.ui.html.api.Style;
-import xapi.util.api.ReceivesValue;
 
 public class CssInjectorGenerator implements CreatesContextObject<HtmlGeneratorResult>{
 
@@ -309,6 +309,6 @@ public class CssInjectorGenerator implements CreatesContextObject<HtmlGeneratorR
   }
 
   protected Type getLogLevel() {
-    return Type.TRACE;
+    return Type.DEBUG;
   }
 }

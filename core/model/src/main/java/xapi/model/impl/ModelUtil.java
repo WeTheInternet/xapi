@@ -1,10 +1,5 @@
 package xapi.model.impl;
 
-import java.lang.reflect.Method;
-import java.util.Collection;
-import java.util.LinkedHashSet;
-import java.util.Set;
-
 import xapi.annotation.model.DeleterFor;
 import xapi.annotation.model.GetterFor;
 import xapi.annotation.model.IsModel;
@@ -14,6 +9,16 @@ import xapi.except.NotConfiguredCorrectly;
 import xapi.model.api.Model;
 import xapi.model.api.ModelManifest;
 import xapi.model.api.ModelManifest.MethodData;
+
+import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.lang.reflect.WildcardType;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 public class ModelUtil {
 
@@ -26,22 +31,29 @@ public class ModelUtil {
       if (type == Model.class) {
         continue;
       }
+      final IsModel isModel = cls.getAnnotation(IsModel.class);
+      String idField = isModel == null ? "id" : isModel.key().value();
       for (final Method method : type.getMethods()) {
         if (method.getDeclaringClass() != Model.class) {
           if (!manifest.hasSeenMethod(method.getName())) {
-            final MethodData property = manifest.addProperty(method.getName(), method.getAnnotation(GetterFor.class),
+            final MethodData property = manifest.addProperty(method.getName(), idField, method.getAnnotation(GetterFor.class),
                 method.getAnnotation(SetterFor.class), method.getAnnotation(DeleterFor.class));
+            property.setIdField(idField);
             final Class<?> dataType;
+            final Type genericType;
             if (property.isGetter(method.getName())) {
               // For a getter, we will determine the field type by the return type
               dataType = method.getReturnType();
+              genericType = method.getGenericReturnType();
             } else {
               // For setters and deleters, we will determine the field type by the first parameter type.
               // However, a removeAll method may have no parameters, in which case we will have to wait.
               if (method.getParameterTypes().length > 0) {
                 dataType = method.getParameterTypes()[0];
+                genericType = method.getGenericParameterTypes()[0];
               } else {
                 dataType = null;
+                genericType = null;
               }
             }
             if (dataType != null) {
@@ -52,13 +64,107 @@ public class ModelUtil {
                     + "must have identical type information");
               }
               property.setType(dataType);
+              Class[] erasedTypes = getErasedTypeParameters(genericType);
+              property.setTypeParams(erasedTypes);
             }
+
             property.addAnnotations(method.getAnnotations());
           }
         }
       }
     }
     return manifest;
+  }
+
+  static Class[] getErasedTypeParameters(Type genericType) {
+    if (genericType instanceof ParameterizedType) {
+      final ParameterizedType typed = (ParameterizedType) genericType;
+      final Type[] paramTypes = typed.getActualTypeArguments();
+      Class[] erasedTypes = new Class[paramTypes.length];
+      for (int i = 0, m = paramTypes.length; i < m; i++ ) {
+        final Type paramType = paramTypes[i];
+        erasedTypes[i] = getErasedType(paramType);
+      }
+      return erasedTypes;
+    } else if (genericType instanceof TypeVariable) {
+      final Type[] bounds = ((TypeVariable) genericType).getBounds();
+      if (bounds.length != 1) {
+        // throw an exception with a good message
+      }
+      return getErasedTypeParameters(bounds[0]);
+    } else {
+      return new Class[0];
+    }
+  }
+
+  static Class getErasedType(Type paramType) {
+    if (paramType instanceof Class) {
+      return (Class) paramType;
+    } else if (paramType instanceof ParameterizedType) {
+      return (Class) // We are asking the parameterized type for it's raw type, which is always Class
+          ((ParameterizedType) paramType).getRawType();
+    } else if (paramType instanceof WildcardType) {
+      final Type[] upper = ((WildcardType) paramType).getUpperBounds();
+      return getErasedType(upper[0]);
+    } else if (paramType instanceof java.lang.reflect.TypeVariable){
+      final Type[] bounds = ((TypeVariable) paramType).getBounds();
+      if (bounds.length > 1) {
+        Class[] erasedBounds = new Class[bounds.length];
+        Class weakest = null;
+        for (int i = 0; i < erasedBounds.length; i++) {
+          erasedBounds[i] = getErasedType(bounds[i]);
+          if (i == 0) {
+            weakest = erasedBounds[i];
+          } else {
+            weakest = getWeakest(weakest, erasedBounds[i]);
+          }
+          // If we are erased to object, stop erasing...
+          if (weakest == Object.class) {
+            break;
+          }
+        }
+        return weakest;
+      }
+//      System.err.println("Unsupported: "+ Arrays.asList(bounds));
+      return getErasedType(bounds[0]);
+    } else {
+      throw new UnsupportedOperationException();
+    }
+  }
+
+  private static Class getWeakest(Class one, Class two) {
+    if (one.isAssignableFrom(two)) {
+      return one;
+    } else if (two.isAssignableFrom(one)) {
+      return two;
+    }
+    // No luck on quick check...  Look in interfaces.
+    Set<Class<?>> oneInterfaces = getFlattenedInterfaces(one);
+    Set<Class<?>> twoInterfaces = getFlattenedInterfaces(two);
+    // Keep only shared interfaces
+    oneInterfaces.retainAll(twoInterfaces);
+    Class strongest = Object.class;
+    for (Class<?> cls : oneInterfaces) {
+        // There is a winning type...
+        if (strongest.isAssignableFrom(cls)){
+          strongest = cls;
+        } else if (!cls.isAssignableFrom(strongest)){
+          return Object.class;
+        }
+    }
+    // Will be Object.class if there were no shared interfaces (or shared interfaces were not compatible).
+    return strongest;
+  }
+
+  private static Set<Class<?>> getFlattenedInterfaces(Class cls) {
+    final Set<Class<?>> set = new HashSet<>();
+    while (cls != null && cls != Object.class) {
+      for (Class iface : cls.getInterfaces()) {
+        collectInterfaces(set, iface);
+      }
+      cls = cls.getSuperclass();
+    }
+    return set;
   }
 
   private static void collectAllTypes(final Collection<Class<?>> into, final Class<?> cls) {
@@ -71,9 +177,11 @@ public class ModelUtil {
   }
 
   private static void collectInterfaces(final Collection<Class<?>> into, final Class<?> cls) {
-    for (final Class<?> iface : cls.getInterfaces()) {
-      if (into.add(iface)) {
-        collectInterfaces(into, iface);
+    if (into.add(cls)) {
+      for (final Class<?> iface : cls.getInterfaces()) {
+        if (into.add(iface)) {
+          collectInterfaces(into, iface);
+        }
       }
     }
   }

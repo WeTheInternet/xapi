@@ -1,10 +1,5 @@
 package xapi.model.impl;
 
-import java.lang.reflect.Array;
-import java.util.Arrays;
-import java.util.Map.Entry;
-import java.util.Objects;
-
 import xapi.annotation.inject.InstanceDefault;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
@@ -17,8 +12,52 @@ import xapi.model.api.PersistentModel;
 import xapi.util.api.ErrorHandler;
 import xapi.util.api.SuccessHandler;
 
+import static xapi.util.impl.PairBuilder.entryOf;
+
+import javax.inject.Provider;
+import java.lang.reflect.Array;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.Map.Entry;
+import java.util.Objects;
+
 @InstanceDefault(implFor=Model.class)
 public class AbstractModel implements Model, PersistentModel, NestedModel{
+
+  protected final class Itr implements Iterable<Entry<String, Object>> {
+
+    private final String[] keys;
+
+    public Itr(final String[] keys) {
+      this.keys = keys;
+    }
+
+    @Override
+    public Iterator<Entry<String, Object>> iterator() {
+      return new Iterator<Entry<String,Object>>() {
+
+        int pos = 0;
+        @Override
+        public boolean hasNext() {
+          return pos < keys.length;
+        }
+
+        @Override
+        public Entry<String, Object> next() {
+          final String key = keys[pos];
+          Object value = getProperty(key);
+          if (value == null) {
+            final Class<?> type = getPropertyType(key);
+            if (type.isPrimitive()) {
+              value = AbstractModel.getPrimitiveValue(type);
+            }
+          }
+          return entryOf(key, value);
+        }
+      };
+    }
+  }
+
 
   private static StringTo<Object> defaultValues = X_Collect.newStringMap(Object.class);
   protected StringTo<Object> map;
@@ -69,10 +108,24 @@ public class AbstractModel implements Model, PersistentModel, NestedModel{
       return (T) val;
     }
   }
+  @Override
+  public <T> T getProperty(final String key, final Provider<T> dflt) {
+    Object val = map.get(key);
+    if (val == null) {
+      val = dflt.get();
+    }
+    if (val == null) {
+      final Class<?> type = getPropertyType(key);
+      return (T) getPrimitiveValue(type);
+    } else {
+      return (T) val;
+    }
+  }
 
   @Override
   public Iterable<Entry<String, Object>> getProperties() {
-    return map.entries();
+    final String[] names = getPropertyNames();
+    return new Itr(names);
   }
 
   @Override

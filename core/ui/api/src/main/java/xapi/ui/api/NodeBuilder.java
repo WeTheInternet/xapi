@@ -24,8 +24,14 @@ public abstract class NodeBuilder<E> implements Widget<E> {
   private NodeBuilder childTarget = this;
 
   protected final IntTo<ReceivesValue<E>> createdCallbacks;
+  protected final boolean searchableChildren;
 
   protected NodeBuilder() {
+    this(false);
+  }
+
+  public NodeBuilder(boolean searchableChildren) {
+    this.searchableChildren = searchableChildren;
     createdCallbacks = X_Collect.newList(Class.class.cast(ReceivesValue.class));
   }
 
@@ -179,6 +185,7 @@ public abstract class NodeBuilder<E> implements Widget<E> {
 
   public NodeBuilder<E> onCreated(ReceivesValue<E> callback) {
     if (el == null) {
+      assert searchableChildren : "Cannot handle created callbacks without searchableChildren in "+this;
       createdCallbacks.add(callback);
       if (elementProvider != null) {
         getElement(); // will trigger our callback
@@ -195,6 +202,9 @@ public abstract class NodeBuilder<E> implements Widget<E> {
     el = create(b.toString());
     startInitialize(el);
     try {
+        if (!searchableChildren) {
+          return el;
+        }
         boolean initChildren = false;
         if (children != null) {
           initChildren = children.resolveChildren(el);

@@ -3,14 +3,6 @@
  */
 package xapi.model.api;
 
-import java.lang.annotation.Annotation;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import xapi.annotation.model.ClientToServer;
 import xapi.annotation.model.DeleterFor;
 import xapi.annotation.model.FieldValidator;
@@ -30,6 +22,14 @@ import xapi.model.impl.ModelUtil;
 import xapi.source.api.CharIterator;
 import xapi.source.impl.StringCharIterator;
 import xapi.util.api.ValidatesValue;
+
+import java.lang.annotation.Annotation;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * This class is a manifest used to collect non-platform-specific metadata about all of the
@@ -57,16 +57,20 @@ public class ModelManifest {
     private PersistenceStrategy persistenceStrategy;
     private final ArrayList<Class<? extends ValidatesValue<?>>> validators;
     private Class<?> type;
+    private Class<?>[] typeParams;
+    private String idField;
 
     Map<String, ModelMethodType> methodNames = new HashMap<>();
 
     public MethodData(final String name) {
       this.name = name;
       this.validators = new ArrayList<>();
+      idField = "id";
     }
 
-    public MethodData(final String name, final GetterFor getter, final SetterFor setter, final DeleterFor deleter) {
+    public MethodData(final String name, String idField, final GetterFor getter, final SetterFor setter, final DeleterFor deleter) {
       this.validators = new ArrayList<>();
+      this.idField = idField;
       this.name = recordMethod(name, getter, setter, deleter);
     }
     /**
@@ -108,6 +112,10 @@ public class ModelManifest {
       }
     }
 
+    public void setIdField(String idField) {
+      this.idField = idField;
+    }
+
     public void setType(final Class<?> type) {
       this.type = type;
     }
@@ -116,14 +124,25 @@ public class ModelManifest {
       return type;
     }
 
+    public void setTypeParams(final Class<?> ... typeParams) {
+      this.typeParams = typeParams;
+    }
+
+    public Class<?>[] getTypeParams() {
+      return typeParams;
+    }
+
     public boolean isGetter(final String name) {
       return methodNames.get(name) == ModelMethodType.GET;
     }
 
     public String recordMethod(final String methodName, final GetterFor getter, final SetterFor setter, final DeleterFor deleter) {
-      final ModelMethodType methodType = ModelMethodType.deduceMethodType(methodName, getter, setter, deleter);
+      final ModelMethodType methodType = ModelMethodType.deduceMethodType(methodName, idField, getter, setter, deleter);
       final String name;
       switch (methodType) {
+        case ID:
+          name = idField;
+          break;
         case GET:
           if (getter == null || getter.value().length() == 0) {
             name = ModelNameUtil.stripGetter(methodName);
@@ -395,13 +414,13 @@ public class ModelManifest {
     }
   }
 
-  public MethodData addProperty(final String methodName, final GetterFor getter, final SetterFor setter, final DeleterFor deleter) {
+  public MethodData addProperty(final String methodName, String idField, final GetterFor getter, final SetterFor setter, final DeleterFor deleter) {
     MethodData data;
     if (methodsByMethodNames.containsKey(methodName)) {
       data = methodsByMethodNames.get(methodName);
       data.recordMethod(methodName, getter, setter, deleter);
     } else {
-      data = new MethodData(methodName, getter, setter, deleter);
+      data = new MethodData(methodName, idField, getter, setter, deleter);
       if (methodsByPropertyNames.containsKey(data.name)) {
         data = methodsByPropertyNames.get(data.name);
         data.recordMethod(methodName, getter, setter, deleter);

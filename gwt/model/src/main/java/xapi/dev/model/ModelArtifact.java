@@ -1,40 +1,5 @@
 package xapi.dev.model;
 
-import static xapi.dev.model.ModelGeneratorGwt.allAbstract;
-import static xapi.dev.model.ModelGeneratorGwt.canBeSupertype;
-import static xapi.dev.model.ModelGeneratorGwt.fieldName;
-import static xapi.dev.model.ModelGeneratorGwt.toSignature;
-import static xapi.dev.model.ModelGeneratorGwt.toTypes;
-import static xapi.dev.model.ModelGeneratorGwt.typeToParameterString;
-import static xapi.gwt.model.service.ModelServiceGwt.REGISTER_CREATOR_METHOD;
-import static xapi.source.X_Source.binaryToSource;
-
-import com.google.gwt.core.ext.GeneratorContext;
-import com.google.gwt.core.ext.RebindResult;
-import com.google.gwt.core.ext.TreeLogger;
-import com.google.gwt.core.ext.TreeLogger.Type;
-import com.google.gwt.core.ext.UnableToCompleteException;
-import com.google.gwt.core.ext.linker.Artifact;
-import com.google.gwt.core.ext.linker.Transferable;
-import com.google.gwt.core.ext.linker.impl.StandardLinkerContext;
-import com.google.gwt.core.ext.typeinfo.JClassType;
-import com.google.gwt.core.ext.typeinfo.JMethod;
-import com.google.gwt.core.ext.typeinfo.JParameter;
-import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
-import com.google.gwt.core.ext.typeinfo.JType;
-import com.google.gwt.core.ext.typeinfo.NotFoundException;
-
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Array;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
-
-import javax.inject.Named;
-
 import xapi.annotation.model.ClientToServer;
 import xapi.annotation.model.DeleterFor;
 import xapi.annotation.model.GetterFor;
@@ -56,6 +21,43 @@ import xapi.model.impl.ModelUtil;
 import xapi.source.X_Source;
 import xapi.source.api.IsType;
 import xapi.util.X_Runtime;
+
+import static xapi.dev.model.ModelGeneratorGwt.allAbstract;
+import static xapi.dev.model.ModelGeneratorGwt.canBeSupertype;
+import static xapi.dev.model.ModelGeneratorGwt.fieldName;
+import static xapi.dev.model.ModelGeneratorGwt.toSignature;
+import static xapi.dev.model.ModelGeneratorGwt.toTypes;
+import static xapi.dev.model.ModelGeneratorGwt.typeToParameterString;
+import static xapi.gwt.model.service.ModelServiceGwt.REGISTER_CREATOR_METHOD;
+import static xapi.source.X_Source.binaryToSource;
+
+import com.google.gwt.core.ext.GeneratorContext;
+import com.google.gwt.core.ext.RebindResult;
+import com.google.gwt.core.ext.TreeLogger;
+import com.google.gwt.core.ext.TreeLogger.Type;
+import com.google.gwt.core.ext.UnableToCompleteException;
+import com.google.gwt.core.ext.linker.Artifact;
+import com.google.gwt.core.ext.linker.Transferable;
+import com.google.gwt.core.ext.linker.impl.StandardLinkerContext;
+import com.google.gwt.core.ext.typeinfo.JClassType;
+import com.google.gwt.core.ext.typeinfo.JMethod;
+import com.google.gwt.core.ext.typeinfo.JParameter;
+import com.google.gwt.core.ext.typeinfo.JParameterizedType;
+import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
+import com.google.gwt.core.ext.typeinfo.JType;
+import com.google.gwt.core.ext.typeinfo.NotFoundException;
+
+import javax.inject.Named;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Transferable
 public class ModelArtifact extends Artifact<ModelArtifact> {
@@ -122,9 +124,13 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
   }
 
   void implementMethod(final TreeLogger logger, final JMethod ifaceMethod, final GeneratorContext ctx) {
-    logger.log(Type.INFO, "Implementing model method "+ifaceMethod.getJsniSignature());
+    logger.log(logLevel(), "Implementing model method "+ifaceMethod.getJsniSignature());
     toGenerate.add(xapi.dev.model.ModelGeneratorGwt.toSignature(ifaceMethod));
     applyAnnotations(logger, ifaceMethod, ifaceMethod.getAnnotations(), ctx);
+  }
+
+  private Type logLevel() {
+    return Type.TRACE;
   }
 
   void applyAnnotations(final TreeLogger logger, final JMethod method, final Annotation[] annos, final GeneratorContext ctx) {
@@ -260,14 +266,17 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
     final JClassType modelInterface = ctx.getTypeOracle().findType(Model.class.getPackage().getName(), Model.class.getSimpleName());
     final Set<String> propertyNames = new LinkedHashSet<String>();
     final Set<JType> interestingTypes = new HashSet<JType>();
+    final IsModel modelAnno = type.getAnnotation(IsModel.class);
+    String idField = modelAnno == null ? "id" : modelAnno.key().value();
+    Class idClass = modelAnno == null ? String.class : modelAnno.key().keyType();
     for (final JMethod method : methods.keySet()) {
-      final String propName = ModelMethodType.deducePropertyName(method.getName(), method.getAnnotation(GetterFor.class),
-          method.getAnnotation(SetterFor.class), method.getAnnotation(DeleterFor.class));
-        propertyNames.add(propName);
-        if (!toGenerate.contains(toSignature(method))) {
-          logger.log(Type.TRACE, "Skipping method defined in supertype: "+method.getJsniSignature());
-          continue;
-        }
+      final String propName = ModelMethodType.deducePropertyName(method.getName(), idField,
+          method.getAnnotation(GetterFor.class), method.getAnnotation(SetterFor.class), method.getAnnotation(DeleterFor.class));
+      propertyNames.add(propName);
+      if (!toGenerate.contains(toSignature(method))) {
+        logger.log(logLevel(), "Skipping method defined in supertype: "+method.getJsniSignature());
+        continue;
+      }
 
       final Annotation[] annos = methods.get(method);
       final String methodName = method.getName();
@@ -276,6 +285,7 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
 
       final String simpleReturnType = out.addImport(method.getReturnType().getQualifiedSourceName());
       final IsType returns = binaryToSource(method.getReturnType().getQualifiedBinaryName());
+      final List<IsType> generics = getGenerics(method.getReturnType());
       final IsType[] parameters = toTypes(method.getParameterTypes());
 
       if (isInteresting(method.getReturnType(), modelInterface)) {
@@ -293,7 +303,7 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
         assert parameters.length == 0 : "A getter method cannot have parameters. " +
         		"Generated code requires using getter methods without args.  You provided "+method.getJsniSignature();
         grabAnnotations(logger, models, fieldMap, method, annos, type);
-        field.addGetter(returns, name, methodName, method.getAnnotations());
+        field.addGetter(returns, name, methodName, method.getAnnotations(), generics);
 
         getPropertyType.println("case \""+propName+"\":")
           .indentln("return "+out.addImport(method.getReturnType().getQualifiedSourceName())+".class;");
@@ -360,7 +370,7 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
           final String name = ModelNameUtil.stripGetter(method.getName());
           final ModelField field = fieldMap.getOrMakeField(name);
           field.setType(returnType);
-          field.addGetter(returns, name, methodName, method.getAnnotations());
+          field.addGetter(returns, name, methodName, method.getAnnotations(), generics);
           grabAnnotations(logger, models, fieldMap, method, annos, type);
         } else if (isSetter) {
           final MethodBuffer mb = generator.createMethod(simpleReturnType, methodName, params);
@@ -389,6 +399,17 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
     implementInterestingTypes(type, out, modelInterface, interestingTypes);
 
     generator.generateModel(X_Source.toType(builder.getPackage(), builder.getClassBuffer().getSimpleName()), fieldMap);
+  }
+
+  private List<IsType> getGenerics(JType type) {
+    final JParameterizedType genericType = type.isParameterized();
+    List<IsType> generics = new ArrayList<>();
+    if (genericType != null) {
+      for (JClassType parameter : genericType.getTypeArgs()) {
+        generics.add(binaryToSource(parameter.getErasedType().getQualifiedBinaryName()));
+      }
+    }
+    return generics;
   }
 
   /**
@@ -540,7 +561,7 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
     } else {
       fieldName = name.value();
       if (X_Runtime.isDebug()) {
-        logger.log(Type.TRACE, "Named method "+method.getJsniSignature()+" "
+        logger.log(logLevel(), "Named method "+method.getJsniSignature()+" "
           +fieldName+", from @Named attribute.  Heuristic name: "+fieldName(method, models));
       }
     }

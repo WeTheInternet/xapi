@@ -25,6 +25,7 @@ public interface ModelUser extends Model {
   @FieldValidator(validators=ChecksStringNotEmpty.class)
   String id();
 
+  String getImage();
 
   @FieldValidator(validators=ChecksStringNotEmpty.class)
   String getEmail();
@@ -36,6 +37,7 @@ public interface ModelUser extends Model {
   String getLastName();
 
   ModelUser setEmail(String email);
+  ModelUser setImage(String image);
   ModelUser setFirstName(String firstName);
   ModelUser setLastName(String lastName);
   ModelUser setId(String id);

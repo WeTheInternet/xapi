@@ -1,28 +1,29 @@
 package xapi.test.server;
 
-import static org.junit.Assert.assertTrue;
-
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
 import xapi.io.X_IO;
 import xapi.io.api.IORequest;
 import xapi.io.api.IORequestBuilder;
 import xapi.io.service.IOService;
 import xapi.log.X_Log;
 import xapi.time.X_Time;
+import xapi.util.X_Debug;
 import xapi.util.api.ConvertsValue;
 import xapi.util.api.ErrorHandler;
 import xapi.util.api.Pointer;
 import xapi.util.api.SuccessHandler;
+
+import static org.junit.Assert.assertTrue;
 
 public class BasicIOTest {
 
   private static abstract class Handler implements SuccessHandler<String>, ErrorHandler<Throwable> {
     @Override
     public void onError(final Throwable e) {
-      X_Log.error("Error encountered", e);
+      X_Log.error("IO error encountered", e);
+      X_Debug.rethrow(e);
     }
   }
 

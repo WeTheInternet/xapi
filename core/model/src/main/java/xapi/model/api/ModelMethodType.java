@@ -17,16 +17,16 @@ public enum ModelMethodType {
 
   GET("get"), /*GET_WITH_DEFAULT,*/ /*CHECK,*/
   SET("set"), /*CHECK_AND_SET,*/ ADD("add"), ADD_ALL("addAll"),
-  REMOVE("remove"), CLEAR("clear");
+  REMOVE("remove"), CLEAR("clear"), ID("id");
 
   private String prefix;
   private ModelMethodType(final String prefix) {
     this.prefix = prefix;
   }
 
-  public static String deducePropertyName(final String name,
+  public static String deducePropertyName(final String name, String idField,
       final GetterFor getter, final SetterFor setter, final DeleterFor deleter) {
-    switch (deduceMethodType(name, getter, setter, deleter)) {
+    switch (deduceMethodType(name, idField, getter, setter, deleter)) {
       case GET:
         return getter == null || getter.value().isEmpty() ? ModelNameUtil.stripGetter(name)
             : getter.value();
@@ -42,7 +42,7 @@ public enum ModelMethodType {
     }
     throw new UnsupportedOperationException("Method "+name +" is not a valid model method name");
   }
-  public static ModelMethodType deduceMethodType(final String name,
+  public static ModelMethodType deduceMethodType(final String name, String idField,
       final GetterFor getter, final SetterFor setter, final DeleterFor deleter) {
     if (getter != null) {
       return GET;
@@ -54,6 +54,9 @@ public enum ModelMethodType {
       return REMOVE;
     }
 
+    if (name.equals(idField)) {
+      return ID;
+    }
     // No annotations.  We are stuck guessing based on method name. Ew.
     final String prefix = name.replaceFirst("[A-Z].*", "");
     switch(prefix) {
@@ -64,9 +67,12 @@ public enum ModelMethodType {
       case "set":
         return SET;
       case "add":
+      case "put":
         return name.startsWith(prefix+"All") ? ADD_ALL : ADD;
       case "rem":
       case "remove":
+      case "del":
+      case "delete":
         return name.startsWith(prefix+"All") ? CLEAR : REMOVE;
       case "clear":
         return CLEAR;

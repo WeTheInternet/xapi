@@ -3,51 +3,31 @@
  */
 package xapi.jre.model;
 
-import static xapi.util.impl.PairBuilder.entryOf;
+import xapi.annotation.inject.SingletonDefault;
+import xapi.dev.source.CharBuffer;
+import xapi.io.X_IO;
+import xapi.log.X_Log;
+import xapi.model.api.Model;
+import xapi.model.api.ModelKey;
+import xapi.model.api.ModelNotFoundException;
+import xapi.model.api.ModelQuery;
+import xapi.model.api.ModelQuery.QueryParameter;
+import xapi.model.api.ModelQueryResult;
+import xapi.model.service.ModelService;
+import xapi.platform.JrePlatform;
+import xapi.source.impl.StringCharIterator;
+import xapi.time.X_Time;
+import xapi.util.api.ErrorHandler;
+import xapi.util.api.ProvidesValue;
+import xapi.util.api.RemovalHandler;
+import xapi.util.api.SuccessHandler;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Map.Entry;
-import java.util.Objects;
-
-import xapi.annotation.inject.SingletonDefault;
-import xapi.collect.X_Collect;
-import xapi.collect.api.ClassTo;
-import xapi.collect.api.Dictionary;
-import xapi.dev.source.CharBuffer;
-import xapi.except.NotYetImplemented;
-import xapi.io.X_IO;
-import xapi.log.X_Log;
-import xapi.model.api.Model;
-import xapi.model.api.ModelKey;
-import xapi.model.api.ModelManifest;
-import xapi.model.api.ModelManifest.MethodData;
-import xapi.model.api.ModelMethodType;
-import xapi.model.api.ModelModule;
-import xapi.model.api.ModelNotFoundException;
-import xapi.model.api.ModelQuery;
-import xapi.model.api.ModelQuery.QueryParameter;
-import xapi.model.api.ModelQueryResult;
-import xapi.model.impl.AbstractModel;
-import xapi.model.impl.AbstractModelService;
-import xapi.model.impl.ModelUtil;
-import xapi.model.service.ModelService;
-import xapi.platform.JrePlatform;
-import xapi.source.impl.StringCharIterator;
-import xapi.time.X_Time;
-import xapi.util.api.ConvertsValue;
-import xapi.util.api.ErrorHandler;
-import xapi.util.api.ProvidesValue;
-import xapi.util.api.RemovalHandler;
-import xapi.util.api.SuccessHandler;
 
 /**
  * @author James X. Nelson (james@wetheinter.net, @james)
@@ -55,249 +35,8 @@ import xapi.util.api.SuccessHandler;
  */
 @JrePlatform
 @SingletonDefault(implFor=ModelService.class)
-public class ModelServiceJre extends AbstractModelService {
+public class ModelServiceJre extends AbstractJreModelService {
 
-  private static ThreadLocal<ModelModule> currentModule = new ThreadLocal<>();
-
-  public static RemovalHandler registerModule(final ModelModule module) {
-    currentModule.set(module);
-    return new RemovalHandler() {
-      @Override
-      public void remove() {
-        currentModule.remove();
-      }
-    };
-  }
-
-  public static ProvidesValue<RemovalHandler> captureScope() {
-    final ModelModule module = currentModule.get();
-    return new ProvidesValue<RemovalHandler>() {
-      @Override
-      public RemovalHandler get() {
-        final ModelModule was = currentModule.get();
-        currentModule.set(module);
-        return new RemovalHandler() {
-          @Override
-          public void remove() {
-            if (module == currentModule.get()) {
-              if (was == null) {
-                currentModule.remove();
-              } else {
-                currentModule.set(was);
-              }
-            }
-          }
-        };
-      }
-    };
-  }
-
-  /**
-   * @author James X. Nelson (james@wetheinter.net, @james)
-   *
-   */
-  public class ModelInvocationHandler implements InvocationHandler {
-
-    final ModelManifest manifest;
-    final Dictionary<String, Object> values;
-    ModelKey key;
-
-    public ModelInvocationHandler(final Class<? extends Model> modelClass) {
-      this(modelClass, X_Collect.newDictionary());
-    }
-
-    public ModelInvocationHandler(final Class<? extends Model> modelClass, final Dictionary<String, Object> values) {
-      this(getOrMakeModelManifest(modelClass), values);
-    }
-
-    public ModelInvocationHandler(final ModelManifest manifest, final Dictionary<String, Object> values) {
-      this.manifest = manifest;
-      this.values = values;
-    }
-
-      @Override
-          public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
-            switch (method.getName()) {
-              case "setProperty":
-                if (method.getParameterTypes().length == 2) {
-                  values.setValue((String)args[0], args[1]);
-                  return proxy;
-                }
-              case "setKey":
-                key = (ModelKey) args[0];
-                return proxy;
-              case "removeProperty":
-                if (method.getParameterTypes().length == 1) {
-                  values.removeValue((String)args[0]);
-                  return this;
-                }
-              case "getType":
-                return manifest.getType();
-              case "getPropertyType":
-                final String name = (String) args[0];
-                return manifest.getMethodData(name).getType();
-              case "getPropertyNames":
-                return manifest.getPropertyNames();
-              case "getProperties":
-                final String[] properties = manifest.getPropertyNames();
-                return new Itr(properties, values, new ConvertsValue<String, Object>() {
-                  @Override
-                  public Object convert(final String from) {
-                    final MethodData typeData = manifest.getMethodData(from);
-                    if (typeData.getType().isPrimitive()) {
-                      return AbstractModel.getPrimitiveValue(typeData.getType());
-                    }
-                    return null;
-                  }
-                });
-              case "getKey":
-                return key;
-              case "clear":
-                values.clearValues();
-                return proxy;
-              case "getProperty":
-                Object result = null;
-                if (method.getParameterTypes().length == 1) {
-                  // no default value
-                  result = values.getValue((String)args[0]);
-                } else if (method.getParameterTypes().length == 2) {
-                  // there is a default value...
-                  result = values.getValue((String)args[0]);
-                  if (result == null) {
-                    result = args[1];
-                  }
-                }
-                if (result == null) {
-                  final MethodData typeData = manifest.getMethodData((String)args[0]);
-                  return AbstractModel.getPrimitiveValue(typeData.getType());
-                }
-                return result;
-              case "hashCode":
-                return AbstractModel.hashCodeForModel((Model)proxy);
-              case "equals":
-                return AbstractModel.equalsForModel((Model)proxy, args[0]);
-              case "toString":
-                return AbstractModel.toStringForModel((Model)proxy);
-            }
-            if (method.getDeclaringClass() == Model.class) {
-              throw new UnsupportedOperationException("Unhandled xapi.model.api.Model method: "+method.toGenericString());
-            }
-            final MethodData property = manifest.getMethodData(method.getName());
-            final ModelMethodType methodType = property.getMethodType(method.getName());
-            if (methodType == null) {
-              throw new UnsupportedOperationException("Unhandled model method: "+method.toGenericString());
-            }
-            switch (methodType) {
-              case GET:
-                Object result = values.getValue(property.getName());
-                if (result == null && method.getParameterTypes().length > 1) {
-                  return args[1];
-                }
-                return result;
-              case SET:
-                boolean isFluent = ModelUtil.isFluent(method);
-                result = null;
-                if (method.getParameters().length == 2) {
-                  // This is a check-and-set
-                  final Object previous = values.getValue(property.getName());
-                  final boolean returnsBoolean = method.getReturnType() == boolean.class;
-                  if (Objects.equals(previous, args[0])) {
-                    result = values.setValue(property.getName(), args[1]);
-                    if (returnsBoolean) {
-                      return true;
-                    }
-                  }
-                  if (returnsBoolean) {
-                    return false;
-                  }
-                } else {
-                  result = values.setValue(property.getName(), args[0]);
-                }
-                if (isFluent) {
-                  return proxy;
-                }
-                if (method.getReturnType() == null || method.getReturnType() == void.class) {
-                  return null;
-                }
-                return result;
-              case ADD:
-              case ADD_ALL:
-              case CLEAR:
-                throw new NotYetImplemented("Method "+method.toGenericString()+" of "+
-                    method.getDeclaringClass()+" is not yet implemented");
-              case REMOVE:
-                result = null;
-                isFluent = ModelUtil.isFluent(method);
-                if (method.getParameters().length == 2) {
-                  // This is a check-and-remove
-                  final Object previous = values.getValue(property.getName());
-                  final boolean returnsBoolean = method.getReturnType() == boolean.class;
-                  if (Objects.equals(previous, args[0])) {
-                    result = values.removeValue(property.getName());
-                    if (returnsBoolean) {
-                      return true;
-                    }
-                  }
-                  if (returnsBoolean) {
-                    return false;
-                  }
-                } else {
-                  result = values.removeValue(property.getName());
-                }
-                if (isFluent) {
-                  return proxy;
-                }
-                if (method.getReturnType() == null || method.getReturnType() == void.class) {
-                  return null;
-                }
-                return result;
-            }
-            return null;
-          }
-
-  }
-
-  private final class Itr implements Iterable<Entry<String, Object>> {
-
-    private final String[] keys;
-    private final Dictionary<String, Object> map;
-    private final ConvertsValue<String, Object> defaultValueProvider;
-
-    private Itr(final String[] keys, final Dictionary<String, Object> map, final ConvertsValue<String, Object> defaultValueProvider) {
-      this.keys = keys;
-      this.map = map;
-      this.defaultValueProvider = defaultValueProvider;
-    }
-
-    @Override
-    public Iterator<Entry<String, Object>> iterator() {
-      return new Iterator<Entry<String,Object>>() {
-
-        int pos = 0;
-        @Override
-        public boolean hasNext() {
-          return pos < keys.length;
-        }
-
-        @Override
-        public Entry<String, Object> next() {
-          final String key = keys[pos];
-          Object value = map.getValue(key);
-          if (value == null) {
-            value = defaultValueProvider.convert(key);
-          }
-          return entryOf(key, value);
-        }
-      };
-    }
-
-  }
-
-  @SuppressWarnings("unchecked")
-  private final ClassTo<ProvidesValue<Object>> modelFactories = X_Collect.newClassMap(
-      Class.class.cast(ProvidesValue.class)
-  );
-  private final ClassTo<ModelManifest> modelManifests = X_Collect.newClassMap(ModelManifest.class);
   private File root;
 
   @Override
@@ -328,6 +67,8 @@ public class ModelServiceJre extends AbstractModelService {
         X_Log.error(getClass(), "Unable to save model "+model, e);
         if (callback instanceof ErrorHandler) {
           ((ErrorHandler) callback).onError(e);
+        } else {
+          rethrow(e);
         }
         return;
       }
@@ -337,7 +78,7 @@ public class ModelServiceJre extends AbstractModelService {
     }
     final CharBuffer serialized = serialize(type, model);
     final File file = f;
-    X_Time.runLater(new Runnable() {
+    final Runnable finish = new Runnable() {
 
       @Override
       public void run() {
@@ -348,15 +89,26 @@ public class ModelServiceJre extends AbstractModelService {
           final FileOutputStream result = new FileOutputStream(file);
           X_IO.drain(result, X_IO.toStreamUtf8(serialized.toString()));
           callback.onSuccess(model);
-          X_Log.info(getClass(), "Saved model to ",file);
+          X_Log.info(getClass(), "Saved model to ", file);
         } catch (final IOException e) {
-          X_Log.error(getClass(), "Unable to save model "+model, e);
+          X_Log.error(getClass(), "Unable to save model " + model, e);
           if (callback instanceof ErrorHandler) {
             ((ErrorHandler) callback).onError(e);
+          } else {
+            rethrow(e);
           }
         }
       }
-    });
+    };
+    if (isAsync()) {
+      X_Time.runLater(finish);
+    } else {
+      finish.run();;
+    }
+  }
+
+  protected boolean isAsync() {
+    return false;
   }
 
   @SuppressWarnings("unchecked")
@@ -393,6 +145,8 @@ public class ModelServiceJre extends AbstractModelService {
             X_Log.error(getClass(), "Unable to load file for model "+modelKey);
             if (callback instanceof ErrorHandler) {
               ((ErrorHandler) callback).onError(new ModelNotFoundException(modelKey));
+            } else {
+              rethrow(e);
             }
           } finally {
             handler.remove();
@@ -479,6 +233,8 @@ public class ModelServiceJre extends AbstractModelService {
           X_Log.error(getClass(), "Unable to load files for query "+query);
           if (callback instanceof ErrorHandler) {
             ((ErrorHandler) callback).onError(new RuntimeException("Unable to load files for query "+query));
+          } else {
+            rethrow(e);
           }
         } finally {
           handler.remove();
@@ -551,6 +307,8 @@ public class ModelServiceJre extends AbstractModelService {
           X_Log.error(getClass(), "Unable to load files for query "+query);
           if (callback instanceof ErrorHandler) {
             ((ErrorHandler) callback).onError(new RuntimeException("Unable to load files for query "+query));
+          } else {
+            rethrow(e);
           }
         } finally {
           handler.remove();
@@ -584,70 +342,6 @@ public class ModelServiceJre extends AbstractModelService {
       root.mkdirs();
     }
     return root;
-  }
-
-  /**
-   * @see xapi.model.impl.AbstractModelService#create(java.lang.Class)
-   */
-  @SuppressWarnings({
-      "unchecked", "rawtypes"
-  })
-  @Override
-  public <M extends Model> M create(final Class<M> key) {
-    ProvidesValue factory = modelFactories.get(key);
-    if (factory == null) {
-      factory = createModelFactory(key);
-      modelFactories.put(key, factory);
-    }
-    return (M)factory.get();
-  }
-
-  protected <M extends Model> ProvidesValue<M> createModelFactory(final Class<M> modelClass) {
-    // TODO: check for an X_Inject interface definition and prefer that, if possible...
-    if (modelClass.isInterface()) {
-      return new ProvidesValue<M>() {
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public M get() {
-          return (M) Proxy.newProxyInstance(Thread.currentThread().getContextClassLoader(),
-              new Class<?>[]{modelClass}, newInvocationHandler(modelClass));
-        }
-      };
-
-    } else {
-      // The type is not an interface.  We are boned.
-      throw new NotYetImplemented("Unable to generate class provider for " + modelClass+"; "
-          + "only interface types are supported at this time");
-    }
-  }
-
-  protected InvocationHandler newInvocationHandler(final Class<? extends Model> modelClass) {
-    return new ModelInvocationHandler(modelClass);
-  }
-
-  protected ModelManifest getOrMakeModelManifest(final Class<? extends Model> cls) {
-    final ModelModule module = currentModule.get();
-    if (module != null) {
-      final String typeName = getTypeName(cls);
-      return module.getManifest(typeName);
-    }
-    ModelManifest manifest = modelManifests.get(cls);
-    if (manifest == null) {
-      manifest = ModelUtil.createManifest(cls);
-      modelManifests.put(cls, manifest);
-    }
-    return manifest;
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public <M extends Model> Class<M> typeToClass(final String kind) {
-    return (Class<M>) typeNameToClass.get(kind);
-  }
-
-  public ModelModule getModelModule() {
-    return currentModule.get();
   }
 
 }

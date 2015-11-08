@@ -3,12 +3,12 @@
  */
 package xapi.test.model.content;
 
-import java.util.TreeMap;
-
 import xapi.collect.api.StringTo;
 import xapi.collect.impl.StringToAbstract;
 import xapi.model.content.ModelText;
 import xapi.model.impl.AbstractModel;
+
+import java.util.TreeMap;
 
 /**
  * @author James X. Nelson (james@wetheinter.net, @james)
@@ -69,7 +69,7 @@ public class ModelTextTest extends AbstractModel implements ModelText {
   protected StringTo<Object> newStringMap() {
     // We need to manually enforce ordering for our tests.
     // The order of the iterable of this map must match the order of the keys returned by getPropertyNames();
-    return new StringToAbstract<Object>(new TreeMap<String, Object>());
+    return new StringToAbstract<Object>(Object.class, new TreeMap<String, Object>());
   }
 
 }

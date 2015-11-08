@@ -48,8 +48,8 @@ public class ModelManifestSerializationTest {
   public void testModelFieldInequality() throws Throwable{
     final GetterFor getter = GetterForBuilder.buildGetterFor().setValue("name").build();
     final SetterFor setter = SetterForBuilder.buildSetterFor().setValue("name").build();
-    final MethodData method1 = new MethodData("name", getter, null, null);
-    final MethodData method2 = new MethodData("name", null, setter, null);
+    final MethodData method1 = new MethodData("name", "id", getter, null, null);
+    final MethodData method2 = new MethodData("name", "id", null, setter, null);
     Assert.assertNotEquals(method1, method2);
     Assert.assertEquals(method1.getName(), method2.getName());
   }
@@ -61,7 +61,7 @@ public class ModelManifestSerializationTest {
     final ModelManifest manifest2 = ModelUtil.createManifest(ModelContent.class);
     final GetterFor getter = getClass().getMethod("testInequality").getAnnotation(GetterFor.class);
     Assert.assertNotNull(getter);
-    manifest2.addProperty("getFake", getter, null, null);
+    manifest2.addProperty("getFake", "id", getter, null, null);
     Assert.assertNotEquals(manifest1, manifest2);
   }
 

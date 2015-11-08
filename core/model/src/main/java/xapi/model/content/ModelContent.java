@@ -12,12 +12,7 @@ public interface ModelContent extends ModelText, HasVotes, HasAuthor {
 
   String MODEL_CONTENT_TYPE = "content";
 
-  ProvidesValue<KeyBuilder> CONTENT_KEY_BUILDER = new ProvidesValue<KeyBuilder>() {
-    @Override
-    public KeyBuilder get() {
-      return KeyBuilder.build(MODEL_CONTENT_TYPE);
-    }
-  };
+  ProvidesValue<KeyBuilder> CONTENT_KEY_BUILDER = KeyBuilder.forType(MODEL_CONTENT_TYPE);
 
   ProvidesValue<ModelBuilder<ModelContent>> CONTENT_MODEL_BUILDER = new ProvidesValue<ModelBuilder<ModelContent>>() {
     @Override

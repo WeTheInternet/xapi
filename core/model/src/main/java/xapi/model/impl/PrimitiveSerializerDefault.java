@@ -4,6 +4,10 @@
 package xapi.model.impl;
 
 import xapi.annotation.inject.InstanceDefault;
+import xapi.collect.api.ClassTo;
+import xapi.collect.api.IntTo;
+import xapi.collect.api.ObjectTo;
+import xapi.collect.api.StringTo;
 import xapi.model.api.PrimitiveSerializer;
 import xapi.source.api.CharIterator;
 import xapi.util.X_Debug;
@@ -659,29 +663,87 @@ function DoubleToIEEE(f)
     if (cls == null) {
       return null;
     }
-    switch (cls) {
-      case "boolean":
-        return boolean.class;
-      case "byte":
-        return byte.class;
-      case "short":
-        return short.class;
-      case "char":
-        return char.class;
-      case "int":
-        return int.class;
-      case "long":
-        return long.class;
-      case "float":
-        return float.class;
-      case "double":
-        return double.class;
-      case "void":
-        return void.class;
-    }
     try {
+      switch (cls) {
+        case "boolean":
+          return boolean.class;
+        case "byte":
+          return byte.class;
+        case "short":
+          return short.class;
+        case "char":
+          return char.class;
+        case "int":
+          return int.class;
+        case "long":
+          return long.class;
+        case "float":
+          return float.class;
+        case "double":
+          return double.class;
+        case "[Lboolean;":
+          return boolean[].class;
+        case "[Lbyte;":
+          return byte[].class;
+        case "[Lshort;":
+          return short[].class;
+        case "[Lchar;":
+          return char[].class;
+        case "[Lint;":
+          return int[].class;
+        case "[Llong;":
+          return long[].class;
+        case "[Lfloat;":
+          return float[].class;
+        case "[Ldouble;":
+          return double[].class;
+        case "void":
+          return void.class;
+        case "xapi.collect.api.IntTo":
+          return IntTo.class;
+        case "xapi.collect.api.StringTo":
+          return StringTo.class;
+        case "xapi.collect.api.ClassTo":
+          return ClassTo.class;
+        case "xapi.collect.api.ObjectTo":
+          return ObjectTo.class;
+        case "xapi.collect.api.IntTo.Many":
+          return IntTo.Many.class;
+        case "xapi.collect.api.StringTo.Many":
+          return StringTo.Many.class;
+        case "xapi.collect.api.ClassTo.Many":
+          return ClassTo.Many.class;
+        case "xapi.collect.api.ObjectTo.Many":
+          return ObjectTo.Many.class;
+        // Cannot support standard collections due to inability to determine properly erased component types
+//        case "java.util.List":
+//          return List.class;
+//        case "java.util.ArrayList":
+//          return ArrayList.class;
+//        case "java.util.LinkedList":
+//          return LinkedList.class;
+//        case "java.util.Set":
+//          return Set.class;
+//        case "java.util.HashSet":
+//          return HashSet.class;
+//        case "java.util.LinkedHashSet":
+//          return LinkedHashSet.class;
+//        case "java.util.TreeSet":
+//          return TreeSet.class;
+//        case "java.util.Map":
+//          return Map.class;
+//        case "java.util.HashMap":
+//          return HashMap.class;
+//        case "java.util.LinkedHashMap":
+//          return LinkedHashMap.class;
+//        case "java.util.TreeMap":
+//          return TreeMap.class;
+      }
       return Class.forName(cls);
     } catch (final ClassNotFoundException e) {
+      assert false : "Could not deserialize class "+cls+"; make sure that reflection " +
+          "is enabled for this type.\n" +
+          "Calling Class.forName(\""+cls+"\"); with a string literal should suffice.";
       throw X_Debug.rethrow(e);
     }
   }

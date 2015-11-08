@@ -1,6 +1,7 @@
 package xapi.io.impl;
 
 import xapi.io.api.IOCallback;
+import xapi.util.X_Debug;
 
 public class IOCallbackDefault <V> implements IOCallback<V>{
 
@@ -11,7 +12,7 @@ public class IOCallbackDefault <V> implements IOCallback<V>{
 
   @Override
   public void onError(Throwable e) {
-    
+    X_Debug.rethrow(e);
   }
 
   @Override

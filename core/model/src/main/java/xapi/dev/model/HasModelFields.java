@@ -20,7 +20,7 @@ public class HasModelFields implements java.io.Serializable {
   private ClientToServer defaultToServer;
   private ServerToClient defaultToClient;
 
-  StringTo<ModelField> fields = new StringToAbstract<ModelField>();
+  StringTo<ModelField> fields = new StringToAbstract<ModelField>(ModelField.class);
   private Persistent defaultPersistence;
   private Key key;
 

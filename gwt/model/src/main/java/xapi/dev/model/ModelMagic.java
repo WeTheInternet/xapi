@@ -1,5 +1,12 @@
 package xapi.dev.model;
 
+import xapi.annotation.model.IsModel;
+import xapi.gwt.model.ModelGwt;
+import xapi.inject.X_Inject;
+import xapi.model.impl.ModelUtil;
+import xapi.util.X_Namespace;
+import xapi.util.X_Properties;
+
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.RebindResult;
 import com.google.gwt.core.ext.TreeLogger;
@@ -24,13 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.StringTokenizer;
-
-import xapi.annotation.model.IsModel;
-import xapi.gwt.model.ModelGwt;
-import xapi.inject.X_Inject;
-import xapi.model.impl.ModelUtil;
-import xapi.util.X_Namespace;
-import xapi.util.X_Properties;
 
 public class ModelMagic implements UnifyAstListener, MagicMethodGenerator {
 
@@ -90,8 +90,12 @@ public class ModelMagic implements UnifyAstListener, MagicMethodGenerator {
     }
     final JExpression arg0 = args.get(0);
     if (!(arg0 instanceof JClassLiteral)) {
-      logger.log(Type.ERROR, "X_Model."+methodName+"() expects a class literal as argument; you sent a "
-        + arg0.getClass()+" : "+arg0);
+      logger.log(Type.ERROR, "X_Model."+methodName+"() expects a class literal as argument; you sent a "+ arg0.getClass()+" : "+arg0);
+      logger.log(Type.ERROR, "Method call: "+call.toSource());
+      logger.log(Type.ERROR, "Method call: "+call.getTarget().toSource());
+      if (logger.isLoggable(Type.INFO)) {
+        logger.log(Type.INFO, "Enclosing type source: "+call.getTarget().getEnclosingType().toSource());
+      }
       throw new UnableToCompleteException();
     }
     final JClassLiteral classLit = (JClassLiteral)arg0;

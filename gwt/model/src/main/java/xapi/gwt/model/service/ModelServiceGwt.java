@@ -1,7 +1,9 @@
 package xapi.gwt.model.service;
 
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.reflect.client.strategy.GwtRetention;
 
+import xapi.annotation.gwt.MagicMethod;
 import xapi.annotation.inject.SingletonOverride;
 import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
@@ -58,6 +60,8 @@ public class ModelServiceGwt extends AbstractModelService
   }
 
   @Override
+  @MagicMethod(doNotVisit = true)
+  @GwtRetention(privacy = 0) // this method is magic.  Do not try to expose it via generated reflection...
   public <T extends Model> T create(final Class<T> key) {
     final ProvidesValue<? extends Model> provider = PROVIDERS.get(key);
     if (provider == null) {
@@ -82,6 +86,11 @@ public class ModelServiceGwt extends AbstractModelService
       protected boolean isModelType(final Class<?> propertyType) {
         return PROVIDERS.containsKey(propertyType);
       }
+
+      @Override
+      protected boolean isIterableType(Class<?> propertyType) {
+        return super.isIterableType(propertyType);
+      }
     };
   }
 
@@ -103,10 +112,11 @@ public class ModelServiceGwt extends AbstractModelService
     final StringDictionary<String> headers = X_Collect.newDictionary();
     headers.setValue("X-Model-Type", model.getType());
     final CharBuffer serialized =  serialize(type, model);
-    X_IO.getIOService().post(url, serialized.toString(), headers, new DelegatingIOCallback<>((resp) -> {
+    X_IO.getIOService().post(url, serialized.toString(), headers, new DelegatingIOCallback<>(
+            resp -> {
       final M deserialized = deserialize(type, new StringCharIterator(resp.body()));
       callback.onSuccess(deserialized);
-    }));
+    }, DelegatingIOCallback.failHandler(callback)));
   }
 
   protected String getUrlBase() {
@@ -131,7 +141,7 @@ public class ModelServiceGwt extends AbstractModelService
       X_Log.error("Got response! "+resp.body());
       final M deserialized = deserialize(type, new StringCharIterator(resp.body()));
       callback.onSuccess(deserialized);
-    }));
+    }, DelegatingIOCallback.failHandler(callback)));
 
   }
 
@@ -161,7 +171,7 @@ public class ModelServiceGwt extends AbstractModelService
         result.addModel(deserialized);
       }
       callback.onSuccess(result);
-    }));
+    }, DelegatingIOCallback.failHandler(callback)));
 
   }
 
@@ -189,7 +199,7 @@ public class ModelServiceGwt extends AbstractModelService
         result.addModel(deserialized);
       }
       callback.onSuccess(result);
-    }));
+    }, DelegatingIOCallback.failHandler(callback)));
 
   }
 

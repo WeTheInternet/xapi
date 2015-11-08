@@ -81,10 +81,41 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-server-api</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>${gwt.groupId}</groupId>
       <artifactId>gwt-dev</artifactId>
       <scope>provided</scope>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <systemProperties>
+            <property>
+              <name>gwt.args</name>
+              <value>-war /tmp/gwtc -logLevel INFO -batch module </value>
+            </property>
+            <property>
+              <name>java.specification.version</name>
+              <value>1.8</value>
+            </property>
+            <property>
+              <name>gwt.modules</name>
+              <value>xapi.test.ModelTest.JUnit</value>
+            </property>
+          </systemProperties>
+<!--          <debugForkedProcess>true</debugForkedProcess>-->
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 
 </project>
