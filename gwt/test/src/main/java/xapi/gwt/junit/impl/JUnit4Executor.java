@@ -11,6 +11,7 @@ import xapi.collect.api.IntTo;
 import xapi.gwt.junit.api.JUnitExecution;
 import xapi.log.X_Log;
 import xapi.time.X_Time;
+import xapi.util.X_Debug;
 import xapi.util.api.ReceivesValue;
 
 import com.google.gwt.core.client.GWT;
@@ -24,6 +25,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -366,43 +368,51 @@ public class JUnit4Executor {
       if (e == null) {
         return SUCCESS;
       }
+      if (!expected.isAssignableFrom(e.getClass())) {
+        X_Debug.rethrow(e);
+      }
       return expected.isAssignableFrom(e.getClass()) ? SUCCESS : e;
     }
   }
 
   protected void findAndSetField(Predicate<Class> matcher, Object value, Object inst, boolean forceSet) {
-    Class<?> declaringClass = inst.getClass();
-    Field[] fields = GwtReflect.getPublicFields(declaringClass);
-    for (Field field : fields) {
-      if (matcher.test(field.getType())) {
-        try {
-          if (forceSet || field.get(inst) == null) {
-            field.set(inst, value);
-          }
-        } catch (Throwable e) {
-          X_Log.warn(
-              getClass(),
-              "findAndSetField for " + matcher + " on " + declaringClass + " (" + inst + ") encountered an error",
-              e
-          );
-        }
-      }
-    }
-    while (declaringClass != null && declaringClass != Object.class) {
-      fields = GwtReflect.getDeclaredFields(declaringClass);
+    try {
+      Class<?> declaringClass = inst.getClass();
+      Field[] fields = GwtReflect.getPublicFields(declaringClass);
       for (Field field : fields) {
         if (matcher.test(field.getType())) {
           try {
-            field.setAccessible(true);
             if (forceSet || field.get(inst) == null) {
               field.set(inst, value);
             }
           } catch (Throwable e) {
-            X_Log.warn(getClass(), "findAndSetField for "+matcher+" on "+declaringClass+" ("+inst+") encountered an error", e);
+            X_Log.warn(
+                getClass(),
+                "findAndSetField for " + matcher + " on " + declaringClass + " (" + inst + ") encountered an error",
+                e
+            );
           }
         }
       }
-      declaringClass = declaringClass.getSuperclass();
+      while (declaringClass != null && declaringClass != Object.class) {
+        fields = GwtReflect.getDeclaredFields(declaringClass);
+        for (Field field : fields) {
+          if (matcher.test(field.getType())) {
+            try {
+              field.setAccessible(true);
+              if (forceSet || field.get(inst) == null) {
+                field.set(inst, value);
+              }
+            } catch (Throwable e) {
+              X_Log.warn(getClass(), "findAndSetField for "+matcher+" on "+declaringClass+" ("+inst+") encountered an error", e);
+            }
+          }
+        }
+        declaringClass = declaringClass.getSuperclass();
+      }
+
+    } catch (Throwable e) {
+      X_Log.warn(getClass(), "Unable to set value "+value+" on instance "+inst+" using matcher "+matcher);
     }
   }
 
@@ -435,6 +445,31 @@ public class JUnit4Executor {
     }
     b.append("</pre>");
     return b.toString();
+  }
+
+  public static void runTest(Object on, Method method) throws Throwable {
+    new JUnit4Executor().run(on, method, (s)->{});
+  }
+
+  public static void runTests(Class<?> cls) throws Exception {
+    new JUnit4Executor().runAll(
+        cls, cls.newInstance(), results -> {
+          final Iterator<Entry<Method, Throwable>> itr = results.entrySet().iterator();
+          Throwable last = null;
+          while (itr.hasNext()) {
+            final Entry<Method,Throwable> next = itr.next();
+            if (next.getValue() == SUCCESS || next.getValue() == null) {
+              itr.remove();
+            } else {
+              last = next.getValue();
+              X_Log.error("Failure invoking "+next.getKey().getName(), last);
+            }
+          }
+          if (!results.isEmpty()) {
+            throw new RuntimeException(results.size()+ " tests in "+cls+" failed: "+results, last);
+          }
+        }
+    );
   }
 
   protected class Lifecycle {

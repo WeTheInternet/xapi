@@ -56,7 +56,7 @@ public class ReflectionTest extends GWTTestCase {
       Class<MagicClassTest> cls = GwtReflect.magicClass(MagicClassTest.class);
       GWT.log("Test Class.newInstance() "+cls.getName());
       MagicClassTest instance = cls.newInstance();
-      Assert.assertNotNull("Null instance returned",instance);
+      assertNotNull("Null instance returned",instance);
       assert instance instanceof MagicClassTest;
       log.log(LogLevel.INFO, instance);
     } catch (Exception e) {
