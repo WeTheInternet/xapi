@@ -3,7 +3,8 @@ package xapi.gwt.junit.gui;
 import elemental.dom.Element;
 import xapi.gwt.junit.api.JUnitExecution;
 import xapi.gwt.junit.impl.JUnit4Executor;
-import xapi.util.api.ProvidesValue;
+
+import javax.inject.Provider;
 
 /**
  * Created by james on 18/10/15.
@@ -11,7 +12,7 @@ import xapi.util.api.ProvidesValue;
 public class JUnitGuiController extends JUnit4Executor {
 
   private Object currentTest; // The current test instance.
-  private ProvidesValue<Element> stageProvider;
+  private Provider<Element> stageProvider;
   private final Runnable updater;
 
   public JUnitGuiController(Runnable updater) {this.updater = updater;}
@@ -26,7 +27,7 @@ public class JUnitGuiController extends JUnit4Executor {
    *
    * @return false to skip the test.
    */
-  protected boolean onTestStart(ProvidesValue<Element> stageProvider, Object inst){
+  protected boolean onTestStart(Provider<Element> stageProvider, Object inst){
     this.stageProvider = stageProvider;
     currentTest = inst;
     findAndSetField(JUnitGuiController.class::isAssignableFrom, this, inst, false);

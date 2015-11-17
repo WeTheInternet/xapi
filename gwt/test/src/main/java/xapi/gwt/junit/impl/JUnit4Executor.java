@@ -279,6 +279,7 @@ public class JUnit4Executor {
         e -> {
           if (execution == newExecution) {
             execution = oldExecution;
+            setExecution(oldExecution, inst);
           }
         }
     );
@@ -447,8 +448,22 @@ public class JUnit4Executor {
     return b.toString();
   }
 
+  /**
+   * Synchronously execute the supplied method on the supplied object, rethrowing any exceptions we encounter.
+   *
+   * This method is deprecated and discouraged, since any test with asynchronicity must use a callback.
+   */
+  @Deprecated
   public static void runTest(Object on, Method method) throws Throwable {
-    new JUnit4Executor().run(on, method, (s)->{});
+    Throwable[] result = new Throwable[0];
+    new JUnit4Executor().run(on, method, (s)->{
+          if (s != SUCCESS){
+            result[0] = s;
+          }
+    });
+    if (result[0] != null) {
+      throw result[0];
+    }
   }
 
   public static void runTests(Class<?> cls) throws Exception {

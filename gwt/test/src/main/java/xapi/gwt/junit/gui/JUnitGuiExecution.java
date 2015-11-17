@@ -6,17 +6,23 @@ import xapi.elemental.X_Elemental;
 import xapi.gwt.junit.api.JUnitExecution;
 import xapi.gwt.junit.impl.JUnit4Executor;
 import xapi.util.api.ProvidesValue;
+import xapi.util.impl.LazyProvider;
+
+import javax.inject.Provider;
+import java.lang.reflect.Method;
 
 /**
  * Created by james on 18/10/15.
  */
 public class JUnitGuiExecution extends JUnitExecution<JUnitGuiController> {
 
-  private final ProvidesValue<Element> stageProvider;
+  private ProvidesValue<Element> stageProvider;
+  private final Provider<Element> originalProvider;
   private Element stageRoot;
 
-  public JUnitGuiExecution(ProvidesValue<Element> stageProvider, Runnable update) {
-    this.stageProvider = stageProvider;
+  public JUnitGuiExecution(Provider<Element> stageProvider, Runnable update) {
+    this.originalProvider = stageProvider;
+    this.stageProvider = new LazyProvider<>(stageProvider);
     Element[] running = new Element[1];
     onStartMethod(
         m -> {
@@ -51,6 +57,12 @@ public class JUnitGuiExecution extends JUnitExecution<JUnitGuiController> {
           }
         }
     );
+  }
+
+  @Override
+  public void startMethod(Method method) {
+    stageProvider = new LazyProvider<>(originalProvider);
+    super.startMethod(method);
   }
 
   public Element getStage() {

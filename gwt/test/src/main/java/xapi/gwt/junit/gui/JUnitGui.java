@@ -150,13 +150,7 @@ public abstract class JUnitGui {
   private void renderTest(Element body, Class<?> c) {
     PotentialNode<Element> out = newClassBlock(c);
 
-    out.getStyle()
-        .setDisplay("inline-block")
-        .setVerticalAlign("top")
-        .setMaxHeight("90%")
-        .setOverflowY("auto")
-        .setMarginRight("2em")
-    ;
+    out.setClass("junit root");
 
     final String id = toId(c);
     buildHeader(out, c, id);
@@ -183,7 +177,7 @@ public abstract class JUnitGui {
     Class<?> c = m.getDeclaringClass();
     final String methodId = m.getName() + c.hashCode();
 
-    final PotentialNode<Element> block = out.createChild("pre");
+    final PotentialNode<Element> block = out.createChild("div");
 
     final PotentialNode<Element> link = block
         .createChild("a");
@@ -213,6 +207,7 @@ public abstract class JUnitGui {
   protected void buildHeader(PotentialNode<Element> b, Class<?> c, String id) {
     b.createChild("h3")
         .createChild("a")
+        .setClass("junit")
         .setAttribute("id", id)
         .setAttribute("href", "#run:" + id)
         .onCreated(
@@ -225,7 +220,7 @@ public abstract class JUnitGui {
         .append(c.getName())
     ;
     b.createChild("div")
-        .setClass("results")
+        .setClass("junit results")
         .setAttribute("id", TEST_RESULTS + id)
     ;
 
@@ -278,7 +273,7 @@ public abstract class JUnitGui {
       final Element result = initialize(view[0], controller, inst);
       return result;
     };
-    if (controller.onTestStart(LazyProvider.of(stageProvider), inst)) {
+    if (controller.onTestStart(stageProvider, inst)) {
       controller.runAll(
           c, inst, fin -> {
             res.putAll(fin);
@@ -307,11 +302,11 @@ public abstract class JUnitGui {
         }
       }
     }
-    final StringBuilder b = new StringBuilder("<span class='success'>Passed: ")
+    final StringBuilder b = new StringBuilder("<span class='junit success'>Passed: ")
         .append(success).append("/").append(total).append("</span>; ")
         .append("<span");
     if (fail > 0) {
-      b.append(" class='fail'");
+      b.append(" class='junit fail'");
     }
     b.append(">Failed: ").append(fail).append("/").append(total);
     el.setInnerHTML(b.toString());
@@ -351,7 +346,7 @@ public abstract class JUnitGui {
       }
     } catch (Throwable e) {
       results.put(m, e);
-      stage.setInnerHTML(debug("<div style='color:red'>" + m.getName() + " fails!</div>", e));
+      stage.setInnerHTML(debug("<div class='junit' style='color:red'>" + m.getName() + " fails!</div>", e));
     }
   }
 
