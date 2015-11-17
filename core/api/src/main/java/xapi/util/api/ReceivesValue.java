@@ -44,6 +44,8 @@ package xapi.util.api;
 
 public interface ReceivesValue <T>{
 
+  ReceivesValue NO_OP = new NoOp();
+
   /**
    * set() can be used either as an asynchronous method callback,
    * or as an actual setter for a {@link Bean} value.
@@ -61,8 +63,13 @@ public interface ReceivesValue <T>{
 	 *
 	 * @param <T>
 	 */
-	public static class NoOp <T> implements ReceivesValue<T>{
+  class NoOp <T> implements ReceivesValue<T>{
 	  @Override public void set(T value) {}
+  }
+
+  interface ReceivesValueUnsafe <T> {
+
+	void set(T value) throws Throwable;
   }
 
 }
