@@ -7,7 +7,7 @@ import java.util.function.BiConsumer;
  *         Created on 07/11/15.
  */
 @SuppressWarnings("unchecked")
-public interface In2<I1, I2> extends HasInput {
+public interface In2<I1, I2> extends HasInput, Rethrowable {
 
   void in(I1 in1, I2 in2);
 
@@ -69,7 +69,7 @@ public interface In2<I1, I2> extends HasInput {
     return of;
   }
 
-  interface In2Unsafe <I1, I2> extends In2<I1, I2>, Rethrowable{
+  interface In2Unsafe <I1, I2> extends In2<I1, I2> {
     void inUnsafe(I1 in1, I2 in2) throws Throwable;
 
     default void in(I1 in1, I2 in2) {

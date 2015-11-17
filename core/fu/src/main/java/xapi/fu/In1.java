@@ -7,7 +7,7 @@ import java.util.function.Consumer;
  *         Created on 07/11/15.
  */
 @SuppressWarnings("unchecked") // yes, this api will let you do terrible things.  Don't do terrible things.
-public interface In1<I> extends HasInput {
+public interface In1<I> extends HasInput, Rethrowable {
 
   void in(I in);
 
@@ -50,7 +50,7 @@ public interface In1<I> extends HasInput {
     return of;
   }
 
-  interface In1Unsafe <I> extends In1<I>, Rethrowable{
+  interface In1Unsafe <I> extends In1<I> {
     void inUnsafe(I in) throws Throwable;
 
     default void in(I in) {

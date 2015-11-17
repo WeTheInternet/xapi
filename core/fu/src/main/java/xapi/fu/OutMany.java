@@ -4,7 +4,7 @@ package xapi.fu;
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 07/11/15.
  */
-public interface OutMany {
+public interface OutMany extends Rethrowable {
 
   Out1[] out0();
 

@@ -7,7 +7,7 @@ import java.util.function.Supplier;
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 07/11/15.
  */
-public interface Out1<O> {
+public interface Out1<O> extends Rethrowable {
 
   O out1();
 

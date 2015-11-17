@@ -35,6 +35,10 @@ public interface Out2<O1, O2> extends OutMany {
     return this;
   }
 
+  default <O> Out1<O> map(In1Out1 mapper) {
+    return null;
+  }
+
   /**
    * @return an immutable copy of this object.
    */

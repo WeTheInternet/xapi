@@ -5,7 +5,7 @@ package xapi.fu;
  *         Created on 07/11/15.
  */
 @SuppressWarnings("unchecked")
-public interface In4<I1, I2, I3, I4> extends HasInput {
+public interface In4<I1, I2, I3, I4> extends HasInput, Rethrowable {
 
   void in(I1 in1, I2 in2, I3 in3, I4 in4);
 
@@ -85,7 +85,7 @@ public interface In4<I1, I2, I3, I4> extends HasInput {
     return of;
   }
 
-  interface In4Unsafe <I1, I2, I3, I4> extends In4<I1, I2, I3, I4>, Rethrowable{
+  interface In4Unsafe <I1, I2, I3, I4> extends In4<I1, I2, I3, I4> {
     void inUnsafe(I1 in1, I2 in2, I3 in3, I4 in4) throws Throwable;
 
     default void in(I1 in1, I2 in2, I3 in3, I4 in4) {
