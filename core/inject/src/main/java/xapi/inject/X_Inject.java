@@ -37,12 +37,6 @@
  */
 package xapi.inject;
 
-import static xapi.util.X_Runtime.isJava;
-
-import java.util.ServiceLoader;
-
-import javax.inject.Provider;
-
 import xapi.annotation.gwt.MagicMethod;
 import xapi.annotation.inject.SingletonDefault;
 import xapi.annotation.inject.SingletonOverride;
@@ -51,6 +45,11 @@ import xapi.except.NotConfiguredCorrectly;
 import xapi.inject.api.Injector;
 import xapi.inject.impl.JavaInjector;
 import xapi.util.api.ReceivesValue;
+
+import static xapi.util.X_Runtime.isJava;
+
+import javax.inject.Provider;
+import java.util.ServiceLoader;
 
 /**
  * A static accessor class for in an instance of {@link Injector}.
@@ -93,13 +92,6 @@ import xapi.util.api.ReceivesValue;
  *
  * <br/><br/>
  *
- * The gwt solution uses a generated extension of {@link JsInjector} using {@link AsyncProxy}.
- * See {@link xapi.dev.generators.GwtDevGenerator} and
- * its subclass {@link xapi.dev.generators.AbstractInjectionGenerator}
- * in the xapi-gwt-inject module.
- *
- * <br/><br/>
- *
  * Unlike ServiceLoader, which presents an iterable of available services,
  * X_Inject currently only returns the highest priority (top of the list) service,
  * and it only returns lazily-loaded singletons (which work with code splitting).
@@ -123,7 +115,7 @@ public class X_Inject{
 
   @KeepMethod
   @MagicMethod(doNotVisit=true)
-  public static <T> T instance(final Class<? super T> cls){
+  public static <T, R extends T> R instance(final Class<T> cls){
     if (isJava()) {
       return xapi.inject.impl.JavaInjector.instance(cls);
     } else {
@@ -167,9 +159,9 @@ public class X_Inject{
    */
   @KeepMethod
   @MagicMethod(doNotVisit=true)
-  public static <T> T singleton(final Class<? super T> cls){
+  public static <T, R extends T> R singleton(final Class<T> cls){
     if (isJava()) {
-      final Provider<T> provider = xapi.inject.impl.JavaInjector.singletonLazy(cls);
+      final Provider<R> provider = xapi.inject.impl.JavaInjector.singletonLazy(cls);
       return provider.get();
     } else {
       throw notConfiguredCorrectly();
@@ -177,7 +169,7 @@ public class X_Inject{
   }
   @KeepMethod
   @MagicMethod(doNotVisit=true)
-  public static <T> void singletonAsync(final Class<? super T> cls,final Class<? extends ReceivesValue<T>> callback){
+  public static <T, R extends T> void singletonAsync(final Class<T> cls,final Class<? extends ReceivesValue<R>> callback){
     if (isJava()){
       // We expose a Class<? super T> api for all injection methods,
       // but in the case of async callback injection, we have to allow
@@ -185,11 +177,11 @@ public class X_Inject{
       // Thus, we must coerce the bounds of the callback class (mostly for gwt)
       @SuppressWarnings("unchecked")
       final
-      Class<? super ReceivesValue<T>> receiverCls = Class.class.cast(callback);
+      Class<? super ReceivesValue<R>> receiverCls = Class.class.cast(callback);
       // we normally enforce "give supertype, get subtype", but in the case of callbacks,
       // it's "give supertype<T> and a concrete subclass of ReceivesValue<T>,
       // and we'll inject the callback and the singleton.
-      final ReceivesValue<T> receiver = singleton(receiverCls);
+      final ReceivesValue<R> receiver = singleton(receiverCls);
       singletonAsync(cls, receiver);
     } else {
       throw  notConfiguredCorrectly();
@@ -241,9 +233,9 @@ public class X_Inject{
    */
   @KeepMethod
   @MagicMethod(doNotVisit=true)
-  public static <T> void singletonAsync(final Class<? super T> cls, final ReceivesValue<T> callback){
+  public static <T, R extends T> void singletonAsync(final Class<T> cls, final ReceivesValue<R> callback){
     if (isJava()) {
-      final Provider<T> provider = xapi.inject.impl.JavaInjector.singletonLazy(cls);
+      final Provider<R> provider = xapi.inject.impl.JavaInjector.singletonLazy(cls);
       callback.set(provider.get());
     } else {
       throw notConfiguredCorrectly();
@@ -270,7 +262,7 @@ public class X_Inject{
    */
   @KeepMethod
   @MagicMethod(doNotVisit=true)
-  public static <T> Provider<T> singletonLazy(final Class<? super T> cls) {
+  public static <T, R extends T> Provider<R> singletonLazy(final Class<T> cls) {
     if (isJava()) {
       return xapi.inject.impl.JavaInjector.singletonLazy(cls);
     } else {

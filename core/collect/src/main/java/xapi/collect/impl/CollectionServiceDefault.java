@@ -125,8 +125,8 @@ public class CollectionServiceDefault implements CollectionService{
   }
 
   @Override
-  public <V> IntTo<V> newList(final Class<? extends V> cls, final CollectionOptions opts) {
-    return new IntToList<V>(cls);
+  public <T, R extends T> IntTo<R> newList(final Class<T> cls, final CollectionOptions opts) {
+    return new IntToList<>(cls);
   }
 
   @Override

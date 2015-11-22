@@ -26,7 +26,7 @@ class IntToList<E> implements IntTo<E> {
   private final ArrayList<E> list = new ArrayList<E>(10);
   private final Class<E> type;
   
-  public IntToList(Class<? extends E> cls) {
+  public IntToList(Class<? super E> cls) {
     this.type = Class.class.cast(cls);
   }
 

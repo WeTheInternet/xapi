@@ -1,13 +1,5 @@
 package xapi.ui.html.api;
 
-import static xapi.collect.X_Collect.newStringMap;
-
-import com.google.gwt.reflect.shared.GwtReflect;
-
-import java.io.IOException;
-
-import javax.inject.Provider;
-
 import xapi.annotation.common.Property;
 import xapi.collect.api.StringTo;
 import xapi.dev.source.DomBuffer;
@@ -36,6 +28,13 @@ import xapi.ui.html.api.Style.UnitType;
 import xapi.util.X_String;
 import xapi.util.api.ConvertsValue;
 import xapi.util.impl.LazyProvider;
+
+import static xapi.collect.X_Collect.newStringMap;
+
+import com.google.gwt.reflect.shared.GwtReflect;
+
+import javax.inject.Provider;
+import java.io.IOException;
 
 public class HtmlSnippet <T> implements ConvertsValue<T, String> {
 
@@ -316,6 +315,8 @@ public class HtmlSnippet <T> implements ConvertsValue<T, String> {
       return unit.value() + "%"+ important;
     case Em:
       return unit.value() + "em" + important;
+    case Rem:
+      return unit.value() + "rem" + important;
     case Px:
       return unit.value() + "px" + important;
     default:

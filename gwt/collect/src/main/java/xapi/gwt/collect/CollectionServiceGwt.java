@@ -25,7 +25,7 @@ import java.util.Map;
 public class CollectionServiceGwt implements CollectionService{
 
   @Override
-  public <V> IntTo<V> newList(Class<? extends V> cls, CollectionOptions opts) {
+  public <T, R extends T> IntTo<R> newList(Class<T> cls, CollectionOptions opts) {
     return IntToListGwt.newInstance();
   }
 

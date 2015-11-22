@@ -41,18 +41,13 @@ public class CharBuffer {
     tail = head = new CharBufferStack();
   }
 
-  CharBuffer next;
-
   CharBuffer append(final StringBuilder chars) {
     return this;
   }
 
   CharBuffer makeChild(){
     final CharBuffer child = newChild();
-    if (next != null) {
-      next.next = child;
-    }
-    next = child;
+    addToEnd(child);
     return child;
   }
 

@@ -303,7 +303,7 @@ public class PrintBuffer extends CharBuffer{
   }
 
   @Override
-  protected PrintBuffer makeChild() {
+  public PrintBuffer makeChild() {
     return (PrintBuffer) super.makeChild();
   }
 

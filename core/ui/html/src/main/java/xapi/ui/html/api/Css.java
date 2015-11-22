@@ -3,7 +3,19 @@ package xapi.ui.html.api;
 import com.google.gwt.resources.client.ClientBundle;
 import com.google.gwt.resources.client.CssResource;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
 public @interface Css {
+
+  @interface CssFile{
+    String[] value();
+    Class<? extends CssResource>[] interfaces() default {};
+  }
 
   /**
    * @return any {@link Style} properties to set.
@@ -14,6 +26,8 @@ public @interface Css {
    * @return any {@link ClientBundle} implementors which must be instantiated and made available.
    */
   Class<? extends ClientBundle>[] resources() default {};
+
+  CssFile[] files() default {};
   
   /**
    * @return Any text to turn into css; 

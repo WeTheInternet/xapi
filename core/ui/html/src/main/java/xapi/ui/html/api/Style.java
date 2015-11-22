@@ -89,7 +89,17 @@ public @interface Style {
   }
 
   enum FontWeight {
-    Bold("bold"), Bolder("bolder"), Normal("normal"), Inherit("inherit");
+    Bold("bold"), Bolder("bolder"), Normal("normal"),
+    Weight100("100"),
+    Weight200("200"),
+    Weight300("300"),
+    Weight400("400"),
+    Weight500("500"),
+    Weight600("600"),
+    Weight700("700"),
+    Weight800("800"),
+    Weight900("900"),
+    Inherit("inherit");
     String styleName;
     FontWeight(String styleName) {
       this.styleName = styleName;
@@ -122,7 +132,7 @@ public @interface Style {
   }
 
   enum UnitType {
-    Px, Pct, Em, Auto, Unset
+    Px, Pct, Em, Rem, Auto, Unset
   }
 
   enum BoxSizing {

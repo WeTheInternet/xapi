@@ -448,6 +448,11 @@ public abstract class MemberBuffer<Self extends MemberBuffer<Self>> extends
   }
 
   @Override
+  public Self makeChild() {
+    return (Self) super.makeChild();
+  }
+
+  @Override
   public Self add(Object... values) {
     super.add(values);
     return self();

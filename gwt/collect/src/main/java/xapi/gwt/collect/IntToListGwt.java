@@ -36,13 +36,16 @@ public class IntToListGwt <E> extends JavaScriptObject implements IntTo<E>{
     return JavaScriptObject.createArray().<IntToListGwt<V>>cast().setArrayProvider(arrayProvider);
   }
 
-
-  public static <V> IntTo<V> createForClass(final Class<V> cls) {
-    return create(new Provider<V[]>() {
+  /**
+   * This method is not safe for general use.  It is only to be used when you need to apply generics to a given type;
+   * unfortunately, the bounds let you send any subtype (not just one with enhanced generics).
+   */
+  static <T, R extends T> IntTo<R> createForClass(final Class<T> cls) {
+    return create(new Provider<R[]>() {
       @SuppressWarnings("unchecked")
       @Override
-      public V[] get() {
-        return (V[])Array.newInstance(cls, 0);
+      public R[] get() {
+        return (R[])Array.newInstance(cls, 0);
       }
     });
   }

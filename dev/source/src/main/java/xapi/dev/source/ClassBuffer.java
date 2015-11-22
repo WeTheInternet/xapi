@@ -557,11 +557,6 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
   }
 
   @Override
-  protected ClassBuffer makeChild() {
-    return (ClassBuffer) super.makeChild();
-  }
-
-  @Override
   @SuppressWarnings("unchecked")
   public ClassBuffer printAfter(String suffix) {
     return (ClassBuffer) super.printAfter(suffix);

@@ -564,11 +564,6 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
   }
 
   @Override
-  protected MethodBuffer makeChild() {
-    return (MethodBuffer) super.makeChild();
-  }
-
-  @Override
   @SuppressWarnings("unchecked")
   public MethodBuffer printAfter(String suffix) {
     return (MethodBuffer) super.printAfter(suffix);

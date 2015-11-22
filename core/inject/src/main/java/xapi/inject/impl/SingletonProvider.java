@@ -34,10 +34,10 @@
  */
 package xapi.inject.impl;
 
-import javax.inject.Provider;
-
 import xapi.util.api.ProvidesValue;
 import xapi.util.impl.ImmutableProvider;
+
+import javax.inject.Provider;
 
 /**
  * A proxy class used to create a lazy-loading provider, with an efficient proxy (self-overwriting) proxy.
@@ -56,22 +56,33 @@ public abstract class SingletonProvider<X> implements Provider<X>, ProvidesValue
      */
     @Override
     public final X get() {
-      X init;
-      //start lock; could be multiple threads here at once
-      synchronized (this) {//compiles out of gwt
-        if (proxy == this){//double check lock; if we won the race condition
-          init = initialValue();//try to init,
-          if (null==init)return null;//pay for null-checks + synchro until inited
-          proxy = createImmutableProvider(init);//replace proxy with an immutable provider
-          onCreate(init);//call on create inside synchro block.
-          //it would be nice if we could do this outside the synchro block,
-          //but then any threads who lose the race condition will get back
-          //a partially initialized instance
-        }else{//another thread has already inited while we waited.
-          return proxy.get();//just return whatever the new proxy has
+      // perform a volatile read.  Much cheaper than a full synchronization
+      Provider<X> provider = proxy;
+
+      if (provider == this) {// double checked lock part 1
+        //start lock; could be multiple threads here at once
+        synchronized (this) {//compiles out of gwt
+          provider = proxy; // another volatile read, in case we just blocked on the synchro
+          if (provider == this) { // double checked lock part 2
+            // we won the race condition
+            X init = initialValue();//try to init,
+            if (null == init) {
+              return null;//pay for null-checks + synchro until inited
+            }
+            proxy = createImmutableProvider(init);//replace proxy with an immutable provider
+            onCreate(init);//call on create inside synchro block.
+            //it would be nice if we could do this outside the synchro block,
+            //but then any threads who lose the race condition will get back
+            //a partially initialized instance
+            return init;
+          } else {
+            //another thread has already inited while we waited.
+            return proxy.get();//just return whatever the new proxy supplies
+          }
         }
+      } else {
+        return proxy.get();
       }
-      return init;
     }
   }
 
@@ -81,7 +92,7 @@ public abstract class SingletonProvider<X> implements Provider<X>, ProvidesValue
    * In subclasses like @LazyPojo, this proxy object is toggled to allow for efficient get() when we can.
    *
    */
-  protected Provider<X> proxy;
+  protected volatile Provider<X> proxy;
 
 	public SingletonProvider() {
 	  proxy = new NullCheckOnGet();
@@ -124,6 +135,10 @@ public abstract class SingletonProvider<X> implements Provider<X>, ProvidesValue
    * @param init
    */
   protected void onCreate(X init) {
+  }
+
+  public void reset() {
+    proxy = this;
   }
 
   /**

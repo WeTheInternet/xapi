@@ -94,7 +94,19 @@ public class X_Collect {
     return new IntToManyList<X>(component);
   }
 
-  public static <V> IntTo<V> newList(final Class<? extends V> cls) {
+  /**
+   * Creates a new IntTo that is optimized for the current platform.
+   * <p>
+   * Be careful with this method!  The generic bounds allow you to send any supertype of the class you want the IntTo to contain,
+   * however, this is only meant to make it easy to specify types which themselves have generics.
+   * <pre>
+   * IntTo<Optional<T>> list = X_Collect.newList(Optional.class); // +1, we ignore the &lt;T>
+   * IntTo<Integer> = X_Collect.newList(Number.class); // -1, if we call .toArray(), we will get a class cast exception. :-/
+   * </pre>
+   *
+   *
+   */
+  public static <T, R extends T> IntTo<R> newList(final Class<T> cls) {
     return service.newList(cls, MUTABLE_LIST);
   }
 

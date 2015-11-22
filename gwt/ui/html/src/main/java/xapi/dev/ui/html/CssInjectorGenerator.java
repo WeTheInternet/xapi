@@ -13,6 +13,7 @@ import xapi.time.impl.RunOnce;
 import xapi.ui.api.StyleService;
 import xapi.ui.html.X_Html;
 import xapi.ui.html.api.Css;
+import xapi.ui.html.api.Css.CssFile;
 import xapi.ui.html.api.El;
 import xapi.ui.html.api.Html;
 import xapi.ui.html.api.HtmlTemplate;
@@ -36,6 +37,7 @@ import com.google.gwt.dev.jjs.UnifyAstView;
 import com.google.gwt.resources.client.ClientBundle;
 import com.google.gwt.resources.client.CssResource;
 
+import java.net.URL;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -97,8 +99,9 @@ public class CssInjectorGenerator implements CreatesContextObject<HtmlGeneratorR
     // Now fill out the body with our css injection that will run only once.
     final IntTo.Many<Style> styles = X_Collect.newIntMultiMap(Style.class);
     final Set<Class<? extends ClientBundle>> resourceTypes = new HashSet<Class<? extends ClientBundle>>();
-    final Set<String> importTypes = new LinkedHashSet<String>();
-    fillStyles(logger, styles, resourceTypes, importTypes, injectionType);
+    final Set<String> importTypes = new LinkedHashSet<>();
+    final Set<CssFile> files = new LinkedHashSet<>();
+    fillStyles(logger, styles, files, resourceTypes, importTypes, injectionType);
 
     // Now compute any supertypes that might want injection too
     for (final JClassType superType : injectionType.getFlattenedSupertypeHierarchy()) {
@@ -137,8 +140,7 @@ public class CssInjectorGenerator implements CreatesContextObject<HtmlGeneratorR
          .println("public void set("+cssService+" serv) {");
 
       // Tear off a print buffer for the body of the method
-      final PrintBuffer body = new PrintBuffer();
-      init.addToEnd(body);
+      final PrintBuffer body = init.makeChild();
 
       // Close the initializer now, so we don't wind up with close-brace-soup later on.
       init.println("}")
@@ -167,6 +169,47 @@ public class CssInjectorGenerator implements CreatesContextObject<HtmlGeneratorR
         }
       }
 
+      for (CssFile file : files) {
+        final Class<? extends CssResource>[] interfaces = file.interfaces();
+        final String[] fileNames = file.value();
+        final ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        for (int i = 0, m = fileNames.length; i < m; i++ ) {
+          String fileName = fileNames[i];
+          if (fileName.startsWith("/")) {
+            // This is to be treated as an absolute location
+            fileName = fileName.substring(1);
+          } else if (fileName.startsWith("./")) {
+            // Treat this file as relative to the first CssResource interface provided
+            if (interfaces.length == 0) {
+              logger.log(Type.ERROR, "Cannot use a relative @CssFile location using ./ without also supplying a CssResource in the interfaces annotation member. " +
+                      "You supplied: "+file+".\n" +
+                      "./uris are relative to the css interface\n" +
+                      "/uris are absolute to the classpath\n" +
+                      "and all unprefixed uris are relative to the location where the @CssFile annotation is found ("+injectionType.getQualifiedSourceName()+")");
+              throw new UnableToCompleteException();
+            }
+            fileName = interfaces[0].getPackage().getName().replace('.', '/') + "/" + fileName;
+          } else {
+            // Treat this file as relative to the type we are injecting
+            fileName = injectionType.getPackage().getName().replace('.', '/') + "/" + fileName;
+          }
+          final URL url = cl.getResource(fileName);
+          if (url == null) {
+            logger.log(Type.ERROR, "Unable to find resource "+fileName+" on the classpath.  Path derived from "+file+" on "+injectionType.getQualifiedSourceName());
+            throw new UnableToCompleteException();
+          }
+          fileNames[i] = fileName;
+        }
+
+        if (interfaces.length == 0) {
+          // No interfaces.  We just want to dump the whole stylesheet
+        } else if (interfaces.length == 1) {
+          // exactly one interface, just use it directly
+        } else {
+          // more than one interface, we need to generate a container type
+        }
+      }
+
       // Print injections and initializations for all ClientBundle classes
       int numResource = 0;
       final JClassType cssResource = findType(ast.getTypeOracle(), CssResource.class);
@@ -176,11 +219,14 @@ public class CssInjectorGenerator implements CreatesContextObject<HtmlGeneratorR
         final String resource = inject.addImport(resourceType);
         final String gwtCreate = inject.addImportStatic(GWT.class, "create");
         final String name = "res"+numResource++;
-        init.println(resource +" "+name+" = "+gwtCreate+"("+resource+".class);");
+        body.println(resource +" "+name+" = "+gwtCreate+"("+resource+".class);");
         // Now, search the declared type for methods that are instances of CssResource, to .ensureInjected()
-        for (final JMethod method : cssResource.getMethods()) {
-          if (method.getReturnType().isClassOrInterface().isAssignableTo(cssResource)) {
-            init.println(name+"."+method.getName()+"().ensureInjected();");
+        for (final JMethod method : type.getMethods()) {
+          if (!method.isStatic()) {
+            final JClassType asType = method.getReturnType().isClassOrInterface();
+            if (asType != null && asType.isAssignableTo(cssResource)) {
+              body.println(name+"."+method.getName()+"().ensureInjected();");
+            }
           }
         }
       }
@@ -246,10 +292,16 @@ public class CssInjectorGenerator implements CreatesContextObject<HtmlGeneratorR
     return false;
   }
 
-  private void fillStyles(final TreeLogger logger, final Many<Style> styles, final Set<Class<? extends ClientBundle>> resourceTypes, final Set<String> importTypes, final JClassType templateType) {
+  private void fillStyles(
+      final TreeLogger logger,
+      final Many<Style> styles,
+      final Set<CssFile> files,
+      final Set<Class<? extends ClientBundle>> resourceTypes,
+      final Set<String> importTypes,
+      final JClassType templateType) {
     final Html html = templateType.getAnnotation(Html.class);
     if (html != null) {
-      fillStyles(logger, styles, resourceTypes, html.css());
+      fillStyles(logger, styles, files, resourceTypes, html.css());
       fillStyles(logger, styles, importTypes, html.body());
       fillStyles(logger, styles, importTypes, html.templates());
     }
@@ -263,7 +315,7 @@ public class CssInjectorGenerator implements CreatesContextObject<HtmlGeneratorR
     }
     final Css css = templateType.getAnnotation(Css.class);
     if (css != null) {
-      fillStyles(logger, styles, resourceTypes, css);
+      fillStyles(logger, styles, files, resourceTypes, css);
     }
     final Style style = templateType.getAnnotation(Style.class);
     if (style != null && style.names().length > 0) {
@@ -295,7 +347,11 @@ public class CssInjectorGenerator implements CreatesContextObject<HtmlGeneratorR
     }
   }
 
-  private void fillStyles(final TreeLogger logger, final Many<Style> styles, final Set<Class<? extends ClientBundle>> resourceTypes, final Css ... csses) {
+  private void fillStyles(final TreeLogger logger,
+                          final Many<Style> styles,
+                          final Set<CssFile> files,
+                          final Set<Class<? extends ClientBundle>> resourceTypes,
+                          final Css ... csses) {
     for (final Css css : csses) {
       for (final Style style : css.style()) {
         if (style.names().length > 0) {
@@ -304,6 +360,9 @@ public class CssInjectorGenerator implements CreatesContextObject<HtmlGeneratorR
       }
       for (final Class<? extends ClientBundle> cls : css.resources()) {
         resourceTypes.add(cls);
+      }
+      for (final CssFile file : css.files()) {
+        files.add(file);
       }
     }
   }
