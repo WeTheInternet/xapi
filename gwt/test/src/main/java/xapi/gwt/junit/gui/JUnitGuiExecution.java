@@ -10,6 +10,7 @@ import xapi.util.impl.LazyProvider;
 
 import javax.inject.Provider;
 import java.lang.reflect.Method;
+import java.util.concurrent.Callable;
 
 /**
  * Created by james on 18/10/15.
@@ -32,6 +33,7 @@ public class JUnitGuiExecution extends JUnitExecution<JUnitGuiController> {
           running[0].setInnerHTML("Running...");
           stageRoot.setInnerHTML("");
           stageRoot.appendChild(running[0]);
+          return null;
         }
     );
     onFinished(
@@ -55,14 +57,15 @@ public class JUnitGuiExecution extends JUnitExecution<JUnitGuiController> {
           if (update != null) {
             update.run();
           }
+          return null;
         }
     );
   }
 
   @Override
-  public void startMethod(Method method) {
+  public Iterable<Callable<Boolean>> startMethod(Method method) {
     stageProvider = new LazyProvider<>(originalProvider);
-    super.startMethod(method);
+    return super.startMethod(method);
   }
 
   public Element getStage() {

@@ -2,11 +2,14 @@ package xapi.gwt.junit.gui;
 
 import xapi.elemental.X_Elemental;
 import xapi.ui.html.api.Css;
+import xapi.ui.html.api.Css.CssFile;
 import xapi.ui.html.api.FontFamily.Monospace;
 import xapi.ui.html.api.Style;
 import xapi.ui.html.api.Style.AlignVertical;
+import xapi.ui.html.api.Style.BoxSizing;
 import xapi.ui.html.api.Style.Display;
 import xapi.ui.html.api.Style.Overflow;
+import xapi.ui.html.api.Style.Position;
 import xapi.ui.html.api.Style.Unit;
 import xapi.ui.html.api.Style.UnitType;
 
@@ -16,6 +19,7 @@ import com.google.gwt.core.client.EntryPoint;
  * Created by james on 16/10/15.
  */
 @Css(
+    files = @CssFile("icecream.css"),
     style ={
       @Style(
           names = ".junit",
@@ -28,7 +32,15 @@ import com.google.gwt.core.client.EntryPoint;
           verticalAign = AlignVertical.Top,
           maxHeight = @Unit(value= 90, type = UnitType.Pct),
           overflowY = Overflow.Auto,
-          marginRight = @Unit(value = 2, type=UnitType.Em)
+          margin = @Unit(type = UnitType.Auto),
+          paddingRight = @Unit(value = 1, type = UnitType.Em),
+          boxSizing = BoxSizing.BorderBox
+      ),
+      @Style(
+          names = ".fullscreen",
+          position = Position.Absolute,
+          left = @Unit(0),
+          top = @Unit(0)
       )
     }
 )

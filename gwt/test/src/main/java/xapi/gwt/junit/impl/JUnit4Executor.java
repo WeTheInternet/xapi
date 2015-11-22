@@ -12,6 +12,7 @@ import xapi.gwt.junit.api.JUnitExecution;
 import xapi.log.X_Log;
 import xapi.time.X_Time;
 import xapi.util.X_Debug;
+import xapi.util.X_Runtime;
 import xapi.util.api.ReceivesValue;
 
 import com.google.gwt.core.client.GWT;
@@ -38,13 +39,13 @@ import java.util.function.Predicate;
 public class JUnit4Executor {
 
   public static final Throwable SUCCESS = new Throwable();
-  private static JUnitExecution execution;
+  protected static JUnitExecution execution;
 
   private ClassTo<Lifecycle> lifecycles;
 
   protected JUnit4Executor() {
     if (execution == null) {
-      execution = initializeSystem();
+      execution = X_Runtime.isGwt() ? initializeSystem() : new JUnitExecution();
     }
     lifecycles = X_Collect.newClassMap(Lifecycle.class);
   }
@@ -132,10 +133,16 @@ public class JUnit4Executor {
       final Map<Method, Throwable> result = newMap();
 
       JUnitExecution controls = prepareToExecute(inst, lifecycle.tests);
-
+      controls.setInstance(inst);
       setExecution(controls, inst);
 
-      IntTo<Callable<Boolean>> tasks = X_Collect.newList(Class.class.cast(Callable.class));
+      IntTo<Callable<Boolean>> tasks = X_Collect.newList(Callable.class);
+
+      tasks.add(()->{
+            final Iterable<Callable<Boolean>> delays = controls.startClass(lifecycle.getTestClass(), inst);
+            delays.forEach(delay->tasks.insert(0, delay));
+            return true;
+      });
       tasks.add(lifecycle.beforeClassInvoker(controls));
 
       for (final Entry<String, Method> test : lifecycle.tests.entrySet()) {
@@ -144,15 +151,20 @@ public class JUnit4Executor {
         tasks.add(
             () -> {
               controls.normalizeLimits();
-              controls. startMethod(method);
+              final Iterable<Callable<Boolean>> startDelays = controls.startMethod(method);
               final double timeout = t == null || t.timeout() == 0 ? getDefaultTimeout() : t.timeout();
               final double deadline = X_Time.nowPlus(timeout);
               final UncaughtExceptionHandler oldHandler = GWT.getUncaughtExceptionHandler();
               final JUnitExecution oldExecution = execution;
+              // We insert the tasks backwards, from 0
               tasks.insert(
                   0, () -> {
                     try {
-                      controls.finishMethod(method, result.get(method));
+                      if (controls.hasError()) {
+                        result.put(method, controls.getError());
+                      }
+                      final Iterable<Callable<Boolean>> delays = controls.finishMethod(method, result.get(method));
+                      delays.forEach(delay->tasks.insert(0, delay));
                     } finally {
                       GWT.setUncaughtExceptionHandler(oldHandler);
                       if (execution == controls) {
@@ -190,6 +202,7 @@ public class JUnit4Executor {
                   }
               );
               tasks.insert(0, lifecycle.beforeInvoker(controls));
+              startDelays.forEach(delay->tasks.insert(0, delay));
               // This one will be run first.  It hijacks the uncaught exception handler, and sets the execution context
               tasks.insert(
                   0, () -> {
@@ -212,6 +225,13 @@ public class JUnit4Executor {
       }
 
       tasks.add(lifecycle.afterClassInvoker(controls));
+
+      tasks.add(()->{
+            int was = tasks.size();
+            final Iterable<Callable<Boolean>> delays = controls.finishClass(result);
+            delays.forEach(delay->tasks.insert(0, delay));
+            return was != tasks.size();
+          });
 
       RepeatingCommand command = () -> {
 
@@ -268,7 +288,6 @@ public class JUnit4Executor {
       ReceivesValue<Map<Method, Throwable>> callback,
       Object inst, Map<String, Method> tests
   ) {
-    controls.finishClass(result);
     callback.set(result);
   }
 
@@ -281,6 +300,7 @@ public class JUnit4Executor {
             execution = oldExecution;
             setExecution(oldExecution, inst);
           }
+          return null;
         }
     );
     return execution;
@@ -488,6 +508,7 @@ public class JUnit4Executor {
   }
 
   protected class Lifecycle {
+    protected final Class<?> forClass;
     protected Map<String, Method> after = newMap();
     protected Map<String, Method> afterClass = newMap();
     protected Map<String, Method> before = newMap();
@@ -495,6 +516,7 @@ public class JUnit4Executor {
     protected Map<String, Method> tests = newMap();
 
     public Lifecycle(Lifecycle from) {
+      forClass = from.forClass;
       beforeClass.putAll(from.beforeClass);
       before.putAll(from.before);
       tests.putAll(from.tests);
@@ -506,10 +528,11 @@ public class JUnit4Executor {
         "rawtypes", "unchecked"
     })
     public Lifecycle(final Class testClass) {
-      Class init = testClass;
-      while (init != null && init != Object.class) {
+      Class initClass = forClass = testClass;
+
+      while (initClass != null && initClass != Object.class) {
         try {
-          for (final Method method : init.getMethods()) {
+          for (final Method method : initClass.getMethods()) {
             if (method.getAnnotation(Test.class) != null) {
               assertPublicZeroArgInstanceMethod(method, Test.class);
               if (!tests.containsKey(method.getName())) {
@@ -523,11 +546,11 @@ public class JUnit4Executor {
             addLifecycleMethods(method);
           }
         } catch (final NoSuchMethodError ignored) {
-          debug("Class " + init + " is not enhanced", null);
+          debug("Class " + initClass + " is not enhanced", null);
         } catch (final Exception e) {
-          debug("Error getting declared methods for " + init, e);
+          debug("Error getting declared methods for " + initClass, e);
         }
-        init = init.getSuperclass();
+        initClass = initClass.getSuperclass();
       }
     }
 
@@ -580,7 +603,7 @@ public class JUnit4Executor {
     public Callable<Boolean> invoker(JUnitExecution controls, Collection<Method> list) {
       return () -> {
         for (final Method m : list) {
-          m.invoke(null);
+          m.invoke(controls.getInstance());
         }
         return controls.isTimeoutsClear();
       };
@@ -600,6 +623,10 @@ public class JUnit4Executor {
 
     public Callable<Boolean> afterInvoker(JUnitExecution controls) {
       return invoker(controls, after());
+    }
+
+    public Class<?> getTestClass() {
+      return forClass;
     }
   }
 

@@ -6,7 +6,6 @@ import xapi.elemental.X_Elemental;
 import xapi.elemental.api.PotentialNode;
 import xapi.gwt.junit.impl.JUnit4Executor;
 import xapi.util.X_Debug;
-import xapi.util.impl.LazyProvider;
 
 import com.google.gwt.core.client.Callback;
 import com.google.gwt.reflect.client.ConstPool;
@@ -273,11 +272,12 @@ public abstract class JUnitGui {
       final Element result = initialize(view[0], controller, inst);
       return result;
     };
-    if (controller.onTestStart(stageProvider, inst)) {
+    if (controller.onTestClassStart(stageProvider, inst)) {
       controller.runAll(
           c, inst, fin -> {
             res.putAll(fin);
             updateTestClass(c);
+            controller.onTestClassFinish(inst, fin);
           }
       );
     }
@@ -294,12 +294,10 @@ public abstract class JUnitGui {
     int success = 0, fail = 0;
     final int total = results.size();
     for (final Map.Entry<Method, Throwable> e : results.entrySet()) {
-      if (e.getValue() != null) {
-        if (e.getValue() == JUnit4Executor.SUCCESS) {
-          success++;
-        } else {
-          fail++;
-        }
+      if (e.getValue() == JUnit4Executor.SUCCESS) {
+        success++;
+      } else {
+        fail++;
       }
     }
     final StringBuilder b = new StringBuilder("<span class='junit success'>Passed: ")
@@ -334,7 +332,7 @@ public abstract class JUnitGui {
         }
         return result;
       };
-      if (controller.onTestStart(LazyProvider.of(stageProvider), inst)) {
+      if (controller.onTestClassStart(stageProvider, inst)) {
 
         controller.run(
             inst, m, e -> {

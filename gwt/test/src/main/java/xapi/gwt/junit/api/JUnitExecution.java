@@ -1,15 +1,18 @@
 package xapi.gwt.junit.api;
 
+import xapi.collect.X_Collect;
+import xapi.collect.api.IntTo;
 import xapi.log.X_Log;
 import xapi.time.X_Time;
 import xapi.util.X_Util;
 import xapi.util.api.ProvidesValue;
-import xapi.util.api.ReceivesTwoValues;
-import xapi.util.api.ReceivesValue;
 
 import java.lang.reflect.Method;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
+import java.util.function.Function;
 
 /**
  * Created by james on 18/10/15.
@@ -22,14 +25,16 @@ public class JUnitExecution<Context> {
   private int maxIntervalsLeft;
 
   private BooleanSupplier[] beforeFinished;
-  private ReceivesTwoValues<Method, Throwable>[] onFinishedMethod;
-  private ReceivesValue<Method>[] onStartMethod;
-  private ReceivesValue<Map<Method, Throwable>>[] onFinishedClass;
+  private BiFunction<Method, Throwable, Callable<Boolean>>[] onFinishedMethod;
+  private Function<Method, Callable<Boolean>>[] onStartMethod;
+  private BiFunction<Class<?>, Object, Callable<Boolean>>[] onStartClass;
+  private Function<Map<Method, Throwable>, Callable<Boolean>>[] onFinishedClass;
 
   private Throwable error;
   private Double deadline;
 
   private Context context;
+  private Object instance;
 
   public JUnitExecution() {
     clear();
@@ -57,23 +62,31 @@ public class JUnitExecution<Context> {
     return this;
   }
 
-  public JUnitExecution<Context> onFinished(ReceivesTwoValues<Method, Throwable> callback) {
+  public JUnitExecution<Context> onFinished(BiFunction<Method, Throwable, Callable<Boolean>> callback) {
     onFinishedMethod = X_Util.pushOnto(onFinishedMethod, callback);
     return this;
   }
 
-  public JUnitExecution<Context> onStartMethod(ReceivesValue<Method> callback) {
+  public JUnitExecution<Context> onStartMethod(Function<Method, Callable<Boolean>> callback) {
     onStartMethod = X_Util.pushOnto(onStartMethod, callback);
     return this;
   }
 
-  public JUnitExecution<Context> onFinishedClass(ReceivesValue<Map<Method,Throwable>> callback) {
+  public JUnitExecution<Context> onStartClass(BiFunction<Class<?>, Object, Callable<Boolean>> callback) {
+    onStartClass = X_Util.pushOnto(onStartClass, callback);
+    return this;
+  }
+
+  public JUnitExecution<Context> onFinishedClass(Function<Map<Method,Throwable>, Callable<Boolean>> callback) {
     onFinishedClass = X_Util.pushOnto(onFinishedClass, callback);
     return this;
   }
 
   public void autoClean() {
-    onFinishedClass(e -> this.clear());
+    onFinishedClass(e -> {
+          this.clear();
+          return null;
+    });
   }
 
   protected boolean isErrorState() {
@@ -105,9 +118,11 @@ public class JUnitExecution<Context> {
     }
     timeouts = new int[0];
     intervals = new int[0];
-    onFinishedMethod = new ReceivesTwoValues[0];
-    onStartMethod = new ReceivesValue[0];
-    onFinishedClass = new ReceivesValue[0];
+    onStartClass = new BiFunction[0];
+    onStartMethod = new Function[0];
+    onFinishedMethod = new BiFunction[0];
+    onFinishedClass = new Function[0];
+
     beforeFinished = new BooleanSupplier[]{
         // The default test is that the timeouts and intervals are cleared.
         this::isTimeoutsClear
@@ -165,18 +180,28 @@ public class JUnitExecution<Context> {
     this.context = context;
   }
 
-  public void finishClass(Map<Method, Throwable> results) {
-    final ReceivesValue<Map<Method, Throwable>>[] copy = onFinishedClass;
-    onFinishedClass = new ReceivesValue[0];
-    for (ReceivesValue<Map<Method, Throwable>> callback : copy) {
-      callback.set(results);
+  public Iterable<Callable<Boolean>> finishClass(Map<Method, Throwable> results) {
+    final Function<Map<Method, Throwable>, Callable<Boolean>>[] copy = onFinishedClass;
+    onFinishedClass = new Function[0];
+    IntTo<Callable<Boolean>> delays = X_Collect.newList(Callable.class);
+    for (Function<Map<Method, Throwable>, Callable<Boolean>> callback : copy) {
+      final Callable<Boolean> delay = callback.apply(results);
+      if (delay != null) {
+        delays.add(delay);
+      }
     }
+    return delays.forEach();
   }
 
-  public void finishMethod(Method m, Throwable e) {
-    for (ReceivesTwoValues<Method, Throwable> callback : onFinishedMethod) {
-      callback.receiveValues(m, e);
+  public Iterable<Callable<Boolean>> finishMethod(Method m, Throwable e) {
+    IntTo<Callable<Boolean>> delays = X_Collect.newList(Callable.class);
+    for (BiFunction<Method, Throwable, Callable<Boolean>> callback : onFinishedMethod) {
+      final Callable<Boolean> delay = callback.apply(m, e);
+      if (delay != null) {
+        delays.add(delay);
+      }
     }
+    return delays.forEach();
   }
 
   public void normalizeLimits() {
@@ -184,9 +209,41 @@ public class JUnitExecution<Context> {
     maxTimeoutsLeft = timeouts.length;
   }
 
-  public void startMethod(Method method) {
-    for (ReceivesValue<Method> callback : onStartMethod) {
-      callback.set(method);
+  public Iterable<Callable<Boolean>> startMethod(Method method) {
+    IntTo<Callable<Boolean>> delays = X_Collect.newList(Callable.class);
+    for (Function<Method, Callable<Boolean>> callback : onStartMethod) {
+      final Callable<Boolean> delay = callback.apply(method);
+      if (delay != null) {
+        delays.add(delay);
+      }
     }
+    return delays.forEach();
+  }
+
+  public Iterable<Callable<Boolean>> startClass(Class<?> testClass, Object inst) {
+    IntTo<Callable<Boolean>> delays = X_Collect.newList(Callable.class);
+    for (BiFunction<Class<?>, Object, Callable<Boolean>> callback : onStartClass) {
+      final Callable<Boolean> delay = callback.apply(testClass, inst);
+        if (delay != null) {
+          delays.add(delay);
+        }
+      }
+    return delays.forEach();
+  }
+
+  public Object getInstance() {
+    return instance;
+  }
+
+  public void setInstance(Object instance) {
+    this.instance = instance;
+  }
+
+  public boolean hasError() {
+    return error != null;
+  }
+
+  public Throwable getError() {
+    return error;
   }
 }
