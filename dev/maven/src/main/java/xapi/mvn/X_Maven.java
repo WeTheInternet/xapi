@@ -4,6 +4,8 @@ import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Model;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.project.ProjectBuilder;
+import org.apache.maven.project.ProjectBuildingRequest;
 import org.eclipse.aether.repository.LocalArtifactResult;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.ArtifactResult;
@@ -14,6 +16,7 @@ import xapi.dev.scanner.impl.ClasspathResourceMap;
 import xapi.inject.X_Inject;
 import xapi.inject.impl.SingletonProvider;
 import xapi.log.X_Log;
+import xapi.mvn.impl.ProjectIterable;
 import xapi.mvn.service.MvnService;
 import xapi.util.X_Debug;
 import xapi.util.X_Runtime;
@@ -162,6 +165,27 @@ public class X_Maven {
       return cl.get();
     }
 
+  }
+
+  public static MavenProject getRootArtifact(MavenProject project) {
+    final MavenProject parent = project.getParent();
+    if (parent == null) {
+      return project;
+    }
+    final String thisDirectory = project.getFile().getParent();
+    final String parentDirectory = parent.getFile().getParent();
+    if (thisDirectory.startsWith(parentDirectory)) {
+      return getRootArtifact(project.getParent());
+    }
+    return project;
+  }
+
+  public static Iterable<MavenProject> getAllChildren(MavenProject project, ProjectBuilder builder, ProjectBuildingRequest request) {
+    return getAllChildren(project, builder, request, true);
+  }
+
+  public static Iterable<MavenProject> getAllChildren(MavenProject project, ProjectBuilder builder, ProjectBuildingRequest request, boolean includeSelf) {
+    return new ProjectIterable(project, builder, request, includeSelf);
   }
 
 }

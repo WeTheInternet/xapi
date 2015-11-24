@@ -25,11 +25,13 @@ import xapi.dev.gwt.gui.CodeServerGui;
 import xapi.inject.impl.SingletonProvider;
 import xapi.log.X_Log;
 import xapi.mojo.api.AbstractXapiMojo;
+import xapi.mojo.api.SourceDependency;
 import xapi.mvn.X_Maven;
 import xapi.util.X_Debug;
 import xapi.util.X_Properties;
 import xapi.util.X_String;
 import xapi.util.api.Pair;
+import xapi.util.api.ReceivesValue;
 import xapi.util.impl.PairBuilder;
 
 import com.google.gwt.core.shared.GWT;
@@ -190,6 +192,55 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
         return 0;
       }
       return debugPort == 0 ? super.debugPort() : debugPort;
+    }
+
+    @Override
+    protected LinkedList<String> getSourcePaths(boolean includeTestSources) {
+      final LinkedList<String> sources = super.getSourcePaths(includeTestSources);
+      ReceivesValue<String> addSource = new ReceivesValue<String>() {
+        @Override
+        public void set(String location) {
+            if (new File(location).exists()) {
+              sources.add(new File(location).getAbsolutePath());
+            } else {
+              X_Log.trace(getClass(), "Skipping non-existent file @ ", location);
+            }
+        }
+      };
+      if (hasSourceDependencies()) {
+        for (SourceDependency sourceDependency : getSourceDependencies()) {
+          try {
+            final MavenProject resultProject = findInWorkspace(sourceDependency.getGroupId(),
+                sourceDependency.getArtifactId());
+            if (resultProject != null) {
+              for (String location : resultProject.getCompileSourceRoots()) {
+                addSource.set(location);
+              }
+
+              addSource.set(resultProject.getBuild().getOutputDirectory());
+              for (Resource resource : resultProject.getResources()) {
+                addSource.set(resource.getDirectory()); // We are ignoring excludes.  If someone needs them, patches are welcome.
+              }
+
+              if (sourceDependency.isIncludeTests()) {
+                for (String location : resultProject.getTestCompileSourceRoots()) {
+                  addSource.set(location);
+                }
+                addSource.set(resultProject.getBuild().getTestOutputDirectory());
+                for (Resource resource : resultProject.getTestResources()) {
+                  addSource.set(resource.getDirectory());
+                }
+              }
+
+            } else {
+              X_Log.warn(getClass(), "No artifact found in workspace for ", sourceDependency);
+            }
+          } catch (Exception e) {
+            X_Log.warn(getClass(), "Error resolving source paths for ", sourceDependency, e);
+          }
+        }
+      }
+      return sources;
     }
 
     public void keepAlive() throws MojoExecutionException {

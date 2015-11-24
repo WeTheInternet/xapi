@@ -88,7 +88,7 @@ public class CodeServerGui extends JFrame{
   }
 
   protected String getLogLevel() {
-    return "INFO";
+    return X_Log.logLevel().name();
   }
 
   protected boolean isUseTestSources() {

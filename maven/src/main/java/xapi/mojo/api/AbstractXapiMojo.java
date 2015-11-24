@@ -14,7 +14,9 @@ import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectHelper;
 import org.apache.maven.project.ProjectBuilder;
 import org.apache.maven.project.ProjectBuildingException;
+import org.apache.maven.project.ProjectBuildingRequest;
 import org.apache.maven.project.ProjectBuildingResult;
+import org.apache.maven.project.ProjectDependenciesResolver;
 import org.codehaus.plexus.component.repository.ComponentDependency;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.repository.WorkspaceReader;
@@ -40,7 +42,9 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @requiresProject true
@@ -61,6 +65,9 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
 
   @Component
   private WorkspaceReader workspace;
+
+  @Component()
+  private ProjectDependenciesResolver resolver;
 
   /**
    * The directory in which to place generated resources
@@ -91,6 +98,10 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
    */
   @Parameter(property = "source.root", defaultValue = "${project.basedir}")
   private File sourceRoot;
+
+
+  @Parameter(property = "xapi.source.artifacts")
+  private SourceDependency[] sourceDependencies;
 
   /**
    * The Maven Session Object, injected by plexus
@@ -125,8 +136,20 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
   @Parameter(property = "output.directory", defaultValue = "${project.build.directory}/generated-sources/xapi")
   private String outputDirectory;
 
+  /**
+   * Additional source roots to use when looking up source artifacts.
+   *
+   * These files should point to the parent pom from which you want to start searching.
+   */
+  @Parameter(property = "source.project.roots")
+  private List<File> sourceProjectRoots;
+
   public ProjectBuilder getBuilder() {
     return builder;
+  }
+
+  public ProjectBuildingRequest getBuildingRequest() {
+    return session.getProjectBuildingRequest();
   }
 
   public MavenProjectHelper getProjectHelper() {
@@ -175,6 +198,68 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
   }
 
   protected abstract void doExecute() throws MojoExecutionException, MojoFailureException;
+
+  private Provider<Map<String, MavenProject>> localWorkspace = new SingletonProvider<Map<String, MavenProject>>() {
+    @Override
+    protected Map<String, MavenProject> initialValue() {
+      final MavenProject root = X_Maven.getRootArtifact(getProject());
+      final Iterable<MavenProject> children = X_Maven.getAllChildren(
+          root,
+          getBuilder(),
+          getBuildingRequest()
+      );
+
+      final Map<String, MavenProject> map = new LinkedHashMap<String, MavenProject>();
+      for (MavenProject child : children) {
+        map.put(child.getGroupId()+":"+child.getArtifactId(), child);
+      }
+
+      if (sourceProjectRoots != null) {
+        boolean warnOnce = true;
+        for (File sourceProjectRoot : sourceProjectRoots) {
+          if (sourceProjectRoot.isDirectory()) {
+            sourceProjectRoot = new File(sourceProjectRoot, "pom.xml");
+          }
+          if (sourceProjectRoot.exists()) {
+            try {
+              final ProjectBuildingResult sourceProject = builder.build(sourceProjectRoot, getBuildingRequest());
+              for (MavenProject child : X_Maven.getAllChildren(
+                  sourceProject.getProject(),
+                  getBuilder(),
+                  getBuildingRequest()
+              )) {
+                String key = child.getGroupId()+":"+child.getArtifactId();
+                if (map.containsKey(key)) {
+                  final File existing = map.get(key).getFile();
+                  if (existing.equals(child.getFile())) {
+                    if (warnOnce) {
+                      warnOnce = false;
+                      X_Log.warn(getClass(), "Sourcepath ", existing, "is already added.");
+                      X_Log.warn(getClass(), "You do not have to add source paths that are in the same maven project as the plugin is executed");
+                    }
+                  } else {
+                    X_Log.warn(getClass(), "Duplicate artifact id found: ", key,
+                        "Choosing", existing, "over", child.getFile());
+                  }
+                } else {
+                  map.put(key, child);
+                }
+              }
+
+            } catch (ProjectBuildingException e) {
+              X_Log.warn(getClass(), "Unable to build source project root ", sourceProjectRoot, e);
+            }
+          } else {
+            X_Log.warn(getClass(), "Unable to find source project root ", sourceProjectRoot);
+          }
+        }
+
+      }
+
+      return map;
+    }
+  };
+
 
   private final Provider<File> generateDirectoryProvider = new SingletonProvider<File>() {
     @Override
@@ -309,6 +394,12 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
     };
   };
 
+  public MavenProject findInWorkspace(String groupId, String artifactId) {
+
+    Map<String, MavenProject> projects = localWorkspace.get();
+    return projects.get(groupId+":"+artifactId);
+  }
+
   public void compile(final String javaName, final String source,
       boolean overwrite, String... additionalClasspath) {
     File file = saveModel(javaName, source, overwrite);
@@ -400,7 +491,7 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
 //    WorkspaceReader workspace = getSession().getRepositorySession()
 //        .getWorkspaceReader();
     File artifact = workspace.findArtifact(new DefaultArtifact(groupId,
-        artifactId, extension, X_Namespace.XAPI_VERSION));
+        artifactId, extension, version));
     if (artifact != null) {
       return artifact.getAbsolutePath();
     }
@@ -433,4 +524,15 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
       return backup;
   }
 
+  public SourceDependency[] getSourceDependencies() {
+    return sourceDependencies;
+  }
+
+  public void setSourceDependencies(SourceDependency[] sourceDependencies) {
+    this.sourceDependencies = sourceDependencies;
+  }
+
+  public boolean hasSourceDependencies() {
+    return sourceDependencies != null && sourceDependencies.length > 0;
+  }
 }
