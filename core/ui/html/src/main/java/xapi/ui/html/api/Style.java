@@ -88,6 +88,26 @@ public @interface Style {
     }
   }
 
+  enum TextDecoration {
+//    BLINK, // NO BLINK FOR YOU!
+    NOT_SET(""),
+    INHERIT("inherit"),
+    INITIAL("initial"),
+    LINE_THROUGH("line-through"),
+    NONE("none"),
+    OVERLINE("overline"),
+    UNDERLINE("underline");
+
+    private final String styleName;
+
+    TextDecoration(String styleName) {
+      this.styleName = styleName;
+    }
+    public String styleName() {
+      return styleName;
+    }
+  }
+
   enum FontWeight {
     Bold("bold"), Bolder("bolder"), Normal("normal"),
     Weight100("100"),
@@ -204,6 +224,8 @@ public @interface Style {
   Position position() default Position.Inherit;
 
   FontStyle fontStyle() default FontStyle.Inherit;
+
+  TextDecoration textDecoration() default TextDecoration.NOT_SET;
 
   FontWeight fontWeight() default FontWeight.Inherit;
 

@@ -179,6 +179,7 @@ public class X_String {
     return isEmpty(name) ? name : Character.toUpperCase(name.charAt(0))+name.substring(1);
   }
 
-
-
+  public static String normalizeNewlines(String text) {
+    return text.replaceAll("\\r\\n?", "\n");
+  }
 }

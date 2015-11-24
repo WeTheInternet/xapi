@@ -1,20 +1,20 @@
 package xapi.elemental;
 
-import javax.inject.Provider;
-
-import com.google.gwt.core.client.MagicMethod;
-
 import elemental.client.Browser;
 import elemental.dom.Element;
 import elemental.html.DivElement;
 import elemental.html.Location;
-
 import xapi.elemental.api.ElementIterable;
 import xapi.elemental.api.ElementalService;
 import xapi.elemental.api.PotentialNode;
 import xapi.inject.X_Inject;
 import xapi.ui.html.X_Html;
+import xapi.util.X_Runtime;
 import xapi.util.api.ConvertsValue;
+
+import com.google.gwt.core.client.MagicMethod;
+
+import javax.inject.Provider;
 
 public class X_Elemental {
 
@@ -155,4 +155,27 @@ public class X_Elemental {
     }
   }
 
+  public static Element getShadowRoot(Element element) {
+    if (X_Runtime.isGwt()) {
+      return getShadowRootNative(element);
+    } else {
+      return element; // no shadow roots for pure java unit tests!
+    }
+  }
+  public static native Element getShadowRootNative(Element element)
+  /*-{
+      if (element.shadowRoot) {
+          return element.shadowRoot;
+      }
+      if (element.createShadowRoot) {
+          return element.createShadowRoot();
+      }
+      return element;
+  }-*/;
+
+  public static void reflow(Element e) {
+    if (e != null) {
+      Browser.getWindow().getComputedStyle(e, null); // triggers a reflow (recomputation of gui layout) for the given element.
+    }
+  }
 }

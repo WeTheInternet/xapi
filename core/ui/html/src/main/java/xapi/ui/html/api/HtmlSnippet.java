@@ -22,6 +22,7 @@ import xapi.ui.html.api.Style.FontWeight;
 import xapi.ui.html.api.Style.Overflow;
 import xapi.ui.html.api.Style.Position;
 import xapi.ui.html.api.Style.Rgb;
+import xapi.ui.html.api.Style.TextDecoration;
 import xapi.ui.html.api.Style.Transition;
 import xapi.ui.html.api.Style.Unit;
 import xapi.ui.html.api.Style.UnitType;
@@ -73,6 +74,10 @@ public class HtmlSnippet <T> implements ConvertsValue<T, String> {
 
     if (style.fontStyle() != FontStyle.Inherit) {
       append("font-style", sheet, style.fontStyle().styleName());
+    }
+
+    if (style.textDecoration() != TextDecoration.NOT_SET) {
+      append("text-decoration", sheet, style.textDecoration().styleName());
     }
 
     if (style.fontWeight() != FontWeight.Inherit) {
