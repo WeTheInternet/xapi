@@ -201,6 +201,14 @@ public class JUnitExecution<Context> {
         delays.add(delay);
       }
     }
+    if (delays.isEmpty()) {
+      error = null;
+    } else {
+      delays.add(()->{
+        error = null;
+        return true;
+      });
+    }
     return delays.forEach();
   }
 

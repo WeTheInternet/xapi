@@ -1,5 +1,6 @@
 package xapi.dev.source;
 
+import xapi.util.X_String;
 import xapi.util.api.ConvertsValue;
 
 public class DomBuffer extends XmlBuffer {
@@ -17,6 +18,34 @@ public class DomBuffer extends XmlBuffer {
       setTrimWhitespace(true);
       setNewLine(false);
     }
+  }
+
+  public DomBuffer setData(final String key, String value) {
+    String keyName = toDataAttrName(key);
+    if (X_String.isEmpty(value)) {
+      return this;
+    } else {
+      setAttribute(keyName, value);
+    }
+    return this;
+  }
+
+  public String toDataAttrName(String key) {
+    key = key.replaceAll("[A-Z]", "-$1").toLowerCase();
+    key = maybePrefixDataAttr(key);
+    if (!key.startsWith("data-")) {
+      key = "data-"+key;
+    }
+    return key;
+  }
+
+  /**
+   * Override this method, or set the system / configuration property data-attr-prefix to add a prefix to all data uris.
+   * <p>
+   * This is helpful for namespacing your apis automatically.
+   */
+  protected String maybePrefixDataAttr(String key) {
+    return System.getProperty("data-attr-prefix", "") + key;
   }
 
   public DomBuffer setClassName(final String clsName) {

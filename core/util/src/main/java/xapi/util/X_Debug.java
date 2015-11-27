@@ -1,13 +1,21 @@
 package xapi.util;
 
-import java.io.PrintStream;
-import java.util.Arrays;
-
 import xapi.log.X_Log;
 import xapi.util.api.ErrorHandler;
 
+import java.io.PrintStream;
+import java.util.Arrays;
+
 public class X_Debug {
   private X_Debug() {}
+
+  public static AssertionError recommendAssertions() {
+    // Use a single debug String in production, which recommends -ea compiles for far more details
+    // in assertion errors.  This can allow you to unit test for AssertionError whenever "something that shouldn't happen" occurs,
+    // without sending along large or sensitive debugging strings to production clients.
+    return new AssertionError("Recompile with -ea assertions enabled for a better error message.");
+  }
+
   public static class DebugStream extends PrintStream {
 
     private final PrintStream orig;

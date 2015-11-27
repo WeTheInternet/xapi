@@ -2,6 +2,8 @@ package xapi.ui.api;
 
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
+import xapi.util.X_Debug;
+import xapi.util.X_String;
 import xapi.util.impl.LazyProvider;
 
 import static xapi.collect.X_Collect.newStringMap;
@@ -12,6 +14,37 @@ import javax.inject.Provider;
  * Created by james on 16/10/15.
  */
 public abstract class ElementBuilder <E> extends NodeBuilder<E> {
+
+  private static volatile int idSeed = 1;
+  private static final Object sync = new Object();
+
+  private int seed;
+
+  public void ensureId() {
+    if (X_String.isEmpty(id)) {
+      synchronized (sync) {
+        seed = idSeed++;
+      }
+      setId(generateId(seed));
+    }
+  }
+
+  protected String generateId(int seed) {
+    return "ele_"+seed;
+  }
+
+  private String id;
+
+  public String getId() {
+    return id;
+  }
+
+  public String getId(boolean forceCreate) {
+    if (forceCreate) {
+      ensureId();
+    }
+    return id;
+  }
 
   @SuppressWarnings("unused")
   public abstract class StyleApplier extends AttributeBuilder implements Stylizer<NodeBuilder<E>> {
@@ -65,6 +98,7 @@ public abstract class ElementBuilder <E> extends NodeBuilder<E> {
         attributes.put("style", (attr=this));
       } else {
         assert attr instanceof ElementBuilder.StyleApplier : "Only use the setStyle method to set the 'style' attribute";
+        throw X_Debug.recommendAssertions();
       }
       return (StyleApplier) attr;
     }
@@ -385,6 +419,9 @@ public abstract class ElementBuilder <E> extends NodeBuilder<E> {
 
     @Override
     public void setAttribute(String name, String value) {
+      if ("id".equalsIgnoreCase(name)) {
+        id = value;
+      }
       attributes.put(name, newAttributeBuilder(value));
     }
 
@@ -442,9 +479,12 @@ public abstract class ElementBuilder <E> extends NodeBuilder<E> {
   }
 
   public ElementBuilder<E> setAttribute(String name, String value) {
-    if ("style".equals(name)) {
+    if ("style".equalsIgnoreCase(name)) {
       stylizer.get().setValue(value);
     } else {
+      if ("id".equalsIgnoreCase(name)) {
+        id = value;
+      }
       attributeApplier.get().setAttribute(name, value);
     }
     return this;
@@ -456,10 +496,14 @@ public abstract class ElementBuilder <E> extends NodeBuilder<E> {
   }
 
   public ElementBuilder<E> addAttribute(String name, String value) {
-    switch(name) {
+    switch(name.toLowerCase()) {
       case "style":
         stylizer.get().addValue(value);
         break;
+      case "id":
+        id = value;
+        attributeApplier.get().addAttribute(name, value);
+        return this;
       case "class":
         AttributeBuilder was = attributes.get(name);
         if (was == null) {
@@ -500,6 +544,7 @@ public abstract class ElementBuilder <E> extends NodeBuilder<E> {
   }
 
   public ElementBuilder<E> setId(String id) {
+    this.id = id;
     setAttribute("id", id);
     return this;
   }

@@ -9,7 +9,6 @@ import xapi.elemental.api.ElementalService;
 import xapi.elemental.api.PotentialNode;
 import xapi.inject.X_Inject;
 import xapi.ui.html.X_Html;
-import xapi.util.X_Runtime;
 import xapi.util.api.ConvertsValue;
 
 import com.google.gwt.core.client.MagicMethod;
@@ -156,22 +155,8 @@ public class X_Elemental {
   }
 
   public static Element getShadowRoot(Element element) {
-    if (X_Runtime.isGwt()) {
-      return getShadowRootNative(element);
-    } else {
-      return element; // no shadow roots for pure java unit tests!
-    }
+    return getElementalService().getShadowRoot(element);
   }
-  public static native Element getShadowRootNative(Element element)
-  /*-{
-      if (element.shadowRoot) {
-          return element.shadowRoot;
-      }
-      if (element.createShadowRoot) {
-          return element.createShadowRoot();
-      }
-      return element;
-  }-*/;
 
   public static void reflow(Element e) {
     if (e != null) {

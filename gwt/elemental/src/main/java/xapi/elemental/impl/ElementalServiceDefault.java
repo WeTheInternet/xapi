@@ -3,19 +3,16 @@
  */
 package xapi.elemental.impl;
 
-import com.google.gwt.core.shared.GwtIncompatible;
-
 import elemental.dom.Element;
-
 import xapi.annotation.inject.SingletonDefault;
 import xapi.elemental.api.ElementalService;
 import xapi.elemental.api.PotentialNode;
 import xapi.source.api.Lexer;
-import xapi.source.impl.LexerForWords;
-import xapi.source.impl.StringCharIterator;
 import xapi.ui.html.X_Html;
 import xapi.ui.html.impl.StyleServiceDefault;
 import xapi.util.api.ConvertsValue;
+
+import com.google.gwt.core.shared.GwtIncompatible;
 
 /**
  * @author "James X. Nelson (james@wetheinter.net)"
@@ -120,5 +117,17 @@ implements ElementalService {
       }
     };
   }
+
+  @Override
+  public native Element getShadowRoot(Element element)
+  /*-{
+      if (element.shadowRoot) {
+          return element.shadowRoot;
+      }
+      if (element.createShadowRoot) {
+          return element.createShadowRoot();
+      }
+      return element;
+  }-*/;
 
 }

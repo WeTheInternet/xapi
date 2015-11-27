@@ -3,13 +3,12 @@
  */
 package xapi.elemental.api;
 
-import com.google.gwt.core.client.MagicMethod;
-
 import elemental.dom.Element;
-
 import xapi.source.api.Lexer;
 import xapi.ui.api.StyleService;
 import xapi.util.api.ConvertsValue;
+
+import com.google.gwt.core.client.MagicMethod;
 
 
 /**
@@ -48,4 +47,5 @@ public interface ElementalService extends StyleService<ElementalService> {
   @MagicMethod(doNotVisit=true)
   <T, E extends Element> ConvertsValue<T, PotentialNode<E>> toElementBuilder(Class<? super T> cls, Class<?> template);
 
+  Element getShadowRoot(Element element);
 }

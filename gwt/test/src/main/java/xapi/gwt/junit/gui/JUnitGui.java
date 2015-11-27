@@ -360,10 +360,6 @@ public abstract class JUnitGui {
     return element == null ? X_Elemental.newDiv() : element;
   }
 
-  protected boolean shouldUnwrap(Throwable e) {
-    return e.getClass() == RuntimeException.class;
-  }
-
   protected void print(final Object string, final Throwable e) {
     final Element el = Browser.getDocument().createDivElement();
     el.setInnerHTML(debug(string, e));

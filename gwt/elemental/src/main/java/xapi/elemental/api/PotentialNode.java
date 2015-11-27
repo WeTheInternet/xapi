@@ -52,9 +52,6 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> {
 
   private String tagName;
 
-  private static int idSeed = 1;
-  private int seed;
-
   public PotentialNode() {
     super(false);
   }
@@ -68,13 +65,13 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> {
     if (tagName != null) {
       // If we have a tagname, then we might expect our element to be addressable.
       // In which case, we want to ensure it has an id
-      if (searchableChildren && !attributes.containsKey("id")) {
-        seed = idSeed++;
-        setAttribute("id", "ele_"+seed);
+      if (searchableChildren) {
+        ensureId();
       }
     }
     super.toHtml(out);
   }
+
 
   public PotentialNode(String tagName) {
     this();
@@ -120,7 +117,11 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> {
   }
 
   protected E build(String html) {
-    return X_Elemental.toElement(html.replaceAll("\n", "<br/>"));
+    return X_Elemental.toElement(sanitizeHtml(html));
+  }
+
+  protected String sanitizeHtml(String html) {
+    return html.replaceAll("\n", "<br/>"); // TODO: actually sanitize
   }
 
   @Override
@@ -204,7 +205,7 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> {
   public String toSource() {
     StringBuilder b = new StringBuilder();
     toHtml(b);
-    return b.toString().replaceAll("\n", "<br/>");
+    return sanitizeHtml(b.toString());
   }
 
   @Override
