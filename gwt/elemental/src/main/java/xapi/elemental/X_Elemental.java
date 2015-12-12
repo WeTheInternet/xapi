@@ -1,6 +1,7 @@
 package xapi.elemental;
 
 import elemental.client.Browser;
+import elemental.dom.DocumentFragment;
 import elemental.dom.Element;
 import elemental.html.DivElement;
 import elemental.html.Location;
@@ -121,6 +122,16 @@ public class X_Elemental {
     final Element clone = (Element) X_Elemental.DIV.cloneNode(false);
     clone.setInnerHTML(string);
     return (E) clone.getFirstElementChild();
+  }
+
+  public static DocumentFragment toFragment(final String string) {
+    final DocumentFragment frag = Browser.getDocument().createDocumentFragment();
+    final Element clone = (Element) X_Elemental.DIV.cloneNode(false);
+    clone.setInnerHTML(string);
+    for (Element element : ElementIterable.forEach(clone.getChildren())) {
+      frag.appendChild(element);
+    }
+    return frag;
   }
 
   @MagicMethod(doNotVisit=true)

@@ -11,6 +11,10 @@
  <packaging>jar</packaging>
  <name>XApi - Core UI Apis</name>
  <url>WeTheInter.net</url>
+
+  <properties>
+    <java.version>1.8</java.version>
+  </properties>
  <description>
     Shared api abstractions for user interfaces
   </description>
@@ -19,6 +23,10 @@
   <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-dev-source</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-fu</artifactId>
   </dependency>
   <dependency>
    <groupId>net.wetheinter</groupId>

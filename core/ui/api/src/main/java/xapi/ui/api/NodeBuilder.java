@@ -4,6 +4,7 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
 import xapi.util.X_Debug;
+import xapi.util.X_String;
 import xapi.util.api.ReceivesValue;
 import xapi.util.impl.DeferredCharSequence;
 
@@ -11,8 +12,12 @@ import static xapi.collect.X_Collect.newStringMap;
 
 import javax.inject.Provider;
 import java.io.IOException;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 public abstract class NodeBuilder<E> implements Widget<E> {
+
   protected static final String EMPTY = "";
 
   private CharSequence buffer;
@@ -26,38 +31,32 @@ public abstract class NodeBuilder<E> implements Widget<E> {
   protected final IntTo<ReceivesValue<E>> createdCallbacks;
   protected final boolean searchableChildren;
 
+  protected Function<String, String> bodySanitizer;
+  protected BiFunction<String, Boolean, NodeBuilder<E>> newNode;
+
   protected NodeBuilder() {
     this(false);
   }
 
   public NodeBuilder(boolean searchableChildren) {
     this.searchableChildren = searchableChildren;
-    createdCallbacks = X_Collect.newList(Class.class.cast(ReceivesValue.class));
+    createdCallbacks = X_Collect.newList(ReceivesValue.class);
+  }
+
+  public boolean hasSiblings() {
+    return siblings != null;
   }
 
   public class ClassnameBuilder extends AttributeBuilder {
 
-    private final StringTo<String> existing;
-
     public ClassnameBuilder() {
-      super("class");
-      existing = newStringMap(String.class);
+      super("class", true);
     }
 
     @Override
     public <C extends NodeBuilder<String>> C addChild(C child) {
-      String value = child.getElement();
-      for (String part : value.split("\\s+")) {
-        if (part.length() > 0) {
-          if (existing.put(part, part) == null) {
-            if (existing.size() > 1) {
-              part = part + " ";
-            }
-            super.addChild(wrapChars(part));
-          }
-        }
-      }
-      return child;
+      return addToSet(child, " "); // classname is a space-separated list of classname tokens
+      // TODO: also send a validator for the classnames
     }
 
   }
@@ -68,9 +67,18 @@ public abstract class NodeBuilder<E> implements Widget<E> {
 
   protected static class AttributeBuilder extends NodeBuilder<String> {
 
-    public AttributeBuilder(CharSequence value) {
+    private final StringTo<String> existing;
+
+    protected AttributeBuilder(CharSequence value) {
+      this(value, false);
+    }
+
+    protected AttributeBuilder(CharSequence value, boolean searchableChildren) {
+      super(searchableChildren);
+      existing = newStringMap(String.class);
       append(value);
     }
+
 
     @Override
     public void append(Widget<String> child) {
@@ -83,14 +91,55 @@ public abstract class NodeBuilder<E> implements Widget<E> {
     }
 
     @Override
-    public NodeBuilder<String> wrapChars(CharSequence body) {
+    protected NodeBuilder<String> wrapChars(CharSequence body) {
       return newAttributeBuilder(body);
     }
 
     @Override
-    protected void toHtml(Appendable out) {
-      super.toHtml(out);
+    protected BiFunction<String, Boolean, NodeBuilder<String>> getCreator() {
+      Function<CharSequence, AttributeBuilder> ctor = AttributeBuilder::new;
+      // ignore the searchable attribute for now.
+      return (str, searchable)->ctor.apply(str);
     }
+
+    @Override
+    public <C extends NodeBuilder<String>> C addChild(C child) {
+      String value = child.getElement();
+      final NodeBuilder<String> wrapped = wrapChars(value);
+      super.addChild(wrapped);
+      return child;
+    }
+
+    public <C extends NodeBuilder<String>> C addToSet(C child,
+                                                      String separator
+    ) {
+      return addToSet(child,
+          (c, txt)->(separator+txt+separator).split(separator), // take the list apart
+          ()->separator // put it back together.
+          );
+    }
+
+    public <C extends NodeBuilder<String>> C addToSet(C child,
+                                                      BiFunction<C, CharSequence, String[]> splitter,
+                                                      Supplier<CharSequence> joinChars
+    ) {
+      // The api of the bifunction demands that we figure out the string value from the element type we are working with.
+      String value = child.getElement();
+      // Since we are a string type, this seems pretty convoluted,
+      // but when working on live elements and nodes, this lets it see the object and the to string'd version at once.
+      for (String part : splitter.apply(child, value)) {
+        if (part.length() > 0) {
+          if (existing.put(part, part) == null) {
+            if (existing.size() > 1) {
+              part = part + joinChars.get();
+            }
+            super.addChild(wrapChars(part));
+          }
+        }
+      }
+      return child;
+    }
+
 
   }
 
@@ -199,7 +248,11 @@ public abstract class NodeBuilder<E> implements Widget<E> {
   private final E initialize() {
     StringBuilder b = new StringBuilder();
     toHtml(b);
-    el = create(b.toString());
+    final String html = b.toString();
+    if (X_String.isEmpty(html)) {
+      return null;
+    }
+    el = create(html);
     startInitialize(el);
     try {
         if (!searchableChildren) {
@@ -348,4 +401,39 @@ public abstract class NodeBuilder<E> implements Widget<E> {
     this.childTarget = null;
   }
 
+  public NodeBuilder<E> createChild(String value) {
+    return wrapChars(value);
+  }
+
+  public final void setNodeFactory(BiFunction<String, Boolean, NodeBuilder<E>> factory) {
+    setNodeFactory(factory, false);
+  }
+  public void setBodySanitizer(Function<String, String> bodySanitizer) {
+    this.bodySanitizer = bodySanitizer;
+  }
+
+  public void setNodeFactory(BiFunction<String, Boolean, NodeBuilder<E>> factory, boolean shareFactories) {
+    if (shareFactories) {
+      this.newNode = factory.andThen(this::shareFactories);
+    } else {
+      this.newNode = factory;
+    }
+  }
+
+  protected NodeBuilder<E> shareFactories(NodeBuilder<E> with) {
+    // Make sure we pass along our factories to our children!
+    // We expose this method so that it is reusable and optional,
+    // so custom behaviors can choose whether to opt in to factory sharing or not.
+    // Scenarios where nodes set different factories preclude sharing, thus, it is an optional operation.
+    with.setBodySanitizer(bodySanitizer);
+    with.setNodeFactory(newNode);
+    return with;
+  }
+
+  protected void setDefaultFactories() {
+    setBodySanitizer(html -> html.replaceAll("\n", "<br/>"));
+    setNodeFactory(getCreator(), true);
+  }
+
+  protected abstract BiFunction<String, Boolean, NodeBuilder<E>> getCreator();
 }

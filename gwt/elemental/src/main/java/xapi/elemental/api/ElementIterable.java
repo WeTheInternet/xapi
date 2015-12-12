@@ -1,12 +1,12 @@
 package xapi.elemental.api;
 
-import java.util.Iterator;
-
 import elemental.dom.Element;
 import elemental.dom.Node;
 import elemental.dom.NodeList;
 import elemental.html.HTMLCollection;
 import elemental.util.Indexable;
+
+import java.util.Iterator;
 
 public class ElementIterable implements Iterable<Element> {
 
@@ -14,20 +14,28 @@ public class ElementIterable implements Iterable<Element> {
   private final class Itr implements Iterator<Element> {
 
     int pos = 0;
+    private Element was;
 
     @Override
     public boolean hasNext() {
+      if (was != null && nodes.at(pos) != was) {
+        // In case somebody is removing node while we are iterating,
+        // we will rewind
+        pos --;
+      }
       while(pos < nodes.length()) {
         if (((Node)nodes.at(pos)).getNodeType() == Node.ELEMENT_NODE)
           return true;
         pos++;
       }
+      was = null;
       return false;
     }
 
     @Override
     public Element next() {
-      return (Element)nodes.at(pos++);
+      was = (Element) nodes.at(pos++);
+      return was;
     }
 
     @Override

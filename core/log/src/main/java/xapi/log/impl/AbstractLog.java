@@ -34,12 +34,13 @@
  */
 package xapi.log.impl;
 
-import java.util.Iterator;
-
 import xapi.collect.api.Fifo;
 import xapi.collect.impl.SimpleFifo;
 import xapi.log.api.LogLevel;
 import xapi.log.api.LogService;
+
+import javax.inject.Provider;
+import java.util.Iterator;
 
 public abstract class AbstractLog implements LogService {
 
@@ -85,9 +86,11 @@ public abstract class AbstractLog implements LogService {
         }
       }
 			return serialized;
-		} else if (m != null && m.getClass().isArray())
-      return new SimpleFifo<Object>((Object[])m).join(", ");
-    else if (m instanceof Iterable) {
+		} else if (m != null && m.getClass().isArray()) {
+          return new SimpleFifo<Object>((Object[])m).join(", ");
+        } else if (m instanceof Provider) {
+          return unwrap(level, ((Provider)m).get());
+        } else if (m instanceof Iterable) {
 		  Iterator iter = ((Iterable)m).iterator();
 		  SimpleFifo fifo = new SimpleFifo();
 		  while(iter.hasNext()) {

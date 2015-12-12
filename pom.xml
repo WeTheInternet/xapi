@@ -22,15 +22,15 @@
   For Google Web Toolkit, we also include reflection support,
   more complete emulation of java.lang.Class, zero-overhead dependency injection,
   a range of code generation utilities, and even "magic-method injection"
-  (for production compiles any method in the app can be swapped out with 
+  (for production compiles any method in the app can be swapped out with
   others based on configuration properties, or any AST mangling / code generating
   methods you wish to write).
-  
+
   There is also a bytecode transformer in the works which will replace calls
   into the DI utility with direct references to static final factories,
   to allow the java compiler to completely erase all injection overhead in all java runtimes.
   </description>
-  
+
  <organization>
   <name>The Internet Party</name>
   <url>WeTheInter.net</url>
@@ -68,7 +68,7 @@
  <modules>
     <!-- Core interfaces and injection layer -->
     <module>core</module>
-    
+
     <!-- Gwt mode runtime -->
     <module>gwt</module>
 
@@ -84,7 +84,7 @@
     <!-- Maven build tools -->
     <module>maven</module>
  </modules>
- 
+
  <url>https://github.com/${github.account}/xapi</url>
  <scm>
    <url>http://github.com/${github.account}/xapi</url>
@@ -104,7 +104,7 @@
   <system>Github Issues</system>
   <url>https://github.com/${github.account}/xapi/issues</url>
  </issueManagement>
- 
+
  <developers>
   <developer>
    <name>James X. Nelson</name>
@@ -133,10 +133,17 @@
 
 
  <dependencyManagement>
-  <!-- Include versioned copies of all dependencies, so children don't set 
+  <!-- Include versioned copies of all dependencies, so children don't set
    versions manually -->
   <dependencies>
    <!-- XApi core modules -->
+
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-fu</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-api</artifactId>
@@ -512,7 +519,7 @@
     <artifactId>xapi-gwtc-jre</artifactId>
     <version>${project.version}</version>
    </dependency>
-   
+
    <!-- Maven plugin -->
    <dependency>
     <groupId>net.wetheinter</groupId>
@@ -839,7 +846,7 @@
       </execution>
      </executions>
     </plugin>
-    <!--This plugin's configuration is used to store Eclipse m2e settings 
+    <!--This plugin's configuration is used to store Eclipse m2e settings
      only. It has no influence on the Maven build itself. -->
     <plugin>
      <groupId>org.eclipse.m2e</groupId>
@@ -1018,5 +1025,5 @@
   </profile>
  </profiles>
 
- 
+
 </project>

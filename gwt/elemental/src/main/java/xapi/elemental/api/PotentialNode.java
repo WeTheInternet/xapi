@@ -1,14 +1,19 @@
 package xapi.elemental.api;
 
 import elemental.client.Browser;
+import elemental.dom.DocumentFragment;
 import elemental.dom.Element;
+import elemental.dom.Node;
 import xapi.elemental.X_Elemental;
 import xapi.ui.api.AttributeApplier;
 import xapi.ui.api.ElementBuilder;
 import xapi.ui.api.NodeBuilder;
 import xapi.ui.api.Widget;
+import xapi.util.X_Debug;
 import xapi.util.X_String;
 import xapi.util.impl.ImmutableProvider;
+
+import java.util.function.BiFunction;
 
 /**
  * TODO: rename this to ElementalBuilder?
@@ -53,11 +58,35 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> {
   private String tagName;
 
   public PotentialNode() {
-    super(false);
+    this(false);
   }
 
   public PotentialNode(boolean searchableChildren) {
     super(searchableChildren);
+    setDefaultFactories();
+  }
+
+  public PotentialNode(String tagName) {
+    this();
+    setTagName(tagName);
+  }
+
+  public PotentialNode(String tagName, boolean searchableChildren) {
+    super(searchableChildren);
+    setDefaultFactories();
+    setTagName(tagName);
+  }
+
+  public PotentialNode(E element) {
+    super(false);
+    setDefaultFactories();
+    el = element;
+    onInitialize(el);
+  }
+
+  @Override
+  protected BiFunction<String, Boolean, NodeBuilder<E>> getCreator() {
+    return PotentialNode::new; // pick the constructor you like
   }
 
   @Override
@@ -72,23 +101,6 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> {
     super.toHtml(out);
   }
 
-
-  public PotentialNode(String tagName) {
-    this();
-    setTagName(tagName);
-  }
-
-  public PotentialNode(String tagName, boolean searchableChildren) {
-    super(searchableChildren);
-    setTagName(tagName);
-  }
-
-  public PotentialNode(E element) {
-    super(false);
-    el = element;
-    onInitialize(el);
-  }
-
   @Override
   protected AttributeApplier createAttributeApplier() {
     return el == null ? new ApplyPendingAttribute() : new ApplyLiveAttribute();
@@ -96,9 +108,11 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> {
 
   @Override
   public PotentialNode<E> createChild(String tagName) {
-    final PotentialNode<E> child = new PotentialNode<>(tagName, searchableChildren);
-    addChild(child);
-    return child;
+    final NodeBuilder<E> child = newNode.apply(tagName, searchableChildren);
+    addChild(child, X_String.isEmpty(tagName)); // If we are a document fragment, we need to make new children the target element for future inserts
+    assert child instanceof PotentialNode :
+        "A potential node cannot have a factory which does not supply a new potential node" ;
+    return (PotentialNode<E>) child;
   }
 
   @Override
@@ -117,11 +131,29 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> {
   }
 
   protected E build(String html) {
+    boolean isMulti = children != null && children.hasSiblings();
+    if (isMulti) {
+      final DocumentFragment frag = X_Elemental.toFragment(sanitizeHtml(html).trim());
+      return compressFragment(frag, html);
+    }
     return X_Elemental.toElement(sanitizeHtml(html));
   }
 
+  protected E compressFragment(DocumentFragment frag, String html) {
+    final Node node = frag.getFirstChild();
+    if (node.getNodeType() == Node.ELEMENT_NODE) {
+      Element e = (Element) frag.getFirstChild();
+      frag.removeChild(e);
+      e.appendChild(frag);
+      return (E)e;
+    } else {
+      assert false : "Cannot compress html into a single node; first child must be an element. Html:\n" + html;
+      throw X_Debug.recommendAssertions();
+    }
+  }
+
   protected String sanitizeHtml(String html) {
-    return html.replaceAll("\n", "<br/>"); // TODO: actually sanitize
+    return bodySanitizer.apply(html); // TODO: actually sanitize
   }
 
   @Override
@@ -131,7 +163,7 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> {
 
   @Override
   protected NodeBuilder<E> wrapChars(CharSequence body) {
-    PotentialNode<E> node = new PotentialNode<E>();
+    PotentialNode<E> node = new PotentialNode<>();
     node.append(body);
     return node;
   }
@@ -178,8 +210,9 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> {
   }
 
   protected String sanitizeAttribute(String result) {
-    return result.replaceAll("'", "&apos;");
+    return  X_String.isEmpty(result) ? "" : result.replaceAll("'", "&apos;");
   }
+
   @Override
   protected CharSequence getCharsAfter(CharSequence self) {
     if (tagName != null && !isEmpty()) {
@@ -210,7 +243,8 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> {
 
   @Override
   public String toString() {
-    return getElement().getOuterHTML();
+    final E ele = getElement();
+    return ele == null ? "" : ele.getOuterHTML();
   }
 
   class Styler extends StyleApplier {
@@ -232,13 +266,12 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> {
       return el;
     }
     // First, look on the document.  This is the fastest, IF we are attached
-    final AttributeBuilder idAttr = attributes.get("id");
-    if (idAttr == null) {
+    String id = getId();
+    if (id == null) {
       return super.findSelf(parent);
     }
-    String id = idAttr.getElement();
     el = (E) Browser.getDocument().getElementById(id);
-    if (el == null) {
+    if (el == null && parent != null) {
       // If we aren't attached, fallback to the slower querySelector
       el = (E) parent.querySelector("#"+id);
     }
@@ -256,7 +289,10 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> {
 
   @Override
   protected void finishInitialize(E el) {
-    Browser.getDocument().getBody().removeChild(el);
+    final Element body = Browser.getDocument().getBody();
+    if (body == el.getParentElement()) {
+      body.removeChild(el);
+    }
     super.finishInitialize(el);
   }
 }

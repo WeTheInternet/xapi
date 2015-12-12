@@ -117,7 +117,7 @@ public abstract class ElementBuilder <E> extends NodeBuilder<E> {
     }
 
     public void addValue(String value) {
-      
+
       for (String part : value.split(";")) {
         String[] parts = part.trim().split(":");
         assert parts.length == 2 : "Malformed style string: "+value
@@ -163,62 +163,62 @@ public abstract class ElementBuilder <E> extends NodeBuilder<E> {
       stylize("bottom", bottom);
       return this;
     }
-    
+
     public StyleApplier setRight(String right) {
       stylize("right", right);
       return this;
     }
-    
+
     public StyleApplier setWidth(String width) {
       stylize("width", width);
       return this;
     }
-    
+
     public StyleApplier setHeight(String width) {
       stylize("width", width);
       return this;
     }
-    
+
     public StyleApplier setMaxWidth(String width) {
       stylize("max-Width", width);
       return this;
     }
-    
+
     public StyleApplier setMaxHeight(String width) {
       stylize("max-Width", width);
       return this;
     }
-    
+
     public StyleApplier setMinWidth(String width) {
       stylize("min-Width", width);
       return this;
     }
-    
+
     public StyleApplier setMinHeight(String width) {
       stylize("min-Width", width);
       return this;
     }
-    
+
     public StyleApplier setVerticalAlign(String vAlign) {
       stylize("vertical-Align", vAlign);
       return this;
     }
-    
+
     public StyleApplier setHorizontalAlign(String hAlign) {
       stylize("text-Align", hAlign);
       return this;
     }
-    
+
     public StyleApplier setOverflow(String overflow) {
       stylize("overflow", overflow);
       return this;
     }
-    
+
     public StyleApplier setOverflowX(String overflowX) {
       stylize("overflow-X", overflowX);
       return this;
     }
-    
+
     public StyleApplier setOverflowY(String overflowY) {
       stylize("overflow-Y", overflowY);
       return this;
@@ -490,10 +490,15 @@ public abstract class ElementBuilder <E> extends NodeBuilder<E> {
     return this;
   }
 
+  public ElementBuilder<E> setDataAttribute(String name, String value) {
+    return setAttribute("data-"+ withPrefix(name), value);
+  }
+
   public ElementBuilder<E> setClass(String value) {
     setAttribute("class", value);
     return this;
   }
+
 
   public ElementBuilder<E> addAttribute(String name, String value) {
     switch(name.toLowerCase()) {
@@ -515,6 +520,18 @@ public abstract class ElementBuilder <E> extends NodeBuilder<E> {
     return this;
   }
 
+  public ElementBuilder<E> addDataAttribute(String name, String value) {
+    return addAttribute("data-"+ withPrefix(name), value);
+  }
+
+  public String withPrefix(String dataKey) {
+    return prefix()+dataKey;
+  }
+
+  protected String prefix() {
+    return System.getProperty("data.attr.prefix", "xapi-");
+  }
+
   protected AttributeBuilder newClassnameBuilder() {
     return new ClassnameBuilder();
   }
@@ -528,7 +545,7 @@ public abstract class ElementBuilder <E> extends NodeBuilder<E> {
     stylizer.get().applyStyle(this, name, value);
     return this;
   }
-  
+
   public StyleApplier getStyle() {
     return stylizer.get();
   }
@@ -573,7 +590,5 @@ public abstract class ElementBuilder <E> extends NodeBuilder<E> {
     setAttribute("checked", checked);
     return this;
   }
-
-  public abstract ElementBuilder<E> createChild(String tagName);
 
 }

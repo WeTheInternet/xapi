@@ -40,12 +40,12 @@ public class DomBuffer extends XmlBuffer {
   }
 
   /**
-   * Override this method, or set the system / configuration property data-attr-prefix to add a prefix to all data uris.
+   * Override this method, or set the system / configuration property data-attr-withPrefix to add a withPrefix to all data uris.
    * <p>
    * This is helpful for namespacing your apis automatically.
    */
   protected String maybePrefixDataAttr(String key) {
-    return System.getProperty("data-attr-prefix", "") + key;
+    return System.getProperty("data-attr-withPrefix", "") + key;
   }
 
   public DomBuffer setClassName(final String clsName) {
@@ -447,7 +447,7 @@ public class DomBuffer extends XmlBuffer {
   }
 
   @Override
-  public XmlBuffer ln() {
+  public DomBuffer ln() {
     super.ln();
     return this;
   }

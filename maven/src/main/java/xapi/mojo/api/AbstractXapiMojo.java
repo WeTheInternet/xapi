@@ -31,6 +31,7 @@ import xapi.util.X_Debug;
 import xapi.util.X_GC;
 import xapi.util.X_Namespace;
 import xapi.util.X_String;
+import xapi.util.X_Util;
 
 import javax.annotation.Generated;
 import javax.inject.Provider;
@@ -102,6 +103,9 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
 
   @Parameter(property = "xapi.source.artifacts")
   private SourceDependency[] sourceDependencies;
+
+  @Parameter(property = "assertions")
+  private Boolean assertions;
 
   /**
    * The Maven Session Object, injected by plexus
@@ -277,6 +281,7 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
       return new File(targetProjectDirectory.get(), generateDirectory);
     };
   };
+
   private final Provider<File> targetProjectDirectory = new SingletonProvider<File>() {
     @Override
     protected File initialValue() {
@@ -453,19 +458,23 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
       System.arraycopy(cp, 0, clone, additionalClasspath.length, cp.length);
       cp = clone;
     }
-    final String[] args = new String[] {
+    String[] args = new String[] {
         "-sourcepath", genDir.getAbsolutePath() + File.separator,
         "-classpath", X_String.join(File.pathSeparator, cp),
         "-d", getProject().getBuild().getDirectory() + File.separator + "classes",
         "-proc:none",
         srcFile.getAbsolutePath() };
-    X_Log.info(getClass(),"Compile arguments", args);
+    final String[] finalArgs = Boolean.TRUE.equals(assertions)
+     ? X_Util.pushOnto(args, "-ea") : args;
+
+    X_Log.log(getClass(), logLevel(), "Compile arguments", finalArgs);
+
     return new Runnable() {
       @Override
       public void run() {
         int result;
         try {
-          result = compiler.get().run(null, null, null, args);
+          result = compiler.get().run(null, null, null, finalArgs);
         } catch (Exception e) {
           X_Log.error("Cannot compile", javaName, ":\n", source, e);
           throw X_Debug.rethrow(e);
@@ -477,6 +486,13 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
       }
     };
 
+  }
+
+  protected LogLevel logLevel() {
+    if (xapiLogLevel == null) {
+      return LogLevel.INFO;
+    }
+    return LogLevel.valueOf(xapiLogLevel);
   }
 
   protected JavaCompiler initCompiler() {

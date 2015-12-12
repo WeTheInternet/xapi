@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE module PUBLIC "-//Google Inc.//DTD Google Web Toolkit 2.5.1//EN" "http://google-web-toolkit.googlecode.com/svn/tags/2.5.1/distro-source/core/src/gwt-module.dtd">
+<!DOCTYPE module PUBLIC "-//Google Inc.//DTD Google Web Toolkit 2.7.0//EN" "http://gwtproject.org/doctype/2.7.0/gwt-module.dtd">
 <module>
   <inherits name="xapi.X_Inject"/>
   <source path="ui/api" />
   <source path="ui/impl" />
+
+  <!-- This configuration property is used to automatically add a stable withPrefix to html data attribute names -->
+  <define-configuration-property name="data.attr.prefix" is-multi-valued="false" />
+  <set-configuration-property name="data.attr.prefix" value="xapi-" />
+
 </module>

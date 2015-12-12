@@ -1,13 +1,19 @@
 package xapi.ui.api;
 
 import org.junit.Test;
-
 import xapi.test.Assert;
+
+import java.util.function.BiFunction;
 
 public class NodeBuilderTest {
 
   private static class TestNode extends NodeBuilder<String> {
     private TestNode() {}
+
+    @Override
+    protected BiFunction<String, Boolean, NodeBuilder<String>> getCreator() {
+      return (tag, searchableChildren)->new TestNode();
+    }
 
     @Override
     public void append(Widget<String> child) {

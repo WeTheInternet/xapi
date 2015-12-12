@@ -79,9 +79,10 @@
                 </goals>
                 <inherited>false</inherited>
                 <configuration>
+                  <assertions>true</assertions>
                   <includeTestSource>true</includeTestSource>
                   <!-- 	<debugPort>7311</debugPort> -->
-                  <debugDelay>${debug.delay}</debugDelay>
+                  <!--  <debugDelay>${debug.delay}</debugDelay>  -->
                 </configuration>
               </execution>
             </executions>
@@ -111,6 +112,7 @@
               </additionalClasspathElements>
               <useManifestOnlyJar>false</useManifestOnlyJar>
               <forkMode>always</forkMode>
+              <enableAssertions>true</enableAssertions>
               <systemProperties>
                 <property>
                   <name>gwt.args</name>
