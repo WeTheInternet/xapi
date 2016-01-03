@@ -9,7 +9,9 @@ import java.lang.reflect.Array;
 import java.util.Iterator;
 
 /**
- * A lightweight utility to assemble strings wit
+ * A lightweight utility to assemble strings using a tree of linked nodes,
+ * so you can easily "tear off" a pointer in the buffer, and generate text from multiple locations at once.
+ *
  * @author James X. Nelson (james@wetheinter.net, @james)
  */
 @SuppressWarnings({"rawtypes", "unchecked"})

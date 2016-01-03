@@ -14,7 +14,7 @@
   <description>
     This module contains static services and default implementations for other core services.
 
-    In order to keep core dependencies as clean as possible,  
+    In order to keep core dependencies as clean as possible,
     we avoid accessing helpers like X_Inject so users can choose when / if they inherit larger dependencies.
   </description>
 
@@ -105,6 +105,22 @@
           </execution>
         </executions>
       </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>attach-sources</id>
+            <phase>package</phase>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+            <inherited>true</inherited>
+          </execution>
+        </executions>
+      </plugin>
+
     </plugins>
   </build>
 

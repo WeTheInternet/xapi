@@ -16,6 +16,8 @@
   </description>
 
   <modules>
+    <!-- V2 of code generator API -->
+    <module>gen</module>
     <!-- Shared dev tools -->
     <module>api</module>
     <!-- Java source generation -->
