@@ -77,7 +77,7 @@ public abstract class SingletonProvider<X> implements Provider<X>, ProvidesValue
             return init;
           } else {
             //another thread has already inited while we waited.
-            return proxy.get();//just return whatever the new proxy supplies
+            return provider.get();//just return whatever the new proxy supplies
           }
         }
       } else {
