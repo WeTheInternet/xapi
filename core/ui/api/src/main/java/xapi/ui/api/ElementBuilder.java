@@ -20,13 +20,18 @@ public abstract class ElementBuilder <E> extends NodeBuilder<E> {
 
   private int seed;
 
-  public void ensureId() {
+  public String ensureId() {
     if (X_String.isEmpty(id)) {
       synchronized (sync) {
         seed = idSeed++;
       }
       setId(generateId(seed));
     }
+    return id;
+  }
+
+  public static String getDefaultPrefix() {
+    return System.getProperty("data.attr.prefix", "xapi-");
   }
 
   protected String generateId(int seed) {
@@ -97,8 +102,10 @@ public abstract class ElementBuilder <E> extends NodeBuilder<E> {
       if (attr == null) {
         attributes.put("style", (attr=this));
       } else {
-        assert attr instanceof ElementBuilder.StyleApplier : "Only use the setStyle method to set the 'style' attribute";
+        if (!(attr instanceof ElementBuilder.StyleApplier)) {
+        assert false : "Only use the setStyle method to set the 'style' attribute";
         throw X_Debug.recommendAssertions();
+        }
       }
       return (StyleApplier) attr;
     }
@@ -529,7 +536,7 @@ public abstract class ElementBuilder <E> extends NodeBuilder<E> {
   }
 
   protected String prefix() {
-    return System.getProperty("data.attr.prefix", "xapi-");
+    return getDefaultPrefix(); // == System.getProperty("data.attr.prefix", "xapi-");
   }
 
   protected AttributeBuilder newClassnameBuilder() {

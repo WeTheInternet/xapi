@@ -106,13 +106,18 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> {
     return el == null ? new ApplyPendingAttribute() : new ApplyLiveAttribute();
   }
 
-  @Override
-  public PotentialNode<E> createChild(String tagName) {
+  public PotentialNode<E> createNode(String tagName) {
     final NodeBuilder<E> child = newNode.apply(tagName, searchableChildren);
-    addChild(child, X_String.isEmpty(tagName)); // If we are a document fragment, we need to make new children the target element for future inserts
     assert child instanceof PotentialNode :
         "A potential node cannot have a factory which does not supply a new potential node" ;
     return (PotentialNode<E>) child;
+  }
+
+  @Override
+  public PotentialNode<E> createChild(String tagName) {
+    final PotentialNode<E> child = createNode(tagName);
+    addChild(child, X_String.isEmpty(tagName)); // If we are a document fragment, we need to make new children the target element for future inserts
+    return child;
   }
 
   @Override

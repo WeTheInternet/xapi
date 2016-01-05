@@ -3,7 +3,9 @@
  */
 package xapi.elemental.impl;
 
+import elemental.client.Browser;
 import elemental.dom.Element;
+import elemental.html.TextAreaElement;
 import xapi.annotation.inject.SingletonDefault;
 import xapi.elemental.api.ElementalService;
 import xapi.elemental.api.PotentialNode;
@@ -23,7 +25,7 @@ extends StyleServiceDefault<ElementalService>
 implements ElementalService {
 
   private Lexer lexer;
-
+  private static final TextAreaElement escaper = Browser.getDocument().createTextAreaElement();
   @Override
   public <T, E extends Element> E toElement(Class<? super T> cls, T obj) {
     return this.<T, E>toElementBuilder(cls).convert(obj).getElement();
@@ -44,7 +46,7 @@ implements ElementalService {
     public E convert(T from) {
       throw new UnsupportedOperationException();
     }
-    
+
   }
   @Override
   public <T, E extends Element> ConvertsValue<T, PotentialNode<E>> toElementBuilder(final Class<? super T> cls, Class<?> template) {
@@ -130,4 +132,49 @@ implements ElementalService {
       return element;
   }-*/;
 
+  @Override
+  public String escapeHTML(String html) {
+    escaper.setInnerText(html);
+    return escaper.getInnerHTML();
+  }
+
+  @Override
+  public String unescapeHTML(String html) {
+    // extremely fast, and appears to be secure,
+    // as both < and &lt; result in < character being output
+    escaper.setInnerHTML(html);
+    return escaper.getTextContent();
+  }
+  /** From angular JS: (use an equivalent of this for jvm elemental service
+
+   SURROGATE_PAIR_REGEXP = /[\uD800-\uDBFF][\uDC00-\uDFFF]/g,
+   // Match everything outside of normal chars and " (quote character)
+   NON_ALPHANUMERIC_REGEXP = /([^\#-~| |!])/g;
+
+   function decodeEntities(value) {
+   if (!value) { return ''; }
+
+   hiddenPre.innerHTML = value.replace(/</g,"&lt;");
+   // innerText depends on styling as it doesn't display hidden elements.
+   // Therefore, it's better to use textContent not to cause unnecessary reflows.
+   return hiddenPre.textContent;
+   }
+
+  function encodeEntities(value) {
+    return value.
+        replace(/&/g, '&amp;').
+    replace(SURROGATE_PAIR_REGEXP, function(value) {
+      var hi = value.charCodeAt(0);
+      var low = value.charCodeAt(1);
+      return '&#' + (((hi - 0xD800) * 0x400) + (low - 0xDC00) + 0x10000) + ';';
+    }).
+    replace(NON_ALPHANUMERIC_REGEXP, function(value) {
+      return '&#' + value.charCodeAt(0) + ';';
+    }).
+    replace(/</g, '&lt;').
+    replace(/>/g, '&gt;');
+  }
+
+
+   * */
 }

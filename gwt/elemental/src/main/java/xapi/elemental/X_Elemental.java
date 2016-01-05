@@ -174,4 +174,51 @@ public class X_Elemental {
       Browser.getWindow().getComputedStyle(e, null); // triggers a reflow (recomputation of gui layout) for the given element.
     }
   }
+
+  public static String escapeHTML(String html) {
+    return getElementalService().escapeHTML(html);
+  }
+
+  /**
+   * This method, in a browser, is fast, but insecure.
+   *
+   * It utilitizes a textarea's existing support for translating text into html entities,
+   * and the testing done on the textarea shows that it can handle &lt;script>alert('hack')&lt;/script>,
+   * without running any script.
+   */
+  public static String unescapeHTML(String html) {
+    return getElementalService().unescapeHTML(html);
+  }
+
+  public static String getDataAttr(String ... parts) {
+    StringBuilder b = new StringBuilder();
+    for (String part : parts) {
+      for (String chunk : part.split("-")) {
+        if (chunk.length() == 0) {
+          // consider warning here; the use of -- seems fishy...
+          continue;
+        }
+        if (b.length() == 0) {
+          b.append(chunk);
+        } else {
+          b.append(Character.toUpperCase(chunk.charAt(0)));
+          if (chunk.length() > 1) {
+            b.append(chunk.substring(1));
+          }
+        }
+      }
+    }
+    return b.toString();
+  }
+
+  public static void insertAfter(Element newNode, Element afterNode) {
+    final Element parent = afterNode.getParentElement();
+    assert parent != null : "You cannot perform insertAfter() with a detached element to wrap";
+    final Element next = afterNode.getNextElementSibling();
+    if (next == null) {
+      parent.appendChild(newNode);
+    } else {
+      parent.insertBefore(newNode, next);
+    }
+  }
 }

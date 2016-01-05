@@ -48,4 +48,8 @@ public interface ElementalService extends StyleService<ElementalService> {
   <T, E extends Element> ConvertsValue<T, PotentialNode<E>> toElementBuilder(Class<? super T> cls, Class<?> template);
 
   Element getShadowRoot(Element element);
+
+  String escapeHTML(String html);
+
+  String unescapeHTML(String html);
 }
