@@ -82,7 +82,7 @@
             </executions>
             <configuration>
                 <targetProject>net.wetheinter:xapi-core-api:jar:${xapi.version}</targetProject>
-                <outputDirectory>${project.build.directory}/generated-sources/annotations</outputDirectory>
+                <generateDirectory>${project.build.directory}/generated-sources/annotations</generateDirectory>
             </configuration>
         </plugin>
       <plugin>

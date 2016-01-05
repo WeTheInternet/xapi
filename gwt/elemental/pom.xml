@@ -105,22 +105,17 @@
         <plugins>
           <plugin>
             <artifactId>maven-surefire-plugin</artifactId>
+            <version>2.19</version>
             <configuration>
               <additionalClasspathElements>
                 <additionalClasspathElement>${project.build.sourceDirectory}</additionalClasspathElement>
                 <additionalClasspathElement>${project.build.testSourceDirectory}</additionalClasspathElement>
               </additionalClasspathElements>
               <useManifestOnlyJar>false</useManifestOnlyJar>
-              <forkMode>always</forkMode>
+              <forkMode>never</forkMode>
+              <forkCount>0</forkCount>
               <enableAssertions>true</enableAssertions>
-              <systemProperties>
-                <property>
-                  <name>gwt.args</name>
-                  <value>-ea -userAgents gecko1_8 -out
-                    ${project.build.directory}/www-test
-                  </value>
-                </property>
-              </systemProperties>
+
             </configuration>
           </plugin>
         </plugins>

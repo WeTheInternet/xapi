@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE module PUBLIC "-//Google Inc.//DTD Google Web Toolkit 2.5.0//EN" "http://google-web-toolkit.googlecode.com/svn/tags/2.5.0/distro-source/core/src/gwt-module.dtd">
+<!DOCTYPE module PUBLIC "-//Google Inc.//DTD Google Web Toolkit 2.5.0//EN" "http://gwtproject.org/doctype/2.7.0/gwt-module.dtd">
 <module>
     <source path="collect" />
     <inherits name="java.util.Util" />
 	<!-- Pull in X_Inject, which has all common utilities we need -->
     <inherits name="xapi.X_Inject" />
 
-    <inherits name="com.google.gwt.reflect.Reflect" /> 
-	
-   <extend-configuration-property name="gwt.magic.methods" 
+    <inherits name="com.google.gwt.reflect.Reflect" />
+
+   <extend-configuration-property name="gwt.magic.methods"
      value="xapi.collect.X_Collect.newList(Ljava/lang/Class;)Lxapi/collect/api/IntTo; *= xapi.dev.collect.IntToInjector" />
- 
+
 </module>
