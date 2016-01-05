@@ -11,6 +11,10 @@ public interface In1Out1<I, O> extends Rethrowable {
 
   O io(I in);
 
+  default O apply(Out1<I> supplier) {
+    return io(supplier.out1());
+  }
+
   default int accept(int position, In1<O> callback, Object... values) {
     final I in = (I) values[position++];
     final O out = io(in);
@@ -29,7 +33,9 @@ public interface In1Out1<I, O> extends Rethrowable {
   static <I, O> In1Out1<I, O> of(In1<I> in, Out1<O> out) {
     return i-> {
       in.in(i);
-      return out.out1();
+      @SuppressWarnings("redundant") // let debuggers have a look. JIT can inline
+      final O o = out.out1();
+      return o;
     };
   }
 
@@ -38,6 +44,18 @@ public interface In1Out1<I, O> extends Rethrowable {
    */
   static <I, O> In1Out1<I, O> unsafe(In1Out1Unsafe<I, O> of) {
     return of;
+  }
+
+  default Out1<O> supply(I in) {
+    return () -> io(in);
+  }
+
+  default Out1<O> supplyDeferred(Out1<I> in) {
+    return () -> io(in.out1());
+  }
+
+  default Out1<O> supplyImmediate(Out1<I> in) {
+    return supply(in.out1());
   }
 
   interface In1Out1Unsafe <I, O> extends In1Out1<I, O>, Rethrowable{

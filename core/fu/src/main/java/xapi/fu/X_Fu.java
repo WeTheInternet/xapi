@@ -20,13 +20,21 @@ public interface X_Fu {
   }
 }
 
+/**
+ This package-local interface extends our platform magic, Jutsu, and initializes it with all default methods.
+
+ This allows you to use techniques like super-sourcing or source-rewriting
+ to swap out this interface with your own platform-specific overrides.
+
+ See src/main/resource/xapi/jutsu/xapi/fu/Fu.java for the Gwt implementation of the super-sourcing technique
+*/
 interface Fu extends Jutsu {
   Fu jutsu = getFu();
-  Fu init();
+
+  Fu init(Fu jutsu);
 
   static Fu getFu() {
-    final Fu fu = () -> jutsu;
-    fu.init();
-    return fu;
+    final Fu fu = (jutsu) -> jutsu;
+    return fu.init(fu);
   }
 }

@@ -75,7 +75,7 @@ public interface InMany extends HasInput {
     }
 
     InManyBuilder add(InManyBuilder multi) {
-      tail = tail.add(Out2.out2(()->multi.size(), ()->multi.build()));
+      tail = tail.add(Out2.out2(()->(Integer)multi.size(), ()->multi.build()));
       return this;
     }
 
