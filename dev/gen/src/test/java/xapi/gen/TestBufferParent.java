@@ -4,7 +4,7 @@ package xapi.gen;
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 12/27/15.
  */
-public class TestBufferParent implements TestBufferType<TestBufferAncestor, TestBufferParent, TestBufferSelf> {
+public class TestBufferParent implements TestBufferTypeWithChildren<TestBufferAncestor, TestBufferParent, TestBufferSelf> {
 
   private final TestBufferAncestor ancestor;
 

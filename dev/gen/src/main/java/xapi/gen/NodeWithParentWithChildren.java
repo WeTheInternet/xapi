@@ -1,5 +1,6 @@
 package xapi.gen;
 
+import xapi.fu.Lazy;
 import xapi.fu.Out1;
 import xapi.gen.NodeWithParentWithChildren.ChildStack;
 
@@ -15,8 +16,8 @@ public abstract class NodeWithParentWithChildren
     <
         Parent extends GenBuffer <?, Parent>,
         Self extends GenBuffer <Parent, Self>,
-        Child extends GenBuffer<Self, Child>,
-        Stack extends ChildStack<Child>
+        Child extends GenBuffer<Self, ? extends Child>,
+        Stack extends ChildStack<? extends Child>
     > extends NodeWithParent<Parent, Self> {
 
   protected static class ChildStack <V> {
@@ -51,7 +52,15 @@ public abstract class NodeWithParentWithChildren
 
   protected class ChildIterator implements Iterator<Child> {
 
-    ChildStack<Child> start = head.out1();
+    ChildStack<? extends Child> start;
+
+    protected ChildIterator() {
+      synchronized (head) {
+        // Forces a refresh of our thread's local copy of memory before preparing to iterate.
+        // This could be made cheaper with extensive use of volatile
+        start = head.out1();
+      }
+    }
 
     @Override
     public boolean hasNext() {
@@ -70,7 +79,7 @@ public abstract class NodeWithParentWithChildren
 
 
   public NodeWithParentWithChildren() {
-
+    head = Lazy.ofNullable(this::newStack, null);
   }
 
   protected NodeWithParentWithChildren(Self node) {
@@ -78,10 +87,17 @@ public abstract class NodeWithParentWithChildren
     this.node = node;
   }
 
-  public final synchronized void addChild(Child child) {
+  public final void addChild(Child child) {
+
     final ChildStack newTail = newStack(child);
-    tail.setNext(newTail);
-    tail = newTail;
+    synchronized (head) {
+      if (tail == null) {
+        head.out1().setNext(tail = newTail);
+      } else {
+        tail.setNext(newTail);
+        tail = newTail;
+      }
+    }
     onChildAdded(child);
   }
 

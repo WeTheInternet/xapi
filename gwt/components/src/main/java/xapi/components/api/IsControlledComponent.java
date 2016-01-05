@@ -31,13 +31,13 @@ public interface IsControlledComponent
   default C getOrMakeController() {
       C c = getController();
       if (c == null) {
-        c = getDefaultController();
+        c = createController();
         setController(c);
       }
       return c;
   }
 
-  default C getDefaultController() {
+  default C createController() {
     throw new UnsupportedOperationException();
   }
 

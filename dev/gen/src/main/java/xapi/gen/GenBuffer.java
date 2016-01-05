@@ -23,12 +23,12 @@ public interface GenBuffer <ParentType extends GenBuffer<?, ParentType>, SelfTyp
     return new NodeWithParent<>(self());
   }
 
-  default SelfType onParent(In1<ParentType> consumer) {
+  default SelfType useParent(In1<ParentType> consumer) {
     consumer.in(parent());
     return self();
   }
 
-  default SelfType onSelf(In1<SelfType> consumer) {
+  default SelfType useSelf(In1<SelfType> consumer) {
     consumer.in(self());
     return self();
   }

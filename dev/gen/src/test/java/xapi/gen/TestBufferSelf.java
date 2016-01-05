@@ -4,7 +4,8 @@ package xapi.gen;
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 12/27/15.
  */
-public class TestBufferSelf implements TestBufferType<TestBufferParent, TestBufferSelf, TestBufferChild> {
+public class TestBufferSelf implements TestBufferTypeWithChildren<TestBufferParent, TestBufferSelf, TestBufferChild> {
+
   private final TestBufferAncestor ancestor;
   private final TestBufferParent parent;
 
@@ -51,9 +52,9 @@ public class TestBufferSelf implements TestBufferType<TestBufferParent, TestBuff
     return child;
   }
 
-  protected <C extends TestBufferChild<C>, Child extends GenBuffer<TestBufferSelf, C>> void addChild(C child) {
-    final NodeWithParent<TestBufferParent, TestBufferSelf, C> ctx = ctx();
-    ctx.addChild(child);
+  protected void addChild(TestBufferChild child) {
+    final Class<? extends TestBufferChild> cls = child.getClass();
+    ctx(Class.class.cast(cls)).addChild(child);
   }
 
 }

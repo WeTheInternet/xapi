@@ -4,9 +4,8 @@ package xapi.gen;
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 12/27/15.
  */
-public class TestBufferAncestor implements TestBufferType<TestBufferAncestor, TestBufferAncestor, TestBufferParent> {
+public class TestBufferAncestor implements TestBufferTypeWithChildren<TestBufferAncestor, TestBufferAncestor, TestBufferParent> {
 
-  private static interface Root extends GenBuffer<Root, TestBufferAncestor> {}
   @Override
   public TestBufferAncestor parent() {
     return this; // nasty trick.  You can return null if you want to null check
@@ -19,8 +18,7 @@ public class TestBufferAncestor implements TestBufferType<TestBufferAncestor, Te
 
   public TestBufferParent createParent() {
     TestBufferParent parent = new TestBufferParent(this);
-    final NodeWithParent<TestBufferAncestor, TestBufferAncestor> ctx = ctx();
-    ctx.addChild(parent);
+    ctx(TestBufferParent.class).addChild(parent);
     return parent;
   }
 }
