@@ -6,7 +6,6 @@ package xapi.gen;
  */
 public class NodeWithParent<Parent extends GenBuffer <?, Parent>, Self extends GenBuffer <Parent, Self>> {
 
-
   protected NodeWithParent<?, Parent> parent;
 
   protected Self node;

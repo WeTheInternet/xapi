@@ -26,7 +26,7 @@ public abstract class NodeBuilder<E> implements Widget<E> {
   protected E el;
   protected Provider<E> elementProvider;
   @SuppressWarnings("rawtypes")
-  private NodeBuilder childTarget = this;
+  protected NodeBuilder childTarget = this;
 
   protected final IntTo<ReceivesValue<E>> createdCallbacks;
   protected final boolean searchableChildren;

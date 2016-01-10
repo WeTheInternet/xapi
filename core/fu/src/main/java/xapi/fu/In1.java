@@ -50,6 +50,10 @@ public interface In1<I> extends HasInput, Rethrowable {
     return of;
   }
 
+  static In1<String> noop() {
+    return ignored->{};
+  }
+
   interface In1Unsafe <I> extends In1<I> {
     void inUnsafe(I in) throws Throwable;
 

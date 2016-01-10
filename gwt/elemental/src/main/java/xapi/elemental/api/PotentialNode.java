@@ -252,6 +252,19 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> {
     return ele == null ? "" : ele.getOuterHTML();
   }
 
+  @Override
+  public StyleApplier getStyle() {
+    if (X_String.isEmpty(getTagName()) && children instanceof ElementBuilder) {
+      return ((ElementBuilder)children).getStyle();
+    }
+    return super.getStyle();
+  }
+
+  @Override
+  public ElementBuilder<E> setStyle(String name, String value) {
+    return super.setStyle(name, value);
+  }
+
   class Styler extends StyleApplier {
 
     @Override

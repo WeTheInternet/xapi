@@ -487,7 +487,7 @@ public abstract class ElementBuilder <E> extends NodeBuilder<E> {
 
   public ElementBuilder<E> setAttribute(String name, String value) {
     if ("style".equalsIgnoreCase(name)) {
-      stylizer.get().setValue(value);
+      getStyle().setValue(value);
     } else {
       if ("id".equalsIgnoreCase(name)) {
         id = value;
@@ -510,7 +510,7 @@ public abstract class ElementBuilder <E> extends NodeBuilder<E> {
   public ElementBuilder<E> addAttribute(String name, String value) {
     switch(name.toLowerCase()) {
       case "style":
-        stylizer.get().addValue(value);
+        getStyle().addValue(value);
         break;
       case "id":
         id = value;
@@ -549,7 +549,7 @@ public abstract class ElementBuilder <E> extends NodeBuilder<E> {
   }
 
   public ElementBuilder<E> setStyle(String name, String value) {
-    stylizer.get().applyStyle(this, name, value);
+    getStyle().applyStyle(this, name, value);
     return this;
   }
 
@@ -563,7 +563,7 @@ public abstract class ElementBuilder <E> extends NodeBuilder<E> {
   }
 
   public ElementBuilder<E> removeStyle(String name) {
-    stylizer.get().applyStyle(this, name, null);
+    getStyle().applyStyle(this, name, null);
     return this;
   }
 
