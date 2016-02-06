@@ -20,10 +20,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import java.io.Serializable;
-import java.util.AbstractList;
+import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -43,8 +42,7 @@ public class ModelTester {
     <T extends Runnable> IntTo<T> getParameterizedTypeVariableWithExtendsOnMethod();
     <T extends Map> IntTo<? extends T> getParameterizedTypeVariableWithWildcardOnMethod();
 
-    <T extends List & Set> IntTo<? extends T> getWideTypeVariablesWithCommonInterface();
-    <T extends AbstractList & Set> IntTo<? extends T> getWideTypeVariablesWithConcreteType();
+    <T extends AbstractSet & Set> IntTo<? extends T> getWideTypeVariablesWithConcreteType();
     <T extends Double & IsSerializable> IntTo<? extends T> getWideTypeVariablesWithMultipleMatches();
 
     <T extends IntTo<Callable>> T getTypeVariableWithExtendsOnMethod();
@@ -65,10 +63,6 @@ public class ModelTester {
 
     method = manifest.getMethodData("getParameterizedTypeVariableWithWildcardOnMethod");
     assertArrayEquals(new Class[]{Map.class}, method.getTypeParams());
-    assertEquals(IntTo.class, method.getType());
-
-    method = manifest.getMethodData("getWideTypeVariablesWithCommonInterface");
-    assertArrayEquals(new Class[]{Collection.class}, method.getTypeParams());
     assertEquals(IntTo.class, method.getType());
 
     method = manifest.getMethodData("getWideTypeVariablesWithConcreteType");

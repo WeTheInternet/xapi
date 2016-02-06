@@ -17,10 +17,6 @@
     Good enough for testing and development, and overridable to adapt to your server environment.
   </description>
 
-  <properties>
-    <java.version>1.7</java.version>
-  </properties>
-
   <dependencies>
     <dependency>
       <groupId>net.wetheinter</groupId>
