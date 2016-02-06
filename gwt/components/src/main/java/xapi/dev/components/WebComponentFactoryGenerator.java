@@ -1,12 +1,38 @@
 package xapi.dev.components;
 
+import xapi.components.api.JsoConsumer;
+import xapi.components.api.JsoSupplier;
+import xapi.components.api.NativelySupported;
+import xapi.components.api.WebComponent;
+import xapi.components.api.WebComponentCallback;
+import xapi.components.api.WebComponentFactory;
+import xapi.components.api.WebComponentMethod;
+import xapi.components.impl.JsFunctionSupport;
+import xapi.components.impl.JsSupport;
+import xapi.components.impl.WebComponentBuilder;
+import xapi.components.impl.WebComponentSupport;
+import xapi.dev.source.ClassBuffer;
+import xapi.dev.source.MethodBuffer;
+import xapi.dev.source.SourceBuilder;
+import xapi.io.X_IO;
+import xapi.ui.html.api.Css;
+import xapi.ui.html.api.El;
+import xapi.ui.html.api.Html;
+import xapi.ui.html.api.Style;
+
 import static java.lang.reflect.Modifier.PRIVATE;
 
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.UnsafeNativeLong;
 import com.google.gwt.core.client.js.JsProperty;
-import com.google.gwt.core.ext.*;
+import com.google.gwt.core.ext.Generator;
+import com.google.gwt.core.ext.GeneratorContext;
+import com.google.gwt.core.ext.IncrementalGenerator;
+import com.google.gwt.core.ext.RebindMode;
+import com.google.gwt.core.ext.RebindResult;
+import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;
+import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.typeinfo.HasAnnotations;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JMethod;
@@ -14,8 +40,8 @@ import com.google.gwt.core.ext.typeinfo.JParameter;
 import com.google.gwt.core.ext.typeinfo.JParameterizedType;
 import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
 import com.google.gwt.core.ext.typeinfo.JType;
+import com.google.gwt.core.ext.typeinfo.JTypeParameter;
 import com.google.gwt.core.ext.typeinfo.NotFoundException;
-import com.google.gwt.dev.resource.Resource;
 import com.google.gwt.dev.util.collect.Sets;
 import com.google.gwt.thirdparty.guava.common.collect.HashMultimap;
 import com.google.gwt.thirdparty.guava.common.collect.Multimap;
@@ -33,27 +59,6 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import xapi.components.api.JsoConsumer;
-import xapi.components.api.JsoSupplier;
-import xapi.components.api.NativelySupported;
-import xapi.components.api.WebComponent;
-import xapi.components.api.WebComponentCallback;
-import xapi.components.api.WebComponentFactory;
-import xapi.components.api.WebComponentMethod;
-import xapi.components.impl.JsFunctionSupport;
-import xapi.components.impl.JsSupport;
-import xapi.components.impl.WebComponentBuilder;
-import xapi.components.impl.WebComponentSupport;
-import xapi.dev.source.ClassBuffer;
-import xapi.dev.source.MethodBuffer;
-import xapi.dev.source.SourceBuilder;
-import xapi.io.X_IO;
-import xapi.log.api.LogLevel;
-import xapi.ui.html.api.Css;
-import xapi.ui.html.api.El;
-import xapi.ui.html.api.Html;
-import xapi.ui.html.api.Style;
 
 public class WebComponentFactoryGenerator extends IncrementalGenerator {
 
@@ -315,17 +320,27 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
         .makeJsni()
         .addImports(JavaScriptObject.class)
         .print("var func = o.@" + qualified + "::" + method.getName() + "(");
+    List<JType> rawParams = new ArrayList<>();
+    for (JType param : method.getParameterTypes()) {
+      if (param instanceof JParameterizedType) {
+        param = ((JParameterizedType)param).getRawType();
+      }
+      if (param instanceof JTypeParameter) {
+        param = ((JTypeParameter)param).getErasedType();
+      }
+      rawParams.add(param);
+    }
     if (data.useJsniWildcard) {
       out.print("*");
     } else {
-      for (final JType param : method.getParameterTypes()) {
+      for (JType param : rawParams) {
         out.print(param.getJNISignature());
       }
     }
     final StringBuilder params = new StringBuilder();
     final Map<Character, String> boxers = new LinkedHashMap<>();
     char paramName = 'a';
-    for (final JType param : method.getParameterTypes()) {
+    for (final JType param : rawParams) {
       // out.print(param.getErasedType().getJNISignature());
       if (params.length() > 0) {
         params.append(',');
@@ -426,6 +441,7 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
         MethodData data = new MethodData(accessorName(method), method.getName());
         if (hasCallbacks) {
           data.type = BuiltInType.find(method);
+          data.useJsniWildcard = true;
         }
         final WebComponentMethod metaData =
           method.getAnnotation(WebComponentMethod.class);

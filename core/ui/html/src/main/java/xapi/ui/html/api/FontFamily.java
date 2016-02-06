@@ -8,35 +8,35 @@ public interface FontFamily {
     String googleFont();
   }
 
-  public static class Cursive implements FontFamily{
+  class Cursive implements FontFamily{
     @Override
     public String name() {
       return "Fondamento, cursive";
     }
   }
 
-  public static class Monospace implements FontFamily{
+  class Monospace implements FontFamily{
     @Override
     public String name() {
       return "monospace, courier new, courier";
     }
   }
 
-  public static class Serif implements FontFamily{
+  class Serif implements FontFamily{
     @Override
     public String name() {
-      return "Junge, times, times new roman";
+      return "Raleway, Junge, times, times new roman";
     }
   }
 
-  public static class SansSerif implements FontFamily{
+  class SansSerif implements FontFamily{
     @Override
     public String name() {
-      return "arial, helvetica";
+      return "Work Sans, arial, helvetica";
     }
   }
 
-  public static class Impact implements FontFamily{
+  class Impact implements FontFamily{
     @Override
     public String name() {
       return "Junge, times, bookman, arial black";

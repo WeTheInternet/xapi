@@ -7,23 +7,23 @@ public class HtmlBuffer {
   private String doctype;
   private HeadBuffer head;
   private DomBuffer body;
-  
+
   public static class HeadBuffer {
-    
+
     private XmlBuffer title;
     private final DomBuffer buffer = new DomBuffer("head");
-    
+
     public HeadBuffer addCss(String css) {
       makeTag("style")
         .setType("text/css")
         .append(css);
       return this;
     }
-    
+
     public DomBuffer makeTag(String name) {
       return buffer.makeTag(name);
     }
-    
+
     public HeadBuffer addScript(String src) {
       script(src);
       buffer.println();
@@ -44,7 +44,7 @@ public class HtmlBuffer {
       buffer.println();
       return this;
     }
-    
+
     public HeadBuffer addStylesheet(String cssUrl) {
       makeTag("link")
         .setRel("stylesheet")
@@ -56,7 +56,7 @@ public class HtmlBuffer {
       buffer.println();
       return this;
     }
-    
+
     public HeadBuffer addMeta(String ... tagPairs) {
       XmlBuffer meta = makeTag("meta").setNewLine(false).allowAbbreviation(false);
       buffer.println();
@@ -72,7 +72,7 @@ public class HtmlBuffer {
       addMeta("charset", charset);
       return this;
     }
-    
+
     public HeadBuffer setTitle(String title) {
       if (this.title == null) {
         this.title = makeTag("title").setNewLine(false);
@@ -83,7 +83,7 @@ public class HtmlBuffer {
       this.title.append(title);
       return this;
     }
-    
+
     @Override
     public String toString() {
       return buffer.toString();
@@ -102,21 +102,30 @@ public class HtmlBuffer {
       ;
       return this;
     }
+    public HeadBuffer addLink(String rel, String href, String type) {
+      buffer.makeTag("link")
+        .setRel(rel)
+        .setHref(href)
+        .setType(type)
+        .allowAbbreviation(true)
+      ;
+      return this;
+    }
   }
 
   public HtmlBuffer() {
     root = new XmlBuffer("html");
-    doctype = "<!doctype html>\n"; 
+    doctype = "<!doctype html>\n";
   }
-  
+
   public final DomBuffer getBody() {
     return body == null ? (setBody(createBody())) : body;
   }
-  
+
   public final HeadBuffer getHead() {
     return head == null ? (setHead(createHead())) : head;
   }
-  
+
   protected DomBuffer createBody() {
     return new DomBuffer("body");
   }
@@ -124,7 +133,7 @@ public class HtmlBuffer {
   protected HeadBuffer createHead() {
     return new HeadBuffer();
   }
-  
+
   private DomBuffer setBody(DomBuffer body) {
     this.body = body;
     root.addToEnd(body);
@@ -136,7 +145,7 @@ public class HtmlBuffer {
     root.addToBeginning(head.buffer);
     return head;
   }
-  
+
   public String toString() {
     return doctype + root;
   }

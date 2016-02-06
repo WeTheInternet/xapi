@@ -5,6 +5,7 @@ import elemental.dom.DocumentFragment;
 import elemental.dom.Element;
 import elemental.html.DivElement;
 import elemental.html.Location;
+import xapi.collect.X_Collect;
 import xapi.elemental.api.ElementIterable;
 import xapi.elemental.api.ElementalService;
 import xapi.elemental.api.PotentialNode;
@@ -219,6 +220,21 @@ public class X_Elemental {
       parent.appendChild(newNode);
     } else {
       parent.insertBefore(newNode, next);
+    }
+  }
+
+  public static void insertAfter(Iterable<Element> newNodes, Element afterNode) {
+    final Element parent = afterNode.getParentElement();
+    assert parent != null : "You cannot perform insertAfter() with a detached element to wrap";
+    final Element next = afterNode.getNextElementSibling();
+    if (next == null) {
+      newNodes.forEach(parent::appendChild);
+    } else {
+      Element[] pointer = new Element[]{next};
+      X_Collect.reverse(newNodes, e->{
+        parent.insertBefore(e, pointer[0]);
+        pointer[0] = e;
+      });
     }
   }
 }

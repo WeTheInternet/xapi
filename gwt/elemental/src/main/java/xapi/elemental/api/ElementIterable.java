@@ -62,6 +62,10 @@ public class ElementIterable implements Iterable<Element> {
     return new ElementIterable(children);
   }
 
+  public static Iterable<Element> forEach(Node node) {
+    return new ElementIterable(node.getChildNodes());
+  }
+
   public static Iterable<Element> forEach(NodeList children) {
     return new ElementIterable(children);
   }
