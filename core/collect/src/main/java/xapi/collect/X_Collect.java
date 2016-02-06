@@ -1,6 +1,6 @@
 package xapi.collect;
 
-
+import xapi.annotation.gc.NotReusable;
 import xapi.collect.api.ClassTo;
 import xapi.collect.api.CollectionOptions;
 import xapi.collect.api.Dictionary;
@@ -13,6 +13,8 @@ import xapi.collect.api.StringTo;
 import xapi.collect.impl.ArrayIterable;
 import xapi.collect.impl.HashComparator;
 import xapi.collect.impl.IntToManyList;
+import xapi.collect.impl.ReverseIterable;
+import xapi.collect.impl.ReverseIterator;
 import xapi.collect.impl.SingletonIterator;
 import xapi.collect.impl.StringToDeepMap;
 import xapi.collect.impl.StringToManyList;
@@ -27,6 +29,8 @@ import static xapi.collect.api.CollectionOptions.asMutableSet;
 import static xapi.inject.X_Inject.singleton;
 
 import java.util.Comparator;
+import java.util.Iterator;
+import java.util.function.Consumer;
 
 public class X_Collect {
 
@@ -161,6 +165,7 @@ public class X_Collect {
   public static final CollectionOptions IMMUTABLE_LIST = asImmutableList().build();
 
   public static final CollectionOptions IMMUTABLE_SET = asImmutableSet().build();
+
   public static final CollectionOptions MUTABLE = asMutable(true).build();
 
   public static final CollectionOptions MUTABLE_INSERTION_ORDERED = asMutable(true).insertionOrdered(true).build();
@@ -171,4 +176,38 @@ public class X_Collect {
 
   private X_Collect() {}
 
+//  public static <V> Iterable<V> iterable(Iterator<V> itr) {
+//    return NonReusableIterable.of(itr);
+//  }
+
+  public static <V> void reverse(Iterable<V> items, Consumer<V> callback) {
+    if (items instanceof ReverseIterable && !(items instanceof NotReusable)) {
+      final Iterable<V> iterable = ((ReverseIterable<V>) items).getIterable();
+      if (iterable != null && !(iterable instanceof NotReusable)) {
+        // we have a source iterable; let's recreate a new iterable.
+        // NotReusable is to be used in the case of iterables which only wrap a single iterator; ie:
+        // Iterable i = ()->iterator;
+        // Instead, use X_Collect.iterable(iterator) to get a NotReusableIterable
+        iterable.forEach(callback);
+        return;
+      }
+    }
+    // no luck on the iterable, try the iterator
+    reverse(items.iterator(), callback);
+  }
+
+  public static <V> void reverse(Iterator<V> items, Consumer<V> callback) {
+    if (items instanceof ReverseIterator && !(items instanceof NotReusable)) {
+      final Iterable<V> iterable = ((ReverseIterator<V>) items).getIterable();
+      if (iterable != null && !(iterable instanceof NotReusable)) {
+        // we have a source iterable; let's recreate a new iterable.
+        // NotReusable is to be used in the case of iterables which only wrap a single iterator; ie:
+        // Iterable i = ()->iterator;
+        // Instead, use X_Collect.iterable(iterator) to get a NotReusableIterable
+        iterable.forEach(callback);
+        return;
+      }
+    }
+    new ReverseIterable<>(items).forEach(callback);
+  }
 }
