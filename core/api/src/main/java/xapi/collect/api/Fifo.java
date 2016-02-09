@@ -1,8 +1,11 @@
 package xapi.collect.api;
 
-import java.util.Iterator;
-
 import xapi.collect.impl.SimpleFifo;
+import xapi.fu.In1;
+import xapi.fu.In1Out1;
+import xapi.fu.Out2;
+
+import java.util.Iterator;
 
 
 /**
@@ -36,7 +39,7 @@ import xapi.collect.impl.SimpleFifo;
  * @param <E>
  */
 public interface Fifo <E> {
-  
+
   /**
    * Analagous to add(), however, we do not use the standard naming convention,
    * to avoid interface clashes with adapter types in collection libraries
@@ -50,10 +53,10 @@ public interface Fifo <E> {
   /**
    * Analagous to addAll(), however, we avoid the standard naming convention,
    * so we can provide a fluent, strongly typed api.
-   * 
+   *
    * Also, since the javascript object, JsFifo, is an array itself,
    * the "cost" of the varargs is diminished because we can just 'cat them together.
-   * 
+   *
    * @param elements - Varags or array adapters for bulk add.
    * @return - this
    */
@@ -63,7 +66,7 @@ public interface Fifo <E> {
   /**
    * Analagous to addAll(), however, we avoid the standard naming convention,
    * so we can provide a fluent, strongly typed api.
-   * 
+   *
    * @param elements - Any collection or custom iterable adapters (like blocking / async).
    * @return - this
    */
@@ -85,6 +88,13 @@ public interface Fifo <E> {
    * @return true if head == tail (there are no elements)
    */
   boolean isEmpty();
+
+  /**
+   * Convenience method for !isEmpty()
+   */
+  default boolean isNotEmpty() {
+    return !isEmpty();
+  }
   /**
    * Check if this queue contains the given item.  O(n) performance.
    *
@@ -127,6 +137,20 @@ public interface Fifo <E> {
    *
    */
   Iterable<E> forEach();
+
+  default Fifo<E> out(In1<E> consumer) {
+    forEach().forEach(consumer::in);
+    return this;
+  }
+
+  default <To> void transform(In1Out1<E, To> transform, In1<To> into) {
+    out(transform.adapt(into));
+  }
+
+  default Out2<Boolean, E> supplier() {
+    final Iterator<E> itr = iterator();
+    return Out2.out2(itr::hasNext, itr::next);
+  }
 
   String join(String delim);
 }

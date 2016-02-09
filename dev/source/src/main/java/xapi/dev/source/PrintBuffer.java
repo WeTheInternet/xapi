@@ -220,6 +220,14 @@ public class PrintBuffer extends CharBuffer{
     return this;
   }
 
+  public PrintBuffer printlns(String str) {
+    for (String line : str.split("\\r|(?:\\r?\\n)")) {
+      println(line.trim());
+    }
+    return this;
+  }
+
+
   public PrintBuffer println(final CharSequence s) {
     printIndent();
     onAppend();

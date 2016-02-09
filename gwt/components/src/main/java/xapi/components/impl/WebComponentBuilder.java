@@ -1,9 +1,21 @@
 package xapi.components.impl;
 
+import elemental.client.Browser;
+import elemental.dom.Element;
+import elemental.html.DivElement;
+import xapi.components.api.OnWebComponentAttributeChanged;
+import xapi.fu.In1;
+import xapi.util.X_String;
+
 import static xapi.components.impl.JsFunctionSupport.wrapConsumerOfThis;
 import static xapi.components.impl.JsFunctionSupport.wrapRunnable;
 import static xapi.components.impl.JsFunctionSupport.wrapWebComponentChangeHandler;
 import static xapi.components.impl.JsSupport.copy;
+
+import com.google.gwt.core.client.JavaScriptObject;
+import com.google.gwt.core.client.UnsafeNativeLong;
+import com.google.gwt.core.client.js.JsProperty;
+import com.google.gwt.core.client.js.JsType;
 
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
@@ -11,18 +23,6 @@ import java.util.function.IntSupplier;
 import java.util.function.LongConsumer;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
-
-import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.core.client.UnsafeNativeLong;
-import com.google.gwt.core.client.js.JsProperty;
-import com.google.gwt.core.client.js.JsType;
-
-import elemental.client.Browser;
-import elemental.dom.Element;
-
-import elemental.html.DivElement;
-import xapi.components.api.OnWebComponentAttributeChanged;
-import xapi.util.X_String;
 
 public class WebComponentBuilder {
 
@@ -117,7 +117,11 @@ public class WebComponentBuilder {
   }
 
   private static final DivElement templateHost = Browser.getDocument().createDivElement();
+
   public WebComponentBuilder addShadowRoot(String html) {
+    return addShadowRoot(html, In1.noop());
+  }
+  public WebComponentBuilder addShadowRoot(String html, In1<Element> initRoot) {
     if (html.contains("<template")) {
       templateHost.setInnerHTML(html);
       Element template = templateHost.getFirstElementChild();
@@ -127,24 +131,31 @@ public class WebComponentBuilder {
         template.setId(id);
       }
       templateHost.setInnerHTML("");
-//      Browser.getDocument().appendChild(template);
-      return createdCallback(element->setShadowRootTemplate(element, template));
+      return createdCallback(element->{
+        final Element root = setShadowRootTemplate(element, template);
+        initRoot.in(root);
+      });
     } else {
-      return createdCallback(element->setShadowRoot(element, html));
+      return createdCallback(element-> {
+        final Element root = setShadowRoot(element, html);
+        initRoot.in(root);
+      });
     }
   }
 
-  private native void setShadowRootTemplate(Element element, Element template)
+  private native Element setShadowRootTemplate(Element element, Element template)
   /*-{
     var root = element.createShadowRoot();
     var clone = document.importNode(template.content, true);
     root.appendChild(clone);
+    return root;
   }-*/;
 
-  private native void setShadowRoot(Element element, String html)
+  private native Element setShadowRoot(Element element, String html)
   /*-{
     var root = element.createShadowRoot();
     root.innerHTML = html;
+    return root;
   }-*/;
 
   public <E extends Element> WebComponentBuilder createdCallback(

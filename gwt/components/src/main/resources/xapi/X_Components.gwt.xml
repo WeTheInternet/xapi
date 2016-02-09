@@ -2,14 +2,16 @@
 <!DOCTYPE module PUBLIC "-//Google Inc.//DTD Google Web Toolkit 2.7.0//EN" "http://gwtproject.org/doctype/2.7.0/gwt-module.dtd">
 <module>
   <inherits name="com.google.gwt.core.Core" />
+  <inherits name="com.google.gwt.resources.Resources" />
   <inherits name="elemental.Elemental" />
   <!-- You will want to include xapi.X_Elemental if you want to use @Css rule
   injection. Note that this presently requires a modified GWT SDK, so this
   feature is not included by default. -->
   <inherits name="xapi.X_Html" />
   <inherits name="xapi.X_Inject" />
+  <inherits name="xapi.X_Fu" />
   <source path="components" />
-  
+
   <generate-with class="xapi.dev.components.WebComponentFactoryGenerator">
     <when-type-assignable class="xapi.components.api.IsWebComponent"/>
   </generate-with>

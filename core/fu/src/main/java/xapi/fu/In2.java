@@ -1,6 +1,8 @@
 package xapi.fu;
 
+import java.util.Map.Entry;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
@@ -67,6 +69,14 @@ public interface In2<I1, I2> extends HasInput, Rethrowable {
    */
   static <I1, I2> In2<I1, I2> in1Unsafe(In2Unsafe<I1, I2> of) {
     return of;
+  }
+
+  default <W> In1 <W> adapt(In1Out1<W, I1> getter1, In1Out1<W, I2> getter2) {
+    return w->in(getter1.io(w), getter2.io(w));
+  }
+
+  default Consumer<Entry<I1, I2>> mapAdapter() {
+    return e->in(e.getKey(), e.getValue());
   }
 
   interface In2Unsafe <I1, I2> extends In2<I1, I2> {

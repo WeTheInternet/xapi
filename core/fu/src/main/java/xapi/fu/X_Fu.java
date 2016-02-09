@@ -1,5 +1,8 @@
 package xapi.fu;
 
+import java.util.Map.Entry;
+import java.util.function.Consumer;
+
 /**
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 07/11/15.
@@ -18,6 +21,7 @@ public interface X_Fu {
   static <T> T[] pushCopy(T[] ts, T t) {
     return Fu.jutsu.pushCopy(ts, t);
   }
+
 }
 
 /**

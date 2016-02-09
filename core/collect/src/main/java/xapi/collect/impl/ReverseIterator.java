@@ -10,15 +10,11 @@ import java.util.Iterator;
  */
 public class ReverseIterator <T> implements Iterator<T> {
 
-  private static final ProvidesValue END/* http://goo.gl/W2Slg6 */ = new ProvidesValue() {
-    @Override
-    public Object get() {
-      assert false : "You should never attempt to get a value from the end provider";
-      return null;
-    }
+  private static final ProvidesValue END/* http://goo.gl/W2Slg6 */ = () -> {
+    assert false : "You should never attempt to get a value from the end provider";
+    return null;
   };
 
-  private T next;
   private ProvidesValue<T> supplier;
   private Iterable<T> iterable;
   private final Iterator<T> original;
@@ -39,12 +35,9 @@ public class ReverseIterator <T> implements Iterator<T> {
         "or you are using very large collections recklessly.";
     if (forward.hasNext()) {
       final T value = forward.next();
-      final ProvidesValue<T> here = new ProvidesValue<T>() {
-        @Override
-        public T get() {
-          supplier = before;
-          return value;
-        }
+      final ProvidesValue<T> here = () ->{
+        supplier = before;
+        return value;
       };
       return consume(here, forward, count+1); // will return the deepest node
     } else {

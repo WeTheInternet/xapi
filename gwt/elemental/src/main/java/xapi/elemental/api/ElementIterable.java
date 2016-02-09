@@ -18,7 +18,7 @@ public class ElementIterable implements Iterable<Element> {
 
     @Override
     public boolean hasNext() {
-      if (was != null && nodes.at(pos) != was) {
+      if (was != null && nodes.at(pos-1) != was) {
         // In case somebody is removing node while we are iterating,
         // we will rewind
         pos --;

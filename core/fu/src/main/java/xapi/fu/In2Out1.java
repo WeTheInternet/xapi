@@ -41,6 +41,22 @@ public interface In2Out1<I1, I2, O> extends Rethrowable {
     return of;
   }
 
+  default In1Out1<I2, O> supply1(I1 in1) {
+    return in2->io(in1, in2);
+  }
+
+  default In1Out1<I1, O> supply2(I2 in2) {
+    return in1->io(in1, in2);
+  }
+
+  static <I1, I2, O> In1Out1<I2,O> with1(In2Out1<I1, I2, O> io, I1 in1) {
+    return in2 -> io.io(in1, in2);
+  }
+
+  static <I1, I2, O> In1Out1<I1,O> with2(In2Out1<I1, I2, O> io, I2 in2) {
+    return in1 -> io.io(in1, in2);
+  }
+
   interface In2Out1Unsafe <I1, I2, O> extends In2Out1<I1, I2, O> {
     O ioUnsafe(I1 i1, I2 i2) throws Throwable;
 

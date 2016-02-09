@@ -1,12 +1,13 @@
 package xapi.collect.api;
 
 import xapi.collect.proxy.CollectionProxy;
+import xapi.fu.In1;
+import xapi.fu.In1Out1;
 
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-
 
 public interface IntTo <T>
 extends CollectionProxy<Integer,T>
@@ -109,5 +110,24 @@ extends CollectionProxy<Integer,T>
    */
   Deque<T> asDeque();
 
+  default boolean forMatches(In1Out1<T, Boolean> matcher, In1<T> callback) {
+    boolean matched = false;
+    for (T t : forEach()) {
+      if (matcher.io(t)) {
+        callback.in(t);
+      }
+    }
+    return matched;
+  }
+
+  default boolean firstMatch(In1Out1<T, Boolean> matcher, In1<T> callback) {
+    for (T t : forEach()) {
+      if (matcher.io(t)) {
+        callback.in(t);
+        return true;
+      }
+    }
+    return false;
+  }
 
 }

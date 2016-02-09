@@ -4,38 +4,39 @@
   <inherits name="xapi.X_Inject" />
   <inherits name="xapi.X_Html" />
   <inherits name="xapi.X_Ui" />
+  <inherits name="xapi.X_Fu" />
   <source path="elemental" />
   <source path="elemental/api" />
   <source path="elemental/service" />
   <source path="elemental/impl" />
 
-  <extend-configuration-property name="gwt.magic.methods" 
+  <extend-configuration-property name="gwt.magic.methods"
     value="xapi.elemental.X_Elemental.injectCss(Ljava/lang/Class;)V *= xapi.dev.ui.html.CssInjector"/>
 
-  <extend-configuration-property name="gwt.magic.methods" 
+  <extend-configuration-property name="gwt.magic.methods"
     value="xapi.elemental.X_Elemental.toElement(Ljava/lang/Class;Ljava/lang/Object;)Lelemental/dom/Element; *= xapi.dev.elemental.ElementalInjector"/>
 
-  <extend-configuration-property name="gwt.magic.methods" 
+  <extend-configuration-property name="gwt.magic.methods"
     value="xapi.elemental.X_Elemental.toElementBuilder(Ljava/lang/Class;)Lxapi/util/api/ConvertsValue; *= xapi.dev.elemental.ElementalInjector"/>
-  
-  <extend-configuration-property name="gwt.magic.methods" 
+
+  <extend-configuration-property name="gwt.magic.methods"
     value="xapi.elemental.api.ElementalService.toElement(Ljava/lang/Class;Ljava/lang/Object;)Lelemental/dom/Element; *= xapi.dev.elemental.ElementalInjector"/>
 
-  <extend-configuration-property name="gwt.magic.methods" 
+  <extend-configuration-property name="gwt.magic.methods"
     value="xapi.elemental.api.ElementalService.toElementBuilder(Ljava/lang/Class;)Lxapi/util/api/ConvertsValue; *= xapi.dev.elemental.ElementalInjector"/>
 
-  
-  <extend-configuration-property name="gwt.magic.methods" 
+
+  <extend-configuration-property name="gwt.magic.methods"
     value="xapi.elemental.X_Elemental.toElement(Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/Object;)Lelemental/dom/Element; *= xapi.dev.elemental.ElementalInjector"/>
 
-  <extend-configuration-property name="gwt.magic.methods" 
+  <extend-configuration-property name="gwt.magic.methods"
     value="xapi.elemental.X_Elemental.toElementBuilder(Ljava/lang/Class;Ljava/lang/Class;)Lxapi/util/api/ConvertsValue; *= xapi.dev.elemental.ElementalInjector"/>
-  
-  <extend-configuration-property name="gwt.magic.methods" 
+
+  <extend-configuration-property name="gwt.magic.methods"
     value="xapi.elemental.api.ElementalService.toElement(Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/Object;)Lelemental/dom/Element; *= xapi.dev.elemental.ElementalInjector"/>
 
-  <extend-configuration-property name="gwt.magic.methods" 
+  <extend-configuration-property name="gwt.magic.methods"
     value="xapi.elemental.api.ElementalService.toElementBuilder(Ljava/lang/Class;Ljava/lang/Class;)Lxapi/util/api/ConvertsValue; *= xapi.dev.elemental.ElementalInjector"/>
-  
+
 
 </module>

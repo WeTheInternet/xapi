@@ -30,6 +30,18 @@ public interface In1Out1<I, O> extends Rethrowable {
     return lambda;
   }
 
+  static <I, O> In1Out1<I, O> ofDeferred(Out1<O> supplier) {
+    return ignored->supplier.out1();
+  }
+
+  static <I, O> In1Out1<I, O> ofImmediate(Out1<O> supplier) {
+    return of(supplier.out1());
+  }
+
+  static <I, O> In1Out1<I, O> of(O value) {
+    return ignored->value;
+  }
+
   static <I, O> In1Out1<I, O> of(In1<I> in, Out1<O> out) {
     return i-> {
       in.in(i);
@@ -56,6 +68,10 @@ public interface In1Out1<I, O> extends Rethrowable {
 
   default Out1<O> supplyImmediate(Out1<I> in) {
     return supply(in.out1());
+  }
+
+  default In1<I> adapt(In1<O> into) {
+    return i->into.in(io(i));
   }
 
   interface In1Out1Unsafe <I, O> extends In1Out1<I, O>, Rethrowable{

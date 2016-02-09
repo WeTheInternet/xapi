@@ -4,7 +4,6 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.ObjectTo;
 import xapi.collect.proxy.MapOf;
-import xapi.util.api.ConvertsValue;
 
 public class ObjectToManyList<K, V> extends MapOf<K, IntTo<V>> implements ObjectTo.Many<K, V>{
 
@@ -27,12 +26,12 @@ public class ObjectToManyList<K, V> extends MapOf<K, IntTo<V>> implements Object
 
   @Override
   public IntTo<V> get(Object key) {
-    return getOrCompute((K)key, new ConvertsValue<K, IntTo<V>>(){
-      @Override
-      public IntTo<V> convert(K key) {
-        return createList(componentClass);
-      }
-    });
+    IntTo<V> was = super.get(key);
+    if (was == null) {
+      was = createList(componentClass);
+      put((K) key, was);
+    }
+    return was;
   }
 
   protected IntTo<V> createList(Class<V> componentClass) {

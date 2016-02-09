@@ -10,7 +10,10 @@ extends EntryIterable<K,V>, CollectionProxy<K,V>, HasValues<K,V>
 
   V getOrCompute(K key, ConvertsValue<K,V> factory);
 
-  static interface Many <K, V> extends ObjectTo<K, IntTo<V>> {
+  interface Many <K, V> extends ObjectTo<K, IntTo<V>> {
+    default boolean add (K key, V value) {
+      return get(key).add(value);
+    }
   }
 
 // Inherited from CollectionProxy

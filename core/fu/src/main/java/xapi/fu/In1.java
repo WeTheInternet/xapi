@@ -50,7 +50,7 @@ public interface In1<I> extends HasInput, Rethrowable {
     return of;
   }
 
-  static In1<String> noop() {
+  static <I> In1<I> noop() {
     return ignored->{};
   }
 

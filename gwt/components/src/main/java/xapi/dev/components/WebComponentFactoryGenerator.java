@@ -1,8 +1,13 @@
 package xapi.dev.components;
 
+import xapi.collect.api.Fifo;
+import xapi.collect.impl.SimpleFifo;
 import xapi.components.api.JsoConsumer;
 import xapi.components.api.JsoSupplier;
 import xapi.components.api.NativelySupported;
+import xapi.components.api.ShadowDom;
+import xapi.components.api.ShadowDomStyle;
+import xapi.components.api.ShadowDomStyles;
 import xapi.components.api.WebComponent;
 import xapi.components.api.WebComponentCallback;
 import xapi.components.api.WebComponentFactory;
@@ -14,6 +19,7 @@ import xapi.components.impl.WebComponentSupport;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
+import xapi.fu.In1Out1;
 import xapi.io.X_IO;
 import xapi.ui.html.api.Css;
 import xapi.ui.html.api.El;
@@ -61,6 +67,17 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class WebComponentFactoryGenerator extends IncrementalGenerator {
+
+  private static ThreadLocal<ShadowDomStyleInjectorGenerator> shadowDomGenerator = new ThreadLocal<ShadowDomStyleInjectorGenerator>() {
+    @Override
+    protected ShadowDomStyleInjectorGenerator initialValue() {
+      return new ShadowDomStyleInjectorGenerator();
+    }
+  };
+
+  static ShadowDomStyleInjectorGenerator getStyleInjectorGenerator() {
+    return shadowDomGenerator.get();
+  }
 
   private static enum BuiltInType {
     // Uses non-standard bean-casing so we can use .name() to generate code to
@@ -129,6 +146,7 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
       throws UnableToCompleteException {
     final JClassType type = context.getTypeOracle().findType(typeName);
     final WebComponent component = type.getAnnotation(WebComponent.class);
+    final Fifo<ShadowDomStyle> styles = extractSharedStyles(type);
     if (component == null) {
       logger.log(Type.ERROR, "Type " + type.getQualifiedSourceName()
         + " missing required annotation, " + WebComponent.class.getName());
@@ -213,38 +231,30 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
       }
     }
 
-    String shadowDom = component.shadowDom();
-    String[] templates = component.shadowDomTemplates();
-    if (shadowDom.length() > 0) {
-      // The user has specified some shadow dom html directly
-      // TODO check templates and mix them based on presence of "<shadow"
-      out.println("builder.addShadowRoot(\""+ Generator.escape(shadowDom)+"\");");
-    } else {
-      if (templates.length == 0) {
-        // No shadow DOM.  Just return the new instance
-      } else {
-        // There are shadow dom resource to inject...
-        for (String template : templates) {
-          if (!template.startsWith("/")) {
-            // Relative resource
-            template = "/"+type.getPackage().getName().replace('.', '/')+"/"+template;
-          }
-          try (
-          InputStream resource = context.getResourcesOracle().getResourceAsStream(template.substring(1));
-              ) {
-              if (resource == null) {
-                logger.log(Type.ERROR, "Unable to find shadow root resource "+template);
-                throw new UnableToCompleteException();
-              }
-              String asString = X_IO.toStringUtf8(resource);
-              // TODO: pre-process this shadow root...
-              out.println("builder.addShadowRoot(\""+ Generator.escape(asString)+"\");");
-          } catch (IOException e) {
-                logger.log(Type.ERROR, "Error generating shadow root resource "+template, e);
-          }
-
+    ShadowDom[] shadowDoms = component.shadowDom();
+    if (shadowDoms.length > 0) {
+      for (ShadowDom shadowDom : shadowDoms) {
+        // Calculate if we need to do any css injection.
+        In1Out1<String, String> shadowStyle = null;
+        if (shadowDom.styles().length > 0 || styles.isNotEmpty()) {
+          final Fifo<ShadowDomStyle> localStyles = new SimpleFifo<>();
+          localStyles.giveAll(shadowDom.styles());
+          shadowStyle = getStyleInjectorGenerator().generateShadowStyles(logger, styles, localStyles, context);
         }
-
+        for (String template : shadowDom.value()) {
+          template = resolveTemplate(logger, template, context, type);
+          out.print("builder.addShadowRoot(\""+ Generator.escape(template)+"\"");
+          if (shadowStyle != null) {
+            out
+                .print(", shadow -> {")
+                .indent()
+                .printlns(shadowStyle.io("shadow"))
+                .outdent()
+                .print("}")
+            ;
+          }
+          out.println(");"); // just close out the shadowroot call
+        }
       }
     }
 
@@ -277,6 +287,49 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
     context.commit(logger, pw);
 
     return new RebindResult(RebindMode.USE_ALL_NEW, qualifiedName);
+  }
+
+  private Fifo<ShadowDomStyle> extractSharedStyles(JClassType type) {
+    final Fifo<ShadowDomStyle> list = new SimpleFifo<>();
+
+    final ShadowDomStyles styles = type.getAnnotation(ShadowDomStyles.class);
+    if (styles != null) {
+      list.giveAll(styles.value());
+    }
+    final ShadowDomStyle style = type.getAnnotation(ShadowDomStyle.class);
+    if (style != null) {
+      list.giveAll(style);
+    }
+    return list;
+  }
+
+  private String resolveTemplate(TreeLogger logger, String template, GeneratorContext context, JClassType type) throws UnableToCompleteException {
+    if (template.trim().startsWith("<")) {
+      // raw html
+      return template;
+    }
+    // resource to load
+
+    // There are shadow dom resource to inject...
+      if (!template.startsWith("/")) {
+        // Relative resource
+        template = "/"+type.getPackage().getName().replace('.', '/')+"/"+template;
+      }
+      try (
+          InputStream resource = context.getResourcesOracle().getResourceAsStream(template.substring(1));
+      ) {
+        if (resource == null) {
+          logger.log(Type.ERROR, "Unable to find shadow root bundle "+template);
+          throw new UnableToCompleteException();
+        }
+        String asString = X_IO.toStringUtf8(resource);
+        // TODO: pre-process this shadow root...
+        return asString;
+
+      } catch (IOException e) {
+        logger.log(Type.ERROR, "Error generating shadow root bundle "+template, e);
+        throw new UnableToCompleteException();
+      }
   }
 
   @Override

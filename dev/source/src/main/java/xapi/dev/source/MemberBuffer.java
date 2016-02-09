@@ -384,6 +384,12 @@ public abstract class MemberBuffer<Self extends MemberBuffer<Self>> extends
   }
 
   @Override
+  public final Self printlns(final String str) {
+    super.printlns(str);
+    return self();
+  }
+
+  @Override
   public Self print(final String str) {
     super.print(str);
     return self();

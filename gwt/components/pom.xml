@@ -13,7 +13,7 @@
 	<description>
     A web component API for manually building web components via WebComponentBuilder, or generating them from interfaces via WebComponentFactory
   </description>
-  
+
   <properties>
    <java.version>1.8</java.version>
   </properties>
@@ -21,7 +21,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>net.wetheinter</groupId>
-			<artifactId>xapi-core-ui-html</artifactId>
+			<artifactId>xapi-gwt-ui-html</artifactId>
 		</dependency>
 
         <dependency>
