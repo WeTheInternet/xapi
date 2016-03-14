@@ -193,18 +193,34 @@ public class AnnotationMirrorProcessor extends AbstractProcessor {
     final Fifo<String> requiredFields = new SimpleFifo<String>();
     final Fifo<String> ctorParams = new SimpleFifo<String>();
     final Types types = processingEnv.getTypeUtils();
+
+    final MethodBuffer addValue = annoBuilder.createMethod("public " + builderName + " addValue(String key, Object value)")
+        .println("switch(key){").indent();
+
     for (final ExecutableElement method : ElementFilter.methodsIn(element
         .getEnclosedElements())) {
-      final String fieldName = method.getSimpleName().toString();
-      final AnnotationValue dflt = method.getDefaultValue();
       final TypeMirror returnMirror = method.getReturnType();
+      final String fieldName = method.getSimpleName().toString();
+      final String fieldType = annoBuilder.addImport(returnMirror.toString());
+      final AnnotationValue dflt = method.getDefaultValue();
       manifest.addMethod(method.getSimpleName(), returnMirror, dflt);
       final FieldBuffer annoField = annoBuilder
           .createField(returnMirror.toString(),
               method.getSimpleName().toString(),
               Modifier.PRIVATE);
-      annoField.addGetter(Modifier.PUBLIC | Modifier.FINAL);
-      annoField.addSetter(Modifier.PUBLIC | Modifier.FINAL);
+      int mod = Modifier.PUBLIC | Modifier.FINAL;
+      annoField.addGetter(mod);
+      final MethodBuffer setter = annoField.addSetter(mod);
+
+      if (fieldType.contains("[]")) {
+        setter.setParameters(fieldType.replace("[]", " ...") + " "+annoField.getName());
+      }
+
+      addValue
+          .println("case \"" + annoField.getName()+"\":")
+          .indentln(setter.getName() +"((" + returnMirror.toString()+ ")value);")
+          .indentln("break;")
+      ;
 
       final FieldBuffer field = immutableAnno
           .createField(returnMirror.toString(),
@@ -282,6 +298,16 @@ public class AnnotationMirrorProcessor extends AbstractProcessor {
       }
       // field.setInitializer(dflt.toString());
     }
+
+    addValue.println("default:")
+        .indent()
+        .println("assert false : \"Unhandled type \" + key + \" for type \" + getClass();")
+        .throwException(IllegalArgumentException.class, "\"Invalid key: \"+key")
+        .outdent()
+        .println("}")
+        .returnValue("this")
+    ;
+
     if (requiredFields.size() == 0) {
       // With no required fields,
       // We can create a zero-arg constructor and static accessor method

@@ -1,61 +1,61 @@
 package xapi.javac.dev.model;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.lang.model.element.Name;
-import javax.lang.model.util.Elements;
-import javax.lang.model.util.Types;
-
-import xapi.javac.dev.util.SearchFor;
-
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.MethodInvocationTree;
-import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.Tree.Kind;
 import com.sun.tools.javac.code.Type;
+import xapi.javac.dev.api.JavacService;
+
+import javax.lang.model.element.Name;
+import javax.lang.model.type.TypeMirror;
+import java.util.ArrayList;
+import java.util.List;
 
 public class GwtCreateInvocationSite implements HasClassLiteralReference {
 
-  private Type type;
+  private TypeMirror type;
   private ExpressionTree source;
   private final List<? extends ExpressionTree> args;
   private final ExpressionTree invoke;
+  private final JavacService service;
 
-  public GwtCreateInvocationSite(ExpressionTree arg, List<? extends ExpressionTree> args) {
+  public GwtCreateInvocationSite(JavacService service, ExpressionTree arg, List<? extends ExpressionTree> args) {
     this.args = args;
     this.invoke = arg;
+    this.service = service;
     setSource(arg);
   }
 
-  public Type getType() {
+  public TypeMirror getType() {
     return type;
   }
-  
+
   @Override
   public Kind getNodeKind() {
     return source == null
         ? Kind.MEMBER_REFERENCE // class literal
         : source.getKind(); // anything else
   }
-  
+
   @Override
   public Name getNodeName() {
-    return type != null
-        ? type.tsym.flatName()
+
+    return type instanceof Type
+        ? ((Type)type).tsym.flatName()
         : nameOf(source);
   }
-  
+
   @Override
   public ExpressionTree getSource() {
     return source;
   }
-  
+
   @Override
   public void setSource(ExpressionTree init) {
     source = init;
-    type = SearchFor.classLiteral(init);
+    type = service.findType(init);
+    assert type != null : "Null type found for " + init.getClass()+" of " + init;
   }
 
   private Name nameOf(ExpressionTree source) {
@@ -86,5 +86,5 @@ public class GwtCreateInvocationSite implements HasClassLiteralReference {
   public ExpressionTree getInvocation() {
     return invoke;
   }
-  
+
 }

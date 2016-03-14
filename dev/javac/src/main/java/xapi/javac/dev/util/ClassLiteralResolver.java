@@ -1,14 +1,5 @@
 package xapi.javac.dev.util;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import xapi.javac.dev.model.HasClassLiteralReference;
-import xapi.javac.dev.plugin.ClassWorldPlugin;
-import xapi.log.X_Log;
-
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodTree;
@@ -20,25 +11,30 @@ import com.sun.source.util.TreeScanner;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.tree.JCTree.JCIdent;
 import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
+import xapi.javac.dev.model.HasClassLiteralReference;
+import xapi.javac.dev.plugin.XapiCompilerPlugin;
+import xapi.log.X_Log;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class ClassLiteralResolver extends TreeScanner<Void, Void>{
 
   private final List<HasClassLiteralReference> variables;
   private final List<HasClassLiteralReference> invocations;
-  private final ClassWorldPlugin classWorld;
+  private final XapiCompilerPlugin classWorld;
   private String currentUnit;
   int depth = 0;
-  
-  public ClassLiteralResolver(List<? extends HasClassLiteralReference> items, ClassWorldPlugin classWorld) {
+
+  public ClassLiteralResolver(List<? extends HasClassLiteralReference> items, XapiCompilerPlugin classWorld) {
     this.classWorld = classWorld;
     variables = new ArrayList<>();
     invocations = new ArrayList<>();
-    items
-      .forEach(r -> {
-        add(r);
-      });
+    items.forEach(this::add);
   }
-  
+
   private void add(HasClassLiteralReference r) {
     if (!r.isResolved()) {
       Kind kind = r.getNodeKind();
@@ -63,8 +59,8 @@ public class ClassLiteralResolver extends TreeScanner<Void, Void>{
     super.visitCompilationUnit(node, p);
     final Set<String> pending = new HashSet<>();
     boolean[] done = new boolean[]{true};
-    variables.removeIf(r -> r.isResolved());
-    invocations.removeIf(r -> r.isResolved());
+    variables.removeIf(HasClassLiteralReference::isResolved);
+    invocations.removeIf(HasClassLiteralReference::isResolved);
     List<HasClassLiteralReference> all = new ArrayList<>();
     all.addAll(variables);
     all.addAll(invocations);
@@ -104,7 +100,7 @@ public class ClassLiteralResolver extends TreeScanner<Void, Void>{
     }
     return null;
   }
-  
+
   @Override
   public Void visitMethod(MethodTree node, Void p) {
     if (!invocations.isEmpty()) {
@@ -135,7 +131,7 @@ public class ClassLiteralResolver extends TreeScanner<Void, Void>{
     }
     return super.visitMethod(node, p);
   }
-  
+
   @Override
   public Void visitVariable(VariableTree node, Void p) {
     if (!variables.isEmpty()) {
