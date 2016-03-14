@@ -30,4 +30,6 @@ public @interface ShadowDom {
    * In this case, an annotation like @DoNotErase might be handy.
    */
   ShadowDomStyle[] styles() default {};
+
+  Class<? extends ShadowDomPlugin>[] plugins() default {};
 }

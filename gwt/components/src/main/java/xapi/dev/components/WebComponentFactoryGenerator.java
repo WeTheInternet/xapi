@@ -1,11 +1,14 @@
 package xapi.dev.components;
 
+import xapi.annotation.inject.SingletonDefault;
+import xapi.annotation.inject.SingletonOverride;
 import xapi.collect.api.Fifo;
 import xapi.collect.impl.SimpleFifo;
 import xapi.components.api.JsoConsumer;
 import xapi.components.api.JsoSupplier;
 import xapi.components.api.NativelySupported;
 import xapi.components.api.ShadowDom;
+import xapi.components.api.ShadowDomPlugin;
 import xapi.components.api.ShadowDomStyle;
 import xapi.components.api.ShadowDomStyles;
 import xapi.components.api.WebComponent;
@@ -20,6 +23,7 @@ import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.fu.In1Out1;
+import xapi.inject.X_Inject;
 import xapi.io.X_IO;
 import xapi.ui.html.api.Css;
 import xapi.ui.html.api.El;
@@ -52,6 +56,7 @@ import com.google.gwt.dev.util.collect.Sets;
 import com.google.gwt.thirdparty.guava.common.collect.HashMultimap;
 import com.google.gwt.thirdparty.guava.common.collect.Multimap;
 
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -79,7 +84,7 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
     return shadowDomGenerator.get();
   }
 
-  private static enum BuiltInType {
+  private enum BuiltInType {
     // Uses non-standard bean-casing so we can use .name() to generate code to
     // match methods
     // in the WebComponentSupport class
@@ -172,6 +177,7 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
 
     final PrintWriter pw = context.tryCreate(logger, pkg, factoryName);
     if (pw == null) {
+      logger.log(logLevel(), "Reusing existing class " + qualifiedName);
       return new RebindResult(RebindMode.USE_EXISTING, qualifiedName);
     }
 
@@ -231,6 +237,20 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
       }
     }
 
+    final String inject = out.addImport(X_Inject.class);
+    for (Class<? extends ShadowDomPlugin> pluginClass : component.plugins()) {
+      String plugin = out.addImport(pluginClass);
+
+      out
+          .println("builder.addShadowDomPlugin(")
+          .indent()
+          .print(inject)
+          .print(isSingleton(pluginClass) ? ".instance" : ".singleton")
+          .println("(" + plugin +".class)")
+          .outdent()
+          .println(");");
+    }
+
     ShadowDom[] shadowDoms = component.shadowDom();
     if (shadowDoms.length > 0) {
       for (ShadowDom shadowDom : shadowDoms) {
@@ -241,14 +261,17 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
           localStyles.giveAll(shadowDom.styles());
           shadowStyle = getStyleInjectorGenerator().generateShadowStyles(logger, styles, localStyles, context);
         }
+
         for (String template : shadowDom.value()) {
           template = resolveTemplate(logger, template, context, type);
           out.print("builder.addShadowRoot(\""+ Generator.escape(template)+"\"");
           if (shadowStyle != null) {
             out
-                .print(", shadow -> {")
+                .println()
+                .println(", shadow -> {")
                 .indent()
                 .printlns(shadowStyle.io("shadow"))
+                .println("return shadow;")
                 .outdent()
                 .print("}")
             ;
@@ -287,6 +310,18 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
     context.commit(logger, pw);
 
     return new RebindResult(RebindMode.USE_ALL_NEW, qualifiedName);
+  }
+
+  private Type logLevel() {
+    return Type.WARN;
+  }
+
+  protected boolean isSingleton(Class<? extends ShadowDomPlugin> pluginClass) {
+    return
+        pluginClass.getAnnotation(Singleton.class) != null ||
+        pluginClass.getAnnotation(SingletonOverride.class) != null ||
+        pluginClass.getAnnotation(SingletonDefault.class) != null
+    ;
   }
 
   private Fifo<ShadowDomStyle> extractSharedStyles(JClassType type) {

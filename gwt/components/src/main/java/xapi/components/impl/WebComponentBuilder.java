@@ -3,8 +3,12 @@ package xapi.components.impl;
 import elemental.client.Browser;
 import elemental.dom.Element;
 import elemental.html.DivElement;
+import xapi.collect.X_Collect;
+import xapi.collect.api.Fifo;
 import xapi.components.api.OnWebComponentAttributeChanged;
-import xapi.fu.In1;
+import xapi.components.api.ShadowDomPlugin;
+import xapi.fu.In1Out1;
+import xapi.fu.In2Out1;
 import xapi.util.X_String;
 
 import static xapi.components.impl.JsFunctionSupport.wrapConsumerOfThis;
@@ -27,7 +31,7 @@ import java.util.function.Supplier;
 public class WebComponentBuilder {
 
   @JsType
-  static interface WebComponentPrototype {
+  interface WebComponentPrototype {
     @JsProperty
     void setAttachedCallback(JavaScriptObject callback);
 
@@ -68,8 +72,10 @@ public class WebComponentBuilder {
 
   private final WebComponentPrototype prototype;
   private String superTag;
+  private Fifo<ShadowDomPlugin> plugins;
 
   public WebComponentBuilder(JavaScriptObject prototype) {
+    plugins = X_Collect.newFifo(); // uses linked list in jvm, but array in js
     if (prototype == null) {
       prototype = htmlElementPrototype();
     }
@@ -118,10 +124,12 @@ public class WebComponentBuilder {
 
   private static final DivElement templateHost = Browser.getDocument().createDivElement();
 
-  public WebComponentBuilder addShadowRoot(String html) {
-    return addShadowRoot(html, In1.noop());
+  public void addShadowDomPlugin(ShadowDomPlugin plugin) {
+    plugins.give(plugin);
   }
-  public WebComponentBuilder addShadowRoot(String html, In1<Element> initRoot) {
+
+  public WebComponentBuilder addShadowRoot(String html, ShadowDomPlugin ... plugins) {
+    final In1Out1<Element, Element> initializer;
     if (html.contains("<template")) {
       templateHost.setInnerHTML(html);
       Element template = templateHost.getFirstElementChild();
@@ -131,16 +139,24 @@ public class WebComponentBuilder {
         template.setId(id);
       }
       templateHost.setInnerHTML("");
-      return createdCallback(element->{
-        final Element root = setShadowRootTemplate(element, template);
-        initRoot.in(root);
-      });
+      initializer = In2Out1.with2(this::setShadowRootTemplate, template);
     } else {
-      return createdCallback(element-> {
-        final Element root = setShadowRoot(element, html);
-        initRoot.in(root);
-      });
+      initializer = In2Out1.with2(this::setShadowRoot, html);
     }
+    // Optimize for (common) cases of not having any plugins...
+    if (plugins.length == 0 && this.plugins.isEmpty()) {
+      return createdCallback(initializer.ignoreOutput().toConsumer());
+    }
+    return createdCallback(element->{
+      Element root = initializer.io(element);
+      for (ShadowDomPlugin plugin : plugins) {
+        root = plugin.transform(root);
+      }
+      for (ShadowDomPlugin plugin : this.plugins.forEach()) {
+        root = plugin.transform(root);
+      }
+    });
+
   }
 
   private native Element setShadowRootTemplate(Element element, Element template)

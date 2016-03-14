@@ -26,6 +26,8 @@
     <module>bytecode</module>
     <!-- Classpath scanning -->
     <module>scanner</module>
+    <!-- Javac Plugins -->
+    <module>javac</module>
     <!-- Template generator -->
     <module>template</module>
     <!-- java.io.File helpers -->

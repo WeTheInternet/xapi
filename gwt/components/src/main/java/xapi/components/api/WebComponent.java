@@ -29,5 +29,11 @@ public @interface WebComponent {
    */
   String tagName();
 
+  /**
+   * @return any {@link ShadowDomPlugin}s that you want to have X_Inject'd, and applied to your shadow dom.
+   * Read the javadoc on {@link ShadowDomPlugin} for more information.
+   */
+  Class<? extends ShadowDomPlugin>[] plugins() default {};
+
 
 }
