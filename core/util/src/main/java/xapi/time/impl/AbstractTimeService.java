@@ -38,8 +38,8 @@ public abstract class AbstractTimeService extends ImmutableMoment implements Tim
   public Moment nowPlusOne() {
     double later;
     // locks on static var
-    synchronized (TimeService.second_to_nano) {
-      later = now+(delta += TimeService.second_to_nano);// ensured unique
+    synchronized (TimeService.nano_to_second) {
+      later = now+(delta += TimeService.nano_to_second);// ensured unique
     }
     return new ImmutableMoment(later);
   }
@@ -50,5 +50,5 @@ public abstract class AbstractTimeService extends ImmutableMoment implements Tim
     now = System.currentTimeMillis();
     delta = 0;
   }
-  
+
 }

@@ -1,5 +1,7 @@
 package xapi.fu;
 
+import static xapi.fu.Out1.immutable1;
+
 /**
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 07/11/15.
@@ -7,6 +9,79 @@ package xapi.fu;
 public interface OutMany extends Rethrowable {
 
   Out1[] out0();
+
+  default int length() {
+    return out0().length;
+  }
+
+  static OutMany outMany(Object ... args) {
+    Out1[] array = new Out1[args.length];
+    for (int i = args.length; i-->0;) {
+      Object value = args[i];
+      array[i] = immutable1(value);
+    }
+    return  ()->array;
+  }
+
+  static OutMany outManyDeferred(Out1 ... args) {
+    return  ()->args;
+  }
+
+  /**
+   * The expressions sent as arguments will not be evaluated until requested,
+   * but will remembered as executed, with frozen values being returned.
+   */
+  static OutMany outManyLazy(Out1 ... args) {
+    Out1[] values = new Out1[args.length];
+    for (int i = args.length; i-->0;) {
+      Out1 value = args[i];
+      int myI = i;
+      values[i] = () -> {
+         Object v = value.out1();
+         values[myI] = immutable1(v);
+         return v;
+      };
+    }
+    return  ()->values;
+  }
+
+  static OutMany outManyCaching(Filter acceptable, Out1 ... args) {
+    Out1[] values = new Out1[args.length];
+    for (int i = args.length; i-->0;) {
+      Out1 value = args[i];
+      int myI = i;
+      values[i] = () -> {
+         Object v = value.out1();
+         if (acceptable.filter(v)) {
+           values[myI] = immutable1(v);
+         }
+         return v;
+      };
+    }
+    return  ()->values;
+  }
+
+  static OutMany outManyIntercepted(In1Out1<Out1, Out1> intercept, Out1 ... args) {
+    Out1[] values = new Out1[args.length];
+    for (int i = args.length; i-->0;) {
+      Out1 value = args[i];
+      int myI = i;
+      values[i] = () -> {
+         Object v = intercept.io(value).out1();
+         return v;
+      };
+    }
+    return  ()->values;
+  }
+
+  static OutMany outManyImmediate(Out1 ... args) {
+    Out1[] values = new Out1[args.length];
+    for (int i = args.length; i-->0;) {
+      Out1 value = args[i];
+      values[i] = value.freeze();
+    }
+    return  ()->values;
+  }
 
   default <T> Out1<T> out(int position) {
     final Out1[] out = out0();

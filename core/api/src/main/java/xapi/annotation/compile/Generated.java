@@ -1,9 +1,5 @@
 package xapi.annotation.compile;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
-
 import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
 import static java.lang.annotation.ElementType.CONSTRUCTOR;
 import static java.lang.annotation.ElementType.FIELD;
@@ -14,6 +10,10 @@ import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+
 /**
  * This is a duplicate of {@link javax.annotation.Generated}, with the exception
  * that this class has a runtime annotation retention level, as we need to
@@ -22,7 +22,6 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * @author "James X. Nelson (james@wetheinter.net)"
  *
  */
-
 @Documented
 @Retention(RUNTIME)
 @Target({PACKAGE, TYPE, ANNOTATION_TYPE, METHOD, CONSTRUCTOR, FIELD,

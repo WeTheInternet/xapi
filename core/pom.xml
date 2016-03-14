@@ -13,9 +13,9 @@
  <url>WeTheInter.net/source/core</url>
  <description>
   This is the main aggregator for all implementation code shared between modules.
-  
-  Each module contains one or more service interfaces, 
-  exposed statically using "X_" prefixed classes.  
+
+  Each module contains one or more service interfaces,
+  exposed statically using "X_" prefixed classes.
   Core modules will define their API interfaces, their static accessor,
   and often a "plain-jre" default implementation which can be replaced by injection override.
 
@@ -24,35 +24,35 @@
  </description>
 
  <modules>
-  <!-- 
-  The fu module contains a collection of lambda-friendly interfaces 
+  <!--
+  The fu module contains a collection of lambda-friendly interfaces
   which enable useful functional apis for composing streamlined processes in java 8 environments.
   -->
   <module>fu</module>
-  <!-- The api module is the root dependency of all xapi modules, artifactId: 
-   xapi-core. It consists mostly of interfaces, annotations, and a few implementation 
-   classes; the annotations used for injection are stored here, for modules 
-   which wish to define a default injection target, but do not want or need 
-   to perform injection themselves. xapi-core exports the following injectable 
-   services: X_String, X_Property and the following static service classes, 
+  <!-- The api module is the root dependency of all xapi modules, artifactId:
+   xapi-core. It consists mostly of interfaces, annotations, and a few implementation
+   classes; the annotations used for injection are stored here, for modules
+   which wish to define a default injection target, but do not want or need
+   to perform injection themselves. xapi-core exports the following injectable
+   services: X_String, X_Property and the following static service classes,
    which may become injectable as required: X_Byte, X_Debug -->
   <module>api</module>
 
   <!-- Basic logging interfaces, and a few adapter types to aid in integrating other APIs. -->
   <module>log</module>
 
-  <!-- The reflect module is where we keep our code-mirroring interfaces. 
+  <!-- The reflect module is where we keep our code-mirroring interfaces.
    It's only dependency is xapi-api, and it includes a read-only abstraction api
    of java language semantics, to abstract away the source of said structure
    (bytecode, programmatic, ast, etc). -->
 
   <module>reflect</module>
 
-  <!-- The inject module contains the skeleton infrastructure of our dependency 
-   injection mechanism. It is functional in any jre environment, though the 
-   bare module can only perform injection if manfiests are saved to META-INF/instances 
-   and META-INF/singletons. For runtime classpath scanning, and manifest generation, 
-   see xapi-jre-inject The gwt module, xapi-gwt-inject, implements dependency 
+  <!-- The inject module contains the skeleton infrastructure of our dependency
+   injection mechanism. It is functional in any jre environment, though the
+   bare module can only perform injection if manfiests are saved to META-INF/instances
+   and META-INF/singletons. For runtime classpath scanning, and manifest generation,
+   see xapi-jre-inject The gwt module, xapi-gwt-inject, implements dependency
    injection with heavy use of codegen. -->
   <module>inject</module>
 
@@ -65,13 +65,13 @@
   <!-- Core io api -->
   <module>io</module>
 
-  <!-- Core collection abstractions. Beta -->
+  <!-- Core collection abstractions. Alpha -->
   <module>collect</module>
 
-  <!-- Core concurrency abstractions. Alpha -->
+  <!-- Core concurrency abstractions. Beta -->
   <module>process</module>
 
-  <!-- A simple argument processor, based on GWT ArgProcessor classes. -->
+  <!-- A simple argument processor, based on Gwt ArgProcessor classes. -->
   <module>args</module>
 
   <!-- Core user interface apis. -->
@@ -79,6 +79,11 @@
 
   <!-- Test module -->
   <module>test</module>
+
+  <!--
+  The complete impl of the XApiService, in the XApi class.
+  -->
+  <module>impl</module>
 
  </modules>
 

@@ -1,6 +1,5 @@
 package xapi.time.impl;
 
-import xapi.time.X_Time;
 import xapi.time.api.Moment;
 
 public class ImmutableMoment implements Moment{
@@ -15,26 +14,39 @@ public class ImmutableMoment implements Moment{
   }
   @Override
   public int compareTo(Moment o) {
-    double delta = millis-o.millis();
-    if (delta == 0)
-      return 0;
-    if (delta < 1 && delta > -1) {
-      int bits = 0;
-      double diff = Math.signum(delta);
-      delta *= diff;
-      while (delta < 1) {
-        delta *= 2;
-        bits += diff;
-      }
-      return (int)(diff * bits);
-    }
-    return (int)delta;
+    long me =
+/*js:
+function DoubleToIEEE(f)
+{
+  var buf = new ArrayBuffer(8);
+  (new Float64Array(buf))[0] = f;
+  // We will also process these bits as ints to avoid long emulation.
+  // Thus, we do not bother with a doubleToLongBits method, as long emulation sucks
+  return [ (new Uint32Array(buf))[0] ,(new Uint32Array(buf))[1] ];
+}(java: millis() :java)
+:js*/
+/*java: Double.doubleToRawLongBits(millis()) :java*/
+        Double.doubleToLongBits(millis());
+
+    long you =
+/*js:
+function DoubleToIEEE(f)
+{
+  var buf = new ArrayBuffer(8);
+  (new Float64Array(buf))[0] = f;
+  // We will also process these bits as ints to avoid long emulation.
+  // Thus, we do not bother with a doubleToLongBits method, as long emulation sucks
+  return [ (new Uint32Array(buf))[0] ,(new Uint32Array(buf))[1] ];
+}(java: o.millis() :java)
+:js*/
+/*java: Double.doubleToRawLongBits(o.millis()) :java*/
+        Double.doubleToLongBits(o.millis());
+    return Long.compare(me, you);
   }
 
   @Override
   public int hashCode() {
-    double delta = X_Time.birth()-millis;
-    return (int)(delta < 1 ? 1000000000.0*(delta) : delta);
+    return Double.hashCode(millis());
   }
 
   @Override

@@ -568,4 +568,20 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
   public MethodBuffer printAfter(String suffix) {
     return (MethodBuffer) super.printAfter(suffix);
   }
+
+  public String getName() {
+    return methodName;
+  }
+
+  public MethodBuffer throwException(Class<? extends Throwable> type) {
+    String imported = addImport(type);
+    println("throw new "+imported+"();");
+    return this;
+  }
+
+  public MethodBuffer throwException(Class<? extends Throwable> type, String constructorArgs) {
+    String imported = addImport(type);
+    println("throw new "+imported+"(" + constructorArgs+");");
+    return this;
+  }
 }

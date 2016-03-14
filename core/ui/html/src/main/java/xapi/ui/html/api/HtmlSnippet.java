@@ -116,6 +116,10 @@ public class HtmlSnippet <T> implements ConvertsValue<T, String> {
         if (i > 0) {
           b.append(", ");
         }
+        if (fonts[i] == null) {
+          throw new NullPointerException("The font at position " + i + " in the fontFamily property of " + style+" was not loaded (check above in the log to see what class).  " +
+              "\nCheck that this type is loaded (as a class, not just source) on the Gwt classpath.");
+        }
         try {
           if (fonts[i].isInterface()) {
             Object value = GwtReflect.invoke(fonts[i], "name", new Class<?>[0], null);

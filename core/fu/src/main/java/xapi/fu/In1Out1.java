@@ -74,6 +74,10 @@ public interface In1Out1<I, O> extends Rethrowable {
     return i->into.in(io(i));
   }
 
+  default In1<I> ignoreOutput() {
+    return this::io;
+  }
+
   interface In1Out1Unsafe <I, O> extends In1Out1<I, O>, Rethrowable{
     O ioUnsafe(I in) throws Throwable;
 

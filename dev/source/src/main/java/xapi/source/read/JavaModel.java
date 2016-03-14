@@ -1,9 +1,9 @@
 package xapi.source.read;
 
+import xapi.collect.impl.SimpleStack;
+
 import java.lang.reflect.Modifier;
 import java.util.Iterator;
-
-import xapi.collect.impl.SimpleStack;
 
 public final class JavaModel {
   private JavaModel() {}
@@ -279,6 +279,12 @@ public final class JavaModel {
       return b.toString();
     }
 
+    public void setVarargs(boolean b) {
+      varargs = b;
+      if (type.arrayDepth > 0) {
+        type.arrayDepth--;
+      }
+    }
   }
 
 

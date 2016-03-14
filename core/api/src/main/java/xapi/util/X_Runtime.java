@@ -1,16 +1,19 @@
 package xapi.util;
 
-import static xapi.util.X_Namespace.*;
+import xapi.platform.JrePlatform;
+
+import static xapi.util.X_Namespace.PROPERTY_DEBUG;
+import static xapi.util.X_Namespace.PROPERTY_MULTITHREADED;
+import static xapi.util.X_Namespace.PROPERTY_TEST;
+import static xapi.util.X_Namespace.PROPERTY_USE_X_INJECT;
 
 import java.io.File;
 import java.io.IOException;
 
-import xapi.platform.JrePlatform;
-
 /**
  * This class is magic; there are four copies of this class;
  * do not add anything to them unless you download all xapi source,
- * and do a full text search on "X_Runtime\s+{" 
+ * and do a full text search on "X_Runtime\s+{"
  *
  * This is the public class exposed to a jre.
  * Each method compiles down to a runtime constant,
@@ -34,7 +37,7 @@ import xapi.platform.JrePlatform;
 public class X_Runtime {
 
   private X_Runtime() {}
-  
+
   // using static final fields to encourage inlining after clinit
   private static final boolean inject;
   private static final boolean parallel;
@@ -42,10 +45,10 @@ public class X_Runtime {
   private static final boolean test;
   private static final boolean gwt;
   static {
-    debug = "true".equals(System.getProperty(PROPERTY_DEBUG));
-    test = !"false".equals(System.getProperty(PROPERTY_TEST));
+    debug = "true".equals(System.getProperty(PROPERTY_DEBUG, "true"));
+    test = "true".equals(System.getProperty(PROPERTY_TEST, "false"));
 
-    boolean success = !"false".equals(System.getProperty(PROPERTY_USE_X_INJECT, "true"));
+    boolean success = "true".equals(System.getProperty(PROPERTY_USE_X_INJECT, "true"));
     try {
 
       // Check if user has disabled with a system property.
@@ -192,7 +195,7 @@ public class X_Runtime {
     //set xapi.debug = true to enable debugging.
     return debug;
   }
-  
+
   public static boolean isTest() {
     return test;
   }

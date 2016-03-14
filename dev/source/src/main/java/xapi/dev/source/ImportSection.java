@@ -223,7 +223,7 @@ public class ImportSection {
         + "(java[.]lang.[^.]*)" + // discard java.lang, but keep java.lang.reflect
         "|" +  // also discard primitives
         "((void)|(boolean)|(short)|(char)|(int)|(long)|(float)|(double)"
-        + "|(String)|(Object)|(Void)|(Boolean)|(Short)|(Character)|(Integer)|(Long)|(Float)|(Double))"
+        + "|(String)|(Class)|(Object)|(Void)|(Boolean)|(Short)|(Character)|(Integer)|(Long)|(Float)|(Double))"
         + ")" + "[;]*");
   }
 

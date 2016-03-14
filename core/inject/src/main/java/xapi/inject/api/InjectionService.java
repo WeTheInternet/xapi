@@ -4,7 +4,7 @@ import javax.inject.Provider;
 
 public interface InjectionService {
 
-  final String MANIFEST_NAME = "xapi.inject";
+  String MANIFEST_NAME = "xapi.inject";
 
   void preload(Class<?> cls);
 

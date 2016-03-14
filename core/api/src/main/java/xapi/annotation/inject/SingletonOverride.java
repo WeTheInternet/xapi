@@ -49,7 +49,7 @@ import xapi.annotation.reflect.MirroredAnnotation;
  *
  * <br/><br/>
  *
- * When the {@link wetheinter.net.inject.X_Inject} generator processes classes, it chooses a single injection target
+ * When the {@link xapi.inject.X_Inject} generator processes classes, it chooses a single injection target
  * based on priority.  SingletonDefault is always the lowest priority;
  * OverrideImpls are chosen based on highest {@link #priority()}.
  *

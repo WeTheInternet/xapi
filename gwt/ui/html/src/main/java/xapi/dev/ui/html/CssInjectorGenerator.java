@@ -157,7 +157,8 @@ public class CssInjectorGenerator implements CreatesContextObject<HtmlGeneratorR
             int pos = AbstractHtmlGenerator.fillStyles(null, sheetStyle, extraStyle, style);
             priority = Math.min(pos, priority);
           } catch (final Exception e) {
-            logger.log(Type.ERROR, "Error calculating styles", e);
+            logger.log(Type.ERROR, "Error calculating styles while generating css for "
+                + injectionType.getQualifiedSourceName(), e);
             throw new UnableToCompleteException();
           }
         }

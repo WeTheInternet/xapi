@@ -1,16 +1,5 @@
 package xapi.io;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.SocketException;
-import java.net.UnknownHostException;
-
-import javax.inject.Provider;
-
 import xapi.collect.impl.SimpleFifo;
 import xapi.inject.X_Inject;
 import xapi.io.api.HasLiveness;
@@ -26,6 +15,16 @@ import xapi.time.api.Moment;
 import xapi.util.X_Debug;
 import xapi.util.X_Util;
 import xapi.util.api.ErrorHandler;
+
+import javax.inject.Provider;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 
 public class X_IO {
 

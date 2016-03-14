@@ -1,11 +1,11 @@
 package xapi.annotation.compile;
 
+import xapi.annotation.reflect.MirroredAnnotation;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-
-import xapi.annotation.reflect.MirroredAnnotation;
 
 /**
  * A compile-time resource; default behavior is to treat {@link #value()} as a
@@ -30,7 +30,7 @@ import xapi.annotation.reflect.MirroredAnnotation;
 @MirroredAnnotation
 public @interface Resource {
 
-  public enum ResourceType {
+  enum ResourceType {
     CLASSPATH_RESOURCE, LITERAL_VALUE, ABSOLUTE_FILE, CLASS_NAME, PACKAGE_NAME, ARTIFACT_ID
   }
 

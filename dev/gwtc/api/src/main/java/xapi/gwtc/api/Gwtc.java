@@ -1,11 +1,5 @@
 package xapi.gwtc.api;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
 import xapi.annotation.common.Property;
 import xapi.annotation.compile.Dependency;
 import xapi.annotation.compile.Resource;
@@ -13,19 +7,25 @@ import xapi.annotation.compile.Resource.ResourceType;
 import xapi.annotation.reflect.MirroredAnnotation;
 import xapi.annotation.ui.UiTemplate;
 
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
 /**
  * An annotation used to describe gwt compiler settings.
  * <p>
  * This annotation may be applied to a package, class or method,
- * though support for these locations is not guaranteed by all implementations. 
+ * though support for these locations is not guaranteed by all implementations.
  * <p>
  * The primary use case for this is in testing; when using JUnit 4 support,
  * there is no simple means to define which GWT modules or sources to inherit,
  * so this annotation is used to fill in those details.
  * <p>
- * By putting this annotation at a package level, you can 
- * 
- * 
+ * By putting this annotation at a package level, you can
+ *
+ *
  * @author "James X. Nelson (james@wetheinter.net)"
  */
 @Documented
@@ -44,31 +44,31 @@ public @interface Gwtc {
    * <p>
    * The search order of inherited {@link Gwtc#compileMode()} will be based
    * upon the first {@link Gwtc#inheritanceMode()} value found.
-   * 
+   *
    * @author "James X. Nelson (james@wetheinter.net)"
    *
    */
-  public enum CompileMode {
+  enum CompileMode {
     /**
      * Run a standard full GWT compile.
      */
-    GWTC, 
+    GWTC,
     /**
      * Run in a superdevmode shell.  Default value.
      */
-    SUPERDEV, 
+    SUPERDEV,
     /**
      * Run in standard dev mode; not yet supported
      */
-    DEV, 
+    DEV,
     /**
      * Run GWTTestCase in production mode; not yet supported
      */
-    JUNIT3_PROD, 
+    JUNIT3_PROD,
     /**
      * Run GWTTestCase in dev mode; not yet supported
      */
-    JUNIT3_DEV, 
+    JUNIT3_DEV,
     /**
      * Run a full compile on the annotated method or class,
      * without including any other entry points or dependencies.
@@ -81,28 +81,28 @@ public @interface Gwtc {
      * without including any other entry points or dependencies.
      * <p>
      * Useful for tests which want an isolated module definition,
-     * to ensure that no other settings / source inclusions interfere 
+     * to ensure that no other settings / source inclusions interfere
      * with the compile.
      */
     SUPERDEV_ISOLATED,
     INHERIT
   }
 
-  public enum IsolationMode {
+  enum IsolationMode {
     MONOLITHIC,
     PER_PACKAGE,
     PER_CLASS,
     PER_METHOD
   }
-  
+
   /**
    * This enum is used to control how ancestor {@link Gwtc} annotation
-   * are used to build generated gwt.xml.  
-   * 
+   * are used to build generated gwt.xml.
+   *
    * @author "James X. Nelson (james@wetheinter.net)"
    *
    */
-  public enum AncestorMode {
+  enum AncestorMode {
     INHERIT_ONE_PARENT,
     INHERIT_ALL_PARENTS,
     INHERIT_ENCLOSING_CLASSES,
@@ -110,20 +110,20 @@ public @interface Gwtc {
     INHERIT_CHILDREN
     // TODO INHERIT_INTERFACES
   }
-  
+
   /**
    * @return the preferred {@link CompileMode} for this compile;
    * this value may be overridden, where the annotation closest
    * to the method / class being run will determine the CompileMode used.
    * <p>
-   * The default run mode is inherit, which will cause the compiler to 
+   * The default run mode is inherit, which will cause the compiler to
    * check encolsing classes or packages for the compile mode to use.
-   * 
+   *
    * If no parent specifies any mode, {@link CompileMode#SUPERDEV} will be chosen
    * to encourage maximum development time compile speed.
    */
   CompileMode compileMode() default CompileMode.INHERIT;
-  
+
   /**
    * @return an array of {@link Property} annotations to describe
    * System.setProperies() calls to make.
@@ -139,9 +139,9 @@ public @interface Gwtc {
    * &lt;set-configuration-property> elements to generate.
    */
   Property[] propertiesGwtConfiguration() default {};
-  
+
   GwtcProperties[] propertiesLaunch() default {};
-  
+
   /**
    * @return an array of {@link Resource} annotations describing additional
    * gwt.xml to include.  If you want to manually add snippets of xml, be sure
@@ -156,20 +156,20 @@ public @interface Gwtc {
    * {@link ResourceType#ABSOLUTE_FILE} - Specify an absolute path, include extension</li><li>
    * {@link ResourceType#CLASS_NAME} - Specifies a classname to search for {@link Gwtc} annotations</li><li>
    * {@link ResourceType#PACKAGE_NAME} - Specifies a packagename to search for {@link Gwtc} annotations</li></ul>
-   * 
+   *
    */
   Resource[] includeGwtXml() default {
     @Resource("com.google.gwt.core.Core")
   };
-  
+
   String[] includeSource() default { "client" };
-  
+
   IsolationMode isolationMode() default IsolationMode.MONOLITHIC;
-  
+
   /**
    * @return an array of {@link Resource} annotations describing additional
-   * html code to include in generated host page.  If you want to manually 
-   * add snippets of html, be sure to set {@link Resource#type()} 
+   * html code to include in generated host page.  If you want to manually
+   * add snippets of html, be sure to set {@link Resource#type()}
    * to {@link Resource.ResourceType#LITERAL_VALUE}.
    * <p>
    * Inheriting an entire file with .htm(l) suffix will cause the <pre><head> and <body></pre> elements
@@ -183,10 +183,10 @@ public @interface Gwtc {
    * {@link ResourceType#CLASSPATH_RESOURCE} - Searches classloader</li><li>
    * {@link ResourceType#LITERAL_VALUE} - Adds generated snippet of html</li><li>
    * {@link ResourceType#ABSOLUTE_FILE} - Specify an absolute path, include extension</li><li>
-   * 
+   *
    */
   UiTemplate[] includeHostHtml() default {};
-  
+
   /**
    * @return an array of {@link Dependency} elements to include.
    * <p>
@@ -197,7 +197,7 @@ public @interface Gwtc {
    * The compiler will look up the META-INF/maven/group-id/artifact-id/pom.xml resource,
    * and add the jar / folder containing said dependency to the classpath.
    * <p>
-   * If this fails, the compiler will emit a warning and then use 
+   * If this fails, the compiler will emit a warning and then use
    * System.getenv("M2_HOME")/group/id/artifact-id/version/artifact-id-version.jar
    */
   Dependency[] dependencies() default {
@@ -205,7 +205,7 @@ public @interface Gwtc {
     @Dependency(Dependency.DIR_TEMP),
     @Dependency(Dependency.DIR_GEN)
   };
-  
+
   /**
    * @return an array of {@link AncestorMode} values to describe how the given
    * {@link Gwtc} annotation should inherit settings from enclosing classes and packages.

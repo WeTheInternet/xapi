@@ -1463,6 +1463,9 @@ public class JavaLexer {
     final IsParameter param = new IsParameter(type.toString(), chars.subSequence(start, pos).toString());
     param.annotations = annos;
     param.modifier = mods.modifier;
+    if (type.varargs) {
+      param.setVarargs(true);
+    }
     return param;
   }
 

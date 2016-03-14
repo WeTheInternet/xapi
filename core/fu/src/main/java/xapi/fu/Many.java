@@ -23,6 +23,30 @@ import java.util.Iterator;
  *         Created on 07/11/15.
  */
 public class Many <T> implements Iterable <T> {
+
+  private static class Itr <T> implements Iterator<T> {
+    private Many<T> here;
+
+    public Itr(Many<T> me) {
+      here = me;
+    }
+
+    @Override
+    public boolean hasNext() {
+      return here!=null;
+    }
+
+    @Override
+    public T next() {
+      try {
+        return here.value;
+      }finally {
+        here = here.next;
+      }
+    }
+  }
+
+
   T value;
   Many<T> next;
 
@@ -62,28 +86,6 @@ public class Many <T> implements Iterable <T> {
       tail = tail.add(mapped);
     }
     return head;
-  }
-
-  private static class Itr <T> implements Iterator<T> {
-    private Many<T> here;
-
-    public Itr(Many<T> me) {
-      here = me;
-    }
-
-    @Override
-    public boolean hasNext() {
-      return here!=null;
-    }
-
-    @Override
-    public T next() {
-      try {
-        return here.value;
-      }finally {
-        here = here.next;
-      }
-    }
   }
 
   public void clear() {

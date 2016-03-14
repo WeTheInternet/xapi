@@ -1,7 +1,5 @@
 package xapi.jre.time;
 
-import java.util.Calendar;
-
 import xapi.annotation.inject.SingletonOverride;
 import xapi.platform.AndroidPlatform;
 import xapi.platform.JrePlatform;
@@ -9,6 +7,8 @@ import xapi.time.api.Moment;
 import xapi.time.impl.ImmutableMoment;
 import xapi.time.impl.TimeServiceDefault;
 import xapi.time.service.TimeService;
+
+import java.util.Calendar;
 
 @JrePlatform
 @AndroidPlatform
@@ -18,8 +18,9 @@ public class JreTimeServiceHighPrecision extends TimeServiceDefault{
   private static final long serialVersionUID = 7851025085789327954L;
 
   private final double nanoBirth;
-  
-  private double nanoNow;
+
+  private volatile double nanoNow;
+
 
   public JreTimeServiceHighPrecision() {
     nanoBirth = System.nanoTime();
@@ -32,30 +33,28 @@ public class JreTimeServiceHighPrecision extends TimeServiceDefault{
 
   @Override
   public Moment nowPlusOne() {
-    float now;
-    synchronized(second_to_nano) {// Forces race conditions to wait;
-      // if .nanoTime() in an enviro does not have nano-second resolution,
-      // it probably doesn't have hardware fast enough to resolve the 
-      // race condition faster than nanoTime() updates.
-      now = System.nanoTime();
-    }
+    tick();
     return new ImmutableMoment(birth()+
-      (now-nanoBirth)*milli_to_nano);
+      (nanoNow - nanoBirth) * nano_to_milli);
   }
 
 
-  
+
   @Override
   public Moment now() {
     return new ImmutableMoment(birth()+
-      (System.nanoTime()-nanoBirth)*milli_to_nano);
+      (System.nanoTime()-nanoBirth) * nano_to_milli);
   }
 
   @Override
-  public synchronized void tick() {
-    nanoNow = (milli_to_nano*(System.nanoTime()-nanoBirth));
+  public void tick() {
+    double now;
+    do {
+      now = ((System.nanoTime()-nanoBirth) * nano_to_milli);
+    } while (now == nanoNow); // performs a volatile read
+    nanoNow = now;
   }
-  
+
   @Override
   public String timestamp() {
     // Ya...  It's more lines of code than using a library,
@@ -68,7 +67,7 @@ public class JreTimeServiceHighPrecision extends TimeServiceDefault{
     result[2] = Character.forDigit((val/=10)%10, 10);
     result[1] = Character.forDigit((val/=10)%10, 10);
     result[0] = Character.forDigit((val/10)%10, 10);
-    
+
     val = c.get(Calendar.MONTH);
     result[5] = Character.forDigit(val/10, 10);
     result[6] = Character.forDigit(val%10, 10);
@@ -85,7 +84,7 @@ public class JreTimeServiceHighPrecision extends TimeServiceDefault{
     result[19] = Character.forDigit(val%10, 10);
     result[18] = Character.forDigit((val/=10)%10, 10);
     result[17] = Character.forDigit((val/10)%10, 10);
-    
+
     val = c.getTimeZone().getOffset(c.getTimeInMillis()) / 60000;
     if (val < 0) {
       result[20] = '-';
@@ -97,8 +96,8 @@ public class JreTimeServiceHighPrecision extends TimeServiceDefault{
     val = val%60;
     result[24] = Character.forDigit((val/10)%10, 10);
     result[25] = Character.forDigit(val%10, 10);
-    
+
     return new String(result);
   }
-  
+
 }

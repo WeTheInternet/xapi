@@ -414,7 +414,7 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
   public File saveModel(final String javaName, final String source,
       boolean overwrite) {
     File genDir = getGenerateDirectory();
-    X_Log.trace(getClass(),"Preparing compile", getTargetProjectDirectory(), genDir);
+    X_Log.trace(getClass(),"Preparing compile", genDir);
     genDir.mkdirs();
     String sourceName;
     if (javaName.endsWith(".java")) {

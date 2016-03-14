@@ -16,8 +16,14 @@
   we had to swap out the injection methods themselves with magic methods
   that call into generated-on-the-fly provider classes.
  </description>
-  
+
   <dependencies>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-fu</artifactId>
+      <classifier>sources</classifier>
+      <version>${project.version}</version>
+    </dependency>
     <dependency>
       <groupId>net.wetheinter</groupId>
       <artifactId>xapi-core-inject</artifactId>
