@@ -9,7 +9,7 @@ import static xapi.util.service.StringService.metricSuffix;
 public class X_String {
 
   private X_String() {}
-  
+
   public static byte[] getBytes(String source) {
     return source.getBytes();
   }
@@ -99,7 +99,13 @@ public class X_String {
   public static String joinStrings(String ... values) {
     return join(", ", values);
   }
-  public static String join(String separator, String ... values) {
+  public static String join(String separator, String ... values)
+  /*js:
+
+  return values.join(separator);
+
+  :js*/
+  {//java:
     if (values.length == 0) return "";// need at least one element
     // all string operations use a new array, so minimize all calls possible
     char[] sep = separator.toCharArray();
@@ -124,17 +130,17 @@ public class X_String {
       pos += sep.length;
     }
     // now, add the last element;
-    // this is why we checked values.length == 0 off the hop
+    // this is why we short-circuited values.length == 0 off the hop
     System.arraycopy(values[values.length - 1].toCharArray(), 0, joined, pos,
       values[values.length - 1].length());
 
     return new String(joined);
-  }
+  }//:java
 
   public static boolean isEmpty(String enclosing) {
     return enclosing == null || enclosing.length() == 0;
   }
-  
+
   public static boolean isEmptyTrimmed(String enclosing) {
     return enclosing == null || enclosing.trim().length() == 0;
   }
@@ -182,4 +188,5 @@ public class X_String {
   public static String normalizeNewlines(String text) {
     return text.replaceAll("\\r\\n?", "\n");
   }
+
 }

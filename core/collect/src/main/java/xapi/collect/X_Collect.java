@@ -32,14 +32,54 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.function.Consumer;
 
+/**
+ A wrapper / helper class around {@link CollectionService}.
+
+ We use {@link xapi.inject.X_Inject#singleton} to give us a platform-specific implementation of our underlying collections class.
+
+ Right now, GWT and JVMs get two different versions,
+ but any platform you want can and should feel free to inject the collections types of your choosing.
+
+ At this time, there are a number of {@link CollectionOptions} that are NOT supported correctly / at all.
+ Basic lists, maps and multimaps work, but all permutations of the settings are not applied correctly.
+
+ If you write an implementation which does handle these classes correctly,
+ feel free to submit them as a pull request to git@github.com:JamesXNelson/xapi.git
+ or email James@WeTheInter.net with a link so your module can be referred to in (public) documentation.
+
+
+ A note on the generics structures used in this class:
+
+ Rather than rely on `Class<? super T>`,
+ we instead use two generics to represent a type:
+ `<Type, Generic extends Type> Type method(Class<Generic> cls);`
+
+ The second generic gives a place for the compiler
+ to put the subtypes of the generic Type.
+
+ Plain `<Type>` means the raw type, so
+ `Generic extends Type` allows the compiler to infer:
+ `List<String> list = method(List.class)`
+ Where `Type == List.class` and `Generic == List<String>.class`
+
+ Without the two generics, it is impossible to safely
+ infer `SomeType<String>` from `String.class`.
+ *
+ */
 public class X_Collect {
 
-  public static <V> IntTo<V> asList(@SuppressWarnings("unchecked")
+  @SuppressWarnings("all")
+  public static <V> IntTo<V> asList(
   final V ... elements) {
-    @SuppressWarnings("unchecked")
-    final
-    Class<V> cls = Class.class.cast(elements.getClass().getComponentType());
+    if (elements == null) {
+      throw new NullPointerException();
+    }
+    final Class<V> cls = Class.class.cast(elements.getClass().getComponentType());
     final IntTo<V> list = service.newList(cls, MUTABLE_LIST);
+    if (elements.length == 1 && cls.isArray()) {
+      // Do not create an IntTo<V[]> by accident!  Bad heap pollution! BAD!
+
+    }
     for (final V item : elements) {
       list.push(item);
     }

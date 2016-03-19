@@ -43,6 +43,10 @@ public interface LogService {
   void doLog(LogLevel level, Fifo<Object> o);
   void log(LogLevel level, Object o);
 
+  default void log(LogLevel level, Object ... o) {
+    log(level, newFifo().giveAll(o));
+  }
+
   LogLevel getLogLevel();
 
   void setLogLevel(LogLevel logLevel);
@@ -53,5 +57,53 @@ public interface LogService {
   Fifo<Object> newFifo();
 
   Iterable<Object> shouldIterate(Object m);
+
+  default void error(Class<?> cls, String string) {
+    log(LogLevel.ERROR, cls, string);
+  }
+
+  default void warn(Class<?> cls, String string) {
+    log(LogLevel.WARN, cls, string);
+  }
+  default void info(Class<?> cls, String string) {
+    log(LogLevel.INFO, cls, string);
+  }
+
+  default void trace(Class<?> cls, String string) {
+    log(LogLevel.TRACE, cls, string);
+  }
+
+  default void debug(Class<?> cls, String string) {
+    log(LogLevel.DEBUG, cls, string);
+  }
+
+  default void spam(Class<?> cls, String string) {
+    log(LogLevel.ALL, cls, string);
+  }
+
+
+  default void error(Class<?> cls, String string, Throwable e) {
+    log(LogLevel.ERROR, cls, string, e);
+  }
+
+  default void warn(Class<?> cls, String string, Throwable e) {
+    log(LogLevel.WARN, cls, string, e);
+  }
+  default void info(Class<?> cls, String string, Throwable e) {
+    log(LogLevel.INFO, cls, string, e);
+  }
+
+  default void trace(Class<?> cls, String string, Throwable e) {
+    log(LogLevel.TRACE, cls, string, e);
+  }
+
+  default void debug(Class<?> cls, String string, Throwable e) {
+    log(LogLevel.DEBUG, cls, string, e);
+  }
+
+  default void spam(Class<?> cls, String string, Throwable e) {
+    log(LogLevel.ALL, cls, string, e);
+  }
+
 
 }

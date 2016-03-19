@@ -1,12 +1,13 @@
 package xapi.reflect.service;
 
+import java.lang.reflect.Method;
 
 /**
  * A service interface for providing reflection support to limited runtimes.
- * 
+ *
  * Currently, this serves primarily to allow GWT to use reflection,
  * but there's no reason it cannot be used for gwt-flash or java2objc tranpiling either.
- * 
+ *
  * @author "James X. Nelson (james@wetheinter.net)"
  *
  */
@@ -16,7 +17,9 @@ public interface ReflectionService {
 
   <T> T[] newArray(Class<T> classLit, int dimension);
 
-  <T> T[] newArray(Class<T> classLit, int ... dimensions);
+  <T> T[][] newArray(Class<T> classLit, int dim1, int dim2);
+
+  <T> T[][][] newArray(Class<T> classLit, int dim1, int dim2, int dim3);
 
   /**
    * This method is mostly for gwt; but is also useful for web apps and codegen
@@ -43,4 +46,5 @@ public interface ReflectionService {
 
   Package getPackage(String parentName, ClassLoader cl);
 
+  Object invokeDefaultMethod(Method method, Object ... params);
 }
