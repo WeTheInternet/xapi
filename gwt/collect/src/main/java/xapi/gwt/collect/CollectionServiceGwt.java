@@ -25,7 +25,7 @@ import java.util.Map;
 public class CollectionServiceGwt implements CollectionService{
 
   @Override
-  public <T, R extends T> IntTo<R> newList(Class<T> cls, CollectionOptions opts) {
+  public <Type, Generic extends Type> IntTo<Type> newList(Class<Generic> cls, CollectionOptions opts) {
     return IntToListGwt.newInstance();
   }
 
@@ -49,7 +49,7 @@ public class CollectionServiceGwt implements CollectionService{
   }
 
   @Override
-  public <V> ClassTo<V> newClassMap(Class<V> cls, CollectionOptions opts) {
+  public <V, C extends Class<? extends V>> ClassTo<V> newClassMap(C cls, CollectionOptions opts) {
     return new xapi.collect.impl.ClassToDefault<V>(newMap(opts), cls);
   }
 

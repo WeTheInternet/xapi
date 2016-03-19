@@ -282,7 +282,7 @@ public abstract class AbstractJreModelService extends AbstractModelService {
       defaultValueProvider.put(IntTo.class, new ConvertsTwoValues<ModelManifest, MethodData, Object>() {
             @Override
             public Object convert(ModelManifest manifest, MethodData method) {
-              final Class<?>[] types = method.getTypeParams();
+              final Class[] types = method.getTypeParams();
               assert types.length == 1 : "Expected exactly one type argument for IntTo instances";
               return X_Collect.newList(types[0]);
             }

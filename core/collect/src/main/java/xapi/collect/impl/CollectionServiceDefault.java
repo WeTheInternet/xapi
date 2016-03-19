@@ -125,7 +125,7 @@ public class CollectionServiceDefault implements CollectionService{
   }
 
   @Override
-  public <T, R extends T> IntTo<R> newList(final Class<T> cls, final CollectionOptions opts) {
+  public <Type, Generic extends Type>  IntTo<Type> newList(final Class<Generic> cls, final CollectionOptions opts) {
     return new IntToList<>(cls);
   }
 
@@ -141,7 +141,7 @@ public class CollectionServiceDefault implements CollectionService{
 
 
   @Override
-  public <V> ClassTo<V> newClassMap(final Class<V> cls, final CollectionOptions opts) {
+  public <V, C extends Class<? extends V>> ClassTo<V> newClassMap(final C cls, final CollectionOptions opts) {
     return new ClassToDefault<V>(this.<Class<?>, V>newMap(opts), cls);
   }
 

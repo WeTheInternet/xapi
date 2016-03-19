@@ -11,10 +11,10 @@ import xapi.model.api.Model;
 
 public class ModelGeneratorTest {
 
-  private static interface TestModel extends Model {
+  private interface TestModel extends Model {
     String getString();
   }
-  
+
   @Test
   public void testModelGen() {
     ModelGeneratorMojo mojo = new ModelGeneratorMojo();
@@ -25,5 +25,5 @@ public class ModelGeneratorTest {
     X_Log.info(getClass(), "test model:", cls);
     mojo.buildModel(cls, adapter, map);
   }
-  
+
 }

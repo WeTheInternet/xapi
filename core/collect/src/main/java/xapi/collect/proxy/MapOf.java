@@ -22,10 +22,10 @@ implements CollectionProxy<K,V>, Map<K,V>, HasValues<K,V>, ObjectTo<K,V>
   private final Map<K,V> map;
   private final Class<V> valueClass;
 
-  public MapOf(final Map<K, V> map, final Class<K> keyClass, final Class<V> valueClass) {
+  public <C extends Class<? extends V>> MapOf(final Map<K, V> map, final Class<K> keyClass, final C valueClass) {
     this.map = map;
     this.keyClass = keyClass;
-    this.valueClass = valueClass;
+    this.valueClass = (Class<V>)valueClass;
   }
 
   @Override

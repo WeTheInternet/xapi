@@ -34,11 +34,11 @@
  */
 package xapi.inject.api;
 
-import javax.inject.Provider;
-
 import xapi.annotation.inject.SingletonDefault;
 import xapi.annotation.inject.SingletonOverride;
 import xapi.inject.impl.JavaInjector;
+
+import javax.inject.Provider;
 
 /**
  * A simple injection interface used for java-based dependency injection.
@@ -81,12 +81,12 @@ public interface Injector {
    * @param cls - The service interface or base service class to provide
    * @return - A singleton instance of the service class.
    */
-  public <T> T provide(Class<? super T> cls);
+  <T, C extends Class<? extends T>> T provide(C cls);
 
-  public <T> T create(Class<? super T> cls);
-  
-  public <T> void setSingletonFactory(Class<T> cls, Provider<T> provider);
+  <T, C extends Class<? extends T>> T create(C cls);
 
-  public <T> void setInstanceFactory(Class<T> cls, Provider<T> provider);
+  <T> void setSingletonFactory(Class<T> cls, Provider<T> provider);
+
+  <T> void setInstanceFactory(Class<T> cls, Provider<T> provider);
 
 }

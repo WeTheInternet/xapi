@@ -34,14 +34,13 @@
  */
 package xapi.inject.impl;
 
-import java.lang.reflect.Method;
-
-import javax.inject.Provider;
-
 import xapi.inject.api.Injector;
 import xapi.log.X_Log;
 import xapi.util.X_Runtime;
 import xapi.util.X_Util;
+
+import javax.inject.Provider;
+import java.lang.reflect.Method;
 
 public class JavaInjector {
 
@@ -56,8 +55,8 @@ public class JavaInjector {
    * @param <X>
    */
   private static class LazySingletonInjector <X> extends SingletonInitializer<X>{
-    private Class<? super X> cls;
-    public LazySingletonInjector(Class<? super X> cls) {
+    private Class<? extends X> cls;
+    public <C extends Class<? extends X>> LazySingletonInjector(C cls) {
       this.cls=cls;
     }
     @Override
@@ -97,12 +96,12 @@ public class JavaInjector {
    * Our lazily-loaded injector singleton.
    */
   private static final XInjectSingleton singleton = new XInjectSingleton();
-  public static <T> T instance(Class<? super T> cls) {
+  public static <T, C extends Class<? extends T>> T instance(C cls) {
     return singleton.get().create(cls);
   }
 
-  public static <T> Provider<T> singletonLazy(Class<? super T> cls) {
-    return new LazySingletonInjector<T>(cls);
+  public static <T, C extends Class<? extends T>> Provider<T> singletonLazy(C cls) {
+    return new LazySingletonInjector<>(cls);
   }
 
 
@@ -130,7 +129,7 @@ public class JavaInjector {
       X_Log.error(e, "Cannot create interface class ",iface, "while registering singleton provider");
     }
   }
-  
+
   @SuppressWarnings({ "rawtypes", "unchecked" })
   public static void registerInstanceProvider(String iface, final String name) {
     try {

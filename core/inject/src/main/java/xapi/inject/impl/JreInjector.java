@@ -1,18 +1,5 @@
 package xapi.inject.impl;
 
-import static xapi.util.X_Namespace.DEFAULT_INSTANCES_LOCATION;
-import static xapi.util.X_Namespace.DEFAULT_SINGLETONS_LOCATION;
-import static xapi.util.X_Namespace.PROPERTY_INJECTOR;
-import static xapi.util.X_Namespace.PROPERTY_INSTANCES;
-import static xapi.util.X_Namespace.PROPERTY_RUNTIME_META;
-import static xapi.util.X_Namespace.PROPERTY_SINGLETONS;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-
-import javax.inject.Provider;
-
 import xapi.collect.api.InitMap;
 import xapi.collect.impl.AbstractInitMap;
 import xapi.collect.impl.InitMapDefault;
@@ -25,6 +12,18 @@ import xapi.util.X_Runtime;
 import xapi.util.api.ConvertsValue;
 import xapi.util.api.ReceivesValue;
 import xapi.util.impl.ImmutableProvider;
+
+import static xapi.util.X_Namespace.DEFAULT_INSTANCES_LOCATION;
+import static xapi.util.X_Namespace.DEFAULT_SINGLETONS_LOCATION;
+import static xapi.util.X_Namespace.PROPERTY_INJECTOR;
+import static xapi.util.X_Namespace.PROPERTY_INSTANCES;
+import static xapi.util.X_Namespace.PROPERTY_RUNTIME_META;
+import static xapi.util.X_Namespace.PROPERTY_SINGLETONS;
+
+import javax.inject.Provider;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 
 public class JreInjector implements Injector{
 
@@ -201,7 +200,7 @@ public class JreInjector implements Injector{
 
 	@Override
 	@SuppressWarnings("unchecked")
-	  public <T> T create(final Class<? super T> cls) {
+	  public <T, C extends Class<? extends T>> T create(final C cls) {
 	    try {
 	      return (T) instanceProviders.get(cls).get();
 	    } catch (final Exception e) {
@@ -221,7 +220,7 @@ public class JreInjector implements Injector{
 
 	  @Override
     @SuppressWarnings("unchecked")
-	public <T> T provide(final Class<? super T> cls){
+	public <T, C extends Class<? extends T>> T provide(final C cls){
 	  try {
 		  return (T) singletonProviders.get(cls).get();
 	  } catch (final Exception e) {

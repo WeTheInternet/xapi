@@ -50,7 +50,8 @@ public class X_Collect {
   final V ... elements) {
     @SuppressWarnings("unchecked")
     final
-    IntTo<V> list = (IntTo<V>)newSet(elements.getClass().getComponentType());
+    Class<V> cls = Class.class.cast(elements.getClass().getComponentType());
+    IntTo<V> list = newSet(cls);
     for (final V item : elements) {
       list.push(item);
     }
@@ -72,13 +73,12 @@ public class X_Collect {
     return new HashComparator<T>();
   }
   public static <T, S extends T> Iterable<T> iterable(final S item) {
-    return new SingletonIterator<T>(item);
+    return new SingletonIterator<>(item);
   }
-  public static <T, S extends T> Iterable<T> iterable(@SuppressWarnings("unchecked")
-  final S ... items) {
-    return new ArrayIterable<T>(items);
+  public static <T, S extends T> Iterable<T> iterable(@SuppressWarnings("all") final S ... items) {
+    return new ArrayIterable<>(items);
   }
-  public static <V> ClassTo<V> newClassMap(final Class<V> valueCls) {
+  public static <V, C extends Class<? extends V>> ClassTo<V> newClassMap(final C valueCls) {
     return service.newClassMap(valueCls, MUTABLE);
   }
 
@@ -110,7 +110,7 @@ public class X_Collect {
    *
    *
    */
-  public static <T, R extends T> IntTo<R> newList(final Class<T> cls) {
+  public static <Type, Generic extends Type> IntTo<Type> newList(final Class<Generic> cls) {
     return service.newList(cls, MUTABLE_LIST);
   }
 
@@ -121,7 +121,7 @@ public class X_Collect {
     return service.newMap(keyCls, valueCls, opts);
   }
 
-  public static <V> IntTo<V> newSet(final Class<V> cls) {
+  public static <Type, Generic extends Type> IntTo<Type> newSet(final Class<Generic> cls) {
     return service.newList(cls, MUTABLE_SET);
   }
 

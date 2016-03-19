@@ -3,6 +3,12 @@
  */
 package xapi.model.api;
 
+import xapi.collect.X_Collect;
+import xapi.collect.api.ClassTo;
+import xapi.collect.api.IntTo;
+import xapi.model.service.ModelService;
+import xapi.source.api.CharIterator;
+
 import static xapi.collect.X_Collect.newList;
 
 import java.lang.reflect.Array;
@@ -10,12 +16,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-
-import xapi.collect.X_Collect;
-import xapi.collect.api.ClassTo;
-import xapi.collect.api.IntTo;
-import xapi.model.service.ModelService;
-import xapi.source.api.CharIterator;
 
 /**
  * A ModelQuery is a bean describing a query for a given model.
@@ -31,11 +31,11 @@ import xapi.source.api.CharIterator;
  */
 public class ModelQuery <M extends Model> {
 
-  public static enum QueryParameterType {
+  public enum QueryParameterType {
     EQUALS, GREATER_THAN, LESS_THAN, CONTAINS
   }
 
-  public static enum SortOrder {
+  public enum SortOrder {
     ASCENDING, DESCENDING
   }
 
@@ -133,8 +133,8 @@ public class ModelQuery <M extends Model> {
 
   @SuppressWarnings("unchecked")
   public ModelQuery() {
-    parameters = newList(Class.class.cast(QueryParameter.class));
-    sortOptions = newList(Class.class.cast(SortOption.class));
+    parameters = newList(QueryParameter.class);
+    sortOptions = newList(SortOption.class);
     pageSize = 50;
     limit = 500;
     namespace = "";

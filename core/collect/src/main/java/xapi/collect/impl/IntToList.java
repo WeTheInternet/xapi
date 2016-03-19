@@ -25,8 +25,8 @@ class IntToList<E> implements IntTo<E> {
 
   private final ArrayList<E> list = new ArrayList<E>(10);
   private final Class<E> type;
-  
-  public IntToList(Class<? super E> cls) {
+
+  public <Generic extends E> IntToList(Class<Generic> cls) {
     this.type = Class.class.cast(cls);
   }
 
@@ -127,7 +127,7 @@ class IntToList<E> implements IntTo<E> {
     assert item == null || valueType() == null || valueType().isAssignableFrom(item.getClass());
     return list.add(item);
   }
-  
+
   @Override
   @SuppressWarnings("unchecked")
   public boolean addAll(E... items) {
@@ -136,7 +136,7 @@ class IntToList<E> implements IntTo<E> {
     }
     return true;
   }
-  
+
   @Override
   public boolean addAll(Iterable<E> items) {
     if (items instanceof Collection) {
@@ -148,7 +148,7 @@ class IntToList<E> implements IntTo<E> {
     }
     return true;
   }
-  
+
   @Override
   public boolean insert(int pos, E item) {
     list.add(pos, item);
@@ -200,7 +200,7 @@ class IntToList<E> implements IntTo<E> {
     ensureCapacity(index);
     list.set(index, value);
   }
-  
+
   private void ensureCapacity(int index) {
     while(list.size()<=index) {
       list.add(getDefaultValue());
@@ -243,7 +243,7 @@ class IntToList<E> implements IntTo<E> {
     deque.addAll(list);
     return deque;
   }
-  
+
   @Override
   public String toString() {
     return list.toString();

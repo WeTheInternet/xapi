@@ -10,7 +10,7 @@ import xapi.collect.api.StringTo;
 
 public interface CollectionService {
 
-  <T, R extends T> IntTo<R> newList(Class<T> cls, CollectionOptions opts);
+  <E, Generic extends E> IntTo<E> newList(Class<Generic> cls, CollectionOptions opts);
 
   <V> IntTo<V> newSet(Class<V> cls, CollectionOptions opts);
 
@@ -18,7 +18,7 @@ public interface CollectionService {
 
   <K, V> ObjectTo.Many<K, V> newMultiMap(Class<K> key, Class<V> cls, CollectionOptions opts);
 
-  <V> ClassTo<V> newClassMap(Class<V> cls, CollectionOptions opts);
+  <V, C extends Class<? extends V>> ClassTo<V> newClassMap(C cls, CollectionOptions opts);
 
   <V> ClassTo.Many<V> newClassMultiMap(Class<V> cls, CollectionOptions opts);
 
