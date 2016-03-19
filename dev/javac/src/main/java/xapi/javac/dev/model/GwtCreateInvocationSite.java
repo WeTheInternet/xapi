@@ -66,8 +66,8 @@ public class GwtCreateInvocationSite implements HasClassLiteralReference {
       return ((IdentifierTree)select).getName();
     } else {
       System.out.println("Unhandled type sent to nameOf(): "+source.getClass());
+      return null;
     }
-    return null;
   }
 
   public List<? extends ExpressionTree> getArgs() {

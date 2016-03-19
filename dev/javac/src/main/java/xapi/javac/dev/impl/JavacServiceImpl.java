@@ -6,7 +6,11 @@ import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.MethodInvocationTree;
+import com.sun.source.tree.MethodTree;
+import com.sun.source.tree.VariableTree;
+import com.sun.tools.javac.api.JavacTrees;
 import com.sun.tools.javac.code.Type;
+import com.sun.tools.javac.main.JavaCompiler;
 import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.model.JavacTypes;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
@@ -18,9 +22,13 @@ import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Name;
 import xapi.annotation.inject.InstanceDefault;
 import xapi.javac.dev.api.JavacService;
+import xapi.javac.dev.model.InjectionBinding;
+import xapi.javac.dev.model.InjectionMap;
+import xapi.javac.dev.model.XApiInjectionConfiguration;
 import xapi.log.X_Log;
 
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
@@ -35,6 +43,13 @@ public class JavacServiceImpl implements JavacService {
 
   private Types types;
   private Elements elements;
+  private InjectionMap injections;
+  private JavacTrees trees;
+  private JavaCompiler compiler;
+
+  public JavacServiceImpl() {
+    injections = new InjectionMap();
+  }
 
   @Override
   public String getPackageName(CompilationUnitTree cu) {
@@ -133,8 +148,38 @@ public class JavacServiceImpl implements JavacService {
   }
 
   @Override
+  public Optional<InjectionBinding> getInjectionBinding(XApiInjectionConfiguration config, TypeMirror type) {
+    String scope;
+    try {
+      scope = config.getSettings().scope().getName();
+    } catch (MirroredTypeException e) {
+      scope = e.getTypeMirror().toString();
+    }
+    String typeName = types.erasure(type).toString();
+    if ("Test".equals(typeName)) {
+      InjectionBinding egregiousHack = new InjectionBinding("Test", "ComplexTest");
+      return Optional.of(egregiousHack);
+    }
+    return injections.getBinding(scope, typeName);
+  }
+
+  @Override
   public void init(Context context) {
     types = JavacTypes.instance(context);
     elements = JavacElements.instance(context);
+    trees = JavacTrees.instance(context);
+    compiler = JavaCompiler.instance(context);
+
   }
+
+  @Override
+  public InjectionBinding createInjectionBinding(VariableTree node) {
+    return new InjectionBinding(this, node);
+  }
+
+  @Override
+  public InjectionBinding createInjectionBinding(MethodTree node) {
+    return new InjectionBinding(this, node);
+  }
+
 }

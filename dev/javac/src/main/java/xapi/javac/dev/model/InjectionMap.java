@@ -4,6 +4,7 @@ import xapi.api.Scope;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 
+import java.util.Optional;
 import java.util.Properties;
 
 /**
@@ -41,5 +42,12 @@ public class InjectionMap {
 
       });
     });
+  }
+
+  public Optional<InjectionBinding> getBinding(String scopeClass, String typeName) {
+    if (injections.containsKey(scopeClass)) {
+      return Optional.ofNullable(injections.get(scopeClass).get(typeName));
+    }
+    return Optional.empty();
   }
 }

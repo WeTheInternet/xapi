@@ -14,6 +14,10 @@ import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Name;
+import xapi.javac.dev.api.JavacService;
+import xapi.javac.dev.model.InjectionBinding;
+import xapi.javac.dev.model.PendingCompilationUnit;
+import xapi.javac.dev.search.InjectionTargetSearchVisitor;
 import xapi.javac.dev.util.NameUtil;
 import xapi.log.X_Log;
 import xapi.util.X_Debug;
@@ -37,6 +41,8 @@ public class XapiCompilerPlugin implements Plugin {
   List<Runnable> onFinish = new ArrayList<>();
   boolean finished;
   private TaskListener listener;
+  private Trees trees;
+  private JavacService service;
 
   @Override
   public String getName() {
@@ -64,6 +70,8 @@ public class XapiCompilerPlugin implements Plugin {
   @Override
   public void init(JavacTask javac, String... args) {
     final BasicJavacTask task = (BasicJavacTask)javac;
+    trees = Trees.instance(javac);
+    service = JavacService.instanceFor(((BasicJavacTask) javac).getContext());
     listener = new TaskListener() {
       @Override
       public void started(TaskEvent e) {
@@ -92,6 +100,8 @@ public class XapiCompilerPlugin implements Plugin {
       cups.put(name, new PendingCompilationUnit(name, unit));
     }
     PendingCompilationUnit pcu = cups.get(name);
+    final List<InjectionBinding> bindings = new InjectionTargetSearchVisitor(service, trees)
+        .scan(unit, new ArrayList<>());
     pcu.finish();
     boolean almostDone = unfinished.size() == 1;
     unfinished.remove(pcu);
@@ -149,14 +159,17 @@ public class XapiCompilerPlugin implements Plugin {
 
   protected void doFinish() {
     finished = true;
-    final List<Runnable> copy = new ArrayList<>(onFinish);
-    onFinish.clear();
+    final List<Runnable> copy;
+    synchronized (onFinish) {
+      copy = new ArrayList<>(onFinish);
+      onFinish.clear();
+    }
     copy.forEach(Runnable::run);
     copy.clear();
   }
 
   public Trees getTrees() {
-    return null;
+    return trees;
   }
 
 }

@@ -52,6 +52,6 @@ public abstract class SingletonInitializer<X> extends SingletonProvider<X>{
   protected void onCreate(X init) {
     if (init instanceof Initable)
       ((Initable)init).init();
-    X_Inject.initialize(init);
+    X_Inject.initialize(init.getClass(), init);
   };
 }

@@ -2,7 +2,7 @@ package xapi.javac.dev.model;
 
 import xapi.annotation.api.XApi;
 
-import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.Element;
 import java.io.Serializable;
 
 /**
@@ -12,10 +12,10 @@ import java.io.Serializable;
 public class XApiInjectionConfiguration implements Serializable {
 
   private final XApi settings;
-  private final TypeElement element;
+  private final Element element;
   private final String name;
 
-  public XApiInjectionConfiguration(XApi settings, String name, TypeElement element) {
+  public XApiInjectionConfiguration(XApi settings, String name, Element element) {
     this.settings = settings;
     this.element = element;
     this.name = name;
@@ -25,7 +25,7 @@ public class XApiInjectionConfiguration implements Serializable {
     return settings;
   }
 
-  public TypeElement getElement() {
+  public Element getElement() {
     return element;
   }
 

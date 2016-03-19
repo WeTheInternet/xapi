@@ -40,8 +40,8 @@ public class JavacPluginTest {
        "-sourcepath", resources.getAbsolutePath(), // source files we want to compile
         "-s", gen.getAbsolutePath(), // generated source output directory
 
-//       "-processorpath",
-//       jar,
+       "-processorpath",
+       jar,
 
        "-Xplugin:GwtCreatePlugin",
        "-Xplugin:XapiCompilerPlugin",

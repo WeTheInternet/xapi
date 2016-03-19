@@ -21,7 +21,7 @@ import xapi.io.X_IO;
 import xapi.javac.dev.api.JavacService;
 import xapi.javac.dev.model.GwtCreateInvocationSite;
 import xapi.javac.dev.util.ClassLiteralResolver;
-import xapi.javac.dev.util.GwtCreateSearchVisitor;
+import xapi.javac.dev.search.GwtCreateSearchVisitor;
 import xapi.log.X_Log;
 import xapi.source.X_Source;
 import xapi.util.X_Util;

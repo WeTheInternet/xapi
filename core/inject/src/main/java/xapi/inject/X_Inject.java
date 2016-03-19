@@ -109,8 +109,7 @@ import java.util.ServiceLoader;
 @KeepMethod
 public class X_Inject{
 
-  public static void initialize(final Object o) {
-//      JavaInjector.initialize(o);
+  public static <T, C extends Class<? extends T>> void initialize(C cls, final T o) {
   }
 
   @KeepMethod

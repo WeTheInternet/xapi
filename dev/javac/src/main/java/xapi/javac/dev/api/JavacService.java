@@ -3,10 +3,17 @@ package xapi.javac.dev.api;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.ExpressionTree;
+import com.sun.source.tree.MethodTree;
+import com.sun.source.tree.VariableTree;
+import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.util.Context;
 import xapi.inject.X_Inject;
+import xapi.javac.dev.model.InjectionBinding;
+import xapi.javac.dev.model.XApiInjectionConfiguration;
 
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.type.TypeMirror;
+import java.util.Optional;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
@@ -23,6 +30,12 @@ public interface JavacService {
     instance.init(context);
     return instance;
   }
+  static JavacService instanceFor(ProcessingEnvironment processingEnv) {
+    if (processingEnv instanceof JavacProcessingEnvironment) {
+      return instanceFor(((JavacProcessingEnvironment)processingEnv).getContext());
+    }
+    throw new UnsupportedOperationException("Unable to create javac service from processing environment " + processingEnv);
+  }
 
   String getPackageName(CompilationUnitTree cu);
 
@@ -31,4 +44,11 @@ public interface JavacService {
   void init(Context context);
 
   ClassTree getClassTree(CompilationUnitTree compilationUnit);
+
+  Optional<InjectionBinding> getInjectionBinding(XApiInjectionConfiguration config, TypeMirror type);
+
+  InjectionBinding createInjectionBinding(VariableTree node);
+
+  InjectionBinding createInjectionBinding(MethodTree node);
+
 }

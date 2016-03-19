@@ -6,6 +6,10 @@ package xapi.fu;
  */
 public interface Pointer <T> extends In1<T>, Out1<T> {
 
+  static <T> Pointer <T> pointer() {
+    return new PointerSimple<>();
+  }
+
   class PointerSimple <T> implements Pointer<T> {
     private volatile T value;
 
