@@ -11,8 +11,8 @@ import com.sun.source.util.TreeScanner;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.tree.JCTree.JCIdent;
 import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
+import xapi.javac.dev.api.CompilerService;
 import xapi.javac.dev.model.HasClassLiteralReference;
-import xapi.javac.dev.plugin.XapiCompilerPlugin;
 import xapi.log.X_Log;
 
 import java.util.ArrayList;
@@ -24,11 +24,11 @@ public class ClassLiteralResolver extends TreeScanner<Void, Void>{
 
   private final List<HasClassLiteralReference> variables;
   private final List<HasClassLiteralReference> invocations;
-  private final XapiCompilerPlugin classWorld;
+  private final CompilerService classWorld;
   private String currentUnit;
   int depth = 0;
 
-  public ClassLiteralResolver(List<? extends HasClassLiteralReference> items, XapiCompilerPlugin classWorld) {
+  public ClassLiteralResolver(List<? extends HasClassLiteralReference> items, CompilerService classWorld) {
     this.classWorld = classWorld;
     variables = new ArrayList<>();
     invocations = new ArrayList<>();

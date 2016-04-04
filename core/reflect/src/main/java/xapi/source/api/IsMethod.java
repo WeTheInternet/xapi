@@ -3,12 +3,12 @@ package xapi.source.api;
 public interface IsMethod
 extends
 IsMember,
+IsNamedType,
 HasEnclosingClass
 {
 
   boolean isAbstract();
   boolean isStatic();
-  String getName();
   IsType getReturnType();
   IsType[] getParameters();
   IsGeneric[] getGenerics();

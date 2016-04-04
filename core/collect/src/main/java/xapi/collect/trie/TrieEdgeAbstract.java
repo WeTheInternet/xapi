@@ -2,7 +2,7 @@ package xapi.collect.trie;
 
 import xapi.collect.api.StringTrie.StringTrieCursor;
 import xapi.collect.api.StringTrie.StringTrieEdge;
-import xapi.collect.impl.Chars;
+import xapi.source.api.Chars;
 
 class TrieEdgeAbstract <E> implements StringTrieEdge<E> {
 

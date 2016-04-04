@@ -1,6 +1,11 @@
 package xapi.javac.dev.processor;
 
+import com.github.javaparser.JavaParser;
+import com.github.javaparser.ParseException;
+import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.visitor.TransformVisitor.Transformer;
 import com.sun.source.tree.ClassTree;
+import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
@@ -10,12 +15,16 @@ import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.util.List;
 import xapi.annotation.api.XApi;
+import xapi.except.NotYetImplemented;
 import xapi.fu.Pointer;
 import xapi.javac.dev.api.JavacService;
 import xapi.javac.dev.model.InjectionBinding;
 import xapi.javac.dev.model.XApiInjectionConfiguration;
 import xapi.javac.dev.search.InjectionTargetSearchVisitor;
+import xapi.javac.dev.template.TemplateTransformer;
 import xapi.javac.dev.util.ElementUtil;
+import xapi.source.X_Source;
+import xapi.util.X_Debug;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Filer;
@@ -29,12 +38,20 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Name;
+import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.ElementKindVisitor8;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic.Kind;
+import javax.tools.FileObject;
+import javax.tools.JavaFileManager.Location;
+import javax.tools.JavaFileObject;
+import javax.tools.StandardLocation;
+import java.io.IOException;
+import java.io.Writer;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.Optional;
@@ -76,18 +93,81 @@ public class XapiAnnotationProcessor extends AbstractProcessor {
       Set<? extends TypeElement> annotations, RoundEnvironment roundEnv
   ) {
 
-    if (Math.random() > -1) {
-      return true;
-    }
-    annotations.forEach(annotation->roundEnv.getElementsAnnotatedWith(annotation).forEach(this::processAnnotation));
+
+
+    annotations.forEach(annotation->roundEnv.getElementsAnnotatedWith(annotation).forEach(element->{
+
+      XApi xapi = element.getAnnotation(XApi.class);
+
+      if (xapi.templates().length > 0) {
+        for (String path : xapi.templates()) {
+          String pkg = "";
+          if (path.startsWith("./")) {
+            path = path.substring(2);
+            final PackageElement packageElement = elements.getPackageOf(element);
+            if (packageElement != null) {
+              pkg = packageElement.getQualifiedName().toString();
+            }
+          }
+          int index = path.indexOf('/');
+          while (index != -1) {
+            String subpath = path.substring(0, index);
+            path = path.substring(index+1);
+            index = path.indexOf('/');
+            if (pkg.isEmpty()) {
+              pkg = subpath;
+            } else {
+              pkg = pkg + "." + subpath;
+            }
+          }
+          if ("*".equals(path)) {
+            // match everything in this package
+            throw new NotYetImplemented("* file pattern matching not yet supported by XApi annotation processor.");
+          } else {
+            // An actual filename.
+            final Location location = StandardLocation.SOURCE_PATH;
+            final FileObject resource;
+            if (path.indexOf('.') == -1) {
+              path = path + ".xapi";
+            }
+            try {
+              resource = filer.getResource(location, pkg, path);
+              final CompilationUnit result = JavaParser.parse(
+                  resource.openInputStream(),
+                  Charset.defaultCharset().name()
+              );
+              Transformer transformer = new TemplateTransformer();
+              String source = result.toSource(transformer);
+
+              final JavaFileObject file = filer.createSourceFile(X_Source.qualifiedName(
+                  pkg,
+                  path.replace(".xapi", "")
+              ), element);
+              try (Writer out = file.openWriter()) {
+                out.append(source);
+              }
+            } catch (IOException | ParseException e) {
+              throw X_Debug.rethrow(e);
+            }
+          }
+        }
+
+      }
+
+      if (Math.random() > -1) {
+        return;
+      }
+      final CompilationUnitTree cup = null; // TODO possibly delete this... :-/
+      processAnnotation(cup, element);
+    }));
     if (roundEnv.processingOver()) {
       // we are done collecting up XApi annotations; lets generate some code!
-      annotatedTypes.forEach(this::generate);
+      annotatedTypes.forEach(type->generate(null, type));
     }
     return true;
   }
 
-  private void processAnnotation(Element element) {
+  private void processAnnotation(CompilationUnitTree cup, Element element) {
     final XApi xapi = element.getAnnotation(XApi.class);
     switch (element.getKind()) {
       case PACKAGE:
@@ -105,18 +185,18 @@ public class XapiAnnotationProcessor extends AbstractProcessor {
       case ENUM:
         final Name name = elements.getBinaryName((TypeElement) element);
         log.printMessage(Kind.NOTE, "Adding XApi annotated element "+element);
-        annotatedTypes.add(new XApiInjectionConfiguration(xapi, name.toString(), element));
+        annotatedTypes.add(new XApiInjectionConfiguration(xapi, name.toString(), element, cup));
         break;
       default:
         throw new UnsupportedOperationException("Unsupported location of XApi annotation ("+element.getKind()+") : " + element);
     }
   }
 
-  private void generate(XApiInjectionConfiguration config) {
+  private void generate(CompilationUnitTree cup, XApiInjectionConfiguration config) {
     final Element type = config.getElement();
 
     final ClassTree tr = trees.getTree((TypeElement) type);
-    final java.util.List<InjectionBinding> results = new InjectionTargetSearchVisitor(service, trees)
+    final java.util.List<InjectionBinding> results = new InjectionTargetSearchVisitor(service, cup)
         .scan(trees.getTree(type), new ArrayList<>());
     trees.getTree(type);
 

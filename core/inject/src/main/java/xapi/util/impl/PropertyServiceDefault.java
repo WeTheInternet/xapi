@@ -3,7 +3,7 @@ package xapi.util.impl;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
-import xapi.annotation.gwt.MagicMethod;
+import xapi.annotation.compile.MagicMethod;
 import xapi.annotation.inject.SingletonDefault;
 import xapi.util.X_Namespace;
 import xapi.util.service.PropertyService;

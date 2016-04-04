@@ -54,8 +54,25 @@ public final class JavaModel {
   }
 
   public static class IsType extends IsQualified {
+
     public IsType() {
       generics = new SimpleStack<IsGeneric>();
+    }
+
+    public IsType(String pkg, String type) {
+      super(pkg, type);
+      int ind = type.indexOf("[]");
+      while (ind > -1) {
+        arrayDepth++;
+        type = type.replace("[]", "");
+        ind = type.indexOf("[]");
+      }
+      ind = type.indexOf('<');
+      if (ind == -1) {
+        generics = new SimpleStack<>();
+      } else {
+        generics = JavaLexer.extractGenerics(type, ind);
+      }
     }
     public IsType(String type) {
       super(JavaLexer.stripTypeMods(type));
@@ -67,7 +84,7 @@ public final class JavaModel {
       }
       ind = type.indexOf('<');
       if (ind == -1) {
-        generics = new SimpleStack<IsGeneric>();
+        generics = new SimpleStack<>();
       } else {
         generics = JavaLexer.extractGenerics(type, ind);
       }
@@ -116,6 +133,10 @@ public final class JavaModel {
     @Override
     public String toString() {
       return typeName()+" "+name;
+    }
+
+    public static IsNamedType namedType(String className, String simpleName) {
+      return new IsNamedType(className, simpleName);
     }
   }
   public static class IsVariable extends IsNamedType {

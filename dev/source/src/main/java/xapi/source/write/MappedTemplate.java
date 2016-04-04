@@ -9,11 +9,19 @@ public class MappedTemplate extends Template {
   private Map<String, Integer> positions;
 
   public MappedTemplate(String template, Iterable<String> items) {
-    this(template, toArray(items));
+    this(template, StringerMatcher.DEFAULT_TO_STRINGER, toArray(items));
   }
 
   public MappedTemplate(String template, String ... replaceables) {
-    super(template, replaceables);
+    this(template, StringerMatcher.DEFAULT_TO_STRINGER, replaceables);
+  }
+
+  public MappedTemplate(String template, StringerMatcher matcher, Iterable<String> items) {
+    this(template, matcher, toArray(items));
+  }
+
+  public MappedTemplate(String template, StringerMatcher matcher, String ... replaceables) {
+    super(template, matcher, replaceables);
     positions = new HashMap<String, Integer>();
     for (int i = 0, m = replaceables.length; i < m; i++) {
       positions.put(replaceables[i], i);

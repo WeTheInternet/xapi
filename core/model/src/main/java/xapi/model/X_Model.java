@@ -2,7 +2,7 @@ package xapi.model;
 
 import javax.inject.Provider;
 
-import xapi.annotation.gwt.MagicMethod;
+import xapi.annotation.compile.MagicMethod;
 import xapi.inject.X_Inject;
 import xapi.model.api.Model;
 import xapi.model.api.ModelKey;

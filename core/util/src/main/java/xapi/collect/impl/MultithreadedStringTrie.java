@@ -8,6 +8,7 @@ import java.util.concurrent.locks.Lock;
 import static xapi.collect.api.CharPool.EMPTY_STRING;
 import xapi.collect.api.CharPool;
 import xapi.collect.api.PrefixedMap;
+import xapi.source.api.Chars;
 
 /**
  * NSFW
@@ -231,7 +232,7 @@ public class MultithreadedStringTrie<E> implements PrefixedMap<E> {
   protected void doPut(final Edge into, final char[] key, final int index, final int end, final E value) {
     assert index < end;
     try {
-      
+
     // To stay threadsafe, we synchronize on Edges when we modify them.
     // To stay fast, we don't recurse until we are out of the synchro block.
 

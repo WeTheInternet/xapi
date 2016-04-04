@@ -1,5 +1,6 @@
 package xapi.javac.dev.model;
 
+import com.sun.source.tree.CompilationUnitTree;
 import xapi.annotation.api.XApi;
 
 import javax.lang.model.element.Element;
@@ -14,11 +15,13 @@ public class XApiInjectionConfiguration implements Serializable {
   private final XApi settings;
   private final Element element;
   private final String name;
+  CompilationUnitTree cup;
 
-  public XApiInjectionConfiguration(XApi settings, String name, Element element) {
+  public XApiInjectionConfiguration(XApi settings, String name, Element element, CompilationUnitTree cup) {
     this.settings = settings;
     this.element = element;
     this.name = name;
+    this.cup = cup;
   }
 
   public XApi getSettings() {

@@ -1,7 +1,7 @@
 package xapi.javac.dev.search;
 
 import com.sun.source.tree.AnnotationTree;
-import com.sun.source.tree.ExpressionTree;
+import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.LabeledStatementTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
@@ -10,14 +10,13 @@ import com.sun.source.tree.Tree;
 import com.sun.source.tree.Tree.Kind;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.util.TreePathScanner;
-import com.sun.source.util.Trees;
 import com.sun.tools.javac.tree.JCTree;
-import com.sun.tools.javac.tree.JCTree.JCIdent;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.util.Name;
 import xapi.inject.X_Inject;
 import xapi.javac.dev.api.JavacService;
 import xapi.javac.dev.model.InjectionBinding;
+import xapi.source.read.JavaModel.IsNamedType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,15 +30,15 @@ import java.util.function.Predicate;
  */
 public class InjectionTargetSearchVisitor extends TreePathScanner<List<InjectionBinding>, List<InjectionBinding>>{
 
-  private final Trees trees;
   private final JavacService service;
   private final List<InjectionBinding> targets;
+  private final CompilationUnitTree cup;
   private Predicate<VariableTree> injectNulls;
 
-  public InjectionTargetSearchVisitor(JavacService service, Trees trees) {
+  public InjectionTargetSearchVisitor(JavacService service, CompilationUnitTree cup) {
     this.service = service;
-    this.trees = trees;
     injectNulls = v->false;
+    this.cup = cup;
     targets = new ArrayList<>();
   }
 
@@ -113,19 +112,14 @@ public class InjectionTargetSearchVisitor extends TreePathScanner<List<Injection
   }
 
   private boolean isXInjectMethodCall(MethodInvocationTree node) {
-    final ExpressionTree expr = node.getMethodSelect();
-    if (expr instanceof JCIdent) {
-      final String exprName = TreeInfo.fullName((JCIdent)expr).toString();
-      if (exprName.startsWith(X_Inject.class.getCanonicalName())) {
-        // for now, we are just going to handle X_Inject.instance, X_Inject.singleton and X_Inject.initialize
-        final String methodName = exprName.substring(X_Inject.class.getCanonicalName().length() + 1, exprName.length());
-        if (methodName.equals("inject")) {
-          // we want to inject an instance
-        } else if (methodName.equals("singleton")) {
-          // we want to inject a singleton
-        } else if (methodName.equals("initialize")) {
-          // we want to perform field injection on an arbitrary object (fun!)
-        }
+    final IsNamedType exprName = service.getName(cup, node);
+    if (exprName.typeName().equals(X_Inject.class.getCanonicalName())) {
+      // for now, we are just going to handle X_Inject.instance, X_Inject.singleton and X_Inject.initialize
+      switch (exprName.getName()) {
+        case "inject":
+        case "singleton":
+        case "intialize":
+          return true;
       }
     }
     return false;

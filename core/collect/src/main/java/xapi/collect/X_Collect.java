@@ -118,6 +118,11 @@ public class X_Collect {
   public static <T, S extends T> Iterable<T> iterable(@SuppressWarnings("all") final S ... items) {
     return new ArrayIterable<>(items);
   }
+  @SuppressWarnings({"all"})
+  public static <V, C extends Class<? extends V>> ClassTo<V> newClassMap() {
+    ClassTo raw = service.newClassMap(Object.class, MUTABLE);
+    return raw;
+  }
   public static <V, C extends Class<? extends V>> ClassTo<V> newClassMap(final C valueCls) {
     return service.newClassMap(valueCls, MUTABLE);
   }
@@ -154,7 +159,7 @@ public class X_Collect {
     return service.newList(cls, MUTABLE_LIST);
   }
 
-  public static <K,V> ObjectTo<K,V> newMap(final Class<K> keyCls, final Class<V> valueCls) {
+  public static <K,V, Key extends K, Value extends V> ObjectTo<Key,Value> newMap(final Class<Key> keyCls, final Class<Value> valueCls) {
     return service.newMap(keyCls, valueCls, MUTABLE);
   }
   public static <K,V> ObjectTo<K,V> newMap(final Class<K> keyCls, final Class<V> valueCls, final CollectionOptions opts) {
@@ -178,7 +183,7 @@ public class X_Collect {
     return service.newDictionary(cls);
   }
 
-  public static <V> StringTo<V> newStringMap(final Class<V> valueCls) {
+  public static <V, Generic extends V> StringTo<V> newStringMap(final Class<Generic> valueCls) {
     return service.newStringMap(valueCls, MUTABLE);
   }
 

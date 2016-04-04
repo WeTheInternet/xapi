@@ -1,13 +1,5 @@
 package xapi.bytecode.impl;
 
-import java.io.IOException;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-
 import xapi.bytecode.ClassPool;
 import xapi.bytecode.CtClass;
 import xapi.bytecode.CtClassType;
@@ -45,6 +37,14 @@ import xapi.util.X_Debug;
 import xapi.util.X_String;
 import xapi.util.api.ConvertsValue;
 import xapi.util.api.Pair;
+
+import java.io.IOException;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
 
 public class BytecodeAdapterService implements
     SourceAdapterService<String, CtMethod, CtField, Annotation> {
@@ -587,7 +587,7 @@ public class BytecodeAdapterService implements
     @Override
     public IsField getField(String name) {
       for (IsField field : getFields()) {
-        if (field.getDeclaredName().equals(name)) {
+        if (field.getName().equals(name)) {
           return field;
         }
       }
@@ -843,7 +843,7 @@ public class BytecodeAdapterService implements
     }
 
     @Override
-    public String getDeclaredName() {
+    public String getName() {
       return field.getName();
     }
 

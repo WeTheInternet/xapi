@@ -1,8 +1,9 @@
-package xapi.collect.impl;
+package xapi.source.api;
 
 public class Chars implements CharSequence{
 
   public static final Chars EMPTY_STRING = new Chars(new char[0]);
+
 
   public static final class SingleChar implements CharSequence{
 
@@ -53,6 +54,10 @@ public class Chars implements CharSequence{
     this.chars = chars;
     this.start = start;
     this.length = end - start;
+  }
+
+  public int getStart() {
+    return start;
   }
 
   public char[] getChars() {

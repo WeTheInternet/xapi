@@ -1,7 +1,7 @@
 /**
  *
  */
-package xapi.annotation.gwt;
+package xapi.annotation.compile;
 
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.CLASS;
@@ -27,4 +27,6 @@ public @interface MagicMethod {
   String documentation() default "";
 
   boolean doNotVisit() default true;
+
+  Reference generator() default @Reference;
 }

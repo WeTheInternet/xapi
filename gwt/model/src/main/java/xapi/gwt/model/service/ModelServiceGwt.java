@@ -3,7 +3,7 @@ package xapi.gwt.model.service;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.reflect.client.strategy.GwtRetention;
 
-import xapi.annotation.gwt.MagicMethod;
+import xapi.annotation.compile.MagicMethod;
 import xapi.annotation.inject.SingletonOverride;
 import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;

@@ -1,12 +1,5 @@
 package xapi.source;
 
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.ArrayList;
-import java.util.Collections;
-
-import javax.inject.Provider;
-
 import xapi.inject.X_Inject;
 import xapi.source.api.HasQualifiedName;
 import xapi.source.api.IsType;
@@ -14,6 +7,14 @@ import xapi.source.service.SourceService;
 import xapi.util.X_String;
 import xapi.util.api.Pair;
 import xapi.util.impl.PairBuilder;
+
+import static xapi.util.X_String.isEmpty;
+
+import javax.inject.Provider;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.Collections;
 
 public class X_Source {
 
@@ -220,7 +221,7 @@ public class X_Source {
     return type.getQualifiedName().equals("java.lang.Object");
   }
   public static String qualifiedName(String pkg, String enclosed) {
-    return X_String.isEmpty(pkg) ? enclosed : enclosed.startsWith(pkg+".") ? enclosed : pkg + "." + enclosed;
+    return isEmpty(pkg) ? enclosed : isEmpty(enclosed) ? pkg : enclosed.startsWith(pkg+".") ? enclosed : pkg + "." + enclosed;
   }
   public static String[] splitClassName(String providerName) {
     int was, is = was = providerName.lastIndexOf('.');

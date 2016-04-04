@@ -18,6 +18,7 @@ import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import org.apache.tools.ant.filters.StringInputStream;
 import xapi.io.X_IO;
+import xapi.javac.dev.api.CompilerService;
 import xapi.javac.dev.api.JavacService;
 import xapi.javac.dev.model.GwtCreateInvocationSite;
 import xapi.javac.dev.util.ClassLiteralResolver;
@@ -65,7 +66,7 @@ public class GwtCreatePlugin implements Plugin {
     }
 
     protected String rebind(GwtCreateInvocationSite edit) {
-      return "new "+  edit.getType().toString()+"()"; // For now, no rebinding
+      return "new dist."+  edit.getType().toString()+"()"; // For now, no rebinding
     }
 
     public void process() {
@@ -77,13 +78,20 @@ public class GwtCreatePlugin implements Plugin {
                + rebind(edit)
                + file.substring(pos[1]+1);
       }
-        String pkg = String.valueOf(X_Util.firstNotNull(compilationUnit.getPackageName(), ""));
+        String originalPackage = String.valueOf(X_Util.firstNotNull(compilationUnit.getPackageName(), ""));
+        String pkg = X_Source.qualifiedName("dist", originalPackage);
+      if (originalPackage.isEmpty()) {
+        file = "package dist;\n\n" + file;
+      } else {
+        final String packageRegex = "package\\s+" + originalPackage.replaceAll("[.]", "[.]") + ";";
+        file = file.replaceFirst(packageRegex, "package " + pkg+";");
+      }
         // TODO get the actual resources directory in use, to check what we're actually doing
         Filer filer = env.getFiler();
         final String fileName = compilationUnit.getSourceFile().getName();
-        String suffix = pkg.replace('.', File.separatorChar) + File.separatorChar;
+        String suffix = originalPackage.replace('.', File.separatorChar) + File.separatorChar;
         String[] path = fileName.split(Pattern.quote(suffix));
-        String name = suffix.substring(0, suffix.length()-1) + path[path.length-1];
+        String name = path[path.length-1];
         FileObject res;
         X_Log.info(getClass(), "path", path, "pkg", pkg);
         try {
@@ -114,7 +122,7 @@ public class GwtCreatePlugin implements Plugin {
     final JavacProcessingEnvironment env = JavacProcessingEnvironment.instance(context);
     final Trees trees = JavacTrees.instance(task);
     final HashSet<String> seen = new HashSet<>();
-    final JavacService service = JavacService.instanceFor(context);
+    final JavacService service = JavacService.instanceFor(task);
     task.addTaskListener(new TaskListener() {
 
       @Override
@@ -142,7 +150,7 @@ public class GwtCreatePlugin implements Plugin {
             return;
           }
           final Context ctx = task.getContext();
-          XapiCompilerPlugin classWorld = ctx.get(XapiCompilerPlugin.class);
+          CompilerService classWorld = CompilerService.compileServiceFrom(service);
           final List<GwtCreateInvocationSite> results = new LinkedList<>();
           new GwtCreateSearchVisitor(ctx).scan(compilationUnit, results);
 

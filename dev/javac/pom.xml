@@ -20,6 +20,34 @@
 
   <dependencies>
      <dependency>
+      <groupId>com.github.javaparser</groupId>
+      <artifactId>javaparser-core</artifactId>
+       <version>2.3.X</version>
+     </dependency>
+     <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-jre-io</artifactId>
+     </dependency>
+     <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-core-process</artifactId>
+     </dependency>
+     <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-jre-inject</artifactId>
+     </dependency>
+     <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-dev-file</artifactId>
+     </dependency>
+     <dependency>
+      <groupId>com.sun</groupId>
+      <artifactId>compiler-plugins</artifactId>
+      <version>1.0</version>
+      <systemPath>${project.basedir}/lib/classes.jar</systemPath>
+      <scope>system</scope>
+     </dependency>
+     <dependency>
       <groupId>${gwt.groupId}</groupId>
       <artifactId>gwt-dev</artifactId>
       <scope>provided</scope>
@@ -30,19 +58,9 @@
       <scope>test</scope>
      </dependency>
      <dependency>
-      <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-jre-io</artifactId>
-     </dependency>
-     <dependency>
-      <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-jre-inject</artifactId>
-     </dependency>
-     <dependency>
-      <groupId>com.sun</groupId>
-      <artifactId>compiler-plugins</artifactId>
-      <version>1.0</version>
-      <systemPath>${project.basedir}/lib/classes.jar</systemPath>
-      <scope>system</scope>
+      <groupId>${gwt.groupId}</groupId>
+      <artifactId>gwt-elemental</artifactId>
+      <scope>test</scope>
      </dependency>
      <dependency>
       <groupId>net.wetheinter</groupId>

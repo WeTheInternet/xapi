@@ -7,7 +7,7 @@ import java.util.Collection;
  * A fast, lightweight string templating system with zero dependencies.
  * <p>
  * You supply a template String and an array of tokens to replace when calling
- * {@link #apply(String...)}. The order of tokens supplied in the constructor
+ * {@link #apply(Object...)}. The order of tokens supplied in the constructor
  * corresponds to the order of strings supplied in apply().
  * <p>
  * The Template will compile your string into an executable stack, which
@@ -36,31 +36,32 @@ import java.util.Collection;
 public class Template extends Stack{
 
   public Template(String template, String ... replaceables) {
-    super("", ToStringer.DEFAULT_TO_STRINGER);
+    super("", StringerMatcher.DEFAULT_TO_STRINGER);
     compile(template, replaceables);
   }
-  
+
   public Template(String template, Iterable<String> replaceables) {
     this(template, toArray(replaceables));
   }
-  
+
+  public Template(String template, StringerMatcher matcher, String ... replaceables) {
+    super("", matcher);
+    compile(template, replaceables);
+  }
+
+  public Template(String template, StringerMatcher matcher, Iterable<String> replaceables) {
+    this(template, matcher, toArray(replaceables));
+  }
+
   protected static String[] toArray(Iterable<String> items) {
     if (items instanceof Collection) {
       return ((Collection<String>)items).toArray(new String[0]);
     }
-    ArrayList<String> all = new ArrayList<String>();
+    ArrayList<String> all = new ArrayList<>();
     for (String item : items) {
       all.add(item);
     }
     return all.toArray(new String[all.size()]);
-  }
-
-  public void setToStringer(ToStringer toString) {
-    Stack s = this;
-    while (s != null) {
-      s.toString = toString;
-      s = s.next;
-    }
   }
 
   /**
@@ -81,9 +82,11 @@ public class Template extends Stack{
     int[] tokenPositions = new int[replaceables.length];
     int[] liveIndices = new int[replaceables.length];
 
+
     // Get the first index, if any, of each replaceable token.
     for (int i = replaceables.length; i-- > 0;) {
-      int next = template.indexOf(replaceables[i]);
+      final String matcher = replaceables[i];
+      int next = template.indexOf(matcher);
       if (next > -1) { // Record only live tokens (ignore missing replacements)
         liveIndices[numLive++] = i;
         tokenPositions[i] = template.indexOf(replaceables[i]);
@@ -191,11 +194,11 @@ public class Template extends Stack{
  *
  */
 class Stack {
-  ToStringer toString;
-  final String prefix;
+  StringerMatcher toString;
+  final CharSequence prefix;
   Stack next;
 
-  Stack(String prefix, ToStringer toString) {
+  Stack(CharSequence prefix, StringerMatcher toString) {
     assert prefix != null;
     this.prefix = prefix;
     this.toString = toString;
@@ -228,11 +231,11 @@ class Stack {
  * @author "James X. Nelson (james@wetheinter.net)"
  *
  */
-final class StackNode extends Stack {
+class StackNode extends Stack {
 
   private final int position;
 
-  StackNode(String prefix, int position, ToStringer toString) {
+  StackNode(CharSequence prefix, int position, StringerMatcher toString) {
     super(prefix, toString);
     assert position >= 0;
     this.position = position;

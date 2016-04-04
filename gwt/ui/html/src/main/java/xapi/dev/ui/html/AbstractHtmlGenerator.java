@@ -1,5 +1,24 @@
 package xapi.dev.ui.html;
 
+import xapi.annotation.compile.Generated;
+import xapi.annotation.compile.Import;
+import xapi.collect.X_Collect;
+import xapi.collect.api.IntTo;
+import xapi.collect.api.StringTo;
+import xapi.dev.source.SourceBuilder;
+import xapi.except.NotYetImplemented;
+import xapi.source.X_Source;
+import xapi.source.write.MappedTemplate;
+import xapi.source.write.StringerMatcher;
+import xapi.ui.html.api.Css;
+import xapi.ui.html.api.El;
+import xapi.ui.html.api.Html;
+import xapi.ui.html.api.HtmlTemplate;
+import xapi.ui.html.api.Style;
+import xapi.util.X_String;
+import xapi.util.api.ConvertsValue;
+import xapi.util.impl.LazyProvider;
+
 import static xapi.collect.X_Collect.newStringMap;
 import static xapi.ui.html.api.HtmlSnippet.appendTo;
 
@@ -14,34 +33,14 @@ import com.google.gwt.dev.jjs.UnifyAstView;
 import com.google.gwt.user.server.Base64Utils;
 import com.google.gwt.util.tools.shared.Md5Utils;
 
+import javax.inject.Provider;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
-
-import javax.inject.Provider;
-
-import xapi.annotation.compile.Generated;
-import xapi.annotation.compile.Import;
-import xapi.collect.X_Collect;
-import xapi.collect.api.IntTo;
-import xapi.collect.api.StringTo;
-import xapi.dev.source.SourceBuilder;
-import xapi.except.NotYetImplemented;
-import xapi.source.X_Source;
-import xapi.source.write.MappedTemplate;
-import xapi.source.write.ToStringer;
-import xapi.ui.html.api.Css;
-import xapi.ui.html.api.El;
-import xapi.ui.html.api.Html;
-import xapi.ui.html.api.HtmlTemplate;
-import xapi.ui.html.api.Style;
-import xapi.util.X_String;
-import xapi.util.api.ApplyMethod;
-import xapi.util.api.ConvertsValue;
-import xapi.util.impl.LazyProvider;
+import java.util.function.Predicate;
 
 public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> implements CreatesContextObject<Ctx> {
 
@@ -192,19 +191,24 @@ public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> im
         }
       }
       if (!references.isEmpty()) {
-        final MappedTemplate apply = new MappedTemplate(text, references.keyArray()) {
+        final StringerMatcher matcher = new StringerMatcher() {
+          @Override
+          public String toString(final Object o) {
+            return escape(String.valueOf(o));
+          }
+
+          @Override
+          public Predicate<String> matcherFor(String value) {
+            return null;
+          }
+        };
+        final MappedTemplate apply = new MappedTemplate(text, matcher, references.keyArray()) {
           @Override
           protected Object retrieve(final String key, final Object object) {
             final ConvertsValue<String, String> converter = (ConvertsValue<String, String>) object;
             return converter.convert(key);
           }
         };
-        apply.setToStringer(new ToStringer() {
-          @Override
-          public String toString(final Object o) {
-            return escape(String.valueOf(o));
-          }
-        });
         text = apply.applyMap(references.entries());
       }
     }

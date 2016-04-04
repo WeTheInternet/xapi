@@ -87,6 +87,11 @@ public class X_String {
   }
 
   public static String joinClasses(String separator, Class<?> ... values) {
+    String[] copy = classesToQualified(values);
+    return join(separator, copy);
+  }
+
+  public static String[] classesToQualified(Class<?> ... values) {
     int i = values.length;
     String[] copy = new String[i];
     for(;i-->0;){
@@ -94,8 +99,20 @@ public class X_String {
       if (cls != null)
         copy[i] = cls.getCanonicalName();
     }
-    return join(separator, copy);
+    return copy;
   }
+
+  public static String[] classesToBinary(Class<?> ... values) {
+    int i = values.length;
+    String[] copy = new String[i];
+    for(;i-->0;){
+      Class<?> cls = values[i];
+      if (cls != null)
+        copy[i] = cls.getName();
+    }
+    return copy;
+  }
+
   public static String joinStrings(String ... values) {
     return join(", ", values);
   }

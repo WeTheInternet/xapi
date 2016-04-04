@@ -24,6 +24,11 @@
       <groupId>net.wetheinter</groupId>
       <artifactId>xapi-gwt-ui-html</artifactId>
     </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-dev-javac</artifactId>
+      <version>${project.version}</version>
+    </dependency>
 
     <dependency>
       <groupId>${gwt.groupId}</groupId>

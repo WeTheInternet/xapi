@@ -1,19 +1,28 @@
+package test;
+
 import org.junit.Assert;
 import xapi.annotation.api.XApi;
+import xapi.annotation.inject.InstanceDefault;
 import xapi.inject.X_Inject;
 
 import com.google.gwt.core.shared.GWT;
 
 import javax.inject.Inject;
 
-@XApi
+@XApi(
+    templates = "./Generated"
+)
+@InstanceDefault(implFor = Test.class)
 public class Test {
 
+  public static final Class<Test> FINAL_FIELD_INITED_BY_CLASS_LITERAL = Test.class;
   @Inject
   Test test;
 
+  public String world;
+
   @Inject
-  final Test withInitializer = newTest();
+  final static Test withInitializer = newTest();
 
   private static Test newTest() {
     return X_Inject.instance(FINAL_FIELD_INITED_BY_CLASS_LITERAL);
@@ -32,33 +41,36 @@ public class Test {
     assert this.test != null;
   }
 
-  static final Class<Test> FINAL_FIELD_INITED_BY_CLASS_LITERAL = Test.class;
-  static Class<Test> NONFINAL_FIELD_INITED_BY_CLASS_LITERAL = Test.class;
-  static Class<Test> withLiteralReturn() { return Test.class; }
-  static Class<Test> withFinalFieldReturn() { return FINAL_FIELD_INITED_BY_CLASS_LITERAL; }
-  static Class<Test> withNonFinalFieldReturn() { return NONFINAL_FIELD_INITED_BY_CLASS_LITERAL; }
+  public static Class<Test> NONFINAL_FIELD_INITED_BY_CLASS_LITERAL = Test.class;
+  public static Class<Test> withLiteralReturn() { return Test.class; }
+  public static Class<Test> withFinalFieldReturn() { return FINAL_FIELD_INITED_BY_CLASS_LITERAL; }
+  public static Class<Test> withNonFinalFieldReturn() { return NONFINAL_FIELD_INITED_BY_CLASS_LITERAL; }
 
-  void classLiteral() {
+  public void classLiteral() {
     test(GWT.create(Test.class));
   }
 
-  void finalFieldInitedByClassLiteral() {
+  public void finalFieldInitedByClassLiteral() {
     GWT.create(FINAL_FIELD_INITED_BY_CLASS_LITERAL);
   }
 
-  void nonFinalFieldInitedByClassLiteral() {
+  public void nonFinalFieldInitedByClassLiteral() {
     GWT.create(NONFINAL_FIELD_INITED_BY_CLASS_LITERAL);
   }
 
-  void methodWithLiteralReturn() {
+  public void methodWithLiteralReturn() {
     GWT.create(withLiteralReturn());
   }
 
-  void methodWithFinalFieldReturn() {
+  public void methodWithFinalFieldReturn() {
     GWT.create(withFinalFieldReturn());
   }
 
-  void test(Test test) {
+  public void test(Test test) {
     Assert.assertEquals(test.getClass(), this.getClass());
+  }
+
+  public void hello(String world) {
+    this.world = world;
   }
 }

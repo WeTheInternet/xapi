@@ -1,5 +1,7 @@
 package xapi.collect.api;
 
+import xapi.fu.In1Out1;
+
 import java.io.Serializable;
 
 /**
@@ -25,7 +27,16 @@ extends HasValues<String,V>, Serializable
 
   int size();
 
-  public static interface Many <V>
+  default V getOrCreate(String key, In1Out1<String, V> factory) {
+    V value = get(key);
+    if (value == null) {
+      value = factory.io(key);
+      put(key, value);
+    }
+    return value;
+  }
+
+  interface Many <V>
   extends StringTo<IntTo<V>>
   {
     Many <V> add(String key, V value);

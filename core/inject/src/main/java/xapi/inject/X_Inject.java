@@ -37,7 +37,7 @@
  */
 package xapi.inject;
 
-import xapi.annotation.gwt.MagicMethod;
+import xapi.annotation.compile.MagicMethod;
 import xapi.annotation.inject.SingletonDefault;
 import xapi.annotation.inject.SingletonOverride;
 import xapi.annotation.reflect.KeepMethod;

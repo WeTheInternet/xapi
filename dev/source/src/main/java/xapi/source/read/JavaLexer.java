@@ -35,11 +35,6 @@
 
 package xapi.source.read;
 
-import java.lang.reflect.Modifier;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.TreeSet;
-
 import xapi.collect.impl.SimpleStack;
 import xapi.dev.source.TypeDefinitionException;
 import xapi.source.read.JavaModel.AnnotationMember;
@@ -59,6 +54,11 @@ import xapi.source.read.JavaVisitor.MethodVisitor;
 import xapi.source.read.JavaVisitor.ModifierVisitor;
 import xapi.source.read.JavaVisitor.ParameterVisitor;
 import xapi.source.read.JavaVisitor.TypeData;
+
+import java.lang.reflect.Modifier;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.TreeSet;
 
 @SuppressWarnings("rawtypes")
 public class JavaLexer {
@@ -603,9 +603,6 @@ public class JavaLexer {
    * @param chars - The type signature to read.
    * @param pos - Where to start reading
    * @return - The end index where we finished reading.
-   *
-   * Do not send strings which may include fully qualified method or field references;
-   * instead use {@link #extractStatement(CharSequence, int)}
    *
    */
   public static TypeDef extractType(final CharSequence chars, int pos)

@@ -1,7 +1,7 @@
 package xapi.reflect;
 
 import xapi.annotation.api.XApi;
-import xapi.annotation.gwt.MagicMethod;
+import xapi.annotation.compile.MagicMethod;
 import xapi.log.api.LogService;
 import xapi.reflect.service.ReflectionService;
 import xapi.util.X_Runtime;

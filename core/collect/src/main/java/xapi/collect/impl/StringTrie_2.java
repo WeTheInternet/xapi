@@ -1,6 +1,8 @@
 package xapi.collect.impl;
 
 
+import xapi.source.api.Chars;
+
 import static xapi.collect.api.CharPool.EMPTY_STRING;
 
 import java.io.Serializable;

@@ -38,7 +38,7 @@ import xapi.util.api.ConvertsValue;
  * Examines the classpath for interfaces extending {@link Model},
  * or any type annotated with {@link IsModel}, and then builds
  * implementation classes for the given type.
- * 
+ *
  * @author <a href="mailto:james@wetheinter.net">James X. Nelson</a>
  * @version $Id$
  */
@@ -51,7 +51,7 @@ import xapi.util.api.ConvertsValue;
 )
 public class ModelGeneratorMojo extends AbstractXapiMojo {
 
-  
+
   @SuppressWarnings("unchecked")
   @Override
   protected void doExecute() throws MojoExecutionException, MojoFailureException {
@@ -63,7 +63,7 @@ public class ModelGeneratorMojo extends AbstractXapiMojo {
     ClasspathResourceMap environment // The complete compile-scope classpath
       = X_Maven.compileScopeScanner(project, getSession());
     final BytecodeAdapterService adapter = X_Maven.compileScopeAdapter(project, getSession());
-    
+
     // IdentityHashMap is faster, as it uses == for comparison,
     // and we know our ClassFiles come from the same map
     IdentityHashMap<ClassFile, Integer> models =
@@ -78,7 +78,7 @@ public class ModelGeneratorMojo extends AbstractXapiMojo {
       if (!models.containsKey(model))
         models.put(model, 0);
     }
-    
+
     // Build implementations for our models
     for (Iterator<Entry<ClassFile, Integer>> i = models.entrySet().iterator(); i.hasNext();) {
       Entry<ClassFile, Integer> entry = i.next();
@@ -89,7 +89,7 @@ public class ModelGeneratorMojo extends AbstractXapiMojo {
       }
       i.remove();
     }
-    
+
     // Run a javac for annotation processing.
   }
 
@@ -112,7 +112,7 @@ public class ModelGeneratorMojo extends AbstractXapiMojo {
       };
     };
   };
-  
+
   void buildModel(ClassFile clsFile, BytecodeAdapterService adapter, ClasspathResourceMap classpath) {
     X_Log.info("Building model ",clsFile);
     IsClass cls = adapter.toClass(clsFile.getName());
@@ -134,7 +134,7 @@ public class ModelGeneratorMojo extends AbstractXapiMojo {
       // Interface-only models don't have to look at any fields or existing methods
       // They will also be able to select superclass based on platform type
       for (IsMethod method : cls.getMethods()) {
-        
+
         if (X_Source.isJavaLangObject(method.getEnclosingType()))
           continue;
         if (HasModelFields.isModel(method.getEnclosingType()))
@@ -151,13 +151,13 @@ public class ModelGeneratorMojo extends AbstractXapiMojo {
         }
       }
       for (IsClass iface : cls.getInterfaces()) {
-        
+
       }
     } else {
       // Classes will only have abstract methods filled in, and serializers built
       for (IsMethod method : cls.getMethods()) {
         if (method.isAbstract()) {
-          
+
         }
       }
     }
@@ -181,7 +181,7 @@ public class ModelGeneratorMojo extends AbstractXapiMojo {
 
   private void buildPojo(ClassFile key, BytecodeAdapterService adapter, ClasspathResourceMap classpath) {
     X_Log.info("Building pojo ",key);
-    
+
   }
-  
+
 }

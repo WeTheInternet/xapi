@@ -19,6 +19,14 @@ public class ReverseIterable <T> implements Iterable<T> {
     this.iterator = iterator;
   }
 
+  public static <T> ReverseIterable <T> reverse(Iterable<T> itr) {
+    return new ReverseIterable<T>(itr);
+  }
+
+  public static <T> ReverseIterable <T> reverse(Iterator<T> itr) {
+    return new ReverseIterable<T>(itr);
+  }
+
   @Override
   public Iterator<T> iterator() {
     if (iterable != null) {

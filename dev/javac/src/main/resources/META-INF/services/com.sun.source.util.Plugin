@@ -1,2 +1,3 @@
 xapi.javac.dev.plugin.XapiCompilerPlugin
 xapi.javac.dev.plugin.GwtCreatePlugin
+xapi.javac.dev.plugin.MagicMethodPlugin

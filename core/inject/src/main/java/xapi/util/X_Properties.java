@@ -35,7 +35,7 @@
 
 package xapi.util;
 
-import xapi.annotation.gwt.MagicMethod;
+import xapi.annotation.compile.MagicMethod;
 import xapi.inject.impl.SingletonProvider;
 import xapi.util.impl.PropertyServiceDefault;
 import xapi.util.service.PropertyService;

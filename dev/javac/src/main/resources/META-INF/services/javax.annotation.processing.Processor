@@ -1,1 +1,2 @@
 xapi.javac.dev.processor.XapiAnnotationProcessor
+xapi.javac.dev.processor.MagicMethodAnnotationProcessor

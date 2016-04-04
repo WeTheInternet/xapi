@@ -1,6 +1,6 @@
 package xapi.ui.html;
 
-import xapi.annotation.gwt.MagicMethod;
+import xapi.annotation.compile.MagicMethod;
 import xapi.inject.X_Inject;
 import xapi.ui.api.StyleService;
 import xapi.ui.html.api.HtmlService;

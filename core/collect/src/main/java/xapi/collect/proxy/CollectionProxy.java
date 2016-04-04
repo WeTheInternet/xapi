@@ -33,6 +33,10 @@ public interface CollectionProxy <K, V>
 
   boolean isEmpty();
 
+  default boolean isNotEmpty() {
+    return !isEmpty();
+  }
+
   void clear();
 
   Class<K> keyType();

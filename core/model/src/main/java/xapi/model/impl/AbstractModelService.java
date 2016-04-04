@@ -5,7 +5,7 @@ package xapi.model.impl;
 
 import java.util.Objects;
 
-import xapi.annotation.gwt.MagicMethod;
+import xapi.annotation.compile.MagicMethod;
 import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
 import xapi.collect.api.StringTo;

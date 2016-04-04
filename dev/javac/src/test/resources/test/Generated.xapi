@@ -1,0 +1,12 @@
+package test;
+
+import xapi.util.X_Template;
+
+public class Generated {
+
+  public Generated() {
+    String hello = "Hello World";
+    Test value = `this.hello($hello);`;
+  }
+
+}

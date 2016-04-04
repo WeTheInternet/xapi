@@ -1,19 +1,19 @@
 package xapi.javac.dev.model;
 
-import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
+import com.sun.source.tree.CompilationUnitTree;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class PendingCompilationUnit {
+public class CompilationUnitTaskList {
 
-  private final List<Consumer<JCCompilationUnit>> listeners;
+  private final List<Consumer<CompilationUnitTree>> listeners;
   private final String name;
-  private JCCompilationUnit unit;
+  private CompilationUnitTree unit;
   private boolean finished;
 
-  public PendingCompilationUnit(String name, JCCompilationUnit unit) {
+  public CompilationUnitTaskList(String name, CompilationUnitTree unit) {
     this.name = name;
     this.unit = unit;
     listeners = new ArrayList<>();
@@ -33,15 +33,15 @@ public class PendingCompilationUnit {
     return name;
   }
 
-  public JCCompilationUnit getUnit() {
+  public CompilationUnitTree getUnit() {
     return unit;
   }
 
-  public void setUnit(JCCompilationUnit unit) {
+  public void setUnit(CompilationUnitTree unit) {
     this.unit = unit;
   }
 
-  public void onFinished(Consumer<JCCompilationUnit> consumer) {
+  public void onFinished(Consumer<CompilationUnitTree> consumer) {
     if (finished) {
       consumer.accept(unit);
     } else {
@@ -51,8 +51,8 @@ public class PendingCompilationUnit {
 
   @Override
   public boolean equals(Object obj) {
-    return obj instanceof PendingCompilationUnit &&
-        ((PendingCompilationUnit)obj).name.equals(name);
+    return obj instanceof CompilationUnitTaskList &&
+        ((CompilationUnitTaskList)obj).name.equals(name);
   }
 
   @Override

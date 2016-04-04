@@ -3,6 +3,7 @@ package xapi.collect.impl;
 import xapi.annotation.inject.SingletonDefault;
 import xapi.collect.api.CharPool;
 import xapi.except.NotYetImplemented;
+import xapi.source.api.Chars;
 
 @SingletonDefault(implFor=CharPool.class)
 public class CharPoolTrie extends MultithreadedStringTrie<char[]> implements CharPool{
@@ -50,8 +51,8 @@ public class CharPoolTrie extends MultithreadedStringTrie<char[]> implements Cha
     assert pos < end;//you can't call onEmpty if you're on the last node!
     char[] singleton = new char[end-pos];
     char[] keys = key.getChars();
-    System.arraycopy(keys, key.start+pos, singleton, 0, singleton.length);
-    doPut(e, keys, key.start+pos, key.start+end, singleton);
+    System.arraycopy(keys, key.getStart()+pos, singleton, 0, singleton.length);
+    doPut(e, keys, key.getStart()+pos, key.getStart()+end, singleton);
     return singleton;
   }
 
