@@ -65,4 +65,22 @@ public interface In1<I> extends HasInput, Rethrowable {
       }
     }
   }
+
+  static <I1, I2> In1<I1> from2(In2<I1, I2> adapt, I2 i2) {
+    return i1 -> adapt.in(i1, i2);
+  }
+
+  static <I1, I2> In1<I2> from1(In2<I1, I2> adapt, I1 i1) {
+    return i2 -> adapt.in(i1, i2);
+  }
+
+  static <I1> In1<In1<I1>> receiver(I1 value) {
+    // We need to declare a variable with this type for type inferment to work.
+    final In2<In1<I1>, I1> in2 = In1::in;
+    return in2.provide2(value);
+  }
+
+  static <I> In1<I> ignored(Runnable r) {
+    return ignored -> r.run();
+  }
 }

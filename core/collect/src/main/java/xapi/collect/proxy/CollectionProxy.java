@@ -2,6 +2,7 @@ package xapi.collect.proxy;
 
 import xapi.collect.api.CollectionOptions;
 import xapi.collect.api.ObjectTo;
+import xapi.fu.In1;
 import xapi.util.api.ConvertsTwoValues;
 
 import java.util.Collection;
@@ -44,4 +45,12 @@ public interface CollectionProxy <K, V>
   Class<V> valueType();
 
    boolean forEach(ConvertsTwoValues<K, V, Boolean> callback);
+
+   default void forEachValue(In1<V> callback) {
+     // purposely create a copy. This will avoid comodification exception
+     for (V v : toArray()) {
+       callback.in(v);
+     }
+   }
+
 }

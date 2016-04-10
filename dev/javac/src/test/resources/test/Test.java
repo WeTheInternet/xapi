@@ -46,31 +46,33 @@ public class Test {
   public static Class<Test> withFinalFieldReturn() { return FINAL_FIELD_INITED_BY_CLASS_LITERAL; }
   public static Class<Test> withNonFinalFieldReturn() { return NONFINAL_FIELD_INITED_BY_CLASS_LITERAL; }
 
-  public void classLiteral() {
-    test(GWT.create(Test.class));
+  public Test classLiteral() {
+    return test(GWT.create(Test.class));
   }
 
-  public void finalFieldInitedByClassLiteral() {
-    GWT.create(FINAL_FIELD_INITED_BY_CLASS_LITERAL);
+  public Test finalFieldInitedByClassLiteral() {
+    return GWT.create(FINAL_FIELD_INITED_BY_CLASS_LITERAL);
   }
 
-  public void nonFinalFieldInitedByClassLiteral() {
-    GWT.create(NONFINAL_FIELD_INITED_BY_CLASS_LITERAL);
+  public Test nonFinalFieldInitedByClassLiteral() {
+    return GWT.create(NONFINAL_FIELD_INITED_BY_CLASS_LITERAL);
   }
 
-  public void methodWithLiteralReturn() {
-    GWT.create(withLiteralReturn());
+  public Test methodWithLiteralReturn() {
+    return GWT.create(withLiteralReturn());
   }
 
-  public void methodWithFinalFieldReturn() {
-    GWT.create(withFinalFieldReturn());
+  public Test methodWithFinalFieldReturn() {
+    return GWT.create(withFinalFieldReturn());
   }
 
-  public void test(Test test) {
+  public Test test(Test test) {
     Assert.assertEquals(test.getClass(), this.getClass());
+    return test;
   }
 
-  public void hello(String world) {
+  public String hello(String world) {
     this.world = world;
+    return "hello: " + world;
   }
 }

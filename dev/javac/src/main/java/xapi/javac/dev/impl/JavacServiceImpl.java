@@ -34,7 +34,9 @@ import xapi.annotation.inject.InstanceDefault;
 import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
 import xapi.collect.api.StringDictionary;
+import xapi.collect.api.StringTo;
 import xapi.fu.In2;
+import xapi.fu.Out2;
 import xapi.javac.dev.api.JavacService;
 import xapi.javac.dev.model.InjectionBinding;
 import xapi.javac.dev.model.InjectionMap;
@@ -74,10 +76,12 @@ public class JavacServiceImpl implements JavacService {
   private JavaCompiler compiler;
   private StringDictionary<String> props;
   private final ClassTo cache;
+  private final StringTo<Out2<TypeElement, CompilationUnitTree>> typeMap;
   private JavaFileManager filer;
 
   public JavacServiceImpl() {
     cache = X_Collect.newClassMap();
+    typeMap = X_Collect.newStringMap(Out2.class);
     injections = new InjectionMap();
     remember(InjectionMap.class, injections);
     props = X_Collect.newDictionary();
@@ -130,6 +134,12 @@ public class JavacServiceImpl implements JavacService {
           // Grab the type parameter off the class literal
           final TypeElement ele = elements.getTypeElement(asField.getExpression().toString());
           assert ele.asType() != null;
+          return ele.asType();
+        }
+        if (asField.type != null) {
+          CharSequence name = asField.type.tsym.getQualifiedName();
+          final TypeElement ele = elements.getTypeElement(name);
+          assert ele != null;
           return ele.asType();
         }
         throw new UnsupportedOperationException("Could not find type of " + init);
@@ -203,8 +213,29 @@ public class JavacServiceImpl implements JavacService {
   @Override
   public String getQualifiedName(CompilationUnitTree cup, ClassTree classTree) {
     String pkg = getPackageName(cup);
+    if ("unnamed package".equals(pkg)) {
+      return classTree.getSimpleName().toString();
+    }
     // TODO consider enclosing elements correctly...
     return X_Source.qualifiedName(pkg, classTree.getSimpleName().toString());
+  }
+
+  @Override
+  public String getQualifiedName(CompilationUnitTree cup, Tree tree) {
+    if (tree instanceof CompilationUnitTree) {
+      return getQualifiedName((CompilationUnitTree)tree);
+    } else if (tree instanceof ImportTree) {
+      ImportTree importTree = (ImportTree) tree;
+      return getQualifiedName(cup, importTree.getQualifiedIdentifier());
+    } else if (tree instanceof ClassTree) {
+      return getQualifiedName(cup, (ClassTree)tree);
+    } else if (tree instanceof ExpressionTree){
+      final TypeMirror type = findType((ExpressionTree) tree);
+      return type.toString();
+    } else {
+      X_Log.error(getClass(), "Unhandled tree subclass ", tree.getKind(), " with class ", tree.getClass());
+      throw new UnsupportedOperationException("Not able to determine qualified name of " + tree);
+    }
   }
 
   @Override

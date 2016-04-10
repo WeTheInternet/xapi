@@ -3,13 +3,15 @@ package xapi.javac.dev.api;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.TaskListener;
+import xapi.fu.In1;
 import xapi.fu.Out2;
 import xapi.inject.X_Inject;
 import xapi.javac.dev.model.CompilerSettings;
+import xapi.javac.dev.model.JavaDocument;
 import xapi.util.X_String;
 
+import javax.lang.model.element.TypeElement;
 import java.net.URL;
-import java.util.function.Consumer;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
@@ -37,15 +39,17 @@ public interface CompilerService {
 
   void init(JavacService service);
 
-  void record(CompilationUnitTree cup);
+  void record(CompilationUnitTree cup, TypeElement typeElement);
 
-  void onCompilationUnitFinished(String name, Consumer<CompilationUnitTree> callback);
+  void peekOnCompiledUnits(In1<JavaDocument> callback);
+
+  void onCompilationUnitFinished(String name, In1<CompilationUnitTree> callback);
 
   void onFinished(Runnable r);
 
   TaskListener getTaskListener(JavacTask task);
 
-  void overwriteCompilationUnit(CompilationUnitTree cup, String newSource);
+  void overwriteCompilationUnit(JavaDocument doc, String newSource);
 
   /**
    * When a magic method emits code that contains more magic methods,
@@ -82,4 +86,8 @@ public interface CompilerService {
   default String outputPackage() {
     return "dist";
   }
+
+  boolean isGreedyCompiler();
+
+  JavaDocument getDocument(CompilationUnitTree cup);
 }

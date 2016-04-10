@@ -4,6 +4,7 @@ import xapi.collect.api.CollectionOptions;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.ObjectTo;
 import xapi.collect.proxy.CollectionProxy;
+import xapi.except.NotYetImplemented;
 import xapi.util.api.ConvertsTwoValues;
 
 import java.util.Collection;
@@ -52,7 +53,7 @@ public class IntToAbstract <V> implements IntTo<V> {
     assert valueType() == null || item == null || valueType().isAssignableFrom(item.getClass());
     return store.put(newEntry(size(), item)) == null;
   }
-  
+
   @Override
   public boolean insert(int pos, V item) {
     for (int i = store.size(); i --> 0; ) {
@@ -85,24 +86,17 @@ public class IntToAbstract <V> implements IntTo<V> {
 
   @Override
   public Collection<V> toCollection(Collection<V> into) {
-    if (into == null) {
-
-    }
-    return null;
+    throw new NotYetImplemented(getClass() + " must implement toCollection");
   }
 
   @Override
   public Map<Integer,V> toMap(Map<Integer,V> into) {
-    if (into == null) {
-
-    }
-    return null;
+    throw new NotYetImplemented(getClass() + " must implement toMap");
   }
 
   @Override
   public ObjectTo<Integer,V> clone(CollectionOptions options) {
-    ObjectTo<Integer, V> clone = null;
-    return clone;
+    throw new NotYetImplemented(getClass() + " must implement clone");
   }
 
   @Override
@@ -214,7 +208,7 @@ public class IntToAbstract <V> implements IntTo<V> {
       set(((Number)key).intValue(), (V)value);
     }
   }
-  
+
   @Override
   public boolean addAll(Iterable<V> items) {
     for (V item : items) {
@@ -222,7 +216,7 @@ public class IntToAbstract <V> implements IntTo<V> {
     }
     return true;
   }
-  
+
   @Override
   @SuppressWarnings("unchecked")
   public boolean addAll(V ... items) {

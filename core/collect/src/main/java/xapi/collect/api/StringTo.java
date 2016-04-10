@@ -1,6 +1,9 @@
 package xapi.collect.api;
 
+import xapi.fu.In1;
 import xapi.fu.In1Out1;
+
+import static xapi.fu.In2.in2;
 
 import java.io.Serializable;
 
@@ -16,12 +19,8 @@ import java.io.Serializable;
  * @param <V>
  */
 public interface StringTo <V>
-extends HasValues<String,V>, Serializable
+extends HasValues<String,V>, Serializable, TypedMap<String, V>
 {
-
-  V get(String key);
-  V put(String key, V value);
-  V remove(String key);
 
   String[] keyArray();
 
@@ -40,6 +39,10 @@ extends HasValues<String,V>, Serializable
   extends StringTo<IntTo<V>>
   {
     Many <V> add(String key, V value);
+  }
+
+  default In1<V> adapter(In1Out1<V, String> adapter) {
+    return in2(this::put).adapt1(adapter);
   }
 
 }

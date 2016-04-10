@@ -1,6 +1,7 @@
 package xapi.collect.impl;
 
 import xapi.collect.api.StringDictionary;
+import xapi.fu.In2;
 import xapi.util.api.ReceivesValue;
 
 public class StringDictionaryDefault <V> extends StringToAbstract<V> implements StringDictionary<V>{
@@ -45,4 +46,8 @@ public class StringDictionaryDefault <V> extends StringToAbstract<V> implements 
     }
   }
 
+  @Override
+  public void forEach(In2<String, V> callback) {
+    forKeys(key->callback.in(key, getValue(key)));
+  }
 }

@@ -1,5 +1,7 @@
 package xapi.fu;
 
+import xapi.fu.In1Out1.In1Out1Unsafe;
+
 import javax.inject.Provider;
 import java.util.function.Supplier;
 
@@ -28,6 +30,9 @@ public interface Out1<O> extends Rethrowable {
     return f;
   }
 
+  default Out1<O> self() {
+    return this;
+  }
   default Supplier<O> toSupplier() {
     return this::out1;
   }
@@ -99,5 +104,13 @@ public interface Out1<O> extends Rethrowable {
       }
       return this;
     }
+  }
+
+  default <To> Out1<To> map(In1Out1<O, To> factory) {
+    return factory.supplyDeferred(this);
+  }
+
+  default <To> Out1<To> mapUnsafe(In1Out1Unsafe<O, To> factory) {
+    return factory.supplyDeferred(this);
   }
 }

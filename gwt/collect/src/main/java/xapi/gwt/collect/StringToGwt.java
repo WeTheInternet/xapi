@@ -13,6 +13,10 @@ import com.google.gwt.core.client.JavaScriptObject;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
+/**
+ * This is an old-school jso-style implementation of an insertion ordered map that is optimized for gwt.
+ * TODO: make a simpler version that does not preserve order and use it when we don't care to pay for the extra abstraction.
+ */
 @InstanceOverride(implFor=StringTo.class)
 @SuppressWarnings("serial")
 @GwtScriptOnly
@@ -38,11 +42,16 @@ public class StringToGwt <V> extends JavaScriptObject implements StringTo<V>{
 
   public static native <T> StringToGwt<T> fromJso(JavaScriptObject o)
   /*-{
+     if (o.hasOwnProperty("_v$") && o.hasOwnProperty("_k")) {
+       return o; // TODO: perhaps make a copy?
+     }
      var m = @xapi.gwt.collect.StringToGwt::create()();
      for (var i in o) {
-       var slot = {i : this._k.length, v: o[i]};
-       m._k[slot.i] = i;
-       m[i] = slot;
+       if (o.hasOwnProperty(i)) {
+         var slot = {i : this._k.length, v: o[i]};
+         m._k[slot.i] = i;
+         m[i] = slot;
+       }
      }
    }-*/;
 

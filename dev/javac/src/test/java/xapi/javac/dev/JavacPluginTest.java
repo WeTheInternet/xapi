@@ -3,8 +3,10 @@ package xapi.javac.dev;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import xapi.fu.Out2;
+import xapi.fu.Pointer;
 import xapi.inject.X_Inject;
 import xapi.javac.dev.api.CompilerService;
+import xapi.javac.dev.model.CompilerSettings;
 import xapi.test.Assert;
 
 import java.io.File;
@@ -25,18 +27,18 @@ public class JavacPluginTest {
     // Compile a test resource and check if the GwtCreate plugin found our call to GWT.create
 
     CompilerService compiler = X_Inject.singleton(CompilerService.class);
-    Out2<Integer, URL> result = compiler.compileFiles(
-        compiler.defaultSettings().setTest(true).setClearGenerateDirectory(true),
+    Out2<Integer, URL> result = compiler.compileFiles(testSettings(compiler),
         "test/Test.java", "ComplexTest.java");
     Assert.assertEquals("Javac failed", 0, result.out1().intValue());
 
     URLClassLoader cl = new URLClassLoader(new URL[]{result.out2()}, Thread.currentThread().getContextClassLoader());
+    Pointer<Object> value = Pointer.pointer();
     Thread runIn = new Thread(()->{
       try {
-
         final Class<?> cls = cl.loadClass("dist.test.Test");
         Object o = cls.newInstance();
-        cls.getMethod("finalFieldInitedByClassLiteral").invoke(o);
+        Object test = cls.getMethod("finalFieldInitedByClassLiteral").invoke(o);
+        value.in(test);
       } catch (Exception e) {
         throw new RuntimeException(e);
       }
@@ -44,6 +46,17 @@ public class JavacPluginTest {
     runIn.setContextClassLoader(cl);
     runIn.start();
     runIn.join();
+    Object test = value.out1();
+//    assertThat(test).isNotNull();
 
+  }
+
+  private CompilerSettings testSettings(CompilerService compiler) {
+    final CompilerSettings settings = compiler.defaultSettings().setTest(true).setClearGenerateDirectory(true);
+    try {
+      return settings.setGenerateDirectory(new File(settings.getRoot(),"target/generated-test-sources/test").getCanonicalPath());
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 }

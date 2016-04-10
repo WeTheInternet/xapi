@@ -13,7 +13,11 @@ public interface Rethrowable {
     if (e instanceof Error) {
       throw (Error)e;
     }
-    throw new RuntimeException(e);
+    throw newRuntimeException(e);
+  }
+
+  default RuntimeException newRuntimeException(Throwable e) {
+    return new RuntimeException(e);
   }
 
 }

@@ -59,7 +59,11 @@ public interface In2<I1, I2> extends HasInput, Rethrowable {
     return i1 -> in(i1, and);
   }
 
-  static <I1, I2> In2<I1, I2> in2(BiConsumer<I1, I2> of) {
+  static <I1, I2> In2<I1, I2> in2(In2<I1, I2> of) {
+    return of;
+  }
+
+  static <I1, I2> In2<I1, I2> fromBiconsumer(BiConsumer<I1, I2> of) {
     return of::accept;
   }
 
@@ -73,7 +77,7 @@ public interface In2<I1, I2> extends HasInput, Rethrowable {
   /**
    * This method just exists to give you somewhere to create a lambda that will rethrow exceptions,
    * but exposes an exceptionless api.  If you don't have to call code with checked exceptions,
-   * prefer the standard {@link #in2(BiConsumer)}, as try/catch can disable / weaken some JIT compilers.
+   * prefer the standard {@link #fromBiconsumer(BiConsumer)}, as try/catch can disable / weaken some JIT compilers.
    */
   static <I1, I2> In2<I1, I2> in1Unsafe(In2Unsafe<I1, I2> of) {
     return of;
@@ -84,7 +88,11 @@ public interface In2<I1, I2> extends HasInput, Rethrowable {
   }
 
   default Consumer<Entry<I1, I2>> mapAdapter() {
-    return e->in(e.getKey(), e.getValue());
+    // You can't overload the same type to have different generics in a single expression,
+    // so we can't actually have two different In1Out generics in an inline expression
+    In1Out1<Entry<I1, I2>, I1> key = Entry::getKey;
+    In1Out1<Entry<I1, I2>, I2> value = Entry::getValue;
+    return adapt(key, value).toConsumer();
   }
 
   interface In2Unsafe <I1, I2> extends In2<I1, I2> {
@@ -98,4 +106,13 @@ public interface In2<I1, I2> extends HasInput, Rethrowable {
       }
     }
   }
+
+  static <I1, I2> In2<I1, I2> ignoreSecond(In1<I1> callback) {
+    return (i1, i2) -> callback.in(i1);
+  }
+
+  static <I1, I2> In2<I1, I2> ignoreFirst(In1<I2> callback) {
+    return (i1, i2) -> callback.in(i2);
+  }
+
 }

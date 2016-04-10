@@ -1,7 +1,5 @@
 package xapi.javac.dev.impl;
 
-import com.github.javaparser.JavaParser;
-import com.github.javaparser.ParseException;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.PackageDeclaration;
 import com.github.javaparser.ast.expr.NameExpr;
@@ -15,22 +13,27 @@ import com.sun.tools.javac.api.MultiTaskListener;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.main.JavaCompiler;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
-import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Name;
 import xapi.annotation.inject.SingletonDefault;
+import xapi.collect.X_Collect;
+import xapi.collect.api.StringTo;
+import xapi.fu.In1;
 import xapi.fu.Out2;
 import xapi.fu.Rethrowable;
-import xapi.io.X_IO;
 import xapi.javac.dev.api.CompilerService;
 import xapi.javac.dev.api.JavacService;
+import xapi.javac.dev.api.SourceTransformationService;
 import xapi.javac.dev.model.CompilationUnitTaskList;
 import xapi.javac.dev.model.CompilerSettings;
 import xapi.javac.dev.model.InjectionBinding;
+import xapi.javac.dev.model.JavaDocument;
 import xapi.javac.dev.search.InjectionTargetSearchVisitor;
 import xapi.log.X_Log;
 import xapi.source.X_Source;
 import xapi.util.X_Debug;
+
+import static xapi.fu.In2.ignoreFirst;
 
 import javax.lang.model.element.TypeElement;
 import javax.tools.FileObject;
@@ -38,8 +41,6 @@ import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.net.MalformedURLException;
@@ -51,7 +52,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Consumer;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
@@ -63,8 +65,11 @@ public class CompilerServiceImpl implements CompilerService, Rethrowable {
   private JavacService service;
 
   Map<String, CompilationUnitTaskList> cups = new HashMap<>();
+  SortedMap<String, JavaDocument> documentsByType = new TreeMap<>();
+  StringTo<StringTo<JavaDocument>> documentsInUnit = X_Collect.newStringDeepMap(JavaDocument.class);
   Set<CompilationUnitTaskList> unfinished = new HashSet<>();
   List<Runnable> onFinish = new ArrayList<>();
+  List<In1<JavaDocument>> listeners = new ArrayList<>();
   boolean finished;
 
   @Override
@@ -84,22 +89,47 @@ public class CompilerServiceImpl implements CompilerService, Rethrowable {
   }
 
   @Override
-  public void record(CompilationUnitTree cup) {
-    JCCompilationUnit unit = (JCCompilationUnit) cup;
-    String name = service.getQualifiedName(cup);
-    if (cups.containsKey(name)) {
-      cups.get(name).setUnit(unit);
-    } else {
-      cups.put(name, new CompilationUnitTaskList(name, unit));
-    }
-    CompilationUnitTaskList pcu = cups.get(name);
-    final List<InjectionBinding> bindings = new InjectionTargetSearchVisitor(service, unit)
-        .scan(unit, new ArrayList<>());
+  public void record(CompilationUnitTree cup, TypeElement typeElement) {
+    getOrMakeDocument(cup, typeElement);
+    final List<InjectionBinding> bindings = new InjectionTargetSearchVisitor(service, cup)
+        .scan(cup, new ArrayList<>());
 
   }
 
+  private JavaDocument getOrMakeDocument(CompilationUnitTree cup, TypeElement typeElement) {
+    String typeName = typeElement.getQualifiedName().toString();
+    JavaDocument doc = documentsByType.get(typeName);
+      doc = new JavaDocument(doc, service, cup, typeElement);
+      documentsByType.put(typeName, doc);
+
+    String cupName = doc.getCompilationUnitName();
+    documentsInUnit.get(cupName).put(typeName, doc);
+
+    if (cups.containsKey(cupName)) {
+      final CompilationUnitTaskList existing = cups.get(cupName);
+      existing.setUnit(cup);
+    } else {
+      cups.put(cupName, new CompilationUnitTaskList(cupName, cup));
+    }
+
+    CompilationUnitTaskList pcu = cups.get(cupName);
+    pcu.onFinished(In1.ignored(()->
+        documentsInUnit.get(cupName)
+            // forBoth accepts an In2 type, but we only want to act on the second type, which is a JavaDocument,
+            // so we use In2.ignoreFirst to call the finish() method on each document
+            .forBoth(ignoreFirst(JavaDocument::finish))
+    ));
+    return doc;
+  }
+
   @Override
-  public void onCompilationUnitFinished(String name, Consumer<CompilationUnitTree> callback) {
+  public void peekOnCompiledUnits(In1<JavaDocument> listener) {
+    listeners.add(listener);
+    documentsByType.values().forEach(listener.toConsumer());
+  }
+
+  @Override
+  public void onCompilationUnitFinished(String name, In1<CompilationUnitTree> callback) {
     CompilationUnitTaskList pcu = cups.get(name);
     if (pcu == null) {
       pcu = new CompilationUnitTaskList(name, null);
@@ -152,9 +182,9 @@ public class CompilerServiceImpl implements CompilerService, Rethrowable {
           if (element == null) {
             X_Log.info(getClass(), "No element found for ", name);
           } else {
-
+            final javax.lang.model.element.Name qualified = element.getQualifiedName();
             Name binary = env.getElementUtils().getBinaryName(element);
-            String relativeName = binary.toString().split("[$]")[0];// TODO check for enclosing types instead of this hack
+            String relativeName = binary.toString().split("[$]")[0];// TODO check for enclosing types instead of this nasty hack
             JavaFileObject javaFile;
             try {
               javaFile = jfm.getJavaFileForInput(StandardLocation.SOURCE_OUTPUT, relativeName, JavaFileObject.Kind.SOURCE);
@@ -189,19 +219,12 @@ public class CompilerServiceImpl implements CompilerService, Rethrowable {
   }
 
   @Override
-  public void overwriteCompilationUnit(CompilationUnitTree cup, String newSource) {
-    String pkg = service.getPackageName(cup);
-    String fileName = service.getFileName(cup);
-    final CompilationUnit parsed;
-    final String originalSource;
-    try (
-        InputStream in = cup.getSourceFile().openInputStream()
-    ){
-      parsed = JavaParser.parse(X_IO.toStreamUtf8(newSource), "UTF-8");
-      originalSource = X_IO.toStringUtf8(in);
-    } catch (IOException | ParseException e) {
-      throw X_Debug.rethrow(e);
-    }
+  public void overwriteCompilationUnit(JavaDocument doc, String newSource) {
+
+    String pkg = doc.getPackageName();
+    String fileName = doc.getFileName();
+    final CompilationUnit parsed = doc.getAst();
+    final String originalSource = doc.getSource();
     final PackageDeclaration packageDcl = parsed.getPackage();
     String currentPackage = packageDcl.getName().getName();
     final String distPackage = outputPackage();
@@ -213,17 +236,27 @@ public class CompilerServiceImpl implements CompilerService, Rethrowable {
       parsedName.setName(parsedName.getName().replace(tmpPackage+".", distPackage+"."));
 
     } else if (currentPackage.startsWith(distPackage)) {
-      // throw exception... do not overwrite stuff in final output location!
+      // document has been finalized.
+      // we may want to add listeners who only want to see a document after it has stabilized
+      doc.finalize(service);
     } else {
       // move the file into /tmp package and recompile until it becomes stable.
       parsedName.setName(X_Source.qualifiedName(tmpPackage, parsedName.getName()));
     }
     if (!parsedName.getName().equals(pkg)) {
-      try {
-        parsed.getImports().add(JavaParser.parseImport("import "+pkg+".*;"));
-      } catch (ParseException e) {
-       throw rethrow(e);
-      }
+        // mutate all packages starting with the original package.
+        // TODO: store up references to all original packages with a manager who can, at any time,
+        // find all the import statements belonging to a given prefix,
+        parsed.getImports().stream()
+            .filter(importDecl -> importDecl.getName().getName().startsWith(pkg))
+            .forEach(importDecl -> {
+              String name = importDecl.getName().getName();
+              name = name.replace(pkg, parsedName.getName());
+              final NameExpr nameExpr = new NameExpr(name);
+              importDecl.setName(nameExpr);
+            });
+      SourceTransformationService sources = service.getSourceTransformService();
+      sources.recordRepackage(doc, pkg, parsedName.getName());
     }
     String finalSource = parsed.toSource(service.getTransformer());
     if (!originalSource.equals(finalSource)) {
@@ -234,18 +267,33 @@ public class CompilerServiceImpl implements CompilerService, Rethrowable {
             StandardLocation.SOURCE_OUTPUT,
             parsedName.getName(),
             fileName + ".java",
-            cup.getSourceFile()
+            doc.getSourceFile()
         );
         try (
             Writer writer = output.openWriter()
         ) {
           writer.append(finalSource);
         }
-        // TODO: add to compile queue
+        if (isGreedyCompiler()) {
+          onCompilationUnitFinished(doc.getAstName(), In1.noop());
+        }
       } catch (Throwable e) {
         throw rethrow(e);
       }
     }
+  }
+
+  @Override
+  public boolean isGreedyCompiler() {
+    return true;
+  }
+
+  @Override
+  public JavaDocument getDocument(CompilationUnitTree cup) {
+    final String type = service.getQualifiedName(cup);
+    return documentsByType.computeIfAbsent(type, ignored->
+      getOrMakeDocument(cup, service.getElements().getTypeElement(type))
+    );
   }
 
   protected void doFinish() {
@@ -267,7 +315,7 @@ public class CompilerServiceImpl implements CompilerService, Rethrowable {
       public void started(TaskEvent e) {
         javacTask.getContext().put(JavacService.class, service);
         if (e.getKind() == Kind.ANALYZE) {
-          record(e.getCompilationUnit());
+          record(e.getCompilationUnit(), e.getTypeElement());
         }
       }
 

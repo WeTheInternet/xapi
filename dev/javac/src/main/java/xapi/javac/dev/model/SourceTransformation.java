@@ -2,6 +2,8 @@ package xapi.javac.dev.model;
 
 import com.sun.source.tree.CompilationUnitTree;
 
+import javax.tools.JavaFileObject;
+
 /**
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 4/3/16.
@@ -9,7 +11,7 @@ import com.sun.source.tree.CompilationUnitTree;
 public class SourceTransformation {
 
   public enum SourceTransformType {
-    REPLACE, WRAP, REMOVE
+    REPLACE, WRAP, REMOVE, REPACKAGE, CHANGE_IMPORT
   }
 
   private SourceTransformType transformType;
@@ -23,6 +25,7 @@ public class SourceTransformation {
   private String expected;
 
   private CompilationUnitTree compilationUnit;
+  private boolean failedTransform;
 
   public CompilationUnitTree getCompilationUnit() {
     return compilationUnit;
@@ -78,4 +81,11 @@ public class SourceTransformation {
     return this;
   }
 
+  public void setFailedTransform(String source, String name, JavaFileObject cup) {
+    this.failedTransform = true;
+  }
+
+  public boolean isFailedTransform() {
+    return failedTransform;
+  }
 }

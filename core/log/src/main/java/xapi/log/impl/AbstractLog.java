@@ -36,6 +36,7 @@ package xapi.log.impl;
 
 import xapi.collect.api.Fifo;
 import xapi.collect.impl.SimpleFifo;
+import xapi.fu.Out1;
 import xapi.log.api.LogLevel;
 import xapi.log.api.LogService;
 
@@ -88,6 +89,8 @@ public abstract class AbstractLog implements LogService {
 			return serialized;
 		} else if (m != null && m.getClass().isArray()) {
           return new SimpleFifo<Object>((Object[])m).join(", ");
+        } else if (m instanceof Out1) {
+          return unwrap(level, ((Out1)m).out1());
         } else if (m instanceof Provider) {
           return unwrap(level, ((Provider)m).get());
         } else if (m instanceof Iterable) {

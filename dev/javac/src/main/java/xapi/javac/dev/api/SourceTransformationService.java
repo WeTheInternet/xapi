@@ -2,6 +2,7 @@ package xapi.javac.dev.api;
 
 import com.sun.source.tree.CompilationUnitTree;
 import xapi.inject.X_Inject;
+import xapi.javac.dev.model.JavaDocument;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
@@ -25,4 +26,6 @@ public interface SourceTransformationService {
   InjectionResolver createInjectionResolver(CompilationUnitTree cup);
 
   void requestOverwrite(CompilationUnitTree cup, int startPos, int endPos, String newSource);
+
+  void recordRepackage(JavaDocument doc, String oldPackage, String newPackage);
 }

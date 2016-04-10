@@ -16,6 +16,7 @@ import xapi.fu.In1Out1;
 import xapi.fu.In2;
 import xapi.inject.X_Inject;
 import xapi.javac.dev.model.InjectionBinding;
+import xapi.javac.dev.model.JavaLibrary;
 import xapi.javac.dev.model.XApiInjectionConfiguration;
 import xapi.javac.dev.template.TemplateTransformer;
 import xapi.source.read.JavaModel;
@@ -23,6 +24,8 @@ import xapi.source.read.JavaModel.IsType;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
 import javax.tools.JavaFileManager;
 import java.util.Optional;
 
@@ -98,12 +101,41 @@ public interface JavacService {
     return recall(JavaFileManager.class);
   }
 
+  default JavaLibrary getJavaLibrary() {
+    return getOrCreate(JavaLibrary.class, cls->{
+      JavaLibrary lib = X_Inject.instance(JavaLibrary.class);
+      initializeLibrary(lib);
+      return lib;
+    });
+  }
+
+  default CompilerService getCompilerService() {
+    return getOrCreate(CompilerService.class, cls->CompilerService.compileServiceFrom(this));
+  }
+
+  default Types getTypes() {
+    return recall(Types.class);
+  }
+
+  default Elements getElements() {
+    return recall(Elements.class);
+  }
+
+  default void initializeLibrary(JavaLibrary lib) {
+    lib.initialize(this);
+  }
+
   String getFileName(CompilationUnitTree cup);
 
   String getQualifiedName(CompilationUnitTree cup, ClassTree classTree);
+
+  String getQualifiedName(CompilationUnitTree cup, Tree tree);
 
   default String getQualifiedName(CompilationUnitTree cup) {
     return getQualifiedName(cup, getClassTree(cup));
   }
 
+  default SourceTransformationService getSourceTransformService() {
+    return SourceTransformationService.instanceFrom(this);
+  }
 }

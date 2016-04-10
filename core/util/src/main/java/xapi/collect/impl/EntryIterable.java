@@ -18,4 +18,8 @@ public interface EntryIterable <K, V> {
 
   }
 
+  default void forBoth(In2<K, V> callback) {
+    entries().forEach(callback.mapAdapter());
+  }
+
 }

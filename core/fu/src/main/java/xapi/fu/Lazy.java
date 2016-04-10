@@ -53,6 +53,11 @@ public class Lazy <T> implements Out1<T> {
     return new Lazy<>(factory);
   }
 
+  public static <I, T> Lazy<T> ofDeferredConcrete(In1Out1<I, T> supplier, I value) {
+    final Out1<T> factory = supplier.supply(value);
+    return new Lazy<>(factory);
+  }
+
   public static <I, T> Lazy<T> ofImmediate(In1Out1<I, T> supplier, Out1<I> value) {
     return of(supplier.apply(value));
   }
@@ -76,6 +81,11 @@ public class Lazy <T> implements Out1<T> {
 
   public static <I, T> LazyNullable<T> ofNullableDeferred(In1Out1<I, T> supplier, Out1<I> value) {
     final Out1<T> factory = supplier.supplyDeferred(value);
+    return new LazyNullable<>(factory);
+  }
+
+  public static <I, T> LazyNullable<T> ofNullableDeferredConcrete(In1Out1<I, T> supplier, I value) {
+    final Out1<T> factory = supplier.supply(value);
     return new LazyNullable<>(factory);
   }
 

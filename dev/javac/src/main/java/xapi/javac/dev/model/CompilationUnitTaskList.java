@@ -1,14 +1,13 @@
 package xapi.javac.dev.model;
 
 import com.sun.source.tree.CompilationUnitTree;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Consumer;
+import xapi.collect.X_Collect;
+import xapi.collect.api.IntTo;
+import xapi.fu.In1;
 
 public class CompilationUnitTaskList {
 
-  private final List<Consumer<CompilationUnitTree>> listeners;
+  private final IntTo<In1<CompilationUnitTree>> listeners;
   private final String name;
   private CompilationUnitTree unit;
   private boolean finished;
@@ -16,7 +15,8 @@ public class CompilationUnitTaskList {
   public CompilationUnitTaskList(String name, CompilationUnitTree unit) {
     this.name = name;
     this.unit = unit;
-    listeners = new ArrayList<>();
+    assert name != null;
+    listeners = X_Collect.newList(In1.class);
   }
 
   public boolean isFinished() {
@@ -25,7 +25,7 @@ public class CompilationUnitTaskList {
 
   public void finish() {
     finished = true;
-    listeners.forEach(c -> c.accept(unit));
+    listeners.forEachValue(In1.receiver(unit));
     listeners.clear();
   }
 
@@ -41,9 +41,9 @@ public class CompilationUnitTaskList {
     this.unit = unit;
   }
 
-  public void onFinished(Consumer<CompilationUnitTree> consumer) {
+  public void onFinished(In1<CompilationUnitTree> consumer) {
     if (finished) {
-      consumer.accept(unit);
+      consumer.in(unit);
     } else {
       listeners.add(consumer);
     }
@@ -59,4 +59,5 @@ public class CompilationUnitTaskList {
   public int hashCode() {
     return name.hashCode();
   }
+
 }
