@@ -141,7 +141,7 @@ public class CollectionServiceDefault implements CollectionService{
 
 
   @Override
-  public <V, C extends Class<? extends V>> ClassTo<V> newClassMap(final C cls, final CollectionOptions opts) {
+  public <V, Generic extends V> ClassTo<V> newClassMap(final Class<Generic> cls, final CollectionOptions opts) {
     return new ClassToDefault<V>(this.<Class<?>, V>newMap(opts), cls);
   }
 
@@ -182,7 +182,7 @@ public class CollectionServiceDefault implements CollectionService{
   }
 
   @Override
-  public <V> ClassTo.Many<V> newClassMultiMap(final Class<V> cls, final CollectionOptions opts) {
+  public <V, Generic extends V> ClassTo.Many<V> newClassMultiMap(final Class<Generic> cls, final CollectionOptions opts) {
     return new ClassToManyList<>(cls, this.<Class<?>, IntTo<V>>newMap(opts));
   }
 

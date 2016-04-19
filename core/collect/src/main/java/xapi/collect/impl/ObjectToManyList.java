@@ -10,9 +10,10 @@ public class ObjectToManyList<K, V> extends MapOf<K, IntTo<V>> implements Object
   private static final long serialVersionUID = 681636065098625160L;
   private final Class<V> componentClass;
 
-  public ObjectToManyList(final Class<K> keyClass, final Class<V> componentClass, final java.util.Map<K, IntTo<V>> map) {
+  public <GenericV extends V> ObjectToManyList(final Class<K> keyClass, final Class<GenericV> componentClass, final java.util.Map<K, IntTo<V>> map) {
     super(map, keyClass, Class.class.cast(IntTo.class));
-    this.componentClass = componentClass;
+    Class forget = componentClass;
+    this.componentClass = forget;
   }
 
   public ObjectToManyList<K, V> add(final String key, final V value) {

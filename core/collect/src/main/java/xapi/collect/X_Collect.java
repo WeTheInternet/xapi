@@ -119,15 +119,15 @@ public class X_Collect {
     return new ArrayIterable<>(items);
   }
   @SuppressWarnings({"all"})
-  public static <V, C extends Class<? extends V>> ClassTo<V> newClassMap() {
+  public static <V> ClassTo<V> newClassMap() {
     ClassTo raw = service.newClassMap(Object.class, MUTABLE);
     return raw;
   }
-  public static <V, C extends Class<? extends V>> ClassTo<V> newClassMap(final C valueCls) {
+  public static <Type, Generic extends Type> ClassTo<Type> newClassMap(final Class<Generic> valueCls) {
     return service.newClassMap(valueCls, MUTABLE);
   }
 
-  public static <V> ClassTo.Many<V> newClassMultiMap(final Class<V> valueCls) {
+  public static <Type, Generic extends Type> ClassTo.Many<Type> newClassMultiMap(final Class<Generic> valueCls) {
     return service.newClassMultiMap(valueCls, MUTABLE);
   }
 
