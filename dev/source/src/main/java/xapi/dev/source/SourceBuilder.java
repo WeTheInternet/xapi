@@ -186,9 +186,13 @@ public class SourceBuilder<Payload> {
   }
 
   @Override
-  public String toString() {
+  public final String toString() {
+    return toSource();
+  }
+
+  public String toSource() {
     StringBuilder source = new StringBuilder();
-    String body = head.toString();
+    String body = head.toSource();
     if (pkgName.length() > 0) {
       if (body.trim().startsWith("package")) {
         int ind = body.indexOf(';', body.indexOf("package"));
@@ -197,7 +201,7 @@ public class SourceBuilder<Payload> {
       source.append("package " + pkgName + ";\n\n");
     }
     if (imports != null) {
-      source.append(imports.toString());
+      source.append(imports.toSource());
     }
     source.append(body);
     return source.toString();

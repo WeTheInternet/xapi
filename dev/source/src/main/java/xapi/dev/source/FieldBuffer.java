@@ -158,9 +158,9 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
   }
 
   @Override
-  public String toString() {
+  public String toSource() {
     if (fieldType == TypeData.NONE) {
-      return super.toString();
+      return super.toSource();
     }
 
     final StringBuilder b = new StringBuilder(Character.toString(NEW_LINE));
@@ -170,7 +170,7 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
     b.append(origIndent);
     if (annotations.size() > 0) {
       for (final String anno : annotations) {
-        b.append('@').append(anno).append(NEW_LINE + origIndent);
+        b.append('@').append(anno).append(NEW_LINE).append(origIndent);
       }
     }
     final String mods = Modifier.toString(modifier);
@@ -202,7 +202,7 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
       b.append(";");
     }
     b.append("\n");
-    return b.toString() + super.toString();
+    return b.toString() + super.toSource();
   }
 
   protected String fluentReturnType() {

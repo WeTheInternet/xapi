@@ -1,7 +1,7 @@
 package com.github.javaparser.ast.plugin;
 
 import com.github.javaparser.ast.expr.UiExpr;
-import com.github.javaparser.ast.visitor.DumpVisitor.SourcePrinter;
+import xapi.fu.Printable;
 
 /**
  * Used to allow custom transforms of ui elements,
@@ -17,6 +17,6 @@ import com.github.javaparser.ast.visitor.DumpVisitor.SourcePrinter;
  */
 public interface UiTranslatorPlugin {
 
-  String transformUi(SourcePrinter printer, UiExpr ui);
+  String transformUi(Printable printer, UiExpr ui);
 
 }

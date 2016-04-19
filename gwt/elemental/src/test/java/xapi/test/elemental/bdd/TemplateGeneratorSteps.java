@@ -8,7 +8,6 @@ import com.github.javaparser.ast.expr.UiContainerExpr;
 import com.github.javaparser.ast.expr.UiExpr;
 import com.github.javaparser.ast.plugin.UiTransformer;
 import com.github.javaparser.ast.stmt.BlockStmt;
-import com.github.javaparser.ast.visitor.DumpVisitor.SourcePrinter;
 import com.sun.source.tree.CompilationUnitTree;
 import cucumber.api.java.After;
 import cucumber.api.java.Before;
@@ -17,6 +16,7 @@ import cucumber.api.java.en.Then;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.dev.elemental.ElementalTemplatePlugin;
+import xapi.fu.Printable;
 import xapi.io.X_IO;
 import xapi.javac.dev.api.JavacService;
 import xapi.javac.dev.model.JavaDocument;
@@ -128,11 +128,10 @@ public class TemplateGeneratorSteps {
         .collect(Collectors.joining("\n"));
     Node ui = getNode(name);
     final String transformed;
-    SourcePrinter p = new SourcePrinter("");
+    Printable p = Printable.newPrinter();
     if (ui instanceof UiContainerExpr) {
-
       new ElementalTemplatePlugin<>().transformUi(p, (UiExpr) ui);
-      transformed = p.getSource();
+      transformed = p.toSource();
     } else {
       UiTransformer t = new UiTransformer();
       t.setPlugin(new ElementalTemplatePlugin<>());

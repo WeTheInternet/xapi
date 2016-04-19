@@ -1,7 +1,7 @@
 package com.github.javaparser.ast.plugin;
 
 import com.github.javaparser.ast.expr.TemplateLiteralExpr;
-import com.github.javaparser.ast.visitor.DumpVisitor.SourcePrinter;
+import xapi.fu.Printable;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
@@ -12,11 +12,11 @@ public class Transformer {
 
   public Transformer(){}
 
-  public String onTemplateStart(SourcePrinter printer, TemplateLiteralExpr template) {
+  public String onTemplateStart(Printable printer, TemplateLiteralExpr template) {
     return template.getValue();
   }
 
-  public void onTemplateEnd(SourcePrinter printer) {
+  public void onTemplateEnd(Printable printer) {
   }
 
 }

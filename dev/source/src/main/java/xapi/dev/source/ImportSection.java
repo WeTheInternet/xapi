@@ -77,7 +77,11 @@ public class ImportSection {
   }
 
   @Override
-  public String toString() {
+  public final String toString() {
+    return toSource();
+  }
+
+  public String toSource() {
     final StringBuilder b = new StringBuilder();
 
     // Print static imports first

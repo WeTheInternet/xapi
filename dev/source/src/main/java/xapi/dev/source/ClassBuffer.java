@@ -135,7 +135,7 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
   }
 
   @Override
-  public String toString() {
+  public String toSource() {
     final StringBuilder b = new StringBuilder(Character.toString(NEW_LINE));
     if (javaDoc != null && javaDoc.isNotEmpty()) {
       b.append(javaDoc.toString());
@@ -219,11 +219,11 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
     }
     b.append("{");
     b.append(NEW_LINE);
-    return b + super.toString();
+    return b + super.toSource();
   }
 
   protected String superString() {
-    return super.toString();
+    return super.toSource();
   }
 
   @Override
@@ -407,7 +407,7 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
       }
 
       @Override
-      public String toString() {
+      public String toSource() {
         return NEW_LINE + origIndent + "new " + classDef + "() {" + NEW_LINE
             + superString();
       }

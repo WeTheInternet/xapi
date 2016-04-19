@@ -115,22 +115,22 @@ public class XmlBuffer extends PrintBuffer {
     return buffer;
   }
 
-  public String toString() {
+  public String toSource() {
     if (tagName == null) {
       assert attributes == null || attributes.isEmpty() : "Cannot add attributes to an XmlBuffer with no tag name: "
-          + "\nAttributes: " + attributes + "\nBody: " + super.toString();
-      return super.toString();
+          + "\nAttributes: " + attributes + "\nBody: " + super.toSource();
+      return super.toSource();
     }
     String indent = trimWhitespace ? "" : this.indent;
     final String origIndent = indent.replaceFirst(INDENT, "");
     final StringBuilder b = new StringBuilder(origIndent);
 
     String text;
-    text = this.before.toString();
+    text = this.before.toSource();
     if (text.length() > 0) {
       b.append(escape(text));
     }
-    text = this.comment.toString();
+    text = this.comment.toSource();
     if (text.length() > 0) {
       if (!text.startsWith("<!--")) {
         b.append("<!--\n");
@@ -154,7 +154,7 @@ public class XmlBuffer extends PrintBuffer {
     if (attributes != null && !attributes.isEmpty()) {
       b.append(" ").append(attributes);
     }
-    final String body = super.toString();
+    final String body = super.toSource();
     if (abbr && body.length() == 0) {
       if (shouldShortenEmptyTag(tagName)) {
         newline(b.append("/>"));

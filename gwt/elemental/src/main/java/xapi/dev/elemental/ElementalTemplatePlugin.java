@@ -15,8 +15,8 @@ import com.github.javaparser.ast.expr.UiContainerExpr;
 import com.github.javaparser.ast.expr.UiExpr;
 import com.github.javaparser.ast.plugin.Transformer;
 import com.github.javaparser.ast.plugin.UiTranslatorPlugin;
-import com.github.javaparser.ast.visitor.DumpVisitor.SourcePrinter;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
+import xapi.fu.Printable;
 import xapi.source.X_Source;
 import xapi.util.api.DebugRethrowable;
 
@@ -31,7 +31,7 @@ public class ElementalTemplatePlugin <Ctx> implements UiTranslatorPlugin, DebugR
   protected class ElementalUiVisitor extends VoidVisitorAdapter <Ctx> {
 
     private final Expression expr;
-    private SourcePrinter printer;
+    private Printable printer;
 
     public ElementalUiVisitor(UiExpr expr) {
       if (expr instanceof TemplateLiteralExpr) {
@@ -63,14 +63,14 @@ public class ElementalTemplatePlugin <Ctx> implements UiTranslatorPlugin, DebugR
       printer.print(n.getName());
       printer.print("\")");
       super.visit(n, arg);
-      printer.printLn();
+      printer.println();
       printer.print(".build()");
     }
 
     @Override
     public void visit(UiAttrExpr n, Ctx arg) {
       printer.indent();
-      printer.printLn();
+      printer.println();
       printer.print(".set(\"");
       printer.print(n.getName().getName());
       printer.print("\", ");
@@ -94,7 +94,7 @@ public class ElementalTemplatePlugin <Ctx> implements UiTranslatorPlugin, DebugR
         }
       }
       printer.print(")");
-      printer.unindent();
+      printer.outdent();
 //      super.visit(n, arg); // leave this disabled until nesting is considered
     }
 
@@ -113,7 +113,7 @@ public class ElementalTemplatePlugin <Ctx> implements UiTranslatorPlugin, DebugR
       super.visit(n, arg);
     }
 
-    public void printTo(SourcePrinter printer, Ctx arg) {
+    public void printTo(Printable printer, Ctx arg) {
       this.printer = printer;
       expr.accept(this, arg);
     }
@@ -121,7 +121,7 @@ public class ElementalTemplatePlugin <Ctx> implements UiTranslatorPlugin, DebugR
   }
 
   @Override
-  public String transformUi(SourcePrinter printer, UiExpr ui) {
+  public String transformUi(Printable printer, UiExpr ui) {
     ElementalUiVisitor visitor = new ElementalUiVisitor(ui);
     visitor.printTo(printer, getArgument());
     return Transformer.DO_NOT_PRINT;

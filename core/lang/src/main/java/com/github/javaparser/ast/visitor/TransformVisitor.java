@@ -24,6 +24,7 @@ package com.github.javaparser.ast.visitor;
 import com.github.javaparser.ast.comments.Comment;
 import com.github.javaparser.ast.expr.TemplateLiteralExpr;
 import com.github.javaparser.ast.plugin.Transformer;
+import xapi.fu.Printable;
 import xapi.source.X_Source;
 
 import static com.github.javaparser.ast.plugin.Transformer.DO_NOT_PRINT;
@@ -57,7 +58,7 @@ public class TransformVisitor extends DumpVisitor {
     transformer.onTemplateEnd(printer);
   }
 
-  public static void normalizeToString(SourcePrinter printer, String template) {
+  public static void normalizeToString(Printable printer, String template) {
     printer.print("\"");
     if (template.isEmpty()) {
       printer.print("\"");
@@ -67,7 +68,7 @@ public class TransformVisitor extends DumpVisitor {
         String line = lines[i];
         printer.print(X_Source.escape(line));
         if (i < lines.length - 1) {
-          printer.printLn("\\n\" +");
+          printer.println("\\n\" +");
         }
         printer.print("\"");
       }

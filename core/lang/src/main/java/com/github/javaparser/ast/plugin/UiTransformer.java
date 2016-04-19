@@ -8,8 +8,8 @@ import com.github.javaparser.ast.expr.MemberValuePair;
 import com.github.javaparser.ast.expr.SingleMemberAnnotationExpr;
 import com.github.javaparser.ast.expr.TemplateLiteralExpr;
 import com.github.javaparser.ast.expr.UiExpr;
-import com.github.javaparser.ast.visitor.DumpVisitor.SourcePrinter;
 import com.github.javaparser.ast.visitor.TransformVisitor;
+import xapi.fu.Printable;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
@@ -22,7 +22,7 @@ public class UiTransformer extends Transformer {
 
   @Override
   public String onTemplateStart(
-      SourcePrinter printer, TemplateLiteralExpr template
+      Printable printer, TemplateLiteralExpr template
   ) {
     if (shouldConvertToString(template)) {
       TransformVisitor.normalizeToString(printer, template.getValueWithoutTicks());

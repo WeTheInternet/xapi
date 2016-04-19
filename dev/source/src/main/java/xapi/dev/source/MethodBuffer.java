@@ -96,7 +96,7 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
   }
 
   @Override
-  public String toString() {
+  public String toSource() {
     final StringBuilder b = new StringBuilder(Character.toString(NEW_LINE));
     if (javaDoc != null && javaDoc.isNotEmpty()) {
       b.append(javaDoc.toString());
@@ -164,7 +164,7 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
       prefix = "{\n";
       suffix = (once ? NEW_LINE : "") + origIndent + "}\n";
     }
-    return b.toString() + prefix + super.toString() + suffix;
+    return b.toString() + prefix + super.toSource() + suffix;
   }
 
   public MethodBuffer addExceptions(final String... exceptions) {

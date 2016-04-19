@@ -20,6 +20,11 @@ public interface Printable <Self extends Printable<Self>> extends Coercible {
 
   Self setIndent(String indent);
 
+  String toSource();
+
+  static SimplePrintable newPrinter() {
+    return toPrinter(new StringBuilder());
+  }
   static SimplePrintable toPrinter(StringBuilder b) {
     return new SimplePrintable(b);
   }
@@ -36,6 +41,7 @@ public interface Printable <Self extends Printable<Self>> extends Coercible {
 
     public SimplePrintable(StringBuilder builder) {
       this.target = builder;
+      indent = perIndent();
     }
 
     @Override
@@ -72,6 +78,11 @@ public interface Printable <Self extends Printable<Self>> extends Coercible {
     public SimplePrintable setIndent(String indent) {
       this.indent = indent;
       return self();
+    }
+
+    @Override
+    public String toSource() {
+      return target.toString();
     }
   }
 

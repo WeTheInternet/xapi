@@ -302,14 +302,6 @@ public class PrintBuffer extends CharBuffer implements Printable<PrintBuffer>{
     return this;
   }
 
-  @Override
-  public String toString() {
-    final StringBuilder body = new StringBuilder(header());
-    body.append(head);
-    body.append(target.toString());
-    return body + footer();
-  }
-
   public boolean isEmpty() {
     return target.length() == 0 && head.next == null;
   }
@@ -341,5 +333,13 @@ public class PrintBuffer extends CharBuffer implements Printable<PrintBuffer>{
   public PrintBuffer append(Object obj) {
     super.append(obj);
     return self();
+  }
+
+  @Override
+  public String toSource() {
+    final StringBuilder body = new StringBuilder(header());
+    body.append(head);
+    body.append(target.toString());
+    return body + footer();
   }
 }

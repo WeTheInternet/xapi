@@ -155,7 +155,12 @@ public class CharBuffer implements Coercible {
   }
 
   @Override
-  public String toString() {
+  @Deprecated // prefer .toSource();
+  public final String toString() {
+    return toSource();
+  }
+
+  public String toSource() {
     final StringBuilder body = new StringBuilder();
     body.append(head);
     body.append(target.toString());
