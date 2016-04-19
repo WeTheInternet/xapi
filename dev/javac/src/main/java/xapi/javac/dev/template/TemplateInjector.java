@@ -38,9 +38,7 @@ public class TemplateInjector implements MagicMethodInjector {
         Class<TemplateGenerator> generator = loadClass(value);
         In2Out1<String, Class, TemplateGenerator> factory = this::createFactory;
 
-        generatorByTypeName.put(key, factory
-            .supply1(value)
-            .supply(generator));
+        generatorByTypeName.put(key, factory.supply(value, generator));
       }
     });
   }
@@ -90,6 +88,7 @@ public class TemplateInjector implements MagicMethodInjector {
     if (generator != null) {
       return generator.out1();
     }
+
     return (Service, Cup, Source, Type, Value, Resolver) -> false;
   }
 }

@@ -1,7 +1,8 @@
 package xapi.javac.dev.template;
 
+import com.github.javaparser.ast.expr.TemplateLiteralExpr;
 import com.github.javaparser.ast.visitor.DumpVisitor.SourcePrinter;
-import com.github.javaparser.ast.visitor.TransformVisitor.Transformer;
+import com.github.javaparser.ast.plugin.Transformer;
 import xapi.util.X_Template;
 
 /**
@@ -12,10 +13,10 @@ public class TemplateTransformer extends Transformer {
 
   @Override
   public String onTemplateStart(
-      SourcePrinter printer, String template
+      SourcePrinter printer, TemplateLiteralExpr template
   ) {
     printer.printLn(X_Template.class.getCanonicalName() + ".processTemplate(");
-    return template;
+    return template.getValue();
   }
 
   @Override

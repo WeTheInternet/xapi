@@ -3,7 +3,7 @@ package xapi.javac.dev.processor;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseException;
 import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.visitor.TransformVisitor.Transformer;
+import com.github.javaparser.ast.plugin.Transformer;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.Tree;
@@ -93,8 +93,6 @@ public class XapiAnnotationProcessor extends AbstractProcessor {
       Set<? extends TypeElement> annotations, RoundEnvironment roundEnv
   ) {
 
-
-
     annotations.forEach(annotation->roundEnv.getElementsAnnotatedWith(annotation).forEach(element->{
 
       XApi xapi = element.getAnnotation(XApi.class);
@@ -141,7 +139,7 @@ public class XapiAnnotationProcessor extends AbstractProcessor {
 
               final JavaFileObject file = filer.createSourceFile(X_Source.qualifiedName(
                   pkg,
-                  path.replace(".xapi", "")
+                  path.replace(".xapi", "") // remove file extension
               ), element);
               try (Writer out = file.openWriter()) {
                 out.append(source);

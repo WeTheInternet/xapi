@@ -49,7 +49,7 @@ public class CollectionServiceGwt implements CollectionService{
   }
 
   @Override
-  public <V, C extends Class<? extends V>> ClassTo<V> newClassMap(C cls, CollectionOptions opts) {
+  public <V, Generic extends V> ClassTo<V> newClassMap(Class<Generic> cls, CollectionOptions opts) {
     return new xapi.collect.impl.ClassToDefault<V>(newMap(opts), cls);
   }
 
@@ -72,7 +72,7 @@ public class CollectionServiceGwt implements CollectionService{
   }
 
   @Override
-  public <V> ClassTo.Many<V> newClassMultiMap(final Class<V> cls, final CollectionOptions opts) {
+  public <V, Generic extends V> ClassTo.Many<V> newClassMultiMap(final Class<Generic> cls, final CollectionOptions opts) {
     return new ClassToManyList<>(cls, newMap(opts));
   }
 

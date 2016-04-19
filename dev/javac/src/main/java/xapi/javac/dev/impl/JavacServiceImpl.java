@@ -84,6 +84,7 @@ public class JavacServiceImpl implements JavacService {
     typeMap = X_Collect.newStringMap(Out2.class);
     injections = new InjectionMap();
     remember(InjectionMap.class, injections);
+    remember(JavacService.class, this);
     props = X_Collect.newDictionary();
   }
 
