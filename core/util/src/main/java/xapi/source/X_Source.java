@@ -249,4 +249,61 @@ public class X_Source {
     return new String[]{"", providerName};
   }
 
+  public static String normalizeNewlines(String template) {
+    // to remain GWT-compatible, we will use string regex methods.
+    // a jvm-only implementation could be made using precompiled Patterns,
+    // but it's likely not worth the nano seconds it will save.
+    return template.replaceAll("\r\n?", "\n");
+  }
+
+  public static String escape(final String unescaped) {
+    int extra = 0;
+    for (int in = 0, n = unescaped.length(); in < n; ++in) {
+      switch (unescaped.charAt(in)) {
+        case '\r':
+          String normalized = normalizeNewlines(unescaped);
+          if (!normalized.equals(unescaped)) {
+            return escape(normalized);
+          }
+        case '\0':
+        case '\n':
+        case '\"':
+        case '\\':
+          ++extra;
+          break;
+      }
+    }
+    if (extra == 0) {
+      return unescaped;
+    }
+    final char[] oldChars = unescaped.toCharArray();
+    final char[] newChars = new char[oldChars.length + extra];
+    for (int in = 0, out = 0, n = oldChars.length; in < n; ++in, ++out) {
+      char c = oldChars[in];
+      switch (c) {
+        case '\r':
+          newChars[out++] = '\\';
+          c = 'r';
+          break;
+        case '\0':
+          newChars[out++] = '\\';
+          c = '0';
+          break;
+        case '\n':
+          newChars[out++] = '\\';
+          c = 'n';
+          break;
+        case '\"':
+          newChars[out++] = '\\';
+          c = '"';
+          break;
+        case '\\':
+          newChars[out++] = '\\';
+          c = '\\';
+          break;
+      }
+      newChars[out] = c;
+    }
+    return String.valueOf(newChars);
+  }
 }

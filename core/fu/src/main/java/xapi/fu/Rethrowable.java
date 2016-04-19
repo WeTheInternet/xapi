@@ -7,6 +7,9 @@ package xapi.fu;
 public interface Rethrowable {
 
   default RuntimeException rethrow(Throwable e) {
+    if (this instanceof Debuggable) {
+      ((Debuggable)this).viewException(e);
+    }
     if (e instanceof RuntimeException) {
       throw (RuntimeException)e;
     }

@@ -38,7 +38,7 @@ public abstract class MemberBuffer<Self extends MemberBuffer<Self>> extends
   }
 
   @SuppressWarnings("unchecked")
-  private final Self self() {
+  public final Self self() {
     return (Self) this;
   }
 
@@ -434,7 +434,7 @@ public abstract class MemberBuffer<Self extends MemberBuffer<Self>> extends
   }
 
   @Override
-  protected String coerce(Object obj) {
+  public String coerce(Object obj) {
     if (obj instanceof Class) {
       return addImport((Class) obj);
     } else if (obj instanceof Enum){

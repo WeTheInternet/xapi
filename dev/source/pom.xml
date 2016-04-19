@@ -13,7 +13,7 @@
  <name>XApi - Dev mode tools for source generation</name>
  <url>WeTheInter.net</url>
  <description>
-    A fluent, functional codegen utility 
+    A fluent, functional codegen utility
   </description>
 
  <properties>
@@ -22,6 +22,12 @@
  </properties>
 
  <dependencies>
+
+
+  <dependency>
+   <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-fu</artifactId>
+  </dependency>
   <dependency>
    <groupId>junit</groupId>
    <artifactId>junit</artifactId>

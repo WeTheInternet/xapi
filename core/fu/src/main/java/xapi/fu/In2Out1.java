@@ -49,6 +49,10 @@ public interface In2Out1<I1, I2, O> extends Rethrowable {
     return in1->io(in1, in2);
   }
 
+  default Out1<O> supply(I1 in1, I2 in2) {
+    return supply1(in1).supply(in2);
+  }
+
   static <I1, I2, O> In1Out1<I2,O> with1(In2Out1<I1, I2, O> io, I1 in1) {
     return in2 -> io.io(in1, in2);
   }

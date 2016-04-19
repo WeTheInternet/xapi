@@ -320,7 +320,7 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
   }
 
   @Override
-  protected void onAppend() {
+  public void onAppend() {
     if (once) {
       once = false;
       onFirstAppend();

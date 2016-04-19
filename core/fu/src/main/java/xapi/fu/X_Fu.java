@@ -1,5 +1,7 @@
 package xapi.fu;
 
+import java.util.function.Predicate;
+
 /**
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 07/11/15.
@@ -15,8 +17,48 @@ public interface X_Fu {
     return Fu.jutsu.pushOnto(ts, t);
   }
 
+  static int getLength(Object obj) {
+    return Fu.jutsu.getLength(obj);
+  }
+
+  static void setValue(Object obj, int index, Object value) {
+    Fu.jutsu.setValue(obj, index, value);
+  }
+
+  static Object getValue(Object obj, int index) {
+    return Fu.jutsu.getValue(obj, index);
+  }
+
   static <T> T[] pushCopy(T[] ts, T t) {
     return Fu.jutsu.pushCopy(ts, t);
+  }
+
+  static <T extends CharSequence> Predicate<T> notEmpty() {
+    return item->item != null && item.length() > 0;
+  }
+
+  static boolean returnTrue() {
+    return true;
+  }
+
+  static boolean returnFalse() {
+    return false;
+  }
+
+  static <T> boolean returnTrue(T ignored) {
+    return true;
+  }
+
+  static <T> boolean returnFalse(T ignored) {
+    return false;
+  }
+
+  static <T> Filter<T> alwaysTrue() {
+    return X_Fu::returnTrue;
+  }
+
+  static <T> Filter<T> alwaysFalse() {
+    return X_Fu::returnFalse;
   }
 
 }

@@ -35,8 +35,9 @@
 
 package xapi.dev.source;
 
+import xapi.fu.Printable;
 
-public class PrintBuffer extends CharBuffer{
+public class PrintBuffer extends CharBuffer implements Printable<PrintBuffer>{
 
   static final char NEW_LINE = '\n';
   static final String INDENT = "  ";
@@ -103,6 +104,28 @@ public class PrintBuffer extends CharBuffer{
     return this;
   }
 
+  @Override
+  public boolean isIndentNeeded() {
+    return !indented;
+  }
+
+  @Override
+  public PrintBuffer setIndentNeeded(boolean needed) {
+    indented = !needed;
+    return this;
+  }
+
+  @Override
+  public String getIndent() {
+    return indent;
+  }
+
+  @Override
+  public PrintBuffer setIndent(String indent) {
+    this.indent = indent;
+    return this;
+  }
+
   public PrintBuffer append(final boolean b) {
     onAppend();
     target.append(b);
@@ -142,13 +165,6 @@ public class PrintBuffer extends CharBuffer{
   public PrintBuffer indent() {
     indent = indent + INDENT;
     return this;
-  }
-
-  private void printIndent() {
-    if (!indented) {
-      target.append(indent);
-      indented = true;
-    }
   }
 
   public PrintBuffer indentln(final Object obj) {
@@ -319,5 +335,11 @@ public class PrintBuffer extends CharBuffer{
   @SuppressWarnings("unchecked")
   public PrintBuffer printAfter(String suffix) {
     return (PrintBuffer) super.printAfter(suffix);
+  }
+
+  @Override
+  public PrintBuffer append(Object obj) {
+    super.append(obj);
+    return self();
   }
 }

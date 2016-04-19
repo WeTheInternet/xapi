@@ -25,8 +25,16 @@ interface Jutsu {
     return (T[]) arr;
   }
 
-  default String coerce(Object value) {
-    return String.valueOf(value);
+  default int getLength(Object obj) {
+    return Array.getLength(obj);
+  }
+
+  default void setValue(Object obj, int index, Object value) {
+    Array.set(obj, index, value);
+  }
+
+  default Object getValue(Object obj, int index) {
+    return Array.get(obj, index);
   }
 
   default int applyArguments(int i, Many<HasInput> each, Object ... args) {

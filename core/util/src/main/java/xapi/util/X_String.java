@@ -6,6 +6,8 @@ import xapi.inject.X_Inject;
 import static xapi.util.service.StringService.binarySuffix;
 import static xapi.util.service.StringService.metricSuffix;
 
+import java.util.Iterator;
+
 public class X_String {
 
   private X_String() {}
@@ -153,6 +155,18 @@ public class X_String {
 
     return new String(joined);
   }//:java
+
+  public static String join(String separator, Iterable values) {
+    StringBuilder b = new StringBuilder();
+    final Iterator itr = values.iterator();
+    if (itr.hasNext()) {
+      b.append(String.valueOf(itr.next()));
+    }
+    while (itr.hasNext()) {
+      b.append(separator).append(String.valueOf(itr.next()));
+    }
+    return b.toString();
+  }
 
   public static boolean isEmpty(String enclosing) {
     return enclosing == null || enclosing.length() == 0;

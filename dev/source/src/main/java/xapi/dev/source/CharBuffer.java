@@ -4,9 +4,7 @@
 package xapi.dev.source;
 
 import xapi.collect.impl.StringStack;
-
-import java.lang.reflect.Array;
-import java.util.Iterator;
+import xapi.fu.Coercible;
 
 /**
  * A lightweight utility to assemble strings using a tree of linked nodes,
@@ -15,7 +13,7 @@ import java.util.Iterator;
  * @author James X. Nelson (james@wetheinter.net, @james)
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
-public class CharBuffer {
+public class CharBuffer implements Coercible {
 
   protected static final class CharBufferStack extends StringStack<CharBuffer> {
   }
@@ -61,39 +59,12 @@ public class CharBuffer {
     return new CharBuffer(suffix);
   }
 
-  protected void onAppend() {
-  }
+  public void onAppend() { }
 
   public CharBuffer append(final Object obj) {
     onAppend();
     target.append(coerce(obj));
     return this;
-  }
-
-  /**
-   * In case you want control over how each object added by the methods
-   * {@link #append(Object)} and {@link #add(Object[])} are rendered,
-   * you may freely override this method.
-   */
-  protected String coerce(Object obj) {
-    if (obj instanceof Iterable){
-      StringBuilder b = new StringBuilder();
-      for (Iterator i = ((Iterable)obj).iterator();
-           i.hasNext();) {
-        final Object value = i.next();
-        b.append(coerce(value));
-      }
-      return b.toString();
-    } else if (obj != null && obj.getClass().isArray()){
-      StringBuilder b = new StringBuilder();
-      for (int i = 0, m = Array.getLength(obj); i < m; i++ ) {
-        final Object value = Array.get(obj, i);
-        b.append(coerce(value));
-      }
-      return b.toString();
-    } else {
-      return String.valueOf(obj);
-    }
   }
 
   public CharBuffer append(final String str) {
