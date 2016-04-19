@@ -74,6 +74,9 @@
   <!-- A simple argument processor, based on Gwt ArgProcessor classes. -->
   <module>args</module>
 
+  <!-- XApi language parser, ast and tools (enhanced fork of github.com/javaparser). -->
+  <module>lang</module>
+
   <!-- Core user interface apis. -->
   <module>ui</module>
 
