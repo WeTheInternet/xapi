@@ -1,6 +1,7 @@
 package xapi.javac.dev;
 
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import xapi.fu.Out2;
 import xapi.fu.Pointer;
@@ -23,6 +24,7 @@ public class JavacPluginTest {
   }
 
   @Test
+  @Ignore // Temporarily disable this test, as we wind up leaving temporary artifacts that intellij automatically adds to classpath...
   public void testSimpleCompile () throws Exception {
     // Compile a test resource and check if the GwtCreate plugin found our call to GWT.create
 
