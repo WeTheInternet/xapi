@@ -6,6 +6,46 @@ Given compile ui with name HelloWorld:
 Then source code of HelloWorld is:
   | new PotentialElement("div").append("Hello World ") .build() |
 
+Scenario: Parse a template with children
+Given compile ui with name HelloWorld:
+  | <template id="test">                        |
+  | <a href="javascript:void(0)">  |
+  | <content />                                 |
+  | </a>                                        |
+  | </template>                                 |
+Then source code of HelloWorld is:
+  | new PotentialElement("template")            |
+  | .set("id", "test")                          |
+  |                                             |
+  | .createChild("a")                           |
+  | .set("href", "javascript:void(0)")          |
+  |                                             |
+  | .createChild("content")                     |
+  | .finishChild()                              |
+  |                                             |
+  | .finishChild()                              |
+  |                                             |
+  | .build()                                    |
+
+Scenario: Parse a template with an html class attribute
+Given compile ui with name HelloWorld:
+  | <template id="test"  class="link" /> |
+Then source code of HelloWorld is:
+  | new PotentialElement("template")            |
+  | .set("id", "test")                          |
+  | .set("class", "link")                       |
+  | .build()                                    |
+
+Scenario: Parse a template with an html comment
+Given compile ui with name HelloWorld:
+  | <template id="test">                        |
+  | <!-- This is a comment -->                  |
+  | </template>                                 |
+Then source code of HelloWorld is:
+  | new PotentialElement("template")            |
+  | .set("id", "test")                          |
+  | .build()                                    |
+
 Scenario: Create a class from a template file
 Given compile component with name HelloWorld:
   | import xapi.ui.api.*;                                                                 |

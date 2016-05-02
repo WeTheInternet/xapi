@@ -1,5 +1,8 @@
 package xapi.dev.components;
 
+import com.github.javaparser.JavaParser;
+import com.github.javaparser.ParseException;
+import com.github.javaparser.ast.expr.UiContainerExpr;
 import xapi.annotation.inject.SingletonDefault;
 import xapi.annotation.inject.SingletonOverride;
 import xapi.collect.api.Fifo;
@@ -25,6 +28,8 @@ import xapi.dev.source.SourceBuilder;
 import xapi.fu.In1Out1;
 import xapi.inject.X_Inject;
 import xapi.io.X_IO;
+import xapi.log.X_Log;
+import xapi.log.api.LogLevel;
 import xapi.ui.html.api.Css;
 import xapi.ui.html.api.El;
 import xapi.ui.html.api.Html;
@@ -256,28 +261,35 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
       for (ShadowDom shadowDom : shadowDoms) {
         // Calculate if we need to do any css injection.
         In1Out1<String, String> shadowStyle = null;
+
+        GeneratedComponentMetadata metadata = new GeneratedComponentMetadata();
+
         if (shadowDom.styles().length > 0 || styles.isNotEmpty()) {
           final Fifo<ShadowDomStyle> localStyles = new SimpleFifo<>();
           localStyles.giveAll(shadowDom.styles());
           shadowStyle = getStyleInjectorGenerator().generateShadowStyles(logger, styles, localStyles, context);
+          if (shadowStyle != null) {
+            metadata.modifiers.give(shadowStyle);
+          }
         }
 
         for (String template : shadowDom.value()) {
-          template = resolveTemplate(logger, template, context, type);
-          out.print("builder.addShadowRoot(\""+ Generator.escape(template)+"\"");
-          if (shadowStyle != null) {
-            out
+          template = resolveTemplate(logger, template, context, type, metadata);
+          out
+                .print("builder.addShadowRoot(\"")
+                    .print(Generator.escape(template))
+                .print("\"")
                 .println()
                 .println(", shadow -> {")
-                .indent()
-                .printlns(shadowStyle.io("shadow"))
-                .println("return shadow;")
-                .outdent()
-                .print("}")
-            ;
+                .indent();
+
+          metadata.modifiers.out(modifier->out.printlns(modifier.io("shadow")));
+
+          out
+              .println("return shadow;")
+              .outdent()
+              .println("});"); // just close out the shadowroot call
           }
-          out.println(");"); // just close out the shadowroot call
-        }
       }
     }
 
@@ -338,33 +350,64 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
     return list;
   }
 
-  private String resolveTemplate(TreeLogger logger, String template, GeneratorContext context, JClassType type) throws UnableToCompleteException {
+  private String resolveTemplate(TreeLogger logger, String template, GeneratorContext context, JClassType type, GeneratedComponentMetadata metadata) throws UnableToCompleteException {
+    String asString;
+    boolean wasHtml = false;
     if (template.trim().startsWith("<")) {
-      // raw html
-      return template;
-    }
-    // resource to load
+      // raw html / xapi template.
+      asString = template;
+    } else {
+      // resource to load
+        if (!template.startsWith("/")) {
+          // Relative resource
+          template = "/"+type.getPackage().getName().replace('.', '/')+"/"+template;
+          wasHtml = template.endsWith(".html");
+        }
+        try (
+            InputStream resource = context.getResourcesOracle().getResourceAsStream(template.substring(1))
+        ) {
+          if (resource == null) {
+            logger.log(Type.ERROR, "Unable to find shadow root bundle "+template);
+            throw new UnableToCompleteException();
+          }
+          asString = X_IO.toStringUtf8(resource);
 
-    // There are shadow dom resource to inject...
-      if (!template.startsWith("/")) {
-        // Relative resource
-        template = "/"+type.getPackage().getName().replace('.', '/')+"/"+template;
-      }
-      try (
-          InputStream resource = context.getResourcesOracle().getResourceAsStream(template.substring(1));
-      ) {
-        if (resource == null) {
-          logger.log(Type.ERROR, "Unable to find shadow root bundle "+template);
+        } catch (IOException e) {
+          logger.log(Type.ERROR, "Error generating shadow root bundle "+template, e);
           throw new UnableToCompleteException();
         }
-        String asString = X_IO.toStringUtf8(resource);
-        // TODO: pre-process this shadow root...
-        return asString;
+    }
 
-      } catch (IOException e) {
-        logger.log(Type.ERROR, "Error generating shadow root bundle "+template, e);
+    try {
+      final UiContainerExpr container = JavaParser.parseUiContainer(asString);
+      // The template parsed.
+      // We are going to need to transform it into a few different forms:
+      // 1) The actual html to inject, which we return
+      // 2) Any stylesheets or message bundles generated by the template
+      // 3) A transform function that can operate on the shadow dom element at runtime.
+    } catch (ParseException e) {
+      if (!wasHtml && metadata.isAllowedToFail()) {
+        X_Log.warn(getClass(), "Unable to parse html as xapi UI.  Treating template as raw html. Set -Dxapi.log.level=TRACE to see the template");
+        X_Log.trace(asString);
+        if (X_Log.loggable(LogLevel.TRACE)) {
+          if (!asString.equals(template)) {
+            X_Log.trace("From template", template);
+          }
+        }
+        X_Log.warn(e);
+        return asString;
+      } else {
+        logger.log(Type.ERROR, "Unparseable xapi template:");
+        if (!asString.equals(template)) {
+          logger.log(Type.ERROR, "loaded from " + template);
+        }
+        logger.log(Type.ERROR, asString, e);
         throw new UnableToCompleteException();
       }
+    }
+
+    // TODO: pre-process this shadow root...
+    return asString;
   }
 
   @Override

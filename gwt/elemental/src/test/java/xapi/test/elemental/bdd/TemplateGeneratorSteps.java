@@ -36,6 +36,69 @@ import java.util.stream.Collectors;
 //import static org.assertj.core.api.Assertions.assertThat;
 
 /**
+ *
+ Simple example:
+
+ Element e = `<div
+ class = .styleName { left: 5px } \
+ .styleName a { color: #579 }
+ onClick = this::onClick
+ onMouseOver = this.addClassName("hovered")
+ onMouseOut = this::removeClassName, "hovered"
+ ><a
+ href = this::submit
+ > Hello world! </a></div>`;
+
+
+ *Consideration* for a polyglot syntax:
+ *
+ html:
+ shadowRoot:
+ div:
+ class = "testing"
+ onclick = this::onClick(*)
+ onmouseover = js:
+ alert(this.innerText);
+ :js
+ onfocus = java:
+ this.focused = true;
+ :java
+
+ Hello from inside the shadow DOM
+ (this div is what is actually rendered,
+ with any tags inside the web component injected below)
+ :content:
+ :div
+ :shadowRoot
+ div:
+ Hello from the external DOM.
+
+ This element is the only one visible when inspecting the element,
+ but it will actually be rendered inside the <content /> tag in the shadow root.
+ :div
+ :html
+ java:
+ class $X implements HasClickHandler {
+ boolean focused = false;
+ }
+ :java
+ js:
+ function onCreated() {
+ console.log("this will be automatically bound to web component lifecycle");
+ }
+ function focus() {
+ this.controller.@$X::focused = true;
+ }
+ :js
+ css:
+ .testing {
+ background-color: navy;
+ color: white;
+ }
+ :css
+
+
+ *
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 4/9/16.
  */
@@ -76,19 +139,7 @@ public class TemplateGeneratorSteps {
         // Use CSS parser
       case '@':
         // Grab Processing instruction
-/*
-  Element e = `<div
-      class = .styleName { left: 5px } \
-              .styleName a { color: #579 }
-      onClick = this::onClick
-      onMouseOver = this.addClassName("hovered")
-      onMouseOut = this::removeClassName, "hovered"
-   ><a
-    href = this::submit
-    > Hello world! </a></div>`;
 
-
-* */
       default :
         // Maybe Java references, css classes, or possibly just text
         try {
@@ -137,7 +188,7 @@ public class TemplateGeneratorSteps {
       t.setPlugin(new ElementalTemplatePlugin<>());
       transformed = ui.toSource(t);
     }
-    assertThat(transformed, equalToIgnoringWhiteSpace(expected));
+    assertThat("Expected\n: " + expected+"\n\nActual:\n" + transformed, transformed, equalToIgnoringWhiteSpace(expected));
   }
 
   private Node getNode(String name) {

@@ -190,6 +190,17 @@
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-core-lang</artifactId>
+    <version>${project.version}</version>
+   </dependency>
+   <dependency>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-core-lang</artifactId>
+    <version>${project.version}</version>
+    <classifier>sources</classifier>
+   </dependency>
+   <dependency>
+    <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-util</artifactId>
     <version>${project.version}</version>
    </dependency>
@@ -448,6 +459,11 @@
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-dev-source</artifactId>
+    <version>${project.version}</version>
+   </dependency>
+   <dependency>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-dev-javac</artifactId>
     <version>${project.version}</version>
    </dependency>
    <dependency>

@@ -32,6 +32,7 @@ public class ElementalTemplatePlugin <Ctx> implements UiTranslatorPlugin, DebugR
 
     private final Expression expr;
     private Printable printer;
+    private boolean hasRoot;
 
     public ElementalUiVisitor(UiExpr expr) {
       if (expr instanceof TemplateLiteralExpr) {
@@ -59,12 +60,27 @@ public class ElementalTemplatePlugin <Ctx> implements UiTranslatorPlugin, DebugR
 
     @Override
     public void visit(UiContainerExpr n, Ctx arg) {
-      printer.print("new PotentialElement(\"");
+      boolean isRoot = !hasRoot;
+      if (isRoot) {
+        hasRoot = true;
+        printer.print("new PotentialElement(\"");
+      } else {
+        printer.indent();
+        printer.println();
+        printer.println();
+        printer.print(".createChild(\"");
+      }
       printer.print(n.getName());
       printer.print("\")");
       super.visit(n, arg);
       printer.println();
-      printer.print(".build()");
+      if (isRoot) {
+
+        printer.print(".build()");
+      } else {
+        printer.println(".finishChild()");
+        printer.outdent();
+      }
     }
 
     @Override
@@ -103,6 +119,11 @@ public class ElementalTemplatePlugin <Ctx> implements UiTranslatorPlugin, DebugR
       n.getChildren().forEach(uiExpr -> {
         if (uiExpr instanceof TemplateLiteralExpr) {
           final String src = ((TemplateLiteralExpr)uiExpr).getValueWithoutTicks();
+          if (src.chars().allMatch(Character::isWhitespace)) {
+            // TODO make ignoring whitespace optional...
+            // probably by enforcing a supertype on the Ctx argument...
+            return;
+          }
           printer.print(".append(\"");
           printer.print(X_Source.escape(src));
           printer.print("\")");
@@ -110,7 +131,6 @@ public class ElementalTemplatePlugin <Ctx> implements UiTranslatorPlugin, DebugR
           uiExpr.accept(this, arg);
         }
       });
-      super.visit(n, arg);
     }
 
     public void printTo(Printable printer, Ctx arg) {
