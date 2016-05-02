@@ -4,8 +4,8 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.CollectionOptions;
 import xapi.collect.api.HasValues;
 import xapi.collect.api.ObjectTo;
+import xapi.fu.In1Out1;
 import xapi.util.api.ConvertsTwoValues;
-import xapi.util.api.ConvertsValue;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -207,10 +207,10 @@ implements CollectionProxy<K,V>, Map<K,V>, HasValues<K,V>, ObjectTo<K,V>
   }
 
   @Override
-  public V getOrCompute(K key, ConvertsValue<K, V> factory) {
+  public V getOrCompute(K key, In1Out1<K, V> factory) {
     V existing = get(key);
     if (existing == null) {
-      existing = factory.convert(key);
+      existing = factory.io(key);
       put(key, existing);
     }
     return existing;

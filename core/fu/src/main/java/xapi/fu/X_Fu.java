@@ -1,5 +1,8 @@
 package xapi.fu;
 
+import static xapi.fu.MappableIterable.mappable;
+
+import java.util.Iterator;
 import java.util.function.Predicate;
 
 /**
@@ -61,25 +64,29 @@ public interface X_Fu {
     return X_Fu::returnFalse;
   }
 
-}
 
-/**
- This package-local class implements our platform magic, Jutsu, and initializes it with all default methods.
-
- This allows you to use techniques like super-sourcing or source-rewriting
- to swap out this interface with your own platform-specific overrides.
-
- See src/main/resource/xapi/jutsu/xapi/fu/Fu.java for the Gwt implementation of the super-sourcing technique
-*/
-class Fu implements Jutsu {
-  static final Fu jutsu = getFu();
-
-  protected Fu init(Fu jutsu) {
-    return jutsu;
+  static <T> String reduceToString(Iterable<T> data, In1Out1<T, String> serializer, String separator) {
+    return reduceToString(map(data, serializer), separator);
   }
 
-  static Fu getFu() {
-    final Fu fu = new Fu();
-    return fu.init(fu);
+  static <F, T> Iterable<T> map(Iterable<F> data, In1Out1<F, T> converter) {
+    return mappable(data).map(converter);
   }
+
+  static String reduceToString(Iterable<? extends CharSequence> data, String separator) {
+    StringBuilder b = new StringBuilder();
+    final Iterator<? extends CharSequence> itr = data.iterator();
+    if (itr.hasNext()) {
+      b.append(itr.next());
+      while (itr.hasNext()) {
+        b.append(separator);
+        b.append(itr.next());
+      }
+    }
+    return b.toString();
+  }
+
+
+
 }
+

@@ -4,8 +4,8 @@ import xapi.collect.api.CollectionOptions;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.ObjectTo;
 import xapi.collect.proxy.CollectionProxy;
+import xapi.fu.In1Out1;
 import xapi.util.api.ConvertsTwoValues;
-import xapi.util.api.ConvertsValue;
 
 import javax.inject.Provider;
 import java.util.ArrayList;
@@ -31,10 +31,10 @@ public abstract class ObjectToAbstract<K,V> implements ObjectTo<K,V> {
     }
 
     @Override
-    public IntTo<V> getOrCompute(K key, ConvertsValue<K, IntTo<V>> factory) {
+    public IntTo<V> getOrCompute(K key, In1Out1<K, IntTo<V>> factory) {
       IntTo<V> existing = get(key);
       if (existing == null) {
-        existing = factory.convert(key);
+        existing = factory.io(key);
         put(key, existing);
       }
       return existing;

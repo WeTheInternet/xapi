@@ -1,5 +1,11 @@
 package xapi.gwt.collect;
 
+import xapi.collect.impl.ArrayIterable;
+import xapi.collect.impl.EntryValueAdapter;
+import xapi.collect.impl.IteratorWrapper;
+
+import com.google.gwt.core.client.JavaScriptObject;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -7,32 +13,35 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import xapi.collect.impl.ArrayIterable;
-import xapi.collect.impl.EntryValueAdapter;
-import xapi.collect.impl.IteratorWrapper;
-
-import com.google.gwt.core.client.JavaScriptObject;
-
 public class JsDictionary <V> extends JavaScriptObject {
 
   protected JsDictionary() {
   }
 
-  class KeyItr extends ArrayIterable<String>{
-    public KeyItr() {
-      super(keyArray());
+  static class KeyItr extends ArrayIterable<String>{
+    private final JsDictionary from;
+
+    public KeyItr(JsDictionary from) {
+      super(from.keyArray());
+      this.from = from;
     }
     @Override
     protected void remove(String key) {
-      JsDictionary.this.remove(key);
+      from.remove(key);
     }
   }
 
-  class EntryItr implements Iterator<Entry<String, V>> {
+  static class EntryItr <V> implements Iterator<Entry<String, V>> {
 
+    private final JsDictionary<V> from;
     int pos = 0;
-    int max = keyArray().length;
+    int max;
     Entry<String, V> entry;
+
+    public EntryItr(JsDictionary <V> from) {
+      max = from.keyArray().length;
+      this.from = from;
+    }
 
     @Override
     public boolean hasNext() {
@@ -41,8 +50,8 @@ public class JsDictionary <V> extends JavaScriptObject {
 
     @Override
     public Entry<String,V> next() {
-      final String key = keyArray()[pos++];
-      final V next = get(key);
+      final String key = from.keyArray()[pos++];
+      final V next = from.get(key);
       entry = new Entry<String,V>() {
 
         @Override
@@ -58,10 +67,10 @@ public class JsDictionary <V> extends JavaScriptObject {
         @Override
         public V setValue(V value) {
           if (value == null) {
-            return JsDictionary.this.removeAndReturn(key);
+            return from.removeAndReturn(key);
           }
           else
-            return JsDictionary.this.put(key, value);
+            return from.put(key, value);
         }
       };
       return entry;
@@ -70,7 +79,7 @@ public class JsDictionary <V> extends JavaScriptObject {
     @Override
     public void remove() {
       assert entry != null : "You must call next() before remove() in JsDictionary.entries()";
-      JsDictionary.this.remove(entry.getKey());
+      from.remove(entry.getKey());
     }
 
   }
@@ -179,7 +188,7 @@ public class JsDictionary <V> extends JavaScriptObject {
   }
 
   public final Iterable<String> keys() {
-    return new KeyItr();
+    return new KeyItr(this);
   }
 
   public final Iterable<V> values() {
@@ -187,7 +196,7 @@ public class JsDictionary <V> extends JavaScriptObject {
   }
 
   public final Iterable<Entry<String,V>> entries() {
-    return new IteratorWrapper<Entry<String, V>>(new EntryItr());
+    return new IteratorWrapper<Entry<String, V>>(new EntryItr(this));
   }
 
   public final int size() {
@@ -196,7 +205,7 @@ public class JsDictionary <V> extends JavaScriptObject {
 
   public final V[] toArray() {
 //    String[] keys = keyArray();
-//    
+//
 //    V[] array = GwtReflect.newArray(valueType(), keys.length);
 //    for (int i = keys.length; i --> 0; array[i] = get(keys[i]));
 //    return array;

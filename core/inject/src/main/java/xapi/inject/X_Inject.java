@@ -115,7 +115,7 @@ public class X_Inject{
 
   @KeepMethod
   @MagicMethod(doNotVisit=true)
-  public static <T, C extends Class<? extends T>> T instance(final C cls){
+  public static <T, Generic extends T> T instance(final Class<Generic> cls){
     if (isJava()) {
       return xapi.inject.impl.JavaInjector.instance(cls);
     } else {

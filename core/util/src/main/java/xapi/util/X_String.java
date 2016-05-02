@@ -179,6 +179,21 @@ public class X_String {
   public static boolean isNotEmpty(String enclosing) {
     return enclosing != null && enclosing.length() > 0;
   }
+  public static boolean isEmpty(String[] enclosing) {
+    if (enclosing == null || enclosing.length == 0) {
+      return true;
+    }
+    for (String s : enclosing) {
+      if (isNotEmpty(s)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  public static boolean isNotEmpty(String[] enclosing) {
+    return !isEmpty(enclosing);
+  }
 
   public static boolean isNotEmptyTrimmed(String enclosing) {
     return enclosing != null && enclosing.trim().length() > 0;

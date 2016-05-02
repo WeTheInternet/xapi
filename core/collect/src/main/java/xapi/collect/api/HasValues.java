@@ -1,9 +1,9 @@
 package xapi.collect.api;
 
 import xapi.collect.impl.EntryIterable;
+import xapi.fu.In2Out1;
 
 import java.util.Map.Entry;
-
 
 public interface HasValues<K,V> extends EntryIterable<K,V> {
 
@@ -31,6 +31,29 @@ public interface HasValues<K,V> extends EntryIterable<K,V> {
   Iterable<K> keys();
 
   Iterable<V> values();
+
+  default <R> R reduceKeys(In2Out1<K, R, R> reducer, R initial) {
+    for (K k : keys()) {
+      initial = reducer.io(k, initial);
+    }
+    return initial;
+  }
+
+  default <R> R reduceValues(In2Out1<V, R, R> reducer, R initial) {
+    for (V v : values()) {
+      initial = reducer.io(v, initial);
+    }
+    return initial;
+  }
+
+  // TODO: enable once Gwt fork is rebased onto stream support
+//  default Stream<K> keyStream() {
+//    return StreamSupport.stream(keys().spliterator(), false);
+//  }
+//
+//  default Stream<V> valueStream() {
+//    return StreamSupport.stream(values().spliterator(), false);
+//  }
 
   Class<K> keyType();
 

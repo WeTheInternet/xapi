@@ -2,13 +2,13 @@ package xapi.collect.api;
 
 import xapi.collect.impl.EntryIterable;
 import xapi.collect.proxy.CollectionProxy;
-import xapi.util.api.ConvertsValue;
+import xapi.fu.In1Out1;
 
 public interface ObjectTo <K, V>
 extends EntryIterable<K,V>, CollectionProxy<K,V>, HasValues<K,V>
 {
 
-  V getOrCompute(K key, ConvertsValue<K,V> factory);
+  V getOrCompute(K key, In1Out1<K,V> factory);
 
   interface Many <K, V> extends ObjectTo<K, IntTo<V>> {
     default boolean add (K key, V value) {

@@ -1,5 +1,7 @@
 package xapi.fu;
 
+import xapi.fu.In1Out1.In1Out1Unsafe;
+
 /**
  * A lazy-initialized object.
  *
@@ -49,6 +51,11 @@ public class Lazy <T> implements Out1<T> {
   }
 
   public static <I, T> Lazy<T> ofDeferred(In1Out1<I, T> supplier, Out1<I> value) {
+    final Out1<T> factory = ()->supplier.io(value.out1());
+    return new Lazy<>(factory);
+  }
+
+  public static <I, T> Lazy<T> ofDeferredUnsafe(In1Out1Unsafe<I, T> supplier, Out1Unsafe<I> value) {
     final Out1<T> factory = ()->supplier.io(value.out1());
     return new Lazy<>(factory);
   }
