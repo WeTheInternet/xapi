@@ -17,4 +17,7 @@ public abstract class UiExpr extends LiteralExpr {
     super(beginLine, beginColumn, endLine, endColumn);
   }
 
+  public UiExpr() {
+  }
+
 }

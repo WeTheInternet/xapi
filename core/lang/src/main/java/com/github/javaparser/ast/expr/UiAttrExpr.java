@@ -28,6 +28,17 @@ public class UiAttrExpr extends UiExpr {
     this.expression = expression;
   }
 
+  public UiAttrExpr(
+      NameExpr name,
+      boolean attribute,
+      Expression expression
+  ) {
+    super();
+    this.name = name;
+    this.attribute = attribute;
+    this.expression = expression;
+  }
+
   public NameExpr getName() {
     return name;
   }

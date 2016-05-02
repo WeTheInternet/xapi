@@ -263,6 +263,18 @@ SPECIAL_TOKEN :
   <MULTI_LINE_COMMENT: "*/" > : DEFAULT
 }
 
+/* HTML Comments; not special tokens so we can limit where they are considered */
+TOKEN :
+{
+  <IN_HTML_COMMENT: "<!--"> : HTML_MODE
+}
+<HTML_MODE>
+TOKEN :
+{
+  <HTML_COMMENT: ( ~["-"] | " " | ( "-" ~["-"] ) | ( "--" ~[">"] ) ) +  >
+| <END_HTML_COMMENT: "-->" >
+}
+
 <IN_JAVA_DOC_COMMENT, IN_MULTI_LINE_COMMENT>
 MORE :
 {
@@ -349,6 +361,7 @@ TOKEN :
 TOKEN:
 {
    < END_UI_BODY: "</" > { input_stream.backup(2); } : DEFAULT
+ | < UI_BODY_COMMENT: "<!--" > : HTML_MODE
  | < NEW_UI_BODY: "<"  > { input_stream.backup(1); } : DEFAULT
  | < UI_TEXT: (
     ~["<"]
@@ -468,8 +481,8 @@ TOKEN :
 TOKEN :
 {
   < IDENTIFIER: <LETTER> (<PART_LETTER>)* >
-|
-  < #LETTER:
+| < FEATURE_IDENTIFIER: <LETTER> ( <IDENTIFIER> | "-" | "*" ) + >
+| < #LETTER:
       [  // all chars for which Character.isIdentifierStart is true
          "\u0024",          // "$"
          "\u0041"-"\u005a", // "A"-"Z"
@@ -2074,6 +2087,25 @@ NameExpr Name():
   { return ret; }
 }
 
+NameExpr FeatureName():
+/*
+ * We want to allow all valid java and html attribute names;
+ * unlike the standard Name() function, we do not consider .* imports, so we can avoid lookahead.
+ * Currently, we add `*` and `-` to the list of allowed characters (but not .)
+ */
+{
+	Token t;
+}
+{
+  (
+      <IDENTIFIER> { t = token; }
+      | <FEATURE_IDENTIFIER> { t = token; }
+      | "class"  { t = token; }
+  )
+  { return new NameExpr(t.beginLine, t.beginColumn, t.endLine, t.endColumn, t.image); }
+}
+
+
 List ClassOrInterfaceTypeList():
 {
 	List ret = new LinkedList();
@@ -2659,12 +2691,34 @@ UiContainerExpr UiContainer():
   boolean isInTemplate = false;
 }{
 
-   "<" { beginLine = token.beginLine; beginColumn = token.beginColumn; }
+
+   (
+     (
+       <IN_HTML_COMMENT> {
+         beginLine = token.beginLine; beginColumn = token.beginColumn;
+       }
+       ( <HTML_COMMENT>{
+            attr = new UiAttrExpr(new NameExpr("value"), false, new StringLiteralExpr(token.image));
+            attrs.add(attr);
+       } ) *
+       <END_HTML_COMMENT> {
+        endLine = token.endLine; endColumn = token.endColumn;
+        tagName = new NameExpr("comment");
+        body = new UiBodyExpr(beginLine, beginColumn + 4, endLine, endColumn - 3, new ArrayList());
+        new UiContainerExpr(beginLine, beginColumn, endLine, endColumn, tagName, attrs, body, isInTemplate);
+       }
+     ) |
+     "<" {
+      beginLine = token.beginLine; beginColumn = token.beginColumn;
+     }
+   )
    tagName = Name()
    ( attr = UiAttr() { attrs.add(attr); } ) *
     (
       "/>`"{ isInTemplate = true; endLine = token.endLine; endColumn = token.endColumn; }
-     | "/>" { endLine = token.endLine; endColumn = token.endColumn; }
+     | "/>" {
+        endLine = token.endLine; endColumn = token.endColumn;
+     }
      | (
            ">"
            body = UiBody()
@@ -2697,7 +2751,9 @@ UiBodyExpr UiBody():
    { setState(UI_BODY); }
    (
 
-     (<NEW_UI_BODY>
+     /* For now, we will elide comment nodes.   */
+    ( <UI_BODY_COMMENT> ( <HTML_COMMENT> )* <END_HTML_COMMENT> { setState(UI_BODY); }  )
+    | (<NEW_UI_BODY>
      el = UiContainer() {
         if (beginLine == -1) {
           beginLine = el.getBeginLine();
@@ -2746,7 +2802,7 @@ UiAttrExpr UiAttr():
         line=token.beginLine;
         column=token.beginColumn;
     } ]
-    name = Name() {
+    name = FeatureName() {
         if (!isAttribute) {
             line=token.beginLine;
             column=token.beginColumn;
