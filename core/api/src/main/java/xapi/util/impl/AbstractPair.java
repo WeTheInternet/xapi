@@ -1,9 +1,9 @@
 package xapi.util.impl;
 
-import java.util.Map.Entry;
-
 import xapi.util.X_Util;
 import xapi.util.api.Pair;
+
+import java.util.Map.Entry;
 
 public class AbstractPair <X,Y>
 implements Pair<X, Y>, Entry<X,Y>
@@ -44,6 +44,7 @@ implements Pair<X, Y>, Entry<X,Y>
       if (X_Util.equal(x, that.get0())){
         return X_Util.equal(y, that.get1());
       }
+      return false;
     }
     if (obj instanceof Entry){
       Entry<?, ?> that = (Entry<?, ?>) obj;

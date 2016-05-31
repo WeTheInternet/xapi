@@ -104,8 +104,10 @@ public @interface Dependency {
   String version() default "";
   String classifier() default "";
   DependencyType dependencyType() default DependencyType.RELATIVE;
+  boolean inheritDependencies() default false;
+  Specifier[] specifiers() default @Specifier;
 
-  public enum DependencyType {
+  enum DependencyType {
     RELATIVE, ABSOLUTE, MAVEN
   }
 

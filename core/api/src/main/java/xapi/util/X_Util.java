@@ -98,4 +98,21 @@ public final class X_Util{
       return copy;
     }
   }
+
+  public static boolean isArray(Object items) {
+    if (items == null) {
+      return false;
+    }
+    if (X_Runtime.isJavaScript()) {
+      return jsniIsArray(items);
+    } else {
+      return items.getClass().isArray();
+    }
+  }
+
+  private static native boolean jsniIsArray(Object items)
+  /*-{
+    return Array.isArray(items);
+  }-*/;
+
 }
