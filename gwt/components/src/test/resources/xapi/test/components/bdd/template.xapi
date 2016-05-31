@@ -1,0 +1,9 @@
+package xapi.test.components.client;
+
+import xapi.ui.api.*;
+import xapi.util.api.*;
+
+@Ui(`$ui`)
+public interface TestComponent extends $extends {
+  $body
+}
