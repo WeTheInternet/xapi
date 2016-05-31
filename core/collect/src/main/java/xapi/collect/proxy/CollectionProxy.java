@@ -2,8 +2,10 @@ package xapi.collect.proxy;
 
 import xapi.collect.api.CollectionOptions;
 import xapi.collect.api.ObjectTo;
+import xapi.collect.impl.ArrayIterable;
 import xapi.fu.In1;
-import xapi.util.api.ConvertsTwoValues;
+import xapi.fu.In2;
+import xapi.fu.In2Out1;
 
 import java.util.Collection;
 import java.util.Map;
@@ -44,7 +46,7 @@ public interface CollectionProxy <K, V>
 
   Class<V> valueType();
 
-   boolean forEach(ConvertsTwoValues<K, V, Boolean> callback);
+   boolean readWhileTrue(In2Out1<K, V, Boolean> callback);
 
    default void forEachValue(In1<V> callback) {
      // purposely create a copy. This will avoid comodification exception
@@ -53,4 +55,13 @@ public interface CollectionProxy <K, V>
      }
    }
 
+   default void forEachPair(In2<K, V> callback) {
+     // purposely create a copy. This will avoid comodification exception
+     readWhileTrue(callback.supply1(true));
+   }
+
+  default Iterable<V> iterateValues() {
+    final V[] arr = toArray();
+    return new ArrayIterable<>(arr);
+  };
 }

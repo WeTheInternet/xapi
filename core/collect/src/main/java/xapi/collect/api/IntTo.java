@@ -27,6 +27,7 @@ extends CollectionProxy<Integer,T>
       return new IntToIterator<T>(self);
     }
   }
+
   class IntToIterator <T> implements Iterator <T> {
     private IntTo<T> source;
     int pos = 0;
@@ -54,6 +55,10 @@ extends CollectionProxy<Integer,T>
   boolean add(T item);
 
   boolean addAll(Iterable<T> items);
+
+  default boolean addAll(IntTo<T> items) {
+    return addAll(items.toArray());
+  }
 
   @SuppressWarnings("unchecked")
   boolean addAll(T ... items);

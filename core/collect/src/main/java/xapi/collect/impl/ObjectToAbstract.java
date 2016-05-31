@@ -5,7 +5,7 @@ import xapi.collect.api.IntTo;
 import xapi.collect.api.ObjectTo;
 import xapi.collect.proxy.CollectionProxy;
 import xapi.fu.In1Out1;
-import xapi.util.api.ConvertsTwoValues;
+import xapi.fu.In2Out1;
 
 import javax.inject.Provider;
 import java.util.ArrayList;
@@ -227,9 +227,9 @@ public abstract class ObjectToAbstract<K,V> implements ObjectTo<K,V> {
 
 
   @Override
-  public boolean forEach(ConvertsTwoValues<K, V, Boolean> callback) {
+  public boolean readWhileTrue(In2Out1<K, V, Boolean> callback) {
     for (Entry<K, V> e : entries()) {
-      if (!callback.convert(e.getKey(), e.getValue())) {
+      if (!callback.io(e.getKey(), e.getValue())) {
         return false;
       }
     }

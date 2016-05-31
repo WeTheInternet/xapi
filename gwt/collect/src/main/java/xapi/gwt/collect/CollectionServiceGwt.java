@@ -10,14 +10,15 @@ import xapi.collect.api.ObjectTo.Many;
 import xapi.collect.api.StringDictionary;
 import xapi.collect.api.StringTo;
 import xapi.collect.impl.ClassToManyList;
+import xapi.collect.impl.IntToSet;
 import xapi.collect.impl.ObjectToManyList;
 import xapi.collect.impl.StringToManyList;
+import xapi.collect.proxy.CollectionProxy;
+import xapi.collect.proxy.MapOf;
 import xapi.collect.service.CollectionService;
-import xapi.except.NotYetImplemented;
 import xapi.platform.GwtPlatform;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
+import java.util.Comparator;
 import java.util.Map;
 
 @GwtPlatform
@@ -30,20 +31,22 @@ public class CollectionServiceGwt implements CollectionService{
   }
 
   @Override
-  public <V> IntTo<V> newSet(Class<V> cls, CollectionOptions opts) {
-    throw new NotYetImplemented("Set "+"not yet implemented");
+  public <E, Generic extends E> IntTo<E> newSet(
+      Class<Generic> cls, Comparator<E> cmp, CollectionOptions opts
+  ) {
+    return new IntToSet<>(cls, opts, cmp);
   }
 
   @Override
   public <K,V> ObjectTo<K,V> newMap(Class<K> key, Class<V> cls, CollectionOptions opts) {
-    return new xapi.collect.proxy.MapOf<K, V>(newMap(opts), key, cls);
+    return new xapi.collect.proxy.MapOf<>(newMap(opts), key, cls);
   }
 
   private <K, V> Map<K, V> newMap(CollectionOptions opts) {
     if (opts.insertionOrdered()) {
-      return new LinkedHashMap<>();
+      return new java.util.LinkedHashMap<>();
     } else {
-      return new HashMap<>();
+      return new java.util.HashMap<>();
     }
     // No need for concurrent map types in Gwt
   }
@@ -85,6 +88,16 @@ public class CollectionServiceGwt implements CollectionService{
   @Override
   public <V> Fifo<V> newFifo() {
     return JsFifo.newFifo();
+  }
+
+  @Override
+  public <K, V, Key extends K, Value extends V> CollectionProxy<K, V> newProxy(
+      Class<Key> keyType, Class<Value> valueType, CollectionOptions opts
+  ) {
+    if (opts.insertionOrdered()) {
+        return new MapOf<>(new java.util.LinkedHashMap<>(), keyType, valueType);
+    }
+    return new MapOf<>(new java.util.HashMap<>(), keyType, valueType);
   }
 
 }

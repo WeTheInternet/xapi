@@ -18,6 +18,7 @@ import xapi.collect.impl.ReverseIterator;
 import xapi.collect.impl.SingletonIterator;
 import xapi.collect.impl.StringToDeepMap;
 import xapi.collect.impl.StringToManyList;
+import xapi.collect.proxy.CollectionProxy;
 import xapi.collect.service.CollectionService;
 import xapi.util.api.ReceivesValue;
 
@@ -28,6 +29,8 @@ import static xapi.collect.api.CollectionOptions.asMutableList;
 import static xapi.collect.api.CollectionOptions.asMutableSet;
 import static xapi.inject.X_Inject.singleton;
 
+import java.lang.reflect.Array;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.function.Consumer;
@@ -131,8 +134,16 @@ public class X_Collect {
     return service.newClassMultiMap(valueCls, MUTABLE);
   }
 
+  public static <Type, Generic extends Type> ClassTo.Many<Type> newClassMultiMap(final Class<Generic> valueCls, CollectionOptions opts) {
+    return service.newClassMultiMap(valueCls, opts);
+  }
+
   public static <K, V> ObjectTo.Many<K, V> newMultiMap(final Class<K> keyCls, final Class<V> valueCls) {
-    return service.newMultiMap(keyCls, valueCls, MUTABLE);
+    return newMultiMap(keyCls, valueCls, MUTABLE);
+  }
+
+  public static <K, V> ObjectTo.Many<K, V> newMultiMap(final Class<K> keyCls, final Class<V> valueCls, CollectionOptions opts) {
+    return service.newMultiMap(keyCls, valueCls, opts);
   }
 
   public static <T> Fifo<T> newFifo() {
@@ -157,6 +168,18 @@ public class X_Collect {
    */
   public static <Type, Generic extends Type> IntTo<Type> newList(final Class<Generic> cls) {
     return service.newList(cls, MUTABLE_LIST);
+  }
+
+  public static <Type, Generic extends Type> IntTo<Type> newList(final Class<Generic> cls, CollectionOptions opts) {
+    return service.newList(cls, CollectionOptions.from(opts).insertionOrdered(true).build());
+  }
+
+  public static <Type, Generic extends Type> IntTo<Type> newSet(final Class<Generic> cls, Comparator<Type> cmp) {
+    return service.newSet(cls, cmp, CollectionOptions.asInsertionOrdered().build());
+  }
+
+  public static <Type, Generic extends Type> IntTo<Type> newSet(final Class<Generic> cls, CollectionOptions opts, Comparator<Type> cmp) {
+    return service.newSet(cls, cmp, CollectionOptions.from(opts).insertionOrdered(true).build());
   }
 
   public static <K,V, Key extends K, Value extends V> ObjectTo<Key,Value> newMap(final Class<Key> keyCls, final Class<Value> valueCls) {
@@ -196,7 +219,11 @@ public class X_Collect {
   }
 
   public static <X> StringTo.Many<X> newStringMultiMap(final Class<X> component) {
-    return service.newStringMultiMap(component, MUTABLE);
+    return service.newStringMultiMap(component, MUTABLE_INSERTION_ORDERED);
+  }
+
+  public static <X> StringTo.Many<X> newStringMultiMap(final Class<X> component, CollectionOptions opts) {
+    return service.newStringMultiMap(component, opts);
   }
 
   public static <X> StringTo.Many<X> newStringMultiMap(final Class<X> component, final java.util.Map<String, IntTo<X>> map) {
@@ -254,5 +281,20 @@ public class X_Collect {
       }
     }
     new ReverseIterable<>(items).forEach(callback);
+  }
+
+  public static <T, G extends T> T[] toArray(Class<G> cls, Collection<T> items) {
+    if (items == null) {
+      return null;
+    }
+    return items.toArray((T[])Array.newInstance(cls, items.size()));
+  }
+
+  public static String[] toArray(Collection<String> items) {
+    return toArray(String.class, items);
+  }
+
+  public static <K, Key extends K, V, Value extends V> CollectionProxy<K, V> newProxy(Class<Key> keyCls, Class<Value> valueCls, CollectionOptions opts) {
+      return service.newProxy(keyCls, valueCls, opts);
   }
 }

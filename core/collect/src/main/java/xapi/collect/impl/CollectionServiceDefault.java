@@ -12,7 +12,6 @@ import xapi.collect.api.StringTo;
 import xapi.collect.proxy.CollectionProxy;
 import xapi.collect.proxy.MapOf;
 import xapi.collect.service.CollectionService;
-import xapi.except.NotYetImplemented;
 import xapi.platform.AndroidPlatform;
 import xapi.platform.GwtDevPlatform;
 import xapi.platform.JrePlatform;
@@ -20,6 +19,7 @@ import xapi.util.X_Runtime;
 
 import static java.util.Collections.synchronizedMap;
 
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -89,7 +89,7 @@ public class CollectionServiceDefault implements CollectionService{
 
   @SuppressWarnings({ "unchecked", "rawtypes" })
   private final CollectionProxy<Class<?>,Comparator<?>> comparators =
-    newProxy((Class)Class.class, (Class)Comparator.class, CollectionOptions.asConcurrent(true).build());
+    newProxy(Class.class, Comparator.class, CollectionOptions.asConcurrent(true).build());
 
 
   public CollectionServiceDefault() {
@@ -112,6 +112,7 @@ public class CollectionServiceDefault implements CollectionService{
         // TODO: something with better performance...
         // Perhaps supersource ConcurrentSkipListMap,
         // and remove all the contention-worries that plague its implementation
+        // (why pay to handle concurrent threads in a single-threaded environment?)
         return synchronizedMap(new LinkedHashMap<K, V>());
       } else {
         return new LinkedHashMap<K, V>();
@@ -130,8 +131,10 @@ public class CollectionServiceDefault implements CollectionService{
   }
 
   @Override
-  public <V> IntTo<V> newSet(final Class<V> cls, final CollectionOptions opts) {
-    throw new NotYetImplemented("IntToSet not yet implemented");
+  public <E, Generic extends E> IntTo<E> newSet(
+      Class<Generic> cls, Comparator<E> cmp, CollectionOptions opts
+  ) {
+    return new IntToSet<>(cls, opts, cmp);
   }
 
   @Override
@@ -150,18 +153,19 @@ public class CollectionServiceDefault implements CollectionService{
     return new StringToAbstract<>(Class.class.cast(cls), this.<String, V>newMap(opts));
   }
 
-  protected <K, V> CollectionProxy<K,V> newProxy(final Class<K> keyType, final Class<V> valueType, final CollectionOptions opts) {
+  public <K, V, Key extends K, Value extends V> CollectionProxy<K, V> newProxy(
+      Class<Key> keyType, Class<Value> valueType, CollectionOptions opts) {
     if (opts.insertionOrdered()) {
       if (opts.concurrent()) {
-        return new MapOf<K,V>(new ConcurrentSkipListMap<K,V>(), keyType, valueType);
+        return new MapOf<>(new ConcurrentSkipListMap<>(), keyType, valueType);
       } else {
-        return new MapOf<K,V>(new LinkedHashMap<K,V>(), keyType, valueType);
+        return new MapOf<>(new LinkedHashMap<>(), keyType, valueType);
       }
     }
     if (opts.concurrent()) {
-      return new MapOf<K,V>(new ConcurrentHashMap<K,V>(), keyType, valueType);
+      return new MapOf<>(new ConcurrentHashMap<>(), keyType, valueType);
     } else {
-      return new MapOf<K,V>(new HashMap<K,V>(), keyType, valueType);
+      return new MapOf<>(new HashMap<>(), keyType, valueType);
     }
   }
 
@@ -190,7 +194,13 @@ public class CollectionServiceDefault implements CollectionService{
   public <V> StringTo.Many<V> newStringMultiMap(final Class<V> cls,
     final CollectionOptions opts) {
     // TODO honor opts
-    return new StringToManyList<V>(cls);
+    if (opts.insertionOrdered()) {
+      return new StringToManyList<>(cls,
+          // ick... we'll get a fast, insertion ordered concurrent map.  For now, just make it synchronized :-(
+          opts.concurrent() ? Collections.synchronizedMap(new LinkedHashMap<>()) : new LinkedHashMap<>()
+      );
+    }
+    return new StringToManyList<V>(cls, opts);
   }
 
   @Override
@@ -202,4 +212,5 @@ public class CollectionServiceDefault implements CollectionService{
   public <V> Fifo<V> newFifo() {
     return new SimpleFifo<V>();
   }
+
 }

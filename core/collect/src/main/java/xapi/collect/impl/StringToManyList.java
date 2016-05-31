@@ -1,22 +1,36 @@
 package xapi.collect.impl;
 
 import xapi.collect.X_Collect;
+import xapi.collect.api.CollectionOptions;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
+
+import static xapi.collect.X_Collect.MUTABLE_LIST;
 
 public class StringToManyList <X> extends StringToAbstract<IntTo<X>> implements StringTo.Many<X>{
 
   private static final long serialVersionUID = 681636065098625160L;
   private final Class<X> componentClass;
+  private final CollectionOptions opts;
 
   public StringToManyList(final Class<X> componentClass) {
+    this(componentClass, MUTABLE_LIST);
+  }
+
+  public StringToManyList(final Class<X> componentClass, CollectionOptions opts) {
     super(Class.class.cast(IntTo.class));
     this.componentClass = componentClass;
+    this.opts = opts;
   }
 
   public StringToManyList(final Class<X> componentClass, final java.util.Map<String, IntTo<X>> map) {
+    this(componentClass, map, MUTABLE_LIST);
+  }
+
+  public StringToManyList(final Class<X> componentClass, final java.util.Map<String, IntTo<X>> map, CollectionOptions opts) {
     super(Class.class.cast(IntTo.class), map);
     this.componentClass = componentClass;
+    this.opts = opts;
   }
 
   @Override
@@ -35,8 +49,9 @@ public class StringToManyList <X> extends StringToAbstract<IntTo<X>> implements 
     return list;
   }
 
-  protected IntTo<X> newList() {
-    return X_Collect.newList(componentClass);
+  @Override
+  public IntTo<X> newList() {
+    return X_Collect.newList(componentClass, opts);
   }
 
 

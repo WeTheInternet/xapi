@@ -7,12 +7,15 @@ import xapi.collect.api.IntTo;
 import xapi.collect.api.ObjectTo;
 import xapi.collect.api.StringDictionary;
 import xapi.collect.api.StringTo;
+import xapi.collect.proxy.CollectionProxy;
+
+import java.util.Comparator;
 
 public interface CollectionService {
 
   <E, Generic extends E> IntTo<E> newList(Class<Generic> cls, CollectionOptions opts);
 
-  <V> IntTo<V> newSet(Class<V> cls, CollectionOptions opts);
+  <E, Generic extends E> IntTo<E> newSet(Class<Generic> cls, Comparator<E> cmp, CollectionOptions opts);
 
   <K, V> ObjectTo<K, V> newMap(Class<K> key, Class<V> cls, CollectionOptions opts);
 
@@ -30,4 +33,5 @@ public interface CollectionService {
 
   <V> Fifo<V> newFifo();
 
+  <K, V, Key extends K, Value extends V> CollectionProxy<K,V> newProxy(Class<Key> keyCls, Class<Value> valueCls, CollectionOptions opts);
 }

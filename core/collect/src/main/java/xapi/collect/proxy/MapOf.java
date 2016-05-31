@@ -5,7 +5,7 @@ import xapi.collect.api.CollectionOptions;
 import xapi.collect.api.HasValues;
 import xapi.collect.api.ObjectTo;
 import xapi.fu.In1Out1;
-import xapi.util.api.ConvertsTwoValues;
+import xapi.fu.In2Out1;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -22,9 +22,9 @@ implements CollectionProxy<K,V>, Map<K,V>, HasValues<K,V>, ObjectTo<K,V>
   private final Map<K,V> map;
   private final Class<V> valueClass;
 
-  public <C extends Class<? extends V>> MapOf(final Map<K, V> map, final Class<K> keyClass, final C valueClass) {
+  public <Key extends K, Value extends V> MapOf(final Map<K, V> map, final Class<Key> keyClass, final Class<Value> valueClass) {
     this.map = map;
-    this.keyClass = keyClass;
+    this.keyClass = (Class<K>) keyClass;
     this.valueClass = (Class<V>)valueClass;
   }
 
@@ -217,9 +217,9 @@ implements CollectionProxy<K,V>, Map<K,V>, HasValues<K,V>, ObjectTo<K,V>
   }
 
   @Override
-  public boolean forEach(ConvertsTwoValues<K, V, Boolean> callback) {
+  public boolean readWhileTrue(In2Out1<K, V, Boolean> callback) {
     for (Entry<K, V> entry : entries()) {
-      if (!callback.convert(entry.getKey(), entry.getValue())) {
+      if (!callback.io(entry.getKey(), entry.getValue())) {
         return false;
       }
     }

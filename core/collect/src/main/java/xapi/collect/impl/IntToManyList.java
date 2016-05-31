@@ -5,7 +5,7 @@ import xapi.collect.api.CollectionOptions;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.ObjectTo;
 import xapi.collect.api.StringTo;
-import xapi.util.api.ConvertsTwoValues;
+import xapi.fu.In2Out1;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -384,9 +384,9 @@ public class IntToManyList <X> implements IntTo.Many<X>{
 
 
   @Override
-  public boolean forEach(ConvertsTwoValues<Integer, IntTo<X>, Boolean> callback) {
+  public boolean readWhileTrue(In2Out1<Integer, IntTo<X>, Boolean> callback) {
     for (int i = 0, m = size(); i < m; i++ ) {
-      if (!callback.convert(i, get(i))) {
+      if (!callback.io(i, get(i))) {
         return false;
       }
     }

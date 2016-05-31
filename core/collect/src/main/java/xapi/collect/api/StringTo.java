@@ -35,11 +35,7 @@ extends HasValues<String,V>, Serializable, TypedMap<String, V>
     return value;
   }
 
-  interface Many <V>
-  extends StringTo<IntTo<V>>
-  {
-    Many <V> add(String key, V value);
-  }
+  interface Many <V> extends StringTo<IntTo<V>>, HasMany<String, V> { }
 
   default In1<V> adapter(In1Out1<V, String> adapter) {
     return in2(this::put).adapt1(adapter);

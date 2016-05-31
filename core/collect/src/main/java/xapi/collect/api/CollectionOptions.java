@@ -8,13 +8,15 @@ public final class CollectionOptions {
   private final boolean forbidsDuplicate;
   private final boolean insertionOrdered;
   private final boolean mutable;
+  private final boolean sparse;
 
   private CollectionOptions(boolean concurrent, boolean forbidsDuplicate,
-    boolean insertionOrdered, boolean mutable) {
+    boolean insertionOrdered, boolean mutable, boolean sparse) {
     this.concurrent = concurrent;
     this.forbidsDuplicate = forbidsDuplicate;
     this.insertionOrdered = insertionOrdered;
     this.mutable = mutable;
+    this.sparse = sparse;
   }
 
   public boolean concurrent() {
@@ -39,6 +41,7 @@ public final class CollectionOptions {
     boolean insertionOrdered;
     boolean forbidsDuplicate;
     boolean mutable;
+    boolean sparse;
 
     public Builder() {
       concurrent = X_Runtime.isMultithreaded();
@@ -46,6 +49,11 @@ public final class CollectionOptions {
 
     public Builder concurrent(boolean concurrent) {
       this.concurrent = concurrent;
+      return this;
+    }
+
+    public Builder sparse(boolean sparse) {
+      this.sparse = sparse;
       return this;
     }
 
@@ -66,7 +74,7 @@ public final class CollectionOptions {
 
     public CollectionOptions build() {
       return new CollectionOptions(
-        concurrent, forbidsDuplicate, insertionOrdered, mutable);
+        concurrent, forbidsDuplicate, insertionOrdered, mutable, sparse);
     }
   }
 
@@ -75,6 +83,10 @@ public final class CollectionOptions {
   }
 
   public static Builder asImmutableList() {
+    return new Builder().mutable(false).insertionOrdered(true);
+  }
+
+  public static Builder asInsertionOrdered() {
     return new Builder().insertionOrdered(true);
   }
 
@@ -94,4 +106,31 @@ public final class CollectionOptions {
     return new Builder().mutable(mutable);
   }
 
+  public static Builder from(CollectionOptions opts) {
+    final Builder builder = new Builder();
+    if (opts.insertionOrdered()) {
+      builder.insertionOrdered = true;
+    }
+    if (opts.concurrent) {
+      builder.concurrent = true;
+    }
+    if (opts.forbidsDuplicate) {
+      builder.forbidsDuplicate = true;
+    }
+    if (opts.mutable) {
+      builder.mutable = true;
+    }
+    if (opts.sparse) {
+      builder.sparse = true;
+    }
+    return builder;
+  }
+
+  public boolean dense() {
+    return !sparse;
+  }
+
+  public boolean sparse() {
+    return sparse;
+  }
 }

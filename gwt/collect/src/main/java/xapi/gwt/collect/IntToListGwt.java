@@ -5,9 +5,9 @@ import xapi.collect.api.CollectionOptions;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.ObjectTo;
 import xapi.except.NotYetImplemented;
+import xapi.fu.In2Out1;
 import xapi.platform.GwtPlatform;
 import xapi.util.X_Util;
-import xapi.util.api.ConvertsTwoValues;
 import xapi.util.impl.AbstractPair;
 
 import com.google.gwt.core.client.GwtScriptOnly;
@@ -67,9 +67,7 @@ public class IntToListGwt <E> extends JavaScriptObject implements IntTo<E>{
   @Override
   @SuppressWarnings("unchecked")
   public final boolean addAll(final E... items) {
-    for (final E item : items) {
-      add(item);
-    }
+    concat(items);
     return true;
   }
 
@@ -80,6 +78,21 @@ public class IntToListGwt <E> extends JavaScriptObject implements IntTo<E>{
     }
     return true;
   }
+
+  @Override
+  public final boolean addAll(final IntTo<E> items) {
+    if (X_Util.isArray(items)) {
+      concat(items);
+    } else {
+      items.forEachValue(this::add);
+    }
+    return true;
+  }
+
+  public final native void concat(Object array)
+  /*-{
+    this.concat(array);
+  }-*/;
 
   @Override
   public final Deque<E> asDeque() {
@@ -318,9 +331,9 @@ public class IntToListGwt <E> extends JavaScriptObject implements IntTo<E>{
   }
 
   @Override
-  public final boolean forEach(ConvertsTwoValues<Integer, E, Boolean> callback) {
+  public final boolean readWhileTrue(In2Out1<Integer, E, Boolean> callback) {
     for (int i = 0, m = size(); i < m; i++ ) {
-      if (!callback.convert(i, get(i))) {
+      if (!callback.io(i, get(i))) {
         return false;
       }
     }

@@ -4,8 +4,10 @@ import xapi.collect.api.CollectionOptions;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.ObjectTo;
 import xapi.except.NotYetImplemented;
+import xapi.fu.In1;
+import xapi.fu.In2;
+import xapi.fu.In2Out1;
 import xapi.util.X_Util;
-import xapi.util.api.ConvertsTwoValues;
 import xapi.util.impl.AbstractPair;
 
 import java.lang.reflect.Array;
@@ -23,11 +25,19 @@ import java.util.Set;
 
 class IntToList<E> implements IntTo<E> {
 
-  private final ArrayList<E> list = new ArrayList<E>(10);
+  private final List<E> list;
   private final Class<E> type;
+  private final In1<Integer> resizer;
 
   public <Generic extends E> IntToList(Class<Generic> cls) {
+    this(cls, new ArrayList<>(10), ArrayList::ensureCapacity);
+  }
+
+
+  public <Generic extends E, L extends List<E>> IntToList(Class<Generic> cls, L list, In2<L, Integer> resizer) {
     this.type = Class.class.cast(cls);
+    this.resizer = resizer.provide1(list);
+    this.list = list;
   }
 
   @Override
@@ -61,7 +71,8 @@ class IntToList<E> implements IntTo<E> {
   @SuppressWarnings("unchecked")
   public void setValue(Object key, Object value) {
     int k = (Integer)key;
-    list.ensureCapacity(k);
+    final List<E> l = list;
+    resizer.in(k);
     list.set(k, (E)value);
   }
 
@@ -258,9 +269,9 @@ class IntToList<E> implements IntTo<E> {
   }
 
   @Override
-  public boolean forEach(ConvertsTwoValues<Integer, E, Boolean> callback) {
+  public boolean readWhileTrue(In2Out1<Integer, E, Boolean> callback) {
     for (int i = 0, m = size(); i < m; i++ ) {
-      if (!callback.convert(i, get(i))) {
+      if (!callback.io(i, get(i))) {
         return false;
       }
     }
