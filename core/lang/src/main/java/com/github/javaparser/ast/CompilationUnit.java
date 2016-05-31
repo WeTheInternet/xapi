@@ -3,12 +3,12 @@
  * Copyright (C) 2011, 2013-2015 The JavaParser Team.
  *
  * This file is part of JavaParser.
- * 
+ *
  * JavaParser can be used either under the terms of
  * a) the GNU Lesser General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * b) the terms of the Apache License 
+ * b) the terms of the Apache License
  *
  * You should have received a copy of both licenses in LICENCE.LGPL and
  * LICENCE.APACHE. Please refer to those files for details.
@@ -18,22 +18,22 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  */
- 
+
 package com.github.javaparser.ast;
 
 import com.github.javaparser.ast.body.AnnotationDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.EmptyTypeDeclaration;
 import com.github.javaparser.ast.body.EnumDeclaration;
+import com.github.javaparser.ast.body.TypeDeclaration;
 import com.github.javaparser.ast.comments.Comment;
 import com.github.javaparser.ast.comments.JavadocComment;
-import com.github.javaparser.ast.body.TypeDeclaration;
 import com.github.javaparser.ast.visitor.GenericVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitor;
 
-import java.util.List;
+import static com.github.javaparser.ast.internal.Utils.ensureNotNull;
 
-import static com.github.javaparser.ast.internal.Utils.*;
+import java.util.List;
 
 /**
  * <p>
@@ -89,7 +89,7 @@ public final class CompilationUnit extends Node {
      * Including javadocs, line comments and block comments of all types,
      * inner-classes and other members.<br>
      * If there is no comment, <code>null</code> is returned.
-     * 
+     *
      * @return list with all comments of this compilation unit or
      *         <code>null</code>
      * @see JavadocComment
@@ -103,7 +103,7 @@ public final class CompilationUnit extends Node {
     /**
      * Retrieves the list of imports declared in this compilation unit or
      * <code>null</code> if there is no import.
-     * 
+     *
      * @return the list of imports or <code>null</code> if there is no import
      */
     public List<ImportDeclaration> getImports() {
@@ -115,7 +115,7 @@ public final class CompilationUnit extends Node {
      * Retrieves the package declaration of this compilation unit.<br>
      * If this compilation unit has no package declaration (default package),
      * <code>null</code> is returned.
-     * 
+     *
      * @return the package declaration or <code>null</code>
      */
     public PackageDeclaration getPackage() {
@@ -125,7 +125,7 @@ public final class CompilationUnit extends Node {
     /**
      * Return the list of types declared in this compilation unit.<br>
      * If there is no types declared, <code>null</code> is returned.
-     * 
+     *
      * @return the list of types or <code>null</code> null if there is no type
      * @see AnnotationDeclaration
      * @see ClassOrInterfaceDeclaration
@@ -137,9 +137,28 @@ public final class CompilationUnit extends Node {
         return types;
     }
 
+    public TypeDeclaration getPrimaryType() {
+        types = ensureNotNull(types);
+        for (TypeDeclaration typeDeclaration : types) {
+            if (!typeDeclaration.getName().contains("$")) {
+                return typeDeclaration;
+            }
+        }
+        int minCnt = Integer.MAX_VALUE;
+        TypeDeclaration winner = types.get(0);
+        for (TypeDeclaration typeDeclaration : types) {
+            int cnt = (int) typeDeclaration.getName().chars().filter(c->c=='$').count();
+            if (cnt < minCnt) {
+                winner = typeDeclaration;
+                minCnt = cnt;
+            }
+        }
+        return winner;
+    }
+
     /**
      * Sets the list of comments of this compilation unit.
-     * 
+     *
      * @param comments
      *            the list of comments
      */
@@ -150,7 +169,7 @@ public final class CompilationUnit extends Node {
     /**
      * Sets the list of imports of this compilation unit. The list is initially
      * <code>null</code>.
-     * 
+     *
      * @param imports
      *            the list of imports
      */
@@ -161,7 +180,7 @@ public final class CompilationUnit extends Node {
 
     /**
      * Sets or clear the package declarations of this compilation unit.
-     * 
+     *
      * @param pakage
      *            the pakage declaration to set or <code>null</code> to default
      *            package
@@ -173,7 +192,7 @@ public final class CompilationUnit extends Node {
 
     /**
      * Sets the list of types declared in this compilation unit.
-     * 
+     *
      * @param types
      *            the lis of types
      */

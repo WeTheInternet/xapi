@@ -30,6 +30,8 @@ import com.github.javaparser.ast.visitor.VoidVisitor;
  */
 public class NameExpr extends Expression implements NamedNode {
 
+	public static final String COMMENT_NAME = "--comment--";
+
 	private String name;
 
 	public NameExpr() {

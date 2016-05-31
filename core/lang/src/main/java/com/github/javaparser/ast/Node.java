@@ -391,4 +391,16 @@ public abstract class Node implements Cloneable {
     {
         return comment != null;
     }
+
+    public CompilationUnit getCompilationUnit() {
+        Node node = this;
+        while (node != null) {
+            if (node instanceof CompilationUnit) {
+                return (CompilationUnit) node;
+            } else {
+                node = node.getParentNode();
+            }
+        }
+        return null;
+    }
 }

@@ -2087,22 +2087,54 @@ NameExpr Name():
   { return ret; }
 }
 
+NameExpr TagName():
+{ NameExpr name; }
+{
+    name = FeatureName()
+    { return name; }
+}
+
 NameExpr FeatureName():
 /*
- * We want to allow all valid java and html attribute names;
- * unlike the standard Name() function, we do not consider .* imports, so we can avoid lookahead.
- * Currently, we add `*` and `-` to the list of allowed characters (but not .)
+ * We want to allow all valid java and html attribute names,
+ * so we additionally allow - to be in names.  * is allowed, but wildcard matching is not yet implemented
  */
 {
-	Token t;
+	NameExpr ret;
 }
 {
   (
-      <IDENTIFIER> { t = token; }
-      | <FEATURE_IDENTIFIER> { t = token; }
-      | "class"  { t = token; }
+      <IDENTIFIER>
+      { ret = new NameExpr(token.beginLine, token.beginColumn, token.endLine, token.endColumn, token.image);}
+      | <FEATURE_IDENTIFIER>
+      { ret = new NameExpr(token.beginLine, token.beginColumn, token.endLine, token.endColumn, token.image);}
+      | "class"
+      { ret = new NameExpr(token.beginLine, token.beginColumn, token.endLine, token.endColumn, token.image);}
+      | "this"
+      { ret = new NameExpr(token.beginLine, token.beginColumn, token.endLine, token.endColumn, token.image);}
+      | "super"
+      { ret = new NameExpr(token.beginLine, token.beginColumn, token.endLine, token.endColumn, token.image);}
+      | "import"
+      { ret = new NameExpr(token.beginLine, token.beginColumn, token.endLine, token.endColumn, token.image);}
   )
-  { return new NameExpr(t.beginLine, t.beginColumn, t.endLine, t.endColumn, t.image); }
+  ( LOOKAHEAD(2) "."
+   (
+   <IDENTIFIER>
+   { ret = new QualifiedNameExpr(ret.getBeginLine(), ret.getBeginColumn(), token.endLine, token.endColumn, ret, token.image); }
+      | <FEATURE_IDENTIFIER>
+   { ret = new QualifiedNameExpr(ret.getBeginLine(), ret.getBeginColumn(), token.endLine, token.endColumn, ret, token.image); }
+      | "class"
+   { ret = new QualifiedNameExpr(ret.getBeginLine(), ret.getBeginColumn(), token.endLine, token.endColumn, ret, token.image); }
+      | "this"
+   { ret = new QualifiedNameExpr(ret.getBeginLine(), ret.getBeginColumn(), token.endLine, token.endColumn, ret, token.image); }
+      | "super"
+   { ret = new QualifiedNameExpr(ret.getBeginLine(), ret.getBeginColumn(), token.endLine, token.endColumn, ret, token.image); }
+      | "import"
+   { ret = new QualifiedNameExpr(ret.getBeginLine(), ret.getBeginColumn(), token.endLine, token.endColumn, ret, token.image); }
+   )
+  )*
+
+  { return ret; }
 }
 
 
@@ -2370,6 +2402,13 @@ Expression MultiplicativeExpression():
   ret = UnaryExpression()
   (
   	( "*" { op = BinaryExpr.Operator.times; } |
+  	  LOOKAHEAD( {
+  	  "/".equals(getToken(1).image) &&
+  	   (
+  	       !getToken(2).image.startsWith(">")
+  	       && !(getToken(2).kind == IDENTIFIER && getToken(3).image.equals(">"))
+  	   )
+  	   } )
   	  "/" { op = BinaryExpr.Operator.divide; } |
   	  "%" { op = BinaryExpr.Operator.remainder; }
   	) right = UnaryExpression() { ret = new BinaryExpr(ret.getBeginLine(), ret.getBeginColumn(), token.endLine, token.endColumn, ret, right, op); }
@@ -2703,28 +2742,38 @@ UiContainerExpr UiContainer():
        } ) *
        <END_HTML_COMMENT> {
         endLine = token.endLine; endColumn = token.endColumn;
-        tagName = new NameExpr("comment");
+        tagName = new NameExpr(NameExpr.COMMENT_NAME);
         body = new UiBodyExpr(beginLine, beginColumn + 4, endLine, endColumn - 3, new ArrayList());
-        new UiContainerExpr(beginLine, beginColumn, endLine, endColumn, tagName, attrs, body, isInTemplate);
+        return new UiContainerExpr(beginLine, beginColumn, endLine, endColumn, tagName, attrs, body, isInTemplate);
        }
      ) |
      "<" {
       beginLine = token.beginLine; beginColumn = token.beginColumn;
      }
    )
-   tagName = Name()
+   tagName = TagName()
    ( attr = UiAttr() { attrs.add(attr); } ) *
     (
-      "/>`"{ isInTemplate = true; endLine = token.endLine; endColumn = token.endColumn; }
-     | "/>" {
-        endLine = token.endLine; endColumn = token.endColumn;
-     }
+      (
+        "/"
+        [endTagName = TagName() {
+          if (!tagName.equals(endTagName)) {
+            throw new ParseException("Mismatched start/end tags: " + tagName + " != " + endTagName + " on line " + token.beginLine + " image: " + token.image);
+          }
+        }]
+        (
+          ">`"{ isInTemplate = true; endLine = token.endLine; endColumn = token.endColumn; }
+         | ">" {
+            endLine = token.endLine; endColumn = token.endColumn;
+         }
+        )
+      )
      | (
            ">"
            body = UiBody()
-           "</" endTagName = Name() {
+           "</" endTagName = TagName() {
                 if (!tagName.equals(endTagName)) {
-                    throw new ParseException("Mismatched start/end tags: " + tagName + " != " + endTagName);
+                    throw new ParseException("Mismatched start/end tags: " + tagName + " != " + endTagName + " on line " + token.beginLine + " image: " + token.image);
                 }
            }
            (
@@ -2743,17 +2792,38 @@ UiBodyExpr UiBody():
 {
   UiContainerExpr el;
   List<UiExpr> children = new ArrayList();
+  String comment = null;
   int beginLine = -1;
   int beginColumn = -1;
   int endLine = -1;
   int endColumn = -1;
 }{
    { setState(UI_BODY); }
-   (
 
-     /* For now, we will elide comment nodes.   */
-    ( <UI_BODY_COMMENT> ( <HTML_COMMENT> )* <END_HTML_COMMENT> { setState(UI_BODY); }  )
-    | (<NEW_UI_BODY>
+   (
+    (
+      <UI_BODY_COMMENT> {
+        beginLine = token.beginLine; beginColumn = token.beginColumn;
+      }
+      ( <HTML_COMMENT> {
+           comment = token.image;
+      } ) *
+      <END_HTML_COMMENT> {
+       if (comment != null) {
+           endLine = token.endLine; endColumn = token.endColumn;
+           NameExpr tagName = new NameExpr(NameExpr.COMMENT_NAME);
+           UiBodyExpr body = new UiBodyExpr(beginLine, beginColumn + 4, endLine, endColumn - 3, new ArrayList());
+           UiAttrExpr attr = new UiAttrExpr(new NameExpr("value"), false, new StringLiteralExpr(comment));
+           List attrs = Collections.singletonList(attr);
+           children.add(new UiContainerExpr(beginLine, beginColumn, endLine, endColumn, tagName, attrs, body, false));
+           setState(UI_BODY);
+           comment = null;
+       }
+      }
+
+   ) | (
+
+     <NEW_UI_BODY>
      el = UiContainer() {
         if (beginLine == -1) {
           beginLine = el.getBeginLine();
@@ -2763,22 +2833,26 @@ UiBodyExpr UiBody():
         endColumn = el.getEndColumn();
         children.add(el);
         setState(UI_BODY);
-      }
+     }
+
+   ) | (
+
+     <UI_TEXT> {
+       if (beginLine == -1) {
+         beginLine = token.beginLine;
+         beginColumn = token.beginColumn;
+       }
+       endLine = token.endLine;
+       endColumn = token.endColumn;
+       children.add(new TemplateLiteralExpr(token.beginLine, token.beginColumn, token.endLine, token.endColumn, token.image));
+     }
+
    )
-   | <UI_TEXT> {
-    if (beginLine == -1) {
-      beginLine = token.beginLine;
-      beginColumn = token.beginColumn;
-    }
-    endLine = token.endLine;
-    endColumn = token.endColumn;
-   children.add(new TemplateLiteralExpr(token.beginLine, token.beginColumn, token.endLine, token.endColumn, token.image));
-   }
-   ) *
-   <END_UI_BODY>
+ ) *
+ <END_UI_BODY>
 {
  setState(DEFAULT);
-return new UiBodyExpr(beginLine, beginColumn, endLine, endColumn, children);
+ return new UiBodyExpr(beginLine, beginColumn, endLine, endColumn, children);
 }
 }
 
@@ -2796,24 +2870,26 @@ UiAttrExpr UiAttr():
      Map jsonValues = new HashMap();
      NameExpr nextName;
  }{
-    // Optional: start an <elements @attributeName="with @ to map to string attributes" />
-    [ "@" {
-        isAttribute = true;
-        line=token.beginLine;
-        column=token.beginColumn;
-    } ]
-    name = FeatureName() {
-        if (!isAttribute) {
+    (
+        // Optional: start an <elements @attributeName="with @ to map to string attributes" />
+        [ "@" {
+            isAttribute = true;
             line=token.beginLine;
             column=token.beginColumn;
+        } ]
+        name = FeatureName() {
+            if (!isAttribute) {
+                line=token.beginLine;
+                column=token.beginColumn;
+            }
         }
-    }
-    "=" (
+        "=" (
 
-      // Grab annotations on the values; @value = "asd" uses html attribute mapping, so `@value = @NotNull "asd"` is where the annotations go.
-      (annotation = Annotation() { annotations = add(annotations, annotation); } )*
+          // Grab annotations on the values; @value = "asd" uses html attribute mapping, so `@value = @NotNull "asd"` is where the annotations go.
+          (annotation = Annotation() { annotations = add(annotations, annotation); } )*
 
-      expression = UiValue()
+          expression = UiValue()
+        )
     )
     {
       assert line != -1;
@@ -2827,6 +2903,7 @@ Expression UiValue():
     Expression expression;
 }
 {
+(
       // { json : "object" }.  For blocks of java, use a lambda ()->{}
       ( expression = JsonContainer() ) |
 
@@ -2840,8 +2917,68 @@ Expression UiValue():
       ( expression = CssContainer()) |
 
       // Any valid, simple java construct (including lambdas and method references).
-      expression = UnaryExpression()
+      expression = FeatureExpression()
+)
 { return expression; }
+}
+
+Expression FeatureExpression():
+{
+  Expression expr;
+  NameExpr methodName;
+  Statement statement;
+  List typeArgs = null;
+}
+{
+(
+    (
+        (
+    // Check for parentheticals, as they will be used to resolve any ambiguous expressions
+              LOOKAHEAD({ getToken(1).image.equals("(") })
+              expr = Expression()
+        )
+        (
+          "->" statement = LambdaBody()
+          { expr = generateLambda(expr, statement); }
+        )?
+        (
+        "::"
+          [typeArgs = TypeParameters() { typeArgs.remove(0); } ] (<IDENTIFIER > | "new")
+          { expr = new MethodReferenceExpr(expr.getBeginLine(), expr.getBeginColumn(), token.endLine, token.endColumn, expr, typeArgs, token.image); }
+
+        )?
+    )
+    | expr = Literal()
+    | (
+        (
+            expr = FeatureName()
+        )
+        (
+          "->" statement = LambdaBody()
+          { expr = generateLambda(expr, statement); }
+        )?
+        (
+        "::"
+          [typeArgs = TypeParameters() { typeArgs.remove(0); } ] (<IDENTIFIER > | "new")
+          { expr = new MethodReferenceExpr(expr.getBeginLine(), expr.getBeginColumn(), token.endLine, token.endColumn, expr, typeArgs, token.image); }
+
+        )?
+    )
+    | ( LOOKAHEAD(2) expr = UiStatement() )
+
+    // The only expressions we allow outside of parentheticals are simple;
+    // Either a singleArg->lambda(), ref::methodRef, "String", AnyName, numbers or boolean.
+    )
+    {return expr;}
+}
+
+Expression UiStatement():
+{
+  ExpressionStmt statement;
+}
+{
+  statement = StatementExpression()
+  { return statement.getExpression(); }
 }
 
 JsonContainerExpr JsonContainer():
@@ -2854,28 +2991,26 @@ JsonContainerExpr JsonContainer():
   int column;
 }{
   (
-  "{" {
-    line = token.beginLine;
-    column = token.beginColumn;
-  }
+    (
+    "{" {
+      line = token.beginLine;
+      column = token.beginColumn;
+    }
 
-  ( pair = JsonPair() { items.add(pair); }) *
+    ( pair = JsonPair() { items.add(pair); }) *
 
-  "}" )
-  | (
-  "[" {
-    line = token.beginLine;
-    column = token.beginColumn;
-    isArray = true;
-  }
+    "}" )
+    | (
+    "[" {
+      line = token.beginLine;
+      column = token.beginColumn;
+      isArray = true;
+    }
 
-  [
-    value = UiValue() { items.add(pair); }
-    ("," value = UiValue() { items.add(pair); } )*
-  ]
+    ( value = UiValue() { items.add(pair); } ) *
 
-  "]" )
-
+    "]" )
+  )
   { return new JsonContainerExpr(line, column, token.endLine, token.endColumn, isArray, items); }
 }
 
@@ -2887,10 +3022,13 @@ JsonPairExpr JsonPair():
   Expression value;
 }
 {
-  ( name = Expression() { line = name.getBeginLine(); column = name.getBeginColumn(); } )
-  ":"
-  (
-   value = UiValue()
+(
+      ( name = Expression() { line = name.getBeginLine(); column = name.getBeginColumn(); } )
+      ":"
+      (
+       value = UiValue()
+      )
+      [ "," ] // we allow trailing commas at the end of lists and maps (easier coding)
   )
   { return new JsonPairExpr(line, column, token.endLine, token.endColumn, name, value); }
 }

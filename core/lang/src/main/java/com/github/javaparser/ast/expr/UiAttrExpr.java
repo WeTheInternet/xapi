@@ -43,6 +43,10 @@ public class UiAttrExpr extends UiExpr {
     return name;
   }
 
+  public String getNameString() {
+    return name.getName();
+  }
+
   public void setName(NameExpr name) {
     this.name = name;
   }

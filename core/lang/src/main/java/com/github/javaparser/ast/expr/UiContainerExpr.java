@@ -1,9 +1,16 @@
 package com.github.javaparser.ast.expr;
 
+import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.visitor.GenericVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitor;
+import xapi.collect.api.IntTo;
+import xapi.collect.api.StringTo;
+import xapi.fu.In1Out1;
+
+import static xapi.collect.X_Collect.newStringMultiMap;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
@@ -14,23 +21,46 @@ public class UiContainerExpr extends UiExpr {
   private boolean inTemplate;
   private NameExpr name;
   private UiBodyExpr body;
-  private List<UiAttrExpr> attributes;
+  private StringTo.Many<UiAttrExpr> attrs;
 
   public UiContainerExpr(final int beginLine, final int beginColumn, final int endLine, final int endColumn,
                          NameExpr name, List<UiAttrExpr> attributes, UiBodyExpr body, boolean isInTemplate) {
     super(beginLine, beginColumn, endLine, endColumn);
+    attrs = newStringMultiMap(UiAttrExpr.class);
     this.name = name;
-    this.attributes = attributes;
     this.body = body;
     this.inTemplate = isInTemplate;
+    setAttributes(attributes);
   }
 
   public List<UiAttrExpr> getAttributes() {
-    return attributes;
+    return attrs.flatten().asList();
+  }
+
+  public void addAttribute(boolean replace, UiAttrExpr attr) {
+    final List<Node> children = getChildrenNodes();
+    final IntTo<UiAttrExpr> into = attrs.get(attr.getNameString());
+    if (replace) {
+      into.forEachValue(children::remove);
+      into.clear();
+    }
+    into.add(attr);
+    children.add(attr);
+  }
+
+  public IntTo<UiAttrExpr> getAttributes(String name) {
+    return attrs.get(name);
+  }
+
+  public Optional<UiAttrExpr> getAttribute(String name) {
+    final IntTo<UiAttrExpr> avail = attrs.get(name);
+    assert avail.size() < 2 : "Asked for a single attribute, but value of " + name +" had more than 1 item: " + avail;
+    return avail.isEmpty() ? Optional.empty() : Optional.ofNullable(avail.at(0));
   }
 
   public void setAttributes(List<UiAttrExpr> attributes) {
-    this.attributes = attributes;
+    final In1Out1<UiAttrExpr, String> mapper = UiAttrExpr::getNameString;
+    attrs.addManyMapped(attributes, mapper);
     setAsParentNodeOf(attributes);
   }
 
@@ -75,5 +105,17 @@ public class UiContainerExpr extends UiExpr {
 
   public void setInTemplate(boolean inTemplate) {
     this.inTemplate = inTemplate;
+  }
+
+  public boolean removeAttribute(UiAttrExpr attr) {
+    final IntTo<UiAttrExpr> list = attrs.get(attr.getNameString());
+    getChildrenNodes().remove(attr);
+    if (list.findRemove(attr, false)) {
+      if (list.isEmpty()) {
+        attrs.remove(attr.getNameString());
+      }
+      return true;
+    }
+    return false;
   }
 }

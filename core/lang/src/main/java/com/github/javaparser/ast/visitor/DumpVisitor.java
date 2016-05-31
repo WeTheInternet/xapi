@@ -403,7 +403,6 @@ public class DumpVisitor implements VoidVisitor<Object> {
 				final ClassOrInterfaceType c = i.next();
 				c.accept(this, arg);
 				if (i.hasNext()) {
-					printer.print(" & ");
 				}
 			}
 		}
@@ -856,7 +855,8 @@ public class DumpVisitor implements VoidVisitor<Object> {
 		printer.indent();
 		printer.print(n.getName().getName());
 		printer.print(" = ");
-		n.accept(this, arg);
+		n.getName().accept(this, arg);
+		n.getExpression().accept(this, arg);
 		printer.outdent();
     }
 
