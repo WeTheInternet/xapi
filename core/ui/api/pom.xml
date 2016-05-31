@@ -26,11 +26,7 @@
   </dependency>
   <dependency>
     <groupId>net.wetheinter</groupId>
-    <artifactId>xapi-fu</artifactId>
-  </dependency>
-  <dependency>
-   <groupId>net.wetheinter</groupId>
-   <artifactId>xapi-core-collect</artifactId>
+    <artifactId>xapi-core-lang</artifactId>
   </dependency>
 
   <!-- Testing dependencies -->

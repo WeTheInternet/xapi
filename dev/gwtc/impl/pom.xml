@@ -20,18 +20,34 @@
   and should only ever be included in dev-mode runtimes that need to perform gwt compiles.
 
   In the maven plugin, the jre frontend and this backend are used together in one runtime.
-  In the collide plugin, the gwt frontend runs in the browser, and this backend runs in vert.x server. 
+  In the collide plugin, the gwt frontend runs in the browser, and this backend runs in vert.x server.
   </description>
-  
+
   <properties>
     <xapi.skip.test>true</xapi.skip.test>
   </properties>
-  
+
   <dependencies>
     <!-- Take the full jre injection, for runtime classpath scanning. -->
     <dependency>
       <groupId>net.wetheinter</groupId>
       <artifactId>xapi-jre-inject</artifactId>
+    </dependency>
+
+    <!-- Yes, we declare direct dependency on gwt-dev. -->
+    <!-- This is a big import with potential classpath conflicts; -->
+    <!-- For this reason, you may want to launch gwtc-impl in its own thread -->
+
+    <!-- Note that you can take xapi-gwtc-api for your client code, -->
+    <!-- and only reference xapi-gwtc-impl when you run compiles -->
+    <dependency>
+      <groupId>${gwt.groupId}</groupId>
+      <artifactId>gwt-dev</artifactId>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>${gwt.groupId}</groupId>
+      <artifactId>gwt-user</artifactId>
     </dependency>
     <!-- Take the gwt uber jar, so we always have all production mode code-->
     <!-- Because we are taking the uber jar, we will be shadowing other gwt modules. -->
@@ -47,22 +63,6 @@
     <dependency>
       <groupId>net.wetheinter</groupId>
       <artifactId>xapi-dev-shell</artifactId>
-    </dependency>
-    
-    <!-- Yes, we declare direct dependency on gwt-dev. -->
-    <!-- This is a big import with potential classpath conflicts; -->
-    <!-- For this reason, you may want to launch gwtc-impl in its own thread -->
-
-    <!-- Note that you can take xapi-gwtc-api for your client code, -->
-    <!-- and only reference xapi-gwtc-impl when you run compiles -->
-    <dependency>
-      <groupId>${gwt.groupId}</groupId>
-      <artifactId>gwt-dev</artifactId>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>${gwt.groupId}</groupId>
-      <artifactId>gwt-user</artifactId>
     </dependency>
     <!-- Must declare compile dependency on JUnit, as we look at JUnit classes
          while generating entry points for test cases

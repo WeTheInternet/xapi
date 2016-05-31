@@ -94,7 +94,9 @@ public class X_File {
     SERVICE.get().mkdirsTransient(dest);
   }
 
-  public static void deepDelete(String genDir) {
-    SERVICE.get().delete(genDir, true);
+  public static void deepDelete(String dir) {
+    if (dir != null) {
+      SERVICE.get().delete(dir, true);
+    }
   }
 }

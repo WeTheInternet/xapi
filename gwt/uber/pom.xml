@@ -7,9 +7,9 @@
   <version>0.6-SNAPSHOT</version>
  </parent>
 
- <!-- Standalone gwt module; runs all gwt tests, and builds uber jar. Deferring 
-  tests until the dist module allows all gwt source jars to compile quickly, 
-  but ensures that any module dependent on a working distribution gets a working 
+ <!-- Standalone gwt module; runs all gwt tests, and builds uber jar. Deferring
+  tests until the dist module allows all gwt source jars to compile quickly,
+  but ensures that any module dependent on a working distribution gets a working
   jar. -->
  <artifactId>xapi-gwt</artifactId>
  <packaging>jar</packaging>
@@ -18,7 +18,7 @@
  <description>
     This module exists solely to package all other gwt modules into a single
     uber jar.  This makes deploying to non-mavenized targets much easier.
-    
+
     Of course, you would be wise to inherit your dependencies individually;
     the uber jar is intended for projects like collide,
     which have complex configuration, and adding many jars would be a pain.
@@ -27,14 +27,14 @@
  </properties>
 
  <dependencies>
- 
- 
+
+
   <dependency>
    <groupId>${gwt.groupId}</groupId>
    <artifactId>gwt-dev</artifactId>
    <scope>test</scope>
   </dependency>
- 
+
   <dependency>
    <groupId>net.wetheinter</groupId>
    <artifactId>xapi-dev-source</artifactId>
@@ -91,7 +91,7 @@
         </exclusion>
    </exclusions>
   </dependency>
-  
+
   <dependency>
    <groupId>${gwt.groupId}</groupId>
    <artifactId>gwt-user</artifactId>
@@ -133,7 +133,7 @@
     </executions>
    </plugin>
    <plugin>
-   
+
     <!-- Runs all gwt tests before building uber jar. -->
     <artifactId>maven-surefire-plugin</artifactId>
     <configuration>
@@ -146,8 +146,7 @@
      <systemProperties>
       <property>
        <name>gwt.args</name>
-       <value>-noincremental -nodevMode -ea -userAgents gecko1_8 -out
-        ${project.build.directory}/www-test</value>
+       <value>-noincremental -nodevMode -ea -userAgents gecko1_8 -out ${project.build.directory}/www-test</value>
       </property>
      </systemProperties>
     </configuration>

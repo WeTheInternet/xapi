@@ -1,16 +1,16 @@
-package xapi.gwt;
+package xapi.gwt.util;
 
 import xapi.log.X_Log;
 
 public class X_Gwt {
 
   private X_Gwt(){}
-  
+
   /**
-   * Runs a main method;  
+   * Runs a main method;
    * dev mode will simply use reflection to call .main(args);
    * prod mode can magic-method-inject the main method into a web worker / iframe.
-   * 
+   *
    * @param cls - The class with the main method to run.  Use a class literal.
    * @param args - The strings you want passed to the main()
    */
@@ -22,5 +22,5 @@ public class X_Gwt {
       X_Log.error("Error running main method in",cls,"with args",args);
     }
   }
-  
+
 }

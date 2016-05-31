@@ -1,13 +1,13 @@
 package xapi.gwt.ui.html.impl;
 
-import com.google.gwt.junit.client.GWTTestCase;
-
 import xapi.inject.X_Inject;
 import xapi.test.Assert;
 import xapi.ui.api.StyleService;
 import xapi.ui.autoui.client.User;
 import xapi.ui.autoui.client.UserModel;
 import xapi.ui.html.X_Html;
+
+import com.google.gwt.junit.client.GWTTestCase;
 
 public class X_HtmlTest extends GWTTestCase {
 

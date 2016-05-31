@@ -7,6 +7,7 @@ import xapi.util.api.ConvertsValue;
 public class XmlBuffer extends PrintBuffer {
 
   public static final String QUOTE = "\"", QUOTE_ENTITY = "&quot;";
+  private static final String COMMENT_NAME = "!--";
 
   private String tagName;
   private PrintBuffer attributes;
@@ -24,13 +25,24 @@ public class XmlBuffer extends PrintBuffer {
   public XmlBuffer() {
     comment = new PrintBuffer();
     before = new PrintBuffer();
-    indent = INDENT;
-    escaper = ConvertsValue.PASS_THRU;
+    init();
   }
 
   public XmlBuffer(final String tagName) {
     this();
     setTagName(tagName);
+  }
+
+  XmlBuffer(StringBuilder suffix) {
+    super(suffix);
+    comment = new PrintBuffer();
+    before = new PrintBuffer();
+    init();
+  }
+
+  protected void init() {
+    indent = INDENT;
+    escaper = ConvertsValue.PASS_THRU;
   }
 
   public XmlBuffer setTagName(final String name) {
@@ -350,6 +362,30 @@ public class XmlBuffer extends PrintBuffer {
 
   public boolean isNoTagName() {
     return tagName == null;
+  }
+
+  public boolean hasComment() {
+    return comment.isEmpty();
+  }
+
+  /**
+   * final so implementors must override addComment.
+   *
+   * We pay for the ugly unsafe generic to make it final,
+   * so perhaps a nice @DoNotOverride annotation is in order
+   * or @MustCallSuper (which would make the infinite recursion obvious),
+   * or @NeverCallFrom() (which would check all subtype's method bodies)
+   */
+  @SuppressWarnings("unchecked")
+  public final <X extends XmlBuffer> X setComment(String comment) {
+    this.comment.clear();
+    addComment(comment);
+    return (X) this;
+  }
+
+  public XmlBuffer addComment(String comment) {
+    this.comment.append(comment);
+    return this;
   }
 
   @Override

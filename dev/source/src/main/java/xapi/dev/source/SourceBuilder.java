@@ -37,6 +37,24 @@ package xapi.dev.source;
 
 public class SourceBuilder<Payload> {
 
+  public enum JavaType {
+    CLASS("class"),
+    INTERFACE("interface"),
+    ENUM("enum"),
+    ANNOTATION("@interface"),
+    UNKNOWN("");
+
+    private final String keyword;
+
+    JavaType(String keyword) {
+      this.keyword = keyword;
+    }
+    public void initialize(SourceBuilder builder, String pkg, String filename) {
+      builder.setClassDefinition("public " + keyword + " " + filename, false);
+      builder.setPackage(pkg);
+    }
+  }
+
   private final PrintBuffer head;
   private PrintBuffer buffer;
   private ImportSection imports;
@@ -47,6 +65,11 @@ public class SourceBuilder<Payload> {
 
   public SourceBuilder() {
     head = buffer = new PrintBuffer();
+  }
+
+  public SourceBuilder(Payload payload) {
+    this();
+    setPayload(payload);
   }
 
   public SourceBuilder(String classDef) {

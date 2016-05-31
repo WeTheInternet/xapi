@@ -1,18 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE module PUBLIC "-//Google Inc.//DTD Google Web Toolkit 2.7.0//EN" "http://gwtproject.org/doctype/2.7.0/gwt-module.dtd">
 <module>
- 
+
   <inherits name="com.google.gwt.core.MagicMethods" />
   <inherits name="com.google.gwt.i18n.I18N" />
-  
+  <inherits name="xapi.X_Fu" />
+
   <!--Include our emulation layer, xapi.emul.* -->
-  <super-source path="emul"/><!-- 
+  <super-source path="emul"/><!--
   Note that jre-level emul goes in com.google.gwt.emul,
   as the resource loader doesn't seem to obey classpath ordering correctly.
   -->
- 
+
  <!-- Pull in the source folders we need for basic api support -->
-  
+
   <source path="annotation"/> <!-- Annotations used throughout -->
   <source path="platform"/> <!-- Platform annotations -->
   <source path="collect"/> <!-- Basic collections abstractions -->
@@ -21,13 +22,19 @@
   <source path="enviro"/> <!-- Our logger -->
   <source path="util"/> <!-- Basic utility layer -->
   <source path="time"/> <!-- Time provider -->
-  <source path="gwt"/> <!-- Gwt implementation layer.  
+  <source path="api"/> <!-- Shared api code -->
+  <source path="gwt/annotation"/>
+  <source path="gwt/log"/>
+  <source path="gwt/time"/>
+  <source path="gwt/util"/>
+  <source path="gwt/collect"/>
+
       xapi.gwt is where web mode implementations should go.
       xapi.jre is for pure java runtimes; never include in web mode.
-      
+
       Avoid com.foo.gwt and com.foo.jre syntax,
       as you cannot include com.foo.* in gwt w/out taking com.foo.jre.
-      
+
       TODO: create a path-blacklist to block package names in a given folder,
       like .*[.]server[.].* or .*[.]jre[.].*
   -->
@@ -48,17 +55,17 @@ Inheriting xapi.X_Inject will set this to true, and enable production injection.
 You may set it back to false if you wish to use monolithic factory generators instead -->
 <define-property values="true,false" name="xapi.inject"/>
 <set-property name="xapi.inject" value="false" />
-     
-  <!-- 
+
+  <!--
   As an example of magic method injection, we'll set up a runtime property
   that will compile down to return true; if runtime injection is working.
-  
+
   Magic-method can override super-source, which returns false,
   so we'll have it return true if xapi-gwt-api or xapi-gwt is above gwt-dev on classpath.
    -->
-  <extend-configuration-property name="gwt.magic.methods" 
+  <extend-configuration-property name="gwt.magic.methods"
     value="xapi.inject.X_Inject.isRuntimeInjection() *= xapi.dev.inject.ReturnTrue"/>
-  
+
 
 <!-- Allows modules to define what platform annotation the production mode compiler uses -->
 <!-- This is useful in case you want to have multiple production targets in gwt that exclude each other -->

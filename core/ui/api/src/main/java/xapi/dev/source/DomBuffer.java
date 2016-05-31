@@ -20,6 +20,23 @@ public class DomBuffer extends XmlBuffer {
     }
   }
 
+  /**
+   * This method is inherently unsafe;
+   * thus it is package-local, to force you to come read this comment.
+   *
+   * This is going to make a nameless, compact DomBuffer, with this
+   * builder inserted as it's target (the head of the string building),
+   * but when a new node is added, this builder will be finalized,
+   * and future appends will be ignored.
+   *
+   * This behavior may change (by passing references instead of calling .toString()
+   */
+  DomBuffer(StringBuilder suffix) {
+    super(suffix);
+    setTrimWhitespace(true);
+    setNewLine(false);
+  }
+
   public DomBuffer setData(final String key, String value) {
     String keyName = toDataAttrName(key);
     if (X_String.isEmpty(value)) {
@@ -127,6 +144,23 @@ public class DomBuffer extends XmlBuffer {
   public DomBuffer setAttribute(final String name, final String value) {
     super.setAttribute(name, value);
     return this;
+  }
+
+  @Override
+  protected DomBuffer newChild() {
+    return new DomBuffer();
+  }
+
+  @Override
+  protected PrintBuffer newChild(StringBuilder suffix) {
+    final DomBuffer buffer = new DomBuffer(suffix);
+    buffer.append(suffix);
+    return buffer;
+  }
+
+  @Override
+  public DomBuffer makeChild() {
+    return (DomBuffer) super.makeChild();
   }
 
   public DomBuffer makeHiddenIframe() {

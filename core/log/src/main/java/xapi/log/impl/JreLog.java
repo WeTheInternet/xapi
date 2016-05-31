@@ -45,8 +45,13 @@ import xapi.util.X_Runtime;
 public class JreLog extends AbstractLog{
 
   public JreLog() {
-    logLevel = LogLevel.valueOf(System.getProperty(X_Namespace.PROPERTY_LOG_LEVEL,
-        X_Runtime.isDebug() ? "ALL" : "INFO"));
+
+    logLevel = LogLevel.valueOf(
+        X_Runtime.isDebug() ?
+        // System.getProperty is a GWT magic method; it must use string constants (even though X_Runtime.isDebug will also be a constant...
+        System.getProperty(X_Namespace.PROPERTY_LOG_LEVEL, "ALL") :
+        System.getProperty(X_Namespace.PROPERTY_LOG_LEVEL, "INFO")
+    );
   }
 
   public void doLog(LogLevel level, Fifo<Object> array)

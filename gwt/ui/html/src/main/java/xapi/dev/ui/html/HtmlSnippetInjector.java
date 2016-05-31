@@ -1,5 +1,7 @@
 package xapi.dev.ui.html;
 
+import xapi.ui.html.api.HtmlSnippet;
+
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.core.ext.UnableToCompleteException;
@@ -20,8 +22,6 @@ import com.google.gwt.dev.jjs.ast.JNewInstance;
 import com.google.gwt.reflect.rebind.ReflectionUtilAst;
 
 import java.util.List;
-
-import xapi.ui.html.api.HtmlSnippet;
 
 /**
  * A magic method injector for the methods X_Html.toHtml and X_Html.toSnippet:
@@ -82,8 +82,11 @@ public class HtmlSnippetInjector implements MagicMethodGenerator {
     ast.getTypeOracle().findType(provider.getFinalName());
 
     // Grab the type from the jjs ast
-
-    final JClassType uiType = (JClassType) ast.searchForTypeBySource(provider.getFinalName());
+    JClassType uiType = (JClassType) ast.searchForTypeBySource(provider.getFinalName());
+    if (uiType == null) {
+      logger.log(Type.ERROR, "Could not load " + provider.getFinalName()+" ; generated source likely contains errors");
+      throw new UnableToCompleteException();
+    }
     final SourceInfo info = methodCall.getSourceInfo().makeChild();
     JExpression inst = null;
     for (final JMethod method : uiType.getMethods()) {

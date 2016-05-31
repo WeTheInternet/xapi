@@ -2,6 +2,8 @@ package xapi.reflect;
 
 import xapi.annotation.api.XApi;
 import xapi.annotation.compile.MagicMethod;
+import xapi.inject.X_Inject;
+import xapi.log.X_Log;
 import xapi.log.api.LogService;
 import xapi.reflect.service.ReflectionService;
 import xapi.util.X_Runtime;
@@ -17,6 +19,10 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.TypeVariable;
+import java.net.URL;
+import java.security.CodeSource;
+import java.security.ProtectionDomain;
 
 /**
  * A set of static accessor classes to enable reflection in gwt.
@@ -37,7 +43,7 @@ import java.lang.reflect.Modifier;
 @XApi
 public class X_Reflect {
 
-  @Inject static ReflectionService reflectionService;
+  @Inject static ReflectionService reflectionService = X_Inject.singleton(ReflectionService.class);
   @Inject static LogService logService;
 
   /**
@@ -1098,7 +1104,11 @@ public class X_Reflect {
   }
 
   private static void log(final String string, final Throwable e) {
-    logService.error(X_Reflect.class, string, e);
+    if (logService == null) {
+      X_Log.error(X_Reflect.class, string, e);
+    } else {
+      logService.error(X_Reflect.class, string, e);
+    }
   }
 
   private static <T extends AccessibleObject> T makeAccessible(final T member) {
@@ -1131,4 +1141,42 @@ public class X_Reflect {
   private X_Reflect() {
   }
 
+  public static String className(Object value) {
+    return value == null ? "<null>" : value.getClass().getCanonicalName();
+  }
+
+  public static <T> Class<? extends T> getGenericAsClass(Object from) {
+    return getGenericAsClass(from, 0);
+  }
+
+  public static <T> Class<? extends T> getGenericAsClass(Object from, int position) {
+    assert from != null : "Do not send null objects to X_Reflect.getGenericsAsClass";
+    final TypeVariable<? extends Class<?>>[] params = from.getClass().getTypeParameters();
+    assert params.length > position : "Requested a generic type from position " + position +" of type " + from.getClass()+", but no type variable found on object " + from;
+    return (Class<? extends T>) params[position].getGenericDeclaration();
+  }
+
+  public static String getFileLoc(Class<?> mainClass) {
+    assert mainClass != null : "Do not send null class to X_Reflect.getFileLoc";
+    URL loc = null;
+    final ProtectionDomain domain = mainClass.getProtectionDomain();
+    if (domain != null) {
+      final CodeSource source = mainClass.getProtectionDomain().getCodeSource();
+      if (source != null) {
+        loc = source.getLocation();
+      }
+    }
+    if (loc == null) {
+      loc = mainClass.getClassLoader().getResource(mainClass.getCanonicalName().replace('.', '/')+".class");
+    }
+    boolean isJar = loc.getProtocol().equals("jar") || loc.toExternalForm().contains("jar!");
+    if (isJar) {
+      // When the main class is in a jar, we need to make sure that jar is on the classpath
+      String jar = loc.toExternalForm().replace("jar:", "").split("jar!")[0] + ".jar";
+      return jar;
+    } else {
+      // location is a source path; add it directly
+      return loc.toExternalForm().replace("file:", "");
+    }
+  }
 }

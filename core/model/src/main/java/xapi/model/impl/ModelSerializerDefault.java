@@ -11,6 +11,7 @@ import xapi.collect.api.StringTo;
 import xapi.collect.proxy.CollectionProxy;
 import xapi.collect.proxy.MapOf;
 import xapi.dev.source.CharBuffer;
+import xapi.fu.In2Out1;
 import xapi.log.X_Log;
 import xapi.model.api.Model;
 import xapi.model.api.ModelDeserializationContext;
@@ -201,10 +202,10 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
     }
     if (keyType == Integer.class) {
 //      integer collection.  If it is dense, we can just write the length and then the items.
-      if (collection.forEach(new ConvertsTwoValues() {
+      if (collection.readWhileTrue(new In2Out1() {
          int was;
          @Override
-         public Boolean convert(Object key, Object value) {
+         public Boolean io(Object key, Object value) {
            final Integer k = (Integer) key;
            if (++was==k) {
              return true;
@@ -214,53 +215,37 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
        })) {
         // It is a dense array.  We can write out the values
         out.append(primitives.serializeBoolean(true));
-        collection.forEach(new ConvertsTwoValues() {
-           @Override
-           public Boolean convert(Object key, Object value) {
+        collection.readWhileTrue((key, value)-> {
              writeObject(out, valueType, value, primitives, ctx);
              return true;
-           }
-         });
+           });
       } else {
         // it is a sparse array. write out w/ nulls
         out.append(primitives.serializeBoolean(false));
-        collection.forEach(
-            new ConvertsTwoValues() {
-              @Override
-              public Boolean convert(Object key, Object value) {
+        collection.readWhileTrue((key, value) -> {
                 out.append(primitives.serializeInt((Integer) key));
                 writeObject(out, valueType, value, primitives, ctx);
                 return true;
-              }
             }
         );
       }
     } else if (keyType == Class.class) {
-        collection.forEach(new ConvertsTwoValues() {
-           @Override
-           public Boolean convert(Object key, Object value) {
+        collection.readWhileTrue((key, value) -> {
              out.append(primitives.serializeClass((Class) key));
              writeObject(out, valueType, value, primitives, ctx);
              return true;
-           }
          });
     } else if (keyType == String.class) {
-        collection.forEach(new ConvertsTwoValues() {
-           @Override
-           public Boolean convert(Object key, Object value) {
+        collection.readWhileTrue((key, value) -> {
              out.append(primitives.serializeString((String) key));
              writeObject(out, valueType, value, primitives, ctx);
              return true;
-           }
          });
     } else if (keyType.isEnum()) {
-        collection.forEach(new ConvertsTwoValues() {
-           @Override
-           public Boolean convert(Object key, Object value) {
+        collection.readWhileTrue((key, value) -> {
              out.append(primitives.serializeString(((Enum) key).name()));
              writeObject(out, valueType, value, primitives, ctx);
              return true;
-           }
          });
     } else {
       assert false : "Unsupported key type "+keyType+" in model serializer: "+getClass();

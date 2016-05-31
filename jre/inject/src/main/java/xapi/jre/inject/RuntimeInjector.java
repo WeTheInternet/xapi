@@ -1,16 +1,5 @@
 package xapi.jre.inject;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
-
 import xapi.annotation.inject.InstanceDefault;
 import xapi.annotation.inject.InstanceOverride;
 import xapi.annotation.inject.SingletonDefault;
@@ -37,6 +26,17 @@ import xapi.time.impl.ImmutableMoment;
 import xapi.util.X_Properties;
 import xapi.util.X_Runtime;
 import xapi.util.api.ReceivesValue;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class RuntimeInjector implements ReceivesValue<String> {
 
@@ -296,7 +296,7 @@ public class RuntimeInjector implements ReceivesValue<String> {
   }
   protected void writeMeta(final Map<String, ClassFile> injectables,
       final File target) {
-    X_Log.info("Writing meta to ",target.getAbsoluteFile());
+    X_Log.info(getClass(), "Writing meta to ",target.getAbsoluteFile());
 
     if (!target.exists()) {
       if (!target.mkdirs()) {

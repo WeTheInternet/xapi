@@ -48,9 +48,26 @@
 			<groupId>${gwt.groupId}</groupId>
 			<artifactId>gwt-user</artifactId>
 		</dependency>
+
+		<!-- Testing dependencies -->
+        <dependency>
+            <groupId>net.wetheinter</groupId>
+            <artifactId>xapi-gwtc-impl</artifactId>
+			<scope>test</scope>
+		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>info.cukes</groupId>
+			<artifactId>cucumber-java</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>info.cukes</groupId>
+			<artifactId>cucumber-junit</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

@@ -45,7 +45,7 @@ public class X_IO {
       @SuppressWarnings({ "unchecked", "rawtypes" })
       @Override
       public void run() {
-        final boolean log = info != null && X_Log.loggable(info), trace = X_Log.loggable(LogLevel.TRACE);
+        final boolean log = info != null && X_Log.loggable(info), trace = X_Log.loggable(LogLevel.DEBUG);
         int delay = 20;
         int read = 1;
         int loops = 20000;
@@ -59,7 +59,7 @@ public class X_IO {
               if (avail == 0) {
                 // Maybe process is dead...
                 if (!liveCheck.isAlive()){
-                  X_Log.debug(getClass(), "Stream not alive; bailing after ",X_Time.difference(birth));
+                  X_Log.debug(getClass(), "Stream not alive; completing after ",X_Time.difference(birth));
                   read = -1;
                   break top;
                 }
@@ -79,6 +79,8 @@ public class X_IO {
                     .give("delay: "+delay)
                     );
               }
+              System.out.flush();
+              System.err.flush();
               if (read > 0){
                 delay = 20;
                 buffer.write(bytes, 0, read);

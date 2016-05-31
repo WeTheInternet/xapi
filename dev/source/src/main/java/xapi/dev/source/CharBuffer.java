@@ -18,7 +18,7 @@ public class CharBuffer implements Coercible {
   protected static final class CharBufferStack extends StringStack<CharBuffer> {
   }
 
-  StringBuilder target;
+  volatile StringBuilder target;
   protected String indent = "";
   CharBufferStack head;
   CharBufferStack tail;
@@ -42,6 +42,7 @@ public class CharBuffer implements Coercible {
   }
 
   CharBuffer append(final StringBuilder chars) {
+    target.append(chars);
     return this;
   }
 
@@ -107,8 +108,11 @@ public class CharBuffer implements Coercible {
         + this;
     final CharBufferStack newTail = new CharBufferStack();
     newTail.setValue(buffer);
-    newTail.setPrefix(target.toString());
-    target.setLength(0);
+    synchronized (target) { // we synchro on this volatile variable, because we only need the lock if we share a reference.
+      final StringBuilder myTarget = target;
+      newTail.setPrefix(()->myTarget.toString());
+      target = new StringBuilder(); // everyone else will see this change w/out having to synchro
+    }
     tail.next = newTail;
     tail = newTail;
   }
