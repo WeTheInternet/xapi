@@ -1,6 +1,8 @@
 package xapi.elemental.api;
 
 import elemental.dom.Element;
+import xapi.annotation.inject.InstanceDefault;
+import xapi.inject.X_Inject;
 import xapi.ui.api.ElementPosition;
 import xapi.ui.api.UiElement;
 import xapi.ui.impl.AbstractUiElement;
@@ -9,9 +11,20 @@ import xapi.ui.impl.AbstractUiElement;
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 4/19/16.
  */
+@InstanceDefault(implFor = UiElementWeb.class)
 public class UiElementWeb extends AbstractUiElement {
 
-  protected Element element;
+  public static UiElementWeb fromWeb(Element element) {
+    UiElementWeb el = X_Inject.instance(UiElementWeb.class);
+    el.setElement(element);
+    return el;
+  }
+
+  private void setElement(Element element) {
+    this.element = element;
+  }
+
+  private Element element;
 
   public Element element() {
     return element;

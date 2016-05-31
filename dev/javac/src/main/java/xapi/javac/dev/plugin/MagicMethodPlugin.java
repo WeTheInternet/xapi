@@ -96,7 +96,7 @@ public class MagicMethodPlugin implements Plugin {
           final IntTo<Out2<MethodInvocationTree, MagicMethodInjector>> matched = finder.getMatched();
           if (matched.isNotEmpty()) {
             SourceTransformationService editor = SourceTransformationService.instanceFrom(service);
-            matched.forEach((index, vals) -> {
+            matched.readWhileTrue((index, vals) -> {
               final InjectionResolver resolver = editor.createInjectionResolver(cup);
               final MethodInvocationTree method = vals.out1();
               final MagicMethodInjector injector = vals.out2();

@@ -11,8 +11,8 @@ import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.PrintBuffer;
 import xapi.dev.source.SourceBuilder;
+import xapi.dev.source.SourceTransform;
 import xapi.fu.In1;
-import xapi.fu.In1Out1;
 import xapi.fu.In2.In2Unsafe;
 import xapi.inject.X_Inject;
 import xapi.source.X_Modifier;
@@ -123,14 +123,14 @@ public class ShadowDomStyleInjectorGenerator {
   private ClassTo.Many<InjectionResult> cssInjectors = X_Collect.newClassMultiMap(InjectionResult.class);
 
 
-  public In1Out1<String, String> generateShadowStyles(
+  public SourceTransform generateShadowStyles(
       TreeLogger logger,
       Fifo<ShadowDomStyle> sharedStyles,
       Fifo<ShadowDomStyle> localStyles,
       GeneratorContext context
   ) {
 
-    Fifo<In1Out1<String, String>> injectors = new SimpleFifo<>();
+    Fifo<SourceTransform> injectors = new SimpleFifo<>();
 
     extractInjectors(logger, sharedStyles, context, injectors::give);
     extractInjectors(logger, localStyles, context, injectors::give);
@@ -138,7 +138,7 @@ public class ShadowDomStyleInjectorGenerator {
 
     return into-> {
       StringBuilder b = new StringBuilder();
-      injectors.transform(with2(In1Out1::io, into), b::append);
+      injectors.transform(with2(SourceTransform::transform, into), b::append);
       return b.toString();
     }; // "styleProvider.addTo("+into+")"
   }
@@ -147,7 +147,7 @@ public class ShadowDomStyleInjectorGenerator {
       TreeLogger logger,
       Fifo<ShadowDomStyle> allStyle,
       GeneratorContext context,
-      In1<In1Out1<String, String>> callback
+      In1<SourceTransform> callback
   ) {
 
     Map<ShadowDomStyle, String> missingProviders = new LinkedHashMap<>();
@@ -179,7 +179,6 @@ public class ShadowDomStyleInjectorGenerator {
       callback.in(result::inject);
     };
     missingProviders.entrySet().forEach(buildProvider.mapAdapter());
-
 
   }
 

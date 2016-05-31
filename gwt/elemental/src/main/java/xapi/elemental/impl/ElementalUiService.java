@@ -70,4 +70,24 @@ public class ElementalUiService extends UiServiceImpl {
     return new ElementalProperties((UiElementWeb)e);
   }
 
+  @Override
+  public Object getHost(Object from) {
+    if (from instanceof UiElementWeb) {
+      UiElementWeb e = (UiElementWeb) from;
+      final Element host = nativeHost(e.element());
+      return UiElementWeb.fromWeb(host);
+    }
+    assert from instanceof Element || isElement(from);
+    return nativeHost ((Element) from);
+  }
+
+  private native boolean isElement(Object from)
+  /*-{
+    return from && from.nodeType === 1;
+  }-*/;
+
+  private native Element nativeHost(Element element)
+  /*-{
+    return element && element.host || element;
+  }-*/;
 }

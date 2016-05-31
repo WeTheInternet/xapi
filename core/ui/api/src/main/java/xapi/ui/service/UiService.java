@@ -27,4 +27,7 @@ public interface UiService {
   <E extends UiElement> UiWithAttributes <E> newAttributes(E e);
 
   <E extends UiElement> UiWithProperties <E> newProperties(E e);
+
+  Object getHost(Object from);
+
 }

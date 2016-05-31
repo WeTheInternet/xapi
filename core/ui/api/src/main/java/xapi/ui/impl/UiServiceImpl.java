@@ -2,6 +2,7 @@ package xapi.ui.impl;
 
 import xapi.annotation.inject.SingletonDefault;
 import xapi.collect.api.ClassTo;
+import xapi.except.NotYetImplemented;
 import xapi.fu.In1Out1;
 import xapi.fu.Out1;
 import xapi.inject.X_Inject;
@@ -84,4 +85,8 @@ public class UiServiceImpl implements UiService {
     return new UiWithProperties<>(e);
   }
 
+  @Override
+  public Object getHost(Object from) {
+    throw new NotYetImplemented(getClass() + " needs to override .getHost()");
+  }
 }

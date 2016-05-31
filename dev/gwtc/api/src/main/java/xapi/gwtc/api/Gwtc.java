@@ -220,4 +220,6 @@ public @interface Gwtc {
    * return true to print generated gwt.xml to stdOut during compilation
    */
   boolean debug() default false;
+
+  Class<?>[] inheritClasses() default {};
 }

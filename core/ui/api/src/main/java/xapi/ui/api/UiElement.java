@@ -20,6 +20,10 @@ public interface UiElement extends ElementInjector {
 
   String toSource();
 
+  default UiElement getHost() {
+    return (UiElement) UiService.getUiService().getHost(this);
+  }
+
   <F extends UiFeature, Generic extends F> F getFeature(Class<Generic> cls);
 
   <F extends UiFeature, Generic extends F> F addFeature(Class<Generic> cls, F feature);
@@ -71,7 +75,7 @@ public interface UiElement extends ElementInjector {
   default ElementInjector asInjector() {
     // Platforms like Gwt might erase the type information off a
     // raw html / javascript type, so we return "real java objects" here.
-    // This also allows implementors
+    // This also allows implementors to insert control logic to the element attachment methoods.
     return new DelegateElementInjector(this);
   }
 
