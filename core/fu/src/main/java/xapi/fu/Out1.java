@@ -56,6 +56,19 @@ public interface Out1<O> extends Rethrowable {
     return of::get;
   }
 
+  static <I, O> Out1<O> out1Immediate(In1Out1<I, O> mapper, I input) {
+    return mapper.supply(input);
+  }
+
+  static <I, O> Out1<O> out1Immediate(In1Out1<I, O> mapper, Out1<I> input) {
+    I value = input.out1();
+    return ()->mapper.io(value);
+  }
+
+  static <I, O> Out1<O> out1Deferred(In1Out1<I, O> mapper, Out1<I> input) {
+    return ()->mapper.io(input.out1());
+  }
+
   /**
    * This method just exists to give you somewhere to create a lambda that will rethrow exceptions,
    * but exposes an exceptionless api.  If you don't have to call code with checked exceptions,
@@ -78,7 +91,7 @@ public interface Out1<O> extends Rethrowable {
     }
   }
 
-  class Out1Immutable <O> implements Out1<O> {
+  final class Out1Immutable <O> implements Out1<O> {
 
     private final O value;
 

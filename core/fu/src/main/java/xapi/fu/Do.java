@@ -48,4 +48,16 @@ public interface Do {
     }
   }
 
+  static <V> void forEach(Iterable<V> values, In1<V> job) {
+    values.forEach(job.toConsumer());
+  }
+
+  static <V, To> void forEachMapped2(Iterable<V> values, In1Out1<V, To> mapper, In2<V, To> job) {
+    forEach(values, In1.mapped1(job, mapper));
+  }
+
+  static <V, To> void forEachMapped1(Iterable<V> values, In1Out1<V, To> mapper, In2<To, V> job) {
+    forEach(values, In1.mapped2(job, mapper));
+  }
+
 }

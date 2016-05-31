@@ -83,10 +83,30 @@ public interface In1Out1<I, O> extends Rethrowable {
 
     default O io(I in) {
       try {
-        return ioUnsafe(in);
+        return this.ioUnsafe(in);
       } catch (Throwable e) {
         throw rethrow(e);
       }
     }
   }
+
+  default <To> In1Out1<I,To> mapOut(In1Out1<O, To> mapper) {
+    return in-> {
+      final O o = this.io(in);
+      return mapper.io(o);
+    };
+  }
+
+  default <To> In1Out1<To,O> mapIn(In1Out1<To, I> mapper) {
+    return to-> {
+      final I i1 = mapper.io(to);
+      return this.io(i1);
+    };
+  }
+
+  static <I, T, O> In1Out1<I, O> ofMapped(In1Out1<I, T> mapper, In1Out1<T, O> job) {
+    return mapper.mapOut(job);
+  }
+
+
 }

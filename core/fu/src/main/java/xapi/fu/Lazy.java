@@ -126,6 +126,10 @@ public class Lazy <T> implements Out1<T> {
     proxy = prox[0];
   }
 
+  public boolean isImmutable() {
+    return proxy instanceof Out1Immutable;
+  }
+
   protected boolean valueAcceptable(T value) {
     return value != null;
   }

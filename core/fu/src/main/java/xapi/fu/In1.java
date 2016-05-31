@@ -70,6 +70,28 @@ public interface In1<I> extends HasInput, Rethrowable {
     return i1 -> adapt.in(i1, i2);
   }
 
+  static <I1, I2> In1<I1> mapped1(In2<I1, I2> adapt, In1Out1<I1, I2> mapper) {
+    return i1 -> adapt.in(i1, mapper.io(i1));
+  }
+
+  static <I1, I2> In1<I1> mapped1Reverse(In1Out1<I1, I2> mapper, In2<I1, I2> operation) {
+    return i1 -> {
+      final I2 mapped = mapper.io(i1);
+      operation.in(i1, mapped);
+    };
+  }
+
+  static <I1, I2> In1<I2> mapped2(In2<I1, I2> adapt, In1Out1<I2, I1> i1) {
+    return i2 -> adapt.in(i1.io(i2), i2);
+  }
+
+  static <I1, I2> In1<I2> mapped2Reverse(In1Out1<I2, I1> mapper, In2<I1, I2> adapt) {
+    return i2 -> {
+      final I1 mapped = mapper.io(i2);
+      adapt.in(mapped, i2);
+    };
+  }
+
   static <I1, I2> In1<I2> from1(In2<I1, I2> adapt, I1 i1) {
     return i2 -> adapt.in(i1, i2);
   }
@@ -82,5 +104,13 @@ public interface In1<I> extends HasInput, Rethrowable {
 
   static <I> In1<I> ignored(Runnable r) {
     return ignored -> r.run();
+  }
+
+  default void forEach(Iterable<I> value) {
+    value.forEach(toConsumer());
+  }
+
+  default <To> In1<To> map1(In1Out1<To, I> mapper) {
+    return i1->in(mapper.io(i1));
   }
 }
