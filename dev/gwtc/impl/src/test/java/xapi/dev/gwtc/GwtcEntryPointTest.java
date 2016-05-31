@@ -15,6 +15,8 @@ import xapi.test.gwtc.cases.GwtcCaseJunit4;
 import xapi.util.X_Namespace;
 import xapi.util.X_Properties;
 
+import com.google.gwt.core.ext.TreeLogger.Type;
+
 public class GwtcEntryPointTest {
 
   static {
@@ -66,6 +68,7 @@ public class GwtcEntryPointTest {
     final Package pkg = CaseEntryPoint.class.getPackage();
     final GwtcService gwtc = X_Gwtc.getServiceFor(pkg, false);
     final GwtManifest manifest = new GwtManifest("Gwtc_"+pkg.getName().replace('.', '_'));
+    manifest.setLogLevel(Type.TRACE);
     manifest.addSystemProp("gwt.usearchives=false");
     Assert.assertEquals(0, gwtc.compile(manifest));
   }
@@ -77,6 +80,7 @@ public class GwtcEntryPointTest {
     final GwtcService gwtc = X_Gwtc.getServiceFor(CaseEntryPoint.class);
     gwtc.addJUnitClass(GwtcCaseJunit4.class);
     final GwtManifest manifest = new GwtManifest(gwtc.getModuleName());
+    manifest.setLogLevel(Type.TRACE);
     manifest.addSystemProp("gwt.usearchives=false");
     Assert.assertEquals(0, gwtc.compile(manifest));
   }

@@ -1,5 +1,38 @@
 package xapi.dev.gwtc.impl;
 
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import xapi.annotation.compile.Dependency;
+import xapi.annotation.compile.Dependency.DependencyType;
+import xapi.annotation.compile.DependencyBuilder;
+import xapi.annotation.compile.Resource;
+import xapi.annotation.compile.ResourceBuilder;
+import xapi.collect.X_Collect;
+import xapi.collect.api.StringTo;
+import xapi.dev.gwtc.api.GwtcService;
+import xapi.dev.source.ClassBuffer;
+import xapi.dev.source.MethodBuffer;
+import xapi.dev.source.SourceBuilder;
+import xapi.dev.source.SourceBuilder.JavaType;
+import xapi.dev.source.XmlBuffer;
+import xapi.file.X_File;
+import xapi.fu.Out1;
+import xapi.gwtc.api.GwtManifest;
+import xapi.gwtc.api.GwtcXmlBuilder;
+import xapi.log.X_Log;
+import xapi.log.api.LogLevel;
+import xapi.reflect.X_Reflect;
+import xapi.util.X_Debug;
+
+import com.google.gwt.core.client.EntryPoint;
+import com.google.gwt.core.client.RunAsyncCallback;
+import com.google.gwt.junit.client.GWTTestCase;
+import com.google.gwt.junit.tools.GWTTestSuite;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -9,33 +42,6 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import xapi.annotation.compile.Dependency;
-import xapi.annotation.compile.Dependency.DependencyType;
-import xapi.annotation.compile.DependencyBuilder;
-import xapi.annotation.compile.Resource;
-import xapi.annotation.compile.ResourceBuilder;
-import xapi.dev.gwtc.api.GwtcService;
-import xapi.dev.source.ClassBuffer;
-import xapi.dev.source.MethodBuffer;
-import xapi.dev.source.SourceBuilder;
-import xapi.dev.source.XmlBuffer;
-import xapi.file.X_File;
-import xapi.log.X_Log;
-import xapi.log.api.LogLevel;
-import xapi.util.X_Debug;
-
-import com.google.gwt.core.client.EntryPoint;
-import com.google.gwt.core.client.RunAsyncCallback;
-import com.google.gwt.junit.client.GWTTestCase;
-import com.google.gwt.junit.tools.GWTTestSuite;
 
 public abstract class GwtcServiceAbstract implements GwtcService {
 
@@ -50,7 +56,6 @@ public abstract class GwtcServiceAbstract implements GwtcService {
     }
   }
 
-  protected static final String GEN_PREFIX = "__gen";
   protected final GwtcContext context;
   protected final String genName;
   protected final File tempDir;
@@ -59,23 +64,25 @@ public abstract class GwtcServiceAbstract implements GwtcService {
   protected GwtcEntryPointBuilder out;
   private boolean needsReportError = true;
   protected String manifestName;
+  protected StringTo<Out1<String>> files;
 
   public GwtcServiceAbstract(ClassLoader resourceLoader) {
+    finished = new HashSet<>();
+    files = X_Collect.newStringMap(Out1.class);
     context = new GwtcContext(this, resourceLoader);
 
-    finished = new HashSet<String>();
     genName = context.getGenName();
     tempDir = X_File.createTempDir(genName);
-    String qualifiedName = GEN_PREFIX+"."+genName;
+    String qualifiedName = GwtManifest.GEN_PREFIX+"."+genName;
 
-    entryPoint = new SourceBuilder<GwtcService>("public class "+ genName).setPackage(GEN_PREFIX);
+    entryPoint = new SourceBuilder<GwtcService>("public class "+ genName).setPackage(GwtManifest.GEN_PREFIX);
     out = new GwtcEntryPointBuilder(entryPoint);
 
     context.setEntryPoint(qualifiedName);
-    context.addGwtXmlSource(GEN_PREFIX);
+
+    context.addGwtXmlSource(GwtManifest.GEN_PREFIX);
 
   }
-
 
   @Override
   public void addClass(Class<?> clazz) {
@@ -120,12 +127,46 @@ public abstract class GwtcServiceAbstract implements GwtcService {
     context.addClass(clazz);
   }
 
+  @Override
+  public void addClasspath(Class<?> cls) {
+
+    String loc = X_Reflect.getFileLoc(cls);
+
+    final DependencyBuilder builder = DependencyBuilder
+        .buildDependency(loc)
+        .setDependencyType(DependencyType.ABSOLUTE);
+
+    context.addDependency(builder.build());
+    // if loc is a src/main/java or src/test/java, also include resources module:
+    String unixed = loc.replace('\\', '/');
+    int index = unixed.indexOf("src/main/java");
+    if (index != -1) {
+
+      context.addDependency(builder
+          .setValue(unixed.replace("src/main/java", "src/main/resources"))
+          .build());
+
+    } else if (unixed.indexOf("src/test/java") != -1) {
+
+      context.addDependency(builder
+          .setValue(unixed.replace("src/test/java", "src/test/resources"))
+          .build());
+      context.addDependency(builder
+          .setValue(unixed.replace("src/test/java", "src/main/java"))
+          .build());
+      context.addDependency(builder
+          .setValue(unixed.replace("src/test/java", "src/main/resources"))
+          .build());
+
+    }
+  }
+
   public String getEntryPoint() {
     return entryPoint.toString();
   }
 
-  public String getGwtXml() {
-    return context.getGwtXml().toString();
+  public String getGwtXml(GwtManifest manifest) {
+    return context.getGwtXml(manifest).toString();
   }
 
   @Override
@@ -133,7 +174,10 @@ public abstract class GwtcServiceAbstract implements GwtcService {
     return genName;
   }
 
-  protected void generateWar(String warDir, String moduleName) {
+  protected void generateWar(GwtManifest manifest) {
+    String warDir = manifest.getWarDir();
+    String moduleName = manifest.getModuleName();
+
     final XmlBuffer
       buffer = new XmlBuffer("html"),
       head = buffer.makeTag("head"),
@@ -141,7 +185,8 @@ public abstract class GwtcServiceAbstract implements GwtcService {
     ;
     buffer.printBefore(getHostPageDocType());
 
-    context.generateAll(new File(warDir), moduleName, head, body);
+
+    context.generateAll(new File(manifest.getGenDir()), moduleName, head, body);
 
     head.makeTag("script")
     .setAttribute("type", "text/javascript")
@@ -341,7 +386,7 @@ public abstract class GwtcServiceAbstract implements GwtcService {
   }
 
 
-  public void copyModuleTo(String module) {
+  public void copyModuleTo(String module, GwtManifest manifest) {
     String from = manifestName == null ? genName : manifestName;
     File f = new File(tempDir, from+".gwt.xml");
     if (f.exists()) {
@@ -354,24 +399,59 @@ public abstract class GwtcServiceAbstract implements GwtcService {
       }
       f = new File(tempDir, path);
       f.mkdirs();
-      saveGwtXmlFile(context.getGwtXml(), module.substring(ind+1), f);
+      saveGwtXmlFile(context.getGwtXml(manifest), module.substring(ind+1), manifest);
     }
   }
 
-  protected void saveGwtXmlFile(XmlBuffer xml, String moduleName, File dest) {
-    saveTempFile(GwtcXmlBuilder.HEADER+xml, new File(dest,moduleName+".gwt.xml"));
+  protected void saveGwtXmlFile(XmlBuffer xml, String moduleName, GwtManifest manifest) {
+    saveTempFile(GwtcXmlBuilder.HEADER+xml, new File(inGeneratedDirectory(manifest, moduleName.replace('.', '/')+".gwt.xml")));
   }
 
   protected void saveTempFile(String value, File dest) {
     X_Log.trace(getClass(), "saving generated file to",dest);
-    dest.getParentFile().mkdirs();
-    try (FileWriter out = new FileWriter(dest);) {
+    final boolean success = dest.getParentFile().mkdirs();
+    assert success || dest.getParentFile().exists() : "Unable to create parent directories for " + dest.getAbsolutePath();
+    try (FileWriter out = new FileWriter(dest)) {
       out.append(value);
-      out.close();
     } catch (IOException e) {
       X_Log.warn(getClass(), "Error saving generated file ",dest,"\n"+value);
       throw X_Debug.rethrow(e);
     }
   }
 
+  @Override
+  public SourceBuilder createJavaFile(String pkg, String filename, JavaType type) {
+    final SourceBuilder builder = new SourceBuilder();
+    type.initialize(builder, pkg, filename);
+    createFile(pkg.replace('.', '/'), filename+".java", builder::toSource);
+    return builder;
+  }
+
+  @Override
+  public void createFile(String pkg, String filename, Out1<String> sourceProvider) {
+    String fqcn = pkg + File.separatorChar + filename;
+    assert !files.containsKey(fqcn) : "Already created file with the qualified name " + fqcn;
+    files.put(fqcn, sourceProvider);
+  }
+
+  @Override
+  public String modifyPackage(String pkgToUse) {
+    // exists in case subclasses want to repackage things...
+    return pkgToUse;
+  }
+
+  @Override
+  public MethodBuffer addMethodToEntryPoint(String methodDef) {
+    return entryPoint.getClassBuffer().createMethod(methodDef);
+  }
+
+  @Override
+  public void addGwtInherit(String inherit) {
+    context.addGwtXmlInherit(inherit);
+  }
+
+  @Override
+  public MethodBuffer getOnModuleLoad() {
+    return out.out;
+  }
 }

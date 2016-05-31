@@ -1,17 +1,5 @@
 package xapi.dev.gwtc.impl;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
-import javax.inject.Inject;
-
-import com.google.gwt.core.client.EntryPoint;
-import com.google.gwt.reflect.shared.GwtReflect;
-
 import xapi.dev.X_Gwtc;
 import xapi.dev.gwtc.api.GwtcService;
 import xapi.dev.source.ClassBuffer;
@@ -21,6 +9,17 @@ import xapi.dev.source.SourceBuilder;
 import xapi.gwtc.api.DefaultValue;
 import xapi.log.X_Log;
 import xapi.source.X_Source;
+
+import com.google.gwt.core.client.EntryPoint;
+import com.google.gwt.reflect.shared.GwtReflect;
+
+import javax.inject.Inject;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class GwtcEntryPointBuilder {
 
@@ -35,13 +34,13 @@ public class GwtcEntryPointBuilder {
     this.cls = gwtc.getClassBuffer();
     out = cls.addInterface(EntryPoint.class)
         .createMethod("void onModuleLoad");
-    instanceProviders = new LinkedHashMap<String, String>();
+    instanceProviders = new LinkedHashMap<>();
   }
 
   public void println(String text) {
     out.println(text);
   }
-  
+
   public String formatInstanceCall(Method method, boolean onNewInstance) {
     String cls = formatInstanceProvider(method.getDeclaringClass());
     StringBuilder b = new StringBuilder();
@@ -123,7 +122,7 @@ public class GwtcEntryPointBuilder {
     }
     return b.toString();
   }
-  
+
   public String formatStaticCall(Method method) {
     String clazz = cls.addImport(method.getDeclaringClass());
     StringBuilder b = new StringBuilder();

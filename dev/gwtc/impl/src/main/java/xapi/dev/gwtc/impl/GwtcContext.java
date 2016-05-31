@@ -1,16 +1,5 @@
 package xapi.dev.gwtc.impl;
 
-import java.io.File;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.Callable;
-
-import javax.inject.Provider;
-
 import xapi.annotation.compile.Dependency;
 import xapi.annotation.compile.Resource;
 import xapi.annotation.ui.UiTemplateBuilder;
@@ -21,9 +10,11 @@ import xapi.dev.gwtc.api.GwtcService;
 import xapi.dev.scanner.X_Scanner;
 import xapi.dev.scanner.impl.ClasspathResourceMap;
 import xapi.dev.source.XmlBuffer;
+import xapi.gwtc.api.GwtManifest;
 import xapi.gwtc.api.Gwtc;
 import xapi.gwtc.api.Gwtc.AncestorMode;
 import xapi.gwtc.api.GwtcProperties;
+import xapi.gwtc.api.GwtcXmlBuilder;
 import xapi.inject.impl.SingletonProvider;
 import xapi.log.X_Log;
 import xapi.util.X_Debug;
@@ -33,6 +24,16 @@ import xapi.util.api.ReceivesValue;
 
 import com.google.gwt.reflect.shared.GwtReflect;
 import com.google.gwt.reflect.shared.GwtReflectJre;
+
+import javax.inject.Provider;
+import java.io.File;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Callable;
 
 @SuppressWarnings({"unchecked", "rawtypes", "unused"})
 public class GwtcContext {
@@ -190,7 +191,7 @@ public class GwtcContext {
      * Finds the next parent element annotated with @Gwtc.
      * <br/>
      * This method should NOT be used to recurse parent hierarchy;
-     * instead use {@link #getParents()}
+     * instead use {@link #getParent()}
      *
      * @return the next parent with @Gwtc, if there is one.
      */
@@ -459,9 +460,15 @@ public class GwtcContext {
     } else {
       maybeAddAncestors(gwtc, c);
       inherit(data);
+      for (Class<?> inherited : gwtc.inheritClasses()) {
+        if (!nodes.containsKey(inherited)) {
+          scanClass(inherited);
+        }
+      }
     }
     if (parent != null) {
       X_Log.trace(getClass(), "Next annotated parent of ",c,"is",parent);
+
     }
   }
 
@@ -474,7 +481,7 @@ public class GwtcContext {
   }
 
   private void scanMethod(Method method) {
-
+    X_Log.trace(getClass(), "TODO: scan method ", method);
   }
 
   private void scanPackage(Package pkg) {
@@ -491,6 +498,7 @@ public class GwtcContext {
     Gwtc gwtc = pkg.getAnnotation(Gwtc.class);
     addGwtcPackage(gwtc, pkg, false);
     X_Log.trace(getClass(), "Parent of ",pkg,"is",data.getParent());
+
     ClassLoader cl = Thread.currentThread().getContextClassLoader();
     for (ClassFile file : classpath.get().findClassesInPackage(pkg.getName())) {
       X_Log.trace(getClass(), "Checking class file ", file.getName());
@@ -575,7 +583,10 @@ public class GwtcContext {
     module.addInherit(value);
   }
 
-  public XmlBuffer getGwtXml() {
+  public XmlBuffer getGwtXml(GwtManifest manifest) {
+    if (manifest != null) {
+      manifest.getModules().forEach(module->module.addInherit(module.getInheritName()));
+    }
     return module.getBuffer();
   }
 
@@ -663,6 +674,7 @@ public class GwtcContext {
       parentName = parentName.substring(0, ind);
       ind = parentName.lastIndexOf('.');
       pkg = GwtReflect.getPackage(parentName);
+
       X_Log.debug(getClass(), "Checking parent package", "'"+parentName+"'", pkg != null);
 
       if (pkg != null) {

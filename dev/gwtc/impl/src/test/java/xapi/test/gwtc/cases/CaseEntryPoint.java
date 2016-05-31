@@ -14,6 +14,8 @@ import xapi.log.X_Log;
 import xapi.log.api.LogLevel;
 import xapi.log.api.LogService;
 import xapi.platform.GwtPlatform;
+import xapi.test.junit.JUnit4Runner;
+import xapi.test.junit.JUnitUi;
 import xapi.util.X_Namespace;
 
 import com.google.gwt.core.client.EntryPoint;
@@ -25,14 +27,22 @@ import com.google.gwt.dom.client.Element;
   includeGwtXml={
     @Resource("xapi.X_Inherit"),
     @Resource("xapi.X_Inject"),
-  }
+    @Resource("com.google.gwt.core.Core"),
+  },
+    inheritClasses = {
+        JUnitUi.class, JUnit4Runner.class
+    }
   ,includeSource=""
   ,includeHostHtml={
     @UiTemplate("<div id='logger' />")
   }
   ,dependencies={
     @Dependency(dependencyType=DependencyType.MAVEN,
-      groupId="net.wetheinter", value="xapi-gwt",version=X_Namespace.XAPI_VERSION)
+      groupId="net.wetheinter", value="gwt-user",version=X_Namespace.GWT_VERSION),
+    @Dependency(dependencyType=DependencyType.MAVEN,
+      groupId="net.wetheinter", value="gwt-dev",version=X_Namespace.GWT_VERSION),
+    @Dependency(dependencyType=DependencyType.MAVEN,
+      groupId="net.wetheinter", value="xapi-gwt",version=X_Namespace.XAPI_VERSION),
   }
   ,propertiesLaunch=@GwtcProperties(
     obfuscationLevel=ObfuscationLevel.PRETTY
@@ -58,11 +68,12 @@ public class CaseEntryPoint implements EntryPoint {
       return el || (
         el = $doc.createElement('div'),
         el.id = 'logger',
+        $doc.body.appendChild(el),
         el
       );
     }-*/;
   }
-  
+
   @Override
   public void onModuleLoad() {
     X_Log.info(getClass(), "Hello World");

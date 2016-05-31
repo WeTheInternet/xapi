@@ -1,13 +1,17 @@
 package xapi.dev.gwtc.api;
 
-import java.io.File;
-import java.lang.reflect.Method;
-
+import xapi.dev.source.MethodBuffer;
+import xapi.dev.source.SourceBuilder;
+import xapi.dev.source.SourceBuilder.JavaType;
+import xapi.fu.Out1;
 import xapi.gwtc.api.GwtManifest;
 
 import com.google.gwt.core.client.RunAsyncCallback;
 import com.google.gwt.junit.client.GWTTestCase;
 import com.google.gwt.junit.tools.GWTTestSuite;
+
+import java.io.File;
+import java.lang.reflect.Method;
 
 public interface GwtcService {
 
@@ -19,9 +23,18 @@ public interface GwtcService {
   void addGwtTestSuite(Class<? extends GWTTestSuite> asSubclass);
   boolean addJUnitClass(Class<?> clazz);
   void addAsyncBlock(Class<? extends RunAsyncCallback> asSubclass);
-  int compile(GwtManifest manifest);
   void addGwtModules(Class<?> clazz);
-  String getModuleName();
-  File getTempDir();
+  void addClasspath(Class<?> cls);
+  MethodBuffer addMethodToEntryPoint(String methodDef);
+  void addGwtInherit(String inherit);
 
+  int compile(GwtManifest manifest);
+
+  String getModuleName();
+  SourceBuilder createJavaFile(String pkg, String filename, JavaType type);
+  void createFile(String pkg, String filename, Out1<String> sourceProvider);
+  File getTempDir();
+  String inGeneratedDirectory(GwtManifest manifest, String filename);
+  String modifyPackage(String pkgToUse);
+  MethodBuffer getOnModuleLoad();
 }
