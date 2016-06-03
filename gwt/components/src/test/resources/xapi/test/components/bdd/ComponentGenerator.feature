@@ -242,7 +242,7 @@ Feature: ComponentGenerator.feature: Transpile xapi templates into web component
       | /define-tag>                                                                         |
       |                                                                                      |
       | <define-tag name="to-dos"                                                            |
-      | dom=<div class="to-dos" children = ()->select("to-do")  /div>                        |
+      | dom=<div class="to-dos" children = select("to-do") />                                |
       |                                                                                      |
       | example = <to-dos>                                                                   |
       | <to-do text = "Create awesome examples of <to-do/>s to finish" />                    |
@@ -252,22 +252,20 @@ Feature: ComponentGenerator.feature: Transpile xapi templates into web component
       | anyone with a synced keyboard/mouse/powerglove                                       |
       | can login, open windows, create and edit text (code),                                |
       | drag ui elements around, and interact  them around anywhere.`                        |
-      | />                                                                                   |
+      | /to-do>                                                                              |
       | <to-do id    = "createAwesomeToDoApp"                                                |
       | text     = "Finish ALLLLL the things!"                                               |
-      | thisType = "ToDo" // Create an alias to the type of the current element, <to-do/>    |
-      | isDone   = ()->siblings().allMatch(ToDo::isDone)                               |
-      | onClick  = (e)->{                                                                    |
+      | thisType = "ToDo" // Create an alias to the type of the currrent element, <to-do/>   |
+      | isDone   = (siblings().allMatch(ToDo::isDone))                                         |
+      | onClick  = e->{                                                                      |
       | if (!$this.isDone()) {                                                               |
-      | xapi.log.X_Log.alert("Finish your other todos first!");                              |
+      | xapi.log.X_Log.alert("Finish your other todos first!");                               |
       | }                                                                                    |
       | e.cancel(); // do not propagate to the "super" method in the definition of <to-do /> |
       | }                                                                                    |
-      | />                                                                                   |
+      | /to-do>                                                                              |
       | <add-to-do />                                                                        |
       | <to-do text = "Make the add-to-do element work in a concise, declarative manner" />  |
-      | </to-dos>                                                                            |
+      | </to-dos>                                                                             |
       | /define-tag>                                                                         |
       | </define-tags>                                                                       |
-
-

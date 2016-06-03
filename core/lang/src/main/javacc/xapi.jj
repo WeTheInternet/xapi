@@ -481,7 +481,7 @@ TOKEN :
 TOKEN :
 {
   < IDENTIFIER: <LETTER> (<PART_LETTER>)* >
-| < FEATURE_IDENTIFIER: <LETTER> ( <IDENTIFIER> | "-" | "*" ) + >
+| < FEATURE_IDENTIFIER: <LETTER> ( ( <IDENTIFIER> | "-" | "*" ) + ( <IDENTIFIER> | "*" ) )? >
 | < #LETTER:
       [  // all chars for which Character.isIdentifierStart is true
          "\u0024",          // "$"
@@ -2928,13 +2928,14 @@ Expression FeatureExpression():
   NameExpr methodName;
   Statement statement;
   List typeArgs = null;
+  List args = null;
 }
 {
 (
     (
         (
     // Check for parentheticals, as they will be used to resolve any ambiguous expressions
-              LOOKAHEAD({ getToken(1).image.equals("(") })
+              LOOKAHEAD({ getToken(1).image.startsWith("(") })
               expr = Expression()
         )
         (
@@ -2962,6 +2963,22 @@ Expression FeatureExpression():
           [typeArgs = TypeParameters() { typeArgs.remove(0); } ] (<IDENTIFIER > | "new")
           { expr = new MethodReferenceExpr(expr.getBeginLine(), expr.getBeginColumn(), token.endLine, token.endColumn, expr, typeArgs, token.image); }
 
+        )?
+        (
+          [ typeArgs = TypeParameters() { typeArgs.remove(0); } ]
+          args = Arguments()
+          {
+            NameExpr scope;
+            if (expr instanceof QualifiedNameExpr) {
+              QualifiedNameExpr qualified = (QualifiedNameExpr) expr;
+              scope = qualified.getQualifier();
+            } else {
+              scope = null;
+            }
+            MethodCallExpr m = new MethodCallExpr(expr.getBeginLine(), expr.getBeginColumn(), token.endLine, token.endColumn, scope, typeArgs, null, args);
+            m.setNameExpr((NameExpr)expr);
+            expr = m;
+          }
         )?
     )
     | ( LOOKAHEAD(2) expr = UiStatement() )

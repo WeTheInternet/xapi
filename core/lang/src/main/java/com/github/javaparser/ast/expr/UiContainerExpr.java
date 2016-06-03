@@ -46,6 +46,7 @@ public class UiContainerExpr extends UiExpr {
     }
     into.add(attr);
     children.add(attr);
+    setAsParentNodeOf(attr);
   }
 
   public IntTo<UiAttrExpr> getAttributes(String name) {

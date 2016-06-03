@@ -44,6 +44,14 @@ Feature: Compile templates into valid java files
     Given compile ui with name ImportFrom:
       | <template importFrom=Type.class /> |
 
+  Scenario: Parse a template with an empty lambda
+    Given compile ui with name EmptyLambda:
+      | <template onClick=()->{} /> |
+
+  Scenario: Parse a template with a single parameter lambda
+    Given compile ui with name SingleLambdaParam:
+      | <template onClick=e->{ e.doStuff(); } /> |
+
   Scenario: Parse a template with an html comment
     Given compile ui with name HelloWorld:
       | <template id="test">       |
