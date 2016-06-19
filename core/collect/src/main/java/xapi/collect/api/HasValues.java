@@ -2,6 +2,7 @@ package xapi.collect.api;
 
 import xapi.collect.impl.EntryIterable;
 import xapi.fu.In2Out1;
+import xapi.fu.Out2;
 
 import java.util.Map.Entry;
 
@@ -25,6 +26,8 @@ public interface HasValues<K,V> extends EntryIterable<K,V> {
 
   // We can also safely use generics as they will be erased
   void putAll(Iterable<Entry<K,V>> items);
+
+  void addAll(Iterable<Out2<K,V>> items);
 
   void removeAll(Iterable<K> items);
 

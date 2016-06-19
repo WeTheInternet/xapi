@@ -11,8 +11,9 @@ import java.util.function.Predicate;
  */
 public interface X_Fu {
 
+  In1Out1<String, String> STRING_DUPLICATE = s -> s + s;
 
-  static <T> T[] array(T ... t) {
+  static <T> T[] array(T... t) {
     return t;
   }
 
@@ -37,7 +38,7 @@ public interface X_Fu {
   }
 
   static <T extends CharSequence> Predicate<T> notEmpty() {
-    return item->item != null && item.length() > 0;
+    return item -> item != null && item.length() > 0;
   }
 
   static boolean returnTrue() {
@@ -64,7 +65,6 @@ public interface X_Fu {
     return X_Fu::returnFalse;
   }
 
-
   static <T> String reduceToString(Iterable<T> data, In1Out1<T, String> serializer, String separator) {
     return reduceToString(map(data, serializer), separator);
   }
@@ -85,8 +85,6 @@ public interface X_Fu {
     }
     return b.toString();
   }
-
-
 
 }
 

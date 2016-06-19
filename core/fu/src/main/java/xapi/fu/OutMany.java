@@ -1,6 +1,6 @@
 package xapi.fu;
 
-import static xapi.fu.Out1.immutable1;
+import static xapi.fu.Immutable.immutable1;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)

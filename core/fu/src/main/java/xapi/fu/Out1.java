@@ -1,6 +1,10 @@
 package xapi.fu;
 
 import xapi.fu.In1Out1.In1Out1Unsafe;
+import xapi.fu.Log.LogLevel;
+
+import static xapi.fu.Filter.alwaysTrue;
+import static xapi.fu.Immutable.immutable1;
 
 import javax.inject.Provider;
 import java.util.function.Supplier;
@@ -12,6 +16,21 @@ import java.util.function.Supplier;
 public interface Out1<O> extends Rethrowable {
 
   O out1();
+
+  Out1 NULL = immutable1(null);
+  Out1<String> EMPTY_STRING = immutable1("");
+  Out1<String> NEW_LINE = immutable1("\n");
+  Out1<String> SPACE = immutable1(" ");
+  Out1<Boolean> FALSE = immutable1(false);
+  Out1<Integer> ZERO = immutable1(0);
+  Out1<Boolean> TRUE = immutable1(true);
+  Out1<Integer> ONE = immutable1(1);
+  Out1<Integer> NEGATIVE_ONE = immutable1(-1);
+
+  default boolean isImmutable() {
+    Object o = this;
+    return o instanceof Immutable || o instanceof IsImmutable;
+  }
 
   default Out1<O> use(In1<O> callback) {
     callback.in(out1());
@@ -46,10 +65,6 @@ public interface Out1<O> extends Rethrowable {
 
   static <O> Out1<O> out1(Out1<O> of) {
     return of;
-  }
-
-  static <O> Out1Immutable<O> immutable1(O of) {
-    return new Out1Immutable<>(of);
   }
 
   static <O> Out1<O> out1Provider(Provider<O> of) {
@@ -89,33 +104,43 @@ public interface Out1<O> extends Rethrowable {
         throw rethrow(e);
       }
     }
-  }
 
-  final class Out1Immutable <O> implements Out1<O> {
-
-    private final O value;
-
-    public Out1Immutable(O value) {
-      this.value = value;
+    default O eatExceptions() {
+      return eatExceptions(
+          Log.firstLog(this), LogLevel.WARN, alwaysTrue());
     }
 
-    @Override
-    public O out1() {
-      return value;
+    @SuppressWarnings("unchecked")
+    default O eatExceptions(Log log) {
+      Filter<Throwable> filter = Filter.TRUE;
+       return eatExceptions(log, LogLevel.WARN, filter);
     }
 
-    public Out1Immutable <O> orElse(O maybeNull) {
-      if (value == null) {
-        return new Out1Immutable<>(maybeNull);
+    default O eatExceptions(Log log, Filter<Throwable> filter) {
+      return eatExceptions(log, LogLevel.WARN, filter);
+    }
+
+    @SuppressWarnings("unchecked")
+    default O eatExceptions(Log log, LogLevel level) {
+      return eatExceptions(log, level, alwaysTrue());
+    }
+
+    default O eatExceptions(Log log, LogLevel level, Filter<Throwable> filter) {
+      try {
+        return outUnsafe();
+      } catch (Throwable e) {
+        log = Log.normalize(log);
+        if (log.isLoggable(level)) {
+          try {
+            log.log(getClass(), e);
+          } catch (Throwable loggingError) {
+            log.log(LogLevel.ERROR, "Error logging error! Errorception: ");
+            log.log(LogLevel.ERROR, "Error while logging: ", loggingError);
+            log.log(LogLevel.ERROR, "Original error: ", e);
+          }
+        }
+        throw rethrow(e);
       }
-      return this;
-    }
-
-    public Out1Immutable <O> orElse(Out1<O> provider) {
-      if (value == null) {
-        return new Out1Immutable<>(provider.out1());
-      }
-      return this;
     }
   }
 
@@ -126,4 +151,5 @@ public interface Out1<O> extends Rethrowable {
   default <To> Out1<To> mapUnsafe(In1Out1Unsafe<O, To> factory) {
     return factory.supplyDeferred(this);
   }
+
 }

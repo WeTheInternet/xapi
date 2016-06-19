@@ -1,5 +1,7 @@
 package xapi.fu;
 
+import xapi.fu.Log.DefaultLog;
+
 /**
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 1/3/16.
@@ -45,7 +47,7 @@ public interface Pointer <T> extends In1<T>, Out1<T> {
     }
   }
 
-  class PointerDeferred <T> implements Pointer<T>, Log {
+  class PointerDeferred <T> implements Pointer<T>, DefaultLog {
     protected volatile Out1<T> value;
 
     public PointerDeferred(Out1<T> value) {
@@ -63,7 +65,7 @@ public interface Pointer <T> extends In1<T>, Out1<T> {
 
     @Override
     public void in(T in) {
-      this.value = Out1.immutable1(in);
+      this.value = Immutable.immutable1(in);
     }
 
     public void supply(Out1<T> deferred) {
@@ -80,11 +82,11 @@ public interface Pointer <T> extends In1<T>, Out1<T> {
 
     @Override
     public T out1() {
-      if (value instanceof Out1Immutable) {
+      if (value instanceof Immutable) {
         return value.out1();
       }
       T result = value.out1();
-      value = Out1.immutable1(result);
+      value = Immutable.immutable1(result);
       return result;
     }
   }

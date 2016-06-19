@@ -6,6 +6,9 @@ package xapi.fu;
  */
 public interface Filter<T> {
 
+  Filter TRUE = args->true;
+  Filter FALSE = args->false;
+
   boolean filter(T ... args);
 
   interface Filter1 <T> extends Filter<T> {
@@ -79,5 +82,13 @@ public interface Filter<T> {
 
   static <S, O extends S, T extends S> Filter2<S, O, T> filter2Unsafe(Filter2Unsafe<S, O, T> filter) {
     return filter;
+  }
+
+  static Filter<Throwable> alwaysTrue() {
+    return TRUE;
+  }
+
+  static Filter<Throwable> alwaysFalse() {
+    return FALSE;
   }
 }

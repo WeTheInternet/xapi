@@ -59,17 +59,17 @@ public interface Out2<O1, O2> extends OutMany {
   }
 
   static <O1, O2> Out2<O1, O2> out2(O1 o1, Out1<O2> o2) {
-    Out1[] out = new Out1[]{Out1.immutable1(o1), o2};
+    Out1[] out = new Out1[]{Immutable.immutable1(o1), o2};
     return ()->out;
   }
 
   static <O1, O2> Out2<O1, O2> out2(O1 o1, O2 o2) {
-    Out1[] out = new Out1[]{Out1.immutable1(o1), Out1.immutable1(o2)};
+    Out1[] out = new Out1[]{Immutable.immutable1(o1), Immutable.immutable1(o2)};
     return ()->out;
   }
 
   static <O1, O2> Out2<O1, O2> out2(Out1<O1> o1, O2 o2) {
-    Out1[] out = new Out1[]{o1, Out1.immutable1(o2)};
+    Out1[] out = new Out1[]{o1, Immutable.immutable1(o2)};
     return ()->out;
   }
 

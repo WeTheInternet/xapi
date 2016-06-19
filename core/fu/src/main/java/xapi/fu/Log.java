@@ -1,10 +1,15 @@
 package xapi.fu;
 
+import xapi.fu.Log.LogLevel;
+
+import static xapi.fu.Log.printLevel;
+
 /**
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 07/11/15.
  */
 public interface Log extends Debuggable {
+
   enum LogLevel {
     DEBUG, TRACE, INFO, WARN, ERROR
     ;
@@ -12,6 +17,14 @@ public interface Log extends Debuggable {
     static LogLevel DEFAULT = valueOf(System.getProperty("xapi.log.level", "INFO"));
 
   }
+
+  interface DefaultLog extends Log {
+    @Override
+    default void print(LogLevel level, String debug) {
+      DefaultLoggers.DEFAULT.log(level, debug);
+    }
+  }
+
   default Log log(LogLevel level, Object ... values) {
     if (isLoggable(level)) {
       print(level, debug(values));
@@ -39,17 +52,10 @@ public interface Log extends Debuggable {
     }
   }
 
-  default void print(LogLevel level, String debug) {
-    String maybe = maybePrintLevel(level);
-    if (level == LogLevel.ERROR) {
-      System.err.println(maybe+debug);
-    } else {
-      System.out.println(maybe+debug);
-    }
-  }
+  void print(LogLevel level, String debug);
 
   default String maybePrintLevel(LogLevel level) {
-    return "["+level+"] ";
+    return printLevel(level);
   }
 
   default boolean isLoggable(LogLevel level) {
@@ -60,5 +66,82 @@ public interface Log extends Debuggable {
   default LogLevel getLogLevel() {
     return LogLevel.DEFAULT;
   }
+
+  static String printLevel(LogLevel level) {
+    return "["+level+"] ";
+  }
+
+  static Log normalize(Log log) {
+    return log == null ? defaultLogger() : log;
+  }
+
+  static Log allLogs(Object ... maybeLogs) {
+    Log stacked = null;
+    for (Object maybeLog : maybeLogs) {
+      if (maybeLog instanceof Log) {
+        final Log log = (Log) maybeLog;
+        if (stacked == null) {
+          stacked = log;
+        } else {
+          final Log parents = stacked;
+          stacked = (level, debug) -> {
+            parents.log(level, debug);
+            log.log(level, debug);
+          };
+        }
+      }
+    }
+    return stacked == null ? defaultLogger() : stacked;
+  }
+
+  static Log firstLog(Object ... log) {
+    if (log == null) {
+      // someone might send us a null array reference...
+      return defaultLogger();
+    }
+    for (Object maybe : log) {
+      if (maybe instanceof Log) {
+        return (Log) maybe;
+      }
+    }
+    return defaultLogger();
+  }
+
+  static Log defaultLogger() {
+    return DefaultLoggers.DEFAULT;
+  }
+
+  static Log sysOut() {
+    return DefaultLoggers.SYS_OUT;
+  }
+
+  static Log sysErr() {
+    return DefaultLoggers.SYS_ERR;
+  }
+
+  static Log voidLogger() {
+    return DefaultLoggers.VOID;
+  }
+}
+
+interface DefaultLoggers {
+
+  // Some default implementations for when you are lazy.
+  // We stash them in this ugly package-private class,
+  // to encourage the use of static methods in the Log class,
+  // Log.defaultLogger() or Log.sysOut/Err.
+  // This will allow magic-method injection to swap these out, if desired
+
+  Log VOID = (level, debug) -> {};
+
+  Log SYS_OUT = (level, debug) ->
+      System.out.println(printLevel(level) + debug);
+
+  Log SYS_ERR = (level, debug) ->
+      System.err.println(printLevel(level) + debug);
+
+  Log DEFAULT = (level, debug) ->
+      (level == LogLevel.ERROR ? SYS_OUT : SYS_ERR)
+          .print(level, debug);
 
 }

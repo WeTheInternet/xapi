@@ -8,13 +8,16 @@ public interface Rethrowable {
 
   default RuntimeException rethrow(Throwable e) {
     if (this instanceof Debuggable) {
-      ((Debuggable)this).viewException(e);
+      ((Debuggable)this).viewException(this, e);
     }
     if (e instanceof RuntimeException) {
       throw (RuntimeException)e;
     }
     if (e instanceof Error) {
       throw (Error)e;
+    }
+    if (e instanceof InterruptedException) {
+      Thread.currentThread().interrupt();
     }
     throw newRuntimeException(e);
   }
