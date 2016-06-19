@@ -1,0 +1,7 @@
+<app
+  ref = "root"
+  title = "Hi"
+  body = <button text="Clicky" onClick=e->{
+        $root.title = "Hello!";
+        } />
+/>

@@ -10,7 +10,7 @@ import java.lang.annotation.Target;
  *         Created on 4/18/16.
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
+@Target({ElementType.TYPE, ElementType.METHOD})
 public @interface Ui {
 
   String javaPrefix() default "";

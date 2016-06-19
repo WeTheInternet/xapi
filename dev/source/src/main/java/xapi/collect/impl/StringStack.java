@@ -2,7 +2,7 @@ package xapi.collect.impl;
 
 import xapi.fu.Out1;
 
-import static xapi.fu.Out1.immutable1;
+import static xapi.fu.Immutable.immutable1;
 
 public class StringStack <T> {
 

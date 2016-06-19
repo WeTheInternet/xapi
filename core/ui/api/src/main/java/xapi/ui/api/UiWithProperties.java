@@ -9,7 +9,7 @@ import xapi.fu.In2;
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 4/19/16.
  */
-public class UiWithProperties <E extends UiElement> implements UiFeature {
+public class UiWithProperties <Element, E extends UiElement<? extends Element, E>> implements UiFeature {
 
   private In1Out1<String, Object> getter;
   private In2<String, Object> setter;

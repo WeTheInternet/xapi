@@ -17,6 +17,8 @@
 
   <modules>
     <module>api</module>
+    <module>components</module>
+    <module>generator</module>
     <module>autoui</module>
     <module>html</module>
   </modules>

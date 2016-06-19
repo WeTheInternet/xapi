@@ -53,7 +53,7 @@ public class GeneratedComponentMetadata {
   public void setContainer(UiContainerExpr container) {
     // Check the container for various interesting things, like method references.
     this.container = container;
-    this.metadata = Lazy.ofDeferred(()->{
+    this.metadata = Lazy.deferred1(()->{
       ComponentMetadataFinder finder = new ComponentMetadataFinder();
       container.accept(finder, null);
       return finder;
@@ -168,5 +168,9 @@ public class GeneratedComponentMetadata {
     addModifier(ele ->
         service + " $ui = " + service + ".getUiService();"
     );
+  }
+
+  public SourceBuilder<?> getSourceBuilder() {
+    return sourceBuilder == null ? getParent() == null ? null : getParent().getSourceBuilder() : sourceBuilder;
   }
 }

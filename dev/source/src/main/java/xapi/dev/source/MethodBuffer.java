@@ -99,7 +99,7 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
   public String toSource() {
     final StringBuilder b = new StringBuilder(Character.toString(NEW_LINE));
     if (javaDoc != null && javaDoc.isNotEmpty()) {
-      b.append(javaDoc.toString());
+      b.append(javaDoc.toSource());
     }
     b.append(origIndent);
     if (annotations.size() > 0) {

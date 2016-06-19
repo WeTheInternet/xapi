@@ -247,4 +247,7 @@ public class SourceBuilder<Payload> {
     classDef = null;
   }
 
+  public boolean isDefined() {
+    return classDef != null;
+  }
 }

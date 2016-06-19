@@ -4,7 +4,7 @@ import xapi.fu.Lazy;
 import xapi.fu.Out1;
 import xapi.gen.NodeWithParentWithChildren.ChildStack;
 
-import static xapi.fu.Out1.immutable1;
+import static xapi.fu.Immutable.immutable1;
 
 import java.util.Iterator;
 

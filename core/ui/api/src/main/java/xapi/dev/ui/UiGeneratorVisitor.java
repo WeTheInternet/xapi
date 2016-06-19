@@ -19,7 +19,15 @@ public class UiGeneratorVisitor extends VoidVisitorAdapter<UiGeneratorService> {
   private UiFeatureGenerator feature;
 
   public UiGeneratorVisitor() {
-    root = Lazy.ofDeferred(this.createRoot());
+    root = Lazy.deferred1(this.createRoot());
+  }
+
+  public UiGeneratorVisitor(Out1<GeneratedComponentMetadata> source) {
+    root = Lazy.deferred1(source);
+  }
+
+  public UiGeneratorVisitor(GeneratedComponentMetadata source) {
+    root = Lazy.immutable1(source);
   }
 
   protected Out1<GeneratedComponentMetadata> createRoot() {

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-jre-parent</artifactId>
+    <version>0.6-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>xapi-jre-ui-parent</artifactId>
+  <packaging>pom</packaging>
+  <name>XApi - Jre UI</name>
+  <url>WeTheInter.net</url>
+  <description>
+  This is the main aggregator for all jre ui submodules.
+
+  Currently, the only submodule / implementation is for javafx.
+
+ </description>
+
+  <modules>
+
+    <module>javafx</module>
+
+  </modules>
+
+</project>

@@ -2,6 +2,7 @@ package xapi.ui.api;
 
 import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
+import xapi.fu.Immutable;
 import xapi.fu.In1;
 import xapi.fu.Lazy;
 import xapi.fu.Out1;
@@ -33,9 +34,9 @@ public abstract class UiBuilder <E extends UiElement> implements DebugRethrowabl
 
   public UiBuilder(String type) {
     assert type != null : "Specify empty string for null type UiBuilders (lists)";
-    instance = Lazy.ofDeferred(this::initialize, this::instantiate);
+    instance = Lazy.deferred1(this::initialize, this::instantiate);
     uiService = UiService::getUiService;
-    children = Lazy.ofDeferred(()->X_Collect.newList(UiBuilder.class));
+    children = Lazy.deferred1(()->X_Collect.newList(UiBuilder.class));
     setType(type);
   }
 
@@ -117,6 +118,6 @@ public abstract class UiBuilder <E extends UiElement> implements DebugRethrowabl
   }
 
   public void setUiService(UiService uiService) {
-    this.uiService = Out1.immutable1(uiService);
+    this.uiService = Immutable.immutable1(uiService);
   }
 }

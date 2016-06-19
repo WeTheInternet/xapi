@@ -7,6 +7,7 @@ import com.sun.source.tree.MethodInvocationTree;
 import xapi.annotation.inject.InstanceDefault;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
+import xapi.fu.Immutable;
 import xapi.fu.In2Out1;
 import xapi.fu.Out1;
 import xapi.inject.X_Inject;
@@ -46,7 +47,7 @@ public class TemplateInjector implements MagicMethodInjector {
   private TemplateGenerator createFactory(String type, Class<TemplateGenerator> cls) {
     final TemplateGenerator instance = X_Inject.instance(cls);
     if (cacheGenerators()) {
-      generatorByTypeName.put(type, Out1.immutable1(instance));
+      generatorByTypeName.put(type, Immutable.immutable1(instance));
     }
     return instance;
   }

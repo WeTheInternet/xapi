@@ -26,7 +26,7 @@ public interface CompilerService {
   Out2<Integer, URL> compileFiles(CompilerSettings settings, String ... files);
 
   default Out2<Integer, URL> compileClasses(CompilerSettings settings, Class ... classes) {
-    return compileFiles(settings, X_String.classesToQualified(classes));
+    return compileFiles(settings, X_String.classesToSourceFiles(classes));
   }
 
   static CompilerService compileServiceFrom(JavacService service) {

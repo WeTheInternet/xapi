@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-jre-ui-parent</artifactId>
+    <version>0.6-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>xapi-jre-ui-javafx</artifactId>
+  <name>XApi - Jre JavaFx UI</name>
+  <url>WeTheInter.net</url>
+  <description>
+  A JavaFx implementation of the XApi UI Framework
+
+ </description>
+
+    <dependencies>
+        <dependency>
+            <groupId>net.wetheinter</groupId>
+            <artifactId>xapi-core-ui-components</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.wetheinter</groupId>
+            <artifactId>xapi-jre-io</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.wetheinter</groupId>
+            <artifactId>xapi-core-io</artifactId>
+        </dependency>
+    </dependencies>
+
+</project>

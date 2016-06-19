@@ -12,21 +12,21 @@ import xapi.ui.api.UiWithProperties;
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 4/19/16.
  */
-public interface UiService {
+public interface UiService <Element, E extends UiElement<Element, E>> {
 
   static UiService getUiService() {
     return X_Inject.singleton(UiService.class);
   }
 
-  <Element extends UiElement, Generic extends Element> UiBuilder<Element> newBuilder(Class<Generic> cls);
+  <Generic extends E> UiBuilder<E> newBuilder(Class<Generic> cls);
 
   ClassTo<In1Out1<String,Object>> getDeserializers();
 
   ClassTo<In1Out1<Object,String>> getSerializers();
 
-  <E extends UiElement> UiWithAttributes <E> newAttributes(E e);
+  UiWithAttributes <Element, E> newAttributes(E e);
 
-  <E extends UiElement> UiWithProperties <E> newProperties(E e);
+  UiWithProperties <Element, E> newProperties(E e);
 
   Object getHost(Object from);
 

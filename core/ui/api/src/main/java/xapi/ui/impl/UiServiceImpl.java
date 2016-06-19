@@ -22,7 +22,7 @@ import static xapi.collect.X_Collect.newClassMap;
  */
 @SingletonDefault(implFor = UiService.class)
 @SuppressWarnings("unchecked")
-public class UiServiceImpl implements UiService {
+public class UiServiceImpl <Element, E extends UiElement<Element, E>> implements UiService <Element, E> {
 
   private ClassTo<Out1<UiBuilder>> builderFactories;
   private ClassTo<In1Out1<String, Object>> deserializers;
@@ -35,7 +35,7 @@ public class UiServiceImpl implements UiService {
   }
 
   @Override
-  public <E extends UiElement, Generic extends E> UiBuilder<E> newBuilder(Class<Generic> cls) {
+  public <Generic extends E> UiBuilder<E> newBuilder(Class<Generic> cls) {
     final Out1<UiBuilder> factory = builderFactories.getOrCompute(cls,
         key -> () -> {
       UiBuilder<E> builder;
@@ -76,14 +76,15 @@ public class UiServiceImpl implements UiService {
   }
 
   @Override
-  public UiWithAttributes newAttributes(UiElement e) {
+  public UiWithAttributes<Element, E> newAttributes(E e) {
     return new UiWithAttributes<>(e);
   }
 
   @Override
-  public UiWithProperties newProperties(UiElement e) {
+  public UiWithProperties<Element, E> newProperties(E e) {
     return new UiWithProperties<>(e);
   }
+
 
   @Override
   public Object getHost(Object from) {

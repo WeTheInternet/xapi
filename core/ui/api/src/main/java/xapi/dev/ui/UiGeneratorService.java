@@ -9,6 +9,8 @@ import com.github.javaparser.ast.expr.UiContainerExpr;
  */
 public interface UiGeneratorService {
 
+  GeneratedComponentMetadata generateComponent(String pkgName, String className, UiContainerExpr expr);
+
   UiComponentGenerator getComponentGenerator(UiContainerExpr container, GeneratedComponentMetadata metadta);
 
   UiFeatureGenerator getFeatureGenerator(UiAttrExpr container, UiComponentGenerator componentGenerator);

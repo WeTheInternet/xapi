@@ -295,6 +295,21 @@
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-core-ui-generator</artifactId>
+    <version>${project.version}</version>
+   </dependency>
+   <dependency>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-core-ui-components</artifactId>
+    <version>${project.version}</version>
+   </dependency>
+   <dependency>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-jre-ui-javafx</artifactId>
+    <version>${project.version}</version>
+   </dependency>
+   <dependency>
+    <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-ui-html</artifactId>
     <version>${project.version}</version>
     <classifier>sources</classifier>

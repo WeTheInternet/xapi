@@ -1,6 +1,6 @@
 package xapi.gen;
 
-import xapi.fu.Out1;
+import xapi.fu.Immutable;
 import xapi.gen.NodeWithParentWithChildren.ChildStack;
 
 /**
@@ -19,7 +19,7 @@ public interface TestBufferTypeWithChildren<
     return new NodeWithParentWithChildren<Parent, Self, Child, ChildStack<C>>() {
       @Override
       protected ChildStack<C> newStack(Child child) {
-        return new ChildStack<>(Out1.immutable1((C)child));
+        return new ChildStack<>(Immutable.immutable1((C)child));
       }
     };
   }

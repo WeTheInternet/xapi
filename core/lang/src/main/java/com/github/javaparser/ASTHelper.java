@@ -3,12 +3,12 @@
  * Copyright (C) 2011, 2013-2015 The JavaParser Team.
  *
  * This file is part of JavaParser.
- * 
+ *
  * JavaParser can be used either under the terms of
  * a) the GNU Lesser General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * b) the terms of the Apache License 
+ * b) the terms of the Apache License
  *
  * You should have received a copy of both licenses in LICENCE.LGPL and
  * LICENCE.APACHE. Please refer to those files for details.
@@ -18,7 +18,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  */
- 
+
 package com.github.javaparser;
 
 import com.github.javaparser.ast.CompilationUnit;
@@ -30,11 +30,7 @@ import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.body.TypeDeclaration;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.body.VariableDeclaratorId;
-import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.MethodCallExpr;
-import com.github.javaparser.ast.expr.NameExpr;
-import com.github.javaparser.ast.expr.QualifiedNameExpr;
-import com.github.javaparser.ast.expr.VariableDeclarationExpr;
+import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.Statement;
@@ -44,6 +40,7 @@ import com.github.javaparser.ast.type.ReferenceType;
 import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.type.VoidType;
 import com.github.javaparser.ast.type.PrimitiveType.Primitive;
+import xapi.log.X_Log;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,7 +49,7 @@ import static com.github.javaparser.ast.internal.Utils.*;
 
 /**
  * This class helps to construct new nodes.
- * 
+ *
  * @author Júlio Vilmar Gesser
  */
 public final class ASTHelper {
@@ -82,7 +79,7 @@ public final class ASTHelper {
     /**
      * Creates a new {@link NameExpr} from a qualified name.<br>
      * The qualified name can contains "." (dot) characters.
-     * 
+     *
      * @param qualifiedName
      *            qualified name
      * @return instanceof {@link NameExpr}
@@ -98,7 +95,7 @@ public final class ASTHelper {
 
     /**
      * Creates a new {@link Parameter}.
-     * 
+     *
      * @param type
      *            type of the parameter
      * @param name
@@ -111,7 +108,7 @@ public final class ASTHelper {
 
     /**
      * Creates a {@link FieldDeclaration}.
-     * 
+     *
      * @param modifiers
      *            modifiers
      * @param type
@@ -129,7 +126,7 @@ public final class ASTHelper {
 
     /**
      * Creates a {@link FieldDeclaration}.
-     * 
+     *
      * @param modifiers
      *            modifiers
      * @param type
@@ -146,7 +143,7 @@ public final class ASTHelper {
 
     /**
      * Creates a {@link VariableDeclarationExpr}.
-     * 
+     *
      * @param type
      *            type
      * @param name
@@ -162,7 +159,7 @@ public final class ASTHelper {
     /**
      * Adds the given parameter to the method. The list of parameters will be
      * initialized if it is <code>null</code>.
-     * 
+     *
      * @param method
      *            method
      * @param parameter
@@ -180,7 +177,7 @@ public final class ASTHelper {
     /**
      * Adds the given argument to the method call. The list of arguments will be
      * initialized if it is <code>null</code>.
-     * 
+     *
      * @param call
      *            method call
      * @param arg
@@ -198,7 +195,7 @@ public final class ASTHelper {
     /**
      * Adds the given type declaration to the compilation unit. The list of
      * types will be initialized if it is <code>null</code>.
-     * 
+     *
      * @param cu
      *            compilation unit
      * @param type
@@ -216,7 +213,7 @@ public final class ASTHelper {
 
     /**
      * Creates a new {@link ReferenceType} for a class or interface.
-     * 
+     *
      * @param name
      *            name of the class or interface
      * @param arrayCount
@@ -229,7 +226,7 @@ public final class ASTHelper {
 
     /**
      * Creates a new {@link ReferenceType} for the given primitive type.
-     * 
+     *
      * @param type
      *            primitive type
      * @param arrayCount
@@ -243,7 +240,7 @@ public final class ASTHelper {
     /**
      * Adds the given statement to the specified block. The list of statements
      * will be initialized if it is <code>null</code>.
-     * 
+     *
      * @param block to have expression added to
      * @param stmt to be added
      */
@@ -259,7 +256,7 @@ public final class ASTHelper {
     /**
      * Adds the given expression to the specified block. The list of statements
      * will be initialized if it is <code>null</code>.
-     * 
+     *
      * @param block to have expression added to
      * @param expr to be added
      */
@@ -270,7 +267,7 @@ public final class ASTHelper {
     /**
      * Adds the given declaration to the specified type. The list of members
      * will be initialized if it is <code>null</code>.
-     * 
+     *
      * @param type
      *            type declaration
      * @param decl
@@ -294,6 +291,30 @@ public final class ASTHelper {
             nodes.addAll(getNodesByType(child, clazz));
         }
         return nodes;
+    }
+
+
+    public static String extractAttrValue(UiAttrExpr attr) {
+        final Expression value = attr.getExpression();
+        try {
+            return extractStringValue(value);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Unsupported UiAttrExpr value; source : " + attr, e);
+        }
+    }
+
+    public static String extractStringValue(Expression value) {
+        if (value instanceof StringLiteralExpr) {
+            return ((StringLiteralExpr)value).getValue();
+        } else if (value instanceof TemplateLiteralExpr) {
+            return ((TemplateLiteralExpr)value).getValue();
+        } else if (value instanceof NameExpr) {
+            return ((NameExpr)value).getName();
+        } else {
+            String error = "Unhandled attribute value; cannot extract compile time string literal from " + value;
+            X_Log.error(ASTHelper.class, error);
+            throw new IllegalArgumentException(error);
+        }
     }
 
 }

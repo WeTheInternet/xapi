@@ -28,6 +28,7 @@
     <module>process</module>
     <module>model</module>
     <module>io</module>
+    <module>ui</module>
     <module>uber</module>
     
   </modules>

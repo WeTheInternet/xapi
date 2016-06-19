@@ -1,18 +1,14 @@
 package xapi.dev.components;
 
-import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.MethodReferenceExpr;
-import com.github.javaparser.ast.expr.NameExpr;
-import com.github.javaparser.ast.expr.StringLiteralExpr;
-import com.github.javaparser.ast.expr.TemplateLiteralExpr;
-import com.github.javaparser.ast.expr.UiAttrExpr;
-import com.github.javaparser.ast.expr.UiContainerExpr;
+import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import xapi.dev.ui.GeneratedComponentMetadata;
-import xapi.log.X_Log;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.github.javaparser.ASTHelper.extractAttrValue;
+import static com.github.javaparser.ASTHelper.extractStringValue;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
@@ -101,22 +97,4 @@ public class MethodReferenceReplacementVisitor extends VoidVisitorAdapter<Genera
     super.visit(n, arg);
   }
 
-  private String extractAttrValue(UiAttrExpr attr) {
-    final Expression value = attr.getExpression();
-    return extractStringValue(value);
-  }
-
-  private String extractStringValue(Expression value) {
-    if (value instanceof StringLiteralExpr) {
-      return ((StringLiteralExpr)value).getValue();
-    } else if (value instanceof TemplateLiteralExpr) {
-      return ((TemplateLiteralExpr)value).getValue();
-    } else if (value instanceof NameExpr) {
-      return ((NameExpr)value).getName();
-    } else {
-      String error = "Unhandled attribute value; cannot extract compile time string literal from " + value+" \nSource: " + attr;
-      X_Log.error(getClass(), error);
-      throw new IllegalArgumentException(error);
-    }
-  }
 }
