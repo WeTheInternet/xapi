@@ -44,9 +44,11 @@ public class X_Runtime {
   private static final boolean debug;
   private static final boolean test;
   private static final boolean gwt;
+  private static final String fileSeparator;
   static {
     debug = "true".equals(System.getProperty(PROPERTY_DEBUG, "true"));
     test = "true".equals(System.getProperty(PROPERTY_TEST, "false"));
+    fileSeparator = System.getProperty("file.separator", "false");
 
     boolean success = "true".equals(System.getProperty(PROPERTY_USE_X_INJECT, "true"));
     try {
@@ -217,6 +219,11 @@ public class X_Runtime {
     return pwd == null ? "." : pwd;
   }
 
+  public static String fileSeparator() {
+    return fileSeparator;
+  }
 
-
+  public static char fileSeparatorChar() {
+    return fileSeparator.charAt(0);
+  }
 }

@@ -75,6 +75,12 @@ public class X_Runtime {
     return com.google.gwt.core.client.GWT.getModuleBaseURL();
   }
 
+  public static String fileSeparator() {
+    return "/";
+  }
 
+  public static char fileSeparatorChar() {
+    return '/';
+  }
 
 }

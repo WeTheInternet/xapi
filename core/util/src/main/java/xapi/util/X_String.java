@@ -104,6 +104,17 @@ public class X_String {
     return copy;
   }
 
+  public static String[] classesToSourceFiles(Class<?> ... values) {
+    int i = values.length;
+    String[] copy = new String[i];
+    for(;i-->0;){
+      Class<?> cls = values[i];
+      if (cls != null)
+        copy[i] = cls.getCanonicalName().replace('.', X_Runtime.fileSeparatorChar()) + ".java";
+    }
+    return copy;
+  }
+
   public static String[] classesToBinary(Class<?> ... values) {
     int i = values.length;
     String[] copy = new String[i];
