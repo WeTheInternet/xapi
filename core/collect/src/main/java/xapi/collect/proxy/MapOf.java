@@ -6,6 +6,7 @@ import xapi.collect.api.HasValues;
 import xapi.collect.api.ObjectTo;
 import xapi.fu.In1Out1;
 import xapi.fu.In2Out1;
+import xapi.fu.Out2;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -140,6 +141,11 @@ implements CollectionProxy<K,V>, Map<K,V>, HasValues<K,V>, ObjectTo<K,V>
     for (final Entry<K, V> entry : items) {
       map.put(entry.getKey(), entry.getValue());
     }
+  }
+
+  @Override
+  public void addAll(Iterable<Out2<K, V>> items) {
+    items.forEach(item->map.put(item.out1(), item.out2()));
   }
 
   @Override

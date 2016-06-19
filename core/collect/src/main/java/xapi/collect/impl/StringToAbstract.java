@@ -2,6 +2,7 @@ package xapi.collect.impl;
 
 import xapi.annotation.inject.InstanceDefault;
 import xapi.collect.api.StringTo;
+import xapi.fu.Out2;
 import xapi.platform.GwtDevPlatform;
 import xapi.platform.JrePlatform;
 import xapi.util.X_Runtime;
@@ -67,6 +68,13 @@ public class StringToAbstract <V> implements StringTo<V>{
       for (final java.util.Map.Entry<String, V> item : items) {
         map.put(item.getKey(), item.getValue());
       }
+    }
+  }
+
+  @Override
+  public void addAll(Iterable<Out2<String, V>> items) {
+    for (final Out2<String, V> item : items) {
+      map.put(item.out1(), item.out2());
     }
   }
 

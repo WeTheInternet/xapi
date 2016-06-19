@@ -1,14 +1,14 @@
 package xapi.gwt.collect;
 
+import com.google.gwt.core.client.GwtScriptOnly;
+import com.google.gwt.core.client.JavaScriptObject;
 import xapi.annotation.inject.InstanceOverride;
 import xapi.collect.api.StringTo;
 import xapi.collect.impl.ArrayIterable;
 import xapi.collect.impl.EntryValueAdapter;
 import xapi.collect.impl.IteratorWrapper;
+import xapi.fu.Out2;
 import xapi.platform.GwtPlatform;
-
-import com.google.gwt.core.client.GwtScriptOnly;
-import com.google.gwt.core.client.JavaScriptObject;
 
 import java.util.Iterator;
 import java.util.Map.Entry;
@@ -235,6 +235,13 @@ public class StringToGwt <V> extends JavaScriptObject implements StringTo<V>{
   public final void putAll(final Iterable<Entry<String,V>> items) {
     for (final Entry<String, V> item : items) {
       put(item.getKey(), item.getValue());
+    }
+  }
+
+  @Override
+  public final void addAll(final Iterable<Out2<String,V>> items) {
+    for (final Out2<String, V> item : items) {
+      put(item.out1(), item.out2());
     }
   }
 

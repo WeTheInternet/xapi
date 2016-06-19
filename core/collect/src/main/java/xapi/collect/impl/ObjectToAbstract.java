@@ -6,6 +6,7 @@ import xapi.collect.api.ObjectTo;
 import xapi.collect.proxy.CollectionProxy;
 import xapi.fu.In1Out1;
 import xapi.fu.In2Out1;
+import xapi.fu.Out2;
 
 import javax.inject.Provider;
 import java.util.ArrayList;
@@ -190,6 +191,14 @@ public abstract class ObjectToAbstract<K,V> implements ObjectTo<K,V> {
     for (Entry<K,V> item : items) {
       assert item != null;
       put(item.getKey(), item.getValue());
+    }
+  }
+
+  @Override
+  public void addAll(Iterable<Out2<K, V>> items) {
+    for (Out2<K,V> item : items) {
+      assert item != null;
+      put(item.out1(), item.out2());
     }
   }
 
