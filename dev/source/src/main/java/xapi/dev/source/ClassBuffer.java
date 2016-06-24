@@ -182,6 +182,16 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
 
     b.append(simpleName + " ");
 
+    if (generics.size() > 0) {
+      b.append("<");
+      for (final String generic : generics) {
+        b.append(generic);
+        b.append(", ");
+      }
+      b.delete(b.length() - 2, b.length());
+      b.append("> ");
+    }
+
     if (isClass) {
       if (superClass != null) {
         b.append("extends " + superClass + " ");
@@ -207,15 +217,6 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
         }
         b.delete(b.length() - 2, b.length());
       }
-    }
-    if (generics.size() > 0) {
-      b.append("<");
-      for (final String generic : generics) {
-        b.append(generic);
-        b.append(", ");
-      }
-      b.delete(b.length() - 2, b.length());
-      b.append("> ");
     }
     b.append("{");
     b.append(NEW_LINE);
@@ -256,7 +257,7 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
     superClass = metadata.getSuperClass();
     definition = metadata.getClassName();
 
-    context.getImports().addImports(metadata.getImports());
+    getImports().addImports(metadata.getImports());
 
     if (metadata.hasGenerics()) {
       generics.clear();
@@ -316,6 +317,11 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
   }
 
   @Override
+  public ImportSection getImports() {
+    return context.getImports();
+  }
+
+  @Override
   public String addImport(final String importName) {
     // Don't import types in the same package as us.
     if (getPackage() == null) {
@@ -348,12 +354,17 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
 
   @Override
   public String addImportStatic(final Class<?> cls, final String name) {
-    return context.getImports().addStatic(cls, name);
+    return context.getImports().addStaticImport(cls, name);
+  }
+
+  @Override
+  public String addImportStatic(final String cls, final String name) {
+    return context.getImports().addStaticImport(cls, name);
   }
 
   @Override
   public String addImportStatic(final String importName) {
-    return context.getImports().addStatic(importName);
+    return context.getImports().addStaticImport(importName);
   }
 
   public String getSuperClass() {

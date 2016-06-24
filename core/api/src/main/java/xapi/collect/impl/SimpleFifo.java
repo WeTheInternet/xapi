@@ -1,12 +1,12 @@
 package xapi.collect.impl;
 
-import java.io.Serializable;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
-
 import xapi.annotation.inject.InstanceDefault;
 import xapi.collect.api.Fifo;
 import xapi.util.api.ConvertsValue;
+
+import java.io.Serializable;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 /**
  * A simple, fast, threadsafe, one-way, single-linked list.
@@ -28,7 +28,7 @@ public class SimpleFifo <E> implements Fifo<E>, Iterable<E>, Serializable{
   private static final long serialVersionUID = 2525421548842680240L;
   private class Itr implements Iterator<E> {
 
-    Node last = head, node = last;
+    Node<E> last = head, node = last;
 
     @Override
     public boolean hasNext() {
@@ -46,7 +46,7 @@ public class SimpleFifo <E> implements Fifo<E>, Iterable<E>, Serializable{
 
     @Override
     public void remove() {
-      Node expected = node;
+      Node<E> expected = node;
       synchronized(head) {
         if (last.next != expected)
           return;
@@ -73,18 +73,23 @@ public class SimpleFifo <E> implements Fifo<E>, Iterable<E>, Serializable{
     return false;
   }
 
-  protected final class Node implements Serializable {
+  protected final static class Node <E> implements Serializable {
+
+    public Node() {
+
+    }
+
     private static final long serialVersionUID = -4821223918445216546L;
     public E item;
-    public Node next;
+    public Node<E> next;
     @Override
     public String toString() {
       return String.valueOf(item);
     }
   }
 
-  protected Node head = new Node();
-  private transient Node tail;
+  protected Node<E> head = new Node<>();
+  private transient Node<E> tail;
   private int size;
 
   public SimpleFifo() {
@@ -104,7 +109,7 @@ public class SimpleFifo <E> implements Fifo<E>, Iterable<E>, Serializable{
   @Override
   public Fifo<E> give(E item) {
     if (item==null)return this;
-    Node add = new Node();
+    Node<E> add = new Node<>();
     add.item = item;
     synchronized (head) {
       size++;
@@ -123,7 +128,7 @@ public class SimpleFifo <E> implements Fifo<E>, Iterable<E>, Serializable{
 
   @Override
   public boolean remove(E item) {
-    Node start = head, next = head.next;
+    Node<E> start = head, next = head.next;
     int was;
     synchronized(head) {
       was = size;
@@ -154,7 +159,7 @@ public class SimpleFifo <E> implements Fifo<E>, Iterable<E>, Serializable{
   @Override
   public E take() {
     synchronized (head) {
-      Node next = head.next;
+      Node<E> next = head.next;
       if (next == null) {
         tail = head;
         return null;
@@ -207,7 +212,7 @@ public class SimpleFifo <E> implements Fifo<E>, Iterable<E>, Serializable{
 
   @Override
   public String join(String delim) {
-    Node n = head.next;
+    Node<E> n = head.next;
     if (n == null)return "";
     StringBuilder b = new StringBuilder();
     b.append(n.item);
@@ -217,9 +222,9 @@ public class SimpleFifo <E> implements Fifo<E>, Iterable<E>, Serializable{
     }
     return b.toString();
   }
-  
+
   public String join(String delim, ConvertsValue<E, String> serializer) {
-    Node n = head.next;
+    Node<E> n = head.next;
     if (n == null)return "";
     StringBuilder b = new StringBuilder();
     b.append(serialize(serializer, n.item));
@@ -229,7 +234,7 @@ public class SimpleFifo <E> implements Fifo<E>, Iterable<E>, Serializable{
     }
     return b.toString();
   }
-  
+
   protected String serialize(ConvertsValue<E, String> serializer, E item) {
     return serializer == null ? String.valueOf(item) : serializer.convert(item);
   }

@@ -35,18 +35,45 @@
 
 package xapi.dev.source;
 
+import xapi.fu.In1;
+
 import static xapi.dev.source.PrintBuffer.NEW_LINE;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
-public class ImportSection {
+public class ImportSection implements CanAddImports {
 
-  private final Map<String, String> imports = new HashMap<String, String>();
-  private final Map<String, String> importStatic = new HashMap<String, String>();
+  public static class PackageAwareImports extends ImportSection implements HasPackage {
+
+    private String packageName;
+
+    @Override
+    public String getPackageName() {
+      return packageName;
+    }
+
+    public void setPackageName(String packageName) {
+      this.packageName = packageName;
+    }
+  }
+
+  // It's ok to use a plain hashmap, we sort all imports before printing.
+  private final Map<String, String> imports = new HashMap<>();
+  private final Map<String, String> importStatic = new HashMap<>();
+  private final Set<String> starImports = new HashSet<>();
+  private boolean canIgnoreOwnPackage;
+  private boolean replaceDollarSign;
 
   public ImportSection() {
+    canIgnoreOwnPackage = true;
+  }
+
+  public boolean hasStarImports() {
+    return !starImports.isEmpty();
   }
 
   public ImportSection addImports(final String... imports) {
@@ -57,21 +84,33 @@ public class ImportSection {
   }
 
   public String addImport(final String importName) {
-    return tryImport(importName, importName.contains("static "));
+    return tryImport(importName, importName.contains("static "), false);
   }
 
-  public String addStatic(final Class<?> cls, final String importName) {
+  public String addImport(final String importName, boolean skipNoPackages) {
+    return tryImport(importName, importName.contains("static "), skipNoPackages);
+  }
+
+  public String addStaticImport(final Class<?> cls, final String importName) {
+    return addStaticImport(cls.getCanonicalName(), importName);
+  }
+
+  public String addStaticImport(final String cls, final String importName) {
     final boolean hasStatic = importName!=null&&importName.length()>0;
-    return tryImport(cls.getCanonicalName()+(hasStatic ? "."+importName : ""), hasStatic, false);
+    return tryImport(cls+(hasStatic ? "."+importName : ""), hasStatic, shouldReplaceDollarSign());
   }
 
-  public String addStatic(final String importName) {
-    return tryImport(importName, true);
+  public boolean shouldReplaceDollarSign() {
+    return replaceDollarSign;
+  }
+
+  public String addStaticImport(final String importName) {
+    return tryImport(importName, true, false);
   }
 
   public ImportSection addStatics(final String... imports) {
     for (final String iport : imports) {
-      addStatic(iport);
+      addStaticImport(iport);
     }
     return this;
   }
@@ -116,6 +155,16 @@ public class ImportSection {
     }
   }
 
+  /**
+   * We keep track of the prefix of each import,
+   * so we can group similar packages together.
+   *
+   * This uses the first packagename,
+   * so all com.* and org.* will be grouped together,
+   * but for concise packagenames like xapi.* or elemental.*,
+   * this will ensure we don't get a spamming of newlines.
+   *
+   */
   private String prefixOf(final String string) {
     final int ind = string.indexOf('.');
     return ind == -1 ? string : string.substring(0, ind);
@@ -124,13 +173,6 @@ public class ImportSection {
   public ImportSection reserveSimpleName(final String cls) {
     if (!imports.containsKey(cls)) {
       imports.put(cls, "");
-    }
-    return this;
-  }
-
-  public ImportSection reserveMethodName(final String name) {
-    if (!imports.containsKey(name)) {
-      imports.put(name, "");
     }
     return this;
   }
@@ -166,25 +208,29 @@ public class ImportSection {
         existing.equals(importName); // This type is already imported
   }
 
-  protected String tryImport(final String importName, final boolean staticImport) {
-    return tryImport(importName, staticImport, true);
+  protected String tryImport(final String importName, final boolean staticImport, boolean skipNoPackage) {
+    return tryImport(importName, staticImport, shouldReplaceDollarSign(), skipNoPackage);
   }
 
-  protected String tryImport(String importName, final boolean staticImport, final boolean replaceDollarSigns) {
+  protected String tryImport(String importName, final boolean staticImport, final boolean replaceDollarSigns, final boolean skipNoPackages) {
+    final String originalImport = importName;
     final Map<String, String> map = staticImport ? importStatic : imports;
     int arrayDepth = 0;
     int index = importName.indexOf(".");
-    if (index == -1) {
-      return importName;
-    }
+    // do not import primitives
+    final boolean hasDot = index != -1;
+
+    // ignore any []
     index = importName.indexOf("[]");
     while (index != -1) {
       importName = importName.substring(0, index)
           + (index < importName.length() - 2 ? importName.substring(index + 2)
-              : "");
+          : "");
       index = importName.indexOf("[]", index);
       arrayDepth++;
     }
+
+    // rip off generics, and optionally try to import them as well
     importName = trim(importName);
     index = importName.indexOf('<');
     String suffix;
@@ -192,13 +238,47 @@ public class ImportSection {
       suffix = "";
     } else {
       suffix = importName.substring(index);
-      // TODO import and strip these generics too.
+      suffix = importFullyQualifiedNames(suffix);
       importName = importName.substring(0, index);
     }
+
+    // put back any array definitions we ignored
     while (arrayDepth-- > 0) {
       suffix += "[]";
     }
-    if (!staticImport && skipImports(importName)) {
+
+    // check if we need to import this type...
+    if (skipImports(importName, skipNoPackages)) {
+      if (importName.startsWith("java.lang.")) {
+        importName = importName.substring(10);
+      }
+      return importName + suffix;
+    }
+
+    if (hasDot){
+      // a name with a . in it; check if we need to import it
+      if (!staticImport && canIgnoreOwnPackage() && this instanceof HasPackage) {
+        String pkg = ((HasPackage)this).getPackageName();
+        if (pkg != null && !pkg.isEmpty()) {
+          final String noPkg = importName.replace(pkg + ".", "");
+          if (noPkg.indexOf('.') == -1) {
+            String existing = map.get(noPkg);
+            if (existing == null || existing.isEmpty()) {
+              map.put(noPkg, importName);
+              return noPkg + suffix;
+            } else {
+              if (importName.equals(existing)) {
+                return noPkg + suffix;
+              } else {
+                return existing + suffix;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (!staticImport && skipImports(importName, skipNoPackages)) {
       return importName.replace("java.lang.", "") + suffix;
     }
     if (replaceDollarSigns) {
@@ -207,31 +287,100 @@ public class ImportSection {
     final String shortname = importName.substring(1 + importName.lastIndexOf('.'));
     if ("*".equals(shortname)) {
       map.put(importName, importName);
-      return importName + suffix;
+      assert suffix.length() == 0 : "Bad import; has a suffix with a * import: " + originalImport;
+      return importName;
     }
 
     final String existing = map.get(shortname);
-    if (existing == null) {
+    if (existing == null || existing.isEmpty()) {
       map.put(shortname, importName);
       return shortname + suffix;
     }
+    // if the existing match was this classname, we are allowed to return shortname
     if (existing.equals(importName)) {
       return shortname + suffix;
     }
-    // map.put(importName+" "+map.size(), importName);
+    // if there was an existing name that wasn't us, we can't perform the import.
     return importName + suffix;
   }
 
-  private boolean skipImports(final String importName) {
-    return importName.matches("("
+  public String importFullyQualifiedNames(String suffix) {
+    // use two builders: one for the final result,
+    StringBuilder result = new StringBuilder();
+    // and the other for java packagenames (java identifiers and dots)
+    StringBuilder word = new StringBuilder();
+
+    // we'll want to use the logic to clear the word buffer more than once...
+    In1<Boolean> tryImport = hasDot->{
+      if (word.length() > 0) {
+        if (hasDot) {
+          String imported = addImport(word.toString(), true);
+          result.append(imported);
+        } else {
+          result.append(word);
+        }
+        word.setLength(0);
+      }
+    };
+
+    // loop through whole string
+    boolean hasDot = false;
+    int pos = 0;
+    while (pos < suffix.length()) {
+      char c = suffix.charAt(pos++);
+      // record . and java identifiers in word builders
+      if (c == '.') {
+        hasDot = true;
+        word.append(c);
+      } else {
+        if (Character.isJavaIdentifierPart(c)) {
+          word.append(c);
+        } else {
+          tryImport.in(hasDot);
+          hasDot = false;
+          result.append(c);
+        }
+      }
+    }
+    tryImport.in(hasDot);
+    return result.toString();
+  }
+
+  protected boolean canIgnoreOwnPackage() {
+    return canIgnoreOwnPackage;
+  }
+
+  private boolean skipImports(final String importName, boolean skipSingleNames) {
+    if (importName.matches("("
         + "(java[.]lang.[^.]*)" + // discard java.lang, but keep java.lang.reflect
         "|" +  // also discard primitives
-        "((void)|(boolean)|(short)|(char)|(int)|(long)|(float)|(double)"
-        + "|(String)|(Class)|(Object)|(Void)|(Boolean)|(Short)|(Character)|(Integer)|(Long)|(Float)|(Double))"
-        + ")" + "[;]*");
+          "(void)|(boolean)|(short)|(char)|(int)|(long)|(float)|(double)"
+        + "|extends|super|import|static|[?]"
+        + "|(String)|(Class)|(Object)|(Void)|(Boolean)|(Short)|(Character)|(Integer)|(Long)|(Float)|(Double)|(Iterable))"
+        + "[;]*")) {
+      return true;
+    }
+    return skipSingleNames && importName.indexOf('.') == -1;
   }
 
   private String trim(final String importName) {
-    return importName.replaceAll("(\\[\\])|(\\s*import\\s+)|(static\\s+)|(\\s*;\\s*)", "");
+    return importName.replaceAll(
+        //"(\\[\\s*\\])|" +
+        "(\\s*import\\s+)|" +
+        "(\\s*static\\s+)|" +
+        "(\\s*;\\s*)", "");
+  }
+
+  @Override
+  public ImportSection getImports() {
+    return this;
+  }
+
+  public void setCanIgnoreOwnPackage(boolean canIgnoreOwnPackage) {
+    this.canIgnoreOwnPackage = canIgnoreOwnPackage;
+  }
+
+  public void setReplaceDollarSign(boolean replaceDollarSign) {
+    this.replaceDollarSign = replaceDollarSign;
   }
 }

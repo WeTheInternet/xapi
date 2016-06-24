@@ -178,4 +178,16 @@ public interface In2<I1, I2> extends HasInput, Rethrowable {
       return value;
     };
   }
+
+  static <I1, I2> Do reduceAll(In2<I1, I2> lambda, I1 i1, I2 i2) {
+    return lambda.provide1(i1).provide(i2);
+  }
+
+  static <I1, I2> In1<I2> reduce1(In2<I1, I2> lambda, I1 i1) {
+    return lambda.provide1(i1);
+  }
+
+  static <I1, I2> In1<I1> reduce2(In2<I1, I2> lambda, I2 i2) {
+    return lambda.provide2(i2);
+  }
 }

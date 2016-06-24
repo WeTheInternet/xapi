@@ -238,7 +238,7 @@ public class PrintBuffer extends CharBuffer implements Printable<PrintBuffer>{
 
   public PrintBuffer printlns(String str) {
     for (String line : str.split("\\r|(?:\\r?\\n)")) {
-      println(line.trim());
+      println(line);
     }
     return this;
   }

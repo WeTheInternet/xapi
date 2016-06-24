@@ -17,6 +17,7 @@ public class StringToDeepMap <X> extends StringToAbstract<StringTo<X>>{
     StringTo<X> list = super.get(key);
     if (list == null) {
       list = newMap();
+      put(key, list);
     }
     return list;
   }

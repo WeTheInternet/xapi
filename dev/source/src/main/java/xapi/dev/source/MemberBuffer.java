@@ -10,7 +10,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 public abstract class MemberBuffer<Self extends MemberBuffer<Self>> extends
-    PrintBuffer {
+    PrintBuffer implements CanAddImports {
 
   protected final Set<String> annotations;
   protected final Set<String> generics;
@@ -50,18 +50,7 @@ public abstract class MemberBuffer<Self extends MemberBuffer<Self>> extends
         this.generics.add(generic.replace("!", ""));
       } else {
         // pull fqcn into import statements and shorten them
-        for (final String part : generic.split(" ")) {
-          final int index = generic.lastIndexOf(".");
-          if (index > 0) {
-            final String shortened = addImport(part);
-            if (shortened.length() != part.trim().length()) {
-              // We can safely strip package names.
-              generic = generic.replace(
-                  part.substring(0, part.length() - shortened.length()), "");
-            }
-          }
-        }
-        this.generics.add(generic);
+        this.generics.add(getImports().importFullyQualifiedNames(generic));
       }
     }
     return self();
@@ -74,6 +63,8 @@ public abstract class MemberBuffer<Self extends MemberBuffer<Self>> extends
   public abstract String addImportStatic(String cls);
 
   public abstract String addImportStatic(Class<?> cls, String name);
+
+  public abstract String addImportStatic(String cls, String name);
 
   public final Self addImports(final String... clses) {
     for (final String cls : clses) {

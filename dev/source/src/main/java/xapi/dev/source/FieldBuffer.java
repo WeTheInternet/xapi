@@ -83,6 +83,11 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
   }
 
   @Override
+  public ImportSection getImports() {
+    return cls.getImports();
+  }
+
+  @Override
   public String addImport(final Class<?> cls) {
     return this.cls.addImport(cls);
   }
@@ -103,6 +108,11 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
   @Override
   public String addImportStatic(final String cls) {
     return this.cls.addImportStatic(cls);
+  }
+
+  @Override
+  public String addImportStatic(final String cls, final String name) {
+    return this.cls.addImportStatic(cls, name);
   }
 
   public MethodBuffer addSetter(final int modifier) {

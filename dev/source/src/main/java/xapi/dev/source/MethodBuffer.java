@@ -173,6 +173,11 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
   }
 
   @Override
+  public ImportSection getImports() {
+    return context.getImports();
+  }
+
+  @Override
   public String addImport(final Class<?> cls) {
     return context.getImports().addImport(cls);
   }
@@ -188,12 +193,17 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
 
   @Override
   public String addImportStatic(final Class<?> cls, final String name) {
-    return context.getImports().addStatic(cls, name);
+    return context.getImports().addStaticImport(cls, name);
+  }
+
+  @Override
+  public String addImportStatic(final String cls, final String name) {
+    return context.getImports().addStaticImport(cls, name);
   }
 
   @Override
   public String addImportStatic(final String cls) {
-    return context.getImports().addStatic(cls);
+    return context.getImports().addStaticImport(cls);
   }
 
   public MethodBuffer addParameters(final String... parameters) {

@@ -61,6 +61,42 @@ public interface In2Out1<I1, I2, O> extends Rethrowable {
     return in1 -> io.io(in1, in2);
   }
 
+
+  /**
+   * This hideous looking method enables
+   * you to perform inline compute operations,
+   * where you can retrieve a value from an object,
+   * transform that object into a new value,
+   * store that back into the original map,
+   * then return the new value.
+   *
+   * While terrible to read, this method can be used as follows:
+   *
+   * <pre>
+   *   Map<String, Integer> map = new HashMap<>();
+   *   map.put("key", 0);
+   *   In3Out1.transformCompute(map, Map::get, Map::set)
+   *      .io(map, "key", (k, v)->v++);
+   *   assert map.get("key") == 2;
+   *
+   *   When using a Map class, you can use X_Collect.computeMapTransform,
+   *   which will supply the Map::get and Map::put method references for you.
+   *
+   * </pre>
+   */
+  static <Obj, Key, Val>
+  In2Out1<Key , In2Out1<Key, Val, Val>,Val>
+  computeKeyValueTransform(Obj obj,
+                           In2Out1<Obj, Key, Val> getter,
+                           In3<Obj, Key, Val> setter) {
+    return (key, t) -> {
+      Val v = getter.io(obj, key);
+      Val c = t.io(key, v);
+      setter.in(obj, key, c);
+      return c;
+    };
+  }
+
   interface In2Out1Unsafe <I1, I2, O> extends In2Out1<I1, I2, O> {
     O ioUnsafe(I1 i1, I2 i2) throws Throwable;
 

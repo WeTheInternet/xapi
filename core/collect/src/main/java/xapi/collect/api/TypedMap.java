@@ -1,6 +1,6 @@
 package xapi.collect.api;
 
-import xapi.fu.In1Out1;
+import xapi.fu.In2Out1;
 import xapi.fu.Out2;
 
 /**
@@ -18,7 +18,7 @@ public interface TypedMap <K, V> {
 
   V remove(K key);
 
-    default Out2<V, V> putAndReturnBoth(K key, V value) {
+  default Out2<V, V> putAndReturnBoth(K key, V value) {
     return Out2.out2(value, put(key, value));
   }
 
@@ -31,12 +31,21 @@ public interface TypedMap <K, V> {
     return Out2.out2(previousValue, value);
   }
 
-  default V compute(K key, In1Out1<V, V> io) {
+  default V compute(K key, In2Out1<K, V, V> io) {
     V existing = get(key);
-    final V computed = io.io(existing);
+    final V computed = io.io(key, existing);
     if (computed != existing) {
-      put(key, existing);
+      put(key, computed);
     }
     return computed;
+  }
+
+  default V computeReturnPrevious(K key, In2Out1<K, V, V> io) {
+    V existing = get(key);
+    final V computed = io.io(key, existing);
+    if (computed != existing) {
+      put(key, computed);
+    }
+    return existing;
   }
 }

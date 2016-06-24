@@ -35,7 +35,15 @@
 
 package xapi.dev.source;
 
-public class SourceBuilder<Payload> {
+public class SourceBuilder<Payload> implements CanAddImports {
+
+  protected class SourceBuilderImports extends ImportSection implements HasPackage {
+
+    @Override
+    public String getPackageName() {
+      return SourceBuilder.this.getPackage();
+    }
+  }
 
   public enum JavaType {
     CLASS("class"),
@@ -57,7 +65,7 @@ public class SourceBuilder<Payload> {
 
   private final PrintBuffer head;
   private PrintBuffer buffer;
-  private ImportSection imports;
+  private SourceBuilderImports imports;
   private ClassBuffer classDef;
   private Payload payload;
   private String pkgName = "";
@@ -110,7 +118,7 @@ public class SourceBuilder<Payload> {
 
   public ImportSection getImports() {
     if (imports == null) {
-      imports = new ImportSection();
+      imports = new SourceBuilderImports();
     }
     return imports;
   }
@@ -149,29 +157,13 @@ public class SourceBuilder<Payload> {
     return this;
   }
 
-  public String addImport(Class<?> cls) {
-    return getClassBuffer().addImport(cls);
-  }
-
-  public String addImport(String cls) {
-    return getClassBuffer().addImport(cls);
-  }
-
-  public String addImportStatic(Class<?> cls, String name) {
-    return getClassBuffer().addImportStatic(cls, name);
-  }
-
-  public String addImportStatic(String cls) {
-    return getClassBuffer().addImportStatic(cls);
-  }
-
   public SourceBuilder<Payload> addImports(Class<?>... cls) {
-    getClassBuffer().addImports(cls);
+    getImports().addImports(cls);
     return this;
   }
 
   public SourceBuilder<Payload> addImports(String... cls) {
-    getClassBuffer().addImports(cls);
+    getImports().addImports(cls);
     return this;
   }
 
@@ -232,6 +224,22 @@ public class SourceBuilder<Payload> {
 
   public String getQualifiedName() {
     return getClassBuffer().getQualifiedName();
+  }
+
+  public String getSourceFileName() {
+    final String pkg = getPackage();
+    if (pkg.length() == 0) {
+      return getSimpleName() + ".java";
+    }
+    return pkg.replace('.', '/') + "/" + getSimpleName() + ".java";
+  }
+
+  public String getClassFileName() {
+    final String pkg = getPackage();
+    if (pkg.length() == 0) {
+      return getSimpleName() + ".class";
+    }
+    return pkg.replace('.', '/') + "/" + getSimpleName() + ".class";
   }
 
   public String getSimpleName() {

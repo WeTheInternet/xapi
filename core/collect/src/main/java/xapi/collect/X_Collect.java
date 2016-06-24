@@ -20,6 +20,7 @@ import xapi.collect.impl.StringToDeepMap;
 import xapi.collect.impl.StringToManyList;
 import xapi.collect.proxy.CollectionProxy;
 import xapi.collect.service.CollectionService;
+import xapi.fu.In2Out1;
 import xapi.util.api.ReceivesValue;
 
 import static xapi.collect.api.CollectionOptions.asImmutableList;
@@ -33,6 +34,7 @@ import java.lang.reflect.Array;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.function.Consumer;
 
 /**
@@ -296,5 +298,25 @@ public class X_Collect {
 
   public static <K, Key extends K, V, Value extends V> CollectionProxy<K, V> newProxy(Class<Key> keyCls, Class<Value> valueCls, CollectionOptions opts) {
       return service.newProxy(keyCls, valueCls, opts);
+  }
+
+  /**
+   * Despite the ugly mess of generic here,
+   * this handy method can allow us to create
+   * inline compute()-style methods like so:
+   * <pre>
+   *
+   * </pre>
+   * Map<String, Integer> m = new HashMap<>();
+   * m.put("key", 0);
+   * int i = computeMapTransform(m).io("key", (k, v)->v++);
+   * assert i == 1;
+   * assert map.get("key").equals(1);
+   * 
+   */
+  public static <Key, Val>
+  In2Out1<Key, In2Out1<Key, Val, Val>, Val>
+  computeMapTransform(Map<Key, Val> map) {
+    return In2Out1.computeKeyValueTransform(map, Map::get, Map::put);
   }
 }
