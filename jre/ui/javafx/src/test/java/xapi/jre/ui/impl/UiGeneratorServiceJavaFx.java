@@ -1,9 +1,12 @@
 package xapi.jre.ui.impl;
 
+import xapi.dev.ui.AbstractUiGeneratorService;
+import xapi.dev.ui.DataFeatureGenerator;
 import xapi.dev.ui.UiComponentGenerator;
 import xapi.dev.ui.UiFeatureGenerator;
-import xapi.dev.ui.AbstractUiGeneratorService;
 import xapi.fu.Out2;
+
+import static xapi.fu.Out2.out2;
 
 import java.util.Arrays;
 
@@ -16,18 +19,19 @@ public class UiGeneratorServiceJavaFx extends AbstractUiGeneratorService {
 
   protected Iterable<Out2<String, UiComponentGenerator>> getComponentGenerators() {
     return Arrays.asList(
-        Out2.out2("app", new JavaFxAppComponentGenerator()),
-        Out2.out2("button", new UiComponentGenerator())
+        out2("app", new JavaFxAppComponentGenerator()),
+        out2("button", new JavaFxButtonComponentGenerator())
     );
   }
 
   protected Iterable<Out2<String, UiFeatureGenerator>> getFeatureGenerators() {
     return Arrays.asList(
-        Out2.out2("ref", new UiFeatureGenerator()),
-        Out2.out2("title", new UiFeatureGenerator()),
-        Out2.out2("body", new UiFeatureGenerator()),
-        Out2.out2("text", new UiFeatureGenerator()),
-        Out2.out2("onClick", new UiFeatureGenerator())
+        out2("ref", new UiFeatureGenerator()),
+        out2("title", new UiFeatureGenerator()),
+        out2("data", new DataFeatureGenerator()),
+        out2("body", new JavaFxBodyFeatureGenerator()),
+        out2("text", new JavaFxTextFeatureGenerator()),
+        out2("onClick", new JavaFxActionFeatureGenerator())
     );
   }
 }

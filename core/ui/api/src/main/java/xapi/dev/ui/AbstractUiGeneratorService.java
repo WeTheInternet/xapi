@@ -49,7 +49,9 @@ public class AbstractUiGeneratorService implements UiGeneratorService {
   public GeneratedComponentMetadata generateComponent(
       String pkgName, String className, UiContainerExpr expr
   ) {
-    final GeneratedComponentMetadata metadata = createMetadata(expr);
+    final GeneratedComponentMetadata metadata = createMetadata(null, expr);
+    final String fqcn = X_Source.qualifiedName(pkgName, className);
+    metadata.setControllerType(fqcn);
     String generatedName = calculateGeneratedName(pkgName, className, expr);
     SourceBuilder b = new SourceBuilder("public class " + generatedName);
     b.setPackage(pkgName);
@@ -71,7 +73,7 @@ public class AbstractUiGeneratorService implements UiGeneratorService {
 
   protected String calculateGeneratedName(String pkgName, String className, UiContainerExpr expr) {
     String fqcn = X_Source.qualifiedName(pkgName, className);
-    return className + "__Component_" + numGenerated.compute(fqcn, i->i == null ? 0 : i++);
+    return className + "__Component_" + numGenerated.compute(fqcn, (k, i)->i == null ? 0 : i++);
   }
 
   @Override

@@ -54,11 +54,8 @@ public class JavacPluginTest {
   }
 
   private CompilerSettings testSettings(CompilerService compiler) {
-    final CompilerSettings settings = compiler.defaultSettings().setTest(true).setClearGenerateDirectory(true);
-    try {
-      return settings.setGenerateDirectory(new File(settings.getRoot(),"target/generated-test-sources/test").getCanonicalPath());
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+    return compiler.defaultSettings()
+        .setTest(true)
+        .setClearGenerateDirectory(true);
   }
 }

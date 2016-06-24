@@ -5,5 +5,5 @@ import xapi.ui.api.UiElement;
 /**
  * Created by james on 6/7/16.
  */
-public interface Window extends UiElement {
+public interface Window <Type, Self extends Window<Type, Self>> extends UiElement <Type, Self> {
 }

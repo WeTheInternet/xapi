@@ -50,11 +50,21 @@ public class UiFeatureGenerator {
     return false;
   }
 
-  public boolean shouldVisitorSuper(UiGeneratorService service, UiComponentGenerator myGenerator, UiAttrExpr n) {
+  public boolean startVisit(
+      UiGeneratorService service,
+      UiComponentGenerator generator,
+      GeneratedComponentMetadata container,
+      UiAttrExpr attr
+  ) {
     return true;
   }
 
-  public void finishVisit(UiGeneratorService service, UiComponentGenerator myGenerator, UiAttrExpr n) {
+  public void finishVisit(
+      UiGeneratorService service,
+      UiComponentGenerator generator,
+      GeneratedComponentMetadata parent,
+      UiAttrExpr n
+  ) {
 
   }
 }

@@ -47,15 +47,9 @@ public class CompilerSettings implements Rethrowable {
     String genDir = getGenerateDirectory();
     args.add("-s");
     args.add(genDir);
-    File genFile = new File(genDir);
-    if (!genFile.exists()) {
-      if (!genFile.mkdirs()) {
-        X_Log.error(getClass(), "Cannot create generate directory ", genFile, "expect subsequent failures");
-      }
-    }
+
     if (isClearGenerateDirectory()) {
-      X_File.deepDelete(genDir);
-      genFile.mkdir();
+      resetGenerateDirectory();
     }
 
     String processorPath = getProcessorPath();
@@ -108,6 +102,19 @@ public class CompilerSettings implements Rethrowable {
 
     X_Log.info(getClass(), "Javac args:", args);
     return args.toArray(new String[args.size()]);
+  }
+
+  public void resetGenerateDirectory() {
+    final String genDir = getGenerateDirectory();
+    File genFile = new File(genDir);
+    if (!genFile.exists()) {
+      if (!genFile.mkdirs()) {
+        X_Log.error(getClass(), "Cannot create generate directory ", genFile, "expect subsequent failures");
+      }
+    }
+    X_File.deepDelete(genDir);
+    boolean result = genFile.mkdirs();
+    assert result : "Unable to create generate directory " + genFile;
   }
 
   public PreferMode getPreferMode() {
@@ -204,6 +211,17 @@ public class CompilerSettings implements Rethrowable {
 
   public CompilerSettings setTest(boolean test) {
     this.test = test;
+    if (test && generateDirectory == null) {
+      try {
+        final File f = new File(getRoot(), "target/generated-test-sources/test");
+        if (!f.exists()) {
+          f.mkdirs();
+        }
+        return setGenerateDirectory(f.getCanonicalPath());
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
     return this;
   }
 
@@ -212,6 +230,9 @@ public class CompilerSettings implements Rethrowable {
       final File resourcesDir = new File(getRoot(), "src/" + (test?"test":"main") + "/resources");
       try {
         sourceDirectory = resourcesDir.getCanonicalPath();
+        if (!resourcesDir.exists()) {
+          resourcesDir.mkdirs();
+        }
       } catch (IOException e) {
         throw rethrow(e);
       }
@@ -227,7 +248,11 @@ public class CompilerSettings implements Rethrowable {
   public String getGenerateDirectory() {
     if (generateDirectory == null) {
       try {
-        generateDirectory = new File(getRoot(),"target/generated-" + (test?"test-":"") + "sources/gwt").getCanonicalPath();
+        File f = new File(getRoot(),"target/generated-" + (test?"test-":"") + "sources/gwt");
+        generateDirectory = f.getCanonicalPath();
+        if (!f.exists()) {
+          f.mkdirs();
+        }
       } catch (IOException e) {
         throw rethrow(e);
       }
@@ -243,7 +268,8 @@ public class CompilerSettings implements Rethrowable {
   public String getProcessorPath() {
     if (processorPath == null) {
       try {
-        processorPath = new File(root,"target/xapi-dev-javac-"+ X_Namespace.XAPI_VERSION+".jar").getCanonicalPath();
+        final File f = new File(root, "target/xapi-dev-javac-" + X_Namespace.XAPI_VERSION + ".jar");
+        processorPath = f.getCanonicalPath();
       } catch (IOException e) {
         throw rethrow(e);
       }

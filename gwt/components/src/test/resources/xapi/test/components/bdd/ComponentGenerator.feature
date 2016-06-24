@@ -103,6 +103,7 @@ Feature: ComponentGenerator.feature: Transpile xapi templates into web component
       | import xapi.components.impl.WebComponentBuilder;                                                              |
       | import xapi.components.impl.WebComponentSupport;                                                              |
       | import xapi.inject.X_Inject;                                                                                  |
+      | import xapi.test.components.client.TestComponent;                                                             |
       | import xapi.ui.service.UiService;                                                                             |
       |                                                                                                               |
       | public final class TestComponent_WebComponentFactory implements WebComponentFactory<TestComponent> {          |
@@ -152,7 +153,8 @@ Feature: ComponentGenerator.feature: Transpile xapi templates into web component
       | applyValue_element(builder);                                                                                  |
       | applyProperty_onClick(builder);                                                                               |
       | applyProperty_world(builder);                                                                                 |
-      | builder.addShadowRoot("<box\n    text = \"Hello $world\"\n    id = \"gen1\"/>"                                |
+      | builder.addShadowRoot("<box\n    text =                                                                       |
+      | \"Hello $world\"\n    id = \"gen1\"/>"                                                                        |
       | , shadow -> {                                                                                                 |
       | UiService $ui = UiService.getUiService();                                                                     |
       | TestComponent $this = (TestComponent) $ui.getHost(shadow);                                                    |
@@ -161,7 +163,7 @@ Feature: ComponentGenerator.feature: Transpile xapi templates into web component
       | $this::onClick                                                                                                |
       | );                                                                                                            |
       | return shadow;                                                                                                |
-      | });                                                                                                           |
+      | });                                                                                                            |
       | ctor = WebComponentSupport.register("test-component", builder.build());                                       |
       | }                                                                                                             |
       |                                                                                                               |
@@ -256,16 +258,16 @@ Feature: ComponentGenerator.feature: Transpile xapi templates into web component
       | <to-do id    = "createAwesomeToDoApp"                                                |
       | text     = "Finish ALLLLL the things!"                                               |
       | thisType = "ToDo" // Create an alias to the type of the currrent element, <to-do/>   |
-      | isDone   = (siblings().allMatch(ToDo::isDone))                                         |
+      | isDone   = (siblings().allMatch(ToDo::isDone))                                       |
       | onClick  = e->{                                                                      |
       | if (!$this.isDone()) {                                                               |
-      | xapi.log.X_Log.alert("Finish your other todos first!");                               |
+      | xapi.log.X_Log.alert("Finish your other todos first!");                              |
       | }                                                                                    |
       | e.cancel(); // do not propagate to the "super" method in the definition of <to-do /> |
       | }                                                                                    |
       | /to-do>                                                                              |
       | <add-to-do />                                                                        |
       | <to-do text = "Make the add-to-do element work in a concise, declarative manner" />  |
-      | </to-dos>                                                                             |
+      | </to-dos>                                                                            |
       | /define-tag>                                                                         |
       | </define-tags>                                                                       |

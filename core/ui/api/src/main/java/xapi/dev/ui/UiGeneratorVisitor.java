@@ -36,15 +36,22 @@ public class UiGeneratorVisitor extends VoidVisitorAdapter<UiGeneratorService> {
 
   @Override
   public void visit(UiContainerExpr n, UiGeneratorService service) {
+    boolean isRoot = parent == null;
     final GeneratedComponentMetadata myParent = getParent();
-    final GeneratedComponentMetadata me = parent = myParent.createChild(n, service);
+
+    final GeneratedComponentMetadata me;
+    if (isRoot) {
+      me = parent = myParent;
+    } else {
+      me = parent = myParent.createChild(n, service);
+    }
     try {
 
       final UiComponentGenerator myGenerator = generator = service.getComponentGenerator(n, me);
-      if (generator.visitSuper(service, me, n)) {
+      if (generator.startVisit(service, me, n)) {
         super.visit(n, service);
       }
-      myGenerator.finishVisit(service, me, n);
+      myGenerator.endVisit(service, me, n);
 
     } finally {
       parent = myParent;
@@ -59,10 +66,10 @@ public class UiGeneratorVisitor extends VoidVisitorAdapter<UiGeneratorService> {
     final UiComponentGenerator myGenerator = generator;
     final UiFeatureGenerator myFeature = feature = service.getFeatureGenerator(n, generator);
 
-    if (myFeature.shouldVisitorSuper(service, myGenerator, n)) {
+    if (myFeature.startVisit(service, myGenerator, parent, n)) {
       super.visit(n, service);
     }
-    myFeature.finishVisit(service, myGenerator, n);
+    myFeature.finishVisit(service, myGenerator, parent, n);
 
     if (myFeature.hasSideEffects()) {
       myGenerator.getMetadata().recordSideEffects(service, myFeature);

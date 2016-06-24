@@ -1,7 +1,12 @@
 <app
   ref = "root"
   title = "Hi"
-  body = <button text="Clicky" onClick=e->{
-        $root.title = "Hello!";
-        } />
-/>
+  data =
+      @Type
+      { one: 0, two: 0 }
+  >
+  <button ref="one" text="Button 1" onClick=e->
+    $one.setText("You clicked one " + $root.data.one++ + " times") />
+  <button ref="two" text="Button 2" onClick=e->
+    $two.setText("You clicked two " + $root.data.compute("two", (k, v)->v++) + " times") />
+</app>

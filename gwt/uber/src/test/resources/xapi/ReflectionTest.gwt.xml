@@ -9,6 +9,7 @@
   <source path="test/gwt/reflect/cases"/>
 
   <inherits name="xapi.X_Inject"/>
+  <inherits name="xapi.X_Collect"/>
 
   <inherits name="com.google.gwt.core.Core"/>
   <inherits name="com.google.gwt.http.HTTP"/>

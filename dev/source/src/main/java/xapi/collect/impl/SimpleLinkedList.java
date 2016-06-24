@@ -156,4 +156,14 @@ AbstractLinkedList<T, SimpleLinkedList.LinkedListNode<T>, SimpleLinkedList<T>> {
     final LinkedListNode<T> next) {
     next.previous = previous;
   }
+
+  public synchronized T pop() {
+    if (head == tail) {
+      throw new IllegalStateException("Cannot pop from an empty list");
+    }
+    T value = tail.value;
+    tail.value = null;
+    tail = tail.previous;
+    return value;
+  }
 }

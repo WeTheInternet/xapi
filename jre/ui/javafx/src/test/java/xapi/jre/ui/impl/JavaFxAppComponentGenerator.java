@@ -1,11 +1,18 @@
 package xapi.jre.ui.impl;
 
+import com.github.javaparser.ASTHelper;
+import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
-import javafx.stage.Stage;
+import javafx.scene.layout.VBox;
+import xapi.dev.source.ClassBuffer;
+import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.dev.ui.GeneratedComponentMetadata;
 import xapi.dev.ui.UiComponentGenerator;
 import xapi.dev.ui.UiGeneratorService;
+import xapi.fu.In1Out1;
+
+import java.util.Optional;
 
 /**
  * Created by james on 6/17/16.
@@ -17,27 +24,46 @@ public class JavaFxAppComponentGenerator extends UiComponentGenerator {
   }
 
   @Override
-  public boolean visitSuper(
+  public boolean startVisit(
       UiGeneratorService service, GeneratedComponentMetadata me, UiContainerExpr n
   ) {
+
     SourceBuilder<?> out = me.getSourceBuilder();
-//
-//    if (out == null) {
-//      out = java();
-//      me.setSourceBuilder(out);
-//    }
-    if (!out.isDefined()) {
+    final Optional<UiAttrExpr> type = n.getAttribute("type");
+    String container = type
+        .map(ASTHelper::extractAttrValue)
+        .orElse(VBox.class.getName());
+    container = out.addImport(container);
+    String binder = out.addImport(In1Out1.class);
 
-    }
+    String controller = out.addImport(me.getControllerType());
 
-    String stageCls = out.addImport(Stage.class);
-
+    final ClassBuffer cb = out.getClassBuffer();
+    cb.addInterface(binder + "<" + controller + ", " + container + ">");
     // Even though we are the mapping for <app />,
     // we are actually going to bind to a JavaFX stage;
     // this is because we want to be callable within other
     // JavaFX code, and Application.launch may only be called once!
 
+    String refName = me.getRefName();
 
-    return super.visitSuper(service, me, n);
+    final MethodBuffer method = cb.createMethod("public " + container + " io(" + controller + " " + refName + ")");
+    String varName = me.newVarName("root");
+    method.println(container + " " + varName + " = new " + container + "();");
+
+    me.saveMethod(varName, method);
+    me.pushPanelName(varName);
+
+    return super.startVisit(service, me, n);
+  }
+
+  @Override
+  public void endVisit(
+      UiGeneratorService service, GeneratedComponentMetadata me, UiContainerExpr n
+  ) {
+    String panelName = me.popPanelName();
+    me.getMethod(panelName)
+      .returnValue(panelName);
+    super.endVisit(service, me, n);
   }
 }

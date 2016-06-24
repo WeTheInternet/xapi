@@ -4,6 +4,7 @@ import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.expr.TemplateLiteralExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
+import com.github.javaparser.ast.plugin.Transformer;
 import xapi.dev.source.DomBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.fu.Lazy;
@@ -25,6 +26,7 @@ public class UiComponentGenerator {
   private GeneratedComponentMetadata metadata;
   private List<UiFeatureGenerator> featureGenerators;
   private boolean printCommentsAllowed;
+  private Transformer transformer;
 
   public UiComponentGenerator() {
     this(DomBuffer::new);
@@ -34,6 +36,11 @@ public class UiComponentGenerator {
     shadowDomBuffer = Lazy.deferred1(factory);
     classBuffer = Lazy.deferred1(SourceBuilder<GeneratedComponentMetadata>::new, this::getMetadata);
     featureGenerators = new ArrayList<>();
+    transformer = createTransformer();
+  }
+
+  protected Transformer createTransformer() {
+    return new Transformer();
   }
 
   public String convertToSource(Expression value) {
@@ -73,11 +80,15 @@ public class UiComponentGenerator {
     this.printCommentsAllowed = printCommentsAllowed;
   }
 
-  public boolean visitSuper(UiGeneratorService service, GeneratedComponentMetadata me, UiContainerExpr n) {
+  public boolean startVisit(UiGeneratorService service, GeneratedComponentMetadata me, UiContainerExpr n) {
     return true;
   }
 
-  public void finishVisit(UiGeneratorService service, GeneratedComponentMetadata me, UiContainerExpr n) {
+  public void endVisit(UiGeneratorService service, GeneratedComponentMetadata me, UiContainerExpr n) {
 
+  }
+
+  public Transformer getTransformer() {
+    return null;
   }
 }

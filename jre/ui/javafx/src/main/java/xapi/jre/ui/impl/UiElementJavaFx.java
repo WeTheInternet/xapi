@@ -9,14 +9,14 @@ import xapi.ui.impl.AbstractUiElement;
 /**
  * Created by james on 6/7/16.
  */
-public class UiElementJavaFx<N extends Node> extends AbstractUiElement<N, UiElementJavaFx<N>> {
+public class UiElementJavaFx<N extends Node, Ui extends UiElementJavaFx<N, Ui>> extends AbstractUiElement<N, Ui> {
 
-  public UiElementJavaFx() {
-    super(UiElementJavaFx.class);
+  public UiElementJavaFx(Class<Ui> cls) {
+    super(cls);
   }
 
   @Override
-  public <El extends UiElementJavaFx<N>> void insertAdjacent(ElementPosition pos, El child) {
+  public <El extends Ui> void insertAdjacent(ElementPosition pos, El child) {
     final N node = element();
     final ObservableList<Node> children;
     if (node instanceof Pane) {

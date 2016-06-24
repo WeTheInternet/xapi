@@ -263,7 +263,7 @@ public class GwtcSteps {
 
   private void initializeManifest(GwtcService service, GwtManifest manifest) {
     manifest.addSystemProp("gwt.usearchives=false");
-    manifest.setLogLevel(Type.INFO);
+    manifest.setLogLevel(Type.TRACE);
     manifest.setWorkDir(service.getTempDir().getAbsolutePath());
     manifest.setGenDir(manifest.getGenDir()); // make the default explicit, so the argument is sent to command line
     manifest.setStrict(true); // break on any error

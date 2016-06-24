@@ -22,11 +22,24 @@
         </dependency>
         <dependency>
             <groupId>net.wetheinter</groupId>
+            <artifactId>xapi-core-ui-generator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.wetheinter</groupId>
             <artifactId>xapi-jre-io</artifactId>
         </dependency>
         <dependency>
             <groupId>net.wetheinter</groupId>
+            <artifactId>xapi-jre-collect</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.wetheinter</groupId>
             <artifactId>xapi-core-io</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.wetheinter</groupId>
+            <artifactId>xapi-dev-javac</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
