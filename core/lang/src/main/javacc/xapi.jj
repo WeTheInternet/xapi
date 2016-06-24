@@ -2894,7 +2894,9 @@ UiAttrExpr UiAttr():
     {
       assert line != -1;
       assert column != -1;
-      return new UiAttrExpr(line, column, token.endLine, token.endColumn,name, isAttribute, expression);
+      UiAttrExpr attr = new UiAttrExpr(line, column, token.endLine, token.endColumn,name, isAttribute, expression);
+      attr.setAnnotations(annotations);
+      return attr;
     }
 }
 
@@ -3006,6 +3008,7 @@ JsonContainerExpr JsonContainer():
   boolean isArray = false;
   int line;
   int column;
+  int cnt = 0;
 }{
   (
     (
@@ -3024,7 +3027,16 @@ JsonContainerExpr JsonContainer():
       isArray = true;
     }
 
-    ( value = UiValue() { items.add(pair); } ) *
+    ( value = UiValue() {
+      IntegerLiteralExpr key = new IntegerLiteralExpr(Integer.toString(cnt++));
+      items.add(new JsonPairExpr(
+             value.getBeginLine(),
+             value.getBeginColumn(),
+             value.getEndLine(),
+             value.getEndColumn(),
+             key, value
+      ));
+     } ) *
 
     "]" )
   )

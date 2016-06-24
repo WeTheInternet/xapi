@@ -1,7 +1,9 @@
 package com.github.javaparser.ast.expr;
 
+import com.github.javaparser.ASTHelper;
 import com.github.javaparser.ast.visitor.GenericVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitor;
+import xapi.source.X_Source;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
@@ -37,7 +39,14 @@ public class JsonPairExpr extends UiExpr {
 
   @Override
   public <A> void accept(VoidVisitor<A> v, A arg) {
-    getKeyExpr().accept(v, arg);
-    getValueExpr().accept(v, arg);
+    v.visit(this, arg);
+  }
+
+  public String getKeyString() {
+    return ASTHelper.extractStringValue(getKeyExpr());
+  }
+  public String getKeyQuoted() {
+    String asString = ASTHelper.extractStringValue(getKeyExpr());
+    return asString.startsWith("\"") ? asString : "\"" + X_Source.escape(asString) + "\"";
   }
 }

@@ -71,6 +71,7 @@ import com.github.javaparser.ast.stmt.TryStmt;
 import com.github.javaparser.ast.stmt.TypeDeclarationStmt;
 import com.github.javaparser.ast.stmt.WhileStmt;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
+import com.github.javaparser.ast.type.IntersectionType;
 import com.github.javaparser.ast.type.PrimitiveType;
 import com.github.javaparser.ast.type.ReferenceType;
 import com.github.javaparser.ast.type.Type;
@@ -940,4 +941,58 @@ public abstract class ModifierVisitorAdapter<A> implements GenericVisitor<Node, 
 		return n;
 	}
 
+  @Override
+  public Node visit(IntersectionType n, A arg) {
+    final List<ReferenceType> elements = n.getElements();
+    for (int i = 0, m = elements.size(); i < m; i++) {
+      elements.set(i, (ReferenceType) elements.get(i).accept(this, arg));
+    }
+    return n;
+  }
+
+  @Override
+  public Node visit(UnionType n, A arg) {
+    final List<ReferenceType> elements = n.getElements();
+    for (int i = 0, m = elements.size(); i < m; i++) {
+      elements.set(i, (ReferenceType) elements.get(i).accept(this, arg));
+    }
+    removeNulls(elements);
+    return n;
+  }
+
+  @Override
+  public Node visit(UiBodyExpr n, A arg) {
+    final List<UiExpr> children = n.getChildren();
+    for (int i = 0, m = children.size(); i < m; i++) {
+      children.set(i, (UiExpr) children.get(i).accept(this, arg));
+    }
+    removeNulls(children);
+    return n;
+  }
+
+  @Override
+  public Node visit(UiAttrExpr n, A arg) {
+    if (n.getAnnotations() != null) {
+      final List<AnnotationExpr> annotations = n.getAnnotations();
+      for (int i = 0, m = annotations.size(); i < m; i++) {
+        annotations.set(i, (AnnotationExpr) annotations.get(i).accept(this, arg));
+      }
+      removeNulls(annotations);
+    }
+    n.setName((NameExpr)n.getName().accept(this, arg));
+    n.setExpression((Expression)n.getExpression().accept(this, arg));
+    return n;
+  }
+
+  @Override
+  public Node visit(UiContainerExpr n, A arg) {
+    n.setNameExpr((NameExpr)n.getNameExpr().accept(this, arg));
+    final List<UiAttrExpr> attributes = n.getAttributes();
+    for (int i = 0, m = attributes.size(); i < m; i++) {
+      attributes.set(i, (UiAttrExpr) attributes.get(i).accept(this, arg));
+      removeNulls(attributes);
+    }
+    n.setBody((UiBodyExpr)n.getBody().accept(this, arg));
+    return n;
+  }
 }

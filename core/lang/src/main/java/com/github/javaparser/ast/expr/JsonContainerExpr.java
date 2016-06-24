@@ -48,8 +48,10 @@ public class JsonContainerExpr extends JsonExpr {
 
   @Override
   public <A> void accept(VoidVisitor<A> v, A arg) {
-    for (JsonPairExpr pair : pairs) {
-      pair.accept(v, arg);
-    }
+    v.visit(this, arg);
+  }
+
+  public boolean isEmpty() {
+    return pairs.isEmpty();
   }
 }

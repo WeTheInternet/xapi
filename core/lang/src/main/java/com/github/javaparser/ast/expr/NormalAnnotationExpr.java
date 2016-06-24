@@ -26,6 +26,7 @@ import com.github.javaparser.ast.visitor.VoidVisitor;
 
 import static com.github.javaparser.ast.internal.Utils.ensureNotNull;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -67,4 +68,9 @@ public final class NormalAnnotationExpr extends AnnotationExpr {
 		this.pairs = pairs;
 		setAsParentNodeOf(this.pairs);
 	}
+
+  @Override
+  public Iterable<MemberValuePair> getMembers() {
+    return Collections.unmodifiableList(pairs);
+  }
 }

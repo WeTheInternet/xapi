@@ -1303,4 +1303,5 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 
 		return new UiContainerExpr(n.getBeginLine(), n.getBeginColumn(), n.getEndLine(), n.getEndColumn(), name, attrs, body, n.isInTemplate());
 	}
+
 }

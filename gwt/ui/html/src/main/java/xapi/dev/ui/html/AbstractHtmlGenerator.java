@@ -119,7 +119,7 @@ public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> im
     if (importType.staticImport().length()==0) {
       out.getImports().addImport(importType.value());
     } else {
-      out.getImports().addStatic(importType.value(), importType.staticImport());
+      out.getImports().addStaticImport(importType.value(), importType.staticImport());
     }
   }
   protected void clear() {

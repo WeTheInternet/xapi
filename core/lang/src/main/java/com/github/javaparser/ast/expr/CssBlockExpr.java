@@ -42,9 +42,6 @@ public class CssBlockExpr extends UiExpr {
 
   @Override
   public <A> void accept(VoidVisitor<A> v, A arg) {
-    for (CssContainerExpr container : containers) {
-      container.accept(v, arg);
-    }
-
+    v.visit(this, arg);
   }
 }

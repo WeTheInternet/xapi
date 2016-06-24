@@ -264,4 +264,16 @@ public interface VoidVisitor<A> {
 
     void visit(UiBodyExpr n, A arg);
 
+    void visit(JsonContainerExpr n, A arg);
+
+    void visit(JsonPairExpr n, A arg);
+
+    void visit(CssBlockExpr n, A arg);
+
+    void visit(CssContainerExpr n, A arg);
+
+    void visit(CssRuleExpr n, A arg);
+
+    void visit(CssSelectorExpr n, A arg);
+
 }

@@ -35,6 +35,6 @@ public class CssSelectorExpr extends CssExpr {
 
   @Override
   public <A> void accept(VoidVisitor<A> v, A arg) {
-
+    v.visit(this, arg);
   }
 }

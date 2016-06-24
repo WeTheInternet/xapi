@@ -27,6 +27,14 @@ public class CssContainerExpr extends UiExpr {
     this.rules = rules;
   }
 
+  public List<CssSelectorExpr> getSelectors() {
+    return selectors;
+  }
+
+  public List<CssRuleExpr> getRules() {
+    return rules;
+  }
+
   @Override
   public <R, A> R accept(GenericVisitor<R, A> v, A arg) {
     for (CssSelectorExpr selector : selectors) {
@@ -46,11 +54,6 @@ public class CssContainerExpr extends UiExpr {
 
   @Override
   public <A> void accept(VoidVisitor<A> v, A arg) {
-    for (CssSelectorExpr selector : selectors) {
-      selector.accept(v, arg);
-    }
-    for (CssRuleExpr rule : rules) {
-      rule.accept(v, arg);
-    }
+    v.visit(this, arg);
   }
 }

@@ -25,6 +25,14 @@ public class CssRuleExpr extends CssExpr {
     this.value = value;
   }
 
+  public Expression getKey() {
+    return key;
+  }
+
+  public Expression getValue() {
+    return value;
+  }
+
   @Override
   public <R, A> R accept(GenericVisitor<R, A> v, A arg) {
     R r = key.accept(v, arg);

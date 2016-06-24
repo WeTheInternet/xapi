@@ -30,22 +30,30 @@ import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.body.TypeDeclaration;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.body.VariableDeclaratorId;
-import com.github.javaparser.ast.expr.*;
+import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.MemberValuePair;
+import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.expr.NameExpr;
+import com.github.javaparser.ast.expr.QualifiedNameExpr;
+import com.github.javaparser.ast.expr.StringLiteralExpr;
+import com.github.javaparser.ast.expr.TemplateLiteralExpr;
+import com.github.javaparser.ast.expr.UiAttrExpr;
+import com.github.javaparser.ast.expr.VariableDeclarationExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.PrimitiveType;
+import com.github.javaparser.ast.type.PrimitiveType.Primitive;
 import com.github.javaparser.ast.type.ReferenceType;
 import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.type.VoidType;
-import com.github.javaparser.ast.type.PrimitiveType.Primitive;
 import xapi.log.X_Log;
+
+import static com.github.javaparser.ast.internal.Utils.isNullOrEmpty;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static com.github.javaparser.ast.internal.Utils.*;
 
 /**
  * This class helps to construct new nodes.
@@ -300,6 +308,15 @@ public final class ASTHelper {
             return extractStringValue(value);
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Unsupported UiAttrExpr value; source : " + attr, e);
+        }
+    }
+
+    public static String extractAnnoValue(MemberValuePair attr) {
+        final Expression value = attr.getValue();
+        try {
+            return extractStringValue(value);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Unsupported MemberValuePair value; source : " + attr+"; parent: " + attr.getParentNode(), e);
         }
     }
 

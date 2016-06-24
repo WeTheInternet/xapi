@@ -865,6 +865,9 @@ public abstract class VoidVisitorAdapter<A> implements VoidVisitor<A> {
 	@Override
 	public void visit(UiAttrExpr n, A arg) {
 		n.getName().accept(this, arg);
+        if (n.getAnnotations() != null) {
+            n.getAnnotations().forEach(anno->anno.accept(this, arg));
+        }
 		n.getExpression().accept(this, arg);
 	}
 
@@ -887,4 +890,37 @@ public abstract class VoidVisitorAdapter<A> implements VoidVisitor<A> {
 		}
 
 	}
+
+  @Override
+  public void visit(JsonContainerExpr n, A arg) {
+    n.getPairs().forEach(pair->pair.accept(this, arg));
+  }
+
+  @Override
+  public void visit(JsonPairExpr n, A arg) {
+    n.getKeyExpr().accept(this, arg);
+    n.getValueExpr().accept(this, arg);
+  }
+
+  @Override
+  public void visit(CssBlockExpr n, A arg) {
+    n.getContainers().forEach(container->container.accept(this, arg));
+  }
+
+  @Override
+  public void visit(CssContainerExpr n, A arg) {
+    n.getSelectors().forEach(selector->selector.accept(this, arg));
+    n.getRules().forEach(rule->rule.accept(this, arg));
+  }
+
+  @Override
+  public void visit(CssRuleExpr n, A arg) {
+    n.getKey().accept(this, arg);
+    n.getValue().accept(this, arg);
+  }
+
+  @Override
+  public void visit(CssSelectorExpr n, A arg) {
+
+  }
 }
