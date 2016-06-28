@@ -22,8 +22,8 @@ import java.util.List;
 public class UiComponentGenerator {
 
   protected Lazy<DomBuffer> shadowDomBuffer;
-  protected Lazy<SourceBuilder<GeneratedComponentMetadata>> classBuffer;
-  private GeneratedComponentMetadata metadata;
+  protected Lazy<SourceBuilder<ContainerMetadata>> classBuffer;
+  private ContainerMetadata metadata;
   private List<UiFeatureGenerator> featureGenerators;
   private boolean printCommentsAllowed;
   private Transformer transformer;
@@ -34,7 +34,7 @@ public class UiComponentGenerator {
 
   public UiComponentGenerator(Out1<DomBuffer> factory) {
     shadowDomBuffer = Lazy.deferred1(factory);
-    classBuffer = Lazy.deferred1(SourceBuilder<GeneratedComponentMetadata>::new, this::getMetadata);
+    classBuffer = Lazy.deferred1(SourceBuilder<ContainerMetadata>::new, this::getMetadata);
     featureGenerators = new ArrayList<>();
     transformer = createTransformer();
   }
@@ -57,15 +57,15 @@ public class UiComponentGenerator {
     return shadowDomBuffer.out1();
   }
 
-  public SourceBuilder<GeneratedComponentMetadata> java() {
+  public SourceBuilder<ContainerMetadata> java() {
     return classBuffer.out1();
   }
 
-  public GeneratedComponentMetadata getMetadata() {
+  public ContainerMetadata getMetadata() {
     return metadata;
   }
 
-  public void setMetadata(GeneratedComponentMetadata metadata) {
+  public void setMetadata(ContainerMetadata metadata) {
     this.metadata = metadata;
     if (classBuffer.isImmutable()) {
       classBuffer.out1().setPayload(metadata);
@@ -80,11 +80,11 @@ public class UiComponentGenerator {
     this.printCommentsAllowed = printCommentsAllowed;
   }
 
-  public boolean startVisit(UiGeneratorService service, GeneratedComponentMetadata me, UiContainerExpr n) {
+  public boolean startVisit(UiGeneratorService service, ContainerMetadata me, UiContainerExpr n) {
     return true;
   }
 
-  public void endVisit(UiGeneratorService service, GeneratedComponentMetadata me, UiContainerExpr n) {
+  public void endVisit(UiGeneratorService service, ContainerMetadata me, UiContainerExpr n) {
 
   }
 

@@ -93,6 +93,9 @@ public class X_String {
     return join(separator, copy);
   }
 
+  public static String classToQualified(Class<?> cls) {
+    return classesToQualified(cls)[0];
+  }
   public static String[] classesToQualified(Class<?> ... values) {
     int i = values.length;
     String[] copy = new String[i];
@@ -102,6 +105,10 @@ public class X_String {
         copy[i] = cls.getCanonicalName();
     }
     return copy;
+  }
+
+  public static String classToSourceFiles(Class<?> cls) {
+    return classesToSourceFiles(cls)[0];
   }
 
   public static String[] classesToSourceFiles(Class<?> ... values) {
@@ -115,6 +122,9 @@ public class X_String {
     return copy;
   }
 
+  public static String classToBinary(Class<?> cls) {
+    return classesToBinary(cls)[0];
+  }
   public static String[] classesToBinary(Class<?> ... values) {
     int i = values.length;
     String[] copy = new String[i];

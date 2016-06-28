@@ -4,7 +4,7 @@ import com.github.javaparser.ast.expr.UiContainerExpr;
 import javafx.scene.control.Button;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
-import xapi.dev.ui.GeneratedComponentMetadata;
+import xapi.dev.ui.ContainerMetadata;
 import xapi.dev.ui.UiComponentGenerator;
 import xapi.dev.ui.UiGeneratorService;
 
@@ -19,7 +19,7 @@ public class JavaFxButtonComponentGenerator extends UiComponentGenerator {
 
   @Override
   public boolean startVisit(
-      UiGeneratorService service, GeneratedComponentMetadata me, UiContainerExpr n
+        UiGeneratorService service, ContainerMetadata me, UiContainerExpr n
   ) {
 
     String parentName = me.peekPanelName();
@@ -36,7 +36,7 @@ public class JavaFxButtonComponentGenerator extends UiComponentGenerator {
 
   @Override
   public void endVisit(
-      UiGeneratorService service, GeneratedComponentMetadata me, UiContainerExpr n
+        UiGeneratorService service, ContainerMetadata me, UiContainerExpr n
   ) {
     me.popPanelName();
     me.removeMethod("b");

@@ -2,7 +2,7 @@ package xapi.dev.components;
 
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
-import xapi.dev.ui.GeneratedComponentMetadata;
+import xapi.dev.ui.ContainerMetadata;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -14,11 +14,11 @@ import static com.github.javaparser.ASTHelper.extractStringValue;
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 5/29/16.
  */
-public class MethodReferenceReplacementVisitor extends VoidVisitorAdapter<GeneratedComponentMetadata> {
+public class MethodReferenceReplacementVisitor extends VoidVisitorAdapter<ContainerMetadata> {
 
   protected static final AtomicInteger random = new AtomicInteger();
 
-  public static MethodReferenceReplacementVisitor mutateExpression(UiContainerExpr container, GeneratedComponentMetadata metadata) {
+  public static MethodReferenceReplacementVisitor mutateExpression(UiContainerExpr container, ContainerMetadata metadata) {
     MethodReferenceReplacementVisitor visitor = new MethodReferenceReplacementVisitor();
     container.accept(visitor, metadata);
     return visitor;
@@ -29,7 +29,7 @@ public class MethodReferenceReplacementVisitor extends VoidVisitorAdapter<Genera
 
   @Override
   public void visit(
-      UiContainerExpr n, GeneratedComponentMetadata arg
+      UiContainerExpr n, ContainerMetadata arg
   ) {
     final UiContainerExpr oldContainer = container;
     container = n;
@@ -39,7 +39,7 @@ public class MethodReferenceReplacementVisitor extends VoidVisitorAdapter<Genera
 
   @Override
   public void visit(
-      UiAttrExpr n, GeneratedComponentMetadata arg
+      UiAttrExpr n, ContainerMetadata arg
   ) {
     final UiAttrExpr oldAttr = attr;
     attr = n;
@@ -49,7 +49,7 @@ public class MethodReferenceReplacementVisitor extends VoidVisitorAdapter<Genera
 
   @Override
   public void visit(
-      MethodReferenceExpr n, GeneratedComponentMetadata arg
+      MethodReferenceExpr n, ContainerMetadata arg
   ) {
     container.removeAttribute(attr);
     final Optional<UiAttrExpr> idAttr = container.getAttribute("id");

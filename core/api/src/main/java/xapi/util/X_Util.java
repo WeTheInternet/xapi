@@ -1,7 +1,13 @@
 package xapi.util;
 
-import java.lang.reflect.Array;
+import xapi.fu.In2Out1;
+import xapi.fu.X_Fu;
+
+import static xapi.fu.X_Fu.blank;
+import static xapi.util.X_Runtime.isJavaScript;
+
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -88,12 +94,58 @@ public final class X_Util{
     return e;
   }
 
+  public static <T> T[] pushIfMissing(T[] array, T item) {
+      return pushIf(array, item, (b, i)->indexOf(array, item) == -1);
+  }
+
+  public static <T> T[] pushAllMissing(T[] array, T ... items) {
+      if (items == null || items.length == 0) {
+          return array;
+      }
+      T[] missing = blank(items);
+      int cnt = 0;
+      for (int i = 0; i < items.length; i++ ) {
+          final T item = items[i];
+          int index = indexOf(array, items[i]);
+          // record missing items
+          if (index == -1) {
+              // do not double-add items.
+              if (indexOf(missing, item) == -1) {
+                missing[cnt++] = item;
+              }
+          }
+      }
+      if (cnt == 0) {
+          return array;
+      }
+      final T[] result = X_Fu.copy(array, array.length + cnt);
+      System.arraycopy(missing, 0, result, array.length, cnt);
+      return result;
+  }
+
+    public static void main(String ... a) {
+        Integer[] is = new Integer[]{1, 2, 3};
+        Integer[] missing = new Integer[]{4, 4, 3, 1, 2, 33, 5};
+        final Integer[] res = pushAllMissing(is, missing);
+        assert res.length == 5;
+        assert res[3] == 4;
+        assert res[4] == 5;
+        System.out.println(Arrays.asList(res));
+    }
+
+  public static <T> T[] pushIf(T[] beforeFinished, T t, In2Out1<T[], T, Boolean> filter) {
+      if (filter.io(beforeFinished, t)) {
+          return pushOnto(beforeFinished, t);
+      }
+      return beforeFinished;
+  }
+
   public static <T> T[] pushOnto(T[] beforeFinished, T t) {
-    if (X_Runtime.isJavaScript()) {
+    if (isJavaScript()) {
       beforeFinished[beforeFinished.length] = t;
       return beforeFinished;
     } else {
-      T[] copy = (T[]) Array.newInstance(beforeFinished.getClass(), beforeFinished.length+1);
+      T[] copy = X_Fu.copy(beforeFinished, beforeFinished.length+1);
       copy[beforeFinished.length] = t;
       return copy;
     }
@@ -103,7 +155,7 @@ public final class X_Util{
     if (items == null) {
       return false;
     }
-    if (X_Runtime.isJavaScript()) {
+    if (isJavaScript()) {
       return jsniIsArray(items);
     } else {
       return items.getClass().isArray();
@@ -115,4 +167,23 @@ public final class X_Util{
     return Array.isArray(items);
   }-*/;
 
+    public static <K> int indexOf(K[] from, K match) {
+        if (from == null || from.length == 0) {
+            return -1;
+        }
+        if (match == null) {
+            for (int i = 0; i < from.length; i++) {
+                if (from[i] == null) {
+                    return i;
+                }
+            }
+        } else {
+            for (int i = 0; i < from.length; i++) {
+                if (match.equals(from[i])) {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
 }

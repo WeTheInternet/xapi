@@ -46,10 +46,10 @@ public class AbstractUiGeneratorService implements UiGeneratorService {
   }
 
   @Override
-  public GeneratedComponentMetadata generateComponent(
+  public ContainerMetadata generateComponent(
       String pkgName, String className, UiContainerExpr expr
   ) {
-    final GeneratedComponentMetadata metadata = createMetadata(null, expr);
+    final ContainerMetadata metadata = createMetadata(null, expr);
     final String fqcn = X_Source.qualifiedName(pkgName, className);
     metadata.setControllerType(fqcn);
     String generatedName = calculateGeneratedName(pkgName, className, expr);
@@ -66,7 +66,7 @@ public class AbstractUiGeneratorService implements UiGeneratorService {
       String pkgName,
       String className,
       UiContainerExpr expr,
-      GeneratedComponentMetadata metadata
+      ContainerMetadata metadata
   ) {
     return new UiGeneratorVisitor(metadata);
   }
@@ -77,7 +77,7 @@ public class AbstractUiGeneratorService implements UiGeneratorService {
   }
 
   @Override
-  public UiComponentGenerator getComponentGenerator(UiContainerExpr container, GeneratedComponentMetadata metadta) {
+  public UiComponentGenerator getComponentGenerator(UiContainerExpr container, ContainerMetadata metadta) {
     final UiComponentGenerator generator = componentGenerators.get(container.getName());
     Objects.requireNonNull(generator, "Null component for " + container.getName());
     return generator;

@@ -28,7 +28,7 @@ import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.dev.source.SourceTransform;
-import xapi.dev.ui.GeneratedComponentMetadata;
+import xapi.dev.ui.ContainerMetadata;
 import xapi.inject.X_Inject;
 import xapi.io.X_IO;
 import xapi.log.X_Log;
@@ -272,7 +272,7 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
         }
 
         for (String template : shadowDom.value()) {
-          GeneratedComponentMetadata metadata = createMetadata();
+          ContainerMetadata metadata = createMetadata();
           if (shadowStyle != null) {
             metadata.addModifier(shadowStyle);
           }
@@ -327,8 +327,8 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
     return new RebindResult(RebindMode.USE_ALL_NEW, qualifiedName);
   }
 
-  protected GeneratedComponentMetadata createMetadata() {
-    return new GeneratedComponentMetadata();
+  protected ContainerMetadata createMetadata() {
+    return new ContainerMetadata();
   }
 
   public static String toFactoryName(String simple) {
@@ -361,7 +361,7 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
     return list;
   }
 
-  private String resolveTemplate(TreeLogger logger, String template, GeneratorContext context, JClassType type, GeneratedComponentMetadata metadata) throws UnableToCompleteException {
+  private String resolveTemplate(TreeLogger logger, String template, GeneratorContext context, JClassType type, ContainerMetadata metadata) throws UnableToCompleteException {
     String asString;
     boolean wasHtml = false;
     if (template.trim().startsWith("<")) {
@@ -445,7 +445,7 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
       TreeLogger logger,
       GeneratorContext context,
       JClassType type,
-      GeneratedComponentMetadata metadata,
+      ContainerMetadata metadata,
       UiContainerExpr container
   ) {
 

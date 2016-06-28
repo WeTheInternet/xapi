@@ -45,6 +45,24 @@ public interface In2Out1<I1, I2, O> extends Rethrowable {
     return in2->io(in1, in2);
   }
 
+  default In1Out1<I2, O> supply1Deferred(Out1<I1> in1) {
+    return in2->io(in1.out1(), in2);
+  }
+
+  default In1Out1<I2, O> supply1Immediate(Out1<I1> in1) {
+    final I1 i = in1.out1();
+    return in2->io(i, in2);
+  }
+
+  default In1Out1<I1, O> supply2Deferred(Out1<I2> in2) {
+    return in1->io(in1, in2.out1());
+  }
+
+  default In1Out1<I1, O> supply2Immediate(Out1<I2> in2) {
+    final I2 i = in2.out1();
+    return in1->io(in1, i);
+  }
+
   default In1Out1<I1, O> supply2(I2 in2) {
     return in1->io(in1, in2);
   }

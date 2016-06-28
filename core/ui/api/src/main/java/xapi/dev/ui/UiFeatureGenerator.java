@@ -53,7 +53,7 @@ public class UiFeatureGenerator {
   public boolean startVisit(
       UiGeneratorService service,
       UiComponentGenerator generator,
-      GeneratedComponentMetadata container,
+      ContainerMetadata container,
       UiAttrExpr attr
   ) {
     return true;
@@ -62,7 +62,7 @@ public class UiFeatureGenerator {
   public void finishVisit(
       UiGeneratorService service,
       UiComponentGenerator generator,
-      GeneratedComponentMetadata parent,
+      ContainerMetadata parent,
       UiAttrExpr n
   ) {
 

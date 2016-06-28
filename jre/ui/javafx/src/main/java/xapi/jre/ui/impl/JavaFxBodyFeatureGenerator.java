@@ -3,7 +3,7 @@ package xapi.jre.ui.impl;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
-import xapi.dev.ui.GeneratedComponentMetadata;
+import xapi.dev.ui.ContainerMetadata;
 import xapi.dev.ui.UiComponentGenerator;
 import xapi.dev.ui.UiFeatureGenerator;
 import xapi.dev.ui.UiGeneratorService;
@@ -15,7 +15,7 @@ public class JavaFxBodyFeatureGenerator extends UiFeatureGenerator {
 
   @Override
   public boolean startVisit(
-      UiGeneratorService service, UiComponentGenerator generator, GeneratedComponentMetadata parent, UiAttrExpr n
+        UiGeneratorService service, UiComponentGenerator generator, ContainerMetadata parent, UiAttrExpr n
   ) {
     final Expression expr = n.getExpression();
     if (!(expr instanceof UiContainerExpr)) {

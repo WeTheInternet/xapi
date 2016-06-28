@@ -7,7 +7,8 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import xapi.dev.source.SourceBuilder;
-import xapi.dev.ui.GeneratedComponentMetadata;
+import xapi.dev.ui.ContainerMetadata;
+import xapi.dev.ui.UiAnnotationProcessor;
 import xapi.dev.ui.UiGeneratorService;
 import xapi.fu.Out2;
 import xapi.fu.Pointer;
@@ -16,8 +17,11 @@ import xapi.io.X_IO;
 import xapi.javac.dev.api.CompilerService;
 import xapi.javac.dev.model.CompilerSettings;
 import xapi.jre.ui.impl.UiGeneratorServiceJavaFx;
+import xapi.reflect.X_Reflect;
+import xapi.ui.api.Ui;
 
 import static xapi.source.X_Source.classToEnclosedSourceName;
+import static xapi.util.X_String.classToSourceFiles;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -29,6 +33,7 @@ import java.net.URLClassLoader;
 /**
  * Created by james on 6/7/16.
  */
+@Ui("<import file=`Demo.xapi` />")
 public class JreUiDemo extends Application {
 
   private Stage stage;
@@ -41,9 +46,6 @@ public class JreUiDemo extends Application {
   public void start(Stage stage) throws Exception {
     this.stage = stage;
 
-    int a = -23;
-    int b = +a;
-    System.out.println(b);
     String template;
     try (InputStream in = JreUiDemo.class.getResourceAsStream("Demo.xapi")) {
       template = X_IO.toStringUtf8(in);
@@ -52,7 +54,7 @@ public class JreUiDemo extends Application {
     final UiGeneratorService uiService = new UiGeneratorServiceJavaFx();
     final String pkg = getClass().getPackage().getName();
     final String simpleName = classToEnclosedSourceName(getClass());
-    final GeneratedComponentMetadata generated = uiService.generateComponent(
+    final ContainerMetadata generated = uiService.generateComponent(
         pkg, simpleName, container);
 
     final SourceBuilder<?> builder = generated.getSourceBuilder();
@@ -76,7 +78,15 @@ public class JreUiDemo extends Application {
 
     Out2<Integer, URL> result = compiler.compileFiles(settings,
         builder.getSourceFileName());
-    assert 0 == result.out1().intValue() : "Javac failed...";
+    assert 0 == result.out1() : "Javac failed...";
+
+    String loc = X_Reflect.getFileLoc(JreUiDemo.class);
+    loc = loc.replace("target/test-classes", "src/test/java");
+    settings.setSourceDirectory(loc)
+            .setProcessorPath(X_Reflect.getFileLoc(UiAnnotationProcessor.class));
+    final Out2<Integer, URL> res2 = compiler.compileFiles(settings, loc + classToSourceFiles(JreUiDemo.class));
+
+    System.out.println(res2.out1() + " : " + res2.out2());
 
     URLClassLoader cl = new URLClassLoader(new URL[]{result.out2()}, Thread.currentThread().getContextClassLoader());
     Pointer<Parent> value = Pointer.pointer();
@@ -105,4 +115,5 @@ public class JreUiDemo extends Application {
   public Stage getStage() {
     return stage;
   }
+
 }

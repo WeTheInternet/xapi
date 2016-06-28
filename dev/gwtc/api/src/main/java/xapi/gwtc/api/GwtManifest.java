@@ -150,7 +150,7 @@ public class GwtManifest {
   private boolean includeGenDir;
   private CleanupMode cleanupMode = DELETE_ON_SUCCESSFUL_EXIT;
   private StringTo<GwtcXmlBuilder> gwtBuilders = newStringMapInsertionOrdered(GwtcXmlBuilder.class);
-  private boolean useCurrentJvm = true;
+  private boolean useCurrentJvm = false;
 
   public GwtManifest() {
     includeGenDir = true;

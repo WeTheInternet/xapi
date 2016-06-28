@@ -16,7 +16,7 @@ import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.PrintBuffer;
 import xapi.dev.ui.ComponentMetadataFinder;
 import xapi.dev.ui.ComponentMetadataQuery;
-import xapi.dev.ui.GeneratedComponentMetadata;
+import xapi.dev.ui.ContainerMetadata;
 import xapi.dev.ui.UiComponentGenerator;
 import xapi.dev.ui.UiFeatureGenerator;
 import xapi.dev.ui.UiGeneratorService;
@@ -32,7 +32,7 @@ public class JavaFxActionFeatureGenerator extends UiFeatureGenerator {
 
   @Override
   public boolean startVisit(
-      UiGeneratorService service, UiComponentGenerator generator, GeneratedComponentMetadata me, UiAttrExpr n) {
+        UiGeneratorService service, UiComponentGenerator generator, ContainerMetadata me, UiAttrExpr n) {
     final Expression expr = n.getExpression();
     if (expr instanceof LambdaExpr) {
 
@@ -76,7 +76,8 @@ public class JavaFxActionFeatureGenerator extends UiFeatureGenerator {
                           UnaryExpr toReplace = (UnaryExpr) parent.getParentNode();
                           // ++ and -- must be handled specially, as they perform
                           // a read and a write
-                          replacements.put(toReplace, ()->newNode.transformUnary(toReplace));
+                          parent.setScope((Expression) newNode.getNode());
+                          replacements.put(toReplace, ()->newNode.transformUnary(n, toReplace));
                         } else if (parent.getParentNode() instanceof BinaryExpr) {
                           // A && || = > < >= <= etc binary expression;
                           // These are safe to replace as simple get operations,

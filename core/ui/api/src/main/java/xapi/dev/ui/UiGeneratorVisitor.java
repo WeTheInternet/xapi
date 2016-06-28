@@ -13,8 +13,8 @@ import xapi.fu.Out1;
  */
 public class UiGeneratorVisitor extends VoidVisitorAdapter<UiGeneratorService> {
 
-  final Lazy<GeneratedComponentMetadata> root;
-  GeneratedComponentMetadata parent;
+  final Lazy<ContainerMetadata> root;
+  ContainerMetadata parent;
   private UiComponentGenerator generator;
   private UiFeatureGenerator feature;
 
@@ -22,24 +22,24 @@ public class UiGeneratorVisitor extends VoidVisitorAdapter<UiGeneratorService> {
     root = Lazy.deferred1(this.createRoot());
   }
 
-  public UiGeneratorVisitor(Out1<GeneratedComponentMetadata> source) {
+  public UiGeneratorVisitor(Out1<ContainerMetadata> source) {
     root = Lazy.deferred1(source);
   }
 
-  public UiGeneratorVisitor(GeneratedComponentMetadata source) {
+  public UiGeneratorVisitor(ContainerMetadata source) {
     root = Lazy.immutable1(source);
   }
 
-  protected Out1<GeneratedComponentMetadata> createRoot() {
-    return GeneratedComponentMetadata::new;
+  protected Out1<ContainerMetadata> createRoot() {
+    return ContainerMetadata::new;
   }
 
   @Override
   public void visit(UiContainerExpr n, UiGeneratorService service) {
     boolean isRoot = parent == null;
-    final GeneratedComponentMetadata myParent = getParent();
+    final ContainerMetadata myParent = getParent();
 
-    final GeneratedComponentMetadata me;
+    final ContainerMetadata me;
     if (isRoot) {
       me = parent = myParent;
     } else {
@@ -87,7 +87,7 @@ public class UiGeneratorVisitor extends VoidVisitorAdapter<UiGeneratorService> {
     super.visit(n, arg);
   }
 
-  private GeneratedComponentMetadata getParent() {
+  private ContainerMetadata getParent() {
     if (parent == null) {
       parent = root.out1();
     }

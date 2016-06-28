@@ -22,7 +22,7 @@ import java.util.Optional;
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 5/1/16.
  */
-public class GeneratedComponentMetadata {
+public class ContainerMetadata {
 
   public static class MetadataRoot {
 
@@ -79,7 +79,7 @@ public class GeneratedComponentMetadata {
   private boolean allowedToFail;
   private boolean sideEffects;
   private UiContainerExpr container;
-  private GeneratedComponentMetadata parent;
+  private ContainerMetadata parent;
   private SourceBuilder<?> sourceBuilder;
   private String elementType;
   private String componentType;
@@ -89,7 +89,7 @@ public class GeneratedComponentMetadata {
   private boolean $uiPrinted;
   private boolean searchTypes;
 
-  public GeneratedComponentMetadata() {
+  public ContainerMetadata() {
     modifiers = newFifo();
     searchTypes = true;
     methods = X_Collect.newStringMap(MethodBuffer.class);
@@ -97,7 +97,7 @@ public class GeneratedComponentMetadata {
     allowedToFail = Boolean.getBoolean("xapi.component.ignore.parse.failure");
   }
 
-  public GeneratedComponentMetadata(UiContainerExpr container) {
+  public ContainerMetadata(UiContainerExpr container) {
     this();
     setContainer(container);
   }
@@ -122,21 +122,21 @@ public class GeneratedComponentMetadata {
     return container;
   }
 
-  public GeneratedComponentMetadata createChild(UiContainerExpr n, UiGeneratorService service) {
-    final GeneratedComponentMetadata copy = service.createMetadata(root, n);
+  public ContainerMetadata createChild(UiContainerExpr n, UiGeneratorService service) {
+    final ContainerMetadata copy = service.createMetadata(root, n);
     copy.parent = this;
     copy.copyFrom(this);
     return copy;
   }
 
-  protected void copyFrom(GeneratedComponentMetadata metadata) {
+  protected void copyFrom(ContainerMetadata metadata) {
     this.allowedToFail = metadata.allowedToFail;
     this.methods = metadata.methods;
     this.panelNames = metadata.panelNames;
     this.root = metadata.root;
   }
 
-  public GeneratedComponentMetadata getParent() {
+  public ContainerMetadata getParent() {
     return parent;
   }
 
@@ -144,7 +144,7 @@ public class GeneratedComponentMetadata {
     recordSideEffects(service, this, feature);
   }
 
-  public void recordSideEffects(UiGeneratorService service, GeneratedComponentMetadata source, UiFeatureGenerator feature) {
+  public void recordSideEffects(UiGeneratorService service, ContainerMetadata source, UiFeatureGenerator feature) {
     setSideEffects(true);
     if (parent != null) {
       parent.recordSideEffects(service, source, feature);
@@ -302,7 +302,7 @@ public class GeneratedComponentMetadata {
 
   public String getRootReference() {
     if (root.rootReference == null) {
-      GeneratedComponentMetadata seed = this;
+      ContainerMetadata seed = this;
       while (seed.getParent() != null) {
         seed = seed.getParent();
       }

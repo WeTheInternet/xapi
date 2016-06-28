@@ -21,8 +21,14 @@ import java.lang.reflect.Array;
 interface Jutsu {
 
   default <T> T[] emptyArray(T[] notCopied, int length) {
-    Object arr = Array.newInstance(notCopied.getClass(), length);
+    Object arr = Array.newInstance(notCopied.getClass().getComponentType(), length);
     return (T[]) arr;
+  }
+
+  default <T> T[] arrayCopy(T[] copied, int length) {
+    T[] arr = emptyArray(copied, length);
+    System.arraycopy(copied, 0, arr, 0, Math.min(length, copied.length));
+    return arr;
   }
 
   default int getLength(Object obj) {

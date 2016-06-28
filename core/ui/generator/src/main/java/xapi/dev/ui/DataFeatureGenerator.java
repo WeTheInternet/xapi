@@ -27,7 +27,7 @@ public class DataFeatureGenerator extends UiFeatureGenerator {
 
   @Override
   public boolean startVisit(
-      UiGeneratorService service, UiComponentGenerator generator, GeneratedComponentMetadata container, UiAttrExpr attr
+        UiGeneratorService service, UiComponentGenerator generator, ContainerMetadata container, UiAttrExpr attr
   ) {
     final Expression value = attr.getExpression();
     if (value instanceof JsonContainerExpr) {
@@ -64,11 +64,12 @@ public class DataFeatureGenerator extends UiFeatureGenerator {
         DataTypeOptions opts,
         JsonContainerExpr json,
         Node newNode,
+        ClassBuffer out,
         In2Out1<Node, Expression, Node> createRead,
         In2Out1<Node, Expression, Node> createWrite,
         In1Out1<String, String> addImport
     ) {
-      super(newNode, createRead, createWrite, addImport);
+      super(newNode, out, createRead, createWrite, addImport);
       this.opts = opts;
       this.json = json;
     }
@@ -77,18 +78,30 @@ public class DataFeatureGenerator extends UiFeatureGenerator {
         DataTypeOptions opts,
         JsonContainerExpr json,
         Node newNode,
+        ClassBuffer out,
         In2Out1<Node, Expression, Node> createRead,
         In2Out1<Node, Expression, Node> createWrite,
         In2Out1<Node, Expression, Node> compute,
         In1Out1<String, String> addImport
     ) {
-      super(newNode, createRead, createWrite, compute, addImport);
+      super(newNode, out, createRead, createWrite, compute, addImport);
       this.opts = opts;
       this.json = json;
     }
 
     @Override
-    public Node transformUnary(UnaryExpr expr) {
+    protected String getDataType(String keyName) {
+      final IsType type = opts.getFieldTypes().get(keyName);
+      if (type == null) {
+        if (opts.getType() != null) {
+          return opts.getType();
+        }
+      }
+      return type == null ? super.getDataType(keyName) : type.getQualifiedName();
+    }
+
+    @Override
+    public Node transformUnary(Expression source, UnaryExpr expr) {
       final Node node = getNode();
       final Expression scope = expr.getExpr();
       if (scope instanceof FieldAccessExpr) {
@@ -120,14 +133,14 @@ public class DataFeatureGenerator extends UiFeatureGenerator {
           }
         }
       }
-      return super.transformUnary(expr);
+      return super.transformUnary(source, expr);
     }
   }
 
   protected NodeTransformer newTransformer(
       UiGeneratorService service,
       UiComponentGenerator generator,
-      GeneratedComponentMetadata container,
+      ContainerMetadata container,
       JsonContainerExpr value,
       DataTypeOptions opts,
       Node expr
@@ -148,12 +161,12 @@ public class DataFeatureGenerator extends UiFeatureGenerator {
           // modifiers will be .get() and .put()
         }
     }
-    return new DataTypeTransformer(opts, value, expr, read, write, container.getSourceBuilder()::addImport);
+    return new DataTypeTransformer(opts, value, expr, container.getSourceBuilder().getClassBuffer(), read, write, container.getSourceBuilder()::addImport);
   }
 
   protected String printFactory(
       JsonContainerExpr json,
-      GeneratedComponentMetadata container,
+      ContainerMetadata container,
       Optional<AnnotationExpr> anno,
       DataTypeOptions opts,
       ClassBuffer cb,
@@ -210,11 +223,11 @@ public class DataFeatureGenerator extends UiFeatureGenerator {
     return new DataTypeOptions();
   }
 
-  protected DataTypeOptions getDatatypeFrom(ClassBuffer cb, GeneratedComponentMetadata metadata, JsonContainerExpr json) {
+  protected DataTypeOptions getDatatypeFrom(ClassBuffer cb, ContainerMetadata metadata, JsonContainerExpr json) {
     return dataTypeOptions().fromAnnotation(cb, json, null, metadata.isSearchTypes());
   }
 
-  protected DataTypeOptions getDatatypeFrom(ClassBuffer cb, GeneratedComponentMetadata metadata, JsonContainerExpr json, AnnotationExpr anno) {
+  protected DataTypeOptions getDatatypeFrom(ClassBuffer cb, ContainerMetadata metadata, JsonContainerExpr json, AnnotationExpr anno) {
     return dataTypeOptions().fromAnnotation(cb, json, anno, metadata.isSearchTypes());
   }
 

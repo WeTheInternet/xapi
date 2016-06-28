@@ -2,7 +2,7 @@ package xapi.dev.ui;
 
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
-import xapi.dev.ui.GeneratedComponentMetadata.MetadataRoot;
+import xapi.dev.ui.ContainerMetadata.MetadataRoot;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
@@ -10,14 +10,14 @@ import xapi.dev.ui.GeneratedComponentMetadata.MetadataRoot;
  */
 public interface UiGeneratorService {
 
-  GeneratedComponentMetadata generateComponent(String pkgName, String className, UiContainerExpr expr);
+  ContainerMetadata generateComponent(String pkgName, String className, UiContainerExpr expr);
 
-  UiComponentGenerator getComponentGenerator(UiContainerExpr container, GeneratedComponentMetadata metadta);
+  UiComponentGenerator getComponentGenerator(UiContainerExpr container, ContainerMetadata metadta);
 
   UiFeatureGenerator getFeatureGenerator(UiAttrExpr container, UiComponentGenerator componentGenerator);
 
-  default GeneratedComponentMetadata createMetadata(MetadataRoot root, UiContainerExpr n) {
-    final GeneratedComponentMetadata component = new GeneratedComponentMetadata(n);
+  default ContainerMetadata createMetadata(MetadataRoot root, UiContainerExpr n) {
+    final ContainerMetadata component = new ContainerMetadata(n);
     component.setRoot(new MetadataRoot());
 
     return component;

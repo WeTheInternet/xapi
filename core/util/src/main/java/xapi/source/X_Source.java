@@ -11,6 +11,7 @@ import xapi.util.impl.PairBuilder;
 import static xapi.util.X_String.isEmpty;
 
 import javax.inject.Provider;
+import javax.validation.constraints.NotNull;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -306,4 +307,14 @@ public class X_Source {
     }
     return String.valueOf(newChars);
   }
+
+  public static String toCamelCase(String name) {
+    return name == null || name.isEmpty() ? "" : Character.toUpperCase(name.charAt(0)) + (name.length() > 1 ? name.substring(1) : "");
+  }
+
+    public static String removePackage(String pkgName, @NotNull String typeName) {
+        assert typeName != null : "Do not send null typenames to X_Source.removePackage";
+        return pkgName == null ? typeName :
+              typeName.replace(pkgName + ".", "");
+    }
 }

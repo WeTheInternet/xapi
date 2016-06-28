@@ -87,4 +87,18 @@ public class UiAnnotatedElements {
         throw new IllegalStateException("ExecutableElement " + exe + " had bad parameter annotations; " +
                 "Contains some but not all parameters with @UiField annotations. " + exe.getParameters());
     }
+
+  @Override
+  public String toString() {
+    return "UiAnnotatedElements{" +
+        "uiTypes=" + uiTypes +
+        ", uiMethods=" + uiMethods +
+        ", boundMethods=" + boundMethods +
+        ", boundFields=" + boundFields +
+        ", boundParameters=" + boundParameters +
+        ", sAnyAnnotations=" + hasAnyAnnotations() +
+        ", sUiAnnotations=" + hasUiAnnotations() +
+        ", sBoundAnnotations=" + hasBoundAnnotations() +
+        '}';
+  }
 }

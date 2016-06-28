@@ -21,6 +21,18 @@ public interface X_Fu {
     return Fu.jutsu.pushOnto(ts, t);
   }
 
+  static <T> T[] blank(T[] ts) {
+    return Fu.jutsu.emptyArray(ts, ts.length);
+  }
+
+  static <T> T[] blank(T[] ts, int length) {
+    return Fu.jutsu.emptyArray(ts, length);
+  }
+
+  static <T> T[] copy(T[] ts, int length) {
+    return Fu.jutsu.arrayCopy(ts, length);
+  }
+
   static int getLength(Object obj) {
     return Fu.jutsu.getLength(obj);
   }

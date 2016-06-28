@@ -18,6 +18,9 @@ public interface Out1<O> extends Rethrowable {
   O out1();
 
   Out1 NULL = immutable1(null);
+  static <T> Out1 <T> null1() {
+      return NULL;
+  }
   Out1<String> EMPTY_STRING = immutable1("");
   Out1<String> NEW_LINE = immutable1("\n");
   Out1<String> SPACE = immutable1(" ");
@@ -146,6 +149,40 @@ public interface Out1<O> extends Rethrowable {
 
   default <To> Out1<To> map(In1Out1<O, To> factory) {
     return factory.supplyDeferred(this);
+  }
+
+  default Out1<O> mapIf(In1Out1<O, Boolean> filter, In1Out1<O, O> modifier) {
+    return ()->{
+        O o = out1();
+        if (filter.io(o)) {
+            o = modifier.io(o);
+        }
+        return o;
+    };
+  }
+
+  default <To> Out1<To> mapIf(In1Out1<O, Boolean> filter,
+                              In1Out1<O, To> pass,
+                              In1Out1<O, To> fail) {
+    return ()->{
+        O o = out1();
+        if (filter.io(o)) {
+            return pass.io(o);
+        }
+        return fail.io(o);
+    };
+  }
+
+  default <In, To> Out1<To> map(In2Out1<O, In, To> factory, In in1) {
+    return factory.supply(out1(), in1);
+  }
+
+  default <In, To> Out1<To> mapDeferred(In2Out1<O, In, To> factory, Out1<In> in1) {
+    return factory.supply1Deferred(this).supplyDeferred(in1);
+  }
+
+  default <In, To> Out1<To> mapImmediate(In2Out1<O, In, To> factory, Out1<In> in1) {
+    return factory.supply1(out1()).supplyDeferred(in1);
   }
 
   default <To> Out1<To> mapUnsafe(In1Out1Unsafe<O, To> factory) {

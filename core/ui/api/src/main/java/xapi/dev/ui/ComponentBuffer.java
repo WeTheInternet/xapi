@@ -14,25 +14,25 @@ import static xapi.inject.X_Inject.instance;
  */
 public class ComponentBuffer extends PrintBuffer {
 
-  private final Out1<GeneratedComponentMetadata> root;
+  private final Out1<ContainerMetadata> root;
 
   private Out1<SourceBuilder<?>> componentBinder = Lazy.deferred1(this::defaultSourceBuilder);
 
   private Out1<DomBuffer> domBuffer = Lazy.deferred1(this::defaultDomBuffer);
 
   public ComponentBuffer() {
-    this(immutable1(instance(GeneratedComponentMetadata.class)), true);
+    this(immutable1(instance(ContainerMetadata.class)), true);
   }
 
-  public ComponentBuffer(GeneratedComponentMetadata metadata) {
+  public ComponentBuffer(ContainerMetadata metadata) {
     this(immutable1(metadata), true);
   }
 
-  public ComponentBuffer(Out1<GeneratedComponentMetadata> metadata) {
+  public ComponentBuffer(Out1<ContainerMetadata> metadata) {
     this(Lazy.deferred1(metadata), false);
   }
 
-  public ComponentBuffer(Out1<GeneratedComponentMetadata> root, boolean immediate) {
+  public ComponentBuffer(Out1<ContainerMetadata> root, boolean immediate) {
      this.root = immediate ? immutable1(root.out1()) : Lazy.deferred1(root);
   }
 

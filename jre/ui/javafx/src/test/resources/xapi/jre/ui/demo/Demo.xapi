@@ -3,10 +3,10 @@
   title = "Hi"
   data =
       @Type
-      { one: 0, two: 0 }
+      { one: 0, two: 0, text: "" }
   >
   <button ref="one" text="Button 1" onClick=e->
     $one.setText("You clicked one " + $root.data.one++ + " times") />
   <button ref="two" text="Button 2" onClick=e->
-    $two.setText("You clicked two " + $root.data.compute("two", (k, v)->v++) + " times") />
+    $two.setText("You clicked two " + ++$root.data.two + " times") />
 </app>

@@ -3,7 +3,7 @@ package xapi.jre.ui.impl;
 import com.github.javaparser.ASTHelper;
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import xapi.dev.source.MethodBuffer;
-import xapi.dev.ui.GeneratedComponentMetadata;
+import xapi.dev.ui.ContainerMetadata;
 import xapi.dev.ui.UiComponentGenerator;
 import xapi.dev.ui.UiFeatureGenerator;
 import xapi.dev.ui.UiGeneratorService;
@@ -16,7 +16,7 @@ public class JavaFxTextFeatureGenerator extends UiFeatureGenerator {
 
   @Override
   public boolean startVisit(
-      UiGeneratorService service, UiComponentGenerator generator, GeneratedComponentMetadata parent, UiAttrExpr n
+        UiGeneratorService service, UiComponentGenerator generator, ContainerMetadata parent, UiAttrExpr n
   ) {
     String text = ASTHelper.extractAttrValue(n);
     String panel = parent.peekPanelName();
