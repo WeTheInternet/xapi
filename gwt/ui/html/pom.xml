@@ -97,7 +97,7 @@
           <systemProperties>
             <property>
               <name>gwt.args</name>
-              <value>-nodevMode -ea -userAgents gecko1_8 -out
+              <value>-nodevMode -ea -userAgents gecko1_8 -war
                 ${project.build.directory}/www-test
               </value>
             </property>

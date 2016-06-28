@@ -61,9 +61,9 @@
         <directory>src/test/resources</directory>
       </testResource>
     </testResources>
-    
+
     <plugins>
-    
+
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>2.15</version><!--$NO-MVN-MAN-VER$-->
@@ -78,14 +78,14 @@
           <systemProperties>
             <property>
               <name>gwt.args</name>
-              <value>-out ${project.build.directory}/www-test -war ${project.build.directory}/www-test -prod
+              <value>-war ${project.build.directory}/www-test -prod
                 -runStyle HtmlUnit:FF3 -userAgents gecko1_8</value>
             </property>
           </systemProperties>
           <skip>true</skip>
         </configuration>
       </plugin>
-      
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-eclipse-plugin</artifactId>
@@ -108,7 +108,7 @@
           </classpathContainers>
         </configuration>
       </plugin>
-      
+
     </plugins>
   </build>
 

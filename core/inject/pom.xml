@@ -58,7 +58,7 @@
           <systemProperties>
             <property>
               <name>gwt.args</name>
-              <value>-out target/test</value>
+              <value>-war target/test</value>
             </property>
           </systemProperties>
         </configuration>

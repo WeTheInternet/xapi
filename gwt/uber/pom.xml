@@ -146,7 +146,7 @@
      <systemProperties>
       <property>
        <name>gwt.args</name>
-       <value>-noincremental -nodevMode -ea -userAgents gecko1_8 -out ${project.build.directory}/www-test</value>
+       <value>-noincremental -nodevMode -ea -userAgents gecko1_8 -war ${project.build.directory}/www-test</value>
       </property>
      </systemProperties>
     </configuration>
