@@ -2,7 +2,11 @@ package xapi.dev.ui;
 
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
+import xapi.dev.processor.AnnotationTools;
 import xapi.dev.ui.ContainerMetadata.MetadataRoot;
+import xapi.ui.api.Ui;
+
+import javax.lang.model.element.TypeElement;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
@@ -10,16 +14,15 @@ import xapi.dev.ui.ContainerMetadata.MetadataRoot;
  */
 public interface UiGeneratorService {
 
-  ContainerMetadata generateComponent(String pkgName, String className, UiContainerExpr expr);
+    ComponentBuffer runPhase(String id, ComponentBuffer component);
 
-  UiComponentGenerator getComponentGenerator(UiContainerExpr container, ContainerMetadata metadta);
+    UiComponentGenerator getComponentGenerator(UiContainerExpr container, ContainerMetadata metadata);
 
-  UiFeatureGenerator getFeatureGenerator(UiAttrExpr container, UiComponentGenerator componentGenerator);
+    UiFeatureGenerator getFeatureGenerator(UiAttrExpr container, UiComponentGenerator componentGenerator);
 
-  default ContainerMetadata createMetadata(MetadataRoot root, UiContainerExpr n) {
-    final ContainerMetadata component = new ContainerMetadata(n);
-    component.setRoot(new MetadataRoot());
+    ContainerMetadata createMetadata(MetadataRoot root, UiContainerExpr n);
 
-    return component;
-  }
+    UiGeneratorVisitor createVisitor(ContainerMetadata metadata);
+
+    ComponentBuffer initialize(AnnotationTools service, TypeElement type, Ui ui, UiContainerExpr container);
 }

@@ -317,4 +317,9 @@ public class X_Source {
         return pkgName == null ? typeName :
               typeName.replace(pkgName + ".", "");
     }
+
+    public static String enclosedNameFlattened(String pkg, String fullyQualified) {
+        String enclosed = removePackage(pkg, fullyQualified);
+        return enclosed.replace('.', '_');
+    }
 }

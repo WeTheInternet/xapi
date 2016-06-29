@@ -46,6 +46,7 @@ import xapi.source.X_Source;
 import xapi.source.read.JavaModel.IsNamedType;
 import xapi.source.read.JavaModel.IsType;
 
+import javax.annotation.processing.Filer;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeMirror;
@@ -78,6 +79,7 @@ public class JavacServiceImpl implements JavacService {
   private final ClassTo cache;
   private final StringTo<Out2<TypeElement, CompilationUnitTree>> typeMap;
   private JavaFileManager filer;
+  private Filer procFiler;
 
   public JavacServiceImpl() {
     cache = X_Collect.newClassMap();
@@ -264,6 +266,14 @@ public class JavacServiceImpl implements JavacService {
     filer = context.get(JavaFileManager.class);
     if (filer == null) {
       filer = new JavacFileManager(context, true, Charset.forName("UTF-8"));
+    }
+    Filer proc = context.get(Filer.class);
+    if (proc == null) {
+      proc = procFiler;
+    }
+    if (proc != null) {
+      procFiler = proc;
+      remember(Filer.class, proc);
     }
     remember(JavaFileManager.class, filer);
     remember(Types.class, types);

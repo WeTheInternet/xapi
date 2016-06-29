@@ -14,6 +14,20 @@ public interface Do {
     return this::done;
   }
 
+  default Do doBefore(Do d) {
+    return ()->{
+      d.done();
+      done();
+    };
+  }
+
+  default Do doAfter(Do d) {
+    return ()->{
+      done();
+      d.done();
+    };
+  }
+
   default <I> In1<I> requireBefore(In1<I> in1) {
     return i->{
       in1.in(i);

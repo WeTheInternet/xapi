@@ -54,7 +54,10 @@ public class ComponentMetadataFinder extends VoidVisitorAdapter<ComponentMetadat
 
   @Override
   public void visit(UiAttrExpr n, ComponentMetadataQuery query) {
-    recurse(n, reduceAll(super::visit, n, query));
+    recurse(n, reduceAll(super::visit, n, query)
+                .doBefore(()->
+                    query.notifyUiAttrExpr(scope, n)
+                ));
   }
 
   @Override

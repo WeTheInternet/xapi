@@ -1,58 +1,99 @@
 package xapi.dev.ui;
 
+import xapi.collect.X_Collect;
+import xapi.collect.api.ClassTo;
 import xapi.dev.source.DomBuffer;
-import xapi.dev.source.PrintBuffer;
 import xapi.dev.source.SourceBuilder;
+import xapi.dev.ui.InterestingNodeFinder.InterestingNodeResults;
 import xapi.fu.Lazy;
 import xapi.fu.Out1;
 
 import static xapi.fu.Immutable.immutable1;
 import static xapi.inject.X_Inject.instance;
 
+import javax.lang.model.element.TypeElement;
+
 /**
  * Created by james on 6/17/16.
  */
-public class ComponentBuffer extends PrintBuffer {
+public class ComponentBuffer {
 
-  private final Out1<ContainerMetadata> root;
+    private final Out1<ContainerMetadata> root;
 
-  private Out1<SourceBuilder<?>> componentBinder = Lazy.deferred1(this::defaultSourceBuilder);
+    private Out1<SourceBuilder<ContainerMetadata>> componentBinder = Lazy.deferred1(this::defaultSourceBuilder);
+    private final ClassTo<ContainerMetadata> implementations;
 
-  private Out1<DomBuffer> domBuffer = Lazy.deferred1(this::defaultDomBuffer);
+    private Out1<DomBuffer> domBuffer = Lazy.deferred1(this::defaultDomBuffer);
+    private TypeElement element;
+    private InterestingNodeResults interestingNodes;
 
-  public ComponentBuffer() {
-    this(immutable1(instance(ContainerMetadata.class)), true);
-  }
+    public ComponentBuffer() {
+        this(immutable1(instance(ContainerMetadata.class)), true);
+    }
 
-  public ComponentBuffer(ContainerMetadata metadata) {
-    this(immutable1(metadata), true);
-  }
+    public ComponentBuffer(ContainerMetadata metadata) {
+        this(immutable1(metadata), true);
+    }
 
-  public ComponentBuffer(Out1<ContainerMetadata> metadata) {
-    this(Lazy.deferred1(metadata), false);
-  }
+    public ComponentBuffer(Out1<ContainerMetadata> metadata) {
+        this(Lazy.deferred1(metadata), false);
+    }
 
-  public ComponentBuffer(Out1<ContainerMetadata> root, boolean immediate) {
-     this.root = immediate ? immutable1(root.out1()) : Lazy.deferred1(root);
-  }
+    public ComponentBuffer(Out1<ContainerMetadata> root, boolean immediate) {
+        this.root = immediate ? immutable1(root.out1()) : Lazy.deferred1(root);
+        implementations = X_Collect.newClassMap(ContainerMetadata.class);
+    }
 
-  protected SourceBuilder<?> defaultSourceBuilder() {
-    return root.out1().getSourceBuilder();
-  }
+    protected SourceBuilder<ContainerMetadata> defaultSourceBuilder() {
+        return root.out1().getSourceBuilder();
+    }
 
-  protected DomBuffer defaultDomBuffer() {
-    return instance(DomBuffer.class);
-  }
+    protected DomBuffer defaultDomBuffer() {
+        return instance(DomBuffer.class);
+    }
 
-  private Out1<DomBuffer> dom = Lazy.deferred1(DomBuffer::new);
+    private Out1<DomBuffer> dom = Lazy.deferred1(DomBuffer::new);
 
-  public SourceBuilder getBinder() {
-    return componentBinder.out1();
-  }
+    public SourceBuilder<ContainerMetadata> getBinder() {
+        return componentBinder.out1();
+    }
 
-  public DomBuffer getDom() {
-    return domBuffer.out1();
-  }
+    public ContainerMetadata getRoot() {
+        return root.out1();
+    }
 
+    public DomBuffer getDom() {
+        return domBuffer.out1();
+    }
 
+    public TypeElement getElement() {
+        return element;
+    }
+
+    public void setElement(TypeElement element) {
+        this.element = element;
+    }
+
+    public void setInterestingNodes(InterestingNodeResults interestingNodes) {
+        this.interestingNodes = interestingNodes;
+    }
+
+    public InterestingNodeResults getInterestingNodes() {
+        return interestingNodes;
+    }
+
+    public boolean hasDataNodes() {
+        return interestingNodes != null && interestingNodes.hasDataNodes();
+    }
+
+    public boolean hasTemplateReferences() {
+        return interestingNodes != null && interestingNodes.hasTemplateReferences();
+    }
+
+    public ContainerMetadata getImplementation(Class<? extends UiImplementationGenerator> implType) {
+        final ContainerMetadata r = getRoot();
+        // TODO use a ClassTo...
+        implementations.getOrCompute(implType, t->r.createImplementation(implType));
+        return r;
+    }
 }

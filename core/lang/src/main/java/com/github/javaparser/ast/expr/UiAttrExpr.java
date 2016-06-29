@@ -51,8 +51,8 @@ public class UiAttrExpr extends UiExpr {
     synthetic = true;
   }
 
-  public UiAttrExpr(String ref, Expression value) {
-    this(new NameExpr(ref), false, value);
+  public UiAttrExpr(String name, Expression value) {
+    this(new NameExpr(name), false, value);
   }
 
   public NameExpr getName() {

@@ -6,7 +6,7 @@ import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.dev.ui.ContainerMetadata;
 import xapi.dev.ui.UiComponentGenerator;
-import xapi.dev.ui.UiGeneratorService;
+import xapi.dev.ui.UiGeneratorTools;
 
 /**
  * Created by james on 6/17/16.
@@ -19,7 +19,7 @@ public class JavaFxButtonComponentGenerator extends UiComponentGenerator {
 
   @Override
   public boolean startVisit(
-        UiGeneratorService service, ContainerMetadata me, UiContainerExpr n
+        UiGeneratorTools service, ContainerMetadata me, UiContainerExpr n
   ) {
 
     String parentName = me.peekPanelName();
@@ -36,7 +36,7 @@ public class JavaFxButtonComponentGenerator extends UiComponentGenerator {
 
   @Override
   public void endVisit(
-        UiGeneratorService service, ContainerMetadata me, UiContainerExpr n
+        UiGeneratorTools service, ContainerMetadata me, UiContainerExpr n
   ) {
     me.popPanelName();
     me.removeMethod("b");

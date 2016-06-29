@@ -1,6 +1,7 @@
 package xapi.util;
 
 import xapi.collect.api.CharPool;
+import xapi.fu.In1Out1;
 import xapi.inject.X_Inject;
 
 import static xapi.util.service.StringService.binarySuffix;
@@ -93,16 +94,25 @@ public class X_String {
     return join(separator, copy);
   }
 
+  public static String joinClasses(String separator, In1Out1<Class<?>, String> mapper, Class<?> ... values) {
+    String[] copy = classesMapped(mapper, values);
+    return join(separator, copy);
+  }
+
   public static String classToQualified(Class<?> cls) {
     return classesToQualified(cls)[0];
   }
   public static String[] classesToQualified(Class<?> ... values) {
+    return classesMapped(Class::getCanonicalName, values);
+  }
+
+  public static String[] classesMapped(In1Out1<Class<?>, String> mapper, Class<?> ... values) {
     int i = values.length;
     String[] copy = new String[i];
     for(;i-->0;){
       Class<?> cls = values[i];
       if (cls != null)
-        copy[i] = cls.getCanonicalName();
+        copy[i] = mapper.io(cls);
     }
     return copy;
   }

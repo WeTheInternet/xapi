@@ -12,6 +12,7 @@ import com.sun.source.util.JavacTask;
 import com.sun.tools.javac.api.BasicJavacTask;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.util.Context;
+import xapi.dev.processor.AnnotationTools;
 import xapi.fu.In1Out1;
 import xapi.fu.In2;
 import xapi.inject.X_Inject;
@@ -22,7 +23,10 @@ import xapi.javac.dev.template.TemplateTransformer;
 import xapi.source.read.JavaModel;
 import xapi.source.read.JavaModel.IsType;
 
+import javax.annotation.processing.Filer;
 import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.PackageElement;
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
@@ -33,109 +37,129 @@ import java.util.Optional;
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 3/12/16.
  */
-public interface JavacService {
+public interface JavacService extends AnnotationTools {
 
-  static JavacService instanceFor(JavacTask task) {
-    if (task instanceof BasicJavacTask) {
-      return instanceFor(((BasicJavacTask)task).getContext());
+    static JavacService instanceFor(JavacTask task) {
+        if (task instanceof BasicJavacTask) {
+            return instanceFor(((BasicJavacTask) task).getContext());
+        }
+        throw new UnsupportedOperationException("Unable to create javac service from JavacTask " + task);
     }
-    throw new UnsupportedOperationException("Unable to create javac service from JavacTask " + task);
-  }
 
-  static JavacService instanceFor(Context context) {
-    JavacService instance = context.get(JavacService.class);
-    if (instance == null) {
-      instance = X_Inject.instance(JavacService.class);
-      context.put(JavacService.class, instance);
+    static JavacService instanceFor(Context context) {
+        JavacService instance = context.get(JavacService.class);
+        if (instance == null) {
+            instance = X_Inject.instance(JavacService.class);
+            context.put(JavacService.class, instance);
+        }
+        instance.init(context);
+        return instance;
     }
-    instance.init(context);
-    return instance;
-  }
-  static JavacService instanceFor(ProcessingEnvironment processingEnv) {
-    if (processingEnv instanceof JavacProcessingEnvironment) {
-      return instanceFor(((JavacProcessingEnvironment)processingEnv).getContext());
+
+    static JavacService instanceFor(ProcessingEnvironment processingEnv) {
+        if (processingEnv instanceof JavacProcessingEnvironment) {
+            final JavacService inst = instanceFor(((JavacProcessingEnvironment) processingEnv).getContext());
+            inst.remember(Filer.class, processingEnv.getFiler());
+            return inst;
+        }
+        throw new UnsupportedOperationException("Unable to create javac service from processing environment " + processingEnv);
     }
-    throw new UnsupportedOperationException("Unable to create javac service from processing environment " + processingEnv);
-  }
 
-  String getPackageName(CompilationUnitTree cu);
+    String getPackageName(CompilationUnitTree cu);
 
-  TypeMirror findType(ExpressionTree init);
+    TypeMirror findType(ExpressionTree init);
 
-  void init(Context context);
+    void init(Context context);
 
-  ClassTree getClassTree(CompilationUnitTree compilationUnit);
+    ClassTree getClassTree(CompilationUnitTree compilationUnit);
 
-  Optional<InjectionBinding> getInjectionBinding(XApiInjectionConfiguration config, TypeMirror type);
+    Optional<InjectionBinding> getInjectionBinding(XApiInjectionConfiguration config, TypeMirror type);
 
-  InjectionBinding createInjectionBinding(VariableTree node);
+    InjectionBinding createInjectionBinding(VariableTree node);
 
-  InjectionBinding createInjectionBinding(MethodTree node);
+    InjectionBinding createInjectionBinding(MethodTree node);
 
-  IsType getInvocationTargetType(CompilationUnitTree cup, MethodInvocationTree node);
+    IsType getInvocationTargetType(CompilationUnitTree cup, MethodInvocationTree node);
 
-  JavaModel.IsNamedType getName(CompilationUnitTree cup, MethodInvocationTree node);
+    JavaModel.IsNamedType getName(CompilationUnitTree cup, MethodInvocationTree node);
 
-  ClassTree getEnclosingClass(CompilationUnitTree cup, Tree node);
+    ClassTree getEnclosingClass(CompilationUnitTree cup, Tree node);
 
-  void readProperties(In2<String, String> in);
+    void readProperties(In2<String, String> in);
 
-  <T, C extends Class<T>> T remember(C cls, T value);
+    <T, C extends Class<T>> T remember(C cls, T value);
 
-  <T, C extends Class<T>> T recall(C cls);
+    <T, C extends Class<T>> T recall(C cls);
 
-  default <T, C extends Class<T>> T getOrCreate(C cls, In1Out1<C, T> factory) {
-    T inst = recall(cls);
-    if (inst == null) {
-      inst = factory.io(cls);
-      remember(cls, inst);
+    default <T, C extends Class<T>> T getOrCreate(C cls, In1Out1<C, T> factory) {
+        T inst = recall(cls);
+        if (inst == null) {
+            inst = factory.io(cls);
+            remember(cls, inst);
+        }
+        return inst;
     }
-    return inst;
-  }
 
-  default Transformer getTransformer() {
-    return getOrCreate(Transformer.class, cls->new TemplateTransformer());
-  }
+    default Transformer getTransformer() {
+        return getOrCreate(Transformer.class, cls -> new TemplateTransformer());
+    }
 
-  default JavaFileManager getFiler() {
-    return recall(JavaFileManager.class);
-  }
+    @Override
+    default JavaFileManager getFileManager() {
+        return recall(JavaFileManager.class);
+    }
 
-  default JavaLibrary getJavaLibrary() {
-    return getOrCreate(JavaLibrary.class, cls->{
-      JavaLibrary lib = X_Inject.instance(JavaLibrary.class);
-      initializeLibrary(lib);
-      return lib;
-    });
-  }
+    @Override
+    default Filer getFiler() {
+        return recall(Filer.class);
+    }
 
-  default CompilerService getCompilerService() {
-    return getOrCreate(CompilerService.class, cls->CompilerService.compileServiceFrom(this));
-  }
+    default JavaLibrary getJavaLibrary() {
+        return getOrCreate(JavaLibrary.class, cls -> {
+            JavaLibrary lib = X_Inject.instance(JavaLibrary.class);
+            initializeLibrary(lib);
+            return lib;
+        });
+    }
 
-  default Types getTypes() {
-    return recall(Types.class);
-  }
+    default CompilerService getCompilerService() {
+        return getOrCreate(CompilerService.class, cls -> CompilerService.compileServiceFrom(this));
+    }
 
-  default Elements getElements() {
-    return recall(Elements.class);
-  }
+    @Override
+    default Types getTypes() {
+        return recall(Types.class);
+    }
 
-  default void initializeLibrary(JavaLibrary lib) {
-    lib.initialize(this);
-  }
+    @Override
+    default Elements getElements() {
+        return recall(Elements.class);
+    }
 
-  String getFileName(CompilationUnitTree cup);
+    default void initializeLibrary(JavaLibrary lib) {
+        lib.initialize(this);
+    }
 
-  String getQualifiedName(CompilationUnitTree cup, ClassTree classTree);
+    String getFileName(CompilationUnitTree cup);
 
-  String getQualifiedName(CompilationUnitTree cup, Tree tree);
+    String getQualifiedName(CompilationUnitTree cup, ClassTree classTree);
 
-  default String getQualifiedName(CompilationUnitTree cup) {
-    return getQualifiedName(cup, getClassTree(cup));
-  }
+    String getQualifiedName(CompilationUnitTree cup, Tree tree);
 
-  default SourceTransformationService getSourceTransformService() {
-    return SourceTransformationService.instanceFrom(this);
-  }
+    default String getQualifiedName(CompilationUnitTree cup) {
+        return getQualifiedName(cup, getClassTree(cup));
+    }
+
+    default SourceTransformationService getSourceTransformService() {
+        return SourceTransformationService.instanceFrom(this);
+    }
+
+    @Override
+    default String getPackageName(TypeElement type) {
+        final PackageElement pkg = getElements().getPackageOf(type);
+        if (pkg == null) {
+            return "";
+        }
+        return pkg.getQualifiedName().toString();
+    }
 }

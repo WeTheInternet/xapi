@@ -111,6 +111,10 @@ public class ComponentGraph implements Rethrowable {
     return parentContainer;
   }
 
+  public UiContainerExpr getDeepestContainer() {
+    return self instanceof UiContainerExpr ? (UiContainerExpr) self : parentContainer;
+  }
+
   /**
    * In order to determine if a node should be considered the child of
    * an attribute, that child must have the same container as the parent attribute.

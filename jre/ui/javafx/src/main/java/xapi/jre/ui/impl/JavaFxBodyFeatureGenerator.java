@@ -6,7 +6,7 @@ import com.github.javaparser.ast.expr.UiContainerExpr;
 import xapi.dev.ui.ContainerMetadata;
 import xapi.dev.ui.UiComponentGenerator;
 import xapi.dev.ui.UiFeatureGenerator;
-import xapi.dev.ui.UiGeneratorService;
+import xapi.dev.ui.UiGeneratorTools;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 6/19/16.
@@ -15,7 +15,7 @@ public class JavaFxBodyFeatureGenerator extends UiFeatureGenerator {
 
   @Override
   public boolean startVisit(
-        UiGeneratorService service, UiComponentGenerator generator, ContainerMetadata parent, UiAttrExpr n
+        UiGeneratorTools service, UiComponentGenerator generator, ContainerMetadata parent, UiAttrExpr n
   ) {
     final Expression expr = n.getExpression();
     if (!(expr instanceof UiContainerExpr)) {

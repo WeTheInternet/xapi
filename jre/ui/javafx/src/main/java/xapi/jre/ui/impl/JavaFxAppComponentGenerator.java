@@ -9,7 +9,7 @@ import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.dev.ui.ContainerMetadata;
 import xapi.dev.ui.UiComponentGenerator;
-import xapi.dev.ui.UiGeneratorService;
+import xapi.dev.ui.UiGeneratorTools;
 import xapi.fu.In1Out1;
 
 import java.util.Optional;
@@ -25,7 +25,7 @@ public class JavaFxAppComponentGenerator extends UiComponentGenerator {
 
   @Override
   public boolean startVisit(
-        UiGeneratorService service, ContainerMetadata me, UiContainerExpr n
+        UiGeneratorTools service, ContainerMetadata me, UiContainerExpr n
   ) {
 
     SourceBuilder<?> out = me.getSourceBuilder();
@@ -59,7 +59,7 @@ public class JavaFxAppComponentGenerator extends UiComponentGenerator {
 
   @Override
   public void endVisit(
-        UiGeneratorService service, ContainerMetadata me, UiContainerExpr n
+        UiGeneratorTools service, ContainerMetadata me, UiContainerExpr n
   ) {
     String panelName = me.popPanelName();
     me.getMethod(panelName)

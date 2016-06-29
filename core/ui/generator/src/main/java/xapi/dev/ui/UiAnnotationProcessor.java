@@ -1,12 +1,8 @@
 package xapi.dev.ui;
 
-import com.github.javaparser.ASTHelper;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseException;
-import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
-import com.github.javaparser.ast.visitor.ModifierVisitorAdapter;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
@@ -15,13 +11,13 @@ import xapi.inject.X_Inject;
 import xapi.javac.dev.api.JavacService;
 import xapi.log.X_Log;
 import xapi.ui.api.PhaseMap;
+import xapi.ui.api.PhaseMap.PhaseNode;
 import xapi.ui.api.Ui;
 import xapi.ui.api.UiElement;
 import xapi.ui.api.UiPhase;
 import xapi.util.X_Debug;
 import xapi.util.X_String;
 
-import static xapi.source.X_Source.classToEnclosedSourceName;
 import static xapi.source.X_Source.removePackage;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -32,20 +28,14 @@ import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
-import javax.tools.FileObject;
-import javax.tools.StandardLocation;
-import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Optional;
-import java.util.ServiceLoader;
 import java.util.Set;
 
 /**
@@ -61,6 +51,7 @@ public class UiAnnotationProcessor extends AbstractProcessor {
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
         service = JavacService.instanceFor(processingEnv);
+
         super.init(processingEnv);
     }
 
@@ -85,7 +76,9 @@ public class UiAnnotationProcessor extends AbstractProcessor {
                 final Set<? extends Element> annotated = roundEnv.getElementsAnnotatedWith(anno);
                 annotated.forEach(ele->{
                     UiPhase phase = ele.getAnnotation(UiPhase.class);
-                    phases.add(phase);
+                    if (phase != null) {
+                        phases.add(phase);
+                    }
                     if (ele instanceof TypeElement) {
                         types.add((TypeElement) ele);
                     } else {
@@ -147,7 +140,6 @@ public class UiAnnotationProcessor extends AbstractProcessor {
                 UiContainerExpr container;
                 try {
                     container= JavaParser.parseUiContainer(source);
-                    container = resolveImports(element, container);
                 } catch (ParseException e) {
                     throw X_Debug.rethrow(e);
                 }
@@ -165,56 +157,7 @@ public class UiAnnotationProcessor extends AbstractProcessor {
         return false;
     }
 
-    private UiContainerExpr resolveImports(TypeElement element, UiContainerExpr container) {
-        return (UiContainerExpr) new ModifierVisitorAdapter<Object>(){
-            @Override
-            public Node visit(
-                  UiContainerExpr n, Object arg
-            ) {
-                if ("import".equals(n.getName())) {
-                    final Optional<UiAttrExpr> file = n.getAttribute("file");
-                    if (!file.isPresent()) {
-                        throw new IllegalArgumentException("import tags must specify a file feature");
-                    }
-                    String loc = ASTHelper.extractAttrValue(file.get());
-                    final FileObject resource;
-                    try {
-                        if (loc.indexOf('/') == -1) {
-                            // This file is relative to our source file
-                            final PackageElement pkg = service.getElements().getPackageOf(element);
-                            String pkgName;
-                            if (pkg == null) {
-                                pkgName = "";
-                            } else {
-                                pkgName = pkg.getQualifiedName().toString();
-                            }
-                            resource = service.getFiler().getFileForInput(
-                                  StandardLocation.SOURCE_PATH,
-                                  pkgName,
-                                  loc
-                            );
-                        } else {
-                            // Treat the file as absolute classpath uri
-                            resource = service.getFiler().getFileForInput(
-                                  StandardLocation.SOURCE_PATH,
-                                  "",
-                                  loc
-                            );
-                        }
-                        String src = resource.getCharContent(true).toString();
-                        final UiContainerExpr newContainer = JavaParser.parseUiContainer(src);
-                        return newContainer;
-                    } catch (IOException | ParseException e) {
-                        X_Log.error(getClass(), "Error trying to resolve import", n, e);
-                    }
-                }
-                return super.visit(n, arg);
-            }
-        }.visit(container, null);
-    }
-
     private void generateUiImplementations(SourceBuilder<?> out, MethodBuffer factory, TypeElement type, Ui ui, UiContainerExpr container) {
-        final ServiceLoader<UiGeneratorService> services = ServiceLoader.load(UiGeneratorService.class);
 
         // Generate an abstract, base class that is fully generic.
         // Then, for every known type provider on the classpath,
@@ -222,44 +165,34 @@ public class UiAnnotationProcessor extends AbstractProcessor {
         // optionally with a number of configurable interfaces added.
 
         // generate generic base class.
-        UiSuperclassGenerator superclass = getSuperclassGenerator(type, ui, container);
+        UiGeneratorService generator = getSuperclassGenerator();
+        ComponentBuffer component = generator.initialize(service, type, ui, container);
+        // Run each phase, potentially including custom phases injected by third parties
+        // Note, we need to use forthcoming xapi.properties support to record annotations
+        // which are annotated with @UiPhase, so a library can be compiled with a record
+        // of the UiPhase added.  Currently, we do not use any custom phases.
+        for (PhaseNode<String> phase : phaseMap.forEachNode()) {
+            component = generator.runPhase(phase.getId(), component);
 
-
-
-
-        for (UiGeneratorService uiGeneratorService : services) {
-
-            final String pkg = getClass().getPackage().getName();
-            final String simpleName = classToEnclosedSourceName(getClass());
-            final ContainerMetadata generated = uiGeneratorService.generateComponent(
-                  pkg, simpleName, container);
-
-            final SourceBuilder<?> builder = generated.getSourceBuilder();
-            System.out.println(builder);
-            String impl = factory.addImport(builder.getQualifiedName());
-            factory.returnValue("new " + impl+"().io(from);");
         }
 
-//        String inject = out.addImport(X_Inject.class);
-//        String builder = out.addImport(UiBuilder.class);
-//        factory.println(builder + " b = " + inject+".instance(" + builder + ".class);");
-//        StringTo<UiContainerExpr> refMap = RefCollectorVisitor.collectRefs(container);
+//        for (UiGeneratorService uiGeneratorService : services) {
 //
-//        container.accept(new VoidVisitorAdapter<PrintBuffer>() {
-//            @Override
-//            public void visit(UiContainerExpr n, PrintBuffer arg) {
-//                arg.println("b.setType(\"" + n.getName() + "\");");
-//                super.visit(n, arg);
-//            }
-//        }, factory);
+//            final String pkg = getClass().getPackage().getName();
+//            final String simpleName = classToEnclosedSourceName(getClass());
+//            final ContainerMetadata generated = uiGeneratorService.generateComponent(
+//                  pkg, simpleName, container);
 //
-//        factory.returnValue("b.build();");
+//            final SourceBuilder<?> builder = generated.getSourceBuilder();
+//            System.out.println(builder);
+//            String impl = factory.addImport(builder.getQualifiedName());
+//            factory.returnValue("new " + impl+"().io(from);");
+//        }
+
     }
 
-    protected UiSuperclassGenerator getSuperclassGenerator(TypeElement type, Ui ui, UiContainerExpr container) {
-        UiSuperclassGenerator generator = X_Inject.instance(UiSuperclassGenerator.class);
-        generator.initialize(type, ui, container);
-        return generator;
+    protected UiGeneratorService getSuperclassGenerator() {
+        return X_Inject.instance(UiGeneratorService.class);
     }
 
     private void generateUiBinder(TypeElement element, UiAnnotatedElements elements) {

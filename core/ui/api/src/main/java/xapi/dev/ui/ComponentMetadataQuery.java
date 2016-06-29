@@ -2,6 +2,7 @@ package xapi.dev.ui;
 
 import com.github.javaparser.ast.expr.MethodReferenceExpr;
 import com.github.javaparser.ast.expr.NameExpr;
+import com.github.javaparser.ast.expr.UiAttrExpr;
 import xapi.collect.impl.SimpleStack;
 import xapi.fu.In1Out1;
 import xapi.fu.In2;
@@ -22,6 +23,8 @@ public class ComponentMetadataQuery implements Destroyable {
 
   private final SimpleStack<In2<ComponentGraph, NameExpr>> nameListeners = new SimpleStack<>();
   private final SimpleStack<In2<ComponentGraph, MethodReferenceExpr>> methodReferenceListeners = new SimpleStack<>();
+  private final SimpleStack<In2<ComponentGraph, UiAttrExpr>> dataFeatureListeners = new SimpleStack<>();
+  private final SimpleStack<In2<ComponentGraph, UiAttrExpr>> refFeatureListeners = new SimpleStack<>();
 
 
   public boolean isVisitChildContainers() {
@@ -51,6 +54,16 @@ public class ComponentMetadataQuery implements Destroyable {
     return this;
   }
 
+  public ComponentMetadataQuery addDataFeatureListener(In2<ComponentGraph, UiAttrExpr> listener) {
+    dataFeatureListeners.add(listener);
+    return this;
+  }
+
+  public ComponentMetadataQuery addRefFeatureListener(In2<ComponentGraph, UiAttrExpr> listener) {
+    refFeatureListeners.add(listener);
+    return this;
+  }
+
   public ComponentMetadataQuery addMethodReferenceListener(In2<ComponentGraph, MethodReferenceExpr> listener) {
     methodReferenceListeners.add(listener);
     return this;
@@ -60,13 +73,30 @@ public class ComponentMetadataQuery implements Destroyable {
   public void destroy() {
     nameListeners.clear();
     methodReferenceListeners.clear();
+    dataFeatureListeners.clear();
+    refFeatureListeners.clear();
   }
 
   public void notifyNameExpr(ComponentGraph scope, NameExpr n) {
     nameListeners.forEach(listener->listener.in(scope, n));
   }
 
+  public void notifyUiAttrExpr(ComponentGraph scope, UiAttrExpr n) {
+      switch (n.getName().getName().toLowerCase()) {
+          case "ref":
+            refFeatureListeners.forEach(listener->listener.in(scope, n));
+              break;
+          case "data":
+            dataFeatureListeners.forEach(listener->listener.in(scope, n));
+              break;
+      }
+  }
+
   public void notifyMethodReference(ComponentGraph scope, MethodReferenceExpr n) {
     methodReferenceListeners.forEach(listener->listener.in(scope, n));
+  }
+
+  public String normalizeTemplateName(String name) {
+    return name.substring(1);
   }
 }

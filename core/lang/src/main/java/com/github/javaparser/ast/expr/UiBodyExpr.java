@@ -20,6 +20,7 @@ public class UiBodyExpr extends UiExpr {
       List<UiExpr> children) {
     super(beginLine, beginColumn, endLine, endColumn);
     this.children = children;
+    setAsParentNodeOf(children);
   }
 
   @Override public <R, A> R accept(final GenericVisitor<R, A> v, final A arg) {

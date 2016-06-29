@@ -27,7 +27,7 @@ public class DataFeatureGenerator extends UiFeatureGenerator {
 
   @Override
   public boolean startVisit(
-        UiGeneratorService service, UiComponentGenerator generator, ContainerMetadata container, UiAttrExpr attr
+        UiGeneratorTools service, UiComponentGenerator generator, ContainerMetadata container, UiAttrExpr attr
   ) {
     final Expression value = attr.getExpression();
     if (value instanceof JsonContainerExpr) {
@@ -138,7 +138,7 @@ public class DataFeatureGenerator extends UiFeatureGenerator {
   }
 
   protected NodeTransformer newTransformer(
-      UiGeneratorService service,
+      UiGeneratorTools service,
       UiComponentGenerator generator,
       ContainerMetadata container,
       JsonContainerExpr value,

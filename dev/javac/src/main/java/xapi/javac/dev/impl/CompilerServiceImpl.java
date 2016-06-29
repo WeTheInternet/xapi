@@ -261,12 +261,12 @@ public class CompilerServiceImpl implements CompilerService, Rethrowable {
     String finalSource = parsed.toSource(service.getTransformer());
     if (!originalSource.equals(finalSource)) {
       // TODO add Generated annotation which includes hashes of original files, and steps along the ways
-      final JavaFileManager filer = service.getFiler();
+      final JavaFileManager filer = service.getFileManager();
       try {
-        final FileObject output = filer.getFileForOutput(
+        final FileObject output = filer.getJavaFileForOutput(
             StandardLocation.SOURCE_OUTPUT,
-            parsedName.getName(),
-            fileName + ".java",
+            parsedName.getName() + "." + fileName,
+            JavaFileObject.Kind.SOURCE,
             doc.getSourceFile()
         );
         try (

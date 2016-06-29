@@ -5,11 +5,16 @@ import xapi.fu.Rethrowable;
 import xapi.log.X_Log;
 import xapi.util.X_Debug;
 import xapi.util.X_Namespace;
+import xapi.util.X_String;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
@@ -26,10 +31,18 @@ public class CompilerSettings implements Rethrowable {
     private String generateDirectory;
     private String processorPath;
     private List<String> plugins;
-    private boolean generateDebugging = true;
+    private Set<String> classpath;
+    private boolean generateDebugging;
+    private boolean useRuntimeClasspath;
     private PreferMode preferMode;
     private ImplicitMode implicitMode;
+    private ProcessorMode processorMode;
     private boolean clearGenerateDirectory;
+    private boolean addedRuntimePath;
+
+    public CompilerSettings() {
+        generateDebugging = true;
+    }
 
     public String[] toArguments(String... files) {
         List<String> args = new ArrayList<>();
@@ -45,10 +58,12 @@ public class CompilerSettings implements Rethrowable {
         int ind = sources.indexOf("src/main/java");
         if (ind != -1) {
             sources += File.pathSeparator + sources.replace("src/main/java", "src/main/resources");
+            sources += File.pathSeparator + sources.replace("src/main/java", "target/generated-sources/annotations");
         } else {
             ind = sources.indexOf("src/test/java");
             if (ind != -1) {
                 sources += File.pathSeparator + sources.replace("src/test/java", "src/test/resources");
+                sources += File.pathSeparator + sources.replace("src/test/java", "target/generated-test-sources/test");
             }
         }
             args.add(sources);
@@ -61,9 +76,34 @@ public class CompilerSettings implements Rethrowable {
             resetGenerateDirectory();
         }
 
-        String processorPath = getProcessorPath();
-        args.add("-processorpath");
-        args.add(processorPath);
+        final ProcessorMode proc = getProcessorMode();
+        final boolean addProcessor;
+        switch (proc) {
+            case CompileOnly:
+                args.add("-proc:none");
+                addProcessor = false;
+                break;
+            case Both:
+                addProcessor = true;
+                break;
+            case ProcessOnly:
+                args.add("-proc:only");
+                addProcessor = true;
+                break;
+            default:
+                throw new AssertionError("Can't get here");
+        }
+        if (addProcessor) {
+            String processorPath = getProcessorPath();
+            args.add("-processorpath");
+            args.add(processorPath);
+        }
+
+        final Set<String> path = getClasspath();
+        if (path != null && !path.isEmpty()) {
+            args.add("-cp");
+            args.add(X_String.join(File.pathSeparator, path));
+        }
 
         getPlugins().forEach(plugin -> {
             if (!plugin.startsWith("-Xplugin:")) {
@@ -109,11 +149,12 @@ public class CompilerSettings implements Rethrowable {
             throw rethrow(e);
         }
 
-        X_Log.info(getClass(), "Javac args:", args);
+        X_Log.info(getClass(), "Javac args:\n",
+              "javac " + X_String.join(" ", args));
         return args.toArray(new String[args.size()]);
     }
 
-    public void resetGenerateDirectory() {
+    public CompilerSettings resetGenerateDirectory() {
         final String genDir = getGenerateDirectory();
         File genFile = new File(genDir);
         if (!genFile.exists()) {
@@ -124,6 +165,7 @@ public class CompilerSettings implements Rethrowable {
         X_File.deepDelete(genDir);
         boolean result = genFile.mkdirs();
         assert result : "Unable to create generate directory " + genFile;
+        return this;
     }
 
     public PreferMode getPreferMode() {
@@ -159,12 +201,16 @@ public class CompilerSettings implements Rethrowable {
         return this;
     }
 
-    enum PreferMode {
+    public enum PreferMode {
         NEWER, SOURCE
     }
 
-    enum ImplicitMode {
+    public enum ImplicitMode {
         CLASS, NONE
+    }
+
+    public enum ProcessorMode {
+        CompileOnly, ProcessOnly, Both
     }
 
     public String getRoot() {
@@ -250,6 +296,10 @@ public class CompilerSettings implements Rethrowable {
                 throw rethrow(e);
             }
         }
+        String genDir = getGenerateDirectory();
+        if (!sourceDirectory.contains(genDir)) {
+            return X_String.join(File.pathSeparator, sourceDirectory, genDir);
+        }
         return sourceDirectory;
     }
 
@@ -305,12 +355,66 @@ public class CompilerSettings implements Rethrowable {
         return plugins;
     }
 
+    public void setPlugins(List<String> plugins) {
+        this.plugins = plugins;
+    }
+
+    public Set<String> getClasspath() {
+        if (classpath == null) {
+            classpath = new LinkedHashSet<>();
+        }
+        if (isUseRuntimeClasspath() && !addedRuntimePath) {
+            addedRuntimePath = true;
+            ClassLoader cl = Thread.currentThread().getContextClassLoader();
+            while (cl != null) {
+                if (cl instanceof URLClassLoader) {
+                    for (URL url : ((URLClassLoader) cl).getURLs()) {
+                        classpath.add(url.toExternalForm().replace("file:", ""));
+                    }
+                }
+                cl = cl.getParent();
+            }
+        }
+        return classpath;
+    }
+
+    public CompilerSettings setClasspath(Set<String> classpath) {
+        this.classpath = classpath;
+        return this;
+    }
+
+    public CompilerSettings addToClasspath(String loc) {
+        this.classpath.add(loc);
+        return this;
+    }
+
     public boolean isGenerateDebugging() {
         return generateDebugging;
     }
 
     public CompilerSettings setGenerateDebugging(boolean generateDebugging) {
         this.generateDebugging = generateDebugging;
+        return this;
+    }
+
+    public ProcessorMode getProcessorMode() {
+        if (processorMode == null) {
+            processorMode = ProcessorMode.Both;
+        }
+        return processorMode;
+    }
+
+    public CompilerSettings setProcessorMode(ProcessorMode processorMode) {
+        this.processorMode = processorMode;
+        return this;
+    }
+
+    public boolean isUseRuntimeClasspath() {
+        return useRuntimeClasspath;
+    }
+
+    public CompilerSettings setUseRuntimeClasspath(boolean useRuntimeClasspath) {
+        this.useRuntimeClasspath = useRuntimeClasspath;
         return this;
     }
 }

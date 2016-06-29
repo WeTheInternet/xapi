@@ -33,6 +33,7 @@ import xapi.inject.X_Inject;
 import xapi.io.X_IO;
 import xapi.log.X_Log;
 import xapi.log.api.LogLevel;
+import xapi.source.X_Source;
 import xapi.ui.html.api.Css;
 import xapi.ui.html.api.El;
 import xapi.ui.html.api.Html;
@@ -51,15 +52,7 @@ import com.google.gwt.core.ext.RebindResult;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.core.ext.UnableToCompleteException;
-import com.google.gwt.core.ext.typeinfo.HasAnnotations;
-import com.google.gwt.core.ext.typeinfo.JClassType;
-import com.google.gwt.core.ext.typeinfo.JMethod;
-import com.google.gwt.core.ext.typeinfo.JParameter;
-import com.google.gwt.core.ext.typeinfo.JParameterizedType;
-import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
-import com.google.gwt.core.ext.typeinfo.JType;
-import com.google.gwt.core.ext.typeinfo.JTypeParameter;
-import com.google.gwt.core.ext.typeinfo.NotFoundException;
+import com.google.gwt.core.ext.typeinfo.*;
 import com.google.gwt.dev.util.collect.Sets;
 import com.google.gwt.thirdparty.guava.common.collect.LinkedHashMultimap;
 import com.google.gwt.thirdparty.guava.common.collect.Multimap;
@@ -190,7 +183,7 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
       return new RebindResult(RebindMode.USE_EXISTING, qualifiedName);
     }
 
-    final SourceBuilder<JClassType> sourceBuilder = new SourceBuilder<JClassType>
+    final SourceBuilder<ContainerMetadata> sourceBuilder = new SourceBuilder<ContainerMetadata>
     ("public final class " + factoryName)
     .setPackage(pkg);
     final ClassBuffer out =
@@ -409,7 +402,11 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
           final JClassType controllerType = iface.isParameterized().getTypeArgs()[2];
           metadata.setElementType(elementType.getErasedType().getQualifiedSourceName());
           metadata.setComponentType(componentType.getErasedType().getQualifiedSourceName());
-          metadata.setControllerType(controllerType.getErasedType().getQualifiedSourceName());
+          final JClassType erased = controllerType.getErasedType();
+          final JPackage pkg = erased.getPackage();
+          String pkgName = pkg == null ? "" : pkg.getName();
+          String clsName = X_Source.removePackage(pkgName, erased.getQualifiedSourceName());
+          metadata.setControllerType(pkgName, clsName);
         }
       }
 

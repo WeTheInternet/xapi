@@ -30,6 +30,7 @@ public class UiContainerExpr extends UiExpr {
     this.name = name;
     this.body = body;
     this.inTemplate = isInTemplate;
+    setAsParentNodeOf(body);
     setAttributes(attributes);
   }
 

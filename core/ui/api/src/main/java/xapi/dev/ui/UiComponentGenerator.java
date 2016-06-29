@@ -80,15 +80,15 @@ public class UiComponentGenerator {
     this.printCommentsAllowed = printCommentsAllowed;
   }
 
-  public boolean startVisit(UiGeneratorService service, ContainerMetadata me, UiContainerExpr n) {
+  public boolean startVisit(UiGeneratorTools service, ContainerMetadata me, UiContainerExpr n) {
     return true;
   }
 
-  public void endVisit(UiGeneratorService service, ContainerMetadata me, UiContainerExpr n) {
+  public void endVisit(UiGeneratorTools service, ContainerMetadata me, UiContainerExpr n) {
 
   }
 
   public Transformer getTransformer() {
-    return null;
+    return transformer;
   }
 }
