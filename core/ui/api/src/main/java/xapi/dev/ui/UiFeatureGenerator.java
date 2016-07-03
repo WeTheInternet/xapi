@@ -13,6 +13,8 @@ import java.util.regex.Pattern;
  */
 public class UiFeatureGenerator {
 
+  public static final UiFeatureGenerator DO_NOTHING = new UiFeatureGenerator();
+
   private String featurePattern;
   // TODO: a regex abstraction like GWT's RegExp class (but no GWT dependencies)
   private Lazy<Pattern> pattern;
@@ -50,20 +52,21 @@ public class UiFeatureGenerator {
     return false;
   }
 
-  public boolean startVisit(
+  public UiVisitScope startVisit(
       UiGeneratorTools service,
       UiComponentGenerator generator,
       ContainerMetadata container,
       UiAttrExpr attr
   ) {
-    return true;
+    return UiVisitScope.DEFAULT_FEATURE;
   }
 
   public void finishVisit(
-      UiGeneratorTools service,
-      UiComponentGenerator generator,
-      ContainerMetadata parent,
-      UiAttrExpr n
+        UiGeneratorTools service,
+        UiComponentGenerator generator,
+        ContainerMetadata parent,
+        UiAttrExpr n,
+        UiVisitScope scope
   ) {
 
   }

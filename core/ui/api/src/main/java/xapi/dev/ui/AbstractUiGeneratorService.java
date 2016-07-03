@@ -7,7 +7,10 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import com.github.javaparser.ast.visitor.ModifierVisitorAdapter;
+import xapi.collect.X_Collect;
+import xapi.collect.api.IntTo;
 import xapi.dev.ui.ContainerMetadata.MetadataRoot;
+import xapi.fu.Do;
 import xapi.log.X_Log;
 import xapi.util.X_Debug;
 
@@ -27,21 +30,43 @@ import java.util.Optional;
 public abstract class AbstractUiGeneratorService extends UiGeneratorTools implements UiGeneratorService {
 
     protected String phase;
+    protected final IntTo<Do> onDone;
 
     public AbstractUiGeneratorService() {
+        onDone = X_Collect.newList(Do.class);
     }
 
     @Override
     public UiComponentGenerator getComponentGenerator(UiContainerExpr container, ContainerMetadata metadata) {
-        final UiComponentGenerator generator = componentGenerators.get(container.getName());
-        Objects.requireNonNull(generator, "Null component for " + container.getName());
+        final UiComponentGenerator generator = super.getComponentGenerator(container, metadata);
+        if (ignoreMissingComponents()) {
+            warn(getClass(), "Ignoring missing component ", container);
+        } else {
+            Objects.requireNonNull(generator, "Null component for " + container.getName());
+        }
         return generator;
+    }
+
+    protected boolean ignoreMissingFeatures() {
+        return true;
+    }
+
+    protected boolean ignoreMissingComponents() {
+        return true;
+    }
+
+    protected void warn(Object ... logMe) {
+        X_Log.warn(logMe);
     }
 
     @Override
     public UiFeatureGenerator getFeatureGenerator(UiAttrExpr container, UiComponentGenerator componentGenerator) {
-        final UiFeatureGenerator generator = featureGenerators.get(container.getNameString());
-        Objects.requireNonNull(generator, "Null feature for " + container.getNameString());
+        final UiFeatureGenerator generator = super.getFeatureGenerator(container, componentGenerator);
+        if (ignoreMissingFeatures()) {
+            warn(getClass(), "Ignoring missing feature ", container);
+        } else {
+            Objects.requireNonNull(generator, "Null feature for " + container.getName());
+        }
         return generator;
     }
 
@@ -71,6 +96,7 @@ public abstract class AbstractUiGeneratorService extends UiGeneratorTools implem
                     }
                     String loc = ASTHelper.extractAttrValue(file.get());
                     final FileObject resource;
+                    String src = null;
                     try {
                         if (loc.indexOf('/') == -1) {
                             // This file is relative to our source file
@@ -86,11 +112,11 @@ public abstract class AbstractUiGeneratorService extends UiGeneratorTools implem
                             // Treat the file as absolute classpath uri
                             resource = findFile(filer, "", loc);
                         }
-                        String src = resource.getCharContent(true).toString();
+                        src = resource.getCharContent(true).toString();
                         final UiContainerExpr newContainer = JavaParser.parseUiContainer(src);
                         return newContainer;
                     } catch (IOException | ParseException e) {
-                        X_Log.error(getClass(), "Error trying to resolve import", n, e);
+                        X_Log.error(getClass(), "Error trying to resolve import", n, "with source", src, e);
                     }
                 }
                 return super.visit(n, arg);
@@ -112,11 +138,23 @@ public abstract class AbstractUiGeneratorService extends UiGeneratorTools implem
 
     @Override
     public UiGeneratorVisitor createVisitor(ContainerMetadata metadata) {
-        return new UiGeneratorVisitor(metadata);
+        return new UiGeneratorVisitor(scope->{
+           scopes.add(scope);
+            return ()->{
+                UiVisitScope popped = scopes.pop();
+                assert popped == scope : "Scope stack inconsistent; " +
+                      "expected " + popped + " to be the same reference as " + scope;
+            };
+        }, metadata);
     }
 
     @Override
     public UiGeneratorService getGenerator() {
         return this;
+    }
+
+    @Override
+    public void finish() {
+        onDone.removeAll(Do::done);
     }
 }

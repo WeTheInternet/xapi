@@ -3,28 +3,22 @@ package com.github.javaparser.ast.plugin;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.body.VariableDeclaratorId;
-import com.github.javaparser.ast.expr.ArrayAccessExpr;
-import com.github.javaparser.ast.expr.AssignExpr;
-import com.github.javaparser.ast.expr.BinaryExpr;
-import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.FieldAccessExpr;
-import com.github.javaparser.ast.expr.IntegerLiteralExpr;
-import com.github.javaparser.ast.expr.LambdaExpr;
-import com.github.javaparser.ast.expr.MethodCallExpr;
-import com.github.javaparser.ast.expr.NameExpr;
-import com.github.javaparser.ast.expr.StringLiteralExpr;
-import com.github.javaparser.ast.expr.UnaryExpr;
+import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.expr.UnaryExpr.Operator;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.type.UnknownType;
+import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import xapi.collect.api.StringTo;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
+import xapi.dev.source.PrintBuffer;
 import xapi.except.NotImplemented;
 import xapi.fu.In1Out1;
 import xapi.fu.In2Out1;
+import xapi.fu.Lazy;
+import xapi.fu.Notifier;
 import xapi.fu.Out1;
 import xapi.source.X_Source;
 
@@ -33,6 +27,7 @@ import static xapi.collect.X_Collect.newStringMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 6/20/16.
@@ -63,6 +58,35 @@ public class NodeTransformer {
     Node generateNode(Ctx ctx, Node originalNode, Node currentNode);
   }
 
+  private static final String KEY_TRANSFORMER = "__tr@nsf0rmer__"; // purposely misspelled to avoid collisions
+  private static final String KEY_SOURCE = "__s0urc3__"; // purposely misspelled to avoid collisions
+
+  public static boolean hasTransformer(Node n) {
+    return n.getExtra(KEY_TRANSFORMER) != null;
+  }
+
+  public static NodeTransformer getTransformer(Node n) {
+    return n.getExtra(KEY_TRANSFORMER);
+  }
+
+  public static List<String> findTransformers(Node n) {
+    final List<String> list = new ArrayList<>();
+
+    n.accept(new VoidVisitorAdapter<Object>() {
+      @Override
+      public void visit(MethodCallExpr n, Object arg) {
+        final NodeTransformer transformer = getTransformer(n);
+        if (transformer != null) {
+          final Expression source = n.getExtra(KEY_SOURCE);
+          list.add(transformer.generateTransformer(source));
+        }
+        super.visit(n, arg);
+      }
+    }, null);
+
+    return list;
+  }
+
   private final Node newNode;
   protected final In2Out1<Node, Expression, Node> createRead;
   protected final In2Out1<Node, Expression, Node> createWrite;
@@ -73,6 +97,8 @@ public class NodeTransformer {
   private final StringTo<String> computeNames;
   private final StringTo<String> getterNames;
   private final StringTo<String> setterNames;
+  private final StringTo<String> notifierNames;
+  private final StringTo<PrintBuffer> notificationSites;
 
   public NodeTransformer(
       Node newNode,
@@ -135,6 +161,33 @@ public class NodeTransformer {
     computeNames = newStringMap(String.class);
     getterNames = newStringMap(String.class);
     setterNames = newStringMap(String.class);
+    notifierNames = newStringMap(String.class);
+    notificationSites = newStringMap(MethodBuffer.class);
+  }
+
+
+  public Node transformBinary(Expression source, BinaryExpr expr) {
+    if (expr.getLeft() instanceof FieldAccessExpr) {
+      FieldAccessExpr field = (FieldAccessExpr) expr.getLeft();
+      if (field.getScope() == newNode) {
+        String get = generateGetterMethod(field);
+        MethodCallExpr invoke = new MethodCallExpr();
+        invoke.setName(get);
+        expr.setLeft(invoke);
+        initExtras(invoke, field);
+      }
+    }
+    if (expr.getRight() instanceof FieldAccessExpr) {
+      FieldAccessExpr field = (FieldAccessExpr) expr.getRight();
+      if (field.getScope() == newNode) {
+        String get = generateGetterMethod(field);
+        MethodCallExpr invoke = new MethodCallExpr();
+        invoke.setName(get);
+        expr.setRight(invoke);
+        initExtras(invoke, field);
+      }
+    }
+    return expr;
   }
 
   public Node transformUnary(Expression source, UnaryExpr expr) {
@@ -153,6 +206,7 @@ public class NodeTransformer {
         MethodCallExpr methodCall = new MethodCallExpr();
         methodCall.setName(compute);
         methodCall.setArgs(Arrays.asList(lambda));
+        initExtras(methodCall, data);
         return methodCall;
       case preIncrement:
       case preDecrement:
@@ -165,14 +219,23 @@ public class NodeTransformer {
         final BinaryExpr.Operator operator = expr.getOperator() == Operator.preIncrement ? BinaryExpr.Operator.plus : BinaryExpr.Operator.minus;
         BinaryExpr op = new BinaryExpr(get, new IntegerLiteralExpr("1"), operator);
         methodCall.setArgs(Arrays.asList(op));
+        initExtras(methodCall, data);
         return methodCall;
       case inverse:
       case negative:
       case not:
       case positive:
+        throw new NotImplemented("Need to implement unary operator " + expr.getOperator() + " in " + getClass());
     }
-    //    return expr;
-    return new StringLiteralExpr(expr.toSource());
+        return expr;
+//    return new StringLiteralExpr(expr.toSource());
+  }
+
+  // If you change the MethodCallExpr parameter to a weaker type,
+  // do be sure to update the visitor used in the findNotifiers method to match!
+  protected void initExtras(MethodCallExpr node, Expression data) {
+    node.addExtra(KEY_TRANSFORMER, this);
+    node.addExtra(KEY_SOURCE, data);
   }
 
   protected String generateComputeMethod(Expression expr) {
@@ -213,6 +276,48 @@ public class NodeTransformer {
       }
     }
     throw new NotImplemented("Unable to extract a compute method for expression " + expr);
+  }
+
+  protected String generateTransformer(Expression expr) {
+    String notifierName;
+    if (expr instanceof FieldAccessExpr) {
+      final String fieldName = getFieldName(expr);
+      notifierName = notifierNames.get(fieldName);
+      if (notifierName == null) {
+        String datatype = out.addImport(getDataType(fieldName));
+        datatype = X_Source.primitiveToObject(datatype);
+        generateSetterMethod(expr); // will always need a setter inited to ensure notifier has somewhere to act
+        notifierName = "notify" + X_Source.toCamelCase(fieldName);
+        notifierNames.put(fieldName, notifierName);
+
+        String lazy = out.addImport(Lazy.class);
+        String notifier = out.addImport(Notifier.class);
+        out.createField(lazy+"<" + notifier + "<" + datatype + ">>", notifierName)
+            .setInitializer(lazy+".deferred1(" + notifier +"::new);");
+
+        // Add a hook in the setter method to trigger notifications.
+        final PrintBuffer notificationSite = notificationSites.get(fieldName);
+        if (notificationSite.isEmpty()) {
+          boolean ifGaurd = isOnlyNotifyChanges(expr);
+          if (ifGaurd) {
+            String objects = out.addImport(Objects.class);
+            notificationSite.println("if (!" + objects +".equals(oldVal, val)) {");
+            notificationSite.indent();
+          }
+          notificationSite.println(notifierName+".out1().notifyListeners(oldVal, val);");
+          if (ifGaurd) {
+            notificationSite.outdent();
+            notificationSite.println("}");
+          }
+        }
+      }
+      return notifierName;
+    }
+    throw new NotImplemented("Unable to generate a transformer for expression " + expr);
+  }
+
+  protected boolean isOnlyNotifyChanges(Expression expr) {
+    return true;
   }
 
   protected String generateGetterMethod(Expression expr) {
@@ -259,8 +364,17 @@ public class NodeTransformer {
           String set = nodeSetMethod(expr);
           String keyType = getKeyType(expr);
           String escapeKey = escapedKey(keyType, field.getField());
-          boolean cast = needsCast(expr, field.getField(), datatype);
-          setter.returnValue((cast ? "(" + datatype + ")" : "") + nodeSource() + "." + set + "(" + escapeKey + ", " + "val)");
+          setter.print(datatype + " oldVal = ");
+          if (needsCast(expr, field.getField(), datatype)) {
+            setter.print("(" + datatype + ")");
+          }
+          setter.println(nodeSource() + "." + set + "(" + escapeKey + ", val);");
+          // Add a printbuffer that we can optionally add a notifier for
+          final PrintBuffer buffer = new PrintBuffer();
+          setter.addToEnd(buffer);
+          buffer.setIndent(setter.getIndent());
+          notificationSites.put(field.getField(), buffer);
+          setter.returnValue("oldVal");
         } else {
           throw new NotImplemented("Unable to extract a setter method for expression " + expr);
         }
@@ -271,7 +385,18 @@ public class NodeTransformer {
     throw new NotImplemented("Unable to extract a setter method for expression " + expr);
   }
 
-  private boolean needsCast(Expression expr, String field, String datatype) {
+  protected String getFieldName(Expression expr) {
+
+    if (expr instanceof FieldAccessExpr) {
+      final FieldAccessExpr field = (FieldAccessExpr) expr;
+      if (field.getScope() == newNode) {
+        return field.getField();
+      }
+    }
+    throw new NotImplemented("Unable to extract a field name for expression " + expr);
+  }
+
+  protected boolean needsCast(Expression expr, String field, String datatype) {
     return !"Object".equals(datatype);
   }
 
@@ -311,10 +436,6 @@ public class NodeTransformer {
 
   protected String getDataType(String keyName) {
     return "Object";
-  }
-
-  public Node transformBinary(BinaryExpr expr) {
-    return expr;
   }
 
   public Node transformAssignExpr(AssignExpr expr) {

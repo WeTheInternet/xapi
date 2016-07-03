@@ -25,21 +25,20 @@ public class JreUiDemo extends Application {
     @Override
     public void start(Stage stage) throws Exception {
         this.stage = stage;
-
         CompilerService compiler = singleton(CompilerService.class);
         Pointer<Parent> value = Pointer.pointer();
         final String generatedName = getClass().getPackage().getName() + ".JavaFxComponent0_" + getClass().getSimpleName();
-        compiler.processAnnotationsAndRun(JreUiDemo.class,
-              (cl, cls) -> {
+        compiler.startCompile(JreUiDemo.class)
+              .compileAndRun((cl, cls) -> {
                   final Class<?> generated = cl.loadClass(generatedName);
                   Object o = generated.newInstance();
                   Object test = generated.getMethod("io", JreUiDemo.class).invoke(o, JreUiDemo.this);
-                  value.in((Parent) test);
+                  value.in((Parent)test);
               }
         );
 
         stage.setTitle("Hi");
-        stage.setScene(new Scene(value.out1(), 200, 200));
+        stage.setScene(new Scene(value.out1(), 600, 400));
         stage.show();
     }
 

@@ -4,25 +4,17 @@ import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.TaskListener;
 import xapi.fu.In1;
-import xapi.fu.In2.In2Unsafe;
 import xapi.fu.Out2;
 import xapi.inject.X_Inject;
 import xapi.javac.dev.model.CompilerSettings;
 import xapi.javac.dev.model.CompilerSettings.ImplicitMode;
 import xapi.javac.dev.model.CompilerSettings.ProcessorMode;
 import xapi.javac.dev.model.JavaDocument;
-import xapi.log.X_Log;
 import xapi.reflect.X_Reflect;
-import xapi.util.X_Debug;
 import xapi.util.X_String;
 
-import static xapi.util.X_String.classToSourceFiles;
-
-import javax.annotation.processing.Processor;
 import javax.lang.model.element.TypeElement;
-import java.io.File;
 import java.net.URL;
-import java.net.URLClassLoader;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
@@ -102,6 +94,10 @@ public interface CompilerService {
 
   JavaDocument getDocument(CompilationUnitTree cup);
 
+  default PendingCompile startCompile(Class<?> cls) {
+    return new PendingCompile(cls, this);
+  }
+
   default CompilerSettings settingsForClass(Class<?> cls) {
     String loc = X_Reflect.getFileLoc(cls);
     boolean test = loc.contains("test-classes");
@@ -128,53 +124,4 @@ public interface CompilerService {
     return settings;
   }
 
-  default Out2<Integer,URL> runAnnotationProcessor(Class<?> cls,
-                                                   Class<? extends Processor> ... processors) {
-
-    final CompilerSettings settings = settingsForClass(cls);
-    if (processors != null && processors.length > 0) {
-      String path = X_String.joinClasses(File.pathSeparator, X_Reflect::getFileLoc, processors);
-      settings.setProcessorPath(path);
-    }
-
-    String loc = X_Reflect.getFileLoc(cls);
-    boolean test = loc.contains("test-classes");
-    if (test) {
-      loc = loc.replace("target/test-classes", "src/test/java");
-    } else {
-      loc = loc.replace("target/classes", "src/main/java");
-    }
-
-    return compileFiles(settings, loc + classToSourceFiles(cls));
-
-  }
-
-  @SuppressWarnings("varargs")
-  default Out2<Integer, URL> processAnnotationsAndRun(Class<?> clsIn,
-                                                      In2Unsafe<ClassLoader, Class<?>> callback,
-                                                      Class<? extends Processor> ... processors) {
-    final Out2<Integer, URL> result = runAnnotationProcessor(clsIn, processors);
-
-    assert result.out1() == 0 : "Annotation processing failed";
-
-    final URLClassLoader cl = new URLClassLoader(new URL[]{result.out2()}, Thread.currentThread().getContextClassLoader());
-    Thread runIn = new Thread(()->{
-      try {
-        callback.in(cl, cl.loadClass(clsIn.getCanonicalName()));
-      } catch (ClassNotFoundException e) {
-        X_Log.error(getClass(), "Compilation did not succeed for class", clsIn, e );
-        throw X_Debug.rethrow(e);
-      }
-    });
-    runIn.setContextClassLoader(cl);
-    runIn.start();
-    try {
-      runIn.join();
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw X_Debug.rethrow(e);
-    }
-
-    return result;
-  }
 }

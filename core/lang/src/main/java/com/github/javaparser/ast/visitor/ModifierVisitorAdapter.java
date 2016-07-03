@@ -992,7 +992,9 @@ public abstract class ModifierVisitorAdapter<A> implements GenericVisitor<Node, 
       attributes.set(i, (UiAttrExpr) attributes.get(i).accept(this, arg));
       removeNulls(attributes);
     }
-    n.setBody((UiBodyExpr)n.getBody().accept(this, arg));
+    if (n.getBody() != null) {
+    	n.setBody((UiBodyExpr)n.getBody().accept(this, arg));
+    }
     return n;
   }
 }

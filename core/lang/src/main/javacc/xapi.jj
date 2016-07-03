@@ -2402,14 +2402,15 @@ Expression MultiplicativeExpression():
   ret = UnaryExpression()
   (
   	( "*" { op = BinaryExpr.Operator.times; } |
-  	  LOOKAHEAD( {
+  	  ( LOOKAHEAD( {
   	  "/".equals(getToken(1).image) &&
   	   (
   	       !getToken(2).image.startsWith(">")
   	       && !(getToken(2).kind == IDENTIFIER && getToken(3).image.equals(">"))
   	   )
   	   } )
-  	  "/" { op = BinaryExpr.Operator.divide; } |
+  	  "/" { op = BinaryExpr.Operator.divide; }
+  	   )|
   	  "%" { op = BinaryExpr.Operator.remainder; }
   	) right = UnaryExpression() { ret = new BinaryExpr(ret.getBeginLine(), ret.getBeginColumn(), token.endLine, token.endColumn, ret, right, op); }
   )*
@@ -2929,6 +2930,7 @@ Expression FeatureExpression():
   Expression expr;
   NameExpr methodName;
   Statement statement;
+
   List typeArgs = null;
   List args = null;
 }
@@ -2951,22 +2953,23 @@ Expression FeatureExpression():
 
         )?
     )
-    | expr = Literal()
-    | (
+    | LOOKAHEAD(2)
         (
             expr = FeatureName()
         )
+        [
         (
           "->" statement = LambdaBody()
           { expr = generateLambda(expr, statement); }
-        )?
-        (
+
+        ) | (
+
         "::"
           [typeArgs = TypeParameters() { typeArgs.remove(0); } ] (<IDENTIFIER > | "new")
           { expr = new MethodReferenceExpr(expr.getBeginLine(), expr.getBeginColumn(), token.endLine, token.endColumn, expr, typeArgs, token.image); }
 
-        )?
-        (
+        ) | (
+
           [ typeArgs = TypeParameters() { typeArgs.remove(0); } ]
           args = Arguments()
           {
@@ -2981,9 +2984,10 @@ Expression FeatureExpression():
             m.setNameExpr((NameExpr)expr);
             expr = m;
           }
-        )?
-    )
-    | ( LOOKAHEAD(2) expr = UiStatement() )
+        )
+        ]
+
+    | expr = UiStatement()
 
     // The only expressions we allow outside of parentheticals are simple;
     // Either a singleArg->lambda(), ref::methodRef, "String", AnyName, numbers or boolean.
@@ -2994,10 +2998,12 @@ Expression FeatureExpression():
 Expression UiStatement():
 {
   ExpressionStmt statement;
+  Expression expr;
 }
 {
-  statement = StatementExpression()
-  { return statement.getExpression(); }
+  LOOKAHEAD( Expression() ) expr = Expression() { return expr; }
+  | expr = Literal()
+  { return expr; }
 }
 
 JsonContainerExpr JsonContainer():

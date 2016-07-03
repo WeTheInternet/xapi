@@ -4,6 +4,7 @@ import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
+import xapi.collect.impl.SimpleLinkedList;
 import xapi.dev.ui.ContainerMetadata.MetadataRoot;
 import xapi.fu.In2Out1;
 import xapi.fu.Out2;
@@ -20,6 +21,7 @@ public abstract class UiGeneratorTools {
     protected final StringTo<Integer> numGenerated;
     protected final StringTo<UiComponentGenerator> componentGenerators;
     protected final StringTo<UiFeatureGenerator> featureGenerators;
+    protected final SimpleLinkedList<UiVisitScope> scopes;
 
     public UiGeneratorTools() {
         numGenerated = X_Collect.newStringMap(Integer.class);
@@ -27,6 +29,7 @@ public abstract class UiGeneratorTools {
         featureGenerators = X_Collect.newStringMap(UiFeatureGenerator.class);
         componentGenerators.addAll(getComponentGenerators());
         featureGenerators.addAll(getFeatureGenerators());
+        scopes = new SimpleLinkedList<>();
     }
 
     protected Iterable<Out2<String, UiComponentGenerator>> getComponentGenerators() {
@@ -52,11 +55,26 @@ public abstract class UiGeneratorTools {
     public abstract UiGeneratorService getGenerator();
 
     public UiComponentGenerator getComponentGenerator(UiContainerExpr container, ContainerMetadata metadata) {
-        return componentGenerators.getOrCreate(container.getName(), n->getGenerator().getComponentGenerator(container, metadata));
+        String name = container.getName();
+        final UiComponentGenerator scoped = scopes.findNotNullMappedReverse(
+              scope -> scope.getComponentOverrides().get(name)
+        );
+        if (scoped != null) {
+            return scoped;
+        }
+        return componentGenerators.get(name);
     }
 
     public UiFeatureGenerator getFeatureGenerator(UiAttrExpr container, UiComponentGenerator componentGenerator) {
-        return featureGenerators.getOrCreate(container.getNameString(), n->getGenerator().getFeatureGenerator(container, componentGenerator));
+        String name = container.getNameString();
+        final UiFeatureGenerator scoped = scopes.findNotNullMappedReverse(
+              scope -> scope.getFeatureOverrides().get(name)
+        );
+        if (scoped != null) {
+            return scoped;
+        }
+
+        return featureGenerators.get(name);
     }
 
     public ContainerMetadata createMetadata(MetadataRoot root, UiContainerExpr n) {

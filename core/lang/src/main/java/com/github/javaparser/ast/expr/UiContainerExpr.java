@@ -54,6 +54,9 @@ public class UiContainerExpr extends UiExpr {
     return attrs.get(name);
   }
 
+  public UiAttrExpr getAttributeNotNull(String name) {
+    return getAttribute(name).orElseThrow(()->new NullPointerException("No feature named " + name + " found in " + this));
+  }
   public Optional<UiAttrExpr> getAttribute(String name) {
     final IntTo<UiAttrExpr> avail = attrs.get(name);
     assert avail.size() < 2 : "Asked for a single attribute, but value of " + name +" had more than 1 item: " + avail;

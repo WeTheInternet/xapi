@@ -26,7 +26,7 @@ import java.util.Optional;
 public class DataFeatureGenerator extends UiFeatureGenerator {
 
   @Override
-  public boolean startVisit(
+  public UiVisitScope startVisit(
         UiGeneratorTools service, UiComponentGenerator generator, ContainerMetadata container, UiAttrExpr attr
   ) {
     final Expression value = attr.getExpression();
@@ -48,7 +48,7 @@ public class DataFeatureGenerator extends UiFeatureGenerator {
       // register `varName.out1()` as a replacement for all accessors of this particular data
       MethodCallExpr expr = new MethodCallExpr(new NameExpr(var), "out1");
       container.registerFieldProvider(container.getRefName(), "data", newTransformer(service, generator, container, json, opts, expr));
-      return false;
+      return UiVisitScope.DEFAULT_CONTAINER;
     } else {
       throw new IllegalArgumentException("Cannot assign a node of type " + value.getClass() + " to a data feature; bad data: " + value);
     }

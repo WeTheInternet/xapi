@@ -4,8 +4,11 @@ import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiBodyExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
+import xapi.dev.ui.UiVisitScope.ScopeType;
+import xapi.fu.In1Out1;
 import xapi.fu.Lazy;
 import xapi.fu.Out1;
+import xapi.util.api.RemovalHandler;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
@@ -13,25 +16,35 @@ import xapi.fu.Out1;
  */
 public class UiGeneratorVisitor extends VoidVisitorAdapter<UiGeneratorTools> {
 
+    interface ScopeHandler extends In1Out1<UiVisitScope, RemovalHandler> { }
+
     final Lazy<ContainerMetadata> root;
+    private ScopeHandler onScope;
     ContainerMetadata parent;
     private UiComponentGenerator generator;
     private UiFeatureGenerator feature;
 
-    public UiGeneratorVisitor() {
+    public UiGeneratorVisitor(ScopeHandler onScope) {
+        this.onScope = onScope;
         root = Lazy.deferred1(this.createRoot());
     }
 
-    public UiGeneratorVisitor(Out1<ContainerMetadata> source) {
+    public UiGeneratorVisitor(ScopeHandler onScope, Out1<ContainerMetadata> source) {
+        this.onScope = onScope;
         root = Lazy.deferred1(source);
     }
 
-    public UiGeneratorVisitor(ContainerMetadata source) {
+    public UiGeneratorVisitor(ScopeHandler onScope, ContainerMetadata source) {
+        this.onScope = onScope;
         root = Lazy.immutable1(source);
     }
 
     protected Out1<ContainerMetadata> createRoot() {
         return ContainerMetadata::new;
+    }
+
+    public void wrapScope(In1Out1<ScopeHandler, ScopeHandler> mapper) {
+        onScope = mapper.io(onScope);
     }
 
     @Override
@@ -49,10 +62,15 @@ public class UiGeneratorVisitor extends VoidVisitorAdapter<UiGeneratorTools> {
         try {
             final UiComponentGenerator myGenerator = generator = service.getComponentGenerator(n, me);
             if (myGenerator != null) {
-                if (generator.startVisit(service, me, n)) {
+                final UiVisitScope scope = generator.startVisit(service, me, n);
+                assert scope.getType() == ScopeType.CONTAINER : "Expected container scope " + scope;
+                final RemovalHandler undo = onScope.io(scope);
+                if (scope.isVisitChildren()) {
+
                     super.visit(n, service);
                 }
-                myGenerator.endVisit(service, me, n);
+                undo.remove();
+                myGenerator.endVisit(service, me, n, scope);
             }
 
         } finally {
@@ -72,10 +90,14 @@ public class UiGeneratorVisitor extends VoidVisitorAdapter<UiGeneratorTools> {
 
             final UiFeatureGenerator myFeature = feature = service.getFeatureGenerator(n, generator);
             if (myFeature != null) {
-                if (myFeature.startVisit(service, myGenerator, parent, n)) {
+                final UiVisitScope scope = myFeature.startVisit(service, myGenerator, parent, n);
+                assert scope.getType() == ScopeType.FEATURE : "Expected feature scope " + scope;
+                final RemovalHandler undo = onScope.io(scope);
+                if (scope.isVisitChildren()) {
                     super.visit(n, service);
                 }
-                myFeature.finishVisit(service, myGenerator, parent, n);
+                undo.remove();
+                myFeature.finishVisit(service, myGenerator, parent, n, scope);
                 if (myFeature.hasSideEffects()) {
                     myGenerator.getMetadata().recordSideEffects(service, myFeature);
                 }

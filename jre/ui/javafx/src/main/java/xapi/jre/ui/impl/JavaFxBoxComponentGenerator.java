@@ -1,9 +1,9 @@
 package xapi.jre.ui.impl;
 
+import com.github.javaparser.ASTHelper;
 import com.github.javaparser.ast.expr.UiContainerExpr;
-import javafx.scene.control.Button;
+import javafx.scene.layout.VBox;
 import xapi.dev.source.MethodBuffer;
-import xapi.dev.source.SourceBuilder;
 import xapi.dev.ui.ContainerMetadata;
 import xapi.dev.ui.UiComponentGenerator;
 import xapi.dev.ui.UiGeneratorTools;
@@ -12,11 +12,7 @@ import xapi.dev.ui.UiVisitScope;
 /**
  * Created by james on 6/17/16.
  */
-public class JavaFxButtonComponentGenerator extends UiComponentGenerator {
-
-  public JavaFxButtonComponentGenerator() {
-
-  }
+public class JavaFxBoxComponentGenerator extends UiComponentGenerator {
 
   @Override
   public UiVisitScope startVisit(
@@ -25,10 +21,14 @@ public class JavaFxButtonComponentGenerator extends UiComponentGenerator {
 
     String parentName = me.peekPanelName();
     final MethodBuffer mb = me.getMethod(parentName);
-    final SourceBuilder<?> out = me.getSourceBuilder();
-    String button = out.addImport(Button.class);
-    String ref = me.getRefName("button");
-    mb.println(button + " " + ref + " = new " + button + "();");
+    String container = n.getAttribute("type")
+          .map(ASTHelper::extractAttrValue)
+          .orElse(VBox.class.getCanonicalName());
+    container = mb.addImport(container);
+
+    String ref = me.getRefName("box");
+    mb.println(container + " " + ref + " = new " + container + "();");
+
     mb.println(parentName + ".getChildren().add(" + ref + ");");
     me.pushPanelName(ref);
     me.saveMethod(ref, mb);
@@ -40,8 +40,8 @@ public class JavaFxButtonComponentGenerator extends UiComponentGenerator {
         UiGeneratorTools service, ContainerMetadata me, UiContainerExpr n,
         UiVisitScope scope
   ) {
-    String pop = me.popPanelName();
-    me.removeMethod(pop);
+    String panel = me.popPanelName();
+    me.removeMethod(panel);
     super.endVisit(service, me, n, scope);
   }
 }

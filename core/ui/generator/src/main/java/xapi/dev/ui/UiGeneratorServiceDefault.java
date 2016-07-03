@@ -54,7 +54,8 @@ public class UiGeneratorServiceDefault extends AbstractUiGeneratorService {
 
     @Override
     public ComponentBuffer initialize(
-          AnnotationTools service, TypeElement type, Ui ui, UiContainerExpr container) {
+          AnnotationTools service, TypeElement type, Ui ui, UiContainerExpr container
+    ) {
 
         this.service = service;
         final String pkgName = service.getPackageName(type);
@@ -86,7 +87,7 @@ public class UiGeneratorServiceDefault extends AbstractUiGeneratorService {
             case PhaseIntegration.PHASE_INTEGRATION:
                 return peekIntegration(component);
             case PhaseBinding.PHASE_BINDING:
-                return peekBinding(component);
+                return runBinding(component);
             default:
                 return runCustomPhase(id, component);
         }
@@ -129,7 +130,11 @@ public class UiGeneratorServiceDefault extends AbstractUiGeneratorService {
 
         SourceBuilder<ContainerMetadata> binder = component.getBinder();
         // TODO add @Generated tag with all resources we are dependent upon
-        saveGeneratedComponent(component.getRoot());
+
+        final SourceBuilder<ContainerMetadata> root = component.getBinder();
+        onDone.add(()->
+            saveGeneratedComponent(root)
+        );
 
         return component;
     }
@@ -141,8 +146,7 @@ public class UiGeneratorServiceDefault extends AbstractUiGeneratorService {
         return "Super" + super.calculateGeneratedName(pkgName, className, expr);
     }
 
-    private void saveGeneratedComponent(ContainerMetadata root) {
-        final SourceBuilder<ContainerMetadata> binder = root.getSourceBuilder();
+    private void saveGeneratedComponent(SourceBuilder<?> binder) {
 
         final String src = binder.toSource();
         try {
@@ -151,7 +155,7 @@ public class UiGeneratorServiceDefault extends AbstractUiGeneratorService {
             try (OutputStream o = out.openOutputStream()) {
                 X_IO.drain(o, X_IO.toStreamUtf8(src));
             }
-            X_Log.info(getClass(), "Generating ui into ", out, "\n", src);
+            X_Log.info(getClass(), "Generating ui into ", out.toUri(), "\n", src);
         } catch (IOException e) {
             throw X_Debug.rethrow(e);
         }
@@ -161,7 +165,7 @@ public class UiGeneratorServiceDefault extends AbstractUiGeneratorService {
         final InterestingNodeResults interestingNodes = component.getInterestingNodes();
         Set<UiContainerExpr> templateParents = interestingNodes.getTemplateNameParents();
         componentFactory = containerFilter(templateParents);
-        featureFactory = (feature, gen) ->{
+        featureFactory = (feature, gen) -> {
             if (templateParents.contains(ASTHelper.getContainerParent(feature))) {
                 rewriteDataReferences(component, feature, gen);
                 return new UiFeatureGenerator();
@@ -178,87 +182,82 @@ public class UiGeneratorServiceDefault extends AbstractUiGeneratorService {
     protected void rewriteDataReferences(ComponentBuffer component, UiAttrExpr n, UiComponentGenerator gen) {
         final ContainerMetadata me = gen.getMetadata();
         final Expression expr = n.getExpression();
-        if (expr instanceof LambdaExpr) {
-
-            LambdaExpr body = (LambdaExpr) expr;
-            Map<Node, Out1<Node>> replacements = new IdentityHashMap<>();
-            final ComponentMetadataQuery query = new ComponentMetadataQuery();
-            body.accept(
-                  new ComponentMetadataFinder(),
-                  query
-                        .addNameListener((graph, name) -> {
-                            String replacement;
-                            switch (name.getName()) {
-                                case "$root":
-                                    replacement = me.getRootReference();
-                                    break;
-                                default:
-                                    if (query.isTemplateName(name.getName())) {
-                                        replacement = query.normalizeTemplateName(name.getName());
-                                    } else {
-                                        replacement = null;
-                                    }
-                            }
-                            String ref = replacement;
-                            name.setName(ref);
-                            name.getParentNode().getParentNode().accept(new ModifierVisitorAdapter<Object>() {
-                                @Override
-                                public Node visit(
-                                      FieldAccessExpr n, Object arg
-                                ) {
-                                    String var = n.getField();
-                                    NodeTransformer newNode = me.findReplacement(ref, var);
-                                    if (newNode != null) {
-                                        // If this node is the qualifier on a field access,
-                                        // then we may want to perform additional transformations...
-                                        if (n.getParentNode() instanceof FieldAccessExpr) {
-                                            // A field access may be shorthand notation for a map access...
-                                            // The data field was a qualifier of a field access...
-                                            FieldAccessExpr parent = (FieldAccessExpr) n.getParentNode();
-                                            if (parent.getParentNode() instanceof UnaryExpr) {
-                                                // A + - ++ -- ! or ~ expression.  We will replace this with a compute call
-                                                // if one is available...
-                                                UnaryExpr toReplace = (UnaryExpr) parent.getParentNode();
-                                                // ++ and -- must be handled specially, as they perform
-                                                // a read and a write
-                                                parent.setScope((Expression) newNode.getNode());
-                                                replacements.put(toReplace, () -> newNode.transformUnary(n, toReplace));
-                                            } else if (parent.getParentNode() instanceof BinaryExpr) {
-                                                // A && || = > < >= <= etc binary expression;
-                                                // These are safe to replace as simple get operations,
-                                                // as they do not perform assignment
-                                                BinaryExpr toReplace = (BinaryExpr) parent.getParentNode();
-                                                final Node result = newNode.transformBinary(toReplace);
-                                                replacements.put(toReplace, () -> newNode.transformBinary(toReplace));
-                                            } else if (parent.getParentNode() instanceof AssignExpr) {
-                                                AssignExpr toReplace = (AssignExpr) parent.getParentNode();
-                                                // A plain = assignment will be transformed into a write,
-                                                // while all other assignment, += -= etc will need to read and write
-                                                final Node result = newNode.transformAssignExpr(toReplace);
-                                                replacements.put(
-                                                      toReplace,
-                                                      () -> newNode.transformAssignExpr(toReplace)
-                                                );
-                                            }
-                                        } else if (n.getParentNode() instanceof ArrayAccessExpr) {
-                                            // An array access may be shorthand notation for a list access
-                                            ArrayAccessExpr toReplace = (ArrayAccessExpr) n.getParentNode();
-                                            final Node result = newNode.transformArrayAccess(toReplace);
-                                            replacements.put(toReplace, () -> newNode.transformArrayAccess(toReplace));
-                                        }
-                                        return newNode.getNode();
-                                    }
-                                    return super.visit(n, arg);
+        Map<Node, Out1<Node>> replacements = new IdentityHashMap<>();
+        final ComponentMetadataQuery query = new ComponentMetadataQuery();
+        query.setVisitAttributeContainers(false);
+        query.setVisitChildContainers(false);
+        expr.accept(
+              new ComponentMetadataFinder(),
+              query
+                    .addNameListener((graph, name) -> {
+                        String replacement;
+                        switch (name.getName()) {
+                            case "$root":
+                                replacement = me.getRootReference();
+                                break;
+                            default:
+                                if (query.isTemplateName(name.getName())) {
+                                    replacement = query.normalizeTemplateName(name.getName());
+                                } else {
+                                    replacement = null;
                                 }
-                            }, null);
+                        }
+                        String ref = replacement;
+                        name.setName(ref);
+                        name.getParentNode().getParentNode().accept(new ModifierVisitorAdapter<Object>() {
+                            @Override
+                            public Node visit(
+                                  FieldAccessExpr n, Object arg
+                            ) {
+                                String var = n.getField();
+                                NodeTransformer newNode = me.findReplacement(ref, var);
+                                if (newNode != null) {
+                                    // If this node is the qualifier on a field access,
+                                    // then we may want to perform additional transformations...
+                                    if (n.getParentNode() instanceof FieldAccessExpr) {
+                                        // A field access may be shorthand notation for a map access...
+                                        // The data field was a qualifier of a field access...
+                                        FieldAccessExpr parent = (FieldAccessExpr) n.getParentNode();
+                                        if (parent.getParentNode() instanceof UnaryExpr) {
+                                            // A + - ++ -- ! or ~ expression.  We will replace this with a compute call
+                                            // if one is available...
+                                            UnaryExpr toReplace = (UnaryExpr) parent.getParentNode();
+                                            // ++ and -- must be handled specially, as they perform
+                                            // a read and a write
+                                            parent.setScope((Expression) newNode.getNode());
+                                            replacements.put(toReplace, () -> newNode.transformUnary(n, toReplace));
+                                        } else if (parent.getParentNode() instanceof BinaryExpr) {
+                                            // A && || = > < >= <= etc binary expression;
+                                            // These are safe to replace as simple get operations,
+                                            // as they do not perform assignment
+                                            BinaryExpr toReplace = (BinaryExpr) parent.getParentNode();
+                                            replacements.put(toReplace, () -> newNode.transformBinary(n, toReplace));
+                                        } else if (parent.getParentNode() instanceof AssignExpr) {
+                                            AssignExpr toReplace = (AssignExpr) parent.getParentNode();
+                                            // A plain = assignment will be transformed into a write,
+                                            // while all other assignment, += -= etc will need to read and write
+                                            final Node result = newNode.transformAssignExpr(toReplace);
+                                            replacements.put(
+                                                  toReplace,
+                                                  () -> newNode.transformAssignExpr(toReplace)
+                                            );
+                                        }
+                                    } else if (n.getParentNode() instanceof ArrayAccessExpr) {
+                                        // An array access may be shorthand notation for a list access
+                                        ArrayAccessExpr toReplace = (ArrayAccessExpr) n.getParentNode();
+                                        final Node result = newNode.transformArrayAccess(toReplace);
+                                        replacements.put(toReplace, () -> newNode.transformArrayAccess(toReplace));
+                                    }
+                                    return newNode.getNode();
+                                }
+                                return super.visit(n, arg);
+                            }
+                        }, null);
 
-                        })
-            );
-            if (!replacements.isEmpty()) {
-                ConcreteModifierVisitor.replaceResolved(replacements);
-            }
-        } else {
-            X_Log.trace(getClass(), "Ignoring unhandled expression", expr, expr == null ? null : expr.getClass());
+                    })
+        );
+        if (!replacements.isEmpty()) {
+            ConcreteModifierVisitor.replaceResolved(replacements);
         }
     }
 
@@ -266,7 +265,7 @@ public class UiGeneratorServiceDefault extends AbstractUiGeneratorService {
         final InterestingNodeResults interestingNodes = component.getInterestingNodes();
         Set<UiContainerExpr> dataParents = interestingNodes.getDataParents();
         componentFactory = containerFilter(dataParents);
-        featureFactory = (feature, gen) ->{
+        featureFactory = (feature, gen) -> {
             if (feature.getNameString().equalsIgnoreCase("data")) {
                 return new DataFeatureGenerator();
             } else if (dataParents.contains(ASTHelper.getContainerParent(feature))) {
@@ -289,7 +288,7 @@ public class UiGeneratorServiceDefault extends AbstractUiGeneratorService {
             final ContainerMetadata metadata = component.getImplementation(service.getClass());
             service.setGenerator(this);
             final ContainerMetadata result = service.generateComponent(metadata, component);
-            saveGeneratedComponent(result);
+            saveGeneratedComponent(result.getSourceBuilder());
         }
         return component;
     }
@@ -302,7 +301,7 @@ public class UiGeneratorServiceDefault extends AbstractUiGeneratorService {
         return component;
     }
 
-    protected ComponentBuffer peekBinding(ComponentBuffer component) {
+    protected ComponentBuffer runBinding(ComponentBuffer component) {
         return component;
     }
 

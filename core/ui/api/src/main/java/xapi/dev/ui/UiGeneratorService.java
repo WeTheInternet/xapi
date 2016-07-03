@@ -25,4 +25,6 @@ public interface UiGeneratorService {
     UiGeneratorVisitor createVisitor(ContainerMetadata metadata);
 
     ComponentBuffer initialize(AnnotationTools service, TypeElement type, Ui ui, UiContainerExpr container);
+
+    void finish();
 }

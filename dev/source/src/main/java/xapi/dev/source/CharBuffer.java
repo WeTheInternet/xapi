@@ -48,6 +48,7 @@ public class CharBuffer implements Coercible {
 
   CharBuffer makeChild(){
     final CharBuffer child = newChild();
+    child.indent = indent;
     addToEnd(child);
     return child;
   }

@@ -22,13 +22,15 @@
 package com.github.javaparser.ast;
 
 import com.github.javaparser.ast.comments.Comment;
+import com.github.javaparser.ast.plugin.Transformer;
 import com.github.javaparser.ast.visitor.CloneVisitor;
 import com.github.javaparser.ast.visitor.DumpVisitor;
 import com.github.javaparser.ast.visitor.EqualsVisitor;
 import com.github.javaparser.ast.visitor.GenericVisitor;
 import com.github.javaparser.ast.visitor.TransformVisitor;
-import com.github.javaparser.ast.plugin.Transformer;
 import com.github.javaparser.ast.visitor.VoidVisitor;
+import xapi.collect.X_Collect;
+import xapi.collect.api.StringTo;
 
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -57,6 +59,7 @@ public abstract class Node implements Cloneable {
 
     private List<Node> childrenNodes = new LinkedList<Node>();
     private List<Comment> orphanComments = new LinkedList<Comment>();
+    private StringTo<Object> extras;
 
     /**
      * This attribute can store additional information from semantic analysis.
@@ -402,5 +405,19 @@ public abstract class Node implements Cloneable {
             }
         }
         return null;
+    }
+
+    public void addExtra(String key, Object value) {
+        if (extras == null) {
+            extras = X_Collect.newStringMap(Object.class);
+        }
+        extras.put(key, value);
+    }
+
+    public <T> T getExtra(String key) {
+        if (extras == null) {
+            return null;
+        }
+        return (T) extras.get(key);
     }
 }

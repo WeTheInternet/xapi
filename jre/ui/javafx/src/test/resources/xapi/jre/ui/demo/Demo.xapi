@@ -5,8 +5,16 @@
       @Type
       { one: 0, two: 0, text: "" }
   >
-  <button ref="one" text="Button 1" onClick=e->
-    $one.setText("You clicked one " + $root.data.one++ + " times") />
-  <button ref="two" text="Button 2" onClick=e->
-    $two.setText("You clicked two " + ++$root.data.two + " times") />
+  <box
+        size = 300 * (()->150 + 10 * $root.data.one)
+        align = center
+  >
+      <button ref="one" text="Button 1" onClick=e->
+        $one.setText("You clicked one " + $root.data.one++ + " times") />
+      <button ref="two" text="Button 2" onClick=e->
+        $two.setText("You clicked two " + ++$root.data.two + " times") />
+  </box>
+  <box align = center>
+      <button text="Close" onClick=System.exit(0) />
+  </box>
 </app>

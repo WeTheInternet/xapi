@@ -1611,8 +1611,10 @@ public class DumpVisitor implements VoidVisitor<Object> {
 		if (printPar) {
 			printer.print("(");
 		}
+		boolean hadParam = false;
 		if (parameters != null) {
 			for (Iterator<Parameter> i = parameters.iterator(); i.hasNext();) {
+				hadParam = true;
 				Parameter p = i.next();
 				p.accept(this, arg);
 				if (i.hasNext()) {
@@ -1621,6 +1623,9 @@ public class DumpVisitor implements VoidVisitor<Object> {
 			}
 		}
 		if (printPar) {
+			if (hadParam) {
+				printer.print(" ");
+			}
 			printer.print(")");
 		}
 

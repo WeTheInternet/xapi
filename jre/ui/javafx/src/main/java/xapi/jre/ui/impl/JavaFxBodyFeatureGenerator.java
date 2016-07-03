@@ -7,6 +7,10 @@ import xapi.dev.ui.ContainerMetadata;
 import xapi.dev.ui.UiComponentGenerator;
 import xapi.dev.ui.UiFeatureGenerator;
 import xapi.dev.ui.UiGeneratorTools;
+import xapi.dev.ui.UiVisitScope;
+import xapi.dev.ui.UiVisitScope.ScopeType;
+
+import static xapi.dev.ui.UiVisitScope.visitScope;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 6/19/16.
@@ -14,7 +18,7 @@ import xapi.dev.ui.UiGeneratorTools;
 public class JavaFxBodyFeatureGenerator extends UiFeatureGenerator {
 
   @Override
-  public boolean startVisit(
+  public UiVisitScope startVisit(
         UiGeneratorTools service, UiComponentGenerator generator, ContainerMetadata parent, UiAttrExpr n
   ) {
     final Expression expr = n.getExpression();
@@ -23,6 +27,6 @@ public class JavaFxBodyFeatureGenerator extends UiFeatureGenerator {
     }
     UiContainerExpr container = (UiContainerExpr) expr;
 
-    return false;
+    return visitScope(ScopeType.CONTAINER, false);
   }
 }

@@ -10,6 +10,7 @@ import xapi.dev.source.SourceBuilder;
 import xapi.dev.ui.ContainerMetadata;
 import xapi.dev.ui.UiComponentGenerator;
 import xapi.dev.ui.UiGeneratorTools;
+import xapi.dev.ui.UiVisitScope;
 import xapi.fu.In1Out1;
 
 import java.util.Optional;
@@ -24,7 +25,7 @@ public class JavaFxAppComponentGenerator extends UiComponentGenerator {
   }
 
   @Override
-  public boolean startVisit(
+  public UiVisitScope startVisit(
         UiGeneratorTools service, ContainerMetadata me, UiContainerExpr n
   ) {
 
@@ -59,11 +60,12 @@ public class JavaFxAppComponentGenerator extends UiComponentGenerator {
 
   @Override
   public void endVisit(
-        UiGeneratorTools service, ContainerMetadata me, UiContainerExpr n
+        UiGeneratorTools service, ContainerMetadata me, UiContainerExpr n,
+        UiVisitScope scope
   ) {
     String panelName = me.popPanelName();
     me.getMethod(panelName)
       .returnValue(panelName);
-    super.endVisit(service, me, n);
+    super.endVisit(service, me, n, scope);
   }
 }

@@ -39,6 +39,7 @@ import com.github.javaparser.ast.type.PrimitiveType;
 import com.github.javaparser.ast.type.PrimitiveType.Primitive;
 import com.github.javaparser.ast.type.ReferenceType;
 import com.github.javaparser.ast.type.Type;
+import com.github.javaparser.ast.type.UnknownType;
 import com.github.javaparser.ast.type.VoidType;
 import xapi.log.X_Log;
 
@@ -104,6 +105,10 @@ public final class ASTHelper {
      */
     public static Parameter createParameter(Type type, String name) {
         return new Parameter(type, new VariableDeclaratorId(name));
+    }
+
+    public static Parameter createParameter(String name) {
+        return new Parameter(new UnknownType(), new VariableDeclaratorId(name));
     }
 
     /**
@@ -314,11 +319,14 @@ public final class ASTHelper {
 
     public static String extractStringValue(Expression value) {
         if (value instanceof StringLiteralExpr) {
+            // StringLiteral strangely covers all primitives as well...
             return ((StringLiteralExpr)value).getValue();
         } else if (value instanceof TemplateLiteralExpr) {
             return ((TemplateLiteralExpr)value).getValue();
+        } else if (value instanceof NullLiteralExpr) {
+            return "null";
         } else if (value instanceof NameExpr) {
-            return ((NameExpr)value).getName();
+            return value.toString();
         } else {
             String error = "Unhandled attribute value; cannot extract compile time string literal from " + value;
             X_Log.error(ASTHelper.class, error);
@@ -335,5 +343,11 @@ public final class ASTHelper {
             feature = feature.getParentNode();
         }
         return (UiContainerExpr) feature;
+    }
+
+    public static boolean isNumericLiteral(Expression expr) {
+        return expr instanceof IntegerLiteralExpr ||
+               expr instanceof LongLiteralExpr ||
+               expr instanceof DoubleLiteralExpr;
     }
 }
