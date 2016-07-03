@@ -232,7 +232,11 @@ public class X_Collect {
     return new StringToManyList<X>(component, map);
   }
 
-  public static final CollectionService service = singleton(CollectionService.class);
+  private static final CollectionService service = singleton(CollectionService.class);
+
+  public static CollectionService collections() {
+    return service;
+  }
 
   public static final CollectionOptions IMMUTABLE = asMutable(false).build();
 
@@ -312,7 +316,7 @@ public class X_Collect {
    * int i = computeMapTransform(m).io("key", (k, v)->v++);
    * assert i == 1;
    * assert map.get("key").equals(1);
-   * 
+   *
    */
   public static <Key, Val>
   In2Out1<Key, In2Out1<Key, Val, Val>, Val>

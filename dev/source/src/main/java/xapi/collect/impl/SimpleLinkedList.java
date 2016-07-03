@@ -3,9 +3,13 @@
  */
 package xapi.collect.impl;
 
+import xapi.fu.Filter.Filter1;
+import xapi.fu.In1;
+import xapi.fu.In1Out1;
+import xapi.fu.X_Fu;
+
 import java.util.Iterator;
 import java.util.ListIterator;
-import java.util.function.Consumer;
 
 /**
  * @author "James X. Nelson (james@wetheinter.net)"
@@ -106,6 +110,55 @@ AbstractLinkedList<T, SimpleLinkedList.LinkedListNode<T>, SimpleLinkedList<T>> {
 
   }
 
+
+  public void forEachReverse(final In1<T> consumer) {
+    assert consumer != null;
+    final Iterator<T> reverse = iteratorReverse();
+    while (reverse.hasNext()) {
+      consumer.in(reverse.next());
+    }
+  }
+
+  public T findReverse(final Filter1<T> consumer) {
+    assert consumer != null;
+    final Iterator<T> reverse = iteratorReverse();
+    while (reverse.hasNext()) {
+      final T next = reverse.next();
+      if (consumer.filter1(next)) {
+        return next;
+      }
+    }
+    return null;
+  }
+
+  public <R> R findMappedReverse(final Filter1<T> consumer, In1Out1<T, R> mapper) {
+    assert consumer != null;
+    final Iterator<T> reverse = iteratorReverse();
+    while (reverse.hasNext()) {
+      final T next = reverse.next();
+      if (consumer.filter1(next)) {
+        return mapper.io(next);
+      }
+    }
+    return null;
+  }
+
+  public T findNotNullReverse() {
+    return findReverse(X_Fu::returnNotNull);
+  }
+
+  public <R> R findNotNullMappedReverse(In1Out1<T, R> mapper) {
+    return findMappedReverse(X_Fu::returnNotNull, mapper);
+  }
+
+  public Iterator<T> iteratorReverse() {
+    return new NodeIteratorReverse();
+  }
+
+  public Iterable<T> reverse() {
+    return NodeIteratorReverse::new;
+  }
+
   protected final class NodeIteratorReverse implements Iterator<T> {
     private LinkedListNode<T> next = tail;
 
@@ -128,18 +181,6 @@ AbstractLinkedList<T, SimpleLinkedList.LinkedListNode<T>, SimpleLinkedList<T>> {
       throw new UnsupportedOperationException();
     }
 
-  }
-
-  public void forEachReverse(final Consumer<T> consumer) {
-    assert consumer != null;
-    final Iterator<T> reverse = iteratorReverse();
-    while (reverse.hasNext()) {
-      consumer.accept(reverse.next());
-    }
-  }
-
-  public Iterator<T> iteratorReverse() {
-    return new NodeIteratorReverse();
   }
 
   public ListIterator<T> listIterator() {

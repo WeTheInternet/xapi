@@ -135,4 +135,13 @@ extends CollectionProxy<Integer,T>
     return false;
   }
 
+  default void removeAll(In1<T> callback) {
+    final T[] items = toArray();
+    clear();
+    for (T item : items) {
+      callback.in(item);
+    }
+
+  }
+
 }

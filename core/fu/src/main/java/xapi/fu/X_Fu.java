@@ -69,11 +69,23 @@ public interface X_Fu {
     return false;
   }
 
+  static <T> boolean returnNotNull(T t) {
+    return t != null;
+  }
+
+  static <T> boolean isNull(T t) {
+    return t == null;
+  }
+
   static <T> Filter<T> alwaysTrue() {
     return X_Fu::returnTrue;
   }
 
   static <T> Filter<T> alwaysFalse() {
+    return X_Fu::returnFalse;
+  }
+
+  static <T> Filter<T> notNull() {
     return X_Fu::returnFalse;
   }
 

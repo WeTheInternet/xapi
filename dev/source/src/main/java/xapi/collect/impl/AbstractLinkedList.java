@@ -3,6 +3,10 @@
  */
 package xapi.collect.impl;
 
+import xapi.fu.Filter.Filter1;
+import xapi.fu.In1Out1;
+import xapi.fu.X_Fu;
+
 import java.util.Iterator;
 
 /**
@@ -141,6 +145,38 @@ public abstract class AbstractLinkedList<T, N extends AbstractLinkedList.Node<T,
   protected abstract N newNode(T item);
 
   protected void onAdd(final N previous, final N next) {
+  }
+
+  public <R> R findMapped(final Filter1<T> consumer, In1Out1<T, R> mapper) {
+    assert consumer != null;
+    final Iterator<T> itr = iterator();
+    while (itr.hasNext()) {
+      final T next = itr.next();
+      if (consumer.filter1(next)) {
+        return mapper.io(next);
+      }
+    }
+    return null;
+  }
+
+  public T find(final Filter1<T> consumer) {
+    assert consumer != null;
+    final Iterator<T> itr = iterator();
+    while (itr.hasNext()) {
+      final T next = itr.next();
+      if (consumer.filter1(next)) {
+        return next;
+      }
+    }
+    return null;
+  }
+
+  public T findNotNull() {
+    return find(X_Fu::returnNotNull);
+  }
+
+  public <R> R findNotNullMapped(In1Out1<T, R> mapper) {
+    return findMapped(X_Fu::returnNotNull, mapper);
   }
 
 }

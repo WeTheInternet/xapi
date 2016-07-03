@@ -151,11 +151,15 @@ public interface Out1<O> extends Rethrowable {
     return factory.supplyDeferred(this);
   }
 
-  default Out1<O> mapIf(In1Out1<O, Boolean> filter, In1Out1<O, O> modifier) {
+  default Out1<O> ifNull(In1Out1<O, O> mapper) {
+    return mapIf(X_Fu::isNull, mapper);
+  }
+
+  default Out1<O> mapIf(In1Out1<O, Boolean> filter, In1Out1<O, O> mapper) {
     return ()->{
         O o = out1();
         if (filter.io(o)) {
-            o = modifier.io(o);
+            o = mapper.io(o);
         }
         return o;
     };
