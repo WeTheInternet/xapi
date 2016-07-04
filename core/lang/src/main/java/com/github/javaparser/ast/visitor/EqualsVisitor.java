@@ -1568,4 +1568,81 @@ public class EqualsVisitor implements GenericVisitor<Boolean, Node> {
 		return Boolean.TRUE;
 	}
 
+    @Override
+    public Boolean visit(JsonContainerExpr n, Node arg) {
+        JsonContainerExpr n2 = (JsonContainerExpr) arg;
+        if (!nodesEquals(n.getPairs(), n2.getPairs())) {
+            return Boolean.FALSE;
+        }
+        return Boolean.TRUE;
+    }
+
+    @Override
+    public Boolean visit(JsonPairExpr n, Node arg) {
+        JsonPairExpr n2 = (JsonPairExpr) arg;
+        if (!nodeEquals(n.getKeyExpr(), n2.getKeyExpr())) {
+            return Boolean.FALSE;
+        }
+        if (!nodeEquals(n.getValueExpr(), n2.getValueExpr())) {
+            return Boolean.FALSE;
+        }
+        return Boolean.TRUE;
+    }
+
+    @Override
+    public Boolean visit(CssBlockExpr n, Node arg) {
+        CssBlockExpr n2 = (CssBlockExpr) arg;
+        if (!nodesEquals(n.getContainers(), n2.getContainers())) {
+            return Boolean.FALSE;
+        }
+        return true;
+    }
+
+    @Override
+    public Boolean visit(CssContainerExpr n, Node arg) {
+        CssContainerExpr n2 = (CssContainerExpr)arg;
+        if (!nodesEquals(n.getSelectors(), n2.getSelectors())) {
+            return Boolean.FALSE;
+        }
+        if (!nodesEquals(n.getRules(), n2.getRules())) {
+            return Boolean.FALSE;
+        }
+        return Boolean.TRUE;
+    }
+
+    @Override
+    public Boolean visit(CssRuleExpr n, Node arg) {
+        CssRuleExpr n2 = (CssRuleExpr) arg;
+        if (!nodeEquals(n.getKey(), n2.getKey())) {
+            return Boolean.FALSE;
+        }
+        if (!nodeEquals(n.getValue(), n2.getValue())) {
+            return Boolean.FALSE;
+        }
+        return Boolean.TRUE;
+    }
+
+    @Override
+    public Boolean visit(CssSelectorExpr n, Node arg) {
+        CssSelectorExpr n2 = (CssSelectorExpr) arg;
+        if (!objEquals(n.getParts(), n2.getParts())) {
+            return Boolean.FALSE;
+        }
+        return Boolean.TRUE;
+    }
+
+    @Override
+    public Boolean visit(CssValueExpr n, Node arg) {
+        CssValueExpr n2 = (CssValueExpr) arg;
+        if (!nodeEquals(n.getValue(), n2.getValue())) {
+            return Boolean.FALSE;
+        }
+        if (!objEquals(n.getUnit(), n2.getUnit())) {
+            return Boolean.FALSE;
+        }
+        if (n.isImportant() != n2.isImportant()) {
+            return Boolean.FALSE;
+        }
+        return Boolean.TRUE;
+    }
 }

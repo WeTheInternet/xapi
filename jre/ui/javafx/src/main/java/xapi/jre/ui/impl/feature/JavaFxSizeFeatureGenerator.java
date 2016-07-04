@@ -31,7 +31,10 @@ public class JavaFxSizeFeatureGenerator extends UiFeatureGenerator {
         final MethodBuffer mb = container.getMethod(panel);
 
         final UiAttrExpr size = parent.getAttributeNotNull("size");
-        final Expression expr = size.getExpression();
+        Expression expr = size.getExpression();
+        while (expr instanceof EnclosedExpr) {
+            expr = ((EnclosedExpr)expr).getInner();
+        }
         final Expression width, height;
         if (ASTHelper.isNumericLiteral(expr)) {
             // a single numeric literal means "use this number for both width and height".

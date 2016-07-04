@@ -921,6 +921,10 @@ public abstract class VoidVisitorAdapter<A> implements VoidVisitor<A> {
 
   @Override
   public void visit(CssSelectorExpr n, A arg) {
-
   }
+
+    @Override
+    public void visit(CssValueExpr n, A arg) {
+        n.getValue().accept(this, arg);
+    }
 }

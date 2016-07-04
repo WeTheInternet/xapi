@@ -11,8 +11,8 @@ import java.util.List;
  */
 public class JsonContainerExpr extends JsonExpr {
 
-  private final List<JsonPairExpr> pairs;
-  private final boolean isArray;
+  private List<JsonPairExpr> pairs;
+  private boolean isArray;
 
   public JsonContainerExpr(
       final int beginLine,
@@ -23,7 +23,7 @@ public class JsonContainerExpr extends JsonExpr {
       List<JsonPairExpr> pairs
   ) {
     super(beginLine, beginColumn, endLine, endColumn);
-    this.pairs = pairs;
+    setPairs(pairs);
     this.isArray = isArray;
   }
 
@@ -35,15 +35,18 @@ public class JsonContainerExpr extends JsonExpr {
     return pairs;
   }
 
+  public void setPairs(List<JsonPairExpr> pairs) {
+    this.pairs = pairs;
+    setAsParentNodeOf(pairs);
+  }
+
+  public void setArray(boolean array) {
+    isArray = array;
+  }
+
   @Override
   public <R, A> R accept(GenericVisitor<R, A> v, A arg) {
-    for (JsonPairExpr pair : pairs) {
-      R r = pair.accept(v, arg);
-      if (r != null) {
-        return r;
-      }
-    }
-    return null;
+    return v.visit(this, arg);
   }
 
   @Override

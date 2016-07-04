@@ -11,8 +11,8 @@ import xapi.source.X_Source;
  */
 public class JsonPairExpr extends UiExpr {
 
-  private final Expression keyExpr;
-  private final Expression valueExpr;
+  private Expression keyExpr;
+  private Expression valueExpr;
 
   public JsonPairExpr(final int beginLine, final int beginColumn, final int endLine, final int endColumn, Expression keyExpr, Expression valueExpr) {
     super(beginLine, beginColumn, endLine, endColumn);
@@ -28,13 +28,19 @@ public class JsonPairExpr extends UiExpr {
     return valueExpr;
   }
 
+  public void setKeyExpr(Expression keyExpr) {
+    this.keyExpr = keyExpr;
+    setAsParentNodeOf(keyExpr);
+  }
+
+  public void setValueExpr(Expression valueExpr) {
+    this.valueExpr = valueExpr;
+    setAsParentNodeOf(valueExpr);
+  }
+
   @Override
   public <R, A> R accept(GenericVisitor<R, A> v, A arg) {
-    R r = getKeyExpr().accept(v, arg);
-    if (r != null) {
-      return r;
-    }
-    return getValueExpr().accept(v, arg);
+    return v.visit(this, arg);
   }
 
   @Override

@@ -21,54 +21,23 @@
 
 package com.github.javaparser.ast.visitor;
 
-import com.github.javaparser.ast.comments.BlockComment;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.ImportDeclaration;
-import com.github.javaparser.ast.comments.LineComment;
+import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.PackageDeclaration;
 import com.github.javaparser.ast.TypeParameter;
-import com.github.javaparser.ast.body.AnnotationDeclaration;
-import com.github.javaparser.ast.body.AnnotationMemberDeclaration;
-import com.github.javaparser.ast.body.BodyDeclaration;
-import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
-import com.github.javaparser.ast.body.ConstructorDeclaration;
-import com.github.javaparser.ast.body.EmptyMemberDeclaration;
-import com.github.javaparser.ast.body.EmptyTypeDeclaration;
-import com.github.javaparser.ast.body.EnumConstantDeclaration;
-import com.github.javaparser.ast.body.EnumDeclaration;
-import com.github.javaparser.ast.body.FieldDeclaration;
-import com.github.javaparser.ast.body.InitializerDeclaration;
+import com.github.javaparser.ast.body.*;
+import com.github.javaparser.ast.comments.BlockComment;
 import com.github.javaparser.ast.comments.JavadocComment;
-import com.github.javaparser.ast.body.MethodDeclaration;
-import com.github.javaparser.ast.body.MultiTypeParameter;
-import com.github.javaparser.ast.body.Parameter;
-import com.github.javaparser.ast.body.TypeDeclaration;
-import com.github.javaparser.ast.body.VariableDeclarator;
-import com.github.javaparser.ast.body.VariableDeclaratorId;
+import com.github.javaparser.ast.comments.LineComment;
 import com.github.javaparser.ast.expr.*;
-import com.github.javaparser.ast.stmt.AssertStmt;
-import com.github.javaparser.ast.stmt.BlockStmt;
-import com.github.javaparser.ast.stmt.BreakStmt;
-import com.github.javaparser.ast.stmt.CatchClause;
-import com.github.javaparser.ast.stmt.ContinueStmt;
-import com.github.javaparser.ast.stmt.DoStmt;
-import com.github.javaparser.ast.stmt.EmptyStmt;
-import com.github.javaparser.ast.stmt.ExplicitConstructorInvocationStmt;
-import com.github.javaparser.ast.stmt.ExpressionStmt;
-import com.github.javaparser.ast.stmt.ForStmt;
-import com.github.javaparser.ast.stmt.ForeachStmt;
-import com.github.javaparser.ast.stmt.IfStmt;
-import com.github.javaparser.ast.stmt.LabeledStmt;
-import com.github.javaparser.ast.stmt.ReturnStmt;
-import com.github.javaparser.ast.stmt.Statement;
-import com.github.javaparser.ast.stmt.SwitchEntryStmt;
-import com.github.javaparser.ast.stmt.SwitchStmt;
-import com.github.javaparser.ast.stmt.SynchronizedStmt;
-import com.github.javaparser.ast.stmt.ThrowStmt;
-import com.github.javaparser.ast.stmt.TryStmt;
-import com.github.javaparser.ast.stmt.TypeDeclarationStmt;
-import com.github.javaparser.ast.stmt.WhileStmt;
+import com.github.javaparser.ast.stmt.*;
 import com.github.javaparser.ast.type.*;
+import xapi.collect.X_Collect;
+import xapi.fu.In3Out1;
+import xapi.fu.Out1;
+
+import java.util.Iterator;
 
 /**
  * @author Julio Vilmar Gesser
@@ -1631,53 +1600,152 @@ public abstract class GenericVisitorAdapter<R, A> implements GenericVisitor<R, A
         return null;
     }
 
-	@Override
-	public R visit(final BlockComment n, final A arg) {
-		return null;
-	}
+    @Override
+    public R visit(final BlockComment n, final A arg) {
+        return null;
+    }
 
-	@Override
-	public R visit(final LineComment n, final A arg) {
-		return null;
-	}
+    @Override
+    public R visit(final LineComment n, final A arg) {
+        return null;
+    }
 
-	@Override
-	public R visit(UiAttrExpr n, A arg) {
-		R result = n.getName().accept(this, arg);
-		if (result != null) {
-			return result;
-		}
-		result = n.getExpression().accept(this, arg);
-		return result;
-	}
+    @Override
+    public R visit(UiAttrExpr n, A arg) {
+        R result = n.getName().accept(this, arg);
+        if (result != null) {
+            return result;
+        }
+        result = n.getExpression().accept(this, arg);
+        return result;
+    }
 
-	@Override
-	public R visit(UiContainerExpr n, A arg) {
-		R result = n.getNameExpr().accept(this, arg);
-		if (result != null) {
-			return result;
-		}
-		for (UiAttrExpr uiAttrExpr : n.getAttributes()) {
-			result = uiAttrExpr.accept(this, arg);
-			if (result != null) {
-				return result;
-			}
-		}
-		if (n.getBody() != null) {
-			result = n.getBody().accept(this, arg);
-		}
-		return result;
-	}
+    @Override
+    public R visit(UiContainerExpr n, A arg) {
+        R result = n.getNameExpr().accept(this, arg);
+        if (result != null) {
+            return result;
+        }
+        for (UiAttrExpr uiAttrExpr : n.getAttributes()) {
+            result = uiAttrExpr.accept(this, arg);
+            if (result != null) {
+                return result;
+            }
+        }
+        if (n.getBody() != null) {
+            result = n.getBody().accept(this, arg);
+        }
+        return result;
+    }
 
-	@Override
-	public R visit(UiBodyExpr n, A arg) {
-		for (UiExpr uiExpr : n.getChildren()) {
-			final R result = uiExpr.accept(this, arg);
-			if (result != null) {
-				return result;
-			}
-		}
+    @Override
+    public R visit(UiBodyExpr n, A arg) {
+        if (n.getChildren() != null) {
+            for (UiExpr uiExpr : n.getChildren()) {
+                final R result = uiExpr.accept(this, arg);
+                if (result != null) {
+                    return result;
+                }
+            }
+        }
+        return null;
+    }
 
-		return null;
-	}
+    @Override
+    public R visit(JsonContainerExpr n, A arg) {
+        return checkAllItems(arg, JsonPairExpr::accept, n.getPairs());
+    }
+
+    @Override
+    public R visit(JsonPairExpr n, A arg) {
+        return checkExpression(arg, n.getKeyExpr(),
+            ()-> checkExpression(arg, n.getValueExpr()));
+    }
+
+    @Override
+    public R visit(CssBlockExpr n, A arg) {
+        return checkAllItems(arg, CssContainerExpr::accept, n.getContainers());
+    }
+
+    @Override
+    public R visit(CssContainerExpr n, A arg) {
+        return checkAllItems(arg, CssSelectorExpr::accept, n.getSelectors(),
+            ()-> checkAllItems(arg, CssRuleExpr::accept, n.getRules()
+        ));
+    }
+
+    @Override
+    public R visit(CssRuleExpr n, A arg) {
+        return checkExpression(arg, n.getKey(),
+            ()->checkExpression(arg, n.getValue()));
+    }
+
+    @Override
+    public R visit(CssSelectorExpr n, A arg) {
+        return null;
+    }
+
+    @Override
+    public R visit(CssValueExpr n, A arg) {
+        return checkExpression(arg, n.getValue());
+    }
+
+    protected <N extends Node> R checkItems(A arg, In3Out1<N, GenericVisitor<R, A>, A, R> mapper, Iterable<N> nodes, Out1<R> ifNull) {
+        R result = checkAllItems(arg, mapper, nodes);
+        if (result == null) {
+            return ifNull.out1();
+        }
+        return result;
+    }
+
+    protected <N extends Node> R checkItem(A arg, In3Out1<N, GenericVisitor<R, A>, A, R> mapper, N node, Out1<R> ifNull) {
+        if (node != null) {
+            R result = mapper.io(node, this, arg);
+            if (result == null) {
+                return ifNull.out1();
+            }
+        }
+        return null;
+    }
+
+    protected R checkExpression(A arg, Expression node) {
+        if (node != null) {
+            return node.accept(this, arg);
+        }
+        return null;
+    }
+    protected R checkExpression(A arg, Expression node, Out1<R> ifNull) {
+        if (node != null) {
+            R result = node.accept(this, arg);
+            if (result == null) {
+                return ifNull.out1();
+            }
+        }
+        return null;
+    }
+
+    protected <N extends Node> R checkItems(A arg, In3Out1<N, GenericVisitor<R, A>, A, R> mapper, N... nodes) {
+        return checkAllItems(arg, mapper, X_Collect.arrayIterable(nodes));
+    }
+
+    protected <N extends Node> R checkAllItems(A arg, In3Out1<N, GenericVisitor<R, A>, A, R> mapper, Iterable<N> nodes, Out1<R> ifNull) {
+        final R result = checkAllItems(arg, mapper, nodes);
+        if (result == null) {
+            return ifNull.out1();
+        }
+        return result;
+    }
+    protected <N extends Node> R checkAllItems(A arg, In3Out1<N, GenericVisitor<R, A>, A, R> mapper, Iterable<N> nodes) {
+        if (nodes == null) {
+            return null;
+        }
+        final Iterator<N> itr = nodes.iterator();
+        while (itr.hasNext()) {
+            final N node = itr.next();
+            if (node != null) {
+                return mapper.io(node, this, arg);
+            }
+        }
+        return null;
+    }
 }

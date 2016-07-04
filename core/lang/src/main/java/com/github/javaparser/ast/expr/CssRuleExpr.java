@@ -9,8 +9,8 @@ import com.github.javaparser.ast.visitor.VoidVisitor;
  */
 public class CssRuleExpr extends CssExpr {
 
-  private final Expression key;
-  private final Expression value;
+  private Expression key;
+  private Expression value;
 
   public CssRuleExpr(
       final int beginLine,
@@ -33,19 +33,21 @@ public class CssRuleExpr extends CssExpr {
     return value;
   }
 
+  public void setKey(Expression key) {
+    this.key = key;
+  }
+
+  public void setValue(Expression value) {
+    this.value = value;
+  }
+
   @Override
   public <R, A> R accept(GenericVisitor<R, A> v, A arg) {
-    R r = key.accept(v, arg);
-    if (r != null) {
-      return r;
-    }
-    r = value.accept(v, arg);
-    return r;
+    return v.visit(this, arg);
   }
 
   @Override
   public <A> void accept(VoidVisitor<A> v, A arg) {
-    key.accept(v, arg);
-    value.accept(v, arg);
+    v.visit(this, arg);
   }
 }

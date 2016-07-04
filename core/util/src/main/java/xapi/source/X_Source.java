@@ -322,4 +322,14 @@ public class X_Source {
         String enclosed = removePackage(pkg, fullyQualified);
         return enclosed.replace('.', '_');
     }
+
+  public static String addLineNumbers(String src) {
+    final String[] lines = src.split("\n");
+    int maxSize = (int)(Math.log10(lines.length) + 1);
+    for (int i = 0; i < lines.length; i++) {
+      String line = lines[i];
+      lines[i] = (i + 1) + X_String.repeat(" ", maxSize - i + 1) + line;
+    }
+    return X_String.join("\n", lines);
+  }
 }

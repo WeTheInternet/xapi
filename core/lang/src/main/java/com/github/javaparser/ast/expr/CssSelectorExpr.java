@@ -30,7 +30,7 @@ public class CssSelectorExpr extends CssExpr {
 
   @Override
   public <R, A> R accept(GenericVisitor<R, A> v, A arg) {
-    return null;
+    return v.visit(this, arg);
   }
 
   @Override

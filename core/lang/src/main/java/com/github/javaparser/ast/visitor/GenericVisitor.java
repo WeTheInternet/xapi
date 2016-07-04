@@ -263,4 +263,18 @@ public interface GenericVisitor<R, A> {
     R visit(UiAttrExpr n, A arg);
 
     R visit(UiContainerExpr n, A arg);
+
+	R visit(JsonContainerExpr n, A arg);
+
+	R visit(JsonPairExpr n, A arg);
+
+	R visit(CssBlockExpr n, A arg);
+
+	R visit(CssContainerExpr n, A arg);
+
+	R visit(CssRuleExpr n, A arg);
+
+	R visit(CssSelectorExpr n, A arg);
+
+	R visit(CssValueExpr n, A arg);
 }

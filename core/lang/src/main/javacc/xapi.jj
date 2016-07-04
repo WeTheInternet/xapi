@@ -381,6 +381,15 @@ TOKEN:
 
 }
 
+TOKEN :
+{
+ < IMPORTANT: "!important" >
+ | <CSS_UNIT: ( "px" | "em" | "ems" | "pc" | "cm" | "mm" | "in" | "pt" | "ex" | "rem" |
+  "rad" | "grad" | "deg" | "s" | "ms" | "hz" | "khz" | "dpi" | "dpcm") >
+ | <CSS_UNIT_WITH_PCT : ( <CSS_UNIT> | "%" ) >
+
+}
+
 /* LITERALS */
 
 TOKEN :
@@ -480,8 +489,8 @@ TOKEN :
 
 TOKEN :
 {
-  < IDENTIFIER: <LETTER> (<PART_LETTER>)* >
-| < FEATURE_IDENTIFIER: <LETTER> ( ( <IDENTIFIER> | "-" | "*" ) + ( <IDENTIFIER> | "*" ) )? >
+  < IDENTIFIER: <CSS_UNIT> | (<LETTER> (<PART_LETTER>)*) >
+| < FEATURE_IDENTIFIER: <CSS_UNIT> | (<LETTER> ( ( <IDENTIFIER> | "-" | "*" ) + ( <IDENTIFIER> | "*" ) )? ) >
 | < #LETTER:
       [  // all chars for which Character.isIdentifierStart is true
          "\u0024",          // "$"
@@ -2814,7 +2823,9 @@ UiBodyExpr UiBody():
            endLine = token.endLine; endColumn = token.endColumn;
            NameExpr tagName = new NameExpr(NameExpr.COMMENT_NAME);
            UiBodyExpr body = new UiBodyExpr(beginLine, beginColumn + 4, endLine, endColumn - 3, new ArrayList());
-           UiAttrExpr attr = new UiAttrExpr(new NameExpr("value"), false, new StringLiteralExpr(comment));
+           UiAttrExpr attr = new UiAttrExpr(new NameExpr("value"), false, new TemplateLiteralExpr(
+           beginLine, beginColumn, endLine, endColumn, comment
+           ));
            List attrs = Collections.singletonList(attr);
            children.add(new UiContainerExpr(beginLine, beginColumn, endLine, endColumn, tagName, attrs, body, false));
            setState(UI_BODY);
@@ -2913,7 +2924,7 @@ Expression UiValue():
       // < block of="ui" />
       ( expression = UiContainer() ) |
 
-      // .{  #block { of: css; }  }
+      // .{  #block { of: css; }  } OR .{ inline: style-rules }
       ( expression = CssBlock()) |
 
       // .single { css : rule; }
@@ -3001,7 +3012,7 @@ Expression UiStatement():
   Expression expr;
 }
 {
-  LOOKAHEAD( Expression() ) expr = Expression() { return expr; }
+  LOOKAHEAD( Expression() ";" ) ( expr = Expression() { return expr; } ";" )
   | expr = Literal()
   { return expr; }
 }
@@ -3072,6 +3083,8 @@ CssBlockExpr CssBlock():
 {
   List containers = new ArrayList();
   CssContainerExpr container;
+  List rules = new ArrayList();
+  CssRuleExpr rule;
   int line;
   int column;
 }
@@ -3081,8 +3094,22 @@ CssBlockExpr CssBlock():
     column = token.beginColumn;
   } )
   (
-    container = CssContainer() { containers.add(container); }
-  ) *
+      (
+         (
+           rule = CssRule() { rules.add(rule); }
+         )+
+         {
+            container = new CssContainerExpr(line, column, token.endLine, token.endColumn, new ArrayList(), rules);
+            containers.add(container);
+         }
+      )
+      |
+      (
+          (
+            container = CssContainer() { containers.add(container); }
+          ) *
+      )
+  )
   "}"
   { return new CssBlockExpr(line, column, token.endLine, token.endColumn, containers); }
 }
@@ -3124,8 +3151,12 @@ CssSelectorExpr CssSelector():
         parts.add(token.image);
         line = token.beginLine;
         column = token.beginColumn;
+    } | <FEATURE_IDENTIFIER> {
+        parts.add(token.image);
+        line = token.beginLine;
+        column = token.beginColumn;
     }
-    ( <CSS_SELECTOR> { parts.add(token.image); } )*
+    ( <CSS_SELECTOR> { parts.add(token.image); } | <FEATURE_IDENTIFIER> { parts.add(token.image); } )*
 
   )
   { return new CssSelectorExpr(line, column, token.endLine, token.endColumn, parts); }
@@ -3155,9 +3186,34 @@ CssRuleExpr CssRule():
     )
   )
   ":"
-  ( value = UnaryExpression() )
-  ";"
+  ( value = CssExpression() )
   { return new CssRuleExpr(line, column, token.endLine, token.endColumn, key, value); }
+}
+
+Expression CssExpression():
+{
+  Expression value;
+  ExpressionStmt stmt;
+  String unit = null;
+  boolean important = false;
+}
+{
+    LOOKAHEAD( StatementExpression() )
+    stmt = StatementExpression() { value = stmt.getExpression(); }
+    |
+    (
+      value = Expression()
+      [ <CSS_UNIT> { unit = token.image; } ]
+      [ <CSS_UNIT_WITH_PCT> { unit = token.image; } ]
+      [ <IMPORTANT> { important = true; } ]
+      ";"
+      {
+        value = new CssValueExpr(value, unit, important);
+      }
+    )
+  {
+    return value;
+  }
 }
 
 Expression Literal():

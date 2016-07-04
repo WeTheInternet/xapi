@@ -50,11 +50,9 @@ public class TransformVisitor extends DumpVisitor {
     printJavaComment(comment, arg);
 
     String template = transformer.onTemplateStart(printer, n);
-    if (DO_NOT_PRINT.equals(template)) {
-      transformer.onTemplateEnd(printer);
-      return;
+    if (!DO_NOT_PRINT.equals(template)) {
+      normalizeToString(printer, template);
     }
-    normalizeToString(printer, template);
     transformer.onTemplateEnd(printer);
   }
 

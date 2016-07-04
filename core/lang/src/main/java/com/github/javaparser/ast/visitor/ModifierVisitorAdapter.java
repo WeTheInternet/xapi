@@ -79,6 +79,8 @@ import com.github.javaparser.ast.type.UnionType;
 import com.github.javaparser.ast.type.UnknownType;
 import com.github.javaparser.ast.type.VoidType;
 import com.github.javaparser.ast.type.WildcardType;
+import xapi.fu.In1;
+import xapi.fu.In3Out1;
 
 import java.util.List;
 
@@ -986,15 +988,93 @@ public abstract class ModifierVisitorAdapter<A> implements GenericVisitor<Node, 
 
   @Override
   public Node visit(UiContainerExpr n, A arg) {
-    n.setNameExpr((NameExpr)n.getNameExpr().accept(this, arg));
-    final List<UiAttrExpr> attributes = n.getAttributes();
-    for (int i = 0, m = attributes.size(); i < m; i++) {
-      attributes.set(i, (UiAttrExpr) attributes.get(i).accept(this, arg));
-      removeNulls(attributes);
-    }
-    if (n.getBody() != null) {
-    	n.setBody((UiBodyExpr)n.getBody().accept(this, arg));
-    }
+    copy(n.getNameExpr(), n::setNameExpr, NameExpr::accept, arg);
+    copyAll(n.getAttributes(), n::setAttributes, UiAttrExpr::accept, arg);
+    copy(n.getBody(), n::setBody, UiBodyExpr::accept, arg);
     return n;
   }
+
+    @Override
+    public Node visit(JsonContainerExpr n, A arg) {
+        copyAll(n.getPairs(), n::setPairs, JsonPairExpr::accept, arg);
+        return n;
+    }
+
+    @Override
+    public Node visit(JsonPairExpr n, A arg) {
+        copy(n.getKeyExpr(), n::setKeyExpr, arg);
+        copy(n.getValueExpr(), n::setValueExpr, arg);
+        return n;
+    }
+
+    @Override
+    public Node visit(CssBlockExpr n, A arg) {
+        copyAll(n.getContainers(), n::setContainers, CssContainerExpr::accept, arg);
+        return n;
+    }
+
+    @Override
+    public Node visit(CssContainerExpr n, A arg) {
+        copyAll(n.getSelectors(), n::setSelectors, CssSelectorExpr::accept, arg);
+        copyAll(n.getRules(), n::setRules, CssRuleExpr::accept, arg);
+        return n;
+    }
+
+    @Override
+    public Node visit(CssRuleExpr n, A arg) {
+        copy(n.getKey(), n::setKey, arg);
+        copy(n.getValue(), n::setValue, arg);
+        return n;
+    }
+
+    @Override
+    public Node visit(CssSelectorExpr n, A arg) {
+        return n;
+    }
+
+    @Override
+    public Node visit(CssValueExpr n, A arg) {
+        copy(n.getValue(), n::setValue, arg);
+        return n;
+    }
+
+    protected <N extends Node> void copyAll(
+        List<N> pairs,
+        In1<List<N>> setPairs,
+        In3Out1<N, GenericVisitor<Node, A>, A, Node> mapper,
+        A arg
+    ) {
+        if (pairs != null) {
+            for (int i = 0, m = pairs.size(); i < m; i++) {
+                final N pair = pairs.get(i);
+                pairs.set(i, (N) mapper.io(pair, this, arg));
+            }
+            removeNulls(pairs);
+        }
+        setPairs.in(pairs);
+    }
+    protected Node copy(
+        Expression expr,
+        In1<Expression> setExpr,
+        A arg
+    ) {
+        if (expr == null) {
+            return null;
+        }
+        final Node copy = expr.accept(this, arg);
+        setExpr.in((Expression) copy);
+        return copy;
+    }
+    protected <N extends Node> void copy(
+        N item,
+        In1<N> setItem,
+        In3Out1<N, GenericVisitor<Node, A>, A, Node> mapper,
+        A arg
+    ) {
+        if (item != null) {
+            item = (N) mapper.io(item, this, arg);
+        }
+        setItem.in(item);
+    }
+
 }

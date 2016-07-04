@@ -11,8 +11,8 @@ import java.util.List;
  */
 public class CssContainerExpr extends UiExpr {
 
-  private final List<CssSelectorExpr> selectors;
-  private final List<CssRuleExpr> rules;
+  private List<CssSelectorExpr> selectors;
+  private List<CssRuleExpr> rules;
 
   public CssContainerExpr(
       final int beginLine,
@@ -35,21 +35,17 @@ public class CssContainerExpr extends UiExpr {
     return rules;
   }
 
+  public void setSelectors(List<CssSelectorExpr> selectors) {
+    this.selectors = selectors;
+  }
+
+  public void setRules(List<CssRuleExpr> rules) {
+    this.rules = rules;
+  }
+
   @Override
   public <R, A> R accept(GenericVisitor<R, A> v, A arg) {
-    for (CssSelectorExpr selector : selectors) {
-      R r = selector.accept(v, arg);
-      if (r != null) {
-        return r;
-      }
-    }
-    for (CssRuleExpr rule : rules) {
-      R r = rule.accept(v, arg);
-      if (r != null) {
-        return r;
-      }
-    }
-    return null;
+    return v.visit(this, arg);
   }
 
   @Override

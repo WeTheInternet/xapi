@@ -4,9 +4,12 @@
   data =
       @Type
       { one: 0, two: 0, text: "" }
+//  style = .{
+//          .cls { background-color: blue }
+//           }
   >
   <box
-        size = 300 * (()->150 + 10 * $root.data.one)
+        size = ( 300 * (()->150 + 10 * $root.data.one) )
         align = center
   >
       <button ref="one" text="Button 1" onClick=e->

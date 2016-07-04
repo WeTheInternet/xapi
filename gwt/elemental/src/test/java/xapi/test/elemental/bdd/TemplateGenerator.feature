@@ -60,10 +60,25 @@ Feature: Compile templates into valid java files
     Then source code of HelloWorld is:
       | new PotentialElement("template")     |
       | .set("id", "test")                   |
+      |                                      |
       | .createChild("--comment--")          |
       | .set("value", " This is a comment ") |
       | .finishChild()                       |
+      |                                      |
       | .build()                             |
+
+  Scenario: Parse a template with an inline style feature
+    Given compile ui with name HelloWorld:
+      | <template                |
+      | style = .{ left: 10px; } |
+      | />                       |
+    Then source code of HelloWorld is:
+      | new PotentialElement("template") |
+      | .set("style", ".{\n" +           |
+      | "    left : 10px;\n" +           |
+      | "  }")                           |
+      | .build()                         |
+
 
   Scenario: Create a class from a template file
     Given compile component with name HelloWorld:

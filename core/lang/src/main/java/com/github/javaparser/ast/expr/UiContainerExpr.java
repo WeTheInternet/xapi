@@ -65,6 +65,7 @@ public class UiContainerExpr extends UiExpr {
 
   public void setAttributes(List<UiAttrExpr> attributes) {
     final In1Out1<UiAttrExpr, String> mapper = UiAttrExpr::getNameString;
+    attrs.clear();
     attrs.addManyMapped(attributes, mapper);
     setAsParentNodeOf(attributes);
   }

@@ -11,7 +11,7 @@ import java.util.List;
  */
 public class CssBlockExpr extends UiExpr {
 
-  private final List<CssContainerExpr> containers;
+  private List<CssContainerExpr> containers;
 
   public CssBlockExpr(
       final int beginLine,
@@ -21,23 +21,21 @@ public class CssBlockExpr extends UiExpr {
       List<CssContainerExpr> containers
   ) {
     super(beginLine, beginColumn, endLine, endColumn);
-    this.containers = containers;
+    setContainers(containers);
   }
 
   public List<CssContainerExpr> getContainers() {
     return containers;
   }
 
+  public void setContainers(List<CssContainerExpr> containers) {
+    this.containers = containers;
+    setAsParentNodeOf(containers);
+  }
+
   @Override
   public <R, A> R accept(GenericVisitor<R, A> v, A arg) {
-    for (CssContainerExpr container : containers) {
-      R r = container.accept(v, arg);
-      if (r != null) {
-        return r;
-      }
-    }
-
-    return null;
+    return v.visit(this, arg);
   }
 
   @Override

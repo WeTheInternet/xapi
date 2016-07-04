@@ -276,4 +276,6 @@ public interface VoidVisitor<A> {
 
     void visit(CssSelectorExpr n, A arg);
 
+    void visit(CssValueExpr n, A arg);
+
 }

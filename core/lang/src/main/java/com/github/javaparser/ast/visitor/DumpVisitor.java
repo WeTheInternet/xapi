@@ -1718,7 +1718,17 @@ public class DumpVisitor implements VoidVisitor<Object> {
   @Override
   public void visit(CssBlockExpr n, Object arg) {
     printer.println(".{");
-    n.getContainers().forEach(container->container.accept(this, arg));
+    printer.indent();
+    final List<CssContainerExpr> containers = n.getContainers();
+    if (containers.size() == 1 && containers.get(0).getSelectors().isEmpty()) {
+        // In the case of a single container with no rules, we do not want to
+        // print a wrapper .{ } as there are no blocks inside; instead,
+        // we just want to print .{ rules: inline }
+        containers.get(0).getRules().forEach(rule -> visit(rule, arg));
+    } else {
+        containers.forEach(container->visit(container, arg));
+    }
+    printer.outdent();
     printer.print("}");
   }
 
@@ -1732,7 +1742,9 @@ public class DumpVisitor implements VoidVisitor<Object> {
       selectors.get(i).accept(this, arg);
     }
     printer.println("{");
+    printer.indent();
     n.getRules().forEach(rule->rule.accept(this, arg));
+    printer.outdent();
     printer.println("}");
 
   }
@@ -1740,10 +1752,27 @@ public class DumpVisitor implements VoidVisitor<Object> {
   @Override
   public void visit(CssRuleExpr n, Object arg) {
     n.getKey().accept(this, arg);
+    printer.print(" : ");
     n.getValue().accept(this, arg);
+    printer.println(";");
   }
 
-  @Override
+    @Override
+    public void visit(CssValueExpr n, Object arg) {
+        final Expression value = n.getValue();
+        if (value != null) {
+            value.accept(this, arg);
+        }
+        if (n.getUnit() != null) {
+            printer.print(n.getUnit());
+        }
+        if (n.isImportant()) {
+            printer.print(" !important");
+        }
+    }
+
+
+	@Override
   public void visit(CssSelectorExpr n, Object arg) {
     n.getParts().forEach(part->printer.print(part+" "));
   }

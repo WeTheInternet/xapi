@@ -15,4 +15,7 @@ public abstract class CssExpr extends UiExpr {
     super(beginLine, beginColumn, endLine, endColumn);
   }
 
+  public CssExpr() {
+    super();
+  }
 }

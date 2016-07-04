@@ -1,22 +1,17 @@
 package xapi.dev.elemental;
 
+import com.github.javaparser.ASTHelper;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseException;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
-import com.github.javaparser.ast.expr.AnnotationExpr;
-import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.LiteralExpr;
-import com.github.javaparser.ast.expr.NameExpr;
-import com.github.javaparser.ast.expr.StringLiteralExpr;
-import com.github.javaparser.ast.expr.TemplateLiteralExpr;
-import com.github.javaparser.ast.expr.UiAttrExpr;
-import com.github.javaparser.ast.expr.UiBodyExpr;
-import com.github.javaparser.ast.expr.UiContainerExpr;
-import com.github.javaparser.ast.expr.UiExpr;
+import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.plugin.Transformer;
 import com.github.javaparser.ast.plugin.UiTranslatorPlugin;
+import com.github.javaparser.ast.visitor.TransformVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import xapi.fu.Printable;
+import xapi.javac.dev.template.TemplateTransformer;
+import xapi.log.X_Log;
 import xapi.source.X_Source;
 import xapi.util.api.DebugRethrowable;
 
@@ -84,6 +79,11 @@ public class ElementalTemplatePlugin <Ctx> implements UiTranslatorPlugin, DebugR
     }
 
     @Override
+    public void visit(CssBlockExpr n, Ctx arg) {
+      TransformVisitor.normalizeToString(printer, n.toSource(new TemplateTransformer()));
+    }
+
+    @Override
     public void visit(UiAttrExpr n, Ctx arg) {
       printer.indent();
       printer.println();
@@ -91,22 +91,33 @@ public class ElementalTemplatePlugin <Ctx> implements UiTranslatorPlugin, DebugR
       printer.print(n.getName().getName());
       printer.print("\", ");
       final Expression value = n.getExpression();
+      boolean keepTrying = true;
       if (value instanceof LiteralExpr) {
-        // literals can be written directly as source.
-        if (value instanceof StringLiteralExpr) {
-          String asString = ((StringLiteralExpr)value).getValue();
-          printer.print("\"");
-          // Do full generator escaping here...
-          printer.print(asString); // ...later
-          printer.print("\"");
+        keepTrying = false;
+        String val;
+        try {
+          val = ASTHelper.extractStringValue(value);
+          if (value.getClass() == StringLiteralExpr.class ||
+                value instanceof TemplateLiteralExpr ||
+                value instanceof UiExpr) {
+            val = "\"" + X_Source.escape(val) + "\"";
+          }
+          printer.print(val);
+        } catch (Exception ignored) {
+          keepTrying = true;
+          X_Log.debug(getClass(), "ignored exception: ", ignored);
         }
-      // non-literals...  time to map some stuff!
-      } else if (value instanceof NameExpr){
-        String name = ((NameExpr)value).getName();
-        if (name.startsWith("$")) {
-          // A $dollar reference!
-          // We'll want to emit a magic method to handle type coercions in compiler...
-          printer.print("xapi.fu.X_Fu.coerce(" + name.substring(1) +")");
+      }
+      if (keepTrying) {
+        if (value instanceof NameExpr){
+          String name = value.toSource();
+          if (name.startsWith("$")) {
+            // A $dollar reference!
+            // We'll want to emit a magic method to handle type coercions in compiler...
+            printer.print("xapi.fu.X_Fu.coerce(" + name.substring(1) +")");
+          }
+        } else {
+          value.accept(this, arg);
         }
       }
       printer.print(")");

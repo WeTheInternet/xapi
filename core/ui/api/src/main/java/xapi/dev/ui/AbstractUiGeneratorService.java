@@ -12,6 +12,7 @@ import xapi.collect.api.IntTo;
 import xapi.dev.ui.ContainerMetadata.MetadataRoot;
 import xapi.fu.Do;
 import xapi.log.X_Log;
+import xapi.source.X_Source;
 import xapi.util.X_Debug;
 
 import javax.lang.model.element.PackageElement;
@@ -116,7 +117,8 @@ public abstract class AbstractUiGeneratorService extends UiGeneratorTools implem
                         final UiContainerExpr newContainer = JavaParser.parseUiContainer(src);
                         return newContainer;
                     } catch (IOException | ParseException e) {
-                        X_Log.error(getClass(), "Error trying to resolve import", n, "with source", src, e);
+                        X_Log.error(getClass(), "Error trying to resolve import", n, "with source:\n",
+                              X_Source.addLineNumbers(src), e);
                     }
                 }
                 return super.visit(n, arg);

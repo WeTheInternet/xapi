@@ -26,59 +26,14 @@ import com.github.javaparser.ast.ImportDeclaration;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.PackageDeclaration;
 import com.github.javaparser.ast.TypeParameter;
-import com.github.javaparser.ast.body.AnnotationDeclaration;
-import com.github.javaparser.ast.body.AnnotationMemberDeclaration;
-import com.github.javaparser.ast.body.BodyDeclaration;
-import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
-import com.github.javaparser.ast.body.ConstructorDeclaration;
-import com.github.javaparser.ast.body.EmptyMemberDeclaration;
-import com.github.javaparser.ast.body.EmptyTypeDeclaration;
-import com.github.javaparser.ast.body.EnumConstantDeclaration;
-import com.github.javaparser.ast.body.EnumDeclaration;
-import com.github.javaparser.ast.body.FieldDeclaration;
-import com.github.javaparser.ast.body.InitializerDeclaration;
-import com.github.javaparser.ast.body.MethodDeclaration;
-import com.github.javaparser.ast.body.MultiTypeParameter;
-import com.github.javaparser.ast.body.Parameter;
-import com.github.javaparser.ast.body.TypeDeclaration;
-import com.github.javaparser.ast.body.VariableDeclarator;
-import com.github.javaparser.ast.body.VariableDeclaratorId;
+import com.github.javaparser.ast.body.*;
 import com.github.javaparser.ast.comments.BlockComment;
 import com.github.javaparser.ast.comments.Comment;
 import com.github.javaparser.ast.comments.JavadocComment;
 import com.github.javaparser.ast.comments.LineComment;
 import com.github.javaparser.ast.expr.*;
-import com.github.javaparser.ast.stmt.AssertStmt;
-import com.github.javaparser.ast.stmt.BlockStmt;
-import com.github.javaparser.ast.stmt.BreakStmt;
-import com.github.javaparser.ast.stmt.CatchClause;
-import com.github.javaparser.ast.stmt.ContinueStmt;
-import com.github.javaparser.ast.stmt.DoStmt;
-import com.github.javaparser.ast.stmt.EmptyStmt;
-import com.github.javaparser.ast.stmt.ExplicitConstructorInvocationStmt;
-import com.github.javaparser.ast.stmt.ExpressionStmt;
-import com.github.javaparser.ast.stmt.ForStmt;
-import com.github.javaparser.ast.stmt.ForeachStmt;
-import com.github.javaparser.ast.stmt.IfStmt;
-import com.github.javaparser.ast.stmt.LabeledStmt;
-import com.github.javaparser.ast.stmt.ReturnStmt;
-import com.github.javaparser.ast.stmt.Statement;
-import com.github.javaparser.ast.stmt.SwitchEntryStmt;
-import com.github.javaparser.ast.stmt.SwitchStmt;
-import com.github.javaparser.ast.stmt.SynchronizedStmt;
-import com.github.javaparser.ast.stmt.ThrowStmt;
-import com.github.javaparser.ast.stmt.TryStmt;
-import com.github.javaparser.ast.stmt.TypeDeclarationStmt;
-import com.github.javaparser.ast.stmt.WhileStmt;
-import com.github.javaparser.ast.type.ClassOrInterfaceType;
-import com.github.javaparser.ast.type.IntersectionType;
-import com.github.javaparser.ast.type.PrimitiveType;
-import com.github.javaparser.ast.type.ReferenceType;
-import com.github.javaparser.ast.type.Type;
-import com.github.javaparser.ast.type.UnionType;
-import com.github.javaparser.ast.type.UnknownType;
-import com.github.javaparser.ast.type.VoidType;
-import com.github.javaparser.ast.type.WildcardType;
+import com.github.javaparser.ast.stmt.*;
+import com.github.javaparser.ast.type.*;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -1303,5 +1258,77 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 
 		return new UiContainerExpr(n.getBeginLine(), n.getBeginColumn(), n.getEndLine(), n.getEndColumn(), name, attrs, body, n.isInTemplate());
 	}
+
+    @Override
+    public Node visit(JsonContainerExpr n, Object arg) {
+        if (n == null) {
+            return null;
+        }
+        final List<JsonPairExpr> pairs = visit(n.getPairs(), arg);
+        return new JsonContainerExpr(n.getBeginLine(), n.getBeginColumn(), n.getEndLine(), n.getEndColumn(), n.isArray(), pairs);
+    }
+
+    @Override
+    public Node visit(JsonPairExpr n, Object arg) {
+        if (n == null) {
+            return null;
+        }
+        final Expression key = getExpression(n.getKeyExpr(), arg);
+        final Expression value = getExpression(n.getValueExpr(), arg);
+
+        return new JsonPairExpr(n.getBeginLine(), n.getBeginColumn(), n.getEndLine(), n.getEndColumn(),
+            key, value);
+    }
+
+    @Override
+    public Node visit(CssContainerExpr n, Object arg) {
+        if (n == null) {
+            return null;
+        }
+        final List<CssSelectorExpr> selectors = visit(n.getSelectors(), arg);
+        final List<CssRuleExpr> rules = visit(n.getRules(), arg);
+        return new CssContainerExpr(n.getBeginLine(), n.getBeginColumn(), n.getEndLine(), n.getEndColumn(),
+            selectors, rules);
+    }
+
+    @Override
+    public Node visit(CssRuleExpr n, Object arg) {
+        if (n == null) {
+            return null;
+        }
+        final Expression key = getExpression(n.getKey(), arg);
+        final Expression value = getExpression(n.getValue(), arg);
+        return new CssRuleExpr(n.getBeginLine(), n.getBeginColumn(), n.getEndLine(), n.getEndColumn(),
+            key, value);
+    }
+
+    @Override
+    public Node visit(CssValueExpr n, Object arg) {
+        if (n == null) {
+            return null;
+        }
+        final Expression value = getExpression(n.getValue(), arg);
+
+        return new CssValueExpr(n.getBeginLine(), n.getBeginColumn(), n.getEndLine(), n.getEndColumn(),
+            value, n.getUnit(), n.isImportant());
+    }
+
+    @Override
+    public Node visit(CssBlockExpr n, Object arg) {
+        if (n == null) {
+            return null;
+        }
+        final List<CssContainerExpr> containers = visit(n.getContainers(), arg);
+        return new CssBlockExpr(n.getBeginLine(), n.getBeginColumn(), n.getEndLine(), n.getEndColumn(), containers);
+    }
+
+    @Override
+    public Node visit(CssSelectorExpr n, Object arg) {
+        return null;
+    }
+
+    protected Expression getExpression(Expression from, Object arg) {
+        return from == null ? null : (Expression) from.accept(this, arg);
+    }
 
 }

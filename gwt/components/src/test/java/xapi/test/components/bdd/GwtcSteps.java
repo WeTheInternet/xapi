@@ -1,5 +1,6 @@
 package xapi.test.components.bdd;
 
+import com.github.javaparser.ASTHelper;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseException;
 import com.github.javaparser.ast.CompilationUnit;
@@ -12,7 +13,6 @@ import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.expr.MemberValuePair;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.NormalAnnotationExpr;
-import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import cucumber.api.java.Before;
@@ -276,8 +276,9 @@ public class GwtcSteps {
         if (anno instanceof NormalAnnotationExpr) {
           for (MemberValuePair pair : ((NormalAnnotationExpr) anno).getPairs()) {
             if (pair.getName().equals("tagName")) {
-              if (pair.getValue() instanceof StringLiteralExpr) {
-                return ((StringLiteralExpr) pair.getValue()).getValue();
+              String val = ASTHelper.extractAnnoValue(pair);
+              if (val != null) {
+                return val;
               } else {
                 X_Log.error(
                     getClass(),

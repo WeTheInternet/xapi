@@ -266,4 +266,11 @@ public class X_String {
     return text.replaceAll("\\r\\n?", "\n");
   }
 
+  public static String repeat(String s, int i) {
+    StringBuilder b = new StringBuilder();
+    while (i --> 0) {
+      b.append(s);
+    }
+    return b.toString();
+  }
 }

@@ -10,14 +10,7 @@ import xapi.collect.api.IntTo;
 import xapi.collect.api.ObjectTo;
 import xapi.collect.api.StringDictionary;
 import xapi.collect.api.StringTo;
-import xapi.collect.impl.ArrayIterable;
-import xapi.collect.impl.HashComparator;
-import xapi.collect.impl.IntToManyList;
-import xapi.collect.impl.ReverseIterable;
-import xapi.collect.impl.ReverseIterator;
-import xapi.collect.impl.SingletonIterator;
-import xapi.collect.impl.StringToDeepMap;
-import xapi.collect.impl.StringToManyList;
+import xapi.collect.impl.*;
 import xapi.collect.proxy.CollectionProxy;
 import xapi.collect.service.CollectionService;
 import xapi.fu.In2Out1;
@@ -120,8 +113,8 @@ public class X_Collect {
   public static <T, S extends T> Iterable<T> iterable(final S item) {
     return new SingletonIterator<>(item);
   }
-  public static <T, S extends T> Iterable<T> iterable(@SuppressWarnings("all") final S ... items) {
-    return new ArrayIterable<>(items);
+  public static <T, S extends T> Iterable<T> arrayIterable(@SuppressWarnings("all") final S ... items) {
+    return items == null ? EmptyIterable.EMPTY : new ArrayIterable<>(items);
   }
   @SuppressWarnings({"all"})
   public static <V> ClassTo<V> newClassMap() {
