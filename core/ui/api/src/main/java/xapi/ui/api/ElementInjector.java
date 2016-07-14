@@ -4,17 +4,18 @@ package xapi.ui.api;
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 4/18/16.
  */
-public interface ElementInjector <Element, E extends UiElement<? extends Element, E>> {
+public interface ElementInjector
+    <Element> {
 
-  <El extends E> void appendChild(El newChild);
+  <El extends UiElement<Element, El>> void appendChild(El newChild);
 
-  <El extends E> void insertBefore(El newChild);
+  <El extends UiElement<Element, El>> void insertBefore(El newChild);
 
-  <El extends E> void insertAtBegin(El newChild);
+  <El extends UiElement<Element, El>> void insertAtBegin(El newChild);
 
-  <El extends E> void insertAfter(El newChild);
+  <El extends UiElement<Element, El>> void insertAfter(El newChild);
 
-  <El extends E> void insertAtEnd(El newChild);
+  <El extends UiElement<Element, El>> void insertAtEnd(El newChild);
 
-  <El extends E> void removeChild(El child);
+  <El extends UiElement<Element, El>> void removeChild(El child);
 }

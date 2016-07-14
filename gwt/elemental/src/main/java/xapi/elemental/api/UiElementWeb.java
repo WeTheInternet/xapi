@@ -4,6 +4,7 @@ import elemental.dom.Element;
 import xapi.annotation.inject.InstanceDefault;
 import xapi.inject.X_Inject;
 import xapi.ui.api.ElementPosition;
+import xapi.ui.api.UiElement;
 import xapi.ui.impl.AbstractUiElement;
 
 /**
@@ -24,7 +25,7 @@ public class UiElementWeb <E extends Element> extends AbstractUiElement<E, UiEle
   }
 
   @Override
-  public <El extends UiElementWeb<E>> void appendChild(El child) {
+  public <El extends UiElement<E, El>> void appendChild(El child) {
     assert child instanceof UiElementWeb : "You may only append web elements to other web elements";
     super.appendChild(child);
     final E e = element();
@@ -33,7 +34,7 @@ public class UiElementWeb <E extends Element> extends AbstractUiElement<E, UiEle
   }
 
   @Override
-  public <El extends UiElementWeb<E>> void removeChild(El child) {
+  public <El extends UiElement<E, El>> void removeChild(El child) {
     assert child instanceof UiElementWeb : "You may only remove web elements from other web elements";
     super.removeChild(child);
     final E e = element();
@@ -47,7 +48,7 @@ public class UiElementWeb <E extends Element> extends AbstractUiElement<E, UiEle
   }
 
   @Override
-  public <El extends UiElementWeb<E>> void insertAdjacent(ElementPosition pos, El child) {
+  public <El extends UiElement<E, El>> void insertAdjacent(ElementPosition pos, El child) {
     assert child instanceof UiElementWeb : "You may only insert web elements into other web elements";
     final E e = element();
     final E c = child.element();

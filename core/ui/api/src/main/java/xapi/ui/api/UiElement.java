@@ -2,6 +2,7 @@ package xapi.ui.api;
 
 import xapi.collect.api.IntTo;
 import xapi.fu.In1Out1;
+import xapi.fu.ReturnSelf;
 import xapi.inject.X_Inject;
 import xapi.ui.impl.DelegateElementInjector;
 import xapi.ui.service.UiService;
@@ -12,9 +13,11 @@ import xapi.ui.service.UiService;
  */
 public interface UiElement
     <Element, Self extends UiElement<? extends Element, Self>>
-    extends ElementInjector<Element, Self> {
+    extends ElementInjector<Element>, ReturnSelf<Self> {
 
-  UiElement<? extends Element, ?> getParent();
+  Self getParent();
+
+  Self setParent(Self parent);
 
   <E extends UiElement<? extends Element, E>> IntTo<E> getChildren();
 
@@ -40,10 +43,6 @@ public interface UiElement
     return f;
   }
 
-  default Self self() {
-    return (Self) this;
-  }
-
   default <F extends UiFeature, Generic extends F> F createFeature(Class<Generic> cls) {
     return X_Inject.instance(cls);
   }
@@ -61,34 +60,35 @@ public interface UiElement
   }
 
   @Override
-  default <El extends Self> void appendChild(El newChild) {
+  default <El extends UiElement<Element, El>> void appendChild(El newChild) {
     asInjector().appendChild(newChild);
+    ((UiElement)newChild).setParent(self());
   }
 
   @Override
-  default <El extends Self> void removeChild(El child) {
+  default <El extends UiElement<Element, El>> void removeChild(El child) {
     asInjector().removeChild(child);
   }
 
-  <El extends Self> void insertAdjacent(ElementPosition pos, El child);
+  <El extends UiElement<Element, El>> void insertAdjacent(ElementPosition pos, El child);
 
-  default <El extends Self> void insertBefore(El newChild) {
+  default <El extends UiElement<Element, El>> void insertBefore(El newChild) {
     asInjector().insertBefore(newChild);
   }
 
-  default <El extends Self> void insertAtBegin(El newChild) {
+  default <El extends UiElement<Element, El>> void insertAtBegin(El newChild) {
     asInjector().insertAtBegin(newChild);
   }
 
-  default <El extends Self> void insertAfter(El newChild) {
+  default <El extends UiElement<Element, El>> void insertAfter(El newChild) {
     asInjector().insertAfter(newChild);
   }
 
-  default <El extends Self> void insertAtEnd(El newChild) {
+  default <El extends UiElement<Element, El>> void insertAtEnd(El newChild) {
     asInjector().insertAtEnd(newChild);
   }
 
-  default ElementInjector<Element, Self> asInjector() {
+  default ElementInjector<Element> asInjector() {
     // Platforms like Gwt might erase the type information off a
     // raw html / javascript type, so we return "real java objects" here.
     // This also allows implementors to insert control logic to the element attachment methoods.

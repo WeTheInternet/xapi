@@ -14,7 +14,7 @@ import xapi.ui.api.UiFeature;
  */
 public abstract class
     AbstractUiElement <Element, Self extends AbstractUiElement<? extends Element, Self>>
-    implements UiElement <Element, Self> {
+    implements UiElement<Element,Self> {
 
   protected Self parent;
   protected final IntTo<? extends Self> children;
@@ -47,8 +47,14 @@ public abstract class
   }
 
   @Override
-  public UiElement getParent() {
+  public Self getParent() {
     return parent;
+  }
+
+  @Override
+  public Self setParent(Self parent) {
+    this.parent = parent;
+    return self();
   }
 
   public IntTo<? extends Self> getChildren() {
