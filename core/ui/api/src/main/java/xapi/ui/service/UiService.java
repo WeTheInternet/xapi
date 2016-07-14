@@ -12,9 +12,10 @@ import xapi.ui.api.UiWithProperties;
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 4/19/16.
  */
-public interface UiService <Element, E extends UiElement<Element, E>> {
+public interface UiService <Node, E extends UiElement<Node, ? extends Node,  E>> {
 
-  static UiService getUiService() {
+  @SuppressWarnings("unchecked")
+  static <Node, E extends UiElement<Node, ? extends Node, E>> UiService<Node, E> getUiService() {
     return X_Inject.singleton(UiService.class);
   }
 
@@ -24,9 +25,9 @@ public interface UiService <Element, E extends UiElement<Element, E>> {
 
   ClassTo<In1Out1<Object,String>> getSerializers();
 
-  UiWithAttributes <Element, E> newAttributes(E e);
+  UiWithAttributes <Node, E> newAttributes(E e);
 
-  UiWithProperties <Element, E> newProperties(E e);
+  UiWithProperties <Node, E> newProperties(E e);
 
   Object getHost(Object from);
 

@@ -4,18 +4,17 @@ import javafx.collections.ObservableList;
 import javafx.scene.Node;
 import javafx.scene.layout.Pane;
 import xapi.ui.api.ElementPosition;
-import xapi.ui.api.UiElement;
 import xapi.ui.impl.AbstractUiElement;
 import xapi.util.X_Debug;
 
 /**
  * Created by james on 6/7/16.
  */
-public class UiElementJavaFx<N extends Node, Ui extends UiElementJavaFx<N, Ui>> extends AbstractUiElement<Node, Ui> {
+public class UiElementJavaFx<N extends Node> extends AbstractUiElement<Node, N, UiElementJavaFx<?>> {
 
   private final Class<N> elementType;
 
-  public UiElementJavaFx(Class<N> elType, Class<Ui> cls) {
+  public <Ui extends UiElementJavaFx<N>> UiElementJavaFx(Class<N> elType, Class<Ui> cls) {
     super(cls);
     this.elementType = elType;
   }
@@ -32,7 +31,7 @@ public class UiElementJavaFx<N extends Node, Ui extends UiElementJavaFx<N, Ui>> 
   }
 
   @Override
-  public <El extends UiElement<Node, El>> void insertAdjacent(ElementPosition pos, El child) {
+  public void insertAdjacent(ElementPosition pos, UiElementJavaFx child) {
     final Node node = element();
     final ObservableList<Node> children;
     switch (pos) {
@@ -42,7 +41,7 @@ public class UiElementJavaFx<N extends Node, Ui extends UiElementJavaFx<N, Ui>> 
       // Thus, we must be attached to a parent, and insert into it's children nodes
       case BEFORE_BEGIN:
       case AFTER_END:
-        UiElementJavaFx parent = getParent();
+        final UiElementJavaFx parent = getParent();
         children = getParent().getInsertionPoint();
         final int myPos = children.indexOf(node);
         assert myPos != -1 : "Trying to insert a child adjacent to a node that is not in its parent's insertion point";
@@ -51,7 +50,7 @@ public class UiElementJavaFx<N extends Node, Ui extends UiElementJavaFx<N, Ui>> 
         } else {
           children.add(myPos, child.element());
         }
-        ((UiElementJavaFx)child).setParent(parent);
+        child.setParent(parent);
         break;
       case AFTER_BEGIN:
       case BEFORE_END:
@@ -61,7 +60,7 @@ public class UiElementJavaFx<N extends Node, Ui extends UiElementJavaFx<N, Ui>> 
         } else {
           children.add(children.size()-1, child.element());
         }
-        ((UiElementJavaFx)child).setParent(this);
+        child.setParent(self());
         break;
       default:
         throw new IllegalStateException("Unhandled injection position " + pos + " in " + this);
@@ -69,13 +68,13 @@ public class UiElementJavaFx<N extends Node, Ui extends UiElementJavaFx<N, Ui>> 
   }
 
   @Override
-  public <El extends UiElement<Node, El>> void appendChild(El newChild) {
+  public void appendChild(UiElementJavaFx newChild) {
     getInsertionPoint().add(newChild.element());
-    ((UiElementJavaFx)newChild).setParent(this);
+    newChild.setParent(self());
   }
 
   @Override
-  public <El extends UiElement<Node, El>> void removeChild(El child) {
+  public void removeChild(UiElementJavaFx child) {
     getInsertionPoint().remove(child.element());
     child.setParent(null);
   }

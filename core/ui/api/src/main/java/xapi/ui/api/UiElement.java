@@ -2,7 +2,6 @@ package xapi.ui.api;
 
 import xapi.collect.api.IntTo;
 import xapi.fu.In1Out1;
-import xapi.fu.ReturnSelf;
 import xapi.inject.X_Inject;
 import xapi.ui.impl.DelegateElementInjector;
 import xapi.ui.service.UiService;
@@ -12,28 +11,28 @@ import xapi.ui.service.UiService;
  *         Created on 4/18/16.
  */
 public interface UiElement
-    <Element, Self extends UiElement<? extends Element, Self>>
-    extends ElementInjector<Element>, ReturnSelf<Self> {
+    <Node, Element extends Node, Base extends UiElement<Node, ? extends Node, Base>>
+    extends ElementInjector<Node, Base> {
 
-  Self getParent();
+  Base getParent();
 
-  Self setParent(Self parent);
+  Base setParent(Base parent);
 
-  <E extends UiElement<? extends Element, E>> IntTo<E> getChildren();
+  IntTo<Base> getChildren();
 
   String toSource();
 
   Element element();
 
-  default <El extends Self> Self getHost() {
-    return (El) UiService.getUiService().getHost(this);
+  default Node getHost() {
+    return (Node)UiService.getUiService().getHost(this);
   }
 
   <F extends UiFeature, Generic extends F> F getFeature(Class<Generic> cls);
 
   <F extends UiFeature, Generic extends F> F addFeature(Class<Generic> cls, F feature);
 
-  default <F extends UiFeature, Generic extends F> F getOrAddFeature(Class<Generic> cls, In1Out1<Self, F> factory) {
+  default <F extends UiFeature, Generic extends F> F getOrAddFeature(Class<Generic> cls, In1Out1<Base, F> factory) {
     F f = getFeature(cls);
     if (f == null) {
       f = factory.io(self());
@@ -47,58 +46,63 @@ public interface UiElement
     return X_Inject.instance(cls);
   }
 
-  default UiWithAttributes getAttributes() {
+  @SuppressWarnings("unchecked")
+  default Base self() {
+    return (Base) this;
+  }
+
+  default UiWithAttributes<Node, Base> getAttributes() {
     return getOrAddFeature(UiWithAttributes.class, e->getUiService().newAttributes(e));
   }
 
-  default UiWithProperties getProperties() {
+  default UiWithProperties<Node, Base> getProperties() {
     return getOrAddFeature(UiWithProperties.class, e->getUiService().newProperties(e));
   }
 
-  default UiService getUiService() {
+  default UiService<Node, Base> getUiService() {
     return UiService.getUiService();
   }
 
   @Override
-  default <El extends UiElement<Element, El>> void appendChild(El newChild) {
+  default void appendChild(Base newChild) {
     asInjector().appendChild(newChild);
-    ((UiElement)newChild).setParent(self());
+    newChild.setParent(self());
   }
 
   @Override
-  default <El extends UiElement<Element, El>> void removeChild(El child) {
+  default void removeChild(Base child) {
     asInjector().removeChild(child);
   }
 
-  <El extends UiElement<Element, El>> void insertAdjacent(ElementPosition pos, El child);
+  void insertAdjacent(ElementPosition pos, Base child);
 
-  default <El extends UiElement<Element, El>> void insertBefore(El newChild) {
+  default void insertBefore(Base newChild) {
     asInjector().insertBefore(newChild);
   }
 
-  default <El extends UiElement<Element, El>> void insertAtBegin(El newChild) {
+  default void insertAtBegin(Base newChild) {
     asInjector().insertAtBegin(newChild);
   }
 
-  default <El extends UiElement<Element, El>> void insertAfter(El newChild) {
+  default void insertAfter(Base newChild) {
     asInjector().insertAfter(newChild);
   }
 
-  default <El extends UiElement<Element, El>> void insertAtEnd(El newChild) {
+  default void insertAtEnd(Base newChild) {
     asInjector().insertAtEnd(newChild);
   }
 
-  default ElementInjector<Element> asInjector() {
+  default ElementInjector<Node, Base> asInjector() {
     // Platforms like Gwt might erase the type information off a
     // raw html / javascript type, so we return "real java objects" here.
-    // This also allows implementors to insert control logic to the element attachment methoods.
-    return new DelegateElementInjector(this);
+    // This also allows implementors to insert control logic to the element attachment methods.
+    return new DelegateElementInjector<>(self());
   }
 
   default boolean removeFromParent() {
-    final UiElement parent = getParent();
+    final Base parent = getParent();
     if (parent != null) {
-      parent.removeChild(this);
+      parent.removeChild(self());
       assert getParent() == null : "Parent did not correctly detach child." +
           "\nChild " + toSource()+
           "\nParent " + parent.toSource();

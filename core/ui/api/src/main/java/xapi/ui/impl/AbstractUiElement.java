@@ -13,11 +13,11 @@ import xapi.ui.api.UiFeature;
  *         Created on 4/19/16.
  */
 public abstract class
-    AbstractUiElement <Element, Self extends AbstractUiElement<? extends Element, Self>>
-    implements UiElement<Element,Self> {
+    AbstractUiElement <Node, Element extends Node, Self extends AbstractUiElement<Node, ? extends Node, Self>>
+    implements UiElement<Node, Element,Self> {
 
   protected Self parent;
-  protected final IntTo<? extends Self> children;
+  protected final IntTo<Self> children;
   protected final ClassTo<UiFeature> features;
   protected Lazy<Element> element;
 
@@ -57,7 +57,8 @@ public abstract class
     return self();
   }
 
-  public IntTo<? extends Self> getChildren() {
+
+  public IntTo<Self> getChildren() {
     return children;
   }
 

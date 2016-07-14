@@ -7,7 +7,7 @@ import xapi.ui.api.components.Window;
 /**
  * Created by james on 6/7/16.
  */
-public class WindowJavaFx extends UiElementJavaFx<BorderPane, WindowJavaFx> implements Window<Node, BorderPane, WindowJavaFx> {
+public class WindowJavaFx extends UiElementJavaFx<BorderPane> implements Window<Node, BorderPane, UiElementJavaFx<?>> {
 
   public WindowJavaFx() {
     super(BorderPane.class, WindowJavaFx.class);
