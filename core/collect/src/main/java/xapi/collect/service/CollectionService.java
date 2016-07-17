@@ -9,13 +9,11 @@ import xapi.collect.api.StringDictionary;
 import xapi.collect.api.StringTo;
 import xapi.collect.proxy.CollectionProxy;
 
-import java.util.Comparator;
-
 public interface CollectionService {
 
   <E, Generic extends E> IntTo<E> newList(Class<Generic> cls, CollectionOptions opts);
 
-  <E, Generic extends E> IntTo<E> newSet(Class<Generic> cls, Comparator<E> cmp, CollectionOptions opts);
+  <E, Generic extends E> IntTo<E> newSet(Class<Generic> cls, CollectionOptions opts);
 
   <K, V> ObjectTo<K, V> newMap(Class<K> key, Class<V> cls, CollectionOptions opts);
 
@@ -25,9 +23,9 @@ public interface CollectionService {
 
   <V, Generic extends V> ClassTo.Many<V> newClassMultiMap(Class<Generic> cls, CollectionOptions opts);
 
-  <V> StringTo<V> newStringMap(Class<? extends V> cls, CollectionOptions opts);
+  <V, Generic extends V> StringTo<V> newStringMap(Class<Generic> cls, CollectionOptions opts);
 
-  <V> StringTo.Many<V> newStringMultiMap(Class<V> cls, CollectionOptions opts);
+  <V, Generic extends V> StringTo.Many<V> newStringMultiMap(Class<Generic> cls, CollectionOptions opts);
 
   <V> StringDictionary<V> newDictionary(Class<V> cls);
 

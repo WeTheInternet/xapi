@@ -10,17 +10,8 @@ import xapi.fu.In2Out1;
 import xapi.util.impl.AbstractPair;
 
 import java.lang.reflect.Array;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.Deque;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 
 public class IntToAbstract <V> implements IntTo<V> {
 
@@ -61,6 +52,11 @@ public class IntToAbstract <V> implements IntTo<V> {
   public boolean add(V item) {
     maybeRebalance();
     assert valueType() == null || item == null || valueType().isAssignableFrom(item.getClass());
+    if (opts.forbidsDuplicate()) {
+      if (contains(item)) {
+        return false;
+      }
+    }
     return store.put(newEntry(size(), item)) == null;
   }
 
@@ -306,15 +302,22 @@ public class IntToAbstract <V> implements IntTo<V> {
 
   @Override
   public boolean addAll(Iterable<V> items) {
-    for (V item : items) {
-      add(item);
+    List<V> list = newList();
+    if (items instanceof Collection) {
+      list.addAll((Collection<V>)items);
+    } else {
+      items.forEach(list::add);
     }
-    return true;
+    V[] v = list.toArray((V[])Array.newInstance(valueType(), list.size()));
+    return addAll(v);
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public boolean addAll(V ... items) {
+    if (!opts.insertionOrdered()) {
+      Arrays.sort(items, comparator);
+    }
     for (V item : items) {
       add(item);
     }

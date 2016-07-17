@@ -24,14 +24,14 @@ public class StringToAbstract <V> implements StringTo<V>{
   public StringToAbstract(Class<V> valueType) {
     this.valueType = valueType;
     if (isMultithreaded()) {
-      map = new ConcurrentHashMap<String,V>();
+      map = new ConcurrentHashMap<>();
     } else {
-      map = new HashMap<String,V>();
+      map = new HashMap<>();
     }
   }
 
-  public StringToAbstract(Class<V> valueType, final Map<String, V> map) {
-    this.valueType = valueType;
+  public <Generic extends V> StringToAbstract(Class<Generic> valueType, final Map<String, V> map) {
+    this.valueType = Class.class.cast(valueType);
     this.map = map;
   }
 

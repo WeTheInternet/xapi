@@ -322,7 +322,7 @@ public class IntToListGwt <E> extends JavaScriptObject implements IntTo<E>{
   @Override
   public final Map<Integer, E> toMap(Map<Integer, E> into) {
     if (into == null) {
-      into = new LinkedHashMap<Integer, E>();
+      into = new LinkedHashMap<>();
     }
     for (int i = 0, m = size(); i < m; i++) {
       into.put(i, getValue(i));
@@ -340,4 +340,8 @@ public class IntToListGwt <E> extends JavaScriptObject implements IntTo<E>{
     return true;
   }
 
+  @Override
+  public final String toString(Integer key, E value) {
+    return String.valueOf(value);
+  }
 }

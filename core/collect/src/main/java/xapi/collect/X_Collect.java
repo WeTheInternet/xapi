@@ -169,12 +169,12 @@ public class X_Collect {
     return service.newList(cls, CollectionOptions.from(opts).insertionOrdered(true).build());
   }
 
-  public static <Type, Generic extends Type> IntTo<Type> newSet(final Class<Generic> cls, Comparator<Type> cmp) {
-    return service.newSet(cls, cmp, CollectionOptions.asInsertionOrdered().build());
+  public static <Type, Generic extends Type> IntTo<Type> newSet(final Class<Generic> cls) {
+    return service.newSet(cls, MUTABLE_INSERTION_ORDERED_SET);
   }
 
-  public static <Type, Generic extends Type> IntTo<Type> newSet(final Class<Generic> cls, CollectionOptions opts, Comparator<Type> cmp) {
-    return service.newSet(cls, cmp, CollectionOptions.from(opts).insertionOrdered(true).build());
+  public static <Type, Generic extends Type> IntTo<Type> newSet(final Class<Generic> cls, CollectionOptions opts) {
+    return service.newSet(cls, CollectionOptions.from(opts).forbidsDuplicate(true).build());
   }
 
   public static <K,V, Key extends K, Value extends V> ObjectTo<Key,Value> newMap(final Class<Key> keyCls, final Class<Value> valueCls) {
@@ -182,10 +182,6 @@ public class X_Collect {
   }
   public static <K,V> ObjectTo<K,V> newMap(final Class<K> keyCls, final Class<V> valueCls, final CollectionOptions opts) {
     return service.newMap(keyCls, valueCls, opts);
-  }
-
-  public static <Type, Generic extends Type> IntTo<Type> newSet(final Class<Generic> cls) {
-    return service.newList(cls, MUTABLE_SET);
   }
 
   public static <X> StringTo<StringTo<X>> newStringDeepMap(final Class<? extends X> component) {
@@ -209,15 +205,15 @@ public class X_Collect {
     return newStringMap(Object.class);
   }
 
-  public static <V> StringTo<V> newStringMapInsertionOrdered(final Class<V> valueCls) {
+  public static <V, Generic extends V> StringTo<V> newStringMapInsertionOrdered(final Class<Generic> valueCls) {
     return service.newStringMap(valueCls, MUTABLE_INSERTION_ORDERED);
   }
 
-  public static <X> StringTo.Many<X> newStringMultiMap(final Class<X> component) {
+  public static <V, Generic extends V> StringTo.Many<V> newStringMultiMap(final Class<Generic> component) {
     return service.newStringMultiMap(component, MUTABLE_INSERTION_ORDERED);
   }
 
-  public static <X> StringTo.Many<X> newStringMultiMap(final Class<X> component, CollectionOptions opts) {
+  public static <V, Generic extends V> StringTo.Many<V> newStringMultiMap(final Class<Generic> component, CollectionOptions opts) {
     return service.newStringMultiMap(component, opts);
   }
 
@@ -244,6 +240,8 @@ public class X_Collect {
   public static final CollectionOptions MUTABLE_LIST = asMutableList().build();
 
   public static final CollectionOptions MUTABLE_SET = asMutableSet().build();
+
+  public static final CollectionOptions MUTABLE_INSERTION_ORDERED_SET = asMutableSet().insertionOrdered(true).build();
 
   private X_Collect() {}
 

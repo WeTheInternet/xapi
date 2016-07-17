@@ -1,8 +1,6 @@
 package xapi.gwt.collect;
 
 import xapi.annotation.inject.SingletonOverride;
-import xapi.collect.api.CollectionOptions;
-import xapi.collect.api.StringTo;
 import xapi.collect.impl.CollectionServiceDefault;
 import xapi.collect.service.CollectionService;
 import xapi.log.X_Log;
@@ -28,11 +26,6 @@ implements CollectionService{
   static {
     Package java = Package.getPackage("java");
     touch(java);
-  }
-
-  @Override
-  public <V> StringTo<V> newStringMap(Class<? extends V> cls, CollectionOptions opts) {
-    return super.newStringMap(cls, opts);
   }
 
   private static void touch(Package java) {

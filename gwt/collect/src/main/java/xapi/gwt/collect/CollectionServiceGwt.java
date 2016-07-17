@@ -18,7 +18,6 @@ import xapi.collect.proxy.MapOf;
 import xapi.collect.service.CollectionService;
 import xapi.platform.GwtPlatform;
 
-import java.util.Comparator;
 import java.util.Map;
 
 @GwtPlatform
@@ -32,9 +31,9 @@ public class CollectionServiceGwt implements CollectionService{
 
   @Override
   public <E, Generic extends E> IntTo<E> newSet(
-      Class<Generic> cls, Comparator<E> cmp, CollectionOptions opts
+      Class<Generic> cls, CollectionOptions opts
   ) {
-    return new IntToSet<>(cls, opts, cmp);
+    return new IntToSet<>(cls, opts);
   }
 
   @Override
@@ -57,7 +56,7 @@ public class CollectionServiceGwt implements CollectionService{
   }
 
   @Override
-  public <V> StringTo<V> newStringMap(Class<? extends V> cls, CollectionOptions opts) {
+  public <V, Generic extends V> StringTo<V> newStringMap(Class<Generic> cls, CollectionOptions opts) {
     // we ignore options because js maps are, for now, all the same
     // all maps are insertion ordered an mutable;
     // there's nothing we can do to stop you from changing a jso value ;)
@@ -80,9 +79,9 @@ public class CollectionServiceGwt implements CollectionService{
   }
 
   @Override
-  public <V> xapi.collect.api.StringTo.Many<V> newStringMultiMap(Class<V> cls,
+  public <V, Generic extends V> xapi.collect.api.StringTo.Many<V> newStringMultiMap(Class<Generic> cls,
     CollectionOptions opts) {
-    return new StringToManyList<V>(cls);
+    return new StringToManyList<>(cls);
   }
 
   @Override

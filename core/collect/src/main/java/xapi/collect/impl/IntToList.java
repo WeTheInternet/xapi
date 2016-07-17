@@ -4,30 +4,24 @@ import xapi.collect.api.CollectionOptions;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.ObjectTo;
 import xapi.except.NotYetImplemented;
-import xapi.fu.In1;
+import xapi.fu.In1.In1Serializable;
 import xapi.fu.In2;
 import xapi.fu.In2Out1;
 import xapi.util.X_Util;
 import xapi.util.impl.AbstractPair;
 
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Deque;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
+import static xapi.fu.In1.serializable1;
 
-class IntToList<E> implements IntTo<E> {
+import java.io.Serializable;
+import java.lang.reflect.Array;
+import java.util.*;
+import java.util.Map.Entry;
+
+class IntToList<E> implements IntTo<E>, Serializable {
 
   private final List<E> list;
   private final Class<E> type;
-  private final In1<Integer> resizer;
+  private final In1Serializable<Integer> resizer;
 
   public <Generic extends E> IntToList(Class<Generic> cls) {
     this(cls, new ArrayList<>(10), ArrayList::ensureCapacity);
@@ -36,7 +30,7 @@ class IntToList<E> implements IntTo<E> {
 
   public <Generic extends E, L extends List<E>> IntToList(Class<Generic> cls, L list, In2<L, Integer> resizer) {
     this.type = Class.class.cast(cls);
-    this.resizer = resizer.provide1(list);
+    this.resizer = serializable1(resizer.provide1(list));
     this.list = list;
   }
 
@@ -71,7 +65,6 @@ class IntToList<E> implements IntTo<E> {
   @SuppressWarnings("unchecked")
   public void setValue(Object key, Object value) {
     int k = (Integer)key;
-    final List<E> l = list;
     resizer.in(k);
     list.set(k, (E)value);
   }

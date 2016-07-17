@@ -73,6 +73,10 @@ extends CollectionProxy<Integer,T>
 
   boolean remove(int index);
 
+  default boolean removeValue(T value) {
+    return findRemove(value, false);
+  }
+
   boolean findRemove(T value, boolean all);
 
   void set(int index, T value);
@@ -142,6 +146,11 @@ extends CollectionProxy<Integer,T>
       callback.in(item);
     }
 
+  }
+
+  @Override
+  default String toString(Integer key, T value) {
+    return String.valueOf(value);
   }
 
 }

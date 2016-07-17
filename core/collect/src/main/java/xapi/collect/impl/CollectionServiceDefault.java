@@ -19,13 +19,11 @@ import xapi.util.X_Runtime;
 
 import static java.util.Collections.synchronizedMap;
 
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentSkipListMap;
 
 @GwtDevPlatform
 @JrePlatform
@@ -132,9 +130,9 @@ public class CollectionServiceDefault implements CollectionService{
 
   @Override
   public <E, Generic extends E> IntTo<E> newSet(
-      Class<Generic> cls, Comparator<E> cmp, CollectionOptions opts
+      Class<Generic> cls, CollectionOptions opts
   ) {
-    return new IntToSet<>(cls, opts, cmp);
+    return new IntToSet<>(cls, opts);
   }
 
   @Override
@@ -149,15 +147,15 @@ public class CollectionServiceDefault implements CollectionService{
   }
 
   @Override
-  public <V> StringTo<V> newStringMap(final Class<? extends V> cls, final CollectionOptions opts) {
-    return new StringToAbstract<>(Class.class.cast(cls), this.<String, V>newMap(opts));
+  public <V, Generic extends V> StringTo<V> newStringMap(final Class<Generic> cls, final CollectionOptions opts) {
+    return new StringToAbstract<>(cls, this.<String, V>newMap(opts));
   }
 
   public <K, V, Key extends K, Value extends V> CollectionProxy<K, V> newProxy(
       Class<Key> keyType, Class<Value> valueType, CollectionOptions opts) {
     if (opts.insertionOrdered()) {
       if (opts.concurrent()) {
-        return new MapOf<>(new ConcurrentSkipListMap<>(), keyType, valueType);
+        return new MapOf<>(synchronizedMap(new LinkedHashMap<>()), keyType, valueType);
       } else {
         return new MapOf<>(new LinkedHashMap<>(), keyType, valueType);
       }
@@ -191,16 +189,16 @@ public class CollectionServiceDefault implements CollectionService{
   }
 
   @Override
-  public <V> StringTo.Many<V> newStringMultiMap(final Class<V> cls,
+  public <V, Generic extends V> StringTo.Many<V> newStringMultiMap(final Class<Generic> cls,
     final CollectionOptions opts) {
     // TODO honor opts
     if (opts.insertionOrdered()) {
       return new StringToManyList<>(cls,
           // ick... we'll get a fast, insertion ordered concurrent map.  For now, just make it synchronized :-(
-          opts.concurrent() ? Collections.synchronizedMap(new LinkedHashMap<>()) : new LinkedHashMap<>()
-      );
+          opts.concurrent() ? synchronizedMap(new LinkedHashMap<>()) : new LinkedHashMap<>()
+      , opts);
     }
-    return new StringToManyList<V>(cls, opts);
+    return new StringToManyList<>(cls, opts);
   }
 
   @Override
