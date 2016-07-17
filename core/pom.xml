@@ -77,6 +77,9 @@
   <!-- XApi language parser, ast and tools (enhanced fork of github.com/javaparser). -->
   <module>lang</module>
 
+  <!-- Basic event system. -->
+  <module>event</module>
+
   <!-- Core user interface apis. -->
   <module>ui</module>
 
