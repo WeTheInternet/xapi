@@ -1,11 +1,13 @@
 package xapi.fu;
 
+import java.io.Serializable;
 import java.util.function.Consumer;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 07/11/15.
  */
+@FunctionalInterface
 @SuppressWarnings("unchecked") // yes, this api will let you do terrible things.  Don't do terrible things.
 public interface In1<I> extends HasInput, Rethrowable {
 
@@ -113,4 +115,10 @@ public interface In1<I> extends HasInput, Rethrowable {
   default <To> In1<To> map1(In1Out1<To, I> mapper) {
     return i1->in(mapper.io(i1));
   }
+
+  static <E> In1Serializable<E> serializable1(In1<E> from) {
+    return from::in;
+  }
+
+  interface In1Serializable <I> extends In1<I>, Serializable { }
 }

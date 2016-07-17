@@ -34,6 +34,8 @@
  */
 package xapi.util.api;
 
+import java.io.Serializable;
+
 /**
  * An interface used to send back an opaque method to clear some kind of state.
  *
@@ -42,12 +44,12 @@ package xapi.util.api;
  * @author James X. Nelson (james@wetheinter.net, @james)
  *
  */
-public interface RemovalHandler {
+public interface RemovalHandler extends Serializable {
 
   /**
    * Clear some kind of state; usually removing an event handler.
    */
-  public void remove();
+  void remove();
 
   /**
    * A public static no-op.
@@ -55,9 +57,6 @@ public interface RemovalHandler {
    * Rather than use a null handler and perform null checks on every access,
    * use this Non Operational constant object to avoid allowing null fields
    */
-	public RemovalHandler DoNothing = new RemovalHandler() {
-    @Override
-    public void remove() {}
-  };
+   RemovalHandler DoNothing = ()->{};
 
 }

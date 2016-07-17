@@ -7,7 +7,6 @@ import static xapi.fu.X_Fu.blank;
 import static xapi.util.X_Runtime.isJavaScript;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -123,16 +122,6 @@ public final class X_Util{
       return result;
   }
 
-    public static void main(String ... a) {
-        Integer[] is = new Integer[]{1, 2, 3};
-        Integer[] missing = new Integer[]{4, 4, 3, 1, 2, 33, 5};
-        final Integer[] res = pushAllMissing(is, missing);
-        assert res.length == 5;
-        assert res[3] == 4;
-        assert res[4] == 5;
-        System.out.println(Arrays.asList(res));
-    }
-
   public static <T> T[] pushIf(T[] beforeFinished, T t, In2Out1<T[], T, Boolean> filter) {
       if (filter.io(beforeFinished, t)) {
           return pushOnto(beforeFinished, t);
@@ -186,4 +175,11 @@ public final class X_Util{
         }
         return -1;
     }
+
+    public static void maybeRethrow(Exception e) {
+        if (unwrap(e) instanceof InterruptedException) {
+            rethrow(e);
+        }
+    }
+
 }

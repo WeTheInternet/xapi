@@ -30,13 +30,9 @@ public interface Out2<O1, O2> extends OutMany {
     return this;
   }
 
-  default Out2<O1, O2> use2(In1<O1> callback) {
-    callback.in(out1());
+  default Out2<O1, O2> use2(In1<O2> callback) {
+    callback.in(out2());
     return this;
-  }
-
-  default <O> Out1<O> map(In1Out1 mapper) {
-    return null;
   }
 
   /**
@@ -54,22 +50,22 @@ public interface Out2<O1, O2> extends OutMany {
   }
 
   static <O1, O2> Out2<O1, O2> out2(Out1<O1> o1, Out1<O2> o2) {
-    Out1[] out = new Out1[]{o1, o2};
+    final Out1[] out = new Out1[]{o1, o2};
     return ()->out;
   }
 
   static <O1, O2> Out2<O1, O2> out2(O1 o1, Out1<O2> o2) {
-    Out1[] out = new Out1[]{Immutable.immutable1(o1), o2};
+    final Out1[] out = new Out1[]{Immutable.immutable1(o1), o2};
     return ()->out;
   }
 
   static <O1, O2> Out2<O1, O2> out2(O1 o1, O2 o2) {
-    Out1[] out = new Out1[]{Immutable.immutable1(o1), Immutable.immutable1(o2)};
+    final Out1[] out = new Out1[]{Immutable.immutable1(o1), Immutable.immutable1(o2)};
     return ()->out;
   }
 
   static <O1, O2> Out2<O1, O2> out2(Out1<O1> o1, O2 o2) {
-    Out1[] out = new Out1[]{o1, Immutable.immutable1(o2)};
+    final Out1[] out = new Out1[]{o1, Immutable.immutable1(o2)};
     return ()->out;
   }
 
