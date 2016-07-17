@@ -1,6 +1,7 @@
 package xapi.fu;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.Method;
 
 /**
  * Jutsu: technique, method, spell, skill or trick.
@@ -60,5 +61,40 @@ interface Jutsu {
   // By default, we always return clones.  Enviros like Gwt can opt to reuse / mutate the array.
   default <T> T[] pushOnto(T[] ts, T t) {
     return pushCopy(ts, t);
+  }
+
+  default String lambdaName(Object o) {
+    final Class<?> c = o.getClass();
+    Method replaceMethod;
+    try {
+      replaceMethod = c.getDeclaredMethod("writeReplace");
+    } catch (NoSuchMethodException e) {
+      return null;
+    }
+    replaceMethod.setAccessible(true);
+    Object lambda;
+    try {
+      lambda = replaceMethod.invoke(o);
+      // the name of the generated lambda method is the perfect identifier for our lambda handlers :-)
+      Class l = Class.forName("java.lang.invoke.SerializedLambda");
+      Method m = l.getMethod("getImplMethodName");
+      String name = (String)m.invoke(lambda);
+      if (Boolean.getBoolean("xapi.debug") || !name.contains("lambda")){
+        m = l.getMethod("getFunctionalInterfaceClass");
+        name = m.invoke(lambda)+ "#" + name;
+        m = l.getMethod("getFunctionalInterfaceMethodSignature");
+        name = name + m.invoke(lambda);
+      }
+      m = l.getMethod("getCapturedArgCount");
+      int i = (Integer)m.invoke(lambda);
+      m = l.getMethod("getCapturedArg", int.class);
+      while(i --> 0) {
+        name += "|" + System.identityHashCode(m.invoke(lambda, i));
+      }
+      return name;
+    } catch (Exception ignored) {
+      ignored.printStackTrace();
+    }
+    return null;
   }
 }

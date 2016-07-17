@@ -62,4 +62,8 @@ class Fu implements Jutsu {
     ts[ts.length] = t;
     return ts;
   }
+
+  public String lambdaName(Object o) {
+    return o.getClass().getName();
+  }
 }

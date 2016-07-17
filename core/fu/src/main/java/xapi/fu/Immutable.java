@@ -1,5 +1,7 @@
 package xapi.fu;
 
+import static xapi.fu.Out2.out2;
+
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 6/18/16.
  */
@@ -13,6 +15,10 @@ public class Immutable<O> implements Out1<O>, IsImmutable {
 
   public static <O> Immutable<O> immutable1(O of) {
     return new Immutable<>(of);
+  }
+
+  public static <O1, O2> Immutable<Out2<O1, O2>> immutable2(O1 o1, O2 o2) {
+    return new Immutable<>(out2(o1, o2));
   }
 
   @Override

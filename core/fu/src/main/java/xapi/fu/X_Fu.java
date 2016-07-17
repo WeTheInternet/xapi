@@ -110,5 +110,18 @@ public interface X_Fu {
     return b.toString();
   }
 
+  static String getLambdaMethodName(Object o) {
+    return Fu.jutsu.lambdaName(o);
+  }
+
+  static boolean isLambda(Object o) {
+    if (o == null) {
+      return false;
+    }
+    final Class<? extends Object> cl = o.getClass();
+    return // cl.isSynthetic() &&  // gwt currently lacks this method :-/
+        cl.getName().toLowerCase().contains("$$lambda$");
+
+  }
 }
 

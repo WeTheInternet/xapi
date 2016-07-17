@@ -74,8 +74,13 @@ public class BytecodeAdapterService implements
         @Override
         public IsClass convert(String classString) {
           Pair<String, Integer> cls = X_Source.extractArrayDepth(classString);
-          String clsName = cls.get0();
-          URL location = X_Source.classToUrl(clsName, getClassLoader());
+          String clsName = cls.get0().split("/")[0]; // lambdas can have / in classname...
+          final ClassLoader cl = getClassLoader();
+          URL location = X_Source.classToUrl(clsName, cl);
+          if (location == null && clsName.contains("$$Lambda")) {
+            clsName = clsName.split("[$][$]Lambda")[0];
+            location = X_Source.classToUrl(clsName, cl);
+          }
           while (location == null) {
             // Might be an inner class.  Lets have a peek.
             int lastPeriod = clsName.lastIndexOf('.');
@@ -85,7 +90,7 @@ public class BytecodeAdapterService implements
             char[] newName = clsName.toCharArray();
             newName[lastPeriod] = '$';
             clsName = new String(newName);
-            location = X_Source.classToUrl(clsName, getClassLoader());
+            location = X_Source.classToUrl(clsName, cl);
 
           }
           IsClass asClass;
