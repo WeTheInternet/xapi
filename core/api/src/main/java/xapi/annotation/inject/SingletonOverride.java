@@ -43,7 +43,6 @@ import java.lang.annotation.Target;
 
 import xapi.annotation.reflect.MirroredAnnotation;
 
-
 /**
  * An annotation used to override a {@link SingletonDefault} used in dependency injection.
  *
@@ -85,7 +84,7 @@ public @interface SingletonOverride {
    *
    * If you expect your override to be further overridden in submodules, pick a negative priority.
    */
-  int priority() default Integer.MIN_VALUE;
+  int priority() default Integer.MIN_VALUE + 2;
 //  /**
 //   * @return - A platform filter to exclude a given override from certain types of builds.
 //   *

@@ -88,7 +88,11 @@ public class JavaInjector {
           }
         }
         // pure jre
-        return new JreInjector();
+        try {
+          return (Injector)Class.forName("xapi.inject.impl.JreInjector").newInstance();
+        } catch (Exception e) {
+          throw X_Util.rethrow(e);
+        }
       }
     }
 

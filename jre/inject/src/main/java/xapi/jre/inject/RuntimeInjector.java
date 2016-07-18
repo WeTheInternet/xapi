@@ -16,16 +16,16 @@ import xapi.dev.scanner.api.ClasspathScanner;
 import xapi.dev.scanner.impl.ClasspathResourceMap;
 import xapi.dev.scanner.impl.ClasspathScannerDefault;
 import xapi.except.NotConfiguredCorrectly;
+import xapi.fu.In2;
 import xapi.inject.X_Inject;
+import xapi.inject.api.PlatformChecker;
 import xapi.inject.impl.JavaInjector;
 import xapi.log.X_Log;
 import xapi.platform.Platform;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
 import xapi.time.impl.ImmutableMoment;
-import xapi.util.X_Properties;
 import xapi.util.X_Runtime;
-import xapi.util.api.ReceivesValue;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -35,19 +35,20 @@ import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class RuntimeInjector implements ReceivesValue<String> {
+public class RuntimeInjector implements In2<String, PlatformChecker> {
 
   @Override
-  public void set(final String targetDir) {
+  public void in(final String targetDir, PlatformChecker selector) {
     final String prefix = "META-INF"+File.separator;
-    writeMetaInfo(targetDir, prefix+"singletons", prefix+"instances");
+    writeMetaInfo(targetDir, selector, prefix+"singletons", prefix+"instances");
   }
 
   @SuppressWarnings("unchecked")
-  public void writeMetaInfo(String targetDir, final String singletonDir, final String instanceDir){
+  public void writeMetaInfo(String targetDir, PlatformChecker checker, final String singletonDir, final String instanceDir){
     if (!targetDir.endsWith(File.separator)) {
       targetDir += File.separator;
     }
@@ -77,7 +78,7 @@ public class RuntimeInjector implements ReceivesValue<String> {
       .scan(targetClassloader())
       ;
     // Only collect platform types if we are not running in a known platform.
-    final String runtime[] = X_Properties.platform.get().split(",");
+    final String runtime[] = checker.getRuntime();
 
     final Fifo<ClassFile> defaultSingletons = new SimpleFifo<ClassFile>();
     final Fifo<ClassFile> defaultInstances = new SimpleFifo<ClassFile>();
@@ -96,7 +97,7 @@ public class RuntimeInjector implements ReceivesValue<String> {
         scopes.add(platform);
         shortName = platform.substring(platform.lastIndexOf('.')+1);
         platformMap.put(file.getName(), file);
-        if (file.getName().equals(runtime)) {
+        if (file.getName().equals(platform)) {
           bestMatch = file;
         }
         if (bestMatch == null && file.getName().endsWith(shortName)) {
@@ -118,18 +119,22 @@ public class RuntimeInjector implements ReceivesValue<String> {
         throw platformMisconfigured(next.getName());
       }
       fallbacks = anno.getMemberValue("fallback");
+      List<String> names = new ArrayList<>();
+      names.add(anno.getTypeName());
       if (fallbacks != null) {
         final ArrayMemberValue arr = (ArrayMemberValue)fallbacks;
         for (final MemberValue v : arr.getValue()) {
           final String name = ((ClassMemberValue)v).getValue();
           final ClassFile fallback = platformMap.get(name);
           if (fallback != null) {
+            names.add(name);
             if (scopes.add(fallback.getName())) {
               remainder.add(fallback);
             }
           }
         }
       }
+      checker.addPlatform(targetClassloader(), anno.getTypeName(), names);
       remainder.remove(next);
     }
     final Moment checked = now();
@@ -137,21 +142,30 @@ public class RuntimeInjector implements ReceivesValue<String> {
       SingletonDefault.class, SingletonOverride.class,
       InstanceDefault.class, InstanceOverride.class
       )) {
+
       Annotation anno = cls.getAnnotation(SingletonDefault.class.getName());
       if (anno != null && allowedPlatform(cls, scopes, platforms)) {
-        defaultSingletons.give(cls);
+        if (needsSingletonBinding(cls)) {
+          defaultSingletons.give(cls);
+        }
       }
       anno = cls.getAnnotation(SingletonOverride.class.getName());
       if (anno != null && allowedPlatform(cls, scopes, platforms)) {
-        singletonImpls.give(cls);
+        if (needsSingletonBinding(cls)) {
+          singletonImpls.give(cls);
+        }
       }
       anno = cls.getAnnotation(InstanceDefault.class.getName());
       if (anno != null && allowedPlatform(cls, scopes, platforms)) {
-        defaultInstances.give(cls);
+        if (needsInstanceBinding(cls)) {
+          defaultInstances.give(cls);
+        }
       }
       anno = cls.getAnnotation(InstanceOverride.class.getName());
       if (anno != null && allowedPlatform(cls, scopes, platforms)) {
-        instanceImpls.give(cls);
+        if (needsInstanceBinding(cls)) {
+          instanceImpls.give(cls);
+        }
       }
     }
     final Moment mapped = now();
@@ -260,6 +274,17 @@ public class RuntimeInjector implements ReceivesValue<String> {
     }
 
   }
+
+  protected boolean needsSingletonBinding(ClassFile cls) {
+    String name = "META-INF/singletons/" + cls.getQualifiedName();
+    return targetClassloader().getResource(name) == null;
+  }
+
+  protected boolean needsInstanceBinding(ClassFile cls) {
+    String name = "META-INF/instances/" + cls.getQualifiedName();
+    return targetClassloader().getResource(name) == null;
+  }
+
   /**
    * @return
    */

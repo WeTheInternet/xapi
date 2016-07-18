@@ -1,7 +1,5 @@
 package xapi.gwt.time;
 
-import java.util.Date;
-
 import xapi.annotation.inject.SingletonOverride;
 import xapi.inject.impl.SingletonProvider;
 import xapi.platform.GwtPlatform;
@@ -13,8 +11,10 @@ import com.google.gwt.core.client.Scheduler.ScheduledCommand;
 import com.google.gwt.i18n.shared.DateTimeFormat;
 import com.google.gwt.i18n.shared.DateTimeFormat.PredefinedFormat;
 
+import java.util.Date;
+
 @GwtPlatform
-@SingletonOverride(implFor=TimeService.class, priority=Integer.MIN_VALUE+1)
+@SingletonOverride(implFor=TimeService.class, priority=Integer.MIN_VALUE+3)
 public class TimeServiceGwt extends AbstractTimeService {
 
   private static final long serialVersionUID = -7873490109878690176L;
