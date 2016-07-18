@@ -1,6 +1,7 @@
 package xapi.model.api;
 
-import javax.inject.Provider;
+import xapi.fu.Out1;
+
 import java.util.Map.Entry;
 
 
@@ -9,7 +10,7 @@ public interface Model {
   //attributes
   <T> T getProperty(String key);
   <T> T getProperty(String key, T dflt);
-  <T> T getProperty(String key, Provider<T> dflt);
+  <T> T getProperty(String key, Out1<T> dflt);
   Class<?> getPropertyType(String key);
   Iterable<Entry<String, Object>> getProperties();
   String[] getPropertyNames();

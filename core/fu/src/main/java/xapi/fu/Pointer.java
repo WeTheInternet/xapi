@@ -1,15 +1,48 @@
 package xapi.fu;
 
 import xapi.fu.Log.DefaultLog;
+import xapi.fu.Log.LogLevel;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 1/3/16.
  */
-public interface Pointer <T> extends In1<T>, Out1<T> {
+public interface Pointer <T> extends In1<T>, Out1<T>, In1Out1<T, T> {
+
+  Out2<In1<T>, Out1<T>> accessors();
+
+  @Override
+  default void in(T in) {
+    accessors().out1().in(in);
+  }
+
+  @Override
+  default T out1() {
+    return accessors().out2().out1();
+  }
+
+  @Override
+  default T io(T in) {
+    return getThenSet(in);
+  }
+
+  default T getThenSet(T in) {
+    T was = out1();
+    in(in);
+    return was;
+  }
+
+  default T setThenGet(T in) {
+    io(in);
+    return out1();
+  }
 
   static <T> Pointer <T> pointer() {
-    return new PointerSimple<>();
+    T[] value = X_Fu.array((T)null);
+    final In1<T> in = In1.from1(X_Fu::setZeroeth, value);
+    final Out1<T> out = Out1.out1Deferred(X_Fu::getZeroeth, value);
+    final Out2<In1<T>, Out1<T>> pair = Out2.out2Immutable(in, out);
+    return ()-> pair;
   }
 
   static <T> Pointer <T> pointerTo(T value) {
@@ -18,35 +51,51 @@ public interface Pointer <T> extends In1<T>, Out1<T> {
     return pointer;
   }
 
-  static <T> Pointer <T> pointerToDeferred(Out1<T> value) {
+  static <T> Pointer <T> pointerJoin(In1<T> input, Out1<T> output) {
+    return new PointerJoin<>(input, output);
+  }
+
+  static <T> Pointer <T> pointerDeferred(Out1<T> value) {
     return new PointerDeferred<>(value);
   }
 
-  static <T> Pointer <T> pointerToLazy(Out1<T> value) {
-    return new PointerDeferred<>(value);
+  static <T> PointerImmutable <T> pointerImmutable(T value) {
+    return new PointerImmutable<>(value);
   }
 
-  class PointerSimple <T> implements Pointer<T> {
-    private volatile T value;
+  static <T> PointerLazy <T> pointerLazy(Out1<T> value) {
+    return new PointerLazy<>(value);
+  }
 
-    public PointerSimple(T value) {
-      this.value = value;
+  interface PointerComparable<T extends Comparable<T>> extends Pointer<T>, Lambda {
+
+  }
+
+  final class PointerJoin <T> implements Pointer<T>, DefaultLog {
+
+    @Override
+    public Out2<In1<T>, Out1<T>> accessors() {
+      return Out2.out2Immutable(in, out);
     }
 
-    public PointerSimple() {
+    private final In1<T> in;
+    private final Out1<T> out;
+
+    PointerJoin(In1<T> in, Out1<T> out) {
+      this.in = in;
+      this.out = out;
     }
 
     @Override
-    public void in(T in) {
-      this.value = in;
+    public void in(T i) {
+      in.in(i);
     }
 
     @Override
     public T out1() {
-      return value;
+      return out.out1();
     }
   }
-
   class PointerDeferred <T> implements Pointer<T>, DefaultLog {
     protected volatile Out1<T> value;
 
@@ -64,6 +113,11 @@ public interface Pointer <T> extends In1<T>, Out1<T> {
     }
 
     @Override
+    public Out2<In1<T>, Out1<T>> accessors() {
+      return Out2.out2Immutable(this, this);
+    }
+
+    @Override
     public void in(T in) {
       this.value = Immutable.immutable1(in);
     }
@@ -78,7 +132,10 @@ public interface Pointer <T> extends In1<T>, Out1<T> {
     }
   }
 
-  class PointerLazy <T> extends PointerDeferred <T> {
+  class PointerLazy <T> extends PointerDeferred <T> implements IsLazy {
+
+    PointerLazy() {}
+    PointerLazy(Out1<T> of) {value = of;}
 
     @Override
     public T out1() {
@@ -100,17 +157,44 @@ public interface Pointer <T> extends In1<T>, Out1<T> {
 
     @Override
     public void in(T in) {
+      warnAttemptToSet(in);
+    }
+
+    protected void warnAttemptToSet(T in) {
+      if ("true".equals(System.getProperty("xapi.strict.immutable"))) {
+        final Out1<String> message = Immutable.immutable1("Attempting to assign value [" + in + "] to an immutable pointer: " + getClass() + " : " + this);
+        Log.firstLog(in, this).log(LogLevel.DEBUG, "Attempt to set an immutable");
+        assert false : message;
+      }
+    }
+
+    @Override
+    public Out2<In1<T>, Out1<T>> accessors() {
+      return Out2.out2Immutable(this, this);
     }
 
     @Override
     public T out1() {
       return value;
     }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o)
+        return true;
+      if (!(o instanceof PointerImmutable))
+        return false;
+
+      final PointerImmutable<?> that = (PointerImmutable<?>) o;
+
+      return X_Fu.equal(value, that.value);
+
+    }
+
+    @Override
+    public int hashCode() {
+      return value != null ? value.hashCode() : 0;
+    }
   }
 
-  @Override
-  void in(T in);
-
-  @Override
-  T out1();
 }

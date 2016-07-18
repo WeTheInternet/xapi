@@ -13,7 +13,7 @@ import java.util.function.Supplier;
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 07/11/15.
  */
-public interface Out1<O> extends Rethrowable {
+public interface Out1<O> extends Rethrowable, Lambda {
 
   O out1();
 
@@ -85,6 +85,10 @@ public interface Out1<O> extends Rethrowable {
 
   static <I, O> Out1<O> out1Deferred(In1Out1<I, O> mapper, Out1<I> input) {
     return ()->mapper.io(input.out1());
+  }
+
+  static <I, O> Out1<O> out1Deferred(In1Out1<I, O> mapper, I input) {
+    return ()->mapper.io(input);
   }
 
   /**

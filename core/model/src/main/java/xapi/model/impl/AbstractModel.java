@@ -3,6 +3,7 @@ package xapi.model.impl;
 import xapi.annotation.inject.InstanceDefault;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
+import xapi.fu.Out1;
 import xapi.log.X_Log;
 import xapi.model.X_Model;
 import xapi.model.api.Model;
@@ -14,7 +15,6 @@ import xapi.util.api.SuccessHandler;
 
 import static xapi.util.impl.PairBuilder.entryOf;
 
-import javax.inject.Provider;
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -109,10 +109,10 @@ public class AbstractModel implements Model, PersistentModel, NestedModel{
     }
   }
   @Override
-  public <T> T getProperty(final String key, final Provider<T> dflt) {
+  public <T> T getProperty(final String key, final Out1<T> dflt) {
     Object val = map.get(key);
     if (val == null) {
-      val = dflt.get();
+      val = dflt.out1();
     }
     if (val == null) {
       final Class<?> type = getPropertyType(key);

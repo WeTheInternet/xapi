@@ -9,7 +9,7 @@ import java.util.function.Consumer;
  *         Created on 07/11/15.
  */
 @SuppressWarnings("unchecked")
-public interface In2<I1, I2> extends HasInput, Rethrowable {
+public interface In2<I1, I2> extends HasInput, Rethrowable, Lambda {
 
   void in(I1 in1, I2 in2);
 

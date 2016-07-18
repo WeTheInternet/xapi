@@ -13,7 +13,7 @@ import xapi.annotation.reflect.MirroredAnnotation;
 /**
  * The annotation used to trigger the model generator.
  *
- * This can be placed on an interface that extends {@link xapi.IsModel.api.Model},
+ * This can be placed on an interface that extends {@link xapi.model.api.Model},
  * to get the full persistence layer support, or on any interface or abstract class
  * to have X_Model.create() produce a filled in, fully functional subclass
  *

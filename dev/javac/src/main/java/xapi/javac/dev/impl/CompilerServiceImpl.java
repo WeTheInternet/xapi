@@ -82,7 +82,7 @@ public class CompilerServiceImpl implements CompilerService, Rethrowable {
     int result = com.sun.tools.javac.Main.compile(settings.toArguments(files), new PrintWriter(System.out));
     File f = new File(settings.getOutputDirectory());
     try {
-      return Out2.out2(result, f.toURI().toURL());
+      return Out2.out2Immutable(result, f.toURI().toURL());
     } catch (MalformedURLException e) {
       throw rethrow (e);
     }

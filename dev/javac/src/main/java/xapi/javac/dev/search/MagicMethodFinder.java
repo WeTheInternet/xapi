@@ -48,7 +48,7 @@ public class MagicMethodFinder extends TreeScanner {
     for (MethodMatcher<MagicMethodInjector> matcher : matchers) {
       final Optional<MagicMethodInjector> result = matcher.matches(name);
       if (result.isPresent()) {
-        matched.add(Out2.out2(invocation, result.get()));
+        matched.add(Out2.out2Immutable(invocation, result.get()));
       }
     }
     super.visitApply(invocation);

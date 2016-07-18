@@ -1,8 +1,15 @@
 package xapi.fu;
 
+import xapi.fu.Filter.Filter2;
+
 import static xapi.fu.MappableIterable.mappable;
 
+import javax.validation.constraints.NotNull;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.Collection;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.function.Predicate;
 
 /**
@@ -77,6 +84,10 @@ public interface X_Fu {
     return t == null;
   }
 
+  static <T> boolean notNull(final T value) {
+    return value != null;
+  }
+
   static <T> Filter<T> alwaysTrue() {
     return X_Fu::returnTrue;
   }
@@ -86,7 +97,7 @@ public interface X_Fu {
   }
 
   static <T> Filter<T> notNull() {
-    return X_Fu::returnFalse;
+    return X_Fu::notNull;
   }
 
   static <T> String reduceToString(Iterable<T> data, In1Out1<T, String> serializer, String separator) {
@@ -122,6 +133,180 @@ public interface X_Fu {
     return // cl.isSynthetic() &&  // gwt currently lacks this method :-/
         cl.getName().toLowerCase().contains("$$lambda$");
 
+  }
+
+  static <T> boolean noneNull(final T value, final T value1) {
+    return value != null && value1 != null;
+  }
+
+  static <T> boolean equal(final T value, final T value1) {
+
+    // cover the most permutations first.
+    if (value == value1) {
+      // if both were the same reference or null, return quickly
+      return true;
+    }
+    // If either was null, that's a fail.
+    if (!noneNull(value, value1)) {
+      return false;
+    }
+
+    final Class<?> cls = value.getClass();
+    final Class<?> cls1 = value1.getClass();
+    if (cls == cls1) {
+      if (cls.isArray()) {
+        // for array types, just iterate items...
+        final int len = Fu.jutsu.getLength(value);
+        final int len1 = Fu.jutsu.getLength(value1);
+        if (len != len1) {
+          return false;
+        }
+        for (int i = 0; i < len; i++) {
+          if (!equal(Fu.jutsu.getValue(value, i), Fu.jutsu.getValue(value1, i))) {
+            return false;
+          }
+        }
+        return true;
+      }
+      // two objects with the same class, just evaluate equality
+      return value.equals(value1);
+    }
+    if (cls.isAssignableFrom(cls1)) {
+      if (areComparable(value, value1)) {
+        // We'll let comparable objects return 0 for us to short-circuit equals().
+        return ((Comparable)value).compareTo(value1) == 0;
+      }
+
+      if (value instanceof Collection) {
+        // both are collections. Check the size() before we check elements.
+        int mySize = ((Collection)value).size();
+        int yourSize = ((Collection)value1).size();
+        if (mySize != yourSize) {
+          return false;
+        }
+      }
+      if (value instanceof Map) {
+        // both are maps. Check the size() before we check elements.
+        int mySize = ((Map)value).size();
+        int yourSize = ((Map)value1).size();
+        if (mySize != yourSize) {
+          return false;
+        }
+      }
+      if (value instanceof Iterable) {
+        // both are iterable.
+        return iterEqual((Iterable)value, (Iterable)value1);
+      }
+      if (value instanceof Iterator) {
+        // both are iterators
+        return iterEqual((Iterator)value, (Iterator) value1);
+      }
+      // let the type that is NOT assignable decide.
+      // This allows you to make types that can "dominate" other types equality methods.
+      // For example, an object that knows how to compare itself to a String...
+      // Strings will still only compare to each other, but your non-string object can do
+      // something other than .toString() when it is being checked.
+      return value1.equals(value);
+    }
+    // in case one of the values is not assignable to the other, we allow them a chance to call .equals();
+    if (cls1.isAssignableFrom(cls)) {
+      // let the more specific type check equality
+      return value.equals(value1);
+    }
+    // don't even check objects that aren't assignable in at least one direction.
+    return false;
+  }
+
+  static <T> boolean areComparable(T value, T value1) {
+    final Class<?> comp = comparableClassFor(value);
+    if (comp == null) {
+      return false;
+    }
+    final Class<?> comp1 = comparableClassFor(value1);
+    return comp == comp1;
+  }
+
+  /**
+   * Returns the comparable class for the given object,
+   * if it is comparable to itself;
+   * that is:
+   * interface Type extends Comparable&lt;Type> {}.
+   * will allow Type.class to be returned.
+   *
+   * interface Type extends Supertype, Comparable &lt;Supertype> {}
+   * will return null, as only directly comparable objects will
+   */
+    static Class<?> comparableClassFor(Object x) {
+      return comparableClassFor(x, Filter.filter2(X_Fu::equal));
+    }
+    static Class<?> comparableClassFor(Object x, Filter2<Class<?>, Class<?>, Class<?>> filter) {
+
+      if (x instanceof Comparable) {
+        final Class<?> c;
+        Type[] genericInterfaces, actualArgs;
+        Type type;
+        ParameterizedType p;
+        if ((c = x.getClass()) == String.class) {
+          return c;
+        }
+        if ((genericInterfaces = c.getGenericInterfaces()) != null) {
+          for (int i = 0; i < genericInterfaces.length; ++i) {
+            if (((type = genericInterfaces[i]) instanceof ParameterizedType) &&
+                ((p = (ParameterizedType)type).getRawType() ==
+                    Comparable.class)
+                ) {
+
+                if ((actualArgs = p.getActualTypeArguments()) != null &&
+                actualArgs.length == 1 && actualArgs[0] == c) {
+                  // type arg is c
+                  return c;
+                }
+            }
+            // short circuit if a Comparable match
+            return null;
+          }
+        }
+      }
+      return null;
+    }
+
+  static boolean iterEqual(Iterable v1, Iterable v2) {
+    if (v1 == null) {
+      return v2 == null;
+    }
+    if (v2 == null) {
+      return false;
+    }
+    return iterEqualNullsafe(v1.iterator(), v2.iterator());
+  }
+
+  static boolean iterEqual(Iterator v1, Iterator v2) {
+    if (v1 == null) {
+      return v2 == null;
+    }
+    if (v2 == null) {
+      return false;
+    }
+    return iterEqualNullsafe(v1, v2);
+  }
+  static boolean iterEqualNullsafe(@NotNull Iterator v1, @NotNull Iterator v2) {
+    while (v1.hasNext()) {
+      if (!v2.hasNext()) {
+        return false;
+      }
+      if (!equal(v1.next(), v2.next())) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  static <T> T getZeroeth(T[] value) {
+    return value[0];
+  }
+
+  static <T> void setZeroeth(T[] values, T value) {
+    values[0] = value;
   }
 }
 

@@ -2,6 +2,8 @@ package xapi.fu;
 
 import xapi.fu.Out1.Out1Unsafe;
 
+import static xapi.fu.Immutable.immutable1;
+
 /**
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 07/11/15.
@@ -38,7 +40,7 @@ public interface Out2<O1, O2> extends OutMany {
   /**
    * @return an immutable copy of this object.
    */
-  default <F extends Out2<O1, O2> & Frozen> F freeze() {
+  default <F extends Out2<O1, O2> & Frozen> F freeze2() {
     if (this instanceof Frozen) {
       return (F) this;
     }
@@ -55,17 +57,67 @@ public interface Out2<O1, O2> extends OutMany {
   }
 
   static <O1, O2> Out2<O1, O2> out2(O1 o1, Out1<O2> o2) {
-    final Out1[] out = new Out1[]{Immutable.immutable1(o1), o2};
+    final Out1[] out = new Out1[]{immutable1(o1), o2};
     return ()->out;
   }
 
-  static <O1, O2> Out2<O1, O2> out2(O1 o1, O2 o2) {
-    final Out1[] out = new Out1[]{Immutable.immutable1(o1), Immutable.immutable1(o2)};
-    return ()->out;
+  static <O1, O2> Out2<O1, O2> out2Immutable(O1 o1, O2 o2) {
+    return new Out2Immutable<>(o1, o2);
+  }
+
+  class Out2Immutable <O1, O2> implements Out2<O1, O2>, IsImmutable {
+
+    private final O1 one;
+    private final O2 two;
+
+    public Out2Immutable(O1 one, O2 two) {
+      this.one = one;
+      this.two = two;
+    }
+
+    @Override
+    public Out1[] out0() {
+      return new Out1[]{
+          immutable1(one),
+          immutable1(two)
+      };
+    }
+
+    @Override
+    public O1 out1() {
+      return one;
+    }
+
+    @Override
+    public O2 out2() {
+      return two;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o)
+        return true;
+      if (!(o instanceof Out2Immutable))
+        return false;
+
+      final Out2Immutable<?, ?> that = (Out2Immutable<?, ?>) o;
+
+      if (one != null ? !one.equals(that.one) : that.one != null)
+        return false;
+      return two != null ? two.equals(that.two) : that.two == null;
+
+    }
+
+    @Override
+    public int hashCode() {
+      int result = one != null ? one.hashCode() : 0;
+      result = 31 * result + (two != null ? two.hashCode() : 0);
+      return result;
+    }
   }
 
   static <O1, O2> Out2<O1, O2> out2(Out1<O1> o1, O2 o2) {
-    final Out1[] out = new Out1[]{o1, Immutable.immutable1(o2)};
+    final Out1[] out = new Out1[]{o1, immutable1(o2)};
     return ()->out;
   }
 

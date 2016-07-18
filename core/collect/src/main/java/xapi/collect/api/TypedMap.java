@@ -19,7 +19,7 @@ public interface TypedMap <K, V> {
   V remove(K key);
 
   default Out2<V, V> putAndReturnBoth(K key, V value) {
-    return Out2.out2(value, put(key, value));
+    return Out2.out2Immutable(value, put(key, value));
   }
 
   default Out2<V, V> putIfUnchanged(K key, V previousValue, V value) {
@@ -28,7 +28,7 @@ public interface TypedMap <K, V> {
     } else {
       value = previousValue;
     }
-    return Out2.out2(previousValue, value);
+    return Out2.out2Immutable(previousValue, value);
   }
 
   default V compute(K key, In2Out1<K, V, V> io) {

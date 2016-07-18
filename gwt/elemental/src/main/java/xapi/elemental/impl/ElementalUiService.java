@@ -19,9 +19,8 @@ import xapi.ui.service.UiService;
 @SingletonOverride(implFor = UiService.class)
 public class ElementalUiService extends UiServiceImpl <Element, UiElementWeb<Element>> {
 
-  public static class ElementalAttributes extends UiWithAttributes<Element, UiElementWeb<Element>> {
-    public ElementalAttributes(UiElementWeb e) {
-      super(e);
+  public class ElementalAttributes extends UiWithAttributes<Element, UiElementWeb<Element>> {
+    public ElementalAttributes() {
     }
 
     @Override
@@ -35,10 +34,7 @@ public class ElementalUiService extends UiServiceImpl <Element, UiElementWeb<Ele
     }
   }
 
-  public static class ElementalProperties extends UiWithProperties<Element, UiElementWeb<Element>> {
-    public ElementalProperties(UiElementWeb e) {
-      super(e);
-    }
+  public class ElementalProperties extends UiWithProperties<Element, UiElementWeb<Element>> {
 
     @Override
     protected In1Out1<String, Object> findGetter(UiElementWeb<Element> element) {
@@ -61,12 +57,16 @@ public class ElementalUiService extends UiServiceImpl <Element, UiElementWeb<Ele
 
   @Override
   public UiWithAttributes<Element, UiElementWeb<Element>> newAttributes(UiElementWeb<Element> el) {
-    return new ElementalAttributes(el);
+    final ElementalAttributes ui = new ElementalAttributes();
+    ui.initialize(el, this);
+    return ui;
   }
 
   @Override
   public UiWithProperties<Element, UiElementWeb<Element>> newProperties(UiElementWeb<Element> el) {
-      return new ElementalProperties(el);
+      final ElementalProperties ui = new ElementalProperties();
+      ui.initialize(el, this);
+      return ui ;
   }
 
   @Override
@@ -89,4 +89,9 @@ public class ElementalUiService extends UiServiceImpl <Element, UiElementWeb<Ele
   /*-{
     return element && element.host || element;
   }-*/;
+
+  @Override
+  protected Element getParent(Element element) {
+    return (Element) element.getParentNode(); // TODO consider stopping at document.body/head?
+  }
 }

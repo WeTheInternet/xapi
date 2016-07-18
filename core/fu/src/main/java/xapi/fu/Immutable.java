@@ -18,7 +18,7 @@ public class Immutable<O> implements Out1<O>, IsImmutable {
   }
 
   public static <O1, O2> Immutable<Out2<O1, O2>> immutable2(O1 o1, O2 o2) {
-    return new Immutable<>(out2(o1, o2));
+    return new Immutable<>(Out2.out2Immutable(o1, o2));
   }
 
   @Override

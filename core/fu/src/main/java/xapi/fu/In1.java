@@ -9,7 +9,7 @@ import java.util.function.Consumer;
  */
 @FunctionalInterface
 @SuppressWarnings("unchecked") // yes, this api will let you do terrible things.  Don't do terrible things.
-public interface In1<I> extends HasInput, Rethrowable {
+public interface In1<I> extends HasInput, Rethrowable, Lambda {
 
   void in(I in);
 

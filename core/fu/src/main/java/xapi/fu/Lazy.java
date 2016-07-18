@@ -16,7 +16,7 @@ import xapi.fu.In1Out1.In1Out1Unsafe;
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 14/12/15.
  */
-public class Lazy <T> implements Out1<T> {
+public class Lazy <T> implements Out1<T>, IsLazy {
 
   // This is volatile because the first read to this proxy will immutabilize the result of the constructot Out1,
   // thus, we want all other threads to notice that the Lazy has changed,

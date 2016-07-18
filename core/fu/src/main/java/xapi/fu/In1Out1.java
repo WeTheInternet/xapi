@@ -7,7 +7,7 @@ import java.util.function.Function;
  *         Created on 07/11/15.
  */
 @SuppressWarnings("unchecked") // yes, this api will let you do terrible things.  Don't do terrible things.
-public interface In1Out1<I, O> extends Rethrowable {
+public interface In1Out1<I, O> extends Rethrowable, Lambda {
 
   O io(I in);
 

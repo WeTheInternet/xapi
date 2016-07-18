@@ -55,22 +55,22 @@ public interface InMany extends HasInput {
     Many<Out2<Integer, HasInput>> tail, head = tail = new Many<>();
 
     InManyBuilder add(In1 in) {
-      tail = tail.add(Out2.out2(1, in));
+      tail = tail.add(Out2.out2Immutable(1, in));
       return this;
     }
 
     InManyBuilder add(In2 in) {
-      tail = tail.add(Out2.out2(2, in));
+      tail = tail.add(Out2.out2Immutable(2, in));
       return this;
     }
 
     InManyBuilder add(In3 in) {
-      tail = tail.add(Out2.out2(3, in));
+      tail = tail.add(Out2.out2Immutable(3, in));
       return this;
     }
 
     InManyBuilder add(In4 in) {
-      tail = tail.add(Out2.out2(4, in));
+      tail = tail.add(Out2.out2Immutable(4, in));
       return this;
     }
 

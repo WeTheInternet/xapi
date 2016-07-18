@@ -1,7 +1,5 @@
 package xapi.model;
 
-import javax.inject.Provider;
-
 import xapi.annotation.compile.MagicMethod;
 import xapi.inject.X_Inject;
 import xapi.model.api.Model;
@@ -13,6 +11,8 @@ import xapi.model.service.ModelCache;
 import xapi.model.service.ModelService;
 import xapi.source.impl.StringCharIterator;
 import xapi.util.api.SuccessHandler;
+
+import javax.inject.Provider;
 
 public class X_Model {
 
@@ -28,7 +28,7 @@ public class X_Model {
   @MagicMethod(doNotVisit=true,
       documentation="This magic method generates the model class and all of its dependent models, "
         + "then re-routes to the same provider as X_Inject.instance()")
-  public static <M extends Model> M create(final Class<M> modelClass) {
+  public static <M extends Model, Generic extends M> M create(final Class<Generic> modelClass) {
     return service.get().create(modelClass);
   }
 

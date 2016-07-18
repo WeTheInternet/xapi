@@ -6,7 +6,7 @@ import static xapi.fu.Immutable.immutable1;
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 07/11/15.
  */
-public interface OutMany extends Rethrowable {
+public interface OutMany extends Rethrowable, Lambda {
 
   Out1[] out0();
 

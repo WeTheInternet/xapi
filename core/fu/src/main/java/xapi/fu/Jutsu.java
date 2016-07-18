@@ -79,7 +79,7 @@ interface Jutsu {
       Class l = Class.forName("java.lang.invoke.SerializedLambda");
       Method m = l.getMethod("getImplMethodName");
       String name = (String)m.invoke(lambda);
-      if (Boolean.getBoolean("xapi.debug") || !name.contains("lambda")){
+      if (Boolean.parseBoolean(System.getProperty("xapi.debug", "false")) || !name.contains("lambda")){
         m = l.getMethod("getFunctionalInterfaceClass");
         name = m.invoke(lambda)+ "#" + name;
         m = l.getMethod("getFunctionalInterfaceMethodSignature");

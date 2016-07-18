@@ -53,7 +53,7 @@ public interface CollectionProxy <K, V>
    default boolean readWhileTrue(In1<Out2<K, V>> callback, In2Out1<K, V, Boolean> filter) {
      return readWhileTrue((k, v)->{
        if (filter.io(k, v)) {
-         Out2<K, V> o = Out2.out2(k, v);
+         Out2<K, V> o = Out2.out2Immutable(k, v);
          callback.in(o);
          return true;
        }

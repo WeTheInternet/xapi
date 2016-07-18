@@ -20,9 +20,9 @@ public class JavaFxUiGeneratorService extends AbstractUiImplementationGenerator 
   @Override
   protected Iterable<Out2<String, UiComponentGenerator>> getComponentGenerators() {
     return Arrays.asList(
-        out2("button", new JavaFxButtonComponentGenerator()),
-        out2("box", new JavaFxBoxComponentGenerator()),
-        out2("app", new JavaFxAppComponentGenerator())
+        Out2.out2Immutable("button", new JavaFxButtonComponentGenerator()),
+        Out2.out2Immutable("box", new JavaFxBoxComponentGenerator()),
+        Out2.out2Immutable("app", new JavaFxAppComponentGenerator())
     );
   }
 
@@ -34,15 +34,15 @@ public class JavaFxUiGeneratorService extends AbstractUiImplementationGenerator 
   @Override
   protected Iterable<Out2<String, UiFeatureGenerator>> getFeatureGenerators() {
     return Arrays.asList(
-        out2("ref", new UiFeatureGenerator()),
-        out2("title", new UiFeatureGenerator()),
-        out2("data", new UiFeatureGenerator()),
-        out2("body", new JavaFxBodyFeatureGenerator()),
-        out2("text", new JavaFxTextFeatureGenerator()),
-        out2("align", new JavaFxAlignFeatureGenerator()),
-        out2("fill", new JavaFxFillFeatureGenerator()),
-        out2("size", new JavaFxSizeFeatureGenerator()),
-        out2("onClick", new JavaFxActionFeatureGenerator())
+        Out2.out2Immutable("ref", new UiFeatureGenerator()),
+        Out2.out2Immutable("title", new UiFeatureGenerator()),
+        Out2.out2Immutable("data", new UiFeatureGenerator()),
+        Out2.out2Immutable("body", new JavaFxBodyFeatureGenerator()),
+        Out2.out2Immutable("text", new JavaFxTextFeatureGenerator()),
+        Out2.out2Immutable("align", new JavaFxAlignFeatureGenerator()),
+        Out2.out2Immutable("fill", new JavaFxFillFeatureGenerator()),
+        Out2.out2Immutable("size", new JavaFxSizeFeatureGenerator()),
+        Out2.out2Immutable("onClick", new JavaFxActionFeatureGenerator())
     );
   }
 }
