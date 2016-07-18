@@ -30,8 +30,8 @@ public class RemovableEventHandler <Source, Event extends IsEvent<Source>> imple
     }
 
     @Override
-    public void handleEvent(Event e) {
-        lambda.handleEvent(e);
+    public boolean handleEvent(Event e) {
+        return lambda.handleEvent(e);
     }
 
     @Override

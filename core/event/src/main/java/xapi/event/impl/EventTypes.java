@@ -1,5 +1,7 @@
 package xapi.event.impl;
 
+import xapi.collect.X_Collect;
+import xapi.collect.api.StringTo;
 import xapi.event.api.IsEventType;
 
 /**
@@ -35,6 +37,13 @@ public enum EventTypes implements IsEventType {
     Attach("attach"),
     Detach("detach");
 
+    private static final StringTo<IsEventType> types = X_Collect.newStringMap(IsEventType.class);
+    static {
+        for (EventTypes type : values()) {
+            types.put(type.eventType, type);
+        }
+
+    }
     private final String eventType;
 
     EventTypes(String eventType) {
@@ -44,5 +53,13 @@ public enum EventTypes implements IsEventType {
     @Override
     public String getEventType() {
         return eventType;
+    }
+
+    public static IsEventType convertType(String nativeType) {
+        return types.get(nativeType);
+    }
+
+    public static IsEventType registerType(String nativeType, IsEventType type) {
+        return types.put(nativeType, type);
     }
 }

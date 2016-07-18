@@ -24,9 +24,14 @@ public abstract class
   public <S extends Self> AbstractUiElement(Class<S> cls) {
     children = X_Collect.newList(cls);
     features = X_Collect.newClassMap(UiFeature.class);
-    element = Lazy.deferred1(this::initialize);
+    element = Lazy.deferred1(this::initAndBind);
   }
 
+  protected final Element initAndBind() {
+    Element e = initialize();
+    getUiService().bindNode(e, ui());
+    return e;
+  }
   public Element initialize() {
     throw new NotImplemented("Class " + getClass() + " must implement initialize()");
   }
@@ -44,6 +49,10 @@ public abstract class
   public void setElement(Element element) {
     assert this.element.isUnresolved() : "Calling setElement after element has already been resolved";
     this.element = Lazy.immutable1(element);
+    final Self was = getUiService().bindNode(element, ui());
+    assert was == null || was == this : "Binding native node " + element + " to multiple elements;" +
+        "\nwas: " + was + "," +
+        "\nis: " + this;
   }
 
   @Override
@@ -54,7 +63,7 @@ public abstract class
   @Override
   public Self setParent(Self parent) {
     this.parent = parent;
-    return self();
+    return ui();
   }
 
 

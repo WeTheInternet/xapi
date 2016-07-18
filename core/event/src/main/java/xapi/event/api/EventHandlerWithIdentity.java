@@ -21,8 +21,8 @@ public class EventHandlerWithIdentity<Source, Event extends IsEvent<Source>> imp
         this.wrapped = wrapped;
     }
 
-    public void handleEvent(Event e) {
-        wrapped.handleEvent(e);
+    public boolean handleEvent(Event e) {
+        return wrapped.handleEvent(e);
     }
 
     @Override

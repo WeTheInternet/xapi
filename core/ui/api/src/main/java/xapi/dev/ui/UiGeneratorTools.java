@@ -34,21 +34,21 @@ public abstract class UiGeneratorTools {
 
     protected Iterable<Out2<String, UiComponentGenerator>> getComponentGenerators() {
         return Arrays.asList(
-              Out2.out2("app", new UiComponentGenerator()),
-              Out2.out2("import", new UiComponentGenerator()),
-              Out2.out2("button", new UiComponentGenerator())
+              Out2.out2Immutable("app", new UiComponentGenerator()),
+              Out2.out2Immutable("import", new UiComponentGenerator()),
+              Out2.out2Immutable("button", new UiComponentGenerator())
         );
     }
 
     protected Iterable<Out2<String, UiFeatureGenerator>> getFeatureGenerators() {
         return Arrays.asList(
-              Out2.out2("ref", new UiFeatureGenerator()),
-              Out2.out2("title", new UiFeatureGenerator()),
-              Out2.out2("body", new UiFeatureGenerator()),
-              Out2.out2("data", new UiFeatureGenerator()),
-              Out2.out2("file", new UiFeatureGenerator()),
-              Out2.out2("text", new UiFeatureGenerator()),
-              Out2.out2("onClick", new UiFeatureGenerator())
+              Out2.out2Immutable("ref", new UiFeatureGenerator()),
+              Out2.out2Immutable("title", new UiFeatureGenerator()),
+              Out2.out2Immutable("body", new UiFeatureGenerator()),
+              Out2.out2Immutable("data", new UiFeatureGenerator()),
+              Out2.out2Immutable("file", new UiFeatureGenerator()),
+              Out2.out2Immutable("text", new UiFeatureGenerator()),
+              Out2.out2Immutable("onClick", new UiFeatureGenerator())
         );
     }
 

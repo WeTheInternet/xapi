@@ -1,10 +1,13 @@
 package xapi.ui.service;
 
 import xapi.collect.api.ClassTo;
+import xapi.event.api.EventManager;
+import xapi.event.api.IsEventType;
 import xapi.fu.In1Out1;
 import xapi.inject.X_Inject;
 import xapi.ui.api.UiBuilder;
 import xapi.ui.api.UiElement;
+import xapi.ui.api.event.UiEventManager;
 import xapi.ui.api.UiWithAttributes;
 import xapi.ui.api.UiWithProperties;
 
@@ -31,4 +34,15 @@ public interface UiService <Node, E extends UiElement<Node, ? extends Node,  E>>
 
   Object getHost(Object from);
 
+  EventManager newEventManager();
+
+  UiEventManager<Node, E> uiEvents();
+
+  E findContainer(Node nativeNode);
+
+  IsEventType convertType(String nativeType);
+
+  E bindNode(Node node, E container);
+
+  String debugDump();
 }

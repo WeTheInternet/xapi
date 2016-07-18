@@ -12,7 +12,7 @@ import xapi.ui.service.UiService;
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 4/19/16.
  */
-public class UiWithAttributes <Node, E extends UiElement<Node, ? extends Node, E>> implements UiFeature {
+public class UiWithAttributes <Node, E extends UiElement<Node, ? extends Node, E>> implements UiFeature<Node, E> {
 
   private In1Out1<String, String> getter;
   private In2<String, String> setter;
@@ -25,19 +25,6 @@ public class UiWithAttributes <Node, E extends UiElement<Node, ? extends Node, E
     setter = values::put;
   }
 
-  public UiWithAttributes(E element) {
-    getter = findGetter(element);
-    if (getter != null) {
-      setter = findSetter(element);
-    }
-    if (setter == null) {
-      final StringTo<String> values = X_Collect.newStringMap(String.class);
-      getter = values::get;
-      setter = values::put;
-
-    }
-  }
-
   protected In2<String, String> findSetter(E element) {
     return null;
   }
@@ -47,9 +34,18 @@ public class UiWithAttributes <Node, E extends UiElement<Node, ? extends Node, E
   }
 
   @Override
-  public void initialize(UiService service) {
+  public void initialize(E element, UiService service) {
     deserializers = service.getDeserializers();
     serializers = service.getSerializers();
+    getter = findGetter(element);
+    if (getter != null) {
+      setter = findSetter(element);
+    }
+    if (setter == null) {
+      final StringTo<String> values = X_Collect.newStringMap(String.class);
+      getter = values::get;
+      setter = values::put;
+    }
   }
 
   public String getAttribute(String key) {

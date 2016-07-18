@@ -1,10 +1,13 @@
 package xapi.ui.api;
 
 import xapi.collect.api.IntTo;
+import xapi.event.api.IsEvent;
 import xapi.fu.In1Out1;
 import xapi.inject.X_Inject;
 import xapi.ui.impl.DelegateElementInjector;
 import xapi.ui.service.UiService;
+
+import javax.validation.constraints.NotNull;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
@@ -35,11 +38,16 @@ public interface UiElement
   default <F extends UiFeature, Generic extends F> F getOrAddFeature(Class<Generic> cls, In1Out1<Base, F> factory) {
     F f = getFeature(cls);
     if (f == null) {
-      f = factory.io(self());
+      f = factory.io(ui());
       // purposely not null checking.  Will leave this to implementors to enforce.
+      f.initialize(this, getUiService());
       addFeature(cls, f);
     }
     return f;
+  }
+
+  default UiEventsFeature getEvents() {
+    return getOrAddFeature(UiEventsFeature.class, i->createFeature(UiEventsFeature.class));
   }
 
   default <F extends UiFeature, Generic extends F> F createFeature(Class<Generic> cls) {
@@ -47,7 +55,7 @@ public interface UiElement
   }
 
   @SuppressWarnings("unchecked")
-  default Base self() {
+  default Base ui() {
     return (Base) this;
   }
 
@@ -66,7 +74,7 @@ public interface UiElement
   @Override
   default void appendChild(Base newChild) {
     asInjector().appendChild(newChild);
-    newChild.setParent(self());
+    newChild.setParent(ui());
   }
 
   @Override
@@ -96,13 +104,13 @@ public interface UiElement
     // Platforms like Gwt might erase the type information off a
     // raw html / javascript type, so we return "real java objects" here.
     // This also allows implementors to insert control logic to the element attachment methods.
-    return new DelegateElementInjector<>(self());
+    return new DelegateElementInjector<>(ui());
   }
 
   default boolean removeFromParent() {
     final Base parent = getParent();
     if (parent != null) {
-      parent.removeChild(self());
+      parent.removeChild(ui());
       assert getParent() == null : "Parent did not correctly detach child." +
           "\nChild " + toSource()+
           "\nParent " + parent.toSource();
@@ -110,4 +118,21 @@ public interface UiElement
     }
     return false;
   }
+
+  default boolean onEventCapture(@NotNull IsEvent<?> event) {
+    return getEvents().fireCapture(event);
+  }
+
+  default boolean handlesBubble(@NotNull IsEvent<?> event) {
+    return getEvents().fireCapture(event);
+  }
+
+  default boolean handlesCapture(@NotNull IsEvent<?> event) {
+    return getEvents().fireCapture(event);
+  }
+
+  default boolean onEventBubble(@NotNull IsEvent<?> event) {
+    return getEvents().fireBubble(event);
+  }
+
 }

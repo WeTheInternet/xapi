@@ -1,6 +1,6 @@
 package xapi.event.api;
 
-import xapi.fu.In1;
+import xapi.fu.Filter.Filter1;
 import xapi.util.api.RemovalHandler;
 
 import java.io.Serializable;
@@ -10,7 +10,7 @@ import java.io.Serializable;
  */
 public interface EventHandler <Source, Event extends IsEvent<Source>> extends Serializable {
 
-    void handleEvent(Event e);
+    boolean handleEvent(Event e);
 
     /**
      * This method is provided, for your convenience, to store a reference to the event handler remover object.
@@ -47,11 +47,11 @@ public interface EventHandler <Source, Event extends IsEvent<Source>> extends Se
      * The returned RemovalHandler closes over the actual lambda instance you provide, and is the only bit of code other
      * than the original generated lambda capable of finding and removing the handler from the manager's internal map.
      *
-     * This handy static method allows you to provide any serializable key, and an {@link In1} instance, which calls
+     * This handy static method allows you to provide any serializable key, and an {@link Filter1} instance, which calls
      * into the constructor of our {@link RemovableEventHandler} class (which you can feel free to instantiate directly)
      *
      */
-    static <Source, Event extends IsEvent<Source>> RemovableEventHandler<Source, Event> removable(Serializable id, In1<Event> handler) {
-        return new RemovableEventHandler<>(id, handler::in);
+    static <Source, Event extends IsEvent<Source>> RemovableEventHandler<Source, Event> removable(Serializable id, Filter1<Event> handler) {
+        return new RemovableEventHandler<>(id, handler::filter1);
     }
 }

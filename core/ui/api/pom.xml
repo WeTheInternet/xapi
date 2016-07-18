@@ -30,6 +30,10 @@
   </dependency>
   <dependency>
     <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-core-model</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-lang</artifactId>
   </dependency>
 
@@ -47,9 +51,10 @@
 
    <dependency>
    <groupId>net.wetheinter</groupId>
-   <artifactId>xapi-jre-inject</artifactId>
+   <artifactId>xapi-jre-model</artifactId>
    <scope>test</scope>
   </dependency>
+
   <dependency>
    <groupId>net.wetheinter</groupId>
    <artifactId>xapi-core-test</artifactId>

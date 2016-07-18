@@ -60,7 +60,7 @@ public class UiElementJavaFx<N extends Node> extends AbstractUiElement<Node, N, 
         } else {
           children.add(children.size()-1, child.element());
         }
-        child.setParent(self());
+        child.setParent(ui());
         break;
       default:
         throw new IllegalStateException("Unhandled injection position " + pos + " in " + this);
@@ -70,7 +70,7 @@ public class UiElementJavaFx<N extends Node> extends AbstractUiElement<Node, N, 
   @Override
   public void appendChild(UiElementJavaFx newChild) {
     getInsertionPoint().add(newChild.element());
-    newChild.setParent(self());
+    newChild.setParent(ui());
   }
 
   @Override

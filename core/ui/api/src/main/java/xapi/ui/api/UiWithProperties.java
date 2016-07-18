@@ -4,12 +4,13 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.fu.In1Out1;
 import xapi.fu.In2;
+import xapi.ui.service.UiService;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 4/19/16.
  */
-public class UiWithProperties <Node, E extends UiElement<Node, ? extends Node, E>> implements UiFeature {
+public class UiWithProperties <Node, E extends UiElement<Node, ? extends Node, E>> implements UiFeature<Node, E> {
 
   private In1Out1<String, Object> getter;
   private In2<String, Object> setter;
@@ -20,7 +21,9 @@ public class UiWithProperties <Node, E extends UiElement<Node, ? extends Node, E
     setter = values::put;
   }
 
-  public UiWithProperties(E element) {
+
+  @Override
+  public void initialize(E element, UiService service) {
     getter = findGetter(element);
     if (getter != null) {
       setter = findSetter(element);
@@ -30,6 +33,7 @@ public class UiWithProperties <Node, E extends UiElement<Node, ? extends Node, E
       getter = values::get;
       setter = values::put;
     }
+
   }
 
   protected In2<String, Object> findSetter(E element) {

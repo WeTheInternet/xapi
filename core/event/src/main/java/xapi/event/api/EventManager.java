@@ -4,13 +4,11 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
 import xapi.event.impl.EventTypes;
-import xapi.fu.In1;
 import xapi.inject.X_Inject;
 import xapi.log.X_Log;
 import xapi.util.api.RemovalHandler;
 
 import static xapi.collect.X_Collect.newStringMultiMap;
-import static xapi.fu.In2.reduce2;
 
 import javax.validation.constraints.NotNull;
 import java.io.Serializable;
@@ -20,22 +18,22 @@ import java.io.Serializable;
  */
 public class EventManager implements Serializable {
 
-    private final StringTo.Many<EventHandler<?, ?>> handlers;
-    private final EventService service;
+    protected final StringTo.Many<EventHandler<?, ?>> handlers;
+    protected final EventService eventService;
 
     public EventManager() {
         this(X_Inject.singleton(EventService.class));
     }
 
     public EventManager(EventService service) {
-        this.service = service;
+        this.eventService = service;
         handlers = newStringMultiMap(EventHandler.class, X_Collect.MUTABLE_INSERTION_ORDERED_SET);
     }
 
     public <Source, E extends IsEvent<Source>> RemovalHandler addHandler(IsEventType type, EventHandler<Source, E> lambda) {
         // method references, by default, do NOT conform to object equality semantics.
         // very bad things will happen if you add a non-serializable lambda and then try to use .removeHandler later.
-        final EventHandler<Source, E> handler = service.normalizeHandler(lambda);
+        final EventHandler<Source, E> handler = eventService.normalizeHandler(lambda);
         final IntTo<EventHandler<?, ?>> handles = handlers.get(type.getEventType());
         boolean added = handles.add(handler);
         if (!added) {
@@ -53,12 +51,12 @@ public class EventManager implements Serializable {
         }
         boolean removed = handles.removeValue(lambda);
         if (!removed) {
-            final EventHandler<Source, E> normalized = service.normalizeHandler(lambda);
+            final EventHandler<Source, E> normalized = eventService.normalizeHandler(lambda);
             if (normalized != lambda) {
                 removed = handles.removeValue(normalized);
             }
             if (!removed) {
-                assert !service.isLambda(lambda) : "CANNOT REMOVE A LAMBDA HANDLER CORRECTLY! " + lambda + " is a raw lambda,\n" +
+                assert !eventService.isLambda(lambda) : "CANNOT REMOVE A LAMBDA HANDLER CORRECTLY! " + lambda + " is a raw lambda,\n" +
                     "which are created as ad-hoc anonymous classes that do NOT conform to object identity semantics;\nif you want " +
                     "to be able to use EventManager.removeHandler correctly,\nyou MUST make sure any instance or closed-over references " +
                     "are Serializable AND immutable\n(and your EventService is configured to transform serializable lambdas into instances of " +
@@ -71,13 +69,23 @@ public class EventManager implements Serializable {
         return removed;
     }
 
-    public <Source> void fireEvent(@NotNull IsEvent<Source> event) {
+    public boolean handlesEvent(IsEventType type) {
+        return handlers.containsKey(type.getEventType());
+    }
+
+    public boolean fireEvent(@NotNull IsEvent<?> event) {
         IntTo<EventHandler<?, ?>> handles = handlers.get(event.getTypeString());
         if (handles.isEmpty()) {
             handles = handlers.get(EventTypes.Unhandled.getEventType());
         }
-        final In1<EventHandler> r = reduce2(EventHandler::handleEvent, event);
-        handles.forEachValue(handler->r.in(handler));
+        boolean allow = true;
+        for (EventHandler handle : handles.forEach()) {
+            allow = handle.handleEvent(event);
+            if (!allow) {
+                return false;
+            }
+        }
+        return true;
     }
 
 }
