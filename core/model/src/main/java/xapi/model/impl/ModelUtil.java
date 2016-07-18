@@ -35,6 +35,9 @@ public class ModelUtil {
       String idField = isModel == null ? "id" : isModel.key().value();
       for (final Method method : type.getMethods()) {
         if (method.getDeclaringClass() != Model.class) {
+          if (method.isDefault()) {
+            continue; // no need to override default methods!
+          }
           if (!manifest.hasSeenMethod(method.getName())) {
             final MethodData property = manifest.addProperty(method.getName(), idField, method.getAnnotation(GetterFor.class),
                 method.getAnnotation(SetterFor.class), method.getAnnotation(DeleterFor.class));

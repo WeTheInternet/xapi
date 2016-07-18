@@ -47,4 +47,6 @@ public interface ReflectionService {
   Package getPackage(String parentName, ClassLoader cl);
 
   Object invokeDefaultMethod(Method method, Object ... params);
+
+  Object invokeDefaultMethod(Object inst, Method method, Object ... params);
 }

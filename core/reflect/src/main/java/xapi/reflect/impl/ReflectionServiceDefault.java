@@ -64,9 +64,12 @@ public class ReflectionServiceDefault implements ReflectionService{
             return null;
           }
         });
+    return invokeDefaultMethod(t, method, params);
+  }
 
+  @Override
+  public Object invokeDefaultMethod(Object instance, final Method method, final Object ... params) {
     try {
-
       // Use reflection on some reflection classes to get access to a Lookup object we aren't supposed to touch :-)
       // TODO: add proper security wrapper code
       final Field field = java.lang.invoke.MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
@@ -74,8 +77,8 @@ public class ReflectionServiceDefault implements ReflectionService{
       final java.lang.invoke.MethodHandles.Lookup lookup = (java.lang.invoke.MethodHandles.Lookup) field.get(null);
       final Object value = lookup
           .unreflectSpecial(method, method.getDeclaringClass())
-          .bindTo(t)
-          .invokeWithArguments();
+          .bindTo(instance)
+          .invokeWithArguments(params);
       return value;
     } catch (Throwable e) {
       e.printStackTrace();

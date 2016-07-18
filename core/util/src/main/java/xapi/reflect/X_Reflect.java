@@ -886,6 +886,18 @@ public class X_Reflect {
    * @throws Throwable
    * - Throws throwable because InvocationTargetException is unwrapped for you.
    */
+  public static Object invokeDefaultMethod(final Class<?> cls, final String name,
+                              final Class<?>[] paramTypes,
+                              final Object inst, final Object... params) throws Throwable {
+      Method method;
+      try {
+        method = makeAccessible(cls.getDeclaredMethod(name, paramTypes));
+      } catch (final NoSuchMethodException e) {
+        method = cls.getMethod(name, paramTypes);
+      }
+      return reflectionService.invokeDefaultMethod(inst, method, params);
+  }
+
   public static Object invoke(final Class<?> cls, final String name,
                               final Class<?>[] paramTypes,
                               final Object inst, final Object... params) throws Throwable {

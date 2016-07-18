@@ -14,6 +14,7 @@ import xapi.model.api.ModelModule;
 import xapi.model.impl.AbstractModel;
 import xapi.model.impl.AbstractModelService;
 import xapi.model.impl.ModelUtil;
+import xapi.reflect.X_Reflect;
 import xapi.util.X_Debug;
 import xapi.util.api.ConvertsTwoValues;
 import xapi.util.api.ConvertsValue;
@@ -166,6 +167,10 @@ public abstract class AbstractJreModelService extends AbstractModelService {
       }
       if (method.getDeclaringClass() == Model.class) {
         throw new UnsupportedOperationException("Unhandled xapi.model.api.Model method: "+method.toGenericString());
+      }
+      if (method.isDefault()) {
+        Method original = manifest.getModelType().getMethod(method.getName(), method.getParameterTypes());
+        return X_Reflect.invokeDefaultMethod(original.getDeclaringClass(), method.getName(), method.getParameterTypes(), proxy, args);
       }
       final MethodData property = manifest.getMethodData(method.getName());
       final ModelMethodType methodType = property.getMethodType(method.getName());
