@@ -13,11 +13,15 @@ public class UiEventsFeature <Node, Base extends UiElement<Node, ? extends Node,
 
     EventManager captures;
     EventManager bubbles;
+    private UiService service;
+    private Base node;
 
     @Override
     public void initialize(Base node, UiService service) {
         captures = service.newEventManager();
         bubbles = service.newEventManager();
+        this.service = service;
+        this.node = node;
     }
 
     public boolean handlesCapture(IsEventType type) {
@@ -43,6 +47,7 @@ public class UiEventsFeature <Node, Base extends UiElement<Node, ? extends Node,
 
     public UiEventsFeature addBubbling(IsEventType type, EventHandler handler) {
         bubbles.addHandler(type, handler);
+        service.bindEvent(type, node, handler, false);
         return this;
     }
 

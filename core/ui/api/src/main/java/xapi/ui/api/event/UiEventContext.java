@@ -98,4 +98,8 @@ public interface UiEventContext<Payload, Node, Base extends UiElement<Node, ? ex
         return this;
     }
 
+    @Override
+    default void print(LogLevel level, String debug) {
+        X_Log.log(getClass(), xapi.log.api.LogLevel.valueOf(level.name()), debug);
+    }
 }

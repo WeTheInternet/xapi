@@ -11,8 +11,12 @@ import static xapi.fu.Log.printLevel;
 public interface Log extends Debuggable {
 
   enum LogLevel {
-    DEBUG, TRACE, INFO, WARN, ERROR
+    ALL, DEBUG, TRACE, INFO, WARN, ERROR
     ;
+
+    public boolean isLoggable(LogLevel level) {
+      return level.ordinal() >= ordinal();
+    }
 
     static LogLevel DEFAULT = valueOf(System.getProperty("xapi.log.level", "INFO"));
 

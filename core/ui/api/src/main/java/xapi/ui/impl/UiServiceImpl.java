@@ -2,6 +2,7 @@ package xapi.ui.impl;
 
 import xapi.annotation.inject.SingletonDefault;
 import xapi.collect.api.ClassTo;
+import xapi.event.api.EventHandler;
 import xapi.event.api.EventManager;
 import xapi.event.api.IsEventType;
 import xapi.event.impl.EventTypes;
@@ -153,5 +154,14 @@ public class UiServiceImpl <Node, E extends UiElement<Node, ? extends Node, E>>
   public E bindNode(Node node, E container) {
     knownNodes.put(node, container);
     return container;
+  }
+
+  @Override
+  public void bindEvent(IsEventType type, E ui, Node node, EventHandler handler, boolean useCapture) {
+    throw new NotImplemented(getClass() + " must implement .bindEvent");
+  }
+
+  protected <Payload, NativeEvent> Payload toPayload(IsEventType type, E ui, Node element, NativeEvent e) {
+    return null;
   }
 }

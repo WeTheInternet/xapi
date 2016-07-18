@@ -1,6 +1,7 @@
 package xapi.ui.service;
 
 import xapi.collect.api.ClassTo;
+import xapi.event.api.EventHandler;
 import xapi.event.api.EventManager;
 import xapi.event.api.IsEventType;
 import xapi.fu.In1Out1;
@@ -45,4 +46,10 @@ public interface UiService <Node, E extends UiElement<Node, ? extends Node,  E>>
   E bindNode(Node node, E container);
 
   String debugDump();
+
+  default void bindEvent(IsEventType type, E ui, EventHandler handler, boolean useCapture) {
+    bindEvent(type, ui, ui.element(), handler, useCapture);
+  }
+
+  void bindEvent(IsEventType type, E ui, Node node, EventHandler handler, boolean useCapture);
 }

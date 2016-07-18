@@ -4,11 +4,15 @@ import elemental.dom.Element;
 import elemental.js.dom.JsElement;
 import xapi.annotation.inject.SingletonOverride;
 import xapi.elemental.api.UiElementWeb;
+import xapi.event.api.EventHandler;
+import xapi.event.api.IsEventType;
 import xapi.fu.In1Out1;
 import xapi.fu.In2;
 import xapi.gwt.collect.JsDictionary;
+import xapi.platform.GwtPlatform;
 import xapi.ui.api.UiWithAttributes;
 import xapi.ui.api.UiWithProperties;
+import xapi.ui.api.event.UiEventManager;
 import xapi.ui.impl.UiServiceImpl;
 import xapi.ui.service.UiService;
 
@@ -16,6 +20,7 @@ import xapi.ui.service.UiService;
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 4/19/16.
  */
+@GwtPlatform
 @SingletonOverride(implFor = UiService.class)
 public class ElementalUiService extends UiServiceImpl <Element, UiElementWeb<Element>> {
 
@@ -94,4 +99,15 @@ public class ElementalUiService extends UiServiceImpl <Element, UiElementWeb<Ele
   protected Element getParent(Element element) {
     return (Element) element.getParentNode(); // TODO consider stopping at document.body/head?
   }
+
+  @Override
+  public void bindEvent(
+      IsEventType type, UiElementWeb<Element> ui, Element element, EventHandler handler, boolean useCapture
+  ) {
+    element.addEventListener(type.getEventType(), e->{
+      final UiEventManager<Element, UiElementWeb<Element>> manager = uiEvents();
+      manager.fireUiEvent(ui, type, toPayload(type, ui, element, e));
+    }, useCapture);
+  }
+
 }

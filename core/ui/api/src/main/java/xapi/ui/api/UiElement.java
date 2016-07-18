@@ -2,8 +2,11 @@ package xapi.ui.api;
 
 import xapi.collect.api.IntTo;
 import xapi.event.api.IsEvent;
+import xapi.event.impl.EventTypes;
 import xapi.fu.In1Out1;
 import xapi.inject.X_Inject;
+import xapi.ui.api.event.UiEvent;
+import xapi.ui.api.event.UiEventHandler;
 import xapi.ui.impl.DelegateElementInjector;
 import xapi.ui.service.UiService;
 
@@ -135,4 +138,19 @@ public interface UiElement
     return getEvents().fireBubble(event);
   }
 
+  default <Payload> Base onEventBubble(EventTypes type, UiEventHandler<Payload, Node, Base, ? extends UiEvent<Payload, Node, Base>> handler) {
+    getEvents().addBubbling(type, handler);
+    return ui();
+  }
+  default <Payload> Base onEvent(EventTypes type, UiEventHandler<Payload, Node, Base, ? extends UiEvent<Payload, Node, Base>> handler, boolean capture) {
+    if (capture) {
+      return onEventCapture(type, handler);
+    } else {
+      return onEventBubble(type, handler);
+    }
+  }
+  default <Payload> Base onEventCapture(EventTypes type, UiEventHandler<Payload, Node, Base, ? extends UiEvent<Payload, Node, Base>> handler) {
+    getEvents().addCapturing(type, handler);
+    return ui();
+  }
 }

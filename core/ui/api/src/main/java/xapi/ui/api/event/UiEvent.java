@@ -8,4 +8,11 @@ import xapi.ui.api.UiElement;
  */
 public interface UiEvent <Payload, Node, Ui extends UiElement<Node, ? extends Node, Ui>> extends IsEvent<UiEventContext<Payload, Node, Ui>> {
 
+    default Ui ui() {
+        return getSource().getSourceElement();
+    }
+
+    default Node node() {
+        return getSource().getNativeEventTarget();
+    }
 }
