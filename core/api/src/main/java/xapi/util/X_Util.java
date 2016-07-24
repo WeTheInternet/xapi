@@ -134,8 +134,7 @@ public final class X_Util{
       beforeFinished[beforeFinished.length] = t;
       return beforeFinished;
     } else {
-      T[] copy = X_Fu.copy(beforeFinished, beforeFinished.length+1);
-      copy[beforeFinished.length] = t;
+      T[] copy = X_Fu.push(beforeFinished, t);
       return copy;
     }
   }

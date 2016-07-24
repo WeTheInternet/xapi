@@ -28,4 +28,9 @@ public class MultiException extends RuntimeException{
   public Iterable<Throwable> getThrowables() {
     return throwables.forEach();
   }
+
+  @Override
+  public String toString() {
+    return super.toString() + "\n" +throwables.join("\n\n");
+  }
 }
