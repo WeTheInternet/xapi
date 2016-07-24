@@ -42,13 +42,13 @@ public class UiElementJavaFx<N extends Node> extends AbstractUiElement<Node, N, 
       case BEFORE_BEGIN:
       case AFTER_END:
         final UiElementJavaFx parent = getParent();
-        children = getParent().getInsertionPoint();
+        children = parent.getInsertionPoint();
         final int myPos = children.indexOf(node);
         assert myPos != -1 : "Trying to insert a child adjacent to a node that is not in its parent's insertion point";
         if (pos == ElementPosition.BEFORE_BEGIN) {
-          children.add(myPos-1, child.element());
-        } else {
           children.add(myPos, child.element());
+        } else {
+          children.add(myPos+1, child.element());
         }
         child.setParent(parent);
         break;
@@ -77,6 +77,15 @@ public class UiElementJavaFx<N extends Node> extends AbstractUiElement<Node, N, 
   public void removeChild(UiElementJavaFx child) {
     getInsertionPoint().remove(child.element());
     child.setParent(null);
+  }
+
+  @Override
+  public boolean removeFromParent() {
+    if (((Pane)element().getParent()).getChildren().remove(element())) {
+      setParent(null);
+      return true;
+    }
+    return false;
   }
 
   @Override

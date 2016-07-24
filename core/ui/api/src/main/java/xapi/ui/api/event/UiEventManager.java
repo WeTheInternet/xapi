@@ -154,7 +154,7 @@ public class UiEventManager <Node, Ui extends UiElement<Node, ? extends Node, Ui
 
         UiEventChain captureChain = buildUiChain(event, new UiEventChain(source), UiElement::handlesCapture);
         while (captureChain != null) {
-            if (!captureChain.self.onEventCapture(event)) {
+            if (!captureChain.self.fireEventCapture(event)) {
                 return false;
             }
             captureChain = captureChain.next;
@@ -163,12 +163,12 @@ public class UiEventManager <Node, Ui extends UiElement<Node, ? extends Node, Ui
         UiEventChain bubbleChain = new UiEventChain(source);
         buildUiChain(event, bubbleChain, UiElement::handlesCapture);
         while (bubbleChain != null) {
-            if (!bubbleChain.self.onEventBubble(event)) {
+            if (!bubbleChain.self.fireEventBubble(event)) {
                 return false;
             }
             bubbleChain = captureChain.prev;
         }
-        
+
         return true;
     }
 

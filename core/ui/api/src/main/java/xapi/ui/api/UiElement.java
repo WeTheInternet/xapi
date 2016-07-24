@@ -122,7 +122,7 @@ public interface UiElement
     return false;
   }
 
-  default boolean onEventCapture(@NotNull IsEvent<?> event) {
+  default boolean fireEventCapture(@NotNull IsEvent<?> event) {
     return getEvents().fireCapture(event);
   }
 
@@ -134,7 +134,7 @@ public interface UiElement
     return getEvents().fireCapture(event);
   }
 
-  default boolean onEventBubble(@NotNull IsEvent<?> event) {
+  default boolean fireEventBubble(@NotNull IsEvent<?> event) {
     return getEvents().fireBubble(event);
   }
 
