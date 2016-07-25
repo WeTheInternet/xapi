@@ -1,6 +1,6 @@
 package java.util;
 
-import com.google.gwt.lang.Array;
+import javaemul.internal.ArrayHelper;
 
 import java.io.Serializable;
 import java.util.AbstractCollection;
@@ -776,7 +776,7 @@ public class ArrayDeque<E> extends AbstractCollection<E>
     public <T> T[] toArray(T[] a) {
         int size = size();
         if (a.length < size){
-            a = Array.createFrom(a, size);
+            a = ArrayHelper.createFrom(a, size);
         }
   copyElements(a);
         if (a.length > size)
@@ -793,7 +793,7 @@ public class ArrayDeque<E> extends AbstractCollection<E>
      */
     public ArrayDeque<E> clone() {
         ArrayDeque<E> result = new ArrayDeque<E>();
-        result.elements = Array.createFrom(elements, elements.length);
+        result.elements = ArrayHelper.createFrom(elements, elements.length);
         return result;
     }
 

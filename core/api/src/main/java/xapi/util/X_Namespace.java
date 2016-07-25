@@ -20,7 +20,7 @@ public class X_Namespace {
    */
   public static final String XAPI_VERSION = "0.6-SNAPSHOT";
 
-  public static final String GWT_VERSION = "2.7.0";
+  public static final String GWT_VERSION = "2.8.0";
 
   /**
    * The groupId used for the xapi project.  This is used to

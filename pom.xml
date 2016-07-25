@@ -47,8 +47,8 @@
   <xapi.plugin.version>0.5</xapi.plugin.version>
   <xapi.log.level>INFO</xapi.log.level>
   <gwt.groupId>net.wetheinter</gwt.groupId>
-  <gwt.version>2.7.0</gwt.version>
-  <gwt.plugin.version>2.7.0</gwt.plugin.version>
+  <gwt.version>2.8.0</gwt.version>
+  <gwt.plugin.version>2.8.0</gwt.plugin.version>
   <xapi.gwt.version>${gwt.version}</xapi.gwt.version>
   <playn.version>1.5.1</playn.version>
   <appengine.version>1.9.19</appengine.version>
@@ -386,11 +386,6 @@
    </dependency>
 
    <!-- XApi GWT modules -->
-   <dependency>
-    <groupId>net.wetheinter</groupId>
-    <artifactId>gwt-method-inject</artifactId>
-    <version>2.7.0-SNAPSHOT</version>
-   </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-gwt-api</artifactId>
@@ -938,6 +933,32 @@
  </build>
 
  <profiles>
+   <profile>
+    <id>default-profile</id>
+    <activation>
+     <activeByDefault>true</activeByDefault>
+     <file>
+      <exists>${java.home}/../lib/tools.jar</exists>
+     </file>
+    </activation>
+    <properties>
+     <toolsjar>${java.home}/../lib/tools.jar</toolsjar>
+     <classesjar>${java.home}/../lib/classes.jar</classesjar>
+    </properties>
+   </profile>
+   <profile>
+    <id>mac-profile</id>
+    <activation>
+     <activeByDefault>false</activeByDefault>
+     <file>
+      <exists>${java.home}/../Classes/classes.jar</exists>
+     </file>
+    </activation>
+    <properties>
+     <toolsjar>${java.home}/../Classes/classes.jar</toolsjar>
+     <classesjar>${java.home}/../Classes/classes.jar</classesjar>
+    </properties>
+   </profile>
   <!--
   <profile>
     <id>jdk7</id>

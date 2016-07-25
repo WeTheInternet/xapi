@@ -28,6 +28,7 @@ import xapi.mojo.api.AbstractXapiMojo;
 import xapi.mojo.api.SourceDependency;
 import xapi.mvn.X_Maven;
 import xapi.util.X_Debug;
+import xapi.util.X_Namespace;
 import xapi.util.X_Properties;
 import xapi.util.X_String;
 import xapi.util.api.Pair;
@@ -163,7 +164,7 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
 //      version = GWT.getVersion();
 //      if (version != null)
 //        return version;
-      return superGuess("com.google.gwt", "2.7.0");
+      return superGuess("com.google.gwt", X_Namespace.GWT_VERSION);
     };
   };
 

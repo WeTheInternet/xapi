@@ -6,6 +6,7 @@ import xapi.annotation.model.GetterFor;
 import xapi.annotation.model.Serializable;
 import xapi.annotation.model.SetterFor;
 import xapi.annotation.reflect.Fluent;
+import xapi.dev.source.CharBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.model.api.ModelDeserializationContext;
@@ -267,13 +268,14 @@ public class ModelGeneratorGwt extends IncrementalGenerator{
     final String serializerType = out.getClassBuffer().addImport(ModelSerializer.class);
     final String charIterator = out.addImport(CharIterator.class);
     final String serialContext = out.addImport(ModelSerializationContext.class);
+    final String charBuffer = out.addImport(CharBuffer.class);
     final String deserialContext = out.addImport(ModelDeserializationContext.class);
     out.getClassBuffer().addInterface(serializerType+"<"+simpleType+">");
 
     final MethodBuffer modelToString = out.getClassBuffer()
-          .createMethod("public String modelToString(" + simpleType+" model, " + serialContext + " ctx)");
+          .createMethod("public " + charBuffer + " modelToString(" + simpleType+" model, " + serialContext + " ctx)");
     final MethodBuffer stringToModel = out.getClassBuffer()
-        .createMethod("public " + simpleType + " stringToModel(" + charIterator + " model, " + deserialContext + " ctx)");
+        .createMethod("public " + simpleType + " modelFromString(" + charIterator + " model, " + deserialContext + " ctx)");
 
     if (toClient.isEmpty()) {
       stringToModel.returnValue("throw new " + out.getClassBuffer().addImport(UnsupportedOperationException.class)+"();");

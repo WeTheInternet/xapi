@@ -3,6 +3,7 @@
 .project
 .DS_Store
 .idea
+classes
 target
 war
 bin

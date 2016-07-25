@@ -1,7 +1,5 @@
 package xapi.gwt.collect;
 
-import com.google.gwt.core.client.GwtScriptOnly;
-import com.google.gwt.core.client.JavaScriptObject;
 import xapi.annotation.inject.InstanceOverride;
 import xapi.collect.api.StringTo;
 import xapi.collect.impl.ArrayIterable;
@@ -9,6 +7,9 @@ import xapi.collect.impl.EntryValueAdapter;
 import xapi.collect.impl.IteratorWrapper;
 import xapi.fu.Out2;
 import xapi.platform.GwtPlatform;
+
+import com.google.gwt.core.client.GwtScriptOnly;
+import com.google.gwt.core.client.JavaScriptObject;
 
 import java.util.Iterator;
 import java.util.Map.Entry;
@@ -146,7 +147,7 @@ public class StringToGwt <V> extends JavaScriptObject implements StringTo<V>{
   @Override
   public final native String[] keyArray()
   /*-{
-   return @com.google.gwt.lang.Array::clone([Ljava/lang/Object;)(this._k);
+   return @javaemul.internal.ArrayHelper::clone([Ljava/lang/Object;II)(this._k, 0, this._k.length);
    }-*/;
 
   private final native String[] nativeKeys()

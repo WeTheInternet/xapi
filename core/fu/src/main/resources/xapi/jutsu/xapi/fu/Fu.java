@@ -37,7 +37,7 @@ class Fu implements Jutsu {
 
   public <T> T[] emptyArray(T[] notCopied, int length) {
     // This class is not visible on your classpath.  It is from super-source in gwt-dev.jar
-    Object arr = com.google.gwt.lang.Array.createFrom(notCopied, length);
+    Object arr = javaemul.internal.ArrayHelper.createFrom(notCopied, length);
     return (T[]) arr;
   }
 

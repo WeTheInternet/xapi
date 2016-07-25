@@ -156,8 +156,8 @@
 							<sources>
 								<source>src/main/gwt-${gwt.version}/</source>
 								<!--
-                                    Uncomment these to look at super-source and/or generated source 
-									<source>src/main/resources/com/google/gwt/emul/</source> <source>target/gwt-gen</source> 
+                                    Uncomment these to look at super-source and/or generated source
+									<source>src/main/resources/com/google/gwt/emul/</source> <source>target/gwt-gen</source>
 									<source>target/gwt-emul/com/google/gwt/emul/</source> <source>target/gwt-lang/com/google/gwt/dev/jjs/intrinsic/</source> -->
 							</sources>
 						</configuration>
@@ -240,7 +240,7 @@
 				  <logLevel>INFO</logLevel>
 				  <extraJvmArgs>-ea</extraJvmArgs>
 				  <jsInteropMode>NONE</jsInteropMode>
-<!-- 				  <methodNameDisplayMode>FULL</methodNameDisplayMode> --> 
+<!-- 				  <methodNameDisplayMode>FULL</methodNameDisplayMode> -->
 				  <extraSources>
 				    <extraSource>${project.basedir}/src/test/java</extraSource>
 				    <extraSource>${project.basedir}/src/test/resources</extraSource>
@@ -257,7 +257,7 @@
 					<configuration>
 						<generateDirectory>${project.build.directory}/gwt-gen</generateDirectory>
 						<includeTestSource>true</includeTestSource>
-						<xapi.log.level>TRACE</xapi.log.level>
+						<xapiLogLevel>TRACE</xapiLogLevel>
 					</configuration>
 				</plugin>
 				<plugin>
@@ -323,7 +323,7 @@
 				</plugin>
 			</plugins>
 		</pluginManagement>
-	</build> 
+	</build>
 
 	<profiles>
 		<profile>

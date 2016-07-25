@@ -27,6 +27,7 @@ import xapi.log.X_Log;
 import xapi.log.api.LogLevel;
 import xapi.reflect.X_Reflect;
 import xapi.util.X_Debug;
+import xapi.util.X_Namespace;
 
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.RunAsyncCallback;
@@ -249,7 +250,7 @@ public abstract class GwtcServiceAbstract implements GwtcService {
     addDependency(
         DependencyBuilder.buildDependency("gwt-reflect")
         .setGroupId("net.wetheinter")
-        .setVersion("2.7.0")
+        .setVersion(X_Namespace.GWT_VERSION)
         .setClassifier("tests")
         .setDependencyType(DependencyType.MAVEN)
         .build()

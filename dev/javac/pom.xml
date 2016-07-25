@@ -53,6 +53,13 @@
       <systemPath>${project.basedir}/lib/classes.jar</systemPath>
       <scope>system</scope>
      </dependency>
+    <dependency>
+      <groupId>com.sun</groupId>
+      <artifactId>java-tools</artifactId>
+      <version>1.0</version>
+      <scope>system</scope>
+      <systemPath>${toolsjar}</systemPath>
+    </dependency>
      <dependency>
       <groupId>${gwt.groupId}</groupId>
       <artifactId>gwt-dev</artifactId>
