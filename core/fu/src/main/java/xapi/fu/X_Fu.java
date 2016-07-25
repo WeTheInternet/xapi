@@ -237,7 +237,7 @@ public interface X_Fu {
    * will return null, as only directly comparable objects will
    */
     static Class<?> comparableClassFor(Object x) {
-      return comparableClassFor(x, Filter.filter2(X_Fu::equal));
+      return comparableClassFor(x, Filter.<Class<?>, Class<?>, Class<?>>filter2(X_Fu::equal));
     }
     static Class<?> comparableClassFor(Object x, Filter2<Class<?>, Class<?>, Class<?>> filter) {
 
@@ -249,7 +249,7 @@ public interface X_Fu {
         if ((c = x.getClass()) == String.class) {
           return c;
         }
-        if ((genericInterfaces = c.getGenericInterfaces()) != null) {
+        if ((genericInterfaces = Fu.jutsu.getGenericInterfaces(c)) != null) {
           for (int i = 0; i < genericInterfaces.length; ++i) {
             if (((type = genericInterfaces[i]) instanceof ParameterizedType) &&
                 ((p = (ParameterizedType)type).getRawType() ==

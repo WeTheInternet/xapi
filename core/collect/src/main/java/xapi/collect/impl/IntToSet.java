@@ -5,12 +5,13 @@ import xapi.collect.api.CollectionOptions;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.ObjectTo;
 import xapi.collect.proxy.CollectionProxy;
+import xapi.fu.In1;
 import xapi.fu.In2Out1;
 import xapi.fu.Out2;
+import xapi.fu.X_Fu;
 import xapi.util.impl.AbstractPair;
 
 import java.io.Serializable;
-import java.lang.reflect.Array;
 import java.util.*;
 import java.util.Map.Entry;
 
@@ -48,12 +49,18 @@ public class IntToSet <V> implements IntTo<V>, Serializable {
   @Override
   public V[] toArray() {
     int s = size();
-    V[] values = (V[]) Array.newInstance(valueType(), s);
+    V[] values = newArray(s);
     final Iterator<V> itr = store.iterateValues().iterator();
     for(int i = 0; i < s; i++) {
       values[i] = itr.next();
     }
     return values;
+  }
+
+  private V[] newArray(int s) {
+    V[] arr = X_Fu.<V>array();
+    arr = X_Fu.blank(arr, s);
+    return arr;
   }
 
   @Override
@@ -103,7 +110,8 @@ public class IntToSet <V> implements IntTo<V>, Serializable {
     if (into == null) {
       into = newList();
     }
-    forEachValue(into::add);
+    Collection<V> target = into;
+    forEachValue(v->target.add(v));
     return into;
   }
 
@@ -112,7 +120,8 @@ public class IntToSet <V> implements IntTo<V>, Serializable {
     if (into == null) {
       into = newMap();
     }
-    forEachPair(into::put);
+    Map<Integer, V> target = into;
+    forEachPair(target::put);
     return into;
   }
 
@@ -365,5 +374,20 @@ public class IntToSet <V> implements IntTo<V>, Serializable {
   @Override
   public String toString() {
     return toSource();
+  }
+
+  @Override
+  public boolean removeValue(V value) {
+    return IntTo.super.removeValue(value);
+  }
+
+  @Override
+  public void removeAll(In1<V> callback) {
+    IntTo.super.removeAll(callback);
+  }
+
+  @Override
+  public String toString(Integer key, V value) {
+    return IntTo.super.toString(key, value);
   }
 }

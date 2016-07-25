@@ -1,6 +1,8 @@
 package xapi.fu;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.Type;
+
 import com.google.gwt.core.shared.GWT;
 
 /**
@@ -61,6 +63,16 @@ class Fu implements Jutsu {
   public <T> T[] pushOnto(T[] ts, T t) {
     ts[ts.length] = t;
     return ts;
+  }
+
+  public Type[] getGenericInterfaces(Class<?> c) {
+    if (c == null) {
+      return new Type[0];
+    }
+    Class[] classes = c.getInterfaces();
+    Type[] types = new Type[classes.length];
+    System.arraycopy(classes, 0, types, 0, classes.length);
+    return types;
   }
 
   public String lambdaName(Object o) {

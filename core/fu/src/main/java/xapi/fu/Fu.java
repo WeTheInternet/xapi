@@ -1,5 +1,7 @@
 package xapi.fu;
 
+import java.lang.reflect.Type;
+
 /**
  This package-local class implements our platform magic, Jutsu, and initializes it with all default methods.
 
@@ -18,5 +20,10 @@ class Fu implements Jutsu {
   static Fu getFu() {
     final Fu fu = new Fu();
     return fu.init(fu);
+  }
+
+  @Override
+  public Type[] getGenericInterfaces(Class<?> c) {
+    return c == null ? new Type[0] : c.getInterfaces();
   }
 }

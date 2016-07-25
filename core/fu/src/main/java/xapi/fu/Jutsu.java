@@ -2,6 +2,7 @@ package xapi.fu;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 
 /**
  * Jutsu: technique, method, spell, skill or trick.
@@ -96,5 +97,9 @@ interface Jutsu {
       ignored.printStackTrace();
     }
     return null;
+  }
+
+  default Type[] getGenericInterfaces(Class<?> c) {
+    return new Type[0];
   }
 }
