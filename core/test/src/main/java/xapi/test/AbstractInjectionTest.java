@@ -1,16 +1,16 @@
 package xapi.test;
 
-import java.net.URL;
-
 import org.junit.Before;
 import org.junit.BeforeClass;
-
+import xapi.inject.api.PlatformChecker;
 import xapi.time.impl.RunOnce;
 import xapi.util.X_Namespace;
 
+import java.net.URL;
+
 /**
  * An abstract base class for jre modules that want to manually force runtime injection at bootstrap.
- * 
+ *
  * @author "James X. Nelson (james@wetheinter.net)"
  *
  */
@@ -23,7 +23,7 @@ public class AbstractInjectionTest {
     System.setProperty(X_Namespace.PROPERTY_RUNTIME_META, "target/test-classes");
     System.setProperty(X_Namespace.PROPERTY_TEST, "true");
   }
-  
+
   @Before // can't do BeforeClass because we need to call this.getClass()
   public void prepareInjector(){
     System.setProperty(X_Namespace.PROPERTY_RUNTIME_META, "target/test-classes");
@@ -38,8 +38,9 @@ public class AbstractInjectionTest {
           .loadClass("xapi.jre.inject.RuntimeInjector")
           .newInstance();
 
-        injector.getClass().getMethod("writeMetaInfo", String.class, String.class, String.class)
-          .invoke(injector,testClasses, "META-INF/singletons", "META-INF/instances");
+        final PlatformChecker checker = new PlatformChecker();
+        injector.getClass().getMethod("writeMetaInfo", String.class, PlatformChecker.class, String.class, String.class)
+          .invoke(injector,testClasses, checker, "META-INF/singletons", "META-INF/instances");
       } catch (Exception e) {
         System.err.println("[WARN]: Runtime injection failure for "+getClass()+"; " +
         		"You should include xapi-jre-inject on your test classpath.");

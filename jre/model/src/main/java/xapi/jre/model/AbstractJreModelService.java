@@ -5,6 +5,7 @@ import xapi.collect.api.ClassTo;
 import xapi.collect.api.Dictionary;
 import xapi.collect.api.IntTo;
 import xapi.except.NotYetImplemented;
+import xapi.fu.Out1;
 import xapi.model.api.Model;
 import xapi.model.api.ModelKey;
 import xapi.model.api.ModelManifest;
@@ -147,8 +148,8 @@ public abstract class AbstractJreModelService extends AbstractModelService {
             // there is a default value...
             result = values.getValue((String)args[0]);
             if (result == null) {
-              if (method.getParameterTypes()[1] == Provider.class) {
-                result = ((Provider)args[1]).get();
+              if (method.getParameterTypes()[1] == Out1.class) {
+                result = ((Out1)args[1]).out1();
               } else {
                 result = args[1];
               }

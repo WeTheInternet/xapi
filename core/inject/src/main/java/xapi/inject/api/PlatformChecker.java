@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 /**
@@ -91,11 +92,12 @@ public class PlatformChecker {
         }
     }
 
-    public Class<?> findBest(Iterable<Class<?>> cls) {
+    public Class<?> findBest(Map<Class<?>, Integer> cls) {
         int best = Integer.MIN_VALUE;
         Class<?> result = null;
-        for (Class<?> cl : cls) {
-            int score = classScore(cl);
+        for (Entry<Class<?>, Integer> entry : cls.entrySet()) {
+            final Class<?> cl = entry.getKey();
+            int score = entry.getValue() == null ? classScore(cl) : entry.getValue();
             if (score > best) {
                 result = cl;
                 best = score;
@@ -116,9 +118,11 @@ public class PlatformChecker {
                 score = Integer.MIN_VALUE + 1;
             } else {
                 Integer maybe = platformScore.get(annotation.annotationType());
-                if (maybe != null && maybe != Integer.MIN_VALUE) {
-                    if (maybe > bump) {
-                        bump = maybe;
+                if (maybe != null) {
+                    if (maybe != Integer.MIN_VALUE) {
+                        if (maybe > bump) {
+                            bump = maybe;
+                        }
                     }
                 }
             }

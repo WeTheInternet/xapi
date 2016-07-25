@@ -21,8 +21,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Enumeration;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class JreInjector implements Injector {
 
@@ -208,7 +208,7 @@ public class JreInjector implements Injector {
             }
         }
         URL resource;
-        Set<Class<?>> candidates = new LinkedHashSet<>();
+        Map<Class<?>, Integer> candidates = new LinkedHashMap<>();
         while (resources.hasMoreElements()) {
             resource = resources.nextElement();
             final InputStream stream = resource.openStream();
@@ -216,9 +216,16 @@ public class JreInjector implements Injector {
             stream.read(into);
             try {
                 String result = new String(into).split("\n")[0];
+                String[] bits = result.split("=");
                 try {
-                    final Class<?> clazz = Class.forName(result, true, cls.getClassLoader());
-                    candidates.add(clazz);
+                    final Class<?> clazz = Class.forName(bits[0], true, cls.getClassLoader());
+                    Integer newVal = bits.length == 1 ? null : Integer.parseInt(bits[1].trim());
+                    final Integer was = candidates.get(clazz);
+                    if (was == null) {
+                        candidates.put(clazz, newVal);
+                    } else if (newVal != null) {
+                        candidates.put(clazz, Math.max(was, newVal));
+                    }
                 } catch (ClassNotFoundException e) {
                     // TODO: warn...
                 }
