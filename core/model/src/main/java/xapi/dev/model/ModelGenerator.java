@@ -12,12 +12,12 @@ import xapi.dev.model.ModelField.GetterMethod;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
+import xapi.fu.Out1;
 import xapi.source.api.IsType;
 import xapi.util.api.ConvertsTwoValues;
 
 import static xapi.source.X_Source.primitiveToObject;
 
-import javax.inject.Provider;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -211,11 +211,11 @@ public class ModelGenerator {
           mb.print("return this.<" + imported + ">getProperty(\"" + field.getName() + "\"");
           for (DefaultProvider defaultProvider : providers) {
             if (defaultProvider.tryMatch(qualified)) {
-              final String provider = mb.addImport(Provider.class);
+              final String provider = mb.addImport(Out1.class);
               mb.print(", ")
                   .print("new ").print(provider).print("<").print(imported).println(">() {")
                   .indent()
-                  .print("public ").print(imported).println(" get() {")
+                  .print("public ").print(imported).println(" out1() {")
                   .indent()
                   .println(defaultProvider.initializer.convert(mb, getter))
                   .outdent()

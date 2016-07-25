@@ -23,6 +23,11 @@
   </dependency>
   <dependency>
    <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-core-event</artifactId>
+   <classifier>sources</classifier>
+  </dependency>
+  <dependency>
+   <groupId>net.wetheinter</groupId>
    <artifactId>xapi-core-ui-autoui</artifactId>
    <classifier>sources</classifier>
   </dependency>
@@ -37,8 +42,7 @@
   </dependency>
   <dependency>
    <groupId>net.wetheinter</groupId>
-   <artifactId>xapi-gwt-collect</artifactId>
-   <version>${project.version}</version><!--$NO-MVN-MAN-VER$-->
+   <artifactId>xapi-gwt-model</artifactId>
   </dependency>
   <dependency>
    <groupId>net.wetheinter</groupId>
@@ -53,9 +57,9 @@
    <artifactId>xapi-dev-source</artifactId>
    <classifier>sources</classifier>
   </dependency>
-  
+
   <!-- Testing dependencies -->
-  
+
   <dependency>
    <groupId>net.wetheinter</groupId>
    <artifactId>xapi-core-ui-autoui</artifactId>

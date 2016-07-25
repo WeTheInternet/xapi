@@ -6,6 +6,7 @@
     <inherits name="java.util.Util" />
 	<!-- Pull in X_Inject, which has all common utilities we need -->
     <inherits name="xapi.X_Inject" />
+    <inherits name="xapi.X_Source" />
 
     <inherits name="com.google.gwt.reflect.Reflect" />
 

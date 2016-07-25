@@ -52,6 +52,11 @@ public interface EventHandler <Source, Event extends IsEvent<Source>> extends Se
      *
      */
     static <Source, Event extends IsEvent<Source>> RemovableEventHandler<Source, Event> removable(Serializable id, Filter1<Event> handler) {
-        return new RemovableEventHandler<>(id, handler::filter1);
+        return new RemovableEventHandler<>(id, new EventHandler<Source, Event>() {
+            @Override
+            public boolean handleEvent(Event e) {
+                return handler.filter1(e);
+            }
+        });
     }
 }

@@ -111,21 +111,43 @@ public class UiEventManager <Node, Ui extends UiElement<Node, ? extends Node, Ui
                     return (UiDetachEvent<Payload, Node, Ui>)()->context;
 
                 case Select:
-                    return (UiSelectEvent<Payload, Node, Ui>)()->context;
+                    // Gwt has problems inferring types on overloaded functional interfaces...
+                    return new UiSelectEvent<Payload, Node, Ui>() {
+                        @Override
+                        public UiEventContext<Payload, Node, Ui> getSource() {
+                            return context;
+                        }
+                    };
                 case Unselect:
-                    return (UiUnselectEvent<Payload, Node, Ui>)()->context;
+                    return new UiUnselectEvent<Payload, Node, Ui>() {
+
+                        @Override
+                        public UiEventContext<Payload, Node, Ui> getSource() {
+                            return context;
+                        }
+                    };
 
                 case Change:
                     Payload payload = context.getPayload();
                     assert payload instanceof HasBeforeAfter : "Change events must supply a payload which implements HasBeforeAfter";
                     HasBeforeAfter values = (HasBeforeAfter)payload;
-                    return (UiChangeEvent<Payload, Node, Ui, Object>)()-> Out3.out3(context, values::getBefore, values::getAfter);
-
+                    return new UiChangeEvent<Payload, Node, Ui, Object>() {
+                        @Override
+                        public Out3<UiEventContext<Payload, Node, Ui>, Object, Object> values() {
+                            return Out3.out3(context, ()->values.getBefore(), ()->values.getAfter());
+                        }
+                    };
                 case Undo:
                     payload = context.getPayload();
                     assert payload instanceof HasBeforeAfter : "Undo events must supply a payload which implements HasBeforeAfter";
                     values = (HasBeforeAfter)payload;
-                    return (UiUndoEvent<Payload, Node, Ui, Object>)()-> Out3.out3(context, values::getBefore, values::getAfter);
+                    return new UiUndoEvent<Payload, Node, Ui, Object>() {
+
+                        @Override
+                        public Out3<UiEventContext<Payload, Node, Ui>, Object, Object> values() {
+                            return Out3.out3(context, ()->values.getBefore(), ()->values.getAfter());
+                        }
+                    };
             }
         }
         // No pre-canned event type to support... create an anonymous event class

@@ -5,21 +5,20 @@ import xapi.event.api.EventHandler;
 import xapi.event.api.EventHandlerWithIdentity;
 import xapi.event.api.EventService;
 import xapi.event.api.IsEvent;
+import xapi.except.NotImplemented;
 import xapi.fu.X_Fu;
 import xapi.log.X_Log;
 import xapi.util.X_Debug;
 import xapi.util.X_Util;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 7/16/16.
  */
 @SingletonDefault(implFor = EventService.class)
-public class EventServiceDefault implements EventService {
+public class AbstractEventService implements EventService {
 
     private boolean warn = true;
 
@@ -65,11 +64,12 @@ public class EventServiceDefault implements EventService {
         if (name != null) {
             return name;
         }
-        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-        try (ObjectOutputStream out = new ObjectOutputStream(bytes)) {
-            out.writeObject(handler);
-        }
-        return bytes.toByteArray();
+        return backupExtractIdentifier(handler);
+    }
+
+    protected  <Source, Event extends IsEvent<Source>> Serializable backupExtractIdentifier(EventHandler<Source, Event> handler)
+    throws IOException {
+        throw new NotImplemented(getClass() + " must implement backupExtractIdentifier; could not get id for "+ handler);
     }
 
     public boolean isLambda(EventHandler<?, ?> handler) {
