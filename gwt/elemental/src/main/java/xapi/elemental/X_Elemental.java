@@ -18,10 +18,12 @@ import javax.inject.Provider;
 
 public class X_Elemental {
 
-  public static void addClassName(final Element e, final String cls) {
+  public static boolean addClassName(final Element e, final String cls) {
     if (!hasClassName(e, cls)) {
       e.setClassName(e.getClassName() + " " + cls);
+      return true;
     }
+    return false;
   }
 
   public static void alert(final String msg) {
@@ -99,9 +101,13 @@ public class X_Elemental {
     return (Element) X_Elemental.DIV.cloneNode(false);
   }
 
-  public static void removeClassName(final Element e, final String cls) {
-    final String clsName = " " + e.getClassName() + " ";
-    e.setClassName(clsName.replace(" " + cls + " ", " ").trim());
+  public static boolean removeClassName(final Element e, final String cls) {
+    if (hasClassName(e, cls)) {
+      final String clsName = " " + e.getClassName() + " ";
+      e.setClassName(clsName.replace(" " + cls + " ", " ").trim());
+      return true;
+    }
+    return false;
   }
 
   @MagicMethod(doNotVisit=true)

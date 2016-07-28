@@ -153,4 +153,8 @@ public interface UiElement
     getEvents().addCapturing(type, handler);
     return ui();
   }
+
+  boolean addStyleName(String style);
+
+  boolean removeStyleName(String style);
 }

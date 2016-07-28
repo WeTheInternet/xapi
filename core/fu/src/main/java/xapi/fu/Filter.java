@@ -72,6 +72,17 @@ public interface Filter<T> {
     return filter;
   }
 
+  static <T> Filter1<T> referenceFilter(T value) {
+    return t->t==value;
+  }
+
+  static <T> Filter1<T> equalsFilter(T value) {
+    if (value == null) {
+      return t->t==null;
+    }
+    return value::equals;
+  }
+
   static <T> Filter1<T> filter1Unsafe(Filter1Unsafe<T> filter) {
     return filter;
   }

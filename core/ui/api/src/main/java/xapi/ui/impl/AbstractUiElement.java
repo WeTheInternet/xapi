@@ -13,7 +13,7 @@ import xapi.ui.api.UiFeature;
  *         Created on 4/19/16.
  */
 public abstract class
-    AbstractUiElement <Node, Element extends Node, Self extends AbstractUiElement<Node, ? extends Node, Self>>
+    AbstractUiElement <Node, Element extends Node, Self extends UiElement<Node, ? extends Node, Self>>
     implements UiElement<Node, Element,Self> {
 
   protected Self parent;

@@ -32,6 +32,13 @@ public interface Pointer <T> extends In1<T>, Out1<T>, In1Out1<T, T> {
     return was;
   }
 
+  default T getThenApply(In1Out1<T, T> io) {
+    T was = out1();
+    T next = io.io(was);
+    in(next);
+    return was;
+  }
+
   default T setThenGet(T in) {
     io(in);
     return out1();

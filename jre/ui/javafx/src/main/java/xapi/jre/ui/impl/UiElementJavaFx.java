@@ -1,7 +1,9 @@
 package xapi.jre.ui.impl;
 
 import javafx.collections.ObservableList;
+import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.layout.Pane;
 import xapi.ui.api.ElementPosition;
 import xapi.ui.impl.AbstractUiElement;
@@ -27,7 +29,7 @@ public class UiElementJavaFx<N extends Node> extends AbstractUiElement<Node, N, 
   protected ObservableList<Node> getInsertionPoint() {
     final N node = element();
     assert node instanceof Pane : "Cannot insert into " + this + " as element " + node + " is not a Pane subclass";
-    return ((Pane)node).getChildren();
+    return getChildren(node);
   }
 
   @Override
@@ -58,7 +60,7 @@ public class UiElementJavaFx<N extends Node> extends AbstractUiElement<Node, N, 
         if (pos == ElementPosition.AFTER_BEGIN) {
           children.add(0, child.element());
         } else {
-          children.add(children.size()-1, child.element());
+          children.add(children.size(), child.element());
         }
         child.setParent(ui());
         break;
@@ -81,11 +83,25 @@ public class UiElementJavaFx<N extends Node> extends AbstractUiElement<Node, N, 
 
   @Override
   public boolean removeFromParent() {
-    if (((Pane)element().getParent()).getChildren().remove(element())) {
+    final Parent par = element().getParent();
+    if (par == null) {
+      return false;
+    }
+    if (getChildren(par).remove(element())) {
       setParent(null);
       return true;
     }
     return false;
+  }
+
+  protected ObservableList<Node> getChildren(Node parent) {
+    if (parent instanceof Pane) {
+      return ((Pane)parent).getChildren();
+    } else if (parent instanceof Group) {
+      return ((Group)parent).getChildren();
+    } else {
+      throw new IllegalArgumentException("Cannot get children of parent " + parent);
+    }
   }
 
   @Override
@@ -96,4 +112,12 @@ public class UiElementJavaFx<N extends Node> extends AbstractUiElement<Node, N, 
       throw X_Debug.rethrow(e);
     }
   }
+
+  public boolean addStyleName(String name) {
+    return element().getStyleClass().add(name);
+  }
+  public boolean removeStyleName(String name) {
+    return element().getStyleClass().remove(name);
+  }
+
 }

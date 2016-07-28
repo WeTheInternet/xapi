@@ -2,6 +2,7 @@ package xapi.elemental.api;
 
 import elemental.dom.Element;
 import xapi.annotation.inject.InstanceDefault;
+import xapi.elemental.X_Elemental;
 import xapi.inject.X_Inject;
 import xapi.ui.api.ElementPosition;
 import xapi.ui.impl.AbstractUiElement;
@@ -49,5 +50,15 @@ public class UiElementWeb <E extends Element> extends AbstractUiElement<Element,
     final E e = element();
     final E c = child.element();
     e.insertAdjacentElement(pos.position(), c);
+  }
+
+  @Override
+  public boolean addStyleName(String style) {
+    return X_Elemental.addClassName(element(), style);
+  }
+
+  @Override
+  public boolean removeStyleName(String style) {
+    return X_Elemental.removeClassName(element(), style);
   }
 }

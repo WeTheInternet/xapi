@@ -10,6 +10,7 @@ import xapi.fu.X_Fu;
 
 import java.util.Iterator;
 import java.util.ListIterator;
+import java.util.NoSuchElementException;
 
 /**
  * @author "James X. Nelson (james@wetheinter.net)"
@@ -28,6 +29,7 @@ AbstractLinkedList<T, SimpleLinkedList.LinkedListNode<T>, SimpleLinkedList<T>> {
 
     private LinkedListNode<T> node;
     int pos;
+    boolean forward, removed;
 
     public ListIter(final LinkedListNode<T> start, final int pos) {
       this.node = start;
@@ -57,12 +59,17 @@ AbstractLinkedList<T, SimpleLinkedList.LinkedListNode<T>, SimpleLinkedList<T>> {
 
     @Override
     public boolean hasPrevious() {
-      return node == null ? tail != null : node.previous != null;
+      return node != head;
     }
 
     @Override
     public T next() {
+      if (node.next == null) {
+        throw new NoSuchElementException();
+      }
       try {
+        forward = true;
+        removed = false;
         return node.next.value;
       } finally {
         pos++;
@@ -72,35 +79,63 @@ AbstractLinkedList<T, SimpleLinkedList.LinkedListNode<T>, SimpleLinkedList<T>> {
 
     @Override
     public int nextIndex() {
-      return pos + 1;
+      return forward ? pos : pos - 1;
     }
 
     @Override
     public T previous() {
       try {
-        return node == null ? tail.value : node.value;
+        removed = forward = false;
+        if (node == head) {
+          throw new NoSuchElementException();
+        }
+        return node.value;
       } finally {
         pos--;
-        node = node == null ? tail.previous : node.previous == null ? head
-          : node.previous;
+        node = node.previous;
       }
     }
 
     @Override
     public int previousIndex() {
-      return pos - 1;
+      return forward ? pos-1 : pos;
     }
 
     @Override
     public void remove() {
-      final LinkedListNode<T> next = node.next;
-      node.next = next.next;
-      if (next.next == null) {
-        tail = node;
-      } else {
-        next.next.previous = node;
+      if (removed) {
+        throw new IllegalStateException();
       }
-      node = next;
+      removed = true;
+      if (forward) {
+        final LinkedListNode<T> prev = node.previous;
+        prev.next = node.next;
+        if (node.next == null) {
+          tail = prev;
+        } else {
+          prev.next.previous = prev;
+        }
+        node.next = null;
+        node.previous = null;
+        node.value = null;
+        node = prev;
+
+        pos --;
+      } else {
+        final LinkedListNode<T> back = node.next;
+        node.next = back.next;
+        if (back.next == null) {
+          tail = node;
+        } else {
+          back.next.previous = node;
+        }
+        back.next = null;
+        back.previous = null;
+        back.value = null;
+        if (head != tail) {
+          pos ++;
+        }
+      }
     }
 
     @Override
@@ -185,6 +220,12 @@ AbstractLinkedList<T, SimpleLinkedList.LinkedListNode<T>, SimpleLinkedList<T>> {
 
   public ListIterator<T> listIterator() {
     return new ListIter(head, 0);
+  }
+
+  @Override
+  public Iterator<T> iterator() {
+    // the remove function of the default iterator kinda sucks.
+    return listIterator();
   }
 
   @Override

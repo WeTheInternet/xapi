@@ -3,6 +3,7 @@
  */
 package xapi.collect.impl;
 
+import xapi.fu.Filter;
 import xapi.fu.Filter.Filter1;
 import xapi.fu.In1Out1;
 import xapi.fu.X_Fu;
@@ -32,25 +33,43 @@ public abstract class AbstractLinkedList<T, N extends AbstractLinkedList.Node<T,
   }
 
   protected final class NodeIterator implements Iterator<T> {
-    private N next = head.next;
-
+    private N next = head, prev;
+    private boolean removed;
     @Override
     public boolean hasNext() {
-      return next != null;
+      return next.next != null;
     }
 
     @Override
     public T next() {
+      if (next.next == null) {
+        throw new IllegalStateException();
+      }
       try {
-        return next.value;
+        return next.next.value;
       } finally {
+        if (removed) {
+          removed = false;
+        } else {
+          prev = next;
+        }
         next = next.next;
       }
     }
 
     @Override
     public void remove() {
-      throw new UnsupportedOperationException();
+      if (removed) {
+        throw new IllegalStateException();
+      }
+      removed = true;
+      prev.next = next.next;
+      next.next = null;
+      next.value = null;
+      next = prev;
+      if (prev.next == null) {
+        tail = prev;
+      }
     }
 
   }
@@ -159,6 +178,26 @@ public abstract class AbstractLinkedList<T, N extends AbstractLinkedList.Node<T,
     return null;
   }
 
+  public boolean contains(final T value) {
+    return containsMatch(Filter.equalsFilter(value));
+  }
+
+  public boolean containsReference(final T value) {
+    return containsMatch(Filter.referenceFilter(value));
+  }
+
+  public boolean containsMatch(final Filter1<T> consumer) {
+    assert consumer != null;
+    final Iterator<T> itr = iterator();
+    while (itr.hasNext()) {
+      final T next = itr.next();
+      if (consumer.filter1(next)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   public T find(final Filter1<T> consumer) {
     assert consumer != null;
     final Iterator<T> itr = iterator();
@@ -171,6 +210,27 @@ public abstract class AbstractLinkedList<T, N extends AbstractLinkedList.Node<T,
     return null;
   }
 
+  public boolean remove(T value) {
+    return findRemove1(Filter.equalsFilter(value));
+  }
+
+  public boolean removeByReference(T value) {
+    return findRemove1(Filter.referenceFilter(value));
+  }
+
+  public boolean findRemove1(final Filter1<T> matcher) {
+    assert matcher != null;
+    final Iterator<T> itr = iterator();
+    while (itr.hasNext()) {
+      final T next = itr.next();
+      if (matcher.filter1(next)) {
+        itr.remove();
+        return true;
+      }
+    }
+    return false;
+
+  }
   public T findNotNull() {
     return find(X_Fu::returnNotNull);
   }
