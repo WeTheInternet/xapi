@@ -121,4 +121,12 @@ public interface In1<I> extends HasInput, Rethrowable, Lambda {
   }
 
   interface In1Serializable <I> extends In1<I>, Serializable { }
+
+  default  <V> In2<I, V> ignore2() {
+    return (i, ignored) -> in(i);
+  }
+
+  default  <V> In2<V, I> ignore1() {
+    return (ignored, i) -> in(i);
+  }
 }

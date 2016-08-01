@@ -9,6 +9,7 @@ import xapi.platform.AndroidPlatform;
 import xapi.platform.DevPlatform;
 import xapi.platform.GwtDevPlatform;
 import xapi.platform.GwtPlatform;
+import xapi.platform.JavaFxPlatform;
 import xapi.platform.JrePlatform;
 import xapi.platform.Platform;
 import xapi.util.X_Properties;
@@ -30,6 +31,7 @@ import java.util.Set;
 @DevPlatform
 @GwtDevPlatform
 @AndroidPlatform
+@JavaFxPlatform
 public class PlatformChecker {
 
     private final Set<String> runtime;

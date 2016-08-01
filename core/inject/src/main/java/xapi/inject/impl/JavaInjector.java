@@ -138,7 +138,7 @@ public class JavaInjector {
   public static void registerInstanceProvider(String iface, final String name) {
     try {
       final Class cls = Class.forName(name);
-      singleton.get().setSingletonFactory(Class.forName(iface), new Provider() {
+      singleton.get().setInstanceFactory(Class.forName(iface), new Provider() {
         @Override
         public Object get() {
           try {

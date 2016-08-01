@@ -110,6 +110,9 @@ public class JreInjector implements Injector {
                 final Class<?> cls;
                 try {
                     cls = lookup(clazz, instanceUrlFragment.get(), JreInjector.this, instanceProviders);
+                    if (cls == clazz && instanceProviders.containsKey(cls)) {
+                        return instanceProviders.get(cls);
+                    }
                     return ()->{
                         try {
                             return cls.newInstance();
@@ -149,6 +152,9 @@ public class JreInjector implements Injector {
                     try {
                         //First, lookup META-INF/singletons for a replacement.
                         cls = lookup(clazz, singletonUrlFragment.get(), JreInjector.this, singletonProviders);
+                        if (cls == clazz && singletonProviders.containsKey(cls)) {
+                            return singletonProviders.get(cls);
+                        }
                         return new ImmutableProvider<>(cls.newInstance());
                     } catch (final Throwable e) {
                         if (singletonProviders.containsKey(clazz)) {
@@ -202,6 +208,15 @@ public class JreInjector implements Injector {
                 injector.initOnce = false;
                 injector.init(cls, map);
                 resources = loader.getResources(relativeUrl + name);
+                if (relativeUrl.contains(instanceUrlFragment.get())) {
+                    if (injector.instanceProviders.containsKey(cls)) {
+                        return cls;
+                    }
+                } else {
+                    if (injector.singletonProviders.containsKey(cls)) {
+                        return cls;
+                    }
+                }
             }
             if (resources == null || !resources.hasMoreElements()) {
                 return cls;

@@ -8,6 +8,9 @@ package xapi.fu;
  */
 public interface Do {
 
+  Do NOTHING = () -> {
+  };
+
   void done();
 
   default Runnable toRunnable() {

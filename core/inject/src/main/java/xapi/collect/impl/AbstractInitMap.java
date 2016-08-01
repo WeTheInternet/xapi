@@ -119,8 +119,9 @@ public abstract class AbstractInitMap <Key, Value> implements InitMap<Key,Value>
 		if (isMultiThreaded()) {
 		  //double-checked lock for multithreaded enviros only
 		  synchronized(getLock(key)) {
-  		  if (hasKey(key))
-          return getValue(key);
+  		  if (hasKey(key)) {
+                    return getValue(key);
+                  }
 		    //init object
 		    value = initialize(k);
 		    setValue(key, value);
@@ -153,7 +154,7 @@ public abstract class AbstractInitMap <Key, Value> implements InitMap<Key,Value>
 	public String toKey(Key key) {
 	  return keyProvider.convert(key);
 	}
-	
+
 	@Override
 	public Value convert(Key from) {
 	  return get(from);
