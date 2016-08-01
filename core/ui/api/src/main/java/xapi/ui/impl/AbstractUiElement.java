@@ -82,4 +82,22 @@ public abstract class
     return (F) result;
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o)
+      return true;
+    if (!(o instanceof UiElement))
+      return false;
+
+    final UiElement<?, ?, ?> that = (UiElement<?, ?, ?>) o;
+
+    // Ui elements may use referential equality,
+    // since two elements with the exact same attributes are not actually equal
+    return element() == that.element();
+  }
+
+  @Override
+  public int hashCode() {
+    return element().hashCode();
+  }
 }

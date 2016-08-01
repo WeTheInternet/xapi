@@ -42,13 +42,17 @@ public class DoubleSupplierBinding implements ObservableDoubleValue {
         return new DoubleSupplierBinding(()->(double)value.getAsLong());
     }
 
+    public void invalidate() {
+            invalidationListeners.keySet()
+                  .forEach(l->l.invalidated(DoubleSupplierBinding.this));
+    }
+
     public DoubleSupplierBinding bindNotifier(Notifier<? extends Number> notifier) {
         notifier.listen((oldV, newV)-> {
             // per source code in javafx ExpressionHelper class, we fire invalidations before changes.
-            invalidationListeners.keySet()
-                  .forEach(l->l.invalidated(DoubleSupplierBinding.this));
+           invalidate();
            changeListeners.keySet()
-                 .forEach(l->l.changed(DoubleSupplierBinding.this, oldV, newV));
+               .forEach(l->l.changed(DoubleSupplierBinding.this, oldV, newV));
         }
         );
         return this;

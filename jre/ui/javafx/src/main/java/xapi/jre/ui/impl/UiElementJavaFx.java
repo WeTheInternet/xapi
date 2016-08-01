@@ -95,6 +95,10 @@ public class UiElementJavaFx<N extends Node> extends AbstractUiElement<Node, N, 
   }
 
   protected ObservableList<Node> getChildren(Node parent) {
+    return getChildList(parent);
+  }
+
+  public static ObservableList<Node> getChildList(Node parent) {
     if (parent instanceof Pane) {
       return ((Pane)parent).getChildren();
     } else if (parent instanceof Group) {
