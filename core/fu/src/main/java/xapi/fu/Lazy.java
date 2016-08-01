@@ -55,7 +55,7 @@ public class Lazy <T> implements Out1<T>, IsLazy {
           if (valueAcceptable(value)) {
             // We only override the proxy if the value is non-null,
             // or if you specifically implemented LazyNullable.
-            proxy = immutable1(value);
+            proxy = Immutable.immutable1(value);
             prox[0] = null;
           }
           return value;

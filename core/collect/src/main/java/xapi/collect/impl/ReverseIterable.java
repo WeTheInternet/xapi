@@ -1,12 +1,14 @@
 package xapi.collect.impl;
 
+import xapi.fu.MappedIterable;
+
 import java.util.Iterator;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 2/6/16.
  */
-public class ReverseIterable <T> implements Iterable<T> {
+public class ReverseIterable <T> implements MappedIterable<T> {
 
   private Iterator<T> iterator;
   private Iterable<T> iterable;

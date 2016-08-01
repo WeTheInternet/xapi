@@ -1,5 +1,6 @@
 package xapi.collect.impl;
 
+import xapi.fu.In1;
 import xapi.fu.In2;
 
 import java.util.Map.Entry;
@@ -20,6 +21,10 @@ public interface EntryIterable <K, V> {
 
   default void forBoth(In2<K, V> callback) {
     entries().forEach(callback.mapAdapter());
+  }
+
+  default void forValues(In1<V> callback) {
+    entries().forEach(callback.<K>ignore1().mapAdapter());
   }
 
 }
