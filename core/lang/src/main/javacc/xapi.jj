@@ -221,13 +221,81 @@ PARSER_END(ASTParser)
 
 TOKEN_MGR_DECLS : {
 
-  Stack stateStack = new Stack();
+  int setState(int state) {
+    int was = curLexState;
+    curLexState = state;
+    return was;
+  }
 
   void backup(int n) { input_stream.backup(n); }
+
+  char peekNext() {
+    int backup = 0;
+    char c = 0;
+    try {
+      c = input_stream.BeginToken();
+      backup ++;
+      while (Character.isWhitespace(c)) {
+        c = input_stream.BeginToken();
+        backup++;
+      }
+      input_stream.backup(backup);
+    } catch (IOException e) {
+      // Hit EOF while peeking...
+      input_stream.backup(backup);
+    }
+    return c;
+  }
+
+  boolean looksLikeCssSelector() {
+    // TODO make this far stricter,
+    // and in doing so, be able to support more advanced selectors
+    int backup = 0;
+    char c;
+    try {
+      boolean sawNonSpace = false;
+      boolean previousWasAlphaNum = false;
+      while (true) {
+          c = input_stream.BeginToken();
+          backup ++;
+          switch (c) {
+            case '{':
+              return sawNonSpace;
+            case '~':
+            case '+':
+            case '>':
+              // Avoid matching e->{ (lambdas)
+              if (!previousWasAlphaNum) {
+                return false;
+              }
+            case '.':
+            case '#':
+            case '-':
+            case '_':
+            case ':':
+              previousWasAlphaNum = false;
+              sawNonSpace = true;
+              break;
+            default:
+              if (Character.isLetterOrDigit(c)) {
+                previousWasAlphaNum = true;
+                sawNonSpace = true;
+              } else if (!Character.isWhitespace(c)){
+                return false;
+              }
+          }
+      }
+    } catch (IOException ignore) {
+      // Hit EOF while peeking...
+    } finally {
+      input_stream.backup(backup);
+    }
+  return false;
+  }
 }
 
 /* WHITE SPACE */
-
+< DEFAULT, CSS_BODY, UI_BODY, JSON_BODY >
 SKIP :
 {
   " "
@@ -238,12 +306,13 @@ SKIP :
 }
 
 /* COMMENTS */
-
+< DEFAULT, CSS_BODY, UI_BODY, JSON_BODY >
 SPECIAL_TOKEN :
 {
   <SINGLE_LINE_COMMENT: "//" (~["\n","\r"])* ("\n"|"\r"|"\r\n")? >
 }
 
+< DEFAULT, CSS_BODY, UI_BODY, JSON_BODY >
 MORE :
 {
   <"/**" ~["/"]> { input_stream.backup(1); } : IN_JAVA_DOC_COMMENT
@@ -263,16 +332,11 @@ SPECIAL_TOKEN :
   <MULTI_LINE_COMMENT: "*/" > : DEFAULT
 }
 
-/* HTML Comments; not special tokens so we can limit where they are considered */
+<UI_COMMENT_MODE>
 TOKEN :
 {
-  <IN_HTML_COMMENT: "<!--"> : HTML_MODE
-}
-<HTML_MODE>
-TOKEN :
-{
-  <HTML_COMMENT: ( ~["-"] | " " | ( "-" ~["-"] ) | ( "--" ~[">"] ) ) +  >
-| <END_HTML_COMMENT: "-->" >
+  <UI_COMMENT_BODY: ( ~["-"] | " " | ( "-" ~["-"] ) | ( "--" ~[">"] ) ) +  >
+| <END_UI_COMMENT: "-->" >
 }
 
 <IN_JAVA_DOC_COMMENT, IN_MULTI_LINE_COMMENT>
@@ -281,8 +345,47 @@ MORE :
   < ~[] >
 }
 
-/* RESERVED WORDS AND LITERALS */
 
+<UI_BODY>
+TOKEN:
+{
+   < END_UI_BODY: "</" > { input_stream.backup(2); } : DEFAULT
+ | < UI_COMMENT: "<!--" > : UI_COMMENT_MODE
+ | < UI_TEXT: (
+    ~["<"]
+ )+ >
+}
+
+<CSS_BODY>
+TOKEN:
+{
+   < CSS_KEY: ["-"] ( ["-"] )? (
+     (
+        ( ["0"-"9"] | ["a"-"z"] | ["A"-"Z"] ) ( "-" ["0"-"9"] | ["a"-"z"] | ["A"-"Z"] ) *
+     )+
+     ) >
+  | < CSS_SELECTOR: (
+
+        ( ( "." | "#" | ":" | "::" ) ( ["0"-"9"] | ["a"-"z"] | ["A"-"Z"] | "-" | "_" )+ )
+        |
+        ( ( ["a"-"z"] | ["A"-"Z"] )+ "-" ( ["0"-"9"] | ["a"-"z"] | ["A"-"Z"] "-" )* )
+     )
+     (
+       ( ">" | "~" | "+" | ":" | "::" ) ?
+         ( ["." , "#"] )? ( ["0"-"9"] | ["a"-"z"] | ["A"-"Z"] | "-" | "_" )+
+     )*
+ >
+ | < CSS_SELECTOR_JOIN: ( ">" | "~" | "+" )>
+ | < START_CSS_BLOCK : ".{" >
+ | <IMPORTANT: "!important" >
+ | <CSS_UNIT: ( "px" | "em" | "ems" | "pc" | "cm" | "mm" | "in" | "pt" | "ex" | "rem" |
+  "rad" | "grad" | "deg" | "s" | "ms" | "hz" | "khz" | "dpi" | "dpcm") >
+ | <CSS_UNIT_WITH_PCT : ( <CSS_UNIT> | "%" ) >
+
+}
+
+/* RESERVED WORDS AND LITERALS */
+< DEFAULT, CSS_BODY, UI_BODY, JSON_BODY >
 TOKEN :
 {
   < ABSTRACT: "abstract" >
@@ -338,60 +441,24 @@ TOKEN :
 | < VOID: "void" >
 | < VOLATILE: "volatile" >
 | < WHILE: "while" >
-}
 
-/* START CHANGES */
-
-TOKEN :
-{
-   < START_JAVA: "`java:" >
- | < END_JAVA: ":java`" >
- | < START_HTML: "`html:" >
- | < END_HTML: ":html`" >
- | < START_CSS: "`css:" >
- | < END_CSS: ":css`" >
- | < START_PI: "`@" >
- | < END_PI: "@`" >
- | < START_UI: "`<" > { input_stream.backup(1); } : UI_BODY
- | < START_SCRIPT: "`{" >
- | < END_SCRIPT: "}`" >
-}
-
-<UI_BODY>
-TOKEN:
-{
-   < END_UI_BODY: "</" > { input_stream.backup(2); } : DEFAULT
- | < UI_BODY_COMMENT: "<!--" > : HTML_MODE
- | < NEW_UI_BODY: "<"  > { input_stream.backup(1); } : DEFAULT
- | < UI_TEXT: (
-    ~["<"]
- )+ >
-}
-
-<CSS_BODY>
-TOKEN:
-{
-   < END_CSS_BODY: "}" > { input_stream.backup(1); } : DEFAULT
- | < CSS_SELECTOR: ( ">" | "~" | "+" | (
-        ("." | "#")? ( ["0"-"9"] | ["a"-"z"] | ["A"-"Z"] | "-" | "_" )+
-     )+
- ) >
- | < CSS_KEY: ( ["-"] ["-"] ( ["0"-"9"] | ["a"-"z"] | ["A"-"Z"] | "-" )+
- ) >
-
-}
-
-TOKEN :
-{
- < IMPORTANT: "!important" >
- | <CSS_UNIT: ( "px" | "em" | "ems" | "pc" | "cm" | "mm" | "in" | "pt" | "ex" | "rem" |
-  "rad" | "grad" | "deg" | "s" | "ms" | "hz" | "khz" | "dpi" | "dpcm") >
- | <CSS_UNIT_WITH_PCT : ( <CSS_UNIT> | "%" ) >
-
+// xapi language escape sequences
+|  < START_JAVA: "`java:" >
+| < END_JAVA: ":java`" >
+| < START_HTML: "`html:" >
+| < END_HTML: ":html`" >
+| < START_CSS: "`css:" >
+| < END_CSS: ":css`" >
+| < START_PI: "`@" >
+| < END_PI: "@`" >
+| < START_UI: "`<" > { input_stream.backup(1); } : UI_BODY
+| < START_SCRIPT: "`{" >
+| < END_SCRIPT: "}`" >
 }
 
 /* LITERALS */
 
+< DEFAULT, CSS_BODY, UI_BODY, JSON_BODY >
 TOKEN :
 {
   < LONG_LITERAL:
@@ -483,14 +550,9 @@ TOKEN :
       )*
       "`"
   >
-}
-
 /* IDENTIFIERS */
-
-TOKEN :
-{
-  < IDENTIFIER: <CSS_UNIT> | (<LETTER> (<PART_LETTER>)*) >
-| < FEATURE_IDENTIFIER: <CSS_UNIT> | (<LETTER> ( ( <IDENTIFIER> | "-" | "*" ) + ( <IDENTIFIER> | "*" ) )? ) >
+| < IDENTIFIER: (<LETTER> (<PART_LETTER>)*) >
+| < FEATURE_IDENTIFIER: (<LETTER> ( ( <IDENTIFIER> | "-" | "*" ) + ( <IDENTIFIER> | "*" ) )? ) >
 | < #LETTER:
       [  // all chars for which Character.isIdentifierStart is true
          "\u0024",          // "$"
@@ -1186,13 +1248,10 @@ TOKEN :
          "\ufff9"-"\ufffb"
       ]
   >
-}
+
 
 /* SEPARATORS */
-
-TOKEN :
-{
-  < LPAREN: "(" >
+| < LPAREN: "(" >
 | < RPAREN: ")" >
 | < LBRACE: "{" >
 | < RBRACE: "}" >
@@ -1202,13 +1261,10 @@ TOKEN :
 | < COMMA: "," >
 | < DOT: "." >
 | < AT: "@" >
-}
+
 
 /* OPERATORS */
-
-TOKEN :
-{
-  < ASSIGN: "=" >
+| < ASSIGN: "=" >
 | < LT: "<" >
 | < BANG: "!" >
 | < TILDE: "~" >
@@ -1248,6 +1304,7 @@ TOKEN :
 }
 
 /* >'s need special attention due to generics syntax. */
+< DEFAULT, CSS_BODY, UI_BODY, JSON_BODY >
 TOKEN :
 {
   < RUNSIGNEDSHIFT: ">>>" >
@@ -2117,6 +2174,12 @@ NameExpr FeatureName():
       { ret = new NameExpr(token.beginLine, token.beginColumn, token.endLine, token.endColumn, token.image);}
       | <FEATURE_IDENTIFIER>
       { ret = new NameExpr(token.beginLine, token.beginColumn, token.endLine, token.endColumn, token.image);}
+      | <CSS_SELECTOR>
+      {
+        // TODO validate that this is a simple css selector, like tag-name
+        // and not an illegal feature identifier, such as tag-name > other-tag
+        ret = new NameExpr(token.beginLine, token.beginColumn, token.endLine, token.endColumn, token.image);
+      }
       | "class"
       { ret = new NameExpr(token.beginLine, token.beginColumn, token.endLine, token.endColumn, token.image);}
       | "this"
@@ -2743,14 +2806,14 @@ UiContainerExpr UiContainer():
 
    (
      (
-       <IN_HTML_COMMENT> {
+       <UI_COMMENT> {
          beginLine = token.beginLine; beginColumn = token.beginColumn;
        }
-       ( <HTML_COMMENT>{
+       ( <UI_COMMENT_BODY>{
             attr = new UiAttrExpr(new NameExpr("value"), false, new StringLiteralExpr(token.image));
             attrs.add(attr);
        } ) *
-       <END_HTML_COMMENT> {
+       <END_UI_COMMENT> {
         endLine = token.endLine; endColumn = token.endColumn;
         tagName = new NameExpr(NameExpr.COMMENT_NAME);
         body = new UiBodyExpr(beginLine, beginColumn + 4, endLine, endColumn - 3, new ArrayList());
@@ -2812,13 +2875,13 @@ UiBodyExpr UiBody():
 
    (
     (
-      <UI_BODY_COMMENT> {
+      <UI_COMMENT> {
         beginLine = token.beginLine; beginColumn = token.beginColumn;
       }
-      ( <HTML_COMMENT> {
+      ( <UI_COMMENT_BODY> {
            comment = token.image;
       } ) *
-      <END_HTML_COMMENT> {
+      <END_UI_COMMENT> {
        if (comment != null) {
            endLine = token.endLine; endColumn = token.endColumn;
            NameExpr tagName = new NameExpr(NameExpr.COMMENT_NAME);
@@ -2835,7 +2898,10 @@ UiBodyExpr UiBody():
 
    ) | (
 
-     <NEW_UI_BODY>
+     <LT> {
+      token_source.backup(1);
+      token_source.SwitchTo(DEFAULT);
+     }
      el = UiContainer() {
         if (beginLine == -1) {
           beginLine = el.getBeginLine();
@@ -2898,7 +2964,7 @@ UiAttrExpr UiAttr():
         "=" (
 
           // Grab annotations on the values; @value = "asd" uses html attribute mapping, so `@value = @NotNull "asd"` is where the annotations go.
-          (annotation = Annotation() { annotations = add(annotations, annotation); } )*
+          ( LOOKAHEAD( { token_source.peekNext() == '@' } ) annotation = Annotation() { annotations = add(annotations, annotation); } )*
 
           expression = UiValue()
         )
@@ -2918,17 +2984,30 @@ Expression UiValue():
 }
 {
 (
+        LOOKAHEAD( { token_source.looksLikeCssSelector() } )
+      (
+        {
+          int oldState = token_source.setState(CSS_BODY);
+        }
+        (
+          try {
+          // .{  #block { of: css; }  } OR .{ inline: style-rules }
+          ( expression = CssBlock())
+          |
+          // .single { css : rule; }
+           ( expression = CssContainer())
+          } finally {
+            { token_source.setState(oldState); }
+          }
+          )
+      )
+      |
+
       // { json : "object" }.  For blocks of java, use a lambda ()->{}
       ( expression = JsonContainer() ) |
 
       // < block of="ui" />
       ( expression = UiContainer() ) |
-
-      // .{  #block { of: css; }  } OR .{ inline: style-rules }
-      ( expression = CssBlock()) |
-
-      // .single { css : rule; }
-      ( expression = CssContainer()) |
 
       // Any valid, simple java construct (including lambdas and method references).
       expression = FeatureExpression()
@@ -3089,26 +3168,28 @@ CssBlockExpr CssBlock():
   int column;
 }
 {
-  ( ".{" {
+
+  <START_CSS_BLOCK> {
     line = token.beginLine;
     column = token.beginColumn;
-  } )
+  }
   (
-      (
-         (
-           rule = CssRule() { rules.add(rule); }
-         )+
-         {
-            container = new CssContainerExpr(line, column, token.endLine, token.endColumn, new ArrayList(), rules);
-            containers.add(container);
-         }
-      )
-      |
-      (
-          (
-            container = CssContainer() { containers.add(container); }
-          ) *
-      )
+     LOOKAHEAD( CssRule() )
+     (
+       (
+         rule = CssRule() { rules.add(rule); }
+       )+
+       {
+          container = new CssContainerExpr(line, column, token.endLine, token.endColumn, new ArrayList(), rules);
+          containers.add(container);
+       }
+    )
+    |
+    (
+        (
+          container = CssContainer() { containers.add(container); }
+        ) *
+    )
   )
   "}"
   { return new CssBlockExpr(line, column, token.endLine, token.endColumn, containers); }
@@ -3122,8 +3203,10 @@ CssContainerExpr CssContainer():
   int column;
   CssSelectorExpr selector;
   CssRuleExpr rule;
+  int oldState = token_source.setState(CSS_BODY);
 }
 {
+  try {
   ( selector = CssSelector() {
         line = selector.getBeginLine();
         column = selector.getBeginColumn();
@@ -3134,6 +3217,9 @@ CssContainerExpr CssContainer():
     ( rule = CssRule() { rules.add(rule); } ) *
     "}"
    )
+   } finally {
+     { token_source.setState(oldState); }
+   }
   { return new CssContainerExpr(line, column, token.endLine, token.endColumn, selectors, rules); }
 }
 
@@ -3146,6 +3232,7 @@ CssSelectorExpr CssSelector():
 }
 {
   (
+    (
     // TODO make each token an object w/ begin and end source info?
     <CSS_SELECTOR> {
         parts.add(token.image);
@@ -3155,8 +3242,25 @@ CssSelectorExpr CssSelector():
         parts.add(token.image);
         line = token.beginLine;
         column = token.beginColumn;
+    } | <IDENTIFIER> {
+        parts.add(token.image);
+        line = token.beginLine;
+        column = token.beginColumn;
+    } | "*" {
+        parts.add(token.image);
+        line = token.beginLine;
+        column = token.beginColumn;
     }
-    ( <CSS_SELECTOR> { parts.add(token.image); } | <FEATURE_IDENTIFIER> { parts.add(token.image); } )*
+    )
+    (
+       ":" { parts.add(token.image); }
+     | "::" { parts.add(token.image); }
+     | <CSS_SELECTOR> { parts.add(token.image); }
+     | <FEATURE_IDENTIFIER> { parts.add(token.image); }
+     | <IDENTIFIER> { parts.add(token.image); }
+     | <CSS_SELECTOR_JOIN> { parts.add(token.image); }
+     | "*" { parts.add(token.image); }
+     )*
 
   )
   { return new CssSelectorExpr(line, column, token.endLine, token.endColumn, parts); }
@@ -3177,12 +3281,39 @@ CssRuleExpr CssRule():
         column = token.beginColumn;
         key = new StringLiteralExpr(line, column, token.endLine, token.endColumn, token.image);
       }
-    ) |
+    )
+    | (
+      <IDENTIFIER> {
+        line = token.beginLine;
+        column = token.beginColumn;
+        key = new StringLiteralExpr(line, column, token.endLine, token.endColumn, token.image);
+      }
+    )
+    | (
+      <FEATURE_IDENTIFIER> {
+        line = token.beginLine;
+        column = token.beginColumn;
+        key = new StringLiteralExpr(line, column, token.endLine, token.endColumn, token.image);
+      }
+    )
+    | (
+      <CSS_SELECTOR> {
+        // TODO validate that we did not pick up an invalid key,
+        // as CSS_KEY can be mis-matched as a CssSelector
+        line = token.beginLine;
+        column = token.beginColumn;
+        key = new StringLiteralExpr(line, column, token.endLine, token.endColumn, token.image);
+      }
+    )
+    // TODO allow use of expressions only within parens
+    |
     (
+      "("
       key = UnaryExpression() {
         line = key.getBeginLine();
         column = key.getBeginColumn();
       }
+      ")"
     )
   )
   ":"
@@ -3198,18 +3329,24 @@ Expression CssExpression():
   boolean important = false;
 }
 {
+  (
     LOOKAHEAD( StatementExpression() )
     stmt = StatementExpression() { value = stmt.getExpression(); }
     |
     (
       value = Expression()
       [ <CSS_UNIT> { unit = token.image; } ]
+      [ <IDENTIFIER> {
+       // TODO validate that this is a usable css unit
+       unit = token.image;
+       } ]
       [ <CSS_UNIT_WITH_PCT> { unit = token.image; } ]
       [ <IMPORTANT> { important = true; } ]
       ";"
       {
         value = new CssValueExpr(value, unit, important);
       }
+    )
     )
   {
     return value;

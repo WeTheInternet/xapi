@@ -74,9 +74,71 @@ Feature: Compile templates into valid java files
       | />                       |
     Then source code of HelloWorld is:
       | new PotentialElement("template") |
-      | .set("style", ".{\n" +           |
-      | "    left : 10px;\n" +           |
-      | "  }")                           |
+      | .set("style", "left : 10px;")    |
+      | .build()                         |
+
+  Scenario: Parse a template with a css container as a class attribute
+    Given compile ui with name HelloWorld:
+      | <template                    |
+      | class = .cls { left: 10px; } |
+      | />                           |
+    Then source code of HelloWorld is:
+      | new PotentialElement("template") |
+      | .set("class", "cls")             |
+      | .addCss(                         |
+      | ".cls {" +                       |
+      | "left : 10px;" +                 |
+      | "}"                              |
+      | )                                |
+      | .build()                         |
+
+  Scenario: Parse a template with a css block to embed
+    Given compile ui with name HelloWorld:
+      | <template               |
+      | class = "cls"           |
+      | css = .{                |
+      | .cls{ left: 10px; }     |
+      | .cls div { top: 10px; } |
+      | }                       |
+      | />                      |
+    Then source code of HelloWorld is:
+      | new PotentialElement("template") |
+      | .set("class", "cls")             |
+      | .set("css", null)                |
+      | .addCss(                         |
+      | ".cls {" +                       |
+      | "left : 10px;" +                 |
+      | "}"                              |
+      | )                                |
+      | .addCss(                         |
+      | ".cls div {" +                   |
+      | "top : 10px;" +                  |
+      | "}"                              |
+      | )                                |
+      | .build()                         |
+
+  Scenario: Parse a template with a complex css block
+    Given compile ui with name HelloWorld:
+      | <template                                                 |
+      | css = .{                                                  |
+      | .cls-name > div:hover * { left: 4*5; }                    |
+      | .cls div, .clazz+.thing { background-color: ()->"10px"; } |
+      | }                                                         |
+      | />                                                        |
+    Then source code of HelloWorld is:
+      | new PotentialElement("template") |
+      | .set("css", null)                |
+      | .addCss(                         |
+      | ".cls-name > div:hover * {" +    |
+      | "left : 45;" +                   |
+      | "}"                              |
+      | )                                |
+      | .addCss(                         |
+      | ".cls div, "                     |
+      | ".clazz+.thing {" +              |
+      | "background-color : 10px;" +     |
+      | "}"                              |
+      | )                                |
       | .build()                         |
 
 

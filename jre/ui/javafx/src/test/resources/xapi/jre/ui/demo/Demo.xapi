@@ -3,10 +3,17 @@
   title = "Hi"
   data =
       @Type
-      { one: 0, two: 0, text: "" }
-//  style = .{
-//          .cls { background-color: blue }
-//           }
+      {
+          // The one button uses postIncrement++ so we start its count at 1
+          one: 1,
+          // The two button uses ++preIncrement, so we start its count at 0
+          two: 0,
+          text: ""
+      }
+          // Css BNF is not ready yet
+  style = .{
+          .cls { background-color: blue; }
+          }
   >
   <box
         size = ( 300 * (()->150 + 10 * $root.data.one) )

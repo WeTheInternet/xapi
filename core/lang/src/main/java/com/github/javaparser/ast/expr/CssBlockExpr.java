@@ -9,7 +9,7 @@ import java.util.List;
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 4/10/16.
  */
-public class CssBlockExpr extends UiExpr {
+public class CssBlockExpr extends CssExpr {
 
   private List<CssContainerExpr> containers;
 

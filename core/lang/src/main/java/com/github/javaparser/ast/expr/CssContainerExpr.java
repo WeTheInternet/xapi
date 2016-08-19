@@ -9,7 +9,7 @@ import java.util.List;
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 4/10/16.
  */
-public class CssContainerExpr extends UiExpr {
+public class CssContainerExpr extends CssExpr {
 
   private List<CssSelectorExpr> selectors;
   private List<CssRuleExpr> rules;
@@ -51,5 +51,11 @@ public class CssContainerExpr extends UiExpr {
   @Override
   public <A> void accept(VoidVisitor<A> v, A arg) {
     v.visit(this, arg);
+  }
+
+  public boolean isSingleClassSelector() {
+    return getSelectors().size() == 1 &&
+           getSelectors().get(0).getParts().size() == 1 &&
+           getSelectors().get(0).getParts().get(0).startsWith(".");
   }
 }
