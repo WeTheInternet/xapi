@@ -1,4 +1,4 @@
-package xapi.collect.impl;
+package xapi.util.impl;
 
 import xapi.fu.MappedIterable;
 

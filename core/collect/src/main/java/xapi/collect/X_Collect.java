@@ -15,6 +15,8 @@ import xapi.collect.proxy.CollectionProxy;
 import xapi.collect.service.CollectionService;
 import xapi.fu.In2Out1;
 import xapi.util.api.ReceivesValue;
+import xapi.util.impl.ReverseIterable;
+import xapi.util.impl.ReverseIterator;
 
 import static xapi.collect.api.CollectionOptions.asImmutableList;
 import static xapi.collect.api.CollectionOptions.asImmutableSet;

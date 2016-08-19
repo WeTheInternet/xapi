@@ -10,7 +10,7 @@ import com.sun.source.util.TaskListener;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
-import xapi.collect.impl.ReverseIterable;
+import xapi.util.impl.ReverseIterable;
 import xapi.fu.Out2;
 import xapi.inject.X_Inject;
 import xapi.javac.dev.api.InjectionResolver;
