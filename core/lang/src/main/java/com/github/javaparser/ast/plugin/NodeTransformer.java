@@ -193,8 +193,35 @@ public class NodeTransformer {
   public Node transformUnary(Expression source, UnaryExpr expr) {
     final Expression data = expr.getExpr();
     switch (expr.getOperator()) {
-      case posDecrement:
+      // x++
       case posIncrement:
+      // x--
+      case posDecrement:
+        // For post increment / decrement,
+        // we want to store the de/incremented value,
+        // but use the current value.
+        // So, we will generate setX(getX() + 1),
+        // as the setX function returns the previous value
+        final String setter = generateSetterMethod(data);
+        final String getter = generateGetterMethod(data);
+        MethodCallExpr methodCall = new MethodCallExpr();
+        methodCall.setName(setter);
+        MethodCallExpr get = new MethodCallExpr();
+        get.setName(getter);
+        final BinaryExpr.Operator operator = expr.getOperator() == Operator.posIncrement ? BinaryExpr.Operator.plus : BinaryExpr.Operator.minus;
+        BinaryExpr op = new BinaryExpr(get, new IntegerLiteralExpr("1"), operator);
+        methodCall.setArgs(Arrays.asList(op));
+        initExtras(methodCall, data);
+        return methodCall;
+      // ++x
+      // --x
+      case preIncrement:
+      case preDecrement:
+        // For pre increment / decrement,
+        // we want to de/increment the value,
+        // and use the updated value immediately
+        // So, we will use computeX_1(i -> i++)
+        // TODO: Have a global INCREMENT function we can just reference instead
         String compute = generateComputeMethod(data) + "_1";
         List<Parameter> params = new ArrayList<>();
         Type type = new UnknownType();
@@ -203,22 +230,9 @@ public class NodeTransformer {
         UnaryExpr copy = new UnaryExpr(new NameExpr("i"), expr.getOperator());
         Statement body = new ExpressionStmt(copy);
         LambdaExpr lambda = new LambdaExpr(params, body, false);
-        MethodCallExpr methodCall = new MethodCallExpr();
+        methodCall = new MethodCallExpr();
         methodCall.setName(compute);
         methodCall.setArgs(Arrays.asList(lambda));
-        initExtras(methodCall, data);
-        return methodCall;
-      case preIncrement:
-      case preDecrement:
-        final String setter = generateSetterMethod(data);
-        final String getter = generateGetterMethod(data);
-        methodCall = new MethodCallExpr();
-        methodCall.setName(setter);
-        MethodCallExpr get = new MethodCallExpr();
-        get.setName(getter);
-        final BinaryExpr.Operator operator = expr.getOperator() == Operator.preIncrement ? BinaryExpr.Operator.plus : BinaryExpr.Operator.minus;
-        BinaryExpr op = new BinaryExpr(get, new IntegerLiteralExpr("1"), operator);
-        methodCall.setArgs(Arrays.asList(op));
         initExtras(methodCall, data);
         return methodCall;
       case inverse:
