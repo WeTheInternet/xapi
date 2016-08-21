@@ -1,11 +1,12 @@
 package xapi.time;
 
-import static xapi.inject.X_Inject.singleton;
 import xapi.time.api.Moment;
 import xapi.time.impl.ImmutableMoment;
 import xapi.time.service.TimeService;
 import xapi.util.X_String;
 import xapi.util.impl.RunUnsafe;
+
+import static xapi.inject.X_Inject.singleton;
 
 public class X_Time {
 
@@ -95,6 +96,10 @@ public class X_Time {
 
   public static double nowPlus(final double millis) {
     return now().millis()+millis;
+  }
+
+  public static Moment nowPlusOne() {
+    return service.nowPlusOne();
   }
 
   public static boolean isPast(final double millis) {

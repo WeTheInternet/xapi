@@ -5,14 +5,7 @@ import xapi.time.impl.ImmutableMoment;
 
 public interface TimeService extends Moment{
 
-  /**
-   * If you need to synchronize your time service, synchronize on this object,
-   * as that is what other implementations do.  It's a little hacky, but, hey... now you know.
-   */
-  final Double nano_to_second = 0.000000001;
-  final Double nano_to_milli = 0.000001;
-
-  //float now();// from Moment
+  Double nano_to_milli = 0.000001;
 
   /**
    * creates an immutable copy of a moment
@@ -21,9 +14,22 @@ public interface TimeService extends Moment{
    */
   Moment clone(Moment moment);
   /**
-   * updates now() to current time
+   * Updates .now() to a value that is at least as high as the current system time,
+   * and always higher than any previous value returned from .now()
+   *
+   * When this is invoked multiple times within the same millisecond, implementations must
+   * return a double value that is uniquely higher than the current second, but ideally as small as possible.
+   *
+   * In the worst case scenario, now() + Math.ulp(System.currentTimeMillis) will leave 0x800 spaces between millis,
+   * and this worst case happens at Wed Sep 07 2039 08:47:35 GMT-7,
+   * which is the millisecond timestamp 0x200_0000_0000 (uses the most bits in significand).
+   *
+   * Until then, we can safely rely on 0x1000 spaces between milliseconds.
+   *
    */
-  void tick();
+  double tick();
+
+  double lastTick();
   /**
    * the epoch in millis when this TimeService was instantiated
    * @return - System startup time.
@@ -51,16 +57,25 @@ public interface TimeService extends Moment{
    * until the next call to tick();
    */
   Moment nowPlusOne();
+
   /**
-   * Attempts to sleep if the current thread is not already interrupted.
+   * A generic means to defer a task until later;
+   * if you need non-trivial scheduling,
+   * consider inheriting xapi-core-process (and the platform-specific implementation you need).
    *
-   * This method will reset the interrupted flag if the thread is interrupted
-   * while sleeping.
+   * This is useful to avoid depending on Thread directly;
+   * The default implementation is quite sloppy;
+   * it just creates and starts a thread with your runnable.
    *
-   * @param millis - Millis to wait, >= 0
-   * @param nanos - Nanos to wait, must be > 0 is millis == 0
+   * The Gwt version uses the deferred scheduler,
+   * and appengine uses it's blessed thread factory.
+   *
+   * You are highly encouraged to extend the time service for your platform,
+   * and put in some better task scheduling here.
+   *
+   * TODO: return a Future&lt;> or other means to cancel / control the task
+   *
    */
-//  void trySleep(int millis, int nanos);
   void runLater(Runnable runnable);
 
   /**

@@ -1,12 +1,12 @@
 package xapi.time.impl;
 
-import java.util.Date;
-
 import xapi.annotation.inject.SingletonDefault;
 import xapi.time.service.TimeService;
 
+import java.util.Date;
+
 @SingletonDefault(implFor = TimeService.class)
-public class TimeServiceDefault extends AbstractTimeService{
+public class TimeServiceDefault extends AbstractTimeService {
 
   private static final long serialVersionUID = -8070323612852368910L;
 

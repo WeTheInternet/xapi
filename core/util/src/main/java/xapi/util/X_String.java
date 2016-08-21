@@ -273,4 +273,49 @@ public class X_String {
     }
     return b.toString();
   }
+
+  public static String toTimestamp(int year, int month, int date, int hour, int minute, int milli, int offsetMinutes) {
+
+    // Ya...  It's more lines of code than using a library,
+    // but it's also the minimum overhead possible.
+
+    char[] result = "yyyy-MM-ddTHH:mm.sss+00:00".toCharArray();
+
+    result[3] = Character.forDigit(year%10, 10);
+    result[2] = Character.forDigit((year/=10)%10, 10);
+    result[1] = Character.forDigit((year/=10)%10, 10);
+    result[0] = Character.forDigit((year/10)%10, 10);
+
+    result[5] = Character.forDigit(month/10, 10);
+    result[6] = Character.forDigit(month%10, 10);
+
+    result[8] = Character.forDigit(date/10, 10);
+    result[9] = Character.forDigit(date%10, 10);
+
+    result[11] = Character.forDigit(hour/10, 10);
+    result[12] = Character.forDigit(hour%10, 10);
+
+    result[14] = Character.forDigit(minute/10, 10);
+    result[15] = Character.forDigit(minute%10, 10);
+
+    result[19] = Character.forDigit(milli%10, 10);
+    result[18] = Character.forDigit((milli/=10)%10, 10);
+    result[17] = Character.forDigit((milli/10)%10, 10);
+
+    if (offsetMinutes < 0) {
+      result[20] = '-';
+      offsetMinutes = -offsetMinutes;
+    }
+    int hours = offsetMinutes / 60;
+    result[21] = Character.forDigit(hours/10, 10);
+    result[22] = Character.forDigit(hours%10, 10);
+
+    offsetMinutes = offsetMinutes%60;
+    result[24] = Character.forDigit((offsetMinutes/10)%10, 10);
+    result[25] = Character.forDigit(offsetMinutes%10, 10);
+
+    return new String(result);
+
+  }
+
 }

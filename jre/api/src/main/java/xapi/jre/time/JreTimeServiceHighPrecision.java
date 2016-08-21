@@ -3,12 +3,12 @@ package xapi.jre.time;
 import xapi.annotation.inject.SingletonOverride;
 import xapi.platform.AndroidPlatform;
 import xapi.platform.JrePlatform;
-import xapi.time.api.Moment;
-import xapi.time.impl.ImmutableMoment;
 import xapi.time.impl.TimeServiceDefault;
 import xapi.time.service.TimeService;
+import xapi.util.X_String;
 
 import java.util.Calendar;
+import java.util.concurrent.locks.LockSupport;
 
 @JrePlatform
 @AndroidPlatform
@@ -19,85 +19,51 @@ public class JreTimeServiceHighPrecision extends TimeServiceDefault{
 
   private final double nanoBirth;
 
-  private volatile double nanoNow;
-
-
   public JreTimeServiceHighPrecision() {
     nanoBirth = System.nanoTime();
   }
 
   @Override
   public double millis() {
-    return (birth()+nanoNow);
+    return (birth()+
+        (System.nanoTime() - nanoBirth) * nano_to_milli);
   }
 
   @Override
-  public Moment nowPlusOne() {
-    tick();
-    return new ImmutableMoment(birth()+
-      (nanoNow - nanoBirth) * nano_to_milli);
-  }
-
-
-
-  @Override
-  public Moment now() {
-    return new ImmutableMoment(birth()+
-      (System.nanoTime()-nanoBirth) * nano_to_milli);
-  }
-
-  @Override
-  public void tick() {
-    double now;
-    do {
-      now = ((System.nanoTime()-nanoBirth) * nano_to_milli);
-    } while (now == nanoNow); // performs a volatile read
-    nanoNow = now;
+  public double tick() {
+    final double start = millis();
+    return delta.updateAndGet(i -> {
+      // Unless tick is called very, very rapidly,
+      // the next nanotime will be greater than our current time.
+      if (start > i) {
+        return start;
+      }
+      // When called quickly, we want to return the smallest possible
+      // floating point that is greater than the previous time,
+      // as well as the current returnable time...
+      i = i + TIME_ULP;
+      // However, we don't want to get more than a millisecond out of sync...
+      // So, we will wait until our nowPlusOne is within 1 milli of now()
+      while (i > millis() + getMarginOfError()) {
+        // Release our thread so that instead of busy-waiting,
+        // we will let other threads have a chance to do some work.
+        LockSupport.parkNanos(1);
+      }
+      return i;
+    });
   }
 
   @Override
   public String timestamp() {
-    // Ya...  It's more lines of code than using a library,
-    // but it's also the minimum overhead possible.
     Calendar c = Calendar.getInstance();
-    char[] result = "yyyy-MM-ddTHH:mm.sss+00:00".toCharArray();
-    // yyyy
-    int val = c.get(Calendar.YEAR);
-    result[3] = Character.forDigit(val%10, 10);
-    result[2] = Character.forDigit((val/=10)%10, 10);
-    result[1] = Character.forDigit((val/=10)%10, 10);
-    result[0] = Character.forDigit((val/10)%10, 10);
-
-    val = c.get(Calendar.MONTH);
-    result[5] = Character.forDigit(val/10, 10);
-    result[6] = Character.forDigit(val%10, 10);
-    val = c.get(Calendar.DATE);
-    result[8] = Character.forDigit(val/10, 10);
-    result[9] = Character.forDigit(val%10, 10);
-    val = c.get(Calendar.HOUR);
-    result[11] = Character.forDigit(val/10, 10);
-    result[12] = Character.forDigit(val%10, 10);
-    val = c.get(Calendar.MINUTE);
-    result[14] = Character.forDigit(val/10, 10);
-    result[15] = Character.forDigit(val%10, 10);
-    val = c.get(Calendar.MILLISECOND);
-    result[19] = Character.forDigit(val%10, 10);
-    result[18] = Character.forDigit((val/=10)%10, 10);
-    result[17] = Character.forDigit((val/10)%10, 10);
-
-    val = c.getTimeZone().getOffset(c.getTimeInMillis()) / 60000;
-    if (val < 0) {
-      result[20] = '-';
-      val = -val;
-    }
-    int hours = val / 60;
-    result[21] = Character.forDigit(hours/10, 10);
-    result[22] = Character.forDigit(hours%10, 10);
-    val = val%60;
-    result[24] = Character.forDigit((val/10)%10, 10);
-    result[25] = Character.forDigit(val%10, 10);
-
-    return new String(result);
+    return X_String.toTimestamp(
+        c.get(Calendar.YEAR),
+        c.get(Calendar.MONTH),
+        c.get(Calendar.DATE),
+        c.get(Calendar.HOUR),
+        c.get(Calendar.MINUTE),
+        c.get(Calendar.MILLISECOND),
+        c.getTimeZone().getOffset(c.getTimeInMillis()) / 60000);
   }
 
 }
