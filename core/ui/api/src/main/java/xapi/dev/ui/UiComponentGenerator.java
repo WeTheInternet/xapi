@@ -34,7 +34,7 @@ public class UiComponentGenerator {
 
   public UiComponentGenerator(Out1<DomBuffer> factory) {
     shadowDomBuffer = Lazy.deferred1(factory);
-    classBuffer = Lazy.deferred1(SourceBuilder<ContainerMetadata>::new, this::getMetadata);
+    classBuffer = Lazy.deferBoth(SourceBuilder<ContainerMetadata>::new, this::getMetadata);
     featureGenerators = new ArrayList<>();
     transformer = createTransformer();
   }

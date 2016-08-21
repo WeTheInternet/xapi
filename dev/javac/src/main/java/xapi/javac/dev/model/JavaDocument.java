@@ -13,7 +13,7 @@ import xapi.log.X_Log;
 import xapi.source.X_Source;
 import xapi.util.api.DebugRethrowable;
 
-import static xapi.fu.Lazy.mapped1;
+import static xapi.fu.Lazy.deferSupplier;
 import static xapi.fu.Pointer.pointerDeferred;
 
 import javax.lang.model.element.TypeElement;
@@ -58,10 +58,10 @@ public class JavaDocument implements DebugRethrowable {
     assert service != null : "null service";
     assert compilationUnit != null : "null compilation unit";
     assert type != null : "null type";
-    packageName = mapped1(service::getPackageName, compilationUnit);
+    packageName = deferSupplier(service::getPackageName, compilationUnit);
     enclosedName = Lazy.deferred1(()->getTypeName().replace(packageName.out1()+".", ""));
     fileName = Lazy.deferred1(()->service.getFileName(compilationUnit));
-    originalSource = mapped1(this::toSource, compilationUnit);
+    originalSource = deferSupplier(this::toSource, compilationUnit);
     currentSource = pointerDeferred(
         originalSource.map(X_IO::toStreamUtf8)
             .mapUnsafe(JavaParser::parse)

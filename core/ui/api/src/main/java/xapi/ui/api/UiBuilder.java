@@ -34,7 +34,7 @@ public abstract class UiBuilder <E extends UiElement> implements DebugRethrowabl
 
   public UiBuilder(String type) {
     assert type != null : "Specify empty string for null type UiBuilders (lists)";
-    instance = Lazy.deferred1(this::initialize, this::instantiate);
+    instance = Lazy.deferBoth(this::initialize, this::instantiate);
     uiService = UiService::getUiService;
     children = Lazy.deferred1(()->X_Collect.newList(UiBuilder.class));
     setType(type);

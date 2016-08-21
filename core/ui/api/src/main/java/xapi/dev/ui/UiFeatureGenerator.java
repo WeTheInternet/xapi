@@ -24,7 +24,7 @@ public class UiFeatureGenerator {
   }
 
   protected void resetPattern() {
-    pattern = Lazy.deferred1(Pattern::compile, this::getFeaturePattern);
+    pattern = Lazy.deferBoth(Pattern::compile, this::getFeaturePattern);
   }
 
   public double matchScore(String featureName, UiExpr value) {

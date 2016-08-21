@@ -34,16 +34,16 @@ public class JreInjector implements Injector {
         @SuppressWarnings("unchecked")
         @Override
         protected In2<String, PlatformChecker> initialValue() {
+            final String injector = System.getProperty(
+                PROPERTY_INJECTOR,
+                DEFAULT_INJECTOR
+            );
             try {
-                final String injector = System.getProperty(
-                    PROPERTY_INJECTOR,
-                    DEFAULT_INJECTOR
-                );
                 final Class<?> cls =
                     Class.forName(injector);
                 return (In2<String, PlatformChecker>) cls.newInstance();
             } catch (final ClassNotFoundException e) {
-
+                X_Log.warn(getClass(), "Unable to find injector ", injector, "on the classpath");
             } catch (final Exception e) {
                 e.printStackTrace();
                 final Thread t = Thread.currentThread();
