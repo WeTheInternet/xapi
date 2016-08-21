@@ -1,5 +1,21 @@
 package xapi.dev.scanner.impl;
 
+import xapi.annotation.inject.InstanceDefault;
+import xapi.collect.api.Fifo;
+import xapi.collect.impl.SimpleFifo;
+import xapi.dev.resource.impl.ByteCodeResource;
+import xapi.dev.resource.impl.FileBackedResource;
+import xapi.dev.resource.impl.JarBackedResource;
+import xapi.dev.resource.impl.SourceCodeResource;
+import xapi.dev.resource.impl.StringDataResource;
+import xapi.dev.scanner.api.ClasspathScanner;
+import xapi.except.ThreadsafeUncaughtExceptionHandler;
+import xapi.util.X_Debug;
+import xapi.util.X_Namespace;
+import xapi.util.X_Properties;
+import xapi.util.X_Util;
+import xapi.util.api.ProvidesValue;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -20,22 +36,6 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
 
-import xapi.annotation.inject.InstanceDefault;
-import xapi.collect.api.Fifo;
-import xapi.collect.impl.SimpleFifo;
-import xapi.dev.resource.impl.ByteCodeResource;
-import xapi.dev.resource.impl.FileBackedResource;
-import xapi.dev.resource.impl.JarBackedResource;
-import xapi.dev.resource.impl.SourceCodeResource;
-import xapi.dev.resource.impl.StringDataResource;
-import xapi.dev.scanner.api.ClasspathScanner;
-import xapi.except.ThreadsafeUncaughtExceptionHandler;
-import xapi.util.X_Debug;
-import xapi.util.X_Namespace;
-import xapi.util.X_Properties;
-import xapi.util.X_Util;
-import xapi.util.api.ProvidesValue;
-
 @InstanceDefault(implFor = ClasspathScanner.class)
 public class ClasspathScannerDefault implements ClasspathScanner {
 
@@ -45,6 +45,7 @@ public class ClasspathScannerDefault implements ClasspathScanner {
   final Set<Pattern> bytecodeMatchers;
   final Set<Pattern> sourceMatchers;
   final Set<String> activeJars;
+  private boolean scanSystemJars;
 
   public ClasspathScannerDefault() {
     pkgs = new HashSet<String>();
@@ -321,10 +322,25 @@ public class ClasspathScannerDefault implements ClasspathScanner {
     }
     for (final URL url : classPaths.keySet()) {
       final Fifo<String> packages = classPaths.get(url);
-      final ScanRunner scanner = newScanRunner(url, map, executor, packages.forEach(), pos);
-      jobs.give(executor.submit(scanner));
+      if (shouldScanUrl(url)) {
+        final ScanRunner scanner = newScanRunner(url, map, executor, packages.forEach(), pos);
+        jobs.give(executor.submit(scanner));
+      }
     }
     return new Finisher();
+  }
+
+  protected boolean shouldScanUrl(URL url) {
+    String external = url.toExternalForm();
+    if (!scanSystemJars) {
+      if (external.contains(
+          System.getProperty("java.home", "--n0t f0und---")
+      )) {
+        return false;
+      }
+    }
+
+    return !external.contains("idea_rt.jar");
   }
 
   private ScanRunner newScanRunner(final URL classPath, final ClasspathResourceMap map, final ExecutorService executor,
@@ -351,6 +367,13 @@ public class ClasspathScannerDefault implements ClasspathScanner {
     bytecodeMatchers.add(Pattern.compile(regex));
     return this;
   }
+
+  @Override
+  public ClasspathScanner skipSystemJars(boolean skipSystemJars) {
+    this.scanSystemJars = !skipSystemJars;
+    return this;
+  }
+
   @Override
   public ClasspathScanner matchClassFiles(final String ... regexes) {
     for (final String regex : regexes) {

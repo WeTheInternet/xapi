@@ -1,10 +1,10 @@
 package xapi.dev.scanner.api;
 
+import xapi.dev.scanner.impl.ClasspathResourceMap;
+
 import java.lang.annotation.Annotation;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-
-import xapi.dev.scanner.impl.ClasspathResourceMap;
 
 /**
  * Most runtime annotation scanner libraries are too heavyweight;
@@ -25,6 +25,7 @@ public interface ClasspathScanner {
   ClasspathScanner scanAnnotation(Class<? extends Annotation> annotations);
   ClasspathScanner scanAnnotations(@SuppressWarnings("unchecked") Class<? extends Annotation> ... annotations);
   ClasspathScanner matchClassFile(String regex);
+  ClasspathScanner skipSystemJars(boolean skipSystemJars);
   ClasspathScanner matchClassFiles(String ... regex);
   ClasspathScanner matchSourceFile(String regex);
   ClasspathScanner matchSourceFiles(String ... regex);
