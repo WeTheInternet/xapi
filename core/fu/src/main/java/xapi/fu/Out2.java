@@ -4,6 +4,8 @@ import xapi.fu.Out1.Out1Unsafe;
 
 import static xapi.fu.Immutable.immutable1;
 
+import java.util.Map.Entry;
+
 /**
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 07/11/15.
@@ -61,11 +63,11 @@ public interface Out2<O1, O2> extends OutMany {
     return ()->out;
   }
 
-  static <O1, O2> Out2<O1, O2> out2Immutable(O1 o1, O2 o2) {
+  static <O1, O2> Out2Immutable <O1, O2> out2Immutable(O1 o1, O2 o2) {
     return new Out2Immutable<>(o1, o2);
   }
 
-  class Out2Immutable <O1, O2> implements Out2<O1, O2>, IsImmutable {
+  class Out2Immutable <O1, O2> implements Out2<O1, O2>, Entry<O1, O2>, IsImmutable {
 
     private final O1 one;
     private final O2 two;
@@ -77,10 +79,26 @@ public interface Out2<O1, O2> extends OutMany {
 
     @Override
     public Out1[] out0() {
+      // arrays are mutable, so we give everyone that asks a new one
       return new Out1[]{
           immutable1(one),
           immutable1(two)
       };
+    }
+
+    @Override
+    public final O1 getKey() {
+      return out1();
+    }
+
+    @Override
+    public final O2 getValue() {
+      return out2();
+    }
+
+    @Override
+    public final O2 setValue(O2 value) {
+      throw new UnsupportedOperationException("Object is immutable");
     }
 
     @Override
@@ -133,4 +151,9 @@ public interface Out2<O1, O2> extends OutMany {
     return out2(o1, o2);
   }
 
+  static <O1, O2> Out2<O1, O2> fromEntry(Entry<O1, O2> entry) {
+    return entry instanceof Out2 ?
+        (Out2<O1, O2>) entry :
+        out2Immutable(entry.getKey(), entry.getValue());
+  }
 }

@@ -2,12 +2,13 @@ package xapi.collect.api;
 
 import xapi.fu.Do;
 import xapi.fu.In1Out1;
+import xapi.fu.MapLike;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 5/3/16.
  */
-public interface HasMany <K, V> extends HasValues<K, IntTo<V>>, TypedMap<K, IntTo<V>> {
+public interface HasMany <K, V> extends HasValues<K, IntTo<V>>, MapLike<K, IntTo<V>> {
 
   IntTo<V> newList();
 

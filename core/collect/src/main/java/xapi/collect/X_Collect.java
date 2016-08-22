@@ -203,6 +203,10 @@ public class X_Collect {
     return service.newStringMap(valueCls, MUTABLE);
   }
 
+  public static <V, Generic extends V> StringTo<V> newStringMap(final Class<Generic> valueCls, CollectionOptions opts) {
+    return service.newStringMap(valueCls, opts);
+  }
+
   public static StringTo<Object> newStringMap() {
     return newStringMap(Object.class);
   }

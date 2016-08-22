@@ -2,6 +2,7 @@ package xapi.collect.api;
 
 import xapi.fu.In1;
 import xapi.fu.In1Out1;
+import xapi.fu.MapLike;
 
 import static xapi.fu.In2.in2;
 
@@ -19,7 +20,7 @@ import java.io.Serializable;
  * @param <V>
  */
 public interface StringTo <V>
-extends HasValues<String,V>, Serializable, TypedMap<String, V>
+extends HasValues<String,V>, Serializable, MapLike<String, V>
 {
 
   String[] keyArray();
@@ -28,6 +29,7 @@ extends HasValues<String,V>, Serializable, TypedMap<String, V>
 
   default V getOrCreate(String key, In1Out1<String, V> factory) {
     V value = get(key);
+    keys();
     if (value == null) {
       value = factory.io(key);
       put(key, value);

@@ -15,6 +15,10 @@ public class MappedIterator<From, To> implements Iterator<To> {
         this.mapper = mapper;
     }
 
+    public static <From, To> MappedIterator<From, To> mapIterator(Iterator<From> from, In1Out1<From, To> mapper) {
+        return new MappedIterator<>(from, mapper);
+    }
+
     @Override
     public boolean hasNext() {
         return from.hasNext();

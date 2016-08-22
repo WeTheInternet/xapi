@@ -1,25 +1,30 @@
-package xapi.collect.api;
-
-import xapi.fu.In2Out1;
-import xapi.fu.Out2;
+package xapi.fu;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 4/10/16.
  */
-public interface TypedMap <K, V> {
+public interface MapLike<K, V> {
 
   /**
-   * A put operation.  Returns the previous value, if any
+   * A put operation.  Returns the previous value, if any.
    */
   V put(K key, V value);
 
+  /**
+   * A get operation.  Returns the known value, if any.
+     */
   V get(K key);
 
+  /**
+   * A remove operation.  Returns the deleted value, if any.
+     */
   V remove(K key);
 
+  MappedIterable<Out2<K, V>> view();
+
   default Out2<V, V> putAndReturnBoth(K key, V value) {
-    return Out2.out2Immutable(value, put(key, value));
+    return Out2.out2Immutable(put(key, value), value);
   }
 
   default Out2<V, V> putIfUnchanged(K key, V previousValue, V value) {

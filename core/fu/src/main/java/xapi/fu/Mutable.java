@@ -8,28 +8,84 @@ import static xapi.fu.Immutable.immutable1;
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 6/18/16.
  */
-public class Mutable <I> implements In1Unsafe, Out1Unsafe{
+public class Mutable <I> implements In1Unsafe<I>, Out1Unsafe<I> {
 
-  private volatile I i;
+  public static <Value, Bound extends Value> Mutable<Value> mutable(Class<Bound> bounds) {
+    return new TypesafeMutable<>(bounds);
+  }
+
+  private volatile I value;
 
   public Mutable() {
   }
 
   public Mutable(I value) {
-    i = value;
+    value = value;
   }
 
   public Immutable<I> freeze() {
-    return immutable1(i);
+    return immutable1(value);
   }
 
   @Override
-  public void inUnsafe(Object in) throws Throwable {
-
+  public final void in(I in) {
+    In1Unsafe.super.in(in);
   }
 
   @Override
-  public Object outUnsafe() throws Throwable {
-    return null;
+  public final I out1() {
+    return Out1Unsafe.super.out1();
+  }
+
+  @Override
+  public void inUnsafe(I in) throws Throwable {
+    this.value = in;
+  }
+
+  @Override
+  public I outUnsafe() throws Throwable {
+    return value;
+  }
+
+  public static class TypesafeMutable <T> extends Mutable <T> {
+
+    private final Class<? extends T> bounds;
+
+    public <Bound extends T> TypesafeMutable(Class<Bound> cls) {
+      this.bounds = cls;
+    }
+
+    public Class<? extends T> getBounds() {
+      return bounds;
+    }
+
+    @Override
+    public final void inUnsafe(T in) throws Throwable {
+      if (in != null) {
+        in = checkInput(bounds, in);
+      }
+      super.inUnsafe(in);
+    }
+
+    protected T checkInput(Class<? extends T> bounds, T in) {
+      if (in != null && !bounds.isInstance(in)) {
+        throw new ClassCastException(in + " is not a " + bounds);
+      }
+      return in;
+    }
+
+    protected T checkOutput(Class<? extends T> bounds, T in) {
+      if (in != null && !bounds.isInstance(in)) {
+        throw new ClassCastException(in + " is not a " + bounds);
+      }
+      return in;
+    }
+
+    @Override
+    public final T outUnsafe() throws Throwable {
+      T output = super.outUnsafe();
+      output = checkOutput(bounds, output);
+      return output;
+    }
   }
 }

@@ -6,7 +6,10 @@ package xapi.fu;
 public interface MappedIterable<T> extends Iterable<T> {
 
     default <To> MappedIterable<To> map(In1Out1<T, To> mapper) {
-        return ()-> new MappedIterator<>(iterator(), mapper);
+        return mapIterable(this, mapper);
     }
 
+    static <From, To> MappedIterable<To> mapIterable(Iterable<From> from, In1Out1<From, To> mapper) {
+        return ()->new MappedIterator<>(from.iterator(), mapper);
+    }
 }
