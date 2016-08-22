@@ -27,7 +27,7 @@ public class JavaFxSizeFeatureGenerator extends UiFeatureGenerator {
     ) {
 
         String panel = container.peekPanelName();
-        final UiContainerExpr parent = container.getContainer();
+        final UiContainerExpr parent = container.getUi();
         final MethodBuffer mb = container.getMethod(panel);
 
         final UiAttrExpr size = parent.getAttributeNotNull("size");

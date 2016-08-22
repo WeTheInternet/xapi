@@ -327,8 +327,19 @@ public final class ASTHelper {
             return "null";
         } else if (value instanceof NameExpr) {
             return value.toString();
+        } else if (value instanceof CssValueExpr) {
+            CssValueExpr cssValue = (CssValueExpr) value;
+            StringBuilder b = new StringBuilder();
+            b.append(extractStringValue(cssValue.getValue()));
+            if (cssValue.getUnit() != null) {
+                b.append(cssValue.getUnit());
+            }
+            if (cssValue.isImportant()) {
+                b.append(" !important");
+            }
+            return b.toString();
         } else {
-            String error = "Unhandled attribute value; cannot extract compile time string literal from " + value;
+            String error = "Unhandled attribute value; cannot extract compile time string literal from " + value.getClass() + " : " + value;
             X_Log.error(ASTHelper.class, error);
             throw new IllegalArgumentException(error);
         }

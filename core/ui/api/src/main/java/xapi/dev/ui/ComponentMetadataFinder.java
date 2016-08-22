@@ -1,12 +1,6 @@
 package xapi.dev.ui;
 
-import com.github.javaparser.ast.expr.MethodReferenceExpr;
-import com.github.javaparser.ast.expr.NameExpr;
-import com.github.javaparser.ast.expr.StringLiteralExpr;
-import com.github.javaparser.ast.expr.TemplateLiteralExpr;
-import com.github.javaparser.ast.expr.UiAttrExpr;
-import com.github.javaparser.ast.expr.UiContainerExpr;
-import com.github.javaparser.ast.expr.UiExpr;
+import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import xapi.fu.Do;
 import xapi.util.api.Destroyable;
@@ -79,6 +73,36 @@ public class ComponentMetadataFinder extends VoidVisitorAdapter<ComponentMetadat
   }
 
   public void visit(TemplateLiteralExpr n, ComponentMetadataQuery query) {
+    super.visit(n, query);
+  }
+
+  @Override
+  public void visit(CssBlockExpr n, ComponentMetadataQuery query) {
+    query.notifyCssExpr(scope, n);
+    super.visit(n, query);
+  }
+
+  @Override
+  public void visit(CssContainerExpr n, ComponentMetadataQuery query) {
+    query.notifyCssExpr(scope, n);
+    super.visit(n, query);
+  }
+
+  @Override
+  public void visit(CssSelectorExpr n, ComponentMetadataQuery query) {
+    query.notifyCssExpr(scope, n);
+    super.visit(n, query);
+  }
+
+  @Override
+  public void visit(CssRuleExpr n, ComponentMetadataQuery query) {
+    query.notifyCssExpr(scope, n);
+    super.visit(n, query);
+  }
+
+  @Override
+  public void visit(CssValueExpr n, ComponentMetadataQuery query) {
+    query.notifyCssExpr(scope, n);
     super.visit(n, query);
   }
 

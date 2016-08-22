@@ -1,5 +1,6 @@
 package xapi.dev.ui;
 
+import com.github.javaparser.ast.expr.CssExpr;
 import com.github.javaparser.ast.expr.MethodReferenceExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.UiAttrExpr;
@@ -25,6 +26,8 @@ public class ComponentMetadataQuery implements Destroyable {
   private final SimpleStack<In2<ComponentGraph, MethodReferenceExpr>> methodReferenceListeners = new SimpleStack<>();
   private final SimpleStack<In2<ComponentGraph, UiAttrExpr>> dataFeatureListeners = new SimpleStack<>();
   private final SimpleStack<In2<ComponentGraph, UiAttrExpr>> refFeatureListeners = new SimpleStack<>();
+  private final SimpleStack<In2<ComponentGraph, CssExpr>> cssFeatureListeners = new SimpleStack<>();
+  private final SimpleStack<In2<ComponentGraph, UiAttrExpr>> allFeatureListeners = new SimpleStack<>();
 
 
   public boolean isVisitChildContainers() {
@@ -64,6 +67,16 @@ public class ComponentMetadataQuery implements Destroyable {
     return this;
   }
 
+  public ComponentMetadataQuery addCssFeatureListener(In2<ComponentGraph, CssExpr> listener) {
+    cssFeatureListeners.add(listener);
+    return this;
+  }
+
+  public ComponentMetadataQuery addAllFeatureListener(In2<ComponentGraph, UiAttrExpr> listener) {
+    allFeatureListeners.add(listener);
+    return this;
+  }
+
   public ComponentMetadataQuery addMethodReferenceListener(In2<ComponentGraph, MethodReferenceExpr> listener) {
     methodReferenceListeners.add(listener);
     return this;
@@ -81,7 +94,12 @@ public class ComponentMetadataQuery implements Destroyable {
     nameListeners.forEach(listener->listener.in(scope, n));
   }
 
+  public void notifyCssExpr(ComponentGraph scope, CssExpr n) {
+    cssFeatureListeners.forEach(listener->listener.in(scope, n));
+  }
+
   public void notifyUiAttrExpr(ComponentGraph scope, UiAttrExpr n) {
+      allFeatureListeners.forEach(listener -> listener.in(scope, n));
       switch (n.getName().getName().toLowerCase()) {
           case "ref":
             refFeatureListeners.forEach(listener->listener.in(scope, n));

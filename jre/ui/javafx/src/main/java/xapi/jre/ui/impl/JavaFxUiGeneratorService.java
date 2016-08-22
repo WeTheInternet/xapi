@@ -5,10 +5,9 @@ import xapi.dev.ui.UiComponentGenerator;
 import xapi.dev.ui.UiFeatureGenerator;
 import xapi.fu.Out2;
 import xapi.jre.ui.impl.feature.JavaFxAlignFeatureGenerator;
+import xapi.jre.ui.impl.feature.JavaFxCssFeatureGenerator;
 import xapi.jre.ui.impl.feature.JavaFxFillFeatureGenerator;
 import xapi.jre.ui.impl.feature.JavaFxSizeFeatureGenerator;
-
-import static xapi.fu.Out2.out2;
 
 import java.util.Arrays;
 
@@ -37,6 +36,7 @@ public class JavaFxUiGeneratorService extends AbstractUiImplementationGenerator 
         Out2.out2Immutable("ref", new UiFeatureGenerator()),
         Out2.out2Immutable("title", new UiFeatureGenerator()),
         Out2.out2Immutable("data", new UiFeatureGenerator()),
+        Out2.out2Immutable("class", new JavaFxCssFeatureGenerator()),
         Out2.out2Immutable("body", new JavaFxBodyFeatureGenerator()),
         Out2.out2Immutable("text", new JavaFxTextFeatureGenerator()),
         Out2.out2Immutable("align", new JavaFxAlignFeatureGenerator()),

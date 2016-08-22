@@ -96,7 +96,7 @@ public class UiGeneratorServiceDefault extends AbstractUiGeneratorService {
     protected ComponentBuffer preprocessComponent(ComponentBuffer component) {
         // Find all refs, datanodes and other interesting bits of data.
         final ContainerMetadata metadata = component.getRoot();
-        UiContainerExpr container = metadata.getContainer();
+        UiContainerExpr container = metadata.getUi();
         // replace all <import /> tags with imported resources
         container = resolveImports(service.getElements(), service.getFileManager(), component.getElement(), container);
         if (container.getAttribute("ref") == null) {
@@ -123,6 +123,9 @@ public class UiGeneratorServiceDefault extends AbstractUiGeneratorService {
 
         if (component.hasDataNodes()) {
             generateDataAccessors(component);
+        }
+        if (component.hasCssOrClassname()) {
+            generateCssPrimitives(component);
         }
         if (component.hasTemplateReferences()) {
             rewriteTemplateReferences(component);
@@ -175,7 +178,7 @@ public class UiGeneratorServiceDefault extends AbstractUiGeneratorService {
         };
         final ContainerMetadata metadata = component.getRoot();
         UiGeneratorVisitor visitor = createVisitor(component.getRoot());
-        visitor.visit(metadata.getContainer(), this);
+        visitor.visit(metadata.getUi(), this);
         resetFactories();
     }
 
@@ -261,6 +264,25 @@ public class UiGeneratorServiceDefault extends AbstractUiGeneratorService {
         }
     }
 
+    protected void generateCssPrimitives(ComponentBuffer component) {
+        final InterestingNodeResults interestingNodes = component.getInterestingNodes();
+        Set<UiContainerExpr> cssParents = interestingNodes.getCssParents();
+        componentFactory = containerFilter(cssParents);
+        featureFactory = (feature, gen) -> {
+            switch (feature.getNameString().toLowerCase()) {
+                case "css":
+                case "style":
+                case "class":
+                    return new CssFeatureGenerator();
+            }
+            return null;
+        };
+        final ContainerMetadata metadata = component.getRoot();
+        UiGeneratorVisitor visitor = createVisitor(component.getRoot());
+        visitor.visit(metadata.getUi(), this);
+        resetFactories();
+    }
+
     protected void generateDataAccessors(ComponentBuffer component) {
         final InterestingNodeResults interestingNodes = component.getInterestingNodes();
         Set<UiContainerExpr> dataParents = interestingNodes.getDataParents();
@@ -277,7 +299,7 @@ public class UiGeneratorServiceDefault extends AbstractUiGeneratorService {
         };
         final ContainerMetadata metadata = component.getRoot();
         UiGeneratorVisitor visitor = createVisitor(component.getRoot());
-        visitor.visit(metadata.getContainer(), this);
+        visitor.visit(metadata.getUi(), this);
         resetFactories();
     }
 

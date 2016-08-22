@@ -4,6 +4,7 @@ import com.github.javaparser.ASTHelper;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
+import com.github.javaparser.ast.expr.UiExpr;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -20,12 +21,15 @@ public class InterestingNodeFinder {
     public static class InterestingNodeResults {
         private Map<ComponentGraph, UiAttrExpr> dataNodes;
         private Map<ComponentGraph, UiAttrExpr> refNodes;
+        private Map<ComponentGraph, UiExpr> cssNodes;
+        private boolean hasClassname;
         private Map<ComponentGraph, List<NameExpr>> templateNames;
 
         public InterestingNodeResults() {
             dataNodes = new IdentityHashMap<>();
             refNodes = new IdentityHashMap<>();
             templateNames = new IdentityHashMap<>();
+            cssNodes = new IdentityHashMap<>();
         }
 
         public void addTemplateName(ComponentGraph g, NameExpr n) {
@@ -41,8 +45,24 @@ public class InterestingNodeFinder {
             dataNodes.put(g, n);
         }
 
+        public void addCssNode(ComponentGraph g, UiExpr n) {
+            cssNodes.put(g, n);
+        }
+
+        public void foundClassnameFeature() {
+            hasClassname = true;
+        }
+
         public boolean hasDataNodes() {
             return !dataNodes.isEmpty();
+        }
+
+        public boolean hasCssNodes() {
+            return !cssNodes.isEmpty();
+        }
+
+        public boolean hasCssOrClassname() {
+            return !cssNodes.isEmpty() || hasClassname;
         }
 
         public boolean hasTemplateReferences() {
@@ -57,6 +77,14 @@ public class InterestingNodeFinder {
             return refNodes;
         }
 
+        public Map<ComponentGraph, UiExpr> getCssNodes() {
+            return cssNodes;
+        }
+
+        public boolean hasClassname() {
+            return hasClassname;
+        }
+
         public Map<ComponentGraph, List<NameExpr>> getTemplateNames() {
             return templateNames;
         }
@@ -67,6 +95,15 @@ public class InterestingNodeFinder {
             }
             Map<UiContainerExpr, Boolean> map = new IdentityHashMap<>();
             dataNodes.keySet().forEach(containerFinder(map));
+            return map.keySet();
+        }
+
+        public Set<UiContainerExpr> getCssParents() {
+            if (!hasCssNodes()) {
+                return Collections.emptySet();
+            }
+            Map<UiContainerExpr, Boolean> map = new IdentityHashMap<>();
+            cssNodes.keySet().forEach(containerFinder(map));
             return map.keySet();
         }
 
@@ -105,6 +142,13 @@ public class InterestingNodeFinder {
               .setVisitAttributeContainers(true)
               .addDataFeatureListener(results::addDataNode)
               .addRefFeatureListener(results::addRefNode)
+              .addCssFeatureListener(results::addCssNode)
+              .addAllFeatureListener((scope, attr) ->{
+                  if ("class".equalsIgnoreCase(attr.getNameString())) {
+                      results.foundClassnameFeature();
+                      results.addCssNode(scope, attr);
+                  }
+              })
               .addNameListener((g, n) -> {
                   if (query.isTemplateName(n.getName())) {
                       results.addTemplateName(g, n);

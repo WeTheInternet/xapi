@@ -22,7 +22,7 @@ public class JavaFxFillFeatureGenerator extends UiFeatureGenerator {
 
         String panel = container.peekPanelName();
         final MethodBuffer mb = container.getMethod(panel);
-        final String fill = container.getContainer().getAttribute("fill")
+        final String fill = container.getUi().getAttribute("fill")
               .map(ASTHelper::extractAttrValue)
               .orElse("null").toLowerCase();
 

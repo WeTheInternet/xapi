@@ -24,7 +24,7 @@ public class JavaFxAlignFeatureGenerator extends UiFeatureGenerator {
         String panel = container.peekPanelName();
         final MethodBuffer mb = container.getMethod(panel);
 
-        final String align = container.getContainer().getAttribute("align")
+        final String align = container.getUi().getAttribute("align")
               .map(ASTHelper::extractAttrValue)
               .orElse("center").toLowerCase();
 

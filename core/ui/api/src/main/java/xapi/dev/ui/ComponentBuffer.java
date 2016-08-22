@@ -86,6 +86,14 @@ public class ComponentBuffer {
         return interestingNodes != null && interestingNodes.hasDataNodes();
     }
 
+    public boolean hasCssNodes() {
+        return interestingNodes != null && interestingNodes.hasCssNodes();
+    }
+
+    public boolean hasCssOrClassname() {
+        return interestingNodes != null && interestingNodes.hasCssOrClassname();
+    }
+
     public boolean hasTemplateReferences() {
         return interestingNodes != null && interestingNodes.hasTemplateReferences();
     }

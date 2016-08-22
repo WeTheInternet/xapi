@@ -77,6 +77,16 @@ Feature: Compile templates into valid java files
       | .set("style", "left : 10px;")    |
       | .build()                         |
 
+  Scenario: Parse a template with a hex color in a style feature
+    Given compile ui with name HelloWorld:
+      | <template                    |
+      | style = .{ color: #ffffff; } |
+      | />                           |
+    Then source code of HelloWorld is:
+      | new PotentialElement("template")  |
+      | .set("style", "color : #ffffff;") |
+      | .build()                          |
+
   Scenario: Parse a template with a css container as a class attribute
     Given compile ui with name HelloWorld:
       | <template                    |

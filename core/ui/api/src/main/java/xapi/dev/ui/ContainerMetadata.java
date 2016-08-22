@@ -11,12 +11,17 @@ import xapi.collect.api.StringTo;
 import xapi.collect.impl.SimpleLinkedList;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
+import xapi.dev.source.NameGen;
 import xapi.dev.source.SourceBuilder;
 import xapi.dev.source.SourceTransform;
 import xapi.fu.In1Out1;
+import xapi.fu.Lazy;
 import xapi.source.X_Source;
 import xapi.ui.service.UiService;
 
+import static xapi.fu.Lazy.deferred1;
+
+import java.util.IdentityHashMap;
 import java.util.Optional;
 
 /**
@@ -30,10 +35,16 @@ public class ContainerMetadata {
         private String rootReference;
         private final StringTo<Integer> nameCounts;
         private final StringTo<StringTo<NodeTransformer>> fieldRenames;
+        private final NameGen names;
 
         public MetadataRoot() {
             nameCounts = X_Collect.newStringMap(Integer.class);
             fieldRenames = X_Collect.newStringDeepMap(NodeTransformer.class);
+            names = initNames();
+        }
+
+        protected NameGen initNames() {
+            return NameGen.getGlobal();
         }
 
         public String getRootReference() {
@@ -83,6 +94,8 @@ public class ContainerMetadata {
     private UiContainerExpr container;
     private ContainerMetadata parent;
     private SourceBuilder<ContainerMetadata> sourceBuilder;
+    private Lazy<StyleMetadata> style = deferred1(StyleMetadata::new);
+    private IdentityHashMap<UiContainerExpr, ContainerMetadata> children;
     private String elementType;
     private String componentType;
     private String controllerType;
@@ -94,7 +107,7 @@ public class ContainerMetadata {
     private String controllerName;
     // WARNING: If you add new fields, update copyFrom method!
 
-    protected void copyFrom(ContainerMetadata metadata) {
+    protected void copyFrom(ContainerMetadata metadata, boolean child) {
         this.allowedToFail = metadata.allowedToFail;
         this.methods = metadata.methods;
         this.panelNames = metadata.panelNames;
@@ -105,8 +118,11 @@ public class ContainerMetadata {
         this.controllerPkg = metadata.controllerPkg;
         this.controllerType = metadata.controllerType;
         this.controllerName = metadata.controllerName;
-        this.type = metadata.type;
         this.searchTypes = metadata.searchTypes;
+        if (!child) {
+            this.type = metadata.type;
+            this.style = metadata.style;
+        }
     }
 
     public ContainerMetadata() {
@@ -114,6 +130,7 @@ public class ContainerMetadata {
         searchTypes = true;
         methods = X_Collect.newStringMap(MethodBuffer.class);
         panelNames = new SimpleLinkedList<>();
+        children = new IdentityHashMap<>();
         allowedToFail = Boolean.getBoolean("xapi.component.ignore.parse.failure");
     }
 
@@ -139,15 +156,29 @@ public class ContainerMetadata {
         this.container = container;
     }
 
-    public UiContainerExpr getContainer() {
+    public UiContainerExpr getUi() {
         return container;
     }
 
+    public NameGen getNameGen() {
+        return root.names;
+    }
+
+    public StyleMetadata getStyle() {
+        return style.out1();
+    }
+
+    public boolean hasStyle() {
+        return style.isResolved();
+    }
+
     public ContainerMetadata createChild(UiContainerExpr n, UiGeneratorTools tools) {
-        final ContainerMetadata copy = tools.createMetadata(root, n);
-        copy.parent = this;
-        copy.copyFrom(this);
-        return copy;
+        return children.computeIfAbsent(n, ui->{
+            final ContainerMetadata copy = tools.createMetadata(root, n);
+            copy.parent = this;
+            copy.copyFrom(this, true);
+            return copy;
+        });
     }
 
     public ContainerMetadata getParent() {
@@ -358,7 +389,12 @@ public class ContainerMetadata {
 
     public ContainerMetadata createImplementation(Class<? extends UiImplementationGenerator> implType) {
         final ContainerMetadata copy = new ContainerMetadata(container);
-        copy.copyFrom(this);
+        copy.copyFrom(this, false);
+        SimpleLinkedList<ContainerMetadata> all = new SimpleLinkedList<>();
+        all.add(copy);
+        children.entrySet().forEach(e->
+            copy.children.put(e.getKey(), e.getValue().createImplementation(implType))
+        );
         return copy;
     }
 }

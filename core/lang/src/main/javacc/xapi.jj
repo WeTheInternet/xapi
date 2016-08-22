@@ -359,7 +359,8 @@ TOKEN:
 <CSS_BODY>
 TOKEN:
 {
-   < CSS_KEY: ["-"] ( ["-"] )? (
+    <HEX_COLOR: "#" ( ( ["0"-"9"] | ["a"-"f"] | ["A"-"F"] ) {3} | ( ["0"-"9"] | ["a"-"f"] | ["A"-"F"] ) {6}  ) >
+  | < CSS_KEY: ["-"] ( ["-"] )? (
      (
         ( ["0"-"9"] | ["a"-"z"] | ["A"-"Z"] ) ( "-" ["0"-"9"] | ["a"-"z"] | ["A"-"Z"] ) *
      )+
@@ -3253,8 +3254,7 @@ CssSelectorExpr CssSelector():
     }
     )
     (
-       ":" { parts.add(token.image); }
-     | "::" { parts.add(token.image); }
+       "::" { parts.add(token.image); }
      | <CSS_SELECTOR> { parts.add(token.image); }
      | <FEATURE_IDENTIFIER> { parts.add(token.image); }
      | <IDENTIFIER> { parts.add(token.image); }
@@ -3332,8 +3332,10 @@ Expression CssExpression():
   (
     LOOKAHEAD( StatementExpression() )
     stmt = StatementExpression() { value = stmt.getExpression(); }
-    |
-    (
+    | ( <HEX_COLOR> {
+        value = new StringLiteralExpr(token.image);
+    } [ <IMPORTANT> { important = true; } ] ";"
+    ) | (
       value = Expression()
       [ <CSS_UNIT> { unit = token.image; } ]
       [ <IDENTIFIER> {
@@ -3343,11 +3345,11 @@ Expression CssExpression():
       [ <CSS_UNIT_WITH_PCT> { unit = token.image; } ]
       [ <IMPORTANT> { important = true; } ]
       ";"
-      {
-        value = new CssValueExpr(value, unit, important);
-      }
     )
     )
+  {
+    value = new CssValueExpr(value, unit, important);
+  }
   {
     return value;
   }

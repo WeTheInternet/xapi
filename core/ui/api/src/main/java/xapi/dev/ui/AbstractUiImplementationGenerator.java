@@ -18,7 +18,7 @@ public abstract class AbstractUiImplementationGenerator extends UiGeneratorTools
     public ContainerMetadata generateComponent(ContainerMetadata metadata, ComponentBuffer buffer) {
         final String pkgName = metadata.getControllerPackage();
         final String className = metadata.getControllerSimpleName();
-        final UiContainerExpr expr = metadata.getContainer();
+        final UiContainerExpr expr = metadata.getUi();
         metadata.setControllerType(pkgName, className);
         String generatedName = calculateGeneratedName(pkgName, className, expr);
         SourceBuilder b = new SourceBuilder("public class " + generatedName)

@@ -258,7 +258,7 @@ public abstract class Node implements Cloneable {
     }
 
     @Override
-    public final int hashCode() {
+    public int hashCode() {
         return toString().hashCode();
     }
 

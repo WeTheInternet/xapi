@@ -74,8 +74,12 @@ public abstract class AbstractUiGeneratorService extends UiGeneratorTools implem
     @Override
     public ContainerMetadata createMetadata(MetadataRoot root, UiContainerExpr n) {
         final ContainerMetadata component = new ContainerMetadata(n);
-        component.setRoot(root == null ? new MetadataRoot() : root);
+        component.setRoot(root == null ? createMetadataRoot() : root);
         return component;
+    }
+
+    protected MetadataRoot createMetadataRoot() {
+        return new MetadataRoot();
     }
 
     @Override

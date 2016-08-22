@@ -10,18 +10,23 @@
           two: 0,
           text: ""
       }
-          // Css BNF is not ready yet
-  style = .{
-          .cls { background-color: blue; }
-          }
+  class = .{
+      .cls{
+        background-color: #011151;
+       }
+      .cls .btn {
+        background-color: #010931;
+        color: white;
+      }
+    }
   >
   <box
         size = ( 300 * (()->150 + 10 * $root.data.one) )
         align = center
   >
-      <button ref="one" text="Button 1" onClick=e->
+      <button ref="one" text="Button 1" class="btn button1" onClick=e->
         $one.setText("You clicked one " + $root.data.one++ + " times") />
-      <button ref="two" text="Button 2" onClick=e->
+      <button ref="two" text="Button 2" class="btn button2" onClick=e->
         $two.setText("You clicked two " + ++$root.data.two + " times") />
   </box>
   <box align = center>
