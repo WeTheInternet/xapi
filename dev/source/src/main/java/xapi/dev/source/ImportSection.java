@@ -219,6 +219,19 @@ public class ImportSection implements CanAddImports {
     int index = importName.indexOf(".");
     // do not import primitives
     final boolean hasDot = index != -1;
+    importName = trim(importName);
+
+    // rip off generics, and optionally try to import them as well
+    // Be sure to do generics before array types, or else List<String[]> will become List<String>[]
+    index = importName.indexOf('<');
+    String suffix;
+    if (index == -1) {
+      suffix = "";
+    } else {
+      suffix = importName.substring(index);
+      suffix = importFullyQualifiedNames(suffix);
+      importName = importName.substring(0, index);
+    }
 
     // ignore any []
     index = importName.indexOf("[]");
@@ -230,17 +243,6 @@ public class ImportSection implements CanAddImports {
       arrayDepth++;
     }
 
-    // rip off generics, and optionally try to import them as well
-    importName = trim(importName);
-    index = importName.indexOf('<');
-    String suffix;
-    if (index == -1) {
-      suffix = "";
-    } else {
-      suffix = importName.substring(index);
-      suffix = importFullyQualifiedNames(suffix);
-      importName = importName.substring(0, index);
-    }
 
     // put back any array definitions we ignored
     while (arrayDepth-- > 0) {
