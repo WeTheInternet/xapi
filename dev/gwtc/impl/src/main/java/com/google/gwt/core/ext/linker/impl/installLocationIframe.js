@@ -18,7 +18,7 @@ function setupInstallLocation() {
   var scriptFrame = $doc.createElement('iframe');
   scriptFrame.src = 'javascript:""';
   scriptFrame.id = '__MODULE_NAME__';
-  scriptFrame.sandbox = "allow-same-origin allow-scripts";
+  scriptFrame.sandbox = "allow-same-origin allow-scripts allow-top-navigation";
   scriptFrame.style.cssText = 'position:absolute; width:0; height:0; border:none; left: -1000px;'
     + ' top: -1000px;';
   scriptFrame.tabIndex = -1;
