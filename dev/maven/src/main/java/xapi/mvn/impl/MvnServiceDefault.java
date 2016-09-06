@@ -1,21 +1,15 @@
 package xapi.mvn.impl;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.regex.Pattern;
-
+import org.apache.maven.model.Dependency;
 import org.apache.maven.model.Model;
+import org.apache.maven.model.Parent;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
+import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.connector.basic.BasicRepositoryConnectorFactory;
 import org.eclipse.aether.impl.DefaultServiceLocator;
@@ -30,13 +24,14 @@ import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
 import org.eclipse.aether.spi.connector.transport.TransporterFactory;
 import org.eclipse.aether.transport.file.FileTransporterFactory;
 import org.eclipse.aether.transport.http.HttpTransporterFactory;
-
 import xapi.annotation.inject.SingletonDefault;
 import xapi.collect.impl.AbstractMultiInitMap;
 import xapi.dev.resource.impl.StringDataResource;
 import xapi.dev.scanner.X_Scanner;
 import xapi.dev.scanner.impl.ClasspathResourceMap;
+import xapi.fu.Filter.Filter1;
 import xapi.inject.impl.SingletonInitializer;
+import xapi.io.X_IO;
 import xapi.log.X_Log;
 import xapi.log.api.LogLevel;
 import xapi.mvn.service.MvnService;
@@ -46,10 +41,28 @@ import xapi.util.X_Debug;
 import xapi.util.X_String;
 import xapi.util.X_Util;
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.UncheckedIOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.jar.JarFile;
+import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
+
 @SingletonDefault(implFor = MvnService.class)
 public class MvnServiceDefault implements MvnService {
 
+  private final MvnCacheImpl cache;
+
   public MvnServiceDefault() {
+    cache = new MvnCacheImpl(this);
   }
 
   private static final Pattern POM_PATTERN = Pattern.compile(".*pom.*xml");
@@ -177,7 +190,7 @@ public class MvnServiceDefault implements MvnService {
   public Model loadPomFile(String pomLocation) throws IOException,
       XmlPullParserException {
     File pomfile = new File(pomLocation);
-    FileReader reader = null;
+    FileReader reader;
     MavenXpp3Reader mavenreader = new MavenXpp3Reader();
     reader = new FileReader(pomfile);
     Model model = mavenreader.read(reader);
@@ -191,6 +204,116 @@ public class MvnServiceDefault implements MvnService {
       return new MavenXpp3Reader().read(new StringReader(pomString));
     } catch (IOException ignored) {
       throw X_Util.rethrow(ignored);
+    }
+  }
+
+  @Override
+  public List<String> loadDependencies(Artifact artifact, Filter1<Dependency> filter) {
+    Map<String, String> dependencies = new LinkedHashMap<>();
+
+    loadInto(dependencies, artifact, filter);
+
+    return new ArrayList<>(dependencies.values());
+  }
+
+  private void loadInto(Map<String, String> dependencies, Artifact artifact, Filter1<Dependency> filter) {
+    String artifactString = toArtifactString(artifact);
+    if (!dependencies.containsKey(artifactString)) {
+      String fileLoc = artifact.getFile().getAbsolutePath();
+      dependencies.put(artifactString, fileLoc);
+      try (
+          JarFile jar = new JarFile(artifact.getFile())
+       ) {
+        final ZipEntry pomEntry = jar.getEntry("META-INF/maven/" + artifact.getGroupId() + "/" + artifact.getArtifactId() + "/pom.xml");
+        if (pomEntry != null) {
+          // some jars, like javax.inject, do not package a pom inside the jar :-/
+          String pomString = X_IO.toStringUtf8(jar.getInputStream(pomEntry));
+          final Model pom = loadPomString(pomString);
+          loadDependencies(dependencies, jar, pom, filter);
+        }
+      } catch (IOException e) {
+        throw new UncheckedIOException(e);
+      } catch (XmlPullParserException e) {
+        throw new RuntimeException(e);
+      }
+    }
+  }
+
+  private String toArtifactString(Artifact artifact) {
+    if (artifact.getExtension() == null) {
+      if (artifact.getClassifier() == null) {
+        return artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + artifact.getVersion();
+      } else {
+        return artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + artifact.getClassifier() + ":" + artifact.getVersion();
+      }
+    } else {
+      if (artifact.getClassifier() == null) {
+        return artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + artifact.getExtension() + ":" + artifact.getVersion();
+      } else {
+        return artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + artifact.getExtension() + ":" + artifact.getClassifier() + ":" + artifact.getVersion();
+      }
+    }
+  }
+
+  private void loadDependencies(Map<String, String> dependencies, JarFile jar, Model pom, Filter1<Dependency> filter) {
+    allDeps:
+    for (Dependency dependency : pom.getDependencies()) {
+      if (filter.filter1(dependency)) {
+        final ZipEntry pomEntry = jar.getEntry("META-INF/maven/" + cache.resolveProperty(pom, "${pom.groupId}") + "/" + dependency.getArtifactId() + "/pom.xml");
+        if (pomEntry != null) {
+          // If the pom of the dependency is in the jar, it is very likely a shaded jar that already contains the
+          // rest of the contents of the dependency, so we should skip it.
+          continue;
+        }
+        if (dependency.getVersion() == null) {
+          // dependency management was used somewhere along the way :-/
+          if (pom.getDependencyManagement() != null) {
+            for (Dependency dep : pom.getDependencyManagement().getDependencies()) {
+              if (dep.getGroupId().equals(dependency.getGroupId()) && dep.getArtifactId().equals(dependency.getArtifactId())) {
+                loadDependency(dependencies, pom, dep, filter);
+                continue allDeps;
+              }
+            }
+          }
+          // ugh.  We have to look up parent dependency chains.
+          Parent parent = pom.getParent();
+          while (parent != null) {
+            final ArtifactResult parentArtifact = loadArtifact(
+                parent.getGroupId(),
+                parent.getArtifactId(),
+                "",
+                "pom",
+                parent.getVersion()
+            );
+            try {
+              final Model parentPom = loadPomFile(parentArtifact.getArtifact().getFile().getAbsolutePath());
+              parentPom.getDependencyManagement();
+              if (parentPom.getDependencyManagement() != null) {
+                for (Dependency dep : parentPom.getDependencyManagement().getDependencies()) {
+                  if (dep.getGroupId().equals(dependency.getGroupId()) && dep.getArtifactId().equals(dependency.getArtifactId())) {
+                    loadDependency(dependencies, pom, dep, filter);
+                    continue allDeps;
+                  }
+                }
+              }
+              parent = parentPom.getParent();
+            } catch (IOException | XmlPullParserException e) {
+              throw new RuntimeException(e);
+            }
+          }
+        } else {
+          loadDependency(dependencies, pom, dependency, filter);
+        }
+      }
+    }
+
+  }
+
+  private void loadDependency(Map<String, String> dependencies, Model pom, Dependency dependency, Filter1<Dependency> filter) {
+    String artifactString = cache.toArtifactString(pom, dependency);
+    if (!dependencies.containsKey(artifactString)) {
+      final Artifact artifact = cache.loadArtifact(pom, dependency);
+      loadInto(dependencies, artifact, filter);
     }
   }
 

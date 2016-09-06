@@ -2,10 +2,12 @@ package xapi.mvn;
 
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.execution.MavenSession;
+import org.apache.maven.model.Dependency;
 import org.apache.maven.model.Model;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.ProjectBuilder;
 import org.apache.maven.project.ProjectBuildingRequest;
+import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.repository.LocalArtifactResult;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.ArtifactResult;
@@ -13,6 +15,7 @@ import xapi.bytecode.impl.BytecodeAdapterService;
 import xapi.dev.X_Dev;
 import xapi.dev.scanner.X_Scanner;
 import xapi.dev.scanner.impl.ClasspathResourceMap;
+import xapi.fu.Filter.Filter1;
 import xapi.inject.X_Inject;
 import xapi.inject.impl.SingletonProvider;
 import xapi.log.X_Log;
@@ -58,6 +61,15 @@ public class X_Maven {
   public static ArtifactResult loadArtifact(String groupId, String artifactId,
       String version) {
     return loadArtifact(groupId, artifactId, "jar", version);
+  }
+
+  public static List<String> loadCompileDependencies(Artifact artifact) {
+    return loadDependencies(artifact, d->
+        d.getScope() == null ? "tests".equals(d.getType()) : "compile".equals(d.getScope()));
+  }
+
+  public static List<String> loadDependencies(Artifact artifact, Filter1<Dependency> filter) {
+    return service.loadDependencies(artifact, filter);
   }
 
   public static ArtifactResult loadArtifact(String groupId, String artifactId,
