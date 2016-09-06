@@ -1,21 +1,22 @@
 package xapi.process.api;
 
-import java.util.Iterator;
-import java.util.concurrent.TimeoutException;
-
-import javax.inject.Provider;
-
+import xapi.fu.Do;
 import xapi.log.X_Log;
 import xapi.process.X_Process;
 import xapi.util.X_Debug;
+
 import static xapi.process.X_Process.now;
+
+import javax.inject.Provider;
+import java.util.Iterator;
+import java.util.concurrent.TimeoutException;
 
 public abstract class ConcurrentEnvironment {
 
-  public static enum Priority {
+  public enum Priority {
     High, Medium, Low
   }
-  public static enum Strategy {
+  public enum Strategy {
     Block, FixedPeriod, DecayingPeriod, Recycle
   }
 
@@ -51,15 +52,15 @@ public abstract class ConcurrentEnvironment {
       System.out.println("check timeout");
       checkTimeouts(max);
 
-      Iterator<Runnable> iter = getDeferred().iterator();
+      Iterator<Do> iter = getDeferred().iterator();
       while (iter.hasNext()) {
         System.out.println("iterating job");
-        Runnable next;
+        Do next;
         synchronized (synchro) {
           next = iter.next();
           iter.remove();
         }
-        next.run();
+        next.done();
         System.out.println("check finalies again");
         if (hasFinalies()) {
           System.out.println("has finalies");
@@ -85,14 +86,14 @@ public abstract class ConcurrentEnvironment {
   }
 
   protected void runFinalies(double max) throws TimeoutException {
-    Iterator<Runnable> iter = getFinally().iterator();
+    Iterator<Do> iter = getFinally().iterator();
     while (iter.hasNext()) {
-      Runnable next;
+      Do next;
       synchronized (synchro) {
         next = iter.next();
         iter.remove();
       }
-      next.run();
+      next.done();
       if (now() > max)
         throw new TimeoutException();
     }
@@ -117,13 +118,13 @@ public abstract class ConcurrentEnvironment {
     return start;
   }
 
-  public abstract Iterable<Runnable> getDeferred();
-  public abstract Iterable<Runnable> getFinally();
+  public abstract Iterable<Do> getDeferred();
+  public abstract Iterable<Do> getFinally();
   public abstract Iterable<Thread> getThreads();
 
-  public abstract void pushDeferred(Runnable cmd);
-  public abstract void pushEventually(Runnable cmd);
-  public abstract void pushFinally(Runnable cmd);
+  public abstract void pushDeferred(Do cmd);
+  public abstract void pushEventually(Do cmd);
+  public abstract void pushFinally(Do cmd);
   public abstract void pushThread(Thread childThread);
 
 

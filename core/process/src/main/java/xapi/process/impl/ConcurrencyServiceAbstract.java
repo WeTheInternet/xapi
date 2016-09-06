@@ -1,17 +1,7 @@
 package xapi.process.impl;
 
-import static xapi.util.X_Debug.debug;
-
-import java.lang.Thread.State;
-import java.lang.Thread.UncaughtExceptionHandler;
-import java.util.Iterator;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import javax.inject.Provider;
-
 import xapi.collect.impl.AbstractMultiInitMap;
+import xapi.fu.Do;
 import xapi.log.X_Log;
 import xapi.process.api.ConcurrentEnvironment;
 import xapi.process.api.ConcurrentEnvironment.Priority;
@@ -20,23 +10,31 @@ import xapi.process.api.ProcessController;
 import xapi.process.service.ConcurrencyService;
 import xapi.util.X_Runtime;
 import xapi.util.X_Util;
-import xapi.util.api.ConvertsValue;
 import xapi.util.api.ReceivesValue;
+
+import static xapi.util.X_Debug.debug;
+
+import javax.inject.Provider;
+import java.lang.Thread.State;
+import java.lang.Thread.UncaughtExceptionHandler;
+import java.util.Iterator;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
 
-  protected class WrappedRunnable implements Runnable {
+  protected class WrappedRunnable implements Do {
 
-    private Runnable core;
+    private Do core;
 
-    public WrappedRunnable(Runnable core) {
+    public WrappedRunnable(Do core) {
       this.core = core;
     }
 
     @Override
-    public void run() {
-
-      core.run();
+    public void done() {
+      core.done();
       destroy(Thread.currentThread(), threadFlushTime());
 
       //Now that we've finished the job we were told to do,
@@ -91,12 +89,7 @@ public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
     AbstractMultiInitMap<Thread,ConcurrentEnvironment,UncaughtExceptionHandler> {
 
     public EnviroMap() {
-      super(new ConvertsValue<Thread,String>() {
-        @Override
-        public String convert(Thread from) {
-          return from.getName();
-        }
-      });
+      super(Thread::getName);
     }
 
     @Override
@@ -129,9 +122,9 @@ public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
   private AtomicInteger threadCount = new AtomicInteger();
 
   @Override
-  public Thread newThread(Runnable cmd) {
+  public Thread newThread(Do cmd) {
     WrappedRunnable wrapped = wrap(cmd);
-    Thread childThread = new Thread(wrapped);
+    Thread childThread = new Thread(wrapped.toRunnable());
     childThread.setName(cmd.getClass().getName()+"_"+threadCount.incrementAndGet());
     Thread running = Thread.currentThread();
     ConcurrentEnvironment enviro = environments.get(running, running.getUncaughtExceptionHandler());
@@ -146,7 +139,7 @@ public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
    *
    * This method is very useful for running benchmarks or testing assertions.
    */
-  protected WrappedRunnable wrap(Runnable cmd) {
+  protected WrappedRunnable wrap(Do cmd) {
     if (cmd instanceof WrappedRunnable)
       return (WrappedRunnable)cmd;
     return new WrappedRunnable(cmd);
@@ -304,19 +297,19 @@ public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
 
 
   @Override
-  public void runDeferred(Runnable cmd) {
+  public void runDeferred(Do cmd) {
     ConcurrentEnvironment enviro = currentEnvironment();
     enviro.pushDeferred(cmd);
   }
 
   @Override
-  public void runEventually(Runnable cmd) {
+  public void runEventually(Do cmd) {
     ConcurrentEnvironment enviro = currentEnvironment();
     enviro.pushEventually(cmd);
   }
 
   @Override
-  public void runFinally(Runnable cmd) {
+  public void runFinally(Do cmd) {
     ConcurrentEnvironment enviro = currentEnvironment();
     enviro.pushFinally(cmd);
   }

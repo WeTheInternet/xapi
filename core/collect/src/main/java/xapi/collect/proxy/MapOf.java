@@ -51,7 +51,11 @@ implements CollectionProxy<K,V>, Map<K,V>, HasValues<K,V>, ObjectTo<K,V>
   }
 
   @Override
-  public boolean containsKey(final Object key) {
+  public final boolean containsKey(final Object key) {
+    return has((K) key);
+  }
+
+  public boolean has(K key) {
     return map.containsKey(key);
   }
 

@@ -74,12 +74,17 @@ public class AbstractModel implements Model, PersistentModel, NestedModel{
   }
 
   protected StringTo<Object> newStringMap() {
-    return X_Collect.newStringMap(Object.class);
+    return X_Collect.newStringMapInsertionOrdered(Object.class);
   }
 
   @Override
   public ModelKey getKey(){
     return key;
+  }
+
+  @Override
+  public boolean hasProperty(String key) {
+    return map.containsKey(key);
   }
 
   @Override

@@ -32,6 +32,10 @@ public class X_Model {
     return service.get().create(modelClass);
   }
 
+  public static Model create() {
+    return create(Model.class);
+  }
+
   @MagicMethod(doNotVisit=true,
       documentation="This magic method generates the model class, and returns the internal table name of the modelClass")
   public static <M extends Model> String register(final Class<M> modelClass) {

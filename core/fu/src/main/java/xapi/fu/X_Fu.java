@@ -88,18 +88,6 @@ public interface X_Fu {
     return value != null;
   }
 
-  static <T> Filter<T> alwaysTrue() {
-    return X_Fu::returnTrue;
-  }
-
-  static <T> Filter<T> alwaysFalse() {
-    return X_Fu::returnFalse;
-  }
-
-  static <T> Filter<T> notNull() {
-    return X_Fu::notNull;
-  }
-
   static <T> String reduceToString(Iterable<T> data, In1Out1<T, String> serializer, String separator) {
     return reduceToString(map(data, serializer), separator);
   }
@@ -237,9 +225,9 @@ public interface X_Fu {
    * will return null, as only directly comparable objects will
    */
     static Class<?> comparableClassFor(Object x) {
-      return comparableClassFor(x, Filter.<Class<?>, Class<?>, Class<?>>filter2(X_Fu::equal));
+      return comparableClassFor(x, Filter.filter2(X_Fu::equal));
     }
-    static Class<?> comparableClassFor(Object x, Filter2<Class<?>, Class<?>, Class<?>> filter) {
+    static Class<?> comparableClassFor(Object x, Filter2<Object, Type, Class<?>> filter) {
 
       if (x instanceof Comparable) {
         final Class<?> c;
@@ -257,7 +245,7 @@ public interface X_Fu {
                 ) {
 
                 if ((actualArgs = p.getActualTypeArguments()) != null &&
-                actualArgs.length == 1 && actualArgs[0] == c) {
+                actualArgs.length == 1 && filter.filter2(actualArgs[0], c)) {
                   // type arg is c
                   return c;
                 }
@@ -299,6 +287,13 @@ public interface X_Fu {
       }
     }
     return true;
+  }
+
+  static <I, O> O mapIfNotNull(I in, In1Out1<I, O> mapper) {
+    if (in == null) {
+      return null;
+    }
+    return mapper.io(in);
   }
 
   static <T> T getZeroeth(T[] value) {

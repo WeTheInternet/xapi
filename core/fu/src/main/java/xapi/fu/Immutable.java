@@ -1,10 +1,11 @@
 package xapi.fu;
 
-import static xapi.fu.Out2.out2;
+import java.io.Serializable;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 6/18/16.
  */
+@SuppressWarnings("all")
 public class Immutable<O> implements Out1<O>, IsImmutable {
 
   private final O value;
@@ -54,4 +55,26 @@ public class Immutable<O> implements Out1<O>, IsImmutable {
     final To result = mapper.io(value);
     return immutable1(result);
   }
+
+  private Object writeReplace() {
+    return new ImmutableSerialized<>().setValue(value);
+  }
+
+}
+class ImmutableSerialized <O> implements Serializable {
+  private O value;
+
+  public O getValue() {
+    return value;
+  }
+
+  public ImmutableSerialized<O> setValue(O value) {
+    this.value = value;
+    return this;
+  }
+
+  public Object readResolve() {
+    return new Immutable<>(value);
+  }
+
 }

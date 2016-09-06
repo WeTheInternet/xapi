@@ -1,8 +1,8 @@
 package xapi.javac.dev.model;
 
-import xapi.api.Scope;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
+import xapi.scope.api.Scope;
 
 import java.util.Optional;
 import java.util.Properties;

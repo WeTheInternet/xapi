@@ -5,7 +5,7 @@ import xapi.annotation.compile.Dependency;
 import xapi.annotation.compile.Import;
 import xapi.annotation.compile.SourceRewrite;
 import xapi.annotation.reflect.MirroredAnnotation;
-import xapi.api.Scope;
+import xapi.scope.api.Scope;
 
 import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
 import static java.lang.annotation.ElementType.PACKAGE;

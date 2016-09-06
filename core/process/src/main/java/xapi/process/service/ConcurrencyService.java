@@ -1,13 +1,14 @@
 package xapi.process.service;
 
-import java.util.concurrent.Future;
-
+import xapi.fu.Do;
 import xapi.process.api.AsyncLock;
 import xapi.process.api.Process;
 import xapi.process.api.ProcessController;
 import xapi.time.service.TimeService;
 import xapi.util.api.ErrorHandler;
 import xapi.util.api.ReceivesValue;
+
+import java.util.concurrent.Future;
 
 public interface ConcurrencyService {
 
@@ -22,9 +23,9 @@ public interface ConcurrencyService {
    * @param cmd - The command to wrap in a new thread.
    * @return - An unstarted thread that will run the given command.
    */
-  Thread newThread(Runnable cmd);
+  Thread newThread(Do cmd);
   /**
-   * Experimental; may replace {@link #newThread(Runnable)}.
+   * Experimental; may replace {@link #newThread(Do)}.
    *
    * Accepts an instance of {@link Process}, and returns a {@link ProcessController}.
    *
@@ -41,7 +42,7 @@ public interface ConcurrencyService {
    * processed.
    * @param cmd - The task to run.
    */
-  void runDeferred(Runnable cmd);
+  void runDeferred(Do cmd);
   /**
    * Runs the given command after the work queue for the current environment
    * is drained.  Finalies must always be cleared before a given unit of
@@ -53,7 +54,7 @@ public interface ConcurrencyService {
    *
    * @param cmd - The command to run after the work queue is drained.
    */
-  void runFinally(Runnable cmd);
+  void runFinally(Do cmd);
   /**
    * Wait (at least) a given number of milliseconds to perform a task.
    *
@@ -65,7 +66,7 @@ public interface ConcurrencyService {
    * @param cmd - The command to run.
    * @param millisToWait - A minimum of milliseconds to wait.
    */
-  void runTimeout(Runnable cmd, int millisToWait);
+  void runTimeout(Do cmd, int millisToWait);
   /**
    * Runs the command eventually, most likely on an unused thread.
    *
@@ -84,7 +85,7 @@ public interface ConcurrencyService {
    * A best-effort is made to use warm threads with nothing better to do
    * to process eventually commands.
    */
-  void runEventually(Runnable cmd);
+  void runEventually(Do cmd);
 
   /**
    * Resolves a future in another thread / using a shared poller.

@@ -9,17 +9,25 @@ import java.util.function.Function;
 @SuppressWarnings("unchecked") // yes, this api will let you do terrible things.  Don't do terrible things.
 public interface In1Out1<I, O> extends Rethrowable, Lambda {
 
+  In1Out1 IDENTITY = i->i;
+
   O io(I in);
 
   default O apply(Out1<I> supplier) {
     return io(supplier.out1());
   }
 
-  default int accept(int position, In1<O> callback, Object... values) {
-    final I in = (I) values[position++];
+  default I select(int position, In1<O> callback, I ... values) {
+    final I in = values[position];
     final O out = io(in);
     callback.in(out);
-    return position;
+    return in;
+  }
+
+  public static void main(String ... a) {
+    In1Out1<String, String> i = In1Out1.IDENTITY;
+    final String v = i.select(1, System.out::println, "", "thing");
+    System.out.println(v);
   }
 
   default Function<I, O> toFunction() {

@@ -2,7 +2,8 @@ package xapi.args;
 
 import xapi.fu.Out1;
 
-import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * Argument handler for arguments that are directories.
@@ -13,7 +14,7 @@ import java.io.File;
  * @author James X. Nelson "james@wetheinter.net"
  *
  */
-public abstract class ArgHandlerFile extends ArgHandler {
+public abstract class ArgHandlerPath extends ArgHandler {
 
   @Override
   public Out1<String>[] getDefaultArgs() {
@@ -22,13 +23,13 @@ public abstract class ArgHandlerFile extends ArgHandler {
 
   @Override
   public String[] getTagArgs() {
-    return new String[]{"file"};
+    return new String[]{"path"};
   }
 
   @Override
   public int handle(String[] args, int startIndex) {
     if (startIndex + 1 < args.length) {
-      setFile(new File(args[startIndex + 1]));
+      setPath(Paths.get(args[startIndex + 1]));
       return 1;
     }
 
@@ -37,6 +38,6 @@ public abstract class ArgHandlerFile extends ArgHandler {
     return -1;
   }
 
-  public abstract void setFile(File file);
+  public abstract void setPath(Path path);
 
 }

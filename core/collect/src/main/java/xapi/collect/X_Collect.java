@@ -241,6 +241,8 @@ public class X_Collect {
 
   public static final CollectionOptions MUTABLE = asMutable(true).build();
 
+  public static final CollectionOptions MUTABLE_CONCURRENT = asMutable(true).concurrent(true).build();
+
   public static final CollectionOptions MUTABLE_INSERTION_ORDERED = asMutable(true).insertionOrdered(true).build();
 
   public static final CollectionOptions MUTABLE_LIST = asMutableList().build();

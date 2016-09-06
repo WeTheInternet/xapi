@@ -4,6 +4,7 @@ import java.util.concurrent.Future;
 
 import javax.inject.Provider;
 
+import xapi.fu.Do;
 import xapi.inject.X_Inject;
 import xapi.process.api.AsyncLock;
 import xapi.process.api.Process;
@@ -20,23 +21,23 @@ public class X_Process {
     service.get().resolve(future, receiver);
   }
 
-  public static void runDeferred(Runnable cmd) {
+  public static void runDeferred(Do cmd) {
     service.get().runDeferred(cmd);
   }
 
-  public static void runEventually(Runnable cmd) {
+  public static void runEventually(Do cmd) {
     service.get().runEventually(cmd);
   }
 
-  public static void runFinally(Runnable cmd) {
+  public static void runFinally(Do cmd) {
     service.get().runFinally(cmd);
   }
 
-  public static void runTimeout(Runnable cmd, int milliDelay) {
+  public static void runTimeout(Do cmd, int milliDelay) {
     service.get().runTimeout(cmd, milliDelay);
   }
 
-  public static Thread newThread(Runnable cmd) {
+  public static Thread newThread(Do cmd) {
     return service.get().newThread(cmd);
   }
 

@@ -197,4 +197,43 @@ public interface Out1<O> extends Rethrowable, Lambda {
     return factory.supplyDeferred(this);
   }
 
+  static <O> O[] resolve(O[] into, Out1<O> ... args) {
+    if (args.length != into.length) {
+      throw new IllegalArgumentException();
+    }
+    for (int i = 0; i < args.length; i++) {
+      into[i] = args[i].out1();
+    }
+    return into;
+  }
+
+  static <O> O[] resolve(In1Out1<Integer, O[]> into, Out1<O> ... args) {
+    final O[] result = into.io(args.length);
+    for (int i = 0; i < args.length; i++) {
+      result[i] = args[i].out1();
+    }
+    return result;
+  }
+
+  static <O, To> To[] resolveMapped(To[] into, In1Out1<O, To> mapper, Out1<O> ... args) {
+    if (args.length != into.length) {
+      throw new IllegalArgumentException();
+    }
+    for (int i = 0; i < args.length; i++) {
+      final O val = args[i].out1();
+      final To to = mapper.io(val);
+      into[i] = to;
+    }
+    return into;
+  }
+
+  static <O, To> To[] resolveMapped(In1Out1<Integer, To[]> into, In1Out1<O, To> mapper, Out1<O> ... args) {
+    final To[] result = into.io(args.length);
+    for (int i = 0; i < args.length; i++) {
+      final O val = args[i].out1();
+      final To to = mapper.io(val);
+      result[i] = to;
+    }
+    return result;
+  }
 }

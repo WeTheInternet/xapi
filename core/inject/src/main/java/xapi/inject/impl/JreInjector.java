@@ -110,16 +110,22 @@ public class JreInjector implements Injector {
                 final Class<?> cls;
                 try {
                     cls = lookup(clazz, instanceUrlFragment.get(), JreInjector.this, instanceProviders);
-                    if (cls == clazz && instanceProviders.containsKey(cls)) {
-                        return instanceProviders.get(cls);
+                    if (cls == clazz) {
+                        if (instanceProviders.containsKey(cls)) {
+                            return instanceProviders.get(cls);
+                        } else if (singletonProviders.containsKey(clazz)) {
+                            X_Log.warn(getClass(), "Attempting instance injection for ", clazz
+                            , "but no instance type registered; however, there is a singleton type available.",
+                                "Consider using X_Inject(" + clazz.getSimpleName()+".class) instead");
+                        }
                     }
                     return ()->{
                         try {
                             return cls.newInstance();
                         } catch (final Exception e) {
                             e.printStackTrace();
-                            throw new RuntimeException("Could not instantiate new instance of " + cls.getName() + " : " + clazz,
-                                e);
+                            String message = "Could not instantiate new instance of " + cls.getName() + " : " + clazz;
+                            throw new RuntimeException(message, e);
                         }
                     };
                 } catch (final Exception e) {
@@ -168,7 +174,11 @@ public class JreInjector implements Injector {
                             return provider;
                         }
                         e.printStackTrace();
-                        final String message = "Could not instantiate singleton for " + clazz.getName() + " for " + clazz;
+                        String message = "Could not instantiate singleton for " + clazz.getName() + " for " + clazz;
+                        if (instanceProviders.containsKey(clazz)) {
+                            message += "\nThe type " + clazz + " does have a mapping for an instance scope;\n" +
+                            "use X_Inject.instance(" + clazz.getSimpleName()+".class) instead";
+                        }
                         tryLog(message, e);
                         throw new RuntimeException(message, e);
                     }

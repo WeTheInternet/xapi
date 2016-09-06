@@ -1,12 +1,9 @@
 package xapi.test.io;
 
-import java.net.UnknownHostException;
-
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringDictionary;
 import xapi.io.api.DelegatingIOCallback;
@@ -21,6 +18,8 @@ import xapi.util.X_Util;
 import xapi.util.api.Pointer;
 import xapi.util.api.SuccessHandler;
 
+import java.net.UnknownHostException;
+
 
 public class IOServiceTest {
 
@@ -28,7 +27,7 @@ public class IOServiceTest {
     return new IOServiceDefault();
   }
 
-  @Test
+  @Test(timeout = 10_000)
   public void testGet() {
     final Moment now = X_Time.now();
     final Pointer<Boolean> success = new Pointer<Boolean>(false);
@@ -56,7 +55,7 @@ public class IOServiceTest {
     System.out.println("Test took "+X_Time.difference(now));
   }
 
-  @Test
+  @Test(timeout = 10_000)
   public void testPost() {
     final Moment now = X_Time.now();
     final Pointer<Boolean> success = new Pointer<Boolean>(false);

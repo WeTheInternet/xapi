@@ -29,7 +29,7 @@ public class HtmlServiceDefault implements HtmlService {
  and will be very inefficient.  The preferred method of replacing this whole
  method with an auto-generated implementation requires no runtime reflection.
      */
-    BeanValueProvider bean = X_Inject.singleton(UserInterfaceFactory.class).getBeanProvider(cls);
+    BeanValueProvider bean = X_Inject.instance(UserInterfaceFactory.class).getBeanProvider(cls);
     return new HtmlSnippet<>(templateClass.getAnnotation(Html.class), bean, css);
   }
 

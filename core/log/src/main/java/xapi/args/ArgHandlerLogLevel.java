@@ -1,12 +1,13 @@
 package xapi.args;
 
+import xapi.fu.Out1;
 import xapi.log.api.LogLevel;
 
 /**
  * Argument handler for processing the log level flag.
- * 
+ *
  * Based on original implementation from the GWT project.
- *  
+ *
  * @author GWT team "gwtproject.org"
  * @author James X. Nelson "james@wetheinter.net"
  *
@@ -37,8 +38,11 @@ public class ArgHandlerLogLevel extends ArgHandler {
   }
 
   @Override
-  public String[] getDefaultArgs() {
-    return new String[] {getTag(), getDefaultLogLevel().name()};
+  @SuppressWarnings("unchecked")
+  public Out1<String>[] getDefaultArgs() {
+    return new Out1[] {
+        this::getTag, ()->getDefaultLogLevel().name()
+    };
   }
 
   @Override

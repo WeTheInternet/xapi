@@ -9,6 +9,9 @@ public interface MappedIterable<T> extends Iterable<T> {
         return mapIterable(this, mapper);
     }
 
+    static <To> MappedIterable<To> mapped(Iterable<To> itr) {
+        return itr instanceof MappedIterable ? (MappedIterable<To>) itr : itr::iterator;
+    }
     static <From, To> MappedIterable<To> mapIterable(Iterable<From> from, In1Out1<From, To> mapper) {
         return ()->new MappedIterator<>(from.iterator(), mapper);
     }

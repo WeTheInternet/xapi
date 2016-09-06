@@ -2,13 +2,10 @@ package xapi.collect.impl;
 
 import xapi.annotation.inject.InstanceDefault;
 import xapi.collect.api.StringTo;
-import xapi.fu.MappedIterable;
 import xapi.fu.Out2;
 import xapi.platform.GwtDevPlatform;
 import xapi.platform.JrePlatform;
 import xapi.util.X_Runtime;
-
-import static xapi.fu.MappedIterable.mapIterable;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -33,12 +30,6 @@ public class StringToAbstract <V> implements StringTo<V>{
     }
   }
 
-  @Override
-  public MappedIterable<Out2<String, V>> view() {
-    return ()-> mapIterable(entries(), Out2::fromEntry).iterator();
-  }
-
-
   public <Generic extends V> StringToAbstract(Class<Generic> valueType, final Map<String, V> map) {
     this.valueType = Class.class.cast(valueType);
     this.map = map;
@@ -59,10 +50,13 @@ public class StringToAbstract <V> implements StringTo<V>{
   }
 
   @Override
-  public boolean containsKey(final Object key) {
-    return map.containsKey(key);
+  public final boolean containsKey(final Object key) {
+    return has((String)key);
   }
 
+  public boolean has(String key) {
+    return map.containsKey(key);
+  }
   @Override
   public boolean containsValue(final Object key) {
     return map.containsValue(key);

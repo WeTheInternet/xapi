@@ -1,8 +1,10 @@
 package xapi.args;
 
+import xapi.fu.Out1;
+
 /**
- * Base class for command line argument handlers. 
- * 
+ * Base class for command line argument handlers.
+ *
  * @author GWT team "gwtproject.org"
  * @author James X. Nelson "james@wetheinter.net"
  *
@@ -10,8 +12,8 @@ package xapi.args;
 public abstract class ArgHandler {
 
   protected static final String[] EMPTY = new String[0];
-  
-  public String[] getDefaultArgs() {
+
+  public Out1<String>[] getDefaultArgs() {
     return null;
   }
 
@@ -36,6 +38,11 @@ public abstract class ArgHandler {
    * causes the program to abort and usage to be displayed.
    */
   public abstract int handle(String[] args, int tagIndex);
+
+  public int handle(Out1<String>[] args, int tagIndex) {
+    String[] resolved = Out1.resolve(String[]::new, args);
+    return handle(resolved, tagIndex);
+  }
 
   public boolean isRequired() {
     return false;

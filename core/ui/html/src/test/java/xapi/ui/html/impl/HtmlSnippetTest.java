@@ -1,10 +1,7 @@
 package xapi.ui.html.impl;
 
-import javax.inject.Named;
-
 import org.junit.Before;
 import org.junit.Test;
-
 import xapi.inject.X_Inject;
 import xapi.test.Assert;
 import xapi.ui.api.StyleService;
@@ -14,6 +11,8 @@ import xapi.ui.html.X_Html;
 import xapi.ui.html.api.El;
 import xapi.ui.html.api.Html;
 import xapi.ui.html.api.HtmlSnippet;
+
+import javax.inject.Named;
 
 @Html(
   body = @El(
@@ -76,7 +75,7 @@ public class HtmlSnippetTest {
 
   private BeanValueProvider toValues(final HtmlSnippetTest test) {
     final UserInterfaceFactory factory = X_Inject
-      .singleton(UserInterfaceFactory.class);
+      .instance(UserInterfaceFactory.class);
     return factory.getBeanProvider(test.getClass());
   }
 

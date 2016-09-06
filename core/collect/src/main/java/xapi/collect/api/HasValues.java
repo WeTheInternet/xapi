@@ -27,6 +27,10 @@ public interface HasValues<K,V> extends EntryIterable<K,V> {
   // We can also safely use generics as they will be erased
   void putAll(Iterable<Entry<K,V>> items);
 
+  default void putAll(HasValues<K,V> items) {
+    putAll(items.entries());
+  }
+
   void addAll(Iterable<Out2<K,V>> items);
 
   void removeAll(Iterable<K> items);

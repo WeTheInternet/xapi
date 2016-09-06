@@ -1,5 +1,7 @@
 package xapi.args;
 
+import xapi.fu.Out1;
+
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -7,7 +9,7 @@ import java.util.Set;
 
 /**
  * A basic argument processor, based on the equivalent class in GWT.
- * 
+ *
  * @author GWT team "gwtproject.org"
  * @author James X. Nelson "james@wetheinter.net"
  *
@@ -226,7 +228,7 @@ public class ArgProcessorBase {
     // Allow the default handlers to pretend there were other arguments.
     //
     for (ArgHandler def : defs) {
-      String[] defArgs = def.getDefaultArgs();
+      Out1<String>[] defArgs = def.getDefaultArgs();
       if (defArgs != null) {
         if (def.handle(defArgs, 0) == -1) {
           return false;
@@ -240,6 +242,6 @@ public class ArgProcessorBase {
   protected void registerHandler(ArgHandler handler) {
     String tag = handler.getTag();
     argHandlers.put(tag != null ? tag : "", handler);
-  }  
-  
+  }
+
 }
