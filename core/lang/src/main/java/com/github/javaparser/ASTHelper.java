@@ -317,6 +317,20 @@ public final class ASTHelper {
         }
     }
 
+    public static List<String> extractStrings(Expression value) {
+        List<String> strings = new ArrayList<>();
+        if (value instanceof JsonContainerExpr) {
+            JsonContainerExpr json = (JsonContainerExpr) value;
+            assert json.isArray();
+            for (JsonPairExpr pair : json.getPairs()) {
+                strings.add(extractStringValue(pair.getValueExpr()));
+            }
+        } else {
+            strings.add(extractStringValue(value));
+        }
+        return strings;
+    }
+
     public static String extractStringValue(Expression value) {
         if (value instanceof StringLiteralExpr) {
             // StringLiteral strangely covers all primitives as well...

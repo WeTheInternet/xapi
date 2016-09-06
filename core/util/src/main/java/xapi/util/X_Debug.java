@@ -18,6 +18,8 @@ public class X_Debug {
 
   public static class DebugStream extends PrintStream {
 
+    private static final int maxLines = Integer.parseInt(X_Properties.getProperty("xapi.debug.lines", "10"));
+
     private final PrintStream orig;
     private final int depth;
 
@@ -37,7 +39,7 @@ public class X_Debug {
       RuntimeException e = new RuntimeException();
       e.fillInStackTrace();
       StackTraceElement[] traces = e.getStackTrace();
-      int index = depth, end = Math.min(depth+10, traces.length);
+      int index = depth, end = Math.min(depth+maxLines, traces.length);
       orig.print("\n\t\t @ ");
       for(;index < end; index++ ) {
         orig.print(traces[index]+": ");
@@ -46,7 +48,7 @@ public class X_Debug {
         flush(orig);
       }
     }
-    
+
     private void flush(PrintStream orig2) {
       orig.flush();
     }
@@ -130,7 +132,7 @@ public class X_Debug {
     traceSystemOut(3);
   }
   /**
-   * 
+   *
    * @param ignoreDepth
    */
   public static void traceSystemOut(int ignoreDepth) {

@@ -1,5 +1,7 @@
 package com.github.javaparser.ast.expr;
 
+import com.github.javaparser.ASTHelper;
+import com.github.javaparser.ast.exception.NotFoundException;
 import com.github.javaparser.ast.visitor.GenericVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitor;
 
@@ -38,6 +40,24 @@ public class JsonContainerExpr extends JsonExpr {
   public void setPairs(List<JsonPairExpr> pairs) {
     this.pairs = pairs;
     setAsParentNodeOf(pairs);
+  }
+
+  public Expression getNode(String name) {
+    for (JsonPairExpr pair : getPairs()) {
+      if (name.equals(ASTHelper.extractStringValue(pair.getKeyExpr()))) {
+        return pair.getValueExpr();
+      }
+    }
+    throw new NotFoundException(name);
+  }
+
+  public Expression getNode(int index) {
+    if (index < pairs.size() || index < 0) {
+      throw new IndexOutOfBoundsException(index + " not within bounds of " + pairs.size());
+    }
+    final JsonPairExpr pair = pairs.get(index);
+    assert Integer.toString(index).equals(ASTHelper.extractStringValue(pair.getKeyExpr()));
+    return pair.getValueExpr();
   }
 
   public void setArray(boolean array) {

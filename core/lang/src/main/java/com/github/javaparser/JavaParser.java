@@ -31,6 +31,7 @@ import com.github.javaparser.ast.comments.CommentsParser;
 import com.github.javaparser.ast.comments.LineComment;
 import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.JsonContainerExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.Statement;
@@ -262,6 +263,13 @@ public final class JavaParser {
     public static UiContainerExpr parseUiContainer(final String uiContainer) throws ParseException {
         StringReader sr = new StringReader(uiContainer);
         final UiContainerExpr e = new ASTParser(sr).UiContainer();
+        sr.close();
+        return e;
+    }
+
+    public static JsonContainerExpr parseJsonContainer(final String uiContainer) throws ParseException {
+        StringReader sr = new StringReader(uiContainer);
+        final JsonContainerExpr e = new ASTParser(sr).JsonContainer();
         sr.close();
         return e;
     }

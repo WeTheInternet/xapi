@@ -3133,6 +3133,17 @@ JsonContainerExpr JsonContainer():
              value.getEndColumn(),
              key, value
       ));
+     } )?
+
+    ( "," value = UiValue() {
+      IntegerLiteralExpr key = new IntegerLiteralExpr(Integer.toString(cnt++));
+      items.add(new JsonPairExpr(
+             value.getBeginLine(),
+             value.getBeginColumn(),
+             value.getEndLine(),
+             value.getEndColumn(),
+             key, value
+      ));
      } ) *
 
     "]" )
