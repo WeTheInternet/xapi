@@ -117,6 +117,10 @@ public class GwtCreatePlugin implements Plugin {
   @Override
   public void init(final JavacTask javac, String... args) {
 
+    if ("true".equals(System.getProperty("xapi.no.javac.plugin"))) {
+      return;
+    }
+
     final BasicJavacTask task = (BasicJavacTask) javac;
     final Context context = task.getContext();
     final JavacProcessingEnvironment env = JavacProcessingEnvironment.instance(context);

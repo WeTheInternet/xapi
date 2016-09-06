@@ -1,11 +1,8 @@
 package xapi.dev.processor;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Set;
+import xapi.util.api.Pair;
+import xapi.util.impl.AbstractPair;
+import xapi.util.impl.PairBuilder;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Filer;
@@ -25,10 +22,12 @@ import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
 import javax.tools.FileObject;
 import javax.tools.StandardLocation;
-
-import xapi.util.api.Pair;
-import xapi.util.impl.AbstractPair;
-import xapi.util.impl.PairBuilder;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Set;
 
 /**
  * This is the annotation processor for our injection library.
@@ -149,6 +148,9 @@ public class InjectionAnnotationProcessor extends AbstractProcessor{
       final Set<? extends TypeElement> annotations,
       final RoundEnvironment roundEnv
   ) {
+    if ("true".equals(System.getProperty("xapi.no.javac.plugin"))) {
+      return true;
+    }
     final Elements elements = processingEnv.getElementUtils();
     for (final TypeElement anno : annotations) {
       final ExecutableElement implFor = extractImplFor(anno);

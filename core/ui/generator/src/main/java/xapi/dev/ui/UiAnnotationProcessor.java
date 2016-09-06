@@ -50,6 +50,9 @@ public class UiAnnotationProcessor extends AbstractProcessor {
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
+        if ("true".equals(System.getProperty("xapi.no.javac.plugin"))) {
+            return;
+        }
         service = JavacService.instanceFor(processingEnv);
 
         super.init(processingEnv);
@@ -57,6 +60,11 @@ public class UiAnnotationProcessor extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+
+        if ("true".equals(System.getProperty("xapi.no.javac.plugin"))) {
+            return true;
+        }
+
         if (!roundEnv.processingOver()) {
             final Types typeOracle = service.getTypes();
             final Elements elements = service.getElements();

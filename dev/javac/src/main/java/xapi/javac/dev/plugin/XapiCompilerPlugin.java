@@ -23,6 +23,9 @@ public class XapiCompilerPlugin implements Plugin {
 
   @Override
   public void init(JavacTask javac, String... args) {
+    if ("true".equals(System.getProperty("xapi.no.javac.plugin"))) {
+      return;
+    }
     final BasicJavacTask task = (BasicJavacTask)javac;
     trees = Trees.instance(javac);
     service = JavacService.instanceFor(javac);

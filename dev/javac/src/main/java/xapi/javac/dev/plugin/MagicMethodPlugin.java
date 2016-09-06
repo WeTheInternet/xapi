@@ -40,6 +40,12 @@ public class MagicMethodPlugin implements Plugin {
   private JavacService service;
 
   public MagicMethodPlugin() {
+    if ("true".equals(System.getProperty("xapi.no.javac.plugin"))) {
+      matchers = null;
+      changes = null;
+      injectors = null;
+      return;
+     }
     matchers = newList(MethodMatcher.class);
     changes = newList(InjectionResolver.class);
     injectors = newStringMap(MagicMethodInjector.class);
@@ -52,6 +58,9 @@ public class MagicMethodPlugin implements Plugin {
 
   @Override
   public void init(JavacTask javacTask, String... strings) {
+    if ("true".equals(System.getProperty("xapi.no.javac.plugin"))) {
+      return;
+    }
     service = JavacService.instanceFor(javacTask);
     service.remember(MagicMethodPlugin.class, this);
     service.readProperties((key, value)->{
