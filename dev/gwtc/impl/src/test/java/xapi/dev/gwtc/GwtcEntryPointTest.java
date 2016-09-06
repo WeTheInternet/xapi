@@ -8,6 +8,7 @@ import org.junit.Test;
 
 import xapi.dev.X_Gwtc;
 import xapi.dev.gwtc.api.GwtcService;
+import xapi.dev.gwtc.impl.GwtcManifestImpl;
 import xapi.gwtc.api.GwtManifest;
 import xapi.test.Assert;
 import xapi.test.gwtc.cases.CaseEntryPoint;
@@ -67,7 +68,7 @@ public class GwtcEntryPointTest {
     }
     final Package pkg = CaseEntryPoint.class.getPackage();
     final GwtcService gwtc = X_Gwtc.getServiceFor(pkg, false);
-    final GwtManifest manifest = new GwtManifest("Gwtc_"+pkg.getName().replace('.', '_'));
+    final GwtManifest manifest = new GwtcManifestImpl("Gwtc_"+pkg.getName().replace('.', '_'));
     manifest.setLogLevel(Type.TRACE);
     manifest.addSystemProp("gwt.usearchives=false");
     Assert.assertEquals(0, gwtc.compile(manifest));
@@ -79,7 +80,7 @@ public class GwtcEntryPointTest {
     }
     final GwtcService gwtc = X_Gwtc.getServiceFor(CaseEntryPoint.class);
     gwtc.addJUnitClass(GwtcCaseJunit4.class);
-    final GwtManifest manifest = new GwtManifest(gwtc.getModuleName());
+    final GwtManifest manifest = new GwtcManifestImpl(gwtc.getModuleName());
     manifest.setLogLevel(Type.TRACE);
     manifest.addSystemProp("gwt.usearchives=false");
     Assert.assertEquals(0, gwtc.compile(manifest));

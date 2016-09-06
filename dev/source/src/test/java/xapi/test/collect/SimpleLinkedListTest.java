@@ -3,16 +3,15 @@
  */
 package xapi.test.collect;
 
+import org.junit.Test;
+import xapi.collect.impl.SimpleLinkedList;
+
 import static org.junit.Assert.assertEquals;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
-
-import org.junit.Test;
-
-import xapi.collect.impl.SimpleLinkedList;
 
 /**
  * @author "James X. Nelson (james@wetheinter.net)"
@@ -78,7 +77,6 @@ AbstractLinkedListTest<SimpleLinkedList<String>> {
     listItr.previous();
     listItr.previous();
     listItr.previous();
-    listItr.previous();
     assertIteratorContents(listItr, "one", "one.two.five", "one.five",
       "one.seven.five", "two");
     assertIteratorContents(stack.iterator(), "one", "one.two.five", "one.five",
@@ -114,8 +112,8 @@ AbstractLinkedListTest<SimpleLinkedList<String>> {
     stack.add("three");
     final ListIterator<String> listItr = stack.listIterator();
     listItr.next();
-    listItr.remove();
     listItr.next();
+    listItr.remove();
     assertIteratorContents(stack.iterator(), "one", "three");
     assertIteratorContents(stack.listIterator(), "one", "three");
     assertIteratorContents(stack.iteratorReverse(), "three", "one");
@@ -139,6 +137,7 @@ AbstractLinkedListTest<SimpleLinkedList<String>> {
   public void testListIterator_RemoveAtEnd() {
     stack.add("three");
     final ListIterator<String> listItr = stack.listIterator();
+    listItr.next();
     listItr.next();
     listItr.next();
     listItr.remove();

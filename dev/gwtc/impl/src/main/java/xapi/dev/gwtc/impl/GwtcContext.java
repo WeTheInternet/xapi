@@ -16,17 +16,23 @@ import xapi.gwtc.api.Gwtc.AncestorMode;
 import xapi.gwtc.api.GwtcProperties;
 import xapi.gwtc.api.GwtcXmlBuilder;
 import xapi.inject.impl.SingletonProvider;
+import xapi.io.X_IO;
 import xapi.log.X_Log;
 import xapi.util.X_Debug;
 import xapi.util.X_String;
 import xapi.util.api.ConvertsValue;
 import xapi.util.api.ReceivesValue;
 
+import static sun.awt.geom.Crossings.debug;
+
 import com.google.gwt.reflect.shared.GwtReflect;
 import com.google.gwt.reflect.shared.GwtReflectJre;
 
 import javax.inject.Provider;
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -805,7 +811,7 @@ public class GwtcContext {
         GwtcUnit node = nodes.getValue(value);
         if (node.xml != null) {
           X_Log.info(getClass(), "Generating gwt.xml for ",node.source,"to",dir);
-          node.xml.save(dir);
+          save(node, dir);
         }
         if (node.parent == null) {
           topLevel.add(node);
@@ -819,6 +825,32 @@ public class GwtcContext {
         gen.generate(head, body);
       }
     }
+  }
+
+  private void save(GwtcUnit node, File outputFile) {
+    final GwtcXmlBuilder xml = node.xml;
+    outputFile = new File(outputFile, xml.getFileName());
+    if (debug) {
+      X_Log.info(getClass(), "Saving generated gwt.xml file",outputFile,"\n",xml.getBuffer());
+    } else {
+      X_Log.debug(getClass(), "Saving generated gwt.xml file",outputFile,"\n"+xml.getBuffer());
+    }
+    try {
+      if (outputFile.exists()) {
+        outputFile.delete();
+      }
+      outputFile.getParentFile().mkdirs();
+      outputFile.createNewFile();
+    } catch (IOException e) {
+      X_Log.warn(getClass(),"Unable to create generated gwt.xml file", outputFile, e);
+    }
+    try (FileOutputStream fos = new FileOutputStream(outputFile)) {
+      String value = GwtcXmlBuilder.HEADER +xml.getBuffer();
+      X_IO.drain(fos, new ByteArrayInputStream(value.getBytes(GwtcXmlBuilder.UTF8)));
+    } catch (IOException e) {
+      X_Log.warn(getClass(), "Unable to save generated gwt.xml file to ",outputFile,e,"\n"+xml.getBuffer());
+    }
+
   }
 
   public void addPackages(Package pkg, GwtcServiceImpl gwtc, boolean recursive) {

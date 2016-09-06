@@ -33,6 +33,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -107,7 +108,9 @@ public class RuntimeInjector implements In2<String, PlatformChecker> {
     }
     final Moment scanned = now();
     if (bestMatch == null) {
-      throw platformMisconfigured(shortName);
+      final NotConfiguredCorrectly error = platformMisconfigured(shortName);
+      error.printStackTrace();
+      return;
     }
     MemberValue fallbacks;
     final LinkedHashSet<ClassFile> remainder = new LinkedHashSet<ClassFile>();
@@ -315,9 +318,15 @@ public class RuntimeInjector implements In2<String, PlatformChecker> {
     return true;
   }
   private NotConfiguredCorrectly platformMisconfigured(final String platform) {
-    return new NotConfiguredCorrectly("Could not find platform annotation for " +
-      "current runtime "+platform+"; please ensure this class is on the " +
-      "classpath, and that it is annotated with @Platform");
+    Throwable trace = new Throwable();
+    trace.fillInStackTrace();
+    trace.printStackTrace();
+    final NotConfiguredCorrectly error = new NotConfiguredCorrectly("Could not find platform annotation for " +
+        "current runtime " + platform + "; please ensure this class is on the " +
+        "classpath, and that it is annotated with @Platform. "
+        +Arrays.asList(trace.getStackTrace())
+    );
+    throw error;
   }
   protected void writeMeta(final Map<String, ClassFile> injectables,
       final File target) {

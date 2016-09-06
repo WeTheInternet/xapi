@@ -1,21 +1,13 @@
 package xapi.process;
 
-import static xapi.log.X_Log.info;
-import static xapi.process.X_Process.flush;
-import static xapi.process.X_Process.kill;
-import static xapi.process.X_Process.newThread;
-import static xapi.process.X_Process.now;
-import static xapi.process.X_Process.runDeferred;
-import static xapi.process.X_Process.runFinally;
-import static xapi.process.X_Process.threadStartTime;
-import static xapi.process.X_Process.trySleep;
-
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
 import xapi.util.X_Namespace;
 import xapi.util.api.Pointer;
+
+import static xapi.log.X_Log.info;
+import static xapi.process.X_Process.*;
 
 public class ConcurrencyTest {
 
@@ -28,12 +20,7 @@ public class ConcurrencyTest {
   @Test
   public void testSimpleDeferment() throws Exception{
     final Pointer<Boolean> success = new Pointer<Boolean>();
-    runDeferred(new Runnable() {
-      @Override
-      public void run() {
-        success.set(true);
-      }
-    });
+    runDeferred(()->success.set(true));
     success.set(false);
     flush(1000);
     Assert.assertTrue(success.get());
@@ -41,18 +28,8 @@ public class ConcurrencyTest {
   @Test
   public void testMultiDeferment() throws Exception{
     final Pointer<Boolean> success = new Pointer<Boolean>();
-    runFinally(new Runnable() {
-      @Override
-      public void run() {
-        success.set(false);
-      }
-    });
-    runDeferred(new Runnable() {
-      @Override
-      public void run() {
-        success.set(true);
-      }
-    });
+    runFinally(()->success.set(false));
+    runDeferred(()->success.set(true));
     success.set(false);
     flush(1000);
     Assert.assertTrue(success.get());
@@ -63,37 +40,25 @@ public class ConcurrencyTest {
     //we expect all finalies to run between all deferred commands.
     //We will use a closure object to make sure execution is happening in the expected order.
     final Pointer<Long> stage = new Pointer<Long>(0L);
-    runFinally(new Runnable() {
-      @Override
-      public void run() {
+    runFinally(() -> {
         //runs first
         Assert.assertEquals("1st defer ran before 1st finally",stage.get().longValue(), 0);
         stage.set(1L);
-        runDeferred(new Runnable() {
-          @Override
-          public void run() {
+        runDeferred(() -> {
             //runs last
             Assert.assertEquals("2nd defer ran before 2nd finally",stage.get().longValue(), 3);
             stage.set(4L);
-          }
         });
-      }
     });
-    runDeferred(new Runnable() {
-      @Override
-      public void run() {
+    runDeferred(() -> {
           //runs second
           Assert.assertEquals("1st defer ran before 1st finally",stage.get().longValue(), 1);
           stage.set(2L);
-          runFinally(new Runnable() {
-            @Override
-            public void run() {
+          runFinally(() -> {
               //runs third, as a finally inside a defer should.
               Assert.assertEquals("2nd finally did not run after 1st defer",stage.get().longValue(), 2);
               stage.set(3L);
-            }
         });
-      }
     });
     flush(1000);
     Assert.assertTrue(stage.get() == 4);
@@ -102,29 +67,20 @@ public class ConcurrencyTest {
   @Test
   public void testSimpleThread() {
     final Pointer<Boolean> success = new Pointer<Boolean>();
-    Thread t = newThread(new Runnable() {
-      @Override
-      public void run() {
+    Thread t = newThread(() -> {
         info("Thread start time: "+(now()-threadStartTime()));
         //make sure our thread flushed when it's done!
-        runFinally(new Runnable() {
-          @Override
-          public void run() {
+        runFinally(() -> {
             info("To True: "+(now()-threadStartTime()));
             success.set(true);
-          }
         });
         info("To False: "+(now()-threadStartTime()));
         success.set(false);
-      }
     });
     success.set(false);
-    runFinally(new Runnable() {
-      @Override
-      public void run() {
+    runFinally(() -> {
         info("To False: "+(now()-threadStartTime()));
         success.set(false);
-      }
     });
     t.start();
     trySleep(500);
@@ -136,18 +92,10 @@ public class ConcurrencyTest {
   public void testThreadTimeout() {
     final Pointer<Boolean> timeout = new Pointer<Boolean>(false);
     final Pointer<Boolean> ran = new Pointer<Boolean>(false);
-    Thread first = newThread(new Runnable() {
-      @Override
-      public void run() {
+    Thread first = newThread(() -> {
         ran.set(true);
-        runFinally(new Runnable() {
-          @Override
-          public void run() {
-            timeout.set(true);
-          }
-        });
+        runFinally(() ->timeout.set(true));
         timeout.set(false);
-      }
     });
     first.start();
     trySleep(50);

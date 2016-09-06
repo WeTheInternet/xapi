@@ -2,21 +2,16 @@ package xapi.gwtc.api;
 
 import xapi.annotation.compile.Resource;
 import xapi.dev.source.XmlBuffer;
-import xapi.io.X_IO;
 import xapi.log.X_Log;
 import xapi.util.X_Runtime;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.HashSet;
 import java.util.Set;
 
 public class GwtcXmlBuilder {
 
-  private static final Charset UTF8 = Charset.forName("utf-8");
+  public static final Charset UTF8 = Charset.forName("utf-8");
   public static final String HEADER = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
       + "<!DOCTYPE module PUBLIC \"-//Google Inc.//DTD Google Web Toolkit 2.7.0/EN\" \"http://gwtproject.org/doctype/2.7.0/gwt-module.dtd\">\n";
 
@@ -98,29 +93,29 @@ public class GwtcXmlBuilder {
     }
   }
 
-  public void save(File outputFile) {
-    outputFile = new File(outputFile, fileName);
-    if (debug) {
-      X_Log.info(getClass(), "Saving generated gwt.xml file",outputFile,"\n"+out);
-    } else {
-      X_Log.debug(getClass(), "Saving generated gwt.xml file",outputFile,"\n"+out);
-    }
-    try {
-      if (outputFile.exists()) {
-        outputFile.delete();
-      }
-      outputFile.getParentFile().mkdirs();
-      outputFile.createNewFile();
-    } catch (IOException e) {
-      X_Log.warn(getClass(),"Unable to create generated gwt.xml file", outputFile, e);
-    }
-    try (FileOutputStream fos = new FileOutputStream(outputFile)) {
-      String value = HEADER + out;
-      X_IO.drain(fos, new ByteArrayInputStream(value.getBytes(UTF8)));
-    } catch (IOException e) {
-      X_Log.warn(getClass(), "Unable to save generated gwt.xml file to ",outputFile,e,"\n"+out);
-    }
-  }
+//  public void save(File outputFile) {
+//    outputFile = new File(outputFile, fileName);
+//    if (debug) {
+//      X_Log.info(getClass(), "Saving generated gwt.xml file",outputFile,"\n"+out);
+//    } else {
+//      X_Log.debug(getClass(), "Saving generated gwt.xml file",outputFile,"\n"+out);
+//    }
+//    try {
+//      if (outputFile.exists()) {
+//        outputFile.delete();
+//      }
+//      outputFile.getParentFile().mkdirs();
+//      outputFile.createNewFile();
+//    } catch (IOException e) {
+//      X_Log.warn(getClass(),"Unable to create generated gwt.xml file", outputFile, e);
+//    }
+//    try (FileOutputStream fos = new FileOutputStream(outputFile)) {
+//      String value = HEADER + out;
+//      X_IO.drain(fos, new ByteArrayInputStream(value.getBytes(UTF8)));
+//    } catch (IOException e) {
+//      X_Log.warn(getClass(), "Unable to save generated gwt.xml file to ",outputFile,e,"\n"+out);
+//    }
+//  }
 
   public void inherit(String inherit) {
     out.makeTagAtBeginning("inherits")

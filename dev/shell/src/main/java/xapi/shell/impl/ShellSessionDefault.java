@@ -1,16 +1,8 @@
 package xapi.shell.impl;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
 import xapi.collect.X_Collect;
 import xapi.collect.api.Fifo;
+import xapi.fu.Do;
 import xapi.io.X_IO;
 import xapi.io.api.HasLiveness;
 import xapi.io.api.LineReader;
@@ -30,7 +22,16 @@ import xapi.util.api.Pointer;
 import xapi.util.api.RemovalHandler;
 import xapi.util.api.SuccessHandler;
 
-class ShellSessionDefault implements ShellSession, Runnable {
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+class ShellSessionDefault implements ShellSession, Do {
 
   Process process;
   public boolean finished;
@@ -59,7 +60,7 @@ class ShellSessionDefault implements ShellSession, Runnable {
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   @Override
-  public void run() {
+  public void done() {
     final InputStream stdOut;
     final InputStream stdErr;
     synchronized (this) {
@@ -127,9 +128,7 @@ class ShellSessionDefault implements ShellSession, Runnable {
   @Override
   public int block(final int i, final TimeUnit seconds) {
     final Thread waiting = Thread.currentThread();
-    X_Process.newThread(new Runnable() {
-      @Override
-      public void run() {
+    X_Process.newThread(() -> {
         synchronized (ShellSessionDefault.this) {
           try {
             ShellSessionDefault.this.wait(seconds.toMillis(i), 0);
@@ -142,7 +141,6 @@ class ShellSessionDefault implements ShellSession, Runnable {
         if (status == null) {
           waiting.interrupt();
         }
-      }
     }).start();
     return join();
   }
@@ -313,7 +311,7 @@ class ShellSessionDefault implements ShellSession, Runnable {
     }
     return immediate;
   }
-  class PipeOut implements Runnable{
+  class PipeOut implements Do {
     private final Pointer<Boolean> blocking = new Pointer<Boolean>(false);// we start out with content to push.
     private long timeout = 50;
     public PipeOut() {
@@ -329,7 +327,7 @@ class ShellSessionDefault implements ShellSession, Runnable {
     }
     OutputStream os;
     @Override
-    public void run() {
+    public void done() {
       X_Log.info(getClass(), "Running process", command.commands);
       try {
       while(isRunning()) {
@@ -415,12 +413,7 @@ class ShellSessionDefault implements ShellSession, Runnable {
           + " one thread wait on a process at once.";
       waiting = Thread.currentThread();
       clears.give(this);
-      X_Process.runTimeout(new Runnable() {
-        @Override
-        public void run() {
-          remove();
-        }
-      }, (int) unit.toMillis(timeout));
+      X_Process.runTimeout(this::remove, (int) unit.toMillis(timeout));
       join();
       return getValue();
     }

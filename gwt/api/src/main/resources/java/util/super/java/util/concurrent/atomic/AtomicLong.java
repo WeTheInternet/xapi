@@ -1,33 +1,14 @@
-/*
- * Copyright (C) 2011 The Guava Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package java.util.concurrent.atomic;
 
-/**
- * GWT emulated version of {@link AtomicLong}.  It's a thin wrapper
- * around the primitive {@code long}.
- *
- * @author Jige Yu
- */
+import java.util.function.LongUnaryOperator;
+import java.util.function.LongBinaryOperator;
+
 public class AtomicLong extends Number implements java.io.Serializable {
 
   private long value;
 
   public AtomicLong(long initialValue) {
-    this.value = initialValue;
+    value = initialValue;
   }
 
   public AtomicLong() {
@@ -46,18 +27,21 @@ public class AtomicLong extends Number implements java.io.Serializable {
   }
 
   public final long getAndSet(long newValue) {
-    long current = value;
+    long oldValue = value;
     value = newValue;
-    return current;
+    return oldValue;
   }
 
   public final boolean compareAndSet(long expect, long update) {
     if (value == expect) {
       value = update;
       return true;
-    } else {
-      return false;
     }
+    return false;
+  }
+
+  public final boolean weakCompareAndSet(long expect, long update) {
+    return compareAndSet(expect, update);
   }
 
   public final long getAndIncrement() {
@@ -69,9 +53,9 @@ public class AtomicLong extends Number implements java.io.Serializable {
   }
 
   public final long getAndAdd(long delta) {
-    long current = value;
+    long oldValue = value;
     value += delta;
-    return current;
+    return oldValue;
   }
 
   public final long incrementAndGet() {
@@ -83,16 +67,37 @@ public class AtomicLong extends Number implements java.io.Serializable {
   }
 
   public final long addAndGet(long delta) {
-    value += delta;
-    return value;
+    return (value += delta);
   }
 
-  @Override public String toString() {
-    return Long.toString(value);
+  public final long getAndUpdate(LongUnaryOperator updateFunction) {
+    long oldValue = value;
+    value = updateFunction.applyAsLong(oldValue);
+    return oldValue;
+  }
+
+  public final long updateAndGet(LongUnaryOperator updateFunction) {
+    return (value = updateFunction.applyAsLong(value));
+  }
+
+  public final long getAndAccumulate(long amount,
+                                    LongBinaryOperator accumulatorFunction) {
+    long oldValue = value;
+    value = accumulatorFunction.applyAsLong(oldValue, amount);
+    return oldValue;
+  }
+
+  public final long accumulateAndGet(long amount,
+                                    LongBinaryOperator accumulatorFunction) {
+    return (value = accumulatorFunction.applyAsLong(value, amount));
+  }
+
+  public String toString() {
+    return value + "";
   }
 
   public int intValue() {
-    return (int) value;
+    return (int)value;
   }
 
   public long longValue() {
@@ -100,10 +105,11 @@ public class AtomicLong extends Number implements java.io.Serializable {
   }
 
   public float floatValue() {
-    return (float) value;
+    return (float)value;
   }
 
   public double doubleValue() {
-    return (double) value;
+    return (double)value;
   }
+
 }

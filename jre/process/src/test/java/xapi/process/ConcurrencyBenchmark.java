@@ -1,14 +1,7 @@
 package xapi.process;
 
-import static xapi.process.X_Process.flush;
-import static xapi.process.X_Process.kill;
-import static xapi.process.X_Process.newThread;
-import static xapi.process.X_Process.now;
-import static xapi.process.X_Process.runFinally;
-import static xapi.process.X_Process.trySleep;
-
 import org.junit.Test;
-
+import xapi.fu.Do;
 import xapi.log.X_Log;
 import xapi.log.api.LogLevel;
 import xapi.test.Benchmark;
@@ -17,6 +10,8 @@ import xapi.test.Benchmark.Timing;
 import xapi.util.X_Namespace;
 import xapi.util.api.Pointer;
 import xapi.util.api.ReceivesValue;
+
+import static xapi.process.X_Process.*;
 
 
 public class ConcurrencyBenchmark {
@@ -28,17 +23,14 @@ public class ConcurrencyBenchmark {
         @Override
         public void set(final Timing value) {
           //start our threads all at once.  We want to overload the system.
-          runFinally(new Runnable() {
-            Thread t = newThread(new Runnable() {
-              @Override
-              public void run() {
+          runFinally(new Do() {
+            Thread t = newThread(() -> {
                 job.run();
                 kill(Thread.currentThread(), maxTime);
                 value.finish();
-              }
             });
             @Override
-            public void run() {
+            public void done() {
               t.start();
             }
           });

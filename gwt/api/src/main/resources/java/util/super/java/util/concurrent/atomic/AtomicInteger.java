@@ -1,27 +1,8 @@
-/*
- * Copyright (C) 2009 The Guava Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package java.util.concurrent.atomic;
 
-/**
- * GWT emulated version of {@link AtomicInteger}.  It's a thin wrapper
- * around the primitive {@code int}.
- *
- * @author Hayward Chan
- */
+import java.util.function.IntUnaryOperator;
+import java.util.function.IntBinaryOperator;
+
 public class AtomicInteger extends Number implements java.io.Serializable {
 
   private int value;
@@ -46,18 +27,21 @@ public class AtomicInteger extends Number implements java.io.Serializable {
   }
 
   public final int getAndSet(int newValue) {
-    int current = value;
+    int oldValue = value;
     value = newValue;
-    return current;
+    return oldValue;
   }
 
   public final boolean compareAndSet(int expect, int update) {
     if (value == expect) {
       value = update;
       return true;
-    } else {
-      return false;
     }
+    return false;
+  }
+
+  public final boolean weakCompareAndSet(int expect, int update) {
+    return compareAndSet(expect, update);
   }
 
   public final int getAndIncrement() {
@@ -69,9 +53,9 @@ public class AtomicInteger extends Number implements java.io.Serializable {
   }
 
   public final int getAndAdd(int delta) {
-    int current = value;
+    int oldValue = value;
     value += delta;
-    return current;
+    return oldValue;
   }
 
   public final int incrementAndGet() {
@@ -83,12 +67,33 @@ public class AtomicInteger extends Number implements java.io.Serializable {
   }
 
   public final int addAndGet(int delta) {
-    value += delta;
-    return value;
+    return (value += delta);
   }
 
-  @Override public String toString() {
-    return Integer.toString(value);
+  public final int getAndUpdate(IntUnaryOperator updateFunction) {
+    int oldValue = value;
+    value = updateFunction.applyAsInt(oldValue);
+    return oldValue;
+  }
+
+  public final int updateAndGet(IntUnaryOperator updateFunction) {
+    return (value = updateFunction.applyAsInt(value));
+  }
+
+  public final int getAndAccumulate(int amount,
+                                    IntBinaryOperator accumulatorFunction) {
+    int oldValue = value;
+    value = accumulatorFunction.applyAsInt(oldValue, amount);
+    return oldValue;
+  }
+
+  public final int accumulateAndGet(int amount,
+                                    IntBinaryOperator accumulatorFunction) {
+    return (value = accumulatorFunction.applyAsInt(value, amount));
+  }
+
+  public String toString() {
+    return value + "";
   }
 
   public int intValue() {
@@ -96,14 +101,15 @@ public class AtomicInteger extends Number implements java.io.Serializable {
   }
 
   public long longValue() {
-    return (long) value;
+    return (long)value;
   }
 
   public float floatValue() {
-    return (float) value;
+    return (float)value;
   }
 
   public double doubleValue() {
-    return (double) value;
+    return (double)value;
   }
+
 }

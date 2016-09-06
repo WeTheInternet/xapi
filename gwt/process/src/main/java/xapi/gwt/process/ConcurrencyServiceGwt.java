@@ -1,10 +1,9 @@
 package xapi.gwt.process;
 
-import java.lang.Thread.UncaughtExceptionHandler;
-
 import xapi.annotation.inject.SingletonOverride;
 import xapi.collect.api.Fifo;
 import xapi.except.NotYetImplemented;
+import xapi.fu.Do;
 import xapi.gwt.collect.JsFifo;
 import xapi.log.X_Log;
 import xapi.platform.GwtPlatform;
@@ -19,8 +18,9 @@ import xapi.util.api.SuccessHandler;
 
 import com.google.gwt.core.client.Duration;
 import com.google.gwt.core.client.Scheduler;
-import com.google.gwt.core.client.Scheduler.ScheduledCommand;
 import com.google.gwt.user.client.Timer;
+
+import java.lang.Thread.UncaughtExceptionHandler;
 
 @GwtPlatform
 @SingletonOverride(implFor=ConcurrencyService.class)
@@ -30,9 +30,9 @@ public class ConcurrencyServiceGwt extends ConcurrencyServiceAbstract{
 
   class GwtEnvironment extends ConcurrentEnvironment {
 
-    private final Fifo<Runnable> defers = JsFifo.newFifo();
-    private final Fifo<Runnable> finalies = JsFifo.newFifo();
-    private final Fifo<Runnable> eventualies = JsFifo.newFifo();
+    private final Fifo<Do> defers = JsFifo.newFifo();
+    private final Fifo<Do> finalies = JsFifo.newFifo();
+    private final Fifo<Do> eventualies = JsFifo.newFifo();
     private final Fifo<Thread> threads = JsFifo.newFifo();
 
     @Override
@@ -41,24 +41,22 @@ public class ConcurrencyServiceGwt extends ConcurrencyServiceAbstract{
     }
 
     @Override
-    public Iterable<Runnable> getDeferred() {
+    public Iterable<Do> getDeferred() {
       return defers.forEach();
     }
 
     @Override
-    public Iterable<Runnable> getFinally() {
+    public Iterable<Do> getFinally() {
       return finalies.forEach();
     }
 
-
-
     @Override
-    public void pushDeferred(Runnable cmd) {
+    public void pushDeferred(Do cmd) {
       defers.give(cmd);
     }
 
     @Override
-    public void pushFinally(Runnable cmd) {
+    public void pushFinally(Do cmd) {
       finalies.give(cmd);
     }
 
@@ -68,7 +66,7 @@ public class ConcurrencyServiceGwt extends ConcurrencyServiceAbstract{
     }
 
     @Override
-    public void pushEventually(Runnable cmd) {
+    public void pushEventually(Do cmd) {
       eventualies.give(cmd);
     }
   }
@@ -79,37 +77,27 @@ public class ConcurrencyServiceGwt extends ConcurrencyServiceAbstract{
   }
 
   @Override
-  public void runDeferred(final Runnable cmd) {
-    Scheduler.get().scheduleDeferred(new ScheduledCommand() {
-      @Override
-      public void execute() {
-        cmd.run();
-      }
-    });
+  public void runDeferred(final Do cmd) {
+    Scheduler.get().scheduleDeferred(cmd::done);
   }
 
   @Override
-  public void runFinally(final Runnable cmd) {
-    Scheduler.get().scheduleFinally(new ScheduledCommand() {
-      @Override
-      public void execute() {
-        cmd.run();
-      }
-    });
+  public void runFinally(final Do cmd) {
+    Scheduler.get().scheduleFinally(cmd::done);
   }
 
   @Override
-  public void runTimeout(final Runnable cmd, int millisToWait) {
+  public void runTimeout(final Do cmd, int millisToWait) {
     new Timer() {
       @Override
       public void run() {
-        cmd.run();
+        cmd.done();
       }
     }.schedule(millisToWait);
   }
 
   @Override
-  public void runEventually(Runnable cmd) {
+  public void runEventually(Do cmd) {
     currentEnvironment().pushEventually(cmd);
   }
 
@@ -132,8 +120,6 @@ public class ConcurrencyServiceGwt extends ConcurrencyServiceAbstract{
   }
 
 }
-
-
 
 class SingleThreadedLock implements AsyncLock {
 

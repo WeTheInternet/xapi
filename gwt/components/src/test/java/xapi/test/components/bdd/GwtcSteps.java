@@ -27,6 +27,7 @@ import xapi.components.api.WebComponentFactory;
 import xapi.dev.X_Gwtc;
 import xapi.dev.components.WebComponentFactoryGenerator;
 import xapi.dev.gwtc.api.GwtcService;
+import xapi.dev.gwtc.impl.GwtcManifestImpl;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder.JavaType;
 import xapi.fu.In1;
@@ -145,7 +146,7 @@ public class GwtcSteps {
     service.addClasspath(GeneratedComponentEntryPoint.class);
     service.addClasspath(IsWebComponent.class);
     service.createFile("META-INF", "xapi.properties", ()->"");
-    final GwtManifest manifest = new GwtManifest(service.getModuleName());
+    final GwtManifest manifest = new GwtcManifestImpl(service.getModuleName());
     initializeManifest(service, manifest);
 
 

@@ -7,18 +7,13 @@ import xapi.collect.impl.SimpleFifo;
 import xapi.fu.In2;
 import xapi.log.X_Log;
 import xapi.source.X_Source;
-import xapi.util.X_Util;
 
-import static xapi.collect.X_Collect.newList;
-import static xapi.collect.X_Collect.newSet;
-import static xapi.collect.X_Collect.newStringMapInsertionOrdered;
+import static xapi.collect.X_Collect.*;
 import static xapi.fu.In2.in2;
 import static xapi.gwtc.api.GwtManifest.CleanupMode.DELETE_ON_SUCCESSFUL_EXIT;
 
 import com.google.gwt.core.ext.TreeLogger.Type;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.Iterator;
 
 public class GwtManifest {
@@ -233,20 +228,15 @@ public class GwtManifest {
   }
 
   public String getGenDir() {
-    File f;
-    if (genDir == null) {
-      f = new File(getWorkDir(), GEN_PREFIX);
-    } else {
-      f = new File(genDir);
-    }
-    boolean result = f.exists() || f.mkdirs();
-    assert result : "Unable to create parent directories of " + f;
-    try {
-      return f.getCanonicalPath();
-    } catch (IOException e) {
-      X_Log.warn(getClass(), "Invalid generated code directory ", f);
-      throw X_Util.rethrow(e);
-    }
+    return normalizeGenDir(genDir);
+  }
+
+  protected String normalizeWorkDir(String workDir) {
+    return workDir;
+  }
+
+  protected String normalizeGenDir(String genDir) {
+    return genDir;
   }
 
   public String getGwtVersion() {
@@ -306,18 +296,7 @@ public class GwtManifest {
   }
 
   public String getWorkDir() {
-    if (workDir == null) {
-      try {
-        File f = File.createTempFile("GwtcTmp", "Compile");
-        f.delete();
-        f.mkdirs();
-        workDir = f.getAbsolutePath();
-      } catch (IOException e) {
-        X_Log.error(getClass(), "Unable to create a work dir in temp directory", e);
-        throw X_Util.rethrow(e);
-      }
-    }
-    return workDir;
+    return normalizeWorkDir(workDir);
   }
 
   public boolean isAutoOpen() {

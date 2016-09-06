@@ -16,8 +16,8 @@
     Everything needed to run a comprehensive dev environment.
 
     Just type X_ and pick a service from autocomplete;
-    new dev modules will be added as they are built. 
-    
+    new dev modules will be added as they are built.
+
     The only dev service not included in the uber jar is xapi-dev-maven,
     as it includes all runtime dependencies of maven, adding ~4 seconds to build time,
     and 6 megabytes to the final output jar size (without xapi-dev-maven, it's ~1MB).
@@ -94,10 +94,10 @@
               <exclude>net.wetheinter:gwt-dev</exclude>
               <exclude>net.wetheinter:gwt-user</exclude>
               <exclude>net.wetheinter:elemental</exclude>
-              <exclude>org.apache.maven:*</exclude>
-              <exclude>org.apache.*:*</exclude>
-              <exclude>org.codehaus.plexus:*</exclude>
-              <exclude>org.*:*</exclude>
+              <exclude>org.assertj:*</exclude>
+              <exclude>org.junit:*</exclude>
+              <exclude>junit*:*</exclude>
+              <exclude>org.hamcrest*:*</exclude>
               <exclude>javax.*:*</exclude>
               <exclude>commons-codec.*:*</exclude>
               <exclude>com.google.guava:*</exclude>

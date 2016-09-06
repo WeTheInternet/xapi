@@ -5,11 +5,8 @@ import xapi.collect.api.StringTo;
 import xapi.collect.impl.ArrayIterable;
 import xapi.collect.impl.EntryValueAdapter;
 import xapi.collect.impl.IteratorWrapper;
-import xapi.fu.MappedIterable;
 import xapi.fu.Out2;
 import xapi.platform.GwtPlatform;
-
-import static xapi.fu.MappedIterable.mapIterable;
 
 import com.google.gwt.core.client.GwtScriptOnly;
 import com.google.gwt.core.client.JavaScriptObject;
@@ -165,6 +162,12 @@ public class StringToGwt <V> extends JavaScriptObject implements StringTo<V>{
   }-*/;
 
   @Override
+  public final native boolean has(String key)
+  /*-{
+    return this.hasOwnProperty(key)&&this[key] != undefined;
+  }-*/;
+
+  @Override
   public final boolean containsValue(final Object value) {
     final String[] keys = nativeKeys();
     int i = keys.length;
@@ -280,11 +283,6 @@ public class StringToGwt <V> extends JavaScriptObject implements StringTo<V>{
   @Override
   public final Iterable<Entry<String,V>> entries() {
     return new IteratorWrapper<>(new EntryItr(this));
-  }
-
-  @Override
-  public final MappedIterable<Out2<String, V>> view() {
-      return ()-> mapIterable(entries(), Out2::fromEntry).iterator();
   }
 
   @Override

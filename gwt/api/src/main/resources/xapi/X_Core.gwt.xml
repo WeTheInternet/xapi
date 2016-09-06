@@ -23,6 +23,7 @@
   <source path="util"/> <!-- Basic utility layer -->
   <source path="time"/> <!-- Time provider -->
   <source path="api"/> <!-- Shared api code -->
+  <source path="scope"/> <!-- Scoping -->
   <source path="gwt/annotation"/>
   <source path="gwt/log"/>
   <source path="gwt/time"/>
