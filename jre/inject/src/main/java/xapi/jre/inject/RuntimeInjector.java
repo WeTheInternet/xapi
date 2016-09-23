@@ -4,6 +4,7 @@ import xapi.annotation.inject.InstanceDefault;
 import xapi.annotation.inject.InstanceOverride;
 import xapi.annotation.inject.SingletonDefault;
 import xapi.annotation.inject.SingletonOverride;
+import xapi.annotation.reflect.KeepClass;
 import xapi.bytecode.ClassFile;
 import xapi.bytecode.annotation.Annotation;
 import xapi.bytecode.annotation.ArrayMemberValue;
@@ -22,10 +23,12 @@ import xapi.inject.api.PlatformChecker;
 import xapi.inject.impl.JavaInjector;
 import xapi.log.X_Log;
 import xapi.platform.Platform;
+import xapi.reflect.X_Reflect;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
 import xapi.time.impl.ImmutableMoment;
 import xapi.util.X_Runtime;
+import xapi.util.X_Util;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -38,8 +41,10 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
+@KeepClass
 public class RuntimeInjector implements In2<String, PlatformChecker> {
 
   @Override
@@ -53,7 +58,45 @@ public class RuntimeInjector implements In2<String, PlatformChecker> {
     if (!targetDir.endsWith(File.separator)) {
       targetDir += File.separator;
     }
-    final File target = new File(targetDir).getAbsoluteFile();
+    File relative = new File(targetDir);
+    if (new File("target/classes").equals(relative)) {
+      // find the class that called us, and use their "target/classes"
+      final Map<Thread, StackTraceElement[]> traces = Thread.getAllStackTraces();
+      for (Entry<Thread, StackTraceElement[]> trace : traces.entrySet()) {
+        if ("main".equals(trace.getKey().getName())) {
+          // Using a thread named main is best...
+            final StackTraceElement[] els = trace.getValue();
+            int i = els.length-1;
+            StackTraceElement best = els[--i];
+            String cls = best.getClassName().toLowerCase();
+            while(i > 0 &&
+                (
+                    cls.contains("java.lang.") ||
+                    cls.contains(".intellij.") ||
+                    cls.contains(".eclipse") ||
+                    cls.contains("netbeans"))
+                ) {
+              // if the main class is likely an ide,
+              // then we should look higher...
+              while (i-- > 0) {
+                if ("main".equals(els[i].getMethodName())) {
+                  best = els[i];
+                  cls = best.getClassName().toLowerCase();
+                  break;
+                }
+              }
+            }
+            try {
+              Class mainClass = Class.forName(best.getClassName());
+              final String mainLoc = X_Reflect.getFileLoc(mainClass);
+              relative = new File(mainLoc);
+            } catch (ClassNotFoundException e) {
+              throw X_Util.rethrow(e);
+            }
+          }
+        }
+    }
+    final File target = relative.getAbsoluteFile();
     if (!target.isDirectory()) {
       if (!target.mkdirs()) {
         throw new RuntimeException("Unable to get or make jre injection generator output directory: "+
