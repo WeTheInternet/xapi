@@ -169,6 +169,11 @@ public abstract class Node implements Cloneable {
         this.beginColumn = beginColumn;
     }
 
+    public final String getCoordinates() {
+        return "[" + getBeginLine()+":"+getBeginColumn()+", " +
+                    getEndLine() + ":" + getEndColumn() + "]";
+    }
+
     /**
      * Sets the begin line of this node.
      *

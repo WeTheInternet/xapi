@@ -22,17 +22,31 @@
  <dependencies>
   <dependency>
    <groupId>net.wetheinter</groupId>
-   <artifactId>xapi-fu</artifactId>
+   <artifactId>xapi-core-lang</artifactId>
   </dependency>
   <dependency>
    <groupId>net.wetheinter</groupId>
-   <artifactId>xapi-dev-source</artifactId>
+   <artifactId>xapi-dev-javac</artifactId>
+  </dependency>
+  <dependency>
+   <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-dev-scanner</artifactId>
+  </dependency>
+  <dependency>
+   <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-jre-inject</artifactId>
   </dependency>
   <dependency>
    <groupId>junit</groupId>
    <artifactId>junit</artifactId>
    <scope>test</scope>
   </dependency>
+  <dependency>
+   <groupId>org.assertj</groupId>
+   <artifactId>assertj-core-java8</artifactId>
+   <scope>test</scope>
+  </dependency>
+
  </dependencies>
 
  <build>

@@ -18,7 +18,8 @@
 
   <description>
   Contains useful functional apis for use in a java 8 environment,
-  and convenient apis for composing streamlined processes.
+  and convenient apis for composing streamlined processes,
+  plus as a bit of witchcraft to aid in cross-platform support.
   </description>
 
   <dependencies>

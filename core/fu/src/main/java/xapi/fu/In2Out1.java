@@ -126,4 +126,23 @@ public interface In2Out1<I1, I2, O> extends Rethrowable, Lambda {
       }
     }
   }
+
+    default <Sub1 extends I1> In2Out1<Sub1, I2, O> sub1() {
+      return this::io;
+    }
+
+    default <Sub2 extends I2> In2Out1<I1, Sub2, O> sub2() {
+      return this::io;
+    }
+
+    static <I1, I2, OSuper, O extends OSuper> In2Out1<I1, I2, OSuper> superOut1(In2Out1<I1, I2, O> i) {
+      return i::io;
+    }
+    static <I1, SuperI1, I2, O> In2Out1<SuperI1, I2, O> superIn1(In2Out1<I1, I2, O> i) {
+      return (i1, i2)->i.io((I1)i1, i2);
+    }
+    static <I1, I2, SuperI2, O> In2Out1<I1, SuperI2, O> superIn2(In2Out1<I1, I2, O> i) {
+      return (i1, i2)->i.io(i1, (I2)i2);
+    }
+
 }

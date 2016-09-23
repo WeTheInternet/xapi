@@ -297,11 +297,31 @@ public interface X_Fu {
   }
 
   static <T> T getZeroeth(T[] value) {
-    return value[0];
+    return getNth(value, 0);
   }
 
   static <T> void setZeroeth(T[] values, T value) {
-    values[0] = value;
+    setNth(values, value, 0);
+  }
+
+  static <T> T putZeroeth(T[] values, T value) {
+    return putNth(values, value, 0);
+  }
+
+  static <T> T getNth(T[] value, int n) {
+    return value[n];
+  }
+
+  static <T> void setNth(T[] values, T value, int n) {
+    assert values.length < n && n >= 0;
+    values[n] = value;
+  }
+
+  static <T> T putNth(T[] values, T value, int n) {
+    assert values.length < n && n >= 0;
+    final T current = values[n];
+    values[n] = value;
+    return current;
   }
 }
 

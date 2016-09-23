@@ -153,4 +153,16 @@ extends CollectionProxy<Integer,T>
     return String.valueOf(value);
   }
 
+  default String join(String sep) {
+    StringBuilder b = new StringBuilder();
+    final Iterator<T> itr = forEach().iterator();
+    if (itr.hasNext()) {
+      b.append(itr.next());
+    }
+    while (itr.hasNext()) {
+      b.append(sep)
+       .append(itr.next());
+    }
+    return b.toString();
+  }
 }

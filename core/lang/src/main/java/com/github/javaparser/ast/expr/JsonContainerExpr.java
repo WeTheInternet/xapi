@@ -17,6 +17,13 @@ public class JsonContainerExpr extends JsonExpr {
   private boolean isArray;
 
   public JsonContainerExpr(
+      boolean isArray,
+      List<JsonPairExpr> pairs
+  ) {
+    this(-1, -1, -1, -1, isArray, pairs);
+  }
+
+  public JsonContainerExpr(
       final int beginLine,
       final int beginColumn,
       final int endLine,
@@ -40,6 +47,15 @@ public class JsonContainerExpr extends JsonExpr {
   public void setPairs(List<JsonPairExpr> pairs) {
     this.pairs = pairs;
     setAsParentNodeOf(pairs);
+  }
+
+  public boolean hasNode(String name) {
+    for (JsonPairExpr pair : getPairs()) {
+      if (name.equals(ASTHelper.extractStringValue(pair.getKeyExpr()))) {
+        return true;
+      }
+    }
+    return false;
   }
 
   public Expression getNode(String name) {

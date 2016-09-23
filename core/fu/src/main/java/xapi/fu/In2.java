@@ -35,10 +35,6 @@ public interface In2<I1, I2> extends HasInput, Rethrowable, Lambda {
     return (i2, i1) -> in(i1, i2);
   }
 
-  default In1<I1> provide2(Out1<I2> and){
-    return i1 -> in(i1, and.out1());
-  }
-
   default In1<I2> adapt1(In1Out1<I2, I1> adapt) {
     return i2 -> in(adapt.io(i2), i2);
   }

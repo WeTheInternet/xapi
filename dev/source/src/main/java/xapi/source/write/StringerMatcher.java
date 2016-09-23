@@ -1,5 +1,7 @@
 package xapi.source.write;
 
+import xapi.fu.Out1;
+
 import java.util.function.Predicate;
 
 /**
@@ -20,7 +22,9 @@ public interface StringerMatcher {
 final class DefaultStringerMatcher implements StringerMatcher {
   @Override
   public String toString(Object o) {
-    return String.valueOf(o);
+    return String.valueOf(
+        o instanceof Out1 ? ((Out1)o).out1() : o
+    );
   }
 
   @Override

@@ -14,6 +14,13 @@ public class JsonPairExpr extends UiExpr {
   private Expression keyExpr;
   private Expression valueExpr;
 
+  public JsonPairExpr(String key, Expression valueExpr) {
+    this(StringLiteralExpr.stringLiteral(key), valueExpr);
+  }
+  public JsonPairExpr(Expression keyExpr, Expression valueExpr) {
+    this(-1, -1, -1, -1, keyExpr, valueExpr);
+  }
+
   public JsonPairExpr(final int beginLine, final int beginColumn, final int endLine, final int endColumn, Expression keyExpr, Expression valueExpr) {
     super(beginLine, beginColumn, endLine, endColumn);
     this.keyExpr = keyExpr;

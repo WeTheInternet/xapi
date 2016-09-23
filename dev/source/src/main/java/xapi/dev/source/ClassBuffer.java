@@ -223,6 +223,22 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
     return b + super.toSource();
   }
 
+  public boolean isClass() {
+    return isClass;
+  }
+
+  public boolean isAnnotation() {
+    return isAnnotation;
+  }
+
+  public boolean isEnum() {
+    return isEnum;
+  }
+
+  public boolean isInterface() {
+    return !isClass() && !isAnnotation() && !isEnum();
+  }
+
   protected String superString() {
     return super.toSource();
   }

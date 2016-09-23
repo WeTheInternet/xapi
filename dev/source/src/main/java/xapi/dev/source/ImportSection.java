@@ -228,8 +228,13 @@ public class ImportSection implements CanAddImports {
     if (index == -1) {
       suffix = "";
     } else {
-      suffix = importName.substring(index);
+      int endIndex = importName.lastIndexOf('>');
+      suffix = importName.substring(index, endIndex);
       suffix = importFullyQualifiedNames(suffix);
+      if (endIndex < importName.length()) {
+        String tail = importName.substring(endIndex);
+        suffix += tail;
+      }
       importName = importName.substring(0, index);
     }
 
