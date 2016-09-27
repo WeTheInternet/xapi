@@ -333,8 +333,10 @@ public final class ASTHelper {
 
     public static String extractStringValue(Expression value) {
         if (value instanceof StringLiteralExpr) {
-            // StringLiteral strangely covers all primitives as well...
-            return ((StringLiteralExpr)value).getValue();
+            // StringLiteral strangely covers all primitives except boolean...
+            return ((StringLiteralExpr) value).getValue();
+        } else if (value instanceof BooleanLiteralExpr) {
+            return Boolean.toString(((BooleanLiteralExpr)value).getValue());
         } else if (value instanceof TemplateLiteralExpr) {
             return ((TemplateLiteralExpr)value).getValue();
         } else if (value instanceof NullLiteralExpr) {

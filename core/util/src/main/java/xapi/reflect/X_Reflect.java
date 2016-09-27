@@ -12,6 +12,7 @@ import xapi.util.X_String;
 import static xapi.util.X_String.joinClasses;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
@@ -43,7 +44,7 @@ import java.security.ProtectionDomain;
 @XApi
 public class X_Reflect {
 
-  @Inject static ReflectionService reflectionService = X_Inject.singleton(ReflectionService.class);
+  @Inject static Provider<ReflectionService> reflectionService = X_Inject.singletonLazy(ReflectionService.class);
   @Inject static LogService logService;
 
   /**
@@ -815,7 +816,7 @@ public class X_Reflect {
     if (X_Runtime.isJavaScript()) {
       return Package.getPackage(name);
     } else {
-      return reflectionService.getPackage(name);
+      return reflectionService.get().getPackage(name);
     }
   }
 
@@ -895,7 +896,7 @@ public class X_Reflect {
       } catch (final NoSuchMethodException e) {
         method = cls.getMethod(name, paramTypes);
       }
-      return reflectionService.invokeDefaultMethod(inst, method, params);
+      return reflectionService.get().invokeDefaultMethod(inst, method, params);
   }
 
   public static Object invoke(final Class<?> cls, final String name,
@@ -915,7 +916,7 @@ public class X_Reflect {
           inst == null &&
           method.getDeclaringClass().isInterface() &&
           !Modifier.isAbstract(method.getModifiers())) {
-        return reflectionService.invokeDefaultMethod(method, params);
+        return reflectionService.get().invokeDefaultMethod(method, params);
       }
       if (method.getReturnType() == void.class) {
         method.invoke(inst, params);
@@ -989,7 +990,7 @@ public class X_Reflect {
    * @return new T[dimension]
    */
   public static <T> T[] newArray(final Class<T> classLit, final int size) {
-    return reflectionService.newArray(classLit, size);
+    return reflectionService.get().newArray(classLit, size);
   }
 
   /**
@@ -1025,7 +1026,7 @@ public class X_Reflect {
    * @return new T[dim1][dim2];
    */
   public static <T, R extends T> T[][] newArray(final Class<R> classLit, final int dim1, final int dim2) {
-    return reflectionService.newArray(classLit, dim1, dim2);
+    return reflectionService.get().newArray(classLit, dim1, dim2);
   }
 
   public static <T extends Throwable> T doThrow(final T exception) throws T {

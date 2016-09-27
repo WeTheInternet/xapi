@@ -233,10 +233,10 @@ TOKEN_MGR_DECLS : {
     int backup = 0;
     char c = 0;
     try {
-      c = input_stream.BeginToken();
+      c = input_stream.readChar();
       backup ++;
       while (Character.isWhitespace(c)) {
-        c = input_stream.BeginToken();
+        c = input_stream.readChar();
         backup++;
       }
       input_stream.backup(backup);
@@ -256,7 +256,7 @@ TOKEN_MGR_DECLS : {
       boolean sawNonSpace = false;
       boolean previousWasAlphaNum = false;
       while (true) {
-          c = input_stream.BeginToken();
+          c = input_stream.readChar();
           backup ++;
           switch (c) {
             case '{':
@@ -291,6 +291,48 @@ TOKEN_MGR_DECLS : {
       input_stream.backup(backup);
     }
   return false;
+  }
+
+  boolean looksLikeMethodOrLambda() {
+    // look for a valid java name followed by ->, :: or (
+    int backup = 1;
+    input_stream.backup(0);
+    try {
+        char c = input_stream.readChar();
+
+        while(Character.isWhitespace(c)) {
+            backup++;
+            c = input_stream.readChar();
+        }
+        if (c == '.') {
+          while (c == '.' || Character.isJavaIdentifierPart(c)) {
+            backup++;
+            c = input_stream.readChar();
+          }
+          while(Character.isWhitespace(c)) {
+              backup++;
+              c = input_stream.readChar();
+          }
+        }
+        switch (c) {
+          case '-':
+            backup++;
+            c = input_stream.readChar();
+            return c == '>';
+          case ':':
+            backup++;
+            c = input_stream.readChar();
+            return c == ':';
+          case '(':
+            return true;
+          default:
+            return false;
+        }
+    } catch (IOException e){
+        return false;
+    } finally {
+      input_stream.backup(backup);
+    }
   }
 }
 
@@ -3054,7 +3096,10 @@ Expression FeatureExpression():
 
         )?
     )
-    | LOOKAHEAD(2)
+    | LOOKAHEAD({
+        ( getToken(1).kind == IDENTIFIER || getToken(1).kind == FEATURE_IDENTIFIER )
+        && token_source.looksLikeMethodOrLambda()
+        })
         (
             expr = FeatureName()
         )
@@ -3102,8 +3147,11 @@ Expression UiStatement():
   Expression expr;
 }
 {
-  LOOKAHEAD( Expression() ";" ) ( expr = Expression() { return expr; } ";" )
-  | expr = Literal()
+  (
+    LOOKAHEAD( Expression() ";" ) ( expr = Expression() ";" { return expr; } )
+    | expr = FeatureName()
+    | expr = Literal()
+  )
   { return expr; }
 }
 

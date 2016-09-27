@@ -164,4 +164,8 @@ public class TemplateLiteralExpr extends UiExpr {
     }
     return value;
   }
+
+    public static TemplateLiteralExpr templateLiteral(String str) {
+      return new TemplateLiteralExpr(-1, -1, -1, -1, str);
+    }
 }

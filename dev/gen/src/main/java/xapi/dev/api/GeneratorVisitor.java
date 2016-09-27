@@ -1,12 +1,14 @@
 package xapi.dev.api;
 
 import com.github.javaparser.ASTHelper;
+import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.visitor.VoidVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import xapi.collect.impl.SimpleStack;
 import xapi.dev.source.SourceBuilder;
 import xapi.fu.Do;
+import xapi.fu.Filter.Filter1;
 import xapi.source.X_Source;
 import xapi.source.read.JavaVisitor;
 
@@ -259,14 +261,47 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
             final String from = resolveLiteral(ctx, json.getNode("from"));
             final String to = resolveLiteral(ctx, json.getNode("to"));
             final String var = resolveLiteral(ctx, json.getNode("var"));
+            Filter1<Integer> filter;
+            if (json.hasNode("filter")) {
+                Node filterExpr = json.getNode("filter");
+                filter = i-> {
+                    final Expression filtered = resolveVar(ctx, (Expression) filterExpr);
+                    return ((BooleanLiteralExpr)filtered).getValue();
+                };
+            } else {
+                filter = always->true;
+            }
+            final JsonContainerExpr tasks = (JsonContainerExpr) json.getNode("tasks");
             for (int i = Integer.parseInt(from), m = Integer.parseInt(to); i <= m; i++) {
                 final Do undo = ctx.addToContext(var, IntegerLiteralExpr.intLiteral(i));
-                addMethod(ctx, builder, (JsonContainerExpr) json.getNode("tasks"), modifiers);
+                if (filter.filter1(i)) {
+                    addMethod(ctx, builder, tasks, modifiers);
+                }
                 undo.done();
             }
         } else {
-            new ApiMethodGenerator<>(builder, json, modifiers)
-                .visit(json, ctx);
+            if (json.isArray()) {
+                json.getPairs().forEach(pair->{
+                    if (!(pair.getValueExpr() instanceof JsonContainerExpr)) {
+                        throw new IllegalArgumentException("tasks arrays must contain only json object nodes");
+                    }
+                    JsonContainerExpr item = (JsonContainerExpr) pair.getValueExpr();
+                    addMethod(ctx, builder, item, modifiers);
+                });
+            } else {
+                if (json.hasNode("filter")) {
+                    Node filterExpr = json.getNode("filter");
+                    final AstFilter<Object> filter = i -> {
+                        final Expression filtered = resolveVar(ctx, (Expression) filterExpr);
+                        return ((BooleanLiteralExpr) filtered).getValue();
+                    };
+                    if (!filter.filter1(json)) {
+                        return;
+                    }
+                }
+                new ApiMethodGenerator<>(builder, json, modifiers)
+                    .visit(json, ctx);
+            }
         }
     }
 

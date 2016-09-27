@@ -4,7 +4,9 @@ import com.github.javaparser.ASTHelper;
 import com.github.javaparser.ast.exception.NotFoundException;
 import com.github.javaparser.ast.visitor.GenericVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitor;
+import xapi.collect.X_Collect;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -92,5 +94,18 @@ public class JsonContainerExpr extends JsonExpr {
 
   public boolean isEmpty() {
     return pairs.isEmpty();
+  }
+
+  public static <N extends Expression> JsonContainerExpr jsonArray(N ... nodes) {
+    return jsonArray(X_Collect.arrayIterable(nodes));
+  }
+
+  public static <N extends Expression> JsonContainerExpr jsonArray(Iterable<N> nodes) {
+    List<JsonPairExpr> pairs = new ArrayList<>();
+    int cnt = 0;
+    for (N node : nodes) {
+      pairs.add(new JsonPairExpr(Integer.toString(cnt++), node));
+    }
+    return new JsonContainerExpr(true, pairs);
   }
 }

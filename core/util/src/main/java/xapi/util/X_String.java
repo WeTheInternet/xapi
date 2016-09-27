@@ -11,7 +11,18 @@ import java.util.Iterator;
 
 public class X_String {
 
-  private X_String() {}
+    public static boolean equalIgnoreWhitespace(String a, String b) {
+      if (a == b) {
+        return true;
+      }
+      if (a == null || b == null) {
+        return false;
+      }
+      return a.replaceAll("\\s+", " ")
+          .equals(b.replaceAll("\\s+", " "));
+    }
+
+    private X_String() {}
 
   public static byte[] getBytes(String source) {
     return source.getBytes();

@@ -3,12 +3,12 @@
  * Copyright (C) 2011, 2013-2015 The JavaParser Team.
  *
  * This file is part of JavaParser.
- * 
+ *
  * JavaParser can be used either under the terms of
  * a) the GNU Lesser General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * b) the terms of the Apache License 
+ * b) the terms of the Apache License
  *
  * You should have received a copy of both licenses in LICENCE.LGPL and
  * LICENCE.APACHE. Please refer to those files for details.
@@ -18,7 +18,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  */
- 
+
 package com.github.javaparser.ast.expr;
 
 import com.github.javaparser.ast.visitor.GenericVisitor;
@@ -48,5 +48,14 @@ public final class CharLiteralExpr extends StringLiteralExpr {
     @Override
     public <A> void accept(VoidVisitor<A> v, A arg) {
         v.visit(this, arg);
+    }
+
+    public Character charValue() {
+        assert value == null || value.length() == 1 : "Not a valid char: " + value;
+        return value == null ? null : value.charAt(0);
+    }
+
+    public static CharLiteralExpr charLiteral(char c) {
+        return new CharLiteralExpr(Character.toString(c));
     }
 }

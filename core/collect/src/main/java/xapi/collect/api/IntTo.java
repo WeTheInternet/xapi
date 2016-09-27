@@ -1,6 +1,7 @@
 package xapi.collect.api;
 
 import xapi.collect.proxy.CollectionProxy;
+import xapi.fu.Filter.Filter1;
 import xapi.fu.In1;
 import xapi.fu.In1Out1;
 
@@ -78,6 +79,29 @@ extends CollectionProxy<Integer,T>
   }
 
   boolean findRemove(T value, boolean all);
+
+  default boolean removeIf(Filter1<T> value, boolean all) {
+    if (all) {
+      boolean removed = false;
+      // remove backwards, to avoid shifting index issues
+      for (int i = size(); i --> 0; ) {
+        if (value.filter1(at(i))) {
+          remove(i);
+          removed = true;
+        }
+      }
+      return removed;
+    } else {
+      // remove forwards, to remove first instance
+      for (int i = 0; i < size(); i++) {
+        if (value.filter1(at(i))) {
+          remove(i);
+          return true;
+        }
+      }
+      return false;
+    }
+  }
 
   void set(int index, T value);
 

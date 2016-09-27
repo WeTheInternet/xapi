@@ -23,6 +23,8 @@ public class ApiGeneratorContext<Ctx extends ApiGeneratorContext<Ctx>>
 
     private StringTo<Node> vars = X_Collect.newStringMap(Node.class);
     private StringTo<SourceBuilder<Ctx>> sources = X_Collect.newStringMap(SourceBuilder.class);
+    private boolean firstOfRange;
+    private boolean inRange;
 
     public Do addToContext(String id, Node node) {
         String key = id.startsWith("$") ? id.substring(1) : id;
@@ -59,8 +61,16 @@ public class ApiGeneratorContext<Ctx extends ApiGeneratorContext<Ctx>>
         return t.apply((Object[]) values);
     }
 
+    public boolean hasNode(String key) {
+        return vars.containsKey(key.startsWith("$") ? key.substring(1) : key);
+    }
+
+    public Node getNode(String key) {
+        return vars.get(key.startsWith("$") ? key.substring(1) : key);
+    }
+
     public String getString(String key) {
-        final Node node = vars.get(key.startsWith("$") ? key.substring(1) : key);
+        final Node node = getNode(key);
         return node == null ? null : ASTHelper.extractStringValue((Expression) node);
     }
 
@@ -70,5 +80,24 @@ public class ApiGeneratorContext<Ctx extends ApiGeneratorContext<Ctx>>
             .setClassDefinition("public " + (isInterface ? "interface" : "class") + " " + cls, false)
             .setPackage(pkg)
         );
+    }
+
+    public void setFirstOfRange(boolean firstOfRange) {
+        this.firstOfRange = firstOfRange;
+    }
+
+    public boolean isFirstOfRange() {
+        if (!inRange) {
+            throw new IllegalStateException("Cannot use $first() outside of a $range expression");
+        }
+        return firstOfRange;
+    }
+
+    public void setInRange(boolean inRange) {
+        this.inRange = inRange;
+    }
+
+    public boolean isInRange() {
+        return inRange;
     }
 }

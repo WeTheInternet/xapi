@@ -529,6 +529,7 @@ public class JavaLexer {
       // params
       pos = eatWhitespace(chars, pos + 1);
       while (chars.charAt(pos) != ')') {
+        int initial = pos;
         // TODO grab parameter annotations here.
         final ParameterVisitor<R> param = visitor.visitParameter();
         pos = visitAnnotation(param, receiver, chars, pos);
@@ -551,6 +552,9 @@ public class JavaLexer {
         pos = eatWhitespace(chars, pos);
         if (chars.charAt(pos) == ',') {
           pos++;
+        }
+        if (initial == pos) {
+          throw new IllegalArgumentException("Bad signature " + chars);
         }
       }
     }

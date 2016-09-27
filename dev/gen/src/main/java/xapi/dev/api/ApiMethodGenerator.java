@@ -61,14 +61,27 @@ public class ApiMethodGenerator <Ctx extends ApiGeneratorContext<Ctx>> extends V
             .append(name)
             .append("(");
         String prefix = "";
-        for (String param : params.forEach()) {
-            methodDef.append(prefix).append(param);
-            prefix = ", ";
+        if (params != null) {
+            for (String param : params.forEach()) {
+                methodDef.append(prefix).append(param);
+                prefix = ", ";
+            }
         }
         methodDef.append(")");
         final MethodBuffer buffer = builder.getClassBuffer().createMethod(methodDef.toString());
         if (body != null) {
-            buffer.printlns(body);
+            int trim = Integer.MAX_VALUE;
+            for (String line : body.split("\\n|(?:\\r|\\n)")) {
+                int whitespace = 0;
+                while (line.length() > 0 && Character.isWhitespace(line.charAt(0))) {
+                    whitespace++;
+                    line = line.substring(1);
+                }
+                if (whitespace > 0) {
+                    trim = Math.min(trim, whitespace);
+                }
+            };
+            buffer.printlns(body.replaceAll("\n\\s{"+ trim + "}", "\n"));
         }
         buffer.setModifier(modifiers);
         undos.forEach(Do::done);
@@ -84,7 +97,7 @@ public class ApiMethodGenerator <Ctx extends ApiGeneratorContext<Ctx>> extends V
                     ((JsonContainerExpr)value).getPairs()
                         .forEach(pair->{
                             String varName = pair.getKeyString();
-                            final Expression resolved = resolveVar(ctx, varName, pair.getValueExpr());
+                            final Expression resolved = resolveVar(ctx, pair.getValueExpr());
                             final Do undo = ctx.addToContext(varName, resolved);
                             undos.add(undo);
                         });
@@ -108,10 +121,13 @@ public class ApiMethodGenerator <Ctx extends ApiGeneratorContext<Ctx>> extends V
                 name = resolveString(ctx, n.getValueExpr());
                 break;
             case "params":
-                params = resolveToLiterals(ctx, n.getValueExpr());
+                final Expression resolved = resolveVar(ctx, n.getValueExpr());
+                params = resolveToLiterals(ctx, resolved);
                 break;
             case "body":
                 body = resolveBody(ctx, n.getValueExpr());
+                break;
+            case "filter":
                 break;
             default:
                 throw new IllegalArgumentException("Method generator cannot understand json nodes with " +
@@ -119,7 +135,4 @@ public class ApiMethodGenerator <Ctx extends ApiGeneratorContext<Ctx>> extends V
         }
     }
 
-    protected Expression resolveVar(Ctx arg, String key, Expression valueExpr) {
-        return valueExpr;
-    }
 }

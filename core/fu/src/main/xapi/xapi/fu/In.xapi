@@ -19,26 +19,348 @@
                 from: 1,
                 to: $n,
                 var: "s",
-                tasks: {
-                    name : `map$s`,
-                    typeParams : "To",
-                    returns : $type(`In$n`,
-                        $range(1, $n, $n->`I$n`)
-                        .$replace(`I$s`, "To")),
-                    params : {
-                        mapper : In1Out1.class.$generic("To", `I$s`)
+                tasks: [
+                    // default <To> InN<I1, To, In> mapN(In1Out1<I2, To> mapper) {
+                    //   return (i1, i2, in) -> in(i1, mapper.io(i2), in);
+                    // }
+                    {
+                        name : `map$s`,
+                        typeParams : "To",
+                        returns : $type(`In$n`,
+                            $range(1, $n, $n->`I$n`)
+                            .$replace(`I$s`, "To")),
+                        params : {
+                            mapper : In1Out1.class.$generic("To", `I$s`)
+                        },
+                        body : ( `return (` +
+                            $range(1, $n, $i->( $first() ? "" : ", ") + `i$i`) +
+                            `) -> in(` +
+                            $range(1, $n, $i ->
+                                ( $first() ? "" : ", ") +
+                                ( ( $i == $s ) ? `mapper.io(i$i)` : `i$i` )
+                            ) +
+                            `);`
+                        )
                     },
-                    body : ( `return (` +
-                        $range(1, $n, $i->( $i == 1 ? "" : ", ") + `i$i`) +
-                        `) -> in(` +
-                        $range(1, $n, $i ->
-                        ( $i == 1 ? "" : ", ") +
-                        ( ( $i == $s ) ? `mapper.io(i$i)` : `i$i` )
-                        ) +
-                        `);`
-                    )
-                }
+
+                    // default <T> In2<T, I2> merge1And3(In1Out1<T, I1> map1, In1Out1<T, I3> map2) {
+                    //  return (t, i2)->in(map1.io(t), i2, map3.io(t));
+                    // }
+                    {
+
+                        from: 1,
+                        to: $n,
+                        var: "t",
+                        filter: $s < $t;,
+                        tasks: {
+                            name : `merge$sAnd$t`,
+                            var : {
+                                l : $n - 1;
+                            },
+                            returns : $type(`In$l`,
+                                $range(0, $n, $n->`I$n`)
+                                .$replace(`I0`, "T")
+                                .$remove(`I$s`)
+                                .$remove(`I$t`)
+                            ),
+                            typeParams : "T",
+                            params : {
+                                `map$s` : `In1Out1<T, I$s>`
+                                `map$t` : `In1Out1<T, I$t>`
+                            },
+                            body : (
+                                `return (` +
+                                $range(0, $n, $i -> $i != $t && $i != $s,
+                                    $i-> $first() ? "t" : `, i$i` ) +
+                                `) -> in(` +
+                                $range(1, $n, $i ->
+                                    ( $first() ? "" : ", ") +
+                                    ( ( $i == $s ) ? `map$s.io(i$s)` :
+                                      ( $i == $t ) ? `map$t.io(i$t)` : `i$i` )
+                                ) +
+                                `);`
+                            )
+
+                        }
+                    },
+
+                    // default In1<I1> provide2(I2 i2) {
+                    //   return (i1) -> in(i1, i2);
+                    // }
+                    {
+                        name : `provide$s`,
+                        var : {
+                          l : ($n - 1)
+                        },
+                        returns : $l == 0 ? "Do" :
+                            $type(`In$l`, $range(1, $n, $n->$n != $s, $n->`I$n`));,
+                        params : {
+                            val : `I$s`
+                        },
+                        body : ( `return (` +
+                            $range(1, $n, $i-> $i != $s,
+                                $i->( $first() ? "" : ", ") + `i$i`) +
+                            `) -> in(` +
+                            $range(1, $n, $i ->
+                            ( $first() ? "" : ", ") +
+                            ( ( $i == $s ) ? "val" : `i$i` )
+                            ) +
+                            `);`
+                        )
+                    },
+
+                    // default In1<I1> provide2Deferred(Out1<I2> i2) {
+                    //   return (i1) -> in(i1, i2.out1());
+                    // }
+                    {
+                        name : `provide$sDeferred`,
+                        var : {
+                          l : ($n - 1)
+                        },
+                        returns : $type(`In$l`,
+                            $range(1, $n, $n->`I$n`)
+                            .$remove(`I$s`)),
+                        params : {
+                            val : `Out1<I$s>`
+                        },
+                        body : ( `return (` +
+                            $range(1, $n, $i -> $i != $s,
+                                $i-> ( $first() ? "" : ", ") + `i$i` ) +
+                            `) -> in(` +
+                            $range(1, $n, $i ->
+                                ( $first() ? "" : ", ") +
+                                ( ( $i == $s ) ? "val.out1()" : `i$i` )
+                            ) +
+                            `);`
+                        )
+                    },
+
+                    // default In1<I1> provide2Immediate(Out1<I2> i2) {
+                    //   I2 result = i2.out1();
+                    //   return (i1) -> in(i1, result);
+                    // }
+                    {
+                        name : `provide$sImmediate`,
+                        var : {
+                          l : ($n - 1)
+                        },
+                        returns : $type(`In$l`,
+                            $range(1, $n, $n->`I$n`)
+                            .$remove(`I$s`)),
+                        params : {
+                            val : `Out1<I$s>`
+                        },
+                        body : (
+                            `I$s result = val.out1();
+                            return (` +
+                            $range(1, $n, $i -> $i != $s,
+                                $i-> ( $first() ? "" : ", ") + `i$i` ) +
+                            `) -> in(` +
+                            $range(1, $n, $i ->
+                                ( $first() ? "" : ", ") +
+                                ( ( $i == $s ) ? "result" : `i$i` )
+                            ) +
+                            `);`
+                        )
+                    },
+
+                    // default <T> In4<I1, T, I2> require2After(In1<T> require) {
+                    //   return (i1, t, i2) -> {
+                    //     in(i1, i2);
+                    //     require.in(t);
+                    //   }
+                    // }
+                    {
+                        name : `require$sAfter`,
+                        var : {
+                          l : ($n + 1)
+                        },
+                        filter: $n < 5;,
+                        typeParams : "T",
+                        returns : $type(`In$l`,
+                            $range(1, $l,
+                              $n -> $n == $s ? "T" :
+                              $n > $s ? "I" + ($n - 1) : `I$n`
+                        )),
+                        params : {
+                            require : `In1<T>`
+                        },
+                        body : (
+                            `return (` +
+                            $range(1, $l,
+                                $i-> ( $first() ? "" : ", ") +
+                                ( $i == $s ? `t` :
+                                  $i > $s ? "i" + ($i - 1) : `i$i`
+                                ) ) +
+                            `) -> {
+                              in(` +
+                              $range(1, $l, $i -> $i != $s, $i ->
+                                ( $first() ? "" : ", ") +
+                                (
+                                  $i > $s ? "i" + ($i - 1) : `i$i`
+                                ) ) +
+                            `);
+                              require.in(t);
+                          };`
+                        )
+                    },
+
+                    // default <T> In4<I1, T, I2> require2Before(In1<T> require) {
+                    //   return (i1, t, i2) -> {
+                    //     require.in(t);
+                    //     in(i1, i2);
+                    //   }
+                    // }
+                    {
+                        name : `require$sBefore`,
+                        var : {
+                          l : ($n + 1)
+                        },
+                        filter: $n < 5;,
+                        typeParams : "T",
+                        returns : $type(`In$l`,
+                            $range(1, $l,
+                              $n -> $n == $s ? "T" :
+                              $n > $s ? "I" + ($n - 1) : `I$n`
+                        )),
+                        params : {
+                            require : `In1<T>`
+                        },
+                        body : (
+                            `return (` +
+                            $range(1, $l,
+                                $i-> ( $first() ? "" : ", ") +
+                                ( $i == $s ? `t` :
+                                  $i > $s ? "i" + ($i - 1) : `i$i`
+                                ) ) +
+                            `) -> {
+                              require.in(t);
+                              in(` +
+                              $range(1, $l, $i -> $i != $s, $i ->
+                                ( $first() ? "" : ", ") +
+                                (
+                                  $i > $s ? "i" + ($i - 1) : `i$i`
+                                ) ) +
+                            `);
+                          };`
+                        )
+                    },
+
+                    // default In2<I1, I2> spy2Before(In1<I2> spy) {
+                    //   return (i1, i2) -> {
+                    //     spy.in1(i2);
+                    //     in(i1, result);
+                    //   }
+                    // }
+                    {
+                        name : `spy$sBefore`,
+                        returns : $type(`In$n`,
+                            $range(1, $n, $n->`I$n`)),
+                        params : {
+                            spy : `In1<I$s>`
+                        },
+                        body : (
+                            `return (` +
+                            $range(1, $n, $i-> ( $first() ? "" : ", ") + `i$i` ) +
+                            `) -> {
+                              spy.in1(i$s);
+                              in(` +
+                                $range(1, $n, $i -> ( $first() ? "" : ", ") + `i$i`) +
+                              `);
+                            };`
+                        )
+                    },
+
+                    // default In2<I1, I2> spy2After(In1<I2> spy) {
+                    //   return (i1, i2) -> {
+                    //     in(i1, result);
+                    //     spy.in1(i2);
+                    //   }
+                    // }
+                    {
+                        name : `spy$sAfter`,
+                        returns : $type(`In$n`,
+                            $range(1, $n, $n->`I$n`)),
+                        params : {
+                            spy : `In1<I$s>`
+                        },
+                        body : (
+                            `return (` +
+                            $range(1, $n, $i-> ( $first() ? "" : ", ") + `i$i` ) +
+                            `) -> {
+                              in(` +
+                            $range(1, $n, $i -> ( $first() ? "" : ", ") + `i$i`) +
+                              `);
+                              spy.in1(i$s);
+                            };`
+                        )
+                    },
+
+                    {
+
+                        from: 1,
+                        to: $n,
+                        var: "t",
+                        filter: $s != $t;,
+                        tasks:[
+                            // default In3<I1, I3, I2> swap3And2() {
+                            //  return (i1, i3, i2)->in(i1, i2, i3);
+                            // }
+                            {
+                                name : `swap$sAnd$t`,
+                                filter : $s < $t;,
+                                returns : $type(`In$n`,
+                                    $range(1, $n, $n->`I$n`)
+                                    .$replace(`I$s`, `tmp`)
+                                    .$replace(`I$t`, `I$s`)
+                                    .$replace(`tmp`, `I$t`)
+                                ),
+                                body : (
+                                    `return (` +
+                                    $range(1, $n,
+                                        $i-> ( $first() ? "" : ", ") +
+                                            ( $i == $s ? `i$t` : $i == $t ? `i$s` : `i$i` )
+                                        ) +
+                                    `) -> in(` +
+                                    $range(1, $n, $i ->
+                                        ( $first() ? "" : ", ") + `i$i`
+                                    ) +
+                                    `);`
+                                )
+
+                            },
+                            // default In1<I2> use2for1(In1Out1<I2, I1> mapper) {
+                            //  return i2->in(mapper.io(i2), i2);
+                            // }
+                            {
+                                name : `use$sFor$t`,
+                                var : {
+                                  l : ($n - 1)
+                                },
+                                returns : $type(`In$l`,
+                                    $range(1, $n, $n->`I$n`)
+                                    .$remove(`I$s`)),
+                                params : {
+                                    val : `In1Out1<I$s, I$t>`
+                                },
+                                body : (
+                                    `return (` +
+                                    $range(1, $n, $i -> $i != $t,
+                                        $i-> ( $first() ? "" : ", ") + `i$i` ) +
+                                    `) -> in(` +
+                                    $range(1, $n, $i ->
+                                        ( $first() ? "" : ", ") +
+                                        ( ( $i == $t ) ? `mapper.io(i$s)` : `i$i` )
+                                    ) +
+                                    `);`
+                                )
+
+                            }
+                        ]
+                    }
+                ]
             }
+
           ],
           staticMethods : [
           ]

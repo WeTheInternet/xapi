@@ -3,9 +3,8 @@ package xapi.dev.ui;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import xapi.fu.Do;
+import xapi.fu.In2;
 import xapi.util.api.Destroyable;
-
-import static xapi.fu.In2.reduceAll;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
@@ -32,7 +31,7 @@ public class ComponentMetadataFinder extends VoidVisitorAdapter<ComponentMetadat
         query.isVisitChildContainers() ;
 
     if (recurse) {
-      recurse(n, reduceAll(super::visit, n, query));
+      recurse(n, In2.reduceAll(super::visit, n, query));
     }
   }
 
@@ -48,7 +47,7 @@ public class ComponentMetadataFinder extends VoidVisitorAdapter<ComponentMetadat
 
   @Override
   public void visit(UiAttrExpr n, ComponentMetadataQuery query) {
-    recurse(n, reduceAll(super::visit, n, query)
+    recurse(n, In2.reduceAll(super::visit, n, query)
                 .doBefore(()->
                     query.notifyUiAttrExpr(scope, n)
                 ));

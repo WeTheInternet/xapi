@@ -75,6 +75,24 @@ public interface In2Out1<I1, I2, O> extends Rethrowable, Lambda {
     return in2 -> io.io(in1, in2);
   }
 
+  static <I1, I2, O> In1Out1<I2,O> with1Deferred(In2Out1<I1, I2, O> io, Out1<I1> in1) {
+    return in2 -> io.io(in1.out1(), in2);
+  }
+
+  static <I1, I2, O> In1Out1<I2,O> with1Immediate(In2Out1<I1, I2, O> io, Out1<I1> in1) {
+    final I1 value = in1.out1();
+    return in2 -> io.io(value, in2);
+  }
+
+  static <I1, I2, O> In1Out1<I1,O> with2Deferred(In2Out1<I1, I2, O> io, Out1<I2> in2) {
+    return in1 -> io.io(in1, in2.out1());
+  }
+
+  static <I1, I2, O> In1Out1<I1,O> with2Immediate(In2Out1<I1, I2, O> io, Out1<I2> in2) {
+    final I2 value = in2.out1();
+    return in1 -> io.io(in1, value);
+  }
+
   static <I1, I2, O> In1Out1<I1,O> with2(In2Out1<I1, I2, O> io, I2 in2) {
     return in1 -> io.io(in1, in2);
   }

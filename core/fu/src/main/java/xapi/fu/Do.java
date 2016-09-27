@@ -11,7 +11,7 @@ public interface Do {
   Do NOTHING = () -> {
   };
 
-  void done();
+    void done();
 
   default Runnable toRunnable() {
     return this::done;

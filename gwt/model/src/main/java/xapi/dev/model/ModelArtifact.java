@@ -149,7 +149,7 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
       existing = models.getRootType(logger, ctx).getInheritableMethods();
     }
     for (final JMethod method : existing) {
-      if (!method.isAbstract()) {
+      if (isAllowed(method) && !method.isAbstract()) {
         uniqueMethods.put(toSignature(method), method);
       }
     }
@@ -158,26 +158,34 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
       if (next.isInterface() != null) {
         sb.getClassBuffer().addInterfaces(next.getQualifiedSourceName());
         for (final JMethod method : next.getMethods()) {
-          final String sig = toSignature(method);
-          if (!uniqueMethods.containsKey(sig)) {
-            uniqueMethods.put(sig, method);
+          if (isAllowed(method)) {
+            final String sig = toSignature(method);
+            if (!uniqueMethods.containsKey(sig)) {
+              uniqueMethods.put(sig, method);
+            }
           }
         }
       } else {
         for (final JMethod method : next.getMethods()) {
-          final String sig = toSignature(method);
-          if (uniqueMethods.containsKey(sig)) {
-            if (debug) {
-              logger.log(Type.WARN, "Found multiple model methods for " + type.getName() + "::" + sig +
-                "; preferring method from " + uniqueMethods.get(sig).getEnclosingType().getName());
+          if (isAllowed(method)) {
+            final String sig = toSignature(method);
+            if (uniqueMethods.containsKey(sig)) {
+              if (debug) {
+                logger.log(Type.WARN, "Found multiple model methods for " + type.getName() + "::" + sig +
+                  "; preferring method from " + uniqueMethods.get(sig).getEnclosingType().getName());
+              }
+            } else {
+              uniqueMethods.put(sig, method);
             }
-          } else {
-            uniqueMethods.put(sig, method);
           }
         }
       }
     }
     return uniqueMethods.values();
+  }
+
+  private boolean isAllowed(JMethod method) {
+    return !method.isDefaultMethod();
   }
 
   public void generateModelClass(final TreeLogger logger, final SourceBuilder<ModelMagic> builder, final GeneratorContext ctx,

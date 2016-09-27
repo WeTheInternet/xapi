@@ -3,12 +3,12 @@
  * Copyright (C) 2011, 2013-2015 The JavaParser Team.
  *
  * This file is part of JavaParser.
- * 
+ *
  * JavaParser can be used either under the terms of
  * a) the GNU Lesser General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * b) the terms of the Apache License 
+ * b) the terms of the Apache License
  *
  * You should have received a copy of both licenses in LICENCE.LGPL and
  * LICENCE.APACHE. Please refer to those files for details.
@@ -18,7 +18,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  */
- 
+
 package com.github.javaparser.ast.expr;
 
 import com.github.javaparser.ast.visitor.GenericVisitor;
@@ -58,5 +58,13 @@ public class LongLiteralExpr extends StringLiteralExpr {
 				value.length() == 20 && //
 				value.startsWith(UNSIGNED_MIN_VALUE) && //
 				(value.charAt(19) == 'L' || value.charAt(19) == 'l');
+	}
+
+	public Long longValue() {
+		return value == null ? null : Long.parseLong(value);
+	}
+
+	public static LongLiteralExpr longLiteral(long l) {
+		return new LongLiteralExpr(Long.toString(l));
 	}
 }

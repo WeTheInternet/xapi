@@ -11,6 +11,10 @@ public interface In1Out1<I, O> extends Rethrowable, Lambda {
 
   In1Out1 IDENTITY = i->i;
 
+  static <O> In1Out1<O, O> identity() {
+    return IDENTITY;
+  }
+
   O io(I in);
 
   default O apply(Out1<I> supplier) {

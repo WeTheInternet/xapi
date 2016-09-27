@@ -69,13 +69,7 @@ public class RuntimeInjector implements In2<String, PlatformChecker> {
             int i = els.length-1;
             StackTraceElement best = els[--i];
             String cls = best.getClassName().toLowerCase();
-            while(i > 0 &&
-                (
-                    cls.contains("java.lang.") ||
-                    cls.contains(".intellij.") ||
-                    cls.contains(".eclipse") ||
-                    cls.contains("netbeans"))
-                ) {
+            while(i > 0 && isSystemClass(cls)) {
               // if the main class is likely an ide,
               // then we should look higher...
               while (i-- > 0) {
@@ -86,10 +80,23 @@ public class RuntimeInjector implements In2<String, PlatformChecker> {
                 }
               }
             }
+            if (isSystemClass(cls)) {
+              i = els.length-1;
+              best = els[i];
+              while (isSystemClass(cls) && i>0) {
+                best = els[i--];
+                cls = best.getClassName().toLowerCase();
+              }
+            }
             try {
               Class mainClass = Class.forName(best.getClassName());
               final String mainLoc = X_Reflect.getFileLoc(mainClass);
               relative = new File(mainLoc);
+              if (relative.isFile()) {
+                // Our search landed on a file (likely a jar);
+                // revert to "target/classes", and assume semi-sane $PWD
+                relative = new File(targetDir);
+              }
             } catch (ClassNotFoundException e) {
               throw X_Util.rethrow(e);
             }
@@ -319,6 +326,17 @@ public class RuntimeInjector implements In2<String, PlatformChecker> {
       X_Log.info("Total: ", X_Time.difference(start, finished));
     }
 
+  }
+
+  private boolean isSystemClass(String cls) {
+    return cls.startsWith("java.lang.") ||
+           cls.startsWith("sun.") ||
+           cls.startsWith("org.apache.maven.") ||
+           cls.contains(".intellij.") ||
+           cls.startsWith("org.junit") ||
+           cls.startsWith("junit.") ||
+           cls.contains(".eclipse") ||
+           cls.contains("netbeans");
   }
 
   protected boolean needsSingletonBinding(ClassFile cls) {
