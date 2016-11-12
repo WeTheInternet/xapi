@@ -26,6 +26,14 @@
     and enough code to throw up a servlet for tests, or hookup an endpoint of some kind.
     -->
     <module>api</module>
+    <!--
+    Generator binding to use xapi-lang to declaratively structure your server
+    -->
+    <module>gen</module>
+    <!--
+    Vert.x implementation of (flagship) xapi server
+    -->
+    <module>vertx</module>
 
   </modules>
 

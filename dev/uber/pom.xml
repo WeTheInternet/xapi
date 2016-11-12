@@ -76,6 +76,14 @@
     </dependency>
     <dependency>
       <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-gen</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-server-gen</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
       <artifactId>xapi-core-test</artifactId>
       <scope>test</scope>
     </dependency>

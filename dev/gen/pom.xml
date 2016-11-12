@@ -37,6 +37,10 @@
    <artifactId>xapi-jre-inject</artifactId>
   </dependency>
   <dependency>
+   <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-jre-api</artifactId>
+  </dependency>
+  <dependency>
    <groupId>junit</groupId>
    <artifactId>junit</artifactId>
    <scope>test</scope>

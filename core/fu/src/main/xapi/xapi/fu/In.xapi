@@ -93,7 +93,7 @@
                           l : ($n - 1)
                         },
                         returns : $l == 0 ? "Do" :
-                            $type(`In$l`, $range(1, $n, $n->$n != $s, $n->`I$n`));,
+                            $type(`In$l`, $range(1, $n, $v->$v != $s, $v->`I$v`));,
                         params : {
                             val : `I$s`
                         },
@@ -118,7 +118,7 @@
                           l : ($n - 1)
                         },
                         returns : $type(`In$l`,
-                            $range(1, $n, $n->`I$n`)
+                            $range(1, $n, $v->`I$v`)
                             .$remove(`I$s`)),
                         params : {
                             val : `Out1<I$s>`
