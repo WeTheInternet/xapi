@@ -2,12 +2,16 @@ package xapi.fu;
 
 import xapi.fu.Filter.Filter1;
 import xapi.fu.Filter.Filter2;
+import xapi.fu.has.HasItems;
+import xapi.fu.has.HasSize;
+
+import static xapi.fu.iterate.EmptyIterator.NONE;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 4/10/16.
  */
-public interface MapLike<K, V> {
+public interface MapLike<K, V> extends HasSize, HasItems<Out2<K, V>> {
 
   /**
    * A put operation.  Returns the previous value, if any.
@@ -31,15 +35,17 @@ public interface MapLike<K, V> {
 
   Iterable<K> keys();
 
+  @Override
+  default MappedIterable<Out2<K, V>> forEachItem() {
+    return mappedOut();
+  }
+
   default MappedIterable<K> mappedKeys() {
     final Iterable<K> itr = keys();
-    if (itr instanceof MappedIterable) {
-      return (MappedIterable<K>) itr;
-    }
     return MappedIterable.mapped(itr);
   }
 
-  default MappedIterable<V> valuesMapped() {
+  default MappedIterable<V> mappedValues() {
     return MappedIterable.mapIterable(keys(), this::get);
   }
 
@@ -224,5 +230,47 @@ public interface MapLike<K, V> {
       put(key, computed);
     }
     return existing;
+  }
+
+  default MappedIterable<Out2<K, V>> mappedOut() {
+    return mappedKeys()
+        .map(key->Out2.out2Immutable(key, get(key)));
+  }
+
+  MapLike EMPTY = new MapLike() {
+
+    @Override
+    public int size() {
+      return 0;
+    }
+
+    @Override
+    public Object put(Object key, Object value) {
+      throw new UnsupportedOperationException("EMPTY");
+    }
+
+    @Override
+    public Object get(Object key) {
+      return null;
+    }
+
+    @Override
+    public boolean has(Object key) {
+      return false;
+    }
+
+    @Override
+    public Object remove(Object key) {
+      return null;
+    }
+
+    @Override
+    public Iterable keys() {
+      return NONE;
+    }
+  };
+
+  static <K, V> MapLike<K, V> empty() {
+    return EMPTY;
   }
 }

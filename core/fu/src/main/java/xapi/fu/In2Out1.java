@@ -9,6 +9,8 @@ import java.util.function.BiFunction;
 @SuppressWarnings("unchecked") // yes, this api will let you do terrible things.  Don't do terrible things.
 public interface In2Out1<I1, I2, O> extends Rethrowable, Lambda {
 
+  In2Out1 RETURN_NULL = (i1, i2) ->null;
+
   O io(I1 in1, I2 in2);
 
   default int accept(int position, In1<O> callback, Object... values) {
@@ -97,7 +99,6 @@ public interface In2Out1<I1, I2, O> extends Rethrowable, Lambda {
     return in1 -> io.io(in1, in2);
   }
 
-
   /**
    * This hideous looking method enables
    * you to perform inline compute operations,
@@ -161,6 +162,21 @@ public interface In2Out1<I1, I2, O> extends Rethrowable, Lambda {
     }
     static <I1, I2, SuperI2, O> In2Out1<I1, SuperI2, O> superIn2(In2Out1<I1, I2, O> i) {
       return (i1, i2)->i.io(i1, (I2)i2);
+    }
+
+    static <I1, I2, O> In2Out1<I1, I2, O> returnNull() {
+      return RETURN_NULL;
+    }
+
+    static <I1, I2, O> O[] forEach(I1[] i1s, I2[] i2s, O[] os, In2Out1<I1, I2, O> mapper) {
+      for (int i = 0; i < os.length; i++) {
+        if (i >= i1s.length || i >= i2s.length) {
+          return os;
+        }
+        O mapped = mapper.io(i1s[i], i2s[i]);
+        os[i] = mapped;
+      }
+      return os;
     }
 
 }

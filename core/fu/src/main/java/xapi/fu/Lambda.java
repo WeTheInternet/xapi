@@ -32,4 +32,5 @@ public interface Lambda extends Serializable { // we want to force usable names.
             return myName.compareTo(yourName);
         }
     }
+
 }

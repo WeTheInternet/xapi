@@ -45,7 +45,7 @@ interface Jutsu {
     return Array.get(obj, index);
   }
 
-  default int applyArguments(int i, Many<HasInput> each, Object ... args) {
+  default int applyArguments(int i, Iterable<HasInput> each, Object ... args) {
     for (HasInput in : each) {
       i = in.accept(i, args);
     }
@@ -101,5 +101,13 @@ interface Jutsu {
 
   default Type[] getGenericInterfaces(Class<?> c) {
     return new Type[0];
+  }
+
+  default Object newArray(Class<?> type, int size) {
+    return Array.newInstance(type, size);
+  }
+
+  default void setArray(Object array, int pos, Object value) {
+    Array.set(array, pos, value);
   }
 }

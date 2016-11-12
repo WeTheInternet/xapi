@@ -40,6 +40,18 @@ public interface In3Out1<I1, I2, I3, O> extends Rethrowable, Lambda {
     return (in2, in3)->io(in1, in2, in3);
   }
 
+  default <To> In3Out1<To, I2, I3, O> map1(In1Out1<To, I1> mapper) {
+    return (to, i2, i3)->io(mapper.io(to), i2, i3);
+  }
+
+  default <To> In3Out1<I1, To, I3, O> map2(In1Out1<To, I2> mapper) {
+    return (i1, to, i3)->io(i1, mapper.io(to), i3);
+  }
+
+  default <To> In3Out1<I1, I2, To, O> map3(In1Out1<To, I3> mapper) {
+    return (i1, i2, to)->io(i1, i2, mapper.io(to));
+  }
+
   default In2Out1<I1, I3, O> supply2(I2 in2) {
     return (in1, in3)->io(in1, in2, in3);
   }

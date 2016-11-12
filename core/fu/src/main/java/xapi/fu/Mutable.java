@@ -20,7 +20,7 @@ public class Mutable <I> implements In1Unsafe<I>, Out1Unsafe<I> {
   }
 
   public Mutable(I value) {
-    value = value;
+    this.value = value;
   }
 
   public Immutable<I> freeze() {
@@ -42,6 +42,13 @@ public class Mutable <I> implements In1Unsafe<I>, Out1Unsafe<I> {
     this.value = in;
   }
 
+  public final boolean isNull() {
+    return value == null;
+  }
+
+  public final boolean isNonNull() {
+    return value != null;
+  }
   @Override
   public I outUnsafe() throws Throwable {
     return value;

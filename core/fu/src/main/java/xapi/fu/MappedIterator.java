@@ -8,9 +8,9 @@ import java.util.Iterator;
 public class MappedIterator<From, To> implements Iterator<To> {
 
     private final Iterator<From> from;
-    private final In1Out1<From, To> mapper;
+    private final In1Out1<? super From, ? extends To> mapper;
 
-    public MappedIterator(Iterator<From> from, In1Out1<From, To> mapper) {
+    public MappedIterator(Iterator<From> from, In1Out1<? super From, ? extends To> mapper) {
         this.from = from;
         this.mapper = mapper;
     }

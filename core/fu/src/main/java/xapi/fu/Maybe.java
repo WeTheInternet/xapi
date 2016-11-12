@@ -59,6 +59,9 @@ public interface Maybe <V> extends Rethrowable {
         };
     }
 
+    static <O> Maybe<O> nullable(O mapped) {
+        return mapped == null ? not() : immutable(mapped);
+    }
     static <O> ImmutableMaybe<O> immutable(O mapped) {
         return new ImmutableMaybe<>(mapped);
     }

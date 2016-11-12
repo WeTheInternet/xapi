@@ -39,6 +39,14 @@ public interface Out2<O1, O2> extends OutMany {
     return this;
   }
 
+  default <To> Out2<O1, To> mapped2(In1Out1<O2, To> mapper) {
+    return out2(this::out1, mapper.supplyDeferred(this::out2));
+  }
+
+  default <To> Out2<To, O2> mapped1(In1Out1<O1, To> mapper) {
+    return out2(mapper.supplyDeferred(this::out1), this::out2);
+  }
+
   /**
    * @return an immutable copy of this object.
    */

@@ -1,6 +1,7 @@
 package xapi.fu;
 
-import java.lang.reflect.Array;
+import xapi.fu.iterate.Chain;
+
 import java.lang.reflect.Type;
 
 import com.google.gwt.core.shared.GWT;
@@ -45,7 +46,7 @@ class Fu implements Jutsu {
     return String.valueOf(value);
   }
 
-  public int applyArguments(int i, Many<HasInput> each, Object ... args) {
+  public int applyArguments(int i, Chain<HasInput> each, Object ... args) {
     for (HasInput in : each) {
       i = in.accept(i, args);
     }

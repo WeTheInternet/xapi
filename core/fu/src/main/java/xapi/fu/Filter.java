@@ -11,11 +11,31 @@ public interface Filter<T> {
   Filter1 IF_NULL = args->args==null;
   Filter1 FALSE = args->false;
 
+  static <T> Filter1<T> ifNotNull() {
+    return IF_NOT_NULL;
+  }
+
+  static <T> Filter1<T> ifNull() {
+    return IF_NULL;
+  }
+
+  static <T> Filter1<T> alwaysTrue() {
+    return TRUE;
+  }
+
+  static <T> Filter1<T> alwaysFalse() {
+    return FALSE;
+  }
+
   boolean filter(T ... args);
 
   interface Filter1 <T> extends Filter<T> {
 
     boolean filter1(T item);
+
+    default Filter1<T> inverse() {
+      return i->!filter1(i);
+    }
 
     @Override
     default boolean filter(T... args) {
@@ -152,11 +172,4 @@ public interface Filter<T> {
     return filter;
   }
 
-  static Filter<Throwable> alwaysTrue() {
-    return TRUE;
-  }
-
-  static Filter<Throwable> alwaysFalse() {
-    return FALSE;
-  }
 }

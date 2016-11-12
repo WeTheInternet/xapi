@@ -36,6 +36,13 @@ public interface Log extends Debuggable {
     return this;
   }
 
+  default Log log(Class forClass, LogLevel level, Object ... values) {
+    if (isLoggable(level)) {
+      log(forClass, values);
+    }
+    return this;
+  }
+
   default Log log(Class forClass, Object ... values) {
     LogLevel level = levelForClass(forClass);
     if (isLoggable(level)) {

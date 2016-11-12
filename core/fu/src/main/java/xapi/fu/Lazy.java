@@ -36,6 +36,25 @@ public class Lazy <T> implements Out1<T>, IsLazy {
 
   private interface ProxySupplier <T> extends Out1<T> { }
 
+  public Immutable<T> asImmutable(){
+
+    // If we are already immutable, share proxy
+    if (proxy instanceof Immutable) {
+      return (Immutable<T>) proxy;
+    }
+
+    // Get our value; if it is acceptable, our proxy will be immutable
+    final T value = out1();
+
+    // Try to share proxy again
+    if (proxy instanceof Immutable) {
+      return (Immutable<T>) proxy;
+    }
+
+    // Value was not acceptable, so return a new immutable instance.
+    return Immutable.immutable1(value);
+  }
+
   @SuppressWarnings("unchecked")
   public Lazy(Out1<T> supplier) {
     proxy = proxySupplier(supplier);
@@ -123,6 +142,12 @@ public class Lazy <T> implements Out1<T>, IsLazy {
   }
 
   public static <T> Lazy<T> deferred1(Out1<T> supplier) {
+    return supplier instanceof Lazy ?
+        (Lazy<T>)supplier :
+        new Lazy<>(supplier) ;
+  }
+
+  public static <T> Lazy<T> deferred1Unsafe(Out1Unsafe<T> supplier) {
     return supplier instanceof Lazy ?
         (Lazy<T>)supplier :
         new Lazy<>(supplier) ;

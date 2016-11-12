@@ -2,8 +2,6 @@ package xapi.fu;
 
 import xapi.fu.Filter.Filter2;
 
-import static xapi.fu.MappableIterable.mappable;
-
 import javax.validation.constraints.NotNull;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -26,6 +24,15 @@ public interface X_Fu {
 
   static <T> T[] push(T[] ts, T t) {
     return Fu.jutsu.pushOnto(ts, t);
+  }
+
+  static Object newArray(Class<?> type, int size) {
+    return Fu.jutsu.newArray(type, size);
+  }
+
+  static Object setArray(Object array, int pos, Object value) {
+    Fu.jutsu.setArray(array, pos, value);
+    return array;
   }
 
   static <T> T[] blank(T[] ts) {
@@ -93,7 +100,7 @@ public interface X_Fu {
   }
 
   static <F, T> Iterable<T> map(Iterable<F> data, In1Out1<F, T> converter) {
-    return mappable(data).map(converter);
+    return MappedIterable.mapped(data).map(converter);
   }
 
   static String reduceToString(Iterable<? extends CharSequence> data, String separator) {

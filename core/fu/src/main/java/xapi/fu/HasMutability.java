@@ -7,17 +7,17 @@ public interface HasMutability {
 
   default boolean isMutable() {
     final boolean is = this instanceof IsMutable;
-    Out1<String> f = this::toString;
-    assert this instanceof IsImmutable ? !is : true :
+    assert !(this instanceof IsImmutable) :
         "Type " + getClass() + " must not be both Mutable and Immutable... "
-        + Out1.out1Unsafe(this::toString).out1();
+        + Out1.out1Unsafe(this::toString).out1(); // cheating this refs in default method
     return is;
   }
 
   default boolean isImmutable() {
     final boolean is = this instanceof IsImmutable;
-    assert this instanceof IsMutable ? !is : true :
-        "Type " + getClass() + " must not be both Mutable and Immutable... ";
+    assert !(this instanceof IsMutable) :
+        "Type " + getClass() + " must not be both Mutable and Immutable... "
+          + Out1.out1Unsafe(this::toString).out1(); // cheating this refs in default method
     return is;
   }
 

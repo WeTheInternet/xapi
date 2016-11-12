@@ -1,12 +1,14 @@
 package xapi.fu;
 
+import xapi.fu.iterate.Chain;
+
 /**
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 07/11/15.
  */
 public interface InMany extends HasInput {
 
-  Many<HasInput> children();
+  MappedIterable<HasInput> children();
 
   default void in(Object ... args) {
     Fu.jutsu.applyArguments(0, children(), args);
@@ -52,7 +54,7 @@ public interface InMany extends HasInput {
 
   class InManyBuilder {
 
-    Many<Out2<Integer, HasInput>> tail, head = tail = new Many<>();
+    Chain<Out2<Integer, HasInput>> tail, head = tail = new Chain<>();
 
     InManyBuilder add(In1 in) {
       tail = tail.add(Out2.out2Immutable(1, in));
@@ -75,46 +77,44 @@ public interface InMany extends HasInput {
     }
 
     InManyBuilder add(InManyBuilder multi) {
-      tail = tail.add(Out2.out2(()->(Integer)multi.size(), ()->multi.build()));
+      tail = tail.add(Out2.out2(multi::size, multi::build));
       return this;
     }
 
     private int size() {
-      int size = 1;
-      Many<Out2<Integer, HasInput>> test = head;
-      while (test.next != null) {
-        size ++;
-        test = test.next;
+      int size = 0;
+      for (Out2<Integer, HasInput> item : head) {
+        size += item.out1();
       }
       return size;
     }
 
     InMany build() {
       // Waits until invocation to peek in the stack
-      return ()->head.map(Out2::out2);
+      return ()-> head.map(Out2::out2);
     }
 
     InMany buildSnapshot() {
       // Copy from the the stack so when we invoke, we see the builder state at this instant.
-      final Many<HasInput> snapshot = head.map(Out2::out2);
+      final MappedIterable<HasInput> snapshot = head.map(Out2::out2);
       return ()->snapshot;
     }
   }
 
   static InMany of(HasInput in) {
-    return ()->new Many<HasInput>().add(in);
+    return ()->new Chain<HasInput>().add(in);
   }
 
   static InMany of(HasInput before, HasInput after) {
-    return ()->new Many<HasInput>().add(before).add(after);
+    return ()->new Chain<HasInput>().add(before).add(after);
   }
 
   static InMany of(HasInput before, HasInput middle, HasInput after) {
-    return ()->new Many<HasInput>().add(before).add(middle).add(after);
+    return ()->new Chain<HasInput>().add(before).add(middle).add(after);
   }
 
   static InMany of(HasInput... ins) {
-    Many<HasInput> tail, head = tail = new Many<HasInput>();
+    Chain<HasInput> tail, head = tail = new Chain<HasInput>();
     for (HasInput in : ins) {
       tail = tail.add(in);
     }

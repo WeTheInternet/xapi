@@ -13,7 +13,7 @@ import java.util.function.Supplier;
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 07/11/15.
  */
-public interface Out1<O> extends Rethrowable, Lambda {
+public interface Out1<O> extends Rethrowable, Lambda, HasMutability {
 
   O out1();
 
@@ -21,19 +21,20 @@ public interface Out1<O> extends Rethrowable, Lambda {
   static <T> Out1 <T> null1() {
       return NULL;
   }
-  Out1<String> EMPTY_STRING = immutable1("");
-  Out1<String> NEW_LINE = immutable1("\n");
-  Out1<String> SPACE = immutable1(" ");
-  Out1<Boolean> FALSE = immutable1(false);
-  Out1<Integer> ZERO = immutable1(0);
-  Out1<Boolean> TRUE = immutable1(true);
-  Out1<Integer> ONE = immutable1(1);
-  Out1<Integer> NEGATIVE_ONE = immutable1(-1);
 
-  default boolean isImmutable() {
-    Object o = this;
-    return o instanceof Immutable || o instanceof IsImmutable;
-  }
+  Out1<String> EMPTY_STRING = immutable1("");
+  Out1<String> SPACE = immutable1(" ");
+  Out1<String> NEW_LINE = immutable1("\n");
+
+  Out1<Boolean> FALSE = immutable1(false);
+  Out1<Boolean> TRUE = immutable1(true);
+
+  Out1<Integer> ZERO = immutable1(0);
+  Out1<Integer> ONE = immutable1(1);
+  Out1<Integer> NEG_ONE = immutable1(-1);
+
+  Out1<Double> ONE_DOT = immutable1(1.);
+  Out1<Double> NEG_ONE_DOT = immutable1(-1.);
 
   default Out1<O> use(In1<O> callback) {
     callback.in(out1());
@@ -66,7 +67,7 @@ public interface Out1<O> extends Rethrowable, Lambda {
     return of::get;
   }
 
-  static <O> Out1<O> out1(Out1<O> of) {
+  static <O> Out1<O> newOut1(Out1<O> of) {
     return of;
   }
 
@@ -94,7 +95,7 @@ public interface Out1<O> extends Rethrowable, Lambda {
   /**
    * This method just exists to give you somewhere to create a lambda that will rethrow exceptions,
    * but exposes an exceptionless api.  If you don't have to call code with checked exceptions,
-   * prefer the standard {@link #out1(Out1)}, as try/catch can disable / weaken some JIT compilers.
+   * prefer the standard {@link #Out1(Out1)}, as try/catch can disable / weaken some JIT compilers.
    */
   static <O> Out1<O> out1Unsafe(Out1Unsafe<O> of) {
     return of;

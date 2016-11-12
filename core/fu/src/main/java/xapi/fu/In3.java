@@ -51,6 +51,18 @@ public interface In3<I1, I2, I3> extends HasInput, Rethrowable, Lambda {
     return (i1, i2) -> in(i1, i2, and.out1());
   }
 
+  default <T> In3<T, I2, I3> map1(In1Out1<T, I1> mapper) {
+    return (to, i2, i3)->in(mapper.io(to), i2, i3);
+  }
+
+  default <T> In3<I1, T, I3> map2(In1Out1<T, I2> mapper) {
+    return (i1, to, i3)->in(i1, mapper.io(to), i3);
+  }
+
+  default <T> In3<I1, I2, T> map3(In1Out1<T, I3> mapper) {
+    return (i1, i2, to)->in(i1, i2, mapper.io(to));
+  }
+
   default In2<I2, I3> provide1(I1 and){
     return (i2, i3) -> in(and, i2, i3);
   }

@@ -1,5 +1,7 @@
 package xapi.fu;
 
+import xapi.fu.Filter.Filter1;
+
 import java.io.Serializable;
 import java.util.function.Consumer;
 
@@ -11,7 +13,73 @@ import java.util.function.Consumer;
 @SuppressWarnings("unchecked") // yes, this api will let you do terrible things.  Don't do terrible things.
 public interface In1<I> extends HasInput, Rethrowable, Lambda {
 
+  In1 IGNORED = i->{};
+
+  static <T> In1<T> ignored() {
+    return IGNORED;
+  }
+
   void in(I in);
+
+  default In1<I> inChain(I in) {
+    in(in);
+    return this;
+  }
+
+  default void useAfterMe(I in, In1<I> next) {
+    in(in);
+    next.in(in);
+  }
+
+  default void useAfterMeUnsafe(I in, In1Unsafe<I> next) {
+    in(in);
+    next.in(in);
+  }
+
+  default void useBeforeMe(I in, In1<I> next) {
+    next.in(in);
+    in(in);
+  }
+
+  default void useBeforeMeUnsafe(I in, In1Unsafe<I> next) {
+    next.in(in);
+    in(in);
+  }
+
+  default In1<I> useAfterMe(In1<I> next) {
+    return in->{
+      in(in);
+      next.in(in);
+    };
+  }
+
+  default In1Unsafe<I> useAfterMeUnsafe(In1Unsafe<I> next) {
+    return in->{
+      in(in);
+      next.in(in);
+    };
+  }
+
+  default In1<I> useBeforeMe(In1<I> next) {
+    return in -> {
+      next.in(in);
+      in(in);
+    };
+  }
+
+  default In1Unsafe <I> useBeforeMeUnsafe(In1Unsafe<I> next) {
+    return in->{
+      next.in(in);
+      in(in);
+    };
+  }
+
+  default In1Unsafe<I> unsafe() {
+    if (this instanceof In1Unsafe) {
+      return (In1Unsafe<I>) this;
+    }
+    return this::in;
+  }
 
   @Override
   default int accept(int position, Object... values) {
@@ -128,5 +196,15 @@ public interface In1<I> extends HasInput, Rethrowable, Lambda {
 
   default  <V> In2<V, I> ignore1() {
     return (ignored, i) -> in(i);
+  }
+
+  default Filter1<I> filtered(Filter1<I> filter) {
+    return i-> {
+      if (filter.filter1(i)) {
+        in(i);
+        return true;
+      }
+      return false;
+    };
   }
 }

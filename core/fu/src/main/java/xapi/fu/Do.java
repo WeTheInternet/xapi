@@ -6,7 +6,7 @@ package xapi.fu;
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 07/11/15.
  */
-public interface Do {
+public interface Do extends AutoCloseable {
 
   Do NOTHING = () -> {
   };
@@ -24,6 +24,11 @@ public interface Do {
     };
   }
 
+  @Override
+  default void close() { // erases exceptions
+    done();
+  }
+
   default Do doAfter(Do d) {
     return ()->{
       done();
@@ -35,6 +40,28 @@ public interface Do {
     return i->{
       in1.in(i);
       done();
+    };
+  }
+
+  default <O> Out1<O> returns1(O val) {
+    return ()->{
+      done();
+      return val;
+    };
+  }
+
+  default <O> Out1<O> returns1Deferred(Out1<O> val) {
+    return ()->{
+      done();
+      return val.out1();
+    };
+  }
+
+  default <O> Out1<O> returns1Immediate(Out1<O> val) {
+    O value = val.out1();
+    return ()->{
+      done();
+      return value;
     };
   }
 
@@ -55,6 +82,15 @@ public interface Do {
 
   interface DoUnsafe extends Do, Rethrowable{
     void doneUnsafe() throws Throwable;
+
+    @Override
+    default void done() {
+      try {
+        doneUnsafe();
+      } catch (Throwable throwable) {
+        throw rethrow(throwable);
+      }
+    }
 
     default void in() {
       try {

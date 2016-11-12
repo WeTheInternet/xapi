@@ -61,7 +61,7 @@ public class Immutable<O> implements Out1<O>, IsImmutable {
   }
 
 }
-class ImmutableSerialized <O> implements Serializable {
+class ImmutableSerialized <O> implements Serializable, IsImmutable {
   private O value;
 
   public O getValue() {
