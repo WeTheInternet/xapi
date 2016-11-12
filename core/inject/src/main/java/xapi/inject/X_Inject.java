@@ -252,7 +252,7 @@ public class X_Inject{
    */
   @KeepMethod
   @MagicMethod(doNotVisit=true)
-  public static <T, C extends Class<? extends T>> Provider<T> singletonLazy(final C cls) {
+  public static <Type, Generic extends Type> Provider<Type> singletonLazy(final Class<Generic> cls) {
     if (isJava()) {
       return xapi.inject.impl.JavaInjector.singletonLazy(cls);
     } else {

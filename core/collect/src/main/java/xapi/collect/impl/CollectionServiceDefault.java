@@ -19,6 +19,7 @@ import xapi.util.X_Runtime;
 
 import static java.util.Collections.synchronizedMap;
 
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -105,6 +106,10 @@ public class CollectionServiceDefault implements CollectionService{
   }
 
   protected <K, V> Map<K,V> newMap(final CollectionOptions opts) {
+    if (!opts.mutable()) {
+      return Collections.unmodifiableMap(newMap(CollectionOptions.from(opts)
+        .mutable(true).build()));
+    }
     if (opts.insertionOrdered()) {
       if (opts.concurrent()) {
         // TODO: something with better performance...
@@ -136,8 +141,8 @@ public class CollectionServiceDefault implements CollectionService{
   }
 
   @Override
-  public <K,V> ObjectTo<K,V> newMap(final Class<K> key, final Class<V> cls, final CollectionOptions opts) {
-    return new MapOf<K,V>(this.<K, V>newMap(opts), key, cls);
+  public <K,V, Key extends K, Value extends V> ObjectTo<K,V> newMap(final Class<Key> key, final Class<Value> cls, final CollectionOptions opts) {
+    return new MapOf<>(this.<K, V>newMap(opts), key, cls);
   }
 
 

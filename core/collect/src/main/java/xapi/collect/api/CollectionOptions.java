@@ -45,6 +45,8 @@ public final class CollectionOptions {
 
     public Builder() {
       concurrent = X_Runtime.isMultithreaded();
+      mutable = true; // default to mutable.  Most collections should start mutable,
+      // and only become immutable once they are fully initialized.
     }
 
     public Builder concurrent(boolean concurrent) {

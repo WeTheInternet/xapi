@@ -15,7 +15,7 @@ public interface CollectionService {
 
   <E, Generic extends E> IntTo<E> newSet(Class<Generic> cls, CollectionOptions opts);
 
-  <K, V> ObjectTo<K, V> newMap(Class<K> key, Class<V> cls, CollectionOptions opts);
+  <K, V, Key extends K, Value extends V> ObjectTo<K, V> newMap(Class<Key> key, Class<Value> cls, CollectionOptions opts);
 
   <K, V> ObjectTo.Many<K, V> newMultiMap(Class<K> key, Class<V> cls, CollectionOptions opts);
 

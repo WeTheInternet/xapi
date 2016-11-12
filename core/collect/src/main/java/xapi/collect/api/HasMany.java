@@ -3,6 +3,8 @@ package xapi.collect.api;
 import xapi.fu.Do;
 import xapi.fu.In1Out1;
 import xapi.fu.MapLike;
+import xapi.fu.MappedIterable;
+import xapi.fu.Out2;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
@@ -15,6 +17,11 @@ public interface HasMany <K, V> extends HasValues<K, IntTo<V>>, MapLike<K, IntTo
   default HasMany <K, V> add(K key, V value) {
     get(key).add(value);
     return this;
+  }
+
+  @Override
+  default MappedIterable<Out2<K, IntTo<V>>> forEachItem() {
+    return MapLike.super.forEachItem();
   }
 
   default HasMany <K, V> addMany(K key, Iterable<V> value) {
@@ -43,6 +50,11 @@ public interface HasMany <K, V> extends HasValues<K, IntTo<V>>, MapLike<K, IntTo
     final IntTo<V> flat = newList();
     values().forEach(flat::addAll);
     return flat;
+  }
+
+  default Iterable<Out2<K, Iterable<V>>> iterableOut() {
+    return mappedOut()
+        .map(out->out.mapped2(IntTo::forEach));
   }
 
 }

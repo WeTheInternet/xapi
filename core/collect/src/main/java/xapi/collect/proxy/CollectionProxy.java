@@ -2,12 +2,13 @@ package xapi.collect.proxy;
 
 import xapi.collect.api.CollectionOptions;
 import xapi.collect.api.ObjectTo;
-import xapi.collect.impl.ArrayIterable;
 import xapi.collect.impl.SimpleStack;
 import xapi.fu.In1;
 import xapi.fu.In2;
+import xapi.fu.In2.In2Unsafe;
 import xapi.fu.In2Out1;
 import xapi.fu.Out2;
+import xapi.fu.iterate.ArrayIterable;
 
 import java.util.Collection;
 import java.util.Map;
@@ -68,6 +69,9 @@ public interface CollectionProxy <K, V>
      }
    }
 
+   default void forEachPairUnsafe(In2Unsafe<K, V> callback) {
+       forEachPair(callback);
+   }
    default void forEachPair(In2<K, V> callback) {
      // purposely create a copy. This will avoid comodification exception
      readWhileTrue(callback.supply1(true));

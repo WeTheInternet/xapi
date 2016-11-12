@@ -3,17 +3,17 @@ package xapi.collect.api;
 import xapi.collect.impl.EntryIterable;
 import xapi.fu.In2Out1;
 import xapi.fu.Out2;
+import xapi.fu.has.HasSize;
 
 import java.util.Map.Entry;
 
-public interface HasValues<K,V> extends EntryIterable<K,V> {
+public interface HasValues<K,V> extends EntryIterable<K,V>, HasSize {
 
   // We don't implement typed getters / setters or removers,
   // Because some implementers of this interface are javascript objects,
   // and the interface's erased typed signature MUST match the final method's type.
   // Setting K to String will result in a Ljava/lang/Object; in the interface,
   // and Ljava/lang/String; in the implemented method.
-
 
   boolean isEmpty();
 

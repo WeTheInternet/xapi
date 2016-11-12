@@ -4,6 +4,8 @@ import xapi.collect.proxy.CollectionProxy;
 import xapi.fu.Filter.Filter1;
 import xapi.fu.In1;
 import xapi.fu.In1Out1;
+import xapi.fu.MappedIterable;
+import xapi.fu.has.HasItems;
 
 import java.util.Deque;
 import java.util.Iterator;
@@ -11,14 +13,14 @@ import java.util.List;
 import java.util.Set;
 
 public interface IntTo <T>
-extends CollectionProxy<Integer,T>
+extends CollectionProxy<Integer,T>, HasItems<T>
 {
 
   interface Many <T> extends IntTo<IntTo<T>> {
     void add(int key, T item);
   }
 
-  class IntToIterable <T> implements Iterable <T> {
+  class IntToIterable <T> implements MappedIterable <T> {
     private final IntTo<T> self;
     public IntToIterable(IntTo<T> self) {
       this.self = self;
@@ -52,6 +54,11 @@ extends CollectionProxy<Integer,T>
   }
 
   Iterable<T> forEach();
+
+  @Override
+  default MappedIterable<T> forEachItem() {
+    return MappedIterable.mapped(forEach());
+  }
 
   boolean add(T item);
 
@@ -177,8 +184,11 @@ extends CollectionProxy<Integer,T>
     return String.valueOf(value);
   }
 
-  default String join(String sep) {
-    StringBuilder b = new StringBuilder();
+  default String join(String before, String sep, String after) {
+    if (isEmpty()) {
+      return "";
+    }
+    StringBuilder b = new StringBuilder(before);
     final Iterator<T> itr = forEach().iterator();
     if (itr.hasNext()) {
       b.append(itr.next());
@@ -187,6 +197,18 @@ extends CollectionProxy<Integer,T>
       b.append(sep)
        .append(itr.next());
     }
+    b.append(after);
     return b.toString();
   }
+  default String join(String sep) {
+    return join("", sep, "");
+  }
+
+    static boolean isEmpty(IntTo<?> list) {
+      return list == null || list.isEmpty();
+    }
+
+    default IntTo<? super T> narrow() {
+        return this;
+    }
 }

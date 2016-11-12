@@ -84,6 +84,6 @@ public @interface InstanceOverride {
    *
    * If you expect your override to be further overridden in submodules, pick a negative priority.
    */
-  int priority() default Integer.MIN_VALUE;
+  int priority() default Integer.MIN_VALUE + 2;
 
 }

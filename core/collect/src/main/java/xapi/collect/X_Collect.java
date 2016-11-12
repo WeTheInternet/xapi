@@ -14,6 +14,8 @@ import xapi.collect.impl.*;
 import xapi.collect.proxy.CollectionProxy;
 import xapi.collect.service.CollectionService;
 import xapi.fu.In2Out1;
+import xapi.fu.iterate.ArrayIterable;
+import xapi.fu.iterate.SingletonIterator;
 import xapi.util.api.ReceivesValue;
 import xapi.util.impl.ReverseIterable;
 import xapi.util.impl.ReverseIterator;
@@ -167,6 +169,10 @@ public class X_Collect {
     return service.newList(cls, MUTABLE_LIST);
   }
 
+  public static IntTo<String> newStringList() {
+    return newList(String.class);
+  }
+
   public static <Type, Generic extends Type> IntTo<Type> newList(final Class<Generic> cls, CollectionOptions opts) {
     return service.newList(cls, CollectionOptions.from(opts).insertionOrdered(true).build());
   }
@@ -179,10 +185,10 @@ public class X_Collect {
     return service.newSet(cls, CollectionOptions.from(opts).forbidsDuplicate(true).build());
   }
 
-  public static <K,V, Key extends K, Value extends V> ObjectTo<Key,Value> newMap(final Class<Key> keyCls, final Class<Value> valueCls) {
+  public static <K,V, Key extends K, Value extends V> ObjectTo<K,V> newMap(final Class<Key> keyCls, final Class<Value> valueCls) {
     return service.newMap(keyCls, valueCls, MUTABLE);
   }
-  public static <K,V> ObjectTo<K,V> newMap(final Class<K> keyCls, final Class<V> valueCls, final CollectionOptions opts) {
+  public static <K,V, Key extends K, Value extends V> ObjectTo<K,V> newMap(final Class<Key> keyCls, final Class<Value> valueCls, final CollectionOptions opts) {
     return service.newMap(keyCls, valueCls, opts);
   }
 
@@ -322,4 +328,5 @@ public class X_Collect {
   computeMapTransform(Map<Key, Val> map) {
     return In2Out1.computeKeyValueTransform(map, Map::get, Map::put);
   }
+
 }
