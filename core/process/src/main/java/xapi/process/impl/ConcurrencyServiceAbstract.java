@@ -2,6 +2,7 @@ package xapi.process.impl;
 
 import xapi.collect.impl.AbstractMultiInitMap;
 import xapi.fu.Do;
+import xapi.fu.In1;
 import xapi.log.X_Log;
 import xapi.process.api.ConcurrentEnvironment;
 import xapi.process.api.ConcurrentEnvironment.Priority;
@@ -10,11 +11,10 @@ import xapi.process.api.ProcessController;
 import xapi.process.service.ConcurrencyService;
 import xapi.util.X_Runtime;
 import xapi.util.X_Util;
-import xapi.util.api.ReceivesValue;
+import xapi.util.impl.AbstractPair;
 
 import static xapi.util.X_Debug.debug;
 
-import javax.inject.Provider;
 import java.lang.Thread.State;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.Iterator;
@@ -102,7 +102,11 @@ public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
         params.uncaughtException(key, new InterruptedException());
       }
       X_Log.debug("Initializing Concurrent Environment", key);
-      return initializeEnvironment(key, params);
+      final ConcurrentEnvironment inited = initializeEnvironment(key, params);
+      inited.getThreads().forEach(t->
+        environments.put(new AbstractPair<>(t, params), inited)
+      );
+      return inited;
     }
     @Override
     protected UncaughtExceptionHandler defaultParams() {
@@ -117,7 +121,7 @@ public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
     return 2000;
   }
 
-  private final EnviroMap environments = initMap();
+  protected final EnviroMap environments = initMap();
 
   private AtomicInteger threadCount = new AtomicInteger();
 
@@ -160,7 +164,7 @@ public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
   }
 
   @Override
-  public <T> void resolve(final Future<T> future, final ReceivesValue<T> receiver) {
+  public <T> void resolve(final Future<T> future, final In1<T> receiver) {
     if (future.isDone()) {
       callback(future, receiver);
       return;
@@ -168,17 +172,9 @@ public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
     //The future isn't done.  Let's push a task into the enviro.
     Thread otherThread = getFuturesThread();
     ConcurrentEnvironment enviro = environments.get(otherThread, otherThread.getUncaughtExceptionHandler());
-    enviro.monitor(Priority.Low, new Provider<Boolean>() {
-      @Override
-      public Boolean get() {
-        return future.isDone();
-      }
-    }, new Runnable() {
-      @Override
-      public void run() {
-        callback(future, receiver);
-      }
-    });
+    enviro.monitor(Priority.Low, future::isDone,
+        () -> callback(future, receiver)
+    );
   }
 
   /**
@@ -190,9 +186,9 @@ public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
     return Thread.currentThread();
   }
 
-  protected <T> void callback(Future<T> future, ReceivesValue<T> receiver) {
+  protected <T> void callback(Future<T> future, In1<T> receiver) {
     try {
-      receiver.set(future.get());
+      receiver.in(future.get());
       return;
     } catch (InterruptedException e) {
       debug(e);

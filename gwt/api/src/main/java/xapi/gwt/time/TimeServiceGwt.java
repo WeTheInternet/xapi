@@ -7,6 +7,7 @@ import xapi.platform.GwtPlatform;
 import xapi.time.impl.AbstractTimeService;
 import xapi.time.service.TimeService;
 
+import com.google.gwt.core.client.Duration;
 import com.google.gwt.core.client.Scheduler;
 import com.google.gwt.core.client.Scheduler.ScheduledCommand;
 import com.google.gwt.i18n.shared.DateTimeFormat;
@@ -26,7 +27,12 @@ public class TimeServiceGwt extends AbstractTimeService {
 
   @Override
   public String timestamp() {
-    return formatter.out1().format(new Date());
+    return timestamp(Duration.currentTimeMillis());
+  }
+
+  @Override
+  public String timestamp(double millis) {
+    return formatter.out1().format(new Date((long)millis));
   }
 
   @Override

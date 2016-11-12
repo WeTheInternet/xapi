@@ -25,7 +25,13 @@ public abstract class ConcurrentEnvironment {
   private static final double start = X_Process.now();
 
   public void monitor(Priority priority, Provider<Boolean> gate, Runnable job) {
-
+    pushDeferred(()->{
+      if (Boolean.TRUE.equals(gate.get())) {
+        job.run();
+      } else {
+        monitor(priority, gate, job);
+      }
+    });
   }
 
   public boolean hasFinalies() {
@@ -46,27 +52,27 @@ public abstract class ConcurrentEnvironment {
     try {
     do {
       if (hasFinalies()) {
-        System.out.println("run finallies");
+        X_Log.debug(getClass(), "run finallies");
         runFinalies(max);
       }
-      System.out.println("check timeout");
+      X_Log.debug(getClass(), "check timeout");
       checkTimeouts(max);
 
       Iterator<Do> iter = getDeferred().iterator();
       while (iter.hasNext()) {
-        System.out.println("iterating job");
         Do next;
         synchronized (synchro) {
           next = iter.next();
           iter.remove();
         }
+        X_Log.trace(getClass(), "iterating job", next);
         next.done();
-        System.out.println("check finalies again");
+        X_Log.debug(getClass(), "check finalies again");
         if (hasFinalies()) {
-          System.out.println("has finalies");
+          X_Log.trace(getClass(), "has finalies");
           runFinalies(max);
         }
-        System.out.println("check timeout");
+        X_Log.debug(getClass(), "check timeout");
         checkTimeouts(max);
       }
     }while(! isEmpty());
@@ -74,7 +80,7 @@ public abstract class ConcurrentEnvironment {
       return false;
     }finally {
       if (X_Debug.isBenchmark()) {
-        X_Log.info("Spent "+(now()-(max-timeout))+" millis flushing environment");
+        X_Log.debug("Spent "+(now()-(max-timeout))+" millis flushing environment");
       }
     }
     return false;

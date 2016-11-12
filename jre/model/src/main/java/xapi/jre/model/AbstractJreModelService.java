@@ -5,6 +5,7 @@ import xapi.collect.api.ClassTo;
 import xapi.collect.api.Dictionary;
 import xapi.collect.api.IntTo;
 import xapi.except.NotYetImplemented;
+import xapi.fu.In2;
 import xapi.fu.Out1;
 import xapi.model.api.Model;
 import xapi.model.api.ModelKey;
@@ -133,7 +134,7 @@ public abstract class AbstractJreModelService extends AbstractModelService {
           return manifest.getPropertyNames();
         case "getProperties":
           final String[] properties = manifest.getPropertyNames();
-          return new Itr(properties, values, getDefaultValueProvider(manifest));
+          return new Itr(properties, values, getDefaultValueProvider(manifest, values::setValue));
         case "getKey":
           return key;
         case "clear":
@@ -156,7 +157,7 @@ public abstract class AbstractJreModelService extends AbstractModelService {
             }
           }
           if (result == null) {
-            return getDefaultValueProvider(manifest).convert((String)args[0]);
+            return getDefaultValueProvider(manifest, values::setValue).convert((String)args[0]);
           }
           return result;
         case "hashCode":
@@ -166,12 +167,12 @@ public abstract class AbstractJreModelService extends AbstractModelService {
         case "toString":
           return AbstractModel.toStringForModel((Model)proxy);
       }
-      if (method.getDeclaringClass() == Model.class) {
-        throw new UnsupportedOperationException("Unhandled xapi.model.api.Model method: "+method.toGenericString());
-      }
       if (method.isDefault()) {
         Method original = manifest.getModelType().getMethod(method.getName(), method.getParameterTypes());
         return X_Reflect.invokeDefaultMethod(original.getDeclaringClass(), method.getName(), method.getParameterTypes(), proxy, args);
+      }
+      if (method.getDeclaringClass() == Model.class) {
+        throw new UnsupportedOperationException("Unhandled xapi.model.api.Model method: "+method.toGenericString());
       }
       final MethodData property = manifest.getMethodData(method.getName());
       final ModelMethodType methodType = property.getMethodType(method.getName());
@@ -194,7 +195,7 @@ public abstract class AbstractJreModelService extends AbstractModelService {
               } catch (Throwable ignored){}
               return args[1];
             }
-            return getDefaultValueProvider(manifest).convert(property.getName());
+            return getDefaultValueProvider(manifest, values::setValue).convert(property.getName());
           }
           return result;
         case SET:
@@ -261,7 +262,7 @@ public abstract class AbstractJreModelService extends AbstractModelService {
 
   }
 
-  protected ConvertsValue<String,Object> getDefaultValueProvider(final ModelManifest manifest) {
+  protected ConvertsValue<String,Object> getDefaultValueProvider(final ModelManifest manifest, In2<String, Object> setter) {
     return new ConvertsValue<String, Object>() {
       @Override
       public Object convert(final String from) {
@@ -269,13 +270,17 @@ public abstract class AbstractJreModelService extends AbstractModelService {
         if (typeData.getType().isPrimitive()) {
           return AbstractModel.getPrimitiveValue(typeData.getType());
         } else if (typeData.getType().isArray()) {
-          return Array.newInstance(typeData.getType().getComponentType(), 0);
+          final Object arr = Array.newInstance(typeData.getType().getComponentType(), 0);
+          setter.in(from, arr);
+          return arr;
         } else {
           maybeInitDefaults(defaultValueProvider);
           // Handle other default values
           final ConvertsTwoValues<ModelManifest, MethodData, Object> provider = defaultValueProvider.get(typeData.getType());
           if (provider != null) {
-            return provider.convert(manifest, typeData);
+            final Object val = provider.convert(manifest, typeData);
+            setter.in(from, val);
+            return val;
           }
         }
         return null;
@@ -320,7 +325,7 @@ public abstract class AbstractJreModelService extends AbstractModelService {
 
         @Override
         public Entry<String, Object> next() {
-          final String key = keys[pos];
+          final String key = keys[pos++];
           Object value = map.getValue(key);
           if (value == null) {
             value = defaultValueProvider.convert(key);
@@ -404,7 +409,14 @@ public abstract class AbstractJreModelService extends AbstractModelService {
   @Override
   @SuppressWarnings("unchecked")
   public <M extends Model> Class<M> typeToClass(final String kind) {
-    return (Class<M>) typeNameToClass.get(kind);
+    return (Class<M>) typeNameToClass.getOrCreate(kind, k->
+      modelManifests.findAndReduce((cls, manifest)->{
+        if (manifest.getType().equals(kind)) {
+          return (Class<M>)cls;
+        }
+        return null;
+      })
+    );
   }
 
   protected void rethrow(Exception e) {

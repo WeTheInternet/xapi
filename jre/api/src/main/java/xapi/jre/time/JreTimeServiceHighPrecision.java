@@ -55,7 +55,11 @@ public class JreTimeServiceHighPrecision extends TimeServiceDefault{
 
   @Override
   public String timestamp() {
+    return timestamp(millis());
+  }
+  public String timestamp(double millis) {
     Calendar c = Calendar.getInstance();
+    c.setTimeInMillis((long)millis);
     return X_String.toTimestamp(
         c.get(Calendar.YEAR),
         c.get(Calendar.MONTH),

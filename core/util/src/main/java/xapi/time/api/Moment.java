@@ -1,21 +1,10 @@
 package xapi.time.api;
 
-import xapi.fu.IsImmutable;
+import xapi.time.impl.ImmutableMoment;
 
 import java.io.Serializable;
 
 public interface Moment extends Serializable, Comparable <Moment> {
-
-  /**
-   * Warning: You have to handle NAN in comparisons of millis,
-   * as that is the value for NULL;
-   * this allows MIN_VALUE and -1 to not be mistaken for "null".
-   */
-  Moment NULL = (Moment & IsImmutable)()->Double.NaN;
-  Moment ZERO = (Moment & IsImmutable)()->0;
-  Moment ONE = (Moment & IsImmutable)()->1;
-  Moment NEG_ONE = (Moment & IsImmutable)()->-1;
-  Moment TWO = (Moment & IsImmutable)()->2;
 
   double millis();
 
@@ -79,12 +68,12 @@ public interface Moment extends Serializable, Comparable <Moment> {
   default Moment plus(double millis) {
     double me = millis();
     double later = me + millis;
-    return (IsImmutable & Moment)()->later;
+    return new ImmutableMoment(later);
   }
 
   default Moment minus(double millis) {
     double me = millis();
     double later = me - millis;
-    return (IsImmutable & Moment)()->later;
+    return new ImmutableMoment(later);
   }
 }

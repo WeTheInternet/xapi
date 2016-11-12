@@ -198,25 +198,25 @@ public class RuntimeInjector implements In2<String, PlatformChecker> {
 
       Annotation anno = cls.getAnnotation(SingletonDefault.class.getName());
       if (anno != null && allowedPlatform(cls, scopes, platforms)) {
-        if (needsSingletonBinding(cls)) {
+        if (needsSingletonBinding(implFor(anno))) {
           defaultSingletons.give(cls);
         }
       }
       anno = cls.getAnnotation(SingletonOverride.class.getName());
       if (anno != null && allowedPlatform(cls, scopes, platforms)) {
-        if (needsSingletonBinding(cls)) {
+        if (needsSingletonBinding(implFor(anno))) {
           singletonImpls.give(cls);
         }
       }
       anno = cls.getAnnotation(InstanceDefault.class.getName());
       if (anno != null && allowedPlatform(cls, scopes, platforms)) {
-        if (needsInstanceBinding(cls)) {
+        if (needsInstanceBinding(implFor(anno))) {
           defaultInstances.give(cls);
         }
       }
       anno = cls.getAnnotation(InstanceOverride.class.getName());
       if (anno != null && allowedPlatform(cls, scopes, platforms)) {
-        if (needsInstanceBinding(cls)) {
+        if (needsInstanceBinding(implFor(anno))) {
           instanceImpls.give(cls);
         }
       }
@@ -328,6 +328,10 @@ public class RuntimeInjector implements In2<String, PlatformChecker> {
 
   }
 
+  private ClassMemberValue implFor(Annotation anno) {
+    return (ClassMemberValue) anno.getMemberValue("implFor");
+  }
+
   private boolean isSystemClass(String cls) {
     return cls.startsWith("java.lang.") ||
            cls.startsWith("sun.") ||
@@ -339,13 +343,13 @@ public class RuntimeInjector implements In2<String, PlatformChecker> {
            cls.contains("netbeans");
   }
 
-  protected boolean needsSingletonBinding(ClassFile cls) {
-    String name = "META-INF/singletons/" + cls.getQualifiedName();
+  protected boolean needsSingletonBinding(ClassMemberValue cls) {
+    String name = "META-INF/singletons/" + cls.getValue();
     return targetClassloader().getResource(name) == null;
   }
 
-  protected boolean needsInstanceBinding(ClassFile cls) {
-    String name = "META-INF/instances/" + cls.getQualifiedName();
+  protected boolean needsInstanceBinding(ClassMemberValue cls) {
+    String name = "META-INF/instances/" + cls.getValue();
     return targetClassloader().getResource(name) == null;
   }
 

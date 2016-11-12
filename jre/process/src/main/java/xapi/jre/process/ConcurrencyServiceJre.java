@@ -4,6 +4,7 @@ import xapi.annotation.inject.SingletonDefault;
 import xapi.except.NotYetImplemented;
 import xapi.fu.Do;
 import xapi.fu.Lazy;
+import xapi.fu.Mutable;
 import xapi.inject.impl.SingletonProvider;
 import xapi.log.X_Log;
 import xapi.platform.JrePlatform;
@@ -22,6 +23,7 @@ import static xapi.fu.Lazy.deferred1;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 
 @JrePlatform
@@ -98,7 +100,27 @@ public class ConcurrencyServiceJre extends ConcurrencyServiceAbstract{
   public ConcurrentEnvironment initializeEnvironment(
     Thread key, UncaughtExceptionHandler params) {
     ConcurrentEnvironment enviro = new JreConcurrentEnvironment();
+    Mutable<Integer> delay = new Mutable<>(500_000);
+    final Thread thread = createThread(() -> {
+      while (true) {
+        if (enviro.flush(10)) {
+          LockSupport.parkNanos(delay.out1());
+          // Cap delay at 3/4 of a second
+          delay.in(Math.max(1_750_000_000, delay.out1() * 3/2));
+        } else {
+          delay.in(500_000_000);
+        }
+      }
+    });
+    enviro.pushThread(thread);
+    thread.setDaemon(true);
+    thread.start();
+
     return enviro;
+  }
+
+  protected Thread createThread(Do task) {
+    return new Thread(task.toRunnable());
   };
 
   protected int maxThreads() {

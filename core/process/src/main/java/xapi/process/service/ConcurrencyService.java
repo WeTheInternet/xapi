@@ -1,12 +1,12 @@
 package xapi.process.service;
 
 import xapi.fu.Do;
+import xapi.fu.In1;
 import xapi.process.api.AsyncLock;
 import xapi.process.api.Process;
 import xapi.process.api.ProcessController;
 import xapi.time.service.TimeService;
 import xapi.util.api.ErrorHandler;
-import xapi.util.api.ReceivesValue;
 
 import java.util.concurrent.Future;
 
@@ -104,7 +104,7 @@ public interface ConcurrencyService {
    * any exceptions caused by the future (after unwrapping ExecutionException
    * and RuntimeException).
    */
-  <T> void resolve(Future<T> future, ReceivesValue<T> receiver);
+  <T> void resolve(Future<T> future, In1<T> receiver);
 
   /**
    * Flushes all jobs for a given thread, up to a given millisecond timeout.

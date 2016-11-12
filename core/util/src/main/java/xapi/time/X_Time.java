@@ -113,4 +113,8 @@ public class X_Time {
   public static String timestamp() {
     return service.timestamp();
   }
+
+  public static String timestamp(double millis) {
+    return service.timestamp(millis);
+  }
 }

@@ -1,8 +1,10 @@
 package xapi.time.impl;
 
+import xapi.fu.IsImmutable;
+import xapi.time.X_Time;
 import xapi.time.api.Moment;
 
-public class ImmutableMoment implements Moment{
+public class ImmutableMoment implements Moment, IsImmutable {
   private static final long serialVersionUID = -5493139144266455063L;
   private final double millis;
   private int hash;
@@ -27,5 +29,10 @@ public class ImmutableMoment implements Moment{
     return
       obj == this ||
       ( (obj instanceof Moment) &&  0 == compareTo((Moment)obj) );
+  }
+
+  @Override
+  public String toString() {
+    return X_Time.timestamp(millis());
   }
 }

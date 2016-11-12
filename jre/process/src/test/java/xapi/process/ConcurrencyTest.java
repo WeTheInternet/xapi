@@ -9,6 +9,9 @@ import xapi.util.api.Pointer;
 import static xapi.log.X_Log.info;
 import static xapi.process.X_Process.*;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
 public class ConcurrencyTest {
 
   @BeforeClass public static void prepare() {
@@ -40,6 +43,7 @@ public class ConcurrencyTest {
     //we expect all finalies to run between all deferred commands.
     //We will use a closure object to make sure execution is happening in the expected order.
     final Pointer<Long> stage = new Pointer<Long>(0L);
+    CountDownLatch latch = new CountDownLatch(2);
     runFinally(() -> {
         //runs first
         Assert.assertEquals("1st defer ran before 1st finally",stage.get().longValue(), 0);
@@ -48,6 +52,7 @@ public class ConcurrencyTest {
             //runs last
             Assert.assertEquals("2nd defer ran before 2nd finally",stage.get().longValue(), 3);
             stage.set(4L);
+            latch.countDown();
         });
     });
     runDeferred(() -> {
@@ -58,9 +63,14 @@ public class ConcurrencyTest {
               //runs third, as a finally inside a defer should.
               Assert.assertEquals("2nd finally did not run after 1st defer",stage.get().longValue(), 2);
               stage.set(3L);
+              latch.countDown();
         });
     });
-    flush(1000);
+
+    do {
+        flush(200);
+    } while (!latch.await(100, TimeUnit.MILLISECONDS));
+
     Assert.assertTrue(stage.get() == 4);
   }
 

@@ -1,27 +1,39 @@
 package xapi.process;
 
-import java.util.concurrent.Future;
-
-import javax.inject.Provider;
-
 import xapi.fu.Do;
+import xapi.fu.Do.DoUnsafe;
+import xapi.fu.In1;
+import xapi.fu.In1.In1Unsafe;
+import xapi.fu.Lazy;
 import xapi.inject.X_Inject;
 import xapi.process.api.AsyncLock;
 import xapi.process.api.Process;
 import xapi.process.api.ProcessController;
 import xapi.process.service.ConcurrencyService;
-import xapi.util.api.ReceivesValue;
+
+import javax.inject.Provider;
+import java.util.concurrent.Future;
 
 public class X_Process {
 
   private static final Provider<ConcurrencyService> service = X_Inject
       .singletonLazy(ConcurrencyService.class);
 
-  public static <T> void block(Future<T> future, ReceivesValue<T> receiver) {
+  public static <T> void resolve(Future<T> future, In1<T> receiver) {
     service.get().resolve(future, receiver);
   }
 
+  public static <T> void blockInBackground(Future<T> future, In1<T> receiver) {
+    runDeferred(()->
+      service.get().resolve(future, receiver)
+    );
+  }
+
   public static void runDeferred(Do cmd) {
+    service.get().runDeferred(cmd);
+  }
+
+  public static void runDeferredUnsafe(DoUnsafe cmd) {
     service.get().runDeferred(cmd);
   }
 
@@ -73,4 +85,16 @@ public class X_Process {
     return service.get().newLock();
   }
 
+  public static <T> void runWhenReadyUnsafe(Lazy<T> io, In1Unsafe<T> callback) {
+    runWhenReady(io, callback);
+  }
+  public static <T> void runWhenReady(Lazy<T> io, In1<T> callback) {
+    if (io.isFull1()) {
+      callback.in(io.out1());
+    } else {
+      runDeferred(()->{
+        runWhenReady(io, callback);
+      });
+    }
+  }
 }

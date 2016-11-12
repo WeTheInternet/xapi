@@ -147,6 +147,10 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
           for (int i = 0; i < len; i++) {
             out.append(primitives.serializeLong(Array.getLong(array, i)));
           }
+        } else if (childType == char.class) {
+          for (int i = 0; i < len; i++) {
+            out.append(primitives.serializeChar(Array.getChar(array, i)));
+          }
         } else {
           // all int types
           for (int i = 0; i < len; i++) {
@@ -416,6 +420,18 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
           asFloat = 0f;
         }
         out.append(primitives.serializeFloat(asFloat.floatValue()));
+      } else if (valueType == boolean.class) {
+        Boolean asBoolean = (Boolean) value;
+        if (asBoolean == null) {
+          asBoolean = false;
+        }
+        out.append(primitives.serializeBoolean(asBoolean.booleanValue()));
+      } else if (valueType == char.class) {
+        Character asCharacter = (Character) value;
+        if (asCharacter == null) {
+          asCharacter = '0';
+        }
+        out.append(primitives.serializeChar(asCharacter.charValue()));
       } else if (valueType == long.class) {
         Long asLong  = (Long) value;
         if (asLong == null) {

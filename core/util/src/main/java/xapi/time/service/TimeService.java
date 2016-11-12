@@ -84,5 +84,11 @@ public interface TimeService extends Moment{
    */
   String timestamp();
 
+  /**
+   * @return An ISO-8601 compliant timestamp:
+   * yyyy-MM-dd'T'HH:mm.sssZ
+   */
+  String timestamp(double millis);
+
 
 }

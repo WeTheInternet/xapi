@@ -3,13 +3,6 @@
  */
 package xapi.test.model;
 
-import java.lang.reflect.Array;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.Objects;
-
 import xapi.annotation.inject.SingletonOverride;
 import xapi.log.X_Log;
 import xapi.model.api.Model;
@@ -31,11 +24,18 @@ import xapi.test.model.content.ModelTextTest;
 import xapi.test.model.content.ModelUserTest;
 import xapi.util.api.SuccessHandler;
 
+import java.lang.reflect.Array;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Objects;
+
 /**
  * @author James X. Nelson (james@wetheinter.net, @james)
  *
  */
-@SingletonOverride(priority=Integer.MIN_VALUE, implFor=ModelService.class)
+@SingletonOverride(priority=Integer.MIN_VALUE+2, implFor=ModelService.class)
 public class ModelServiceTestImpl extends AbstractModelService {
 
   private final HashMap<ModelKey, Model> ramCache = new HashMap<>();
