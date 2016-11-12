@@ -33,7 +33,7 @@ public interface ScopeService {
     });
   }
 
-  <S extends Scope> void runInNewScope(Class<S> scope, In2Unsafe<S, Do> todo);
+  <S extends Scope, Generic extends S> void runInNewScope(Class<Generic> scope, In2Unsafe<Generic, Do> todo);
 
   Scope currentScope();
 

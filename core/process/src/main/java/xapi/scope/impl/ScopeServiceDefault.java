@@ -1,12 +1,13 @@
 package xapi.scope.impl;
 
+import xapi.annotation.inject.InstanceDefault;
 import xapi.collect.api.ClassTo;
 import xapi.fu.Do;
 import xapi.fu.In1Out1;
 import xapi.fu.In2.In2Unsafe;
 import xapi.inject.X_Inject;
 import xapi.scope.api.Scope;
-import xapi.scope.api.Scope.GlobalScope;
+import xapi.scope.api.GlobalScope;
 import xapi.scope.service.ScopeService;
 
 import java.util.concurrent.atomic.AtomicReference;
@@ -14,6 +15,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 9/5/16.
  */
+@InstanceDefault(implFor = ScopeService.class)
 public class ScopeServiceDefault implements ScopeService {
 
     protected class ScopeMap {
@@ -90,14 +92,16 @@ public class ScopeServiceDefault implements ScopeService {
     }
 
     @Override
-    public <S extends Scope> void runInNewScope(Class<S> scope, In2Unsafe<S, Do> todo) {
-        final S created = createScope(scope);
+    public <S extends Scope, Generic extends S> void runInNewScope(
+        Class<Generic> scope, In2Unsafe<Generic, Do> todo
+    ) {
+        final Generic created = createScope(scope);
         runInScope(created, todo);
     }
 
     @Override
     public Scope currentScope() {
-        return currentScope.get().scope.get();
+        return currentScope.get().scope.updateAndGet(s->s==null?newGlobalScope():s);
     }
 
 }

@@ -5,8 +5,8 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.fu.In1Out1;
 import xapi.inject.X_Inject;
-import xapi.scope.api.Scope.GlobalScope;
-import xapi.time.api.Moment;
+import xapi.scope.api.GlobalScope;
+import xapi.scope.api.SessionScope;
 import xapi.util.api.HasId;
 
 /**
@@ -18,7 +18,7 @@ public class GlobalScopeDefault <User, Request> extends AbstractScope<GlobalScop
     private In1Out1<User, String> keySource;
     private StringTo<SessionScope<User, Request>> users;
 
-    protected GlobalScopeDefault() {
+    public GlobalScopeDefault() {
         users = X_Collect.newStringMap(SessionScope.class, X_Collect.MUTABLE_CONCURRENT);
         keySource = u-> {
             if (u instanceof HasId) {

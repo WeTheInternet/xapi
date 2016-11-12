@@ -1,6 +1,7 @@
 package xapi.scope.api;
 
 import xapi.fu.In1Out1;
+import xapi.fu.MapLike;
 
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -11,56 +12,54 @@ import java.util.function.Predicate;
  */
 public interface Scope {
 
-  interface GlobalScope <UserType, RequestType> extends Scope {
-
-    SessionScope<UserType, RequestType> getSessionScope(UserType user);
-
-    @Override
-    default Class<? extends Scope> forScope() {
-      return GlobalScope.class;
-    }
-  }
-  interface SessionScope <UserType, RequestType> extends Scope {
-    UserType getUser();
-    RequestScope<RequestType> getRequestScope(RequestType request);
-
-    SessionScope<UserType, RequestType> setUser(UserType user);
-
-    void touch();
-
-    @Override
-    default Class<? extends Scope> forScope() {
-      return SessionScope.class;
-    }
-  }
-  interface RequestScope<RequestType>  extends Scope {
-    RequestType getRequest();
-
-    void setRequest(RequestType req);
-
-    @Override
-    default Class<? extends Scope> forScope() {
-      return RequestScope.class;
-    }
-  }
-  interface LocalScope extends Scope {
-    @Override
-    default Class<? extends Scope> forScope() {
-      return LocalScope.class;
-    }
+  default <T, C extends T> T getLocal(Class<C> cls) {
+    return this.<T, C>localData().get(cls);
   }
 
-  boolean isReleased();
+  default boolean hasLocal(Class cls) {
+    return localData().has(cls);
+  }
 
-  boolean hasLocal(Class<?> cls);
+  default <T, C extends T> T removeLocal(Class<C> cls) {
+    return this.<T, C>localData().remove(cls);
+  }
 
-  <T, C extends T> T getLocal(Class<C> cls);
+  default <T, C extends T> T setLocal(Class<C> cls, T value) {
+    return this.<T, C>localData().put(cls, value);
+  }
 
-  <T, C extends T> T set(Class<C> cls, T value);
+  default boolean isAttached() {
+    return localData().has(attachedKey());
+  }
 
-  void release();
+  default void release() {
+    removeLocal(ScopeKeys.ATTACHED_KEY);
+    final Scope parent = getParent();
+    parent.removeLocal(forScope());
+    removeLocal(parent.forScope());
+    setLocal(parentKey(), nullScope());
+  }
 
-  Scope getParent();
+  default Scope getParent() {
+    // We use the class ParentKey as a key,
+    // and just tell java we expect some kind of scope back
+    // (a type which will not be of type ParentKey)
+    return getLocal(parentKey());
+  }
+
+  default Scope setParent(Scope parent) {
+    assert !findParent(parent.getClass(), true).isPresent();
+    // We use the class ParentKey as a key,
+    // and just tell java we expect some kind of scope back
+    // (a type which will not be of type ParentKey)
+    final MapLike<Class<Scope>, Scope> data = localData();
+    setLocal(attachedKey(), parent.isAttached());
+    setLocal(parent.forScope(), parent);
+    parent.setLocal(forScope(), this);
+    return data.put(parentKey(), parent);
+  }
+
+  <T, C extends T> MapLike<Class<C>, T> localData();
 
   default Class<? extends Scope> forScope() {
     return getClass();
@@ -97,7 +96,7 @@ public interface Scope {
       return get(key);
     } else {
       final T value = factory.io(key);
-      set(key, value);
+      setLocal(key, value);
       return value;
     }
   }
@@ -114,4 +113,39 @@ public interface Scope {
     return Optional.empty();
   }
 
+  default <S extends Scope> Optional<S> findParentOrSelf(Class<S> type, boolean exactMatch) {
+    Scope current = this;
+    Predicate<Class> matcher = exactMatch ? type::equals : type::isAssignableFrom;
+    if (matcher.test(getClass())) {
+      return Optional.of((S)this);
+    }
+    while (current != null) {
+      if (matcher.test(current.getClass())) {
+        return Optional.of((S)current);
+      }
+      current = current.getParent();
+    }
+    return Optional.empty();
+  }
+
+  default Class<Scope> parentKey() {
+    return ScopeKeys.PARENT_KEY;
+  }
+
+  default Class<Object> attachedKey() {
+    return ScopeKeys.ATTACHED_KEY;
+  }
+
+  default Scope nullScope() {
+    return ScopeKeys.NULL;
+  }
+}
+
+@SuppressWarnings("unchecked")
+final class ScopeKeys {
+  static final Class<Scope> PARENT_KEY = Class.class.cast(ParentKey.class);
+  static final Class<Object> ATTACHED_KEY = Class.class.cast(AttachedKey.class);
+  static final Scope NULL = MapLike::empty;
+  private interface ParentKey extends Scope {}
+  private interface AttachedKey extends Scope {}
 }

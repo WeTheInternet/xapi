@@ -2,21 +2,25 @@ package xapi.scope.impl;
 
 import xapi.fu.In1Out1;
 import xapi.inject.X_Inject;
-import xapi.scope.api.Scope.SessionScope;
+import xapi.scope.api.RequestScope;
+import xapi.scope.api.SessionScope;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
+import xapi.util.api.Destroyable;
 
+import java.util.Optional;
 import java.util.WeakHashMap;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 9/5/16.
  */
-public class SessionScopeDefault <User, Request> extends AbstractScope<SessionScopeDefault<User, Request>> implements SessionScope<User, Request> {
+public class SessionScopeDefault <User, Request, Session extends SessionScopeDefault<User, Request, Session>>
+    extends AbstractScope<Session> implements SessionScope<User, Request>, Destroyable {
 
     private User user;
     private Moment activity;
-    private WeakHashMap<Request, RequestScope<Request>> requests;
     private In1Out1<Request, RequestScope<Request>> scopeFactory;
+    protected final WeakHashMap<Request, RequestScope<Request>> requests;
 
     protected SessionScopeDefault() {
         this(req->{
@@ -38,9 +42,43 @@ public class SessionScopeDefault <User, Request> extends AbstractScope<SessionSc
     }
 
     @Override
-    public RequestScope<Request> getRequestScope(Request request) {
+    public RequestScope<Request> getRequestScope(Optional<Request> request) {
+        if(request.isPresent()){
+            final RequestScope<Request> scope = requests.get(request.get());
+            if (scope != null) {
+                return scope;
+            }
+        }
+        final Optional<RequestScope> parentScope = findParentOrSelf(RequestScope.class, false);
+        if (parentScope.isPresent()) {
+            return parentScope.get();
+        }
+        // only let one thread look in or mutate this scope at a time
+        synchronized (requests) {
+            final Request req = request.orElseThrow(() -> new IllegalArgumentException(
+                "Cannot get a request scope with a null request from scope " + this
+            ));
+            final RequestScope<Request> child = requests.get(req);
+            if (child != null) {
+                // TODO: validate generic signatures.
+                return child;
+            }
+            // no existing scope, create one.
+            final RequestScope<Request> newScope = createRequestScope(request);
+            final RequestScope was = requests.put(req, newScope);
+            if (was != null) {
+                was.release();
+            }
+            return newScope;
+        }
+    }
 
-        return null;
+    protected RequestScope<Request> createRequestScope(Optional<Request> request) {
+        final RequestScope<Request> scope = new RequestScopeDefault();
+        if (request.isPresent()) {
+            scope.setRequest(request.get());
+        }
+        return scope;
     }
 
     @Override
@@ -52,5 +90,12 @@ public class SessionScopeDefault <User, Request> extends AbstractScope<SessionSc
     @Override
     public void touch() {
         activity = X_Time.now();
+    }
+
+    @Override
+    public void destroy() {
+        requests.clear();
+        user = null;
+        scopeFactory = null;
     }
 }

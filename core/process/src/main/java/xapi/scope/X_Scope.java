@@ -11,8 +11,11 @@ public class X_Scope {
 
     private static final ScopeService service = X_Inject.singleton(ScopeService.class);
 
-    static Do inheritScope() {
+    public static Do inheritScope() {
         return service.inheritScope();
     }
 
+    public static ScopeService service() {
+        return service;
+    }
 }
