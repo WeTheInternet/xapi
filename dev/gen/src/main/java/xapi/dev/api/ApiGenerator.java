@@ -1,11 +1,15 @@
 package xapi.dev.api;
 
 import com.github.javaparser.JavaParser;
-import com.github.javaparser.ast.expr.UiContainerExpr;
+import com.github.javaparser.ast.Node;
+import xapi.annotation.compile.Generated;
 import xapi.annotation.inject.InstanceDefault;
+import xapi.dev.source.SourceBuilder;
 import xapi.inject.X_Inject;
 import xapi.io.X_IO;
 import xapi.reflect.X_Reflect;
+import xapi.time.X_Time;
+import xapi.util.api.Digester;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -34,7 +38,7 @@ public class ApiGenerator {
         for (String coord : coords) {
             Path path = Paths.get(coord);
             System.out.println(path);
-            Files.find(path, 50, (p, a)-> p.toString().endsWith(".xapi"))
+            Files.find(path, 50, (p, a)-> p.toString().endsWith("Out.xapi"))
                 .forEach(file->generator.generate(path, file));
         }
     }
@@ -42,11 +46,62 @@ public class ApiGenerator {
     private <Ctx extends ApiGeneratorContext<Ctx>> void generate(Path path, Path file) {
         try {
             String sourceFile = X_IO.toStringUtf8(Files.newInputStream(file));
-            final Path relativePath = path.relativize(file);
-            final UiContainerExpr ast = JavaParser.parseUiContainer(sourceFile);
+            Path relativePath = path.relativize(file);
+            final Node ast = JavaParser.parseNode(sourceFile);
             GeneratorVisitor<Ctx> visitor = new GeneratorVisitor<>(relativePath);
-            final ApiGeneratorContext ctx = new ApiGeneratorContext();
+            final ApiGeneratorContext<Ctx> ctx = new ApiGeneratorContext<>();
             ast.accept(visitor, (Ctx)ctx);
+
+            Path sourceDir = file.getRoot();
+            boolean sawSrc = false;
+            for (Path subpath : file) {
+                if (sawSrc) {
+                    if ("main".equals(subpath.toString())) {
+                        sourceDir = sourceDir.resolve(subpath);
+                        sourceDir = sourceDir.resolve("gen");
+                    } else {
+                        sourceDir = sourceDir.getParent().resolve("gen");
+                    }
+                    break;
+                } else if ("src".equals(subpath.toString())) {
+                    sourceDir = sourceDir.resolve(subpath);
+                    sawSrc = true;
+                } else {
+                    sourceDir = sourceDir.resolve(subpath);
+                }
+            }
+
+            Digester digester = X_Inject.instance(Digester.class);
+            for (SourceBuilder<Ctx> source : ctx.getSourceFiles()) {
+                String src = source.toSource();
+                final byte[] digest = digester.digest(src.getBytes());
+                String hash = digester.toString(digest);
+                final String anno = "@" +
+                    source.addImport(Generated.class) +
+                    "(date=\"" +
+                    X_Time.now().toString() +
+                    "\",\n  value = {\"" +
+                    ApiGenerator.class.getName() +
+                    "\", \"" +
+                    relativePath.toString() +
+                    "\", \"" +
+                    hash +
+                    "\"})";
+
+                source.getClassBuffer().addAnnotation(anno);
+                Path saveTo = sourceDir;
+                for (String part : source.getPackage().split("[.]")) {
+                    saveTo = saveTo.resolve(part);
+                }
+                saveTo = saveTo.resolve(source.getSimpleName() + ".java");
+                Files.createDirectories(saveTo.getParent());
+                if (!Files.exists(saveTo)) {
+                    saveTo = Files.createFile(saveTo);
+                }
+                X_IO.drain(Files.newOutputStream(saveTo),
+                    X_IO.toStreamUtf8(source.toSource()));
+            }
+
         } catch (Exception e) {
             e.printStackTrace();
         }

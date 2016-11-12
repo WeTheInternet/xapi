@@ -7,8 +7,11 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.dev.source.SourceBuilder;
 import xapi.fu.Do;
+import xapi.fu.In1Out1;
+import xapi.fu.Lazy;
 import xapi.fu.Out1;
 import xapi.fu.ReturnSelf;
+import xapi.log.X_Log;
 import xapi.source.X_Source;
 import xapi.source.write.StringerMatcher;
 import xapi.source.write.Template;
@@ -30,10 +33,13 @@ public class ApiGeneratorContext<Ctx extends ApiGeneratorContext<Ctx>>
         String key = id.startsWith("$") ? id.substring(1) : id;
         final Node was = vars.get(key);
         vars.put(key, node);
+        if (was != null) {
+            X_Log.warn(getClass(), "Overriding key ", id, "was", was, "is", node);
+        }
         return was == null ? () -> vars.remove(key) : () -> vars.put(key, was);
     }
 
-    public String resolveValues(String nameString) {
+    public String resolveValues(String nameString, In1Out1<Node, Object> mapper) {
         final String[] keys = vars.keyArray();
         final Out1<?>[] values = new Out1[keys.length];
         for (
@@ -42,7 +48,9 @@ public class ApiGeneratorContext<Ctx extends ApiGeneratorContext<Ctx>>
             ) {
             final String key = keys[i];
             keys[i] = key.startsWith("$") ? key : "$" + key;
-            values[i] = () -> vars.get(key);
+            values[i] = Lazy.deferred1(
+                () -> mapper.io(vars.get(key))
+            );
         }
         Template t = new Template(nameString, new StringerMatcher() {
             @Override
@@ -74,7 +82,7 @@ public class ApiGeneratorContext<Ctx extends ApiGeneratorContext<Ctx>>
         return node == null ? null : ASTHelper.extractStringValue((Expression) node);
     }
 
-    public SourceBuilder<Ctx> newSourceFile(String pkg, String cls, boolean isInterface) {
+    public SourceBuilder<Ctx> getOrMakeClass(String pkg, String cls, boolean isInterface) {
         final String fqcn = X_Source.qualifiedName(pkg, cls);
         return sources.getOrCreate(fqcn, create -> new SourceBuilder<>(self())
             .setClassDefinition("public " + (isInterface ? "interface" : "class") + " " + cls, false)
@@ -99,5 +107,9 @@ public class ApiGeneratorContext<Ctx extends ApiGeneratorContext<Ctx>>
 
     public boolean isInRange() {
         return inRange;
+    }
+
+    public Iterable<SourceBuilder<Ctx>> getSourceFiles() {
+        return sources.values();
     }
 }

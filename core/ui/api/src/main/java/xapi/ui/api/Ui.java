@@ -1,5 +1,7 @@
 package xapi.ui.api;
 
+import xapi.annotation.reflect.MirroredAnnotation;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -11,6 +13,7 @@ import java.lang.annotation.Target;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
+@MirroredAnnotation
 public @interface Ui {
 
   String javaPrefix() default "";

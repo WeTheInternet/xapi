@@ -85,6 +85,15 @@ public class SourceBuilder<Payload> implements CanAddImports {
     setClassDefinition(classDef, classDef.trim().endsWith("{"));
   }
 
+  public SourceBuilder<Payload> replaceSource(CharSequence src) {
+    destroy();
+    head.clear();
+    head.append(src);
+    head.println();
+
+    return this;
+  }
+
   public PrintBuffer getBuffer() {
     return buffer;
   }

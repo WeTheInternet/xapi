@@ -6,18 +6,26 @@ import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.expr.BinaryExpr.Operator;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
+import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.ReferenceType;
 import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.type.VoidType;
+import com.github.javaparser.ast.visitor.ComposableXapiVisitor;
 import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
+import xapi.dev.api.AstMethodInvoker.AstMethodResult;
 import xapi.dev.source.SourceBuilder;
 import xapi.except.NotYetImplemented;
 import xapi.fu.Do;
 import xapi.fu.Filter.Filter1;
+import xapi.fu.In1;
+import xapi.fu.Maybe;
 import xapi.fu.Rethrowable;
+import xapi.fu.X_Fu;
+import xapi.fu.iterate.CountedIterator;
+import xapi.log.X_Log;
 import xapi.source.write.Template;
 import xapi.util.X_String;
 
@@ -30,8 +38,6 @@ import static com.github.javaparser.ast.expr.TemplateLiteralExpr.templateLiteral
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 9/22/16.
@@ -52,160 +58,279 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
         return literals.at(0);
     }
 
+    default ApiGeneratorMethods methods() {
+        return ()->this;
+    }
+
     default IntTo<String> resolveToLiterals(Ctx ctx, Expression typeParams) {
         IntTo<String> types = X_Collect.newList(String.class);
-        if (typeParams instanceof MethodCallExpr) {
-            MethodCallExpr call = (MethodCallExpr) typeParams;
-            if (call.getName().startsWith("$")) {
-                // We have a utility method to deal with;
-                final List<Expression> args = call.getArgs();
-                switch (call.getName()) {
-                    case "$range":
-                        // expects a arguments in the forms of literals or lambda expressions
-                        List<String> items = resolveRange(ctx, call);
-                        types.addAll(items);
-                        break;
-                    case "$type":
-                        // first argument is the type name,
-                        String type = resolveString(ctx, args.get(0));
-                        if (args.size() > 1) {
-                            StringBuilder b = new StringBuilder(type).append("<");
-                            String prefix = "";
-                            for (int i = 1; i < args.size(); i++) {
-                                final Expression nextArg = args.get(i);
-                                final IntTo<String> generics = resolveToLiterals(ctx, nextArg);
-                                for (String s : generics.forEach()) {
-                                    b.append(prefix);
-                                    b.append(s);
-                                    prefix = ", ";
-                                }
-                            }
-                            b.append(">");
-                            type = b.toString();
+        ComposableXapiVisitor<Ctx> resolver = new ComposableXapiVisitor<>();
+        resolver.withMethodCallExpr((call, c)->{
+                Maybe<AstMethodInvoker<Ctx>> toInvoke = methods().findMethod(ctx, call);
+                if (toInvoke.isPresent()) {
+                    final AstMethodResult res = toInvoke.get().io(this, ctx, call);
+                    if (res.getActualResult() == call) {
+                        X_Log.warn(getClass(), "Invoker failure; expect errors", toInvoke.get(), res);
+                    } else {
+                        if (res.getActualResult() != null) {
+                            res.getExprs().forEach(expr->expr.accept(resolver, ctx));
+                            return false;
                         }
-                        types.add(type);
-                        break;
-                    case "$replace":
-                        // get the types from the scope of the method call,
-                        // then perform replacement on them.
-                        if (call.getScope() == null) {
-                            throw new IllegalArgumentException("$replace can only be used after another expression; " +
-                                "such as: $range(1, 2, $n->`I$n`).$replace(`I1`, `To`)");
-                        }
-                        if (args.size() != 2) {
-                            throw new IllegalArgumentException("$replace() calls must have exactly two arguments");
-                        }
-                        IntTo<String> scoped = resolveToLiterals(ctx, call.getScope());
-                        String pattern = resolveString(ctx, args.get(0));
-                        String replaceWith = resolveString(ctx, args.get(1));
-                        Pattern regex = Pattern.compile(pattern);
-                        for (int i = 0; i < scoped.size(); i++) {
-                            final Matcher matcher = regex.matcher(scoped.at(i));
-                            if (matcher.matches()) {
-                                final String result = matcher.replaceAll(replaceWith);
-                                scoped.set(i, result);
-                            }
-                        }
-                        return scoped;
-                    case "$generic":
-                        // Method should be of the form:
-                        // Type.class.$generic("G", "E", "NERIC" ...)
-                        scoped = resolveToLiterals(ctx, call.getScope());
-                        JsonContainerExpr wrapper = JsonContainerExpr.jsonArray(args);
-                        final IntTo<String> generics = resolveToLiterals(ctx, wrapper);
-                        String generic = "<" + generics.join(", ") + ">";
-                        for (String raw : scoped.forEach()) {
-                            types.add(raw + generic);
-                        }
-                        break;
-                    case "$first":
-                        types.add(Boolean.toString(ctx.isFirstOfRange()));
-                        break;
-                    case "$remove":
-                        scoped = resolveToLiterals(ctx, call.getScope());
-                        if (args.size() != 1) {
-                            throw new IllegalArgumentException("$remove() expects exactly one argument;" +
-                                "\nyou sent " + debugNode(call));
-                        }
-                        final Expression asVar = resolveVar(ctx, args.get(0));
-                        pattern = resolveString(ctx, asVar);
-                        regex = Pattern.compile(pattern);
-                        scoped.removeIf(s->regex.matcher(s).matches(), true);
-                        return scoped;
-                    default:
-                        throw new NotYetImplemented("System method " + call.getName()
-                         +" is either misspelled or not supported;\n" + debugNode(call));
-                }
-            }
-        } else if (typeParams instanceof JsonContainerExpr) {
-            JsonContainerExpr json = (JsonContainerExpr) typeParams;
-            if (json.isArray()) {
-                json.getPairs().forEach(pair->{
-                    final IntTo<String> result = resolveToLiterals(ctx, pair.getValueExpr());
-                    types.addAll(result);
-                });
-            } else {
-                json.getPairs().forEach(pair-> {
-                    final Expression resolved = resolveVar(ctx, pair.getValueExpr());
-                    final IntTo<String> paramType = resolveToLiterals(ctx, resolved);
-                    if (paramType.size() != 1) {
-                        throw new IllegalArgumentException("Parameter types using json notation must have " +
-                            "values which return exactly one type;" +
-                            "\nyou sent " + debugNode(pair.getValueExpr()) + "" +
-                            "\nwhich returned " + paramType +
-                            "\nfrom " + debugNode(json));
                     }
-                    final String name = resolveString(ctx, templateLiteral(pair.getKeyString()));
-                    types.addAll(paramType.get(0) + " " + name);
-                });
-            }
+                }
+                // No magic methods; just turn the method call into a template and return a string...
+                MethodCallExpr copy = (MethodCallExpr) call.clone();
+                final Expression[] args = copy.getArgs().toArray(new Expression[0]);
+                copy.getArgs().clear();
+                for (Expression arg : args) {
+                    final Expression resolvedArg = resolveVar(ctx, arg);
+                    // Maybe expand this expression?
+                    if (Boolean.TRUE.equals(resolvedArg.getExtra("isWrappedVararg"))) {
+                        JsonContainerExpr list = (JsonContainerExpr) resolvedArg;
+                        list.getPairs().stream()
+                            .map(JsonPairExpr::getValueExpr)
+                            .map(ex-> resolveVar(ctx, ex))
+                            .forEach(copy.getArgs()::add);
+                    } else {
+                        copy.getArgs().add(resolvedArg);
+                    }
+                }
+
+            types.add(resolveTemplate(ctx, TemplateLiteralExpr.templateLiteral(copy.toSource())));
+                return false;
+            })
+            .withSysExpr((expr, c)->{
+                final In1<Node> callback = expr.voidVisit(resolver, c)
+                    .provide1(resolver)
+                    .provide2(c);
+                expr.readAllNodes(callback, ctx);
+                return false;
+            })
+            .withTypeExpr((expr, c)->{
+                String result = resolveTemplate(ctx, templateLiteral(expr.getType().toSource()));
+                types.add(result);
+                return false;
+            })
+            .withTemplateLiteralExpr((expr, c)->{
+                String result = resolveTemplate(ctx, expr);
+                types.add(result);
+                return false;
+            })
+            .withJsonContainerExpr((json, c)->{
+                if (json.isArray()) {
+                    json.getPairs().forEach(pair->{
+                        final IntTo<String> result = resolveToLiterals(ctx, pair.getValueExpr());
+                        types.addAll(result);
+                    });
+                } else {
+                    json.getPairs().forEach(pair -> {
+                        final Expression resolved = resolveVar(ctx, pair.getValueExpr());
+                        final IntTo<String> paramType = resolveToLiterals(ctx, resolved);
+                        if (paramType.size() != 1) {
+                            throw new IllegalArgumentException("Parameter types using json notation must have " +
+                                "values which return exactly one type;" +
+                                "\nyou sent " + debugNode(pair.getValueExpr()) + "" +
+                                "\nwhich returned " + paramType +
+                                "\nfrom " + debugNode(json));
+                        }
+                        final String name = resolveString(ctx, templateLiteral(pair.getKeyString()));
+                        types.add(paramType.get(0) + " " + name);
+                    });
+                }
+                return false;
+            })
+            .withStringLiteralExpr((expr, c)->types.add(expr.getValue()))
+            .withBooleanLiteralExpr((expr, c)->types.add(Boolean.toString(expr.getValue())))
+            .withIntegerLiteralExpr((expr, c)->types.add(String.valueOf(expr.getValue())))
+            .withIntegerLiteralMinValueExpr((expr, c)->types.add(String.valueOf(expr.getValue())))
+            .withDoubleLiteralExpr((expr, c)->types.add(String.valueOf(expr.getValue())))
+            .withLongLiteralExpr((expr, c)->types.add(String.valueOf(expr.getValue())))
+            .withCharLiteralExpr((expr, c)->types.add(String.valueOf(expr.getValue())))
+            .withQualifiedNameExpr((expr, c)-> {
+                if ("class".equals(expr.getSimpleName())) {
+                    expr.getQualifier().accept(resolver, c);
+                    return false;
+                }
+                return true;
+            })
+            .withNameExpr((expr, c)->{
+                String name = expr.getName();
+                if (name.contains("$")) {
+                    types.add(resolveTemplate(c, templateLiteral(name)));
+                } else {
+                    types.add(name);
+                }
+                return false;
+            })
+            .withBinaryExpr((expr, c)->{
+                final Expression result = resolveVar(ctx, expr);
+                result.accept(resolver, c);
+                return false;
+            })
+            .withConditionalExpr((expr, c)->{
+                final Expression evaled = resolveVar(c, expr.getCondition());
+                if (isConditionTrue(ctx, evaled)) {
+                    expr.getThenExpr().accept(resolver, c);
+                } else {
+                    expr.getElseExpr().accept(resolver, c);
+                }
+                return false;
+            })
+            .withArrayInitializerExpr((expr, c)->{
+                expr.getValues().forEach(value->
+                    types.addAll(resolveToLiterals(ctx, value))
+                );
+                return false;
+            })
+            .withClassExpr((expr, c)->{
+
+                Type type = expr.getType();
+                int arrayCnt = 0;
+                if (type instanceof ReferenceType) {
+                    arrayCnt = ((ReferenceType)type).getArrayCount();
+                    type = ((ReferenceType)type).getType();
+                }
+                String arrays = X_String.repeat("[]", arrayCnt);
+                if (type instanceof VoidType) {
+                    types.add("void");
+                    return false;
+                } else if (type instanceof ClassOrInterfaceType) {
+                    types.add(((ClassOrInterfaceType)type).getName() + arrays);
+                    return false;
+                } else {
+                    throw new IllegalArgumentException("Unhandled ClassExpr type " + type + " from " + expr + " at " + expr.getCoordinates());
+                }
+            })
+            ;
+        if (typeParams instanceof MethodCallExpr) {
+//            MethodCallExpr call = (MethodCallExpr) typeParams;
+//            if (call.getName().startsWith("$")) {
+//                // We have a utility method to deal with;
+//                final List<Expression> args = call.getArgs();
+//                switch (call.getName()) {
+//                    case "$range":
+//                        typeParams.accept(resolver, ctx);
+//                        // expects arguments in the forms of literals or lambda expressions
+////                        List<String> items = resolveRange(ctx, call);
+////                        types.addAll(items);
+//                        break;
+//                    case "$print":
+//                        final Expression expr = resolveVar(ctx, args.get(0));
+//                        return resolveToLiterals(ctx, TemplateLiteralExpr.templateLiteral(expr.toSource()));
+//                    case "$if":
+//                        boolean resolved = isConditionTrue(ctx, args.get(0));
+//                        if (resolved) {
+//                            types.addAll(resolveToLiterals(ctx, args.get(1)));
+//                        }
+//                        break;
+//                    case "$else":
+//                        resolved = isConditionTrue(ctx, ((MethodCallExpr) typeParams).getScope());
+//                        if (!resolved) {
+//                            types.addAll(resolveToLiterals(ctx, args.get(0)));
+//                        }
+//                        break;
+//                    case "$type":
+//                        // first argument is the type name,
+//                        String type = resolveString(ctx, args.get(0));
+//                        if (args.size() > 1) {
+//                            StringBuilder b = new StringBuilder(type).append("<");
+//                            String prefix = "";
+//                            for (int i = 1; i < args.size(); i++) {
+//                                final Expression nextArg = args.get(i);
+//                                final IntTo<String> generics = resolveToLiterals(ctx, nextArg);
+//                                for (String s : generics.forEach()) {
+//                                    b.append(prefix);
+//                                    b.append(s);
+//                                    prefix = ", ";
+//                                }
+//                            }
+//                            b.append(">");
+//                            type = b.toString();
+//                        }
+//                        types.add(type);
+//                        break;
+//                    case "$replace":
+//                        // get the types from the scope of the method call,
+//                        // then perform replacement on them.
+//                        if (call.getScope() == null) {
+//                            throw new IllegalArgumentException("$replace can only be used after another expression; " +
+//                                "such as: $range(1, 2, $n->`I$n`).$replace(`I1`, `To`)");
+//                        }
+//                        if (args.size() != 2) {
+//                            throw new IllegalArgumentException("$replace() calls must have exactly two arguments");
+//                        }
+//                        IntTo<String> scoped = resolveToLiterals(ctx, call.getScope());
+//                        String pattern = resolveString(ctx, args.get(0));
+//                        String replaceWith = resolveString(ctx, args.get(1));
+//                        Pattern regex = Pattern.compile(pattern);
+//                        for (int i = 0; i < scoped.size(); i++) {
+//                            final Matcher matcher = regex.matcher(scoped.at(i));
+//                            if (matcher.matches()) {
+//                                final String result = matcher.replaceAll(replaceWith);
+//                                scoped.set(i, result);
+//                            }
+//                        }
+//                        return scoped;
+//                    case "$generic":
+//                        // Method should be of the form:
+//                        // Type.class.$generic("G", "E", "NERIC" ...)
+//                        scoped = resolveToLiterals(ctx, call.getScope());
+//                        JsonContainerExpr wrapper = JsonContainerExpr.jsonArray(args);
+//                        final IntTo<String> generics = resolveToLiterals(ctx, wrapper);
+//                        String generic = "<" + generics.join(", ") + ">";
+//                        for (String raw : scoped.forEach()) {
+//                            types.add(raw + generic);
+//                        }
+//                        break;
+//                    case "$first":
+//                        types.add(Boolean.toString(ctx.isFirstOfRange()));
+//                        break;
+//                    case "$remove":
+//                        scoped = resolveToLiterals(ctx, call.getScope());
+//                        if (args.size() != 1) {
+//                            throw new IllegalArgumentException("$remove() expects exactly one argument;" +
+//                                "\nyou sent " + debugNode(call));
+//                        }
+//                        final Expression asVar = resolveVar(ctx, args.get(0));
+//                        pattern = resolveString(ctx, asVar);
+//                        regex = Pattern.compile(pattern);
+//                        scoped.removeIf(s->regex.matcher(s).matches(), true);
+//                        return scoped;
+//                    default:
+//                        throw new NotYetImplemented("System method " + call.getName()
+//                         +" is either misspelled or not supported;\n" + debugNode(call));
+//                }
+//            } else {
+//                // A method call to serialize to String...
+//                types.add(resolveTemplate(ctx, TemplateLiteralExpr.templateLiteral(typeParams.toSource())));
+//            }
+            typeParams.accept(resolver, ctx);
+        } else if (typeParams instanceof JsonContainerExpr) {
+            typeParams.accept(resolver, ctx);
         } else if (typeParams instanceof TemplateLiteralExpr){
-            String result = resolveTemplate(ctx, ((TemplateLiteralExpr)typeParams));
-            types.add(result);
+            typeParams.accept(resolver, ctx);
         } else if (typeParams instanceof StringLiteralExpr){
-            types.add(ASTHelper.extractStringValue(typeParams));
+            typeParams.accept(resolver, ctx);
         } else if (typeParams instanceof BooleanLiteralExpr){
-            types.add(ASTHelper.extractStringValue(typeParams));
+            typeParams.accept(resolver, ctx);
         } else if (typeParams instanceof QualifiedNameExpr){
-            QualifiedNameExpr qualified = (QualifiedNameExpr) typeParams;
-            if ("class".equals(qualified.getSimpleName())) {
-                typeParams = qualified.getQualifier();
-            } else {
-                typeParams = qualified;
-            }
-            types.add(((NameExpr)typeParams).getName());
+            typeParams.accept(resolver, ctx);
         } else if (typeParams instanceof NameExpr) {
-            String name = ((NameExpr)typeParams).getName();
-            if (name.startsWith("$")) {
-                types.add(ctx.getString(name));
-            } else {
-                types.add(name);
-            }
+            typeParams.accept(resolver, ctx);
         } else if (typeParams instanceof ClassExpr) {
-            Type type = ((ClassExpr)typeParams).getType();
-            int arrayCnt = 0;
-            if (type instanceof ReferenceType) {
-                arrayCnt = ((ReferenceType)type).getArrayCount();
-                type = ((ReferenceType)type).getType();
-            }
-            String arrays = X_String.repeat("[]", arrayCnt);
-            if (type instanceof VoidType) {
-                types.add("void");
-            } else if (type instanceof ClassOrInterfaceType) {
-                types.add(((ClassOrInterfaceType)type).getName() + arrays);
-            } else {
-                throw new IllegalArgumentException("Unhandled ClassExpr type " + type + " from " + typeParams + " at " + typeParams.getCoordinates());
-            }
+            typeParams.accept(resolver, ctx);
         } else if (typeParams instanceof BinaryExpr) {
-            final Expression result = resolveVar(ctx, typeParams);
-            return resolveToLiterals(ctx, result);
+            typeParams.accept(resolver, ctx);
         } else if (typeParams instanceof ConditionalExpr) {
-            ConditionalExpr conditional = (ConditionalExpr) typeParams;
-            if (isConditionTrue(ctx, conditional.getCondition())) {
-                return resolveToLiterals(ctx, conditional.getThenExpr());
-            } else {
-                return resolveToLiterals(ctx, conditional.getElseExpr());
-            }
+            typeParams.accept(resolver, ctx);
+        } else if (typeParams instanceof ArrayInitializerExpr) {
+            typeParams.accept(resolver, ctx);
+        } else if (typeParams instanceof SysExpr) {
+            typeParams.accept(resolver, ctx);
+        } else if (typeParams instanceof EnclosedExpr) {
+            typeParams.accept(resolver, ctx);
+        } else if (typeParams instanceof TypeExpr) {
+            typeParams.accept(resolver, ctx);
         } else {
             throw new IllegalArgumentException("Unhandled type argument: " + debugNode(typeParams));
         }
@@ -217,8 +342,14 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
     }
 
     default String resolveString(Ctx ctx, Expression value) {
+        return resolveString(ctx, value, false);
+    }
+    default String resolveString(Ctx ctx, Expression value, boolean allowEmpty) {
         final IntTo<String> literals = resolveToLiterals(ctx, value);
         if (literals.size() != 1) {
+            if (allowEmpty && literals.isEmpty()) {
+                return "";
+            }
             throw new IllegalStateException("Cannot extract a single String argument for " + debugNode(value)
               + "\nThis node resulted in: " + literals);
         }
@@ -242,7 +373,7 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
 //        }
     }
     default String resolveTemplate(Ctx ctx, TemplateLiteralExpr value) {
-        return ctx.resolveValues(value.getValueWithoutTicks());
+        return ctx.resolveValues(value.getValueWithoutTicks(), item->resolveToLiterals(ctx, (Expression)item).join(", "));
     }
 
     default List<String> resolveRange(Ctx ctx, MethodCallExpr call) {
@@ -335,14 +466,23 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
             return Integer.parseInt(ASTHelper.extractStringValue(parameter));
         } else if (parameter instanceof NameExpr) {
             String name = ((NameExpr)parameter).getName();
-            if (name.startsWith("$")) {
-                name = name.substring(1);
-            }
             // Now that we have the variable name, lets pull it from context
             int size = Integer.parseInt(ctx.getString(name));
             return size;
         }
         throw new IllegalArgumentException("Cannot extract int from " + parameter + " (at " + parameter.getCoordinates() + ")");
+    }
+
+    default Expression resolveNode(Ctx ctx, Node node) {
+        if (node instanceof Expression) {
+            return resolveVar(ctx, (Expression) node);
+        } else if (node instanceof ExpressionStmt) {
+            return resolveVar(ctx, ((ExpressionStmt)node).getExpression());
+        } else if (node instanceof ReturnStmt) {
+            return resolveVar(ctx, ((ReturnStmt)node).getExpr());
+        } else {
+            throw new IllegalArgumentException("Unable to resolve node " + debugNode(node));
+        }
     }
 
     default JsonContainerExpr resolveMethod(Ctx ctx, MethodCallExpr methodCall) {
@@ -425,6 +565,15 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
         }
     }
 
+    default boolean isConditionTrue(Ctx ctx, Statement condition) {
+        if (condition instanceof ExpressionStmt) {
+            return isConditionTrue(ctx, ((ExpressionStmt)condition).getExpression());
+        } else if (condition instanceof ReturnStmt) {
+            return isConditionTrue(ctx, ((ReturnStmt)condition).getExpr());
+        } else {
+            throw new IllegalArgumentException("Unhandled statement type " + debugNode(condition));
+        }
+    }
     default boolean isConditionTrue(Ctx ctx, Expression condition) {
         if (condition instanceof BinaryExpr) {
             BinaryExpr expr = (BinaryExpr) condition;
@@ -454,6 +603,15 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
                 default:
                     throw new IllegalArgumentException("Unsupported binary operator in conditional expression; " + debugNode(condition));
             }
+        } else if (condition instanceof MethodCallExpr) {
+            MethodCallExpr expr = (MethodCallExpr) condition;
+            switch (expr.getName()) {
+                case "$if":
+                case "$elseIf":
+                    return isConditionTrue(ctx, expr.getArg(0));
+                default:
+                    throw new IllegalArgumentException("Cannot extract conditional truth from method call: " + debugNode(expr));
+            }
         } else if (condition instanceof EnclosedExpr) {
             return isConditionTrue(ctx, ((EnclosedExpr)condition).getInner());
         }
@@ -466,7 +624,8 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
             final String value = ((IntegerLiteralExpr) result).getValue();
             return Integer.parseInt(value);
         } else {
-            throw new IllegalArgumentException("Cannot ");
+            String asString = resolveString(ctx, result);
+            return Integer.parseInt(asString);
         }
     }
     default Expression resolveVar(Ctx ctx, Expression valueExpr) {
@@ -505,7 +664,7 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
                     } else {
                       // string concat for anything else...
                       String leftString = resolveString(ctx, expr.getLeft());
-                      String rightString = resolveString(ctx, expr.getLeft());
+                      String rightString = resolveString(ctx, expr.getRight());
                       return new StringLiteralExpr(leftString + rightString);
                     }
                 // numeric in, numeric out
@@ -621,6 +780,46 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
                 return resolveVar(ctx, conditional.getElseExpr());
 
             }
+        } else if (valueExpr instanceof MethodCallExpr) {
+            final Maybe<AstMethodInvoker<Ctx>> invoker = methods().findMethod(ctx, (MethodCallExpr) valueExpr);
+            if (invoker.isPresent()) {
+                final AstMethodResult result = invoker.get().io(this, ctx, (MethodCallExpr) valueExpr);
+                CountedIterator<Expression> all = CountedIterator.count(result.getExprs());
+                if (all.size() == 1) {
+                    return all.next();
+                }
+                final JsonContainerExpr json = new JsonContainerExpr(() -> all);
+                json.addExtra("isWrappedVararg", true);
+                return json;
+            }
+        } else if (valueExpr instanceof SysExpr) {
+            SysExpr sys = (SysExpr) valueExpr;
+            return sys.readAsOneNode((n, c)-> {
+                final Expression resolved = resolveNode(ctx, n);
+                ComposableXapiVisitor<Ctx> nameVisitor = new ComposableXapiVisitor<>();
+                nameVisitor.withNameExpr((name, con)->{
+                    String newName = resolveTemplate(con, templateLiteral(name.getName()));
+                    name.setName(newName);
+                    return false;
+                });
+                nameVisitor.withMethodCallExpr((name, con)->{
+                    String newValue = resolveTemplate(con, templateLiteral(name.getName()));
+                    name.setName(newValue);
+                    return true;
+                });
+                nameVisitor.withStringLiteralExpr((name, con)->{
+                    String newValue = resolveTemplate(con, templateLiteral(name.getValue()));
+                    name.setValue(newValue);
+                    return false;
+                });
+                nameVisitor.withTemplateLiteralExpr((name, con)->{
+                    String newValue = resolveTemplate(con, name);
+                    name.setValue(newValue);
+                    return false;
+                });
+                resolved.accept(nameVisitor, c);
+                return resolved;
+            }, ctx);
         }
         return valueExpr;
     }
@@ -803,4 +1002,31 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
             );
     }
 
+    default Expression boxResult(Ctx ctx, MethodCallExpr expr, Object result) {
+        if (result instanceof Expression) {
+            return (Expression) result;
+        }
+        if (result instanceof Number) {
+            if (result.getClass() == Integer.class) {
+                return IntegerLiteralExpr.intLiteral((Integer)result);
+            }
+            return DoubleLiteralExpr.doubleLiteral(((Number)result).doubleValue());
+        }
+        if (result instanceof String) {
+            return StringLiteralExpr.stringLiteral((String) result);
+        }
+        if (result instanceof Boolean) {
+            return BooleanLiteralExpr.boolLiteral((Boolean)result);
+        }
+        if (result.getClass().isArray()) {
+            List<Expression> items = new ArrayList<>();
+            for (int i = 0, m = X_Fu.getLength(result); i < m; i++) {
+                Object value = X_Fu.getValue(result, i);
+                Expression boxed = boxResult(ctx, expr, value);
+                items.add(boxed);
+            }
+            return JsonContainerExpr.jsonArray(items);
+        }
+        throw new UnsupportedOperationException("Unable to box result type " + result);
+    }
 }

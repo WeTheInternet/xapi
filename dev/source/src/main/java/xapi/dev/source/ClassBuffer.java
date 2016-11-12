@@ -346,6 +346,11 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
               + this);
     }
     if (importName.startsWith(getPackage())) {
+      if ("".equals(getPackage())) {
+        if (importName.indexOf('.') == -1) {
+          return importName;
+        }
+      }
       // Make sure it's not in a sub-package
       final String stripped = importName.substring(getPackage().length() + 1);
       // Assuming java camel case naming convention.
@@ -394,6 +399,11 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
 
   public ClassBuffer setSuperClass(final Class<?> superClass) {
     this.superClass = addImport(superClass);
+    return this;
+  }
+
+  public ClassBuffer setPackage(String pkgName) {
+    context.setPackage(pkgName);
     return this;
   }
 

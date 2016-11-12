@@ -158,8 +158,8 @@ public class JavaDocument implements DebugRethrowable {
     X_Log.trace(getClass(),
         "JavaDocument: ", getTypeName(),
 
-        "Source:\n\n", Out1.out1(this::getSource),
-        "\n\nCompilation Unit:", Out1.out1(this::getCompilationUnit)
+        "Source:\n\n", Out1.newOut1(this::getSource),
+        "\n\nCompilation Unit:", Out1.newOut1(this::getCompilationUnit)
         );
     return "JavaDocument [" + getTypeName() +"]";
   }

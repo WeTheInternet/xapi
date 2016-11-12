@@ -172,4 +172,8 @@ public class CharBuffer implements Coercible {
     return body.toString();
   }
 
+  public byte[] toBytes() {
+    return toSource().getBytes();
+  }
+
 }

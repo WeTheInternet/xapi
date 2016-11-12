@@ -5,12 +5,14 @@ import xapi.fu.In1Out1;
 
 import static xapi.util.X_Util.pushIfMissing;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 6/27/16.
@@ -74,7 +76,7 @@ public class PhaseMap <K extends Comparable<K>> {
                 // an insertion in the middle... lets walk the nodes to find our insertion point.
                 PhaseNode<K> n = head;
                 while (n != null) {
-                    if (n.isBlockerOf(node)) {
+                    if (n.isBlockerOf(node) || node.isPrerequisiteOf(n)) {
                         node.next = n.next;
                         n.next = node;
                         break;
@@ -332,10 +334,10 @@ public class PhaseMap <K extends Comparable<K>> {
             }
             for (PhaseNode<K> node : cur) {
                 // prevent recursion sickness
+                if (Objects.equals(o.id, node.id)) {
+                    return true;
+                }
                 if (seen.add(node.id)) {
-                  if (Objects.equals(o.id, node.id)) {
-                      return true;
-                  }
                   final PhaseNode<K>[] nexts = target.io(node);
                   if (node.deepContains(seen, o, target, nexts)) {
                       return  true;
@@ -378,5 +380,15 @@ public class PhaseMap <K extends Comparable<K>> {
         }
     }
 
+    public static PhaseMap<String> withDefaults(Set<UiPhase> phases) {
 
+        assert ! (phases instanceof HashMap) :
+            "Do not send a hashset for these order-dependent values";
+        for (Class<?> phase : UiPhase.CORE_PHASES) {
+            phases.add(phase.getAnnotation(UiPhase.class));
+        }
+
+        // compute phases to run
+        return toMap(phases, UiPhase::id, UiPhase::priority, UiPhase::prerequisite, UiPhase::block);
+    }
 }

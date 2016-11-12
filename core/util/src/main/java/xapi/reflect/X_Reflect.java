@@ -1180,7 +1180,11 @@ public class X_Reflect {
       }
     }
     if (loc == null) {
-      loc = mainClass.getClassLoader().getResource(mainClass.getCanonicalName().replace('.', '/')+".class");
+      ClassLoader cl = mainClass.getClassLoader();
+      if (cl == null) {
+        cl = Thread.currentThread().getContextClassLoader();
+      }
+      loc = cl.getResource(mainClass.getCanonicalName().replace('.', '/')+".class");
     }
     boolean isJar = loc.getProtocol().equals("jar") || loc.toExternalForm().contains("jar!");
     if (isJar) {

@@ -2,13 +2,14 @@ package xapi.dev.ui;
 
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
+import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.source.SourceBuilder;
 import xapi.util.api.RemovalHandler;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 6/28/16.
  */
-public abstract class AbstractUiImplementationGenerator extends UiGeneratorTools implements UiImplementationGenerator {
+public abstract class AbstractUiImplementationGenerator <Ctx extends ApiGeneratorContext<Ctx>> extends UiGeneratorTools<Ctx> implements UiImplementationGenerator {
     protected UiGeneratorService generator;
 
     public AbstractUiImplementationGenerator() {

@@ -7,11 +7,10 @@ import xapi.dev.source.SourceBuilder;
 import xapi.dev.ui.InterestingNodeFinder.InterestingNodeResults;
 import xapi.fu.Lazy;
 import xapi.fu.Out1;
+import xapi.source.read.JavaModel.IsQualified;
 
 import static xapi.fu.Immutable.immutable1;
 import static xapi.inject.X_Inject.instance;
-
-import javax.lang.model.element.TypeElement;
 
 /**
  * Created by james on 6/17/16.
@@ -24,7 +23,7 @@ public class ComponentBuffer {
     private final ClassTo<ContainerMetadata> implementations;
 
     private Out1<DomBuffer> domBuffer = Lazy.deferred1(this::defaultDomBuffer);
-    private TypeElement element;
+    private IsQualified element;
     private InterestingNodeResults interestingNodes;
 
     public ComponentBuffer() {
@@ -66,11 +65,11 @@ public class ComponentBuffer {
         return domBuffer.out1();
     }
 
-    public TypeElement getElement() {
+    public IsQualified getElement() {
         return element;
     }
 
-    public void setElement(TypeElement element) {
+    public void setElement(IsQualified element) {
         this.element = element;
     }
 

@@ -16,7 +16,8 @@ public interface MvnModule extends MvnDependency {
     default MvnProps moduleProps() {
         return getProperty("props", ()->{
             MapLike<String, String> map = X_Collect.newStringMap(String.class);
-            return immutable1(map)::out1;
+            final MvnProps props = immutable1(map)::out1;
+            return props;
         });
     }
 

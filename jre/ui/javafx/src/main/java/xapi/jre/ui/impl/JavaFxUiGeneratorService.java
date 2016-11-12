@@ -1,5 +1,6 @@
 package xapi.jre.ui.impl;
 
+import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.ui.AbstractUiImplementationGenerator;
 import xapi.dev.ui.UiComponentGenerator;
 import xapi.dev.ui.UiFeatureGenerator;
@@ -14,7 +15,11 @@ import java.util.Arrays;
 /**
  * Created by james on 6/17/16.
  */
-public class JavaFxUiGeneratorService extends AbstractUiImplementationGenerator {
+public class JavaFxUiGeneratorService extends AbstractUiImplementationGenerator<JavaFxUiGeneratorService.Ctx> {
+
+  static final class Ctx extends ApiGeneratorContext<Ctx> {
+
+  }
 
   @Override
   protected Iterable<Out2<String, UiComponentGenerator>> getComponentGenerators() {

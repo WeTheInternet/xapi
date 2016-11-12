@@ -1,22 +1,43 @@
 package xapi.dev.api;
 
 import com.github.javaparser.ASTHelper;
+import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.ImportDeclaration;
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.PackageDeclaration;
+import com.github.javaparser.ast.TypeParameter;
+import com.github.javaparser.ast.body.*;
 import com.github.javaparser.ast.expr.*;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
+import com.github.javaparser.ast.visitor.DumpVisitor;
+import com.github.javaparser.ast.visitor.ModifierVisitorAdapter;
 import com.github.javaparser.ast.visitor.VoidVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
+import xapi.collect.X_Collect;
+import xapi.collect.api.IntTo;
+import xapi.collect.api.ObjectTo;
 import xapi.collect.impl.SimpleStack;
 import xapi.dev.source.SourceBuilder;
 import xapi.fu.Do;
 import xapi.fu.Filter.Filter1;
+import xapi.fu.Mutable;
+import xapi.fu.Out2;
+import xapi.fu.Out2.Out2Immutable;
+import xapi.fu.Printable;
+import xapi.fu.iterate.GrowableIterator;
 import xapi.source.X_Source;
 import xapi.source.read.JavaVisitor;
+
+import static com.github.javaparser.ast.expr.TemplateLiteralExpr.templateLiteral;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ListIterator;
+import java.util.Optional;
+import java.util.WeakHashMap;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 9/17/16.
@@ -24,10 +45,17 @@ import java.util.List;
 public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
     extends VoidVisitorAdapter<Ctx> implements ApiGeneratorTools<Ctx> {
 
+    private static final String DUMP_WRAP_KEY = "wrapVisit";
+
     private final Path relativePath;
+    private String pkgName;
+    boolean globalInput;
+    private final WeakHashMap<UiContainerExpr, GrowableIterator<Do>> undos;
+    private UiContainerExpr container;
 
     public GeneratorVisitor(Path relativePath) {
         this.relativePath = relativePath;
+        undos = new WeakHashMap<>();
     }
 
     protected Class<Ctx> contextClass() {
@@ -35,11 +63,63 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
     }
 
     @Override
-    public void visit(UiContainerExpr n, Ctx arg) {
-        if ("generate".equals(n.getName())) {
-            generate(n, arg);
-        } else {
-            super.visit(n, arg);
+    public void visit(UiContainerExpr n, Ctx ctx) {
+        final UiContainerExpr was = container;
+        container = n;
+        try {
+            switch (n.getName()) {
+                case "generate":
+                    generate(n, ctx);
+                    return;
+                case "generateInterface":
+                    n.accept(generateInterface(), ctx);
+                    break;
+                case "generateClass":
+
+                case "loop":
+                    final Expression from = n.getAttributeNotNull("from").getExpression();
+                    final Expression to = n.getAttributeNotNull("to").getExpression();
+                    final Expression var = n.getAttributeNotNull("var").getExpression();
+                    String varName = resolveString(ctx, var);
+                    for (int i = resolveInt(ctx, from), m = resolveInt(ctx, to); i <= m; i++) {
+                        final Do undo = ctx.addToContext(varName, IntegerLiteralExpr.intLiteral(i));
+                        super.visit(n, ctx);
+                        undo.done();
+                    }
+                    break;
+                case "var":
+                    final Optional<UiAttrExpr> value = n.getAttribute("value");
+                    final Optional<UiAttrExpr> dflt = n.getAttribute("default");
+                    String name = resolveString(ctx, n.getAttributeNotNull("name").getExpression());
+                    if (value.isPresent() && dflt.isPresent()) {
+                        throw new IllegalStateException("A var cannot have both a value and a default attribute");
+                    }
+                    if (!value.isPresent() && !dflt.isPresent()) {
+                        throw new IllegalStateException("A var must have either a value or a default attribute");
+                    }
+
+                    Do undo;
+                    if (value.isPresent()) {
+                        undo = ctx.addToContext(name, value.get().getExpression());
+                    } else if (!ctx.hasNode(name)) {
+                        undo = ctx.addToContext(name, dflt.get().getExpression());
+                    } else {
+                        undo = Do.NOTHING;
+                    }
+
+                    if (!globalInput) {
+                        // global inputs won't be scoped.
+                        undosFor(n).concat(undo);
+                    }
+                default:
+                    super.visit(n, ctx);
+            }
+        } finally {
+            final GrowableIterator<Do> undo = undos.remove(n);
+            if (undo != null) {
+                undo.forEachRemaining(Do::done);
+            }
+            container = was;
         }
     }
 
@@ -71,6 +151,30 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
         } finally {
             undos.forEach(Do::done);
         }
+    }
+
+    @Override
+    public void visit(MemberValuePair n, Ctx arg) {
+        if ("in".equals(n.getName())) {
+            final boolean was = globalInput;
+            globalInput = true;
+            super.visit(n, arg);
+            globalInput = was;
+        } else {
+            super.visit(n, arg);
+        }
+    }
+
+    @Override
+    public void visit(MethodDeclaration n, Ctx arg) {
+
+        super.visit(n, arg);
+    }
+
+    @Override
+    public void visit(PackageDeclaration n, Ctx arg) {
+        pkgName = n.getPackageName();
+        super.visit(n, arg);
     }
 
     public void loop(UiAttrExpr attr, Ctx arg) {
@@ -108,8 +212,62 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
             public JsonContainerExpr defaultMethods, staticMethods, methods;
 
             @Override
-            public void visit(JsonContainerExpr n, Ctx arg) {
-                super.visit(n, arg);
+            public void visit(UiAttrExpr n, Ctx ctx) {
+                switch (n.getNameString()) {
+                    case "template":
+                        DynamicDeclarationExpr decl = (DynamicDeclarationExpr) n.getExpression();
+                        ClassOrInterfaceDeclaration template = (ClassOrInterfaceDeclaration) decl.getBody();
+                        // We need to transform this declaration into its final form.
+                        final List<ImportDeclaration> imports = new ArrayList<>();
+                        final List<AnnotationExpr> annos = new ArrayList<>();
+                        n.getAnnotations().forEach(anno->{
+                            if ("import".equalsIgnoreCase(anno.getNameString().toLowerCase())) {
+                                anno.getMembers().forEach(member->{
+                                    IntTo<String> importDecls = resolveToLiterals(ctx, member.getValue());
+                                    importDecls.forEachValue(importDecl->{
+                                        boolean isStatic = importDecl.contains("static ");
+                                        if (isStatic) {
+                                            importDecl = importDecl.replace("static ", "").trim();
+                                        }
+                                        boolean isAsterisk = importDecl.contains(".*");
+                                        if (isAsterisk) {
+                                            importDecl = importDecl.replace(".*", "");
+                                        }
+                                        imports.add(new ImportDeclaration(new NameExpr(importDecl),
+                                            isStatic, isAsterisk));
+                                    });
+                                });
+                            } else {
+                                annos.add(anno);
+                            }
+                        });
+                        template.setAnnotations(annos);
+                        final List<TypeDeclaration> asList = new ArrayList<>();
+                        asList.add((TypeDeclaration) template.clone());
+                        CompilationUnit unit = new CompilationUnit(findPackage(ctx), imports, asList);
+                        generateAndSave(ctx, unit);
+                        return;
+                    case "var":
+                        if (!(n.getExpression() instanceof JsonContainerExpr)) {
+                            throw new IllegalArgumentException("A var attribute must have a json container child; you sent " + n);
+                        }
+                        JsonContainerExpr vars = (JsonContainerExpr) n.getExpression();
+                        if (vars.isArray()) {
+                            throw new IllegalArgumentException("A var attribute cannot be a json array; you sent " + n);
+                        }
+                        vars.getPairs().forEach(pair->{
+                            String key = resolveString(ctx, pair.getKeyExpr());
+                            final Do undo = ctx.addToContext(key, pair.getValueExpr());
+                            undosFor(container).concat(undo);
+                        });
+                        return;
+                }
+                super.visit(n, ctx);
+            }
+
+            @Override
+            public void visit(JsonContainerExpr n, Ctx ctx) {
+                super.visit(n, ctx);
                 // We've now visited all the named pairs;
                 // lets generate the types we expect!
                 if (name == null) {
@@ -125,24 +283,19 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
                 }
                 int dollarInd = nameString.indexOf('$');
                 if (dollarInd != -1) {
-                    nameString = arg.resolveValues(nameString);
+                    nameString = resolveValues(ctx, nameString);
                 }
                 String pkg;
                 if (nameString.indexOf('.') == -1) {
                     // No package?  Lets guess one for you...
-                    pkg = arg.getString("package");
-                    if (pkg == null) {
-                        // Use the source directory of the .xapi file...
-                        pkg = relativePath.getParent().toString()
-                            .replace('/', '.')
-                            .replace('\\', '.');
-                    }
+                    pkg = ctx.getString("package");
+                    pkg = maybeGuessPackage(pkg);
                 } else {
                     pkg = X_Source.toPackage(nameString);
                     nameString = X_Source.removePackage(pkg, nameString);
                 }
-                SourceBuilder<Ctx> builder = arg.newSourceFile(pkg, nameString, true);
-                generateInterface(arg, builder, typeParams, extend, methods, defaultMethods, staticMethods);
+                SourceBuilder<Ctx> builder = ctx.getOrMakeClass(pkg, nameString, true);
+                generateInterface(ctx, builder, typeParams, extend, methods, defaultMethods, staticMethods);
             }
 
             @Override
@@ -198,6 +351,313 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
         };
     }
 
+    protected String resolveValues(Ctx ctx, String nameString) {
+        return ctx.resolveValues(nameString, item->resolveString(ctx, (Expression)item));
+    }
+
+    protected void generateAndSave(Ctx ctx, CompilationUnit unit) {
+        // We have been given a CompilationUnit that contains template values to replace.
+        // Lets transform it into a source file, and then save it.
+        final TypeDeclaration primary = unit.getPrimaryType();
+        String pkgName = resolveString(ctx, templateLiteral(
+            unit.getPackage().getPackageName()
+        ));
+        primary.setPackage(pkgName);
+        String typeName = resolveString(ctx, templateLiteral(
+            primary.getName()
+        ));
+        primary.setName(typeName);
+        final SourceBuilder<Ctx> builder = ctx.getOrMakeClass(
+            pkgName,
+            typeName,
+            primary.isInterface()
+        );
+
+        ModifierVisitorAdapter<Ctx> mods = modifyUnit(ctx, unit);
+        unit.accept(mods, ctx);
+
+        DumpVisitor visitor = new DumpVisitor() {
+            @Override
+            protected Printable createSourcePrinter() {
+                return builder.getClassBuffer();
+            }
+
+            @Override
+            public void visit(MethodDeclaration n, Object arg) {
+                Out2<Do, Do> todo = n.getExtra(DUMP_WRAP_KEY);
+                if (todo == null) {
+                    super.visit(n, arg);
+                    return;
+                }
+                todo.out1().done();
+                super.visit(n, arg);
+                todo.out2().done();
+            }
+
+            @Override
+            public void visit(SingleMemberAnnotationExpr n, Object arg) {
+                if (Boolean.TRUE.equals(n.getExtra("remove"))) {
+                    return;
+                }
+                super.visit(n, arg);
+            }
+
+            @Override
+            public void visit(NormalAnnotationExpr n, Object arg) {
+                if (Boolean.TRUE.equals(n.getExtra("remove"))) {
+                    return;
+                }
+                super.visit(n, arg);
+            }
+
+            @Override
+            public void visit(MethodCallExpr n, Object arg) {
+                if (n.getName().startsWith("$")) {
+                    final IntTo<String> lits = resolveToLiterals(ctx, n);
+                    // Super-hack... to insert arbitrary code where we don't
+                    // know / want to parse the internal structure, we just
+                    // replace this code with a single NameExpr that
+                    // happens to contain arbitrary code
+                    super.visit(new NameExpr(lits.join(", ")), arg);
+                } else {
+                    super.visit(n, arg);
+                }
+            }
+
+            @Override
+            protected String resolveName(NameExpr name) {
+                return resolveTemplate(ctx, templateLiteral(name.getName()));
+            }
+
+            @Override
+            protected String resolveTypeName(ClassOrInterfaceType type) {
+                final IntTo<String> literal = resolveToLiterals(ctx,
+                    templateLiteral(type.getName()));
+                return literal.join(", ");
+            }
+
+            @Override
+            protected String resolveTypeParam(TypeParameter typeParam) {
+                if (ctx.hasNode(typeParam.getName())) {
+                    final IntTo<String> literals = resolveToLiterals(
+                        ctx,
+                        (Expression) ctx.getNode(typeParam.getName())
+                    );
+                    return literals.join(", ");
+                }
+                return super.resolveTypeParam(typeParam);
+            }
+        };
+        unit.accept(visitor, null);
+        System.out.println(builder.toSource());
+    }
+
+    protected ModifierVisitorAdapter<Ctx> modifyUnit(Ctx ctx, CompilationUnit unit) {
+        ObjectTo.Many<String, BodyDeclaration> remapping =
+            X_Collect.newMultiMap(String.class, BodyDeclaration.class);
+        return new ModifierVisitorAdapter<Ctx>() {
+            @Override
+            public Node visit(MemberValuePair n, Ctx arg) {
+                return super.visit(n, arg);
+            }
+
+            @Override
+            public Node visit(AnnotationDeclaration n, Ctx arg) {
+                AnnotationDeclaration result = (AnnotationDeclaration) super.visit(n, arg);
+                final List<BodyDeclaration> members = result.getMembers();
+                remapMembers(n, members);
+                result.setMembers(members);
+                return result;
+            }
+
+            @Override
+            public Node visit(ClassOrInterfaceDeclaration n, Ctx arg) {
+                ClassOrInterfaceDeclaration result = (ClassOrInterfaceDeclaration) super.visit(n, arg);
+                final List<BodyDeclaration> members = result.getMembers();
+                remapMembers(n, members);
+                result.setMembers(members);
+                return result;
+            }
+
+            @Override
+            public Node visit(EnumDeclaration n, Ctx arg) {
+                EnumDeclaration result = (EnumDeclaration) super.visit(n, arg);
+                final List<BodyDeclaration> members = result.getMembers();
+                remapMembers(n, members);
+                result.setMembers(members);
+                return result;
+            }
+
+            private void remapMembers(TypeDeclaration n, List<BodyDeclaration> members) {
+                for (
+                    final ListIterator<BodyDeclaration> itr =
+                    members.listIterator(members.size());
+                    itr.hasPrevious(); ) {
+                    final BodyDeclaration member = itr.previous();
+                    String declKey = declarationKey(member);
+                    if (remapping.containsKey(declKey)) {
+                        itr.remove();
+                        member.setParentNode(null);
+                        Mutable<Integer> cnt = new Mutable<>(0);
+                        remapping.get(declKey)
+                            .forEachValue(v->{
+                                itr.add(v);
+                                cnt.in(cnt.out1()+1);
+                            });
+                        while (cnt.out1() > 0) {
+                            itr.previous();
+                            cnt.in(cnt.out1()-1);
+                        }
+                    }
+                }
+                n.setMembers(members);
+            }
+
+            private String declarationKey(BodyDeclaration member) {
+                if (member instanceof MethodDeclaration) {
+                    MethodDeclaration asMethod = (MethodDeclaration) member;
+                    return asMethod.getName() + "#" + asMethod.getParameters();
+                } else if (member instanceof FieldDeclaration) {
+                    FieldDeclaration asField = (FieldDeclaration) member;
+                    return asField.getVariables().toString();
+                } else {
+                    throw new IllegalArgumentException("No declaration key for " + debugNode(member));
+                }
+            }
+
+            @Override
+            public Node visit(MethodDeclaration n, Ctx arg) {
+                if (!n.getAnnotations().isEmpty()) {
+                    IntTo<MethodDeclaration> methods = X_Collect.newList(MethodDeclaration.class);
+                    methods.add(n);
+                    for (AnnotationExpr anno : n.getAnnotations()) {
+                        switch (anno.getNameString().toLowerCase()) {
+                            case "unfold":
+                                removeFromOutput(anno);
+                                Mutable<Integer> from = new Mutable<>();
+                                Mutable<Integer> to = new Mutable<>();
+                                Mutable<String> name = new Mutable<>();
+                                anno.getMembers().forEach(pair->{
+                                    switch (pair.getName()) {
+                                        case "from":
+                                            from.in(resolveInt(ctx, pair.getValue()));
+                                            break;
+                                        case "to":
+                                            to.in(resolveInt(ctx, pair.getValue()));
+                                            break;
+                                        case "var":
+                                            name.in(resolveString(ctx, pair.getValue()));
+                                            break;
+                                        default:
+                                            throw new IllegalArgumentException("Bad @unfold member name " + pair.getName());
+                                    }
+                                });
+                                assert from.out1() != null : "Missing from= member in @unfold annotation " + anno;
+                                assert to.out1() != null : "Missing to= member in @unfold annotation " + anno;
+                                assert name.out1() != null : "Missing var= member in @unfold annotation " + anno;
+                                // When unfolding, we want to multiplex one method
+                                // declaration into multiple declarations.
+                                // Note that we might want to unfold multiple times...
+                                final IntTo<MethodDeclaration> newMethods = X_Collect.newList(MethodDeclaration.class);
+                                methods.forEachValue(decl->{
+                                    for (int i = from.out1(), m = to.out1(); i <= m; i++) {
+                                        MethodDeclaration newDecl = (MethodDeclaration) decl.clone();
+                                        deferVarResolution(ctx, newDecl, name.out1(), IntegerLiteralExpr.intLiteral(i));
+                                        newMethods.add(newDecl);
+                                    }
+                                });
+                                methods = newMethods;
+                                remapping.put(declarationKey(n), (IntTo<BodyDeclaration>) methods.narrow());
+                                break;
+                            case "var":
+                                removeFromOutput(anno);
+                                name = new Mutable<>();
+                                Mutable<Expression> value = new Mutable<>();
+                                Mutable<Boolean> isDefault = new Mutable<>();
+                                anno.getMembers().forEach(pair-> {
+                                    switch (pair.getName().toLowerCase()) {
+                                        case "name":
+                                            name.in(resolveString(ctx, pair.getValue()));
+                                            break;
+                                        case "value":
+                                            value.in(resolveVar(ctx, pair.getValue()));
+                                            break;
+                                        case "default":
+                                            value.in(resolveVar(ctx, pair.getValue()));
+                                            isDefault.in(true);
+                                            break;
+                                        default:
+                                            throw new IllegalArgumentException("Unsupported var member name " + pair.getName() + " in " + anno);
+                                    }
+                                });
+
+                                methods.forEachValue(decl->
+                                    deferVarResolution(ctx, decl, name.out1(), value.out1(), Boolean.TRUE.equals(isDefault.out1()))
+                                );
+                                break;
+                            default:
+                                // An annotation we don't treat as special...
+                        }
+                    }
+                }
+                return super.visit(n, arg);
+            }
+
+        };
+    }
+
+    protected void removeFromOutput(Node node) {
+        node.addExtra("remove", true);
+    }
+
+    protected void deferVarResolution(Ctx ctx, Node newDecl, String varName, Node value) {
+        deferVarResolution(ctx, newDecl, varName, value, false);
+    }
+    protected void deferVarResolution(Ctx ctx, Node newDecl, String varName, Node value, boolean checkFirst) {
+        Mutable<Do> undoer = new Mutable<>();
+        final Out2Immutable<Do, Do> existing = newDecl.getExtra(DUMP_WRAP_KEY);
+        final Out2Immutable<Do, Do> myTask = Out2.out2Immutable(
+            () -> undoer.in(
+                !checkFirst || !ctx.hasNode(varName) ?
+                    ctx.addToContext(varName, value) :
+                    Do.NOTHING
+            ),
+            () -> undoer.out1().done()
+        );
+        if (existing == null) {
+            newDecl.addExtra(DUMP_WRAP_KEY, myTask);
+        } else {
+            newDecl.addExtra(DUMP_WRAP_KEY, Out2.out2Immutable(
+                existing.out1().doAfter(myTask.out1()),
+                existing.out2().doAfter(myTask.out2())
+            ));
+        }
+    }
+
+    protected PackageDeclaration findPackage(Ctx ctx) {
+        if (ctx.hasNode("package")) {
+            return new PackageDeclaration(new NameExpr(ctx.getString("package")));
+        }
+        return new PackageDeclaration(new NameExpr(maybeGuessPackage(null)));
+    }
+
+    protected String maybeGuessPackage(String pkg) {
+        if (pkg == null) {
+            if (pkgName != null) {
+                return pkgName;
+            }
+            // Use the source directory of the .xapi file...
+            return relativePath.getParent().toString()
+                .replace('/', '.')
+                .replace('\\', '.');
+        }
+        return pkg;
+    }
+
+    protected GrowableIterator<Do> undosFor(UiContainerExpr container) {
+        return undos.computeIfAbsent(container, k->new GrowableIterator<>());
+    }
+
     private void generateInterface(
         Ctx arg,
         SourceBuilder<Ctx> builder,
@@ -228,7 +688,6 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
             addMethods(arg, builder, staticMethods, Modifier.PUBLIC | Modifier.STATIC);
         }
 
-        System.out.println(builder);
     }
 
     protected void addMethods(Ctx ctx, SourceBuilder<Ctx> builder, JsonContainerExpr methods, int modifiers) {

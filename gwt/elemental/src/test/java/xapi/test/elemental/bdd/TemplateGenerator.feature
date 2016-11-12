@@ -44,6 +44,10 @@ Feature: Compile templates into valid java files
     Given compile ui with name ImportFrom:
       | <template importFrom=Type.class /> |
 
+  Scenario: Parse a template with a class body
+    Given compile ui with name ClassBody:
+      | <template importFrom=public class Body {} /> |
+
   Scenario: Parse a template with an empty lambda
     Given compile ui with name EmptyLambda:
       | <template onClick=()->{} /> |

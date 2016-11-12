@@ -1,13 +1,24 @@
 package xapi.collect.impl;
 
 import xapi.fu.In1;
+import xapi.fu.In1.In1Unsafe;
 import xapi.fu.In2;
+import xapi.fu.In2Out1;
+import xapi.fu.MappedIterable;
+import xapi.fu.Out2;
+import xapi.fu.has.HasItems;
 
 import java.util.Map.Entry;
 
-public interface EntryIterable <K, V> {
+public interface EntryIterable <K, V> extends HasItems<Out2<K, V>> {
 
   Iterable<Entry<K,V>> entries();
+
+  @Override
+  default MappedIterable<Out2<K, V>> forEachItem() {
+    return MappedIterable.mapped(entries())
+        .map(e->Out2.out2Immutable(e.getKey(), e.getValue()));
+  }
 
   default EntryIterable <K, V> iterate(In2<K, V> callback) {
     entries().forEach(
@@ -23,7 +34,20 @@ public interface EntryIterable <K, V> {
     entries().forEach(callback.mapAdapter());
   }
 
+  default <To> To findAndReduce(In2Out1<K, V, To> filter) {
+    for (Entry<K, V> entry : entries()) {
+      To result = filter.io(entry.getKey(), entry.getValue());
+      if (result != null) {
+        return result;
+      }
+    }
+    return null;
+  }
+
   default void forValues(In1<V> callback) {
+    entries().forEach(callback.<K>ignore1().mapAdapter());
+  }
+  default void forValuesUnsafe(In1Unsafe<V> callback) {
     entries().forEach(callback.<K>ignore1().mapAdapter());
   }
 

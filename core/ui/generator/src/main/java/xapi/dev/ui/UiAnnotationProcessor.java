@@ -10,6 +10,7 @@ import xapi.fu.In1Out1;
 import xapi.inject.X_Inject;
 import xapi.javac.dev.api.JavacService;
 import xapi.log.X_Log;
+import xapi.source.read.JavaModel.IsQualified;
 import xapi.ui.api.PhaseMap;
 import xapi.ui.api.PhaseMap.PhaseNode;
 import xapi.ui.api.Ui;
@@ -99,13 +100,7 @@ public class UiAnnotationProcessor extends AbstractProcessor {
                 });
             });
 
-            for (Class<?> phase : UiPhase.CORE_PHASES) {
-                phases.add(phase.getAnnotation(UiPhase.class));
-            }
-
-            // compute phases to run
-            phaseMap = PhaseMap.toMap(phases, UiPhase::id, UiPhase::priority, UiPhase::prerequisite, UiPhase::block);
-
+            phaseMap = PhaseMap.withDefaults(phases);
             types.forEach(this::generateControllers);
         }
         return true;
@@ -132,7 +127,7 @@ public class UiAnnotationProcessor extends AbstractProcessor {
     private boolean generateUiFactory(TypeElement element, UiAnnotatedElements elements) {
         String simpleName = element.getSimpleName().toString();
         String fqcn = element.getQualifiedName().toString();
-        SourceBuilder builder = new SourceBuilder("public class " + simpleName + "UiFactory");
+        SourceBuilder<Element> builder = new SourceBuilder<>("public class " + simpleName + "UiFactory");
         final ClassBuffer out = builder.getClassBuffer();
         builder.setPackage(fqcn.replace("." + simpleName, ""));
         String ele = builder.addImport(UiElement.class);
@@ -165,7 +160,7 @@ public class UiAnnotationProcessor extends AbstractProcessor {
         return false;
     }
 
-    private void generateUiImplementations(SourceBuilder<?> out, MethodBuffer factory, TypeElement type, Ui ui, UiContainerExpr container) {
+    private void generateUiImplementations(SourceBuilder<Element> out, MethodBuffer factory, TypeElement type, Ui ui, UiContainerExpr container) {
 
         // Generate an abstract, base class that is fully generic.
         // Then, for every known type provider on the classpath,
@@ -173,8 +168,10 @@ public class UiAnnotationProcessor extends AbstractProcessor {
         // optionally with a number of configurable interfaces added.
 
         // generate generic base class.
-        UiGeneratorService generator = getSuperclassGenerator();
-        ComponentBuffer component = generator.initialize(service, type, ui, container);
+        UiGeneratorService<Element> generator = getSuperclassGenerator();
+        final String pkg = service.getPackageName(type);
+        IsQualified typeName = new IsQualified(pkg, type.getQualifiedName().toString().replace(pkg+".", ""));
+        ComponentBuffer component = generator.initialize(service, typeName, container);
         // Run each phase, potentially including custom phases injected by third parties
         // Note, we need to use forthcoming xapi.properties support to record annotations
         // which are annotated with @UiPhase, so a library can be compiled with a record
@@ -199,7 +196,7 @@ public class UiAnnotationProcessor extends AbstractProcessor {
 
     }
 
-    protected UiGeneratorService getSuperclassGenerator() {
+    protected UiGeneratorService<Element> getSuperclassGenerator() {
         return X_Inject.instance(UiGeneratorService.class);
     }
 

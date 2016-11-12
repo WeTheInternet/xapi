@@ -5,6 +5,8 @@ import com.github.javaparser.ast.expr.UiContainerExpr;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.collect.impl.SimpleLinkedList;
+import xapi.dev.api.ApiGeneratorContext;
+import xapi.dev.api.ApiGeneratorTools;
 import xapi.dev.ui.ContainerMetadata.MetadataRoot;
 import xapi.fu.In2Out1;
 import xapi.fu.Out2;
@@ -16,7 +18,7 @@ import java.util.Set;
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 6/28/16.
  */
-public abstract class UiGeneratorTools {
+public abstract class UiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> implements ApiGeneratorTools <Ctx> {
 
     protected final StringTo<Integer> numGenerated;
     protected final StringTo<UiComponentGenerator> componentGenerators;

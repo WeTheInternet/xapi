@@ -181,4 +181,7 @@ public final class X_Util{
         }
     }
 
+    public static String defaultCharset() {
+        return "UTF-8";
+    }
 }

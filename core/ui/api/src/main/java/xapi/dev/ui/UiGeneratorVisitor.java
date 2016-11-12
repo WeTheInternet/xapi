@@ -112,7 +112,71 @@ public class UiGeneratorVisitor extends VoidVisitorAdapter<UiGeneratorTools> {
           UiBodyExpr n, UiGeneratorTools arg
     ) {
         if (n.isNotEmpty()) {
+            /*
+            TODO: allow parser selectors like so:
+            <some-ui>
+              {json/
+                {
+                  uses: "json parser",
+                  is : "wrapped in ForeignNode"
+                }
+              /json}
+              {java/
+                @Ui(`
+                  <this is = \` Some java type wrapped in a ForeignNode \`/>
+                `)
+                package de.mocra.cy;
+              /java}
+              <raw-xapi
+                is="embedded child node"
+                processedAt=sameTimeAsParentNode()
+                deferredProcessing =
+                  {xapi/
+                      <defer-parsing
+                        is = \`
+                          also wrapped in ForeignNode,
+                          to ensure contents are a "black box",
+                          which are not parsed until you open it.
 
+                          Think of it like the blood-brain barrier for code :-)
+                          Or Schrodinger's Scope :-/
+                        \`/>
+                  /xapi}
+                  // note that embedded languages which parse // as comments
+                  //can-embed-close tags} in comments,
+                  // since the parent parser slices off the /EOF} style symbol.
+
+              /raw-xapi>
+              // note that <self-closing /> tags are allowed to be written as:
+              // <self-closing value=<some thing=Huge /> /self-closing>
+              // to ensure that /> is not erroneously mapped to an unexpected element.
+              // This ensures that a parse breaks closer to the source of the error.
+
+              {wti/
+                Allow for custom syntax of any kind,
+                by registering a lang name,
+                which must map to a (findable parser plugin)->{
+                  The plugin will be used to stream into the source,
+                  until the end token is seen,
+                  with the end token in the form /lang}
+                  where lang is used in the opening {lang/ tag,
+                  (which is safe to use inside this block,
+                  as we let the foreign parser (process everything)->{
+                    Because we know what the closing tag is going to be,
+                    we can, by default, make all ForeignNode lang tags lazy,
+                    thus deferring the scope (and failure) of embedded syntax.
+                  }
+                  between the opening and closing lang tags.
+
+                  Beware a hack like adding "/xapi}" in other languages;
+                  this should never happen anywhere; this lang tag should
+                  be special cased such that it is only allowed when
+                  the immediate parent lang tag is {xapi/
+                  (if found when searching for closing lang tag, throw exception)
+                }.
+              /wti}
+            </some-ui>
+            */
         }
         super.visit(n, arg);
     }

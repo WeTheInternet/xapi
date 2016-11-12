@@ -2,17 +2,15 @@ package xapi.dev.ui;
 
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
-import xapi.dev.processor.AnnotationTools;
+import xapi.dev.gen.SourceHelper;
 import xapi.dev.ui.ContainerMetadata.MetadataRoot;
-import xapi.ui.api.Ui;
-
-import javax.lang.model.element.TypeElement;
+import xapi.source.read.JavaModel.IsQualified;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 5/4/16.
  */
-public interface UiGeneratorService {
+public interface UiGeneratorService <Raw> {
 
     ComponentBuffer runPhase(String id, ComponentBuffer component);
 
@@ -24,7 +22,9 @@ public interface UiGeneratorService {
 
     UiGeneratorVisitor createVisitor(ContainerMetadata metadata);
 
-    ComponentBuffer initialize(AnnotationTools service, TypeElement type, Ui ui, UiContainerExpr container);
+    ComponentBuffer initialize(SourceHelper<Raw> service, IsQualified type, UiContainerExpr container);
+
+    UiGeneratorTools tools();
 
     void finish();
 }
