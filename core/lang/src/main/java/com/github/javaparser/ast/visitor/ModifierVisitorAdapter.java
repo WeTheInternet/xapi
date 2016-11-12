@@ -82,6 +82,7 @@ import com.github.javaparser.ast.type.WildcardType;
 import xapi.fu.In1;
 import xapi.fu.In3Out1;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -284,10 +285,12 @@ public abstract class ModifierVisitorAdapter<A> implements GenericVisitor<Node, 
 		}
 		final List<Type> typeArgs = n.getTypeArgs();
 		if (typeArgs != null) {
+			List<Type> newTypes = new ArrayList<>();
 			for (int i = 0; i < typeArgs.size(); i++) {
-				typeArgs.set(i, (Type) typeArgs.get(i).accept(this, arg));
+				newTypes.add((Type) typeArgs.get(i).accept(this, arg));
 			}
-			removeNulls(typeArgs);
+			removeNulls(newTypes);
+			n.setTypeArgs(newTypes);
 		}
 		return n;
 	}
@@ -994,6 +997,13 @@ public abstract class ModifierVisitorAdapter<A> implements GenericVisitor<Node, 
     return n;
   }
 
+  @Override
+  public Node visit(DynamicDeclarationExpr n, A arg) {
+	  final Node body = n.getBody().accept(this, arg);
+	  n.setBody((BodyDeclaration)body);
+	  return n;
+  }
+
     @Override
     public Node visit(JsonContainerExpr n, A arg) {
         copyAll(n.getPairs(), n::setPairs, JsonPairExpr::accept, arg);
@@ -1032,7 +1042,13 @@ public abstract class ModifierVisitorAdapter<A> implements GenericVisitor<Node, 
         return n;
     }
 
-    @Override
+	@Override
+	public Node visit(SysExpr sysExpr, A arg) {
+		sysExpr.modify(this, arg);
+		return sysExpr;
+	}
+
+	@Override
     public Node visit(CssValueExpr n, A arg) {
         copy(n.getValue(), n::setValue, arg);
         return n;

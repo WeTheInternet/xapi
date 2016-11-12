@@ -230,21 +230,139 @@ TOKEN_MGR_DECLS : {
   void backup(int n) { input_stream.backup(n); }
 
   char peekNext() {
+    return peekNext(true);
+  }
+
+  char peekNext(boolean eatWhitespace) {
     int backup = 0;
     char c = 0;
     try {
       c = input_stream.readChar();
       backup ++;
-      while (Character.isWhitespace(c)) {
-        c = input_stream.readChar();
-        backup++;
+      if (eatWhitespace) {
+        while (Character.isWhitespace(c)) {
+          c = input_stream.readChar();
+          backup++;
+        }
       }
-      input_stream.backup(backup);
     } catch (IOException e) {
       // Hit EOF while peeking...
+    } finally {
       input_stream.backup(backup);
     }
     return c;
+  }
+
+  boolean isMemberBody() {
+    if (peekNext() == 'p') {
+      int backup = 0;
+      try {
+        char c = input_stream.readChar();
+        backup ++;
+        while (Character.isWhitespace(c)) {
+          c = input_stream.readChar();
+          backup ++;
+        }
+        assert c == 'p';
+        c = input_stream.readChar();
+        backup ++;
+        switch (c) {
+          case 'u'://blic
+            c = input_stream.readChar();
+            backup ++;
+            if (c != 'b') {
+              return false;
+            }
+            c = input_stream.readChar();
+            backup ++;
+            if (c != 'l') {
+              return false;
+            }
+            c = input_stream.readChar();
+            backup ++;
+            if (c != 'i') {
+              return false;
+            }
+            c = input_stream.readChar();
+            backup ++;
+            if (c != 'c') {
+              return false;
+            }
+            c = input_stream.readChar();
+            backup ++;
+            return Character.isWhitespace(c);
+
+          case 'r'://rivate | rotected
+            c = input_stream.readChar();
+            backup ++;
+            switch (c) {
+              case 'i'://ivate
+                c = input_stream.readChar();
+                backup ++;
+                if (c != 'v') {
+                  return false;
+                }
+                c = input_stream.readChar();
+                backup ++;
+                if (c != 'a') {
+                  return false;
+                }
+                c = input_stream.readChar();
+                backup ++;
+                if (c != 't') {
+                  return false;
+                }
+                c = input_stream.readChar();
+                backup ++;
+                if (c != 'e') {
+                  return false;
+                }
+                c = input_stream.readChar();
+                backup ++;
+                return Character.isWhitespace(c);
+
+              case 'o'://otected
+                c = input_stream.readChar();
+                backup ++;
+                if (c != 't') {
+                  return false;
+                }
+                c = input_stream.readChar();
+                backup ++;
+                if (c != 'e') {
+                  return false;
+                }
+                c = input_stream.readChar();
+                backup ++;
+                if (c != 'c') {
+                  return false;
+                }
+                c = input_stream.readChar();
+                backup ++;
+                if (c != 't') {
+                  return false;
+                }
+                c = input_stream.readChar();
+                backup ++;
+                if (c != 'e') {
+                  return false;
+                }
+                c = input_stream.readChar();
+                backup ++;
+                if (c != 'd') {
+                  return false;
+                }
+                c = input_stream.readChar();
+                backup ++;
+                return Character.isWhitespace(c);
+            }
+        }
+      } catch (IOException e) {
+      } finally {
+        input_stream.backup(backup);
+      }
+    }
+    return false;
   }
 
   boolean looksLikeCssSelector() {
@@ -2239,6 +2357,8 @@ NameExpr FeatureName():
       { ret = new NameExpr(token.beginLine, token.beginColumn, token.endLine, token.endColumn, token.image);}
       | "package"
       { ret = new NameExpr(token.beginLine, token.beginColumn, token.endLine, token.endColumn, token.image);}
+      | "default"
+      { ret = new NameExpr(token.beginLine, token.beginColumn, token.endLine, token.endColumn, token.image);}
       | "implements"
       { ret = new NameExpr(token.beginLine, token.beginColumn, token.endLine, token.endColumn, token.image);}
   )
@@ -2878,6 +2998,16 @@ UiContainerExpr UiContainer():
      }
    )
    tagName = TagName()
+
+   // TODO: If there is a "/" next, we want to load a foreign parser...
+   // as in: <ele wti =
+   //                 <wti/ (Valid wti using)->{
+   //                      a registered foreign parser, named "wti",
+   //                      with text that cannot contain /wti > (without the space)
+   //                      }
+   //                 /wti>
+   //        /ele>
+
    ( attr = UiAttr() { attrs.add(attr); } ) *
     (
       (
@@ -3034,9 +3164,20 @@ UiAttrExpr UiAttr():
 Expression UiValue():
 {
     Expression expression;
+    BodyDeclaration member;
 }
 {
 (
+        LOOKAHEAD( { token_source.isMemberBody() } )
+      (
+        member = ClassOrInterfaceBodyDeclaration(true)
+        {
+          expression = new DynamicDeclarationExpr(member);
+        }
+
+      )
+      |
+
         LOOKAHEAD( { token_source.looksLikeCssSelector() } )
       (
         {
@@ -4188,6 +4329,8 @@ Expression MemberValue():
 	   ret = MemberValueArrayInitializer()
 	 |
 	   ret = ConditionalExpression()
+	 |
+	   ret = UiContainer()
   )
   { return ret; }
 }

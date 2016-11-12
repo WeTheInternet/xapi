@@ -34,7 +34,9 @@ import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.*;
 import com.github.javaparser.ast.type.*;
 import xapi.collect.X_Collect;
+import xapi.fu.In1Out1;
 import xapi.fu.In3Out1;
+import xapi.fu.Mutable;
 import xapi.fu.Out1;
 
 import java.util.Iterator;
@@ -1748,4 +1750,27 @@ public abstract class GenericVisitorAdapter<R, A> implements GenericVisitor<R, A
         }
         return null;
     }
+
+	@Override
+	public R visit(DynamicDeclarationExpr n, A arg) {
+		return n.getBody().accept(this, arg);
+	}
+
+	@Override
+	public R visit(SysExpr sysExpr, A arg) {
+		if (sysExpr != null) {
+			final In1Out1<Node, R> factory = sysExpr.genericVisit(this, arg)
+				.supply1(this)
+				.supply2(arg);
+			Mutable<R> result = new Mutable<>();
+			sysExpr.readNodesWhile(n -> result.isNull(), n -> {
+				final R r = factory.io(n);
+				if (r != null) {
+					result.in(r);
+				}
+
+			}, arg);
+		}
+		return null;
+	}
 }

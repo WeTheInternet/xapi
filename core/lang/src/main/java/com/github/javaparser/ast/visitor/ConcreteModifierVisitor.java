@@ -87,13 +87,10 @@ public class ConcreteModifierVisitor extends ModifierVisitorAdapter <Map<Node, N
   }
 
   public static void replaceAll(Map<Node, Node> replacements) {
-    // find the lowest common ancestor of all nodes;
-    // for very large graphs, this will be faster than traversing a potentially very large
-    // number on uninteresting nodes (and given that we do map lookups on every node,
-    // we prefer reducing the search size as graphs with low height won't take much of a hit,
-    // and graphs of large height or breadth can save a substantial amount of time)
     final Node ancestor = findAncestor(replacements.keySet());
     // traverse only from the common ancestor down.
+    // A single pass through from one ancestor will complete all needed work,
+    // and only visit each node once, to avoid idempotency errors.
     if (ancestor != null) {
       ancestor.accept(new ConcreteModifierVisitor(), replacements);
     }
@@ -102,6 +99,22 @@ public class ConcreteModifierVisitor extends ModifierVisitorAdapter <Map<Node, N
   private ConcreteModifierVisitor() {
   }
 
+  /**
+     find the lowest common ancestor of all nodes;
+     for very large graphs, this will be faster than
+     traversing a potentially very large number of uninteresting nodes,
+     up to N-?, where ? is < N, but can be almost N,
+
+     Given that we do map lookups on every node,
+     we prefer reducing the search size of large graphs,
+     which can take a big hit if we process N-? total nodes in a graph,
+     up to N-? times { ~N * ~N ~= O(nlogn)}.
+
+     By choosing the nearest-to-root ancestor,
+     we may wind up processing N-? nodes more than we have to,
+     but only do so once (thereby
+
+   */
   private static Node findAncestor(Set<Node> nodes) {
     if (nodes.isEmpty()) {
       return null;
@@ -1062,6 +1075,82 @@ public class ConcreteModifierVisitor extends ModifierVisitorAdapter <Map<Node, N
   public Node visit(
       UiContainerExpr n, Map<Node, Node> arg
   ) {
+    if (arg.containsKey(n)) {
+      return arg.get(n);
+    }
+    return super.visit(n, arg);
+  }
+
+  @Override
+  public Node visit(
+      DynamicDeclarationExpr n, Map<Node, Node> arg
+  ) {
+    if (arg.containsKey(n)) {
+      return arg.get(n);
+    }
+    return super.visit(n, arg);
+  }
+
+  @Override
+  public Node visit(
+      JsonContainerExpr n, Map<Node, Node> arg
+  ) {
+    if (arg.containsKey(n)) {
+      return arg.get(n);
+    }
+    return super.visit(n, arg);
+  }
+
+  @Override
+  public Node visit(JsonPairExpr n, Map<Node, Node> arg) {
+    if (arg.containsKey(n)) {
+      return arg.get(n);
+    }
+    return super.visit(n, arg);
+  }
+
+  @Override
+  public Node visit(CssBlockExpr n, Map<Node, Node> arg) {
+    if (arg.containsKey(n)) {
+      return arg.get(n);
+    }
+    return super.visit(n, arg);
+  }
+
+  @Override
+  public Node visit(CssContainerExpr n, Map<Node, Node> arg) {
+    if (arg.containsKey(n)) {
+      return arg.get(n);
+    }
+    return super.visit(n, arg);
+  }
+
+  @Override
+  public Node visit(CssRuleExpr n, Map<Node, Node> arg) {
+    if (arg.containsKey(n)) {
+      return arg.get(n);
+    }
+    return super.visit(n, arg);
+  }
+
+  @Override
+  public Node visit(CssSelectorExpr n, Map<Node, Node> arg) {
+    if (arg.containsKey(n)) {
+      return arg.get(n);
+    }
+    return super.visit(n, arg);
+  }
+
+  @Override
+  public Node visit(CssValueExpr n, Map<Node, Node> arg) {
+    if (arg.containsKey(n)) {
+      return arg.get(n);
+    }
+    return super.visit(n, arg);
+  }
+
+  @Override
+  public Node visit(SysExpr n, Map<Node, Node> arg) {
     if (arg.containsKey(n)) {
       return arg.get(n);
     }

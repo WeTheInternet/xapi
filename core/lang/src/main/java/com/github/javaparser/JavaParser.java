@@ -267,6 +267,16 @@ public final class JavaParser {
         return e;
     }
 
+    public static Node parseNode(final String uiContainer) throws ParseException {
+        if (uiContainer.trim().charAt(0) == '<') {
+            return parseUiContainer(uiContainer);
+        }
+        StringReader sr = new StringReader(uiContainer);
+        final CompilationUnit e = new ASTParser(sr).CompilationUnit();
+        sr.close();
+        return e;
+    }
+
     public static JsonContainerExpr parseJsonContainer(final String uiContainer) throws ParseException {
         StringReader sr = new StringReader(uiContainer);
         final JsonContainerExpr e = new ASTParser(sr).JsonContainer();

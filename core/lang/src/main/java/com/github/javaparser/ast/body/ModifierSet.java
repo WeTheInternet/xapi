@@ -3,12 +3,12 @@
  * Copyright (C) 2011, 2013-2015 The JavaParser Team.
  *
  * This file is part of JavaParser.
- * 
+ *
  * JavaParser can be used either under the terms of
  * a) the GNU Lesser General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * b) the terms of the Apache License 
+ * b) the terms of the Apache License
  *
  * You should have received a copy of both licenses in LICENCE.LGPL and
  * LICENCE.APACHE. Please refer to those files for details.
@@ -18,7 +18,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  */
- 
+
 package com.github.javaparser.ast.body;
 
 import com.github.javaparser.ast.AccessSpecifier;
@@ -55,6 +55,8 @@ public final class ModifierSet {
     public static final int ABSTRACT = Modifier.ABSTRACT;
 
     public static final int STRICTFP = Modifier.STRICT;
+
+    public static final int DEFAULT = Modifier.PUBLIC;
 
     public static AccessSpecifier getAccessSpecifier(int modifiers) {
         if (isPublic(modifiers)){
@@ -108,6 +110,10 @@ public final class ModifierSet {
     }
 
     public static boolean isPublic(int modifiers) {
+        return (modifiers & PUBLIC) != 0;
+    }
+
+    public static boolean isDefault(int modifiers) {
         return (modifiers & PUBLIC) != 0;
     }
 

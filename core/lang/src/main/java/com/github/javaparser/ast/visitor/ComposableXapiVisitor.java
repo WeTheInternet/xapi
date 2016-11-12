@@ -1002,6 +1002,26 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
         doVisit(CssValueExpr.class, n, arg, super::visit);
     }
 
+    public ComposableXapiVisitor<Ctx> withDynamicDeclarationExpr(In2Out1<DynamicDeclarationExpr, Ctx, Boolean> callback) {
+        putCallback(DynamicDeclarationExpr.class, callback);
+        return this;
+    }
+
+    @Override
+    public void visit(DynamicDeclarationExpr n, Ctx arg) {
+        doVisit(DynamicDeclarationExpr.class, n, arg, super::visit);
+    }
+
+    public ComposableXapiVisitor<Ctx> withSysExpr(In2Out1<SysExpr, Ctx, Boolean> callback) {
+        putCallback(SysExpr.class, callback);
+        return this;
+    }
+
+    @Override
+    public void visit(SysExpr sysExpr, Ctx arg) {
+        doVisit(SysExpr.class, sysExpr, arg, super::visit);
+    }
+
     public ComposableXapiVisitor<Ctx> withCssValueExpr(In2Out1<CssValueExpr, Ctx, Boolean> callback) {
         putCallback(CssValueExpr.class, callback);
         return this;

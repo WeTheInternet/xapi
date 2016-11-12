@@ -5,18 +5,36 @@ import com.github.javaparser.ast.exception.NotFoundException;
 import com.github.javaparser.ast.visitor.GenericVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitor;
 import xapi.collect.X_Collect;
+import xapi.fu.has.HasSize;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 4/10/16.
  */
-public class JsonContainerExpr extends JsonExpr {
+public class JsonContainerExpr extends JsonExpr implements HasSize {
 
   private List<JsonPairExpr> pairs;
   private boolean isArray;
+
+  public JsonContainerExpr(
+      Iterable<Expression> exprs
+  ) {
+    this(-1, -1, -1, -1, true, exprToPairs(exprs));
+  }
+
+  private static List<JsonPairExpr> exprToPairs(Iterable<Expression> exprs) {
+    final Iterator<Expression> itr = exprs.iterator();
+    final List<JsonPairExpr> result = new ArrayList<>();
+    for (int i = 0; itr.hasNext(); i++) {
+      result.add(new JsonPairExpr(Integer.toString(i), itr.next()));
+    }
+    return result;
+  }
 
   public JsonContainerExpr(
       boolean isArray,
@@ -70,7 +88,7 @@ public class JsonContainerExpr extends JsonExpr {
   }
 
   public Expression getNode(int index) {
-    if (index < pairs.size() || index < 0) {
+    if (index >= pairs.size() || index < 0) {
       throw new IndexOutOfBoundsException(index + " not within bounds of " + pairs.size());
     }
     final JsonPairExpr pair = pairs.get(index);
@@ -100,6 +118,16 @@ public class JsonContainerExpr extends JsonExpr {
     return jsonArray(X_Collect.arrayIterable(nodes));
   }
 
+  public static JsonContainerExpr jsonObject(Expression ... nodes) {
+    assert nodes.length % 2 == 1 : "Json objects must have an even multiple of nodes; you sent " + nodes.length
+        +"\n:" + Arrays.asList(nodes);
+    List<JsonPairExpr> pairs = new ArrayList<>();
+    for (int i = 0, m = nodes.length; i < m; i+=2) {
+      pairs.add(new JsonPairExpr(nodes[i], nodes[i+1]));
+    }
+    return new JsonContainerExpr(false, pairs);
+  }
+
   public static <N extends Expression> JsonContainerExpr jsonArray(Iterable<N> nodes) {
     List<JsonPairExpr> pairs = new ArrayList<>();
     int cnt = 0;
@@ -107,5 +135,10 @@ public class JsonContainerExpr extends JsonExpr {
       pairs.add(new JsonPairExpr(Integer.toString(cnt++), node));
     }
     return new JsonContainerExpr(true, pairs);
+  }
+
+  @Override
+  public int size() {
+    return pairs.size();
   }
 }

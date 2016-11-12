@@ -258,6 +258,8 @@ public interface VoidVisitor<A> {
 
     void visit(TypeExpr n, A arg);
 
+    void visit(DynamicDeclarationExpr n, A arg);
+
     void visit(UiAttrExpr n, A arg);
 
     void visit(UiContainerExpr n, A arg);
@@ -278,4 +280,5 @@ public interface VoidVisitor<A> {
 
     void visit(CssValueExpr n, A arg);
 
+    void visit(SysExpr sysExpr, A arg);
 }

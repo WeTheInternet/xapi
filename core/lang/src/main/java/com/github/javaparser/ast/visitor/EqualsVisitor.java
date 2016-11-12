@@ -26,56 +26,15 @@ import com.github.javaparser.ast.ImportDeclaration;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.PackageDeclaration;
 import com.github.javaparser.ast.TypeParameter;
-import com.github.javaparser.ast.body.AnnotationDeclaration;
-import com.github.javaparser.ast.body.AnnotationMemberDeclaration;
-import com.github.javaparser.ast.body.BaseParameter;
-import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
-import com.github.javaparser.ast.body.ConstructorDeclaration;
-import com.github.javaparser.ast.body.EmptyMemberDeclaration;
-import com.github.javaparser.ast.body.EmptyTypeDeclaration;
-import com.github.javaparser.ast.body.EnumConstantDeclaration;
-import com.github.javaparser.ast.body.EnumDeclaration;
-import com.github.javaparser.ast.body.FieldDeclaration;
-import com.github.javaparser.ast.body.InitializerDeclaration;
-import com.github.javaparser.ast.body.MethodDeclaration;
-import com.github.javaparser.ast.body.MultiTypeParameter;
-import com.github.javaparser.ast.body.Parameter;
-import com.github.javaparser.ast.body.VariableDeclarator;
-import com.github.javaparser.ast.body.VariableDeclaratorId;
+import com.github.javaparser.ast.body.*;
 import com.github.javaparser.ast.comments.BlockComment;
 import com.github.javaparser.ast.comments.JavadocComment;
 import com.github.javaparser.ast.comments.LineComment;
 import com.github.javaparser.ast.expr.*;
-import com.github.javaparser.ast.stmt.AssertStmt;
-import com.github.javaparser.ast.stmt.BlockStmt;
-import com.github.javaparser.ast.stmt.BreakStmt;
-import com.github.javaparser.ast.stmt.CatchClause;
-import com.github.javaparser.ast.stmt.ContinueStmt;
-import com.github.javaparser.ast.stmt.DoStmt;
-import com.github.javaparser.ast.stmt.EmptyStmt;
-import com.github.javaparser.ast.stmt.ExplicitConstructorInvocationStmt;
-import com.github.javaparser.ast.stmt.ExpressionStmt;
-import com.github.javaparser.ast.stmt.ForStmt;
-import com.github.javaparser.ast.stmt.ForeachStmt;
-import com.github.javaparser.ast.stmt.IfStmt;
-import com.github.javaparser.ast.stmt.LabeledStmt;
-import com.github.javaparser.ast.stmt.ReturnStmt;
-import com.github.javaparser.ast.stmt.SwitchEntryStmt;
-import com.github.javaparser.ast.stmt.SwitchStmt;
-import com.github.javaparser.ast.stmt.SynchronizedStmt;
-import com.github.javaparser.ast.stmt.ThrowStmt;
-import com.github.javaparser.ast.stmt.TryStmt;
-import com.github.javaparser.ast.stmt.TypeDeclarationStmt;
-import com.github.javaparser.ast.stmt.WhileStmt;
-import com.github.javaparser.ast.type.ClassOrInterfaceType;
-import com.github.javaparser.ast.type.IntersectionType;
-import com.github.javaparser.ast.type.PrimitiveType;
-import com.github.javaparser.ast.type.ReferenceType;
-import com.github.javaparser.ast.type.UnionType;
-import com.github.javaparser.ast.type.UnknownType;
-import com.github.javaparser.ast.type.VoidType;
-import com.github.javaparser.ast.type.WildcardType;
+import com.github.javaparser.ast.stmt.*;
+import com.github.javaparser.ast.type.*;
 
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -948,7 +907,7 @@ public class EqualsVisitor implements GenericVisitor<Boolean, Node> {
 	}
 
 	@Override public Boolean visit(final TemplateLiteralExpr n1, final Node arg) {
-		final StringLiteralExpr n2 = (StringLiteralExpr) arg; // allow a template to match a string if their values equal.
+		final TemplateLiteralExpr n2 = (TemplateLiteralExpr) arg; // allow a template to match a string if their values equal.
 
 		if (!objEquals(n1.getValue(), n2.getValue())) {
 			return Boolean.FALSE;
@@ -1645,4 +1604,32 @@ public class EqualsVisitor implements GenericVisitor<Boolean, Node> {
         }
         return Boolean.TRUE;
     }
+
+	@Override
+	public Boolean visit(SysExpr sysExpr, Node arg) {
+		final SysExpr yourExpr = ((SysExpr) arg);
+		final Iterator<Node> yourNodes = yourExpr.nodes()
+			.iterator();
+		final Iterator<Node> myNodes = sysExpr.nodes()
+			.iterator();
+
+		while (myNodes.hasNext()) {
+			if (!yourNodes.hasNext()) {
+				return false;
+			}
+			final Node myNode = myNodes.next();
+			final Node yourNode = yourNodes.next();
+			Boolean equal = myNode.accept(this, yourNode);
+			if (Boolean.FALSE.equals(equal)) {
+				return false;
+			}
+		}
+		return !myNodes.hasNext();
+	}
+
+	@Override
+	public Boolean visit(DynamicDeclarationExpr n, Node arg) {
+		return n.getBody().accept(this, arg);
+	}
+
 }

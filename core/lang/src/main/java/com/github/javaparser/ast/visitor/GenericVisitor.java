@@ -170,6 +170,8 @@ public interface GenericVisitor<R, A> {
 
 	public R visit(UiBodyExpr n, A arg);
 
+	public R visit(DynamicDeclarationExpr n, A arg);
+
 	public R visit(IntegerLiteralExpr n, A arg);
 
 	public R visit(LongLiteralExpr n, A arg);
@@ -277,4 +279,6 @@ public interface GenericVisitor<R, A> {
 	R visit(CssSelectorExpr n, A arg);
 
 	R visit(CssValueExpr n, A arg);
+
+    	R visit(SysExpr sysExpr, A arg);
 }

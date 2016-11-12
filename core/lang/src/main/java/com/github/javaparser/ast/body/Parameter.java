@@ -3,12 +3,12 @@
  * Copyright (C) 2011, 2013-2015 The JavaParser Team.
  *
  * This file is part of JavaParser.
- * 
+ *
  * JavaParser can be used either under the terms of
  * a) the GNU Lesser General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * b) the terms of the Apache License 
+ * b) the terms of the Apache License
  *
  * You should have received a copy of both licenses in LICENCE.LGPL and
  * LICENCE.APACHE. Please refer to those files for details.
@@ -18,14 +18,19 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  */
- 
+
 package com.github.javaparser.ast.body;
 
 import com.github.javaparser.ast.TypedNode;
 import com.github.javaparser.ast.expr.AnnotationExpr;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.visitor.GenericVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitor;
+import xapi.fu.Immutable;
+import xapi.fu.In2Out1;
+import xapi.fu.Lazy;
+import xapi.fu.Out1;
 
 import java.util.List;
 
@@ -37,7 +42,15 @@ public final class Parameter extends BaseParameter implements TypedNode {
 
     private boolean isVarArgs;
 
+    private Out1<Class<?>> classFactory = Lazy.deferred1Unsafe(()->Class.forName(type.toSource()));
+
     public Parameter() {
+    }
+
+    public Parameter(Class<?> type, String id) {
+    	super(new VariableDeclaratorId(id));
+        setType(new ClassOrInterfaceType(type.getName()));
+        classFactory = Immutable.immutable1(type);
     }
 
     public Parameter(Type type, VariableDeclaratorId id) {
@@ -54,6 +67,10 @@ public final class Parameter extends BaseParameter implements TypedNode {
         super(beginLine, beginColumn, endLine, endColumn, modifiers, annotations, id);
         setType(type);
         setVarArgs(isVarArgs);
+    }
+
+    public Class<?> getTypeAsClass() {
+        return classFactory.out1();
     }
 
     @Override
@@ -84,4 +101,17 @@ public final class Parameter extends BaseParameter implements TypedNode {
     public void setVarArgs(boolean isVarArgs) {
         this.isVarArgs = isVarArgs;
     }
+
+    public static Parameter[] from(boolean varargs, Class<?>[] params, String[] names) {
+        final Parameter[] array = new Parameter[params.length];
+        In2Out1.forEach(params, names, array,
+            (param, name)->new Parameter(new ClassOrInterfaceType(param.getCanonicalName()), new VariableDeclaratorId(name))
+        );
+        if (varargs) {
+            // if you sent true, and there are no args, you deserve an exception.
+            array[array.length-1].setVarArgs(true);
+        }
+        return array;
+    }
+
 }

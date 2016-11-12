@@ -22,19 +22,19 @@ package com.github.javaparser.ast;
 
 import com.github.javaparser.ast.type.Type;
 
-import java.util.Collections;
-import java.util.List;
-
 import static com.github.javaparser.ast.internal.Utils.ensureNotNull;
 import static java.util.Collections.unmodifiableList;
+
+import java.util.Collections;
+import java.util.List;
 
 public class TypeArguments {
     public static final TypeArguments EMPTY = withArguments(Collections.<Type>emptyList());
 
-    private final List<Type> typeArguments;
+    private final List<? extends Type> typeArguments;
     private final boolean usesDiamondOperator;
 
-    private TypeArguments(List<Type> typeArguments, boolean usesDiamondOperator) {
+    private TypeArguments(List<? extends Type> typeArguments, boolean usesDiamondOperator) {
         this.typeArguments = ensureNotNull(typeArguments);
         this.usesDiamondOperator = usesDiamondOperator;
     }
@@ -51,7 +51,7 @@ public class TypeArguments {
         return new TypeArguments(Collections.<Type>emptyList(), true);
     }
 
-    public static TypeArguments withArguments(List<Type> typeArguments) {
+    public static TypeArguments withArguments(List<? extends Type> typeArguments) {
         return new TypeArguments(typeArguments, false);
     }
 }

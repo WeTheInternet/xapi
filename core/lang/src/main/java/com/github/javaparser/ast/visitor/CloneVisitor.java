@@ -25,6 +25,7 @@ import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.ImportDeclaration;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.PackageDeclaration;
+import com.github.javaparser.ast.TypeArguments;
 import com.github.javaparser.ast.TypeParameter;
 import com.github.javaparser.ast.body.*;
 import com.github.javaparser.ast.comments.BlockComment;
@@ -34,6 +35,7 @@ import com.github.javaparser.ast.comments.LineComment;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.*;
 import com.github.javaparser.ast.type.*;
+import xapi.collect.api.StringTo;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -47,10 +49,18 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 		List<ImportDeclaration> imports = visit(_n.getImports(), _arg);
 		List<TypeDeclaration> types = visit(_n.getTypes(), _arg);
 
-		return new CompilationUnit(
+		return copyExtras(_n, new CompilationUnit(
 				_n.getBeginLine(), _n.getBeginColumn(), _n.getEndLine(), _n.getEndColumn(),
 				package_, imports, types
-		);
+		));
+	}
+
+	protected <N extends Node> N copyExtras(N oldNode, N newNode) {
+            final StringTo<Object> oldExtras = oldNode.getExtras();
+            if (oldExtras != null && !oldExtras.isEmpty()) {
+		newNode.setExtras(oldExtras);
+            }
+            return newNode;
 	}
 
 	@Override
@@ -64,7 +74,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				annotations, name
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -77,7 +87,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				name, _n.isStatic(), _n.isAsterisk()
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -91,17 +101,17 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 
         Comment comment = cloneNodes(_n.getComment(), _arg);
         r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
 	public Node visit(LineComment _n, Object _arg) {
-		return new LineComment(_n.getBeginLine(), _n.getBeginColumn(), _n.getEndLine(), _n.getEndColumn(), _n.getContent());
+		return copyExtras(_n, new LineComment(_n.getBeginLine(), _n.getBeginColumn(), _n.getEndLine(), _n.getEndColumn(), _n.getContent()));
 	}
 
 	@Override
 	public Node visit(BlockComment _n, Object _arg) {
-		return new BlockComment(_n.getBeginLine(), _n.getBeginColumn(), _n.getEndLine(), _n.getEndColumn(), _n.getContent());
+		return copyExtras(_n, new BlockComment(_n.getBeginLine(), _n.getBeginColumn(), _n.getEndLine(), _n.getEndColumn(), _n.getContent()));
 	}
 
 	@Override
@@ -119,7 +129,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				_n.getModifiers(), annotations, _n.isInterface(), _n.getName(), typeParameters, extendsList, implementsList, members
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -136,7 +146,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				 _n.getModifiers(), annotations, _n.getName(), implementsList, entries, members
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -148,7 +158,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				_n.getBeginLine(), _n.getBeginColumn(), _n.getEndLine(), _n.getEndColumn()
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -164,7 +174,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				 annotations, _n.getName(), args, classBody
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -179,7 +189,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				 _n.getModifiers(), annotations, _n.getName(), members
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -195,7 +205,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				 _n.getModifiers(), annotations, type_, _n.getName(), defaultValue
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -211,7 +221,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				 _n.getModifiers(), annotations, type_, variables
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -225,7 +235,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				id, init
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -237,7 +247,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				_n.getName(), _n.getArrayCount()
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -255,7 +265,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				 _n.getModifiers(), annotations, typeParameters, _n.getName(), parameters, throws_, block
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -273,8 +283,9 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				_n.getBeginLine(), _n.getBeginColumn(), _n.getEndLine(), _n.getEndColumn(),
 				 _n.getModifiers(), annotations, typeParameters, type_, _n.getName(), parameters, _n.getArrayCount(), throws_, block
 		);
+                r.setDefault(_n.isDefault());
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -289,7 +300,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				_n.getModifiers(), annotations, type_, _n.isVarArgs(), id
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -304,7 +315,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				_n.getModifiers(), annotations, type, id
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -316,7 +327,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				_n.getBeginLine(), _n.getBeginColumn(), _n.getEndLine(), _n.getEndColumn()
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -330,7 +341,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				 _n.isStatic(), block
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -341,7 +352,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				_n.getContent()
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -352,10 +363,10 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 
 		ClassOrInterfaceType r = new ClassOrInterfaceType(
 				_n.getBeginLine(), _n.getBeginColumn(), _n.getEndLine(), _n.getEndColumn(),
-				scope, _n.getName(), _n.getTypeArguments()
+				scope, _n.getName(), TypeArguments.withArguments(typeArgs)
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -367,7 +378,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				_n.getType()
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -388,7 +399,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
                 _n.getArrayCount(), ann, _arraysAnnotations);
         Comment comment = cloneNodes(_n.getComment(), _arg);
         r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
     @Override
@@ -400,7 +411,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
                 elements);
         Comment comment = cloneNodes(_n.getComment(), _arg);
         r.setComment(comment);
-        return r;
+        return copyExtras(_n, r);
     }
 
     @Override
@@ -412,7 +423,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
                 elements);
         Comment comment = cloneNodes(_n.getComment(), _arg);
         r.setComment(comment);
-        return r;
+        return copyExtras(_n, r);
     }
 
 	@Override
@@ -421,7 +432,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 
 		VoidType r = new VoidType(_n.getBeginLine(), _n.getBeginColumn(), _n.getEndLine(), _n.getEndColumn());
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -435,7 +446,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				ext, sup
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -444,7 +455,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 
 		UnknownType r = new UnknownType();
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -458,7 +469,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				name, index
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -483,7 +494,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 		r.setArraysAnnotations(_arraysAnnotations);
         Comment comment = cloneNodes(_n.getComment(), _arg);
         r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -496,7 +507,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				values
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -509,7 +520,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				_n.getBeginLine(), _n.getBeginColumn(), _n.getEndLine(), _n.getEndColumn(),
 				target, value, _n.getOperator());
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -523,7 +534,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				left, right, _n.getOperator()
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -537,7 +548,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				type_, expr
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -550,7 +561,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				type_
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -565,7 +576,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				condition, thenExpr, elseExpr
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -578,7 +589,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				inner
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -592,7 +603,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				scope, typeArgs, _n.getField()
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -606,7 +617,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				expr, type_
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -617,7 +628,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				_n.getValue()
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -628,7 +639,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				_n.getValue()
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -640,7 +651,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				_n.getValue()
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -661,7 +672,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 
 		IntegerLiteralMinValueExpr r = new IntegerLiteralMinValueExpr(_n.getBeginLine(), _n.getBeginColumn(), _n.getEndLine(), _n.getEndColumn());
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -670,7 +681,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 
 		LongLiteralMinValueExpr r = new LongLiteralMinValueExpr(_n.getBeginLine(), _n.getBeginColumn(), _n.getEndLine(), _n.getEndColumn());
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -682,7 +693,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				_n.getValue()
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -694,7 +705,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				_n.getValue()
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -715,7 +726,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 
 		NullLiteralExpr r = new NullLiteralExpr(_n.getBeginLine(), _n.getBeginColumn(), _n.getEndLine(), _n.getEndColumn());
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -730,7 +741,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				scope, typeArgs, _n.getName(), args
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -742,7 +753,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				_n.getName()
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -759,7 +770,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				scope, type_, typeArgs, args, anonymousBody
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -772,7 +783,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				scope, _n.getName()
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -785,7 +796,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				classExpr
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -798,7 +809,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				classExpr
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -811,7 +822,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				expr, _n.getOperator()
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -826,7 +837,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				_n.getModifiers(), annotations, type_, vars
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -839,7 +850,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				name
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -853,7 +864,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				name, memberValue
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -867,7 +878,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				name, pairs
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -880,7 +891,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				_n.getName(), value
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -895,7 +906,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				typeArgs, _n.isThis(), expr, args
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -908,7 +919,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				typeDecl
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -922,7 +933,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				check, message
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -935,7 +946,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				stmts
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -948,7 +959,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				_n.getLabel(), stmt
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -957,7 +968,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 
 		EmptyStmt r = new EmptyStmt(_n.getBeginLine(), _n.getBeginColumn(), _n.getEndLine(), _n.getEndColumn());
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -970,7 +981,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				expr
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -984,7 +995,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				selector, entries
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -998,7 +1009,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				label, stmts
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -1010,7 +1021,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				_n.getId()
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -1023,7 +1034,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				expr
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -1038,7 +1049,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				condition, thenStmt, elseStmt
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -1052,7 +1063,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				condition, body
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -1064,7 +1075,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				_n.getId()
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -1078,7 +1089,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				body, condition
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -1093,7 +1104,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				var, iterable, body
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -1109,7 +1120,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				init, compare, update, body
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -1122,7 +1133,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				expr
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -1136,7 +1147,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				expr, block
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -1152,7 +1163,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				resources, tryBlock, catchs, finallyBlock
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -1166,7 +1177,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				param.getModifiers(), param.getAnnotations(), param.getType(), param.getId(), catchBlock
 		);
 		r.setComment(comment);
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -1180,7 +1191,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 				_n.getEndLine(), _n.getEndColumn(), lambdaParameters, body,
 				_n.isParametersEnclosed());
 
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -1192,7 +1203,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 		MethodReferenceExpr r = new MethodReferenceExpr(_n.getBeginLine(),
 				_n.getBeginColumn(), _n.getEndLine(), _n.getEndColumn(), scope,
 				typeParams, _n.getIdentifier());
-		return r;
+		return copyExtras(_n, r);
 	}
 
 	@Override
@@ -1203,7 +1214,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 		TypeExpr r = new TypeExpr(n.getBeginLine(), n.getBeginColumn(),
 				n.getEndLine(), n.getEndColumn(), t);
 
-		return r;
+		return copyExtras(n, r);
 	}
 
     public <T extends Node> List<T> visit(List<T> _nodes, Object _arg) {
@@ -1212,8 +1223,9 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
         List<T> r = new ArrayList<T>(_nodes.size());
         for (T n : _nodes) {
             T rN = cloneNodes(n, _arg);
-            if (rN != null)
-                r.add(rN);
+            if (rN != null) {
+                r.add(copyExtras(n, rN));
+	    }
         }
         return r;
     }
@@ -1233,7 +1245,9 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 			return null;
 		}
 		final List<UiExpr> children = visit(n.getChildren(), arg);
-		return new UiBodyExpr(n.getBeginLine(), n.getBeginColumn(), n.getEndLine(), n.getEndColumn(), children);
+		return copyExtras(n,
+			new UiBodyExpr(n.getBeginLine(), n.getBeginColumn(), n.getEndLine(), n.getEndColumn(), children)
+		);
 	}
 
 	@Override
@@ -1243,8 +1257,9 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 		}
 		final NameExpr name = (NameExpr) visit(n.getName(), arg);
 		final Expression expr = (Expression) n.getExpression().accept(this, arg);
-
-		return new UiAttrExpr(n.getBeginLine(), n.getBeginColumn(), n.getEndLine(), n.getEndColumn(), name, n.isAttribute(), expr);
+		return copyExtras(n,
+			new UiAttrExpr(n.getBeginLine(), n.getBeginColumn(), n.getEndLine(), n.getEndColumn(), name, n.isAttribute(), expr)
+		);
 	}
 
 	@Override
@@ -1255,8 +1270,9 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 		final NameExpr name = (NameExpr) visit(n.getNameExpr(), arg);
 		final List<UiAttrExpr> attrs = visit(n.getAttributes(), arg);
 		UiBodyExpr body = (UiBodyExpr) visit(n.getBody(), arg);
-
-		return new UiContainerExpr(n.getBeginLine(), n.getBeginColumn(), n.getEndLine(), n.getEndColumn(), name, attrs, body, n.isInTemplate());
+		return copyExtras(n,
+			new UiContainerExpr(n.getBeginLine(), n.getBeginColumn(), n.getEndLine(), n.getEndColumn(), name, attrs, body, n.isInTemplate())
+		);
 	}
 
     @Override
@@ -1265,7 +1281,9 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
             return null;
         }
         final List<JsonPairExpr> pairs = visit(n.getPairs(), arg);
-        return new JsonContainerExpr(n.getBeginLine(), n.getBeginColumn(), n.getEndLine(), n.getEndColumn(), n.isArray(), pairs);
+	    return copyExtras(n,
+		    new JsonContainerExpr(n.getBeginLine(), n.getBeginColumn(), n.getEndLine(), n.getEndColumn(), n.isArray(), pairs)
+	    );
     }
 
     @Override
@@ -1276,8 +1294,10 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
         final Expression key = getExpression(n.getKeyExpr(), arg);
         final Expression value = getExpression(n.getValueExpr(), arg);
 
-        return new JsonPairExpr(n.getBeginLine(), n.getBeginColumn(), n.getEndLine(), n.getEndColumn(),
-            key, value);
+	    return copyExtras(n,
+		    new JsonPairExpr(n.getBeginLine(), n.getBeginColumn(), n.getEndLine(), n.getEndColumn(),
+            		key, value)
+	    );
     }
 
     @Override
@@ -1287,8 +1307,11 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
         }
         final List<CssSelectorExpr> selectors = visit(n.getSelectors(), arg);
         final List<CssRuleExpr> rules = visit(n.getRules(), arg);
-        return new CssContainerExpr(n.getBeginLine(), n.getBeginColumn(), n.getEndLine(), n.getEndColumn(),
-            selectors, rules);
+
+	    return copyExtras(n,
+		    new CssContainerExpr(n.getBeginLine(), n.getBeginColumn(), n.getEndLine(), n.getEndColumn(),
+		            selectors, rules)
+	    );
     }
 
     @Override
@@ -1298,8 +1321,10 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
         }
         final Expression key = getExpression(n.getKey(), arg);
         final Expression value = getExpression(n.getValue(), arg);
-        return new CssRuleExpr(n.getBeginLine(), n.getBeginColumn(), n.getEndLine(), n.getEndColumn(),
-            key, value);
+	    return copyExtras(n,
+		    new CssRuleExpr(n.getBeginLine(), n.getBeginColumn(), n.getEndLine(), n.getEndColumn(),
+	            key, value)
+	    );
     }
 
     @Override
@@ -1309,8 +1334,10 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
         }
         final Expression value = getExpression(n.getValue(), arg);
 
-        return new CssValueExpr(n.getBeginLine(), n.getBeginColumn(), n.getEndLine(), n.getEndColumn(),
-            value, n.getUnit(), n.isImportant());
+	    return copyExtras(n,
+		    new CssValueExpr(n.getBeginLine(), n.getBeginColumn(), n.getEndLine(), n.getEndColumn(),
+		    value, n.getUnit(), n.isImportant())
+	    );
     }
 
     @Override
@@ -1319,16 +1346,38 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
             return null;
         }
         final List<CssContainerExpr> containers = visit(n.getContainers(), arg);
-        return new CssBlockExpr(n.getBeginLine(), n.getBeginColumn(), n.getEndLine(), n.getEndColumn(), containers);
+        return copyExtras(n,
+            new CssBlockExpr(n.getBeginLine(), n.getBeginColumn(), n.getEndLine(), n.getEndColumn(), containers)
+        );
     }
 
     @Override
     public Node visit(CssSelectorExpr n, Object arg) {
-        return null;
+        return copyExtras(n,
+            new CssSelectorExpr(n.getBeginLine(), n.getBeginColumn(), n.getEndLine(), n.getEndColumn(), n.getParts())
+        );
     }
 
-    protected Expression getExpression(Expression from, Object arg) {
+	@Override
+	public Node visit(SysExpr sysExpr, Object arg) {
+		SysExpr expr = new SysExpr(sysExpr.nodes());
+		sysExpr.shareState(expr);
+		return expr;
+	}
+
+	protected Expression getExpression(Expression from, Object arg) {
         return from == null ? null : (Expression) from.accept(this, arg);
     }
 
+	@Override
+	public Node visit(DynamicDeclarationExpr n, Object arg) {
+		if (n == null) {
+			return null;
+		}
+		final BodyDeclaration body = (BodyDeclaration)n.getBody().accept(this, arg);
+            return copyExtras(n,
+                new DynamicDeclarationExpr(n.getBeginLine(), n.getBeginColumn(),
+			n.getEndLine(), n.getEndColumn(), body)
+            );
+	}
 }

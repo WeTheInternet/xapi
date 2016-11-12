@@ -24,9 +24,11 @@ package com.github.javaparser.ast.body;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.DocumentableNode;
 import com.github.javaparser.ast.NamedNode;
+import com.github.javaparser.ast.PackageDeclaration;
 import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import xapi.dev.source.SourceBuilder.JavaType;
+import xapi.source.X_Modifier;
 import xapi.source.X_Source;
 
 import static com.github.javaparser.ast.internal.Utils.ensureNotNull;
@@ -104,6 +106,10 @@ public abstract class TypeDeclaration extends BodyDeclaration implements NamedNo
 		this.name = new NameExpr(name);
 	}
 
+	public final void setPackage(String pkgName) {
+		getCompilationUnit().setPackage(new PackageDeclaration(new NameExpr(pkgName)));
+	}
+
     public final void setNameExpr(NameExpr nameExpr) {
       this.name = nameExpr;
     }
@@ -130,5 +136,9 @@ public abstract class TypeDeclaration extends BodyDeclaration implements NamedNo
 		String prefix = getPackageName().replace('.', '/');
 		return prefix +
 			   (prefix.isEmpty() ? "" : "/");
+	}
+
+	public boolean isInterface() {
+		return X_Modifier.isInterface(modifiers);
 	}
 }

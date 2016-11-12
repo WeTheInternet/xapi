@@ -39,6 +39,10 @@ public abstract class AnnotationExpr extends Expression {
 		return name;
 	}
 
+	public String getNameString() {
+		return name.getName();
+	}
+
     public abstract Iterable<MemberValuePair> getMembers();
 
 	public void setName(NameExpr name) {

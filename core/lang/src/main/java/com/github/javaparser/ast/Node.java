@@ -425,4 +425,23 @@ public abstract class Node implements Cloneable {
         }
         return (T) extras.get(key);
     }
+
+    public StringTo<Object> getExtras() {
+        return extras;
+    }
+
+    public void setExtras(StringTo<Object> extras) {
+        if (this.extras == null) {
+            this.extras = X_Collect.newStringMap(Object.class);
+        } else {
+            this.extras.clear();
+        }
+        this.extras.putAll(extras);
+    }
+
+    public void borrowExtras(Node from) {
+        if (from.extras != null) {
+            from.extras.forBoth(this::addExtra);
+        }
+    }
 }
