@@ -2,7 +2,7 @@ package xapi.gwt.collect;
 
 import xapi.annotation.inject.InstanceOverride;
 import xapi.collect.api.StringTo;
-import xapi.collect.impl.ArrayIterable;
+import xapi.fu.iterate.ArrayIterable;
 import xapi.collect.impl.EntryValueAdapter;
 import xapi.collect.impl.IteratorWrapper;
 import xapi.fu.Out2;

@@ -37,7 +37,7 @@ public class CollectionServiceGwt implements CollectionService{
   }
 
   @Override
-  public <K,V> ObjectTo<K,V> newMap(Class<K> key, Class<V> cls, CollectionOptions opts) {
+  public <K,V, Key extends K, Value extends V> ObjectTo<K,V> newMap(Class<Key> key, Class<Value> cls, CollectionOptions opts) {
     return new xapi.collect.proxy.MapOf<>(newMap(opts), key, cls);
   }
 
