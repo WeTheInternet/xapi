@@ -1,0 +1,129 @@
+package xapi.fu.out;
+@Generate(
+    in = {
+        <var name = "max"
+            default = 5 />,
+        <var name = "types"
+            default = ["Type", "Int", "Long", "Double", "Bool"] />
+    },
+    out = {
+        <loop
+            from = 1
+            to = $max
+            var = "size"
+        >
+            <generateInterface
+                var = {
+                    typeParams :
+                        $range(1, $size, $i->`O$i`),
+                    wrappedParams :
+                        $range(1, $size, $i->`Out1<O$i>`)
+                }
+                template =
+                    @Import({
+                        "xapi.fu.HasOutput",
+                        "xapi.fu.Rethrowable",
+                        "xapi.fu.Lambda"
+                    })
+                    public interface Out$size <$typeParams>
+                                extends HasOutput, Rethrowable, Lambda {
+
+                     Immutable$size <$wrappedParams> outAll();
+
+                     @unfold(from = 1, to = $size, var = "n")
+                     default O$n out$n(){
+                         return out$nProvider().out1();
+                     }
+
+                     @unfold(from = 1, to = $size, var = "n")
+                     default Out1<O$n> out$nProvider(){
+                         return outAll().out$n();
+                     }
+
+                     @unfold(from = 1, to = $size, var = "n")
+                     default Out$size<$typeParams> read$n(In1<O$n> callback){
+                         callback.in(out$n());
+                         return this;
+                     }
+
+                     @unfold(from = 1, to = $size, var = "n")
+                     @var(
+                         name = "outParams",
+                         value = $range(1, $size, $p ->
+                             $p == $n ? "To" : `O$p`)
+                     )
+                     default <To> Out$size<$outParams> mapped$n(In1Out1<O$n, To> mapper){
+                         return Out.out3(
+                           $range(1, $size, $p ->
+                               $p == $n ? mapper.supplyDeferred(out$pProvider()) : out$pProvider()
+                           )
+                         );
+                     }
+
+                     @unfold(from = 1, to = $size, var = "n")
+                     default <To> Out$size<$typeParams> spy$n(In1<O$n> callback){
+                         return
+                           $if($size == 1, $print(()->{
+                               O1 out = out1();
+                               callback.in(out);
+                               return out;
+                           }))
+                           .$else(
+                               Out.out$size(
+                               $range(1, $size, $p ->
+                                   $p == $n ? out$pProvider().spy1(callback) : out$pProvider()
+                               )
+                           )
+                         );
+                     }
+
+
+                }
+            /generateInterface>
+
+        </loop>,
+
+        <loop
+            from = 1
+            to = 3
+            var = "size">
+            <var name = "asPrimitive"
+                value = {
+                    Type:"O$n",
+                    Int:"int",
+                    Long:"long",
+                    Double:"double",
+                    Bool:"boolean"
+                } />,
+            <var name = "asObject"
+                value = {
+                    Type:"O$n",
+                    Int: "Integer",
+                    Long: "Long",
+                    Double: "Double",
+                    Bool: "Boolean"
+                } />
+        </loop>
+    })
+public class Out {
+
+    static Out$n<$types> out$n(Out2<$typeList, @named(`O$n`) String> ... params) {
+        Immutable$n immutable = Immutable.immutable$n(
+            $for ( params, ($type $type, String $name) ->
+                $print(
+                    (
+                        $first() ? ""
+                              //, \n between method parameters when there are more than three params specified
+                            : "," + ( $n < 4 ? " " : "\n" )
+                    ) + (
+                        $ifType($type, Immutable.class, `$name`)
+                        .$elseIfType($type, Lazy.class, `$name.asImmutable()`)
+                        .$else(`Immutable.immutable1($name)`)
+                    )
+                    +  " " + name
+               )
+            )
+        );
+        return ()->immutable;
+    }
+}
