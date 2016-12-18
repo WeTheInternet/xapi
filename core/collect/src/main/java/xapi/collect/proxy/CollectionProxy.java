@@ -52,13 +52,16 @@ public interface CollectionProxy <K, V>
    boolean readWhileTrue(In2Out1<K, V, Boolean> callback);
 
    default boolean readWhileTrue(In1<Out2<K, V>> callback, In2Out1<K, V, Boolean> filter) {
-     return readWhileTrue((k, v)->{
-       if (filter.io(k, v)) {
-         Out2<K, V> o = Out2.out2Immutable(k, v);
-         callback.in(o);
-         return true;
-       }
-       return false;
+     return readWhileTrue(new In2Out1<K, V, Boolean>() {
+         @Override
+         public Boolean io(K k, V v) {
+             if (filter.io(k, v)) {
+                 Out2<K, V> o = Out2.out2Immutable(k, v);
+                 callback.in(o);
+                 return true;
+             }
+             return false;
+         }
      });
    }
 
@@ -79,7 +82,12 @@ public interface CollectionProxy <K, V>
 
    default Iterable<Out2<K, V>> forEachEntry() {
      SimpleStack<Out2<K, V>> stack = new SimpleStack<>();
-     readWhileTrue(stack::add, (k, v)->true);
+     readWhileTrue(new In1<Out2<K, V>>() {
+         @Override
+         public void in(Out2<K, V> in) {
+             stack.add(in);
+         }
+     }, In2Out1.RETURN_TRUE);
      return stack;
    }
 

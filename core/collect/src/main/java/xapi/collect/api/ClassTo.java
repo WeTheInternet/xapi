@@ -1,9 +1,11 @@
 package xapi.collect.api;
 
 import xapi.fu.In1;
+import xapi.fu.In1Out1;
 import xapi.fu.MappedIterable;
+import xapi.fu.Maybe;
 import xapi.fu.iterate.Chain;
-import xapi.fu.iterate.Chain.ChainBuilder;
+import xapi.fu.iterate.ChainBuilder;
 
 public interface ClassTo <V>
 extends ObjectTo<Class<?>, V>
@@ -61,6 +63,20 @@ extends ObjectTo<Class<?>, V>
             if (key.isInstance(value)) {
                 callback.in(value);
             }
+        }
+    }
+
+    default Maybe<V> findAssignableKeyOrCompute(Class<?> key, In1Out1<Class<?>, V> factory) {
+        final Maybe<V> maybe = firstWhereKey(key::isAssignableFrom);
+        if (maybe.isPresent()) {
+            return maybe;
+        }
+        final V value = factory.io(key);
+        if (value == null) {
+            return Maybe.nullable(value);
+        } else {
+            put(key, value);
+            return Maybe.immutable(value);
         }
     }
 

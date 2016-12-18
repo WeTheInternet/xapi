@@ -27,7 +27,7 @@ extends CollectionProxy<Integer,T>, HasItems<T>
     }
     @Override
     public Iterator<T> iterator() {
-      return new IntToIterator<T>(self);
+      return new IntToIterator<>(self);
     }
   }
 

@@ -70,6 +70,18 @@ import java.util.function.Consumer;
  */
 public class X_Collect {
 
+  public static <V, Generic extends V> IntTo<V> asList(Class<Generic> component, Iterable<V> items) {
+    final IntTo<V> list = service.newList(component, MUTABLE_LIST);
+    list.addAll(items);
+    return list;
+  }
+
+  public static <V, Generic extends V> IntTo<V> asSet(Class<Generic> component, Iterable<V> items) {
+    final IntTo<V> list = service.newList(component, MUTABLE_SET);
+    list.addAll(items);
+    return list;
+  }
+
   @SuppressWarnings("all")
   public static <V> IntTo<V> asList(
   final V ... elements) {
@@ -80,7 +92,7 @@ public class X_Collect {
     final IntTo<V> list = service.newList(cls, MUTABLE_LIST);
     if (elements.length == 1 && cls.isArray()) {
       // Do not create an IntTo<V[]> by accident!  Bad heap pollution! BAD!
-
+      // TODO warn...
     }
     for (final V item : elements) {
       list.push(item);

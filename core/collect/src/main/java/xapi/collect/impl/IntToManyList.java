@@ -100,7 +100,8 @@ public class IntToManyList <X> implements IntTo.Many<X>{
     for (final IntTo<X> item : map.values()) {
       if (item.size() == value.size()) {
         for (int i = item.size(); i-->0;) {
-          if (!equals(item.get(i), value.get(i))) {
+          Integer key = new Integer(i);
+          if (!equals(item.get(key), value.get(key))) {
             continue main;
           }
         }
