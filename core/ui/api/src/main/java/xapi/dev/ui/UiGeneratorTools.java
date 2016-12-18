@@ -1,5 +1,6 @@
 package xapi.dev.ui;
 
+import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import xapi.collect.X_Collect;
@@ -8,6 +9,7 @@ import xapi.collect.impl.SimpleLinkedList;
 import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.api.ApiGeneratorTools;
 import xapi.dev.ui.ContainerMetadata.MetadataRoot;
+import xapi.fu.In1Out1;
 import xapi.fu.In2Out1;
 import xapi.fu.Out2;
 import xapi.source.X_Source;
@@ -107,4 +109,7 @@ public abstract class UiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> im
         return getGenerator().createVisitor(metadata);
     }
 
+    public In1Out1<Expression, Expression> varResolver(Ctx ctx) {
+        return In2Out1.with1(this::resolveVar, ctx);
+    }
 }

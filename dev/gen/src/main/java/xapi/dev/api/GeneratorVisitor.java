@@ -6,7 +6,13 @@ import com.github.javaparser.ast.ImportDeclaration;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.PackageDeclaration;
 import com.github.javaparser.ast.TypeParameter;
-import com.github.javaparser.ast.body.*;
+import com.github.javaparser.ast.body.AnnotationDeclaration;
+import com.github.javaparser.ast.body.BodyDeclaration;
+import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
+import com.github.javaparser.ast.body.EnumDeclaration;
+import com.github.javaparser.ast.body.FieldDeclaration;
+import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.body.TypeDeclaration;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.visitor.DumpVisitor;
@@ -20,6 +26,7 @@ import xapi.collect.impl.SimpleStack;
 import xapi.dev.source.SourceBuilder;
 import xapi.fu.Do;
 import xapi.fu.Filter.Filter1;
+import xapi.fu.Maybe;
 import xapi.fu.Mutable;
 import xapi.fu.Out2;
 import xapi.fu.Out2.Out2Immutable;
@@ -36,7 +43,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Optional;
 import java.util.WeakHashMap;
 
 /**
@@ -88,8 +94,8 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
                     }
                     break;
                 case "var":
-                    final Optional<UiAttrExpr> value = n.getAttribute("value");
-                    final Optional<UiAttrExpr> dflt = n.getAttribute("default");
+                    final Maybe<UiAttrExpr> value = n.getAttribute("value");
+                    final Maybe<UiAttrExpr> dflt = n.getAttribute("default");
                     String name = resolveString(ctx, n.getAttributeNotNull("name").getExpression());
                     if (value.isPresent() && dflt.isPresent()) {
                         throw new IllegalStateException("A var cannot have both a value and a default attribute");
@@ -758,7 +764,7 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
                         return;
                     }
                 }
-                new ApiMethodGenerator<>(builder, json, modifiers)
+                new ApiMethodGenerator<>(this, builder, json, modifiers)
                     .visit(json, ctx);
             }
         }

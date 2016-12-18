@@ -14,12 +14,13 @@ import java.lang.reflect.Modifier;
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 9/21/16.
  */
-public class ApiMethodGenerator <Ctx extends ApiGeneratorContext<Ctx>> extends VoidVisitorAdapter<Ctx> implements ApiGeneratorTools<Ctx> {
+public class ApiMethodGenerator <Ctx extends ApiGeneratorContext<Ctx>> extends VoidVisitorAdapter<Ctx> {
 
     private final SourceBuilder<Ctx> builder;
     private final JsonContainerExpr json;
     private final SimpleStack<Do> undos;
     private final int modifiers;
+    private final ApiGeneratorTools<Ctx> tools;
     private IntTo<String> typeParams;
     private String returnType;
     private String name;
@@ -27,10 +28,12 @@ public class ApiMethodGenerator <Ctx extends ApiGeneratorContext<Ctx>> extends V
     private String body;
 
     public ApiMethodGenerator(
+        ApiGeneratorTools<Ctx> tools,
         SourceBuilder<Ctx> builder,
         JsonContainerExpr json,
         int modifiers
     ) {
+        this.tools = tools;
         this.builder = builder;
         this.json = json;
         this.modifiers = modifiers;
@@ -97,7 +100,7 @@ public class ApiMethodGenerator <Ctx extends ApiGeneratorContext<Ctx>> extends V
                     ((JsonContainerExpr)value).getPairs()
                         .forEach(pair->{
                             String varName = pair.getKeyString();
-                            final Expression resolved = resolveVar(ctx, pair.getValueExpr());
+                            final Expression resolved = tools.resolveVar(ctx, pair.getValueExpr());
                             final Do undo = ctx.addToContext(varName, resolved);
                             undos.add(undo);
                         });
@@ -107,10 +110,10 @@ public class ApiMethodGenerator <Ctx extends ApiGeneratorContext<Ctx>> extends V
                 }
                 break;
             case "typeParams":
-                typeParams = resolveToLiterals(ctx, n.getValueExpr());
+                typeParams = tools.resolveToLiterals(ctx, n.getValueExpr());
                 break;
             case "returns":
-                final IntTo<String> returnTypes = resolveToLiterals(ctx, n.getValueExpr());
+                final IntTo<String> returnTypes = tools.resolveToLiterals(ctx, n.getValueExpr());
                 if (returnTypes.size() != 1) {
                     throw new IllegalArgumentException("Bad returns member for method declaration; " +
                         n.getCoordinates() + " must return exactly one type, but instead returned " + returnTypes);
@@ -118,14 +121,14 @@ public class ApiMethodGenerator <Ctx extends ApiGeneratorContext<Ctx>> extends V
                 returnType = returnTypes.at(0);
                 break;
             case "name":
-                name = resolveString(ctx, n.getValueExpr());
+                name = tools.resolveString(ctx, n.getValueExpr());
                 break;
             case "params":
-                final Expression resolved = resolveVar(ctx, n.getValueExpr());
-                params = resolveToLiterals(ctx, resolved);
+                final Expression resolved = tools.resolveVar(ctx, n.getValueExpr());
+                params = tools.resolveToLiterals(ctx, resolved);
                 break;
             case "body":
-                body = resolveBody(ctx, n.getValueExpr());
+                body = tools.resolveBody(ctx, n.getValueExpr());
                 break;
             case "filter":
                 break;

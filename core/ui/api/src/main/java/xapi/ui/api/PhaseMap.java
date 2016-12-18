@@ -33,7 +33,7 @@ public class PhaseMap <K extends Comparable<K>> {
         PhaseMap<T> map = new PhaseMap<>();
         for (S s : source) {
             T id = getId.io(s);
-            Integer priority = getPriority.io(s);
+            int priority = getPriority.io(s);
             T prerequisite = getPrerequisite.io(s);
             T block = getBlock.io(s);
             map.addNode(id, priority, prerequisite, block);

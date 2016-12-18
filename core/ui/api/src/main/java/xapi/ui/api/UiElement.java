@@ -1,5 +1,8 @@
 package xapi.ui.api;
 
+import jsinterop.annotations.JsIgnore;
+import jsinterop.annotations.JsProperty;
+import jsinterop.annotations.JsType;
 import xapi.collect.api.IntTo;
 import xapi.event.api.IsEvent;
 import xapi.event.impl.EventTypes;
@@ -16,28 +19,38 @@ import javax.validation.constraints.NotNull;
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 4/18/16.
  */
+@JsType
 public interface UiElement
     <Node, Element extends Node, Base extends UiElement<Node, ? extends Node, Base>>
     extends ElementInjector<Node, Base> {
 
+  @JsProperty
   Base getParent();
 
+  @JsProperty
   Base setParent(Base parent);
 
+  @JsIgnore
   IntTo<Base> getChildren();
 
+  @JsIgnore
   String toSource();
 
+  @JsIgnore
   Element element();
 
+  @JsIgnore
   default Node getHost() {
     return (Node)UiService.getUiService().getHost(this);
   }
 
+  @JsIgnore
   <F extends UiFeature, Generic extends F> F getFeature(Class<Generic> cls);
 
+  @JsIgnore
   <F extends UiFeature, Generic extends F> F addFeature(Class<Generic> cls, F feature);
 
+  @JsIgnore
   default <F extends UiFeature, Generic extends F> F getOrAddFeature(Class<Generic> cls, In1Out1<Base, F> factory) {
     F f = getFeature(cls);
     if (f == null) {
@@ -49,27 +62,33 @@ public interface UiElement
     return f;
   }
 
+  @JsIgnore
   default UiEventsFeature getEvents() {
     return getOrAddFeature(UiEventsFeature.class, i->createFeature(UiEventsFeature.class));
   }
 
+  @JsIgnore
   default <F extends UiFeature, Generic extends F> F createFeature(Class<Generic> cls) {
     return X_Inject.instance(cls);
   }
 
+  @JsIgnore
   @SuppressWarnings("unchecked")
   default Base ui() {
     return (Base) this;
   }
 
+  @JsIgnore
   default UiWithAttributes<Node, Base> getAttributes() {
     return getOrAddFeature(UiWithAttributes.class, e->getUiService().newAttributes(e));
   }
 
+  @JsIgnore
   default UiWithProperties<Node, Base> getProperties() {
     return getOrAddFeature(UiWithProperties.class, e->getUiService().newProperties(e));
   }
 
+  @JsIgnore
   default UiService<Node, Base> getUiService() {
     return UiService.getUiService();
   }
@@ -103,6 +122,7 @@ public interface UiElement
     asInjector().insertAtEnd(newChild);
   }
 
+  @JsIgnore
   default ElementInjector<Node, Base> asInjector() {
     // Platforms like Gwt might erase the type information off a
     // raw html / javascript type, so we return "real java objects" here.
@@ -110,6 +130,7 @@ public interface UiElement
     return new DelegateElementInjector<>(ui());
   }
 
+  @JsIgnore
   default boolean removeFromParent() {
     final Base parent = getParent();
     if (parent != null) {
@@ -122,26 +143,32 @@ public interface UiElement
     return false;
   }
 
+  @JsIgnore
   default boolean fireEventCapture(@NotNull IsEvent<?> event) {
     return getEvents().fireCapture(event);
   }
 
+  @JsIgnore
   default boolean handlesBubble(@NotNull IsEvent<?> event) {
     return getEvents().fireCapture(event);
   }
 
+  @JsIgnore
   default boolean handlesCapture(@NotNull IsEvent<?> event) {
     return getEvents().fireCapture(event);
   }
 
+  @JsIgnore
   default boolean fireEventBubble(@NotNull IsEvent<?> event) {
     return getEvents().fireBubble(event);
   }
 
+  @JsIgnore
   default <Payload> Base onEventBubble(EventTypes type, UiEventHandler<Payload, Node, Base, ? extends UiEvent<Payload, Node, Base>> handler) {
     getEvents().addBubbling(type, handler);
     return ui();
   }
+  @JsIgnore
   default <Payload> Base onEvent(EventTypes type, UiEventHandler<Payload, Node, Base, ? extends UiEvent<Payload, Node, Base>> handler, boolean capture) {
     if (capture) {
       return onEventCapture(type, handler);
@@ -149,12 +176,15 @@ public interface UiElement
       return onEventBubble(type, handler);
     }
   }
+  @JsIgnore
   default <Payload> Base onEventCapture(EventTypes type, UiEventHandler<Payload, Node, Base, ? extends UiEvent<Payload, Node, Base>> handler) {
     getEvents().addCapturing(type, handler);
     return ui();
   }
 
+  @JsIgnore
   boolean addStyleName(String style);
 
+  @JsIgnore
   boolean removeStyleName(String style);
 }

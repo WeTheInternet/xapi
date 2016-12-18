@@ -113,7 +113,7 @@ public class CompilerServiceImpl implements CompilerService, Rethrowable {
     }
 
     CompilationUnitTaskList pcu = cups.get(cupName);
-    pcu.onFinished(In1.ignored(()->
+    pcu.onFinished(In1.ignoreIn1(()->
         documentsInUnit.get(cupName)
             // forBoth accepts an In2 type, but we only want to act on the second type, which is a JavaDocument,
             // so we use In2.ignoreFirst to call the finish() method on each document

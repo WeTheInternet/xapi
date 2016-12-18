@@ -16,7 +16,7 @@ import xapi.util.api.RemovalHandler;
  */
 public class UiGeneratorVisitor extends VoidVisitorAdapter<UiGeneratorTools> {
 
-    interface ScopeHandler extends In1Out1<UiVisitScope, RemovalHandler> { }
+    public interface ScopeHandler extends In1Out1<UiVisitScope, RemovalHandler> { }
 
     final Lazy<ContainerMetadata> root;
     private ScopeHandler onScope;

@@ -6,9 +6,11 @@ import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import com.github.javaparser.ast.plugin.NodeTransformer;
 import xapi.collect.X_Collect;
+import xapi.collect.api.ClassTo;
 import xapi.collect.api.Fifo;
 import xapi.collect.api.StringTo;
 import xapi.collect.impl.SimpleLinkedList;
+import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.NameGen;
@@ -16,13 +18,13 @@ import xapi.dev.source.SourceBuilder;
 import xapi.dev.source.SourceTransform;
 import xapi.fu.In1Out1;
 import xapi.fu.Lazy;
+import xapi.fu.Maybe;
 import xapi.source.X_Source;
 import xapi.ui.service.UiService;
 
 import static xapi.fu.Lazy.deferred1;
 
 import java.util.IdentityHashMap;
-import java.util.Optional;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
@@ -34,11 +36,14 @@ public class ContainerMetadata {
 
         private String rootReference;
         private final StringTo<Integer> nameCounts;
+        private final ClassTo<Lazy<?>> factories;
         private final StringTo<StringTo<NodeTransformer>> fieldRenames;
         private final NameGen names;
+        private ApiGeneratorContext<?> ctx;
 
         public MetadataRoot() {
             nameCounts = X_Collect.newStringMap(Integer.class);
+            factories = X_Collect.newClassMap(Lazy.class);
             fieldRenames = X_Collect.newStringDeepMap(NodeTransformer.class);
             names = initNames();
         }
@@ -81,6 +86,14 @@ public class ContainerMetadata {
                 return fieldRenames.get(ref).get(var);
             }
             return null;
+        }
+
+        public ApiGeneratorContext<?> getCtx() {
+            return ctx;
+        }
+
+        public void setCtx(ApiGeneratorContext<?> ctx) {
+            this.ctx = ctx;
         }
     }
 
@@ -335,7 +348,7 @@ public class ContainerMetadata {
 
     public String getRefName(String backup) {
 
-        final Optional<UiAttrExpr> refAttr = container.getAttribute("ref");
+        final Maybe<UiAttrExpr> refAttr = container.getAttribute("ref");
         if (refAttr.isPresent()) {
             String refName = ASTHelper.extractAttrValue(refAttr.get());
             root.reserveName(refName);
@@ -396,5 +409,34 @@ public class ContainerMetadata {
             copy.children.put(e.getKey(), e.getValue().createImplementation(implType))
         );
         return copy;
+    }
+
+    public boolean hasFactory(
+        Class<?> key
+    ) {
+        final Maybe<Lazy<?>> success = root.factories.firstWhereKeyValue(key::isAssignableFrom, Lazy::isFull1);
+        return success.isPresent();
+    }
+
+    public <T, Generic extends T> T getOrCreateFactory(
+        Class<Generic> key,
+        In1Out1<Class<? super Generic>, T> factory
+    ) {
+        final Lazy<?> existing = root.factories.getAssignable(key);
+        if (existing != null) {
+            return (T) existing.out1();
+        }
+        final Lazy<?> result = Lazy.deferred1(factory.supply(key));
+        root.factories.put(key, result);
+        return (T) result.out1();
+    }
+
+    public ApiGeneratorContext getContext() {
+        return root.getCtx();
+    }
+
+    public ContainerMetadata setContext(ApiGeneratorContext<?> ctx) {
+        root.setCtx(ctx);
+        return this;
     }
 }

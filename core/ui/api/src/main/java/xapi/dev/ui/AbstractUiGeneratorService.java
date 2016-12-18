@@ -18,6 +18,7 @@ import xapi.dev.ui.InterestingNodeFinder.InterestingNodeResults;
 import xapi.fu.Do;
 import xapi.fu.In2Out1;
 import xapi.fu.Lazy;
+import xapi.fu.Maybe;
 import xapi.fu.Out1;
 import xapi.log.X_Log;
 import xapi.source.X_Source;
@@ -28,6 +29,7 @@ import xapi.ui.api.UiPhase.PhaseIntegration;
 import xapi.ui.api.UiPhase.PhasePreprocess;
 import xapi.ui.api.UiPhase.PhaseSupertype;
 import xapi.util.X_Debug;
+import xapi.util.X_Util;
 
 import javax.tools.FileObject;
 import javax.tools.JavaFileManager;
@@ -35,7 +37,6 @@ import javax.tools.StandardLocation;
 import java.io.IOException;
 import java.util.IdentityHashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 
@@ -138,7 +139,8 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
         UiContainerExpr container = metadata.getUi();
         // replace all <import /> tags with imported resources
         container = resolveImports(service, component.getElement(), container, getHints());
-        if (container.getAttribute("ref") == null) {
+        final Maybe<UiAttrExpr> refAttr = container.getAttribute("ref");
+        if (refAttr == null || refAttr.isAbsent()) {
             container.addAttribute(false, new UiAttrExpr("ref", new StringLiteralExpr("root")));
         }
         metadata.setContainer(container);
@@ -173,6 +175,16 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
         );
 
         return component;
+    }
+
+    @Override
+    public void overwriteResource(String path, String fileName, String source, Raw hints) {
+        service.saveResource(path, fileName, source, hints);
+    }
+
+    @Override
+    public void overwriteSource(String pkgName, String clsName, String source, Raw hints) {
+        service.saveSource(pkgName, clsName, source, X_Util.firstNotNull(hints, getHints()));
     }
 
     protected void saveGeneratedComponent(SourceBuilder<?> binder) {
@@ -331,7 +343,10 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
             final ContainerMetadata metadata = component.getImplementation(service.getClass());
             service.setGenerator(this);
             final ContainerMetadata result = service.generateComponent(metadata, component);
-            saveGeneratedComponent(result.getSourceBuilder());
+            final SourceBuilder<ContainerMetadata> src = result.getSourceBuilder();
+            onFinish(()->{
+                saveGeneratedComponent(src);
+            });
         }
         return component;
     }
@@ -359,7 +374,7 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
                   UiContainerExpr n, Object arg
             ) {
                 if ("import".equals(n.getName())) {
-                    final Optional<UiAttrExpr> file = n.getAttribute("file");
+                    final Maybe<UiAttrExpr> file = n.getAttribute("file");
                     if (!file.isPresent()) {
                         throw new IllegalArgumentException("import tags must specify a file feature");
                     }
@@ -422,6 +437,11 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
     @Override
     public void finish() {
         onDone.removeAll(Do::done);
+    }
+
+    @Override
+    public void onFinish(Do ondone) {
+        onDone.add(ondone);
     }
 
     protected void resetFactories() {
