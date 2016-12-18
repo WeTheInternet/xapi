@@ -3,23 +3,12 @@ package xapi.dev.components;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseException;
 import com.github.javaparser.ast.expr.UiContainerExpr;
+import jsinterop.annotations.JsProperty;
 import xapi.annotation.inject.SingletonDefault;
 import xapi.annotation.inject.SingletonOverride;
 import xapi.collect.api.Fifo;
 import xapi.collect.impl.SimpleFifo;
-import xapi.components.api.IsControlledComponent;
-import xapi.components.api.IsWebComponent;
-import xapi.components.api.JsoConsumer;
-import xapi.components.api.JsoSupplier;
-import xapi.components.api.NativelySupported;
-import xapi.components.api.ShadowDom;
-import xapi.components.api.ShadowDomPlugin;
-import xapi.components.api.ShadowDomStyle;
-import xapi.components.api.ShadowDomStyles;
-import xapi.components.api.WebComponent;
-import xapi.components.api.WebComponentCallback;
-import xapi.components.api.WebComponentFactory;
-import xapi.components.api.WebComponentMethod;
+import xapi.components.api.*;
 import xapi.components.impl.JsFunctionSupport;
 import xapi.components.impl.JsSupport;
 import xapi.components.impl.WebComponentBuilder;
@@ -43,7 +32,6 @@ import static java.lang.reflect.Modifier.PRIVATE;
 
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.UnsafeNativeLong;
-import com.google.gwt.core.client.js.JsProperty;
 import com.google.gwt.core.ext.Generator;
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.IncrementalGenerator;
@@ -61,14 +49,7 @@ import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -125,6 +106,7 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
     public String        valueClass;
     public boolean       mapToAttribute;
     public boolean useJsniWildcard;
+    public JType[] types;
 
     public MethodData(final String accessorName, final String name) {
       this.accessorName = accessorName;
@@ -204,7 +186,7 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
     final List<JClassType> flattened = new ArrayList<JClassType>(type.getFlattenedSupertypeHierarchy());
     for (int i = flattened.size(); i --> 0; ) {
       final JClassType iface = flattened.get(i);
-      generateFunctionAccessors(logger, context, iface, methods, hasCallbacks);
+      generateFunctionAccessors(logger, context, iface, methods, hasCallbacks, type);
     }
 
     final String supplier = out.addImport(Supplier.class);
@@ -276,7 +258,7 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
                     .print(Generator.escape(template))
                 .print("\"")
                 .println()
-                .println(", shadow -> {")
+                .println(", (host, shadow) -> {")
                 .indent();
 
           metadata.applyModifiers(out, "shadow");
@@ -329,7 +311,7 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
   }
 
   private Type logLevel() {
-    return Type.WARN;
+    return Type.TRACE;
   }
 
   protected boolean isSingleton(Class<? extends ShadowDomPlugin> pluginClass) {
@@ -459,7 +441,8 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
   protected Type logLevel(final String typeName) {
     return
       //        BooleanPickerElement.class.getName().equals(typeName) ? Type.INFO : Type.TRACE;
-      Type.DEBUG;
+      typeName.contains("Button") ? Type.INFO : Type.DEBUG;
+//       Type.DEBUG;
   }
 
   private String accessorName(final JMethod method) {
@@ -479,8 +462,10 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
     return name;
   }
 
-  private void generateDefaultFunctionAccessor(final TreeLogger logger,
-    final JMethod method, final MethodData data, final ClassBuffer cls, final Set<String> helpers) {
+  private void generateDefaultFunctionAccessor(
+      final TreeLogger logger,
+      final JMethod method, final MethodData data, final ClassBuffer cls, final Set<String> helpers, JClassType rootType
+  ) {
     final String qualified = method.getEnclosingType().getQualifiedSourceName();
     final String typeName = cls.addImport(qualified);
     cls.addImport(JavaScriptObject.class);
@@ -572,9 +557,11 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
     .println("});");
   }
 
-  private void generateFunctionAccessors(final TreeLogger logger,
-    final GeneratorContext context, final JClassType iface,
-    final Multimap<String, MethodData> results, final boolean hasCallbacks) throws UnableToCompleteException {
+  private void generateFunctionAccessors(
+      final TreeLogger logger,
+      final GeneratorContext context, final JClassType iface,
+      final Multimap<String, MethodData> results, final boolean hasCallbacks, JClassType type
+  ) throws UnableToCompleteException {
     if (iface.getMethods().length == 0) {
       return;
     }
@@ -600,7 +587,8 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
       source.getClassBuffer().createConstructor(PRIVATE);
     }
     final Set<String> helpers = new LinkedHashSet<>();
-    for (final JMethod method : iface.getMethods()) {
+    methods:
+    for (JMethod method : iface.getMethods()) {
       if (method.isStatic()) {
         continue;
       }
@@ -608,13 +596,48 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
         // Do not blow away natively supported methods!
         continue;
       }
-      if (method.getEnclosingType() == iface) {
+      if (method.getEnclosingType() != iface) {
+        logger.log(Type.WARN, "Skipping method with bad enclosing type; " + method.getEnclosingType() + " != " + iface);
+      } else {
+        // Check for signature overrides
+        boolean overloaded = false;
+        for (MethodData methodData : results.values()) {
+          if (method.getName().equals(methodData.name)) {
+            if (Arrays.equals(methodData.types, method.getParameterTypes())) {
+              // already handled an override of this method; skip it...
+              logger.log(TreeLogger.TRACE, "Skipping overload of " + method.getJsniSignature() + "; preferring " + methodData.accessorName );
+//              continue methods;
+            } else {
+              // There is polymorphism on this method name;
+              // we are going to have to type match javascript supplied names.
+              // Beware non-array-wrapped varargs; you should be sending js[]s
+              logger.log(TreeLogger.WARN, "Method signature overloading " +
+                  "between " + method.getJsniSignature() + " and; generating both accessors, " +
+                      "but you may have choice conflict in which method is mapped to javascript");
+              // TODO: handle polymorphic method signatures via a trampoline method
+              overloaded = true;
+//              continue methods;
+
+            }
+          }
+        }
+
+        if (type != iface)
+        try {
+          final JMethod overridden = type.getMethod(method.getName(), method.getParameterTypes());
+          // If the root type overrides this interface method, prefer the root type...
+          logger.log(TreeLogger.ERROR, "Overridden method " + overridden.getJsniSignature() + " != " + method.getJsniSignature());
+          method = overridden;
+        } catch (NotFoundException ignored) {
+        }
+
         Collection<MethodData> existing = results.get(name);
         MethodData data = new MethodData(accessorName(method), method.getName());
         if (hasCallbacks) {
           data.type = BuiltInType.find(method);
           data.useJsniWildcard = true;
         }
+        data.types = method.getParameterTypes();
         final WebComponentMethod metaData =
           method.getAnnotation(WebComponentMethod.class);
         if (metaData != null) {
@@ -628,13 +651,14 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
           data.writeable = metaData.writeable();
         }
         if (method.isDefaultMethod()) {
+
           data.valueClass = qualified;
           existing = Sets.add(new LinkedHashSet<>(existing), data);
           results.putAll(name, existing);
           // A default method! Let's generate a method to extract a javascript
           // function that will correctly handle un/boxing when passing values.
           if (source != null) {
-            generateDefaultFunctionAccessor(logger, method, data, source.getClassBuffer(), helpers);
+            generateDefaultFunctionAccessor(logger, method, data, source.getClassBuffer(), helpers, type);
           }
         } else {
           // An abstract method should be treated like a JsType method;
@@ -674,7 +698,7 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
                 generateSetter(logger, debeaned, data, method, source, helpers);
               }
             }
-            existing = Sets.add(new LinkedHashSet<MethodData>(existing), data);
+            existing = Sets.add(new LinkedHashSet<>(existing), data);
             results.putAll(name, existing);
           } else {
             logger.log(Type.WARN, "Unable to generate web component implementation for "

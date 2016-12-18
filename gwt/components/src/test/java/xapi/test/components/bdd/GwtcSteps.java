@@ -13,6 +13,7 @@ import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.expr.MemberValuePair;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.NormalAnnotationExpr;
+import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import cucumber.api.java.Before;
@@ -25,12 +26,25 @@ import xapi.collect.api.StringTo;
 import xapi.components.api.IsWebComponent;
 import xapi.components.api.WebComponentFactory;
 import xapi.dev.X_Gwtc;
-import xapi.dev.components.WebComponentFactoryGenerator;
+import xapi.dev.api.ApiGeneratorContext;
+import xapi.dev.gen.SourceHelper;
 import xapi.dev.gwtc.api.GwtcService;
 import xapi.dev.gwtc.impl.GwtcManifestImpl;
 import xapi.dev.source.MethodBuffer;
+import xapi.dev.source.SourceBuilder;
 import xapi.dev.source.SourceBuilder.JavaType;
+import xapi.dev.ui.ComponentBuffer;
+import xapi.dev.ui.ContainerMetadata;
+import xapi.dev.ui.UiComponentGenerator;
+import xapi.dev.ui.UiGeneratorService;
+import xapi.dev.ui.UiGeneratorServiceDefault;
+import xapi.dev.ui.UiGeneratorVisitor;
+import xapi.dev.ui.UiTagGenerator;
 import xapi.fu.In1;
+import xapi.fu.Lazy;
+import xapi.fu.Out2;
+import xapi.fu.iterate.Chain;
+import xapi.fu.iterate.ChainBuilder;
 import xapi.gwtc.api.GwtManifest;
 import xapi.gwtc.api.GwtManifest.CleanupMode;
 import xapi.gwtc.api.GwtcXmlBuilder;
@@ -40,6 +54,7 @@ import xapi.javac.dev.api.CompilerService;
 import xapi.log.X_Log;
 import xapi.log.api.LogLevel;
 import xapi.source.X_Source;
+import xapi.source.read.JavaModel.IsQualified;
 import xapi.test.components.client.GeneratedComponentEntryPoint;
 import xapi.util.X_Namespace;
 import xapi.util.X_Properties;
@@ -53,8 +68,14 @@ import static xapi.util.X_String.join;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.ext.TreeLogger.Type;
 
+import javax.lang.model.element.Element;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -66,47 +87,6 @@ import java.util.Optional;
  */
 public class GwtcSteps {
 
-  public static class CompiledComponent {
-
-    private final GwtcService gwtc;
-    private final CompilationUnit parsed;
-    private final ClassOrInterfaceDeclaration cls;
-    private final GwtManifest manifest;
-
-    public CompiledComponent(
-        ClassOrInterfaceDeclaration cls,
-        CompilationUnit parsed,
-        GwtcService gwtc,
-        GwtManifest manifest
-    ) {
-      this.cls = cls;
-      this.parsed = parsed;
-      this.gwtc = gwtc;
-      this.manifest = manifest;
-    }
-
-    public GwtcService getGwtc() {
-      return gwtc;
-    }
-
-    public CompilationUnit getParsed() {
-      return parsed;
-    }
-
-    protected String getWebComponentFactorySimpleName() {
-      return WebComponentFactoryGenerator.toFactoryName(cls.getName());
-    }
-
-    public File getWebComponentFactoryFile() {
-      String simpleName = getWebComponentFactorySimpleName();
-      String resourcePath = cls.getPackageAsPath() + simpleName + ".java";
-      return new File(getGwtc().inGeneratedDirectory(getManifest(), resourcePath));
-    }
-
-    public GwtManifest getManifest() {
-      return manifest;
-    }
-  }
   private static final String QUOTED = "\"([^\"]+)\"";
 
   static {
@@ -117,13 +97,52 @@ public class GwtcSteps {
 
   private StringTo<CompiledComponent> compiledComponents;
   private StringTo<String> sources;
+  private Lazy<GwtcService> gwtc;
+  private Lazy<UiGeneratorService> tools;
+  private Lazy<GwtManifest> gwtManifest = Lazy.deferred1(this::createManifest);
+
+  protected GwtManifest createManifest() {
+      final GwtcService service = gwtc.out1();
+      service.addClasspath(IsWebComponent.class);
+      service.createFile("META-INF", "xapi.properties", ()->"");
+      final GwtManifest manifest = new GwtcManifestImpl(service.getModuleName());
+      initializeManifest(service, manifest);
+      return manifest;
+  }
+  protected <Ctx extends ApiGeneratorContext<Ctx>> UiGeneratorService<Element> createUiGen() {
+    return new UiGeneratorServiceDefault<Ctx>() {
+      @Override
+      protected Iterable<Out2<String, UiComponentGenerator>> getComponentGenerators() {
+        return Chain.<Out2<String, UiComponentGenerator>>startChain().addAll(super.getComponentGenerators())
+                    .add(Out2.out2Immutable("define-tags", new UiTagGenerator()))
+                    .add(Out2.out2Immutable("define-tag", new UiTagGenerator()))
+                    .build();
+      }
+    };
+  }
 
   @Before
   public void before() {
     compiledComponents = X_Collect.newStringMap(CompiledComponent.class);
     sources = X_Collect.newStringMap(String.class);
+    resetGwtCompiler();
+    resetApiGenerator();
   }
 
+  protected void resetApiGenerator() {
+    tools = Lazy.deferred1(this::createUiGen);
+  }
+
+
+  protected void resetGwtCompiler() {
+    gwtc = Lazy.deferred1(X_Gwtc::getServiceForClass, GeneratedComponentEntryPoint.class);
+    gwtManifest = Lazy.deferred1(this::createManifest);
+  }
+
+  @Given("^reset compilation:$")
+  public void resetCompilation() {
+    resetGwtCompiler();
+  }
   @Given("^compile the code:$")
   public void compileTheCode(List<String> lines) {
     final Optional<String> first = lines.stream().filter(notEmpty()).findFirst();
@@ -132,134 +151,219 @@ public class GwtcSteps {
     }
     CompilerService compiler = X_Inject.singleton(CompilerService.class);
 
+  }
+
+  @Given("^add java component:$")
+  public void addJavaComponent(List<String> lines) throws ParseException {
+    checkNotEmpty(lines);
+
+    GwtcService service = gwtc.out1();
+    final GwtManifest manifest = gwtManifest.out1();
+
+    String code = join("\n", toArray(lines));
+    JavaType type = JavaType.UNKNOWN;
+    String pkgToUse;
+    String clsToUse;
+    final CompilationUnit parsed = JavaParser.parse(X_IO.toStreamUtf8(code), "UTF-8");
+    type = parsed.getPrimaryType().getJavaType();
+    final int ident = System.identityHashCode(manifest);
+    final String fileName = "Gen" + ident;
+    pkgToUse = parsed.getPackage() == null ? null : parsed.getPackage().getPackageName();
+    if (pkgToUse == null) {
+      pkgToUse = service.modifyPackage("xapi.test.pkg" + ident);
+      parsed.setPackage(new PackageDeclaration(new NameExpr(pkgToUse)));
+    }
+    final GwtcXmlBuilder builder = manifest.getOrCreateBuilder(pkgToUse, fileName);
+    builder.addSource("");
+    service.addGwtInherit(builder.getInheritName());
+
+    for (String auto : autoImport()) {
+      parsed.getImports().add(new ImportDeclaration(new NameExpr(auto), false, true));
+    }
+    clsToUse = parsed.getPrimaryType().getName();
+
+
+    // lets save the code, then generate an inclusion for it.
+    // Note, we are only recording the provider for the source;
+    // we still have 'til the end of the compile to actually finish generating code.
+    service.createFile(pkgToUse.replace('.', '/'), clsToUse + ".java", parsed::toSource);
+
+    final MethodBuffer method = service.addMethodToEntryPoint("public void runMethod" + ident);
+    service.getOnModuleLoad()
+        .println(method.getName() + "();");
+
+    parsed.getTypes().forEach(t -> {
+      if (t instanceof ClassOrInterfaceDeclaration) {
+        final ClassOrInterfaceDeclaration cls = (ClassOrInterfaceDeclaration) t;
+        In1<ClassOrInterfaceDeclaration> printComponent = coi -> {
+          String print = coi.getName();
+          String qualifiedName = null;
+          boolean hadName = false;
+          if (print.indexOf('.') == -1) {
+            // check the imports for the correct package
+            for (ImportDeclaration importDecl : parsed.getImports()) {
+              if (importDecl.getName().getName().endsWith(print)) {
+                qualifiedName = importDecl.getName().getName();
+                hadName = true;
+                break;
+              }
+            }
+            if (!hadName) {
+              qualifiedName = X_Source.qualifiedName(parsed.getPackage().getPackageName(), coi.getName());
+            }
+          } else {
+            qualifiedName = coi.getName();
+          }
+          print = method.addImport(qualifiedName);
+          String gwt = method.addImport(GWT.class);
+          final String factory = method.addImport(WebComponentFactory.class);
+          method.print(factory + "<" + print + "> factory = ");
+          method.println(gwt + ".create(" + print + ".class);");
+          method.println("factory.newComponent();");
+
+          final CompiledComponent component = new CompiledComponent(cls, parsed, service, manifest);
+          String tagName = getTagName(cls);
+          compiledComponents.put(qualifiedName, component);
+          compiledComponents.put(tagName, component);
+        };
+        if (cls.isInterface()) {
+          for (ClassOrInterfaceType iface : cls.getExtends()) {
+            if (iface.getName().endsWith(IsWebComponent.class.getSimpleName())) {
+              printComponent.in(cls);
+            }
+          }
+        } else {
+          for (ClassOrInterfaceType iface : cls.getImplements()) {
+            if (iface.getName().endsWith(IsWebComponent.class.getSimpleName())) {
+              printComponent.in(cls);
+            }
+
+          }
+
+        }
+      } else if (t instanceof AnnotationDeclaration) {
+        X_Log.warn(
+            getClass(),
+            "Saw a generated annotation, but we aren't running javac yet; this annotation won't be used in the Gwt compile"
+        );
+      } else if (t instanceof EnumDeclaration) {
+        X_Log.warn(
+            getClass(),
+            "Saw a generated enum, but we aren't running javac yet; this enum won't be used in the Gwt compile"
+        );
+      } else {
+        throw new AssertionError("Unsupported type " + t.getClass() + " : " + t);
+      }
+
+    });
+  }
+
+  @Given("^add xapi component:$")
+  public void addXapiComponent(List<String> lines) throws ParseException {
+    checkNotEmpty(lines);
+
+    GwtcService service = gwtc.out1();
+    final GwtManifest manifest = gwtManifest.out1();
+
+    String code = join("\n", toArray(lines));
+    String clsToUse;
+    final UiContainerExpr parsed = JavaParser.parseXapi(X_IO.toStreamUtf8(code), "UTF-8");
+    final int ident = System.identityHashCode(manifest);
+    final String fileName = "Gen" + ident;
+    final String pkgToUse =
+        ASTHelper.extractStringValue(
+        parsed.getAttribute("package").getIfNull(UiAttrExpr.of(
+            "package",
+            "xapi.test.pkg"
+        )).getExpression());
+    final UiGeneratorService generator = this.tools.out1();
+    final IsQualified type = new IsQualified(pkgToUse, fileName);
+    final ComponentBuffer buffer = generator.initialize(new SourceHelper() {
+      @Override
+      public String readSource(String pkgName, String clsName, Object o) {
+        throw new UnsupportedOperationException("Cannot read source from this test");
+      }
+
+      @Override
+      public void saveSource(String pkgName, String clsName, String src, Object o) {
+        final Path genDir = Paths.get(manifest.getGenDir());
+        final Path packageDir = genDir.resolve(pkgName.replace('.', File.separatorChar));
+        try {
+          Files.createDirectories(packageDir);
+          final Path file = packageDir.resolve(clsName + ".java");
+          Files.write(file, src.getBytes());
+        } catch (IOException e) {
+          throw new UncheckedIOException(e);
+        }
+      }
+
+      @Override
+      public void saveResource(String path, String fileName, String src, Object o) {
+        final Path genDir = Paths.get(manifest.getGenDir());
+        final Path packageDir = genDir.resolve(path.replace('/', File.separatorChar));
+        try {
+          Files.createDirectories(packageDir);
+          final Path file = packageDir.resolve(fileName);
+          Files.write(file, src.getBytes());
+        } catch (IOException e) {
+          throw new UncheckedIOException(e);
+        }
+
+      }
+    }, type, parsed);
+
+    final GwtcXmlBuilder builder = manifest.getOrCreateBuilder(pkgToUse, fileName);
+    builder.addSource("");
+    service.addGwtInherit(builder.getInheritName());
+
+    final SourceBuilder<ContainerMetadata> out = buffer.getBinder();
+    autoImport().forEach(out::addImport);
+
+    final ApiGeneratorContext<?> ctx = new ApiGeneratorContext<>();
+    buffer.getRoot().setContext(ctx);
+    final UiGeneratorVisitor visitor = generator.createVisitor(buffer.getRoot());
+    visitor.visit(parsed, generator.tools());
 
   }
 
   @Given("^compile the component:$")
   public void compileTheComponent(List<String> lines) throws ParseException {
+    boolean isXapi = checkNotEmpty(lines)
+      .get().startsWith("<");
+
+    if (isXapi) {
+      addXapiComponent(lines);
+    } else {
+      addJavaComponent(lines);
+    }
+
+    compileGwt();
+
+  }
+
+  @Given("^compile gwt$")
+  public void compileGwt() throws ParseException {
+
+    final GwtcService service = gwtc.out1();
+    final GwtManifest manifest = gwtManifest.out1();
+
+    final int result = service.compile(manifest);
+    assertEquals("Compile failed w/ code " + result, 0, result);
+
+  }
+
+  private Optional<String> checkNotEmpty(List<String> lines) {
     final Optional<String> first = lines.stream().filter(notEmpty()).findFirst();
     if (!first.isPresent()) {
       throw new AssertionError("No text supplied to compile method.  You sent " + lines);
     }
+    return first;
+  }
 
-    GwtcService service = X_Gwtc.getServiceFor(GeneratedComponentEntryPoint.class);
-    service.addClasspath(GeneratedComponentEntryPoint.class);
-    service.addClasspath(IsWebComponent.class);
-    service.createFile("META-INF", "xapi.properties", ()->"");
-    final GwtManifest manifest = new GwtcManifestImpl(service.getModuleName());
-    initializeManifest(service, manifest);
-
-
-    // Now, lets add our component to the Gwt compilation classpath
-    String code = join("\n", toArray(lines));
-    JavaType type = JavaType.UNKNOWN;
-    String pkgToUse;
-    String clsToUse;
-    try {
-      final CompilationUnit parsed = JavaParser.parse(X_IO.toStreamUtf8(code), "UTF-8");
-      type = parsed.getPrimaryType().getJavaType();
-      final int ident = System.identityHashCode(manifest);
-      final String fileName = "Gen" + ident;
-      pkgToUse = parsed.getPackage() == null ? null : parsed.getPackage().getPackageName();
-      if (pkgToUse == null) {
-        pkgToUse = service.modifyPackage("xapi.test.pkg" + ident);
-        parsed.setPackage(new PackageDeclaration(new NameExpr(pkgToUse)));
-      }
-      final GwtcXmlBuilder builder = manifest.getOrCreateBuilder(pkgToUse, fileName);
-      builder.addSource("");
-      service.addGwtInherit(builder.getInheritName());
-
-      parsed.getImports().add(new ImportDeclaration(new NameExpr("xapi.components.api"), false, true));
-      parsed.getImports().add(new ImportDeclaration(new NameExpr("xapi.ui.api"), false, true));
-      clsToUse = parsed.getPrimaryType().getName();
-
-
-      // lets save the code, then generate an inclusion for it.
-      service.createFile(pkgToUse.replace('.', '/'), clsToUse + ".java", parsed::toSource);
-
-      final MethodBuffer method = service.addMethodToEntryPoint("public void runMethod" + ident);
-      service.getOnModuleLoad()
-          .println(method.getName() + "();");
-
-      parsed.getTypes().forEach(t -> {
-        if (t instanceof ClassOrInterfaceDeclaration) {
-          final ClassOrInterfaceDeclaration cls = (ClassOrInterfaceDeclaration) t;
-          In1<ClassOrInterfaceDeclaration> printComponent = coi -> {
-            String print = coi.getName();
-            String qualifiedName = null;
-            boolean hadName = false;
-            if (print.indexOf('.') == -1) {
-              // check the imports for the correct package
-              for (ImportDeclaration importDecl : parsed.getImports()) {
-                if (importDecl.getName().getName().endsWith(print)) {
-                  qualifiedName = importDecl.getName().getName();
-                  hadName = true;
-                  break;
-                }
-              }
-              if (!hadName) {
-                qualifiedName = X_Source.qualifiedName(parsed.getPackage().getPackageName(), coi.getName());
-              }
-            } else {
-              qualifiedName = coi.getName();
-            }
-            print = method.addImport(qualifiedName);
-            String gwt = method.addImport(GWT.class);
-            final String factory = method.addImport(WebComponentFactory.class);
-            method.print(factory + "<" + print + "> factory = ");
-            method.println(gwt + ".create(" + print + ".class);");
-            method.println("factory.newComponent();");
-
-            final CompiledComponent component = new CompiledComponent(cls, parsed, service, manifest);
-            String tagName = getTagName(cls);
-            compiledComponents.put(qualifiedName, component);
-            compiledComponents.put(tagName, component);
-          };
-          if (cls.isInterface()) {
-            for (ClassOrInterfaceType iface : cls.getExtends()) {
-              if (iface.getName().endsWith(IsWebComponent.class.getSimpleName())) {
-                printComponent.in(cls);
-              }
-            }
-          } else {
-            for (ClassOrInterfaceType iface : cls.getImplements()) {
-              if (iface.getName().endsWith(IsWebComponent.class.getSimpleName())) {
-                printComponent.in(cls);
-              }
-
-            }
-
-          }
-        } else if (t instanceof AnnotationDeclaration) {
-          X_Log.warn(
-              getClass(),
-              "Saw a generated annotation, but we aren't running javac yet; this annotation won't be used in the Gwt compile"
-          );
-        } else if (t instanceof EnumDeclaration) {
-          X_Log.warn(
-              getClass(),
-              "Saw a generated enum, but we aren't running javac yet; this enum won't be used in the Gwt compile"
-          );
-        } else {
-          throw new AssertionError("Unsupported type " + t.getClass() + " : " + t);
-        }
-
-      });
-
-    } catch (ParseException e) {
-      // The source of the component is just
-      final UiContainerExpr uiContainer = JavaParser.parseUiContainer(code);
-    }
-    if (type != JavaType.UNKNOWN) {
-    } else {
-      // if it wasn't a valid java file, then it is just a plain UiContainer,
-      // which we should componentize (wrap in a valid java class)
-    }
-
-    final int result = service.compile(manifest);
-
-    assertEquals("Compile failed w/ code " + result, 0, result);
-
+  private ChainBuilder<String> autoImport() {
+    return Chain.<String>startChain()
+        .add("xapi.components.api")
+        .add("xapi.ui.api");
   }
 
   private void initializeManifest(GwtcService service, GwtManifest manifest) {
@@ -269,6 +373,7 @@ public class GwtcSteps {
     manifest.setGenDir(manifest.getGenDir()); // make the default explicit, so the argument is sent to command line
     manifest.setStrict(true); // break on any error
     manifest.setCleanupMode(CleanupMode.DELETE_ON_SUCCESSFUL_EXIT);
+    manifest.setUseCurrentJvm(true);
   }
 
   private String getTagName(ClassOrInterfaceDeclaration cls) {

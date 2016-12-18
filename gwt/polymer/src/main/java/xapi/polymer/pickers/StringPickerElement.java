@@ -1,9 +1,8 @@
 package xapi.polymer.pickers;
 
-import com.google.gwt.core.client.GWT;
-import com.google.gwt.core.client.js.JsProperty;
-import com.google.gwt.core.client.js.JsType;
-
+import elemental.dom.Element;
+import jsinterop.annotations.JsProperty;
+import jsinterop.annotations.JsType;
 import xapi.components.api.IsWebComponent;
 import xapi.components.api.OnWebComponentAttached;
 import xapi.components.api.OnWebComponentAttributeChanged;
@@ -13,14 +12,14 @@ import xapi.components.api.WebComponentFactory;
 import xapi.components.api.WebComponentMethod;
 import xapi.polymer.core.PolymerElement;
 
-import elemental.dom.Element;
+import com.google.gwt.core.client.GWT;
 
 
 @JsType
 @WebComponent(tagName=StringPickerElement.TAG_NAME)
 public interface StringPickerElement extends
 IsWebComponent<Element>,
-OnWebComponentAttributeChanged,
+OnWebComponentAttributeChanged<Element>,
 OnWebComponentCreated<Element>,
 OnWebComponentAttached<Element>,
 AbstractPickerElement<Element> {
@@ -56,7 +55,7 @@ AbstractPickerElement<Element> {
   Element getTextField();
 
   @Override
-  default void onAttributeChanged(String name, String oldVal, String newVal) {
+  default void onAttributeChanged(Element e, String name, String oldVal, String newVal) {
     switch (name) {
     case "value":
       getTextField().setAttribute("value", newVal);

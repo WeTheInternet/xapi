@@ -1,11 +1,8 @@
 package xapi.polymer.pickers;
 
-import static xapi.components.impl.JsSupport.setAttr;
-
-import com.google.gwt.core.client.js.JsProperty;
-import com.google.gwt.core.client.js.JsType;
-import com.google.gwt.core.shared.GWT;
-
+import elemental.dom.Element;
+import jsinterop.annotations.JsProperty;
+import jsinterop.annotations.JsType;
 import xapi.components.api.IsWebComponent;
 import xapi.components.api.OnWebComponentAttributeChanged;
 import xapi.components.api.OnWebComponentCreated;
@@ -13,14 +10,16 @@ import xapi.components.api.WebComponent;
 import xapi.components.api.WebComponentFactory;
 import xapi.components.api.WebComponentMethod;
 
-import elemental.dom.Element;
+import static xapi.components.impl.JsSupport.setAttr;
+
+import com.google.gwt.core.shared.GWT;
 
 
 @JsType
 @WebComponent(tagName=IntegerPickerElement.TAG_NAME)
 public interface IntegerPickerElement extends
 IsWebComponent<Element>,
-OnWebComponentAttributeChanged,
+OnWebComponentAttributeChanged<Element>,
 OnWebComponentCreated<Element>,
 AbstractPickerElement<Element> {
 
@@ -51,7 +50,7 @@ AbstractPickerElement<Element> {
   }
 
   @Override
-  default void onAttributeChanged(String name, String oldVal, String newVal) {
+  default void onAttributeChanged(Element e, String name, String oldVal, String newVal) {
     switch (name) {
     case "value":
       getPolymer().setValue(newVal);

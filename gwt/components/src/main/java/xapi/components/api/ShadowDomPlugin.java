@@ -15,6 +15,6 @@ import elemental.dom.Element;
  */
 public interface ShadowDomPlugin {
 
-  Element transform(Element shadowRoot);
+  Element transform(Element host, Element shadowRoot);
 
 }

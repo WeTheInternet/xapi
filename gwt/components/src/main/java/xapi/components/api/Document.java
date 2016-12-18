@@ -1,16 +1,17 @@
 package xapi.components.api;
 
-import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.core.client.js.JsProperty;
-import com.google.gwt.core.client.js.JsType;
-
 import elemental.dom.Element;
-import elemental.html.BodyElement;
+import elemental.js.html.JsBodyElement;
+import jsinterop.annotations.JsProperty;
+import jsinterop.annotations.JsType;
 
-@JsType
+import com.google.gwt.core.client.JavaScriptObject;
+
+@JsType(isNative = true)
 public interface Document {
-  @JsType
-  public static interface RegisterElement {
+
+  @JsType(isNative = true)
+  interface RegisterElement {
     JavaScriptObject call(Document doc, String name, JavaScriptObject prototype);
   }
 
@@ -22,5 +23,5 @@ public interface Document {
   <E extends Element> E getElementById(String id);
 
   @JsProperty
-  BodyElement getBody();
+  JsBodyElement getBody();
 }

@@ -1,20 +1,20 @@
 package xapi.components.api;
 
-import java.util.function.Consumer;
+import xapi.fu.Do;
+import xapi.fu.In1;
 
 import com.google.gwt.core.client.Callback;
 import com.google.gwt.core.client.GWT;
-import com.google.gwt.core.client.Scheduler.ScheduledCommand;
 
 public class LoggingCallback <T, E extends Exception> implements Callback<T, E> {
 
-	private final Consumer<T> callback;
+	private final In1<T> callback;
 
-	public LoggingCallback(Consumer<T> callback) {
+	public LoggingCallback(In1<T> callback) {
 		this.callback = callback;
 		assert callback != null : "Do not send null callbacks to LoggingCallback";
   }
-	
+
 	@Override
 	public void onFailure(E reason) {
 		GWT.log(getFailureText(reason), reason);
@@ -26,11 +26,11 @@ public class LoggingCallback <T, E extends Exception> implements Callback<T, E> 
 
 	@Override
 	public void onSuccess(T result) {
-		callback.accept(result);
+		callback.in(result);
 	}
 
-	public static Callback<Void, Exception> voidCallback(ScheduledCommand onLoaded) {
-	  return new LoggingCallback<>((v)->onLoaded.execute());
+	public static Callback<Void, Exception> voidCallback(Do onLoaded) {
+	  return new LoggingCallback<>(onLoaded.ignores1());
   }
 
 }

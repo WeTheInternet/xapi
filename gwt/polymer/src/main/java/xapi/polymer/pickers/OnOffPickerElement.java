@@ -1,14 +1,13 @@
 package xapi.polymer.pickers;
 
-import com.google.gwt.core.client.js.JsProperty;
-import com.google.gwt.core.client.js.JsType;
-import com.google.gwt.core.shared.GWT;
-
+import elemental.dom.Element;
+import jsinterop.annotations.JsProperty;
+import jsinterop.annotations.JsType;
 import xapi.components.api.OnWebComponentCreated;
 import xapi.components.api.WebComponent;
 import xapi.components.api.WebComponentFactory;
 
-import elemental.dom.Element;
+import com.google.gwt.core.shared.GWT;
 
 /**
  * For elements that have boolean on/off state, but also wish to handle the null or "no choice made state",

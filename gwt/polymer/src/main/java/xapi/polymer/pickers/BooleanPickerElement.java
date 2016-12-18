@@ -1,5 +1,8 @@
 package xapi.polymer.pickers;
 
+import elemental.dom.Element;
+import jsinterop.annotations.JsProperty;
+import jsinterop.annotations.JsType;
 import xapi.components.api.OnWebComponentAttributeChanged;
 import xapi.components.api.OnWebComponentCreated;
 import xapi.components.api.WebComponent;
@@ -11,11 +14,7 @@ import xapi.ui.html.api.Style;
 import xapi.ui.html.api.Style.Unit;
 import xapi.ui.html.api.Style.UnitType;
 
-import com.google.gwt.core.client.js.JsProperty;
-import com.google.gwt.core.client.js.JsType;
 import com.google.gwt.core.shared.GWT;
-
-import elemental.dom.Element;
 
 @JsType
 @WebComponent(tagName=BooleanPickerElement.TAG_NAME)
@@ -27,7 +26,7 @@ import elemental.dom.Element;
 )
 public interface BooleanPickerElement extends
 AbstractPickerElement<Element>,
-OnWebComponentAttributeChanged,
+OnWebComponentAttributeChanged<Element>,
 OnWebComponentCreated<Element> {
 
   String TAG_NAME = "xapi-boolean-picker";
@@ -50,7 +49,7 @@ OnWebComponentCreated<Element> {
   }
 
   @Override
-  default void onAttributeChanged(String name, String oldVal, String newVal) {
+  default void onAttributeChanged(Element e, String name, String oldVal, String newVal) {
     // Used when the user manually sets <xapi-enum-picker>.value="newVal"
     // This will also be called whenever the radio group is updated via clicks,
     // however, this has no effect as the selected variable already equals newVal

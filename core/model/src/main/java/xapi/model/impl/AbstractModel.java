@@ -355,8 +355,7 @@ public class AbstractModel implements Model, PersistentModel, NestedModel{
    * @see xapi.model.api.Model#setKey(xapi.model.api.ModelKey)
    */
   @Override
-  public Model setKey(final ModelKey key) {
+  public void setKey(final ModelKey key) {
     this.key = key;
-    return this;
   }
 }

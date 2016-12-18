@@ -2,6 +2,7 @@ package xapi.gwtc.api;
 
 import xapi.annotation.common.Property;
 import xapi.annotation.compile.Dependency;
+import xapi.annotation.compile.Dependency.DependencyType;
 import xapi.annotation.compile.Resource;
 import xapi.annotation.compile.Resource.ResourceType;
 import xapi.annotation.reflect.MirroredAnnotation;
@@ -201,9 +202,9 @@ public @interface Gwtc {
    * System.getenv("M2_HOME")/group/id/artifact-id/version/artifact-id-version.jar
    */
   Dependency[] dependencies() default {
-    @Dependency(Dependency.DIR_BIN),
-    @Dependency(Dependency.DIR_TEMP),
-    @Dependency(Dependency.DIR_GEN)
+    @Dependency(dependencyType = DependencyType.ABSOLUTE, value = Dependency.DIR_BIN),
+    @Dependency(dependencyType = DependencyType.ABSOLUTE, value = Dependency.DIR_TEMP),
+    @Dependency(dependencyType = DependencyType.ABSOLUTE, value = Dependency.DIR_GEN)
   };
 
   /**

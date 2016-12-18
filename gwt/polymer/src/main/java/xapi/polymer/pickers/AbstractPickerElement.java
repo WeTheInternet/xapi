@@ -1,16 +1,8 @@
 package xapi.polymer.pickers;
 
-import static xapi.components.impl.JsSupport.addClassName;
-import static xapi.components.impl.JsSupport.hideIfEmpty;
-import static xapi.components.impl.JsSupport.newElement;
-import static xapi.polymer.core.PolymerInput.newInput;
-import static xapi.polymer.core.PolymerLabel.newLabel;
-
-import com.google.gwt.core.client.js.JsProperty;
-import com.google.gwt.core.client.js.JsType;
-
 import elemental.dom.Element;
-
+import jsinterop.annotations.JsProperty;
+import jsinterop.annotations.JsType;
 import xapi.components.api.IsWebComponent;
 import xapi.components.api.OnWebComponentAttached;
 import xapi.components.api.OnWebComponentCreated;
@@ -18,6 +10,10 @@ import xapi.components.impl.WebComponentWithCallbacks;
 import xapi.polymer.core.PolymerElement;
 import xapi.polymer.core.PolymerInput;
 import xapi.polymer.core.PolymerLabel;
+
+import static xapi.components.impl.JsSupport.*;
+import static xapi.polymer.core.PolymerInput.newInput;
+import static xapi.polymer.core.PolymerLabel.newLabel;
 
 @JsType
 public interface AbstractPickerElement <E extends Element> extends

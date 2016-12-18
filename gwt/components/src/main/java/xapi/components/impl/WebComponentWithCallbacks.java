@@ -3,16 +3,15 @@
  */
 package xapi.components.impl;
 
-import static xapi.components.impl.JsFunctionSupport.mergeConsumer;
-
-import com.google.gwt.core.client.js.JsProperty;
-import com.google.gwt.core.client.js.JsType;
-
-import java.util.function.Consumer;
-
+import elemental.dom.Element;
+import jsinterop.annotations.JsProperty;
+import jsinterop.annotations.JsType;
 import xapi.components.api.IsWebComponent;
 import xapi.components.api.OnWebComponentCreated;
-import elemental.dom.Element;
+
+import static xapi.components.impl.JsFunctionSupport.mergeConsumer;
+
+import java.util.function.Consumer;
 
 /**
  * @author "James X. Nelson (james@wetheinter.net)"

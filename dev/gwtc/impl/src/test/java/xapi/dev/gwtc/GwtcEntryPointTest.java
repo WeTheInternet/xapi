@@ -22,6 +22,7 @@ public class GwtcEntryPointTest {
 
   static {
     X_Properties.setProperty(X_Namespace.PROPERTY_MULTITHREADED, "10");
+    X_Properties.setProperty(X_Namespace.PROPERTY_LOG_LEVEL, "WARN");
   }
 
   private static boolean beforeClass;
@@ -67,9 +68,9 @@ public class GwtcEntryPointTest {
       return;
     }
     final Package pkg = CaseEntryPoint.class.getPackage();
-    final GwtcService gwtc = X_Gwtc.getServiceFor(pkg, false);
+    final GwtcService gwtc = X_Gwtc.getServiceForPackage(pkg, false);
     final GwtManifest manifest = new GwtcManifestImpl("Gwtc_"+pkg.getName().replace('.', '_'));
-    manifest.setLogLevel(Type.TRACE);
+    manifest.setLogLevel(Type.WARN);
     manifest.addSystemProp("gwt.usearchives=false");
     Assert.assertEquals(0, gwtc.compile(manifest));
   }
@@ -78,10 +79,10 @@ public class GwtcEntryPointTest {
     if ("true".equals(System.getProperty("xapi.build.quick"))) {
       return;
     }
-    final GwtcService gwtc = X_Gwtc.getServiceFor(CaseEntryPoint.class);
+    final GwtcService gwtc = X_Gwtc.getServiceForClass(CaseEntryPoint.class);
     gwtc.addJUnitClass(GwtcCaseJunit4.class);
     final GwtManifest manifest = new GwtcManifestImpl(gwtc.getModuleName());
-    manifest.setLogLevel(Type.TRACE);
+    manifest.setLogLevel(Type.WARN);
     manifest.addSystemProp("gwt.usearchives=false");
     Assert.assertEquals(0, gwtc.compile(manifest));
   }

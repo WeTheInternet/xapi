@@ -283,7 +283,7 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
         // We can just push onto the array
         for (int i = 0; i < length; i++) {
           Object value = readObject(valueType, src, primitives, ctx);
-          result.setValue(i, value);
+          result.setValue(new Integer(i), value);
         }
       } else {
         // we need to actually read the keys and set as appropriate

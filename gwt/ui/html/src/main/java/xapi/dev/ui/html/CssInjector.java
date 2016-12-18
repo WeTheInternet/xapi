@@ -1,5 +1,8 @@
 package xapi.dev.ui.html;
 
+import xapi.ui.api.StyleService;
+import xapi.ui.html.X_Html;
+
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.core.ext.UnableToCompleteException;
@@ -8,19 +11,10 @@ import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.dev.jjs.MagicMethodGenerator;
 import com.google.gwt.dev.jjs.SourceInfo;
 import com.google.gwt.dev.jjs.UnifyAstView;
-import com.google.gwt.dev.jjs.ast.Context;
-import com.google.gwt.dev.jjs.ast.JClassLiteral;
-import com.google.gwt.dev.jjs.ast.JClassType;
-import com.google.gwt.dev.jjs.ast.JDeclaredType;
-import com.google.gwt.dev.jjs.ast.JExpression;
-import com.google.gwt.dev.jjs.ast.JMethod;
-import com.google.gwt.dev.jjs.ast.JMethodCall;
+import com.google.gwt.dev.jjs.ast.*;
 import com.google.gwt.reflect.rebind.ReflectionUtilAst;
 
 import java.util.List;
-
-import xapi.ui.api.StyleService;
-import xapi.ui.html.X_Html;
 
 /**
  * A magic method injector for {@link X_Html#injectCss(Class, xapi.ui.api.StyleService)}
@@ -49,7 +43,7 @@ public class CssInjector implements MagicMethodGenerator {
 
     // Ensure the type is loaded by the type oracle.
     final TypeOracle oracle = ast.getTypeOracle();
-    ast.translate(typeLiteral.getRefType());
+    final JType translated = ast.translate(typeLiteral.getRefType());
 
     // Load the type from the type oracle
     com.google.gwt.core.ext.typeinfo.JClassType templateType;
@@ -60,6 +54,7 @@ public class CssInjector implements MagicMethodGenerator {
       throw new UnableToCompleteException();
     }
 
+    logger.log(TreeLogger.TRACE, "Template translated : " + translated.toSource());
     HtmlGeneratorResult provider;
     provider = CssInjectorGenerator.generateSnippetProvider(logger, ast, templateType);
     // Force load the type, to ensure it is parsed into AST

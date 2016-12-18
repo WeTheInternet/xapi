@@ -7,19 +7,19 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.Fifo;
 import xapi.components.api.OnWebComponentAttributeChanged;
 import xapi.components.api.ShadowDomPlugin;
+import xapi.fu.Do;
+import xapi.fu.In1;
 import xapi.fu.In1Out1;
+import xapi.fu.In2;
 import xapi.fu.In2Out1;
+import xapi.fu.In3;
 import xapi.util.X_String;
 
-import static xapi.components.impl.JsFunctionSupport.wrapConsumerOfThis;
-import static xapi.components.impl.JsFunctionSupport.wrapRunnable;
-import static xapi.components.impl.JsFunctionSupport.wrapWebComponentChangeHandler;
+import static xapi.components.impl.JsFunctionSupport.*;
 import static xapi.components.impl.JsSupport.copy;
 
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.UnsafeNativeLong;
-import com.google.gwt.core.client.js.JsProperty;
-import com.google.gwt.core.client.js.JsType;
 
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
@@ -29,33 +29,6 @@ import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 
 public class WebComponentBuilder {
-
-  @JsType
-  interface WebComponentPrototype {
-    @JsProperty
-    void setAttachedCallback(JavaScriptObject callback);
-
-    @JsProperty
-    JavaScriptObject getAttachedCallback();
-
-    @JsProperty
-    void setCreatedCallback(JavaScriptObject callback);
-
-    @JsProperty
-    JavaScriptObject getCreatedCallback();
-
-    @JsProperty
-    void setDetachedCallback(JavaScriptObject callback);
-
-    @JsProperty
-    JavaScriptObject getDetachedCallback();
-
-    @JsProperty
-    void setAttributeChangedCallback(JavaScriptObject callback);
-
-    @JsProperty
-    JavaScriptObject getAttributeChangedCallback();
-  }
 
   public static WebComponentBuilder create() {
     return new WebComponentBuilder(htmlElementPrototype());
@@ -67,7 +40,7 @@ public class WebComponentBuilder {
 
   public static native JavaScriptObject htmlElementPrototype()
   /*-{
-     return HTMLElement.prototype;
+     return Object.create(HTMLElement.prototype);
    }-*/;
 
   private final WebComponentPrototype prototype;
@@ -91,6 +64,16 @@ public class WebComponentBuilder {
     return attachedCallback(wrapConsumerOfThis(function));
   }
 
+  public <E extends Element, T> WebComponentBuilder attachedCallback(
+      final In1Out1<E, T> mapper, final In1<T> function) {
+    return attachedCallback(wrapInputOfThis(function.map1(mapper)));
+  }
+
+  public <E extends Element, T> WebComponentBuilder attachedCallback(
+      In1Out1<E, T> mapper, final In2<T, E> function) {
+    return attachedCallback(wrapInputOfThis(function.map1(mapper)));
+  }
+
   public WebComponentBuilder attachedCallback(final JavaScriptObject function) {
     if (prototype.getAttachedCallback() == null) {
       prototype.setAttachedCallback(function);
@@ -103,8 +86,16 @@ public class WebComponentBuilder {
   }
 
   public <E extends Element> WebComponentBuilder attributeChangedCallback(
-    final OnWebComponentAttributeChanged function) {
-    return attachedCallback(wrapWebComponentChangeHandler(function));
+    final OnWebComponentAttributeChanged<E> function) {
+    return attributeChangedCallback(wrapWebComponentChangeHandler(function));
+  }
+
+  public <E extends Element, T> WebComponentBuilder attributeChangedCallback(
+    final In1Out1<E, T> mapper, final OnWebComponentAttributeChanged<T> function) {
+    return attributeChangedCallback(JsFunctionSupport.<E>wrapWebComponentChangeHandler((el, name, oldVal, newVal)->{
+      final T mapped = mapper.io(el);
+      function.onAttributeChanged(mapped, name, oldVal, newVal);
+    }));
   }
 
   public WebComponentBuilder attributeChangedCallback(final JavaScriptObject function) {
@@ -120,6 +111,18 @@ public class WebComponentBuilder {
 
   public WebComponentBuilder createdCallback(final Runnable function) {
     return createdCallback(wrapRunnable(function));
+  }
+
+  public <E extends Element> WebComponentBuilder createdCallback(final In1<E> callback) {
+    return createdCallback(wrapIn1(callback));
+  }
+
+  public <E extends Element, T> WebComponentBuilder createdCallback(In1Out1<E, T> mapper, final In1<T> callback) {
+    return createdCallback(wrapIn1(callback.map1(mapper)));
+  }
+
+  public WebComponentBuilder createdCallback(final Do function) {
+    return createdCallback(wrapDo(function));
   }
 
   private static final DivElement templateHost = Browser.getDocument().createDivElement();
@@ -145,15 +148,15 @@ public class WebComponentBuilder {
     }
     // Optimize for (common) cases of not having any plugins...
     if (plugins.length == 0 && this.plugins.isEmpty()) {
-      return createdCallback(initializer.ignoreOutput().toConsumer());
+      return createdCallback(initializer.ignoreOutput());
     }
     return createdCallback(element->{
       Element root = initializer.io(element);
       for (ShadowDomPlugin plugin : plugins) {
-        root = plugin.transform(root);
+        root = plugin.transform(element, root);
       }
       for (ShadowDomPlugin plugin : this.plugins.forEach()) {
-        root = plugin.transform(root);
+        root = plugin.transform(element, root);
       }
     });
 
@@ -173,11 +176,6 @@ public class WebComponentBuilder {
     root.innerHTML = html;
     return root;
   }-*/;
-
-  public <E extends Element> WebComponentBuilder createdCallback(
-    final Consumer<E> function) {
-    return createdCallback(wrapConsumerOfThis(function));
-  }
 
   public WebComponentBuilder createdCallback(JavaScriptObject function) {
     function = reapplyThis(function);
@@ -200,13 +198,18 @@ public class WebComponentBuilder {
     };
   }-*/;
 
-  public WebComponentBuilder detachedCallback(final Runnable function) {
-    return detachedCallback(wrapRunnable(function));
+  public WebComponentBuilder detachedCallback(final Do function) {
+    return detachedCallback(wrapDo(function));
   }
 
   public <E extends Element> WebComponentBuilder detachedCallback(
     final Consumer<E> function) {
     return detachedCallback(wrapConsumerOfThis(function));
+  }
+
+  public <E extends Element, T> WebComponentBuilder detachedCallback(
+      final In1Out1<E, T> mapper, final In1<T> function) {
+    return detachedCallback(wrapIn1(function.map1(mapper)));
   }
 
   public WebComponentBuilder detachedCallback(final JavaScriptObject function) {
@@ -243,6 +246,26 @@ public class WebComponentBuilder {
 
   public WebComponentBuilder addValue(final String name, final JavaScriptObject value) {
     return addValue(name, value, false, true, true);
+  }
+
+  public WebComponentBuilder addFunction(final String name, final In1<Object[]> value) {
+    final JavaScriptObject func = JsFunctionSupport.wrapInput(value);
+    return addValue(name, func, true, false, false);
+  }
+
+  public WebComponentBuilder addFunction(final String name, final In2<Element, Object[]> value) {
+    final JavaScriptObject func = JsFunctionSupport.wrapInput(value);
+    return addValue(name, func, true, false, false);
+  }
+
+  public <T> WebComponentBuilder addFunction(final String name, final In1Out1<Element, T> mapper, final In2<T, Element> value) {
+    final JavaScriptObject func = JsFunctionSupport.wrapInputOfThis(value.map1(mapper));
+    return addValue(name, func, true, true, false);
+  }
+
+  public <T> WebComponentBuilder addFunction(final String name, final In1Out1<Element, T> mapper, final In3<T, Element, Object[]> value) {
+    final JavaScriptObject func = JsFunctionSupport.wrapInput(value.map1(mapper));
+    return addValue(name, func, true, true, false);
   }
 
   public WebComponentBuilder addValueReadOnly(final String name,
@@ -298,6 +321,50 @@ public class WebComponentBuilder {
 			proto.set = function(i) {
 				set.__caller__ = this;
 				set.@java.util.function.Consumer::accept(Ljava/lang/Object;)(i)
+			};
+		}
+		Object
+				.defineProperty(
+						this.@xapi.components.impl.WebComponentBuilder::prototype,
+						name, proto);
+		return this;
+  }-*/;
+
+  public <T> WebComponentBuilder addProperty(String name,
+            In1Out1<Element, T> get, In2<Element, T> set) {
+    return addProperty(name, get, set, true, false);
+  }
+
+  public <C, T> WebComponentBuilder addProperty(String name,
+            In1Out1<Element, C> mapper, In1Out1<C, T> get, In2<C, T> set) {
+    return addProperty(name, get == null ? null : get.mapIn(mapper), set == null ? null : set.map1(mapper), true, false);
+  }
+
+  public <T> WebComponentBuilder addPropertyReadOnly(String name, In1Out1<Element, T> get) {
+    return addProperty(name, get, null, true, false);
+  }
+
+  public <T> WebComponentBuilder addPropertyWriteOnly(String name, In2<Element, T> set) {
+    return addProperty(name, null, set, true, false);
+  }
+
+  public native <T> WebComponentBuilder addProperty(String name,
+            In1Out1<Element, T> get, In2<Element, T> set, boolean enumerable, boolean configurable)
+    /*-{
+		var proto = {
+			enumerable : enumerable,
+			configurable : configurable,
+		};
+		if (get) {
+			proto.get = function() {
+				get.__caller__ = this;
+				return get.@In1Out1::io(Ljava/lang/Object;)(this);
+			};
+		}
+		if (set) {
+			proto.set = function(i) {
+				set.__caller__ = this;
+				set.@In2::in(Ljava/lang/Object;Ljava/lang/Object;)(this, i);
 			};
 		}
 		Object

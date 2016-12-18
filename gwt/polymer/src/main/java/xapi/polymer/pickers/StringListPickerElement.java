@@ -1,14 +1,8 @@
 package xapi.polymer.pickers;
 
-import static elemental.events.KeyboardEvent.KeyCode.ENTER;
-
-import static xapi.components.impl.JsSupport.addClassName;
-import static xapi.components.impl.JsSupport.is;
-import static xapi.polymer.core.PolymerElement.newFlexVertical;
-import static xapi.polymer.core.PolymerElement.newIconButtonFloatingMini;
-import static xapi.polymer.core.PolymerElement.newLayoutCenterHorizontal;
-import static xapi.polymer.pickers.StringPickerElement.NEW_STRING_PICKER;
-
+import elemental.dom.Element;
+import jsinterop.annotations.JsProperty;
+import jsinterop.annotations.JsType;
 import xapi.components.api.WebComponent;
 import xapi.components.api.WebComponentFactory;
 import xapi.polymer.core.PolymerElement;
@@ -19,12 +13,14 @@ import xapi.ui.html.api.Style.Rgb;
 import xapi.ui.html.api.Style.Unit;
 import xapi.ui.html.api.Style.UnitType;
 
-import com.google.gwt.core.client.js.JsProperty;
-import com.google.gwt.core.client.js.JsType;
+import static elemental.events.KeyboardEvent.KeyCode.ENTER;
+import static xapi.components.impl.JsSupport.addClassName;
+import static xapi.components.impl.JsSupport.is;
+import static xapi.polymer.core.PolymerElement.*;
+import static xapi.polymer.pickers.StringPickerElement.NEW_STRING_PICKER;
+
 import com.google.gwt.core.shared.GWT;
 import com.google.gwt.event.dom.client.ClickEvent;
-
-import elemental.dom.Element;
 
 @JsType
 @WebComponent(tagName=StringListPickerElement.TAG_NAME)

@@ -71,7 +71,7 @@ public class GwtCompiler {
               CheckForUpdates.ONE_DAY
           );
         }
-        boolean success = new Compiler(options).run(logger);
+        boolean success = new Compiler().compile(logger, options);
         if (success) {
           CheckForUpdates.logUpdateAvailable(logger, updater);
         }

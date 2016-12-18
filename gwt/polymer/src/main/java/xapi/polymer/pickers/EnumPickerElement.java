@@ -1,16 +1,9 @@
 package xapi.polymer.pickers;
 
-import static xapi.components.impl.JsSupport.newElement;
-import static xapi.components.impl.JsSupport.setAttr;
-
-import java.util.function.Consumer;
-
-import com.google.gwt.core.client.js.JsProperty;
-import com.google.gwt.core.client.js.JsType;
-
 import elemental.dom.Element;
 import elemental.html.InputElement;
-
+import jsinterop.annotations.JsProperty;
+import jsinterop.annotations.JsType;
 import xapi.components.api.IsWebComponent;
 import xapi.components.api.OnWebComponentAttributeChanged;
 import xapi.components.api.ToStringIsName;
@@ -18,12 +11,17 @@ import xapi.components.api.WebComponent;
 import xapi.components.api.WebComponentMethod;
 import xapi.components.impl.JsFunctionSupport;
 
+import static xapi.components.impl.JsSupport.newElement;
+import static xapi.components.impl.JsSupport.setAttr;
+
+import java.util.function.Consumer;
+
 @JsType
 @WebComponent(tagName=EnumPickerElement.TAG_NAME)
 public interface EnumPickerElement <E extends Enum<E>> extends
 IsWebComponent<Element>,
 AbstractPickerElement<Element>,
-OnWebComponentAttributeChanged
+OnWebComponentAttributeChanged<Element>
 {
 
   String TAG_NAME = "xapi-enum-picker";
@@ -84,7 +82,7 @@ OnWebComponentAttributeChanged
   void setAttributeChangeHandler(Consumer<E> listener);
 
   @Override
-  default void onAttributeChanged(String name, String oldVal, String newVal) {
+  default void onAttributeChanged(Element e, String name, String oldVal, String newVal) {
     // Used when the user manually sets <xapi-enum-picker>.value="newVal"
     // This will also be called whenever the radio group is updated via clicks,
     // however, this has no effect as the selected variable already equals newVal

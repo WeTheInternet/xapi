@@ -1,9 +1,9 @@
 package xapi.components.api;
 
 import elemental.dom.Element;
-
-import com.google.gwt.core.client.js.JsProperty;
-import com.google.gwt.core.client.js.JsType;
+import jsinterop.annotations.JsIgnore;
+import jsinterop.annotations.JsProperty;
+import jsinterop.annotations.JsType;
 
 /**
  * Created by james on 25/10/15.
@@ -17,29 +17,28 @@ public interface IsControlledComponent
     OnWebComponentDetached<E>
 {
 
-  @Override
-  default E element() {
-    return IsWebComponent.super.element();
-  }
-
   @JsProperty
   C getController();
 
   @JsProperty
   void setController(C controller);
 
+  @JsIgnore
   default C getOrMakeController() {
-      C c = getController();
+    return getOrMake(this);
+  }
+
+  @JsIgnore
+  static <E extends Element, W extends IsWebComponent<E>, C extends IsComponentController<E, W>> C getOrMake(IsControlledComponent<E, W, C> from) {
+      C c = from.getController();
       if (c == null) {
-        c = createController();
-        setController(c);
+        c = from.createController();
+        from.setController(c);
       }
       return c;
   }
 
-  default C createController() {
-    throw new UnsupportedOperationException();
-  }
+  C createController();
 
   @Override
   default void onAttached(E element) {

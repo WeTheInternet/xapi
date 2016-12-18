@@ -1,14 +1,18 @@
 package xapi.dev.components;
 
-import com.github.javaparser.ast.expr.*;
+import com.github.javaparser.ast.expr.MethodReferenceExpr;
+import com.github.javaparser.ast.expr.NameExpr;
+import com.github.javaparser.ast.expr.StringLiteralExpr;
+import com.github.javaparser.ast.expr.UiAttrExpr;
+import com.github.javaparser.ast.expr.UiContainerExpr;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import xapi.dev.ui.ContainerMetadata;
-
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
+import xapi.fu.Maybe;
 
 import static com.github.javaparser.ASTHelper.extractAttrValue;
 import static com.github.javaparser.ASTHelper.extractStringValue;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
@@ -52,7 +56,7 @@ public class MethodReferenceReplacementVisitor extends VoidVisitorAdapter<Contai
       MethodReferenceExpr n, ContainerMetadata arg
   ) {
     container.removeAttribute(attr);
-    final Optional<UiAttrExpr> idAttr = container.getAttribute("id");
+    final Maybe<UiAttrExpr> idAttr = container.getAttribute("id");
     String ident;
     if (idAttr.isPresent()) {
       ident = extractAttrValue(idAttr.get());

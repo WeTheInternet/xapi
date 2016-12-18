@@ -4,12 +4,19 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
 import xapi.collect.impl.SimpleFifo;
+import xapi.fu.Filter;
+import xapi.fu.Immutable;
 import xapi.fu.In2;
+import xapi.fu.MappedIterable;
+import xapi.fu.Out1;
+import xapi.fu.iterate.SingletonIterator;
 import xapi.log.X_Log;
 import xapi.source.X_Source;
 
 import static xapi.collect.X_Collect.*;
+import static xapi.fu.Immutable.immutable1;
 import static xapi.fu.In2.in2;
+import static xapi.fu.iterate.SingletonIterator.singleItem;
 import static xapi.gwtc.api.GwtManifest.CleanupMode.DELETE_ON_SUCCESSFUL_EXIT;
 
 import com.google.gwt.core.ext.TreeLogger.Type;
@@ -22,31 +29,33 @@ public class GwtManifest {
     ALWAYS_DELETE, DELETE_ON_SUCCESS, NEVER_DELETE, DELETE_ON_EXIT, DELETE_ON_SUCCESSFUL_EXIT
   }
 
+  public enum MethodNameMode {
+      NONE,
+      ONLY_METHOD_NAME,
+      ABBREVIATED,
+      FULL
+  }
+
   private final class ClasspathIterable implements Iterable<String> {
     private final class Itr implements Iterator<String> {
-      IntTo<String> src = getSources();
-      IntTo<String> dep = getDependencies();
-      int pos = 0;
+      Iterator<String> src = getSources().forEach().iterator();
+      Iterator<String> dep = getDependencies().iterator();
       @Override
-      public boolean hasNext() {
+      public synchronized boolean hasNext() {
         if (dep == null) {
-          return pos < src.size();
+          return src.hasNext();
         }
-        if (dep.isEmpty()) {
-          dep = null;
-          return pos < src.size();
-        }
-        if (pos == src.size()) {
+        if (!src.hasNext()) {
           src = dep;
-          pos = 0;
-          return !src.isEmpty();
+          dep = null;
         }
-        return true;
+        return src.hasNext();
       }
 
       @Override
       public String next() {
-        return src.get(pos++);
+        hasNext();
+        return src.next();
       }
 
       @Override
@@ -109,7 +118,7 @@ public class GwtManifest {
 
   private boolean autoOpen;
   private boolean closureCompiler;
-  private IntTo<String> dependencies = newSet(String.class);
+  private IntTo<Out1<? extends Iterable<String>>> dependencies = newSet(Out1.class);
   private String deployDir;
   private boolean disableAggressiveOptimize;
   private boolean disableCastCheck;
@@ -146,6 +155,10 @@ public class GwtManifest {
   private CleanupMode cleanupMode = DELETE_ON_SUCCESSFUL_EXIT;
   private StringTo<GwtcXmlBuilder> gwtBuilders = newStringMapInsertionOrdered(GwtcXmlBuilder.class);
   private boolean useCurrentJvm = false;
+  private boolean recompile;
+  private CompiledDirectory compileDirectory;
+  private boolean online;
+  private MethodNameMode mode;
 
   public GwtManifest() {
     includeGenDir = true;
@@ -157,12 +170,12 @@ public class GwtManifest {
   }
 
   public GwtManifest addDependency(String dep) {
-    dependencies.push(dep);
+    dependencies.push(immutable1(singleItem(dep)));
     return this;
   }
 
-  public GwtManifest addDependencies(String dep) {
-    dependencies.push(dep);
+  public GwtManifest addDependency(Out1<String> dep) {
+    dependencies.push(dep.map(SingletonIterator::singleItem));
     return this;
   }
 
@@ -207,8 +220,13 @@ public class GwtManifest {
   public GwtManifest clearSystemProps() {
     return this;
   }
-  public IntTo<String> getDependencies() {
-    return dependencies;
+  public MappedIterable<String> getDependencies() {
+//    IntTo<String> unique = newSet(String.class);
+    return dependencies.forEachItem()
+        .flatten(Out1::out1)
+        .filter(Filter.ifNotNull())
+//        .filter(unique::add)
+        ;
   }
 
   public String getDeployDir() {
@@ -295,6 +313,10 @@ public class GwtManifest {
     return warDir;
   }
 
+  public String getCompiledWar() {
+    return compileDirectory == null ? warDir : compileDirectory.getWarDir();
+  }
+
   public String getWorkDir() {
     return normalizeWorkDir(workDir);
   }
@@ -354,7 +376,10 @@ public class GwtManifest {
     return this;
   }
   public GwtManifest setDependencies(IntTo<String> dependencies) {
-    this.dependencies = dependencies;
+    this.dependencies.clear();
+    this.dependencies.addAll(dependencies.forEachItem()
+        .map(SingletonIterator::singleItem)
+        .map(Immutable::immutable1));
     return this;
   }
   public GwtManifest setDeployDir(String deployDir) {
@@ -506,14 +531,9 @@ public class GwtManifest {
     return this;
   }
 
-
-  public String toProgramArgs() {
-    return toProgramArgs(false);
-  }
-
-  public String[] toProgramArgArray(boolean isRecompile) {
+  public String[] toProgramArgArray() {
     IntTo<String> fifo = X_Collect.newList(String.class);
-    readProgramArgs(isRecompile, (key, value)-> {
+    readProgramArgs((key, value)-> {
       if (!key.trim().isEmpty()) {
         fifo.add("-" + key);
       }
@@ -524,9 +544,9 @@ public class GwtManifest {
     return fifo.toArray();
   }
 
-  public String toProgramArgs(boolean isRecompile) {
+  public String toProgramArgs() {
     StringBuilder b = new StringBuilder();
-    readProgramArgs(isRecompile, in2(
+    readProgramArgs(in2(
         arg1 -> {
           if (!arg1.trim().isEmpty()) {
             b.append(NEW_ARG);
@@ -540,7 +560,7 @@ public class GwtManifest {
     }));
     return b.toString().trim();
   }
-  public void readProgramArgs(boolean isRecompile, In2<String, Object> read) {
+  public void readProgramArgs(In2<String, Object> read) {
 
     if (deployDir != null) {
       read.in(ARG_DEPLOY_DIR, deployDir);
@@ -591,12 +611,13 @@ public class GwtManifest {
         read.in(" ", arg);
       }
     }
-    if (isRecompile) {
+    if (recompile) {
       if (port != 0) {
         read.in(ARG_PORT, port);
       }
       sources.forEachValue(read.provide1("src")::in);
-      dependencies.forEachValue(read.provide1("src")::in);
+      dependencies.forEachItem().map(Out1::out1).filter(Filter.ifNotNull())
+        .forEach(read.provide1("src")::in);
     }
     if (closureCompiler) {
       read.in(ARG_ENABLE_CLOSURE, null);
@@ -661,18 +682,26 @@ public class GwtManifest {
       }
       cp.add(source);
     }
-    for (String source : dependencies.forEach()) {
-      if (source.contains("gwt-user")) {
-        hadGwtUser = true;
+    for (Out1<? extends Iterable<String>> sourceOut : dependencies.forEach()) {
+      if (sourceOut == null) {
+        continue;
       }
-      if (source.contains("gwt-codeserver")) {
-        hadGwtCodeserver = true;
+      for (String source : sourceOut.out1()) {
+        if (source == null) {
+          continue;
+        }
+        if (source.contains("gwt-user")) {
+          hadGwtUser = true;
+        }
+        if (source.contains("gwt-codeserver")) {
+          hadGwtCodeserver = true;
+        }
+        if (source.contains("gwt-dev")) {
+          hadGwtDev = true;
+          addItemsBeforeGwtDev(cp, true);
+        }
+        cp.add(source);
       }
-      if (source.contains("gwt-dev")) {
-        hadGwtDev = true;
-        addItemsBeforeGwtDev(cp, true);
-      }
-      cp.add(source);
     }
     if (!hadGwtUser) {
       addGwtArtifact(cp, gwtHome, gwtVersion, "gwt-user");
@@ -816,7 +845,9 @@ public class GwtManifest {
     if (dependencies.size() > 0) {
       b.append("\n ").append(ARG_DEPENDENCIES).append(":");
       for (int i = 0, m = dependencies.size(); i < m; i++) {
-        b.append(NEW_LIST_ITEM).append(dependencies.get(i));
+        for (String dep : dependencies.get(i).out1()) {
+          b.append(NEW_LIST_ITEM).append(dep);
+        }
       }
       b.append("\n");
     }
@@ -923,4 +954,41 @@ public class GwtManifest {
     this.useCurrentJvm = useCurrentJvm;
   }
 
+  public void addDependencies(Out1<? extends Iterable<String>> out1) {
+    if (out1 != null) {
+      dependencies.add(out1);
+    }
+  }
+
+  public boolean isRecompile() {
+    return recompile;
+  }
+
+  public void setRecompile(boolean recompile) {
+    this.recompile = recompile;
+  }
+
+  public void setCompileDirectory(CompiledDirectory compileDirectory) {
+    this.compileDirectory = compileDirectory;
+  }
+
+  public CompiledDirectory getCompileDirectory() {
+    return compileDirectory;
+  }
+
+  public boolean isOnline() {
+    return online;
+  }
+
+  public void setOnline(boolean online) {
+    this.online = online;
+  }
+
+  public MethodNameMode getMethodNameMode() {
+    return mode;
+  }
+
+  public void setMethodNameMode(MethodNameMode mode) {
+    this.mode = mode;
+  }
 }

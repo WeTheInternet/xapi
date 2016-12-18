@@ -16,6 +16,7 @@ import xapi.collect.impl.StringToManyList;
 import xapi.collect.proxy.CollectionProxy;
 import xapi.collect.proxy.MapOf;
 import xapi.collect.service.CollectionService;
+import xapi.fu.X_Fu;
 import xapi.platform.GwtPlatform;
 
 import java.util.Map;
@@ -26,7 +27,7 @@ public class CollectionServiceGwt implements CollectionService{
 
   @Override
   public <Type, Generic extends Type> IntTo<Type> newList(Class<Generic> cls, CollectionOptions opts) {
-    return IntToListGwt.newInstance();
+    return IntToListGwt.create(()->(Type[]) X_Fu.newArray(cls, 0));
   }
 
   @Override

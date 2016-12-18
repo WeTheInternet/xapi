@@ -1,8 +1,5 @@
 package xapi.components.api;
 
-import com.google.gwt.core.client.js.JsProperty;
-import com.google.gwt.core.client.js.JsType;
-
 public interface WebComponentFactory<W extends IsWebComponent<?>> {
 
   /**

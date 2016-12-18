@@ -20,6 +20,11 @@
       <groupId>net.wetheinter</groupId>
       <artifactId>xapi-core-collect</artifactId>
     </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>jsinterop-annotations</artifactId>
+      <version>${gwt.version}</version>
+    </dependency>
     <!-- For generating models -->
     <dependency>
       <groupId>net.wetheinter</groupId>
@@ -30,7 +35,7 @@
       <groupId>net.wetheinter</groupId>
       <artifactId>xapi-dev-bytecode</artifactId>
     </dependency>
-    
+
     <!-- Test dependencies -->
     <dependency>
       <groupId>net.wetheinter</groupId>

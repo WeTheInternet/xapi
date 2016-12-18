@@ -2,9 +2,8 @@ package xapi.model.api;
 
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringDictionary;
+import xapi.fu.Out1;
 import xapi.util.api.ReceivesValue;
-
-import java.util.function.Supplier;
 
 /**
  * Created by james on 03/10/15.
@@ -12,22 +11,22 @@ import java.util.function.Supplier;
 public class ModelBuilder <M extends Model> {
   private KeyBuilder key = new KeyBuilder();
   private StringDictionary<Object> properties = X_Collect.newDictionary();
-  private Supplier<M> creator;
+  private Out1<M> creator;
 
-  public static <M extends Model> ModelBuilder<M> build(Supplier<M> creator) {
+  public static <M extends Model> ModelBuilder<M> build(Out1<M> creator) {
     ModelBuilder builder = new ModelBuilder();
     builder.creator = creator;
     return builder;
   }
 
-  public static <M extends Model> ModelBuilder<M> build(ModelKey withKey, Supplier<M> creator) {
+  public static <M extends Model> ModelBuilder<M> build(ModelKey withKey, Out1<M> creator) {
     ModelBuilder builder = new ModelBuilder();
     builder.key.fromKey(withKey);
     builder.creator = creator;
     return builder;
   }
 
-  public static <M extends Model> ModelBuilder<M> build(KeyBuilder withBuilder, Supplier<M> creator) {
+  public static <M extends Model> ModelBuilder<M> build(KeyBuilder withBuilder, Out1<M> creator) {
     ModelBuilder builder = new ModelBuilder();
     builder.key.fromBuilder(withBuilder);
     builder.creator = creator;
@@ -43,7 +42,7 @@ public class ModelBuilder <M extends Model> {
     return this;
   }
 
-  public ModelBuilder<M> withCreator(Supplier<M> creator) {
+  public ModelBuilder<M> withCreator(Out1<M> creator) {
     this.creator = creator;
     return this;
   }
@@ -58,17 +57,17 @@ public class ModelBuilder <M extends Model> {
     return this;
   }
 
-  public ModelBuilder withProperty(String propName, Object value) {
+  public ModelBuilder<M> withProperty(String propName, Object value) {
     properties.setValue(propName, value);
     return this;
   }
 
-  public ModelBuilder withParent(String propName, ModelKey parent) {
+  public ModelBuilder<M> withParent(String propName, ModelKey parent) {
     key.withParent(parent);
     return this;
   }
 
-  public ModelBuilder withParent(String propName, KeyBuilder parent) {
+  public ModelBuilder<M> withParent(String propName, KeyBuilder parent) {
     key.withParent(parent);
     return this;
   }
@@ -91,16 +90,15 @@ public class ModelBuilder <M extends Model> {
 
   private M newModel() {
     assert creator != null : "You MUST supply a creator to ModelBuilder";
-    final M model = creator.get();
+    final M model = creator.out1();
     return model;
   }
 
-  public M buildModel(Supplier<M> creator) {
-    Supplier<M> oldCreator = creator;
+  public synchronized M buildModel(Out1<M> creator) {
+    Out1<M> oldCreator = creator;
     this.creator = creator;
     M model = buildModel();
     this.creator = oldCreator;
-    oldCreator = null;
     return model;
   }
   public M buildModel(String id) {

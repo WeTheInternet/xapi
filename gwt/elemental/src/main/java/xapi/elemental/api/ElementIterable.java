@@ -5,10 +5,11 @@ import elemental.dom.Node;
 import elemental.dom.NodeList;
 import elemental.html.HTMLCollection;
 import elemental.util.Indexable;
+import xapi.fu.MappedIterable;
 
 import java.util.Iterator;
 
-public class ElementIterable implements Iterable<Element> {
+public class ElementIterable implements MappedIterable<Element> {
 
   private final Indexable nodes;
   private final class Itr implements Iterator<Element> {
@@ -66,7 +67,7 @@ public class ElementIterable implements Iterable<Element> {
     return new ElementIterable(node.getChildNodes());
   }
 
-  public static Iterable<Element> forEach(NodeList children) {
+  public static MappedIterable<Element> forEach(NodeList children) {
     return new ElementIterable(children);
   }
 

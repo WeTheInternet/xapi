@@ -3,11 +3,10 @@ package xapi.polymer.core;
 import static xapi.components.impl.JsSupport.create;
 import static xapi.ui.html.api.HtmlTemplate.KEY_VALUE;
 
-import com.google.gwt.core.client.js.JsProperty;
-import com.google.gwt.core.client.js.JsType;
-
 import elemental.dom.Element;
 
+import jsinterop.annotations.JsProperty;
+import jsinterop.annotations.JsType;
 import xapi.annotation.common.Property;
 import xapi.elemental.X_Elemental;
 import xapi.elemental.api.PotentialNode;

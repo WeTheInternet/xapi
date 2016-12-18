@@ -14,13 +14,20 @@ import xapi.ui.impl.AbstractUiElement;
 @InstanceDefault(implFor = UiElementWeb.class)
 public class UiElementWeb <E extends Element> extends AbstractUiElement<Element, E, UiElementWeb<E>> {
 
+  private static final String MEMOIZE_KEY = "xapi-element";
+
   public UiElementWeb() {
     super(UiElementWeb.class);
   }
 
   public static UiElementWeb fromWeb(Element element) {
+    final Object existing = element.getDataset().at(MEMOIZE_KEY);
+    if (existing != null) {
+      return (UiElementWeb) existing;
+    }
     UiElementWeb el = X_Inject.instance(UiElementWeb.class);
     el.setElement(element);
+    element.getDataset().setAt(MEMOIZE_KEY, el);
     return el;
   }
 

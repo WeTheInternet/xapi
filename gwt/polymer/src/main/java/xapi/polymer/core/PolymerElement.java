@@ -1,32 +1,22 @@
 package xapi.polymer.core;
 
-import static xapi.components.impl.JsFunctionSupport.wrapConsumer;
-import static xapi.components.impl.JsSupport.getBoolean;
-import static xapi.components.impl.JsSupport.getDouble;
-import static xapi.components.impl.JsSupport.getInt;
-import static xapi.components.impl.JsSupport.getLong;
-import static xapi.components.impl.JsSupport.newElement;
-import static xapi.components.impl.JsSupport.setAttr;
-import static xapi.components.impl.JsSupport.setBoolean;
-import static xapi.components.impl.JsSupport.setDouble;
-import static xapi.components.impl.JsSupport.setInt;
-import static xapi.components.impl.JsSupport.setLong;
-import static xapi.polymer.core.PolymerSupport.setPolymerAttr;
-
-import java.util.function.Consumer;
-
-import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.core.client.js.JsProperty;
-import com.google.gwt.core.client.js.JsType;
-import com.google.gwt.event.dom.client.ClickEvent;
-
 import elemental.dom.Element;
 import elemental.events.Event;
 import elemental.events.EventRemover;
 import elemental.events.KeyboardEvent;
 import elemental.js.dom.JsElement;
-
+import jsinterop.annotations.JsProperty;
+import jsinterop.annotations.JsType;
 import xapi.components.api.HasElement;
+
+import static xapi.components.impl.JsFunctionSupport.wrapConsumer;
+import static xapi.components.impl.JsSupport.*;
+import static xapi.polymer.core.PolymerSupport.setPolymerAttr;
+
+import com.google.gwt.core.client.JavaScriptObject;
+import com.google.gwt.event.dom.client.ClickEvent;
+
+import java.util.function.Consumer;
 
 @JsType
 public interface PolymerElement extends HasElement<Element> {

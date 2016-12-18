@@ -1,13 +1,13 @@
 package xapi.dev;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
-
 import xapi.dev.gwtc.api.GwtcService;
 import xapi.gwtc.api.DefaultValue;
 import xapi.gwtc.api.Gwtc;
 import xapi.inject.X_Inject;
 import xapi.log.X_Log;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
 
 public class X_Gwtc {
 
@@ -19,24 +19,24 @@ public class X_Gwtc {
       X_Log.error(X_Gwtc.class, "Could not find class",entryPoint,"from",Thread.currentThread().getContextClassLoader(), e);
     }
   }
-  
-  public static GwtcService getServiceFor(Method method) {
+
+  public static GwtcService getServiceForMethod(Method method) {
     final GwtcService service = X_Inject.instance(GwtcService.class);
     if (method != null) {
       service.addMethod(method);
     }
     return service;
   }
-  
-  public static GwtcService getServiceFor(Class<?> clazz) {
+
+  public static GwtcService getServiceForClass(Class<?> clazz) {
     final GwtcService service = X_Inject.instance(GwtcService.class);
     if (clazz != null) {
       service.addClass(clazz);
     }
     return service;
   }
-  
-  public static GwtcService getServiceFor(Package pkg, boolean recursive) {
+
+  public static GwtcService getServiceForPackage(Package pkg, boolean recursive) {
     final GwtcService service = X_Inject.instance(GwtcService.class);
     if (pkg != null) {
       service.addPackage(pkg, recursive);
@@ -77,5 +77,5 @@ public class X_Gwtc {
       }
     }
   }
-  
+
 }

@@ -369,6 +369,6 @@ public class CssInjectorGenerator implements CreatesContextObject<HtmlGeneratorR
   }
 
   protected Type getLogLevel() {
-    return Type.DEBUG;
+    return Type.TRACE;
   }
 }

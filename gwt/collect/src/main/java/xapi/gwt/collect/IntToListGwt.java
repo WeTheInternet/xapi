@@ -6,6 +6,7 @@ import xapi.collect.api.IntTo;
 import xapi.collect.api.ObjectTo;
 import xapi.except.NotYetImplemented;
 import xapi.fu.In2Out1;
+import xapi.fu.Out1;
 import xapi.platform.GwtPlatform;
 import xapi.util.X_Util;
 import xapi.util.impl.AbstractPair;
@@ -13,7 +14,6 @@ import xapi.util.impl.AbstractPair;
 import com.google.gwt.core.client.GwtScriptOnly;
 import com.google.gwt.core.client.JavaScriptObject;
 
-import javax.inject.Provider;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -30,33 +30,49 @@ import java.util.Set;
 @GwtPlatform
 @InstanceOverride(implFor=IntTo.class)
 @GwtScriptOnly
-public class IntToListGwt <E> extends JavaScriptObject implements IntTo<E>{
+public class IntToListGwt <E> implements IntTo<E>{
 
-  public static <V> IntTo<V> create(final Provider<V[]> arrayProvider) {
-    return JavaScriptObject.createArray().<IntToListGwt<V>>cast().setArrayProvider(arrayProvider);
+  private final JavaScriptObject array;
+  private Out1<E[]> provider;
+  private Class<? extends E> valueCls;
+
+  public IntToListGwt(JavaScriptObject array, Out1<E[]> arrayProvider) {
+    this.array = array;
+    this.provider = arrayProvider;
+  }
+
+  public static <V> IntToListGwt<V> create(final Out1<V[]> arrayProvider) {
+    return new IntToListGwt<>(JavaScriptObject.createArray(), arrayProvider);
+  }
+
+  public static <V> IntToListGwt<V> createFrom(final JavaScriptObject array) {
+    return new IntToListGwt<>(array);
+  }
+
+  public static <V> IntToListGwt<V> createFrom(final JavaScriptObject array, Out1<V[]> arrayProvider) {
+    return new IntToListGwt<>(array, arrayProvider);
   }
 
   /**
    * This method is not safe for general use.  It is only to be used when you need to apply generics to a given type;
    * unfortunately, the bounds let you send any subtype (not just one with enhanced generics).
    */
-  static <T, R extends T> IntTo<R> createForClass(final Class<T> cls) {
-    return create(new Provider<R[]>() {
-      @SuppressWarnings("unchecked")
-      @Override
-      public R[] get() {
-        return (R[])Array.newInstance(cls, 0);
-      }
-    });
+  static <T, R extends T> IntTo<T> createForClass(final Class<R> cls) {
+    final IntToListGwt<T> list = create(() -> (R[]) Array.newInstance(cls, 0));
+    list.valueCls = cls;
+    return list;
   }
 
-  public static native <V> IntTo<V> newInstance()
-  /*-{
-   return [];
-  }-*/;
+  public static <V> IntTo<V> newInstance() {
+    return new IntToListGwt<>(JavaScriptObject.createArray());
+  }
 
-  protected IntToListGwt() {}
-
+  protected IntToListGwt(JavaScriptObject array) {
+    this.array = array;
+    this.provider = ()-> {
+      throw new UnsupportedOperationException("IntToListGwt does not have an array provider" + this);
+    };
+  }
 
   @Override
   public final boolean add(final E item) {
@@ -91,7 +107,7 @@ public class IntToListGwt <E> extends JavaScriptObject implements IntTo<E>{
 
   public final native void concat(Object array)
   /*-{
-    this.concat(array);
+    this.@IntToListGwt::array.concat(array);
   }-*/;
 
   @Override
@@ -128,7 +144,7 @@ public class IntToListGwt <E> extends JavaScriptObject implements IntTo<E>{
   @Override
   public final native void clear()
   /*-{
-    this.splice(0, this.length);
+    this.@IntToListGwt::array.splice(0, this.length);
   }-*/;
 
   @Override
@@ -170,7 +186,7 @@ public class IntToListGwt <E> extends JavaScriptObject implements IntTo<E>{
 
   @Override
   public final Iterable<E> forEach() {
-    return new IntTo.IntToIterable<E>(this);
+    return new IntToIterable<>(this);
   }
 
   @Override
@@ -180,7 +196,7 @@ public class IntToListGwt <E> extends JavaScriptObject implements IntTo<E>{
 
   public final native E getValue(int key)
   /*-{
-    return this[key]||null;
+    return this.@IntToListGwt::array[key]||null;
   }-*/;
 
   @Override
@@ -196,10 +212,11 @@ public class IntToListGwt <E> extends JavaScriptObject implements IntTo<E>{
   @Override
   public final native boolean insert(int pos, E item)
   /*-{
-    while(this.length < pos){
-      this.push(undefined);
+    var arr = this.@IntToListGwt::array;
+    while(arr.length < pos){
+      arr.push(undefined);
     }
-    this.splice(pos, 0, item);
+    arr.splice(pos, 0, item);
     return true;
   }-*/;
 
@@ -211,7 +228,7 @@ public class IntToListGwt <E> extends JavaScriptObject implements IntTo<E>{
   @Override
   public final native E pop()
   /*-{
-    return this.splice(this.length-1, 1);
+    return this.@IntToListGwt::array.splice(this.length-1, 1);
   }-*/;
 
   @Override
@@ -241,16 +258,16 @@ public class IntToListGwt <E> extends JavaScriptObject implements IntTo<E>{
   @Override
   public final native void set(int index, E value)
   /*-{
-    while (this.length < index)
-      this[this.length] = null;
-    this[index] = value;
+    var arr = this.@IntToListGwt::array;
+    while (arr.length < index)
+      arr[arr.length] = null;
+    arr[index] = value;
   }-*/;
 
-  public final native IntToListGwt<E> setArrayProvider(Provider<E[]> provider)
-  /*-{
-     this.toArray = function(){return provider.@javax.inject.Provider::get()();}
-     return this;
-   }-*/;
+  public final IntToListGwt<E> setArrayProvider(Out1<E[]> provider) {
+    this.provider = provider;
+    return this;
+  }
 
   @Override
   @SuppressWarnings("unchecked")
@@ -261,14 +278,15 @@ public class IntToListGwt <E> extends JavaScriptObject implements IntTo<E>{
   @Override
   public final native int size()
   /*-{
-    return this.length;
+    return this.@IntToListGwt::array.length;
   }-*/;
 
   public final native E splice(int key)
   /*-{
-    if (key < this.length) {
-      var ret = this[key];
-      this.splice(key, 1);
+    var arr = this.@IntToListGwt::array;
+    if (key < arr.length) {
+      var ret = arr[key];
+      arr.splice(key, 1);
       return ret;
     }
     return null;
@@ -278,16 +296,13 @@ public class IntToListGwt <E> extends JavaScriptObject implements IntTo<E>{
   @Override
   public final native E[] toArray()
   /*-{
-    if (this.toArray) {
-      var arr = this.toArray();
-      for (var i in this) {
-        if (i !== '_v$') {
-          arr[i] = this[i];
-        }
-      }
-      return arr;
+    var provider = this.@IntToListGwt::provider;
+    var source = this.@IntToListGwt::array;
+    var arr = provider.@Out1::out1()();
+    for (var i in source) {
+        arr[i] = source[i];
     }
-    throw "toArray not supported";
+    return arr;
   }-*/;
 
 
@@ -297,8 +312,8 @@ public class IntToListGwt <E> extends JavaScriptObject implements IntTo<E>{
 
   public final native Class<E> valueType()
   /*-{
-    if (this._v$) {
-        return this._v$;
+    if (this.@IntToListGwt::valueCls) {
+        return this.@IntToListGwt::valueCls;
     }
     return @IntToListGwt::guessValueClass(*)(this);
   }-*/;
@@ -343,5 +358,9 @@ public class IntToListGwt <E> extends JavaScriptObject implements IntTo<E>{
   @Override
   public final String toString(Integer key, E value) {
     return String.valueOf(value);
+  }
+
+  public JavaScriptObject rawArray() {
+    return array;
   }
 }

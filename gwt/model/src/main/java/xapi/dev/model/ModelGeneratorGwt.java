@@ -31,6 +31,7 @@ import com.google.gwt.core.ext.typeinfo.NotFoundException;
 
 import java.io.PrintWriter;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -338,7 +339,7 @@ public class ModelGeneratorGwt extends IncrementalGenerator{
           }
         }
       } else {
-        assert false : "Concrete types do not need to be filled in with generated types.";
+        assert false : "How do you have a non-abstract interface? " + type;
       }
     } else {
       final JClassType root = magic.getRootType(logger, ctx);
@@ -349,6 +350,12 @@ public class ModelGeneratorGwt extends IncrementalGenerator{
         }
       }
     }
+    builder.getClassBuffer()
+        .println("static { ")
+        // This is a magic method the compiler uses to record the correct Type.class <--> Type[].class,
+        // to enable non-compile-time-literal use of Array.newInstance elsewhere in the code.
+        .indentln(builder.addImport(Array.class)+".newInstance(" + type.getSimpleSourceName() + ".class, 0);")
+        .println("}");
   }
 
   static Set<String> getImplementedSignatures(final JMethod[] inheritableMethods) {

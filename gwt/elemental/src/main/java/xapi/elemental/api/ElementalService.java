@@ -5,6 +5,7 @@ package xapi.elemental.api;
 
 import elemental.dom.Element;
 import elemental.html.StyleElement;
+import xapi.fu.Out1;
 import xapi.source.api.Lexer;
 import xapi.ui.api.StyleService;
 import xapi.util.api.ConvertsValue;
@@ -51,12 +52,14 @@ public interface ElementalService extends StyleService<ElementalService> {
 
   Element getShadowRoot(Element element);
 
+  Element getShadowHost(Element element);
+
   String escapeHTML(String html);
 
   String unescapeHTML(String html);
 
   StyleElement injectStyle(Class<? extends ClientBundle> bundle, Class<? extends CssResource> ... styles);
 
-  ElementalService registerStyle(Class<? extends ClientBundle> bundle, String css, Class<? extends CssResource> ... styles);
+  Out1<StyleElement> registerStyle(Class<? extends ClientBundle> bundle, String css, Class<? extends CssResource> ... styles);
 
 }

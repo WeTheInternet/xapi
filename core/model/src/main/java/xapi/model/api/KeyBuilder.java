@@ -1,7 +1,7 @@
 package xapi.model.api;
 
+import xapi.fu.Out1;
 import xapi.model.X_Model;
-import xapi.util.api.ProvidesValue;
 
 /**
  * Created by james on 03/10/15.
@@ -88,12 +88,7 @@ public class KeyBuilder {
     return this;
   }
 
-  public static ProvidesValue<KeyBuilder> forType(final String type) {
-    return new ProvidesValue<KeyBuilder>() {
-      @Override
-      public KeyBuilder get() {
-        return KeyBuilder.build(type);
-      }
-    };
+  public static Out1<KeyBuilder> forType(final String type) {
+    return Out1.out1Deferred(KeyBuilder::build, type);
   }
 }

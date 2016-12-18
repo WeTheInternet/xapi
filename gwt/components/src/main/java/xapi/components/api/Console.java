@@ -1,8 +1,8 @@
 package xapi.components.api;
 
-import com.google.gwt.core.client.js.JsType;
+import jsinterop.annotations.JsType;
 
-@JsType(prototype="Console")
+@JsType(isNative = true)
 public interface Console {
-	public void log(Object message);
+	void log(Object message);
 }

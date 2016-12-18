@@ -10,6 +10,7 @@ import xapi.dev.gwtc.api.GwtcService;
 import xapi.dev.scanner.X_Scanner;
 import xapi.dev.scanner.impl.ClasspathResourceMap;
 import xapi.dev.source.XmlBuffer;
+import xapi.fu.MappedIterable;
 import xapi.gwtc.api.GwtManifest;
 import xapi.gwtc.api.Gwtc;
 import xapi.gwtc.api.Gwtc.AncestorMode;
@@ -33,6 +34,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -322,8 +324,48 @@ public class GwtcContext {
   // =====================================================
   // =====================================================
 
+  public static class Dep {
+    private final Dependency dependency;
+    private final AnnotatedElement source;
+
+    public Dep(Dependency dependency, AnnotatedElement source) {
+      this.dependency = dependency;
+      this.source = source;
+    }
+
+    public Dependency getDependency() {
+      return dependency;
+    }
+
+    public AnnotatedElement getSource() {
+      return source;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o)
+        return true;
+      if (!(o instanceof Dep))
+        return false;
+
+      final Dep dep = (Dep) o;
+
+      if (!dependency.equals(dep.dependency))
+        return false;
+      return source.equals(dep.source);
+
+    }
+
+    @Override
+    public int hashCode() {
+      int result = dependency.hashCode();
+      result = 31 * result + source.hashCode();
+      return result;
+    }
+  }
+
   private final GwtcXmlBuilder module;
-  private final Set<Dependency> dependencies = new LinkedHashSet<Dependency>();
+  private final Set<Dep> dependencies = new LinkedHashSet<>();
   private final Set<Resource> gwtXmlDeps = new LinkedHashSet<Resource>();
   private final Set<GwtcProperties> launchProperties = new LinkedHashSet<GwtcProperties>();
   private final Set<Object> needChildren = new HashSet<Object>();
@@ -622,9 +664,9 @@ public class GwtcContext {
     }
   }
 
-  protected void addGwtcSettings(Gwtc gwtc) {
+  protected void addGwtcSettings(Gwtc gwtc, AnnotatedElement clazz) {
     for (Dependency dep : gwtc.dependencies()) {
-      addDependency(dep);
+      addDependency(dep, clazz);
     }
     for (GwtcProperties prop : gwtc.propertiesLaunch()) {
       addLaunchProperty(prop);
@@ -635,16 +677,16 @@ public class GwtcContext {
     return launchProperties.add(prop);
   }
 
-  public boolean addDependency(Dependency dep) {
-    return dependencies.add(dep);
+  public void addDependency(Dependency dep, AnnotatedElement clazz) {
+    dependencies.add(new Dep(dep, clazz));
   }
 
   public Iterable<GwtcProperties> getLaunchProperties() {
     return launchProperties;
   }
 
-  public Iterable<Dependency> getDependencies() {
-    return dependencies;
+  public MappedIterable<Dep> getDependencies() {
+    return dependencies::iterator;
   }
 
   protected void addGwtcClass(Gwtc gwtc, Class<?> clazz) {
@@ -652,7 +694,7 @@ public class GwtcContext {
     GwtcUnit node = nodes.get(clazz);
     String inheritName = node.generateGwtXml(gwtc, clazz.getPackage().getName(), clazz.getSimpleName());
     inheritGwtXml(inheritName);
-    addGwtcSettings(gwtc);
+    addGwtcSettings(gwtc, clazz);
   }
 
   protected void addGwtcPackage(Gwtc gwtc, Package pkg, boolean recursive) {
@@ -662,7 +704,7 @@ public class GwtcContext {
     GwtcUnit node = nodes.get(pkg);
     String inherit = node.generateGwtXml(gwtc, pkg.getName(), name);
     inheritGwtXml(inherit);
-    addGwtcSettings(gwtc);
+    addGwtcSettings(gwtc, pkg);
     maybeAddAncestors(gwtc, pkg);
     if (recursive) {
       needChildren.add(pkg);

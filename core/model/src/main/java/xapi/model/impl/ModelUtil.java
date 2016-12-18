@@ -39,39 +39,47 @@ public class ModelUtil {
             continue; // no need to override default methods!
           }
           if (!manifest.hasSeenMethod(method.getName())) {
-            final MethodData property = manifest.addProperty(method.getName(), idField, method.getAnnotation(GetterFor.class),
-                method.getAnnotation(SetterFor.class), method.getAnnotation(DeleterFor.class));
-            property.setIdField(idField);
-            final Class<?> dataType;
-            final Type genericType;
-            if (property.isGetter(method.getName())) {
-              // For a getter, we will determine the field type by the return type
-              dataType = method.getReturnType();
-              genericType = method.getGenericReturnType();
-            } else {
-              // For setters and deleters, we will determine the field type by the first parameter type.
-              // However, a removeAll method may have no parameters, in which case we will have to wait.
-              if (method.getParameterTypes().length > 0) {
-                dataType = method.getParameterTypes()[0];
-                genericType = method.getGenericParameterTypes()[0];
+            try {
+              final MethodData property = manifest.addProperty(method.getName(),
+                  idField,
+                  method.getAnnotation(GetterFor.class),
+                  method.getAnnotation(SetterFor.class),
+                  method.getAnnotation(DeleterFor.class)
+              );
+              property.setIdField(idField);
+              final Class<?> dataType;
+              final Type genericType;
+              if (property.isGetter(method.getName())) {
+                // For a getter, we will determine the field type by the return type
+                dataType = method.getReturnType();
+                genericType = method.getGenericReturnType();
               } else {
-                dataType = null;
-                genericType = null;
+                // For setters and deleters, we will determine the field type by the first parameter type.
+                // However, a removeAll method may have no parameters, in which case we will have to wait.
+                if (method.getParameterTypes().length > 0) {
+                  dataType = method.getParameterTypes()[0];
+                  genericType = method.getGenericParameterTypes()[0];
+                } else {
+                  dataType = null;
+                  genericType = null;
+                }
               }
-            }
-            if (dataType != null) {
-              final Class<?> oldType = property.getType();
-              if (oldType != null && oldType != dataType) {
-                throw new NotConfiguredCorrectly("Field "+property.getName()+" for "+cls+" has data type "
-                    + "disagreement; already saw type "+oldType+" but now saw "+dataType+". Get/set/remove methods "
-                    + "must have identical type information");
+              if (dataType != null) {
+                final Class<?> oldType = property.getType();
+                if (oldType != null && oldType != dataType) {
+                  throw new NotConfiguredCorrectly("Field " + property.getName() + " for " + cls + " has data type "
+                      + "disagreement; already saw type " + oldType + " but now saw " + dataType + ". Get/set/remove methods "
+                      + "must have identical type information");
+                }
+                property.setType(dataType);
+                Class[] erasedTypes = getErasedTypeParameters(genericType);
+                property.setTypeParams(erasedTypes);
               }
-              property.setType(dataType);
-              Class[] erasedTypes = getErasedTypeParameters(genericType);
-              property.setTypeParams(erasedTypes);
-            }
 
-            property.addAnnotations(method.getAnnotations());
+              property.addAnnotations(method.getAnnotations());
+            } catch (Throwable e) {
+              throw new RuntimeException("Error processing model class " + cls, e);
+            }
           }
         }
       }
@@ -248,7 +256,9 @@ public class ModelUtil {
 
   public static String guessModelType(final String simpleName) {
     final String type = simpleName.replace("Model", "");
-    assert type.length() > 0 : "Cannot have a model class named Model!";
+    if (type.isEmpty()) {
+      return "";
+    }
     return Character.toLowerCase(type.charAt(0)) + type.substring(1);
   }
 

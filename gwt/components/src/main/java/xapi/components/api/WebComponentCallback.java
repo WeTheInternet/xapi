@@ -1,6 +1,6 @@
 package xapi.components.api;
 
-import com.google.gwt.core.client.js.JsType;
+import jsinterop.annotations.JsType;
 
 /**
  * Built in marker interface for callback interfaces that route to the defined web component

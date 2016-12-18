@@ -12,13 +12,13 @@ import static xapi.ui.html.api.Style.Overflow.Auto;
 import static xapi.ui.html.api.Style.Position.Relative;
 import static xapi.ui.html.api.Style.UnitType.Px;
 
-import com.google.gwt.core.client.js.JsProperty;
-import com.google.gwt.core.client.js.JsType;
 import com.google.gwt.core.shared.GWT;
 
 import elemental.dom.Element;
 import elemental.html.DivElement;
 
+import jsinterop.annotations.JsProperty;
+import jsinterop.annotations.JsType;
 import xapi.annotation.common.Property;
 import xapi.components.api.IsWebComponent;
 import xapi.components.api.OnWebComponentCreated;

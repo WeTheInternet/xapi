@@ -11,6 +11,7 @@ import xapi.annotation.inject.SingletonDefault;
 import xapi.elemental.api.ElementalService;
 import xapi.elemental.api.PotentialNode;
 import xapi.elemental.api.StyleCacheService;
+import xapi.fu.Out1;
 import xapi.inject.X_Inject;
 import xapi.source.api.Lexer;
 import xapi.ui.html.X_Html;
@@ -142,6 +143,12 @@ implements ElementalService {
   }-*/;
 
   @Override
+  public native Element getShadowHost(Element element)
+  /*-{
+    return element.host || element;
+  }-*/;
+
+  @Override
   public StyleElement injectStyle(
       Class<? extends ClientBundle> bundle, Class<? extends CssResource> ... styles
   ) {
@@ -149,11 +156,12 @@ implements ElementalService {
   }
 
   @Override
-  public ElementalService registerStyle(
+  @SafeVarargs
+  public final Out1<StyleElement> registerStyle(
       Class<? extends ClientBundle> bundle, String css, Class<? extends CssResource>... styles
   ) {
     styleCache.get().registerStyle(bundle, css, styles);
-    return this;
+    return ()->injectStyle(bundle, styles);
   }
 
   @Override

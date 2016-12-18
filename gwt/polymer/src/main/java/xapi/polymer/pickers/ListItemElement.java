@@ -1,25 +1,11 @@
 package xapi.polymer.pickers;
 
-import static com.google.gwt.regexp.shared.RegExp.quote;
-
-import static xapi.components.impl.JsSupport.getString;
-import static xapi.components.impl.JsSupport.newElement;
-import static xapi.components.impl.JsSupport.not;
-import static xapi.components.impl.JsSupport.removeFromParent;
-import static xapi.components.impl.JsSupport.setObject;
-
-import java.util.function.Consumer;
-import java.util.function.Function;
-
-import com.google.gwt.core.client.GWT;
-import com.google.gwt.core.client.js.JsProperty;
-import com.google.gwt.core.client.js.JsType;
-
 import elemental.dom.Element;
 import elemental.js.util.JsArrayOfString;
 import elemental.js.util.JsMapFromStringTo;
 import elemental.util.MapFromStringTo;
-
+import jsinterop.annotations.JsProperty;
+import jsinterop.annotations.JsType;
 import xapi.components.api.IsWebComponent;
 import xapi.components.api.OnWebComponentAttributeChanged;
 import xapi.components.api.OnWebComponentCreated;
@@ -28,12 +14,20 @@ import xapi.components.api.WebComponentFactory;
 import xapi.components.api.WebComponentMethod;
 import xapi.polymer.core.PolymerElement;
 
+import static com.google.gwt.regexp.shared.RegExp.quote;
+import static xapi.components.impl.JsSupport.*;
+
+import com.google.gwt.core.client.GWT;
+
+import java.util.function.Consumer;
+import java.util.function.Function;
+
 
 @JsType
 @WebComponent(tagName=ListItemElement.TAG_NAME)
 public interface ListItemElement extends
 IsWebComponent<Element>,
-OnWebComponentAttributeChanged,
+OnWebComponentAttributeChanged<Element>,
 OnWebComponentCreated<Element>,
 AbstractPickerElement<Element> {
 
@@ -158,7 +152,7 @@ AbstractPickerElement<Element> {
   }
 
   @Override
-  default void onAttributeChanged(String name, String oldVal, String newVal) {
+  default void onAttributeChanged(Element e, String name, String oldVal, String newVal) {
     MapFromStringTo<Element> map;
     switch (name) {
     case "value":

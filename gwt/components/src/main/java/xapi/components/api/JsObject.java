@@ -1,7 +1,8 @@
 package xapi.components.api;
 
+import jsinterop.annotations.JsType;
+
 import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.core.client.js.JsType;
 
 @JsType
 public interface JsObject {

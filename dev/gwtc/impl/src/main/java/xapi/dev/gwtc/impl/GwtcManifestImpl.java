@@ -1,5 +1,6 @@
 package xapi.dev.gwtc.impl;
 
+import xapi.annotation.inject.InstanceDefault;
 import xapi.gwtc.api.GwtManifest;
 import xapi.log.X_Log;
 import xapi.util.X_Util;
@@ -9,7 +10,11 @@ import java.io.IOException;
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 8/27/16.
  */
+@InstanceDefault(implFor = GwtManifest.class)
 public class GwtcManifestImpl extends GwtManifest {
+
+    public GwtcManifestImpl() {
+    }
 
     public GwtcManifestImpl(String moduleName) {
         super(moduleName);

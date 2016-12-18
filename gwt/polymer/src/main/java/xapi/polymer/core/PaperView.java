@@ -1,7 +1,6 @@
 package xapi.polymer.core;
 
-import com.google.gwt.core.client.js.JsType;
-
+import jsinterop.annotations.JsType;
 import xapi.components.api.HasElement;
 import xapi.components.api.NativelySupported;
 

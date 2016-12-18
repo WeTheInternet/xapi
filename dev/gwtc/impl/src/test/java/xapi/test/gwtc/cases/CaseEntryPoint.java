@@ -27,6 +27,7 @@ import com.google.gwt.dom.client.Element;
   includeGwtXml={
     @Resource("xapi.X_Inherit"),
     @Resource("xapi.X_Inject"),
+    @Resource("xapi.X_Collect"),
     @Resource("com.google.gwt.core.Core"),
   },
     inheritClasses = {
@@ -37,11 +38,7 @@ import com.google.gwt.dom.client.Element;
     @UiTemplate("<div id='logger' />")
   }
   ,dependencies={
-    @Dependency(dependencyType=DependencyType.MAVEN,
-      groupId="net.wetheinter", value="gwt-user",version=X_Namespace.GWT_VERSION),
-    @Dependency(dependencyType=DependencyType.MAVEN,
-      groupId="net.wetheinter", value="gwt-dev",version=X_Namespace.GWT_VERSION),
-    @Dependency(dependencyType=DependencyType.MAVEN,
+    @Dependency(dependencyType=DependencyType.MAVEN, loadChildren = false,
       groupId="net.wetheinter", value="xapi-gwt",version=X_Namespace.XAPI_VERSION),
   }
   ,propertiesLaunch=@GwtcProperties(

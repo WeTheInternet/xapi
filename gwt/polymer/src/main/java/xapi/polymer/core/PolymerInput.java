@@ -1,13 +1,12 @@
 package xapi.polymer.core;
 
-import static xapi.components.impl.JsSupport.create;
-
+import jsinterop.annotations.JsProperty;
+import jsinterop.annotations.JsType;
 import xapi.annotation.common.Property;
 import xapi.ui.html.api.El;
 import xapi.ui.html.api.Html;
 
-import com.google.gwt.core.client.js.JsProperty;
-import com.google.gwt.core.client.js.JsType;
+import static xapi.components.impl.JsSupport.create;
 
 @JsType
 @Html(

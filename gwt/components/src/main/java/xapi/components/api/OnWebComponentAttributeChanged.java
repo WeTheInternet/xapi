@@ -1,11 +1,11 @@
 package xapi.components.api;
 
-import com.google.gwt.core.client.js.JsType;
+import jsinterop.annotations.JsType;
 
 @JsType
-public interface OnWebComponentAttributeChanged extends WebComponentCallback {
+public interface OnWebComponentAttributeChanged <E> extends WebComponentCallback {
 
   @NativelySupported
-  void onAttributeChanged(String name, String oldVal, String newVal);
+  void onAttributeChanged(E element, String name, String oldVal, String newVal);
 
 }

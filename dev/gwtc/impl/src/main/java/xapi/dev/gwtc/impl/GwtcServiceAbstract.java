@@ -37,6 +37,7 @@ import com.google.gwt.junit.tools.GWTTestSuite;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -137,7 +138,7 @@ public abstract class GwtcServiceAbstract implements GwtcService {
         .buildDependency(loc)
         .setDependencyType(DependencyType.ABSOLUTE);
 
-    context.addDependency(builder.build());
+    context.addDependency(builder.build(), cls);
     // if loc is a src/main/java or src/test/java, also include resources module:
     String unixed = loc.replace('\\', '/');
     int index = unixed.indexOf("src/main/java");
@@ -145,19 +146,19 @@ public abstract class GwtcServiceAbstract implements GwtcService {
 
       context.addDependency(builder
           .setValue(unixed.replace("src/main/java", "src/main/resources"))
-          .build());
+          .build(), cls);
 
     } else if (unixed.indexOf("src/test/java") != -1) {
 
       context.addDependency(builder
           .setValue(unixed.replace("src/test/java", "src/test/resources"))
-          .build());
+          .build(), cls);
       context.addDependency(builder
           .setValue(unixed.replace("src/test/java", "src/main/java"))
-          .build());
+          .build(), cls);
       context.addDependency(builder
           .setValue(unixed.replace("src/test/java", "src/main/resources"))
-          .build());
+          .build(), cls);
 
     }
   }
@@ -239,8 +240,8 @@ public abstract class GwtcServiceAbstract implements GwtcService {
   }
 
 
-  public void addDependency(Dependency dep) {
-    context.addDependency(dep);
+  public void addDependency(Dependency dep, AnnotatedElement clazz) {
+    context.addDependency(dep, clazz);
   }
 
   @Override
@@ -254,7 +255,7 @@ public abstract class GwtcServiceAbstract implements GwtcService {
         .setClassifier("tests")
         .setDependencyType(DependencyType.MAVEN)
         .build()
-        );
+        , clazz);
     List<Method>
       beforeClass = new ArrayList<>(),
       before = new ArrayList<>(),

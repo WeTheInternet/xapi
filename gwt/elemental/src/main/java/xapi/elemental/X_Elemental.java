@@ -175,6 +175,10 @@ public class X_Elemental {
     return getElementalService().getShadowRoot(element);
   }
 
+  public static Element getShadowHost(Element element) {
+    return getElementalService().getShadowHost(element);
+  }
+
   public static void reflow(Element e) {
     if (e != null) {
       Browser.getWindow().getComputedStyle(e, null); // triggers a reflow (recomputation of gui layout) for the given element.

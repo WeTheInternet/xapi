@@ -1,28 +1,27 @@
 package xapi.components.impl;
 
+import elemental.dom.Element;
+import elemental.js.dom.JsElement;
+import xapi.components.api.Document;
+import xapi.components.api.IsWebComponent;
+import xapi.components.api.JsoConstructorSupplier;
+import xapi.fu.Do;
+
 import static xapi.components.api.LoggingCallback.voidCallback;
-
-import java.util.function.Supplier;
-
-import javax.validation.constraints.NotNull;
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.Scheduler;
-import com.google.gwt.core.client.Scheduler.ScheduledCommand;
 import com.google.gwt.core.client.ScriptInjector;
 
-import xapi.components.api.Document;
-import xapi.components.api.IsWebComponent;
-import xapi.components.api.JsoConstructorSupplier;
-
-import elemental.dom.Element;
-import elemental.js.dom.JsElement;
+import javax.validation.constraints.NotNull;
+import java.util.function.Supplier;
 
 public class WebComponentSupport {
 
-  public void ensureWebComponentApi(ScheduledCommand onLoaded) {
+  public void ensureWebComponentApi(Do onLoaded) {
     // Check if document.register exists
+    onLoaded = onLoaded.onlyOnce();
     if (JsSupport.doc().getRegisterElement() == null) {
       // Nope... Lets inject our polyfill
       ScriptInjector
@@ -31,7 +30,7 @@ public class WebComponentSupport {
         .setRemoveTag(true)
         .inject();
     } else {
-      Scheduler.get().scheduleDeferred(onLoaded);
+      Scheduler.get().scheduleDeferred(onLoaded::done);
     }
   }
 

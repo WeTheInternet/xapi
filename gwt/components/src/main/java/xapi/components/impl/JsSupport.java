@@ -1,24 +1,29 @@
 package xapi.components.impl;
 
-import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.core.client.UnsafeNativeLong;
-
 import elemental.dom.Element;
 import elemental.html.DivElement;
 import elemental.js.util.JsArrayOfBoolean;
 import elemental.js.util.JsArrayOfInt;
 import elemental.js.util.JsArrayOfNumber;
 import elemental.js.util.JsArrayOfString;
-
 import xapi.components.api.Console;
 import xapi.components.api.Document;
 import xapi.components.api.JsObject;
+import xapi.components.api.Window;
+
+import com.google.gwt.core.client.JavaScriptObject;
+import com.google.gwt.core.client.UnsafeNativeLong;
 
 public class JsSupport {
 
   public static native Document doc()
   /*-{
   	return $doc;
+  }-*/;
+
+  public static native Window win()
+  /*-{
+  	return $wnd;
   }-*/;
 
   public static native JsObject object()
