@@ -21,6 +21,7 @@ import xapi.ui.api.PhaseMap;
 import xapi.ui.api.PhaseMap.PhaseNode;
 import xapi.util.X_Util;
 
+import static xapi.fu.Out2.out2Immutable;
 import static xapi.util.X_Util.firstNotNull;
 
 import java.io.File;
@@ -106,7 +107,32 @@ public class WebAppGenerator extends AbstractUiGeneratorService <WebAppGenerator
                     throw rethrow(e);
                 }
             }
+
+            @Override
+            public void saveResource(
+                String path, String fileName, String src, WebAppGeneratorContext hints
+            ) {
+                final WebAppGeneratorContext used = firstNotNull(hints, ctx);
+                final SourceBuilder<WebAppGeneratorContext> buffer = used.getOrMakeClass(path, fileName, false);
+                buffer.replaceSource(src);
+                Path dir = Paths.get(used.getGeneratorDirectory());
+                if (path.matches("[/]?[.][.][/]?")) {
+                    warnPathWithDotDot(path, used);
+                }
+                dir = dir.resolve(path);
+                try {
+                    final Path output = Files.createDirectories(dir).resolve(fileName);
+                    X_IO.drain(Files.newOutputStream(output), X_IO.toStreamUtf8(src));
+                } catch (IOException e) {
+                    throw rethrow(e);
+                }
+            }
+
         };
+    }
+
+    protected void warnPathWithDotDot(String path, WebAppGeneratorContext ctx) {
+        throw new IllegalArgumentException("Do not use .. in path names; bad path: " + path);
     }
 
     @Override
@@ -136,9 +162,11 @@ public class WebAppGenerator extends AbstractUiGeneratorService <WebAppGenerator
     protected Iterable<Out2<String, UiComponentGenerator>> getComponentGenerators() {
         return
                     Chain.<Out2<String, UiComponentGenerator>>toChain(
-                        Out2.out2Immutable("web-app", new WebAppComponentGenerator()),
-                        Out2.out2Immutable("classpath", new ClasspathComponentGenerator()),
-                        Out2.out2Immutable("gwtc", new GwtcComponentGenerator())
+                        out2Immutable("define-tags", new WebAppComponentGenerator()),
+                        out2Immutable("define-tag", new WebAppComponentGenerator()),
+                        out2Immutable("web-app", new WebAppComponentGenerator()),
+                        out2Immutable("classpath", new ClasspathComponentGenerator()),
+                        out2Immutable("gwtc", new GwtcComponentGenerator())
                     )
                     .build();
     }

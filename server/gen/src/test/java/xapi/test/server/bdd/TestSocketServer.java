@@ -2,6 +2,9 @@ package xapi.test.server.bdd;
 
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
+import xapi.fu.In1;
+import xapi.fu.In1.In1Unsafe;
+import xapi.fu.In2;
 import xapi.fu.Lazy;
 import xapi.fu.Mutable;
 import xapi.fu.Rethrowable;
@@ -11,11 +14,13 @@ import xapi.model.api.Model;
 import xapi.model.api.PrimitiveSerializer;
 import xapi.model.impl.AbstractModel;
 import xapi.process.X_Process;
+import xapi.scope.api.RequestScope;
 import xapi.server.X_Server;
 import xapi.server.api.Classpath;
-import xapi.server.api.Gwtc;
+import xapi.server.api.ModelGwtc;
 import xapi.server.api.Route;
 import xapi.server.api.WebApp;
+import xapi.server.api.XapiServer;
 import xapi.source.api.CharIterator;
 import xapi.source.impl.InputStreamCharIterator;
 
@@ -36,7 +41,7 @@ import java.util.concurrent.locks.LockSupport;
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/23/16.
  */
-class TestSocketServer extends AbstractModel implements WebApp, Rethrowable {
+class TestSocketServer extends AbstractModel implements WebApp, Rethrowable, XapiServer<SocketRequest, Socket> {
 
     private final URL classpath;
     private final Lazy<Socket> io;
@@ -45,11 +50,12 @@ class TestSocketServer extends AbstractModel implements WebApp, Rethrowable {
     private ServerSocket socket;
     private int port = -1;
     private StringTo<Classpath> classpaths;
-    private StringTo<Gwtc> gwtcs;
+    private StringTo<ModelGwtc> gwtcs;
     private StringTo<Model> templates;
     private IntTo<Route> routes;
     private volatile boolean running;
     private String source;
+    private boolean devMode;
 
     public TestSocketServer(WebApp classpath) {
         try {
@@ -97,6 +103,56 @@ class TestSocketServer extends AbstractModel implements WebApp, Rethrowable {
                 e.printStackTrace();
             } finally {
         }
+    }
+
+    @Override
+    public void serviceRequest(Socket socket, In2<SocketRequest, Socket> callback) {
+
+    }
+
+    @Override
+    public String getPath(SocketRequest req) {
+        return req.getPath();
+    }
+
+    @Override
+    public String getMethod(SocketRequest req) {
+        return "SOCKET";
+    }
+
+    @Override
+    public WebApp getWebApp() {
+        return null;
+    }
+
+    @Override
+    public IntTo<String> getParams(SocketRequest req, String param) {
+        throw new UnsupportedOperationException("Socket server does not have params");
+    }
+
+    @Override
+    public IntTo<String> getHeaders(SocketRequest req, String header) {
+        throw new UnsupportedOperationException("Socket server does not have headers");
+    }
+
+    @Override
+    public void writeText(RequestScope<SocketRequest> request, String payload, In1<SocketRequest> callback) {
+        throw new UnsupportedOperationException("writeText not supported");
+    }
+
+    @Override
+    public void writeGwtJs(RequestScope<SocketRequest> request, String payload, In1<SocketRequest> callback) {
+        throw new UnsupportedOperationException("writeGwtJs not supported");
+    }
+
+    @Override
+    public void writeCallback(RequestScope<SocketRequest> request, String payload, In1<SocketRequest> callback) {
+        throw new UnsupportedOperationException("writeCallback not supported");
+    }
+
+    @Override
+    public void inScope(Socket socket, In1Unsafe<RequestScope<SocketRequest>> callback) {
+
     }
 
     public void start() {
@@ -195,8 +251,14 @@ class TestSocketServer extends AbstractModel implements WebApp, Rethrowable {
     }
 
     @Override
-    public StringTo<Gwtc> getGwtModules() {
+    public StringTo<ModelGwtc> getGwtModules() {
         return gwtcs;
+    }
+
+    @Override
+    public WebApp setGwtModules(StringTo<ModelGwtc> modules) {
+        this.gwtcs = modules;
+        return this;
     }
 
     @Override
@@ -218,5 +280,16 @@ class TestSocketServer extends AbstractModel implements WebApp, Rethrowable {
     public WebApp setRunning(boolean running) {
         this.running = running;
         return this;
+    }
+
+    @Override
+    public WebApp setDevMode(boolean devMode) {
+        this.devMode = devMode;
+        return this;
+    }
+
+    @Override
+    public boolean isDevMode() {
+        return devMode;
     }
 }

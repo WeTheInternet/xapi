@@ -7,10 +7,7 @@ Feature:
     Given Generate web app named HelloWorld:
       | <web-app /> |
     Then Expect web app named HelloWorld to have source:
-      |                                      |
-      | public class Component0_HelloWorld { |
-      |                                      |
-      | public void helloWorld () {          |
-      | }                                    |
-      |                                      |
-      | }                                    |
+      |                                           |
+      | public class SuperComponent0_HelloWorld { |
+      |                                           |
+      | }                                         |

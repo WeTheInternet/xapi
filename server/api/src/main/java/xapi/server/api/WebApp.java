@@ -3,6 +3,7 @@ package xapi.server.api;
 import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
+import xapi.fu.Out1;
 import xapi.model.api.Model;
 
 /**
@@ -24,7 +25,13 @@ public interface WebApp extends Model {
         return this;
     }
 
-    StringTo<Gwtc> getGwtModules();
+    StringTo<ModelGwtc> getGwtModules();
+
+    WebApp setGwtModules(StringTo<ModelGwtc> modules);
+
+    default StringTo<ModelGwtc> getOrCreateGwtModules() {
+        return getOrCreate(this::getGwtModules, Out1.out1Deferred(X_Collect::newStringMap, ModelGwtc.class), this::setGwtModules);
+    }
 
     StringTo<Model> getTemplates();
 
@@ -33,6 +40,10 @@ public interface WebApp extends Model {
     boolean isRunning();
 
     WebApp setRunning(boolean running);
+
+    boolean isDevMode();
+
+    WebApp setDevMode(boolean devMode);
 
     int getPort();
 

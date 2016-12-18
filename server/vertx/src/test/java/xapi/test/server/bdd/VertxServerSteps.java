@@ -37,11 +37,8 @@ public class VertxServerSteps implements ServerTestHelper<XapiVertxServer> {
 
     @Override
     public XapiVertxServer newServer(String name, WebApp classpath) {
-        final XapiVertxServer server = new XapiVertxServer();
-        classpath.getProperties().forEach(e->
-            server.setProperty(e.getKey(), e.getValue())
-        );
-        server.setKey(X_Model.newKey("", "web-app", name));
+        final XapiVertxServer server = new XapiVertxServer(classpath);
+        server.getWebApp().setKey(X_Model.newKey("", "web-app", name));
         return server;
     }
 
@@ -56,10 +53,10 @@ public class VertxServerSteps implements ServerTestHelper<XapiVertxServer> {
     @Then("^Expect url (\\S+) to return:$")
     public void expectUrlToReturn(String url, List<String> lines) throws Throwable {
         if (url.startsWith("/")) {
-            url = "http://127.0.0.1:" + newestServer.getPort() + url;
+            url = "http://127.0.0.1:" + newestServer.getWebApp().getPort() + url;
         }
         else if (url.indexOf(':') == -1) {
-            url = "http://127.0.0.1:" + newestServer.getPort() + "/" + url;
+            url = "http://127.0.0.1:" + newestServer.getWebApp().getPort() + "/" + url;
         }
 
         ReadAllInputStream all = ReadAllInputStream.read(new URL(url).openStream());

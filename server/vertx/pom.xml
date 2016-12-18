@@ -27,6 +27,10 @@
     </dependency>
     <dependency>
       <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-gwtc-impl</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
       <artifactId>xapi-jre-process</artifactId>
     </dependency>
     <dependency>
@@ -37,6 +41,10 @@
       <groupId>net.wetheinter</groupId>
       <artifactId>xapi-core-ui-api</artifactId>
      </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-dev-maven</artifactId>
+    </dependency>
     <dependency>
       <groupId>net.wetheinter</groupId>
       <artifactId>xapi-dev-javac</artifactId>

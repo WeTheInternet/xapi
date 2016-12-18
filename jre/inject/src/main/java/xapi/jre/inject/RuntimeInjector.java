@@ -27,6 +27,7 @@ import xapi.reflect.X_Reflect;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
 import xapi.time.impl.ImmutableMoment;
+import xapi.util.X_Properties;
 import xapi.util.X_Runtime;
 import xapi.util.X_Util;
 
@@ -138,7 +139,8 @@ public class RuntimeInjector implements In2<String, PlatformChecker> {
 
     ClassFile bestMatch = null;
     final HashMap<String,ClassFile> platformMap = new HashMap<String, ClassFile>();
-    String shortName = null;
+    String shortName = X_Properties.platform.get();
+
     final Set<String> scopes = new LinkedHashSet<String>();
     final ArrayList<ClassFile> platforms = new ArrayList<ClassFile>();
     final Moment prepped = now();
@@ -301,7 +303,10 @@ public class RuntimeInjector implements In2<String, PlatformChecker> {
       final IntegerMemberValue oldPriority = (IntegerMemberValue)oldOverride.getMemberValue("priority");
       final IntegerMemberValue newPriority = (IntegerMemberValue)impl.getMemberValue("priority");
 
-      if (newPriority.getValue() > oldPriority.getValue()){
+      int oldP = oldPriority == null ? Integer.MIN_VALUE : oldPriority.getValue();
+      int newP = newPriority == null ? Integer.MIN_VALUE : newPriority.getValue();
+
+      if (newP > oldP){
         injectionTargets.put(clsName, cls);
       }
     }

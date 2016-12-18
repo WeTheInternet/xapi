@@ -1,21 +1,24 @@
 package xapi.server.vertx;
 
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.HttpServerResponse;
 import xapi.collect.api.StringTo;
 import xapi.fu.Lazy;
 import xapi.fu.Out2;
 import xapi.fu.Pointer;
 import xapi.util.api.Destroyable;
+import xapi.util.api.RequestLike;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/3/16.
  */
-public class VertxRequest implements Destroyable {
+public class VertxRequest implements Destroyable, RequestLike {
 
     private HttpServerRequest httpRequest;
     private final Lazy<String> body;
     private final Lazy<StringTo.Many<String>> params;
     private final Lazy<StringTo.Many<String>> headers;
+    private boolean autoclose;
 
     public VertxRequest(HttpServerRequest req) {
         httpRequest = req;
@@ -28,6 +31,7 @@ public class VertxRequest implements Destroyable {
         });
         params = Lazy.deferred1(()->new MultimapAdapter(httpRequest.params()));
         headers = Lazy.deferred1(()->new MultimapAdapter(httpRequest.headers()));
+        autoclose = true;
     }
 
     public HttpServerRequest getHttpRequest() {
@@ -52,6 +56,11 @@ public class VertxRequest implements Destroyable {
         httpRequest = null;
     }
 
+    @Override
+    public String getPath() {
+        return httpRequest.path();
+    }
+
     public String getBody() {
         return body.out1();
     }
@@ -62,5 +71,21 @@ public class VertxRequest implements Destroyable {
 
     public Iterable<Out2<String, Iterable<String>>> getHeaders() {
         return headers.out1().iterableOut();
+    }
+
+    public final HttpServerRequest getRequest() {
+        return getHttpRequest();
+    }
+
+    public final HttpServerResponse getResponse() {
+        return getHttpRequest().response();
+    }
+
+    public boolean isAutoclose() {
+        return autoclose;
+    }
+
+    public void setAutoclose(boolean autoclose) {
+        this.autoclose = autoclose;
     }
 }
