@@ -110,9 +110,6 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
   @Parameter(property="xapi.include.test", defaultValue="false")
   private Boolean includeTestSource;
 
-  @Parameter(property = "gwt.js.interop", defaultValue = "JS")
-  private String jsInteropMode;
-
   @Parameter(property = "gwt.log.level", defaultValue = "INFO")
   private String logLevel;
 
@@ -374,7 +371,7 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
             // Missing gwt-user means we're probably missing org.json and validation apis...
           }
           if (autoCompile) {
-            launchServer(includeTestSource, jsInteropMode, logLevel);
+            launchServer(includeTestSource, logLevel);
           }
         }
         });

@@ -12,8 +12,7 @@ import xapi.dev.ui.UiComponentGenerator;
 import xapi.dev.ui.UiGeneratorTools;
 import xapi.dev.ui.UiVisitScope;
 import xapi.fu.In1Out1;
-
-import java.util.Optional;
+import xapi.fu.Maybe;
 
 /**
  * Created by james on 6/17/16.
@@ -30,10 +29,10 @@ public class JavaFxAppComponentGenerator extends UiComponentGenerator {
   ) {
 
     SourceBuilder<?> out = me.getSourceBuilder();
-    final Optional<UiAttrExpr> type = n.getAttribute("type");
+    final Maybe<UiAttrExpr> type = n.getAttribute("type");
     String container = type
-        .map(ASTHelper::extractAttrValue)
-        .orElse(VBox.class.getName());
+        .mapImmediate(ASTHelper::extractAttrValue)
+        .useIfNull(VBox.class::getName);
     container = out.addImport(container);
     String binder = out.addImport(In1Out1.class);
 

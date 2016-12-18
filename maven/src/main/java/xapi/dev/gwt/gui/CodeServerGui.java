@@ -55,7 +55,7 @@ public class CodeServerGui extends JFrame{
     controls = new CodeServerControls(new Runnable() {
       @Override
       public void run() {
-        launchServer(isUseTestSources(), "JS", getLogLevel());
+        launchServer(isUseTestSources(), getLogLevel());
       }
     });
     add(controls,BorderLayout.SOUTH);
@@ -96,7 +96,7 @@ public class CodeServerGui extends JFrame{
   }
 
 
-  protected void launchServer(boolean includeTestSources, String jsInteropMode, String logLevel) {
+  protected void launchServer(boolean includeTestSources, String logLevel) {
     try{
       String cpSep = File.pathSeparator;
     String cp = getClasspath(includeTestSources, cpSep);
@@ -122,9 +122,9 @@ public class CodeServerGui extends JFrame{
       }
     }
     X_Log.debug("Codeserver classpath",cp);
-    
+
     int debugPort = debugPort();
-    int len = debugPort > 0 ? 12 : 10;
+    int len = debugPort > 0 ? 10 : 8;
     final String[] cmdArray = new String[len];
     cmdArray[0] = //path to java executable
       System.getProperty("java.home")+File.separator+"bin" +File.separator+"java";
@@ -143,8 +143,6 @@ public class CodeServerGui extends JFrame{
     cmdArray[pos++] = "com.google.gwt.dev.codeserver.CodeServer";
     cmdArray[pos++] = "-port";
     cmdArray[pos++] = Integer.toString(getPort());
-    cmdArray[pos++] = "-XjsInteropMode";
-    cmdArray[pos++] = jsInteropMode;
     cmdArray[pos++] = "-logLevel";
     cmdArray[pos++] = logLevel;
 

@@ -11,10 +11,10 @@ import xapi.dev.ui.UiComponentGenerator;
 import xapi.dev.ui.UiFeatureGenerator;
 import xapi.dev.ui.UiGeneratorTools;
 import xapi.dev.ui.UiVisitScope;
+import xapi.fu.Maybe;
 import xapi.jre.ui.runtime.DoubleSupplierBinding;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 7/1/16.
@@ -60,7 +60,7 @@ public class JavaFxSizeFeatureGenerator extends UiFeatureGenerator {
             if (ASTHelper.isNumericLiteral(width)) {
                 mb.println(panel+".setPrefWidth(" + widthStr + ");");
             } else {
-                final Optional<UiAttrExpr> fill = parent.getAttribute("fill");
+                final Maybe<UiAttrExpr> fill = parent.getAttribute("fill");
                 if (fill.isPresent()) {
                     if (!"height".equals(ASTHelper.extractAttrValue(fill.get()))) {
                         throw new IllegalArgumentException(
@@ -87,7 +87,7 @@ public class JavaFxSizeFeatureGenerator extends UiFeatureGenerator {
             if (ASTHelper.isNumericLiteral(height)) {
                 mb.println(panel+".setPrefHeight(" + heightStr + ");");
             } else {
-                final Optional<UiAttrExpr> fill = parent.getAttribute("fill");
+                final Maybe<UiAttrExpr> fill = parent.getAttribute("fill");
                 if (fill.isPresent()) {
                     if (!"width".equals(ASTHelper.extractAttrValue(fill.get()))) {
                         throw new IllegalArgumentException(

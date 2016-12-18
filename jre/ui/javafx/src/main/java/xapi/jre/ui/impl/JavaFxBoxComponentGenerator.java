@@ -22,8 +22,8 @@ public class JavaFxBoxComponentGenerator extends UiComponentGenerator {
     String parentName = me.peekPanelName();
     final MethodBuffer mb = me.getMethod(parentName);
     String container = n.getAttribute("type")
-          .map(ASTHelper::extractAttrValue)
-          .orElse(VBox.class.getCanonicalName());
+          .mapDeferred(ASTHelper::extractAttrValue)
+          .getIfNull(VBox.class.getCanonicalName());
     container = mb.addImport(container);
 
     String ref = me.getRefName("box");

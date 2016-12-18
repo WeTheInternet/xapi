@@ -25,8 +25,8 @@ public class JavaFxAlignFeatureGenerator extends UiFeatureGenerator {
         final MethodBuffer mb = container.getMethod(panel);
 
         final String align = container.getUi().getAttribute("align")
-              .map(ASTHelper::extractAttrValue)
-              .orElse("center").toLowerCase();
+              .mapDeferred(ASTHelper::extractAttrValue)
+              .getIfNull("center").toLowerCase();
 
         // default align in javafx is ugly; only use it if null is explicitly sent.
         if (!"null".equals(align)) {
