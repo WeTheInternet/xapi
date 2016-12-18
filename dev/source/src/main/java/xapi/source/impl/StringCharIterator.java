@@ -3,7 +3,7 @@ package xapi.source.impl;
 import xapi.source.api.CharIterator;
 
 public class StringCharIterator implements CharIterator {
-  final String content;
+  final CharSequence content;
   final int length;
   int current;
 
@@ -22,8 +22,8 @@ public class StringCharIterator implements CharIterator {
     return content.charAt(current);
   }
 
-  public String peekString() {
-    return content.substring(current, current+1);
+  public CharSequence peekSeq() {
+    return content.subSequence(current, current+1);
   }
 
   @Override
@@ -33,14 +33,14 @@ public class StringCharIterator implements CharIterator {
 
   @Override
   public String toString() {
-    return current == length ? "" : content.substring(current);
+    return current == length ? "" : content.subSequence(current, length).toString();
   }
 
   @Override
   public CharSequence consume(final int size) {
     final int was = current;
     current += size;
-    return content.substring(was, current);
+    return content.subSequence(was, current);
   }
 
   @Override

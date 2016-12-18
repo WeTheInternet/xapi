@@ -1,11 +1,5 @@
 package xapi.dev.scanner;
 
-import java.lang.annotation.Annotation;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
-
 import xapi.bytecode.ClassFile;
 import xapi.dev.X_Dev;
 import xapi.dev.resource.impl.StringDataResource;
@@ -14,10 +8,16 @@ import xapi.dev.scanner.impl.ClasspathResourceMap;
 import xapi.inject.X_Inject;
 import xapi.util.X_String;
 
+import java.lang.annotation.Annotation;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
+
 public class X_Scanner {
 
   private X_Scanner() {}
-  
+
   public static ClasspathResourceMap scanClassloader(ClassLoader cl) {
     return scanAll()
       .scan(cl);
@@ -31,7 +31,7 @@ public class X_Scanner {
         .scanPackage("")
         .scan(cl, Executors.newCachedThreadPool());
   }
-  
+
   private static ClasspathScanner scanAll() {
     return X_Inject.instance(ClasspathScanner.class)
         .matchClassFile(".*")
@@ -40,7 +40,7 @@ public class X_Scanner {
         .scanPackage("");
   }
 
-  public static ClasspathResourceMap scanClassloader(ClassLoader cl, 
+  public static ClasspathResourceMap scanClassloader(ClassLoader cl,
       boolean scanClasses, boolean scanSources, boolean scanResources, String pkg) {
     ClasspathScanner scanner = X_Inject.instance(ClasspathScanner.class);
     if (scanClasses)
@@ -79,9 +79,14 @@ public class X_Scanner {
 
   @SafeVarargs
   public static Iterable<ClassFile> findMethodsWithAnnotations(ClassLoader cl, Class<? extends Annotation> ... annoClass) {
+    return findMethodsWithAnnotations(cl, "", annoClass);
+  }
+
+  @SafeVarargs
+  public static Iterable<ClassFile> findMethodsWithAnnotations(ClassLoader cl, String packageName, Class<? extends Annotation> ... annoClass) {
     return X_Inject.instance(ClasspathScanner.class)
         .matchClassFile(".*")
-        .scanPackage("")
+        .scanPackage(packageName)
         .scan(cl)
         .findClassWithAnnotatedMethods(annoClass);
   }
@@ -98,7 +103,7 @@ public class X_Scanner {
   }
 
   public static Iterable<ClassFile> findDirectSubclasses(ClassLoader classLoader, Class<?> ... cls) {
-    return 
+    return
         X_Inject.instance(ClasspathScanner.class)
         .matchClassFile(".*")
         .scanPackage("")
@@ -107,7 +112,7 @@ public class X_Scanner {
   }
 
   public static Iterable<ClassFile> findImplementationsOf(ClassLoader classLoader, Class<?> ... cls) {
-    return 
+    return
         X_Inject.instance(ClasspathScanner.class)
         .matchClassFile(".*")
         .scanPackage("")
@@ -116,13 +121,13 @@ public class X_Scanner {
   }
 
   public static Iterable<ClassFile> findClassesInPackage(ClassLoader classLoader, String pkgName) {
-    return 
+    return
         X_Inject.instance(ClasspathScanner.class)
         .matchClassFile(".*")
         .scanPackage("")
         .scan(classLoader)
         .findClassesInPackage(pkgName);
-    
+
   }
 
 }

@@ -1,41 +1,38 @@
 package xapi.time.impl;
 
-import static xapi.time.X_Time.threadStart;
+import xapi.fu.Do;
 import xapi.time.api.Moment;
 import xapi.util.api.ReceivesValue;
 
-public class RunOnce {
+import static xapi.time.X_Time.threadStart;
 
-  private static final Runnable NO_OP = new Runnable() {
-    @Override
-    public void run() {}
-  };
+public class RunOnce {
 
   @SuppressWarnings("rawtypes")
   private static final ReceivesValue NO_OP_RECEIVER = new ReceivesValue.NoOp();
 
-  public static Runnable runOnce(final Runnable job) {
+  public static Do runOnce(final Do job) {
     return runOnce(job, false);
   }
 
-  public static Runnable runOnce(final Runnable job, final boolean oncePerMoment) {
+  public static Do runOnce(final Do job, final boolean oncePerMoment) {
     if (oncePerMoment) {
-      return new Runnable() {
+      return new Do() {
         RunOnce lock = new RunOnce();
         @Override
-        public void run() {
+        public void done() {
           if (lock.shouldRun(oncePerMoment)) {
-            job.run();
+            job.done();
           }
         }
       };
     } else {
-      return new Runnable() {
-        Runnable once = job;
+      return new Do() {
+        Do once = job;
         @Override
-        public void run() {
-          once.run();
-          once = NO_OP;
+        public void done() {
+          once.done();
+          once = Do.NOTHING;
         }
       };
     }
@@ -71,6 +68,11 @@ public class RunOnce {
 
   private Moment once;
 
+  public boolean hasRun() {
+    synchronized (this) {
+      return once != null;
+    }
+  }
   public boolean shouldRun(boolean oncePerMoment) {
     if (once == null) {
       synchronized (this) {

@@ -269,6 +269,14 @@ public class X_String {
     return source.substring(0, ind);
   }
 
+  public static String chopEndOrReturnEmpty(String source, String match) {
+    int ind = source.lastIndexOf(match);
+    if (ind == -1) {
+      return "";
+    }
+    return source.substring(ind+1);
+  }
+
   public static String toTitleCase(String name) {
     return isEmpty(name) ? name : Character.toUpperCase(name.charAt(0))+name.substring(1);
   }

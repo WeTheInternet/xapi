@@ -3,6 +3,7 @@ package xapi.shell.impl;
 import xapi.collect.X_Collect;
 import xapi.collect.api.Fifo;
 import xapi.fu.Do;
+import xapi.fu.In1;
 import xapi.io.X_IO;
 import xapi.io.api.HasLiveness;
 import xapi.io.api.LineReader;
@@ -40,7 +41,7 @@ class ShellSessionDefault implements ShellSession, Do {
   private final StringReader onStdOut = new StringReader();
   private final Fifo<String> stdIns = X_Collect.newFifo();
   private final Fifo<RemovalHandler> clears = X_Collect.newFifo();
-  private final SuccessHandler<ShellSession> callback;
+  private volatile SuccessHandler<ShellSession> callback;
   private final ErrorHandler<Throwable> err;
   private final ArgumentProcessor processor;
   private final Moment birth = X_Time.now();
@@ -240,7 +241,7 @@ class ShellSessionDefault implements ShellSession, Do {
   }
 
   protected void finish () {
-    boolean shouldRun = false;
+    boolean shouldRun;
     synchronized (once) {
       for (final RemovalHandler clear : clears.forEach()) {
         clear.remove();
@@ -249,10 +250,33 @@ class ShellSessionDefault implements ShellSession, Do {
       shouldRun = status == 0 && once.shouldRun(false);
     }
     if (shouldRun) {
-      if (callback != null) {
-        callback.onSuccess(this);
+      synchronized (once) {
+        if (callback != null) {
+          callback.onSuccess(this);
+        }
+        callback = ignored->{};
       }
     }
+  }
+
+  @Override
+  public void onFinished(In1<ShellSession> handler) {
+    synchronized (once) {
+      if (!once.hasRun()) {
+        final SuccessHandler<ShellSession> oldCallback = callback;
+        if (oldCallback == null) {
+          callback = handler::in;
+        } else {
+          callback = self-> {
+            oldCallback.onSuccess(self);
+            handler.in(self);
+          };
+        }
+        return;
+      }
+      // we have already run; lets defer the callback to avoid eager race conditions
+    }
+    X_Time.runLater(handler.provide(this).toRunnable());
   }
 
   @Override
