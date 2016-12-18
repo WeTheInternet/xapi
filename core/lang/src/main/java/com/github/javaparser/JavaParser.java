@@ -35,6 +35,7 @@ import com.github.javaparser.ast.expr.JsonContainerExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.Statement;
+import xapi.fu.In1Out1.In1Out1Unsafe;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -90,6 +91,11 @@ public final class JavaParser {
         return parse(in,encoding,true);
     }
 
+    public static UiContainerExpr parseXapi(final InputStream in,
+                                        final String encoding) throws ParseException {
+        return parseXapi(in,encoding,true);
+    }
+
     /**
      * Parses the Java code contained in the {@link InputStream} and returns a
      * {@link CompilationUnit} that represents it.
@@ -104,10 +110,34 @@ public final class JavaParser {
      */
     public static CompilationUnit parse(final InputStream in,
                                         final String encoding, boolean considerComments) throws ParseException {
+        return parse(in, encoding, considerComments, ASTParser::CompilationUnit);
+    }
+
+    public static UiContainerExpr parseXapi(final InputStream in,
+                                        final String encoding, boolean considerComments) throws ParseException {
+        return parse(in, encoding, considerComments, ASTParser::UiContainer);
+    }
+
+    public static <T extends Node> T parse(final InputStream in,
+                                           final String encoding,
+                                           boolean considerComments,
+                                           In1Out1Unsafe<ASTParser, T> parseMethod) throws ParseException {
         try {
-            String code = SourcesHelper.streamToString(in, encoding);
-            InputStream in1 = SourcesHelper.stringToStream(code, encoding);
-            CompilationUnit cu = new ASTParser(in1, encoding).CompilationUnit();
+            // We are going to read in the full source input stream first,
+            //
+            String code = null;
+            InputStream in1;
+            if (considerComments) {
+                code = SourcesHelper.streamToString(in, encoding);
+                // since we already drained the input stream,
+                // we need to rescope it onto this string (and allow real input to be released).
+                in1 = SourcesHelper.stringToStream(code, encoding);
+            } else {
+                in1 = in;
+            }
+            final ASTParser parser = new ASTParser(in1, encoding);
+            T cu = parseMethod.io(parser);
+
             if (considerComments){
                 insertComments(cu,code);
             }
@@ -137,6 +167,16 @@ public final class JavaParser {
         return parse(file,encoding,true);
     }
 
+    public static UiContainerExpr parseXapi(final InputStream in)
+            throws ParseException {
+        return parseXapi(in, null,true);
+    }
+
+    public static UiContainerExpr parseXapi(final File file, final String encoding)
+            throws ParseException, IOException {
+        return parseXapi(file,encoding,true);
+    }
+
     /**
      * Parses the Java code contained in a {@link File} and returns a
      * {@link CompilationUnit} that represents it.
@@ -152,11 +192,19 @@ public final class JavaParser {
      */
     public static CompilationUnit parse(final File file, final String encoding, boolean considerComments)
             throws ParseException, IOException {
-        final FileInputStream in = new FileInputStream(file);
-        try {
+        try(
+            final FileInputStream in = new FileInputStream(file);
+        ) {
             return parse(in, encoding, considerComments);
-        } finally {
-            in.close();
+        }
+    }
+
+    public static UiContainerExpr parseXapi(final File file, final String encoding, boolean considerComments)
+            throws ParseException, IOException {
+        try(
+            final FileInputStream in = new FileInputStream(file);
+        ) {
+            return parseXapi(in, encoding, considerComments);
         }
     }
 
@@ -176,16 +224,33 @@ public final class JavaParser {
         return parse(file, null,true);
     }
 
+    public static UiContainerExpr parseXapi(final File file) throws ParseException,
+            IOException {
+        return parseXapi(file, null,true);
+    }
+
     public static CompilationUnit parse(final Reader reader, boolean considerComments)
+            throws ParseException {
+        return parseReader(reader, considerComments, ASTParser::CompilationUnit);
+    }
+
+    public static UiContainerExpr parseXapi(final Reader reader, boolean considerComments)
+            throws ParseException {
+        return parseReader(reader, considerComments, ASTParser::UiContainer);
+    }
+
+    public static <T extends Node> T parseReader(final Reader reader, boolean considerComments,
+                                                 In1Out1Unsafe<ASTParser, T> parseMethod)
             throws ParseException {
         try {
             String code = SourcesHelper.readerToString(reader);
             Reader reader1 = SourcesHelper.stringToReader(code);
-            CompilationUnit cu = new ASTParser(reader1).CompilationUnit();
+            final ASTParser parser = new ASTParser(reader1);
+            T node = parseMethod.io(parser);
             if (considerComments){
-                insertComments(cu,code);
+                insertComments(node,code);
             }
-            return cu;
+            return node;
         } catch (IOException ioe){
             throw new ParseException(ioe.getMessage());
         }
@@ -463,11 +528,18 @@ public final class JavaParser {
         return b.getBeginLine()>(a.getEndLine()+1);
     }
 
-    private static void insertComments(CompilationUnit cu, String code) throws IOException {
+    private static void insertComments(Node cu, String code) throws IOException {
         CommentsParser commentsParser = new CommentsParser();
         CommentsCollection allComments = commentsParser.parse(code);
 
-        insertCommentsInCu(cu,allComments);
+        if (cu instanceof CompilationUnit) {
+            insertCommentsInCu((CompilationUnit) cu,allComments);
+        } else {
+            List<Comment> comments = allComments.getAll();
+            PositionUtils.sortByBeginPosition(comments);
+
+            insertCommentsInNode(cu, comments);
+        }
     }
 
 }

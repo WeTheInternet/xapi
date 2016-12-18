@@ -173,45 +173,52 @@ final class ASTParser {
 
     private Token last_special_token = null;
 
+    private boolean putBackTokens() {
+          Token root = new Token(), last=root;
+          root.next = null;
+
+          // First, we build a list of tokens to push back, in backwards order
+          while (token.next != null) {
+            Token t = token;
+            // Find the token whose token.next is the last in the chain
+            while (t.next != null && t.next.next != null)
+              t = t.next;
+
+            // put it at the end of the new chain
+            last.next = t.next;
+            last = t.next;
+
+            // If there are special tokens, these go before the regular tokens,
+            // so we want to push them back onto the input stream in the order
+            // we find them along the specialToken chain.
+
+            if (t.next.specialToken != null) {
+              Token tt=t.next.specialToken;
+              while (tt != null) {
+                last.next = tt;
+                last = tt;
+                tt.next = null;
+                tt = tt.specialToken;
+              }
+            }
+            t.next = null;
+          };
+
+          while (root.next != null) {
+            token_source.backup(root.next.image.length());
+            root.next = root.next.next;
+          }
+//          if (all) {
+            jj_ntk = -1;
+//          }
+          return true;
+    }
+
     private boolean setState(int state) {
       if (state == token_source.curLexState) {
         return false;
       }
-      Token root = new Token(), last=root;
-      root.next = null;
-
-      // First, we build a list of tokens to push back, in backwards order
-      while (token.next != null) {
-        Token t = token;
-        // Find the token whose token.next is the last in the chain
-        while (t.next != null && t.next.next != null)
-          t = t.next;
-
-        // put it at the end of the new chain
-        last.next = t.next;
-        last = t.next;
-
-        // If there are special tokens, these go before the regular tokens,
-        // so we want to push them back onto the input stream in the order
-        // we find them along the specialToken chain.
-
-        if (t.next.specialToken != null) {
-          Token tt=t.next.specialToken;
-          while (tt != null) {
-            last.next = tt;
-            last = tt;
-            tt.next = null;
-            tt = tt.specialToken;
-          }
-        }
-        t.next = null;
-      };
-
-      while (root.next != null) {
-        token_source.backup(root.next.image.length());
-        root.next = root.next.next;
-      }
-      jj_ntk = -1;
+      putBackTokens();
       token_source.SwitchTo(state);
       return true;
     }
@@ -237,13 +244,13 @@ TOKEN_MGR_DECLS : {
     int backup = 0;
     char c = 0;
     try {
-      c = input_stream.readChar();
-      backup ++;
       if (eatWhitespace) {
-        while (Character.isWhitespace(c)) {
-          c = input_stream.readChar();
-          backup++;
-        }
+        backup += eatWhitespaceAndComments();
+        c = input_stream.readChar();
+        backup ++;
+      } else {
+        c = input_stream.readChar();
+        backup ++;
       }
     } catch (IOException e) {
       // Hit EOF while peeking...
@@ -253,16 +260,89 @@ TOKEN_MGR_DECLS : {
     return c;
   }
 
-  boolean isMemberBody() {
+  int eatWhitespace() {
+    int backup = 0;
+    int amt = 0;
+    char c = 0;
+    try {
+      c = input_stream.readChar();
+      backup ++;
+      while (Character.isWhitespace(c)) {
+          backup = 1;
+          amt ++;
+          c = input_stream.readChar();
+      }
+    } catch (IOException e) {
+      // Hit EOF while peeking...
+      return amt;
+    } finally {
+        input_stream.backup(backup);
+    }
+    return amt;
+  }
+  int eatComments() {
+    int backup = 0;
+    int amt = 0;
+    char c = 0;
+    try {
+      c = input_stream.readChar();
+      backup ++;
+      if (c == '/') {
+          c = input_stream.readChar();
+          if (c == '*') {
+              backup = 0;
+              amt = 2;
+              do {
+                  while ((c = input_stream.readChar()) != '*') {
+                      amt ++;
+                  }
+                  amt ++;
+              } while ((c = input_stream.readChar()) != '/');
+              amt++;
+          } else if (c == '/') {
+              backup = 0;
+              amt = 2;
+              while ((c = input_stream.readChar()) != '\n') {
+                  amt ++;
+              }
+              if (c == '\n') {
+                amt++;
+              }
+          } else {
+              backup++;
+              return 0;
+          }
+      }
+    } catch (IOException e) {
+      // Hit EOF while peeking...
+      return amt;
+    } finally {
+        input_stream.backup(backup);
+    }
+    return amt;
+  }
+
+  int eatWhitespaceAndComments() {
+    int ws, comments, backup = 0;
+    do {
+      ws = eatWhitespace();
+      comments = eatComments();
+      backup += ws + comments;
+    } while (ws > 0 || comments > 0);
+    return backup;
+  }
+
+  boolean isMemberBody(Token token) {
+    if (token.next != null) {
+      return token.next.image.matches("public|private|protected");
+    }
+    input_stream.backup(0);
     if (peekNext() == 'p') {
       int backup = 0;
       try {
+        backup += eatWhitespaceAndComments();
         char c = input_stream.readChar();
         backup ++;
-        while (Character.isWhitespace(c)) {
-          c = input_stream.readChar();
-          backup ++;
-        }
         assert c == 'p';
         c = input_stream.readChar();
         backup ++;
@@ -365,10 +445,89 @@ TOKEN_MGR_DECLS : {
     return false;
   }
 
-  boolean looksLikeCssSelector() {
+  boolean looksLikeInitializer(Token token) {
+    boolean checkStatic = true;
+    if (token.next != null) {
+      if (token.next.image.equals("static")) {
+        if (token.next.next != null) {
+           return token.next.next.image.equals("{");
+        }
+        checkStatic = false;
+      } else {
+        return token.next.image.equals("{");
+      }
+    }
+    input_stream.backup(0);
+    int backup = 0;
+    try {
+      backup = eatWhitespaceAndComments();
+      switch (peekNext()) {
+          case '{':
+            return true;
+          case 's':
+            if (!checkStatic) {
+              return false;
+            }
+            char c = input_stream.readChar();
+            backup++;
+            assert c == 's';
+
+            c = input_stream.readChar();
+            backup++;
+            if (c != 't') {
+              return false;
+            }
+
+            c = input_stream.readChar();
+            backup++;
+            if (c != 'a') {
+              return false;
+            }
+
+            c = input_stream.readChar();
+            backup++;
+            if (c != 't') {
+              return false;
+            }
+
+            c = input_stream.readChar();
+            backup++;
+            if (c != 'i') {
+              return false;
+            }
+
+            c = input_stream.readChar();
+            backup++;
+            if (c != 'c') {
+              return false;
+            }
+
+            c = input_stream.readChar();
+            backup++;
+            return Character.isWhitespace(c) || c == '{';
+          default:
+            return false;
+      }
+    } catch (IOException e) {
+    } finally {
+      input_stream.backup(backup);
+    }
+    return false;
+  }
+
+  boolean looksLikeCssSelector(Token token) {
+    int backup = 0;
+    if (token.next != null) {
+      // reverse the stream however far it is ahead,
+      Token remove = token.next;
+      while (remove != null) {
+        backup -= remove.image.length();
+        input_stream.backup(remove.image.length());
+        remove = remove.next;
+      }
+    }
     // TODO make this far stricter,
     // and in doing so, be able to support more advanced selectors
-    int backup = 0;
     char c;
     try {
       boolean sawNonSpace = false;
@@ -409,6 +568,14 @@ TOKEN_MGR_DECLS : {
       input_stream.backup(backup);
     }
   return false;
+  }
+
+  boolean looksLikeJson(Token token) {
+    if (token.next != null) {
+      return token.next.image.equals("[") || token.next.image.equals("{");
+    }
+    char c = peekNext();
+    return c == '[' || c == '{';
   }
 
   boolean looksLikeMethodOrLambda() {
@@ -1802,7 +1969,7 @@ BodyDeclaration ClassOrInterfaceBodyDeclaration(boolean isInterface):
 {
   {  }
   (
-	  LOOKAHEAD(2)
+	  LOOKAHEAD( { token_source.looksLikeInitializer(token) } )
 	  ret = InitializerDeclaration()
 	  {
 	     if (isInterface)
@@ -1813,7 +1980,7 @@ BodyDeclaration ClassOrInterfaceBodyDeclaration(boolean isInterface):
 	  {
 	    if(!isInterface)
 	    {
-	      throwParseException(token, "An interface cannot have default members");
+	      throwParseException(token, "A non-interface cannot have default members");
 	    }
 	    isDefault = true;
 	  }]
@@ -2965,7 +3132,7 @@ Expression PrimarySuffixWithoutSuper(Expression scope):
 UiContainerExpr UiContainer():
 {
   NameExpr tagName;
-  NameExpr endTagName;
+  NameExpr endTagName = null;
   List<UiAttrExpr> attrs = new ArrayList();
   UiAttrExpr attr;
   UiBodyExpr body = null;
@@ -3040,7 +3207,12 @@ UiContainerExpr UiContainer():
     )
 
 {
- return new UiContainerExpr(beginLine, beginColumn, endLine, endColumn, tagName, attrs, body, isInTemplate); }
+   UiContainerExpr xapi = new UiContainerExpr(beginLine, beginColumn, endLine, endColumn, tagName, attrs, body, isInTemplate);
+   if (endTagName != null && body == null) {
+     xapi.alwaysRenderClose();
+   }
+   return xapi;
+ }
 }
 
 
@@ -3168,7 +3340,7 @@ Expression UiValue():
 }
 {
 (
-        LOOKAHEAD( { token_source.isMemberBody() } )
+        LOOKAHEAD( { token_source.isMemberBody(token) } )
       (
         member = ClassOrInterfaceBodyDeclaration(true)
         {
@@ -3178,7 +3350,7 @@ Expression UiValue():
       )
       |
 
-        LOOKAHEAD( { token_source.looksLikeCssSelector() } )
+        LOOKAHEAD( { token_source.looksLikeCssSelector(token) } )
       (
         {
           int oldState = token_source.setState(CSS_BODY);
@@ -3198,6 +3370,7 @@ Expression UiValue():
       |
 
       // { json : "object" }.  For blocks of java, use a lambda ()->{}
+      LOOKAHEAD( { token_source.looksLikeJson(token) } )
       ( expression = JsonContainer() ) |
 
       // < block of="ui" />
@@ -3305,8 +3478,9 @@ JsonContainerExpr JsonContainer():
   int line;
   int column;
   int cnt = 0;
+  AnnotationExpr annotation;
+  List annotations = new ArrayList();
 }{
-  (
     (
     "{" {
       line = token.beginLine;
@@ -3315,39 +3489,35 @@ JsonContainerExpr JsonContainer():
 
     ( pair = JsonPair() { items.add(pair); }) *
 
-    "}" )
+    "}" {
+      return new JsonContainerExpr(line, column, token.endLine, token.endColumn, false, items);
+    } )
     | (
     "[" {
       line = token.beginLine;
       column = token.beginColumn;
-      isArray = true;
     }
 
-    ( value = UiValue() {
-      IntegerLiteralExpr key = new IntegerLiteralExpr(Integer.toString(cnt++));
-      items.add(new JsonPairExpr(
-             value.getBeginLine(),
-             value.getBeginColumn(),
-             value.getEndLine(),
-             value.getEndColumn(),
-             key, value
-      ));
-     } )?
+    (
+    ( LOOKAHEAD( { token_source.peekNext() == '@' } ) annotation = Annotation() { annotations = add(annotations, annotation); } )*
 
-    ( "," value = UiValue() {
-      IntegerLiteralExpr key = new IntegerLiteralExpr(Integer.toString(cnt++));
-      items.add(new JsonPairExpr(
-             value.getBeginLine(),
-             value.getBeginColumn(),
-             value.getEndLine(),
-             value.getEndColumn(),
-             key, value
-      ));
-     } ) *
+      value = UiValue() {
+        IntegerLiteralExpr key = new IntegerLiteralExpr(Integer.toString(cnt++));
+        pair = new JsonPairExpr(
+                              value.getBeginLine(),
+                              value.getBeginColumn(),
+                              value.getEndLine(),
+                              value.getEndColumn(),
+                              key, value
+                       );
+        pair.setAnnotations(annotations);
+        items.add(pair);
+       } [","]
+     )*
 
     "]" )
-  )
-  { return new JsonContainerExpr(line, column, token.endLine, token.endColumn, isArray, items); }
+
+  { return new JsonContainerExpr(line, column, token.endLine, token.endColumn, true, items); }
 }
 
 JsonPairExpr JsonPair():
@@ -3356,17 +3526,24 @@ JsonPairExpr JsonPair():
   int column;
   Expression name;
   Expression value;
+  AnnotationExpr annotation;
+  List annotations = new ArrayList();
 }
 {
 (
       ( name = Expression() { line = name.getBeginLine(); column = name.getBeginColumn(); } )
       ":"
       (
+      ( LOOKAHEAD( { token_source.peekNext() == '@' } ) annotation = Annotation() { annotations = add(annotations, annotation); } )*
        value = UiValue()
       )
       [ "," ] // we allow trailing commas at the end of lists and maps (easier coding)
   )
-  { return new JsonPairExpr(line, column, token.endLine, token.endColumn, name, value); }
+  {
+    JsonPairExpr pair = new JsonPairExpr(line, column, token.endLine, token.endColumn, name, value);
+    pair.setAnnotations(annotations);
+    return pair;
+  }
 }
 
 CssBlockExpr CssBlock():

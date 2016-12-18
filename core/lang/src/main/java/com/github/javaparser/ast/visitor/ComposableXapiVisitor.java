@@ -16,6 +16,7 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
 import xapi.fu.In2;
 import xapi.fu.In2Out1;
+import xapi.fu.In3;
 
 import static xapi.fu.In2Out1.superIn1;
 
@@ -25,12 +26,21 @@ import static xapi.fu.In2Out1.superIn1;
 public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
 
     private ClassTo<In2Out1<Node, Ctx, Boolean>> callbacks = X_Collect.newClassMap(In2Out1.class);
+    private In3<Node, Ctx, In2<Node, Ctx>> defaultCallback = (n, c, i)->i.in(n, c);
 
-    private <N extends Node> void doVisit(Class<N> cls, N n, Ctx arg, In2<N, Ctx> superCall) {
+    private <N extends Node> void doVisit(Class<N> cls, N node, Ctx ctx, In2<N, Ctx> superCall) {
         In2Out1<Node, Ctx, Boolean> filter = callbacks.get(cls);
-        if (filter == null || filter.io(n, arg)) {
-            superCall.in(n, arg);
+        if (filter == null) {
+            defaultCallback.in(node, ctx, (In2)superCall);
+        } else if (filter.io(node, ctx)) {
+            superCall.in(node, ctx);
+//        } else { // The filter returned false; do nothing.
         }
+    }
+
+    public ComposableXapiVisitor<Ctx> withDefaultCallback(In3<Node, Ctx, In2<Node, Ctx>> callback) {
+        this.defaultCallback = callback;
+        return this;
     }
 
     protected <N extends Node> void putCallback(Class<N> cls, In2Out1<N, Ctx, Boolean> callback) {

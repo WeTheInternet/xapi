@@ -1,5 +1,6 @@
 package com.github.javaparser.ast.plugin;
 
+import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.TemplateLiteralExpr;
 import xapi.fu.Printable;
 
@@ -14,6 +15,10 @@ public class Transformer {
 
   public String onTemplateStart(Printable printer, TemplateLiteralExpr template) {
     return template.getValue();
+  }
+
+  public String resolveName(Printable printer, NameExpr name) {
+    return name.getName();
   }
 
   public void onTemplateEnd(Printable printer) {

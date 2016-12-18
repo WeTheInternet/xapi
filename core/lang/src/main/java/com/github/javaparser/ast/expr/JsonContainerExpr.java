@@ -5,6 +5,7 @@ import com.github.javaparser.ast.exception.NotFoundException;
 import com.github.javaparser.ast.visitor.GenericVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitor;
 import xapi.collect.X_Collect;
+import xapi.fu.MappedIterable;
 import xapi.fu.has.HasSize;
 
 import java.util.ArrayList;
@@ -62,6 +63,14 @@ public class JsonContainerExpr extends JsonExpr implements HasSize {
 
   public List<JsonPairExpr> getPairs() {
     return pairs;
+  }
+
+  public MappedIterable<Expression> getValues() {
+    return MappedIterable.mapped(pairs).map(JsonPairExpr::getValueExpr);
+  }
+
+  public MappedIterable<Expression> getKeys() {
+    return MappedIterable.mapped(pairs).map(JsonPairExpr::getKeyExpr);
   }
 
   public void setPairs(List<JsonPairExpr> pairs) {

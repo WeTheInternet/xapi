@@ -56,7 +56,7 @@ public final class ModifierSet {
 
     public static final int STRICTFP = Modifier.STRICT;
 
-    public static final int DEFAULT = Modifier.PUBLIC;
+    public static final int DEFAULT = 0x2000;
 
     public static AccessSpecifier getAccessSpecifier(int modifiers) {
         if (isPublic(modifiers)){
@@ -114,7 +114,7 @@ public final class ModifierSet {
     }
 
     public static boolean isDefault(int modifiers) {
-        return (modifiers & PUBLIC) != 0;
+        return (modifiers & DEFAULT) != 0;
     }
 
     public static boolean isStatic(int modifiers) {

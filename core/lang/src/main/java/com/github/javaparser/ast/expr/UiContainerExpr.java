@@ -5,12 +5,14 @@ import com.github.javaparser.ast.visitor.GenericVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitor;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
+import xapi.fu.Filter.Filter1;
 import xapi.fu.In1Out1;
+import xapi.fu.MappedIterable;
+import xapi.fu.Maybe;
 
 import static xapi.collect.X_Collect.newStringMultiMap;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
@@ -19,6 +21,7 @@ import java.util.Optional;
 public class UiContainerExpr extends UiExpr {
 
   private boolean inTemplate;
+  private boolean alwaysRenderClose;
   private NameExpr name;
   private UiBodyExpr body;
   private StringTo.Many<UiAttrExpr> attrs;
@@ -55,12 +58,16 @@ public class UiContainerExpr extends UiExpr {
   }
 
   public UiAttrExpr getAttributeNotNull(String name) {
-    return getAttribute(name).orElseThrow(()->new NullPointerException("No feature named " + name + " found in " + this));
+    return getAttribute(name).getOrThrow(()->new NullPointerException("No feature named " + name + " found in " + this));
   }
-  public Optional<UiAttrExpr> getAttribute(String name) {
+  public MappedIterable<UiAttrExpr> getAttributesMatching(Filter1<UiAttrExpr> filter) {
+    return attrs.flattenedValues()
+            .filter(filter);
+  }
+  public Maybe<UiAttrExpr> getAttribute(String name) {
     final IntTo<UiAttrExpr> avail = attrs.get(name);
     assert avail.size() < 2 : "Asked for a single attribute, but value of " + name +" had more than 1 item: " + avail;
-    return avail.isEmpty() ? Optional.empty() : Optional.ofNullable(avail.at(0));
+    return avail.isEmpty() ? Maybe.not() : Maybe.nullable(avail.at(0));
   }
 
   public void setAttributes(List<UiAttrExpr> attributes) {
@@ -123,5 +130,13 @@ public class UiContainerExpr extends UiExpr {
       return true;
     }
     return false;
+  }
+
+  public void alwaysRenderClose() {
+    this.alwaysRenderClose = true;
+  }
+
+  public boolean shouldRenderClose() {
+    return alwaysRenderClose;
   }
 }

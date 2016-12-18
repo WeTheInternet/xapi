@@ -4,6 +4,8 @@ import com.github.javaparser.ast.visitor.GenericVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitor;
 import xapi.fu.Filter.Filter1;
 
+import static com.github.javaparser.ast.expr.StringLiteralExpr.stringLiteral;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -110,5 +112,13 @@ public class UiAttrExpr extends UiExpr {
       }
     }
     return Optional.empty();
+  }
+
+  public static UiAttrExpr of(String name, String stringValue) {
+    return new UiAttrExpr(new NameExpr(name), name.startsWith("@"), stringLiteral(stringValue));
+  }
+
+  public static UiAttrExpr of(String name, Expression value) {
+    return new UiAttrExpr(new NameExpr(name), name.startsWith("@"), value);
   }
 }

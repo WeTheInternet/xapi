@@ -21,7 +21,7 @@ import xapi.fu.Maybe;
 import xapi.fu.Rethrowable;
 import xapi.fu.X_Fu;
 import xapi.fu.has.HasSize;
-import xapi.fu.iterate.Chain.ChainBuilder;
+import xapi.fu.iterate.ChainBuilder;
 
 import static com.github.javaparser.ast.expr.TemplateLiteralExpr.templateLiteral;
 import static xapi.fu.Immutable.immutable1;

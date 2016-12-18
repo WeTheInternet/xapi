@@ -1,6 +1,7 @@
 package xapi.io;
 
 import xapi.collect.impl.SimpleFifo;
+import xapi.fu.has.HasSize;
 import xapi.inject.X_Inject;
 import xapi.io.api.HasLiveness;
 import xapi.io.api.IOMessage;
@@ -197,10 +198,22 @@ public class X_IO {
 
   public static String toStringUtf8(final InputStream in) throws IOException {
     try (
-        final StringBufferOutputStream b = new StringBufferOutputStream();
+        final StringBufferOutputStream b = new StringBufferOutputStream()
     ) {
       drain(b, in);
       return b.toString();
+    }
+  }
+
+  public static byte[] toByteArray(final InputStream in) throws IOException {
+    try (
+        final ByteArrayOutputStream b =
+            in instanceof HasSize ?
+                new ByteArrayOutputStream( ((HasSize)in).size() ) :
+                new ByteArrayOutputStream()
+    ) {
+      drain(b, in);
+      return b.toByteArray();
     }
   }
 

@@ -74,7 +74,7 @@ public class DumpVisitor implements VoidVisitor<Object> {
         return printer.toSource();
     }
 
-    private void printModifiers(final int modifiers) {
+    private void printModifiers(final int modifiers, boolean isMethod) {
         if (ModifierSet.isPrivate(modifiers)) {
             printer.print("private ");
         }
@@ -84,9 +84,9 @@ public class DumpVisitor implements VoidVisitor<Object> {
         if (ModifierSet.isPublic(modifiers)) {
             printer.print("public ");
         }
-        if (ModifierSet.isDefault(modifiers)) {
-            printer.print("default ");
-        }
+//        if (isMethod && ModifierSet.isDefault(modifiers)) {
+//            printer.print("default ");
+//        }
         if (ModifierSet.isAbstract(modifiers)) {
             printer.print("abstract ");
         }
@@ -321,7 +321,7 @@ public class DumpVisitor implements VoidVisitor<Object> {
             }
 
         } else {
-            printModifiers(n.getModifiers());
+            printModifiers(n.getModifiers(), false);
 
             if (n.isInterface()) {
                 printer.print("interface ");
@@ -356,9 +356,9 @@ public class DumpVisitor implements VoidVisitor<Object> {
             }
 
             printer.println(" {");
-            printer.indent();
 
         }
+        printer.indent();
 
 
         if (!isNullOrEmpty(n.getMembers())) {
@@ -587,7 +587,7 @@ public class DumpVisitor implements VoidVisitor<Object> {
         printJavaComment(n.getComment(), arg);
         printJavadoc(n.getJavaDoc(), arg);
         printMemberAnnotations(n.getAnnotations(), arg);
-        printModifiers(n.getModifiers());
+        printModifiers(n.getModifiers(), false);
         n.getType().accept(this, arg);
 
         printer.print(" ");
@@ -936,10 +936,10 @@ public class DumpVisitor implements VoidVisitor<Object> {
     @Override
     public void visit(UiAttrExpr n, Object arg) {
         printJavaComment(n.getComment(), arg);
-        printer.indent();
+//        printer.indent();
         n.getName().accept(this, arg);
         printer.print(" = ");
-        if (n.getAnnotations() != null) {
+        if (n.getAnnotations() != null && !n.getAnnotations().isEmpty()) {
             printer.println();
             for (AnnotationExpr annotationExpr : n.getAnnotations()) {
                 annotationExpr.accept(this, arg);
@@ -948,7 +948,7 @@ public class DumpVisitor implements VoidVisitor<Object> {
             printer.println();
         }
         n.getExpression().accept(this, arg);
-        printer.outdent();
+//        printer.outdent();
     }
 
     @Override
@@ -960,13 +960,19 @@ public class DumpVisitor implements VoidVisitor<Object> {
         printer.print("<");
         n.getNameExpr().accept(this, arg);
         printer.indent();
-        for (UiAttrExpr attr : n.getAttributes()) {
+        final List<UiAttrExpr> attrs = n.getAttributes();
+        for (UiAttrExpr attr : attrs) {
             printer.println();
             attr.accept(this, arg);
         }
         printer.outdent();
         if (n.getBody() == null) {
-            printer.print("/>");
+            if (n.shouldRenderClose()) {
+                printer.println();
+                printer.print("/").print(n.getName()).print(">");
+            } else {
+                printer.print("/>");
+            }
         } else {
             printer.print(">");
             n.getBody().accept(this, arg);
@@ -974,6 +980,7 @@ public class DumpVisitor implements VoidVisitor<Object> {
             n.getNameExpr().accept(this, arg);
             printer.print(">");
         }
+
         if (n.isInTemplate()) {
             printer.print("`");
         }
@@ -1107,7 +1114,7 @@ public class DumpVisitor implements VoidVisitor<Object> {
         printJavaComment(n.getComment(), arg);
         printJavadoc(n.getJavaDoc(), arg);
         printMemberAnnotations(n.getAnnotations(), arg);
-        printModifiers(n.getModifiers());
+        printModifiers(n.getModifiers(), false);
 
         printTypeParameters(n.getTypeParameters(), arg);
         if (!n.getTypeParameters().isEmpty()) {
@@ -1148,7 +1155,7 @@ public class DumpVisitor implements VoidVisitor<Object> {
         printJavaComment(n.getComment(), arg);
         printJavadoc(n.getJavaDoc(), arg);
         printMemberAnnotations(n.getAnnotations(), arg);
-        printModifiers(n.getModifiers());
+        printModifiers(n.getModifiers(), true);
         if (n.isDefault()) {
             printer.print("default ");
         }
@@ -1199,7 +1206,7 @@ public class DumpVisitor implements VoidVisitor<Object> {
     public void visit(final Parameter n, final Object arg) {
         printJavaComment(n.getComment(), arg);
         printAnnotations(n.getAnnotations(), arg);
-        printModifiers(n.getModifiers());
+        printModifiers(n.getModifiers(), false);
         if (n.getType() != null) {
             n.getType().accept(this, arg);
         }
@@ -1213,7 +1220,7 @@ public class DumpVisitor implements VoidVisitor<Object> {
     @Override
     public void visit(MultiTypeParameter n, Object arg) {
         printAnnotations(n.getAnnotations(), arg);
-        printModifiers(n.getModifiers());
+        printModifiers(n.getModifiers(), false);
 
         Type type = n.getType();
         if (type != null) {
@@ -1246,7 +1253,7 @@ public class DumpVisitor implements VoidVisitor<Object> {
     public void visit(final VariableDeclarationExpr n, final Object arg) {
         printJavaComment(n.getComment(), arg);
         printAnnotations(n.getAnnotations(), arg);
-        printModifiers(n.getModifiers());
+        printModifiers(n.getModifiers(), false);
 
         n.getType().accept(this, arg);
         printer.print(" ");
@@ -1383,7 +1390,7 @@ public class DumpVisitor implements VoidVisitor<Object> {
         printJavaComment(n.getComment(), arg);
         printJavadoc(n.getJavaDoc(), arg);
         printMemberAnnotations(n.getAnnotations(), arg);
-        printModifiers(n.getModifiers());
+        printModifiers(n.getModifiers(), false);
 
         printer.print("enum ");
         printer.print(n.getName());
@@ -1634,7 +1641,7 @@ public class DumpVisitor implements VoidVisitor<Object> {
         printJavaComment(n.getComment(), arg);
         printJavadoc(n.getJavaDoc(), arg);
         printMemberAnnotations(n.getAnnotations(), arg);
-        printModifiers(n.getModifiers());
+        printModifiers(n.getModifiers(), false);
 
         printer.print("@interface ");
         printer.print(n.getName());
@@ -1652,7 +1659,7 @@ public class DumpVisitor implements VoidVisitor<Object> {
         printJavaComment(n.getComment(), arg);
         printJavadoc(n.getJavaDoc(), arg);
         printMemberAnnotations(n.getAnnotations(), arg);
-        printModifiers(n.getModifiers());
+        printModifiers(n.getModifiers(), false);
 
         n.getType().accept(this, arg);
         printer.print(" ");
@@ -1734,6 +1741,9 @@ public class DumpVisitor implements VoidVisitor<Object> {
     public void visit(LambdaExpr n, Object arg) {
         printJavaComment(n.getComment(), arg);
 
+        printer.println();
+        printer.indent();
+
         List<Parameter> parameters = n.getParameters();
         boolean printPar = n.isParametersEnclosed();
 
@@ -1766,6 +1776,9 @@ public class DumpVisitor implements VoidVisitor<Object> {
         } else {
             body.accept(this, arg);
         }
+        printer.println();
+        printer.outdent();
+
     }
 
     @Override
@@ -1814,14 +1827,24 @@ public class DumpVisitor implements VoidVisitor<Object> {
             printer.print("{");
         }
 
-        final boolean was = inArray;
-        inArray = n.isArray();
         final List<JsonPairExpr> pairs = n.getPairs();
+        final boolean was = inArray, multi = pairs.size() > 1;
+        inArray = n.isArray();
+        if (multi) {
+            printer.indent();
+        }
         for (int i = 0; i < pairs.size(); i++) {
             if (i > 0) {
                 printer.print(", ");
             }
+            if (multi) {
+                printer.println();
+            }
             pairs.get(i).accept(this, arg);
+        }
+        if (multi) {
+            printer.outdent();
+            printer.println();
         }
         inArray = was;
 

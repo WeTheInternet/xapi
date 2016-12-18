@@ -11,7 +11,7 @@ import xapi.fu.Rethrowable;
 import xapi.fu.has.HasType;
 import xapi.fu.iterate.CachingIterator;
 import xapi.fu.iterate.Chain;
-import xapi.fu.iterate.Chain.ChainBuilder;
+import xapi.fu.iterate.ChainBuilder;
 import xapi.fu.iterate.EmptyIterator;
 
 import static xapi.fu.iterate.SingletonIterator.singleItem;

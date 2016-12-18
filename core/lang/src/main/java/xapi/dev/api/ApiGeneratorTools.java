@@ -1,9 +1,11 @@
 package xapi.dev.api;
 
 import com.github.javaparser.ASTHelper;
+import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.expr.BinaryExpr.Operator;
+import com.github.javaparser.ast.plugin.Transformer;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
@@ -13,6 +15,7 @@ import com.github.javaparser.ast.type.ReferenceType;
 import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.type.VoidType;
 import com.github.javaparser.ast.visitor.ComposableXapiVisitor;
+import com.github.javaparser.ast.visitor.TransformVisitor;
 import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.dev.api.AstMethodInvoker.AstMethodResult;
@@ -22,6 +25,8 @@ import xapi.fu.Do;
 import xapi.fu.Filter.Filter1;
 import xapi.fu.In1;
 import xapi.fu.Maybe;
+import xapi.fu.Out1;
+import xapi.fu.Printable;
 import xapi.fu.Rethrowable;
 import xapi.fu.X_Fu;
 import xapi.fu.iterate.CountedIterator;
@@ -65,7 +70,11 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
     default IntTo<String> resolveToLiterals(Ctx ctx, Expression typeParams) {
         IntTo<String> types = X_Collect.newList(String.class);
         ComposableXapiVisitor<Ctx> resolver = new ComposableXapiVisitor<>();
-        resolver.withMethodCallExpr((call, c)->{
+        resolver
+            .withDefaultCallback((node, context, superCall)->{
+                throw new NotYetImplemented("No handler registered for " + debugNode(node));
+            })
+            .withMethodCallExpr((call, c)->{
                 Maybe<AstMethodInvoker<Ctx>> toInvoke = methods().findMethod(ctx, call);
                 if (toInvoke.isPresent()) {
                     final AstMethodResult res = toInvoke.get().io(this, ctx, call);
@@ -104,6 +113,12 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
                     .provide1(resolver)
                     .provide2(c);
                 expr.readAllNodes(callback, ctx);
+                return false;
+            })
+            .withUiContainerExpr((ui, c)-> {
+                String src = ui.toSource(getTransformer(c));
+                final String[] lines = TransformVisitor.normalizeLines(src);
+                types.add(X_String.join("\n", lines));
                 return false;
             })
             .withTypeExpr((expr, c)->{
@@ -200,141 +215,22 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
                 } else {
                     throw new IllegalArgumentException("Unhandled ClassExpr type " + type + " from " + expr + " at " + expr.getCoordinates());
                 }
-            })
-            ;
-        if (typeParams instanceof MethodCallExpr) {
-//            MethodCallExpr call = (MethodCallExpr) typeParams;
-//            if (call.getName().startsWith("$")) {
-//                // We have a utility method to deal with;
-//                final List<Expression> args = call.getArgs();
-//                switch (call.getName()) {
-//                    case "$range":
-//                        typeParams.accept(resolver, ctx);
-//                        // expects arguments in the forms of literals or lambda expressions
-////                        List<String> items = resolveRange(ctx, call);
-////                        types.addAll(items);
-//                        break;
-//                    case "$print":
-//                        final Expression expr = resolveVar(ctx, args.get(0));
-//                        return resolveToLiterals(ctx, TemplateLiteralExpr.templateLiteral(expr.toSource()));
-//                    case "$if":
-//                        boolean resolved = isConditionTrue(ctx, args.get(0));
-//                        if (resolved) {
-//                            types.addAll(resolveToLiterals(ctx, args.get(1)));
-//                        }
-//                        break;
-//                    case "$else":
-//                        resolved = isConditionTrue(ctx, ((MethodCallExpr) typeParams).getScope());
-//                        if (!resolved) {
-//                            types.addAll(resolveToLiterals(ctx, args.get(0)));
-//                        }
-//                        break;
-//                    case "$type":
-//                        // first argument is the type name,
-//                        String type = resolveString(ctx, args.get(0));
-//                        if (args.size() > 1) {
-//                            StringBuilder b = new StringBuilder(type).append("<");
-//                            String prefix = "";
-//                            for (int i = 1; i < args.size(); i++) {
-//                                final Expression nextArg = args.get(i);
-//                                final IntTo<String> generics = resolveToLiterals(ctx, nextArg);
-//                                for (String s : generics.forEach()) {
-//                                    b.append(prefix);
-//                                    b.append(s);
-//                                    prefix = ", ";
-//                                }
-//                            }
-//                            b.append(">");
-//                            type = b.toString();
-//                        }
-//                        types.add(type);
-//                        break;
-//                    case "$replace":
-//                        // get the types from the scope of the method call,
-//                        // then perform replacement on them.
-//                        if (call.getScope() == null) {
-//                            throw new IllegalArgumentException("$replace can only be used after another expression; " +
-//                                "such as: $range(1, 2, $n->`I$n`).$replace(`I1`, `To`)");
-//                        }
-//                        if (args.size() != 2) {
-//                            throw new IllegalArgumentException("$replace() calls must have exactly two arguments");
-//                        }
-//                        IntTo<String> scoped = resolveToLiterals(ctx, call.getScope());
-//                        String pattern = resolveString(ctx, args.get(0));
-//                        String replaceWith = resolveString(ctx, args.get(1));
-//                        Pattern regex = Pattern.compile(pattern);
-//                        for (int i = 0; i < scoped.size(); i++) {
-//                            final Matcher matcher = regex.matcher(scoped.at(i));
-//                            if (matcher.matches()) {
-//                                final String result = matcher.replaceAll(replaceWith);
-//                                scoped.set(i, result);
-//                            }
-//                        }
-//                        return scoped;
-//                    case "$generic":
-//                        // Method should be of the form:
-//                        // Type.class.$generic("G", "E", "NERIC" ...)
-//                        scoped = resolveToLiterals(ctx, call.getScope());
-//                        JsonContainerExpr wrapper = JsonContainerExpr.jsonArray(args);
-//                        final IntTo<String> generics = resolveToLiterals(ctx, wrapper);
-//                        String generic = "<" + generics.join(", ") + ">";
-//                        for (String raw : scoped.forEach()) {
-//                            types.add(raw + generic);
-//                        }
-//                        break;
-//                    case "$first":
-//                        types.add(Boolean.toString(ctx.isFirstOfRange()));
-//                        break;
-//                    case "$remove":
-//                        scoped = resolveToLiterals(ctx, call.getScope());
-//                        if (args.size() != 1) {
-//                            throw new IllegalArgumentException("$remove() expects exactly one argument;" +
-//                                "\nyou sent " + debugNode(call));
-//                        }
-//                        final Expression asVar = resolveVar(ctx, args.get(0));
-//                        pattern = resolveString(ctx, asVar);
-//                        regex = Pattern.compile(pattern);
-//                        scoped.removeIf(s->regex.matcher(s).matches(), true);
-//                        return scoped;
-//                    default:
-//                        throw new NotYetImplemented("System method " + call.getName()
-//                         +" is either misspelled or not supported;\n" + debugNode(call));
-//                }
-//            } else {
-//                // A method call to serialize to String...
-//                types.add(resolveTemplate(ctx, TemplateLiteralExpr.templateLiteral(typeParams.toSource())));
-//            }
-            typeParams.accept(resolver, ctx);
-        } else if (typeParams instanceof JsonContainerExpr) {
-            typeParams.accept(resolver, ctx);
-        } else if (typeParams instanceof TemplateLiteralExpr){
-            typeParams.accept(resolver, ctx);
-        } else if (typeParams instanceof StringLiteralExpr){
-            typeParams.accept(resolver, ctx);
-        } else if (typeParams instanceof BooleanLiteralExpr){
-            typeParams.accept(resolver, ctx);
-        } else if (typeParams instanceof QualifiedNameExpr){
-            typeParams.accept(resolver, ctx);
-        } else if (typeParams instanceof NameExpr) {
-            typeParams.accept(resolver, ctx);
-        } else if (typeParams instanceof ClassExpr) {
-            typeParams.accept(resolver, ctx);
-        } else if (typeParams instanceof BinaryExpr) {
-            typeParams.accept(resolver, ctx);
-        } else if (typeParams instanceof ConditionalExpr) {
-            typeParams.accept(resolver, ctx);
-        } else if (typeParams instanceof ArrayInitializerExpr) {
-            typeParams.accept(resolver, ctx);
-        } else if (typeParams instanceof SysExpr) {
-            typeParams.accept(resolver, ctx);
-        } else if (typeParams instanceof EnclosedExpr) {
-            typeParams.accept(resolver, ctx);
-        } else if (typeParams instanceof TypeExpr) {
-            typeParams.accept(resolver, ctx);
-        } else {
-            throw new IllegalArgumentException("Unhandled type argument: " + debugNode(typeParams));
-        }
+            });
+        typeParams.accept(resolver, ctx);
         return types;
+    }
+
+    default Transformer getTransformer(Ctx ctx) {
+        return new Transformer() {
+            @Override
+            public String onTemplateStart(Printable printer, TemplateLiteralExpr template) {
+                return resolveString(ctx, template);
+            }
+
+            @Override
+            public void onTemplateEnd(Printable printer) {
+            }
+        };
     }
 
     default String debugNode(Node node) {
@@ -796,6 +692,7 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
             SysExpr sys = (SysExpr) valueExpr;
             return sys.readAsOneNode((n, c)-> {
                 final Expression resolved = resolveNode(ctx, n);
+
                 ComposableXapiVisitor<Ctx> nameVisitor = new ComposableXapiVisitor<>();
                 nameVisitor.withNameExpr((name, con)->{
                     String newName = resolveTemplate(con, templateLiteral(name.getName()));
@@ -1028,5 +925,37 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
             return JsonContainerExpr.jsonArray(items);
         }
         throw new UnsupportedOperationException("Unable to box result type " + result);
+    }
+
+    default String getPackage(Ctx ctx, Node n, Out1<String> dfltPackage) {
+        final Expression expr;
+        if (n instanceof UiContainerExpr) {
+            UiContainerExpr container = (UiContainerExpr) n;
+            expr = container.getAttribute("package").getIfNull(UiAttrExpr.of(
+                "package",
+                dfltPackage.out1()
+            ));
+            return getPackage(ctx, expr, dfltPackage);
+        } else if (n instanceof UiAttrExpr) {
+            UiAttrExpr attr = (UiAttrExpr) n;
+            if (!"package".equals(attr.getNameString())) {
+                throw new IllegalArgumentException("Cannot get a package from an attribute not named `package`; " + debugNode(n));
+            }
+            return getPackage(ctx, attr.getExpression(), dfltPackage);
+        } else if (n instanceof CompilationUnit) {
+            CompilationUnit unit = (CompilationUnit) n;
+            expr = unit.getPackage().getName();
+            if (ctx == null) {
+                return ASTHelper.extractStringValue(expr);
+            }
+            return resolveString(ctx, expr);
+        } else if (n instanceof Expression) {
+            if (ctx == null) {
+                return ASTHelper.extractStringValue((Expression)n);
+            }
+            return resolveString(ctx, (Expression) n);
+        } else {
+            throw new IllegalArgumentException("Cannot extract package from " + debugNode(n));
+        }
     }
 }
