@@ -1,4 +1,6 @@
 package xapi.dev.util;
+import xapi.source.read.SourceUtil;
+
 import static xapi.dev.util.InjectionUtils.generatedAsyncProviderName;
 
 import com.google.gwt.core.ext.linker.Artifact;
@@ -7,10 +9,6 @@ import com.google.gwt.core.ext.linker.impl.StandardLinkerContext;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
-
-import javax.annotation.Nonnull;
-
-import xapi.source.read.SourceUtil;
 
 @Transferable
 public class InjectionCallbackArtifact extends Artifact<InjectionCallbackArtifact>{
@@ -26,8 +24,8 @@ public class InjectionCallbackArtifact extends Artifact<InjectionCallbackArtifac
 
   private final Set<String> callbacks = new LinkedHashSet<String>();
 
-  public InjectionCallbackArtifact(@Nonnull
-  final String packageName, @Nonnull
+  public InjectionCallbackArtifact(
+  final String packageName,
   final String className) {
     super(StandardLinkerContext.class);
     this.packageName = packageName;

@@ -3,16 +3,15 @@ package xapi.mvn.impl;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Parent;
-import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.resolution.ArtifactResult;
 import xapi.annotation.inject.InstanceDefault;
+import xapi.collect.X_Collect;
+import xapi.collect.api.StringTo;
 import xapi.mvn.model.MvnCoords;
 import xapi.mvn.model.MvnModule;
 import xapi.mvn.service.MvnCache;
 import xapi.mvn.service.MvnService;
-
-import java.io.IOException;
 
 /**
  * In cases where we need to lookup values from jars and poms, we do not want to have to keep resolving artifacts,
@@ -24,17 +23,11 @@ import java.io.IOException;
 public class MvnCacheImpl implements MvnCache {
 
     private final MvnService service;
+    private final StringTo<ArtifactResult> resultCache = X_Collect.newStringMap(ArtifactResult.class);
+    private final StringTo<Model> modelCache = X_Collect.newStringMap(Model.class);
 
     public MvnCacheImpl(MvnService service) {
         this.service = service;
-    }
-
-    public Model getPom(Artifact artifact) {
-        try {
-            return service.loadPomFile(artifact.getFile().getAbsolutePath());
-        } catch (XmlPullParserException | IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     public Model getPom(Parent artifact) {
@@ -46,18 +39,13 @@ public class MvnCacheImpl implements MvnCache {
     }
 
     public Model getPom(String groupId, String artifactId, String extension, String classifier, String version) {
-        final ArtifactResult result = service.loadArtifact(
-            groupId,
-            artifactId,
-            classifier,
-            extension,
-            version
-        );
-        try {
-            return service.loadPomFile(result.getArtifact().getFile().getAbsolutePath());
-        } catch (XmlPullParserException | IOException e) {
-            throw new RuntimeException(e);
-        }
+        final Artifact artifact = getArtifact(groupId, artifactId, classifier, extension, version);
+        return getPom(artifact);
+    }
+
+    public Model getPom(Artifact artifact) {
+        String fileName = artifact.getFile().getAbsolutePath();
+        return modelCache.getOrCreateUnsafe(fileName, service::loadPomFile);
     }
 
     public Model getPom(Model model, Dependency artifact) {
@@ -216,7 +204,25 @@ public class MvnCacheImpl implements MvnCache {
         classifier = resolveProperty(pom, classifier, "");
         type = resolveProperty(pom, type, "jar");
         version = resolveProperty(pom, version);
-        return service.loadArtifact(groupId, artifactId, classifier, type, version).getArtifact();
+
+        return getArtifact(groupId, artifactId, classifier, type, version);
+    }
+
+    private Artifact getArtifact(String groupId, String artifactId, String classifier, String type, String version) {
+        String key = groupId+"|"+artifactId+"|"+type+"|"+classifier+"|"+version;
+
+        final ArtifactResult result =
+            resultCache.getOrCreate(key, k->
+                service.loadArtifact(
+                    groupId,
+                    artifactId,
+                    classifier,
+                    type,
+                    version
+                )
+            );
+
+        return result.getArtifact();
     }
 
     @Override

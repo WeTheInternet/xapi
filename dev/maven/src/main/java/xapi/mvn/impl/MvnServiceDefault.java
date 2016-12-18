@@ -52,6 +52,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
@@ -123,7 +124,16 @@ public class MvnServiceDefault implements MvnService {
     DefaultArtifact artifact = new DefaultArtifact( groupId,artifactId,classifier, X_String.isEmpty(extension) ? "jar" : extension, version);
 
     try {
+      final LocalArtifactRequest localRequest = new LocalArtifactRequest(artifact, remoteRepos(), null);
+      final LocalArtifactResult result = session.getLocalRepositoryManager().find(session, localRequest);
       ArtifactRequest request = new ArtifactRequest(artifact, remoteRepos(), null);
+      if (result.isAvailable()) {
+        final ArtifactResult artifactResult = new ArtifactResult(request);
+        final Artifact withFile = artifact.setFile(result.getFile());
+        artifactResult.setArtifact(withFile);
+        artifactResult.setRepository(result.getRepository());
+        return artifactResult;
+      }
       return repoSystem.resolveArtifact(session, request);
     } catch (ArtifactResolutionException e) {
       X_Log.log(getClass(), getLogLevel(), "Resolved? ", e.getResult().isResolved(), e.getResult().getExceptions());
@@ -287,10 +297,12 @@ public class MvnServiceDefault implements MvnService {
             );
             try {
               final Model parentPom = loadPomFile(parentArtifact.getArtifact().getFile().getAbsolutePath());
-              parentPom.getDependencyManagement();
               if (parentPom.getDependencyManagement() != null) {
                 for (Dependency dep : parentPom.getDependencyManagement().getDependencies()) {
-                  if (dep.getGroupId().equals(dependency.getGroupId()) && dep.getArtifactId().equals(dependency.getArtifactId())) {
+                  if (
+                      dep.getGroupId().equals(dependency.getGroupId()) &&
+                      dep.getArtifactId().equals(dependency.getArtifactId()) &&
+                        Objects.equals(dep.getClassifier(), dependency.getClassifier())) {
                     loadDependency(dependencies, pom, dep, filter);
                     continue allDeps;
                   }
