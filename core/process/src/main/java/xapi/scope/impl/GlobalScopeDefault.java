@@ -8,12 +8,13 @@ import xapi.inject.X_Inject;
 import xapi.scope.api.GlobalScope;
 import xapi.scope.api.SessionScope;
 import xapi.util.api.HasId;
+import xapi.util.api.RequestLike;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 9/5/16.
  */
 @InstanceDefault(implFor = GlobalScope.class)
-public class GlobalScopeDefault <User, Request> extends AbstractScope<GlobalScopeDefault<User, Request>> implements GlobalScope <User, Request> {
+public class GlobalScopeDefault <User, Request extends RequestLike> extends AbstractScope<GlobalScopeDefault<User, Request>> implements GlobalScope <User, Request> {
 
     private In1Out1<User, String> keySource;
     private StringTo<SessionScope<User, Request>> users;

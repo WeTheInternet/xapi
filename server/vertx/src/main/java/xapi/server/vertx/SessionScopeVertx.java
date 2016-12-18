@@ -1,5 +1,6 @@
 package xapi.server.vertx;
 
+import xapi.annotation.inject.InstanceOverride;
 import xapi.scope.api.RequestScope;
 import xapi.scope.api.SessionScope;
 import xapi.scope.impl.SessionScopeDefault;
@@ -9,6 +10,7 @@ import java.util.Optional;
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/2/16.
  */
+@InstanceOverride(implFor = SessionScope.class)
 public class SessionScopeVertx extends
     SessionScopeDefault<CollideUser, VertxRequest, SessionScopeVertx>{
 
@@ -27,13 +29,13 @@ public class SessionScopeVertx extends
     @Override
     public RequestScope<VertxRequest> getRequestScope(Optional<VertxRequest> request) {
         synchronized (requests) {
-            RequestScope<VertxRequest> current = get(RequestScope.class);
+            RequestScopeVertx current = (RequestScopeVertx)get(RequestScope.class);
             if (current == null) {
                 current = new RequestScopeVertx(request.get());
                 setLocal(RequestScope.class, current);
             } else {
                 if (request.isPresent()) {
-                    current.setRequest(request.get());
+                    current.initialize(request.get());
                 }
             }
             return current;

@@ -1,44 +1,25 @@
 package xapi.scope.impl;
 
-import xapi.fu.Out2;
 import xapi.scope.api.RequestScope;
+import xapi.util.api.RequestLike;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/4/16.
  */
-public class RequestScopeDefault <Request, Self extends RequestScopeDefault<Request, Self>>
+public class RequestScopeDefault <Req extends RequestLike, Self extends RequestScopeDefault<Req, Self>>
     extends AbstractScope <Self>
-    implements RequestScope <Request> {
+    implements RequestScope <Req> {
 
-    private Request request;
+    private Req request;
 
     @Override
-    public Request getRequest() {
+    public Req getRequest() {
         return request;
     }
 
     @Override
-    public String getPath() {
-        throw new UnsupportedOperationException(getClass() + " must implement getPath");
-    }
-
-    @Override
-    public String getBody() {
-        throw new UnsupportedOperationException(getClass() + " must implement getBody");
-    }
-
-    @Override
-    public Iterable<Out2<String, Iterable<String>>> getParams() {
-        throw new UnsupportedOperationException(getClass() + " must implement getParams");
-    }
-
-    @Override
-    public Iterable<Out2<String, Iterable<String>>> getHeaders() {
-        throw new UnsupportedOperationException(getClass() + " must implement getHeaders");
-    }
-
-    @Override
-    public void setRequest(Request req) {
+    public void initialize(Req req) {
         this.request = req;
     }
+
 }

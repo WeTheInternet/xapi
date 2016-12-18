@@ -1,6 +1,7 @@
 package xapi.scope.impl;
 
 import xapi.annotation.inject.InstanceDefault;
+import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
 import xapi.fu.Do;
 import xapi.fu.In1Out1;
@@ -19,8 +20,8 @@ import java.util.concurrent.atomic.AtomicReference;
 public class ScopeServiceDefault implements ScopeService {
 
     protected class ScopeMap {
-        protected ClassTo<Scope> scopes;
-        protected ClassTo<In1Out1<Class<? extends Scope>, Scope>> factories;
+        protected ClassTo<Scope> scopes = X_Collect.newClassMap(Scope.class);
+        protected ClassTo<In1Out1<Class<? extends Scope>, Scope>> factories = X_Collect.newClassMap(In1Out1.class);
         protected AtomicReference<Scope> scope = new AtomicReference<>();
 
         protected void inherit(ScopeMap map) {

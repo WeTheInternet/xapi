@@ -12,7 +12,7 @@ import java.util.Optional;
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/2/16.
  */
-@InstanceOverride(implFor = ScopeService.class)
+@InstanceOverride(implFor = ScopeService.class, priority = 0)
 @SuppressWarnings("unchecked")
 public class ScopeServiceVertx extends ScopeServiceDefault {
 
@@ -20,7 +20,7 @@ public class ScopeServiceVertx extends ScopeServiceDefault {
         final SessionScope<CollideUser, VertxRequest> session = sessionScope();
         // This request will be ignored if the request scope is already initialized
         VertxRequest vertxReq = new VertxRequest(req);
-        final RequestScope<VertxRequest> request = session.getRequestScope(
+        final RequestScopeVertx request = (RequestScopeVertx) session.getRequestScope(
             Optional.of(vertxReq)
         );
         if (req != null) {

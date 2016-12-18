@@ -7,6 +7,7 @@ import xapi.scope.api.SessionScope;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
 import xapi.util.api.Destroyable;
+import xapi.util.api.RequestLike;
 
 import java.util.Optional;
 import java.util.WeakHashMap;
@@ -14,7 +15,7 @@ import java.util.WeakHashMap;
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 9/5/16.
  */
-public class SessionScopeDefault <User, Request, Session extends SessionScopeDefault<User, Request, Session>>
+public class SessionScopeDefault <User, Request extends RequestLike, Session extends SessionScopeDefault<User, Request, Session>>
     extends AbstractScope<Session> implements SessionScope<User, Request>, Destroyable {
 
     private User user;
@@ -23,9 +24,9 @@ public class SessionScopeDefault <User, Request, Session extends SessionScopeDef
     protected final WeakHashMap<Request, RequestScope<Request>> requests;
 
     protected SessionScopeDefault() {
-        this(req->{
+        this((req)->{
             final RequestScope scope = X_Inject.instance(RequestScope.class);
-            scope.setRequest(req);
+            scope.initialize(req);
             return scope;
         });
     }
@@ -76,7 +77,7 @@ public class SessionScopeDefault <User, Request, Session extends SessionScopeDef
     protected RequestScope<Request> createRequestScope(Optional<Request> request) {
         final RequestScope<Request> scope = new RequestScopeDefault();
         if (request.isPresent()) {
-            scope.setRequest(request.get());
+            scope.initialize(request.get());
         }
         return scope;
     }
