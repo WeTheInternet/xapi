@@ -30,6 +30,10 @@ public interface X_Fu {
     return Fu.jutsu.newArray(type, size);
   }
 
+  static Object[] newObjectArray(int size) {
+    return new Object[size];
+  }
+
   static Object setArray(Object array, int pos, Object value) {
     Fu.jutsu.setArray(array, pos, value);
     return array;

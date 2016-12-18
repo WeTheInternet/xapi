@@ -50,6 +50,23 @@ public interface AnnotationTools extends SourceHelper<Element> {
         }
     }
 
+    default FileObject outputFile(String path, String file, Element ... types) throws IOException {
+        Filer filer = getFiler();
+        if (filer == null) {
+            // annotation processor filer might be null,
+            // in which case we fall back to the file maanger.
+            // Note that this (currently) ignores the types elements.
+            return getFileManager().getFileForOutput(
+                  StandardLocation.SOURCE_OUTPUT,
+                  path,
+                file,
+                  null
+            );
+        } else {
+            return filer.createResource(StandardLocation.SOURCE_OUTPUT, path, file, types);
+        }
+    }
+
     @Override
     default String readSource(String pkgName, String clsName, Element hints) {
         try {
@@ -79,5 +96,23 @@ public interface AnnotationTools extends SourceHelper<Element> {
         } catch (IOException e) {
             throw X_Util.rethrow(e);
         }
+    }
+
+    @Override
+    default void saveResource(String path, String fileName, String src, Element hints) {
+
+        try {
+            final FileObject file = outputFile(
+                path == null || path.isEmpty() ? "" : path,
+                fileName,
+                hints
+            );
+            try (OutputStream o = file.openOutputStream()) {
+                o.write(src.getBytes(defaultCharset()));
+            }
+        } catch (IOException e) {
+            throw X_Util.rethrow(e);
+        }
+
     }
 }

@@ -1,6 +1,5 @@
 package xapi.fu.iterate;
 
-import xapi.fu.iterate.Chain.ChainBuilder;
 import xapi.fu.has.HasSize;
 
 import java.util.Collection;

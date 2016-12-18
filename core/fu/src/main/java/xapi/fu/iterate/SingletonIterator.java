@@ -1,8 +1,10 @@
 package xapi.fu.iterate;
 
+import xapi.fu.MappedIterable;
+
 import java.util.Iterator;
 
-public class SingletonIterator <X> implements Iterable<X>{
+public class SingletonIterator <X> implements MappedIterable<X> {
 
   private final class Iter implements Iterator<X> {
     private X object;

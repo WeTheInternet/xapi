@@ -237,4 +237,8 @@ public interface Out1<O> extends Rethrowable, Lambda, HasMutability {
     }
     return result;
   }
+
+    default Do ignoreOut1() {
+      return this::out1;
+    }
 }

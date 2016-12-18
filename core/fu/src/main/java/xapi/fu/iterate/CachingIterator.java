@@ -2,7 +2,6 @@ package xapi.fu.iterate;
 
 import xapi.fu.*;
 import xapi.fu.Filter.Filter1;
-import xapi.fu.iterate.Chain.ChainBuilder;
 
 import java.util.Iterator;
 
@@ -23,7 +22,7 @@ public class CachingIterator <T> implements Iterator<T>, Rethrowable {
     }
 
     public CachingIterator(Iterator<T> wrapped) {
-        lock = new Object(); // binary semaphore, to prevent concurrent modification
+        lock = new Object();
         // To start with, our getNext returns an iterator that accesses the wrapped source object
         // If you peekAll() or filterUntil() on this iterator, this accessor method will be
         // replaced with one that no longer holds the source iterator in scope.

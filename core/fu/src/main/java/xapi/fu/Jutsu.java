@@ -90,7 +90,7 @@ interface Jutsu {
       int i = (Integer)m.invoke(lambda);
       m = l.getMethod("getCapturedArg", int.class);
       while(i --> 0) {
-        name += "|" + System.identityHashCode(m.invoke(lambda, i));
+        name += "|" + System.identityHashCode(m.invoke(lambda, new Integer(i)));
       }
       return name;
     } catch (Exception ignored) {

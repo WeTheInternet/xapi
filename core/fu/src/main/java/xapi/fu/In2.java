@@ -169,6 +169,20 @@ public interface In2<I1, I2> extends HasInput, Rethrowable, Lambda {
     };
   }
 
+  default In2<I1, I2> doBeforeMe(In2<I1, I2> other) {
+    return (i1, i2) -> {
+      other.in(i1, i2);
+      in(i1, i2);
+    };
+  }
+
+  default In2<I1, I2> doAfterMe(In2<I1, I2> other) {
+    return (i1, i2) -> {
+      in(i1, i2);
+      other.in(i1, i2);
+    };
+  }
+
   default <O1> In2Out1<I1, I2, O1> supply1AfterRead(Out1<O1> factory) {
     return (i1, i2) -> {
       in(i1, i2);

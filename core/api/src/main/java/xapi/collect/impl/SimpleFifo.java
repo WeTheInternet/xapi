@@ -106,6 +106,15 @@ public class SimpleFifo <E> implements Fifo<E>, Iterable<E>, Serializable{
     }
   }
 
+  public SimpleFifo(Iterable<E> els) {
+    this();
+    for (E el : els) {
+      if (el != null) {
+        give(el);
+      }
+    }
+  }
+
   @Override
   public Fifo<E> give(E item) {
     if (item==null)return this;

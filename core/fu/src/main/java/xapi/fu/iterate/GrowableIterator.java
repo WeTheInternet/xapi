@@ -52,11 +52,16 @@ public class GrowableIterator<T> implements Iterator <T> {
     }
 
     public GrowableIterator(Iterable<T> mine) {
-        this(Out1.newOut1(mine::iterator));
+        this(new Out1<Iterator<T>>() {
+            @Override
+            public Iterator<T> out1() {
+                return mine.iterator();
+            }
+        });
     }
 
     public GrowableIterator(Out1<Iterator<T>> mine) {
-        this.mine = Lazy.deferred1(mine);
+        this.mine = Lazy.deferred1(mine::out1);
         head = this;
     }
 
@@ -65,7 +70,7 @@ public class GrowableIterator<T> implements Iterator <T> {
     }
 
     protected GrowableIterator(Out1<Iterator<T>> mine, GrowableIterator<T> head) {
-        this.mine = Lazy.deferred1(mine);
+        this.mine = Lazy.deferred1(mine::out1);
         this.head = head;
     }
 
@@ -78,7 +83,7 @@ public class GrowableIterator<T> implements Iterator <T> {
     }
 
     public GrowableIterator<T> concat(Iterable<T> itr) {
-        return concatDeferred(Out1.newOut1(itr::iterator));
+        return concatDeferred(itr::iterator);
     }
 
     public GrowableIterator<T> concatDeferred(Out1<Iterator<T>> itr) {
@@ -110,7 +115,12 @@ public class GrowableIterator<T> implements Iterator <T> {
     }
 
     public GrowableIterator<T> insert(Iterable<T> itr) {
-        return insertDeferred(itr::iterator);
+        return insertDeferred(new Out1<Iterator<T>>() {
+            @Override
+            public Iterator<T> out1() {
+                return itr.iterator();
+            }
+        });
     }
 
     public GrowableIterator<T> insertDeferred(Out1<Iterator<T>> itr) {

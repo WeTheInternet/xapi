@@ -43,6 +43,9 @@ public interface Do extends AutoCloseable {
     };
   }
 
+  default <I> In1<I> ignores1() {
+    return ignored->done();
+  }
   default <O> Out1<O> returns1(O val) {
     return ()->{
       done();
@@ -113,4 +116,8 @@ public interface Do extends AutoCloseable {
     forEach(values, In1.mapped2(job, mapper));
   }
 
+  default Do onlyOnce() {
+    Mutable<Do> todo = new Mutable<>(this);
+    return ()->todo.useThenSet(Do::done, Do.NOTHING);
+  }
 }

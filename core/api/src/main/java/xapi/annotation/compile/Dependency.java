@@ -86,7 +86,7 @@ public @interface Dependency {
    */
   String DIR_GEN = "${dir.gen}";
   /**
-   * The gen directory; must be set as a system property (or in whatever PropertyService
+   * The output directory; must be set as a system property (or in whatever PropertyService
    * is used by X_Properties).  Some implementations, like the maven launcher,
    * will fill this value in for you.  The gwt compiler will default this
    * special location to the WAR/moduleName directory.
@@ -103,6 +103,7 @@ public @interface Dependency {
   String groupId() default "";
   String version() default "";
   String classifier() default "";
+  boolean loadChildren() default true;
   DependencyType dependencyType() default DependencyType.RELATIVE;
   boolean inheritDependencies() default false;
   Specifier[] specifiers() default @Specifier;

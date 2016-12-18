@@ -9,4 +9,6 @@ public interface SourceHelper <Hints> {
 
     void saveSource(String pkgName, String clsName, String src, Hints hints);
 
+    void saveResource(String path, String fileName, String src, Hints hints);
+
 }

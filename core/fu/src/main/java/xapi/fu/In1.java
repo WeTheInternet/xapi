@@ -172,7 +172,7 @@ public interface In1<I> extends HasInput, Rethrowable, Lambda {
     return in2.provide2(value);
   }
 
-  static <I> In1<I> ignored(Runnable r) {
+  static <I> In1<I> ignoreIn1(Runnable r) {
     return ignored -> r.run();
   }
 

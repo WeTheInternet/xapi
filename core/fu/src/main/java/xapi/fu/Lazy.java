@@ -121,6 +121,41 @@ public class Lazy <T> implements Out1<T>, IsLazy {
     return proxy instanceof ProxySupplier;
   }
 
+  public final Lazy<T> ifFull(In1<T> callback) {
+    return ifFull(callback, false);
+  }
+  public final Lazy<T> ifFull(In1<T> callback, boolean eager) {
+    if (eager ? valueAcceptable(out1()) : isFull1()) {
+      callback.in(out1());
+    }
+    return this;
+  }
+
+  public final Lazy<T> ifResolved(In1<T> callback) {
+    if (isResolved()) {
+      callback.in(out1());
+    }
+    return this;
+  }
+
+  public final Lazy<T> ifUnresolved(In1<T> callback) {
+    if (isUnresolved()) {
+      callback.in(out1());
+    }
+    return this;
+  }
+
+  public final Lazy<T> ifNull(In1<T> callback) {
+    return ifNull(callback, false);
+  }
+  public final Lazy<T> ifNull(In1<T> callback, boolean eager) {
+    if ((eager || isResolved()) // avoid resolving
+        && isNull1()) {
+      callback.in(out1());
+    }
+    return this;
+  }
+
   public final T assertAcceptable1() {
     T out = out1();
     assert valueAcceptable(out);
@@ -145,6 +180,10 @@ public class Lazy <T> implements Out1<T>, IsLazy {
     return supplier instanceof Lazy ?
         (Lazy<T>)supplier :
         new Lazy<>(supplier) ;
+  }
+
+  public static <I, T> Lazy<T> deferred1(In1Out1<I, T> supplier, I input) {
+    return deferred1(supplier.supply(input));
   }
 
   public static <T> Lazy<T> deferred1Unsafe(Out1Unsafe<T> supplier) {

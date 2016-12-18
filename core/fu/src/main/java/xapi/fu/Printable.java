@@ -41,7 +41,7 @@ public interface Printable <Self extends Printable<Self>> extends Coercible {
 
     public SimplePrintable(StringBuilder builder) {
       this.target = builder;
-      indent = perIndent();
+      indent = "";
     }
 
     @Override

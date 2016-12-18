@@ -10,6 +10,45 @@ import static xapi.fu.Immutable.immutable1;
  */
 public class Mutable <I> implements In1Unsafe<I>, Out1Unsafe<I> {
 
+  public interface MutableAsIO <I> extends In1Out1<I, I> {
+
+    Mutable<Out2<In1<I>, Out1<I>>> data();
+
+    @Override
+    default I io(I in) {
+      final Mutable<Out2<In1<I>, Out1<I>>> wrapper = data();
+      final Out2<In1<I>, Out1<I>> data = wrapper.out1();
+
+      final I was = data.out2().out1();
+      if (in != null) {
+        // allow the use of null to say "only read";
+        // use #clear or #replace...
+        data.out1().in(in);
+      }
+      return was;
+    }
+
+    default void clear() {
+      replace(new Mutable<>());
+    }
+
+    static <I> MutableAsIO<I> toIO(Mutable<I> mutable) {
+      final Mutable<Out2<In1<I>, Out1<I>>> container = new Mutable<>();
+      MutableAsIO<I> asIO = ()->container;
+      return asIO.replace(mutable);
+    }
+
+    default MutableAsIO<I> replace(Out2<In1<I>, Out1<I>> pointer) {
+      data().in(pointer);
+      return this;
+    }
+
+    default MutableAsIO<I> replace(Mutable<I> value) {
+      data().in(Out2.out2Immutable(value::in, value::out1));
+      return this;
+    }
+  }
+
   public static <Value, Bound extends Value> Mutable<Value> mutable(Class<Bound> bounds) {
     return new TypesafeMutable<>(bounds);
   }
@@ -37,9 +76,18 @@ public class Mutable <I> implements In1Unsafe<I>, Out1Unsafe<I> {
     return Out1Unsafe.super.out1();
   }
 
+  public final MutableAsIO<I> asIO() {
+    return MutableAsIO.toIO(this);
+  }
+
   @Override
   public void inUnsafe(I in) throws Throwable {
     this.value = in;
+  }
+
+  @Override
+  public I outUnsafe() throws Throwable {
+    return value;
   }
 
   public final boolean isNull() {
@@ -48,10 +96,6 @@ public class Mutable <I> implements In1Unsafe<I>, Out1Unsafe<I> {
 
   public final boolean isNonNull() {
     return value != null;
-  }
-  @Override
-  public I outUnsafe() throws Throwable {
-    return value;
   }
 
   public static class TypesafeMutable <T> extends Mutable <T> {
@@ -95,4 +139,25 @@ public class Mutable <I> implements In1Unsafe<I>, Out1Unsafe<I> {
       return output;
     }
   }
+
+    public final void set(I b) {
+      in(b);
+    }
+
+    public final I setReturnNew(I b) {
+      in(b);
+      return b;
+    }
+
+    public final Mutable<I> useThenSet(In1<I> callback, I newVal) {
+      callback.in(out1());
+      in(newVal);
+      return this;
+    }
+
+    public final I setReturnOld(I b) {
+      final I old = out1();
+      in(b);
+      return old;
+    }
 }

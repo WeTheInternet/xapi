@@ -168,4 +168,8 @@ In1Out1<I, O> extends Rethrowable, Lambda {
     }
     return os;
   }
+
+    default In1Out1<I, O> lazy(MapLike<I, O> cache) {
+      return i-> cache.getOrCreate(i, this);
+    }
 }

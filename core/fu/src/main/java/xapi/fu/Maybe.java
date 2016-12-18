@@ -97,4 +97,18 @@ public interface Maybe <V> extends Rethrowable {
     static <V> Maybe<V> not() {
         return NULL;
     }
+
+    default V getIfNull(V val) {
+        if (isPresent()) {
+            return get();
+        }
+        return val;
+    }
+
+    default V useIfNull(Out1<V> val) {
+        if (isPresent()) {
+            return get();
+        }
+        return val.out1();
+    }
 }

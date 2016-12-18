@@ -1,7 +1,7 @@
 package xapi.fu.has;
 
 import xapi.fu.iterate.Chain;
-import xapi.fu.iterate.Chain.ChainBuilder;
+import xapi.fu.iterate.ChainBuilder;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 11/4/16.

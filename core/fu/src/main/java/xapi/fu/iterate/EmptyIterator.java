@@ -7,10 +7,15 @@ import java.util.Iterator;
  */
 public final class EmptyIterator <I> implements Iterator <I> {
 
-    public static final Iterable NONE = EmptyIterator::new;
+    public static final Iterator EMPTY = new EmptyIterator();
+    public static final Iterable NONE = ()->EMPTY;
 
     public static <I> Iterable<I> none() {
         return NONE;
+    }
+
+    public static <I> Iterator<I> empty() {
+        return EMPTY;
     }
 
     @Override

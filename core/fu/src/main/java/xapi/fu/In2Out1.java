@@ -10,6 +10,8 @@ import java.util.function.BiFunction;
 public interface In2Out1<I1, I2, O> extends Rethrowable, Lambda {
 
   In2Out1 RETURN_NULL = (i1, i2) ->null;
+  In2Out1 RETURN_TRUE = (i1, i2) ->true;
+  In2Out1 RETURN_FALSE = (i1, i2) ->false;
 
   O io(I1 in1, I2 in2);
 

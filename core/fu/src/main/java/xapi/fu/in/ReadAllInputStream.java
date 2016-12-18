@@ -49,7 +49,7 @@ public class ReadAllInputStream extends InputStream {
                 }
                 page = new byte[size+1];
                 page[0] = (byte) chunk;
-                in.read(page, total+1, size);
+                in.read(page, 1, size);
                 pages.concat(page);
                 total += size+1;
                 limit -= size+1;

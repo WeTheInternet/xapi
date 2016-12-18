@@ -47,4 +47,19 @@ public class ArrayIterable <E> implements MappedIterable<E>, HasSize {
   public int size() {
     return array.length;
   }
+
+  @Override
+  public String toString() {
+    StringBuilder b = new StringBuilder("[");
+    if (array.length > 0) {
+      // iterate all but last element
+      for (int i = 0, m = array.length - 1; i < m; i++ ) {
+        b.append(array[i]);
+        b.append(", ");
+      }
+      // pop on the end item
+      b.append(array[array.length-1]);// already checked zero length
+    }
+    return b.append("]").toString();
+  }
 }

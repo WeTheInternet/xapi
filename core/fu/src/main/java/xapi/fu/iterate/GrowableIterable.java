@@ -36,15 +36,30 @@ public interface GrowableIterable<T> extends Iterable<T> {
             return (GrowableIterable<T>) one;
         }
         GrowableIterator<T> itr = new GrowableIterator<>(one);
-        return ()->itr;
+        return new GrowableIterable<T>() {
+            @Override
+            public GrowableIterator<T> iterator() {
+                return itr;
+            }
+        };
     }
 
     static <T> GrowableIterable<T> of(Iterator<T> one) {
         if (one instanceof GrowableIterator) {
-            return ()->(GrowableIterator<T>) one;
+            return new GrowableIterable<T>() {
+                @Override
+                public GrowableIterator<T> iterator() {
+                    return (GrowableIterator<T>) one;
+                }
+            };
         }
         final GrowableIterator<T> itr = new GrowableIterator<>(one);
-        return ()->itr;
+        return new GrowableIterable<T>() {
+            @Override
+            public GrowableIterator<T> iterator() {
+                return itr;
+            }
+        };
     }
 
     static <T> GrowableIterable<T> of(T one) {
