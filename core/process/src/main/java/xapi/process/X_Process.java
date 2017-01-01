@@ -5,6 +5,7 @@ import xapi.fu.Do.DoUnsafe;
 import xapi.fu.In1;
 import xapi.fu.In1.In1Unsafe;
 import xapi.fu.Lazy;
+import xapi.fu.Out1;
 import xapi.inject.X_Inject;
 import xapi.process.api.AsyncLock;
 import xapi.process.api.Process;
@@ -43,6 +44,10 @@ public class X_Process {
 
   public static void runFinally(Do cmd) {
     service.get().runFinally(cmd);
+  }
+
+  public static <T> void runFinally(In1<T> cmd, Out1<T> from) {
+    service.get().runFinally(cmd.provide(from));
   }
 
   public static void runTimeout(Do cmd, int milliDelay) {

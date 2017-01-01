@@ -8,7 +8,7 @@ import xapi.fu.In2;
 import xapi.fu.In2Out1;
 import xapi.fu.Out1;
 import xapi.gwtc.api.GwtManifest;
-import xapi.gwtc.api.IsRecompiler;
+import xapi.gwtc.api.ServerRecompiler;
 
 import com.google.gwt.core.client.RunAsyncCallback;
 import com.google.gwt.junit.client.GWTTestCase;
@@ -35,7 +35,7 @@ public interface GwtcService {
   void addGwtInherit(String inherit);
 
   int compile(GwtManifest manifest);
-  In2Out1<Integer, TimeUnit, Integer> recompile(GwtManifest manifest, In2<In1<In1<IsRecompiler>>, Throwable> callback);
+  In2Out1<Integer, TimeUnit, Integer> recompile(GwtManifest manifest, In2<ServerRecompiler, Throwable> callback);
   void compile(GwtManifest manifest, int timeout, TimeUnit unit, In1<Integer> callback);
 
   String getModuleName();

@@ -2,9 +2,13 @@ package xapi.server.api;
 
 import xapi.dev.gwtc.api.GwtcService;
 import xapi.fu.In1;
+import xapi.fu.iterate.Chain;
+import xapi.fu.iterate.ChainBuilder;
 import xapi.gwtc.api.GwtManifest;
 import xapi.gwtc.api.IsRecompiler;
+import xapi.gwtc.api.ServerRecompiler;
 import xapi.inject.X_Inject;
+import xapi.log.X_Log;
 import xapi.model.api.Model;
 
 /**
@@ -20,9 +24,9 @@ public interface ModelGwtc extends Model {
 
     ModelGwtc setService(GwtcService service);
 
-    In1<In1<IsRecompiler>> getRecompiler();
+    ServerRecompiler getRecompiler();
 
-    ModelGwtc setRecompiler(In1<In1<IsRecompiler>> recompiler);
+    ModelGwtc setRecompiler(ServerRecompiler recompiler);
 
     default GwtcService getOrCreateService() {
         return getOrCreate(this::getService, this::createService, this::setService);
@@ -38,5 +42,23 @@ public interface ModelGwtc extends Model {
 
     default GwtcService createService() {
         return X_Inject.instance(GwtcService.class);
+    }
+
+    default void warmupCompile() {
+        if (getRecompiler() == null) {
+            ChainBuilder<In1<IsRecompiler>> queued = Chain.startChain();
+            setRecompiler(queued::add);
+            final GwtcService gwtc = getOrCreateService();
+            final GwtManifest manifest = getOrCreateManifest();
+            gwtc.recompile(manifest, (comp, err)->{
+                if (err == null) {
+                    setRecompiler(comp);
+                    queued.forAll(comp::useServer);
+                    queued.clear();
+                } else {
+                    X_Log.error(getClass(), "Failure in warmup compile", err, "module:\n", manifest);
+                }
+            });
+        }
     }
 }

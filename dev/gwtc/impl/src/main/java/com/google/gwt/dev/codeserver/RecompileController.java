@@ -6,6 +6,7 @@ import xapi.fu.Out3;
 import xapi.gwtc.api.CompiledDirectory;
 import xapi.gwtc.api.IsRecompiler;
 import xapi.inject.impl.LazyPojo;
+import xapi.log.X_Log;
 
 import com.google.gwt.dev.cfg.ResourceLoader;
 import com.google.gwt.dev.codeserver.Job.Result;
@@ -29,87 +30,92 @@ public class RecompileController implements IsRecompiler {
   private Logger log = Logger.getLogger(getClass().getSimpleName());
   private ResourceLoader loader;
 
-  private LazyPojo<CompiledDirectory> compileDir =
-      new LazyPojo<CompiledDirectory>(){
-    @Override
-    protected CompiledDirectory initialValue() {
-      final Out3<Result, CompileStrategy, ResourceLoader> results = initialize();
-      if (results.out2() == CompileStrategy.SKIPPED) {
-        loader = results.out3();
-      } else {
-        loader = recompiler.getResourceLoader();
-      }
-      final Result res = results.out1();
-      final CompileDir dir = res.outputDir;
+  private LazyPojo<CompiledDirectory> compileDir = resetCompilation();
 
-      // Try to look up the permutation map from war directory
-      File warp = dir.getWarDir();
+  private LazyPojo<CompiledDirectory> resetCompilation() {
+    return
+        new LazyPojo<CompiledDirectory>(){
+          @Override
+          protected CompiledDirectory initialValue() {
+            final Out3<Result, CompileStrategy, ResourceLoader> results = initialize();
+            if (results.out2() == CompileStrategy.SKIPPED) {
+              loader = results.out3();
+            } else {
+              loader = recompiler.getResourceLoader();
+            }
+            final Result res = results.out1();
+            final CompileDir dir = res.outputDir;
 
-      File war = new File(warp,getModuleName()+File.separator+"compilation-mappings.txt");
-      Map<String, String> permutations = new HashMap<>();
-      if (war.exists()) {
-        try (
-          BufferedReader read = new BufferedReader(new FileReader(war));
-        ){
-        String line, strongName=null;
-        while ((line = read.readLine())!=null) {
-          if (line.startsWith("user.agent")) {
-            if (strongName != null) {
-              if (line.contains("safari")) {
-                permutations.put("safari", strongName);
-              }
-              else if (line.contains("gecko1_8")) {
-                permutations.put("gecko1_8", strongName);
-              }
-              else if (line.contains("gecko")) {
-                permutations.put("gecko", strongName);
-              }
-              else if (line.contains("ie6")) {
-                permutations.put("ie6", strongName);
-              }
-              else if (line.contains("ie8")) {
-                permutations.put("ie8", strongName);
-              }
-              else if (line.contains("ie9")) {
-                permutations.put("ie9", strongName);
-              }
-              else if (line.contains("opera")) {
-                permutations.put("opera", strongName);
+            // Try to look up the permutation map from war directory
+            File warp = dir.getWarDir();
+
+            File war = new File(warp,getModuleName()+File.separator+"compilation-mappings.txt");
+            Map<String, String> permutations = new HashMap<>();
+            if (war.exists()) {
+              try (
+                  BufferedReader read = new BufferedReader(new FileReader(war));
+              ){
+                String line, strongName=null;
+                while ((line = read.readLine())!=null) {
+                  if (line.startsWith("user.agent")) {
+                    if (strongName != null) {
+                      if (line.contains("safari")) {
+                        permutations.put("safari", strongName);
+                      }
+                      else if (line.contains("gecko1_8")) {
+                        permutations.put("gecko1_8", strongName);
+                      }
+                      else if (line.contains("gecko")) {
+                        permutations.put("gecko", strongName);
+                      }
+                      else if (line.contains("ie6")) {
+                        permutations.put("ie6", strongName);
+                      }
+                      else if (line.contains("ie8")) {
+                        permutations.put("ie8", strongName);
+                      }
+                      else if (line.contains("ie9")) {
+                        permutations.put("ie9", strongName);
+                      }
+                      else if (line.contains("opera")) {
+                        permutations.put("opera", strongName);
+                      }
+                    }
+                  } else {
+                    int ind = line.indexOf(".cache.js");
+                    if (ind > -1) {
+                      strongName = line.substring(0, ind);
+                    }
+                  }
+                }
+              }catch (Exception e) {
+                e.printStackTrace();
               }
             }
-          } else {
-            int ind = line.indexOf(".cache.js");
-            if (ind > -1) {
-              strongName = line.substring(0, ind);
-            }
-          }
-        }
-        }catch (Exception e) {
-          e.printStackTrace();
-        }
-      }
 
-      final File symbolDir = dir.findSymbolMapDir(getModuleName());
-      CompiledDirectory compiled = new CompiledDirectory()
-        .setDeployDir(dir.getDeployDir().getAbsolutePath())
-        .setExtraDir(dir.getExtraDir().getAbsolutePath())
-        .setGenDir(dir.getGenDir().getAbsolutePath())
-        .setLogFile(dir.getLogFile().getAbsolutePath())
-        .setWarDir(dir.getWarDir().getAbsolutePath())
-        .setWorkDir(dir.getWorkDir().getAbsolutePath())
-        .setStrategy(results.out2())
-        .setSourceMapDir(symbolDir == null ? null : symbolDir.getAbsolutePath())
-        .setUri(getModuleName())
-        .setUserAgentMap(permutations)
-      ;
-      return compiled;
-    };
-    @Override
-    public void reset() {
-      //TODO: delete any files, if they exist
-      super.reset();
-    };
-  };
+            final File symbolDir = dir.findSymbolMapDir(getModuleName());
+            CompiledDirectory compiled = new CompiledDirectory()
+                .setDeployDir(dir.getDeployDir().getAbsolutePath())
+                .setExtraDir(dir.getExtraDir().getAbsolutePath())
+                .setGenDir(dir.getGenDir().getAbsolutePath())
+                .setLogFile(dir.getLogFile().getAbsolutePath())
+                .setWarDir(dir.getWarDir().getAbsolutePath())
+                .setWorkDir(dir.getWorkDir().getAbsolutePath())
+                .setStrategy(results.out2())
+                .setSourceMapDir(symbolDir == null ? null : symbolDir.getAbsolutePath())
+                .setUri(getModuleName())
+                .setUserAgentMap(permutations)
+                ;
+            return compiled;
+          };
+          @Override
+          public void reset() {
+            //TODO: delete any files, if they exist
+            super.reset();
+          };
+        };
+  }
+
   private final Recompiler recompiler;
   private PrintWriterTreeLogger logger;
 
@@ -140,6 +146,10 @@ public class RecompileController implements IsRecompiler {
     try {
       result = compileDir.get();
       return result;
+    } catch (Throwable t) {
+      X_Log.warn(getClass(), "Resetting GWT recompiler", t);
+      compileDir = resetCompilation();
+      throw t;
     } finally {
       if (toDestroy != null && result != null && result.getStrategy() != CompileStrategy.SKIPPED) {
         destroy(toDestroy, 10000);

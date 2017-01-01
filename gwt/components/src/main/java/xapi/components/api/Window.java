@@ -19,4 +19,5 @@ public interface Window {
 
   void removeEventListener(String name, JsEventListener<?> callback, boolean useCapture);
 
+  void alert(String s);
 }

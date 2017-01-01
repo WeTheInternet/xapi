@@ -20,6 +20,7 @@ import xapi.gwtc.api.GwtManifest;
 import xapi.gwtc.api.Gwtc;
 import xapi.gwtc.api.GwtcProperties;
 import xapi.gwtc.api.IsRecompiler;
+import xapi.gwtc.api.ServerRecompiler;
 import xapi.io.api.SimpleLineReader;
 import xapi.log.X_Log;
 import xapi.reflect.X_Reflect;
@@ -33,6 +34,7 @@ import xapi.util.X_Properties;
 import xapi.util.X_Util;
 
 import static xapi.fu.iterate.SingletonIterator.singleItem;
+import static xapi.process.X_Process.runFinally;
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.RunAsyncCallback;
@@ -140,7 +142,7 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
   }
 
   @Override
-  public In2Out1<Integer, TimeUnit, Integer> recompile(GwtManifest manifest, In2<In1<In1<IsRecompiler>>, Throwable> callback) {
+  public In2Out1<Integer, TimeUnit, Integer> recompile(GwtManifest manifest, In2<ServerRecompiler, Throwable> callback) {
     String gwtHome = generateCompile(manifest);
     // Logging
     X_Log.info(getClass(), "Starting gwt compile", manifest.getModuleName());
@@ -179,18 +181,28 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
 
         Mutable<In1<IsRecompiler>> userRequest = new Mutable<>();
 
-        final In1<In1<IsRecompiler>> useCompiler = getComp -> {
-          userRequest.in(getComp);
+        final ServerRecompiler useCompiler = getComp ->
+          userRequest.mutex(()->{
+            if (userRequest.isNonNull()) {
+                final In1<IsRecompiler> current = userRequest.out1();
+                final In1<IsRecompiler> toAdd = getComp.onlyOnce();
+                // newest requests get serviced first,
+                // in the event of a page reload, an old request may have disconnected,
+                // so we want to process the callbacks from newest to oldest.
+                userRequest.in(current.useBeforeMe(toAdd));
+            } else {
+              userRequest.in(getComp.onlyOnce());
+            }
+          });
           synchronized (result) {
             result.notify();
           }
-        };
         callback.in(useCompiler, null);
         manifest.setOnline(true);
         while (manifest.isOnline()) {
           synchronized (result) {
             try {
-              result.wait(10_000);
+              result.wait(1_000);
             } catch (InterruptedException e) {
               X_Log.info(getClass(), "Recompiler interrupted; shutting down");
               return; // kill the thread
@@ -198,7 +210,8 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
           }
           userRequest.useThenSet(pending->{
             if (pending != null) {
-              pending.in(compiler);
+              // exit quickly to avoid race conditions!
+              runFinally(pending.provide(compiler));
             }
           }, null);
         }
@@ -217,7 +230,7 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
         throw X_Debug.rethrow(e);
       }
     };
-    return blocker.supply1AfterRead(code::out1);
+    return blocker.supply1AfterRead(code);
   }
 
   private URL[] fromClasspath(String[] classpath) {

@@ -2,6 +2,7 @@ package xapi.server.vertx;
 
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
@@ -19,7 +20,7 @@ import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
 import xapi.gwtc.api.CompiledDirectory;
 import xapi.gwtc.api.GwtManifest;
-import xapi.gwtc.api.IsRecompiler;
+import xapi.gwtc.api.ServerRecompiler;
 import xapi.io.X_IO;
 import xapi.log.X_Log;
 import xapi.process.X_Process;
@@ -95,11 +96,16 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
         }
         final HttpServerOptions opts = new HttpServerOptions()
             .setHost("0.0.0.0")
-            .setPort(webApp.getPort())
-            ;
+            .setPort(webApp.getPort());
 
         Mutable<HttpServer> connection = new Mutable<>();
-        vertx = Vertx.vertx();
+        final VertxOptions vertxOptions = new VertxOptions();
+        if (webApp.isDevMode()) {
+            vertxOptions
+                .setMaxEventLoopExecuteTime(60_000_000_000L) // one minute for event loop when debugging
+                .setMaxWorkerExecuteTime(200_000_000_000L);
+        }
+        vertx = Vertx.vertx(vertxOptions);
 
         exe = X_Process::runDeferred;
         final HttpServer server = vertx.createHttpServer(opts)
@@ -175,6 +181,7 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
                 )) {
                     return;
                 } else {
+                    X_Log.trace(getClass(), "Best was no good; ", best, "\nServing backups:", backups);
                     for (Route backup : backups) {
                         if (backup.serve(vertx, done->
                             callback.in(done, req)
@@ -228,7 +235,12 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
         if (module == null) {
             throw new IllegalArgumentException("No gwt app registered for id " + payload);
         }
-        String url = request.getRequest().getPath();
+        writeGwtJs(request.getRequest(), payload, module, callback);
+    }
+
+    private void writeGwtJs(VertxRequest req, String payload, ModelGwtc module, In1<VertxRequest> callback) {
+        final HttpServerResponse response = req.getResponse();
+        String url = req.getPath();
         if (url.contains(".nocache.js")) {
             // request was for the nocache file; compile every time (for now)
             final GwtManifest manifest = module.getOrCreateManifest();
@@ -236,16 +248,16 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
                 Do onDone = () -> {
                     Path path = Paths.get(manifest.getCompiledWar());
                     final Path file = path.resolve(payload + File.separatorChar + payload + ".nocache.js");
-                    request.getRequest().getResponse().sendFile(
+                    req.getResponse().sendFile(
                         file.normalize().toString()
                     );
-                    callback.in(request.getRequest());
+                    callback.in(req);
                 };
                 final GwtcService service = module.getOrCreateService();
                 if (manifest.isRecompile()) {
-                    final In1<In1<IsRecompiler>> compiler = module.getRecompiler();
+                    final ServerRecompiler compiler = module.getRecompiler();
                     if (compiler != null) {
-                        compiler.in(comp->{
+                        compiler.useServer(comp->{
                             final CompiledDirectory result = comp.recompile();
                             if (result.getStrategy() != CompileStrategy.SKIPPED) {
                                 // only update the directory to serve if we did not skip the compile
@@ -282,7 +294,7 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
             Mutable<Boolean> done = new Mutable<>(false);
             if (Files.exists(file)) {
                 final String normalized = file.normalize().toString();
-                request.getRequest().getResponse().sendFile(normalized);
+                req.getResponse().sendFile(normalized);
             } else if (url.startsWith("sourcemaps")){
                 if (url.endsWith("json")) {
                     final String fileName = X_String.chopEndOrReturnEmpty(url, "/")
@@ -291,7 +303,7 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
                     file = dir.resolve(fileName);
                     if (Files.exists(file)) {
                         final String normalized = file.normalize().toString();
-                        request.getRequest().getResponse().sendFile(normalized);
+                        req.getResponse().sendFile(normalized);
                     } else {
                         X_Log.warn(getClass(), "No file to serve for ", file, "from url", url);
                     }
@@ -307,19 +319,20 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
 
                     // Lets check in obvious file locations
                     if (module.getRecompiler() != null) {
-                        request.getRequest().setAutoclose(false);
+                        req.setAutoclose(false);
                         done.in(true);
-                        module.getRecompiler().in(recompiler->{
+                        module.getRecompiler().useServer(recompiler->{
                             final URL resource = recompiler.getResourceLoader().getResource(fileName);
-                            final HttpServerResponse response = request.getRequest().getResponse();
                             if (resource == null) {
                                 if (fileName.startsWith("gen/")) {
                                     Path genPath = Paths.get(manifest.getCompileDirectory().getGenDir());
                                     final Path genFile = genPath.resolve(fileName.substring(4));
                                     if (Files.exists(genFile)) {
                                         response.sendFile(genFile.toString());
-                                        callback.in(request.getRequest());
+                                        callback.in(req);
                                         return;
+                                    } else {
+                                        X_Log.warn(getClass(), "No file found for path", genFile);
                                     }
                                 }
                             } else {
@@ -331,16 +344,16 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
                                 ) {
                                     final byte[] bytes = X_IO.toByteArray(in);
                                     response.end(Buffer.buffer(bytes));
-                                    callback.in(request.getRequest());
+                                    callback.in(req);
                                     return;
 //                                    AsyncInputStream input = new AsyncInputStream(vertx, exe, in);
 //                                    input.exceptionHandler(t->{
 //                                        X_Log.error(getClass(), "Failed sending source", resource, t);
-//                                        callback.in(request.getRequest());
+//                                        callback.in(req);
 //                                        assert false : "Failure sending source " + resource + " : " + t;
 //                                    });
 //                                    input.endHandler(v->
-//                                        callback.in(request.getRequest())
+//                                        callback.in(req)
 //                                    );
 //                                    final Pump pump = Pump.pump(input, response);
 //                                    pump.start();
@@ -352,7 +365,7 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
                             }
 
                             X_Log.error(getClass(), "Failed sending source", fileName);
-                            callback.in(request.getRequest());
+                            callback.in(req);
                         });
                     }
                 }
@@ -360,7 +373,7 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
                 X_Log.warn(getClass(), "No file to serve for ", file, "from url", url);
             }
             if (!done.out1()) {
-                callback.in(request.getRequest());
+                callback.in(req);
             }
         }
     }
