@@ -8,10 +8,13 @@ import xapi.annotation.model.Persistent;
 import xapi.annotation.model.Serializable;
 import xapi.annotation.model.ServerToClient;
 import xapi.annotation.model.SetterFor;
+import xapi.collect.X_Collect;
+import xapi.collect.api.StringTo;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.except.NotConfiguredCorrectly;
+import xapi.fu.In1;
 import xapi.gwt.model.service.ModelServiceGwt;
 import xapi.model.X_Model;
 import xapi.model.api.Model;
@@ -77,11 +80,61 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
   private Persistent defaultPersistence;
 
   private Serializable defaultSerialization;
+  private final StringTo<In1<ModelField>> listTypes;
+  private final StringTo<In1<ModelField>> mapTypes;
 
   protected ModelArtifact(final String typeName, final String typeClass) {
     super(StandardLinkerContext.class);
     this.typeName = typeName;
     this.typeClass = typeClass;
+    listTypes = initLists();
+    mapTypes = initMaps();
+  }
+
+  protected StringTo<In1<ModelField>> initMaps() {
+    final StringTo<In1<ModelField>> map = X_Collect.newStringMap(In1.class);
+    final In1<ModelField> setMapType = In1.from2(ModelField::setMapType, true);
+    map.put("Map", setMapType);
+    map.put("HashMap", setMapType);
+    map.put("LinkedHashMap", setMapType);
+    map.put("TreeMap", setMapType);
+    map.put("ConcurrentHashMap", setMapType);
+    map.put("ConcurrentSkipListMap", setMapType);
+    map.put("MapLike", setMapType);
+    map.put("StringTo", setMapType);
+    map.put("StringTo$Many", setMapType);
+    map.put("StringTo.Many", setMapType);
+    map.put("ObjectTo", setMapType);
+    map.put("ObjectTo$Many", setMapType);
+    map.put("ObjectTo.Many", setMapType);
+    map.put("ClassTo", setMapType);
+    map.put("ClassTo$Many", setMapType);
+    map.put("ClassTo.Many", setMapType);
+    map.put("EnumTo", setMapType);
+    map.put("EnumTo$Many", setMapType);
+    map.put("EnumTo.Many", setMapType);
+    map.put("AssignabilityMap", setMapType);
+    return map;
+  }
+
+  protected StringTo<In1<ModelField>> initLists() {
+    final StringTo<In1<ModelField>> map = X_Collect.newStringMap(In1.class);
+    final In1<ModelField> setListType = In1.from2(ModelField::setListType, true);
+    map.put("List", setListType);
+    map.put("ArrayList", setListType);
+    map.put("LinkedList", setListType);
+    map.put("SimpleLinkedList", setListType);
+    map.put("Set", setListType);
+    map.put("Fifo", setListType);
+    map.put("SimpleFifo", setListType);
+    map.put("Chain", setListType);
+    map.put("ChainBuilder", setListType);
+    map.put("IntTo", setListType);
+    map.put("ListLike", setListType);
+    map.put("SetLike", setListType);
+    map.put("Queue", setListType);
+    map.put("Dequeue", setListType);
+    return map;
   }
 
   @Override
@@ -628,7 +681,21 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
         		" your model is now undeterministic and may break unexpectedly.";
     }
 
-
+    final String simpleType = method.getReturnType().getErasedType().getSimpleSourceName();
+    listTypes.use(simpleType, callback->{
+      if (callback == null) {
+        field.setListType(true);
+      } else {
+        callback.in(field);
+      }
+    });
+    mapTypes.use(simpleType, callback->{
+      if (callback == null) {
+        field.setMapType(true);
+      } else {
+        callback.in(field);
+      }
+    });
   }
 
   private void implementAction(final TreeLogger logger,final ModelGenerator generator, final JMethod method, final ModelMagic models, final Annotation[] annos) {

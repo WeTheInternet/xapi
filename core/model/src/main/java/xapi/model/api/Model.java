@@ -22,7 +22,7 @@ public interface Model {
 
   @JsIgnore
   default <T> T getOrSaveProperty(String key, Out1<T> dflt) {
-    boolean save = hasProperty(key);
+    boolean save = !hasProperty(key);
     T val = getProperty(key, dflt);
     if (save) {
       setProperty(key, val);

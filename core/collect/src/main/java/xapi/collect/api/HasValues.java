@@ -14,6 +14,7 @@ public interface HasValues<K,V> extends EntryIterable<K,V>, HasSize {
   // and the interface's erased typed signature MUST match the final method's type.
   // Setting K to String will result in a Ljava/lang/Object; in the interface,
   // and Ljava/lang/String; in the implemented method.
+  // (TODO: force compile time actors to do assignability matching?).
 
   boolean isEmpty();
 

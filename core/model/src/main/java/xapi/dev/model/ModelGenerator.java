@@ -208,7 +208,11 @@ public class ModelGenerator {
           mb.print("return this.<" + primitiveToObject(imported)+">getProperty(\"" );
           mb.println(field.getName() + "\", "+ getDefaultValue(imported) +");");
         } else {
-          mb.print("return this.<" + imported + ">getProperty(\"" + field.getName() + "\"");
+          String getterName = "getProperty";
+          if (field.isListType() || field.isMapType()) {
+            getterName = "getOrSaveProperty";
+          }
+          mb.print("return this.<" + imported + ">"+ getterName + "(\"" + field.getName() + "\"");
           for (DefaultProvider defaultProvider : providers) {
             if (defaultProvider.tryMatch(qualified)) {
               final String provider = mb.addImport(Out1.class);

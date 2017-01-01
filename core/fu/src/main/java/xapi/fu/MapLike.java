@@ -28,6 +28,13 @@ public interface MapLike<K, V> extends HasSize, HasItems<Out2<K, V>> {
    */
   boolean has(K key);
 
+  default boolean use(K key, In1<V> callback) {
+    if (has(key)) {
+      callback.in(get(key));
+      return true;
+    }
+    return false;
+  }
   /**
    * A remove operation.  Returns the deleted value, if any.
      */

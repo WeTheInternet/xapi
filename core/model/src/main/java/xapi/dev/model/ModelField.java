@@ -93,6 +93,7 @@ public class ModelField implements java.io.Serializable {
 
   private boolean listType;
   private boolean mapType;
+  private boolean rememberDefault;
   private boolean publicSetter;
   private boolean publicAdder;
   private boolean publicRemover;
@@ -376,4 +377,27 @@ public class ModelField implements java.io.Serializable {
     return validators.toArray(new Class[validators.size()]);
   }
 
+  public boolean isListType() {
+    return listType;
+  }
+
+  public void setListType(boolean listType) {
+    this.listType = listType;
+  }
+
+  public boolean isMapType() {
+    return mapType;
+  }
+
+  public void setMapType(boolean mapType) {
+    this.mapType = mapType;
+  }
+
+  public boolean isRememberDefault() {
+    return rememberDefault;
+  }
+
+  public void setRememberDefault(boolean rememberDefault) {
+    this.rememberDefault = rememberDefault;
+  }
 }
