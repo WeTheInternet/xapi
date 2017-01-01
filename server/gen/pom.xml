@@ -64,6 +64,12 @@
       <artifactId>xapi-dev-scanner</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-dev-javac</artifactId>
+      <classifier>sun</classifier>
+      <scope>test</scope>
+    </dependency>
     <!-- Cucumber, for easy behavior driven tests -->
     <dependency>
       <groupId>info.cukes</groupId>
@@ -90,6 +96,7 @@
             </goals>
           </execution>
         </executions>
-      </plugin></plugins>
+      </plugin>
+    </plugins>
   </build>
 </project>

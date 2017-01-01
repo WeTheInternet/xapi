@@ -490,6 +490,12 @@
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-dev-javac</artifactId>
+    <classifier>sun</classifier>
+    <version>${project.version}</version>
+   </dependency>
+   <dependency>
+    <groupId>net.wetheinter</groupId>
     <artifactId>xapi-gen</artifactId>
     <version>${project.version}</version>
    </dependency>

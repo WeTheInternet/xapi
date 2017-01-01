@@ -76,6 +76,14 @@
       <scope>test</scope>
     </dependency>
 
+    <!-- We need this because surefire doesn't include our system scoped dependency... -->
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-dev-javac</artifactId>
+      <classifier>sun</classifier>
+      <scope>test</scope>
+    </dependency>
+
     <!-- Cucumber, for easy behavior driven tests -->
     <dependency>
       <groupId>info.cukes</groupId>
