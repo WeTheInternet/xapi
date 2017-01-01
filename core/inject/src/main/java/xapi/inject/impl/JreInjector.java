@@ -206,7 +206,7 @@ public class JreInjector implements Injector {
         final JreInjector injector,
         final InitMap<Class<?>, ?> map
     )
-    throws IOException, ClassNotFoundException {
+    throws IOException {
         final String name = cls.getName();
         final ClassLoader loader = cls.getClassLoader();
         if (!relativeUrl.endsWith("/")) {
@@ -242,17 +242,35 @@ public class JreInjector implements Injector {
             try {
                 String result = new String(into).split("\n")[0];
                 String[] bits = result.split("=");
+                Class<?> clazz;
                 try {
-                    final Class<?> clazz = Class.forName(bits[0], true, cls.getClassLoader());
-                    Integer newVal = bits.length == 1 ? null : Integer.parseInt(bits[1].trim());
-                    final Integer was = candidates.get(clazz);
-                    if (was == null) {
-                        candidates.put(clazz, newVal);
-                    } else if (newVal != null) {
-                        candidates.put(clazz, Math.max(was, newVal));
-                    }
+                    final Class<?> fromKeyLoader = Class.forName(bits[0], true, cls.getClassLoader());
+
+                    clazz = fromKeyLoader;
                 } catch (ClassNotFoundException e) {
-                    // TODO: warn...
+                    try {
+                        final ClassLoader threadCl = Thread.currentThread().getContextClassLoader();
+                        if (cls.getClassLoader() == threadCl) {
+                            continue;
+                        }
+                        final Class<?> fromThreadLoader = Class.forName(
+                            bits[0],
+                            true,
+                            Thread.currentThread().getContextClassLoader()
+                        );
+                        clazz = fromThreadLoader;
+                    } catch (ClassNotFoundException ex) {
+                        // Nope.  class is nowhere to be found...
+                        continue;
+                    }
+                }
+
+                Integer newVal = bits.length == 1 ? null : Integer.parseInt(bits[1].trim());
+                final Integer was = candidates.get(clazz);
+                if (was == null) {
+                    candidates.put(clazz, newVal);
+                } else if (newVal != null) {
+                    candidates.put(clazz, Math.max(was, newVal));
                 }
             } finally {
                 stream.close();
