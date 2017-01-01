@@ -44,6 +44,9 @@ public class Chars implements CharSequence{
   final int start;
   private final int length;
 
+  public Chars(String chars) {
+    this(chars.toCharArray());
+  }
   public Chars(char[] chars) {
     this(chars, 0, chars.length);
   }

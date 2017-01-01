@@ -94,4 +94,15 @@ public class ChainBuilder<T> implements HasSize, MappedIterable<T> {
   public T last() {
     return prev.value.out1();
   }
+
+  public void clear() {
+    tail = prev = head;
+    head.next = null;
+    size = 0;
+  }
+
+  @Override
+  public String toString() {
+    return "[ " + join(" , ") + " ]";
+  }
 }

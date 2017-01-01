@@ -149,13 +149,39 @@ public class Mutable <I> implements In1Unsafe<I>, Out1Unsafe<I> {
       return b;
     }
 
-    public final Mutable<I> useThenSet(In1<I> callback, I newVal) {
-      callback.in(out1());
-      in(newVal);
+    public final Mutable<I> process(In1Out1<I, I> mapper) {
+      final I mapped = mapper.io(out1());
+      in(mapped);
       return this;
     }
 
-    public final I setReturnOld(I b) {
+    public final <P1> Mutable<I> process(In2Out1<I, P1, I> mapper, P1 param1) {
+      final I mapped = mapper.io(out1(), param1);
+      in(mapped);
+      return this;
+    }
+
+    public final <P1, P2> Mutable<I> process(In3Out1<I, P1, P2, I> mapper, P1 param1, P2 param2) {
+      final I mapped = mapper.io(out1(), param1, param2);
+      in(mapped);
+      return this;
+    }
+
+    public final Mutable<I> useThenSet(In1<I> callback, I newVal) {
+      mutex(()->{
+        callback.in(out1());
+        in(newVal);
+      });
+      return this;
+    }
+
+  public void mutex(Do o) {
+    synchronized (this) {
+      o.done();
+    }
+  }
+
+  public final I setReturnOld(I b) {
       final I old = out1();
       in(b);
       return old;

@@ -7,6 +7,7 @@ import xapi.fu.iterate.ChainBuilder;
 import xapi.fu.iterate.EmptyIterator;
 
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 7/31/16.
@@ -131,7 +132,23 @@ public interface MappedIterable<T> extends Iterable<T> {
     }
 
     default T first() {
-        return iterator().next();
+        final Iterator<T> itr = iterator();
+        if (itr.hasNext()) {
+            return itr.next();
+        }
+        throw new NoSuchElementException();
+    }
+
+    default T last() {
+        final Iterator<T> itr = iterator();
+        if (!itr.hasNext()) {
+           throw new NoSuchElementException();
+        }
+        T next = null;
+        while (itr.hasNext()) {
+            next = itr.next();
+        }
+        return next;
     }
 
     default String join(String joiner) {
@@ -158,5 +175,10 @@ public interface MappedIterable<T> extends Iterable<T> {
 
     default <To> boolean itemsEqualsMapped(In1Out1<T, To> mapper, Iterable<T> other) {
         return X_Fu.iterEqual(this.map(mapper), MappedIterable.mapped(other).map(mapper));
+    }
+
+    default MappedIterable<T> forAll(In1<T> consumer) {
+        forEach(consumer.toConsumer());
+        return this;
     }
 }

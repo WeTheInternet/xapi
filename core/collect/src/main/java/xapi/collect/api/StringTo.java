@@ -28,7 +28,9 @@ extends HasValues<String,V>, Serializable, MapLike<String, V>
 
   String[] keyArray();
 
-  int size();
+  default int size() {
+    return keyArray().length;
+  }
 
   default V getOrCreateUnsafe(String key, In1Out1Unsafe<String, V> factory) {
     return getOrCreate(key, factory);

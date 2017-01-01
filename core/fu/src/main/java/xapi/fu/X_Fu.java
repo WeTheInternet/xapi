@@ -334,5 +334,18 @@ public interface X_Fu {
     values[n] = value;
     return current;
   }
+
+  static boolean isNotEmpty(int[] format) {
+    return !isEmpty(format);
+  }
+
+  static boolean isEmpty(int[] format) {
+    for (int i : format) {
+      if (i != 0) {
+        return false;
+      }
+    }
+    return true;
+  }
 }
 

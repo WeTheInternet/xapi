@@ -5,7 +5,9 @@ import xapi.collect.api.CollectionOptions;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.ObjectTo;
 import xapi.except.NotYetImplemented;
+import xapi.fu.In1;
 import xapi.fu.In2Out1;
+import xapi.fu.MappedIterable;
 import xapi.fu.Out1;
 import xapi.platform.GwtPlatform;
 import xapi.util.X_Util;
@@ -15,16 +17,8 @@ import com.google.gwt.core.client.GwtScriptOnly;
 import com.google.gwt.core.client.JavaScriptObject;
 
 import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Deque;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 
 
 @GwtPlatform
@@ -185,8 +179,13 @@ public class IntToListGwt <E> implements IntTo<E>{
   }
 
   @Override
-  public final Iterable<E> forEach() {
+  public final MappedIterable<E> forEach() {
     return new IntToIterable<>(this);
+  }
+
+  @Override
+  public void forEachValue(In1<E> callback) {
+    forEach().forAll(callback);
   }
 
   @Override

@@ -207,4 +207,17 @@ public interface In1<I> extends HasInput, Rethrowable, Lambda {
       return false;
     };
   }
+
+  default In1<I> onlyOnce() {
+    final In1<I>[] once = new In1[1];
+    once[0] = this::in;
+    return i-> {
+      final In1<I> was;
+      synchronized (once) {
+        was = once[0];
+        once[0] = In1.IGNORED;
+      }
+      was.in(i);
+    };
+  }
 }
