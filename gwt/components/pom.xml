@@ -60,6 +60,12 @@
             <artifactId>xapi-core-ui-generator</artifactId>
 			<scope>test</scope>
 		</dependency>
+        <dependency>
+            <groupId>net.wetheinter</groupId>
+            <artifactId>xapi-dev-javac</artifactId>
+			<classifier>sun</classifier>
+			<scope>test</scope>
+		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>

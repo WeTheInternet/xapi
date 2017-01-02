@@ -727,14 +727,23 @@ public class GwtManifest {
   }
 
   protected void addGwtArtifact(IntTo<String> cp, String gwtHome, String gwtVersion, String artifact) {
+    X_Log.info(getClass(), "Gwt home", gwtHome, "version", gwtVersion, "artifact", artifact);
     if (gwtHome.contains("gwt-dev")) {
       gwtHome = gwtHome.replace("gwt-dev", artifact);
     }
-    cp.add(gwtHome+
+    final String file = gwtHome+
         (gwtHome.endsWith("/")?"":"/")+
-        artifact+
-        (gwtVersion.length()>0?"-"+gwtVersion:"")+
-        ".jar");
+        (gwtVersion.isEmpty() ?
+            artifact :
+            // there is a gwtVersion; only use it if the artifact doesn't loosely resemble a version string
+        artifact.matches("([A-Za-z0-9]+[.][A-Za-z0-9]+)") ?
+            artifact :
+            artifact + "-" + gwtVersion
+        )+
+        (gwtVersion.isEmpty()? "" : "-"+gwtVersion)+
+        ".jar";
+    X_Log.info(getClass(), "Adding gwt file", file);
+    cp.add(file);
   }
 
   /**
