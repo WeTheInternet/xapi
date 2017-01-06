@@ -137,6 +137,12 @@ public class SuperDevUtil {
         args.add(manifest.getMethodNameMode().name());
       }
 
+      if (manifest.isIncremental()) {
+        args.add("-incremental");
+      } else {
+        args.add("-noincremental");
+      }
+
       args.add(module);
 
       opts.parseArgs(args.toArray(new String[args.size()]));

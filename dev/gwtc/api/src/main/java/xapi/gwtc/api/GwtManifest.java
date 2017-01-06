@@ -103,6 +103,7 @@ public class GwtManifest {
   private static final String ARG_VALIDATE_ONLY = "validate";
   private static final String ARG_WAR_DIR = "war";
   private static final String ARG_WORK_DIR = "workDir";
+  private static final String ARG_INCREMENTAL = "incremental";
   private static final String NEW_ARG = " -";
   private static final String NEW_LINE = "\n ";
   private static final String NEW_ITEM = NEW_LINE + "- ";
@@ -128,6 +129,7 @@ public class GwtManifest {
   private boolean disableUnitCache;
   private boolean draftCompile;
   private boolean enableAssertions;
+  private boolean incremental;
   private IntTo<String> extraArgs = newList(String.class);
   private String extrasDir;
   private int fragments = DEFAULT_FRAGMENTS;
@@ -728,20 +730,29 @@ public class GwtManifest {
 
   protected void addGwtArtifact(IntTo<String> cp, String gwtHome, String gwtVersion, String artifact) {
     X_Log.info(getClass(), "Gwt home", gwtHome, "version", gwtVersion, "artifact", artifact);
+
+    gwtHome = gwtHome.replace('\\', '/'); // just in case
     if (gwtHome.contains("gwt-dev")) {
       gwtHome = gwtHome.replace("gwt-dev", artifact);
     }
-    final String file = gwtHome+
-        (gwtHome.endsWith("/")?"":"/")+
+    if (gwtHome.endsWith("/")) {
+      gwtHome = gwtHome.substring(0, gwtHome.length()-1);
+    }
+    if (gwtVersion.isEmpty()) {
+      if (gwtHome.matches(".*([0-9]+[.]){2}[0-9]+$")) {
+        gwtVersion = gwtHome.substring(gwtHome.lastIndexOf('/')+1);
+      }
+    }
+
+    final String file = gwtHome+"/"+
         (gwtVersion.isEmpty() ?
             artifact :
-            // there is a gwtVersion; only use it if the artifact doesn't loosely resemble a version string
-        artifact.matches("([A-Za-z0-9]+[.][A-Za-z0-9]+)") ?
-            artifact :
-            artifact + "-" + gwtVersion
+            artifact.contains(gwtVersion) ?
+                artifact :
+                artifact + "-" + gwtVersion
         )+
-        (gwtVersion.isEmpty()? "" : "-"+gwtVersion)+
         ".jar";
+
     X_Log.info(getClass(), "Adding gwt file", file);
     cp.add(file);
   }
@@ -999,5 +1010,13 @@ public class GwtManifest {
 
   public void setMethodNameMode(MethodNameMode mode) {
     this.mode = mode;
+  }
+
+  public boolean isIncremental() {
+    return incremental;
+  }
+
+  public void setIncremental(boolean incremental) {
+    this.incremental = incremental;
   }
 }
