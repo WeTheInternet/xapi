@@ -170,6 +170,9 @@ extends CollectionProxy<Integer,T>, HasItems<T>
     return false;
   }
 
+  default boolean removeOne(Filter1<T> callback) {
+    return removeIf(callback, false);
+  }
   default void removeAll(In1<T> callback) {
     final T[] items = toArray();
     clear();

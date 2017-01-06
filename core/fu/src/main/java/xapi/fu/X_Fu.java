@@ -51,6 +51,10 @@ public interface X_Fu {
     return Fu.jutsu.arrayCopy(ts, length);
   }
 
+  static int[] copy(int[] ts, int length) {
+    return Fu.jutsu.arrayCopy(ts, length);
+  }
+
   static int getLength(Object obj) {
     return Fu.jutsu.getLength(obj);
   }
@@ -346,6 +350,14 @@ public interface X_Fu {
       }
     }
     return true;
+  }
+
+  static int minusOne(int val) {
+    return val-1;
+  }
+
+  static int plusOne(int val) {
+    return val+1;
   }
 }
 

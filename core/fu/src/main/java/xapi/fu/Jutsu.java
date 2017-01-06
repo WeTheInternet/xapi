@@ -33,6 +33,12 @@ interface Jutsu {
     return arr;
   }
 
+  default int[] arrayCopy(int[] copied, int length) {
+    int[] arr = new int[length];
+    System.arraycopy(copied, 0, arr, 0, Math.min(length, copied.length));
+    return arr;
+  }
+
   default int getLength(Object obj) {
     return Array.getLength(obj);
   }

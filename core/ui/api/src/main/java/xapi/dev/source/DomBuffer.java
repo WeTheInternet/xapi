@@ -252,10 +252,9 @@ public class DomBuffer extends XmlBuffer {
   @Override
   public DomBuffer makeTagNoIndent(final String name) {
     final DomBuffer buffer = new DomBuffer(name);
-    buffer.setNewLine(printNewline);
-    buffer.setTrimWhitespace(trimWhitespace);
-    buffer.indent = indent + INDENT;
     buffer.setNewLine(false);
+    buffer.setTrimWhitespace(trimWhitespace);
+    buffer.indent = isNoTagName() ? indent : indent + INDENT;
     addToEnd(buffer);
     return buffer;
   }
@@ -264,7 +263,7 @@ public class DomBuffer extends XmlBuffer {
   public DomBuffer makeTagAtBeginning(final String name) {
     final DomBuffer buffer = new DomBuffer(name);
     buffer.setTrimWhitespace(trimWhitespace);
-    buffer.indent = indent + INDENT;
+    buffer.indent = isNoTagName() ? indent : indent + INDENT;
     addToBeginning(buffer);
     return buffer;
   }
@@ -274,7 +273,7 @@ public class DomBuffer extends XmlBuffer {
     final DomBuffer buffer = new DomBuffer(name);
     buffer.setTrimWhitespace(trimWhitespace);
     buffer.setNewLine(false);
-    buffer.indent = indent + INDENT;
+    buffer.indent = isNoTagName() ? indent : indent + INDENT;
     addToBeginning(buffer);
     return buffer;
   }

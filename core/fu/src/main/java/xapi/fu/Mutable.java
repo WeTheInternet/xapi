@@ -90,6 +90,15 @@ public class Mutable <I> implements In1Unsafe<I>, Out1Unsafe<I> {
     return value;
   }
 
+  public I compute(In1Out1<I, I> mapper) {
+    return mutex(()->{
+      final I oldVal = out1();
+      final I newVal = mapper.io(oldVal);
+      in(newVal);
+      return newVal;
+    });
+  }
+
   public final boolean isNull() {
     return value == null;
   }
@@ -175,9 +184,13 @@ public class Mutable <I> implements In1Unsafe<I>, Out1Unsafe<I> {
       return this;
     }
 
-  public void mutex(Do o) {
+  public final void mutex(Do o) {
+    mutex(o.returns1(null));
+  }
+
+  public <O> O mutex(Out1<O> o) {
     synchronized (this) {
-      o.done();
+      return o.out1();
     }
   }
 

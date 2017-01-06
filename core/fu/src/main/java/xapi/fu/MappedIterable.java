@@ -86,6 +86,7 @@ public interface MappedIterable<T> extends Iterable<T> {
 
             private Lazy<T> reset() {
                 return Lazy.deferred1(()->{
+                    assert iter != null;
                     while (iter.hasNext()) {
                         final T n = iter.next();
                         if (filter.filter1(n)) {
@@ -139,6 +140,14 @@ public interface MappedIterable<T> extends Iterable<T> {
         throw new NoSuchElementException();
     }
 
+    default T firstOrNull() {
+        final Iterator<T> itr = iterator();
+        if (itr.hasNext()) {
+            return itr.next();
+        }
+        return null;
+    }
+
     default T last() {
         final Iterator<T> itr = iterator();
         if (!itr.hasNext()) {
@@ -151,6 +160,9 @@ public interface MappedIterable<T> extends Iterable<T> {
         return next;
     }
 
+    default String join(String before, String joiner, String after) {
+        return before + join(joiner) + after;
+    }
     default String join(String joiner) {
         return join(Object::toString, joiner);
     }
@@ -180,5 +192,16 @@ public interface MappedIterable<T> extends Iterable<T> {
     default MappedIterable<T> forAll(In1<T> consumer) {
         forEach(consumer.toConsumer());
         return this;
+    }
+
+    default boolean isNotEmpty() {
+        return iterator().hasNext();
+    }
+    default boolean isEmpty() {
+        return !iterator().hasNext();
+    }
+
+    default <O> MappedIterable<O> ifNotEmpty(In1Out1<T, O> mapper) {
+        return map(i->i==null?null:mapper.io(i));
     }
 }

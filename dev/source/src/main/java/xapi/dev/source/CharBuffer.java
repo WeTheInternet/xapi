@@ -111,6 +111,8 @@ public class CharBuffer implements Coercible {
     newTail.setValue(buffer);
     synchronized (target) { // we synchro on this volatile variable, because we only need the lock if we share a reference.
       final StringBuilder myTarget = target;
+      // Cannot convert to method reference; we want to see updates myTarget variables
+      //noinspection Convert2MethodRef
       newTail.setPrefix(()->myTarget.toString());
       target = new StringBuilder(); // everyone else will see this change w/out having to synchro
     }

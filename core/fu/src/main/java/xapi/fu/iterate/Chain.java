@@ -201,7 +201,7 @@ class ChainIterator <T> implements Iterator<T> {
 
   @Override
   public synchronized boolean hasNext() {
-    return here.value!=null;
+    return here != null && here.value!=null;
   }
 
   @Override
