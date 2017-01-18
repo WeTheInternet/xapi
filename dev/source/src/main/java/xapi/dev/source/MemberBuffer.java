@@ -15,26 +15,29 @@ public abstract class MemberBuffer<Self extends MemberBuffer<Self>> extends
   protected final Set<String> annotations;
   protected final Set<String> generics;
   protected final String origIndent;
+  protected final MemberBuffer<?> enclosing;
   protected PrintBuffer javaDoc;
 
   protected int modifier = Modifier.PUBLIC;
 
-  public MemberBuffer() {
-    this("");
+  public MemberBuffer(MemberBuffer<?> enclosing) {
+    this("", enclosing);
   }
 
-  protected MemberBuffer(StringBuilder target) {
+  protected MemberBuffer(StringBuilder target, MemberBuffer<?> enclosing) {
     super(target);
     origIndent = indent;
     annotations = new TreeSet<String>();
     generics = new TreeSet<String>();
+    this.enclosing = enclosing;
   }
 
-  public MemberBuffer(final String indent) {
+  public MemberBuffer(final String indent, final MemberBuffer<?> enclosing) {
     this.indent = indent;
     origIndent = indent;
     annotations = new TreeSet<String>();
     generics = new TreeSet<String>();
+    this.enclosing = enclosing;
   }
 
   @SuppressWarnings("unchecked")

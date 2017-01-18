@@ -9,6 +9,7 @@ import xapi.util.api.Pair;
 import xapi.util.impl.PairBuilder;
 
 import static xapi.util.X_String.isEmpty;
+import static xapi.util.X_String.toTitleCase;
 
 import javax.inject.Provider;
 import javax.validation.constraints.NotNull;
@@ -257,6 +258,18 @@ public class X_Source {
     return template.replaceAll("\r\n?", "\n");
   }
 
+  public static String javaQuote(String unescaped) {
+    if (unescaped.endsWith(";")) {
+      unescaped = unescaped.substring(0, unescaped.length()-1);
+    }
+    if (unescaped.startsWith("\"")) {
+      unescaped = unescaped.substring(1);
+    }
+    if (unescaped.endsWith("\"")) {
+      unescaped = unescaped.substring(0, unescaped.length()-1);
+    }
+    return "\"" + escape(unescaped) + "\"";
+  }
   public static String escape(final String unescaped) {
     int extra = 0;
     for (int in = 0, n = unescaped.length(); in < n; ++in) {
@@ -309,7 +322,31 @@ public class X_Source {
   }
 
   public static String toCamelCase(String name) {
-    return name == null || name.isEmpty() ? "" : Character.toUpperCase(name.charAt(0)) + (name.length() > 1 ? name.substring(1) : "");
+    if (name == null || name.isEmpty()) {
+      return "";
+    }
+
+    while (name.startsWith("-")) {
+      name = name.substring(1);
+    }
+
+    String val = toTitleCase(name);
+    int nextDash = val.indexOf('-');
+    if (nextDash == -1) {
+      return val;
+    }
+    StringBuilder result = new StringBuilder();
+    int prev = 0;
+    while (nextDash != -1) {
+
+      result.append(toTitleCase(val.substring(prev, nextDash)));
+      prev = nextDash+1; // skip writing the -
+      nextDash = val.indexOf('-', prev);
+    }
+    if (prev < val.length()) {
+      result.append(toTitleCase(val.substring(prev)));
+    }
+    return result.toString();
   }
 
     public static String removePackage(String pkgName, @NotNull String typeName) {

@@ -48,7 +48,7 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
   public FieldBuffer(final ClassBuffer enclosingClass, final String type,
     final String name,
     final String indent) {
-    super(indent);
+    super(indent, enclosingClass);
     this.cls = enclosingClass;
     this.fieldName = name;
     this.methodFragment = Character.toUpperCase(name.charAt(0))

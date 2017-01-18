@@ -51,12 +51,35 @@ public final class JavaModel {
       return getQualifiedName();
     }
 
+    @Override
+    public boolean equals(Object o) {
+      if (this == o)
+        return true;
+      if (!(o instanceof IsQualified))
+        return false;
+
+      final IsQualified that = (IsQualified) o;
+
+      if (qualifiedName != null ? !qualifiedName.equals(that.qualifiedName) : that.qualifiedName != null)
+        return false;
+      if (simpleName != null ? !simpleName.equals(that.simpleName) : that.simpleName != null)
+        return false;
+      return packageName != null ? packageName.equals(that.packageName) : that.packageName == null;
+    }
+
+    @Override
+    public int hashCode() {
+      int result = qualifiedName != null ? qualifiedName.hashCode() : 0;
+      result = 31 * result + (simpleName != null ? simpleName.hashCode() : 0);
+      result = 31 * result + (packageName != null ? packageName.hashCode() : 0);
+      return result;
+    }
   }
 
   public static class IsType extends IsQualified {
 
     public IsType() {
-      generics = new SimpleStack<IsGeneric>();
+      generics = new SimpleStack<>();
     }
 
     public IsType(String pkg, String type) {
@@ -108,7 +131,152 @@ public final class JavaModel {
       }
       return b.toString();
     }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o)
+        return true;
+      if (!(o instanceof IsType))
+        return false;
+      if (!super.equals(o))
+        return false;
+
+      final IsType isType = (IsType) o;
+
+      if (arrayDepth != isType.arrayDepth)
+        return false;
+      if (generics == null || !generics.equals(isType.generics)){
+        return false;
+      }
+      return super.equals(o);
+    }
+
+    @Override
+    public int hashCode() {
+      int result = super.hashCode();
+      result = 31 * result + (generics != null ? generics.hashCode() : 0);
+      result = 31 * result + arrayDepth;
+      result = 31 * result + super.hashCode();
+      return result;
+    }
   }
+
+  public enum UnitType {
+    CLASS("class *"),
+    INTERFACE("interface *"),
+    ENUM("enum *"),
+    ANNOTATION("@interface *"),
+    XAPI("@XApi({\"*\"})");
+
+    private final String pattern;
+
+    UnitType(String pattern) {
+      this.pattern = pattern;
+    }
+
+    public String toDefinition(String name, int protection) {
+      String start = "";
+      switch (protection) {
+        case Modifier.PROTECTED:
+          start = "protected ";
+          break;
+        case Modifier.PUBLIC:
+          start = "public ";
+          break;
+        case Modifier.PRIVATE:
+          start = "private ";
+          break;
+      }
+      return start + pattern.replace("*",
+          this == XAPI ?
+          name
+              .replaceAll("\"", "\\\"")
+              .replaceAll("\n", "\\n\", \n\"")
+              :
+          name);
+    }
+  }
+
+  public static class IsTypeDefinition extends IsType {
+    private UnitType unitType;
+    private int protection;
+
+    public UnitType getUnitType() {
+      return unitType;
+    }
+
+    public void setUnitType(UnitType unitType) {
+      this.unitType = unitType;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o)
+        return true;
+      if (!(o instanceof IsTypeDefinition))
+        return false;
+      if (!super.equals(o))
+        return false;
+
+      final IsTypeDefinition that = (IsTypeDefinition) o;
+
+      if (protection != that.protection)
+        return false;
+      return unitType == that.unitType;
+    }
+
+    @Override
+    public int hashCode() {
+      int result = super.hashCode();
+      result = 31 * result + (unitType != null ? unitType.hashCode() : 0);
+      result = 31 * result + protection;
+      return result;
+    }
+
+    public String toDefinition() {
+      return unitType.toDefinition(getSimpleName(), protection);
+    }
+
+    public int getProtection() {
+      return protection;
+    }
+
+    public void setProtection(int protection) {
+      this.protection = protection;
+    }
+
+    public static IsTypeDefinition newInterface(String packageName, String className) {
+      final IsTypeDefinition type = newType(packageName, className);
+      type.setUnitType(UnitType.INTERFACE);
+      return type;
+    }
+
+    public static IsTypeDefinition newClass(String packageName, String className) {
+      final IsTypeDefinition type = newType(packageName, className);
+      type.setUnitType(UnitType.CLASS);
+      return type;
+    }
+
+    public static IsTypeDefinition newEnum(String packageName, String className) {
+      final IsTypeDefinition type = newType(packageName, className);
+      type.setUnitType(UnitType.ENUM);
+      return type;
+    }
+
+    public static IsTypeDefinition newAnnotation(String packageName, String className) {
+      final IsTypeDefinition type = newType(packageName, className);
+      type.setUnitType(UnitType.ANNOTATION);
+      return type;
+    }
+
+    private static IsTypeDefinition newType(String packageName, String className) {
+      final IsTypeDefinition type = new IsTypeDefinition();
+      type.setType(packageName, className);
+      type.setProtection(Modifier.PUBLIC);
+      return type;
+    }
+  }
+
   public static class IsNamedType extends IsType {
     public IsNamedType() {}
     public IsNamedType(final String type, final String name) {

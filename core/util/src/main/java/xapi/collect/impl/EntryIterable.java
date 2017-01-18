@@ -20,6 +20,11 @@ public interface EntryIterable <K, V> extends HasItems<Out2<K, V>> {
         .map(e->Out2.out2Immutable(e.getKey(), e.getValue()));
   }
 
+  default MappedIterable<V> forEachValue() {
+    return MappedIterable.mapped(entries())
+        .map(Entry::getValue);
+  }
+
   default EntryIterable <K, V> iterate(In2<K, V> callback) {
     entries().forEach(
         // Need to be explicit about the generics for some reason :-/

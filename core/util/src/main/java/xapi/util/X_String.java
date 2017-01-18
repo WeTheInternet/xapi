@@ -4,6 +4,8 @@ import xapi.collect.api.CharPool;
 import xapi.fu.In1Out1;
 import xapi.inject.X_Inject;
 
+import static xapi.fu.MappedIterable.mapped;
+import static xapi.fu.iterate.ArrayIterable.iterate;
 import static xapi.util.service.StringService.binarySuffix;
 import static xapi.util.service.StringService.metricSuffix;
 
@@ -160,6 +162,13 @@ public class X_String {
   public static String joinStrings(String ... values) {
     return join(", ", values);
   }
+  public static <T> String join(String separator, In1Out1<T, String> mapper, T ... values) {
+    return join(separator, iterate(values)
+        .map(mapper));
+  }
+  public static <T> String join(String separator, In1Out1<T, String> mapper, Iterable<T> values) {
+    return join(separator, mapped(values).map(mapper));
+  }
   public static String join(String separator, String ... values)
   /*js:
 
@@ -278,7 +287,8 @@ public class X_String {
   }
 
   public static String toTitleCase(String name) {
-    return isEmpty(name) ? name : Character.toUpperCase(name.charAt(0))+name.substring(1);
+    return isEmpty(name) ? name : Character.toUpperCase(name.charAt(0))+
+        (name.length() == 1 ? "" : name.substring(1));
   }
 
   public static String normalizeNewlines(String text) {

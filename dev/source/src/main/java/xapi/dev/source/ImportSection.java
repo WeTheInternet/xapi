@@ -38,6 +38,7 @@ package xapi.dev.source;
 import xapi.fu.In1;
 
 import static xapi.dev.source.PrintBuffer.NEW_LINE;
+import static xapi.fu.iterate.ArrayIterable.iterate;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -170,11 +171,26 @@ public class ImportSection implements CanAddImports {
     return ind == -1 ? string : string.substring(0, ind);
   }
 
-  public ImportSection reserveSimpleName(final String cls) {
-    if (!imports.containsKey(cls)) {
-      imports.put(cls, "");
+  public String tryReserveSimpleName(final String simple, final String full) {
+    String was = imports.get(simple);
+    if (was == null) {
+      imports.put(simple, "");
+    } else {
+      if (!was.equals(full) && !"".equals(was)) {
+        // will throw exception for us
+        reserveSimpleName(simple);
+      }
     }
-    return this;
+    return simple;
+  }
+  public String reserveSimpleName(final String ... classes) {
+    for (String cls : classes) {
+      if (!imports.containsKey(cls)) {
+        imports.put(cls, "");
+        return cls;
+      }
+    }
+    throw new IllegalArgumentException("The names " + iterate(classes) + " are unavailable");
   }
 
   public String addImport(final Class<?> cls) {
@@ -219,6 +235,9 @@ public class ImportSection implements CanAddImports {
     int index = importName.indexOf(".");
     // do not import primitives
     final boolean hasDot = index != -1;
+    if (!hasDot) {
+      return tryReserveSimpleName(importName, importName);
+    }
     importName = trim(importName);
 
     // rip off generics, and optionally try to import them as well
@@ -262,23 +281,21 @@ public class ImportSection implements CanAddImports {
       return importName + suffix;
     }
 
-    if (hasDot){
-      // a name with a . in it; check if we need to import it
-      if (!staticImport && canIgnoreOwnPackage() && this instanceof HasPackage) {
-        String pkg = ((HasPackage)this).getPackageName();
-        if (pkg != null && !pkg.isEmpty()) {
-          final String noPkg = importName.replace(pkg + ".", "");
-          if (noPkg.indexOf('.') == -1) {
-            String existing = map.get(noPkg);
-            if (existing == null || existing.isEmpty()) {
-              map.put(noPkg, importName);
+    // a name with a . in it; check if we need to import it
+    if (!staticImport && canIgnoreOwnPackage() && this instanceof HasPackage) {
+      String pkg = ((HasPackage)this).getPackageName();
+      if (pkg != null && !pkg.isEmpty()) {
+        final String noPkg = importName.replace(pkg + ".", "");
+        if (noPkg.indexOf('.') == -1) {
+          String existing = map.get(noPkg);
+          if (existing == null || existing.isEmpty()) {
+            map.put(noPkg, importName);
+            return noPkg + suffix;
+          } else {
+            if (importName.equals(existing)) {
               return noPkg + suffix;
             } else {
-              if (importName.equals(existing)) {
-                return noPkg + suffix;
-              } else {
-                return existing + suffix;
-              }
+              return existing + suffix;
             }
           }
         }

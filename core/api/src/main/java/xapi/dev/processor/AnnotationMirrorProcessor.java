@@ -32,6 +32,7 @@ import javax.lang.model.util.Types;
 import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
+import java.io.FileNotFoundException;
 import java.io.Writer;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Modifier;
@@ -136,6 +137,7 @@ public class AnnotationMirrorProcessor extends AbstractProcessor {
           } else {
             file.delete();
           }
+        } catch (final FileNotFoundException ignored) {
         } catch (final Exception e) {
           e.printStackTrace();
         }

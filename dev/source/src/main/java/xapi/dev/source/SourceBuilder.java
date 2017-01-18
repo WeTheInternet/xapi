@@ -110,16 +110,20 @@ public class SourceBuilder<Payload> implements CanAddImports {
     return classDef;
   }
 
+  protected void setBuffer(ClassBuffer from) {
+    // make sure import buffer comes before class def
+    getImports();
+    classDef = from;
+    // create a new print buffer for content after class definition
+    head.addToEnd(classDef);
+    head.setNotIndent();
+    addBuffer(new PrintBuffer());
+  }
+
   public SourceBuilder<Payload> setClassDefinition(String definition,
       boolean wellFormatted) {
     if (classDef == null) {
-      // make sure import buffer comes before class def
-      getImports();
-      classDef = new ClassBuffer(this).indent();
-      // create a new print buffer for content after class definition
-      head.addToEnd(classDef);
-      head.setNotIndent();
-      addBuffer(new PrintBuffer());
+      setBuffer(new ClassBuffer(this, null, ""));
     }
     classDef.setDefinition(definition, wellFormatted);
     return this;

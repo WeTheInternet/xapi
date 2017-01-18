@@ -1196,4 +1196,30 @@ public class X_Reflect {
       return loc.toExternalForm().replace("file:", "");
     }
   }
+
+    public static <T> T mostDerived(T ours, T theirs) {
+      final Class<?> ourClass = ours.getClass();
+      final Class<?> theirClass = theirs.getClass();
+      if (ourClass == theirClass) {
+        return ours;
+      }
+      Class<?> seek = ourClass;
+      while (seek != null && seek != Object.class) {
+        if (seek == theirClass) {
+          return ours;
+        }
+        seek = seek.getSuperclass();
+      }
+      seek = theirClass;
+      while (seek != null && seek != Object.class) {
+        if (seek == ourClass) {
+          return theirs;
+        }
+        seek = seek.getSuperclass();
+      }
+      // No luck; return ours.
+      // good luck if you are using (bad) reflection proxies instead of real objects :-)
+      // actually, your course of action is to change the code which calls this method.
+      return ours;
+    }
 }

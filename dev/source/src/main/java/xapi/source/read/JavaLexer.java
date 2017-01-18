@@ -43,17 +43,7 @@ import xapi.source.read.JavaModel.HasModifier;
 import xapi.source.read.JavaModel.IsAnnotation;
 import xapi.source.read.JavaModel.IsGeneric;
 import xapi.source.read.JavaModel.IsParameter;
-import xapi.source.read.JavaModel.IsType;
-import xapi.source.read.JavaVisitor.AnnotationMemberVisitor;
-import xapi.source.read.JavaVisitor.AnnotationVisitor;
-import xapi.source.read.JavaVisitor.ClassBodyVisitor;
-import xapi.source.read.JavaVisitor.ClassVisitor;
-import xapi.source.read.JavaVisitor.GenericVisitor;
-import xapi.source.read.JavaVisitor.JavadocVisitor;
-import xapi.source.read.JavaVisitor.MethodVisitor;
-import xapi.source.read.JavaVisitor.ModifierVisitor;
-import xapi.source.read.JavaVisitor.ParameterVisitor;
-import xapi.source.read.JavaVisitor.TypeData;
+import xapi.source.read.JavaVisitor.*;
 
 import java.lang.reflect.Modifier;
 import java.util.Iterator;
@@ -933,18 +923,6 @@ public class JavaLexer {
     }
   }
 
-  protected static boolean isQualified(final String typeName) {
-    // In order to avoid trying to import enclosed type names, like
-    // Cls.InnerCls,
-    // we require that recognized package names begin w/ a lowercase letter.
-    //
-    // So long as you stick to java naming conventions, the lexer will handle
-    // imports
-    // and qualified name shortening automatically.
-    return Character.isLowerCase(typeName.charAt(0))
-        && typeName.indexOf('.') != -1;
-  }
-
   protected static void error(final Throwable e, final String string) {
     if (string != null) {
       System.err.println(string);
@@ -1316,140 +1294,6 @@ public class JavaLexer {
       type = type.substring(0, end);
     }
     return type;
-  }
-
-  protected static int lexType(final IsType into, final CharSequence chars, int pos) {
-    int start = pos = eatWhitespace(chars, pos);
-    int lastPeriod = -1;
-    final int max = chars.length()-1;
-    boolean doneParsing = false;
-    final StringBuilder pkg = new StringBuilder();
-    package_loop:
-    if (Character.isLowerCase(chars.charAt(pos))) {
-      // We may have package names to read.
-      while(true) {
-        pos = eatWhitespace(chars, pos);
-        while(Character.isJavaIdentifierPart(chars.charAt(++pos))){
-          if (pos == max){
-            if (lastPeriod == -1) {
-              // no package, so don't go looking for class references either.
-              doneParsing = true;
-            } else {
-              // everything up to the last period is already in package variable.
-              start = pos = lastPeriod + 1;
-            }
-            break package_loop;
-          }
-        }
-        final int whitespace = eatWhitespace(chars, pos);
-        if (chars.charAt(whitespace) == '.') {
-          if (whitespace > pos && chars.charAt(whitespace+1)=='.') {
-            break package_loop;
-          }
-          if (lastPeriod != -1) {
-            pkg.append('.');
-          }
-          lastPeriod = pos = whitespace;
-          pkg.append(chars.subSequence(start, pos).toString().trim());
-          pos = start = eatWhitespace(chars, pos+1);
-          if (Character.isUpperCase(chars.charAt(start))) {
-            break package_loop;
-          }
-        } else {
-          if (whitespace > pos) {
-            doneParsing = true;
-            break package_loop;
-          }
-        }
-      }
-  }
-    if (doneParsing){
-      if (pos == max) {
-        into.setType(pkg.toString(), chars.subSequence(start, pos+1).toString());
-        return pos;
-      }
-      into.setType(pkg.toString(), chars.subSequence(start, pos).toString());
-    } else {
-      final StringBuilder typeName = new StringBuilder();
-      lastPeriod = -1;
-      typeloop:
-      while (true) {
-        pos = eatWhitespace(chars, pos);
-        if (!Character.isJavaIdentifierStart(chars.charAt(pos))){
-          if (pos > start) {
-            if (lastPeriod != -1) {
-              typeName.append('.');
-            }
-            typeName.append(chars.subSequence(start, pos).toString().trim());
-          }
-          break;
-        }
-        while(Character.isJavaIdentifierPart(chars.charAt(++pos))) {
-          if (pos == max) {
-            if (lastPeriod != -1) {
-              typeName.append('.');
-            }
-            typeName.append(chars.subSequence(start, pos+1).toString().trim());
-            break typeloop;
-          }
-        }
-        final int whitespace = eatWhitespace(chars, pos);
-        if (chars.charAt(whitespace) == '.') {
-          if (lastPeriod != -1) {
-            typeName.append('.');
-          }
-          if (pos != whitespace && chars.charAt(whitespace + 1) == '.') {
-            typeName.append(chars.subSequence(start, pos).toString().trim());
-            break;
-          }
-          lastPeriod = pos = whitespace;
-          typeName.append(chars.subSequence(start, pos).toString());
-          start = pos = eatWhitespace(chars, pos+1);
-        } else {
-          if (whitespace > pos) {
-            if (lastPeriod != -1) {
-              typeName.append('.');
-            }
-            typeName.append(chars.subSequence(start, pos).toString().trim());
-            break;
-          }
-        }
-      }
-      into.setType(pkg.toString(), typeName.toString());
-      if (pos == max) {
-        pos++;
-      }
-    }
-    into.packageName = pkg.toString();
-    start = pos = eatWhitespace(chars, pos);
-    if (pos < chars.length()) {
-      pos = eatGeneric(chars, pos);
-      if (pos != start) {
-        lexGenerics(into.generics, chars.subSequence(start, ++pos), 0);
-      }
-    }
-    pos = eatWhitespace(chars, pos);
-    try{
-      while (chars.charAt(pos) == '[') {
-        into.arrayDepth ++;
-        while (chars.charAt(++pos)!=']') {
-          ;
-        }
-        pos = eatWhitespace(chars, pos+1);
-      }
-    } catch (final IndexOutOfBoundsException ignored){}
-    if (pos < chars.length() && chars.charAt(pos) == '.') {
-      assert chars.charAt(pos+1) == '.';
-      assert chars.charAt(pos+2) == '.';
-      into.arrayDepth++;
-      pos = eatWhitespace(chars, pos+3);
-    }
-    return pos;
-  }
-
-  private static void lexGenerics(
-      final SimpleStack<IsGeneric> into, final CharSequence chars, final int pos) {
-
   }
 
   public static IsParameter lexParam(final CharSequence chars) {

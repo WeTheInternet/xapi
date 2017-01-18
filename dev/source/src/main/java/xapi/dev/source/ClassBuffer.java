@@ -79,6 +79,7 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
     this.target = target;
   }
   private ClassBuffer(ClassBuffer from) {
+    super(from.enclosing);
     // TODO reduce the common classbuffer operations to a supertype "TypeBuffer",
     // where we include all the wiring to add fields and methods, but none of the
     // wrapping where we print things like "public class MyName"
@@ -105,23 +106,16 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
   }
 
   public ClassBuffer() {
-    this(new SourceBuilder<Object>());
+    this(new SourceBuilder<>(), null, "");
+    context.setBuffer(this);
   }
 
-  public ClassBuffer(final String indent) {
-    this(new SourceBuilder<Object>(), indent);
-  }
-
-  public ClassBuffer(final SourceBuilder<?> context) {
-    this(context, "");
-  }
-
-  public ClassBuffer(final SourceBuilder<?> context, final String indent) {
-    super(indent);
+  public ClassBuffer(final SourceBuilder<?> context, MemberBuffer<?> enclosing, final String indent) {
+    super(indent, enclosing);
     indent();
     this.context = context;
-    interfaces = new TreeSet<String>();
-    ctors = new SimpleStack<MethodBuffer>();
+    interfaces = new TreeSet<>();
+    ctors = new SimpleStack<>();
     classes = new PrintBuffer();
     fields = new PrintBuffer();
     constructors = new PrintBuffer();
@@ -160,7 +154,7 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
     if (isStatic()) {
       b.append("static ");
     }
-    if (isAbstract()) {
+    if (isAbstract() && !isInterface()) {
       b.append("abstract ");
     }
     if (isFinal()) {
@@ -357,8 +351,8 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
       if (Character.isUpperCase(stripped.charAt(0))) {
         // This is our package. Don't import, but do try to strip package.
         if (context.getImports().canMinimize(importName)) {
-          context.getImports().reserveSimpleName(
-              stripped.substring(stripped.lastIndexOf('.') + 1));
+          context.getImports().tryReserveSimpleName(
+              stripped.substring(stripped.lastIndexOf('.') + 1), importName);
           return stripped;
         } else {
           return importName;
@@ -431,16 +425,17 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
   }
 
   public ClassBuffer createInnerClass(final String classDef) {
-    final ClassBuffer inner = new ClassBuffer(context, memberIndent());
+    final ClassBuffer inner = new ClassBuffer(context, this, memberIndent());
     inner.setDefinition(classDef, classDef.trim().endsWith("{"));
     addClass(inner);
     return inner;
   }
 
   public ClassBuffer createAnonymousClass(final String classDef) {
+    ClassBuffer outer = this;
     class AnonymousClass extends ClassBuffer {
       public AnonymousClass(final SourceBuilder<?> context, final String indent) {
-        super(context, indent);
+        super(context, outer, indent);
       }
 
       @Override
@@ -472,7 +467,7 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
   }
 
   public MethodBuffer createConstructor(final int modifiers, final String... params) {
-    final MethodBuffer method = new MethodBuffer(context, memberIndent());
+    final MethodBuffer method = new MethodBuffer(context, this, memberIndent());
     method.setModifier(modifiers);
     method.setName(getSimpleName());
     method.setReturnType("");
@@ -483,7 +478,7 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
   }
 
   public MethodBuffer createMethod(final String methodDef) {
-    final MethodBuffer method = new MethodBuffer(context, memberIndent());
+    final MethodBuffer method = new MethodBuffer(context, this, memberIndent());
     method.setDefinition(methodDef);
     addMethod(method);
     return method;
@@ -491,7 +486,7 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
 
   public MethodBuffer createMethod(final int modifiers, final Class<?> returnType,
       final String name, final String... params) {
-    final MethodBuffer method = new MethodBuffer(context, memberIndent());
+    final MethodBuffer method = new MethodBuffer(context, this, memberIndent());
     method.setModifier(modifiers);
     method.setName(name);
     method.setReturnType(addImport(returnType));

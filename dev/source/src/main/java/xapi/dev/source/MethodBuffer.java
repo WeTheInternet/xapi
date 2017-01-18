@@ -53,6 +53,7 @@ import java.util.Map.Entry;
 public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
     MethodVisitor<SourceBuilder<?>> {
 
+  private final ClassBuffer enclosing;
   protected SourceBuilder<?>          context;
   private boolean                     once;
   private boolean                     useJsni = true;
@@ -63,21 +64,22 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
   private int                         tryDepth;
 
   public MethodBuffer(final SourceBuilder<?> context) {
-    this(context, INDENT);
+    this(context, context.getClassBuffer(), INDENT);
   }
 
   private MethodBuffer(MethodBuffer from) {
-    super(from.indent);
+    super(from.indent, from.enclosing);
     this.context = from.context;
     this.methodName = from.methodName;
     this.parameters = from.parameters;
     this.exceptions = from.exceptions;
     this.returnType = from.returnType;
     this.tryDepth = from.tryDepth;
+    this.enclosing = from.enclosing;
   }
 
   private MethodBuffer(MethodBuffer from, StringBuilder target) {
-    super(target);
+    super(target, from.enclosing);
     this.indent = from.indent;
     this.context = from.context;
     this.methodName = from.methodName;
@@ -85,14 +87,16 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
     this.exceptions = from.exceptions;
     this.returnType = from.returnType;
     this.tryDepth = from.tryDepth;
+    this.enclosing = from.enclosing;
   }
 
-  public MethodBuffer(final SourceBuilder<?> context, final String indent) {
-    super(indent);
+  public MethodBuffer(final SourceBuilder<?> context, ClassBuffer enclosing, final String indent) {
+    super(indent, enclosing);
     this.context = context;
+    this.enclosing = enclosing;
     this.indent = indent + INDENT;
-    parameters = new LinkedHashSet<String>();
-    exceptions = new LinkedHashSet<String>();
+    parameters = new LinkedHashSet<>();
+    exceptions = new LinkedHashSet<>();
   }
 
   @Override
@@ -107,8 +111,19 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
         b.append('@').append(anno).append(NEW_LINE).append(origIndent);
       }
     }
-    b.append(Modifier.toString(modifier));
-    if ((modifier & MODIFIER_DEFAULT) == MODIFIER_DEFAULT) {
+    boolean isDefault = (modifier & MODIFIER_DEFAULT) == MODIFIER_DEFAULT;
+    String mods = Modifier.toString(modifier);
+    if (enclosing != null && enclosing.isInterface()) {
+      // remove public and abstract for interface methods, as they are implicit.
+      if (Modifier.isPublic(modifier)) {
+        mods = mods.replace("public ", "");
+      }
+      if (Modifier.isAbstract(modifier)) {
+        mods = mods.replace("abstract ", "");
+      }
+    }
+    b.append(mods);
+    if (isDefault) {
       b.append(" default");
     }
     if (returnType.simpleName.length() > 0) {
@@ -184,7 +199,9 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
 
   @Override
   public String addImport(final String cls) {
-    final String noPkg = cls.replace(context.getPackage() + ".", "");
+    final String noPkg =
+        context.getPackage() == null || context.getPackage().isEmpty() ? cls
+            : cls.replace(context.getPackage() + ".", "");
     if (noPkg.indexOf('.') == -1) {
       return noPkg;
     }
@@ -320,7 +337,7 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
   }
 
   public ClassBuffer createLocalClass(final String classDef) {
-    final ClassBuffer cls = new ClassBuffer(context, indent);
+    final ClassBuffer cls = new ClassBuffer(context, this, indent);
     cls.setDefinition(classDef, classDef.trim().endsWith("{"));
     assert cls.privacy == 0 : "A local class cannot be "
       + Modifier.toString(cls.privacy);
@@ -339,7 +356,12 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
   }
 
   protected void onFirstAppend() {
-
+    if (enclosing != null && enclosing.isInterface()) {
+      // automatically add default if you are printing into a non-static interface method
+      if (!Modifier.isStatic(modifier)) {
+        modifier |= MODIFIER_DEFAULT;
+      }
+    }
   }
 
   /**
