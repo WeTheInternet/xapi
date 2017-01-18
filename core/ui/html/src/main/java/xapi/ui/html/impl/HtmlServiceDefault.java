@@ -16,7 +16,7 @@ import xapi.util.X_String;
 public class HtmlServiceDefault implements HtmlService {
 
   @Override
-  public <T> HtmlSnippet<T> toSnippet(Class<?> templateClass, Class<? extends T> cls, StyleService<?> css) {
+  public <T> HtmlSnippet<T> toSnippet(Class<?> templateClass, Class<? extends T> cls, StyleService<?, ?> css) {
     /*
  We do not store a field or provider for UserInterfaceFactory,
  as this entire method needs to be swapped out by the compiler,
@@ -34,7 +34,7 @@ public class HtmlServiceDefault implements HtmlService {
   }
 
   @Override
-  public void injectStyle(Class<?> cls, StyleService<?> context) {
+  public void injectStyle(Class<?> cls, StyleService<?, ?> context) {
     Style style = cls.getAnnotation(Style.class);
     if (style != null) {
       printStyle(style, context);
@@ -47,7 +47,7 @@ public class HtmlServiceDefault implements HtmlService {
     }
   }
 
-  private void printStyle(Style style, StyleService<?> context) {
+  private void printStyle(Style style, StyleService<?, ?> context) {
     StringBuilder result = new StringBuilder();
     String extra = HtmlSnippet.appendTo(result, style);
     context.addCss(result.toString(), style.priority());

@@ -2,15 +2,19 @@ package xapi.ui.html.impl;
 
 import org.junit.Before;
 import org.junit.Test;
+import xapi.fu.Out1;
 import xapi.inject.X_Inject;
 import xapi.test.Assert;
 import xapi.ui.api.StyleService;
+import xapi.ui.api.style.HasStyleResources;
 import xapi.ui.autoui.api.BeanValueProvider;
 import xapi.ui.autoui.api.UserInterfaceFactory;
 import xapi.ui.html.X_Html;
 import xapi.ui.html.api.El;
 import xapi.ui.html.api.Html;
 import xapi.ui.html.api.HtmlSnippet;
+
+import com.google.gwt.dom.client.StyleElement;
 
 import javax.inject.Named;
 
@@ -24,27 +28,42 @@ public class HtmlSnippetTest {
 
   public static final String NAME = "html-snippet";
 
-  private StyleService<?> ctx;
+  private StyleService<?, ?> ctx;
+
+  private static class TestService implements StyleService<StyleElement, HasStyleResources> {
+    @Override
+    public void addCss(final String css, final int priority) {
+
+    }
+
+    @Override
+    public void loadGoogleFonts(String ... fonts) {
+      addCss(X_Html.toGoogleFontUrl(fonts), 0);
+    }
+
+    @Override
+    public void flushCss() {
+    }
+
+    @Override
+    public StyleElement injectStyle(
+        Class<? extends HasStyleResources> bundle, Class<?>[] styles
+    ) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Out1<StyleElement> registerStyle(
+        Class<? extends HasStyleResources> bundle, String css, Class<?>[] styles
+    ) {
+      throw new UnsupportedOperationException();
+    }
+  }
 
   @SuppressWarnings("rawtypes")
   @Before
   public void setup() {
-    ctx = new StyleService<StyleService>() {
-      @Override
-      public StyleService addCss(final String css, final int priority) {
-
-        return this;
-      }
-
-      @Override
-      public void loadGoogleFonts(String ... fonts) {
-        addCss(X_Html.toGoogleFontUrl(fonts), 0);
-      }
-
-      @Override
-      public void flushCss() {
-      }
-    };
+    ctx = new TestService();
   }
 
   @Test

@@ -97,8 +97,8 @@ public class XapiAnnotationProcessor extends AbstractProcessor {
 
       XApi xapi = element.getAnnotation(XApi.class);
 
-      if (xapi.templates().length > 0) {
-        for (String path : xapi.templates()) {
+      if (xapi.value().length > 0) {
+        for (String path : xapi.value()) {
           String pkg = "";
           if (path.startsWith("./")) {
             path = path.substring(2);

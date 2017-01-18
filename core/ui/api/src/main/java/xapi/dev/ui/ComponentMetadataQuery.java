@@ -25,6 +25,7 @@ public class ComponentMetadataQuery implements Destroyable {
   private final SimpleStack<In2<ComponentGraph, NameExpr>> nameListeners = new SimpleStack<>();
   private final SimpleStack<In2<ComponentGraph, MethodReferenceExpr>> methodReferenceListeners = new SimpleStack<>();
   private final SimpleStack<In2<ComponentGraph, UiAttrExpr>> dataFeatureListeners = new SimpleStack<>();
+  private final SimpleStack<In2<ComponentGraph, UiAttrExpr>> modelFeatureListeners = new SimpleStack<>();
   private final SimpleStack<In2<ComponentGraph, UiAttrExpr>> refFeatureListeners = new SimpleStack<>();
   private final SimpleStack<In2<ComponentGraph, CssExpr>> cssFeatureListeners = new SimpleStack<>();
   private final SimpleStack<In2<ComponentGraph, UiAttrExpr>> allFeatureListeners = new SimpleStack<>();
@@ -52,6 +53,11 @@ public class ComponentMetadataQuery implements Destroyable {
     return templateNameFilter.io(name);
   }
 
+  public ComponentMetadataQuery setTemplateNameFilter(In1Out1<String, Boolean> template) {
+    this.templateNameFilter = template;
+    return this;
+  }
+
   public ComponentMetadataQuery addNameListener(In2<ComponentGraph, NameExpr> listener) {
     nameListeners.add(listener);
     return this;
@@ -59,6 +65,11 @@ public class ComponentMetadataQuery implements Destroyable {
 
   public ComponentMetadataQuery addDataFeatureListener(In2<ComponentGraph, UiAttrExpr> listener) {
     dataFeatureListeners.add(listener);
+    return this;
+  }
+
+  public ComponentMetadataQuery addModelFeatureListener(In2<ComponentGraph, UiAttrExpr> listener) {
+    modelFeatureListeners.add(listener);
     return this;
   }
 
@@ -107,6 +118,9 @@ public class ComponentMetadataQuery implements Destroyable {
           case "data":
             dataFeatureListeners.forEach(listener->listener.in(scope, n));
               break;
+          case "model":
+            modelFeatureListeners.forEach(listener->listener.in(scope, n));
+              break;
       }
   }
 
@@ -115,6 +129,6 @@ public class ComponentMetadataQuery implements Destroyable {
   }
 
   public String normalizeTemplateName(String name) {
-    return name.substring(1);
+    return name.startsWith("$") ? name.substring(1) : name;
   }
 }

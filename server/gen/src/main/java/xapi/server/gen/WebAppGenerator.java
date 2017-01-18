@@ -2,6 +2,7 @@ package xapi.server.gen;
 
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import xapi.annotation.inject.InstanceOverride;
+import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.api.ApiGeneratorTools;
 import xapi.dev.gen.SourceHelper;
 import xapi.dev.source.SourceBuilder;
@@ -41,6 +42,16 @@ public class WebAppGenerator extends AbstractUiGeneratorService <WebAppGenerator
 
     private WebAppGeneratorContext ctx;
 
+    @Override
+    protected ApiGeneratorContext<?> contextFor(
+        IsQualified type, UiContainerExpr container
+    ) {
+        if (ctx == null) {
+            ctx = new WebAppGeneratorContext();
+        }
+        return ctx;
+    }
+
     public WebApp generateWebApp(String name, UiContainerExpr container) {
         ctx = new WebAppGeneratorContext();
         UiGeneratorService<WebAppGeneratorContext> service = createUiGenerator();
@@ -58,12 +69,12 @@ public class WebAppGenerator extends AbstractUiGeneratorService <WebAppGenerator
 
         PhaseMap<String> phaseMap = PhaseMap.withDefaults(new LinkedHashSet<>());
         for (PhaseNode<String> phase : phaseMap.forEachNode()) {
-            buffer = service.runPhase(phase.getId(), buffer);
+            buffer = service.runPhase(buffer, phase.getId());
         }
 
 //        final UiGeneratorVisitor visitor = service.createVisitor(buffer.getRoot());
 //        visitor.visit(container, service.tools());
-        final SourceBuilder<ContainerMetadata> source = buffer.getBinder();
+        final SourceBuilder<?> source = buffer.getBinder();
         String src = source.toSource();
         X_Log.info(getClass(), src, "Generated... " + src);
         try {
@@ -179,6 +190,11 @@ public class WebAppGenerator extends AbstractUiGeneratorService <WebAppGenerator
     @Override
     protected UiFeatureGenerator createDataFeatureGenerator() {
         return new DataFeatureGenerator();
+    }
+
+    @Override
+    protected UiFeatureGenerator createModelFeatureGenerator() {
+        return new ModelFeatureGenerator();
     }
 
     @Override

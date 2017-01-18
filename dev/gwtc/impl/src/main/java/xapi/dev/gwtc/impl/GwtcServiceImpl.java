@@ -315,6 +315,9 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
       Thread t = new Thread(()->{
         final boolean success = GwtCompiler.doCompile(programArgs);
         code.in(success ? 0 : 1);
+        if (success) {
+          manifest.computeCompileDirectory();
+        }
         cleanup.in(code.out1());
       });
       t.setContextClassLoader(loader);
@@ -348,6 +351,10 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
       });
       controller.onFinished(session->{
         int result = session.join();
+        if (result == 0) {
+          // successful compile; update compile dir
+          manifest.computeCompileDirectory();
+        }
         cleanup.in(result);
       });
       return controller::block;
@@ -380,7 +387,7 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
   @Override
   public int compile(GwtManifest manifest) {
     return doCompile(manifest)
-      .io(60, TimeUnit.SECONDS);
+      .io(120, TimeUnit.SECONDS);
   }
 
   private boolean runtimeContainsClasspath(String genDir, String[] classpath) {

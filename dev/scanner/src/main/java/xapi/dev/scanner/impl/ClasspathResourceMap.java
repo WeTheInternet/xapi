@@ -1,16 +1,5 @@
 package xapi.dev.scanner.impl;
 
-import java.io.File;
-import java.lang.annotation.Annotation;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Target;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.regex.Pattern;
-
 import xapi.bytecode.ClassFile;
 import xapi.bytecode.ClassPool;
 import xapi.bytecode.FieldInfo;
@@ -29,6 +18,17 @@ import xapi.source.X_Source;
 import xapi.util.X_Debug;
 import xapi.util.api.MatchesValue;
 import xapi.util.api.ProvidesValue;
+
+import java.io.File;
+import java.lang.annotation.Annotation;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.regex.Pattern;
 
 public class ClasspathResourceMap {
 
@@ -306,6 +306,10 @@ public class ClasspathResourceMap {
   @SuppressWarnings("unchecked")
   public final Iterable<ClassFile> getAllClasses(){
     return new ClassFileIterator(MatchesValue.ANY, bytecode);
+  }
+
+  public final Iterable<StringDataResource> getAllResources(){
+    return resources.findPrefixed("");
   }
 
   public Iterable<ClassFile> findClassesInPackage(final String name) {

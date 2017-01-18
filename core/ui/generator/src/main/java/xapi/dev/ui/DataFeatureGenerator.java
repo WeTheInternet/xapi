@@ -1,14 +1,7 @@
 package xapi.dev.ui;
 
 import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.expr.AnnotationExpr;
-import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.FieldAccessExpr;
-import com.github.javaparser.ast.expr.JsonContainerExpr;
-import com.github.javaparser.ast.expr.MethodCallExpr;
-import com.github.javaparser.ast.expr.NameExpr;
-import com.github.javaparser.ast.expr.UiAttrExpr;
-import com.github.javaparser.ast.expr.UnaryExpr;
+import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.plugin.NodeTransformer;
 import com.github.javaparser.ast.plugin.Transformer;
 import xapi.dev.source.ClassBuffer;
@@ -16,9 +9,8 @@ import xapi.dev.source.PrintBuffer;
 import xapi.fu.In1Out1;
 import xapi.fu.In2Out1;
 import xapi.fu.Lazy;
+import xapi.fu.Maybe;
 import xapi.source.api.IsType;
-
-import java.util.Optional;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 6/19/16.
@@ -27,7 +19,11 @@ public class DataFeatureGenerator extends UiFeatureGenerator {
 
   @Override
   public UiVisitScope startVisit(
-        UiGeneratorTools service, UiComponentGenerator generator, ContainerMetadata container, UiAttrExpr attr
+      UiGeneratorTools service,
+      UiComponentGenerator generator,
+      ComponentBuffer source,
+      ContainerMetadata container,
+      UiAttrExpr attr
   ) {
     final Expression value = attr.getExpression();
     if (value instanceof JsonContainerExpr) {
@@ -35,7 +31,7 @@ public class DataFeatureGenerator extends UiFeatureGenerator {
       // either a bean with all the keys that match the supplied data,
       // or a list / map / array / container type to use.
       JsonContainerExpr json = (JsonContainerExpr) value;
-      Optional<AnnotationExpr> anno = attr.getAnnotation(
+      Maybe<AnnotationExpr> anno = attr.getAnnotation(
           a -> a.getName().getName().equalsIgnoreCase("type"));
       DataTypeOptions opts;
       final ClassBuffer cb = container.getSourceBuilder().getClassBuffer();
@@ -48,7 +44,7 @@ public class DataFeatureGenerator extends UiFeatureGenerator {
       // register `varName.out1()` as a replacement for all accessors of this particular data
       MethodCallExpr expr = new MethodCallExpr(new NameExpr(var), "out1");
       container.registerFieldProvider(container.getRefName(), "data", newTransformer(service, generator, container, json, opts, expr));
-      return UiVisitScope.DEFAULT_CONTAINER;
+      return UiVisitScope.FEATURE_VISIT_CHILDREN;
     } else {
       throw new IllegalArgumentException("Cannot assign a node of type " + value.getClass() + " to a data feature; bad data: " + value);
     }
@@ -167,7 +163,7 @@ public class DataFeatureGenerator extends UiFeatureGenerator {
   protected String printFactory(
       JsonContainerExpr json,
       ContainerMetadata container,
-      Optional<AnnotationExpr> anno,
+      Maybe<AnnotationExpr> anno,
       DataTypeOptions opts,
       ClassBuffer cb,
       Transformer transformer

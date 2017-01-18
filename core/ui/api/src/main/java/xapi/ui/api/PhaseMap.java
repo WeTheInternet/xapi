@@ -1,18 +1,16 @@
 package xapi.ui.api;
 
-import xapi.util.impl.ReverseIterable;
 import xapi.fu.In1Out1;
+import xapi.util.impl.ReverseIterable;
 
 import static xapi.util.X_Util.pushIfMissing;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 6/27/16.
@@ -382,7 +380,7 @@ public class PhaseMap <K extends Comparable<K>> {
 
     public static PhaseMap<String> withDefaults(Set<UiPhase> phases) {
 
-        assert ! (phases instanceof HashMap) :
+        assert phases.getClass() != HashSet.class :
             "Do not send a hashset for these order-dependent values";
         for (Class<?> phase : UiPhase.CORE_PHASES) {
             phases.add(phase.getAnnotation(UiPhase.class));

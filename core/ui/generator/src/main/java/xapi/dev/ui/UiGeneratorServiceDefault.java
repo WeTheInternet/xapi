@@ -19,12 +19,12 @@ public class UiGeneratorServiceDefault <Ctx extends ApiGeneratorContext<Ctx>> ex
 
     @Override
     public UiComponentGenerator getComponentGenerator(UiContainerExpr container, ContainerMetadata metadata) {
-        return componentFactory.io(container, metadata);
+        return state.componentFactory.io(container, metadata);
     }
 
     @Override
     public UiFeatureGenerator getFeatureGenerator(UiAttrExpr container, UiComponentGenerator componentGenerator) {
-        return featureFactory.io(container, componentGenerator);
+        return state.featureFactory.io(container, componentGenerator);
     }
 
     @Override
@@ -35,6 +35,11 @@ public class UiGeneratorServiceDefault <Ctx extends ApiGeneratorContext<Ctx>> ex
     @Override
     protected UiFeatureGenerator createDataFeatureGenerator() {
         return new DataFeatureGenerator();
+    }
+
+    @Override
+    protected UiFeatureGenerator createModelFeatureGenerator() {
+        return new ModelFeatureGenerator();
     }
 
     protected ComponentBuffer peekIntegration(ComponentBuffer component) {

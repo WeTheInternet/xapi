@@ -11,6 +11,7 @@ import xapi.log.X_Log;
 import com.google.gwt.dev.cfg.ResourceLoader;
 import com.google.gwt.dev.codeserver.Job.Result;
 import com.google.gwt.dev.codeserver.JobEvent.CompileStrategy;
+import com.google.gwt.dev.javac.StaleJarError;
 import com.google.gwt.dev.util.log.PrintWriterTreeLogger;
 
 import java.io.BufferedReader;
@@ -46,6 +47,9 @@ public class RecompileController implements IsRecompiler {
             final Result res = results.out1();
             final CompileDir dir = res.outputDir;
 
+            if (dir == null) {
+
+            }
             // Try to look up the permutation map from war directory
             File warp = dir.getWarDir();
 
@@ -107,12 +111,7 @@ public class RecompileController implements IsRecompiler {
                 .setUserAgentMap(permutations)
                 ;
             return compiled;
-          };
-          @Override
-          public void reset() {
-            //TODO: delete any files, if they exist
-            super.reset();
-          };
+          }
         };
   }
 
@@ -147,8 +146,20 @@ public class RecompileController implements IsRecompiler {
       result = compileDir.get();
       return result;
     } catch (Throwable t) {
-      X_Log.warn(getClass(), "Resetting GWT recompiler", t);
       compileDir = resetCompilation();
+      if (t.getCause() instanceof NullPointerException) {
+        if (t.getCause().getMessage().startsWith("entry")) {
+          // A jar we were using was removed (rebuilt most likely)
+          // we are going to have to ditch this classloader and restart...
+          final CompiledDirectory toReturn = toDestroy;
+          compileDir.set(toReturn);
+          toDestroy = null;
+          X_Log.trace(getClass(), "Resetting GWT recompiler due to broken classpath item", t);
+          return toReturn;
+
+        }
+      }
+      X_Log.warn(getClass(), "Resetting GWT recompiler", t);
       throw t;
     } finally {
       if (toDestroy != null && result != null && result.getStrategy() != CompileStrategy.SKIPPED) {
@@ -231,7 +242,11 @@ public class RecompileController implements IsRecompiler {
         dir = recompiler.recompile(job);
         final CompileStrategy strategy = table.getPublishedEvent(job).getCompileStrategy();
         return Out3.out3(dir, strategy, currentLoader);
-      }catch (Exception e) {
+      }catch (Throwable e) {
+        if (e instanceof StaleJarError) {
+          compileDir = resetCompilation();
+          log.log(Level.WARNING, "Stale jars detected; reinitializing GWT compiler");
+        }
         e.printStackTrace();
         log.log(Level.SEVERE, "Unable to compile module.", e);
         throw new RuntimeException(e);

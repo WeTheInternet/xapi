@@ -7,6 +7,7 @@ import javafx.scene.layout.VBox;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
+import xapi.dev.ui.ComponentBuffer;
 import xapi.dev.ui.ContainerMetadata;
 import xapi.dev.ui.UiComponentGenerator;
 import xapi.dev.ui.UiGeneratorTools;
@@ -25,14 +26,14 @@ public class JavaFxAppComponentGenerator extends UiComponentGenerator {
 
   @Override
   public UiVisitScope startVisit(
-        UiGeneratorTools service, ContainerMetadata me, UiContainerExpr n
+      UiGeneratorTools service, ComponentBuffer source, ContainerMetadata me, UiContainerExpr n
   ) {
 
     SourceBuilder<?> out = me.getSourceBuilder();
     final Maybe<UiAttrExpr> type = n.getAttribute("type");
     String container = type
-        .mapImmediate(ASTHelper::extractAttrValue)
-        .useIfNull(VBox.class::getName);
+        .mapNullSafe(ASTHelper::extractAttrValue)
+        .ifAbsentSupply(VBox.class::getName);
     container = out.addImport(container);
     String binder = out.addImport(In1Out1.class);
 
@@ -54,7 +55,7 @@ public class JavaFxAppComponentGenerator extends UiComponentGenerator {
     me.saveMethod(varName, method);
     me.pushPanelName(varName);
 
-    return super.startVisit(service, me, n);
+    return super.startVisit(service, source, me, n);
   }
 
   @Override

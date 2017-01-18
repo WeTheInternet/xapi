@@ -18,7 +18,11 @@ public class CssFeatureGenerator extends UiFeatureGenerator {
 
   @Override
   public UiVisitScope startVisit(
-        UiGeneratorTools service, UiComponentGenerator generator, ContainerMetadata container, UiAttrExpr attr
+      UiGeneratorTools service,
+      UiComponentGenerator generator,
+      ComponentBuffer source,
+      ContainerMetadata container,
+      UiAttrExpr attr
   ) {
     final Expression value = attr.getExpression();
     boolean isClassAttr = "class".equalsIgnoreCase(attr.getNameString());
@@ -52,7 +56,7 @@ public class CssFeatureGenerator extends UiFeatureGenerator {
       }
       // Now transform the css ast into commands that will apply style to an element.
       container.getStyle().addApplied(containers);
-      return UiVisitScope.DEFAULT_CONTAINER;
+      return UiVisitScope.CONTAINER_VISIT_CHILDREN;
     }
 
     if (isClassAttr) {
@@ -119,7 +123,7 @@ public class CssFeatureGenerator extends UiFeatureGenerator {
       container.getStyle().addRules(containers);
     }
 
-    return UiVisitScope.DEFAULT_CONTAINER;
+    return UiVisitScope.CONTAINER_VISIT_CHILDREN;
   }
 
   private boolean checkForDynamism(List<CssContainerExpr> containers) {

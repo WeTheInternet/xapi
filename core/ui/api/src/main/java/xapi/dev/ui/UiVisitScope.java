@@ -31,9 +31,14 @@ public class UiVisitScope {
     }
 
     @SuppressWarnings("all")
-    public static final UiVisitScope DEFAULT_CONTAINER = new UiVisitScopeImmutable(ScopeType.CONTAINER);
+    public static final UiVisitScope CONTAINER_VISIT_CHILDREN = new UiVisitScopeImmutable(ScopeType.CONTAINER);
+
     @SuppressWarnings("all")
-    public static final UiVisitScope DEFAULT_FEATURE = new UiVisitScopeImmutable(ScopeType.FEATURE);
+    public static final UiVisitScope CONTAINER_NO_CHILDREN = new UiVisitScope(ScopeType.CONTAINER).setVisitChildren(false);
+    @SuppressWarnings("all")
+    public static final UiVisitScope FEATURE_VISIT_CHILDREN = new UiVisitScopeImmutable(ScopeType.FEATURE);
+    @SuppressWarnings("all")
+    public static final UiVisitScope FEATURE_NO_CHILDREN = new UiVisitScope(ScopeType.FEATURE).setVisitChildren(false);
     private final ScopeType type;
     private boolean visitChildren;
     private StringTo<UiComponentGenerator> componentOverrides;

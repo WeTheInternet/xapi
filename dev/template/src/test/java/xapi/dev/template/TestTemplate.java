@@ -1,20 +1,18 @@
 package xapi.dev.template;
 
+import org.junit.Assert;
+import org.junit.Test;
+import xapi.dev.source.SourceBuilder;
+import xapi.log.api.LogLevel;
+import xapi.log.api.LogService;
+
+import javax.tools.JavaCompiler;
+import javax.tools.ToolProvider;
 import java.io.File;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Random;
-
-import javax.tools.JavaCompiler;
-import javax.tools.ToolProvider;
-
-import org.junit.Assert;
-import org.junit.Test;
-
-import xapi.dev.source.SourceBuilder;
-import xapi.log.api.LogLevel;
-import xapi.log.api.LogService;
 
 /**
  * A fairly simple test of our templating system;
@@ -70,6 +68,10 @@ public class Success {
  */
 public class TestTemplate implements TemplateClassGenerator{
 
+    static {
+        System.setProperty("xapi.multithreaded", "");
+        System.setProperty("xapi.inject", "false");
+    }
 
   @Override
 	public void initialize(LogService logger, TemplateGeneratorOptions options) {

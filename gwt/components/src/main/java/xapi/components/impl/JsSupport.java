@@ -7,14 +7,37 @@ import elemental.js.util.JsArrayOfInt;
 import elemental.js.util.JsArrayOfNumber;
 import elemental.js.util.JsArrayOfString;
 import xapi.components.api.Console;
+import xapi.components.api.CustomElementRegistry;
 import xapi.components.api.Document;
 import xapi.components.api.JsObject;
+import xapi.components.api.Symbol;
 import xapi.components.api.Window;
+import xapi.fu.In1Out1;
+import xapi.fu.In2Out1;
 
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.UnsafeNativeLong;
 
 public class JsSupport {
+
+  private static class NativeFactory <I, O> implements In2Out1<I, In1Out1<I, O>, O> {
+
+    private final Symbol name;
+
+    public NativeFactory(String name) {
+      this.name = JsSupport.symbol(name == null ? "__component__" : name);
+    }
+
+    @Override
+    public native O io(I el, In1Out1<I, O> io)
+    /*-{
+      var n = this.@NativeFactory::name;
+      if (!el[n]) {
+        el[n] = io.@In1Out1::io(Ljava/lang/Object;)(el);
+      }
+      return el[n];
+    }-*/;
+  }
 
   public static native Document doc()
   /*-{
@@ -24,6 +47,16 @@ public class JsSupport {
   public static native Window win()
   /*-{
   	return $wnd;
+  }-*/;
+
+  public static native Symbol symbol(String symbol)
+  /*-{
+  	return $wnd.Symbol['for'](symbol);
+  }-*/;
+
+  public static native CustomElementRegistry customElements()
+  /*-{
+  	return $wnd.customElements;
   }-*/;
 
   public static native JsObject object()
@@ -562,4 +595,8 @@ public class JsSupport {
   /*-{
     return Object.create(o);
   }-*/;
+
+  public static <I, O> In1Out1<I, O> nativeFactory(In1Out1<I, O> factory, String name) {
+    return factory.lazy(new NativeFactory<>(name));
+  }
 }

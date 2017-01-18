@@ -24,10 +24,14 @@
         size = ( 300 * (()->150 + 10 * $root.data.one) )
         align = center
   >
-      <button ref="one" text="Button 1" class="btn button1" onClick=e->
-        $one.setText("You clicked one " + $root.data.one++ + " times") />
-      <button ref="two" text="Button 2" class="btn button2" onClick=e->
-        $two.setText("You clicked two " + ++$root.data.two + " times") />
+      <button ref="one" text="Button 1" class="btn button1" onClick=e-> {
+        $one.setText("You clicked one " + $root.data.one++ + " times");
+      } />
+
+      <button ref="two" text="Button 2" class="btn button2" onClick=e-> {
+        $two.setText("You clicked two " + ++$root.data.two + " times");
+      } />
+
   </box>
   <box align = center>
       <button text="Close" onClick=System.exit(0) />

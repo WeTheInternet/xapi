@@ -3,7 +3,9 @@ package xapi.dev.ui;
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import xapi.dev.api.ApiGeneratorContext;
-import xapi.dev.source.SourceBuilder;
+import xapi.dev.ui.GeneratedUiComponent.GeneratedUiImplementation;
+import xapi.dev.ui.InterestingNodeFinder.InterestingNodeResults;
+import xapi.util.X_String;
 import xapi.util.api.RemovalHandler;
 
 /**
@@ -16,25 +18,22 @@ public abstract class AbstractUiImplementationGenerator <Ctx extends ApiGenerato
     }
 
     @Override
-    public ContainerMetadata generateComponent(ContainerMetadata metadata, ComponentBuffer buffer) {
+    public GeneratedUiImplementation generateComponent(ContainerMetadata metadata, ComponentBuffer buffer) {
         final String pkgName = metadata.getControllerPackage();
         final String className = metadata.getControllerSimpleName();
         final UiContainerExpr expr = metadata.getUi();
         metadata.setControllerType(pkgName, className);
-        String generatedName = calculateGeneratedName(pkgName, className, expr);
-        SourceBuilder b = new SourceBuilder("public class " + generatedName)
-            .setPackage(pkgName)
-            .setSuperClass(buffer.getBinder().getQualifiedName());
-        metadata.setSourceBuilder(b);
-        UiGeneratorVisitor visitor = createVisitor(metadata);
+        final GeneratedUiImplementation impl = getImpl(buffer.getGeneratedComponent());
+        metadata.setImplementation(impl);
+        UiGeneratorVisitor visitor = createVisitor(metadata, buffer);
 
         visitor.visit(expr, this);
-        return metadata;
+        return impl;
     }
 
     @Override
-    public UiGeneratorVisitor createVisitor(ContainerMetadata metadata) {
-        final UiGeneratorVisitor visitor = super.createVisitor(metadata);
+    public UiGeneratorVisitor createVisitor(ContainerMetadata metadata, ComponentBuffer buffer) {
+        final UiGeneratorVisitor visitor = super.createVisitor(metadata, buffer);
         visitor.wrapScope(
         handler->
             scope -> {
@@ -91,5 +90,25 @@ public abstract class AbstractUiImplementationGenerator <Ctx extends ApiGenerato
             return getGenerator().getFeatureGenerator(container, componentGenerator);
         }
         return gen;
+    }
+
+    @Override
+    public void spyOnInterestingNodes(
+        ComponentBuffer component, InterestingNodeResults interestingNodes
+    ) {
+
+    }
+
+    @Override
+    public void spyOnNewComponent(ComponentBuffer component) {
+
+    }
+
+    @Override
+    protected void initializeComponent(GeneratedUiComponent result) {
+        if (!X_String.isEmpty(getImplPrefix())) {
+            getImpl(result).setPrefix(getImplPrefix());
+        }
+        super.initializeComponent(result);
     }
 }

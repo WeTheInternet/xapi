@@ -8,6 +8,6 @@ Feature:
       | <web-app /> |
     Then Expect web app named HelloWorld to have source:
       |                                           |
-      | public class SuperComponent0_HelloWorld { |
+      | public interface HelloWorldComponent { |
       |                                           |
       | }                                         |

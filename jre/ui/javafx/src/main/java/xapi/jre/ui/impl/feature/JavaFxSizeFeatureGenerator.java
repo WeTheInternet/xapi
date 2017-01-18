@@ -6,6 +6,7 @@ import com.github.javaparser.ast.expr.BinaryExpr.Operator;
 import com.github.javaparser.ast.plugin.NodeTransformer;
 import com.github.javaparser.ast.plugin.Transformer;
 import xapi.dev.source.MethodBuffer;
+import xapi.dev.ui.ComponentBuffer;
 import xapi.dev.ui.ContainerMetadata;
 import xapi.dev.ui.UiComponentGenerator;
 import xapi.dev.ui.UiFeatureGenerator;
@@ -23,7 +24,11 @@ public class JavaFxSizeFeatureGenerator extends UiFeatureGenerator {
 
     @Override
     public UiVisitScope startVisit(
-          UiGeneratorTools service, UiComponentGenerator generator, ContainerMetadata container, UiAttrExpr attr
+        UiGeneratorTools service,
+        UiComponentGenerator generator,
+        ComponentBuffer source,
+        ContainerMetadata container,
+        UiAttrExpr attr
     ) {
 
         String panel = container.peekPanelName();
@@ -110,7 +115,7 @@ public class JavaFxSizeFeatureGenerator extends UiFeatureGenerator {
             }
         }
 
-        return super.startVisit(service, generator, container, attr);
+        return super.startVisit(service, generator, source, container, attr);
     }
 
     protected String toLambdaOrLiteral(Expression expr, Transformer transformer) {

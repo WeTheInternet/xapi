@@ -19,24 +19,28 @@ public class UiGeneratorVisitor extends VoidVisitorAdapter<UiGeneratorTools> {
     public interface ScopeHandler extends In1Out1<UiVisitScope, RemovalHandler> { }
 
     final Lazy<ContainerMetadata> root;
+    private final ComponentBuffer source;
     private ScopeHandler onScope;
     ContainerMetadata parent;
     private UiComponentGenerator generator;
     private UiFeatureGenerator feature;
 
-    public UiGeneratorVisitor(ScopeHandler onScope) {
+    public UiGeneratorVisitor(ScopeHandler onScope, ComponentBuffer source) {
         this.onScope = onScope;
         root = Lazy.deferred1(this.createRoot());
+        this.source = source;
     }
 
-    public UiGeneratorVisitor(ScopeHandler onScope, Out1<ContainerMetadata> source) {
+    public UiGeneratorVisitor(ScopeHandler onScope, Out1<ContainerMetadata> metadata, ComponentBuffer source) {
         this.onScope = onScope;
-        root = Lazy.deferred1(source);
+        root = Lazy.deferred1(metadata);
+        this.source = source;
     }
 
-    public UiGeneratorVisitor(ScopeHandler onScope, ContainerMetadata source) {
+    public UiGeneratorVisitor(ScopeHandler onScope, ContainerMetadata metadata, ComponentBuffer source) {
         this.onScope = onScope;
-        root = Lazy.immutable1(source);
+        root = Lazy.immutable1(metadata);
+        this.source = source;
     }
 
     protected Out1<ContainerMetadata> createRoot() {
@@ -58,11 +62,12 @@ public class UiGeneratorVisitor extends VoidVisitorAdapter<UiGeneratorTools> {
         } else {
             me = parent = myParent.createChild(n, service);
         }
+        me.setImplementation(myParent.getImplementation());
         final UiComponentGenerator oldGenerator = generator;
         try {
             final UiComponentGenerator myGenerator = generator = service.getComponentGenerator(n, me);
             if (myGenerator != null) {
-                final UiVisitScope scope = generator.startVisit(service, me, n);
+                final UiVisitScope scope = generator.startVisit(service, source, me, n);
                 assert scope.getType() == ScopeType.CONTAINER : "Expected container scope " + scope;
                 final RemovalHandler undo = onScope.io(scope);
                 if (scope.isVisitChildren()) {
@@ -90,7 +95,7 @@ public class UiGeneratorVisitor extends VoidVisitorAdapter<UiGeneratorTools> {
 
             final UiFeatureGenerator myFeature = feature = service.getFeatureGenerator(n, generator);
             if (myFeature != null) {
-                final UiVisitScope scope = myFeature.startVisit(service, myGenerator, parent, n);
+                final UiVisitScope scope = myFeature.startVisit(service, myGenerator, source, parent, n);
                 assert scope.getType() == ScopeType.FEATURE : "Expected feature scope " + scope;
                 final RemovalHandler undo = onScope.io(scope);
                 if (scope.isVisitChildren()) {

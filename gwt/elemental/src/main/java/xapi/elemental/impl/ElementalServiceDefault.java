@@ -5,34 +5,24 @@ package xapi.elemental.impl;
 
 import elemental.client.Browser;
 import elemental.dom.Element;
-import elemental.html.StyleElement;
 import elemental.html.TextAreaElement;
 import xapi.annotation.inject.SingletonDefault;
 import xapi.elemental.api.ElementalService;
 import xapi.elemental.api.PotentialNode;
-import xapi.elemental.api.StyleCacheService;
-import xapi.fu.Out1;
-import xapi.inject.X_Inject;
 import xapi.source.api.Lexer;
 import xapi.ui.html.X_Html;
 import xapi.ui.html.impl.StyleServiceDefault;
 import xapi.util.api.ConvertsValue;
 
 import com.google.gwt.core.shared.GwtIncompatible;
-import com.google.gwt.resources.client.ClientBundle;
-import com.google.gwt.resources.client.CssResource;
-
-import javax.inject.Provider;
 
 /**
  * @author "James X. Nelson (james@wetheinter.net)"
  */
 @SingletonDefault(implFor=ElementalService.class)
 public class ElementalServiceDefault
-extends StyleServiceDefault<ElementalService>
+extends StyleServiceDefault
 implements ElementalService {
-
-  private static final Provider<StyleCacheService> styleCache = X_Inject.singletonLazy(StyleCacheService.class);
 
   private Lexer lexer;
   private static final TextAreaElement escaper = Browser.getDocument().createTextAreaElement();
@@ -147,22 +137,6 @@ implements ElementalService {
   /*-{
     return element.host || element;
   }-*/;
-
-  @Override
-  public StyleElement injectStyle(
-      Class<? extends ClientBundle> bundle, Class<? extends CssResource> ... styles
-  ) {
-    return styleCache.get().injectStyle(bundle, styles);
-  }
-
-  @Override
-  @SafeVarargs
-  public final Out1<StyleElement> registerStyle(
-      Class<? extends ClientBundle> bundle, String css, Class<? extends CssResource>... styles
-  ) {
-    styleCache.get().registerStyle(bundle, css, styles);
-    return ()->injectStyle(bundle, styles);
-  }
 
   @Override
   public String escapeHTML(String html) {

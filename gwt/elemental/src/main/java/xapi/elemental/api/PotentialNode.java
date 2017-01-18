@@ -236,8 +236,9 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> {
   /**
    * @param tagName the tagName to set
    */
-  public void setTagName(String tagName) {
+  public PotentialNode<E> setTagName(String tagName) {
     this.tagName = tagName;
+    return this;
   }
 
   public String toSource() {

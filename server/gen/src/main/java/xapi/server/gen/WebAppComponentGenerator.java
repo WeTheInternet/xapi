@@ -4,6 +4,7 @@ import com.github.javaparser.ast.expr.UiContainerExpr;
 import xapi.collect.api.StringTo;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
+import xapi.dev.ui.ComponentBuffer;
 import xapi.dev.ui.ContainerMetadata;
 import xapi.dev.ui.UiComponentGenerator;
 import xapi.dev.ui.UiFeatureGenerator;
@@ -20,7 +21,7 @@ public class WebAppComponentGenerator extends UiComponentGenerator {
 
     @Override
     public UiVisitScope startVisit(
-        UiGeneratorTools service, ContainerMetadata me, UiContainerExpr n
+        UiGeneratorTools service, ComponentBuffer source, ContainerMetadata me, UiContainerExpr n
     ) {
         final UiVisitScope scope = new UiVisitScope(ScopeType.CONTAINER);
         final StringTo<UiFeatureGenerator> overrides = scope.getFeatureOverrides();

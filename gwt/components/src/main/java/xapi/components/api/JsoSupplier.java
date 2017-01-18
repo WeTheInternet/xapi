@@ -1,15 +1,22 @@
 package xapi.components.api;
 
-import java.util.function.Supplier;
+import xapi.fu.Out1;
 
 import com.google.gwt.core.client.JavaScriptObject;
 
-public class JsoSupplier implements Supplier<Object> {
+import java.util.function.Supplier;
+
+public class JsoSupplier implements Out1<Object>, Supplier<Object> {
 
   private JavaScriptObject jso;
 
   public JsoSupplier(JavaScriptObject jso) {
     this.jso = jso;
+  }
+
+  @Override
+  public final Object out1() {
+    return get();
   }
 
   @Override

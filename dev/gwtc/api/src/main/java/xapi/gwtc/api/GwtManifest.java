@@ -20,6 +20,7 @@ import static xapi.fu.iterate.SingletonIterator.singleItem;
 import static xapi.gwtc.api.GwtManifest.CleanupMode.DELETE_ON_SUCCESSFUL_EXIT;
 
 import com.google.gwt.core.ext.TreeLogger.Type;
+import com.google.gwt.dev.codeserver.JobEvent.CompileStrategy;
 
 import java.util.Iterator;
 
@@ -129,7 +130,6 @@ public class GwtManifest {
   private boolean disableUnitCache;
   private boolean draftCompile;
   private boolean enableAssertions;
-  private boolean incremental;
   private IntTo<String> extraArgs = newList(String.class);
   private String extrasDir;
   private int fragments = DEFAULT_FRAGMENTS;
@@ -161,6 +161,7 @@ public class GwtManifest {
   private CompiledDirectory compileDirectory;
   private boolean online;
   private MethodNameMode mode;
+  private boolean incremental;
 
   public GwtManifest() {
     includeGenDir = true;
@@ -654,7 +655,9 @@ public class GwtManifest {
     if (validateOnly) {
       read.in(ARG_VALIDATE_ONLY, null);
     }
-
+    if (incremental) {
+      read.in(ARG_INCREMENTAL, null);
+    }
     read.in(" ", moduleName);
 
   }
@@ -941,6 +944,9 @@ public class GwtManifest {
     if (validateOnly) {
       b.append(NEW_ITEM).append(ARG_VALIDATE_ONLY);
     }
+    if (incremental) {
+      b.append(NEW_ITEM).append(ARG_INCREMENTAL);
+    }
 
     return b.toString();
   }
@@ -1018,5 +1024,20 @@ public class GwtManifest {
 
   public void setIncremental(boolean incremental) {
     this.incremental = incremental;
+  }
+
+  public CompiledDirectory computeCompileDirectory() {
+    compileDirectory = new CompiledDirectory();
+    compileDirectory.setDeployDir(getDeployDir());
+    compileDirectory.setExtraDir(getExtrasDir());
+    compileDirectory.setGenDir(getGenDir());
+    compileDirectory.setPort(getPort());
+    compileDirectory.setWarDir(getWarDir());
+    compileDirectory.setWorkDir(getWorkDir());
+    compileDirectory.setStrategy(isIncremental() ? CompileStrategy.INCREMENTAL : CompileStrategy.FULL);
+    // TODO add logFile and UserAgent mappings.
+    // when using a java main, it should send back a response on success
+    // containing the actual directories and mappings to use.
+    return compileDirectory;
   }
 }

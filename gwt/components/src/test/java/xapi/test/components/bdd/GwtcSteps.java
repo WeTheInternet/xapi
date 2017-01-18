@@ -27,14 +27,14 @@ import xapi.components.api.IsWebComponent;
 import xapi.components.api.WebComponentFactory;
 import xapi.dev.X_Gwtc;
 import xapi.dev.api.ApiGeneratorContext;
-import xapi.dev.gen.SourceHelper;
+import xapi.dev.gen.FileBasedSourceHelper;
 import xapi.dev.gwtc.api.GwtcService;
 import xapi.dev.gwtc.impl.GwtcManifestImpl;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.dev.source.SourceBuilder.JavaType;
 import xapi.dev.ui.ComponentBuffer;
-import xapi.dev.ui.ContainerMetadata;
+import xapi.dev.ui.GeneratedUiComponent.GeneratedUiApi;
 import xapi.dev.ui.UiComponentGenerator;
 import xapi.dev.ui.UiGeneratorService;
 import xapi.dev.ui.UiGeneratorServiceDefault;
@@ -45,6 +45,7 @@ import xapi.fu.Lazy;
 import xapi.fu.Out2;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
+import xapi.gwtc.api.CompiledDirectory;
 import xapi.gwtc.api.GwtManifest;
 import xapi.gwtc.api.GwtManifest.CleanupMode;
 import xapi.gwtc.api.GwtcXmlBuilder;
@@ -58,6 +59,7 @@ import xapi.source.read.JavaModel.IsQualified;
 import xapi.test.components.client.GeneratedComponentEntryPoint;
 import xapi.util.X_Namespace;
 import xapi.util.X_Properties;
+import xapi.util.X_String;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -71,8 +73,6 @@ import com.google.gwt.core.ext.TreeLogger.Type;
 import javax.lang.model.element.Element;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -96,6 +96,7 @@ public class GwtcSteps {
   }
 
   private StringTo<CompiledComponent> compiledComponents;
+  private StringTo<ComponentBuffer> generatedComponents;
   private StringTo<String> sources;
   private Lazy<GwtcService> gwtc;
   private Lazy<UiGeneratorService> tools;
@@ -104,6 +105,7 @@ public class GwtcSteps {
   protected GwtManifest createManifest() {
       final GwtcService service = gwtc.out1();
       service.addClasspath(IsWebComponent.class);
+      service.addClasspath(GeneratedComponentEntryPoint.class);
       service.createFile("META-INF", "xapi.properties", ()->"");
       final GwtManifest manifest = new GwtcManifestImpl(service.getModuleName());
       initializeManifest(service, manifest);
@@ -124,6 +126,7 @@ public class GwtcSteps {
   @Before
   public void before() {
     compiledComponents = X_Collect.newStringMap(CompiledComponent.class);
+    generatedComponents = X_Collect.newStringMap(ComponentBuffer.class);
     sources = X_Collect.newStringMap(String.class);
     resetGwtCompiler();
     resetApiGenerator();
@@ -258,72 +261,47 @@ public class GwtcSteps {
     });
   }
 
-  @Given("^add xapi component:$")
-  public void addXapiComponent(List<String> lines) throws ParseException {
+  @Given("^add xapi component named (.+):$")
+  public ComponentBuffer addXapiComponent(String name, List<String> lines) throws ParseException {
     checkNotEmpty(lines);
 
     GwtcService service = gwtc.out1();
     final GwtManifest manifest = gwtManifest.out1();
 
+    if (name == null) {
+      name = "Gen"+System.identityHashCode(manifest);
+    } else {
+      name = X_Source.toCamelCase(name);
+    }
+
     String code = join("\n", toArray(lines));
     String clsToUse;
     final UiContainerExpr parsed = JavaParser.parseXapi(X_IO.toStreamUtf8(code), "UTF-8");
-    final int ident = System.identityHashCode(manifest);
-    final String fileName = "Gen" + ident;
     final String pkgToUse =
         ASTHelper.extractStringValue(
-        parsed.getAttribute("package").getIfNull(UiAttrExpr.of(
+        parsed.getAttribute("package").ifAbsentReturn(UiAttrExpr.of(
             "package",
             "xapi.test.pkg"
         )).getExpression());
     final UiGeneratorService generator = this.tools.out1();
-    final IsQualified type = new IsQualified(pkgToUse, fileName);
-    final ComponentBuffer buffer = generator.initialize(new SourceHelper() {
-      @Override
-      public String readSource(String pkgName, String clsName, Object o) {
-        throw new UnsupportedOperationException("Cannot read source from this test");
-      }
+    final IsQualified type = new IsQualified(pkgToUse, name);
+    final ComponentBuffer buffer = generator.initialize(new FileBasedSourceHelper(manifest::getGenDir), type, parsed);
 
-      @Override
-      public void saveSource(String pkgName, String clsName, String src, Object o) {
-        final Path genDir = Paths.get(manifest.getGenDir());
-        final Path packageDir = genDir.resolve(pkgName.replace('.', File.separatorChar));
-        try {
-          Files.createDirectories(packageDir);
-          final Path file = packageDir.resolve(clsName + ".java");
-          Files.write(file, src.getBytes());
-        } catch (IOException e) {
-          throw new UncheckedIOException(e);
-        }
-      }
+    generatedComponents.put(name, buffer);
 
-      @Override
-      public void saveResource(String path, String fileName, String src, Object o) {
-        final Path genDir = Paths.get(manifest.getGenDir());
-        final Path packageDir = genDir.resolve(path.replace('/', File.separatorChar));
-        try {
-          Files.createDirectories(packageDir);
-          final Path file = packageDir.resolve(fileName);
-          Files.write(file, src.getBytes());
-        } catch (IOException e) {
-          throw new UncheckedIOException(e);
-        }
-
-      }
-    }, type, parsed);
-
-    final GwtcXmlBuilder builder = manifest.getOrCreateBuilder(pkgToUse, fileName);
+    final GwtcXmlBuilder builder = manifest.getOrCreateBuilder(pkgToUse, name);
     builder.addSource("");
     service.addGwtInherit(builder.getInheritName());
 
-    final SourceBuilder<ContainerMetadata> out = buffer.getBinder();
+    final SourceBuilder<?> out = buffer.getBinder();
     autoImport().forEach(out::addImport);
 
     final ApiGeneratorContext<?> ctx = new ApiGeneratorContext<>();
     buffer.getRoot().setContext(ctx);
-    final UiGeneratorVisitor visitor = generator.createVisitor(buffer.getRoot());
+    final UiGeneratorVisitor visitor = generator.createVisitor(buffer.getRoot(), buffer);
     visitor.visit(parsed, generator.tools());
 
+    return buffer;
   }
 
   @Given("^compile the component:$")
@@ -332,7 +310,7 @@ public class GwtcSteps {
       .get().startsWith("<");
 
     if (isXapi) {
-      addXapiComponent(lines);
+      addXapiComponent("Gen" + System.identityHashCode(lines), lines);
     } else {
       addJavaComponent(lines);
     }
@@ -368,11 +346,13 @@ public class GwtcSteps {
 
   private void initializeManifest(GwtcService service, GwtManifest manifest) {
     manifest.addSystemProp("gwt.usearchives=false");
+    manifest.setDisableUnitCache(true);
     manifest.setLogLevel(Type.TRACE);
     manifest.setWorkDir(service.getTempDir().getAbsolutePath());
     manifest.setGenDir(manifest.getGenDir()); // make the default explicit, so the argument is sent to command line
     manifest.setStrict(true); // break on any error
     manifest.setCleanupMode(CleanupMode.DELETE_ON_SUCCESSFUL_EXIT);
+//    manifest.setCleanupMode(CleanupMode.NEVER_DELETE);
     manifest.setUseCurrentJvm(true);
   }
 
@@ -416,47 +396,63 @@ public class GwtcSteps {
     sources.put(targetName, fileContents);
   }
 
+  @And("^save generated gwt source file " + QUOTED + " as " + QUOTED + "$")
+  public void saveGeneratedGwtSourceFileAs(String fileName, String targetName) throws Throwable {
+    final CompiledDirectory compiled = gwtManifest.out1().getCompileDirectory();
+    if (compiled == null) {
+      throw new AssertionError("Gwt compile failed or not yet run.");
+    }
+
+    final Path genDir = Paths.get(compiled.getGenDir());
+    final String cleaned = fileName.contains(".") ? fileName.contains("/") || fileName.contains(".java") ?
+        fileName : fileName.replace('.', '/') + ".java" : fileName + ".java";
+    final Path file = genDir.resolve(cleaned);
+    if (!Files.exists(file)) {
+      throw new AssertionError("No file exists for " + file +" " +
+          "-- requested: " + fileName);
+    }
+    final String fileContents = X_IO.toStringUtf8(Files.newInputStream(file));
+    sources.put(targetName, fileContents);
+  }
+
   @Then("^confirm source \"([^\"]*)\" matches:$")
   public void confirmSourceMatches(String componentName, List<String> lines) throws Throwable {
-    class Matches {
-      int expectedLine; String expected;
-      int actualLine; String actual;
+    final String source = sources.get(componentName);
+    assertNotNull(source);
+    fuzzyEquals(source, lines);
+  }
 
-      public Matches(int expectedLine, String expected) {
-        this.expectedLine = expectedLine;
-        this.expected = expected;
-      }
-    }
-    List<Matches> matches = new ArrayList<>();
+  public void fuzzyEquals(String source, List<String> expected) throws Throwable {
+    // cucumber gives us lists, so lists it is!
+    List<SourceMatches> matches = new ArrayList<>();
 
-    lines.stream()
+    expected.stream()
         .filter(line->!line.trim().isEmpty())
         .forEach(line ->  {
           for (String subLine : line.split("\n|\\\\n")) {
             if (!subLine.trim().isEmpty()) {
-              matches.add(new Matches(matches.size(), subLine));
+              matches.add(new SourceMatches(matches.size(), subLine));
             }
           }
         });
 
-    final String source = sources.get(componentName);
-    assertNotNull(source);
 
     int lineNum = 0;
     for (String line : source.split("\n|\\\\n")) {
       if (!line.trim().isEmpty()) {
         if (lineNum >= matches.size()) {
-          // failure just in line size...
-          break;
+          throw new ComparisonFailure("Different size of lines; failing early; "
+              + "Expected: " + matches.size() + "; got " + expected.size() + "."
+              , "\n" + X_String.join("\n", matches), "\n" +source);
         }
-        final Matches match = matches.get(lineNum);
+        final SourceMatches match = matches.get(lineNum);
         match.actualLine = lineNum++;
         match.actual = line;
       }
     }
-    final Iterator<Matches> itr = matches.iterator();
+    final Iterator<SourceMatches> itr = matches.iterator();
     while (itr.hasNext()) {
-      Matches match = itr.next();
+      SourceMatches match = itr.next();
       if (match.actual == null ||
           !match.expected.replaceAll("\\s+", "")
           .equals(
@@ -487,5 +483,15 @@ public class GwtcSteps {
             , match.expected, match.actual);
       }
     }
+  }
+
+  @Then("^confirm api source for \"([^\"]*)\" matches:$")
+  public void confirmApiSourceForMatches(String source, List<String> expected) throws Throwable {
+    final ComponentBuffer component = generatedComponents.getOrReturn(source, () -> {
+      throw new IllegalStateException("No component for " + source + " among: " + generatedComponents.keys());
+    });
+    final GeneratedUiApi api = component.getGeneratedComponent().getApi();
+    String actual = api.getSource().toSource();
+    fuzzyEquals(actual, expected);
   }
 }

@@ -18,6 +18,7 @@ import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.dev.source.SourceTransform;
 import xapi.dev.ui.ContainerMetadata;
+import xapi.dev.ui.ContainerMetadata.MetadataRoot;
 import xapi.inject.X_Inject;
 import xapi.io.X_IO;
 import xapi.log.X_Log;
@@ -247,11 +248,14 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
         }
 
         for (String template : shadowDom.value()) {
+          // TODO: this is broken; the metadata no longer holds the source builder;
+          // this implementation is deprecated,
+          // as we now generate our components before GWT is compiled.
           ContainerMetadata metadata = createMetadata();
           if (shadowStyle != null) {
             metadata.addModifier(shadowStyle);
           }
-          metadata.setSourceBuilder(sourceBuilder);
+          metadata.setSource(()->sourceBuilder);
           template = resolveTemplate(logger, template, context, type, metadata);
           out
                 .print("builder.addShadowRoot(\"")
@@ -303,7 +307,10 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
   }
 
   protected ContainerMetadata createMetadata() {
-    return new ContainerMetadata();
+      final ContainerMetadata container = new ContainerMetadata();
+      final MetadataRoot root = new MetadataRoot();
+      container.setRoot(root);
+    return container;
   }
 
   public static String toFactoryName(String simple) {

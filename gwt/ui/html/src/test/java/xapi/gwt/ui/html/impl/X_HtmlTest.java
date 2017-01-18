@@ -11,7 +11,7 @@ import com.google.gwt.junit.client.GWTTestCase;
 
 public class X_HtmlTest extends GWTTestCase {
 
-  private StyleService<?> context;
+  private StyleService<?, ?> context;
 
   @Override
   protected void gwtSetUp() throws Exception {

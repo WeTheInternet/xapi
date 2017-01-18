@@ -2,22 +2,26 @@ package xapi.jre.ui.impl;
 
 import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.ui.AbstractUiImplementationGenerator;
+import xapi.dev.ui.GeneratedUiComponent;
+import xapi.dev.ui.GeneratedUiComponent.GeneratedUiImplementation;
 import xapi.dev.ui.UiComponentGenerator;
 import xapi.dev.ui.UiFeatureGenerator;
 import xapi.fu.Out2;
+import xapi.jre.ui.impl.JavaFxUiGeneratorService.JavaFxCtx;
 import xapi.jre.ui.impl.feature.JavaFxAlignFeatureGenerator;
 import xapi.jre.ui.impl.feature.JavaFxCssFeatureGenerator;
 import xapi.jre.ui.impl.feature.JavaFxFillFeatureGenerator;
 import xapi.jre.ui.impl.feature.JavaFxSizeFeatureGenerator;
+import xapi.platform.JavaFxPlatform;
 
 import java.util.Arrays;
 
 /**
  * Created by james on 6/17/16.
  */
-public class JavaFxUiGeneratorService extends AbstractUiImplementationGenerator<JavaFxUiGeneratorService.Ctx> {
+public class JavaFxUiGeneratorService extends AbstractUiImplementationGenerator<JavaFxCtx> {
 
-  static final class Ctx extends ApiGeneratorContext<Ctx> {
+  static final class JavaFxCtx extends ApiGeneratorContext<JavaFxCtx> {
 
   }
 
@@ -36,6 +40,13 @@ public class JavaFxUiGeneratorService extends AbstractUiImplementationGenerator<
   }
 
   @Override
+  protected void initializeComponent(GeneratedUiComponent result) {
+      if (result.addImplementationFactory(JavaFxPlatform.class, GeneratedJavaFxComponent::new)) {
+        super.initializeComponent(result);
+      }
+  }
+
+  @Override
   protected Iterable<Out2<String, UiFeatureGenerator>> getFeatureGenerators() {
     return Arrays.asList(
         Out2.out2Immutable("ref", new UiFeatureGenerator()),
@@ -49,5 +60,15 @@ public class JavaFxUiGeneratorService extends AbstractUiImplementationGenerator<
         Out2.out2Immutable("size", new JavaFxSizeFeatureGenerator()),
         Out2.out2Immutable("onClick", new JavaFxActionFeatureGenerator())
     );
+  }
+
+  @Override
+  public GeneratedUiImplementation getImpl(GeneratedUiComponent component) {
+    for (GeneratedUiImplementation impl : component.getImpls()) {
+      if (impl instanceof GeneratedJavaFxComponent) {
+        return impl;
+      }
+    }
+    throw new IllegalStateException("No impl available for " + component);
   }
 }

@@ -9,6 +9,7 @@ import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import xapi.dev.source.MethodBuffer;
+import xapi.dev.ui.ComponentBuffer;
 import xapi.dev.ui.ContainerMetadata;
 import xapi.dev.ui.UiComponentGenerator;
 import xapi.dev.ui.UiFeatureGenerator;
@@ -28,7 +29,12 @@ public class JavaFxActionFeatureGenerator extends UiFeatureGenerator {
 
   @Override
   public UiVisitScope startVisit(
-        UiGeneratorTools service, UiComponentGenerator generator, ContainerMetadata me, UiAttrExpr n) {
+      UiGeneratorTools service,
+      UiComponentGenerator generator,
+      ComponentBuffer source,
+      ContainerMetadata me,
+      UiAttrExpr n
+  ) {
     final Expression expr = n.getExpression();
     MethodBuffer into = me.getParentMethod();
     String target = me.peekPanelName();

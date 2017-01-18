@@ -5,20 +5,18 @@ package xapi.elemental.api;
 
 import elemental.dom.Element;
 import elemental.html.StyleElement;
-import xapi.fu.Out1;
 import xapi.source.api.Lexer;
 import xapi.ui.api.StyleService;
+import xapi.ui.html.api.GwtStyles;
 import xapi.util.api.ConvertsValue;
 
 import com.google.gwt.core.client.MagicMethod;
-import com.google.gwt.resources.client.ClientBundle;
-import com.google.gwt.resources.client.CssResource;
 
 /**
  * @author "James X. Nelson (james@wetheinter.net)"
  *
  */
-public interface ElementalService extends StyleService<ElementalService> {
+public interface ElementalService extends StyleService<StyleElement, GwtStyles> {
 
   String METHOD_ENHANCE_MARKUP = "enhanceMarkup";
   String METHOD_TO_ELEMENT = "toElement";
@@ -57,9 +55,5 @@ public interface ElementalService extends StyleService<ElementalService> {
   String escapeHTML(String html);
 
   String unescapeHTML(String html);
-
-  StyleElement injectStyle(Class<? extends ClientBundle> bundle, Class<? extends CssResource> ... styles);
-
-  Out1<StyleElement> registerStyle(Class<? extends ClientBundle> bundle, String css, Class<? extends CssResource> ... styles);
 
 }

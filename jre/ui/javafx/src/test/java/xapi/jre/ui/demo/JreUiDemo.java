@@ -27,7 +27,7 @@ public class JreUiDemo extends Application {
         this.stage = stage;
         CompilerService compiler = singleton(CompilerService.class);
         Pointer<Parent> value = Pointer.pointer();
-        final String generatedName = getClass().getPackage().getName() + ".JavaFxComponent0_" + getClass().getSimpleName();
+        final String generatedName = getClass().getPackage().getName() + ".JavaFx" + getClass().getSimpleName();
         compiler.startCompile(JreUiDemo.class)
               .compileAndRun((cl, cls) -> {
                   final Class<?> generated = cl.loadClass(generatedName);

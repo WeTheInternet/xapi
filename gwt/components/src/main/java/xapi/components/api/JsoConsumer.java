@@ -1,15 +1,22 @@
 package xapi.components.api;
 
-import java.util.function.Consumer;
+import xapi.fu.In1;
 
 import com.google.gwt.core.client.JavaScriptObject;
 
-public class JsoConsumer implements Consumer<Object> {
+import java.util.function.Consumer;
+
+public class JsoConsumer implements Consumer<Object>, In1<Object> {
 
   private JavaScriptObject obj;
 
   public JsoConsumer(JavaScriptObject obj) {
     this.obj = obj;
+  }
+
+  @Override
+  public final void in(Object in) {
+    accept(in);
   }
 
   @Override

@@ -436,10 +436,8 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
             }
 
             @Override
-            protected String resolveTypeName(ClassOrInterfaceType type) {
-                final IntTo<String> literal = resolveToLiterals(ctx,
-                    templateLiteral(type.getName()));
-                return literal.join(", ");
+            protected String resolveType(ClassOrInterfaceType type) {
+                return resolveTemplate(ctx, templateLiteral(type.toSource()));
             }
 
             @Override

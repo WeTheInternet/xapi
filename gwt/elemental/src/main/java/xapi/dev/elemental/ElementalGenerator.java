@@ -3,22 +3,7 @@
  */
 package xapi.dev.elemental;
 
-import com.google.gwt.core.ext.Generator;
-import com.google.gwt.core.ext.TreeLogger;
-import com.google.gwt.core.ext.TreeLogger.Type;
-import com.google.gwt.core.ext.UnableToCompleteException;
-import com.google.gwt.core.ext.typeinfo.JClassType;
-import com.google.gwt.core.ext.typeinfo.JMethod;
-import com.google.gwt.core.shared.GWT;
-import com.google.gwt.dev.jjs.UnifyAstView;
-
-import java.lang.reflect.Modifier;
-import java.util.HashSet;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
+import elemental.dom.Element;
 import xapi.collect.impl.AbstractMultiInitMap;
 import xapi.dev.elemental.ElementalGeneratorContext.ElementalGeneratorResult;
 import xapi.dev.source.ClassBuffer;
@@ -42,7 +27,22 @@ import xapi.ui.html.api.Style;
 import xapi.util.X_Debug;
 import xapi.util.api.ConvertsValue;
 import xapi.util.api.ReceivesValue;
-import elemental.dom.Element;
+
+import com.google.gwt.core.ext.Generator;
+import com.google.gwt.core.ext.TreeLogger;
+import com.google.gwt.core.ext.TreeLogger.Type;
+import com.google.gwt.core.ext.UnableToCompleteException;
+import com.google.gwt.core.ext.typeinfo.JClassType;
+import com.google.gwt.core.ext.typeinfo.JMethod;
+import com.google.gwt.core.shared.GWT;
+import com.google.gwt.dev.jjs.UnifyAstView;
+
+import java.lang.reflect.Modifier;
+import java.util.HashSet;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author "James X. Nelson (james@wetheinter.net)"
@@ -84,10 +84,8 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
 
   /**
    * @param logger
-   * @param modelType
    * @param ast
    * @param ctx
-   * @param enclosingMethod
    * @return
    * @throws UnableToCompleteException
    */
@@ -154,9 +152,7 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
 
     final boolean
       // Create a template for the messages class.
-      isTemplateMessages = templateType.isAssignableTo(ctx.getTypeMessages()),
-      isTemplateView = templateType.isAssignableTo(ctx.getTypeView())
-    ;
+      isTemplateMessages = templateType.isAssignableTo(ctx.getTypeMessages());
     boolean // Create a template for the widget class.
     // Must implement .getElement()
     isTemplateWidget = templateType.isAssignableTo(ctx.getTypeWidget());
@@ -174,10 +170,6 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
           + "elemental.dom.Node, you sent "+templateType.getParameterizedQualifiedSourceName();
     }
 
-
-    if (isTemplateView) {
-      // Create a template for the view class.
-    }
 
     final MethodBuffer doImport = out.createMethod("public static void "+METHOD_IMPORT+"("+typeService+" "+KEY_SERVICE+")");
 

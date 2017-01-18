@@ -19,32 +19,38 @@ public class ComponentBuffer {
 
     private final Out1<ContainerMetadata> root;
 
-    private Out1<SourceBuilder<ContainerMetadata>> componentBinder = Lazy.deferred1(this::defaultSourceBuilder);
     private final ClassTo<ContainerMetadata> implementations;
 
     private Out1<DomBuffer> domBuffer = Lazy.deferred1(this::defaultDomBuffer);
     private IsQualified element;
     private InterestingNodeResults interestingNodes;
+    private final GeneratedUiComponent component;
 
-    public ComponentBuffer() {
-        this(immutable1(instance(ContainerMetadata.class)), true);
+    public ComponentBuffer(String pkgName, String simpleName) {
+        this(pkgName, simpleName, immutable1(instance(ContainerMetadata.class)), true);
     }
 
-    public ComponentBuffer(ContainerMetadata metadata) {
-        this(immutable1(metadata), true);
+    public ComponentBuffer(String pkgName, String simpleName, ContainerMetadata metadata) {
+        this(pkgName, simpleName, immutable1(metadata), true);
     }
 
-    public ComponentBuffer(Out1<ContainerMetadata> metadata) {
-        this(Lazy.deferred1(metadata), false);
+    public ComponentBuffer(String pkgName, String simpleName, Out1<ContainerMetadata> metadata) {
+        this(pkgName, simpleName, Lazy.deferred1(metadata), false);
     }
 
-    public ComponentBuffer(Out1<ContainerMetadata> root, boolean immediate) {
+    public ComponentBuffer(String pkgName, String simpleName, Out1<ContainerMetadata> root, boolean immediate) {
         this.root = immediate ? immutable1(root.out1()) : Lazy.deferred1(root);
         implementations = X_Collect.newClassMap(ContainerMetadata.class);
+        component = new GeneratedUiComponent(pkgName, simpleName);
     }
 
-    protected SourceBuilder<ContainerMetadata> defaultSourceBuilder() {
-        return root.out1().getSourceBuilder();
+    public ComponentBuffer(GeneratedUiComponent component, ContainerMetadata root) {
+        this(component, immutable1(root), true);
+    }
+    public ComponentBuffer(GeneratedUiComponent component, Out1<ContainerMetadata> root, boolean immediate) {
+        this.root = immediate ? immutable1(root.out1()) : Lazy.deferred1(root);
+        implementations = X_Collect.newClassMap(ContainerMetadata.class);
+        this.component = component;
     }
 
     protected DomBuffer defaultDomBuffer() {
@@ -53,8 +59,8 @@ public class ComponentBuffer {
 
     private Out1<DomBuffer> dom = Lazy.deferred1(DomBuffer::new);
 
-    public SourceBuilder<ContainerMetadata> getBinder() {
-        return componentBinder.out1();
+    public SourceBuilder<?> getBinder() {
+        return component.getApi().getSource();
     }
 
     public ContainerMetadata getRoot() {
@@ -85,6 +91,10 @@ public class ComponentBuffer {
         return interestingNodes != null && interestingNodes.hasDataNodes();
     }
 
+    public boolean hasModelNodes() {
+        return interestingNodes != null && interestingNodes.hasModelNodes();
+    }
+
     public boolean hasCssNodes() {
         return interestingNodes != null && interestingNodes.hasCssNodes();
     }
@@ -102,5 +112,9 @@ public class ComponentBuffer {
         // TODO use a ClassTo...
         implementations.getOrCompute(implType, t->r.createImplementation(implType));
         return r;
+    }
+
+    public GeneratedUiComponent getGeneratedComponent() {
+        return component;
     }
 }

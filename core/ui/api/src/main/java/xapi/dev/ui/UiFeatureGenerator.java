@@ -55,10 +55,11 @@ public class UiFeatureGenerator {
   public UiVisitScope startVisit(
       UiGeneratorTools service,
       UiComponentGenerator generator,
+      ComponentBuffer source,
       ContainerMetadata container,
       UiAttrExpr attr
   ) {
-    return UiVisitScope.DEFAULT_FEATURE;
+    return UiVisitScope.FEATURE_VISIT_CHILDREN;
   }
 
   public void finishVisit(

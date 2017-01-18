@@ -177,7 +177,7 @@ public class UiAnnotationProcessor extends AbstractProcessor {
         // which are annotated with @UiPhase, so a library can be compiled with a record
         // of the UiPhase added.  Currently, we do not use any custom phases.
         for (PhaseNode<String> phase : phaseMap.forEachNode()) {
-            component = generator.runPhase(phase.getId(), component);
+            component = generator.runPhase(component, phase.getId());
         }
         generator.finish();
 

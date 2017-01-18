@@ -10,6 +10,7 @@ import xapi.annotation.model.ServerToClient;
 import xapi.annotation.model.SetterFor;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
+import xapi.dev.api.ApiGeneratorTools;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
@@ -83,57 +84,28 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
   private final StringTo<In1<ModelField>> listTypes;
   private final StringTo<In1<ModelField>> mapTypes;
 
-  protected ModelArtifact(final String typeName, final String typeClass) {
+  protected ModelArtifact(ApiGeneratorTools<?> tools, final String typeName, final String typeClass) {
     super(StandardLinkerContext.class);
     this.typeName = typeName;
     this.typeClass = typeClass;
-    listTypes = initLists();
-    mapTypes = initMaps();
+    listTypes = initLists(tools);
+    mapTypes = initMaps(tools);
+
   }
 
-  protected StringTo<In1<ModelField>> initMaps() {
+  protected StringTo<In1<ModelField>> initMaps(ApiGeneratorTools<?> tools) {
     final StringTo<In1<ModelField>> map = X_Collect.newStringMap(In1.class);
     final In1<ModelField> setMapType = In1.from2(ModelField::setMapType, true);
-    map.put("Map", setMapType);
-    map.put("HashMap", setMapType);
-    map.put("LinkedHashMap", setMapType);
-    map.put("TreeMap", setMapType);
-    map.put("ConcurrentHashMap", setMapType);
-    map.put("ConcurrentSkipListMap", setMapType);
-    map.put("MapLike", setMapType);
-    map.put("StringTo", setMapType);
-    map.put("StringTo$Many", setMapType);
-    map.put("StringTo.Many", setMapType);
-    map.put("ObjectTo", setMapType);
-    map.put("ObjectTo$Many", setMapType);
-    map.put("ObjectTo.Many", setMapType);
-    map.put("ClassTo", setMapType);
-    map.put("ClassTo$Many", setMapType);
-    map.put("ClassTo.Many", setMapType);
-    map.put("EnumTo", setMapType);
-    map.put("EnumTo$Many", setMapType);
-    map.put("EnumTo.Many", setMapType);
-    map.put("AssignabilityMap", setMapType);
+    tools.allMapTypes()
+          .forAll(map::put, setMapType);
     return map;
   }
 
-  protected StringTo<In1<ModelField>> initLists() {
+  protected StringTo<In1<ModelField>> initLists(ApiGeneratorTools<?> tools) {
     final StringTo<In1<ModelField>> map = X_Collect.newStringMap(In1.class);
     final In1<ModelField> setListType = In1.from2(ModelField::setListType, true);
-    map.put("List", setListType);
-    map.put("ArrayList", setListType);
-    map.put("LinkedList", setListType);
-    map.put("SimpleLinkedList", setListType);
-    map.put("Set", setListType);
-    map.put("Fifo", setListType);
-    map.put("SimpleFifo", setListType);
-    map.put("Chain", setListType);
-    map.put("ChainBuilder", setListType);
-    map.put("IntTo", setListType);
-    map.put("ListLike", setListType);
-    map.put("SetLike", setListType);
-    map.put("Queue", setListType);
-    map.put("Dequeue", setListType);
+    tools.allListTypes()
+          .forAll(map::put, setListType);
     return map;
   }
 

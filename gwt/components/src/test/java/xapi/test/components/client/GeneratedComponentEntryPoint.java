@@ -21,7 +21,8 @@ import com.google.gwt.core.ext.TreeLogger.Type;
 
 @Gwtc(
     includeGwtXml={
-        @Resource("xapi.X_Components")
+        @Resource("xapi.X_Components"),
+        @Resource("xapi.test.components.ComponentTest")
     }
     ,includeSource=""
     ,includeHostHtml={

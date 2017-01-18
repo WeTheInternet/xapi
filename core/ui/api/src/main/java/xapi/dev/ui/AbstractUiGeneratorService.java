@@ -15,14 +15,16 @@ import xapi.dev.gen.SourceHelper;
 import xapi.dev.source.SourceBuilder;
 import xapi.dev.ui.ContainerMetadata.MetadataRoot;
 import xapi.dev.ui.InterestingNodeFinder.InterestingNodeResults;
-import xapi.fu.Do;
-import xapi.fu.In2Out1;
-import xapi.fu.Lazy;
-import xapi.fu.Maybe;
-import xapi.fu.Out1;
+import xapi.fu.*;
+import xapi.fu.iterate.ArrayIterable;
+import xapi.fu.iterate.CachingIterator;
+import xapi.fu.iterate.Chain;
+import xapi.fu.iterate.ChainBuilder;
 import xapi.log.X_Log;
 import xapi.source.X_Source;
 import xapi.source.read.JavaModel.IsQualified;
+import xapi.ui.api.PhaseMap;
+import xapi.ui.api.PhaseMap.PhaseNode;
 import xapi.ui.api.UiPhase.PhaseBinding;
 import xapi.ui.api.UiPhase.PhaseImplementation;
 import xapi.ui.api.UiPhase.PhaseIntegration;
@@ -36,6 +38,8 @@ import javax.tools.JavaFileManager;
 import javax.tools.StandardLocation;
 import java.io.IOException;
 import java.util.IdentityHashMap;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
@@ -47,15 +51,27 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
 
     protected String phase;
     protected final IntTo<Do> onDone;
-    protected Lazy<MetadataRoot> metadata;
     protected SourceHelper<Raw> service;
+    protected final Lazy<Iterable<UiImplementationGenerator>> impls;
+    protected final ChainBuilder<GeneratedUiComponent> seen;
 
-    protected In2Out1<UiContainerExpr, ContainerMetadata, UiComponentGenerator> componentFactory;
-    protected In2Out1<UiAttrExpr, UiComponentGenerator, UiFeatureGenerator> featureFactory;
+    protected static class GeneratorState {
+
+        protected Lazy<MetadataRoot> metadata;
+        protected In2Out1<UiContainerExpr, ContainerMetadata, UiComponentGenerator> componentFactory;
+        protected In2Out1<UiAttrExpr, UiComponentGenerator, UiFeatureGenerator> featureFactory;
+    }
+
+    protected volatile GeneratorState state;
+
 
     public AbstractUiGeneratorService() {
         onDone = X_Collect.newList(Do.class);
-        resetFactories();
+        impls = Lazy.deferred1(()->
+            CachingIterator.cachingIterable(getImplementations().iterator())
+        );
+        seen = Chain.startChain();
+        resetState();
     }
 
 
@@ -66,23 +82,26 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
         this.service = service;
         final String pkgName = type.getPackage();
         final String simpleName = X_Source.enclosedNameFlattened(pkgName, type.getQualifiedName());
-        final MetadataRoot root = metadata.out1();
+        final MetadataRoot root = state.metadata.out1();
         final ContainerMetadata metadata = createMetadata(root, container);
-        final ComponentBuffer component = new ComponentBuffer(metadata);
-        component.setElement(type);
+        final GeneratedUiComponent component = newComponent(pkgName, simpleName);
+        final ComponentBuffer buffer = new ComponentBuffer(component, metadata);
+        root.setGeneratedComponent(component);
+        buffer.getRoot().setContext(contextFor(type, container));
+        buffer.setElement(type);
         metadata.setControllerType(pkgName, simpleName);
         String generatedName = calculateGeneratedName(pkgName, simpleName, container);
-        final SourceBuilder<ContainerMetadata> b = new SourceBuilder<>();
-        b.setClassDefinition("public class " + generatedName, false);
-        b.setPackage(pkgName);
-        metadata.setSourceBuilder(b);
+        impls.out1().forEach(impl->impl.spyOnNewComponent(buffer));
+        return buffer;
+    }
 
-        return component;
+    protected ApiGeneratorContext<?> contextFor(IsQualified type, UiContainerExpr container) {
+        return new ApiGeneratorContext<>();
     }
 
     @Override
     public UiComponentGenerator getComponentGenerator(UiContainerExpr container, ContainerMetadata metadata) {
-        return componentFactory.io(container, metadata);
+        return state.componentFactory.io(container, metadata);
     }
 
     protected boolean ignoreMissingFeatures() {
@@ -99,7 +118,7 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
 
     @Override
     public UiFeatureGenerator getFeatureGenerator(UiAttrExpr container, UiComponentGenerator componentGenerator) {
-        return featureFactory.io(container, componentGenerator);
+        return state.featureFactory.io(container, componentGenerator);
     }
 
     @Override
@@ -114,15 +133,16 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
     }
 
     @Override
-    public ComponentBuffer runPhase(String id, ComponentBuffer component) {
+    public ComponentBuffer runPhase(ComponentBuffer component, String id) {
         this.phase = id;
+        final Iterable<UiImplementationGenerator> impls = this.impls.out1();
         switch (id) {
             case PhasePreprocess.PHASE_PREPROCESS:
-                return preprocessComponent(component);
+                return preprocessComponent(component, impls);
             case PhaseSupertype.PHASE_SUPERTYPE:
                 return createSupertype(component);
             case PhaseImplementation.PHASE_IMPLEMENTATION:
-                return createImplementation(component);
+                return createImplementation(component, impls);
             case PhaseIntegration.PHASE_INTEGRATION:
                 return peekIntegration(component);
             case PhaseBinding.PHASE_BINDING:
@@ -133,7 +153,7 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
     }
 
 
-    protected ComponentBuffer preprocessComponent(ComponentBuffer component) {
+    protected ComponentBuffer preprocessComponent(ComponentBuffer component, Iterable<UiImplementationGenerator> impls) {
         // Find all refs, datanodes and other interesting bits of data.
         final ContainerMetadata metadata = component.getRoot();
         UiContainerExpr container = metadata.getUi();
@@ -147,16 +167,15 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
         // find and resolve all nodes with ref attributes
         final InterestingNodeResults interestingNodes = new InterestingNodeFinder().findInterestingNodes(container);
         component.setInterestingNodes(interestingNodes);
-        return component;
-    }
 
-    protected Raw getHints() {
-        return null;
-    }
-
-    protected ComponentBuffer createSupertype(ComponentBuffer component) {
+        for (UiImplementationGenerator impl : impls) {
+            impl.spyOnInterestingNodes(component, interestingNodes);
+        }
 
         if (component.hasDataNodes()) {
+            generateDataAccessors(component);
+        }
+        if (component.hasModelNodes()) {
             generateDataAccessors(component);
         }
         if (component.hasCssOrClassname()) {
@@ -166,13 +185,20 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
             rewriteTemplateReferences(component);
         }
 
-        SourceBuilder<ContainerMetadata> binder = component.getBinder();
-        // TODO add @Generated tag with all resources we are dependent upon
+        return component;
+    }
 
-        final SourceBuilder<ContainerMetadata> root = component.getBinder();
-        onDone.add(()->
-            saveGeneratedComponent(root)
-        );
+    protected Raw getHints() {
+        return null;
+    }
+
+    protected ComponentBuffer createSupertype(ComponentBuffer component) {
+
+        // TODO add @Generated tag with all resources we are dependent upon
+//        final SourceBuilder<?> root = component.getBinder();
+//        onDone.add(()->
+//            saveGeneratedComponent(root)
+//        );
 
         return component;
     }
@@ -197,28 +223,41 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
     protected void rewriteTemplateReferences(ComponentBuffer component) {
         final InterestingNodeResults interestingNodes = component.getInterestingNodes();
         Set<UiContainerExpr> templateParents = interestingNodes.getTemplateNameParents();
-        componentFactory = containerFilter(templateParents);
-        featureFactory = (feature, gen) -> {
+        state.componentFactory = containerFilter(templateParents);
+        state.featureFactory = (feature, gen) -> {
             if (templateParents.contains(ASTHelper.getContainerParent(feature))) {
-                rewriteDataReferences(component, feature, gen);
+                rewriteDataReferences(component, feature, gen, interestingNodes);
                 return new UiFeatureGenerator();
             } else {
                 return null;
             }
         };
         final ContainerMetadata metadata = component.getRoot();
-        UiGeneratorVisitor visitor = createVisitor(component.getRoot());
+        UiGeneratorVisitor visitor = createVisitor(metadata, component);
         visitor.visit(metadata.getUi(), this);
         resetFactories();
     }
 
-    protected void rewriteDataReferences(ComponentBuffer component, UiAttrExpr n, UiComponentGenerator gen) {
+    protected void rewriteDataReferences(
+        ComponentBuffer component,
+        UiAttrExpr n,
+        UiComponentGenerator gen,
+        InterestingNodeResults interestingNodes
+    ) {
         final ContainerMetadata me = gen.getMetadata();
         final Expression expr = n.getExpression();
+        final Ctx ctx = (Ctx) component.getRoot().getContext();
         Map<Node, Out1<Node>> replacements = new IdentityHashMap<>();
         final ComponentMetadataQuery query = new ComponentMetadataQuery();
         query.setVisitAttributeContainers(false);
         query.setVisitChildContainers(false);
+        IntTo<String> refNames = X_Collect.newSet(String.class);
+        interestingNodes.getRefNodes().values().forEach(attr->{
+            String refName = resolveString(ctx, attr.getExpression());
+            refNames.add("$" + refName);
+        });
+        query.setTemplateNameFilter(refNames::contains);
+
         expr.accept(
             new ComponentMetadataFinder(),
             query
@@ -232,12 +271,19 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
                             if (query.isTemplateName(name.getName())) {
                                 replacement = query.normalizeTemplateName(name.getName());
                             } else {
-                                replacement = null;
+                                return;
                             }
                     }
                     String ref = replacement;
                     name.setName(ref);
-                    name.getParentNode().getParentNode().accept(new ModifierVisitorAdapter<Object>() {
+                    Node parent = name;
+                    if (parent.getParentNode() != null) {
+                        parent = parent.getParentNode();
+                    }
+                    if (parent.getParentNode() != null) {
+                        parent = parent.getParentNode();
+                    }
+                    parent.accept(new ModifierVisitorAdapter<Object>() {
                         @Override
                         public Node visit(
                             FieldAccessExpr n, Object arg
@@ -297,8 +343,8 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
     protected void generateCssPrimitives(ComponentBuffer component) {
         final InterestingNodeResults interestingNodes = component.getInterestingNodes();
         Set<UiContainerExpr> cssParents = interestingNodes.getCssParents();
-        componentFactory = containerFilter(cssParents);
-        featureFactory = (feature, gen) -> {
+        state.componentFactory = containerFilter(cssParents);
+        state.featureFactory = (feature, gen) -> {
             switch (feature.getNameString().toLowerCase()) {
                 case "css":
                 case "style":
@@ -308,46 +354,52 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
             return null;
         };
         final ContainerMetadata metadata = component.getRoot();
-        UiGeneratorVisitor visitor = createVisitor(component.getRoot());
+        UiGeneratorVisitor visitor = createVisitor(metadata, component);
         visitor.visit(metadata.getUi(), this);
         resetFactories();
     }
 
     protected abstract UiFeatureGenerator createCssFeatureGenerator();
     protected abstract UiFeatureGenerator createDataFeatureGenerator();
+    protected abstract UiFeatureGenerator createModelFeatureGenerator();
 
     protected void generateDataAccessors(ComponentBuffer component) {
         final InterestingNodeResults interestingNodes = component.getInterestingNodes();
         Set<UiContainerExpr> dataParents = interestingNodes.getDataParents();
-        componentFactory = containerFilter(dataParents);
-        featureFactory = (feature, gen) -> {
+        Set<UiContainerExpr> modelParents = interestingNodes.getModelParents();
+        final Set<UiContainerExpr> allParents = new LinkedHashSet<>();
+        allParents.addAll(dataParents);
+        allParents.addAll(modelParents);
+
+        state.componentFactory = containerFilter(allParents);
+        state.featureFactory = (feature, gen) -> {
             if (feature.getNameString().equalsIgnoreCase("data")) {
                 return createDataFeatureGenerator();
-            } else if (dataParents.contains(ASTHelper.getContainerParent(feature))) {
-                // TODO map features which contain nested UiContainExpr via InterestingNodeFinder
+            } else if (feature.getNameString().equalsIgnoreCase("model")) {
+                return createModelFeatureGenerator();
+            } else if (allParents.contains(ASTHelper.getContainerParent(feature))) {
+                // TODO map features which contain nested UiContainerExpr via InterestingNodeFinder
                 return new UiFeatureGenerator();
             } else {
                 return null;
             }
         };
         final ContainerMetadata metadata = component.getRoot();
-        UiGeneratorVisitor visitor = createVisitor(component.getRoot());
+        UiGeneratorVisitor visitor = createVisitor(metadata, component);
         visitor.visit(metadata.getUi(), this);
         resetFactories();
     }
 
-    protected ComponentBuffer createImplementation(ComponentBuffer component) {
+    protected ComponentBuffer createImplementation(ComponentBuffer component, Iterable<UiImplementationGenerator> impls) {
         // Generate a boilerplate interface that takes generics for all renderable nodes.
-
-        for (UiImplementationGenerator service : getImplementations()) {
+        for (UiImplementationGenerator service : impls) {
             final ContainerMetadata metadata = component.getImplementation(service.getClass());
             service.setGenerator(this);
-            final ContainerMetadata result = service.generateComponent(metadata, component);
-            final SourceBuilder<ContainerMetadata> src = result.getSourceBuilder();
-            onFinish(()->{
-                saveGeneratedComponent(src);
-            });
+            service.generateComponent(metadata, component);
         }
+        onFinish(()->
+            component.getGeneratedComponent().saveSource(tools(), getGenerator())
+        );
         return component;
     }
 
@@ -418,15 +470,15 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
     }
 
     @Override
-    public UiGeneratorVisitor createVisitor(ContainerMetadata metadata) {
+    public UiGeneratorVisitor createVisitor(ContainerMetadata metadata, ComponentBuffer buffer) {
         return new UiGeneratorVisitor(scope->{
-           scopes.add(scope);
+            scopes.add(scope);
             return ()->{
                 UiVisitScope popped = scopes.pop();
                 assert popped == scope : "Scope stack inconsistent; " +
-                      "expected " + popped + " to be the same reference as " + scope;
+                    "expected " + popped + " to be the same reference as " + scope;
             };
-        }, metadata);
+        }, metadata, buffer);
     }
 
     @Override
@@ -436,7 +488,11 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
 
     @Override
     public void finish() {
-        onDone.removeAll(Do::done);
+        int maxLoop = 50;
+        while (!onDone.isEmpty() && maxLoop-->0) {
+            onDone.removeAll(Do::done);
+        }
+        assert maxLoop > 0 : "Ui Generator service " + getClass() + " ran onFinish 50 times.";
     }
 
     @Override
@@ -445,9 +501,9 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
     }
 
     protected void resetFactories() {
-        metadata = Lazy.deferred1(this::createMetadataRoot);
-        componentFactory = this::superGetComponentGenerator;
-        featureFactory = this::superGetFeatureGenerator;
+        state.metadata = Lazy.deferred1(this::createMetadataRoot);
+        state.componentFactory = this::superGetComponentGenerator;
+        state.featureFactory = this::superGetFeatureGenerator;
     }
 
     protected final UiFeatureGenerator superGetFeatureGenerator(UiAttrExpr container, UiComponentGenerator componentGenerator) {
@@ -484,5 +540,74 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
     @Override
     public UiGeneratorTools tools() {
         return this;
+    }
+
+    @Override
+    public MappedIterable<GeneratedUiComponent> allComponents() {
+        return seen.cached();
+    }
+
+    @Override
+    public MappedIterable<GeneratedUiComponent> generateComponents(
+        SourceHelper<Raw> sources, IsQualified type, UiContainerExpr ... parsed
+    ) {
+        PhaseMap<String> map = PhaseMap.withDefaults(new LinkedHashSet<>());
+        final Iterator<PhaseNode<String>> phases = map.forEachNode().iterator();
+        final MappedIterable<? extends Out2<
+            Mutable<ComponentBuffer>,
+            Do>
+            > components = ArrayIterable.iterate(parsed)
+            .map(ui -> {
+                ComponentBuffer buffer = initialize(sources, type, ui);
+                Do onStart = pauseState();
+                return Out2.out2Immutable(new Mutable<>(buffer), onStart);
+            })
+            .cached();
+
+        phases.forEachRemaining(phase-> {
+            components.forAll(job->{
+                job.out2().done();
+                final Mutable<ComponentBuffer> buffer = job.out1();
+                buffer.process(this::runPhase, phase.getId());
+            });
+        });
+
+//        for (UiContainerExpr ui : parsed) {
+//
+//            ComponentBuffer buffer = initialize(sources, type, ui);
+//
+//            for (PhaseNode<String> phase : map.forEachNode()) {
+//                buffer = runPhase(buffer, phase.getId());
+//            }
+//        }
+
+        finish();
+
+        final MappedIterable<GeneratedUiComponent> results = allComponents();
+        resetState();
+        seen.clear();
+
+        return results;
+    }
+
+    public Do pauseState() {
+        final GeneratorState currentState = state;
+        resetState();
+        return ()-> state = currentState;
+    }
+
+    protected void resetState() {
+        state = new GeneratorState();
+        resetFactories();
+    }
+
+    @Override
+    public void initializeComponent(GeneratedUiComponent result) {
+        seen.add(result);
+        for (UiImplementationGenerator impl : impls.out1()) {
+            if (impl instanceof UiGeneratorTools) {
+                ((UiGeneratorTools)impl).initializeComponent(result);
+            }
+        }
     }
 }

@@ -15,7 +15,13 @@ interface WebComponentPrototype {
   void setAttachedCallback(JavaScriptObject callback);
 
   @JsProperty
+  void setConnectedCallback(JavaScriptObject callback);
+
+  @JsProperty
   JavaScriptObject getAttachedCallback();
+
+  @JsProperty
+  JavaScriptObject getConnectedCallback();
 
   @JsProperty
   void setCreatedCallback(JavaScriptObject callback);
@@ -24,14 +30,32 @@ interface WebComponentPrototype {
   JavaScriptObject getCreatedCallback();
 
   @JsProperty
+  void setConstructor(JavaScriptObject callback);
+
+  @JsProperty
+  JavaScriptObject getConstructor();
+
+  @JsProperty
   void setDetachedCallback(JavaScriptObject callback);
 
   @JsProperty
   JavaScriptObject getDetachedCallback();
 
   @JsProperty
+  void setDisconnectedCallback(JavaScriptObject callback);
+
+  @JsProperty
+  JavaScriptObject getDisconnectedCallback();
+
+  @JsProperty
   void setAttributeChangedCallback(JavaScriptObject callback);
 
   @JsProperty
   JavaScriptObject getAttributeChangedCallback();
+
+  @JsProperty
+  void setAdoptedCallback(JavaScriptObject callback);
+
+  @JsProperty
+  JavaScriptObject getAdoptedCallback();
 }

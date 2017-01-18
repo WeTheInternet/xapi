@@ -20,6 +20,7 @@ import java.util.function.Consumer;
 public class InterestingNodeFinder {
     public static class InterestingNodeResults {
         private Map<ComponentGraph, UiAttrExpr> dataNodes;
+        private Map<ComponentGraph, UiAttrExpr> modelNodes;
         private Map<ComponentGraph, UiAttrExpr> refNodes;
         private Map<ComponentGraph, UiExpr> cssNodes;
         private boolean hasClassname;
@@ -27,6 +28,7 @@ public class InterestingNodeFinder {
 
         public InterestingNodeResults() {
             dataNodes = new IdentityHashMap<>();
+            modelNodes = new IdentityHashMap<>();
             refNodes = new IdentityHashMap<>();
             templateNames = new IdentityHashMap<>();
             cssNodes = new IdentityHashMap<>();
@@ -45,6 +47,10 @@ public class InterestingNodeFinder {
             dataNodes.put(g, n);
         }
 
+        public void addModelNode(ComponentGraph g, UiAttrExpr n) {
+            modelNodes.put(g, n);
+        }
+
         public void addCssNode(ComponentGraph g, UiExpr n) {
             cssNodes.put(g, n);
         }
@@ -55,6 +61,10 @@ public class InterestingNodeFinder {
 
         public boolean hasDataNodes() {
             return !dataNodes.isEmpty();
+        }
+
+        public boolean hasModelNodes() {
+            return !modelNodes.isEmpty();
         }
 
         public boolean hasCssNodes() {
@@ -69,8 +79,16 @@ public class InterestingNodeFinder {
             return !templateNames.isEmpty();
         }
 
+        public boolean hasRefNodes() {
+            return !refNodes.isEmpty();
+        }
+
         public Map<ComponentGraph, UiAttrExpr> getDataNodes() {
             return dataNodes;
+        }
+
+        public Map<ComponentGraph, UiAttrExpr> getModelNodes() {
+            return modelNodes;
         }
 
         public Map<ComponentGraph, UiAttrExpr> getRefNodes() {
@@ -95,6 +113,15 @@ public class InterestingNodeFinder {
             }
             Map<UiContainerExpr, Boolean> map = new IdentityHashMap<>();
             dataNodes.keySet().forEach(containerFinder(map));
+            return map.keySet();
+        }
+
+        public Set<UiContainerExpr> getModelParents() {
+            if (!hasModelNodes()) {
+                return Collections.emptySet();
+            }
+            Map<UiContainerExpr, Boolean> map = new IdentityHashMap<>();
+            modelNodes.keySet().forEach(containerFinder(map));
             return map.keySet();
         }
 
@@ -141,6 +168,7 @@ public class InterestingNodeFinder {
               .setVisitChildContainers(true)
               .setVisitAttributeContainers(true)
               .addDataFeatureListener(results::addDataNode)
+              .addModelFeatureListener(results::addModelNode)
               .addRefFeatureListener(results::addRefNode)
               .addCssFeatureListener(results::addCssNode)
               .addAllFeatureListener((scope, attr) ->{

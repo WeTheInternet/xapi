@@ -3,15 +3,12 @@
  */
 package xapi.dev.elemental;
 
-import java.util.HashMap;
-import java.util.Map;
-
+import elemental.dom.Element;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.ui.html.HtmlGeneratorNode;
 import xapi.dev.ui.html.HtmlGeneratorResult;
 import xapi.elemental.api.ElementalService;
 import xapi.elemental.api.PotentialNode;
-import xapi.ui.api.View;
 import xapi.ui.api.Widget;
 import xapi.util.api.ConvertsValue;
 
@@ -21,7 +18,8 @@ import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.dev.jjs.UnifyAstView;
 import com.google.gwt.i18n.client.Messages;
 
-import elemental.dom.Element;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author "James X. Nelson (james@wetheinter.net)"
@@ -77,7 +75,6 @@ public class ElementalGeneratorContext {
       NAME_ELEMENT = Element.class.getName(),
       NAME_POTENTIAL_ELEMENT = PotentialNode.class.getName(),
       NAME_SERVICE = ElementalService.class.getName(),
-      NAME_VIEW = View.class.getName(),
       NAME_MESSAGES = Messages.class.getName(),
       NAME_WIDGET = Widget.class.getName();
   // NAME_TEMPLATES = SafeHtmlTemplates.class.getName() // TODO implement templates
@@ -89,7 +86,6 @@ public class ElementalGeneratorContext {
       typeElementalService,
       typePotentialElemental,
       typeMessages,
-      typeView,
       typeWidget;
 
   private final Map<String, ElementalGeneratorResult> results;
@@ -101,7 +97,6 @@ public class ElementalGeneratorContext {
     typeElementalService = findType(logger, ast, NAME_SERVICE);
     typePotentialElemental = findType(logger, ast, NAME_POTENTIAL_ELEMENT);
     typeMessages = findType(logger, ast, NAME_MESSAGES);
-    typeView = findType(logger, ast, NAME_VIEW);
     typeWidget = findType(logger, ast, NAME_WIDGET);
     results = new HashMap<String, ElementalGeneratorResult>();
   }
@@ -153,13 +148,6 @@ public class ElementalGeneratorContext {
    */
   public JClassType getTypeMessages() {
     return typeMessages;
-  }
-
-  /**
-   * @return the typeView
-   */
-  public JClassType getTypeView() {
-    return typeView;
   }
 
   public ElementalGeneratorResult findExistingProvider(String name) {

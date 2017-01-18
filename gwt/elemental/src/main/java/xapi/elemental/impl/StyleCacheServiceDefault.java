@@ -6,8 +6,9 @@ import xapi.annotation.inject.SingletonDefault;
 import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
 import xapi.collect.api.StringDictionary;
-import xapi.elemental.api.StyleCacheService;
+import xapi.ui.api.StyleCacheService;
 import xapi.log.X_Log;
+import xapi.ui.html.api.GwtStyles;
 
 import com.google.gwt.resources.client.ClientBundle;
 import com.google.gwt.resources.client.CssResource;
@@ -21,13 +22,13 @@ import java.util.Arrays;
  *         Created on 2/6/16.
  */
 @SingletonDefault(implFor = StyleCacheService.class)
-public class StyleCacheServiceDefault implements StyleCacheService {
+public class StyleCacheServiceDefault implements StyleCacheService<StyleElement, GwtStyles> {
 
   private StringDictionary<StyleElement> styleElems = X_Collect.newDictionary(StyleElement.class);
 
   @Override
   public StyleElement injectStyle(
-      Class<? extends ClientBundle> bundle, Class<? extends CssResource>... styles
+      Class<? extends GwtStyles> bundle, Class<?>... styles
   ) {
     String key = toKey(bundle, styles);
     StyleElement style = styleElems.getValue(key);
@@ -38,7 +39,7 @@ public class StyleCacheServiceDefault implements StyleCacheService {
     return (StyleElement) style.cloneNode(true); // we return clones, so shadowDom can efficiently inject style tags
   }
 
-  protected StyleElement generateStyle(Class<? extends ClientBundle> bundle, Class<? extends CssResource> ... styles) {
+  protected StyleElement generateStyle(Class<? extends GwtStyles> bundle, Class<?> ... styles) {
     // First, we must find an instance of the bundle.  Since it is too late to GWT.create, we must assume there is a constant field.
     ClientBundle resource;
     findResource:
@@ -58,7 +59,7 @@ public class StyleCacheServiceDefault implements StyleCacheService {
     }
     ClassTo<CssResource> resources = X_Collect.newClassMap(CssResource.class);
     searchStyle:
-    for (Class<? extends CssResource> style : styles) {
+    for (Class<?> style : styles) {
       for (Method method : bundle.getMethods()) {
         if (method.getReturnType() == style) {
           try {
@@ -104,7 +105,7 @@ public class StyleCacheServiceDefault implements StyleCacheService {
 
   @Override
   public void registerStyle(
-      Class<? extends ClientBundle> bundle, String css, Class<? extends CssResource>... styles
+      Class<? extends GwtStyles> bundle, String css, Class<?>... styles
   ) {
     String key = toKey(bundle, styles);
     final StyleElement style = createStyle(css);
@@ -117,7 +118,7 @@ public class StyleCacheServiceDefault implements StyleCacheService {
     return style;
   }
 
-  private String toKey(Class<? extends ClientBundle> bundle, Class<? extends CssResource>[] styles) {
+  private String toKey(Class<? extends GwtStyles> bundle, Class<?>[] styles) {
     String s = bundle.getName();
     String[] names = new String[styles.length];
     for (int i = styles.length; i-->0;) {

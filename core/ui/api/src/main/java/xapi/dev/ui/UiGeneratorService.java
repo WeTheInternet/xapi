@@ -5,6 +5,7 @@ import com.github.javaparser.ast.expr.UiContainerExpr;
 import xapi.dev.gen.SourceHelper;
 import xapi.dev.ui.ContainerMetadata.MetadataRoot;
 import xapi.fu.Do;
+import xapi.fu.MappedIterable;
 import xapi.source.read.JavaModel.IsQualified;
 
 /**
@@ -13,7 +14,7 @@ import xapi.source.read.JavaModel.IsQualified;
  */
 public interface UiGeneratorService <Raw> {
 
-    ComponentBuffer runPhase(String id, ComponentBuffer component);
+    ComponentBuffer runPhase(ComponentBuffer component, String id);
 
     UiComponentGenerator getComponentGenerator(UiContainerExpr container, ContainerMetadata metadata);
 
@@ -25,7 +26,7 @@ public interface UiGeneratorService <Raw> {
 
     void overwriteSource(String path, String fileName, String source, Raw hints);
 
-    UiGeneratorVisitor createVisitor(ContainerMetadata metadata);
+    UiGeneratorVisitor createVisitor(ContainerMetadata metadata, ComponentBuffer buffer);
 
     ComponentBuffer initialize(SourceHelper<Raw> service, IsQualified type, UiContainerExpr container);
 
@@ -34,4 +35,10 @@ public interface UiGeneratorService <Raw> {
     void finish();
 
     void onFinish(Do ondone);
+
+    MappedIterable<GeneratedUiComponent> allComponents();
+
+    MappedIterable<GeneratedUiComponent> generateComponents(SourceHelper<Raw> sources,
+                                                            IsQualified type,
+                                                            UiContainerExpr ... parsed);
 }

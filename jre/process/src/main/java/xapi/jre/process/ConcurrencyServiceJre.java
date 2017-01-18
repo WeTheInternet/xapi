@@ -100,15 +100,15 @@ public class ConcurrencyServiceJre extends ConcurrencyServiceAbstract{
   public ConcurrentEnvironment initializeEnvironment(
     Thread key, UncaughtExceptionHandler params) {
     ConcurrentEnvironment enviro = new JreConcurrentEnvironment();
-    Mutable<Integer> delay = new Mutable<>(500_000);
+    Mutable<Integer> delay = new Mutable<>(50_000);
     final Thread thread = createThread(() -> {
       while (true) {
         if (enviro.flush(10)) {
           LockSupport.parkNanos(delay.out1());
-          // Cap delay at 3/4 of a second
-          delay.in(Math.max(1_750_000_000, delay.out1() * 3/2));
+          // Cap delay at 1/4 of a second
+          delay.in(Math.max(250_000_000, delay.out1() * 3/2));
         } else {
-          delay.in(500_000_000);
+          delay.in(50_000_000);
         }
       }
     });

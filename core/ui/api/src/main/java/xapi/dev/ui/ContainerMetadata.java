@@ -16,9 +16,11 @@ import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.NameGen;
 import xapi.dev.source.SourceBuilder;
 import xapi.dev.source.SourceTransform;
+import xapi.dev.ui.GeneratedUiComponent.GeneratedUiImplementation;
 import xapi.fu.In1Out1;
 import xapi.fu.Lazy;
 import xapi.fu.Maybe;
+import xapi.fu.Out1;
 import xapi.source.X_Source;
 import xapi.ui.service.UiService;
 
@@ -40,6 +42,7 @@ public class ContainerMetadata {
         private final StringTo<StringTo<NodeTransformer>> fieldRenames;
         private final NameGen names;
         private ApiGeneratorContext<?> ctx;
+        private GeneratedUiComponent generatedComponent;
 
         public MetadataRoot() {
             nameCounts = X_Collect.newStringMap(Integer.class);
@@ -95,6 +98,14 @@ public class ContainerMetadata {
         public void setCtx(ApiGeneratorContext<?> ctx) {
             this.ctx = ctx;
         }
+
+        public void setGeneratedComponent(GeneratedUiComponent generatedComponent) {
+            this.generatedComponent = generatedComponent;
+        }
+
+        public GeneratedUiComponent getGeneratedComponent() {
+            return generatedComponent;
+        }
     }
 
     // WARNING: If you add new fields, update copyFrom method!
@@ -106,9 +117,9 @@ public class ContainerMetadata {
     private boolean sideEffects;
     private UiContainerExpr container;
     private ContainerMetadata parent;
-    private SourceBuilder<ContainerMetadata> sourceBuilder;
     private Lazy<StyleMetadata> style = deferred1(StyleMetadata::new);
     private IdentityHashMap<UiContainerExpr, ContainerMetadata> children;
+    private String refName;
     private String elementType;
     private String componentType;
     private String controllerType;
@@ -118,6 +129,8 @@ public class ContainerMetadata {
     private boolean searchTypes;
     private String controllerPkg;
     private String controllerName;
+    private GeneratedUiImplementation implementation;
+    private Out1<SourceBuilder<?>> source;
     // WARNING: If you add new fields, update copyFrom method!
 
     protected void copyFrom(ContainerMetadata metadata, boolean child) {
@@ -132,7 +145,9 @@ public class ContainerMetadata {
         this.controllerType = metadata.controllerType;
         this.controllerName = metadata.controllerName;
         this.searchTypes = metadata.searchTypes;
+        this.implementation = metadata.implementation;
         if (!child) {
+            this.source = metadata.source;
             this.type = metadata.type;
             this.style = metadata.style;
         }
@@ -145,6 +160,10 @@ public class ContainerMetadata {
         panelNames = new SimpleLinkedList<>();
         children = new IdentityHashMap<>();
         allowedToFail = Boolean.getBoolean("xapi.component.ignore.parse.failure");
+        source = ()->implementation == null ?
+                root.getGeneratedComponent() == null ? null
+                : root.getGeneratedComponent().getBase().getSource()
+                : implementation.getSource();
     }
 
     public ContainerMetadata(UiContainerExpr container) {
@@ -236,10 +255,6 @@ public class ContainerMetadata {
         return methods.getOrCreate(key, create);
     }
 
-    public void setSourceBuilder(SourceBuilder<ContainerMetadata> sourceBuilder) {
-        this.sourceBuilder = sourceBuilder;
-    }
-
     public void setElementType(String elementType) {
         this.elementType = elementType;
     }
@@ -249,7 +264,7 @@ public class ContainerMetadata {
     }
 
     public String getElementTypeImported() {
-        return sourceBuilder.addImport(elementType);
+        return getSourceBuilder().addImport(elementType);
     }
 
     public void setComponentType(String componentType) {
@@ -287,9 +302,9 @@ public class ContainerMetadata {
     }
 
     public String getTypeImported() {
-        assert type.endsWith(sourceBuilder.addImport(type))
+        assert type.endsWith(getSourceBuilder().addImport(type))
               : "Bad type import: " + type;
-        return sourceBuilder.addImport(type);
+        return getSourceBuilder().addImport(type);
     }
 
     public void ensure$this() {
@@ -309,14 +324,15 @@ public class ContainerMetadata {
             return;
         }
         $uiPrinted = true;
-        String service = sourceBuilder.addImport(UiService.class);
+        String service = getSourceBuilder().addImport(UiService.class);
         addModifier(ele ->
               service + " $ui = " + service + ".getUiService();"
         );
     }
 
-    public SourceBuilder<ContainerMetadata> getSourceBuilder() {
-        return sourceBuilder == null ? getParent() == null ? null : getParent().getSourceBuilder() : sourceBuilder;
+    public SourceBuilder<?> getSourceBuilder() {
+//        return sourceBuilder == null ? getParent() == null ? null : getParent().getSourceBuilder() : sourceBuilder;
+        return source.out1();
     }
 
     public void pushPanelName(String root) {
@@ -348,16 +364,17 @@ public class ContainerMetadata {
 
     public String getRefName(String backup) {
 
-        final Maybe<UiAttrExpr> refAttr = container.getAttribute("ref");
-        if (refAttr.isPresent()) {
-            String refName = ASTHelper.extractAttrValue(refAttr.get());
-            root.reserveName(refName);
-            return refName;
-        } else {
-            String genRef = newVarName(backup);
-            container.addAttribute(true, new UiAttrExpr("ref", new StringLiteralExpr(genRef)));
-            return genRef;
+        if (refName == null) {
+            final Maybe<UiAttrExpr> refAttr = container.getAttribute("ref");
+            if (refAttr.isPresent()) {
+                refName = ASTHelper.extractAttrValue(refAttr.get());
+                root.reserveName(refName);
+            } else {
+                refName = newVarName(backup);
+                container.addAttribute(true, new UiAttrExpr("ref", new StringLiteralExpr(refName)));
+            }
         }
+        return refName;
     }
 
     public void setRoot(MetadataRoot root) {
@@ -438,5 +455,21 @@ public class ContainerMetadata {
     public ContainerMetadata setContext(ApiGeneratorContext<?> ctx) {
         root.setCtx(ctx);
         return this;
+    }
+
+    public GeneratedUiComponent getGeneratedComponent() {
+        return root.getGeneratedComponent();
+    }
+
+    public void setImplementation(GeneratedUiImplementation implementation) {
+        this.implementation = implementation;
+    }
+
+    public GeneratedUiImplementation getImplementation() {
+        return implementation;
+    }
+
+    public void setSource(Out1<SourceBuilder<?>> source) {
+        this.source = source;
     }
 }

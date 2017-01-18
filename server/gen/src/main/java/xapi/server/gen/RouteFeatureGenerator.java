@@ -8,6 +8,7 @@ import com.github.javaparser.ast.expr.UiContainerExpr;
 import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
+import xapi.dev.ui.ComponentBuffer;
 import xapi.dev.ui.ContainerMetadata;
 import xapi.dev.ui.UiComponentGenerator;
 import xapi.dev.ui.UiFeatureGenerator;
@@ -43,7 +44,7 @@ public class RouteFeatureGenerator extends UiFeatureGenerator {
         public void ensureRouteExists(UiContainerExpr route) {
             final Expression pathExpr = route.getAttributeNotNull("path").getExpression();
             final Expression methodExpr = route.getAttribute("method")
-                .useIfNull(()-> new UiAttrExpr("", StringLiteralExpr.stringLiteral("GET"))).getExpression();
+                .ifAbsentSupply(()-> new UiAttrExpr("", StringLiteralExpr.stringLiteral("GET"))).getExpression();
             final Expression responseExpr = route.getAttributeNotNull("response").getExpression();
 
             String path = tools.resolveString(ctx, pathExpr);
@@ -77,7 +78,11 @@ public class RouteFeatureGenerator extends UiFeatureGenerator {
 
     @Override
     public UiVisitScope startVisit(
-        UiGeneratorTools service, UiComponentGenerator generator, ContainerMetadata container, UiAttrExpr attr
+        UiGeneratorTools service,
+        UiComponentGenerator generator,
+        ComponentBuffer source,
+        ContainerMetadata container,
+        UiAttrExpr attr
     ) {
         final ClassBuffer out = container.getSourceBuilder().getClassBuffer();
 
@@ -102,6 +107,6 @@ public class RouteFeatureGenerator extends UiFeatureGenerator {
             factory.ensureRouteExists((UiContainerExpr) route);
         });
 
-        return super.startVisit(service, generator, container, attr);
+        return super.startVisit(service, generator, source, container, attr);
     }
 }

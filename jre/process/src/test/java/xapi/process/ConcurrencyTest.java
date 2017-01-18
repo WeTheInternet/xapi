@@ -10,6 +10,7 @@ import static xapi.log.X_Log.info;
 import static xapi.process.X_Process.*;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 public class ConcurrencyTest {
@@ -75,12 +76,15 @@ public class ConcurrencyTest {
   }
 
   @Test
-  public void testSimpleThread() {
+  public void testSimpleThread() throws InterruptedException {
     final Pointer<Boolean> success = new Pointer<Boolean>();
+    Semaphore wait = new Semaphore(1);
+    wait.acquire();
     Thread t = newThread(() -> {
         info("Thread start time: "+(now()-threadStartTime()));
         //make sure our thread flushed when it's done!
-        runFinally(() -> {
+        runFinallyUnsafe(() -> {
+            wait.acquire();
             info("To True: "+(now()-threadStartTime()));
             success.set(true);
         });
@@ -91,6 +95,7 @@ public class ConcurrencyTest {
     runFinally(() -> {
         info("To False: "+(now()-threadStartTime()));
         success.set(false);
+        wait.release();
     });
     t.start();
     trySleep(500);

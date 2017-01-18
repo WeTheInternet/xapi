@@ -15,6 +15,10 @@ import java.io.InputStream;
  */
 public class WebAppGeneratorContext extends ApiGeneratorContext<WebAppGeneratorContext> implements Rethrowable {
 
+    public WebAppGeneratorContext() {
+
+    }
+
     private String generatorDirectory;
 
     public String readSource(String pkgName, String clsName) {

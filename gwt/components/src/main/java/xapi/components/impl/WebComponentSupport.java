@@ -53,7 +53,15 @@ public class WebComponentSupport {
     return GWT.getHostPageBaseURL() + "x-tag-components.min.js";
   }
 
+  @Deprecated
   public static <E extends IsWebComponent<? extends Element>> Supplier<E> register(String tagName,
+      JavaScriptObject build) {
+    Document doc = JsSupport.doc();
+    JavaScriptObject jso = doc.getRegisterElement().call(doc, tagName, build);
+    return new JsoConstructorSupplier<E>(jso);
+  }
+
+  public static <E extends IsWebComponent<? extends Element>> Supplier<E> define(String tagName,
       JavaScriptObject build) {
     Document doc = JsSupport.doc();
     JavaScriptObject jso = doc.getRegisterElement().call(doc, tagName, build);

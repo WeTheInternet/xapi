@@ -7,12 +7,7 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.Fifo;
 import xapi.components.api.OnWebComponentAttributeChanged;
 import xapi.components.api.ShadowDomPlugin;
-import xapi.fu.Do;
-import xapi.fu.In1;
-import xapi.fu.In1Out1;
-import xapi.fu.In2;
-import xapi.fu.In2Out1;
-import xapi.fu.In3;
+import xapi.fu.*;
 import xapi.util.X_String;
 
 import static xapi.components.impl.JsFunctionSupport.*;
@@ -23,12 +18,23 @@ import com.google.gwt.core.client.UnsafeNativeLong;
 
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
-import java.util.function.IntSupplier;
 import java.util.function.LongConsumer;
-import java.util.function.LongSupplier;
-import java.util.function.Supplier;
 
 public class WebComponentBuilder {
+
+  public static final boolean useV1 = "true".equals(
+      System.getProperty("web.components.v1", "false")
+  );
+
+  private static final String
+      CREATED_CALLBACK = useV1 ? "constructor" : "createdCallback",
+      ATTACHED_CALLBACK = useV1 ? "connectedCallback" : "attachedCallback",
+      DETACHED_CALLBACK = useV1 ? "diconnectedCallback" : "attachedCallback",
+      ATTRIBUTE_CHANGE_CALLBACK = "attributeChangedCallback", // same in both versions
+      ADOPTED_CALLBACK = "adoptedCallback" // only works in v1
+  ;
+
+  private MapLike<String, Object> extras;
 
   public static WebComponentBuilder create() {
     return new WebComponentBuilder(htmlElementPrototype());
@@ -75,12 +81,26 @@ public class WebComponentBuilder {
   }
 
   public WebComponentBuilder attachedCallback(final JavaScriptObject function) {
-    if (prototype.getAttachedCallback() == null) {
-      prototype.setAttachedCallback(function);
+    // This should compile out one branch because useV1 will be compile-time constant.
+    if (useV1) {
+
+      if (prototype.getConnectedCallback() == null) {
+        prototype.setConnectedCallback(function);
+      } else {
+        // append the functions together
+        prototype.setConnectedCallback(JsFunctionSupport.merge(prototype
+          .getConnectedCallback(), function));
+      }
+
     } else {
-      // append the functions together
-      prototype.setAttachedCallback(JsFunctionSupport.merge(prototype
-        .getAttachedCallback(), function));
+
+      if (prototype.getAttachedCallback() == null) {
+        prototype.setAttachedCallback(function);
+      } else {
+        // append the functions together
+        prototype.setAttachedCallback(JsFunctionSupport.merge(prototype
+          .getAttachedCallback(), function));
+      }
     }
     return this;
   }
@@ -179,14 +199,26 @@ public class WebComponentBuilder {
 
   public WebComponentBuilder createdCallback(JavaScriptObject function) {
     function = reapplyThis(function);
-    if (prototype.getCreatedCallback() == null) {
-      prototype.setCreatedCallback(function);
+    if (useV1) {
+      if (prototype.getConstructor() == null) {
+        prototype.setConstructor(function);
+      } else {
+        // append the functions together
+        prototype.setConstructor(JsFunctionSupport.merge(
+          function,
+          prototype.getConstructor()
+          ));
+      }
     } else {
-      // append the functions together
-      prototype.setCreatedCallback(JsFunctionSupport.merge(
-        function,
-        prototype.getCreatedCallback()
-        ));
+      if (prototype.getCreatedCallback() == null) {
+        prototype.setCreatedCallback(function);
+      } else {
+        // append the functions together
+        prototype.setCreatedCallback(JsFunctionSupport.merge(
+          function,
+          prototype.getCreatedCallback()
+          ));
+      }
     }
     return this;
   }
@@ -223,8 +255,17 @@ public class WebComponentBuilder {
     return this;
   }
 
+  public native JavaScriptObject buildRaw()
+  /*-{
+  	var p = this.@xapi.components.impl.WebComponentBuilder::prototype;
+  	if (this.@xapi.components.impl.WebComponentBuilder::superTag != null) {
+  	  p['extends'] = this.@xapi.components.impl.WebComponentBuilder::superTag;
+  	}
+  	return p;
+  }-*/;
   public native JavaScriptObject build()
   /*-{
+
   	var p = {
   		prototype : this.@xapi.components.impl.WebComponentBuilder::prototype
   	};
@@ -289,13 +330,13 @@ public class WebComponentBuilder {
 		return this;
   }-*/;
 
-  public <T> WebComponentBuilder addProperty(final String name, final Supplier<T> get,
+  public <T> WebComponentBuilder addProperty(final String name, final Out1<T> get,
     final Consumer<T> set) {
     return addProperty(name, get, set, true, false);
   }
 
   public <T> WebComponentBuilder addPropertyReadOnly(final String name,
-    final Supplier<T> get) {
+    final Out1<T> get) {
     return addProperty(name, get, null, true, false);
   }
 
@@ -305,7 +346,7 @@ public class WebComponentBuilder {
   }
 
   public native <T> WebComponentBuilder addProperty(String name,
-    Supplier<T> get, Consumer<T> set, boolean enumerable, boolean configurable)
+    Out1<T> get, Consumer<T> set, boolean enumerable, boolean configurable)
     /*-{
 		var proto = {
 			enumerable : enumerable,
@@ -314,7 +355,7 @@ public class WebComponentBuilder {
 		if (get) {
 			proto.get = function() {
 				get.__caller__ = this;
-				return get.@java.util.function.Supplier::get()()
+				return get.@xapi.fu.Out1::out1()()
 			};
 		}
 		if (set) {
@@ -353,7 +394,7 @@ public class WebComponentBuilder {
     /*-{
 		var proto = {
 			enumerable : enumerable,
-			configurable : configurable,
+			configurable : configurable
 		};
 		if (get) {
 			proto.get = function() {
@@ -374,12 +415,12 @@ public class WebComponentBuilder {
 		return this;
   }-*/;
 
-  public WebComponentBuilder addPropertyInt(final String name, final IntSupplier get,
+  public WebComponentBuilder addPropertyInt(final String name, final Out1<Integer> get,
     final IntConsumer set) {
     return addPropertyInt(name, get, set, true, false);
   }
 
-  public WebComponentBuilder addPropertyIntReadOnly(final String name, final IntSupplier get) {
+  public WebComponentBuilder addPropertyIntReadOnly(final String name, final Out1<Integer> get) {
     return addPropertyInt(name, get, null, true, false);
   }
 
@@ -389,7 +430,7 @@ public class WebComponentBuilder {
   }
 
   public native WebComponentBuilder addPropertyInt(String name,
-    IntSupplier get, IntConsumer set, boolean enumerable, boolean configurable)
+    Out1<Integer> get, IntConsumer set, boolean enumerable, boolean configurable)
     /*-{
 		var proto = {
 			enumerable : enumerable,
@@ -398,7 +439,7 @@ public class WebComponentBuilder {
 		if (get) {
 			proto.get = function() {
 				get.__caller__ = this;
-				var i = get.@java.util.function.IntSupplier::getAsInt()();
+				var i = get.@xapi.fu.Out1::out1()();
 				return @xapi.components.impl.JsSupport::unboxInteger(Lcom/google/gwt/core/client/JavaScriptObject;)(i)
 			};
 		}
@@ -416,13 +457,13 @@ public class WebComponentBuilder {
 		return this;
   }-*/;
 
-  public WebComponentBuilder addPropertyLong(final String name, final LongSupplier get,
+  public WebComponentBuilder addPropertyLong(final String name, final Out1<Long> get,
     final LongConsumer set) {
     return addPropertyLong(name, get, set, true, false);
   }
 
   public WebComponentBuilder addPropertyLongReadOnly(final String name,
-    final LongSupplier get) {
+    final Out1<Long> get) {
     return addPropertyLong(name, get, null, true, false);
   }
 
@@ -433,7 +474,7 @@ public class WebComponentBuilder {
 
   @UnsafeNativeLong
   public native WebComponentBuilder addPropertyLong(String name,
-    LongSupplier get, LongConsumer set, boolean enumerable,
+    Out1<Long> get, LongConsumer set, boolean enumerable,
     boolean configurable)
     /*-{
 		var proto = {
@@ -443,7 +484,7 @@ public class WebComponentBuilder {
 		if (get) {
 			proto.get = function() {
 				get.__caller__ = this;
-				var i = get.@java.util.function.LongSupplier::getAsLong()();
+				var i = get.@xapi.fu.Out1::out1()();
 				return @xapi.components.impl.JsSupport::unboxLong(Lcom/google/gwt/core/client/JavaScriptObject;)(i)
 			};
 		}
@@ -462,12 +503,12 @@ public class WebComponentBuilder {
   }-*/;
 
   public WebComponentBuilder addPropertyLongNativeUnbox(final String name,
-    final LongSupplier get, final LongConsumer set) {
+    final Out1<Long> get, final LongConsumer set) {
     return addPropertyLongNativeUnbox(name, get, set, true, false);
   }
 
   public WebComponentBuilder addPropertyLongNativeUnboxReadOnly(final String name,
-    final LongSupplier get) {
+    final Out1<Long> get) {
     return addPropertyLongNativeUnbox(name, get, null, true, false);
   }
 
@@ -478,7 +519,7 @@ public class WebComponentBuilder {
 
   @UnsafeNativeLong
   public native WebComponentBuilder addPropertyLongNativeUnbox(String name,
-    LongSupplier get, LongConsumer set, boolean enumerable,
+    Out1<Long> get, LongConsumer set, boolean enumerable,
     boolean configurable)
     /*-{
 		var proto = {
@@ -488,7 +529,7 @@ public class WebComponentBuilder {
 		if (get) {
 			proto.get = function() {
 				get.__caller__ = this;
-				var i = get.@java.util.function.LongSupplier::getAsLong()();
+				var i = get.@xapi.fu.Out1::out1()();
 				return @xapi.components.impl.JsSupport::unboxLongNative(Lcom/google/gwt/core/client/JavaScriptObject;)(i);
 			};
 		}
@@ -506,4 +547,10 @@ public class WebComponentBuilder {
 		return this;
   }-*/;
 
+  public MapLike<String, Object> getExtras() {
+    if (extras == null) {
+      extras = X_Collect.newStringMap();
+    }
+    return extras;
+  }
 }

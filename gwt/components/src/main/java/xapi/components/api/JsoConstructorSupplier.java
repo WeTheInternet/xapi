@@ -1,17 +1,23 @@
 package xapi.components.api;
 
-import java.util.function.Supplier;
+import elemental.dom.Element;
+import xapi.fu.Out1;
 
 import com.google.gwt.core.client.JavaScriptObject;
 
-import elemental.dom.Element;
+import java.util.function.Supplier;
 
-public class JsoConstructorSupplier<E extends IsWebComponent<? extends Element>> implements Supplier<E> {
+public class JsoConstructorSupplier<E extends IsWebComponent<? extends Element>> implements Supplier<E>, Out1<E> {
 
   private final JavaScriptObject ctor;
 
   public JsoConstructorSupplier(JavaScriptObject ctor) {
     this.ctor = ctor;
+  }
+
+  @Override
+  public final E out1() {
+    return get();
   }
 
   @Override

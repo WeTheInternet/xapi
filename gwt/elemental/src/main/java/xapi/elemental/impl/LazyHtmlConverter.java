@@ -1,13 +1,13 @@
 package xapi.elemental.impl;
 
-import javax.inject.Provider;
-
+import elemental.dom.Element;
 import xapi.ui.api.StyleService;
 import xapi.util.api.ConvertsValue;
 import xapi.util.api.MergesValues;
-import elemental.dom.Element;
 
-public class LazyHtmlConverter <T, S extends StyleService<S>, E extends Element>
+import javax.inject.Provider;
+
+public class LazyHtmlConverter <T, S extends StyleService<?, ?>, E extends Element>
 implements MergesValues<T, S, E> {
 
   protected final LazyHtmlClone<E> cloner;

@@ -21,13 +21,18 @@
 	<dependencies>
 		<dependency>
 			<groupId>net.wetheinter</groupId>
-			<artifactId>xapi-gwt-ui-html</artifactId>
+			<artifactId>xapi-elemental</artifactId>
 		</dependency>
 
         <dependency>
             <groupId>net.wetheinter</groupId>
             <artifactId>xapi-jre-io</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>net.wetheinter</groupId>
+            <artifactId>xapi-core-ui-generator</artifactId>
+		</dependency>
 
         <dependency>
             <groupId>net.wetheinter</groupId>

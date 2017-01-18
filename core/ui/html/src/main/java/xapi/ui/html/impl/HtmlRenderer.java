@@ -1,7 +1,5 @@
 package xapi.ui.html.impl;
 
-import javax.inject.Provider;
-
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.ui.api.StyleService;
@@ -9,6 +7,8 @@ import xapi.ui.html.X_Html;
 import xapi.ui.html.api.HtmlSnippet;
 import xapi.util.api.ConvertsValue;
 import xapi.util.impl.LazyProvider;
+
+import javax.inject.Provider;
 
 public class HtmlRenderer {
 
@@ -18,7 +18,7 @@ public class HtmlRenderer {
   );
 
   @SuppressWarnings("unchecked")
-  public <T> ConvertsValue<T, String> getRenderer(Class<T> type, StyleService<?> context) {
+  public <T> ConvertsValue<T, String> getRenderer(Class<T> type, StyleService<?, ?> context) {
     ConvertsValue<T, String> converter = (ConvertsValue<T, String>) map.get(type.getName());
     if (converter == null) {
       converter = buildConverter(type, context);
@@ -27,7 +27,7 @@ public class HtmlRenderer {
     return converter;
   }
 
-  protected <T> ConvertsValue<T, String> buildConverter(final Class<T> type, final StyleService<?> context) {
+  protected <T> ConvertsValue<T, String> buildConverter(final Class<T> type, final StyleService<? ,?> context) {
     final Provider<HtmlSnippet<T>> snippet =
       new LazyProvider<>(new Provider<HtmlSnippet<T>>() {
         @Override

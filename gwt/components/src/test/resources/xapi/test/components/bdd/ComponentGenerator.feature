@@ -220,54 +220,83 @@ Feature: ComponentGenerator.feature: Transpile xapi templates into web component
       | // this line is purposely long so the editor will leave us lots of whitespace if we autoformat this file (alt+ctrl+L in intellij) |
 
   Scenario: Compile a ToDoApp entirely from templates...
-    Given compile the component:
-      | <define-tags                                                                        |
-      | tags = {                                                                             |
-      |   "to-do" : <define-tag                                                                |
+    Given add xapi component named to-dos:
+      | <define-tags                                                                       |
+      | imports = [                                                                       |
+      |     xapi.fu.Filter1,                                                              |
+      |    "de.mocra.cy.shared.*"                                                         |
+      | ]                                                                                  |
+      | tags = [                                                                             |
+      |    <define-tag                                                                |
+      |     name="to-do"                                                                           |
       |     model={                                                                           |
       |       text:String.class,                                                                   |
       |       data:HasData.class,                                                                  |
+      |       todos:ListLike.class.$generic(Todo.class),                                                                  |
       |       isDone:(Filter<Self>.class),                                                         |
       |       onClick:ClickHandler.class,                                                          |
-      |     }                                                                                    |
+      |     }                                                                                   |
+      |     api = [                                                                                   |
+      |       public default void addTodo(Todo todo) {                                                                                   |
+      |         getModel().getTodos().add(todo);                                                                                   |
+      |       }                                                                                   |
+      |     ]                                                                                   |
       |     data = {done:false, text:""}                                                         |
       |     isDone = ()->data.<Boolean>get("done")                                               |
       |     onClick = e -> this.done = !this.done                                                |
       |                                                                                          |
       |     // matches the value of the text feature in <to-do text="What is rendered"/>         |
-      |     ui=<div class="to-do">{text}</div>                                                  |
+      |     ui= @ShadowDom <div class="to-do">{text}</div>                                                  |
       |   /define-tag>                                                                         |
       |   ,                                                                                    |
-      |   "to-dos" : <define-tag                                                                                    |
+      |   <define-tag name="to-dos"                                                                                    |
       |   ui=<div class="to-dos" children = select("to-do") />                                |
       |                                                                                          |
       |   /define-tag>                                                                                    |
-      |   }                                                                                    |
+      |   ]                                                                                    |
       |                                                                                        |
-      |   example =                                                                    |
-      |                                                                                          |
-      |         <to-dos>                                                                   |
-      |           <to-do text = "Create awesome examples of <to-do/>s to finish" />                    |
-      |           <to-do id   = "polyuser-collaboration-room"                                          |
-      |                         text = `Patent a multi-user collaboration room,                                      |
-      |                         with a 360 degree digital display around a desk.                                     |
-      |                         anyone with a synced keyboard/mouse/powerglove                                       |
-      |                         can login, open windows, create and edit text (code),                                |
-      |                         drag ui elements around, and interact  them around anywhere.`                        |
-      |           /to-do>                                                                              |
-      |           <to-do id    = "createAwesomeToDoApp"                                                |
-      |               text     = "Finish ALLLLL the things!"                                               |
-      |               thisType = "ToDo" // Create an alias to the type of the currrent element, <to-do/>   |
-      |               isDone   = (siblings().allMatch(ToDo::isDone))                                       |
-      |               onClick  = e->{                                                                      |
-      |                   if (!$this.isDone()) {                                                               |
-      |                   xapi.log.X_Log.alert("Finish your other todos first!");                              |
-      |                   }                                                                                    |
-      |                   e.cancel(); // do not propagate to the "super" method in the definition of <to-do /> |
-      |               }                                                                                    |
-      |           /to-do>                                                                              |
-      |           <add-to-do />                                                                        |
-      |           <to-do text = "Make the add-to-do element work in a concise, declarative manner" />  |
-      |         </to-dos>                                                                            |
+#      |   example =                                                                    |
+#      |                                                                                          |
+#      |         <to-dos>                                                                   |
+#      |           <to-do text = "Create awesome examples of <to-do/>s to finish" />                    |
+#      |           <to-do id   = "polyuser-collaboration-room"                                          |
+#      |                         text = `Patent a multi-user collaboration room,                                      |
+#      |                         with a 360 degree digital display around a desk.                                     |
+#      |                         anyone with a synced keyboard/mouse/powerglove                                       |
+#      |                         can login, open windows, create and edit text (code),                                |
+#      |                         drag ui elements around, and interact  them around anywhere.`                        |
+#      |           /to-do>                                                                              |
+#      |           <to-do id    = "createAwesomeToDoApp"                                                |
+#      |               text     = "Finish ALLLLL the things!"                                               |
+#      |               thisType = "ToDo" // Create an alias to the type of the currrent element, <to-do/>   |
+#      |               isDone   = (siblings().allMatch(ToDo::isDone))                                       |
+#      |               onClick  = e->{                                                                      |
+#      |                   if (!$this.isDone()) {                                                               |
+#      |                   xapi.log.X_Log.alert("Finish your other todos first!");                              |
+#      |                   }                                                                                    |
+#      |                   e.cancel(); // do not propagate to the "super" method in the definition of <to-do /> |
+#      |               }                                                                                    |
+#      |           /to-do>                                                                              |
+#      |           <add-to-do />                                                                        |
+#      |           <to-do text = "Make the add-to-do element work in a concise, declarative manner" />  |
+#      |         </to-dos>                                                                            |
       | /define-tags>                                                                        |
-#    And save generated source of component "define-tags" as "UseTheSource"
+#    And save generated gwt source file "xapi.ui.generated.BaseToDo" as "BaseToDoSource"
+#    And save generated gwt source file "xapi.ui.generated.BaseToDos" as "BaseToDosSource"
+#    And save generated gwt source file "xapi.ui.generated.ToDo" as "ToDoSource"
+#    And save generated gwt source file "xapi.ui.generated.ToDos" as "ToDosSource"
+#    And save generated gwt source file "xapi.ui.generated.ModelToDo" as "ModelToDoSource"
+    Then confirm api source for "ToDos" matches:
+    | package xapi.test.pkg;                               |
+    |                                                          |
+    | import xapi.components.api;                               |
+    |                                                          |
+    | public interface ToDosComponent {                                 |
+    |                                                          |
+    |   abstract ModelToDosComponent getModel() ;              |
+    |                                                          |
+    |   default void addTodo(Todo todo) {               |
+    |     getModel().getTodos().add(todo);                     |
+    |   }                                                      |
+    |                                                          |
+    | }                                                        |

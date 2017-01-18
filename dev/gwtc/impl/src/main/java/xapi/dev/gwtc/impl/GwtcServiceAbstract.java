@@ -141,23 +141,31 @@ public abstract class GwtcServiceAbstract implements GwtcService {
     context.addDependency(builder.build(), cls);
     // if loc is a src/main/java or src/test/java, also include resources module:
     String unixed = loc.replace('\\', '/');
-    int index = unixed.indexOf("src/main/java");
+    int index = unixed.indexOf("target/classes");
     if (index != -1) {
 
       context.addDependency(builder
-          .setValue(unixed.replace("src/main/java", "src/main/resources"))
+          .setValue(unixed.replace("target/classes", "src/main/java"))
           .build(), cls);
 
-    } else if (unixed.indexOf("src/test/java") != -1) {
+      context.addDependency(builder
+          .setValue(unixed.replace("target/classes", "src/main/resources"))
+          .build(), cls);
+
+    } else if (unixed.contains("target/test-classes")) {
 
       context.addDependency(builder
-          .setValue(unixed.replace("src/test/java", "src/test/resources"))
+          .setValue(unixed.replace("target/test-classes", "src/test/java"))
+          .build(), cls);
+
+      context.addDependency(builder
+          .setValue(unixed.replace("target/test-classes", "src/test/resources"))
           .build(), cls);
       context.addDependency(builder
-          .setValue(unixed.replace("src/test/java", "src/main/java"))
+          .setValue(unixed.replace("target/test-classes", "src/main/java"))
           .build(), cls);
       context.addDependency(builder
-          .setValue(unixed.replace("src/test/java", "src/main/resources"))
+          .setValue(unixed.replace("target/test-classes", "src/main/resources"))
           .build(), cls);
 
     }

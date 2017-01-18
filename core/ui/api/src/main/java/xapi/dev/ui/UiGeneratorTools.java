@@ -9,10 +9,15 @@ import xapi.collect.impl.SimpleLinkedList;
 import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.api.ApiGeneratorTools;
 import xapi.dev.ui.ContainerMetadata.MetadataRoot;
+import xapi.dev.ui.GeneratedUiComponent.GeneratedUiImplementation;
+import xapi.dev.ui.UiNamespace.DefaultUiNamespace;
 import xapi.fu.In1Out1;
 import xapi.fu.In2Out1;
 import xapi.fu.Out2;
 import xapi.source.X_Source;
+import xapi.util.X_String;
+
+import static xapi.fu.Out2.out2Immutable;
 
 import java.util.Arrays;
 import java.util.Set;
@@ -38,21 +43,23 @@ public abstract class UiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> im
 
     protected Iterable<Out2<String, UiComponentGenerator>> getComponentGenerators() {
         return Arrays.asList(
-              Out2.out2Immutable("app", new UiComponentGenerator()),
-              Out2.out2Immutable("import", new UiComponentGenerator()),
-              Out2.out2Immutable("button", new UiComponentGenerator())
+              out2Immutable("app", new UiComponentGenerator()),
+              out2Immutable("import", new UiComponentGenerator()),
+              out2Immutable("button", new UiComponentGenerator()),
+              out2Immutable("define-tags", new UiTagGenerator()),
+              out2Immutable("define-tag", new UiTagGenerator())
         );
     }
 
     protected Iterable<Out2<String, UiFeatureGenerator>> getFeatureGenerators() {
         return Arrays.asList(
-              Out2.out2Immutable("ref", new UiFeatureGenerator()),
-              Out2.out2Immutable("title", new UiFeatureGenerator()),
-              Out2.out2Immutable("body", new UiFeatureGenerator()),
-              Out2.out2Immutable("data", new UiFeatureGenerator()),
-              Out2.out2Immutable("file", new UiFeatureGenerator()),
-              Out2.out2Immutable("text", new UiFeatureGenerator()),
-              Out2.out2Immutable("onClick", new UiFeatureGenerator())
+              out2Immutable("ref", new UiFeatureGenerator()),
+              out2Immutable("title", new UiFeatureGenerator()),
+              out2Immutable("body", new UiFeatureGenerator()),
+              out2Immutable("data", new UiFeatureGenerator()),
+              out2Immutable("file", new UiFeatureGenerator()),
+              out2Immutable("text", new UiFeatureGenerator()),
+              out2Immutable("onClick", new UiFeatureGenerator())
         );
     }
 
@@ -104,12 +111,41 @@ public abstract class UiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> im
     }
 
     public UiGeneratorVisitor createVisitor(
-          ContainerMetadata metadata
+        ContainerMetadata metadata, ComponentBuffer buffer
     ) {
-        return getGenerator().createVisitor(metadata);
+        return getGenerator().createVisitor(metadata, buffer);
     }
 
     public In1Out1<Expression, Expression> varResolver(Ctx ctx) {
         return In2Out1.with1(this::resolveVar, ctx);
+    }
+
+    protected void initializeComponent(GeneratedUiComponent result) {
+        final UiGeneratorService gen = getGenerator();
+        if (gen != this && gen instanceof UiGeneratorTools) {
+            ((UiGeneratorTools)gen).initializeComponent(result);
+        }
+    }
+
+    public GeneratedUiComponent newComponent(String pkg, String className) {
+        final GeneratedUiComponent component = new GeneratedUiComponent(pkg, className);
+        initializeComponent(component);
+        return component;
+    }
+
+    public UiNamespace namespace() {
+        return new DefaultUiNamespace();
+    }
+
+    public UiNamespace getNamespace(GeneratedUiComponent component) {
+        UiNamespace ns = namespace();
+        ns = component.getImpls()
+            .reduceInstances(GeneratedUiImplementation::reduceNamespace, ns);
+        return ns;
+    }
+
+    public String tagToJavaName(UiContainerExpr n) {
+        String[] names = n.getName().split("-");
+        return X_String.join("", X_String::toTitleCase, names);
     }
 }

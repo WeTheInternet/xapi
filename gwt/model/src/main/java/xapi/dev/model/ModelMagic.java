@@ -1,6 +1,7 @@
 package xapi.dev.model;
 
 import xapi.annotation.model.IsModel;
+import xapi.dev.api.ApiGeneratorTools;
 import xapi.gwt.model.ModelGwt;
 import xapi.inject.X_Inject;
 import xapi.model.impl.ModelUtil;
@@ -170,7 +171,8 @@ public class ModelMagic implements UnifyAstListener, MagicMethodGenerator {
       } else {
         name = isModel.modelType();
       }
-      model = new ModelArtifact(name, type.getQualifiedBinaryName());
+      ApiGeneratorTools<?> t = new ApiGeneratorTools() {};
+      model = new ModelArtifact(t, name, type.getQualifiedBinaryName());
       model.applyDefaultAnnotations(logger, type);
       models.put(type.getName(), model);
     } else {

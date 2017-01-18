@@ -342,7 +342,7 @@ public class HtmlSnippet <T> implements ConvertsValue<T, String> {
   public HtmlSnippet(
       final Html html,
       final BeanValueProvider values,
-      final StyleService<?> context
+      final StyleService<?, ?> context
       ) {
     assert html != null : "Do not send null @Html to HtmlSnippet!";
     assert values != null : "Do not send null BeanValueProvider to HtmlSnippet!";
@@ -410,7 +410,7 @@ public class HtmlSnippet <T> implements ConvertsValue<T, String> {
     return m.applyMap(vals.entries());
   }
 
-  private void toStyleSheet(final Style style, final StyleService<?> context) {
+  private void toStyleSheet(final Style style, final StyleService<?, ?> context) {
     final StringBuilder sheet = new StringBuilder();
 
     final String[] names = style.names();

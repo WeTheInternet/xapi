@@ -80,8 +80,13 @@ public class UiComponentGenerator {
     this.printCommentsAllowed = printCommentsAllowed;
   }
 
-  public UiVisitScope startVisit(UiGeneratorTools tools, ContainerMetadata me, UiContainerExpr n) {
-    return UiVisitScope.DEFAULT_CONTAINER;
+  public UiVisitScope startVisit(
+      UiGeneratorTools tools,
+      ComponentBuffer source,
+      ContainerMetadata me,
+      UiContainerExpr n
+  ) {
+    return UiVisitScope.CONTAINER_VISIT_CHILDREN;
   }
 
   public void endVisit(UiGeneratorTools tools, ContainerMetadata me, UiContainerExpr n, UiVisitScope scope) {

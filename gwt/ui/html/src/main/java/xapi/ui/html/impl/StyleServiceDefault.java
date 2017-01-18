@@ -3,21 +3,25 @@
  */
 package xapi.ui.html.impl;
 
-import static xapi.collect.X_Collect.newStringMap;
+import elemental.client.Browser;
+import elemental.dom.Node;
+import elemental.html.StyleElement;
+import xapi.annotation.inject.SingletonDefault;
+import xapi.collect.api.StringTo;
+import xapi.fu.Out1;
+import xapi.inject.X_Inject;
+import xapi.ui.api.StyleCacheService;
+import xapi.ui.api.StyleService;
+import xapi.ui.html.X_Html;
+import xapi.ui.html.api.GwtStyles;
 
-import java.util.Arrays;
+import static xapi.collect.X_Collect.newStringMap;
 
 import com.google.gwt.core.client.Scheduler;
 import com.google.gwt.core.client.Scheduler.ScheduledCommand;
 
-import elemental.client.Browser;
-import elemental.dom.Node;
-import elemental.html.StyleElement;
-
-import xapi.annotation.inject.SingletonDefault;
-import xapi.collect.api.StringTo;
-import xapi.ui.api.StyleService;
-import xapi.ui.html.X_Html;
+import javax.inject.Provider;
+import java.util.Arrays;
 
 /**
  * @author "James X. Nelson (james@wetheinter.net)"
@@ -26,8 +30,10 @@ import xapi.ui.html.X_Html;
 @SuppressWarnings("rawtypes")
 @SingletonDefault(
   implFor = StyleService.class)
-public class StyleServiceDefault<T extends StyleService> implements
-StyleService<T> {
+public class StyleServiceDefault implements StyleService<StyleElement, GwtStyles> {
+
+  private static final Provider<StyleCacheService<StyleElement, GwtStyles>> styleCache = X_Inject.singletonLazy(StyleCacheService.class);
+
 
   private ScheduledCommand printPendingCss;
   private final StringTo<String> pendingCss = newStringMap(String.class);
@@ -35,7 +41,7 @@ StyleService<T> {
 
   @Override
   @SuppressWarnings("unchecked")
-  public T addCss(final String css, final int priority) {
+  public void addCss(final String css, final int priority) {
     if (printPendingCss == null) {
       css(css);
     }
@@ -46,7 +52,6 @@ StyleService<T> {
     } else {
       pendingCss.put(key, was + "\n" + css);
     }
-    return (T) this;
   }
 
   protected void css(final String css) {
@@ -150,6 +155,22 @@ StyleService<T> {
   @Override
   public void loadGoogleFonts(String ... fonts) {
     addCss(X_Html.toGoogleFontUrl(fonts), 0);
+  }
+
+  @Override
+  public StyleElement injectStyle(
+      Class<? extends GwtStyles> bundle, Class<?> ... styles
+  ) {
+    return styleCache.get().injectStyle(bundle, styles);
+  }
+
+  @Override
+  @SafeVarargs
+  public final Out1<StyleElement> registerStyle(
+      Class<? extends GwtStyles> bundle, String css, Class<?>... styles
+  ) {
+    styleCache.get().registerStyle(bundle, css, styles);
+    return ()->injectStyle(bundle, styles);
   }
 
 }

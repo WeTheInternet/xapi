@@ -10,6 +10,7 @@ import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.NameGen;
 import xapi.dev.source.PrintBuffer;
+import xapi.dev.ui.ComponentBuffer;
 import xapi.dev.ui.ContainerMetadata;
 import xapi.dev.ui.StyleMetadata;
 import xapi.dev.ui.UiComponentGenerator;
@@ -28,7 +29,11 @@ public class JavaFxCssFeatureGenerator extends UiFeatureGenerator {
 
     @Override
     public UiVisitScope startVisit(
-          UiGeneratorTools service, UiComponentGenerator generator, ContainerMetadata container, UiAttrExpr attr
+        UiGeneratorTools service,
+        UiComponentGenerator generator,
+        ComponentBuffer source,
+        ContainerMetadata container,
+        UiAttrExpr attr
     ) {
 
         String panel = container.peekPanelName();
@@ -100,7 +105,7 @@ public class JavaFxCssFeatureGenerator extends UiFeatureGenerator {
 
 
 
-        return super.startVisit(service, generator, container, attr);
+        return super.startVisit(service, generator, source, container, attr);
     }
 
     private static String renameForJavaFx(String key) {
