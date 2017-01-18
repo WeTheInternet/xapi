@@ -372,15 +372,11 @@ public class DumpVisitor implements VoidVisitor<Object> {
     }
 
     protected String resolveType(ClassOrInterfaceType type) {
-        return type.toSource();
+        return type.getName();
     }
 
     protected String resolveName(NameExpr name) {
         return name.getName();
-    }
-
-    protected String resolveTypeName(ClassOrInterfaceType type) {
-        return type.getName();
     }
 
     /**
@@ -432,7 +428,7 @@ public class DumpVisitor implements VoidVisitor<Object> {
             n.getScope().accept(this, arg);
             printer.print(".");
         }
-        printer.print(resolveTypeName(n));
+        printer.print(resolveType(n));
 
         if (n.isUsingDiamondOperator()) {
             printer.print("<>");
@@ -989,7 +985,7 @@ public class DumpVisitor implements VoidVisitor<Object> {
     @Override
     public void visit(UiBodyExpr n, Object arg) {
         printJavaComment(n.getComment(), arg);
-        for (UiExpr child : n.getChildren()) {
+        for (Expression child : n.getChildren()) {
             if (child instanceof TemplateLiteralExpr) {
                 printer.print(((TemplateLiteralExpr) child).getValue());
             } else {

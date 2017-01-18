@@ -24,6 +24,8 @@ import java.util.function.Predicate;
 public class ApiGeneratorContext<Ctx extends ApiGeneratorContext<Ctx>>
     implements ReturnSelf<Ctx> {
 
+    public ApiGeneratorContext() { }
+
     private StringTo<Node> vars = X_Collect.newStringMap(Node.class);
     private StringTo<SourceBuilder<Ctx>> sources = X_Collect.newStringMap(SourceBuilder.class);
     private boolean firstOfRange;
@@ -33,7 +35,7 @@ public class ApiGeneratorContext<Ctx extends ApiGeneratorContext<Ctx>>
         String key = id.startsWith("$") ? id.substring(1) : id;
         final Node was = vars.get(key);
         vars.put(key, node);
-        if (was != null) {
+        if (was != null && was != node) {
             X_Log.warn(getClass(), "Overriding key ", id, "was", was, "is", node);
         }
         return was == null ? () -> vars.remove(key) : () -> vars.put(key, was);

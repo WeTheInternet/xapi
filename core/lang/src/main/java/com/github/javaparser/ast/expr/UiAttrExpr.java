@@ -3,11 +3,11 @@ package com.github.javaparser.ast.expr;
 import com.github.javaparser.ast.visitor.GenericVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitor;
 import xapi.fu.Filter.Filter1;
+import xapi.fu.Maybe;
 
 import static com.github.javaparser.ast.expr.StringLiteralExpr.stringLiteral;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
@@ -105,13 +105,13 @@ public class UiAttrExpr extends UiExpr {
     this.annotations = annotations;
   }
 
-  public Optional<AnnotationExpr> getAnnotation(Filter1<AnnotationExpr> filter) {
+  public Maybe<AnnotationExpr> getAnnotation(Filter1<AnnotationExpr> filter) {
     for (AnnotationExpr annotation : annotations) {
       if (filter.filter1(annotation)) {
-        return Optional.of(annotation);
+        return Maybe.nullable(annotation);
       }
     }
-    return Optional.empty();
+    return Maybe.not();
   }
 
   public static UiAttrExpr of(String name, String stringValue) {

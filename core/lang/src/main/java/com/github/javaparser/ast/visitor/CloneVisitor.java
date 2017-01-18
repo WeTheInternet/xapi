@@ -1244,7 +1244,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 		if (n == null) {
 			return null;
 		}
-		final List<UiExpr> children = visit(n.getChildren(), arg);
+		final List<Expression> children = visit(n.getChildren(), arg);
 		return copyExtras(n,
 			new UiBodyExpr(n.getBeginLine(), n.getBeginColumn(), n.getEndLine(), n.getEndColumn(), children)
 		);

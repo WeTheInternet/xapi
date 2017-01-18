@@ -13,11 +13,11 @@ import java.util.List;
  */
 public class UiBodyExpr extends UiExpr {
 
-  private List<UiExpr> children;
+  private List<Expression> children;
 
   public UiBodyExpr(
       final int beginLine, final int beginColumn, final int endLine, final int endColumn,
-      List<UiExpr> children) {
+      List<Expression> children) {
     super(beginLine, beginColumn, endLine, endColumn);
     this.children = children;
     setAsParentNodeOf(children);
@@ -31,11 +31,11 @@ public class UiBodyExpr extends UiExpr {
     v.visit(this, arg);
   }
 
-  public List<UiExpr> getChildren() {
+  public List<Expression> getChildren() {
     return children;
   }
 
-  public void setChildren(List<UiExpr> children) {
+  public void setChildren(List<Expression> children) {
     this.children = children;
     setAsParentNodeOf(children);
   }

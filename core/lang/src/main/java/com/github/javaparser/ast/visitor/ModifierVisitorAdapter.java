@@ -967,9 +967,9 @@ public abstract class ModifierVisitorAdapter<A> implements GenericVisitor<Node, 
 
   @Override
   public Node visit(UiBodyExpr n, A arg) {
-    final List<UiExpr> children = n.getChildren();
+    final List<Expression> children = n.getChildren();
     for (int i = 0, m = children.size(); i < m; i++) {
-      children.set(i, (UiExpr) children.get(i).accept(this, arg));
+      children.set(i, (Expression)children.get(i).accept(this, arg));
     }
     removeNulls(children);
     return n;

@@ -1643,7 +1643,7 @@ public abstract class GenericVisitorAdapter<R, A> implements GenericVisitor<R, A
     @Override
     public R visit(UiBodyExpr n, A arg) {
         if (n.getChildren() != null) {
-            for (UiExpr uiExpr : n.getChildren()) {
+            for (Expression uiExpr : n.getChildren()) {
                 final R result = uiExpr.accept(this, arg);
                 if (result != null) {
                     return result;

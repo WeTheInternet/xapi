@@ -1,7 +1,9 @@
 package com.github.javaparser.ast.plugin;
 
+import com.github.javaparser.ast.TypeParameter;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.TemplateLiteralExpr;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import xapi.fu.Printable;
 
 /**
@@ -24,4 +26,11 @@ public class Transformer {
   public void onTemplateEnd(Printable printer) {
   }
 
+  public String resolveType(ClassOrInterfaceType type) {
+    return type.getName();
+  }
+
+  public String resolveTypeParam(TypeParameter param) {
+    return param.toSource();
+  }
 }

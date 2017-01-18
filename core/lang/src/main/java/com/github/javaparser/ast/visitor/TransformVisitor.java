@@ -21,10 +21,12 @@
 
 package com.github.javaparser.ast.visitor;
 
+import com.github.javaparser.ast.TypeParameter;
 import com.github.javaparser.ast.comments.Comment;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.TemplateLiteralExpr;
 import com.github.javaparser.ast.plugin.Transformer;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import xapi.fu.Printable;
 import xapi.source.X_Source;
 
@@ -60,6 +62,16 @@ public class TransformVisitor extends DumpVisitor {
   @Override
   protected String resolveName(NameExpr name) {
     return transformer.resolveName(printer, name);
+  }
+
+  @Override
+  protected String resolveType(ClassOrInterfaceType type) {
+    return transformer.resolveType(type);
+  }
+
+  @Override
+  protected String resolveTypeParam(TypeParameter typeParam) {
+    return transformer.resolveTypeParam(typeParam);
   }
 
   public static void normalizeToString(Printable printer, String template) {

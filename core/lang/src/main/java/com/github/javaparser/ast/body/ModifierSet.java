@@ -57,6 +57,11 @@ public final class ModifierSet {
     public static final int STRICTFP = Modifier.STRICT;
 
     public static final int DEFAULT = 0x2000;
+    public static final int PROTECTION_BITS = PUBLIC - PRIVATE - PROTECTED;
+    /**
+     * Used with & to turn off protection bits
+     */
+    public static final int VISIBILITY_MASK = 0xFFFFFFFF - PROTECTION_BITS;
 
     public static AccessSpecifier getAccessSpecifier(int modifiers) {
         if (isPublic(modifiers)){

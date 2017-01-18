@@ -2528,6 +2528,22 @@ NameExpr FeatureName():
       { ret = new NameExpr(token.beginLine, token.beginColumn, token.endLine, token.endColumn, token.image);}
       | "implements"
       { ret = new NameExpr(token.beginLine, token.beginColumn, token.endLine, token.endColumn, token.image);}
+      | "if"
+      { ret = new NameExpr(token.beginLine, token.beginColumn, token.endLine, token.endColumn, token.image);}
+      | "else"
+      { ret = new NameExpr(token.beginLine, token.beginColumn, token.endLine, token.endColumn, token.image);}
+      | "for"
+      { ret = new NameExpr(token.beginLine, token.beginColumn, token.endLine, token.endColumn, token.image);}
+      | "while"
+      { ret = new NameExpr(token.beginLine, token.beginColumn, token.endLine, token.endColumn, token.image);}
+      | "do"
+      { ret = new NameExpr(token.beginLine, token.beginColumn, token.endLine, token.endColumn, token.image);}
+      | "break"
+      { ret = new NameExpr(token.beginLine, token.beginColumn, token.endLine, token.endColumn, token.image);}
+      | "continue"
+      { ret = new NameExpr(token.beginLine, token.beginColumn, token.endLine, token.endColumn, token.image);}
+      | "return"
+      { ret = new NameExpr(token.beginLine, token.beginColumn, token.endLine, token.endColumn, token.image);}
   )
   ( LOOKAHEAD(2) "."
    (
@@ -3219,7 +3235,8 @@ UiContainerExpr UiContainer():
 UiBodyExpr UiBody():
 {
   UiContainerExpr el;
-  List<UiExpr> children = new ArrayList();
+  Expression value;
+  List<Expression> children = new ArrayList();
   String comment = null;
   int beginLine = -1;
   int beginColumn = -1;
@@ -3268,6 +3285,11 @@ UiBodyExpr UiBody():
         setState(UI_BODY);
      }
 
+//   ) | (
+    // Need to remove the need for lexical scope so we can do this...
+//     value = UiValue() {
+//        children.add(value);
+//     }
    ) | (
 
      <UI_TEXT> {

@@ -3,6 +3,7 @@ package xapi.dev.api;
 import com.github.javaparser.ASTHelper;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.TypeParameter;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.expr.BinaryExpr.Operator;
 import com.github.javaparser.ast.plugin.Transformer;
@@ -18,17 +19,12 @@ import com.github.javaparser.ast.visitor.ComposableXapiVisitor;
 import com.github.javaparser.ast.visitor.TransformVisitor;
 import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
+import xapi.collect.api.StringTo;
 import xapi.dev.api.AstMethodInvoker.AstMethodResult;
 import xapi.dev.source.SourceBuilder;
 import xapi.except.NotYetImplemented;
-import xapi.fu.Do;
+import xapi.fu.*;
 import xapi.fu.Filter.Filter1;
-import xapi.fu.In1;
-import xapi.fu.Maybe;
-import xapi.fu.Out1;
-import xapi.fu.Printable;
-import xapi.fu.Rethrowable;
-import xapi.fu.X_Fu;
 import xapi.fu.iterate.CountedIterator;
 import xapi.log.X_Log;
 import xapi.source.write.Template;
@@ -105,7 +101,7 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
                     }
                 }
 
-            types.add(resolveTemplate(ctx, TemplateLiteralExpr.templateLiteral(copy.toSource())));
+            types.add(resolveTemplate(ctx, templateLiteral(copy.toSource())));
                 return false;
             })
             .withSysExpr((expr, c)->{
@@ -225,6 +221,28 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
             @Override
             public String onTemplateStart(Printable printer, TemplateLiteralExpr template) {
                 return resolveString(ctx, template);
+            }
+
+            @Override
+            public String resolveName(Printable printer, NameExpr name) {
+                return resolveString(ctx, name);
+            }
+
+            @Override
+            public String resolveType(ClassOrInterfaceType type) {
+                return resolveString(ctx, templateLiteral(type.getName()));
+            }
+
+            @Override
+            public String resolveTypeParam(TypeParameter typeParam) {
+                if (ctx.hasNode(typeParam.getName())) {
+                    final IntTo<String> literals = resolveToLiterals(
+                        ctx,
+                        (Expression) ctx.getNode(typeParam.getName())
+                    );
+                    return literals.join(", ");
+                }
+                return resolveString(ctx, templateLiteral(typeParam.toSource()));
             }
 
             @Override
@@ -931,9 +949,8 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
         final Expression expr;
         if (n instanceof UiContainerExpr) {
             UiContainerExpr container = (UiContainerExpr) n;
-            expr = container.getAttribute("package").getIfNull(UiAttrExpr.of(
-                "package",
-                dfltPackage.out1()
+            expr = container.getAttribute("package")
+                .ifAbsentReturn(UiAttrExpr.of("package", dfltPackage.out1()
             ));
             return getPackage(ctx, expr, dfltPackage);
         } else if (n instanceof UiAttrExpr) {
@@ -957,5 +974,183 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
         } else {
             throw new IllegalArgumentException("Cannot extract package from " + debugNode(n));
         }
+    }
+
+    default String lookupType(String s) {
+        return qualifyType(s);
+    }
+
+    static String qualifyType(String s) {
+        if (s.contains(".")) {
+            return s;
+        }
+        String raw = s.split("<")[0];
+        switch (raw) {
+            case "Iterator":
+            case "List":
+            case "Set":
+            case "ArrayList":
+            case "LinkedList":
+            case "Queue":
+            case "Dequeue":
+            case "HashSet":
+            case "TreeSet":
+            case "Map":
+            case "HashMap":
+            case "TreeMap":
+                return "java.util." + s;
+            case "ConcurrentMap":
+            case "ConcurrentHashMap":
+            case "ConcurrentSkipListMap":
+            case "ConcurrentLinkedDeque":
+                return "java.util.concurrent." + s;
+            case "MapLike":
+            case "ListLike":
+            case "SetLike":
+                return "xapi.fu." + s;
+            case "MappedIterable":
+            case "Chain":
+            case "ChainBuilder":
+            case "ArrayIterable":
+            case "CachingIterator":
+                return "xapi.fu.iterate." + s;
+            case "IntTo":
+            case "StringTo":
+            case "StringTo.Many":
+            case "ClassTo":
+            case "ClassTo.Many":
+            case "ObjectTo":
+            case "ObjectTo.Many":
+            case "Fifo":
+                return "xapi.collect.api." + s;
+        }
+        return s;
+    }
+
+    StringTo<String> DEFAULT_MAP_TYPES = X_Collect.newStringMap(
+        "Map", "java.util.Map",
+        "java.util.Map", "java.util.Map",
+
+        "HashMap", "java.util.HashMap",
+        "java.util.HashMap", "java.util.HashMap",
+
+        "LinkedHashMap", "java.util.LinkedHashMap",
+        "java.util.LinkedHashMap", "java.util.LinkedHashMap",
+
+        "TreeMap", "java.util.TreeMap",
+        "java.util.TreeMap", "java.util.TreeMap",
+
+        "ConcurrentMap", "java.util.concurrent.ConcurrentMap",
+        "java.util.concurrent.ConcurrentMap", "java.util.concurrent.ConcurrentMap",
+
+        "ConcurrentHashMap", "java.util.concurrent.ConcurrentHashMap",
+        "java.util.concurrent.ConcurrentHashMap", "java.util.concurrent.ConcurrentHashMap",
+
+        "ConcurrentSkipListMap", "java.util.concurrent.ConcurrentSkipListMap",
+        "java.util.concurrent.ConcurrentSkipListMap", "java.util.concurrent.ConcurrentSkipListMap",
+
+        "MapLike", "xapi.fu.MapLike",
+        "xapi.fu.MapLike", "xapi.fu.MapLike",
+
+        "StringTo", "xapi.collect.api.StringTo",
+        "xapi.collect.api.StringTo", "xapi.collect.api.StringTo",
+        "StringTo.Many", "xapi.collect.api.StringTo.Many",
+        "xapi.collect.api.StringTo.Many", "xapi.collect.api.StringTo.Many",
+        "StringTo$Many", "xapi.collect.api.StringTo.Many",
+        "xapi.collect.api.StringTo$Many", "xapi.collect.api.StringTo.Many",
+
+        "ObjectTo", "xapi.collect.api.ObjectTo",
+        "xapi.collect.api.ObjectTo", "xapi.collect.api.ObjectTo",
+        "ObjectTo.Many", "xapi.collect.api.ObjectTo.Many",
+        "xapi.collect.api.ObjectTo.Many", "xapi.collect.api.ObjectTo.Many",
+        "ObjectTo$Many", "xapi.collect.api.ObjectTo.Many",
+        "xapi.collect.api.ObjectTo$Many", "xapi.collect.api.ObjectTo.Many",
+
+        "ClassTo", "xapi.collect.api.ClassTo",
+        "xapi.collect.api.ClassTo", "xapi.collect.api.ClassTo",
+        "ClassTo.Many", "xapi.collect.api.ClassTo.Many",
+        "xapi.collect.api.ClassTo.Many", "xapi.collect.api.ClassTo.Many",
+        "ClassTo$Many", "xapi.collect.api.ClassTo.Many",
+        "xapi.collect.api.ClassTo$Many", "xapi.collect.api.ClassTo.Many",
+
+        "EnumTo", "xapi.collect.api.EnumTo",
+        "xapi.collect.api.EnumTo", "xapi.collect.api.EnumTo",
+        "EnumTo.Many", "xapi.collect.api.EnumTo.Many",
+        "xapi.collect.api.EnumTo.Many", "xapi.collect.api.EnumTo.Many",
+        "EnumTo$Many", "xapi.collect.api.EnumTo.Many",
+        "xapi.collect.api.EnumTo$Many", "xapi.collect.api.EnumTo.Many",
+
+        "AssignabilityMap", "xapi.collect.api.AssignabilityMap",
+        "xapi.collect.api.AssignabilityMap", "xapi.collect.api.AssignabilityMap"
+
+    );
+    StringTo<String> DEFAULT_LIST_TYPES = X_Collect.newStringMap(
+        "List", "java.util.List",
+        "java.util.List", "java.util.List",
+        "Set", "java.util.Set",
+        "java.util.Set", "java.util.Set",
+        "Queue", "java.util.Queue",
+        "java.util.Queue", "java.util.Queue",
+        "Dequeue", "java.util.Dequeue",
+        "java.util.Dequeue", "java.util.Dequeue",
+
+        "ArrayList", "java.util.ArrayList",
+        "java.util.ArrayList", "java.util.ArrayList",
+        "LinkedList", "java.util.LinkedList",
+        "java.util.LinkedList", "java.util.LinkedList",
+
+        "HashSet", "java.util.HashSet",
+        "java.util.HashSet", "java.util.HashSet",
+        "LinkedHashSet", "java.util.LinkedHashSet",
+        "java.util.LinkedHashSet", "java.util.LinkedHashSet",
+        "TreeSet", "java.util.TreeSet",
+        "java.util.TreeSet", "java.util.TreeSet",
+
+        "ConcurrentLinkedDeque", "java.util.concurrent.ConcurrentLinkedDequeue",
+        "java.util.concurrent.ConcurrentLinkedDeque", "java.util.concurrent.ConcurrentLinkedDequeue",
+
+        "ListLike", "xapi.fu.ListLike",
+        "xapi.fu.ListLike", "xapi.fu.ListLike",
+        "SetLike", "xapi.fu.SetLike",
+        "xapi.fu.SetLike", "xapi.fu.SetLike",
+
+        "Fifo", "xapi.collect.api.Fifo",
+        "xapi.collect.api.Fifo", "xapi.collect.api.Fifo",
+
+        "IntTo", "xapi.collect.api.IntTo",
+        "xapi.collect.api.IntTo", "xapi.collect.api.IntTo",
+        "IntTo.Many", "xapi.collect.api.IntTo.Many",
+        "xapi.collect.api.IntTo.Many", "xapi.collect.api.IntTo.Many",
+        "IntTo$Many", "xapi.collect.api.IntTo.Many",
+        "xapi.collect.api.IntTo$Many", "xapi.collect.api.IntTo.Many",
+
+        "SimpleFifo", "xapi.collect.impl.SimpleFifo",
+        "xapi.collect.impl.SimpleFifo", "xapi.collect.impl.SimpleFifo",
+        "SimpleLinkedList", "xapi.collect.impl.SimpleLinkedList",
+        "xapi.collect.impl.SimpleLinkedList", "xapi.collect.impl.SimpleLinkedList"
+    );
+
+    StringTo<String> DEFAULT_ITERATING_TYPES = X_Collect.newStringMap(
+        "Iterator", "java.util.Iterator",
+        "java.util.Iterator", "java.util.Iterator",
+
+        "MappedIterable", "xapi.fu.iterate.MappedIterable",
+        "xapi.fu.iterate.MappedIterable", "xapi.fu.iterate.MappedIterable",
+        "Chain", "xapi.fu.iterate.Chain",
+        "xapi.fu.iterate.Chain", "xapi.fu.iterate.Chain",
+        "ChainBuilder", "xapi.fu.iterate.ChainBuilder",
+        "xapi.fu.iterate.ChainBuilder", "xapi.fu.iterate.ChainBuilder",
+        "ArrayIterable", "xapi.fu.iterate.ArrayIterable",
+        "xapi.fu.iterate.ArrayIterable", "xapi.fu.iterate.ArrayIterable",
+        "CachingIterator", "xapi.fu.iterate.CachingIterator",
+        "xapi.fu.iterate.CachingIterator", "xapi.fu.iterate.CachingIterator"
+    );
+
+    default MappedIterable<String> allMapTypes() {
+        return DEFAULT_MAP_TYPES.mappedKeys();
+    }
+
+    default MappedIterable<String> allListTypes() {
+        return DEFAULT_LIST_TYPES.mappedKeys();
     }
 }

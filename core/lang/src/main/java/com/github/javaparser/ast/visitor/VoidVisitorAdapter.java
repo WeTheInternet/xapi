@@ -836,7 +836,7 @@ public abstract class VoidVisitorAdapter<A> implements VoidVisitor<A> {
 
 	@Override
 	public void visit(UiBodyExpr n, A arg) {
-		for (UiExpr uiExpr : n.getChildren()) {
+		for (Expression uiExpr : n.getChildren()) {
 			uiExpr.accept(this, arg);
 		}
 
@@ -908,4 +908,5 @@ public abstract class VoidVisitorAdapter<A> implements VoidVisitor<A> {
 		);
 
 	}
+
 }
