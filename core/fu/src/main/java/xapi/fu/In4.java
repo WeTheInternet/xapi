@@ -35,20 +35,20 @@ public interface In4<I1, I2, I3, I4> extends HasInput, Rethrowable, Lambda {
     return  (i2, i3, i4, i1) -> in(i1, i2, i3, i4);
   }
 
-  default In3<I2, I3, I4> provide1(Out1<I1> and){
-    return (i2, i3, i4) -> in(and.out1(), i2, i3, i4);
+  default In3<I2, I3, I4> provide1(I1 and){
+    return (i2, i3, i4) -> in(and, i2, i3, i4);
   }
 
-  default In3<I1, I3, I4> provide2(Out1<I2> and){
-    return (i1, i3, i4) -> in(i1, and.out1(), i3, i4);
+  default In3<I1, I3, I4> provide2(I2 and){
+    return (i1, i3, i4) -> in(i1, and, i3, i4);
   }
 
-  default In3<I1, I2, I4> provide3(Out1<I3> and){
-    return (i1, i2, i4) -> in(i1, i2, and.out1(), i4);
+  default In3<I1, I2, I4> provide3(I3 and){
+    return (i1, i2, i4) -> in(i1, i2, and, i4);
   }
 
-  default In3<I1, I2, I3> provide4(Out1<I4> and){
-    return (i1, i2, i3) -> in(i1, i2, i3, and.out1());
+  default In3<I1, I2, I3> provide4(I4 and){
+    return (i1, i2, i3) -> in(i1, i2, i3, and);
   }
 
   static <I1, I2, I3, I4> In4<I1, I2, I3, I4> in4(In4<I1, I2, I3, I4> of) {

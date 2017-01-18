@@ -92,6 +92,6 @@ public @interface XApi {
    */
   boolean finalBuild() default false;
 
-  String[] templates() default {};
+  String[] value() default {};
 
 }

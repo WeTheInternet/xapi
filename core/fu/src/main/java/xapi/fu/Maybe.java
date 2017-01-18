@@ -76,15 +76,22 @@ public interface Maybe <V> extends Rethrowable {
         };
     }
 
-    default <O> Maybe<O> mapIfNotNull(In1Out1<V, O> mapper, In1Out1<V, Throwable> factory) {
+    default <O> Maybe<O> mapIfAbsent(In1Out1<V, O> mapper, Out1<Throwable> factory) {
         return ()-> {
             V out = get();
             if (out == null) {
-                final Throwable throwable = factory.io(get());
+                final Throwable throwable = factory.out1();
+                if (throwable == null) {
+                    return null;
+                }
                 throw rethrow(throwable);
             }
             return mapper.io(out);
         };
+    }
+
+    default <O> Maybe<O> mapIfAbsent(In1Out1<V, O> mapper) {
+        return mapIfAbsent(mapper, Out1.null1());
     }
 
     default Optional<V> optional() {
@@ -98,17 +105,43 @@ public interface Maybe <V> extends Rethrowable {
         return NULL;
     }
 
-    default V getIfNull(V val) {
+    default Maybe<V> readIfPresent(In1<V> val) {
+        if (isPresent()) {
+            val.in(get());
+        }
+        return this;
+    }
+
+    default Maybe<V> readIfAbsent(In1<V> val) {
+        if (isPresent()) {
+            val.in(get());
+        }
+        return this;
+    }
+    default <I1, I2> V ifAbsentSupply(In2Out1<I1, I2, V> val, I1 i1, I2 i2) {
+        if (isPresent()) {
+            return get();
+        }
+        return val.io(i1, i2);
+    }
+
+    default <I1, I2> V ifAbsentSupply(In1Out1<I1, V> val, I1 i1) {
+        if (isPresent()) {
+            return get();
+        }
+        return val.io(i1);
+    }
+    default V ifAbsentSupply(Out1<V> val) {
+        if (isPresent()) {
+            return get();
+        }
+        return val.out1();
+    }
+    default V ifAbsentReturn(V val) {
         if (isPresent()) {
             return get();
         }
         return val;
     }
 
-    default V useIfNull(Out1<V> val) {
-        if (isPresent()) {
-            return get();
-        }
-        return val.out1();
-    }
 }

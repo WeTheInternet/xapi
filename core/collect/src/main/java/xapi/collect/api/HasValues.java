@@ -7,7 +7,7 @@ import xapi.fu.has.HasSize;
 
 import java.util.Map.Entry;
 
-public interface HasValues<K,V> extends EntryIterable<K,V>, HasSize {
+public interface HasValues<K,V> extends EntryIterable<K,V>, HasSize, HasEmptiness {
 
   // We don't implement typed getters / setters or removers,
   // Because some implementers of this interface are javascript objects,
@@ -15,8 +15,6 @@ public interface HasValues<K,V> extends EntryIterable<K,V>, HasSize {
   // Setting K to String will result in a Ljava/lang/Object; in the interface,
   // and Ljava/lang/String; in the implemented method.
   // (TODO: force compile time actors to do assignability matching?).
-
-  boolean isEmpty();
 
   void clear();
 

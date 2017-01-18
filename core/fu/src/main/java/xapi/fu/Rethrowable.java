@@ -31,6 +31,9 @@ public interface Rethrowable {
     }
     return rethrow(e);
   }
+  default <T> T sneakyThrow(Throwable e) {
+    throw rethrow(e);
+  }
   default RuntimeException rethrow(Throwable e) {
     if (this instanceof Debuggable) {
       ((Debuggable)this).viewException(this, e);

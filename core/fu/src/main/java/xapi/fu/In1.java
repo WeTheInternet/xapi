@@ -220,4 +220,11 @@ public interface In1<I> extends HasInput, Rethrowable, Lambda {
       was.in(i);
     };
   }
+
+    default In1Out1<I, I> returnArg() {
+      return i->{
+        in(i);
+        return i;
+      };
+    }
 }

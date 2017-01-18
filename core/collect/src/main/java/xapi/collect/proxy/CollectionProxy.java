@@ -1,6 +1,7 @@
 package xapi.collect.proxy;
 
 import xapi.collect.api.CollectionOptions;
+import xapi.collect.api.HasEmptiness;
 import xapi.collect.api.ObjectTo;
 import xapi.collect.impl.SimpleStack;
 import xapi.fu.In1;
@@ -14,7 +15,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
 
-public interface CollectionProxy <K, V>
+public interface CollectionProxy <K, V> extends HasEmptiness
 {
 
   ObjectTo<K, V> clone(CollectionOptions options);
@@ -36,12 +37,6 @@ public interface CollectionProxy <K, V>
   Collection<V> toCollection(Collection<V> into);
 
   Map<K, V> toMap(Map<K, V> into);
-
-  boolean isEmpty();
-
-  default boolean isNotEmpty() {
-    return !isEmpty();
-  }
 
   void clear();
 

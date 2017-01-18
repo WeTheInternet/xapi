@@ -79,12 +79,8 @@ public interface Out1<O> extends Rethrowable, Lambda, HasMutability {
     return mapper.supply(input);
   }
 
-  static <I, O> Out1<O> out1Immediate(In1Out1<I, O> mapper, Out1<I> input) {
-    I value = input.out1();
-    return ()->mapper.io(value);
-  }
 
-  static <I, O> Out1<O> out1Deferred(In1Out1<I, O> mapper, Out1<I> input) {
+  static <I, O> Out1<O> out1DeferBoth(In1Out1<I, O> mapper, Out1<I> input) {
     return ()->mapper.io(input.out1());
   }
 

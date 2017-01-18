@@ -2,6 +2,7 @@ package xapi.fu;
 
 import xapi.fu.Filter.Filter1;
 import xapi.fu.iterate.ArrayIterable;
+import xapi.fu.iterate.CachingIterator;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
 import xapi.fu.iterate.EmptyIterator;
@@ -16,6 +17,10 @@ public interface MappedIterable<T> extends Iterable<T> {
 
     default <To> MappedIterable<To> map(In1Out1<T, To> mapper) {
         return mapIterable(this, mapper);
+    }
+
+    default MappedIterable<T> spy(In1<T> mapper) {
+        return mapIterable(this, mapper.returnArg());
     }
 
     default ChainBuilder<T> copy() {
@@ -79,6 +84,19 @@ public interface MappedIterable<T> extends Iterable<T> {
         return ()->new MappedIterator<>(from.iterator(), mapper);
     }
 
+    default boolean hasMatch(Filter1<T> filter) {
+        return firstMatch(filter).isPresent();
+    }
+
+    default Maybe<T> firstMatch(Filter1<T> filter) {
+        for (T t:this) {
+            if (filter.filter1(t)) {
+                return Maybe.immutable(t);
+            }
+        }
+        return Maybe.not();
+    }
+
     default MappedIterable<T> filter(Filter1<T> filter) {
         return ()->new Iterator<T>() {
             Iterator<T> iter = iterator();
@@ -117,6 +135,13 @@ public interface MappedIterable<T> extends Iterable<T> {
     default T reduce(In2Out1<T, T, T> reducer, T seed) {
         for (T t : this) {
             seed = reducer.io(seed, t);
+        }
+        return seed;
+    }
+
+    default <O> O reduceInstances(In2Out1<T, O, O> reducer, O seed) {
+        for (T t : this) {
+            seed = reducer.io(t, seed);
         }
         return seed;
     }
@@ -189,8 +214,42 @@ public interface MappedIterable<T> extends Iterable<T> {
         return X_Fu.iterEqual(this.map(mapper), MappedIterable.mapped(other).map(mapper));
     }
 
+    default boolean anyMatch(Filter1<T> filter) {
+        final Iterator<T> itr = iterator();
+        while (itr.hasNext()) {
+            if (filter.filter1(itr.next())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    default boolean noneMatch(Filter1<T> filter) {
+        final Iterator<T> itr = iterator();
+        while (itr.hasNext()) {
+            if (filter.filter1(itr.next())) {
+                return false;
+            }
+        }
+        return true;
+    }
     default MappedIterable<T> forAll(In1<T> consumer) {
         forEach(consumer.toConsumer());
+        return this;
+    }
+
+    default <S> MappedIterable<T> forAll(In2<T, S> consumer, S constant) {
+        forEach(consumer.provide2(constant).toConsumer());
+        return this;
+    }
+
+    default <S1, S2> MappedIterable<T> forAll(In3<T, S1, S2> consumer, S1 const1, S2 const2) {
+        forEach(consumer.provide2(const1).provide2(const2).toConsumer());
+        return this;
+    }
+
+    default <S1, S2, S3> MappedIterable<T> forAll(In4<T, S1, S2, S3> consumer, S1 const1, S2 const2, S3 const3) {
+        forEach(consumer.provide2(const1).provide2(const2).provide2(const3).toConsumer());
         return this;
     }
 
@@ -203,5 +262,28 @@ public interface MappedIterable<T> extends Iterable<T> {
 
     default <O> MappedIterable<O> ifNotEmpty(In1Out1<T, O> mapper) {
         return map(i->i==null?null:mapper.io(i));
+    }
+
+    /**
+     * @return An iterable which caches as it goes, but does not read all items immediately.
+     *
+     * Good for situations when you want to create things lazily.
+     */
+    default MappedIterable<T> caching() {
+        return CachingIterator.cachingIterable(iterator());
+    }
+
+    /**
+     * @return A complete copy of this iterable (performs a full iteration to prime cache).
+     *
+     * Good for situations when you want to capture then clear something stateful,
+     * (you want to read the full payload of a list, so you do not see concurrent mutations).
+     *
+     */
+    default MappedIterable<T> cached() {
+        final MappedIterable<T> itr = CachingIterator.cachingIterable(iterator());
+        // Read the backing iterable into our cache.
+        itr.forAll(In1.ignored());
+        return itr;
     }
 }

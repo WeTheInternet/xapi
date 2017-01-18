@@ -2,6 +2,7 @@ package xapi.fu;
 
 import xapi.fu.Filter.Filter1;
 import xapi.fu.Filter.Filter2;
+import xapi.fu.Out1.Out1Unsafe;
 import xapi.fu.has.HasItems;
 import xapi.fu.has.HasSize;
 
@@ -57,12 +58,7 @@ public interface MapLike<K, V> extends HasSize, HasItems<Out2<K, V>> {
   }
 
   default MappedIterable<Out2<K, V>> all() {
-    return MappedIterable.mapIterable(keys(), new In1Out1<K, Out2<K, V>>() {
-      @Override
-      public Out2<K, V> io(K in) {
-        return Out2.out2Immutable(in, get(in));
-      }
-    });
+    return MappedIterable.mapIterable(keys(), in-> Out2.out2Immutable(in, get(in)));
   }
 
   default V getOrCreate(K key, In1Out1<K, V> ifNull) {
@@ -74,7 +70,7 @@ public interface MapLike<K, V> extends HasSize, HasItems<Out2<K, V>> {
     return is;
   }
 
-  default V getOrReturn(K key, Out1<V> ifNull) {
+  default V getOrReturn(K key, Out1Unsafe<V> ifNull) {
     V is = get(key);
     if (is == null) {
       return ifNull.out1();
@@ -246,6 +242,15 @@ public interface MapLike<K, V> extends HasSize, HasItems<Out2<K, V>> {
   default V compute(K key, In2Out1<K, V, V> io) {
     V existing = get(key);
     final V computed = io.io(key, existing);
+    if (computed != existing) {
+      put(key, computed);
+    }
+    return computed;
+  }
+
+  default V computeValue(K key, In1Out1<V, V> io) {
+    V existing = get(key);
+    final V computed = io.io(existing);
     if (computed != existing) {
       put(key, computed);
     }

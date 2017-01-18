@@ -21,6 +21,11 @@ public class ChainBuilder<T> implements HasSize, MappedIterable<T> {
     this.head = tail = prev = head;
   }
 
+  public T addReturnValue(T value) {
+    add(value);
+    return value;
+  }
+
   public ChainBuilder<T> add(T value) {
     size++;
     prev = tail;

@@ -229,6 +229,26 @@ public class X_Collect {
     return newStringMap(Object.class);
   }
 
+  public static StringTo<String> newStringMap(String key, String value, String ... more) {
+    final StringTo<String> map = newStringMap(String.class);
+    if (key != null) {
+      map.put(key, value);
+    }
+    if (more != null) {
+      String isKey = null;
+      for (String next : more) {
+        if (isKey == null) {
+          isKey = next;
+        } else {
+          map.put(isKey, next);
+          isKey = null;
+        }
+      }
+      assert isKey == null : "Leftover key: " + isKey + " from " + ArrayIterable.iterate(more);
+    }
+    return map;
+  }
+
   public static <V, Generic extends V> StringTo<V> newStringMapInsertionOrdered(final Class<Generic> valueCls) {
     return service.newStringMap(valueCls, MUTABLE_INSERTION_ORDERED);
   }

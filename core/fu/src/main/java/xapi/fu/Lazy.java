@@ -227,8 +227,13 @@ public class Lazy <T> implements Out1<T>, IsLazy {
     return new Lazy<>(factory);
   }
 
-  public static <I1, I2, T> Lazy<T> deferBoth(In2Out1<I1, I2, T> supplier, Out1<I1> o1, Out1<I2> o2) {
+  public static <I1, I2, T> Lazy<T> deferAll(In2Out1<I1, I2, T> supplier, Out1<I1> o1, Out1<I2> o2) {
     final Out1<T> factory = ()->supplier.io(o1.out1(), o2.out1());
+    return new Lazy<>(factory);
+  }
+
+  public static <I1, I2, I3, T> Lazy<T> deferAll(In3Out1<I1, I2, I3, T> supplier, Out1<I1> o1, Out1<I2> o2, Out1<I3> o3) {
+    final Out1<T> factory = ()->supplier.io(o1.out1(), o2.out1(), o3.out1());
     return new Lazy<>(factory);
   }
 
@@ -237,12 +242,17 @@ public class Lazy <T> implements Out1<T>, IsLazy {
     return new Lazy<>(factory);
   }
 
+  public static <I1, I2, I3, T> Lazy<T> deferSupplier(In3Out1<I1, I2, I3, T> supplier, I1 o1, I2 o2, I3 o3) {
+    final Out1<T> factory = ()->supplier.io(o1, o2, o3);
+    return new Lazy<>(factory);
+  }
+
   public static <I, T> Lazy<T> deferSupplierUnsafe(In1Out1Unsafe<I, T> supplier, Out1Unsafe<I> value) {
     final Out1<T> factory = ()->supplier.io(value.out1());
     return new Lazy<>(factory);
   }
 
-  public static <I, T> Lazy<T> deferSupplierImmediateValue(In1Out1<I, T> supplier, Out1<I> value) {
+  public static <I, T> Lazy<T> deferSupplierImmediateValueUnsafe(In1Out1<I, T> supplier, Out1<I> value) {
     final I whenCreated = value.out1();
     final Out1<T> factory = ()->supplier.io(whenCreated);
     return new Lazy<>(factory);

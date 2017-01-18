@@ -359,5 +359,9 @@ public interface X_Fu {
   static int plusOne(int val) {
     return val+1;
   }
+
+  static Integer nullSafeIncrement(Integer in) {
+    return in == null ? 0 : in + 1;
+  }
 }
 

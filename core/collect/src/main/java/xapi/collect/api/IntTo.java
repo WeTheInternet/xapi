@@ -160,6 +160,9 @@ extends CollectionProxy<Integer,T>, HasItems<T>
     return matched;
   }
 
+  default boolean hasMatch(In1Out1<T, Boolean> matcher) {
+    return firstMatch(matcher, In1.ignored());
+  }
   default boolean firstMatch(In1Out1<T, Boolean> matcher, In1<T> callback) {
     for (T t : forEach()) {
       if (matcher.io(t)) {

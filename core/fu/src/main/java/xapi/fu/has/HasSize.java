@@ -1,8 +1,5 @@
 package xapi.fu.has;
 
-import xapi.fu.iterate.Chain;
-import xapi.fu.iterate.ChainBuilder;
-
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 11/4/16.
  */
@@ -10,6 +7,7 @@ public interface HasSize {
 
     int size();
 
+/*
     default ChainBuilder<Integer> toEndFrom0() {
         return toEndFromN(0);
     }
@@ -53,5 +51,6 @@ public interface HasSize {
         }
         return chain;
     }
+*/
 
 }
