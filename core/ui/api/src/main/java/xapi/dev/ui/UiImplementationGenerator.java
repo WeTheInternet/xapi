@@ -4,6 +4,7 @@ import com.github.javaparser.ast.expr.UiContainerExpr;
 import xapi.dev.ui.ContainerMetadata.MetadataRoot;
 import xapi.dev.ui.GeneratedUiComponent.GeneratedUiImplementation;
 import xapi.dev.ui.InterestingNodeFinder.InterestingNodeResults;
+import xapi.dev.ui.UiComponentGenerator.UiGenerateMode;
 
 /**
  * Instances of a {@link UiImplementationGenerator} are responsible
@@ -22,7 +23,11 @@ public interface UiImplementationGenerator {
 
     UiGeneratorTools getTools();
 
-    GeneratedUiImplementation generateComponent(ContainerMetadata metadata, ComponentBuffer buffer);
+    GeneratedUiImplementation generateComponent(
+        ContainerMetadata metadata,
+        ComponentBuffer buffer,
+        UiGenerateMode mode
+    );
 
     default ContainerMetadata createMetadata(MetadataRoot root, UiContainerExpr n) {
         return getTools().createMetadata(root, n);
@@ -35,4 +40,6 @@ public interface UiImplementationGenerator {
     void spyOnNewComponent(ComponentBuffer component);
 
     GeneratedUiImplementation getImpl(GeneratedUiComponent component);
+
+    UiGenerateMode getMode(ComponentBuffer component, ContainerMetadata metadata);
 }

@@ -5,6 +5,7 @@ import com.github.javaparser.ast.expr.UiContainerExpr;
 import xapi.dev.gen.SourceHelper;
 import xapi.dev.ui.ContainerMetadata.MetadataRoot;
 import xapi.fu.Do;
+import xapi.fu.In1Out1;
 import xapi.fu.MappedIterable;
 import xapi.source.read.JavaModel.IsQualified;
 
@@ -39,6 +40,8 @@ public interface UiGeneratorService <Raw> {
     MappedIterable<GeneratedUiComponent> allComponents();
 
     MappedIterable<GeneratedUiComponent> generateComponents(SourceHelper<Raw> sources,
-                                                            IsQualified type,
+                                                            In1Out1<UiContainerExpr, IsQualified> type,
                                                             UiContainerExpr ... parsed);
+
+    ComponentBuffer getBuffer(String name);
 }

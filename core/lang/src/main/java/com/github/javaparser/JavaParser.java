@@ -35,6 +35,7 @@ import com.github.javaparser.ast.expr.JsonContainerExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.Statement;
+import com.github.javaparser.ast.type.Type;
 import xapi.fu.In1Out1.In1Out1Unsafe;
 
 import java.io.File;
@@ -270,6 +271,14 @@ public final class JavaParser {
             throws ParseException {
         StringReader sr = new StringReader(blockStatement);
         BlockStmt result = new ASTParser(sr).Block();
+        sr.close();
+        return result;
+    }
+
+    public static Type parseType(final String type)
+            throws ParseException {
+        StringReader sr = new StringReader(type);
+        Type result = new ASTParser(sr).Type();
         sr.close();
         return result;
     }

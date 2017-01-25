@@ -17,7 +17,8 @@ public class JavaFxBoxComponentGenerator extends UiComponentGenerator {
 
   @Override
   public UiVisitScope startVisit(
-      UiGeneratorTools service, ComponentBuffer source, ContainerMetadata me, UiContainerExpr n
+      UiGeneratorTools service, ComponentBuffer source, ContainerMetadata me, UiContainerExpr n,
+      UiGenerateMode mode
   ) {
 
     String parentName = me.peekPanelName();
@@ -33,7 +34,7 @@ public class JavaFxBoxComponentGenerator extends UiComponentGenerator {
     mb.println(parentName + ".getChildren().add(" + ref + ");");
     me.pushPanelName(ref);
     me.saveMethod(ref, mb);
-    return super.startVisit(service, source, me, n);
+    return super.startVisit(service, source, me, n, mode);
   }
 
   @Override

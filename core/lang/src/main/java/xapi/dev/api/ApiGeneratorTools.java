@@ -735,6 +735,11 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
                 resolved.accept(nameVisitor, c);
                 return resolved;
             }, ctx);
+        } else if (valueExpr instanceof NameExpr) {
+            String key = ((NameExpr)valueExpr).getName();
+            if (ctx.hasNode(key)) {
+                return (Expression) ctx.getNode(key);
+            }
         }
         return valueExpr;
     }

@@ -1,16 +1,11 @@
 package xapi.dev.ui;
 
-import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.StringLiteralExpr;
-import com.github.javaparser.ast.expr.TemplateLiteralExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import com.github.javaparser.ast.plugin.Transformer;
 import xapi.dev.source.DomBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.fu.Lazy;
 import xapi.fu.Out1;
-
-import static xapi.reflect.X_Reflect.className;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +15,11 @@ import java.util.List;
  *         Created on 5/3/16.
  */
 public class UiComponentGenerator {
+
+  public enum UiGenerateMode {
+    TAG_DEFINITION, UI_BUILDING, MODEL_BUILDING;
+    public static final UiGenerateMode DEFAULT = UI_BUILDING;
+  }
 
   protected Lazy<DomBuffer> shadowDomBuffer;
   protected Lazy<SourceBuilder<ContainerMetadata>> classBuffer;
@@ -41,16 +41,6 @@ public class UiComponentGenerator {
 
   protected Transformer createTransformer() {
     return new Transformer();
-  }
-
-  public String convertToSource(Expression value) {
-    if (value instanceof StringLiteralExpr) {
-      return ((StringLiteralExpr)value).getValue();
-    } else if (value instanceof TemplateLiteralExpr) {
-      return ((TemplateLiteralExpr)value).getValueWithoutTicks();
-    } else {
-      throw new IllegalArgumentException("Cannot convert " + className(value) +" into source: " + value);
-    }
   }
 
   public DomBuffer dom() {
@@ -84,7 +74,8 @@ public class UiComponentGenerator {
       UiGeneratorTools tools,
       ComponentBuffer source,
       ContainerMetadata me,
-      UiContainerExpr n
+      UiContainerExpr n,
+      UiGenerateMode mode
   ) {
     return UiVisitScope.CONTAINER_VISIT_CHILDREN;
   }

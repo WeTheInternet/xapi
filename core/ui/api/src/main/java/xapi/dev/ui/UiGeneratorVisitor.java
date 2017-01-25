@@ -4,6 +4,7 @@ import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiBodyExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
+import xapi.dev.ui.UiComponentGenerator.UiGenerateMode;
 import xapi.dev.ui.UiVisitScope.ScopeType;
 import xapi.fu.In1Out1;
 import xapi.fu.Lazy;
@@ -24,23 +25,27 @@ public class UiGeneratorVisitor extends VoidVisitorAdapter<UiGeneratorTools> {
     ContainerMetadata parent;
     private UiComponentGenerator generator;
     private UiFeatureGenerator feature;
+    private UiGenerateMode mode;
 
     public UiGeneratorVisitor(ScopeHandler onScope, ComponentBuffer source) {
         this.onScope = onScope;
         root = Lazy.deferred1(this.createRoot());
         this.source = source;
+        mode = UiGenerateMode.DEFAULT;
     }
 
     public UiGeneratorVisitor(ScopeHandler onScope, Out1<ContainerMetadata> metadata, ComponentBuffer source) {
         this.onScope = onScope;
         root = Lazy.deferred1(metadata);
         this.source = source;
+        mode = UiGenerateMode.DEFAULT;
     }
 
     public UiGeneratorVisitor(ScopeHandler onScope, ContainerMetadata metadata, ComponentBuffer source) {
         this.onScope = onScope;
         root = Lazy.immutable1(metadata);
         this.source = source;
+        mode = UiGenerateMode.DEFAULT;
     }
 
     protected Out1<ContainerMetadata> createRoot() {
@@ -67,7 +72,7 @@ public class UiGeneratorVisitor extends VoidVisitorAdapter<UiGeneratorTools> {
         try {
             final UiComponentGenerator myGenerator = generator = service.getComponentGenerator(n, me);
             if (myGenerator != null) {
-                final UiVisitScope scope = generator.startVisit(service, source, me, n);
+                final UiVisitScope scope = generator.startVisit(service, source, me, n, getMode());
                 assert scope.getType() == ScopeType.CONTAINER : "Expected container scope " + scope;
                 final RemovalHandler undo = onScope.io(scope);
                 if (scope.isVisitChildren()) {
@@ -191,5 +196,13 @@ public class UiGeneratorVisitor extends VoidVisitorAdapter<UiGeneratorTools> {
             parent = root.out1();
         }
         return parent;
+    }
+
+    public UiGenerateMode getMode() {
+        return mode == null ? UiGenerateMode.DEFAULT : mode;
+    }
+
+    public void setMode(UiGenerateMode mode) {
+        this.mode = mode;
     }
 }

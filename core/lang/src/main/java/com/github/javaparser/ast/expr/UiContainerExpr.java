@@ -139,4 +139,15 @@ public class UiContainerExpr extends UiExpr {
   public boolean shouldRenderClose() {
     return alwaysRenderClose;
   }
+
+  public UiContainerExpr getContainerParentNode() {
+    Node next = this.getParentNode();
+    while (next != null) {
+      if (next instanceof UiContainerExpr) {
+        return (UiContainerExpr) next;
+      }
+      next = next.getParentNode();
+    }
+    return null;
+  }
 }

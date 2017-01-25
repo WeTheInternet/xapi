@@ -5,13 +5,11 @@ import com.github.javaparser.ast.expr.UiContainerExpr;
 import xapi.annotation.inject.InstanceDefault;
 import xapi.dev.api.ApiGeneratorContext;
 
-import javax.lang.model.element.Element;
-
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 6/26/16.
  */
 @InstanceDefault(implFor = UiGeneratorService.class)
-public class UiGeneratorServiceDefault <Ctx extends ApiGeneratorContext<Ctx>> extends AbstractUiGeneratorService<Element, Ctx> {
+public class UiGeneratorServiceDefault <Raw, Ctx extends ApiGeneratorContext<Ctx>> extends AbstractUiGeneratorService<Raw, Ctx> {
 
     public UiGeneratorServiceDefault() {
         resetFactories();

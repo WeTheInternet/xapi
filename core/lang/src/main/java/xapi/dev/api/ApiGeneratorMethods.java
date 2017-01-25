@@ -122,7 +122,8 @@ public interface ApiGeneratorMethods<Ctx extends ApiGeneratorContext<Ctx>> exten
             final TypeExpr superType = $type(tools, ctx, resolved);
             final String typeString = tools.resolveString(ctx, resolved, true);
             if (!typeString.isEmpty()) {
-                refs.add(new ReferenceType(superType.getType()));
+                final Type t = superType.getType();
+                refs.add(t instanceof ReferenceType ? (ReferenceType)t : new ReferenceType(t));
             }
         }
         if ("?".equals(named)) {
@@ -176,7 +177,11 @@ public interface ApiGeneratorMethods<Ctx extends ApiGeneratorContext<Ctx>> exten
                 return new TypeExpr(new PrimitiveType(primitive));
             } //:primitiveCheck
             final ClassOrInterfaceType rawType = new ClassOrInterfaceType(named);
-            rawType.setTypeArguments(TypeArguments.withArguments(refs));
+            if (rawType.getTypeArguments() == null) {
+                rawType.setTypeArguments(TypeArguments.withArguments(refs));
+            } else if (!refs.isEmpty()){
+                rawType.getTypeArguments().getTypeArguments().addAll(refs);
+            }
             return new TypeExpr(rawType);
         }
     }

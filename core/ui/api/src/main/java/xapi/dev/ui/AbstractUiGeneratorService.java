@@ -10,6 +10,7 @@ import com.github.javaparser.ast.visitor.ConcreteModifierVisitor;
 import com.github.javaparser.ast.visitor.ModifierVisitorAdapter;
 import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
+import xapi.collect.api.StringTo;
 import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.gen.SourceHelper;
 import xapi.dev.source.SourceBuilder;
@@ -54,6 +55,7 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
     protected SourceHelper<Raw> service;
     protected final Lazy<Iterable<UiImplementationGenerator>> impls;
     protected final ChainBuilder<GeneratedUiComponent> seen;
+    protected final StringTo<ComponentBuffer> allComponents;
 
     protected static class GeneratorState {
 
@@ -71,6 +73,7 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
             CachingIterator.cachingIterable(getImplementations().iterator())
         );
         seen = Chain.startChain();
+        allComponents = X_Collect.newStringMap(ComponentBuffer.class);
         resetState();
     }
 
@@ -86,17 +89,29 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
         final ContainerMetadata metadata = createMetadata(root, container);
         final GeneratedUiComponent component = newComponent(pkgName, simpleName);
         final ComponentBuffer buffer = new ComponentBuffer(component, metadata);
+        final Ctx ctx = contextFor(type, container);
         root.setGeneratedComponent(component);
-        buffer.getRoot().setContext(contextFor(type, container));
+        buffer.getRoot().setContext(ctx);
         buffer.setElement(type);
         metadata.setControllerType(pkgName, simpleName);
         String generatedName = calculateGeneratedName(pkgName, simpleName, container);
         impls.out1().forEach(impl->impl.spyOnNewComponent(buffer));
+        allComponents.put(type.getQualifiedName(), buffer);
+        allComponents.put(type.getSimpleName(), buffer);
+
+        if (container.getName().equals("define-tag")) {
+            // TODO: handle define-tags by NOT storing the whole buffer.
+            // A Buffer is going to need to handle multiple tag definitions,
+            // and that work does not add enough value at this time to warrant attention.
+            String tagName = resolveString(ctx, container.getAttributeNotNull("tagName").getExpression());
+            allComponents.put(tagName, buffer);
+        }
         return buffer;
     }
 
-    protected ApiGeneratorContext<?> contextFor(IsQualified type, UiContainerExpr container) {
-        return new ApiGeneratorContext<>();
+    protected Ctx contextFor(IsQualified type, UiContainerExpr container) {
+        // If this fails, you need to override this method to return the context type you want to use.
+        return (Ctx) new ApiGeneratorContext();
     }
 
     @Override
@@ -392,10 +407,10 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
 
     protected ComponentBuffer createImplementation(ComponentBuffer component, Iterable<UiImplementationGenerator> impls) {
         // Generate a boilerplate interface that takes generics for all renderable nodes.
-        for (UiImplementationGenerator service : impls) {
-            final ContainerMetadata metadata = component.getImplementation(service.getClass());
-            service.setGenerator(this);
-            service.generateComponent(metadata, component);
+        for (UiImplementationGenerator impl : impls) {
+            final ContainerMetadata metadata = component.getImplementation(impl.getClass());
+            impl.setGenerator(this);
+            impl.generateComponent(metadata, component, impl.getMode(component, metadata));
         }
         onFinish(()->
             component.getGeneratedComponent().saveSource(tools(), getGenerator())
@@ -548,8 +563,13 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
     }
 
     @Override
+    public ComponentBuffer getBuffer(String name) {
+        return allComponents.get(name);
+    }
+
+    @Override
     public MappedIterable<GeneratedUiComponent> generateComponents(
-        SourceHelper<Raw> sources, IsQualified type, UiContainerExpr ... parsed
+        SourceHelper<Raw> sources, In1Out1<UiContainerExpr, IsQualified> type, UiContainerExpr ... parsed
     ) {
         PhaseMap<String> map = PhaseMap.withDefaults(new LinkedHashSet<>());
         final Iterator<PhaseNode<String>> phases = map.forEachNode().iterator();
@@ -558,7 +578,8 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
             Do>
             > components = ArrayIterable.iterate(parsed)
             .map(ui -> {
-                ComponentBuffer buffer = initialize(sources, type, ui);
+                final IsQualified myType = type.io(ui);
+                ComponentBuffer buffer = initialize(sources, myType, ui);
                 Do onStart = pauseState();
                 return Out2.out2Immutable(new Mutable<>(buffer), onStart);
             })

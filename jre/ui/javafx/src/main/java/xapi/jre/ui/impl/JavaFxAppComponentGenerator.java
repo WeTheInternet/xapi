@@ -26,7 +26,8 @@ public class JavaFxAppComponentGenerator extends UiComponentGenerator {
 
   @Override
   public UiVisitScope startVisit(
-      UiGeneratorTools service, ComponentBuffer source, ContainerMetadata me, UiContainerExpr n
+      UiGeneratorTools service, ComponentBuffer source, ContainerMetadata me, UiContainerExpr n,
+      UiGenerateMode mode
   ) {
 
     SourceBuilder<?> out = me.getSourceBuilder();
@@ -55,7 +56,7 @@ public class JavaFxAppComponentGenerator extends UiComponentGenerator {
     me.saveMethod(varName, method);
     me.pushPanelName(varName);
 
-    return super.startVisit(service, source, me, n);
+    return super.startVisit(service, source, me, n, mode);
   }
 
   @Override

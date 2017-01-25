@@ -1,24 +1,38 @@
 package xapi.dev.ui;
 
 import com.github.javaparser.ast.expr.AnnotationExpr;
+import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.expr.TypeExpr;
+import com.github.javaparser.ast.expr.UiContainerExpr;
+import com.github.javaparser.ast.type.Type;
 import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
+import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.source.CanAddImports;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.FieldBuffer;
+import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
+import xapi.dev.ui.GeneratedUiComponent.GeneratedUiImplementation.RequiredMethodType;
 import xapi.fu.*;
+import xapi.fu.iterate.CachingIterator;
 import xapi.model.api.Model;
+import xapi.reflect.X_Reflect;
 import xapi.source.read.JavaModel.IsTypeDefinition;
 import xapi.ui.api.NodeBuilder;
 import xapi.util.X_String;
 
 import static xapi.fu.Lazy.deferAll;
 import static xapi.fu.Lazy.deferSupplier;
+import static xapi.fu.Out2.out2Immutable;
 
 import java.io.Serializable;
+import java.lang.reflect.Modifier;
+import java.util.EnumMap;
+import java.util.Map.Entry;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 1/6/17.
@@ -28,9 +42,9 @@ public class GeneratedUiComponent {
     public static class GeneratedUiMember implements Serializable {
         private String memberName;
         private final IntTo<AnnotationExpr> annotations;
-        private String memberType;
+        private Type memberType;
 
-        public GeneratedUiMember(String memberType, String memberName) {
+        public GeneratedUiMember(Type memberType, String memberName) {
             annotations = X_Collect.newList(AnnotationExpr.class);
             this.memberType = memberType;
             this.memberName = memberName;
@@ -44,11 +58,11 @@ public class GeneratedUiComponent {
             this.memberName = memberName;
         }
 
-        public String getMemberType() {
+        public Type getMemberType() {
             return memberType;
         }
 
-        public void setMemberType(String memberType) {
+        public void setMemberType(Type memberType) {
             this.memberType = memberType;
         }
 
@@ -64,14 +78,56 @@ public class GeneratedUiComponent {
     }
     public static class GeneratedUiField extends GeneratedUiMember {
 
-        public GeneratedUiField(String memberType, String memberName) {
+        public GeneratedUiField(Type memberType, String memberName) {
             super(memberType, memberName);
         }
     }
     public static class GeneratedUiMethod extends GeneratedUiMember {
 
-        public GeneratedUiMethod(String memberType, String memberName) {
+        private UiContainerExpr source;
+        private RequiredMethodType type;
+        private final StringTo<String> params;
+        private ApiGeneratorContext<?> context;
+
+        public GeneratedUiMethod(Type memberType, String memberName) {
             super(memberType, memberName);
+            params = X_Collect.newStringMapInsertionOrdered(String.class);
+        }
+
+        public void setSource(UiContainerExpr source) {
+            this.source = source;
+        }
+
+        public UiContainerExpr getSource() {
+            return source;
+        }
+
+        public void setType(RequiredMethodType type) {
+            this.type = type;
+        }
+
+        public RequiredMethodType getType() {
+            return type;
+        }
+
+        public void addParam(String type, String paramName) {
+            params.put(paramName, type);
+        }
+
+        public void setContext(ApiGeneratorContext<?> context) {
+            this.context = context;
+        }
+
+        public ApiGeneratorContext<?> getContext() {
+            return context;
+        }
+
+        public int getParamCount() {
+            return params.size();
+        }
+        public MappedIterable<Out2<String, String>> getParams() {
+            return params.forEachItem()
+                         .map(Out2::reverse);
         }
     }
 
@@ -81,6 +137,7 @@ public class GeneratedUiComponent {
         private final Lazy<StringTo<Integer>> methodNames;
         private final String packageName;
         private final String typeName;
+        protected final GeneratedJavaFile superType;
         protected String prefix, suffix;
         private ContainerMetadata metadata;
 
@@ -91,9 +148,13 @@ public class GeneratedUiComponent {
         }
 
         public GeneratedJavaFile(String pkg, String cls) {
+            this(null, pkg, cls);
+        }
+        public GeneratedJavaFile(GeneratedJavaFile superType, String pkg, String cls) {
             source = Lazy.deferred1(this::createSource);
             suffix = prefix = "";
             this.packageName = pkg;
+            this.superType = superType;
             this.typeName = cls;
             fieldNames = Lazy.deferred1(()->X_Collect.newStringMap(Integer.class));
             methodNames = Lazy.deferred1(()->X_Collect.newStringMap(Integer.class));
@@ -180,13 +241,35 @@ public class GeneratedUiComponent {
         public boolean isInterface() {
             return false;
         }
+
+        public void ensureField(String type, String name) {
+            GeneratedJavaFile check = this;
+            synchronized (fieldNames) {
+                while (check != null) {
+                    if (check.fieldNames.out1().containsKey(name)) {
+                        return;
+                    }
+                    check = check.superType;
+                }
+                fieldNames.out1().put(name, 0);
+
+                getSource().getClassBuffer()
+                    .createField(type, name, Modifier.PROTECTED)
+                    .createGetter(Modifier.PUBLIC)
+                    .createSetter(Modifier.PUBLIC);
+            }
+        }
     }
 
     public static class GeneratedUiModel extends GeneratedJavaFile {
         protected final StringTo<GeneratedUiField> fields;
 
         public GeneratedUiModel(String packageName, String className) {
-            super(packageName, className);
+            this(null, packageName, className);
+        }
+
+        public GeneratedUiModel(GeneratedJavaFile superType, String packageName, String className) {
+            super(superType, packageName, className);
             fields = X_Collect.newStringMap(GeneratedUiField.class);
         }
 
@@ -210,11 +293,12 @@ public class GeneratedUiComponent {
             return "Model" + className;
         }
 
-        public GeneratedUiField addField(UiGeneratorTools tools, String typeName, String fieldName, boolean immutable) {
-            final GeneratedUiField newField = new GeneratedUiField(typeName, fieldName);
+        public GeneratedUiField addField(UiGeneratorTools tools, Type type, String fieldName, boolean immutable) {
+            final GeneratedUiField newField = new GeneratedUiField(type, fieldName);
             fields.put(fieldName, newField);
 
             final ClassBuffer buf = getSource().getClassBuffer();
+            String typeName = tools.lookupType(type.toSource());
             if (typeName.contains(".")) {
                 typeName = buf.addImport(typeName);
             }
@@ -257,9 +341,12 @@ public class GeneratedUiComponent {
         private final StringTo<In2Out1<UiNamespace, CanAddImports, String>> generics;
         private final StringTo<In1<GeneratedUiImplementation>> abstractMethods;
 
-        @SuppressWarnings("unchecked")
         public GeneratedUiLayer(String pkg, String cls) {
-            super(pkg, cls);
+            this(null, pkg, cls);
+        }
+        @SuppressWarnings("unchecked")
+        public GeneratedUiLayer(GeneratedUiLayer superType, String pkg, String cls) {
+            super(superType, pkg, cls);
             generics = X_Collect.newStringMapInsertionOrdered(In2Out1.class);
             abstractMethods = X_Collect.newStringMap(In1.class);
         }
@@ -375,7 +462,7 @@ public class GeneratedUiComponent {
         private final String apiName;
 
         public GeneratedUiBase(GeneratedUiApi api) {
-            super(api.getPackageName(), api.getTypeName());
+            super(api, api.getPackageName(), api.getTypeName());
             this.apiName = api.getWrappedName();
         }
 
@@ -403,14 +490,21 @@ public class GeneratedUiComponent {
 
     public static class GeneratedUiImplementation extends GeneratedUiLayer {
 
+        public enum RequiredMethodType {
+            NEW_BUILDER, CREATE_FROM_MODEL, CREATE_FROM_STYLE, CREATE, CREATE_FROM_MODEL_AND_STYLE
+        }
+
         protected final String apiName;
         protected final String implName;
+        private final EnumMap<RequiredMethodType, Out2<GeneratedUiMethod, MethodCallExpr>> requiredMethods;
+
 
         public GeneratedUiImplementation(String pkg, GeneratedUiApi api, GeneratedUiBase base) {
-            super(pkg, api.getTypeName());
+            super(base, pkg, api.getTypeName());
             apiName = api.getWrappedName();
             implName = base.getWrappedName();
             setSuffix("Component");
+            requiredMethods = new EnumMap<>(RequiredMethodType.class);
         }
 
         @Override
@@ -422,8 +516,97 @@ public class GeneratedUiComponent {
 
         public void commitOutput(UiGeneratorService<?> gen) {
             if (shouldSaveType()) {
+                while (!requiredMethods.isEmpty()) {
+                    Iterable<Entry<RequiredMethodType, Out2<GeneratedUiMethod, MethodCallExpr>>> itr = requiredMethods.entrySet();
+                    final MappedIterable<Out3<RequiredMethodType, GeneratedUiMethod, MethodCallExpr>> todo = CachingIterator.cachingIterable(
+                        itr.iterator())
+                        .map(e -> Out3.out3(e.getKey(), e.getValue().out1(), e.getValue().out2()))
+                        .cached();
+                    requiredMethods.clear();
+                    todo.forEach(e->
+                        addRequiredMethod(gen, e.out1(), e.out2(), e.out3())
+                    );
+                }
                 gen.overwriteSource(getPackageName(), getWrappedName(), getSource().toSource(), null);
             }
+        }
+
+        @SuppressWarnings("unchecked")
+        protected void addRequiredMethod(
+            UiGeneratorService<?> gen,
+            RequiredMethodType key,
+            GeneratedUiMethod method,
+            MethodCallExpr call
+        ) {
+            final ClassBuffer buf = getSource().getClassBuffer();
+            StringBuilder methodDef = new StringBuilder("public ");
+            GeneratedUiComponent source = call.getExtra(UiConstants.EXTRA_SOURCE_COMPONENT);
+            assert source != null : "A requiredMethod's MethodCallExpr argument must have UiConstants.EXTRA_SOURCE_COMPONENT set to the component " +
+                "which owns this method call.  Bad method: " + gen.tools().debugNode(call);
+            GeneratedUiImplementation bestImpl = source.getBestImpl(this);
+            final ApiGeneratorContext<?> ctx = method.getContext();
+            final String typeName;
+            final Expression memberType = new TypeExpr(method.getMemberType());
+            switch (key) {
+                case CREATE:
+                    typeName = gen.tools().resolveString(ctx, memberType);
+                    break;
+                case CREATE_FROM_MODEL:
+                    typeName = gen.tools().resolveString(ctx, memberType);
+                    break;
+                case CREATE_FROM_MODEL_AND_STYLE:
+                    typeName = gen.tools().resolveString(ctx, memberType);
+                    break;
+                case CREATE_FROM_STYLE:
+                    typeName = gen.tools().resolveString(ctx, memberType);
+                    break;
+                case NEW_BUILDER:
+                    // TODO remove manual newBuilder wiring and let us handle that here.
+                    return;
+                default:
+                    assert false : "Unhandled required method " + key + " from " + call;
+                    return;
+            }
+            methodDef.append(typeName).append(" ");
+            methodDef.append(call.getName());
+            final MethodBuffer out = buf.createMethod(methodDef+"()");
+
+            out.print("return new " + bestImpl.getWrappedName() + "(");
+
+            Mutable<String> prefix = new Mutable<>("");
+            method.getParams().forAll(i -> {
+                out.addParameter(i.out1(), i.out2());
+                out.print(prefix.replace(", ")).print(i.out2());
+            });
+            out.println(");");
+
+            // now, we also need to make the constructor we just referenced.
+            // if all calls to constructors are done via required CREATE_* methods,
+            // then we can safely create the constructor now, and not make two.
+            // If we want to create constructors elsewhere, we'll need to abstract
+            // out the code below into a required method that is a constructor.
+            final MappedIterable<String> paramsItr = method.getParams()
+                .map2(Out2::join, " ");
+
+            final String[] params = paramsItr.toArray(String[]::new);
+
+            final MethodBuffer ctor = bestImpl.getSource().getClassBuffer()
+                .createConstructor(Modifier.PUBLIC, params);
+
+            // For all params, call a setter.
+            // That is, ensure there is a field w/ getter and setter.
+            method.getParams()
+                .spy(param->{
+                    // call setters for each field.
+                    String titled = X_String.toTitleCase(param.out2());
+                    ctor.println("set" + titled + "(" + param.out2() + ");");
+                })
+                .forAllMapped(
+                bestImpl::ensureField, Out2::out2, Out2::out1 // was <name, type>, needs <type, name>
+                                                              // we have to invert the map keys because
+                                                              // only names, not types, are the unique key
+            );
+
         }
 
         protected IsTypeDefinition definition() {
@@ -433,6 +616,52 @@ public class GeneratedUiComponent {
         public UiNamespace reduceNamespace(UiNamespace from) {
             return from;
         }
+
+        public boolean requireMethod(RequiredMethodType type, GeneratedUiMethod method, MethodCallExpr call) {
+            final Out2<GeneratedUiMethod, MethodCallExpr> was = requiredMethods.put(type, out2Immutable(method, call));
+            return was == null;
+        }
+
+        public int isSimilar(GeneratedUiImplementation impl) {
+            if (impl.getClass() == getClass()) {
+                return Integer.MAX_VALUE;
+            }
+            if (X_Reflect.mostDerived(this, impl) == impl) {
+                // the other is a subclass of us...
+                return 100000;
+            }
+            if (X_Reflect.mostDerived(impl, this) == this) {
+                // we are a subclass of the other...
+                return 1000;
+            }
+            if (X_Fu.equal(getSuffix(), impl.getSuffix())) {
+                if (X_Fu.equal(getPrefix(), impl.getPrefix())) {
+                    return 1000;
+                }
+                return 100;
+            }
+            else if (X_Fu.equal(getPrefix(), impl.getPrefix())) {
+                return 100;
+            }
+            return 0;
+        }
+    }
+
+    private GeneratedUiImplementation getBestImpl(GeneratedUiImplementation similarToo) {
+        GeneratedUiImplementation best = null;
+        int bestScore = Integer.MIN_VALUE;
+        for (GeneratedUiImplementation impl : getImpls()) {
+            int similarScore = similarToo.isSimilar(impl);
+            if (similarScore > bestScore) {
+                bestScore = similarScore;
+                best = impl;
+            }
+        }
+
+        if (best == null) {
+            throw new IllegalArgumentException("Could not find matching impl for " + similarToo + " from " + getImpls());
+        }
+        return best;
     }
 
     private final Lazy<GeneratedUiApi> api;
@@ -648,4 +877,10 @@ public class GeneratedUiComponent {
         };
     }
 
+    public Maybe<GeneratedUiField> getModelField(String name) {
+        if (hasPublicModel()) {
+            return Maybe.nullable(getPublicModel().getField(name));
+        }
+        return Maybe.not();
+    }
 }

@@ -32,7 +32,7 @@ import java.util.List;
 /**
  * @author Julio Vilmar Gesser
  */
-public final class MethodCallExpr extends Expression {
+public final class MethodCallExpr extends Expression implements ScopedExpression {
 
 	private Expression scope;
 

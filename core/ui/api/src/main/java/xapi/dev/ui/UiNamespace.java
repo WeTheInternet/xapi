@@ -14,6 +14,8 @@ public interface UiNamespace {
 
     String ATTR_ID = "id";
     String ATTR_REF = "ref";
+    String ATTR_MODEL = "model";
+    String ATTR_DATA = "data";
     String ATTR_STYLE = "style";
     String ATTR_HREF = "href";
     String EL_BOX = "box";

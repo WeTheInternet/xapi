@@ -12,6 +12,7 @@ import xapi.dev.ui.ContainerMetadata;
 import xapi.dev.ui.GeneratedUiComponent;
 import xapi.dev.ui.GeneratedUiComponent.GeneratedUiImplementation;
 import xapi.dev.ui.InterestingNodeFinder.InterestingNodeResults;
+import xapi.dev.ui.UiComponentGenerator.UiGenerateMode;
 import xapi.dev.ui.UiNamespace;
 import xapi.fu.Lazy;
 import xapi.fu.MapLike;
@@ -52,9 +53,11 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
 
     @Override
     public GeneratedUiImplementation generateComponent(
-        ContainerMetadata metadata, ComponentBuffer buffer
+        ContainerMetadata metadata, ComponentBuffer buffer,
+        UiGenerateMode mode
     ) {
-        final GeneratedUiImplementation component = super.generateComponent(metadata, buffer);
+
+        final GeneratedUiImplementation component = super.generateComponent(metadata, buffer, mode);
         fillInImpl((GeneratedWebComponent) component, metadata, buffer);
         return component;
     }

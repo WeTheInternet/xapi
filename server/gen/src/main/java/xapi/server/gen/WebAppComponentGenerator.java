@@ -21,7 +21,8 @@ public class WebAppComponentGenerator extends UiComponentGenerator {
 
     @Override
     public UiVisitScope startVisit(
-        UiGeneratorTools service, ComponentBuffer source, ContainerMetadata me, UiContainerExpr n
+        UiGeneratorTools service, ComponentBuffer source, ContainerMetadata me, UiContainerExpr n,
+        UiGenerateMode mode
     ) {
         final UiVisitScope scope = new UiVisitScope(ScopeType.CONTAINER);
         final StringTo<UiFeatureGenerator> overrides = scope.getFeatureOverrides();

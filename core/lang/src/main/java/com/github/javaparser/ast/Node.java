@@ -419,6 +419,12 @@ public abstract class Node implements Cloneable {
         extras.put(key, value);
     }
 
+    public boolean hasExtra(String key) {
+        if (extras == null) {
+            return false;
+        }
+        return extras.containsKey(key);
+    }
     public <T> T getExtra(String key) {
         if (extras == null) {
             return null;

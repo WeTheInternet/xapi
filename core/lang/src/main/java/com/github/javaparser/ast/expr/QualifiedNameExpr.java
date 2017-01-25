@@ -3,12 +3,12 @@
  * Copyright (C) 2011, 2013-2015 The JavaParser Team.
  *
  * This file is part of JavaParser.
- * 
+ *
  * JavaParser can be used either under the terms of
  * a) the GNU Lesser General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * b) the terms of the Apache License 
+ * b) the terms of the Apache License
  *
  * You should have received a copy of both licenses in LICENCE.LGPL and
  * LICENCE.APACHE. Please refer to those files for details.
@@ -18,7 +18,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  */
- 
+
 package com.github.javaparser.ast.expr;
 
 import com.github.javaparser.ast.visitor.GenericVisitor;
@@ -27,7 +27,7 @@ import com.github.javaparser.ast.visitor.VoidVisitor;
 /**
  * @author Julio Vilmar Gesser
  */
-public final class QualifiedNameExpr extends NameExpr {
+public final class QualifiedNameExpr extends NameExpr implements ScopedExpression {
 
 	private NameExpr qualifier;
 
@@ -60,5 +60,16 @@ public final class QualifiedNameExpr extends NameExpr {
 	public void setQualifier(final NameExpr qualifier) {
 		this.qualifier = qualifier;
 		setAsParentNodeOf(this.qualifier);
+	}
+
+	@Override
+	public Expression getScope() {
+		return getQualifier();
+	}
+
+	@Override
+	public void setScope(Expression scope) {
+		assert scope instanceof NameExpr : "Qualified name expression can only use other NameExpr as scopes.  You sent " + scope;
+		setQualifier((NameExpr) scope);
 	}
 }

@@ -2,13 +2,12 @@ package xapi.server.gen;
 
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import xapi.annotation.inject.InstanceOverride;
-import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.api.ApiGeneratorTools;
 import xapi.dev.gen.SourceHelper;
 import xapi.dev.source.SourceBuilder;
 import xapi.dev.ui.*;
-import xapi.fu.iterate.Chain;
 import xapi.fu.Out2;
+import xapi.fu.iterate.Chain;
 import xapi.inject.X_Inject;
 import xapi.io.X_IO;
 import xapi.javac.dev.api.CompilerService;
@@ -43,7 +42,7 @@ public class WebAppGenerator extends AbstractUiGeneratorService <WebAppGenerator
     private WebAppGeneratorContext ctx;
 
     @Override
-    protected ApiGeneratorContext<?> contextFor(
+    protected WebAppGeneratorContext contextFor(
         IsQualified type, UiContainerExpr container
     ) {
         if (ctx == null) {

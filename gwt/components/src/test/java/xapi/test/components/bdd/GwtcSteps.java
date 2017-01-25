@@ -70,7 +70,6 @@ import static xapi.util.X_String.join;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.ext.TreeLogger.Type;
 
-import javax.lang.model.element.Element;
 import java.io.File;
 import java.io.FileInputStream;
 import java.nio.file.Files;
@@ -111,8 +110,8 @@ public class GwtcSteps {
       initializeManifest(service, manifest);
       return manifest;
   }
-  protected <Ctx extends ApiGeneratorContext<Ctx>> UiGeneratorService<Element> createUiGen() {
-    return new UiGeneratorServiceDefault<Ctx>() {
+  protected <Ctx extends ApiGeneratorContext<Ctx>> UiGeneratorService<Object> createUiGen() {
+    return new UiGeneratorServiceDefault<Object, Ctx>() {
       @Override
       protected Iterable<Out2<String, UiComponentGenerator>> getComponentGenerators() {
         return Chain.<Out2<String, UiComponentGenerator>>startChain().addAll(super.getComponentGenerators())

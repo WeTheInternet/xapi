@@ -22,7 +22,7 @@ import java.lang.reflect.Modifier;
  * @author "James X. Nelson (james@wetheinter.net)"
  *
  */
-public class FieldBuffer extends MemberBuffer<FieldBuffer> {
+public class FieldBuffer extends MemberBuffer<FieldBuffer> implements CanAddImports {
 
   private final ClassBuffer cls;
   private final TypeData fieldType;// The type of the field itself
@@ -80,6 +80,16 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> {
     }
     get.visitModifier(modifiers, cls.context);
     return get;
+  }
+
+  public final FieldBuffer createGetter(final int modifiers) {
+    addGetter(modifiers);
+    return this;
+  }
+
+  public final FieldBuffer createSetter(final int modifiers) {
+    addSetter(modifiers);
+    return this;
   }
 
   @Override

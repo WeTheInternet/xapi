@@ -14,7 +14,7 @@ import xapi.util.X_String;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static xapi.fu.iterate.ArrayIterable.iterate;
-import static xapi.fu.MappedIterable.mapIterable;
+import static xapi.fu.MappedIterable.adaptIterable;
 
 import java.util.List;
 
@@ -48,12 +48,12 @@ public class ServerGenSteps implements ServerTestHelper<TestSocketServer> {
     @Then("^Expect web app named (\\S+) to have source:$")
     public void expectNamedWebAppToHaveSource(String name, List<String> lines) throws Throwable {
         String expected = X_String.join("\n",
-            mapIterable(lines, String::trim)
+            adaptIterable(lines, String::trim)
         );
         final WebApp app = webApps.get(name);
         assertNotNull("No app named " + name, app);
         String src = app.getSource();
-        src = X_String.join("\n", mapIterable(
+        src = X_String.join("\n", adaptIterable(
             iterate(src.split("\n")), String::trim
         ));
         assertEquals(expected, src);

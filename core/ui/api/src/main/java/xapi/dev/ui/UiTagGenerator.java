@@ -1,5 +1,6 @@
 package xapi.dev.ui;
 
+import com.github.javaparser.ASTHelper;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseException;
 import com.github.javaparser.ast.Node;
@@ -34,10 +35,9 @@ import xapi.util.X_Util;
 
 import static com.github.javaparser.ast.expr.StringLiteralExpr.stringLiteral;
 import static com.github.javaparser.ast.expr.TemplateLiteralExpr.templateLiteral;
+import static xapi.dev.ui.UiConstants.EXTRA_MODEL_INFO;
 import static xapi.fu.Out1.out1Deferred;
 import static xapi.source.X_Source.javaQuote;
-
-import java.lang.reflect.Modifier;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 11/24/16.
@@ -117,7 +117,8 @@ public class UiTagGenerator extends UiComponentGenerator {
 
     @Override
     public UiVisitScope startVisit(
-        UiGeneratorTools tools, ComponentBuffer source, ContainerMetadata me, UiContainerExpr n
+        UiGeneratorTools tools, ComponentBuffer source, ContainerMetadata me, UiContainerExpr n,
+        UiGenerateMode mode
     ) {
         if (n.getName().equalsIgnoreCase("define-tags")) {
             // we have a list of tags to consider
@@ -321,52 +322,146 @@ public class UiTagGenerator extends UiComponentGenerator {
 
                     @Override
                     public void visit(UiContainerExpr n, UiContainerExpr arg) {
-                        if ("if".equals(n.getName())) {
-                            // if tags are special.  We will use them to wrap the body of this container in a conditional
-                            toDom.print("if (");
+                        switch (n.getName().toLowerCase()) {
+                            case "if":
+                                // if tags are special.  We will use them to wrap the body of this container in a conditional
+                                toDom.print("if (");
 
-                            boolean first = true;
-                            for (UiAttrExpr attr : n.getAttributes()) {
-                                resolveReference(tools, ctx, component, baseClass, rootRefField, attr.getExpression());
-                                final String serialized = tools.resolveString(ctx, attr.getExpression());
-                                // TODO handle escaping...
-                                if (!first) {
-                                    toDom.print(" &&");
+                                boolean first = true;
+                                for (UiAttrExpr attr : n.getAttributes()) {
+                                    resolveReference(tools, ctx, component, baseClass, rootRefField, attr.getExpression());
+                                    final String serialized = tools.resolveString(ctx, attr.getExpression());
+                                    // TODO handle escaping...
+                                    if (!first) {
+                                        toDom.print(" &&");
+                                    }
+                                    switch (attr.getName().getName()) {
+                                        case "notNull":
+                                            toDom.print(serialized + " != null");
+                                            break;
+                                        case "isNull":
+                                            toDom.print(serialized + " == null");
+                                            break;
+                                        case "isTrue":
+                                            toDom.print(serialized);
+                                            break;
+                                        case "isFalse":
+                                            toDom.print("!" + serialized);
+                                            break;
+                                        case "isZero":
+                                            toDom.print(serialized + " == 0");
+                                            break;
+                                        case "isOne":
+                                            toDom.print(serialized + " == 1");
+                                            break;
+                                        case "isMinusOne":
+                                            toDom.print(serialized + " == -1");
+                                            break;
+                                        default:
+
+                                    }
+                                    first = false;
                                 }
-                                switch (attr.getName().getName()) {
-                                    case "notNull":
-                                        toDom.print(serialized + " != null");
-                                        break;
-                                    case "isNull":
-                                        toDom.print(serialized + " == null");
-                                        break;
-                                    case "isTrue":
-                                        toDom.print(serialized);
-                                        break;
-                                    case "isFalse":
-                                        toDom.print("!" + serialized);
-                                        break;
-                                    case "isZero":
-                                        toDom.print(serialized + " == 0");
-                                        break;
-                                    case "isOne":
-                                        toDom.print(serialized + " == 1");
-                                        break;
-                                    case "isMinusOne":
-                                        toDom.print(serialized + " == -1");
-                                        break;
-                                    default:
 
+                                toDom.println(") {");
+                                toDom.indent();
+                                final UiBodyExpr myBody = n.getBody();
+                                if (myBody != null) {
+                                    super.visit(myBody, n);
                                 }
-                                first = false;
-                            }
+                                toDom.outdent();
+                                toDom.println("}");
+                                return;
+                            // for tag is also special; we will unfold the underlying item type
+                            case "for":
+                                toDom.print("for (");
+                                n.getAttribute("allOf")
+                                    .readIfPresent(all->{
+                                        final Expression startExpr = all.getExpression();
+                                        resolveReference(tools, ctx, component, baseClass, rootRefField, all.getExpression());
+                                        final Expression endExpr = all.getExpression();
 
-                            toDom.println(") {");
-                            toDom.indent();
-                            super.visit(n, arg);
-                            toDom.outdent();
-                            toDom.println("}");
-                            return;
+                                        final Maybe<UiAttrExpr> index = n.getAttribute("index");
+
+                                        // TODO an alternative to as which exposes the index as well/instead
+                                        n.getAttribute("as")
+                                            .readIfPresent(as->{
+                                                final String asName = tools.resolveString(ctx, as.getExpression());
+                                                // Ok! We have allOf=someData, likely $model.fieldName,
+                                                // and an as=name to put into the context.
+
+                                                // Lets find out what type our elements are,
+                                                // open our for loop, register the model information,
+                                                // and then visit the children of the <for /> tag
+                                                if (endExpr instanceof ScopedExpression) {
+                                                    // probably a $model/$data reference...
+                                                    Expression allOfRoot = ((ScopedExpression) endExpr)
+                                                        .getRootScope();
+                                                    if (isModelReference(allOfRoot)) {
+                                                        GeneratedUiField modelInfo = (GeneratedUiField) endExpr.getExtras().get(
+                                                            EXTRA_MODEL_INFO);
+                                                        if (modelInfo == null) {
+                                                            throw new IllegalArgumentException(
+                                                                "Complex model expressions not yet supported by <for /> tag."
+                                                                +"\nYou sent " + tools.debugNode(startExpr) + "; which was converted to " + tools.debugNode(endExpr));
+                                                        }
+                                                        String type = toDom.addImport(ASTHelper.extractGeneric(modelInfo.getMemberType()));
+                                                        String call = tools.resolveString(ctx, endExpr);
+                                                        toDom.append(type).append(" ").append(asName)
+                                                            .append(" : ").append(call).println(") {")
+                                                            .indent();
+
+                                                        // Save our vars to ctx state.
+                                                        // Since we are running inside a for loop,
+                                                        // we want the var to point to the named instance we just used.
+                                                        NameExpr var = new NameExpr(asName);
+                                                        var.setExtras(endExpr.getExtras());
+                                                        Do undo = ctx.addToContext(asName, var);
+                                                        // Now, we can visit children
+                                                        if (index.isPresent()) {
+                                                            String indexName = tools.resolveString(ctx, index.get().getExpression());
+                                                            final UiBodyExpr body = n.getBody();
+                                                            if (body != null) {
+                                                                int cnt = 0;
+                                                                for (Expression child : body.getChildren()) {
+                                                                    final Do indexUndo = ctx.addToContext(
+                                                                        indexName,
+                                                                        IntegerLiteralExpr.intLiteral(cnt++)
+                                                                    );
+//                                                                    child.addExtra(EXTRA_GENERATE_MODE, "");
+                                                                    child.accept(this, n);
+                                                                    indexUndo.done();
+                                                                }
+
+                                                            }
+                                                        } else {
+                                                            // No index; just visit children.
+                                                            final UiBodyExpr body = n.getBody();
+                                                            if (body != null) {
+                                                                super.visit(body, n);
+                                                            }
+                                                        }
+
+                                                        undo.done();
+
+                                                        toDom.outdent();
+                                                        toDom.println("}");
+                                                        return;
+                                                    }
+                                                    throw new IllegalArgumentException("Non-model based for loop expressions not yet supported."
+                                                        +"\nYou sent " + tools.debugNode(startExpr) + "; which was converted to " + tools.debugNode(endExpr));
+                                                }
+                                                throw new IllegalArgumentException("Non-ScopedExpression based for loop expressions not yet supported."
+                                                    +"\nYou sent " + tools.debugNode(startExpr) + "; which was converted to " + tools.debugNode(endExpr));
+                                            })
+                                            .readIfAbsent(noAs->{
+                                                throw new IllegalArgumentException("For now, all <for /> tags *must* have an as=nameToReferenceItems attribute");
+                                            });
+                                    })
+                                    .readIfAbsentUnsafe(noAllOf->{
+                                        throw new IllegalArgumentException("For now, all <for /> tags *must* have an allOf= attribute");
+                                    });
+                                return;
                         }
                         String parentRefName = refFieldName;
                         // TODO: if the container is a known xapi component,
@@ -399,7 +494,7 @@ public class UiTagGenerator extends UiComponentGenerator {
                             undo = component.registerRef(rootRef, refField);
                         } else {
                             if (refNode.isPresent()) {
-                                assert n.getParentNode() == arg;
+                                assert n.getContainerParentNode() == arg;
                                 String ref = tools.resolveString(ctx, refNode.get());
                                 refFieldName = baseClass.newFieldName(ref);
                                 final FieldBuffer refField = out.createField(
@@ -413,20 +508,53 @@ public class UiTagGenerator extends UiComponentGenerator {
                             undo = Do.NOTHING;
                         }
                         boolean compact = requireCompact(n);
-                        String type = baseClass.getElementBuilderType(namespace);
-                        toDom.println(type + " " + refFieldName + " = " + newBuilder.out1() + ";")
-                             .println(refFieldName + ".append(\"<" + n.getName() +
-                                 (compact ? "" : ">") + "\");");
 
-                        // tricky... each ui container sends itself to the children as argument;
-                        try {
-                            super.visit(n, n);
-                        } finally {
-                            if (compact) {
-                                toDom.println(refFieldName + ".append(\" />\");");
+                        final Maybe<Expression> modelNode = n.getAttribute(UiNamespace.ATTR_MODEL)
+                            .mapNullSafe(UiAttrExpr::getExpression);
+
+                        String type = baseClass.getElementBuilderType(namespace);
+                        boolean printedVar = false;
+                        if (modelNode.isPresent()) {
+                            // When a modelNode is present, we should delegate to a generated element's toDom method.
+                            final Expression modelExpr = modelNode.get();
+                            final Expression nodeToUse = tools.resolveVar(ctx, modelExpr);
+                            if (nodeToUse != null && nodeToUse.hasExtra(EXTRA_MODEL_INFO)) {
+                                // yay, some model info for us!+
+//                                final GeneratedUiField modelInfo = nodeToUse.getExtra(EXTRA_MODEL_INFO);
+                                ComponentBuffer otherTag = tools.getComponentInfo(n.getName());
+                                // We'll want to defer to a factory method on the other component.
+                                MethodCallExpr factoryMethod = otherTag.getTagFactory(tools, ctx, component, n);
+                                String initializer = tools.resolveString(ctx, factoryMethod);
+                                toDom.println(type + " " + refFieldName + " = " + initializer + ";");
+                                printedVar = true;
                             } else {
-                                toDom.println(refFieldName + ".append(\"</ " + n.getName() + ">\");");
+                                // The model node was not a named key; it might be a json literal...
                             }
+                        }
+
+                        try {
+
+                            if (printedVar) {
+                                if (n.getBody() != null) {
+                                    n.getBody().accept(this, n);
+                                }
+                            } else {
+                                toDom.println(type + " " + refFieldName + " = " + newBuilder.out1() + ";")
+                                     .println(refFieldName + ".append(\"<" + n.getName() +
+                                         (compact ? "" : ">") + "\");");
+                                try {
+                                    // tricky... each ui container sends itself to the children as argument;
+                                    super.visit(n, n);
+                                } finally {
+                                    if (compact) {
+                                        toDom.println(refFieldName + ".append(\" />\");");
+                                    } else {
+                                        toDom.println(refFieldName + ".append(\"</" + n.getName() + ">\");");
+                                    }
+                                }
+                            }
+
+                        } finally {
                             if (parentRefName != null) {
                                 toDom.println(parentRefName+".addChild(" + refFieldName + ");");
                             }
@@ -491,7 +619,7 @@ public class UiTagGenerator extends UiComponentGenerator {
                                                     final GeneratedUiModel model = component.getPublicModel();
                                                     final GeneratedUiField field = model.fields.get(ref.getIdentifier());
                                                     if (field != null) {
-                                                        switch (field.getMemberType()) {
+                                                        switch (field.getMemberType().toSource()) {
                                                             case "String":
                                                             case "java.lang.String":
                                                                 // TODO bind the model's string property to the contents of this node
@@ -627,6 +755,18 @@ public class UiTagGenerator extends UiComponentGenerator {
         }
     }
 
+    protected boolean isModelReference(Expression expr) {
+        if (expr instanceof NameExpr) {
+            return "$model".equals(((NameExpr)expr).getName());
+        } else if (expr instanceof MethodCallExpr) {
+            return "getModel".equals(((MethodCallExpr)expr).getName());
+        } else if (expr instanceof FieldAccessExpr) {
+            return "$model".equals(((FieldAccessExpr)expr).getField());
+        } else {
+            return false;
+        }
+    }
+
     protected void resolveReference(
         UiGeneratorTools tools,
         ApiGeneratorContext ctx,
@@ -658,6 +798,7 @@ public class UiTagGenerator extends UiComponentGenerator {
                                 throw new IllegalArgumentException("No model field of name " + n.getField() + " declared");
                             }
                             MethodCallExpr replaceWith = new MethodCallExpr(n.getScope(), field.getterName());
+                            replaceWith.addExtra(EXTRA_MODEL_INFO, field);
                             return replaceWith;
                         }
                         return super.visit(n, arg);
@@ -684,7 +825,9 @@ public class UiTagGenerator extends UiComponentGenerator {
                                 if (lastQualified == null) {
                                     return getModel;
                                 } else {
-                                    replaceQualified = new MethodCallExpr(getModel, toModelGetter(component, lastQualified.getName()));
+                                    final Maybe<GeneratedUiField> modelField = component.getModelField(lastQualified.getName());
+                                    replaceQualified = new MethodCallExpr(getModel, modelField.getOrThrow().getterName());
+                                    replaceQualified.addExtra(EXTRA_MODEL_INFO, modelField.get());
                                 }
                                 break;
                             case "$data":
@@ -731,14 +874,6 @@ public class UiTagGenerator extends UiComponentGenerator {
         } finally {
             undo.done();
         }
-    }
-
-    protected String toModelGetter(GeneratedUiComponent component, String name) {
-        if (component.hasPublicModel()) {
-            final GeneratedUiField field = component.getPublicModel().getField(name);
-            return field.getterName();
-        }
-        throw new IllegalStateException("No model field for " + name + " in " + component.getPublicModel());
     }
 
     protected String getScopeType(UiGeneratorTools tools, Expression scope) {
@@ -824,10 +959,8 @@ public class UiTagGenerator extends UiComponentGenerator {
         maybeAddImports(tools, ctx, model, attr);
         api.getSource().getClassBuffer().createMethod(model.getWrappedName()+" getModel()")
                 .makeAbstract();
-        me.getGeneratedComponent().getBase().getSource().getClassBuffer().createField(model.getWrappedName(), "model")
-            .makePrivate()
-            .addGetter(Modifier.PUBLIC)
-            .addAnnotation(Override.class);
+
+        me.getGeneratedComponent().getBase().ensureField(model.getWrappedName(), "model");
 
         boolean immutable = attr.getAnnotation(anno->anno.getNameString().equalsIgnoreCase("immutable")).isPresent();
         final Expression expr = attr.getExpression();
@@ -843,13 +976,12 @@ public class UiTagGenerator extends UiComponentGenerator {
                 } else {
                     Type type = tools.methods().$type(tools, ctx, typeExpr).getType();
                     // TODO smart import lookups...
-                    String typeName = tools.lookupType(type.toSource());
                     boolean isImmutable = immutable;
                     if (!isImmutable) {
                         isImmutable = pair.getAnnotation(anno -> anno.getNameString().equalsIgnoreCase(
                             "immutable")).isPresent();
                     }
-                    api.getModel().addField(tools, typeName, rawFieldName, isImmutable);
+                    api.getModel().addField(tools, type, rawFieldName, isImmutable);
                 }
             });
         } else {

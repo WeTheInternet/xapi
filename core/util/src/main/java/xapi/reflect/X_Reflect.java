@@ -1217,9 +1217,9 @@ public class X_Reflect {
         }
         seek = seek.getSuperclass();
       }
-      // No luck; return ours.
+      // No luck; return null, since these types are not assignable.
       // good luck if you are using (bad) reflection proxies instead of real objects :-)
       // actually, your course of action is to change the code which calls this method.
-      return ours;
+      return null;
     }
 }

@@ -1,16 +1,33 @@
 package xapi.dev.ui;
 
+import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.expr.StringLiteralExpr;
+import com.github.javaparser.ast.expr.UiAttrExpr;
+import com.github.javaparser.ast.expr.UiContainerExpr;
+import com.github.javaparser.ast.type.Type;
 import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
+import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.source.DomBuffer;
+import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
+import xapi.dev.ui.GeneratedUiComponent.GeneratedUiBase;
+import xapi.dev.ui.GeneratedUiComponent.GeneratedUiImplementation;
+import xapi.dev.ui.GeneratedUiComponent.GeneratedUiImplementation.RequiredMethodType;
+import xapi.dev.ui.GeneratedUiComponent.GeneratedUiMethod;
 import xapi.dev.ui.InterestingNodeFinder.InterestingNodeResults;
 import xapi.fu.Lazy;
+import xapi.fu.Maybe;
 import xapi.fu.Out1;
 import xapi.source.read.JavaModel.IsQualified;
 
+import static xapi.dev.ui.GeneratedUiComponent.GeneratedUiImplementation.RequiredMethodType.*;
 import static xapi.fu.Immutable.immutable1;
 import static xapi.inject.X_Inject.instance;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by james on 6/17/16.
@@ -116,5 +133,53 @@ public class ComponentBuffer {
 
     public GeneratedUiComponent getGeneratedComponent() {
         return component;
+    }
+
+    public MethodCallExpr getTagFactory(
+        UiGeneratorTools tools,
+        ApiGeneratorContext ctx,
+        GeneratedUiComponent other,
+        UiContainerExpr ui
+    ) {
+        GeneratedUiBase otherBase = other.getBase();
+        // Our tag factory should be a method generated onto the base class;
+        // if the source tag supplied a model or a style, we must pass those references in as parameters.
+        final GeneratedUiComponent me = getGeneratedComponent();
+        final GeneratedUiBase myBase = me.getBase();
+        String myBaseName = myBase.getWrappedName();
+        myBaseName = otherBase.getSource().addImport(myBaseName);
+        final Maybe<UiAttrExpr> model = ui.getAttribute("model");
+        final Maybe<UiAttrExpr> style = ui.getAttribute("style");
+        final String name = "create" + otherBase.getWrappedName();
+        MethodCallExpr call = new MethodCallExpr(null, name);
+        final Type returnType = tools.methods().$type(tools, ctx, StringLiteralExpr.stringLiteral(otherBase.getWrappedName())).getType();
+        GeneratedUiMethod method = new GeneratedUiMethod(returnType, name);
+        method.setSource(ui);
+        method.setContext(ctx);
+        final MethodBuffer creator = other.getBase().getSource().getClassBuffer()
+            .createMethod("public abstract " + myBaseName + " " + name);
+        final List<Expression> args = new ArrayList<>();
+        RequiredMethodType type = CREATE;
+        if (model.isPresent()) {
+            type = CREATE_FROM_MODEL;
+            args.add(tools.resolveVar(ctx, model.get().getExpression()));
+            method.addParam(me.getPublicModel().getWrappedName(), "model");
+            creator.addParameter(getGeneratedComponent().getPublicModel().getWrappedName(), "model");
+        }
+        if (style.isPresent()) {
+            type = type == CREATE_FROM_MODEL ? CREATE_FROM_MODEL_AND_STYLE : CREATE_FROM_STYLE;
+            args.add( tools.resolveVar(ctx, style.get().getExpression()));
+            final String styleType = tools.namespace().getStyleResourceType(creator);
+            method.addParam(styleType, "style");
+            creator.addParameter(styleType, "style");
+        }
+        method.setType(type);
+
+        call.setArgs(args);
+
+        call.addExtra(UiConstants.EXTRA_SOURCE_COMPONENT, getGeneratedComponent());
+
+        other.getImpls().forAll(GeneratedUiImplementation::requireMethod, type, method, call);
+        return call;
     }
 }

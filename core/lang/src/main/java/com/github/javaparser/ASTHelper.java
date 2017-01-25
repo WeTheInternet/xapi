@@ -23,6 +23,7 @@ package com.github.javaparser;
 
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.TypeArguments;
 import com.github.javaparser.ast.body.BodyDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
@@ -34,13 +35,10 @@ import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.Statement;
-import com.github.javaparser.ast.type.ClassOrInterfaceType;
-import com.github.javaparser.ast.type.PrimitiveType;
+import com.github.javaparser.ast.type.*;
 import com.github.javaparser.ast.type.PrimitiveType.Primitive;
-import com.github.javaparser.ast.type.ReferenceType;
-import com.github.javaparser.ast.type.Type;
-import com.github.javaparser.ast.type.UnknownType;
-import com.github.javaparser.ast.type.VoidType;
+import xapi.fu.MappedIterable;
+import xapi.fu.Out1.Out1Unsafe;
 import xapi.log.X_Log;
 
 import static com.github.javaparser.ast.internal.Utils.isNullOrEmpty;
@@ -376,5 +374,58 @@ public final class ASTHelper {
         return expr instanceof IntegerLiteralExpr ||
                expr instanceof LongLiteralExpr ||
                expr instanceof DoubleLiteralExpr;
+    }
+
+    public static String extractGeneric(Type type) {
+        return extractGeneric(type, 0);
+    }
+    public static String extractGeneric(Type type, int pos) {
+        return extractGeneric(type, pos, ()->"Object");
+    }
+
+    public static String extractGeneric(Type type, int pos, Out1Unsafe<String> ifRaw) {
+        if (type instanceof ClassOrInterfaceType) {
+            ClassOrInterfaceType cl = (ClassOrInterfaceType) type;
+            final TypeArguments typeArgs = cl.getTypeArguments();
+            if (typeArgs == null) {
+                return ifRaw.out1();
+            }
+            if (typeArgs.getTypeArguments().size() == 0) {
+                return cl.getName();
+            }
+            return extractGeneric(typeArgs.getTypeArguments().get(pos));
+        } else if (type instanceof ReferenceType) {
+            ReferenceType ref = (ReferenceType) type;
+            final Type reffed = ref.getType();
+            if (reffed != ref) {
+                return extractGeneric(reffed, pos, ifRaw);
+            }
+        } else if (type instanceof UnionType) {
+            UnionType union = (UnionType) type;
+            return MappedIterable.mapped(union.getElements())
+                    .map(ASTHelper::extractGeneric)
+                    .join(" | ");
+        } else if (type instanceof PrimitiveType) {
+            PrimitiveType union = (PrimitiveType) type;
+
+        } else if (type instanceof WildcardType) {
+            WildcardType wildcard = (WildcardType) type;
+            if (wildcard.getSuper() == null) {
+                if (wildcard.getExtends() == null) {
+                    return "?";
+                }
+                return "? extends " + extractGeneric(wildcard.getExtends(), pos, ifRaw);
+            } else {
+                return "? super " + extractGeneric(wildcard.getExtends(), pos, ifRaw);
+            }
+        } else if (type instanceof VoidType) {
+            return "void";
+        } else if (type instanceof IntersectionType) {
+            IntersectionType intersection = (IntersectionType ) type;
+            return MappedIterable.mapped(intersection.getElements())
+                .map(ASTHelper::extractGeneric)
+                .join(" & ");
+        }
+        return type.toSource();
     }
 }

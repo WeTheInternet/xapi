@@ -51,7 +51,7 @@ import java.util.LinkedHashSet;
 import java.util.Map.Entry;
 
 public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
-    MethodVisitor<SourceBuilder<?>> {
+    MethodVisitor<SourceBuilder<?>>, CanAddImports {
 
   private final ClassBuffer enclosing;
   protected SourceBuilder<?>          context;

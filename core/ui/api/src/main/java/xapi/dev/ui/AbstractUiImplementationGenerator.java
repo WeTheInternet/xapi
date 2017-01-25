@@ -5,6 +5,7 @@ import com.github.javaparser.ast.expr.UiContainerExpr;
 import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.ui.GeneratedUiComponent.GeneratedUiImplementation;
 import xapi.dev.ui.InterestingNodeFinder.InterestingNodeResults;
+import xapi.dev.ui.UiComponentGenerator.UiGenerateMode;
 import xapi.util.X_String;
 import xapi.util.api.RemovalHandler;
 
@@ -18,7 +19,11 @@ public abstract class AbstractUiImplementationGenerator <Ctx extends ApiGenerato
     }
 
     @Override
-    public GeneratedUiImplementation generateComponent(ContainerMetadata metadata, ComponentBuffer buffer) {
+    public GeneratedUiImplementation generateComponent(
+        ContainerMetadata metadata,
+        ComponentBuffer buffer,
+        UiGenerateMode mode
+    ) {
         final String pkgName = metadata.getControllerPackage();
         final String className = metadata.getControllerSimpleName();
         final UiContainerExpr expr = metadata.getUi();
@@ -26,7 +31,7 @@ public abstract class AbstractUiImplementationGenerator <Ctx extends ApiGenerato
         final GeneratedUiImplementation impl = getImpl(buffer.getGeneratedComponent());
         metadata.setImplementation(impl);
         UiGeneratorVisitor visitor = createVisitor(metadata, buffer);
-
+        visitor.setMode(mode);
         visitor.visit(expr, this);
         return impl;
     }
@@ -110,5 +115,16 @@ public abstract class AbstractUiImplementationGenerator <Ctx extends ApiGenerato
             getImpl(result).setPrefix(getImplPrefix());
         }
         super.initializeComponent(result);
+    }
+
+    @Override
+    public UiGenerateMode getMode(ComponentBuffer component, ContainerMetadata metadata) {
+        if (metadata.getUi().getName().startsWith("define-tag")) {
+            return UiGenerateMode.TAG_DEFINITION;
+        }
+        if (metadata.getUi().getName().startsWith("model")) {
+            return UiGenerateMode.MODEL_BUILDING;
+        }
+        return UiGenerateMode.UI_BUILDING;
     }
 }

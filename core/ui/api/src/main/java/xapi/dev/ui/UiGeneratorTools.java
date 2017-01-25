@@ -148,4 +148,8 @@ public abstract class UiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> im
         String[] names = n.getName().split("-");
         return X_String.join("", X_String::toTitleCase, names);
     }
+
+    public ComponentBuffer getComponentInfo(String name) {
+        return getGenerator().getBuffer(name);
+    }
 }
