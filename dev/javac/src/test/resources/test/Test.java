@@ -10,7 +10,7 @@ import com.google.gwt.core.shared.GWT;
 import javax.inject.Inject;
 
 @XApi(
-    templates = "./Generated"
+    value = "./Generated"
 )
 @InstanceDefault(implFor = Test.class)
 public class Test {
