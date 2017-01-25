@@ -7,17 +7,20 @@ import java.util.Iterator;
 
 public class ArrayIterable <E> implements MappedIterable<E>, HasSize {
 
+  private final int start;
+  private final int end;
+
   public static <E> ArrayIterable<E> iterate(E ... es) {
     return new ArrayIterable<>(es);
   }
 
   private final E[] array;
 
-  private final class Itr implements Iterator<E> {
-    int pos = 0, end = array.length;
+  private final class Itr implements Iterator<E>, HasSize {
+    int pos = start, finish = end;
     @Override
     public boolean hasNext() {
-      return pos < end;
+      return pos < finish;
     }
     @Override
     public E next() {
@@ -27,11 +30,30 @@ public class ArrayIterable <E> implements MappedIterable<E>, HasSize {
     public void remove() {
       ArrayIterable.this.remove(array[pos-1]);
     }
+
+    @Override
+    public int size() { // size of the iterator is whatever is left. iterable == full size.
+      return finish - pos;
+    }
+  }
+
+  public ArrayIterable(E[] array) {
+    this(array, 0, array == null ? 0 : array.length);
   }
 
   @SuppressWarnings("unchecked") // can't do anything with a zero length array.
-  public ArrayIterable(E[] array) {
+  public ArrayIterable(E[] array, int start, int end) {
     this.array = array == null ? (E[])new Object[0] : array;
+    this.start = start;
+    this.end = end;
+    assert boundsCheck();
+  }
+
+  private boolean boundsCheck() {
+    assert start >= 0 : "Invalid (start can't be negative) " + start;
+    assert end >= 0 : "Invalid (end can't be negative) " + end;
+    assert array == null || end <= array.length : "Invalid; end (" + end + ") must be less than array.length (" + array.length+")";
+    return true;
   }
 
   @Override
@@ -45,7 +67,7 @@ public class ArrayIterable <E> implements MappedIterable<E>, HasSize {
 
   @Override
   public int size() {
-    return array.length;
+    return end - start;
   }
 
   @Override

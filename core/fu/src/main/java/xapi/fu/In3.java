@@ -77,6 +77,15 @@ public interface In3<I1, I2, I3> extends HasInput, Rethrowable, Lambda {
     return (i1, i2) -> in(i1, i2, and);
   }
 
+
+  default In2<I1, I3> adapt2(In1Out1<I1, I2> adapt) {
+    return (i1, i3) -> in(i1, adapt.io(i1), i3);
+  }
+
+  default In2<I1, I2> adapt3(In1Out1<I1, I3> adapt) {
+    return (i1, i2) -> in(i1, i2, adapt.io(i1));
+  }
+
   static <I1, I2, I3> In3<I1, I2, I3> in3(In2<I1, I2> in12, In1<I3> in3) {
     return (i1, i2, i3)-> {
       in12.in(i1, i2);

@@ -60,4 +60,15 @@ public interface Rethrowable {
     return new RuntimeException(e);
   }
 
+    static <I1, I2, T> T throwNow(In2Out1<I1, I2, Throwable> exception, I1 arg1, I2 arg2) {
+      return throwNow(exception.supply1(arg1).supply(arg2));
+    }
+
+    static <I1, T> T throwNow(In1Out1<I1, Throwable> exception, I1 arg) {
+      return throwNow(exception.supply(arg));
+    }
+    static <T> T throwNow(Out1<Throwable> exception) {
+      throw new Rethrowable(){}
+        .rethrow(exception.out1());
+    }
 }

@@ -5,6 +5,7 @@ import xapi.fu.iterate.ArrayIterable;
 import xapi.fu.iterate.CachingIterator;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
+import xapi.fu.iterate.CountedIterator;
 import xapi.fu.iterate.EmptyIterator;
 
 import java.util.Iterator;
@@ -16,11 +17,19 @@ import java.util.NoSuchElementException;
 public interface MappedIterable<T> extends Iterable<T> {
 
     default <To> MappedIterable<To> map(In1Out1<T, To> mapper) {
-        return mapIterable(this, mapper);
+        return adaptIterable(this, mapper);
+    }
+
+    default <I1, To> MappedIterable<To> map1(In2Out1<I1, T, To> mapper, I1 i1) {
+        return adaptIterable(this, mapper.supply1(i1));
+    }
+
+    default <I2, To> MappedIterable<To> map2(In2Out1<T, I2, To> mapper, I2 i2) {
+        return adaptIterable(this, mapper.supply2(i2));
     }
 
     default MappedIterable<T> spy(In1<T> mapper) {
-        return mapIterable(this, mapper.returnArg());
+        return adaptIterable(this, mapper.returnArg());
     }
 
     default ChainBuilder<T> copy() {
@@ -80,7 +89,7 @@ public interface MappedIterable<T> extends Iterable<T> {
         return new ArrayIterable<>(items);
     }
 
-    static <From, To> MappedIterable<To> mapIterable(Iterable<From> from, In1Out1<? super From, ? extends To> mapper) {
+    static <From, To> MappedIterable<To> adaptIterable(Iterable<From> from, In1Out1<? super From, ? extends To> mapper) {
         return ()->new MappedIterator<>(from.iterator(), mapper);
     }
 
@@ -155,6 +164,31 @@ public interface MappedIterable<T> extends Iterable<T> {
             }
         }
         return seed;
+    }
+
+    default T[] toArray(In1Out1<Integer, T[]> arrayCtor) {
+        // In case this iterator knows its size, we can skip a double-iterate
+        final CountedIterator<T> counted = CountedIterator.count(this);
+        T[] array = arrayCtor.io(counted.size());
+        return toArray(array);
+    }
+    default T[] toArray(T[] arr) {
+        return toArray(arr, 0, arr.length);
+    }
+
+    default T[] toArray(T[] arr, int start) {
+        return toArray(arr, start, arr.length);
+    }
+
+    default T[] toArray(T[] arr, int start, int end) {
+        assert end <= arr.length;
+        final Iterator<T> itr = iterator();
+        for (int i = start;
+             itr.hasNext() && i < end;
+             i++) {
+            arr[i] = itr.next();
+        }
+        return arr;
     }
 
     default T first() {
@@ -243,8 +277,22 @@ public interface MappedIterable<T> extends Iterable<T> {
         return this;
     }
 
+    default <S> MappedIterable<T> forAllMapped(In2<T, S> consumer, In1Out1<T, S> mapper) {
+        forEach(consumer.adapt2(mapper).toConsumer());
+        return this;
+    }
+
     default <S1, S2> MappedIterable<T> forAll(In3<T, S1, S2> consumer, S1 const1, S2 const2) {
         forEach(consumer.provide2(const1).provide2(const2).toConsumer());
+        return this;
+    }
+
+    default <S1, S2> MappedIterable<T> forAllMapped(In2<S1, S2> consumer, In1Out1<T, S1> mapper1, In1Out1<T, S2> mapper2) {
+        return forAllMapped(consumer.ignore1(), mapper1, mapper2);
+    }
+
+    default <S1, S2> MappedIterable<T> forAllMapped(In3<T, S1, S2> consumer, In1Out1<T, S1> mapper1, In1Out1<T, S2> mapper2) {
+        forEach(consumer.adapt2(mapper1).adapt2(mapper2).toConsumer());
         return this;
     }
 
@@ -281,7 +329,12 @@ public interface MappedIterable<T> extends Iterable<T> {
      *
      */
     default MappedIterable<T> cached() {
-        final MappedIterable<T> itr = CachingIterator.cachingIterable(iterator());
+        final MappedIterable<T> itr;
+        if (this instanceof CachingIterator.ReplayableIterable) {
+            itr = this;
+        } else {
+            itr = CachingIterator.cachingIterable(iterator());
+        }
         // Read the backing iterable into our cache.
         itr.forAll(In1.ignored());
         return itr;

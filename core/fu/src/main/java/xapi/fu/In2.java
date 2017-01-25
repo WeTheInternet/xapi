@@ -202,4 +202,16 @@ public interface In2<I1, I2> extends HasInput, Rethrowable, Lambda {
   static <I1, I2> In1<I1> reduce2(In2<I1, I2> lambda, I2 i2) {
     return lambda.provide2(i2);
   }
+
+  default <I> In3<I, I1, I2> ignore1() {
+    return (i, i1, i2) -> in(i1, i2);
+  }
+
+  default <I> In3<I1, I, I2> ignore2() {
+    return (i1, i, i2) -> in(i1, i2);
+  }
+
+  default <I> In3<I1, I2, I> ignore3() {
+    return (i1, i2, i) -> in(i1, i2);
+  }
 }

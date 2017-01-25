@@ -199,4 +199,10 @@ public class Mutable <I> implements In1Unsafe<I>, Out1Unsafe<I> {
       in(b);
       return old;
     }
+
+    public I replace(I s) {
+      I was = out1();
+      in(s);
+      return was;
+    }
 }

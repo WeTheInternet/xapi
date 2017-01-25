@@ -10,6 +10,9 @@ import java.util.Iterator;
  */
 public class CachingIterator <T> implements Iterator<T>, Rethrowable {
 
+    public interface ReplayableIterable<T> extends MappedIterable<T> {}
+
+    private volatile boolean checking;
     private volatile Out2<Boolean, T> next;
     private volatile Out1<Out2<Boolean, T>> getNext;
     private final Object lock;
@@ -35,7 +38,7 @@ public class CachingIterator <T> implements Iterator<T>, Rethrowable {
         });
     }
 
-    public MappedIterable<T> replayable() {
+    public ReplayableIterable<T> replayable() {
         return this::replay;
     }
 
@@ -47,8 +50,15 @@ public class CachingIterator <T> implements Iterator<T>, Rethrowable {
             @Override
             public boolean hasNext() {
                 return (Boolean)mutex.io(()-> {
-                    if (head == head.tail.io(null)) {
-                        return next.out1();
+                    final boolean wasChecking = checking;
+                    try {
+
+                        checking = true;
+                        if (head == head.tail.io(null)) {
+                            return CachingIterator.this.hasNext();
+                        }
+                    } finally {
+                        checking = wasChecking;
                     }
                     return true;
                 });
@@ -60,7 +70,7 @@ public class CachingIterator <T> implements Iterator<T>, Rethrowable {
                     if (head == head.tail.io(null)) {
                         // If our head is at the tail (no more cached items to view),
                         // then we go ahead and ask the external caching iterator for an item
-                        final T val = next.out2();
+                        final T val = CachingIterator.this.next();
                         // Be sure to update our pointer to be the tail;
                         // if everyone uses mutex(), this is safe.
                         head = head.tail.io(null);
@@ -89,7 +99,8 @@ public class CachingIterator <T> implements Iterator<T>, Rethrowable {
         vals = Chain.startChain();
         getNext =
             ()->
-                ()-> {
+                ()-> mutex(()->{
+
                     final boolean hasNext = wrapped.hasNext();
                     final Out1[] value = new Out1[]{
                         hasNext ? Out1.TRUE : Out1.FALSE,
@@ -99,13 +110,15 @@ public class CachingIterator <T> implements Iterator<T>, Rethrowable {
                         value[1] = Lazy.deferred1(()->vals.addReturnValue(wrapped.next()))
                                 .map(i-> {
                                     // Once you have next()'d an element, this node must return false for hasNext.
-                                    value[0] = Out1.FALSE;
+                                    if (!checking) {
+                                        value[0] = Out1.FALSE;
+                                    }
                                     return i;
                                 });
                     }
                     next = ()->value;
                     return value;
-            };
+            });
         advance();
     }
 
@@ -162,7 +175,27 @@ public class CachingIterator <T> implements Iterator<T>, Rethrowable {
                     values.add(Out2.out2Immutable(more, cur));
                 }
                 final Iterator<Out2<Boolean, T>> itr = values.iterator();
-                getNext = itr::next;
+                GrowableIterator<Out2<Boolean, T>> growable = GrowableIterator.of(itr)
+                        .concat(new Iterator<Out2<Boolean, T>>() {
+                            final Out1<Out2<Boolean, T>> remaining = getNext;
+                            Out2<Boolean, T> myNext = next;
+                            @Override
+                            public boolean hasNext() {
+                                return mutex(()->myNext.out1());
+                            }
+
+                            @Override
+                            public Out2<Boolean, T> next() {
+                                return mutex(()->{
+                                    try {
+                                        return myNext;
+                                    } finally {
+                                        myNext = remaining.out1();
+                                    }
+                                });
+                            }
+                        });
+                getNext = growable::next;
                 next = getNext.out1();
             });
         }

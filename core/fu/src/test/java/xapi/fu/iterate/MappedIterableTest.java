@@ -107,6 +107,17 @@ public class MappedIterableTest {
 
     }
 
+    @Test
+    public void testCachingIterator() {
+        ChainBuilder<String> vals = Chain.toChain("one", "two", "three");
+        assertIterableEquals(vals, "one", "two", "three");
+        final MappedIterable<String> cached = CachingIterator.cachingIterable(vals.iterator());
+        assertIterableEquals(cached, "one", "two", "three");
+        assertIterableEquals(cached, "one", "two", "three");
+
+
+    }
+
     private <T> void assertIterableEquals(Iterable<T> itr, T ... contents) {
         assertThat(itr.iterator()).containsExactly(contents);
         // double-tap is intentional; we want to detect if an iterable is maintaining state.

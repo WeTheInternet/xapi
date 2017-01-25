@@ -1,6 +1,7 @@
 package xapi.fu;
 
 import xapi.fu.Out1.Out1Unsafe;
+import xapi.fu.iterate.Chain;
 
 import static xapi.fu.Immutable.immutable1;
 
@@ -163,5 +164,19 @@ public interface Out2<O1, O2> extends OutMany {
     return entry instanceof Out2 ?
         (Out2<O1, O2>) entry :
         out2Immutable(entry.getKey(), entry.getValue());
+  }
+
+  default Out2<O2, O1> reverse() {
+    return out2(out2Provider(), out1Provider());
+  }
+
+  static <S, O1 extends S, O2 extends S> MappedIterable<S> iterate(Out2<O1, O2> out) {
+    return Chain.<S>startChain()
+                .add(out.out1())
+                .add(out.out2());
+  }
+
+  default String join(String between) {
+    return out1() + between + out2();
   }
 }

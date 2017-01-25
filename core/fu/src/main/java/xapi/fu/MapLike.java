@@ -54,11 +54,11 @@ public interface MapLike<K, V> extends HasSize, HasItems<Out2<K, V>> {
   }
 
   default MappedIterable<V> mappedValues() {
-    return MappedIterable.mapIterable(keys(), this::get);
+    return MappedIterable.adaptIterable(keys(), this::get);
   }
 
   default MappedIterable<Out2<K, V>> all() {
-    return MappedIterable.mapIterable(keys(), in-> Out2.out2Immutable(in, get(in)));
+    return MappedIterable.adaptIterable(keys(), in-> Out2.out2Immutable(in, get(in)));
   }
 
   default V getOrCreate(K key, In1Out1<K, V> ifNull) {

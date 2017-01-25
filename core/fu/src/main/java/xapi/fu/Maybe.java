@@ -1,5 +1,7 @@
 package xapi.fu;
 
+import xapi.fu.In1.In1Unsafe;
+
 import java.util.Optional;
 
 /**
@@ -105,6 +107,9 @@ public interface Maybe <V> extends Rethrowable {
         return NULL;
     }
 
+    default Maybe<V> readIfPresentUnsafe(In1Unsafe<V> val) {
+        return readIfPresent(val);
+    }
     default Maybe<V> readIfPresent(In1<V> val) {
         if (isPresent()) {
             val.in(get());
@@ -112,8 +117,11 @@ public interface Maybe <V> extends Rethrowable {
         return this;
     }
 
+    default Maybe<V> readIfAbsentUnsafe(In1Unsafe<V> val) {
+        return readIfAbsent(val);
+    }
     default Maybe<V> readIfAbsent(In1<V> val) {
-        if (isPresent()) {
+        if (!isPresent()) {
             val.in(get());
         }
         return this;
