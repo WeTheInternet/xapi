@@ -33,8 +33,6 @@ import xapi.server.api.WebApp;
 import xapi.server.api.XapiServer;
 import xapi.util.X_String;
 
-import com.google.gwt.dev.codeserver.JobEvent.CompileStrategy;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,6 +41,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.locks.LockSupport;
+
+import com.google.gwt.dev.codeserver.JobEvent.CompileStrategy;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/23/16.
@@ -102,6 +102,9 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
         final VertxOptions vertxOptions = new VertxOptions();
         if (webApp.isDevMode()) {
             vertxOptions
+                .setBlockedThreadCheckInterval(2000)
+                .setQuorumSize(5)
+                .setHAEnabled(true)
                 .setMaxEventLoopExecuteTime(60_000_000_000L) // one minute for event loop when debugging
                 .setMaxWorkerExecuteTime(200_000_000_000L);
         }
@@ -226,6 +229,21 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
     public void writeText(RequestScope<VertxRequest> request, String payload, In1<VertxRequest> callback) {
         final HttpServerResponse response = request.getRequest().getResponse();
         response.end(payload);
+        callback.in(request.getRequest());
+    }
+
+    @Override
+    public void writeFile(RequestScope<VertxRequest> request, String payload, In1<VertxRequest> callback) {
+        final HttpServerResponse response = request.getRequest().getResponse();
+        File toServe = new File(webApp.getContentRoot());
+        if (!toServe.exists()) {
+            throw new IllegalStateException("Content root " + toServe + " does not exist!");
+        }
+        toServe = new File(toServe, payload);
+        if (!toServe.exists()) {
+            throw new IllegalStateException("Content file " + toServe + " does not exist!");
+        }
+        response.sendFile(toServe.getAbsolutePath());
         callback.in(request.getRequest());
     }
 

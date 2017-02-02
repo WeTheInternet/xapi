@@ -56,6 +56,7 @@ class TestSocketServer extends AbstractModel implements WebApp, Rethrowable, Xap
     private volatile boolean running;
     private String source;
     private boolean devMode;
+    private String contentRoot;
 
     public TestSocketServer(WebApp classpath) {
         try {
@@ -141,6 +142,13 @@ class TestSocketServer extends AbstractModel implements WebApp, Rethrowable, Xap
     }
 
     @Override
+    public void writeFile(
+        RequestScope<SocketRequest> request, String payload, In1<SocketRequest> callback
+    ) {
+        throw new UnsupportedOperationException("writeText not supported");
+    }
+
+    @Override
     public void writeGwtJs(RequestScope<SocketRequest> request, String payload, In1<SocketRequest> callback) {
         throw new UnsupportedOperationException("writeGwtJs not supported");
     }
@@ -177,6 +185,16 @@ class TestSocketServer extends AbstractModel implements WebApp, Rethrowable, Xap
         enviro.setDaemon(true);
         WebApp.super.start();
         enviro.start();
+    }
+
+    @Override
+    public void setContentRoot(String root) {
+        this.contentRoot = root;
+    }
+
+    @Override
+    public String getContentRoot() {
+        return contentRoot;
     }
 
     private void serviceRequests() throws IOException {

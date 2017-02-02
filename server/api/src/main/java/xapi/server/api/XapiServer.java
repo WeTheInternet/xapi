@@ -50,6 +50,8 @@ public interface XapiServer <Request extends RequestLike, RawRequest> {
 
     void writeText(RequestScope<Request> request, String payload, In1<Request> callback);
 
+    void writeFile(RequestScope<Request> request, String payload, In1<Request> callback);
+
     void writeGwtJs(RequestScope<Request> request, String payload, In1<Request> callback);
 
     void writeCallback(RequestScope<Request> request, String payload, In1<Request> callback);

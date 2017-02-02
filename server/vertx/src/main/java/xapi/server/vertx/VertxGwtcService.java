@@ -39,6 +39,7 @@ public class VertxGwtcService extends GwtcServiceImpl {
             );
             return X_Maven.loadDependencies(result.getArtifact(), check->
                 !"test".equals(check.getScope()) && !"system".equals(check.getScope())
+                    && !check.isOptional()
             );
         });
         // Start download of artifact info immediately, but do not block

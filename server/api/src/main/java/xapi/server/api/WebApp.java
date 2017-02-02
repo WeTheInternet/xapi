@@ -61,4 +61,7 @@ public interface WebApp extends Model {
         setRunning(true);
     }
 
+    void setContentRoot(String root);
+
+    String getContentRoot();
 }

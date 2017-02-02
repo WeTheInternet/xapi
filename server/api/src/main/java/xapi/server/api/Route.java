@@ -13,7 +13,7 @@ import xapi.util.api.RequestLike;
 public interface Route extends Model {
 
     enum RouteType {
-        Text, Gwt, Callback
+        Text, Gwt, Callback, File
     }
 
     default <Req extends RequestLike> boolean serve(RequestScope<Req> request, In1<Req> callback) {
@@ -39,6 +39,9 @@ public interface Route extends Model {
                 return true;
             case Callback:
                 server.writeCallback(request, payload, callback);
+                return true;
+            case File:
+                server.writeFile(request, payload, callback);
                 return true;
 
         }
