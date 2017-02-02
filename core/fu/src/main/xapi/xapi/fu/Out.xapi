@@ -53,7 +53,7 @@ package xapi.fu.out;
                              $p == $n ? "To" : `O$p`)
                      )
                      default <To> Out$size<$outParams> mapped$n(In1Out1<O$n, To> mapper){
-                         return Out.out3(
+                         return Out.out$size(
                            $range(1, $size, $p ->
                                $p == $n ? mapper.supplyDeferred(out$pProvider()) : out$pProvider()
                            )

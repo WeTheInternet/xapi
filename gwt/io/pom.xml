@@ -40,6 +40,13 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>net.sourceforge.htmlunit</groupId>
+      <artifactId>htmlunit</artifactId>
+      <!-- Copied from gwt-dev -->
+      <version>2.19</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <scope>test</scope>

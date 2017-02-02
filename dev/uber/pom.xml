@@ -30,6 +30,10 @@
   <dependencies>
     <dependency>
       <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-jre-ui-javafx</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
       <artifactId>xapi-jre-inject</artifactId>
     </dependency>
     <dependency>

@@ -339,17 +339,40 @@ public interface X_Fu {
     return current;
   }
 
-  static boolean isNotEmpty(int[] format) {
-    return !isEmpty(format);
+  static boolean isNotZeroed(int[] format) {
+    return !isZeroed(format);
   }
 
-  static boolean isEmpty(int[] format) {
+
+  static boolean isZeroed(int[] format) {
     for (int i : format) {
       if (i != 0) {
         return false;
       }
     }
     return true;
+  }
+
+  static boolean hasNoNulls(Object[] format) {
+    return !hasNulls(format);
+  }
+
+
+  static boolean hasNulls(Object[] format) {
+    for (Object i : format) {
+      if (i == null) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  static boolean isEmpty(Object[] format) {
+    return format == null || format.length == 0;
+  }
+
+  static boolean isNotEmpty(Object[] format) {
+    return !isEmpty(format);
   }
 
   static int minusOne(int val) {

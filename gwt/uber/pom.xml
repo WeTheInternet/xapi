@@ -86,9 +86,13 @@
    <artifactId>xapi-gwt-test</artifactId>
    <exclusions>
     <exclusion>
-          <groupId>junit</groupId>
-          <artifactId>junit</artifactId>
-        </exclusion>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+    </exclusion>
+    <exclusion>
+      <groupId>net.sourceforge.htmlunit</groupId>
+      <artifactId>htmlunit</artifactId>
+    </exclusion>
     <exclusion>
      <groupId>org.hamcrest</groupId>
      <artifactId>hamcrest-core</artifactId>
@@ -101,6 +105,15 @@
    <artifactId>gwt-user</artifactId>
    <scope>test</scope>
   </dependency>
+
+  <dependency>
+   <groupId>net.sourceforge.htmlunit</groupId>
+   <artifactId>htmlunit</artifactId>
+   <!-- Copied from gwt-dev -->
+   <version>2.19</version>
+   <scope>test</scope>
+  </dependency>
+
   <dependency>
     <groupId>junit</groupId>
     <artifactId>junit</artifactId>

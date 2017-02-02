@@ -3,8 +3,6 @@ package xapi.dev.processor;
 import xapi.dev.gen.SourceHelper;
 import xapi.util.X_Util;
 
-import static xapi.util.X_Util.defaultCharset;
-
 import javax.annotation.processing.Filer;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
@@ -15,8 +13,12 @@ import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.JavaFileObject.Kind;
 import javax.tools.StandardLocation;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
+
+import static xapi.util.X_Util.defaultCharset;
+import static xapi.util.X_Util.rethrow;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 6/29/16.
@@ -69,16 +71,21 @@ public interface AnnotationTools extends SourceHelper<Element> {
 
     @Override
     default String readSource(String pkgName, String clsName, Element hints) {
+        final JavaFileManager filer = getFileManager();
         try {
-            final JavaFileManager filer = getFileManager();
             final FileObject file = filer.getFileForInput(
                 StandardLocation.SOURCE_PATH,
                 pkgName,
                 clsName
             );
             return file.getCharContent(true).toString();
-        } catch (IOException e) {
-            throw X_Util.rethrow(e);
+        } catch (Exception e) {
+            if (e instanceof RuntimeException && e.getCause() instanceof FileNotFoundException) {
+                throw new RuntimeException(
+                    "If this error is occurring via maven / IDE, consider adding " +
+                        "src/main/java to your resource path, so apt can see your resources.\nOriginal error:" + e.getMessage(), e);
+            }
+            throw rethrow(e);
         }
 
     }

@@ -50,6 +50,15 @@
       <version>${project.version}</version>
       <!--$NO-MVN-MAN-VER$-->
     </dependency>
+
+    <dependency>
+      <groupId>net.sourceforge.htmlunit</groupId>
+      <artifactId>htmlunit</artifactId>
+      <!-- Copied from gwt-dev -->
+      <version>2.19</version>
+      <scope>test</scope>
+    </dependency>
+
     <dependency>
       <groupId>net.wetheinter</groupId>
       <artifactId>xapi-core-test</artifactId>
