@@ -33,8 +33,6 @@ import xapi.log.X_Log;
 import xapi.source.X_Source;
 import xapi.util.X_Debug;
 
-import static xapi.fu.In2.ignoreFirst;
-
 import javax.lang.model.element.TypeElement;
 import javax.tools.FileObject;
 import javax.tools.JavaFileManager;
@@ -46,14 +44,9 @@ import java.io.Writer;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.*;
+
+import static xapi.fu.In2.ignoreFirst;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)

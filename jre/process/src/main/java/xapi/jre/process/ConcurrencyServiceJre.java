@@ -18,13 +18,13 @@ import xapi.util.api.ErrorHandler;
 import xapi.util.api.RemovalHandler;
 import xapi.util.api.SuccessHandler;
 
-import static xapi.fu.Lazy.deferred1;
-
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static xapi.fu.Lazy.deferred1;
 
 @JrePlatform
 @SingletonDefault(implFor=ConcurrencyService.class)
@@ -102,7 +102,7 @@ public class ConcurrencyServiceJre extends ConcurrencyServiceAbstract{
     ConcurrentEnvironment enviro = new JreConcurrentEnvironment();
     Mutable<Integer> delay = new Mutable<>(50_000);
     final Thread thread = createThread(() -> {
-      while (true) {
+      while (!enviro.isStopped()) {
         if (enviro.flush(10)) {
           LockSupport.parkNanos(delay.out1());
           // Cap delay at 1/4 of a second
@@ -120,8 +120,10 @@ public class ConcurrencyServiceJre extends ConcurrencyServiceAbstract{
   }
 
   protected Thread createThread(Do task) {
-    return new Thread(task.toRunnable());
-  };
+    final Thread t = new Thread(task.toRunnable());
+    t.setName("xapi-thread-" + task);
+    return t;
+  }
 
   protected int maxThreads() {
     return maxThreads.get();

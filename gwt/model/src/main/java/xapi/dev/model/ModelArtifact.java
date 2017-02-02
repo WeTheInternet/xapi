@@ -1,13 +1,6 @@
 package xapi.dev.model;
 
-import xapi.annotation.model.ClientToServer;
-import xapi.annotation.model.DeleterFor;
-import xapi.annotation.model.GetterFor;
-import xapi.annotation.model.IsModel;
-import xapi.annotation.model.Persistent;
-import xapi.annotation.model.Serializable;
-import xapi.annotation.model.ServerToClient;
-import xapi.annotation.model.SetterFor;
+import xapi.annotation.model.*;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.dev.api.ApiGeneratorTools;
@@ -26,12 +19,12 @@ import xapi.source.X_Source;
 import xapi.source.api.IsType;
 import xapi.util.X_Runtime;
 
-import static xapi.dev.model.ModelGeneratorGwt.allAbstract;
-import static xapi.dev.model.ModelGeneratorGwt.canBeSupertype;
-import static xapi.dev.model.ModelGeneratorGwt.fieldName;
-import static xapi.dev.model.ModelGeneratorGwt.toSignature;
-import static xapi.dev.model.ModelGeneratorGwt.toTypes;
-import static xapi.dev.model.ModelGeneratorGwt.typeToParameterString;
+import javax.inject.Named;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Array;
+import java.util.*;
+
+import static xapi.dev.model.ModelGeneratorGwt.*;
 import static xapi.gwt.model.service.ModelServiceGwt.REGISTER_CREATOR_METHOD;
 import static xapi.source.X_Source.binaryToSource;
 
@@ -50,18 +43,6 @@ import com.google.gwt.core.ext.typeinfo.JParameterizedType;
 import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
 import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.gwt.core.ext.typeinfo.NotFoundException;
-
-import javax.inject.Named;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 @Transferable
 public class ModelArtifact extends Artifact<ModelArtifact> {
@@ -303,6 +284,9 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
     String idField = modelAnno == null ? "id" : modelAnno.key().value();
     Class idClass = modelAnno == null ? String.class : modelAnno.key().keyType();
     for (final JMethod method : methods.keySet()) {
+      if (method.isDefaultMethod()) {
+        continue;
+      }
       final String propName = ModelMethodType.deducePropertyName(method.getName(), idField,
           method.getAnnotation(GetterFor.class), method.getAnnotation(SetterFor.class), method.getAnnotation(DeleterFor.class));
       propertyNames.add(propName);

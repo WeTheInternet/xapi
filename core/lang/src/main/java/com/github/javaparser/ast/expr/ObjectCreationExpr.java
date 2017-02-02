@@ -3,12 +3,12 @@
  * Copyright (C) 2011, 2013-2015 The JavaParser Team.
  *
  * This file is part of JavaParser.
- * 
+ *
  * JavaParser can be used either under the terms of
  * a) the GNU Lesser General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * b) the terms of the Apache License 
+ * b) the terms of the Apache License
  *
  * You should have received a copy of both licenses in LICENCE.LGPL and
  * LICENCE.APACHE. Please refer to those files for details.
@@ -18,7 +18,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  */
- 
+
 package com.github.javaparser.ast.expr;
 
 import com.github.javaparser.ast.body.BodyDeclaration;
@@ -29,7 +29,7 @@ import com.github.javaparser.ast.visitor.VoidVisitor;
 
 import java.util.List;
 
-import static com.github.javaparser.ast.internal.Utils.*;
+import static com.github.javaparser.ast.internal.Utils.ensureNotNull;
 
 /**
  * Defines constructor call expression.
@@ -41,6 +41,8 @@ import static com.github.javaparser.ast.internal.Utils.*;
  * @author Julio Vilmar Gesser
  */
 public final class ObjectCreationExpr extends Expression {
+
+	private boolean usingDiamondOperator;
 
 	private Expression scope;
 
@@ -69,11 +71,16 @@ public final class ObjectCreationExpr extends Expression {
 	}
 
 	public ObjectCreationExpr(final int beginLine, final int beginColumn, final int endLine, final int endColumn,
-			final Expression scope, final ClassOrInterfaceType type, final List<Type> typeArgs,
+			final Expression scope, final ClassOrInterfaceType type, List<Type> typeArgs,
 			final List<Expression> args, final List<BodyDeclaration> anonymousBody) {
 		super(beginLine, beginColumn, endLine, endColumn);
 		setScope(scope);
 		setType(type);
+//		if (type.getTypeArguments() != null && typeArgs == null) {
+//			usingDiamondOperator = type.getTypeArguments().isUsingDiamondOperator();
+//			typeArgs = type.getTypeArguments().getTypeArguments();
+//			type.setTypeArguments(TypeArguments.withEmpty());
+//		}
 		setTypeArgs(typeArgs);
 		setArgs(args);
 		setAnonymousClassBody(anonymousBody);
@@ -134,5 +141,9 @@ public final class ObjectCreationExpr extends Expression {
 	public void setTypeArgs(final List<Type> typeArgs) {
 		this.typeArgs = typeArgs;
 		setAsParentNodeOf(this.typeArgs);
+	}
+
+	public boolean isUseDiamondOperator() {
+		return usingDiamondOperator;
 	}
 }

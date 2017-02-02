@@ -2545,6 +2545,7 @@ NameExpr FeatureName():
       | "return"
       { ret = new NameExpr(token.beginLine, token.beginColumn, token.endLine, token.endColumn, token.image);}
   )
+
   ( LOOKAHEAD(2) "."
    (
    <IDENTIFIER>
@@ -3480,12 +3481,65 @@ Expression FeatureExpression():
 Expression UiStatement():
 {
   ExpressionStmt statement;
-  Expression expr;
+  Expression expr, nextExpr;
 }
 {
   (
     LOOKAHEAD( Expression() ";" ) ( expr = Expression() ";" { return expr; } )
-    | expr = FeatureName()
+    | (
+        expr = FeatureName()
+
+        ( "[" "]" {
+           if (expr instanceof NameExpr) {
+              ClassOrInterfaceType asCls = new ClassOrInterfaceType(((NameExpr)expr).getQualifiedName());
+              expr = new TypeExpr(new ReferenceType(asCls, 1));
+           } else if (expr instanceof TypeExpr) {
+              ReferenceType refType = (ReferenceType)((TypeExpr)expr).getType();
+              refType.setArrayCount(refType.getArrayCount()+1);
+           } else {
+              throw new IllegalArgumentException(
+                "Cannot handle a non-name, non-reference type expression "
+                  + expr + " of type " + expr.getClass() );
+           }
+        } )*
+        (
+          "."
+          nextExpr = UiStatement() {
+            if (nextExpr instanceof ScopedExpression) {
+              ScopedExpression scope = (ScopedExpression)nextExpr;
+              scope.getRoot().setScope(expr);
+              expr = nextExpr;
+            } else if (nextExpr instanceof NameExpr) {
+              NameExpr nextName = (NameExpr)nextExpr;
+              if (expr instanceof NameExpr) {
+                expr = new QualifiedNameExpr((NameExpr)expr, nextName.getName());
+              } else if (expr instanceof TypeExpr) {
+                  TypeExpr exprType = (TypeExpr)expr;
+                  if ("class".equals(nextName.getName())) {
+                    return new ClassExpr(exprType.getType());
+                  }
+                  if (Character.isLowerCase(nextName.getName().charAt(0))) {
+                    // treat this as a field reference.
+                    FieldAccessExpr asField = new FieldAccessExpr(expr, nextName.getName());
+                    expr = asField;
+                  } else {
+                    // Treat this as a type reference
+                    if (! (exprType.getType() instanceof ClassOrInterfaceType) ) {
+                      throw new ParseException("Illegal nested type. type " + expr + "." + nextExpr + " is invalid");
+                    }
+                    ClassOrInterfaceType asClass = (ClassOrInterfaceType)exprType.getType();
+                    ClassOrInterfaceType nested = new ClassOrInterfaceType(asClass, nextName.getName());
+                    expr = new TypeExpr(nested);
+                  }
+              } else {
+                  throw new ParseException("Unhandled . reference in " + expr + " :: " + nextExpr);
+              }
+            } else {
+              throw new ParseException("Unhandled . reference in " + expr + " :: " + nextExpr);
+            }
+          }
+        )*
+      )
     | expr = Literal()
   )
   { return expr; }

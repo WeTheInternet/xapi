@@ -10,6 +10,10 @@ public interface ScopedExpression <Self extends Expression & ScopedExpression<Se
 
     Expression getScope();
 
+    default Expression getExpression() {
+        return self();
+    }
+
     default Expression getRootScope() {
         Expression next, rootMost = self();
         while (
@@ -21,6 +25,14 @@ public interface ScopedExpression <Self extends Expression & ScopedExpression<Se
                 return rootMost;
             }
             rootMost = next;
+        }
+        return rootMost;
+    }
+
+    default ScopedExpression getRoot() {
+        ScopedExpression rootMost = self();
+        while (rootMost.getScope() instanceof ScopedExpression) {
+            rootMost = (ScopedExpression) rootMost.getScope();
         }
         return rootMost;
     }

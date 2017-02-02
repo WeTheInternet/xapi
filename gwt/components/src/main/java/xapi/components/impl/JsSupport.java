@@ -6,12 +6,9 @@ import elemental.js.util.JsArrayOfBoolean;
 import elemental.js.util.JsArrayOfInt;
 import elemental.js.util.JsArrayOfNumber;
 import elemental.js.util.JsArrayOfString;
-import xapi.components.api.Console;
-import xapi.components.api.CustomElementRegistry;
-import xapi.components.api.Document;
-import xapi.components.api.JsObject;
-import xapi.components.api.Symbol;
-import xapi.components.api.Window;
+import jsinterop.annotations.JsIgnore;
+import xapi.components.api.*;
+import xapi.components.api.CustomElementRegistry.ExtendsTag;
 import xapi.fu.In1Out1;
 import xapi.fu.In2Out1;
 
@@ -58,6 +55,32 @@ public class JsSupport {
   /*-{
   	return $wnd.customElements;
   }-*/;
+
+  @JsIgnore
+  public static JavaScriptObject defineElement(String name, JavaScriptObject prototype) {
+    return customElements().define(name, prototype, null); // js is cool with null
+  }
+
+  @JsIgnore
+  public static ComponentConstructor defineTag(String name, JavaScriptObject prototype) {
+    return defineTag(name, prototype, null);
+  }
+
+  @JsIgnore
+  public static ComponentConstructor defineTag(String name, JavaScriptObject prototype, ExtendsTag extendsTag) {
+    final JavaScriptObject definition = customElements().define(name, prototype, extendsTag);
+    return new ComponentConstructor(definition);
+  }
+
+  @JsIgnore
+  static ExtendsTag extendsTag(String tagName) {
+    if (tagName == null) {
+      return null;
+    }
+    ExtendsTag obj = JavaScriptObject.createObject().cast();
+    obj.setExtends(tagName);
+    return obj;
+  }
 
   public static native JsObject object()
   /*-{
@@ -492,6 +515,11 @@ public class JsSupport {
     object[key]=value;
   }-*/;
 
+  public static native void setObject(Object object, int key, Object value)
+  /*-{
+    object[key]=value;
+  }-*/;
+
   public static native Object getObject(Object object, String key)
   /*-{
     return object[key];
@@ -599,4 +627,18 @@ public class JsSupport {
   public static <I, O> In1Out1<I, O> nativeFactory(In1Out1<I, O> factory, String name) {
     return factory.lazy(new NativeFactory<>(name));
   }
+
+  public static native <T> T unsafeCast(Object thing)
+  /*-{
+    return thing;
+  }-*/;
+
+  public static JsObjectDescriptor newDescriptor() {
+    return JavaScriptObject.createObject().cast();
+  }
+
+    public static native WebComponentPrototype prototypeOf(JavaScriptObject classOrProto)
+    /*-{
+      return classOrProto.prototype ? classOrProto.prototype : classOrProto; // TODO handle cases when being sent a prototype
+    }-*/;
 }

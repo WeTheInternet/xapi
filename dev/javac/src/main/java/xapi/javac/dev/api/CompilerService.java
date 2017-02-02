@@ -103,8 +103,6 @@ public interface CompilerService {
     boolean test = loc.contains("test-classes");
     final CompilerSettings settings = defaultSettings()
           .setTest(test)
-          .setClearGenerateDirectory(false)
-          .resetGenerateDirectory()
           .setImplicitMode(ImplicitMode.CLASS)
           .setProcessorMode(ProcessorMode.Both);
 

@@ -16,8 +16,9 @@ public interface CustomElementRegistry {
         String getExtends();
 
         void setExtends(String extendsTag);
+
     }
 
-    void define(String name, JavaScriptObject prototype, ExtendsTag extendsTag);
+    JavaScriptObject define(String name, JavaScriptObject prototype, ExtendsTag extendsTag);
 
 }

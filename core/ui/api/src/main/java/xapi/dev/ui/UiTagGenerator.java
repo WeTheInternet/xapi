@@ -4,8 +4,12 @@ import com.github.javaparser.ASTHelper;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseException;
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.body.BodyDeclaration;
+import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
+import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.ModifierSet;
+import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.visitor.ModifierVisitorAdapter;
@@ -26,12 +30,17 @@ import xapi.fu.Do;
 import xapi.fu.Lazy;
 import xapi.fu.MappedIterable;
 import xapi.fu.Maybe;
+import xapi.fu.Mutable;
 import xapi.fu.Out1;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
 import xapi.log.X_Log;
+import xapi.source.read.SourceUtil;
 import xapi.util.X_String;
 import xapi.util.X_Util;
+
+import java.util.Arrays;
+import java.util.List;
 
 import static com.github.javaparser.ast.expr.StringLiteralExpr.stringLiteral;
 import static com.github.javaparser.ast.expr.TemplateLiteralExpr.templateLiteral;
@@ -193,6 +202,7 @@ public class UiTagGenerator extends UiComponentGenerator {
         final String className = toClassName(name);
         final Maybe<UiAttrExpr> apiAttr = n.getAttribute("api");
         final Maybe<UiAttrExpr> implAttr = n.getAttribute("impl");
+        final Maybe<UiAttrExpr> generics = n.getAttribute("generics");
         final Maybe<UiAttrExpr> data = n.getAttribute("data");
         final Maybe<UiAttrExpr> model = n.getAttribute("model");
         final Maybe<UiAttrExpr> ui = n.getAttribute("ui");
@@ -206,6 +216,9 @@ public class UiTagGenerator extends UiComponentGenerator {
         final GeneratedUiApi api = component.getApi();
         final GeneratedUiBase base = component.getBase();
 
+        if (generics.isPresent()) {
+            addGenerics(tools, component, me, generics.get());
+        }
         if (data.isPresent()) {
             // The component has some internal data (not shared in model)
             addDataAccessors(tools, me, data.get(), base);
@@ -229,7 +242,7 @@ public class UiTagGenerator extends UiComponentGenerator {
             addUi(tools, me, ui.get(), component);
         }
 
-        apiAttr.readIfPresent(attr->addApiMethods(tools, me, attr));
+        apiAttr.readIfPresent(attr-> addApiMembers(tools, me, attr));
         implAttr.readIfPresent(attr->addImplMethods(tools, me, attr));
 
         eventHandlers.forEach(onHandler->{
@@ -246,7 +259,38 @@ public class UiTagGenerator extends UiComponentGenerator {
         });
     }
 
-    protected void addLayerMethods(UiGeneratorTools tools, ContainerMetadata me, GeneratedUiLayer layer, UiAttrExpr attr) {
+    protected Do addGenerics(
+        UiGeneratorTools tools,
+        GeneratedUiComponent component,
+        ContainerMetadata me,
+        UiAttrExpr attr
+    ) {
+        final Expression generics = attr.getExpression();
+        if (!(generics instanceof JsonContainerExpr)) {
+            throw new IllegalArgumentException("A generic={} feature must be a json value; you sent " + tools.debugNode(attr));
+        }
+        JsonContainerExpr container = (JsonContainerExpr) generics;
+        if (container.isArray()) {
+            throw new IllegalArgumentException("A generic={} feature must be a json map; you sent array " + tools.debugNode(attr));
+        }
+        Mutable<Do> undos = new Mutable<>(Do.NOTHING);
+        final ApiGeneratorContext ctx = me.getContext();
+        container.getPairs().forEach(pair->{
+            String genericName = tools.resolveString(ctx, pair.getKeyExpr());
+            final Expression resolved = tools.resolveVar(ctx, pair.getValueExpr());
+            final TypeExpr type = tools.methods().$type(tools, ctx, resolved);
+            if (genericName.startsWith("$")) {
+                final Do was = undos.out1();
+                final Do use = was.doAfter(ctx.addToContext(genericName, type));
+                undos.in(use);
+            }
+            component.addGeneric(genericName, type);
+        });
+
+        return undos.out1();
+    }
+
+    protected void addLayerMembers(UiGeneratorTools tools, ContainerMetadata me, GeneratedUiLayer layer, UiAttrExpr attr) {
         final ApiGeneratorContext ctx = me.getContext();
         maybeAddImports(tools, ctx, layer, attr);
         final Expression resolved = tools.resolveVar(ctx, attr.getExpression());
@@ -254,24 +298,37 @@ public class UiTagGenerator extends UiComponentGenerator {
             JsonContainerExpr asJson = (JsonContainerExpr) resolved;
             asJson.getValues().forAll(expr->{
                 if (expr instanceof DynamicDeclarationExpr) {
-                    DynamicDeclarationExpr method = (DynamicDeclarationExpr) expr;
-                    printMethod(tools, layer, me, method);
+                    DynamicDeclarationExpr member = (DynamicDeclarationExpr) expr;
+                    printMember(tools, layer, me, member);
                 } else {
                     throw new IllegalArgumentException("Unhandled api= feature value " + tools.debugNode(expr) + " from " + tools.debugNode(attr));
                 }
             });
         } else if (resolved instanceof DynamicDeclarationExpr) {
-            DynamicDeclarationExpr method = (DynamicDeclarationExpr) resolved;
-            printMethod(tools, layer, me, method);
+            // A single dynamic declaration is special; if it is a class or an interface
+            // and the layer matches that type, we will use that type directly.
+            DynamicDeclarationExpr member = (DynamicDeclarationExpr) resolved;
+            if (member.getBody() instanceof ClassOrInterfaceDeclaration) {
+                ClassOrInterfaceDeclaration type = (ClassOrInterfaceDeclaration) member.getBody();
+                if (layer.isInterface()) {
+                    if (type.isInterface()) {
+                       // api has an interface, lets use it!
+
+                    }
+                } else if (!type.isInterface()) {
+                       // base is a class, lets use it!
+                }
+            }
+            printMember(tools, layer, me, member);
         } else {
             throw new IllegalArgumentException("Unhandled api= feature value " + tools.debugNode(resolved) + " from " + tools.debugNode(attr));
         }
     }
-    protected void addApiMethods(UiGeneratorTools tools, ContainerMetadata me, UiAttrExpr attr) {
-        addLayerMethods(tools, me, me.getGeneratedComponent().getApi(), attr);
+    protected void addApiMembers(UiGeneratorTools tools, ContainerMetadata me, UiAttrExpr attr) {
+        addLayerMembers(tools, me, me.getGeneratedComponent().getApi(), attr);
     }
     protected void addImplMethods(UiGeneratorTools tools, ContainerMetadata me, UiAttrExpr attr) {
-        addLayerMethods(tools, me, me.getGeneratedComponent().getBase(), attr);
+        addLayerMembers(tools, me, me.getGeneratedComponent().getBase(), attr);
     }
 
     private String toClassName(String name) {
@@ -407,6 +464,9 @@ public class UiTagGenerator extends UiComponentGenerator {
                                                         }
                                                         String type = toDom.addImport(ASTHelper.extractGeneric(modelInfo.getMemberType()));
                                                         String call = tools.resolveString(ctx, endExpr);
+                                                        if (modelInfo.getMemberType().hasRawType("IntTo")) {
+                                                            call = call + ".forEach()"; // ew.  But. well, it is what it is.  TODO: abstract this away
+                                                        }
                                                         toDom.append(type).append(" ").append(asName)
                                                             .append(" : ").append(call).println(") {")
                                                             .indent();
@@ -523,7 +583,7 @@ public class UiTagGenerator extends UiComponentGenerator {
 //                                final GeneratedUiField modelInfo = nodeToUse.getExtra(EXTRA_MODEL_INFO);
                                 ComponentBuffer otherTag = tools.getComponentInfo(n.getName());
                                 // We'll want to defer to a factory method on the other component.
-                                MethodCallExpr factoryMethod = otherTag.getTagFactory(tools, ctx, component, n);
+                                MethodCallExpr factoryMethod = otherTag.getTagFactory(tools, ctx, component, namespace, n);
                                 String initializer = tools.resolveString(ctx, factoryMethod);
                                 toDom.println(type + " " + refFieldName + " = " + initializer + ";");
                                 printedVar = true;
@@ -610,7 +670,7 @@ public class UiTagGenerator extends UiComponentGenerator {
                                         String scopeName = getScopeType(tools, scope);
                                         if (scopeName != null && scopeName.startsWith("$")) {
                                             // We have a method reference to a bound name ($model, $data, $Api, $Base, $Self)
-                                            switch (scopeName.toLowerCase()) {
+                                            switch (scopeName.toLowerCase().split("<")[0]) {
                                                 case "$model":
                                                     // model references are excellent; they are defined by their types.
                                                     if (!component.hasPublicModel()) {
@@ -972,7 +1032,7 @@ public class UiTagGenerator extends UiComponentGenerator {
                 if (typeExpr instanceof DynamicDeclarationExpr) {
                     // Must be a default method.
                     DynamicDeclarationExpr method = (DynamicDeclarationExpr) typeExpr;
-                    printMethod(tools, api.getModel(), me, method);
+                    printMember(tools, api.getModel(), me, method);
                 } else {
                     Type type = tools.methods().$type(tools, ctx, typeExpr).getType();
                     // TODO smart import lookups...
@@ -1018,31 +1078,111 @@ public class UiTagGenerator extends UiComponentGenerator {
 
     }
 
-    protected void printMethod(
+    protected void printMember(
         UiGeneratorTools tools,
         GeneratedJavaFile cls,
         ContainerMetadata me,
-        DynamicDeclarationExpr method
+        DynamicDeclarationExpr member
     ) {
         final ApiGeneratorContext ctx = me.getContext();
 
-
-        resolveReference(tools, ctx, me.getGeneratedComponent(), cls, null, method);
+        resolveReference(tools, ctx, me.getGeneratedComponent(), cls, null, member);
 
         final Do undo = resolveSpecialNames(ctx, me.getGeneratedComponent(), cls, null);
-        UiMethodTransformer transformer = new UiMethodTransformer(cls);
-        final Node result = transformer.visit(method, new UiMethodContext()
-            .setContainer(me)
-            .setTools(tools)
-            .setGenerator(this)
-        );
+        try {
 
-        final String src = tools.resolveLiteral(ctx, (Expression)result);
-        cls.getSource().getClassBuffer()
-            .println()
-            .printlns(src);
+            final BodyDeclaration decl = member.getBody();
+            ChainBuilder<VariableDeclarator> toForward = Chain.startChain();
+            if (decl instanceof FieldDeclaration) {
+                FieldDeclaration asField = (FieldDeclaration) decl;
+                String typeName = asField.getType().toSource();
+                for (VariableDeclarator var : asField.getVariables()) {
+                    if (var.getInit() == null) {
+                        if (cls.isInterface()) {
+                            toForward.add(var);
+                        }
+                    } else {
+                        // A field with an initializer.
+                        final Expression init = var.getInit();
+                        // If this is an interface, we may be able to use only default methods
+                        if (cls.isInterface()) {
 
-        undo.done();
+                            if (init instanceof MethodReferenceExpr) {
+                                // when using a method reference, we will bind get/set to whatever is referneced.
+                                MethodReferenceExpr methodRef = (MethodReferenceExpr) init;
+                                if ("$model".equals(methodRef.getScope().toSource())) {
+                                    String scope = tools.resolveString(ctx, methodRef.getScope());
+                                    // Create getter and setter
+                                    String nameToUse = cls.newFieldName(methodRef.getIdentifier());
+                                    String getterName = SourceUtil.toGetterName(typeName, nameToUse);
+                                    String setterName = SourceUtil.toSetterName(nameToUse);
+                                    final ClassBuffer buf = cls.getSource().getClassBuffer();
+                                    boolean addGetter = true, addSetter = true;
+                                    if (nameToUse.startsWith("get")) {
+                                        // getter only
+                                        addSetter = false;
+                                    } else if (nameToUse.startsWith("set")) {
+                                        // setter only
+                                        addGetter = false;
+                                    }
+                                    if (addGetter) {
+                                        buf.createMethod("default " + typeName + " " + getterName+ "()")
+                                            .print("return ")
+                                            .printlns(scope + "." + getterName + "();");
+                                    }
+                                    if (addSetter) {
+                                        buf.createMethod("default void " + setterName+ "()")
+                                            .addParameter(typeName, nameToUse)
+                                            .printlns(scope + "." + setterName + "(" + nameToUse + ");");
+                                    }
+                                    continue; // do not fall through into .ensureField.
+                                } else {
+                                    throw new NotYetImplemented("Can only support $model::fieldReferences; you sent " + tools.debugNode(init));
+                                }
+
+
+                            } else if (var.getInit() instanceof MethodCallExpr) {
+                                // no magic for these guys yet;
+                            } else {
+                                // assume this is a constant.  forward to base type to fill out.
+                                toForward.add(var);
+                                // falls through to .ensureField.
+                            }
+                        }
+                    }
+                    cls.ensureField(typeName, var.getId().getName());
+                }
+
+                if (toForward.isEmpty()) {
+                    return;
+                } else {
+                    // for an interface, we turn a field into a pair of getter / setters (no field!)
+                    if (cls instanceof GeneratedUiApi) {
+                        // Whenever we add to the interface, we also add to the base class.
+                        final List<VariableDeclarator> oldVars = asField.getVariables();
+                        asField.setVariables(Arrays.asList(toForward.toArray(VariableDeclarator[]::new)));
+                        printMember(tools, me.getGeneratedComponent().getBase(), me, member);
+                        asField.setVariables(oldVars);
+                        return;
+                    }
+                }
+            }
+
+            UiMethodTransformer transformer = new UiMethodTransformer(cls);
+            final Node result = transformer.visit(member, new UiMethodContext()
+                .setContainer(me)
+                .setTools(tools)
+                .setGenerator(this)
+            );
+
+            final String src = tools.resolveLiteral(ctx, (Expression) result);
+            cls.getSource().getClassBuffer()
+                .println()
+                .printlns(src);
+
+        } finally {
+            undo.done();
+        }
     }
 
     private void addDataAccessors(

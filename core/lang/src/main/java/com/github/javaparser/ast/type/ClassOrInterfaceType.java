@@ -151,4 +151,9 @@ public final class ClassOrInterfaceType extends Type implements NamedNode {
         this.typeArguments = typeArguments;
         setAsParentNodeOf(this.typeArguments.getTypeArguments());
     }
+
+    @Override
+    public boolean hasRawType(String name) {
+        return this.name.equals(name);
+    }
 }

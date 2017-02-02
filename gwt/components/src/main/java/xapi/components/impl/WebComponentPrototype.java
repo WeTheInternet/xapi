@@ -2,6 +2,7 @@ package xapi.components.impl;
 
 import jsinterop.annotations.JsProperty;
 import jsinterop.annotations.JsType;
+import xapi.components.api.JsoArray;
 
 import com.google.gwt.core.client.JavaScriptObject;
 
@@ -30,10 +31,15 @@ interface WebComponentPrototype {
   JavaScriptObject getCreatedCallback();
 
   @JsProperty
-  void setConstructor(JavaScriptObject callback);
+  /**
+   * The actual name in the js class must be constructor,
+   * but we do special things with it when building the class,
+   * then defer to the optional init method (defined here, as a created callback).
+   */
+  void setInit(JavaScriptObject callback);
 
   @JsProperty
-  JavaScriptObject getConstructor();
+  JavaScriptObject getInit();
 
   @JsProperty
   void setDetachedCallback(JavaScriptObject callback);
@@ -52,6 +58,12 @@ interface WebComponentPrototype {
 
   @JsProperty
   JavaScriptObject getAttributeChangedCallback();
+
+  @JsProperty
+  void setObservedAttributes(JsoArray<String> callback);
+
+  @JsProperty
+  JsoArray<String> getObservedAttributes();
 
   @JsProperty
   void setAdoptedCallback(JavaScriptObject callback);

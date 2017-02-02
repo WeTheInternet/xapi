@@ -1,13 +1,12 @@
 package xapi.javac.dev.api;
 
+import xapi.fu.In1;
 import xapi.fu.In2.In2Unsafe;
 import xapi.fu.Out2;
 import xapi.javac.dev.model.CompilerSettings;
 import xapi.log.X_Log;
 import xapi.reflect.X_Reflect;
 import xapi.util.X_Debug;
-
-import static xapi.util.X_String.classToSourceFiles;
 
 import javax.annotation.processing.Processor;
 import java.io.File;
@@ -17,6 +16,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import static xapi.util.X_String.classToSourceFiles;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 6/30/16.
@@ -48,9 +49,12 @@ public class PendingCompile {
     }
 
     public PendingCompile addProcessor(Class<? extends Processor> processor) {
+        // TODO consider using the manual -processor ClassName override instead of this...
         String existing = settings.getProcessorPath();
         final String loc = X_Reflect.getFileLoc(processor);
-        if (existing.contains(loc)) {
+        if (existing == null) {
+            settings.setProcessorPath(loc);
+        } else if (!existing.contains(loc)) {
             existing = existing + File.pathSeparator + loc;
             settings.setProcessorPath(existing);
         }
@@ -96,5 +100,23 @@ public class PendingCompile {
         }
 
         return result;
+    }
+
+    public CompilerSettings getSettings() {
+        return settings;
+    }
+
+    public PendingCompile withSettings(In1<CompilerSettings> callback) {
+        callback.in(getSettings());
+        return this;
+    }
+
+    public CompilerService getCompiler() {
+        return compiler;
+    }
+
+    public PendingCompile withCompiler(In1<CompilerService> callback) {
+        callback.in(getCompiler());
+        return this;
     }
 }

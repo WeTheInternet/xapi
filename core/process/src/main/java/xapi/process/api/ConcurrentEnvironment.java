@@ -5,11 +5,11 @@ import xapi.log.X_Log;
 import xapi.process.X_Process;
 import xapi.util.X_Debug;
 
-import static xapi.process.X_Process.now;
-
 import javax.inject.Provider;
 import java.util.Iterator;
 import java.util.concurrent.TimeoutException;
+
+import static xapi.process.X_Process.now;
 
 public abstract class ConcurrentEnvironment {
 
@@ -23,6 +23,7 @@ public abstract class ConcurrentEnvironment {
   private final Object synchro = new Object();
 
   private static final double start = X_Process.now();
+  protected boolean stop;
 
   public void monitor(Priority priority, Provider<Boolean> gate, Runnable job) {
     pushDeferred(()->{
@@ -133,5 +134,11 @@ public abstract class ConcurrentEnvironment {
   public abstract void pushFinally(Do cmd);
   public abstract void pushThread(Thread childThread);
 
+  public void shutdown() {
+    stop = true;
+  }
 
+  public boolean isStopped() {
+    return stop;
+  }
 }

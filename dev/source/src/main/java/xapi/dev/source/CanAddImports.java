@@ -5,6 +5,8 @@ package xapi.dev.source;
  */
 public interface CanAddImports {
 
+  CanAddImports NO_OP = new NoOpImports();
+
   ImportSection getImports();
 
   default String addImport(Class<?> cls) {
@@ -23,5 +25,32 @@ public interface CanAddImports {
     return getImports().addStaticImport(cls);
   }
 
+}
 
+class NoOpImports implements CanAddImports {
+
+  @Override
+  public ImportSection getImports() {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public String addImport(Class<?> cls) {
+    return cls.getCanonicalName();
+  }
+
+  @Override
+  public String addImport(String cls) {
+    return cls;
+  }
+
+  @Override
+  public String addImportStatic(Class<?> cls, String name) {
+    return cls.getCanonicalName() + "." + name;
+  }
+
+  @Override
+  public String addImportStatic(String cls) {
+    return cls;
+  }
 }

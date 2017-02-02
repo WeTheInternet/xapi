@@ -66,6 +66,10 @@ public interface UiNamespace {
         return importer.addImport(HasStyleResources.class);
     }
 
+    default String getBaseStyleResourceType(CanAddImports importer) {
+        return getStyleResourceType(importer);
+    }
+
     default String getStyleCacheType(CanAddImports importer) {
         return importer.addImport(StyleCacheService.class);
     }

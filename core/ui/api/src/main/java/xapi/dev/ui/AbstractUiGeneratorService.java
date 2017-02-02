@@ -454,6 +454,8 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
                             String pkgName = element.getPackage();
                             if (pkgName == null) {
                                 pkgName = "";
+                            } else {
+                                pkgName = pkgName.replace('.', '/');
                             }
                             src = filer.readSource(pkgName, loc, hints);
                         } else {
@@ -571,44 +573,57 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
     public MappedIterable<GeneratedUiComponent> generateComponents(
         SourceHelper<Raw> sources, In1Out1<UiContainerExpr, IsQualified> type, UiContainerExpr ... parsed
     ) {
-        PhaseMap<String> map = PhaseMap.withDefaults(new LinkedHashSet<>());
-        final Iterator<PhaseNode<String>> phases = map.forEachNode().iterator();
-        final MappedIterable<? extends Out2<
-            Mutable<ComponentBuffer>,
-            Do>
-            > components = ArrayIterable.iterate(parsed)
-            .map(ui -> {
-                final IsQualified myType = type.io(ui);
-                ComponentBuffer buffer = initialize(sources, myType, ui);
-                Do onStart = pauseState();
-                return Out2.out2Immutable(new Mutable<>(buffer), onStart);
-            })
-            .cached();
+        try {
 
-        phases.forEachRemaining(phase-> {
-            components.forAll(job->{
-                job.out2().done();
-                final Mutable<ComponentBuffer> buffer = job.out1();
-                buffer.process(this::runPhase, phase.getId());
+            PhaseMap<String> map = PhaseMap.withDefaults(new LinkedHashSet<>());
+            final Iterator<PhaseNode<String>> phases = map.forEachNode().iterator();
+            final MappedIterable<? extends Out2<
+                Mutable<ComponentBuffer>,
+                Do>
+                > components = ArrayIterable.iterate(parsed)
+                .map(ui -> {
+                    final IsQualified myType = type.io(ui);
+                    ComponentBuffer buffer = initialize(sources, myType, ui);
+                    Do onStart = pauseState();
+                    return Out2.out2Immutable(new Mutable<>(buffer), onStart);
+                })
+                .cached();
+
+            phases.forEachRemaining(phase-> {
+                components.forAll(job->{
+                    job.out2().done();
+                    final Mutable<ComponentBuffer> buffer = job.out1();
+                    buffer.process(this::runPhase, phase.getId());
+                });
             });
-        });
 
-//        for (UiContainerExpr ui : parsed) {
-//
-//            ComponentBuffer buffer = initialize(sources, type, ui);
-//
-//            for (PhaseNode<String> phase : map.forEachNode()) {
-//                buffer = runPhase(buffer, phase.getId());
-//            }
-//        }
+    //        for (UiContainerExpr ui : parsed) {
+    //
+    //            ComponentBuffer buffer = initialize(sources, type, ui);
+    //
+    //            for (PhaseNode<String> phase : map.forEachNode()) {
+    //                buffer = runPhase(buffer, phase.getId());
+    //            }
+    //        }
 
-        finish();
+            finish();
+        } catch (Throwable t) {
+            X_Log.error(getClass(), "Did not generate ui successfully;", t, "for", parsed);
+            if (isStrict()) {
+                throw t;
+            }
+        }
+
 
         final MappedIterable<GeneratedUiComponent> results = allComponents();
         resetState();
         seen.clear();
 
         return results;
+    }
+
+    protected boolean isStrict() {
+        return false;
     }
 
     public Do pauseState() {

@@ -16,6 +16,9 @@ public class UiGeneratorTest {
     public void testSimpleUiComponent() throws Throwable {
         CompilerService compiler = X_Inject.singleton(CompilerService.class);
         final PendingCompile output = compiler.startCompile(SimpleUiComponent.class);
+        output.getSettings()
+            .setClearGenerateDirectory(false)
+            .resetGenerateDirectory();
         boolean[] success = new boolean[1];
         final int code = output.compileAndRun(
               (cl, classes) -> success[0] = true , true

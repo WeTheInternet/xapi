@@ -1,6 +1,5 @@
 package com.github.javaparser.ast.type;
 
-import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.visitor.GenericVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitor;
 
@@ -55,5 +54,17 @@ public class IntersectionType extends Type {
         }
         this.elements = elements;
         setAsParentNodeOf(this.elements);
+    }
+
+    @Override
+    public boolean hasRawType(String name) {
+        if (elements != null) {
+            for (ReferenceType element : elements) {
+                if (element.hasRawType(name)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

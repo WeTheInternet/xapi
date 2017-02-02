@@ -293,7 +293,7 @@ Feature: ComponentGenerator.feature: Transpile xapi templates into web component
     |                                                          |
     | public interface ToDosComponent {                                 |
     |                                                          |
-    |   abstract ModelToDosComponent getModel() ;              |
+    |   abstract ModelToDos getModel() ;              |
     |                                                          |
     |   default void addTodo(Todo todo) {               |
     |     getModel().getTodos().add(todo);                     |

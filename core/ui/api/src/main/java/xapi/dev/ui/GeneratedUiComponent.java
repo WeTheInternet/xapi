@@ -17,22 +17,24 @@ import xapi.dev.source.FieldBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.dev.ui.GeneratedUiComponent.GeneratedUiImplementation.RequiredMethodType;
+import xapi.dev.ui.api.GeneratedUiGenericInfo;
 import xapi.fu.*;
 import xapi.fu.iterate.CachingIterator;
 import xapi.model.api.Model;
 import xapi.reflect.X_Reflect;
 import xapi.source.read.JavaModel.IsTypeDefinition;
+import xapi.source.read.SourceUtil;
 import xapi.ui.api.NodeBuilder;
 import xapi.util.X_String;
-
-import static xapi.fu.Lazy.deferAll;
-import static xapi.fu.Lazy.deferSupplier;
-import static xapi.fu.Out2.out2Immutable;
 
 import java.io.Serializable;
 import java.lang.reflect.Modifier;
 import java.util.EnumMap;
 import java.util.Map.Entry;
+
+import static xapi.fu.Lazy.deferAll;
+import static xapi.fu.Lazy.deferSupplier;
+import static xapi.fu.Out2.out2Immutable;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 1/6/17.
@@ -253,10 +255,16 @@ public class GeneratedUiComponent {
                 }
                 fieldNames.out1().put(name, 0);
 
-                getSource().getClassBuffer()
-                    .createField(type, name, Modifier.PROTECTED)
-                    .createGetter(Modifier.PUBLIC)
-                    .createSetter(Modifier.PUBLIC);
+                final ClassBuffer buf = getSource().getClassBuffer();
+                if (buf.isInterface()) {
+                    buf.createMethod("public " + type + " " + SourceUtil.toGetterName(type, name) + "()");
+                    buf.createMethod("public void " + SourceUtil.toSetterName(name) + "()")
+                        .addParameter(type, name);
+                } else {
+                    buf.createField(type, name, Modifier.PROTECTED)
+                        .createGetter(Modifier.PUBLIC)
+                        .createSetter(Modifier.PUBLIC);
+                }
             }
         }
     }
@@ -335,10 +343,20 @@ public class GeneratedUiComponent {
         protected Lazy<GeneratedUiModel> model = deferAll(
             GeneratedUiModel::new,
             this::getPackageName,
-            this::getWrappedName
+            this::getNameForModel
         );
+
+        public Maybe<GeneratedUiLayer> getSuperType() {
+            return Maybe.nullable((GeneratedUiLayer)superType);
+        }
+
+        protected String getNameForModel() {
+            return getTypeName(); // you may want to suffix your models.
+        }
+
         private String nameElement, nameElementBuilder, nameStyleService, nameStyleElement;
         private final StringTo<In2Out1<UiNamespace, CanAddImports, String>> generics;
+        private final GeneratedUiGenericInfo genericInfo;
         private final StringTo<In1<GeneratedUiImplementation>> abstractMethods;
 
         public GeneratedUiLayer(String pkg, String cls) {
@@ -348,6 +366,7 @@ public class GeneratedUiComponent {
         public GeneratedUiLayer(GeneratedUiLayer superType, String pkg, String cls) {
             super(superType, pkg, cls);
             generics = X_Collect.newStringMapInsertionOrdered(In2Out1.class);
+            genericInfo = new GeneratedUiGenericInfo();
             abstractMethods = X_Collect.newStringMap(In1.class);
         }
 
@@ -385,6 +404,9 @@ public class GeneratedUiComponent {
                 } else {
                     nameElement = namespace.getElementType(getSource());
                 }
+                Type type = null;
+                final TypeExpr expr = new TypeExpr(type);
+                genericInfo.addGeneric(nameElement, expr);
             }
             // Use the concrete type
             return nameElement;
@@ -602,9 +624,7 @@ public class GeneratedUiComponent {
                     ctor.println("set" + titled + "(" + param.out2() + ");");
                 })
                 .forAllMapped(
-                bestImpl::ensureField, Out2::out2, Out2::out1 // was <name, type>, needs <type, name>
-                                                              // we have to invert the map keys because
-                                                              // only names, not types, are the unique key
+                bestImpl::ensureField, Out2::out1, Out2::out2
             );
 
         }
@@ -772,10 +792,10 @@ public class GeneratedUiComponent {
         if (base.isResolved()) {
             // our actual class name is WrappedName, and we implement the api type name
             final GeneratedUiBase baseLayer = base.out1();
-            // Only implement the api if we generated methods into it...
             final ClassBuffer out = baseLayer.getSource().getClassBuffer();
             baseGenerics = baseLayer.getGenericsMap();
             String apiName = baseLayer.apiName;
+
             if (apiGenerics != null && apiGenerics.isNotEmpty()) {
                 apiName += "<";
                 for (Out2<String, In2Out1<UiNamespace, CanAddImports, String>> generic : apiGenerics.forEachItem()) {
@@ -844,7 +864,7 @@ public class GeneratedUiComponent {
                     rawSuper += value;
                 }
                 rawSuper += ">";
-                out.getClassBuffer().setSuperClass(rawSuper);
+                out.getClassBuffer().setSuperClass(rawSuper.replace("<>", ""));
             }
             if (ui.model.isResolved()) {
                 final GeneratedUiModel model = ui.model.out1();
@@ -882,5 +902,12 @@ public class GeneratedUiComponent {
             return Maybe.nullable(getPublicModel().getField(name));
         }
         return Maybe.not();
+    }
+
+    public void addGeneric(String genericName, TypeExpr type) {
+        final GeneratedUiApi a = getApi();
+        a.getGenericsMap().put(genericName, (ns, imp)-> {
+            return type.getType().toSource();
+        });
     }
 }

@@ -25,9 +25,9 @@ import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.visitor.GenericVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitor;
 
-import static com.github.javaparser.ast.internal.Utils.ensureNotNull;
-
 import java.util.List;
+
+import static com.github.javaparser.ast.internal.Utils.ensureNotNull;
 
 /**
  * @author Julio Vilmar Gesser
@@ -41,6 +41,7 @@ public final class MethodCallExpr extends Expression implements ScopedExpression
 	private NameExpr name;
 
 	private List<Expression> args;
+	private boolean usingDiamondOperator;
 
 	public MethodCallExpr() {
 	}
@@ -120,5 +121,13 @@ public final class MethodCallExpr extends Expression implements ScopedExpression
 	public void setTypeArgs(final List<Type> typeArgs) {
 		this.typeArgs = typeArgs;
 		setAsParentNodeOf(this.typeArgs);
+	}
+
+	public boolean isUsingDiamondOperator() {
+		return usingDiamondOperator;
+	}
+
+	public void setUsingDiamondOperator(boolean usingDiamondOperator) {
+		this.usingDiamondOperator = usingDiamondOperator;
 	}
 }

@@ -33,21 +33,6 @@ import xapi.util.X_Debug;
 import xapi.util.X_Properties;
 import xapi.util.X_Util;
 
-import static xapi.fu.iterate.SingletonIterator.singleItem;
-import static xapi.process.X_Process.runFinally;
-
-import com.google.gwt.core.client.GWT;
-import com.google.gwt.core.client.RunAsyncCallback;
-import com.google.gwt.core.ext.TreeLogger.Type;
-import com.google.gwt.dev.Compiler;
-import com.google.gwt.dev.GwtCompiler;
-import com.google.gwt.dev.codeserver.RecompileController;
-import com.google.gwt.dev.codeserver.SuperDevUtil;
-import com.google.gwt.dev.util.log.PrintWriterTreeLogger;
-import com.google.gwt.junit.client.GWTTestCase;
-import com.google.gwt.junit.tools.GWTTestSuite;
-import com.google.gwt.reflect.shared.GwtReflect;
-
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.AnnotatedElement;
@@ -66,6 +51,21 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static xapi.fu.iterate.SingletonIterator.singleItem;
+import static xapi.process.X_Process.runFinally;
+
+import com.google.gwt.core.client.GWT;
+import com.google.gwt.core.client.RunAsyncCallback;
+import com.google.gwt.core.ext.TreeLogger.Type;
+import com.google.gwt.dev.Compiler;
+import com.google.gwt.dev.GwtCompiler;
+import com.google.gwt.dev.codeserver.RecompileController;
+import com.google.gwt.dev.codeserver.SuperDevUtil;
+import com.google.gwt.dev.util.log.PrintWriterTreeLogger;
+import com.google.gwt.junit.client.GWTTestCase;
+import com.google.gwt.junit.tools.GWTTestSuite;
+import com.google.gwt.reflect.shared.GwtReflect;
 
 @Gwtc(propertiesLaunch=@GwtcProperties)
 @InstanceDefault(implFor=GwtcService.class)
@@ -162,7 +162,7 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
     URLClassLoader loader = manifestBackedClassloader(urls, manifest);
 
     Mutable<Integer> code = new Mutable<>();
-    Thread t = new Thread(()->{
+    final Runnable task = ()->{
       try {
         final PrintWriterTreeLogger logger = new PrintWriterTreeLogger();
         logger.setMaxDetail(manifest.getLogLevel());
@@ -182,21 +182,21 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
         Mutable<In1<IsRecompiler>> userRequest = new Mutable<>();
 
         final ServerRecompiler useCompiler = getComp ->
-          userRequest.mutex(()->{
-            if (userRequest.isNonNull()) {
+            userRequest.mutex(()->{
+              if (userRequest.isNonNull()) {
                 final In1<IsRecompiler> current = userRequest.out1();
                 final In1<IsRecompiler> toAdd = getComp.onlyOnce();
                 // newest requests get serviced first,
                 // in the event of a page reload, an old request may have disconnected,
                 // so we want to process the callbacks from newest to oldest.
                 userRequest.in(current.useBeforeMe(toAdd));
-            } else {
-              userRequest.in(getComp.onlyOnce());
-            }
-          });
-          synchronized (result) {
-            result.notify();
-          }
+              } else {
+                userRequest.in(getComp.onlyOnce());
+              }
+            });
+        synchronized (result) {
+          result.notify();
+        }
         callback.in(useCompiler, null);
         manifest.setOnline(true);
         while (manifest.isOnline()) {
@@ -220,17 +220,27 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
         callback.in(null, fail);
         throw fail;
       }
-    });
+    };
+    In2Unsafe<Integer, TimeUnit> blocker = startTask(task, loader);
+    return blocker.supply1AfterRead(code);
+  }
+
+  private In2Unsafe<Integer, TimeUnit> startTask(Runnable task, URLClassLoader loader) {
+    Thread t = new Thread(task);
+    try {
+      loader.loadClass("com.google.gwt.core.ext.Linker");
+    } catch (ClassNotFoundException e) {
+      e.printStackTrace();
+    }
     t.setContextClassLoader(loader);
     t.start();
-    In2Unsafe<Integer, TimeUnit> blocker = (sec, unit) ->{
+    return (sec, unit) ->{
       try {
         t.join(unit.toMillis(sec));
       } catch (InterruptedException e) {
         throw X_Debug.rethrow(e);
       }
     };
-    return blocker.supply1AfterRead(code);
   }
 
   private URL[] fromClasspath(String[] classpath) {
@@ -362,7 +372,8 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
   }
 
   private URLClassLoader manifestBackedClassloader(URL[] urls, GwtManifest manifest) {
-    return new URLClassLoader(urls, Thread.currentThread().getContextClassLoader()) {
+    // TODO: consider pulling some, but not all jars off of: Thread.currentThread().getContextClassLoader()
+     return new URLClassLoader(urls, Thread.currentThread().getContextClassLoader()) {
       @Override
       public URL getResource(String name) {
         URL url = super.getResource(name);

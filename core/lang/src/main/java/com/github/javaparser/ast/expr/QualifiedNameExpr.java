@@ -45,6 +45,10 @@ public final class QualifiedNameExpr extends NameExpr implements ScopedExpressio
 		setQualifier(scope);
 	}
 
+	public String getQualifiedName() {
+		return getQualifier() == null ? getName() : getQualifier().getQualifiedName() + "." + getName();
+	}
+
 	@Override public <R, A> R accept(final GenericVisitor<R, A> v, final A arg) {
 		return v.visit(this, arg);
 	}

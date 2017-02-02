@@ -57,13 +57,13 @@ public class CompilerSettings implements Rethrowable {
         args.add("-sourcepath");
         int ind = sources.indexOf("src/main/java");
         if (ind != -1) {
-            sources += File.pathSeparator + sources.replace("src/main/java", "src/main/resources");
-            sources += File.pathSeparator + sources.replace("src/main/java", "target/generated-sources/annotations");
+            sources += File.pathSeparator + sources.replace("src/main/java", "src/main/resources")
+                    + File.pathSeparator + sources.replace("src/main/java", "target/generated-sources/annotations");
         } else {
             ind = sources.indexOf("src/test/java");
             if (ind != -1) {
-                sources += File.pathSeparator + sources.replace("src/test/java", "src/test/resources");
-                sources += File.pathSeparator + sources.replace("src/test/java", "target/generated-test-sources/test");
+                sources += File.pathSeparator + sources.replace("src/test/java", "src/test/resources")
+                    + File.pathSeparator + sources.replace("src/test/java", "target/generated-test-sources/test");
             }
         }
             args.add(sources);
@@ -95,8 +95,10 @@ public class CompilerSettings implements Rethrowable {
         }
         if (addProcessor) {
             String processorPath = getProcessorPath();
-            args.add("-processorpath");
-            args.add(processorPath);
+            if (processorPath != null) {
+                args.add("-processorpath");
+                args.add(processorPath);
+            }
         }
 
         final Set<String> path = getClasspath();
@@ -332,7 +334,9 @@ public class CompilerSettings implements Rethrowable {
         if (processorPath == null) {
             try {
                 final File f = new File(root, "target/xapi-dev-javac-" + X_Namespace.XAPI_VERSION + ".jar");
-                processorPath = f.getCanonicalPath();
+                if (f.exists()) {
+                    processorPath = f.getCanonicalPath();
+                }
             } catch (IOException e) {
                 throw rethrow(e);
             }

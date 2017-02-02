@@ -3,6 +3,7 @@ package xapi.dev.source;
 import xapi.source.read.JavaLexer;
 import xapi.source.read.JavaLexer.TypeDef;
 import xapi.source.read.JavaVisitor.TypeData;
+import xapi.source.read.SourceUtil;
 
 import java.lang.reflect.Modifier;
 
@@ -235,8 +236,7 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> implements CanAddImpo
 
   protected String getterName() {
     return exact ? fieldName
-      : (fieldType.clsName.equalsIgnoreCase("boolean") ? "is" : "get")
-        + methodFragment;
+      : SourceUtil.toGetterName(fieldType.clsName, methodFragment);
   }
 
   protected MethodBuffer initAdder() {

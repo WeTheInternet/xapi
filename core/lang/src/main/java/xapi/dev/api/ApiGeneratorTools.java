@@ -27,8 +27,12 @@ import xapi.fu.*;
 import xapi.fu.Filter.Filter1;
 import xapi.fu.iterate.CountedIterator;
 import xapi.log.X_Log;
+import xapi.source.X_Source;
 import xapi.source.write.Template;
 import xapi.util.X_String;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.github.javaparser.ast.expr.BooleanLiteralExpr.boolLiteral;
 import static com.github.javaparser.ast.expr.CharLiteralExpr.charLiteral;
@@ -36,9 +40,6 @@ import static com.github.javaparser.ast.expr.DoubleLiteralExpr.doubleLiteral;
 import static com.github.javaparser.ast.expr.IntegerLiteralExpr.intLiteral;
 import static com.github.javaparser.ast.expr.LongLiteralExpr.longLiteral;
 import static com.github.javaparser.ast.expr.TemplateLiteralExpr.templateLiteral;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 9/22/16.
@@ -1158,4 +1159,129 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
     default MappedIterable<String> allListTypes() {
         return DEFAULT_LIST_TYPES.mappedKeys();
     }
+
+
+    default Expression qualified(Ctx ctx, Expression scope, Expression name) {
+        return qualified(ctx, scope, name, In2.NULL);
+    }
+
+    default Expression qualified(
+        Ctx ctx,
+        Expression scope,
+        Expression name,
+        In2<NameExpr, Expression> spyQualified
+    ) {
+        assert name != null;
+        if (scope == null) {
+            return name;
+        }
+        if (name instanceof ScopedExpression) {
+            ScopedExpression n = (ScopedExpression) name;
+            assert n.getScope() == null || n.getScope() == scope :
+                "Do not redefine a scoped expression;" +
+                    "\nwas: " + n.getScope() +
+                    "\nto:  " + scope +
+                    "\nfor: " + name;
+            n.setScope(scope);
+            if (scope instanceof NameExpr) {
+                // todo: import / spy on the qualified name of a method / field / type reference
+                if (spyQualified != null) {
+                    spyQualified.in((NameExpr)scope, name);
+                }
+            }
+            return name;
+        }
+        if (scope instanceof NameExpr) {
+            spyQualified.in((NameExpr) scope, name);
+        }
+        if (! (name instanceof NameExpr)) {
+            name = coerceToName(ctx, name);
+        }
+        if (name instanceof NameExpr) {
+            NameExpr n = (NameExpr) name;
+            if ("class".equals(n.getSimpleName())) {
+                // when we have a class literal,
+                // lets collapse it into a type expression.
+                if (scope instanceof TypeExpr) {
+                    // Ok, our scope is already in the form of Type.class
+                    return scope;
+                } else {
+                    // Create a type out of the name of this scope (dropping the .class)
+                    return methods().$type(this, ctx, scope);
+                }
+            }
+            if (scope instanceof NameExpr ) {
+                // com.fu.Type.fieldName or com.fu.Type
+                final NameExpr scopeName = (NameExpr) scope;
+                if (Character.isUpperCase(scopeName.getSimpleName().charAt(0))) {
+                    // if you follow java naming conventions; packages lowercase,
+                    // all TypeNames title case, then we can infer field / nested types.
+                    if (Character.isUpperCase(n.getSimpleName().charAt(0))) {
+                        // Nested.Type
+                        return asNestedType(ctx, scopeName, n);
+                    } else {
+                        // Field.reference
+                        return asFieldReference(ctx, scopeName, n);
+                    }
+                } else if (Character.isUpperCase(n.getSimpleName().charAt(0))) {
+                    // pkgName.TypeName
+                    final ClassOrInterfaceType type = new ClassOrInterfaceType(X_Source.qualifiedName(
+                        scopeName.getQualifiedName(),
+                        n.getQualifiedName()
+                    ));
+                    return new TypeExpr(type);
+                } else {
+                    // com.pkgName // we don't actually have a package type expression;
+                    // just return a standard QualifiedName
+                    return new QualifiedNameExpr(scopeName, n.getQualifiedName());
+                }
+            } else if (scope instanceof TypeExpr){
+                // When the scope is a type, is the name []?
+                if ("[]".equals(n.getName())) {
+                    final Type scopeType = ((TypeExpr) scope).getType();
+                    if (scopeType instanceof ReferenceType) {
+                        final ReferenceType refType = (ReferenceType)scopeType;
+                        refType.setArrayCount(refType.getArrayCount()+1);
+                        return scope;
+                    } else {
+                        ReferenceType asArray = new ReferenceType(scopeType, 1);
+                        return new TypeExpr(asArray);
+                    }
+                }
+            }
+        }
+        throw new UnsupportedOperationException("Cannot handle name " + debugNode(name) + " with scope (" + debugNode(scope) + ")");
+    }
+
+    default Expression coerceToName(Ctx ctx, Expression name) {
+        if (name instanceof NameExpr) {
+            return name;
+        } else if (name instanceof TemplateLiteralExpr) {
+            return new NameExpr(resolveTemplate(ctx, (TemplateLiteralExpr) name));
+        }
+        return name;
+    }
+
+    default Expression asFieldReference(Ctx ctx, NameExpr scopeName, NameExpr n) {
+        final TypeExpr rootType = methods().$type(this, ctx, scopeName);
+        FieldAccessExpr field = new FieldAccessExpr(rootType, n.getQualifiedName());
+        return field;
+    }
+
+    default Expression asNestedType(Ctx ctx, NameExpr scopeName, NameExpr n) {
+        final TypeExpr rootType = methods().$type(this, ctx, scopeName);
+        if (n == null) {
+            return rootType;
+        }
+        if ("[]".equals(n.getSimpleName())) {
+            final ReferenceType refType = new ReferenceType(rootType.getType(), 1);
+            return new TypeExpr(refType);
+        }
+        if ("class".equals(n.getSimpleName())) {
+            return new ClassExpr(rootType.getType());
+        }
+        final ClassOrInterfaceType qualified = new ClassOrInterfaceType((ClassOrInterfaceType) rootType.getType(), n.getQualifiedName());
+        return new TypeExpr(qualified);
+    }
+
 }

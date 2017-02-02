@@ -16,7 +16,6 @@ import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
-import org.apache.tools.ant.filters.StringInputStream;
 import xapi.io.X_IO;
 import xapi.javac.dev.api.CompilerService;
 import xapi.javac.dev.api.JavacService;
@@ -32,6 +31,7 @@ import javax.lang.model.element.Name;
 import javax.tools.FileObject;
 import javax.tools.StandardLocation;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -104,7 +104,7 @@ public class GwtCreatePlugin implements Plugin {
         // Save a super-sourced copy of this file in the generated directory
         X_Log.info(getClass(), "Writing to generated file "+res.getName());
         try (OutputStream out = res.openOutputStream()){
-          X_IO.drain(out, new StringInputStream(file));
+          X_IO.drain(out, new FileInputStream(file));
         } catch (IOException e) {
           X_Log.error(getClass(), "Unable to save resource to "+res+"."+name+" to write to", e);
           throw X_Util.rethrow(e);

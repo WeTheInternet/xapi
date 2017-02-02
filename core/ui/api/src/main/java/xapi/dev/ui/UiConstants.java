@@ -5,6 +5,8 @@ package xapi.dev.ui;
  */
 public interface UiConstants {
     String EXTRA_GENERATE_MODE = "__gen_mode__";
-    String EXTRA_MODEL_INFO = "modelInfo";
+    String EXTRA_MODEL_INFO = "__model_info__";
     String EXTRA_SOURCE_COMPONENT = "__source_comp__";
+    String EXTRA_RESOURCE_PATH = "__path__";
+    String EXTRA_FILE_NAME = "__file_name__";
 }

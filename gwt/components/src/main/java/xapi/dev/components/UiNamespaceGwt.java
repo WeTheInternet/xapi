@@ -15,7 +15,6 @@ import xapi.ui.html.api.GwtStyles;
 public class UiNamespaceGwt implements UiNamespace {
 
     public UiNamespaceGwt() {
-        System.out.println();
     }
 
     @Override

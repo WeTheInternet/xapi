@@ -13,14 +13,14 @@ import xapi.util.X_Runtime;
 import xapi.util.X_Util;
 import xapi.util.impl.AbstractPair;
 
-import static xapi.util.X_Debug.debug;
-
 import java.lang.Thread.State;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static xapi.util.X_Debug.debug;
 
 public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
 
@@ -101,7 +101,7 @@ public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
       if (key.isInterrupted()) {
         params.uncaughtException(key, new InterruptedException());
       }
-      X_Log.debug("Initializing Concurrent Environment", key);
+      X_Log.info("Initializing Concurrent Environment", key);
       final ConcurrentEnvironment inited = initializeEnvironment(key, params);
       inited.getThreads().forEach(t->
         environments.put(new AbstractPair<>(t, params), inited)
@@ -128,10 +128,14 @@ public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
   @Override
   public Thread newThread(Do cmd) {
     WrappedRunnable wrapped = wrap(cmd);
-    Thread childThread = new Thread(wrapped.toRunnable());
-    childThread.setName(cmd.getClass().getName()+"_"+threadCount.incrementAndGet());
     Thread running = Thread.currentThread();
     ConcurrentEnvironment enviro = environments.get(running, running.getUncaughtExceptionHandler());
+    Thread childThread = new Thread(wrapped
+        .doAfter(()->{
+          enviro.shutdown();
+        })
+        .toRunnable());
+    childThread.setName(cmd.getClass().getName()+"_"+threadCount.incrementAndGet());
     enviro.pushThread(childThread);
     return childThread;
   }

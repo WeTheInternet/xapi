@@ -17,10 +17,10 @@ import xapi.fu.Out2;
 import xapi.source.X_Source;
 import xapi.util.X_String;
 
-import static xapi.fu.Out2.out2Immutable;
-
 import java.util.Arrays;
 import java.util.Set;
+
+import static xapi.fu.Out2.out2Immutable;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 6/28/16.
@@ -137,8 +137,11 @@ public abstract class UiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> im
         return new DefaultUiNamespace();
     }
 
-    public UiNamespace getNamespace(GeneratedUiComponent component) {
+    public UiNamespace getNamespace(GeneratedUiComponent component, boolean base) {
         UiNamespace ns = namespace();
+        if (base) {
+            return ns;
+        }
         ns = component.getImpls()
             .reduceInstances(GeneratedUiImplementation::reduceNamespace, ns);
         return ns;

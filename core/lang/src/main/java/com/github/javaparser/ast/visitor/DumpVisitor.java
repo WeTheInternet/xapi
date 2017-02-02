@@ -39,13 +39,13 @@ import xapi.dev.source.MemberBuffer;
 import xapi.fu.In1;
 import xapi.fu.Printable;
 
-import static com.github.javaparser.PositionUtils.sortByBeginPosition;
-import static com.github.javaparser.ast.internal.Utils.isNullOrEmpty;
-
 import java.lang.reflect.Modifier;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+
+import static com.github.javaparser.PositionUtils.sortByBeginPosition;
+import static com.github.javaparser.ast.internal.Utils.isNullOrEmpty;
 
 /**
  * Dumps the AST to formatted Java source code.
@@ -1034,7 +1034,11 @@ public class DumpVisitor implements VoidVisitor<Object> {
             n.getScope().accept(this, arg);
             printer.print(".");
         }
-        printTypeArgs(n.getTypeArgs(), arg);
+        if (n.isUsingDiamondOperator()) {
+            printer.print("<>");
+        } else {
+            printTypeArgs(n.getTypeArgs(), arg);
+        }
         printer.print(resolveName(n.getNameExpr()));
         printArguments(n.getArgs(), arg);
     }

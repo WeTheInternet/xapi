@@ -9,6 +9,7 @@ import com.github.javaparser.ast.type.Type;
 import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
 import xapi.dev.api.ApiGeneratorContext;
+import xapi.dev.source.CanAddImports;
 import xapi.dev.source.DomBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
@@ -22,12 +23,12 @@ import xapi.fu.Maybe;
 import xapi.fu.Out1;
 import xapi.source.read.JavaModel.IsQualified;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static xapi.dev.ui.GeneratedUiComponent.GeneratedUiImplementation.RequiredMethodType.*;
 import static xapi.fu.Immutable.immutable1;
 import static xapi.inject.X_Inject.instance;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by james on 6/17/16.
@@ -139,6 +140,7 @@ public class ComponentBuffer {
         UiGeneratorTools tools,
         ApiGeneratorContext ctx,
         GeneratedUiComponent other,
+        UiNamespace namespace,
         UiContainerExpr ui
     ) {
         GeneratedUiBase otherBase = other.getBase();
@@ -150,9 +152,9 @@ public class ComponentBuffer {
         myBaseName = otherBase.getSource().addImport(myBaseName);
         final Maybe<UiAttrExpr> model = ui.getAttribute("model");
         final Maybe<UiAttrExpr> style = ui.getAttribute("style");
-        final String name = "create" + otherBase.getWrappedName();
+        final String name = "create" + myBaseName;
         MethodCallExpr call = new MethodCallExpr(null, name);
-        final Type returnType = tools.methods().$type(tools, ctx, StringLiteralExpr.stringLiteral(otherBase.getWrappedName())).getType();
+        final Type returnType = tools.methods().$type(tools, ctx, StringLiteralExpr.stringLiteral(myBaseName)).getType();
         GeneratedUiMethod method = new GeneratedUiMethod(returnType, name);
         method.setSource(ui);
         method.setContext(ctx);
@@ -169,7 +171,7 @@ public class ComponentBuffer {
         if (style.isPresent()) {
             type = type == CREATE_FROM_MODEL ? CREATE_FROM_MODEL_AND_STYLE : CREATE_FROM_STYLE;
             args.add( tools.resolveVar(ctx, style.get().getExpression()));
-            final String styleType = tools.namespace().getStyleResourceType(creator);
+            final String styleType = namespace.getBaseStyleResourceType(CanAddImports.NO_OP);
             method.addParam(styleType, "style");
             creator.addParameter(styleType, "style");
         }

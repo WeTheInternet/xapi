@@ -5,48 +5,52 @@ import elemental.dom.Element;
 import elemental.html.DivElement;
 import xapi.collect.X_Collect;
 import xapi.collect.api.Fifo;
+import xapi.components.api.JsObjectDescriptor;
+import xapi.components.api.JsoArray;
 import xapi.components.api.OnWebComponentAttributeChanged;
 import xapi.components.api.ShadowDomPlugin;
+import xapi.components.api.Symbol;
 import xapi.fu.*;
 import xapi.util.X_String;
-
-import static xapi.components.impl.JsFunctionSupport.*;
-import static xapi.components.impl.JsSupport.copy;
-
-import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.core.client.UnsafeNativeLong;
 
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
 
+import static xapi.components.impl.JsFunctionSupport.*;
+import static xapi.components.impl.JsSupport.copy;
+import static xapi.components.impl.WebComponentVersion.V0;
+import static xapi.components.impl.WebComponentVersion.V1;
+
+import com.google.gwt.core.client.JavaScriptObject;
+import com.google.gwt.core.client.UnsafeNativeLong;
+
 public class WebComponentBuilder {
 
-  public static final boolean useV1 = "true".equals(
-      System.getProperty("web.components.v1", "false")
-  );
+  public static final WebComponentVersion DEFAULT_VERSION = "true".equals(
+      System.getProperty("web.components.v0", "false")) ? V1 : V0;
 
-  private static final String
-      CREATED_CALLBACK = useV1 ? "constructor" : "createdCallback",
-      ATTACHED_CALLBACK = useV1 ? "connectedCallback" : "attachedCallback",
-      DETACHED_CALLBACK = useV1 ? "diconnectedCallback" : "attachedCallback",
-      ATTRIBUTE_CHANGE_CALLBACK = "attributeChangedCallback", // same in both versions
-      ADOPTED_CALLBACK = "adoptedCallback" // only works in v1
-  ;
+  private final WebComponentVersion version;
+  private final JavaScriptObject componentClass;
 
   private MapLike<String, Object> extras;
 
   public static WebComponentBuilder create() {
-    return new WebComponentBuilder(htmlElementPrototype());
+    return new WebComponentBuilder(htmlElementPrototype(), DEFAULT_VERSION);
   }
 
   public static WebComponentBuilder create(final JavaScriptObject proto) {
-    return new WebComponentBuilder(proto);
+    return new WebComponentBuilder(proto, DEFAULT_VERSION);
   }
 
   public static native JavaScriptObject htmlElementPrototype()
   /*-{
-     return Object.create(HTMLElement.prototype);
+     return Object.create($wnd.HTMLElement.prototype);
+   }-*/;
+
+  public static native JavaScriptObject htmlElementClass()
+  /*-{
+     return $wnd.HTMLElement;
    }-*/;
 
   private final WebComponentPrototype prototype;
@@ -54,12 +58,75 @@ public class WebComponentBuilder {
   private Fifo<ShadowDomPlugin> plugins;
 
   public WebComponentBuilder(JavaScriptObject prototype) {
-    plugins = X_Collect.newFifo(); // uses linked list in jvm, but array in js
-    if (prototype == null) {
-      prototype = htmlElementPrototype();
-    }
-    this.prototype = (WebComponentPrototype) prototype;
+    this(prototype, DEFAULT_VERSION);
   }
+
+  public WebComponentBuilder(JavaScriptObject classOrProto, WebComponentVersion version) {
+    this.version = version;
+    plugins = X_Collect.newFifo(); // uses linked list in jvm, but array in js
+    if (version == V0) {
+      if (classOrProto == null) {
+        classOrProto = htmlElementPrototype();
+      }
+      this.prototype = (WebComponentPrototype) classOrProto;
+      componentClass = classOrProto;
+    } else {
+      if (classOrProto == null) {
+        classOrProto = htmlElementClass();
+      }
+      componentClass = createJsClass(classOrProto);
+      this.prototype = JsSupport.prototypeOf(componentClass);
+    }
+  }
+
+  public void setClassName(String name) {
+    final JsObjectDescriptor props = JsSupport.newDescriptor();
+    props.setValue(name);
+    props.setConfigurable(false);
+    props.setWritable(false);
+
+    JsSupport.object().defineProperty(prototype, Symbol.toStringTag(), props);
+  }
+
+  protected native JavaScriptObject createJsClass(JavaScriptObject parent)
+  /*-{
+
+    var upgrade = typeof Reflect === 'object' ?
+      function () {
+        return Reflect.construct(
+          parent,
+          arguments,
+          this.constructor
+        );
+      } :
+      function () {
+        return parent.apply(this, arguments) || this;
+      };
+
+    // the actual constructor
+    function constructor() {
+      // delegates to an optional init property that we can build imperatively
+      return this.init && this.init.apply(this, arguments);
+    }
+
+    function clazz() {
+      // Get an extensible instance of the HTMLElement (or subtype)
+      var self = upgrade.apply(this, arguments);
+      // call the constructor as that instance, returning our
+      // supplied instance, or a new instance, if the init method so chooses.
+      return constructor.apply(self, arguments) || self;
+    }
+
+    clazz.prototype = Object.create(parent.prototype);
+
+    Object.defineProperty(clazz.prototype, "constructor", {
+      configurable: true,
+      writable: true,
+      value: clazz
+    });
+
+    return clazz;
+  }-*/;
 
   public WebComponentBuilder attachedCallback(final Runnable function) {
     return attachedCallback(wrapRunnable(function));
@@ -82,7 +149,7 @@ public class WebComponentBuilder {
 
   public WebComponentBuilder attachedCallback(final JavaScriptObject function) {
     // This should compile out one branch because useV1 will be compile-time constant.
-    if (useV1) {
+    if (useV1()) {
 
       if (prototype.getConnectedCallback() == null) {
         prototype.setConnectedCallback(function);
@@ -102,6 +169,27 @@ public class WebComponentBuilder {
           .getAttachedCallback(), function));
       }
     }
+    return this;
+  }
+
+  private boolean useV1() {
+    return version == V1;
+  }
+
+  public WebComponentBuilder observeAttribute(String named) {
+    JsoArray<String> observed = prototype.getObservedAttributes();
+    if (observed == null) {
+      observed = JsoArray.newArray(named);
+      prototype.setObservedAttributes(observed);
+    } else if (observed.indexOf(named) == -1) {
+      observed.push(named);
+    }
+    return this;
+  }
+
+  public <E extends Element> WebComponentBuilder observeAttribute(String named, OnWebComponentAttributeChanged<E> callback) {
+    observeAttribute(named);
+    attributeChangedCallback(callback);
     return this;
   }
 
@@ -199,14 +287,14 @@ public class WebComponentBuilder {
 
   public WebComponentBuilder createdCallback(JavaScriptObject function) {
     function = reapplyThis(function);
-    if (useV1) {
-      if (prototype.getConstructor() == null) {
-        prototype.setConstructor(function);
+    if (useV1()) {
+      if (prototype.getInit() == null) {
+        prototype.setInit(function);
       } else {
         // append the functions together
-        prototype.setConstructor(JsFunctionSupport.merge(
+        prototype.setInit(JsFunctionSupport.merge(
           function,
-          prototype.getConstructor()
+          prototype.getInit()
           ));
       }
     } else {
@@ -245,24 +333,26 @@ public class WebComponentBuilder {
   }
 
   public WebComponentBuilder detachedCallback(final JavaScriptObject function) {
-    if (prototype.getDetachedCallback() == null) {
-      prototype.setDetachedCallback(function);
+    if (useV1()) {
+      if (prototype.getDisconnectedCallback() == null) {
+        prototype.setDisconnectedCallback(function);
+      } else {
+        // append the functions together
+        prototype.setDisconnectedCallback(JsFunctionSupport.merge(prototype
+          .getDisconnectedCallback(), function));
+      }
     } else {
-      // append the functions together
-      prototype.setDetachedCallback(JsFunctionSupport.merge(prototype
-        .getDetachedCallback(), function));
+      if (prototype.getDetachedCallback() == null) {
+        prototype.setDetachedCallback(function);
+      } else {
+        // append the functions together
+        prototype.setDetachedCallback(JsFunctionSupport.merge(prototype
+          .getDetachedCallback(), function));
+      }
     }
     return this;
   }
 
-  public native JavaScriptObject buildRaw()
-  /*-{
-  	var p = this.@xapi.components.impl.WebComponentBuilder::prototype;
-  	if (this.@xapi.components.impl.WebComponentBuilder::superTag != null) {
-  	  p['extends'] = this.@xapi.components.impl.WebComponentBuilder::superTag;
-  	}
-  	return p;
-  }-*/;
   public native JavaScriptObject build()
   /*-{
 
@@ -276,7 +366,7 @@ public class WebComponentBuilder {
   }-*/;
 
   public WebComponentBuilder extend() {
-    return new WebComponentBuilder(copy(prototype));
+    return new WebComponentBuilder(copy(prototype), DEFAULT_VERSION);
   }
 
   public WebComponentBuilder setExtends(final String tagName) {
@@ -315,6 +405,22 @@ public class WebComponentBuilder {
   }
 
   public native WebComponentBuilder addValue(String name,
+    JavaScriptObject value, boolean enumerable, boolean configurable,
+    boolean writeable)
+    /*-{
+		Object
+				.defineProperty(
+						this.@xapi.components.impl.WebComponentBuilder::prototype,
+						name, {
+							value : value,
+							enumerable : enumerable,
+							configurable : configurable,
+							writeable : writeable
+						});
+		return this;
+  }-*/;
+
+  public native WebComponentBuilder addValue(Symbol name,
     JavaScriptObject value, boolean enumerable, boolean configurable,
     boolean writeable)
     /*-{
@@ -552,5 +658,13 @@ public class WebComponentBuilder {
       extras = X_Collect.newStringMap();
     }
     return extras;
+  }
+
+  public String getSuperTag() {
+    return superTag;
+  }
+
+  public JavaScriptObject getComponentClass() {
+    return componentClass;
   }
 }

@@ -19,9 +19,8 @@ import xapi.ui.api.UiPhase;
 import xapi.util.X_Debug;
 import xapi.util.X_String;
 
-import static xapi.source.X_Source.removePackage;
-
 import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
@@ -34,10 +33,13 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
+import javax.tools.Diagnostic.Kind;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+
+import static xapi.source.X_Source.removePackage;
 
 /**
  * Created by james on 6/6/16.
@@ -48,14 +50,18 @@ public class UiAnnotationProcessor extends AbstractProcessor {
 
     private JavacService service;
     private PhaseMap<String> phaseMap;
+    private Messager messages;
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
+        messages = processingEnv.getMessager();
         if ("true".equals(System.getProperty("xapi.no.javac.plugin"))) {
+            messages.printMessage(Kind.NOTE, "Skipping ui annotations because system property xapi.no.javac.plugin was set to true");
             return;
         }
         service = JavacService.instanceFor(processingEnv);
 
+        messages.printMessage(Kind.NOTE, "UiAnnotationProcessor is ready.");
         super.init(processingEnv);
     }
 
@@ -63,9 +69,11 @@ public class UiAnnotationProcessor extends AbstractProcessor {
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
 
         if ("true".equals(System.getProperty("xapi.no.javac.plugin"))) {
+            messages.printMessage(Kind.NOTE, "Skipping ui annotations because system property xapi.no.javac.plugin was set to true");
             return true;
         }
 
+        messages.printMessage(Kind.NOTE, "Running: Is round over? " + roundEnv.processingOver());
         if (!roundEnv.processingOver()) {
             final Types typeOracle = service.getTypes();
             final Elements elements = service.getElements();
@@ -168,18 +176,24 @@ public class UiAnnotationProcessor extends AbstractProcessor {
         // optionally with a number of configurable interfaces added.
 
         // generate generic base class.
-        UiGeneratorService<Element> generator = getSuperclassGenerator();
-        final String pkg = service.getPackageName(type);
-        IsQualified typeName = new IsQualified(pkg, type.getQualifiedName().toString().replace(pkg+".", ""));
-        ComponentBuffer component = generator.initialize(service, typeName, container);
-        // Run each phase, potentially including custom phases injected by third parties
-        // Note, we need to use forthcoming xapi.properties support to record annotations
-        // which are annotated with @UiPhase, so a library can be compiled with a record
-        // of the UiPhase added.  Currently, we do not use any custom phases.
-        for (PhaseNode<String> phase : phaseMap.forEachNode()) {
-            component = generator.runPhase(component, phase.getId());
+        try {
+
+            UiGeneratorService<Element> generator = getSuperclassGenerator();
+            final String pkg = service.getPackageName(type);
+            IsQualified typeName = new IsQualified(pkg, type.getQualifiedName().toString().replace(pkg+".", ""));
+            ComponentBuffer component = generator.initialize(service, typeName, container);
+            // Run each phase, potentially including custom phases injected by third parties
+            // Note, we need to use forthcoming xapi.properties support to record annotations
+            // which are annotated with @UiPhase, so a library can be compiled with a record
+            // of the UiPhase added.  Currently, we do not use any custom phases.
+            for (PhaseNode<String> phase : phaseMap.forEachNode()) {
+                component = generator.runPhase(component, phase.getId());
+            }
+            generator.finish();
+        } catch (Throwable t) {
+            messages.printMessage(Kind.WARNING,
+                "Error encountered generating ui for " + type + " from " + container + " : " + t);
         }
-        generator.finish();
 
 //        for (UiGeneratorService uiGeneratorService : services) {
 //

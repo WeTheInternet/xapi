@@ -49,4 +49,17 @@ public class UnionType extends Type {
     public <A> void accept(VoidVisitor<A> v, A arg) {
         v.visit(this, arg);
     }
+
+    @Override
+    public boolean hasRawType(String name) {
+        if (elements != null) {
+            for (ReferenceType element : elements) {
+                if (element.hasRawType(name)) {
+                    return true;
+                }
+            }
+
+        }
+        return false;
+    }
 }

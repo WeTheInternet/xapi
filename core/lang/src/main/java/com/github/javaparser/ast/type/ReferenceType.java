@@ -3,12 +3,12 @@
  * Copyright (C) 2011, 2013-2015 The JavaParser Team.
  *
  * This file is part of JavaParser.
- * 
+ *
  * JavaParser can be used either under the terms of
  * a) the GNU Lesser General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * b) the terms of the Apache License 
+ * b) the terms of the Apache License
  *
  * You should have received a copy of both licenses in LICENCE.LGPL and
  * LICENCE.APACHE. Please refer to those files for details.
@@ -18,7 +18,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  */
- 
+
 package com.github.javaparser.ast.type;
 
 import com.github.javaparser.ast.TypedNode;
@@ -100,15 +100,15 @@ public final class ReferenceType extends Type implements TypedNode {
 	/**
 	 * <p>Arrays annotations are annotations on the arrays modifiers of the type.
 	 * Consider this example:</p>
-	 * 
+	 *
 	 * <p><pre>
 	 * {@code
 	 * int @Ann1 [] @Ann2 [] array;
 	 * }</pre></p>
-	 * 
+	 *
 	 * <p>in this this method will return a list with the annotation expressions <pre>@Ann1</pre>
 	 * and <pre>@Ann2</pre></p>
-	 * 
+	 *
 	 * <p>Note that the first list element of arraysAnnotations will refer to the first array modifier encountered.
 	 * Considering the example the first element will be a list containing just @Ann1 while the second element will
 	 * be a list containing just @Ann2.
@@ -128,4 +128,17 @@ public final class ReferenceType extends Type implements TypedNode {
     public void setArraysAnnotations(List<List<AnnotationExpr>> arraysAnnotations) {
         this.arraysAnnotations = arraysAnnotations;
     }
+
+	@Override
+	public boolean hasRawType(String name) {
+    		int expected = arrayCount;
+    		name = name.trim();
+    		while (name.endsWith("[]") && expected --> 0) {
+    			name = name.substring(0, name.length()-2).trim();
+		}
+		if (expected != 0 || name.contains("[]")) {
+    			return false;
+		}
+		return getType().hasRawType(name);
+	}
 }

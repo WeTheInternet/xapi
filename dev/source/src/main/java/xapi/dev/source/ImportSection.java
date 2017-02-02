@@ -37,14 +37,14 @@ package xapi.dev.source;
 
 import xapi.fu.In1;
 
-import static xapi.dev.source.PrintBuffer.NEW_LINE;
-import static xapi.fu.iterate.ArrayIterable.iterate;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import static xapi.dev.source.PrintBuffer.NEW_LINE;
+import static xapi.fu.iterate.ArrayIterable.iterate;
 
 public class ImportSection implements CanAddImports {
 
@@ -176,6 +176,9 @@ public class ImportSection implements CanAddImports {
     if (was == null) {
       imports.put(simple, "");
     } else {
+      if (simple.equals(full) && !simple.contains(".")) {
+        return simple;
+      }
       if (!was.equals(full) && !"".equals(was)) {
         // will throw exception for us
         reserveSimpleName(simple);

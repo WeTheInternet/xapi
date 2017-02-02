@@ -27,9 +27,13 @@ public class JreUiDemo extends Application {
         this.stage = stage;
         CompilerService compiler = singleton(CompilerService.class);
         Pointer<Parent> value = Pointer.pointer();
-        final String generatedName = getClass().getPackage().getName() + ".JavaFx" + getClass().getSimpleName();
+        final String generatedName = getClass().getPackage().getName() + ".JavaFx" + getClass().getSimpleName() + "Component";
         compiler.startCompile(JreUiDemo.class)
-              .compileAndRun((cl, cls) -> {
+            .withSettings(s->
+                s.setClearGenerateDirectory(false)
+                        .resetGenerateDirectory()
+            )
+            .compileAndRun((cl, cls) -> {
                   final Class<?> generated = cl.loadClass(generatedName);
                   Object o = generated.newInstance();
                   Object test = generated.getMethod("io", JreUiDemo.class).invoke(o, JreUiDemo.this);
