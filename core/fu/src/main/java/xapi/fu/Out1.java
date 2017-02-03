@@ -7,6 +7,7 @@ import static xapi.fu.Filter.alwaysTrue;
 import static xapi.fu.Immutable.immutable1;
 
 import javax.inject.Provider;
+import java.util.concurrent.Semaphore;
 import java.util.function.Supplier;
 
 /**
@@ -237,4 +238,28 @@ public interface Out1<O> extends Rethrowable, Lambda, HasMutability {
     default Do ignoreOut1() {
       return this::out1;
     }
+
+  default <O1> Out2<O1, O> return1(O1 obj) {
+    Out1[] items = new Out1[] {
+        Immutable.immutable1(obj),
+        this
+    };
+    return ()->items;
+  }
+
+  default <O1> Out2<O,O1> return2(O1 obj) {
+    Out1[] items = new Out1[] {
+        this,
+        Immutable.immutable1(obj)
+    };
+    return ()->items;
+  }
+
+  default <O1> Out2<O1, O> supply1(Out1<O1> obj) {
+    return Out2.out2(obj, this);
+  }
+
+  default <O1> Out2<O,O1> supply2(Out1<O1> obj) {
+    return Out2.out2(this, obj);
+  }
 }

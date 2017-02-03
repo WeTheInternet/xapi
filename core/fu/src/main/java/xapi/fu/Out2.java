@@ -89,6 +89,7 @@ public interface Out2<O1, O2> extends OutMany {
     @Override
     public Out1[] out0() {
       // arrays are mutable, so we give everyone that asks a new one
+      // while this object remains immutable, you _could_ do terrible things to this array
       return new Out1[]{
           immutable1(one),
           immutable1(two)

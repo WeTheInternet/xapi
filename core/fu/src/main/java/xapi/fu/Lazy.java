@@ -22,6 +22,7 @@ public class Lazy <T> implements Out1<T>, IsLazy {
   // thus, we want all other threads to notice that the Lazy has changed,
   // without calling the expensive synchronized proxy needed to safely "lock once" on a deferred value
   private volatile Out1<T> proxy;
+  private volatile boolean resolving;
 
   @Override
   public final T out1() {
@@ -67,17 +68,22 @@ public class Lazy <T> implements Out1<T>, IsLazy {
     prox[0] = () -> {
       // take turns looking at the memory slot
       synchronized (prox) {
-        if (proxy == prox[0]) {
-          // first on in tries the provider;
-          T value = supplier.out1();
-          // default acceptable value is non-null
-          if (valueAcceptable(value)) {
-            // We only override the proxy if the value is non-null,
-            // or if you specifically implemented LazyNullable.
-            proxy = Immutable.immutable1(value);
-            prox[0] = null;
+        resolving = true;
+        try {
+          if (proxy == prox[0]) {
+            // first on in tries the provider;
+            T value = supplier.out1();
+            // default acceptable value is non-null
+            if (valueAcceptable(value)) {
+              // We only override the proxy if the value is non-null,
+              // or if you specifically implemented LazyNullable.
+              proxy = Immutable.immutable1(value);
+              prox[0] = null;
+            }
+            return value;
           }
-          return value;
+        } finally {
+          resolving = false;
         }
       }
       return proxy.out1();
@@ -115,6 +121,20 @@ public class Lazy <T> implements Out1<T>, IsLazy {
 
   public final boolean isResolved() {
     return !isUnresolved();
+  }
+
+  /**
+   * In case you want to know if someone else has already started resolving this Lazy,
+   * this boolean is ONLY true when some other thread has started resolving us.
+   *
+   * This is useful in case you don't want to create the object,
+   * but if someone else has started, then you should block (get the value),
+   * so you can then clean it up (or if you only want it if it will already be paid for).
+   *
+   */
+  public final boolean isResolving() {
+    assert !resolving || isUnresolved(); // must not thing we are resolving when we are resolved.
+    return resolving;
   }
 
   public final boolean isUnresolved() {

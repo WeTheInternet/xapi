@@ -17,6 +17,7 @@ import java.util.function.Predicate;
 public interface X_Fu {
 
   In1Out1<String, String> STRING_DUPLICATE = s -> s + s;
+  Object[] EMPTY = new Object[0];
 
   static <T> T[] array(T... t) {
     return t;
@@ -91,7 +92,7 @@ public interface X_Fu {
     return false;
   }
 
-  static <T> boolean returnNotNull(T t) {
+  static <T> boolean isNotNull(T t) {
     return t != null;
   }
 
@@ -385,6 +386,11 @@ public interface X_Fu {
 
   static Integer nullSafeIncrement(Integer in) {
     return in == null ? 0 : in + 1;
+  }
+
+  @SuppressWarnings("unchecked")
+  static <T> T[] emptyArray() {
+    return (T[]) EMPTY;
   }
 }
 

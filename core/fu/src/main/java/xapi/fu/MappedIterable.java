@@ -106,6 +106,10 @@ public interface MappedIterable<T> extends Iterable<T> {
         return Maybe.not();
     }
 
+    default <O> MappedIterable<T> filterMapped(In1Out1<T, O> mapper, In1Out1<O, Boolean> filter) {
+        return filter(filter.mapIn(mapper)::io);
+    }
+
     default MappedIterable<T> filter(Filter1<T> filter) {
         return ()->new Iterator<T>() {
             Iterator<T> iter = iterator();

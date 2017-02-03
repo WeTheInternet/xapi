@@ -183,11 +183,11 @@ AbstractLinkedList<T, SimpleLinkedList.LinkedListNode<T>, SimpleLinkedList<T>> {
   }
 
   public T findNotNullReverse() {
-    return findReverse(X_Fu::returnNotNull);
+    return findReverse(X_Fu::isNotNull);
   }
 
   public <R> R findNotNullMappedReverse(In1Out1<T, R> mapper) {
-    return findMappedReverse(X_Fu::returnNotNull, X_Fu::returnNotNull, mapper);
+    return findMappedReverse(X_Fu::isNotNull, X_Fu::isNotNull, mapper);
   }
 
   public Iterator<T> iteratorReverse() {

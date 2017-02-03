@@ -232,11 +232,11 @@ public abstract class AbstractLinkedList<T, N extends AbstractLinkedList.Node<T,
 
   }
   public T findNotNull() {
-    return find(X_Fu::returnNotNull);
+    return find(X_Fu::isNotNull);
   }
 
   public <R> R findNotNullMapped(In1Out1<T, R> mapper) {
-    return findMapped(X_Fu::returnNotNull, mapper);
+    return findMapped(X_Fu::isNotNull, mapper);
   }
 
 }
