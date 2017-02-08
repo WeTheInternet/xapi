@@ -8,10 +8,10 @@ import java.util.Iterator;
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 11/4/16.
  */
-public class CountedIterator <T> implements Iterator<T>, HasSize {
+public class CountedIterator <T> implements SizedIterator<T> {
 
     private final Iterator<T> source;
-    private final int size;
+    private int size;
 
     public static <T> CountedIterator<T> count(Iterator<T> itr) {
         return itr instanceof CountedIterator ? (CountedIterator<T>) itr : new CountedIterator<>(itr);
@@ -72,6 +72,8 @@ public class CountedIterator <T> implements Iterator<T>, HasSize {
 
     @Override
     public T next() {
+        size --;
+        assert size >= 0;
         return source.next();
     }
 

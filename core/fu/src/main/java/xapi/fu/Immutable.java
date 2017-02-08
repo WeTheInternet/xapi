@@ -32,9 +32,10 @@ public class Immutable<O> implements Out1<O>, IsImmutable {
       this.items = items == null
           ? X_Fu.emptyArray()
           : ArrayIterable.<Object>iterate(items)
-              .map(Immutable::immutable1)
-              .toArray(Immutable[]::new);
-
+              .map(Immutable::<Object>immutable1)
+              // gwt doesn't like the Immutable::new syntax
+              // the erased generics cause a raw new Object(int) construct to be created
+              .toArray(i->new Immutable[i]);
     }
 
     public <O> Out1<O> compress1() {

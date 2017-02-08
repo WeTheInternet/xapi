@@ -25,7 +25,14 @@ public class CachingIterator <T> implements Iterator<T>, Rethrowable {
         return new CachingIterator<>(itr);
     }
 
-    public static <T> MappedIterable<T> cachingIterable(Iterator<T> itr) {
+    public static <T> ReplayableIterable<T> cachingIterable(Iterable<T> itr) {
+        if (itr instanceof ReplayableIterable) {
+            return (ReplayableIterable<T>) itr;
+        } else {
+            return cachingIterable(itr.iterator());
+        }
+    }
+    public static <T> ReplayableIterable<T> cachingIterable(Iterator<T> itr) {
         final CachingIterator<T> cacher = cachingIterator(itr);
         return cacher.replayable();
     }

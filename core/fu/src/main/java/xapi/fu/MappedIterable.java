@@ -3,10 +3,12 @@ package xapi.fu;
 import xapi.fu.Filter.Filter1;
 import xapi.fu.iterate.ArrayIterable;
 import xapi.fu.iterate.CachingIterator;
+import xapi.fu.iterate.CachingIterator.ReplayableIterable;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
 import xapi.fu.iterate.CountedIterator;
 import xapi.fu.iterate.EmptyIterator;
+import xapi.fu.iterate.SizedIterable;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -332,15 +334,20 @@ public interface MappedIterable<T> extends Iterable<T> {
      * (you want to read the full payload of a list, so you do not see concurrent mutations).
      *
      */
-    default MappedIterable<T> cached() {
-        final MappedIterable<T> itr;
-        if (this instanceof CachingIterator.ReplayableIterable) {
-            itr = this;
-        } else {
-            itr = CachingIterator.cachingIterable(iterator());
-        }
+    default ReplayableIterable<T> cached() {
+        final ReplayableIterable<T> itr = CachingIterator.cachingIterable(this);
         // Read the backing iterable into our cache.
         itr.forAll(In1.ignored());
         return itr;
+    }
+
+    default SizedIterable<T> counted() {
+        final ReplayableIterable<T> itr = CachingIterator.cachingIterable(this);
+        // Read the backing iterable into our cache, counting as we go.
+        Mutable<Integer> count = new Mutable<>(0);
+        itr.forAll(ignored->count.process(X_Fu::increment));
+
+        return SizedIterable.of(count.out1(), itr);
+
     }
 }

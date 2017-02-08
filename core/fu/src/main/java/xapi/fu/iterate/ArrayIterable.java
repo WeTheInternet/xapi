@@ -1,11 +1,6 @@
 package xapi.fu.iterate;
 
-import xapi.fu.MappedIterable;
-import xapi.fu.has.HasSize;
-
-import java.util.Iterator;
-
-public class ArrayIterable <E> implements MappedIterable<E>, HasSize {
+public class ArrayIterable <E> implements SizedIterable <E> {
 
   private final int start;
   private final int end;
@@ -16,7 +11,7 @@ public class ArrayIterable <E> implements MappedIterable<E>, HasSize {
 
   private final E[] array;
 
-  private final class Itr implements Iterator<E>, HasSize {
+  private final class Itr implements SizedIterator<E> {
     int pos = start, finish = end;
     @Override
     public boolean hasNext() {
@@ -57,7 +52,7 @@ public class ArrayIterable <E> implements MappedIterable<E>, HasSize {
   }
 
   @Override
-  public Iterator<E> iterator() {
+  public SizedIterator<E> iterator() {
     return new Itr();
   }
 

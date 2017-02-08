@@ -239,6 +239,14 @@ public interface Out1<O> extends Rethrowable, Lambda, HasMutability {
       return this::out1;
     }
 
+    default <I1> In1Out1<I1, O> ignoreIn1() {
+      return i->out1();
+    }
+
+    default <I1, I2> In2Out1<I1, I2, O> ignoreIn2() {
+      return (ig, nored)->out1();
+    }
+
   default <O1> Out2<O1, O> return1(O1 obj) {
     Out1[] items = new Out1[] {
         Immutable.immutable1(obj),

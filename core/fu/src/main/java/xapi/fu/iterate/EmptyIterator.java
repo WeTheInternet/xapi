@@ -1,20 +1,19 @@
 package xapi.fu.iterate;
 
-import java.util.Iterator;
-
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/2/16.
  */
-public final class EmptyIterator <I> implements Iterator <I> {
+public final class EmptyIterator <I> implements SizedIterator <I> {
 
-    public static final Iterator EMPTY = new EmptyIterator();
-    public static final Iterable NONE = ()->EMPTY;
+    @SuppressWarnings("unchecked")
+    public static final SizedIterator EMPTY = new EmptyIterator();
+    public static final SizedIterable NONE = SizedIterable.of(0, ()->EMPTY);
 
-    public static <I> Iterable<I> none() {
+    public static <I> SizedIterable<I> none() {
         return NONE;
     }
 
-    public static <I> Iterator<I> empty() {
+    public static <I> SizedIterator<I> empty() {
         return EMPTY;
     }
 
@@ -26,5 +25,10 @@ public final class EmptyIterator <I> implements Iterator <I> {
     @Override
     public I next() {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int size() {
+        return 0;
     }
 }

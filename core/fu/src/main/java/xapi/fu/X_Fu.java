@@ -392,5 +392,13 @@ public interface X_Fu {
   static <T> T[] emptyArray() {
     return (T[]) EMPTY;
   }
+
+  static int increment(int integer) {
+    return integer + 1;
+  }
+
+  static int decrement(int integer) {
+    return integer - 1;
+  }
 }
 

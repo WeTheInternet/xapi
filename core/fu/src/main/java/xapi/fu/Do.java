@@ -117,7 +117,24 @@ public interface Do extends AutoCloseable {
   }
 
   default Do onlyOnce() {
-    Mutable<Do> todo = new Mutable<>(this);
-    return ()->todo.useThenSet(Do::done, Do.NOTHING);
+    return new DoOnce(this);
+  }
+}
+final class DoOnce implements Do {
+
+  private final Mutable<Do> todo;
+
+  public DoOnce(Do onlyOnce) {
+    todo = new Mutable<>(onlyOnce);
+  }
+
+  @Override
+  public final Do onlyOnce() {
+    return this; // no need to double-wrap
+  }
+
+  @Override
+  public void done() {
+    todo.useThenSet(Do::done, Do.NOTHING);
   }
 }
