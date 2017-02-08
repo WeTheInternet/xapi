@@ -14,7 +14,7 @@ import xapi.util.api.DebugRethrowable;
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 4/18/16.
  */
-public abstract class UiBuilder <E extends UiElement> implements DebugRethrowable {
+public abstract class UiBuilder <E extends UiNode> implements DebugRethrowable {
 
   private String type;
   private String source;

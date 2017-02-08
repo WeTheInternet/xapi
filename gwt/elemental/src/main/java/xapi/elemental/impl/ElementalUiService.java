@@ -1,6 +1,7 @@
 package xapi.elemental.impl;
 
 import elemental.dom.Element;
+import elemental.dom.Node;
 import elemental.js.dom.JsElement;
 import xapi.annotation.inject.SingletonOverride;
 import xapi.elemental.api.UiElementWeb;
@@ -22,28 +23,28 @@ import xapi.ui.service.UiService;
  */
 @GwtPlatform
 @SingletonOverride(implFor = UiService.class)
-public class ElementalUiService extends UiServiceImpl <Element, UiElementWeb<Element>> {
+public class ElementalUiService extends UiServiceImpl <Node, UiElementWeb<Element>> {
 
-  public class ElementalAttributes extends UiWithAttributes<Element, UiElementWeb<Element>> {
+  public class ElementalAttributes extends UiWithAttributes<Node, UiElementWeb<Element>> {
     public ElementalAttributes() {
     }
 
     @Override
     protected In1Out1<String, String> findGetter(UiElementWeb<Element> element) {
-      return element.element()::getAttribute;
+      return element.getElement()::getAttribute;
     }
 
     @Override
     protected In2<String, String> findSetter(UiElementWeb<Element> element) {
-      return element.element()::setAttribute;
+      return element.getElement()::setAttribute;
     }
   }
 
-  public class ElementalProperties extends UiWithProperties<Element, UiElementWeb<Element>> {
+  public class ElementalProperties extends UiWithProperties<Node, UiElementWeb<Element>> {
 
     @Override
     protected In1Out1<String, Object> findGetter(UiElementWeb<Element> element) {
-      final Element ele = element.element();
+      final Element ele = element.getElement();
       if (ele instanceof JsElement) {
         return ((JsElement) ele).<JsDictionary>cast()::get;
       }
@@ -52,7 +53,7 @@ public class ElementalUiService extends UiServiceImpl <Element, UiElementWeb<Ele
 
     @Override
     protected In2<String, Object> findSetter(UiElementWeb<Element> element) {
-      final Element ele = element.element();
+      final Element ele = element.getElement();
       if (ele instanceof JsElement) {
         return ((JsElement) ele).<JsDictionary>cast()::put;
       }
@@ -61,14 +62,14 @@ public class ElementalUiService extends UiServiceImpl <Element, UiElementWeb<Ele
   }
 
   @Override
-  public UiWithAttributes<Element, UiElementWeb<Element>> newAttributes(UiElementWeb<Element> el) {
+  public UiWithAttributes<Node, UiElementWeb<Element>> newAttributes(UiElementWeb<Element> el) {
     final ElementalAttributes ui = new ElementalAttributes();
     ui.initialize(el, this);
     return ui;
   }
 
   @Override
-  public UiWithProperties<Element, UiElementWeb<Element>> newProperties(UiElementWeb<Element> el) {
+  public UiWithProperties<Node, UiElementWeb<Element>> newProperties(UiElementWeb<Element> el) {
       final ElementalProperties ui = new ElementalProperties();
       ui.initialize(el, this);
       return ui ;
@@ -78,7 +79,7 @@ public class ElementalUiService extends UiServiceImpl <Element, UiElementWeb<Ele
   public Object getHost(Object from) {
     if (from instanceof UiElementWeb) {
       UiElementWeb<?> e = (UiElementWeb) from;
-      final Element host = nativeHost(e.element());
+      final Element host = nativeHost(e.getElement());
       return UiElementWeb.fromWeb(host);
     }
     assert from instanceof Element || isElement(from);
@@ -96,16 +97,16 @@ public class ElementalUiService extends UiServiceImpl <Element, UiElementWeb<Ele
   }-*/;
 
   @Override
-  protected Element getParent(Element element) {
-    return (Element) element.getParentNode(); // TODO consider stopping at document.body/head?
+  protected Node getParent(Node element) {
+    return element.getParentNode(); // TODO consider stopping at document.body/head?
   }
 
   @Override
   public void bindEvent(
-      IsEventType type, UiElementWeb<Element> ui, Element element, EventHandler handler, boolean useCapture
+      IsEventType type, UiElementWeb<Element> ui, Node element, EventHandler handler, boolean useCapture
   ) {
     element.addEventListener(type.getEventType(), e->{
-      final UiEventManager<Element, UiElementWeb<Element>> manager = uiEvents();
+      final UiEventManager<Node, UiElementWeb<Element>> manager = uiEvents();
       manager.fireUiEvent(ui, type, toPayload(type, ui, element, e));
     }, useCapture);
   }

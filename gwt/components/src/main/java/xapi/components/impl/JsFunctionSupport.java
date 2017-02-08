@@ -6,10 +6,11 @@ import xapi.fu.Do;
 import xapi.fu.In1;
 import xapi.fu.In2;
 import xapi.fu.In3;
-
-import com.google.gwt.core.client.JavaScriptObject;
+import xapi.fu.Out1;
 
 import java.util.function.Consumer;
+
+import com.google.gwt.core.client.JavaScriptObject;
 
 public class JsFunctionSupport {
 
@@ -50,6 +51,21 @@ public class JsFunctionSupport {
 	/*-{
 	  return @JsFunctionSupport::maybeEnter(*)(function(){
 	    task.@In1::in(Ljava/lang/Object;)(arguments[0]);
+	  });
+	 }-*/;
+
+	public static native <T> JavaScriptObject wrapOut1(Out1<T> task)
+	/*-{
+	  return @JsFunctionSupport::maybeEnter(*)(function(){
+	    task.__caller__ = this;
+	    return task.@Out1::out1()();
+	  });
+	 }-*/;
+
+	public static native <I1, I2> JavaScriptObject wrapIn2(In2<I1, I2> task)
+	/*-{
+	  return @JsFunctionSupport::maybeEnter(*)(function(){
+	    task.@In2::in(Ljava/lang/Object;Ljava/lang/Object;)(arguments[0], arguments[1]);
 	  });
 	 }-*/;
 
@@ -132,4 +148,11 @@ public class JsFunctionSupport {
 	    value.@In3::in(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)(this, this, javaArr);
 	  });
 	}-*/;
+
+	public static native JavaScriptObject reapplyThis(JavaScriptObject f)
+        /*-{
+          return function() {
+            return f.apply(this, [this].concat(Array.prototype.slice.apply(arguments)));
+          };
+        }-*/;
 }

@@ -5,6 +5,7 @@ import xapi.collect.api.ClassTo;
 import xapi.collect.api.IntTo;
 import xapi.except.NotImplemented;
 import xapi.fu.Lazy;
+import xapi.fu.iterate.SizedIterable;
 import xapi.ui.api.UiElement;
 import xapi.ui.api.UiFeature;
 
@@ -13,15 +14,15 @@ import xapi.ui.api.UiFeature;
  *         Created on 4/19/16.
  */
 public abstract class
-    AbstractUiElement <Node, Element extends Node, Self extends UiElement<Node, ? extends Node, Self>>
-    implements UiElement<Node, Element,Self> {
+    AbstractUiElement <Node, Element extends Node, Base extends UiElement<Node, ? extends Node, Base>>
+    implements UiElement<Node, Element, Base> {
 
-  protected Self parent;
-  protected final IntTo<Self> children;
+  protected Base parent;
+  protected final IntTo<Base> children;
   protected final ClassTo<UiFeature> features;
   protected Lazy<Element> element;
 
-  public <S extends Self> AbstractUiElement(Class<S> cls) {
+  public <S extends Base> AbstractUiElement(Class<S> cls) {
     children = X_Collect.newList(cls);
     features = X_Collect.newClassMap(UiFeature.class);
     element = Lazy.deferred1(this::initAndBind);
@@ -37,7 +38,7 @@ public abstract class
   }
 
   @Override
-  public Element element() {
+  public Element getElement() {
     return element.out1();
   }
 
@@ -49,26 +50,25 @@ public abstract class
   public void setElement(Element element) {
     assert this.element.isUnresolved() : "Calling setElement after element has already been resolved";
     this.element = Lazy.immutable1(element);
-    final Self was = getUiService().bindNode(element, ui());
+    final Base was = getUiService().bindNode(element, ui());
     assert was == null || was == this : "Binding native node " + element + " to multiple elements;" +
         "\nwas: " + was + "," +
         "\nis: " + this;
   }
 
   @Override
-  public Self getParent() {
+  public Base getParent() {
     return parent;
   }
 
   @Override
-  public Self setParent(Self parent) {
+  public Base setParent(Base parent) {
     this.parent = parent;
     return ui();
   }
 
-
-  public IntTo<Self> getChildren() {
-    return children;
+  public SizedIterable<Base> getChildren() {
+    return children.forEachItem().counted();
   }
 
   @Override
@@ -93,11 +93,11 @@ public abstract class
 
     // Ui elements may use referential equality,
     // since two elements with the exact same attributes are not actually equal
-    return element() == that.element();
+    return getElement() == that.getElement();
   }
 
   @Override
   public int hashCode() {
-    return element().hashCode();
+    return getElement().hashCode();
   }
 }

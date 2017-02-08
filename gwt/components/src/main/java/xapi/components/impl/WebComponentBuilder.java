@@ -11,6 +11,8 @@ import xapi.components.api.OnWebComponentAttributeChanged;
 import xapi.components.api.ShadowDomPlugin;
 import xapi.components.api.Symbol;
 import xapi.fu.*;
+import xapi.ui.api.component.ComponentOptions;
+import xapi.ui.api.component.IsComponent;
 import xapi.util.X_String;
 
 import java.util.function.Consumer;
@@ -142,7 +144,7 @@ public class WebComponentBuilder {
     return attachedCallback(wrapInputOfThis(function.map1(mapper)));
   }
 
-  public <E extends Element, T> WebComponentBuilder attachedCallback(
+  public <E extends Element, T> WebComponentBuilder attachedCallbackMapped(
       In1Out1<E, T> mapper, final In2<T, E> function) {
     return attachedCallback(wrapInputOfThis(function.map1(mapper)));
   }
@@ -225,6 +227,10 @@ public class WebComponentBuilder {
     return createdCallback(wrapIn1(callback));
   }
 
+  public <E extends Element, C extends IsComponent<E, C>> WebComponentBuilder createdCallback(final In2<E, ComponentOptions<E, C>> callback) {
+    return createdCallback(wrapIn2(callback));
+  }
+
   public <E extends Element, T> WebComponentBuilder createdCallback(In1Out1<E, T> mapper, final In1<T> callback) {
     return createdCallback(wrapIn1(callback.map1(mapper)));
   }
@@ -293,8 +299,8 @@ public class WebComponentBuilder {
       } else {
         // append the functions together
         prototype.setInit(JsFunctionSupport.merge(
-          function,
-          prototype.getInit()
+          prototype.getInit(),
+          function
           ));
       }
     } else {
@@ -303,20 +309,13 @@ public class WebComponentBuilder {
       } else {
         // append the functions together
         prototype.setCreatedCallback(JsFunctionSupport.merge(
-          function,
-          prototype.getCreatedCallback()
+          prototype.getCreatedCallback(),
+          function
           ));
       }
     }
     return this;
   }
-
-  private native JavaScriptObject reapplyThis(JavaScriptObject f)
-  /*-{
-    return function() {
-      return f.apply(this, [this].concat(Array.prototype.slice.apply(arguments)));
-    };
-  }-*/;
 
   public WebComponentBuilder detachedCallback(final Do function) {
     return detachedCallback(wrapDo(function));
@@ -375,7 +374,7 @@ public class WebComponentBuilder {
     return this;
   }
 
-  public WebComponentBuilder addValue(final String name, final JavaScriptObject value) {
+  public WebComponentBuilder addValue(final String name, final Object value) {
     return addValue(name, value, false, true, true);
   }
 
@@ -400,12 +399,17 @@ public class WebComponentBuilder {
   }
 
   public WebComponentBuilder addValueReadOnly(final String name,
-    final JavaScriptObject value) {
+    final Object value) {
+    return addValue(name, value, false, true, false);
+  }
+
+  public WebComponentBuilder addValueReadOnly(final Symbol name,
+    final Object value) {
     return addValue(name, value, false, true, false);
   }
 
   public native WebComponentBuilder addValue(String name,
-    JavaScriptObject value, boolean enumerable, boolean configurable,
+    Object value, boolean enumerable, boolean configurable,
     boolean writeable)
     /*-{
 		Object
@@ -421,7 +425,7 @@ public class WebComponentBuilder {
   }-*/;
 
   public native WebComponentBuilder addValue(Symbol name,
-    JavaScriptObject value, boolean enumerable, boolean configurable,
+    Object value, boolean enumerable, boolean configurable,
     boolean writeable)
     /*-{
 		Object
@@ -451,8 +455,21 @@ public class WebComponentBuilder {
     return addProperty(name, null, set, true, false);
   }
 
-  public native <T> WebComponentBuilder addProperty(String name,
-    Out1<T> get, Consumer<T> set, boolean enumerable, boolean configurable)
+  public <T> WebComponentBuilder addProperty(Symbol name,
+    Out1<T> get, Consumer<T> set, boolean enumerable, boolean configurable) {
+    return doAddProperty(name, get, set, enumerable, configurable);
+  }
+  public <T> WebComponentBuilder addProperty(String name,
+    Out1<T> get, Consumer<T> set, boolean enumerable, boolean configurable) {
+    return doAddProperty(name, get, set, enumerable, configurable);
+  }
+
+  private native <T> WebComponentBuilder doAddProperty(
+      Object name,
+      Out1<T> get,
+      Consumer<T> set,
+      boolean enumerable,
+      boolean configurable)
     /*-{
 		var proto = {
 			enumerable : enumerable,
@@ -482,12 +499,16 @@ public class WebComponentBuilder {
     return addProperty(name, get, set, true, false);
   }
 
-  public <C, T> WebComponentBuilder addProperty(String name,
-            In1Out1<Element, C> mapper, In1Out1<C, T> get, In2<C, T> set) {
+  public <E extends Element, C, T> WebComponentBuilder addProperty(String name,
+            In1Out1<E, C> mapper, In1Out1<C, T> get, In2<C, T> set) {
     return addProperty(name, get == null ? null : get.mapIn(mapper), set == null ? null : set.map1(mapper), true, false);
   }
 
-  public <T> WebComponentBuilder addPropertyReadOnly(String name, In1Out1<Element, T> get) {
+  public <E extends Element, T> WebComponentBuilder addPropertyReadOnly(String name, In1Out1<E, T> get) {
+    return addProperty(name, get, null, true, false);
+  }
+
+  public <E extends Element, T> WebComponentBuilder addPropertyReadOnly(Symbol name, In1Out1<E, T> get) {
     return addProperty(name, get, null, true, false);
   }
 
@@ -495,8 +516,17 @@ public class WebComponentBuilder {
     return addProperty(name, null, set, true, false);
   }
 
-  public native <T> WebComponentBuilder addProperty(String name,
-            In1Out1<Element, T> get, In2<Element, T> set, boolean enumerable, boolean configurable)
+  public <E extends Element, T> WebComponentBuilder addProperty(Symbol name,
+            In1Out1<E, T> get, In2<E, T> set, boolean enumerable, boolean configurable) {
+    return doAddProperty(name, get, set, enumerable, configurable);
+  }
+
+  public <E extends Element, T> WebComponentBuilder addProperty(String name,
+            In1Out1<E, T> get, In2<E, T> set, boolean enumerable, boolean configurable) {
+    return doAddProperty(name, get, set, enumerable, configurable);
+  }
+
+  private native <E extends Element, T> WebComponentBuilder doAddProperty(Object name, In1Out1<E, T> get, In2<E, T> set, boolean enumerable, boolean configurable)
     /*-{
 		var proto = {
 			enumerable : enumerable,
@@ -666,5 +696,9 @@ public class WebComponentBuilder {
 
   public JavaScriptObject getComponentClass() {
     return componentClass;
+  }
+
+  public WebComponentPrototype getPrototype() {
+    return prototype;
   }
 }

@@ -1,19 +1,19 @@
 package xapi.components.api;
 
 import xapi.fu.In1Out1;
-import xapi.fu.X_Fu;
-import xapi.ui.api.UiElement;
+import xapi.ui.api.component.ComponentOptions;
+import xapi.ui.api.component.IsComponent;
 
 import com.google.gwt.core.client.JavaScriptObject;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 1/25/17.
  */
-public class ComponentConstructor<E> {
+public class ComponentConstructor<E, C extends IsComponent<E, C>> {
 
-    private final In1Out1<Object[], E> factory;
+    private final In1Out1<ComponentOptions<E, C>, E> factory;
 
-    protected class JsAdapter implements In1Out1<Object[], E> {
+    protected class JsAdapter implements In1Out1<ComponentOptions<E, C>, E> {
 
         private final JavaScriptObject ctor;
 
@@ -22,37 +22,26 @@ public class ComponentConstructor<E> {
         }
 
         @Override
-        public E io(Object[] in) {
-            // Here is where we determine how to invoke our factory
-            if (X_Fu.isEmpty(in)) {
-                // no arguments.
-            } else {
-                // we have args; lets see what types they are.
-                if (in.length == 1) {
-                    if (in[0] instanceof UiElement) {
-                        // When the arguments to create an element
-                        // is a UiElement, then we want to be filling in that element;
-                        // otherwise, we want to be creating a new element.
-                    }
-                }
-            }
-            return null;
-        }
+        public native E io(ComponentOptions<E, C> opts)
+        /*-{
+            var make = this.@JsAdapter::ctor;
+            return new make(opts);
+        }-*/;
     }
 
     public ComponentConstructor(JavaScriptObject obj) {
         this.factory = adaptJso(obj);
     }
 
-    protected In1Out1<Object[],E> adaptJso(JavaScriptObject obj) {
+    protected In1Out1<ComponentOptions<E, C>,E> adaptJso(JavaScriptObject obj) {
         return new JsAdapter(obj);
     }
 
-    public ComponentConstructor(In1Out1<Object[], E> factory) {
+    public ComponentConstructor(In1Out1<ComponentOptions<E, C>, E> factory) {
         this.factory = factory;
     }
 
-    public E construct(Object ... args) {
-        return factory.io(args == null ? new Object[0] : args);
+    public E construct(ComponentOptions<E, C> opts) {
+        return factory.io(opts);
     }
 }

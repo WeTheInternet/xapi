@@ -266,7 +266,7 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
                 Do onDone = () -> {
                     Path path = Paths.get(manifest.getCompiledWar());
                     final Path file = path.resolve(payload + File.separatorChar + payload + ".nocache.js");
-                    req.getResponse().sendFile(
+                    response.sendFile(
                         file.normalize().toString()
                     );
                     callback.in(req);
@@ -312,7 +312,7 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
             Mutable<Boolean> done = new Mutable<>(false);
             if (Files.exists(file)) {
                 final String normalized = file.normalize().toString();
-                req.getResponse().sendFile(normalized);
+                response.sendFile(normalized);
             } else if (url.startsWith("sourcemaps")){
                 if (url.endsWith("json")) {
                     final String fileName = X_String.chopEndOrReturnEmpty(url, "/")
@@ -321,7 +321,7 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
                     file = dir.resolve(fileName);
                     if (Files.exists(file)) {
                         final String normalized = file.normalize().toString();
-                        req.getResponse().sendFile(normalized);
+                        response.sendFile(normalized);
                     } else {
                         X_Log.warn(getClass(), "No file to serve for ", file, "from url", url);
                     }

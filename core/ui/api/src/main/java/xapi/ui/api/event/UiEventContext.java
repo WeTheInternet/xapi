@@ -4,12 +4,12 @@ import xapi.event.api.IsEventType;
 import xapi.fu.Log;
 import xapi.log.X_Log;
 import xapi.model.api.Model;
-import xapi.ui.api.UiElement;
+import xapi.ui.api.UiNode;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 7/17/16.
  */
-public interface UiEventContext<Payload, Node, Base extends UiElement<Node, ? extends Node, Base>> extends IsEventType, Model, Log {
+public interface UiEventContext<Payload, Node, Base extends UiNode<Node, ? extends Node, Base>> extends IsEventType, Model, Log {
 
     String KEY_EVENT_TYPE = "eventType";
     String KEY_PAYLOAD_TYPE = "payload";

@@ -48,7 +48,7 @@ public interface UiService <Node, E extends UiElement<Node, ? extends Node,  E>>
   String debugDump();
 
   default void bindEvent(IsEventType type, E ui, EventHandler handler, boolean useCapture) {
-    bindEvent(type, ui, ui.element(), handler, useCapture);
+    bindEvent(type, ui, ui.getElement(), handler, useCapture);
   }
 
   void bindEvent(IsEventType type, E ui, Node node, EventHandler handler, boolean useCapture);

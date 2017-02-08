@@ -109,7 +109,7 @@ WebComponentWithCallbacks<E> {
     // disabling shadow root for now as it doesn't really add any value...
 //    Element shadow = getShadowRoot();
 //    if (shadow == null) {
-//      shadow = createShadowRoot(element());
+//      shadow = createShadowRoot(getElement());
 //      setShadowRoot(shadow);
 //    }
 //    return shadow;

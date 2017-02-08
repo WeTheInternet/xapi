@@ -7,7 +7,7 @@ import jsinterop.annotations.JsType;
  *         Created on 4/18/16.
  */
 @JsType(isNative = true)
-public interface ElementInjector <Node, Base extends UiElement<Node, ? extends Node, Base>> {
+public interface ElementInjector <Node, Base extends UiNode<Node, ? extends Node, Base>> {
 
   void appendChild(Base newChild);
 

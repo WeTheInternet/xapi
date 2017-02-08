@@ -12,7 +12,7 @@ import xapi.ui.service.UiService;
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 4/19/16.
  */
-public class UiWithAttributes <Node, E extends UiElement<Node, ? extends Node, E>> implements UiFeature<Node, E> {
+public class UiWithAttributes <Node, E extends UiNode<Node, ? extends Node, E>> implements UiFeature<Node, E> {
 
   private In1Out1<String, String> getter;
   private In2<String, String> setter;

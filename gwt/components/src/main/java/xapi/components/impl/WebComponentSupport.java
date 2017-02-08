@@ -2,12 +2,12 @@ package xapi.components.impl;
 
 import elemental.dom.Element;
 import elemental.js.dom.JsElement;
+import xapi.components.api.ComponentConstructor;
 import xapi.components.api.Document;
 import xapi.components.api.IsWebComponent;
-import xapi.components.api.ComponentConstructor;
 import xapi.components.api.JsoConstructorSupplier;
 import xapi.fu.Do;
-import xapi.ui.api.UiElement;
+import xapi.ui.api.component.IsComponent;
 
 import javax.validation.constraints.NotNull;
 import java.util.function.Supplier;
@@ -63,12 +63,12 @@ public class WebComponentSupport {
     return new JsoConstructorSupplier<E>(jso);
   }
 
-  public static <E extends UiElement> ComponentConstructor<E> define(String tagName, JavaScriptObject jsClass, String extendsTag) {
+  public static <E, C extends IsComponent<E, C>> ComponentConstructor<E, C> define(String tagName, JavaScriptObject jsClass, String extendsTag) {
     ComponentConstructor jso = JsSupport.defineTag(tagName, jsClass, JsSupport.extendsTag(extendsTag));
     return jso;
   }
 
-  public static <E extends UiElement> ComponentConstructor<UiElement> define(String tagName, WebComponentBuilder component) {
+  public static <E, C extends IsComponent<E, C>> ComponentConstructor<E, C> define(String tagName, WebComponentBuilder component) {
     ComponentConstructor jso = JsSupport.defineTag(tagName, component.getComponentClass(), JsSupport.extendsTag(component.getSuperTag()));
     return jso;
   }

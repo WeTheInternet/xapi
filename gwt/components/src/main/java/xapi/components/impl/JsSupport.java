@@ -10,31 +10,11 @@ import jsinterop.annotations.JsIgnore;
 import xapi.components.api.*;
 import xapi.components.api.CustomElementRegistry.ExtendsTag;
 import xapi.fu.In1Out1;
-import xapi.fu.In2Out1;
 
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.UnsafeNativeLong;
 
 public class JsSupport {
-
-  private static class NativeFactory <I, O> implements In2Out1<I, In1Out1<I, O>, O> {
-
-    private final Symbol name;
-
-    public NativeFactory(String name) {
-      this.name = JsSupport.symbol(name == null ? "__component__" : name);
-    }
-
-    @Override
-    public native O io(I el, In1Out1<I, O> io)
-    /*-{
-      var n = this.@NativeFactory::name;
-      if (!el[n]) {
-        el[n] = io.@In1Out1::io(Ljava/lang/Object;)(el);
-      }
-      return el[n];
-    }-*/;
-  }
 
   public static native Document doc()
   /*-{
@@ -69,7 +49,7 @@ public class JsSupport {
   @JsIgnore
   public static ComponentConstructor defineTag(String name, JavaScriptObject prototype, ExtendsTag extendsTag) {
     final JavaScriptObject definition = customElements().define(name, prototype, extendsTag);
-    return new ComponentConstructor(definition);
+    return new ComponentConstructor(prototype);
   }
 
   @JsIgnore
@@ -458,6 +438,11 @@ public class JsSupport {
     return name in object;
    }-*/;
 
+  public static native boolean exists(Object object, Symbol name)
+  /*-{
+    return name in object;
+   }-*/;
+
   public static native boolean attributeExists(Object object, String name)
   /*-{
     return object.getAttribute && object.getAttribute(name) != null;
@@ -521,6 +506,11 @@ public class JsSupport {
   }-*/;
 
   public static native Object getObject(Object object, String key)
+  /*-{
+    return object[key];
+  }-*/;
+
+  public static native Object getObject(Object object, Symbol key)
   /*-{
     return object[key];
   }-*/;
@@ -624,8 +614,20 @@ public class JsSupport {
     return Object.create(o);
   }-*/;
 
-  public static <I, O> In1Out1<I, O> nativeFactory(In1Out1<I, O> factory, String name) {
-    return factory.lazy(new NativeFactory<>(name));
+  public static <I, O> In1Out1<I, O> nativeFactory(String name, In1Out1<I, O> factory) {
+    return factory.lazy(new JsLazyExpando<>(name));
+  }
+
+  public static <I, O> In1Out1<I, O> nativeFactory(Symbol name, In1Out1<I, O> factory) {
+    return factory.lazy(new JsLazyExpando<>(name));
+  }
+
+  public static <I, O> void setFactory(I in, O val, String name) {
+    new JsLazyExpando<>(name).setValue(in, val);
+  }
+
+  public static <I, O> void setFactory(I in, O val, Symbol name) {
+    new JsLazyExpando<>(name).setValue(in, val);
   }
 
   public static native <T> T unsafeCast(Object thing)

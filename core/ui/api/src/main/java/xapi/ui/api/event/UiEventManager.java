@@ -53,7 +53,7 @@ public class UiEventManager <Node, Ui extends UiElement<Node, ? extends Node, Ui
     protected <Payload> UiEventContext<Payload,Node,Ui> newContext(Ui node, IsEventType type, Payload payload) {
         final UiEventContext<Payload, Node, Ui> ctx = X_Model.create(UiEventContext.class);
         ctx.setEventType(type.getEventType());
-        ctx.setNativeEventTarget(node.element());
+        ctx.setNativeEventTarget(node.getElement());
         ctx.setNativeType(type.getEventType());
         ctx.setPayload(payload);
         ctx.setSource(node);

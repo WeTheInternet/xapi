@@ -3,10 +3,10 @@ package xapi.ui.api;
 import jsinterop.annotations.JsIgnore;
 import jsinterop.annotations.JsProperty;
 import jsinterop.annotations.JsType;
-import xapi.collect.api.IntTo;
 import xapi.event.api.IsEvent;
 import xapi.event.impl.EventTypes;
 import xapi.fu.In1Out1;
+import xapi.fu.iterate.SizedIterable;
 import xapi.inject.X_Inject;
 import xapi.ui.api.event.UiEvent;
 import xapi.ui.api.event.UiEventHandler;
@@ -22,7 +22,7 @@ import javax.validation.constraints.NotNull;
 @JsType
 public interface UiElement
     <Node, Element extends Node, Base extends UiElement<Node, ? extends Node, Base>>
-    extends ElementInjector<Node, Base> {
+    extends ElementInjector<Node, Base>, UiNode<Node, Element, Base> {
 
   @JsProperty
   Base getParent();
@@ -31,13 +31,10 @@ public interface UiElement
   Base setParent(Base parent);
 
   @JsIgnore
-  IntTo<Base> getChildren();
+  SizedIterable<Base> getChildren();
 
   @JsIgnore
   String toSource();
-
-  @JsIgnore
-  Element element();
 
   @JsIgnore
   default Node getHost() {

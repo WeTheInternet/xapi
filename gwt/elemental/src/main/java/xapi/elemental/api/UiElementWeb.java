@@ -1,6 +1,7 @@
 package xapi.elemental.api;
 
 import elemental.dom.Element;
+import elemental.dom.Node;
 import xapi.annotation.inject.InstanceDefault;
 import xapi.elemental.X_Elemental;
 import xapi.inject.X_Inject;
@@ -12,7 +13,9 @@ import xapi.ui.impl.AbstractUiElement;
  *         Created on 4/19/16.
  */
 @InstanceDefault(implFor = UiElementWeb.class)
-public class UiElementWeb <E extends Element> extends AbstractUiElement<Element, E, UiElementWeb<E>> {
+public class UiElementWeb <E extends Element>
+    extends AbstractUiElement<Node, E, UiElementWeb<E>>
+    implements WebNode<E, UiElementWeb<E>> {
 
   private static final String MEMOIZE_KEY = "xapi-element";
 
@@ -34,38 +37,38 @@ public class UiElementWeb <E extends Element> extends AbstractUiElement<Element,
   @Override
   public void appendChild(UiElementWeb<E> newChild) {
     super.appendChild(newChild);
-    final E e = element();
-    final E c = newChild.element();
+    final E e = getElement();
+    final E c = newChild.getElement();
     e.appendChild(c);
   }
 
   @Override
   public void removeChild(UiElementWeb<E> child) {
     super.removeChild(child);
-    final E e = element();
-    final E c = child.element();
+    final E e = getElement();
+    final E c = child.getElement();
     e.appendChild(c);
   }
 
   @Override
   public String toSource() {
-    return element().getOuterHTML();
+    return getElement().getOuterHTML();
   }
 
   @Override
   public void insertAdjacent(ElementPosition pos, UiElementWeb<E> child) {
-    final E e = element();
-    final E c = child.element();
+    final E e = getElement();
+    final E c = child.getElement();
     e.insertAdjacentElement(pos.position(), c);
   }
 
   @Override
   public boolean addStyleName(String style) {
-    return X_Elemental.addClassName(element(), style);
+    return X_Elemental.addClassName(getElement(), style);
   }
 
   @Override
   public boolean removeStyleName(String style) {
-    return X_Elemental.removeClassName(element(), style);
+    return X_Elemental.removeClassName(getElement(), style);
   }
 }

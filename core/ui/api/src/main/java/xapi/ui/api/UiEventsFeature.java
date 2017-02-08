@@ -11,8 +11,8 @@ import xapi.ui.service.UiService;
  */
 public class UiEventsFeature <Node, Base extends UiElement<Node, ? extends Node, Base>> implements UiFeature <Node, Base> {
 
-    EventManager captures;
-    EventManager bubbles;
+    private EventManager captures;
+    private EventManager bubbles;
     private UiService service;
     private Base node;
 
@@ -51,5 +51,19 @@ public class UiEventsFeature <Node, Base extends UiElement<Node, ? extends Node,
         return this;
     }
 
+    public EventManager getCaptures() {
+        return captures;
+    }
 
+    public EventManager getBubbles() {
+        return bubbles;
+    }
+
+    public UiService getService() {
+        return service;
+    }
+
+    public Base getNode() {
+        return node;
+    }
 }
