@@ -89,6 +89,11 @@ public class DomBuffer extends XmlBuffer {
     return this;
   }
 
+  public DomBuffer setSlot(final String slot) {
+    setAttribute("slot", slot);
+    return this;
+  }
+
   public DomBuffer setSrc(final String src) {
     setAttribute("src", src);
     return this;

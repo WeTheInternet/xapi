@@ -126,6 +126,9 @@ implements ElementalService {
       if (element.shadowRoot) {
           return element.shadowRoot;
       }
+      if (element.attachShadow) {
+          return element.attachShadow({mode: "open"});
+      }
       if (element.createShadowRoot) {
           return element.createShadowRoot();
       }

@@ -2,6 +2,7 @@ package xapi.components.impl;
 
 import elemental.client.Browser;
 import elemental.dom.Element;
+import elemental.dom.Node;
 import elemental.html.DivElement;
 import xapi.collect.X_Collect;
 import xapi.collect.api.Fifo;
@@ -10,6 +11,7 @@ import xapi.components.api.JsoArray;
 import xapi.components.api.OnWebComponentAttributeChanged;
 import xapi.components.api.ShadowDomPlugin;
 import xapi.components.api.Symbol;
+import xapi.elemental.X_Elemental;
 import xapi.fu.*;
 import xapi.ui.api.component.ComponentOptions;
 import xapi.ui.api.component.IsComponent;
@@ -29,20 +31,17 @@ import com.google.gwt.core.client.UnsafeNativeLong;
 
 public class WebComponentBuilder {
 
-  public static final WebComponentVersion DEFAULT_VERSION = "true".equals(
-      System.getProperty("web.components.v0", "false")) ? V1 : V0;
-
   private final WebComponentVersion version;
   private final JavaScriptObject componentClass;
 
   private MapLike<String, Object> extras;
 
   public static WebComponentBuilder create() {
-    return new WebComponentBuilder(htmlElementPrototype(), DEFAULT_VERSION);
+    return new WebComponentBuilder(htmlElementPrototype(), WebComponentSupport.DEFAULT_VERSION);
   }
 
   public static WebComponentBuilder create(final JavaScriptObject proto) {
-    return new WebComponentBuilder(proto, DEFAULT_VERSION);
+    return new WebComponentBuilder(proto, WebComponentSupport.DEFAULT_VERSION);
   }
 
   public static native JavaScriptObject htmlElementPrototype()
@@ -60,7 +59,7 @@ public class WebComponentBuilder {
   private Fifo<ShadowDomPlugin> plugins;
 
   public WebComponentBuilder(JavaScriptObject prototype) {
-    this(prototype, DEFAULT_VERSION);
+    this(prototype, WebComponentSupport.DEFAULT_VERSION);
   }
 
   public WebComponentBuilder(JavaScriptObject classOrProto, WebComponentVersion version) {
@@ -93,41 +92,41 @@ public class WebComponentBuilder {
   protected native JavaScriptObject createJsClass(JavaScriptObject parent)
   /*-{
 
-    var upgrade = typeof Reflect === 'object' ?
-      function () {
-        return Reflect.construct(
-          parent,
-          arguments,
-          this.constructor
-        );
-      } :
-      function () {
-        return parent.apply(this, arguments) || this;
-      };
+      var upgrade = typeof Reflect === 'object' ?
+          function () {
+            return Reflect.construct(
+              parent,
+              arguments,
+              this.constructor
+            );
+          } :
+          function () {
+            return parent.apply(this, arguments) || this;
+          };
 
-    // the actual constructor
-    function constructor() {
-      // delegates to an optional init property that we can build imperatively
-      return this.init && this.init.apply(this, arguments);
-    }
+      // the actual constructor
+      function constructor() {
+        // delegates to an optional init property that we can build imperatively
+        return this.init && this.init.apply(this, arguments);
+      }
 
-    function clazz() {
-      // Get an extensible instance of the HTMLElement (or subtype)
-      var self = upgrade.apply(this, arguments);
-      // call the constructor as that instance, returning our
-      // supplied instance, or a new instance, if the init method so chooses.
-      return constructor.apply(self, arguments) || self;
-    }
+      function clazz() {
+        // Get an extensible instance of the HTMLElement (or subtype)
+        var self = upgrade.apply(this, arguments);
+        // call the constructor as that instance, returning our
+        // supplied instance, or a new instance, if the init method so chooses.
+        return constructor.apply(self, arguments) || self;
+      }
 
-    clazz.prototype = Object.create(parent.prototype);
+      clazz.prototype = Object.create(parent.prototype);
 
-    Object.defineProperty(clazz.prototype, "constructor", {
-      configurable: true,
-      writable: true,
-      value: clazz
-    });
+      Object.defineProperty(clazz.prototype, "constructor", {
+        configurable: true,
+        writable: true,
+        value: clazz
+      });
 
-    return clazz;
+      return clazz;
   }-*/;
 
   public WebComponentBuilder attachedCallback(final Runnable function) {
@@ -276,20 +275,26 @@ public class WebComponentBuilder {
 
   }
 
-  private native Element setShadowRootTemplate(Element element, Element template)
-  /*-{
-    var root = element.createShadowRoot();
-    var clone = document.importNode(template.content, true);
-    root.appendChild(clone);
+  private Element setShadowRootTemplate(Element element, Element template) {
+    final Element root = getShadowRoot(element);
+    if (template != null) {
+      Node clone = JsSupport.doc().importNode(JsSupport.getNode(template, "content"), true);
+      root.appendChild(clone);
+    }
     return root;
-  }-*/;
+  }
 
-  private native Element setShadowRoot(Element element, String html)
-  /*-{
-    var root = element.createShadowRoot();
-    root.innerHTML = html;
+  private Element setShadowRoot(Element element, String html) {
+    Element root = getShadowRoot(element);
+    if (html != null) {
+      root.setInnerHTML(html);
+    }
     return root;
-  }-*/;
+  }
+
+  private Element getShadowRoot(Element element) {
+    return X_Elemental.getShadowRoot(element);
+  }
 
   public WebComponentBuilder createdCallback(JavaScriptObject function) {
     function = reapplyThis(function);
@@ -365,7 +370,7 @@ public class WebComponentBuilder {
   }-*/;
 
   public WebComponentBuilder extend() {
-    return new WebComponentBuilder(copy(prototype), DEFAULT_VERSION);
+    return new WebComponentBuilder(copy(prototype), WebComponentSupport.DEFAULT_VERSION);
   }
 
   public WebComponentBuilder setExtends(final String tagName) {

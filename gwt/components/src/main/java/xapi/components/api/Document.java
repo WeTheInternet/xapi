@@ -24,4 +24,7 @@ public interface Document {
 
   @JsProperty
   JsBodyElement getBody();
+
+  /** filthy trick with this generic... */
+  <N> N importNode(N content, boolean b);
 }

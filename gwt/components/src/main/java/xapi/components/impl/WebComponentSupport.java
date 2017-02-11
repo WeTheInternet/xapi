@@ -7,12 +7,15 @@ import xapi.components.api.Document;
 import xapi.components.api.IsWebComponent;
 import xapi.components.api.JsoConstructorSupplier;
 import xapi.fu.Do;
+import xapi.fu.Mutable;
 import xapi.ui.api.component.IsComponent;
 
 import javax.validation.constraints.NotNull;
 import java.util.function.Supplier;
 
 import static xapi.components.api.LoggingCallback.voidCallback;
+import static xapi.components.impl.WebComponentVersion.V0;
+import static xapi.components.impl.WebComponentVersion.V1;
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JavaScriptObject;
@@ -21,16 +24,30 @@ import com.google.gwt.core.client.ScriptInjector;
 
 public class WebComponentSupport {
 
+  public static final WebComponentVersion DEFAULT_VERSION = "true".equals(
+      System.getProperty("web.components.v0", "false")) ? V1 : V0;
+
   public void ensureWebComponentApi(Do onLoaded) {
+    ensureWebComponentApi(onLoaded, DEFAULT_VERSION);
+  }
+  public void ensureWebComponentApi(Do onLoaded, WebComponentVersion version) {
     // Check if document.register exists
-    onLoaded = onLoaded.onlyOnce();
+
     if (JsSupport.doc().getRegisterElement() == null) {
       // Nope... Lets inject our polyfill
-      ScriptInjector
-        .fromUrl(getPolyfillUrl())
-        .setCallback(voidCallback(onLoaded))
-        .setRemoveTag(true)
-        .inject();
+      Mutable<JavaScriptObject> script = new Mutable<>();
+      script.in(ScriptInjector
+          .fromUrl(getPolyfillUrl(version))
+          .setCallback(voidCallback(() -> {
+            if (version == V1) {
+              JsSupport.win().addEventListener("WebComponentsReady", onLoaded.onlyOnce().ignores1()::in, false);
+            } else {
+              onLoaded.done();
+            }
+            // TODO: remove the script
+          }))
+          .setWindow(ScriptInjector.TOP_WINDOW)
+          .inject());
     } else {
       Scheduler.get().scheduleDeferred(onLoaded::done);
     }
@@ -51,8 +68,12 @@ public class WebComponentSupport {
 		return webComponent;
   }-*/;
 
-  protected String getPolyfillUrl() {
-    return GWT.getHostPageBaseURL() + "x-tag-components.min.js";
+  protected static String getPolyfillUrl(WebComponentVersion version) {
+    if (version == V1) {
+      return GWT.getModuleBaseURL() + "js/webcomponents-v1.js";
+    } else {
+      return GWT.getHostPageBaseURL() + "x-tag-components.min.js";
+    }
   }
 
   @Deprecated

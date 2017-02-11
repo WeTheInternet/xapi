@@ -186,10 +186,11 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
               if (userRequest.isNonNull()) {
                 final In1<IsRecompiler> current = userRequest.out1();
                 final In1<IsRecompiler> toAdd = getComp.onlyOnce();
-                // newest requests get serviced first,
+                // oldest requests get serviced first...  TODO: capture state better than this.
                 // in the event of a page reload, an old request may have disconnected,
                 // so we want to process the callbacks from newest to oldest.
-                userRequest.in(current.useBeforeMe(toAdd));
+                userRequest.in(toAdd.useBeforeMe(current));
+//                userRequest.in(current.useBeforeMe(toAdd));
               } else {
                 userRequest.in(getComp.onlyOnce());
               }
@@ -210,7 +211,8 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
           }
           userRequest.useThenSet(pending->{
             if (pending != null) {
-              // exit quickly to avoid race conditions!
+              // exit synchronized block quickly to avoid race conditions!
+              // TODO: be able to re-hydrate state for each pending request
               runFinally(pending.provide(compiler));
             }
           }, null);

@@ -1,6 +1,7 @@
 package xapi.components.impl;
 
 import elemental.dom.Element;
+import elemental.dom.Node;
 import elemental.html.DivElement;
 import elemental.js.util.JsArrayOfBoolean;
 import elemental.js.util.JsArrayOfInt;
@@ -510,6 +511,11 @@ public class JsSupport {
     return object[key];
   }-*/;
 
+  public static native Node getNode(Object object, String key)
+  /*-{
+    return object[key];
+  }-*/;
+
   public static native Object getObject(Object object, Symbol key)
   /*-{
     return object[key];
@@ -571,7 +577,14 @@ public class JsSupport {
 
   public static native Element createShadowRoot(Element e)
   /*-{
-    return e.createShadowRoot();
+    if (e.attachShadow) {
+      return e.attachShadow({mode: "open"});
+    }
+    if (e.createShadowRoot) {
+      return e.createShadowRoot();
+    }
+    debugger;
+    throw Error("Does not have shadow root: " + e.tagName);
   }-*/;
 
   public static native JsArrayOfString split(String value, String on)

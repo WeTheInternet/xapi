@@ -21,4 +21,6 @@ public interface UiConfig
     void addStyleAssembler(StyleAssembler<Element, StyleElement, R, Service> assembler);
 
     R getResources();
+
+    StyleAssembler<Element,StyleElement,R,Service> getDefaultAssembler();
 }

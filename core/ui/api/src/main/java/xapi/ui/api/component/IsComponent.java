@@ -21,4 +21,7 @@ public interface IsComponent
 
     Self getUi();
 
+    IsComponent<?, ?> getParentComponent();
+
+    void setParentComponent(IsComponent<?, ?> parent);
 }
