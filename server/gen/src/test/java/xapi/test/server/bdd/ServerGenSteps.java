@@ -11,12 +11,12 @@ import xapi.log.api.LogLevel;
 import xapi.server.api.WebApp;
 import xapi.util.X_String;
 
+import java.util.List;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static xapi.fu.iterate.ArrayIterable.iterate;
 import static xapi.fu.MappedIterable.adaptIterable;
-
-import java.util.List;
+import static xapi.fu.iterate.ArrayIterable.iterate;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/10/16.
@@ -39,7 +39,7 @@ public class ServerGenSteps implements ServerTestHelper<TestSocketServer> {
     }
 
     @Given("^Generate web app named (.+):$")
-    public void generateWebApp(String name, List<String> source) throws ParseException {
+    public void generateWebApp(String name, List<String> source) throws ParseException, ClassNotFoundException {
         String src = X_String.join("\n", source);
         final UiContainerExpr app = JavaParser.parseUiContainer(src);
         createWebApp(name, app);

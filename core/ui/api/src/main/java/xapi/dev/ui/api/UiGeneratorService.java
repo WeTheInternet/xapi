@@ -1,9 +1,11 @@
-package xapi.dev.ui;
+package xapi.dev.ui.api;
 
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import xapi.dev.gen.SourceHelper;
-import xapi.dev.ui.ContainerMetadata.MetadataRoot;
+import xapi.dev.ui.impl.UiGeneratorTools;
+import xapi.dev.ui.api.ContainerMetadata.MetadataRoot;
+import xapi.dev.ui.impl.UiGeneratorVisitor;
 import xapi.fu.Do;
 import xapi.fu.In1Out1;
 import xapi.fu.MappedIterable;

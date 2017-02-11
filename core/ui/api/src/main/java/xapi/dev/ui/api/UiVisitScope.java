@@ -1,4 +1,4 @@
-package xapi.dev.ui;
+package xapi.dev.ui.api;
 
 import xapi.collect.api.StringTo;
 import xapi.fu.In1;

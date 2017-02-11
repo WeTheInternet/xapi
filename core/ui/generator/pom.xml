@@ -28,6 +28,11 @@
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-dev-javac</artifactId>
   </dependency>
+  <dependency>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-dev-javac</artifactId>
+    <classifier>sun</classifier>
+  </dependency>
 
   <!-- Testing dependencies -->
   <dependency>

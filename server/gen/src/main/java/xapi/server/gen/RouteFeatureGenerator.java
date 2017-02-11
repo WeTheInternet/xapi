@@ -8,12 +8,12 @@ import com.github.javaparser.ast.expr.UiContainerExpr;
 import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
-import xapi.dev.ui.ComponentBuffer;
-import xapi.dev.ui.ContainerMetadata;
-import xapi.dev.ui.UiComponentGenerator;
-import xapi.dev.ui.UiFeatureGenerator;
-import xapi.dev.ui.UiGeneratorTools;
-import xapi.dev.ui.UiVisitScope;
+import xapi.dev.ui.api.ComponentBuffer;
+import xapi.dev.ui.api.ContainerMetadata;
+import xapi.dev.ui.api.UiComponentGenerator;
+import xapi.dev.ui.api.UiFeatureGenerator;
+import xapi.dev.ui.impl.UiGeneratorTools;
+import xapi.dev.ui.api.UiVisitScope;
 import xapi.fu.Do;
 import xapi.fu.iterate.SingletonIterator;
 

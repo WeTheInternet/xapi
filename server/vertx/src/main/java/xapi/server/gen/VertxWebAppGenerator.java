@@ -1,6 +1,6 @@
 package xapi.server.gen;
 
-import xapi.dev.ui.UiImplementationGenerator;
+import xapi.dev.ui.api.UiImplementationGenerator;
 
 import java.util.Collections;
 

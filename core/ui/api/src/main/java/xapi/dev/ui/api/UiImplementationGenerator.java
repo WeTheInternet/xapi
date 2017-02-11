@@ -1,10 +1,10 @@
-package xapi.dev.ui;
+package xapi.dev.ui.api;
 
 import com.github.javaparser.ast.expr.UiContainerExpr;
-import xapi.dev.ui.ContainerMetadata.MetadataRoot;
-import xapi.dev.ui.GeneratedUiComponent.GeneratedUiImplementation;
-import xapi.dev.ui.InterestingNodeFinder.InterestingNodeResults;
-import xapi.dev.ui.UiComponentGenerator.UiGenerateMode;
+import xapi.dev.ui.impl.UiGeneratorTools;
+import xapi.dev.ui.api.ContainerMetadata.MetadataRoot;
+import xapi.dev.ui.impl.InterestingNodeFinder.InterestingNodeResults;
+import xapi.dev.ui.api.UiComponentGenerator.UiGenerateMode;
 
 /**
  * Instances of a {@link UiImplementationGenerator} are responsible

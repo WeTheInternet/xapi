@@ -1,4 +1,4 @@
-package xapi.dev.ui;
+package xapi.dev.ui.api;
 
 import com.github.javaparser.ast.expr.CssContainerExpr;
 

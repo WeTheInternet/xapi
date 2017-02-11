@@ -1,4 +1,4 @@
-package xapi.dev.ui;
+package xapi.dev.ui.api;
 
 import com.github.javaparser.ASTHelper;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
@@ -16,7 +16,9 @@ import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.NameGen;
 import xapi.dev.source.SourceBuilder;
 import xapi.dev.source.SourceTransform;
-import xapi.dev.ui.GeneratedUiComponent.GeneratedUiImplementation;
+import xapi.dev.ui.impl.UiGeneratorTools;
+import xapi.dev.ui.impl.ComponentMetadataQuery;
+import xapi.dev.ui.impl.ComponentMetadataFinder;
 import xapi.fu.In1Out1;
 import xapi.fu.Lazy;
 import xapi.fu.Maybe;

@@ -3,13 +3,13 @@ package xapi.jre.ui.impl;
 import com.github.javaparser.ASTHelper;
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import xapi.dev.source.MethodBuffer;
-import xapi.dev.ui.ComponentBuffer;
-import xapi.dev.ui.ContainerMetadata;
-import xapi.dev.ui.UiComponentGenerator;
-import xapi.dev.ui.UiFeatureGenerator;
-import xapi.dev.ui.UiGeneratorTools;
-import xapi.dev.ui.UiVisitScope;
-import xapi.dev.ui.UiVisitScope.ScopeType;
+import xapi.dev.ui.api.ComponentBuffer;
+import xapi.dev.ui.api.ContainerMetadata;
+import xapi.dev.ui.api.UiComponentGenerator;
+import xapi.dev.ui.api.UiFeatureGenerator;
+import xapi.dev.ui.impl.UiGeneratorTools;
+import xapi.dev.ui.api.UiVisitScope;
+import xapi.dev.ui.api.UiVisitScope.ScopeType;
 import xapi.source.X_Source;
 
 /**

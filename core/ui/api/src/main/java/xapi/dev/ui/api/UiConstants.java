@@ -1,4 +1,4 @@
-package xapi.dev.ui;
+package xapi.dev.ui.api;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 1/22/17.

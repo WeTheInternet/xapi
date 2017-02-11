@@ -57,6 +57,7 @@
       <groupId>com.sun</groupId>
       <artifactId>java-tools</artifactId>
       <version>1.0</version>
+      <optional>true</optional>
       <scope>system</scope>
       <systemPath>${toolsjar}</systemPath>
     </dependency>

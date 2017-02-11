@@ -1,7 +1,8 @@
-package xapi.dev.ui;
+package xapi.dev.ui.impl;
 
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
+import xapi.dev.ui.api.ComponentGraph;
 import xapi.fu.Do;
 import xapi.fu.In2;
 import xapi.util.api.Destroyable;

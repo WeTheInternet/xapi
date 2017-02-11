@@ -1,11 +1,11 @@
 package xapi.jre.ui.impl;
 
 import xapi.dev.api.ApiGeneratorContext;
-import xapi.dev.ui.AbstractUiImplementationGenerator;
-import xapi.dev.ui.GeneratedUiComponent;
-import xapi.dev.ui.GeneratedUiComponent.GeneratedUiImplementation;
-import xapi.dev.ui.UiComponentGenerator;
-import xapi.dev.ui.UiFeatureGenerator;
+import xapi.dev.ui.impl.AbstractUiImplementationGenerator;
+import xapi.dev.ui.api.GeneratedUiComponent;
+import xapi.dev.ui.api.GeneratedUiImplementation;
+import xapi.dev.ui.api.UiComponentGenerator;
+import xapi.dev.ui.api.UiFeatureGenerator;
 import xapi.fu.Out2;
 import xapi.jre.ui.impl.JavaFxUiGeneratorService.JavaFxCtx;
 import xapi.jre.ui.impl.feature.JavaFxAlignFeatureGenerator;

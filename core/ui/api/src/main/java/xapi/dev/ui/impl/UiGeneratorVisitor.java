@@ -1,11 +1,16 @@
-package xapi.dev.ui;
+package xapi.dev.ui.impl;
 
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiBodyExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
-import xapi.dev.ui.UiComponentGenerator.UiGenerateMode;
-import xapi.dev.ui.UiVisitScope.ScopeType;
+import xapi.dev.ui.api.ComponentBuffer;
+import xapi.dev.ui.api.ContainerMetadata;
+import xapi.dev.ui.api.UiComponentGenerator;
+import xapi.dev.ui.api.UiComponentGenerator.UiGenerateMode;
+import xapi.dev.ui.api.UiFeatureGenerator;
+import xapi.dev.ui.api.UiVisitScope;
+import xapi.dev.ui.api.UiVisitScope.ScopeType;
 import xapi.fu.In1Out1;
 import xapi.fu.Lazy;
 import xapi.fu.Out1;

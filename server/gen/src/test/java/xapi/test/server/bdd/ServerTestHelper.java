@@ -16,12 +16,12 @@ import xapi.server.api.WebApp;
 import xapi.server.api.XapiServer;
 import xapi.server.gen.WebAppGenerator;
 
-import static org.junit.Assert.assertNotNull;
-
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.LockSupport;
+
+import static org.junit.Assert.assertNotNull;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/23/16.

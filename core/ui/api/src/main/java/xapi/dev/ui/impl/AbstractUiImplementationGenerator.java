@@ -1,11 +1,12 @@
-package xapi.dev.ui;
+package xapi.dev.ui.impl;
 
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import xapi.dev.api.ApiGeneratorContext;
-import xapi.dev.ui.GeneratedUiComponent.GeneratedUiImplementation;
-import xapi.dev.ui.InterestingNodeFinder.InterestingNodeResults;
-import xapi.dev.ui.UiComponentGenerator.UiGenerateMode;
+import xapi.dev.ui.api.*;
+import xapi.dev.ui.api.GeneratedUiImplementation;
+import xapi.dev.ui.impl.InterestingNodeFinder.InterestingNodeResults;
+import xapi.dev.ui.api.UiComponentGenerator.UiGenerateMode;
 import xapi.util.X_String;
 import xapi.util.api.RemovalHandler;
 

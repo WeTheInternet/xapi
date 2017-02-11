@@ -7,7 +7,6 @@ import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.FieldBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
-import xapi.util.X_Runtime;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Filer;
@@ -353,9 +352,13 @@ public class AnnotationMirrorProcessor extends AbstractProcessor {
   }
 
   private void log(final String string) {
-    if (X_Runtime.isDebug()) {
+    if (isDebug()) {
       System.out.println(string);
     }
+  }
+
+  protected boolean isDebug() {
+    return false; // X_Runtime.isDebug();
   }
 
 }

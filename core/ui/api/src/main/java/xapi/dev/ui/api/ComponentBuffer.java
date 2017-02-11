@@ -1,4 +1,4 @@
-package xapi.dev.ui;
+package xapi.dev.ui.api;
 
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
@@ -13,11 +13,9 @@ import xapi.dev.source.CanAddImports;
 import xapi.dev.source.DomBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
-import xapi.dev.ui.GeneratedUiComponent.GeneratedUiBase;
-import xapi.dev.ui.GeneratedUiComponent.GeneratedUiImplementation;
-import xapi.dev.ui.GeneratedUiComponent.GeneratedUiImplementation.RequiredMethodType;
-import xapi.dev.ui.GeneratedUiComponent.GeneratedUiMethod;
-import xapi.dev.ui.InterestingNodeFinder.InterestingNodeResults;
+import xapi.dev.ui.impl.UiGeneratorTools;
+import xapi.dev.ui.api.GeneratedUiImplementation.RequiredMethodType;
+import xapi.dev.ui.impl.InterestingNodeFinder.InterestingNodeResults;
 import xapi.fu.Lazy;
 import xapi.fu.Maybe;
 import xapi.fu.Out1;
@@ -26,7 +24,7 @@ import xapi.source.read.JavaModel.IsQualified;
 import java.util.ArrayList;
 import java.util.List;
 
-import static xapi.dev.ui.GeneratedUiComponent.GeneratedUiImplementation.RequiredMethodType.*;
+import static xapi.dev.ui.api.GeneratedUiImplementation.RequiredMethodType.*;
 import static xapi.fu.Immutable.immutable1;
 import static xapi.inject.X_Inject.instance;
 

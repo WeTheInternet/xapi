@@ -1,8 +1,8 @@
 package xapi.dev.components;
 
-import xapi.dev.ui.GeneratedUiComponent;
-import xapi.dev.ui.GeneratedUiComponent.GeneratedUiImplementation;
-import xapi.dev.ui.UiNamespace;
+import xapi.dev.ui.api.GeneratedUiComponent;
+import xapi.dev.ui.api.GeneratedUiImplementation;
+import xapi.dev.ui.api.UiNamespace;
 import xapi.fu.Lazy;
 import xapi.inject.X_Inject;
 

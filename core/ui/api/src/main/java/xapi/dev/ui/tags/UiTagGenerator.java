@@ -1,4 +1,4 @@
-package xapi.dev.ui;
+package xapi.dev.ui.tags;
 
 import com.github.javaparser.ASTHelper;
 import com.github.javaparser.JavaParser;
@@ -18,13 +18,9 @@ import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.FieldBuffer;
 import xapi.dev.source.MethodBuffer;
-import xapi.dev.ui.GeneratedUiComponent.GeneratedJavaFile;
-import xapi.dev.ui.GeneratedUiComponent.GeneratedUiApi;
-import xapi.dev.ui.GeneratedUiComponent.GeneratedUiBase;
-import xapi.dev.ui.GeneratedUiComponent.GeneratedUiField;
-import xapi.dev.ui.GeneratedUiComponent.GeneratedUiLayer;
-import xapi.dev.ui.GeneratedUiComponent.GeneratedUiModel;
-import xapi.dev.ui.UiVisitScope.ScopeType;
+import xapi.dev.ui.api.*;
+import xapi.dev.ui.api.UiVisitScope.ScopeType;
+import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.except.NotYetImplemented;
 import xapi.fu.Do;
 import xapi.fu.Lazy;
@@ -44,7 +40,7 @@ import java.util.List;
 
 import static com.github.javaparser.ast.expr.StringLiteralExpr.stringLiteral;
 import static com.github.javaparser.ast.expr.TemplateLiteralExpr.templateLiteral;
-import static xapi.dev.ui.UiConstants.EXTRA_MODEL_INFO;
+import static xapi.dev.ui.api.UiConstants.EXTRA_MODEL_INFO;
 import static xapi.fu.Out1.out1Deferred;
 import static xapi.source.X_Source.javaQuote;
 
@@ -133,7 +129,7 @@ public class UiTagGenerator extends UiComponentGenerator {
             // we have a list of tags to consider
             return generateTagList(tools, me, n);
         } else if (n.getName().equalsIgnoreCase("define-tag")) {
-            return generateTag(tools, me, n);
+            return generateTag(tools, source, me, n, mode);
         } else {
             throw new IllegalArgumentException("Unhandled component type " + n.getName() + "; " + tools.debugNode(n));
         }
@@ -190,10 +186,33 @@ public class UiTagGenerator extends UiComponentGenerator {
         return "xapi.ui.generated";
     }
 
-    protected UiVisitScope generateTag(UiGeneratorTools tools, ContainerMetadata me, UiContainerExpr n) {
+    protected UiVisitScope generateTag(
+        UiGeneratorTools tools,
+        ComponentBuffer source,
+        ContainerMetadata me,
+        UiContainerExpr n,
+        UiGenerateMode mode
+    ) {
         String pkg = tools.getPackage(me.getContext(), n, this::getDefaultPackage);
         String name = tools.resolveString(me.getContext(), n.getAttributeNotNull("name").getExpression());
+
         doTagGeneration(tools, me, n, pkg, name);
+//        final UiVisitScope scope = new UiVisitScope(ScopeType.CONTAINER);
+//
+//        final StringTo<UiFeatureGenerator> features = scope.getFeatureOverrides();
+//
+//        final UiFeatureGenerator apiGen = new UiTagApiGenerator(),
+//                                 uiGen = new UiTagUiGenerator(),
+//                                 modelGen = new UiTagModelGenerator(),
+//                                 renderGen = new UiTagRenderGenerator()
+//                                 ;
+//        features.put("ui", uiGen);
+//        features.put("shadow", uiGen);
+//        features.put("model", modelGen);
+//        features.put("render", renderGen);
+//        features.put("api", apiGen);
+//        features.put("base", apiGen);
+
         return UiVisitScope.CONTAINER_NO_CHILDREN;
     }
 
@@ -677,7 +696,7 @@ public class UiTagGenerator extends UiComponentGenerator {
                                                         throw new IllegalStateException("Cannot reference $model on a type without a model={ name: Type.class } feature.");
                                                     }
                                                     final GeneratedUiModel model = component.getPublicModel();
-                                                    final GeneratedUiField field = model.fields.get(ref.getIdentifier());
+                                                    final GeneratedUiField field = model.getFields().get(ref.getIdentifier());
                                                     if (field != null) {
                                                         switch (field.getMemberType().toSource()) {
                                                             case "String":
@@ -852,7 +871,7 @@ public class UiTagGenerator extends UiComponentGenerator {
                     @Override
                     public Node visit(FieldAccessExpr n, Object arg) {
                         if (n.getScope().toSource().equals("$model")) {
-                            final GeneratedUiField field = component.getPublicModel().fields.get(
+                            final GeneratedUiField field = component.getPublicModel().getFields().get(
                                 n.getField());
                             if (field == null) {
                                 throw new IllegalArgumentException("No model field of name " + n.getField() + " declared");

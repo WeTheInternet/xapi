@@ -1,4 +1,4 @@
-package xapi.dev.ui;
+package xapi.dev.ui.impl;
 
 import com.github.javaparser.ASTHelper;
 import com.github.javaparser.JavaParser;
@@ -14,8 +14,9 @@ import xapi.collect.api.StringTo;
 import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.gen.SourceHelper;
 import xapi.dev.source.SourceBuilder;
-import xapi.dev.ui.ContainerMetadata.MetadataRoot;
-import xapi.dev.ui.InterestingNodeFinder.InterestingNodeResults;
+import xapi.dev.ui.api.*;
+import xapi.dev.ui.api.ContainerMetadata.MetadataRoot;
+import xapi.dev.ui.impl.InterestingNodeFinder.InterestingNodeResults;
 import xapi.fu.*;
 import xapi.fu.iterate.ArrayIterable;
 import xapi.fu.iterate.CachingIterator;
@@ -62,6 +63,18 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
         protected Lazy<MetadataRoot> metadata;
         protected In2Out1<UiContainerExpr, ContainerMetadata, UiComponentGenerator> componentFactory;
         protected In2Out1<UiAttrExpr, UiComponentGenerator, UiFeatureGenerator> featureFactory;
+
+        public In2Out1<UiAttrExpr, UiComponentGenerator, UiFeatureGenerator> getFeatureFactory() {
+            return featureFactory;
+        }
+
+        public In2Out1<UiContainerExpr, ContainerMetadata, UiComponentGenerator> getComponentFactory() {
+            return componentFactory;
+        }
+
+        public Lazy<MetadataRoot> getMetadata() {
+            return metadata;
+        }
     }
 
     protected volatile GeneratorState state;
@@ -638,7 +651,7 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
     }
 
     @Override
-    public void initializeComponent(GeneratedUiComponent result) {
+    protected void initializeComponent(GeneratedUiComponent result) {
         seen.add(result);
         for (UiImplementationGenerator impl : impls.out1()) {
             if (impl instanceof UiGeneratorTools) {

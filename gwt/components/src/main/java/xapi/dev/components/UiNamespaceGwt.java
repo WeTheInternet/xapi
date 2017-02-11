@@ -4,7 +4,7 @@ import elemental.dom.Element;
 import elemental.dom.Node;
 import elemental.html.StyleElement;
 import xapi.dev.source.CanAddImports;
-import xapi.dev.ui.UiNamespace;
+import xapi.dev.ui.api.UiNamespace;
 import xapi.elemental.api.ElementalService;
 import xapi.elemental.api.PotentialNode;
 import xapi.ui.html.api.GwtStyles;

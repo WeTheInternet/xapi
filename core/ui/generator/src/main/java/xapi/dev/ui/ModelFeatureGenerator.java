@@ -1,6 +1,12 @@
 package xapi.dev.ui;
 
 import com.github.javaparser.ast.expr.UiAttrExpr;
+import xapi.dev.ui.api.ComponentBuffer;
+import xapi.dev.ui.api.ContainerMetadata;
+import xapi.dev.ui.api.GeneratedUiComponent;
+import xapi.dev.ui.api.UiComponentGenerator;
+import xapi.dev.ui.api.UiVisitScope;
+import xapi.dev.ui.impl.UiGeneratorTools;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 6/19/16.

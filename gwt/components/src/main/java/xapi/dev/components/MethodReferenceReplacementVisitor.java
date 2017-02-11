@@ -6,7 +6,7 @@ import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
-import xapi.dev.ui.ContainerMetadata;
+import xapi.dev.ui.api.ContainerMetadata;
 import xapi.fu.Maybe;
 
 import static com.github.javaparser.ASTHelper.extractAttrValue;

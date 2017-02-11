@@ -5,7 +5,14 @@ import xapi.annotation.inject.InstanceOverride;
 import xapi.dev.api.ApiGeneratorTools;
 import xapi.dev.gen.SourceHelper;
 import xapi.dev.source.SourceBuilder;
-import xapi.dev.ui.*;
+import xapi.dev.ui.CssFeatureGenerator;
+import xapi.dev.ui.DataFeatureGenerator;
+import xapi.dev.ui.ModelFeatureGenerator;
+import xapi.dev.ui.api.ComponentBuffer;
+import xapi.dev.ui.api.UiComponentGenerator;
+import xapi.dev.ui.api.UiFeatureGenerator;
+import xapi.dev.ui.api.UiGeneratorService;
+import xapi.dev.ui.impl.AbstractUiGeneratorService;
 import xapi.fu.Out2;
 import xapi.fu.iterate.Chain;
 import xapi.inject.X_Inject;
@@ -21,9 +28,6 @@ import xapi.ui.api.PhaseMap;
 import xapi.ui.api.PhaseMap.PhaseNode;
 import xapi.util.X_Util;
 
-import static xapi.fu.Out2.out2Immutable;
-import static xapi.util.X_Util.firstNotNull;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -33,11 +37,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.LinkedHashSet;
 
+import static xapi.fu.Out2.out2Immutable;
+import static xapi.util.X_Util.firstNotNull;
+
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/8/16.
  */
 @InstanceOverride(implFor=UiGeneratorService.class)
-public class WebAppGenerator extends AbstractUiGeneratorService <WebAppGeneratorContext, WebAppGeneratorContext> implements ApiGeneratorTools<WebAppGeneratorContext> {
+public class WebAppGenerator extends AbstractUiGeneratorService<WebAppGeneratorContext, WebAppGeneratorContext> implements ApiGeneratorTools<WebAppGeneratorContext> {
 
     private WebAppGeneratorContext ctx;
 

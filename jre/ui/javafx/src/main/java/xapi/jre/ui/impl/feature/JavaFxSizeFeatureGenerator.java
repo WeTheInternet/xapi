@@ -6,12 +6,12 @@ import com.github.javaparser.ast.expr.BinaryExpr.Operator;
 import com.github.javaparser.ast.plugin.NodeTransformer;
 import com.github.javaparser.ast.plugin.Transformer;
 import xapi.dev.source.MethodBuffer;
-import xapi.dev.ui.ComponentBuffer;
-import xapi.dev.ui.ContainerMetadata;
-import xapi.dev.ui.UiComponentGenerator;
-import xapi.dev.ui.UiFeatureGenerator;
-import xapi.dev.ui.UiGeneratorTools;
-import xapi.dev.ui.UiVisitScope;
+import xapi.dev.ui.api.ComponentBuffer;
+import xapi.dev.ui.api.ContainerMetadata;
+import xapi.dev.ui.api.UiComponentGenerator;
+import xapi.dev.ui.api.UiFeatureGenerator;
+import xapi.dev.ui.impl.UiGeneratorTools;
+import xapi.dev.ui.api.UiVisitScope;
 import xapi.fu.Maybe;
 import xapi.jre.ui.runtime.DoubleSupplierBinding;
 

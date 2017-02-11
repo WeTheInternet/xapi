@@ -4,11 +4,11 @@ import com.github.javaparser.ASTHelper;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import javafx.scene.layout.VBox;
 import xapi.dev.source.MethodBuffer;
-import xapi.dev.ui.ComponentBuffer;
-import xapi.dev.ui.ContainerMetadata;
-import xapi.dev.ui.UiComponentGenerator;
-import xapi.dev.ui.UiGeneratorTools;
-import xapi.dev.ui.UiVisitScope;
+import xapi.dev.ui.api.ComponentBuffer;
+import xapi.dev.ui.api.ContainerMetadata;
+import xapi.dev.ui.api.UiComponentGenerator;
+import xapi.dev.ui.impl.UiGeneratorTools;
+import xapi.dev.ui.api.UiVisitScope;
 
 /**
  * Created by james on 6/17/16.

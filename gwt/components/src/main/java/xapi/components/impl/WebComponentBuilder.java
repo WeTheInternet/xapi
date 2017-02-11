@@ -11,7 +11,6 @@ import xapi.components.api.JsoArray;
 import xapi.components.api.OnWebComponentAttributeChanged;
 import xapi.components.api.ShadowDomPlugin;
 import xapi.components.api.Symbol;
-import xapi.elemental.X_Elemental;
 import xapi.fu.*;
 import xapi.ui.api.component.ComponentOptions;
 import xapi.ui.api.component.IsComponent;
@@ -23,6 +22,7 @@ import java.util.function.LongConsumer;
 
 import static xapi.components.impl.JsFunctionSupport.*;
 import static xapi.components.impl.JsSupport.copy;
+import static xapi.components.impl.JsSupport.getShadowRoot;
 import static xapi.components.impl.WebComponentVersion.V0;
 import static xapi.components.impl.WebComponentVersion.V1;
 
@@ -290,10 +290,6 @@ public class WebComponentBuilder {
       root.setInnerHTML(html);
     }
     return root;
-  }
-
-  private Element getShadowRoot(Element element) {
-    return X_Elemental.getShadowRoot(element);
   }
 
   public WebComponentBuilder createdCallback(JavaScriptObject function) {

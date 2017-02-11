@@ -575,6 +575,20 @@ public class JsSupport {
     return false;
   }-*/;
 
+  public static native Element getShadowRoot(Element element)
+  /*-{
+    if (element.shadowRoot) {
+      return element.shadowRoot;
+    }
+    if (element.attachShadow) {
+      return element.attachShadow({mode: "open"});
+    }
+    if (element.createShadowRoot) {
+      return element.createShadowRoot();
+    }
+    return element;
+  }-*/;
+
   public static native Element createShadowRoot(Element e)
   /*-{
     if (e.attachShadow) {
@@ -656,4 +670,5 @@ public class JsSupport {
     /*-{
       return classOrProto.prototype ? classOrProto.prototype : classOrProto; // TODO handle cases when being sent a prototype
     }-*/;
+
 }

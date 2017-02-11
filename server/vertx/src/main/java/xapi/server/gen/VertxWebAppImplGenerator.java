@@ -1,8 +1,8 @@
 package xapi.server.gen;
 
-import xapi.dev.ui.AbstractUiImplementationGenerator;
-import xapi.dev.ui.GeneratedUiComponent;
-import xapi.dev.ui.GeneratedUiComponent.GeneratedUiImplementation;
+import xapi.dev.ui.impl.AbstractUiImplementationGenerator;
+import xapi.dev.ui.api.GeneratedUiComponent;
+import xapi.dev.ui.api.GeneratedUiImplementation;
 import xapi.server.vertx.api.VertxPlatform;
 
 /**

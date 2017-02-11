@@ -1,4 +1,4 @@
-package xapi.dev.ui;
+package xapi.dev.ui.impl;
 
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.UiAttrExpr;
@@ -8,9 +8,11 @@ import xapi.collect.api.StringTo;
 import xapi.collect.impl.SimpleLinkedList;
 import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.api.ApiGeneratorTools;
-import xapi.dev.ui.ContainerMetadata.MetadataRoot;
-import xapi.dev.ui.GeneratedUiComponent.GeneratedUiImplementation;
-import xapi.dev.ui.UiNamespace.DefaultUiNamespace;
+import xapi.dev.ui.api.*;
+import xapi.dev.ui.api.ContainerMetadata.MetadataRoot;
+import xapi.dev.ui.api.GeneratedUiImplementation;
+import xapi.dev.ui.api.UiNamespace.DefaultUiNamespace;
+import xapi.dev.ui.tags.UiTagGenerator;
 import xapi.fu.In1Out1;
 import xapi.fu.In2Out1;
 import xapi.fu.Out2;
@@ -134,7 +136,7 @@ public abstract class UiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> im
     }
 
     public UiNamespace namespace() {
-        return new DefaultUiNamespace();
+        return DefaultUiNamespace.DEFAULT;
     }
 
     public UiNamespace getNamespace(GeneratedUiComponent component, boolean base) {

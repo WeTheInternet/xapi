@@ -6,6 +6,8 @@ import com.github.javaparser.ast.expr.UiContainerExpr;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
+import xapi.dev.ui.api.ComponentBuffer;
+import xapi.dev.ui.api.UiGeneratorService;
 import xapi.fu.In1Out1;
 import xapi.inject.X_Inject;
 import xapi.javac.dev.api.JavacService;

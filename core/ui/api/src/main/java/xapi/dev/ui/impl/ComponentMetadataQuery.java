@@ -1,10 +1,11 @@
-package xapi.dev.ui;
+package xapi.dev.ui.impl;
 
 import com.github.javaparser.ast.expr.CssExpr;
 import com.github.javaparser.ast.expr.MethodReferenceExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import xapi.collect.impl.SimpleStack;
+import xapi.dev.ui.api.ComponentGraph;
 import xapi.fu.In1Out1;
 import xapi.fu.In2;
 import xapi.fu.In2Out1;

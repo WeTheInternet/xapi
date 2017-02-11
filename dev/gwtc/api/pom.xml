@@ -26,10 +26,6 @@
 		</dependency>
 		<dependency>
 			<groupId>net.wetheinter</groupId>
-			<artifactId>xapi-gwtc-api</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>net.wetheinter</groupId>
 			<artifactId>xapi-jre-inject</artifactId>
 		</dependency>
 		<dependency>

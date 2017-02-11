@@ -3,6 +3,12 @@ package xapi.dev.ui;
 import com.github.javaparser.ast.expr.*;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.PrintBuffer;
+import xapi.dev.ui.api.ComponentBuffer;
+import xapi.dev.ui.api.ContainerMetadata;
+import xapi.dev.ui.api.UiComponentGenerator;
+import xapi.dev.ui.api.UiFeatureGenerator;
+import xapi.dev.ui.api.UiVisitScope;
+import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.fu.Lazy;
 
 import java.util.ArrayList;

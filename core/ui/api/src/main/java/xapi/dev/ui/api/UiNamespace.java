@@ -1,4 +1,4 @@
-package xapi.dev.ui;
+package xapi.dev.ui.api;
 
 import xapi.dev.source.CanAddImports;
 import xapi.ui.api.StyleCacheService;
@@ -23,10 +23,9 @@ public interface UiNamespace {
     String EL_INPUT = "input";
 
     class DefaultUiNamespace implements UiNamespace {
-        protected DefaultUiNamespace() {}
+        public static final DefaultUiNamespace DEFAULT = new DefaultUiNamespace();
+        private DefaultUiNamespace() {}
     }
-
-    DefaultUiNamespace DEFAULT_UI_NAMESPACE = new DefaultUiNamespace();
 
     default String getElementType(CanAddImports importer) {
         return importer.addImport(UiElement.class);
