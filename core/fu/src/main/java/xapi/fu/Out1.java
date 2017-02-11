@@ -270,4 +270,13 @@ public interface Out1<O> extends Rethrowable, Lambda, HasMutability {
   default <O1> Out2<O,O1> supply2(Out1<O1> obj) {
     return Out2.out2(this, obj);
   }
+
+  default Out1<O> spy1(In1<O> spy) {
+    final Out1<O> self = this;
+    return ()->{
+      O val = self.out1();
+      spy.in(val);
+      return val;
+    };
+  }
 }
