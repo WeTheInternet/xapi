@@ -1,6 +1,7 @@
 package xapi.fu;
 
 import xapi.fu.Filter.Filter1;
+import xapi.fu.has.HasSize;
 import xapi.fu.iterate.ArrayIterable;
 import xapi.fu.iterate.CachingIterator;
 import xapi.fu.iterate.CachingIterator.ReplayableIterable;
@@ -205,6 +206,14 @@ public interface MappedIterable<T> extends Iterable<T> {
         throw new NoSuchElementException();
     }
 
+    default Maybe<T> firstMaybe() {
+        final Iterator<T> itr = iterator();
+        if (itr.hasNext()) {
+            return Maybe.immutable(itr.next());
+        }
+        return Maybe.not();
+    }
+
     default T firstOrNull() {
         final Iterator<T> itr = iterator();
         if (itr.hasNext()) {
@@ -349,5 +358,61 @@ public interface MappedIterable<T> extends Iterable<T> {
 
         return SizedIterable.of(count.out1(), itr);
 
+    }
+
+    default MappedIterable<T> skip(int i) {
+        final Mutable<Integer> count = new Mutable<>(i);
+        return skipWhile(ignored->
+            count.process(X_Fu::decrement).out1() > 0
+        );
+    }
+
+    default MappedIterable<T> skipWhile(In1Out1<T, Boolean> filter) {
+        return ()->{
+            final Iterator<T> itr = iterator();
+            while (itr.hasNext() && filter.io(itr.next()))
+            ; // intentionally empty
+            return itr;
+        };
+    }
+
+    /**
+     * Test is a newly created iterator has a number of items.
+     *
+     * Your iterables better be returning fresh iterators,
+     * and not just wrapping a single iterator that we exhaust when checking.
+     *
+     * @param numItems - The minimum number of items found in our iterator
+     * @return - true if there are numItems OR MORE in this iterator.
+     *
+     * This is cheaper than .size(), which can be O(n) if the backing iterator
+     * does not know how large it is.
+     */
+    default boolean hasAtLeast(int numItems) {
+        if (numItems < 1) {
+            return true;
+        }
+        if (this instanceof HasSize) {
+            return ((HasSize)this).size() >= numItems;
+        }
+        final Iterator<T> itr = iterator();
+        while (itr.hasNext() && numItems --> 0) {
+            itr.next();
+        }
+        return numItems == 0;
+    }
+
+    default boolean hasExactly(int numItems) {
+        final Iterator<T> itr = iterator();
+        if (numItems == 0) {
+            return !itr.hasNext();
+        }
+        if (this instanceof HasSize) {
+            return ((HasSize)this).size() == numItems;
+        }
+        while (itr.hasNext() && numItems --> 0) {
+            itr.next();
+        }
+        return !itr.hasNext();
     }
 }

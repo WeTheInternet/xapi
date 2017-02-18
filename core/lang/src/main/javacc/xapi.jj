@@ -3482,6 +3482,7 @@ Expression UiStatement():
 {
   ExpressionStmt statement;
   Expression expr, nextExpr;
+  Type type;
 }
 {
   (
@@ -3541,6 +3542,9 @@ Expression UiStatement():
         )*
       )
     | expr = Literal()
+    | type = Type() {
+      expr = new TypeExpr(type);
+    }
   )
   { return expr; }
 }

@@ -25,7 +25,7 @@ import com.google.gwt.core.client.ScriptInjector;
 public class WebComponentSupport {
 
   public static final WebComponentVersion DEFAULT_VERSION = "true".equals(
-      System.getProperty("web.components.v0", "false")) ? V1 : V0;
+      System.getProperty("web.components.v0", "false")) ? V0 : V1;
 
   public void ensureWebComponentApi(Do onLoaded) {
     ensureWebComponentApi(onLoaded, DEFAULT_VERSION);

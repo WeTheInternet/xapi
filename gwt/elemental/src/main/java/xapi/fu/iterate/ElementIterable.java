@@ -59,11 +59,11 @@ public class ElementIterable implements MappedIterable<Element> {
     return new Itr();
   }
 
-  public static Iterable<Element> forEach(HTMLCollection children) {
+  public static MappedIterable<Element> forEach(HTMLCollection children) {
     return new ElementIterable(children);
   }
 
-  public static Iterable<Element> forEach(Node node) {
+  public static MappedIterable<Element> forEach(Node node) {
     return new ElementIterable(node.getChildNodes());
   }
 

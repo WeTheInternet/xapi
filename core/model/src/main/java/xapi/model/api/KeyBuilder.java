@@ -51,7 +51,11 @@ public class KeyBuilder {
   }
 
   public KeyBuilder withParent(ModelKey parent) {
-    this.parent = new KeyBuilder().withParent(parent);
+    if (parent == null) {
+      this.parent = null;
+    } else {
+      this.parent = newKeyBuilder(parent);
+    }
     return this;
   }
 
@@ -63,19 +67,19 @@ public class KeyBuilder {
     return X_Model.newKey(namespace, kind, id);
   }
 
-  public void fromKey(ModelKey key) {
+  public KeyBuilder fromKey(ModelKey key) {
     this.namespace = key.getNamespace();
     this.kind = key.getKind();
     this.id = key.getId();
     if (key.getParent() != null) {
       this.parent = newKeyBuilder(key);
-      this.parent.fromKey(key);
     }
+    return this;
   }
 
   protected KeyBuilder newKeyBuilder(ModelKey key) {
     // let subclasses override this
-    return new KeyBuilder();
+    return new KeyBuilder().fromKey(key);
   }
 
   public KeyBuilder fromBuilder(KeyBuilder other) {

@@ -1,9 +1,5 @@
 package xapi.model.api;
 
-import jsinterop.annotations.JsProperty;
-import jsinterop.annotations.JsType;
-
-@JsType
 public interface ModelKey {
 
   String DEFAULT_NAMESPACE = "";
@@ -17,25 +13,23 @@ public interface ModelKey {
   // will use the serialized String id format, but backends may need to understand
   // when to convert the key types; long ids, for example, are used by appengine.
 
-  @JsProperty
   String getNamespace();
-  @JsProperty
   String getKind();
-  @JsProperty
   String getId();
-  @JsProperty
   int getKeyType();
 
   ModelKey setKeyType(int keyType);
 
   ModelKey setId(String id);
 
-  @JsProperty
   ModelKey getParent();
 
   boolean isComplete();
 
   ModelKey getChild(String kind, String id);
 
+  default ModelKey getChild(ModelKey child) {
+    return getChild(child.getKind(), child.getId());
+  }
 
 }

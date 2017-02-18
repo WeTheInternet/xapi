@@ -27,6 +27,7 @@ import xapi.source.X_Source;
 import xapi.source.read.JavaModel.IsQualified;
 import xapi.ui.api.PhaseMap;
 import xapi.ui.api.PhaseMap.PhaseNode;
+import xapi.ui.api.UiPhase;
 import xapi.ui.api.UiPhase.PhaseBinding;
 import xapi.ui.api.UiPhase.PhaseImplementation;
 import xapi.ui.api.UiPhase.PhaseIntegration;
@@ -160,23 +161,39 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
         return new MetadataRoot();
     }
 
+    /**
+     *
+     * @param component - the component to run a phase a phase for
+     * @param id - the id of the component
+     * @return The component, for chaining
+     *
+     * Note that id is the second parameter, to enable easier method references;
+     * this allows us to use this::runPhase as an
+     * In2Out1<Component, String, Component>
+     * which can then be easily piped into a loop.
+     */
     @Override
     public ComponentBuffer runPhase(ComponentBuffer component, String id) {
-        this.phase = id;
-        final Iterable<UiImplementationGenerator> impls = this.impls.out1();
-        switch (id) {
-            case PhasePreprocess.PHASE_PREPROCESS:
-                return preprocessComponent(component, impls);
-            case PhaseSupertype.PHASE_SUPERTYPE:
-                return createSupertype(component);
-            case PhaseImplementation.PHASE_IMPLEMENTATION:
-                return createImplementation(component, impls);
-            case PhaseIntegration.PHASE_INTEGRATION:
-                return peekIntegration(component);
-            case PhaseBinding.PHASE_BINDING:
-                return runBinding(component);
-            default:
-                return runCustomPhase(id, component);
+        try(
+            @SuppressWarnings("unused") // autoclosed
+            Do ondone = tools().startRound(id, component.getGeneratedComponent())
+        ) {
+            this.phase = id;
+            final Iterable<UiImplementationGenerator> impls = this.impls.out1();
+            switch (id) {
+                case PhasePreprocess.PHASE_PREPROCESS:
+                    return preprocessComponent(component, impls);
+                case PhaseSupertype.PHASE_SUPERTYPE:
+                    return createSupertype(component);
+                case PhaseImplementation.PHASE_IMPLEMENTATION:
+                    return createImplementation(component, impls);
+                case PhaseIntegration.PHASE_INTEGRATION:
+                    return peekIntegration(component);
+                case PhaseBinding.PHASE_BINDING:
+                    return runBinding(component);
+                default:
+                    return runCustomPhase(id, component);
+            }
         }
     }
 
@@ -517,10 +534,23 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
     }
 
     @Override
-    public void finish() {
+    public void finish(MappedIterable<ComponentBuffer> itr, String id) {
         int maxLoop = 50;
-        while (!onDone.isEmpty() && maxLoop-->0) {
-            onDone.removeAll(Do::done);
+        Mutable<Do> startCleanup = new Mutable<>();
+        while (maxLoop-->0) {
+            startCleanup.in(Do.NOTHING);
+
+            itr.forAll(component->
+                startCleanup.process(Do::doAfter, // melt `Do`s together
+                tools().startRound(id, component.getGeneratedComponent())));
+
+            while (!onDone.isEmpty()) {
+                onDone.removeAll(Do::done);
+            }
+            startCleanup.out1().done();
+            if (onDone.isEmpty()) {
+                return;
+            }
         }
         assert maxLoop > 0 : "Ui Generator service " + getClass() + " ran onFinish 50 times.";
     }
@@ -602,13 +632,13 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
                 })
                 .cached();
 
-            phases.forEachRemaining(phase-> {
+            phases.forEachRemaining(phase->
                 components.forAll(job->{
                     job.out2().done();
                     final Mutable<ComponentBuffer> buffer = job.out1();
                     buffer.process(this::runPhase, phase.getId());
-                });
-            });
+                })
+            );
 
     //        for (UiContainerExpr ui : parsed) {
     //
@@ -618,8 +648,10 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
     //                buffer = runPhase(buffer, phase.getId());
     //            }
     //        }
-
-            finish();
+            final MappedIterable<ComponentBuffer> itr = components
+                .map(Out2::out1)
+                .map(Mutable::out1);
+            finish(itr, UiPhase.CLEANUP);
         } catch (Throwable t) {
             X_Log.error(getClass(), "Did not generate ui successfully;", t, "for", parsed);
             if (isStrict()) {

@@ -68,6 +68,8 @@ public class Lazy <T> implements Out1<T>, IsLazy {
     prox[0] = () -> {
       // take turns looking at the memory slot
       synchronized (prox) {
+        // only possible in GWT, or if you actually have a provider that recurses into itself.
+        assert !resolving : "You are trying to access a Lazy while it is being initialized";
         resolving = true;
         try {
           if (proxy == prox[0]) {

@@ -78,7 +78,7 @@ public interface Maybe <V> extends Rethrowable {
         };
     }
 
-    default <O> Maybe<O> mapIfAbsent(In1Out1<V, O> mapper, Out1<Throwable> factory) {
+    default <O> Maybe<O> mapIfPresent(In1Out1<V, O> mapper, Out1<Throwable> factory) {
         return ()-> {
             V out = get();
             if (out == null) {
@@ -92,8 +92,8 @@ public interface Maybe <V> extends Rethrowable {
         };
     }
 
-    default <O> Maybe<O> mapIfAbsent(In1Out1<V, O> mapper) {
-        return mapIfAbsent(mapper, Out1.null1());
+    default <O> Maybe<O> mapIfPresent(In1Out1<V, O> mapper) {
+        return mapIfPresent(mapper, Out1.null1());
     }
 
     default Optional<V> optional() {
@@ -132,12 +132,24 @@ public interface Maybe <V> extends Rethrowable {
         }
         return val.io(i1, i2);
     }
+    default <I1, I2> V ifAbsentSupplyLazy(In2Out1<I1, I2, V> val, Out1<I1> i1, Out1<I2> i2) {
+        if (isPresent()) {
+            return get();
+        }
+        return val.io(i1.out1(), i2.out1());
+    }
 
-    default <I1, I2> V ifAbsentSupply(In1Out1<I1, V> val, I1 i1) {
+    default <I1> V ifAbsentSupply(In1Out1<I1, V> val, I1 i1) {
         if (isPresent()) {
             return get();
         }
         return val.io(i1);
+    }
+    default <I1> V ifAbsentSupplyLazy(In1Out1<I1, V> val, Out1<I1> i1) {
+        if (isPresent()) {
+            return get();
+        }
+        return val.io(i1.out1());
     }
     default V ifAbsentSupply(Out1<V> val) {
         if (isPresent()) {

@@ -12,9 +12,9 @@ import xapi.inject.X_Inject;
 import xapi.ui.html.X_Html;
 import xapi.util.api.ConvertsValue;
 
-import com.google.gwt.core.client.MagicMethod;
-
 import javax.inject.Provider;
+
+import com.google.gwt.core.client.MagicMethod;
 
 public class X_Elemental {
 
@@ -173,6 +173,10 @@ public class X_Elemental {
 
   public static Element getShadowRoot(Element element) {
     return getElementalService().getShadowRoot(element);
+  }
+
+  public static boolean hasShadowRoot(Element element) {
+    return getElementalService().hasShadowRoot(element);
   }
 
   public static Element getShadowHost(Element element) {

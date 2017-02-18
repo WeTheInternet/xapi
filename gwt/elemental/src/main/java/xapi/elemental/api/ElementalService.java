@@ -50,6 +50,8 @@ public interface ElementalService extends StyleService<StyleElement, GwtStyles> 
 
   Element getShadowRoot(Element element);
 
+  boolean hasShadowRoot(Element element);
+
   Element getShadowHost(Element element);
 
   String escapeHTML(String html);

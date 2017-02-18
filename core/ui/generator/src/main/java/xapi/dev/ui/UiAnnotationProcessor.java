@@ -41,6 +41,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
+import static xapi.fu.iterate.SingletonIterator.singleItem;
 import static xapi.source.X_Source.removePackage;
 
 /**
@@ -191,7 +192,7 @@ public class UiAnnotationProcessor extends AbstractProcessor {
             for (PhaseNode<String> phase : phaseMap.forEachNode()) {
                 component = generator.runPhase(component, phase.getId());
             }
-            generator.finish();
+            generator.finish(singleItem(component), UiPhase.CLEANUP);
         } catch (Throwable t) {
             messages.printMessage(Kind.WARNING,
                 "Error encountered generating ui for " + type + " from " + container + " : " + t);

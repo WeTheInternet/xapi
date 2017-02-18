@@ -10,15 +10,6 @@ import com.google.gwt.core.client.JavaScriptObject;
 @JsType(isNative = true)
 public interface CustomElementRegistry {
 
-    @JsType(isNative = true)
-    interface ExtendsTag {
-
-        String getExtends();
-
-        void setExtends(String extendsTag);
-
-    }
-
     JavaScriptObject define(String name, JavaScriptObject prototype, ExtendsTag extendsTag);
 
 }

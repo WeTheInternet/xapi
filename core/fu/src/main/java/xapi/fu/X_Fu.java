@@ -400,5 +400,19 @@ public interface X_Fu {
   static int decrement(int integer) {
     return integer - 1;
   }
+
+  static Integer decrement(Integer integer) {
+    if (integer == null) {
+      return null;
+    }
+    return integer - 1;
+  }
+
+  static Integer increment(Integer integer) {
+    if (integer == null) {
+      return null;
+    }
+    return integer + 1;
+  }
 }
 

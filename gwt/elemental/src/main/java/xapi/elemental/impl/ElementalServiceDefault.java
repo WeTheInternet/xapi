@@ -121,6 +121,12 @@ implements ElementalService {
   }
 
   @Override
+  public native boolean hasShadowRoot(Element element)
+  /*-{
+    return element.shadowRoot !== undefined;
+  }-*/;
+
+  @Override
   public native Element getShadowRoot(Element element)
   /*-{
       if (element.shadowRoot) {

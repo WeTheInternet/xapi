@@ -1,5 +1,7 @@
 package xapi.ui.api.component;
 
+import xapi.fu.MappedIterable;
+
 /**
  * Successor to xapi-components module's IsWebComponent interface,
  * as this type relies on cross-platform {@link xapi.ui.api.UiNode},
@@ -23,5 +25,8 @@ public interface IsComponent
 
     IsComponent<?, ?> getParentComponent();
 
+    MappedIterable<IsComponent<?, ?>> getChildComponents();
+
     void setParentComponent(IsComponent<?, ?> parent);
+
 }

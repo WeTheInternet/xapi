@@ -35,7 +35,7 @@ public interface UiGeneratorService <Raw> {
 
     UiGeneratorTools tools();
 
-    void finish();
+    void finish(MappedIterable<ComponentBuffer> itr, String cleanup);
 
     void onFinish(Do ondone);
 

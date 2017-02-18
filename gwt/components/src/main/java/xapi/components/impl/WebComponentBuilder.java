@@ -54,6 +54,11 @@ public class WebComponentBuilder {
      return $wnd.HTMLElement;
    }-*/;
 
+  public static native JavaScriptObject htmlAnchorClass()
+  /*-{
+     return $wnd.HTMLAnchorElement;
+   }-*/;
+
   private final WebComponentPrototype prototype;
   private String superTag;
   private Fifo<ShadowDomPlugin> plugins;
@@ -105,12 +110,12 @@ public class WebComponentBuilder {
           };
 
       // the actual constructor
-      function constructor() {
+      var constructor = function() {
         // delegates to an optional init property that we can build imperatively
         return this.init && this.init.apply(this, arguments);
       }
 
-      function clazz() {
+      var clazz = function() {
         // Get an extensible instance of the HTMLElement (or subtype)
         var self = upgrade.apply(this, arguments);
         // call the constructor as that instance, returning our

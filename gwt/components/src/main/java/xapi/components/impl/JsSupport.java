@@ -7,9 +7,7 @@ import elemental.js.util.JsArrayOfBoolean;
 import elemental.js.util.JsArrayOfInt;
 import elemental.js.util.JsArrayOfNumber;
 import elemental.js.util.JsArrayOfString;
-import jsinterop.annotations.JsIgnore;
 import xapi.components.api.*;
-import xapi.components.api.CustomElementRegistry.ExtendsTag;
 import xapi.fu.In1Out1;
 
 import com.google.gwt.core.client.JavaScriptObject;
@@ -37,28 +35,24 @@ public class JsSupport {
   	return $wnd.customElements;
   }-*/;
 
-  @JsIgnore
   public static JavaScriptObject defineElement(String name, JavaScriptObject prototype) {
     return customElements().define(name, prototype, null); // js is cool with null
   }
 
-  @JsIgnore
   public static ComponentConstructor defineTag(String name, JavaScriptObject prototype) {
     return defineTag(name, prototype, null);
   }
 
-  @JsIgnore
   public static ComponentConstructor defineTag(String name, JavaScriptObject prototype, ExtendsTag extendsTag) {
     final JavaScriptObject definition = customElements().define(name, prototype, extendsTag);
     return new ComponentConstructor(prototype);
   }
 
-  @JsIgnore
   static ExtendsTag extendsTag(String tagName) {
     if (tagName == null) {
       return null;
     }
-    ExtendsTag obj = JavaScriptObject.createObject().cast();
+    ExtendsTag obj = unsafeCast(JavaScriptObject.createObject());
     obj.setExtends(tagName);
     return obj;
   }

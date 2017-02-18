@@ -12,6 +12,8 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface UiPhase {
 
+    String CLEANUP = "cleanup";
+
     /**
      * A phase id you expect to be complete before you run.
      * (phases that run before this phase)

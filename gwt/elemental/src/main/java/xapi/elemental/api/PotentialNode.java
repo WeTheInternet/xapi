@@ -113,6 +113,12 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> {
     return (PotentialNode<E>) child;
   }
 
+  public PotentialNode<E> createChild(String tagName, String is) {
+    final PotentialNode<E> child = createChild(tagName);
+    child.setAttribute("is", is);
+    return child;
+  }
+
   @Override
   public PotentialNode<E> createChild(String tagName) {
     final PotentialNode<E> child = createNode(tagName);

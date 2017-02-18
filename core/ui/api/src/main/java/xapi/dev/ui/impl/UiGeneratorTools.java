@@ -13,9 +13,13 @@ import xapi.dev.ui.api.ContainerMetadata.MetadataRoot;
 import xapi.dev.ui.api.GeneratedUiImplementation;
 import xapi.dev.ui.api.UiNamespace.DefaultUiNamespace;
 import xapi.dev.ui.tags.UiTagGenerator;
+import xapi.fu.Do;
 import xapi.fu.In1Out1;
 import xapi.fu.In2Out1;
 import xapi.fu.Out2;
+import xapi.fu.iterate.CachingIterator.ReplayableIterable;
+import xapi.fu.iterate.Chain;
+import xapi.fu.iterate.ChainBuilder;
 import xapi.source.X_Source;
 import xapi.util.X_String;
 
@@ -33,6 +37,8 @@ public abstract class UiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> im
     protected final StringTo<UiComponentGenerator> componentGenerators;
     protected final StringTo<UiFeatureGenerator> featureGenerators;
     protected final SimpleLinkedList<UiVisitScope> scopes;
+    private final ChainBuilder<Do> roundEndListener;
+    private final ChainBuilder<Do> roundStartListener;
 
     public UiGeneratorTools() {
         numGenerated = X_Collect.newStringMap(Integer.class);
@@ -41,6 +47,8 @@ public abstract class UiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> im
         componentGenerators.addAll(getComponentGenerators());
         featureGenerators.addAll(getFeatureGenerators());
         scopes = new SimpleLinkedList<>();
+        roundEndListener = Chain.startChain();
+        roundStartListener = Chain.startChain();
     }
 
     protected Iterable<Out2<String, UiComponentGenerator>> getComponentGenerators() {
@@ -156,5 +164,40 @@ public abstract class UiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> im
 
     public ComponentBuffer getComponentInfo(String name) {
         return getGenerator().getBuffer(name);
+    }
+
+    public void onRoundStart(Do task) {
+        synchronized (roundStartListener) {
+            roundStartListener.add(task);
+        }
+    }
+
+    public void onRoundComplete(Do task) {
+        synchronized (roundEndListener) {
+            roundEndListener.add(task);
+        }
+    }
+
+    public Do startRound(String id, GeneratedUiComponent component) {
+        clearTasks(roundStartListener);
+        return this::finishRound;
+    }
+
+    private void clearTasks(ChainBuilder<Do> tasks) {
+        while (!tasks.isEmpty()) {
+            final ReplayableIterable<Do> jobs;
+            // We only use this on final variables,
+            // and this synchronized is why this method is private, instead of a utility method
+            //noinspection SynchronizationOnLocalVariableOrMethodParameter
+            synchronized (tasks) {
+                jobs = tasks.cached();
+                tasks.clear();
+            }
+            jobs.forAll(Do::done);
+        }
+    }
+
+    public void finishRound() {
+        clearTasks(roundEndListener);
     }
 }

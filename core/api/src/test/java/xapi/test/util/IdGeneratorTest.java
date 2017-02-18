@@ -14,7 +14,7 @@ public class IdGeneratorTest {
     IdGenerator<RecursiveId> gen = new IdGeneratorDefault<>();
     class RecursiveId implements HasId {
 
-        private Lazy<String> id = Lazy.deferred1(()->gen.generateId(this));
+        private Lazy<String> id = Lazy.deferred1(()->gen.generateId(null));
 
         @Override
         public String getId() {

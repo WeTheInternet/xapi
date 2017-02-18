@@ -163,7 +163,14 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
                     expr.getQualifier().accept(resolver, c);
                     return false;
                 }
-                return true;
+                final Expression scope = expr.getRootScope();
+                if (scope instanceof NameExpr && ((NameExpr)scope).getSimpleName().startsWith("$")) {
+                    // when a qualified name starts with a $ref, we want to descend into that name...
+                    return true;
+                }
+                // Serialize this name and finish
+                types.add(resolveTemplate(c, templateLiteral(expr.getQualifiedName())));
+                return false;
             })
             .withNameExpr((expr, c)->{
                 String name = expr.getName();
