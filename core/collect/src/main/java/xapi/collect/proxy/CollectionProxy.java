@@ -15,6 +15,18 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
 
+/**
+ * An interface that can be compatible with jdk collection types.
+ *
+ * TODO: remove this type so we don't have terrible, ambiguous method calls
+ * which take Object instead of a typed parameter.
+ *
+ * All types which currently extend this type should instead extend something more universal,
+ * like {@link xapi.fu.MapLike}
+ *
+ * @param <K> - The key type
+ * @param <V> - The value type
+ */
 public interface CollectionProxy <K, V> extends HasEmptiness
 {
 

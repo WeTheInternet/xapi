@@ -62,12 +62,6 @@ In1Out1<I, O> extends Rethrowable, Lambda {
     return in;
   }
 
-  public static void main(String ... a) {
-    In1Out1<String, String> i = In1Out1.IDENTITY;
-    final String v = i.select(1, System.out::println, "", "thing");
-    System.out.println(v);
-  }
-
   default Function<I, O> toFunction() {
     return this::io;
   }

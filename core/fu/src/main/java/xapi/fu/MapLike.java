@@ -70,10 +70,35 @@ public interface MapLike<K, V> extends HasSize, HasItems<Out2<K, V>> {
     return is;
   }
 
-  default V getOrReturn(K key, Out1Unsafe<V> ifNull) {
+  default V getOrSupply(K key, Out1Unsafe<V> ifNull) {
     V is = get(key);
     if (is == null) {
       return ifNull.out1();
+    }
+    return is;
+  }
+
+  default V getAndRemove(K key) {
+    final V was = get(key);
+    if (was != null) {
+      remove(key);
+    }
+    return was;
+  }
+
+  default Maybe<V> getAndRemoveMaybe(K key) {
+    final V was = get(key);
+    if (was == null) {
+      return Maybe.not();
+    }
+    remove(key);
+    return Maybe.immutable(was);
+  }
+
+  default V getOrReturn(K key, V ifNull) {
+    V is = get(key);
+    if (is == null) {
+      return ifNull;
     }
     return is;
   }

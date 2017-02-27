@@ -1,16 +1,13 @@
 package xapi.collect;
 
 import xapi.annotation.gc.NotReusable;
-import xapi.collect.api.ClassTo;
+import xapi.collect.api.*;
 import xapi.collect.api.CollectionOptions;
-import xapi.collect.api.Dictionary;
-import xapi.collect.api.Fifo;
-import xapi.collect.api.HasValues;
-import xapi.collect.api.IntTo;
-import xapi.collect.api.ObjectTo;
-import xapi.collect.api.StringDictionary;
-import xapi.collect.api.StringTo;
-import xapi.collect.impl.*;
+import xapi.collect.impl.EmptyIterable;
+import xapi.collect.impl.HashComparator;
+import xapi.collect.impl.IntToManyList;
+import xapi.collect.impl.StringToDeepMap;
+import xapi.collect.impl.StringToManyList;
 import xapi.collect.proxy.CollectionProxy;
 import xapi.collect.service.CollectionService;
 import xapi.fu.In2Out1;
@@ -20,19 +17,15 @@ import xapi.util.api.ReceivesValue;
 import xapi.util.impl.ReverseIterable;
 import xapi.util.impl.ReverseIterator;
 
-import static xapi.collect.api.CollectionOptions.asImmutableList;
-import static xapi.collect.api.CollectionOptions.asImmutableSet;
-import static xapi.collect.api.CollectionOptions.asMutable;
-import static xapi.collect.api.CollectionOptions.asMutableList;
-import static xapi.collect.api.CollectionOptions.asMutableSet;
-import static xapi.inject.X_Inject.singleton;
-
 import java.lang.reflect.Array;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.function.Consumer;
+
+import static xapi.collect.api.CollectionOptions.*;
+import static xapi.inject.X_Inject.singleton;
 
 /**
  A wrapper / helper class around {@link CollectionService}.
@@ -199,6 +192,10 @@ public class X_Collect {
 
   public static <K,V, Key extends K, Value extends V> ObjectTo<K,V> newMap(final Class<Key> keyCls, final Class<Value> valueCls) {
     return service.newMap(keyCls, valueCls, MUTABLE);
+  }
+
+  public static <K,V, Key extends K, Value extends V> ObjectTo<K,V> newInsertionOrderedMap(final Class<Key> keyCls, final Class<Value> valueCls) {
+    return service.newMap(keyCls, valueCls, MUTABLE_INSERTION_ORDERED);
   }
   public static <K,V, Key extends K, Value extends V> ObjectTo<K,V> newMap(final Class<Key> keyCls, final Class<Value> valueCls, final CollectionOptions opts) {
     return service.newMap(keyCls, valueCls, opts);

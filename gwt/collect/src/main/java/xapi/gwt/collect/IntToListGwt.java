@@ -13,12 +13,12 @@ import xapi.platform.GwtPlatform;
 import xapi.util.X_Util;
 import xapi.util.impl.AbstractPair;
 
-import com.google.gwt.core.client.GwtScriptOnly;
-import com.google.gwt.core.client.JavaScriptObject;
-
 import java.lang.reflect.Array;
 import java.util.*;
 import java.util.Map.Entry;
+
+import com.google.gwt.core.client.GwtScriptOnly;
+import com.google.gwt.core.client.JavaScriptObject;
 
 
 @GwtPlatform
@@ -188,7 +188,13 @@ public class IntToListGwt <E> implements IntTo<E>{
     forEach().forAll(callback);
   }
 
+  /**
+   * This method accepts Object for compatibility with jdk Collections as a Map,
+   * but it expects an Integer object, and will fail if you send an Element E type.
+   *
+   */
   @Override
+  @Deprecated
   public final E get(final Object key) {
     return getValue((Integer)key);
   }
