@@ -486,7 +486,7 @@ public class GwtcSteps {
 
   @Then("^confirm api source for \"([^\"]*)\" matches:$")
   public void confirmApiSourceForMatches(String source, List<String> expected) throws Throwable {
-    final ComponentBuffer component = generatedComponents.getOrReturn(source, () -> {
+    final ComponentBuffer component = generatedComponents.getOrSupply(source, () -> {
       throw new IllegalStateException("No component for " + source + " among: " + generatedComponents.keys());
     });
     final GeneratedUiApi api = component.getGeneratedComponent().getApi();

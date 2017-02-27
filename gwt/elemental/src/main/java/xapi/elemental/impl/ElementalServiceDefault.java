@@ -9,6 +9,8 @@ import elemental.html.TextAreaElement;
 import xapi.annotation.inject.SingletonDefault;
 import xapi.elemental.api.ElementalService;
 import xapi.elemental.api.PotentialNode;
+import xapi.fu.In1;
+import xapi.fu.Lazy;
 import xapi.source.api.Lexer;
 import xapi.ui.html.X_Html;
 import xapi.ui.html.impl.StyleServiceDefault;
@@ -25,7 +27,20 @@ extends StyleServiceDefault
 implements ElementalService {
 
   private Lexer lexer;
+  private final Lazy<Element> offscreen;
   private static final TextAreaElement escaper = Browser.getDocument().createTextAreaElement();
+
+  public ElementalServiceDefault() {
+    offscreen = Lazy.deferred1(()->{
+      Element el = newNode("div").getElement();
+      el.getStyle().setPosition("absolute");
+      el.getStyle().setLeft(-2000, "px");
+      el.getStyle().setTop(-2000, "px");
+      Browser.getDocument().getBody().appendChild(el);
+      return el;
+    });
+  }
+
   @Override
   public <T, E extends Element> E toElement(Class<? super T> cls, T obj) {
     return this.<T, E>toElementBuilder(cls).convert(obj).getElement();
@@ -123,7 +138,7 @@ implements ElementalService {
   @Override
   public native boolean hasShadowRoot(Element element)
   /*-{
-    return element.shadowRoot !== undefined;
+    return !!element.shadowRoot;
   }-*/;
 
   @Override
@@ -192,4 +207,16 @@ implements ElementalService {
 
 
    * */
+
+  @Override
+  public void ensureAttached(Element element, In1<Element> whileAttached) {
+    if (element.getParentElement() != null) {
+      whileAttached.in(element);
+      return;
+    }
+    // TODO: consider an off-screen container that is actually rendered...
+    offscreen.out1().appendChild(element);
+    whileAttached.in(element);
+    element.getParentElement().removeChild(element);
+  }
 }

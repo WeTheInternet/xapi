@@ -29,4 +29,5 @@ public interface IsComponent
 
     void setParentComponent(IsComponent<?, ?> parent);
 
+    void addChildComponent(IsComponent<?, ?> child);
 }

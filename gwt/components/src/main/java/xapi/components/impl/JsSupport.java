@@ -569,13 +569,18 @@ public class JsSupport {
     return false;
   }-*/;
 
-  public static native Element getShadowRoot(Element element)
+  public static Element getShadowRoot(Element element) {
+    return getShadowRoot(element, ShadowMode.OPEN);
+  }
+  public static native Element getShadowRoot(Element element, ShadowMode mode)
   /*-{
     if (element.shadowRoot) {
       return element.shadowRoot;
     }
     if (element.attachShadow) {
-      return element.attachShadow({mode: "open"});
+      return element.attachShadow({mode:
+        mode == @ShadowMode::OPEN ? "open" : "closed"
+      });
     }
     if (element.createShadowRoot) {
       return element.createShadowRoot();

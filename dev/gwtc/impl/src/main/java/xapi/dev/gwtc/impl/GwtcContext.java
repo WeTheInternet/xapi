@@ -20,14 +20,10 @@ import xapi.inject.impl.SingletonProvider;
 import xapi.io.X_IO;
 import xapi.log.X_Log;
 import xapi.util.X_Debug;
+import xapi.util.X_Runtime;
 import xapi.util.X_String;
 import xapi.util.api.ConvertsValue;
 import xapi.util.api.ReceivesValue;
-
-import static sun.awt.geom.Crossings.debug;
-
-import com.google.gwt.reflect.shared.GwtReflect;
-import com.google.gwt.reflect.shared.GwtReflectJre;
 
 import javax.inject.Provider;
 import java.io.ByteArrayInputStream;
@@ -42,6 +38,9 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
+
+import com.google.gwt.reflect.shared.GwtReflect;
+import com.google.gwt.reflect.shared.GwtReflectJre;
 
 @SuppressWarnings({"unchecked", "rawtypes", "unused"})
 public class GwtcContext {
@@ -376,6 +375,7 @@ public class GwtcContext {
 
   private final Provider<ClasspathResourceMap> classpath;
   private final GwtcService gwtcService;
+  private boolean debug = X_Runtime.isDebug();
 
   public GwtcContext(GwtcService gwtcService, ClassLoader resourceLoader) {
     this.gwtcService = gwtcService;

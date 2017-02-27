@@ -83,6 +83,7 @@ public class GwtcEntryPointTest {
     gwtc.addJUnitClass(GwtcCaseJunit4.class);
     final GwtManifest manifest = new GwtcManifestImpl(gwtc.getModuleName());
     manifest.setLogLevel(Type.WARN);
+    manifest.setUseCurrentJvm(false);
     manifest.addSystemProp("gwt.usearchives=false");
     Assert.assertEquals(0, gwtc.compile(manifest));
   }

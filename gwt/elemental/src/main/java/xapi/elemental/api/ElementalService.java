@@ -5,6 +5,7 @@ package xapi.elemental.api;
 
 import elemental.dom.Element;
 import elemental.html.StyleElement;
+import xapi.fu.In1;
 import xapi.source.api.Lexer;
 import xapi.ui.api.StyleService;
 import xapi.ui.html.api.GwtStyles;
@@ -58,4 +59,5 @@ public interface ElementalService extends StyleService<StyleElement, GwtStyles> 
 
   String unescapeHTML(String html);
 
+  void ensureAttached(Element element, In1<Element> whileAttached);
 }

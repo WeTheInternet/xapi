@@ -10,6 +10,7 @@ import xapi.components.api.JsObjectDescriptor;
 import xapi.components.api.JsoArray;
 import xapi.components.api.OnWebComponentAttributeChanged;
 import xapi.components.api.ShadowDomPlugin;
+import xapi.components.api.ShadowMode;
 import xapi.components.api.Symbol;
 import xapi.fu.*;
 import xapi.ui.api.component.ComponentOptions;
@@ -249,7 +250,11 @@ public class WebComponentBuilder {
     plugins.give(plugin);
   }
 
-  public WebComponentBuilder addShadowRoot(String html, ShadowDomPlugin ... plugins) {
+  public final WebComponentBuilder addShadowRoot(String html, ShadowDomPlugin ... plugins) {
+    return addShadowRoot(ShadowMode.OPEN, html, plugins);
+  }
+
+  public WebComponentBuilder addShadowRoot(ShadowMode mode, String html, ShadowDomPlugin ... plugins) {
     final In1Out1<Element, Element> initializer;
     if (html.contains("<template")) {
       templateHost.setInnerHTML(html);
@@ -260,13 +265,11 @@ public class WebComponentBuilder {
         template.setId(id);
       }
       templateHost.setInnerHTML("");
-      initializer = In2Out1.with2(this::setShadowRootTemplate, template);
+      initializer = In3Out1.with1(this::setShadowRootTemplate, mode)
+            .supply2(template);
     } else {
-      initializer = In2Out1.with2(this::setShadowRoot, html);
-    }
-    // Optimize for (common) cases of not having any plugins...
-    if (plugins.length == 0 && this.plugins.isEmpty()) {
-      return createdCallback(initializer.ignoreOutput());
+      initializer = In3Out1.with1(this::setShadowRoot, mode)
+            .supply2(html);
     }
     return createdCallback(element->{
       Element root = initializer.io(element);
@@ -280,8 +283,8 @@ public class WebComponentBuilder {
 
   }
 
-  private Element setShadowRootTemplate(Element element, Element template) {
-    final Element root = getShadowRoot(element);
+  private Element setShadowRootTemplate(ShadowMode mode, Element element, Element template) {
+    final Element root = getShadowRoot(element, mode);
     if (template != null) {
       Node clone = JsSupport.doc().importNode(JsSupport.getNode(template, "content"), true);
       root.appendChild(clone);
@@ -289,8 +292,8 @@ public class WebComponentBuilder {
     return root;
   }
 
-  private Element setShadowRoot(Element element, String html) {
-    Element root = getShadowRoot(element);
+  private Element setShadowRoot(ShadowMode mode, Element element, String html) {
+    Element root = getShadowRoot(element, mode);
     if (html != null) {
       root.setInnerHTML(html);
     }
@@ -330,6 +333,11 @@ public class WebComponentBuilder {
   public <E extends Element> WebComponentBuilder detachedCallback(
     final Consumer<E> function) {
     return detachedCallback(wrapConsumerOfThis(function));
+  }
+
+  public <E extends Element, T> WebComponentBuilder detachedCallbackMapped(
+      In1Out1<E, T> mapper, final In2<T, E> function) {
+    return detachedCallback(wrapInputOfThis(function.map1(mapper)));
   }
 
   public <E extends Element, T> WebComponentBuilder detachedCallback(

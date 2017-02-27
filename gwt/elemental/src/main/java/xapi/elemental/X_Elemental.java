@@ -5,7 +5,9 @@ import elemental.dom.DocumentFragment;
 import elemental.dom.Element;
 import elemental.html.DivElement;
 import elemental.html.Location;
-import xapi.elemental.api.ElementIterable;
+import xapi.fu.Do;
+import xapi.fu.In1;
+import xapi.fu.iterate.ElementIterable;
 import xapi.elemental.api.ElementalService;
 import xapi.elemental.api.PotentialNode;
 import xapi.inject.X_Inject;
@@ -165,6 +167,9 @@ public class X_Elemental {
 
   private X_Elemental() {}
 
+  public static Do removeFromParentTask(Element e) {
+    return In1.in1(X_Elemental::removeFromParent).provide(e);
+  }
   public static void removeFromParent(Element e) {
     if (e.getParentElement() != null) {
       e.getParentElement().removeChild(e);
@@ -245,5 +250,9 @@ public class X_Elemental {
     } else {
       newNodes.forEach(e->parent.insertBefore(e, afterNode));
     }
+  }
+
+  public static void ensureAttached(Element element, In1<Element> whileAttached) {
+    getElementalService().ensureAttached(element, whileAttached);
   }
 }

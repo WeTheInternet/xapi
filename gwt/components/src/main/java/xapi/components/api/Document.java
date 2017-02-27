@@ -6,7 +6,7 @@ import elemental.js.html.JsHTMLCollection;
 import jsinterop.annotations.JsOverlay;
 import jsinterop.annotations.JsProperty;
 import jsinterop.annotations.JsType;
-import xapi.elemental.api.ElementIterable;
+import xapi.fu.iterate.ElementIterable;
 import xapi.fu.MappedIterable;
 
 import com.google.gwt.core.client.JavaScriptObject;
