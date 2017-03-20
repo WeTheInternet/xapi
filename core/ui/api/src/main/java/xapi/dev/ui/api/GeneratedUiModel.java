@@ -65,11 +65,14 @@ public class GeneratedUiModel extends GeneratedJavaFile {
             buf.createMethod("public " + typeName + " set" + capitalized)
                 .addParameter(typeName, fieldName)
                 .makeAbstract();
-            if (typeName.contains("[]") ||
+            if (typeName.contains("[]")) {
+                // TODO We'll need adders, removers and clear
+
+            } else if (
                 tools.allListTypes().anyMatch(typeName::equals)
                 ) {
-
                 // TODO We'll need adders, removers and clear
+
 
             }
         }

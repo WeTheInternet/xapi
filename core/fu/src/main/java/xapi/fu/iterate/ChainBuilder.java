@@ -1,6 +1,8 @@
 package xapi.fu.iterate;
 
+import xapi.fu.Do;
 import xapi.fu.MappedIterable;
+import xapi.fu.Out2;
 import xapi.fu.has.HasSize;
 
 import java.util.Iterator;
@@ -42,6 +44,32 @@ public class ChainBuilder<T> implements HasSize, MappedIterable<T> {
     }
     size++;
     return this;
+  }
+
+  public Do addUndoable(T value) {
+    Out2<Chain<T>, Do> item;
+    if (head == tail) {
+      prev = tail;
+      item = head.addUndoable(value);
+      tail = item.out1();
+    } else {
+      item = head.addUndoable(value);
+    }
+    size++;
+    return item.out2().doAfter(()->size--);
+  }
+
+  public Do insertUndoable(T value) {
+    Out2<Chain<T>, Do> item;
+    if (head == tail) {
+      prev = tail;
+      item = head.insertUndoable(value);
+      tail = item.out1();
+    } else {
+      item = head.insertUndoable(value);
+    }
+    size++;
+    return item.out2().doAfter(()->size--);
   }
 
   public ChainBuilder<T> addAll(T... rest) {

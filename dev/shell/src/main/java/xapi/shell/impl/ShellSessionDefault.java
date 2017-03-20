@@ -59,6 +59,11 @@ class ShellSessionDefault implements ShellSession, Do {
     this.processor = argProcessor;
   }
 
+  @Override
+  public final void close() {
+    done();
+  }
+
   @SuppressWarnings({"unchecked", "rawtypes"})
   @Override
   public void done() {

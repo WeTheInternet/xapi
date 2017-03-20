@@ -88,12 +88,12 @@ public class Chain<T> implements GrowableIterable<T>, MappedIterable<T> {
 
   public Chain<T> add(T value) {
     final Chain<T> t = tail.io(null);
-//    t.value = Immutable.immutable1(value);
-//    Chain<T> newTail = new Chain<>(t);
-//    t.next = newTail;
-//    tail.in(newTail);
-//    return newTail;
     return t.insert(value);
+  }
+
+  public Out2<Chain<T>, Do> addUndoable(T value) {
+    final Chain<T> t = tail.io(null);
+    return t.insertUndoable(value);
   }
 
   public Chain<T> insert(T value) {
@@ -110,6 +110,41 @@ public class Chain<T> implements GrowableIterable<T>, MappedIterable<T> {
     nextChain.next = myNext;
     this.value = Immutable.immutable1(value);
     return nextChain;
+  }
+
+  public Out2<Chain<T>, Do> insertUndoable(T value) {
+    final Chain<T> curTail = tail.io(null);
+    assert curTail.value == null;
+    assert curTail.next == null;
+
+    final Chain<T> myNext = next;
+    final Chain<T> nextChain = new Chain<>(this);
+    if (myNext == null) {
+      tail.io(nextChain);
+    }
+    nextChain.value = this.value;
+    nextChain.next = myNext;
+    this.value = Immutable.immutable1(value);
+    final Do undo = () -> {
+      Chain<T> target = this;
+      // need to find the nextChain we added; could be n-1 nodes away :-/
+      while (target != null && target.next != nextChain) {
+        target = target.next;
+      }
+      if (target == null) {
+        // item already gone
+        return;
+      }
+      // need to remove nextChain, then reattach whatever next it has, if any.
+      if (nextChain.next == null) {
+        assert nextChain == tail.io(null);
+        tail.io(Chain.this);
+        target.next = null;
+      } else {
+        target.next = nextChain.next;
+      }
+    };
+    return Out2.out2Immutable(nextChain, undo);
   }
 
   @Override
@@ -185,6 +220,10 @@ public class Chain<T> implements GrowableIterable<T>, MappedIterable<T> {
       tail.io(next);
     }
     this.next = next;
+  }
+
+  public Chain<T> tail() {
+    return tail.io(null);
   }
 }
 
