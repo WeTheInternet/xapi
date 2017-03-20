@@ -10,6 +10,12 @@ import java.util.function.IntSupplier;
 public final class Coord implements IsImmutable {
 
     public static final Coord ZERO = new Coord(0.0, 0.0);
+    public static final Coord INFINITY = new Coord(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
+    /**
+     * allows for rounding errors up to 1/2^24
+     * (absolute differences up to 0.00000006 are tolerated)
+     */
+    private static final double ROUNDING_ERROR = 1./(1<<24);
 
     private final double x;
 
@@ -109,6 +115,17 @@ public final class Coord implements IsImmutable {
         } else return false;
     }
 
+    public boolean almostEquals(Object obj) {
+        if (obj == this) return true;
+        if (obj instanceof Coord) {
+            Coord other = (Coord) obj;
+            return Math.abs(Math.max(
+                getX() - other.getX(),
+                getY() - other.getY()
+            )) < ROUNDING_ERROR; // an absolute difference less than 1/2^24 on either edge
+        } else return false;
+    }
+
     public boolean bothPositive() {
         return x >= 0 && y >= 0;
     }
@@ -127,5 +144,29 @@ public final class Coord implements IsImmutable {
 
     public boolean isZero() {
         return getX() == 0 && getY() == 0;
+    }
+
+    /**
+     * @param range - A Coord to check
+     * @return - true if this coords wholly contains the coord to check.
+        range.getX() >= getX()
+        &&
+        range.getY() <= getY()
+     */
+    public boolean contains(Coord range) {
+        return range.getX() >= getX() && range.getY() <= getY();
+    }
+
+    /**
+     * @param range - A Coord to check
+     * @return - true if these coords overlap at all.
+            ! (range.getY() < getX() || range.getX() > getY());
+     */
+    public boolean intersects(Coord range) {
+        return ! (range.getY() < getX() || range.getX() > getY());
+    }
+
+    public double size() {
+        return Math.abs(getY() - getX());
     }
 }

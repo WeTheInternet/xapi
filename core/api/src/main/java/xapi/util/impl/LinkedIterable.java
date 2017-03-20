@@ -20,7 +20,11 @@ public class LinkedIterable <T> implements MappedIterable<T> {
         public boolean hasNext() {
             if (!computed) {
                 computed = true;
-                node = next.io(node);
+                final T newNode = next.io(node);
+                if (node == newNode) {
+                    return false;
+                }
+                node = newNode;
             }
             return node != null;
         }

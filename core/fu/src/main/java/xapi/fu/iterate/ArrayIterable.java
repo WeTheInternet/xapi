@@ -32,6 +32,27 @@ public class ArrayIterable <E> implements SizedIterable <E> {
     }
   }
 
+  private final class ItrReverse implements SizedIterator<E> {
+    int pos = end, finish = start;
+    @Override
+    public boolean hasNext() {
+      return pos > finish;
+    }
+    @Override
+    public E next() {
+      return array[--pos];
+    }
+    @Override
+    public void remove() {
+      ArrayIterable.this.remove(array[pos+1]);
+    }
+
+    @Override
+    public int size() { // size of the iterator is whatever is left. iterable == full size.
+      return pos - finish;
+    }
+  }
+
   public ArrayIterable(E[] array) {
     this(array, 0, array == null ? 0 : array.length);
   }
@@ -54,6 +75,10 @@ public class ArrayIterable <E> implements SizedIterable <E> {
   @Override
   public SizedIterator<E> iterator() {
     return new Itr();
+  }
+
+  public SizedIterator<E> iteratorReverse() {
+    return new ItrReverse();
   }
 
   protected void remove(E key) {

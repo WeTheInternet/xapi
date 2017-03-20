@@ -263,25 +263,118 @@ public interface MappedIterable<T> extends Iterable<T> {
         return X_Fu.iterEqual(this.map(mapper), MappedIterable.mapped(other).map(mapper));
     }
 
-    default boolean anyMatch(Filter1<T> filter) {
-        final Iterator<T> itr = iterator();
-        while (itr.hasNext()) {
-            if (filter.filter1(itr.next())) {
+    default <A> boolean allMatch(In2Out1<T, A, Boolean> filter, A value) {
+        return allMatch(filter.supply2(value));
+    }
+
+    default <A> boolean allMatchRepeated(In2Out1<T, A, Boolean> filter, Out1<A> value) {
+        return allMatch(filter.supply2Deferred(value));
+    }
+
+    default <A> boolean allMatchLazy(In2Out1<T, A, Boolean> filter, Out1<A> value) {
+        return allMatch(filter.supply2Deferred(Lazy.deferred1(value)));
+    }
+
+    default boolean allMatch(In1Out1<T, Boolean> filter) {
+        for (T t : this) {
+            if (!filter.io(t)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    default <A> boolean anyMatch(In2Out1<T, A, Boolean> filter, A value) {
+        return anyMatch(filter.supply2(value));
+    }
+
+    default <A> boolean anyMatchRepeated(In2Out1<T, A, Boolean> filter, Out1<A> value) {
+        return anyMatch(filter.supply2Deferred(value));
+    }
+
+    default <A> boolean anyMatchLazy(In2Out1<T, A, Boolean> filter, Out1<A> value) {
+        return anyMatch(filter.supply2Deferred(Lazy.deferred1(value)));
+    }
+
+    default boolean anyMatch(In1Out1<T, Boolean> filter) {
+        for (T t : this) {
+            if (filter.io(t)) {
                 return true;
             }
         }
         return false;
     }
 
-    default boolean noneMatch(Filter1<T> filter) {
-        final Iterator<T> itr = iterator();
-        while (itr.hasNext()) {
-            if (filter.filter1(itr.next())) {
+    default <A> boolean noneMatch(In2Out1<T, A, Boolean> filter, A value) {
+        return noneMatch(filter.supply2(value));
+    }
+
+    /**
+     * TODO: adapt this javadoc to all methods
+     *
+     * Check if none of the elements in this iterable match a given 2-to-boolean filter,
+     * with our element type T as first argument, and an Out1&lt;A> factory as second argument.
+     *
+     * BEWARE THE FACTORY SENT TO THIS METHOD WILL BE CALLED ONCE PER ITEM IN THIS ITERABLE!
+     *
+     * If you just want to supply a factory to only be called once,
+     * and only called if this iterable is not empty, see {@link #noneMatchLazy}).
+     *
+     * This is an important difference in semantics,
+     * as it will be far rarer that you will want to call a factory N times.
+     * (where N = the size of this iterable)
+     *
+     * Example: <code>
+     *
+     * // We want .noneMatchRepeated to detect if an iterable's value matches
+     * // it's position in said iterable:
+     * MappedIterable<String> strs = Chain.of("0", "1", "2");
+     * // all above elements match, so noneMatchRepeated will return false immediately.
+     *
+     * Mutable<Integer> cnt = new Mutable(0);
+     * if (strs.noneMatchRepeated(String::contains, ()-> {
+     *   // can be shortened using X_Fu::increment, but this is more legible for the example
+     *   int c = count.out1() + 1;
+     *   count.in1(c);
+     *   return Integer.toString(c);
+     * }) {
+     *     // only get here if none of the String elements match their index:
+     *     // strs = Chain.of("0", "a", "b"); would fail immediately
+     *     // strs = Chain.of("a", "b", "2"); would fail eventurally
+     *     // strs = Chain.of("a", "b", "c"); would pass
+     *     // strs = Chain.of("2", "a", "0"); would pass
+     *     // strs = Chain.of("2", "1", "0"); would fail
+     *     // strs = Chain.of(); would pass
+     * }
+     *
+     * </code>
+     *
+     * @param filter - A filter which takes our class generic type T as first parameter,
+     *               with the seceond parameter supplied by method generic type A,
+     *               expected to return a boolean.
+     * @param value - A provider of the value of A,
+     *              WILL BE CALLED ONCE PER ELEMENT FILTERED.
+     *              (to use a lazy version, that only calls once, and only if we aren't empty,
+     *              see {@link #noneMatchLazy}).
+     * @param <A> - Any arbitrary type you want to use in your filter.
+     * @return true if no elements in this iterable match the given filter.
+     */
+    default <A> boolean noneMatchRepeated(In2Out1<T, A, Boolean> filter, Out1<A> value) {
+        return noneMatch(filter.supply2Deferred(value));
+    }
+    default <A> boolean noneMatchLazy(In2Out1<T, A, Boolean> filter, Out1<A> value) {
+        return noneMatch(filter.supply2Deferred(Lazy.deferred1(value)));
+    }
+
+    default boolean noneMatch(In1Out1<T, Boolean> filter) {
+        for (T t : this) {
+            if (filter.io(t)) {
                 return false;
             }
         }
         return true;
     }
+
     default MappedIterable<T> forAll(In1<T> consumer) {
         forEach(consumer.toConsumer());
         return this;

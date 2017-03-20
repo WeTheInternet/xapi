@@ -1,9 +1,9 @@
 package xapi.ui.api;
 
-import static xapi.ui.api.Coord.coord;
-
 import javax.validation.constraints.NotNull;
 import java.util.function.IntSupplier;
+
+import static xapi.ui.api.Coord.coord;
 
 /**
  * A class meant to contain an x,y position, and a w,h size.
@@ -88,27 +88,27 @@ public final class Rect {
         return new Rect(x, y, w, h);
     }
 
-    double getLeft() {
+    public double getLeft() {
         return pos.getX();
     }
 
-    double getTop() {
+    public double getTop() {
         return pos.getY();
     }
 
-    double getRight() {
+    public double getRight() {
         return pos.getX() + size.getX();
     }
 
-    double getBottom() {
+    public double getBottom() {
         return pos.getY() + size.getY();
     }
 
-    double getWidth() {
+    public double getWidth() {
         return size.getX();
     }
 
-    double getHeight() {
+    public double getHeight() {
         return size.getY();
     }
 
@@ -213,5 +213,13 @@ public final class Rect {
     @Override
     public String toString() {
         return "{ x: " + getLeft() + ", y: " + getTop() + ", w: " + getWidth() + ", h: " + getHeight() + "}";
+    }
+
+    public Coord getYAxis() {
+        return Coord.coord(getTop(), getBottom());
+    }
+
+    public Coord getXAxis() {
+        return Coord.coord(getLeft(), getRight());
     }
 }
