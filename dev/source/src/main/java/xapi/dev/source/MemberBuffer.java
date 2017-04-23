@@ -5,9 +5,9 @@ import xapi.source.read.JavaVisitor.TypeData;
 
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.TreeSet;
 
 public abstract class MemberBuffer<Self extends MemberBuffer<Self>> extends
     PrintBuffer implements CanAddImports {
@@ -27,16 +27,16 @@ public abstract class MemberBuffer<Self extends MemberBuffer<Self>> extends
   protected MemberBuffer(StringBuilder target, MemberBuffer<?> enclosing) {
     super(target);
     origIndent = indent;
-    annotations = new TreeSet<String>();
-    generics = new TreeSet<String>();
+    annotations = new LinkedHashSet<>();
+    generics = new LinkedHashSet<>();
     this.enclosing = enclosing;
   }
 
   public MemberBuffer(final String indent, final MemberBuffer<?> enclosing) {
     this.indent = indent;
     origIndent = indent;
-    annotations = new TreeSet<String>();
-    generics = new TreeSet<String>();
+    annotations = new LinkedHashSet<>();
+    generics = new LinkedHashSet<>();
     this.enclosing = enclosing;
   }
 

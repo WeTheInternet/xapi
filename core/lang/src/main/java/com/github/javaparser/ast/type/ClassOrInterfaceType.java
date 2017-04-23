@@ -28,6 +28,7 @@ import com.github.javaparser.ast.TypeArguments;
 import com.github.javaparser.ast.visitor.GenericVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -155,5 +156,20 @@ public final class ClassOrInterfaceType extends Type implements NamedNode {
     @Override
     public boolean hasRawType(String name) {
         return this.name.equals(name);
+    }
+
+    public ClassOrInterfaceType addTypeArgs(Type ... types) {
+        if (typeArguments == TypeArguments.EMPTY) {
+            typeArguments = TypeArguments.withArguments(types);
+        } else {
+            // We need to merge our type args.
+            final List<Type> existing = typeArguments.getTypeArguments();
+            final ArrayList<Type> newList = new ArrayList<>(existing);
+            for (Type type : types) {
+                newList.add(type);
+            }
+            typeArguments = TypeArguments.withArguments(newList);
+        }
+        return this;
     }
 }

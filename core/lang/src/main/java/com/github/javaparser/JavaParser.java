@@ -24,6 +24,7 @@ package com.github.javaparser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.ImportDeclaration;
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.TypeParameter;
 import com.github.javaparser.ast.body.BodyDeclaration;
 import com.github.javaparser.ast.comments.Comment;
 import com.github.javaparser.ast.comments.CommentsCollection;
@@ -35,6 +36,7 @@ import com.github.javaparser.ast.expr.JsonContainerExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.Statement;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
 import xapi.fu.In1Out1.In1Out1Unsafe;
 
@@ -337,6 +339,20 @@ public final class JavaParser {
     public static UiContainerExpr parseUiContainer(final String uiContainer) throws ParseException {
         StringReader sr = new StringReader(uiContainer);
         final UiContainerExpr e = new ASTParser(sr).UiContainer();
+        sr.close();
+        return e;
+    }
+
+    public static TypeParameter parseTypeParameter(final String typeParam) throws ParseException {
+        StringReader sr = new StringReader(typeParam);
+        final TypeParameter e = new ASTParser(sr).TypeParameter();
+        sr.close();
+        return e;
+    }
+
+    public static List<ClassOrInterfaceType> parseTypeList(final String typeName) throws ParseException {
+        StringReader sr = new StringReader(typeName);
+        final List<ClassOrInterfaceType> e = new ASTParser(sr).ClassOrInterfaceTypeList();
         sr.close();
         return e;
     }

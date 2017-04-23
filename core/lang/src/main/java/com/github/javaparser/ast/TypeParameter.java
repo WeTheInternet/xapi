@@ -3,12 +3,12 @@
  * Copyright (C) 2011, 2013-2015 The JavaParser Team.
  *
  * This file is part of JavaParser.
- * 
+ *
  * JavaParser can be used either under the terms of
  * a) the GNU Lesser General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * b) the terms of the Apache License 
+ * b) the terms of the Apache License
  *
  * You should have received a copy of both licenses in LICENCE.LGPL and
  * LICENCE.APACHE. Please refer to those files for details.
@@ -18,7 +18,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  */
- 
+
 package com.github.javaparser.ast;
 
 import com.github.javaparser.ast.expr.AnnotationExpr;
@@ -26,6 +26,7 @@ import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.visitor.GenericVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitor;
 
+import java.util.Collections;
 import java.util.List;
 
 import static com.github.javaparser.ast.internal.Utils.ensureNotNull;
@@ -46,11 +47,19 @@ public final class TypeParameter extends Node implements NamedNode {
 
 	private String name;
 
-    private List<AnnotationExpr> annotations;
+        private List<AnnotationExpr> annotations;
 
 	private List<ClassOrInterfaceType> typeBound;
 
 	public TypeParameter() {
+	}
+
+	public TypeParameter(String name) {
+		this.name = name;
+	}
+
+	public TypeParameter(final String name, final ClassOrInterfaceType typeBound) {
+		this(name, Collections.singletonList(typeBound));
 	}
 
 	public TypeParameter(final String name, final List<ClassOrInterfaceType> typeBound) {
@@ -83,7 +92,7 @@ public final class TypeParameter extends Node implements NamedNode {
 
 	/**
 	 * Return the name of the paramenter.
-	 * 
+	 *
 	 * @return the name of the paramenter
 	 */
 	@Override
@@ -94,7 +103,7 @@ public final class TypeParameter extends Node implements NamedNode {
 	/**
 	 * Return the list of {@link ClassOrInterfaceType} that this parameter
 	 * extends. Return <code>null</code> null if there are no type.
-	 * 
+	 *
 	 * @return list of types that this paramente extends or <code>null</code>
 	 */
 	public List<ClassOrInterfaceType> getTypeBound() {
@@ -104,7 +113,7 @@ public final class TypeParameter extends Node implements NamedNode {
 
 	/**
 	 * Sets the name of this type parameter.
-	 * 
+	 *
 	 * @param name
 	 *            the name to set
 	 */
@@ -114,7 +123,7 @@ public final class TypeParameter extends Node implements NamedNode {
 
 	/**
 	 * Sets the list o types.
-	 * 
+	 *
 	 * @param typeBound
 	 *            the typeBound to set
 	 */
@@ -131,4 +140,5 @@ public final class TypeParameter extends Node implements NamedNode {
     public void setAnnotations(List<AnnotationExpr> annotations) {
         this.annotations = annotations;
     }
+
 }

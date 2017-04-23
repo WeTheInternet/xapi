@@ -36,11 +36,14 @@
 package xapi.dev.source;
 
 import xapi.collect.impl.SimpleStack;
+import xapi.fu.MappedIterable;
 import xapi.source.read.JavaLexer;
 
 import java.lang.reflect.Modifier;
 import java.util.Set;
 import java.util.TreeSet;
+
+import static xapi.fu.iterate.ArrayIterable.iterate;
 
 public class ClassBuffer extends MemberBuffer<ClassBuffer> {
 
@@ -298,6 +301,33 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
 
   public ClassBuffer addInterface(final String iface) {
     return addInterface(iface, true);
+  }
+
+  public String addGenericInterface(Class<?> cls, final String ... generics) {
+    return addGenericInterface(cls.getCanonicalName(), generics);
+  }
+
+  public String addGenericInterface(String cls, final String ... typeParams) {
+    final ImportSection imports = getImports();
+    String type;
+    if (Character.isLowerCase(cls.charAt(0))) {
+      type = imports.addImport(cls);
+    } else {
+      type = cls;
+    }
+    if (typeParams.length == 0) {
+      return type;
+    }
+    final MappedIterable<String> values = iterate(typeParams)
+        .map(imports::addImport);
+    final String sourceName;
+    if (typeParams.length > 2) {
+      sourceName = type + "<\n" + values.join(",\n" + indent)+">";
+    } else {
+      sourceName = type + "<" + values.join(",") + ">";
+    }
+    addInterface(sourceName);
+    return sourceName;
   }
 
   public ClassBuffer addInterface(String iface, final boolean doImport) {

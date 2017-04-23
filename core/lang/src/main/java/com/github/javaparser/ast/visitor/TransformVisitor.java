@@ -30,9 +30,9 @@ import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import xapi.fu.Printable;
 import xapi.source.X_Source;
 
-import static com.github.javaparser.ast.plugin.Transformer.DO_NOT_PRINT;
-
 import java.util.Arrays;
+
+import static com.github.javaparser.ast.plugin.Transformer.DO_NOT_PRINT;
 
 public class TransformVisitor extends DumpVisitor {
 
@@ -43,7 +43,7 @@ public class TransformVisitor extends DumpVisitor {
   }
 
   public TransformVisitor(Transformer transformer) {
-    this.transformer = transformer;
+    this.transformer = transformer == null ? new Transformer() : transformer;
   }
 
   @Override
@@ -70,8 +70,8 @@ public class TransformVisitor extends DumpVisitor {
   }
 
   @Override
-  protected String resolveTypeParam(TypeParameter typeParam) {
-    return transformer.resolveTypeParam(typeParam);
+  protected String resolveTypeParamName(TypeParameter typeParam) {
+    return transformer.resolveTypeParamName(typeParam);
   }
 
   public static void normalizeToString(Printable printer, String template) {

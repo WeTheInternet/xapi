@@ -1,7 +1,10 @@
 package xapi.dev.api;
 
+import com.github.javaparser.JavaParser;
+import com.github.javaparser.ParseException;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.TypeArguments;
+import com.github.javaparser.ast.TypeParameter;
 import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.ReturnStmt;
@@ -22,9 +25,7 @@ import xapi.fu.Rethrowable;
 import xapi.fu.X_Fu;
 import xapi.fu.has.HasSize;
 import xapi.fu.iterate.ChainBuilder;
-
-import static com.github.javaparser.ast.expr.TemplateLiteralExpr.templateLiteral;
-import static xapi.fu.Immutable.immutable1;
+import xapi.util.X_Debug;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
@@ -35,6 +36,9 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
+
+import static com.github.javaparser.ast.expr.TemplateLiteralExpr.templateLiteral;
+import static xapi.fu.Immutable.immutable1;
 
 /**
  * This interface is used to define the $globalMethods()
@@ -52,6 +56,7 @@ import java.util.regex.Pattern;
  *
  * Created by James X. Nelson (james @wetheinter.net) on 10/30/16.
  */
+@SuppressWarnings("unused") // These methods are used via reflection from xapi script
 public interface ApiGeneratorMethods<Ctx extends ApiGeneratorContext<Ctx>> extends Rethrowable {
 
     ApiGeneratorTools<Ctx> tools();
@@ -184,6 +189,43 @@ public interface ApiGeneratorMethods<Ctx extends ApiGeneratorContext<Ctx>> exten
             }
             return new TypeExpr(rawType);
         }
+    }
+
+    default TypeParameter $typeParam(ApiGeneratorTools<Ctx> tools, Ctx ctx, Expression name, Expression ... generics) {
+        String named = tools.resolveString(ctx, name, true);
+        if (named.isEmpty()) {
+            throw new IllegalArgumentException("Cannot create a TypeParameter from empty name " + tools.debugNode(name));
+        }
+
+        final List<ClassOrInterfaceType> refs = new ArrayList<>(generics.length);
+        TypeParameter parsed;
+        try {
+            // This allows you to send a single string with generics as one expression.
+            parsed = JavaParser.parseTypeParameter(named);
+        } catch (ParseException e) {
+            throw X_Debug.rethrow(e);
+        }
+        if (X_Fu.isEmpty(generics)) {
+            return parsed;
+        }
+        // when generics aren't empty, we'll want to parse each one separately,
+        for (Expression generic : generics) {
+            final Expression resolved = tools.resolveVar(ctx, generic);
+            final String typeString = tools.resolveString(ctx, resolved, true);
+            if (!typeString.isEmpty()) {
+                final List<ClassOrInterfaceType> parsedChildren;
+                try {
+                    // We allow each argument to supply a list,
+                    // as this may be a rather common way for expressions to multiplex
+                    parsedChildren = JavaParser.parseTypeList(typeString);
+                } catch (ParseException e) {
+                    throw X_Debug.rethrow(e);
+                }
+                refs.addAll(parsedChildren);
+            }
+        }
+        parsed.setTypeBound(refs);
+        return parsed;
     }
 
     default AstMethodResult $replace(ApiGeneratorTools<Ctx> tools, Ctx ctx, @SystemProvided MethodCallExpr call,

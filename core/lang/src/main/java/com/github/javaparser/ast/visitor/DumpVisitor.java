@@ -37,6 +37,7 @@ import com.github.javaparser.ast.type.*;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MemberBuffer;
 import xapi.fu.In1;
+import xapi.fu.MappedIterable;
 import xapi.fu.Printable;
 
 import java.lang.reflect.Modifier;
@@ -294,9 +295,17 @@ public class DumpVisitor implements VoidVisitor<Object> {
                 + (n.isInterface() ? " interface " : " class ")
                 + n.getName()
                 , true);
-            n.getTypeParameters().forEach(typeParam->{
-                cb.addGenerics(resolveTypeParam(typeParam));
-            });
+            n.getTypeParameters().forEach(typeParam->
+                cb.addGenerics(resolveTypeParamName(typeParam)
+                    + (
+                        typeParam.getTypeBound().isEmpty()
+                            ? ""
+                            : MappedIterable.mapped(typeParam.getTypeBound())
+                                          .map(this::resolveType)
+                                          .join("<", ", ", ">")
+                    )
+                )
+            );
             if (n.isInterface()) {
                 if (!isNullOrEmpty(n.getExtends())) {
                     n.getExtends().forEach(type->
@@ -384,7 +393,7 @@ public class DumpVisitor implements VoidVisitor<Object> {
      * all bounded type arguments (allowing you to perform modifications
      * as you see fit).
      */
-    protected String resolveTypeParam(TypeParameter typeParam) {
+    protected String resolveTypeParamName(TypeParameter typeParam) {
         return typeParam.getName();
     }
 
@@ -447,7 +456,7 @@ public class DumpVisitor implements VoidVisitor<Object> {
             }
         }
 
-        printer.print(resolveTypeParam(n));
+        printer.print(resolveTypeParamName(n));
         if (!isNullOrEmpty(n.getTypeBound())) {
             printer.print(" extends ");
             for (final Iterator<ClassOrInterfaceType> i = n.getTypeBound().iterator(); i.hasNext(); ) {

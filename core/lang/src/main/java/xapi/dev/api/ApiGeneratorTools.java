@@ -242,7 +242,7 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
             }
 
             @Override
-            public String resolveTypeParam(TypeParameter typeParam) {
+            public String resolveTypeParamName(TypeParameter typeParam) {
                 if (ctx.hasNode(typeParam.getName())) {
                     final IntTo<String> literals = resolveToLiterals(
                         ctx,

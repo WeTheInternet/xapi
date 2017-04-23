@@ -30,7 +30,7 @@ public class Transformer {
     return type.getName();
   }
 
-  public String resolveTypeParam(TypeParameter param) {
-    return param.toSource();
+  public String resolveTypeParamName(TypeParameter param) {
+    return param.getName();
   }
 }

@@ -22,6 +22,7 @@ package com.github.javaparser.ast;
 
 import com.github.javaparser.ast.type.Type;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -57,5 +58,9 @@ public class TypeArguments {
 
     public static TypeArguments withArguments(List<? extends Type> typeArguments) {
         return new TypeArguments(typeArguments, false);
+    }
+
+    public static TypeArguments withArguments(Type ... typeArguments) {
+        return new TypeArguments(Arrays.asList(typeArguments), false);
     }
 }
