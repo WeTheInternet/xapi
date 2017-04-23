@@ -6,6 +6,7 @@ package xapi.collect.impl;
 import xapi.fu.Filter;
 import xapi.fu.Filter.Filter1;
 import xapi.fu.In1Out1;
+import xapi.fu.MappedIterable;
 import xapi.fu.X_Fu;
 
 import java.util.Iterator;
@@ -19,7 +20,7 @@ import java.util.Iterator;
  *
  */
 public abstract class AbstractLinkedList<T, N extends AbstractLinkedList.Node<T, N>, L extends AbstractLinkedList<T, N, L>>
-  implements Iterable<T> {
+  implements MappedIterable<T> {
 
   protected static class Node<T, N extends Node<T, N>> {
     protected N next;

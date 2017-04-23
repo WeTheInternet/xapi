@@ -3,11 +3,11 @@ package xapi.util;
 import xapi.fu.In2Out1;
 import xapi.fu.X_Fu;
 
-import static xapi.fu.X_Fu.blank;
-import static xapi.util.X_Runtime.isJavaScript;
-
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ExecutionException;
+
+import static xapi.fu.X_Fu.blank;
+import static xapi.util.X_Runtime.isJavaScript;
 
 /**
  * Generic purpose utility methods;
@@ -21,7 +21,19 @@ public final class X_Util{
   private X_Util() {}
 
   public static boolean equal(final Object one, final Object two){
-    return one == two || (one != null && one.equals(two));
+    return
+        one == two || // success if pointers match
+        (
+            one != null && // fail if either pointer is null (would have already succeeded)
+            one.equals(two) // succeed if .equals() methods agree
+        );
+  }
+
+  public static boolean notEqual(final Object one, final Object two){
+    return
+        one != two && // fail if pointers match
+        one != null && // fail if either pointer is null (null would already have failed)
+        !one.equals(two); // fail if .equals() method disagrees
   }
 
   public static <T> T firstNotNull(final T first, final T second) {

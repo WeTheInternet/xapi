@@ -25,6 +25,28 @@ public interface MapLike<K, V> extends HasSize, HasItems<Out2<K, V>> {
   V get(K key);
 
   /**
+   * A get operation, surrounding in a {@link Maybe} facade,
+   * for functional fallbacks.
+   *
+   * Example:
+   *
+   *
+   *
+   boolean hasKey(String key) {
+       map.getMaybe(key)
+       .mapNullSafe(p->p.getKeys().contains(key))
+       .isPresent();
+   }
+
+   or, if you will...
+       maybe.mapNullSafe(MyType::getKeys)
+            .filter(MapLike::contains, key)
+            .isPresent();
+   */
+  default Maybe<V> getMaybe(K key) {
+    return Maybe.nullable(get(key));
+  }
+  /**
    * Check if there is an entry for the given key.
    */
   boolean has(K key);
@@ -41,6 +63,7 @@ public interface MapLike<K, V> extends HasSize, HasItems<Out2<K, V>> {
      */
   V remove(K key);
 
+  // TODO MappedIterable!
   Iterable<K> keys();
 
   @Override
@@ -70,12 +93,25 @@ public interface MapLike<K, V> extends HasSize, HasItems<Out2<K, V>> {
     return is;
   }
 
-  default V getOrSupply(K key, Out1Unsafe<V> ifNull) {
+  default <F> V getOrCreateFrom(K key, In1Out1<F, V> ifNull, F from) {
+    V is = get(key);
+    if (is == null) {
+      is = ifNull.io(from);
+      put(key, is);
+    }
+    return is;
+  }
+
+  default V getOrSupply(K key, Out1<V> ifNull) {
     V is = get(key);
     if (is == null) {
       return ifNull.out1();
     }
     return is;
+  }
+
+  default V getOrSupplyUnsafe(K key, Out1Unsafe<V> ifNull) {
+    return getOrSupply(key, ifNull);
   }
 
   default V getAndRemove(K key) {

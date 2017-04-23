@@ -88,23 +88,23 @@ extends CollectionProxy<Integer,T>, HasItems<T>
   boolean findRemove(T value, boolean all);
 
   default boolean removeIf(Filter1<T> value, boolean all) {
+    final Iterator<Integer> itr = forEachEntry()
+        .filter(e->value.filter1(e.out2()))
+        .map(e->e.out1())
+        .iterator();
     if (all) {
       boolean removed = false;
       // remove backwards, to avoid shifting index issues
-      for (int i = size(); i --> 0; ) {
-        if (value.filter1(at(i))) {
-          remove(i);
-          removed = true;
-        }
+      for (;itr.hasNext(); ) {
+        // already filtered, above
+        remove(itr.next());
       }
       return removed;
     } else {
       // remove forwards, to remove first instance
-      for (int i = 0; i < size(); i++) {
-        if (value.filter1(at(i))) {
-          remove(i);
-          return true;
-        }
+      if (itr.hasNext()) {
+        remove(itr.next());
+        return true;
       }
       return false;
     }

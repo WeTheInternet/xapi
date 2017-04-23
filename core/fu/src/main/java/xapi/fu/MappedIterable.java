@@ -96,13 +96,13 @@ public interface MappedIterable<T> extends Iterable<T> {
         return ()->new MappedIterator<>(from.iterator(), mapper);
     }
 
-    default boolean hasMatch(Filter1<T> filter) {
+    default boolean hasMatch(In1Out1<T, Boolean> filter) {
         return firstMatch(filter).isPresent();
     }
 
-    default Maybe<T> firstMatch(Filter1<T> filter) {
+    default Maybe<T> firstMatch(In1Out1<T, Boolean> filter) {
         for (T t:this) {
-            if (filter.filter1(t)) {
+            if (filter.io(t)) {
                 return Maybe.immutable(t);
             }
         }
@@ -377,6 +377,11 @@ public interface MappedIterable<T> extends Iterable<T> {
 
     default MappedIterable<T> forAll(In1<T> consumer) {
         forEach(consumer.toConsumer());
+        return this;
+    }
+
+    default MappedIterable<T> forAllAsArray(In1<T[]> consumer, In1Out1<Integer, T[]> arrayCtor) {
+        consumer.in(toArray(arrayCtor));
         return this;
     }
 

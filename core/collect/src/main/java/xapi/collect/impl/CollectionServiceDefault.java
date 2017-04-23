@@ -17,14 +17,16 @@ import xapi.platform.GwtDevPlatform;
 import xapi.platform.JrePlatform;
 import xapi.util.X_Runtime;
 
-import static java.util.Collections.synchronizedMap;
-
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
+
+import static java.util.Collections.synchronizedMap;
 
 @GwtDevPlatform
 @JrePlatform
@@ -202,6 +204,12 @@ public class CollectionServiceDefault implements CollectionService{
           // ick... we'll get a fast, insertion ordered concurrent map.  For now, just make it synchronized :-(
           opts.concurrent() ? synchronizedMap(new LinkedHashMap<>()) : new LinkedHashMap<>()
       , opts);
+    }
+    if (opts.keyOrdered()) {
+      return new StringToManyList<>(cls,
+          opts.concurrent() ? new ConcurrentSkipListMap<>() : new TreeMap<>()
+      , opts);
+
     }
     return new StringToManyList<>(cls, opts);
   }

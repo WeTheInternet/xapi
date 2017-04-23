@@ -6,18 +6,10 @@ import xapi.collect.api.IntTo;
 import xapi.collect.api.ObjectTo;
 import xapi.collect.api.StringTo;
 import xapi.fu.In2Out1;
+import xapi.fu.Out2;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Deque;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeMap;
 
 public class IntToManyList <X> implements IntTo.Many<X>{
 
@@ -26,7 +18,7 @@ public class IntToManyList <X> implements IntTo.Many<X>{
   private int max;
 
   public IntToManyList(final Class<X> componentClass) {
-    this.map = X_Collect.newStringMultiMap(componentClass, new TreeMap<String, IntTo<X>>());
+    this.map = X_Collect.newStringMultiMap(componentClass, CollectionOptions.asKeyOrdered().build());
     this.componentClass = componentClass;
   }
 
@@ -386,12 +378,32 @@ public class IntToManyList <X> implements IntTo.Many<X>{
 
   @Override
   public boolean readWhileTrue(In2Out1<Integer, IntTo<X>, Boolean> callback) {
-    for (int i = 0, m = size(); i < m; i++ ) {
-      if (!callback.io(i, get(i))) {
-        return false;
+    if (appearsCompact()) {
+      for (int i = 0, m = size(); i < m; i++ ) {
+        if (!callback.io(i, get(i))) {
+          return false;
+        }
+      }
+    } else {
+      final Iterator<Out2<Integer, IntTo<X>>> itr = map.forEachItem()
+          .map(e->Out2.out2Immutable(Integer.parseInt(e.out1()), e.out2()))
+          .iterator();
+      while (itr.hasNext()) {
+        final Out2<Integer, IntTo<X>> next = itr.next();
+        if (!callback.io(next.out1(), next.out2())) {
+          return false;
+        }
       }
     }
     return true;
+  }
+
+  protected boolean appearsCompact() {
+    int s = size();
+    if (s == 0) {
+      return true;
+    }
+    return map.containsKey("0") && map.containsKey(Integer.toString(s-1));
   }
 
 }

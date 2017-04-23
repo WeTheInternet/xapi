@@ -46,6 +46,9 @@ public class CollectionServiceGwt implements CollectionService{
     if (opts.insertionOrdered()) {
       return new java.util.LinkedHashMap<>();
     } else {
+      if (opts.keyOrdered()) {
+        return new java.util.TreeMap<>();
+      }
       return new java.util.HashMap<>();
     }
     // No need for concurrent map types in Gwt
@@ -82,7 +85,7 @@ public class CollectionServiceGwt implements CollectionService{
   @Override
   public <V, Generic extends V> xapi.collect.api.StringTo.Many<V> newStringMultiMap(Class<Generic> cls,
     CollectionOptions opts) {
-    return new StringToManyList<>(cls);
+    return new StringToManyList<>(cls, newMap(opts));
   }
 
   @Override

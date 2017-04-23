@@ -112,6 +112,10 @@ public interface X_Fu {
     return MappedIterable.mapped(data).map(converter);
   }
 
+  static <T> T identity(T returnMe) {
+    return returnMe;
+  }
+
   static String reduceToString(Iterable<? extends CharSequence> data, String separator) {
     StringBuilder b = new StringBuilder();
     final Iterator<? extends CharSequence> itr = data.iterator();
@@ -414,5 +418,21 @@ public interface X_Fu {
     }
     return integer + 1;
   }
+
+    static <T> T[] concat(T[] first, T[] second) {
+      if (isEmpty(second)) {
+        return first;
+      }
+      if (isEmpty(first)) {
+        return second;
+      }
+      final T[] newArr = copy(first, first.length + second.length);
+      System.arraycopy(second, 0, newArr, first.length, second.length);
+      return newArr;
+    }
+
+    static <Lower, Upper extends Lower> Upper cast(Class<? extends Upper> to, Lower item) {
+      return to.cast(item);
+    }
 }
 

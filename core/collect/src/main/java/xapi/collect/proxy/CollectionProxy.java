@@ -8,6 +8,7 @@ import xapi.fu.In1;
 import xapi.fu.In2;
 import xapi.fu.In2.In2Unsafe;
 import xapi.fu.In2Out1;
+import xapi.fu.MappedIterable;
 import xapi.fu.Out2;
 import xapi.fu.iterate.ArrayIterable;
 
@@ -87,7 +88,7 @@ public interface CollectionProxy <K, V> extends HasEmptiness
      readWhileTrue(callback.supply1(true));
    }
 
-   default Iterable<Out2<K, V>> forEachEntry() {
+   default MappedIterable<Out2<K, V>> forEachEntry() {
      SimpleStack<Out2<K, V>> stack = new SimpleStack<>();
      readWhileTrue(new In1<Out2<K, V>>() {
          @Override

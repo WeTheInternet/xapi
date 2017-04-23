@@ -3,9 +3,9 @@ package xapi.fu;
 import xapi.fu.Out1.Out1Unsafe;
 import xapi.fu.iterate.Chain;
 
-import static xapi.fu.Immutable.immutable1;
-
 import java.util.Map.Entry;
+
+import static xapi.fu.Immutable.immutable1;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
@@ -72,7 +72,7 @@ public interface Out2<O1, O2> extends OutMany {
     return ()->out;
   }
 
-  static <O1, O2> Out2Immutable <O1, O2> out2Immutable(O1 o1, O2 o2) {
+  static <O1, O2> Out2 <O1, O2> out2Immutable(O1 o1, O2 o2) {
     return new Out2Immutable<>(o1, o2);
   }
 

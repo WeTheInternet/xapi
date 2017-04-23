@@ -78,6 +78,26 @@ public interface Maybe <V> extends Rethrowable {
         };
     }
 
+    default <A, O> Maybe<O> mapNullSafe(In2Out1<V, A, O> mapper, A also) {
+        return ()-> {
+            V out = get();
+            if (out == null) {
+                return null;
+            }
+            return mapper.io(out, also);
+        };
+    }
+
+    default <A, B, O> Maybe<O> mapNullSafe(In3Out1<V, A, B, O> mapper, A also, B balso) {
+        return ()-> {
+            V out = get();
+            if (out == null) {
+                return null;
+            }
+            return mapper.io(out, also, balso);
+        };
+    }
+
     default <O> Maybe<O> mapIfPresent(In1Out1<V, O> mapper, Out1<Throwable> factory) {
         return ()-> {
             V out = get();
@@ -164,4 +184,39 @@ public interface Maybe <V> extends Rethrowable {
         return val;
     }
 
+    default Maybe<V> filter(In1Out1<V, Boolean> filter) {
+        return ()->{
+            if (isPresent()) {
+                final V val = get();
+                if (filter.io(val)) {
+                    return val;
+                }
+            }
+            return null;
+        };
+    }
+
+    default <A> Maybe<V> filter(In2Out1<V, A, Boolean> filter, A also) {
+        return ()->{
+            if (isPresent()) {
+                final V val = get();
+                if (filter.io(val, also)) {
+                    return val;
+                }
+            }
+            return null;
+        };
+    }
+
+    default <A, B> Maybe<V> filter(In3Out1<V, A, B, Boolean> filter, A also, B balso) {
+        return ()->{
+            if (isPresent()) {
+                final V val = get();
+                if (filter.io(val, also, balso)) {
+                    return val;
+                }
+            }
+            return null;
+        };
+    }
 }

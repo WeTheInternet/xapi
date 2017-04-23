@@ -7,16 +7,18 @@ public final class CollectionOptions {
   private final boolean concurrent;
   private final boolean forbidsDuplicate;
   private final boolean insertionOrdered;
+  private final boolean keyOrdered;
   private final boolean mutable;
   private final boolean sparse;
 
   private CollectionOptions(boolean concurrent, boolean forbidsDuplicate,
-    boolean insertionOrdered, boolean mutable, boolean sparse) {
+    boolean insertionOrdered, boolean keyOrdered, boolean mutable, boolean sparse) {
     this.concurrent = concurrent;
     this.forbidsDuplicate = forbidsDuplicate;
     this.insertionOrdered = insertionOrdered;
     this.mutable = mutable;
     this.sparse = sparse;
+    this.keyOrdered = keyOrdered;
   }
 
   public boolean concurrent() {
@@ -31,17 +33,22 @@ public final class CollectionOptions {
     return insertionOrdered;
   }
 
+  public boolean keyOrdered() {
+    return keyOrdered;
+  }
+
   public boolean mutable() {
     return mutable;
   }
 
   public static final class Builder {
 
-    boolean concurrent;
-    boolean insertionOrdered;
-    boolean forbidsDuplicate;
-    boolean mutable;
-    boolean sparse;
+    private boolean concurrent;
+    private boolean insertionOrdered;
+    private boolean forbidsDuplicate;
+    private boolean mutable;
+    private boolean sparse;
+    private boolean keyOrdered;
 
     public Builder() {
       concurrent = X_Runtime.isMultithreaded();
@@ -69,6 +76,11 @@ public final class CollectionOptions {
       return this;
     }
 
+    public Builder keyOrdered(boolean keyOrdered) {
+      this.keyOrdered = keyOrdered;
+      return this;
+    }
+
     public Builder mutable(boolean mutable) {
       this.mutable = mutable;
       return this;
@@ -76,7 +88,7 @@ public final class CollectionOptions {
 
     public CollectionOptions build() {
       return new CollectionOptions(
-        concurrent, forbidsDuplicate, insertionOrdered, mutable, sparse);
+        concurrent, forbidsDuplicate, insertionOrdered, keyOrdered, mutable, sparse);
     }
   }
 
@@ -90,6 +102,10 @@ public final class CollectionOptions {
 
   public static Builder asInsertionOrdered() {
     return new Builder().insertionOrdered(true);
+  }
+
+  public static Builder asKeyOrdered() {
+    return new Builder().keyOrdered(true);
   }
 
   public static Builder asImmutableSet() {
@@ -118,6 +134,9 @@ public final class CollectionOptions {
     }
     if (opts.forbidsDuplicate) {
       builder.forbidsDuplicate = true;
+    }
+    if (opts.keyOrdered) {
+      builder.keyOrdered = true;
     }
     if (opts.mutable) {
       builder.mutable = true;
