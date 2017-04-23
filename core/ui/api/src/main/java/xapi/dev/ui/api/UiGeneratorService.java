@@ -37,7 +37,21 @@ public interface UiGeneratorService <Raw> {
 
     void finish(MappedIterable<ComponentBuffer> itr, String cleanup);
 
-    void onFinish(Do ondone);
+    /**
+     * Run a task later during generation; these tasks are run in sets of priority,
+     * from Integer.MIN_VALUE to MAX_VALUE, with all tasks in the same priority
+     * running in the same pass.
+     *
+     * This allows you to specify a clear order of operations,
+     * where you might want a final task to run at Integer.MAX_VALUE,
+     * with all job-preparation tasks in Integer.MIN_VALUE to -1,
+     * all default jobs running in group 0, and 1 to Integer.MAX_VALUE
+     * as actual pieces of work to perform.
+     *
+     * @param priority
+     * @param ondone
+     */
+    void onFinish(int priority, Do ondone);
 
     MappedIterable<GeneratedUiComponent> allComponents();
 

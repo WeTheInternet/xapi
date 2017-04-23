@@ -6,6 +6,7 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.ui.api.GeneratedUiImplementation.RequiredMethodType;
+import xapi.fu.In2Out1;
 import xapi.fu.MappedIterable;
 import xapi.fu.Out2;
 
@@ -14,14 +15,22 @@ import xapi.fu.Out2;
  */
 public class GeneratedUiMethod extends GeneratedUiMember {
 
+    private final GeneratedUiComponent owner;
+    private final In2Out1<GeneratedUiLayer, UiContainerExpr, String> implFactory;
     private UiContainerExpr source;
     private RequiredMethodType type;
     private final StringTo<String> params;
     private ApiGeneratorContext<?> context;
 
-    public GeneratedUiMethod(Type memberType, String memberName) {
+    public GeneratedUiMethod(GeneratedUiComponent owner, Type memberType, String memberName) {
+        this(owner, memberType, memberName, (ig, nored)->memberType.toSource());
+    }
+
+    public GeneratedUiMethod(GeneratedUiComponent owner, Type memberType, String memberName, In2Out1<GeneratedUiLayer, UiContainerExpr, String> implFactory) {
         super(memberType, memberName);
+        this.owner = owner;
         params = X_Collect.newStringMapInsertionOrdered(String.class);
+        this.implFactory = implFactory;
     }
 
     public void setSource(UiContainerExpr source) {
@@ -56,8 +65,37 @@ public class GeneratedUiMethod extends GeneratedUiMember {
         return params.size();
     }
 
+    /**
+     * @return A mappable iterable of [type, name, type, name, ...] pairs.
+     */
     public MappedIterable<Out2<String, String>> getParams() {
         return params.forEachItem()
+            // params are stored as a name->type relationship,
+            // but when viewing them, it is natural to expect type then name
+            // so we reverse the iterable
             .map(Out2::reverse);
+    }
+
+    public GeneratedUiComponent getOwner() {
+        return owner;
+    }
+
+    public String toSignature(GeneratedUiLayer in, UiContainerExpr ui) {
+        final String retType;
+        if (in == null) {
+            retType = getMemberType().toSource();
+        } else {
+            retType = implFactory.io(in, ui);
+        }
+        return "public " + retType + " " + getMemberName() +"(" +
+            getParams()
+                .map2(Out2::join, " ") // space between Type and name
+                .join(",") // commas between arg pairs
+            +")"
+            ;
+
+    }
+    public final String toSignature() {
+        return toSignature(null, null);
     }
 }

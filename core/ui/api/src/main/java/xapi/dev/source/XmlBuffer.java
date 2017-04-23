@@ -55,6 +55,9 @@ public class XmlBuffer extends PrintBuffer {
 
   public XmlBuffer setAttribute(final String name, final String value) {
     ensureAttributes();
+    // TODO consider a null value to mean "clear this attribute"?
+    // This is a widely used class, so these semantics should not be changed
+    // without tests, or in a commit without any unrelated changes.
     final String val = escapeAttribute(value);
     setRawAttribute(name, val);
     return this;

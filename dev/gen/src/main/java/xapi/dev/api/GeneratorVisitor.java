@@ -29,13 +29,12 @@ import xapi.fu.Filter.Filter1;
 import xapi.fu.Maybe;
 import xapi.fu.Mutable;
 import xapi.fu.Out2;
-import xapi.fu.Out2.Out2Immutable;
 import xapi.fu.Printable;
 import xapi.fu.iterate.GrowableIterator;
+import xapi.log.X_Log;
 import xapi.source.X_Source;
 import xapi.source.read.JavaVisitor;
-
-import static com.github.javaparser.ast.expr.TemplateLiteralExpr.templateLiteral;
+import xapi.util.X_Runtime;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -44,6 +43,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.WeakHashMap;
+
+import static com.github.javaparser.ast.expr.TemplateLiteralExpr.templateLiteral;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 9/17/16.
@@ -441,19 +442,24 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
             }
 
             @Override
-            protected String resolveTypeParam(TypeParameter typeParam) {
+            protected String resolveTypeParamName(TypeParameter typeParam) {
                 if (ctx.hasNode(typeParam.getName())) {
                     final IntTo<String> literals = resolveToLiterals(
                         ctx,
                         (Expression) ctx.getNode(typeParam.getName())
                     );
-                    return literals.join(", ");
+                    if (literals.size() > 1) {
+                        X_Log.trace(getClass(), "Type parameter as variable returned more than one item...", literals, " from ", typeParam.getName());
+                    }
+                    return literals.join(", "); // scary...
                 }
-                return super.resolveTypeParam(typeParam);
+                return super.resolveTypeParamName(typeParam);
             }
         };
         unit.accept(visitor, null);
-        System.out.println(builder.toSource());
+        if (X_Runtime.isDebug()) {
+            System.out.println(builder.toSource());
+        }
     }
 
     protected ModifierVisitorAdapter<Ctx> modifyUnit(Ctx ctx, CompilationUnit unit) {
@@ -619,8 +625,8 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
     }
     protected void deferVarResolution(Ctx ctx, Node newDecl, String varName, Node value, boolean checkFirst) {
         Mutable<Do> undoer = new Mutable<>();
-        final Out2Immutable<Do, Do> existing = newDecl.getExtra(DUMP_WRAP_KEY);
-        final Out2Immutable<Do, Do> myTask = Out2.out2Immutable(
+        final Out2<Do, Do> existing = newDecl.getExtra(DUMP_WRAP_KEY);
+        final Out2<Do, Do> myTask = Out2.out2Immutable(
             () -> undoer.in(
                 !checkFirst || !ctx.hasNode(varName) ?
                     ctx.addToContext(varName, value) :

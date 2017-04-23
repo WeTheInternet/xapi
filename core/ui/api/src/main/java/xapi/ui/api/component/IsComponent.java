@@ -1,6 +1,9 @@
 package xapi.ui.api.component;
 
 import xapi.fu.MappedIterable;
+import xapi.fu.Maybe;
+import xapi.fu.X_Fu;
+import xapi.util.X_Util;
 
 /**
  * Successor to xapi-components module's IsWebComponent interface,
@@ -30,4 +33,23 @@ public interface IsComponent
     void setParentComponent(IsComponent<?, ?> parent);
 
     void addChildComponent(IsComponent<?, ?> child);
+
+    default <E, C extends IsComponent<E, C>> C getRefOrNull(String refName){
+        final Maybe is = getRef(IsComponent.class, refName);
+        return ((Maybe<C>)is).ifAbsentReturn(null);
+    }
+
+    default <E, C extends IsComponent<E, C>> Maybe<C> getRef(
+        Class<C> clazz, String refName) {
+
+        return getChildComponents()
+            .map1(X_Fu::cast, clazz)
+            .firstMatch(c -> X_Util.equal(
+            c.getRefName(),
+            refName
+        ));
+    }
+
+    String getRefName();
+
 }

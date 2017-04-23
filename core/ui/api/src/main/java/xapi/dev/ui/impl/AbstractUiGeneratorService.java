@@ -53,7 +53,7 @@ import java.util.Set;
 public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorContext<Ctx>> extends UiGeneratorTools <Ctx> implements UiGeneratorService <Raw> {
 
     protected String phase;
-    protected final IntTo<Do> onDone;
+    protected final IntTo.Many<Do> onDone;
     protected SourceHelper<Raw> service;
     protected final Lazy<Iterable<UiImplementationGenerator>> impls;
     protected final ChainBuilder<GeneratedUiComponent> seen;
@@ -82,7 +82,7 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
 
 
     public AbstractUiGeneratorService() {
-        onDone = X_Collect.newList(Do.class);
+        onDone = X_Collect.newIntMultiMap(Do.class);
         impls = Lazy.deferred1(()->
             CachingIterator.cachingIterable(getImplementations().iterator())
         );
@@ -104,6 +104,15 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
         final GeneratedUiComponent component = newComponent(pkgName, simpleName);
         final ComponentBuffer buffer = new ComponentBuffer(component, metadata);
         final Ctx ctx = contextFor(type, container);
+        if (container.getName().equals("define-tag")) {
+            // TODO: handle define-tags by NOT storing the whole buffer.
+            // A Buffer is going to need to handle multiple tag definitions,
+            // and that work does not add enough value at this time to warrant attention.
+            String tagName = resolveString(ctx, container.getAttributeNotNull("tagName").getExpression());
+            allComponents.put(tagName, buffer);
+            buffer.setTagName(tagName);
+            component.setTagName(tagName);
+        }
         root.setGeneratedComponent(component);
         buffer.getRoot().setContext(ctx);
         buffer.setElement(type);
@@ -113,13 +122,6 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
         allComponents.put(type.getQualifiedName(), buffer);
         allComponents.put(type.getSimpleName(), buffer);
 
-        if (container.getName().equals("define-tag")) {
-            // TODO: handle define-tags by NOT storing the whole buffer.
-            // A Buffer is going to need to handle multiple tag definitions,
-            // and that work does not add enough value at this time to warrant attention.
-            String tagName = resolveString(ctx, container.getAttributeNotNull("tagName").getExpression());
-            allComponents.put(tagName, buffer);
-        }
         return buffer;
     }
 
@@ -442,8 +444,13 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
             impl.setGenerator(this);
             impl.generateComponent(metadata, component, impl.getMode(component, metadata));
         }
-        onFinish(()->
-            component.getGeneratedComponent().saveSource(tools(), getGenerator())
+        onFinish(Integer.MAX_VALUE-100, ()->
+            // This runs fairly late.  TODO: sane location for constants
+            component.getGeneratedComponent().resolveGenerics(getGenerator())
+        );
+        onFinish(Integer.MAX_VALUE, ()->
+            // This runs very last, obviously :-)
+            component.getGeneratedComponent().saveSource(getGenerator())
         );
         return component;
     }
@@ -545,7 +552,21 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
                 tools().startRound(id, component.getGeneratedComponent())));
 
             while (!onDone.isEmpty()) {
-                onDone.removeAll(Do::done);
+                // Because the underlying collection is an ordered map,
+                // we just keep removing the first element, clearing those items.
+                // This allows job prioritization without much hassle
+                onDone.removeOne(item -> {
+                    item.removeAll(Do::done);
+                    // This task may have added another job of the same priority,
+                    // and the backing map might be configured to return that in
+                    // the current iterator, or require us to restart, without
+                    // deleting the new item; thus, we only remove a prioritized
+                    // multimap entry if the underlying collection is still non-empty
+                    // after we called .removeAll.  Comod is dangerous,
+                    // but sometimes acceptable, and if you don't want it,
+                    // configure your CollectionService(s) to return validating multimaps
+                    return item.isEmpty();
+                });
             }
             startCleanup.out1().done();
             if (onDone.isEmpty()) {
@@ -556,8 +577,8 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
     }
 
     @Override
-    public void onFinish(Do ondone) {
-        onDone.add(ondone);
+    public void onFinish(int priority, Do ondone) {
+        onDone.get(priority).add(ondone);
     }
 
     protected void resetFactories() {

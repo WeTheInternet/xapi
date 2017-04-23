@@ -1,0 +1,56 @@
+<define-tag
+    name = "InputText"
+    tagName = "input-text"
+    model =
+        {
+            value: String.class,
+            title: @Nullable String.class,
+            placeholder: @Nullable String.class
+        }
+    api =
+    @Import({
+        "xapi.util.X_Util"
+    })
+    [
+        public String getValue() {
+            return $model.getValue();
+        }
+        ,
+
+        public $Self setValue(String value) {
+
+            String was = $model.getValue();
+            if (X_Util.notEqual(was, value)) {
+                was = normalizeChange(was, value);
+            }
+            $model.setValue(value);
+            return this;
+        }
+        ,
+        public String normalizeChange(String is, String want) {
+            // let implementors encode set values as desired;
+            // this could (should?) fire an onBeforeChange event,
+            // for components that want to allow foreign listeners to cancel changes.
+            return want;
+        }
+
+    ]
+    impl =
+    [
+        public $Self ui() {
+            return this;
+        }
+    ]
+
+    ui =
+        <box>
+            <if notNull=$model.title>
+                <label ref="title">$model::title</label>
+            </if>
+            <native-element
+                ref="input"
+                gwt=<input type="text" placeholder=$model::placeholder />
+                javafx=<TextField promptTextProperty=$model::placeholder />
+            /native-element>
+        </box>
+/define-tag>

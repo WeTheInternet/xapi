@@ -1,8 +1,8 @@
 package xapi.dev.ui.tags;
 
+import com.github.javaparser.ast.TypeParameter;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.JsonContainerExpr;
-import com.github.javaparser.ast.expr.TypeExpr;
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.ui.api.ComponentBuffer;
@@ -52,8 +52,9 @@ public class UiTagGenericsGenerator extends UiFeatureGenerator {
         container.getPairs().forEach(pair->{
             String genericName = tools.resolveString(ctx, pair.getKeyExpr());
             final Expression resolved = tools.resolveVar(ctx, pair.getValueExpr());
-            final TypeExpr type = tools.methods().$type(tools, ctx, resolved);
-            if (genericName.startsWith("$")) {
+            final TypeParameter type = tools.methods().$typeParam(tools, ctx, resolved);
+
+            if (genericName.contains("$")) {
                 final Do was = undos.out1();
                 final Do use = was.doAfter(ctx.addToContext(genericName, type));
                 undos.in(use);

@@ -20,6 +20,11 @@ public interface EntryIterable <K, V> extends HasItems<Out2<K, V>> {
         .map(e->Out2.out2Immutable(e.getKey(), e.getValue()));
   }
 
+  default MappedIterable<K> forEachKey() {
+    return MappedIterable.mapped(entries())
+        .map(Entry::getKey);
+  }
+
   default MappedIterable<V> forEachValue() {
     return MappedIterable.mapped(entries())
         .map(Entry::getValue);

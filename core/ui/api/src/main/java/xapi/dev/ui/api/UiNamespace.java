@@ -1,6 +1,7 @@
 package xapi.dev.ui.api;
 
 import xapi.dev.source.CanAddImports;
+import xapi.fu.Maybe;
 import xapi.ui.api.StyleCacheService;
 import xapi.ui.api.UiElement;
 import xapi.ui.api.style.HasStyleResources;
@@ -12,15 +13,44 @@ import xapi.ui.impl.UiServiceImpl;
  */
 public interface UiNamespace {
 
-    String ATTR_ID = "id";
-    String ATTR_REF = "ref";
-    String ATTR_MODEL = "model";
-    String ATTR_DATA = "data";
-    String ATTR_STYLE = "style";
-    String ATTR_HREF = "href";
-    String EL_BOX = "box";
-    String EL_BUTTON = "button";
-    String EL_INPUT = "input";
+    String  TYPE_SELF = "Self",
+            TYPE_API = "Api",
+            TYPE_BASE = "Base",
+            TYPE_IMPL = "Impl",
+            TYPE_NODE = "Node",
+            TYPE_ELEMENT = "El",
+            TYPE_ELEMENT_BUILDER = "ElBuilder"
+    ;
+
+    default Maybe<String> loadFromNamespace(String name, CanAddImports imports) {
+        switch (name) {
+            case TYPE_SELF:
+            case TYPE_API:
+            case TYPE_BASE:
+            case TYPE_IMPL:
+                return Maybe.immutable(name);
+            case TYPE_NODE:
+                return Maybe.immutable(
+                    getNodeType(imports)
+                );
+            case TYPE_ELEMENT:
+                return Maybe.immutable(
+                    getElementType(imports)
+                );
+            case TYPE_ELEMENT_BUILDER:
+                return Maybe.immutable(
+                    getElementBuilderType(imports)
+                );
+        }
+        return Maybe.not();
+    }
+
+    String  ATTR_ID = "id",
+            ATTR_REF = "ref",
+            ATTR_MODEL = "model",
+            ATTR_DATA = "data",
+            ATTR_STYLE = "style",
+            ATTR_HREF = "href";
 
     class DefaultUiNamespace implements UiNamespace {
         public static final DefaultUiNamespace DEFAULT = new DefaultUiNamespace();
@@ -49,6 +79,9 @@ public interface UiNamespace {
     default String getNodeType(CanAddImports importer) {
         return importer.addImport(UiElement.class);
     }
+
+    // TODO: add public names for the following methods,
+    // as well as entries in {@link UiNamespace#loadFromNamespace}
 
     /**
      * @return

@@ -41,6 +41,7 @@ public class ComponentBuffer {
     private IsQualified element;
     private InterestingNodeResults interestingNodes;
     private final GeneratedUiComponent component;
+    private String tagName;
 
     public ComponentBuffer(String pkgName, String simpleName) {
         this(pkgName, simpleName, immutable1(instance(ContainerMetadata.class)), true);
@@ -72,8 +73,6 @@ public class ComponentBuffer {
     protected DomBuffer defaultDomBuffer() {
         return instance(DomBuffer.class);
     }
-
-    private Out1<DomBuffer> dom = Lazy.deferred1(DomBuffer::new);
 
     public SourceBuilder<?> getBinder() {
         return component.getApi().getSource();
@@ -153,7 +152,7 @@ public class ComponentBuffer {
         final String name = "create" + myBaseName;
         MethodCallExpr call = new MethodCallExpr(null, name);
         final Type returnType = tools.methods().$type(tools, ctx, StringLiteralExpr.stringLiteral(myBaseName)).getType();
-        GeneratedUiMethod method = new GeneratedUiMethod(returnType, name);
+        GeneratedUiMethod method = new GeneratedUiMethod(me, returnType, name);
         method.setSource(ui);
         method.setContext(ctx);
         final MethodBuffer creator = other.getBase().getSource().getClassBuffer()
@@ -181,5 +180,13 @@ public class ComponentBuffer {
 
         other.getImpls().forAll(GeneratedUiImplementation::requireMethod, type, method, call);
         return call;
+    }
+
+    public void setTagName(String tagName) {
+        this.tagName = tagName;
+    }
+
+    public String getTagName() {
+        return tagName;
     }
 }

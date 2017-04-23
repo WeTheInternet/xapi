@@ -16,12 +16,12 @@ import xapi.util.X_String;
 public class GeneratedUiModel extends GeneratedJavaFile {
     private final StringTo<GeneratedUiField> fields;
 
-    public GeneratedUiModel(String packageName, String className) {
-        this(null, packageName, className);
+    public GeneratedUiModel(GeneratedUiComponent owner, String packageName, String className) {
+        this(owner, null, packageName, className);
     }
 
-    public GeneratedUiModel(GeneratedJavaFile superType, String packageName, String className) {
-        super(superType, packageName, className);
+    public GeneratedUiModel(GeneratedUiComponent owner, GeneratedJavaFile superType, String packageName, String className) {
+        super(owner, superType, packageName, className);
         fields = X_Collect.newStringMap(GeneratedUiField.class);
     }
 

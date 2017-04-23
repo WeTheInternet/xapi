@@ -9,7 +9,11 @@ import xapi.dev.ui.api.GeneratedUiImplementation;
 public class GeneratedJavaFxComponent extends GeneratedUiImplementation {
 
     public GeneratedJavaFxComponent(GeneratedUiComponent ui) {
-        super(ui.getPackageName(), ui.getApi(), ui.getBase());
+        super(ui, ui.getPackageName());
     }
 
+    @Override
+    public String getAttrKey() {
+        return "javafx";
+    }
 }

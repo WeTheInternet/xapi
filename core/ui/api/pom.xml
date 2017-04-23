@@ -22,7 +22,7 @@
  <dependencies>
   <dependency>
     <groupId>net.wetheinter</groupId>
-    <artifactId>xapi-dev-source</artifactId>
+    <artifactId>xapi-core-lang</artifactId>
   </dependency>
   <dependency>
     <groupId>net.wetheinter</groupId>
@@ -40,6 +40,10 @@
   <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-lang</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-dev-file</artifactId>
   </dependency>
 
   <!-- Testing dependencies -->
@@ -76,6 +80,14 @@
     <directory>src/test/resources</directory>
    </testResource>
   </testResources>
+  <resources>
+    <resource>
+      <directory>src/main/resources</directory>
+    </resource>
+    <resource>
+      <directory>src/main/xapi</directory>
+    </resource>
+  </resources>
   <plugins>
    <plugin>
     <groupId>org.apache.maven.plugins</groupId>

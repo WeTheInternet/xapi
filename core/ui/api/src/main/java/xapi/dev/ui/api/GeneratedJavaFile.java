@@ -21,20 +21,24 @@ public class GeneratedJavaFile {
     private final String packageName;
     private final String typeName;
     protected final GeneratedJavaFile superType;
+    private final GeneratedUiComponent owner;
     protected String prefix, suffix;
-    private ContainerMetadata metadata;
+//    protected final StringTo<In2Out1<UiNamespace, CanAddImports, String>> generics;
 
     private IsTypeDefinition type;
+
 
     public boolean shouldSaveType() {
         return true;
     }
 
-    public GeneratedJavaFile(String pkg, String cls) {
-        this(null, pkg, cls);
+    public GeneratedJavaFile(GeneratedUiComponent owner, String pkg, String cls) {
+        this(owner, null, pkg, cls);
     }
 
-    public GeneratedJavaFile(GeneratedJavaFile superType, String pkg, String cls) {
+    @SuppressWarnings("unchecked")
+    public GeneratedJavaFile(GeneratedUiComponent owner, GeneratedJavaFile superType, String pkg, String cls) {
+        this.owner = owner;
         source = Lazy.deferred1(this::createSource);
         suffix = prefix = "";
         this.packageName = pkg;
@@ -149,5 +153,9 @@ public class GeneratedJavaFile {
                     .createSetter(Modifier.PUBLIC);
             }
         }
+    }
+
+    public GeneratedUiComponent getOwner() {
+        return owner;
     }
 }

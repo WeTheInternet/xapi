@@ -3,6 +3,7 @@ package xapi.dev.ui.api;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.TypeExpr;
+import com.github.javaparser.ast.expr.UiContainerExpr;
 import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
@@ -29,19 +30,23 @@ import static xapi.fu.Out2.out2Immutable;
 public class GeneratedUiImplementation extends GeneratedUiLayer {
 
     public enum RequiredMethodType {
-        NEW_BUILDER, CREATE_FROM_MODEL, CREATE_FROM_STYLE, CREATE, CREATE_FROM_MODEL_AND_STYLE
+        NEW_BUILDER, CREATE_FROM_MODEL, CREATE_FROM_STYLE, CREATE, CREATE_NATIVE, CREATE_FROM_MODEL_AND_STYLE
     }
 
     protected final String apiName;
     protected final String implName;
     private final EnumMap<RequiredMethodType, Out2<GeneratedUiMethod, MethodCallExpr>> requiredMethods;
 
-    public GeneratedUiImplementation(String pkg, GeneratedUiApi api, GeneratedUiBase base) {
-        super(base, pkg, api.getTypeName());
-        apiName = api.getWrappedName();
-        implName = base.getWrappedName();
+    public GeneratedUiImplementation(GeneratedUiComponent owner, String pkg) {
+        super(owner.getApi(), pkg, owner.getApi().getTypeName(), ImplLayer.Impl, owner);
+        apiName = owner.getApi().getWrappedName();
+        implName = owner.getBase().getWrappedName();
         setSuffix("Component");
         requiredMethods = new EnumMap<>(RequiredMethodType.class);
+    }
+
+    public String getAttrKey() {
+        return "fallback";
     }
 
     @Override
@@ -80,23 +85,20 @@ public class GeneratedUiImplementation extends GeneratedUiLayer {
         GeneratedUiComponent source = call.getExtra(UiConstants.EXTRA_SOURCE_COMPONENT);
         assert source != null : "A requiredMethod's MethodCallExpr argument must have UiConstants.EXTRA_SOURCE_COMPONENT set to the component " +
             "which owns this method call.  Bad method: " + gen.tools().debugNode(call);
+        assert method.getOwner() == source : "Can remove EXTRA_SOURCE_COMPONENT hack?";
         GeneratedUiImplementation bestImpl = source.getBestImpl(this);
         final ApiGeneratorContext<?> ctx = method.getContext();
         final String typeName;
         final Expression memberType = new TypeExpr(method.getMemberType());
         switch (key) {
             case CREATE:
-                typeName = gen.tools().resolveString(ctx, memberType);
-                break;
             case CREATE_FROM_MODEL:
-                typeName = gen.tools().resolveString(ctx, memberType);
-                break;
             case CREATE_FROM_MODEL_AND_STYLE:
-                typeName = gen.tools().resolveString(ctx, memberType);
-                break;
             case CREATE_FROM_STYLE:
                 typeName = gen.tools().resolveString(ctx, memberType);
                 break;
+            case CREATE_NATIVE:
+
             case NEW_BUILDER:
                 // TODO remove manual newBuilder wiring and let us handle that here.
                 return;
@@ -178,5 +180,15 @@ public class GeneratedUiImplementation extends GeneratedUiLayer {
             return 100;
         }
         return 0;
+    }
+
+    public void addNativeMethod(UiNamespace namespace, GeneratedUiMethod method, UiContainerExpr n) {
+
+        final MethodBuffer out = getSource().getClassBuffer()
+            .createMethod(method.toSignature(this, n))
+            .addAnnotation(Override.class);
+        //        requireMethod(RequiredMethodType.CREATE, method);
+        out.println("return newBuilder()")
+            .indentln(".setTagName(\"input\");");
     }
 }

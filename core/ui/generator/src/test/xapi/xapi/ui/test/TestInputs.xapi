@@ -1,0 +1,46 @@
+<define-tag
+    name = "TestInput"
+    tagName = "test-input"
+    model =
+    {
+        textInput: ModelInputText.class,
+    }
+    api =
+    @Import("xapi.ui.edit.*")
+    [
+    public TextInput getTextInput() {
+        TextInput txt = $model.getTextInput();
+        if (txt == null) {
+             txt = getRef(TextInput.class, "txt").getModel();
+             $model.setTextInput(txt);
+        }
+        return txt;
+    }
+    ,
+
+    public void setText(String txt) {
+        getTextInput().setValue(txt);
+    }
+    ,
+
+    public String getText() {
+        return getTextInput().getValue();
+    }
+
+    ]
+    impl =
+    [
+        private HasWtiStyle resources;, // ugh;, semicolon comma on purpose. , is for json array parser.
+        // Java and Json both understand , and it is invalid during a field declaration;
+        // Either make it a statement w/ semi-colon, or use (parens) to scope java code.
+        public WtiStyle getStyle() {
+            return resources.css();
+            }
+    ]
+
+    ui =
+        <box>
+            <input-text ref="txt" value="Starting text" placeholder="Placeholder" />
+        </box>
+
+    /define-tag>

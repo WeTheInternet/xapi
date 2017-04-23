@@ -9,9 +9,10 @@ import xapi.source.read.JavaModel.IsTypeDefinition;
 public class GeneratedUiBase extends GeneratedUiLayer {
 
     private final String apiName;
+    private String nameNode;
 
-    public GeneratedUiBase(GeneratedUiApi api) {
-        super(api, api.getPackageName(), api.getTypeName());
+    public GeneratedUiBase(GeneratedUiComponent owner, GeneratedUiApi api) {
+        super(api, api.getPackageName(), api.getTypeName(), ImplLayer.Base, owner);
         this.apiName = api.getWrappedName();
     }
 
@@ -39,4 +40,12 @@ public class GeneratedUiBase extends GeneratedUiLayer {
     protected IsTypeDefinition definition() {
         return IsTypeDefinition.newClass(getPackageName(), getWrappedName());
     }
+
+    @Override
+    public String getElementType(UiNamespace namespace) {
+        // We want to force the base node type to come before the element type
+        getNodeType(namespace);
+        return super.getElementType(namespace);
+    }
+
 }

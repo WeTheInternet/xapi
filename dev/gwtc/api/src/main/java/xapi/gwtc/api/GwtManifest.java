@@ -13,6 +13,8 @@ import xapi.fu.iterate.SingletonIterator;
 import xapi.log.X_Log;
 import xapi.source.X_Source;
 
+import java.util.Iterator;
+
 import static xapi.collect.X_Collect.*;
 import static xapi.fu.Immutable.immutable1;
 import static xapi.fu.In2.in2;
@@ -21,8 +23,6 @@ import static xapi.gwtc.api.GwtManifest.CleanupMode.DELETE_ON_SUCCESSFUL_EXIT;
 
 import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.dev.codeserver.JobEvent.CompileStrategy;
-
-import java.util.Iterator;
 
 public class GwtManifest {
 
@@ -162,6 +162,7 @@ public class GwtManifest {
   private boolean online;
   private MethodNameMode mode;
   private boolean incremental;
+  private String relativeRoot;
 
   public GwtManifest() {
     includeGenDir = true;
@@ -817,8 +818,7 @@ public class GwtManifest {
 
   @Override
   public String toString() {
-    assert moduleName != null : "ModuleName is the only field that cannot be null";
-    StringBuilder b = new StringBuilder(moduleName);
+    StringBuilder b = new StringBuilder(moduleName == null ? "null" + "GwtModule" : moduleName);
     b.append(":");
     if (deployDir != null) {
       b.append(NEW_LINE).append(ARG_DEPLOY_DIR).append(": ").append(deployDir);
@@ -1039,5 +1039,13 @@ public class GwtManifest {
     // when using a java main, it should send back a response on success
     // containing the actual directories and mappings to use.
     return compileDirectory;
+  }
+
+  public String getRelativeRoot() {
+    return relativeRoot;
+  }
+
+  public void setRelativeRoot(String relativeRoot) {
+    this.relativeRoot = relativeRoot;
   }
 }

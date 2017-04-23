@@ -428,10 +428,10 @@ public class UiTagGenerator extends UiComponentGenerator {
         Do start = ctx.addToContext("$Self", templateLiteral(cls.getWrappedName()));
         start = start.doAfter(ctx.addToContext("$this", templateLiteral(cls.getWrappedName() + ".this")));
         start = start.doAfter(ctx.addToContext("$Api", templateLiteral(
-            component.getApi().getTypeName()
+            component.getApi().getWrappedName()
         )));
         start = start.doAfter(ctx.addToContext("$Base", templateLiteral(
-            component.getBase().getTypeName()
+            component.getBase().getWrappedName()
         )));
 
         if (rootRefField != null) {
@@ -452,9 +452,9 @@ public class UiTagGenerator extends UiComponentGenerator {
 
     protected MethodBuffer toDomMethod(
         UiNamespace namespace,
-        GeneratedUiLayer ui,
-        ClassBuffer output
+        GeneratedUiLayer ui
     ) {
+        ClassBuffer output = ui.getSource().getClassBuffer();
         String builderType = output.addImport(ui.getElementBuilderType(namespace));
         // TODO check if this builderType expects generics...
         final MethodBuffer method = output.createMethod("public " + builderType + " toDom()");

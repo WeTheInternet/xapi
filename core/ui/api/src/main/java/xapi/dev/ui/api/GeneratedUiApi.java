@@ -8,10 +8,10 @@ import xapi.source.read.JavaModel.IsTypeDefinition;
  */
 public class GeneratedUiApi extends GeneratedUiLayer {
 
-    boolean shouldSave = false;
+    private boolean shouldSave = false;
 
-    public GeneratedUiApi(String packageName, String className) {
-        super(packageName, className);
+    public GeneratedUiApi(GeneratedUiComponent owner, String packageName, String className) {
+        super(packageName, className, ImplLayer.Api, owner);
         suffix = "Component";
         setType(IsTypeDefinition.newInterface(packageName, className));
     }
@@ -41,4 +41,5 @@ public class GeneratedUiApi extends GeneratedUiLayer {
     protected IsTypeDefinition definition() {
         return IsTypeDefinition.newInterface(getPackageName(), getWrappedName());
     }
+
 }
