@@ -6,6 +6,7 @@ import xapi.fu.In1;
 import xapi.fu.In1Out1;
 import xapi.fu.MappedIterable;
 import xapi.fu.has.HasItems;
+import xapi.fu.iterate.SizedIterable;
 
 import java.util.Deque;
 import java.util.Iterator;
@@ -56,8 +57,8 @@ extends CollectionProxy<Integer,T>, HasItems<T>
   Iterable<T> forEach();
 
   @Override
-  default MappedIterable<T> forEachItem() {
-    return MappedIterable.mapped(forEach());
+  default SizedIterable<T> forEachItem() {
+    return SizedIterable.of(this::size, forEach());
   }
 
   boolean add(T item);

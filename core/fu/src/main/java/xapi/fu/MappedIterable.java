@@ -513,4 +513,12 @@ public interface MappedIterable<T> extends Iterable<T> {
         }
         return !itr.hasNext();
     }
+
+    default SizedIterable<T> promisedSize(int size) {
+        return SizedIterable.of(size, this);
+    }
+
+    default SizedIterable<T> promisedSize(Out1<Integer> size) {
+        return SizedIterable.of(size, this);
+    }
 }
