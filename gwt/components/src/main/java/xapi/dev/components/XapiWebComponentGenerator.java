@@ -98,11 +98,12 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
             result.updateSupertype(superType);
             // Now lets provide local definitions for base and api;
             // TODO: check for impl supertypes before hardcoding base
+            ReferenceType type = generator.getDefaultComponentType(this, result);
             base.addLocalDefinition(UiNamespace.TYPE_BASE, new ReferenceType(new ClassOrInterfaceType(
                 superType.getName(base)
             ).addTypeArgs(
                 nodeType,
-                new WildcardType(new ReferenceType(nodeType)),
+                new WildcardType(new ReferenceType(nodeType))
 
                 )
             )
