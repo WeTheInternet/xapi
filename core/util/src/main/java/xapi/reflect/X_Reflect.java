@@ -9,21 +9,16 @@ import xapi.reflect.service.ReflectionService;
 import xapi.util.X_Runtime;
 import xapi.util.X_String;
 
-import static xapi.util.X_String.joinClasses;
-
 import javax.inject.Inject;
 import javax.inject.Provider;
-import java.lang.reflect.AccessibleObject;
-import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.TypeVariable;
+import java.io.IOException;
+import java.lang.reflect.*;
 import java.net.URL;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
+import java.util.Enumeration;
+
+import static xapi.util.X_String.joinClasses;
 
 /**
  * A set of static accessor classes to enable reflection in gwt.
@@ -1222,4 +1217,43 @@ public class X_Reflect {
       // actually, your course of action is to change the code which calls this method.
       return null;
     }
+
+  public static String getSourceLoc(Class<?> cls) {
+    final ClassLoader cl = Thread.currentThread().getContextClassLoader();
+    final String srcName = cls.getName().replace('.', '/') + ".java";
+    URL sourceFile = cl.getResource(srcName);
+    String loc;
+    if (sourceFile == null) {
+      loc = X_Reflect.getFileLoc(cls);
+    } else {
+      loc = sourceFile.toExternalForm().replace("file:", "").replace(srcName, "");
+      if (loc.endsWith("classes/")) {
+        // there might be a source file in our classes folder,
+        // so keep looking a file based
+        try {
+          final Enumeration<URL> choices = cl.getResources(srcName);
+          while (choices.hasMoreElements()) {
+            sourceFile = choices.nextElement();
+            loc = sourceFile.toExternalForm().replace("file:", "").replace(srcName, "");
+            if (!loc.endsWith("classes/")) {
+              // it doesn't end in classes; it's probably the source we are looking for
+              return loc;
+            }
+          }
+        } catch (IOException ignored) {}
+      }
+
+    }
+    if (loc != null && loc.endsWith("classes/")) {
+      int ind = loc.lastIndexOf('/', loc.length() - 8);
+      if (ind != -1) {
+        loc = loc.substring(0, ind);
+      }
+      // handle target/test-classes suffix (chop back to trailing \)
+      if (loc.endsWith("/target")) {
+        loc = loc.substring(0, loc.length() - 7);
+      }
+    }
+    return loc;
+  }
 }

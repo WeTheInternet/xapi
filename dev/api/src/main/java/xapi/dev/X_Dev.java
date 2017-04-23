@@ -1,16 +1,18 @@
 package xapi.dev;
 
-import java.io.File;
-import java.net.MalformedURLException;
-import java.net.URL;
-
 import xapi.dev.resource.impl.FileBackedResource;
 import xapi.dev.resource.impl.StringDataResource;
+import xapi.fu.X_Fu;
 import xapi.log.X_Log;
 import xapi.util.X_Debug;
 import xapi.util.X_Namespace;
 import xapi.util.X_Properties;
 import xapi.util.X_Util;
+
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
 
 public class X_Dev {
 
@@ -87,4 +89,15 @@ public class X_Dev {
     return urls;
   }
 
+    public static URL[] getUrls(ClassLoader cl) {
+        URL[] urls = new URL[0];
+        while (cl instanceof URLClassLoader) {
+            if (cl instanceof URLClassLoader) {
+                final URL[] moreUrls = ((URLClassLoader) cl).getURLs();
+                urls = X_Fu.concat(urls, moreUrls);
+            }
+            cl = cl.getParent();
+        }
+        return urls;
+    }
 }

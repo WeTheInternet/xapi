@@ -1,5 +1,18 @@
 package xapi.file.impl;
 
+import xapi.annotation.inject.SingletonDefault;
+import xapi.file.api.FileService;
+import xapi.fu.MappedIterable;
+import xapi.fu.has.HasSize;
+import xapi.fu.iterate.Chain;
+import xapi.fu.iterate.ChainBuilder;
+import xapi.fu.iterate.EmptyIterator;
+import xapi.fu.iterate.SingletonIterator;
+import xapi.io.X_IO;
+import xapi.log.X_Log;
+import xapi.source.X_Source;
+import xapi.util.X_Debug;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -13,13 +26,6 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
-
-import xapi.annotation.inject.SingletonDefault;
-import xapi.file.api.FileService;
-import xapi.io.X_IO;
-import xapi.log.X_Log;
-import xapi.source.X_Source;
-import xapi.util.X_Debug;
 
 @SingletonDefault(implFor=FileService.class)
 public class FileServiceImpl implements FileService {
@@ -37,7 +43,7 @@ public class FileServiceImpl implements FileService {
   static {
     Runtime.getRuntime().addShutdownHook(GC);
   }
-  
+
   @Override
   public File chmod(int chmod, File file) {
     assertValidChmod(chmod);
@@ -69,10 +75,29 @@ public class FileServiceImpl implements FileService {
     }
     return file;
   }
-  
+
   @Override
   public void delete(String kill, boolean recursive) {
     rm(kill, recursive);
+  }
+
+  @Override
+  public MappedIterable<String> getAllFiles(String file) {
+    final File f = new File(file);
+    ChainBuilder<String> files = Chain.startChain();
+    if (f.isDirectory()) {
+      for (String sub : f.list()) {
+        final MappedIterable<String> subFiles = getAllFiles(new File(f, sub).getAbsolutePath());
+        if (subFiles instanceof HasSize && ((HasSize)subFiles).size() == 0) {
+          continue;
+        }
+        files.addAll(subFiles);
+      }
+      return files;
+    } else if (f.isFile()){
+      return SingletonIterator.singleItem(file);
+    }
+    return EmptyIterator.none();
   }
 
   private static void rm(String kill, boolean recursive) {
@@ -125,7 +150,7 @@ public class FileServiceImpl implements FileService {
     }
     return f;
   }
-  
+
   @Override
   public String getPath(String path) {
     try {
@@ -134,7 +159,7 @@ public class FileServiceImpl implements FileService {
       return new File(path).getAbsolutePath();
     }
   }
-  
+
   @Override
   public String getFileMaybeUnzip(String file, int chmod) {
     File f = new File(file);
@@ -147,7 +172,7 @@ public class FileServiceImpl implements FileService {
     }
     return getPath(file);
   }
-  
+
   @Override
   public String getResourceMaybeUnzip(String resource, ClassLoader cl, int chmod) {
     if (cl == null) {
@@ -165,7 +190,7 @@ public class FileServiceImpl implements FileService {
         if (loc.contains("jar!")) {
           return unzip(resource, new JarFile(X_Source.stripJarName(loc)), chmod);
         } else {
-          String file = X_Source.stripFileName(loc); 
+          String file = X_Source.stripFileName(loc);
           chmod(chmod, new File(file));
           return file;
         }
@@ -180,12 +205,12 @@ public class FileServiceImpl implements FileService {
     }
     return null;
   }
-  
+
   @Override
   public boolean saveFile(String path, String fileName, String contents) {
     return saveFile(path, fileName, contents, "UTF-8");
   }
-  
+
   @Override
   public boolean saveFile(String path, String fileName, String contents, String charset) {
     File f = new File(path);
@@ -246,19 +271,19 @@ public class FileServiceImpl implements FileService {
   /**
    * This test is an APPROXIMATION of whether a given integer is hexadecimal,
    * and is used only in an assertion statement warding off malformed permissions.
-   * 
+   *
    * Any value > 777 and < 0x777 is automatically deemed valid;
    * after that, all we can do is check each number's 4th bit, (chmod & 888 == 0)
-   * 
+   *
    * @param chmod - The chmod value to check
    * @return true is this value COULD be a valid hexadecimal chmod.
    * returns chmod < 0x778 && (chmod & 888) == 0;
-   * 
+   *
    */
   protected static boolean isHexadecimalChmod(int chmod) {
     return chmod < 0x778 && ((chmod & 0x888) == 0);
   }
-  
+
   @Override
   public void mkdirsTransient(File dest) {
     if (!dest.exists()) {

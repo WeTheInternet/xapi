@@ -1,6 +1,7 @@
 package xapi.file;
 
 import xapi.file.api.FileService;
+import xapi.fu.MappedIterable;
 import xapi.inject.X_Inject;
 
 import javax.inject.Provider;
@@ -99,4 +100,8 @@ public class X_File {
       SERVICE.get().delete(dir, true);
     }
   }
+
+    public static MappedIterable<String> getAllFiles(String file) {
+      return SERVICE.get().getAllFiles(file);
+    }
 }
