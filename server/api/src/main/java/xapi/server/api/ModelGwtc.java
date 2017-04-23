@@ -37,7 +37,13 @@ public interface ModelGwtc extends Model {
     }
 
     default GwtManifest createManifest() {
-        return X_Inject.instance(GwtManifest.class);
+        final GwtManifest manifest = X_Inject.instance(GwtManifest.class);
+        final GwtcService service = getService();
+        if (service != null) {
+            String root = service.getSuggestedRoot();
+            manifest.setRelativeRoot(root);
+        }
+        return manifest;
     }
 
     default GwtcService createService() {

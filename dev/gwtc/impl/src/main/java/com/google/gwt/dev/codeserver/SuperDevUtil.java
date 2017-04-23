@@ -3,11 +3,6 @@ package com.google.gwt.dev.codeserver;
 import xapi.gwtc.api.GwtManifest;
 import xapi.log.X_Log;
 
-import com.google.gwt.core.ext.TreeLogger;
-import com.google.gwt.dev.MinimalRebuildCacheManager;
-import com.google.gwt.dev.javac.UnitCache;
-import com.google.gwt.dev.javac.UnitCacheSingleton;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -19,12 +14,17 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.google.gwt.core.ext.TreeLogger;
+import com.google.gwt.dev.MinimalRebuildCacheManager;
+import com.google.gwt.dev.javac.UnitCache;
+import com.google.gwt.dev.javac.UnitCacheSingleton;
+
 public class SuperDevUtil {
 
   private static final ConcurrentHashMap<String, RecompileController> compilers
     = new ConcurrentHashMap<String, RecompileController>();
 
-  public static RecompileController getOrMakeController(TreeLogger logger, GwtManifest manifest, int port) {
+  public static RecompileController getOrMakeController(TreeLogger logger, GwtManifest manifest) {
     String module = manifest.getModuleName();
     RecompileController ret = compilers.get(module);
     if (ret != null)  {
@@ -85,6 +85,9 @@ public class SuperDevUtil {
           src = src.substring(5);
         }
         File dir = new File(src);
+        if (!dir.isAbsolute()) {
+          dir = new File(manifest.getRelativeRoot() + File.separator + dir.getPath());
+        }
           if (dir.exists() ) {
               if (dir.isDirectory()) {
                   sourcePath.add(dir);

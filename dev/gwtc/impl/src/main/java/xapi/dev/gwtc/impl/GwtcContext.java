@@ -376,6 +376,7 @@ public class GwtcContext {
   private final Provider<ClasspathResourceMap> classpath;
   private final GwtcService gwtcService;
   private boolean debug = X_Runtime.isDebug();
+  private Class<?> firstClassAdded;
 
   public GwtcContext(GwtcService gwtcService, ClassLoader resourceLoader) {
     this.gwtcService = gwtcService;
@@ -403,6 +404,9 @@ public class GwtcContext {
 
   public boolean addClass(Class<?> cls) {
     if (finishedClasses.add(cls)) {
+      if (finishedClasses.size() == 1) {
+        firstClassAdded = cls;
+      }
       scanClass(cls);
       return true;
     } else {
@@ -922,4 +926,7 @@ public class GwtcContext {
     }
   }
 
+  public Class<?> getFirstClassAdded() {
+    return firstClassAdded;
+  }
 }

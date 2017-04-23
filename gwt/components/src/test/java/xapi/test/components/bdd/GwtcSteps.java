@@ -33,11 +33,12 @@ import xapi.dev.gwtc.impl.GwtcManifestImpl;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.dev.source.SourceBuilder.JavaType;
+import xapi.dev.ui.UiGeneratorServiceDefault;
 import xapi.dev.ui.api.ComponentBuffer;
 import xapi.dev.ui.api.GeneratedUiApi;
 import xapi.dev.ui.api.UiComponentGenerator;
 import xapi.dev.ui.api.UiGeneratorService;
-import xapi.dev.ui.UiGeneratorServiceDefault;
+import xapi.dev.ui.impl.ClasspathComponentGenerator;
 import xapi.dev.ui.impl.UiGeneratorVisitor;
 import xapi.dev.ui.tags.UiTagGenerator;
 import xapi.fu.In1;
@@ -52,6 +53,7 @@ import xapi.gwtc.api.GwtcXmlBuilder;
 import xapi.inject.X_Inject;
 import xapi.io.X_IO;
 import xapi.javac.dev.api.CompilerService;
+import xapi.javac.dev.model.CompilerSettings;
 import xapi.log.X_Log;
 import xapi.log.api.LogLevel;
 import xapi.source.X_Source;
@@ -61,6 +63,17 @@ import xapi.util.X_Namespace;
 import xapi.util.X_Properties;
 import xapi.util.X_String;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Optional;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static xapi.collect.X_Collect.toArray;
@@ -69,16 +82,6 @@ import static xapi.util.X_String.join;
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.ext.TreeLogger.Type;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
@@ -486,11 +489,38 @@ public class GwtcSteps {
 
   @Then("^confirm api source for \"([^\"]*)\" matches:$")
   public void confirmApiSourceForMatches(String source, List<String> expected) throws Throwable {
-    final ComponentBuffer component = generatedComponents.getOrSupply(source, () -> {
+    final ComponentBuffer component = generatedComponents.getOrSupplyUnsafe(source, () -> {
       throw new IllegalStateException("No component for " + source + " among: " + generatedComponents.keys());
     });
     final GeneratedUiApi api = component.getGeneratedComponent().getApi();
     String actual = api.getSource().toSource();
     fuzzyEquals(actual, expected);
+  }
+
+    @Given("^run classpath component generator$")
+    public void runClasspathComponentGenerator() throws Throwable {
+
+        final String loc = ClasspathComponentGenerator.genDir(getClass());
+        try {
+
+          ClasspathComponentGenerator gen = new ClasspathComponentGenerator(loc);
+          final UiGeneratorService service = new UiGeneratorServiceDefault();
+          gen.generateComponents(service);
+
+          System.out.println(gen);
+        } finally {
+
+        }
+    }
+
+  @Then("^compile generated code$")
+  public void compileGeneratedCode() throws Throwable {
+        final String loc = ClasspathComponentGenerator.genDir(getClass());
+        CompilerService compiler = X_Inject.singleton(CompilerService.class);
+        final CompilerSettings settings = compiler.defaultSettings();
+        settings.setOutputDirectory(loc);
+        settings.setSourceDirectory(loc);
+        final Out2<Integer, URL> result = compiler.compileFiles(settings, loc);
+        assertEquals(Integer.valueOf(0), result.out1());
   }
 }

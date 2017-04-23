@@ -36,7 +36,7 @@ public class RouteFeatureGenerator extends UiFeatureGenerator {
                 .addParameter("Request", "request")
                 .addParameter("In2<Request, Response>", "callback");
             this.ctx = container.getContext();
-            service.getGenerator().onFinish(Do.of(()->
+            service.getGenerator().onFinish(0, Do.of(()->
                 mb.returnValue("false")
             ));
         }

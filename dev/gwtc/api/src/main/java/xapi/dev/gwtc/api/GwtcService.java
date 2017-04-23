@@ -10,13 +10,13 @@ import xapi.fu.Out1;
 import xapi.gwtc.api.GwtManifest;
 import xapi.gwtc.api.ServerRecompiler;
 
-import com.google.gwt.core.client.RunAsyncCallback;
-import com.google.gwt.junit.client.GWTTestCase;
-import com.google.gwt.junit.tools.GWTTestSuite;
-
 import java.io.File;
 import java.lang.reflect.Method;
 import java.util.concurrent.TimeUnit;
+
+import com.google.gwt.core.client.RunAsyncCallback;
+import com.google.gwt.junit.client.GWTTestCase;
+import com.google.gwt.junit.tools.GWTTestSuite;
 
 public interface GwtcService {
 
@@ -45,4 +45,6 @@ public interface GwtcService {
   String inGeneratedDirectory(GwtManifest manifest, String filename);
   String modifyPackage(String pkgToUse);
   MethodBuffer getOnModuleLoad();
+
+  String getSuggestedRoot();
 }

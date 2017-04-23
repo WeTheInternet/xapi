@@ -9,6 +9,9 @@ import elemental.js.util.JsArrayOfNumber;
 import elemental.js.util.JsArrayOfString;
 import xapi.components.api.*;
 import xapi.fu.In1Out1;
+import xapi.ui.api.component.ComponentConstructor;
+import xapi.ui.api.component.ComponentOptions;
+import xapi.ui.api.component.IsComponent;
 
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.UnsafeNativeLong;
@@ -43,9 +46,26 @@ public class JsSupport {
     return defineTag(name, prototype, null);
   }
 
+
+  static class JsAdapter<E, C extends IsComponent<E, C>> implements In1Out1<ComponentOptions<E, C>, E> {
+
+    private final JavaScriptObject ctor;
+
+    protected JsAdapter(JavaScriptObject ctor){
+      this.ctor = ctor;
+    }
+
+    @Override
+    public native E io(ComponentOptions<E, C> opts)
+        /*-{
+          var make = this.@JsAdapter::ctor;
+          return new make(opts);
+        }-*/;
+  }
+
   public static ComponentConstructor defineTag(String name, JavaScriptObject prototype, ExtendsTag extendsTag) {
     final JavaScriptObject definition = customElements().define(name, prototype, extendsTag);
-    return new ComponentConstructor(prototype);
+    return new ComponentConstructor(new JsAdapter<>(prototype));
   }
 
   static ExtendsTag extendsTag(String tagName) {

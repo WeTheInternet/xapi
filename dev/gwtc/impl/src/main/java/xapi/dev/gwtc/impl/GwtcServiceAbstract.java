@@ -29,11 +29,6 @@ import xapi.reflect.X_Reflect;
 import xapi.util.X_Debug;
 import xapi.util.X_Namespace;
 
-import com.google.gwt.core.client.EntryPoint;
-import com.google.gwt.core.client.RunAsyncCallback;
-import com.google.gwt.junit.client.GWTTestCase;
-import com.google.gwt.junit.tools.GWTTestSuite;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -44,6 +39,11 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+
+import com.google.gwt.core.client.EntryPoint;
+import com.google.gwt.core.client.RunAsyncCallback;
+import com.google.gwt.junit.client.GWTTestCase;
+import com.google.gwt.junit.tools.GWTTestSuite;
 
 public abstract class GwtcServiceAbstract implements GwtcService {
 
@@ -463,5 +463,20 @@ public abstract class GwtcServiceAbstract implements GwtcService {
   @Override
   public MethodBuffer getOnModuleLoad() {
     return out.out;
+  }
+
+  @Override
+  public String getSuggestedRoot() {
+    Class<?> cls = context.getFirstClassAdded();
+    if (cls != null) {
+      while (cls.getEnclosingClass() != null) {
+        cls = cls.getEnclosingClass();
+      }
+      final String loc = X_Reflect.getSourceLoc(context.getFirstClassAdded());
+      if (loc != null) {
+        return loc;
+      }
+    }
+    return ".";
   }
 }

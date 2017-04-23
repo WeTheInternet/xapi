@@ -14,8 +14,13 @@ public class GeneratedWebComponent extends GeneratedUiImplementation {
     private final Lazy<UiNamespaceGwt> namespace;
 
     public GeneratedWebComponent(GeneratedUiComponent ui) {
-        super(ui.getPackageName(), ui.getApi(), ui.getBase());
+        super(ui, ui.getPackageName());
         namespace = Lazy.deferred1(()-> X_Inject.instance(UiNamespaceGwt.class));
+    }
+
+    @Override
+    public String getAttrKey() {
+        return "gwt";
     }
 
     @Override

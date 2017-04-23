@@ -18,9 +18,14 @@ import com.sun.tools.javac.util.Name;
 import xapi.annotation.inject.SingletonDefault;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
+import xapi.file.X_File;
 import xapi.fu.In1;
+import xapi.fu.MappedIterable;
 import xapi.fu.Out2;
 import xapi.fu.Rethrowable;
+import xapi.fu.X_Fu;
+import xapi.fu.iterate.ArrayIterable;
+import xapi.fu.iterate.SingletonIterator;
 import xapi.javac.dev.api.CompilerService;
 import xapi.javac.dev.api.JavacService;
 import xapi.javac.dev.api.SourceTransformationService;
@@ -44,6 +49,8 @@ import java.io.Writer;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 
 import static xapi.fu.In2.ignoreFirst;
@@ -72,6 +79,13 @@ public class CompilerServiceImpl implements CompilerService, Rethrowable {
 
   @Override
   public Out2<Integer, URL> compileFiles(CompilerSettings settings, String ... files) {
+    files = ArrayIterable.iterate(files)
+                 .map(file-> Files.isDirectory(Paths.get(file))
+                     ? X_File.getAllFiles(file) : SingletonIterator.singleItem(file)
+                 )
+                 .flatten(X_Fu::<MappedIterable<String>>identity)
+                 .filter(s->s.endsWith(".java"))
+                 .toArray(String[]::new);
     int result = com.sun.tools.javac.Main.compile(settings.toArguments(files), new PrintWriter(System.out));
     File f = new File(settings.getOutputDirectory());
     try {

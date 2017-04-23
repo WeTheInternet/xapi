@@ -168,8 +168,7 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
         logger.setMaxDetail(manifest.getLogLevel());
         final RecompileController compiler = SuperDevUtil.getOrMakeController(
             logger,
-            manifest,
-            manifest.getPort()
+            manifest
         );
 
         final CompiledDirectory result = compiler.recompile();
@@ -400,7 +399,7 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
   @Override
   public int compile(GwtManifest manifest) {
     return doCompile(manifest)
-      .io(120, TimeUnit.SECONDS);
+      .io(600, TimeUnit.SECONDS);
   }
 
   private boolean runtimeContainsClasspath(String genDir, String[] classpath) {
@@ -485,6 +484,9 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
         value = value.substring(0, replacement.start)
             + replacement.newValue+value.substring(replacement.end);
       }
+      if (!new File(value).isAbsolute()) {
+        value = manifest.getRelativeRoot() + File.separator + value;
+      }
       return singleItem(value);
     };
   }
@@ -495,15 +497,6 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
       case ABSOLUTE:
         return replaceLocationVars(manifest, dependency.value(), dep.getSource());
       case RELATIVE:
-        final Out1<MappedIterable<String>> i = replaceLocationVars(manifest, dependency.value(), dep.getSource())
-            .map(itr ->
-                {
-                  final MappedIterable<Iterable<String>> m = itr.map(item -> relativize(item, manifest, dep));
-                  final MappedIterable<String> n = m.flatten(In1Out1.identity());
-                  return n;
-                }
-            );
-
         return replaceLocationVars(manifest, dependency.value(), dep.getSource())
             .map(itr->
                 itr.map(item->relativize(item, manifest, dep))
@@ -563,8 +556,8 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
       fileLoc = res.toExternalForm().replace("file:", "").replaceAll("/target/(test-)?classes", "")
           .replace(pkgInfo, "");
     } else {
-      // TODO consider using the manifest for relativization of resources
-      fileLoc = new File("").getAbsolutePath();
+      // use the manifest for relativization of resources
+      fileLoc = new File(".").getAbsolutePath();
     }
     Path loc = Paths.get(fileLoc);
     if (item.isEmpty()) {
@@ -574,6 +567,9 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
                 .add(loc.resolve("src/main/resources").toString())
                 .build();
     } else {
+      if (!loc.isAbsolute()) {
+        loc = Paths.get(manifest.getRelativeRoot()).resolve(loc);
+      }
       return singleItem(loc.resolve(item).toString());
     }
   }

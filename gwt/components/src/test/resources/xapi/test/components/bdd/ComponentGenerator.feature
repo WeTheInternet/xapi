@@ -300,3 +300,7 @@ Feature: ComponentGenerator.feature: Transpile xapi templates into web component
     |   }                                                      |
     |                                                          |
     | }                                                        |
+
+    Scenario: Run classpath component generator
+      Given run classpath component generator
+      Then compile generated code
