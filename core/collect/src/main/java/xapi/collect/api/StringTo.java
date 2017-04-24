@@ -6,10 +6,11 @@ import xapi.fu.In1Out1.In1Out1Unsafe;
 import xapi.fu.MapLike;
 import xapi.fu.MappedIterable;
 import xapi.fu.Out2;
-
-import static xapi.fu.In2.in2;
+import xapi.fu.iterate.SizedIterable;
 
 import java.io.Serializable;
+
+import static xapi.fu.In2.in2;
 
 /**
  * StringTo is a special mapping interface,
@@ -47,13 +48,13 @@ extends HasValues<String,V>, Serializable, MapLike<String, V>
   }
 
   @Override
-  default MappedIterable<Out2<String, V>> forEachItem() {
+  default SizedIterable<Out2<String, V>> forEachItem() {
     return MapLike.super.forEachItem();
   }
 
   interface Many <V> extends StringTo<IntTo<V>>, HasMany<String, V> {
     @Override
-    default MappedIterable<Out2<String, IntTo<V>>> forEachItem() {
+    default SizedIterable<Out2<String, IntTo<V>>> forEachItem() {
       return HasMany.super.forEachItem();
     }
 

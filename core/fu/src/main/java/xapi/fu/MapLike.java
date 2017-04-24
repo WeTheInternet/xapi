@@ -5,6 +5,7 @@ import xapi.fu.Filter.Filter2;
 import xapi.fu.Out1.Out1Unsafe;
 import xapi.fu.has.HasItems;
 import xapi.fu.has.HasSize;
+import xapi.fu.iterate.SizedIterable;
 
 import static xapi.fu.iterate.EmptyIterator.NONE;
 
@@ -67,7 +68,7 @@ public interface MapLike<K, V> extends HasSize, HasItems<Out2<K, V>> {
   Iterable<K> keys();
 
   @Override
-  default MappedIterable<Out2<K, V>> forEachItem() {
+  default SizedIterable<Out2<K, V>> forEachItem() {
     return mappedOut();
   }
 
@@ -327,9 +328,10 @@ public interface MapLike<K, V> extends HasSize, HasItems<Out2<K, V>> {
     return existing;
   }
 
-  default MappedIterable<Out2<K, V>> mappedOut() {
+  default SizedIterable<Out2<K, V>> mappedOut() {
     return mappedKeys()
-        .map(key->Out2.out2Immutable(key, get(key)));
+        .map(key->Out2.out2Immutable(key, get(key)))
+        .promisedSize(this::size);
   }
 
   MapLike EMPTY = new MapLike() {

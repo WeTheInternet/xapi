@@ -1,6 +1,7 @@
 package xapi.fu;
 
 import xapi.fu.Filter.Filter1;
+import xapi.fu.In1.In1Unsafe;
 import xapi.fu.has.HasSize;
 import xapi.fu.iterate.ArrayIterable;
 import xapi.fu.iterate.CachingIterator;
@@ -373,6 +374,10 @@ public interface MappedIterable<T> extends Iterable<T> {
             }
         }
         return true;
+    }
+
+    default MappedIterable<T> forAllUnsafe(In1Unsafe<T> consumer) {
+        return forAll(consumer);
     }
 
     default MappedIterable<T> forAll(In1<T> consumer) {

@@ -3,8 +3,8 @@ package xapi.collect.api;
 import xapi.fu.Do;
 import xapi.fu.In1Out1;
 import xapi.fu.MapLike;
-import xapi.fu.MappedIterable;
 import xapi.fu.Out2;
+import xapi.fu.iterate.SizedIterable;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
@@ -20,7 +20,7 @@ public interface HasMany <K, V> extends HasValues<K, IntTo<V>>, MapLike<K, IntTo
   }
 
   @Override
-  default MappedIterable<Out2<K, IntTo<V>>> forEachItem() {
+  default SizedIterable<Out2<K, IntTo<V>>> forEachItem() {
     return MapLike.super.forEachItem();
   }
 

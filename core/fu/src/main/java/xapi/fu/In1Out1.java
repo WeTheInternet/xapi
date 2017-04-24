@@ -166,4 +166,12 @@ In1Out1<I, O> extends Rethrowable, Lambda {
     default In1Out1<I, O> lazy(In2Out1<I, In1Out1<I, O>, O> cache) {
       return i-> cache.io(i, this);
     }
+
+    default In1Out1<I, O> spyOut(In1<O> spy) {
+      return i-> {
+        final O o = io(i);
+        spy.in(o);
+        return o;
+      };
+    }
 }

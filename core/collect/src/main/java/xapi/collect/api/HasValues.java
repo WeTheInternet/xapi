@@ -4,6 +4,7 @@ import xapi.collect.impl.EntryIterable;
 import xapi.fu.In2Out1;
 import xapi.fu.Out2;
 import xapi.fu.has.HasSize;
+import xapi.fu.iterate.SizedIterable;
 
 import java.util.Map.Entry;
 
@@ -65,4 +66,20 @@ public interface HasValues<K,V> extends EntryIterable<K,V>, HasSize, HasEmptines
 
   Class<V> valueType();
 
+  default SizedIterable<V> forEachValue() {
+    return EntryIterable.super.forEachValue()
+        .promisedSize(this::size);
+  }
+
+  @Override
+  default SizedIterable<Out2<K, V>> forEachItem() {
+    return EntryIterable.super.forEachItem()
+        .promisedSize(this::size);
+  }
+
+  @Override
+  default SizedIterable<K> forEachKey() {
+    return EntryIterable.super.forEachKey()
+        .promisedSize(this::size);
+  }
 }
