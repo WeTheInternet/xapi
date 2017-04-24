@@ -82,6 +82,10 @@ public abstract class GeneratedUiLayer extends GeneratedJavaFile {
         localDefinitions.put(sysName, param);
     }
 
+    public boolean hasLocalDefinition(String sysName) {
+        return localDefinitions.containsKey(sysName);
+    }
+
     @Override
     protected SourceBuilder<GeneratedJavaFile> createSource() {
         final SourceBuilder<GeneratedJavaFile> source = super.createSource();
@@ -213,9 +217,12 @@ public abstract class GeneratedUiLayer extends GeneratedJavaFile {
 
     public String getGenericValue(GeneratedTypeParameter param) {
         // Check if this layer has a type provider for the requested type param.
-
         return getOwner().addGeneric(param.getSystemName(), param.getType())
             .setExposed(param.isExposed())
             .absorb(param.getType());
+    }
+
+    public ReferenceType getLocalDefinition(String systemName) {
+        return localDefinitions.get(systemName);
     }
 }

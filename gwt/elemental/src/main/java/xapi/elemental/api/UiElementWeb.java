@@ -14,8 +14,7 @@ import xapi.ui.impl.AbstractUiElement;
  */
 @InstanceDefault(implFor = UiElementWeb.class)
 public class UiElementWeb <E extends Element>
-    extends AbstractUiElement<Node, E, UiElementWeb<E>>
-    implements WebNode<E, UiElementWeb<E>> {
+    extends AbstractUiElement<Node, E, UiElementWeb<E>> {
 
   private static final String MEMOIZE_KEY = "xapi-element";
 

@@ -53,6 +53,10 @@ public final class Parameter extends BaseParameter implements TypedNode {
         classFactory = Immutable.immutable1(type);
     }
 
+    public Parameter(Type type, String id) {
+        this(type, new VariableDeclaratorId(id));
+    }
+
     public Parameter(Type type, VariableDeclaratorId id) {
     	super(id);
         setType(type);
@@ -67,6 +71,11 @@ public final class Parameter extends BaseParameter implements TypedNode {
         super(beginLine, beginColumn, endLine, endColumn, modifiers, annotations, id);
         setType(type);
         setVarArgs(isVarArgs);
+    }
+
+    public Parameter(String type, String name) {
+        // TODO actually parse this type
+        this(new ClassOrInterfaceType(type), new VariableDeclaratorId(name));
     }
 
     public Class<?> getTypeAsClass() {

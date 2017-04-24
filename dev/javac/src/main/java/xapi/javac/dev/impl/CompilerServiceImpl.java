@@ -79,12 +79,7 @@ public class CompilerServiceImpl implements CompilerService, Rethrowable {
 
   @Override
   public Out2<Integer, URL> compileFiles(CompilerSettings settings, String ... files) {
-    files = ArrayIterable.iterate(files)
-                 .map(file-> Files.isDirectory(Paths.get(file))
-                     ? X_File.getAllFiles(file) : SingletonIterator.singleItem(file)
-                 )
-                 .flatten(X_Fu::<MappedIterable<String>>identity)
-                 .filter(s->s.endsWith(".java"))
+    files =  javaFilesIn(files)
                  .toArray(String[]::new);
     int result = com.sun.tools.javac.Main.compile(settings.toArguments(files), new PrintWriter(System.out));
     File f = new File(settings.getOutputDirectory());
@@ -93,6 +88,16 @@ public class CompilerServiceImpl implements CompilerService, Rethrowable {
     } catch (MalformedURLException e) {
       throw rethrow (e);
     }
+  }
+
+  @Override
+  public MappedIterable<String> javaFilesIn(String ... files) {
+    return ArrayIterable.iterate(files)
+        .map(file-> Files.isDirectory(Paths.get(file))
+            ? X_File.getAllFiles(file) : SingletonIterator.singleItem(file)
+        )
+        .flatten(X_Fu::<MappedIterable<String>>identity)
+        .filter(s->s.endsWith(".java"));
   }
 
   @Override

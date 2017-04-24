@@ -4,6 +4,7 @@ import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.TaskListener;
 import xapi.fu.In1;
+import xapi.fu.MappedIterable;
 import xapi.fu.Out2;
 import xapi.inject.X_Inject;
 import xapi.javac.dev.model.CompilerSettings;
@@ -41,6 +42,8 @@ public interface CompilerService {
   }
 
   void init(JavacService service);
+
+  MappedIterable<String> javaFilesIn(String... files);
 
   void record(CompilationUnitTree cup, TypeElement typeElement);
 

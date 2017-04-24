@@ -18,13 +18,16 @@ Feature: ComponentGenerator.feature: Transpile xapi templates into web component
       | extends IsWebComponent<elemental.dom.Element> { } |
     And save generated source of component "test-component" as "UseTheSource"
     Then confirm source "UseTheSource" matches:
-      | package xapi.test.components.client;                                                                          |
+      | package xapi.test.components.client; |
+|                                                                                                               |
       |                                                                                                               |
       | import com.google.gwt.core.client.JavaScriptObject;                                                           |
       |                                                                                                               |
       | import java.util.function.Supplier;                                                                           |
       |                                                                                                               |
+      | import xapi.components.api.HasElemente_d_Element_JsFunctionAccess;                                            |
       | import xapi.components.api.IsWebComponente_d_Element_JsFunctionAccess;                                        |
+      | import xapi.components.api.JsoSupplier;                                                                       |
       | import xapi.components.api.WebComponentFactory;                                                               |
       | import xapi.components.impl.WebComponentBuilder;                                                              |
       | import xapi.components.impl.WebComponentSupport;                                                              |
@@ -33,12 +36,20 @@ Feature: ComponentGenerator.feature: Transpile xapi templates into web component
       | public final class TestComponent_WebComponentFactory implements WebComponentFactory<TestComponent> {          |
       |                                                                                                               |
       | private static native JavaScriptObject proto () /*-{                                                          |
-      | return Object.create(HTMLElement.prototype);                                                                  |
+      |   return Object.create(HTMLElement.prototype);                                                                  |
       | }-*/;                                                                                                         |
+      |                                                                                                               |
+      | private static WebComponentBuilder applyProperty_element (WebComponentBuilder builder) {                      |
+      |   builder.addProperty(CONST_ELEMENT,                                                                            |
+      |     new JsoSupplier(HasElemente_d_Element_JsFunctionAccess.get_element()),                                        |
+      |     null,                                                                                                         |
+      |     false, true);                                                                                                 |
+      |   return builder;                                                                                               |
+      | }                                                                                                             |
       |                                                                                                               |
       | private static WebComponentBuilder applyValue_element (WebComponentBuilder builder) {                         |
       | builder.addValue(CONST_ELEMENT, IsWebComponente_d_Element_JsFunctionAccess.element(null),false, true, false); |
-      | return builder;                                                                                               |
+      |   return builder;                                                                                               |
       | }                                                                                                             |
       |                                                                                                               |
       | private static Supplier<TestComponent> ctor;                                                                  |
@@ -46,19 +57,20 @@ Feature: ComponentGenerator.feature: Transpile xapi templates into web component
       | private static final String CONST_ELEMENT = "element";                                                        |
       |                                                                                                               |
       | public TestComponent newComponent () {                                                                        |
-      | return ctor.get();                                                                                            |
+      |   return ctor.get();                                                                                            |
       | }                                                                                                             |
       |                                                                                                               |
       | public String querySelector () {                                                                              |
-      | return "test-component";                                                                                      |
+      |   return "test-component";                                                                                      |
       | }                                                                                                             |
       | static {                                                                                                      |
-      | WebComponentBuilder builder = WebComponentBuilder.create(proto());                                            |
-      | applyValue_element(builder);                                                                                  |
-      | ctor = WebComponentSupport.register("test-component", builder.build());                                       |
+      |   WebComponentBuilder builder = WebComponentBuilder.create(proto());                                            |
+      |   applyProperty_element(builder);                                                                               |
+      |   applyValue_element(builder);                                                                                  |
+      |   ctor = WebComponentSupport.register("test-component", builder.build());                                       |
       | }                                                                                                             |
       |                                                                                                               |
-      | }                                                                                                             |
+      | }                                                                                                           |
 
 
   Scenario: Generate a component with a simple click handler
@@ -96,6 +108,7 @@ Feature: ComponentGenerator.feature: Transpile xapi templates into web component
       |                                                                                                               |
       | import java.util.function.Supplier;                                                                           |
       |                                                                                                               |
+      | import xapi.components.api.HasElemente_d_Element_JsFunctionAccess;                                            |
       | import xapi.components.api.IsWebComponente_d_Element_JsFunctionAccess;                                        |
       | import xapi.components.api.JsoConsumer;                                                                       |
       | import xapi.components.api.JsoSupplier;                                                                       |
@@ -111,6 +124,14 @@ Feature: ComponentGenerator.feature: Transpile xapi templates into web component
       | private static native JavaScriptObject proto () /*-{                                                          |
       | return Object.create(HTMLElement.prototype);                                                                  |
       | }-*/;                                                                                                         |
+      |                                                                                                               |
+      | private static WebComponentBuilder applyProperty_element (WebComponentBuilder builder) {                      |
+      | builder.addProperty(CONST_ELEMENT,                                                                            |
+      | new JsoSupplier(HasElemente_d_Element_JsFunctionAccess.get_element()),                                        |
+      | null,                                                                                                         |
+      | false, true);                                                                                                 |
+      | return builder;                                                                                               |
+      | }                                                                                                             |
       |                                                                                                               |
       | private static WebComponentBuilder applyValue_element (WebComponentBuilder builder) {                         |
       | builder.addValue(CONST_ELEMENT, IsWebComponente_d_Element_JsFunctionAccess.element(null),false, true, false); |
@@ -150,12 +171,12 @@ Feature: ComponentGenerator.feature: Transpile xapi templates into web component
       | }                                                                                                             |
       | static {                                                                                                      |
       | WebComponentBuilder builder = WebComponentBuilder.create(proto());                                            |
+      | applyProperty_element(builder);                                                                               |
       | applyValue_element(builder);                                                                                  |
       | applyProperty_onClick(builder);                                                                               |
       | applyProperty_world(builder);                                                                                 |
-      | builder.addShadowRoot("<box\n    text = \"Hello $world\"\n                                                    |
-      | id = \"gen1\"/>"                                                                                              |
-      | , (host, shadow) -> {                                                                                                 |
+      | builder.addShadowRoot("<box\n  text = \"Hello $world\"\n  id = \"gen1\"/>"                                    |
+      | , (host, shadow) -> {                                                                                         |
       | UiService $ui = UiService.getUiService();                                                                     |
       | TestComponent $this = (TestComponent) $ui.getHost(shadow);                                                    |
       | Element gen1 = shadow.querySelector("#gen1");                                                                 |
@@ -166,6 +187,7 @@ Feature: ComponentGenerator.feature: Transpile xapi templates into web component
       | });                                                                                                           |
       | ctor = WebComponentSupport.register("test-component", builder.build());                                       |
       | }                                                                                                             |
+      |                                                                                                               |
       | }                                                                                                             |
 
   Scenario:  Create a TODO list app
@@ -290,6 +312,7 @@ Feature: ComponentGenerator.feature: Transpile xapi templates into web component
     | package xapi.test.pkg;                               |
     |                                                          |
     | import xapi.components.api;                               |
+    | import xapi.ui.api.component.IsComponent;                            |
     |                                                          |
     | public interface ToDosComponent {                                 |
     |                                                          |

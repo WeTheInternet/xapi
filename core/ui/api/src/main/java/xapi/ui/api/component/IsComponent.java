@@ -1,9 +1,6 @@
 package xapi.ui.api.component;
 
-import xapi.fu.MappedIterable;
-import xapi.fu.Maybe;
-import xapi.fu.X_Fu;
-import xapi.util.X_Util;
+import xapi.fu.iterate.SizedIterable;
 
 /**
  * Successor to xapi-components module's IsWebComponent interface,
@@ -17,38 +14,28 @@ import xapi.util.X_Util;
  */
 public interface IsComponent
     <
-        RawElement,
-        Self extends IsComponent<RawElement, Self>
+        /**
+         * Raw node; the lowest common denominator of generated api.
+         * Your parent and child nodes must be derived from this type
+         */
+        Node,
+        /**
+         * Specific node; the final incarnation of generated api
+         */
+        El extends Node
     >
 {
 
-    RawElement getElement();
+    El getElement();
 
-    Self getUi();
+    IsComponent<Node, ? extends Node> getParentComponent();
 
-    IsComponent<?, ?> getParentComponent();
+    SizedIterable<IsComponent<Node, ? extends Node>> getChildComponents();
 
-    MappedIterable<IsComponent<?, ?>> getChildComponents();
+    void setParentComponent(IsComponent<Node, ? extends Node> parent);
 
-    void setParentComponent(IsComponent<?, ?> parent);
+    void addChildComponent(IsComponent<Node, ? extends Node> child);
 
-    void addChildComponent(IsComponent<?, ?> child);
-
-    default <E, C extends IsComponent<E, C>> C getRefOrNull(String refName){
-        final Maybe is = getRef(IsComponent.class, refName);
-        return ((Maybe<C>)is).ifAbsentReturn(null);
-    }
-
-    default <E, C extends IsComponent<E, C>> Maybe<C> getRef(
-        Class<C> clazz, String refName) {
-
-        return getChildComponents()
-            .map1(X_Fu::cast, clazz)
-            .firstMatch(c -> X_Util.equal(
-            c.getRefName(),
-            refName
-        ));
-    }
 
     String getRefName();
 

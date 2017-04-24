@@ -2,6 +2,7 @@ package xapi.dev.ui.api;
 
 import com.github.javaparser.ast.TypeParameter;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
+import com.github.javaparser.ast.type.ReferenceType;
 import xapi.dev.source.CanAddImports;
 import xapi.dev.ui.api.GeneratedUiLayer.ImplLayer;
 import xapi.fu.MappedIterable;
@@ -104,7 +105,7 @@ public class GeneratedTypeParameter {
             name = namespace.loadFromNamespace(systemName, out)
                      .ifAbsentSupply(type::getName);
         } else {
-            name = type.getName();
+            return type.toString();
         }
         if (UiNamespace.TYPE_SELF.equals(name)) {
             // When requesting a self type, we want to add the known bounds of the given layer.
@@ -160,5 +161,20 @@ public class GeneratedTypeParameter {
     public GeneratedTypeParameter setAddOwnTypeNames() {
         addOwnTypeNames = true;
         return this;
+    }
+
+    @Override
+    public String toString() {
+        return "GeneratedTypeParameter{" +
+            "systemName='" + systemName + '\'' +
+            ", type=" + type +
+            ", implNames=" + implNames +
+            ", exposed=" + exposed +
+            ", addOwnTypeNames=" + addOwnTypeNames +
+            '}';
+    }
+
+    public ReferenceType getReferenceType() {
+        return new ReferenceType(type.getName());
     }
 }

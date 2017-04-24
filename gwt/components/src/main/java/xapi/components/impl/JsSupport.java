@@ -47,7 +47,7 @@ public class JsSupport {
   }
 
 
-  static class JsAdapter<E, C extends IsComponent<E, C>> implements In1Out1<ComponentOptions<E, C>, E> {
+  static class JsAdapter<N, E extends N, C extends IsComponent<N, E>> implements In1Out1<ComponentOptions<N, E, C>, E> {
 
     private final JavaScriptObject ctor;
 
@@ -56,7 +56,7 @@ public class JsSupport {
     }
 
     @Override
-    public native E io(ComponentOptions<E, C> opts)
+    public native E io(ComponentOptions<N, E, C> opts)
         /*-{
           var make = this.@JsAdapter::ctor;
           return new make(opts);

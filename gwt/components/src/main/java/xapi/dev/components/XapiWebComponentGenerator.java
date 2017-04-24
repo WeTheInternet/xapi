@@ -2,12 +2,12 @@ package xapi.dev.components;
 
 import com.github.javaparser.ast.TypeArguments;
 import com.github.javaparser.ast.TypeParameter;
+import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.ReferenceType;
 import com.github.javaparser.ast.type.Type;
-import com.github.javaparser.ast.type.WildcardType;
 import elemental.dom.Element;
 import elemental.dom.Node;
 import elemental.html.StyleElement;
@@ -19,7 +19,6 @@ import xapi.components.impl.WebComponentVersion;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.ui.api.*;
-import xapi.dev.ui.api.GeneratedUiLayer.ImplLayer;
 import xapi.dev.ui.api.UiComponentGenerator.UiGenerateMode;
 import xapi.dev.ui.impl.AbstractUiImplementationGenerator;
 import xapi.dev.ui.impl.InterestingNodeFinder.InterestingNodeResults;
@@ -27,18 +26,16 @@ import xapi.fu.In1Out1;
 import xapi.fu.Lazy;
 import xapi.fu.MapLike;
 import xapi.fu.Maybe;
+import xapi.fu.Out1;
 import xapi.inject.X_Inject;
 import xapi.platform.GwtPlatform;
 import xapi.ui.api.StyleAssembler;
-import xapi.ui.api.UiNode;
 import xapi.ui.api.component.ComponentConstructor;
 import xapi.ui.api.component.ComponentOptions;
 import xapi.ui.api.component.IsComponent;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import com.google.gwt.resources.client.ClientBundle;
@@ -67,24 +64,19 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
 
             final String nodeName = base.getNodeType(baseNs);
             final String eleName = base.getElementType(baseNs);
-            final String baseName = base.getBaseType(baseNs);
-            final String apiName = base.getApiType(baseNs);
-            final String uiNode = baseOut.addImport(UiNode.class);
             List<Type> types = new ArrayList<>();
-            final ClassOrInterfaceType uiNodeType = new ClassOrInterfaceType(uiNode);
-            final ClassOrInterfaceType nodeType = new ClassOrInterfaceType(nodeName);
-            types.add(nodeType);
-            types.add(new WildcardType(new ReferenceType(nodeType)));
-            types.add(new ClassOrInterfaceType(baseName));
-            uiNodeType.setTypeArguments(TypeArguments.withArguments(types));
 
-            final ClassOrInterfaceType eleType = new ClassOrInterfaceType(eleName);
+            final ClassOrInterfaceType rawEle = new ClassOrInterfaceType(eleName);
+            final ClassOrInterfaceType nodeType = new ClassOrInterfaceType(nodeName);
             final String componentName = baseOut.addImport(IsComponent.class);
-            final ClassOrInterfaceType componentType = new ClassOrInterfaceType(componentName);
-            types = new ArrayList<>();
-            types.add(eleType);
-            types.add(new ClassOrInterfaceType(apiName));
-            componentType.setTypeArguments(TypeArguments.withArguments(types));
+            final ClassOrInterfaceType apiSuperType = new ClassOrInterfaceType(componentName);
+            final ClassOrInterfaceType apiType = new ClassOrInterfaceType(api.getWrappedName());
+            types.add(nodeType);
+            types.add(rawEle);
+            apiSuperType.setTypeArguments(TypeArguments.withArguments(types));
+            apiType.setTypeArguments(TypeArguments.withArguments(types));
+            // provide local definitions for api.  TODO: also provide base type now?
+            result.addGlobalDefinition(UiNamespace.TYPE_API, new ReferenceType(apiType));
 
             final TypeParameter nodeParam = new TypeParameter(nodeName);
             String abstractCompPkg = AbstractComponent.class.getPackage().getName();
@@ -92,37 +84,53 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
             final GeneratedUiSupertype superType = new GeneratedUiSupertype(result, abstractCompPkg, abstractCompName,
                 new GeneratedTypeParameter(UiNamespace.TYPE_NODE, nodeParam),
                 new GeneratedTypeParameter(UiNamespace.TYPE_ELEMENT, new TypeParameter(eleName, nodeType)),
-                new GeneratedTypeParameter(UiNamespace.TYPE_BASE, new TypeParameter(baseName, uiNodeType)),
-                new GeneratedTypeParameter(UiNamespace.TYPE_API, new TypeParameter(apiName, componentType))
+                new GeneratedTypeParameter(UiNamespace.TYPE_API, new TypeParameter(UiNamespace.TYPE_API, apiType))
             );
             result.updateSupertype(superType);
-            // Now lets provide local definitions for base and api;
-            // TODO: check for impl supertypes before hardcoding base
-            ReferenceType type = generator.getDefaultComponentType(this, result);
-            base.addLocalDefinition(UiNamespace.TYPE_BASE, new ReferenceType(new ClassOrInterfaceType(
-                superType.getName(base)
-            ).addTypeArgs(
-                nodeType,
-                new WildcardType(new ReferenceType(nodeType))
 
-                )
-            )
+            superType.requireConstructor(new Parameter(UiNamespace.TYPE_ELEMENT, UiNamespace.TYPE_ELEMENT));
+
+            final String o1 = baseOut.addImport(Out1.class);
+            ClassOrInterfaceType out1 = new ClassOrInterfaceType(o1);
+            out1.setTypeArguments(TypeArguments.withArguments(rawEle));
+            superType.requireConstructor(new Parameter(out1, UiNamespace.TYPE_ELEMENT));
+
+            types = new ArrayList<>();
+            types.add(nodeType);
+            types.add(rawEle);
+            types.add(apiType);
+
+            String opts = baseOut.addImport(ComponentOptions.class);
+            String ctor = baseOut.addImport(ComponentConstructor.class);
+
+            final ClassOrInterfaceType optsType = new ClassOrInterfaceType(opts);
+            final ClassOrInterfaceType ctorType = new ClassOrInterfaceType(ctor);
+
+            optsType.setTypeArguments(TypeArguments.withArguments(types));
+            ctorType.setTypeArguments(TypeArguments.withArguments(types));
+
+            superType.requireConstructor(
+                new Parameter(optsType, "opts"),
+                new Parameter(ctorType, "ctor")
             );
 
-
+            final String apiNode = api.getNodeType(baseNs);
             final String apiEle = api.getElementType(baseNs);
-            final GeneratedTypeParameter generic = result.addGeneric(
-                UiNamespace.TYPE_ELEMENT,
-                new TypeParameter(apiEle)
+            final GeneratedTypeParameter apiNodeParam = result.addGeneric(
+                UiNamespace.TYPE_NODE,
+                new TypeParameter(apiNode)
             );
-            generic.setExposed(true);
+            final GeneratedTypeParameter apiEleParam = result.addGeneric(
+                UiNamespace.TYPE_ELEMENT,
+                new TypeParameter(apiEle, nodeType)
+            );
+            apiEleParam.setExposed(true);
             String isCompPkg = IsComponent.class.getPackage().getName();
             String isCompName = IsComponent.class.getSimpleName();
-            String name = api.getSource().addImport(IsComponent.class);
+            api.getSource().addImport(IsComponent.class);
             final GeneratedUiSupertype superInterface = new GeneratedUiSupertype(result, isCompPkg, isCompName,
-                new GeneratedTypeParameter(UiNamespace.TYPE_ELEMENT, new TypeParameter(apiEle)),
-                new GeneratedTypeParameter(UiNamespace.TYPE_SELF, new TypeParameter(api.getWrappedName())
-                ).setAddOwnTypeNames()
+                new GeneratedTypeParameter(UiNamespace.TYPE_NODE, apiNodeParam.getType()),
+                new GeneratedTypeParameter(UiNamespace.TYPE_ELEMENT, apiEleParam.getType())
             );
 
             result.addSuperInterface(superInterface);
@@ -183,17 +191,15 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
         String ctor = out.addImport(ComponentConstructor.class);
         final String type = out.getSimpleName();
         final GeneratedUiComponent generated = buffer.getGeneratedComponent();
-        final UiGeneratorService gen = getGenerator();
 
-        String apiType = generated.getApi().getTypeWithGenerics(ImplLayer.Impl, gen, ns, out);
-
+        final GeneratedUiApi api = component.getOwner().getApi();
         // TODO different supertypes based on needs
-        final String apiGenerics = "<" + element + ", " + apiType + ">";
+        final String apiGenerics = "<" + node + ", " + element + ", " + api.getWrappedName() + "<" + node+", " + element + ">>";
 
         String ctorName = "NEW_" + generated.getTagName().toUpperCase().replace('-', '_');
         out.createField(ctor + apiGenerics, ctorName)
             .makeStatic().makePrivate();
-        out.createField(i1o1+apiGenerics, "getUi").makeStatic().makePrivate();
+        out.createField(i1o1+apiGenerics.replaceFirst(node+", ", ""), "getUi").makeStatic().makePrivate();
 
         out.createConstructor(Modifier.PUBLIC, element+" el")
             .println("super(el);");
@@ -223,27 +229,6 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
         // then remove the corresponding call in AbstractWtiComponent (private project)
         // JsSupport.setFactory(element, this, ComponentNamespace.JS_KEY);
 
-        gen.onFinish(Integer.MAX_VALUE-1, ()->{
-            final GeneratedUiBase base = generated.getBase();
-            if (!generated.getBase().hasGeneric("Self")) {
-                final TypeParameter expr = new TypeParameter();
-                // Any Self-generic will take itself as a final parameter:
-                // interface Example<E, Self extends Example<E, Self>>;
-                // to be a parameter, it must be in its own parameter list
-                // so, we add it generics as an empty type expr (we mostly use the keys,
-                // as the map keys are the names we would use to reference the type elsewhere)
-                expr.setName("Self");
-                generated.addGeneric("Self", expr);
-
-                final ClassOrInterfaceType baseType = new ClassOrInterfaceType(base.getWrappedName());
-                baseType.setTypeArguments(TypeArguments.withArguments(Arrays.asList(
-                    base.getGenericNames()
-                        .map(this::createType)
-                        .toArray(Type[]::new)
-                )));
-                expr.setTypeBound(Collections.singletonList(baseType));
-            }
-        });
     }
 
     protected String configType(UiNamespace ns, ClassBuffer out) {

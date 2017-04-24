@@ -1,8 +1,8 @@
 package xapi.components.impl;
 
 import elemental.dom.Element;
+import elemental.dom.Node;
 import elemental.js.dom.JsElement;
-import xapi.ui.api.component.ComponentConstructor;
 import xapi.components.api.ComponentNamespace;
 import xapi.components.api.Document;
 import xapi.components.api.IsWebComponent;
@@ -11,6 +11,7 @@ import xapi.fu.Do;
 import xapi.fu.In1Out1;
 import xapi.fu.In2Out1;
 import xapi.fu.Mutable;
+import xapi.ui.api.component.ComponentConstructor;
 import xapi.ui.api.component.ComponentOptions;
 import xapi.ui.api.component.IsComponent;
 
@@ -33,7 +34,7 @@ public class WebComponentSupport {
   public static final WebComponentVersion DEFAULT_VERSION = "true".equals(
       System.getProperty("web.components.v0", "false")) ? V0 : V1;
 
-    private static final In1Out1 EXPECT_INITIALIZED = ignored -> {
+    private static final In1Out1<Element, ? extends IsComponent<? super Element, Element>> EXPECT_INITIALIZED = ignored -> {
         throw new RuntimeException("Attached component not found");
     };
 
@@ -41,12 +42,12 @@ public class WebComponentSupport {
     public static
             <
                 E extends Element,
-                Me extends IsComponent<E, Me>
+                Me extends IsComponent<Node, E>
             >
     In1Out1<E, Me> installFactory(
         WebComponentBuilder b,
         In1Out1<E, Me> defaultFactory,
-        ComponentOptions<E, Me> options
+        ComponentOptions<Node, E, Me> options
     ) {
 
         JsLazyExpando<E, Me> expando = new JsLazyExpando<>(ComponentNamespace.JS_KEY);
@@ -151,12 +152,12 @@ public class WebComponentSupport {
     return new JsoConstructorSupplier<E>(jso);
   }
 
-  public static <E, C extends IsComponent<E, C>> ComponentConstructor<E, C> define(String tagName, JavaScriptObject jsClass, String extendsTag) {
+  public static <N, E extends N, C extends IsComponent<N, E>> ComponentConstructor<N, E, C> define(String tagName, JavaScriptObject jsClass, String extendsTag) {
     ComponentConstructor jso = JsSupport.defineTag(tagName, jsClass, JsSupport.extendsTag(extendsTag));
     return jso;
   }
 
-  public static <E, C extends IsComponent<E, C>> ComponentConstructor<E, C> define(String tagName, WebComponentBuilder component) {
+  public static <N, E extends N, C extends IsComponent<N, E>> ComponentConstructor<N, E, C> define(String tagName, WebComponentBuilder component) {
     ComponentConstructor jso = JsSupport.defineTag(tagName, component.getComponentClass(), JsSupport.extendsTag(component.getSuperTag()));
     return jso;
   }

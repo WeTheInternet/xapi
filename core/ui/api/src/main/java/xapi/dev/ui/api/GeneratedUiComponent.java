@@ -1,9 +1,11 @@
 package xapi.dev.ui.api;
 
 import com.github.javaparser.ast.TypeParameter;
+import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
+import com.github.javaparser.ast.type.ReferenceType;
 import com.github.javaparser.ast.type.Type;
 import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
@@ -22,9 +24,8 @@ import xapi.fu.Maybe;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
 import xapi.fu.iterate.SizedIterable;
+import xapi.source.X_Modifier;
 import xapi.util.X_String;
-
-import static xapi.fu.Lazy.deferSupplier;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 1/6/17.
@@ -39,6 +40,7 @@ public class GeneratedUiComponent {
     private final StringTo<FieldBuffer> refs;
     private final GeneratedUiGenericInfo genericInfo;
     private final StringTo<GeneratedUiSupertype> superInterfaces;
+    private final StringTo<ReferenceType> globalDefs;
     private String nameElementBuilderFactory;
     private String tagName;
     private GeneratedUiSupertype superType;
@@ -49,8 +51,9 @@ public class GeneratedUiComponent {
         impls = X_Collect.newClassMap(Lazy.class);
         this.packageName = pkg;
         this.className = cls;
-        refs = X_Collect.newStringMap(FieldBuffer.class);
-        superInterfaces = X_Collect.newStringMap(GeneratedUiSupertype.class);
+        refs = X_Collect.newStringMapInsertionOrdered(FieldBuffer.class);
+        superInterfaces =  X_Collect.newStringMap(GeneratedUiSupertype.class);
+        globalDefs = X_Collect.newStringMapInsertionOrdered(ReferenceType.class);
         genericInfo = new GeneratedUiGenericInfo();
     }
 
@@ -95,11 +98,15 @@ public class GeneratedUiComponent {
 
 
     protected GeneratedUiBase createBase() {
-        return new GeneratedUiBase(this, api.out1());
+        final GeneratedUiBase created = new GeneratedUiBase(this, api.out1());
+        globalDefs.forBoth(created::addLocalDefinition);
+        return created;
     }
 
     protected GeneratedUiApi createApi() {
-        return new GeneratedUiApi(this, packageName, className);
+        final GeneratedUiApi created = new GeneratedUiApi(this, packageName, className);
+        globalDefs.forBoth(created::addLocalDefinition);
+        return created;
     }
 
     public GeneratedUiApi getApi() {
@@ -133,7 +140,8 @@ public class GeneratedUiComponent {
 
     public boolean addImplementationFactory(Class<?> platform,
                                             In1Out1<GeneratedUiComponent, GeneratedUiImplementation> io) {
-        final Lazy<GeneratedUiImplementation> lazy = deferSupplier(io, this);
+        io = io.spyOut(impl->globalDefs.forBoth(impl::addLocalDefinition));
+        final Lazy<GeneratedUiImplementation> lazy = Lazy.deferSupplier(io, this);
         final Lazy<GeneratedUiImplementation> result = impls.put(platform, lazy);
         if (result != null) {
             assert checkSafeOverride(platform, result, lazy);
@@ -197,10 +205,12 @@ public class GeneratedUiComponent {
                 for (GeneratedTypeParameter generic : apiGenerics) {
                     // This type has been made public, so we need to require it from subtypes,
                     // and push it into supertypes.
-                    final String computedDeclaration = generic.computeDeclaration(apiLayer, ImplLayer.Api, gen, ns, out);
-                    apiLayer.getSource().getClassBuffer()
-                        .addGenerics(computedDeclaration);
-                    publicTypes.add(generic);
+                    if (!apiLayer.hasLocalDefinition(generic.getSystemName())) {
+                        final String computedDeclaration = generic.computeDeclaration(apiLayer, ImplLayer.Api, gen, ns, out);
+                        apiLayer.getSource().getClassBuffer()
+                            .addGenerics(computedDeclaration);
+                        publicTypes.add(generic);
+                    }
                 }
             }
         }
@@ -212,8 +222,10 @@ public class GeneratedUiComponent {
 
                 final SourceBuilder<GeneratedJavaFile> out = baseLayer.getSource();
                 for (GeneratedTypeParameter generic : baseGenerics) {
-                    String baseName = generic.computeDeclaration(baseLayer, ImplLayer.Base, gen, ns, out);
-                    out.getClassBuffer().addGenerics(baseName);
+//                    if (baseLayer.hasLocalDefinition(generic.getSystemName())) {
+                        String baseName = generic.computeDeclaration(baseLayer, ImplLayer.Base, gen, ns, out);
+                        out.getClassBuffer().addGenerics(baseName);
+//                    }
                 }
 
             }
@@ -226,9 +238,15 @@ public class GeneratedUiComponent {
         int initialLen = superDef.length();
         final SizedIterable<GeneratedTypeParameter> params = superType.getParams();
         final int numParams = params.size();
-        params.forAll(param-> {
+        params
+            .forAll(param-> {
                 // update base type with our generic bounds
-                String name = layer.getGenericValue(param);
+                String name;
+                if (layer.hasLocalDefinition(param.getSystemName())) {
+                    name = layer.getLocalDefinition(param.getSystemName()).toSource();
+                } else {
+                    name = layer.getGenericValue(param);
+                }
 
                 if (superDef.length() == initialLen) {
                     superDef.append("<");
@@ -238,12 +256,12 @@ public class GeneratedUiComponent {
 
                 if (numParams > 2) {
                     superDef.append("\n    ");
-                } else {
+                } else if (superDef.length() > initialLen){
                     superDef.append(" ");
                 }
 
                 superDef.append(name);
-
+//                layer.addLocalDefinition(param.getSystemName(), param.getReferenceType());
             }
         );
         if (superDef.length() != initialLen) {
@@ -252,7 +270,34 @@ public class GeneratedUiComponent {
             }
             superDef.append(">");
         }
-        layer.getSource().setSuperClass(superDef.toString());
+        if (layer.isInterface()) {
+            layer.getSource().addInterfaces(superDef.toString());
+            // assert no constructors...
+            assert superType.getRequiredConstructors().isEmpty() : "Interface APIs cannot require constructors (found on " + superType + " of " + layer;
+        } else {
+            layer.getSource().setSuperClass(superDef.toString());
+            final SizedIterable<Parameter[]> ctors = superType.getRequiredConstructors();
+            for (Parameter[] parameters : ctors) {
+                // For each set of constructors, create a new constructor matching super
+                final ClassBuffer out = layer.getSource().getClassBuffer();
+                final MethodBuffer ctor = out.createConstructor(X_Modifier.PUBLIC);
+                if (parameters.length > 0) {
+                    // for each parameter, add a parameter, as well as the name in the super call.
+                    String next = "";
+                    ctor.print("super(");
+                    for (Parameter parameter : parameters) {
+                        // TODO: resolve variables in AST names
+                        final String name = parameter.getId().getName();
+                        ctor.addParameter(parameter.getType().toSource(), name);
+                        ctor.print(next).print(name);
+                        next = ", ";
+                    }
+                    ctor.println(");");
+                }
+
+            }
+
+        }
     }
 
     public void saveSource(UiGeneratorService<?> gen) {
@@ -294,7 +339,7 @@ public class GeneratedUiComponent {
             if (api.isResolved() && api.out1().shouldSaveType()) {
                 out.addInterfaces(apiName);
             }
-            saveType(baseLayer, gen, tools, baseGenerics);
+            saveType(baseLayer, gen, tools, null);
         }
 
         getImpls()
@@ -431,4 +476,15 @@ public class GeneratedUiComponent {
         return genericInfo;
     }
 
+    public void addGlobalDefinition(String systemName, ReferenceType referenceType) {
+        globalDefs.put(systemName, referenceType);
+        if (api.isResolved()) {
+            api.out1().addLocalDefinition(systemName, referenceType);
+        }
+        if (base.isResolved()) {
+            base.out1().addLocalDefinition(systemName, referenceType);
+        }
+        getImpls().forAll(GeneratedUiImplementation::addLocalDefinition, systemName, referenceType);
+
+    }
 }

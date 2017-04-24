@@ -232,7 +232,7 @@ public class WebComponentBuilder {
     return createdCallback(wrapIn1(callback));
   }
 
-  public <E extends Element, C extends IsComponent<E, C>> WebComponentBuilder createdCallback(final In2<E, ComponentOptions<E, C>> callback) {
+  public <E extends Element, C extends IsComponent<Node, E>> WebComponentBuilder createdCallback(final In2<E, ComponentOptions<Node, E, C>> callback) {
     return createdCallback(wrapIn2(callback));
   }
 

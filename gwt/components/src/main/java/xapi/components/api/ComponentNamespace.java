@@ -18,7 +18,7 @@ public class ComponentNamespace {
 
     public static native <
         E,
-        Me extends IsComponent<E, Me>> Me getComponent(E e, In1Out1<E, ? extends Me> getUi)
+        Me extends IsComponent<? super E, E>> Me getComponent(E e, In1Out1<E, ? extends Me> getUi)
     /*-{
         // you can check if the java class is initialized or not using the map,
         // but should defer to this method to ensure all creation routes through the factory (that you supplied).

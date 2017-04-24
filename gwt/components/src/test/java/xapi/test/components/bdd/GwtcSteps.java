@@ -521,6 +521,19 @@ public class GwtcSteps {
         settings.setOutputDirectory(loc);
         settings.setSourceDirectory(loc);
         final Out2<Integer, URL> result = compiler.compileFiles(settings, loc);
+        if (result.out1() != 0) {
+          if (X_Log.loggable(LogLevel.TRACE)) {
+            X_Log.error(getClass(), "Failed to compile java files; dumping source for your perusal");
+            compiler.javaFilesIn(loc)
+                    .forAllUnsafe(file->{
+                      X_Log.error(getClass(), "\n", file);
+                      X_Log.error(getClass(), X_IO.toStringUtf8(new FileInputStream(file)));
+            });
+          }
+
+
+          throw new AssertionError("Javac failed; check logs for details.");
+        }
         assertEquals(Integer.valueOf(0), result.out1());
   }
 }

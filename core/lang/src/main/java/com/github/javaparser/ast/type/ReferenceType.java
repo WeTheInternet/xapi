@@ -70,7 +70,11 @@ public final class ReferenceType extends Type implements TypedNode {
         this.arraysAnnotations = arraysAnnotations;
     }
 
-	@Override public <R, A> R accept(final GenericVisitor<R, A> v, final A arg) {
+    public ReferenceType(String s) {
+    	this (new ClassOrInterfaceType(s));
+    }
+
+    @Override public <R, A> R accept(final GenericVisitor<R, A> v, final A arg) {
 		return v.visit(this, arg);
 	}
 

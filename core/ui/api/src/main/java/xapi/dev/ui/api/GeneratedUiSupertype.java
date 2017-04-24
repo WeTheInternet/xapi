@@ -1,5 +1,8 @@
 package xapi.dev.ui.api;
 
+import com.github.javaparser.ast.body.Parameter;
+import xapi.collect.X_Collect;
+import xapi.collect.api.StringTo;
 import xapi.fu.iterate.ArrayIterable;
 import xapi.fu.iterate.SizedIterable;
 import xapi.source.X_Modifier;
@@ -14,6 +17,7 @@ public class GeneratedUiSupertype {
     private final String className;
     private final GeneratedUiComponent owner;
     private final SizedIterable<GeneratedTypeParameter> params;
+    private final StringTo<Parameter[]> requiredConstructors;
     private int mode;
 
     public GeneratedUiSupertype(GeneratedUiComponent owner,
@@ -23,6 +27,7 @@ public class GeneratedUiSupertype {
         this.packageName = packageName;
         this.className = className;
         params = ArrayIterable.iterate(typeParams);
+        requiredConstructors = X_Collect.newStringMap(Parameter[].class);
     }
 
     public GeneratedUiSupertype makeInterface() {
@@ -48,5 +53,17 @@ public class GeneratedUiSupertype {
 
     public GeneratedUiComponent getOwner() {
         return owner;
+    }
+
+    public void requireConstructor(Parameter ... params) {
+        StringBuilder sig = new StringBuilder();
+        for (Parameter param : params) {
+            sig.append(param.toSource());
+        }
+        requiredConstructors.put(sig.toString(), params);
+    }
+
+    public SizedIterable<Parameter[]> getRequiredConstructors() {
+        return requiredConstructors.forEachValue();
     }
 }
