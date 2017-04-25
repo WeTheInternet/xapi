@@ -182,7 +182,7 @@ public class WebAppGenerator extends AbstractUiGeneratorService<WebAppGeneratorC
                         out2Immutable("define-tags", new WebAppComponentGenerator()),
                         out2Immutable("define-tag", new WebAppComponentGenerator()),
                         out2Immutable("web-app", new WebAppComponentGenerator()),
-                        out2Immutable("classpath", new ClasspathComponentGenerator()),
+                        out2Immutable("classpath", new UiComponentGenerator()),
                         out2Immutable("gwtc", new GwtcComponentGenerator())
                     )
                     .build();

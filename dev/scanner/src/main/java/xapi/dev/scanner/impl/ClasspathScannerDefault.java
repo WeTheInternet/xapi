@@ -10,6 +10,7 @@ import xapi.dev.resource.impl.SourceCodeResource;
 import xapi.dev.resource.impl.StringDataResource;
 import xapi.dev.scanner.api.ClasspathScanner;
 import xapi.except.ThreadsafeUncaughtExceptionHandler;
+import xapi.fu.Do;
 import xapi.util.X_Debug;
 import xapi.util.X_Namespace;
 import xapi.util.X_Properties;
@@ -32,6 +33,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.locks.LockSupport;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
@@ -236,11 +238,27 @@ public class ClasspathScannerDefault implements ClasspathScanner {
     }
   }
 
+  private Do onShutdown = Do.NOTHING;
   @Override
   public ExecutorService newExecutor() {
     final int threads = Runtime.getRuntime().availableProcessors()*3/2;
-    return Executors.newFixedThreadPool(
-        Runtime.getRuntime().availableProcessors()*3/2);
+    final ExecutorService pool = Executors.newFixedThreadPool(threads);
+    final Do after = onShutdown;
+    // we run new callbacks sooner, as they are more likely to have
+    // actual work still running to shutdown, and so that we can
+    // re-assign onShutdown as we go, such that each callback
+    // will erase itself before running, leaving onShutdown == Do.NOTHING;
+    onShutdown = after.doBefore(()-> {
+      // unroll shutdown loop as we process, to avoid double-calling
+      onShutdown = after;
+      pool.shutdownNow();
+    });
+    return pool;
+  }
+
+  @Override
+  public void shutdown() {
+    onShutdown.done();
   }
 
   @Override
@@ -309,14 +327,9 @@ public class ClasspathScannerDefault implements ClasspathScanner {
               iter.remove();
             }
           }
-          try {
-            Thread.sleep(0, 500);
-          } catch (final InterruptedException e) {
-            Thread.interrupted();
-            throw X_Debug.rethrow(e);
-          }
+          LockSupport.parkNanos(250_000);
         }
-        executor.shutdown();
+        map.stop();
         return map;
       }
     }

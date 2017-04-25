@@ -13,6 +13,8 @@ import xapi.dev.resource.api.ClasspathResource;
 import xapi.dev.resource.impl.ByteCodeResource;
 import xapi.dev.resource.impl.SourceCodeResource;
 import xapi.dev.resource.impl.StringDataResource;
+import xapi.fu.Lazy;
+import xapi.fu.Out1;
 import xapi.log.X_Log;
 import xapi.source.X_Source;
 import xapi.util.X_Debug;
@@ -40,23 +42,35 @@ public class ClasspathResourceMap {
   private final Set<Pattern> resourceMatchers;
   private final Set<Pattern> sourceMatchers;
   private final Fifo<ByteCodeResource> pending;
-  private final ProvidesValue<ExecutorService> executor;
+  private final Out1<ExecutorService> refreshExecutor;
+  private Lazy<ExecutorService> executor;
   private AnnotatedClassIterator allAnnos;
   private AnnotatedMethodIterator allMethodsWithAnnos;
   private ClassPool pool;
   private ArrayList<URL> classpath;
+  private boolean running;
 
   public ClasspathResourceMap(final ProvidesValue<ExecutorService> executor, final Set<Class<? extends Annotation>> annotations,
     final Set<Pattern> bytecodeMatchers, final Set<Pattern> resourceMatchers, final Set<Pattern> sourceMatchers) {
     this.annotations = annotations;
     this.bytecodeMatchers = bytecodeMatchers;
-    this.executor = executor;
+    refreshExecutor = executor::get;
+    this.executor = Lazy.deferred1(refreshExecutor);
     this.resourceMatchers = resourceMatchers;
     this.sourceMatchers = sourceMatchers;
     this.bytecode = new ResourceTrie<ByteCodeResource>();
     this.sources = new ResourceTrie<SourceCodeResource>();
     this.resources = new ResourceTrie<StringDataResource>();
     this.pending = new SimpleFifo<ByteCodeResource>();
+    running = true;
+  }
+
+  public void stop() {
+    running = false;
+    if (executor.isResolved()) {
+      executor.out1().shutdownNow();
+    }
+    executor = Lazy.deferred1(refreshExecutor);
   }
 
   public void addBytecode(final String name, final ByteCodeResource bytecode) {
@@ -78,6 +92,9 @@ public class ClasspathResourceMap {
                     // Preload classes
                     addSubclasses(iter.next().getClassData());
                     iter.remove();
+                    if (!running) {
+                      return;
+                    }
                   }
                 }
               }
@@ -521,7 +538,7 @@ public final Iterable<ClassFile> findClassWithAnnotatedMethods(
 }
 
   protected ExecutorService getExecutor() {
-    return executor.get();
+    return executor.out1();
   }
 
   public ClassPool getClassPool() {
@@ -594,5 +611,6 @@ extends MultithreadedStringTrie<ResourceType> {
   protected Edge newEdge(final char[] key, final int index, final int end, final ResourceType value) {
     return new PrioritizedEdge(key, index, end, value);
   }
+
 }
 

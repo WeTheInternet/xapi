@@ -320,6 +320,11 @@ public class RuntimeInjector implements In2<String, PlatformChecker> {
     }
     final Moment finished = now();
 
+    scanner.shutdown();
+    resources.stop();
+
+    final Moment shutdown = now();
+
     if (X_Runtime.isDebug()) {
       X_Log.info("Multithreaded? ", X_Runtime.isMultithreaded());
       X_Log.info("Prepped: ", X_Time.difference(start, prepped));
@@ -328,7 +333,8 @@ public class RuntimeInjector implements In2<String, PlatformChecker> {
       X_Log.info("Mapped: ", X_Time.difference(checked, mapped));
       X_Log.info("Analyzed: ", X_Time.difference(mapped, startInject));
       X_Log.info("Injected: ", X_Time.difference(startInject, finished));
-      X_Log.info("Total: ", X_Time.difference(start, finished));
+      X_Log.info("Shutdown: ", X_Time.difference(finished, shutdown));
+      X_Log.info("Total: ", X_Time.difference(start, shutdown));
     }
 
   }

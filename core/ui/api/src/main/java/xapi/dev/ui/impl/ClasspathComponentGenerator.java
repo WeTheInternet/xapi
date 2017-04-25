@@ -21,6 +21,7 @@ import xapi.dev.ui.api.UiGeneratorService;
 import xapi.file.X_File;
 import xapi.fu.Lazy;
 import xapi.fu.MappedIterable;
+import xapi.fu.X_Fu;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
 import xapi.log.X_Log;
@@ -35,6 +36,8 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static xapi.dev.ui.api.UiConstants.EXTRA_FILE_NAME;
 import static xapi.dev.ui.api.UiConstants.EXTRA_RESOURCE_PATH;
@@ -43,6 +46,8 @@ import static xapi.dev.ui.api.UiConstants.EXTRA_RESOURCE_PATH;
  * Created by James X. Nelson (james @wetheinter.net) on 4/1/17.
  */
 public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
+
+    private ExecutorService executor;
 
     public static String genDir(Class<?> cls) {
         return X_Reflect.getFileLoc(cls)
@@ -73,6 +78,7 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
 
     public <T> void generateComponents(UiGeneratorService<T> service) {
 
+        X_Log.trace(getClass(), "Scanning ", genDir.getAbsolutePath());
         // find all .xapi files in our search package
         final FileBasedSourceHelper<T> sources = new FileBasedSourceHelper<>(genDir::getAbsolutePath);
         ClasspathScanner scanner = new ClasspathScannerDefault();
@@ -85,6 +91,7 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
         X_Log.trace(getClass(), "Classpath scan returned in ", Lazy.deferred1(()->X_Time.difference(now)));
         ChainBuilder<UiContainerExpr> tagDefinitions = Chain.startChain();
         for (StringDataResource xapiFile : results.getAllResources()) {
+            X_Log.trace(getClass(), "Processing " , xapiFile.getResourceName());
             String content = xapiFile.readAll();
             final UiContainerExpr parsed;
             try {
@@ -133,20 +140,26 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
         );
 
         for (GeneratedUiComponent generated : result) {
-            System.out.println(generated.getImpls().firstMaybe()
+            X_Log.trace(getClass(), "Generated ", generated.getTagName(), generated.getImpls().firstMaybe()
                 .mapNullSafe(GeneratedUiImplementation::toSource)
                 .ifAbsentReturn("No impl for " + generated));
         }
 
+        results.stop();
+        scanner.shutdown();
+        if (executor != null) {
+            executor.shutdownNow();
+        }
     }
 
     private ClassLoader getClassLoader() {
         final ClassLoader cl = getClass().getClassLoader();
         final URL[] urls = X_Dev.getUrls(cl);
         StringTo<URL> xapiFolders = X_Collect.newStringMapInsertionOrdered(URL.class);
-        for (URL url : urls) {
+        for (URL url : X_Fu.concat(urls, getExtraUrls())) {
             String path = url.getPath().replace('\\', '/');
             final String xapiPath;
+            X_Log.debug(getClass(), "Considering", path);
             if (path.endsWith("target/classes/")) {
                 xapiPath = path.replace("target/classes/", "src/main/xapi/");
             }else if (path.endsWith("target/test-classes/")) {
@@ -158,16 +171,24 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
                 File f = new File(xapiPath);
                 if (f.isDirectory()) {
                     xapiFolders.put(xapiPath, f.toURI().toURL());
+                } else {
+                    X_Log.debug(getClass(), "Skipping non-directory", f);
+
                 }
             } catch (MalformedURLException e) {
                 throw X_Debug.rethrow(e);
             }
         }
         if (!xapiFolders.isEmpty()) {
+            X_Log.trace(getClass(), "Using resolved classpath", xapiFolders.forEachValue().join("\n", "\n", "\n"));
             return new URLClassLoader(xapiFolders.forEachValue().toArray(URL[]::new), cl);
         }
 
         return cl;
+    }
+
+    protected URL[] getExtraUrls() {
+        return new URL[0];
     }
 
     protected void configure(ClasspathScanner scanner) {
@@ -182,7 +203,14 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
     }
 
     protected ClasspathResourceMap scan(ClasspathScanner scanner, ClassLoader classLoader) {
-        return scanner.scan(classLoader);
+        try {
+            if (executor == null || executor.isShutdown()) {
+                executor = Executors.newCachedThreadPool();
+            }
+            return scanner.scan(classLoader, executor).call();
+        } catch (Exception e) {
+            throw X_Debug.rethrow(e);
+        }
     }
 
     protected String searchPackage() {

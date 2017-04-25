@@ -36,4 +36,5 @@ public interface ClasspathScanner {
   Callable<ClasspathResourceMap> scan(ClassLoader loader, ExecutorService executor);
   ExecutorService newExecutor();
 
+  void shutdown();
 }
