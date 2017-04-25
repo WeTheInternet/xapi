@@ -1,92 +1,128 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<parent>
-		<groupId>net.wetheinter</groupId>
-		<artifactId>xapi-gwt-parent</artifactId>
-		<version>0.6-SNAPSHOT</version>
-	</parent>
-	<artifactId>xapi-components</artifactId>
-	<packaging>jar</packaging>
-	<name>XApi - Web Component Implementation</name>
-	<url>WeTheInter.net</url>
-	<description>
-    A web component API for manually building web components via WebComponentBuilder, or generating them from interfaces via WebComponentFactory
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-gwt-parent</artifactId>
+    <version>0.6-SNAPSHOT</version>
+  </parent>
+  <artifactId>xapi-components</artifactId>
+  <packaging>jar</packaging>
+  <name>XApi - Web Component Implementation</name>
+  <url>WeTheInter.net</url>
+  <description>
+    A web component API for manually building web components via WebComponentBuilder, or generating them from interfaces
+    via WebComponentFactory
   </description>
 
   <properties>
-   <java.version>1.8</java.version>
+    <java.version>1.8</java.version>
   </properties>
 
-	<dependencies>
-		<dependency>
-			<groupId>net.wetheinter</groupId>
-			<artifactId>xapi-elemental</artifactId>
-		</dependency>
+  <dependencies>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-elemental</artifactId>
+    </dependency>
 
-        <dependency>
-            <groupId>net.wetheinter</groupId>
-            <artifactId>xapi-jre-io</artifactId>
-        </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-jre-io</artifactId>
+    </dependency>
 
-        <dependency>
-            <groupId>net.wetheinter</groupId>
-            <artifactId>xapi-core-ui-generator</artifactId>
-		</dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-core-ui-generator</artifactId>
+    </dependency>
 
-        <dependency>
-            <groupId>net.wetheinter</groupId>
-            <artifactId>xapi-core-lang</artifactId>
-		</dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-core-ui-api</artifactId>
+      <classifier>sources</classifier>
+    </dependency>
 
-		<dependency>
-			<groupId>${gwt.groupId}</groupId>
-			<artifactId>gwt-elemental</artifactId>
-		</dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-core-lang</artifactId>
+    </dependency>
 
-		<dependency>
-			<groupId>${gwt.groupId}</groupId>
-			<artifactId>gwt-dev</artifactId>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>${gwt.groupId}</groupId>
-			<artifactId>gwt-user</artifactId>
-		</dependency>
+    <dependency>
+      <groupId>${gwt.groupId}</groupId>
+      <artifactId>gwt-elemental</artifactId>
+    </dependency>
 
-		<!-- Testing dependencies -->
-        <dependency>
-            <groupId>net.wetheinter</groupId>
-            <artifactId>xapi-gwtc-impl</artifactId>
-			<scope>test</scope>
-		</dependency>
-        <dependency>
-            <groupId>net.wetheinter</groupId>
-            <artifactId>xapi-dev-javac</artifactId>
-			<classifier>sun</classifier>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>info.cukes</groupId>
-			<artifactId>cucumber-java</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>info.cukes</groupId>
-			<artifactId>cucumber-junit</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.assertj</groupId>
-			<artifactId>assertj-core</artifactId>
-			<scope>test</scope>
-		</dependency>
+    <dependency>
+      <groupId>${gwt.groupId}</groupId>
+      <artifactId>gwt-dev</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>${gwt.groupId}</groupId>
+      <artifactId>gwt-user</artifactId>
+    </dependency>
 
-	</dependencies>
+    <!-- Testing dependencies -->
 
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-gwtc-impl</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-dev-javac</artifactId>
+      <classifier>sun</classifier>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>info.cukes</groupId>
+      <artifactId>cucumber-java</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>info.cukes</groupId>
+      <artifactId>cucumber-junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>3.0.0</version>
+        <executions>
+          <execution>
+            <id>add-source</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <inherited>false</inherited>
+            <configuration>
+              <sources>
+                <source>${project.build.directory}/src/main/gen</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+        <goals>
+          <goal>add-source</goal>
+        </goals>
+      </plugin>
+    </plugins>
+  </build>
 </project>

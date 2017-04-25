@@ -10,7 +10,7 @@ import com.github.javaparser.ast.type.ReferenceType;
 import com.github.javaparser.ast.type.Type;
 import elemental.dom.Element;
 import elemental.dom.Node;
-import elemental.html.StyleElement;
+import xapi.components.api.ComponentNamespace;
 import xapi.components.api.UiConfig;
 import xapi.components.impl.AbstractComponent;
 import xapi.components.impl.WebComponentBuilder;
@@ -24,12 +24,10 @@ import xapi.dev.ui.impl.AbstractUiImplementationGenerator;
 import xapi.dev.ui.impl.InterestingNodeFinder.InterestingNodeResults;
 import xapi.fu.In1Out1;
 import xapi.fu.Lazy;
-import xapi.fu.MapLike;
 import xapi.fu.Maybe;
 import xapi.fu.Out1;
 import xapi.inject.X_Inject;
 import xapi.platform.GwtPlatform;
-import xapi.ui.api.StyleAssembler;
 import xapi.ui.api.component.ComponentConstructor;
 import xapi.ui.api.component.ComponentOptions;
 import xapi.ui.api.component.IsComponent;
@@ -37,9 +35,6 @@ import xapi.ui.api.component.IsComponent;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
-
-import com.google.gwt.resources.client.ClientBundle;
-import com.google.gwt.resources.client.CssResource;
 
 public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator <WebComponentContext> {
 
@@ -175,13 +170,13 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
         final UiNamespace ns = component.reduceNamespace(namespace());
 
         final ClassBuffer out = component.getSource().getClassBuffer();
-        String map = out.addImport(MapLike.class);
         String element = out.addImport(Element.class);
         String node = out.addImport(Node.class);
-        String styleElement = out.addImport(StyleElement.class);
-        String clientBundle = out.addImport(ClientBundle.class);
-        String cssResource = out.addImport(CssResource.class);
-        String assembler = out.addImport(StyleAssembler.class);
+//        String map = out.addImport(MapLike.class);
+//        String styleElement = out.addImport(StyleElement.class);
+//        String clientBundle = out.addImport(ClientBundle.class);
+//        String cssResource = out.addImport(CssResource.class);
+//        String assembler = out.addImport(StyleAssembler.class);
         String builder = out.addImport(WebComponentBuilder.class);
         String version = out.addImport(WebComponentVersion.class);
         String support = out.addImport(WebComponentSupport.class);
@@ -189,6 +184,7 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
         String opts = out.addImport(ComponentOptions.class);
         String i1o1 = out.addImport(In1Out1.class);
         String ctor = out.addImport(ComponentConstructor.class);
+        String compNs = out.addImport(ComponentNamespace.class);
         final String type = out.getSimpleName();
         final GeneratedUiComponent generated = buffer.getGeneratedComponent();
 
@@ -229,6 +225,20 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
         // then remove the corresponding call in AbstractWtiComponent (private project)
         // JsSupport.setFactory(element, this, ComponentNamespace.JS_KEY);
 
+        // Create a global "get component from raw element" method
+        out.createMethod(type + " get" + api.getWrappedName() )
+            .makePublic().makeStatic()
+            .addParameter(element, "e")
+            .indent()
+            .println("assert e != null;")
+            .println("assert e.getTagName().toLowerCase().equals(\"" + generated.getTagName() +"\");")
+            .print("final " + api.getWrappedName() + " component = ")
+            .println(compNs + ".getComponent(e, getUi);")
+            .returnValue("(" + type + ") component;")
+            .outdent()
+
+            ;
+
     }
 
     protected String configType(UiNamespace ns, ClassBuffer out) {
@@ -239,7 +249,7 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
         String config = out.addImport(UiConfig.class) + "<"
             + ns.getElementType(out) +", "
             + ns.getStyleElementType(out) +", "
-            + ns.getStyleResourceType(out) +", "
+            + "? extends " + ns.getStyleResourceType(out) +", "
             + ns.getServiceType(out)
         + ">";
         return config;

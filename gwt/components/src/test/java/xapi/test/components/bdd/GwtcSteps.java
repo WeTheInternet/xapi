@@ -27,6 +27,7 @@ import xapi.components.api.IsWebComponent;
 import xapi.components.api.WebComponentFactory;
 import xapi.dev.X_Gwtc;
 import xapi.dev.api.ApiGeneratorContext;
+import xapi.dev.components.GenerateWebComponents;
 import xapi.dev.gen.FileBasedSourceHelper;
 import xapi.dev.gwtc.api.GwtcService;
 import xapi.dev.gwtc.impl.GwtcManifestImpl;
@@ -56,15 +57,18 @@ import xapi.javac.dev.api.CompilerService;
 import xapi.javac.dev.model.CompilerSettings;
 import xapi.log.X_Log;
 import xapi.log.api.LogLevel;
+import xapi.reflect.X_Reflect;
 import xapi.source.X_Source;
 import xapi.source.read.JavaModel.IsQualified;
 import xapi.test.components.client.GeneratedComponentEntryPoint;
+import xapi.util.X_Debug;
 import xapi.util.X_Namespace;
 import xapi.util.X_Properties;
 import xapi.util.X_String;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -92,7 +96,7 @@ public class GwtcSteps {
   private static final String QUOTED = "\"([^\"]+)\"";
 
   static {
-    X_Log.logLevel(LogLevel.INFO);
+    X_Log.logLevel(LogLevel.TRACE);
     X_Properties.setProperty(X_Namespace.PROPERTY_LOG_LEVEL, "ALL");
     X_Properties.setProperty(X_Namespace.PROPERTY_MULTITHREADED, "10");
   }
@@ -500,14 +504,26 @@ public class GwtcSteps {
     @Given("^run classpath component generator$")
     public void runClasspathComponentGenerator() throws Throwable {
 
-        final String loc = ClasspathComponentGenerator.genDir(getClass());
+        final String loc = ClasspathComponentGenerator.genDir(getCompileLocation());
         try {
 
-          ClasspathComponentGenerator gen = new ClasspathComponentGenerator(loc);
+          X_Log.info(getClass(), "Running classpath generator on " , loc);
+          ClasspathComponentGenerator gen = new ClasspathComponentGenerator(loc) {
+            @Override
+            protected URL[] getExtraUrls() {
+              final String sourceLoc = X_Reflect.getFileLoc(GenerateWebComponents.class);
+              X_Log.info(getClass(), "Checking", sourceLoc, new File(sourceLoc).isDirectory());
+              try {
+                return new URL[]{ new URL("file:" + sourceLoc.replace("gwt/components", "core/ui/api"))};
+              } catch (MalformedURLException e) {
+                throw X_Debug.rethrow(e);
+              }
+            }
+          };
           final UiGeneratorService service = new UiGeneratorServiceDefault();
           gen.generateComponents(service);
 
-          System.out.println(gen);
+          X_Log.info(getClass(), "Finished classpath generator on " , loc);
         } finally {
 
         }
@@ -515,25 +531,34 @@ public class GwtcSteps {
 
   @Then("^compile generated code$")
   public void compileGeneratedCode() throws Throwable {
-        final String loc = ClasspathComponentGenerator.genDir(getClass());
+        final String loc = ClasspathComponentGenerator.genDir(getCompileLocation());
+        if (!new File(loc).exists()) {
+          final boolean succeed = new File(loc).mkdirs();
+          assert succeed : "Cannot create directory " + loc;
+        }
         CompilerService compiler = X_Inject.singleton(CompilerService.class);
         final CompilerSettings settings = compiler.defaultSettings();
         settings.setOutputDirectory(loc);
         settings.setSourceDirectory(loc);
+        settings.setVerbose(true);
         final Out2<Integer, URL> result = compiler.compileFiles(settings, loc);
         if (result.out1() != 0) {
-          if (X_Log.loggable(LogLevel.TRACE)) {
-            X_Log.error(getClass(), "Failed to compile java files; dumping source for your perusal");
+//          if (X_Log.loggable(LogLevel.TRACE)) {
+            X_Log.error(getClass(), "Failed to compile java files; dumping source (in ", loc, ") for your perusal");
             compiler.javaFilesIn(loc)
                     .forAllUnsafe(file->{
-                      X_Log.error(getClass(), "\n", file);
+                      X_Log.error(getClass(), "\nDumping ", file);
                       X_Log.error(getClass(), X_IO.toStringUtf8(new FileInputStream(file)));
             });
-          }
+//          }
 
 
           throw new AssertionError("Javac failed; check logs for details.");
         }
         assertEquals(Integer.valueOf(0), result.out1());
+  }
+
+  private Class<?> getCompileLocation() {
+    return getClass();
   }
 }
