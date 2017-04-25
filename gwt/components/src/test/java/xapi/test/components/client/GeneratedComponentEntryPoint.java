@@ -34,8 +34,6 @@ import com.google.gwt.core.ext.TreeLogger.Type;
     ,@Dependency(dependencyType= DependencyType.MAVEN, loadChildren = false,
         groupId="net.wetheinter", value="xapi-gwtc-impl", version= X_Namespace.XAPI_VERSION)
     ,@Dependency(dependencyType= DependencyType.MAVEN, loadChildren = false,
-        groupId="net.wetheinter", value="xapi-dev", version= X_Namespace.XAPI_VERSION)
-    ,@Dependency(dependencyType= DependencyType.MAVEN, loadChildren = false,
         groupId="org.ow2.asm", value="asm", version= "5.0.3")
     ,@Dependency(dependencyType= DependencyType.MAVEN, loadChildren = false,
         groupId="org.ow2.asm", value="asm-util", version= "5.0.3")

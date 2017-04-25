@@ -18,6 +18,7 @@ import xapi.except.NotImplemented;
 import xapi.except.NotYetImplemented;
 import xapi.inject.impl.SingletonProvider;
 import xapi.log.X_Log;
+import xapi.log.api.LogLevel;
 import xapi.source.X_Modifier;
 import xapi.source.X_Source;
 import xapi.source.api.IsAnnotation;
@@ -95,7 +96,9 @@ public class BytecodeAdapterService implements
           }
           IsClass asClass;
           try {
-            X_Log.debug("Converting",cls.get0(),"to",location);
+            if (X_Log.loggable(LogLevel.DEBUG)) {
+              X_Log.debug("Converting",cls.get0(),"to",location);
+            }
             asClass = new ClassAdapter(new CtClassType(location.openStream(),
                 classPool.get()));
           } catch (NullPointerException e) {
