@@ -33,26 +33,12 @@
  *
  */
 package xapi.dev.generators;
-import static java.io.File.separator;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.List;
-
-import xapi.annotation.inject.SingletonOverride;
 import xapi.collect.api.Fifo;
 import xapi.dev.util.DefermentWriter;
+import xapi.dev.util.DefermentWriter.DefermentStrategy;
 import xapi.dev.util.GwtInjectionMap;
 import xapi.dev.util.InjectionCallbackArtifact;
 import xapi.dev.util.InjectionUtils;
-import xapi.dev.util.DefermentWriter.DefermentStrategy;
 import xapi.gwt.collect.JsFifo;
 import xapi.inject.AsyncProxy;
 import xapi.inject.impl.SingletonInitializer;
@@ -61,6 +47,12 @@ import xapi.source.read.SourceUtil;
 import xapi.util.api.ApplyMethod;
 import xapi.util.api.ReceivesValue;
 import xapi.util.impl.ReceiverAdapter;
+
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+
+import static java.io.File.separator;
 
 import com.google.gwt.core.client.RunAsyncCallback;
 import com.google.gwt.core.ext.BadPropertyValueException;
@@ -75,7 +67,6 @@ import com.google.gwt.core.ext.linker.EmittedArtifact.Visibility;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.shared.GWT;
 import com.google.gwt.user.rebind.ClassSourceFileComposerFactory;
-import com.google.gwt.user.rebind.ClassSourceFileComposerFactory;
 import com.google.gwt.user.rebind.SourceWriter;
 
 /**
@@ -85,7 +76,7 @@ import com.google.gwt.user.rebind.SourceWriter;
  * <br>with static utility methods being provided to subclasses and other package-level utilities.
  * <br>
  * <br>Important methods:
- * <br>{@link #ensureCallbackClass(TreeLogger, String, String, String, String, GeneratorContext)}
+ * <br>{@link #ensureAsyncInjected(TreeLogger, String, String, String, GeneratorContext)}
  * <br>- Ensures that there is an asynchronous (code splitting) provider for the injected class
  * <br>{@link #ensureProviderClass(TreeLogger, String, String, String, String, GeneratorContext)}
  * <br>- Ensures that there is a static provider of a given singleton.
@@ -93,10 +84,6 @@ import com.google.gwt.user.rebind.SourceWriter;
  * <br>Note that if an async provider is accessed before there is a synchronous provider,
  * <br>then the synchronous provider will route through the async callback method,
  * <br>to prevent code splitting from being ruined.
- * <br>
- * <br>If your code accesses the synchronous provider before the async provider,
- * <br>the async provider will skip using a code split (as it wouldn't work anyway).
- * <br>To override this behaviour, set {@link SingletonOverride#forceAsync()} to true
  * <br>
  * @author James X. Nelson (james@wetheinter.net, @james)
  *
@@ -166,7 +153,7 @@ public abstract class AbstractInjectionGenerator extends IncrementalGenerator{
           }
         }
       } catch (BadPropertyValueException e1) {
-        logger.log(Type.WARN, "Unexpected propery exception for xinject.output.dir", e1);
+        logger.log(Type.WARN, "Unexpected property exception for xinject.output.dir", e1);
       }
       try {
         String prefix = ".." +separator+"WEB-INF" +
@@ -223,9 +210,10 @@ public abstract class AbstractInjectionGenerator extends IncrementalGenerator{
                 //if we've found the service, and are not allowed to move it to top,
                 continue exports;//carry on in the loop above.
               }
-              b.append(line+"\n");
+              b.append(line).append("\n");
             }
-            knownContent = b.toString().substring(0, b.length()-1);
+            knownContent = b.length() == 0 ? "" :
+                b.substring(0, b.length()-1); // erase final "\n"
           }catch (IOException e) {
             logger.log(Type.WARN, "Received io exception writing META-INF/service for "+existing.getAbsolutePath());
           }finally{

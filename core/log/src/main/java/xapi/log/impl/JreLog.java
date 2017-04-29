@@ -41,6 +41,8 @@ import xapi.log.api.LogService;
 import xapi.util.X_Namespace;
 import xapi.util.X_Runtime;
 
+import java.io.PrintStream;
+
 @SingletonDefault(implFor=LogService.class)
 public class JreLog extends AbstractLog{
 
@@ -60,16 +62,43 @@ public class JreLog extends AbstractLog{
     while(!array.isEmpty()){
       writeLog(level, b, array.take());
     }
-    (level == LogLevel.ERROR ? System.err : System.out).println(b.toString());
+    (level == LogLevel.ERROR ? errorStream() : logStream()).println(b.toString());
+  }
+
+  protected PrintStream errorStream() {
+    return System.err;
+  }
+
+  protected PrintStream logStream() {
+    return System.out;
   }
 
   @Override
   public Object unwrap(LogLevel level, Object m) {
     if (m instanceof Class) {
       Class<?> c = (Class<?>)m;
-      for (StackTraceElement trace : new Throwable().getStackTrace()) {
+      Class<?> enclosing = c;
+      while (enclosing.isAnonymousClass() && enclosing.getEnclosingClass() != null) {
+        enclosing = enclosing.getEnclosingClass();
+      }
+      final StackTraceElement[] traces = new Throwable().getStackTrace();
+      for (StackTraceElement trace : traces) {
+        // try for exact match first
         if (trace.getClassName().equals(c.getName())) {
           return " "+trace;
+        }
+      }
+      // loosen up and try enclosing types...
+      for (StackTraceElement trace : traces) {
+        final String cls = trace.getClassName();
+        if (cls.contains(enclosing.getName())) {
+          while (c.getEnclosingClass() != null) {
+            c = c.getEnclosingClass();
+            if (trace.getClassName().equals(c.getName())) {
+              return " " + trace;
+            }
+
+          }
         }
       }
       return c.getCanonicalName();

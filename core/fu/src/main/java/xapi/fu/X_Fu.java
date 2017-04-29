@@ -434,5 +434,16 @@ public interface X_Fu {
     static <Lower, Upper extends Lower> Upper cast(Class<? extends Upper> to, Lower item) {
       return to.cast(item);
     }
+
+    static <T> T[] firstNotEmpty(T[] first, T[] ... rest) {
+      if (isEmpty(first)) {
+        for (T[] next : rest) {
+          if (!isEmpty(next)) {
+            return next;
+          }
+        }
+      }
+      return first;
+    }
 }
 

@@ -47,6 +47,7 @@ import static xapi.dev.ui.api.UiConstants.EXTRA_RESOURCE_PATH;
  */
 public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
 
+    private static final Class<?> TAG = ClasspathComponentGenerator.class;
     private ExecutorService executor;
 
     public static String genDir(Class<?> cls) {
@@ -78,7 +79,7 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
 
     public <T> void generateComponents(UiGeneratorService<T> service) {
 
-        X_Log.trace(getClass(), "Scanning ", genDir.getAbsolutePath());
+        X_Log.trace(TAG, "Output dir ", genDir.getAbsolutePath());
         // find all .xapi files in our search package
         final FileBasedSourceHelper<T> sources = new FileBasedSourceHelper<>(genDir::getAbsolutePath);
         ClasspathScanner scanner = new ClasspathScannerDefault();
@@ -88,10 +89,10 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
         Moment now = X_Time.now();
         // runs classloader scan; can be very slow if you do not specify a search package.
         final ClasspathResourceMap results = scan(scanner, getClassLoader());
-        X_Log.trace(getClass(), "Classpath scan returned in ", Lazy.deferred1(()->X_Time.difference(now)));
+        X_Log.trace(TAG, "Classpath scan returned in ", Lazy.deferred1(()->X_Time.difference(now)));
         ChainBuilder<UiContainerExpr> tagDefinitions = Chain.startChain();
         for (StringDataResource xapiFile : results.getAllResources()) {
-            X_Log.trace(getClass(), "Processing " , xapiFile.getResourceName());
+            X_Log.trace(TAG, "Processing " , xapiFile.getResourceName());
             String content = xapiFile.readAll();
             final UiContainerExpr parsed;
             try {
@@ -113,6 +114,7 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
                 } else {
                     pkg = pkg.substring(0, ind).replace('/', '.');
                 }
+                pkg = normalizePackage(pkg);
 
                 // No api generator context available at this time.
                 // TODO: refactor so we can pass in our own ctx.
@@ -140,7 +142,8 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
         );
 
         for (GeneratedUiComponent generated : result) {
-            X_Log.trace(getClass(), "Generated ", generated.getTagName(), generated.getImpls().firstMaybe()
+            X_Log.trace(TAG,
+                "Generated ", generated.getTagName(), generated.getImpls().firstMaybe()
                 .mapNullSafe(GeneratedUiImplementation::toSource)
                 .ifAbsentReturn("No impl for " + generated));
         }
@@ -152,14 +155,22 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
         }
     }
 
+    /**
+     * Allow subclasses to force-override packages
+     */
+    protected String normalizePackage(String pkg) {
+        return pkg;
+    }
+
     private ClassLoader getClassLoader() {
         final ClassLoader cl = getClass().getClassLoader();
         final URL[] urls = X_Dev.getUrls(cl);
         StringTo<URL> xapiFolders = X_Collect.newStringMapInsertionOrdered(URL.class);
-        for (URL url : X_Fu.concat(urls, getExtraUrls())) {
+        final URL[] extras = overrideClasspathUrls(urls);
+        for (URL url : X_Fu.firstNotEmpty(extras, urls)) {
             String path = url.getPath().replace('\\', '/');
             final String xapiPath;
-            X_Log.debug(getClass(), "Considering", path);
+            X_Log.debug(TAG, "Considering", path);
             if (path.endsWith("target/classes/")) {
                 xapiPath = path.replace("target/classes/", "src/main/xapi/");
             }else if (path.endsWith("target/test-classes/")) {
@@ -172,7 +183,7 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
                 if (f.isDirectory()) {
                     xapiFolders.put(xapiPath, f.toURI().toURL());
                 } else {
-                    X_Log.debug(getClass(), "Skipping non-directory", f);
+                    X_Log.debug(TAG, "Skipping non-directory", f);
 
                 }
             } catch (MalformedURLException e) {
@@ -180,23 +191,24 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
             }
         }
         if (!xapiFolders.isEmpty()) {
-            X_Log.trace(getClass(), "Using resolved classpath", xapiFolders.forEachValue().join("\n", "\n", "\n"));
+            X_Log.trace(TAG, "Using resolved classpath", xapiFolders.forEachValue().join("\n", "\n", "\n"));
             return new URLClassLoader(xapiFolders.forEachValue().toArray(URL[]::new), cl);
         }
 
         return cl;
     }
 
-    protected URL[] getExtraUrls() {
-        return new URL[0];
+    protected URL[] overrideClasspathUrls(URL[] urls) {
+        return urls;
     }
 
     protected void configure(ClasspathScanner scanner) {
         String search = searchPackage();
         if (X_String.isNotEmptyTrimmed(search)) {
+            X_Log.trace(TAG, "Using search package scope: " + search);
             scanner.scanPackage(search);
         } else {
-            X_Log.warn(getClass(), "Using unbounded classloader search because you did not specify a searchPackage()",
+            X_Log.warn(TAG, "Using unbounded classloader search because you did not specify a searchPackage()",
                 "This operation could be very slow / expensive (enable xapi.log.level=TRACE to see how long).");
         }
 
