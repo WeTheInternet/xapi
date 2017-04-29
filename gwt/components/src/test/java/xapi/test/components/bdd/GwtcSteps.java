@@ -27,7 +27,7 @@ import xapi.components.api.IsWebComponent;
 import xapi.components.api.WebComponentFactory;
 import xapi.dev.X_Gwtc;
 import xapi.dev.api.ApiGeneratorContext;
-import xapi.dev.components.GenerateWebComponents;
+import xapi.dev.components.XapiWebComponentGenerator;
 import xapi.dev.gen.FileBasedSourceHelper;
 import xapi.dev.gwtc.api.GwtcService;
 import xapi.dev.gwtc.impl.GwtcManifestImpl;
@@ -39,6 +39,7 @@ import xapi.dev.ui.api.ComponentBuffer;
 import xapi.dev.ui.api.GeneratedUiApi;
 import xapi.dev.ui.api.UiComponentGenerator;
 import xapi.dev.ui.api.UiGeneratorService;
+import xapi.dev.ui.api.UiImplementationGenerator;
 import xapi.dev.ui.impl.ClasspathComponentGenerator;
 import xapi.dev.ui.impl.UiGeneratorVisitor;
 import xapi.dev.ui.tags.UiTagGenerator;
@@ -47,6 +48,7 @@ import xapi.fu.Lazy;
 import xapi.fu.Out2;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
+import xapi.fu.iterate.SingletonIterator;
 import xapi.gwtc.api.CompiledDirectory;
 import xapi.gwtc.api.GwtManifest;
 import xapi.gwtc.api.GwtManifest.CleanupMode;
@@ -125,6 +127,11 @@ public class GwtcSteps {
                     .add(Out2.out2Immutable("define-tags", new UiTagGenerator()))
                     .add(Out2.out2Immutable("define-tag", new UiTagGenerator()))
                     .build();
+      }
+
+      @Override
+      protected Iterable<UiImplementationGenerator> getImplementations() {
+        return SingletonIterator.singleItem(new XapiWebComponentGenerator());
       }
     };
   }
@@ -283,13 +290,14 @@ public class GwtcSteps {
     String code = join("\n", toArray(lines));
     String clsToUse;
     final UiContainerExpr parsed = JavaParser.parseXapi(X_IO.toStreamUtf8(code), "UTF-8");
+    final UiGeneratorService generator = this.tools.out1();
     final String pkgToUse =
         ASTHelper.extractStringValue(
         parsed.getAttribute("package").ifAbsentReturn(UiAttrExpr.of(
             "package",
-            "xapi.test.pkg"
+            "xapi.test.components"
         )).getExpression());
-    final UiGeneratorService generator = this.tools.out1();
+
     final IsQualified type = new IsQualified(pkgToUse, name);
     final ComponentBuffer buffer = generator.initialize(new FileBasedSourceHelper(manifest::getGenDir), type, parsed);
 
@@ -510,17 +518,27 @@ public class GwtcSteps {
           X_Log.info(getClass(), "Running classpath generator on " , loc);
           ClasspathComponentGenerator gen = new ClasspathComponentGenerator(loc) {
             @Override
-            protected URL[] getExtraUrls() {
-              final String sourceLoc = X_Reflect.getFileLoc(GenerateWebComponents.class);
+            protected URL[] overrideClasspathUrls(URL[] urls) {
+              final String sourceLoc = X_Reflect.getFileLoc(generatorOutputSource());
               X_Log.info(getClass(), "Checking", sourceLoc, new File(sourceLoc).isDirectory());
               try {
-                return new URL[]{ new URL("file:" + sourceLoc.replace("gwt/components", "core/ui/api"))};
+                return new URL[]{ new URL("file:" + sourceLoc)};
               } catch (MalformedURLException e) {
                 throw X_Debug.rethrow(e);
               }
             }
+
+            @Override
+            protected String searchPackage() {
+              return "xapi.test.components";
+            }
+
+            @Override
+            protected String normalizePackage(String pkg) {
+              return X_String.isEmpty(pkg) ? searchPackage() : searchPackage() + "." + pkg;
+            }
           };
-          final UiGeneratorService service = new UiGeneratorServiceDefault();
+          final UiGeneratorService service = tools.out1();
           gen.generateComponents(service);
 
           X_Log.info(getClass(), "Finished classpath generator on " , loc);
@@ -528,6 +546,10 @@ public class GwtcSteps {
 
         }
     }
+
+  private Class<?> generatorOutputSource() {
+    return GwtcSteps.class;
+  }
 
   @Then("^compile generated code$")
   public void compileGeneratedCode() throws Throwable {

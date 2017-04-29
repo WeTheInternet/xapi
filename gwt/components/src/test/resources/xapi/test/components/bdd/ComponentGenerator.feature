@@ -309,10 +309,10 @@ Feature: ComponentGenerator.feature: Transpile xapi templates into web component
 #    And save generated gwt source file "xapi.ui.generated.ToDos" as "ToDosSource"
 #    And save generated gwt source file "xapi.ui.generated.ModelToDo" as "ModelToDoSource"
     Then confirm api source for "ToDos" matches:
-    | package xapi.test.pkg;                               |
+    | package xapi.test.components;                               |
     |                                                          |
     | import xapi.components.api;                               |
-    | import xapi.ui.api.component.IsComponent;                            |
+    | import xapi.ui.api.component.IsComponent;                               |
     |                                                          |
     | public interface ToDosComponent {                                 |
     |                                                          |

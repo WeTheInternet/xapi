@@ -1,0 +1,52 @@
+<define-tag
+    name = "Asserter"
+    tagName = "xapi-asserter"
+    model =
+        {
+            template: String.class,
+            
+            // an optional tag to print before messages,
+            // useful for grepping through logs
+            tag: @Nullable String.class,
+        }
+    api =
+    @Import({
+        "xapi.util.X_Util"
+    })
+    [
+        public String getTemplate() {
+            return $model.getTemplate();
+        }
+        ,
+
+        public $Self setTemplate(String value) {
+
+            String was = $model.getTemplate();
+            if (X_Util.notEqual(was, value)) {
+                was = normalizeChange(was, value);
+            }
+            $model.setTemplate(value);
+            return this;
+        }
+        ,
+        public String normalizeChange(String is, String want) {
+
+            return want;
+        }
+
+    ]
+    impl =
+    [
+        public $Self ui() {
+            return this;
+        }
+    ]
+
+    ui =
+        <box>
+            <if notNull=$model.tag>
+                <label ref="tag">$model::tag</label>
+            </if>
+            <template source=$model::template />
+        </box>
+/define-tag>
