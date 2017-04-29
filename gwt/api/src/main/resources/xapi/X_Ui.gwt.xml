@@ -8,6 +8,7 @@
   <source path="ui/api/event" />
   <source path="ui/service" />
   <source path="ui/impl" />
+  <source path="ui/edit" />
 
   <!-- This configuration property is used to automatically add a stable withPrefix to html data attribute names -->
   <define-configuration-property name="data.attr.prefix" is-multi-valued="false" />

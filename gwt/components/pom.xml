@@ -99,6 +99,17 @@
   </dependencies>
 
   <build>
+    <resources>
+      <resource>
+        <directory>src/main/java</directory>
+      </resource>
+      <resource>
+        <directory>src/main/resources</directory>
+      </resource>
+      <resource>
+        <directory>src/main/gen</directory>
+      </resource>
+    </resources>
     <plugins>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
@@ -114,7 +125,7 @@
             <inherited>false</inherited>
             <configuration>
               <sources>
-                <source>${project.build.directory}/src/main/gen</source>
+                <source>${project.basedir}/src/main/gen</source>
               </sources>
             </configuration>
           </execution>
