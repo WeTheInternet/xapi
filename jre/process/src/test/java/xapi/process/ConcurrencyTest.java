@@ -6,12 +6,12 @@ import org.junit.Test;
 import xapi.util.X_Namespace;
 import xapi.util.api.Pointer;
 
-import static xapi.log.X_Log.info;
-import static xapi.process.X_Process.*;
-
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+
+import static xapi.log.X_Log.info;
+import static xapi.process.X_Process.*;
 
 public class ConcurrencyTest {
 
@@ -114,7 +114,7 @@ public class ConcurrencyTest {
     });
     first.start();
     trySleep(50);
-    kill(first, 200);
+    kill(first, 1500);
     Assert.assertTrue("Did not run",ran.get());
     Assert.assertTrue("Timing failed",timeout.get());
   }
