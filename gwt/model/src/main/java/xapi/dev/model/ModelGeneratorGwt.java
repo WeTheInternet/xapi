@@ -17,6 +17,16 @@ import xapi.source.api.CharIterator;
 import xapi.source.api.IsType;
 import xapi.util.X_Properties;
 
+import java.io.PrintWriter;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Set;
+
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.IncrementalGenerator;
 import com.google.gwt.core.ext.RebindMode;
@@ -28,16 +38,6 @@ import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.gwt.core.ext.typeinfo.NotFoundException;
-
-import java.io.PrintWriter;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.Set;
 
 public class ModelGeneratorGwt extends IncrementalGenerator{
 
@@ -345,8 +345,11 @@ public class ModelGeneratorGwt extends IncrementalGenerator{
       final JClassType root = magic.getRootType(logger, ctx);
       final Set<String> toSigs = getImplementedSignatures(root.getInheritableMethods());
       for (final JMethod method :  model.extractMethods(logger, builder, ctx, type)) {
-        if (toSigs.add(ModelGeneratorGwt.toSignature(method))) {
-          model.implementMethod(logger, method, ctx);
+        if (!ModelMagic.shouldIgnore(method)) {
+          final String sig = ModelGeneratorGwt.toSignature(method);
+          if (toSigs.add(sig)) {
+            model.implementMethod(logger, method, ctx);
+          }
         }
       }
     }

@@ -74,6 +74,8 @@ public class WebComponentSupport {
             if (opts != null && opts.hasExisting()) {
                 result = opts.getExisting();
                 expando.setValue(e, result);
+//            } else {
+//                expando.setValue(e, defaultFactory.io(e));
             }
         });
 

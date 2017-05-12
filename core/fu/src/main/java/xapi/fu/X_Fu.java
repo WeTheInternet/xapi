@@ -147,6 +147,9 @@ public interface X_Fu {
     return value != null && value1 != null;
   }
 
+  static <T> boolean notEqual(final T value, final T value1) {
+    return !equal(value, value1);
+  }
   static <T> boolean equal(final T value, final T value1) {
 
     // cover the most permutations first.
@@ -170,7 +173,7 @@ public interface X_Fu {
           return false;
         }
         for (int i = 0; i < len; i++) {
-          if (!equal(Fu.jutsu.getValue(value, i), Fu.jutsu.getValue(value1, i))) {
+          if (notEqual(Fu.jutsu.getValue(value, i), Fu.jutsu.getValue(value1, i))) {
             return false;
           }
         }
@@ -445,5 +448,15 @@ public interface X_Fu {
       }
       return first;
     }
+
+  static <T> T[] slice(int from, int length, T ... items) {
+      assert from > 0;
+      assert from < items.length;
+      assert length >= 0;
+      assert from + length <= items.length;
+
+      T[] copy = Fu.jutsu.arrayCopy(items, from, length);
+      return copy;
+  }
 }
 

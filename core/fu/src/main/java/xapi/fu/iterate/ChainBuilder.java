@@ -1,9 +1,11 @@
 package xapi.fu.iterate;
 
 import xapi.fu.Do;
+import xapi.fu.In1;
 import xapi.fu.MappedIterable;
 import xapi.fu.Out2;
 import xapi.fu.has.HasSize;
+import xapi.fu.iterate.CachingIterator.ReplayableIterable;
 
 import java.util.Iterator;
 
@@ -126,6 +128,12 @@ public class ChainBuilder<T> implements HasSize, MappedIterable<T> {
 
   public T last() {
     return prev.value.out1();
+  }
+
+  public void removeAll(In1<T> callback) {
+    final ReplayableIterable<T> items = cached();
+    clear();
+    items.forAll(callback);
   }
 
   public void clear() {

@@ -2,17 +2,26 @@ package xapi.dev.model;
 
 import xapi.annotation.model.IsModel;
 import xapi.dev.api.ApiGeneratorTools;
+import xapi.fu.api.Ignore;
 import xapi.gwt.model.ModelGwt;
 import xapi.inject.X_Inject;
 import xapi.model.impl.ModelUtil;
 import xapi.util.X_Namespace;
 import xapi.util.X_Properties;
 
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.StringTokenizer;
+
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.RebindResult;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.core.ext.UnableToCompleteException;
+import com.google.gwt.core.ext.typeinfo.HasAnnotations;
 import com.google.gwt.dev.javac.StandardGeneratorContext;
 import com.google.gwt.dev.jjs.MagicMethodGenerator;
 import com.google.gwt.dev.jjs.UnifyAstListener;
@@ -25,13 +34,6 @@ import com.google.gwt.dev.jjs.ast.JExpression;
 import com.google.gwt.dev.jjs.ast.JMethod;
 import com.google.gwt.dev.jjs.ast.JMethodCall;
 import com.google.gwt.dev.jjs.impl.UnifyAst.UnifyVisitor;
-
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.StringTokenizer;
 
 public class ModelMagic implements UnifyAstListener, MagicMethodGenerator {
 
@@ -51,6 +53,7 @@ public class ModelMagic implements UnifyAstListener, MagicMethodGenerator {
     models = new LinkedHashMap<String,ModelArtifact>();
   }
 
+  @SuppressWarnings("unused") // called by reflection
   public static JExpression rebindInstance(
     final TreeLogger logger, final JMethodCall call, final JMethod method, final Context context, final UnifyAstView ast) throws UnableToCompleteException {
 
@@ -210,5 +213,25 @@ public class ModelMagic implements UnifyAstListener, MagicMethodGenerator {
     throw new UnableToCompleteException();
   }
 
+  public static boolean shouldIgnore(HasAnnotations source) {
+    final Ignore anno = source.getAnnotation(Ignore.class);
+    if (anno == null) {
+      return false;
+    }
+    for (String s : anno.value()) {
+      switch (s) {
+        case Ignore.ALL:
+        case IsModel.NAMESPACE:
+          return true;
+      }
+    }
+    return anno.value().length == 0;
+  }
 
+  public static boolean shouldIgnore(com.google.gwt.core.ext.typeinfo.JMethod method) {
+    if (method.isDefaultMethod()) {
+      return true;
+    }
+    return shouldIgnore((HasAnnotations)method);
+  }
 }

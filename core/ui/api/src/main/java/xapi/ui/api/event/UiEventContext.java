@@ -1,5 +1,6 @@
 package xapi.ui.api.event;
 
+import xapi.fu.api.Ignore;
 import xapi.event.api.IsEventType;
 import xapi.fu.Log;
 import xapi.log.X_Log;
@@ -99,6 +100,7 @@ public interface UiEventContext<Payload, Node, Base extends UiNode<Node, ? exten
     }
 
     @Override
+    @Ignore
     default void print(LogLevel level, String debug) {
         X_Log.log(getClass(), xapi.log.api.LogLevel.valueOf(level.name()), debug);
     }

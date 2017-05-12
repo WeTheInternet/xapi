@@ -130,9 +130,11 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
   }
 
   void implementMethod(final TreeLogger logger, final JMethod ifaceMethod, final GeneratorContext ctx) {
-    logger.log(logLevel(), "Implementing model method "+ifaceMethod.getJsniSignature());
-    toGenerate.add(xapi.dev.model.ModelGeneratorGwt.toSignature(ifaceMethod));
-    applyAnnotations(logger, ifaceMethod, ifaceMethod.getAnnotations(), ctx);
+    if (!ModelMagic.shouldIgnore(ifaceMethod)) {
+      logger.log(logLevel(), "Implementing model method "+ifaceMethod.getJsniSignature());
+      toGenerate.add(xapi.dev.model.ModelGeneratorGwt.toSignature(ifaceMethod));
+      applyAnnotations(logger, ifaceMethod, ifaceMethod.getAnnotations(), ctx);
+    }
   }
 
   private Type logLevel() {
@@ -140,7 +142,9 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
   }
 
   void applyAnnotations(final TreeLogger logger, final JMethod method, final Annotation[] annos, final GeneratorContext ctx) {
-    methods.put(method, annos);
+    if (!ModelMagic.shouldIgnore(method)) {
+      methods.put(method, annos);
+    }
 
   }
 
@@ -191,7 +195,10 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
   }
 
   private boolean isAllowed(JMethod method) {
-    return !method.isDefaultMethod();
+    if (method.isDefaultMethod()) {
+      return false;
+    }
+    return !ModelMagic.shouldIgnore(method);
   }
 
   public void generateModelClass(final TreeLogger logger, final SourceBuilder<ModelMagic> builder, final GeneratorContext ctx,
@@ -284,7 +291,7 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
     String idField = modelAnno == null ? "id" : modelAnno.key().value();
     Class idClass = modelAnno == null ? String.class : modelAnno.key().keyType();
     for (final JMethod method : methods.keySet()) {
-      if (method.isDefaultMethod()) {
+      if (ModelMagic.shouldIgnore(method)) {
         continue;
       }
       final String propName = ModelMethodType.deducePropertyName(method.getName(), idField,

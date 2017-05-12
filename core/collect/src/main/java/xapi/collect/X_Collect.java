@@ -280,11 +280,15 @@ public class X_Collect {
 
   public static final CollectionOptions MUTABLE_INSERTION_ORDERED = asMutable(true).insertionOrdered(true).build();
 
+  public static final CollectionOptions MUTABLE_KEY_ORDERED = asMutable(true).keyOrdered(true).build();
+
   public static final CollectionOptions MUTABLE_LIST = asMutableList().build();
 
   public static final CollectionOptions MUTABLE_SET = asMutableSet().build();
 
   public static final CollectionOptions MUTABLE_INSERTION_ORDERED_SET = asMutableSet().insertionOrdered(true).build();
+
+  public static final CollectionOptions MUTABLE_KEY_ORDERED_SET = asMutableSet().keyOrdered(true).build();
 
   private X_Collect() {}
 

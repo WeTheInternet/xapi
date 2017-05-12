@@ -1,6 +1,7 @@
 package xapi.fu;
 
 import xapi.fu.Log.LogLevel;
+import xapi.fu.api.Ignore;
 
 import static xapi.fu.Log.printLevel;
 
@@ -63,6 +64,7 @@ public interface Log extends Debuggable {
     }
   }
 
+  @Ignore("model") // we can't see IsModel.NAMESPACE from this module, so use "magic string"
   void print(LogLevel level, String debug);
 
   default String maybePrintLevel(LogLevel level) {

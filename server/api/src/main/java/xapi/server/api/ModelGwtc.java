@@ -59,8 +59,7 @@ public interface ModelGwtc extends Model {
             gwtc.recompile(manifest, (comp, err)->{
                 if (err == null) {
                     setRecompiler(comp);
-                    queued.forAll(comp::useServer);
-                    queued.clear();
+                    queued.removeAll(comp::useServer);
                 } else {
                     X_Log.error(getClass(), "Failure in warmup compile", err, "module:\n", manifest);
                 }

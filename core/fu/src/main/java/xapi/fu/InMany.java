@@ -11,13 +11,20 @@ public interface InMany extends HasInput {
   MappedIterable<HasInput> children();
 
   default void in(Object ... args) {
-    Fu.jutsu.applyArguments(0, children(), args);
+    applyArguments(0, children(), args);
   }
 
   @Override
   default int accept(int index, Object ... values) {
-    int res = Fu.jutsu.applyArguments(index, children(), values);
+    int res = applyArguments(index, children(), values);
     return res;
+  }
+
+  default int applyArguments(int i, Iterable<HasInput> each, Object ... args) {
+    for (HasInput in : each) {
+      i = in.accept(i, args);
+    }
+    return i;
   }
 
   default void in1(Object one) {

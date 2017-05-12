@@ -33,6 +33,12 @@ interface Jutsu {
     return arr;
   }
 
+  default <T> T[] arrayCopy(T[] copied, int from, int length) {
+    T[] arr = emptyArray(copied, length);
+    System.arraycopy(copied, from, arr, 0, Math.min(length, copied.length));
+    return arr;
+  }
+
   default int[] arrayCopy(int[] copied, int length) {
     int[] arr = new int[length];
     System.arraycopy(copied, 0, arr, 0, Math.min(length, copied.length));
@@ -49,13 +55,6 @@ interface Jutsu {
 
   default Object getValue(Object obj, int index) {
     return Array.get(obj, index);
-  }
-
-  default int applyArguments(int i, Iterable<HasInput> each, Object ... args) {
-    for (HasInput in : each) {
-      i = in.accept(i, args);
-    }
-    return i;
   }
 
   default <T> T[] pushCopy(T[] ts, T t) {

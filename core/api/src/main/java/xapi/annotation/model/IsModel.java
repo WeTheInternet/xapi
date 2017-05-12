@@ -26,6 +26,8 @@ import xapi.annotation.reflect.MirroredAnnotation;
 @MirroredAnnotation // We want to generate accessor classes for this annotation.
 public @interface IsModel {
 
+  String NAMESPACE = "model";
+
   Key key() default @Key("id");
 
   Persistent persistence() default @Persistent;
@@ -35,4 +37,14 @@ public @interface IsModel {
   String modelType();
 
   String[] propertyOrder() default {};
+
+  /**
+   * @return a class for a ui component that this model represents.
+   * The default return value is IsModel.class, which means "not for a component".
+   *
+   * This will primarily be defined by generated code for components,
+   * however it is exposed here, so that you can signal to the ui
+   * generators that the annotated model can be supplied to a component's builder.
+   */
+  Class<?> forComponent() default IsModel.class;
 }

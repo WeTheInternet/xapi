@@ -104,6 +104,13 @@ public final class ClassOrInterfaceType extends Type implements NamedNode {
         return name;
     }
 
+    public String getEnclosedName() {
+        if (getScope() == null) {
+            return name;
+        }
+        return getScope().getEnclosedName() +"." + name;
+    }
+
     public ClassOrInterfaceType getScope() {
         return scope;
     }
@@ -171,5 +178,11 @@ public final class ClassOrInterfaceType extends Type implements NamedNode {
             typeArguments = TypeArguments.withArguments(newList);
         }
         return this;
+    }
+
+    public boolean hasTypeArguments() {
+        return typeArguments != null
+            && typeArguments.getTypeArguments() != null
+            && !typeArguments.getTypeArguments().isEmpty();
     }
 }
