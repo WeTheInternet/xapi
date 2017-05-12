@@ -40,6 +40,7 @@
       <artifactId>java-tools</artifactId>
       <version>1.0</version>
       <scope>system</scope>
+      <optional>true</optional>
       <systemPath>${toolsjar}</systemPath>
     </dependency>
 
