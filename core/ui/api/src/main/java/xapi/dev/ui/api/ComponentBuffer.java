@@ -155,8 +155,9 @@ public class ComponentBuffer {
         GeneratedUiMethod method = new GeneratedUiMethod(me, returnType, name);
         method.setSource(ui);
         method.setContext(ctx);
+        final String elBuilder = otherBase.getElementBuilderType(namespace);
         final MethodBuffer creator = other.getBase().getSource().getClassBuffer()
-            .createMethod("public abstract " + myBaseName + " " + name);
+            .createMethod("public abstract " + elBuilder + " " + name);
         final List<Expression> args = new ArrayList<>();
         RequiredMethodType type = CREATE;
         if (model.isPresent()) {

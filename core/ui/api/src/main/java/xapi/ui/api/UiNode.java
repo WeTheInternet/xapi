@@ -1,5 +1,8 @@
 package xapi.ui.api;
 
+import jsinterop.annotations.JsIgnore;
+import jsinterop.annotations.JsType;
+import xapi.fu.api.Ignore;
 import xapi.fu.iterate.SizedIterable;
 
 /**
@@ -11,12 +14,15 @@ import xapi.fu.iterate.SizedIterable;
  *
  * Created by James X. Nelson (james @wetheinter.net) on 2/5/17.
  */
+@JsType
 public interface UiNode <Node, Element extends Node, BaseType extends UiNode<Node, ? extends Node, BaseType>> {
 
     BaseType getParent();
 
     Element getElement();
 
+    @JsIgnore
+    @Ignore
     SizedIterable<BaseType> getChildren();
 
 }

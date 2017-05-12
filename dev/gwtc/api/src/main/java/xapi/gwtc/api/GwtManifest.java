@@ -1,5 +1,6 @@
 package xapi.gwtc.api;
 
+import jdk.nashorn.internal.objects.NativeString;
 import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
@@ -23,6 +24,7 @@ import static xapi.gwtc.api.GwtManifest.CleanupMode.DELETE_ON_SUCCESSFUL_EXIT;
 
 import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.dev.codeserver.JobEvent.CompileStrategy;
+import com.google.gwt.dev.util.arg.SourceLevel;
 
 public class GwtManifest {
 
@@ -89,6 +91,7 @@ public class GwtManifest {
   private static final String ARG_JVM_ARGS = "jvmArgs";
   private static final String ARG_LOCAL_WORKERS = "localWorkers";
   private static final String ARG_LOG_LEVEL = "logLevel";
+  private static final String ARG_SOURCE_LEVEL = "sourceLevel";
   private static final String ARG_OBFUSCATION_LEVEL = "style";
   private static final String ARG_OPEN_ACTION = "openAction";
   private static final String ARG_OPTIMIZATION_LEVEL = "optimize";
@@ -117,6 +120,7 @@ public class GwtManifest {
   private static final Type DEFAULT_LOG_LEVEL = Type.INFO;
   private static final ObfuscationLevel DEFAULT_OBFUSCATION = ObfuscationLevel.OBFUSCATED;
   private static final OpenAction DEFAULT_OPEN_ACTION = OpenAction.IFRAME;
+  private static final SourceLevel DEFAULT_SOURCE_LEVEL = SourceLevel.JAVA8;
 
   private boolean autoOpen;
   private boolean closureCompiler;
@@ -138,6 +142,7 @@ public class GwtManifest {
   private IntTo<String> jvmArgs =  newList(String.class);
   private int localWorkers = DEFAULT_LOCAL_WORKERS;
   private Type logLevel = DEFAULT_LOG_LEVEL;
+  private SourceLevel sourceLevel = DEFAULT_SOURCE_LEVEL;
   private String moduleName;
   private ObfuscationLevel obfuscationLevel = DEFAULT_OBFUSCATION;
   private OpenAction openAction = DEFAULT_OPEN_ACTION;
@@ -275,6 +280,10 @@ public class GwtManifest {
 
   public Type getLogLevel() {
     return logLevel;
+  }
+
+  public SourceLevel getSourceLevel() {
+    return sourceLevel;
   }
 
   public String getModuleName() {
@@ -455,6 +464,11 @@ public class GwtManifest {
     return this;
   }
 
+  public GwtManifest setSourceLevel(SourceLevel sourceLevel) {
+    this.sourceLevel = sourceLevel;
+    return this;
+  }
+
   public GwtManifest setModuleName(String moduleName) {
     this.moduleName = moduleName;
     return this;
@@ -542,10 +556,17 @@ public class GwtManifest {
         fifo.add("-" + key);
       }
       if (value != null) {
-        fifo.add(value.toString().trim());
+        fifo.add(toString(value).trim());
       }
     });
     return fifo.toArray();
+  }
+
+  private String toString(Object value) {
+    if (value instanceof SourceLevel) {
+      return ((SourceLevel)value).getStringValue();
+    }
+    return String.valueOf(value);
   }
 
   public String toProgramArgs() {
@@ -559,7 +580,7 @@ public class GwtManifest {
           b.append(" ");
         }, arg2->{
       if (arg2 != null) {
-        b.append(arg2).append(" ");
+        b.append(toString(arg2)).append(" ");
       }
     }));
     return b.toString().trim();
@@ -583,6 +604,9 @@ public class GwtManifest {
     }
     if (logLevel != DEFAULT_LOG_LEVEL) {
       read.in(ARG_LOG_LEVEL, logLevel.name());
+    }
+    if (sourceLevel != null) {
+      read.in(ARG_SOURCE_LEVEL, sourceLevel.getStringValue());
     }
     if (obfuscationLevel != DEFAULT_OBFUSCATION) {
       String lvl;
@@ -840,6 +864,9 @@ public class GwtManifest {
     }
     if (logLevel != DEFAULT_LOG_LEVEL) {
       b.append(NEW_LINE).append(ARG_LOG_LEVEL).append(": ").append(logLevel.ordinal());
+    }
+    if (sourceLevel != null) {
+      b.append(NEW_LINE).append(ARG_SOURCE_LEVEL).append(": ").append(sourceLevel.ordinal());
     }
     if (obfuscationLevel != DEFAULT_OBFUSCATION) {
       b.append(NEW_LINE).append(ARG_OBFUSCATION_LEVEL).append(": ").append(obfuscationLevel.ordinal());

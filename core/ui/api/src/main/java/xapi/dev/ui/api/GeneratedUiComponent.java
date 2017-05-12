@@ -434,9 +434,10 @@ public class GeneratedUiComponent {
             '}';
     }
 
-    public void requireCoercion(GeneratedUiField field) {
+    public void requireCoercion(GeneratedUiLayer layer, GeneratedUiField field) {
         // create a coerce method which handles the type of this field.
         // This method must accept an instance of this field, and return a serialized string
+        layer.addCoercion(field);
     }
 
     public void createNativeFactory(UiContainerExpr n, MethodBuffer toDom, UiNamespace namespace, String refName) {

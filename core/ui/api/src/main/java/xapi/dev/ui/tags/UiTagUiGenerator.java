@@ -46,6 +46,7 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
         private final ChainBuilder<String> rootRefs;
         private final ClassBuffer out;
         private final ContainerMetadata me;
+        private final GeneratedUiLayer layer;
         public In1<String> refNameSpy;
         public String refFieldName;
         public String rootRef; // The name of the ref in the xapi source
@@ -54,12 +55,13 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
 
         public UiContainerExprVoidVisitorAdapter(
             GeneratedUiComponent component,
+            GeneratedUiLayer layer,
             MethodBuffer toDom,
             UiGeneratorTools tools,
             ChainBuilder<String> rootRefs,
             ContainerMetadata me
         ) {
-
+            this.layer = layer;
             this.component = component;
             this.namespace = tools.namespace();
             this.toDom = toDom;
@@ -381,7 +383,7 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
                                                         toDom.println(refFieldName + ".addChild(getModel().get" + field.getCapitalized()+"());");
                                                     } else {
                                                         toDom.println(refFieldName + ".append(coerce(getModel().get" + field.getCapitalized()+"()));");
-                                                        component.requireCoercion(field);
+                                                        component.requireCoercion(layer, field);
                                                     }
                                             }
                                         }
@@ -594,6 +596,7 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
                 // Now, visit any elements, storing variables to any refs.
                 uiExpr.accept(new UiContainerExprVoidVisitorAdapter(
                     component,
+                    component.getBase(),
                     toDom,
                     tools,
                     rootRefs,

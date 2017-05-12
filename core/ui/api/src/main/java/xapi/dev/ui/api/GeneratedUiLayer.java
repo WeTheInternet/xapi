@@ -7,6 +7,7 @@ import com.github.javaparser.ast.type.ReferenceType;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.dev.source.CanAddImports;
+import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.fu.In1;
 import xapi.fu.Lazy;
@@ -30,6 +31,7 @@ public abstract class GeneratedUiLayer extends GeneratedJavaFile {
     }
 
     private final ImplLayer layer;
+    private final StringTo<String> coercions;
 
     protected Lazy<GeneratedUiModel> model = deferAll(
         GeneratedUiModel::new,
@@ -66,6 +68,7 @@ public abstract class GeneratedUiLayer extends GeneratedJavaFile {
         this.layer = layer;
         abstractMethods = X_Collect.newStringMap(In1.class);
         localDefinitions = X_Collect.newStringMap(ReferenceType.class);
+        coercions = X_Collect.newStringMap(String.class);
     }
 
     public String getModelName() {
@@ -224,5 +227,30 @@ public abstract class GeneratedUiLayer extends GeneratedJavaFile {
 
     public ReferenceType getLocalDefinition(String systemName) {
         return localDefinitions.get(systemName);
+    }
+
+    public boolean hasCoercion(GeneratedUiField field) {
+        return coercions.has(field.getMemberType().toSource());
+    }
+
+    public void addCoercion(GeneratedUiField field) {
+        if (!hasCoercion(field)) {
+            // create a coercion method.
+            final ClassBuffer out = getSource().getClassBuffer();
+            final String type = field.importType(out);
+            final String rawType;
+            int rawInd = type.indexOf('<');
+            if (rawInd == -1) {
+                rawType = type;
+            } else {
+                rawType = type.substring(0, rawInd);
+            }
+            // Check with the oracle to see if we can guess a type...
+            // if it is a component, or a model created for a component,
+            // then we will want to append (return) a new node builder,
+            // whereas other items will either be .toString()d,
+            // or unfolded if they are a container type.
+
+        }
     }
 }

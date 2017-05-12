@@ -239,6 +239,14 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
 
             ;
 
+        out.createMethod(type + " create()" )
+            .makePublic().makeStatic()
+            .addParameter(opts + apiGenerics, "opts")
+            .println("if (opts == null) {")
+            .indentln("opts = new " + opts + "<>();")
+            .println("}")
+            .returnValue("("+ type + ")" + ctorName + ".constructComponent(opts, getUi)");
+
     }
 
     protected String configType(UiNamespace ns, ClassBuffer out) {

@@ -36,7 +36,7 @@ implements IsComponent<Node, El> {
         if (opts.needsComponent()) {
             opts.withComponent((Api)this);
         }
-        element = Lazy.deferred1(constructor::construct, opts);
+        element = Lazy.deferred1(constructor::constructElement, opts);
         this.opts = opts;
         initialize(element);
     }

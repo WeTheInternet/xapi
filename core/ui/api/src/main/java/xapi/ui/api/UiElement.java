@@ -6,7 +6,7 @@ import jsinterop.annotations.JsType;
 import xapi.event.api.IsEvent;
 import xapi.event.impl.EventTypes;
 import xapi.fu.In1Out1;
-import xapi.fu.iterate.SizedIterable;
+import xapi.fu.Out1;
 import xapi.inject.X_Inject;
 import xapi.ui.api.event.UiEvent;
 import xapi.ui.api.event.UiEventHandler;
@@ -21,17 +21,14 @@ import javax.validation.constraints.NotNull;
  */
 @JsType
 public interface UiElement
-    <Node, Element extends Node, Base extends UiElement<Node, ? extends Node, Base>>
+    <Node, Element extends Node, @JsType Base extends UiElement<Node, ? extends Node, Base>>
     extends ElementInjector<Node, Base>, UiNode<Node, Element, Base> {
 
   @JsProperty
   Base getParent();
 
   @JsProperty
-  Base setParent(Base parent);
-
-  @JsIgnore
-  SizedIterable<Base> getChildren();
+  void setParent(Base parent);
 
   @JsIgnore
   String toSource();
@@ -61,12 +58,12 @@ public interface UiElement
 
   @JsIgnore
   default UiEventsFeature getEvents() {
-    return getOrAddFeature(UiEventsFeature.class, i->createFeature(UiEventsFeature.class));
+    return getOrAddFeature(UiEventsFeature.class, i->createFeature(UiEventsFeature.class, ()->X_Inject.instance(UiEventsFeature.class)));
   }
 
   @JsIgnore
-  default <F extends UiFeature, Generic extends F> F createFeature(Class<Generic> cls) {
-    return X_Inject.instance(cls);
+  default <F extends UiFeature, Generic extends F> F createFeature(Class<Generic> cls, Out1<Generic> defaultInject) {
+    return defaultInject.out1();
   }
 
   @JsIgnore

@@ -13,7 +13,17 @@ public class ComponentConstructor<N, E extends N, C extends IsComponent<N, E>> {
         this.factory = factory;
     }
 
-    public E construct(ComponentOptions<N, E, C> opts) {
+    public E constructElement(ComponentOptions<N, E, C> opts) {
         return factory.io(opts);
     }
+
+    public C constructComponent(
+        ComponentOptions<N, E, C> opts,
+        In1Out1<E, C> getUi
+    ) {
+        E element = constructElement(opts);
+        return getUi.io(element);
+    }
+
+
 }

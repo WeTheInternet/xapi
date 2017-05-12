@@ -118,6 +118,11 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
                 types.add(X_String.join("\n", lines));
                 return false;
             })
+            .withFieldAccessExpr((fa, c)->{
+                String result = resolveTemplate(ctx, templateLiteral(fa.toSource()));
+                types.add(result);
+                return false;
+            })
             .withTypeExpr((expr, c)->{
                 String result = resolveTemplate(ctx, templateLiteral(expr.getType().toSource()));
                 types.add(result);

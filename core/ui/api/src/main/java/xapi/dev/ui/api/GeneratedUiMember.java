@@ -1,9 +1,12 @@
 package xapi.dev.ui.api;
 
 import com.github.javaparser.ast.expr.AnnotationExpr;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
+import com.github.javaparser.ast.visitor.DumpVisitor;
 import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
+import xapi.dev.source.CanAddImports;
 
 import java.io.Serializable;
 
@@ -45,5 +48,20 @@ public class GeneratedUiMember implements Serializable {
     public String getterName() {
         return ("boolean".equals(memberType) || "Boolean".equals(memberType) ? "is" : "get")
             + getCapitalized();
+    }
+
+    public String importType(CanAddImports out) {
+        DumpVisitor v = new DumpVisitor(false) {
+            @Override
+            protected String resolveType(ClassOrInterfaceType type) {
+                String name = type.getName();
+                if (name.contains(".")) {
+                    return out.addImport(name);
+                }
+                return name;
+            }
+        };
+        memberType.accept(v, null);
+        return v.getSource();
     }
 }

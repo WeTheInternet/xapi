@@ -65,7 +65,8 @@ public class JsSupport {
 
   public static ComponentConstructor defineTag(String name, JavaScriptObject prototype, ExtendsTag extendsTag) {
     final JavaScriptObject definition = customElements().define(name, prototype, extendsTag);
-    return new ComponentConstructor(new JsAdapter<>(prototype));
+    final In1Out1 adapter = new JsAdapter<>(prototype);
+    return new ComponentConstructor(adapter);
   }
 
   static ExtendsTag extendsTag(String tagName) {

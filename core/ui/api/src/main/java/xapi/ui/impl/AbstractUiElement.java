@@ -62,9 +62,8 @@ public abstract class
   }
 
   @Override
-  public Base setParent(Base parent) {
+  public void setParent(Base parent) {
     this.parent = parent;
-    return ui();
   }
 
   public SizedIterable<Base> getChildren() {
