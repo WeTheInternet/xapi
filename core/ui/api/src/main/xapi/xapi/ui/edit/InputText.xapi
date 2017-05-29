@@ -22,8 +22,8 @@
             String was = $model.getValue();
             if (X_Util.notEqual(was, value)) {
                 was = normalizeChange(was, value);
+                $model.setValue(value);
             }
-            $model.setValue(value);
             return this;
         }
         ,
@@ -49,7 +49,7 @@
             </if>
             <native-element
                 ref="input"
-                gwt=<input type="text" placeholder=$model::placeholder />
+                gwt=<textarea placeholder=$model::placeholder />
                 javafx=<TextField promptTextProperty=$model::placeholder />
             /native-element>
         </box>
