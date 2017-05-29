@@ -3,6 +3,7 @@ package com.github.javaparser.ast.expr;
 import com.github.javaparser.ast.visitor.GenericVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitor;
 import xapi.fu.Filter.Filter1;
+import xapi.fu.In1Out1;
 import xapi.fu.Maybe;
 
 import static com.github.javaparser.ast.expr.StringLiteralExpr.stringLiteral;
@@ -105,9 +106,15 @@ public class UiAttrExpr extends UiExpr {
     this.annotations = annotations;
   }
 
-  public Maybe<AnnotationExpr> getAnnotation(Filter1<AnnotationExpr> filter) {
+  public <T> Maybe<AnnotationExpr> getAnnotation(In1Out1<AnnotationExpr, T> mapper, In1Out1<T, Boolean> filter) {
+    return getAnnotation(mapper.mapOut(filter));
+  }
+  public Maybe<AnnotationExpr> getAnnotation(In1Out1<AnnotationExpr, Boolean> filter) {
+    if (annotations == null) {
+      return Maybe.not();
+    }
     for (AnnotationExpr annotation : annotations) {
-      if (filter.filter1(annotation)) {
+      if (filter.io(annotation)) {
         return Maybe.nullable(annotation);
       }
     }

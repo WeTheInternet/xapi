@@ -23,8 +23,8 @@ package com.github.javaparser.ast.expr;
 
 import com.github.javaparser.ast.visitor.GenericVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitor;
-
-import java.util.Collections;
+import xapi.fu.MappedIterable;
+import xapi.fu.iterate.EmptyIterator;
 
 /**
  * @author Julio Vilmar Gesser
@@ -53,7 +53,7 @@ public final class MarkerAnnotationExpr extends AnnotationExpr {
 	}
 
   @Override
-  public Iterable<MemberValuePair> getMembers() {
-    return Collections.EMPTY_LIST;
+  public MappedIterable<MemberValuePair> getMembers() {
+    return EmptyIterator.none();
   }
 }

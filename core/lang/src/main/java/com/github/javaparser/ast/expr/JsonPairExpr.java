@@ -78,12 +78,43 @@ public class JsonPairExpr extends UiExpr {
   }
 
   public Optional<AnnotationExpr> getAnnotation(Filter1<AnnotationExpr> filter) {
-    for (AnnotationExpr annotation : annotations) {
-      if (filter.filter1(annotation)) {
-        return Optional.of(annotation);
+    if (annotations != null) {
+      for (AnnotationExpr annotation : annotations) {
+        if (filter.filter1(annotation)) {
+          return Optional.of(annotation);
+        }
       }
     }
     return Optional.empty();
+  }
+
+  public static JsonPairExpr of(String fieldName, Expression expr) {
+    return new JsonPairExpr(fieldName, expr);
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o)
+      return true;
+    if (o == null || getClass() != o.getClass())
+      return false;
+    if (!super.equals(o))
+      return false;
+
+    final JsonPairExpr that = (JsonPairExpr) o;
+
+    if (!keyExpr.equals(that.keyExpr))
+      return false;
+    if (!valueExpr.equals(that.valueExpr))
+      return false;
+    return annotations != null ? annotations.equals(that.annotations) : that.annotations == null;
+  }
+
+  @Override
+  public int hashCode() {
+    int result = super.hashCode();
+    result = 31 * result + keyExpr.hashCode();
+    return result;
   }
 
 }

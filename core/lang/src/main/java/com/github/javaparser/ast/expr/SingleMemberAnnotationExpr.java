@@ -23,6 +23,8 @@ package com.github.javaparser.ast.expr;
 
 import com.github.javaparser.ast.visitor.GenericVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitor;
+import xapi.fu.iterate.SingletonIterator;
+import xapi.fu.iterate.SizedIterable;
 
 import java.util.Collections;
 
@@ -66,7 +68,7 @@ public final class SingleMemberAnnotationExpr extends AnnotationExpr {
 	}
 
   @Override
-  public Iterable<MemberValuePair> getMembers() {
-    return Collections.singleton(new MemberValuePair("value", memberValue));
+  public SizedIterable<MemberValuePair> getMembers() {
+    return SingletonIterator.singleItem(new MemberValuePair("value", memberValue));
   }
 }

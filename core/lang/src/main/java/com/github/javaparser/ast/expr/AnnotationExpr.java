@@ -21,32 +21,59 @@
 
 package com.github.javaparser.ast.expr;
 
+import xapi.fu.MappedIterable;
+import xapi.fu.X_Fu;
+
+import java.util.Arrays;
+
 /**
  * @author Julio Vilmar Gesser
  */
 public abstract class AnnotationExpr extends Expression {
 
-	protected NameExpr name;
+    protected NameExpr name;
 
-	public AnnotationExpr() {}
+    public AnnotationExpr() {}
 
-	public AnnotationExpr(int beginLine, int beginColumn, int endLine,
-			int endColumn) {
-		super(beginLine, beginColumn, endLine, endColumn);
-	}
+    public AnnotationExpr(
+        int beginLine, int beginColumn, int endLine,
+        int endColumn
+    ) {
+        super(beginLine, beginColumn, endLine, endColumn);
+    }
 
-	public NameExpr getName() {
-		return name;
-	}
+    public NameExpr getName() {
+        return name;
+    }
 
-	public String getNameString() {
-		return name.getName();
-	}
+    public String getNameString() {
+        return name.getName();
+    }
 
-    public abstract Iterable<MemberValuePair> getMembers();
+    public abstract MappedIterable<MemberValuePair> getMembers();
 
-	public void setName(NameExpr name) {
-		this.name = name;
-		setAsParentNodeOf(name);
-	}
+    public void setName(NameExpr name) {
+        this.name = name;
+        setAsParentNodeOf(name);
+    }
+
+    public static AnnotationExpr newMarkerAnnotation(String name) {
+        final NameExpr nameExpr = NameExpr.of(name);
+        return new MarkerAnnotationExpr(nameExpr);
+    }
+
+    public static AnnotationExpr newSingleMemberAnnotation(String name, Expression value) {
+        final NameExpr nameExpr = NameExpr.of(name);
+        return new SingleMemberAnnotationExpr(nameExpr, value);
+    }
+
+    public static AnnotationExpr newAnnotation(String name, MemberValuePair ... values) {
+        if (X_Fu.isEmpty(values)) {
+            return newMarkerAnnotation(name);
+        }
+        if (values.length == 1 && values[0].getName().equals("value")) {
+            return newSingleMemberAnnotation(name, values[0].getValue());
+        }
+        return new NormalAnnotationExpr(NameExpr.of(name), Arrays.asList(values));
+    }
 }

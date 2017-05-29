@@ -25,6 +25,8 @@ import com.github.javaparser.ast.NamedNode;
 import com.github.javaparser.ast.visitor.GenericVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitor;
 
+import javax.validation.constraints.NotNull;
+
 /**
  * @author Julio Vilmar Gesser
  */
@@ -94,5 +96,20 @@ public class NameExpr extends Expression implements NamedNode {
         }
         String[] parts = n.split("[.]");
         return parts[parts.length - 1];
+    }
+
+    public static NameExpr of(@NotNull String name) {
+        assert name != null : "Do not create NameExpr w/ a null name";
+        int ind = name.indexOf('.');
+        if (ind == -1) {
+            return new NameExpr(name);
+        }
+        QualifiedNameExpr scope = null;
+        int start = 0;
+        while (ind != -1) {
+            scope = new QualifiedNameExpr(scope, name.substring(start, ind));
+            ind = name.indexOf('.', start = ind+1);
+        }
+        return new QualifiedNameExpr(scope, name.substring(start));
     }
 }

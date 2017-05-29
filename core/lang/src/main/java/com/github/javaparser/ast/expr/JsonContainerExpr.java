@@ -150,4 +150,28 @@ public class JsonContainerExpr extends JsonExpr implements HasSize {
   public int size() {
     return pairs.size();
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o)
+      return true;
+    if (o == null || getClass() != o.getClass())
+      return false;
+    if (!super.equals(o))
+      return false;
+
+    final JsonContainerExpr that = (JsonContainerExpr) o;
+
+    if (isArray != that.isArray)
+      return false;
+    return pairs.equals(that.pairs);
+  }
+
+  @Override
+  public int hashCode() {
+    int result = super.hashCode();
+    result = 31 * result + pairs.hashCode();
+    result = 31 * result + (isArray ? 1 : 0);
+    return result;
+  }
 }
