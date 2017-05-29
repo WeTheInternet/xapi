@@ -42,6 +42,57 @@ public interface MappedIterable<T> extends Iterable<T> {
         return copy;
     }
 
+    default <To> MappedIterable<To> flattenedJoin(In1Out1<T, Iterable<To>> mapper, Out1<To> between) {
+        return () -> new Iterator<To>() {
+
+            public To injected;
+            final Iterator<Iterable<To>> itr = map(mapper).iterator();
+
+            Lazy<Iterator<To>> next = reset();
+
+            private Lazy<Iterator<To>> reset() {
+                return Lazy.deferred1(()->{
+                    if (itr.hasNext()) {
+                        return itr.next().iterator();
+                    }
+                    return EmptyIterator.empty();
+                });
+            }
+
+            @Override
+            public boolean hasNext() {
+                if (injected != null) {
+                    return true;
+                }
+                final Iterator<To> current = next.out1();
+                if (current.hasNext()) {
+                    return true;
+                }
+
+                return false;
+            }
+
+            @Override
+            public To next() {
+                synchronized (itr) {
+                    if (injected != null) {
+                        final To ret = injected;
+                        injected = null;
+                        return ret;
+                    }
+                    final Iterator<To> current = next.out1();
+                    try {
+                        return current.next();
+                    } finally {
+                        if (!current.hasNext()) {
+                            injected = between.out1();
+                            next = reset();
+                        }
+                    }
+                }
+            }
+        };
+    }
     default <To> MappedIterable<To> flatten(In1Out1<T, Iterable<To>> mapper) {
         return () -> new Iterator<To>() {
 

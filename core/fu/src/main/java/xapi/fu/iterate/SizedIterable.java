@@ -7,6 +7,8 @@ import xapi.fu.has.HasSize;
 
 import java.util.Iterator;
 
+import static xapi.fu.iterate.SingletonIterator.singleItem;
+
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 2/5/17.
  */
@@ -42,5 +44,51 @@ public interface SizedIterable <T> extends MappedIterable<T>, HasSize {
                 return size.out1();
             }
         };
+    }
+
+    default SizedIterable<T> prepend(T valueToInsert) {
+        return prepend(singleItem(valueToInsert));
+    }
+
+    default SizedIterable<T> prepend(SizedIterable<T> valueToInsert) {
+        if (valueToInsert == null) {
+            return this;
+        }
+        return new BiSizedIterable<>(valueToInsert, this);
+    }
+
+    default SizedIterable<T> append(T valueToInsert) {
+        return append(singleItem(valueToInsert));
+    }
+
+    default SizedIterable<T> append(SizedIterable<T> valueToInsert) {
+        if (valueToInsert == null) {
+            return this;
+        }
+        return new BiSizedIterable<>(this, valueToInsert);
+    }
+
+    default SizedIterable<T> insert(int i, T valueToInsert) {
+        return insert(i, singleItem(valueToInsert));
+    }
+
+    default SizedIterable<T> insert(int i, SizedIterable<T> valueToInsert) {
+        if (i == 0) {
+            // prepend
+            return prepend(valueToInsert);
+        }
+        if (i == -1) {
+            // append
+            return append(valueToInsert);
+        }
+        if (i < -1) {
+            throw new IllegalArgumentException("negative index " + i + " disallowed; only -1 is magic (for append)");
+        }
+        // slice this iterable at the given boundary
+        return new SlicedSizedIterable<>(
+            i, this,
+            SlicedSizedIterable.DRAIN_ALL, valueToInsert,
+            true
+        );
     }
 }

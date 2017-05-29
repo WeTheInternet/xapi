@@ -17,7 +17,9 @@ import java.util.function.Predicate;
 public interface X_Fu {
 
   In1Out1<String, String> STRING_DUPLICATE = s -> s + s;
+  // empty arrays are immutable, because they hold nothing
   Object[] EMPTY = new Object[0];
+  int[] EMPTY_INTS = new int[0];
 
   static <T> T[] array(T... t) {
     return t;
@@ -398,6 +400,9 @@ public interface X_Fu {
   @SuppressWarnings("unchecked")
   static <T> T[] emptyArray() {
     return (T[]) EMPTY;
+  }
+  static int[] emptyIntArray() {
+    return EMPTY_INTS;
   }
 
   static int increment(int integer) {

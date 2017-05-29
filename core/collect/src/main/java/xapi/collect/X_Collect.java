@@ -3,7 +3,6 @@ package xapi.collect;
 import xapi.annotation.gc.NotReusable;
 import xapi.collect.api.*;
 import xapi.collect.api.CollectionOptions;
-import xapi.collect.impl.EmptyIterable;
 import xapi.collect.impl.HashComparator;
 import xapi.collect.impl.IntToManyList;
 import xapi.collect.impl.StringToDeepMap;
@@ -12,6 +11,7 @@ import xapi.collect.proxy.CollectionProxy;
 import xapi.collect.service.CollectionService;
 import xapi.fu.In2Out1;
 import xapi.fu.iterate.ArrayIterable;
+import xapi.fu.iterate.EmptyIterator;
 import xapi.fu.iterate.SingletonIterator;
 import xapi.util.api.ReceivesValue;
 import xapi.util.impl.ReverseIterable;
@@ -123,7 +123,7 @@ public class X_Collect {
     return new SingletonIterator<>(item);
   }
   public static <T, S extends T> Iterable<T> arrayIterable(@SuppressWarnings("all") final S ... items) {
-    return items == null ? EmptyIterable.EMPTY : new ArrayIterable<>(items);
+    return items == null ? EmptyIterator.none() : new ArrayIterable<>(items);
   }
   @SuppressWarnings({"all"})
   public static <V> ClassTo<V> newClassMap() {

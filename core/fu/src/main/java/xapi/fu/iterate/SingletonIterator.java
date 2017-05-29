@@ -4,9 +4,9 @@ import xapi.fu.MappedIterable;
 
 import java.util.Iterator;
 
-public class SingletonIterator <X> implements MappedIterable<X> {
+public class SingletonIterator <X> implements SizedIterable<X> {
 
-  private final class Iter implements Iterator<X> {
+  private final class Iter implements SizedIterator<X> {
     private X object;
 
     public Iter(X object) {
@@ -31,6 +31,11 @@ public class SingletonIterator <X> implements MappedIterable<X> {
     public void remove() {
       object = null;
     }
+
+    @Override
+    public int size() {
+      return object == null ? 0 : 1;
+    }
   }
 
   private final X singleton;
@@ -44,11 +49,16 @@ public class SingletonIterator <X> implements MappedIterable<X> {
   }
 
   @Override
-  public Iterator<X> iterator() {
+  public SizedIterator<X> iterator() {
     return new Iter(singleton);
   }
 
   public static <T> SingletonIterator<T> singleItem(T item) {
     return new SingletonIterator<>(item);
+  }
+
+  @Override
+  public int size() {
+    return 1;
   }
 }

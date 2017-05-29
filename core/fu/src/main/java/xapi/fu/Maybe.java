@@ -116,6 +116,36 @@ public interface Maybe <V> extends Rethrowable {
         return mapIfPresent(mapper, Out1.null1());
     }
 
+    default Maybe<V> mapIfAbsent(Out1<V> supplier) {
+        return ()->{
+            final V out = get();
+            if (out == null) {
+                return supplier.out1();
+            }
+            return out;
+        };
+    }
+
+    default <I1> Maybe<V> mapIfAbsent(In1Out1<I1, V> supplier, I1 i1) {
+        return ()->{
+            final V out = get();
+            if (out == null) {
+                return supplier.io(i1);
+            }
+            return out;
+        };
+    }
+
+    default <I1, I2> Maybe<V> mapIfAbsent(In2Out1<I1, I2, V> supplier, I1 i1, I2 i2) {
+        return ()->{
+            final V out = get();
+            if (out == null) {
+                return supplier.io(i1, i2);
+            }
+            return out;
+        };
+    }
+
     default Optional<V> optional() {
         if (isAbsent()) {
             return Optional.empty();
@@ -151,6 +181,12 @@ public interface Maybe <V> extends Rethrowable {
             return get();
         }
         return val.io(i1, i2);
+    }
+    default <I1, I2, I3> V ifAbsentSupply(In3Out1<I1, I2, I3, V> val, I1 i1, I2 i2, I3 i3) {
+        if (isPresent()) {
+            return get();
+        }
+        return val.io(i1, i2, i3);
     }
     default <I1, I2> V ifAbsentSupplyLazy(In2Out1<I1, I2, V> val, Out1<I1> i1, Out1<I2> i2) {
         if (isPresent()) {
@@ -217,6 +253,23 @@ public interface Maybe <V> extends Rethrowable {
                 }
             }
             return null;
+        };
+    }
+
+    @SuppressWarnings("unchecked")
+    default Maybe<V> lazy() {
+        final Out1[] value = {this::get};
+        return ()->{
+            synchronized (value) {
+                if (!(value[0] instanceof IsImmutable)) {
+                    final Object val = value[0].out1();
+                    if (val != null) {
+                        value[0] = Immutable.immutable1(val);
+                    }
+                    return (V)val;
+                }
+            }
+            return (V)value[0].out1();
         };
     }
 }

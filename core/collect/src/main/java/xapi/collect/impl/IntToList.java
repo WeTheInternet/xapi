@@ -270,4 +270,25 @@ class IntToList<E> implements IntTo<E>, Serializable {
     }
     return true;
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o)
+      return true;
+    if (o == null || getClass() != o.getClass())
+      return false;
+
+    final IntToList<?> intToList = (IntToList<?>) o;
+
+    if (!list.equals(intToList.list))
+      return false;
+    return type != null ? type.equals(intToList.type) : intToList.type == null;
+  }
+
+  @Override
+  public int hashCode() {
+    int result = list.hashCode();
+    result = 31 * result + (type != null ? type.hashCode() : 0);
+    return result;
+  }
 }

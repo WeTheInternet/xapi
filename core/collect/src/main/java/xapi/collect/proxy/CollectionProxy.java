@@ -41,6 +41,14 @@ public interface CollectionProxy <K, V> extends HasEmptiness
 
   void setValue(Object key, Object value);
 
+  default void copyFrom(CollectionProxy<K, V> other) {
+      other.readWhileTrue((k, v)->{
+          entryFor(other)
+              .setValue(v);
+          return true;
+      });
+  }
+
   V remove(Object key);
 
   int size();
@@ -60,9 +68,8 @@ public interface CollectionProxy <K, V> extends HasEmptiness
    boolean readWhileTrue(In2Out1<K, V, Boolean> callback);
 
    default boolean readWhileTrue(In1<Out2<K, V>> callback, In2Out1<K, V, Boolean> filter) {
-     return readWhileTrue(new In2Out1<K, V, Boolean>() {
-         @Override
-         public Boolean io(K k, V v) {
+     return readWhileTrue(
+         (K k, V v) -> {
              if (filter.io(k, v)) {
                  Out2<K, V> o = Out2.out2Immutable(k, v);
                  callback.in(o);
@@ -70,7 +77,7 @@ public interface CollectionProxy <K, V> extends HasEmptiness
              }
              return false;
          }
-     });
+     );
    }
 
    default void forEachValue(In1<V> callback) {
@@ -119,4 +126,5 @@ public interface CollectionProxy <K, V> extends HasEmptiness
   default String toString(K key, V value) {
       return key + "=" + value ;
   }
+
 }

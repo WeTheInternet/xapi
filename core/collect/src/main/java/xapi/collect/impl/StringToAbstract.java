@@ -151,4 +151,24 @@ public class StringToAbstract <V> implements StringTo<V>{
     return map.values();
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o)
+      return true;
+    if (o == null || getClass() != o.getClass())
+      return false;
+
+    final StringToAbstract<?> that = (StringToAbstract<?>) o;
+
+    if (!map.equals(that.map))
+      return false;
+    return valueType != null ? valueType.equals(that.valueType) : that.valueType == null;
+  }
+
+  @Override
+  public int hashCode() {
+    int result = map.hashCode();
+    result = 31 * result + (valueType != null ? valueType.hashCode() : 0);
+    return result;
+  }
 }
