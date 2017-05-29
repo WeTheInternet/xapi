@@ -347,4 +347,13 @@ public class X_String {
 
   }
 
+  public static String firstCharToLowercase(String name) {
+    if (name == null) {
+      return null;
+    }
+    if (name.length() == 1) {
+      return name.toLowerCase();
+    }
+    return Character.toLowerCase(name.charAt(0)) + name.substring(1);
+  }
 }

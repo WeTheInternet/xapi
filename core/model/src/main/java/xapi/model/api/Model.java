@@ -1,7 +1,11 @@
 package xapi.model.api;
 
+import xapi.collect.api.IntTo;
+import xapi.collect.api.StringTo;
+import xapi.collect.proxy.CollectionProxy;
 import xapi.fu.In1;
 import xapi.fu.In1Out1;
+import xapi.fu.MappedIterable;
 import xapi.fu.Out1;
 
 import java.util.Map.Entry;
@@ -43,7 +47,7 @@ public interface Model {
   boolean hasProperty(String key);
 
   Class<?> getPropertyType(String key);
-  Iterable<Entry<String, Object>> getProperties();
+  MappedIterable<Entry<String, Object>> getProperties();
   String[] getPropertyNames();
   Model setProperty(String key, Object value);
   Model removeProperty(String key);
@@ -64,4 +68,39 @@ public interface Model {
 
   String getType();
 
+    default void absorb(Model model) {
+        absorb(model, false);
+    }
+    default void absorb(Model model, boolean append) {
+        model.getProperties()
+            .forAll(e -> {
+                final Object yourVal = e.getValue();
+                if (yourVal == null) {
+                    if (!append) {
+                        removeProperty(e.getKey());
+                    }
+                    return;
+                }
+                final Object myVal = getProperty(e.getKey());
+                final Class<?> propType = getPropertyType(e.getKey());
+                if (Model.class.isAssignableFrom(propType)) {
+                    Model myModel = (Model) myVal;
+                    assert propType == myModel.getPropertyType(e.getKey());
+                    // perform deeper absorb, to avoid clearing references...
+                    myModel.absorb((Model) yourVal);
+                    return;
+                }
+                if (CollectionProxy.class.isAssignableFrom(propType)) {
+                    CollectionProxy myList = (CollectionProxy) myVal;
+                    CollectionProxy yourList = (CollectionProxy) yourVal;
+                   if (!append) {
+                        myList.clear();
+                    }
+                    myList.copyFrom(yourList);
+                    return;
+                }
+                // TODO handle more collection types...
+                setProperty(e.getKey(), e.getValue());
+            });
+    }
 }

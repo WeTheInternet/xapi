@@ -1,5 +1,6 @@
 package xapi.gwt.model;
 
+import xapi.fu.MappedIterable;
 import xapi.model.impl.AbstractModel;
 
 import java.util.Map.Entry;
@@ -7,7 +8,7 @@ import java.util.Map.Entry;
 public class ModelGwt extends AbstractModel {
 
   @Override
-  public Iterable<Entry<String, Object>> getProperties() {
+  public MappedIterable<Entry<String, Object>> getProperties() {
     // Because we know all generated Gwt modules MUST implement property names,
     // We can safely enforce serialization ordering using .getPropertyNames()
     final String[] names = getPropertyNames();

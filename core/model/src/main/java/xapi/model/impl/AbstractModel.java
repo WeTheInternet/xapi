@@ -3,6 +3,7 @@ package xapi.model.impl;
 import xapi.annotation.inject.InstanceDefault;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
+import xapi.fu.MappedIterable;
 import xapi.fu.Out1;
 import xapi.log.X_Log;
 import xapi.model.X_Model;
@@ -24,7 +25,7 @@ import java.util.Objects;
 @InstanceDefault(implFor=Model.class)
 public class AbstractModel implements Model, PersistentModel, NestedModel{
 
-  protected final class Itr implements Iterable<Entry<String, Object>> {
+  protected final class Itr implements MappedIterable<Entry<String, Object>> {
 
     private final String[] keys;
 
@@ -128,7 +129,7 @@ public class AbstractModel implements Model, PersistentModel, NestedModel{
   }
 
   @Override
-  public Iterable<Entry<String, Object>> getProperties() {
+  public MappedIterable<Entry<String, Object>> getProperties() {
     final String[] names = getPropertyNames();
     return new Itr(names);
   }
