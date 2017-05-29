@@ -129,6 +129,12 @@ public class GeneratedUiComponent {
         return getApi().model.out1();
     }
 
+    public GeneratedUiField getPublicField(String name) {
+        name = name.replaceFirst("(is|get|set|has|add|remove|clear)([A-Z][a-zA-Z0-9]*)", "$2");
+        name = X_String.firstCharToLowercase(name);
+        return getPublicModel().getField(name);
+    }
+
     public GeneratedUiModel getPrivateModel() {
         return getBase().model.out1();
     }
@@ -222,10 +228,10 @@ public class GeneratedUiComponent {
 
                 final SourceBuilder<GeneratedJavaFile> out = baseLayer.getSource();
                 for (GeneratedTypeParameter generic : baseGenerics) {
-//                    if (baseLayer.hasLocalDefinition(generic.getSystemName())) {
+                    if (!baseLayer.hasLocalDefinition(generic.getSystemName())) {
                         String baseName = generic.computeDeclaration(baseLayer, ImplLayer.Base, gen, ns, out);
                         out.getClassBuffer().addGenerics(baseName);
-//                    }
+                    }
                 }
 
             }
@@ -317,14 +323,20 @@ public class GeneratedUiComponent {
             String apiName = baseLayer.getApiName();
             final MappedIterable<GeneratedTypeParameter> apiParams = api.out1().getTypeParameters();
             if (apiParams.isNotEmpty()) {
-                apiName += "<";
+                boolean first = true;
                 // TODO get namespace from somewhere better...
                 final UiNamespace ns = gen.tools().namespace();
                 for (GeneratedTypeParameter generic : apiLayer.getTypeParameters()) {
-                    String name = generic.getSystemName();
-                    if (!apiName.endsWith("<")) {
+                    if (baseLayer.hasLocalDefinition(generic.getSystemName())) {
+                        continue;
+                    }
+                    if (first) {
+                        first = false;
+                        apiName += "<";
+                    } else {
                         apiName += ", ";
                     }
+                    String name = generic.getSystemName();
                     if (genericInfo.hasTypeParameter(ImplLayer.Base, name)) {
                         // Add the generic to our implements clause; we've already declared this type
                         apiName += genericInfo.getLayerName(ImplLayer.Base, name);
@@ -334,7 +346,9 @@ public class GeneratedUiComponent {
                         out.addGenerics(computed);
                     }
                 }
-                apiName += ">";
+                if (!first) {
+                    apiName += ">";
+                }
             }
             if (api.isResolved() && api.out1().shouldSaveType()) {
                 out.addInterfaces(apiName);
@@ -447,7 +461,7 @@ public class GeneratedUiComponent {
         final String creator = "create" + X_String.toTitleCase(refName);
         // Now, add a per-implementation override.
         final Type type = new ClassOrInterfaceType(namespace.getElementType(out));
-        final GeneratedUiMethod method = new GeneratedUiMethod(this, type, creator, (imp, ui)->
+        final GeneratedUiMethod method = new GeneratedUiMethod(type, creator, (imp, ui)->
             imp.getElementBuilderType(namespace)
         );
         out.createMethod("protected abstract " + builder + " " + creator);

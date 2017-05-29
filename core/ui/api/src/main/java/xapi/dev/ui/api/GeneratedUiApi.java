@@ -1,6 +1,8 @@
 package xapi.dev.ui.api;
 
+import com.github.javaparser.ast.type.Type;
 import xapi.dev.source.SourceBuilder;
+import xapi.fu.In1Out1;
 import xapi.source.read.JavaModel.IsTypeDefinition;
 
 /**
@@ -42,4 +44,22 @@ public class GeneratedUiApi extends GeneratedUiLayer {
         return IsTypeDefinition.newInterface(getPackageName(), getWrappedName());
     }
 
+    /**
+     * Add an arbitrary extension to this Api;
+     *
+     *
+     * @param pkgName
+     * @param apiName
+     * @param baseName
+     * @param apiFactory
+     * @param baseFactory
+     */
+    public void addExtension(
+        String pkgName,
+        String apiName,
+        String baseName,
+        In1Out1<Type, String> apiFactory,
+        In1Out1<Type, String> baseFactory
+    ) {
+    }
 }

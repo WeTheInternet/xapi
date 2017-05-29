@@ -14,6 +14,7 @@ import xapi.fu.Lazy;
 import xapi.fu.MappedIterable;
 import xapi.fu.Maybe;
 import xapi.fu.X_Fu;
+import xapi.source.X_Source;
 import xapi.source.read.JavaModel.IsTypeDefinition;
 import xapi.ui.api.NodeBuilder;
 
@@ -48,7 +49,7 @@ public abstract class GeneratedUiLayer extends GeneratedJavaFile {
         return getTypeName(); // you may want to suffix your models.
     }
 
-    private String nameNode, nameElement, nameElementBuilder, nameStyleService, nameStyleElement, nameBase, nameApi;
+    private String nameNode, nameElement, nameElementBuilder, nameModel, nameBase, nameApi;
     private final StringTo<In1<GeneratedUiImplementation>> abstractMethods;
     private final StringTo<ReferenceType> localDefinitions;
 
@@ -73,6 +74,14 @@ public abstract class GeneratedUiLayer extends GeneratedJavaFile {
 
     public String getModelName() {
         return model.out1().getWrappedName();
+    }
+
+    public String getModelNameQualified() {
+        final String modelName = model.out1().getWrappedName();
+        if (modelName.indexOf('.') == 0) {
+            return X_Source.qualifiedName(getPackageName(), modelName);
+        }
+        return modelName;
     }
 
     public GeneratedUiModel getModel() {
@@ -121,6 +130,22 @@ public abstract class GeneratedUiLayer extends GeneratedJavaFile {
             );
         }
         return nameElement;
+    }
+
+    public String getModelType(UiNamespace namespace) {
+        if (nameModel == null) {
+            String modelName = getModelNameQualified();
+            if (modelName == null) {
+                Maybe<GeneratedUiLayer> search = getSuperType();
+                while (modelName == null && search.isPresent()) {
+                    modelName = search.get().getModelNameQualified();
+                    search = search.get().getSuperType();
+                }
+            }
+            assert modelName != null : "Did not have a model name present...";
+            nameModel = getSource().addImport(modelName);
+        }
+        return nameModel;
     }
 
     public String getBaseType(UiNamespace namespace) {

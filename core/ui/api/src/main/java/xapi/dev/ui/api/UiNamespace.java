@@ -19,6 +19,7 @@ public interface UiNamespace {
             TYPE_IMPL = "Impl",
             TYPE_NODE = "Node",
             TYPE_ELEMENT = "El",
+            TYPE_MODEL = "Mod",
             TYPE_ELEMENT_BUILDER = "ElBuilder"
     ;
 

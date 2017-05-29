@@ -111,11 +111,11 @@ public abstract class AbstractUiImplementationGenerator <Ctx extends ApiGenerato
     }
 
     @Override
-    protected void initializeComponent(GeneratedUiComponent result) {
+    protected void initializeComponent(GeneratedUiComponent result, ContainerMetadata metadata) {
         if (!X_String.isEmpty(getImplPrefix())) {
             getImpl(result).setPrefix(getImplPrefix());
         }
-        super.initializeComponent(result);
+        super.initializeComponent(result, metadata);
     }
 
     @Override

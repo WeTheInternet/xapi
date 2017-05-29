@@ -20,6 +20,7 @@ import xapi.fu.Mutable;
 import xapi.fu.X_Fu;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
+import xapi.log.X_Log;
 
 import static xapi.dev.ui.api.UiConstants.EXTRA_MODEL_INFO;
 import static xapi.fu.Out1.out1Deferred;
@@ -116,18 +117,31 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
             if (modelNode.isPresent()) {
                 // When a modelNode is present, we should delegate to a generated element's toDom method.
                 final Expression modelExpr = modelNode.get();
-                final Expression nodeToUse = tools.resolveVar(ctx, modelExpr);
-                if (nodeToUse != null && nodeToUse.hasExtra(EXTRA_MODEL_INFO)) {
-                    // yay, some model info for us!+
-                    //                                final GeneratedUiField modelInfo = nodeToUse.getExtra(EXTRA_MODEL_INFO);
-                    ComponentBuffer otherTag = tools.getComponentInfo(n.getName());
-                    // We'll want to defer to a factory method on the other component.
-                    MethodCallExpr factoryMethod = otherTag.getTagFactory(tools, ctx, component, namespace, n);
-                    String initializer = tools.resolveString(ctx, factoryMethod);
-                    toDom.println(type + " " + refFieldName + " = " + initializer + ";");
-                    printedVar = true;
-                } else {
-                    // The model node was not a named key; it might be a json literal...
+                Expression nodeToUse = tools.resolveVar(ctx, modelExpr);
+                if (nodeToUse != null) {
+                    if (!nodeToUse.hasExtra(EXTRA_MODEL_INFO)) {
+                        nodeToUse = owner.resolveReference(tools, ctx, component, baseClass, rootRefField, nodeToUse, false);
+                    }
+                    if (nodeToUse.hasExtra(EXTRA_MODEL_INFO)) {
+                        // yay, some model info for us!
+                        // final GeneratedUiField modelInfo = nodeToUse.getExtra(EXTRA_MODEL_INFO);
+                        ComponentBuffer otherTag = tools.getGenerator().getComponent(ctx, n.getName());
+                        // We'll want to defer to a factory method on the other component.
+                        if (otherTag == null) {
+                            // not
+                            final GeneratedUiDefinition info = tools.getDefinition(ctx, n.getName());
+                            toDom.println(type + " " + refFieldName + " = create" + info.getBaseName() + "();");
+                        } else {
+
+                            MethodCallExpr factoryMethod = otherTag.getTagFactory(tools, ctx, component, namespace, n);
+                            String initializer = tools.resolveString(ctx, factoryMethod);
+                            toDom.println(type + " " + refFieldName + " = " + initializer + ";");
+                        }
+                        printedVar = true;
+                    } else {
+                        // The model node was not a named key; it might be a json literal...
+                        X_Log.info(getClass(), "");
+                    }
                 }
             }
 
@@ -225,8 +239,7 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
             n.getAttribute("allOf")
                 .readIfPresent(all->{
                     final Expression startExpr = all.getExpression();
-                    owner.resolveReference(tools, ctx, component, baseClass, rootRefField, all.getExpression());
-                    final Expression endExpr = all.getExpression();
+                    final Expression endExpr = owner.resolveReference(tools, ctx, component, baseClass, rootRefField, all);
 
                     final Maybe<UiAttrExpr> index = n.getAttribute("index");
 
@@ -443,7 +456,7 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
                 boolean hasUnknownInput = false;
                 final Expression[] myArgs = asMethod.getArgs().toArray(new Expression[asMethod.getArgs().size()]);
                 for (Expression param : myArgs) {
-                    owner.resolveReference(tools, ctx, component, baseClass, rootRefField, param);
+                    owner.resolveReference(tools, ctx, component, baseClass, rootRefField, param, true);
                 }
 
                 Do undo = owner.resolveSpecialNames(ctx, component, baseClass, rootRefField);
@@ -496,8 +509,15 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
 
             boolean first = true;
             for (UiAttrExpr attr : n.getAttributes()) {
-                owner.resolveReference(tools, ctx, component, baseClass, rootRefField, attr.getExpression());
-                final String serialized = tools.resolveString(ctx, attr.getExpression());
+                final Expression expr = owner.resolveReference(
+                    tools,
+                    ctx,
+                    component,
+                    baseClass,
+                    rootRefField,
+                    attr
+                );
+                final String serialized = tools.resolveString(ctx, expr);
                 // TODO handle escaping...
                 if (!first) {
                     toDom.print(" &&");

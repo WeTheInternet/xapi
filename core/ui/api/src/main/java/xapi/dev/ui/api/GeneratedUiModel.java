@@ -15,6 +15,7 @@ import xapi.util.X_String;
  */
 public class GeneratedUiModel extends GeneratedJavaFile {
     private final StringTo<GeneratedUiField> fields;
+    private String nameOverride;
 
     public GeneratedUiModel(GeneratedUiComponent owner, String packageName, String className) {
         this(owner, null, packageName, className);
@@ -46,7 +47,7 @@ public class GeneratedUiModel extends GeneratedJavaFile {
 
     @Override
     protected String wrapName(String className) {
-        return "Model" + className;
+        return nameOverride == null ? "Model" + className : nameOverride;
     }
 
     public GeneratedUiField addField(UiGeneratorTools tools, Type type, String fieldName, boolean immutable) {
@@ -87,5 +88,9 @@ public class GeneratedUiModel extends GeneratedJavaFile {
 
     public GeneratedUiField getField(String name) {
         return fields.get(name);
+    }
+
+    public void overrideName(String name) {
+        this.nameOverride = name;
     }
 }

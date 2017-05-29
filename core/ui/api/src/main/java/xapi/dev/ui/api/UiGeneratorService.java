@@ -2,7 +2,10 @@ package xapi.dev.ui.api;
 
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
+import com.github.javaparser.ast.type.ReferenceType;
+import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.gen.SourceHelper;
+import xapi.dev.ui.impl.AbstractUiImplementationGenerator;
 import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.dev.ui.api.ContainerMetadata.MetadataRoot;
 import xapi.dev.ui.impl.UiGeneratorVisitor;
@@ -59,5 +62,8 @@ public interface UiGeneratorService <Raw> {
                                                             In1Out1<UiContainerExpr, IsQualified> type,
                                                             UiContainerExpr ... parsed);
 
-    ComponentBuffer getBuffer(String name);
+    GeneratedUiDefinition getComponentDefinition(ApiGeneratorContext<?> ctx, String name);
+    ComponentBuffer getComponent(ApiGeneratorContext<?> ctx, String name);
+
+    ReferenceType getDefaultComponentType(AbstractUiImplementationGenerator impl, GeneratedUiComponent component);
 }

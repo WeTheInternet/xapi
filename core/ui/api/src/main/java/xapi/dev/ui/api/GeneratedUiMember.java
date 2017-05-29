@@ -7,8 +7,10 @@ import com.github.javaparser.ast.visitor.DumpVisitor;
 import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.dev.source.CanAddImports;
+import xapi.fu.iterate.SizedIterable;
 
 import java.io.Serializable;
+import java.util.Iterator;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 2/10/17.
@@ -63,5 +65,49 @@ public class GeneratedUiMember implements Serializable {
         };
         memberType.accept(v, null);
         return v.getSource();
+    }
+
+    public void addAnnotation(AnnotationExpr anno) {
+        annotations.add(anno);
+    }
+
+    public void addAnnotations(Iterable<AnnotationExpr> anno) {
+        if (anno != null) {
+            anno.forEach(annotations::add);
+        }
+    }
+
+    public SizedIterable<AnnotationExpr> getAnnotations() {
+        return annotations.forEachItem();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+
+        final GeneratedUiMember that = (GeneratedUiMember) o;
+
+        if (!memberName.equals(that.memberName))
+            return false;
+        if (annotations != null ? !annotations.equals(that.annotations) : that.annotations != null)
+            return false;
+        return memberType.equals(that.memberType);
+    }
+
+    @Override
+    public int hashCode() {
+        return memberName.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "GeneratedUiMember{" +
+            "memberName='" + memberName + '\'' +
+            ", annotations=" + annotations +
+            ", memberType=" + memberType +
+            '}';
     }
 }

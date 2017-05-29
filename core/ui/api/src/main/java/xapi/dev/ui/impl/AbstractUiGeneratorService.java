@@ -6,6 +6,7 @@ import com.github.javaparser.ParseException;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.plugin.NodeTransformer;
+import com.github.javaparser.ast.type.ReferenceType;
 import com.github.javaparser.ast.visitor.ConcreteModifierVisitor;
 import com.github.javaparser.ast.visitor.ModifierVisitorAdapter;
 import xapi.collect.X_Collect;
@@ -22,6 +23,7 @@ import xapi.fu.iterate.ArrayIterable;
 import xapi.fu.iterate.CachingIterator;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
+import xapi.io.X_IO;
 import xapi.log.X_Log;
 import xapi.source.X_Source;
 import xapi.source.read.JavaModel.IsQualified;
@@ -40,6 +42,9 @@ import javax.tools.FileObject;
 import javax.tools.JavaFileManager;
 import javax.tools.StandardLocation;
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.net.URL;
+import java.util.Enumeration;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -56,6 +61,7 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
     protected final IntTo.Many<Do> onDone;
     protected SourceHelper<Raw> service;
     protected final Lazy<Iterable<UiImplementationGenerator>> impls;
+    protected final In1Out1<Ctx, StringTo<GeneratedUiDefinition>> definitions;
     protected final ChainBuilder<GeneratedUiComponent> seen;
     protected final StringTo<ComponentBuffer> allComponents;
 
@@ -88,9 +94,71 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
         );
         seen = Chain.startChain();
         allComponents = X_Collect.newStringMap(ComponentBuffer.class);
+        StringTo<GeneratedUiDefinition>[] map = new StringTo[1];
+        definitions = In1Out1.of(this::loadClasspathDefinitions)
+                            .lazy((ctx, factory)-> {
+                                if (map[0] == null) {
+                                    map[0] = factory.io(ctx);
+                                }
+                                return map[0];
+                            });
+
         resetState();
     }
 
+    private StringTo<GeneratedUiDefinition> loadClasspathDefinitions(Ctx ctx) {
+        final StringTo<GeneratedUiDefinition> map = X_Collect.newStringMapInsertionOrdered(GeneratedUiDefinition.class);
+        try {
+            final Enumeration<URL> settings = Thread.currentThread().getContextClassLoader().getResources(
+                "settings.xapi");
+            final Enumeration<URL> generatedSettings = Thread.currentThread().getContextClassLoader().getResources(
+                "generated-settings.xapi");
+            loadSettings(ctx, map, settings);
+            loadSettings(ctx, map, generatedSettings);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return map;
+    }
+
+    private void loadSettings(Ctx ctx, StringTo<GeneratedUiDefinition> map, Enumeration<URL> settings) throws IOException {
+        while (settings.hasMoreElements()) {
+            final URL settingsFile = settings.nextElement();
+            try {
+                loadSettings(ctx, map, settingsFile);
+            } catch (ParseException e) {
+                X_Log.error(AbstractUiGeneratorService.class,
+                    "Bad settings file", settingsFile, e);
+            }
+        }
+    }
+
+    private void loadSettings(Ctx ctx, StringTo<GeneratedUiDefinition> map, URL settingsFile) throws IOException,
+                                                                                            ParseException {
+        // TODO have a settings service to do this once globally per classloader
+        String source = X_IO.toStringUtf8(settingsFile.openStream());
+        final UiContainerExpr container = JavaParser.parseUiContainer(source);
+        for (UiAttrExpr component : container.getAttributesMatching(attr -> attr.getNameString().equals("components"))) {
+            if (!(component.getExpression() instanceof JsonContainerExpr)) {
+                throw new IllegalArgumentException("Components tag must be a [json, array]; you sent " + component);
+            }
+            JsonContainerExpr items = (JsonContainerExpr) component.getExpression();
+            if (!items.isArray()) {
+                throw new IllegalArgumentException("Components tag must be a [json, array]; you sent " + component);
+            }
+            items.getValues()
+                 .forAll(e->{
+                     final GeneratedUiDefinition definition = GeneratedUiDefinition.fromSettings(
+                         tools(),
+                         ctx,
+                         (UiContainerExpr) e
+                     );
+                     map.put(definition.getTagName(), definition);
+                     map.put(definition.getTypeName(), definition);
+                     map.put(definition.getQualifiedName(), definition);
+                 });
+        }
+    }
 
     @Override
     public ComponentBuffer initialize(
@@ -101,9 +169,9 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
         final String simpleName = X_Source.enclosedNameFlattened(pkgName, type.getQualifiedName());
         final MetadataRoot root = state.metadata.out1();
         final ContainerMetadata metadata = createMetadata(root, container);
-        final GeneratedUiComponent component = newComponent(pkgName, simpleName);
-        final ComponentBuffer buffer = new ComponentBuffer(component, metadata);
         final Ctx ctx = contextFor(type, container);
+        final GeneratedUiComponent component = newComponent(pkgName, simpleName, metadata);
+        final ComponentBuffer buffer = new ComponentBuffer(component, metadata);
         if (container.getName().equals("define-tag")) {
             // TODO: handle define-tags by NOT storing the whole buffer.
             // A Buffer is going to need to handle multiple tag definitions,
@@ -117,7 +185,6 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
         buffer.getRoot().setContext(ctx);
         buffer.setElement(type);
         metadata.setControllerType(pkgName, simpleName);
-        String generatedName = calculateGeneratedName(pkgName, simpleName, container);
         impls.out1().forEach(impl->impl.spyOnNewComponent(buffer));
         allComponents.put(type.getQualifiedName(), buffer);
         allComponents.put(type.getSimpleName(), buffer);
@@ -612,13 +679,6 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
     }
 
     @Override
-    public String calculateGeneratedName(
-        String pkgName, String className, UiContainerExpr expr
-    ) {
-        return "Super" + super.calculateGeneratedName(pkgName, className, expr);
-    }
-
-    @Override
     public UiGeneratorTools tools() {
         return this;
     }
@@ -629,8 +689,31 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
     }
 
     @Override
-    public ComponentBuffer getBuffer(String name) {
+    public ComponentBuffer getComponent(ApiGeneratorContext<?> ctx, String name) {
         return allComponents.get(name);
+    }
+
+    @Override
+    public GeneratedUiDefinition getComponentDefinition(ApiGeneratorContext<?> ctx, String name) {
+        return getDefinition((Ctx)ctx, name);
+    }
+
+    @Override
+    public GeneratedUiDefinition getDefinition(Ctx ctx, String name) {
+        if (allComponents.containsKey(name)) {
+            return allComponents.get(name).getDefinition();
+        }
+        // otherwise, we need to lookup the type from saved settings.xapi
+        return definitions.io((Ctx)ctx).get(name);
+    }
+
+    @Override
+    public ReferenceType getDefaultComponentType(
+        AbstractUiImplementationGenerator impl, GeneratedUiComponent component
+    ) {
+        // TODO: create a generator-scoped ClassWorld for type lookups,
+        // For now, we are going to use SimpleComponent to erase UiNode from required parameter types
+        return null;
     }
 
     @Override
@@ -704,11 +787,11 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
     }
 
     @Override
-    protected void initializeComponent(GeneratedUiComponent result) {
+    protected void initializeComponent(GeneratedUiComponent result, ContainerMetadata metadata) {
         seen.add(result);
         for (UiImplementationGenerator impl : impls.out1()) {
             if (impl instanceof UiGeneratorTools) {
-                ((UiGeneratorTools)impl).initializeComponent(result);
+                ((UiGeneratorTools)impl).initializeComponent(result, metadata);
             }
         }
     }

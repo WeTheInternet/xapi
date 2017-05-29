@@ -1,0 +1,16 @@
+<settings
+
+    components = [
+        <tag
+            name="input-text"
+            package="xapi.ui.edit"
+            type="InputText"
+            model= @Named("ModelInputText") {
+                value: String.class,
+                title: @Nullable String.class,
+                placeholder: @Nullable String.class
+            }
+        /tag>
+    ]
+
+/settings>

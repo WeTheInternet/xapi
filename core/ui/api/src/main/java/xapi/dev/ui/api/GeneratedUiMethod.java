@@ -15,20 +15,18 @@ import xapi.fu.Out2;
  */
 public class GeneratedUiMethod extends GeneratedUiMember {
 
-    private final GeneratedUiComponent owner;
     private final In2Out1<GeneratedUiLayer, UiContainerExpr, String> implFactory;
     private UiContainerExpr source;
     private RequiredMethodType type;
     private final StringTo<String> params;
     private ApiGeneratorContext<?> context;
 
-    public GeneratedUiMethod(GeneratedUiComponent owner, Type memberType, String memberName) {
-        this(owner, memberType, memberName, (ig, nored)->memberType.toSource());
+    public GeneratedUiMethod(Type memberType, String memberName) {
+        this(memberType, memberName, (ig, nored)->memberType.toSource());
     }
 
-    public GeneratedUiMethod(GeneratedUiComponent owner, Type memberType, String memberName, In2Out1<GeneratedUiLayer, UiContainerExpr, String> implFactory) {
+    public GeneratedUiMethod(Type memberType, String memberName, In2Out1<GeneratedUiLayer, UiContainerExpr, String> implFactory) {
         super(memberType, memberName);
-        this.owner = owner;
         params = X_Collect.newStringMapInsertionOrdered(String.class);
         this.implFactory = implFactory;
     }
@@ -74,10 +72,6 @@ public class GeneratedUiMethod extends GeneratedUiMember {
             // but when viewing them, it is natural to expect type then name
             // so we reverse the iterable
             .map(Out2::reverse);
-    }
-
-    public GeneratedUiComponent getOwner() {
-        return owner;
     }
 
     public String toSignature(GeneratedUiLayer in, UiContainerExpr ui) {

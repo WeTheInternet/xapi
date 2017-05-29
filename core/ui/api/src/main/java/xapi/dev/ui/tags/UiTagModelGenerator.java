@@ -6,14 +6,10 @@ import com.github.javaparser.ast.expr.JsonContainerExpr;
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.type.Type;
 import xapi.dev.api.ApiGeneratorContext;
-import xapi.dev.ui.api.ComponentBuffer;
-import xapi.dev.ui.api.ContainerMetadata;
-import xapi.dev.ui.api.GeneratedUiApi;
-import xapi.dev.ui.api.GeneratedUiModel;
-import xapi.dev.ui.api.UiComponentGenerator;
-import xapi.dev.ui.api.UiFeatureGenerator;
+import xapi.dev.source.ClassBuffer;
+import xapi.dev.ui.api.*;
 import xapi.dev.ui.impl.UiGeneratorTools;
-import xapi.dev.ui.api.UiVisitScope;
+import xapi.fu.In1Out1;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 2/10/17.
@@ -38,26 +34,38 @@ public class UiTagModelGenerator extends UiFeatureGenerator {
         ContainerMetadata me,
         UiAttrExpr attr
     ) {
-        final GeneratedUiApi api = me.getGeneratedComponent().getApi();
-
-        //        UiGeneratorTools tools,
-        //        ContainerMetadata me,
-        //        UiAttrExpr attr,
-        //        GeneratedUiApi api
+        final GeneratedUiComponent component = me.getGeneratedComponent();
+        final GeneratedUiApi api = component.getApi();
         final GeneratedUiModel model = api.getModel();
         final ApiGeneratorContext ctx = me.getContext();
-        owner.maybeAddImports(tools, ctx, model, attr);
-        api.getSource().getClassBuffer().createMethod(model.getWrappedName()+" getModel()")
-            .makeAbstract();
 
-        me.getGeneratedComponent().getBase().ensureField(model.getWrappedName(), "model");
+        owner.maybeAddImports(tools, ctx, model, attr);
+        final String modelName = api.getModelName();
+        final In1Out1<Type, String> apiFactory = Type::toSource;
+        final In1Out1<Type, String> baseFactory = Type::toSource;
+        api.addExtension("pkgName", api.getModelName(),
+            component.getBase().getModelName(), apiFactory, baseFactory);
+        final ClassBuffer out = api.getSource().getClassBuffer();
+        // TODO: check for custom type hierarchy, and see if somebody defines getModel().
+        // right now that is implictly done by extending AbstractModelComponent
+
+       out.createMethod("public String getModelType()")
+            .returnValue(api.getModel().getTypeName());
+
+        component.getBase().ensureField(model.getWrappedName(), "model");
 
         boolean immutable = attr.getAnnotation(anno->anno.getNameString().equalsIgnoreCase("immutable")).isPresent();
         final Expression expr = attr.getExpression();
         if (expr instanceof JsonContainerExpr) {
             JsonContainerExpr json = (JsonContainerExpr) expr;
+            final GeneratedUiModel apiModel = api.getModel();
             json.getPairs().forEach(pair->{
-                final String rawFieldName = tools.resolveString(ctx, pair.getKeyExpr());
+                String rawFieldName = tools.resolveString(ctx, pair.getKeyExpr());
+                if (rawFieldName.matches("[0-9]+")) {
+                    // TODO smarter type->name inference for field names...
+                    rawFieldName = "val" + rawFieldName;
+                }
+
                 final Expression typeExpr = tools.resolveVar(ctx, pair.getValueExpr());
                 if (typeExpr instanceof DynamicDeclarationExpr) {
                     // Must be a default method.
@@ -71,11 +79,11 @@ public class UiTagModelGenerator extends UiFeatureGenerator {
                         isImmutable = pair.getAnnotation(anno -> anno.getNameString().equalsIgnoreCase(
                             "immutable")).isPresent();
                     }
-                    api.getModel().addField(tools, type, rawFieldName, isImmutable);
+                    apiModel.addField(tools, type, rawFieldName, isImmutable);
                 }
             });
         } else {
-            throw new IllegalArgumentException("<define-tag model={mustBe: Json} />; you sent " + tools.debugNode(attr));
+            throw new IllegalArgumentException("<define-tag model={mustBe: Jso}  />; you sent " + tools.debugNode(attr));
         }
 
         return UiVisitScope.FEATURE_NO_CHILDREN;

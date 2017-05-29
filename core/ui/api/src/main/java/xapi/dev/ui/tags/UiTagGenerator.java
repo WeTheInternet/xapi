@@ -288,13 +288,26 @@ public class UiTagGenerator extends UiComponentGenerator {
         }
     }
 
-    protected void resolveReference(
+    protected Expression resolveReference(
         UiGeneratorTools tools,
         ApiGeneratorContext ctx,
         GeneratedUiComponent component,
         GeneratedJavaFile target,
         String rootRefField,
-        Expression expression
+        UiAttrExpr attr
+    ) {
+        resolveReference(tools, ctx, component, target, rootRefField, attr.getExpression(), true);
+        return attr.getExpression();
+    }
+
+    protected Expression resolveReference(
+        UiGeneratorTools tools,
+        ApiGeneratorContext ctx,
+        GeneratedUiComponent component,
+        GeneratedJavaFile target,
+        String rootRefField,
+        Expression expression,
+        boolean rewriteParent
     ) {
 
         final Do undo = UiTagGenerator.this.resolveSpecialNames(
@@ -303,15 +316,17 @@ public class UiTagGenerator extends UiComponentGenerator {
             target,
             rootRefField
         );
+        final Expression param;
         try {
-            final Expression param = tools.resolveVar(ctx, expression);
-            Do modelOrData = () ->
-                param.getParentNode().accept(new ModifierVisitorAdapter<Object>() {
+            param = tools.resolveVar(ctx, expression);
+            final Node toMod = rewriteParent ? param.getParentNode() : param;
+            Out1<Expression> modelOrData = () ->
+                (Expression)toMod.accept(new ModifierVisitorAdapter<Expression>() {
                     private QualifiedNameExpr lastQualified;
                     private Node replaceQualified;
 
                     @Override
-                    public Node visit(FieldAccessExpr n, Object arg) {
+                    public Node visit(FieldAccessExpr n, Expression arg) {
                         if (n.getScope().toSource().equals("$model")) {
                             final GeneratedUiField field = component.getPublicModel().getFields().get(
                                 n.getField());
@@ -326,7 +341,7 @@ public class UiTagGenerator extends UiComponentGenerator {
                     }
 
                     @Override
-                    public Node visit(QualifiedNameExpr n, Object arg) {
+                    public Node visit(QualifiedNameExpr n, Expression arg) {
                         final QualifiedNameExpr previous = lastQualified;
                         lastQualified = n;
                         try {
@@ -339,7 +354,24 @@ public class UiTagGenerator extends UiComponentGenerator {
                     }
 
                     @Override
-                    public Node visit(NameExpr n, Object arg) {
+                    public Node visit(MethodReferenceExpr n, Expression arg) {
+                        if (n.getScope().toSource().equals("$model")) {
+                            final GeneratedUiField field = component.getPublicField(n.getIdentifier());
+                            if (field == null) {
+                                throw new IllegalArgumentException("No model field of name " + n.getIdentifier() + " declared");
+                            }
+                            // For now, model referenecs in ui always assumed to be a read operation.
+                            // TODO: put in scope barriers so we only make this assumption in ui tags, but not in
+                            // structures which will have other interpretations.
+                            MethodCallExpr replaceWith = new MethodCallExpr(n.getScope(), field.getterName());
+                            replaceWith.addExtra(EXTRA_MODEL_INFO, field);
+                            return replaceWith;
+                        }
+                        return super.visit(n, arg);
+                    }
+
+                    @Override
+                    public Node visit(NameExpr n, Expression arg) {
                         switch (n.getName()) {
                             case "$model":
                                 final MethodCallExpr getModel = new MethodCallExpr(null, "getModel");
@@ -360,16 +392,21 @@ public class UiTagGenerator extends UiComponentGenerator {
 
 
             if (param instanceof MethodCallExpr) {
-                String scopeType = getScopeType(tools, ((MethodCallExpr)param).getScope());
+                String scopeType = getScopeType(tools, ((MethodCallExpr) param).getScope());
                 if ("$model".equals(scopeType) || "$data".equals(scopeType)) {
-                    modelOrData.done();
+                    return modelOrData.out1();
+                }
+            } else if (param instanceof MethodReferenceExpr) {
+                String scopeType = getScopeType(tools, ((MethodReferenceExpr)param).getScope());
+                if ("$model".equals(scopeType) || "$data".equals(scopeType)) {
+                    return modelOrData.out1();
                 }
             } else if (param instanceof FieldAccessExpr) {
                 // A field access on a data or model node is special.
                 // We will map it to the correct method for you.
                 String scopeType = getScopeType(tools, ((FieldAccessExpr)param).getScope());
                 if ("$model".equals(scopeType) || "$data".equals(scopeType)) {
-                    modelOrData.done();
+                    return modelOrData.out1();
                 }
             } else if (param instanceof NameExpr) {
                 NameExpr rootName = (NameExpr) param;
@@ -379,8 +416,7 @@ public class UiTagGenerator extends UiComponentGenerator {
                 switch (rootName.getName()) {
                     case "$model":
                     case "$data":
-                        modelOrData.done();
-                        break;
+                       return modelOrData.out1();
                     default:
                         // Default case, just leave the name alone
                 }
@@ -394,6 +430,7 @@ public class UiTagGenerator extends UiComponentGenerator {
                 }
             } else {
             }
+            return param;
         } finally {
             undo.done();
         }
@@ -503,7 +540,7 @@ public class UiTagGenerator extends UiComponentGenerator {
     ) {
         final ApiGeneratorContext ctx = me.getContext();
 
-        resolveReference(tools, ctx, me.getGeneratedComponent(), cls, null, member);
+        resolveReference(tools, ctx, me.getGeneratedComponent(), cls, null, member, true);
 
         final Do undo = resolveSpecialNames(ctx, me.getGeneratedComponent(), cls, null);
         try {

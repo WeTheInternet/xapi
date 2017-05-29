@@ -1,6 +1,7 @@
 package xapi.jre.ui.impl;
 
 import xapi.dev.api.ApiGeneratorContext;
+import xapi.dev.ui.api.ContainerMetadata;
 import xapi.dev.ui.impl.AbstractUiImplementationGenerator;
 import xapi.dev.ui.api.GeneratedUiComponent;
 import xapi.dev.ui.api.GeneratedUiImplementation;
@@ -40,9 +41,9 @@ public class JavaFxUiGeneratorService extends AbstractUiImplementationGenerator<
   }
 
   @Override
-  protected void initializeComponent(GeneratedUiComponent result) {
+  protected void initializeComponent(GeneratedUiComponent result, ContainerMetadata metadata) {
       if (result.addImplementationFactory(JavaFxPlatform.class, GeneratedJavaFxComponent::new)) {
-        super.initializeComponent(result);
+        super.initializeComponent(result, metadata);
       }
   }
 

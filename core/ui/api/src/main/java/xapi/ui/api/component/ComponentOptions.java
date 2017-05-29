@@ -31,8 +31,8 @@ import xapi.fu.In1Out1;
  */
 public class ComponentOptions <N, E extends N, C extends IsComponent<N, E>> {
 
-    private In1Out1<E, C> component;
-    private C existing;
+    protected In1Out1<E, C> component;
+    protected C existing;
 
     public ComponentOptions<N, E, C> withComponent(C component) {
         existing = component;

@@ -82,11 +82,6 @@ public class GeneratedUiImplementation extends GeneratedUiLayer {
     ) {
         final ClassBuffer buf = getSource().getClassBuffer();
         StringBuilder methodDef = new StringBuilder("public ");
-        GeneratedUiComponent source = call.getExtra(UiConstants.EXTRA_SOURCE_COMPONENT);
-        assert source != null : "A requiredMethod's MethodCallExpr argument must have UiConstants.EXTRA_SOURCE_COMPONENT set to the component " +
-            "which owns this method call.  Bad method: " + gen.tools().debugNode(call);
-        assert method.getOwner() == source : "Can remove EXTRA_SOURCE_COMPONENT hack?";
-        GeneratedUiImplementation bestImpl = source.getBestImpl(this);
         final ApiGeneratorContext<?> ctx = method.getContext();
         final String typeName;
         final Expression memberType = new TypeExpr(method.getMemberType());
@@ -110,7 +105,7 @@ public class GeneratedUiImplementation extends GeneratedUiLayer {
         methodDef.append(call.getName());
         final MethodBuffer out = buf.createMethod(methodDef + "()");
 
-        out.print("return new " + bestImpl.getWrappedName() + "(");
+        out.print("return new " + getWrappedName() + "(");
 
         Mutable<String> prefix = new Mutable<>("");
         method.getParams().forAll(i -> {
@@ -129,7 +124,7 @@ public class GeneratedUiImplementation extends GeneratedUiLayer {
 
         final String[] params = paramsItr.toArray(String[]::new);
 
-        final MethodBuffer ctor = bestImpl.getSource().getClassBuffer()
+        final MethodBuffer ctor = getSource().getClassBuffer()
             .createConstructor(Modifier.PUBLIC, params);
 
         // For all params, call a setter.
@@ -141,7 +136,7 @@ public class GeneratedUiImplementation extends GeneratedUiLayer {
                 ctor.println("set" + titled + "(" + param.out2() + ");");
             })
             .forAllMapped(
-                bestImpl::ensureField, Out2::out1, Out2::out2
+                this::ensureField, Out2::out1, Out2::out2
             );
 
     }

@@ -130,16 +130,16 @@ public abstract class UiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> im
         return In2Out1.with1(this::resolveVar, ctx);
     }
 
-    protected void initializeComponent(GeneratedUiComponent result) {
+    protected void initializeComponent(GeneratedUiComponent result, ContainerMetadata metadata) {
         final UiGeneratorService gen = getGenerator();
         if (gen != this && gen instanceof UiGeneratorTools) {
-            ((UiGeneratorTools)gen).initializeComponent(result);
+            ((UiGeneratorTools)gen).initializeComponent(result, metadata);
         }
     }
 
-    public GeneratedUiComponent newComponent(String pkg, String className) {
+    public GeneratedUiComponent newComponent(String pkg, String className, ContainerMetadata metadata) {
         final GeneratedUiComponent component = new GeneratedUiComponent(pkg, className);
-        initializeComponent(component);
+        initializeComponent(component, metadata);
         return component;
     }
 
@@ -162,8 +162,8 @@ public abstract class UiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> im
         return X_String.join("", X_String::toTitleCase, names);
     }
 
-    public ComponentBuffer getComponentInfo(String name) {
-        return getGenerator().getBuffer(name);
+    public GeneratedUiDefinition getDefinition(Ctx ctx, String name) {
+        return getGenerator().getComponentDefinition(ctx, name);
     }
 
     public void onRoundStart(Do task) {

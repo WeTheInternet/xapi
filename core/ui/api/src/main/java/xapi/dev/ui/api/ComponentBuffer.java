@@ -152,7 +152,7 @@ public class ComponentBuffer {
         final String name = "create" + myBaseName;
         MethodCallExpr call = new MethodCallExpr(null, name);
         final Type returnType = tools.methods().$type(tools, ctx, StringLiteralExpr.stringLiteral(myBaseName)).getType();
-        GeneratedUiMethod method = new GeneratedUiMethod(me, returnType, name);
+        GeneratedUiMethod method = new GeneratedUiMethod(returnType, name);
         method.setSource(ui);
         method.setContext(ctx);
         final String elBuilder = otherBase.getElementBuilderType(namespace);
@@ -177,8 +177,6 @@ public class ComponentBuffer {
 
         call.setArgs(args);
 
-        call.addExtra(UiConstants.EXTRA_SOURCE_COMPONENT, getGeneratedComponent());
-
         other.getImpls().forAll(GeneratedUiImplementation::requireMethod, type, method, call);
         return call;
     }
@@ -189,5 +187,18 @@ public class ComponentBuffer {
 
     public String getTagName() {
         return tagName;
+    }
+
+    public GeneratedUiDefinition getDefinition() {
+        final GeneratedUiDefinition definition = new GeneratedUiDefinition();
+        definition.setTagName(getTagName());
+        definition.setTypeName(component.getApi().getTypeName());
+        definition.setPackageName(component.getPackageName());
+        if (component.getApi().hasModel()) {
+            final GeneratedUiModel model = component.getApi().getModel();
+            definition.setModelName(model.getWrappedName());
+            definition.getModelFields().putAll(model.getFields());
+        }
+        return definition;
     }
 }

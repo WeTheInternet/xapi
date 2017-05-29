@@ -426,7 +426,7 @@ public abstract class ElementBuilder <E> extends NodeBuilder<E> {
 
     @Override
     public void setAttribute(String name, String value) {
-      if ("id".equalsIgnoreCase(name)) {
+      if (equalsIgnoreCase("id", name)) {
         id = value;
       }
       attributes.put(name, newAttributeBuilder(value));
@@ -486,15 +486,19 @@ public abstract class ElementBuilder <E> extends NodeBuilder<E> {
   }
 
   public ElementBuilder<E> setAttribute(String name, String value) {
-    if ("style".equalsIgnoreCase(name)) {
+    if (equalsIgnoreCase("style", name)) {
       getStyle().setValue(value);
     } else {
-      if ("id".equalsIgnoreCase(name)) {
+      if (equalsIgnoreCase("id", name)) {
         id = value;
       }
       attributeApplier.get().setAttribute(name, value);
     }
     return this;
+  }
+
+  private boolean equalsIgnoreCase(String id, String name) {
+    return name == null ? id == null : id.equals(name.toLowerCase());
   }
 
   public ElementBuilder<E> setDataAttribute(String name, String value) {

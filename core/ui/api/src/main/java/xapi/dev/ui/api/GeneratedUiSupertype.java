@@ -16,7 +16,7 @@ public class GeneratedUiSupertype {
     private final String packageName;
     private final String className;
     private final GeneratedUiComponent owner;
-    private final SizedIterable<GeneratedTypeParameter> params;
+    private SizedIterable<GeneratedTypeParameter> params;
     private final StringTo<Parameter[]> requiredConstructors;
     private int mode;
 
@@ -65,5 +65,9 @@ public class GeneratedUiSupertype {
 
     public SizedIterable<Parameter[]> getRequiredConstructors() {
         return requiredConstructors.forEachValue();
+    }
+
+    public void addTypeParameter(int i, GeneratedTypeParameter apiEleParam) {
+        params = params.insert(i, apiEleParam);
     }
 }

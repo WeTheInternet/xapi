@@ -1,5 +1,6 @@
 package xapi.server.gen;
 
+import xapi.dev.ui.api.ContainerMetadata;
 import xapi.dev.ui.impl.AbstractUiImplementationGenerator;
 import xapi.dev.ui.api.GeneratedUiComponent;
 import xapi.dev.ui.api.GeneratedUiImplementation;
@@ -16,9 +17,12 @@ public class VertxWebAppImplGenerator extends AbstractUiImplementationGenerator<
     }
 
     @Override
-    protected void initializeComponent(GeneratedUiComponent result) {
+    protected void initializeComponent(
+        GeneratedUiComponent result,
+        ContainerMetadata metadata
+    ) {
         if (result.addImplementationFactory(VertxPlatform.class, GeneratedVertxComponent::new)) {
-            super.initializeComponent(result);
+            super.initializeComponent(result, metadata);
         }
     }
 
