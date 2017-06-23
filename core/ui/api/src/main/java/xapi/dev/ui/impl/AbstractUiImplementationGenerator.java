@@ -120,11 +120,15 @@ public abstract class AbstractUiImplementationGenerator <Ctx extends ApiGenerato
 
     @Override
     public UiGenerateMode getMode(ComponentBuffer component, ContainerMetadata metadata) {
-        if (metadata.getUi().getName().startsWith("define-tag")) {
+        String name = metadata.getUi().getName();
+        if (name.startsWith("define-tag")) {
             return UiGenerateMode.TAG_DEFINITION;
         }
-        if (metadata.getUi().getName().startsWith("model")) {
+        if (name.startsWith("model")) {
             return UiGenerateMode.MODEL_BUILDING;
+        }
+        if (name.startsWith("web-app")) {
+            return UiGenerateMode.WEB_APP_BUILDING;
         }
         return UiGenerateMode.UI_BUILDING;
     }

@@ -26,7 +26,7 @@ public interface IsModelComponent
         El extends Node,
         M extends Model
     >
-    extends IsComponent<Node, El>, ModelComponentMixin<El>
+    extends IsComponent<Node, El>, ModelComponentMixin<El, M>
 {
 
     M getModel();

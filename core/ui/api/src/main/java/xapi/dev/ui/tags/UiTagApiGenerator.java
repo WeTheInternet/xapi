@@ -36,11 +36,22 @@ public class UiTagApiGenerator extends UiFeatureGenerator {
         GeneratedUiLayer layer;
         if (attr.getNameString().equals("api")) {
             layer = component.getApi();
-        } else if (attr.getNameString().equals("impl")){
+        } else if (attr.getNameString().equals("impl")) {
             layer = component.getBase();
+        } else if (attr.getNameString().startsWith("impl")) {
+            out : {
+                for (GeneratedUiImplementation impl : component.getImpls()) {
+                    if (attr.getNameString().equals("impl-" + impl.getPrefix())) {
+                        layer = impl;
+                        break out;
+                    }
+                }
+                throw new UnsupportedOperationException("Unknown impl type " + attr.getNameString()
+                +"\nin " + tools.debugNode(attr) + "\nof " + tools.debugNode(me.getUi()));
+            }
         } else {
             throw new UnsupportedOperationException("Unknown attribute name " + attr.getNameString()
-            +" in " + tools.debugNode(attr) + " of " + tools.debugNode(me.getUi()));
+            +"\nin " + tools.debugNode(attr) + "\nof " + tools.debugNode(me.getUi()));
         }
         final ApiGeneratorContext ctx = me.getContext();
         owner.maybeAddImports(tools, ctx, layer, attr);

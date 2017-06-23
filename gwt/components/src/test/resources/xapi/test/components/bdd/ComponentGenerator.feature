@@ -309,20 +309,30 @@ Feature: ComponentGenerator.feature: Transpile xapi templates into web component
 #    And save generated gwt source file "xapi.ui.generated.ToDos" as "ToDosSource"
 #    And save generated gwt source file "xapi.ui.generated.ModelToDo" as "ModelToDoSource"
     Then confirm api source for "ToDos" matches:
-    | package xapi.test.components;                               |
-    |                                                          |
-    | import xapi.components.api;                               |
-    | import xapi.ui.api.component.IsComponent;                               |
-    |                                                          |
-    | public interface ToDosComponent {                                 |
-    |                                                          |
-    |   abstract ModelToDos getModel() ;              |
-    |                                                          |
-    |   default void addTodo(Todo todo) {               |
-    |     getModel().getTodos().add(todo);                     |
-    |   }                                                      |
-    |                                                          |
-    | }                                                        |
+    | package xapi.test.components;              |
+    |                                            |
+    | import static xapi.model.X_Model.create;   |
+    |                                            |
+    | import xapi.components.api;                |
+    | import xapi.ui.api.component.IsComponent;  |
+    |                                            |
+    | public interface ToDosComponent {          |
+    |                                            |
+
+    | public default String getModelType () {    |
+    |   return "ToDos";                          |
+    | }                                          |
+    |                                            |
+    | public default ModelToDos createModel () { |
+    |   return create(ModelToDos.class);         |
+    | }                                          |
+    |                                            |
+    |                                            |
+    | default void addTodo(Todo todo) {          |
+    |   getModel().getTodos().add(todo);         |
+    | }                                          |
+    |                                            |
+    | }                                          |
 
     Scenario: Run classpath component generator
       Given run classpath component generator

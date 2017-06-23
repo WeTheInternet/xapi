@@ -17,9 +17,11 @@ import xapi.fu.Do;
 import xapi.fu.In1Out1;
 import xapi.fu.In2Out1;
 import xapi.fu.Out2;
+import xapi.fu.iterate.ArrayIterable;
 import xapi.fu.iterate.CachingIterator.ReplayableIterable;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
+import xapi.fu.iterate.SizedIterable;
 import xapi.source.X_Source;
 import xapi.util.X_String;
 
@@ -200,4 +202,12 @@ public abstract class UiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> im
     public void finishRound() {
         clearTasks(roundEndListener);
     }
+
+    public SizedIterable<String> getImplPrefixes() {
+        // TODO: not this...  for now, you can override to inject these.
+        // we'll have a more formal solution relying on xapi.settings later...
+        return ArrayIterable.iterate("gwt", "javafx");
+    }
+
+    // TODO: add a collector for things which need to emit values to settings.xapi
 }

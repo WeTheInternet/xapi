@@ -1,10 +1,9 @@
 package xapi.test.components.xapi.test.components;
 
 
-import xapi.ui.api.component.AbstractModelComponent;
 import xapi.fu.Out1;
-import xapi.model.X_Model;
 import xapi.ui.api.NodeBuilder;
+import xapi.ui.api.component.AbstractModelComponent;
 import xapi.ui.api.component.ComponentConstructor;
 import xapi.ui.api.component.ModelComponentOptions;
 
@@ -14,8 +13,6 @@ public abstract class BaseAsserterComponent <Node, El extends Node, ElBuilder ex
     ModelAsserter,
     AsserterComponent<Node, El>
   > implements AsserterComponent<Node, El> {
-
-  protected ModelAsserter model;
 
   public ElBuilder root;
 
@@ -31,16 +28,6 @@ public abstract class BaseAsserterComponent <Node, El extends Node, ElBuilder ex
 
   public BaseAsserterComponent (ModelComponentOptions<Node, El, ModelAsserter, AsserterComponent<Node, El>> opts, ComponentConstructor<Node, El, AsserterComponent<Node, El>> ctor) {
     super(opts, ctor);
-  }
-
-  public ModelAsserter getModel () {
-    return model;
-  }
-
-  @Override
-  public BaseAsserterComponent<Node, El, ElBuilder> setModel (ModelAsserter model) {
-    this.model = model;
-    return this;
   }
 
   public ElBuilder toDom () {
@@ -65,11 +52,6 @@ public abstract class BaseAsserterComponent <Node, El extends Node, ElBuilder ex
 
   public BaseAsserterComponent ui() {
     return this;
-  }
-
-  @Override
-  protected ModelAsserter createModel() {
-    return X_Model.create(ModelAsserter.class);
   }
 
 }

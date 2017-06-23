@@ -56,8 +56,6 @@ implements IsModelComponent<Node, El, Mod> {
         return mod;
     }
 
-    protected abstract Mod createModel();
-
     public AbstractModelComponent<Node, El, Mod, Api> setModel(Mod model) {
         final Mod myModel = this.model.out1();
         myModel.absorb(model);

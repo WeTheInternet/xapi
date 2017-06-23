@@ -21,18 +21,32 @@ public class ComponentMetadataFinder extends VoidVisitorAdapter<ComponentMetadat
     // always recurse into the root container
     boolean recurse = head == null;
 
+
     if (recurse) {
       head = scope = new ComponentGraph(n);
+      if (n.getName().equals("template")) {
+        query.notifyTemplateElementExpr(head, n);
+      }
       super.visit(n, query);
       return;
     }
+
     // if we aren't the root, check the query to see if we should recurse
     recurse = scope.isAttributeChild() ?
         query.isVisitAttributeContainers() :
         query.isVisitChildContainers() ;
 
     if (recurse) {
-      recurse(n, In2.reduceAll(super::visit, n, query));
+      recurse(n, In2
+          .reduceAll(super::visit, n, query)
+          .doBefore(()->{
+            // spy on nodes to check for interesting elements
+            if (n.getName().equals("template")) {
+              query.notifyTemplateElementExpr(scope, n);
+            }
+            // TODO consider "import" as special as well
+          })
+      );
     }
   }
 

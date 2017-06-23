@@ -44,9 +44,9 @@
 
     ui =
         <box>
-            <if notNull=$model.title>
-                <label ref="title">$model::title</label>
-            </if>
+            <if notNull=$model.title
+                whenTrue=<label ref="title">$model::title</label>
+            /if>
             <native-element
                 ref="input"
                 gwt=<textarea placeholder=$model::placeholder />

@@ -17,6 +17,7 @@ import xapi.fu.X_Fu;
 import xapi.source.X_Source;
 import xapi.source.read.JavaModel.IsTypeDefinition;
 import xapi.ui.api.NodeBuilder;
+import xapi.util.X_String;
 
 import java.util.Collections;
 
@@ -74,6 +75,9 @@ public abstract class GeneratedUiLayer extends GeneratedJavaFile {
 
     public String getModelName() {
         return model.out1().getWrappedName();
+    }
+    public String getModelFieldName() {
+        return X_String.firstCharToLowercase(getTypeName());
     }
 
     public String getModelNameQualified() {

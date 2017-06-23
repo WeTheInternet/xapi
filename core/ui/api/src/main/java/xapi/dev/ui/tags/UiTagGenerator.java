@@ -26,6 +26,7 @@ import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
 import xapi.log.X_Log;
 import xapi.source.read.SourceUtil;
+import xapi.ui.api.Ui;
 import xapi.util.X_String;
 import xapi.util.X_Util;
 
@@ -256,6 +257,10 @@ public class UiTagGenerator extends UiComponentGenerator {
 
         features.put("api", apiGen);
         features.put("impl", apiGen);
+
+        for (String prefix : ((UiGeneratorTools<?>)tools).getImplPrefixes()) {
+            features.put("impl-" + prefix, apiGen);
+        }
 
         features.put("generics", genericsGen);
         features.put("input", inputGen);

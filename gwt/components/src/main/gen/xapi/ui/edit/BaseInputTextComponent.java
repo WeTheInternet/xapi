@@ -1,17 +1,15 @@
 package xapi.ui.edit;
 
 
-import xapi.ui.api.component.AbstractModelComponent;
+import elemental.dom.Element;
+
 import xapi.fu.Out1;
 import xapi.ui.api.NodeBuilder;
+import xapi.ui.api.component.AbstractModelComponent;
 import xapi.ui.api.component.ComponentConstructor;
 import xapi.ui.api.component.ModelComponentOptions;
 
-public abstract class BaseInputTextComponent <
-    Node,
-    El extends Node,
-    ElBuilder extends NodeBuilder<El>
-> extends AbstractModelComponent<
+public abstract class BaseInputTextComponent <Node, El extends Node, ElBuilder extends NodeBuilder<El>> extends AbstractModelComponent<
     Node,
     El,
     ModelInputText,
@@ -39,7 +37,7 @@ public abstract class BaseInputTextComponent <
   public ElBuilder toDom () {
     ElBuilder root = newBuilder();
     root.append("<box>");
-    if (getModel() != null && getModel().getTitle() != null) {
+    if (getModel().getTitle() != null) {
       ElBuilder title = newBuilder();
       title.append("<label>");
       title.append(getModel().getTitle());
@@ -55,7 +53,6 @@ public abstract class BaseInputTextComponent <
   public abstract ElBuilder newBuilder () ;
 
   protected abstract ElBuilder createInput () ;
-
 
   public BaseInputTextComponent ui() {
     return this;

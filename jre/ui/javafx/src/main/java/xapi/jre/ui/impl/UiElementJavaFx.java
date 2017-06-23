@@ -109,7 +109,7 @@ public class UiElementJavaFx<N extends Node> extends AbstractUiElement<Node, N, 
   }
 
   @Override
-  public N initialize() {
+  protected N initialize() {
     try {
       return elementType.newInstance();
     } catch (Exception e) {

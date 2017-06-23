@@ -33,7 +33,7 @@ public abstract class
     getUiService().bindNode(e, ui());
     return e;
   }
-  public Element initialize() {
+  protected Element initialize() {
     throw new NotImplemented("Class " + getClass() + " must implement initialize()");
   }
 

@@ -10,6 +10,7 @@ import com.github.javaparser.ast.type.Type;
 import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
 import xapi.collect.api.StringTo;
+import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.FieldBuffer;
 import xapi.dev.source.MethodBuffer;
@@ -454,7 +455,14 @@ public class GeneratedUiComponent {
         layer.addCoercion(field);
     }
 
-    public void createNativeFactory(UiContainerExpr n, MethodBuffer toDom, UiNamespace namespace, String refName) {
+    public <Ctx extends ApiGeneratorContext<Ctx>> void createNativeFactory(
+        UiGeneratorTools<Ctx> tools,
+        Ctx ctx,
+        UiContainerExpr n,
+        MethodBuffer toDom,
+        UiNamespace namespace,
+        String refName
+    ) {
         // Create an abstract method for the native element we want to create.
         final String builder = getBase().getElementBuilderType(namespace);
         final ClassBuffer out = getBase().getSource().getClassBuffer();
@@ -472,7 +480,7 @@ public class GeneratedUiComponent {
             // The impl must have provided the generic, so we must prefer whatever
             // name was used in the concrete subtype
             final Maybe<UiAttrExpr> attr = n.getAttribute(impl.getAttrKey());
-            impl.addNativeMethod(namespace, method, attr
+            impl.addNativeMethod(tools, ctx, namespace, method, attr
                 .mapNullSafe(a->(UiContainerExpr)a.getExpression())
                 .ifAbsentReturn(n));
         }

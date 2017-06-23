@@ -10,6 +10,11 @@ import xapi.dev.source.ClassBuffer;
 import xapi.dev.ui.api.*;
 import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.fu.In1Out1;
+import xapi.fu.Out1;
+import xapi.model.X_Model;
+import xapi.model.api.KeyBuilder;
+import xapi.model.api.Model;
+import xapi.model.api.ModelBuilder;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 2/10/17.
@@ -49,16 +54,22 @@ public class UiTagModelGenerator extends UiFeatureGenerator {
         // TODO: check for custom type hierarchy, and see if somebody defines getModel().
         // right now that is implictly done by extending AbstractModelComponent
 
-       out.createMethod("public String getModelType()")
-            .returnValue(api.getModel().getTypeName());
 
-        component.getBase().ensureField(model.getWrappedName(), "model");
+       out.createMethod("default String getModelType()")
+            .returnValue("\"" + api.getModel().getTypeName() + "\"");
+
+       out.createMethod("default " + modelName + " createModel()")
+            .returnValue(out.addImportStatic(X_Model.class, "create") + "(" + modelName + ".class)");
+
+        component.getBase().ensureFieldDefined(model.getWrappedName(), "model", false);
 
         boolean immutable = attr.getAnnotation(anno->anno.getNameString().equalsIgnoreCase("immutable")).isPresent();
         final Expression expr = attr.getExpression();
         if (expr instanceof JsonContainerExpr) {
             JsonContainerExpr json = (JsonContainerExpr) expr;
             final GeneratedUiModel apiModel = api.getModel();
+
+            final ClassBuffer modOut = api.getModel().getSource().getClassBuffer();
             json.getPairs().forEach(pair->{
                 String rawFieldName = tools.resolveString(ctx, pair.getKeyExpr());
                 if (rawFieldName.matches("[0-9]+")) {
@@ -80,8 +91,34 @@ public class UiTagModelGenerator extends UiFeatureGenerator {
                             "immutable")).isPresent();
                     }
                     apiModel.addField(tools, type, rawFieldName, isImmutable);
+                    modOut.getImports().reserveSimpleName(rawFieldName);
                 }
             });
+
+            // Create some basic utilities in the model interface
+            String constantName = api.getConstantName();
+            String modelField = api.getModelFieldName();
+            String modelType = api.getModelName();
+
+            modOut.createField(String.class, "MODEL_" + constantName)
+                .setInitializer("\"" + modelField + "\"");
+
+            final String out1 = modOut.addImport(Out1.class);
+            final String keyBuilder = modOut.addImport(KeyBuilder.class);
+            final String modBuilder = modOut.addImport(ModelBuilder.class);
+            final String forType = modOut.addImportStatic(KeyBuilder.class, "forType");
+            final String build = modOut.addImportStatic(ModelBuilder.class, "build");
+            final String create = modOut.addImportStatic(X_Model.class, "create");
+
+            modOut.createField(out1 + "<" + keyBuilder+">", constantName + "_KEY_BUILDER")
+                .setInitializer(forType + "(MODEL_" + constantName + ")");
+
+            modOut.createField(out1 + "<" + modBuilder + "<" + modelType + ">>", constantName + "_MODEL_BUILDER")
+                .getInitializer()
+                .println("()->")
+                .indentln(build + "(" + constantName + "_KEY_BUILDER.out1(),")
+                .indentln("()->" + create + "(" + modelType + ".class));");
+
         } else {
             throw new IllegalArgumentException("<define-tag model={mustBe: Jso}  />; you sent " + tools.debugNode(attr));
         }

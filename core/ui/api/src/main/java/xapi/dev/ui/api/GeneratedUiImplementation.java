@@ -3,17 +3,22 @@ package xapi.dev.ui.api;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.TypeExpr;
+import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
+import xapi.collect.X_Collect;
+import xapi.collect.api.StringTo;
 import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
+import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.fu.MappedIterable;
 import xapi.fu.Mutable;
 import xapi.fu.Out2;
 import xapi.fu.Out3;
 import xapi.fu.X_Fu;
 import xapi.fu.iterate.CachingIterator;
+import xapi.fu.iterate.SizedIterable;
 import xapi.reflect.X_Reflect;
 import xapi.source.read.JavaModel.IsTypeDefinition;
 import xapi.util.X_String;
@@ -36,6 +41,7 @@ public class GeneratedUiImplementation extends GeneratedUiLayer {
     protected final String apiName;
     protected final String implName;
     private final EnumMap<RequiredMethodType, Out2<GeneratedUiMethod, MethodCallExpr>> requiredMethods;
+    private final StringTo<RequiredChildFactory> childFactories;
 
     public GeneratedUiImplementation(GeneratedUiComponent owner, String pkg) {
         super(owner.getApi(), pkg, owner.getApi().getTypeName(), ImplLayer.Impl, owner);
@@ -43,6 +49,7 @@ public class GeneratedUiImplementation extends GeneratedUiLayer {
         implName = owner.getBase().getWrappedName();
         setSuffix("Component");
         requiredMethods = new EnumMap<>(RequiredMethodType.class);
+        childFactories = X_Collect.newStringMap(RequiredChildFactory.class);
     }
 
     public String getAttrKey() {
@@ -177,13 +184,31 @@ public class GeneratedUiImplementation extends GeneratedUiLayer {
         return 0;
     }
 
-    public void addNativeMethod(UiNamespace namespace, GeneratedUiMethod method, UiContainerExpr n) {
+    public <Ctx extends ApiGeneratorContext<Ctx>> void addNativeMethod(UiGeneratorTools<Ctx> tools, Ctx ctx, UiNamespace namespace, GeneratedUiMethod method, UiContainerExpr n) {
 
         final MethodBuffer out = getSource().getClassBuffer()
             .createMethod(method.toSignature(this, n))
             .addAnnotation(Override.class);
         //        requireMethod(RequiredMethodType.CREATE, method);
+        String tagName = n.getName();
         out.println("return newBuilder()")
-            .indentln(".setTagName(\"input\");");
+            .indent()
+            .println(".setTagName(\"" + tagName + "\")");
+//        for (UiAttrExpr attr : n.getAttributes()) {
+//            String name = tools.resolveString(ctx, attr.getName());
+//            final Expression val = tools.resolveVar(ctx, attr.getExpression());
+//            out.println(".setAttribute(\"" + name + "\", " + tools.resolveString(ctx, val) + "\")");
+//
+//        }
+        out.println(";");
+
+    }
+
+    public void addChildFactory(GeneratedUiDefinition definition, Expression sourceNode) {
+        childFactories.put(definition.getTypeName(), new RequiredChildFactory(definition, sourceNode));
+    }
+
+    public SizedIterable<RequiredChildFactory> getRequiredChildren() {
+        return childFactories.forEachValue();
     }
 }

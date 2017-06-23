@@ -1,18 +1,11 @@
 package xapi.dev.ui.api;
 
 import com.github.javaparser.ast.expr.*;
-import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
-import com.github.javaparser.ast.visitor.GenericVisitor;
-import com.github.javaparser.ast.visitor.VoidVisitor;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.dev.api.ApiGeneratorContext;
-import xapi.dev.source.CanAddImports;
-import xapi.dev.source.MethodBuffer;
-import xapi.dev.ui.api.GeneratedUiImplementation.RequiredMethodType;
 import xapi.dev.ui.impl.UiGeneratorTools;
-import xapi.except.NotImplemented;
 import xapi.fu.In2Out1;
 import xapi.fu.MappedIterable;
 import xapi.fu.Maybe;
@@ -24,8 +17,6 @@ import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import static xapi.dev.ui.api.GeneratedUiImplementation.RequiredMethodType.*;
 
 /**
  * Contains basic information about a generated component (type name,
@@ -221,6 +212,11 @@ public class GeneratedUiDefinition {
         return modelName;
     }
 
+    public String getQualifiedModelName() {
+        return modelName == null ? null : modelName.indexOf('.') == -1 ?
+            X_Source.qualifiedName(getPackageName(), modelName) : modelName;
+    }
+
     public void setModelName(String modelName) {
         this.modelName = modelName;
     }
@@ -349,5 +345,9 @@ public class GeneratedUiDefinition {
 
     public void setApiName(String apiName) {
         this.apiName = apiName;
+    }
+
+    public String getModelKeyConstant() {
+        return "MODEL_" + X_String.toConstantName(getTypeName());
     }
 }

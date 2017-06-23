@@ -4,6 +4,7 @@ import com.github.javaparser.ASTHelper;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseException;
 import com.github.javaparser.ast.expr.*;
+import com.github.javaparser.ast.visitor.VoidVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.source.ClassBuffer;
@@ -21,6 +22,8 @@ import xapi.fu.X_Fu;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
 import xapi.log.X_Log;
+
+import java.util.List;
 
 import static xapi.dev.ui.api.UiConstants.EXTRA_MODEL_INFO;
 import static xapi.fu.Out1.out1Deferred;
@@ -96,7 +99,7 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
                 case "native-element":
                     // native elements are special; we are going to ask the current
                     // component to just leave an abstract method for implementors to fill in.
-                    handleNativeTag(n, arg, refNode);
+                    handleNativeTag(n, arg, refNode, ctx);
                     return;
             }
             String parentRefName = refFieldName;
@@ -130,7 +133,15 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
                         if (otherTag == null) {
                             // not
                             final GeneratedUiDefinition info = tools.getDefinition(ctx, n.getName());
-                            toDom.println(type + " " + refFieldName + " = create" + info.getBaseName() + "();");
+                            toDom.println(type + " " + refFieldName + " = create" + info.getApiName() + "();");
+
+                            // do the grunt work of getTagFactory, but w/out all the mess
+                            baseClass.getSource().getClassBuffer()
+                                .createMethod("protected abstract " + baseClass.getElementBuilderType(namespace) + " create" + info.getApiName() + "();");
+
+                            component.getImpls()
+                                .forAll(GeneratedUiImplementation::addChildFactory, info, nodeToUse);
+
                         } else {
 
                             MethodCallExpr factoryMethod = otherTag.getTagFactory(tools, ctx, component, namespace, n);
@@ -218,12 +229,17 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
             rootRefs.add(rootRefField);
         }
 
-        private void handleNativeTag(UiContainerExpr n, UiContainerExpr arg, Maybe<Expression> refNode) {
+        private void handleNativeTag(
+            UiContainerExpr n,
+            UiContainerExpr arg,
+            Maybe<Expression> refNode,
+            ApiGeneratorContext ctx
+        ) {
             final boolean isRoot = arg == null;
             final String parentRef = refFieldName;
             final Do undo = registerNode(n, refNode, isRoot);
             try {
-                component.createNativeFactory(n, toDom, namespace, refFieldName);
+                component.createNativeFactory(tools, ctx, n, toDom, namespace, refFieldName);
             } finally {
                 if (parentRef != null) {
                     toDom.println(parentRef + ".addChild(" + refFieldName + ");");
@@ -508,6 +524,10 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
             toDom.print("if (");
 
             boolean first = true;
+            ChainBuilder<Expression> elseExpr = Chain.startChain();
+            ChainBuilder<Expression> whenTrue = Chain.startChain();
+            ChainBuilder<Expression> whenFalse = Chain.startChain();
+            ChainBuilder<Expression> elsifExprs = Chain.startChain();
             for (UiAttrExpr attr : n.getAttributes()) {
                 final Expression expr = owner.resolveReference(
                     tools,
@@ -517,12 +537,29 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
                     rootRefField,
                     attr
                 );
+                if ("else".equals(attr.getNameString())) {
+                    elseExpr.add(expr);
+                    continue;
+                } else if ("elsif".equals(attr.getNameString())) {
+                    elsifExprs.add(expr);
+                    continue;
+                } else if ("whenTrue".equals(attr.getNameString())) {
+                    whenTrue.add(expr);
+                    continue;
+                } else if ("whenFalse".equals(attr.getNameString())) {
+                    whenFalse.add(expr);
+                    continue;
+                }
+                // TODO: consider "compile time conditionals", which
+                // control whether we even print the code or not;
+                // for example, platform-specific overrides for a given case
                 final String serialized = tools.resolveString(ctx, expr);
                 // TODO handle escaping...
                 if (!first) {
                     toDom.print(" &&");
                 }
                 switch (attr.getName().getName()) {
+                    case "isNotNull":
                     case "notNull":
                         toDom.print(serialized + " != null");
                         break;
@@ -552,33 +589,125 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
 
             toDom.println(") {");
             toDom.indent();
-            final UiBodyExpr myBody = n.getBody();
+            UiBodyExpr myBody = n.getBody();
             Mutable<String> childRef = new Mutable<>();
-            if (myBody != null) {
+            if (myBody != null || whenTrue.isNotEmpty()){
                 final In1<String> was = refNameSpy;
                 refNameSpy = In1.in1(i->{
+                    if (isRoot) {
+                        assert childRef.isNull() : "Root elements must not visit more than one node";
+                    }
                     childRef.in(i);
-                    refNameSpy = was;
                 });
-                if (isRoot) {
-                    assert myBody.getChildren()
-                        .stream().filter(X_Fu::notNull)
-                        .filter(e->
-                            !(
-                                e instanceof TemplateLiteralExpr
-                                    && ((TemplateLiteralExpr)e).getValue().trim().isEmpty()
-                            )
-                        )
-                        .count() == 1 : "An <if /> tag as the root of a ui" +
-                        " must contain only one element.";
+                try {
+                    if (isRoot) {
+                        assert whenTrue.isEmpty()  : "Cannot use whenTrue in an if tag that has a non-empty body; "
+                            + tools.debugNode(n);
+                            assert myBody.getChildren()
+                                .stream().filter(X_Fu::notNull)
+                                .filter(e->
+                                    !(
+                                        // ick... cleaning out whitespace.
+                                        e instanceof TemplateLiteralExpr
+                                            && ((TemplateLiteralExpr)e).getValue().trim().isEmpty()
+                                    )
+                                )
+                                .count() == 1 : "An <if /> tag as the root of a ui" +
+                                " must contain at most one element (either in the body of the <if/>," +
+                                " or using whenTrue=<resultCode/>.; you sent \n"
+                                + tools.debugNode(n);
+                    }
+                    if (myBody != null) {
+                        super.visit(myBody, n);
+                    }
+                    whenTrue.forAll(Expression::accept, this, n);
+                } finally {
+                    refNameSpy = was;
                 }
-                super.visit(myBody, n);
+            } else if (isRoot) {
+                // when we are root, and the body is empty, we can use whenTrue to supply value
+                assert whenTrue.size() == 1 : "A root <if /> element can only have 1 whenTrue value, to serve as document root;" +
+                    " consider using <box><if whenTrue=... /></box> or <template />; you sent: \n" +
+                    tools.debugNode(n);
+                whenTrue.forAll(Expression::accept, this, n);
+                String result = tools.resolveString(ctx, whenTrue.first());
+                childRef.in(result);
+            } else {
+                whenTrue.forAll(Expression::accept, this, n);
             }
-            if (childRef.out1() != null) {
+            if (isRoot && childRef.out1() != null) {
                 toDom.returnValue(childRef.out1());
             }
             toDom.outdent();
-            toDom.println("}");
+            toDom.print("}");
+
+            if (elsifExprs.isNotEmpty()) {
+                // print our elsifs.  Because there can be many of these,
+                // we expect them all to be <if /if> bodiless tags,
+                // to allow us to append an else before the nested if...
+                // note that we can't allow else/whenFalse in a nested elsif,
+                first = true;
+
+                In1<Expression>[] printChild = new In1[1];
+                printChild[0] = e->{
+                    if (e instanceof JsonContainerExpr) {
+                        // a list of conditionals
+                        boolean f = true;
+                        for (Expression child : ((JsonContainerExpr) e).getValues()) {
+                            if (f) {
+                                f = false;
+                            } else {
+                                toDom.print(" else ");
+                            }
+                            printChild[0].in(child);
+                        }
+                    } else if (e instanceof UiContainerExpr) {
+                        // better be an if tag...
+                        UiContainerExpr elsif = (UiContainerExpr) e;
+                        if (!elsif.getName().equals("if")) {
+                            throw new IllegalArgumentException("elsif can only have <if /if> or [ <if /> ] children; you sent " + tools.debugNode(n));
+                        }
+                        // now... enforce this elseif does not have BadStructures(tm)
+                        assert elsif.getAttribute("else").isAbsent() :
+                            "An <if /> inside an elsif cannot have an <else /> child; you sent " + tools.debugNode(n);
+                        assert elsif.getAttribute("whenFalse").isAbsent() :
+                            "An <if /> inside an elsif cannot have a <whenFalse /> child; you sent " + tools.debugNode(n);
+                        // hokay!  We got us an if tag.  lets recurse (same parent node...)
+                        handleIfTag(elsif, n);
+                    } else {
+                        // template string?  ...fail
+                        throw new IllegalArgumentException("elsif can only have <if /if> or [ <if /> ] children.");
+                    }
+                };
+                for (Expression e : elsifExprs) {
+                    toDom.println().print(" else ");
+                    printChild[0].in(e);
+                }
+            }
+            if (elseExpr.isNotEmpty() || whenFalse.isNotEmpty()) {
+                childRef.set(null); // clear it out so we can enforce root semantics as needed
+                final In1<String> was = refNameSpy;
+                try {
+                    refNameSpy = In1.in1(i->{
+                        assert !isRoot || childRef.isNull() : "Root elements must not visit more than one node";
+                        childRef.in(i);
+                    });
+                    assert !isRoot || elseExpr.size() + whenFalse.size() == 1 : "A root else statement must return exactly one else node; " +
+                        "you sent [" + elseExpr.join(tools::debugNode, ", ") + "] for else and [ " +
+                        whenFalse.join(tools::debugNode, ", ") + "] for whenFalse \n from " + tools.debugNode(n);
+                    toDom.println(" else {");
+
+                    elseExpr.forAll(Expression::accept, this, n);
+                } finally {
+                    refNameSpy = was;
+                }
+                if (isRoot && childRef.out1() != null) {
+                    toDom.returnValue(childRef.out1());
+                }
+                toDom.print("}");
+
+            }
+            toDom.println();
         }
 
     }

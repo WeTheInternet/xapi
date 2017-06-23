@@ -20,12 +20,13 @@ import java.util.function.Consumer;
  */
 public class InterestingNodeFinder {
     public static class InterestingNodeResults {
-        private Map<ComponentGraph, UiAttrExpr> dataNodes;
-        private Map<ComponentGraph, UiAttrExpr> modelNodes;
-        private Map<ComponentGraph, UiAttrExpr> refNodes;
-        private Map<ComponentGraph, UiExpr> cssNodes;
+        private final Map<ComponentGraph, UiAttrExpr> dataNodes;
+        private final Map<ComponentGraph, UiAttrExpr> modelNodes;
+        private final Map<ComponentGraph, UiAttrExpr> refNodes;
+        private final Map<ComponentGraph, UiExpr> cssNodes;
+        private final Map<ComponentGraph, UiContainerExpr> templateElements;
+        private final Map<ComponentGraph, List<NameExpr>> templateNames;
         private boolean hasClassname;
-        private Map<ComponentGraph, List<NameExpr>> templateNames;
 
         public InterestingNodeResults() {
             dataNodes = new IdentityHashMap<>();
@@ -33,11 +34,16 @@ public class InterestingNodeFinder {
             refNodes = new IdentityHashMap<>();
             templateNames = new IdentityHashMap<>();
             cssNodes = new IdentityHashMap<>();
+            templateElements = new IdentityHashMap<>();
         }
 
         public void addTemplateName(ComponentGraph g, NameExpr n) {
             templateNames.computeIfAbsent(g, i -> new ArrayList<>())
                   .add(n);
+        }
+
+        public void addTemplateElement(ComponentGraph g, UiContainerExpr n) {
+            templateElements.computeIfAbsent(g, i -> n);
         }
 
         public void addRefNode(ComponentGraph g, UiAttrExpr n) {
@@ -58,6 +64,10 @@ public class InterestingNodeFinder {
 
         public void foundClassnameFeature() {
             hasClassname = true;
+        }
+
+        public boolean hasTemplateElement() {
+            return !templateElements.isEmpty();
         }
 
         public boolean hasDataNodes() {
@@ -82,6 +92,10 @@ public class InterestingNodeFinder {
 
         public boolean hasRefNodes() {
             return !refNodes.isEmpty();
+        }
+
+        public Map<ComponentGraph, UiContainerExpr> getTemplateElements() {
+            return templateElements;
         }
 
         public Map<ComponentGraph, UiAttrExpr> getDataNodes() {
@@ -169,6 +183,7 @@ public class InterestingNodeFinder {
               .setVisitChildContainers(true)
               .setVisitAttributeContainers(true)
               .addDataFeatureListener(results::addDataNode)
+              .addTemplateElementFeatureListener(results::addTemplateElement)
               .addModelFeatureListener(results::addModelNode)
               .addRefFeatureListener(results::addRefNode)
               .addCssFeatureListener(results::addCssNode)

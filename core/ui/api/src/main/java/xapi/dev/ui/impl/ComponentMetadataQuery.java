@@ -4,6 +4,7 @@ import com.github.javaparser.ast.expr.CssExpr;
 import com.github.javaparser.ast.expr.MethodReferenceExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.UiAttrExpr;
+import com.github.javaparser.ast.expr.UiContainerExpr;
 import xapi.collect.impl.SimpleStack;
 import xapi.dev.ui.api.ComponentGraph;
 import xapi.fu.In1Out1;
@@ -30,6 +31,7 @@ public class ComponentMetadataQuery implements Destroyable {
   private final SimpleStack<In2<ComponentGraph, UiAttrExpr>> refFeatureListeners = new SimpleStack<>();
   private final SimpleStack<In2<ComponentGraph, CssExpr>> cssFeatureListeners = new SimpleStack<>();
   private final SimpleStack<In2<ComponentGraph, UiAttrExpr>> allFeatureListeners = new SimpleStack<>();
+  private final SimpleStack<In2<ComponentGraph, UiContainerExpr>> templateElementFeatureListeners = new SimpleStack<>();
 
 
   public boolean isVisitChildContainers() {
@@ -61,6 +63,11 @@ public class ComponentMetadataQuery implements Destroyable {
 
   public ComponentMetadataQuery addNameListener(In2<ComponentGraph, NameExpr> listener) {
     nameListeners.add(listener);
+    return this;
+  }
+
+  public ComponentMetadataQuery addTemplateElementFeatureListener(In2<ComponentGraph, UiContainerExpr> listener) {
+    templateElementFeatureListeners.add(listener);
     return this;
   }
 
@@ -108,6 +115,10 @@ public class ComponentMetadataQuery implements Destroyable {
 
   public void notifyCssExpr(ComponentGraph scope, CssExpr n) {
     cssFeatureListeners.forEach(listener->listener.in(scope, n));
+  }
+
+  public void notifyTemplateElementExpr(ComponentGraph scope, UiContainerExpr n) {
+    templateElementFeatureListeners.forEach(listener->listener.in(scope, n));
   }
 
   public void notifyUiAttrExpr(ComponentGraph scope, UiAttrExpr n) {

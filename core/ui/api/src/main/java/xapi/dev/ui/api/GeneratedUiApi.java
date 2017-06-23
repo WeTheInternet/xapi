@@ -62,4 +62,8 @@ public class GeneratedUiApi extends GeneratedUiLayer {
         In1Out1<Type, String> baseFactory
     ) {
     }
+
+    public String getConstantName() {
+        return getTypeName().replaceAll("([a-z])([A-Z])", "$1_$2").toUpperCase();
+    }
 }

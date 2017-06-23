@@ -132,6 +132,9 @@ public class GeneratedJavaFile {
     }
 
     public void ensureField(String type, String name) {
+        ensureFieldDefined(type, name, true);
+    }
+    public void ensureFieldDefined(String type, String name, boolean define) {
         GeneratedJavaFile check = this;
         synchronized (fieldNames) {
             while (check != null) {
@@ -142,15 +145,17 @@ public class GeneratedJavaFile {
             }
             fieldNames.out1().put(name, 0);
 
-            final ClassBuffer buf = getSource().getClassBuffer();
-            if (buf.isInterface()) {
-                buf.createMethod("public " + type + " " + SourceUtil.toGetterName(type, name) + "()");
-                buf.createMethod("public void " + SourceUtil.toSetterName(name) + "()")
-                    .addParameter(type, name);
-            } else {
-                buf.createField(type, name, Modifier.PROTECTED)
-                    .createGetter(Modifier.PUBLIC)
-                    .createSetter(Modifier.PUBLIC);
+            if (define) {
+                final ClassBuffer buf = getSource().getClassBuffer();
+                if (buf.isInterface()) {
+                    buf.createMethod("public " + type + " " + SourceUtil.toGetterName(type, name) + "()");
+                    buf.createMethod("public void " + SourceUtil.toSetterName(name) + "()")
+                        .addParameter(type, name);
+                } else {
+                    buf.createField(type, name, Modifier.PROTECTED)
+                        .createGetter(Modifier.PUBLIC)
+                        .createSetter(Modifier.PUBLIC);
+                }
             }
         }
     }

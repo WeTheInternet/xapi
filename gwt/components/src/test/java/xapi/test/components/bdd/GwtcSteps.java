@@ -45,6 +45,7 @@ import xapi.dev.ui.impl.UiGeneratorVisitor;
 import xapi.dev.ui.tags.UiTagGenerator;
 import xapi.fu.In1;
 import xapi.fu.Lazy;
+import xapi.fu.MappedIterable;
 import xapi.fu.Out2;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
@@ -130,7 +131,7 @@ public class GwtcSteps {
       }
 
       @Override
-      protected Iterable<UiImplementationGenerator> getImplementations() {
+      protected MappedIterable<UiImplementationGenerator> getImplementations() {
         return SingletonIterator.singleItem(new XapiWebComponentGenerator());
       }
     };

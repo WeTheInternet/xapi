@@ -21,8 +21,10 @@ import xapi.dev.ui.impl.InterestingNodeFinder.InterestingNodeResults;
 import xapi.fu.*;
 import xapi.fu.iterate.ArrayIterable;
 import xapi.fu.iterate.CachingIterator;
+import xapi.fu.iterate.CachingIterator.ReplayableIterable;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
+import xapi.fu.iterate.SingletonIterator;
 import xapi.io.X_IO;
 import xapi.log.X_Log;
 import xapi.source.X_Source;
@@ -60,7 +62,7 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
     protected String phase;
     protected final IntTo.Many<Do> onDone;
     protected SourceHelper<Raw> service;
-    protected final Lazy<Iterable<UiImplementationGenerator>> impls;
+    protected final Lazy<MappedIterable<UiImplementationGenerator>> impls;
     protected final In1Out1<Ctx, StringTo<GeneratedUiDefinition>> definitions;
     protected final ChainBuilder<GeneratedUiComponent> seen;
     protected final StringTo<ComponentBuffer> allComponents;
@@ -248,7 +250,7 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
             Do ondone = tools().startRound(id, component.getGeneratedComponent())
         ) {
             this.phase = id;
-            final Iterable<UiImplementationGenerator> impls = this.impls.out1();
+            final MappedIterable<UiImplementationGenerator> impls = this.impls.out1();
             switch (id) {
                 case PhasePreprocess.PHASE_PREPROCESS:
                     return preprocessComponent(component, impls);
@@ -504,12 +506,19 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
         resetFactories();
     }
 
-    protected ComponentBuffer createImplementation(ComponentBuffer component, Iterable<UiImplementationGenerator> impls) {
+    protected ComponentBuffer createImplementation(ComponentBuffer component, MappedIterable<UiImplementationGenerator> impls) {
         // Generate a boilerplate interface that takes generics for all renderable nodes.
         for (UiImplementationGenerator impl : impls) {
             final ContainerMetadata metadata = component.getImplementation(impl.getClass());
             impl.setGenerator(this);
-            impl.generateComponent(metadata, component, impl.getMode(component, metadata));
+            final GeneratedUiImplementation implResult = impl.generateComponent(
+                metadata,
+                component,
+                impl.getMode(component, metadata)
+            );
+            onFinish(Integer.MAX_VALUE, ()->{
+
+            });
         }
         onFinish(Integer.MAX_VALUE-100, ()->
             // This runs fairly late.  TODO: sane location for constants
@@ -522,8 +531,37 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
         return component;
     }
 
-    protected Iterable<UiImplementationGenerator> getImplementations() {
-        return ServiceLoader.load(UiImplementationGenerator.class);
+    protected MappedIterable<UiImplementationGenerator> getImplementations() {
+        final ReplayableIterable<UiImplementationGenerator> itr =
+            CachingIterator.cachingIterable(ServiceLoader.load(UiImplementationGenerator.class));
+        if (itr.isEmpty()) {
+
+            // When no impl type was declared, we should still emit an api and model, if defined.
+            // For this to work sanely in java 9, we likely do not want to emit any base types or higher,
+            // as you will likely want to generate those together with your final impl,
+            // in case your generator decides it wants to add things to the base type.
+            // An existing Api type should not be modified when generating an impl type later on;
+            // we will want to make an ImmutableUiLayer which enforces this.
+
+            // Once the generator apis themselves are more solid, we can look at
+            // ways to ensure both api and base types are always stable / do not change;
+            // however, even then, we would want this to be opt-in, so your final set of impls
+            // can still insert arbitrary supertypes / shared utilities;
+            // remember, you could, theoretically, generate multiple impls for the same runtime environment.
+
+            // As an example, Gwt may want to generate one impl class which uses shadow DOM,
+            // and another one which performs slotting + rendering manually.
+            // In this case, we would likely want to stuff as much in the base type as possible,
+            // with things we likely don't want shared to vert.x, appengine, android, etc.
+
+            // We'll also want to emit partial settings.xapi entries for the component type;
+            // final impl-generation will emit the rest of the settings, and we'll need to
+            // make the settings reader sanely handle multi-file reads (perhaps someday enforcing
+            // single-definition of source files / file hashes or other nice-to-have-but-not-right-nows).
+
+            return SingletonIterator.singleItem(new ApiOnlyGenerator());
+        }
+        return itr;
     }
 
     protected ComponentBuffer runBinding(ComponentBuffer component) {

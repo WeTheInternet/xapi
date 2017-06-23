@@ -1,24 +1,28 @@
 package xapi.ui.edit;
 
+import static xapi.model.X_Model.create;
+import static xapi.model.api.KeyBuilder.forType;
+import static xapi.model.api.ModelBuilder.build;
+
+
 import xapi.fu.Out1;
-import xapi.model.X_Model;
 import xapi.model.api.KeyBuilder;
 import xapi.model.api.Model;
 import xapi.model.api.ModelBuilder;
 
 public interface ModelInputText extends Model{
 
-    String TYPE = "input-text";
+  public String MODEL_INPUT_TEXT = "inputText";
 
-    String MODEL_INPUT_TEXT_TYPE = "input-text";
+  public Out1<KeyBuilder> INPUT_TEXT_KEY_BUILDER = forType(MODEL_INPUT_TEXT);
 
-    Out1<KeyBuilder> INPUT_TEXT_KEY_BUILDER = KeyBuilder.forType(MODEL_INPUT_TEXT_TYPE);
+  public Out1<ModelBuilder<ModelInputText>> INPUT_TEXT_MODEL_BUILDER = 
+      ()->
+        build(INPUT_TEXT_KEY_BUILDER.out1(),
+        ()->create(ModelInputText.class));
 
-    Out1<ModelBuilder<ModelInputText>> MODEL_INPUT_TEXT_BUILDER =
-        ()->ModelBuilder
-            .build(INPUT_TEXT_KEY_BUILDER.out1(), ()-> X_Model.create(ModelInputText.class));
 
-    abstract String getValue () ;
+  abstract String getValue () ;
 
   abstract String setValue (String value) ;
 

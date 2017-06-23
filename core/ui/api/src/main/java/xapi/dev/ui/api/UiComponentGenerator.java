@@ -18,7 +18,7 @@ import java.util.List;
 public class UiComponentGenerator {
 
   public enum UiGenerateMode {
-    TAG_DEFINITION, UI_BUILDING, MODEL_BUILDING;
+    TAG_DEFINITION, UI_BUILDING, MODEL_BUILDING, WEB_APP_BUILDING;
     public static final UiGenerateMode DEFAULT = UI_BUILDING;
   }
 

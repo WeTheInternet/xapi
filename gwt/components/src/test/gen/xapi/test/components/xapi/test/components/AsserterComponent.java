@@ -1,5 +1,7 @@
 package xapi.test.components.xapi.test.components;
 
+import static xapi.model.X_Model.create;
+
 
 import xapi.ui.api.component.IsModelComponent;
 import xapi.util.X_Util;
@@ -10,7 +12,13 @@ public interface AsserterComponent <Node, El extends Node> extends IsModelCompon
     ModelAsserter
   >{
 
-  abstract ModelAsserter getModel () ;
+  public default String getModelType () {
+    return "Asserter";
+  }
+
+  public default ModelAsserter createModel () {
+    return create(ModelAsserter.class);
+  }
 
   default String getTemplate() {
     return getModel().getTemplate();
