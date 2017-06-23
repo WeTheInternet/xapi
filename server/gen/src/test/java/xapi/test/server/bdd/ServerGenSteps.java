@@ -49,13 +49,15 @@ public class ServerGenSteps implements ServerTestHelper<TestSocketServer> {
     public void expectNamedWebAppToHaveSource(String name, List<String> lines) throws Throwable {
         String expected = X_String.join("\n",
             adaptIterable(lines, String::trim)
+            .filter(s->!s.isEmpty())
         );
         final WebApp app = webApps.get(name);
         assertNotNull("No app named " + name, app);
         String src = app.getSource();
         src = X_String.join("\n", adaptIterable(
             iterate(src.split("\n")), String::trim
-        ));
+            ).filter(s->!s.isEmpty())
+        );
         assertEquals(expected, src);
 
     }

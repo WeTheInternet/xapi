@@ -18,6 +18,12 @@ import xapi.dev.ui.api.UiVisitScope.ScopeType;
  */
 public class ClasspathFeatureGenerator extends UiFeatureGenerator {
 
+    private final WebAppComponentGenerator owner;
+
+    public ClasspathFeatureGenerator(WebAppComponentGenerator owner) {
+        this.owner = owner;
+    }
+
     @Override
     public UiVisitScope startVisit(
         UiGeneratorTools service,

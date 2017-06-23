@@ -6,7 +6,7 @@ import jsinterop.annotations.JsFunction;
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 11/28/16.
  */
-@JsFunction
+@JsFunction @FunctionalInterface
 public interface JsEventListener <T extends Event> {
     void onEvent(T event);
 }

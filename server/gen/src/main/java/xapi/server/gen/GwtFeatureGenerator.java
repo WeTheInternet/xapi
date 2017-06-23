@@ -6,4 +6,10 @@ import xapi.dev.ui.api.UiFeatureGenerator;
  * Created by James X. Nelson (james @wetheinter.net) on 10/9/16.
  */
 public class GwtFeatureGenerator extends UiFeatureGenerator {
+
+    private final WebAppComponentGenerator owner;
+
+    public GwtFeatureGenerator(WebAppComponentGenerator owner) {
+        this.owner = owner;
+    }
 }

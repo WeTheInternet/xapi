@@ -233,6 +233,13 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
     }
 
     @Override
+    public void writeTemplate(
+        RequestScope<VertxRequest> request, String payload, In1<VertxRequest> callback
+    ) {
+       writeText(request, payload, callback);
+    }
+
+    @Override
     public void writeFile(RequestScope<VertxRequest> request, String payload, In1<VertxRequest> callback) {
         final HttpServerResponse response = request.getRequest().getResponse();
         File toServe = new File(webApp.getContentRoot());

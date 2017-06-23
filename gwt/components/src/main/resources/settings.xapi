@@ -5,6 +5,8 @@
             name="input-text"
             package="xapi.ui.edit"
             type="InputText"
+            apiName="InputTextComponent"
+            baseName="BaseInputTextComponent"
             model= @Named("ModelInputText") {
                 value: String.class,
                 title: @Nullable String.class,

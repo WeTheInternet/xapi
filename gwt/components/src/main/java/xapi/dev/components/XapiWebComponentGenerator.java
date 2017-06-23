@@ -4,6 +4,7 @@ import com.github.javaparser.ast.TypeArguments;
 import com.github.javaparser.ast.TypeParameter;
 import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.expr.AnnotationExpr;
+import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
@@ -14,8 +15,9 @@ import elemental.dom.Node;
 import xapi.components.api.ComponentNamespace;
 import xapi.components.api.UiConfig;
 import xapi.components.impl.GwtModelComponentMixin;
-import xapi.ui.api.component.AbstractComponent;
-import xapi.ui.api.component.AbstractModelComponent;
+import xapi.model.api.ModelKey;
+import xapi.model.service.ModelCache;
+import xapi.ui.api.component.*;
 import xapi.components.impl.WebComponentBuilder;
 import xapi.components.impl.WebComponentSupport;
 import xapi.components.impl.WebComponentVersion;
@@ -33,11 +35,6 @@ import xapi.fu.Out1;
 import xapi.inject.X_Inject;
 import xapi.model.X_Model;
 import xapi.platform.GwtPlatform;
-import xapi.ui.api.component.ComponentConstructor;
-import xapi.ui.api.component.ComponentOptions;
-import xapi.ui.api.component.IsComponent;
-import xapi.ui.api.component.IsModelComponent;
-import xapi.ui.api.component.ModelComponentOptions;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -85,12 +82,9 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
 
             final ClassOrInterfaceType rawEle = new ClassOrInterfaceType(eleName);
             final ClassOrInterfaceType nodeType = new ClassOrInterfaceType(nodeName);
-            final String componentName = baseOut.addImport(IsComponent.class);
-            final ClassOrInterfaceType apiSuperType = new ClassOrInterfaceType(componentName);
             final ClassOrInterfaceType apiType = new ClassOrInterfaceType(api.getWrappedName());
             types.add(nodeType);
             types.add(rawEle);
-            apiSuperType.setTypeArguments(TypeArguments.withArguments(types));
             apiType.setTypeArguments(TypeArguments.withArguments(types));
             // provide local definitions for api.  TODO: also provide base type now?
             result.addGlobalDefinition(UiNamespace.TYPE_API, new ReferenceType(apiType));
@@ -120,19 +114,6 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
                     new TypeParameter(baseModel, modelType));
                 superType.addTypeParameter(2, modelParam);
                 base.addLocalDefinition(UiNamespace.TYPE_MODEL, new ReferenceType(modelType));
-                final ClassBuffer out = base.getSource().getClassBuffer();
-                out.createMethod("protected " + baseModel + " createModel()")
-                        .returnValue(
-                            out.addImportStatic(X_Model.class, "create")
-                            + "(" + baseModel + ".class)"
-                        )
-                        .addAnnotation(Override.class);
-
-                out.createMethod("public String getModelType()")
-                        .returnValue("\"" + baseModel + "\"")
-                        .addAnnotation(Override.class);
-
-                out.addGenericInterface(GwtModelComponentMixin.class, eleName);
             }
             result.updateSupertype(superType);
 
@@ -223,10 +204,10 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
     }
 
     @Override
-    public GeneratedUiImplementation getImpl(GeneratedUiComponent component) {
+    public GeneratedWebComponent getImpl(GeneratedUiComponent component) {
         for (GeneratedUiImplementation impl : component.getImpls()) {
             if (impl instanceof GeneratedWebComponent) {
-                return impl;
+                return (GeneratedWebComponent) impl;
             }
         }
         throw new IllegalStateException("No GeneratedWebComponent impl found");
@@ -346,6 +327,51 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
             .indentln("opts = new " + opts + "<>();")
             .println("}")
             .returnValue("("+ type + ")" + ctorName + ".constructComponent(opts, getUi)");
+
+        if (model.isPresent()) {
+            component.getSource().getClassBuffer()
+                .addGenericInterface(GwtModelComponentMixin.class, element, api.getModelName());
+        }
+
+        component.getRequiredChildren().forAll(child->{
+            final GeneratedUiDefinition def = child.getDefinition();
+            final Expression source = child.getSourceNode();
+            final String eleBuilder = component.getElementBuilderType(ns);
+            String name = "create" + def.getApiName();
+            final MethodBuffer createChild = out.createMethod("public " + eleBuilder + " " + name);
+            if (def.getModelName() != null) {
+                final ApiGeneratorContext ctx = buffer.getRoot().getContext();
+                final Expression resolved = getTools().resolveVar(ctx, source);
+                String printModel = getTools().resolveString(ctx, resolved)
+                                    // filthy hack... good enough for now, but we need
+                                    // to bring sanity to our ApiGeneratorContext, and how it is distributed
+                                    .replace("$model", "getModel()");
+                final String modName = out.addImport(def.getQualifiedModelName());
+                final String xmodel = out.addImport(X_Model.class);
+                final String modelCache = out.addImport(ModelCache.class);
+                final String modelKey = out.addImport(ModelKey.class);
+                int lastGet = printModel.lastIndexOf("get");
+                final String setterName = printModel.substring(0, lastGet) + "s" + printModel.substring(lastGet + 1);
+                final String modKeyConstant = def.getModelKeyConstant();
+                createChild .println(modName + " mod = " + printModel + ";")
+                            .println("if (mod == null) {")
+                            .indentln("mod = " + xmodel + ".create(" + modName+".class);")
+                            .indentln(setterName.substring(0, setterName.length()-1) + "mod);")
+                            .println("}")
+                            .println(modelCache + " cache = " + xmodel + ".cache();")
+                            .println(modelKey + " key = cache.ensureKey(" + modName + "." + modKeyConstant + ", mod);")
+                            .println("cache.cacheModel(mod, ignore->{});");
+            }
+            createChild.println("final " + eleBuilder + " builder = newBuilder()")
+                       .indentln(".setTagName(\"" + def.getTagName() + "\");");
+
+            if (def.getModelName() != null) {
+                createChild.println("builder.setAttribute(\"data-model-id\", key.toString());");
+            }
+
+            createChild.println("return builder;");
+
+        });
 
     }
 

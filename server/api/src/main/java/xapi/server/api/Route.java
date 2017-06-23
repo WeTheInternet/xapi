@@ -5,28 +5,35 @@ import xapi.fu.Log;
 import xapi.fu.Log.LogLevel;
 import xapi.model.api.Model;
 import xapi.scope.api.RequestScope;
+import xapi.source.write.StringerMatcher;
+import xapi.source.write.Template;
 import xapi.util.api.RequestLike;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/4/16.
  */
 public interface Route extends Model {
+    String[] DEFAULT_TEMPLATE_KEYS = {
+        "$static", "$user", "$api",
+        // TODO: actually have proper nested variable fields
+        "$user.name", "$user.id", "$user.pageId"
+    };
 
     enum RouteType {
-        Text, Gwt, Callback, File
+        Text, Gwt, Callback, File, Template
     }
 
     default <Req extends RequestLike> boolean serve(RequestScope<Req> request, In1<Req> callback) {
-        final String payload = getPayload();
-        if (payload == null) {
-            getOrCreateLog().log(getClass(), LogLevel.WARN,
-                "No payload specified; bailing ", this);
-            return false;
-        }
         RouteType type = getRouteType();
         if (type == null) {
             getOrCreateLog().log(getClass(), LogLevel.WARN,
                 "No route type specified; bailing ", this);
+            return false;
+        }
+        final String payload = getPayload();
+        if (payload == null && type != RouteType.Template) {
+            getOrCreateLog().log(getClass(), LogLevel.WARN,
+                "No payload specified; bailing ", this);
             return false;
         }
         XapiServer server = request.get(XapiServer.class);
@@ -42,6 +49,9 @@ public interface Route extends Model {
                 return true;
             case File:
                 server.writeFile(request, payload, callback);
+                return true;
+            case Template:
+                server.writeTemplate(request, getPayload(), callback);
                 return true;
 
         }
@@ -63,6 +73,25 @@ public interface Route extends Model {
     String getPayload();
 
     Route setPayload(String payload);
+
+    Template getTemplate();
+
+    default Template getOrCreateTemplate() {
+        Template template = getTemplate();
+        if (template == null) {
+            synchronized (this) {
+                template = getTemplate();
+                if (template == null) {
+                    String payload = getPayload();
+                    template = new Template(payload, DEFAULT_TEMPLATE_KEYS);
+                    setTemplate(template);
+                }
+            }
+        }
+        return template;
+    }
+
+    Route setTemplate(Template template);
 
     String getPath();
 

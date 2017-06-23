@@ -12,7 +12,9 @@ import xapi.dev.ui.api.ComponentBuffer;
 import xapi.dev.ui.api.UiComponentGenerator;
 import xapi.dev.ui.api.UiFeatureGenerator;
 import xapi.dev.ui.api.UiGeneratorService;
+import xapi.dev.ui.api.UiImplementationGenerator;
 import xapi.dev.ui.impl.AbstractUiGeneratorService;
+import xapi.dev.ui.tags.UiTagGenerator;
 import xapi.fu.Out2;
 import xapi.fu.iterate.Chain;
 import xapi.inject.X_Inject;
@@ -80,7 +82,7 @@ public class WebAppGenerator extends AbstractUiGeneratorService<WebAppGeneratorC
 
 //        final UiGeneratorVisitor visitor = service.createVisitor(buffer.getRoot());
 //        visitor.visit(container, service.tools());
-        final SourceBuilder<?> source = buffer.getBinder();
+        final SourceBuilder<?> source = buffer.getGeneratedComponent().getBase().getSource();
         String src = source.toSource();
         X_Log.info(getClass(), src, "Generated... " + src);
         try {
@@ -136,6 +138,9 @@ public class WebAppGenerator extends AbstractUiGeneratorService<WebAppGeneratorC
                 if (path.matches("[/]?[.][.][/]?")) {
                     warnPathWithDotDot(path, used);
                 }
+                if (path.startsWith("/")) {
+
+                }
                 dir = dir.resolve(path);
                 try {
                     final Path output = Files.createDirectories(dir).resolve(fileName);
@@ -179,8 +184,8 @@ public class WebAppGenerator extends AbstractUiGeneratorService<WebAppGeneratorC
     protected Iterable<Out2<String, UiComponentGenerator>> getComponentGenerators() {
         return
                     Chain.<Out2<String, UiComponentGenerator>>toChain(
-                        out2Immutable("define-tags", new WebAppComponentGenerator()),
-                        out2Immutable("define-tag", new WebAppComponentGenerator()),
+                        out2Immutable("define-tags", new UiTagGenerator()),
+                        out2Immutable("define-tag", new UiTagGenerator()),
                         out2Immutable("web-app", new WebAppComponentGenerator()),
                         out2Immutable("classpath", new UiComponentGenerator()),
                         out2Immutable("gwtc", new GwtcComponentGenerator())

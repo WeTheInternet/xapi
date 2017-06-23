@@ -1,6 +1,8 @@
 package xapi.server.gen;
 
 import xapi.dev.ui.api.UiImplementationGenerator;
+import xapi.fu.MappedIterable;
+import xapi.fu.iterate.SingletonIterator;
 
 import java.util.Collections;
 
@@ -10,7 +12,7 @@ import java.util.Collections;
 public class VertxWebAppGenerator extends WebAppGenerator {
 
     @Override
-    protected Iterable<UiImplementationGenerator> getImplementations() {
-        return Collections.singletonList(new VertxWebAppImplGenerator());
+    protected MappedIterable<UiImplementationGenerator> getImplementations() {
+        return SingletonIterator.singleItem(new VertxWebAppImplGenerator());
     }
 }

@@ -7,7 +7,88 @@ Feature:
     Given Generate web app named HelloWorld:
       | <web-app /> |
     Then Expect web app named HelloWorld to have source:
-      |                                           |
-      | public interface HelloWorldComponent { |
-      |                                           |
-      | }                                         |
+      | import xapi.server.api.WebApp;                                                                   |
+      | import xapi.server.api.XapiServer;                                                                         |
+      | import xapi.server.api.XapiServerPlugin;                                                                   |
+      | import xapi.util.api.RequestLike;                                                                          |
+      |                                                                                                            |
+      | public class BaseHelloWorldComponent <Request extends RequestLike, Response> implements XapiServerPlugin<Request,Response> { |
+      |                                                                                                            |
+      |   public void installToServer (XapiServer<Request, Response> server) {                                     |
+      |     WebApp app = server.getWebApp();                                                                       |
+      |   }                                                                                                        |
+      |                                                                                                            |
+      | }                                                                                                          |
+
+  Scenario:
+  Compile a simple <route />
+
+    Given Generate web app named HelloWorld:
+      | <web-app                                |
+      |   routes=[                              |
+      |     <route                              |
+      |       path = "/"                        |
+      |       method = "GET"                    |
+      |       response = <page                  |
+      |         dom = <div>"HelloWorld"</div>   |
+      |       /page>                            |
+      |     /route>                             |
+      |   ]                                     |
+      | /web-app>                               |
+    Then Expect web app named HelloWorld to have source:
+      | import xapi.server.api.WebApp;                                                                   |
+      | import xapi.server.api.XapiServer;                                                                         |
+      | import xapi.server.api.XapiServerPlugin;                                                                   |
+      | import xapi.util.api.RequestLike;                                                                          |
+      |                                                                                                            |
+      | public class BaseHelloWorldComponent <Request extends RequestLike, Response> implements XapiServerPlugin<Request,Response> { |
+      |                                                                                                            |
+      |   public void installToServer (XapiServer<Request, Response> server) {                                     |
+      |     WebApp app = server.getWebApp();                                                                       |
+      |     installRoute(app);                                                                                     |
+      |   }                                                                                                        |
+      |                                                                                                            |
+      |   public void installRoute (WebApp app) {                                                                  |
+      |   }                                                                                                        |
+      |                                                                                                            |
+      | }                                                                                                          |
+
+  Scenario:
+  Compile a <route /> using a <template />
+
+    Given Generate web app named TemplateWorld:
+      | <web-app                                |
+      |   templates=[                           |
+      |     <template name="hi">                |
+      |       <page                             |
+      |         dom = <div>Templatey</div>      |
+      |       /page>                            |
+      |     </template>                         |
+      |   ]                                     |
+      |   routes=[                              |
+      |     <route                              |
+      |       path = "/"                        |
+      |       method = "GET"                    |
+      |       response = <page                  |
+      |         template = "hi"                 |
+      |       /page>                            |
+      |     /route>                             |
+      |   ]                                     |
+      | /web-app>                               |
+    Then Expect web app named TemplateWorld to have source:
+      | import xapi.server.api.WebApp;                                                                   |
+      | import xapi.server.api.XapiServer;                                                                         |
+      | import xapi.server.api.XapiServerPlugin;                                                                   |
+      | import xapi.util.api.RequestLike;                                                                          |
+      |                                                                                                            |
+      | public class BaseTemplateWorldComponent <Request extends RequestLike, Response> implements XapiServerPlugin<Request,Response> { |
+      |                                                                                                            |
+      |   public void installToServer (XapiServer<Request, Response> server) {                                     |
+      |     WebApp app = server.getWebApp();                                                                       |
+      |     installRoute(app);                                                                                     |
+      |   }                                                                                                        |
+      |                                                                                                            |
+      |   public void installRoute (WebApp app) {                                                                  |
+      |   }                                                                                                        |
+      |                                                                                                            |
+      | }                                                                                                          |

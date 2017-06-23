@@ -2,21 +2,27 @@ package xapi.components.impl;
 
 import elemental.dom.Element;
 import elemental.dom.Node;
+import elemental.events.Event;
 import elemental.html.DivElement;
 import elemental.js.util.JsArrayOfBoolean;
 import elemental.js.util.JsArrayOfInt;
 import elemental.js.util.JsArrayOfNumber;
 import elemental.js.util.JsArrayOfString;
 import xapi.components.api.*;
+import xapi.fu.Do;
+import xapi.fu.In1;
 import xapi.fu.In1Out1;
 import xapi.ui.api.component.ComponentConstructor;
 import xapi.ui.api.component.ComponentOptions;
 import xapi.ui.api.component.IsComponent;
+import xapi.util.api.RemovalHandler;
 
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.UnsafeNativeLong;
 
 public class JsSupport {
+
+  private static final EventBinder resizeHandler = new EventBinder(win(), "resize", false);
 
   public static native Document doc()
   /*-{
@@ -27,6 +33,14 @@ public class JsSupport {
   /*-{
   	return $wnd;
   }-*/;
+
+  public static RemovalHandler onResize(Do callback) {
+    return onResize(callback.ignores1());
+  }
+
+  public static RemovalHandler onResize(In1<Event> callback) {
+    return resizeHandler.addEventListener(callback);
+  }
 
   public static native Symbol symbol(String symbol)
   /*-{

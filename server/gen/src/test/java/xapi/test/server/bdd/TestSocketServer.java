@@ -154,6 +154,13 @@ class TestSocketServer extends AbstractModel implements WebApp, Rethrowable, Xap
     }
 
     @Override
+    public void writeTemplate(
+        RequestScope<SocketRequest> request, String payload, In1<SocketRequest> callback
+    ) {
+        throw new UnsupportedOperationException("writeTemplate not supported");
+    }
+
+    @Override
     public void writeCallback(RequestScope<SocketRequest> request, String payload, In1<SocketRequest> callback) {
         throw new UnsupportedOperationException("writeCallback not supported");
     }

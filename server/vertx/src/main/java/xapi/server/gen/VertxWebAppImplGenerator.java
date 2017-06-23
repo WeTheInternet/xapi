@@ -27,10 +27,10 @@ public class VertxWebAppImplGenerator extends AbstractUiImplementationGenerator<
     }
 
     @Override
-    public GeneratedUiImplementation getImpl(GeneratedUiComponent component) {
+    public GeneratedVertxComponent getImpl(GeneratedUiComponent component) {
         for (GeneratedUiImplementation impl : component.getImpls()) {
             if (impl instanceof GeneratedVertxComponent) {
-                return impl;
+                return (GeneratedVertxComponent) impl;
             }
         }
         throw new IllegalStateException("No vertx impl found in " + component.getImpls());

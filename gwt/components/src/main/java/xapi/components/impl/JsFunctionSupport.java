@@ -1,6 +1,8 @@
 package xapi.components.impl;
 
 import elemental.dom.Element;
+import elemental.events.Event;
+import xapi.components.api.JsEventListener;
 import xapi.components.api.OnWebComponentAttributeChanged;
 import xapi.fu.Do;
 import xapi.fu.In1;
@@ -25,6 +27,17 @@ public class JsFunctionSupport {
         }
       };
     }-*/;
+
+    public static void ensureEntered(Do task) {
+	    final JavaScriptObject wrapped = wrapDo(task);
+	    final JavaScriptObject entered = maybeEnter(wrapped);
+	    invoke(entered, task);
+    }
+
+        public static native JavaScriptObject invoke(JavaScriptObject func, Object inst, Object ... args)
+	/*-{
+	  return func.apply(inst, args);
+	 }-*/;
 
 	public static native JavaScriptObject wrapRunnable(Runnable task)
 	/*-{
@@ -155,4 +168,26 @@ public class JsFunctionSupport {
             return f.apply(this, [this].concat(Array.prototype.slice.apply(arguments)));
           };
         }-*/;
+
+	public static JsEventListener<?> fixListener(JsEventListener<?> callback) {
+                final JavaScriptObject fixed = wrapListener(callback);
+		return new JsEventListener<Event>() {
+			@Override
+			public void onEvent(Event event) {
+			    invoke(fixed, callback, event);
+                        }
+		};
+	}
+
+	public static native JavaScriptObject wrapListener(JsEventListener<?> callback)
+	/*-{
+          return function() {
+              if (@com.google.gwt.core.client.impl.Impl::entryDepth) {
+                // we are already inside the gwt call stack, just skip the expensive wrapping.
+                return callback.@JsEventListener::onEvent(*)(arguments[0]) || null;
+              } else {
+                return @com.google.gwt.core.client.impl.Impl::entry0(*)(callback, this, arguments) || null;
+              }
+          };
+	}-*/;
 }
