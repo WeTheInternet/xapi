@@ -5,10 +5,13 @@ import xapi.collect.api.CollectionOptions;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.ObjectTo;
 import xapi.except.NotYetImplemented;
+import xapi.fu.Filter.Filter1;
 import xapi.fu.In1;
 import xapi.fu.In2Out1;
 import xapi.fu.MappedIterable;
 import xapi.fu.Out1;
+import xapi.fu.Out2;
+import xapi.fu.iterate.SizedIterable;
 import xapi.platform.GwtPlatform;
 import xapi.util.X_Util;
 import xapi.util.impl.AbstractPair;
@@ -99,6 +102,16 @@ public class IntToListGwt <E> implements IntTo<E>{
     return true;
   }
 
+  @Override
+  public final SizedIterable<E> forEachItem() {
+    return IntTo.super.forEachItem();
+  }
+
+  @Override
+  public final MappedIterable<Out2<Integer, E>> forEachEntry() {
+    return IntTo.super.forEachEntry();
+  }
+
   public final native void concat(Object array)
   /*-{
     this.@IntToListGwt::array.concat(array);
@@ -160,6 +173,11 @@ public class IntToListGwt <E> implements IntTo<E>{
   @SuppressWarnings("unchecked")
   public final Entry<Integer, E> entryFor(final Object key) {
     return new AbstractPair<Integer, E>(size(), (E)key);
+  }
+
+  @Override
+  public final boolean removeIf(Filter1<E> value, boolean all) {
+    return IntTo.super.removeIf(value, all);
   }
 
   @Override

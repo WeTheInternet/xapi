@@ -45,6 +45,11 @@ public class X_Process {
   public static void runFinallyUnsafe(DoUnsafe cmd) {
     runFinally(cmd);
   }
+  public static void runDoubleFinally(Do cmd) {
+    runFinally(()->
+      runFinally(cmd)
+    );
+  }
   public static void runFinally(Do cmd) {
     service.get().runFinally(cmd);
   }

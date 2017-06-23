@@ -5,6 +5,7 @@ import xapi.fu.Filter.Filter1;
 import xapi.fu.In1;
 import xapi.fu.In1Out1;
 import xapi.fu.MappedIterable;
+import xapi.fu.Out2;
 import xapi.fu.has.HasItems;
 import xapi.fu.iterate.SizedIterable;
 
@@ -89,9 +90,20 @@ extends CollectionProxy<Integer,T>, HasItems<T>
   boolean findRemove(T value, boolean all);
 
   default boolean removeIf(Filter1<T> value, boolean all) {
+    @SuppressWarnings("Convert2Lambda")
+    // for some terrible reason, gwt compiler gets an npe trying to compile this
+    // lambda inside a default method from a JSO type (IntToGwt)
+    // while it would be nice to fix this compiler error, we are glossing over
+    // it for the time being by using an explicit anonymous class.
+    final Filter1<Out2<Integer, T>> filter = new Filter1<Out2<Integer, T>>() {
+      @Override
+      public boolean filter1(Out2<Integer, T> e) {
+        return value.filter1(e.out2());
+      }
+    };
     final Iterator<Integer> itr = forEachEntry()
-        .filter(e->value.filter1(e.out2()))
-        .map(e->e.out1())
+        .filter(filter)
+        .map(Out2::out1)
         .iterator();
     if (all) {
       boolean removed = false;

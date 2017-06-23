@@ -356,4 +356,11 @@ public class X_String {
     }
     return Character.toLowerCase(name.charAt(0)) + name.substring(1);
   }
+
+  public static String toConstantName(String name) {
+    if (name == null) {
+      return null;
+    }
+    return name.replaceAll("([a-z0-9])([A-Z])", "$1_$2").toUpperCase();
+  }
 }

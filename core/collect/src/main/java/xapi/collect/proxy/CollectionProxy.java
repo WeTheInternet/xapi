@@ -68,15 +68,24 @@ public interface CollectionProxy <K, V> extends HasEmptiness
    boolean readWhileTrue(In2Out1<K, V, Boolean> callback);
 
    default boolean readWhileTrue(In1<Out2<K, V>> callback, In2Out1<K, V, Boolean> filter) {
-     return readWhileTrue(
-         (K k, V v) -> {
-             if (filter.io(k, v)) {
-                 Out2<K, V> o = Out2.out2Immutable(k, v);
-                 callback.in(o);
-                 return true;
-             }
-             return false;
-         }
+       @SuppressWarnings("Convert2Lambda")
+       // for some terrible reason, gwt compiler gets an npe trying to compile this
+       // lambda inside a default method from a JSO type (IntToGwt?)
+       // while it would be nice to fix this compiler error, we are glossing over
+       // it for the time being by using an explicit anonymous class.
+       final In2Out1<K, V, Boolean> test = new In2Out1<K, V, Boolean>() {
+           @Override
+           public Boolean io(K k, V v) {
+               if (filter.io(k, v)) {
+                   Out2<K, V> o = Out2.out2Immutable(k, v);
+                   callback.in(o);
+                   return true;
+               }
+               return false;
+           }
+       };
+       return readWhileTrue(
+         test
      );
    }
 

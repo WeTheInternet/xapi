@@ -231,6 +231,9 @@ public class DomBuffer extends XmlBuffer {
   public DomBuffer makeSpan() {
     return makeTag("span");
   }
+  public DomBuffer makeScript() {
+    return makeTag("script");
+  }
 
   public DomBuffer makeAnchor() {
     return makeTag("a");
@@ -242,6 +245,18 @@ public class DomBuffer extends XmlBuffer {
 
   public DomBuffer makeAnchorInline() {
     return makeTag("a").setNewLine(false);
+  }
+
+  public DomBuffer makeHtml() {
+    return makeTag("html").allowAbbreviation(false);
+  }
+
+  public DomBuffer makeHead() {
+    return makeTag("head").allowAbbreviation(false);
+  }
+
+  public DomBuffer makeBody() {
+    return makeTag("body");
   }
 
   @Override

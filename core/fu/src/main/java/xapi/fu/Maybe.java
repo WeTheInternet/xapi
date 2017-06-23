@@ -31,6 +31,10 @@ public interface Maybe <V> extends Rethrowable {
         return get() != null;
     }
 
+    default boolean isPresentAndMatches(In1Out1<V, Boolean> filter) {
+        return isPresent() && filter.io(get());
+    }
+
     default boolean isAbsent() {
         return get() == null;
     }

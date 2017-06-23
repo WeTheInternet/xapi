@@ -165,6 +165,13 @@ public interface MappedIterable<T> extends Iterable<T> {
         return filter(filter.mapIn(mapper)::io);
     }
 
+    @SuppressWarnings("unchecked")
+    default <R extends T> MappedIterable<R> filterInstanceOf(Class<? extends R> filter) {
+        return filter(filter::isInstance)
+                // cast is safe, we just checked instance above
+               .map(r->(R)r);
+    }
+
     default MappedIterable<T> filter(Filter1<T> filter) {
         return ()->new Iterator<T>() {
             Iterator<T> iter = iterator();
@@ -357,6 +364,9 @@ public interface MappedIterable<T> extends Iterable<T> {
         return false;
     }
 
+    default boolean noneEqual(T value) {
+        return noneMatch(value::equals);
+    }
     default <A> boolean noneMatch(In2Out1<T, A, Boolean> filter, A value) {
         return noneMatch(filter.supply2(value));
     }
