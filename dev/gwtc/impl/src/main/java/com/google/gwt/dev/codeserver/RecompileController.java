@@ -10,7 +10,7 @@ import xapi.log.X_Log;
 
 import com.google.gwt.dev.cfg.ResourceLoader;
 import com.google.gwt.dev.codeserver.Job.Result;
-import com.google.gwt.dev.codeserver.JobEvent.CompileStrategy;
+import com.google.gwt.dev.codeserver.CompileStrategy;
 import com.google.gwt.dev.javac.StaleJarError;
 import com.google.gwt.dev.util.log.PrintWriterTreeLogger;
 
@@ -20,6 +20,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.UncheckedIOException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -221,6 +222,10 @@ public class RecompileController implements IsRecompiler {
 
   public ResourceLoader getResourceLoader(){
     return loader == null ? recompiler.getResourceLoader() : loader;
+  }
+
+  public URL getResource(String name) {
+    return getResourceLoader().getResource(name);
   }
 
   protected Out3<Result, CompileStrategy, ResourceLoader> initialize(){

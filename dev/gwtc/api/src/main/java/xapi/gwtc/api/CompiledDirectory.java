@@ -2,7 +2,7 @@ package xapi.gwtc.api;
 
 import xapi.fu.Out1;
 
-import com.google.gwt.dev.codeserver.JobEvent.CompileStrategy;
+import com.google.gwt.dev.codeserver.CompileStrategy;
 
 import java.util.Map;
 

@@ -42,7 +42,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.locks.LockSupport;
 
-import com.google.gwt.dev.codeserver.JobEvent.CompileStrategy;
+import com.google.gwt.dev.codeserver.CompileStrategy;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/23/16.
@@ -347,7 +347,7 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
                         req.setAutoclose(false);
                         done.in(true);
                         module.getRecompiler().useServer(recompiler->{
-                            final URL resource = recompiler.getResourceLoader().getResource(fileName);
+                            final URL resource = recompiler.getResource(fileName);
                             if (resource == null) {
                                 if (fileName.startsWith("gen/")) {
                                     Path genPath = Paths.get(manifest.getCompileDirectory().getGenDir());

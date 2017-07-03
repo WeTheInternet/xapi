@@ -103,7 +103,7 @@ public class GwtCompilationServer {
             // event.sendFile(winner.getCanonicalPath());
         } else {
             // assume non-sourcemap request wants a java / resource file.
-            URL res = controller.getResourceLoader().getResource(path);
+            URL res = controller.getResource(path);
             if (res == null) {
                 String resolved = path.replace(module+"/", "");
                 if (resolved.startsWith("gen/")) {
@@ -128,7 +128,7 @@ public class GwtCompilationServer {
                         }
                     }
                 } else {
-                    res = controller.getResourceLoader().getResource(resolved);
+                    res = controller.getResource(resolved);
                 }
                 X_Log.trace(getClass(), "Could not find ", path," checking ",resolved," resulted in ", res);
             }

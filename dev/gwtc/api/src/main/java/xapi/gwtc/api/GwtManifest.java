@@ -14,6 +14,7 @@ import xapi.fu.iterate.SingletonIterator;
 import xapi.log.X_Log;
 import xapi.source.X_Source;
 
+import java.lang.reflect.Array;
 import java.util.Iterator;
 
 import static xapi.collect.X_Collect.*;
@@ -23,10 +24,16 @@ import static xapi.fu.iterate.SingletonIterator.singleItem;
 import static xapi.gwtc.api.GwtManifest.CleanupMode.DELETE_ON_SUCCESSFUL_EXIT;
 
 import com.google.gwt.core.ext.TreeLogger.Type;
-import com.google.gwt.dev.codeserver.JobEvent.CompileStrategy;
+import com.google.gwt.dev.codeserver.CompileStrategy;
 import com.google.gwt.dev.util.arg.SourceLevel;
 
 public class GwtManifest {
+
+  static {
+    // register this with magic method generator, so gwt knows how
+    // to create runtime arrays of Out1's
+    Array.newInstance(Out1.class, 0);
+  }
 
   public enum CleanupMode {
     ALWAYS_DELETE, DELETE_ON_SUCCESS, NEVER_DELETE, DELETE_ON_EXIT, DELETE_ON_SUCCESSFUL_EXIT

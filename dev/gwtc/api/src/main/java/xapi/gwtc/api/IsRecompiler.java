@@ -1,10 +1,10 @@
 package xapi.gwtc.api;
 
-import com.google.gwt.dev.cfg.ResourceLoader;
+import java.net.URL;
 
 public interface IsRecompiler {
 
-  ResourceLoader getResourceLoader();
+  URL getResource(String name);
 
   CompiledDirectory recompile();
 
