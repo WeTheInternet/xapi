@@ -65,7 +65,7 @@ public class X_Maven {
 
   public static List<String> loadCompileDependencies(Artifact artifact) {
     return loadDependencies(artifact, d->
-        d.getScope() == null ? "tests".equals(d.getType()) : "compile".equals(d.getScope()));
+        d.getScope() == null || "compile".equals(d.getScope()));
   }
 
   public static List<String> loadDependencies(Artifact artifact, Filter1<Dependency> filter) {
