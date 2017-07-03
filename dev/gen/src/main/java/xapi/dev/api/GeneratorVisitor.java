@@ -438,7 +438,7 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
 
             @Override
             protected String resolveType(ClassOrInterfaceType type) {
-                return resolveTemplate(ctx, templateLiteral(type.toSource()));
+                return resolveTemplate(ctx, templateLiteral(type.getName()));
             }
 
             @Override
@@ -499,19 +499,21 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
             }
 
             private void remapMembers(TypeDeclaration n, List<BodyDeclaration> members) {
+                final ListIterator<BodyDeclaration> itr = members.listIterator(members.size());
+
                 for (
-                    final ListIterator<BodyDeclaration> itr =
-                    members.listIterator(members.size());
-                    itr.hasPrevious(); ) {
+                    ;itr.hasPrevious(); ) {
                     final BodyDeclaration member = itr.previous();
                     String declKey = declarationKey(member);
                     if (remapping.containsKey(declKey)) {
                         itr.remove();
+                        final Node oldParent = member.getParentNode();
                         member.setParentNode(null);
                         Mutable<Integer> cnt = new Mutable<>(0);
                         remapping.get(declKey)
                             .forEachValue(v->{
                                 itr.add(v);
+                                v.setParentNode(oldParent);
                                 cnt.in(cnt.out1()+1);
                             });
                         while (cnt.out1() > 0) {
@@ -572,6 +574,7 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
                                 methods.forEachValue(decl->{
                                     for (int i = from.out1(), m = to.out1(); i <= m; i++) {
                                         MethodDeclaration newDecl = (MethodDeclaration) decl.clone();
+                                        // saves our scope providers, so we can safely release scope between runs
                                         deferVarResolution(ctx, newDecl, name.out1(), IntegerLiteralExpr.intLiteral(i));
                                         newMethods.add(newDecl);
                                     }
