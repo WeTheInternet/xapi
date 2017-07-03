@@ -13,6 +13,8 @@ import xapi.mvn.model.MvnModule;
 import xapi.mvn.service.MvnCache;
 import xapi.mvn.service.MvnService;
 
+import java.util.Locale;
+
 /**
  * In cases where we need to lookup values from jars and poms, we do not want to have to keep resolving artifacts,
  * and inspecting poms; so, we use this cache to help speed up repeated lookups.
@@ -116,6 +118,16 @@ public class MvnCacheImpl implements MvnCache {
         }
         if ("pom.artifactId".equals(propertyName) || "project.groupId".equals(propertyName)) {
             return model.getArtifactId();
+        }
+        if ("os.detected.classifier".equals(propertyName)) {
+            String os = System.getProperty("os.name").toLowerCase(Locale.ENGLISH);
+            if (os.contains("win")) {
+                return "windows-x86_64";
+            } else if (os.contains("mac")) {
+                return "osx-x86_64";
+            } else {
+                return "linux-x86_64";
+            }
         }
         if (model.getProperties() != null) {
             String value = model.getProperties().getProperty(propertyName);
