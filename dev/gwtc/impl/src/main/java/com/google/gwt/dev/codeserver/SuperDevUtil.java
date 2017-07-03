@@ -154,8 +154,8 @@ public class SuperDevUtil {
       throw new UncheckedIOException(e);
     }
 
-    final File cacheFolder = new File(manifest.getUnitCacheDir());
-    final UnitCache cache = UnitCacheSingleton.get(logger, new File(manifest.getUnitCacheDir()));
+    final File cacheFolder = manifest.getUnitCacheDir() == null ? null : new File(manifest.getUnitCacheDir());
+    final UnitCache cache = UnitCacheSingleton.get(logger, cacheFolder);
     final MinimalRebuildCacheManager rebinds = new MinimalRebuildCacheManager(logger, cacheFolder, new HashMap<>());
 
     JobEventTable eventTable = new JobEventTable();
