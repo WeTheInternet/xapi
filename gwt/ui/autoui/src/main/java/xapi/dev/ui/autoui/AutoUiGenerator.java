@@ -37,7 +37,7 @@ import xapi.collect.impl.SimpleFifo;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
-import xapi.source.write.MappedTemplate;
+import xapi.source.template.MappedTemplate;
 import xapi.ui.autoui.api.AlwaysTrue;
 import xapi.ui.autoui.api.BeanValueProvider;
 import xapi.ui.autoui.api.UiOptions;

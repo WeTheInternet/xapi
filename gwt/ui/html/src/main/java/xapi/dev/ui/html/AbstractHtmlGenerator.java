@@ -8,8 +8,8 @@ import xapi.collect.api.StringTo;
 import xapi.dev.source.SourceBuilder;
 import xapi.except.NotYetImplemented;
 import xapi.source.X_Source;
-import xapi.source.write.MappedTemplate;
-import xapi.source.write.StringerMatcher;
+import xapi.source.template.MappedTemplate;
+import xapi.source.write.ToStringer;
 import xapi.ui.html.api.Css;
 import xapi.ui.html.api.El;
 import xapi.ui.html.api.Html;
@@ -40,7 +40,6 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
-import java.util.function.Predicate;
 
 public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> implements CreatesContextObject<Ctx> {
 
@@ -191,15 +190,10 @@ public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> im
         }
       }
       if (!references.isEmpty()) {
-        final StringerMatcher matcher = new StringerMatcher() {
+        final ToStringer matcher = new ToStringer() {
           @Override
           public String toString(final Object o) {
             return escape(String.valueOf(o));
-          }
-
-          @Override
-          public Predicate<String> matcherFor(String value) {
-            return null;
           }
         };
         final MappedTemplate apply = new MappedTemplate(text, matcher, references.keyArray()) {
