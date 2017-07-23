@@ -4,7 +4,7 @@ import xapi.annotation.common.Property;
 import xapi.collect.api.StringTo;
 import xapi.dev.source.DomBuffer;
 import xapi.log.X_Log;
-import xapi.source.write.MappedTemplate;
+import xapi.source.template.MappedTemplate;
 import xapi.ui.api.StyleService;
 import xapi.ui.autoui.api.BeanValueProvider;
 import xapi.ui.html.X_Html;

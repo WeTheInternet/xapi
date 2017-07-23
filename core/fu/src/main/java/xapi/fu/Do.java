@@ -8,7 +8,20 @@ package xapi.fu;
  */
 public interface Do extends AutoCloseable {
 
-  Do NOTHING = () -> {
+  Do NOTHING = new Do() {
+    @Override
+    public void done() {
+    }
+
+    @Override
+    public Do doBefore(Do d) {
+      return d;
+    }
+
+    @Override
+    public Do doAfter(Do d) {
+      return d;
+    }
   };
 
     void done();
@@ -119,6 +132,7 @@ public interface Do extends AutoCloseable {
   default Do onlyOnce() {
     return new DoOnce(this);
   }
+
 }
 final class DoOnce implements Do {
 

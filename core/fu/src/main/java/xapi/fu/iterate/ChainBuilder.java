@@ -127,6 +127,9 @@ public class ChainBuilder<T> implements HasSize, MappedIterable<T> {
   public boolean isEmpty() {
     return head == tail;
   }
+  public boolean isNotEmpty() {
+    return head != tail;
+  }
 
   public T last() {
     return prev.value.out1();

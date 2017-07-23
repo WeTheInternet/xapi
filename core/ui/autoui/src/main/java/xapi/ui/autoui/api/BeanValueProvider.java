@@ -8,7 +8,7 @@ import java.util.Map.Entry;
 
 import xapi.collect.api.StringTo;
 import xapi.fu.iterate.ArrayIterable;
-import xapi.source.write.MappedTemplate;
+import xapi.source.template.MappedTemplate;
 import xapi.util.api.ConvertsValue;
 
 public class BeanValueProvider {

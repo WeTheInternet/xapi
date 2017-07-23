@@ -10,11 +10,16 @@ import java.util.function.Function;
 public interface
 In1Out1<I, O> extends Rethrowable, Lambda {
 
-  In1Out1 IDENTITY = i->i;
-  In1Out1 RETURN_NULL = i->null;
+  In1Out1 IDENTITY = X_Fu::identity;
+  In1Out1 DOWNCAST = X_Fu::downcast;
+  In1Out1 RETURN_NULL = X_Fu::returnNull;
 
   static <O> In1Out1<O, O> identity() {
     return IDENTITY;
+  }
+
+  static <F extends T, T> In1Out1<F, T> downcast() {
+    return DOWNCAST;
   }
 
   static <I, O> In1Out1<I, O> returnNull() {

@@ -3,8 +3,10 @@ package xapi.fu;
 import xapi.fu.Filter.Filter1;
 import xapi.fu.Filter.Filter2;
 import xapi.fu.Out1.Out1Unsafe;
+import xapi.fu.api.Clearable;
 import xapi.fu.has.HasItems;
 import xapi.fu.has.HasSize;
+import xapi.fu.iterate.JoinedSizedIterable;
 import xapi.fu.iterate.SizedIterable;
 
 import static xapi.fu.iterate.EmptyIterator.NONE;
@@ -13,7 +15,7 @@ import static xapi.fu.iterate.EmptyIterator.NONE;
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 4/10/16.
  */
-public interface MapLike<K, V> extends HasSize, HasItems<Out2<K, V>> {
+public interface MapLike<K, V> extends HasSize, HasItems<Out2<K, V>>, Clearable {
 
   /**
    * A put operation.  Returns the previous value, if any.
@@ -64,8 +66,7 @@ public interface MapLike<K, V> extends HasSize, HasItems<Out2<K, V>> {
      */
   V remove(K key);
 
-  // TODO MappedIterable!
-  Iterable<K> keys();
+  SizedIterable<K> keys();
 
   @Override
   default SizedIterable<Out2<K, V>> forEachItem() {
@@ -177,6 +178,106 @@ public interface MapLike<K, V> extends HasSize, HasItems<Out2<K, V>> {
     final V is = get(key);
     final V newValue = mapper.io(is);
     return put(key, newValue);
+  }
+
+  default <NewKey> MapLike<NewKey, V> mapKey(In1Out1<NewKey, K> fromNewType, In1Out1<K, NewKey> toNewType) {
+    final MapLike<K, V> self = this;
+    return new MapLike<NewKey, V>() {
+      @Override
+      public V put(NewKey key, V value) {
+        final K mappedKey = fromNewType.io(key);
+        return self.put(mappedKey, value);
+      }
+
+      @Override
+      public V get(NewKey key) {
+        final K mappedKey = fromNewType.io(key);
+        return self.get(mappedKey);
+      }
+
+      @Override
+      public boolean has(NewKey key) {
+        final K mappedKey = fromNewType.io(key);
+        return self.has(mappedKey);
+      }
+
+      @Override
+      public V remove(NewKey key) {
+        final K mappedKey = fromNewType.io(key);
+        return self.remove(mappedKey);
+      }
+
+      @Override
+      public SizedIterable<NewKey> keys() {
+        return self.keys().map(toNewType);
+      }
+
+      @Override
+      public void clear() {
+        self.clear();
+      }
+
+      @Override
+      public int size() {
+        return self.size();
+      }
+    };
+  }
+
+  default <NewValue> MapLike<K, NewValue> mapValue(In2Out1<K, NewValue, V> fromNewType, In1Out1<V, NewValue> toNewType) {
+    final MapLike<K, V> self = this;
+    return new MapLike<K, NewValue>() {
+      @Override
+      public NewValue put(K key, NewValue value) {
+        final V mappedValue = fromNewType.io(key, value);
+        final V was = self.put(key, mappedValue);
+        if (was == null) {
+          return null;
+        }
+        final NewValue mappedWas = toNewType.io(was);
+        return mappedWas;
+      }
+
+      @Override
+      public NewValue get(K key) {
+        final V value = self.get(key);
+        if (value == null) {
+          return null;
+        }
+        final NewValue mappedValue = toNewType.io(value);
+        return mappedValue;
+      }
+
+      @Override
+      public boolean has(K key) {
+        return self.has(key);
+      }
+
+      @Override
+      public NewValue remove(K key) {
+        final V was = self.remove(key);
+        if (was == null) {
+          return null;
+        }
+        final NewValue mappedValue = toNewType.io(was);
+        return mappedValue;
+      }
+
+      @Override
+      public SizedIterable<K> keys() {
+        return self.keys();
+      }
+
+      @Override
+      public void clear() {
+        self.clear();
+      }
+
+      @Override
+      public int size() {
+        return self.size();
+      }
+    };
   }
 
   default V filterKeyMapBoth(K key, Filter1<K> filter, In2Out1<K, V, V> mapper) {
@@ -329,12 +430,16 @@ public interface MapLike<K, V> extends HasSize, HasItems<Out2<K, V>> {
   }
 
   default SizedIterable<Out2<K, V>> mappedOut() {
-    return mappedKeys()
+    return keys()
         .map(key->Out2.out2Immutable(key, get(key)))
         .promisedSize(this::size);
   }
 
   MapLike EMPTY = new MapLike() {
+
+    @Override
+    public void clear() {
+    }
 
     @Override
     public int size() {
@@ -362,12 +467,22 @@ public interface MapLike<K, V> extends HasSize, HasItems<Out2<K, V>> {
     }
 
     @Override
-    public Iterable keys() {
+    public SizedIterable keys() {
       return NONE;
     }
   };
 
   static <K, V> MapLike<K, V> empty() {
     return EMPTY;
+  }
+
+  default void putMap(MapLike<K, V> into) {
+    into.forEachItem().forAll(this::putPair);
+  }
+
+  default void putPair(Out2<K, V> pair) {
+    if (pair != null) {
+      put(pair.out1(), pair.out2());
+    }
   }
 }

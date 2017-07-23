@@ -1,11 +1,12 @@
 package xapi.fu;
 
-import xapi.fu.has.HasSize;
+import xapi.fu.api.Clearable;
+import xapi.fu.iterate.SizedIterable;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/9/16.
  */
-public interface SetLike <V> extends Iterable<V>, HasSize {
+public interface SetLike <V> extends SizedIterable<V>, Clearable {
 
     default boolean add(V value) {
         return addAndReturn(value) != null;

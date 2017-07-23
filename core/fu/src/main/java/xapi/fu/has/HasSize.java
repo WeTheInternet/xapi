@@ -1,12 +1,21 @@
 package xapi.fu.has;
 
+import xapi.fu.api.HasEmptiness;
+
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 11/4/16.
  */
-public interface HasSize {
+public interface HasSize extends HasEmptiness {
 
     int size();
 
+    default boolean isEmpty() {
+        return size() == 0;
+    }
+
+    default boolean isNotEmpty() {
+        return !isEmpty();
+    }
 /*
     default ChainBuilder<Integer> toEndFrom0() {
         return toEndFromN(0);

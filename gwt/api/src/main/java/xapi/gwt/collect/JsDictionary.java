@@ -1,7 +1,7 @@
 package xapi.gwt.collect;
 
+import xapi.collect.impl.EntryValueIterable;
 import xapi.fu.iterate.ArrayIterable;
-import xapi.collect.impl.EntryValueAdapter;
 import xapi.collect.impl.IteratorWrapper;
 
 import com.google.gwt.core.client.JavaScriptObject;
@@ -192,7 +192,7 @@ public class JsDictionary <V> extends JavaScriptObject {
   }
 
   public final Iterable<V> values() {
-    return new EntryValueAdapter<String, V>(entries());
+    return new EntryValueIterable<>(entries(), this::size);
   }
 
   public final Iterable<Entry<String,V>> entries() {

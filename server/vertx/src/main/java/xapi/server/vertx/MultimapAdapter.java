@@ -5,6 +5,7 @@ import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
 import xapi.fu.MappedIterable;
 import xapi.fu.Out2;
+import xapi.fu.iterate.SizedIterable;
 import xapi.util.X_Util;
 import xapi.util.impl.AbstractPair;
 
@@ -104,8 +105,8 @@ public class MultimapAdapter implements StringTo.Many<String> {
     }
 
     @Override
-    public Iterable<String> keys() {
-        return map.names();
+    public SizedIterable<String> keys() {
+        return SizedIterable.of(this::size, map.names());
     }
 
     @Override

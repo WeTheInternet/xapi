@@ -5,11 +5,11 @@ package xapi.fu.iterate;
  *
  * Created by James X. Nelson (james @wetheinter.net) on 5/27/17.
  */
-public class BiSizedIterable<T> implements SizedIterable<T> {
+public class JoinedSizedIterable<T> implements SizedIterable<T> {
 
     private final SizedIterable<T> before, after;
 
-    public BiSizedIterable(SizedIterable<T> before, SizedIterable<T> after) {
+    public JoinedSizedIterable(SizedIterable<T> before, SizedIterable<T> after) {
         this.before = before == null ? EmptyIterator.none() : before;
         this.after = after == null ? EmptyIterator.none() : after;
     }
@@ -23,7 +23,7 @@ public class BiSizedIterable<T> implements SizedIterable<T> {
 
         // we are trusting that supplied iterators are threadsafe
         // by putting the lock here, in this anonymous class.
-        // Had we put the lock in the BiSizedIterable root class,
+        // Had we put the lock in the JoinedSizedIterable root class,
         // we could be inviting deadlock if two external callsites
         // each unknowingly get the same SizedIterable,
         // then try to ...iterate through each other, at the same time.

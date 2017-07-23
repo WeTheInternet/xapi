@@ -8,6 +8,7 @@ import xapi.fu.MappedIterable;
 import xapi.fu.Out2;
 import xapi.fu.has.HasItems;
 import xapi.fu.iterate.SizedIterable;
+import xapi.fu.iterate.SizedIterator;
 
 import java.util.Deque;
 import java.util.Iterator;
@@ -15,7 +16,7 @@ import java.util.List;
 import java.util.Set;
 
 public interface IntTo <T>
-extends CollectionProxy<Integer,T>, HasItems<T>
+extends CollectionProxy<Integer,T>, HasItems<T>, SizedIterable<T>
 {
 
   interface Many <T> extends IntTo<IntTo<T>> {
@@ -88,6 +89,10 @@ extends CollectionProxy<Integer,T>, HasItems<T>
   }
 
   boolean findRemove(T value, boolean all);
+
+  default SizedIterator<T> iterator() {
+    return SizedIterator.of(this::size, forEach().iterator());
+  }
 
   default boolean removeIf(Filter1<T> value, boolean all) {
     @SuppressWarnings("Convert2Lambda")

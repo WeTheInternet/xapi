@@ -2,6 +2,7 @@ package xapi.fu;
 
 import xapi.fu.iterate.Chain;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Type;
 
 import com.google.gwt.core.shared.GWT;
@@ -60,8 +61,19 @@ class Fu implements Jutsu {
     return result;
   }
 
+  public int[] pushCopy(int[] ts, int t) {
+    int[] result = (int[])Array.newInstance(int.class, ts.length + 1);
+    System.arraycopy(ts, 0, result, 0, ts.length);
+    result[ts.length] = t;
+    return result;
+  }
+
   // By default, we always return clones.  Enviros like Gwt can opt to reuse / mutate the array.
   public <T> T[] pushOnto(T[] ts, T t) {
+    ts[ts.length] = t;
+    return ts;
+  }
+  public int[] pushOnto(int[] ts, int t) {
     ts[ts.length] = t;
     return ts;
   }

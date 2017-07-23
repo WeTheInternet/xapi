@@ -1,7 +1,9 @@
 package xapi.fu.iterate;
 
 import xapi.fu.Immutable;
+import xapi.fu.In1Out1;
 import xapi.fu.MappedIterable;
+import xapi.fu.MappedIterator;
 import xapi.fu.Out1;
 import xapi.fu.has.HasSize;
 
@@ -46,40 +48,84 @@ public interface SizedIterable <T> extends MappedIterable<T>, HasSize {
         };
     }
 
-    default SizedIterable<T> prepend(T valueToInsert) {
-        return prepend(singleItem(valueToInsert));
+    static <F, T> SizedIterable<T> of(SizedIterable<F> itr, In1Out1<F, T> mapper) {
+        return of(itr::size, itr, mapper);
     }
 
-    default SizedIterable<T> prepend(SizedIterable<T> valueToInsert) {
+    static <F, T> SizedIterable<T> of(Out1<Integer> size, Iterable<F> itr, In1Out1<F, T> mapper) {
+        return new SizedIterable<T>() {
+            @Override
+            public SizedIterator<T> iterator() {
+                final Iterator<F> result = itr.iterator();
+                final SizedIterator<F> source;
+                if (result instanceof SizedIterator) {
+                    source = ((SizedIterator<F>) result);
+                } else {
+                    source = SizedIterator.of(size(), result);
+                }
+                return SizedIterator.of(source, mapper);
+            }
+
+            @Override
+            public int size() {
+                return size.out1();
+            }
+        };
+    }
+
+    default SizedIterable<T> mergePrepend(T valueToInsert) {
+        return mergePrepend(singleItem(valueToInsert));
+    }
+
+    default SizedIterable<T> mergePrepend(SizedIterable<T> valueToInsert) {
         if (valueToInsert == null) {
             return this;
         }
-        return new BiSizedIterable<>(valueToInsert, this);
+        return new JoinedSizedIterable<>(valueToInsert, this);
     }
 
-    default SizedIterable<T> append(T valueToInsert) {
-        return append(singleItem(valueToInsert));
+    @Override
+    default <To> SizedIterable<To> map(In1Out1<T, To> mapper) {
+        return adaptSizedIterable(this, mapper);
     }
 
-    default SizedIterable<T> append(SizedIterable<T> valueToInsert) {
+    static <From, To> SizedIterable<To> adaptSizedIterable(SizedIterable<From> from, In1Out1<? super From, ? extends To> mapper) {
+        return new SizedIterable<To>() {
+            @Override
+            public SizedIterator<To> iterator() {
+                return new MappedSizedIterator<>(from.iterator(), mapper);
+            }
+
+            @Override
+            public int size() {
+                return from.size();
+            }
+        };
+    }
+
+    default SizedIterable<T> mergeAppend(T valueToInsert) {
+        return mergeAppend(singleItem(valueToInsert));
+    }
+
+    default SizedIterable<T> mergeAppend(SizedIterable<T> valueToInsert) {
         if (valueToInsert == null) {
             return this;
         }
-        return new BiSizedIterable<>(this, valueToInsert);
+        return new JoinedSizedIterable<>(this, valueToInsert);
     }
 
-    default SizedIterable<T> insert(int i, T valueToInsert) {
-        return insert(i, singleItem(valueToInsert));
+    default SizedIterable<T> mergeInsert(int i, T valueToInsert) {
+        return mergeInsert(i, singleItem(valueToInsert));
     }
 
-    default SizedIterable<T> insert(int i, SizedIterable<T> valueToInsert) {
+    default SizedIterable<T> mergeInsert(int i, SizedIterable<T> valueToInsert) {
         if (i == 0) {
             // prepend
-            return prepend(valueToInsert);
+            return mergePrepend(valueToInsert);
         }
         if (i == -1) {
             // append
-            return append(valueToInsert);
+            return mergeAppend(valueToInsert);
         }
         if (i < -1) {
             throw new IllegalArgumentException("negative index " + i + " disallowed; only -1 is magic (for append)");
@@ -90,5 +136,15 @@ public interface SizedIterable <T> extends MappedIterable<T>, HasSize {
             SlicedSizedIterable.DRAIN_ALL, valueToInsert,
             true
         );
+    }
+
+    @Override
+    default boolean isEmpty() {
+        return MappedIterable.super.isEmpty();
+    }
+
+    @Override
+    default boolean isNotEmpty() {
+        return MappedIterable.super.isNotEmpty();
     }
 }

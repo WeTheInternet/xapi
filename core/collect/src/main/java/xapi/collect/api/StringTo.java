@@ -62,6 +62,7 @@ extends HasValues<String,V>, Serializable, MapLike<String, V>
       return mappedValues()
           .flatten(IntTo::forEach);
     }
+
   }
 
   default In1<V> adapter(In1Out1<V, String> adapter) {

@@ -3,9 +3,10 @@ package xapi.gwt.collect;
 import xapi.annotation.inject.InstanceOverride;
 import xapi.collect.api.StringTo;
 import xapi.fu.iterate.ArrayIterable;
-import xapi.collect.impl.EntryValueAdapter;
+import xapi.collect.impl.EntryValueIterable;
 import xapi.collect.impl.IteratorWrapper;
 import xapi.fu.Out2;
+import xapi.fu.iterate.SizedIterable;
 import xapi.platform.GwtPlatform;
 
 import com.google.gwt.core.client.GwtScriptOnly;
@@ -260,13 +261,13 @@ public class StringToGwt <V> extends JavaScriptObject implements StringTo<V>{
   }
 
   @Override
-  public final Iterable<String> keys() {
+  public final SizedIterable<String> keys() {
     return new KeyItr(this);
   }
 
   @Override
   public final Iterable<V> values() {
-    return new EntryValueAdapter<String, V>(entries());
+    return new EntryValueIterable<>(entries(), this::size);
   }
 
   @Override

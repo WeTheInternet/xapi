@@ -7,6 +7,7 @@ import xapi.collect.api.ObjectTo;
 import xapi.fu.In1Out1;
 import xapi.fu.In2Out1;
 import xapi.fu.Out2;
+import xapi.fu.iterate.SizedIterable;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -116,8 +117,8 @@ implements CollectionProxy<K,V>, Map<K,V>, HasValues<K,V>, ObjectTo<K,V>
   }
 
   @Override
-  public Iterable<K> keys() {
-    return keySet();
+  public SizedIterable<K> keys() {
+    return SizedIterable.of(this::size, keySet());
   }
 
   @Override

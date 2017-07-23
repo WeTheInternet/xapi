@@ -3,6 +3,7 @@ package xapi.javac.dev.model;
 import xapi.file.X_File;
 import xapi.fu.Rethrowable;
 import xapi.log.X_Log;
+import xapi.reflect.X_Reflect;
 import xapi.util.X_Debug;
 import xapi.util.X_Namespace;
 import xapi.util.X_String;
@@ -15,6 +16,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.SplittableRandom;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
@@ -39,6 +41,7 @@ public class CompilerSettings implements Rethrowable {
     private ProcessorMode processorMode;
     private boolean clearGenerateDirectory;
     private boolean addedRuntimePath;
+    private String clientPackage;
 
     public CompilerSettings() {
         generateDebugging = true;
@@ -218,12 +221,58 @@ public class CompilerSettings implements Rethrowable {
     public String getRoot() {
         if (root == null) {
             try {
+                final Class<?> mainClass = X_Reflect.getRootClass(el->isClientCode(el.getClassName()));
+                if (mainClass != null) {
+                    String loc = X_Reflect.getFileLoc(mainClass);
+                    if (loc != null) {
+                        final File file = new File(loc);
+                        if (file.isDirectory()) {
+                            // we have a directory to use as our root.  Strip off target/classes (or other likely variants)
+                            final String rootLoc = file.getCanonicalPath();
+                            root = rootLoc.split(getClassLocationRegex())[0];
+                            X_Log.info(CompilerSettings.class, "Using root location ", root);
+                            return root;
+                        }
+                    }
+                }
                 root = new File(".").getCanonicalPath();
             } catch (IOException e) {
                 throw rethrow(e);
             }
         }
         return root;
+    }
+
+    /**
+     * @return a regex that can be used to strip off a build output directory, like target/classes,
+     * from your files.  We use these regexes in cases where you don't specify all directories,
+     * so we have to guess where you are running from.  IDEs like intellij will launch tests
+     * from the rootmost directory of your project, while cli tools like maven will run each
+     * modules from that module's root.  So, we prefer inspecting the stacktrace of the
+     * main thread to find the first bit of client code that was run, and check if it's
+     * being run from a compiled classes directory.
+     *
+     * It's a bit hacky, but it enables things to "just work" out of the box without bothering
+     * to configure any directories (which can lead to issues when building on other machines).
+     */
+    protected String getClassLocationRegex() {
+        return
+            "[" + File.separatorChar + "]" +
+                "(target|build|out|dist|lib)" +
+                "[" + File.separatorChar + "]" +
+                "(test-)*classes";
+    }
+
+    private Boolean isClientCode(String className) {
+        return className != null && className.startsWith(getClientPackage());
+    }
+
+    public String getClientPackage() {
+        return clientPackage == null ? "xapi" : clientPackage;
+    }
+
+    public void setClientPackage(String clientPackage) {
+        this.clientPackage = clientPackage;
     }
 
     public CompilerSettings setRoot(String root) {

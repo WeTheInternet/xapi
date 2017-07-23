@@ -1,9 +1,13 @@
 package xapi.collect.impl;
 
+import xapi.fu.Out1;
+import xapi.fu.iterate.SizedIterable;
+import xapi.fu.iterate.SizedIterator;
+
 import java.util.Iterator;
 import java.util.Map.Entry;
 
-public class EntryValueAdapter <K, V> implements Iterable<V> {
+public class EntryValueIterable<K, V> implements SizedIterable<V> {
 
   private class ValueIterator implements Iterator<V>{
     private Iterator<Entry<K,V>> source;
@@ -25,13 +29,20 @@ public class EntryValueAdapter <K, V> implements Iterable<V> {
   }
 
   private Iterable<Entry<K, V>> source;
+  private final Out1<Integer> size;
 
-  public EntryValueAdapter(Iterable<Entry<K,V>> source) {
+  public EntryValueIterable(Iterable<Entry<K,V>> source, Out1<Integer> size) {
     this.source = source;
+    this.size = size;
   }
 
   @Override
-  public Iterator<V> iterator() {
-    return new ValueIterator(source.iterator());
+  public SizedIterator<V> iterator() {
+    return SizedIterator.of(source.iterator(), size, Entry::getValue);
+  }
+
+  @Override
+  public int size() {
+    return size.out1();
   }
 }

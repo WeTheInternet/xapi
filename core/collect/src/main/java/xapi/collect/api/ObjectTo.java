@@ -8,6 +8,7 @@ import xapi.fu.In1;
 import xapi.fu.In1Out1;
 import xapi.fu.MapLike;
 import xapi.fu.Maybe;
+import xapi.fu.iterate.SizedIterable;
 
 public interface ObjectTo <K, V>
 extends EntryIterable<K,V>, CollectionProxy<K,V>, HasValues<K,V>
@@ -32,6 +33,11 @@ extends EntryIterable<K,V>, CollectionProxy<K,V>, HasValues<K,V>
   default MapLike<K, V> asMap() {
       ObjectTo<K, V> values = this;
       return new MapLike<K, V>() {
+          @Override
+          public void clear() {
+              values.clear();
+          }
+
           @Override
           public int size() {
               return values.size();
@@ -58,7 +64,7 @@ extends EntryIterable<K,V>, CollectionProxy<K,V>, HasValues<K,V>
           }
 
           @Override
-          public Iterable<K> keys() {
+          public SizedIterable<K> keys() {
               return values.keys();
           }
       };

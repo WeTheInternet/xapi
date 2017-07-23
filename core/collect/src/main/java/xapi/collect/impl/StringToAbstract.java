@@ -3,6 +3,7 @@ package xapi.collect.impl;
 import xapi.annotation.inject.InstanceDefault;
 import xapi.collect.api.StringTo;
 import xapi.fu.Out2;
+import xapi.fu.iterate.SizedIterable;
 import xapi.platform.GwtDevPlatform;
 import xapi.platform.JrePlatform;
 import xapi.util.X_Runtime;
@@ -89,8 +90,8 @@ public class StringToAbstract <V> implements StringTo<V>{
   }
 
   @Override
-  public Iterable<String> keys() {
-    return map.keySet();
+  public SizedIterable<String> keys() {
+    return SizedIterable.of(this::size, map.keySet());
   }
 
   @Override

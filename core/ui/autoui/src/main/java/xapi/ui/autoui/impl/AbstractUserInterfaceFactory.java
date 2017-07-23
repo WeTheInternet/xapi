@@ -8,7 +8,7 @@ import java.util.List;
 import javax.inject.Named;
 
 import xapi.log.X_Log;
-import xapi.source.write.MappedTemplate;
+import xapi.source.template.MappedTemplate;
 import xapi.ui.autoui.api.BeanValueProvider;
 import xapi.ui.autoui.api.UiOptions;
 import xapi.ui.autoui.api.UiRenderer;

@@ -36,7 +36,7 @@ import java.util.Collection;
 public class Template extends Stack{
 
   public Template(String template, String ... replaceables) {
-    super("", StringerMatcher.DEFAULT_TO_STRINGER);
+    super("", ToStringer.DEFAULT_TO_STRINGER);
     compile(template, replaceables);
   }
 
@@ -44,12 +44,12 @@ public class Template extends Stack{
     this(template, toArray(replaceables));
   }
 
-  public Template(String template, StringerMatcher matcher, String ... replaceables) {
+  public Template(String template, ToStringer matcher, String ... replaceables) {
     super("", matcher);
     compile(template, replaceables);
   }
 
-  public Template(String template, StringerMatcher matcher, Iterable<String> replaceables) {
+  public Template(String template, ToStringer matcher, Iterable<String> replaceables) {
     this(template, matcher, toArray(replaceables));
   }
 
@@ -194,11 +194,11 @@ public class Template extends Stack{
  *
  */
 class Stack {
-  StringerMatcher toString;
+  ToStringer toString;
   final CharSequence prefix;
   Stack next;
 
-  Stack(CharSequence prefix, StringerMatcher toString) {
+  Stack(CharSequence prefix, ToStringer toString) {
     assert prefix != null;
     this.prefix = prefix;
     this.toString = toString;
@@ -235,7 +235,7 @@ class StackNode extends Stack {
 
   private final int position;
 
-  StackNode(CharSequence prefix, int position, StringerMatcher toString) {
+  StackNode(CharSequence prefix, int position, ToStringer toString) {
     super(prefix, toString);
     assert position >= 0;
     this.position = position;

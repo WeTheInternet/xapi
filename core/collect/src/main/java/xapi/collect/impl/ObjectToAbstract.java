@@ -7,6 +7,7 @@ import xapi.collect.proxy.CollectionProxy;
 import xapi.fu.In1Out1;
 import xapi.fu.In2Out1;
 import xapi.fu.Out2;
+import xapi.fu.iterate.SizedIterable;
 
 import javax.inject.Provider;
 import java.util.ArrayList;
@@ -210,13 +211,13 @@ public abstract class ObjectToAbstract<K,V> implements ObjectTo<K,V> {
   }
 
   @Override
-  public Iterable<K> keys() {
-    return new EntryKeyAdapter<K, V>(entries());
+  public SizedIterable<K> keys() {
+    return new EntryKeyIterable<>(entries(), this::size);
   }
 
   @Override
   public Iterable<V> values() {
-    return new EntryValueAdapter<K, V>(entries());
+    return new EntryValueIterable<>(entries(), this::size);
   }
 
   @Override

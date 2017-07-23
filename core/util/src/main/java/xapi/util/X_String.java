@@ -363,4 +363,14 @@ public class X_String {
     }
     return name.replaceAll("([a-z0-9])([A-Z])", "$1_$2").toUpperCase();
   }
+
+  public static String dequote(String s) {
+    if (s == null || s.length() < 2) {
+      return null;
+    }
+    if (s.startsWith("\"") && s.endsWith("\"")) {
+      return s.substring(1, s.length()-1);
+    }
+    return s;
+  }
 }

@@ -2,21 +2,26 @@ package xapi.reflect;
 
 import xapi.annotation.api.XApi;
 import xapi.annotation.compile.MagicMethod;
+import xapi.fu.In1Out1;
 import xapi.inject.X_Inject;
 import xapi.log.X_Log;
 import xapi.log.api.LogService;
 import xapi.reflect.service.ReflectionService;
 import xapi.util.X_Runtime;
 import xapi.util.X_String;
+import xapi.util.X_Util;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.*;
 import java.net.URL;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
 import java.util.Enumeration;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import static xapi.util.X_String.joinClasses;
 
@@ -1256,4 +1261,88 @@ public class X_Reflect {
     }
     return loc;
   }
-}
+
+    public static Class<?> getRootClass(In1Out1<StackTraceElement, Boolean> filter) {
+      // find the main thread, then pick the deepest stack element that matches the filter
+      final Map<Thread, StackTraceElement[]> traces = Thread.getAllStackTraces();
+      for (Entry<Thread, StackTraceElement[]> trace : traces.entrySet()) {
+        if ("main".equals(trace.getKey().getName())) {
+          // Using a thread named main is best...
+          final StackTraceElement[] els = trace.getValue();
+          int i = els.length - 1;
+          StackTraceElement best = els[--i];
+          String cls = best.getClassName();
+          while (i > 0 && isSystemClass(cls)) {
+            // if the main class is likely an ide,
+            // then we should look deeper...
+            while (i-- > 0) {
+              if (filter.io(els[i])) {
+                best = els[i];
+                cls = best.getClassName();
+                break;
+              }
+            }
+          }
+          try {
+            Class mainClass = Class.forName(best.getClassName());
+            return mainClass;
+          } catch (ClassNotFoundException e) {
+            throw X_Util.rethrow(e);
+          }
+        }
+      }
+      return null;
+    }
+    public static Class<?> getMainClass() {
+      // find the class that called us, and use their "target/classes"
+      final Map<Thread, StackTraceElement[]> traces = Thread.getAllStackTraces();
+      for (Entry<Thread, StackTraceElement[]> trace : traces.entrySet()) {
+        if ("main".equals(trace.getKey().getName())) {
+          // Using a thread named main is best...
+          final StackTraceElement[] els = trace.getValue();
+          int i = els.length - 1;
+          StackTraceElement best = els[--i];
+          String cls = best.getClassName();
+          while (i > 0 && isSystemClass(cls)) {
+            // if the main class is likely an ide,
+            // then we should look higher...
+            while (i-- > 0) {
+              if ("main".equals(els[i].getMethodName())) {
+                best = els[i];
+                cls = best.getClassName();
+                break;
+              }
+            }
+          }
+          if (isSystemClass(cls)) {
+            i = els.length - 1;
+            best = els[i];
+            while (isSystemClass(cls) && i-- > 0) {
+              best = els[i];
+              cls = best.getClassName();
+            }
+          }
+          try {
+            Class mainClass = Class.forName(best.getClassName());
+            return mainClass;
+          } catch (ClassNotFoundException e) {
+            throw X_Util.rethrow(e);
+          }
+        }
+      }
+      return null;
+    }
+
+    private static boolean isSystemClass(String cls) {
+      return cls.startsWith("java.") ||
+          cls.startsWith("sun.") ||
+          cls.startsWith("org.apache.maven.") ||
+          cls.contains(".intellij.") ||
+          cls.startsWith("org.junit") ||
+          cls.startsWith("junit.") ||
+          cls.startsWith("cucumber.") ||
+          cls.contains(".eclipse") ||
+          cls.contains("netbeans");
+    }
+
+  }

@@ -2,6 +2,7 @@ package xapi.fu;
 
 import xapi.fu.Filter.Filter1;
 import xapi.fu.In1.In1Unsafe;
+import xapi.fu.api.HasEmptiness;
 import xapi.fu.has.HasSize;
 import xapi.fu.iterate.ArrayIterable;
 import xapi.fu.iterate.CachingIterator;
@@ -18,7 +19,7 @@ import java.util.NoSuchElementException;
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 7/31/16.
  */
-public interface MappedIterable<T> extends Iterable<T> {
+public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
 
     default <To> MappedIterable<To> map(In1Out1<T, To> mapper) {
         return adaptIterable(this, mapper);
@@ -152,6 +153,7 @@ public interface MappedIterable<T> extends Iterable<T> {
         return firstMatch(filter).isPresent();
     }
 
+
     default Maybe<T> firstMatch(In1Out1<T, Boolean> filter) {
         for (T t:this) {
             if (filter.io(t)) {
@@ -159,6 +161,14 @@ public interface MappedIterable<T> extends Iterable<T> {
             }
         }
         return Maybe.not();
+    }
+
+    default <A> Maybe<T> firstMatch(In2Out1<T, A, Boolean> filter, A arg) {
+        return firstMatch(filter.supply2(arg));
+    }
+
+    default <A1, A2> Maybe<T> firstMatch(In3Out1<T, A1, A2, Boolean> filter, A1 arg, A2 arg2) {
+        return firstMatch(filter.supply2(arg).supply2(arg2));
     }
 
     default <O> MappedIterable<T> filterMapped(In1Out1<T, O> mapper, In1Out1<O, Boolean> filter) {
@@ -456,6 +466,11 @@ public interface MappedIterable<T> extends Iterable<T> {
         return this;
     }
 
+    default <S> MappedIterable<T> forAll(S constant, In2<S, T> consumer) {
+        forEach(consumer.provide1(constant).toConsumer());
+        return this;
+    }
+
     default <S> MappedIterable<T> forAllMapped(In2<T, S> consumer, In1Out1<T, S> mapper) {
         forEach(consumer.adapt2(mapper).toConsumer());
         return this;
@@ -463,6 +478,16 @@ public interface MappedIterable<T> extends Iterable<T> {
 
     default <S1, S2> MappedIterable<T> forAll(In3<T, S1, S2> consumer, S1 const1, S2 const2) {
         forEach(consumer.provide2(const1).provide2(const2).toConsumer());
+        return this;
+    }
+
+    default <S1, S2> MappedIterable<T> forAll(S1 const1, S2 const2, In3<S1, S2, T> consumer) {
+        forEach(consumer.provide1(const1).provide1(const2).toConsumer());
+        return this;
+    }
+
+    default <S1, S2> MappedIterable<T> forAll(S1 const1, In3<S1, T, S2> consumer, S2 const2 ) {
+        forEach(consumer.provide1(const1).provide2(const2).toConsumer());
         return this;
     }
 
@@ -586,5 +611,19 @@ public interface MappedIterable<T> extends Iterable<T> {
 
     default SizedIterable<T> promisedSize(Out1<Integer> size) {
         return SizedIterable.of(size, this);
+    }
+
+    default MappedIterable<T> append(MappedIterable<T> after) {
+        return Chain.<T>startChain()
+            .addAll(this)
+            .addAll(after)
+            .build();
+    }
+
+    default MappedIterable<T> prepend(MappedIterable<T> after) {
+        return Chain.<T>startChain()
+            .addAll(after)
+            .addAll(this)
+            .build();
     }
 }

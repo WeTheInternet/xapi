@@ -1,11 +1,6 @@
 package xapi.fu.iterate;
 
 import org.junit.Test;
-import xapi.fu.MappedIterable;
-
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertFalse;
@@ -21,14 +16,14 @@ public class SizedIterableTest {
         final Iterable<String> source = Chain.<String>startChain().add("1").add("2");
         SizedIterable<String> itr = SizedIterable.of(2, source);
 
-        SizedIterable<String> result = itr.insert(1, "1a");
+        SizedIterable<String> result = itr.mergeInsert(1, "1a");
 
         assertIterableEquals(result, "1", "1a", "2");
 
-        result = itr.insert(0, "0");
+        result = itr.mergeInsert(0, "0");
         assertIterableEquals(result, "0", "1", "2");
 
-        result = itr.insert(2, "3");
+        result = itr.mergeInsert(2, "3");
         assertIterableEquals(result, "1", "2", "3");
 
     }

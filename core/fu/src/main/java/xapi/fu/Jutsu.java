@@ -64,8 +64,18 @@ interface Jutsu {
     return result;
   }
 
+  default int[] pushCopy(int[] ts, int t) {
+    int[] result = new int[ts.length + 1];
+    System.arraycopy(ts, 0, result, 0, ts.length);
+    result[ts.length] = t;
+    return result;
+  }
+
   // By default, we always return clones.  Enviros like Gwt can opt to reuse / mutate the array.
   default <T> T[] pushOnto(T[] ts, T t) {
+    return pushCopy(ts, t);
+  }
+  default int[] pushOnto(int[] ts, int t) {
     return pushCopy(ts, t);
   }
 
