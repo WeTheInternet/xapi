@@ -119,16 +119,6 @@ public class MvnCacheImpl implements MvnCache {
         if ("pom.artifactId".equals(propertyName) || "project.groupId".equals(propertyName)) {
             return model.getArtifactId();
         }
-        if ("os.detected.classifier".equals(propertyName)) {
-            String os = System.getProperty("os.name").toLowerCase(Locale.ENGLISH);
-            if (os.contains("win")) {
-                return "windows-x86_64";
-            } else if (os.contains("mac")) {
-                return "osx-x86_64";
-            } else {
-                return "linux-x86_64";
-            }
-        }
         if (model.getProperties() != null) {
             String value = model.getProperties().getProperty(propertyName);
             if (value != null) {
@@ -138,7 +128,11 @@ public class MvnCacheImpl implements MvnCache {
         if (model.getParent() != null) {
             return getProperty(getPom(model.getParent()), propertyName);
         }
-        throw new IllegalStateException("Model " + model + " does not contain property " + propertyName);
+        String result = service.normalize(propertyName);
+        if (result.startsWith("$")) {
+            throw new IllegalStateException("Model " + model + " does not contain property " + propertyName);
+        }
+        return result;
     }
 
     public String toArtifactString(Model pom, Dependency artifact) {

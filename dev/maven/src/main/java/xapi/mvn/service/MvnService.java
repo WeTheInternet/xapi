@@ -35,7 +35,9 @@ public interface MvnService {
 
   RepositorySystemSession getRepoSession();
 
-  void setLogLevel(LogLevel logLevel);
+    String normalize(String classifier);
+
+    void setLogLevel(LogLevel logLevel);
 
   ArtifactResult loadArtifact(String groupId, String artifactId, String version);
 

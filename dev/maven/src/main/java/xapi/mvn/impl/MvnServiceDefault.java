@@ -46,13 +46,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.UncheckedIOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
@@ -121,7 +115,7 @@ public class MvnServiceDefault implements MvnService {
     RepositorySystem repoSystem = this.repoSystem.get();
     RepositorySystemSession session = this.session.get();
 
-    DefaultArtifact artifact = new DefaultArtifact( groupId,artifactId,classifier, X_String.isEmpty(extension) ? "jar" : extension, version);
+    DefaultArtifact artifact = new DefaultArtifact( groupId,artifactId, normalize(classifier), X_String.isEmpty(extension) ? "jar" : extension, version);
 
     try {
       final LocalArtifactRequest localRequest = new LocalArtifactRequest(artifact, remoteRepos(), null);
@@ -157,7 +151,13 @@ public class MvnServiceDefault implements MvnService {
       String classifier, String extension, String version) {
     Moment before = X_Time.now();
     RepositorySystemSession session = this.session.get();
-    DefaultArtifact artifact = new DefaultArtifact( groupId,artifactId,classifier, X_String.isEmpty(extension) ? "jar" : extension, version);
+    DefaultArtifact artifact = new DefaultArtifact(
+        groupId,
+        artifactId,
+        normalize(classifier),
+        X_String.isEmpty(extension) ? "jar" : extension,
+        version
+    );
 
     try {
       LocalArtifactRequest request = new LocalArtifactRequest(artifact, null, null);
@@ -168,6 +168,25 @@ public class MvnServiceDefault implements MvnService {
             + X_Time.difference(before));
       }
     }
+  }
+
+  @Override
+  public String normalize(String classifier) {
+    if (classifier == null) {
+      return "";
+    }
+
+    if ("${os.detected.classifier}".equals(classifier)) {
+      String os = System.getProperty("os.name").toLowerCase(Locale.ENGLISH);
+      if (os.contains("win")) {
+        return "windows-x86_64";
+      } else if (os.contains("mac")) {
+        return "osx-x86_64";
+      } else {
+        return "linux-x86_64";
+      }
+    }
+    return classifier;
   }
 
   protected LogLevel getLogLevel() {
