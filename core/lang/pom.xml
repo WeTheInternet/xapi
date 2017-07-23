@@ -201,6 +201,12 @@
               <goal>jar</goal>
             </goals>
             <inherited>true</inherited>
+            <configuration>
+              <includes>
+                <include>${project.build.directory}/generated-sources/javacc/**</include>
+                <include>${project.basedir}/src/main/java</include>
+              </includes>
+            </configuration>
           </execution>
         </executions>
       </plugin>

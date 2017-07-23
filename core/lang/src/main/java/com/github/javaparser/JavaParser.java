@@ -40,8 +40,6 @@ import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
 import xapi.fu.In1Out1.In1Out1Unsafe;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
@@ -165,72 +163,72 @@ public final class JavaParser {
         return parse(in, null,true);
     }
 
-    public static CompilationUnit parse(final File file, final String encoding)
-            throws ParseException, IOException {
-        return parse(file,encoding,true);
-    }
+//    public static CompilationUnit parse(final File file, final String encoding)
+//            throws ParseException, IOException {
+//        return parse(file,encoding,true);
+//    }
 
     public static UiContainerExpr parseXapi(final InputStream in)
             throws ParseException {
         return parseXapi(in, null,true);
     }
-
-    public static UiContainerExpr parseXapi(final File file, final String encoding)
-            throws ParseException, IOException {
-        return parseXapi(file,encoding,true);
-    }
-
-    /**
-     * Parses the Java code contained in a {@link File} and returns a
-     * {@link CompilationUnit} that represents it.
-     *
-     * @param file
-     *            {@link File} containing Java source code
-     * @param encoding
-     *            encoding of the source code
-     * @return CompilationUnit representing the Java source code
-     * @throws ParseException
-     *             if the source code has parser errors
-     * @throws IOException
-     */
-    public static CompilationUnit parse(final File file, final String encoding, boolean considerComments)
-            throws ParseException, IOException {
-        try(
-            final FileInputStream in = new FileInputStream(file);
-        ) {
-            return parse(in, encoding, considerComments);
-        }
-    }
-
-    public static UiContainerExpr parseXapi(final File file, final String encoding, boolean considerComments)
-            throws ParseException, IOException {
-        try(
-            final FileInputStream in = new FileInputStream(file);
-        ) {
-            return parseXapi(in, encoding, considerComments);
-        }
-    }
-
-    /**
-     * Parses the Java code contained in a {@link File} and returns a
-     * {@link CompilationUnit} that represents it.
-     *
-     * @param file
-     *            {@link File} containing Java source code
-     * @return CompilationUnit representing the Java source code
-     * @throws ParseException
-     *             if the source code has parser errors
-     * @throws IOException
-     */
-    public static CompilationUnit parse(final File file) throws ParseException,
-            IOException {
-        return parse(file, null,true);
-    }
-
-    public static UiContainerExpr parseXapi(final File file) throws ParseException,
-            IOException {
-        return parseXapi(file, null,true);
-    }
+//
+//    public static UiContainerExpr parseXapi(final File file, final String encoding)
+//            throws ParseException, IOException {
+//        return parseXapi(file,encoding,true);
+//    }
+//
+//    /**
+//     * Parses the Java code contained in a {@link File} and returns a
+//     * {@link CompilationUnit} that represents it.
+//     *
+//     * @param file
+//     *            {@link File} containing Java source code
+//     * @param encoding
+//     *            encoding of the source code
+//     * @return CompilationUnit representing the Java source code
+//     * @throws ParseException
+//     *             if the source code has parser errors
+//     * @throws IOException
+//     */
+//    public static CompilationUnit parse(final File file, final String encoding, boolean considerComments)
+//            throws ParseException, IOException {
+//        try(
+//            final FileInputStream in = new FileInputStream(file);
+//        ) {
+//            return parse(in, encoding, considerComments);
+//        }
+//    }
+//
+//    public static UiContainerExpr parseXapi(final File file, final String encoding, boolean considerComments)
+//            throws ParseException, IOException {
+//        try(
+//            final FileInputStream in = new FileInputStream(file);
+//        ) {
+//            return parseXapi(in, encoding, considerComments);
+//        }
+//    }
+//
+//    /**
+//     * Parses the Java code contained in a {@link File} and returns a
+//     * {@link CompilationUnit} that represents it.
+//     *
+//     * @param file
+//     *            {@link File} containing Java source code
+//     * @return CompilationUnit representing the Java source code
+//     * @throws ParseException
+//     *             if the source code has parser errors
+//     * @throws IOException
+//     */
+//    public static CompilationUnit parse(final File file) throws ParseException,
+//            IOException {
+//        return parse(file, null,true);
+//    }
+//
+//    public static UiContainerExpr parseXapi(final File file) throws ParseException,
+//            IOException {
+//        return parseXapi(file, null,true);
+//    }
 
     public static CompilationUnit parse(final Reader reader, boolean considerComments)
             throws ParseException {

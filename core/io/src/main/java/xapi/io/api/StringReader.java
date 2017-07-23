@@ -16,7 +16,7 @@ import xapi.util.X_String;
  * This class has also been enhanced with the {@link #waitToEnd()} method,
  * which will block until the line producer (such as a thread streaming input from an external process)
  * has signalled that the stream is finished by calling {@link #onEnd()}.
- * 
+ *
  * @author "James X. Nelson (james@wetheinter.net)"
  *
  */
@@ -43,7 +43,7 @@ public class StringReader implements LineReader {
       }
     }
   }
-  
+
   @Override
   public final void onEnd() {
     X_Log.trace(getClass(),"ending", this);
@@ -60,10 +60,10 @@ public class StringReader implements LineReader {
       delegates.notifyAll();
     }
   }
-  
+
   protected void onEnd0() {
   }
-  
+
   @Override
   public String toString() {
     return String.valueOf(b);
@@ -82,7 +82,7 @@ public class StringReader implements LineReader {
       callback.onEnd();
     }
   }
-  
+
   public void waitToEnd() throws InterruptedException {
     if (finished) {
       return;
@@ -91,7 +91,7 @@ public class StringReader implements LineReader {
       delegates.wait();
     }
   }
-  
+
   public void waitToEnd(long timeout, int nanos) throws InterruptedException {
     if (finished) {
       return;
@@ -100,4 +100,5 @@ public class StringReader implements LineReader {
       delegates.wait(timeout, nanos);
     }
   }
+
 }

@@ -21,7 +21,7 @@ import javax.validation.constraints.NotNull;
  */
 @JsType
 public interface UiElement
-    <Node, Element extends Node, @JsType Base extends UiElement<Node, ? extends Node, Base>>
+    <Node, Element extends Node, Base extends UiElement<Node, ? extends Node, Base>>
     extends ElementInjector<Node, Base>, UiNode<Node, Element, Base> {
 
   @JsProperty
