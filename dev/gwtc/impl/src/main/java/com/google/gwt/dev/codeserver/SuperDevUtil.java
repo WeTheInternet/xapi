@@ -18,6 +18,8 @@ import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.dev.MinimalRebuildCacheManager;
 import com.google.gwt.dev.javac.UnitCache;
 import com.google.gwt.dev.javac.UnitCacheSingleton;
+import com.google.gwt.dev.jjs.JJSOptions;
+import com.google.gwt.dev.jjs.JJSOptionsImpl;
 
 public class SuperDevUtil {
 
@@ -155,7 +157,12 @@ public class SuperDevUtil {
     }
 
     final File cacheFolder = manifest.getUnitCacheDir() == null ? null : new File(manifest.getUnitCacheDir());
-    final UnitCache cache = UnitCacheSingleton.get(logger, cacheFolder);
+    final JJSOptionsImpl options = new JJSOptionsImpl();
+    // The following two options are the only ones used by UnitCacheSingleton;
+    // we should put back / in support for these...
+//    options.setGenerateJsInteropExports(false);
+//    options.getJsInteropExportFilter().add("...");
+    final UnitCache cache = UnitCacheSingleton.get(logger, cacheFolder, options);
     final MinimalRebuildCacheManager rebinds = new MinimalRebuildCacheManager(logger, cacheFolder, new HashMap<>());
 
     JobEventTable eventTable = new JobEventTable();

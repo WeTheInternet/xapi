@@ -45,6 +45,15 @@
    <classifier>sources</classifier>
   </dependency>
   <dependency>
+   <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-core-lang</artifactId>
+  </dependency>
+  <dependency>
+   <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-core-lang</artifactId>
+   <classifier>sources</classifier>
+  </dependency>
+  <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-reflect</artifactId>
     <classifier>sources</classifier>

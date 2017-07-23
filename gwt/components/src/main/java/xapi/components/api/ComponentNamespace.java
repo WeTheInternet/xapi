@@ -1,6 +1,9 @@
 package xapi.components.api;
 
 import elemental.dom.Element;
+import elemental.dom.Node;
+import elemental2.core.Reflect;
+import jsinterop.base.Js;
 import xapi.components.impl.JsSupport;
 import xapi.fu.In1Out1;
 import xapi.ui.api.component.IsComponent;
@@ -10,6 +13,10 @@ import xapi.ui.api.component.IsComponent;
  */
 public class ComponentNamespace {
     public static final Symbol JS_KEY = JsSupport.symbol("ui");
+    public static final Symbol SLOTTER_KEY = JsSupport.symbol("slotter");
+    public static final String SHADY_KEY = "shadowController";
+    public static final String ATTR_IS_SLOTTED = "xslotted";
+    public static final Symbol SHADOW_ROOT_KEY = JsSupport.symbol("shadedRoot");
 
     public static native boolean hasComponent(Object e)
     /*-{
@@ -46,5 +53,20 @@ public class ComponentNamespace {
             }
         }
         return null;
+    }
+
+    public static void setSource(Element e, String textContent) {
+        Reflect.set(Js.cast(e), "source", textContent);
+    }
+
+    public static String getSource(Element element) {
+        String source = (String) Reflect.get(Js.cast(element), "source");
+        if (source == null) {
+            if (element.getChildren().getLength() == 1 && element.getFirstChild().getNodeType() == Node.TEXT_NODE) {
+                source = element.getFirstChild().getTextContent();
+                setSource(element, source);
+            }
+        }
+        return source;
     }
 }

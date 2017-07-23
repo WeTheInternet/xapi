@@ -2,6 +2,7 @@ package xapi.components.impl;
 
 import elemental.dom.Element;
 import elemental.events.Event;
+import elemental2.core.Function;
 import xapi.components.api.JsEventListener;
 import xapi.components.api.OnWebComponentAttributeChanged;
 import xapi.fu.Do;
@@ -28,6 +29,11 @@ public class JsFunctionSupport {
       };
     }-*/;
 
+    public static native boolean isInGwtCallStack()
+    /*-{
+    	return !!@com.google.gwt.core.client.impl.Impl::entryDepth;
+    }-*/;
+
     public static void ensureEntered(Do task) {
 	    final JavaScriptObject wrapped = wrapDo(task);
 	    final JavaScriptObject entered = maybeEnter(wrapped);
@@ -37,6 +43,11 @@ public class JsFunctionSupport {
         public static native JavaScriptObject invoke(JavaScriptObject func, Object inst, Object ... args)
 	/*-{
 	  return func.apply(inst, args);
+	 }-*/;
+
+        public static native JavaScriptObject invoke(JavaScriptObject func)
+	/*-{
+	  return func();
 	 }-*/;
 
 	public static native JavaScriptObject wrapRunnable(Runnable task)
@@ -65,6 +76,13 @@ public class JsFunctionSupport {
 	  return @JsFunctionSupport::maybeEnter(*)(function(){
 	    task.@In1::in(Ljava/lang/Object;)(arguments[0]);
 	  });
+	 }-*/;
+
+	public static native <This, Arg1> Function curryThisIn1(In2<This, Arg1> task)
+	/*-{
+          return @JsFunctionSupport::maybeEnter(*)(function(){
+            task.@In2::in(Ljava/lang/Object;Ljava/lang/Object;)(this, arguments[0]);
+          });
 	 }-*/;
 
 	public static native <T> JavaScriptObject wrapOut1(Out1<T> task)
@@ -171,12 +189,12 @@ public class JsFunctionSupport {
 
 	public static JsEventListener<?> fixListener(JsEventListener<?> callback) {
                 final JavaScriptObject fixed = wrapListener(callback);
-		return new JsEventListener<Event>() {
-			@Override
-			public void onEvent(Event event) {
-			    invoke(fixed, callback, event);
-                        }
-		};
+		return (JsEventListener<Event>) event -> invoke(fixed, callback, event);
+	}
+
+	public static Do fixDo(Do callback) {
+                final JavaScriptObject fixed = wrapDo(callback);
+		return () -> invoke(fixed, callback);
 	}
 
 	public static native JavaScriptObject wrapListener(JsEventListener<?> callback)

@@ -2,6 +2,7 @@ package xapi.components.api;
 
 import jsinterop.annotations.JsOverlay;
 import jsinterop.annotations.JsType;
+import jsinterop.base.Js;
 import xapi.components.impl.JsSupport;
 
 /**
@@ -15,5 +16,10 @@ public interface Symbol {
     @JsOverlay
     static Symbol toStringTag() {
         return JsSupport.symbol("toStringTag");
+    }
+
+    @JsOverlay
+    static boolean isSymbol(Object name) {
+        return "symbol".equals(Js.typeof(name));
     }
 }

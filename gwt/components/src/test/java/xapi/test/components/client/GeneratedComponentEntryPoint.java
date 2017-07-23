@@ -50,7 +50,7 @@ public class GeneratedComponentEntryPoint implements EntryPoint {
 
   @Override
   public void onModuleLoad() {
-    WebComponentFactory<IsWebComponent<?>> component;
+
   }
 
 }

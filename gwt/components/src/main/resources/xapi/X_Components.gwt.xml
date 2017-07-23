@@ -10,7 +10,10 @@
   <inherits name="xapi.X_Html" />
   <inherits name="xapi.X_Inject" />
   <inherits name="xapi.X_Fu" />
+  <inherits name="com.github.javaparser.XapiParser" />
   <source path="components" />
+
+  <inherits name="elemental2.dom.Dom" />
 
   <generate-with class="xapi.dev.components.WebComponentFactoryGenerator">
     <when-type-assignable class="xapi.components.api.IsWebComponent"/>

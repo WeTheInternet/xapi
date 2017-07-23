@@ -31,7 +31,7 @@ import com.google.gwt.core.client.ScriptInjector;
 
 public class WebComponentSupport {
 
-  public static final WebComponentVersion DEFAULT_VERSION = "true".equals(
+  public static final WebComponentVersion VERSION = "true".equals(
       System.getProperty("web.components.v0", "false")) ? V0 : V1;
 
     private static final In1Out1<Element, ? extends IsComponent<? super Element, Element>> EXPECT_INITIALIZED = ignored -> {
@@ -65,7 +65,7 @@ public class WebComponentSupport {
             }
             expando.setValue(e, result);
             return result;
-        });
+        }, false);
         // The component expando is a bit special,
         // since other created callbacks likely want to get the component instance,
         // we need to pre-emptively set it in the constructor when a component is supplied.
@@ -98,18 +98,15 @@ public class WebComponentSupport {
     }
 
     public void ensureWebComponentApi(Do onLoaded) {
-    ensureWebComponentApi(onLoaded, DEFAULT_VERSION);
-  }
-  public void ensureWebComponentApi(Do onLoaded, WebComponentVersion version) {
     // Check if document.register exists
 
-    if (JsSupport.doc().getRegisterElement() == null) {
+    if (!hasNativeSupport()) {
       // Nope... Lets inject our polyfill
       Mutable<JavaScriptObject> script = new Mutable<>();
       script.in(ScriptInjector
-          .fromUrl(getPolyfillUrl(version))
+          .fromUrl(getPolyfillUrl(VERSION))
           .setCallback(voidCallback(() -> {
-            if (version == V1) {
+            if (VERSION == V1) {
               JsSupport.win().addEnteredListener("WebComponentsReady", onLoaded.onlyOnce().ignores1()::in, false);
             } else {
               onLoaded.done();
@@ -123,7 +120,14 @@ public class WebComponentSupport {
     }
   }
 
-  public static <E extends Element> E asElement(
+  public static boolean hasNativeSupport() {
+      if (VERSION == V0) {
+          return JsSupport.doc().getRegisterElement() != null;
+      }
+      return JsSupport.customElements() != null;
+  }
+
+    public static <E extends Element> E asElement(
       @NotNull IsWebComponent<E> webComponent) {
     if (webComponent instanceof JsElement) {
       return castToElement(webComponent);
@@ -140,7 +144,8 @@ public class WebComponentSupport {
 
   protected static String getPolyfillUrl(WebComponentVersion version) {
     if (version == V1) {
-      return GWT.getModuleBaseURL() + "js/webcomponents-v1.js";
+//      return GWT.getModuleBaseURL() + "js/webcomponents-v1.js";
+      return GWT.getModuleBaseURL() + "js/components-v1.js";
     } else {
       return GWT.getHostPageBaseURL() + "x-tag-components.min.js";
     }

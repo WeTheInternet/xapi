@@ -1,5 +1,7 @@
 package xapi.components.impl;
 
+import elemental2.core.ObjectPropertyDescriptor;
+import jsinterop.base.Js;
 import xapi.components.api.JsObjectDescriptor;
 import xapi.components.api.Symbol;
 import xapi.fu.In1Out1;
@@ -86,13 +88,16 @@ public class JsLazyExpando<I, O> implements In2Out1<I, In1Out1<I, O>, O> {
 
   @Override
   public O io(I el, In1Out1<I, O> io) {
-    if (!reentrant && isDefined(el)) {
-      reentrant = true;
-      try {
+//    if (!reentrant && isDefined(el)) {
+//      reentrant = true;
+//      try {
+//        return getValue(el);
+//      } finally {
+//        reentrant = false;
+//      }
+//    }
+    if (isDefined(el)) {
         return getValue(el);
-      } finally {
-        reentrant = false;
-      }
     }
     O created = io.io(el);
     if (!isDefined(el)) {
@@ -109,6 +114,9 @@ public class JsLazyExpando<I, O> implements In2Out1<I, In1Out1<I, O>, O> {
    * This allows us to apply run-once, lazy initialization of fields on the js class.
    */
   public void addToPrototype(Object prototype, In1Out1<I, O> factory) {
+    addToPrototype(prototype, factory, true);
+  }
+  public void addToPrototype(Object prototype, In1Out1<I, O> factory, boolean makeImmutable) {
       final JsObjectDescriptor opts = JsSupport.newDescriptor();
       opts.setEnumerable(name instanceof String);
       // We want the prototype to be configurable so we are allowed to overwrite it later.
@@ -126,13 +134,25 @@ public class JsLazyExpando<I, O> implements In2Out1<I, In1Out1<I, O>, O> {
 
         @Override
         public O out1() {
-          return io(getCaller(), factory);
+//          if (makeImmutable && result != null) {
+//            // somebody grabbed the raw accessor that we are redefining...
+//            return result;
+//          }
+          final I self = getCaller();
+          final O result = io(self, factory);
+          if (makeImmutable && !isDefined(self)) {
+            opts.setConfigurable(false);
+            opts.get(()->result);
+            object().defineProperty(self, name, opts);
+          }
+          return result;
         }
       };
       // apply our Out1 as the getter on the prototype, ensuring this is passed through to our Out1
-      opts.get(reapplyThis(wrapOut1(task)));
+      opts.get(Js.cast(reapplyThis(wrapOut1(task))));
 
-      // apply the descriptor; this js
+      // apply the descriptor; this attaches to the prototype so each new instance can call our getter
+      // which will, if set to be immutable, cement the value onto that instance, making it unwritable and unconfigurable
       object().defineProperty(prototype, name, opts);
   }
 }

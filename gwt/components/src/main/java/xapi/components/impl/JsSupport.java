@@ -8,14 +8,30 @@ import elemental.js.util.JsArrayOfBoolean;
 import elemental.js.util.JsArrayOfInt;
 import elemental.js.util.JsArrayOfNumber;
 import elemental.js.util.JsArrayOfString;
+import elemental2.core.*;
+import elemental2.dom.*;
+import jsinterop.base.Js;
 import xapi.components.api.*;
+import xapi.components.api.Console;
+import xapi.components.api.CustomElementRegistry;
+import xapi.components.api.Document;
+import xapi.components.api.JsObject;
+import xapi.components.api.Window;
 import xapi.fu.Do;
 import xapi.fu.In1;
 import xapi.fu.In1Out1;
+import xapi.fu.X_Fu;
+import xapi.log.X_Log;
 import xapi.ui.api.component.ComponentConstructor;
 import xapi.ui.api.component.ComponentOptions;
 import xapi.ui.api.component.IsComponent;
+import xapi.util.X_String;
 import xapi.util.api.RemovalHandler;
+
+import java.sql.Ref;
+
+import static xapi.fu.iterate.ArrayIterable.iterate;
+import static xapi.util.X_String.isNotEmpty;
 
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.UnsafeNativeLong;
@@ -465,12 +481,12 @@ public class JsSupport {
 
   public static native boolean exists(Object object, String name)
   /*-{
-    return name in object;
+    return object && object.hasOwnProperty(name);
    }-*/;
 
   public static native boolean exists(Object object, Symbol name)
   /*-{
-    return name in object;
+    return object && object.hasOwnProperty(name); // symbols are, by default, not enumerable, so we'll settle for hasOwnProperty
    }-*/;
 
   public static native boolean attributeExists(Object object, String name)
@@ -545,6 +561,11 @@ public class JsSupport {
     return object[key];
   }-*/;
 
+  public static native elemental2.dom.Node getNode2(Object object, String key)
+  /*-{
+    return object[key];
+  }-*/;
+
   public static native Object getObject(Object object, Symbol key)
   /*-{
     return object[key];
@@ -607,8 +628,16 @@ public class JsSupport {
   public static Element getShadowRoot(Element element) {
     return getShadowRoot(element, ShadowMode.OPEN);
   }
+  public static native elemental2.dom.Element getShadowRoot2(elemental2.dom.Element element, ShadowMode mode)
+  /*-{
+      return @xapi.components.impl.JsSupport::getShadowRoot(Lelemental/dom/Element;Lxapi/components/api/ShadowMode;)(element, mode);
+  }-*/;
+
   public static native Element getShadowRoot(Element element, ShadowMode mode)
   /*-{
+    if (element.shadowController) {
+      return element.shadowController;
+    }
     if (element.shadowRoot) {
       return element.shadowRoot;
     }
@@ -625,6 +654,9 @@ public class JsSupport {
 
   public static native Element createShadowRoot(Element e)
   /*-{
+    if (e.shadowController) {
+      return e.shadowController;
+    }
     if (e.attachShadow) {
       return e.attachShadow({mode: "open"});
     }
@@ -704,5 +736,101 @@ public class JsSupport {
     /*-{
       return classOrProto.prototype ? classOrProto.prototype : classOrProto; // TODO handle cases when being sent a prototype
     }-*/;
+
+  public static native <El> boolean matchesSelector(String selector, El element)
+  /*-{
+    if (!$wnd.Element.prototype.matches) {
+        $wnd.Element.prototype.matches =
+          $wnd.Element.prototype.matchesSelector ||
+          $wnd.Element.prototype.mozMatchesSelector ||
+          $wnd.Element.prototype.msMatchesSelector ||
+          $wnd.Element.prototype.oMatchesSelector ||
+          $wnd.Element.prototype.webkitMatchesSelector ||
+          function(s) {
+            var matches = (this.document || this.ownerDocument).querySelectorAll(s),
+              i = matches.length;
+            while (--i >= 0 && matches.item(i) !== this) {}
+            return i > -1;
+          };
+    }
+    if (!element.matches) {
+      return selector === '*';
+    }
+    return element.matches(selector);
+  }-*/;
+
+  public static ObjectPropertyDescriptor descriptor() {
+    return Js.cast(JavaScriptObject.createObject());
+  }
+
+  public static JsClass elementClass() {
+    final Object elementType = Reflect.get(
+        Js.cast(DomGlobal.window)
+        , "Element");
+    return Js.cast(elementType);
+  }
+
+  public static void installObject(elemental2.core.JsObject global, String name, Object o) {
+    installObject(global, name, o, true);
+  }
+  public static void installObject(elemental2.core.JsObject global, String name, Object o, boolean isFinal) {
+    ObjectPropertyDescriptor descriptor = Reflect.getOwnPropertyDescriptor(global, name);
+    if (descriptor != null) {
+      if (descriptor.value != null) {
+        descriptor.value = o;
+        // If the value is not writable, the following check will fail
+        //noinspection ConstantConditions
+        if (descriptor.value == o) {
+          return;
+        }
+      } else if (descriptor.set != null) {
+        descriptor.set.onInvoke(o);
+        if (descriptor.get == null || descriptor.get.onInvoke() == o) {
+          return;
+        }
+      }
+      if (!descriptor.configurable) {
+        throw new IllegalArgumentException("Cannot install on unwritable field " + name + " of " + global);
+      }
+    }
+    // If we couldn't actually set the object to the descriptor, try to override the descriptor
+    descriptor = JsSupport.descriptor();
+    descriptor.writable = !isFinal;
+    descriptor.value = o;
+    Reflect.defineProperty(global, name, Js.uncheckedCast(descriptor));
+  }
+
+  public static void addElementTasks(Element e, int task) {
+    addTasks(Js.uncheckedCast(e), task);
+  }
+
+  public static void addTasks(elemental2.core.JsObject e, int task) {
+    if (e.hasOwnProperty("tasks")) {
+      int[] tasks = (int[]) Reflect.get(e, "tasks");
+      Reflect.set(e, "tasks", X_Fu.push(tasks, task));
+    } else {
+      Reflect.set(e, "tasks", new int[]{task});
+    }
+  }
+  public static void flushElementTasks(Element e) {
+    flushTasks(Js.uncheckedCast(e));
+  }
+  public static void flushTasks(elemental2.core.JsObject e) {
+    int[] tasks = getTasks(e);
+    int looper = 50;
+    do {
+
+      if (tasks != null) {
+        Reflect.deleteProperty(e, "tasks");
+        RunSoon.runner().finishAll(tasks);
+      }
+
+    } while (X_Fu.isNotEmpty(tasks = getTasks(e)) && looper-->0);
+    assert looper > 0 : "Infinite recursion likely detecting flushing tasks for " + e;
+  }
+
+  private static int[] getTasks(elemental2.core.JsObject e) {
+    return (int[]) Reflect.get(e, "tasks");
+  }
 
 }

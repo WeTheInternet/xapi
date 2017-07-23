@@ -38,8 +38,10 @@ public class EventBinder {
 
     private native void addEventListener(Object target, String evtName, boolean capturePhase)
     /*-{
-        var f = this.@xapi.components.api.EventBinder::onEvent(Lelemental/events/Event;);
-        target.addEventListener(evtName, f, capturePhase);
+        var self = this;
+        target.addEventListener(evtName, function(e){
+          self.@xapi.components.api.EventBinder::onEvent(Lelemental/events/Event;)(e);
+        }, capturePhase);
     }-*/;
 
     @SuppressWarnings("unused") // called by jsni, atm.
