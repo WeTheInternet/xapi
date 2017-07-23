@@ -7,17 +7,18 @@ Feature:
     Given Generate web app named HelloWorld:
       | <web-app /> |
     Then Expect web app named HelloWorld to have source:
-      | import xapi.server.api.WebApp;                                                                   |
-      | import xapi.server.api.XapiServer;                                                                         |
-      | import xapi.server.api.XapiServerPlugin;                                                                   |
-      | import xapi.util.api.RequestLike;                                                                          |
-      |                                                                                                            |
+      | import xapi.fu.In1;                                                                                                          |
+      | import xapi.server.api.WebApp;                                                                                               |
+      | import xapi.server.api.XapiServer;                                                                                           |
+      | import xapi.server.api.XapiServerPlugin;                                                                                     |
+      | import xapi.util.api.RequestLike;                                                                                            |
+      |                                                                                                                              |
       | public class BaseHelloWorldComponent <Request extends RequestLike, Response> implements XapiServerPlugin<Request,Response> { |
-      |                                                                                                            |
-      |   public void installToServer (XapiServer<Request, Response> server) {                                     |
-      |     WebApp app = server.getWebApp();                                                                       |
-      |   }                                                                                                        |
-      |                                                                                                            |
+      |                                                                                                                              |
+      | public In1<XapiServer<Request, Response>> installToServer (WebApp app) {                                                     |
+      |   return In1.ignored();                                                                                                        |
+      | }                                                                                                                            |
+      |                                                                                                                              |
       | }                                                                                                          |
 
   Scenario:
@@ -36,6 +37,7 @@ Feature:
       |   ]                                     |
       | /web-app>                               |
     Then Expect web app named HelloWorld to have source:
+      | import xapi.fu.In1;                                                                   |
       | import xapi.server.api.WebApp;                                                                   |
       | import xapi.server.api.XapiServer;                                                                         |
       | import xapi.server.api.XapiServerPlugin;                                                                   |
@@ -43,9 +45,9 @@ Feature:
       |                                                                                                            |
       | public class BaseHelloWorldComponent <Request extends RequestLike, Response> implements XapiServerPlugin<Request,Response> { |
       |                                                                                                            |
-      |   public void installToServer (XapiServer<Request, Response> server) {                                     |
-      |     WebApp app = server.getWebApp();                                                                       |
+      |   public In1<XapiServer<Request, Response>> installToServer (WebApp app) {                                                     |
       |     installRoute(app);                                                                                     |
+      |     return In1.ignored();                                                                                     |
       |   }                                                                                                        |
       |                                                                                                            |
       |   public void installRoute (WebApp app) {                                                                  |
@@ -76,6 +78,7 @@ Feature:
       |   ]                                     |
       | /web-app>                               |
     Then Expect web app named TemplateWorld to have source:
+      | import xapi.fu.In1;                                                                   |
       | import xapi.server.api.WebApp;                                                                   |
       | import xapi.server.api.XapiServer;                                                                         |
       | import xapi.server.api.XapiServerPlugin;                                                                   |
@@ -83,9 +86,9 @@ Feature:
       |                                                                                                            |
       | public class BaseTemplateWorldComponent <Request extends RequestLike, Response> implements XapiServerPlugin<Request,Response> { |
       |                                                                                                            |
-      |   public void installToServer (XapiServer<Request, Response> server) {                                     |
-      |     WebApp app = server.getWebApp();                                                                       |
+      |   public In1<XapiServer<Request, Response>> installToServer (WebApp app) {                                                     |
       |     installRoute(app);                                                                                     |
+      |     return In1.ignored();                                                                                     |
       |   }                                                                                                        |
       |                                                                                                            |
       |   public void installRoute (WebApp app) {                                                                  |

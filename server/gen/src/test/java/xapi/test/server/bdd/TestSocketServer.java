@@ -4,12 +4,14 @@ import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
 import xapi.fu.In1;
 import xapi.fu.In1.In1Unsafe;
+import xapi.fu.In1Out1;
 import xapi.fu.In2;
 import xapi.fu.Lazy;
 import xapi.fu.Mutable;
 import xapi.fu.Rethrowable;
 import xapi.inject.X_Inject;
 import xapi.io.X_IO;
+import xapi.log.X_Log;
 import xapi.model.api.Model;
 import xapi.model.api.PrimitiveSerializer;
 import xapi.model.impl.AbstractModel;
@@ -20,6 +22,7 @@ import xapi.server.api.Classpath;
 import xapi.server.api.ModelGwtc;
 import xapi.server.api.Route;
 import xapi.server.api.WebApp;
+import xapi.server.api.XapiEndpoint;
 import xapi.server.api.XapiServer;
 import xapi.source.api.CharIterator;
 import xapi.source.impl.InputStreamCharIterator;
@@ -107,7 +110,7 @@ class TestSocketServer extends AbstractModel implements WebApp, Rethrowable, Xap
     }
 
     @Override
-    public void serviceRequest(Socket socket, In2<SocketRequest, Socket> callback) {
+    public void serviceRequest(Socket socket, In2<SocketRequest, Boolean> callback) {
 
     }
 
@@ -166,6 +169,25 @@ class TestSocketServer extends AbstractModel implements WebApp, Rethrowable, Xap
     }
 
     @Override
+    public void writeService(
+        String path, RequestScope<SocketRequest> request, String payload, In1<SocketRequest> callback
+    ) {
+        throw new UnsupportedOperationException("writeService not supported");
+    }
+
+    @Override
+    public void registerEndpoint(String name, XapiEndpoint<?> endpoint) {
+        throw new UnsupportedOperationException("registerEndpoint not supported");
+    }
+
+    @Override
+    public void registerEndpointFactory(
+        String name, In1Out1<String, XapiEndpoint<?>> endpoint
+    ) {
+        throw new UnsupportedOperationException("registerEndpoint not supported");
+    }
+
+    @Override
     public void inScope(Socket socket, In1Unsafe<RequestScope<SocketRequest>> callback) {
 
     }
@@ -197,6 +219,7 @@ class TestSocketServer extends AbstractModel implements WebApp, Rethrowable, Xap
     @Override
     public void setContentRoot(String root) {
         this.contentRoot = root;
+        X_Log.info(TestSocketServer.class, "Content root: ", contentRoot);
     }
 
     @Override

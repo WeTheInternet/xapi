@@ -106,17 +106,21 @@ public interface AnnotationTools extends SourceHelper<Element> {
     }
 
     @Override
-    default void saveResource(String path, String fileName, String src, Element hints) {
+    default String saveResource(String path, String fileName, String src, Element hints) {
 
         try {
+            if (path == null || path.isEmpty()) {
+                path = "";
+            }
             final FileObject file = outputFile(
-                path == null || path.isEmpty() ? "" : path,
+                path,
                 fileName,
                 hints
             );
             try (OutputStream o = file.openOutputStream()) {
                 o.write(src.getBytes(defaultCharset()));
             }
+            return file.toUri().getPath().replace("file:", "");
         } catch (IOException e) {
             throw X_Util.rethrow(e);
         }

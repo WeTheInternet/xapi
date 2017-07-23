@@ -21,6 +21,9 @@ import xapi.fu.Do;
 import xapi.fu.Lazy;
 import xapi.fu.Maybe;
 import xapi.fu.iterate.SingletonIterator;
+import xapi.model.X_Model;
+import xapi.server.api.Route;
+import xapi.server.api.Route.RouteType;
 import xapi.server.api.WebApp;
 import xapi.source.read.JavaModel.IsQualified;
 import xapi.util.X_String;
@@ -79,10 +82,21 @@ public class RouteFeatureGenerator extends UiFeatureGenerator {
                         final Expression resolved = tools.resolveVar(ctx, container);
                         String resolvedSource = tools.resolveString(ctx, resolved);
                         boolean isStatic = rawSource.equals(resolvedSource);
-                        tools.getGenerator().overwriteResource(path, method, resolvedSource, null);
+                        String fileLoc = tools.getGenerator().overwriteResource(path, method, resolvedSource, null);
                         if (!isStatic) {
                             // Add code to handle dynamism in resolved output
                         }
+                        String routeType = mb.addImport(Route.class);
+                        String fileType = mb.addImportStatic(RouteType.class, RouteType.File.name());
+                        String modelCreate = mb.addImportStatic(X_Model.class, "create");
+                        final String routeName = component.getBase().newFieldName("route" + path.replace('/', '_'));
+
+                        mb.println(routeType + " " + routeName + " = " + modelCreate + "(" + routeType + ".class);");
+                        mb.println(routeName + ".setPayload(" + "\"" + fileLoc.replace(ctx.getOutputDirectory(), "") + "\");");
+                        mb.println(routeName + ".setRouteType(" + fileType + ");");
+                        mb.println(routeName + ".setPath(\"" + (path.startsWith("/") ? path : "/" + path) + "\");");
+                        mb.println("app.getRoute().add(" + routeName + ");");
+
                         break;
                     case "page":
                         handlePage(path, method, container, responseExpr);
@@ -297,6 +311,6 @@ public class RouteFeatureGenerator extends UiFeatureGenerator {
             factory.ensureRouteExists((UiContainerExpr) route);
         });
 
-        return super.startVisit(service, generator, source, container, attr);
+        return UiVisitScope.FEATURE_NO_CHILDREN; // handled already
     }
 }

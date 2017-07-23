@@ -300,7 +300,7 @@ public class GwtcSteps {
         )).getExpression());
 
     final IsQualified type = new IsQualified(pkgToUse, name);
-    final ComponentBuffer buffer = generator.initialize(new FileBasedSourceHelper(manifest::getGenDir), type, parsed);
+    final ComponentBuffer buffer = generator.initialize(new FileBasedSourceHelper(manifest::getGenDir, manifest::getWarDir), type, parsed);
 
     generatedComponents.put(name, buffer);
 

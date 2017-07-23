@@ -29,7 +29,6 @@ import xapi.time.api.Moment;
 import xapi.time.impl.ImmutableMoment;
 import xapi.util.X_Properties;
 import xapi.util.X_Runtime;
-import xapi.util.X_Util;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -42,7 +41,6 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 @KeepClass
@@ -61,48 +59,16 @@ public class RuntimeInjector implements In2<String, PlatformChecker> {
     }
     File relative = new File(targetDir);
     if (new File("target/classes").equals(relative)) {
-      // find the class that called us, and use their "target/classes"
-      final Map<Thread, StackTraceElement[]> traces = Thread.getAllStackTraces();
-      for (Entry<Thread, StackTraceElement[]> trace : traces.entrySet()) {
-        if ("main".equals(trace.getKey().getName())) {
-          // Using a thread named main is best...
-            final StackTraceElement[] els = trace.getValue();
-            int i = els.length-1;
-            StackTraceElement best = els[--i];
-            String cls = best.getClassName().toLowerCase();
-            while(i > 0 && isSystemClass(cls)) {
-              // if the main class is likely an ide,
-              // then we should look higher...
-              while (i-- > 0) {
-                if ("main".equals(els[i].getMethodName())) {
-                  best = els[i];
-                  cls = best.getClassName().toLowerCase();
-                  break;
-                }
-              }
-            }
-            if (isSystemClass(cls)) {
-              i = els.length-1;
-              best = els[i];
-              while (isSystemClass(cls) && i>0) {
-                best = els[i--];
-                cls = best.getClassName().toLowerCase();
-              }
-            }
-            try {
-              Class mainClass = Class.forName(best.getClassName());
-              final String mainLoc = X_Reflect.getFileLoc(mainClass);
-              relative = new File(mainLoc);
-              if (relative.isFile()) {
-                // Our search landed on a file (likely a jar);
-                // revert to "target/classes", and assume semi-sane $PWD
-                relative = new File(targetDir);
-              }
-            } catch (ClassNotFoundException e) {
-              throw X_Util.rethrow(e);
-            }
-          }
+      Class<?> mainClass = X_Reflect.getMainClass();
+      if (mainClass != null) {
+        final String mainLoc = X_Reflect.getFileLoc(mainClass);
+        relative = new File(mainLoc);
+        if (relative.isFile()) {
+          // Our search landed on a file (likely a jar);
+          // revert to "target/classes", and assume semi-sane $PWD
+          relative = new File(targetDir);
         }
+      }
     }
     final File target = relative.getAbsoluteFile();
     if (!target.isDirectory()) {
@@ -341,17 +307,6 @@ public class RuntimeInjector implements In2<String, PlatformChecker> {
 
   private ClassMemberValue implFor(Annotation anno) {
     return (ClassMemberValue) anno.getMemberValue("implFor");
-  }
-
-  private boolean isSystemClass(String cls) {
-    return cls.startsWith("java.lang.") ||
-           cls.startsWith("sun.") ||
-           cls.startsWith("org.apache.maven.") ||
-           cls.contains(".intellij.") ||
-           cls.startsWith("org.junit") ||
-           cls.startsWith("junit.") ||
-           cls.contains(".eclipse") ||
-           cls.contains("netbeans");
   }
 
   protected boolean needsSingletonBinding(ClassMemberValue cls) {

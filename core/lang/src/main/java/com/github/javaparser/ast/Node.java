@@ -275,7 +275,6 @@ public abstract class Node implements Cloneable {
         return EqualsVisitor.equals(this, (Node) obj);
     }
 
-    @Override
     public Node clone() {
         return this.accept(new CloneVisitor(), null);
     }

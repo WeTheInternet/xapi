@@ -1165,11 +1165,11 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
     );
 
     default MappedIterable<String> allMapTypes() {
-        return DEFAULT_MAP_TYPES.mappedKeys();
+        return DEFAULT_MAP_TYPES.keys();
     }
 
     default MappedIterable<String> allListTypes() {
-        return DEFAULT_LIST_TYPES.mappedKeys();
+        return DEFAULT_LIST_TYPES.keys();
     }
 
 

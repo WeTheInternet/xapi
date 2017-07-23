@@ -15,6 +15,8 @@ import xapi.dev.ui.api.UiGeneratorService;
 import xapi.dev.ui.api.UiImplementationGenerator;
 import xapi.dev.ui.impl.AbstractUiGeneratorService;
 import xapi.dev.ui.tags.UiTagGenerator;
+import xapi.fu.In1;
+import xapi.fu.In1.In1Unsafe;
 import xapi.fu.Out2;
 import xapi.fu.iterate.Chain;
 import xapi.inject.X_Inject;
@@ -25,6 +27,8 @@ import xapi.log.X_Log;
 import xapi.model.X_Model;
 import xapi.server.api.Classpath;
 import xapi.server.api.WebApp;
+import xapi.server.api.XapiServer;
+import xapi.server.api.XapiServerPlugin;
 import xapi.source.read.JavaModel.IsQualified;
 import xapi.ui.api.PhaseMap;
 import xapi.ui.api.PhaseMap.PhaseNode;
@@ -33,7 +37,10 @@ import xapi.util.X_Util;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -60,7 +67,7 @@ public class WebAppGenerator extends AbstractUiGeneratorService<WebAppGeneratorC
         return ctx;
     }
 
-    public WebApp generateWebApp(String name, UiContainerExpr container) {
+    public WebApp generateWebApp(String name, UiContainerExpr container, In1<In1<XapiServer<?, ?>>> callback) {
         ctx = new WebAppGeneratorContext();
         UiGeneratorService<WebAppGeneratorContext> service = createUiGenerator();
 
@@ -71,6 +78,8 @@ public class WebAppGenerator extends AbstractUiGeneratorService<WebAppGeneratorC
 
         String genDir = settings.getGenerateDirectory();
         ctx.setGeneratorDirectory(genDir);
+        ctx.setOutputDirectory(settings.getOutputDirectory());
+
         final SourceHelper<WebAppGeneratorContext> tools = createSourceHelper(ctx);
         final IsQualified type = new IsQualified(name);
         ComponentBuffer buffer = service.initialize(tools, type, container);
@@ -98,6 +107,32 @@ public class WebAppGenerator extends AbstractUiGeneratorService<WebAppGeneratorC
             final URL cp = task.out2();
 
             WebApp model = newModel(type, cp, src);
+            model.setContentRoot(settings.getOutputDirectory());
+            X_Log.info(WebAppGenerator.class, "Using content root", settings.getOutputDirectory());
+            // initialize model using the class we just generated...
+            callback.in(server->{
+                ClassLoader loader = Thread.currentThread().getContextClassLoader();
+                try {
+                    final Method install = XapiServerPlugin.class.getMethod(
+                        "installToServer",
+                        WebApp.class
+                    );
+                    final Class<?> component = loader.loadClass(source.getQualifiedName());
+                    final Object plugin = component.newInstance();
+                    final In1 result = (In1) install.invoke(plugin, model);
+                    result.in(server);
+                } catch (ClassNotFoundException e) {
+                    X_Log.error(WebAppGenerator.class, "Unable to load generated class " + source.getQualifiedName(), e);
+                } catch (NoSuchMethodException e) {
+                    X_Log.error(WebAppGenerator.class, "Unable to load generated method XapiServerPlugin.installToServer for " + source.getQualifiedName(), e);
+                } catch (IllegalAccessException e) {
+                    X_Log.error(WebAppGenerator.class, "Unable to access constructor of " + source.getQualifiedName(), e);
+                } catch (InstantiationException e) {
+                    X_Log.error(WebAppGenerator.class, "Error encountered in constructor of " + source.getQualifiedName(), e);
+                } catch (InvocationTargetException e) {
+                    X_Log.error(WebAppGenerator.class, "Error encountered calling installToServer in " + source.getQualifiedName(), e);
+                }
+            });
             return model;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -128,13 +163,13 @@ public class WebAppGenerator extends AbstractUiGeneratorService<WebAppGeneratorC
             }
 
             @Override
-            public void saveResource(
+            public String saveResource(
                 String path, String fileName, String src, WebAppGeneratorContext hints
             ) {
                 final WebAppGeneratorContext used = firstNotNull(hints, ctx);
                 final SourceBuilder<WebAppGeneratorContext> buffer = used.getOrMakeClass(path, fileName, false);
                 buffer.replaceSource(src);
-                Path dir = Paths.get(used.getGeneratorDirectory());
+                Path dir = Paths.get(used.getOutputDirectory());
                 if (path.matches("[/]?[.][.][/]?")) {
                     warnPathWithDotDot(path, used);
                 }
@@ -145,7 +180,9 @@ public class WebAppGenerator extends AbstractUiGeneratorService<WebAppGeneratorC
                 try {
                     final Path output = Files.createDirectories(dir).resolve(fileName);
                     X_IO.drain(Files.newOutputStream(output), X_IO.toStreamUtf8(src));
+                    return output.toAbsolutePath().toString();
                 } catch (IOException e) {
+                    X_Log.info(WebAppGenerator.class, "Error saving", dir, "/", fileName, e);
                     throw rethrow(e);
                 }
             }

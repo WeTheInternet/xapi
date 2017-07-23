@@ -1,7 +1,10 @@
 package xapi.util.api;
 
+import xapi.fu.MapLike;
 import xapi.fu.Out1;
 import xapi.fu.Out2;
+import xapi.fu.iterate.EmptyIterator;
+import xapi.fu.iterate.SizedIterable;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 11/26/16.
@@ -12,26 +15,36 @@ public interface RequestLike {
 
     String getBody();
 
-    default String getParam(String name, Out1<String> dflt) {
-        for (Out2<String, Iterable<String>> param : getParams()) {
-            if (name.equals(param.out1())) {
-                return param.out2().iterator().next();
-            }
-        }
-        return dflt.out1();
-    }
-
     default String getHeader(String name, Out1<String> dflt) {
-        for (Out2<String, Iterable<String>> header : getHeaders()) {
-            if (name.equals(header.out1())) {
-                return header.out2().iterator().next();
-            }
+        final SizedIterable<String> headers = getHeaders(name);
+        if (headers.isEmpty()) {
+            return dflt == null ? null : dflt.out1();
         }
-        return dflt.out1();
+        return headers.first();
     }
 
-    Iterable<Out2<String, Iterable<String>>> getParams();
+    default String getParam(String name, Out1<String> dflt) {
+        final SizedIterable<String> params = getParams(name);
+        if (params.isEmpty()) {
+            return dflt == null ? null : dflt.out1();
+        }
+        return params.first();
+    }
 
-    Iterable<Out2<String, Iterable<String>>> getHeaders();
+    default SizedIterable<String> getHeaders(String name) {
+        final MapLike<String, SizedIterable<String>> headers = getHeaders();
+        return headers.getOrSupply(name, EmptyIterator::none);
+    }
+
+    default SizedIterable<String> getParams(String name) {
+        final MapLike<String, SizedIterable<String>> params = getParams();
+        return params.getOrSupply(name, EmptyIterator::none);
+    }
+
+    MapLike<String, SizedIterable<String>> getParams();
+
+    MapLike<String, SizedIterable<String>> getHeaders();
+
+    MapLike<String, String> getCookies();
 
 }

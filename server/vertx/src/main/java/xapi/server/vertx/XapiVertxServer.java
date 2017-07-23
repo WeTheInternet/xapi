@@ -8,21 +8,32 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
+import xapi.annotation.model.IsModel;
+import xapi.collect.X_Collect;
+import xapi.collect.api.ClassTo;
+import xapi.collect.api.InitMap;
 import xapi.collect.api.IntTo;
+import xapi.collect.api.StringTo;
+import xapi.collect.impl.InitMapDefault;
 import xapi.dev.gwtc.api.GwtcService;
+import xapi.except.NotConfiguredCorrectly;
 import xapi.fu.Do;
 import xapi.fu.Do.DoUnsafe;
 import xapi.fu.In1;
 import xapi.fu.In1.In1Unsafe;
+import xapi.fu.In1Out1;
 import xapi.fu.In2;
 import xapi.fu.Mutable;
+import xapi.fu.X_Fu;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
 import xapi.gwtc.api.CompiledDirectory;
 import xapi.gwtc.api.GwtManifest;
 import xapi.gwtc.api.ServerRecompiler;
+import xapi.inject.X_Inject;
 import xapi.io.X_IO;
 import xapi.log.X_Log;
+import xapi.model.api.Model;
 import xapi.process.X_Process;
 import xapi.scope.X_Scope;
 import xapi.scope.api.RequestScope;
@@ -30,7 +41,9 @@ import xapi.server.X_Server;
 import xapi.server.api.ModelGwtc;
 import xapi.server.api.Route;
 import xapi.server.api.WebApp;
+import xapi.server.api.XapiEndpoint;
 import xapi.server.api.XapiServer;
+import xapi.source.template.MappedTemplate;
 import xapi.util.X_String;
 
 import java.io.File;
@@ -40,6 +53,8 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map.Entry;
+import java.util.ServiceLoader;
 import java.util.concurrent.locks.LockSupport;
 
 import com.google.gwt.dev.codeserver.CompileStrategy;
@@ -52,9 +67,79 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
     private final WebApp webApp;
     private Vertx vertx;
     private In1<DoUnsafe> exe;
+    private final InitMap<String, XapiEndpoint<?>> endpoints;
 
     public XapiVertxServer(WebApp webApp) {
         this.webApp = webApp;
+        endpoints = new InitMapDefault<>(
+            X_Fu::identity, this::findEndpoint
+        );
+    }
+
+    public void registerEndpoint(String name, XapiEndpoint<?> endpoint) {
+        endpoints.put(name, endpoint);
+    }
+
+    public void registerEndpointFactory(String name, In1Out1<String, XapiEndpoint<?>> endpoint) {
+        endpoints.put(name, (path, requestLike, payload, callback) -> {
+            final XapiEndpoint realEndpoint = endpoint.io(name);
+            realEndpoint.serviceRequest(path, requestLike, payload, callback);
+        });
+    }
+    protected XapiEndpoint<?> findEndpoint(String name) {
+        // this is called during the init process of the underlying map,
+        // but we made it protected so it could be overloaded, and that
+        // means still want to route all endpoint loading through the caching map.
+        if (endpoints.containsKey(name)) {
+            return endpoints.get(name);
+        }
+        try {
+            final ClassLoader cl = Thread.currentThread().getContextClassLoader();
+            final Class<?> cls = cl.loadClass(name);
+            // once we have the class, lets inject it...
+            Object inst;
+            try {
+                inst = X_Inject.singleton(cls);
+                if (inst == null) {
+                    throw new NullPointerException();
+                }
+                assert XapiEndpoint.class.isInstance(inst) : "Injection result of " + name + ", " + inst.getClass() + " is not a XapiEndpoint" +
+                    " (or there is something nefarious happening with your classloader)";
+                final XapiEndpoint<?> endpoint = (XapiEndpoint<?>) inst;
+                // we'll cache singletons
+                endpoints.put(name, endpoint);
+                return endpoint;
+            } catch (RuntimeException ignored) {
+                // no dice... can we inject an instance?
+                try {
+                    inst = X_Inject.instance(cls);
+                    // huzzah!  we can create instances.  In this case, we'll return the one we just created,
+                    // plus create a simple delegate which knows to inject a new endpoint per invocation.
+                    final Class<XapiEndpoint<?>> c = Class.class.cast(cls);
+                    endpoints.put(name, (path, requestLike, payload, callback) -> {
+                        XapiEndpoint realInst = X_Inject.instance(c);
+                        realInst.serviceRequest(path, requestLike, payload, callback);
+                    });
+                    assert XapiEndpoint.class.isInstance(inst) : "Injection result of " + name + ", " + inst.getClass() + " is not a XapiEndpoint" +
+                        " (or there is something nefarious happening with your classloader)";
+                    return (XapiEndpoint<?>) inst;
+                } catch (RuntimeException stillIgnored) {
+                    // STILL no dice... try service loader then give up.
+                    for (Object result : ServiceLoader.load(cls, cl)) {
+                        // if you loaded through service loader, you are going to be static, and can worry about
+                        // state management yourself.
+                        if (XapiEndpoint.class.isInstance(result)) {
+                            final XapiEndpoint<?> endpoint = (XapiEndpoint<?>) result;
+                            endpoints.put(name, endpoint);
+                            return endpoint;
+                        }
+                    }
+                }
+            }
+        } catch (ClassNotFoundException e) {
+            throw new NotConfiguredCorrectly("Could not load endpoint named " + name);
+        }
+        return null;
     }
 
     @Override
@@ -128,12 +213,55 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
     }
 
     protected void handleRequest(HttpServerRequest req) {
-        serviceRequest(req, (r1, r2)->{
-            final HttpServerResponse resp = r1.getHttpRequest().response();
-            if (r1.isAutoclose() && !resp.ended()){
+        serviceRequest(req, (r, success)->{
+            final HttpServerResponse resp = r.getHttpRequest().response();
+            if (r.isAutoclose() && !resp.ended()){
                 resp.end();
             }
+            if (!Boolean.TRUE.equals(success)) {
+              final HttpServerResponse response = req.response();
+              on404(req, response);
+            }
         });
+    }
+
+    protected void on404(HttpServerRequest req, HttpServerResponse resp) {
+        if (!resp.ended()) {
+            resp.setStatusCode(404);
+            resp.end("<!DOCTYPE html><html>" +
+                "<body style=\"text-align: center; vertical-align: middle; display: block\">" +
+                "<div style=\"white-space:pre-wrap\">" +
+                "Our apologies, we cannot find anything to serve to:" +
+                dump(req) +
+                "</div>" +
+                "</body>" +
+                "</html>");
+        }
+    }
+
+    protected String dump(HttpServerRequest req) {return dump(req, "\n");}
+
+    protected String dump(
+        HttpServerRequest req,
+        String suffix
+    ) {
+        StringBuilder b = new StringBuilder("Request{");
+        b.append("Path: ").append(req.path())
+            .append(suffix);
+        b.append("Query: ").append(req.query())
+            .append(suffix);
+        b.append("Method: ").append(req.method())
+            .append(suffix);
+        for (Entry<String, String> header : req.headers().entries()) {
+            b.append("Header[").append(header.getKey()).append("=").append(header.getValue()).append("]")
+                .append(suffix);
+        }
+        b.append("URI: ").append(req.uri())
+            .append(suffix);
+        b.append("Absolute URI: ").append(req.absoluteURI())
+            .append(suffix);
+
+        return b.toString();
     }
 
     private String resolveResponse(HttpServerRequest req, UiContainerExpr response) {
@@ -147,61 +275,63 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
 
     @Override
     public void serviceRequest(
-        HttpServerRequest req, In2<VertxRequest, HttpServerRequest> callback
+        HttpServerRequest req, In2<VertxRequest, Boolean> callback
     ) {
         inScope(req, vertx->{
 
-            final String path = req.path();
-            final WebApp app = getWebApp();
-            Route best = null;
-            ChainBuilder<Route> backups = Chain.startChain();
-            double score = 0;
-            for (Route route : app.getRoute().forEach()) {
-                double match = route.matches(path);
-                if (match > score) {
-                    if (match == 1) {
-                        // Try to server a perfect match immediately
-                        if (route.serve(vertx, done->
-                            callback.in(done, req)
-                        )) {
-                            return;
+            try {
+
+                final String path = req.path();
+                final WebApp app = getWebApp();
+                Route best = null;
+                ChainBuilder<Route> backups = Chain.startChain();
+                double score = 0;
+                for (Route route : app.getRoute().forEach()) {
+                    double match = route.matches(path);
+                    if (match > score) {
+                        if (match == 1) {
+                            // Try to serve a perfect match immediately
+                            if (route.serve(path, vertx, done->
+                                callback.in(done, true)
+                            )) {
+                                return;
+                            }
                         }
-                    }
-                    if (best != null) {
-                        backups.add(best);
-                    }
-                    score = match;
-                    best = route;
-                } else if (match > 0) {
-                    if (best != null) {
-                        backups.add(route);
-                    }
-                }
-            }
-            if (best != null) {
-                if (best.serve(vertx, done->
-                    callback.in(done, req)
-                )) {
-                    return;
-                } else {
-                    X_Log.trace(getClass(), "Best was no good; ", best, "\nServing backups:", backups);
-                    for (Route backup : backups) {
-                        if (backup.serve(vertx, done->
-                            callback.in(done, req)
-                        )) {
-                            return;
+                        if (best != null) {
+                            backups.add(best);
+                        }
+                        score = match;
+                        best = route;
+                    } else if (match > 0) {
+                        if (best != null) {
+                            backups.add(route);
                         }
                     }
                 }
+                if (best != null) {
+                    if (best.serve(path, vertx, done->
+                        callback.in(done, true)
+                    )) {
+                        return;
+                    } else {
+                        X_Log.trace(getClass(), "Best was no good; ", best, "\nServing backups:", backups);
+                        for (Route backup : backups) {
+                            if (backup.serve(path, vertx, done->
+                                callback.in(done, true)
+                            )) {
+                                return;
+                            }
+                        }
+                    }
+                }
+            } catch (Throwable t) {
+                // failure... TODO error mapping
+                callback.in(vertx.getRequest(), false);
+                throw t;
             }
 
-            final HttpServerResponse response = req.response();
-            final String text = "<html><body>Hello World</body></html>";
-            response.setChunked(true);
-
-            response.end(text);
-
-            callback.in(vertx.getRequest(), req);
+            // If you didn't return, you failed and should return failure to the client
+            callback.in(vertx.getRequest(), false);
         });
     }
 
@@ -236,7 +366,48 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
     public void writeTemplate(
         RequestScope<VertxRequest> request, String payload, In1<VertxRequest> callback
     ) {
+        if (payload.trim().startsWith("<")) {
+            // We have a xapi template to parse and run...
+        } else if (payload.contains("$")) {
+            // Swap out any $named variables, if any, from our scope
+            final ClassTo<Object> vars = X_Collect.newClassMap(Object.class);
+            request.loadMap(vars.asMap());
+
+            MappedTemplate t = new MappedTemplate(payload);
+
+
+            StringTo<Object> replaceables = X_Collect.newStringMap(Object.class);
+
+            for (Class<?> key : vars.keys()) {
+                String name = computeTemplateKey(key);
+                if (name != null) {
+                    if (payload.contains("$" + name)) {
+                        // Payload has a potential match for this value
+                    }
+                    if (payload.contains("${" + name)) {
+                        // Payload might have a nested value for this type... computation of nesting will be nasty.
+                        // consider outsourcing this to a dependency...
+                    }
+                }
+            }
+
+        } else {
+        }
+
        writeText(request, payload, callback);
+    }
+
+    private String computeTemplateKey(Class<?> key) {
+        final IsModel model = key.getAnnotation(IsModel.class);
+        if (model != null) {
+            return model.modelType();
+        }
+        if (Model.class.isAssignableFrom(key)) {
+            // A model w/out an IsModel annotation...
+            // Turn the simplename into a model type
+            return X_String.firstCharToLowercase(key.getSimpleName().replace("Model", ""));
+        }
+        return null;
     }
 
     @Override
@@ -246,9 +417,12 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
         if (!toServe.exists()) {
             throw new IllegalStateException("Content root " + toServe + " does not exist!");
         }
-        toServe = new File(toServe, payload);
+        toServe = new File(webApp.getContentRoot(), payload);
         if (!toServe.exists()) {
-            throw new IllegalStateException("Content file " + toServe + " does not exist!");
+            toServe = new File(payload.startsWith("/") ? payload.substring(1) : payload);
+            if (!toServe.exists()) {
+                throw new IllegalStateException("Content file " + new File(webApp.getContentRoot(), payload) + " does not exist!");
+            }
         }
         response.sendFile(toServe.getAbsolutePath());
         callback.in(request.getRequest());
@@ -270,13 +444,17 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
             // request was for the nocache file; compile every time (for now)
             final GwtManifest manifest = module.getOrCreateManifest();
             X_Process.runDeferred(()->{
+                boolean[] done = {false};
                 Do onDone = () -> {
                     Path path = Paths.get(manifest.getCompiledWar());
                     final Path file = path.resolve(payload + File.separatorChar + payload + ".nocache.js");
-                    response.sendFile(
-                        file.normalize().toString()
-                    );
-                    callback.in(req);
+                    if (!done[0]) {
+                        done[0] = true;
+                        response.sendFile(
+                            file.normalize().toString()
+                        );
+                        callback.in(req);
+                    }
                 };
                 final GwtcService service = module.getOrCreateService();
                 if (manifest.isRecompile()) {
@@ -408,4 +586,16 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
         callback.in(request.getRequest());
     }
 
+    @Override
+    @SuppressWarnings("unchecked")
+    public void writeService(
+        String path, RequestScope<VertxRequest> request, String payload, In1<VertxRequest> callback
+    ) {
+        final XapiEndpoint endpoint = findEndpoint(payload);
+        if (endpoint == null) {
+            X_Log.warn(XapiVertxServer.class, "No endpoint found for", payload);
+        } else {
+            endpoint.serviceRequest(path, request, payload, callback);
+        }
+    }
 }

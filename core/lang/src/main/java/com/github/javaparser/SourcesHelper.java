@@ -22,21 +22,32 @@
 package com.github.javaparser;
 
 import java.io.*;
+import java.nio.charset.Charset;
 
 public class SourcesHelper {
 
     public static String streamToString(InputStream in, String encoding){
         if (encoding == null) {
-            return streamToString(in);
-        } else {
-            java.util.Scanner s = new java.util.Scanner(in, encoding).useDelimiter("\\A");
-            return s.hasNext() ? s.next() : "";
+            encoding = Charset.defaultCharset().name();
+        }
+        try {
+            final InputStreamReader reader = new InputStreamReader(in, encoding);
+            final BufferedReader buf = new BufferedReader(reader);
+            StringBuilder b = new StringBuilder();
+            String line;
+            while ((line = buf.readLine()) != null) {
+                b.append(line).append('\n');
+            }
+            return b.toString();
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 
     public static String streamToString(InputStream in){
-        java.util.Scanner s = new java.util.Scanner(in).useDelimiter("\\A");
-        return s.hasNext() ? s.next() : "";
+        return streamToString(in, Charset.defaultCharset().name());
     }
 
     public static InputStream stringToStream(String s, String encoding) throws UnsupportedEncodingException {

@@ -13,16 +13,17 @@ import xapi.fu.Out1;
 import xapi.fu.ReturnSelf;
 import xapi.log.X_Log;
 import xapi.source.X_Source;
-import xapi.source.write.StringerMatcher;
+import xapi.source.write.ToStringer;
 import xapi.source.write.Template;
-
-import java.util.function.Predicate;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 9/21/16.
  */
 public class ApiGeneratorContext<Ctx extends ApiGeneratorContext<Ctx>>
     implements ReturnSelf<Ctx> {
+
+    private String generatorDirectory;
+    private String outputDirectory;
 
     public ApiGeneratorContext() { }
 
@@ -54,20 +55,7 @@ public class ApiGeneratorContext<Ctx extends ApiGeneratorContext<Ctx>>
                 () -> mapper.io(vars.get(key))
             );
         }
-        Template t = new Template(nameString, new StringerMatcher() {
-            @Override
-            public String toString(Object o) {
-                if (o instanceof Out1) {
-                    o = ((Out1) o).out1();
-                }
-                return o.toString();
-            }
-
-            @Override
-            public Predicate<String> matcherFor(String value) {
-                return value::equals;
-            }
-        }, keys);
+        Template t = new Template(nameString, keys);
         return t.apply((Object[]) values);
     }
 
@@ -115,4 +103,19 @@ public class ApiGeneratorContext<Ctx extends ApiGeneratorContext<Ctx>>
         return sources.values();
     }
 
+    public void setGeneratorDirectory(String generatorDirectory) {
+        this.generatorDirectory = generatorDirectory;
+    }
+
+    public String getGeneratorDirectory() {
+        return generatorDirectory;
+    }
+
+    public String getOutputDirectory() {
+        return outputDirectory;
+    }
+
+    public void setOutputDirectory(String outputDirectory) {
+        this.outputDirectory = outputDirectory;
+    }
 }

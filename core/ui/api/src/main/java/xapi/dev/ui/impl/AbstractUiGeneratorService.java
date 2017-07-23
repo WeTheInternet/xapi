@@ -320,8 +320,8 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
     }
 
     @Override
-    public void overwriteResource(String path, String fileName, String source, Raw hints) {
-        service.saveResource(path, fileName, source, hints);
+    public String overwriteResource(String path, String fileName, String source, Raw hints) {
+        return service.saveResource(path, fileName, source, hints);
     }
 
     @Override

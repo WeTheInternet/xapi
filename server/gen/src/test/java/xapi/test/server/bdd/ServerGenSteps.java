@@ -28,7 +28,6 @@ public class ServerGenSteps implements ServerTestHelper<TestSocketServer> {
     }
 
     @After
-    @Override
     public void cleanup() {
         ServerTestHelper.super.cleanup();
     }

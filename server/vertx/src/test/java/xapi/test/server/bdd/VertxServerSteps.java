@@ -17,6 +17,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.net.URL;
 import java.util.List;
+import java.util.concurrent.locks.LockSupport;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/10/16.
@@ -59,6 +60,18 @@ public class VertxServerSteps implements ServerTestHelper<XapiVertxServer> {
             url = "http://127.0.0.1:" + newestServer.getWebApp().getPort() + "/" + url;
         }
 
+        Thread me = Thread.currentThread();
+        long deadline = System.currentTimeMillis() + 5000;
+        Thread waiter = new Thread(()->{
+            while (me.isAlive() && System.currentTimeMillis() < deadline) {
+                LockSupport.parkUntil(deadline);
+            }
+            if (me.isAlive()) {
+                me.interrupt();
+            }
+        });
+        waiter.setDaemon(true);
+        waiter.start();
         ReadAllInputStream all = ReadAllInputStream.read(new URL(url).openStream());
         String expected = X_String.join("\n", lines);
         String actual = new String(all.all());

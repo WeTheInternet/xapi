@@ -28,7 +28,7 @@ public interface UiGeneratorService <Raw> {
 
     ContainerMetadata createMetadata(MetadataRoot root, UiContainerExpr n);
 
-    void overwriteResource(String path, String fileName, String source, Raw hints);
+    String overwriteResource(String path, String fileName, String source, Raw hints);
 
     void overwriteSource(String path, String fileName, String source, Raw hints);
 

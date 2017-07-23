@@ -3,6 +3,7 @@ package xapi.server.api;
 import xapi.collect.api.IntTo;
 import xapi.fu.In1;
 import xapi.fu.In1.In1Unsafe;
+import xapi.fu.In1Out1;
 import xapi.fu.In2;
 import xapi.scope.api.RequestScope;
 import xapi.util.api.RequestLike;
@@ -20,7 +21,7 @@ public interface XapiServer <Request extends RequestLike, RawRequest> {
 
     void shutdown();
 
-    void serviceRequest(RawRequest request, In2<Request, RawRequest> callback);
+    void serviceRequest(RawRequest request, In2<Request, Boolean> callback);
 
     String getPath(Request req);
 
@@ -57,4 +58,11 @@ public interface XapiServer <Request extends RequestLike, RawRequest> {
     void writeGwtJs(RequestScope<Request> request, String payload, In1<Request> callback);
 
     void writeCallback(RequestScope<Request> request, String payload, In1<Request> callback);
+
+    void writeService(String path, RequestScope<Request> request, String payload, In1<Request> callback);
+
+    void registerEndpoint(String name, XapiEndpoint<?> endpoint);
+
+    void registerEndpointFactory(String name, In1Out1<String, XapiEndpoint<?>> endpoint);
+
 }

@@ -26,6 +26,10 @@
     </dependency>
     <dependency>
       <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-dev-javac</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
       <artifactId>xapi-core-ui-generator</artifactId>
     </dependency>
     <dependency>

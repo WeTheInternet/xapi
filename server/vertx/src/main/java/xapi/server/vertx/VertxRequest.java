@@ -2,10 +2,16 @@ package xapi.server.vertx;
 
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
+import xapi.collect.X_Collect;
+import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
+import xapi.fu.In1Out1;
+import xapi.fu.In2Out1;
 import xapi.fu.Lazy;
-import xapi.fu.Out2;
+import xapi.fu.MapLike;
+import xapi.fu.Out1;
 import xapi.fu.Pointer;
+import xapi.fu.iterate.SizedIterable;
 import xapi.util.api.Destroyable;
 import xapi.util.api.RequestLike;
 
@@ -14,10 +20,23 @@ import xapi.util.api.RequestLike;
  */
 public class VertxRequest implements Destroyable, RequestLike {
 
+    private final In2Out1<String, SizedIterable<String>, IntTo<String>> LIST_MAPPER = (s, i)->{
+        if (i instanceof IntTo) {
+            return (IntTo<String>)i;
+        } else {
+            final IntTo<String> copy = X_Collect.newList(String.class);
+            if (i != null) {
+                copy.addAll(i);
+            }
+            return copy;
+        }
+    };
+
     private HttpServerRequest httpRequest;
     private final Lazy<String> body;
-    private final Lazy<StringTo.Many<String>> params;
-    private final Lazy<StringTo.Many<String>> headers;
+    private final Lazy<MultimapAdapter> params;
+    private final Lazy<MultimapAdapter> headers;
+    private final Lazy<MapLike<String, String>> cookies;
     private boolean autoclose;
 
     public VertxRequest(HttpServerRequest req) {
@@ -31,7 +50,28 @@ public class VertxRequest implements Destroyable, RequestLike {
         });
         params = Lazy.deferred1(()->new MultimapAdapter(httpRequest.params()));
         headers = Lazy.deferred1(()->new MultimapAdapter(httpRequest.headers()));
+        cookies = Lazy.deferred1(readCookies());
         autoclose = true;
+    }
+
+    private Out1<MapLike<String, String>> readCookies() {
+        // TODO put this in an abstract shared class
+        return ()->{
+            final StringTo<String> c = X_Collect.newStringMap(String.class);
+            SizedIterable<String> cookies = getHeaders("Cookie");
+            if (cookies.isEmpty()) {
+                return c;
+            }
+            // need to parse cookies; TODO: pick a lite library to do this for us; not worth the effort to do right
+            for (String cookie : cookies) {
+                String[] bits = cookie.split(";");
+                // TODO unencode non-standard chars...
+                String[] nameValue = bits[0].split("=");
+                c.put(nameValue[0], nameValue.length == 1 ? "" : nameValue[1]);
+            }
+
+            return c;
+        };
     }
 
     public HttpServerRequest getHttpRequest() {
@@ -65,12 +105,21 @@ public class VertxRequest implements Destroyable, RequestLike {
         return body.out1();
     }
 
-    public Iterable<Out2<String, Iterable<String>>> getParams() {
-        return params.out1().iterableOut();
+    public MapLike<String, SizedIterable<String>> getParams() {
+        return params.out1().mapValue(LIST_MAPPER, In1Out1.downcast());
     }
 
-    public Iterable<Out2<String, Iterable<String>>> getHeaders() {
-        return headers.out1().iterableOut();
+    @Override
+    public String getHeader(String name, Out1<String> dflt) {
+        final IntTo<String> val = headers.out1().get(name);
+        if (val == null || val.isEmpty()) {
+            return dflt == null ? null : dflt.out1();
+        }
+        return val.get(0);
+    }
+
+    public MapLike<String, SizedIterable<String>> getHeaders() {
+        return headers.out1().mapValue(LIST_MAPPER, In1Out1.downcast());
     }
 
     public final HttpServerRequest getRequest() {
@@ -87,5 +136,10 @@ public class VertxRequest implements Destroyable, RequestLike {
 
     public void setAutoclose(boolean autoclose) {
         this.autoclose = autoclose;
+    }
+
+    @Override
+    public MapLike<String, String> getCookies() {
+        return cookies.out1();
     }
 }

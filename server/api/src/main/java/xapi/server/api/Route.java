@@ -5,7 +5,6 @@ import xapi.fu.Log;
 import xapi.fu.Log.LogLevel;
 import xapi.model.api.Model;
 import xapi.scope.api.RequestScope;
-import xapi.source.write.StringerMatcher;
 import xapi.source.write.Template;
 import xapi.util.api.RequestLike;
 
@@ -20,10 +19,10 @@ public interface Route extends Model {
     };
 
     enum RouteType {
-        Text, Gwt, Callback, File, Template
+        Text, Gwt, Callback, File, Template, Service
     }
 
-    default <Req extends RequestLike> boolean serve(RequestScope<Req> request, In1<Req> callback) {
+    default <Req extends RequestLike> boolean serve(String path, RequestScope<Req> request, In1<Req> callback) {
         RouteType type = getRouteType();
         if (type == null) {
             getOrCreateLog().log(getClass(), LogLevel.WARN,
@@ -51,7 +50,10 @@ public interface Route extends Model {
                 server.writeFile(request, payload, callback);
                 return true;
             case Template:
-                server.writeTemplate(request, getPayload(), callback);
+                server.writeTemplate(request, payload, callback);
+                return true;
+            case Service:
+                server.writeService(path, request, payload, callback);
                 return true;
 
         }

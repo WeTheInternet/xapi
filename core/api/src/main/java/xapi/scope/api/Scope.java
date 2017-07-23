@@ -2,6 +2,8 @@ package xapi.scope.api;
 
 import xapi.fu.In1Out1;
 import xapi.fu.MapLike;
+import xapi.fu.Out2;
+import xapi.fu.iterate.SizedIterable;
 
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -14,6 +16,26 @@ public interface Scope {
 
   default <T, C extends T> T getLocal(Class<C> cls) {
     return this.<T, C>localData().get(cls);
+  }
+
+  @SuppressWarnings({"unchecked", "UnnecessaryLocalVariable"})
+  default SizedIterable<Class<?>> getLocalKeys() {
+    final SizedIterable keys = localData().keys();
+    return keys;
+  }
+
+  @SuppressWarnings("unchecked")
+  default void loadMap(MapLike<Class<?>, Object> into) {
+    Scope start = this;
+    while (start != null) {
+      MapLike<?, ?> data = start.localData();
+      data.forEachItem().forAll(i->{
+        if (!into.has((Class<?>)i.out1())) {
+          into.putPair((Out2<Class<?>, Object>) i);
+        }
+      });
+      start = getParent();
+    }
   }
 
   default boolean hasLocal(Class cls) {

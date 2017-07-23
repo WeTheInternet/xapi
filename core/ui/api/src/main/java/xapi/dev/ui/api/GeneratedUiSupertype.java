@@ -68,6 +68,6 @@ public class GeneratedUiSupertype {
     }
 
     public void addTypeParameter(int i, GeneratedTypeParameter apiEleParam) {
-        params = params.insert(i, apiEleParam);
+        params = params.mergeInsert(i, apiEleParam);
     }
 }

@@ -81,7 +81,7 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
 
         X_Log.trace(TAG, "Output dir ", genDir.getAbsolutePath());
         // find all .xapi files in our search package
-        final FileBasedSourceHelper<T> sources = new FileBasedSourceHelper<>(genDir::getAbsolutePath);
+        final FileBasedSourceHelper<T> sources = new FileBasedSourceHelper<>(genDir::getAbsolutePath, genDir::getAbsolutePath);
         ClasspathScanner scanner = new ClasspathScannerDefault();
         scanner.matchResource("(.*)[.]xapi");
         configure(scanner);

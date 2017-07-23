@@ -7,6 +7,7 @@ import xapi.dev.source.MethodBuffer;
 import xapi.dev.ui.api.*;
 import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.dev.ui.api.UiVisitScope.ScopeType;
+import xapi.fu.In1;
 import xapi.fu.In2;
 import xapi.server.api.WebApp;
 import xapi.server.api.XapiServer;
@@ -39,11 +40,24 @@ public class WebAppComponentGenerator extends UiComponentGenerator {
         final String server = cb.addImport(XapiServer.class);
         final String webApp = cb.addImport(WebApp.class);
         cb.addGenericInterface(XapiServerPlugin.class.getCanonicalName(), "Request", "Response");
+        String in1 = cb.addImport(In1.class);
         installMethod = cb
             .addGenerics("Request extends " + cb.addImport(RequestLike.class), "Response")
-            .createMethod("void installToServer(" + server + "<Request, Response> server){");
-        installMethod.println(webApp + " app = server.getWebApp();");
+            .createMethod(
+                in1 + "<" + server + "<Request, Response>>" +
+                " "+
+                "installToServer(" + webApp + " app){");
         return scope;
+    }
+
+    @Override
+    public void endVisit(
+        UiGeneratorTools tools, ContainerMetadata me, UiContainerExpr n, UiVisitScope scope
+    ) {
+        super.endVisit(tools, me, n, scope);
+        // TODO actually queue up whether we need to install endpoints, by generating a lambda return here
+        final String in1 = cb.addImport(In1.class);
+        installMethod.returnValue(in1 + ".ignored()");
     }
 
     private UiFeatureGenerator overrides(String s) {

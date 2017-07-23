@@ -19,8 +19,6 @@ public class WebAppGeneratorContext extends ApiGeneratorContext<WebAppGeneratorC
 
     }
 
-    private String generatorDirectory;
-
     public String readSource(String pkgName, String clsName) {
         // Search for source file on classpath.
         String resource = X_Source.qualifiedName(pkgName, clsName).replace('.', '/') + ".java";
@@ -57,11 +55,4 @@ public class WebAppGeneratorContext extends ApiGeneratorContext<WebAppGeneratorC
         return Thread.currentThread().getContextClassLoader();
     }
 
-    public void setGeneratorDirectory(String generatorDirectory) {
-        this.generatorDirectory = generatorDirectory;
-    }
-
-    public String getGeneratorDirectory() {
-        return generatorDirectory;
-    }
 }
