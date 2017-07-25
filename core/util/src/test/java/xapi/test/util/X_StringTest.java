@@ -17,4 +17,17 @@ public class X_StringTest {
     assertEquals("test\newlines", X_String.normalizeNewlines("test\rewlines"));
     assertEquals("test\newlines", X_String.normalizeNewlines("test\r\newlines"));
   }
+
+  @Test
+  public void testEncodeUriComponent() {
+    checkEncoding("\"A\" B ± \"");
+    checkEncoding("http://a+b c.html");
+    checkEncoding("http://テスト++'تجربة!!測試.испытание");
+  }
+
+  private void checkEncoding(String input) {
+    String encoded = X_String.encodeURIComponent(input);
+    String decoded = X_String.decodeURIComponent(encoded);
+    assertEquals(input, decoded);
+  }
 }

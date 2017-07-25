@@ -2,6 +2,7 @@ package xapi.util;
 
 import xapi.collect.api.CharPool;
 import xapi.fu.In1Out1;
+import xapi.fu.X_Fu;
 import xapi.inject.X_Inject;
 
 import static xapi.fu.MappedIterable.mapped;
@@ -9,9 +10,136 @@ import static xapi.fu.iterate.ArrayIterable.iterate;
 import static xapi.util.service.StringService.binarySuffix;
 import static xapi.util.service.StringService.metricSuffix;
 
+import java.io.UnsupportedEncodingException;
+import java.util.BitSet;
 import java.util.Iterator;
 
 public class X_String {
+
+  /**
+   * Used for the encodeURIComponent function
+   */
+  private static final BitSet notEncoded;
+  private static final String HEX_DIGITS = "0123456789ABCDEF";
+
+  static {
+    notEncoded = new BitSet(256);
+
+    // a-z
+    for (int i = 'a'; i <= 'z'; ++i) {
+      notEncoded.set(i);
+    }
+    // A-Z
+    for (int i = 'A'; i <= 'Z'; ++i) {
+      notEncoded.set(i);
+    }
+    // 0-9
+    for (int i = '0'; i <= '9'; ++i) {
+      notEncoded.set(i);
+    }
+
+    // '()*
+    for (int i = 39; i <= 42; ++i) {
+      notEncoded.set(i);
+    }
+    notEncoded.set(33); // !
+    notEncoded.set(45); // -
+    notEncoded.set(46); // .
+    notEncoded.set(95); // _
+    notEncoded.set(126); // ~
+  }
+
+  /**
+   * Escapes all characters except the following: alphabetic, decimal digits, - _ . ! ~ * ' ( )
+   *
+   * @param input A component of a URI
+   * @return the escaped URI component
+   */
+  public static String encodeURIComponent(String input) {
+    if (input == null) {
+      return input;
+    }
+
+    StringBuilder filtered = new StringBuilder(input.length()*2);
+    char c;
+    for (int i = 0; i < input.length(); ++i) {
+      c = input.charAt(i);
+      if (notEncoded.get(c)) {
+        filtered.append(c);
+      } else {
+        final byte[] b = charToBytesUTF(c);
+
+        for (int j = 0; j < b.length; ++j) {
+          filtered.append('%');
+          filtered.append(HEX_DIGITS.charAt(b[j] >> 4 & 0xF));
+          filtered.append(HEX_DIGITS.charAt(b[j] & 0xF));
+        }
+      }
+    }
+    return filtered.toString();
+  }
+
+  public static String decodeURIComponent(String input) {
+    if (input == null) {
+      return input;
+    }
+
+    StringBuilder output = new StringBuilder(input.length());
+    char c;
+
+
+    for (int i = 0, more = -1; i < input.length(); i++) {
+      c = input.charAt(i);
+      switch (c) {
+        case '%':
+          // restore from hex digit
+          for (int bytePattern, sumb = 0; i < input.length(); i++) {
+            assert input.charAt(i) == '%' : "Bad encoding: '" + input.charAt(i) +"' at index " + i + " is not %\nsource: " + input;
+            bytePattern = Integer.parseInt(input.substring(++i, ++i+1),16);
+            if ((bytePattern & 0xc0) == 0x80) { // 10xxxxxx
+              sumb = (sumb << 6) | (bytePattern & 0x3f);
+              if (--more == 0) {
+                output.append((char) sumb);
+                break;
+              }
+            } else if ((bytePattern & 0x80) == 0x00) { // 0xxxxxxx
+              output.append((char) bytePattern);
+              break;
+            } else if ((bytePattern & 0xe0) == 0xc0) { // 110xxxxx
+              sumb = bytePattern & 0x1f;
+              more = 1;
+            } else if ((bytePattern & 0xf0) == 0xe0) { // 1110xxxx
+              sumb = bytePattern & 0x0f;
+              more = 2;
+            } else if ((bytePattern & 0xf8) == 0xf0) { // 11110xxx
+              sumb = bytePattern & 0x07;
+              more = 3;
+            } else if ((bytePattern & 0xfc) == 0xf8) { // 111110xx
+              sumb = bytePattern & 0x03;
+              more = 4;
+            } else { // 1111110x
+              sumb = bytePattern & 0x01;
+              more = 5;
+            }
+          }
+          break;
+        case '+':
+          output.append(' ');
+          continue;
+        default:
+          output.append(c);
+      }
+    }
+    return output.toString();
+  }
+
+  private static byte[] charToBytesUTF(char c) {
+    try {
+      return new String(new char[]{c}).getBytes("UTF-8");
+    } catch (UnsupportedEncodingException e) {
+      return new byte[]{(byte) c};
+    }
+  }
 
     public static boolean equalIgnoreWhitespace(String a, String b) {
       if (a == b) {
@@ -262,6 +390,21 @@ public class X_String {
     return isEmptyTrimmed(groupId1) ? groupId2 : groupId1;
   }
 
+  public static String firstNotEmpty(String first, String second, String ... rest) {
+    if (!isEmptyTrimmed(first)) {
+      return first;
+    }
+    if (!isEmptyTrimmed(second)) {
+      return second;
+    }
+    for (String next : rest) {
+      if (!isEmptyTrimmed(next)) {
+        return next;
+      }
+    }
+    return "";
+  }
+
   public static String[] splitNewLine(String str) {
     return str.split("\n");
   }
@@ -372,5 +515,15 @@ public class X_String {
       return s.substring(1, s.length()-1);
     }
     return s;
+  }
+
+  public static String reverse(String code) {
+    char[] chars = code.toCharArray();
+    for (int start=0,end=chars.length-1;start<=end;start++,end--) {
+      char temp = chars[start];
+      chars[start] = chars[end];
+      chars[end] = temp;
+    }
+    return new String(chars);
   }
 }
