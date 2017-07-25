@@ -196,6 +196,9 @@ public abstract class AbstractModelService implements ModelService
       final int keyType = primitives.deserializeInt(chars);
       final String id = primitives.deserializeString(chars);
       return newKey(namespace, kind, id).setKeyType(keyType);
+    } else if (parentState == -3){
+      // a null key...
+      return null;
     } else {
       final String parentString = chars.consume(parentState).toString();
       assert parentString != null;
@@ -214,6 +217,9 @@ public abstract class AbstractModelService implements ModelService
   public String keyToString(final ModelKey key) {
     final StringBuilder b = new StringBuilder();
     final PrimitiveSerializer primitives = primitiveSerializer();
+    if (key == null) {
+      return primitives.serializeInt(-3);
+    }
     if (key.getParent() == null) {
       b.append(primitives.serializeInt(-1));
       b.append(primitives.serializeString(key.getNamespace()));

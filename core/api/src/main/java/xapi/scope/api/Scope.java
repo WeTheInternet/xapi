@@ -3,6 +3,7 @@ package xapi.scope.api;
 import xapi.fu.In1Out1;
 import xapi.fu.MapLike;
 import xapi.fu.Out2;
+import xapi.fu.X_Fu;
 import xapi.fu.iterate.SizedIterable;
 
 import java.util.Optional;
@@ -51,7 +52,7 @@ public interface Scope {
   }
 
   default boolean isAttached() {
-    return localData().has(attachedKey());
+    return localData().has(attachedKey()) || forScope() == GlobalScope.class;
   }
 
   default void release() {
@@ -119,6 +120,18 @@ public interface Scope {
     } else {
       final T value = factory.io(key);
       setLocal(key, value);
+      return value;
+    }
+  }
+  default <T, C extends T, S extends Scope> T getOrCreateIn(Class<S> type, Class<C> key, In1Out1<Class<C>, T> factory) {
+    if (has(key)) {
+      return get(key);
+    } else {
+      final T value = factory.io(key);
+      Optional<S> s = findParentOrSelf(type, false);
+      s.map(X_Fu::<S, Scope>downcast)
+          .orElse(this)
+          .setLocal(key, value);
       return value;
     }
   }

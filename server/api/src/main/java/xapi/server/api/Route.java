@@ -3,6 +3,7 @@ package xapi.server.api;
 import xapi.fu.In1;
 import xapi.fu.Log;
 import xapi.fu.Log.LogLevel;
+import xapi.fu.Mutable;
 import xapi.model.api.Model;
 import xapi.scope.api.RequestScope;
 import xapi.source.write.Template;
@@ -36,25 +37,27 @@ public interface Route extends Model {
             return false;
         }
         XapiServer server = request.get(XapiServer.class);
+        Mutable<Boolean> success = new Mutable<>(null);
+        callback = callback.useAfterMe(r->success.set(r != null));
         switch (type) {
             case Text:
                 server.writeText(request, payload, callback);
-                return true;
+                return server.blockFor(request, success, 10_000);
             case Gwt:
                 server.writeGwtJs(request, payload, callback);
-                return true;
+                return server.blockFor(request, success, 60_000);
             case Callback:
                 server.writeCallback(request, payload, callback);
-                return true;
+                return server.blockFor(request, success, 10_000);
             case File:
                 server.writeFile(request, payload, callback);
-                return true;
+                return server.blockFor(request, success, 10_000);
             case Template:
                 server.writeTemplate(request, payload, callback);
-                return true;
+                return server.blockFor(request, success, 10_000);
             case Service:
                 server.writeService(path, request, payload, callback);
-                return true;
+                return server.blockFor(request, success, 10_000);
 
         }
         return false;

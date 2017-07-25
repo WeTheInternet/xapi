@@ -8,6 +8,9 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.shareddata.Counter;
+import io.vertx.core.spi.cluster.ClusterManager;
 import xapi.annotation.model.IsModel;
 import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
@@ -17,14 +20,9 @@ import xapi.collect.api.StringTo;
 import xapi.collect.impl.InitMapDefault;
 import xapi.dev.gwtc.api.GwtcService;
 import xapi.except.NotConfiguredCorrectly;
-import xapi.fu.Do;
+import xapi.fu.*;
 import xapi.fu.Do.DoUnsafe;
-import xapi.fu.In1;
 import xapi.fu.In1.In1Unsafe;
-import xapi.fu.In1Out1;
-import xapi.fu.In2;
-import xapi.fu.Mutable;
-import xapi.fu.X_Fu;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
 import xapi.gwtc.api.CompiledDirectory;
@@ -32,19 +30,29 @@ import xapi.gwtc.api.GwtManifest;
 import xapi.gwtc.api.ServerRecompiler;
 import xapi.inject.X_Inject;
 import xapi.io.X_IO;
+import xapi.io.impl.IOCallbackDefault;
 import xapi.log.X_Log;
+import xapi.model.X_Model;
 import xapi.model.api.Model;
+import xapi.model.api.ModelKey;
+import xapi.model.api.PrimitiveSerializer;
 import xapi.process.X_Process;
 import xapi.scope.X_Scope;
 import xapi.scope.api.RequestScope;
+import xapi.scope.api.Scope;
+import xapi.scope.api.SessionScope;
 import xapi.server.X_Server;
 import xapi.server.api.ModelGwtc;
 import xapi.server.api.Route;
 import xapi.server.api.WebApp;
 import xapi.server.api.XapiEndpoint;
 import xapi.server.api.XapiServer;
+import xapi.server.model.ModelSession;
 import xapi.source.template.MappedTemplate;
+import xapi.time.X_Time;
 import xapi.util.X_String;
+import xapi.util.X_Util;
+import xapi.util.api.SuccessHandler;
 
 import java.io.File;
 import java.io.IOException;
@@ -53,8 +61,11 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.SecureRandom;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.ServiceLoader;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.LockSupport;
 
 import com.google.gwt.dev.codeserver.CompileStrategy;
@@ -64,27 +75,125 @@ import com.google.gwt.dev.codeserver.CompileStrategy;
  */
 public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerRequest> {
 
+    private static final String SESSION_KEY = "wtis";
+    private static final String INSTANCE_ID_COUNTER = "iids";
+    private static final String EXPIRED = "Thu, 01 Jan 1970 00:00:00 GMT";
     private final WebApp webApp;
+    private final PrimitiveSerializer primitives;
     private Vertx vertx;
     private In1<DoUnsafe> exe;
     private final InitMap<String, XapiEndpoint<?>> endpoints;
+    /**
+     * This instance id; by default, generated sequentially from static variable.
+     * TODO: use a vert.x clustered counter
+     */
+    private final Lazy<String> iid;
+    private final Lazy<SecureRandom> random;
+    private final ChainBuilder<In2<Vertx, HttpServer>> onStarted;
+    private ClusterManager manager;
+    private final Lazy<Out1<String>> iidFactory;
 
     public XapiVertxServer(WebApp webApp) {
         this.webApp = webApp;
         endpoints = new InitMapDefault<>(
             X_Fu::identity, this::findEndpoint
         );
+        onStarted = Chain.startChain();
+        onStarted.add((v, s)->
+            instanceIdFactory()
+        );
+        primitives = X_Inject.instance(PrimitiveSerializer.class);
+        iidFactory = Lazy.deferred1(initializeIidFactory(webApp));
+        iid = Lazy.deferBoth(webApp::getOrMakeInstanceId, iidFactory);
+        random = Lazy.deferBoth(SecureRandom::new, ()->iid.out1().getBytes());
     }
 
-    public void registerEndpoint(String name, XapiEndpoint<?> endpoint) {
+    protected Out1<Out1<String>> initializeIidFactory(WebApp webApp) {
+        return ()->{
+            if (manager == null) {
+                return null;
+            }
+
+            AtomicLong result = new AtomicLong();
+            final Do useDefaultId = ()->{
+                final int newId = System.identityHashCode(new Object());
+                while (!result.compareAndSet(0, newId)) {
+                    LockSupport.parkNanos(10_000);
+                }
+                synchronized (result) {
+                    result.notify();
+                }
+            };
+            Do generateId = ()->{
+                manager.getCounter(INSTANCE_ID_COUNTER, fut->{
+                    if (fut.failed()) {
+                        X_Log.error(XapiVertxServer.class, "Unable to get instance id counter", fut.cause());
+                        // Use fallback id
+                        useDefaultId.done();
+                    } else {
+                        final Counter counter = fut.result();
+                        counter.incrementAndGet(newId->{
+                            if (newId.failed()) {
+                                X_Log.error(XapiVertxServer.class, "Unable to increment instance id counter", fut.cause());
+                                useDefaultId.done();
+                            } else {
+                                final Long id = newId.result();
+                                while (!result.compareAndSet(0, id)) {
+                                    LockSupport.parkNanos(10_000);
+                                }
+                                synchronized (result) {
+                                    result.notify(); // only notify one at a time, since each request would have asked once
+                                }
+                            }
+                        });
+                    }
+                });
+            };
+            // we'll prime the pump...
+            X_Time.runLater(generateId.toRunnable());
+            return ()-> {
+                long winner = result.get();
+                if (winner != 0) {
+                    if (!result.compareAndSet(winner, 0)) {
+                        // we did not win race
+                        winner = 0;
+                    }
+                }
+                if (winner == 0) {
+                    generateId.done();
+                    while ((winner = result.get()) == 0) {
+                        synchronized (result) {
+                            try {
+                                result.wait(100);
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                                throw X_Util.rethrow(e);
+                            }
+                        }
+                    }
+                }
+                return primitives.serializeLong(winner);
+            };
+        };
+    }
+
+    @Override
+    public void registerEndpoint(String name, XapiEndpoint<VertxRequest> endpoint) {
         endpoints.put(name, endpoint);
     }
 
-    public void registerEndpointFactory(String name, In1Out1<String, XapiEndpoint<?>> endpoint) {
-        endpoints.put(name, (path, requestLike, payload, callback) -> {
-            final XapiEndpoint realEndpoint = endpoint.io(name);
-            realEndpoint.serviceRequest(path, requestLike, payload, callback);
-        });
+    @Override
+    public void registerEndpointFactory(String name, boolean singleton, In1Out1<String, XapiEndpoint<VertxRequest>> endpoint) {
+        synchronized (endpoints) {
+            endpoints.put(name, (path, requestLike, payload, callback) -> {
+                final XapiEndpoint realEndpoint = endpoint.io(name);
+                if (singleton) {
+                    endpoints.put(name, realEndpoint);
+                }
+                realEndpoint.initialize(requestLike, XapiVertxServer.this);
+                realEndpoint.serviceRequest(path, requestLike, payload, callback);
+            });
+        }
     }
     protected XapiEndpoint<?> findEndpoint(String name) {
         // this is called during the init process of the underlying map,
@@ -151,22 +260,78 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
     public void inScope(
         HttpServerRequest req, In1Unsafe<RequestScope<VertxRequest>> callback
     ) {
-        X_Scope.service().runInNewScope(RequestScope.class, (scope, done)->{
+        X_Scope.service().runInNewScope(SessionScope.class, (session, done)->{
+
+            VertxRequest vertxReq = new VertxRequest(req);
+            final RequestScope scope = session.getRequestScope(Optional.of(vertxReq));
             final XapiServer was = scope.setLocal(XapiServer.class, this);
-            try {
-                final RequestScopeVertx s = (RequestScopeVertx) scope;
-                VertxRequest forScope = VertxRequest.getOrMake(s.getRequest(), req);
-                s.initialize(forScope);
-                callback.in(s);
-                done.done();
-            } finally {
-                if (was == null) {
-                    scope.removeLocal(XapiServer.class);
-                } else {
-                    scope.setLocal(XapiServer.class, was);
+            final RequestScopeVertx s = (RequestScopeVertx) scope;
+            final MapLike<String, String> cookies = s.getRequest().getCookies();
+            ModelSession model;
+            final SuccessHandler<ModelSession> saved = new IOCallbackDefault<ModelSession>(){
+                @Override
+                public void onSuccess(ModelSession t) {
+                    finish();
                 }
+
+                @Override
+                public void onError(Throwable e) {
+                    X_Log.error(XapiVertxServer.class, "Error loading session", e);
+                    req.response().putHeader("Set-Cookie", SESSION_KEY+"=;path=/;expires=" + EXPIRED + ";");
+                    finish();
+                }
+
+                private void finish() {
+                    try {
+                        VertxRequest forScope = VertxRequest.getOrMake(s.getRequest(), req);
+                        s.initialize(forScope);
+                        callback.in(s);
+                        done.done();
+                    } finally {
+                        if (was == null) {
+                            scope.removeLocal(XapiServer.class);
+                        } else {
+                            scope.setLocal(XapiServer.class, was);
+                        }
+                    }
+                }
+            };
+            // TODO: if a request does not require a session, don't bother loading one.
+            // for now, we're just going to pay every time for speedier development,
+            // and will optimize once the platform matures
+            if (cookies.has(SESSION_KEY)) {
+                // There is a session key; let's ensure we're synced up
+                final ModelKey key = ModelSession.SESSION_KEY_BUILDER.out1()
+                    .withId(cookies.get(SESSION_KEY)).buildKey();
+                X_Model.mutate(ModelSession.class, key, modelSession->{
+                    modelSession.setTouched(System.currentTimeMillis());
+                    return modelSession;
+                }, saved);
+            } else {
+                // no session key... let's properly initialize our session, and send along a cookie to get session back
+                String sessionKey = generateSessionKey();
+                s.getRequest().getResponse()
+                    .putHeader("Set-Cookie", SESSION_KEY+"="+X_String.encodeURIComponent(sessionKey)+";path=/;");
+                model = ModelSession.SESSION_MODEL_BUILDER.out1().buildModel();
+                model.getKey().setId(sessionKey);
+                model.setTouched(System.currentTimeMillis());
+                X_Model.persist(model, saved);
             }
         });
+    }
+
+    protected String generateSessionKey() {
+        final PrimitiveSerializer serializer = X_Model.getService().primitiveSerializer();
+        String timestamp = serializer.serializeDouble(X_Time.nowPlusOne().millis());
+        String iid = webApp.getOrMakeInstanceId(instanceIdFactory());
+        return
+            timestamp +
+            primitives.serializeLong(random.out1().nextLong()) +
+            primitives.serializeString(iid);
+    }
+
+    private Out1<String> instanceIdFactory() {
+        return iidFactory.out1();
     }
 
     @Override
@@ -185,6 +350,7 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
 
         Mutable<HttpServer> connection = new Mutable<>();
         final VertxOptions vertxOptions = new VertxOptions();
+
         if (webApp.isDevMode()) {
             vertxOptions
                 .setBlockedThreadCheckInterval(2000)
@@ -193,23 +359,48 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
                 .setMaxEventLoopExecuteTime(60_000_000_000L) // one minute for event loop when debugging
                 .setMaxWorkerExecuteTime(200_000_000_000L);
         }
-        vertx = Vertx.vertx(vertxOptions);
-
         exe = X_Process::runDeferred;
-        final HttpServer server = vertx.createHttpServer(opts)
-            .requestHandler(this::handleRequest)
-            .listen(result->{
-                if (result.failed()) {
-                    throw new IllegalStateException("Server failed to start ", result.cause());
-                }
-                X_Log.info(getClass(), "Server up and running at 0.0.0.0:" + webApp.getPort());
-                connection.in(result.result());
-            });
+        Vertx.clusteredVertx(vertxOptions, res->{
+            if (res.succeeded()) {
+                vertx = res.result();
+                final Scope scope = X_Scope.service().currentScope();
+                scope.setLocal(Vertx.class, vertx);
+                manager = ((VertxInternal) vertx).getClusterManager();
+                scope.setLocal(ClusterManager.class, manager);
+
+                vertx.createHttpServer(opts)
+                    .requestHandler(this::handleRequest)
+                    .listen(result->{
+                        if (result.failed()) {
+                            throw new IllegalStateException("Server failed to start ", result.cause());
+                        }
+                        onStarted(vertx, result.result());
+                        X_Log.info(getClass(), "Server up and running at 0.0.0.0:" + webApp.getPort());
+                        endpoints.forEach((key, endpoint)->
+                            endpoint.initialize(scope, XapiVertxServer.this)
+                        );
+                        connection.in(result.result());
+                    });
+
+            } else {
+                X_Log.error(XapiVertxServer.class, "Vert.x failed to start", res.cause());
+            }
+        });
+
 
         while (connection.isNull()) {
             LockSupport.parkNanos(100_000);
         }
 
+    }
+
+    public void onStarted(In2<Vertx, HttpServer> callback) {
+        assert !onStarted.anyMatch(callback::equals) : "Duplicate onStarted callback added: " + callback;
+        onStarted.add(callback);
+    }
+
+    protected void onStarted(Vertx vertx, HttpServer result) {
+        onStarted.forAll(In2::in, vertx, result);
     }
 
     protected void handleRequest(HttpServerRequest req) {
@@ -239,9 +430,9 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
         }
     }
 
-    protected String dump(HttpServerRequest req) {return dump(req, "\n");}
+    public static String dump(HttpServerRequest req) {return dump(req, "\n");}
 
-    protected String dump(
+    public static String dump(
         HttpServerRequest req,
         String suffix
     ) {

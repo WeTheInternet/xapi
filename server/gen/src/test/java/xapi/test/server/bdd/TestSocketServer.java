@@ -60,6 +60,7 @@ class TestSocketServer extends AbstractModel implements WebApp, Rethrowable, Xap
     private String source;
     private boolean devMode;
     private String contentRoot;
+    private String instanceId = "test";
 
     public TestSocketServer(WebApp classpath) {
         try {
@@ -176,13 +177,13 @@ class TestSocketServer extends AbstractModel implements WebApp, Rethrowable, Xap
     }
 
     @Override
-    public void registerEndpoint(String name, XapiEndpoint<?> endpoint) {
+    public void registerEndpoint(String name, XapiEndpoint<SocketRequest> endpoint) {
         throw new UnsupportedOperationException("registerEndpoint not supported");
     }
 
     @Override
     public void registerEndpointFactory(
-        String name, In1Out1<String, XapiEndpoint<?>> endpoint
+        String name, boolean singleton, In1Out1<String, XapiEndpoint<SocketRequest>> endpoint
     ) {
         throw new UnsupportedOperationException("registerEndpoint not supported");
     }
@@ -225,6 +226,16 @@ class TestSocketServer extends AbstractModel implements WebApp, Rethrowable, Xap
     @Override
     public String getContentRoot() {
         return contentRoot;
+    }
+
+    @Override
+    public String getInstanceId() {
+        return instanceId;
+    }
+
+    @Override
+    public void setInstanceId(String instanceId) {
+        this.instanceId = instanceId;
     }
 
     private void serviceRequests() throws IOException {

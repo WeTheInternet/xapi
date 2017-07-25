@@ -12,6 +12,7 @@ import xapi.fu.MapLike;
 import xapi.fu.Out1;
 import xapi.fu.Pointer;
 import xapi.fu.iterate.SizedIterable;
+import xapi.util.X_String;
 import xapi.util.api.Destroyable;
 import xapi.util.api.RequestLike;
 
@@ -62,12 +63,12 @@ public class VertxRequest implements Destroyable, RequestLike {
             if (cookies.isEmpty()) {
                 return c;
             }
-            // need to parse cookies; TODO: pick a lite library to do this for us; not worth the effort to do right
             for (String cookie : cookies) {
                 String[] bits = cookie.split(";");
-                // TODO unencode non-standard chars...
-                String[] nameValue = bits[0].split("=");
-                c.put(nameValue[0], nameValue.length == 1 ? "" : nameValue[1]);
+                for (String bit : bits) {
+                    String[] nameValue = bit.trim().split("=");
+                    c.put(nameValue[0], nameValue.length == 1 ? "" : X_String.decodeURIComponent(nameValue[1]));
+                }
             }
 
             return c;

@@ -53,6 +53,11 @@ public class ModelUserTest extends AbstractModel implements ModelUser {
     return getProperty("lastName");
   }
 
+  @Override
+  public String getDisplayName() {
+    return getProperty("displayName");
+  }
+
   /**
    * @see xapi.model.user.ModelUser#setEmail(java.lang.String)
    */
@@ -65,6 +70,12 @@ public class ModelUserTest extends AbstractModel implements ModelUser {
   @Override
   public ModelUser setImage(String image) {
     setProperty("image", image);
+    return this;
+  }
+
+  @Override
+  public ModelUser setDisplayName(String displayName) {
+    setProperty("displayName", displayName);
     return this;
   }
 

@@ -299,6 +299,7 @@ public class XapiSocketServer implements Rethrowable {
             final In1Out1Unsafe<Model, Out1Unsafe<Model>> client = server.createClient();
             final ModelUser user = X_Model.create(ModelUser.class)
                 .setId("myId")
+                .setDisplayName("My name")
                 .setFirstName("My name");
             Model reply = client.io(user).out1();
 

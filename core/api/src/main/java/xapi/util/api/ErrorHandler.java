@@ -34,6 +34,8 @@
  */
 package xapi.util.api;
 
+import xapi.util.X_Util;
+
 /**
  * An error handling interface compatible with gwt AsyncCallback.
  *
@@ -52,4 +54,14 @@ public interface ErrorHandler <Type extends Throwable> {
    * @param e - A Throwable describing the failure.
    */
   void onError(Type e);
+
+  static <Err extends Throwable> ErrorHandler<Err> delegateTo(SuccessHandler<?> callback) {
+    if (callback instanceof ErrorHandler) {
+      return (ErrorHandler<Err>) callback;
+    } else {
+      return err->{
+        throw X_Util.rethrow(err);
+      };
+    }
+  }
 }

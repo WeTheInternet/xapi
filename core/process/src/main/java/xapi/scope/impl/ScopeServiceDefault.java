@@ -1,11 +1,13 @@
 package xapi.scope.impl;
 
 import xapi.annotation.inject.InstanceDefault;
+import xapi.annotation.inject.SingletonDefault;
 import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
 import xapi.fu.Do;
 import xapi.fu.In1Out1;
 import xapi.fu.In2.In2Unsafe;
+import xapi.fu.Lazy;
 import xapi.inject.X_Inject;
 import xapi.scope.api.Scope;
 import xapi.scope.api.GlobalScope;
@@ -16,7 +18,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 9/5/16.
  */
-@InstanceDefault(implFor = ScopeService.class)
+@SingletonDefault(implFor = ScopeService.class)
 public class ScopeServiceDefault implements ScopeService {
 
     protected class ScopeMap {
@@ -32,6 +34,7 @@ public class ScopeServiceDefault implements ScopeService {
     }
 
     private ThreadLocal<ScopeMap> currentScope;
+    private Lazy<GlobalScope> globalScope = Lazy.deferred1(this::newGlobalScope);
 
     public ScopeServiceDefault() {
         currentScope = new ThreadLocal<ScopeMap>() {
@@ -47,6 +50,9 @@ public class ScopeServiceDefault implements ScopeService {
     }
 
     protected <S extends Scope, Generic extends S> S createScope(Class<Generic> cls) {
+        if (GlobalScope.class.equals(cls)) {
+            return (S) globalScope.out1();
+        }
         final ScopeMap map = currentScope.get();
         Scope scope = map.scopes.get(cls);
         if (scope == null) {
@@ -55,6 +61,9 @@ public class ScopeServiceDefault implements ScopeService {
                 scope = defaultCreate(cls);
             } else {
                 scope = factory.io(cls);
+            }
+            if (scope.getParent() == null) {
+                scope.setParent(globalScope.out1());
             }
             map.scopes.put(cls, scope);
         }
@@ -72,7 +81,9 @@ public class ScopeServiceDefault implements ScopeService {
     }
 
     protected GlobalScope<?, ?> newGlobalScope() {
-        return X_Inject.instance(GlobalScope.class);
+        final GlobalScope scope = X_Inject.instance(GlobalScope.class);
+        scope.isAttached();
+        return scope;
     }
 
     @Override
@@ -102,7 +113,7 @@ public class ScopeServiceDefault implements ScopeService {
 
     @Override
     public Scope currentScope() {
-        return currentScope.get().scope.updateAndGet(s->s==null?newGlobalScope():s);
+        return currentScope.get().scope.updateAndGet(s->s==null?globalScope.out1():s);
     }
 
 }

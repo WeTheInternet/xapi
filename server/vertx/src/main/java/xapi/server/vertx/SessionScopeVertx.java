@@ -4,6 +4,7 @@ import xapi.annotation.inject.InstanceOverride;
 import xapi.scope.api.RequestScope;
 import xapi.scope.api.SessionScope;
 import xapi.scope.impl.SessionScopeDefault;
+import xapi.server.model.ModelSession;
 
 import java.util.Optional;
 
@@ -14,11 +15,10 @@ import java.util.Optional;
 public class SessionScopeVertx extends
     SessionScopeDefault<CollideUser, VertxRequest, SessionScopeVertx>{
 
-    private final ScopeServiceVertx service;
     private CollideUser user;
 
-    public SessionScopeVertx(ScopeServiceVertx service) {
-        this.service = service;
+    public SessionScopeVertx() {
+        System.out.println();
     }
 
     @Override
@@ -32,10 +32,13 @@ public class SessionScopeVertx extends
             RequestScopeVertx current = (RequestScopeVertx)get(RequestScope.class);
             if (current == null) {
                 current = new RequestScopeVertx(request.get());
+                current.setParent(this);
                 setLocal(RequestScope.class, current);
             } else {
                 if (request.isPresent()) {
-                    current.initialize(request.get());
+                    final VertxRequest req = request.get();
+                    assert current.findParent(SessionScope.class, false).get() == SessionScopeVertx.this;
+                    current.initialize(req);
                 }
             }
             return current;

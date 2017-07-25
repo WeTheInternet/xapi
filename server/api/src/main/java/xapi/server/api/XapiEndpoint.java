@@ -2,6 +2,7 @@ package xapi.server.api;
 
 import xapi.fu.In1;
 import xapi.scope.api.RequestScope;
+import xapi.scope.api.Scope;
 import xapi.util.api.RequestLike;
 
 /**
@@ -12,5 +13,9 @@ import xapi.util.api.RequestLike;
 public interface XapiEndpoint<Req extends RequestLike> {
 
     void serviceRequest(String path, RequestScope<Req> req, String payload, In1<Req> callback);
+
+    default void initialize(Scope scope, XapiServer<?, ?> server) {
+
+    }
 
 }

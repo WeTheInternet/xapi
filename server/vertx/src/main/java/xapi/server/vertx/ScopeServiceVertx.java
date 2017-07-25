@@ -2,6 +2,7 @@ package xapi.server.vertx;
 
 import io.vertx.core.http.HttpServerRequest;
 import xapi.annotation.inject.InstanceOverride;
+import xapi.model.user.ModelUser;
 import xapi.scope.api.RequestScope;
 import xapi.scope.api.SessionScope;
 import xapi.scope.impl.ScopeServiceDefault;
@@ -17,7 +18,7 @@ import java.util.Optional;
 public class ScopeServiceVertx extends ScopeServiceDefault {
 
     public RequestScope<VertxRequest> requestScope(HttpServerRequest req) {
-        final SessionScope<CollideUser, VertxRequest> session = sessionScope();
+        final SessionScope<ModelUser, VertxRequest> session = sessionScope();
         // This request will be ignored if the request scope is already initialized
         VertxRequest vertxReq = new VertxRequest(req);
         final RequestScopeVertx request = (RequestScopeVertx) session.getRequestScope(
@@ -29,9 +30,9 @@ public class ScopeServiceVertx extends ScopeServiceDefault {
         return request;
     }
 
-    public SessionScope<CollideUser, VertxRequest> sessionScope() {
+    public SessionScope<ModelUser, VertxRequest> sessionScope() {
         return currentScope().getOrCreate(SessionScope.class, c->
-            new SessionScopeVertx(this)
+            new SessionScopeVertx()
         );
     }
 }

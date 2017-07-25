@@ -4,7 +4,9 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
 import xapi.fu.Out1;
+import xapi.inject.X_Inject;
 import xapi.model.api.Model;
+import xapi.model.api.PrimitiveSerializer;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/4/16.
@@ -64,4 +66,47 @@ public interface WebApp extends Model {
     void setContentRoot(String root);
 
     String getContentRoot();
+
+    String getInstanceId();
+
+    /**
+     * @return Gets or returns a new instanceId based upon the rather primitive default of
+     * "serialize a static incremented long".
+     *
+     */
+    default String instanceId() {
+        return getOrMakeInstanceId(WebAppIdHolder::newId);
+    }
+
+    /**
+     * @param newId A factory for a new Id only used if getInstanceId() returns null
+     * @return The current or a new instanceId for this WebApp.
+     *
+     * Note that serializing WebApp w/out an instanceId would force rehydrated instances to initialize new ids
+     */
+    default String getOrMakeInstanceId(Out1<String> newId) {
+        String instanceId = getInstanceId();
+        if (instanceId == null) {
+            synchronized (this) {
+                // double-checked lock is about as good as default method going to get;
+                // TODO: have a utility method for locking that checks for a HasLock interface...
+                instanceId = getInstanceId();
+                if (instanceId == null) {
+                    instanceId = newId == null ? WebAppIdHolder.newId() : newId.out1();
+                    setInstanceId(instanceId);
+                }
+            }
+        }
+        return instanceId;
+    }
+
+    void setInstanceId(String instanceId);
+}
+class WebAppIdHolder {
+    static int lastId;
+    static PrimitiveSerializer serializer = X_Inject.instance(PrimitiveSerializer.class);
+
+    public static String newId() {
+        return serializer.serializeLong(lastId++);
+    }
 }

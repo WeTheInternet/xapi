@@ -3,6 +3,7 @@ package xapi.scope.service;
 import xapi.fu.Do;
 import xapi.fu.In1.In1Unsafe;
 import xapi.fu.In2.In2Unsafe;
+import xapi.scope.api.GlobalScope;
 import xapi.scope.api.Scope;
 
 /**
@@ -38,6 +39,11 @@ public interface ScopeService {
   Scope currentScope();
 
   Do inheritScope();
+
+  default <S extends GlobalScope> void globalScope(In1Unsafe<S> todo) {
+    final Class<S> cls = Class.class.cast(GlobalScope.class);
+    runInNewScope(cls, todo);
+  }
 
     // TODO: create a .runInEnvironment(boolean inheritEnviro, ClassLoader cl);
   // except, instead of ClassLoader, use some other mechanism to define classpath,

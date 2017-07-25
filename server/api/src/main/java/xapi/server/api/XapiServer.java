@@ -5,8 +5,11 @@ import xapi.fu.In1;
 import xapi.fu.In1.In1Unsafe;
 import xapi.fu.In1Out1;
 import xapi.fu.In2;
+import xapi.fu.Mutable;
 import xapi.scope.api.RequestScope;
 import xapi.util.api.RequestLike;
+
+import java.util.concurrent.locks.LockSupport;
 
 import static xapi.collect.api.IntTo.isEmpty;
 
@@ -61,8 +64,18 @@ public interface XapiServer <Request extends RequestLike, RawRequest> {
 
     void writeService(String path, RequestScope<Request> request, String payload, In1<Request> callback);
 
-    void registerEndpoint(String name, XapiEndpoint<?> endpoint);
+    void registerEndpoint(String name, XapiEndpoint<Request> endpoint);
 
-    void registerEndpointFactory(String name, In1Out1<String, XapiEndpoint<?>> endpoint);
+    void registerEndpointFactory(String name, boolean singleton, In1Out1<String, XapiEndpoint<Request>> endpoint);
 
+    default boolean blockFor(RequestScope<Request> request, Mutable<Boolean> success, int millis) {
+        long deadline = System.currentTimeMillis() + millis;
+        while (System.currentTimeMillis() < deadline) {
+            if (success.out1() != null) {
+                return success.out1();
+            }
+            LockSupport.parkNanos(5_000_000);
+        }
+        return false;
+    }
 }

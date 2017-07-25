@@ -1,6 +1,9 @@
 package xapi.model;
 
 import xapi.annotation.compile.MagicMethod;
+import xapi.bytecode.NotFoundException;
+import xapi.fu.In1;
+import xapi.fu.In1Out1;
 import xapi.inject.X_Inject;
 import xapi.model.api.Model;
 import xapi.model.api.ModelKey;
@@ -10,6 +13,7 @@ import xapi.model.api.ModelQueryResult;
 import xapi.model.service.ModelCache;
 import xapi.model.service.ModelService;
 import xapi.source.impl.StringCharIterator;
+import xapi.util.api.ErrorHandler;
 import xapi.util.api.SuccessHandler;
 
 import javax.inject.Provider;
@@ -45,6 +49,19 @@ public class X_Model {
   public static <M extends Model> void persist(final M model, final SuccessHandler<M> callback) {
     // TODO: return a Promises-like object
     service.get().persist(model, callback);
+  }
+
+  public static <M extends Model> void mutate(final Class<M> type, ModelKey key, In1Out1<M, M> mutator, SuccessHandler<M> callback) {
+    // TODO route back errors... force an error callback?
+    load(type, key, SuccessHandler.handler(item->{
+      if (item == null) {
+        ErrorHandler.delegateTo(callback)
+            .onError(new NotFoundException("No entity exists with key " + key));
+      } else {
+        final M mutated = mutator.io(item);
+        persist(mutated, callback);
+      }
+    }, ErrorHandler.delegateTo(callback)));
   }
 
   public static <M extends Model> void load(final Class<M> modelClass, final ModelKey modelKey, final SuccessHandler<M> callback) {

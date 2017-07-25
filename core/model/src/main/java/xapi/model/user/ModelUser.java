@@ -30,15 +30,17 @@ public interface ModelUser extends Model {
   @FieldValidator(validators=ChecksStringNotEmpty.class)
   String getEmail();
 
-  @FieldValidator(validators=ChecksStringNotEmpty.class)
   String getFirstName();
 
-  @FieldValidator(validators=ChecksStringNotEmpty.class)
   String getLastName();
+
+  @FieldValidator(validators=ChecksStringNotEmpty.class)
+  String getDisplayName();
 
   ModelUser setEmail(String email);
   ModelUser setImage(String image);
-  ModelUser setFirstName(String firstName);
+  ModelUser setDisplayName(String firstName);
+  ModelUser setFirstName(String displayName);
   ModelUser setLastName(String lastName);
   ModelUser setId(String id);
 
