@@ -2,6 +2,7 @@ package xapi.scope.api;
 
 import xapi.fu.In1Out1;
 import xapi.fu.MapLike;
+import xapi.fu.Maybe;
 import xapi.fu.Out2;
 import xapi.fu.X_Fu;
 import xapi.fu.iterate.SizedIterable;
@@ -128,39 +129,39 @@ public interface Scope {
       return get(key);
     } else {
       final T value = factory.io(key);
-      Optional<S> s = findParentOrSelf(type, false);
-      s.map(X_Fu::<S, Scope>downcast)
-          .orElse(this)
+      Maybe<S> s = findParentOrSelf(type, false);
+      s.mapDeferred(In1Out1.<S, Scope>downcast())
+          .ifAbsentReturn(this)
           .setLocal(key, value);
       return value;
     }
   }
 
-  default <S extends Scope> Optional<S> findParent(Class<S> type, boolean exactMatch) {
+  default <S extends Scope> Maybe<S> findParent(Class<S> type, boolean exactMatch) {
     Scope current = this;
     Predicate<Class> matcher = exactMatch ? type::equals : type::isAssignableFrom;
     while (current != null) {
       if (matcher.test(current.getClass())) {
-        return Optional.of((S)current);
+        return Maybe.immutable((S)current);
       }
       current = current.getParent();
     }
-    return Optional.empty();
+    return Maybe.not();
   }
 
-  default <S extends Scope> Optional<S> findParentOrSelf(Class<S> type, boolean exactMatch) {
+  default <S extends Scope> Maybe<S> findParentOrSelf(Class<S> type, boolean exactMatch) {
     Scope current = this;
     Predicate<Class> matcher = exactMatch ? type::equals : type::isAssignableFrom;
     if (matcher.test(getClass())) {
-      return Optional.of((S)this);
+      return Maybe.immutable((S)this);
     }
     while (current != null) {
       if (matcher.test(current.getClass())) {
-        return Optional.of((S)current);
+        return Maybe.immutable((S)current);
       }
       current = current.getParent();
     }
-    return Optional.empty();
+    return Maybe.not();
   }
 
   default Class<Scope> parentKey() {

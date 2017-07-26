@@ -59,6 +59,8 @@ public @interface XApi {
    * Determines which scope is used for both compile time and runtime operations.
    * By initializing a scope before an object is injected / created,
    * you can control what services or objects are created within this class.
+   *
+   * Injections will be provided from the running / created scope matching this class.
    */
   Class<Scope> scope() default Scope.class;
 

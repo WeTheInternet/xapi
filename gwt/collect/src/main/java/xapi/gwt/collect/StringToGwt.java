@@ -3,7 +3,7 @@ package xapi.gwt.collect;
 import xapi.annotation.inject.InstanceOverride;
 import xapi.collect.api.StringTo;
 import xapi.fu.iterate.ArrayIterable;
-import xapi.collect.impl.EntryValueIterable;
+import xapi.fu.java.EntryValueIterable;
 import xapi.collect.impl.IteratorWrapper;
 import xapi.fu.Out2;
 import xapi.fu.iterate.SizedIterable;

@@ -1,4 +1,4 @@
-package xapi.collect.impl;
+package xapi.fu.java;
 
 import xapi.fu.In1Out1;
 import xapi.fu.Out1;

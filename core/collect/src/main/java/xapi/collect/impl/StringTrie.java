@@ -553,9 +553,9 @@ public class StringTrie<E> {
     return null;
   }
 
-  public void compress(CharPoolTrie charPoolTrie) {
-
-  }
+//  public void compress(CharPoolTrie charPoolTrie) {
+//
+//  }
 
   protected E returnValue(TrieEdge e, Chars keys, int pos, int end) {
     return e.value;

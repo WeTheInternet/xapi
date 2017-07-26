@@ -68,17 +68,18 @@ public final class X_Util{
     while (// unwrap checked wrappers, for ease later on
         e instanceof InvocationTargetException
         || e instanceof ExecutionException
-        ) {
+    ) {
       if (e.getCause()!=null){
         e = e.getCause();
-      } else if (e == e.getCause()) {
+      }
+      if (e == e.getCause()) {
         break;
       }
     }
     if (e instanceof InterruptedException) {
       Thread.currentThread().interrupt();
     }
-    // throw unchecked.
+    // throw unchecked. we only claim to return so you can (choose to) write: `throw rethrow(e);`
     throw new RuntimeException(e);
   }
 

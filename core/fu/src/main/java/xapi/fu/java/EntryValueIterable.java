@@ -1,4 +1,4 @@
-package xapi.collect.impl;
+package xapi.fu.java;
 
 import xapi.fu.Out1;
 import xapi.fu.iterate.SizedIterable;

@@ -1,11 +1,11 @@
 package xapi.collect.api;
 
-import xapi.collect.impl.EntryIterable;
 import xapi.fu.In2Out1;
 import xapi.fu.Out2;
 import xapi.fu.api.HasEmptiness;
 import xapi.fu.has.HasSize;
 import xapi.fu.iterate.SizedIterable;
+import xapi.fu.java.EntryIterable;
 
 import java.util.Map.Entry;
 

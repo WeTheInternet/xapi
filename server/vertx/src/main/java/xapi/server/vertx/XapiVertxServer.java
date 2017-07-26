@@ -263,7 +263,7 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
         X_Scope.service().runInNewScope(SessionScope.class, (session, done)->{
 
             VertxRequest vertxReq = new VertxRequest(req);
-            final RequestScope scope = session.getRequestScope(Optional.of(vertxReq));
+            final RequestScope scope = session.getRequestScope(Maybe.immutable(vertxReq));
             final XapiServer was = scope.setLocal(XapiServer.class, this);
             final RequestScopeVertx s = (RequestScopeVertx) scope;
             final MapLike<String, String> cookies = s.getRequest().getCookies();

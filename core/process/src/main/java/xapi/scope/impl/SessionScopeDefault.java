@@ -1,6 +1,7 @@
 package xapi.scope.impl;
 
 import xapi.fu.In1Out1;
+import xapi.fu.Maybe;
 import xapi.inject.X_Inject;
 import xapi.scope.api.RequestScope;
 import xapi.scope.api.SessionScope;
@@ -43,20 +44,20 @@ public class SessionScopeDefault <User, Request extends RequestLike, Session ext
     }
 
     @Override
-    public RequestScope<Request> getRequestScope(Optional<Request> request) {
+    public RequestScope<Request> getRequestScope(Maybe<Request> request) {
         if(request.isPresent()){
             final RequestScope<Request> scope = requests.get(request.get());
             if (scope != null) {
                 return scope;
             }
         }
-        final Optional<RequestScope> parentScope = findParentOrSelf(RequestScope.class, false);
+        final Maybe<RequestScope> parentScope = findParentOrSelf(RequestScope.class, false);
         if (parentScope.isPresent()) {
             return parentScope.get();
         }
         // only let one thread look in or mutate this scope at a time
         synchronized (requests) {
-            final Request req = request.orElseThrow(() -> new IllegalArgumentException(
+            final Request req = request.getOrThrow(() -> new IllegalArgumentException(
                 "Cannot get a request scope with a null request from scope " + this
             ));
             final RequestScope<Request> child = requests.get(req);
@@ -74,8 +75,8 @@ public class SessionScopeDefault <User, Request extends RequestLike, Session ext
         }
     }
 
-    protected RequestScope<Request> createRequestScope(Optional<Request> request) {
-        final RequestScope<Request> scope = new RequestScopeDefault();
+    protected RequestScope<Request> createRequestScope(Maybe<Request> request) {
+        final RequestScope<Request> scope = new RequestScopeDefault<>();
         if (request.isPresent()) {
             scope.initialize(request.get());
         }

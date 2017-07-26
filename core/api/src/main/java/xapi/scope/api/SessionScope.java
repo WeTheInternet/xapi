@@ -1,5 +1,6 @@
 package xapi.scope.api;
 
+import xapi.fu.Maybe;
 import xapi.util.api.RequestLike;
 
 import java.util.Optional;
@@ -10,7 +11,7 @@ import java.util.Optional;
 public interface SessionScope<UserType, RequestType extends RequestLike> extends Scope {
   UserType getUser();
 
-  RequestScope<RequestType> getRequestScope(Optional<RequestType> request);
+  RequestScope<RequestType> getRequestScope(Maybe<RequestType> request);
 
   SessionScope<UserType, RequestType> setUser(UserType user);
 

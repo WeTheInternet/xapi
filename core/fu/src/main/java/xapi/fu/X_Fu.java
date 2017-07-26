@@ -127,10 +127,34 @@ public interface X_Fu {
     return returnMe;
   }
 
+  /**
+   * Useful as a handy method reference whenever you need to
+   * convert a more specific generic into a more raw form,
+   * in order to obey a concrete api requiring a supertype:
+   *
+   * <pre>
+   *
+   * class Thing <T extends Number> {
+   *   Number defaultObject;
+   *
+   *   Number getThing(Maybe<T> from) {
+   *     return from.mapImmediate(X_Fu::downcast)
+   *         .ifAbsentReturn(defaultObject);
+   *   }
+   * }
+   *
+   * </pre>
+   *
+   * It's a bit verbose, but it at least affords you the
+   * ability to specify a typesafe conversion to a weaker type.
+   *
+   * In many cases, an "unsafe" cast will also do,
+   * however, some very complex and hideous generics
+   * can be entirely avoided if you let type inference work for you:
+   */
   static <F extends T, T> T downcast(F from) {
     return from;
   }
-
   static String reduceToString(Iterable<? extends CharSequence> data, String separator) {
     StringBuilder b = new StringBuilder();
     final Iterator<? extends CharSequence> itr = data.iterator();
@@ -534,4 +558,3 @@ public interface X_Fu {
       };
   }
 }
-

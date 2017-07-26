@@ -1,6 +1,5 @@
 package xapi.collect.api;
 
-import xapi.collect.impl.EntryIterable;
 import xapi.collect.proxy.CollectionProxy;
 import xapi.fu.Filter.Filter1;
 import xapi.fu.Filter.Filter2;
@@ -9,6 +8,7 @@ import xapi.fu.In1Out1;
 import xapi.fu.MapLike;
 import xapi.fu.Maybe;
 import xapi.fu.iterate.SizedIterable;
+import xapi.fu.java.EntryIterable;
 
 public interface ObjectTo <K, V>
 extends EntryIterable<K,V>, CollectionProxy<K,V>, HasValues<K,V>

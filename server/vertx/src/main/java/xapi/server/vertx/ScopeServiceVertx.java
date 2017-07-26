@@ -2,13 +2,12 @@ package xapi.server.vertx;
 
 import io.vertx.core.http.HttpServerRequest;
 import xapi.annotation.inject.InstanceOverride;
+import xapi.fu.Maybe;
 import xapi.model.user.ModelUser;
 import xapi.scope.api.RequestScope;
 import xapi.scope.api.SessionScope;
 import xapi.scope.impl.ScopeServiceDefault;
 import xapi.scope.service.ScopeService;
-
-import java.util.Optional;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/2/16.
@@ -22,7 +21,7 @@ public class ScopeServiceVertx extends ScopeServiceDefault {
         // This request will be ignored if the request scope is already initialized
         VertxRequest vertxReq = new VertxRequest(req);
         final RequestScopeVertx request = (RequestScopeVertx) session.getRequestScope(
-            Optional.of(vertxReq)
+            Maybe.immutable(vertxReq)
         );
         if (req != null) {
             request.getRequest().setHttpRequest(req);

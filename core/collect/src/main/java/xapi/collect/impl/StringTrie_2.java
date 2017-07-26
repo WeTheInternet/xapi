@@ -607,10 +607,10 @@ public class StringTrie_2 <E> extends StringTrie<E>{
   protected E onEmpty(Edge e, Chars keys, int pos, int end) {
     return null;
   }
-
-  @Override
-  public void compress(CharPoolTrie charPoolTrie) {
-
-  }
+//
+//  @Override
+//  public void compress(CharPoolTrie charPoolTrie) {
+//
+//  }
 
 }

@@ -1,5 +1,6 @@
 package xapi.scope.api;
 
+import xapi.fu.Maybe;
 import xapi.util.api.RequestLike;
 
 import java.util.Optional;
@@ -19,8 +20,8 @@ public interface RequestScope<RequestType extends RequestLike> extends Scope {
     }
 
     default <U> SessionScope<U, RequestType> getSession() {
-        final Optional<SessionScope> parent = findParent(SessionScope.class, false);
-        final SessionScope scope = parent.orElseThrow(() -> new IllegalStateException(getClass() + " must override getSession"));
+        final Maybe<SessionScope> parent = findParent(SessionScope.class, false);
+        final SessionScope scope = parent.getOrThrow(() -> new IllegalStateException(getClass() + " must override getSession"));
         return scope;
     }
 }

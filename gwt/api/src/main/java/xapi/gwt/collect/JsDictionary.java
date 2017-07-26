@@ -1,6 +1,6 @@
 package xapi.gwt.collect;
 
-import xapi.collect.impl.EntryValueIterable;
+import xapi.fu.java.EntryValueIterable;
 import xapi.fu.iterate.ArrayIterable;
 import xapi.collect.impl.IteratorWrapper;
 
