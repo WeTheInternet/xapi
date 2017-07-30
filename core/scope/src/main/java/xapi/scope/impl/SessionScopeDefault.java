@@ -3,14 +3,13 @@ package xapi.scope.impl;
 import xapi.fu.In1Out1;
 import xapi.fu.Maybe;
 import xapi.inject.X_Inject;
-import xapi.scope.api.RequestScope;
-import xapi.scope.api.SessionScope;
+import xapi.scope.request.RequestScope;
+import xapi.scope.request.SessionScope;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
 import xapi.util.api.Destroyable;
-import xapi.util.api.RequestLike;
+import xapi.scope.request.RequestLike;
 
-import java.util.Optional;
 import java.util.WeakHashMap;
 
 /**

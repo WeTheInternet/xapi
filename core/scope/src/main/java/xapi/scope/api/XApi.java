@@ -1,11 +1,10 @@
-package xapi.annotation.api;
+package xapi.scope.api;
 
 import xapi.annotation.common.Property;
 import xapi.annotation.compile.Dependency;
 import xapi.annotation.compile.Import;
 import xapi.annotation.compile.SourceRewrite;
 import xapi.annotation.reflect.MirroredAnnotation;
-import xapi.scope.api.Scope;
 
 import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
 import static java.lang.annotation.ElementType.PACKAGE;
@@ -62,7 +61,7 @@ public @interface XApi {
    *
    * Injections will be provided from the running / created scope matching this class.
    */
-  Class<Scope> scope() default Scope.class;
+  Class<? extends Scope> scope() default Scope.class;
 
   /**
    * Whether or not this class should be considered An entry point.
@@ -94,6 +93,13 @@ public @interface XApi {
    */
   boolean finalBuild() default false;
 
+  /**
+   * @return an array of strings to be treated as XApi source.
+   *
+   * The semantics of how this source will be applied will depend on where the
+   * @Xapi annotation is used, and which processor is inspecting the annotation.
+   *
+   */
   String[] value() default {};
 
 }

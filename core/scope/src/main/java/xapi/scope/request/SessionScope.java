@@ -1,9 +1,7 @@
-package xapi.scope.api;
+package xapi.scope.request;
 
 import xapi.fu.Maybe;
-import xapi.util.api.RequestLike;
-
-import java.util.Optional;
+import xapi.scope.api.Scope;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/8/16.

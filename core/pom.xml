@@ -65,8 +65,11 @@
   <!-- Core io api -->
   <module>io</module>
 
-  <!-- Core collection abstractions. Alpha -->
+  <!-- Core collection abstractions -->
   <module>collect</module>
+
+  <!-- Core scope / request apis and default implementations-->
+  <module>scope</module>
 
   <!-- Core concurrency abstractions. Beta -->
   <module>process</module>
@@ -85,11 +88,6 @@
 
   <!-- Test module -->
   <module>test</module>
-
-  <!--
-  The complete impl of the XApiService, in the XApi class.
-  -->
-  <module>impl</module>
 
  </modules>
 

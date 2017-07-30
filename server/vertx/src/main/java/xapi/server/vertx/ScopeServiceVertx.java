@@ -4,8 +4,8 @@ import io.vertx.core.http.HttpServerRequest;
 import xapi.annotation.inject.InstanceOverride;
 import xapi.fu.Maybe;
 import xapi.model.user.ModelUser;
-import xapi.scope.api.RequestScope;
-import xapi.scope.api.SessionScope;
+import xapi.scope.request.RequestScope;
+import xapi.scope.request.SessionScope;
 import xapi.scope.impl.ScopeServiceDefault;
 import xapi.scope.service.ScopeService;
 

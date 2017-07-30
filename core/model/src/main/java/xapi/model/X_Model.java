@@ -1,8 +1,7 @@
 package xapi.model;
 
 import xapi.annotation.compile.MagicMethod;
-import xapi.bytecode.NotFoundException;
-import xapi.fu.In1;
+import xapi.except.FatalException;
 import xapi.fu.In1Out1;
 import xapi.inject.X_Inject;
 import xapi.model.api.Model;
@@ -56,7 +55,7 @@ public class X_Model {
     load(type, key, SuccessHandler.handler(item->{
       if (item == null) {
         ErrorHandler.delegateTo(callback)
-            .onError(new NotFoundException("No entity exists with key " + key));
+            .onError(new FatalException("No entity exists with key " + key));
       } else {
         final M mutated = mutator.io(item);
         persist(mutated, callback);

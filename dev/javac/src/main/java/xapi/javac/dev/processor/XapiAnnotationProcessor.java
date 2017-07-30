@@ -14,7 +14,7 @@ import com.sun.tools.javac.code.Scope;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.util.List;
-import xapi.annotation.api.XApi;
+import xapi.scope.api.XApi;
 import xapi.except.NotYetImplemented;
 import xapi.fu.Pointer;
 import xapi.javac.dev.api.JavacService;
@@ -63,7 +63,7 @@ import java.util.Set;
  */
 
 @SupportedAnnotationTypes({
-    "xapi.annotation.api.XApi"
+    "xapi.scope.api.XApi"
 })
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class XapiAnnotationProcessor extends AbstractProcessor {

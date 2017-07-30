@@ -24,32 +24,40 @@ public class JavacPluginTest {
   }
 
   @Test
-  @Ignore // Temporarily disable this test, as we wind up leaving temporary artifacts that intellij automatically adds to classpath...
   public void testSimpleCompile () throws Exception {
     // Compile a test resource and check if the GwtCreate plugin found our call to GWT.create
 
     CompilerService compiler = X_Inject.singleton(CompilerService.class);
-    Out2<Integer, URL> result = compiler.compileFiles(testSettings(compiler),
-        "test/Test.java", "ComplexTest.java");
-    Assert.assertEquals("Javac failed", 0, result.out1().intValue());
 
-    URLClassLoader cl = new URLClassLoader(new URL[]{result.out2()}, Thread.currentThread().getContextClassLoader());
-    Pointer<Object> value = Pointer.pointer();
-    Thread runIn = new Thread(()->{
-      try {
-        final Class<?> cls = cl.loadClass("dist.test.Test");
-        Object o = cls.newInstance();
-        Object test = cls.getMethod("finalFieldInitedByClassLiteral").invoke(o);
-        value.in(test);
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      }
-    });
-    runIn.setContextClassLoader(cl);
-    runIn.start();
-    runIn.join();
-    Object test = value.out1();
-//    assertThat(test).isNotNull();
+    final CompilerSettings settings = testSettings(compiler);
+    try {
+
+      Out2<Integer, URL> result = compiler.compileFiles(settings,
+          "test/Test.java", "ComplexTest.java");
+      Assert.assertEquals("Javac failed", 0, result.out1().intValue());
+
+      URLClassLoader cl = new URLClassLoader(new URL[]{result.out2()}, Thread.currentThread().getContextClassLoader());
+      Pointer<Object> value = Pointer.pointer();
+      Thread runIn = new Thread(()->{
+        try {
+          final Class<?> cls = cl.loadClass("test.Test");
+          Object o = cls.newInstance();
+          Object test = cls.getMethod("finalFieldInitedByClassLiteral").invoke(o);
+          value.in(test);
+        } catch (Exception e) {
+          throw new RuntimeException(e);
+        }
+      });
+      runIn.setContextClassLoader(cl);
+      runIn.start();
+      runIn.join();
+      Object test = value.out1();
+      System.out.println(test);
+  //    assertThat(test).isNotNull();
+    } finally {
+      // cleanup after ourselves.  set a break point here to inspect files before they are deleted.
+      settings.resetGenerateDirectory();
+    }
 
   }
 

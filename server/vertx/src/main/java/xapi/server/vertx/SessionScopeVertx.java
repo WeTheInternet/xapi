@@ -1,12 +1,10 @@
 package xapi.server.vertx;
 
 import xapi.annotation.inject.InstanceOverride;
-import xapi.scope.api.RequestScope;
-import xapi.scope.api.SessionScope;
+import xapi.fu.Maybe;
+import xapi.scope.request.RequestScope;
+import xapi.scope.request.SessionScope;
 import xapi.scope.impl.SessionScopeDefault;
-import xapi.server.model.ModelSession;
-
-import java.util.Optional;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/2/16.
@@ -27,7 +25,7 @@ public class SessionScopeVertx extends
     }
 
     @Override
-    public RequestScope<VertxRequest> getRequestScope(Optional<VertxRequest> request) {
+    public RequestScope<VertxRequest> getRequestScope(Maybe<VertxRequest> request) {
         synchronized (requests) {
             RequestScopeVertx current = (RequestScopeVertx)get(RequestScope.class);
             if (current == null) {

@@ -1,7 +1,7 @@
 package test;
 
 import org.junit.Assert;
-import xapi.annotation.api.XApi;
+import xapi.scope.api.XApi;
 import xapi.annotation.inject.InstanceDefault;
 import xapi.inject.X_Inject;
 

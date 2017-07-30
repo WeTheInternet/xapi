@@ -1,6 +1,5 @@
 package xapi.scope.impl;
 
-import xapi.annotation.inject.InstanceDefault;
 import xapi.annotation.inject.SingletonDefault;
 import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
@@ -9,8 +8,8 @@ import xapi.fu.In1Out1;
 import xapi.fu.In2.In2Unsafe;
 import xapi.fu.Lazy;
 import xapi.inject.X_Inject;
-import xapi.scope.api.Scope;
 import xapi.scope.api.GlobalScope;
+import xapi.scope.api.Scope;
 import xapi.scope.service.ScopeService;
 
 import java.util.concurrent.atomic.AtomicReference;
@@ -54,6 +53,8 @@ public class ScopeServiceDefault implements ScopeService {
             return (S) globalScope.out1();
         }
         final ScopeMap map = currentScope.get();
+        // Check key type hierarchy to find .forScope() methods that we can run without an instance
+
         Scope scope = map.scopes.get(cls);
         if (scope == null) {
             final In1Out1<Class<? extends Scope>, Scope> factory = map.factories.get(cls);
@@ -80,7 +81,7 @@ public class ScopeServiceDefault implements ScopeService {
         return ()->currentScope.get().inherit(map);
     }
 
-    protected GlobalScope<?, ?> newGlobalScope() {
+    protected GlobalScope newGlobalScope() {
         final GlobalScope scope = X_Inject.instance(GlobalScope.class);
         scope.isAttached();
         return scope;

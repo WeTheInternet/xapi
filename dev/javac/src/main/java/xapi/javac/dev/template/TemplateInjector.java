@@ -44,7 +44,7 @@ public class TemplateInjector implements MagicMethodInjector {
     });
   }
 
-  private TemplateGenerator createFactory(String type, Class<TemplateGenerator> cls) {
+  private TemplateGenerator createFactory(String type, Class<? extends TemplateGenerator> cls) {
     final TemplateGenerator instance = X_Inject.instance(cls);
     if (cacheGenerators()) {
       generatorByTypeName.put(type, Immutable.immutable1(instance));

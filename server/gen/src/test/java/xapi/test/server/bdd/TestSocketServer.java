@@ -16,7 +16,7 @@ import xapi.model.api.Model;
 import xapi.model.api.PrimitiveSerializer;
 import xapi.model.impl.AbstractModel;
 import xapi.process.X_Process;
-import xapi.scope.api.RequestScope;
+import xapi.scope.request.RequestScope;
 import xapi.server.X_Server;
 import xapi.server.api.Classpath;
 import xapi.server.api.ModelGwtc;

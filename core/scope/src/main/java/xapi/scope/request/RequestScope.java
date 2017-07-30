@@ -1,9 +1,7 @@
-package xapi.scope.api;
+package xapi.scope.request;
 
 import xapi.fu.Maybe;
-import xapi.util.api.RequestLike;
-
-import java.util.Optional;
+import xapi.scope.api.Scope;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/8/16.
@@ -16,7 +14,7 @@ public interface RequestScope<RequestType extends RequestLike> extends Scope {
 
     @Override
     default Class<? extends Scope> forScope() {
-        return xapi.scope.api.RequestScope.class;
+        return RequestScope.class;
     }
 
     default <U> SessionScope<U, RequestType> getSession() {

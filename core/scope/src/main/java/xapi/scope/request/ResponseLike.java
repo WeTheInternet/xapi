@@ -1,4 +1,4 @@
-package xapi.util.api;
+package xapi.scope.request;
 
 import xapi.fu.ListLike;
 import xapi.fu.MapLike;

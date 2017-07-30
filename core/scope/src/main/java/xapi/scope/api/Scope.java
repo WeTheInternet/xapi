@@ -1,13 +1,16 @@
 package xapi.scope.api;
 
+import xapi.except.NotConfiguredCorrectly;
+import xapi.except.NotYetImplemented;
+import xapi.fu.Do;
+import xapi.fu.In1;
 import xapi.fu.In1Out1;
 import xapi.fu.MapLike;
 import xapi.fu.Maybe;
+import xapi.fu.Out1;
 import xapi.fu.Out2;
-import xapi.fu.X_Fu;
 import xapi.fu.iterate.SizedIterable;
 
-import java.util.Optional;
 import java.util.function.Predicate;
 
 /**
@@ -147,6 +150,59 @@ public interface Scope {
       current = current.getParent();
     }
     return Maybe.not();
+  }
+
+  default <S extends Scope> S findParentOrCreateChild(Class<S> type, boolean exactMatch, Out1<S> factory) {
+    return findParentOrCreateChildIn(type, exactMatch, forScope(), factory.ignoreIn1());
+  }
+
+  default <S extends Scope> S findParentOrCreateChildIn(Class<S> type, boolean exactMatch, Class<? extends Scope> insertionPoint, Out1<S> factory) {
+    return findParentOrCreateChildIn(type, exactMatch, insertionPoint, factory.ignoreIn1());
+  }
+
+  default <S extends Scope> S findParentOrCreateChild(Class<S> type, boolean exactMatch, In1Out1<Class<S>, S> factory) {
+    return findParentOrCreateChildIn(type, exactMatch, forScope(), factory);
+  }
+  default <S extends Scope> S findParentOrCreateChildIn(Class<S> type, boolean exactMatch, Class<? extends Scope> insertionPoint, In1Out1<Class<S>, S> factory) {
+    final Maybe<S> parent = findParent(type, exactMatch);
+    Scope self = this;
+    return parent.ifAbsentSupply(()->{
+      final S newInstance = factory.io(type);
+
+      Scope target;
+      if (insertionPoint == self.forScope()) {
+        newInstance.setParent(this);
+        target = this;
+      } else {
+        //
+        target = findParent(insertionPoint, exactMatch)
+            .getOrThrow(()->new NotConfiguredCorrectly("No insertion point found for " + insertionPoint));
+      }
+
+      target.setLocal(type, newInstance);
+      if (type != newInstance.forScope()) {
+        // we are forgiving about this, in case there is classloader weirdness from your factory,
+        // we want both sources / classloaders to have a key to retrieve the instance.
+        target.setLocal(newInstance.forScope(), newInstance);
+        // we'll also want to ensure that, when this scope object is released,
+        // we update the other key used for this scope
+        newInstance.onDetached(target::removeLocal, type);
+      }
+      target.onDetached(newInstance::release);
+      return newInstance;
+    });
+  }
+
+  default void onDetached(Do cleanup) {
+    if (this == nullScope()) {
+      // This is user error, trying to add a callback to the null scope
+      throw new IllegalStateException("Cannot add onDetach scopes to null / detached scope");
+    }
+    throw new NotYetImplemented(getClass(), "Must implement onDetached()");
+  }
+
+  default <T> void onDetached(In1<T> callback, T value) {
+    onDetached(callback.provide(value));
   }
 
   default <S extends Scope> Maybe<S> findParentOrSelf(Class<S> type, boolean exactMatch) {

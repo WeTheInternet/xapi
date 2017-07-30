@@ -8,11 +8,10 @@ import xapi.dev.ui.api.*;
 import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.dev.ui.api.UiVisitScope.ScopeType;
 import xapi.fu.In1;
-import xapi.fu.In2;
 import xapi.server.api.WebApp;
 import xapi.server.api.XapiServer;
 import xapi.server.api.XapiServerPlugin;
-import xapi.util.api.RequestLike;
+import xapi.scope.request.RequestLike;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/9/16.

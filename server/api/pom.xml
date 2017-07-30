@@ -20,6 +20,10 @@
   <dependencies>
     <dependency>
       <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-core-scope</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
       <artifactId>xapi-jre-model</artifactId>
     </dependency>
     <dependency>
@@ -36,6 +40,14 @@
     <dependency>
       <groupId>net.wetheinter</groupId>
       <artifactId>xapi-gwtc-api</artifactId>
+      <!--
+      Consider excluding gwt-user, and only taking gwt-servlet...
+      For most of our servers, we are integrating gwt compiler,
+      so it's easier to leave this as-is for now,
+      but it makes more sense to just move all gwt-related functionality
+      behind a plugin system, so we don't pollute the classpath
+      with various odd-versioned-stuff we pull in from gwt.
+       -->
     </dependency>
      <dependency>
       <groupId>net.wetheinter</groupId>

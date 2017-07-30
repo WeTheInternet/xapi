@@ -14,7 +14,7 @@ import xapi.fu.Pointer;
 import xapi.fu.iterate.SizedIterable;
 import xapi.util.X_String;
 import xapi.util.api.Destroyable;
-import xapi.util.api.RequestLike;
+import xapi.scope.request.RequestLike;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/3/16.

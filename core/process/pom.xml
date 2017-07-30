@@ -12,11 +12,15 @@
   <name>XApi - Core concurrency layer</name>
   <url>WeTheInter.net</url>
   <description>The basic interfaces and services of the concurrency service.</description>
-  
+
   <dependencies>
     <dependency>
       <groupId>net.wetheinter</groupId>
       <artifactId>xapi-core-io</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-core-scope</artifactId>
     </dependency>
   </dependencies>
 

@@ -3,11 +3,8 @@ package xapi.test.server.bdd;
 import xapi.collect.X_Collect;
 import xapi.collect.api.ObjectTo;
 import xapi.fu.MapLike;
-import xapi.fu.MappedIterable;
-import xapi.fu.Out2;
-import xapi.fu.iterate.EmptyIterator;
 import xapi.fu.iterate.SizedIterable;
-import xapi.util.api.RequestLike;
+import xapi.scope.request.RequestLike;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 11/26/16.

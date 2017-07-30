@@ -104,7 +104,7 @@ public class GwtCreatePlugin implements Plugin {
         // Save a super-sourced copy of this file in the generated directory
         X_Log.info(getClass(), "Writing to generated file "+res.getName());
         try (OutputStream out = res.openOutputStream()){
-          X_IO.drain(out, new FileInputStream(file));
+          X_IO.drain(out, X_IO.toStreamUtf8(file));
         } catch (IOException e) {
           X_Log.error(getClass(), "Unable to save resource to "+res+"."+name+" to write to", e);
           throw X_Util.rethrow(e);

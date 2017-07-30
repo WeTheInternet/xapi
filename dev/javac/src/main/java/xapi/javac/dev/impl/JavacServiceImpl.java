@@ -342,6 +342,10 @@ public class JavacServiceImpl implements JavacService {
 
   private IsType getTypeOf(CompilationUnitTree cup, JavacScope scope, JCTree type) {
     switch (type.getKind()) {
+      case MEMBER_SELECT:
+        // Parsed as a field access, this is what a fully qualified, unimported typename looks like
+        JCFieldAccess field = (JCFieldAccess) type;
+        return new IsType(field.getExpression().toString(), field.name.toString());
       case IDENTIFIER:
         JCIdent ident = (JCIdent) type;
         for (ImportTree importTree : cup.getImports()) {
@@ -352,7 +356,7 @@ public class JavacServiceImpl implements JavacService {
           final String name = TreeInfo.fullName((JCTree) id).toString();
           if (name.endsWith(ident.getName().toString())) {
             // we have a winner!
-            return new IsType(name.toString());
+            return new IsType(name);
           }
           if ("*".equals(name)) {
 

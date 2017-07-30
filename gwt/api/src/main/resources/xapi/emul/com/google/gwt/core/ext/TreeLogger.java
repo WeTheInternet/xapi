@@ -2,15 +2,17 @@ package com.google.gwt.core.ext;
 
 import xapi.gwt.log.SuperTreeLogger;
 
+import java.net.URL;
+
 /*
  * Copyright 2008 Google Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
  * the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -45,6 +47,13 @@ public class TreeLogger {
       return "More info: ";
     }
 
+    /**
+     * @return a URL containing extra information about the problem, or null if
+     *     none.
+     */
+    public URL getURL() {
+      return null;
+    }
   }
 
   /**
@@ -91,7 +100,7 @@ public class TreeLogger {
 
     /**
      * Gets all the possible severity types as an array.
-     * 
+     *
      * @return an array of severity types
      */
     public static Type[] instances() {
@@ -109,7 +118,7 @@ public class TreeLogger {
 
     /**
      * Gets the label for this severity type.
-     * 
+     *
      * @return the label
      */
     public String getLabel() {
@@ -119,7 +128,7 @@ public class TreeLogger {
     /**
      * Determines whether this log type is of lower priority than some other log
      * type.
-     * 
+     *
      * @param other the other log type
      * @return <code>true</code> if this log type is lower priority
      */
@@ -131,7 +140,7 @@ public class TreeLogger {
     /**
      * Indicates whether this severity type represents a high severity that
      * should be highlighted for the user.
-     * 
+     *
      * @return <code>true</code> if this severity is high, otherwise
      *         <code>false</code>.
      */
@@ -221,7 +230,7 @@ public class TreeLogger {
    * Produces a branched logger, which can be used to write messages that are
    * logically grouped together underneath the current logger. The details of
    * how/if the resulting messages are displayed is implementation-dependent.
-   * 
+   *
    * <p>
    * The log message supplied when branching serves two purposes. First, the
    * message should be considered a heading for all the child messages below it.
@@ -231,7 +240,7 @@ public class TreeLogger {
    * being logged, which the implication being that all nested log messages were
    * no more important than the level of their branch parent.
    * </p>
-   * 
+   *
    * <p>
    * As an example of how hierarchical logging can be used, a branched logger in
    * a GUI could write log message as child items of a parent node in a tree
@@ -239,7 +248,7 @@ public class TreeLogger {
    * could prefix each entry with a unique string and indent its text so that it
    * could be sorted later to reconstruct a proper hierarchy.
    * </p>
-   * 
+   *
    * @param type
    * @param msg an optional message to log, which can be <code>null</code> if
    *          only an exception is being logged
@@ -286,7 +295,7 @@ public class TreeLogger {
    * <code>msg</code> and <code>caught</code>, in which case the log event
    * can be ignored. The <code>info</code> can provide extra information to
    * the logger; a logger may choose to ignore this info.
-   * 
+   *
    * @param type
    * @param msg an optional message to log, which can be <code>null</code> if
    *          only an exception is being logged

@@ -5,9 +5,9 @@ import xapi.fu.Log;
 import xapi.fu.Log.LogLevel;
 import xapi.fu.Mutable;
 import xapi.model.api.Model;
-import xapi.scope.api.RequestScope;
+import xapi.scope.request.RequestScope;
 import xapi.source.write.Template;
-import xapi.util.api.RequestLike;
+import xapi.scope.request.RequestLike;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/4/16.

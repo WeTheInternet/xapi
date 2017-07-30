@@ -6,15 +6,15 @@ import xapi.collect.api.StringTo;
 import xapi.fu.In1Out1;
 import xapi.inject.X_Inject;
 import xapi.scope.api.GlobalScope;
-import xapi.scope.api.SessionScope;
+import xapi.scope.request.SessionScope;
 import xapi.util.api.HasId;
-import xapi.util.api.RequestLike;
+import xapi.scope.request.RequestLike;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 9/5/16.
  */
 @InstanceDefault(implFor = GlobalScope.class)
-public class GlobalScopeDefault <User, Request extends RequestLike> extends AbstractScope<GlobalScopeDefault<User, Request>> implements GlobalScope <User, Request> {
+public class GlobalScopeDefault <User, Request extends RequestLike> extends AbstractScope<GlobalScopeDefault<User, Request>> implements GlobalScope {
 
     private In1Out1<User, String> keySource;
     private StringTo<SessionScope<User, Request>> users;
@@ -36,7 +36,6 @@ public class GlobalScopeDefault <User, Request extends RequestLike> extends Abst
         this.keySource = keySource;
     }
 
-    @Override
     public SessionScope<User, Request> getSessionScope(User user) {
         String key = keySource.io(user);
         final SessionScope<User, Request> session = users.getOrCreate(key, k -> initUserScope(user, key));

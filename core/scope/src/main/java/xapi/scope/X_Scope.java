@@ -2,6 +2,7 @@ package xapi.scope;
 
 import xapi.fu.Do;
 import xapi.inject.X_Inject;
+import xapi.scope.api.Scope;
 import xapi.scope.service.ScopeService;
 
 /**
@@ -17,5 +18,9 @@ public class X_Scope {
 
     public static ScopeService service() {
         return service;
+    }
+
+    public static Scope currentScope() {
+        return service().currentScope();
     }
 }

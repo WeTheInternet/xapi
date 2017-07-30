@@ -1,6 +1,5 @@
 package xapi.reflect;
 
-import xapi.annotation.api.XApi;
 import xapi.annotation.compile.MagicMethod;
 import xapi.fu.In1Out1;
 import xapi.inject.X_Inject;
@@ -13,7 +12,6 @@ import xapi.util.X_Util;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.*;
 import java.net.URL;
@@ -41,7 +39,6 @@ import static xapi.util.X_String.joinClasses;
  *
  * @author James X. Nelson (james@wetheinter.net, @james)
  */
-@XApi
 public class X_Reflect {
 
   @Inject static Provider<ReflectionService> reflectionService = X_Inject.singletonLazy(ReflectionService.class);

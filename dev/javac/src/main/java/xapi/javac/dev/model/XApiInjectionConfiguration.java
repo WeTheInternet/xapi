@@ -1,7 +1,7 @@
 package xapi.javac.dev.model;
 
 import com.sun.source.tree.CompilationUnitTree;
-import xapi.annotation.api.XApi;
+import xapi.scope.api.XApi;
 
 import javax.lang.model.element.Element;
 import java.io.Serializable;

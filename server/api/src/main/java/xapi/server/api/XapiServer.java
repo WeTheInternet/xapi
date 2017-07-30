@@ -6,8 +6,8 @@ import xapi.fu.In1.In1Unsafe;
 import xapi.fu.In1Out1;
 import xapi.fu.In2;
 import xapi.fu.Mutable;
-import xapi.scope.api.RequestScope;
-import xapi.util.api.RequestLike;
+import xapi.scope.request.RequestScope;
+import xapi.scope.request.RequestLike;
 
 import java.util.concurrent.locks.LockSupport;
 

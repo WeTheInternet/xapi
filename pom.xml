@@ -191,6 +191,17 @@
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-core-scope</artifactId>
+    <version>${project.version}</version>
+   </dependency>
+   <dependency>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-core-scope</artifactId>
+    <version>${project.version}</version>
+    <classifier>sources</classifier>
+   </dependency>
+   <dependency>
+    <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-lang</artifactId>
     <version>${project.version}</version>
    </dependency>
@@ -218,29 +229,29 @@
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
-    <artifactId>xapi-core-args</artifactId>
-    <version>${project.version}</version>
-   </dependency>
-   <dependency>
-    <groupId>net.wetheinter</groupId>
-    <artifactId>xapi-core-args</artifactId>
-    <version>${project.version}</version>
-    <classifier>sources</classifier>
-   </dependency>
-   <dependency>
-    <groupId>net.wetheinter</groupId>
-    <artifactId>xapi-core-event</artifactId>
-    <version>${project.version}</version>
-   </dependency>
-   <dependency>
-    <groupId>net.wetheinter</groupId>
-    <artifactId>xapi-core-event</artifactId>
-    <version>${project.version}</version>
-    <classifier>sources</classifier>
-   </dependency>
-   <dependency>
-    <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-collect</artifactId>
+    <version>${project.version}</version>
+    <classifier>sources</classifier>
+   </dependency>
+   <dependency>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-core-args</artifactId>
+    <version>${project.version}</version>
+   </dependency>
+   <dependency>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-core-args</artifactId>
+    <version>${project.version}</version>
+    <classifier>sources</classifier>
+   </dependency>
+   <dependency>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-core-event</artifactId>
+    <version>${project.version}</version>
+   </dependency>
+   <dependency>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-core-event</artifactId>
     <version>${project.version}</version>
     <classifier>sources</classifier>
    </dependency>

@@ -1,9 +1,9 @@
 package xapi.server.api;
 
 import xapi.fu.In1;
-import xapi.scope.api.RequestScope;
+import xapi.scope.request.RequestScope;
 import xapi.scope.api.Scope;
-import xapi.util.api.RequestLike;
+import xapi.scope.request.RequestLike;
 
 /**
  * A simple service interface for handling remote requests.

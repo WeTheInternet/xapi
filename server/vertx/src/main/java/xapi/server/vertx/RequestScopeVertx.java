@@ -1,7 +1,7 @@
 package xapi.server.vertx;
 
 import xapi.annotation.inject.InstanceOverride;
-import xapi.scope.api.RequestScope;
+import xapi.scope.request.RequestScope;
 import xapi.scope.impl.AbstractScope;
 
 /**

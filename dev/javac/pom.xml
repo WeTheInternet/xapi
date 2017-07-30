@@ -36,7 +36,7 @@
      </dependency>
      <dependency>
       <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-core-process</artifactId>
+      <artifactId>xapi-core-scope</artifactId>
      </dependency>
      <dependency>
       <groupId>net.wetheinter</groupId>
