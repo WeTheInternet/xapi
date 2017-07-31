@@ -1,9 +1,12 @@
 package xapi.scope.impl;
 
 import xapi.fu.In1Out1;
+import xapi.fu.In2Out1;
 import xapi.fu.Maybe;
 import xapi.inject.X_Inject;
+import xapi.scope.X_Scope;
 import xapi.scope.request.RequestScope;
+import xapi.scope.request.ResponseLike;
 import xapi.scope.request.SessionScope;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
@@ -15,23 +18,23 @@ import java.util.WeakHashMap;
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 9/5/16.
  */
-public class SessionScopeDefault <User, Request extends RequestLike, Session extends SessionScopeDefault<User, Request, Session>>
-    extends AbstractScope<Session> implements SessionScope<User, Request>, Destroyable {
+public class SessionScopeDefault <User, Request extends RequestLike, Response extends ResponseLike, Session extends SessionScopeDefault<User, Request, Response, Session>>
+    extends AbstractScope<Session> implements SessionScope<User, Request, Response>, Destroyable {
 
     private User user;
     private Moment activity;
-    private In1Out1<Request, RequestScope<Request>> scopeFactory;
-    protected final WeakHashMap<Request, RequestScope<Request>> requests;
+    private In2Out1<Request, Response, RequestScope<Request, Response>> scopeFactory;
+    protected final WeakHashMap<Request, RequestScope<Request, Response>> requests;
 
     protected SessionScopeDefault() {
-        this((req)->{
+        this((req, resp)->{
             final RequestScope scope = X_Inject.instance(RequestScope.class);
-            scope.initialize(req);
+            scope.initialize(req, resp);
             return scope;
         });
     }
 
-    protected SessionScopeDefault(In1Out1<Request, RequestScope<Request>> scopeFactory) {
+    protected SessionScopeDefault(In2Out1<Request, Response, RequestScope<Request, Response>> scopeFactory) {
         touch();
         requests = new WeakHashMap<>();
         this.scopeFactory = scopeFactory;
@@ -43,12 +46,10 @@ public class SessionScopeDefault <User, Request extends RequestLike, Session ext
     }
 
     @Override
-    public RequestScope<Request> getRequestScope(Maybe<Request> request) {
-        if(request.isPresent()){
-            final RequestScope<Request> scope = requests.get(request.get());
-            if (scope != null) {
-                return scope;
-            }
+    public RequestScope<Request, Response> getRequestScope(Request req, Response resp) {
+        final RequestScope<Request, Response> scope = requests.get(req);
+        if (scope != null) {
+            return scope;
         }
         final Maybe<RequestScope> parentScope = findParentOrSelf(RequestScope.class, false);
         if (parentScope.isPresent()) {
@@ -56,34 +57,30 @@ public class SessionScopeDefault <User, Request extends RequestLike, Session ext
         }
         // only let one thread look in or mutate this scope at a time
         synchronized (requests) {
-            final Request req = request.getOrThrow(() -> new IllegalArgumentException(
-                "Cannot get a request scope with a null request from scope " + this
-            ));
-            final RequestScope<Request> child = requests.get(req);
+            final RequestScope<Request, Response> child = requests.get(req);
             if (child != null) {
                 // TODO: validate generic signatures.
                 return child;
             }
             // no existing scope, create one.
-            final RequestScope<Request> newScope = createRequestScope(request);
+            final RequestScope<Request, Response> newScope = createRequestScope(req, resp);
             final RequestScope was = requests.put(req, newScope);
             if (was != null) {
                 was.release();
             }
+            newScope.setParent(X_Scope.currentScope());
             return newScope;
         }
     }
 
-    protected RequestScope<Request> createRequestScope(Maybe<Request> request) {
-        final RequestScope<Request> scope = new RequestScopeDefault<>();
-        if (request.isPresent()) {
-            scope.initialize(request.get());
-        }
+    protected RequestScope<Request, Response> createRequestScope(Request request, Response response) {
+        final RequestScope<Request, Response> scope = new RequestScopeDefault<>();
+        scope.initialize(request, response);
         return scope;
     }
 
     @Override
-    public SessionScope<User, Request> setUser(User user) {
+    public SessionScope<User, Request, Response> setUser(User user) {
         this.user = user;
         return this;
     }

@@ -44,7 +44,7 @@ import java.util.concurrent.locks.LockSupport;
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/23/16.
  */
-class TestSocketServer extends AbstractModel implements WebApp, Rethrowable, XapiServer<SocketRequest, Socket> {
+class TestSocketServer extends AbstractModel implements WebApp, Rethrowable, XapiServer<SocketRequest, SocketResponse> {
 
     private final URL classpath;
     private final Lazy<Socket> io;
@@ -111,8 +111,9 @@ class TestSocketServer extends AbstractModel implements WebApp, Rethrowable, Xap
     }
 
     @Override
-    public void serviceRequest(Socket socket, In2<SocketRequest, Boolean> callback) {
-
+    public void serviceRequest(
+        RequestScope<SocketRequest, SocketResponse> request, In2<SocketRequest, Boolean> callback
+    ) {
     }
 
     @Override
@@ -141,56 +142,59 @@ class TestSocketServer extends AbstractModel implements WebApp, Rethrowable, Xap
     }
 
     @Override
-    public void writeText(RequestScope<SocketRequest> request, String payload, In1<SocketRequest> callback) {
+    public void writeText(RequestScope<SocketRequest, SocketResponse> request, String payload, In1<SocketRequest> callback) {
         throw new UnsupportedOperationException("writeText not supported");
     }
 
     @Override
     public void writeFile(
-        RequestScope<SocketRequest> request, String payload, In1<SocketRequest> callback
+        RequestScope<SocketRequest, SocketResponse> request, String payload, In1<SocketRequest> callback
     ) {
         throw new UnsupportedOperationException("writeText not supported");
     }
 
     @Override
-    public void writeGwtJs(RequestScope<SocketRequest> request, String payload, In1<SocketRequest> callback) {
+    public void writeGwtJs(RequestScope<SocketRequest, SocketResponse> request, String payload, In1<SocketRequest> callback) {
         throw new UnsupportedOperationException("writeGwtJs not supported");
     }
 
     @Override
     public void writeTemplate(
-        RequestScope<SocketRequest> request, String payload, In1<SocketRequest> callback
+        RequestScope<SocketRequest, SocketResponse> request, String payload, In1<SocketRequest> callback
     ) {
         throw new UnsupportedOperationException("writeTemplate not supported");
     }
 
     @Override
-    public void writeCallback(RequestScope<SocketRequest> request, String payload, In1<SocketRequest> callback) {
+    public void writeCallback(RequestScope<SocketRequest, SocketResponse> request, String payload, In1<SocketRequest> callback) {
         throw new UnsupportedOperationException("writeCallback not supported");
     }
 
     @Override
     public void writeService(
-        String path, RequestScope<SocketRequest> request, String payload, In1<SocketRequest> callback
+        String path, RequestScope<SocketRequest, SocketResponse> request, String payload, In1<SocketRequest> callback
     ) {
         throw new UnsupportedOperationException("writeService not supported");
     }
 
     @Override
-    public void registerEndpoint(String name, XapiEndpoint<SocketRequest> endpoint) {
+    public void registerEndpoint(String name, XapiEndpoint<SocketRequest, SocketResponse> endpoint) {
         throw new UnsupportedOperationException("registerEndpoint not supported");
     }
 
     @Override
     public void registerEndpointFactory(
-        String name, boolean singleton, In1Out1<String, XapiEndpoint<SocketRequest>> endpoint
+        String name, boolean singleton, In1Out1<String, XapiEndpoint<SocketRequest, SocketResponse>> endpoint
     ) {
         throw new UnsupportedOperationException("registerEndpoint not supported");
     }
 
     @Override
-    public void inScope(Socket socket, In1Unsafe<RequestScope<SocketRequest>> callback) {
-
+    public void inScope(
+        SocketRequest socketRequest,
+        SocketResponse socketResponse,
+        In1Unsafe<RequestScope<SocketRequest, SocketResponse>> callback
+    ) {
     }
 
     public void start() {

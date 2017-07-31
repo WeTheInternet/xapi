@@ -54,6 +54,12 @@
     </dependency>
 
     <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-core-lang</artifactId>
+      <classifier>sources</classifier>
+    </dependency>
+
+    <dependency>
       <groupId>${gwt.groupId}</groupId>
       <artifactId>gwt-elemental</artifactId>
     </dependency>

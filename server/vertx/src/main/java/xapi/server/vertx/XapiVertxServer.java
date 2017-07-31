@@ -72,7 +72,7 @@ import com.google.gwt.dev.codeserver.CompileStrategy;
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/23/16.
  */
-public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerRequest> {
+public class XapiVertxServer implements XapiServer<VertxRequest, VertxResponse> {
 
     private static final String SESSION_KEY = "wtis";
     private static final String INSTANCE_ID_COUNTER = "iids";
@@ -81,7 +81,7 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
     private final PrimitiveSerializer primitives;
     private Vertx vertx;
     private In1<DoUnsafe> exe;
-    private final InitMap<String, XapiEndpoint<?>> endpoints;
+    private final InitMap<String, XapiEndpoint<?, ?>> endpoints;
     /**
      * This instance id; by default, generated sequentially from static variable.
      * TODO: use a vert.x clustered counter
@@ -177,12 +177,12 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
     }
 
     @Override
-    public void registerEndpoint(String name, XapiEndpoint<VertxRequest> endpoint) {
+    public void registerEndpoint(String name, XapiEndpoint<VertxRequest, VertxResponse> endpoint) {
         endpoints.put(name, endpoint);
     }
 
     @Override
-    public void registerEndpointFactory(String name, boolean singleton, In1Out1<String, XapiEndpoint<VertxRequest>> endpoint) {
+    public void registerEndpointFactory(String name, boolean singleton, In1Out1<String, XapiEndpoint<VertxRequest, VertxResponse>> endpoint) {
         synchronized (endpoints) {
             endpoints.put(name, (path, requestLike, payload, callback) -> {
                 final XapiEndpoint realEndpoint = endpoint.io(name);
@@ -194,7 +194,7 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
             });
         }
     }
-    protected XapiEndpoint<?> findEndpoint(String name) {
+    protected XapiEndpoint<?, ?> findEndpoint(String name) {
         // this is called during the init process of the underlying map,
         // but we made it protected so it could be overloaded, and that
         // means still want to route all endpoint loading through the caching map.
@@ -213,7 +213,7 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
                 }
                 assert XapiEndpoint.class.isInstance(inst) : "Injection result of " + name + ", " + inst.getClass() + " is not a XapiEndpoint" +
                     " (or there is something nefarious happening with your classloader)";
-                final XapiEndpoint<?> endpoint = (XapiEndpoint<?>) inst;
+                final XapiEndpoint<?, ?> endpoint = (XapiEndpoint<?, ?>) inst;
                 // we'll cache singletons
                 endpoints.put(name, endpoint);
                 return endpoint;
@@ -223,21 +223,21 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
                     inst = X_Inject.instance(cls);
                     // huzzah!  we can create instances.  In this case, we'll return the one we just created,
                     // plus create a simple delegate which knows to inject a new endpoint per invocation.
-                    final Class<XapiEndpoint<?>> c = Class.class.cast(cls);
+                    final Class<XapiEndpoint<?, ?>> c = Class.class.cast(cls);
                     endpoints.put(name, (path, requestLike, payload, callback) -> {
                         XapiEndpoint realInst = X_Inject.instance(c);
                         realInst.serviceRequest(path, requestLike, payload, callback);
                     });
                     assert XapiEndpoint.class.isInstance(inst) : "Injection result of " + name + ", " + inst.getClass() + " is not a XapiEndpoint" +
                         " (or there is something nefarious happening with your classloader)";
-                    return (XapiEndpoint<?>) inst;
+                    return (XapiEndpoint<?, ?>) inst;
                 } catch (RuntimeException stillIgnored) {
                     // STILL no dice... try service loader then give up.
                     for (Object result : ServiceLoader.load(cls, cl)) {
                         // if you loaded through service loader, you are going to be static, and can worry about
                         // state management yourself.
                         if (XapiEndpoint.class.isInstance(result)) {
-                            final XapiEndpoint<?> endpoint = (XapiEndpoint<?>) result;
+                            final XapiEndpoint<?, ?> endpoint = (XapiEndpoint<?, ?>) result;
                             endpoints.put(name, endpoint);
                             return endpoint;
                         }
@@ -257,12 +257,11 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
 
     @Override
     public void inScope(
-        HttpServerRequest req, In1Unsafe<RequestScope<VertxRequest>> callback
+        VertxRequest req, VertxResponse resp, In1Unsafe<RequestScope<VertxRequest, VertxResponse>> callback
     ) {
         X_Scope.service().runInNewScope(SessionScope.class, (session, done)->{
 
-            VertxRequest vertxReq = new VertxRequest(req);
-            final RequestScope scope = session.getRequestScope(Maybe.immutable(vertxReq));
+            final RequestScope scope = session.getRequestScope(req, resp);
             final XapiServer was = scope.setLocal(XapiServer.class, this);
             final RequestScopeVertx s = (RequestScopeVertx) scope;
             final MapLike<String, String> cookies = s.getRequest().getCookies();
@@ -276,14 +275,15 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
                 @Override
                 public void onError(Throwable e) {
                     X_Log.error(XapiVertxServer.class, "Error loading session", e);
-                    req.response().putHeader("Set-Cookie", SESSION_KEY+"=;path=/;expires=" + EXPIRED + ";");
+                    resp.addHeader("Set-Cookie", SESSION_KEY+"=;path=/;expires=" + EXPIRED + ";");
                     finish();
                 }
 
                 private void finish() {
                     try {
-                        VertxRequest forScope = VertxRequest.getOrMake(s.getRequest(), req);
-                        s.initialize(forScope);
+                        VertxRequest scopeRequest = VertxRequest.getOrMake(s.getRequest(), req.getHttpRequest());
+                        final VertxResponse scopeResponse = new VertxResponse(req.getResponse());
+                        s.initialize(scopeRequest, scopeResponse);
                         callback.in(s);
                         done.done();
                     } finally {
@@ -403,15 +403,18 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
     }
 
     protected void handleRequest(HttpServerRequest req) {
-        serviceRequest(req, (r, success)->{
-            final HttpServerResponse resp = r.getHttpRequest().response();
-            if (r.isAutoclose() && !resp.ended()){
-                resp.end();
-            }
-            if (!Boolean.TRUE.equals(success)) {
-              final HttpServerResponse response = req.response();
-              on404(req, response);
-            }
+        final VertxRequest request = new VertxRequest(req);
+        final VertxResponse response = new VertxResponse(req.response());
+        inScope(request, response, scope->{
+            serviceRequest(scope, (r, success)->{
+                final HttpServerResponse resp = r.getHttpRequest().response();
+                if (r.isAutoclose() && !resp.ended()){
+                    resp.end();
+                }
+                if (!Boolean.TRUE.equals(success)) {
+                  on404(req, response.getResponse());
+                }
+            });
         });
     }
 
@@ -465,13 +468,11 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
 
     @Override
     public void serviceRequest(
-        HttpServerRequest req, In2<VertxRequest, Boolean> callback
+        RequestScope<VertxRequest, VertxResponse> request, In2<VertxRequest, Boolean> callback
     ) {
-        inScope(req, vertx->{
-
             try {
 
-                final String path = req.path();
+                final String path = request.getPath();
                 final WebApp app = getWebApp();
                 Route best = null;
                 ChainBuilder<Route> backups = Chain.startChain();
@@ -481,7 +482,7 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
                     if (match > score) {
                         if (match == 1) {
                             // Try to serve a perfect match immediately
-                            if (route.serve(path, vertx, done->
+                            if (route.serve(path, request, done->
                                 callback.in(done, true)
                             )) {
                                 return;
@@ -499,14 +500,14 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
                     }
                 }
                 if (best != null) {
-                    if (best.serve(path, vertx, done->
+                    if (best.serve(path, request, done->
                         callback.in(done, true)
                     )) {
                         return;
                     } else {
                         X_Log.trace(getClass(), "Best was no good; ", best, "\nServing backups:", backups);
                         for (Route backup : backups) {
-                            if (backup.serve(path, vertx, done->
+                            if (backup.serve(path, request, done->
                                 callback.in(done, true)
                             )) {
                                 return;
@@ -516,13 +517,12 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
                 }
             } catch (Throwable t) {
                 // failure... TODO error mapping
-                callback.in(vertx.getRequest(), false);
+                callback.in(request.getRequest(), false);
                 throw t;
             }
 
             // If you didn't return, you failed and should return failure to the client
-            callback.in(vertx.getRequest(), false);
-        });
+            callback.in(request.getRequest(), false);
     }
 
     @Override
@@ -546,7 +546,7 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
     }
 
     @Override
-    public void writeText(RequestScope<VertxRequest> request, String payload, In1<VertxRequest> callback) {
+    public void writeText(RequestScope<VertxRequest, VertxResponse> request, String payload, In1<VertxRequest> callback) {
         final HttpServerResponse response = request.getRequest().getResponse();
         response.end(payload);
         callback.in(request.getRequest());
@@ -554,7 +554,7 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
 
     @Override
     public void writeTemplate(
-        RequestScope<VertxRequest> request, String payload, In1<VertxRequest> callback
+        RequestScope<VertxRequest, VertxResponse> request, String payload, In1<VertxRequest> callback
     ) {
         if (payload.trim().startsWith("<")) {
             // We have a xapi template to parse and run...
@@ -601,7 +601,7 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
     }
 
     @Override
-    public void writeFile(RequestScope<VertxRequest> request, String payload, In1<VertxRequest> callback) {
+    public void writeFile(RequestScope<VertxRequest, VertxResponse> request, String payload, In1<VertxRequest> callback) {
         final HttpServerResponse response = request.getRequest().getResponse();
         File toServe = new File(webApp.getContentRoot());
         if (!toServe.exists()) {
@@ -619,7 +619,7 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
     }
 
     @Override
-    public void writeGwtJs(RequestScope<VertxRequest> request, String payload, In1<VertxRequest> callback) {
+    public void writeGwtJs(RequestScope<VertxRequest, VertxResponse> request, String payload, In1<VertxRequest> callback) {
         final ModelGwtc module = getWebApp().getOrCreateGwtModules().get(payload);
         if (module == null) {
             throw new IllegalArgumentException("No gwt app registered for id " + payload);
@@ -772,14 +772,14 @@ public class XapiVertxServer implements XapiServer<VertxRequest, HttpServerReque
     }
 
     @Override
-    public void writeCallback(RequestScope<VertxRequest> request, String payload, In1<VertxRequest> callback) {
+    public void writeCallback(RequestScope<VertxRequest, VertxResponse> request, String payload, In1<VertxRequest> callback) {
         callback.in(request.getRequest());
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public void writeService(
-        String path, RequestScope<VertxRequest> request, String payload, In1<VertxRequest> callback
+        String path, RequestScope<VertxRequest, VertxResponse> request, String payload, In1<VertxRequest> callback
     ) {
         final XapiEndpoint endpoint = findEndpoint(payload);
         if (endpoint == null) {

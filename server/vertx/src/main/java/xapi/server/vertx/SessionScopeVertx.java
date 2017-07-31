@@ -2,7 +2,9 @@ package xapi.server.vertx;
 
 import xapi.annotation.inject.InstanceOverride;
 import xapi.fu.Maybe;
+import xapi.scope.request.RequestLike;
 import xapi.scope.request.RequestScope;
+import xapi.scope.request.ResponseLike;
 import xapi.scope.request.SessionScope;
 import xapi.scope.impl.SessionScopeDefault;
 
@@ -11,7 +13,7 @@ import xapi.scope.impl.SessionScopeDefault;
  */
 @InstanceOverride(implFor = SessionScope.class)
 public class SessionScopeVertx extends
-    SessionScopeDefault<CollideUser, VertxRequest, SessionScopeVertx>{
+    SessionScopeDefault<CollideUser, VertxRequest, VertxResponse, SessionScopeVertx>{
 
     private CollideUser user;
 
@@ -25,18 +27,17 @@ public class SessionScopeVertx extends
     }
 
     @Override
-    public RequestScope<VertxRequest> getRequestScope(Maybe<VertxRequest> request) {
+    public RequestScope<VertxRequest, VertxResponse> getRequestScope(VertxRequest req, VertxResponse resp) {
         synchronized (requests) {
             RequestScopeVertx current = (RequestScopeVertx)get(RequestScope.class);
             if (current == null) {
-                current = new RequestScopeVertx(request.get());
+                current = new RequestScopeVertx(req, resp);
                 current.setParent(this);
                 setLocal(RequestScope.class, current);
             } else {
-                if (request.isPresent()) {
-                    final VertxRequest req = request.get();
+                if (req != null) {
                     assert current.findParent(SessionScope.class, false).get() == SessionScopeVertx.this;
-                    current.initialize(req);
+                    current.initialize(req, resp);
                 }
             }
             return current;
@@ -44,7 +45,7 @@ public class SessionScopeVertx extends
     }
 
     @Override
-    public SessionScope<CollideUser, VertxRequest> setUser(CollideUser user) {
+    public SessionScope<CollideUser, VertxRequest, VertxResponse> setUser(CollideUser user) {
         this.user = user;
         return this;
     }

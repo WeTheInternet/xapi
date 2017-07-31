@@ -86,7 +86,7 @@ public class HtmlBuffer {
 
     @Override
     public String toString() {
-      return buffer.toString();
+      return buffer.toSource();
     }
 
     public HeadBuffer setLang(String lang) {

@@ -8,6 +8,7 @@ import xapi.fu.In2;
 import xapi.fu.Mutable;
 import xapi.scope.request.RequestScope;
 import xapi.scope.request.RequestLike;
+import xapi.scope.request.ResponseLike;
 
 import java.util.concurrent.locks.LockSupport;
 
@@ -16,15 +17,15 @@ import static xapi.collect.api.IntTo.isEmpty;
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/23/16.
  */
-public interface XapiServer <Request extends RequestLike, RawRequest> {
+public interface XapiServer <Request extends RequestLike, Response extends ResponseLike> {
 
-    void inScope(RawRequest request, In1Unsafe<RequestScope<Request>> callback);
+    void inScope(Request request, Response response, In1Unsafe<RequestScope<Request, Response>> callback);
 
     void start();
 
     void shutdown();
 
-    void serviceRequest(RawRequest request, In2<Request, Boolean> callback);
+    void serviceRequest(RequestScope<Request, Response> request, In2<Request, Boolean> callback);
 
     String getPath(Request req);
 
@@ -52,23 +53,23 @@ public interface XapiServer <Request extends RequestLike, RawRequest> {
 
     IntTo<String> getHeaders(Request req, String header);
 
-    void writeText(RequestScope<Request> request, String payload, In1<Request> callback);
+    void writeText(RequestScope<Request, Response> request, String payload, In1<Request> callback);
 
-    void writeFile(RequestScope<Request> request, String payload, In1<Request> callback);
+    void writeFile(RequestScope<Request, Response> request, String payload, In1<Request> callback);
 
-    void writeTemplate(RequestScope<Request> request, String payload, In1<Request> callback);
+    void writeTemplate(RequestScope<Request, Response> request, String payload, In1<Request> callback);
 
-    void writeGwtJs(RequestScope<Request> request, String payload, In1<Request> callback);
+    void writeGwtJs(RequestScope<Request, Response> request, String payload, In1<Request> callback);
 
-    void writeCallback(RequestScope<Request> request, String payload, In1<Request> callback);
+    void writeCallback(RequestScope<Request, Response> request, String payload, In1<Request> callback);
 
-    void writeService(String path, RequestScope<Request> request, String payload, In1<Request> callback);
+    void writeService(String path, RequestScope<Request, Response> request, String payload, In1<Request> callback);
 
-    void registerEndpoint(String name, XapiEndpoint<Request> endpoint);
+    void registerEndpoint(String name, XapiEndpoint<Request, Response> endpoint);
 
-    void registerEndpointFactory(String name, boolean singleton, In1Out1<String, XapiEndpoint<Request>> endpoint);
+    void registerEndpointFactory(String name, boolean singleton, In1Out1<String, XapiEndpoint<Request, Response>> endpoint);
 
-    default boolean blockFor(RequestScope<Request> request, Mutable<Boolean> success, int millis) {
+    default boolean blockFor(RequestScope<Request, Response> request, Mutable<Boolean> success, int millis) {
         long deadline = System.currentTimeMillis() + millis;
         while (System.currentTimeMillis() < deadline) {
             if (success.out1() != null) {

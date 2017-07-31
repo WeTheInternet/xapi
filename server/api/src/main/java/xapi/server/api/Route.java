@@ -6,6 +6,7 @@ import xapi.fu.Log.LogLevel;
 import xapi.fu.Mutable;
 import xapi.model.api.Model;
 import xapi.scope.request.RequestScope;
+import xapi.scope.request.ResponseLike;
 import xapi.source.write.Template;
 import xapi.scope.request.RequestLike;
 
@@ -23,7 +24,7 @@ public interface Route extends Model {
         Text, Gwt, Callback, File, Template, Service
     }
 
-    default <Req extends RequestLike> boolean serve(String path, RequestScope<Req> request, In1<Req> callback) {
+    default <Req extends RequestLike, Resp extends ResponseLike> boolean serve(String path, RequestScope<Req, Resp> request, In1<Req> callback) {
         RouteType type = getRouteType();
         if (type == null) {
             getOrCreateLog().log(getClass(), LogLevel.WARN,

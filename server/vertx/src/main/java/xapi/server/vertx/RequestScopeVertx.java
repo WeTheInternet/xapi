@@ -8,15 +8,17 @@ import xapi.scope.impl.AbstractScope;
  * Created by James X. Nelson (james @wetheinter.net) on 10/2/16.
  */
 @InstanceOverride(implFor = RequestScope.class)
-public class RequestScopeVertx extends AbstractScope<RequestScopeVertx> implements RequestScope <VertxRequest> {
+public class RequestScopeVertx extends AbstractScope<RequestScopeVertx> implements RequestScope <VertxRequest, VertxResponse> {
 
     private VertxRequest req;
+    private VertxResponse resp;
 
     public RequestScopeVertx() {
     }
 
-    public RequestScopeVertx(VertxRequest req) {
+    public RequestScopeVertx(VertxRequest req, VertxResponse resp) {
         this.req = req;
+        this.resp = resp;
     }
 
     @Override
@@ -25,16 +27,25 @@ public class RequestScopeVertx extends AbstractScope<RequestScopeVertx> implemen
     }
 
     @Override
-    public void initialize(VertxRequest request) {
-        if (this.req != null && this.req != request) {
+    public VertxResponse getResponse() {
+        return resp;
+    }
+
+    @Override
+    public void initialize(VertxRequest req, VertxResponse resp) {
+        if (this.req != null && this.req != req) {
             this.req.destroy();
         }
-        this.req = request;
-        preload(request);
+        if (this.resp != null && this.resp != resp) {
+            this.resp.destroy();
+        }
+        this.req = req;
+        this.resp = resp;
+        preload(req, resp);
 
     }
 
-    protected void preload(VertxRequest req) {
+    protected void preload(VertxRequest req, VertxResponse resp) {
 
     }
 }

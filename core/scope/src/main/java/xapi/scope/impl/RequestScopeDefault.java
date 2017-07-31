@@ -2,15 +2,17 @@ package xapi.scope.impl;
 
 import xapi.scope.request.RequestScope;
 import xapi.scope.request.RequestLike;
+import xapi.scope.request.ResponseLike;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/4/16.
  */
-public class RequestScopeDefault <Req extends RequestLike, Self extends RequestScopeDefault<Req, Self>>
+public class RequestScopeDefault <Req extends RequestLike, Resp extends ResponseLike, Self extends RequestScopeDefault<Req, Resp, Self>>
     extends AbstractScope <Self>
-    implements RequestScope <Req> {
+    implements RequestScope <Req, Resp> {
 
     private Req request;
+    private Resp response;
 
     @Override
     public Req getRequest() {
@@ -18,8 +20,14 @@ public class RequestScopeDefault <Req extends RequestLike, Self extends RequestS
     }
 
     @Override
-    public void initialize(Req req) {
+    public Resp getResponse() {
+        return response;
+    }
+
+    @Override
+    public void initialize(Req req, Resp resp) {
         this.request = req;
+        this.response = resp;
     }
 
 }

@@ -6,12 +6,12 @@ import xapi.scope.api.Scope;
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/8/16.
  */
-public interface SessionScope<UserType, RequestType extends RequestLike> extends Scope {
+public interface SessionScope<UserType, RequestType extends RequestLike, ResponseType extends ResponseLike> extends Scope {
   UserType getUser();
 
-  RequestScope<RequestType> getRequestScope(Maybe<RequestType> request);
+  RequestScope<RequestType, ResponseType> getRequestScope(RequestType request, ResponseType response);
 
-  SessionScope<UserType, RequestType> setUser(UserType user);
+  SessionScope<UserType, RequestType, ResponseType> setUser(UserType user);
 
   void touch();
 

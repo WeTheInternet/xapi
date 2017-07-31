@@ -8,12 +8,13 @@ Feature:
       | <web-app /> |
     Then Expect web app named HelloWorld to have source:
       | import xapi.fu.In1;                                                                                                          |
+      | import xapi.scope.request.RequestLike;                                                                                            |
+      | import xapi.scope.request.ResponseLike;                                                                                            |
       | import xapi.server.api.WebApp;                                                                                               |
       | import xapi.server.api.XapiServer;                                                                                           |
       | import xapi.server.api.XapiServerPlugin;                                                                                     |
-      | import xapi.util.api.RequestLike;                                                                                            |
       |                                                                                                                              |
-      | public class BaseHelloWorldComponent <Request extends RequestLike, Response> implements XapiServerPlugin<Request,Response> { |
+      | public class BaseHelloWorldComponent <Request extends RequestLike, Response extends ResponseLike> implements XapiServerPlugin<Request,Response> { |
       |                                                                                                                              |
       | public In1<XapiServer<Request, Response>> installToServer (WebApp app) {                                                     |
       |   return In1.ignored();                                                                                                        |
@@ -38,12 +39,13 @@ Feature:
       | /web-app>                               |
     Then Expect web app named HelloWorld to have source:
       | import xapi.fu.In1;                                                                   |
+      | import xapi.scope.request.RequestLike;                                                                          |
+      | import xapi.scope.request.ResponseLike;                                                                          |
       | import xapi.server.api.WebApp;                                                                   |
       | import xapi.server.api.XapiServer;                                                                         |
       | import xapi.server.api.XapiServerPlugin;                                                                   |
-      | import xapi.util.api.RequestLike;                                                                          |
       |                                                                                                            |
-      | public class BaseHelloWorldComponent <Request extends RequestLike, Response> implements XapiServerPlugin<Request,Response> { |
+      | public class BaseHelloWorldComponent <Request extends RequestLike, Response extends ResponseLike> implements XapiServerPlugin<Request,Response> { |
       |                                                                                                            |
       |   public In1<XapiServer<Request, Response>> installToServer (WebApp app) {                                                     |
       |     installRoute(app);                                                                                     |
@@ -79,12 +81,13 @@ Feature:
       | /web-app>                               |
     Then Expect web app named TemplateWorld to have source:
       | import xapi.fu.In1;                                                                   |
+      | import xapi.scope.request.RequestLike;                                                                          |
+      | import xapi.scope.request.ResponseLike;                                                                          |
       | import xapi.server.api.WebApp;                                                                   |
       | import xapi.server.api.XapiServer;                                                                         |
       | import xapi.server.api.XapiServerPlugin;                                                                   |
-      | import xapi.util.api.RequestLike;                                                                          |
       |                                                                                                            |
-      | public class BaseTemplateWorldComponent <Request extends RequestLike, Response> implements XapiServerPlugin<Request,Response> { |
+      | public class BaseTemplateWorldComponent <Request extends RequestLike, Response extends ResponseLike> implements XapiServerPlugin<Request,Response> { |
       |                                                                                                            |
       |   public In1<XapiServer<Request, Response>> installToServer (WebApp app) {                                                     |
       |     installRoute(app);                                                                                     |

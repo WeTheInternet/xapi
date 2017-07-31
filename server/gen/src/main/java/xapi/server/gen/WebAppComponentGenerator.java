@@ -8,6 +8,7 @@ import xapi.dev.ui.api.*;
 import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.dev.ui.api.UiVisitScope.ScopeType;
 import xapi.fu.In1;
+import xapi.scope.request.ResponseLike;
 import xapi.server.api.WebApp;
 import xapi.server.api.XapiServer;
 import xapi.server.api.XapiServerPlugin;
@@ -41,7 +42,7 @@ public class WebAppComponentGenerator extends UiComponentGenerator {
         cb.addGenericInterface(XapiServerPlugin.class.getCanonicalName(), "Request", "Response");
         String in1 = cb.addImport(In1.class);
         installMethod = cb
-            .addGenerics("Request extends " + cb.addImport(RequestLike.class), "Response")
+            .addGenerics("Request extends " + cb.addImport(RequestLike.class), "Response extends " + cb.addImport(ResponseLike.class))
             .createMethod(
                 in1 + "<" + server + "<Request, Response>>" +
                 " "+

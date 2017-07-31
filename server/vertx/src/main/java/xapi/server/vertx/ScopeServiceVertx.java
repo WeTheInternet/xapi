@@ -16,12 +16,13 @@ import xapi.scope.service.ScopeService;
 @SuppressWarnings("unchecked")
 public class ScopeServiceVertx extends ScopeServiceDefault {
 
-    public RequestScope<VertxRequest> requestScope(HttpServerRequest req) {
-        final SessionScope<ModelUser, VertxRequest> session = sessionScope();
+    public RequestScope<VertxRequest, VertxResponse> requestScope(HttpServerRequest req) {
+        final SessionScope<ModelUser, VertxRequest, VertxResponse> session = sessionScope();
         // This request will be ignored if the request scope is already initialized
         VertxRequest vertxReq = new VertxRequest(req);
+        VertxResponse vertxResp = new VertxResponse(req.response());
         final RequestScopeVertx request = (RequestScopeVertx) session.getRequestScope(
-            Maybe.immutable(vertxReq)
+            vertxReq, vertxResp
         );
         if (req != null) {
             request.getRequest().setHttpRequest(req);
@@ -29,7 +30,7 @@ public class ScopeServiceVertx extends ScopeServiceDefault {
         return request;
     }
 
-    public SessionScope<ModelUser, VertxRequest> sessionScope() {
+    public SessionScope<ModelUser, VertxRequest, VertxResponse> sessionScope() {
         return currentScope().getOrCreate(SessionScope.class, c->
             new SessionScopeVertx()
         );

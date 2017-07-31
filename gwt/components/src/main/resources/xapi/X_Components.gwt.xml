@@ -10,6 +10,7 @@
   <inherits name="xapi.X_Html" />
   <inherits name="xapi.X_Inject" />
   <inherits name="xapi.X_Fu" />
+  <inherits name="xapi.X_Lang" />
   <inherits name="com.github.javaparser.XapiParser" />
   <source path="components" />
 

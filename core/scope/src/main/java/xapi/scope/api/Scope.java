@@ -75,7 +75,8 @@ public interface Scope {
   }
 
   default Scope setParent(Scope parent) {
-    assert !findParent(parent.getClass(), true).isPresent();
+    assert !findParent(parent.forScope(), false).isPresent() :
+        "Already have a parent for " + parent.forScope() +" (from " + parent + ")";
     // We use the class ParentKey as a key,
     // and just tell java we expect some kind of scope back
     // (a type which will not be of type ParentKey)
