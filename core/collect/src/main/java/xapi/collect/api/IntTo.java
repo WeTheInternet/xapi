@@ -4,6 +4,7 @@ import xapi.collect.proxy.CollectionProxy;
 import xapi.fu.Filter.Filter1;
 import xapi.fu.In1;
 import xapi.fu.In1Out1;
+import xapi.fu.ListLike;
 import xapi.fu.MappedIterable;
 import xapi.fu.Out2;
 import xapi.fu.has.HasItems;
@@ -235,4 +236,40 @@ extends CollectionProxy<Integer,T>, HasItems<T>, SizedIterable<T>
     default IntTo<? super T> narrow() {
         return this;
     }
+
+  default ListLike<T> asListLike() {
+    return new ListLike<T>() {
+      @Override
+      public T get(int pos) {
+        return IntTo.this.get(pos);
+      }
+
+      @Override
+      public T set(int pos, T value) {
+        return IntTo.this.put(entryFor(pos, value));
+      }
+
+      @Override
+      public T remove(int pos) {
+        return IntTo.this.remove((Integer)pos);
+      }
+
+      @Override
+      public SizedIterator<T> iterator() {
+        return IntTo.this.iterator();
+      }
+
+      @Override
+      public void clear() {
+        IntTo.this.clear();
+      }
+
+      @Override
+      public int size() {
+        return IntTo.this.size();
+      }
+
+      // TODO figure out any default methods that would be more efficient to override
+    };
+  }
 }

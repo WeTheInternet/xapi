@@ -37,6 +37,12 @@ public interface CollectionProxy <K, V> extends HasEmptiness
 
   Entry<K,V> entryFor(Object key);
 
+  default Entry<K,V> entryFor(Object key, V value) {
+      final Entry<K, V> entry = entryFor(key);
+      entry.setValue(value);
+      return entry;
+  }
+
   V get(Object key);
 
   void setValue(Object key, Object value);
