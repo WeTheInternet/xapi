@@ -211,4 +211,8 @@ public class GeneratedUiImplementation extends GeneratedUiLayer {
     public SizedIterable<RequiredChildFactory> getRequiredChildren() {
         return childFactories.forEachValue();
     }
+
+    public void registerBuilder(GeneratedUiFactory builder) {
+
+    }
 }

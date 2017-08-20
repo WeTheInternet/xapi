@@ -6,6 +6,7 @@ import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import com.github.javaparser.ast.type.Type;
+import xapi.annotation.compile.Generated;
 import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
 import xapi.dev.api.ApiGeneratorContext;
@@ -144,19 +145,21 @@ public class ComponentBuffer {
         // Our tag factory should be a method generated onto the base class;
         // if the source tag supplied a model or a style, we must pass those references in as parameters.
         final GeneratedUiComponent me = getGeneratedComponent();
-        final GeneratedUiBase myBase = me.getBase();
-        String myBaseName = myBase.getWrappedName();
-        myBaseName = otherBase.getSource().addImport(myBaseName);
-        final Maybe<UiAttrExpr> model = ui.getAttribute("model");
-        final Maybe<UiAttrExpr> style = ui.getAttribute("style");
-        final String name = "create" + myBaseName;
+
+        final GeneratedUiFactory externalBuilder = other.getFactory();
+        GeneratedUiMethod method = component.createFactoryMethod(tools, ctx, namespace, externalBuilder);
+        final String name = method.getMemberName();
         MethodCallExpr call = new MethodCallExpr(null, name);
-        final Type returnType = tools.methods().$type(tools, ctx, StringLiteralExpr.stringLiteral(myBaseName)).getType();
-        GeneratedUiMethod method = new GeneratedUiMethod(returnType, name);
+
+
         method.setSource(ui);
         method.setContext(ctx);
+
+        final Maybe<UiAttrExpr> model = ui.getAttribute("model");
+        final Maybe<UiAttrExpr> style = ui.getAttribute("style");
         final String elBuilder = otherBase.getElementBuilderType(namespace);
-        final MethodBuffer creator = other.getBase().getSource().getClassBuffer()
+
+        final MethodBuffer creator = otherBase.getSource().getClassBuffer()
             .createMethod("public abstract " + elBuilder + " " + name);
         final List<Expression> args = new ArrayList<>();
         RequiredMethodType type = CREATE;

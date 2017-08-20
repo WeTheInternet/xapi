@@ -2,6 +2,7 @@ package xapi.dev.ui.api;
 
 import com.github.javaparser.ast.TypeParameter;
 import com.github.javaparser.ast.body.Parameter;
+import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
@@ -19,6 +20,7 @@ import xapi.dev.ui.api.GeneratedUiLayer.ImplLayer;
 import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.fu.Do;
 import xapi.fu.In1Out1;
+import xapi.fu.In2Out1;
 import xapi.fu.Lazy;
 import xapi.fu.MappedIterable;
 import xapi.fu.Maybe;
@@ -28,6 +30,8 @@ import xapi.fu.iterate.SizedIterable;
 import xapi.source.X_Modifier;
 import xapi.util.X_String;
 
+import static com.github.javaparser.ast.expr.StringLiteralExpr.stringLiteral;
+
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 1/6/17.
  */
@@ -35,6 +39,7 @@ public class GeneratedUiComponent {
 
     private final Lazy<GeneratedUiApi> api;
     private final Lazy<GeneratedUiBase> base;
+    private final Lazy<GeneratedUiFactory> factory;
     private final ClassTo<Lazy<GeneratedUiImplementation>> impls;
     private final String packageName;
     private final String className;
@@ -49,6 +54,7 @@ public class GeneratedUiComponent {
     public GeneratedUiComponent(String pkg, String cls) {
         api = Lazy.deferred1(this::createApi);
         base = Lazy.deferred1(this::createBase);
+        factory = Lazy.deferred1(this::createFactory);
         impls = X_Collect.newClassMap(Lazy.class);
         this.packageName = pkg;
         this.className = cls;
@@ -104,6 +110,12 @@ public class GeneratedUiComponent {
         return created;
     }
 
+    protected GeneratedUiFactory createFactory() {
+        final GeneratedUiFactory created = new GeneratedUiFactory(this, api.out1());
+        globalDefs.forBoth(created::addLocalDefinition);
+        return created;
+    }
+
     protected GeneratedUiApi createApi() {
         final GeneratedUiApi created = new GeneratedUiApi(this, packageName, className);
         globalDefs.forBoth(created::addLocalDefinition);
@@ -116,6 +128,10 @@ public class GeneratedUiComponent {
 
     public GeneratedUiBase getBase() {
         return base.out1();
+    }
+
+    public GeneratedUiFactory getFactory() {
+        return factory.out1();
     }
 
     public boolean hasPublicModel() {
@@ -361,6 +377,11 @@ public class GeneratedUiComponent {
             .filter(GeneratedJavaFile::shouldSaveType)
             .forAll(this::saveType, gen, tools, baseGenerics);
 
+        final GeneratedUiFactory builder = factory.out1();
+        // let the impls have a peek at our builder
+        getImpls().forAll(GeneratedUiImplementation::registerBuilder, builder);
+        saveType(builder, gen, tools, null);
+
     }
 
     protected void saveType(GeneratedUiLayer ui, UiGeneratorService<?> gen, UiGeneratorTools<?> tools, MappedIterable<GeneratedTypeParameter> generics) {
@@ -509,5 +530,28 @@ public class GeneratedUiComponent {
         }
         getImpls().forAll(GeneratedUiImplementation::addLocalDefinition, systemName, referenceType);
 
+    }
+
+    public GeneratedUiMethod createFactoryMethod(
+        UiGeneratorTools tools,
+        ApiGeneratorContext ctx,
+        UiNamespace namespace,
+        GeneratedUiFactory builder
+    ) {
+
+
+        String myBaseName = getBase().getWrappedName();
+        final String name = "create" + myBaseName;
+        final Type returnType = tools
+            .methods()
+            .$type(tools, ctx, stringLiteral(name))
+            .getType();
+
+        final In2Out1<GeneratedUiLayer, UiContainerExpr, String> io =
+            (layer, ui)-> returnType.toSource();
+
+        final GeneratedUiMethod method = new GeneratedUiMethod(returnType, name, io);
+
+        return method;
     }
 }

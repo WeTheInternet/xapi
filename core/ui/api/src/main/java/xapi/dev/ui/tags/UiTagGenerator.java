@@ -288,6 +288,8 @@ public class UiTagGenerator extends UiComponentGenerator {
             return "getModel".equals(((MethodCallExpr)expr).getName());
         } else if (expr instanceof FieldAccessExpr) {
             return "$model".equals(((FieldAccessExpr)expr).getField());
+        } else if (expr instanceof TemplateLiteralExpr) {
+            return "getModel()".equals(((TemplateLiteralExpr)expr).getValueWithoutTicks());
         } else {
             return false;
         }
@@ -365,10 +367,11 @@ public class UiTagGenerator extends UiComponentGenerator {
                             if (field == null) {
                                 throw new IllegalArgumentException("No model field of name " + n.getIdentifier() + " declared");
                             }
-                            // For now, model referenecs in ui always assumed to be a read operation.
+                            // For now, model references in ui always assumed to be a read operation.
                             // TODO: put in scope barriers so we only make this assumption in ui tags, but not in
                             // structures which will have other interpretations.
-                            MethodCallExpr replaceWith = new MethodCallExpr(n.getScope(), field.getterName());
+                            final Expression newScope = tools.resolveVar(ctx, n.getScope());
+                            MethodCallExpr replaceWith = new MethodCallExpr(newScope, field.getterName());
                             replaceWith.addExtra(EXTRA_MODEL_INFO, field);
                             return replaceWith;
                         }

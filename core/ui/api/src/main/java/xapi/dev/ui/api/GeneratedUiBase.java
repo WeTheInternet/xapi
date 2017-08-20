@@ -9,7 +9,6 @@ import xapi.source.read.JavaModel.IsTypeDefinition;
 public class GeneratedUiBase extends GeneratedUiLayer {
 
     private final String apiName;
-    private String nameNode;
 
     public GeneratedUiBase(GeneratedUiComponent owner, GeneratedUiApi api) {
         super(api, api.getPackageName(), api.getTypeName(), ImplLayer.Base, owner);

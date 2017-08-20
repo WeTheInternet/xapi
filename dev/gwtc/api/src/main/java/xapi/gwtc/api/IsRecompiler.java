@@ -8,4 +8,6 @@ public interface IsRecompiler {
 
   CompiledDirectory recompile();
 
+  CompiledDirectory getOrCompile();
+
 }

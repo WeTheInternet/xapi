@@ -136,6 +136,16 @@ public class RecompileController implements IsRecompiler {
       throw new UncheckedIOException(e);
     }
   }
+
+  @Override
+  public CompiledDirectory getOrCompile() {
+    if (compileDir.isSet()) {
+      return compileDir.get();
+    }
+    return recompile();
+  }
+
+  @Override
   public CompiledDirectory recompile(){
     CompiledDirectory toDestroy = null;
     if (compileDir.isSet()) {

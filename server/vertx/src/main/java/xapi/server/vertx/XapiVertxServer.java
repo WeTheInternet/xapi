@@ -281,9 +281,6 @@ public class XapiVertxServer implements XapiServer<VertxRequest, VertxResponse> 
 
                 private void finish() {
                     try {
-                        VertxRequest scopeRequest = VertxRequest.getOrMake(s.getRequest(), req.getHttpRequest());
-                        final VertxResponse scopeResponse = new VertxResponse(req.getResponse());
-                        s.initialize(scopeRequest, scopeResponse);
                         callback.in(s);
                         done.done();
                     } finally {
@@ -366,7 +363,8 @@ public class XapiVertxServer implements XapiServer<VertxRequest, VertxResponse> 
                 scope.setLocal(Vertx.class, vertx);
                 manager = ((VertxInternal) vertx).getClusterManager();
                 scope.setLocal(ClusterManager.class, manager);
-
+                scope.setLocal(WebApp.class, webApp);
+                scope.setLocal(XapiServer.class, XapiVertxServer.this);
                 vertx.createHttpServer(opts)
                     .requestHandler(this::handleRequest)
                     .listen(result->{
@@ -408,11 +406,11 @@ public class XapiVertxServer implements XapiServer<VertxRequest, VertxResponse> 
         inScope(request, response, scope->{
             serviceRequest(scope, (r, success)->{
                 final HttpServerResponse resp = r.getHttpRequest().response();
-                if (r.isAutoclose() && !resp.ended()){
-                    resp.end();
-                }
                 if (!Boolean.TRUE.equals(success)) {
                   on404(req, response.getResponse());
+                }
+                if (r.isAutoclose() && !resp.ended()){
+                    resp.end();
                 }
             });
         });
@@ -424,7 +422,7 @@ public class XapiVertxServer implements XapiServer<VertxRequest, VertxResponse> 
             resp.end("<!DOCTYPE html><html>" +
                 "<body style=\"text-align: center; vertical-align: middle; display: block\">" +
                 "<div style=\"white-space:pre-wrap\">" +
-                "Our apologies, we cannot find anything to serve to:" +
+                "Our apologies, we cannot find anything to serve to:\n" +
                 dump(req) +
                 "</div>" +
                 "</body>" +
@@ -634,6 +632,7 @@ public class XapiVertxServer implements XapiServer<VertxRequest, VertxResponse> 
             // request was for the nocache file; compile every time (for now)
             final GwtManifest manifest = module.getOrCreateManifest();
             X_Process.runDeferred(()->{
+                final GwtcService service = module.getOrCreateService();
                 boolean[] done = {false};
                 Do onDone = () -> {
                     Path path = Paths.get(manifest.getCompiledWar());
@@ -646,7 +645,6 @@ public class XapiVertxServer implements XapiServer<VertxRequest, VertxResponse> 
                         callback.in(req);
                     }
                 };
-                final GwtcService service = module.getOrCreateService();
                 if (manifest.isRecompile()) {
                     final ServerRecompiler compiler = module.getRecompiler();
                     if (compiler != null) {
@@ -659,10 +657,13 @@ public class XapiVertxServer implements XapiServer<VertxRequest, VertxResponse> 
                             onDone.done();
                         });
                     } else {
+                        // check if there is a production compile available to serve immediately,
+                        // while we do the recompile in the background...
                         service.recompile(manifest, (recompiler, error)->{
                             if (error != null) {
                                 module.setRecompiler(null);
                                 onDone.done();
+                                X_Log.error(XapiVertxServer.class, "Gwt compilation failed", error);
                                 throw new IllegalStateException("Gwt compile failed for manifest " + manifest, error);
                             }
                             module.setRecompiler(recompiler);
