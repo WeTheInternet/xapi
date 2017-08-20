@@ -142,7 +142,7 @@ public class ModelServiceJre extends AbstractJreModelService {
             final M model = deserialize(modelClass, new StringCharIterator(result));
             callback.onSuccess(model);
           } catch (final Exception e) {
-            X_Log.error(getClass(), "Unable to load file for model "+modelKey);
+            X_Log.error(getClass(), "Unable to load file for model "+modelKey, e);
             if (callback instanceof ErrorHandler) {
               ((ErrorHandler) callback).onError(new ModelNotFoundException(modelKey));
             } else {

@@ -2,6 +2,7 @@ package xapi.file.impl;
 
 import xapi.annotation.inject.SingletonDefault;
 import xapi.file.api.FileService;
+import xapi.fu.In2;
 import xapi.fu.MappedIterable;
 import xapi.fu.has.HasSize;
 import xapi.fu.iterate.Chain;
@@ -11,10 +12,12 @@ import xapi.fu.iterate.SingletonIterator;
 import xapi.io.X_IO;
 import xapi.log.X_Log;
 import xapi.source.X_Source;
+import xapi.time.X_Time;
 import xapi.util.X_Debug;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -82,15 +85,26 @@ public class FileServiceImpl implements FileService {
   }
 
   @Override
+  public void loadFile(File file, In2<String, Throwable> callback) {
+    X_Time.runUnsafe(()->{
+      String result;
+      try {
+        result = X_IO.toStringUtf8(new FileInputStream(file));
+      } catch (Throwable t) {
+        callback.in(null, t);
+        throw t;
+      }
+      callback.in(result, null);
+    });
+  }
+
+  @Override
   public MappedIterable<String> getAllFiles(String file) {
     final File f = new File(file);
     ChainBuilder<String> files = Chain.startChain();
     if (f.isDirectory()) {
       for (String sub : f.list()) {
         final MappedIterable<String> subFiles = getAllFiles(new File(f, sub).getAbsolutePath());
-        if (subFiles instanceof HasSize && ((HasSize)subFiles).size() == 0) {
-          continue;
-        }
         files.addAll(subFiles);
       }
       return files;

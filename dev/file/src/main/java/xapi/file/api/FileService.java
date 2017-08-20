@@ -1,5 +1,6 @@
 package xapi.file.api;
 
+import xapi.fu.In2;
 import xapi.fu.MappedIterable;
 
 import java.io.File;
@@ -49,4 +50,6 @@ public interface FileService {
   void delete(String kill, boolean recursive);
 
   MappedIterable<String> getAllFiles(String file);
+
+  void loadFile(File file, In2<String, Throwable> callback);
 }

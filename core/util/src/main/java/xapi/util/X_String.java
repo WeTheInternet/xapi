@@ -526,4 +526,18 @@ public class X_String {
     }
     return new String(chars);
   }
+
+    public static String ensureStartsWith(String base, String prefix) {
+      if (base.startsWith(prefix)) {
+        return base;
+      }
+      return prefix + base;
+    }
+
+    public static String ensureEndsWith(String base, String prefix) {
+      if (base.endsWith(prefix)) {
+        return base;
+      }
+      return base + prefix;
+    }
 }

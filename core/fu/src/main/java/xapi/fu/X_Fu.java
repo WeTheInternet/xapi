@@ -450,6 +450,12 @@ public interface X_Fu {
     return EMPTY_INTS;
   }
 
+  static In1Out1<Integer, Integer> incrementer() {
+      return In1Out1.INCREMENT_INT;
+  }
+  static In1Out1<Integer, Integer> decrementer() {
+      return In1Out1.DECREMENT_INT;
+  }
   static int increment(int integer) {
     return integer + 1;
   }

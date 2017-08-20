@@ -53,12 +53,22 @@ public class XmlBuffer extends PrintBuffer {
     return this;
   }
 
+  public XmlBuffer setAttributeIfNotNull(final String name, final String value) {
+    if (value == null) {
+      return this;
+    }
+    return setAttribute(name, value, true);
+  }
+
   public XmlBuffer setAttribute(final String name, final String value) {
+    return setAttribute(name, value, true);
+  }
+  public XmlBuffer setAttribute(final String name, final String value, boolean encodeValue) {
     ensureAttributes();
     // TODO consider a null value to mean "clear this attribute"?
     // This is a widely used class, so these semantics should not be changed
     // without tests, or in a commit without any unrelated changes.
-    final String val = escapeAttribute(value);
+    final String val = encodeValue ? escapeAttribute(value) : value == null ? " " : " = " + value + " ";
     setRawAttribute(name, val);
     return this;
   }

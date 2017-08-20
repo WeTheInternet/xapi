@@ -2542,6 +2542,10 @@ NameExpr FeatureName():
       { ret = new NameExpr(token.beginLine, token.beginColumn, token.endLine, token.endColumn, token.image);}
       | "continue"
       { ret = new NameExpr(token.beginLine, token.beginColumn, token.endLine, token.endColumn, token.image);}
+      | "switch"
+      { ret = new NameExpr(token.beginLine, token.beginColumn, token.endLine, token.endColumn, token.image);}
+      | "case"
+      { ret = new NameExpr(token.beginLine, token.beginColumn, token.endLine, token.endColumn, token.image);}
       | "return"
       { ret = new NameExpr(token.beginLine, token.beginColumn, token.endLine, token.endColumn, token.image);}
   )

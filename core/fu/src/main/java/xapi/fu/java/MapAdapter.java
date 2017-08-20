@@ -58,4 +58,26 @@ public class MapAdapter <K, V> implements MapLike<K, V>, Serializable {
     public void clear() {
         map.clear();
     }
+
+    @Override
+    public String toString() {
+        return map.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+
+        final MapAdapter<?, ?> that = (MapAdapter<?, ?>) o;
+
+        return map.equals(that.map);
+    }
+
+    @Override
+    public int hashCode() {
+        return map.hashCode();
+    }
 }

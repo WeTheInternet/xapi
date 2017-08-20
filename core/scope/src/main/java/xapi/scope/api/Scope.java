@@ -2,13 +2,8 @@ package xapi.scope.api;
 
 import xapi.except.NotConfiguredCorrectly;
 import xapi.except.NotYetImplemented;
-import xapi.fu.Do;
-import xapi.fu.In1;
-import xapi.fu.In1Out1;
-import xapi.fu.MapLike;
-import xapi.fu.Maybe;
-import xapi.fu.Out1;
-import xapi.fu.Out2;
+import xapi.fu.*;
+import xapi.fu.has.HasLock;
 import xapi.fu.iterate.SizedIterable;
 
 import java.util.function.Predicate;
@@ -17,7 +12,7 @@ import java.util.function.Predicate;
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 2/14/16.
  */
-public interface Scope {
+public interface Scope extends HasLock {
 
   default <T, C extends T> T getLocal(Class<C> cls) {
     return this.<T, C>localData().get(cls);
@@ -25,8 +20,10 @@ public interface Scope {
 
   @SuppressWarnings({"unchecked", "UnnecessaryLocalVariable"})
   default SizedIterable<Class<?>> getLocalKeys() {
-    final SizedIterable keys = localData().keys();
-    return keys;
+    return mutex(()->{
+      final SizedIterable keys = localData().keys();
+      return keys;
+    });
   }
 
   @SuppressWarnings("unchecked")
@@ -44,19 +41,19 @@ public interface Scope {
   }
 
   default boolean hasLocal(Class cls) {
-    return localData().has(cls);
+    return mutex(()->localData().has(cls));
   }
 
   default <T, C extends T> T removeLocal(Class<C> cls) {
-    return this.<T, C>localData().remove(cls);
+    return mutex(()->this.<T, C>localData().remove(cls));
   }
 
   default <T, C extends T> T setLocal(Class<C> cls, T value) {
-    return this.<T, C>localData().put(cls, value);
+    return mutex(()->this.<T, C>localData().put(cls, value));
   }
 
   default boolean isAttached() {
-    return localData().has(attachedKey()) || forScope() == GlobalScope.class;
+    return mutex(()->localData().has(attachedKey()) || forScope() == GlobalScope.class);
   }
 
   default void release() {
@@ -119,26 +116,34 @@ public interface Scope {
   }
 
 
+  default <T, C extends T> T getOrSupply(Class<C> key, Out1<T> factory) {
+    return getOrCreate(key, factory.ignoreIn1());
+  }
+
   default <T, C extends T> T getOrCreate(Class<C> key, In1Out1<Class<C>, T> factory) {
-    if (has(key)) {
-      return get(key);
-    } else {
-      final T value = factory.io(key);
-      setLocal(key, value);
-      return value;
-    }
+    return mutex(()-> {
+      if (has(key)) {
+        return get(key);
+      } else {
+        final T value = factory.io(key);
+        setLocal(key, value);
+        return value;
+      }
+    });
   }
   default <T, C extends T, S extends Scope> T getOrCreateIn(Class<S> type, Class<C> key, In1Out1<Class<C>, T> factory) {
-    if (has(key)) {
-      return get(key);
-    } else {
-      final T value = factory.io(key);
-      Maybe<S> s = findParentOrSelf(type, false);
-      s.mapDeferred(In1Out1.<S, Scope>downcast())
-          .ifAbsentReturn(this)
-          .setLocal(key, value);
-      return value;
-    }
+    return mutex(()-> {
+      if (has(key)) {
+        return get(key);
+      } else {
+        final T value = factory.io(key);
+        Maybe<S> s = findParentOrSelf(type, false);
+        s.mapDeferred(In1Out1.<S, Scope>downcast())
+            .ifAbsentReturn(this)
+            .setLocal(key, value);
+        return value;
+      }
+    });
   }
 
   default <S extends Scope> Maybe<S> findParent(Class<S> type, boolean exactMatch) {
@@ -180,16 +185,18 @@ public interface Scope {
             .getOrThrow(()->new NotConfiguredCorrectly("No insertion point found for " + insertionPoint));
       }
 
-      target.setLocal(type, newInstance);
-      if (type != newInstance.forScope()) {
-        // we are forgiving about this, in case there is classloader weirdness from your factory,
-        // we want both sources / classloaders to have a key to retrieve the instance.
-        target.setLocal(newInstance.forScope(), newInstance);
-        // we'll also want to ensure that, when this scope object is released,
-        // we update the other key used for this scope
-        newInstance.onDetached(target::removeLocal, type);
-      }
-      target.onDetached(newInstance::release);
+      target.mutex(()->{
+        target.setLocal(type, newInstance);
+        if (type != newInstance.forScope()) {
+          // we are forgiving about this, in case there is classloader weirdness from your factory,
+          // we want both sources / classloaders to have a key to retrieve the instance.
+          target.setLocal(newInstance.forScope(), newInstance);
+          // we'll also want to ensure that, when this scope object is released,
+          // we update the other key used for this scope
+          newInstance.onDetached(target::removeLocal, type);
+        }
+        target.onDetached(newInstance::release);
+      });
       return newInstance;
     });
   }

@@ -23,6 +23,7 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.StringDictionary;
 import xapi.collect.api.StringTo;
 import xapi.collect.api.StringTo.Many;
+import xapi.fu.Do.DoUnsafe;
 import xapi.inject.impl.SingletonProvider;
 import xapi.io.IOConstants;
 import xapi.io.X_IO;
@@ -189,9 +190,9 @@ public class IOServiceDefault extends AbstractIOService <URLConnection> {
   protected void sendRequest(final URLConnection connect, final IORequestDefault request, final IOCallback<IOMessage<String>> callback, final String url, final StringDictionary<String> headers, final String body) {
     final LogLevel logLevel = logLevel();
     final Moment before = X_Time.now();
-    X_Time.runUnsafe(new RunUnsafe() {
+    X_Time.runUnsafe(new DoUnsafe() {
       @Override
-      protected void doRun() throws Throwable {
+      public void doneUnsafe() throws Throwable {
         if (X_Log.loggable(logLevel)) {
           X_Log.log(getClass(), logLevel, "Starting IO for ",url,"took",X_Time.difference(before));
         }

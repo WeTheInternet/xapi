@@ -182,6 +182,14 @@ public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
                .map(r->(R)r);
     }
 
+    default <E1, E2> MappedIterable<T> filter(In3Out1<T, E1, E2, Boolean> filter, E1 extra1, E2 extra2) {
+        return filter(filter.supply3(extra2), extra1);
+    }
+
+    default <E1> MappedIterable<T> filter(In2Out1<T, E1, Boolean> filter, E1 extra1) {
+        return filter(filter.supply2(extra1)::io);
+    }
+
     default MappedIterable<T> filter(Filter1<T> filter) {
         return ()->new Iterator<T>() {
             Iterator<T> iter = iterator();

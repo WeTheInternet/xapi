@@ -1,6 +1,8 @@
 package xapi.file;
 
 import xapi.file.api.FileService;
+import xapi.fu.Do;
+import xapi.fu.In2;
 import xapi.fu.MappedIterable;
 import xapi.inject.X_Inject;
 
@@ -104,4 +106,8 @@ public class X_File {
     public static MappedIterable<String> getAllFiles(String file) {
       return SERVICE.get().getAllFiles(file);
     }
+
+  public static void loadFile(File file, In2<String, Throwable> callback) {
+    SERVICE.get().loadFile(file, callback);
+  }
 }

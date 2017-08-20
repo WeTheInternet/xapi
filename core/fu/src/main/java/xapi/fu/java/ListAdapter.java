@@ -15,6 +15,10 @@ public class ListAdapter<T> implements ListLike<T>, Serializable {
     private final List<T> list;
     private boolean sparse;
 
+    public ListAdapter() {
+        this(new ArrayList<>());
+    }
+
     public ListAdapter(List<T> list) {
         this.list = list;
     }
@@ -81,5 +85,30 @@ public class ListAdapter<T> implements ListLike<T>, Serializable {
 
     public void setSparse(boolean sparse) {
         this.sparse = sparse;
+    }
+
+    @Override
+    public String toString() {
+        return "ListAdapter{" +
+            "list=" + list +
+            ", sparse=" + sparse +
+            '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+
+        final ListAdapter<?> that = (ListAdapter<?>) o;
+
+        return list.equals(that.list);
+    }
+
+    @Override
+    public int hashCode() {
+        return list.hashCode();
     }
 }

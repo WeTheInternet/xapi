@@ -15,7 +15,7 @@
 
   Plans are in the works to implement java.lang.Thread as web workers in the future.
   </description>
-  
+
   <dependencies>
     <dependency>
       <groupId>net.wetheinter</groupId>
@@ -28,6 +28,11 @@
     <dependency>
       <groupId>net.wetheinter</groupId>
       <artifactId>xapi-core-process</artifactId>
+      <classifier>sources</classifier>
+    </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-core-scope</artifactId>
       <classifier>sources</classifier>
     </dependency>
     <dependency>

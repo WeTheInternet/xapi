@@ -179,6 +179,9 @@ public abstract class AbstractModelService implements ModelService
    */
   @Override
   public ModelKey keyFromString(final String key) {
+    if (key == null) {
+      return null;
+    }
     final CharIterator chars = new StringCharIterator(key);
     final PrimitiveSerializer primitives = primitiveSerializer();
     return deserializeKey(chars, primitives);

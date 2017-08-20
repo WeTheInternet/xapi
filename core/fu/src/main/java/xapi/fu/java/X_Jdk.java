@@ -93,4 +93,8 @@ public class X_Jdk {
         return toSet(new LinkedHashSet<V>());
     }
 
+    public static <V> SetLike<V> setLinkedSynchronized() {
+        return toSet(Collections.synchronizedSet(new LinkedHashSet<V>()));
+    }
+
 }

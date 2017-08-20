@@ -39,7 +39,6 @@ extends HasValues<String,V>, Serializable, MapLike<String, V>
 
   default V getOrCreate(String key, In1Out1<String, V> factory) {
     V value = get(key);
-    keys();
     if (value == null) {
       value = factory.io(key);
       put(key, value);

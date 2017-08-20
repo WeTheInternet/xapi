@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class NameGen {
 
     private static final Lazy<NameGen> GLOBAL = Lazy.deferSupplier(NameGen::new, 0xcafebabe);
+    private String idPrefix = "id";
 
     public static NameGen getGlobal() {
         return GLOBAL.out1();
@@ -65,7 +66,12 @@ public class NameGen {
     }
 
     protected String idPrefix() {
-        return "id";
+        return idPrefix;
+    }
+
+    public NameGen setIdPrefix(String prefix) {
+        this.idPrefix = prefix;
+        return this;
     }
 
     public String newClass() {

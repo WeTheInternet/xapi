@@ -2,13 +2,15 @@ package xapi.fu;
 
 import xapi.fu.In1.In1Unsafe;
 import xapi.fu.Out1.Out1Unsafe;
+import xapi.fu.api.Copyable;
+import xapi.fu.has.HasLock;
 
 import static xapi.fu.Immutable.immutable1;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 6/18/16.
  */
-public class Mutable <I> implements In1Unsafe<I>, Out1Unsafe<I> {
+public class Mutable <T> implements In1Unsafe<T>, Out1Unsafe<T>, HasLock {
 
   public interface MutableAsIO <I> extends In1Out1<I, I> {
 
@@ -53,47 +55,47 @@ public class Mutable <I> implements In1Unsafe<I>, Out1Unsafe<I> {
     return new TypesafeMutable<>(bounds);
   }
 
-  private volatile I value;
+  private volatile T value;
 
   public Mutable() {
   }
 
-  public Mutable(I value) {
+  public Mutable(T value) {
     this.value = value;
   }
 
-  public Immutable<I> freeze() {
+  public Immutable<T> freeze() {
     return immutable1(value);
   }
 
   @Override
-  public final void in(I in) {
+  public final void in(T in) {
     In1Unsafe.super.in(in);
   }
 
   @Override
-  public final I out1() {
+  public final T out1() {
     return Out1Unsafe.super.out1();
   }
 
-  public final MutableAsIO<I> asIO() {
+  public final MutableAsIO<T> asIO() {
     return MutableAsIO.toIO(this);
   }
 
   @Override
-  public void inUnsafe(I in) throws Throwable {
+  public void inUnsafe(T in) throws Throwable {
     this.value = in;
   }
 
   @Override
-  public I outUnsafe() throws Throwable {
+  public T outUnsafe() throws Throwable {
     return value;
   }
 
-  public I compute(In1Out1<I, I> mapper) {
+  public T compute(In1Out1<T, T> mapper) {
     return mutex(()->{
-      final I oldVal = out1();
-      final I newVal = mapper.io(oldVal);
+      final T oldVal = out1();
+      final T newVal = mapper.io(oldVal);
       in(newVal);
       return newVal;
     });
@@ -122,61 +124,80 @@ public class Mutable <I> implements In1Unsafe<I>, Out1Unsafe<I> {
     @Override
     public final void inUnsafe(T in) throws Throwable {
       if (in != null) {
-        in = checkInput(bounds, in);
+        in = checkInput(in);
       }
       super.inUnsafe(in);
     }
 
-    protected T checkInput(Class<? extends T> bounds, T in) {
-      if (in != null && !bounds.isInstance(in)) {
-        throw new ClassCastException(in + " is not a " + bounds);
-      }
+    protected T checkInput(T in) {
+      checkBounds(in);
       return in;
     }
 
-    protected T checkOutput(Class<? extends T> bounds, T in) {
-      if (in != null && !bounds.isInstance(in)) {
-        throw new ClassCastException(in + " is not a " + bounds);
-      }
+    protected T checkOutput(T in) {
+      checkBounds(in);
       return in;
     }
 
     @Override
     public final T outUnsafe() throws Throwable {
       T output = super.outUnsafe();
-      output = checkOutput(bounds, output);
+      output = checkOutput(output);
       return output;
+    }
+
+    @Override
+    public Mutable<T> copy() {
+      T value = out1();
+      if (value instanceof Copyable) {
+        final Object newValue = ((Copyable) value).copy();
+        checkBounds(newValue);
+        value = (T) newValue;
+      }
+      return new Mutable<>(value);
+    }
+
+    protected void checkBounds(Object newValue) {
+      if (newValue != null && !bounds.isInstance(newValue)) {
+        throw new ClassCastException(newValue + " is not a " + bounds);
+      }
     }
   }
 
-    public final void set(I b) {
+    public final void set(T b) {
       in(b);
     }
 
-    public final I setReturnNew(I b) {
+    public final T setReturnNew(T b) {
       in(b);
       return b;
     }
 
-    public final Mutable<I> process(In1Out1<I, I> mapper) {
-      final I mapped = mapper.io(out1());
-      in(mapped);
-      return this;
+    public final Mutable<T> process(In1Out1<T, T> mapper) {
+      return mutex(()->{
+        final T mapped = mapper.io(out1());
+        in(mapped);
+        return this;
+      });
     }
 
-    public final <P1> Mutable<I> process(In2Out1<I, P1, I> mapper, P1 param1) {
-      final I mapped = mapper.io(out1(), param1);
-      in(mapped);
-      return this;
+    public final <P1> Mutable<T> process(In2Out1<T, P1, T> mapper, P1 param1) {
+      return mutex(()->{
+        final T mapped = mapper.io(out1(), param1);
+        in(mapped);
+        return this;
+      });
     }
 
-    public final <P1, P2> Mutable<I> process(In3Out1<I, P1, P2, I> mapper, P1 param1, P2 param2) {
-      final I mapped = mapper.io(out1(), param1, param2);
-      in(mapped);
-      return this;
+    public final <P1, P2> Mutable<T> process(In3Out1<T, P1, P2, T> mapper, P1 param1, P2 param2) {
+      return mutex(()-> {
+        final T mapped = mapper.io(out1(), param1, param2);
+        in(mapped);
+        return this;
+      });
     }
 
-    public final Mutable<I> useThenSet(In1<I> callback, I newVal) {
+    public final Mutable<T> useThenSet(In1<T> callback, T newVal) {
       mutex(()->{
         callback.in(out1());
         in(newVal);
@@ -184,25 +205,23 @@ public class Mutable <I> implements In1Unsafe<I>, Out1Unsafe<I> {
       return this;
     }
 
-  public final void mutex(Do o) {
-    mutex(o.returns1(null));
-  }
-
-  public <O> O mutex(Out1<O> o) {
-    synchronized (this) {
-      return o.out1();
-    }
-  }
-
-  public final I setReturnOld(I b) {
-      final I old = out1();
+  public final T setReturnOld(T b) {
+      final T old = out1();
       in(b);
       return old;
     }
 
-    public I replace(I s) {
-      I was = out1();
+    public T replace(T s) {
+      T was = out1();
       in(s);
       return was;
     }
+
+  public Mutable<T> copy() {
+    T value = out1();
+    if (value instanceof Copyable) {
+      value = ((Copyable<T>) value).copy();
+    }
+    return new Mutable<>(value);
+  }
 }

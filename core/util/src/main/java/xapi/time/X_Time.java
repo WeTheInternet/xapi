@@ -1,5 +1,6 @@
 package xapi.time;
 
+import xapi.fu.Do.DoUnsafe;
 import xapi.time.api.Moment;
 import xapi.time.impl.ImmutableMoment;
 import xapi.time.service.TimeService;
@@ -70,8 +71,8 @@ public class X_Time {
     service.runLater(runnable);
   }
 
-  public static void runUnsafe(final RunUnsafe runnable) {
-    service.runLater(runnable.asRunnable());
+  public static void runUnsafe(final DoUnsafe runnable) {
+    service.runLater(runnable.toRunnable());
   }
 
   public static String difference(final Moment start, final Moment finish) {

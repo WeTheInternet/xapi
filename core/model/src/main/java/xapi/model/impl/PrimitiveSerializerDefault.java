@@ -48,7 +48,7 @@ public class PrimitiveSerializerDefault implements PrimitiveSerializer {
    * Also note that digits in this section are ordered according to their likely frequency in
    * English language text; this is to help improve GZipping of response bodies, as we are
    * far more likely to encounter the numbers 1 or 0 than 30 or 31.  The order chosen was
-   * based upon http://en.wikipedia.org/wiki/Letter_frequency and other Google searchs for
+   * based upon http://en.wikipedia.org/wiki/Letter_frequency and other Google searches for
    * frequency of punctuation occurrence.
    */
   private static final char[] CONTINUATION_NUM_SECTION = new char[] {
@@ -130,6 +130,8 @@ public class PrimitiveSerializerDefault implements PrimitiveSerializer {
     0,  0,  0,  0,  0,   0,  0,  0,  0, 31,  // 0 - 10
 //                                      \t
 
+    // TODO consider using this bitspace to remove certain characters from encoded values...
+    // like using \u0011 + instead of `/`, `%` or ` `
     0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  // 10 - 20
 //
 
@@ -138,7 +140,7 @@ public class PrimitiveSerializerDefault implements PrimitiveSerializer {
 
     0,  0,  1, 23, 16,  26, 27, 28, 29, 15,  // 30 - 40
 //         ' '  !   "    #   $   %   &   '
-
+                                 // consider moving 17 into the "non-print" characters
     19, 20, 18, 24, 13,  14, 12, 17, 10, 11,  // 40 - 50
 //   (   )   *   +   ,    -   .   /   0   1
 
@@ -146,7 +148,7 @@ public class PrimitiveSerializerDefault implements PrimitiveSerializer {
 //  2   3   4   5   6    7   8   9   :   ;
 
     30, 25, 30, 26, 27,   2, 19, 11,  9,  0,  // 60 - 70
-//   <   =   >   ?   @    A   B   C   D
+//   <   =   >   ?   @    A   B   C   D   E
 
     15, 16,  7,  4, 22,  21, 10, 13,  5,  3,  // 70 - 80
 //   F   G   H   I   J    K   L   M   N   O
@@ -154,17 +156,17 @@ public class PrimitiveSerializerDefault implements PrimitiveSerializer {
     18, 24,  8,  6,  1,  12, 20, 14, 23, 17,  // 80 - 90
 //   P   Q   R   S   T    U   V   W   X   Y
 
-//                           Note this value of 32. It is used to handle integer MIN_VALUEs
+//                           Note this value of 32. It is used to handle integer MIN_VALUEs exceeding normal bitspace
     25, 28, 31, 29, 31,  26, 32,  2, 19, 11,  // 90 - 100
 //   Z   [   \   ]   ^    _   `   a   b   c
 
     9,  0, 15, 16,  7,   4, 22, 21, 10, 13,  // 100 - 110
-//  d       f   g   h    i   j   k   l   m
+//  d   e   f   g   h    i   j   k   l   m
 
     5,  3, 18, 24,  8,   6,  1, 12, 20, 14,  // 110 - 120
 //  n   o   p   q   r    s   t   u   v   w
 
-    23, 17, 25, 27, 29,  28, 30,              // 120 - 130
+    23, 17, 25, 27, 29,  28, 30,              // 120 - 127
 //   x   y   z   {   |    }   ~
   };
 

@@ -1297,7 +1297,7 @@ public class X_Reflect {
         if ("main".equals(trace.getKey().getName())) {
           // Using a thread named main is best...
           final StackTraceElement[] els = trace.getValue();
-          int i = els.length - 1;
+          int i = els.length;
           StackTraceElement best = els[--i];
           String cls = best.getClassName();
           while (i > 0 && isSystemClass(cls)) {

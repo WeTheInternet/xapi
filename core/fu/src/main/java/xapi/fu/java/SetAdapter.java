@@ -156,4 +156,26 @@ public class SetAdapter <V> implements SetLike<V> {
         }
         return null;
     }
+
+    @Override
+    public String toString() {
+        return set.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+
+        final SetAdapter<?> that = (SetAdapter<?>) o;
+
+        return set.equals(that.set);
+    }
+
+    @Override
+    public int hashCode() {
+        return set.hashCode();
+    }
 }

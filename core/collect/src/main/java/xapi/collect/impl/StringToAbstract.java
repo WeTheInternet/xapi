@@ -145,7 +145,7 @@ public class StringToAbstract <V> implements StringTo<V>{
 
   @Override
   public String toString() {
-    return map.toString();
+    return forEachItem().join(o->o.join(" = "), "\n");
   }
 
   protected Collection<V> valueSet() {

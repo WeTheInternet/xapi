@@ -74,6 +74,24 @@ public class UiAttrExpr extends UiExpr {
     return expression;
   }
 
+  public String getStringExpression(boolean quotes) {
+    String value;
+    if (expression instanceof StringLiteralExpr) {
+      value = ((StringLiteralExpr)expression).getValue();
+    } else if (expression instanceof TemplateLiteralExpr) {
+      value = ((TemplateLiteralExpr)expression).getValueWithoutTicks();
+    } else if (expression == null) {
+      return null;
+    } else {
+      throw new IllegalStateException("Expression is not a string: " + expression.getClass() +" : " + expression.toSource());
+    }
+    if (quotes) {
+      return "\"" + value + "\"";
+    } else {
+      return value;
+    }
+  }
+
   public void setExpression(Expression expression) {
     this.expression = expression;
   }

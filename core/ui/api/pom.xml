@@ -26,6 +26,10 @@
   </dependency>
   <dependency>
     <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-core-scope</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>net.wetheinter</groupId>
     <artifactId>jsinterop-annotations</artifactId>
     <version>${gwt.version}</version>
   </dependency>
