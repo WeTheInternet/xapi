@@ -77,6 +77,8 @@ public class DataTypeOptions {
         best = null;
         break;
       }
+    }
+    for (JsonPairExpr pair : json.getPairs()) {
       fieldTypes.put(pair.getKeyString(), extractType(pair, json));
     }
     if (type == null && searchTypes) {

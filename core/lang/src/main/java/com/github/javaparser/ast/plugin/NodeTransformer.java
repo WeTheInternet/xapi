@@ -358,6 +358,24 @@ public class NodeTransformer {
         getterNames.put(field.getField(), getterName);
       }
       return getterName;
+    } else if (expr instanceof QualifiedNameExpr) {
+      final QualifiedNameExpr name = (QualifiedNameExpr) expr;
+      getterName = getterNames.get(name.getSimpleName());
+      if (getterName == null) {
+        String keyName = X_Source.toCamelCase(name.getSimpleName());
+        String datatype = out.addImport(getDataType(name.getSimpleName()));
+        datatype = X_Source.primitiveToObject(datatype);
+        getterName = "get" + keyName;
+        final MethodBuffer getter = out.createMethod("public " + datatype + " " + getterName);
+        String get = nodeGetMethod(expr);
+        String keyType = getKeyType(expr);
+        String escapeKey = escapedKey(keyType, name.getSimpleName());
+
+        boolean cast = needsCast(expr, keyType, datatype);
+        getter.returnValue((cast ? "(" + datatype + ")" : "") + nodeSource() + "." + get + "(" + escapeKey + ")");
+      }
+      getterNames.put(name.getSimpleName(), getterName);
+      return getterName;
     }
     throw new NotImplemented("Unable to extract a getter method for expression " + expr);
   }
@@ -445,7 +463,7 @@ public class NodeTransformer {
   }
 
   protected boolean isMapType(Expression expr) {
-    return expr instanceof FieldAccessExpr;
+    return expr instanceof FieldAccessExpr || expr instanceof QualifiedNameExpr;
   }
 
   protected String getDataType(String keyName) {
@@ -454,6 +472,14 @@ public class NodeTransformer {
 
   public Node transformAssignExpr(AssignExpr expr) {
     return expr;
+  }
+
+  public Node transformName(NameExpr expr) {
+    String get = generateGetterMethod(expr);
+    MethodCallExpr invoke = new MethodCallExpr();
+    invoke.setName(get);
+    initExtras(invoke, expr);
+    return invoke;
   }
 
   public Node transformArrayAccess(ArrayAccessExpr expr) {

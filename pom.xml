@@ -85,6 +85,8 @@
     <!-- Maven build tools -->
     <module>maven</module>
 
+    <!-- Sample applications -->
+    <module>samples</module>
  </modules>
 
  <url>https://github.com/${github.account}/xapi</url>

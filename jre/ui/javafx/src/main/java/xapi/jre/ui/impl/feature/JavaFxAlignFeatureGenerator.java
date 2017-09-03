@@ -41,28 +41,28 @@ public class JavaFxAlignFeatureGenerator extends UiFeatureGenerator {
                 case "center":
                     mb.println(Pos.CENTER + ");");
                     break;
-                case "centerLeft":
+                case "centerleft":
                     mb.println(Pos.CENTER_LEFT + ");");
                     break;
-                case "centerRight":
+                case "centerright":
                     mb.println(Pos.CENTER_RIGHT + ");");
                     break;
                 case "top":
                     mb.println(Pos.TOP_CENTER + ");");
                     break;
-                case "topLeft":
+                case "topleft":
                     mb.println(Pos.TOP_LEFT + ");");
                     break;
-                case "topRight":
+                case "topright":
                     mb.println(Pos.TOP_RIGHT + ");");
                     break;
                 case "bottom":
                     mb.println(Pos.BOTTOM_CENTER + ");");
                     break;
-                case "bottomLeft":
+                case "bottomleft":
                     mb.println(Pos.BOTTOM_LEFT + ");");
                     break;
-                case "bottomRight":
+                case "bottomright":
                     mb.println(Pos.BOTTOM_RIGHT + ");");
                     break;
                 case "left":

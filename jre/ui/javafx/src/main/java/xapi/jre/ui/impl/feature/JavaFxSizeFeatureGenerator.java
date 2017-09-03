@@ -58,7 +58,7 @@ public class JavaFxSizeFeatureGenerator extends UiFeatureGenerator {
             width = expr;
             height = expr;
         }
-        final Transformer transformer = generator.getTransformer();
+        final Transformer transformer = generator.getTransformer(service, source.getRoot().getContext());
         String widthStr = toLambdaOrLiteral(width, transformer);
         String heightStr = toLambdaOrLiteral(height, transformer);
         if (width != null) {

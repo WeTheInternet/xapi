@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>net.wetheinter</groupId>
+		<artifactId>xapi-samples</artifactId>
+		<version>0.6-SNAPSHOT</version>
+	</parent>
+	<artifactId>xapi-demo</artifactId>
+	<packaging>jar</packaging>
+	<version>0.6-SNAPSHOT</version>
+	<name>XApi - Demo Application</name>
+	<url>WeTheInter.net</url>
+	<description>
+        GwtCon 2017 demo app introducing xapi-lang (and xapi itself)
+        </description>
+
+	<dependencies>
+		<dependency>
+			<groupId>net.wetheinter</groupId>
+			<artifactId>xapi-jre-ui-javafx</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>net.wetheinter</groupId>
+			<artifactId>xapi-server-vertx</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<configuration>
+					<archive>
+						<manifest>
+							<mainClass>xapi.demo.jre.DemoApp</mainClass>
+						</manifest>
+					</archive>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+</project>

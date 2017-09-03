@@ -6,6 +6,7 @@ import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.LambdaExpr;
 import com.github.javaparser.ast.expr.MethodReferenceExpr;
 import com.github.javaparser.ast.expr.UiAttrExpr;
+import com.github.javaparser.ast.plugin.Transformer;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import xapi.dev.source.MethodBuffer;
@@ -35,21 +36,23 @@ public class JavaFxActionFeatureGenerator extends UiFeatureGenerator {
       ContainerMetadata me,
       UiAttrExpr n
   ) {
-    final Expression expr = n.getExpression();
+    final Expression orig = n.getExpression();
+    final Expression expr = service.resolveVar(source.getRoot().getContext(), orig);
     MethodBuffer into = me.getParentMethod();
     String target = me.peekPanelName();
     into.println(target + ".setOnAction(")
         .indent();
 
+    final Transformer transformer = generator.getTransformer(service, source.getRoot().getContext());
     if (expr instanceof LambdaExpr || expr instanceof MethodReferenceExpr) {
-      into.printlns(expr.toSource(generator.getTransformer()));
+      into.printlns(expr.toSource(transformer));
     } else {
       final Statement statement = new ExpressionStmt(expr);
       final List<Parameter> params = Arrays.asList(
             ASTHelper.createParameter(me.newVarName("e"))
       );
       LambdaExpr lambda = new LambdaExpr(params, statement, false);
-      into.printlns(lambda.toSource(generator.getTransformer()));
+      into.printlns(lambda.toSource(transformer));
     }
     into
         .outdent()

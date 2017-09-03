@@ -1,6 +1,7 @@
 package xapi.jre.ui.impl;
 
 import com.github.javaparser.ASTHelper;
+import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import javafx.scene.layout.VBox;
@@ -52,7 +53,7 @@ public class JavaFxAppComponentGenerator extends UiComponentGenerator {
     final MethodBuffer method = cb.createMethod("public " + container + " io(" + controller + " " + refName + ")");
     String varName = me.newVarName("root");
     method.println(container + " " + varName + " = new " + container + "();");
-
+    me.getContext().addToContext("source", NameExpr.of(refName));
     me.saveMethod(varName, method);
     me.pushPanelName(varName);
 

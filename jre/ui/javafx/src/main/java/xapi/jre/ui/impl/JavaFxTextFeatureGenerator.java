@@ -1,6 +1,7 @@
 package xapi.jre.ui.impl;
 
 import com.github.javaparser.ASTHelper;
+import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.ui.api.ComponentBuffer;
@@ -25,10 +26,13 @@ public class JavaFxTextFeatureGenerator extends UiFeatureGenerator {
       ContainerMetadata parent,
       UiAttrExpr n
   ) {
-    String text = ASTHelper.extractAttrValue(n);
+    boolean isMethod = n.getExpression() instanceof MethodCallExpr;
+    String text = isMethod ? service.resolveString(source.getRoot().getContext(), n.getExpression()) : ASTHelper.extractAttrValue(n);
     String panel = parent.peekPanelName();
     final MethodBuffer mb = parent.getMethod(panel);
-    mb.println(panel +".setText(\"" + X_Source.escape(text) + "\");");
+    mb.print(panel +".setText(")
+      .print(isMethod ? text : "\"" + X_Source.escape(text) + "\"")
+      .println(");");
     return new UiVisitScope(ScopeType.CONTAINER).setVisitChildren(false);
   }
 }

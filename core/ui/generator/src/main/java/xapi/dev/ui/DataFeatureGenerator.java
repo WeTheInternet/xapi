@@ -46,7 +46,8 @@ public class DataFeatureGenerator extends UiFeatureGenerator {
       } else {
         opts = getDatatypeFrom(cb, container, json);
       }
-      String var = printFactory(json, container, anno, opts, cb, generator.getTransformer());
+      final Transformer transformer = generator.getTransformer(service, source.getRoot().getContext());
+      String var = printFactory(json, container, anno, opts, cb, transformer);
       // register `varName.out1()` as a replacement for all accessors of this particular data
       MethodCallExpr expr = new MethodCallExpr(new NameExpr(var), "out1");
       container.registerFieldProvider(container.getRefName(), "data", newTransformer(service, generator, container, json, opts, expr));

@@ -2,6 +2,7 @@ package xapi.jre.ui.impl;
 
 import com.github.javaparser.ASTHelper;
 import com.github.javaparser.ast.expr.UiContainerExpr;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.ui.api.ComponentBuffer;
@@ -25,12 +26,12 @@ public class JavaFxBoxComponentGenerator extends UiComponentGenerator {
     final MethodBuffer mb = me.getMethod(parentName);
     String container = n.getAttribute("type")
           .mapNullSafe(ASTHelper::extractAttrValue)
+          .mapNullSafe(v->v.contains(".") ? v : "javafx.scene.layout." + v)
           .ifAbsentSupply(VBox.class::getCanonicalName);
     container = mb.addImport(container);
 
     String ref = me.getRefName("box");
     mb.println(container + " " + ref + " = new " + container + "();");
-
     mb.println(parentName + ".getChildren().add(" + ref + ");");
     me.pushPanelName(ref);
     me.saveMethod(ref, mb);

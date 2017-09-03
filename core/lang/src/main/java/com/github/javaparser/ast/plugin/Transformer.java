@@ -4,6 +4,7 @@ import com.github.javaparser.ast.TypeParameter;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.TemplateLiteralExpr;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
+import xapi.dev.api.ApiGeneratorTools;
 import xapi.fu.Printable;
 
 /**

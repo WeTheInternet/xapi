@@ -78,6 +78,9 @@ public interface AnnotationTools extends SourceHelper<Element> {
                 pkgName,
                 clsName
             );
+            if (file == null) {
+                throw new NullPointerException("No file found for " + (pkgName.isEmpty() ? clsName : pkgName + "." + clsName) + " in source path");
+            }
             return file.getCharContent(true).toString();
         } catch (Exception e) {
             if (e instanceof RuntimeException && e.getCause() instanceof FileNotFoundException) {

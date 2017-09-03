@@ -4,13 +4,10 @@ import xapi.dev.source.XmlBuffer;
 import xapi.fu.MappedIterable;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
-import xapi.gwtc.api.CompiledDirectory;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.SortedSet;
 
-import com.google.gwt.core.ext.Linker;
 import com.google.gwt.core.ext.LinkerContext;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;

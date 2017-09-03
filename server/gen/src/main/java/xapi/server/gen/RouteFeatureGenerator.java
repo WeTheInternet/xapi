@@ -17,7 +17,6 @@ import xapi.dev.ui.api.UiComponentGenerator;
 import xapi.dev.ui.api.UiFeatureGenerator;
 import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.dev.ui.api.UiVisitScope;
-import xapi.fu.Do;
 import xapi.fu.Lazy;
 import xapi.fu.Maybe;
 import xapi.fu.iterate.SingletonIterator;
@@ -27,8 +26,6 @@ import xapi.server.api.Route.RouteType;
 import xapi.server.api.WebApp;
 import xapi.source.read.JavaModel.IsQualified;
 import xapi.util.X_String;
-
-import java.util.List;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/9/16.

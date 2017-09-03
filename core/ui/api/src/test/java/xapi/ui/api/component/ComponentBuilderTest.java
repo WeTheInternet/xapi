@@ -3,6 +3,8 @@ package xapi.ui.api.component;
 import org.junit.Test;
 import xapi.fu.Out1;
 
+import static org.junit.Assert.assertNotNull;
+
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 8/20/17.
  */
@@ -63,9 +65,11 @@ public class ComponentBuilderTest {
     @Test
     public void testSimpleComponentBuilder() {
         StringComponentBuilder builder = new StringComponentBuilder();
-
+        final ComponentConstructor<CharSequence, String, StringComponent> ctor = new ComponentConstructor<>(opts->opts.getExisting().getElement());
+        final ScopedComponentFactory<? extends ComponentOptions, StringComponent> factory = opts->new StringComponent(opts, ctor);
+        ComponentBuilder.registerFactory(StringComponent.class, factory);
         final StringComponent component = builder.build();
-
+        assertNotNull("Null component", component);
     }
 
 }

@@ -1,0 +1,34 @@
+<app
+  ref = "root"
+  title = "XApi @ GwtCon 2017"
+      data =
+      {
+          // The one button uses postIncrement++ so we start its count at 1
+          one: 1,
+          // The two button uses ++preIncrement, so we start its count at 0
+          two: 0,
+          startServer: "Start Server"
+      }
+  class =
+    .{
+        .cls{
+        background-color: #011151;
+        }
+        .cls .btn {
+        background-color: #010931;
+        color: white;
+        }
+    }
+>
+    <box size = ( 300 * (()->150 + 10 * $root.data.one) )
+         align = center
+         type = HBox
+    >
+        <button ref="one" text=$root.data.startServer class="btn button1" onClick=e-> {
+            $source.startServer();
+        } />
+
+        <button text="Quit" class="btn button2" onClick=System.exit(0) />
+
+    </box>
+</app>
