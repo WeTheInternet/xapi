@@ -28,10 +28,6 @@
         <groupId>net.wetheinter</groupId>
         <artifactId>xapi-core-util</artifactId>
       </dependency>
-      <dependency>
-        <groupId>net.wetheinter</groupId>
-        <artifactId>xapi-core-ui-api</artifactId>
-      </dependency>
 		<!-- Testing dependencies -->
 		<dependency>
 			<groupId>junit</groupId>

@@ -53,6 +53,9 @@ public interface ComponentBuilder <
         }
         double best = Double.MIN_VALUE;
         final Scope s = scope.out1();
+        if (list.isEmpty()) {
+            throw new IllegalStateException("No registered factory for " + componentType());
+        }
         ScopedComponentFactory<O, C> toUse = list.first();
         for (ScopedComponentFactory<O, C> provider : list) {
             double score = provider.getScore(s);

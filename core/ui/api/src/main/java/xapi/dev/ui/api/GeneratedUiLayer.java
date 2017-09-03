@@ -9,6 +9,7 @@ import xapi.collect.api.StringTo;
 import xapi.dev.source.CanAddImports;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.SourceBuilder;
+import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.fu.In1;
 import xapi.fu.Lazy;
 import xapi.fu.MappedIterable;
@@ -281,5 +282,8 @@ public abstract class GeneratedUiLayer extends GeneratedJavaFile {
             // or unfolded if they are a container type.
 
         }
+    }
+
+    protected void prepareToSave(UiGeneratorTools<?> tools) {
     }
 }

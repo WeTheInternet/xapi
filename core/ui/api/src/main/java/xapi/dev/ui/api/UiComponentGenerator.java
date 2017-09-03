@@ -1,7 +1,10 @@
 package xapi.dev.ui.api;
 
 import com.github.javaparser.ast.expr.UiContainerExpr;
+import com.github.javaparser.ast.plugin.GeneratorAwareTransformer;
 import com.github.javaparser.ast.plugin.Transformer;
+import xapi.dev.api.ApiGeneratorContext;
+import xapi.dev.api.ApiGeneratorTools;
 import xapi.dev.source.DomBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.dev.ui.impl.UiGeneratorTools;
@@ -37,10 +40,10 @@ public class UiComponentGenerator {
     shadowDomBuffer = Lazy.deferred1(factory);
     classBuffer = Lazy.deferBoth(SourceBuilder<ContainerMetadata>::new, this::getMetadata);
     featureGenerators = new ArrayList<>();
-    transformer = createTransformer();
+    transformer = defaultTransformer();
   }
 
-  protected Transformer createTransformer() {
+  protected Transformer defaultTransformer() {
     return new Transformer();
   }
 
@@ -85,7 +88,10 @@ public class UiComponentGenerator {
 
   }
 
-  public Transformer getTransformer() {
-    return transformer;
+  public <Ctx extends ApiGeneratorContext<Ctx>> Transformer getTransformer(ApiGeneratorTools<Ctx> tools, Ctx ctx) {
+    if (tools == null || ctx == null) {
+      return transformer;
+    }
+    return new GeneratorAwareTransformer<>(tools, ctx);
   }
 }

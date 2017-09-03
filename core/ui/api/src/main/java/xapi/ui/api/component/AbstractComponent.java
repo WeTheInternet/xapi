@@ -21,8 +21,6 @@ implements IsComponent<Node, El> {
     private final Lazy<El> element;
     private ComponentOptions<Node, El, Api> opts;
     private String refName;
-    private IsComponent<Node, ? extends Node> parent;
-    private IntTo<IsComponent<Node, ? extends Node>> children;
 
     public AbstractComponent(El element) {
         this(Immutable.immutable1(element));
@@ -62,30 +60,6 @@ implements IsComponent<Node, El> {
 
     public ComponentOptions<Node, El, Api> getOpts() {
         return opts;
-    }
-
-    @Override
-    public void setParentComponent(IsComponent<Node, ? extends Node> parent) {
-        this.parent = parent;
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public void addChildComponent(IsComponent<Node, ? extends Node> child) {
-        if (this.children == null) {
-            this.children = X_Collect.newList(Class.class.cast(IsComponent.class));
-        }
-        this.children.add(child);
-    }
-
-    @Override
-    public IsComponent<Node, ? extends Node> getParentComponent() {
-        return parent;
-    }
-
-    @Override
-    public SizedIterable<IsComponent<Node, ? extends Node>> getChildComponents() {
-        return children == null ? EmptyIterator.none() : children.forEachItem();
     }
 
 }

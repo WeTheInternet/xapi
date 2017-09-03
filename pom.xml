@@ -84,6 +84,7 @@
 
     <!-- Maven build tools -->
     <module>maven</module>
+
  </modules>
 
  <url>https://github.com/${github.account}/xapi</url>
@@ -544,6 +545,11 @@
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-dev-shell</artifactId>
+    <version>${project.version}</version>
+   </dependency>
+   <dependency>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-dev</artifactId>
     <version>${project.version}</version>
    </dependency>
 

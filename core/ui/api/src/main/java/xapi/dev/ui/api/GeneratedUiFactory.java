@@ -6,6 +6,7 @@ import xapi.collect.api.StringTo;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
+import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.fu.Immutable;
 import xapi.fu.Out1;
 import xapi.scope.X_Scope;
@@ -59,6 +60,11 @@ public class GeneratedUiFactory extends GeneratedUiLayer {
                     cb.addImportStatic(Immutable.class, "immutable1") + "(scope)"
                 +")"
             );
+    }
+
+    @Override
+    protected void prepareToSave(UiGeneratorTools<?> tools) {
+        builderMethod.returnValue("null");
     }
 
     protected String getBuildMethodName() {

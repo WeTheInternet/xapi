@@ -1,5 +1,7 @@
 package xapi.ui.api.component;
 
+import xapi.fu.In1;
+
 /**
  *
  * This class is used to describe how multiple components can be stitched together.
@@ -13,4 +15,11 @@ package xapi.ui.api.component;
  * Created by James X. Nelson (james @wetheinter.net) on 8/15/17.
  */
 public class AbstractComponentAssembler implements ComponentAssembler {
+    @Override
+    public ComponentAssembler asParent(
+        ComponentBuilder<?, ?, ?, ?> builder, In1<ComponentAssembler> childAssembler
+    ) {
+
+        return null;
+    }
 }

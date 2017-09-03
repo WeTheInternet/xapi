@@ -43,10 +43,6 @@
   </dependency>
   <dependency>
     <groupId>net.wetheinter</groupId>
-    <artifactId>xapi-core-lang</artifactId>
-  </dependency>
-  <dependency>
-    <groupId>net.wetheinter</groupId>
     <artifactId>xapi-dev-file</artifactId>
   </dependency>
 

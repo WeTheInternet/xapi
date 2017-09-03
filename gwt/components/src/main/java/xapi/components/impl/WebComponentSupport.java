@@ -14,6 +14,7 @@ import xapi.fu.Mutable;
 import xapi.ui.api.component.ComponentConstructor;
 import xapi.ui.api.component.ComponentOptions;
 import xapi.ui.api.component.IsComponent;
+import xapi.ui.api.component.IsGraphComponent;
 
 import javax.validation.constraints.NotNull;
 import java.util.function.Supplier;
@@ -84,8 +85,12 @@ public class WebComponentSupport {
             if (parentComponent != null) {
                 final IsComponent parent = ComponentNamespace.getComponent(parentComponent, EXPECT_INITIALIZED);
                 final IsComponent me = ComponentNamespace.getComponent(e, EXPECT_INITIALIZED);
-                me.setParentComponent(parent);
-                parent.addChildComponent(me);
+                if (me instanceof IsGraphComponent) {
+                    ((IsGraphComponent)me).setParentComponent(parent);
+                }
+                if (parent instanceof IsGraphComponent) {
+                    ((IsGraphComponent)parent).addChildComponent(me);
+                }
             }
         });
         return In2Out1.with2(ComponentNamespace::getComponent, defaultFactory);

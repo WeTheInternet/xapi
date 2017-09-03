@@ -25,7 +25,8 @@ public class ApiGeneratorContext<Ctx extends ApiGeneratorContext<Ctx>>
     private String generatorDirectory;
     private String outputDirectory;
 
-    public ApiGeneratorContext() { }
+    public ApiGeneratorContext() {
+    }
 
     private StringTo<Node> vars = X_Collect.newStringMap(Node.class);
     private StringTo<SourceBuilder<Ctx>> sources = X_Collect.newStringMap(SourceBuilder.class);

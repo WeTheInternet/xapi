@@ -3,6 +3,8 @@
  */
 package xapi.test.gwt.io;
 
+import com.google.gwt.core.client.GWT;
+import com.google.gwt.core.client.GWT.UncaughtExceptionHandler;
 import com.google.gwt.core.client.JavaScriptException;
 import com.google.gwt.http.client.Request;
 import com.google.gwt.http.client.RequestBuilder;
@@ -10,10 +12,12 @@ import com.google.gwt.http.client.RequestBuilder.Method;
 import com.google.gwt.http.client.RequestCallback;
 import com.google.gwt.http.client.RequestException;
 import com.google.gwt.http.client.RequestPermissionException;
+import com.google.gwt.http.client.Response;
 import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.json.client.JSONParser;
 import com.google.gwt.json.client.JSONValue;
 import com.google.gwt.junit.client.GWTTestCase;
+import com.google.gwt.user.client.Window;
 import com.google.gwt.xhr.client.ReadyStateChangeHandler;
 import com.google.gwt.xhr.client.XMLHttpRequest;
 
@@ -21,6 +25,7 @@ import org.junit.Ignore;
 
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringDictionary;
+import xapi.fu.iterate.ArrayIterable;
 import xapi.gwt.io.IOServiceGwt;
 import xapi.io.api.DelegatingIOCallback;
 import xapi.io.api.IORequest;
@@ -35,7 +40,7 @@ import xapi.util.api.Pointer;
  * @author James X. Nelson (james@wetheinter.net, @james)
  *
  */
-public class IOServiceGwtTest extends GWTTestCase{
+public class IOServiceTest extends GWTTestCase{
 
     protected IOService service() {
       return new IOServiceGwt() {
@@ -110,7 +115,7 @@ public class IOServiceGwtTest extends GWTTestCase{
     }
 
     public void testRemoveMe() {
-      // This is here until we re-enable the other tests.
+      GWT.log(Window.Location.getParameterMap() + "2");
     }
 
     @Ignore("The online service we are using does not set CORS correctly; disabled until "

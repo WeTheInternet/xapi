@@ -4,6 +4,7 @@ import com.github.javaparser.ASTHelper;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseException;
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.body.AnnotationDeclaration;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.plugin.NodeTransformer;
 import com.github.javaparser.ast.type.ReferenceType;
@@ -400,6 +401,19 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
                         parent = parent.getParentNode();
                     }
                     parent.accept(new ModifierVisitorAdapter<Object>() {
+
+                        @Override
+                        public Node visit(QualifiedNameExpr n, Object arg) {
+                            if (n.getQualifier().getSimpleName().equals("data")) {
+                                final NodeTransformer newNode = me.findReplacement(ref, "data");
+                                if (newNode != null) {
+                                    replacements.put(n, ()->newNode.transformName(n));
+                                    return n;
+                                }
+                            }
+                            return super.visit(n, arg);
+                        }
+
                         @Override
                         public Node visit(
                             FieldAccessExpr n, Object arg

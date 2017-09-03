@@ -28,15 +28,6 @@ public interface IsComponent
 
     El getElement();
 
-    IsComponent<Node, ? extends Node> getParentComponent();
-
-    SizedIterable<IsComponent<Node, ? extends Node>> getChildComponents();
-
-    void setParentComponent(IsComponent<Node, ? extends Node> parent);
-
-    void addChildComponent(IsComponent<Node, ? extends Node> child);
-
-
     String getRefName();
 
 }

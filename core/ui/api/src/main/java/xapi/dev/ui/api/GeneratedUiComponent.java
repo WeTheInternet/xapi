@@ -386,6 +386,7 @@ public class GeneratedUiComponent {
 
     protected void saveType(GeneratedUiLayer ui, UiGeneratorService<?> gen, UiGeneratorTools<?> tools, MappedIterable<GeneratedTypeParameter> generics) {
         if (ui.shouldSaveType()) {
+            ui.prepareToSave(tools);
             final SourceBuilder<GeneratedJavaFile> out = ui.getSource();
             if (generics != null) {
                 // If the generics are non-null, then we need to add them to our supertype.
