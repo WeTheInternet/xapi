@@ -32,6 +32,7 @@ import com.github.javaparser.ast.visitor.VoidVisitor;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 
+import java.io.Serializable;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -44,9 +45,11 @@ import java.util.List;
  * associated to any element.
  *
  * @author Julio Vilmar Gesser
+ * @modifier James X. Nelson (james @wetheinter.net)
  */
-public abstract class Node implements Cloneable {
-
+public abstract class Node implements Serializable, Cloneable {
+// TODO(james) Turn this class into a xapi Model, and then replace ALL THE new Instance()S!
+// Either that or just implement Model here, but leave everything as hardwired beans? That seems... error prone.
     private int beginLine;
 
     private int beginColumn;

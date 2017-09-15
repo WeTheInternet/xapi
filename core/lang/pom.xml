@@ -50,7 +50,7 @@
       <url>https://github.com/WeTheInternet</url>
       <id>JamesXNelson</id>
     </developer>
-    <!-- Original contributors to fork: -->
+    <!-- Original contributors to javaparser which we forked: -->
     <developer>
       <name>Danny van Bruggen</name>
       <email>hexagonaal@gmail.com</email>

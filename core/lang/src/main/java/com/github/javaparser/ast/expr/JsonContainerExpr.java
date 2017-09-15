@@ -6,6 +6,7 @@ import com.github.javaparser.ast.visitor.GenericVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitor;
 import xapi.collect.X_Collect;
 import xapi.fu.MappedIterable;
+import xapi.fu.Maybe;
 import xapi.fu.has.HasSize;
 
 import java.util.ArrayList;
@@ -88,21 +89,31 @@ public class JsonContainerExpr extends JsonExpr implements HasSize {
   }
 
   public Expression getNode(String name) {
+    return getNodeMaybe(name).getOrThrow(()->new NotFoundException(name));
+  }
+  public Maybe<Expression> getNodeMaybe(String name) {
     for (JsonPairExpr pair : getPairs()) {
       if (name.equals(ASTHelper.extractStringValue(pair.getKeyExpr()))) {
-        return pair.getValueExpr();
+        return Maybe.immutable(pair.getValueExpr());
       }
     }
-    throw new NotFoundException(name);
+    return Maybe.not();
   }
 
   public Expression getNode(int index) {
+    return getNodeMaybe(index).getOrThrow(()->new NotFoundException("No item at index "+index));
+  }
+
+  public Maybe<Expression> getNodeMaybe(int index) {
     if (index >= pairs.size() || index < 0) {
       throw new IndexOutOfBoundsException(index + " not within bounds of " + pairs.size());
     }
     final JsonPairExpr pair = pairs.get(index);
+    if (pair == null) {
+      return Maybe.not();
+    }
     assert Integer.toString(index).equals(ASTHelper.extractStringValue(pair.getKeyExpr()));
-    return pair.getValueExpr();
+    return Maybe.immutable(pair.getValueExpr());
   }
 
   public void setArray(boolean array) {
@@ -173,5 +184,13 @@ public class JsonContainerExpr extends JsonExpr implements HasSize {
     result = 31 * result + pairs.hashCode();
     result = 31 * result + (isArray ? 1 : 0);
     return result;
+  }
+
+  public static boolean isArray(Expression expr) {
+    return expr instanceof JsonContainerExpr && ((JsonContainerExpr)expr).isArray();
+  }
+
+  public static boolean isObject(Expression expr) {
+    return expr instanceof JsonContainerExpr && !((JsonContainerExpr)expr).isArray();
   }
 }

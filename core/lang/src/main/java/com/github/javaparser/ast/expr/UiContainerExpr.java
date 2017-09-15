@@ -25,6 +25,7 @@ public class UiContainerExpr extends UiExpr {
   private NameExpr name;
   private UiBodyExpr body;
   private StringTo.Many<UiAttrExpr> attrs;
+  private String docType;
 
   public UiContainerExpr(final int beginLine, final int beginColumn, final int endLine, final int endColumn,
                          NameExpr name, List<UiAttrExpr> attributes, UiBodyExpr body, boolean isInTemplate) {
@@ -149,5 +150,13 @@ public class UiContainerExpr extends UiExpr {
       next = next.getParentNode();
     }
     return null;
+  }
+
+  public String getDocType() {
+    return docType;
+  }
+
+  public void setDocType(String docType) {
+    this.docType = docType;
   }
 }

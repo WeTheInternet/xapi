@@ -2,7 +2,6 @@ package com.github.javaparser.ast.expr;
 
 import com.github.javaparser.ast.visitor.GenericVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitor;
-import xapi.fu.Filter.Filter1;
 import xapi.fu.In1Out1;
 import xapi.fu.Maybe;
 

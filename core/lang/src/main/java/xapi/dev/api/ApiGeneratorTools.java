@@ -25,6 +25,7 @@ import xapi.dev.source.SourceBuilder;
 import xapi.except.NotYetImplemented;
 import xapi.fu.*;
 import xapi.fu.Filter.Filter1;
+import xapi.fu.api.DoNotOverride;
 import xapi.fu.iterate.CountedIterator;
 import xapi.log.X_Log;
 import xapi.source.X_Source;
@@ -268,6 +269,14 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
         return node == null ? "null" : node + " of type " + node.getClass() + " at " + node.getCoordinates();
     }
 
+    @DoNotOverride
+    default String resolveStringReverse(Expression value, Ctx ctx) {
+        return resolveString(ctx, value);
+    }
+    @DoNotOverride
+    default Expression resolveVarReverse(Expression value, Ctx ctx) {
+        return resolveVar(ctx, value);
+    }
     default String resolveString(Ctx ctx, Expression value) {
         return resolveString(ctx, value, false);
     }

@@ -959,6 +959,9 @@ public class DumpVisitor implements VoidVisitor<Object> {
     @Override
     public void visit(UiContainerExpr n, Object arg) {
         printJavaComment(n.getComment(), arg);
+        if (n.getDocType() != null) {
+            printer.println("<!doctype " + n.getDocType() + ">");
+        }
         if (n.isInTemplate()) {
             printer.print("`");
         }

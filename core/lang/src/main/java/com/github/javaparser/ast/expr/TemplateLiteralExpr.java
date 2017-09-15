@@ -168,4 +168,8 @@ public class TemplateLiteralExpr extends UiExpr {
     public static TemplateLiteralExpr templateLiteral(String str) {
       return new TemplateLiteralExpr(-1, -1, -1, -1, str);
     }
+
+    public static boolean isWhitespaceLiteral(Expression child) {
+      return child instanceof TemplateLiteralExpr && ((TemplateLiteralExpr)child).getValue().trim().isEmpty();
+    }
 }
