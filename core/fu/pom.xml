@@ -9,7 +9,7 @@
 
   <artifactId>xapi-fu</artifactId>
   <packaging>jar</packaging>
-  <name>XApi - FuJustu: Functional objects, helpers and composers</name>
+  <name>XApi - FuJutsu: Functional objects, helpers and composers</name>
   <url>WeTheInter.net</url>
 
   <properties>

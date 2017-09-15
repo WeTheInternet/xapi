@@ -634,4 +634,8 @@ public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
             .addAll(this)
             .build();
     }
+
+    default MappedIterable<T> filterNull() {
+        return filter(X_Fu::notNull);
+    }
 }

@@ -5,6 +5,7 @@ import xapi.fu.Filter.Filter2;
 import xapi.fu.Out1.Out1Unsafe;
 import xapi.fu.api.Clearable;
 import xapi.fu.has.HasItems;
+import xapi.fu.has.HasLock;
 import xapi.fu.has.HasSize;
 import xapi.fu.iterate.JoinedSizedIterable;
 import xapi.fu.iterate.SizedIterable;
@@ -31,9 +32,11 @@ public interface MapLike<K, V> extends HasSize, HasItems<Out2<K, V>>, Clearable 
    * A get operation, surrounding in a {@link Maybe} facade,
    * for functional fallbacks.
    *
+   * THIS METHOD READS THE MAP ONCE AND IS THEN IMMUTABLE.
+   *
+   * For a mutable maybe bound to this map, see {@link #getMaybeBound(K)}
+   *
    * Example:
-   *
-   *
    *
    boolean hasKey(String key) {
        map.getMaybe(key)
@@ -48,6 +51,17 @@ public interface MapLike<K, V> extends HasSize, HasItems<Out2<K, V>>, Clearable 
    */
   default Maybe<V> getMaybe(K key) {
     return Maybe.nullable(get(key));
+  }
+
+  /**
+   * Returns a Maybe that is bound to the underlying data of this map
+   * (i.e., the internal state can change from present to absent on you.
+   *
+   * If you want an immutable snapshot, either call .lazy() on the resulting Maybe,
+   * or use {@link #getMaybe(K)}
+   */
+  default Maybe<V> getMaybeBound(K key) {
+    return ()->get(key);
   }
   /**
    * Check if there is an entry for the given key.
@@ -71,6 +85,38 @@ public interface MapLike<K, V> extends HasSize, HasItems<Out2<K, V>>, Clearable 
   @Override
   default SizedIterable<Out2<K, V>> forEachItem() {
     return mappedOut();
+  }
+
+  default V[] removeAllValues(In1Out1<Integer, V[]> valueFactory) {
+    return HasLock.maybeLock(this, ()->{
+      V[] values = forEachItem()
+          .map(Out2::out2)
+          .filterNull()
+          .toArray(valueFactory);
+      clear();
+      return values;
+    });
+  }
+
+  default K[] removeAllKeys(In1Out1<Integer, K[]> keyFactory) {
+    return HasLock.maybeLock(this, ()->{
+      K[] keys = forEachItem()
+          .map(Out2::out1)
+          .filterNull()
+          .toArray(keyFactory);
+      clear();
+      return keys;
+    });
+  }
+
+  default Out2<K, V>[] removeAllItems() {
+    return HasLock.maybeLock(this, ()->{
+      final Out2<K, V>[] keys = forEachItem()
+          .filterNull()
+          .toArray(Out2[]::new);
+      clear();
+      return keys;
+    });
   }
 
   default MappedIterable<K> mappedKeys() {

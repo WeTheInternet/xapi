@@ -18,7 +18,11 @@ public class IntToManyList <X> implements IntTo.Many<X>{
   private int max;
 
   public IntToManyList(final Class<X> componentClass) {
-    this.map = X_Collect.newStringMultiMap(componentClass, CollectionOptions.asKeyOrdered().build());
+    this(componentClass, CollectionOptions.asKeyOrdered().build());
+  }
+
+  public IntToManyList(Class<X> componentClass, CollectionOptions opts) {
+    this.map = X_Collect.newStringMultiMap(componentClass, opts);
     this.componentClass = componentClass;
   }
 

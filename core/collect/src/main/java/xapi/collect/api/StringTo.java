@@ -6,6 +6,7 @@ import xapi.fu.In1Out1.In1Out1Unsafe;
 import xapi.fu.MapLike;
 import xapi.fu.MappedIterable;
 import xapi.fu.Out2;
+import xapi.fu.has.HasLock;
 import xapi.fu.iterate.SizedIterable;
 
 import java.io.Serializable;
@@ -38,12 +39,14 @@ extends HasValues<String,V>, Serializable, MapLike<String, V>
   }
 
   default V getOrCreate(String key, In1Out1<String, V> factory) {
-    V value = get(key);
-    if (value == null) {
-      value = factory.io(key);
-      put(key, value);
-    }
-    return value;
+    return HasLock.maybeLock(this, ()-> {
+      V value = get(key);
+      if (value == null) {
+        value = factory.io(key);
+        put(key, value);
+      }
+      return value;
+    });
   }
 
   @Override

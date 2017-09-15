@@ -39,6 +39,9 @@ public interface In3Out1<I1, I2, I3, O> extends Rethrowable, Lambda {
   default In2Out1<I2, I3, O> supply1(I1 in1) {
     return (in2, in3)->io(in1, in2, in3);
   }
+  default In2Out1<I2, I3, O> supply1Deferred(Out1<I1> in1) {
+    return (in2, in3)->io(in1.out1(), in2, in3);
+  }
 
   default <To> In3Out1<To, I2, I3, O> map1(In1Out1<To, I1> mapper) {
     return (to, i2, i3)->io(mapper.io(to), i2, i3);
@@ -56,8 +59,16 @@ public interface In3Out1<I1, I2, I3, O> extends Rethrowable, Lambda {
     return (in1, in3)->io(in1, in2, in3);
   }
 
+  default In2Out1<I1, I3, O> supply2Deferred(Out1<I2> in2) {
+    return (in1, in3)->io(in1, in2.out1(), in3);
+  }
+
   default In2Out1<I1, I2, O> supply3(I3 in3) {
     return (in1, in2)->io(in1, in2, in3);
+  }
+
+  default In2Out1<I1, I2, O> supply3Deferred(Out1<I3> in3) {
+    return (in1, in2)->io(in1, in2, in3.out1());
   }
 
   default Out1<O> supply(I1 in1, I2 in2, I3 in3) {

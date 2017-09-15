@@ -119,6 +119,18 @@ public interface Maybe <V> extends Rethrowable {
     default <O> Maybe<O> mapIfPresent(In1Out1<V, O> mapper) {
         return mapIfPresent(mapper, Out1.null1());
     }
+    default <O, E1> Maybe<O> mapIfPresent(In2Out1<V, E1, O> mapper, E1 extra) {
+        return mapIfPresent(mapper.supply2(extra));
+    }
+    default <O, E1> Maybe<O> mapIfPresentLazy(In2Out1<V, E1, O> mapper, Out1<E1> extra) {
+        return mapIfPresent(mapper.supply2Deferred(extra));
+    }
+    default <O, E1, E2> Maybe<O> mapIfPresent(In3Out1<V, E1, E2, O> mapper, E1 extra1, E2 extra2) {
+        return mapIfPresent(mapper.supply2(extra1).supply2(extra2));
+    }
+    default <O, E1, E2> Maybe<O> mapIfPresentLazy(In3Out1<V, E1, E2, O> mapper, Out1<E1> extra1, Out1<E2> extra2) {
+        return mapIfPresent(mapper.supply2Deferred(extra1).supply2Deferred(extra2));
+    }
 
     default Maybe<V> mapIfAbsent(Out1<V> supplier) {
         return ()->{
@@ -139,6 +151,16 @@ public interface Maybe <V> extends Rethrowable {
             return out;
         };
     }
+    default <I1> Maybe<V> mapIfAbsentLazy(In1Out1<I1, V> supplier, Out1<I1> i1) {
+        return ()->{
+            final V out = get();
+            if (out == null) {
+                return supplier.io(i1.out1());
+            }
+            return out;
+        };
+
+    }
 
     default <I1, I2> Maybe<V> mapIfAbsent(In2Out1<I1, I2, V> supplier, I1 i1, I2 i2) {
         return ()->{
@@ -148,6 +170,16 @@ public interface Maybe <V> extends Rethrowable {
             }
             return out;
         };
+    }
+    default <I1, I2> Maybe<V> mapIfAbsentLazy(In2Out1<I1, I2, V> supplier, Out1<I1> i1, Out1<I2> i2) {
+        return ()->{
+            final V out = get();
+            if (out == null) {
+                return supplier.io(i1.out1(), i2.out1());
+            }
+            return out;
+        };
+
     }
 
     default Optional<V> optional() {

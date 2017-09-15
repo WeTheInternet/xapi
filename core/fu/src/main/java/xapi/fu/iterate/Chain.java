@@ -55,7 +55,7 @@ public class Chain<T> implements GrowableIterable<T>, MappedIterable<T> {
     return new ChainBuilder<>();
   }
 
-  public static ChainBuilder<Integer> toChain(int ... values) {
+  public static ChainBuilder<Integer> toIntChain(int ... values) {
     final ChainBuilder<Integer> b = new ChainBuilder<>();
     for (int value : values) {
       // TODO: use a boxing method that can enable object pooling...

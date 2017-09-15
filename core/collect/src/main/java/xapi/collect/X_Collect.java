@@ -158,6 +158,10 @@ public class X_Collect {
     return new IntToManyList<X>(component);
   }
 
+  public static <X> IntTo.Many<X> newIntMultiMap(final Class<X> component, CollectionOptions opts) {
+    return new IntToManyList<X>(component, opts);
+  }
+
   /**
    * Creates a new IntTo that is optimized for the current platform.
    * <p>

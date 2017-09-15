@@ -3,7 +3,6 @@ package xapi.fu.iterate;
 import xapi.fu.Immutable;
 import xapi.fu.In1Out1;
 import xapi.fu.MappedIterable;
-import xapi.fu.MappedIterator;
 import xapi.fu.Out1;
 import xapi.fu.has.HasSize;
 

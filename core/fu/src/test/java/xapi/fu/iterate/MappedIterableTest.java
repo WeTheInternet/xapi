@@ -115,7 +115,22 @@ public class MappedIterableTest {
         assertIterableEquals(cached, "one", "two", "three");
         assertIterableEquals(cached, "one", "two", "three");
 
+    }
 
+    @Test
+    public void testCountedIterator() {
+        final ChainBuilder<Integer> vals = Chain.toIntChain(1, 2, 3);
+        final SizedIterable<Integer> counted = vals.map(i -> i + 1)
+            .counted();
+        assertThat(counted.size()).isEqualTo(3);
+        assertThat(counted).containsExactly(2, 3, 4);
+        assertThat(counted).containsExactly(2, 3, 4);
+
+        final MappedIterable<Integer> itr = SingletonIterator.singleItem(1)
+            .map(i -> i + 1);
+        assertThat(itr.isEmpty()).isFalse();
+        assertThat(itr).containsExactly(2);
+        assertThat(itr).containsExactly(2);
     }
 
     private <T> void assertIterableEquals(Iterable<T> itr, T ... contents) {
