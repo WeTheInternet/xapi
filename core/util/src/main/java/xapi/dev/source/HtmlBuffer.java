@@ -4,7 +4,6 @@ package xapi.dev.source;
 public class HtmlBuffer {
 
   private final XmlBuffer root;
-  private String doctype;
   private HeadBuffer head;
   private DomBuffer body;
 
@@ -111,15 +110,23 @@ public class HtmlBuffer {
       ;
       return this;
     }
+
+    public DomBuffer getBuffer() {
+      return buffer;
+    }
   }
 
   public HtmlBuffer() {
     root = new XmlBuffer("html");
-    doctype = "<!doctype html>\n";
+    root.setDoctype("html");
   }
 
   public final DomBuffer getBody() {
     return body == null ? (setBody(createBody())) : body;
+  }
+
+  public final boolean hasBody() {
+    return body != null;
   }
 
   public final HeadBuffer getHead() {
@@ -147,6 +154,6 @@ public class HtmlBuffer {
   }
 
   public String toString() {
-    return doctype + root;
+    return root.toSource();
   }
 }

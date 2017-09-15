@@ -20,6 +20,7 @@ public class XmlBuffer extends PrintBuffer {
   private boolean abbr = false;
   private ConvertsValue<String, String> escaper;
   protected boolean trimWhitespace;
+  private String doctype;
 
   @SuppressWarnings("unchecked")
   public XmlBuffer() {
@@ -51,6 +52,13 @@ public class XmlBuffer extends PrintBuffer {
     }
     tagName = name;
     return this;
+  }
+
+  @Override
+  public PrintBuffer setIndentNeeded(boolean needed) {
+    comment.setIndentNeeded(needed);
+    before.setIndentNeeded(needed);
+    return super.setIndentNeeded(needed);
   }
 
   public XmlBuffer setAttributeIfNotNull(final String name, final String value) {
@@ -120,6 +128,7 @@ public class XmlBuffer extends PrintBuffer {
     buffer.indent = indent + INDENT;
     buffer.setNewLine(false);
     addToEnd(buffer);
+    buffer.setIndentNeeded(false);
     return buffer;
   }
 
@@ -137,19 +146,23 @@ public class XmlBuffer extends PrintBuffer {
     buffer.setTrimWhitespace(trimWhitespace);
     buffer.indent = indent + INDENT;
     addToBeginning(buffer);
+    buffer.setIndentNeeded(false);
     return buffer;
   }
 
   public String toSource() {
+    String dt = doctype == null ? ""
+              : doctype.startsWith("<!") ? (doctype.endsWith("\n") ? doctype : doctype+"\n")
+              : "<!DOCTYPE " + doctype + ">\n";
     if (tagName == null) {
       assert attributes == null || attributes.isEmpty() : "Cannot add attributes to an XmlBuffer with no tag name: "
           + "\nAttributes: " + attributes + "\nBody: " + super.toSource();
-      return super.toSource();
+      return dt + super.toSource();
     }
     String indent = trimWhitespace ? "" : this.indent;
     final String origIndent = indent.replaceFirst(INDENT, "");
-    final StringBuilder b = new StringBuilder(origIndent);
-
+    final StringBuilder b = new StringBuilder(dt);
+    b.append(origIndent);
     String text;
     text = this.before.toSource();
     if (text.length() > 0) {
@@ -458,6 +471,15 @@ public class XmlBuffer extends PrintBuffer {
 
   public XmlBuffer setTrimWhitespace(boolean trimWhitespace) {
     this.trimWhitespace = trimWhitespace;
+    return this;
+  }
+
+  public String getDoctype() {
+    return doctype;
+  }
+
+  public XmlBuffer setDoctype(String doctype) {
+    this.doctype = doctype;
     return this;
   }
 }

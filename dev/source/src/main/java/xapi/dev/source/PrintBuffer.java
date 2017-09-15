@@ -120,6 +120,10 @@ public class PrintBuffer extends CharBuffer implements Printable<PrintBuffer>{
     return indent;
   }
 
+  public int getIndentCount() {
+    return indent.length() / INDENT.length();
+  }
+
   @Override
   public PrintBuffer setIndent(String indent) {
     this.indent = indent;

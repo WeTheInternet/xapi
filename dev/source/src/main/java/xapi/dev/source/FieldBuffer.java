@@ -57,6 +57,10 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> implements CanAddImpo
     this.indent = indent + INDENT;
     // The type to expose on methods; usually == fieldType, unless exposing []
     this.simpleType = cls.addImport(type);
+    if (type == simpleType && !type.contains(".")) {
+      final String simple = type.split("<")[0];
+      cls.getImports().tryReserveSimpleName(simple, simple);
+    }
     this.methodType = JavaLexer.extractType(simpleType, 0);
     this.fieldType = initGenerator(this.methodType);
   }

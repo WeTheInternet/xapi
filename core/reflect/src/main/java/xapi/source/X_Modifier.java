@@ -3,7 +3,7 @@ package xapi.source;
 public final class X_Modifier {
 
   private X_Modifier() {}
-  
+
   public static final int ABSTRACT  = 0x0400;
 
   public static final int ANNOTATION = 0x2000;
@@ -41,8 +41,12 @@ public final class X_Modifier {
   public static final int VOLATILE  = 0x0040;
 
   public static final int PUBLIC_FINAL  = PUBLIC | FINAL;
+  public static final int PUBLIC_STATIC = PUBLIC | STATIC;
+  public static final int PRIVATE_FINAL  = PRIVATE | FINAL;
+  public static final int PRIVATE_STATIC = PRIVATE | STATIC;
 
   public static final int PUBLIC_STATIC_FINAL  = PUBLIC | FINAL | STATIC;
+  public static final int PRIVATE_STATIC_FINAL  = PRIVATE | FINAL | STATIC;
 
   public static String addArrayBrackets(String addTo, int arrDepth) {
     if (arrDepth<1)return addTo;
@@ -252,7 +256,7 @@ public final class X_Modifier {
       return clsName.substring(0, ind).replace('/', '.');
     }
   }
-  
+
   public static String sourceNameToPackage(String clsName) {
     int ind = clsName.lastIndexOf('.');
     if (ind == -1) {

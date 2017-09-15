@@ -276,6 +276,7 @@ public class DomBuffer extends XmlBuffer {
     buffer.setTrimWhitespace(trimWhitespace);
     buffer.indent = isNoTagName() ? indent : indent + INDENT;
     addToEnd(buffer);
+    buffer.setIndentNeeded(false);
     return buffer;
   }
 
@@ -294,6 +295,7 @@ public class DomBuffer extends XmlBuffer {
     buffer.setTrimWhitespace(trimWhitespace);
     buffer.setNewLine(false);
     buffer.indent = isNoTagName() ? indent : indent + INDENT;
+    buffer.setIndentNeeded(false);
     addToBeginning(buffer);
     return buffer;
   }
@@ -508,5 +510,14 @@ public class DomBuffer extends XmlBuffer {
   public DomBuffer setTitle(final String title) {
     setAttribute("title", title);
     return this;
+  }
+
+  @Override
+  public DomBuffer setDoctype(String doctype) {
+    return (DomBuffer) super.setDoctype(doctype);
+  }
+
+  public DomBuffer setDoctypeHtml() {
+    return setDoctype("html");
   }
 }

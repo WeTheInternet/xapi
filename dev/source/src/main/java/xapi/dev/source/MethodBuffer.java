@@ -203,7 +203,7 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
         context.getPackage() == null || context.getPackage().isEmpty() ? cls
             : cls.replace(context.getPackage() + ".", "");
     if (noPkg.indexOf('.') == -1) {
-      return noPkg;
+      return context.getImports().tryReserveSimpleName(noPkg, cls);
     }
     return context.getImports().addImport(cls);
   }

@@ -55,4 +55,8 @@ public class FileBasedSourceHelper<Hint> implements SourceHelper<Hint> {
 
     }
 
+    @Override
+    public Class<Hint> hintType() {
+        return Class.class.cast(Object.class);
+    }
 }

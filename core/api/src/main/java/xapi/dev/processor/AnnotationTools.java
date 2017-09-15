@@ -35,6 +35,11 @@ public interface AnnotationTools extends SourceHelper<Element> {
 
     String getPackageName(TypeElement type);
 
+    @Override
+    default Class<Element> hintType() {
+        return Element.class;
+    }
+
     default JavaFileObject outputJava(String qualifiedName, Element ... types) throws IOException {
         Filer filer = getFiler();
         if (filer == null) {

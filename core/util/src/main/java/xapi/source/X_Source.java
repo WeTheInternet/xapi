@@ -370,4 +370,25 @@ public class X_Source {
     return X_String.join("\n", lines);
   }
 
+    public static String javaSafeName(String path) {
+      if(isEmpty(path)) {
+        return "";
+      }
+      final char[] chars = path.toCharArray();
+      boolean safe = true;
+      if (!Character.isJavaIdentifierStart(chars[0])) {
+        chars[0] = '_';
+        safe = false;
+      }
+      for (int i = chars.length; i-->1;) {
+        if (!Character.isJavaIdentifierPart(chars[i])) {
+          chars[i] = '_';
+          safe = false;
+        }
+      }
+      if (safe) {
+        return path;
+      }
+      return new String(chars);
+    }
 }

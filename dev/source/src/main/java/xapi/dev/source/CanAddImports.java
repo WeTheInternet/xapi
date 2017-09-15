@@ -21,6 +21,10 @@ public interface CanAddImports {
     return getImports().addStaticImport(cls, name);
   }
 
+  default String addImportStatic(String cls, String name) {
+    return getImports().addStaticImport(cls, name);
+  }
+
   default String addImportStatic(String cls) {
     return getImports().addStaticImport(cls);
   }

@@ -7,6 +7,7 @@ import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.FieldBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
+import xapi.fu.Do;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Filer;
@@ -32,6 +33,7 @@ import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 import java.io.FileNotFoundException;
+import java.io.Serializable;
 import java.io.Writer;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Modifier;
@@ -186,7 +188,7 @@ public class AnnotationMirrorProcessor extends AbstractProcessor {
     final ClassBuffer immutableAnno = annoBuilder
         .addAnnotation("@SuppressWarnings(\"all\")")
         .createInnerClass("private static class Immutable" + simpleName)
-        .addInterfaces(annoName).makeFinal();
+        .addInterface(annoName).makeFinal();
     immutableAnno
         .createMethod(
             "public Class<? extends java.lang.annotation.Annotation> annotationType()")
@@ -195,9 +197,20 @@ public class AnnotationMirrorProcessor extends AbstractProcessor {
     final Fifo<String> ctorParams = new SimpleFifo<String>();
     final Types types = processingEnv.getTypeUtils();
 
+    final MethodBuffer copyMethod = annoBuilder.createMethod(
+        "public static " + builderName + " copy" + simpleName + "()")
+        .addParameter(simpleName, "from")
+        .print("return new " + builderName + "(");
+
+    final MethodBuffer duplicateMethod = annoBuilder.createMethod(
+        "public " + builderName + " duplicate()")
+        .print("return new " + builderName + "(");
+
     final MethodBuffer addValue = annoBuilder.createMethod("public " + builderName + " addValue(String key, Object value)")
         .println("switch(key){").indent();
 
+    Do afterLoop = Do.NOTHING;
+    String duplicateComma = "";
     for (final ExecutableElement method : ElementFilter.methodsIn(element
         .getEnclosedElements())) {
       final TypeMirror returnMirror = method.getReturnType();
@@ -205,27 +218,24 @@ public class AnnotationMirrorProcessor extends AbstractProcessor {
       final String fieldType = annoBuilder.addImport(returnMirror.toString());
       final AnnotationValue dflt = method.getDefaultValue();
       manifest.addMethod(method.getSimpleName(), returnMirror, dflt);
-      final FieldBuffer annoField = annoBuilder
-          .createField(returnMirror.toString(),
-              method.getSimpleName().toString(),
-              Modifier.PRIVATE);
+      final FieldBuffer annoField = annoBuilder.createField(fieldType, fieldName, Modifier.PRIVATE);
       int mod = Modifier.PUBLIC | Modifier.FINAL;
       annoField.addGetter(mod);
       final MethodBuffer setter = annoField.addSetter(mod);
 
+
       if (fieldType.contains("[]")) {
         setter.setParameters(fieldType.replace("[]", " ...") + " "+annoField.getName());
       }
-
       addValue
           .println("case \"" + annoField.getName()+"\":")
-          .indentln(setter.getName() +"((" + returnMirror.toString()+ ")value);")
+          .indentln(setter.getName() +"((" + fieldType + ")value);")
           .indentln("break;")
       ;
 
       final FieldBuffer field = immutableAnno
-          .createField(returnMirror.toString(),
-              method.getSimpleName().toString(),
+          .createField(fieldType,
+              fieldName,
               Modifier.PRIVATE | Modifier.FINAL)
           .setExactName(true);
       field.addGetter(Modifier.PUBLIC | Modifier.FINAL);
@@ -234,7 +244,17 @@ public class AnnotationMirrorProcessor extends AbstractProcessor {
       ctorParams.give(param);
       if (dflt == null) {
         requiredFields.give(param);
+        copyMethod.print(duplicateComma + "from." + fieldName + "()");
+        duplicateMethod.print(duplicateComma + fieldName);
+        duplicateComma = ", ";
+      } else {
+        afterLoop = afterLoop.doAfter(()->{
+          copyMethod.indentln("." + setter.getName() + "(from." + fieldName + "())");
+          duplicateMethod.indentln("." + setter.getName() + "(" + fieldName + ")");
+        });
       }
+
+
       switch (returnMirror.getKind()) {
       case DECLARED:
         if (types.isAssignable(returnMirror, annoType)) {
@@ -300,6 +320,12 @@ public class AnnotationMirrorProcessor extends AbstractProcessor {
       // field.setInitializer(dflt.toString());
     }
 
+    copyMethod.println(")");
+    duplicateMethod.println(")");
+    afterLoop.done();
+    copyMethod.println(";");
+    duplicateMethod.println(";");
+
     addValue.println("default:")
         .indent()
         .println("assert false : \"Unhandled type \" + key + \" for type \" + getClass();")
@@ -346,6 +372,8 @@ public class AnnotationMirrorProcessor extends AbstractProcessor {
       build.returnValue("new Immutable" + simpleName + "("
           + fieldRefs.join(", ") + ")");
     }
+    // add this last, to avoid clouding the namespace
+    immutableAnno.addInterface(Serializable.class);
     log(sb.toString());
     manifest.generated = sb.toString();
     return manifest;

@@ -11,4 +11,12 @@ public interface SourceHelper <Hints> {
 
     String saveResource(String path, String fileName, String src, Hints hints);
 
+    Class<Hints> hintType();
+
+    default Hints filterHints(Hints hints) {
+        if (hintType().isInstance(hints)) {
+            return hints;
+        }
+        return null;
+    }
 }

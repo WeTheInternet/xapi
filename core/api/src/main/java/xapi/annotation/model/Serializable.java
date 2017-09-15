@@ -36,4 +36,5 @@ public @interface Serializable {
 
   ServerToClient serverToClient() default @ServerToClient;
 
+  boolean value() default true;
 }

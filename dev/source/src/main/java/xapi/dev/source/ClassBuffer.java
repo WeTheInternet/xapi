@@ -371,7 +371,12 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
     }
     if (importName.startsWith(getPackage())) {
       if ("".equals(getPackage())) {
-        if (importName.indexOf('.') == -1) {
+        int ind = importName.indexOf('.');
+        if (ind == -1) {
+          context.getImports().tryReserveSimpleName(importName, importName);
+          return importName;
+        } else {
+          String simple = context.getImports().tryReserveSimpleName(importName.substring(ind+1), importName);
           return importName;
         }
       }
@@ -514,7 +519,7 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
     return method;
   }
 
-  public MethodBuffer createMethod(final int modifiers, final Class<?> returnType,
+  public MethodBuffer createMethod(final int modifiers, final String returnType,
       final String name, final String... params) {
     final MethodBuffer method = new MethodBuffer(context, this, memberIndent());
     method.setModifier(modifiers);
@@ -523,6 +528,12 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
     method.addParameters(params);
     addMethod(method);
     return method;
+
+  }
+
+  public final MethodBuffer createMethod(final int modifiers, final Class<?> returnType,
+      final String name, final String... params) {
+    return createMethod(modifiers, returnType.getCanonicalName(), name, params);
   }
 
   public FieldBuffer createField(final Class<?> type, final String name) {

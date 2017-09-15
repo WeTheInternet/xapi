@@ -238,9 +238,6 @@ public class ImportSection implements CanAddImports {
     int index = importName.indexOf(".");
     // do not import primitives
     final boolean hasDot = index != -1;
-    if (!hasDot) {
-      return tryReserveSimpleName(importName, importName);
-    }
     importName = trim(importName);
 
     // rip off generics, and optionally try to import them as well
@@ -258,6 +255,15 @@ public class ImportSection implements CanAddImports {
         suffix += tail;
       }
       importName = importName.substring(0, index);
+    }
+    if (hasDot) {
+      if (Character.isUpperCase(importName.charAt(0))) {
+        // Trying to add a package-local nested type...
+        tryReserveSimpleName(importName.substring(importName.lastIndexOf('.')+1), importName);
+        return importName + suffix;
+      }
+    } else {
+      return tryReserveSimpleName(importName, importName) + suffix;
     }
 
     // ignore any []
@@ -319,7 +325,7 @@ public class ImportSection implements CanAddImports {
     }
 
     final String existing = map.get(shortname);
-    if (existing == null || existing.isEmpty()) {
+    if (existing == null) {
       map.put(shortname, importName);
       return shortname + suffix;
     }

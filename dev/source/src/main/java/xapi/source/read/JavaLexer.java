@@ -1119,8 +1119,13 @@ public class JavaLexer {
     definition = definition.trim();
     // some runtime validation
     if (definition.contains(" ") && isClass) {
-      throw new TypeDefinitionException("Found ambiguous class definition in "
-          + original + "; leftover: " + definition);
+      if (definition.endsWith("}")) {
+        definition = definition.replace("}", "").trim();
+      }
+      if (definition.contains(" ")) {
+        throw new TypeDefinitionException("Found ambiguous class definition in "
+            + original + "; leftover: " + definition);
+      }
     }
     if (definition.length() == 0) {
       throw new TypeDefinitionException(
