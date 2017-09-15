@@ -46,7 +46,7 @@ public class X_Runtime {
   private static final boolean gwt;
   private static final String fileSeparator;
   static {
-    debug = "true".equals(System.getProperty(PROPERTY_DEBUG, "true"));
+    debug = "true".equals(System.getProperty(PROPERTY_DEBUG, "false"));
     test = "true".equals(System.getProperty(PROPERTY_TEST, "false"));
     fileSeparator = System.getProperty("file.separator", "false");
 
