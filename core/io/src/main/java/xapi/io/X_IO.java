@@ -3,8 +3,11 @@ package xapi.io;
 import xapi.collect.impl.SimpleFifo;
 import xapi.fu.has.HasSize;
 import xapi.inject.X_Inject;
+import xapi.io.api.DelegatingInputStream;
+import xapi.io.api.DelegatingOutputStream;
 import xapi.io.api.HasLiveness;
 import xapi.io.api.IOMessage;
+import xapi.io.api.LineReader;
 import xapi.io.api.StringReader;
 import xapi.io.impl.IOCallbackDefault;
 import xapi.io.impl.StringBufferOutputStream;
@@ -26,6 +29,8 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+
+import static xapi.io.api.StreamDelegate.fromLineReader;
 
 public class X_IO {
 
@@ -235,4 +240,11 @@ public class X_IO {
     }
   }
 
+    public static InputStream spy(InputStream in, LineReader lineReader) {
+        return new DelegatingInputStream(in, fromLineReader(lineReader));
+    }
+
+    public static OutputStream spy(OutputStream in, LineReader lineReader) {
+        return new DelegatingOutputStream(in, fromLineReader(lineReader));
+    }
 }

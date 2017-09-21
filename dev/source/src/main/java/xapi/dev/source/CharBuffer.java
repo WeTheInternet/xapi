@@ -75,6 +75,12 @@ public class CharBuffer implements Coercible {
     return this;
   }
 
+  public CharBuffer append(final char ... chars) {
+    onAppend();
+    target.append(chars);
+    return this;
+  }
+
 
   public void addToBeginning(final CharBuffer buffer) {
     assert notContained(buffer) : "Infinite recursion!";
@@ -178,4 +184,7 @@ public class CharBuffer implements Coercible {
     return toSource().getBytes();
   }
 
+  public boolean isEmpty() {
+    return toSource().isEmpty();
+  }
 }

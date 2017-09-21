@@ -1,5 +1,6 @@
 package xapi.time;
 
+import xapi.fu.Do;
 import xapi.fu.Do.DoUnsafe;
 import xapi.time.api.Moment;
 import xapi.time.impl.ImmutableMoment;
@@ -67,6 +68,9 @@ public class X_Time {
     return service.birth();
   }
 
+  public static void doLater(final Do runnable) {
+    service.runLater(runnable.toRunnable());
+  }
   public static void runLater(final Runnable runnable) {
     service.runLater(runnable);
   }

@@ -190,27 +190,6 @@
         </executions>
       </plugin>
 
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-source-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>attach-sources</id>
-            <phase>package</phase>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-            <inherited>true</inherited>
-            <configuration>
-              <includes>
-                <include>${project.build.directory}/generated-sources/javacc/**</include>
-                <include>${project.basedir}/src/main/java</include>
-              </includes>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
     </plugins>
   </build>
 
