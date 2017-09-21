@@ -39,7 +39,7 @@ extends HasValues<String,V>, Serializable, MapLike<String, V>
   }
 
   default V getOrCreate(String key, In1Out1<String, V> factory) {
-    return HasLock.maybeLock(this, ()-> {
+    return HasLock.alwaysLock(this, ()-> {
       V value = get(key);
       if (value == null) {
         value = factory.io(key);

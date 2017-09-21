@@ -13,7 +13,21 @@ import java.util.function.Consumer;
 @SuppressWarnings("unchecked") // yes, this api will let you do terrible things.  Don't do terrible things.
 public interface In1<I> extends HasInput, Rethrowable, Lambda {
 
-  In1 IGNORED = i->{};
+  In1 IGNORED = new In1() {
+    @Override
+    public void in(Object ignored) {}
+
+    @Override
+    public In1 useAfterMe(In1 next) {
+      return next;
+    }
+
+    @Override
+    public In1 useBeforeMe(In1 next) {
+      return next;
+    }
+
+  };
 
   static <T> In1<T> ignored() {
     return IGNORED;
@@ -211,13 +225,32 @@ public interface In1<I> extends HasInput, Rethrowable, Lambda {
   default In1<I> onlyOnce() {
     final In1<I>[] once = new In1[1];
     once[0] = this::in;
-    return i-> {
-      final In1<I> was;
-      synchronized (once) {
-        was = once[0];
-        once[0] = In1.IGNORED;
+    return new In1<I>() {
+      @Override
+      public void in(I in) {
+        final In1<I> was;
+        synchronized (once) {
+          was = once[0];
+          once[0] = In1.IGNORED;
+        }
+        was.in(in);
       }
-      was.in(i);
+
+      @Override
+      public In1<I> useAfterMe(In1<I> next) {
+        if (once[0] == In1.IGNORED) {
+          return next;
+        }
+        return In1.super.useAfterMe(next);
+      }
+
+      @Override
+      public In1<I> useBeforeMe(In1<I> next) {
+        if (once[0] == In1.IGNORED) {
+          return next;
+        }
+        return In1.super.useBeforeMe(next);
+      }
     };
   }
 

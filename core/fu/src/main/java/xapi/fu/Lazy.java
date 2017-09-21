@@ -207,6 +207,9 @@ public class Lazy <T> implements Out1<T>, IsLazy {
   public static <I, T> Lazy<T> deferred1(In1Out1<I, T> supplier, I input) {
     return deferred1(supplier.supply(input));
   }
+  public static <I1, I2, T> Lazy<T> deferred1(In2Out1<I1, I2, T> supplier, I1 i1, I2 i2) {
+    return deferred1(supplier.supply1(i1).supply(i2));
+  }
 
   public static <T> Lazy<T> deferred1Unsafe(Out1Unsafe<T> supplier) {
     return supplier instanceof Lazy ?

@@ -159,7 +159,7 @@ public class X_Collect {
   }
 
   public static <X> IntTo.Many<X> newIntMultiMap(final Class<X> component, CollectionOptions opts) {
-    return new IntToManyList<X>(component, opts);
+    return new IntToManyList<>(component, opts);
   }
 
   /**

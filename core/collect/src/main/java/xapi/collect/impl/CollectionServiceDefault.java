@@ -118,15 +118,22 @@ public class CollectionServiceDefault implements CollectionService{
         // Perhaps supersource ConcurrentSkipListMap,
         // and remove all the contention-worries that plague its implementation
         // (why pay to handle concurrent threads in a single-threaded environment?)
-        return synchronizedMap(new LinkedHashMap<K, V>());
+        return synchronizedMap(new LinkedHashMap<>());
       } else {
-        return new LinkedHashMap<K, V>();
+        return new LinkedHashMap<>();
+      }
+    }
+    if (opts.keyOrdered()) {
+      if (opts.concurrent()) {
+        return new ConcurrentSkipListMap<>();
+      } else {
+        return new TreeMap<>();
       }
     }
     if (X_Runtime.isMultithreaded()) {
-      return new ConcurrentHashMap<K,V>();
+      return new ConcurrentHashMap<>();
     } else {
-      return new HashMap<K,V>();
+      return new HashMap<>();
     }
   }
 

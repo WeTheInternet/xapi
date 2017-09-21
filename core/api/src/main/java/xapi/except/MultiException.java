@@ -33,4 +33,22 @@ public class MultiException extends RuntimeException{
   public String toString() {
     return super.toString() + "\n" +throwables.join("\n\n");
   }
+
+  public static Throwable mergedThrowable(String msg, Throwable current, Throwable previous) {
+      if (current == previous) {
+        return current;
+      }
+      if (previous instanceof MultiException) {
+        ((MultiException)previous).addThrowable(current);
+        return previous;
+      }
+      if (current instanceof MultiException) {
+        ((MultiException)current).addThrowable(previous);
+        return current;
+      }
+      MultiException e = new MultiException(msg);
+      e.addThrowable(previous);
+      e.addThrowable(current);
+      return e;
+  }
 }

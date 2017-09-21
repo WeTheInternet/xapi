@@ -1,6 +1,7 @@
 package xapi.collect.proxy;
 
 import xapi.collect.api.CollectionOptions;
+import xapi.fu.In1Out1;
 import xapi.fu.api.HasEmptiness;
 import xapi.collect.api.ObjectTo;
 import xapi.collect.impl.SimpleStack;
@@ -142,4 +143,13 @@ public interface CollectionProxy <K, V> extends HasEmptiness
       return key + "=" + value ;
   }
 
+   default MappedIterable<V> filterKeysReturnValue(In1Out1<K, Boolean> filter) {
+       return filterKeys(filter)
+           .map(Out2::out2);
+   }
+   default MappedIterable<Out2<K, V>> filterKeys(In1Out1<K, Boolean> filter) {
+       return forEachEntry()
+                .filter(o->filter.io(o.out1()));
+
+   }
 }

@@ -3,12 +3,11 @@ package xapi.fu;
 import xapi.fu.In1Out1.In1Out1Unsafe;
 import xapi.fu.Log.LogLevel;
 
+import javax.inject.Provider;
+import java.util.function.Supplier;
+
 import static xapi.fu.Filter.alwaysTrue;
 import static xapi.fu.Immutable.immutable1;
-
-import javax.inject.Provider;
-import java.util.concurrent.Semaphore;
-import java.util.function.Supplier;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
@@ -249,7 +248,7 @@ public interface Out1<O> extends Rethrowable, Lambda, HasMutability {
 
   default <O1> Out2<O1, O> return1(O1 obj) {
     Out1[] items = new Out1[] {
-        Immutable.immutable1(obj),
+        immutable1(obj),
         this
     };
     return ()->items;
@@ -258,7 +257,7 @@ public interface Out1<O> extends Rethrowable, Lambda, HasMutability {
   default <O1> Out2<O,O1> return2(O1 obj) {
     Out1[] items = new Out1[] {
         this,
-        Immutable.immutable1(obj)
+        immutable1(obj)
     };
     return ()->items;
   }
@@ -279,4 +278,10 @@ public interface Out1<O> extends Rethrowable, Lambda, HasMutability {
       return val;
     };
   }
+
+    static <O1, O2> Out1[] toArray(O1 o1, O2 o2) {
+      return new Out1[]{
+        immutable1(o1), immutable1(o2)
+      };
+    }
 }

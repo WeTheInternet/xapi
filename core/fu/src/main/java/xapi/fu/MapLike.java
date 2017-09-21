@@ -80,6 +80,10 @@ public interface MapLike<K, V> extends HasSize, HasItems<Out2<K, V>>, Clearable 
      */
   V remove(K key);
 
+  default Maybe<V> removeMaybe(K key) {
+    return Maybe.nullable(remove(key));
+  }
+
   SizedIterable<K> keys();
 
   @Override

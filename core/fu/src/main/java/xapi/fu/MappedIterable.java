@@ -176,7 +176,7 @@ public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
     }
 
     @SuppressWarnings("unchecked")
-    default <R extends T> MappedIterable<R> filterInstanceOf(Class<? extends R> filter) {
+    default <R> MappedIterable<R> filterInstanceOf(Class<? extends R> filter) {
         return filter(filter::isInstance)
                 // cast is safe, we just checked instance above
                .map(r->(R)r);

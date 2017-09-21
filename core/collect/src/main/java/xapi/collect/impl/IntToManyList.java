@@ -4,7 +4,7 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.CollectionOptions;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.ObjectTo;
-import xapi.collect.api.StringTo;
+import xapi.collect.proxy.MapOf;
 import xapi.fu.In2Out1;
 import xapi.fu.Out2;
 
@@ -13,7 +13,7 @@ import java.util.Map.Entry;
 
 public class IntToManyList <X> implements IntTo.Many<X>{
 
-  private final StringTo.Many<X> map;
+  private final ObjectTo.Many<Integer, X> map;
   private final Class<X> componentClass;
   private int max;
 
@@ -22,7 +22,7 @@ public class IntToManyList <X> implements IntTo.Many<X>{
   }
 
   public IntToManyList(Class<X> componentClass, CollectionOptions opts) {
-    this.map = X_Collect.newStringMultiMap(componentClass, opts);
+    this.map = X_Collect.newMultiMap(Integer.class, componentClass, opts);
     this.componentClass = componentClass;
   }
 
@@ -42,13 +42,13 @@ public class IntToManyList <X> implements IntTo.Many<X>{
   @Override
   public boolean add(final IntTo<X> item) {
     updateMax();
-    map.put(Integer.toString(max++), item);
+    map.put(max++, item);
     return true;
   }
 
   private void updateMax() {
     // TODO limit this brute force approach so that sparse arrays don't suffer
-    while (map.containsKey(Integer.toString(max++))) {
+    while (map.containsKey(max++)) {
       ;
     }
   }
@@ -56,14 +56,14 @@ public class IntToManyList <X> implements IntTo.Many<X>{
   @Override
   public void add(final int key, final X item) {
     assert item == null || componentClass == null || componentClass.isAssignableFrom(item.getClass());
-    map.get(Integer.toString(key)).add(item);
+    map.get(key).add(item);
   }
 
   @Override
   public boolean addAll(final Iterable<IntTo<X>> items) {
     updateMax();
     for (final IntTo<X> item : items) {
-      map.put(Integer.toString(max++), item);
+      map.put(max++, item);
     }
     return true;
   }
@@ -73,7 +73,7 @@ public class IntToManyList <X> implements IntTo.Many<X>{
   public boolean addAll(final IntTo<X>... items) {
     updateMax();
     for (final IntTo<X> item : items) {
-      map.put(Integer.toString(max++), item);
+      map.put(max++, item);
     }
     return true;
   }
@@ -83,7 +83,7 @@ public class IntToManyList <X> implements IntTo.Many<X>{
     if (pos > max) {
       max = pos+1;
     }
-    map.put(Integer.toString(pos), item);
+    map.put(pos, item);
     return false;
   }
 
@@ -95,8 +95,7 @@ public class IntToManyList <X> implements IntTo.Many<X>{
     main:
     for (final IntTo<X> item : map.values()) {
       if (item.size() == value.size()) {
-        for (int i = item.size(); i-->0;) {
-          Integer key = new Integer(i);
+        for (int key = item.size(); key-->0;) {
           if (!equals(item.get(key), value.get(key))) {
             continue main;
           }
@@ -113,7 +112,7 @@ public class IntToManyList <X> implements IntTo.Many<X>{
 
   @Override
   public IntTo<X> at(final int index) {
-    return map.get(Integer.toString(index));
+    return map.get(index);
   }
 
   @Override
@@ -121,10 +120,8 @@ public class IntToManyList <X> implements IntTo.Many<X>{
     if (value == null) {
       return -1;
     }
-    final String[] keys = map.keyArray();
     main:
-    for (int i = keys.length; i-->0;) {
-      final String key = keys[i];
+    for (Integer key : map.keys()) {
       final IntTo<X> item = map.get(key);
       if (item.size() == value.size()) {
         for (int j = item.size(); j-->0;) {
@@ -132,7 +129,7 @@ public class IntToManyList <X> implements IntTo.Many<X>{
             continue main;
           }
         }
-        return Integer.parseInt(key);
+        return key;
       }
     }
     return -1;
@@ -140,7 +137,7 @@ public class IntToManyList <X> implements IntTo.Many<X>{
 
   @Override
   public boolean remove(final int index) {
-    return map.remove(Integer.toString(index)) != null;
+    return map.remove(index) != null;
   }
 
   @Override
@@ -149,10 +146,8 @@ public class IntToManyList <X> implements IntTo.Many<X>{
       return false;
     }
     boolean success = false;
-    final String[] keys = map.keyArray();
     main:
-    for (int i = keys.length; i-->0;) {
-      final String key = keys[i];
+    for (Integer key : map.keys()) {
       final IntTo<X> item = map.get(key);
       if (item.size() == value.size()) {
         for (int j = item.size(); j-->0;) {
@@ -166,6 +161,7 @@ public class IntToManyList <X> implements IntTo.Many<X>{
         success = true;
       }
     }
+
     return success;
   }
 
@@ -174,24 +170,24 @@ public class IntToManyList <X> implements IntTo.Many<X>{
     if (index > max) {
       max = index+1;
     }
-    map.put(Integer.toString(index), value);
+    map.put(index, value);
   }
 
   @Override
   public void push(final IntTo<X> value) {
     updateMax();
-    map.put(Integer.toString(max++), value);
+    map.put(max++, value);
   }
 
   @Override
   public IntTo<X> pop() {
     updateMax();
     max--;
-    final IntTo<X> items = map.remove(Integer.toString(max));
+    final IntTo<X> items = map.remove(max);
     if (items != null) {
       return items;
     }
-    final String[] keys = map.keyArray();
+    final Integer[] keys = map.keys().toArray(Integer[]::new);
     Arrays.sort(keys);
     return map.remove(keys[keys.length-1]);
   }
@@ -199,9 +195,9 @@ public class IntToManyList <X> implements IntTo.Many<X>{
   @Override
   public List<IntTo<X>> asList() {
     final List<IntTo<X>> list = newList();
-    final String[] keys = map.keyArray();
+    final Integer[] keys = map.keys().toArray(Integer[]::new);
     Arrays.sort(keys);
-    for (final String key : keys) {
+    for (final Integer key : keys) {
       list.add(map.get(key));
     }
     return list;
@@ -211,8 +207,8 @@ public class IntToManyList <X> implements IntTo.Many<X>{
   @SuppressWarnings("unchecked")
   public Set<IntTo<X>> asSet() {
     final Set<IntTo<X>> set = newSet();
-    if (map instanceof StringToAbstract) {
-      set.addAll(((StringToAbstract<IntTo<X>>)map).valueSet());
+    if (map instanceof MapOf) {
+      set.addAll(((MapOf) map).values());
     } else {
       for (final IntTo<X> value : map.values()) {
         set.add(value);
@@ -224,28 +220,28 @@ public class IntToManyList <X> implements IntTo.Many<X>{
   @Override
   public Deque<IntTo<X>> asDeque() {
     final Deque<IntTo<X>> deque = newDeque();
-    final String[] keys = map.keyArray();
+    final Integer[] keys = map.keys().toArray(Integer[]::new);
     Arrays.sort(keys);
-    for (final String key : keys) {
+    for (final Integer key : keys) {
       deque.add(map.get(key));
     }
     return deque;
   }
 
   protected List<IntTo<X>> newList() {
-    return new ArrayList<IntTo<X>>();
+    return new ArrayList<>();
   }
 
   protected Set<IntTo<X>> newSet() {
-    return new LinkedHashSet<IntTo<X>>();
+    return new LinkedHashSet<>();
   }
 
   protected Deque<IntTo<X>> newDeque() {
-    return new ArrayDeque<IntTo<X>>();
+    return new ArrayDeque<>();
   }
 
   protected Map<Integer, IntTo<X>> newMap() {
-    return new TreeMap<Integer, IntTo<X>>();
+    return new TreeMap<>();
   }
 
   @Override
@@ -255,13 +251,12 @@ public class IntToManyList <X> implements IntTo.Many<X>{
 
   @Override
   public IntTo<X> put(final Entry<Integer, IntTo<X>> item) {
-    return map.put(Integer.toString(item.getKey()), item.getValue());
+    return map.put(item);
   }
 
   @Override
   public Entry<Integer, IntTo<X>> entryFor(final Object key) {
-    final String asString = String.valueOf(key);
-    final int asInt = Integer.parseInt(asString);
+    final int asInt = coerceKey(key);
     return new Entry<Integer, IntTo<X>>() {
 
       @Override
@@ -271,12 +266,12 @@ public class IntToManyList <X> implements IntTo.Many<X>{
 
       @Override
       public IntTo<X> getValue() {
-        return map.get(asString);
+        return map.get(asInt);
       }
 
       @Override
       public IntTo<X> setValue(final IntTo<X> value) {
-        return map.put(asString, value);
+        return map.put(asInt, value);
       }
     };
   }
@@ -284,21 +279,29 @@ public class IntToManyList <X> implements IntTo.Many<X>{
   @Override
   public IntTo<X> get(final Object key) {
     assertValid(key);
-    return map.get(String.valueOf(key));
+    return map.get(coerceKey(key));
   }
 
   private void assertValid(final Object key) {
-    assert Integer.parseInt(String.valueOf(key)) >= Integer.MIN_VALUE;
+    assert coerceKey(key) >= Integer.MIN_VALUE;
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public void setValue(final Object key, final Object value) {
-    assertValid(key);
-    if ((Integer)key > max) {
-      max = (Integer)key;
+    Integer k = coerceKey(key);
+    assertValid(k);
+    if (k > max) {
+      max = k;
     }
-    map.put(String.valueOf(key), (IntTo<X>)value);
+    map.put(k, (IntTo<X>)value);
+  }
+
+  private int coerceKey(Object key) {
+    if (key == null) {
+      throw new NullPointerException("Null not allowed");
+    }
+    return key instanceof Number ? ((Number)key).intValue() : Integer.parseInt(String.valueOf(key));
   }
 
   @Override
@@ -307,7 +310,7 @@ public class IntToManyList <X> implements IntTo.Many<X>{
     if (key.equals(max-1)) {
       max--;
     }
-    return map.remove(String.valueOf(key));
+    return map.remove(coerceKey(key));
   }
 
   @Override
@@ -322,15 +325,15 @@ public class IntToManyList <X> implements IntTo.Many<X>{
     final
     IntTo<X>[] results = new IntTo[max];
     for (int i = max;i-->0;) {
-      results[i] = map.get(String.valueOf(i));
+      results[i] = map.get(coerceKey(i));
     }
-    assert noNegatives() : "Cannot use .toArray on an IntTo.Many with negative key values: "+Arrays.asList(map.keyArray());
+    assert noNegatives() : "Cannot use .toArray on an IntTo.Many with negative key values: "+map.keys().join("[", ",", "]");
     return results;
   }
 
   private boolean noNegatives() {
-    for (final String key : map.keyArray()) {
-      if (Integer.parseInt(key) < 0) {
+    for (Integer key : map.keys()) {
+      if (key < 0) {
         return false;
       }
     }
@@ -348,9 +351,9 @@ public class IntToManyList <X> implements IntTo.Many<X>{
     if (map instanceof StringToAbstract) {
       into.addAll(((StringToAbstract) map).valueSet());
     } else {
-      final String[] keys = map.keyArray();
+      final Integer[] keys = map.keys().toArray(Integer[]::new);
       Arrays.sort(keys);
-      for (final String key : keys) {
+      for (final Integer key : keys) {
         into.add(map.get(key));
       }
     }
@@ -362,8 +365,8 @@ public class IntToManyList <X> implements IntTo.Many<X>{
     if (into == null) {
       into = newMap();
     }
-    for (final String key : map.keyArray()) {
-      into.put(Integer.parseInt(key), map.get(key));
+    for (Entry<Integer, IntTo<X>> e : map.entries()) {
+      into.put(e.getKey(), e.getValue());
     }
     return into;
   }
@@ -390,7 +393,7 @@ public class IntToManyList <X> implements IntTo.Many<X>{
       }
     } else {
       final Iterator<Out2<Integer, IntTo<X>>> itr = map.forEachItem()
-          .map(e->Out2.out2Immutable(Integer.parseInt(e.out1()), e.out2()))
+          .map(e->Out2.out2Immutable(e.out1(), e.out2()))
           .iterator();
       while (itr.hasNext()) {
         final Out2<Integer, IntTo<X>> next = itr.next();
@@ -407,7 +410,7 @@ public class IntToManyList <X> implements IntTo.Many<X>{
     if (s == 0) {
       return true;
     }
-    return map.containsKey("0") && map.containsKey(Integer.toString(s-1));
+    return map.containsKey(0) && map.containsKey(s-1);
   }
 
 }
