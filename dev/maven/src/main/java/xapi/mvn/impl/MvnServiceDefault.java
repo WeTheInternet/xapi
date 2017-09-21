@@ -30,10 +30,15 @@ import xapi.dev.resource.impl.StringDataResource;
 import xapi.dev.scanner.X_Scanner;
 import xapi.dev.scanner.impl.ClasspathResourceMap;
 import xapi.fu.Filter.Filter1;
+import xapi.fu.Lazy;
+import xapi.fu.MappedIterable;
+import xapi.fu.Out1;
 import xapi.inject.impl.SingletonInitializer;
 import xapi.io.X_IO;
 import xapi.log.X_Log;
 import xapi.log.api.LogLevel;
+import xapi.mvn.X_Maven;
+import xapi.mvn.api.MvnDependency;
 import xapi.mvn.service.MvnService;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
@@ -238,11 +243,37 @@ public class MvnServiceDefault implements MvnService {
 
   @Override
   public List<String> loadDependencies(Artifact artifact, Filter1<Dependency> filter) {
-    Map<String, String> dependencies = new LinkedHashMap<>();
+    Map<String, String> dependencies = Collections.synchronizedMap(new LinkedHashMap<>());
 
     loadInto(dependencies, artifact, filter);
 
     return new ArrayList<>(dependencies.values());
+  }
+
+  @Override
+  public Out1<MappedIterable<String>> downloadDependencies(MvnDependency dep) {
+
+    final Lazy<List<String>> artifact = Lazy.deferred1(()->{
+      final ArtifactResult result = X_Maven.loadArtifact(
+          dep.getGroupId(),
+          dep.getArtifactId(),
+          dep.getClassifier(),
+          dep.getPackaging(),
+          dep.getVersion()
+      );
+      return loadDependencies(result.getArtifact(), check->
+          !"test".equals(check.getScope()) && !"system".equals(check.getScope())
+              && !check.isOptional()
+      );
+    });
+    // Start download of artifact info immediately, but do not block
+    runLater(artifact.ignoreOut1().toRunnable());
+    // Return a string output that will block on the lazy initializer
+    return artifact.map(MappedIterable::mapped);
+  }
+
+  protected void runLater(Runnable runnable) {
+    X_Time.runLater(runnable);
   }
 
   private void loadInto(Map<String, String> dependencies, Artifact artifact, Filter1<Dependency> filter) {
@@ -273,7 +304,8 @@ public class MvnServiceDefault implements MvnService {
       if (artifact.getClassifier() == null) {
         return artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + artifact.getVersion();
       } else {
-        return artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + artifact.getClassifier() + ":" + artifact.getVersion();
+        // classifier is the fifth coordinate type, which implicitly uses jar for extension / packaging type
+        return artifact.getGroupId() + ":" + artifact.getArtifactId() + ":jar:" + artifact.getClassifier() + ":" + artifact.getVersion();
       }
     } else {
       if (artifact.getClassifier() == null) {
@@ -285,14 +317,13 @@ public class MvnServiceDefault implements MvnService {
   }
 
   private void loadDependencies(Map<String, String> dependencies, JarFile jar, Model pom, Filter1<Dependency> filter) {
-    allDeps:
-    for (Dependency dependency : pom.getDependencies()) {
+    pom.getDependencies().parallelStream().forEach(dependency -> {
       if (filter.filter1(dependency)) {
         final ZipEntry pomEntry = jar.getEntry("META-INF/maven/" + cache.resolveProperty(pom, "${pom.groupId}") + "/" + dependency.getArtifactId() + "/pom.xml");
         if (pomEntry != null) {
           // If the pom of the dependency is in the jar, it is very likely a shaded jar that already contains the
           // rest of the contents of the dependency, so we should skip it.
-          continue;
+          return;
         }
         if (dependency.getVersion() == null) {
           // dependency management was used somewhere along the way :-/
@@ -300,7 +331,7 @@ public class MvnServiceDefault implements MvnService {
             for (Dependency dep : pom.getDependencyManagement().getDependencies()) {
               if (dep.getGroupId().equals(dependency.getGroupId()) && dep.getArtifactId().equals(dependency.getArtifactId())) {
                 loadDependency(dependencies, pom, dep, filter);
-                continue allDeps;
+                return;
               }
             }
           }
@@ -320,10 +351,10 @@ public class MvnServiceDefault implements MvnService {
                 for (Dependency dep : parentPom.getDependencyManagement().getDependencies()) {
                   if (
                       dep.getGroupId().equals(dependency.getGroupId()) &&
-                      dep.getArtifactId().equals(dependency.getArtifactId()) &&
-                        Objects.equals(dep.getClassifier(), dependency.getClassifier())) {
+                          dep.getArtifactId().equals(dependency.getArtifactId()) &&
+                          Objects.equals(dep.getClassifier(), dependency.getClassifier())) {
                     loadDependency(dependencies, pom, dep, filter);
-                    continue allDeps;
+                    return;
                   }
                 }
               }
@@ -336,7 +367,7 @@ public class MvnServiceDefault implements MvnService {
           loadDependency(dependencies, pom, dependency, filter);
         }
       }
-    }
+    });
 
   }
 

@@ -20,7 +20,11 @@
   <dependencies>
     <dependency>
       <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-core-scope</artifactId>
+      <artifactId>xapi-dev-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-core-process</artifactId>
     </dependency>
     <dependency>
       <groupId>net.wetheinter</groupId>

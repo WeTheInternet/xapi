@@ -15,15 +15,23 @@
   <description>
     A set of tools for scanning all sorts of maven data.
   </description>
-  
+
   <properties>
     <aether.version>1.0.1.v20141111</aether.version>
   </properties>
-  
+
   <dependencies>
      <dependency>
       <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-server-api</artifactId>
+     </dependency>
+     <dependency>
+      <groupId>net.wetheinter</groupId>
       <artifactId>xapi-dev-scanner</artifactId>
+     </dependency>
+     <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-dev-api</artifactId>
      </dependency>
      <dependency>
       <groupId>net.wetheinter</groupId>

@@ -30,6 +30,10 @@
     </dependency>
     <dependency>
       <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-dev-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
       <artifactId>xapi-core-ui-generator</artifactId>
     </dependency>
     <dependency>
@@ -40,10 +44,6 @@
       <groupId>net.wetheinter</groupId>
       <artifactId>xapi-core-ui-api</artifactId>
      </dependency>
-    <dependency>
-      <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-dev-javac</artifactId>
-    </dependency>
     <!-- We'll use a simple jetty server for testing. -->
     <dependency>
       <groupId>javax.servlet</groupId>

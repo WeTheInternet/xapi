@@ -1,17 +1,8 @@
-package xapi.mvn.model;
-
-import xapi.mvn.impl.MvnCacheImpl;
-import xapi.mvn.service.MvnCache;
+package xapi.mvn.api;
 
 public interface MvnDependency extends MvnCoords<MvnDependency> {
 
-
-  String getType();
-  String getClassifier();
   MvnCoords<?> getParentCoords();
-
-  MvnDependency setType(String extension);
-  MvnDependency setClassifier(String classifier);
   MvnDependency setParentCoords(MvnCoords parent);
 
   default MvnModule getParent(MvnCache cache) {
@@ -23,10 +14,6 @@ public interface MvnDependency extends MvnCoords<MvnDependency> {
       return (MvnModule) coords;
     }
     return cache.getModule(coords);
-  }
-
-  default String toCoords(MvnCacheImpl cache) {
-    return null;
   }
 
 }

@@ -36,17 +36,7 @@
       <artifactId>xapi-dev-bytecode</artifactId>
     </dependency>
 
-    <!-- Test dependencies -->
-    <dependency>
-      <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-jre-inject</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <scope>test</scope>
-    </dependency>
+    <!-- We do our testing for models in jre/uber module, to avoid cyclic dependencies -->
 
   </dependencies>
 

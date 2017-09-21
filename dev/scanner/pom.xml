@@ -12,10 +12,10 @@
   <name>XApi - Classpath Scanner</name>
   <url>WeTheInter.net</url>
   <description>
-  A classpath scanner that uses our fork of javassist to read 
-  classes, java sources and resources off the classpath. 
+  A classpath scanner that uses our fork of javassist to read
+  classes, java sources and resources off the classpath.
   </description>
-  
+
   <dependencies>
      <dependency>
       <groupId>net.wetheinter</groupId>

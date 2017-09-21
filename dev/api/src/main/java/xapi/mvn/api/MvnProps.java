@@ -1,4 +1,4 @@
-package xapi.mvn.model;
+package xapi.mvn.api;
 
 import xapi.fu.MapLike;
 

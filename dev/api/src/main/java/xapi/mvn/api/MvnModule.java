@@ -1,10 +1,9 @@
-package xapi.mvn.model;
+package xapi.mvn.api;
 
 import xapi.collect.X_Collect;
 import xapi.fu.In1Out1;
 import xapi.fu.MapLike;
 import xapi.fu.X_Fu;
-import xapi.mvn.impl.MvnCacheImpl;
 
 import static xapi.fu.Immutable.immutable1;
 
@@ -26,7 +25,7 @@ public interface MvnModule extends MvnDependency {
         return this;
     }
 
-     default String getProperty(MvnCacheImpl cache, String property) {
+     default String getProperty(MvnCache cache, String property) {
          final MvnProps props = moduleProps();
          if (props.hasProperty(property)) {
              return X_Fu.mapIfNotNull(props.getProperty(property), In1Out1.of(String::valueOf));

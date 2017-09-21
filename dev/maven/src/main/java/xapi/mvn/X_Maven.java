@@ -16,10 +16,13 @@ import xapi.dev.X_Dev;
 import xapi.dev.scanner.X_Scanner;
 import xapi.dev.scanner.impl.ClasspathResourceMap;
 import xapi.fu.Filter.Filter1;
+import xapi.fu.MappedIterable;
+import xapi.fu.Out1;
 import xapi.inject.X_Inject;
 import xapi.inject.impl.SingletonProvider;
 import xapi.log.X_Log;
 import xapi.mvn.impl.ProjectIterable;
+import xapi.mvn.api.MvnDependency;
 import xapi.mvn.service.MvnService;
 import xapi.util.X_Debug;
 import xapi.util.X_Runtime;
@@ -200,4 +203,7 @@ public class X_Maven {
     return new ProjectIterable(project, builder, request, includeSelf);
   }
 
+  public static Out1<MappedIterable<String>> downloadDependencies(MvnDependency dep) {
+    return getMavenService().downloadDependencies(dep);
+  }
 }

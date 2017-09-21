@@ -8,12 +8,11 @@ import org.eclipse.aether.resolution.ArtifactResult;
 import xapi.annotation.inject.InstanceDefault;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
-import xapi.mvn.model.MvnCoords;
-import xapi.mvn.model.MvnModule;
-import xapi.mvn.service.MvnCache;
+import xapi.fu.Lazy;
+import xapi.mvn.api.MvnCoords;
+import xapi.mvn.api.MvnModule;
+import xapi.mvn.api.MvnCache;
 import xapi.mvn.service.MvnService;
-
-import java.util.Locale;
 
 /**
  * In cases where we need to lookup values from jars and poms, we do not want to have to keep resolving artifacts,
@@ -25,8 +24,8 @@ import java.util.Locale;
 public class MvnCacheImpl implements MvnCache {
 
     private final MvnService service;
-    private final StringTo<ArtifactResult> resultCache = X_Collect.newStringMap(ArtifactResult.class);
-    private final StringTo<Model> modelCache = X_Collect.newStringMap(Model.class);
+    private final StringTo<Lazy<ArtifactResult>> resultCache = X_Collect.newStringMap(Lazy.class, X_Collect.MUTABLE_CONCURRENT);
+    private final StringTo<Model> modelCache = X_Collect.newStringMap(Model.class, X_Collect.MUTABLE_CONCURRENT);
 
     public MvnCacheImpl(MvnService service) {
         this.service = service;
@@ -217,18 +216,20 @@ public class MvnCacheImpl implements MvnCache {
     private Artifact getArtifact(String groupId, String artifactId, String classifier, String type, String version) {
         String key = groupId+"|"+artifactId+"|"+type+"|"+classifier+"|"+version;
 
-        final ArtifactResult result =
+        final Lazy<ArtifactResult> result =
             resultCache.getOrCreate(key, k->
-                service.loadArtifact(
+                // we want to reduce co-mod in cache's .getOrCreate, so we return a placeholder Lazy
+                Lazy.deferred1(()->service.loadArtifact(
                     groupId,
                     artifactId,
                     classifier,
                     type,
                     version
                 )
-            );
+            ));
 
-        return result.getArtifact();
+        // Race conditions will block on the first entrant here
+        return result.out1().getArtifact();
     }
 
     @Override

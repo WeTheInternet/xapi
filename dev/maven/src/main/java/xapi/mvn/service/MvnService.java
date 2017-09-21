@@ -9,7 +9,10 @@ import org.eclipse.aether.repository.LocalArtifactResult;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.ArtifactResult;
 import xapi.fu.Filter.Filter1;
+import xapi.fu.MappedIterable;
+import xapi.fu.Out1;
 import xapi.log.api.LogLevel;
+import xapi.mvn.api.MvnDependency;
 
 import java.io.IOException;
 import java.util.List;
@@ -47,4 +50,6 @@ public interface MvnService {
       String version);
 
     List<String> loadDependencies(Artifact artifact, Filter1<Dependency> filter);
+
+    Out1<MappedIterable<String>> downloadDependencies(MvnDependency dep);
 }

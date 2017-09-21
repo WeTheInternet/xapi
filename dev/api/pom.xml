@@ -13,14 +13,25 @@
   <url>WeTheInter.net</url>
   <description>
     Tools for doing shared dev-mode things;
-    classpath scanning, task dispatching, shell scripting...  
+    classpath scanning, task dispatching, shell scripting...
   </description>
-  
+
   <dependencies>
      <dependency>
       <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-core-util</artifactId>
+      <artifactId>xapi-core-model</artifactId>
      </dependency>
+     <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-core-scope</artifactId>
+     </dependency>
+     <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-core-lang</artifactId>
+     </dependency>
+
+    <!-- We do our testing in the uber module, to avoid cyclic dependencies -->
+
   </dependencies>
 
 </project>

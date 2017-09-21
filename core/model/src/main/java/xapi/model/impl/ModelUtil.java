@@ -9,6 +9,7 @@ import xapi.except.NotConfiguredCorrectly;
 import xapi.model.api.Model;
 import xapi.model.api.ModelManifest;
 import xapi.model.api.ModelManifest.MethodData;
+import xapi.source.X_Modifier;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
@@ -35,8 +36,8 @@ public class ModelUtil {
       String idField = isModel == null ? "id" : isModel.key().value();
       for (final Method method : type.getMethods()) {
         if (method.getDeclaringClass() != Model.class) {
-          if (method.isDefault()) {
-            continue; // no need to override default methods!
+          if (method.isDefault() || X_Modifier.isStatic(method.getModifiers())) {
+            continue; // no need to override default / static methods!
           }
           if (!manifest.hasSeenMethod(method.getName())) {
             try {

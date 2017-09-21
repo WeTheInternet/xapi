@@ -1,7 +1,4 @@
-package xapi.mvn.service;
-
-import xapi.mvn.model.MvnCoords;
-import xapi.mvn.model.MvnModule;
+package xapi.mvn.api;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 9/4/16.
