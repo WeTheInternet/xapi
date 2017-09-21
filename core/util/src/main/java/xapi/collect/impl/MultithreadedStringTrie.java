@@ -8,7 +8,9 @@ import java.util.concurrent.locks.Lock;
 import static xapi.collect.api.CharPool.EMPTY_STRING;
 import xapi.collect.api.CharPool;
 import xapi.collect.api.PrefixedMap;
+import xapi.fu.MappedIterable;
 import xapi.source.api.Chars;
+import xapi.util.X_String;
 
 /**
  * NSFW
@@ -64,7 +66,7 @@ public class MultithreadedStringTrie<E> implements PrefixedMap<E> {
   public class Edge implements Serializable {
     private static final long serialVersionUID = 5885970862972987462L;
 
-    protected E value;
+    protected volatile E value;
     protected volatile Edge greater;
     protected volatile Edge lesser;
     // use char[] instead of string for optimized .toString() on keys.
@@ -705,17 +707,12 @@ public class MultithreadedStringTrie<E> implements PrefixedMap<E> {
     return onEmpty(e, keys, pos, end);
   }
 
-  public Iterable<E> findPrefixed(final String prefix) {
-    return new Iterable<E>(){
-      @Override
-      public Iterator<E> iterator() {
-        return new Itr(prefix);
-      }
-    };
+  public MappedIterable<E> findPrefixed(final String prefix) {
+    return ()->new Itr(prefix);
   }
 
-  public void compress(CharPool charPoolTrie) {
-
+  public void compress(CharPool pool) {
+    // Intern references to strings into a pool which can be safely shared across many instances.
   }
 
   protected E returnValue(Edge e, Chars keys, int pos, int end) {

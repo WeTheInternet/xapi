@@ -1,7 +1,9 @@
 package xapi.collect.api;
 
+import xapi.fu.MappedIterable;
+
 public interface HasPrefixed <T>{
 
-  public Iterable<T> findPrefixed(String name);
-  
+  MappedIterable<T> findPrefixed(String name);
+
 }
