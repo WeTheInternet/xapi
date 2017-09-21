@@ -2,10 +2,13 @@ package xapi.test.server.bdd;
 
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
+import xapi.fu.Do;
 import xapi.fu.In1;
 import xapi.fu.In1.In1Unsafe;
 import xapi.fu.In1Out1;
 import xapi.fu.In2;
+import xapi.fu.In2.In2Unsafe;
+import xapi.fu.In3.In3Unsafe;
 import xapi.fu.Lazy;
 import xapi.fu.Mutable;
 import xapi.fu.Rethrowable;
@@ -16,9 +19,12 @@ import xapi.model.api.Model;
 import xapi.model.api.PrimitiveSerializer;
 import xapi.model.impl.AbstractModel;
 import xapi.process.X_Process;
+import xapi.scope.X_Scope;
+import xapi.scope.api.Scope;
 import xapi.scope.request.RequestScope;
+import xapi.scope.request.SessionScope;
 import xapi.server.X_Server;
-import xapi.server.api.Classpath;
+import xapi.dev.api.Classpath;
 import xapi.server.api.ModelGwtc;
 import xapi.server.api.Route;
 import xapi.server.api.WebApp;
@@ -26,6 +32,7 @@ import xapi.server.api.XapiEndpoint;
 import xapi.server.api.XapiServer;
 import xapi.source.api.CharIterator;
 import xapi.source.impl.InputStreamCharIterator;
+import xapi.test.server.bdd.TestSocketServer.SocketScope;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -44,7 +51,14 @@ import java.util.concurrent.locks.LockSupport;
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/23/16.
  */
-class TestSocketServer extends AbstractModel implements WebApp, Rethrowable, XapiServer<SocketRequest, SocketResponse> {
+class TestSocketServer extends AbstractModel implements WebApp, Rethrowable, XapiServer<SocketScope> {
+
+    interface SocketScope extends RequestScope<SocketRequest, SocketResponse> {
+        @Override
+        default Class<? extends Scope> forScope() {
+            return RequestScope.class;
+        }
+    }
 
     private final URL classpath;
     private final Lazy<Socket> io;
@@ -68,7 +82,7 @@ class TestSocketServer extends AbstractModel implements WebApp, Rethrowable, Xap
         } catch (MalformedURLException e) {
             throw rethrow(e);
         }
-        setSource(classpath.getSource());
+        setBaseSource(classpath.getBaseSource());
         setPort(classpath.getPort());
         setClasspaths(classpath.getClasspaths());
         final Mutable<Socket> sock = new Mutable<>();
@@ -112,18 +126,9 @@ class TestSocketServer extends AbstractModel implements WebApp, Rethrowable, Xap
 
     @Override
     public void serviceRequest(
-        RequestScope<SocketRequest, SocketResponse> request, In2<SocketRequest, Boolean> callback
+        SocketScope socketScope, In2<SocketScope, Throwable> callback
     ) {
-    }
-
-    @Override
-    public String getPath(SocketRequest req) {
-        return req.getPath();
-    }
-
-    @Override
-    public String getMethod(SocketRequest req) {
-        return "SOCKET";
+        callback.in(socketScope, null);
     }
 
     @Override
@@ -132,69 +137,68 @@ class TestSocketServer extends AbstractModel implements WebApp, Rethrowable, Xap
     }
 
     @Override
-    public IntTo<String> getParams(SocketRequest req, String param) {
-        throw new UnsupportedOperationException("Socket server does not have params");
-    }
-
-    @Override
-    public IntTo<String> getHeaders(SocketRequest req, String header) {
-        throw new UnsupportedOperationException("Socket server does not have headers");
-    }
-
-    @Override
-    public void writeText(RequestScope<SocketRequest, SocketResponse> request, String payload, In1<SocketRequest> callback) {
+    public void writeText(
+        SocketScope scope, String payload, In2<SocketScope, Throwable> callback
+    ) {
         throw new UnsupportedOperationException("writeText not supported");
     }
 
     @Override
     public void writeFile(
-        RequestScope<SocketRequest, SocketResponse> request, String payload, In1<SocketRequest> callback
+        SocketScope scope, String payload, In2<SocketScope, Throwable> callback
     ) {
         throw new UnsupportedOperationException("writeText not supported");
     }
 
     @Override
-    public void writeGwtJs(RequestScope<SocketRequest, SocketResponse> request, String payload, In1<SocketRequest> callback) {
+    public void writeGwtJs(
+        SocketScope scope, String payload, In2<SocketScope, Throwable> callback
+    ) {
         throw new UnsupportedOperationException("writeGwtJs not supported");
     }
 
     @Override
     public void writeTemplate(
-        RequestScope<SocketRequest, SocketResponse> request, String payload, In1<SocketRequest> callback
+        SocketScope scope, String payload, In2<SocketScope, Throwable> callback
     ) {
         throw new UnsupportedOperationException("writeTemplate not supported");
     }
 
     @Override
-    public void writeCallback(RequestScope<SocketRequest, SocketResponse> request, String payload, In1<SocketRequest> callback) {
+    public void writeCallback(
+        SocketScope scope, String payload, In2<SocketScope, Throwable> callback
+    ) {
         throw new UnsupportedOperationException("writeCallback not supported");
     }
 
     @Override
     public void writeService(
-        String path, RequestScope<SocketRequest, SocketResponse> request, String payload, In1<SocketRequest> callback
+        String path,
+        SocketScope scope,
+        String payload,
+        In2<SocketScope, Throwable> callback
     ) {
         throw new UnsupportedOperationException("writeService not supported");
     }
 
     @Override
-    public void registerEndpoint(String name, XapiEndpoint<SocketRequest, SocketResponse> endpoint) {
+    public void registerEndpoint(String name, XapiEndpoint<SocketScope> endpoint) {
         throw new UnsupportedOperationException("registerEndpoint not supported");
     }
 
     @Override
     public void registerEndpointFactory(
-        String name, boolean singleton, In1Out1<String, XapiEndpoint<SocketRequest, SocketResponse>> endpoint
+        String name, boolean singleton, In1Out1<String, XapiEndpoint<SocketScope>> endpoint
     ) {
         throw new UnsupportedOperationException("registerEndpoint not supported");
     }
 
     @Override
     public void inScope(
-        SocketRequest socketRequest,
-        SocketResponse socketResponse,
-        In1Unsafe<RequestScope<SocketRequest, SocketResponse>> callback
+        In1Out1<SessionScope, SocketScope> scopeFactory, In3Unsafe<SocketScope, Throwable, Do> callback
     ) {
+
+
     }
 
     public void start() {
@@ -292,12 +296,12 @@ class TestSocketServer extends AbstractModel implements WebApp, Rethrowable, Xap
     }
 
     @Override
-    public String getSource() {
+    public String getBaseSource() {
         return source;
     }
 
     @Override
-    public WebApp setSource(String source) {
+    public WebApp setBaseSource(String source) {
         this.source = source;
         return this;
     }

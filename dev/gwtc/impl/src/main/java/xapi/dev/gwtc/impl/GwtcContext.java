@@ -616,14 +616,14 @@ public class GwtcContext {
   }
 
   public void inheritGwtXml(String inherit) {
-    module.inherit(inherit);
+    module.addInherit(inherit);
   }
 
   public String getGenName() {
     return module.getInheritName();
   }
 
-  public void setEntryPoint(String qualifiedName) {
+  public void addEntryPoint(String qualifiedName) {
     module.setEntryPoint(qualifiedName);
   }
 
@@ -637,7 +637,10 @@ public class GwtcContext {
 
   public XmlBuffer getGwtXml(GwtManifest manifest) {
     if (manifest != null) {
-      manifest.getModules().forEach(module->module.addInherit(module.getInheritName()));
+      manifest.getModules().forEach(mod-> {
+        manifest.getEntryPoints().forEach(module::addEntryPoint);
+        mod.addInherit(module.getInheritName());
+      });
     }
     return module.getBuffer();
   }

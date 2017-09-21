@@ -1,6 +1,8 @@
 package xapi.server.api;
 
+import xapi.except.NotConfiguredCorrectly;
 import xapi.fu.In1;
+import xapi.fu.In2;
 import xapi.fu.Log;
 import xapi.fu.Log.LogLevel;
 import xapi.fu.Mutable;
@@ -24,44 +26,43 @@ public interface Route extends Model {
         Text, Gwt, Callback, File, Template, Service
     }
 
-    default <Req extends RequestLike, Resp extends ResponseLike> boolean serve(String path, RequestScope<Req, Resp> request, In1<Req> callback) {
+    default <Req extends RequestLike, Resp extends ResponseLike> void serve(String path, RequestScope<Req, Resp> request, In2<RequestScope<Req, Resp>, Throwable> callback) {
         RouteType type = getRouteType();
         if (type == null) {
             getOrCreateLog().log(getClass(), LogLevel.WARN,
                 "No route type specified; bailing ", this);
-            return false;
+            callback.in(request, new NotConfiguredCorrectly("No route type in " + this));
+            return;
         }
         final String payload = getPayload();
         if (payload == null && type != RouteType.Template) {
             getOrCreateLog().log(getClass(), LogLevel.WARN,
                 "No payload specified; bailing ", this);
-            return false;
+            callback.in(request, new NotConfiguredCorrectly("No payload in " + this));
+            return;
         }
         XapiServer server = request.get(XapiServer.class);
-        Mutable<Boolean> success = new Mutable<>(null);
-        callback = callback.useAfterMe(r->success.set(r != null));
         switch (type) {
             case Text:
                 server.writeText(request, payload, callback);
-                return server.blockFor(request, success, 10_000);
+                return;
             case Gwt:
                 server.writeGwtJs(request, payload, callback);
-                return server.blockFor(request, success, 60_000);
+                return;
             case Callback:
                 server.writeCallback(request, payload, callback);
-                return server.blockFor(request, success, 10_000);
+                return;
             case File:
                 server.writeFile(request, payload, callback);
-                return server.blockFor(request, success, 10_000);
+                return;
             case Template:
                 server.writeTemplate(request, payload, callback);
-                return server.blockFor(request, success, 10_000);
+                return;
             case Service:
                 server.writeService(path, request, payload, callback);
-                return server.blockFor(request, success, 10_000);
-
+                return;
         }
-        return false;
+        callback.in(request, new NotConfiguredCorrectly("Type not handled: " + type));
     }
 
     Log getLog();
@@ -108,7 +109,7 @@ public interface Route extends Model {
         if (url.equals(path)) {
             return 1.;
         }
-        // Do some patter matching here...
+        // Do some pattern matching here...
         if (path.contains("*")) {
             // If there is a *, we will return a slightly lower score
             double score = 0.8;
@@ -148,6 +149,13 @@ public interface Route extends Model {
                         yourInd++;
                     }
                 } else {
+                    if (yourParts.length <= yourInd) {
+                        if (myInd == myParts.length-1) {
+                            return score / 10.;
+                        } else {
+                            return 0.;
+                        }
+                    }
                     final String yours = yourParts[yourInd];
                     if (!mine.equals(yours)) {
                         return 0.;

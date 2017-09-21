@@ -18,8 +18,8 @@ Feature: ComponentGenerator.feature: Transpile xapi templates into web component
       | extends IsWebComponent<elemental.dom.Element> { } |
     And save generated source of component "test-component" as "UseTheSource"
     Then confirm source "UseTheSource" matches:
-      | package xapi.test.components.client; |
-|                                                                                                               |
+      | package xapi.test.components.client;                                                                          |
+      |                                                                                                               |
       |                                                                                                               |
       | import com.google.gwt.core.client.JavaScriptObject;                                                           |
       |                                                                                                               |

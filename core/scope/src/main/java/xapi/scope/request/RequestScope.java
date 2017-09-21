@@ -28,4 +28,5 @@ public interface RequestScope<RequestType extends RequestLike, ResponseType exte
     default String getPath() {
         return getRequest().getPath();
     }
+
 }

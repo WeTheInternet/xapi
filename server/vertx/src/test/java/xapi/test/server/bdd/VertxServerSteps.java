@@ -61,7 +61,7 @@ public class VertxServerSteps implements ServerTestHelper<XapiVertxServer> {
         }
 
         Thread me = Thread.currentThread();
-        long deadline = System.currentTimeMillis() + 5000;
+        long deadline = System.currentTimeMillis() + 20_000;
         Thread waiter = new Thread(()->{
             while (me.isAlive() && System.currentTimeMillis() < deadline) {
                 LockSupport.parkUntil(deadline);
@@ -80,6 +80,6 @@ public class VertxServerSteps implements ServerTestHelper<XapiVertxServer> {
 
     @Given("^Use vert[.]x generator$")
     public void useVertXGenerator() throws Throwable {
-        generatorFactory.in(VertxWebAppGenerator::new);
+        generatorFactory.in(()->new VertxWebAppGenerator().setTest(true));
     }
 }

@@ -88,15 +88,28 @@ public class AbstractResponse implements ResponseLike {
         if (closed) {
             X_Log.warn(AbstractResponse.class, "Response already closed");
         } else {
-            onFinish.out1().in(this);
+            flushFinished();
             closed = true;
         }
         return this;
     }
 
+    private void flushFinished() {
+        beforeFinished();
+        onFinish.out1().in(this);
+        afterFinished();
+    }
+
+    protected void afterFinished() {
+    }
+
+    protected void beforeFinished() {
+
+    }
+
     @Override
     public ResponseLike onFinish(In1<ResponseLike> callback) {
-        onFinish.process(In1::useAfterMe, callback);
+        onFinish.process(In1::useAfterMe, callback.onlyOnce());
         return this;
     }
 
@@ -108,5 +121,9 @@ public class AbstractResponse implements ResponseLike {
             return html.toString();
         }
         return "";
+    }
+
+    public boolean isClosed() {
+        return closed;
     }
 }

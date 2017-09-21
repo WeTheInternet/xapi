@@ -20,6 +20,7 @@ import xapi.dev.source.SourceBuilder;
 import xapi.dev.source.SourceBuilder.JavaType;
 import xapi.dev.source.XmlBuffer;
 import xapi.file.X_File;
+import xapi.fu.In1;
 import xapi.fu.Out1;
 import xapi.gwtc.api.GwtManifest;
 import xapi.gwtc.api.GwtcXmlBuilder;
@@ -75,12 +76,13 @@ public abstract class GwtcServiceAbstract implements GwtcService {
 
     genName = context.getGenName();
     tempDir = X_File.createTempDir(genName);
-    String qualifiedName = GwtManifest.GEN_PREFIX+"."+genName;
 
-    entryPoint = new SourceBuilder<GwtcService>("public class "+ genName).setPackage(GwtManifest.GEN_PREFIX);
+    entryPoint = new SourceBuilder<GwtcService>("public class "+ genName)
+        .setPackage(GwtManifest.GEN_PREFIX);
     out = new GwtcEntryPointBuilder(entryPoint);
 
-    context.setEntryPoint(qualifiedName);
+    String defaultEntryPoint = GwtManifest.GEN_PREFIX+"."+genName;
+    context.addEntryPoint(defaultEntryPoint);
 
     context.addGwtXmlSource(GwtManifest.GEN_PREFIX);
 
@@ -175,8 +177,8 @@ public abstract class GwtcServiceAbstract implements GwtcService {
     return entryPoint.toString();
   }
 
-  public String getGwtXml(GwtManifest manifest) {
-    return context.getGwtXml(manifest).toString();
+  public XmlBuffer getGwtXml(GwtManifest manifest) {
+    return context.getGwtXml(manifest);
   }
 
   @Override
@@ -409,7 +411,8 @@ public abstract class GwtcServiceAbstract implements GwtcService {
       }
       f = new File(tempDir, path);
       f.mkdirs();
-      saveGwtXmlFile(context.getGwtXml(manifest), module.substring(ind+1), manifest);
+      final XmlBuffer xml = context.getGwtXml(manifest);
+      saveGwtXmlFile(xml, module.substring(ind+1), manifest);
     }
   }
 

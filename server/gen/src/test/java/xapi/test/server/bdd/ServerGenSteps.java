@@ -52,7 +52,7 @@ public class ServerGenSteps implements ServerTestHelper<TestSocketServer> {
         );
         final WebApp app = webApps.get(name);
         assertNotNull("No app named " + name, app);
-        String src = app.getSource();
+        String src = app.getBaseSource();
         src = X_String.join("\n", adaptIterable(
             iterate(src.split("\n")), String::trim
             ).filter(s->!s.isEmpty())

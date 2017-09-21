@@ -5,21 +5,24 @@ import xapi.annotation.compile.Dependency;
 import xapi.annotation.compile.Dependency.DependencyType;
 import xapi.annotation.compile.ResourceBuilder;
 import xapi.annotation.inject.InstanceDefault;
+import xapi.collect.X_Collect;
+import xapi.collect.api.StringTo;
+import xapi.dev.gwtc.api.GwtcJobState;
 import xapi.dev.gwtc.api.GwtcService;
 import xapi.dev.gwtc.impl.GwtcContext.Dep;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
+import xapi.dev.source.XmlBuffer;
 import xapi.file.X_File;
 import xapi.fu.*;
+import xapi.fu.Do.DoUnsafe;
 import xapi.fu.In2.In2Unsafe;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
 import xapi.fu.iterate.EmptyIterator;
-import xapi.gwtc.api.CompiledDirectory;
 import xapi.gwtc.api.GwtManifest;
 import xapi.gwtc.api.Gwtc;
 import xapi.gwtc.api.GwtcProperties;
-import xapi.gwtc.api.IsRecompiler;
 import xapi.gwtc.api.ServerRecompiler;
 import xapi.io.api.SimpleLineReader;
 import xapi.log.X_Log;
@@ -60,9 +63,6 @@ import com.google.gwt.core.client.RunAsyncCallback;
 import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.dev.Compiler;
 import com.google.gwt.dev.GwtCompiler;
-import com.google.gwt.dev.codeserver.RecompileController;
-import com.google.gwt.dev.codeserver.SuperDevUtil;
-import com.google.gwt.dev.util.log.PrintWriterTreeLogger;
 import com.google.gwt.junit.client.GWTTestCase;
 import com.google.gwt.junit.tools.GWTTestSuite;
 import com.google.gwt.reflect.shared.GwtReflect;
@@ -74,12 +74,13 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
   private String binDir;
 
   Pattern SPECIAL_DIRS = Pattern.compile(
-      "("+Pattern.quote(Dependency.DIR_BIN)+")|"+
-      "("+Pattern.quote(Dependency.DIR_GEN)+")|"+
-      "("+Pattern.quote(Dependency.DIR_TEMP)+")|"
+      "(" + Pattern.quote(Dependency.DIR_BIN) + ")|" +
+          "(" + Pattern.quote(Dependency.DIR_GEN) + ")|" +
+          "(" + Pattern.quote(Dependency.DIR_TEMP) + ")|"
   );
 
   private MethodBuffer junitLoader;
+  private final StringTo<GwtcJobStateImpl> runningCompiles;
 
   public GwtcServiceImpl() {
     this(Thread.currentThread().getContextClassLoader());
@@ -87,6 +88,7 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
 
   public GwtcServiceImpl(ClassLoader resourceLoader) {
     super(resourceLoader);
+    runningCompiles = X_Collect.newStringMap(GwtcJobStateImpl.class);
   }
 
   @Override
@@ -108,9 +110,10 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
   public void addMethod(Method method) {
     addMethod(method, false);
   }
+
   @Override
   public void addMethod(Method method, boolean onNewInstance) {
-    if (Modifier.isStatic(method.getModifiers())){
+    if (Modifier.isStatic(method.getModifiers())) {
       // print a call to a static method
       out.println(out.formatStaticCall(method));
     } else {
@@ -118,7 +121,6 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
       out.println(out.formatInstanceCall(method, onNewInstance));
     }
   }
-
 
   @Override
   public void addPackage(Package pkg, boolean recursive) {
@@ -135,113 +137,78 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
   @Override
   public void compile(GwtManifest manifest, int timeout, TimeUnit unit, In1<Integer> callback) {
     final In2Out1<Integer, TimeUnit, Integer> compilation = doCompile(manifest);
-    X_Time.runLater(()->{
+    X_Time.runLater(() -> {
       final Integer result = compilation.io(timeout, unit);
       callback.in(result);
     });
   }
 
   @Override
-  public In2Out1<Integer, TimeUnit, Integer> recompile(GwtManifest manifest, In2<ServerRecompiler, Throwable> callback) {
-    String gwtHome = generateCompile(manifest);
-    // Logging
-    X_Log.info(getClass(), "Starting gwt compile", manifest.getModuleName());
-    X_Log.trace(getClass(), manifest);
+  public GwtcJobStateImpl recompile(
+      GwtManifest manifest,
+      In2<ServerRecompiler, Throwable> callback
+  ) {
+
     manifest.setRecompile(true);
+    String id = manifest.getModuleName();
+    GwtcJobStateImpl job = runningCompiles.getOrCreate(id, module ->
+      new GwtcJobStateImpl(manifest, GwtcServiceImpl.this));
+
+    job.startCompile(callback);
+
+    return job;
+  }
+
+  @Override
+  public URLClassLoader resolveClasspath(GwtManifest manifest, GwtcJobState job) {
+    X_Log.info(getClass(), "Starting gwt compile", manifest.getModuleName());
+    X_Log.debug(getClass(), manifest);
+
     final String[] programArgs = manifest.toProgramArgArray();
     final String[] jvmArgs = manifest.toJvmArgArray();
-    X_Log.trace(getClass(), "Args: java ", jvmArgs, programArgs);
-    final String[] classpath = manifest.toClasspathFullCompile(getTempDir().getAbsolutePath(), gwtHome);
+    X_Log.debug(getClass(), "Args: java ", jvmArgs, programArgs);
+
+    final String[] classpath = manifest.toClasspathFullCompile(getTempDir().getAbsolutePath(), job.getGwtHome());
     X_Log.debug(getClass(), "Requested Classpath\n", classpath);
 
-    X_Log.info("Entry point: "+new File(manifest.getWarDir(), context.getGenName()+".html"));
+    X_Log.info("Entry point: " + new File(manifest.getWarDir(), context.getGenName() + ".html"));
     In1<Integer> cleanup = prepareCleanup(manifest);
 
     assert runtimeContainsClasspath(manifest.getGenDir(), classpath);
     URL[] urls = fromClasspath(classpath);
     URLClassLoader loader = manifestBackedClassloader(urls, manifest);
-
-    Mutable<Integer> code = new Mutable<>();
-    final Runnable task = ()->{
-      try {
-        final PrintWriterTreeLogger logger = new PrintWriterTreeLogger();
-        logger.setMaxDetail(manifest.getLogLevel());
-        final RecompileController compiler = SuperDevUtil.getOrMakeController(
-            logger,
-            manifest
-        );
-
-        final CompiledDirectory result = compiler.recompile();
-
-        manifest.setCompileDirectory(result);
-
-        code.in(0);
-        cleanup.in(code.out1());
-
-        Mutable<In1<IsRecompiler>> userRequest = new Mutable<>();
-
-        final ServerRecompiler useCompiler = getComp ->
-            userRequest.mutex(()->{
-              if (userRequest.isNonNull()) {
-                final In1<IsRecompiler> current = userRequest.out1();
-                final In1<IsRecompiler> toAdd = getComp.onlyOnce();
-                // oldest requests get serviced first...  TODO: capture state better than this.
-                // in the event of a page reload, an old request may have disconnected,
-                // so we want to process the callbacks from newest to oldest.
-                userRequest.in(toAdd.useBeforeMe(current));
-//                userRequest.in(current.useBeforeMe(toAdd));
-              } else {
-                userRequest.in(getComp.onlyOnce());
-              }
-            });
-        synchronized (result) {
-          result.notify();
-        }
-        callback.in(useCompiler, null);
-        manifest.setOnline(true);
-        while (manifest.isOnline()) {
-          synchronized (result) {
-            try {
-              result.wait(1_000);
-            } catch (InterruptedException e) {
-              X_Log.info(getClass(), "Recompiler interrupted; shutting down");
-              return; // kill the thread
-            }
-          }
-          userRequest.useThenSet(pending->{
-            if (pending != null) {
-              // exit synchronized block quickly to avoid race conditions!
-              // TODO: be able to re-hydrate state for each pending request
-              runFinally(pending.provide(compiler));
-            }
-          }, null);
-        }
-      } catch (Throwable fail) {
-        manifest.setOnline(false);
-        callback.in(null, fail);
-        throw fail;
-      }
-    };
-    In2Unsafe<Integer, TimeUnit> blocker = startTask(task, loader);
-    return blocker.supply1AfterRead(code);
+    return loader;
   }
 
-  private In2Unsafe<Integer, TimeUnit> startTask(Runnable task, URLClassLoader loader) {
+  protected In2Unsafe<Integer, TimeUnit> startTask(Runnable task, URLClassLoader loader) {
     Thread t = new Thread(task);
     try {
       loader.loadClass("com.google.gwt.core.ext.Linker");
     } catch (ClassNotFoundException e) {
       e.printStackTrace();
     }
+    final DoUnsafe canceler = ()->{
+      t.interrupt();
+      t.join();
+    };
+    t.setUncaughtExceptionHandler((thread, error)->{
+      if (X_Util.unwrap(error) instanceof InterruptedException) {
+        // Someone was trying to cancel the job,
+      } else {
+        t.interrupt();
+      }
+    });
     t.setContextClassLoader(loader);
     t.start();
-    return (sec, unit) ->{
+    final In2Unsafe<Integer, TimeUnit> blocker = (sec, unit) -> {
       try {
         t.join(unit.toMillis(sec));
       } catch (InterruptedException e) {
         throw X_Debug.rethrow(e);
       }
     };
+
+    return blocker;
   }
 
   private URL[] fromClasspath(String[] classpath) {
@@ -268,7 +235,8 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
     return ondone::add;
   });
 
-  private In1<Integer> prepareCleanup(GwtManifest manifest) {
+  @Override
+  public In1<Integer> prepareCleanup(GwtManifest manifest) {
 
     Do delete = ()->{
       X_File.deepDelete(manifest.getWarDir());
@@ -421,10 +389,11 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
     return true;
   }
 
+  @Override
   public String generateCompile(GwtManifest manifest) {
-    assert tempDir.exists() : "No usable directory "+tempDir.getAbsolutePath();
-    X_Log.info(getClass(), "Generated entry point", "\n"+getEntryPoint());
-    X_Log.info(getClass(), "Generated module", "\n"+getGwtXml(manifest));
+    assert tempDir.exists() : "No usable directory " + tempDir.getAbsolutePath();
+    X_Log.info(getClass(), "Generated entry point", "\n", getEntryPoint());
+    X_Log.info(getClass(), "Generated module", "\n", getGwtXml(manifest));
     if (manifest.getModuleName() == null) {
       manifest.setModuleName(genName);
       manifestName = genName;
@@ -432,7 +401,8 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
       manifestName = manifest.getModuleName();
       context.setRenameTo(manifest.getModuleName());
     }
-    saveGwtXmlFile(context.getGwtXml(manifest), manifest.getModuleName(), manifest);
+    XmlBuffer xml = getGwtXml(manifest);
+    saveGwtXmlFile(xml, manifest.getModuleName(), manifest);
     manifest.getModules().forEach(mod->{
       saveGwtXmlFile(mod.getBuffer(), mod.getInheritName(), manifest);
     });

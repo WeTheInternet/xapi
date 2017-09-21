@@ -3,8 +3,10 @@ package xapi.dev.gwtc.impl;
 import xapi.annotation.inject.InstanceDefault;
 import xapi.gwtc.api.GwtManifest;
 import xapi.log.X_Log;
+import xapi.reflect.X_Reflect;
 import xapi.util.X_Util;
 
+import java.io.File;
 import java.io.IOException;
 
 /**
@@ -53,5 +55,20 @@ public class GwtcManifestImpl extends GwtManifest {
             }
         }
         return super.normalizeWorkDir(workDir);
+    }
+
+    @Override
+    protected String fixRelativeSource(String source) {
+        File asFile = new File(getRelativeRoot(), source);
+        if (asFile.exists()) {
+            return asFile.getAbsolutePath();
+        }
+        final Class<?> main = X_Reflect.getMainClass();
+        String mainRoot = X_Reflect.getSourceLoc(main);
+        asFile = new File(mainRoot, source);
+        if (asFile.exists()) {
+            return asFile.getAbsolutePath();
+        }
+        return source;
     }
 }

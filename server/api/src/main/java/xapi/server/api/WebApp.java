@@ -3,6 +3,7 @@ package xapi.server.api;
 import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
+import xapi.dev.api.Classpath;
 import xapi.fu.Out1;
 import xapi.inject.X_Inject;
 import xapi.model.api.Model;
@@ -51,9 +52,9 @@ public interface WebApp extends Model {
 
     WebApp setPort(int port);
 
-    String getSource();
+    String getBaseSource();
 
-    WebApp setSource(String source);
+    WebApp setBaseSource(String source);
 
     default void shutdown() {
         setRunning(false);

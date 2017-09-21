@@ -26,15 +26,26 @@ public class RouteMapTest {
     @Test
     public void testWildcardMatching() {
 
-        RouteMap map = X_Model.create(RouteMap.class);
         final Route helloWorld = X_Model.create(Route.class);
         helloWorld.setPath("hello/world");
-        map.addRoute(helloWorld);
         final Route helloAnyWorld = X_Model.create(Route.class);
         helloAnyWorld.setPath("hello/*/world");
+
+        RouteMap map;
+        map = X_Model.create(RouteMap.class);
+        map.addRoute(helloWorld);
         map.addRoute(helloAnyWorld);
-        final Route actual = map.findRoute("hello/world").get();
-        final Route actualWildcard = map.findRoute("hello/wildcard/world/").get();
+        Route actual = map.findRoute("hello/world").get();
+        Route actualWildcard = map.findRoute("hello/wildcard/world/").get();
+        assertEquals("", helloWorld, actual);
+        assertEquals("", helloAnyWorld, actualWildcard);
+
+        map = X_Model.create(RouteMap.class);
+        // invert the order we add items
+        map.addRoute(helloAnyWorld);
+        map.addRoute(helloWorld);
+        actual = map.findRoute("hello/world").get();
+        actualWildcard = map.findRoute("hello/wildcard/world/").get();
         assertEquals("", helloWorld, actual);
         assertEquals("", helloAnyWorld, actualWildcard);
     }

@@ -5,13 +5,13 @@ import xapi.dev.source.SourceBuilder;
 import xapi.dev.source.SourceBuilder.JavaType;
 import xapi.fu.In1;
 import xapi.fu.In2;
-import xapi.fu.In2Out1;
 import xapi.fu.Out1;
 import xapi.gwtc.api.GwtManifest;
 import xapi.gwtc.api.ServerRecompiler;
 
 import java.io.File;
 import java.lang.reflect.Method;
+import java.net.URLClassLoader;
 import java.util.concurrent.TimeUnit;
 
 import com.google.gwt.core.client.RunAsyncCallback;
@@ -27,6 +27,11 @@ public interface GwtcService {
   void addGwtTestCase(Class<? extends GWTTestCase> subclass);
   void addGwtTestSuite(Class<? extends GWTTestSuite> asSubclass);
 
+  String generateCompile(GwtManifest manifest);
+  URLClassLoader resolveClasspath(GwtManifest manifest, GwtcJobState job);
+
+  In1<Integer> prepareCleanup(GwtManifest manifest);
+
   boolean addJUnitClass(Class<?> clazz);
   void addAsyncBlock(Class<? extends RunAsyncCallback> asSubclass);
   void addGwtModules(Class<?> clazz);
@@ -35,7 +40,7 @@ public interface GwtcService {
   void addGwtInherit(String inherit);
 
   int compile(GwtManifest manifest);
-  In2Out1<Integer, TimeUnit, Integer> recompile(GwtManifest manifest, In2<ServerRecompiler, Throwable> callback);
+  GwtcJobState recompile(GwtManifest manifest, In2<ServerRecompiler, Throwable> callback);
   void compile(GwtManifest manifest, int timeout, TimeUnit unit, In1<Integer> callback);
 
   String getModuleName();
@@ -47,4 +52,5 @@ public interface GwtcService {
   MethodBuffer getOnModuleLoad();
 
   String getSuggestedRoot();
+
 }

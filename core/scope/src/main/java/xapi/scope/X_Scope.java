@@ -23,4 +23,7 @@ public class X_Scope {
     public static Scope currentScope() {
         return service().currentScope();
     }
+    public static Scope currentScopeIfNull(Scope maybeNull) {
+        return maybeNull == null ? currentScope() : maybeNull;
+    }
 }

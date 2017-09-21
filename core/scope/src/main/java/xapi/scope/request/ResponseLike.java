@@ -44,6 +44,5 @@ public interface ResponseLike {
         return this;
     }
 
-
-
+    default String prepareToClose() {return null;}
 }

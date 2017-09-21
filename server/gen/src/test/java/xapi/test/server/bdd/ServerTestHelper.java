@@ -11,7 +11,7 @@ import xapi.fu.Mutable;
 import xapi.fu.Out1;
 import xapi.fu.Rethrowable;
 import xapi.process.X_Process;
-import xapi.server.api.Classpath;
+import xapi.dev.api.Classpath;
 import xapi.server.api.WebApp;
 import xapi.server.api.XapiServer;
 import xapi.server.gen.WebAppGenerator;
@@ -70,6 +70,7 @@ public interface ServerTestHelper <ServerType extends XapiServer> extends Rethro
                     .add(doInstall);
             }
         });
+        classpath.setContentRoot(classpath.getContentRoot().replace("generated-sources", "generated-test-sources"));
         webApps.put(name, classpath);
         return classpath;
     }

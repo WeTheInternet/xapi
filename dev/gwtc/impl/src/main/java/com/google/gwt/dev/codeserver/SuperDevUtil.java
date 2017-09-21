@@ -1,7 +1,11 @@
 package com.google.gwt.dev.codeserver;
 
+import xapi.dev.gwtc.api.GwtcJobState;
+import xapi.dev.gwtc.api.GwtcService;
+import xapi.dev.gwtc.api.IsAppSpace;
 import xapi.gwtc.api.GwtManifest;
 import xapi.log.X_Log;
+import xapi.reflect.X_Reflect;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,36 +30,23 @@ public class SuperDevUtil {
   private static final ConcurrentHashMap<String, RecompileController> compilers
     = new ConcurrentHashMap<String, RecompileController>();
 
-  public static RecompileController getOrMakeController(TreeLogger logger, GwtManifest manifest) {
+  public static RecompileController getOrMakeController(
+      GwtcJobState job,
+      GwtManifest manifest,
+      TreeLogger logger
+  ) {
     String module = manifest.getModuleName();
     RecompileController ret = compilers.get(module);
     if (ret != null)  {
-      ret.cleanup();
-      return ret;
-    }
-    AppSpace app;
-    try {
-      File tmp = File.createTempFile("recompile", "log").getParentFile();
-      tmp.deleteOnExit();
-      // We've overridden AppSpace so we can use more deterministic names for our compile folders,
-      // but if the user does not order the jars correctly, our overridden method will be missing.
-      try {
-        // So, to be safe, we'll try with reflection first, and, on failure, use the existing method.
-//        System.out.println(SuperDevUtil.class.getClassLoader());
-//        System.out.println(Thread.currentThread().getContextClassLoader());
-        ClassLoader cl = Thread.currentThread().getContextClassLoader();
-        Class<?> cls = cl.loadClass(AppSpace.class.getName());
-        Method method = cls.getDeclaredMethod("create", File.class, String.class);
-        method.setAccessible(true);
-        app = (AppSpace) method.invoke(null, tmp , "Gwtc"+module);
-      } catch (Exception e) {
-        e.printStackTrace();
-        app = AppSpace.create(tmp);
+      if (!job.isReusable(manifest)) {
+        ret.cleanup();
+        job.destroy();
+      } else {
+        return ret;
       }
-
-    } catch (IOException e1) {
-      throw new Error("Unable to initialize gwt recompiler ",e1);
     }
+
+    IsAppSpace app = job.getAppSpace();
 
     final OutboxDir outbox;
     final LauncherDir launcher;
@@ -73,6 +64,20 @@ public class SuperDevUtil {
         }
         File dir = new File(src);
         if (!dir.exists()){
+          if (src.startsWith("src")) {
+              final Class<?> main = X_Reflect.getMainClass();
+              if (main != null) {
+                  final String loc = X_Reflect.getSourceLoc(main);
+                  if (loc != null) {
+                    dir = new File(loc, src);
+                  }
+              }
+              if (!dir.exists()) {
+                  dir = new File(".", src);
+              }
+          }
+        }
+        if (!dir.exists()) {
           X_Log.error(SuperDevUtil.class,"Gwt source directory "+dir+" does not exist");
         } else {
           X_Log.trace(SuperDevUtil.class, "Adding to source: "+dir);
@@ -148,6 +153,10 @@ public class SuperDevUtil {
         args.add("-noincremental");
       }
 
+      if (!manifest.isPrecompile()) {
+        args.add("-noprecompile");
+      }
+
       args.add(module);
 
       opts.parseArgs(args.toArray(new String[args.size()]));
@@ -165,13 +174,9 @@ public class SuperDevUtil {
     final UnitCache cache = UnitCacheSingleton.get(logger, cacheFolder, options);
     final MinimalRebuildCacheManager rebinds = new MinimalRebuildCacheManager(logger, cacheFolder, new HashMap<>());
 
-    JobEventTable eventTable = new JobEventTable();
-    JobRunner runner = new JobRunner(eventTable, rebinds);
+    RecompileRunner runner = new RecompileRunner(rebinds, manifest, app);
 
-    Recompiler compiler = new Recompiler(outbox, launcher, module.split("/")[0], opts,
-        cache, rebinds
-//        sourcePath, "127.0.0.1:"+port,logger
-    );
+    Recompiler compiler = new Recompiler(outbox, launcher, module.split("/")[0], opts, cache, rebinds);
       try{
         RecompileController recompiler = new RecompileController(compiler, runner);
         compilers.put(module, recompiler);
@@ -182,6 +187,30 @@ public class SuperDevUtil {
       }
   }
 
+  public static IsAppSpace newAppSpace(String module) {
+    AppSpace app;
+    try {
+      File tmp = File.createTempFile("recompile", "log").getParentFile();
+      tmp.deleteOnExit();
+      // We've overridden AppSpace so we can use more deterministic names for our compile folders,
+      // but if the user does not order the jars correctly, our overridden method will be missing.
+      try {
+        // So, to be safe, we'll try with reflection first, and, on failure, use the existing method.
+        //        System.out.println(SuperDevUtil.class.getClassLoader());
+        //        System.out.println(Thread.currentThread().getContextClassLoader());
+        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        Class<?> cls = cl.loadClass(AppSpace.class.getName());
+        Method method = cls.getDeclaredMethod("create", File.class, String.class);
+        method.setAccessible(true);
+        app = (AppSpace) method.invoke(null, tmp , "Gwtc"+module);
+      } catch (Exception e) {
+        e.printStackTrace();
+        app = AppSpace.create(tmp);
+      }
 
-
+    } catch (IOException e1) {
+      throw new Error("Unable to initialize gwt recompiler ",e1);
+    }
+    return app;
+  }
 }

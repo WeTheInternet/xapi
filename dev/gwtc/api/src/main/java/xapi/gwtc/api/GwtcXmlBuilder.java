@@ -6,7 +6,9 @@ import xapi.log.X_Log;
 import xapi.util.X_Runtime;
 
 import java.nio.charset.Charset;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 public class GwtcXmlBuilder {
@@ -21,6 +23,7 @@ public class GwtcXmlBuilder {
   private final XmlBuffer out;
   private final Set<String> sources;
   private final Set<String> inherits;
+  private final Map<String, XmlBuffer> entryPoints;
   private XmlBuffer entryPoint;
 
   public GwtcXmlBuilder(String pkg, String name) {
@@ -28,7 +31,9 @@ public class GwtcXmlBuilder {
   }
 
   public GwtcXmlBuilder(String pkg, String name, boolean debug) {
-    out = new XmlBuffer("module").setTrimWhitespace(false);
+    out = new XmlBuffer("module")
+        .setNewLine(true)
+        .setTrimWhitespace(false);
     this.debug = debug || X_Runtime.isDebug();
     if (pkg.length() > 0 && !pkg.endsWith(".")) {
       pkg = pkg + ".";
@@ -42,6 +47,7 @@ public class GwtcXmlBuilder {
     }
     sources = new HashSet<>();
     inherits = new HashSet<>();
+    entryPoints = new HashMap<>();
   }
 
   public static GwtcXmlBuilder generateGwtXml(Gwtc gwtc, String pkg, String name) {
@@ -117,22 +123,21 @@ public class GwtcXmlBuilder {
 //    }
 //  }
 
-  public void inherit(String inherit) {
-    out.makeTagAtBeginning("inherits")
-    .setAttribute("name", inherit);
+  public XmlBuffer addEntryPoint(String qualifiedName) {
+    return entryPoints.computeIfAbsent(qualifiedName, q->out.makeTag("entry-point")
+      .setAttribute("class", qualifiedName));
   }
-
   public void setEntryPoint(String qualifiedName) {
     if (entryPoint == null) {
-      entryPoint = out.makeTag("entry-point")
-          .setAttribute("class", qualifiedName);
+      entryPoint = addEntryPoint(qualifiedName);
+    } else {
+      entryPoint.setAttribute("class", qualifiedName);
     }
-    entryPoint.setAttribute("class", qualifiedName);
   }
 
   public void addInherit(String value) {
     if (inherits.add(value)) {
-      out.makeTag("inherits")
+      out.makeTagAtBeginning("inherits")
       .setAttribute("name", value);
     }
   }

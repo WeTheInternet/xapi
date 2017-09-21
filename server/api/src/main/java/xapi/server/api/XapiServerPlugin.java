@@ -2,6 +2,7 @@ package xapi.server.api;
 
 import xapi.fu.In1;
 import xapi.scope.request.RequestLike;
+import xapi.scope.request.RequestScope;
 import xapi.scope.request.ResponseLike;
 
 /**
@@ -15,7 +16,7 @@ import xapi.scope.request.ResponseLike;
  *
  * Created by James X. Nelson (james @wetheinter.net) on 6/9/17.
  */
-public interface XapiServerPlugin <Request extends RequestLike, Response extends ResponseLike> {
+public interface XapiServerPlugin <Request extends RequestScope> {
 
     /**
      * This is called before a XapiServer server is started
@@ -43,6 +44,6 @@ public interface XapiServerPlugin <Request extends RequestLike, Response extends
      * </pre>
      *
      */
-    In1<XapiServer<Request, Response>> installToServer(WebApp app);
+    In1<XapiServer<Request>> installToServer(WebApp app);
 
 }

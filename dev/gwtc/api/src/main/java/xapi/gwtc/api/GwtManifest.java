@@ -1,6 +1,5 @@
 package xapi.gwtc.api;
 
-import jdk.nashorn.internal.objects.NativeString;
 import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
@@ -14,6 +13,7 @@ import xapi.fu.iterate.SingletonIterator;
 import xapi.log.X_Log;
 import xapi.source.X_Source;
 
+import java.io.File;
 import java.lang.reflect.Array;
 import java.util.Iterator;
 
@@ -129,9 +129,29 @@ public class GwtManifest {
   private static final OpenAction DEFAULT_OPEN_ACTION = OpenAction.IFRAME;
   private static final SourceLevel DEFAULT_SOURCE_LEVEL = SourceLevel.JAVA8;
 
+  // TODO consider moving entryPoint and all other settings from GwtcContext into GwtManifest;
+  // though, to be fair, GwtManifest is oriented to capturing arguments supplied to gwtc process,
+  // while GwtcContext captures the gwt.xml source code which is read in by the compiler.
+  // This definition is loose in that both classes were hacked out as needed,
+  // but we can and should rename and consolidate this into a single uber-container for running gwt / j2cl
+
+  private IntTo<String> entryPoints = newSet(String.class, MUTABLE_INSERTION_ORDERED_SET);
+
   private boolean autoOpen;
   private boolean closureCompiler;
+  // we are purposely being as lazy as possible about resolving dependencies;
+  // we have a list of suppliers who can return Iterable instances.
+  // This allows us to background some potentially heavyweight operations
+  // (like downloading and resolving maven dependencies),
+  // where your Out1 factory can be preloading items,
+  // and your Iterable supplies an iterator which blocks on underlying data stream.
   private IntTo<Out1<? extends Iterable<String>>> dependencies = newSet(Out1.class);
+  // This also makes it basically impossible to serialize the logic behind these dependencies.
+  // TODO: save xapi ast instead, so we can execute the resolution in any prepared environment.
+  // LATER: add precomputed local values to serialized xapi, so we can perform "incremental rehydration"
+  // that is, save the hashes of our inputs with final-resolved values,
+  // and only resolve if our inputs are different (do first in gradle, for good incremental support)
+
   private String deployDir;
   private boolean disableAggressiveOptimize;
   private boolean disableCastCheck;
@@ -172,9 +192,10 @@ public class GwtManifest {
   private boolean recompile;
   private CompiledDirectory compileDirectory;
   private boolean online;
-  private MethodNameMode mode;
+  private MethodNameMode methodNameMode;
   private boolean incremental;
   private String relativeRoot;
+  private boolean precompile;
 
   public GwtManifest() {
     includeGenDir = true;
@@ -200,6 +221,19 @@ public class GwtManifest {
     extraArgs.push(extraArg);
     return this;
   }
+
+  /**
+   * This method exists as a setter so that we can call it automatically from xapi generator
+   * using reflection.  It calls {@link #addEntryPoint(String)} and is final.
+   */
+  public final GwtManifest setEntryPoint(String entryPoint) {
+    return addEntryPoint(entryPoint);
+  }
+  public GwtManifest addEntryPoint(String entryPoint) {
+    assert !entryPoints.contains(entryPoint) : "Extra args already contains "+entryPoint;
+    entryPoints.push(entryPoint);
+    return this;
+  }
   public GwtManifest addJvmArg(String jvmArg) {
     assert !jvmArgs.contains(jvmArg) : "Jvm args already contains "+jvmArg;
     jvmArgs.push(jvmArg);
@@ -222,6 +256,10 @@ public class GwtManifest {
   }
   public GwtManifest clearExtraArgs() {
     extraArgs.clear();
+    return this;
+  }
+  public GwtManifest clearEntryPoints() {
+    entryPoints.clear();
     return this;
   }
   public GwtManifest clearJvmArgs() {
@@ -251,6 +289,10 @@ public class GwtManifest {
 
   public IntTo<String> getExtraArgs() {
     return extraArgs;
+  }
+
+  public IntTo<String> getEntryPoints() {
+    return entryPoints;
   }
 
   public String getExtrasDir() {
@@ -717,6 +759,10 @@ public class GwtManifest {
         hadGwtDev = true;
         addItemsBeforeGwtDev(cp, false);
       }
+      if (source.startsWith("src/")) {
+        // a relative source...
+        source = fixRelativeSource(source);
+      }
       cp.add(source);
     }
     for (Out1<? extends Iterable<String>> sourceOut : dependencies.forEach()) {
@@ -755,6 +801,10 @@ public class GwtManifest {
     return cp.toArray();
   }
 
+  protected String fixRelativeSource(String source) {
+    return source;
+  }
+
   protected void prefixClasspath(IntTo<String> cp) {
     // here for you to override
   }
@@ -764,7 +814,7 @@ public class GwtManifest {
   }
 
   protected void addGwtArtifact(IntTo<String> cp, String gwtHome, String gwtVersion, String artifact) {
-    X_Log.info(getClass(), "Gwt home", gwtHome, "version", gwtVersion, "artifact", artifact);
+    X_Log.trace(getClass(), "Gwt home", gwtHome, "version", gwtVersion, "artifact", artifact);
 
     gwtHome = gwtHome.replace('\\', '/'); // just in case
     if (gwtHome.contains("gwt-dev")) {
@@ -1045,11 +1095,11 @@ public class GwtManifest {
   }
 
   public MethodNameMode getMethodNameMode() {
-    return mode;
+    return methodNameMode;
   }
 
   public void setMethodNameMode(MethodNameMode mode) {
-    this.mode = mode;
+    this.methodNameMode = mode;
   }
 
   public boolean isIncremental() {
@@ -1081,5 +1131,13 @@ public class GwtManifest {
 
   public void setRelativeRoot(String relativeRoot) {
     this.relativeRoot = relativeRoot;
+  }
+
+  public boolean isPrecompile() {
+    return precompile;
+  }
+
+  public void setPrecompile(boolean precompile) {
+    this.precompile = precompile;
   }
 }

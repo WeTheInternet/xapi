@@ -7,16 +7,17 @@ Feature:
     Given Generate web app named HelloWorld:
       | <web-app /> |
     Then Expect web app named HelloWorld to have source:
+      | package xapi.generated.web;                                                                                                  |
+      |                                                                                                                              |
       | import xapi.fu.In1;                                                                                                          |
-      | import xapi.scope.request.RequestLike;                                                                                            |
-      | import xapi.scope.request.ResponseLike;                                                                                            |
+      | import xapi.scope.request.RequestScope;                                                                                            |
       | import xapi.server.api.WebApp;                                                                                               |
       | import xapi.server.api.XapiServer;                                                                                           |
       | import xapi.server.api.XapiServerPlugin;                                                                                     |
       |                                                                                                                              |
-      | public class BaseHelloWorldComponent <Request extends RequestLike, Response extends ResponseLike> implements XapiServerPlugin<Request,Response> { |
+      | public class BaseHelloWorldComponent <Request extends RequestScope> implements HelloWorldComponent, XapiServerPlugin<Request> { |
       |                                                                                                                              |
-      | public In1<XapiServer<Request, Response>> installToServer (WebApp app) {                                                     |
+      | public In1<XapiServer<Request>> installToServer (WebApp app) {                                                     |
       |   return In1.ignored();                                                                                                        |
       | }                                                                                                                            |
       |                                                                                                                              |
@@ -38,23 +39,31 @@ Feature:
       |   ]                                     |
       | /web-app>                               |
     Then Expect web app named HelloWorld to have source:
-      | import xapi.fu.In1;                                                                   |
-      | import xapi.scope.request.RequestLike;                                                                          |
-      | import xapi.scope.request.ResponseLike;                                                                          |
-      | import xapi.server.api.WebApp;                                                                   |
-      | import xapi.server.api.XapiServer;                                                                         |
-      | import xapi.server.api.XapiServerPlugin;                                                                   |
-      |                                                                                                            |
-      | public class BaseHelloWorldComponent <Request extends RequestLike, Response extends ResponseLike> implements XapiServerPlugin<Request,Response> { |
-      |                                                                                                            |
-      |   public In1<XapiServer<Request, Response>> installToServer (WebApp app) {                                                     |
-      |     installRoute(app);                                                                                     |
-      |     return In1.ignored();                                                                                     |
-      |   }                                                                                                        |
-      |                                                                                                            |
-      |   public void installRoute (WebApp app) {                                                                  |
-      |   }                                                                                                        |
-      |                                                                                                            |
+      | package xapi.generated.web;                                                                                                                       |
+      |                                                                                                                                                   |
+      | import static xapi.model.X_Model.create;                                                                                                         |
+      | import static xapi.server.api.Route.RouteType.File;                                                                                               |
+      | import xapi.fu.In1;                                                                                                                               |
+      | import xapi.scope.request.RequestScope;                                                                                                           |
+      | import xapi.server.api.Route;                                                                                                                     |
+      | import xapi.server.api.WebApp;                                                                                                                    |
+      | import xapi.server.api.XapiServer;                                                                                                                |
+      | import xapi.server.api.XapiServerPlugin;                                                                                                          |
+      | public class BaseHelloWorldComponent <Request extends RequestScope> implements HelloWorldComponent, XapiServerPlugin<Request> { |
+      |                                                                                                                                                   |
+      |   public In1<XapiServer<Request>> installToServer (WebApp app) {                                                                          |
+      |     installRoute(app);                                                                                                                                |
+      |     return In1.ignored();                                                                                                                             |
+      |   }                                                                                                                                                 |
+      |                                                                                                                                                   |
+      |   public void installRoute (WebApp app) {                                                                                                                  |
+      |     Route route = create(Route.class);                                                                                                                |
+      |     route.setPayload("/GetPage_");                                                                                                                    |
+      |     route.setRouteType(File);                                                                                                                         |
+      |     route.setPath("/");                                                                                                                               |
+      |     app.getRoute().add(route);                                                                                                                       |
+      |   }                                                                                                                                                 |
+      |                                                                                                                                                   |
       | }                                                                                                          |
 
   Scenario:
@@ -80,21 +89,30 @@ Feature:
       |   ]                                     |
       | /web-app>                               |
     Then Expect web app named TemplateWorld to have source:
-      | import xapi.fu.In1;                                                                   |
-      | import xapi.scope.request.RequestLike;                                                                          |
-      | import xapi.scope.request.ResponseLike;                                                                          |
-      | import xapi.server.api.WebApp;                                                                   |
-      | import xapi.server.api.XapiServer;                                                                         |
-      | import xapi.server.api.XapiServerPlugin;                                                                   |
-      |                                                                                                            |
-      | public class BaseTemplateWorldComponent <Request extends RequestLike, Response extends ResponseLike> implements XapiServerPlugin<Request,Response> { |
-      |                                                                                                            |
-      |   public In1<XapiServer<Request, Response>> installToServer (WebApp app) {                                                     |
-      |     installRoute(app);                                                                                     |
-      |     return In1.ignored();                                                                                     |
-      |   }                                                                                                        |
-      |                                                                                                            |
-      |   public void installRoute (WebApp app) {                                                                  |
-      |   }                                                                                                        |
-      |                                                                                                            |
-      | }                                                                                                          |
+      | package xapi.generated.web;                                                                                                                          |
+      |                                                                                                                                                      |
+      | import static xapi.model.X_Model.create;                                                                                                             |
+      | import static xapi.server.api.Route.RouteType.File;                                                                                                  |
+      | import xapi.fu.In1;                                                                                                                                  |
+      | import xapi.scope.request.RequestScope;                                                                                                              |
+      | import xapi.server.api.Route;                                                                                                                        |
+      | import xapi.server.api.WebApp;                                                                                                                       |
+      | import xapi.server.api.XapiServer;                                                                                                                   |
+      | import xapi.server.api.XapiServerPlugin;                                                                                                             |
+      |                                                                                                                                                      |
+      | public class BaseTemplateWorldComponent <Request extends RequestScope> implements TemplateWorldComponent, XapiServerPlugin<Request> { |
+      |                                                                                                                                                      |
+      |   public In1<XapiServer<Request>> installToServer (WebApp app) {                                                                           |
+      |     installRoute(app);                                                                                                                               |
+      |     return In1.ignored();                                                                                                                            |
+      |   }                                                                                                                                                  |
+      |                                                                                                                                                      |
+      |   public void installRoute (WebApp app) {                                                                                                            |
+      |     Route route = create(Route.class);                                                                                                               |
+      |     route.setPayload("/GetPage_");                                                                                                                   |
+      |     route.setRouteType(File);                                                                                                                        |
+      |     route.setPath("/");                                                                                                                              |
+      |     app.getRoute().add(route);                                                                                                                       |
+      |   }                                                                                                                                                  |
+      |                                                                                                                                                      |
+      | }                                                                                                                                                    |

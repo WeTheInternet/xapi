@@ -16,6 +16,8 @@
 
 package com.google.gwt.dev.codeserver;
 
+import xapi.dev.gwtc.api.IsAppSpace;
+
 import com.google.gwt.dev.util.Util;
 
 import java.io.File;
@@ -27,7 +29,7 @@ import java.io.IOException;
  * In addition, there are some files that are shared between recompiles, such as
  * the unit cache.
  */
-class AppSpace {
+class AppSpace implements IsAppSpace {
 
   private final File root;
   private final String module;
@@ -41,15 +43,18 @@ class AppSpace {
     this.module = module;
   }
 
-  File getSpeedTracerLogFile() {
+  @Override
+  public File getSpeedTracerLogFile() {
     return new File(root, "speedtracer.html");
   }
 
-  File getUnitCacheDir() {
+  @Override
+  public File getUnitCacheDir() {
     return new File(root, "gwt-unitcache");
   }
 
-  File getCompileDir(int compileId) {
+  @Override
+  public File getCompileDir(int compileId) {
     return new File(root, module + compileId);
   }
 
