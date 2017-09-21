@@ -1,0 +1,86 @@
+<slide id = Xapi>
+
+    <box id = home
+        text = `[Xapi](XapiLangPresentation::goHome)[-lang]
+          [Declarative] [Code Generation]`
+        position = top.right
+        size = small
+    /box>
+
+    <box id = title
+        text = `Xapi: Extremely Extensible
+                Cross Platform API`
+        size = largest
+        position = top.middle
+    />
+
+
+    <item-list id = list
+        position = left
+        items = [
+            <item id = MultiTarget
+                  preview = `Share code across server,
+                             browser, mobile and desktop.`
+                  fullview = [
+                      <box text =
+                          `
+
+                          `
+                      /box>
+                  ]
+            /item>
+            ,
+            <item id = CrossPlatform
+                  preview = `It's like GWT.create() deferred binding,
+                             but for any platform that can run java.`
+                  fullview = [
+                      <box text =
+                          `
+
+                          `
+                      /box>
+                  ]
+            /item>
+            ,
+            <item id = Generate
+                  preview = `Express intent with simplicity,
+                             generate all the necessary complexity.`
+                  fullview = [
+                      <box text =
+                          `
+
+                          `
+                      /box>
+                  ]
+            /item>
+            ,
+            <item id = Reuse
+                  preview = `Reuse as much as possible;
+                             be able to replace the rest.`
+                  fullview = [
+                      <box text =
+                          `
+
+                          `
+                      /box>
+                  ]
+            /item>
+            ,
+            <item id = PowerTools
+                  preview = `Build tools to empower you.`
+                  fullview = [
+                      <box text =
+                          `
+
+                          `
+                      /box>
+                  ]
+            /item>
+            ,
+        ]
+    /item-list>
+
+    <box id = details position = right />
+
+
+</slide>

@@ -1,0 +1,34 @@
+<slide id=home>
+
+    <box id=title
+      text = `[Xapi][-lang]
+        [Declarative] [Code] [Generation]`
+      position = top.middle
+      size = largest
+    /box> // The /tag> closer for bodiless tags is optional
+
+    <box id=me
+        text = `[James Nelson]`
+        position = center
+        size = large
+        onClick = XapiLangPresentation.showBio()
+    />
+
+    <box id=vertispan
+        image = DemoImages.vertispan()
+        text = `[Vertispan.com](https://vertispan.com)`
+        position = bottom.left
+    />
+
+    <box id=wti
+        image = DemoImages.wti()
+        text = `[We The Inter.net](https://wti.net)`
+        position = bottom.right
+    />
+
+    <box id=gwt
+        text = `[GwtCon 2017](XapiLangPresentation.nextSlide())`
+        position = bottom.middle
+    />
+
+</slide>
