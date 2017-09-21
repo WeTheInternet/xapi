@@ -134,7 +134,7 @@ class Xapi {
             output.out("<artifactId>exec-maven-plugin</artifactId>");
             output.out("<version>1.2.1</version>");
         indent.out("<configuration>");
-            output.out("<mainClass>xapi.demo.jre.DemoApp</mainClass>");
+            output.out("<mainClass>xapi.demo.jre.XapiLangAdmin</mainClass>");
 
         if (!sysArg.isEmpty()) {
             indent.out("<systemProperties>");

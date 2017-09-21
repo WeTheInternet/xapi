@@ -7,8 +7,18 @@ import com.google.gwt.core.client.EntryPoint;
  */
 public class XapiLangPresentation implements EntryPoint {
 
-    @Override
-    public void onModuleLoad() {
+    public static void showBio() {
 
     }
+    public static void goHome() {
+
+    }
+
+    @Override
+    public void onModuleLoad() {
+        hi();
+    }
+
+    private native void hi()
+        /*-{ $wnd.alert('hi'); }-*/;
 }

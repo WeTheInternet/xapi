@@ -1,0 +1,66 @@
+<web-app
+  name = "XapiLang"
+  classpaths = {
+    xapiLang : [
+      $maven("net.wetheinter:xapi-demo:0.6-SNAPSHOT"),
+    ]
+  }
+  gwt = [
+    <gwtc
+      name = "XapiLang"
+      entryPoint = xapi.demo.gwt.XapiLangPresentation
+      module = "xapi.demo.XapiLang"
+      logLevel = TRACE
+      recompile = true
+      obfuscationLevel = PRETTY
+      classpath = $classpath(xapiLang)
+      source = [
+        "src/main/java",
+        "src/main/resources",
+      ]
+    />
+  ]
+  templates = [
+    <template name="session">
+        <page
+          script = `$static/sockjs.js`
+          script = `$static/vertxbus.js`
+          script = {
+            __session: {
+              sessionID : $user.id,
+              activeClient : $user.pageId,
+              name : $user.name
+            }
+          }
+        /page>
+    </template>
+  ]
+  routes = [
+    <route
+      path = "/"
+      method = "GET"
+      secure = true
+      title = "Xapi-Lang @ GwtCon 2017"
+      response =
+        <page
+          template = "session"
+          script = $gwt("XapiLang")
+          script = {
+            user : {
+              name : $user.name,
+            }
+          }
+          style = .{
+            #gwt_root {
+              position: absolute;
+              top: 0;
+              left: 0;
+              bottom: 0;
+              right: 0;
+            }
+          }
+          dom = <div id="gwt_root">Hi There</div>
+        /page>
+    /route>
+  ]
+/web-app>

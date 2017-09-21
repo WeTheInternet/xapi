@@ -18,17 +18,32 @@
 	<dependencies>
 		<dependency>
 			<groupId>net.wetheinter</groupId>
-			<artifactId>xapi-jre-ui-javafx</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>net.wetheinter</groupId>
 			<artifactId>xapi-server-vertx</artifactId>
 			<version>${project.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.google.elemental2</groupId>
+			<artifactId>elemental2-dom</artifactId>
+			<version>1.0.0-beta-1</version>
+		</dependency>
+
+		<dependency>
+			<groupId>net.wetheinter</groupId>
+			<artifactId>xapi-jre-ui-javafx</artifactId>
 		</dependency>
 
 	</dependencies>
 
 	<build>
+		<resources>
+			<resource>
+				<directory>src/main/java</directory>
+			</resource>
+			<resource>
+				<directory>src/main/resources</directory>
+			</resource>
+		</resources>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -36,7 +51,7 @@
 				<configuration>
 					<archive>
 						<manifest>
-							<mainClass>xapi.demo.jre.DemoApp</mainClass>
+							<mainClass>xapi.demo.jre.XapiLangAdmin</mainClass>
 						</manifest>
 					</archive>
 				</configuration>
