@@ -21,6 +21,7 @@ import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.fu.Do;
 import xapi.fu.In1Out1;
 import xapi.fu.In2Out1;
+import xapi.fu.In3Out1;
 import xapi.fu.Lazy;
 import xapi.fu.MappedIterable;
 import xapi.fu.Maybe;
@@ -47,6 +48,7 @@ public class GeneratedUiComponent {
     private final GeneratedUiGenericInfo genericInfo;
     private final StringTo<GeneratedUiSupertype> superInterfaces;
     private final StringTo<ReferenceType> globalDefs;
+    private final StringTo<GeneratedJavaFile> extraLayers;
     private String nameElementBuilderFactory;
     private String tagName;
     private GeneratedUiSupertype superType;
@@ -62,13 +64,14 @@ public class GeneratedUiComponent {
         superInterfaces =  X_Collect.newStringMap(GeneratedUiSupertype.class);
         globalDefs = X_Collect.newStringMapInsertionOrdered(ReferenceType.class);
         genericInfo = new GeneratedUiGenericInfo();
+        extraLayers = X_Collect.newStringMap(GeneratedUiLayer.class);
     }
 
     public GeneratedUiImplementation getBestImpl(GeneratedUiImplementation similarToo) {
         GeneratedUiImplementation best = null;
         int bestScore = Integer.MIN_VALUE;
         for (GeneratedUiImplementation impl : getImpls()) {
-            int similarScore = similarToo.isSimilar(impl);
+            int similarScore = similarToo == null ? 1 : similarToo.isSimilar(impl);
             if (similarScore > bestScore) {
                 bestScore = similarScore;
                 best = impl;
@@ -373,6 +376,7 @@ public class GeneratedUiComponent {
             saveType(baseLayer, gen, tools, null);
         }
 
+
         getImpls()
             .filter(GeneratedJavaFile::shouldSaveType)
             .forAll(this::saveType, gen, tools, baseGenerics);
@@ -381,6 +385,12 @@ public class GeneratedUiComponent {
         // let the impls have a peek at our builder
         getImpls().forAll(GeneratedUiImplementation::registerBuilder, builder);
         saveType(builder, gen, tools, null);
+
+        // Save any extra layers... We do this last so other "mainstream" generation can create standalone Extras,
+        // knowing they will be saved even if defined in an impl or builder type
+        extraLayers.forEachValue()
+                   .filter(GeneratedJavaFile::shouldSaveType)
+                   .forAll(layer->gen.overwriteSource(layer.getPackageName(), layer.getWrappedName(), layer.toSource(), null));
 
     }
 
@@ -554,5 +564,13 @@ public class GeneratedUiComponent {
         final GeneratedUiMethod method = new GeneratedUiMethod(returnType, name, io);
 
         return method;
+    }
+
+    public GeneratedJavaFile getOrCreateExtraLayer(String id, String baseName) {
+        return extraLayers.getOrCreate(id, ignored->new GeneratedJavaFile(this, getPackageName(), baseName));
+    }
+
+    public GeneratedJavaFile getOrCreateExtraLayer(String id, String cls, In3Out1<GeneratedUiComponent, String, String, GeneratedJavaFile> factory) {
+        return extraLayers.getOrCreate(id, factory.supply1(this).supply1(getPackageName()).supply(cls).ignoreIn1());
     }
 }

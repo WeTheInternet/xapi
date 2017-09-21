@@ -135,7 +135,9 @@ public abstract class UiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> im
     protected void initializeComponent(GeneratedUiComponent result, ContainerMetadata metadata) {
         final UiGeneratorService gen = getGenerator();
         if (gen != this && gen instanceof UiGeneratorTools) {
-            ((UiGeneratorTools)gen).initializeComponent(result, metadata);
+            UiGeneratorTools tools = (UiGeneratorTools) gen;
+            // TODO: prevent hideous recursion sickness possible here...  refactor UiGeneratorTools into standalone successor
+            tools.initializeComponent(result, metadata);
         }
     }
 

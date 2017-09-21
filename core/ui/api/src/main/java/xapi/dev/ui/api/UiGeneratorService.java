@@ -20,7 +20,7 @@ import xapi.source.read.JavaModel.IsQualified;
  */
 public interface UiGeneratorService <Raw> {
 
-    ComponentBuffer runPhase(ComponentBuffer component, String id);
+    void runPhase(ComponentBuffer component, String id);
 
     UiComponentGenerator getComponentGenerator(UiContainerExpr container, ContainerMetadata metadata);
 

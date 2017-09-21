@@ -6,6 +6,7 @@ import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.fu.Lazy;
 import xapi.fu.X_Fu;
+import xapi.source.X_Source;
 import xapi.source.read.JavaModel.IsTypeDefinition;
 import xapi.source.read.SourceUtil;
 
@@ -84,6 +85,10 @@ public class GeneratedJavaFile {
         return wrapName(typeName);
     }
 
+    public String getQualifiedName() {
+        return X_Source.qualifiedName(getPackageName(), getWrappedName());
+    }
+
     public String getPrefix() {
         return prefix;
     }
@@ -109,6 +114,9 @@ public class GeneratedJavaFile {
     protected SourceBuilder<GeneratedJavaFile> createSource() {
         final SourceBuilder<GeneratedJavaFile> builder = new SourceBuilder<GeneratedJavaFile>()
             .setPayload(this);
+        if (packageName != null) {
+            builder.setPackage(packageName);
+        }
         if (type != null) {
             builder.setClassDefinition(type.toDefinition(), false);
         }
@@ -123,8 +131,9 @@ public class GeneratedJavaFile {
         return getSource().toSource();
     }
 
-    public void setType(IsTypeDefinition type) {
+    public GeneratedJavaFile setType(IsTypeDefinition type) {
         this.type = type;
+        return this;
     }
 
     public boolean isInterface() {

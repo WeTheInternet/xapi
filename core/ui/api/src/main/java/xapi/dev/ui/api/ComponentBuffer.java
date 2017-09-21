@@ -201,4 +201,8 @@ public class ComponentBuffer {
         }
         return definition;
     }
+
+    public ApiGeneratorContext getContext() {
+        return getRoot().getContext();
+    }
 }

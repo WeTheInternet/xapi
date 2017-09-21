@@ -7,16 +7,17 @@ import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.dev.ui.api.ComponentBuffer;
+import xapi.dev.ui.api.GeneratedJavaFile;
 import xapi.dev.ui.api.UiGeneratorService;
 import xapi.fu.In1Out1;
 import xapi.inject.X_Inject;
 import xapi.javac.dev.api.JavacService;
 import xapi.log.X_Log;
+import xapi.log.api.LogLevel;
 import xapi.source.read.JavaModel.IsQualified;
 import xapi.ui.api.PhaseMap;
 import xapi.ui.api.PhaseMap.PhaseNode;
 import xapi.ui.api.Ui;
-import xapi.ui.api.UiElement;
 import xapi.ui.api.UiPhase;
 import xapi.util.X_Debug;
 import xapi.util.X_String;
@@ -141,7 +142,6 @@ public class UiAnnotationProcessor extends AbstractProcessor {
         SourceBuilder<Element> builder = new SourceBuilder<>("public class " + simpleName + "UiFactory");
         final ClassBuffer out = builder.getClassBuffer();
         builder.setPackage(fqcn.replace("." + simpleName, ""));
-        String ele = builder.addImport(UiElement.class);
         if (!elements.uiTypes.isEmpty()) {
           X_Log.info(getClass(), "Examining ui types for ", element, elements);
             elements.uiTypes.forEach((type, ui)->{
@@ -158,20 +158,28 @@ public class UiAnnotationProcessor extends AbstractProcessor {
                     throw X_Debug.rethrow(e);
                 }
 
+                String ele = builder.addImport(type.getQualifiedName().toString());
                 MethodBuffer factory = out.createMethod("public " + ele + " create"+enclosedName);
                 factory.addParameter(simpleName, "from");
 
-                generateUiImplementations(builder, factory, type, ui, container);
+                final GeneratedJavaFile result = generateUiImplementations(builder, factory, type, ui, container);
+                factory.setReturnType(result.getOwner().getApi().getWrappedName());
+                if (X_Log.loggable(LogLevel.DEBUG)) {
+                    X_Log.debug(UiAnnotationProcessor.class, "UiImpl", result.getSource());
+                    X_Log.debug(UiAnnotationProcessor.class, "UiBase", result.getOwner().getBase().getSource());
+                    X_Log.debug(UiAnnotationProcessor.class, "UiApi", result.getOwner().getApi().getSource());
+                }
             });
         }
         if (!elements.uiMethods.isEmpty()) {
 
         }
-        System.out.println(builder);
+        X_Log.trace(UiAnnotationProcessor.class, "Finished UiFactory", builder);
+
         return false;
     }
 
-    private void generateUiImplementations(SourceBuilder<Element> out, MethodBuffer factory, TypeElement type, Ui ui, UiContainerExpr container) {
+    private GeneratedJavaFile generateUiImplementations(SourceBuilder<Element> out, MethodBuffer factory, TypeElement type, Ui ui, UiContainerExpr container) {
 
         // Generate an abstract, base class that is fully generic.
         // Then, for every known type provider on the classpath,
@@ -184,18 +192,25 @@ public class UiAnnotationProcessor extends AbstractProcessor {
             UiGeneratorService<Element> generator = getSuperclassGenerator();
             final String pkg = service.getPackageName(type);
             IsQualified typeName = new IsQualified(pkg, type.getQualifiedName().toString().replace(pkg+".", ""));
-            ComponentBuffer component = generator.initialize(service, typeName, container);
+            final ComponentBuffer component = generator.initialize(service, typeName, container);
             // Run each phase, potentially including custom phases injected by third parties
             // Note, we need to use forthcoming xapi.properties support to record annotations
             // which are annotated with @UiPhase, so a library can be compiled with a record
             // of the UiPhase added.  Currently, we do not use any custom phases.
             for (PhaseNode<String> phase : phaseMap.forEachNode()) {
-                component = generator.runPhase(component, phase.getId());
+                generator.runPhase(component, phase.getId());
             }
+            // TODO: delay this until the annotation processor is complete,
+            // so we can allow all types to run all phases before we attempt to converge to a final output
             generator.finish(singleItem(component), UiPhase.CLEANUP);
+            final GeneratedJavaFile bestImpl = component.getGeneratedComponent().getBestImpl(null);
+            String impl = factory.addImport(bestImpl.getWrappedName());
+            factory.returnValue("new " + impl+"().io(from);");
+            return bestImpl;
         } catch (Throwable t) {
             messages.printMessage(Kind.WARNING,
                 "Error encountered generating ui for " + type + " from " + container + " : " + t);
+            throw t;
         }
 
 //        for (UiGeneratorService uiGeneratorService : services) {
@@ -207,10 +222,7 @@ public class UiAnnotationProcessor extends AbstractProcessor {
 //
 //            final SourceBuilder<?> builder = generated.getSourceBuilder();
 //            System.out.println(builder);
-//            String impl = factory.addImport(builder.getQualifiedName());
-//            factory.returnValue("new " + impl+"().io(from);");
 //        }
-
     }
 
     protected UiGeneratorService<Element> getSuperclassGenerator() {

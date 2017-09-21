@@ -4,7 +4,6 @@ import com.github.javaparser.ASTHelper;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseException;
 import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.body.AnnotationDeclaration;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.plugin.NodeTransformer;
 import com.github.javaparser.ast.type.ReferenceType;
@@ -26,6 +25,7 @@ import xapi.fu.iterate.CachingIterator.ReplayableIterable;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
 import xapi.fu.iterate.SingletonIterator;
+import xapi.fu.iterate.SizedIterable;
 import xapi.io.X_IO;
 import xapi.log.X_Log;
 import xapi.source.X_Source;
@@ -245,7 +245,7 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
      * which can then be easily piped into a loop.
      */
     @Override
-    public ComponentBuffer runPhase(ComponentBuffer component, String id) {
+    public void runPhase(ComponentBuffer component, String id) {
         try(
             @SuppressWarnings("unused") // autoclosed
             Do ondone = tools().startRound(id, component.getGeneratedComponent())
@@ -254,17 +254,23 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
             final MappedIterable<UiImplementationGenerator> impls = this.impls.out1();
             switch (id) {
                 case PhasePreprocess.PHASE_PREPROCESS:
-                    return preprocessComponent(component, impls);
+                    preprocessComponent(component, impls);
+                    return;
                 case PhaseSupertype.PHASE_SUPERTYPE:
-                    return createSupertype(component);
+                    createSupertype(component);
+                    return;
                 case PhaseImplementation.PHASE_IMPLEMENTATION:
-                    return createImplementation(component, impls);
+                    createImplementation(component, impls);
+                    return;
                 case PhaseIntegration.PHASE_INTEGRATION:
-                    return peekIntegration(component);
+                    peekIntegration(component);
+                    return;
                 case PhaseBinding.PHASE_BINDING:
-                    return runBinding(component);
+                    runBinding(component);
+                    return;
                 default:
-                    return runCustomPhase(id, component);
+                    runCustomPhase(id, component);
+                    return;
             }
         }
     }
@@ -322,19 +328,22 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
 
     @Override
     public String overwriteResource(String path, String fileName, String source, Raw hints) {
-        return service.saveResource(path, fileName, source, hints);
+        return service.saveResource(path, fileName, source, service.filterHints(hints));
     }
 
     @Override
     public void overwriteSource(String pkgName, String clsName, String source, Raw hints) {
-        service.saveSource(pkgName, clsName, source, X_Util.firstNotNull(hints, getHints()));
+        service.saveSource(pkgName, clsName, source, X_Util.firstNotNull(
+            service.filterHints(hints),
+            service.filterHints(getHints())
+        ));
     }
 
     protected void saveGeneratedComponent(SourceBuilder<?> binder) {
 
         final String src = binder.toSource();
         // TODO: add source element types of anything we loaded during compilation
-        service.saveSource(binder.getPackage(), binder.getSimpleName(), src, getHints());
+        service.saveSource(binder.getPackage(), binder.getSimpleName(), src, service.filterHints(getHints()));
     }
 
     protected void rewriteTemplateReferences(ComponentBuffer component) {
@@ -531,7 +540,8 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
                 impl.getMode(component, metadata)
             );
             onFinish(Integer.MAX_VALUE, ()->{
-
+                final SizedIterable<RequiredChildFactory> debug = implResult.getRequiredChildren();
+                debug.size();
             });
         }
         onFinish(Integer.MAX_VALUE-100, ()->
@@ -613,10 +623,10 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
                             } else {
                                 pkgName = pkgName.replace('.', '/');
                             }
-                            src = filer.readSource(pkgName, loc, hints);
+                            src = filer.readSource(pkgName, loc, filer.filterHints(hints));
                         } else {
                             // Treat the file as absolute classpath uri
-                            src = filer.readSource("", loc, hints);
+                            src = filer.readSource("", loc, filer.filterHints(hints));
                         }
                         final UiContainerExpr newContainer = JavaParser.parseUiContainer(src);
                         return newContainer;
@@ -777,36 +787,27 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
             PhaseMap<String> map = PhaseMap.withDefaults(new LinkedHashSet<>());
             final Iterator<PhaseNode<String>> phases = map.forEachNode().iterator();
             final MappedIterable<? extends Out2<
-                Mutable<ComponentBuffer>,
+                ComponentBuffer,
                 Do>
                 > components = ArrayIterable.iterate(parsed)
                 .map(ui -> {
                     final IsQualified myType = type.io(ui);
                     ComponentBuffer buffer = initialize(sources, myType, ui);
                     Do onStart = pauseState();
-                    return Out2.out2Immutable(new Mutable<>(buffer), onStart);
+                    return Out2.out2Immutable(buffer, onStart);
                 })
                 .cached();
 
             phases.forEachRemaining(phase->
                 components.forAll(job->{
                     job.out2().done();
-                    final Mutable<ComponentBuffer> buffer = job.out1();
-                    buffer.process(this::runPhase, phase.getId());
+                    final ComponentBuffer buffer = job.out1();
+                    runPhase(buffer, phase.getId());
                 })
             );
 
-    //        for (UiContainerExpr ui : parsed) {
-    //
-    //            ComponentBuffer buffer = initialize(sources, type, ui);
-    //
-    //            for (PhaseNode<String> phase : map.forEachNode()) {
-    //                buffer = runPhase(buffer, phase.getId());
-    //            }
-    //        }
             final MappedIterable<ComponentBuffer> itr = components
-                .map(Out2::out1)
-                .map(Mutable::out1);
+                .map(Out2::out1);
             finish(itr, UiPhase.CLEANUP);
         } catch (Throwable t) {
             X_Log.error(getClass(), "Did not generate ui successfully;", t, "for", parsed);
@@ -841,6 +842,7 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
     @Override
     protected void initializeComponent(GeneratedUiComponent result, ContainerMetadata metadata) {
         seen.add(result);
+//        super.initializeComponent(result, metadata);
         for (UiImplementationGenerator impl : impls.out1()) {
             if (impl instanceof UiGeneratorTools) {
                 ((UiGeneratorTools)impl).initializeComponent(result, metadata);
