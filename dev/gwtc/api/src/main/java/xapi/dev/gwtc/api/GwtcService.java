@@ -5,7 +5,9 @@ import xapi.dev.source.SourceBuilder;
 import xapi.dev.source.SourceBuilder.JavaType;
 import xapi.fu.In1;
 import xapi.fu.In2;
+import xapi.fu.In2.In2Unsafe;
 import xapi.fu.Out1;
+import xapi.gwtc.api.CompiledDirectory;
 import xapi.gwtc.api.GwtManifest;
 import xapi.gwtc.api.ServerRecompiler;
 
@@ -32,6 +34,8 @@ public interface GwtcService {
 
   In1<Integer> prepareCleanup(GwtManifest manifest);
 
+  In2Unsafe<Integer, TimeUnit> startTask(Runnable task, URLClassLoader loader);
+
   boolean addJUnitClass(Class<?> clazz);
   void addAsyncBlock(Class<? extends RunAsyncCallback> asSubclass);
   void addGwtModules(Class<?> clazz);
@@ -41,7 +45,8 @@ public interface GwtcService {
 
   int compile(GwtManifest manifest);
   GwtcJobState recompile(GwtManifest manifest, In2<ServerRecompiler, Throwable> callback);
-  void compile(GwtManifest manifest, int timeout, TimeUnit unit, In1<Integer> callback);
+  void compile(GwtManifest manifest, long timeout, TimeUnit unit, In2<Integer, Throwable> callback);
+  void doCompile(GwtManifest manifest, long timeout, TimeUnit unit, In2<CompiledDirectory, Throwable> callback);
 
   String getModuleName();
   SourceBuilder createJavaFile(String pkg, String filename, JavaType type);

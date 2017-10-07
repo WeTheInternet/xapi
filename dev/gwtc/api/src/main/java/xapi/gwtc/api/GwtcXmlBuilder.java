@@ -2,6 +2,7 @@ package xapi.gwtc.api;
 
 import xapi.annotation.compile.Resource;
 import xapi.dev.source.XmlBuffer;
+import xapi.fu.MappedIterable;
 import xapi.log.X_Log;
 import xapi.util.X_Runtime;
 
@@ -142,6 +143,10 @@ public class GwtcXmlBuilder {
     }
   }
 
+  public MappedIterable<String> getInherits() {
+    return MappedIterable.mapped(inherits);
+  }
+
   public XmlBuffer getBuffer() {
     return out;
   }
@@ -161,4 +166,7 @@ public class GwtcXmlBuilder {
       .setAttribute("path", path);
   }
 
+  public String getEntryPoint() {
+    return entryPoint == null ? null : entryPoint.getAttribute("class");
+  }
 }

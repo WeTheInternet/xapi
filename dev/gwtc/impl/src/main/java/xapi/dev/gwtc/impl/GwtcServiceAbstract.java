@@ -20,7 +20,6 @@ import xapi.dev.source.SourceBuilder;
 import xapi.dev.source.SourceBuilder.JavaType;
 import xapi.dev.source.XmlBuffer;
 import xapi.file.X_File;
-import xapi.fu.In1;
 import xapi.fu.Out1;
 import xapi.gwtc.api.GwtManifest;
 import xapi.gwtc.api.GwtcXmlBuilder;
@@ -82,7 +81,7 @@ public abstract class GwtcServiceAbstract implements GwtcService {
     out = new GwtcEntryPointBuilder(entryPoint);
 
     String defaultEntryPoint = GwtManifest.GEN_PREFIX+"."+genName;
-    context.addEntryPoint(defaultEntryPoint);
+    context.setEntryPoint(defaultEntryPoint);
 
     context.addGwtXmlSource(GwtManifest.GEN_PREFIX);
 
@@ -197,8 +196,11 @@ public abstract class GwtcServiceAbstract implements GwtcService {
     ;
     buffer.printBefore(getHostPageDocType());
 
+    manifest.setIncludeGenDir(false);
+    final File source = new File(manifest.getGenDir());
+    manifest.addSource(source.getAbsolutePath());
 
-    context.generateAll(new File(manifest.getGenDir()), moduleName, head, body);
+    context.generateAll(source, moduleName, head, body);
 
     head.makeTag("script")
     .setAttribute("type", "text/javascript")

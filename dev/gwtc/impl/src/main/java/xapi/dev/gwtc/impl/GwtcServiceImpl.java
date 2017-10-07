@@ -7,12 +7,14 @@ import xapi.annotation.compile.ResourceBuilder;
 import xapi.annotation.inject.InstanceDefault;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
+import xapi.dev.api.ExtensibleClassLoader;
 import xapi.dev.gwtc.api.GwtcJobState;
 import xapi.dev.gwtc.api.GwtcService;
 import xapi.dev.gwtc.impl.GwtcContext.Dep;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.XmlBuffer;
+import xapi.except.NotYetImplemented;
 import xapi.file.X_File;
 import xapi.fu.*;
 import xapi.fu.Do.DoUnsafe;
@@ -20,6 +22,7 @@ import xapi.fu.In2.In2Unsafe;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
 import xapi.fu.iterate.EmptyIterator;
+import xapi.gwtc.api.CompiledDirectory;
 import xapi.gwtc.api.GwtManifest;
 import xapi.gwtc.api.Gwtc;
 import xapi.gwtc.api.GwtcProperties;
@@ -38,6 +41,7 @@ import xapi.util.X_Util;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -48,6 +52,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -56,6 +61,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static xapi.fu.iterate.SingletonIterator.singleItem;
+import static xapi.gwtc.api.GwtManifest.GEN_PREFIX;
 import static xapi.process.X_Process.runFinally;
 
 import com.google.gwt.core.client.GWT;
@@ -135,11 +141,42 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
   }
 
   @Override
-  public void compile(GwtManifest manifest, int timeout, TimeUnit unit, In1<Integer> callback) {
-    final In2Out1<Integer, TimeUnit, Integer> compilation = doCompile(manifest);
+  public void doCompile(
+      GwtManifest manifest, long timeout, TimeUnit unit, In2<CompiledDirectory, Throwable> callback
+  ) {
+
+    // This is going to be the new primary compilation method for all Gwt compiles;
+    // all others will be deprecated once this one is complete and tested.
+
+    // We want this method to correctly handle foreign classloading;
+    // That is, we want to stash our callbacks, create and call into a Gwt environment,
+    // and then have the same thread that called this method handle the callback.
+    // This is necessary for us to have "clean room" classloaders for gwt compilation,
+    // where the server doesn't leak into gwt, and gwt doesn't leak into server.
+
+    if (manifest.isRecompile()) {
+      // recompilation... our primary concern at the moment
+    } else {
+
+    }
+    throw new NotYetImplemented("TODO finish on next iteration");
+  }
+
+  @Override
+  public void compile(GwtManifest manifest, long timeout, TimeUnit unit, In2<Integer, Throwable> callback) {
+    final In2Out1<Long, TimeUnit, Integer> compilation = doCompile(manifest);
     X_Time.runLater(() -> {
-      final Integer result = compilation.io(timeout, unit);
-      callback.in(result);
+      boolean called = false;
+      try {
+        final Integer result = compilation.io(timeout, unit);
+        called = true;
+        callback.in(result, null);
+      } catch (Throwable t) {
+        if (!called) {
+          callback.in(-1, t);
+        }
+        throw t;
+      }
     });
   }
 
@@ -174,13 +211,13 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
     X_Log.info("Entry point: " + new File(manifest.getWarDir(), context.getGenName() + ".html"));
     In1<Integer> cleanup = prepareCleanup(manifest);
 
-    assert runtimeContainsClasspath(manifest.getGenDir(), classpath);
     URL[] urls = fromClasspath(classpath);
     URLClassLoader loader = manifestBackedClassloader(urls, manifest);
     return loader;
   }
 
-  protected In2Unsafe<Integer, TimeUnit> startTask(Runnable task, URLClassLoader loader) {
+  @Override
+  public In2Unsafe<Integer, TimeUnit> startTask(Runnable task, URLClassLoader loader) {
     Thread t = new Thread(task);
     try {
       loader.loadClass("com.google.gwt.core.ext.Linker");
@@ -268,7 +305,7 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
     }
   }
 
-  protected In2Out1<Integer, TimeUnit, Integer> doCompile(GwtManifest manifest) {
+  protected In2Out1<Long, TimeUnit, Integer> doCompile(GwtManifest manifest) {
     String gwtHome = generateCompile(manifest);
     // Logging
     X_Log.info(getClass(), "Starting gwt compile", manifest.getModuleName());
@@ -283,6 +320,7 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
     In1<Integer> cleanup = prepareCleanup(manifest);
 
     if (manifest.isUseCurrentJvm()) {
+      // this sanity check is expensive...
       assert runtimeContainsClasspath(manifest.getGenDir(), classpath);
       // TODO launch a worker thread for us to block on...
       // Preferably using a brand new URLClassLoader
@@ -301,7 +339,7 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
       });
       t.setContextClassLoader(loader);
       t.start();
-      In2Unsafe<Integer, TimeUnit> blocker= (sec, unit) ->{
+      In2Unsafe<Long, TimeUnit> blocker= (sec, unit) ->{
         try {
           t.join(unit.toMillis(sec));
         } catch (InterruptedException e) {
@@ -341,33 +379,61 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
   }
 
   private URLClassLoader manifestBackedClassloader(URL[] urls, GwtManifest manifest) {
-    // TODO: consider pulling some, but not all jars off of: Thread.currentThread().getContextClassLoader()
-     return new URLClassLoader(urls, Thread.currentThread().getContextClassLoader()) {
-      @Override
-      public URL getResource(String name) {
-        URL url = super.getResource(name);
-        if (url == null) {
-          // Egregious hack; when running in the same jvm, the classloader is not able to use
-          // the bootstrap classpath to load our newly generated resources out of our generated folder,
-          // so, we resort to manually looking up any failed resource loads here, in the classloader.
+//     return new URLClassLoader(urls, superLoader(manifest)) {
+//      @Override
+//      public URL getResource(String name) {
+//        URL url = super.getResource(name);
+//        if (url == null) {
+//          // Egregious hack; when running in the same jvm, the classloader is not able to use
+//          // the bootstrap classpath to load our newly generated resources out of our generated folder,
+//          // so, we resort to manually looking up any failed resource loads here, in the classloader.
+//          try {
+//            File f = new File(inGeneratedDirectory(manifest, name));
+//            if (f.exists()) {
+//              return f.toURI().toURL();
+//            }
+//          } catch (IOException e) {
+//            X_Log.warn(GwtcServiceImpl.class, "Failure to load resources for " + name);
+//          }
+//        }
+//        return url;
+//      }
+//    };
+    final ExtensibleClassLoader loader = new ExtensibleClassLoader(urls, superLoader(manifest));
+    if (manifest.isIsolateClassLoader()) {
+      loader.setCheckMeFirst(true);
+    }
+    return loader.addResourceFinder(name-> {
           try {
             File f = new File(inGeneratedDirectory(manifest, name));
             if (f.exists()) {
               return f.toURI().toURL();
             }
           } catch (IOException e) {
-            X_Log.warn(getClass(), "Failure to load resources for " + name);
+            X_Log.warn(GwtcServiceImpl.class, "Failure to load resources for " + name);
           }
-        }
-        return url;
+          return null;
+        });
+  }
+
+  protected ClassLoader superLoader(GwtManifest manifest) {
+    if (manifest.isUseCurrentJvm()) {
+      if (manifest.isIsolateClassLoader()) {
+          return null;
+      } else {
+          X_Log.trace(GwtcServiceImpl.class, "Using context classloader for gwt compile", manifest);
+          return Thread.currentThread().getContextClassLoader();
       }
-    };
+    }
+    // When not set to reuse jvm, we are currently going to allow the current classloader to be used,
+    // but we should likely update this to return null instead
+    return Thread.currentThread().getContextClassLoader();
   }
 
   @Override
   public int compile(GwtManifest manifest) {
     return doCompile(manifest)
-      .io(600, TimeUnit.SECONDS);
+      .io(600L, TimeUnit.SECONDS);
   }
 
   private boolean runtimeContainsClasspath(String genDir, String[] classpath) {
@@ -379,7 +445,8 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
         if (genDir.equals(s)) {
           continue searching;
         }
-        if (url.toExternalForm().endsWith(s)) {
+        final String external = url.toExternalForm();
+        if (external.endsWith(s) || external.contains("jre/lib")) {
           continue searching;
         }
       }
@@ -392,25 +459,46 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
   @Override
   public String generateCompile(GwtManifest manifest) {
     assert tempDir.exists() : "No usable directory " + tempDir.getAbsolutePath();
-    X_Log.info(getClass(), "Generated entry point", "\n", getEntryPoint());
-    X_Log.info(getClass(), "Generated module", "\n", getGwtXml(manifest));
     if (manifest.getModuleName() == null) {
       manifest.setModuleName(genName);
       manifestName = genName;
     } else {
+      assert context.getInheritedGwtXml().noneMatch(manifest.getModuleName()::equals)
+          : "Do not inherit the gwt xml of the module you are generating! (bad name: " + manifest.getModuleName() + ")";
       manifestName = manifest.getModuleName();
       context.setRenameTo(manifest.getModuleName());
     }
+    if (manifest.getModuleShortName() != null) {
+      context.setRenameTo(manifest.getModuleShortName());
+    }
+    String entryPackage = manifestName;
+    int endInd = entryPackage.lastIndexOf('.');
+    if (endInd != -1) {
+      entryPackage = entryPackage.substring(0, endInd);
+      if (entryPoint.getPackage() == null) {
+        entryPoint.setPackage(entryPackage);
+      } else if (!entryPoint.getPackage().startsWith(entryPackage)){
+        entryPackage = (entryPackage + "." + entryPoint.getPackage())
+                        .replace(GEN_PREFIX+"."+GEN_PREFIX, GEN_PREFIX);
+        if (context.getEntryPoint().startsWith(GEN_PREFIX)) {
+          context.setEntryPoint(context.getEntryPoint().substring(GEN_PREFIX.length()+1));
+        }
+      }
+      entryPoint.setPackage(entryPackage);
+      context.setEntryPointPackage(entryPackage);
+    }
+    String entryPointLocation = inGeneratedDirectory(manifest, entryPoint.getQualifiedName().replace('.', '/')+".java");
     XmlBuffer xml = getGwtXml(manifest);
     saveGwtXmlFile(xml, manifest.getModuleName(), manifest);
     manifest.getModules().forEach(mod->{
       saveGwtXmlFile(mod.getBuffer(), mod.getInheritName(), manifest);
     });
-    String entryPointLocation = inGeneratedDirectory(manifest, entryPoint.getQualifiedName().replace('.', '/')+".java");
     saveTempFile(entryPoint.toString(), new File(entryPointLocation));
     files.forBoth((path, body)->
       saveTempFile(body.out1(), new File(inGeneratedDirectory(manifest, path)))
     );
+    X_Log.info(GwtcServiceImpl.class, "Generated entry point", "\n", getEntryPoint());
+    X_Log.info(GwtcServiceImpl.class, "Generated module", "\n", getGwtXml(manifest));
     return prepareCompile(manifest);
   }
 
@@ -532,10 +620,14 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
     Path loc = Paths.get(fileLoc);
     if (item.isEmpty()) {
       // assume the user wants src/main/java and src/main/resources
-      return Chain.<String>startChain()
-                .add(loc.resolve("src/main/java").toString())
-                .add(loc.resolve("src/main/resources").toString())
-                .build();
+      final ChainBuilder<String> chain = Chain.<String>startChain()
+          .add(loc.resolve("src/main/java").toString())
+          .add(loc.resolve("src/main/resources").toString());
+      final Path genDir = loc.resolve("src/main/gen");
+      if (Files.exists(genDir)) {
+        chain.add(genDir.toString());
+      }
+      return chain.build();
     } else {
       if (!loc.isAbsolute()) {
         loc = Paths.get(manifest.getRelativeRoot()).resolve(loc);
@@ -589,7 +681,9 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
         warDir = GwtcProperties.DEFAULT_WAR;
       }
       manifest.setLogLevel(level);
-      manifest.addSystemProp("xapi.log.level="+level.name());
+      if (manifest.getSystemProperties().noneMatch(String::startsWith, "xapi.log.level")) {
+          manifest.addSystemProp("xapi.log.level="+level.name());
+      }
       manifest.setWarDir(warDir);
 
       if (warDir.contains("/tmp/")) {
@@ -633,26 +727,41 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
         }
       }
       if (gwtHome == null) {
-        URL gwtHomeLocation = Compiler.class.getClassLoader().getResource(Compiler.class.getName().replace('.', '/')+".class");
-        if (gwtHomeLocation == null) {
-          X_Log.warn("Unable to find gwt home from System property gwt.home, "
-              , "nor from looking up the gwt compiler class from classloader.  Defaulting to ./lib");
-          gwtHome = X_File.getPath(".");
-        } else {
-          gwtHome = gwtHomeLocation.toExternalForm();
-          if (gwtHome.contains("jar!")) {
-            gwtHome = gwtHome.split("jar!")[0]+"jar";
-          }
-          gwtHome = gwtHome.replace("file:", "").replace("jar:", "");
-          if (manifest.getGwtVersion().length() == 0) {
-            if (gwtHome.contains("gwt-dev.jar")) {
-              manifest.setGwtVersion("");
-            } else {
-              manifest.setGwtVersion(extractGwtVersion(gwtHome));
+        final Enumeration<URL> compilerLoc;
+        try {
+          compilerLoc = Compiler.class.getClassLoader().getResources(Compiler.class.getName().replace(
+              '.',
+              '/'
+          ) + ".class");
+        } catch (IOException e) {
+          throw new UncheckedIOException(e);
+        }
+        URL gwtHomeLocation;
+        while (compilerLoc.hasMoreElements()) {
+          gwtHomeLocation = compilerLoc.nextElement();
+          if (gwtHomeLocation == null) {
+            X_Log.warn("Unable to find gwt home from System property gwt.home, "
+                , "nor from looking up the gwt compiler class from classloader.  Defaulting to ./lib");
+            gwtHome = X_File.getPath(".");
+          } else {
+            gwtHome = gwtHomeLocation.toExternalForm();
+            if (gwtHome.contains("jar!")) {
+              gwtHome = gwtHome.split("jar!")[0]+"jar";
             }
-          }
-          int ind = gwtHome.lastIndexOf("gwt-dev");
-          gwtHome = gwtHome.substring(0, ind-1);
+            gwtHome = gwtHome.replace("file:", "").replace("jar:", "");
+            if (manifest.getGwtVersion().length() == 0) {
+              if (gwtHome.contains("gwt-dev.jar")) {
+                manifest.setGwtVersion("");
+              } else {
+                manifest.setGwtVersion(extractGwtVersion(gwtHome));
+              }
+            }
+            int ind = gwtHome.lastIndexOf("gwt-dev");
+            if (ind == -1) {
+              continue;
+            }
+            gwtHome = gwtHome.substring(0, ind-1);
+        }
         }
       }
       X_Properties.setProperty("gwt.home", gwtHome);

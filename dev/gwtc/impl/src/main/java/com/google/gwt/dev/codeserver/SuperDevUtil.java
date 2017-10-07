@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.reflect.Method;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -67,9 +68,25 @@ public class SuperDevUtil {
           if (src.startsWith("src")) {
               final Class<?> main = X_Reflect.getMainClass();
               if (main != null) {
-                  final String loc = X_Reflect.getSourceLoc(main);
+                  String loc = X_Reflect.getSourceLoc(main);
                   if (loc != null) {
                     dir = new File(loc, src);
+                  }
+                  if (!dir.exists()) {
+                    final URL sourceLoc = main.getProtectionDomain().getCodeSource().getLocation();
+                    if (sourceLoc != null) {
+                      // yay!
+                      loc = sourceLoc.toString().replace("file:", "");
+                      dir = new File(loc);
+                      // TODO: cache / compress these computed fallbacks
+                      if (dir.exists()) {
+                        int target = loc.lastIndexOf("/target");
+                        if (target != -1) {
+                            String base = loc.substring(0, target + 1);
+                            dir = new File(base, src);
+                        }
+                      }
+                    }
                   }
               }
               if (!dir.exists()) {

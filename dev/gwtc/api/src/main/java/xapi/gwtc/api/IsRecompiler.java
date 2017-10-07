@@ -1,14 +1,10 @@
 package xapi.gwtc.api;
 
-import xapi.dev.gwtc.api.GwtcJobState;
-import xapi.fu.In1;
-import xapi.fu.In2;
+import xapi.fu.Do;
 
 import java.net.URL;
 
 public interface IsRecompiler {
-
-  void onCompileReady(In2<GwtcJobState, Throwable> callback);
 
   URL getResource(String name);
 
@@ -16,4 +12,5 @@ public interface IsRecompiler {
 
   CompiledDirectory getOrCompile();
 
+  void checkFreshness(Do ifFresh, Do ifStale);
 }

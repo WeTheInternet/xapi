@@ -9,6 +9,8 @@ import xapi.fu.Immutable;
 import xapi.fu.In2;
 import xapi.fu.MappedIterable;
 import xapi.fu.Out1;
+import xapi.fu.X_Fu;
+import xapi.fu.iterate.EmptyIterator;
 import xapi.fu.iterate.SingletonIterator;
 import xapi.log.X_Log;
 import xapi.source.X_Source;
@@ -171,6 +173,7 @@ public class GwtManifest {
   private Type logLevel = DEFAULT_LOG_LEVEL;
   private SourceLevel sourceLevel = DEFAULT_SOURCE_LEVEL;
   private String moduleName;
+  private String moduleShortName;
   private ObfuscationLevel obfuscationLevel = DEFAULT_OBFUSCATION;
   private OpenAction openAction = DEFAULT_OPEN_ACTION;
   private int optimizationLevel = DEFAULT_OPTIMIZATION;
@@ -188,7 +191,7 @@ public class GwtManifest {
   private boolean includeGenDir;
   private CleanupMode cleanupMode = DELETE_ON_SUCCESSFUL_EXIT;
   private StringTo<GwtcXmlBuilder> gwtBuilders = newStringMapInsertionOrdered(GwtcXmlBuilder.class);
-  private boolean useCurrentJvm = false;
+  private boolean useCurrentJvm;
   private boolean recompile;
   private CompiledDirectory compileDirectory;
   private boolean online;
@@ -196,6 +199,7 @@ public class GwtManifest {
   private boolean incremental;
   private String relativeRoot;
   private boolean precompile;
+  private boolean isolateClassLoader;
 
   public GwtManifest() {
     includeGenDir = true;
@@ -337,6 +341,10 @@ public class GwtManifest {
 
   public String getModuleName() {
     return moduleName;
+  }
+
+  public String getModuleShortName() {
+    return moduleShortName;
   }
 
   public ObfuscationLevel getObfuscationLevel() {
@@ -523,6 +531,11 @@ public class GwtManifest {
     return this;
   }
 
+  public GwtManifest setModuleShortName(String moduleShortName) {
+    this.moduleShortName = moduleShortName;
+    return this;
+  }
+
   public GwtManifest setObfuscationLevel(ObfuscationLevel obfuscationLevel) {
     this.obfuscationLevel = obfuscationLevel;
     return this;
@@ -693,8 +706,10 @@ public class GwtManifest {
         read.in(ARG_PORT, port);
       }
       sources.forEachValue(read.provide1("src")::in);
-      dependencies.forEachItem().map(Out1::out1).filter(Filter.ifNotNull())
-        .forEach(read.provide1("src")::in);
+//      dependencies.forEachItem().map(Out1::out1)
+//        .filter(Filter.ifNotNull())
+//        .flatten(X_Fu::identity)
+//        .forEach(read.provide1("src")::in);
     }
     if (closureCompiler) {
       read.in(ARG_ENABLE_CLOSURE, null);
@@ -1139,5 +1154,13 @@ public class GwtManifest {
 
   public void setPrecompile(boolean precompile) {
     this.precompile = precompile;
+  }
+
+  public boolean isIsolateClassLoader() {
+    return isolateClassLoader;
+  }
+
+  public void setIsolateClassLoader(boolean isolateClassLoader) {
+    this.isolateClassLoader = isolateClassLoader;
   }
 }

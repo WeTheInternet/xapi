@@ -3,6 +3,7 @@ package com.google.gwt.dev.codeserver;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import xapi.dev.gwtc.api.GwtcJobState;
+import xapi.fu.Do;
 import xapi.fu.In2;
 import xapi.fu.Lazy;
 import xapi.fu.Out3;
@@ -13,6 +14,7 @@ import xapi.inject.impl.LazyPojo;
 import xapi.log.X_Log;
 
 import com.google.gwt.core.ext.TreeLogger;
+import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.dev.cfg.ResourceLoader;
 import com.google.gwt.dev.codeserver.Job.Result;
 import com.google.gwt.dev.codeserver.CompileStrategy;
@@ -43,6 +45,7 @@ public class RecompileController implements IsRecompiler {
 
   private final Recompiler recompiler;
   private PrintWriterTreeLogger logger;
+  private CompileDir lastCompile;
 
   public RecompileController(Recompiler compiler, RecompileRunner runner) {
     this.recompiler = compiler;
@@ -59,13 +62,13 @@ public class RecompileController implements IsRecompiler {
             loader = recompiler.getResourceLoader();
           }
           final Result res = results.out1();
-          final CompileDir dir = res.outputDir;
+          lastCompile = res.outputDir;
 
-          if (dir == null) {
+          if (lastCompile == null) {
 
           }
           // Try to look up the permutation map from war directory
-          File warp = dir.getWarDir();
+          File warp = lastCompile.getWarDir();
 
           File war = new File(warp,getModuleName()+File.separator+"compilation-mappings.txt");
           Map<String, String> permutations = new HashMap<>();
@@ -111,14 +114,14 @@ public class RecompileController implements IsRecompiler {
             }
           }
 
-          final File symbolDir = dir.findSymbolMapDir(getModuleName());
+          final File symbolDir = lastCompile.findSymbolMapDir(getModuleName());
           CompiledDirectory compiled = new CompiledDirectory()
-              .setDeployDir(dir.getDeployDir().getAbsolutePath())
-              .setExtraDir(dir.getExtraDir().getAbsolutePath())
-              .setGenDir(dir.getGenDir().getAbsolutePath())
-              .setLogFile(dir.getLogFile().getAbsolutePath())
-              .setWarDir(dir.getWarDir().getAbsolutePath())
-              .setWorkDir(dir.getWorkDir().getAbsolutePath())
+              .setDeployDir(lastCompile.getDeployDir().getAbsolutePath())
+              .setExtraDir(lastCompile.getExtraDir().getAbsolutePath())
+              .setGenDir(lastCompile.getGenDir().getAbsolutePath())
+              .setLogFile(lastCompile.getLogFile().getAbsolutePath())
+              .setWarDir(lastCompile.getWarDir().getAbsolutePath())
+              .setWorkDir(lastCompile.getWorkDir().getAbsolutePath())
               .setStrategy(results.out2())
               .setSourceMapDir(symbolDir == null ? null : symbolDir.getAbsolutePath())
               .setUri(getModuleName())
@@ -155,7 +158,7 @@ public class RecompileController implements IsRecompiler {
     if (compileDir.isResolved()) {
       toDestroy = compileDir.out1();
       // check for changes...
-
+      compileDir = resetCompilation();
     }
     CompiledDirectory result = null;
     try {
@@ -239,11 +242,6 @@ public class RecompileController implements IsRecompiler {
     return loader == null ? recompiler.getResourceLoader() : loader;
   }
 
-  @Override
-  public void onCompileReady(In2<GwtcJobState, Throwable> callback) {
-
-  }
-
   public URL getResource(String name) {
     return getResourceLoader().getResource(name);
   }
@@ -262,12 +260,20 @@ public class RecompileController implements IsRecompiler {
         final GwtManifest manifest = runner.getManifest();
         String moduleName = manifest.getModuleName();
 
-        // Creating an outbox will immediately compile if the opts didn't disable precompile
-        final Outbox box = new Outbox(moduleName, recompiler, opts, logger);
+        boolean firstRun = job == null;
+        final Outbox box;
+        if (firstRun) {
+          // Creating an outbox will immediately compile if the opts didn't disable precompile
+          box = new Outbox(moduleName, recompiler, opts, logger);
+        } else {
+          // reuse old outbox...
+          box = job.getOutbox();
+        }
         job = new Job(box, defaultProps, logger, opts);
 
-        if (opts.getNoPrecompile()) {
-          // If the recompiler wasn't configured for precompile, we have to run recompile...
+        if (!firstRun || opts.getNoPrecompile()) {
+          // If the recompiler wasn't configured for precompile,
+          // or if we are on second+ run, we have to manually run the recompile...
           runner.submit(job);
         }
         dir = job.waitForResult();
@@ -297,4 +303,15 @@ public class RecompileController implements IsRecompiler {
   public RecompileRunner getRunner() {
     return runner;
   }
+
+  @Override
+  public void checkFreshness(Do ifFresh, Do ifStale) {
+      if (lastCompile == null || job == null) {
+          ifStale.done();
+          return;
+      }
+      recompiler.checkCompileFreshness(ifFresh.toRunnable(), ifStale.toRunnable());
+
+  }
+
 }

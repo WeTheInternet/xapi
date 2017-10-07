@@ -1,7 +1,9 @@
 package xapi.dev.gwtc.impl;
 
 import xapi.dev.gwtc.api.GwtcJobState;
+import xapi.dev.gwtc.api.GwtcService;
 import xapi.dev.gwtc.api.IsAppSpace;
+import xapi.fu.Do;
 import xapi.fu.In1;
 import xapi.fu.In2;
 import xapi.fu.In2.In2Unsafe;
@@ -15,11 +17,10 @@ import xapi.gwtc.api.GwtManifest;
 import xapi.gwtc.api.IsRecompiler;
 import xapi.gwtc.api.ServerRecompiler;
 import xapi.log.X_Log;
+import xapi.time.X_Time;
 
 import java.net.URLClassLoader;
 import java.util.concurrent.TimeUnit;
-
-import static xapi.process.X_Process.runFinally;
 
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.dev.codeserver.JobEvent;
@@ -40,7 +41,7 @@ public class GwtcJobStateImpl implements GwtcJobState {
     private In2Out1<Integer, TimeUnit, Integer> blocker;
     private Status status;
 
-    private final GwtcServiceImpl service;
+    private final GwtcService service;
     private final Lazy<RecompileController> compiler;
     private final Lazy<TreeLogger> logger;
     private Lazy<String> gwtHome;
@@ -48,8 +49,9 @@ public class GwtcJobStateImpl implements GwtcJobState {
     private Lazy<URLClassLoader> classloader;
     private Lazy<In1<Integer>> shutdown;
     private Lazy<ServerRecompiler> api;
+    private volatile String currentEventId;
 
-    public GwtcJobStateImpl(GwtManifest manifest, GwtcServiceImpl gwtcService) {
+    public GwtcJobStateImpl(GwtManifest manifest, GwtcService gwtcService) {
         this.manifest = manifest;
         this.service = gwtcService;
         status = Status.WAITING;
@@ -73,7 +75,29 @@ public class GwtcJobStateImpl implements GwtcJobState {
         return Lazy.deferred1(()->callback->{
             // This code is run whenever calling ServerRecompiler.useServer()
             if (isSuccess()) {
-                callback.in(getController());
+                compiler.out1().checkFreshness(
+                    callback.provide(this::getController),
+                    ()->{
+                        userRequest.add(callback);
+                        synchronized (userRequest) {
+                            X_Log.info(GwtcJobStateImpl.class,
+                                "Notify userRequest");
+                            userRequest.notifyAll();
+                        }
+                        // now wait for the callback to be notified, so we run callback from correct classloader...
+                        synchronized (callback) {
+                            try {
+                                X_Log.info(GwtcJobStateImpl.class,
+                                    "Waiting for callback", callback);
+                                callback.wait();
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                                throw new RuntimeException(e);
+                            }
+                        }
+                        callback.in(compiler.out1());
+                    }
+                );
             } else {
                 userRequest.add(callback);
             }
@@ -101,13 +125,31 @@ public class GwtcJobStateImpl implements GwtcJobState {
         final EventTable table = controller.getRunner().getTable();
         final String name = manifest.getModuleName();
         table.listenForEvents(name, Status.COMPILING, false, ev->{
-            userRequest.removeAll(In1::in, controller);
+            currentEventId = ev.getJobId();
+            status = ev.getStatus();
         });
         table.listenForEvents(name, Status.SERVING, false, ev->{
-            userRequest.removeAll(In1::in, controller);
+            if (ev.getJobId().equals(currentEventId)) {
+                X_Time.runLater(()->{
+                    // We defer here to ensure that the calling code has time to wait.
+                    // it would be exceptionally hard to hit this race condition,
+                    // but it is theoretically possible if the calling thread is frozen for a long time
+                    // (for example, in a debugger with only certain threads paused).
+                    userRequest.removeAll(callback->{
+                        X_Log.info(GwtcJobStateImpl.class, "Notify callbacks gwt compile completed for", callback);
+                        synchronized (callback) {
+                            callback.notifyAll();
+                        }
+                    });
+                });
+            }
         });
         table.listenForEvents(name, null, false, ev->{
-            status = ev.getStatus();
+            X_Log.info(GwtcJobStateImpl.class, "Gwt Event", ev.getJobId(), "status:", ev.getStatus());
+            if (ev.getJobId().equals(currentEventId)){
+                X_Log.info(GwtcJobStateImpl.class, "Setting job", ev.getJobId(), "status to ", ev.getStatus());
+                status = ev.getStatus();
+            }
         });
 
         return controller;
@@ -244,25 +286,44 @@ public class GwtcJobStateImpl implements GwtcJobState {
 
         Mutable<Integer> code = new Mutable<>();
         final Runnable task = () -> {
+            manifest.setOnline(true);
+            boolean called = false;
             try {
-                final RecompileController compiler = getController();
+                while ( manifest.isOnline() ) {
+                    called = false;
+                    final RecompileController compiler = getController();
 
-                final CompiledDirectory result = compiler.recompile();
+                    final CompiledDirectory result = compiler.recompile();
 
-                manifest.setCompileDirectory(result);
+                    manifest.setCompileDirectory(result);
 
-                code.in(0);
-                // We are pre-emptively cleaning up here... might want to put this somewhere more... managed.
-                // cleanup.in(0);
-
-                manifest.setOnline(true);
+                    code.in(0);
+                    // We are pre-emptively cleaning up here... might want to put this somewhere more... managed.
+                    // cleanup.in(0);
+                    called = true;
+                    callback.in(api.out1(), null);
+                    while (userRequest.isEmpty()) {
+                        synchronized (userRequest) {
+                            try {
+                                userRequest.wait();
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                                return;
+                            }
+                        }
+                    }
+                }
             } catch (Throwable fail) {
                 manifest.setOnline(false);
-                callback.in(null, fail);
+                if (!called) {
+                    callback.in(null, fail);
+                }
                 shutdown.out1().in(-1);
+                X_Log.error(GwtcJobStateImpl.class, "Manifest no longer online due to error;",
+                    fail, "quitting compiler", manifest.getModuleName());
                 throw fail;
             }
-            callback.in(api.out1(), null);
+            X_Log.info(GwtcJobStateImpl.class, "Manifest no longer online; quitting compiler", manifest.getModuleName());
         };
         In2Unsafe<Integer, TimeUnit> blocker = service.startTask(task, loader);
 

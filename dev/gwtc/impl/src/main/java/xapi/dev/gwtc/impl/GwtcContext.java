@@ -19,6 +19,7 @@ import xapi.gwtc.api.GwtcXmlBuilder;
 import xapi.inject.impl.SingletonProvider;
 import xapi.io.X_IO;
 import xapi.log.X_Log;
+import xapi.source.X_Source;
 import xapi.util.X_Debug;
 import xapi.util.X_Runtime;
 import xapi.util.X_String;
@@ -619,12 +620,20 @@ public class GwtcContext {
     module.addInherit(inherit);
   }
 
+  public MappedIterable<String> getInheritedGwtXml() {
+    return module.getInherits();
+  }
+
   public String getGenName() {
     return module.getInheritName();
   }
 
-  public void addEntryPoint(String qualifiedName) {
+  public void setEntryPoint(String qualifiedName) {
     module.setEntryPoint(qualifiedName);
+  }
+
+  public String getEntryPoint() {
+    return module.getEntryPoint();
   }
 
   public void addGwtXmlSource(String genPrefix) {
@@ -880,9 +889,9 @@ public class GwtcContext {
     final GwtcXmlBuilder xml = node.xml;
     outputFile = new File(outputFile, xml.getFileName());
     if (debug) {
-      X_Log.info(getClass(), "Saving generated gwt.xml file",outputFile,"\n",xml.getBuffer());
+      X_Log.info(GwtcContext.class, "Saving generated gwt.xml file",outputFile,"\n",xml.getBuffer());
     } else {
-      X_Log.debug(getClass(), "Saving generated gwt.xml file",outputFile,"\n"+xml.getBuffer());
+      X_Log.debug(GwtcContext.class, "Saving generated gwt.xml file",outputFile,"\n"+xml.getBuffer());
     }
     try {
       if (outputFile.exists()) {
@@ -891,13 +900,13 @@ public class GwtcContext {
       outputFile.getParentFile().mkdirs();
       outputFile.createNewFile();
     } catch (IOException e) {
-      X_Log.warn(getClass(),"Unable to create generated gwt.xml file", outputFile, e);
+      X_Log.warn(GwtcContext.class,"Unable to create generated gwt.xml file", outputFile, e);
     }
     try (FileOutputStream fos = new FileOutputStream(outputFile)) {
       String value = GwtcXmlBuilder.HEADER +xml.getBuffer();
       X_IO.drain(fos, new ByteArrayInputStream(value.getBytes(GwtcXmlBuilder.UTF8)));
     } catch (IOException e) {
-      X_Log.warn(getClass(), "Unable to save generated gwt.xml file to ",outputFile,e,"\n"+xml.getBuffer());
+      X_Log.warn(GwtcContext.class, "Unable to save generated gwt.xml file to ",outputFile,e,"\n"+xml.getBuffer());
     }
 
   }
@@ -910,7 +919,7 @@ public class GwtcContext {
       iter = classpath.get().findClassesInPackage(pkg.getName());
     }
     for (ClassFile file : iter) {
-      X_Log.info(getClass(), "Scanning file ",file);
+      X_Log.info(GwtcContext.class, "Scanning file ",file);
       if ("package-info".equals(file.getEnclosedName())) {
         Package p = GwtReflect.getPackage(file.getPackage());
         if (!finishedPackages.contains(p)) {
@@ -923,7 +932,7 @@ public class GwtcContext {
             gwtc.addClass(cls);
           }
         } catch (ClassNotFoundException e) {
-          X_Log.warn(getClass(),"Unable to load class ",file);
+          X_Log.warn(GwtcContext.class,"Unable to load class ",file);
         }
       }
     }
@@ -931,5 +940,18 @@ public class GwtcContext {
 
   public Class<?> getFirstClassAdded() {
     return firstClassAdded;
+  }
+
+  public void setEntryPointPackage(String entryPackage) {
+    if (entryPackage == null) {
+      return;
+    }
+    if (getEntryPoint() == null) {
+      throw new IllegalStateException("Cannot set entry point package before setting entry point!");
+    }
+    if (getEntryPoint().startsWith(entryPackage)) {
+      return;
+    }
+    setEntryPoint(X_Source.qualifiedName(entryPackage, getEntryPoint()));
   }
 }
