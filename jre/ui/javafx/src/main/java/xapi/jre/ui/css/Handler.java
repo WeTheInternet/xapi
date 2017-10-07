@@ -4,14 +4,12 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.CollectionOptions;
 import xapi.collect.api.StringTo;
 import xapi.fu.Out1;
-import xapi.io.X_IO;
+import xapi.io.api.StringURLConnection;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
-import java.nio.charset.Charset;
 
 /**
  * I abhor the name of this class,
@@ -55,19 +53,4 @@ public class Handler extends URLStreamHandler {
         return new StringURLConnection(u, file);
     }
 
-    private static class StringURLConnection extends URLConnection {
-        private final Out1<String> contents;
-
-        public StringURLConnection(URL url, Out1<String> contents){
-            super(url);
-            this.contents = contents;
-        }
-
-        @Override
-        public void connect() throws IOException {}
-
-        @Override public InputStream getInputStream() throws IOException {
-            return X_IO.toStream(contents.out1(), Charset.defaultCharset().name());
-        }
-    }
 }
