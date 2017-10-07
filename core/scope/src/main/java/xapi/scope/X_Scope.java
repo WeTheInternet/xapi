@@ -1,8 +1,11 @@
 package xapi.scope;
 
 import xapi.fu.Do;
+import xapi.fu.Out1;
 import xapi.inject.X_Inject;
 import xapi.scope.api.Scope;
+import xapi.scope.impl.ThreadLocalDeferred;
+import xapi.scope.impl.ThreadLocalLazy;
 import xapi.scope.service.ScopeService;
 
 /**
@@ -25,5 +28,13 @@ public class X_Scope {
     }
     public static Scope currentScopeIfNull(Scope maybeNull) {
         return maybeNull == null ? currentScope() : maybeNull;
+    }
+
+    public static <T> ThreadLocalDeferred<T> localDeferred(Out1<T> o) {
+        return new ThreadLocalDeferred(o);
+    }
+
+    public static <T> ThreadLocalDeferred<T> localLazy(Out1<T> o) {
+        return new ThreadLocalLazy<>(o);
     }
 }

@@ -1,11 +1,13 @@
 package xapi.scope.request;
 
+import xapi.annotation.process.Multiplexed;
 import xapi.fu.Maybe;
 import xapi.scope.api.Scope;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/8/16.
  */
+@Multiplexed
 public interface RequestScope<RequestType extends RequestLike, ResponseType extends ResponseLike> extends Scope {
 
     RequestType getRequest();

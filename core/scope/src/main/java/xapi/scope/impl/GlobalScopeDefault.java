@@ -49,4 +49,8 @@ public class GlobalScopeDefault <User, Request extends RequestLike, Response ext
         return session.setUser(user);
     }
 
+    @Override
+    protected void onRelease() {
+        super.onRelease();
+    }
 }

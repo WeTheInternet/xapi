@@ -1,6 +1,7 @@
 package xapi.scope.impl;
 
 import xapi.annotation.inject.SingletonDefault;
+import xapi.annotation.process.Multiplexed;
 import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
 import xapi.fu.Do;
@@ -8,6 +9,7 @@ import xapi.fu.In1Out1;
 import xapi.fu.In2.In2Unsafe;
 import xapi.fu.Lazy;
 import xapi.inject.X_Inject;
+import xapi.scope.X_Scope;
 import xapi.scope.api.GlobalScope;
 import xapi.scope.api.Scope;
 import xapi.scope.service.ScopeService;
@@ -22,6 +24,7 @@ public class ScopeServiceDefault implements ScopeService {
 
     protected class ScopeMap {
         protected ClassTo<Scope> scopes = X_Collect.newClassMap(Scope.class);
+        protected ThreadLocal<ClassTo<Scope>> multiplexed = X_Scope.localDeferred(()->X_Collect.newClassMap(Scope.class));
         protected ClassTo<In1Out1<Class<? extends Scope>, Scope>> factories = X_Collect.newClassMap(In1Out1.class);
         protected AtomicReference<Scope> scope = new AtomicReference<>();
 
@@ -29,6 +32,7 @@ public class ScopeServiceDefault implements ScopeService {
             scopes.putAll(map.scopes);
             factories.putAll(map.factories);
             scope.set(map.scope.get());
+            multiplexed.get().putAll(map.multiplexed.get());
         }
     }
 
@@ -53,9 +57,12 @@ public class ScopeServiceDefault implements ScopeService {
             return (S) globalScope.out1();
         }
         final ScopeMap map = currentScope.get();
+        Scope scope;
         // Check key type hierarchy to find .forScope() methods that we can run without an instance
 
-        Scope scope = map.scopes.get(cls);
+        final boolean multiplexed = cls.getAnnotation(Multiplexed.class) != null;
+        final ClassTo<Scope> scopeMap = multiplexed ? map.multiplexed.get() : map.scopes;
+        scope = scopeMap.get(cls);
         if (scope == null) {
             final In1Out1<Class<? extends Scope>, Scope> factory = map.factories.get(cls);
             if (factory == null) {
@@ -66,7 +73,10 @@ public class ScopeServiceDefault implements ScopeService {
             if (scope.getParent() == null) {
                 scope.setParent(globalScope.out1());
             }
-            map.scopes.put(cls, scope);
+            scopeMap.put(cls, scope);
+            if (multiplexed) {
+                scope.onDetached(scopeMap::remove, cls);
+            }
         }
         return (S) scope;
     }
@@ -91,12 +101,21 @@ public class ScopeServiceDefault implements ScopeService {
     public <S extends Scope> void runInScope(S scope, In2Unsafe<S, Do> todo) {
         final ScopeMap map = currentScope.get();
         final Scope curScope = map.scope.get();
-        final Scope forType = map.scopes.get(scope.forScope());
+        boolean multiplexed = scope.getClass().getAnnotation(Multiplexed.class) != null;
+        final ClassTo<Scope> scopeMap = multiplexed ? map.multiplexed.get() : map.scopes;
+        final Scope forType = scopeMap.get(scope.forScope());
         map.scope.set(scope);
         submitTask(todo, scope, ()->{
             map.scope.set(curScope);
-            map.scopes.put(scope.forScope(), forType);
-            scope.release();
+            if (forType == null) {
+                scopeMap.remove(scope.forScope());
+            } else {
+                scopeMap.put(scope.forScope(), forType);
+            }
+            if (scope.forScope() != GlobalScope.class) {
+                // never release the global scope.
+                scope.release();
+            }
         });
     }
 

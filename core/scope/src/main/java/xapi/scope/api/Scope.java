@@ -1,5 +1,8 @@
 package xapi.scope.api;
 
+import xapi.annotation.process.Multiplexed;
+import xapi.collect.X_Collect;
+import xapi.collect.api.ClassTo;
 import xapi.except.NotConfiguredCorrectly;
 import xapi.except.NotYetImplemented;
 import xapi.fu.*;
@@ -21,6 +24,7 @@ public interface Scope extends HasLock {
   @SuppressWarnings({"unchecked", "UnnecessaryLocalVariable"})
   default SizedIterable<Class<?>> getLocalKeys() {
     return mutex(()->{
+      // TODO handle multiplexed inner values
       final SizedIterable keys = localData().keys();
       return keys;
     });
@@ -45,11 +49,26 @@ public interface Scope extends HasLock {
   }
 
   default <T, C extends T> T removeLocal(Class<C> cls) {
+    boolean isMultiplexed = cls.getAnnotation(Multiplexed.class) != null;
+    if (isMultiplexed) {
+      final MultiplexedScope map = getOrCreate(MultiplexedScope.class, k->new MultiplexedScope());
+      return (T) map.get().remove(cls);
+    }
     return mutex(()->this.<T, C>localData().remove(cls));
   }
 
   default <T, C extends T> T setLocal(Class<C> cls, T value) {
+    assert !isReleased() : "Do not add values to a released scope; instead, implement Immortal and call reincarnateIfNeeded()";
+    boolean isMultiplexed = cls.getAnnotation(Multiplexed.class) != null;
+    if (isMultiplexed) {
+      final MultiplexedScope map = getOrCreate(MultiplexedScope.class, k->new MultiplexedScope());
+      return (T) map.get().put(cls, value);
+    }
     return mutex(()->this.<T, C>localData().put(cls, value));
+  }
+
+  default boolean isReleased() {
+    return !hasLocal(ScopeKeys.ATTACHED_KEY);
   }
 
   default boolean isAttached() {
@@ -248,4 +267,10 @@ final class ScopeKeys {
   static final Scope NULL = MapLike::empty;
   private interface ParentKey extends Scope {}
   private interface AttachedKey extends Scope {}
+}
+final class MultiplexedScope extends ThreadLocal<ClassTo> {
+  @Override
+  protected ClassTo initialValue() {
+    return X_Collect.newClassMap(Object.class);
+  }
 }

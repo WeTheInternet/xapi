@@ -101,7 +101,7 @@ public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
       if (key.isInterrupted()) {
         params.uncaughtException(key, new InterruptedException());
       }
-      X_Log.info("Initializing Concurrent Environment", key);
+      X_Log.info(ConcurrencyServiceAbstract.class, "Initializing Concurrent Environment", key);
       final ConcurrentEnvironment inited = initializeEnvironment(key, params);
       inited.getThreads().forEach(t->
         environments.put(new AbstractPair<>(t, params), inited)

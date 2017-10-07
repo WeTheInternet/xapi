@@ -14,7 +14,7 @@ import xapi.scope.api.Scope;
  */
 public abstract class AbstractScope <Self extends AbstractScope<Self>> implements Scope, ReturnSelf<Self> {
 
-    private boolean released;
+    protected boolean released;
     private ClassTo<Object> local;
     private Mutable<Do> cleanup = new Mutable<>(Do.NOTHING);
 
@@ -34,32 +34,19 @@ public abstract class AbstractScope <Self extends AbstractScope<Self>> implement
     }
 
     @Override
-    public <T, C extends T> T getLocal(Class<C> cls) {
-        return (T) local.get(cls);
-    }
-
-    @Override
     public boolean hasLocal(Class cls) {
         return local.containsKey(cls);
-    }
-
-    @Override
-    public <T, C extends T> T setLocal(Class<C> cls, T value) {
-        assert !released : "Do not add values to a released scope; instead, implement Immortal and call reincarnateIfNeeded()";
-        return (T)local.put(cls, value);
     }
 
     public Self reincarnateIfNeeded() {
         return released ? reincarnate() : self();
     }
-    /**
-     * This method exists
-     * @return
-     */
+
     protected Self reincarnate() {
         throw new NotYetImplemented(getClass(), "Must implement reincarnate");
     }
 
+    @Override
     public boolean isReleased() {
         return released;
     }
@@ -72,6 +59,10 @@ public abstract class AbstractScope <Self extends AbstractScope<Self>> implement
             onRelease();
         }
         // once released,
+        final Scope parent = getParent();
+        if (parent != null) {
+            parent.removeLocal(forScope());
+        }
         local.clear();
     }
 

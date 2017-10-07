@@ -40,6 +40,7 @@ public final class X_Modifier {
 
   public static final int VOLATILE  = 0x0040;
 
+  public static final int PUBLIC_ABSTRACT  = PUBLIC | ABSTRACT;
   public static final int PUBLIC_FINAL  = PUBLIC | FINAL;
   public static final int PUBLIC_STATIC = PUBLIC | STATIC;
   public static final int PRIVATE_FINAL  = PRIVATE | FINAL;
