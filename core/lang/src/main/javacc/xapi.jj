@@ -4580,12 +4580,18 @@ MemberValuePair MemberValuePair():
 Expression MemberValue():
 {
 	Expression ret;
+	Type type;
 }
 {
   (
 	   ret = Annotation()
 	 |
 	   ret = MemberValueArrayInitializer()
+	 | (
+	   type = Type() {
+	     ret = new TypeExpr(type);
+	   }
+	 )
 	 |
 	   ret = ConditionalExpression()
 	 |

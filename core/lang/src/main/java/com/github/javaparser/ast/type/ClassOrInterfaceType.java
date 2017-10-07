@@ -58,7 +58,18 @@ public final class ClassOrInterfaceType extends Type implements NamedNode {
                     parsed = ((ReferenceType) parsed).getType();
                 }
                 if (parsed instanceof ClassOrInterfaceType) {
-                    setTypeArguments(((ClassOrInterfaceType)parsed).getTypeArguments());
+                    final TypeArguments typeArgs = ((ClassOrInterfaceType) parsed).getTypeArguments();
+                    final List<Type> types = typeArgs.getTypeArguments();
+                    for (int i = 0; i < types.size(); i++) {
+                        Type type = types.get(i);
+                        String simple = type.toSource();
+                        final String qualified = WellKnownTypes.qualifyType(simple);
+                        if (!qualified.equals(simple)) {
+                            type = JavaParser.parseType(qualified);
+                            types.set(i, type);
+                        }
+                    }
+                    setTypeArguments(typeArgs);
                 } else {
                     throw new IllegalStateException("Cannot extract generics from " + name +" ; got: " + parsed.toSource());
                 }
@@ -139,7 +150,14 @@ public final class ClassOrInterfaceType extends Type implements NamedNode {
     }
 
     public void setName(final String name) {
-        this.name = name;
+        int end = name.lastIndexOf('.');
+        if (end == -1) {
+            this.name = name;
+        } else {
+            this.name = name.substring(end+1);
+            assert scope == null : "Cannot send both a scope and a qualified name... (you sent " + name + " and " + scope + ")";
+            setScope(new ClassOrInterfaceType(name.substring(0, end)));
+        }
     }
 
     public void setScope(final ClassOrInterfaceType scope) {

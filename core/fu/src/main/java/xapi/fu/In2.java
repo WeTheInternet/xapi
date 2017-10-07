@@ -214,4 +214,16 @@ public interface In2<I1, I2> extends HasInput, Rethrowable, Lambda {
   default <I> In3<I1, I2, I> ignore3() {
     return (i1, i2, i) -> in(i1, i2);
   }
+
+  default In2<I1, I2> onlyOnce() {
+    final In2<I1, I2>[] self = new In2[]{this};
+    return (i1, i2) -> {
+      final In2<I1, I2> was;
+      synchronized (self) {
+        was = self[0];
+        self[0] = NULL;
+      }
+      was.in(i1, i2);
+    };
+  }
 }

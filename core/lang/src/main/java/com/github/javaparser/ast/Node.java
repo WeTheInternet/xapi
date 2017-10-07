@@ -444,7 +444,9 @@ public abstract class Node implements Serializable, Cloneable {
         } else {
             this.extras.clear();
         }
-        this.extras.putAll(extras);
+        if (extras != null) {
+            this.extras.putAll(extras);
+        }
     }
 
     public void borrowExtras(Node from) {

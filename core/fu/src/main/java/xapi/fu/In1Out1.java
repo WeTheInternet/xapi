@@ -138,9 +138,45 @@ In1Out1<I, O> extends Rethrowable, Lambda {
   }
 
   default <To> In1Out1<I,To> mapOut(In1Out1<O, To> mapper) {
+    // technically we can use `this.` in the lambda, and it should work,
+    // but that's not very readable as it requires moderately deep knowledge
+    // of the JVM to know this just by reading code.
+    final In1Out1<I, O> self = this;
     return in-> {
-      final O o = this.io(in);
+      final O o = self.io(in);
       return mapper.io(o);
+    };
+  }
+
+  default In1Out1<I, O> mapIfNull(In1Out1<I, O> other) {
+    if (other == RETURN_NULL) {
+      // no need to indirect to a known-null-returner :-)
+      return this;
+    }
+    final In1Out1<I, O> self = this;
+    return i->{
+      O mine = self.io(i);
+      if (mine == null) {
+        return other.io(i);
+      }
+      return mine;
+    };
+  }
+
+  default In1Out1<I, O> firstNotNull(In1Out1<I, O> ... other) {
+    final In1Out1<I, O> self = this;
+    return i->{
+      O val = self.io(i);
+      if (val != null) {
+        return val;
+      }
+      for (In1Out1<I, O> maybe : other) {
+        val = maybe.io(i);
+        if (val != null) {
+          return val;
+        }
+      }
+      return null;
     };
   }
 
@@ -180,5 +216,17 @@ In1Out1<I, O> extends Rethrowable, Lambda {
         spy.in(o);
         return o;
       };
+    }
+
+    static <I, O> In1Out1<I, O> alwaysThrow(Out1<Throwable> factory) {
+      return unsafe(ignored->{
+          throw factory.out1();
+      });
+    }
+
+    static <I, O> In1Out1<I, O> alwaysThrowFrom(In1Out1<I, Throwable> factory) {
+      return unsafe(value->{
+          throw factory.io(value);
+      });
     }
 }

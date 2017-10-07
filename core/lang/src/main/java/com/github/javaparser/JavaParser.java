@@ -39,6 +39,9 @@ import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
 import xapi.fu.In1Out1.In1Out1Unsafe;
+import xapi.log.X_Log;
+import xapi.log.api.LogLevel;
+import xapi.source.X_Source;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -334,11 +337,42 @@ public final class JavaParser {
         return e;
     }
 
+    /**
+     * Parse a string into a ui container (TODO: rename to tags).
+     *
+     * This is deprecated in favor of the method which also takes a path,
+     * as that method will print handy links to the location of any parse errors.
+     */
+    @Deprecated
     public static UiContainerExpr parseUiContainer(final String uiContainer) throws ParseException {
         StringReader sr = new StringReader(uiContainer);
-        final UiContainerExpr e = new ASTParser(sr).UiContainer();
-        sr.close();
-        return e;
+        try {
+            final UiContainerExpr e = new ASTParser(sr).UiContainer();
+            sr.close();
+            return e;
+        } catch (ParseException e) {
+            throw e;
+        }
+    }
+
+    public static UiContainerExpr parseUiContainer(final String path, final String uiContainer) throws ParseException {
+        return parseUiContainer(path, uiContainer, LogLevel.ERROR);
+    }
+    public static UiContainerExpr parseUiContainer(final String path, final String uiContainer, LogLevel level) throws ParseException {
+        StringReader sr = new StringReader(uiContainer);
+        try {
+            final UiContainerExpr e = new ASTParser(sr).UiContainer();
+            e.addExtra("location", path);
+            sr.close();
+            return e;
+        } catch (ParseException e) {
+            String linkToDoc = X_Source.pathToLogLink(path, e.currentToken.beginLine);
+            X_Log.log(level, "Parse error at document: " + linkToDoc);
+            // We do two separate logs, because the "who is logging this" link
+            // created from JavaParser.class argument will prevent the linkToDoc from rendering
+            X_Log.log(JavaParser.class, level, "\n[" + level + "] parsing", e);
+            throw e;
+        }
     }
 
     public static TypeParameter parseTypeParameter(final String typeParam) throws ParseException {

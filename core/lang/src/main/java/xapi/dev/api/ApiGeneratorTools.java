@@ -15,6 +15,7 @@ import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.ReferenceType;
 import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.type.VoidType;
+import com.github.javaparser.ast.type.WellKnownTypes;
 import com.github.javaparser.ast.visitor.ComposableXapiVisitor;
 import com.github.javaparser.ast.visitor.TransformVisitor;
 import xapi.collect.X_Collect;
@@ -72,6 +73,14 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
             .withDefaultCallback((node, context, superCall)->{
                 throw new NotYetImplemented("No handler registered for " + debugNode(node));
             })
+            .withEnclosedExpr((node, context)->{
+                node.getInner().accept(resolver, context);
+                return false;
+            })
+            .withInstanceOfExpr((node, context)->{
+                types.add(node.toSource());
+                return false;
+            })
             .withMethodCallExpr((call, c)->{
                 Maybe<AstMethodInvoker<Ctx>> toInvoke = methods().findMethod(ctx, call);
                 if (toInvoke.isPresent()) {
@@ -103,7 +112,13 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
                     }
                 }
 
-            types.add(resolveTemplate(ctx, templateLiteral(copy.toSource())));
+                final Transformer LITERAL_TRANSFORMER = new Transformer(){
+                    @Override
+                    public void normalizeToString(Printable printer, String template) {
+                        printer.print(template);
+                    }
+                };
+                types.add(resolveTemplate(ctx, templateLiteral(copy.toSource(LITERAL_TRANSFORMER))));
                 return false;
             })
             .withSysExpr((expr, c)->{
@@ -1004,54 +1019,7 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
     }
 
     default String lookupType(String s) {
-        return qualifyType(s);
-    }
-
-    static String qualifyType(String s) {
-        if (s.contains(".")) {
-            return s;
-        }
-        String raw = s.split("<")[0];
-        switch (raw) {
-            case "Iterator":
-            case "List":
-            case "Set":
-            case "ArrayList":
-            case "LinkedList":
-            case "Queue":
-            case "Dequeue":
-            case "HashSet":
-            case "TreeSet":
-            case "Map":
-            case "HashMap":
-            case "TreeMap":
-                return "java.util." + s;
-            case "ConcurrentMap":
-            case "ConcurrentHashMap":
-            case "ConcurrentSkipListMap":
-            case "ConcurrentLinkedDeque":
-                return "java.util.concurrent." + s;
-            case "MapLike":
-            case "ListLike":
-            case "SetLike":
-                return "xapi.fu." + s;
-            case "MappedIterable":
-            case "Chain":
-            case "ChainBuilder":
-            case "ArrayIterable":
-            case "CachingIterator":
-                return "xapi.fu.iterate." + s;
-            case "IntTo":
-            case "StringTo":
-            case "StringTo.Many":
-            case "ClassTo":
-            case "ClassTo.Many":
-            case "ObjectTo":
-            case "ObjectTo.Many":
-            case "Fifo":
-                return "xapi.collect.api." + s;
-        }
-        return s;
+        return WellKnownTypes.qualifyType(s);
     }
 
     StringTo<String> DEFAULT_MAP_TYPES = X_Collect.newStringMap(

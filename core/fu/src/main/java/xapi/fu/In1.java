@@ -223,8 +223,7 @@ public interface In1<I> extends HasInput, Rethrowable, Lambda {
   }
 
   default In1<I> onlyOnce() {
-    final In1<I>[] once = new In1[1];
-    once[0] = this::in;
+    final In1<I>[] once = new In1[]{this};
     return new In1<I>() {
       @Override
       public void in(I in) {

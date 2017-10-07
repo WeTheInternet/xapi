@@ -54,7 +54,7 @@ public class TransformVisitor extends DumpVisitor {
 
     String template = transformer.onTemplateStart(printer, n);
     if (!DO_NOT_PRINT.equals(template)) {
-      normalizeToString(printer, template);
+      transformer.normalizeToString(printer, template);
     }
     transformer.onTemplateEnd(printer);
   }
@@ -72,23 +72,6 @@ public class TransformVisitor extends DumpVisitor {
   @Override
   protected String resolveTypeParamName(TypeParameter typeParam) {
     return transformer.resolveTypeParamName(typeParam);
-  }
-
-  public static void normalizeToString(Printable printer, String template) {
-    printer.print("\"");
-    if (template.isEmpty()) {
-      printer.print("\"");
-    } else {
-      String[] lines = normalizeLines(template);
-      for (int i = 0; i < lines.length; i++) {
-        String line = lines[i];
-        printer.print(X_Source.escape(line));
-        if (i < lines.length - 1) {
-          printer.println("\\n\" +");
-        }
-        printer.print("\"");
-      }
-    }
   }
 
   public static String[] normalizeLines(String template) {

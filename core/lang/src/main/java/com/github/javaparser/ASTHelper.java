@@ -391,7 +391,7 @@ public final class ASTHelper {
                 return ifRaw.out1();
             }
             if (typeArgs.getTypeArguments().size() == 0) {
-                return cl.getName();
+                return WellKnownTypes.qualifyType(cl.getName());
             }
             return extractGeneric(typeArgs.getTypeArguments().get(pos));
         } else if (type instanceof ReferenceType) {

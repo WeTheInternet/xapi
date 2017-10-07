@@ -10,7 +10,37 @@ import java.util.Iterator;
  */
 public class CachingIterator <T> implements Iterator<T>, Rethrowable {
 
-    public interface ReplayableIterable<T> extends MappedIterable<T> {}
+    public interface ReplayableIterable<T> extends MappedIterable<T> {
+        default SizedReplayableIterable<T> sized() {
+            int[] cnt = {0};
+            forAll(i->cnt[0]++);
+            return new SizedReplayableIterable<>(this, cnt[0]);
+        }
+    }
+    public static class SizedReplayableIterable<T> implements SizedIterable<T>, ReplayableIterable<T> {
+        private final int size;
+        private final ReplayableIterable<T> source;
+
+        public SizedReplayableIterable(ReplayableIterable<T> source, int size) {
+            this.size = size;
+            this.source = source;
+        }
+
+        @Override
+        public SizedReplayableIterable<T> sized() {
+            return this;
+        }
+
+        @Override
+        public int size() {
+            return size;
+        }
+
+        @Override
+        public SizedIterator<T> iterator() {
+            return SizedIterator.of(size, source.iterator());
+        }
+    }
 
     private volatile boolean checking;
     private volatile Out2<Boolean, T> next;

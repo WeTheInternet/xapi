@@ -375,7 +375,7 @@ public interface X_Fu {
   }
 
   static <T> void setNth(T[] values, T value, int n) {
-    assert values.length < n && n >= 0;
+    assert values.length > n && n >= 0;
     values[n] = value;
   }
 

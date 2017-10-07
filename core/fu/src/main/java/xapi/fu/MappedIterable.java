@@ -2,11 +2,13 @@ package xapi.fu;
 
 import xapi.fu.Filter.Filter1;
 import xapi.fu.In1.In1Unsafe;
+import xapi.fu.In1Out1.In1Out1Unsafe;
 import xapi.fu.api.HasEmptiness;
 import xapi.fu.has.HasSize;
 import xapi.fu.iterate.ArrayIterable;
 import xapi.fu.iterate.CachingIterator;
 import xapi.fu.iterate.CachingIterator.ReplayableIterable;
+import xapi.fu.iterate.CachingIterator.SizedReplayableIterable;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
 import xapi.fu.iterate.CountedIterator;
@@ -22,6 +24,10 @@ import java.util.NoSuchElementException;
 public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
 
     default <To> MappedIterable<To> map(In1Out1<T, To> mapper) {
+        return adaptIterable(this, mapper);
+    }
+
+    default <To> MappedIterable<To> mapUnsafe(In1Out1Unsafe<T, To> mapper) {
         return adaptIterable(this, mapper);
     }
 
@@ -540,11 +546,10 @@ public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
      * (you want to read the full payload of a list, so you do not see concurrent mutations).
      *
      */
-    default ReplayableIterable<T> cached() {
+    default SizedReplayableIterable<T> cached() {
         final ReplayableIterable<T> itr = CachingIterator.cachingIterable(this);
         // Read the backing iterable into our cache.
-        itr.forAll(In1.ignored());
-        return itr;
+        return itr.sized();
     }
 
     default SizedIterable<T> counted() {

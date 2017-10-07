@@ -133,6 +133,9 @@ public interface Do extends AutoCloseable {
     return new DoOnce(this);
   }
 
+  static Do unsafe(DoUnsafe o) {
+    return o;
+  }
 }
 final class DoOnce implements Do {
 

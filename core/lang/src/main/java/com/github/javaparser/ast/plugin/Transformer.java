@@ -4,8 +4,10 @@ import com.github.javaparser.ast.TypeParameter;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.TemplateLiteralExpr;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
+import com.github.javaparser.ast.visitor.TransformVisitor;
 import xapi.dev.api.ApiGeneratorTools;
 import xapi.fu.Printable;
+import xapi.source.X_Source;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
@@ -34,4 +36,22 @@ public class Transformer {
   public String resolveTypeParamName(TypeParameter param) {
     return param.getName();
   }
+
+  public void normalizeToString(Printable printer, String template) {
+    printer.print("\"");
+    if (template.isEmpty()) {
+      printer.print("\"");
+    } else {
+      String[] lines = TransformVisitor.normalizeLines(template);
+      for (int i = 0; i < lines.length; i++) {
+        String line = lines[i];
+        printer.print(X_Source.escape(line));
+        if (i < lines.length - 1) {
+          printer.println("\\n\" +");
+        }
+        printer.print("\"");
+      }
+    }
+  }
+
 }

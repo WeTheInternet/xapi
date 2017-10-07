@@ -54,7 +54,7 @@ import java.util.Set;
  *
  */
 @SupportedAnnotationTypes({"xapi.annotation.inject.*"})
-@SupportedSourceVersion(SourceVersion.RELEASE_7)
+@SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class InjectionAnnotationProcessor extends AbstractProcessor{
 
   protected static class PlatformPair extends AbstractPair<String, Class<?>> {}

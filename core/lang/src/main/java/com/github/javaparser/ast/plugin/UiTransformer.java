@@ -7,6 +7,7 @@ import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.expr.MemberValuePair;
 import com.github.javaparser.ast.expr.SingleMemberAnnotationExpr;
 import com.github.javaparser.ast.expr.TemplateLiteralExpr;
+import com.github.javaparser.ast.expr.UiContainerExpr;
 import com.github.javaparser.ast.expr.UiExpr;
 import com.github.javaparser.ast.visitor.TransformVisitor;
 import xapi.fu.Printable;
@@ -25,7 +26,11 @@ public class UiTransformer extends Transformer {
       Printable printer, TemplateLiteralExpr template
   ) {
     if (shouldConvertToString(template)) {
-      TransformVisitor.normalizeToString(printer, template.getValueWithoutTicks());
+      if (delegate == null) {
+        normalizeToString(printer, template.getValueWithoutTicks());
+      } else {
+        delegate.normalizeToString(printer, template.getValueWithoutTicks());
+      }
       return DO_NOT_PRINT;
     }
     if (plugin == null) {
@@ -34,14 +39,14 @@ public class UiTransformer extends Transformer {
       }
       return super.onTemplateStart(printer, template);
     }
-    final UiExpr ui;
+    final UiContainerExpr ui;
     try {
       // For now, only supporting "html" roots
-      ui = JavaParser.parseUiContainer(template.getValueWithoutTicks());
+      ui = JavaParser.parseUiContainer("<content>"+template.getValueWithoutTicks()+"</content>");
     } catch (ParseException e) {
       throw new RuntimeException(e);
     }
-    return plugin.transformUi(printer, ui);
+    return plugin.transformUi(printer, ui.getBody());
   }
 
   protected boolean shouldConvertToString(TemplateLiteralExpr template) {

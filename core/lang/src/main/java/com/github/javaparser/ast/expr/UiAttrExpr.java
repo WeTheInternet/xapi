@@ -145,4 +145,10 @@ public class UiAttrExpr extends UiExpr {
   public static UiAttrExpr of(String name, Expression value) {
     return new UiAttrExpr(new NameExpr(name), name.startsWith("@"), value);
   }
+
+  public UiAttrExpr withNewValue(Expression valueExpr) {
+    final UiAttrExpr attr = of(getNameString(), valueExpr);
+    attr.setExtras(getExtras());
+    return attr;
+  }
 }

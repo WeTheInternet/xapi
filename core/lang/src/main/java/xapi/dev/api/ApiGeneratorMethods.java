@@ -15,6 +15,7 @@ import com.github.javaparser.ast.type.PrimitiveType;
 import com.github.javaparser.ast.type.PrimitiveType.Primitive;
 import com.github.javaparser.ast.type.ReferenceType;
 import com.github.javaparser.ast.type.Type;
+import com.github.javaparser.ast.type.WellKnownTypes;
 import com.github.javaparser.ast.type.WildcardType;
 import xapi.dev.api.AstMethodInvoker.AstMethodResult;
 import xapi.fu.Do;
@@ -181,6 +182,7 @@ public interface ApiGeneratorMethods<Ctx extends ApiGeneratorContext<Ctx>> exten
                 assert generics.length == 0 : "Primitives cannot have type arguments...";
                 return new TypeExpr(new PrimitiveType(primitive));
             } //:primitiveCheck
+            named = qualifyWellKnownType(named);
             final ClassOrInterfaceType rawType = new ClassOrInterfaceType(named);
             if (rawType.getTypeArguments() == null) {
                 rawType.setTypeArguments(TypeArguments.withArguments(refs));
@@ -189,6 +191,10 @@ public interface ApiGeneratorMethods<Ctx extends ApiGeneratorContext<Ctx>> exten
             }
             return new TypeExpr(rawType);
         }
+    }
+
+    default String qualifyWellKnownType(String named) {
+        return WellKnownTypes.qualifyType(named);
     }
 
     default TypeParameter $typeParam(ApiGeneratorTools<Ctx> tools, Ctx ctx, Expression name, Expression ... generics) {
@@ -389,6 +395,9 @@ public interface ApiGeneratorMethods<Ctx extends ApiGeneratorContext<Ctx>> exten
         String methodName = call.getName();
         ChainBuilder<Method> methods = new ChainBuilder<>();
         for (Method method : getClass().getMethods()) {
+            if (method.getDeclaringClass() == Object.class) {
+                continue;
+            }
             if (method.getName().equals(methodName)) {
                 methods.add(method);
             }

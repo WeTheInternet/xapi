@@ -159,4 +159,8 @@ public class UiContainerExpr extends UiExpr {
   public void setDocType(String docType) {
     this.docType = docType;
   }
+
+  public String getAttributeRequiredString(String id) {
+    return getAttributeNotNull(id).getExpression().toSource();
+  }
 }
