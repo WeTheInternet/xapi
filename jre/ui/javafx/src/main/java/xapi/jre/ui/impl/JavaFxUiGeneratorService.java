@@ -2,6 +2,7 @@ package xapi.jre.ui.impl;
 
 import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.ui.api.ContainerMetadata;
+import xapi.dev.ui.api.UiGeneratorPlatform;
 import xapi.dev.ui.impl.AbstractUiImplementationGenerator;
 import xapi.dev.ui.api.GeneratedUiComponent;
 import xapi.dev.ui.api.GeneratedUiImplementation;
@@ -17,9 +18,12 @@ import xapi.platform.JavaFxPlatform;
 
 import java.util.Arrays;
 
+import static xapi.dev.ui.api.UiGeneratorPlatform.PLATFORM_JAVA_FX;
+
 /**
  * Created by james on 6/17/16.
  */
+@UiGeneratorPlatform(PLATFORM_JAVA_FX)
 public class JavaFxUiGeneratorService extends AbstractUiImplementationGenerator<JavaFxCtx> {
 
   static final class JavaFxCtx extends ApiGeneratorContext<JavaFxCtx> {

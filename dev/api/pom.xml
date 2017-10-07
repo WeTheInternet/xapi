@@ -23,6 +23,10 @@
      </dependency>
      <dependency>
       <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-core-io</artifactId>
+     </dependency>
+     <dependency>
+      <groupId>net.wetheinter</groupId>
       <artifactId>xapi-core-scope</artifactId>
      </dependency>
      <dependency>
@@ -31,6 +35,7 @@
      </dependency>
 
     <!-- We do our testing in the uber module, to avoid cyclic dependencies -->
+
 
   </dependencies>
 

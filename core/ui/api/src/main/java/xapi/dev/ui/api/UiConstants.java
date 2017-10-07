@@ -8,4 +8,5 @@ public interface UiConstants {
     String EXTRA_MODEL_INFO = "__model_info__";
     String EXTRA_RESOURCE_PATH = "__path__";
     String EXTRA_FILE_NAME = "__file_name__";
+    String EXTRA_FOR_LOOP_VAR = "__for_var__";
 }

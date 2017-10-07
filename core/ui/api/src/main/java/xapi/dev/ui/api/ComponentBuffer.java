@@ -2,8 +2,11 @@ package xapi.dev.ui.api;
 
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.expr.NameExpr;
+import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
+import com.github.javaparser.ast.type.Type;
 import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
 import xapi.dev.api.ApiGeneratorContext;
@@ -17,8 +20,10 @@ import xapi.dev.ui.impl.InterestingNodeFinder.InterestingNodeResults;
 import xapi.fu.Lazy;
 import xapi.fu.Maybe;
 import xapi.fu.Out1;
+import xapi.source.X_Modifier;
 import xapi.source.read.JavaModel.IsQualified;
 
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -136,43 +141,69 @@ public class ComponentBuffer {
         ApiGeneratorContext ctx,
         GeneratedUiComponent other,
         UiNamespace namespace,
-        UiContainerExpr ui
+        UiContainerExpr ui,
+        Expression modelNode,
+        MethodBuffer toDom
     ) {
         GeneratedUiBase otherBase = other.getBase();
         // Our tag factory should be a method generated onto the base class;
         // if the source tag supplied a model or a style, we must pass those references in as parameters.
         final GeneratedUiComponent me = getGeneratedComponent();
 
+        final String elBuilder = otherBase.getElementBuilderType(namespace);
+        final GeneratedUiApi myApi = getGeneratedComponent().getApi();
+        String methodName = "create" + myApi.getWrappedName();
+        final MethodBuffer createMethod = otherBase.getOrCreateMethod(X_Modifier.PUBLIC_ABSTRACT, elBuilder, methodName);
         final GeneratedUiFactory externalBuilder = other.getFactory();
         GeneratedUiMethod method = component.createFactoryMethod(tools, ctx, namespace, externalBuilder);
         final String name = method.getMemberName();
+        final List<Expression> args = new ArrayList<>();
         MethodCallExpr call = new MethodCallExpr(null, name);
-
 
         method.setSource(ui);
         method.setContext(ctx);
 
+        if (modelNode != null) {
+            // when we are sent a model node, we are expecting newer semantics;
+            // we will leave the old code below for posterity,
+            // until such time that it is deemed fit for deletion (likely soon...)
+            if (modelNode.hasExtra(UiConstants.EXTRA_MODEL_INFO)) {
+                GeneratedUiMember member = modelNode.getExtra(UiConstants.EXTRA_MODEL_INFO);
+                assert member != null : "Cannot use a name expression without EXTRA_MODEL_INFO: " + tools.debugNode(modelNode);
+                final Type memberType = member.getMemberType();
+                final String typeName = tools.getComponentType(modelNode, memberType);
+                createMethod.addParameter(typeName, member.getMemberName());
+                args.add(modelNode);
+            }
+
+            other.getImpls()
+                .forAll(GeneratedUiImplementation::addChildFactory, getDefinition(), modelNode);
+
+            call.setArgs(args);
+
+            return call;
+        }
+
         final Maybe<UiAttrExpr> model = ui.getAttribute("model");
         final Maybe<UiAttrExpr> style = ui.getAttribute("style");
-        final String elBuilder = otherBase.getElementBuilderType(namespace);
 
-        final MethodBuffer creator = otherBase.getSource().getClassBuffer()
-            .createMethod("public abstract " + elBuilder + " " + name);
-        final List<Expression> args = new ArrayList<>();
         RequiredMethodType type = CREATE;
         if (model.isPresent()) {
             type = CREATE_FROM_MODEL;
-            args.add(tools.resolveVar(ctx, model.get().getExpression()));
+            final Expression modelExpr = model.get().getExpression();
+            final Expression resolved = tools.resolveVar(ctx, modelExpr);
+            args.add(resolved);
             method.addParam(me.getPublicModel().getWrappedName(), "model");
-            creator.addParameter(getGeneratedComponent().getPublicModel().getWrappedName(), "model");
+            createMethod.addParameter(getGeneratedComponent().getPublicModel().getWrappedName(), "model");
         }
         if (style.isPresent()) {
             type = type == CREATE_FROM_MODEL ? CREATE_FROM_MODEL_AND_STYLE : CREATE_FROM_STYLE;
             args.add( tools.resolveVar(ctx, style.get().getExpression()));
             final String styleType = namespace.getBaseStyleResourceType(CanAddImports.NO_OP);
             method.addParam(styleType, "style");
-            creator.addParameter(styleType, "style");
+            createMethod.addParameter(styleType, "style");
         }
+
         method.setType(type);
 
         call.setArgs(args);

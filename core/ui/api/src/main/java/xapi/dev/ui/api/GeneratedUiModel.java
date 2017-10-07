@@ -24,6 +24,7 @@ public class GeneratedUiModel extends GeneratedJavaFile {
     public GeneratedUiModel(GeneratedUiComponent owner, GeneratedJavaFile superType, String packageName, String className) {
         super(owner, superType, packageName, className);
         fields = X_Collect.newStringMap(GeneratedUiField.class);
+        setType(IsTypeDefinition.newInterface(packageName, className));
     }
 
     public StringTo<GeneratedUiField> getFields() {
@@ -42,6 +43,7 @@ public class GeneratedUiModel extends GeneratedJavaFile {
         source.setClassDefinition(type.toDefinition(), false);
         source.setPackage(type.getPackage());
         source.getClassBuffer().addInterface(Model.class);
+        assert source.toSource().contains("interface");
         return source;
     }
 

@@ -106,9 +106,12 @@ public class GeneratedClasspathInfo {
         }
 
         private void printInitLine() {
-            String suffix = owner.init.isResolved() ? "," : "";
+            boolean first = owner.init.isUnresolved();
             MethodBuffer init = owner.init.out1();
-            init.print(source.out1().getName()).print("()").println(suffix);
+            if (!first) {
+                init.println(",");
+            }
+            init.print(source.out1().getName()).print("()");
         }
 
         private String string(String s) {

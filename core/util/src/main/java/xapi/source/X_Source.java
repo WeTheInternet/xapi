@@ -391,4 +391,20 @@ public class X_Source {
       }
       return new String(chars);
     }
+
+  public static String pathToLogLink(String path) {
+    return pathToLogLink(path, null);
+  }
+  public static String pathToLogLink(String path, Integer line) {
+    String unixed = path.replace('\\', '/');
+    String lastBit = unixed.substring(unixed.lastIndexOf('/') + 1);
+    String prefix = unixed.substring(0, unixed.length() - lastBit.length()
+        // We don't advocate for using the default "" package, but we do guard for it
+        - (lastBit.length() == unixed.length() ? 0 : 1));
+    // If we have the path of the document, we can render a link that intellij will pick up.
+    String linkToDoc = prefix.replace('/', '.') + // make it look like a java qualified name
+        "(" + lastBit + ":" + (line == null ? 1 : line) + ")"; // print the file name and the line number to jump to source
+    // TODO: bother with other IDEs :-)
+    return linkToDoc;
+  }
 }

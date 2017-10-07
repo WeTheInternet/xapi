@@ -4,7 +4,9 @@ import com.github.javaparser.ast.expr.DynamicDeclarationExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.JsonContainerExpr;
 import com.github.javaparser.ast.expr.UiAttrExpr;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
+import xapi.collect.api.IntTo;
 import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.ui.api.*;
@@ -15,6 +17,9 @@ import xapi.model.X_Model;
 import xapi.model.api.KeyBuilder;
 import xapi.model.api.Model;
 import xapi.model.api.ModelBuilder;
+import xapi.model.api.ModelKey;
+
+import java.lang.reflect.Modifier;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 2/10/17.
@@ -90,6 +95,24 @@ public class UiTagModelGenerator extends UiFeatureGenerator {
                         isImmutable = pair.getAnnotation(anno -> anno.getNameString().equalsIgnoreCase(
                             "immutable")).isPresent();
                     }
+                    switch (type.toSource()) {
+                        case "IntTo":
+                            type = new ClassOrInterfaceType(IntTo.class.getName());
+                            break;
+                        case "ModelKey":
+                            type = new ClassOrInterfaceType(ModelKey.class.getName());
+                            break;
+                        default:
+                            final String typeSrc = type.toSource();
+                            switch (typeSrc.split("<")[0]) {
+                                case "IntTo":
+                                    type = new ClassOrInterfaceType(IntTo.class.getName() + typeSrc.substring(5)) ;
+                                    break;
+                                case "ModelKey":
+                                    type = new ClassOrInterfaceType(ModelKey.class.getName() + typeSrc.substring(8));
+                                    break;
+                            }
+                    }
                     apiModel.addField(tools, type, rawFieldName, isImmutable);
                     modOut.getImports().reserveSimpleName(rawFieldName);
                 }
@@ -112,6 +135,9 @@ public class UiTagModelGenerator extends UiFeatureGenerator {
 
             modOut.createField(out1 + "<" + keyBuilder+">", constantName + "_KEY_BUILDER")
                 .setInitializer(forType + "(MODEL_" + constantName + ")");
+
+            modOut.createMethod(Modifier.STATIC, keyBuilder, "newKey")
+                  .returnValue(constantName + "_KEY_BUILDER" + ".out1()");
 
             modOut.createField(out1 + "<" + modBuilder + "<" + modelType + ">>", constantName + "_MODEL_BUILDER")
                 .getInitializer()

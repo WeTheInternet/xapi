@@ -4,7 +4,7 @@ import com.github.javaparser.ASTHelper;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseException;
 import com.github.javaparser.ast.expr.*;
-import com.github.javaparser.ast.visitor.VoidVisitor;
+import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.source.ClassBuffer;
@@ -12,6 +12,7 @@ import xapi.dev.source.FieldBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.ui.api.*;
 import xapi.dev.ui.impl.UiGeneratorTools;
+import xapi.except.NotConfiguredCorrectly;
 import xapi.except.NotYetImplemented;
 import xapi.fu.Do;
 import xapi.fu.In1;
@@ -22,8 +23,6 @@ import xapi.fu.X_Fu;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
 import xapi.log.X_Log;
-
-import java.util.List;
 
 import static xapi.dev.ui.api.UiConstants.EXTRA_MODEL_INFO;
 import static xapi.fu.Out1.out1Deferred;
@@ -131,22 +130,39 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
                         ComponentBuffer otherTag = tools.getGenerator().getComponent(ctx, n.getName());
                         // We'll want to defer to a factory method on the other component.
                         if (otherTag == null) {
-                            // not
                             final GeneratedUiDefinition info = tools.getDefinition(ctx, n.getName());
-                            toDom.println(type + " " + refFieldName + " = create" + info.getApiName() + "();");
+                            if (info == null) {
+                                throw new NotConfiguredCorrectly("No definition found for " + n.getName());
+                            }
+                            toDom.print(type + " " + refFieldName + " = create" + info.getApiName() + "(");
 
                             // do the grunt work of getTagFactory, but w/out all the mess
-                            baseClass.getSource().getClassBuffer()
+                            final MethodBuffer baseMethod = baseClass.getSource().getClassBuffer()
                                 .createMethod("protected abstract " + baseClass.getElementBuilderType(namespace) + " create" + info.getApiName() + "();");
+
+                            if (nodeToUse instanceof NameExpr) {
+                                GeneratedUiMember member = nodeToUse.getExtra(UiConstants.EXTRA_MODEL_INFO);
+                                assert member != null : "Cannot use a name expression without EXTRA_MODEL_INFO: " + tools.debugNode(nodeToUse);
+                                // a local var reference will need to be passed to the method.
+                                final String sourceName = ((NameExpr)nodeToUse).getQualifiedName();
+                                final Type memberType = member.getMemberType();
+                                final String typeName = tools.getComponentType(nodeToUse, memberType);
+                                baseMethod.addParameter(typeName, sourceName);
+                                toDom.println(sourceName + ");");
+                            } else {
+                                toDom.println(");");
+                            }
 
                             component.getImpls()
                                 .forAll(GeneratedUiImplementation::addChildFactory, info, nodeToUse);
 
                         } else {
-
-                            MethodCallExpr factoryMethod = otherTag.getTagFactory(tools, ctx, component, namespace, n);
+                            if (!nodeToUse.hasExtra(EXTRA_MODEL_INFO)) {
+                                nodeToUse = owner.resolveReference(tools, ctx, component, baseClass, rootRefField, nodeToUse, false);
+                            }
+                            MethodCallExpr factoryMethod = otherTag.getTagFactory(tools, ctx, component, namespace, n, nodeToUse, toDom);
                             String initializer = tools.resolveString(ctx, factoryMethod);
-                            toDom.println(type + " " + refFieldName + " = " + initializer + ";");
+                                toDom.println(type + " " + refFieldName + " = " + initializer + ";");
                         }
                         printedVar = true;
                     } else {
@@ -216,7 +232,7 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
             }
         }
 
-        private void setRootRef(Maybe<Expression> refNode) {
+        private String setRootRef(Maybe<Expression> refNode) {
             final Expression refExpr = refNode.ifAbsentSupply(
                 out1Deferred(
                     TemplateLiteralExpr::templateLiteral,
@@ -227,6 +243,7 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
             rootRefField = refFieldName = baseClass.newFieldName(rootRef);
             refNameSpy.in(rootRefField);
             rootRefs.add(rootRefField);
+            return rootRefField;
         }
 
         private void handleNativeTag(
@@ -235,6 +252,7 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
             Maybe<Expression> refNode,
             ApiGeneratorContext ctx
         ) {
+            newBuilder.out1();
             final boolean isRoot = arg == null;
             final String parentRef = refFieldName;
             final Do undo = registerNode(n, refNode, isRoot);
@@ -283,7 +301,8 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
                                     }
                                     String type = toDom.addImport(ASTHelper.extractGeneric(modelInfo.getMemberType()));
                                     String call = tools.resolveString(ctx, endExpr);
-                                    if (modelInfo.getMemberType().hasRawType("IntTo")) {
+                                    final Type memberType = modelInfo.getMemberType();
+                                    if (memberType.hasRawType("IntTo")) {
                                         call = call + ".forEach()"; // ew.  But. well, it is what it is.
                                         // TODO: abstract this into something that understands the member type
                                     }
@@ -296,6 +315,7 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
                                     // we want the var to point to the named instance we just used.
                                     NameExpr var = new NameExpr(asName);
                                     var.setExtras(endExpr.getExtras());
+                                    var.addExtra(UiConstants.EXTRA_FOR_LOOP_VAR, true);
                                     Do undo = ctx.addToContext(asName, var);
                                     // Now, we can visit children
                                     if (index.isPresent()) {
@@ -737,19 +757,41 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
             // We explicitly want to generate shadow dom
             // (and inject the minimal amount of css needed)
             final Expression uiExpr = ui.getExpression();
-            if (uiExpr instanceof UiContainerExpr) {
-                // Look for template bindings, to figure out if we need to bind to any model fields
-                MethodBuffer toDom = owner.toDomMethod(tools.namespace(), component.getBase());
+            // TODO Look for template bindings, to figure out if we need to bind to any model fields
+            final UiNamespace namespace = tools.namespace();
+            MethodBuffer toDom = owner.toDomMethod(namespace, component.getBase());
+            ChainBuilder<String> rootRefs = Chain.startChain();
 
-                ChainBuilder<String> rootRefs = Chain.startChain();
+            final UiContainerExprVoidVisitorAdapter visitor = new UiContainerExprVoidVisitorAdapter(
+                component,
+                component.getBase(),
+                toDom,
+                tools,
+                rootRefs,
+                me);
+            final String newBuilder = component.getElementBuilderConstructor(namespace);
+            if (uiExpr instanceof JsonContainerExpr) {
+                // A ui w/ a json container must be an array,
+                final JsonContainerExpr json = (JsonContainerExpr) uiExpr;
+                if (!json.isArray()) {
+                    throw new IllegalArgumentException("Children of a ui=feature must be either an array or an element, " +
+                        "you sent: " + tools.debugNode(json));
+                }
+
+                // our element should act like / be a document fragment.
+                final String varName = visitor.setRootRef(Maybe.not());
+                String builderName = component.getBase().getElementBuilderType(namespace);
+                toDom.println(builderName + " " + varName + " = " + newBuilder + ";");
+
+                for (JsonPairExpr pair : json.getPairs()) {
+                    pair.getValueExpr().accept(visitor, null);
+                }
+                toDom.returnValue(varName);
+                return UiVisitScope.FEATURE_NO_CHILDREN;
+            }
+            if (uiExpr instanceof UiContainerExpr) {
                 // Now, visit any elements, storing variables to any refs.
-                uiExpr.accept(new UiContainerExprVoidVisitorAdapter(
-                    component,
-                    component.getBase(),
-                    toDom,
-                    tools,
-                    rootRefs,
-                    me), null);
+                uiExpr.accept(visitor, null);
 
                 // k.  All done.  Now to decide what to return.
                 if (rootRefs.size() == 1) {
@@ -759,9 +801,7 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
                 } else {
                     if (rootRefs.isEmpty()) {
                         // no root refs; just return an empty builder.
-                        toDom.returnValue(
-                            tools.getNamespace(component, true)
-                                .getElementBuilderConstructor(toDom));
+                        toDom.returnValue(newBuilder);
                     } else {
                         // For now, no support for multiple roots;
                         throw new NotYetImplemented("Multiple root refs not yet supported in " + component);

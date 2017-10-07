@@ -106,7 +106,8 @@ public class UiGeneratorVisitor extends VoidVisitorAdapter<UiGeneratorTools> {
             final UiFeatureGenerator myFeature = feature = service.getFeatureGenerator(n, generator);
             if (myFeature != null) {
                 final UiVisitScope scope = myFeature.startVisit(service, myGenerator, source, parent, n);
-                assert scope.getType() == ScopeType.FEATURE : "Expected feature scope " + scope;
+                assert scope.getType() == ScopeType.FEATURE : "Expected FEATURE scope but was " + scope.getType() + " : " + scope
+                    +"\n from " + service.debugNode(n);
                 final RemovalHandler undo = onScope.io(scope);
                 if (scope.isVisitChildren()) {
                     super.visit(n, service);

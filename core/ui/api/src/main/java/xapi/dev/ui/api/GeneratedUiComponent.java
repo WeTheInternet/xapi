@@ -551,11 +551,12 @@ public class GeneratedUiComponent {
     ) {
 
 
-        String myBaseName = getBase().getWrappedName();
+        String myBaseName = getApi().getWrappedName();
         final String name = "create" + myBaseName;
+        myBaseName = getApi().getQualifiedName();
         final Type returnType = tools
             .methods()
-            .$type(tools, ctx, stringLiteral(name))
+            .$type(tools, ctx, stringLiteral(myBaseName))
             .getType();
 
         final In2Out1<GeneratedUiLayer, UiContainerExpr, String> io =

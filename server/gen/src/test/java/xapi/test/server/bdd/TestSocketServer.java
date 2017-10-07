@@ -339,6 +339,16 @@ class TestSocketServer extends AbstractModel implements WebApp, Rethrowable, Xap
     }
 
     @Override
+    public boolean isClustered() {
+        return false;
+    }
+
+    @Override
+    public WebApp setClustered(boolean clustered) {
+        return null;
+    }
+
+    @Override
     public boolean isRunning() {
         return running;
     }

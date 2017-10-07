@@ -41,6 +41,7 @@ import xapi.server.api.Route.RouteType;
 import xapi.server.gen.WebAppComponentGenerator.WebAppGeneratorScope;
 import xapi.source.X_Source;
 import xapi.util.X_String;
+import xapi.util.X_Util;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -112,11 +113,15 @@ public class GwtFeatureGenerator extends UiFeatureGenerator {
         final Maybe<UiAttrExpr> attrName = gwtc.getAttribute("name");
         final Maybe<UiAttrExpr> attrClasspath = gwtc.getAttribute("classpath");
         final Maybe<UiAttrExpr> attrSource = gwtc.getAttribute("source");
+        final Maybe<UiAttrExpr> attrInherit = gwtc.getAttribute("inherit");
         String module = attrModule
             .mapIfAbsent(()->attrModule.getOrThrow(()->new IllegalArgumentException("A <gwtc /> element must have at least a name or module")))
             .mapNullSafe(UiAttrExpr::getExpression)
             .mapNullSafe(e->service.resolveString(ctx, e))
             .get();
+        final Maybe<String> moduleShortName = gwtc.getAttribute("moduleShortName")
+            .mapNullSafe(UiAttrExpr::getExpression)
+            .mapNullSafe(e -> service.resolveString(ctx, e));
         String name = attrName
             .mapNullSafe(WebAppGenerator::getExpressionSerialized, service, ctx)
             .get();
@@ -144,6 +149,13 @@ public class GwtFeatureGenerator extends UiFeatureGenerator {
         mb.println("final " + model + " " + var + " = " + create + "(" + model + ".class);");
         mb.println("final " + compiler + " " + comp + " = " + var + ".getOrCreateService();");
 
+        if (attrInherit.isPresent()) {
+            final IntTo<String> inherits = service.resolveToLiterals(ctx, attrInherit.get().getExpression());
+            for (String inherit : inherits) {
+                mb.println(comp + ".addGwtInherit(\"" + inherit + "\");");
+            }
+        }
+
         findEntryPoints(name, module, gwtc).forAll(
             cls ->
                 mb.println(compiler + ".addClass(" + mb.addImport(cls) + ".class);")
@@ -153,8 +165,13 @@ public class GwtFeatureGenerator extends UiFeatureGenerator {
                 mb.println(comp + ".addGwtInherit(\"" + cls + "\");")
         );
         mb.println("final " + mb.addImport(GwtManifest.class) + " " + manifest + " = " + var + ".getOrCreateManifest();");
-        if (name != null) {
-            mb.println(manifest + ".setModuleName(\"" + name + "\");");
+        if (module != null || name != null) {
+            mb.println(manifest + ".setModuleName(\"" + X_Util.firstNotNull(module,name) + "\");");
+        }
+        if (moduleShortName.isPresent()) {
+            mb.println(manifest + ".setModuleShortName(\"" + moduleShortName + "\");");
+        } else if (name != null) {
+            mb.println(manifest + ".setModuleShortName(\"" + name + "\");");
         }
 
         // Lets add sources first

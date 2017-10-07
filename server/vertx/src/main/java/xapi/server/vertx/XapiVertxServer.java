@@ -1,6 +1,8 @@
 package xapi.server.vertx;
 
 import com.github.javaparser.ast.expr.UiContainerExpr;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
@@ -24,7 +26,6 @@ import xapi.except.MultiException;
 import xapi.except.NotConfiguredCorrectly;
 import xapi.fu.*;
 import xapi.fu.Do.DoUnsafe;
-import xapi.fu.In2.In2Unsafe;
 import xapi.fu.In3.In3Unsafe;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
@@ -66,11 +67,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.SecureRandom;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.ServiceLoader;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.LockSupport;
+
+import static io.vertx.core.Future.succeededFuture;
 
 import com.google.gwt.dev.codeserver.CompileStrategy;
 
@@ -79,9 +85,16 @@ import com.google.gwt.dev.codeserver.CompileStrategy;
  */
 public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
 
+    static {
+        X_Model.register(ModelSession.class);
+    }
+
     private static final String SESSION_KEY = "wtis";
     private static final String INSTANCE_ID_COUNTER = "iids";
     private static final String EXPIRED = "Thu, 01 Jan 1970 00:00:00 GMT";
+    // This is only used in non-clustered mode, and would benefit from a persistent source
+    // to ensure uniqueness and monotonicity across server starts.
+    private static AtomicLong ts = new AtomicLong(System.nanoTime()/1024);
     private final WebApp webApp;
     private final PrimitiveSerializer primitives;
     private Vertx vertx;
@@ -115,7 +128,8 @@ public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
     protected Out1<Out1<String>> initializeIidFactory(WebApp webApp) {
         return ()->{
             if (manager == null) {
-                return null;
+                // no cluster, no problem... just create a simple shared counter
+                return ()-> "iid" + Long.toString(ts.incrementAndGet(), 36);
             }
 
             AtomicLong result = new AtomicLong();
@@ -303,21 +317,25 @@ public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
             // and will optimize once the platform matures
             if (cookies.has(SESSION_KEY)) {
                 // There is a session key; let's ensure we're synced up
-                final ModelKey key = ModelSession.SESSION_KEY_BUILDER.out1()
-                    .withId(cookies.get(SESSION_KEY)).buildKey();
-                X_Model.mutate(ModelSession.class, key, modelSession->{
-                    modelSession.setTouched(System.currentTimeMillis());
-                    return modelSession;
-                }, saved);
-            } else {
-                // no session key... let's properly initialize our session, and send along a cookie to get session back
-                String sessionKey = generateSessionKey();
-                scope.getResponse().addHeader("Set-Cookie", SESSION_KEY+"="+X_String.encodeURIComponent(sessionKey)+";path=/;");
-                model = ModelSession.SESSION_MODEL_BUILDER.out1().buildModel();
-                model.getKey().setId(sessionKey);
-                model.setTouched(System.currentTimeMillis());
-                X_Model.persist(model, saved);
+                final String cookie = cookies.get(SESSION_KEY);
+                if (!cookie.trim().isEmpty()) {
+
+                    final ModelKey key = ModelSession.SESSION_KEY_BUILDER.out1()
+                        .withId(cookie).buildKey();
+                    X_Model.mutate(ModelSession.class, key, modelSession->{
+                        modelSession.setTouched(System.currentTimeMillis());
+                        return modelSession;
+                    }, saved);
+                    return;
+                }
             }
+            // no session key... let's properly initialize our session, and send along a cookie to get session back
+            String sessionKey = generateSessionKey();
+            scope.getResponse().addHeader("Set-Cookie", SESSION_KEY+"="+X_String.encodeURIComponent(sessionKey)+";path=/;");
+            model = ModelSession.SESSION_MODEL_BUILDER.out1().buildModel();
+            model.getKey().setId(sessionKey);
+            model.setTouched(System.currentTimeMillis());
+            X_Model.persist(model, saved);
         });
     }
 
@@ -361,13 +379,15 @@ public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
                 .setMaxWorkerExecuteTime(200_000_000_000L);
         }
         exe = X_Process::runDeferred;
-        Vertx.clusteredVertx(vertxOptions, res->{
+        final Handler<AsyncResult<Vertx>> startup = res->{
             if (res.succeeded()) {
                 vertx = res.result();
                 final Scope scope = X_Scope.service().currentScope();
                 scope.setLocal(Vertx.class, vertx);
                 manager = ((VertxInternal) vertx).getClusterManager();
-                scope.setLocal(ClusterManager.class, manager);
+                if (manager != null) {
+                    scope.setLocal(ClusterManager.class, manager);
+                }
                 scope.setLocal(WebApp.class, webApp);
                 scope.setLocal(XapiServer.class, XapiVertxServer.this);
                 vertx.createHttpServer(opts)
@@ -387,7 +407,13 @@ public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
             } else {
                 X_Log.error(XapiVertxServer.class, "Vert.x failed to start", res.cause());
             }
-        });
+        };
+        if (webApp.isClustered()) {
+            Vertx.clusteredVertx(vertxOptions, startup);
+        } else {
+            final Vertx server = Vertx.vertx(vertxOptions);
+            startup.handle(succeededFuture(server));
+        }
 
 
         while (connection.isNull()) {
@@ -666,13 +692,13 @@ public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
         if (url.contains(".nocache.js")) {
             // request was for the nocache file; compile every time (for now)
             final GwtManifest manifest = module.getOrCreateManifest();
-            assert !resp.getResponse().headWritten() : "Head already written";
+            assert !resp.getResponse().headWritten() : "Head already written!";
             X_Process.runDeferred(()->{
                 final GwtcService service = module.getOrCreateService();
-                assert !resp.getResponse().headWritten() : "Head already written";
+                assert !resp.getResponse().headWritten() : "Head already written!!";
                 boolean[] done = {false};
                 Do onDone = () -> {
-                    assert !resp.getResponse().headWritten() : "Head already written";
+                    assert !resp.getResponse().headWritten() : "Head already written!!!";
                     Path path = Paths.get(manifest.getCompiledWar());
                     final Path file = path.resolve(payload + File.separatorChar + payload + ".nocache.js");
                     if (!done[0]) {
@@ -684,11 +710,17 @@ public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
                         callback.in(scope, null);
                     }
                 };
+                Duration maxTime = gwtMaxCompileTime();
+//                service.compile(manifest, maxTime.toMillis(), TimeUnit.MILLISECONDS, (code, error)->{
+//
+//                });
+
                 if (manifest.isRecompile()) {
                     final ServerRecompiler compiler = module.getRecompiler();
                     if (compiler != null) {
                         final In1<IsRecompiler> use = comp->{
-                            final CompiledDirectory result = comp.recompile();
+                            final CompiledDirectory result = comp.getOrCompile();
+                            X_Log.info(XapiVertxServer.class, "Gwt recompilation using strategy ", result.getStrategy());
                             if (result.getStrategy() != CompileStrategy.SKIPPED) {
                                 // only update the directory to serve if we did not skip the compile
                                 manifest.setCompileDirectory(result);
@@ -709,7 +741,7 @@ public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
                             module.setRecompiler(recompiler);
                             onDone.done();
                         };
-                        service.recompile(manifest, use);
+                        service.recompile(manifest, use.onlyOnce());
                     }
                 } else {
                     final int result = service.compile(manifest);
@@ -815,6 +847,10 @@ public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
                 callback.in(scope, null);
             }
         }
+    }
+
+    protected Duration gwtMaxCompileTime() {
+        return Duration.of(5, ChronoUnit.MINUTES); // hopefully optimistic...
     }
 
     @Override

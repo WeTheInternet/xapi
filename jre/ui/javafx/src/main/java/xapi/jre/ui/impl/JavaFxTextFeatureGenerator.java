@@ -33,6 +33,6 @@ public class JavaFxTextFeatureGenerator extends UiFeatureGenerator {
     mb.print(panel +".setText(")
       .print(isMethod ? text : "\"" + X_Source.escape(text) + "\"")
       .println(");");
-    return new UiVisitScope(ScopeType.CONTAINER).setVisitChildren(false);
+    return new UiVisitScope(ScopeType.FEATURE).setVisitChildren(false);
   }
 }

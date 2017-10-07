@@ -6,13 +6,13 @@
             child: @Nullable Model.class
         }
     api =
-    @Extends(xapi.ui.layout.HasDefaultSlot<$El>)
+    @Extends(xapi.ui.layout.HasDefaultSlot<El>)
     [
-        public $El getFirstChild();
+        public El getFirstChild();
     ]
     gwt-impl =
     [
-        public $El getFirstChild() {
+        public El getFirstChild() {
             // TODO: use an injected UiService to manage .firstChild?
             // that or force implementors to use UiElement...
             return root.getElement().getFirstChildElement();
@@ -20,14 +20,14 @@
     ]
     javafx-impl =
     [
-        public $El getFirstChild() {
+        public El getFirstChild() {
             // TODO: use an injected UiService to manage .firstChild?
             // that or force implementors to use UiElement...
             List<?> children = root.getElement().getChildren();
             if (children.isEmpty()) {
                 return null;
             }
-            return ($El)children.get(0);
+            return (El)children.get(0);
         }
     ]
 

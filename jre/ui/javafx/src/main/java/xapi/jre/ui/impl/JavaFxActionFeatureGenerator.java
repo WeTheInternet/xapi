@@ -58,6 +58,6 @@ public class JavaFxActionFeatureGenerator extends UiFeatureGenerator {
         .outdent()
         .println(");");
 
-    return visitScope(ScopeType.CONTAINER, false);
+    return visitScope(ScopeType.FEATURE, false);
   }
 }

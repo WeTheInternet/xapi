@@ -22,8 +22,10 @@ public interface Document {
   @JsProperty
   Document.RegisterElement getRegisterElement();
 
+  @SuppressWarnings("unusable-by-js")
   <E extends Element> E createElement(String string);
 
+  @SuppressWarnings("unusable-by-js")
   <E extends Element> E getElementById(String id);
 
   JsHTMLCollection getElementsByTagName(String id);

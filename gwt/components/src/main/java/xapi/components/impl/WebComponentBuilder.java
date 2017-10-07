@@ -234,10 +234,6 @@ public class WebComponentBuilder {
     return this;
   }
 
-  public WebComponentBuilder afterCreatedCallback(final Runnable function) {
-    return afterCreatedCallback(wrapRunnable(function));
-  }
-
   public <E extends Element> WebComponentBuilder afterCreatedCallback(final In1<E> callback) {
     return afterCreatedCallback(wrapIn1(callback));
   }

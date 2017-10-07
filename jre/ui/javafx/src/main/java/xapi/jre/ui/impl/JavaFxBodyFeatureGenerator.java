@@ -32,6 +32,6 @@ public class JavaFxBodyFeatureGenerator extends UiFeatureGenerator {
     }
     UiContainerExpr container = (UiContainerExpr) expr;
 
-    return visitScope(ScopeType.CONTAINER, false);
+    return visitScope(ScopeType.FEATURE, false);
   }
 }

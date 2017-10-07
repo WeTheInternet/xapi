@@ -63,6 +63,6 @@ public interface ShellSession extends Destroyable{
 	 */
 	boolean stdIn(String string);
 
-	int block(int i, TimeUnit seconds);
+	int block(long l, TimeUnit seconds);
 
 }

@@ -120,6 +120,7 @@ public class TestTemplate implements TemplateClassGenerator{
 	  };
 	  //run the compile
 	  int result = compiler.run(System.in, System.out, System.err, args);
+		
 	  if (result != 0)
 	    throw new RuntimeException("Java compile failed w/ status code "+result);
 	  //create a thread with the required classes on the classpath
@@ -142,6 +143,7 @@ public class TestTemplate implements TemplateClassGenerator{
 	  };
 	  t.setContextClassLoader(cl);
 	  t.run();
+	  t.join();
 	}
 
 }

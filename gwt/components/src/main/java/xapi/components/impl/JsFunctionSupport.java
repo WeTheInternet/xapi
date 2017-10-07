@@ -187,9 +187,12 @@ public class JsFunctionSupport {
           };
         }-*/;
 
+	@SuppressWarnings("unusable-by-js")
 	public static JsEventListener<?> fixListener(JsEventListener<?> callback) {
                 final JavaScriptObject fixed = wrapListener(callback);
-		return (JsEventListener<Event>) event -> invoke(fixed, callback, event);
+		@SuppressWarnings("unusable-by-js")
+		JsEventListener listener = event -> invoke(fixed, callback, event);
+		return listener;
 	}
 
 	public static Do fixDo(Do callback) {

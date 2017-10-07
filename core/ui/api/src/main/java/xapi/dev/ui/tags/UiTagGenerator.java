@@ -25,6 +25,7 @@ import xapi.fu.Out1;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
 import xapi.log.X_Log;
+import xapi.source.X_Modifier;
 import xapi.source.read.SourceUtil;
 import xapi.ui.api.Ui;
 import xapi.util.X_String;
@@ -246,10 +247,15 @@ public class UiTagGenerator extends UiComponentGenerator {
                                  renderGen = new UiTagRenderGenerator(pkg, name, this),
                                  genericsGen = new UiTagGenericsGenerator(pkg, name, this),
                                  inputGen = new UiTagInputGenerator(pkg, name, this),
-                                 cssGen = new UiTagCssGenerator(pkg, name, this)
+                                 cssGen = new UiTagCssGenerator(pkg, name, this),
+                                 callbackGen = new UiTagCallbackGenerator(pkg, name, this)
                                  ;
         features.put("ui", uiGen);
         features.put("shadow", uiGen);
+
+        // We already extract these manually
+        features.put("name", UiFeatureGenerator.DO_NOTHING);
+        features.put("tagName", UiFeatureGenerator.DO_NOTHING);
 
         // TODO: preparse model features?
         features.put("model", modelGen);
@@ -257,6 +263,11 @@ public class UiTagGenerator extends UiComponentGenerator {
 
         features.put("api", apiGen);
         features.put("impl", apiGen);
+
+        features.put("onCreated", callbackGen);
+        features.put("onAttached", callbackGen);
+        features.put("onDetached", callbackGen);
+        features.put("onAttributeChanged", callbackGen);
 
         for (String prefix : ((UiGeneratorTools<?>)tools).getImplPrefixes()) {
             features.put("impl-" + prefix, apiGen);
@@ -502,7 +513,7 @@ public class UiTagGenerator extends UiComponentGenerator {
         ClassBuffer output = ui.getSource().getClassBuffer();
         String builderType = output.addImport(ui.getElementBuilderType(namespace));
         // TODO check if this builderType expects generics...
-        final MethodBuffer method = output.createMethod("public " + builderType + " toDom()");
+        final MethodBuffer method = ui.getOrCreateMethod(X_Modifier.PUBLIC,  builderType, "toDom");
         return method;
 
     }

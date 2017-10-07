@@ -297,14 +297,14 @@ public class JavacServiceImpl implements JavacService {
           final Object result = props.setValue(name, value);
           if (result != null) {
             if (!result.equals(value)) {
-              X_Log.warn(getClass(), "Overwriting property ", name, " was ", result, " set to: ", value);
+              X_Log.warn(JavacServiceImpl.class, "Overwriting property ", name, " was ", result, " set to: ", value);
             }
           }
 
         }
       }
     } catch (IOException e) {
-      e.printStackTrace();
+        X_Log.error(JavacServiceImpl.class, "Error reading properties files", e);
     }
   }
 

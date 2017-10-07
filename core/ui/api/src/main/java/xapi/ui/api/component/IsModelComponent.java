@@ -1,7 +1,9 @@
 package xapi.ui.api.component;
 
 import xapi.fu.iterate.SizedIterable;
+import xapi.model.X_Model;
 import xapi.model.api.Model;
+import xapi.model.service.ModelCache;
 
 /**
  * Successor to xapi-components module's IsWebComponent interface,
@@ -30,4 +32,13 @@ public interface IsModelComponent
 {
 
     M getModel();
+
+    /**
+     * @return X_Model.cache(), unless you override with a local cache
+     * (for example, if you want to perform server side rendering,
+     * and wish to supply a cache that you can serialize along with any DOM).
+     */
+    default ModelCache cache() {
+        return X_Model.cache();
+    }
 }

@@ -34,4 +34,11 @@ public class ModelComponentOptions
         return this;
     }
 
+    public M getModel() {
+        return model;
+    }
+
+    public void setModel(M model) {
+        this.model = model;
+    }
 }

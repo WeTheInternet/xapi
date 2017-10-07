@@ -12,12 +12,15 @@ import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.dev.ui.impl.UiGeneratorTools;
+import xapi.fu.In2;
 import xapi.fu.MappedIterable;
 import xapi.fu.Mutable;
 import xapi.fu.Out2;
 import xapi.fu.Out3;
 import xapi.fu.X_Fu;
 import xapi.fu.iterate.CachingIterator;
+import xapi.fu.iterate.Chain;
+import xapi.fu.iterate.ChainBuilder;
 import xapi.fu.iterate.SizedIterable;
 import xapi.reflect.X_Reflect;
 import xapi.source.read.JavaModel.IsTypeDefinition;
@@ -42,6 +45,7 @@ public class GeneratedUiImplementation extends GeneratedUiLayer {
     protected final String implName;
     private final EnumMap<RequiredMethodType, Out2<GeneratedUiMethod, MethodCallExpr>> requiredMethods;
     private final StringTo<RequiredChildFactory> childFactories;
+    private final ChainBuilder<In2<GeneratedUiImplementation, MethodBuffer>> callbackWriters;
 
     public GeneratedUiImplementation(GeneratedUiComponent owner, String pkg) {
         super(owner.getApi(), pkg, owner.getApi().getTypeName(), ImplLayer.Impl, owner);
@@ -50,6 +54,7 @@ public class GeneratedUiImplementation extends GeneratedUiLayer {
         setSuffix("Component");
         requiredMethods = new EnumMap<>(RequiredMethodType.class);
         childFactories = X_Collect.newStringMap(RequiredChildFactory.class);
+        callbackWriters = Chain.startChain();
     }
 
     public String getAttrKey() {
@@ -156,6 +161,7 @@ public class GeneratedUiImplementation extends GeneratedUiLayer {
         return from;
     }
 
+    @Deprecated
     public boolean requireMethod(RequiredMethodType type, GeneratedUiMethod method, MethodCallExpr call) {
         final Out2<GeneratedUiMethod, MethodCallExpr> was = requiredMethods.put(type, out2Immutable(method, call));
         return was == null;
@@ -214,5 +220,14 @@ public class GeneratedUiImplementation extends GeneratedUiLayer {
 
     public void registerBuilder(GeneratedUiFactory builder) {
 
+    }
+
+    public void writeCallbacks(MethodBuffer buffer) {
+        callbackWriters.forAll(In2::in, this, buffer);
+    }
+
+    public void registerCallbackWriter(In2<GeneratedUiImplementation, MethodBuffer> callback) {
+        assert callbackWriters.noneMatch(callback::equals);
+        callbackWriters.add(callback);
     }
 }

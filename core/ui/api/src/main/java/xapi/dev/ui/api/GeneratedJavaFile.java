@@ -3,6 +3,8 @@ package xapi.dev.ui.api;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.dev.source.ClassBuffer;
+import xapi.dev.source.FieldBuffer;
+import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.fu.Lazy;
 import xapi.fu.X_Fu;
@@ -19,6 +21,8 @@ public class GeneratedJavaFile {
     private final Lazy<SourceBuilder<GeneratedJavaFile>> source;
     private final Lazy<StringTo<Integer>> fieldNames;
     private final Lazy<StringTo<Integer>> methodNames;
+    private final Lazy<StringTo<MethodBuffer>> methods;
+    private final Lazy<StringTo<FieldBuffer>> fields;
     private final String packageName;
     private final String typeName;
     protected final GeneratedJavaFile superType;
@@ -45,8 +49,10 @@ public class GeneratedJavaFile {
         this.packageName = pkg;
         this.superType = superType;
         this.typeName = cls;
-        fieldNames = Lazy.deferred1(() -> X_Collect.newStringMap(Integer.class));
-        methodNames = Lazy.deferred1(() -> X_Collect.newStringMap(Integer.class));
+        fieldNames = Lazy.deferred1(X_Collect::newStringMap, Integer.class);
+        methodNames = Lazy.deferred1(X_Collect::newStringMap, Integer.class);
+        methods = Lazy.deferred1(X_Collect::newStringMap, MethodBuffer.class);
+        fields = Lazy.deferred1(X_Collect::newStringMap, FieldBuffer.class);
     }
 
     public String newFieldName(String prefix) {
@@ -171,5 +177,13 @@ public class GeneratedJavaFile {
 
     public GeneratedUiComponent getOwner() {
         return owner;
+    }
+
+    public MethodBuffer getOrCreateMethod(int modifiers, String returnType, String name) {
+        return methods.out1().getOrCreate(name, n->{
+            final String realName = newMethodName(name);
+            final MethodBuffer method = getSource().getClassBuffer().createMethod(modifiers, returnType, realName);
+            return method;
+        });
     }
 }

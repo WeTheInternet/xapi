@@ -15,9 +15,6 @@ import elemental.dom.Node;
 import xapi.components.api.ComponentNamespace;
 import xapi.components.api.UiConfig;
 import xapi.components.impl.GwtModelComponentMixin;
-import xapi.model.api.ModelKey;
-import xapi.model.service.ModelCache;
-import xapi.ui.api.component.*;
 import xapi.components.impl.WebComponentBuilder;
 import xapi.components.impl.WebComponentSupport;
 import xapi.components.impl.WebComponentVersion;
@@ -34,12 +31,24 @@ import xapi.fu.Maybe;
 import xapi.fu.Out1;
 import xapi.inject.X_Inject;
 import xapi.model.X_Model;
+import xapi.model.api.ModelKey;
+import xapi.model.service.ModelCache;
 import xapi.platform.GwtPlatform;
+import xapi.ui.api.component.AbstractComponent;
+import xapi.ui.api.component.AbstractModelComponent;
+import xapi.ui.api.component.ComponentConstructor;
+import xapi.ui.api.component.ComponentOptions;
+import xapi.ui.api.component.IsComponent;
+import xapi.ui.api.component.IsModelComponent;
+import xapi.ui.api.component.ModelComponentOptions;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 
+import static xapi.dev.ui.api.UiGeneratorPlatform.PLATFORM_WEB_COMPONENT;
+
+@UiGeneratorPlatform(PLATFORM_WEB_COMPONENT)
 public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator <WebComponentContext> {
 
     private String configType;
@@ -113,6 +122,7 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
                 final GeneratedTypeParameter modelParam = new GeneratedTypeParameter(UiNamespace.TYPE_MODEL,
                     new TypeParameter(baseModel, modelType));
                 superType.addTypeParameter(2, modelParam);
+                baseOut.makeAbstract();
                 base.addLocalDefinition(UiNamespace.TYPE_MODEL, new ReferenceType(modelType));
             }
             result.updateSupertype(superType);
@@ -256,7 +266,8 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
 
         final GeneratedUiApi api = component.getOwner().getApi();
         // TODO different supertypes based on needs
-        final String apiGenerics = "<" + node + ", " + element + ", " + api.getWrappedName() + "<" + node+", " + element + ">>";
+        final String genericName = type; // api.getTypeName() + "<" + node+", " + element + ">;
+        final String apiGenerics = "<" + node + ", " + element + ", " + genericName +">";
 
         String ctorName = "NEW_" + generated.getTagName().toUpperCase().replace('-', '_');
         out.createField(ctor + apiGenerics, ctorName)
@@ -265,7 +276,6 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
 
         out.createConstructor(Modifier.PUBLIC, element+" el")
             .println("super(el);");
-        // TODO: call super once we fixup inheritance chain?
 
         final MethodBuffer mthd = out
             .createMethod("public static void assemble()")
@@ -296,8 +306,8 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
             .outdent()
             .println("});");
 
-
-        // TODO Add various callbacks
+        // Let the component print various callbacks
+        component.writeCallbacks(mthd);
 
         mthd.println(ctorName + " = " + support+".define(")
             .indentln("\"" + buffer.getTagName() + "\", component);");
@@ -313,9 +323,9 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
             .indent()
             .println("assert e != null;")
             .println("assert e.getTagName().toLowerCase().equals(\"" + generated.getTagName() +"\");")
-            .print("final " + api.getWrappedName() + " component = ")
+            .print("final " + type + " component = ")
             .println(compNs + ".getComponent(e, getUi);")
-            .returnValue("(" + type + ") component;")
+            .returnValue("component")
             .outdent()
 
             ;
@@ -326,7 +336,7 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
             .println("if (opts == null) {")
             .indentln("opts = new " + opts + "<>();")
             .println("}")
-            .returnValue("("+ type + ")" + ctorName + ".constructComponent(opts, getUi)");
+            .returnValue(ctorName + ".constructComponent(opts, getUi)");
 
         if (model.isPresent()) {
             component.getSource().getClassBuffer()
@@ -338,35 +348,72 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
             final Expression source = child.getSourceNode();
             final String eleBuilder = component.getElementBuilderType(ns);
             String name = "create" + def.getApiName();
-            final MethodBuffer createChild = out.createMethod("public " + eleBuilder + " " + name);
-            if (def.getModelName() != null) {
+            final MethodBuffer createChild = out.createMethod("public " + eleBuilder + " " + name)
+                                                .addAnnotation(Override.class)
+                                                .println("final " + eleBuilder + " builder = newBuilder()")
+                                                .indentln(".setTagName(\"" + def.getTagName() + "\");");
+            final String keyName;
+            boolean printClosingBrace = false;
+            if (def.getModelName() == null) {
+                keyName = null;
+            } else {
                 final ApiGeneratorContext ctx = buffer.getRoot().getContext();
                 final Expression resolved = getTools().resolveVar(ctx, source);
-                String printModel = getTools().resolveString(ctx, resolved)
-                                    // filthy hack... good enough for now, but we need
-                                    // to bring sanity to our ApiGeneratorContext, and how it is distributed
-                                    .replace("$model", "getModel()");
                 final String modName = out.addImport(def.getQualifiedModelName());
                 final String xmodel = out.addImport(X_Model.class);
                 final String modelCache = out.addImport(ModelCache.class);
                 final String modelKey = out.addImport(ModelKey.class);
-                int lastGet = printModel.lastIndexOf("get");
-                final String setterName = printModel.substring(0, lastGet) + "s" + printModel.substring(lastGet + 1);
+                GeneratedUiMember modelInfo = resolved.getExtra(UiConstants.EXTRA_MODEL_INFO);
                 final String modKeyConstant = def.getModelKeyConstant();
-                createChild .println(modName + " mod = " + printModel + ";")
-                            .println("if (mod == null) {")
-                            .indentln("mod = " + xmodel + ".create(" + modName+".class);")
-                            .indentln(setterName.substring(0, setterName.length()-1) + "mod);")
-                            .println("}")
-                            .println(modelCache + " cache = " + xmodel + ".cache();")
-                            .println(modelKey + " key = cache.ensureKey(" + modName + "." + modKeyConstant + ", mod);")
-                            .println("cache.cacheModel(mod, ignore->{});");
-            }
-            createChild.println("final " + eleBuilder + " builder = newBuilder()")
-                       .indentln(".setTagName(\"" + def.getTagName() + "\");");
+                if (modelInfo != null) {
+                    final String typeToUse = getTools().getComponentType(resolved, modelInfo.getMemberType());
+                    String paramType = out.addImport(typeToUse);
+                    String varName = modelInfo.getMemberName();
+                    createChild.addParameter(paramType, varName);
+                    createChild.println("if (" + varName + " != null) {")
+                               .indent();
+                    printClosingBrace = true;
+                    if ("ModelKey".equals(paramType)) {
+                        // We are being sent a key.
+                        keyName = varName;
+                    } else {
+                        // assume it is a model
+                        createChild
+                                    // TODO: route cache and key as local var names
+                                   .println(modelCache + " cache = " + "cache();")
+                                   .println(modelKey + " key = cache.ensureKey(" + modName + "." + modKeyConstant+", " + varName + ");")
+                                   .println("cache.cacheModel(" + varName + ", ignore->{});");
+                        keyName = "key";
+                    }
+                } else {
+                    // This mess leftover from initial prototype...
 
-            if (def.getModelName() != null) {
-                createChild.println("builder.setAttribute(\"data-model-id\", key.toString());");
+                    String printModel = getTools().resolveString(ctx, resolved)
+                        // filthy hack... good enough for now, but we need
+                        // to bring sanity to our ApiGeneratorContext, and how it is distributed
+                        .replace("$model", "getModel()");
+                    int lastGet = printModel.lastIndexOf("get");
+                    final String setterName = printModel.substring(0, lastGet) + "s" + printModel.substring(lastGet + 1);
+                    createChild .println(modName + " mod = " + printModel + ";")
+                                .println("if (mod == null) {")
+                                .indentln("mod = " + xmodel + ".create(" + modName+".class);")
+                                .indentln(setterName.substring(0, setterName.length()-1) + "mod);")
+                                .println("}")
+                                .println(modelCache + " cache = " + xmodel + ".cache();")
+                                .println(modelKey + " key = cache.ensureKey(" + modName + "." + modKeyConstant + ", mod);")
+                                .println("cache.cacheModel(mod, ignore->{});");
+                    keyName = "key";
+                }
+            }
+
+            if (keyName != null) {
+                createChild
+                    .println("if (" + keyName + " != null) {")
+                    .indentln("builder.setAttribute(\"data-model-id\", " + keyName + ".toString());")
+                    .println("}");
+            }
+            if (printClosingBrace) {
+                createChild.outdent().println("}");
             }
 
             createChild.println("return builder;");

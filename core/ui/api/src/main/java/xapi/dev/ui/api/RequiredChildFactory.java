@@ -9,6 +9,7 @@ public class RequiredChildFactory {
     private final GeneratedUiDefinition definition;
     private final Expression sourceNode;
 
+
     public RequiredChildFactory(GeneratedUiDefinition definition, Expression sourceNode) {
         this.definition = definition;
         this.sourceNode = sourceNode;

@@ -154,7 +154,7 @@ public class CompilerSettings implements Rethrowable {
             throw rethrow(e);
         }
 
-        X_Log.info(getClass(), "Javac args:\n",
+        X_Log.info(CompilerSettings.class, "Javac args:\n",
               "javac " + X_String.join(" ", args));
         return args.toArray(new String[args.size()]);
     }

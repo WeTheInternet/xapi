@@ -132,12 +132,12 @@ class ShellSessionDefault implements ShellSession, Do {
   }
 
   @Override
-  public int block(final int i, final TimeUnit seconds) {
+  public int block(final long l, final TimeUnit seconds) {
     final Thread waiting = Thread.currentThread();
     X_Process.newThread(() -> {
         synchronized (ShellSessionDefault.this) {
           try {
-            ShellSessionDefault.this.wait(seconds.toMillis(i), 0);
+            ShellSessionDefault.this.wait(seconds.toMillis(l), 0);
           } catch (final InterruptedException e) {
             Thread.currentThread().interrupt();
             waiting.interrupt();

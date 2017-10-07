@@ -1,6 +1,7 @@
 package xapi.server.vertx;
 
 import xapi.annotation.inject.InstanceOverride;
+import xapi.annotation.process.Multiplexed;
 import xapi.scope.request.RequestScope;
 import xapi.scope.impl.AbstractScope;
 
@@ -8,6 +9,7 @@ import xapi.scope.impl.AbstractScope;
  * Created by James X. Nelson (james @wetheinter.net) on 10/2/16.
  */
 @InstanceOverride(implFor = RequestScope.class)
+@Multiplexed
 public class RequestScopeVertx extends AbstractScope<RequestScopeVertx> implements RequestScope <VertxRequest, VertxResponse> {
 
     private VertxRequest req;

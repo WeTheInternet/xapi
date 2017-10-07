@@ -8,5 +8,6 @@ import jsinterop.annotations.JsFunction;
  */
 @JsFunction @FunctionalInterface
 public interface JsEventListener <T extends Event> {
+    @SuppressWarnings("unusable-by-js")
     void onEvent(T event);
 }

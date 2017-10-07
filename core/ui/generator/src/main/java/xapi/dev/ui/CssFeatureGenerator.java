@@ -62,7 +62,7 @@ public class CssFeatureGenerator extends UiFeatureGenerator {
       }
       // Now transform the css ast into commands that will apply style to an element.
       container.getStyle().addApplied(containers);
-      return UiVisitScope.CONTAINER_VISIT_CHILDREN;
+      return UiVisitScope.FEATURE_VISIT_CHILDREN;
     }
 
     if (isClassAttr) {
@@ -129,7 +129,7 @@ public class CssFeatureGenerator extends UiFeatureGenerator {
       container.getStyle().addRules(containers);
     }
 
-    return UiVisitScope.CONTAINER_VISIT_CHILDREN;
+    return UiVisitScope.FEATURE_VISIT_CHILDREN;
   }
 
   private boolean checkForDynamism(List<CssContainerExpr> containers) {

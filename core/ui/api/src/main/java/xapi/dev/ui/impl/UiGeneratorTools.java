@@ -3,6 +3,8 @@ package xapi.dev.ui.impl;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
+import com.github.javaparser.ast.type.Type;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.collect.impl.SimpleLinkedList;
@@ -26,6 +28,7 @@ import xapi.source.X_Source;
 import xapi.util.X_String;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 
 import static xapi.fu.Out2.out2Immutable;
@@ -209,6 +212,26 @@ public abstract class UiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> im
         // TODO: not this...  for now, you can override to inject these.
         // we'll have a more formal solution relying on xapi.settings later...
         return ArrayIterable.iterate("gwt", "javafx");
+    }
+
+    public String getComponentType(Expression nodeToUse, Type memberType) {
+        if (Boolean.TRUE.equals(nodeToUse.getExtra(UiConstants.EXTRA_FOR_LOOP_VAR))) {
+            // When we are a for loop var, then we are either an array or an collection.
+            // For now, we'll just handle the collection case.
+            if (memberType instanceof ClassOrInterfaceType) {
+                final List<Type> typeArgs = ((ClassOrInterfaceType) memberType).getTypeArgs();
+                if (typeArgs.size() != 1) {
+                    throw new IllegalArgumentException("For loop var " + debugNode(nodeToUse) + " " +
+                        "must have a type with exactly one type argument; you sent " + debugNode(memberType));
+                }
+                return typeArgs.get(0).toSource();
+            } else {
+                assert false : "Not tested / implemented";
+                return memberType.toSource();
+            }
+        } else {
+            return memberType.toSource();
+        }
     }
 
     // TODO: add a collector for things which need to emit values to settings.xapi

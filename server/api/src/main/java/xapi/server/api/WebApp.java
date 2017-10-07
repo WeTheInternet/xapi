@@ -40,6 +40,10 @@ public interface WebApp extends Model {
 
     IntTo<Route> getRoute();
 
+    boolean isClustered();
+
+    WebApp setClustered(boolean clustered);
+
     boolean isRunning();
 
     WebApp setRunning(boolean running);

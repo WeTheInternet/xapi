@@ -26,6 +26,7 @@ import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
 import xapi.log.X_Log;
 import xapi.reflect.X_Reflect;
+import xapi.source.X_Source;
 import xapi.source.read.JavaModel.IsQualified;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
@@ -79,6 +80,7 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
 
     public <T> void generateComponents(UiGeneratorService<T> service) {
 
+        final Moment start = X_Time.now();
         X_Log.trace(TAG, "Output dir ", genDir.getAbsolutePath());
         // find all .xapi files in our search package
         final FileBasedSourceHelper<T> sources = new FileBasedSourceHelper<>(genDir::getAbsolutePath, genDir::getAbsolutePath);
@@ -100,7 +102,10 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
             } catch (ParseException|Error e) {
                 if (content.startsWith("<define-tag")) {
                     throw new RuntimeException(
-                        "Failure generating component for " + xapiFile.getResourceName(), e);
+                        "Failure generating component for " +
+                            X_Source.pathToLogLink(xapiFile.getResourceName(),
+                                e instanceof ParseException ? (((ParseException) e).currentToken.beginLine) : 1)
+                        , e);
                 }
                 continue;
             }
@@ -141,7 +146,9 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
             tagDefinitions.toArray(UiContainerExpr[]::new)
         );
 
+        int size = 0;
         for (GeneratedUiComponent generated : result) {
+            size++;
             X_Log.trace(TAG,
                 "Generated ", generated.getTagName(), generated.getImpls().firstMaybe()
                 .mapNullSafe(GeneratedUiImplementation::toSource)
@@ -153,6 +160,7 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
         if (executor != null) {
             executor.shutdownNow();
         }
+        X_Log.info(TAG, "Generated " + size + " components in ", X_Time.difference(start));
     }
 
     /**

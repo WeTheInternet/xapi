@@ -39,6 +39,7 @@ import xapi.ui.api.UiPhase.PhaseIntegration;
 import xapi.ui.api.UiPhase.PhasePreprocess;
 import xapi.ui.api.UiPhase.PhaseSupertype;
 import xapi.util.X_Debug;
+import xapi.util.X_Properties;
 import xapi.util.X_Util;
 
 import javax.tools.FileObject;
@@ -585,7 +586,49 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
 
             return SingletonIterator.singleItem(new ApiOnlyGenerator());
         }
-        return itr;
+        // Otherwise, lets add a filter on UiGeneratorPlatform annotation, if present...
+        StringTo<Integer> priorities = X_Collect.newStringMapInsertionOrdered(Integer.class);
+        String[] nullSpace = new String[1];
+        String[] ignoredPlatforms = X_Properties.getProperty(UiGeneratorPlatform.SYSTEM_PROP_IGNORE_PLATFORM, "").split(",");
+        itr.forAll(impl->{
+            final UiGeneratorPlatform type = impl.getClass().getAnnotation(UiGeneratorPlatform.class);
+            if (type == null) {
+                for (String ignoredPlatform : ignoredPlatforms) {
+                    if ("null".equals(ignoredPlatform)) {
+                        return;
+                    }
+                }
+
+                final Integer was = priorities.put("null", 0);
+                if (was == null) {
+                    nullSpace[0] = impl.getClass().getCanonicalName();
+                } else {
+                    throw new IllegalStateException("Multiple UiImplementationGenerators without UiGeneratorPlatform found; " +
+                        "please add @UiGeneratorPlatform to " + impl.getClass().getCanonicalName() + " and/or " + nullSpace[0]);
+                }
+            } else {
+                for (String ignoredPlatform : ignoredPlatforms) {
+                    if (ignoredPlatform.equals(type.value())) {
+                        return;
+                    }
+                }
+
+                final Integer was = priorities.get(type.value());
+                if (was == null) {
+                    priorities.put(type.value(), type.priority());
+                } else {
+                    if (was < type.priority()) {
+                        priorities.put(type.value(), type.priority());
+                    }
+                }
+            }
+        });
+        return itr.filter(impl->{
+            final UiGeneratorPlatform type = impl.getClass().getAnnotation(UiGeneratorPlatform.class);
+            return type == null ||
+                (priorities.has(type.value()) && priorities.get(type.value()).equals(type.priority()));
+        })
+        .cached();
     }
 
     protected ComponentBuffer runBinding(ComponentBuffer component) {
@@ -720,7 +763,7 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
         final UiFeatureGenerator generator = super.getFeatureGenerator(container, componentGenerator);
         if (generator == null) {
             if (ignoreMissingFeatures()) {
-                warn(getClass(), "Ignoring missing feature ", container);
+                warn(AbstractUiGeneratorService.class, "Ignoring missing feature ", container);
             } else {
                 throw new NullPointerException("Null feature for " + container.getName());
             }
@@ -732,7 +775,7 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
         final UiComponentGenerator generator = super.getComponentGenerator(container, metadata);
         if (generator == null) {
             if (ignoreMissingComponents()) {
-                warn(getClass(), "Ignoring missing component ", container);
+                warn(AbstractUiGeneratorService.class, "Ignoring missing component ", container);
             } else {
                 throw new NullPointerException("Null component for " + container.getName());
             }
@@ -805,12 +848,12 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
                     runPhase(buffer, phase.getId());
                 })
             );
-
             final MappedIterable<ComponentBuffer> itr = components
                 .map(Out2::out1);
             finish(itr, UiPhase.CLEANUP);
         } catch (Throwable t) {
-            X_Log.error(getClass(), "Did not generate ui successfully;", t, "for", parsed);
+            X_Log.error(AbstractUiGeneratorService.class,
+                "Did not generate ui successfully;", t, "for", parsed);
             if (isStrict()) {
                 throw t;
             }

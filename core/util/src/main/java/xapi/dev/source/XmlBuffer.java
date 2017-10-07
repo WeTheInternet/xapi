@@ -390,6 +390,10 @@ public class XmlBuffer extends PrintBuffer {
     return tagName == null;
   }
 
+  public String getTagName() {
+    return tagName;
+  }
+
   public boolean hasComment() {
     return comment.isEmpty();
   }
