@@ -4,6 +4,7 @@ import xapi.annotation.inject.SingletonOverride;
 import xapi.demo.jre.ScreenLogger.LogSpy;
 import xapi.fu.Lazy;
 import xapi.fu.X_Fu;
+import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
 import xapi.inject.X_Inject;
 import xapi.io.X_IO;
@@ -40,7 +41,27 @@ public class ScreenLogger extends JreLog {
     private static final Lazy<ScreenLogger> INSTANCE = Lazy.deferred1(ScreenLoggerInit::getInstance);
 
     private volatile LogSpy spy;
-    protected volatile LogSpyInitializer init = X_Fu::identity;
+    protected volatile LogSpyInitializer init;
+
+    public ScreenLogger() {
+        ChainBuilder<String> out = Chain.startChain(), err = Chain.startChain();
+        spy = new LogSpy() {
+            @Override
+            public void out(String line) {
+                out.add(line);
+            }
+
+            @Override
+            public void err(String line) {
+                err.add(line);
+            }
+        };
+        init = sp->{
+            out.removeAll(sp::out);
+            err.removeAll(sp::err);
+            return sp;
+        };
+    }
 
     @Override
     protected void printLogString(LogLevel level, String logString) {

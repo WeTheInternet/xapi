@@ -1,0 +1,22 @@
+<define-tag
+    name = "XapiBox"
+    tagName = "xapi-box"
+    model =
+        {
+            id: String,
+            text: IntTo.class.$generic(ModelXapiText.class),
+            title: @Nullable String,
+            position: BoxPosition,
+            size: BoxSize
+        }
+    ui =
+        [
+            <if notNull=$model.title
+                whenTrue=<xapi-title>$model::title</xapi-title>
+            /if>
+            ,
+            <for allOf=$model::text as="child">
+                <xapi-text model=child />
+            </for>
+        ]
+/define-tag>

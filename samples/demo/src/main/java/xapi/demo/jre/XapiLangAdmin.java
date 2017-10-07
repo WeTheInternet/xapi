@@ -6,6 +6,7 @@ import javafx.application.Application;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import xapi.dev.ui.api.UiGeneratorPlatform;
 import xapi.fu.In1;
 import xapi.fu.Mutable;
 import xapi.fu.Pointer;
@@ -19,6 +20,7 @@ import xapi.server.api.XapiServer;
 import xapi.server.gen.VertxWebAppGenerator;
 import xapi.server.vertx.XapiVertxServer;
 import xapi.ui.api.Ui;
+import xapi.util.X_Properties;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -38,10 +40,16 @@ import static xapi.inject.X_Inject.singleton;
 @Ui("<import file=`XapiLangAdmin.xapi` />")
 public class XapiLangAdmin extends Application implements ServerManager<XapiVertxServer>{
 
+    static{
+        X_Properties.setProperty(UiGeneratorPlatform.SYSTEM_PROP_IGNORE_PLATFORM, UiGeneratorPlatform.PLATFORM_WEB_COMPONENT);
+    }
+
     public static final ScreenLogger logger = ScreenLogger.getLogger();
 
     public static void main(String ... args) {
+
         Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
+            e.printStackTrace();
             logger.log(LogLevel.ERROR, XapiLangAdmin.class, "Uncaught exception", e);
         });
 
@@ -67,7 +75,7 @@ public class XapiLangAdmin extends Application implements ServerManager<XapiVert
         compiler.startCompile(XapiLangAdmin.class)
             .withSettings(s->
                 s.setClearGenerateDirectory(false)
-                    .resetGenerateDirectory()
+                 .resetGenerateDirectory()
             )
             .compileAndRun((cl, cls) -> {
                     final Class<?> generated = cl.loadClass(generatedName);
@@ -77,7 +85,7 @@ public class XapiLangAdmin extends Application implements ServerManager<XapiVert
                 }
             );
 
-        stage.setTitle("XApi @ GwtCon 2017");
+        stage.setTitle("Xapi Demo");
         stage.setScene(new Scene(value.out1(), 600, 400));
         stage.show();
         startServer();

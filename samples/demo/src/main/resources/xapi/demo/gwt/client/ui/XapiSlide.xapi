@@ -1,0 +1,18 @@
+<define-tag
+    name = "XapiSlide"
+    tagName = "xapi-slide"
+    model =
+        {
+            items: IntTo.class.$generic(ModelKey.class),
+            title: @Nullable String.class,
+        }
+    ui =
+        <box>
+            <if notNull=$model.title
+                whenTrue=<h2>$model::title</h2>
+            /if>
+            <for allOf=$model::items as="child">
+                <xapi-box model=child />
+            </for>
+        </box>
+/define-tag>

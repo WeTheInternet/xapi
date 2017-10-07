@@ -1,0 +1,89 @@
+<xapi-slide id = Xapi-Lang>
+
+    <box id = home
+        text = `[Xapi][-lang]
+          [Declarative](XapiLangPresentation::goHome) [Code Generation]`
+        position = top_right
+        size = small
+    /box>
+
+    <box id = title
+        text = `<xapi-lang
+                  is = declarative
+                  because = ([
+                  "you can mix" + match,
+                  Java::expressions,
+                  withJson({
+                      and: <xml />}),
+                  .or{ --css: rules; }
+                ])
+                /xapi-lang>`
+        size = large
+        position = top
+    />
+
+    <box id = dialect
+         title = "Bring Your Own Dialect"
+         text  = `The Xapi Parser is not opinionated.
+
+                 A parsed Xapi document, on its own, does nothing.
+                 It is just an abstract syntax tree of expressions;
+                 what you do with it is up to you (powertools provided).`
+    />
+
+    <box id = dialect
+         title = "Make It Up As You Go"
+         text  = `Seriously.
+
+                  Just pick some thing you want to model:
+                  data, processes, code or whatever you want,
+                  and make up tags and attributes and json
+                  and annotations and css and java as you please*.
+
+                  Don't worry about how any of it works,
+                  just decide how you want your dialect to look;
+                  if you don't find the perfect syntax at first,
+                  you will after you write hundreds of lines of it,
+                  and preferably not after thousands of line of code
+                  to implement a syntax you no longer want.`
+    />
+
+    <box id = ast
+         title = "What Is Xapi AST?"
+         text  = `Like virtually all parsed languages,
+                  xapi-lang has a tree-shaped data model
+                  called the Abstract Syntax Tree or AST.
+
+                  The GWT compiler has three kinds of AST:
+                  Eclipse JDT parsed AST,
+                  GWT "Jjs AST", which is assembled from JDT,
+                  and GWT "Ext AST", which is exposed to generators.
+                 `
+    />
+
+    <box id = consume
+         title = "How To Consume Xapi AST"
+         text  = ` TODO... `
+    />
+
+
+
+    When you use it, you define what is valid
+    (by throwing exceptions when mistakes happen).
+    and create your own expression dialect;
+    that is, you write code to inspect the AST
+    then do something useful: Generate code,
+    Populate beans, Run programs,
+    Evaluate templates, Create a presentation...
+
+    When a task is repetitive, boring or error prone,
+    Xapi-lang allows you to declare your intent
+    with the minimum necessary complexity,
+    then build tools to automate
+
+
+    `
+    />
+
+
+</xapi-slide>

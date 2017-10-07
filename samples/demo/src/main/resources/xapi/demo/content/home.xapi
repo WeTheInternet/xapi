@@ -1,9 +1,9 @@
-<slide id=home>
+<xapi-slide id=home>
 
     <box id=title
       text = `[Xapi][-lang]
         [Declarative] [Code] [Generation]`
-      position = top.middle
+      position = top
       size = largest
     /box> // The /tag> closer for bodiless tags is optional
 
@@ -17,18 +17,18 @@
     <box id=vertispan
         image = DemoImages.vertispan()
         text = `[Vertispan.com](https://vertispan.com)`
-        position = bottom.left
+        position = bottom_left
     />
 
     <box id=wti
         image = DemoImages.wti()
         text = `[We The Inter.net](https://wti.net)`
-        position = bottom.right
+        position = bottom_right
     />
 
     <box id=gwt
         text = `[GwtCon 2017](XapiLangPresentation.nextSlide())`
-        position = bottom.middle
+        position = bottom
     />
 
-</slide>
+</xapi-slide>

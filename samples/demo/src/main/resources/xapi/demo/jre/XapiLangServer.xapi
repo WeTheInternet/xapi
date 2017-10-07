@@ -2,21 +2,26 @@
   name = "XapiLang"
   classpaths = {
     xapiLang : [
-      $maven("net.wetheinter:xapi-demo:0.6-SNAPSHOT"),
+      $maven("net.wetheinter:xapi-demo:0.6-SNAPSHOT")
     ]
   }
   gwt = [
     <gwtc
       name = "XapiLang"
-      entryPoint = xapi.demo.gwt.XapiLangPresentation
-      module = "xapi.demo.XapiLang"
-      logLevel = TRACE
+      entryPoint = xapi.demo.gwt.client.XapiLangPresentation
+      module = "xapi.demo.XapiLangDist"
+      inherit = "xapi.demo.XapiLang"
+      logLevel = INFO
       recompile = true
+      isolateClassLoader = false
+      useCurrentJvm = true
+      unitCacheDir = "/tmp/gwtcUnitCache"
       obfuscationLevel = PRETTY
       classpath = $classpath(xapiLang)
       source = [
         "src/main/java",
         "src/main/resources",
+        "src/main/gen"
       ]
     />
   ]
@@ -51,7 +56,7 @@
             }
           }
           style = .{
-            #gwt_root {
+            xapi-slides {
               position: absolute;
               top: 0;
               left: 0;
@@ -59,7 +64,9 @@
               right: 0;
             }
           }
-          dom = <div id="gwt_root">Hi There</div>
+          dom = <xapi-slides
+                        id=home
+                        slide = home />
         /page>
     /route>
   ]

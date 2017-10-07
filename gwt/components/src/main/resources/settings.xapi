@@ -13,6 +13,17 @@
                 placeholder: @Nullable String.class
             }
         /tag>
+        ,
+        <tag
+            name="box"
+            package="xapi.ui.layout"
+            type="Box"
+            apiName="BoxComponent"
+            baseName="BaseBoxComponent"
+            model= @Named("ModelBox") {
+                child: Model.class,
+            }
+        /tag>
     ]
 
 /settings>

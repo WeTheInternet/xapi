@@ -1,0 +1,98 @@
+<xapi-slide id = Xapi>
+
+    <item-list id = list
+        position = left
+        items = [
+            <item id = TieredGeneration
+                  preview = `Incremental code generation
+                             for cross-platform applications.`
+                  fullview = [
+                      <box text =
+                          `When considering the structure of your project,
+                           you, ideally, want many small modules,
+                           each with the fewest number of dependencies,
+                           and one or more final "binary" output builds
+                           (Gwt, Java AOT, War, Dalvik/ART, etc).
+
+                           When you are generating code,
+                           you are using a set of dependent files
+                           to produce code that performs relevant work.
+
+                           In order to generate cross-platform code,
+                           you need to create abstract code (an API)
+                           that you can reference within your modules,
+                           but defer the platform-specific implementation
+                           until a later module / final build process.
+
+                           To handle this "deferred binding",
+                           we produce output in two locations:
+                           src/main/gen (API code added to output jar)
+                           src/main/staging (private, local implementation).
+
+                           This allows you to generate incrementally and locally
+                           with only a single source copy of your public API,
+                           and many module-local, incremental implementations,
+                           so you can see (and _test,_ I hope) your output
+                           without performing buildGiantUberJar.sh
+                           then waiting 30 minutes for a build to finish.
+                          `
+                      /box>
+                  ]
+            /item>
+            ,
+            <item id = Tips
+                  preview = `Codegen Tips 'n Tricks`
+                  fullview = [
+                      <box text =
+                          `When generating, move previous output folder,
+                           run your generator, produce your output
+                           then validate / compile your generated output
+                           to determine if you should delete the backup
+                           or move the broken output, put back the good,
+                           then break the compilation as loudly as you can.
+
+                           This prevents referencing code from breaking
+                           so you don't have compile errors to fix
+                           every time you iterate on your generator.
+                          `
+                      /box>
+                      ,
+                      <box text =
+                          `Code generation, like alcohol,
+                           is good in moderation.
+
+                           Do not use a sledgehammer to pound in a nail
+
+                           Do not start a solution with a code generator;
+                           code an implementation or three by hand first,
+                           so you better understand the problem,
+                           and build tools to extract repetitive code
+                           to greatly simplify your code generator.
+
+                           Only generate the parts that need to be dynamic;
+                           put the shared code in an abstract supertype,
+                           so you don't generate \`int increment(int);\` 500 times.
+                          `
+                      /box>
+                  ]
+            /item>
+            ,
+            <item id = CrossPlatform
+                  preview = `It's like GWT.create() deferred binding,
+                             but for any platform that can run java.`
+                  fullview = [
+                      <box text =
+                          `
+
+                          `
+                      /box>
+                  ]
+            /item>
+            ,
+        ]
+    /item-list>
+
+    <box id = details position = right />
+
+
+</xapi-slide>

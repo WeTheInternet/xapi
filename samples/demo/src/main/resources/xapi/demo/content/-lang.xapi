@@ -1,26 +1,27 @@
-<slide id = Xapi-Lang>
+<xapi-slide id = Xapi-Lang>
 
     <box id = home
-        text = `[Xapi](XapiLangPresentation::goHome)[-lang]
+        text = `[Xapi][-lang](XapiLangPresentation::goHome)
           [Declarative] [Code Generation]`
-        position = top.right
+        position = top_right
         size = small
     /box>
 
     <box id = title
-        text = `Xapi: Extremely Extensible
-                Cross Platform API`
+        text = `Xapi-lang:
+                Xml + Java + Css + Json`
         size = largest
-        position = top.middle
+        position = top
     />
 
 
     <item-list id = list
         position = left
         items = [
-            <item id = MultiTarget
-                  preview = `Share code across server,
-                             browser, mobile and desktop.`
+            <item id = JavaParser
+                  preview = `Step 1: Fork [JavaParser](http://javaparser.org),
+                             a JavaCC parser for Java.
+                             --(Yo dawg, I heard you like Java...)--` // TODO popup a picture of Xzibit
                   fullview = [
                       <box text =
                           `
@@ -30,9 +31,8 @@
                   ]
             /item>
             ,
-            <item id = CrossPlatform
-                  preview = `It's like GWT.create() deferred binding,
-                             but for any platform that can run java.`
+            <item id = SprinkleGoodies
+                  preview = `Step 2: Add AST for Xml, Json and Css.`
                   fullview = [
                       <box text =
                           `
@@ -42,9 +42,8 @@
                   ]
             /item>
             ,
-            <item id = Generate
-                  preview = `Express intent with simplicity,
-                             generate all the necessary complexity.`
+            <item id = BuildTools
+                  preview = `Step 3: Build tools to interpret the AST.`
                   fullview = [
                       <box text =
                           `
@@ -54,9 +53,8 @@
                   ]
             /item>
             ,
-            <item id = Reuse
-                  preview = `Reuse as much as possible;
-                             be able to replace the rest.`
+            <item id = GenerateAnything
+                  preview = `Step 4: Automate away all the boring work.`
                   fullview = [
                       <box text =
                           `
@@ -66,8 +64,8 @@
                   ]
             /item>
             ,
-            <item id = PowerTools
-                  preview = `Build tools to empower you.`
+            <item id = Profie
+                  preview = `Step 5: Profit!`
                   fullview = [
                       <box text =
                           `
@@ -83,4 +81,4 @@
     <box id = details position = right />
 
 
-</slide>
+</xapi-slide>

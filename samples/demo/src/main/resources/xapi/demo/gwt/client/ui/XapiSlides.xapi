@@ -1,0 +1,26 @@
+<define-tag
+    name = "XapiSlides"
+    tagName = "xapi-slides"
+    model =
+        {
+            showing: ModelXapiSlide.class,
+            next: @Nullable ModelKey.class,
+        }
+
+    ui =
+        <xapi-box>
+            <xapi-slide model=$model::showing />
+        </xapi-box>
+
+    onCreated = public void created() {
+        String id = getModelId(getElement());
+        xapi.log.X_Log.info("My model id is: ", id);
+        ModelKey key = ModelXapiSlides.newKey()
+            .withId(id).buildKey();
+        ModelXapiSlides cached = (ModelXapiSlides)cache().getModel(key);
+        if (cached != null) {
+            getModel().absorb(cached);
+        }
+    }
+
+/define-tag>

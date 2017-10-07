@@ -21,11 +21,22 @@
 			<artifactId>xapi-server-vertx</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+		<!-- This dependency is not yet public; it will be extracted and uploaded later -->
+		<dependency>
+			<groupId>de.mocra.cy</groupId>
+			<artifactId>wti-shared</artifactId>
+			<version>0.1-SNAPSHOT</version>
+		</dependency>
 
 		<dependency>
 			<groupId>com.google.elemental2</groupId>
 			<artifactId>elemental2-dom</artifactId>
 			<version>1.0.0-beta-1</version>
+		</dependency>
+
+		<dependency>
+			<groupId>net.wetheinter</groupId>
+			<artifactId>xapi-components</artifactId>
 		</dependency>
 
 		<dependency>
@@ -55,6 +66,29 @@
 						</manifest>
 					</archive>
 				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+				<version>3.0.0</version>
+				<executions>
+					<execution>
+						<id>add-source</id>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>add-source</goal>
+						</goals>
+						<inherited>false</inherited>
+						<configuration>
+							<sources>
+								<source>${project.basedir}/src/main/gen</source>
+							</sources>
+						</configuration>
+					</execution>
+				</executions>
+				<goals>
+					<goal>add-source</goal>
+				</goals>
 			</plugin>
 		</plugins>
 	</build>

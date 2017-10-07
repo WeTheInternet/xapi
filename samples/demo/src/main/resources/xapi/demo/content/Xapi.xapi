@@ -1,9 +1,9 @@
-<slide id = Xapi>
+<xapi-slide id = Xapi>
 
     <box id = home
         text = `[Xapi](XapiLangPresentation::goHome)[-lang]
           [Declarative] [Code Generation]`
-        position = top.right
+        position = top_right
         size = small
     /box>
 
@@ -11,7 +11,7 @@
         text = `Xapi: Extremely Extensible
                 Cross Platform API`
         size = largest
-        position = top.middle
+        position = top
     />
 
 
@@ -83,4 +83,4 @@
     <box id = details position = right />
 
 
-</slide>
+</xapi-slide>

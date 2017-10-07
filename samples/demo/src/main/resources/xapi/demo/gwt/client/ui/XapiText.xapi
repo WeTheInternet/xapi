@@ -1,0 +1,16 @@
+<define-tag
+    name = "XapiText"
+    tagName = "xapi-text"
+    model =
+        {
+            value: String,
+            format: int[],
+        }
+    ui =
+    <native-element
+        ref="text"
+        // todo add formatting to this
+        gwt=<div class=XapiPresentation.formatName($model::format)>$model::value</div>
+        javafx=<javafx.scene.text.Text text=$model::value />
+        /native-element>
+/define-tag>
