@@ -51,6 +51,9 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
     final CharBuffer out = new CharBuffer();
     ctx.getBuffer().addToEnd(out);
     write(model, out, ctx);
+    assert model == null || model.equals(modelFromString(CharIterator.forString(out.toSource()),
+        new ModelDeserializationContext(model, ctx.getService(), ctx.getManifest()))) :
+        "Model serialization failure; Bad serialization:\n" + out.toSource()+"\n!=" + model;
     return out;
   }
 
@@ -271,8 +274,8 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
 
   protected void writeStringMap(final CharBuffer out, final StringTo<?> collection, final PrimitiveSerializer primitives, final ModelSerializationContext ctx) {
     if (collection == null) {
-      out.append(primitives.serializeClass(String.class));
-      out.append(primitives.serializeInt(-1));
+      // For null, we will check for class void and immediately return null.
+      out.append(primitives.serializeClass(void.class));
       return;
     }
     final Class valueType = collection.valueType();
@@ -359,7 +362,10 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
       ModelDeserializationContext ctx
   ) {
 
-    final Class valueType = primitives.deserializeClass(src);
+    final Class<?> valueType = primitives.deserializeClass(src);
+    if (valueType.getName().equals("void")) {
+      return null;
+    }
     final StringTo<Object> map = X_Collect.newStringMap(valueType);
 
     int length = primitives.deserializeInt(src);
@@ -563,7 +569,7 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
       return null;
     }
     ModelKey key;
-    if (modelState > -1) {
+    if (modelState != -1) {
       // There is a key for this model
       final String keyString = src.consume(modelState).toString();
       key = ctx.getService().keyFromString(keyString);
@@ -704,7 +710,7 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
       return readString(src, primitives);
     } else if (isModelType(propertyType)) {
       // We have an inner model to read!
-      final ModelDeserializationContext context = ctx.createChildContext(propertyType, src);
+      final ModelDeserializationContext context = ctx.createChildContext(propertyType);
       return modelFromString(src, context);
     } else if (isModelKeyType(propertyType)) {
       String key = readString(src, primitives);

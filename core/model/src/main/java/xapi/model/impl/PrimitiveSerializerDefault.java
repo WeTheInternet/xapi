@@ -266,7 +266,7 @@ public class PrimitiveSerializerDefault implements PrimitiveSerializer {
     for (; i.hasNext();) {
       final char c = i.next();
       final int delta = multi * VALUE_TO_NUM[c];
-      assert delta >= 0 : "Unexpected Integer overlow" ;
+      assert delta >= 0 : "Unexpected Integer overlow; multi: " + multi + " ; char " + c  ;
       if (c < END_VALUE_BOUNDARY) {
         // We hit the end of this number
         if (c > NEGATIVE_VALUE_BOUNDARY) {
@@ -646,7 +646,7 @@ function DoubleToIEEE(f)
    */
   @Override
   public String serializeClass(final Class<?> c) {
-    return serializeString(c.getName());
+    return serializeString(c == null ? null : c.getName());
   }
 
   /**

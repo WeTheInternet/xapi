@@ -22,19 +22,19 @@ import javax.lang.model.element.TypeElement;
 import xapi.log.X_Log;
 
 @SupportedAnnotationTypes({"xapi.annotation.model.*"})
-@SupportedSourceVersion(SourceVersion.RELEASE_7)
+@SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class ModelAnnotationProcessor extends AbstractProcessor{
 
   public ModelAnnotationProcessor() {}
-  
+
   protected Filer filer;
-  
+
   @Override
   public final synchronized void init(ProcessingEnvironment processingEnv) {
     super.init(processingEnv);
     filer = processingEnv.getFiler();
   }
-  
+
   @Override
   public boolean process(
       Set<? extends TypeElement> annotations,
@@ -44,13 +44,13 @@ public class ModelAnnotationProcessor extends AbstractProcessor{
     URL[] urls = ((URLClassLoader)parentCl).getURLs();
     URLClassLoader cl = new URLClassLoader(urls, Thread.currentThread().getContextClassLoader());
 //    X_Log.info(Arrays.asList(urls));
-    
+
     HashSet<String> annotatedTypes = new HashSet<String>();
     HashSet<String> annotatedPackages = new HashSet<String>();
     for (TypeElement anno : annotations) {
       for (Element element : roundEnv.getElementsAnnotatedWith(anno)) {
         Element e = element.getEnclosingElement();
-        
+
         if (e instanceof TypeElement) {
           annotatedTypes.add(((TypeElement)e).getQualifiedName().toString());
         } else if (e instanceof PackageElement){
@@ -68,7 +68,7 @@ public class ModelAnnotationProcessor extends AbstractProcessor{
       Class<?> cls = loadClass(modelCls, cl);
       X_Log.info("Loaded model: ", cls);
     }
-    
+
     if (roundEnv.processingOver())
     try {
     } catch (Exception e) {
@@ -76,10 +76,10 @@ public class ModelAnnotationProcessor extends AbstractProcessor{
       System.err.println("Unable to generate model classes.");
       return false;
     }
-    
+
     return true;
   }
-  
+
   private Class<?> loadClass(String s, ClassLoader cl) {
 
     try{

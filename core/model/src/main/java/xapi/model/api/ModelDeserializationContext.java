@@ -13,17 +13,15 @@ import xapi.source.api.CharIterator;
 public class ModelDeserializationContext {
 
   private ModelService service;
-  private CharIterator chars;
   private PrimitiveSerializer primitives;
   private final Model model;
   private final ModelManifest manifest;
   private boolean clientToServer;
 
-  public ModelDeserializationContext(final Model model, final CharIterator chars, final ModelService service, final ModelManifest manifest) {
+  public ModelDeserializationContext(final Model model, final ModelService service, final ModelManifest manifest) {
     this.model = model;
     this.service = service;
     this.manifest = manifest;
-    this.setChars(chars);
     this.primitives= service.primitiveSerializer();
   }
 
@@ -50,20 +48,6 @@ public class ModelDeserializationContext {
    */
   public void setService(final ModelService service) {
     this.service = service;
-  }
-
-  /**
-   * @return -> chars
-   */
-  public CharIterator getChars() {
-    return chars;
-  }
-
-  /**
-   * @param chars -> set chars
-   */
-  public void setChars(final CharIterator chars) {
-    this.chars = chars;
   }
 
   /**
@@ -94,8 +78,8 @@ public class ModelDeserializationContext {
     this.clientToServer = clientToServer;
   }
 
-  public ModelDeserializationContext createChildContext(final Class<? extends Model> propertyType, final CharIterator src) {
-    return new ModelDeserializationContext(getService().create(propertyType), src, getService(), getManifest());
+  public ModelDeserializationContext createChildContext(final Class<? extends Model> propertyType) {
+    return new ModelDeserializationContext(getService().create(propertyType), getService(), getManifest());
   }
 
 }

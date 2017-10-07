@@ -18,7 +18,7 @@ public class ClusteringPrimitiveDeserializer extends DelegatingPrimitiveSerializ
 
   public ClusteringPrimitiveDeserializer(final PrimitiveSerializer primitives, final CharIterator in) {
     super(primitives);
-    values = X_Collect.newList(String.class);
+    values = X_Collect.newList(String.class, X_Collect.MUTABLE_CONCURRENT);
     int size = primitives.deserializeInt(in);
     while (size --> 0) {
       values.add(primitives.deserializeString(in));

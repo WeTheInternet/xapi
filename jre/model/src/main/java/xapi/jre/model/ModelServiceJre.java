@@ -15,6 +15,7 @@ import xapi.model.api.ModelQuery.QueryParameter;
 import xapi.model.api.ModelQueryResult;
 import xapi.model.service.ModelService;
 import xapi.platform.JrePlatform;
+import xapi.source.api.CharIterator;
 import xapi.source.impl.StringCharIterator;
 import xapi.time.X_Time;
 import xapi.util.api.ErrorHandler;
@@ -87,9 +88,11 @@ public class ModelServiceJre extends AbstractJreModelService {
             file.delete();
           }
           final FileOutputStream result = new FileOutputStream(file);
-          X_IO.drain(result, X_IO.toStreamUtf8(serialized.toString()));
+          final String source = serialized.toSource();
+          X_IO.drain(result, X_IO.toStreamUtf8(source));
           callback.onSuccess(model);
           X_Log.info(getClass(), "Saved model to ", file);
+          assert deserialize(type, CharIterator.forString(source)).equals(model);
         } catch (final IOException e) {
           X_Log.error(getClass(), "Unable to save model " + model, e);
           if (callback instanceof ErrorHandler) {
@@ -103,7 +106,7 @@ public class ModelServiceJre extends AbstractJreModelService {
     if (isAsync()) {
       X_Time.runLater(finish);
     } else {
-      finish.run();;
+      finish.run();
     }
   }
 
@@ -139,9 +142,15 @@ public class ModelServiceJre extends AbstractJreModelService {
           String result;
           try {
             result = X_IO.toStringUtf8(new FileInputStream(file));
-            final M model = deserialize(modelClass, new StringCharIterator(result));
+            final M model;
+            try {
+              model = deserialize(modelClass, new StringCharIterator(result));
+            } catch (Throwable t) {
+              X_Log.error(ModelServiceJre.class, "Bad model string:\n" + result);
+              throw t;
+            }
             callback.onSuccess(model);
-          } catch (final Exception e) {
+          } catch (final Throwable e) {
             if (callback instanceof ErrorHandler) {
               X_Log.trace(ModelServiceJre.class, "Unable to load file for model "+modelKey, e);
               ((ErrorHandler) callback).onError(new ModelNotFoundException(modelKey));

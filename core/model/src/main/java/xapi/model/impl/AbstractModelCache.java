@@ -29,24 +29,33 @@ public class AbstractModelCache implements ModelCache{
 
   @Override
   public void cacheModel(Model model, SuccessHandler<Model> callback) {
-    models.put(model.getKey().toString(), model);
+    if (model != null) {
+      models.put(model.getKey().toString(), model);
+    }
     callback.onSuccess(model);
   }
 
   @Override
   public void saveModel(Model model, SuccessHandler<Model> callback) {
-    models.put(model.getKey().toString(), model);
+    if (model != null) {
+      models.put(model.getKey().toString(), model);
+    }
     callback.onSuccess(model);
   }
 
   @Override
   public void deleteModel(Model model, SuccessHandler<Model> callback) {
-    models.remove(model.getKey().toString());
+    if (model != null && model.getKey() != null) {
+      models.remove(model.getKey().toString());
+    }
     callback.onSuccess(model);
   }
 
   @Override
   public ModelKey ensureKey(String type, Model mod) {
+    if (mod == null) {
+      return null;
+    }
     return mod.getOrComputeKey(()->
         X_Model.newKey(type, "local-" + idNames.incrementAndGet())
      );

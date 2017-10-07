@@ -62,7 +62,7 @@ public abstract class AbstractModelService implements ModelService
     if (model == null) {
       return null;
     }
-    final ModelDeserializationContext context = new ModelDeserializationContext(create(cls), model, this, null);
+    final ModelDeserializationContext context = new ModelDeserializationContext(create(cls), this, null);
     context.setClientToServer(isClientToServer());
     final ModelSerializer<M> serializer = getSerializer(getTypeName(cls));
     return serializer.modelFromString(model, context);
@@ -82,7 +82,7 @@ public abstract class AbstractModelService implements ModelService
       return null;
     }
     final Class<M> cls = (Class<M>) typeNameToClass.get(manifest.getType());
-    final ModelDeserializationContext context = new ModelDeserializationContext(create(cls), model, this, manifest);
+    final ModelDeserializationContext context = new ModelDeserializationContext(create(cls), this, manifest);
     context.setClientToServer(isClientToServer());
     final ModelSerializer<M> serializer = getSerializer(manifest.getType());
     return serializer.modelFromString(model, context);
@@ -193,13 +193,13 @@ public abstract class AbstractModelService implements ModelService
       return null;
     }
     final int parentState = primitives.deserializeInt(chars);
-    if (parentState == -1) {// no parent key specified
+    if (parentState == -3) {// no parent key specified
       final String namespace = primitives.deserializeString(chars);
       final String kind = primitives.deserializeString(chars);
       final int keyType = primitives.deserializeInt(chars);
       final String id = primitives.deserializeString(chars);
       return newKey(namespace, kind, id).setKeyType(keyType);
-    } else if (parentState == -3){
+    } else if (parentState == -1){
       // a null key...
       return null;
     } else {
@@ -221,10 +221,10 @@ public abstract class AbstractModelService implements ModelService
     final StringBuilder b = new StringBuilder();
     final PrimitiveSerializer primitives = primitiveSerializer();
     if (key == null) {
-      return primitives.serializeInt(-3);
+      return primitives.serializeInt(-1);
     }
     if (key.getParent() == null) {
-      b.append(primitives.serializeInt(-1));
+      b.append(primitives.serializeInt(-3));
       b.append(primitives.serializeString(key.getNamespace()));
     } else {
       b.append(primitives.serializeString(keyToString(key.getParent())));

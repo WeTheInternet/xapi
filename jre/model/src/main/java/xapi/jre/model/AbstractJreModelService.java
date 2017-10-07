@@ -419,7 +419,7 @@ public abstract class AbstractJreModelService extends AbstractModelService {
     );
   }
 
-  protected void rethrow(Exception e) {
+  protected void rethrow(Throwable e) {
     X_Debug.rethrow(e);
   }
 }

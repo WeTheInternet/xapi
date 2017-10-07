@@ -25,7 +25,7 @@ public class ClusteringPrimitiveSerializer extends DelegatingPrimitiveSerializer
     this.out = new CharBuffer();
     out.addToEnd(this.size);
     out.addToEnd(this.out);
-    strings = X_Collect.newStringMap(Integer.class);
+    strings = X_Collect.newStringMap(Integer.class, X_Collect.MUTABLE_CONCURRENT);
   }
 
   @Override
