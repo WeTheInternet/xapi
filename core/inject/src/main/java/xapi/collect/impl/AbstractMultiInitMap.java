@@ -1,5 +1,6 @@
 package xapi.collect.impl;
 
+import xapi.fu.In1Out1;
 import xapi.util.X_Runtime;
 import xapi.util.api.ConvertsValue;
 import xapi.util.api.MergesValues;
@@ -16,34 +17,23 @@ implements MergesValues<Key, Params, Value>
   private boolean clearState;
 
 
-  protected static <Key, Value> ConvertsValue<Pair<Key, Value>, String> adapt(final ConvertsValue<Key, String> keyConverter) {
-    return new ConvertsValue<Pair<Key,Value>,String>() {
-      @Override
-      public String convert(Pair<Key,Value> from) {
-        return keyConverter.convert(from.get0());
-      }
-    };
+  protected static <Key, Value> In1Out1<Pair<Key, Value>, String> adapt(final In1Out1<Key, String> keyConverter) {
+    return keyConverter.mapIn(Pair::get0);
   }
 
   @SuppressWarnings("unchecked") //ALWAYS_NULL is erased to object; anything is safe
-  public AbstractMultiInitMap(ConvertsValue<Key, String> keyConverter) {
-    super(AbstractMultiInitMap.<Key, Params>adapt(keyConverter), ALWAYS_NULL);
+  public AbstractMultiInitMap(In1Out1<Key, String> keyConverter) {
+    super(AbstractMultiInitMap.adapt(keyConverter), In1Out1.returnNull());
     clearState = true;
   }
-  public AbstractMultiInitMap(ConvertsValue<Key, String> keyConverter, ConvertsValue<Pair<Key,Params>,Value> valueConverter) {
+  public AbstractMultiInitMap(In1Out1<Key, String> keyConverter, In1Out1<Pair<Key,Params>,Value> valueConverter) {
     super(AbstractMultiInitMap.<Key, Params>adapt(keyConverter), valueConverter);
     clearState = true;
   }
 
   public static <Params, Value> AbstractMultiInitMap<String, Value, Params>
-    stringMultiInitMap(final ConvertsValue<Params, Value> converter) {
-    return new AbstractMultiInitMap<String, Value, Params>(PASS_THRU,
-      new ConvertsValue<Pair<String, Params>, Value>() {
-      @Override
-      public Value convert(Pair<String, Params> from) {
-        return converter.convert(from.get1());
-      }
-    });
+    stringMultiInitMap(final In1Out1<Params, Value> converter) {
+    return new AbstractMultiInitMap<>(PASS_THRU, converter.mapIn(Pair::get1));
   }
 
   public Value get(Key key, Params params) {
@@ -78,7 +68,7 @@ implements MergesValues<Key, Params, Value>
   public final Value initialize(Pair<Key, Params> params) {
     Value value = null;
     try {
-      value = valueProvider.convert(params);
+      value = valueProvider.io(params);
     } catch (Throwable e) {
       logInitError(params, e);
     }

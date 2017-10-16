@@ -4,6 +4,7 @@ import xapi.fu.Do;
 import xapi.fu.Do.DoUnsafe;
 import xapi.fu.In1;
 import xapi.fu.In1.In1Unsafe;
+import xapi.fu.In2;
 import xapi.fu.Lazy;
 import xapi.fu.Out1;
 import xapi.inject.X_Inject;
@@ -101,13 +102,28 @@ public class X_Process {
   public static <T> void runWhenReadyUnsafe(Lazy<T> io, In1Unsafe<T> callback) {
     runWhenReady(io, callback);
   }
+
   public static <T> void runWhenReady(Lazy<T> io, In1<T> callback) {
+    runWhenReady(io, callback.ignore2());
+  }
+
+  public static <T> void runWhenReady(Lazy<T> io, In2<T, Throwable> callback) {
     if (io.isFull1()) {
-      callback.in(io.out1());
+      try {
+        final T result = io.out1();
+        callback.in(result, null);
+      } catch (Throwable t) {
+        callback.in(null ,t);
+        throw t;
+      }
     } else {
-      runDeferred(()->{
-        runWhenReady(io, callback);
-      });
+      runDeferred(()->
+        runWhenReady(io, callback)
+      );
     }
+  }
+
+  public static boolean isInProcess() {
+    return service.get().isInProcess();
   }
 }

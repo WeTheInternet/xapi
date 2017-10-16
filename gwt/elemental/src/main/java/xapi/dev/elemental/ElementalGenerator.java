@@ -423,9 +423,7 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
     }
     final Set<String> finished = new HashSet<>();
     final AbstractMultiInitMap<String, ElementalGeneratorResult, JClassType> map =
-      AbstractMultiInitMap.stringMultiInitMap(new ConvertsValue<JClassType, ElementalGeneratorResult>() {
-        @Override
-        public ElementalGeneratorResult convert(final JClassType from) {
+      AbstractMultiInitMap.stringMultiInitMap(from -> {
           try {
             final ElementalGeneratorResult provider = generateProvider(logger, new ModelProviderImpl(from), from, ast, ctx);
             final String template = src.getImports().addImport(provider.getFinalName());
@@ -434,8 +432,6 @@ public class ElementalGenerator extends AbstractHtmlGenerator<ElementalGenerator
           } catch (final UnableToCompleteException e) {
             throw X_Debug.rethrow(e);
           }
-        }
-
       });
     final String messagesQname = templateType.getQualifiedSourceName();
     for (final JClassType type : templateType.getFlattenedSupertypeHierarchy()) {

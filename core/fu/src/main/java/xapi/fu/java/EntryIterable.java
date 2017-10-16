@@ -3,6 +3,7 @@ package xapi.fu.java;
 import xapi.fu.In1;
 import xapi.fu.In1.In1Unsafe;
 import xapi.fu.In2;
+import xapi.fu.In2.In2Unsafe;
 import xapi.fu.In2Out1;
 import xapi.fu.MappedIterable;
 import xapi.fu.Out2;
@@ -59,6 +60,13 @@ public interface EntryIterable <K, V> extends HasItems<Out2<K, V>> {
   }
   default void forValuesUnsafe(In1Unsafe<V> callback) {
     entries().forEach(callback.<K>ignore1().mapAdapter());
+  }
+  default <I2> void forValuesUnsafe(In2Unsafe<V, I2> callback, I2 i2) {
+    entries().forEach(callback
+        .provide2(i2) // provide the supplied value
+        .<K>ignore1() // ignore the key portion of entry iterator
+        .mapAdapter() // translate to Consumer<Entry<K, V>>
+    );
   }
 
 }

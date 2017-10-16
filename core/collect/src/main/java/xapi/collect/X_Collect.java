@@ -6,6 +6,7 @@ import xapi.collect.api.CollectionOptions;
 import xapi.collect.impl.HashComparator;
 import xapi.collect.impl.IntToManyList;
 import xapi.collect.impl.StringToDeepMap;
+import xapi.collect.impl.StringToDeepMultiMap;
 import xapi.collect.impl.StringToManyList;
 import xapi.collect.proxy.CollectionProxy;
 import xapi.collect.service.CollectionService;
@@ -207,6 +208,10 @@ public class X_Collect {
 
   public static <X> StringTo<StringTo<X>> newStringDeepMap(final Class<? extends X> component) {
     return new StringToDeepMap<>(component);
+  }
+
+  public static <X> StringTo<StringTo<IntTo<X>>> newStringDeepMultiMap(final Class<? extends X> component) {
+    return new StringToDeepMultiMap<>(component);
   }
 
   public static <V> StringDictionary<V> newDictionary() {

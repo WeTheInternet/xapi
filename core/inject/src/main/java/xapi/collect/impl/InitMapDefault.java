@@ -4,16 +4,17 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
+import xapi.fu.In1Out1;
 import xapi.util.api.ConvertsValue;
 import xapi.util.api.ReceivesValue;
 
 public class InitMapDefault <Key, Value> extends AbstractInitMap<Key,Value>{
 
-  protected final ConvertsValue<Key,Value> valueProvider;
+  protected final In1Out1<Key,Value> valueProvider;
 
   private final ConcurrentHashMap<String,Value> map = new ConcurrentHashMap<String,Value>();
 
-  public InitMapDefault(ConvertsValue<Key,String> keyProvider, ConvertsValue<Key,Value> valueProvider) {
+  public InitMapDefault(In1Out1<Key,String> keyProvider, In1Out1<Key,Value> valueProvider) {
     super(keyProvider);
     assert valueProvider != null : "Cannot use null value provider for init map.";
     this.valueProvider = valueProvider;
@@ -21,8 +22,8 @@ public class InitMapDefault <Key, Value> extends AbstractInitMap<Key,Value>{
 
 
   public static <Key, Value> InitMapDefault<Key,Value> createInitMap(
-    ConvertsValue<Key,String> keyProvider, ConvertsValue<Key,Value> valueProvider) {
-    return new InitMapDefault<Key,Value>(keyProvider, valueProvider);
+    In1Out1<Key,String> keyProvider, In1Out1<Key,Value> valueProvider) {
+    return new InitMapDefault<>(keyProvider, valueProvider);
   }
 
   @Override
@@ -52,7 +53,7 @@ public class InitMapDefault <Key, Value> extends AbstractInitMap<Key,Value>{
 
   @Override
   public Value initialize(Key k) {
-    return valueProvider.convert(k);
+    return valueProvider.io(k);
   }
 
   @Override
@@ -60,11 +61,11 @@ public class InitMapDefault <Key, Value> extends AbstractInitMap<Key,Value>{
      for (String key : map.keySet())
        receiver.set(key);
   }
-  
+
   public Iterable<String> keys() {
     return map.keySet();
   }
-  
+
   @Override
   public Iterator<Entry<String, Value>> iterator() {
     return map.entrySet().iterator();

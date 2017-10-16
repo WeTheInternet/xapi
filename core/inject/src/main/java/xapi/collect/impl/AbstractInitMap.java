@@ -34,10 +34,9 @@
  */
 package xapi.collect.impl;
 
-
 import xapi.collect.api.InitMap;
+import xapi.fu.In1Out1;
 import xapi.util.X_Runtime;
-import xapi.util.api.ConvertsValue;
 
 /**
  * A map for singleton values; if containsKey(key) == true,
@@ -67,44 +66,27 @@ public abstract class AbstractInitMap <Key, Value> implements InitMap<Key,Value>
    * But, you weren't using "null" for an id anyway, were you?
    */
   @SuppressWarnings("rawtypes")
-  protected static final ConvertsValue TO_STRING = new ConvertsValue<Object,String>() {
-    @Override
-    public String convert(Object from) {
-      return String.valueOf(from);// will return "null" for null.
-    }
-  };
-  public static final ConvertsValue<String, String> PASS_THRU = new ConvertsValue<String,String>() {
-    @Override
-    public String convert(String from) {
-      return from;// will return null for null.
-    }
-  };
-  public static final ConvertsValue<Class<?>, String> CLASS_NAME = new ConvertsValue<Class<?>,String>() {
-    @Override
-    public String convert(Class<?> from) {
+  protected static final In1Out1 TO_STRING = String::valueOf;
+  public static final In1Out1<String, String> PASS_THRU = In1Out1.IDENTITY;
+  public static final In1Out1<Class<?>, String> CLASS_NAME = from -> {
       // fail fast for gwt's sake, so we get a usable exception
       if (from == null)throw new NullPointerException();
       return from.getName();
-    }
   };
+
   @SuppressWarnings("rawtypes") //it erases to object, we're fine
-  protected static final ConvertsValue ALWAYS_NULL = new ConvertsValue() {
-    @Override
-    public Object convert(Object from) {
-      return null;
-    }
-  };
+  protected static final In1Out1 ALWAYS_NULL = In1Out1.RETURN_NULL;
 
   // This class is super-sourced without ConcurrentMap, for code size optimization.
   // We would inject it, but it is used in the inject subsystem;
-  private final ConvertsValue<Key,String> keyProvider;
+  private final In1Out1<Key,String> keyProvider;
 
   @SuppressWarnings("unchecked") // Accepts Object in only method's only param.
   protected AbstractInitMap() {
     this(TO_STRING);
   }
 
-  protected AbstractInitMap(ConvertsValue<Key,String> keyProvider) {
+  protected AbstractInitMap(In1Out1<Key,String> keyProvider) {
     this.keyProvider = keyProvider;
     assert keyProvider != null : "Cannot use null key provider for init map.";
   }
@@ -112,7 +94,7 @@ public abstract class AbstractInitMap <Key, Value> implements InitMap<Key,Value>
 	private static final Object default_lock = new Object();
 
 	public Value get(Key k) {
-	  String key = keyProvider.convert(k);
+	  String key = keyProvider.io(k);
 		if (hasKey(key))
 			return getValue(key);
 		Value value;
@@ -136,11 +118,11 @@ public abstract class AbstractInitMap <Key, Value> implements InitMap<Key,Value>
 
 	@Override
 	public Value put(Key key, Value value) {
-	  return setValue(keyProvider.convert(key), value);
+	  return setValue(keyProvider.io(key), value);
 	}
 
   public boolean containsKey(Key key) {
-    return hasKey(keyProvider.convert(key));
+    return hasKey(keyProvider.io(key));
   }
 
   protected boolean isMultiThreaded() {
@@ -152,7 +134,7 @@ public abstract class AbstractInitMap <Key, Value> implements InitMap<Key,Value>
 	}
 
 	public String toKey(Key key) {
-	  return keyProvider.convert(key);
+	  return keyProvider.io(key);
 	}
 
 	@Override

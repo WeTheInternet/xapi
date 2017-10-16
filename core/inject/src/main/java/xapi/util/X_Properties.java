@@ -36,6 +36,8 @@
 package xapi.util;
 
 import xapi.annotation.compile.MagicMethod;
+import xapi.fu.Out1;
+import xapi.fu.Out1.Out1Unsafe;
 import xapi.inject.impl.SingletonProvider;
 import xapi.util.impl.PropertyServiceDefault;
 import xapi.util.service.PropertyService;
@@ -96,8 +98,16 @@ public final class X_Properties {
 	  return service.getProperty(property);
 	}
 
-  @MagicMethod(doNotVisit=true)
+  	@MagicMethod(doNotVisit=true)
 	public static String getProperty(final String property, final String dflt) {
+	  return service.getProperty(property, dflt);
+	}
+
+	public static String getProperty(final String property, final Out1<String> dflt) {
+	  return service.getProperty(property, dflt);
+	}
+
+	public static String getPropertyUnsafe(final String property, final Out1Unsafe<String> dflt) {
 	  return service.getProperty(property, dflt);
 	}
 

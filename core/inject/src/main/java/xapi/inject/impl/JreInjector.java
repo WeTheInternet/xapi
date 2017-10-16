@@ -3,6 +3,7 @@ package xapi.inject.impl;
 import xapi.collect.api.InitMap;
 import xapi.collect.impl.AbstractInitMap;
 import xapi.collect.impl.InitMapDefault;
+import xapi.fu.In1Out1;
 import xapi.fu.In2;
 import xapi.inject.api.Injector;
 import xapi.inject.api.PlatformChecker;
@@ -103,9 +104,10 @@ public class JreInjector implements Injector {
     private final AbstractInitMap<Class<?>, Provider<?>> instanceProviders
         = InitMapDefault.createInitMap(
         AbstractInitMap.CLASS_NAME,
-        new ConvertsValue<Class<?>, Provider<?>>() {
+        new In1Out1<Class<?>, Provider<?>>() {
+
             @Override
-            public Provider<?> convert(final Class<?> clazz) {
+            public Provider<?> io(Class<?> clazz) {
                 //First, lookup META-INF/instances for a replacement.
                 final Class<?> cls;
                 try {
@@ -115,11 +117,12 @@ public class JreInjector implements Injector {
                             return instanceProviders.get(cls);
                         } else if (singletonProviders.containsKey(clazz)) {
                             X_Log.warn(getClass(), "Attempting instance injection for ", clazz
-                            , "but no instance type registered; however, there is a singleton type available.",
-                                "Consider using X_Inject(" + clazz.getSimpleName()+".class) instead");
+                                , "but no instance type registered; however, there is a singleton type available.",
+                                "Consider using X_Inject(" + clazz.getSimpleName() + ".class) instead"
+                            );
                         }
                     }
-                    return ()->{
+                    return () -> {
                         try {
                             return cls.newInstance();
                         } catch (final Exception e) {
@@ -132,8 +135,10 @@ public class JreInjector implements Injector {
                     if (instanceProviders.containsKey(clazz)) {
                         return instanceProviders.get(clazz);
                     }
-                    throw new RuntimeException("Could not create instance provider for " + clazz.getName() + " : " + clazz,
-                        e);
+                    throw new RuntimeException(
+                        "Could not create instance provider for " + clazz.getName() + " : " + clazz,
+                        e
+                    );
                 }
             }
         }
@@ -149,9 +154,9 @@ public class JreInjector implements Injector {
      */
     private final InitMap<Class<?>, Provider<Object>> singletonProviders =
         InitMapDefault.createInitMap(AbstractInitMap.CLASS_NAME, new
-            ConvertsValue<Class<?>, Provider<Object>>() {
+            In1Out1<Class<?>, Provider<Object>>() {
                 @Override
-                public Provider<Object> convert(final Class<?> clazz) {
+                public Provider<Object> io(final Class<?> clazz) {
                     //TODO: optionally run through java.util.ServiceLoader,
                     //in case client code already uses ServiceLoader directly (unlikely edge case)
                     Class<?> cls;

@@ -180,4 +180,5 @@ public interface ConcurrencyService {
    */
   AsyncLock newLock();
 
+    boolean isInProcess();
 }
