@@ -86,6 +86,9 @@
   <!-- Core user interface apis. -->
   <module>ui</module>
 
+  <!-- Persistent Settings. -->
+  <module>settings</module>
+
   <!-- Test module -->
   <module>test</module>
 
