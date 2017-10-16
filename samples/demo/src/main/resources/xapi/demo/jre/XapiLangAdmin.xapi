@@ -7,7 +7,7 @@
           one: 1,
           // The two button uses ++preIncrement, so we start its count at 0
           two: 0,
-          startServer: "Start Server"
+          restartServer: "Restart"
       }
   class =
     .{
@@ -24,8 +24,8 @@
          align = center
          type = HBox
     >
-        <button ref="one" text=$root.data.startServer class="btn button1" onClick=e-> {
-            $source.startServer();
+        <button ref="restart" text=$root.data.restartServer class="btn button1" onClick=e-> {
+            $source.restartServer();
         } />
 
         <button text="Quit" class="btn button2" onClick=System.exit(0) />

@@ -7,9 +7,11 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import xapi.dev.ui.api.UiGeneratorPlatform;
+import xapi.fu.Do;
 import xapi.fu.In1;
 import xapi.fu.Mutable;
 import xapi.fu.Pointer;
+import xapi.fu.X_Fu;
 import xapi.javac.dev.api.CompilerService;
 import xapi.javac.dev.model.CompilerSettings.ImplicitMode;
 import xapi.log.X_Log;
@@ -45,6 +47,7 @@ public class XapiLangAdmin extends Application implements ServerManager<XapiVert
     }
 
     public static final ScreenLogger logger = ScreenLogger.getLogger();
+    private XapiVertxServer server;
 
     public static void main(String ... args) {
 
@@ -91,6 +94,16 @@ public class XapiLangAdmin extends Application implements ServerManager<XapiVert
         startServer();
     }
 
+    public void restartServer() {
+        stopServer(this::startServer);
+    }
+
+    public void stopServer(Do onDone) {
+        if (server != null) {
+            server.shutdown(onDone);
+        }
+    }
+
     public void startServer() {
         X_Log.info(XapiLangAdmin.class, "Starting server");
         VertxWebAppGenerator generator = new VertxWebAppGenerator(s->{
@@ -111,13 +124,14 @@ public class XapiLangAdmin extends Application implements ServerManager<XapiVert
         final WebApp app = generator.generateWebApp("XapiLangServer", ui, install);
         app.setPort(13337);
         webApps().put("XapiLangServer", app);
-        XapiVertxServer server = getServer("XapiLangServer");
         if (isRunning("XapiLangServer")) {
+            server = getServer("XapiLangServer");
             install.out1().in(server);
         } else {
-            startup("XapiLangServer", server, done->{
-                install.out1().in(done);
-                server.start();
+            initializeServer("XapiLangServer", done->{
+                server = done;
+                install.out1().in(server);
+//                server.start(()->X_Log.info(XapiLangAdmin.class, "Server online"));
             });
         }
     }
