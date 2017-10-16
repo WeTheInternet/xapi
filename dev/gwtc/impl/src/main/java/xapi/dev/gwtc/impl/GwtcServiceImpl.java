@@ -1,20 +1,14 @@
 package xapi.dev.gwtc.impl;
 
-import org.junit.Test;
 import xapi.annotation.compile.Dependency;
-import xapi.annotation.compile.Dependency.DependencyType;
-import xapi.annotation.compile.ResourceBuilder;
 import xapi.annotation.inject.InstanceDefault;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.dev.api.ExtensibleClassLoader;
-import xapi.dev.gwtc.api.GwtcJobState;
+import xapi.dev.gwtc.api.AnnotatedDependency;
+import xapi.dev.gwtc.api.GwtcJobManager;
+import xapi.dev.gwtc.api.GwtcProjectGenerator;
 import xapi.dev.gwtc.api.GwtcService;
-import xapi.dev.gwtc.impl.GwtcContext.Dep;
-import xapi.dev.source.ClassBuffer;
-import xapi.dev.source.MethodBuffer;
-import xapi.dev.source.XmlBuffer;
-import xapi.except.NotYetImplemented;
 import xapi.file.X_File;
 import xapi.fu.*;
 import xapi.fu.Do.DoUnsafe;
@@ -29,22 +23,17 @@ import xapi.gwtc.api.GwtcProperties;
 import xapi.gwtc.api.ServerRecompiler;
 import xapi.io.api.SimpleLineReader;
 import xapi.log.X_Log;
+import xapi.process.X_Process;
 import xapi.reflect.X_Reflect;
 import xapi.shell.X_Shell;
 import xapi.shell.api.ShellSession;
-import xapi.test.junit.JUnit4Runner;
-import xapi.test.junit.JUnitUi;
-import xapi.time.X_Time;
 import xapi.util.X_Debug;
 import xapi.util.X_Properties;
 import xapi.util.X_Util;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -52,26 +41,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static xapi.fu.iterate.SingletonIterator.singleItem;
-import static xapi.gwtc.api.GwtManifest.GEN_PREFIX;
-import static xapi.process.X_Process.runFinally;
 
-import com.google.gwt.core.client.GWT;
-import com.google.gwt.core.client.RunAsyncCallback;
-import com.google.gwt.core.ext.TreeLogger.Type;
-import com.google.gwt.dev.Compiler;
 import com.google.gwt.dev.GwtCompiler;
-import com.google.gwt.junit.client.GWTTestCase;
-import com.google.gwt.junit.tools.GWTTestSuite;
-import com.google.gwt.reflect.shared.GwtReflect;
 
 @Gwtc(propertiesLaunch=@GwtcProperties)
 @InstanceDefault(implFor=GwtcService.class)
@@ -85,8 +62,8 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
           "(" + Pattern.quote(Dependency.DIR_TEMP) + ")|"
   );
 
-  private MethodBuffer junitLoader;
   private final StringTo<GwtcJobStateImpl> runningCompiles;
+  private final StringTo<GwtcJobManager> jobs;
 
   public GwtcServiceImpl() {
     this(Thread.currentThread().getContextClassLoader());
@@ -95,101 +72,55 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
   public GwtcServiceImpl(ClassLoader resourceLoader) {
     super(resourceLoader);
     runningCompiles = X_Collect.newStringMap(GwtcJobStateImpl.class);
+    jobs = X_Collect.newStringMap(GwtcJobManager.class);
   }
 
-  @Override
-  public void addAsyncBlock(Class<? extends RunAsyncCallback> asSubclass) {
 
-  }
-
-  @Override
-  public void addGwtTestCase(Class<? extends GWTTestCase> subclass) {
-
-  }
-
-  @Override
-  public void addGwtTestSuite(Class<? extends GWTTestSuite> asSubclass) {
-
-  }
-
-  @Override
-  public void addMethod(Method method) {
-    addMethod(method, false);
-  }
-
-  @Override
-  public void addMethod(Method method, boolean onNewInstance) {
-    if (Modifier.isStatic(method.getModifiers())) {
-      // print a call to a static method
-      out.println(out.formatStaticCall(method));
-    } else {
-      // print a call to an instance method; creating an instance if necessary.
-      out.println(out.formatInstanceCall(method, onNewInstance));
-    }
-  }
-
-  @Override
-  public void addPackage(Package pkg, boolean recursive) {
-    if (!finished.add(pkg.getName())) {
-      return;
-    }
-    Gwtc gwtc = pkg.getAnnotation(Gwtc.class);
-    context.addPackages(pkg, this, recursive);
-    if (gwtc != null) {
-      context.addGwtcPackage(gwtc, pkg, recursive);
-    }
-  }
 
   @Override
   public void doCompile(
       GwtManifest manifest, long timeout, TimeUnit unit, In2<CompiledDirectory, Throwable> callback
   ) {
 
-    // This is going to be the new primary compilation method for all Gwt compiles;
-    // all others will be deprecated once this one is complete and tested.
+    final GwtcJobManager manager = jobs.getOrCreateFrom(manifest.getModuleName(), GwtcJobManagerImpl::new, this);
+    manager.compileIfNecessary(manifest, callback);
 
-    // We want this method to correctly handle foreign classloading;
-    // That is, we want to stash our callbacks, create and call into a Gwt environment,
-    // and then have the same thread that called this method handle the callback.
-    // This is necessary for us to have "clean room" classloaders for gwt compilation,
-    // where the server doesn't leak into gwt, and gwt doesn't leak into server.
-
-    if (manifest.isRecompile()) {
-      // recompilation... our primary concern at the moment
-    } else {
-
-    }
-    throw new NotYetImplemented("TODO finish on next iteration");
   }
 
   @Override
   public void compile(GwtManifest manifest, long timeout, TimeUnit unit, In2<Integer, Throwable> callback) {
     final In2Out1<Long, TimeUnit, Integer> compilation = doCompile(manifest);
-    X_Time.runLater(() -> {
+    Lazy<Integer> doCompile = Lazy.deferred1(()->{
       boolean called = false;
       try {
         final Integer result = compilation.io(timeout, unit);
         called = true;
         callback.in(result, null);
+        return result;
       } catch (Throwable t) {
         if (!called) {
           callback.in(-1, t);
         }
         throw t;
       }
+
+    });
+    X_Process.runWhenReady(doCompile, result->{
+      callback.in(result, null);
     });
   }
 
   @Override
   public GwtcJobStateImpl recompile(
       GwtManifest manifest,
+      Long millisToWait,
       In2<ServerRecompiler, Throwable> callback
   ) {
 
     manifest.setRecompile(true);
     String id = manifest.getModuleName();
     GwtcJobStateImpl job = runningCompiles.getOrCreate(id, module ->
-      new GwtcJobStateImpl(manifest, GwtcServiceImpl.this));
+      new GwtcJobStateImpl(manifest, manifest.getModuleName(), manifest.getModuleShortName(), GwtcServiceImpl.this));
 
     job.startCompile(callback);
 
@@ -197,18 +128,13 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
   }
 
   @Override
-  public URLClassLoader resolveClasspath(GwtManifest manifest, GwtcJobState job) {
-    X_Log.info(getClass(), "Starting gwt compile", manifest.getModuleName());
+  public URLClassLoader resolveClasspath(GwtManifest manifest, String compileHome) {
+    X_Log.info(GwtcServiceImpl.class, "Starting gwt compile", manifest.getModuleName());
     X_Log.debug(getClass(), manifest);
 
-    final String[] programArgs = manifest.toProgramArgArray();
-    final String[] jvmArgs = manifest.toJvmArgArray();
-    X_Log.debug(getClass(), "Args: java ", jvmArgs, programArgs);
-
-    final String[] classpath = manifest.toClasspathFullCompile(getTempDir().getAbsolutePath(), job.getGwtHome());
+    final String[] classpath = manifest.toClasspathFullCompile(compileHome);
     X_Log.debug(getClass(), "Requested Classpath\n", classpath);
 
-    X_Log.info("Entry point: " + new File(manifest.getWarDir(), context.getGenName() + ".html"));
     In1<Integer> cleanup = prepareCleanup(manifest);
 
     URL[] urls = fromClasspath(classpath);
@@ -230,8 +156,9 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
     };
     t.setUncaughtExceptionHandler((thread, error)->{
       if (X_Util.unwrap(error) instanceof InterruptedException) {
-        // Someone was trying to cancel the job,
+        // Someone was trying to cancel the job; ignore
       } else {
+        // Not sure this is a wise thing to do... the thread should already be ending due to this handler running.
         t.interrupt();
       }
     });
@@ -308,13 +235,13 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
   protected In2Out1<Long, TimeUnit, Integer> doCompile(GwtManifest manifest) {
     String gwtHome = generateCompile(manifest);
     // Logging
-    X_Log.info(getClass(), "Starting gwt compile", manifest.getModuleName());
+    X_Log.info(GwtcServiceImpl.class, "Starting gwt compile", manifest.getModuleName());
     X_Log.trace(manifest);
     manifest.setRecompile(false);
     final String[] programArgs = manifest.toProgramArgArray();
     final String[] jvmArgs = manifest.toJvmArgArray();
     X_Log.trace("Args: java ", jvmArgs, programArgs);
-    final String[] classpath = manifest.toClasspathFullCompile(getTempDir().getAbsolutePath(), gwtHome);
+    final String[] classpath = manifest.toClasspathFullCompile(gwtHome);
     X_Log.debug("Requested Classpath\n", classpath);
 
     In1<Integer> cleanup = prepareCleanup(manifest);
@@ -458,48 +385,8 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
 
   @Override
   public String generateCompile(GwtManifest manifest) {
-    assert tempDir.exists() : "No usable directory " + tempDir.getAbsolutePath();
-    if (manifest.getModuleName() == null) {
-      manifest.setModuleName(genName);
-      manifestName = genName;
-    } else {
-      assert context.getInheritedGwtXml().noneMatch(manifest.getModuleName()::equals)
-          : "Do not inherit the gwt xml of the module you are generating! (bad name: " + manifest.getModuleName() + ")";
-      manifestName = manifest.getModuleName();
-      context.setRenameTo(manifest.getModuleName());
-    }
-    if (manifest.getModuleShortName() != null) {
-      context.setRenameTo(manifest.getModuleShortName());
-    }
-    String entryPackage = manifestName;
-    int endInd = entryPackage.lastIndexOf('.');
-    if (endInd != -1) {
-      entryPackage = entryPackage.substring(0, endInd);
-      if (entryPoint.getPackage() == null) {
-        entryPoint.setPackage(entryPackage);
-      } else if (!entryPoint.getPackage().startsWith(entryPackage)){
-        entryPackage = (entryPackage + "." + entryPoint.getPackage())
-                        .replace(GEN_PREFIX+"."+GEN_PREFIX, GEN_PREFIX);
-        if (context.getEntryPoint().startsWith(GEN_PREFIX)) {
-          context.setEntryPoint(context.getEntryPoint().substring(GEN_PREFIX.length()+1));
-        }
-      }
-      entryPoint.setPackage(entryPackage);
-      context.setEntryPointPackage(entryPackage);
-    }
-    String entryPointLocation = inGeneratedDirectory(manifest, entryPoint.getQualifiedName().replace('.', '/')+".java");
-    XmlBuffer xml = getGwtXml(manifest);
-    saveGwtXmlFile(xml, manifest.getModuleName(), manifest);
-    manifest.getModules().forEach(mod->{
-      saveGwtXmlFile(mod.getBuffer(), mod.getInheritName(), manifest);
-    });
-    saveTempFile(entryPoint.toString(), new File(entryPointLocation));
-    files.forBoth((path, body)->
-      saveTempFile(body.out1(), new File(inGeneratedDirectory(manifest, path)))
-    );
-    X_Log.info(GwtcServiceImpl.class, "Generated entry point", "\n", getEntryPoint());
-    X_Log.info(GwtcServiceImpl.class, "Generated module", "\n", getGwtXml(manifest));
-    return prepareCompile(manifest);
+    final GwtcProjectGenerator project = getProject(manifest.getModuleName(), null);
+    return project.generateCompile(manifest);
   }
 
   @Override
@@ -518,6 +405,7 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
       Matcher matcher = SPECIAL_DIRS.matcher(value);
       List<Replacement> replacements = new ArrayList<>();
       if (matcher.matches()) {
+        final GwtcProjectGenerator project = getProject(manifest.getModuleName(), null);
         String type = matcher.group();
         switch (type) {
           case Dependency.DIR_BIN:
@@ -530,10 +418,10 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
             replacements.add(new Replacement(matcher.start(), matcher.end(), manifest.getGenDir()));
             break;
           case Dependency.DIR_TEMP:
-            replacements.add(new Replacement(matcher.start(), matcher.end(), tempDir.getAbsolutePath()));
+            replacements.add(new Replacement(matcher.start(), matcher.end(), project.getTempDir().getAbsolutePath()));
             break;
           case Dependency.DIR_SOURCE:
-            replacements.add(new Replacement(matcher.start(), matcher.end(), tempDir.getAbsolutePath()));
+            replacements.add(new Replacement(matcher.start(), matcher.end(), project.getSourceDir().getAbsolutePath()));
             break;
         }
       }
@@ -549,7 +437,8 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
     };
   }
 
-  private Out1<? extends Iterable<String>> resolveDependency(GwtManifest manifest, Dep dep) {
+  @Override
+  public Out1<? extends Iterable<String>> resolveDependency(GwtManifest manifest, AnnotatedDependency dep) {
     final Dependency dependency = dep.getDependency();
     switch (dependency.dependencyType()) {
       case ABSOLUTE:
@@ -601,7 +490,7 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
     }
   }
 
-  private Iterable<String> relativize(String item, GwtManifest manifest, Dep dep) {
+  private Iterable<String> relativize(String item, GwtManifest manifest, AnnotatedDependency dep) {
     if (Files.exists(Paths.get(item))) {
       return singleItem(item);
     }
@@ -645,205 +534,13 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
     return Immutable.immutable1(EmptyIterator.none());
   }
 
-  protected GwtcProperties getDefaultLaunchProperties() {
+  @Override
+  public GwtcProperties getDefaultLaunchProperties() {
     Gwtc myGwtc = getClass().getAnnotation(Gwtc.class);
     if (myGwtc == null) {
       myGwtc = GwtcServiceImpl.class.getAnnotation(Gwtc.class);
     }
     return myGwtc.propertiesLaunch()[0];
-  }
-
-  protected String prepareCompile(GwtManifest manifest) {
-
-    String gwtHome = X_Properties.getProperty("gwt.home");
-    if (manifest.getCompileDirectory() == null) {
-
-      GwtcProperties defaultProp = getDefaultLaunchProperties();
-      Type level = manifest.getLogLevel();
-      String warDir = manifest.getWarDir();
-      for (GwtcProperties prop : context.getLaunchProperties()) {
-
-        if (prop.obfuscationLevel() != defaultProp.obfuscationLevel()) {
-          manifest.setObfuscationLevel(prop.obfuscationLevel());
-        }
-
-        if (prop.logLevel() != defaultProp.logLevel()) {
-          if (level.isLowerPriorityThan(prop.logLevel())) {
-            level = prop.logLevel();
-          }
-        }
-
-        if (!prop.warDir().equals(GwtcProperties.DEFAULT_WAR)) {
-          warDir = prop.warDir();
-        }
-      }
-      if (warDir == null) {
-        warDir = GwtcProperties.DEFAULT_WAR;
-      }
-      manifest.setLogLevel(level);
-      if (manifest.getSystemProperties().noneMatch(String::startsWith, "xapi.log.level")) {
-          manifest.addSystemProp("xapi.log.level="+level.name());
-      }
-      manifest.setWarDir(warDir);
-
-      if (warDir.contains("/tmp/")) {
-        File f = tempDir;
-        try {
-          String tempCanonical = f.getCanonicalPath();
-          if (!warDir.contains(tempCanonical)) {
-            warDir = warDir.replaceAll("/tmp/", tempCanonical + File.separator);
-          }
-          manifest.setWarDir( warDir );
-          warDir = new File(warDir).getCanonicalPath();
-          manifest.setWarDir( warDir );
-          X_Log.info(getClass(), "Manifest WAR: ",manifest.getWarDir());
-          final boolean made = new File(warDir).mkdirs();
-          if (!made) {
-          X_Log.warn(getClass(), "Unable to create temporary war directory for GWT compile",
-              "You will likely get an unwanted war folder in the directory you executed this program \ncheck " + warDir+"");
-          }
-        } catch (IOException e) {
-          X_Log.warn(getClass(), "Unable to create temporary war directory for GWT compile",
-              "You will likely get an unwanted war folder in the directory you executed this program \ncheck " + warDir+"", e);
-          X_Debug.maybeRethrow(e);
-        }
-      }
-      if (manifest.getUnitCacheDir() == null) {
-        try {
-          File f = X_File.createTempDir("gwtc-"+manifest.getModuleName()+"UnitCache", manifest.isDisableUnitCache());
-          if (f != null) {
-            manifest.setUnitCacheDir(f.getCanonicalPath());
-          }
-        } catch (IOException e) {
-          X_Log.warn("Unable to create unit cache work directory for GWT compile",
-              "You will likely get unwanted gwtUnitcache folders in the directory you executed this program");
-        }
-      }
-      Set<Dependency> dups = new HashSet<>();
-      for (Dep dependency : context.getDependencies()) {
-        if (dependency.getDependency().dependencyType() == DependencyType.RELATIVE
-            || dups.add(dependency.getDependency())) {
-          manifest.addDependencies(resolveDependency(manifest, dependency));
-        }
-      }
-      if (gwtHome == null) {
-        final Enumeration<URL> compilerLoc;
-        try {
-          compilerLoc = Compiler.class.getClassLoader().getResources(Compiler.class.getName().replace(
-              '.',
-              '/'
-          ) + ".class");
-        } catch (IOException e) {
-          throw new UncheckedIOException(e);
-        }
-        URL gwtHomeLocation;
-        while (compilerLoc.hasMoreElements()) {
-          gwtHomeLocation = compilerLoc.nextElement();
-          if (gwtHomeLocation == null) {
-            X_Log.warn("Unable to find gwt home from System property gwt.home, "
-                , "nor from looking up the gwt compiler class from classloader.  Defaulting to ./lib");
-            gwtHome = X_File.getPath(".");
-          } else {
-            gwtHome = gwtHomeLocation.toExternalForm();
-            if (gwtHome.contains("jar!")) {
-              gwtHome = gwtHome.split("jar!")[0]+"jar";
-            }
-            gwtHome = gwtHome.replace("file:", "").replace("jar:", "");
-            if (manifest.getGwtVersion().length() == 0) {
-              if (gwtHome.contains("gwt-dev.jar")) {
-                manifest.setGwtVersion("");
-              } else {
-                manifest.setGwtVersion(extractGwtVersion(gwtHome));
-              }
-            }
-            int ind = gwtHome.lastIndexOf("gwt-dev");
-            if (ind == -1) {
-              continue;
-            }
-            gwtHome = gwtHome.substring(0, ind-1);
-        }
-        }
-      }
-      X_Properties.setProperty("gwt.home", gwtHome);
-    }
-
-    generateWar(manifest);
-    return gwtHome;
-  }
-
-  @Override
-  public boolean addJUnitClass(Class<?> clazz) {
-    if (!finished.add(clazz.getName())) {
-      X_Log.info(getClass(), "Skipped JUnit 4 class",clazz);
-      return false;
-    }
-    search: {
-      for (Method m : clazz.getMethods()) {
-        if (m.isAnnotationPresent(Test.class)) {
-          break search;
-        }
-      }
-      return false;
-    }
-    Gwtc gwtc = clazz.getAnnotation(Gwtc.class);
-    X_Log.info(getClass(), "generating JUnit class", clazz, "?"+(gwtc != null));
-    if (gwtc != null) {
-      context.addGwtcClass(gwtc, clazz);
-    }
-    addGwtModules(clazz);
-    X_Log.info(getClass(), "added test class for JUnit 4",clazz);
-    ensureReportError();
-    inheritGwtXml(clazz, ResourceBuilder.buildResource("org.junit.JUnit4").build());
-    inheritGwtXml(clazz, ResourceBuilder.buildResource("com.google.gwt.core.Core").build());
-    ClassBuffer cb = classBuffer();
-    String simple = cb.addImport(clazz);
-    String methodName = "add"+simple+"Tests";
-    String gwt = cb.addImport(GWT.class);
-    String callback = cb.addImport(RunAsyncCallback.class);
-    String magic = cb.addImportStatic(GwtReflect.class, "magicClass");
-    cb.createMethod("void "+methodName)
-      .println(gwt+".runAsync("+simple+".class,")
-      .indent()
-      .println("new "+callback+ "() {")
-      .indent()
-      .println("public void onSuccess() {")
-      .indent()
-      .println(magic+"("+simple+".class);")
-      .startTry()
-      .println("junit.addTests("+simple+".class);")
-      .startCatch("Throwable", "e")
-      .println("junit.print(\"Error adding "+simple+" to unit test\", e);")
-      .endTry()
-      .outdent()
-      .println("}")
-      .println()
-      .println("public void onFailure(Throwable reason) {")
-      .indent()
-      .println("junit.print(\"Error loading "+simple+"\", reason);")
-      .outdent()
-      .println("}")
-      .outdent()
-      .println("}")
-      .outdent()
-      .println(");")
-      ;
-
-    junitLoader.println(methodName+"();");
-    return true;
-  }
-
-  @Override
-  protected void generateReportError(ClassBuffer classBuffer) {
-    super.generateReportError(classBuffer);
-    addClass(JUnit4Runner.class);
-    junitLoader = classBuffer.createInnerClass("private final class JUnit extends JUnitUi")
-      .createMethod("public void loadAllTests()");
-
-    classBuffer.createField(JUnitUi.class, "junit")
-      .setModifier(Modifier.FINAL | Modifier.PRIVATE)
-      .setInitializer("new JUnit()");
-
-    out.println("junit.onModuleLoad();");
   }
 
 }

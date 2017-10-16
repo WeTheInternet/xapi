@@ -63,8 +63,8 @@ public class ModelSessionTest {
     @Test
     public void testBrokeInProd() {
         // a dumping ground the check something that breaks in prod.
-        final ModelSession model = deserialize("pT3EHsessionEnTftzb}u{owf|iI_sue~iuf|t~k3Liid7nvdxb9n_gw^g{cTT Ivoid");
-        System.out.println(model);
+//        final ModelSession model = deserialize("pT3EHsessionEnTftzb}u{owf|iI_sue~iuf|t~k3Liid7nvdxb9n_gw^g{cTT Ivoid");
+//        System.out.println(model);
     }
 
     @Test

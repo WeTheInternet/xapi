@@ -38,7 +38,7 @@ public class SuperDevUtil {
   ) {
     String module = manifest.getModuleName();
     RecompileController ret = compilers.get(module);
-    if (ret != null)  {
+    if (ret != null) {
       if (!job.isReusable(manifest)) {
         ret.cleanup();
         job.destroy();
@@ -55,7 +55,7 @@ public class SuperDevUtil {
     try {
       Set<File> sourcePath = new LinkedHashSet<>();
       List<String> args = new ArrayList<>();
-      for (String src : manifest.getSources().forEach()){
+      for (String src : manifest.getSources().forEach()) {
         //TODO: sanitize this somehow?
         if (".".equals(src)) {
           src = new File("").getAbsolutePath();
@@ -64,44 +64,44 @@ public class SuperDevUtil {
           src = src.substring(5);
         }
         File dir = new File(src);
-        if (!dir.exists()){
+        if (!dir.exists()) {
           if (src.startsWith("src")) {
-              final Class<?> main = X_Reflect.getMainClass();
-              if (main != null) {
-                  String loc = X_Reflect.getSourceLoc(main);
-                  if (loc != null) {
-                    dir = new File(loc, src);
-                  }
-                  if (!dir.exists()) {
-                    final URL sourceLoc = main.getProtectionDomain().getCodeSource().getLocation();
-                    if (sourceLoc != null) {
-                      // yay!
-                      loc = sourceLoc.toString().replace("file:", "");
-                      dir = new File(loc);
-                      // TODO: cache / compress these computed fallbacks
-                      if (dir.exists()) {
-                        int target = loc.lastIndexOf("/target");
-                        if (target != -1) {
-                            String base = loc.substring(0, target + 1);
-                            dir = new File(base, src);
-                        }
-                      }
-                    }
-                  }
+            final Class<?> main = X_Reflect.getMainClass();
+            if (main != null) {
+              String loc = X_Reflect.getSourceLoc(main);
+              if (loc != null) {
+                dir = new File(loc, src);
               }
               if (!dir.exists()) {
-                  dir = new File(".", src);
+                final URL sourceLoc = main.getProtectionDomain().getCodeSource().getLocation();
+                if (sourceLoc != null) {
+                  // yay!
+                  loc = sourceLoc.toString().replace("file:", "");
+                  dir = new File(loc);
+                  // TODO: cache / compress these computed fallbacks
+                  if (dir.exists()) {
+                    int target = loc.lastIndexOf("/target");
+                    if (target != -1) {
+                      String base = loc.substring(0, target + 1);
+                      dir = new File(base, src);
+                    }
+                  }
+                }
               }
+            }
+            if (!dir.exists()) {
+              dir = new File(".", src);
+            }
           }
         }
         if (!dir.exists()) {
-          X_Log.error(SuperDevUtil.class,"Gwt source directory "+dir+" does not exist");
+          X_Log.error(SuperDevUtil.class, "Gwt source directory " + dir + " does not exist");
         } else {
-          X_Log.trace(SuperDevUtil.class, "Adding to source: "+dir);
+          X_Log.trace(SuperDevUtil.class, "Adding to source: " + dir);
         }
         sourcePath.add(dir);
       }
-      for (String src : manifest.getDependencies()){
+      for (String src : manifest.getDependencies()) {
         if (".".equals(src)) {
           src = new File("").getAbsolutePath();
         }
@@ -112,18 +112,18 @@ public class SuperDevUtil {
         if (!dir.isAbsolute()) {
           dir = new File(manifest.getRelativeRoot() + File.separator + dir.getPath());
         }
-          if (dir.exists() ) {
-              if (dir.isDirectory()) {
-                  sourcePath.add(dir);
-                  X_Log.trace(SuperDevUtil.class, "Adding to source path (will hot recompile): " + dir);
-              }
-          } else {
-            final String error = "Gwt dependency directory " + dir + " does not exist";
-            X_Log.error(SuperDevUtil.class, error);
-            if (manifest.isStrict()) {
-              throw new IllegalStateException(error);
-            }
+        if (dir.exists()) {
+          if (dir.isDirectory()) {
+            sourcePath.add(dir);
+            X_Log.trace(SuperDevUtil.class, "Adding to source path (will hot recompile): " + dir);
           }
+        } else {
+          final String error = "Gwt dependency directory " + dir + " does not exist";
+          X_Log.error(SuperDevUtil.class, error);
+          if (manifest.isStrict()) {
+            throw new IllegalStateException(error);
+          }
+        }
       }
       final File warDir = new File(manifest.getWarDir());
       if (!warDir.isDirectory()) {
@@ -132,8 +132,6 @@ public class SuperDevUtil {
           X_Log.warn(SuperDevUtil.class, "Unable to create war dir", manifest.getWarDir(), "expect more errors...");
         }
       }
-      outbox = OutboxDir.create(new File(manifest.getWarDir()), logger);
-      opts = new Options();
 
       args.add("-allowMissingSrc");
 
@@ -141,8 +139,6 @@ public class SuperDevUtil {
         args.add("-src");
         args.add(file.getCanonicalPath());
       }
-
-      opts.addTags();
 
       if (manifest.getPort() != 0) {
         args.add("-port");
@@ -176,25 +172,26 @@ public class SuperDevUtil {
 
       args.add(module);
 
+      // TODO: Here is where we need to consider isolating ClassLoader
+
+      outbox = OutboxDir.create(warDir, logger);
+      opts = new Options();
       opts.parseArgs(args.toArray(new String[args.size()]));
       launcher = LauncherDir.maybeCreate(opts);
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
-    }
 
-    final File cacheFolder = manifest.getUnitCacheDir() == null ? null : new File(manifest.getUnitCacheDir());
-    final JJSOptionsImpl options = new JJSOptionsImpl();
-    // The following two options are the only ones used by UnitCacheSingleton;
-    // we should put back / in support for these...
-//    options.setGenerateJsInteropExports(false);
-//    options.getJsInteropExportFilter().add("...");
-    final UnitCache cache = UnitCacheSingleton.get(logger, cacheFolder, options);
-    final MinimalRebuildCacheManager rebinds = new MinimalRebuildCacheManager(logger, cacheFolder, new HashMap<>());
+      final File cacheFolder = manifest.getUnitCacheDir() == null ? null : new File(manifest.getUnitCacheDir());
+      final JJSOptionsImpl options = new JJSOptionsImpl();
+      // The following two options are the only ones used by UnitCacheSingleton;
+      // we should put back / in support for these...
+      //    options.setGenerateJsInteropExports(false);
+      //    options.getJsInteropExportFilter().add("...");
+      final UnitCache cache = UnitCacheSingleton.get(logger, cacheFolder, options);
+      final MinimalRebuildCacheManager rebinds = new MinimalRebuildCacheManager(logger, cacheFolder, new HashMap<>());
 
-    RecompileRunner runner = new RecompileRunner(rebinds, manifest, app);
+      RecompileRunner runner = new RecompileRunner(rebinds, manifest, app);
 
-    Recompiler compiler = new Recompiler(outbox, launcher, module.split("/")[0], opts, cache, rebinds);
-      try{
+      Recompiler compiler = new Recompiler(outbox, launcher, module.split("/")[0], opts, cache, rebinds);
+      try {
         RecompileController recompiler = new RecompileController(compiler, runner);
         compilers.put(module, recompiler);
         return recompiler;
@@ -202,6 +199,10 @@ public class SuperDevUtil {
         e.printStackTrace();
         throw new RuntimeException(e);
       }
+
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
   }
 
   public static IsAppSpace newAppSpace(String module) {

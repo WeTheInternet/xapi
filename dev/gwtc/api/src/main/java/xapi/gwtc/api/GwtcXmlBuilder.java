@@ -51,14 +51,23 @@ public class GwtcXmlBuilder {
     entryPoints = new HashMap<>();
   }
 
-  public static GwtcXmlBuilder generateGwtXml(Gwtc gwtc, String pkg, String name) {
-    GwtcXmlBuilder builder = new GwtcXmlBuilder(pkg, name, gwtc.debug());
+  public static GwtcXmlBuilder generateGwtXml(String pkg, String name, boolean shouldDebug, Gwtc ... gwtcs) {
+    GwtcXmlBuilder builder = new GwtcXmlBuilder(pkg, name, gwtcs.length == 0 ? shouldDebug : gwtcs[0].debug());
     if (!pkg.endsWith(".")) {
       pkg = pkg + ".";
     }
     X_Log.info(GwtcXmlBuilder.class, "Generating gwt xml for ",pkg+name);
-    builder.generate(gwtc);
+
+    for (Gwtc gwtc : gwtcs) {
+      // We do no uniqueness filtering or validation for elements added here...
+      builder.generate(gwtc);
+    }
+
     return builder;
+  }
+
+  protected boolean shouldDebug() {
+    return X_Runtime.isDebug();
   }
 
   protected void generate(Gwtc gwtc) {

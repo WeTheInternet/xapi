@@ -1,15 +1,14 @@
-package xapi.dev.gwtc.impl;
+package xapi.dev.gwtc.api;
 
 import xapi.annotation.compile.Dependency;
 import xapi.annotation.compile.Resource;
-import xapi.annotation.ui.UiTemplateBuilder;
 import xapi.bytecode.ClassFile;
 import xapi.collect.api.InitMap;
 import xapi.collect.impl.InitMapDefault;
-import xapi.dev.gwtc.api.GwtcService;
 import xapi.dev.scanner.X_Scanner;
 import xapi.dev.scanner.impl.ClasspathResourceMap;
 import xapi.dev.source.XmlBuffer;
+import xapi.fu.In1Out1;
 import xapi.fu.MappedIterable;
 import xapi.gwtc.api.GwtManifest;
 import xapi.gwtc.api.Gwtc;
@@ -22,8 +21,6 @@ import xapi.log.X_Log;
 import xapi.source.X_Source;
 import xapi.util.X_Debug;
 import xapi.util.X_Runtime;
-import xapi.util.X_String;
-import xapi.util.api.ConvertsValue;
 import xapi.util.api.ReceivesValue;
 
 import javax.inject.Provider;
@@ -43,274 +40,47 @@ import java.util.concurrent.Callable;
 import com.google.gwt.reflect.shared.GwtReflect;
 import com.google.gwt.reflect.shared.GwtReflectJre;
 
+/**
+ * This is a giant bag of state dedicated to "things we're adding to a GwtCompilation".
+ *
+ * When this bag of state is effectively empty, we _should_ be able to skip creating any files,
+ * and just supply the correct values to make the compiler run entirely on existing code.
+ */
 @SuppressWarnings({"unchecked", "rawtypes", "unused"})
-public class GwtcContext {
+public class GwtcGeneratedProject {
 
-  private static final ConvertsValue LIST_PROVIDER = new ConvertsValue() {
-    @Override
-    public Object convert(Object from) {
-      return new ArrayList();
-    }
-  };
-  private static final ConvertsValue<Package, String> PACKAGE_NAME =
-      new ConvertsValue<Package, String>() {
-        @Override
-        public String convert(Package from) {
-          return from.getName();
-        }
-      };
-  private static final ConvertsValue<Object, String> ENTITY_NAME =
-      new ConvertsValue<Object, String>() {
-        @Override
-        public String convert(Object from) {
-          if (from instanceof Class) {
-            return ((Class<?>) from).getName();
-          } else if (from instanceof Method) {
-            return ((Method) from).toGenericString();
-          } else if (from instanceof Package) {
-            return ((Package) from).getName();
-          } else {
-            X_Log.warn(getClass(), "Unsupported toString object type",
-                from == null ? "null" : from.getClass(), from);
-            return String.valueOf(from);
-          }
-        }
-      };
-
-  public class GwtcConverter implements ConvertsValue<Object, GwtcUnit> {
-
-    @Override
-    public GwtcUnit convert(Object from) {
+  private static final In1Out1 LIST_PROVIDER = ignored->new ArrayList();
+  private static final In1Out1<Package, String> PACKAGE_NAME = Package::getName;
+  private static final In1Out1<Object, String> ENTITY_NAME = from -> {
       if (from instanceof Class) {
-        return newGwtcData((Class<?>) from);
+        return ((Class<?>) from).getName();
       } else if (from instanceof Method) {
-        return newGwtcData((Method) from);
+        return ((Method) from).toGenericString();
       } else if (from instanceof Package) {
-        return newGwtcData((Package) from);
+        return ((Package) from).getName();
       } else {
-        X_Log.warn(getClass(), "Unsupported toString object type", from == null ? "null" : from
-            .getClass(), from);
+        X_Log.warn(GwtcGeneratedProject.class, "Unsupported toString object type",
+            from == null ? "null" : from.getClass(), from);
+        return String.valueOf(from);
       }
-      return null;
-    }
-
-    protected GwtcUnit newGwtcData(Class<?> from) {
-      return new GwtcUnit(from);
-    }
-
-    protected GwtcUnit newGwtcData(Package from) {
-      return new GwtcUnit(from);
-    }
-
-    protected GwtcUnit newGwtcData(Method from) {
-      return new GwtcUnit(from);
-    }
-
-  }
-
-  protected static class GwtcUnit {
-    private final GwtcUnitType type;
-    public GwtcUnit(Class<?> from) {
-      gwtc = from.getAnnotation(Gwtc.class);
-      source = from;
-      type = GwtcUnitType.Class;
-    }
-
-    public GwtcUnit(Method from) {
-      gwtc = from.getAnnotation(Gwtc.class);
-      source = from;
-      type = GwtcUnitType.Method;
-    }
-
-    public GwtcUnit(Package from) {
-      gwtc = from.getAnnotation(Gwtc.class);
-      source = from;
-      type = GwtcUnitType.Package;
-    }
-
-    protected final Gwtc gwtc;
-    protected GwtcXmlBuilder xml;
-    protected UiTemplateBuilder html;
-    protected final List<Package> packages = new ArrayList<Package>();
-    protected final List<Class<?>> classes = new ArrayList<Class<?>>();
-    public final Object source;
-    private GwtcUnit parent;
-    private Set<GwtcUnit> children = new LinkedHashSet<GwtcUnit>();
-
-    public String generateGwtXml(Gwtc gwtc, String pkg, String name) {
-      xml = GwtcXmlBuilder.generateGwtXml(gwtc, pkg, name);
-      return xml.getInheritName();
-    }
-
-    public boolean isFindAllParents() {
-      for (AncestorMode mode : gwtc.inheritanceMode()) {
-        if (mode == AncestorMode.INHERIT_ALL_PARENTS) {
-          return true;
-        }
-      }
-      return false;
-    }
-
-    @SuppressWarnings("incomplete-switch")
-    public boolean isFindParent() {
-      for (AncestorMode mode : gwtc.inheritanceMode()) {
-        switch (mode){
-          case INHERIT_ALL_PARENTS:
-          case INHERIT_ONE_PARENT:
-            return true;
-        }
-      }
-      return false;
-    }
-
-    public boolean isFindChild() {
-      for (AncestorMode mode : gwtc.inheritanceMode()) {
-        if (mode == AncestorMode.INHERIT_CHILDREN) {
-            return true;
-        }
-      }
-      return false;
-    }
-
-    public boolean isFindEnclosingClasses() {
-      for (AncestorMode mode : gwtc.inheritanceMode()) {
-        if (mode == AncestorMode.INHERIT_ENCLOSING_CLASSES) {
-          return true;
-        }
-      }
-      return false;
-    }
-
-    public boolean isFindSuperClasses() {
-      for (AncestorMode mode : gwtc.inheritanceMode()) {
-        if (mode == AncestorMode.INHERIT_SUPER_CLASSES) {
-          return true;
-        }
-      }
-      return false;
-    }
-
-    public void setParent(GwtcUnit parentNode) {
-      parent = parentNode;
-      parent.children.add(this);
-    }
-
-    /**
-     * Finds the next parent element annotated with @Gwtc.
-     * <br/>
-     * This method should NOT be used to recurse parent hierarchy;
-     * instead use {@link #getParent()}
-     *
-     * @return the next parent with @Gwtc, if there is one.
-     */
-    public Object getParent() {
-      if (!isFindParent()) {
-        return null;
-      }
-      final boolean findAll = isFindAllParents();
-      Object o = source;
-      Class<?> c;
-      switch(type) {
-        case Method:
-          if (!isFindEnclosingClasses()) {
-            return null;
-          }
-          o = c = ((Method)o).getDeclaringClass();
-          if (c.isAnnotationPresent(Gwtc.class)) {
-            return c;
-          } else if (!findAll) {
-            return null;
-          }
-          // fallthrough
-        case Class:
-          c = (Class<?>)o;
-          if (isFindEnclosingClasses()) {
-            Class<?> search = c;
-            while (!isObjectOrNull(search.getDeclaringClass())) {
-              search = search.getDeclaringClass();
-              if (search.isAnnotationPresent(Gwtc.class)) {
-                return search;
-              }
-              if (!findAll) {
-                break;
-              }
-            }
-          }
-          if (isFindSuperClasses()) {
-            Class<?> search = c;
-            while (!isObjectOrNull(search.getSuperclass())) {
-              search = search.getSuperclass();
-              if (search.isAnnotationPresent(Gwtc.class)) {
-                return search;
-              }
-              if (!findAll) {
-                break;
-              }
-            }
-          }
-          o = c.getPackage();
-          // fallthrough
-        case Package:
-          Package p = (Package) o;
-          String pkg = p.getName();
-          if ("".equals(pkg)) {
-            return null;
-          }
-          do {
-            pkg = X_String.chopOrReturnEmpty(pkg, ".");
-            p = GwtReflect.getPackage(pkg);
-            if (p != null) {
-              if (p.isAnnotationPresent(Gwtc.class)) {
-                return p;
-              }
-              if (!findAll) {
-                return null;
-              }
-            }
-          } while (pkg.length() > 0);
-      }
-      return null;
-    }
-
-    public void addChild(GwtcUnit data) {
-      children.add(data);
-      assert data.parent == null || data.parent == this :
-        "GwtcUnit "+data+" already has a parent; "+ data.parent+
-        "; cannot set "+this+" as new parent.";
-      data.parent = this;
-    }
-
-    @Override
-    public String toString() {
-      return "GwtcUnit "+source+" "+type;
-    }
-
-    public Iterable<GwtcUnit> getChildren() {
-      return children;
-    }
-
-    public GwtcUnitType getType() {
-      return type;
-    }
-
-  }
+  };
 
   // =====================================================
   // ==Store the structure of related classpath entities==
   // =====================================================
 
   private final InitMap<Class<?>, List<Method>> methods =
-      new InitMapDefault<Class<?>, List<Method>>(InitMapDefault.CLASS_NAME, LIST_PROVIDER);
+      new InitMapDefault<>(InitMapDefault.CLASS_NAME, LIST_PROVIDER);
   private final InitMap<Class<?>, List<Class<?>>> innerClasses =
-      new InitMapDefault<Class<?>, List<Class<?>>>(InitMapDefault.CLASS_NAME, LIST_PROVIDER);
+      new InitMapDefault<>(InitMapDefault.CLASS_NAME, LIST_PROVIDER);
   private final InitMap<Class<?>, List<Class<?>>> superClasses =
-      new InitMapDefault<Class<?>, List<Class<?>>>(InitMapDefault.CLASS_NAME, LIST_PROVIDER);
+      new InitMapDefault<>(InitMapDefault.CLASS_NAME, LIST_PROVIDER);
   private final InitMap<Package, List<Class<?>>> classes =
-      new InitMapDefault<Package, List<Class<?>>>(PACKAGE_NAME, LIST_PROVIDER);
+      new InitMapDefault<>(PACKAGE_NAME, LIST_PROVIDER);
   private final InitMap<Package, List<Package>> packages =
-      new InitMapDefault<Package, List<Package>>(PACKAGE_NAME, LIST_PROVIDER);
+      new InitMapDefault<>(PACKAGE_NAME, LIST_PROVIDER);
 
-  private final InitMap<Object, GwtcUnit> nodes = new InitMapDefault<Object, GwtcUnit>(ENTITY_NAME, new GwtcConverter());
+  private final InitMap<Object, GwtcUnit> nodes = new InitMapDefault<Object, GwtcUnit>(ENTITY_NAME, new GwtcReflectionConverter());
 
   // =====================================================
   // ==Store sets of all entities for run-once semantics==
@@ -324,48 +94,8 @@ public class GwtcContext {
   // =====================================================
   // =====================================================
 
-  public static class Dep {
-    private final Dependency dependency;
-    private final AnnotatedElement source;
-
-    public Dep(Dependency dependency, AnnotatedElement source) {
-      this.dependency = dependency;
-      this.source = source;
-    }
-
-    public Dependency getDependency() {
-      return dependency;
-    }
-
-    public AnnotatedElement getSource() {
-      return source;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o)
-        return true;
-      if (!(o instanceof Dep))
-        return false;
-
-      final Dep dep = (Dep) o;
-
-      if (!dependency.equals(dep.dependency))
-        return false;
-      return source.equals(dep.source);
-
-    }
-
-    @Override
-    public int hashCode() {
-      int result = dependency.hashCode();
-      result = 31 * result + source.hashCode();
-      return result;
-    }
-  }
-
   private final GwtcXmlBuilder module;
-  private final Set<Dep> dependencies = new LinkedHashSet<>();
+  private final Set<AnnotatedDependency> dependencies = new LinkedHashSet<>();
   private final Set<Resource> gwtXmlDeps = new LinkedHashSet<Resource>();
   private final Set<GwtcProperties> launchProperties = new LinkedHashSet<GwtcProperties>();
   private final Set<Object> needChildren = new HashSet<Object>();
@@ -379,7 +109,7 @@ public class GwtcContext {
   private boolean debug = X_Runtime.isDebug();
   private Class<?> firstClassAdded;
 
-  public GwtcContext(GwtcService gwtcService, ClassLoader resourceLoader) {
+  public GwtcGeneratedProject(GwtcService gwtcService, ClassLoader resourceLoader, String moduleName) {
     this.gwtcService = gwtcService;
     // Start scanning the classpath, but don't block until we need to.
     final Callable<ClasspathResourceMap> scanner = X_Scanner.scanClassloaderAsync(resourceLoader);
@@ -393,8 +123,8 @@ public class GwtcContext {
         }
       }
     };
-    String genName = "Gwtc" + Math.abs(hashCode() - System.nanoTime());
-    module = new GwtcXmlBuilder("", genName, false);
+    final String[] fullName = X_Source.splitClassName(moduleName);
+    module = new GwtcXmlBuilder(fullName[0], fullName[1], false);
     module.addConfigurationProperty("xsiframe.failIfScriptTag", "FALSE");
     module.setPublic("public");
   }
@@ -411,7 +141,7 @@ public class GwtcContext {
       scanClass(cls);
       return true;
     } else {
-      X_Log.warn(getClass(), "Skipping class we've already seen", cls);
+      X_Log.warn(GwtcGeneratedProject.class, "Skipping class we've already seen", cls);
     }
     return false;
   }
@@ -421,7 +151,7 @@ public class GwtcContext {
       scanMethod(method);
       return true;
     } else {
-      X_Log.warn(getClass(), "Skipping method we've already seen", method);
+      X_Log.warn(GwtcGeneratedProject.class, "Skipping method we've already seen", method);
       return false;
     }
   }
@@ -431,7 +161,7 @@ public class GwtcContext {
       scanPackage(pkg);
       return true;
     } else {
-      X_Log.trace(getClass(), "Skipping package we've already seen", pkg);
+      X_Log.trace(GwtcGeneratedProject.class, "Skipping package we've already seen", pkg);
       return false;
     }
   }
@@ -444,7 +174,7 @@ public class GwtcContext {
     } if (data.gwtc == null) {
       return;
     }
-    gwtcService.addClass(clazz);
+    addClass(clazz);
     Object parent;
     if (data.isFindParent()) {
       parent = findAncestor(data.source);
@@ -560,14 +290,14 @@ public class GwtcContext {
           X_Log.info(getClass(), "Loading package", file);
           Package p = GwtReflectJre.getPackage(file.getPackage(), cl);
           if (!finishedPackages.contains(p)) {
-            gwtcService.addPackage(p, false);
+            addPackage(p);
           }
         } else {
           Class<?> clazz = cl.loadClass(file.getName());
           X_Log.trace(getClass(), "Loaded class", clazz);
           if (!finishedClasses.contains(clazz)) {
             X_Log.info(getClass(), "Adding class", clazz);
-            gwtcService.addClass(clazz);
+            addClass(clazz);
           }
         }
       } catch (Exception e) {
@@ -636,8 +366,8 @@ public class GwtcContext {
     return module.getEntryPoint();
   }
 
-  public void addGwtXmlSource(String genPrefix) {
-    module.addSource(genPrefix);
+  public void addGwtXmlSource(String path) {
+    module.addSource(path);
   }
 
   public void addGwtXmlInherit(String value) {
@@ -694,31 +424,31 @@ public class GwtcContext {
   }
 
   public void addDependency(Dependency dep, AnnotatedElement clazz) {
-    dependencies.add(new Dep(dep, clazz));
+    dependencies.add(new AnnotatedDependency(dep, clazz));
   }
 
   public Iterable<GwtcProperties> getLaunchProperties() {
     return launchProperties;
   }
 
-  public MappedIterable<Dep> getDependencies() {
+  public MappedIterable<AnnotatedDependency> getDependencies() {
     return dependencies::iterator;
   }
 
-  protected void addGwtcClass(Gwtc gwtc, Class<?> clazz) {
+  public void addGwtcClass(Gwtc gwtc, Class<?> clazz) {
     // Generate a new gwt.xml file and inherit it.
     GwtcUnit node = nodes.get(clazz);
-    String inheritName = node.generateGwtXml(gwtc, clazz.getPackage().getName(), clazz.getSimpleName());
+    String inheritName = node.generateGwtXml(clazz.getPackage().getName(), clazz.getSimpleName(), gwtc);
     inheritGwtXml(inheritName);
     addGwtcSettings(gwtc, clazz);
   }
 
-  protected void addGwtcPackage(Gwtc gwtc, Package pkg, boolean recursive) {
+  public void addGwtcPackage(Gwtc gwtc, Package pkg, boolean recursive) {
     String name = pkg.getName();
     int i = name.lastIndexOf('.');
     name = Character.toUpperCase(name.charAt(i + 1)) + name.substring(i + 2) + "_Package";
     GwtcUnit node = nodes.get(pkg);
-    String inherit = node.generateGwtXml(gwtc, pkg.getName(), name);
+    String inherit = node.generateGwtXml(pkg.getName(), name, gwtc);
     inheritGwtXml(inherit);
     addGwtcSettings(gwtc, pkg);
     maybeAddAncestors(gwtc, pkg);
@@ -871,7 +601,7 @@ public class GwtcContext {
           X_Log.info(getClass(), "Generating gwt.xml for ",node.source,"to",dir);
           save(node, dir);
         }
-        if (node.parent == null) {
+        if (!node.hasParent()) {
           topLevel.add(node);
         }
       }
@@ -889,9 +619,9 @@ public class GwtcContext {
     final GwtcXmlBuilder xml = node.xml;
     outputFile = new File(outputFile, xml.getFileName());
     if (debug) {
-      X_Log.info(GwtcContext.class, "Saving generated gwt.xml file",outputFile,"\n",xml.getBuffer());
+      X_Log.info(GwtcGeneratedProject.class, "Saving generated gwt.xml file",outputFile,"\n",xml.getBuffer());
     } else {
-      X_Log.debug(GwtcContext.class, "Saving generated gwt.xml file",outputFile,"\n"+xml.getBuffer());
+      X_Log.debug(GwtcGeneratedProject.class, "Saving generated gwt.xml file",outputFile,"\n"+xml.getBuffer());
     }
     try {
       if (outputFile.exists()) {
@@ -900,18 +630,18 @@ public class GwtcContext {
       outputFile.getParentFile().mkdirs();
       outputFile.createNewFile();
     } catch (IOException e) {
-      X_Log.warn(GwtcContext.class,"Unable to create generated gwt.xml file", outputFile, e);
+      X_Log.warn(GwtcGeneratedProject.class,"Unable to create generated gwt.xml file", outputFile, e);
     }
     try (FileOutputStream fos = new FileOutputStream(outputFile)) {
       String value = GwtcXmlBuilder.HEADER +xml.getBuffer();
       X_IO.drain(fos, new ByteArrayInputStream(value.getBytes(GwtcXmlBuilder.UTF8)));
     } catch (IOException e) {
-      X_Log.warn(GwtcContext.class, "Unable to save generated gwt.xml file to ",outputFile,e,"\n"+xml.getBuffer());
+      X_Log.warn(GwtcGeneratedProject.class, "Unable to save generated gwt.xml file to ",outputFile,e,"\n"+xml.getBuffer());
     }
 
   }
 
-  public void addPackages(Package pkg, GwtcServiceImpl gwtc, boolean recursive) {
+  public void addPackages(Package pkg, GwtcProjectGenerator gwtc, boolean recursive) {
     Iterable<ClassFile> iter;
     if (recursive) {
       iter = classpath.get().findClassesBelowPackage(pkg.getName());
@@ -919,20 +649,20 @@ public class GwtcContext {
       iter = classpath.get().findClassesInPackage(pkg.getName());
     }
     for (ClassFile file : iter) {
-      X_Log.info(GwtcContext.class, "Scanning file ",file);
+      X_Log.info(GwtcGeneratedProject.class, "Scanning file ",file);
       if ("package-info".equals(file.getEnclosedName())) {
         Package p = GwtReflect.getPackage(file.getPackage());
         if (!finishedPackages.contains(p)) {
-          gwtcService.addPackage(p, false);
+          addPackage(p);
         }
       } else {
         try {
           Class<?> cls = Thread.currentThread().getContextClassLoader().loadClass(file.getName());
           if (!finishedClasses.contains(cls)) {
-            gwtc.addClass(cls);
+            addClass(cls);
           }
         } catch (ClassNotFoundException e) {
-          X_Log.warn(GwtcContext.class,"Unable to load class ",file);
+          X_Log.warn(GwtcGeneratedProject.class,"Unable to load class ",file);
         }
       }
     }

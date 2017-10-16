@@ -3,6 +3,7 @@ package xapi.server.api;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseException;
 import com.github.javaparser.ast.expr.UiContainerExpr;
+import xapi.dev.gwtc.api.GwtcProjectGenerator;
 import xapi.dev.gwtc.api.GwtcService;
 import xapi.except.NotConfiguredCorrectly;
 import xapi.except.NotYetImplemented;
@@ -49,14 +50,21 @@ public interface ModelGwtc extends Model {
     }
 
     default GwtManifest getOrCreateManifest() {
-        return getOrCreate(this::getManifest, this::createManifest, this::setManifest);
+        return getOrCreateManifest("Gen" + System.identityHashCode(this));
+    }
+    default GwtManifest getOrCreateManifest(String modName) {
+        return getOrCreate(this::getManifest, ()->createManifest(modName), this::setManifest);
     }
 
-    default GwtManifest createManifest() {
+    default GwtManifest createManifest(String modName) {
         final GwtManifest manifest = X_Inject.instance(GwtManifest.class);
         final GwtcService service = getService();
         if (service != null) {
-            String root = service.getSuggestedRoot();
+            final GwtcProjectGenerator project = service.getProject(
+                modName,
+                Thread.currentThread().getContextClassLoader()
+            );
+            String root = project.getSuggestedRoot();
             manifest.setRelativeRoot(root);
         }
         return manifest;
@@ -72,7 +80,7 @@ public interface ModelGwtc extends Model {
             setRecompiler(queued::add);
             final GwtcService gwtc = getOrCreateService();
             final GwtManifest manifest = getOrCreateManifest();
-            gwtc.recompile(manifest, (comp, err)->{
+            gwtc.recompile(manifest, null, (comp, err)->{
                 if (err == null) {
                     setRecompiler(comp);
                     queued.removeAll(comp::useServer);

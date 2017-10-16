@@ -21,9 +21,9 @@ public interface XapiServer <Request extends RequestScope> {
 
     void inScope(In1Out1<SessionScope, Request> scopeFactory, In3Unsafe<Request, Throwable, Do> callback);
 
-    void start();
+    void start(Do onDone);
 
-    void shutdown();
+    void shutdown(Do onDone);
 
     void serviceRequest(Request request, In2<Request, Throwable> callback);
 
@@ -55,4 +55,12 @@ public interface XapiServer <Request extends RequestScope> {
         }
         return false;
     }
+
+    /**
+     * Called from the thread blocking on the running server.
+     *
+     * This is an important distinction with regard to cleaning up particular threads.
+     * You should probably avoid overriding this unless you know what you are doing...
+     */
+    void onRelease();
 }

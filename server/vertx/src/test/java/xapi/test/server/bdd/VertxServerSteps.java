@@ -47,7 +47,7 @@ public class VertxServerSteps implements ServerTestHelper<XapiVertxServer> {
     public void runWebAppNamedHelloWorld(String name) throws Throwable {
         initializeServer(name, server->{
             newestServer = server;
-            newestServer.start();
+            newestServer.start(()->X_Log.info(VertxServerSteps.class, "Server online"));
         });
     }
 

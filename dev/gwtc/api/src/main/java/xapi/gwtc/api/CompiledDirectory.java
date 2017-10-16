@@ -2,9 +2,9 @@ package xapi.gwtc.api;
 
 import xapi.fu.Out1;
 
-import com.google.gwt.dev.codeserver.CompileStrategy;
-
 import java.util.Map;
+
+import com.google.gwt.dev.codeserver.CompileStrategy;
 
 public class CompiledDirectory implements java.io.Serializable /* , io.vertx.core.shareddata.Shareable */ {
 

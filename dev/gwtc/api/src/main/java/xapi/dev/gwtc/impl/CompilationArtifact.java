@@ -2,7 +2,6 @@ package xapi.dev.gwtc.impl;
 
 import java.util.Map;
 
-import com.google.gwt.core.ext.Linker;
 import com.google.gwt.core.ext.linker.Artifact;
 import com.google.gwt.dev.codeserver.CompileStrategy;
 

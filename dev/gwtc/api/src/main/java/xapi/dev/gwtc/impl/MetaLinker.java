@@ -16,7 +16,6 @@ import com.google.gwt.core.ext.linker.ArtifactSet;
 import com.google.gwt.core.ext.linker.LinkerOrder;
 import com.google.gwt.core.ext.linker.LinkerOrder.Order;
 import com.google.gwt.core.ext.linker.Shardable;
-
 import com.google.gwt.core.ext.linker.SyntheticArtifact;
 import com.google.gwt.dev.CompilePropertiesArtifact;
 import com.google.gwt.dev.cfg.BindingProperty;

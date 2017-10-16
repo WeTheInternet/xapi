@@ -9,13 +9,10 @@ import xapi.fu.Immutable;
 import xapi.fu.In2;
 import xapi.fu.MappedIterable;
 import xapi.fu.Out1;
-import xapi.fu.X_Fu;
-import xapi.fu.iterate.EmptyIterator;
 import xapi.fu.iterate.SingletonIterator;
 import xapi.log.X_Log;
 import xapi.source.X_Source;
 
-import java.io.File;
 import java.lang.reflect.Array;
 import java.util.Iterator;
 
@@ -200,6 +197,7 @@ public class GwtManifest {
   private String relativeRoot;
   private boolean precompile;
   private boolean isolateClassLoader;
+  private boolean j2cl;
 
   public GwtManifest() {
     includeGenDir = true;
@@ -751,11 +749,11 @@ public class GwtManifest {
 
   }
 
-  public String[] toClasspathFullCompile(String tempDir, String gwtHome) {
-    return toClasspath(false, tempDir, gwtHome, getGwtVersion());
+  public String[] toClasspathFullCompile(String gwtHome) {
+    return toClasspath(false, gwtHome, getGwtVersion());
   }
 
-  public String[] toClasspath(boolean includeCodeserver, String tempDir, String gwtHome, String gwtVersion) {
+  public String[] toClasspath(boolean includeCodeserver, String gwtHome, String gwtVersion) {
     IntTo<String> cp = newList(String.class);
     prefixClasspath(cp);
     // include our __gen dir?
@@ -1162,5 +1160,13 @@ public class GwtManifest {
 
   public void setIsolateClassLoader(boolean isolateClassLoader) {
     this.isolateClassLoader = isolateClassLoader;
+  }
+
+  public boolean isJ2cl() {
+    return j2cl;
+  }
+
+  public void setJ2cl(boolean j2cl) {
+    this.j2cl = j2cl;
   }
 }

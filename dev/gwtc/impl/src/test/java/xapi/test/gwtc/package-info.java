@@ -1,7 +1,11 @@
 @Gwtc(
   includeGwtXml={
-    @Resource("xapi.X_Inherit")
+      @Resource("xapi.X_Inherit")
   }
+    ,dependencies={
+    @Dependency(dependencyType= DependencyType.MAVEN, loadChildren = false,
+        groupId="net.wetheinter", value="xapi-gwt",version= X_Namespace.XAPI_VERSION),
+}
 //  ,includeHostHtml={
 //    @UiTemplate(
 //      value="<div>"
@@ -30,5 +34,8 @@
 //  }
 )
 package xapi.test.gwtc;
+import xapi.annotation.compile.Dependency;
+import xapi.annotation.compile.Dependency.DependencyType;
 import xapi.annotation.compile.Resource;
 import xapi.gwtc.api.Gwtc;
+import xapi.util.X_Namespace;

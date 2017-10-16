@@ -5,6 +5,7 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
+import xapi.fu.Do;
 import xapi.fu.Do.DoUnsafe;
 import xapi.fu.In1;
 import xapi.fu.Mutable;
@@ -42,7 +43,7 @@ public interface ServerTestHelper <ServerType extends XapiServer> extends Rethro
         cleanups.forEachValue(DoUnsafe::done);
         cleanups.clear();
         webApps.clear();
-        servers.forValues(map->map.forValuesUnsafe(XapiServer::shutdown));
+        servers.forValues(map->map.forValuesUnsafe(XapiServer::shutdown, Do.NOTHING));
         servers.clear();
     }
 

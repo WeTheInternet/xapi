@@ -29,6 +29,7 @@ import xapi.dev.X_Gwtc;
 import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.components.XapiWebComponentGenerator;
 import xapi.dev.gen.FileBasedSourceHelper;
+import xapi.dev.gwtc.api.GwtcProjectGenerator;
 import xapi.dev.gwtc.api.GwtcService;
 import xapi.dev.gwtc.impl.GwtcManifestImpl;
 import xapi.dev.source.MethodBuffer;
@@ -97,11 +98,12 @@ import com.google.gwt.core.ext.TreeLogger.Type;
 public class GwtcSteps {
 
   private static final String QUOTED = "\"([^\"]+)\"";
+  private static final String GENERATED_TEST_MODULE = "xapi.test.pkg.TestModule";
 
   static {
-    X_Log.logLevel(LogLevel.TRACE);
     X_Properties.setProperty(X_Namespace.PROPERTY_LOG_LEVEL, "ALL");
     X_Properties.setProperty(X_Namespace.PROPERTY_MULTITHREADED, "10");
+    X_Log.logLevel(LogLevel.TRACE);
   }
 
   private StringTo<CompiledComponent> compiledComponents;
@@ -109,15 +111,23 @@ public class GwtcSteps {
   private StringTo<String> sources;
   private Lazy<GwtcService> gwtc;
   private Lazy<UiGeneratorService> tools;
+  private Lazy<GwtcProjectGenerator> gwtProject = Lazy.deferred1(this::createProject);
+
+  private GwtcProjectGenerator createProject() {
+      final GwtcService service = gwtc.out1();
+      final GwtcProjectGenerator project = service.getProject(GENERATED_TEST_MODULE, null);
+      return project;
+  }
+
   private Lazy<GwtManifest> gwtManifest = Lazy.deferred1(this::createManifest);
 
   protected GwtManifest createManifest() {
-      final GwtcService service = gwtc.out1();
-      service.addClasspath(IsWebComponent.class);
-      service.addClasspath(GeneratedComponentEntryPoint.class);
-      service.createFile("META-INF", "xapi.properties", ()->"");
-      final GwtManifest manifest = new GwtcManifestImpl(service.getModuleName());
-      initializeManifest(service, manifest);
+      final GwtcProjectGenerator project = gwtProject.out1();
+      project.addClasspath(IsWebComponent.class);
+      project.addClasspath(GeneratedComponentEntryPoint.class);
+      project.createFile("META-INF", "xapi.properties", ()->"");
+      final GwtManifest manifest = project.getManifest();
+      initializeManifest(project, manifest);
       return manifest;
   }
   protected <Ctx extends ApiGeneratorContext<Ctx>> UiGeneratorService<Object> createUiGen() {
@@ -152,7 +162,7 @@ public class GwtcSteps {
 
 
   protected void resetGwtCompiler() {
-    gwtc = Lazy.deferred1(X_Gwtc::getServiceForClass, GeneratedComponentEntryPoint.class);
+    gwtc = Lazy.deferred1(X_Gwtc::getGeneratorForClass, GeneratedComponentEntryPoint.class, GENERATED_TEST_MODULE);
     gwtManifest = Lazy.deferred1(this::createManifest);
   }
 
@@ -175,6 +185,7 @@ public class GwtcSteps {
     checkNotEmpty(lines);
 
     GwtcService service = gwtc.out1();
+    final GwtcProjectGenerator project = gwtProject.out1();
     final GwtManifest manifest = gwtManifest.out1();
 
     String code = join("\n", toArray(lines));
@@ -187,12 +198,12 @@ public class GwtcSteps {
     final String fileName = "Gen" + ident;
     pkgToUse = parsed.getPackage() == null ? null : parsed.getPackage().getPackageName();
     if (pkgToUse == null) {
-      pkgToUse = service.modifyPackage("xapi.test.pkg" + ident);
+      pkgToUse = project.modifyPackage("xapi.test.pkg" + ident);
       parsed.setPackage(new PackageDeclaration(new NameExpr(pkgToUse)));
     }
     final GwtcXmlBuilder builder = manifest.getOrCreateBuilder(pkgToUse, fileName);
     builder.addSource("");
-    service.addGwtInherit(builder.getInheritName());
+    project.addGwtInherit(builder.getInheritName());
 
     for (String auto : autoImport()) {
       parsed.getImports().add(new ImportDeclaration(new NameExpr(auto), false, true));
@@ -203,10 +214,10 @@ public class GwtcSteps {
     // lets save the code, then generate an inclusion for it.
     // Note, we are only recording the provider for the source;
     // we still have 'til the end of the compile to actually finish generating code.
-    service.createFile(pkgToUse.replace('.', '/'), clsToUse + ".java", parsed::toSource);
+    project.createFile(pkgToUse.replace('.', '/'), clsToUse + ".java", parsed::toSource);
 
-    final MethodBuffer method = service.addMethodToEntryPoint("public void runMethod" + ident);
-    service.getOnModuleLoad()
+    final MethodBuffer method = project.addMethodToEntryPoint("public void runMethod" + ident);
+    project.getOnModuleLoad()
         .println(method.getName() + "();");
 
     parsed.getTypes().forEach(t -> {
@@ -280,6 +291,7 @@ public class GwtcSteps {
     checkNotEmpty(lines);
 
     GwtcService service = gwtc.out1();
+    final GwtcProjectGenerator project = gwtProject.out1();
     final GwtManifest manifest = gwtManifest.out1();
 
     if (name == null) {
@@ -306,7 +318,7 @@ public class GwtcSteps {
 
     final GwtcXmlBuilder builder = manifest.getOrCreateBuilder(pkgToUse, name);
     builder.addSource("");
-    service.addGwtInherit(builder.getInheritName());
+    project.addGwtInherit(builder.getInheritName());
 
     final SourceBuilder<?> out = buffer.getBinder();
     autoImport().forEach(out::addImport);
@@ -359,13 +371,13 @@ public class GwtcSteps {
         .add("xapi.ui.api");
   }
 
-  private void initializeManifest(GwtcService service, GwtManifest manifest) {
+  private void initializeManifest(GwtcProjectGenerator service, GwtManifest manifest) {
     manifest.addSystemProp("gwt.usearchives=false");
     manifest.setDisableUnitCache(true);
     manifest.setLogLevel(Type.TRACE);
     manifest.setWorkDir(service.getTempDir().getAbsolutePath());
     manifest.setGenDir(manifest.getGenDir()); // make the default explicit, so the argument is sent to command line
-    manifest.setStrict(true); // break on any error
+    manifest.setStrict(false); // break on any error
     manifest.setCleanupMode(CleanupMode.DELETE_ON_SUCCESSFUL_EXIT);
 //    manifest.setCleanupMode(CleanupMode.NEVER_DELETE);
     manifest.setUseCurrentJvm(true);

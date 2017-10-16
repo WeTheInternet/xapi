@@ -34,6 +34,7 @@ import xapi.source.api.CharIterator;
 import xapi.source.impl.InputStreamCharIterator;
 import xapi.test.server.bdd.TestSocketServer.SocketScope;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -194,6 +195,11 @@ class TestSocketServer extends AbstractModel implements WebApp, Rethrowable, Xap
     }
 
     @Override
+    public void onRelease() {
+
+    }
+
+    @Override
     public void inScope(
         In1Out1<SessionScope, SocketScope> scopeFactory, In3Unsafe<SocketScope, Throwable, Do> callback
     ) {
@@ -201,14 +207,19 @@ class TestSocketServer extends AbstractModel implements WebApp, Rethrowable, Xap
 
     }
 
-    public void start() {
+    @Override
+    public void shutdown(Do onDone) {
+
+    }
+
+    public void start(Do onStart) {
         URLClassLoader cl = new URLClassLoader(
             new URL[]{classpath},
             Thread.currentThread().getContextClassLoader()
         );
         //            server = new Server(port);
         enviro = new Thread(() -> {
-            //                while (server.isRunning()) {
+            onStart.done();
             while (isRunning()) {
                 try {
                     serviceRequests();
@@ -349,6 +360,16 @@ class TestSocketServer extends AbstractModel implements WebApp, Rethrowable, Xap
     }
 
     @Override
+    public boolean isDestroyed() {
+        return false;
+    }
+
+    @Override
+    public WebApp setDestroyed(boolean destroyed) {
+        return null;
+    }
+
+    @Override
     public boolean isRunning() {
         return running;
     }
@@ -357,6 +378,16 @@ class TestSocketServer extends AbstractModel implements WebApp, Rethrowable, Xap
     public WebApp setRunning(boolean running) {
         this.running = running;
         return this;
+    }
+
+    @Override
+    public boolean isDestroyable() {
+        return false;
+    }
+
+    @Override
+    public WebApp setDestroyable(boolean destroyable) {
+        return null;
     }
 
     @Override

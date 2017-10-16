@@ -44,9 +44,17 @@ public interface WebApp extends Model {
 
     WebApp setClustered(boolean clustered);
 
+    boolean isDestroyed();
+
+    WebApp setDestroyed(boolean destroyed);
+
     boolean isRunning();
 
     WebApp setRunning(boolean running);
+
+    boolean isDestroyable();
+
+    WebApp setDestroyable(boolean destroyable);
 
     boolean isDevMode();
 
@@ -106,6 +114,15 @@ public interface WebApp extends Model {
     }
 
     void setInstanceId(String instanceId);
+
+    default void destroy() {
+        if (isRunning()) {
+            setRunning(false);
+        }
+        if (isDestroyable()) {
+            setDestroyed(true);
+        }
+    }
 }
 class WebAppIdHolder {
     static int lastId;

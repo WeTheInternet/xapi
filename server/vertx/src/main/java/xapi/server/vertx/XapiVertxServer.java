@@ -57,6 +57,7 @@ import xapi.source.template.MappedTemplate;
 import xapi.time.X_Time;
 import xapi.util.X_String;
 import xapi.util.X_Util;
+import xapi.util.api.ErrorHandler;
 import xapi.util.api.SuccessHandler;
 
 import java.io.File;
@@ -107,8 +108,10 @@ public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
     private final Lazy<String> iid;
     private final Lazy<SecureRandom> random;
     private final ChainBuilder<In2<Vertx, HttpServer>> onStarted;
+    private final ChainBuilder<In2<Vertx, HttpServer>> onShutdown;
     private ClusterManager manager;
     private final Lazy<Out1<String>> iidFactory;
+    private Do onRelease;
 
     public XapiVertxServer(WebApp webApp) {
         this.webApp = webApp;
@@ -116,6 +119,7 @@ public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
             X_Fu::identity, this::findEndpoint
         );
         onStarted = Chain.startChain();
+        onShutdown = Chain.startChain();
         onStarted.add((v, s)->
             instanceIdFactory()
         );
@@ -123,6 +127,7 @@ public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
         iidFactory = Lazy.deferred1(initializeIidFactory(webApp));
         iid = Lazy.deferBoth(webApp::getOrMakeInstanceId, iidFactory);
         random = Lazy.deferBoth(SecureRandom::new, ()->iid.out1().getBytes());
+        onRelease = webApp.isDestroyable() ? webApp::destroy : Do.NOTHING;
     }
 
     protected Out1<Out1<String>> initializeIidFactory(WebApp webApp) {
@@ -213,6 +218,16 @@ public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
             });
         }
     }
+
+    @Override
+    public void onRelease() {
+        onRelease.done();
+        onRelease = Do.unsafe(()->{
+            throw new IllegalStateException("Server already released");
+        });
+    }
+
+
     protected XapiEndpoint<?> findEndpoint(String name) {
         // this is called during the init process of the underlying map,
         // but we made it protected so it could be overloaded, and that
@@ -354,12 +369,12 @@ public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
     }
 
     @Override
-    public void start() {
+    public void start(Do onStart) {
         webApp.setRunning(true);
         if (webApp.getPort() == 0) {
             X_Server.usePort(p->{
                 webApp.setPort(p);
-                start();
+                start(onStart);
             });
             return;
         }
@@ -401,11 +416,17 @@ public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
                         endpoints.forEach((key, endpoint)->
                             endpoint.initialize(scope, XapiVertxServer.this)
                         );
+                        onStart.done();
+                        // we'll set the mutable's value last,
+                        // as we want the calling thread to block until the job is really complete
                         connection.in(result.result());
                     });
 
             } else {
                 X_Log.error(XapiVertxServer.class, "Vert.x failed to start", res.cause());
+                if (onStart instanceof ErrorHandler) {
+                    ((ErrorHandler) onStart).onError(res.cause());
+                }
             }
         };
         if (webApp.isClustered()) {
@@ -493,8 +514,10 @@ public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
     }
 
     @Override
-    public void shutdown() {
+    public void shutdown(Do onDone) {
+        onShutdown.add(onDone.ignores2());
         webApp.setRunning(false);
+        onRelease = onRelease.doAfter(onDone);
     }
 
     @Override
@@ -741,7 +764,7 @@ public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
                             module.setRecompiler(recompiler);
                             onDone.done();
                         };
-                        service.recompile(manifest, use.onlyOnce());
+                        service.recompile(manifest, maxTime == null ? null : maxTime.toMillis(), use.onlyOnce());
                     }
                 } else {
                     final int result = service.compile(manifest);
@@ -774,7 +797,7 @@ public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
                         resp.prepareToClose();
                         resp.getResponse().sendFile(normalized);
                     } else {
-                        X_Log.warn(getClass(), "No file to serve for ", file, "from url", url);
+                        X_Log.warn(XapiVertxServer.class, "No file to serve for ", file, "from url", url);
                     }
                 } else {
                     // This url is for an actual source file.
@@ -802,7 +825,7 @@ public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
                                         callback.in(scope, null);
                                         return;
                                     } else {
-                                        X_Log.warn(getClass(), "No file found for path", genFile);
+                                        X_Log.warn(XapiVertxServer.class, "No file found for path", genFile);
                                     }
                                 }
                             } else {

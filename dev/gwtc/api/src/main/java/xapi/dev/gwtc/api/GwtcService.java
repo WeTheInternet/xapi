@@ -1,61 +1,77 @@
 package xapi.dev.gwtc.api;
 
-import xapi.dev.source.MethodBuffer;
-import xapi.dev.source.SourceBuilder;
-import xapi.dev.source.SourceBuilder.JavaType;
 import xapi.fu.In1;
 import xapi.fu.In2;
 import xapi.fu.In2.In2Unsafe;
 import xapi.fu.Out1;
 import xapi.gwtc.api.CompiledDirectory;
+import xapi.gwtc.api.DefaultValue;
 import xapi.gwtc.api.GwtManifest;
+import xapi.gwtc.api.GwtcProperties;
 import xapi.gwtc.api.ServerRecompiler;
 
-import java.io.File;
-import java.lang.reflect.Method;
+import java.lang.annotation.Annotation;
 import java.net.URLClassLoader;
 import java.util.concurrent.TimeUnit;
 
-import com.google.gwt.core.client.RunAsyncCallback;
-import com.google.gwt.junit.client.GWTTestCase;
-import com.google.gwt.junit.tools.GWTTestSuite;
-
 public interface GwtcService {
 
-  void addMethod(Method method);
-  void addMethod(Method method, boolean onNewInstance);
-  void addClass(Class<?> clazz);
-  void addPackage(Package pkg, boolean recursive);
-  void addGwtTestCase(Class<? extends GWTTestCase> subclass);
-  void addGwtTestSuite(Class<? extends GWTTestSuite> asSubclass);
+  default void addClassTo(String moduleName, Class<?> clazz) {
+    getProject(moduleName, null).addClass(clazz);
+  }
+
+
+  GwtcProjectGenerator getProject(String moduleName, ClassLoader resources);
 
   String generateCompile(GwtManifest manifest);
-  URLClassLoader resolveClasspath(GwtManifest manifest, GwtcJobState job);
-
+  URLClassLoader resolveClasspath(GwtManifest manifest, String compileHome);
   In1<Integer> prepareCleanup(GwtManifest manifest);
-
   In2Unsafe<Integer, TimeUnit> startTask(Runnable task, URLClassLoader loader);
-
-  boolean addJUnitClass(Class<?> clazz);
-  void addAsyncBlock(Class<? extends RunAsyncCallback> asSubclass);
-  void addGwtModules(Class<?> clazz);
-  void addClasspath(Class<?> cls);
-  MethodBuffer addMethodToEntryPoint(String methodDef);
-  void addGwtInherit(String inherit);
-
   int compile(GwtManifest manifest);
-  GwtcJobState recompile(GwtManifest manifest, In2<ServerRecompiler, Throwable> callback);
+  GwtcJobState recompile(GwtManifest manifest, Long millisToWait, In2<ServerRecompiler, Throwable> callback);
   void compile(GwtManifest manifest, long timeout, TimeUnit unit, In2<Integer, Throwable> callback);
   void doCompile(GwtManifest manifest, long timeout, TimeUnit unit, In2<CompiledDirectory, Throwable> callback);
 
-  String getModuleName();
-  SourceBuilder createJavaFile(String pkg, String filename, JavaType type);
-  void createFile(String pkg, String filename, Out1<String> sourceProvider);
-  File getTempDir();
+//  File getTempDir();
   String inGeneratedDirectory(GwtManifest manifest, String filename);
-  String modifyPackage(String pkgToUse);
-  MethodBuffer getOnModuleLoad();
 
-  String getSuggestedRoot();
+  default DefaultValue getDefaultValue(Class<?> param, Annotation[] annos) {
+    for (Annotation anno : annos) {
+      if (anno.annotationType().equals(DefaultValue.class)) {
+        return (DefaultValue) anno;
+      }
+    }
+    if (param.isPrimitive()) {
+      if (param == char.class) {
+        return DefaultValue.Defaults.DEFAULT_CHAR;
+      } else if (param == long.class) {
+        return DefaultValue.Defaults.DEFAULT_LONG;
+      } else if (param == float.class) {
+        return DefaultValue.Defaults.DEFAULT_FLOAT;
+      } else if (param == double.class) {
+        return DefaultValue.Defaults.DEFAULT_DOUBLE;
+      } else if (param == boolean.class) {
+        return DefaultValue.Defaults.DEFAULT_BOOLEAN;
+      } else {
+        return DefaultValue.Defaults.DEFAULT_INT;
+      }
+    } else if (param == String.class) {
+      return DefaultValue.Defaults.DEFAULT_STRING;
+    } else if (param.isArray()){
+      return DefaultValue.Defaults.DEFAULT_OBJECT;
+    } else {
+      DefaultValue value = param.getAnnotation(DefaultValue.class);
+      if (value == null) {
+        return DefaultValue.Defaults.DEFAULT_OBJECT;
+      } else {
+        return value;
+      }
+    }
+  }
 
+  String extractGwtVersion(String gwtHome);
+
+  GwtcProperties getDefaultLaunchProperties();
+
+  Out1<? extends Iterable<String>> resolveDependency(GwtManifest manifest, AnnotatedDependency dependency);
 }

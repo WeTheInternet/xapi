@@ -1,4 +1,4 @@
-package xapi.dev.gwtc.impl;
+package xapi.dev.gwtc.api;
 
 import java.lang.reflect.Method;
 

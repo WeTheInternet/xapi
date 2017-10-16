@@ -1,7 +1,5 @@
-package xapi.dev.gwtc.impl;
+package xapi.dev.gwtc.api;
 
-import xapi.dev.X_Gwtc;
-import xapi.dev.gwtc.api.GwtcService;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.FieldBuffer;
 import xapi.dev.source.MethodBuffer;
@@ -10,9 +8,6 @@ import xapi.gwtc.api.DefaultValue;
 import xapi.log.X_Log;
 import xapi.source.X_Source;
 
-import com.google.gwt.core.client.EntryPoint;
-import com.google.gwt.reflect.shared.GwtReflect;
-
 import javax.inject.Inject;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
@@ -20,6 +15,9 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import com.google.gwt.core.client.EntryPoint;
+import com.google.gwt.reflect.shared.GwtReflect;
 
 public class GwtcEntryPointBuilder {
 
@@ -106,11 +104,11 @@ public class GwtcEntryPointBuilder {
     return b.append(")").toString();
   }
 
-  public  String formatParameters(Class<?>[] params, Annotation[][] annos) {
+  public String formatParameters(Class<?>[] params, Annotation[][] annos) {
     StringBuilder b = new StringBuilder();
     for (int i = 0, m = params.length; i < m; i++){
       Class<?> param = params[i];
-      DefaultValue value = X_Gwtc.getDefaultValue(param, annos[i]);
+      DefaultValue value = gwtc.getDefaultValue(param, annos[i]);
       if (value == null) {
         b.append("null");
       } else {

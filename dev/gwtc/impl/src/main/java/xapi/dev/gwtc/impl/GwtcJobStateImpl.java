@@ -3,7 +3,7 @@ package xapi.dev.gwtc.impl;
 import xapi.dev.gwtc.api.GwtcJobState;
 import xapi.dev.gwtc.api.GwtcService;
 import xapi.dev.gwtc.api.IsAppSpace;
-import xapi.fu.Do;
+import xapi.fu.Immutable;
 import xapi.fu.In1;
 import xapi.fu.In2;
 import xapi.fu.In2.In2Unsafe;
@@ -36,7 +36,7 @@ import com.google.gwt.dev.util.log.PrintWriterTreeLogger;
 public class GwtcJobStateImpl implements GwtcJobState {
 
     private GwtManifest manifest;
-    private final ChainBuilder<In1<IsRecompiler>> userRequest;
+    private final ChainBuilder<In1<IsRecompiler>> runOnCaller;
     private String argsOnStart;
     private In2Out1<Integer, TimeUnit, Integer> blocker;
     private Status status;
@@ -50,12 +50,16 @@ public class GwtcJobStateImpl implements GwtcJobState {
     private Lazy<In1<Integer>> shutdown;
     private Lazy<ServerRecompiler> api;
     private volatile String currentEventId;
+    private final String moduleName;
+    private final String moduleShortName;
 
-    public GwtcJobStateImpl(GwtManifest manifest, GwtcService gwtcService) {
+    public GwtcJobStateImpl(GwtManifest manifest, String moduleName, String moduleShortName, GwtcService gwtcService) {
+        this.moduleName = moduleName;
+        this.moduleShortName = moduleShortName;
         this.manifest = manifest;
         this.service = gwtcService;
         status = Status.WAITING;
-        userRequest = Chain.startChain();
+        runOnCaller = Chain.startChain();
         logger = Lazy.deferred1(this::createLogger);
         compiler = Lazy.deferred1(this::createController);
         // TODO: make these lazies part of a "resettable group", so when we redo one, we redo all...
@@ -67,7 +71,7 @@ public class GwtcJobStateImpl implements GwtcJobState {
     }
 
     private Lazy<IsAppSpace> initAppSpace() {
-        return Lazy.deferred1(SuperDevUtil::newAppSpace, manifest.getModuleName());
+        return Lazy.deferBoth(SuperDevUtil::newAppSpace, this::getModuleName);
     }
 
     private Lazy<ServerRecompiler> initApi() {
@@ -78,11 +82,11 @@ public class GwtcJobStateImpl implements GwtcJobState {
                 compiler.out1().checkFreshness(
                     callback.provide(this::getController),
                     ()->{
-                        userRequest.add(callback);
-                        synchronized (userRequest) {
+                        runOnCaller.add(callback);
+                        synchronized (runOnCaller) {
                             X_Log.info(GwtcJobStateImpl.class,
-                                "Notify userRequest");
-                            userRequest.notifyAll();
+                                "Notify runOnCaller");
+                            runOnCaller.notifyAll();
                         }
                         // now wait for the callback to be notified, so we run callback from correct classloader...
                         synchronized (callback) {
@@ -99,7 +103,7 @@ public class GwtcJobStateImpl implements GwtcJobState {
                     }
                 );
             } else {
-                userRequest.add(callback);
+                runOnCaller.add(callback);
             }
         });
     }
@@ -109,7 +113,7 @@ public class GwtcJobStateImpl implements GwtcJobState {
     }
 
     private Lazy<URLClassLoader> initClassLoader() {
-        return Lazy.deferred1(service::resolveClasspath, manifest, this);
+        return Lazy.deferAll(service::resolveClasspath, Immutable.immutable1(manifest), this::getGwtHome);
     }
 
     protected Lazy<String> initGwtHome() {
@@ -135,7 +139,7 @@ public class GwtcJobStateImpl implements GwtcJobState {
                     // it would be exceptionally hard to hit this race condition,
                     // but it is theoretically possible if the calling thread is frozen for a long time
                     // (for example, in a debugger with only certain threads paused).
-                    userRequest.removeAll(callback->{
+                    runOnCaller.removeAll(callback->{
                         X_Log.info(GwtcJobStateImpl.class, "Notify callbacks gwt compile completed for", callback);
                         synchronized (callback) {
                             callback.notifyAll();
@@ -239,6 +243,7 @@ public class GwtcJobStateImpl implements GwtcJobState {
         // TODO: actually use shutdown if we haven't already shutdown;
         // for now, ignoring this state management as there are bigger fish to fry
         shutdown = initShutdown();
+
     }
 
     @Override
@@ -271,11 +276,26 @@ public class GwtcJobStateImpl implements GwtcJobState {
         if (!isReusable(manifest)) {
             destroy();
         }
-        if (isRunning() || isSuccess()) {
+        if (isSuccess()) {
             // The job is still running; queue up this callback and carry on...
             // TODO: check manifest / source files for changes and queue a recompile
 
             callback.in(api.out1(), null);
+            return;
+        }
+        if (isRunning()) {
+            final Mutable<IsRecompiler> t = new Mutable<>();
+            runOnCaller.add(recomp-> {
+                t.in(recomp);
+                synchronized (t) {
+                    t.notifyAll();
+                }
+            });
+            getBlocker().io(300, TimeUnit.SECONDS);
+            final IsRecompiler recomp = t.out1();
+            // TODO: reflection-backed delegate...
+
+            callback.in(d->d.in(recomp), null);
             return;
         }
 
@@ -302,10 +322,10 @@ public class GwtcJobStateImpl implements GwtcJobState {
                     // cleanup.in(0);
                     called = true;
                     callback.in(api.out1(), null);
-                    while (userRequest.isEmpty()) {
-                        synchronized (userRequest) {
+                    while (runOnCaller.isEmpty()) {
+                        synchronized (runOnCaller) {
                             try {
-                                userRequest.wait();
+                                runOnCaller.wait();
                             } catch (InterruptedException e) {
                                 Thread.currentThread().interrupt();
                                 return;
@@ -337,5 +357,15 @@ public class GwtcJobStateImpl implements GwtcJobState {
     @Override
     public IsAppSpace getAppSpace() {
         return appSpace.out1();
+    }
+
+    @Override
+    public String getModuleName() {
+        return moduleName;
+    }
+
+    @Override
+    public String getModuleShortName() {
+        return moduleShortName;
     }
 }

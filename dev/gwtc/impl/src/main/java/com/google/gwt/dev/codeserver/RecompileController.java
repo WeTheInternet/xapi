@@ -12,6 +12,7 @@ import xapi.gwtc.api.GwtManifest;
 import xapi.gwtc.api.IsRecompiler;
 import xapi.inject.impl.LazyPojo;
 import xapi.log.X_Log;
+import xapi.util.X_Util;
 
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
@@ -64,17 +65,14 @@ public class RecompileController implements IsRecompiler {
           final Result res = results.out1();
           lastCompile = res.outputDir;
 
-          if (lastCompile == null) {
-
-          }
           // Try to look up the permutation map from war directory
-          File warp = lastCompile.getWarDir();
+          File war = lastCompile.getWarDir();
 
-          File war = new File(warp,getModuleName()+File.separator+"compilation-mappings.txt");
+          File mappings = new File(war,getModuleName()+File.separator+"compilation-mappings.txt");
           Map<String, String> permutations = new HashMap<>();
-          if (war.exists()) {
+          if (mappings.exists()) {
             try (
-                BufferedReader read = new BufferedReader(new FileReader(war));
+                BufferedReader read = new BufferedReader(new FileReader(mappings));
             ){
               String line, strongName=null;
               while ((line = read.readLine())!=null) {
@@ -147,6 +145,14 @@ public class RecompileController implements IsRecompiler {
   @Override
   public CompiledDirectory getOrCompile() {
     if (compileDir.isResolved()) {
+      final RecompileRunner runningJob = getRunner();
+      while (getRunner().isRunning()) {
+        try {
+          runningJob.waitForStateChange();
+        } catch (InterruptedException e) {
+          throw X_Util.rethrow(e);
+        }
+      }
       return compileDir.out1();
     }
     return recompile();

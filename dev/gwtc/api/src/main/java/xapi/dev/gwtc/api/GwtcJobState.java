@@ -26,4 +26,8 @@ public interface GwtcJobState {
     String getGwtHome();
 
     IsAppSpace getAppSpace();
+
+    String getModuleName();
+
+    String getModuleShortName();
 }

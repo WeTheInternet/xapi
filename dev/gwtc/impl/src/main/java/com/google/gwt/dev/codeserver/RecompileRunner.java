@@ -39,26 +39,33 @@ public class RecompileRunner extends JobRunner {
         synchronized void publish(JobEvent event, TreeLogger logger) {
             final String id = event.getInputModuleName();
             super.publish(event, logger);
-            switch (event.getStatus()) {
-                case COMPILING:
-                    progressListeners.getMaybe(id)
-                        .readIfPresent(callback->callback.in(event));
-                    break;
-                case SERVING:
-                    successListeners.getMaybe(id)
-                        .readIfPresent(callback->callback.in(event));
-                    break;
-                case ERROR:
-                    failListeners.getMaybe(id)
-                        .readIfPresent(callback->callback.in(event));
-                    break;
-                case GONE:
-                    cleanupListeners.getMaybe(id)
-                        .readIfPresent(callback->callback.in(event));
-                    cleanup(progressListeners.get(id));
-                    cleanup(successListeners.get(id));
-                    cleanup(failListeners.get(id));
-                    break;
+            try {
+
+                switch (event.getStatus()) {
+                    case COMPILING:
+                        progressListeners.getMaybe(id)
+                            .readIfPresent(callback->callback.in(event));
+                        break;
+                    case SERVING:
+                        successListeners.getMaybe(id)
+                            .readIfPresent(callback->callback.in(event));
+                        break;
+                    case ERROR:
+                        failListeners.getMaybe(id)
+                            .readIfPresent(callback->callback.in(event));
+                        break;
+                    case GONE:
+                        cleanupListeners.getMaybe(id)
+                            .readIfPresent(callback->callback.in(event));
+                        cleanup(progressListeners.get(id));
+                        cleanup(successListeners.get(id));
+                        cleanup(failListeners.get(id));
+                        break;
+                }
+            } finally {
+                synchronized (progressListeners) {
+                    progressListeners.notifyAll();
+                }
             }
         }
 
@@ -139,5 +146,19 @@ public class RecompileRunner extends JobRunner {
 
     public EventTable getTable() {
         return table;
+    }
+
+    public boolean isRunning() {
+        final JobEvent job = getTable().getCompilingJobEvent();
+        if (job == null) {
+            return false;
+        }
+        return job.getStatus() == Status.COMPILING;
+    }
+
+    public void waitForStateChange() throws InterruptedException {
+        synchronized (table.progressListeners) {
+            table.progressListeners.wait();
+        }
     }
 }
