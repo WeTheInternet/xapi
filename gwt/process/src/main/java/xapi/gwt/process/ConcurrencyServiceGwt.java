@@ -18,6 +18,7 @@ import xapi.util.api.SuccessHandler;
 
 import com.google.gwt.core.client.Duration;
 import com.google.gwt.core.client.Scheduler;
+import com.google.gwt.core.client.impl.Impl;
 import com.google.gwt.user.client.Timer;
 
 import java.lang.Thread.UncaughtExceptionHandler;
@@ -69,6 +70,11 @@ public class ConcurrencyServiceGwt extends ConcurrencyServiceAbstract{
     public void pushEventually(Do cmd) {
       eventualies.give(cmd);
     }
+  }
+
+  @Override
+  public boolean isInProcess() {
+    return Impl.isEntryOnStack();
   }
 
   @Override

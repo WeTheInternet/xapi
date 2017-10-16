@@ -139,7 +139,7 @@ public class JsonContainerExpr extends JsonExpr implements HasSize {
   }
 
   public static JsonContainerExpr jsonObject(Expression ... nodes) {
-    assert nodes.length % 2 == 1 : "Json objects must have an even multiple of nodes; you sent " + nodes.length
+    assert nodes.length % 2 == 0 : "Json objects must have an even multiple of nodes; you sent " + nodes.length
         +"\n:" + Arrays.asList(nodes);
     List<JsonPairExpr> pairs = new ArrayList<>();
     for (int i = 0, m = nodes.length; i < m; i+=2) {

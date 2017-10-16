@@ -42,6 +42,7 @@ import xapi.fu.In1Out1.In1Out1Unsafe;
 import xapi.log.X_Log;
 import xapi.log.api.LogLevel;
 import xapi.source.X_Source;
+import xapi.util.X_String;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -359,6 +360,9 @@ public final class JavaParser {
         return parseUiContainer(path, uiContainer, LogLevel.ERROR);
     }
     public static UiContainerExpr parseUiContainer(final String path, final String uiContainer, LogLevel level) throws ParseException {
+        if (X_String.isEmptyTrimmed(uiContainer)) {
+            return null;
+        }
         StringReader sr = new StringReader(uiContainer);
         try {
             final UiContainerExpr e = new ASTParser(sr).UiContainer();

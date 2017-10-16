@@ -12,6 +12,7 @@ import xapi.fu.Maybe;
 
 import static xapi.collect.X_Collect.newStringMultiMap;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -26,6 +27,10 @@ public class UiContainerExpr extends UiExpr {
   private UiBodyExpr body;
   private StringTo.Many<UiAttrExpr> attrs;
   private String docType;
+
+  public UiContainerExpr(String name) {
+    this(-1, -1, -1, -1, new NameExpr(name), new ArrayList<>(), null, false);
+  }
 
   public UiContainerExpr(final int beginLine, final int beginColumn, final int endLine, final int endColumn,
                          NameExpr name, List<UiAttrExpr> attributes, UiBodyExpr body, boolean isInTemplate) {
@@ -42,7 +47,13 @@ public class UiContainerExpr extends UiExpr {
     return attrs.flatten().asList();
   }
 
-  public void addAttribute(boolean replace, UiAttrExpr attr) {
+  public UiAttrExpr addAttribute(String name, Expression value) {
+    final UiAttrExpr attr = UiAttrExpr.of(name, value);
+    addAttribute(false, attr);
+    return attr;
+  }
+
+  public UiAttrExpr addAttribute(boolean replace, UiAttrExpr attr) {
     final List<Node> children = getChildrenNodes();
     final IntTo<UiAttrExpr> into = attrs.get(attr.getNameString());
     if (replace) {
@@ -52,6 +63,7 @@ public class UiContainerExpr extends UiExpr {
     into.add(attr);
     children.add(attr);
     setAsParentNodeOf(attr);
+    return attr;
   }
 
   public IntTo<UiAttrExpr> getAttributes(String name) {

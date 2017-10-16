@@ -13,6 +13,8 @@ import xapi.process.api.AsyncLock;
 import xapi.process.api.ConcurrentEnvironment;
 import xapi.process.impl.ConcurrencyServiceAbstract;
 import xapi.process.service.ConcurrencyService;
+import xapi.scope.X_Scope;
+import xapi.scope.api.Scope;
 import xapi.util.X_Namespace;
 import xapi.util.api.ErrorHandler;
 import xapi.util.api.RemovalHandler;
@@ -30,7 +32,10 @@ import static xapi.fu.Lazy.deferred1;
 @SingletonDefault(implFor=ConcurrencyService.class)
 public class ConcurrencyServiceJre extends ConcurrencyServiceAbstract{
 
+  private ThreadLocal<Scope> scope;
+
   public ConcurrencyServiceJre() {
+    scope = new ThreadLocal<>();
   }
 
   protected class JreConcurrentEnvironment extends ConcurrentEnvironment {
@@ -97,6 +102,11 @@ public class ConcurrencyServiceJre extends ConcurrencyServiceAbstract{
   };
 
   @Override
+  public boolean isInProcess() {
+    return scope.get() != null;
+  }
+
+  @Override
   public ConcurrentEnvironment initializeEnvironment(
     Thread key, UncaughtExceptionHandler params) {
     ConcurrentEnvironment enviro = new JreConcurrentEnvironment();
@@ -112,6 +122,7 @@ public class ConcurrencyServiceJre extends ConcurrencyServiceAbstract{
         }
       }
     });
+    thread.setName("X_Process Enviro Thread " + hashCode());
     enviro.pushThread(thread);
     thread.setDaemon(true);
     thread.start();
@@ -120,7 +131,15 @@ public class ConcurrencyServiceJre extends ConcurrencyServiceAbstract{
   }
 
   protected Thread createThread(Do task) {
-    final Thread t = new Thread(task.toRunnable());
+    Mutable<Scope> s = new Mutable<>(X_Scope.currentScope());
+    Do inheritScope = X_Scope.service().inheritScope();
+    final Thread t = new Thread(task
+        .doBefore(()->
+            scope.set(s.out1())
+        )
+        .doBefore(inheritScope)
+        .doAfter(scope::remove)
+        .toRunnable());
     t.setName("xapi-thread-" + task);
     return t;
   }
@@ -136,7 +155,13 @@ public class ConcurrencyServiceJre extends ConcurrencyServiceAbstract{
 
   @Override
   public void runTimeout(Do cmd, int millisToWait) {
-
+      long target = System.currentTimeMillis() + millisToWait;
+      runDeferred(()->{
+        while (System.currentTimeMillis() < target) {
+          LockSupport.parkUntil(target);
+        }
+        cmd.done();
+      });
   }
 
 
