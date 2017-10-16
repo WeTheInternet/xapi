@@ -38,6 +38,7 @@ import java.io.Writer;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -197,6 +198,11 @@ public class AnnotationMirrorProcessor extends AbstractProcessor {
     final Fifo<String> ctorParams = new SimpleFifo<String>();
     final Types types = processingEnv.getTypeUtils();
 
+    final MethodBuffer toString = immutableAnno
+        .createMethod("public String toString()")
+        .print("return new StringBuilder(\"") .print(simpleName) .println("\")")
+        .indent();
+
     final MethodBuffer copyMethod = annoBuilder.createMethod(
         "public static " + builderName + " copy" + simpleName + "()")
         .addParameter(simpleName, "from")
@@ -211,8 +217,9 @@ public class AnnotationMirrorProcessor extends AbstractProcessor {
 
     Do afterLoop = Do.NOTHING;
     String duplicateComma = "";
-    for (final ExecutableElement method : ElementFilter.methodsIn(element
-        .getEnclosedElements())) {
+    final List<ExecutableElement> methods = ElementFilter.methodsIn(element.getEnclosedElements());
+    boolean many = methods.size() > 2;
+    for (final ExecutableElement method : methods) {
       final TypeMirror returnMirror = method.getReturnType();
       final String fieldName = method.getSimpleName().toString();
       final String fieldType = annoBuilder.addImport(returnMirror.toString());
@@ -240,6 +247,16 @@ public class AnnotationMirrorProcessor extends AbstractProcessor {
           .setExactName(true);
       field.addGetter(Modifier.PUBLIC | Modifier.FINAL);
 
+      if (many) {
+        toString.print(".append(\"\\n\")");
+      }
+      // TODO: actually make the toString emit valid annotation source code instead of this crap:
+      toString.append(".append(\"")
+          .print(fieldName)
+          .print(" : \" + ")
+          .print(fieldName)
+          .println(")");
+
       final String param = field.getSimpleType() + " " + field.getName();
       ctorParams.give(param);
       if (dflt == null) {
@@ -253,7 +270,6 @@ public class AnnotationMirrorProcessor extends AbstractProcessor {
           duplicateMethod.indentln("." + setter.getName() + "(" + fieldName + ")");
         });
       }
-
 
       switch (returnMirror.getKind()) {
       case DECLARED:
@@ -325,6 +341,7 @@ public class AnnotationMirrorProcessor extends AbstractProcessor {
     afterLoop.done();
     copyMethod.println(";");
     duplicateMethod.println(";");
+    toString.println(".toString();");
 
     addValue.println("default:")
         .indent()
