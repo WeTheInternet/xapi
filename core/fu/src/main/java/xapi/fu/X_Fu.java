@@ -478,6 +478,19 @@ public interface X_Fu {
     return integer + 1;
   }
 
+    static <T> T[] concat(T first, T[] second) {
+      final T[] newArr = copy(second, 1 + second.length);
+      System.arraycopy(newArr, 0, newArr, 1, second.length);
+      newArr[0] = first;
+      return newArr;
+    }
+
+    static <T> T[] concat(T first[], T second) {
+      final T[] newArr = copy(first, 1 + first.length);
+      newArr[newArr.length-1] = second;
+      return newArr;
+    }
+
     static <T> T[] concat(T[] first, T[] second) {
       if (isEmpty(second)) {
         return first;

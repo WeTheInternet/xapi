@@ -56,7 +56,7 @@ public interface Log extends Debuggable {
     gen_logLevelForClass : {
       // This level will always be loggable,
       // but note the named block here;
-      // use of this label allows use to mark anywhere we want to generate code
+      // use of this label allows us to mark anywhere we want to generate code
       // that translates a class parameter into a log level.
       // This functionality is being developed in a separate repository,
       // but this code is left here so this class can be used in testing that javac source transform plugin
@@ -134,6 +134,25 @@ public interface Log extends Debuggable {
 
   static Log voidLogger() {
     return DefaultLoggers.VOID;
+  }
+
+  static void tryLog(Class<?> cls, Object inst, Object ... e) {
+    loggerFor(cls, inst).log(cls, e);
+  }
+
+  static Log loggerFor(Class<?> cls, Object inst) {
+    if (inst instanceof Log) {
+      return (Log)inst;
+    }
+    // TODO add a @Level(INFO) annotation to check for;
+    // we should check first on the class of the instance,
+    // then on the calling class,
+    // then on any other supertypes, packages or super-packages.
+    return DefaultLoggers.DEFAULT;
+  }
+
+  static void tryLog(Class<?> cls, Object inst, LogLevel level, Object ... e) {
+    loggerFor(cls, inst).log(cls, level, e);
   }
 }
 

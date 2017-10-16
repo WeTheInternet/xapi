@@ -17,15 +17,15 @@ import xapi.util.api.Destroyer;
  * In order to encourage and facilitate object de-referencing,
  * the X_GC class, combined with the {@link OnGC} annotation
  * allow objects to destroy each other without necessarily knowing anything about them.
- * 
+ *
  * It also allows forming "destruction chains", whereby when a root object is destroyed,
- * we can check if it's fields are destroyable and gc them too, either by annotating with OnGC, 
+ * we can check if it's fields are destroyable and gc them too, either by annotating with OnGC,
  * or implementing the {@link Destroyable} interface.
- * 
+ *
  * Not that this may NOT be what you want, in case a field is shared among multiple children.
- * Thus, GC chaining is disabled by default.  
+ * Thus, GC chaining is disabled by default.
  * Default behavior is to null out fields without inspecting them.
- * 
+ *
  * @author "James X. Nelson (james@wetheinter.net)"
  *
  */
@@ -33,7 +33,7 @@ public class X_GC {
 
   private X_GC() {
   }
-  
+
   private static final class StaticGCMethods extends AbstractMultiInitMap<String, Destroyer, Class<?>> {
     public StaticGCMethods() {
       super(PASS_THRU);
@@ -42,7 +42,7 @@ public class X_GC {
     protected Destroyer initialize(String method, Class<?> cls) {
       try{
         String[] bits = method.split("#");
-        assert bits.length == 2 : 
+        assert bits.length == 2 :
           "[ERROR] Malformed static GC method "+method+"; \n" +
               "Proper syntax is com.package.Clazz$StaticInner#methodName";
         Class<?> toLoad;
@@ -57,7 +57,7 @@ public class X_GC {
           return Destroyer.NO_OP;
         }
         else {
-          assert m.getTypeParameters().length == 0 : 
+          assert m.getTypeParameters().length == 0 :
             "Only zero-arg instance methods allowed";
           if (!m.isAccessible())
             m.setAccessible(true);
@@ -77,12 +77,12 @@ public class X_GC {
       }
     }
   }
-  
+
   private static final class GCMap extends AbstractMultiInitMap<Class<?>, Destroyer, OnGC>
  {
-    
+
     private static final StaticGCMethods staticDestroyers = new StaticGCMethods();
-    
+
     public GCMap() {
       super(CLASS_NAME);
     }
@@ -99,7 +99,7 @@ public class X_GC {
             else {
               if (!m.isAccessible())
                 m.setAccessible(true);
-              assert m.getTypeParameters().length == 0 : 
+              assert m.getTypeParameters().length == 0 :
                 "Only zero-arg instance methods allowed on instance gc methods";
               // could test for static, but we'll let that slide, as it will work...
               zeroArg.add(m);
@@ -145,8 +145,8 @@ public class X_GC {
                         if (anno != null)
                           // This object ref won't give generator details,
                           // However, it can still be made to work, by scanning
-                          // for all OnGC annotations and generating code for any of them 
-                          destroy(cls, obj); 
+                          // for all OnGC annotations and generating code for any of them
+                          destroy(cls, obj);
                       }
                     } catch (Throwable e) {
                       e.printStackTrace();
@@ -180,11 +180,11 @@ public class X_GC {
             }
           }
         };
-        // avoid extra work, if we can; 
+        // avoid extra work, if we can;
         // the static methods are more overhead up front
         if (options.staticGCMethods().length == 0)
           return instanceLevel;
-        
+
         // We have to do reflection
         final ArrayList<Destroyer> staticLevel = new ArrayList<Destroyer>();
         for (String method : options.staticGCMethods()) {
@@ -208,27 +208,27 @@ public class X_GC {
         };
     }
   }
-  
+
   private static final GCMap destroyers = new GCMap();
-  
+
   /**
    * In gwt, we can use this as a magic method to compute a destroy function,
    * but do so without bloating runtime code.  This is why you must send the class.
-   * 
+   *
    * If you put OnGC on a superclass, and do not wish to repeat the annotation,
    * you can send the superclass's class literal, and it will be applied instead
    * (though it will not use any overridden methods; we literally use the super classes Method objects).
-   * 
+   *
    * Note that you must send a the class LITERAL and not a class reference,
    * as that is what the gwt generator will use to define a GC strategy.
-   * 
+   *
    * In any case, the code needed to destroy the fields of the object will just be plain javascript,
    * for (key in _)if (_.hasOwnProperty(key)) delete _[key]
-   * 
-   * Sending the class along simply means we can check for the @GC annotation, and use it to call some 
+   *
+   * Sending the class along simply means we can check for the @GC annotation, and use it to call some
    * zero-arg destroy methods for this object, and maybe even on any particular fields.
-   * 
-   * @param cls
+   *
+   * @param classLiteral
    * @param inst
    */
   public static <T> void destroy(Class<? super T> classLiteral, T inst) {
@@ -248,17 +248,17 @@ public class X_GC {
       gc = classLiteral.getAnnotation(OnGC.class);
       if (gc != null){
         destroy(classLiteral, inst);
-        return; // the above call will recurse 
+        return; // the above call will recurse
       }
     }
   }
   private static boolean shouldSkip(Field f) {
-    return 
-        f.getType().isPrimitive() 
+    return
+        f.getType().isPrimitive()
         || Modifier.isFinal(f.getModifiers())
         || Modifier.isStatic(f.getModifiers())
         || f.getAnnotation(Indestructible.class) != null
-        || f.isSynthetic() 
+        || f.isSynthetic()
         ;
   }
   public static <T> void deepDestroy(Class<? super T> classLiteral, T inst) {
@@ -286,5 +286,5 @@ public class X_GC {
       }
     }
   }
-  
+
 }

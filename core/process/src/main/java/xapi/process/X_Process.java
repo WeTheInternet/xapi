@@ -109,11 +109,15 @@ public class X_Process {
 
   public static <T> void runWhenReady(Lazy<T> io, In2<T, Throwable> callback) {
     if (io.isFull1()) {
+      boolean calledCallback = false;
       try {
         final T result = io.out1();
+        calledCallback = true;
         callback.in(result, null);
       } catch (Throwable t) {
-        callback.in(null ,t);
+        if (!calledCallback) {
+          callback.in(null ,t);
+        }
         throw t;
       }
     } else {

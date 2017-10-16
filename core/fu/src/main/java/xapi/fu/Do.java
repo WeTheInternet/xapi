@@ -1,5 +1,9 @@
 package xapi.fu;
 
+import xapi.fu.api.DoNotOverride;
+
+import java.io.Closeable;
+
 /**
  * A marker interface we apply to immutable types.
  *
@@ -10,22 +14,23 @@ public interface Do extends AutoCloseable {
 
   Do NOTHING = new Do() {
     @Override
-    public void done() {
+    public final void done() {
     }
 
     @Override
-    public Do doBefore(Do d) {
+    public final Do doBefore(Do d) {
       return d;
     }
 
     @Override
-    public Do doAfter(Do d) {
+    public final Do doAfter(Do d) {
       return d;
     }
   };
 
     void done();
 
+  @DoNotOverride
   default Runnable toRunnable() {
     return this::done;
   }
@@ -38,8 +43,13 @@ public interface Do extends AutoCloseable {
   }
 
   @Override
+  @DoNotOverride("override done() instead")
   default void close() { // erases exceptions
     done();
+  }
+
+  default AutoCloseable closeable() {
+    return this;
   }
 
   default Do doAfter(Do d) {
@@ -56,8 +66,18 @@ public interface Do extends AutoCloseable {
     };
   }
 
+  default <I> In1<I> requireAfter(In1<I> in1) {
+    return i->{
+      done();
+      in1.in(i);
+    };
+  }
+
   default <I> In1<I> ignores1() {
     return ignored->done();
+  }
+  default <I1, I2> In2<I1, I2> ignores2() {
+    return (ig, nored)->done();
   }
   default <O> Out1<O> returns1(O val) {
     return ()->{
@@ -78,13 +98,6 @@ public interface Do extends AutoCloseable {
     return ()->{
       done();
       return value;
-    };
-  }
-
-  default <I> In1<I> requireAfter(In1<I> in1) {
-    return i->{
-      done();
-      in1.in(i);
     };
   }
 

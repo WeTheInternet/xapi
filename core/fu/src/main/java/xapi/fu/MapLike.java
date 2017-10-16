@@ -154,6 +154,24 @@ public interface MapLike<K, V> extends HasSize, HasItems<Out2<K, V>>, Clearable 
     return is;
   }
 
+  default <F1, F2> V getOrCreateFrom(K key, In2Out1<F1, F2, V> ifNull, F1 from1, F2 from2) {
+    V is = get(key);
+    if (is == null) {
+      is = ifNull.io(from1, from2);
+      put(key, is);
+    }
+    return is;
+  }
+
+  default <F1, F2, F3> V getOrCreateFrom(K key, In3Out1<F1, F2, F3, V> ifNull, F1 from1, F2 from2, F3 from3) {
+    V is = get(key);
+    if (is == null) {
+      is = ifNull.io(from1, from2, from3);
+      put(key, is);
+    }
+    return is;
+  }
+
   default V getOrSupply(K key, Out1<V> ifNull) {
     V is = get(key);
     if (is == null) {
@@ -459,6 +477,20 @@ public interface MapLike<K, V> extends HasSize, HasItems<Out2<K, V>>, Clearable 
       put(key, computed);
     }
     return computed;
+  }
+
+
+  default V compute(K key, In1<V> ifPresent, Out1<V> ifAbsent) {
+    return HasLock.alwaysLock(this, ()->{
+      V value = get(key);
+      if (value == null) {
+        value = ifAbsent.out1();
+        put(key, value);
+      } else {
+        ifPresent.in(value);
+      }
+      return value;
+    });
   }
 
   default V computeValue(K key, In1Out1<V, V> io) {

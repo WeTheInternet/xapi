@@ -26,6 +26,10 @@
 		</dependency>
 		<dependency>
 			<groupId>net.wetheinter</groupId>
+			<artifactId>xapi-core-process</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>net.wetheinter</groupId>
 			<artifactId>xapi-jre-inject</artifactId>
 		</dependency>
 		<dependency>
@@ -45,6 +49,11 @@
 			<artifactId>gwt-dev</artifactId>
 			<scope>provided</scope>
 		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+		</dependency>
+
 	</dependencies>
 
 	<build>

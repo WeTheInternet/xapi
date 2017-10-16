@@ -70,10 +70,7 @@ public class BytecodeAdapterService implements
   };
 
   InitMap<String, IsClass> classes = new InitMapDefault<String, IsClass>(
-      InitMapDefault.PASS_THRU, new
-      ConvertsValue<String, IsClass>(){
-        @Override
-        public IsClass convert(String classString) {
+      InitMapDefault.PASS_THRU, classString -> {
           Pair<String, Integer> cls = X_Source.extractArrayDepth(classString);
           String clsName = cls.get0().split("/")[0]; // lambdas can have / in classname...
           final ClassLoader cl = getClassLoader();
@@ -115,7 +112,6 @@ public class BytecodeAdapterService implements
             return new IsClassDelegate(asClass, cls.get1());
           }
           return asClass;
-        }
       });
 
   public BytecodeAdapterService() {

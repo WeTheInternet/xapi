@@ -105,6 +105,7 @@ public interface Out1<O> extends Rethrowable, Lambda, HasMutability {
       try {
         return outUnsafe();
       } catch (Throwable e) {
+        Log.tryLog(Out1.class, this,"msg", e);
         throw rethrow(e);
       }
     }
