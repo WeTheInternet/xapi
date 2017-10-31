@@ -97,11 +97,23 @@ public final class X_Util{
     }
 
     //don't use instanceof because we don't want to treat subclasses of RuntimeException as wrappers...
+    final Throwable original = e;
     while (e.getClass().equals(RuntimeException.class) || e.getClass().equals(ExecutionException.class)) {
       if (e.getCause() == null) {
+        // when unwrapping exceptions,
+        // we want to add our parent throwable as a suppressed exception,
+        // so we can see the code who originally called us.
+
+        // We set the original throwable as the suppressed exception
+        // of the final, non-wrapper throwable that calling code wants to see.
+
+        // This will maintain the deepest level of the call stack,
+        // without exponentially increasing log sizes when by
+        // adding multiple parent-child suppressed throwable relationships.
+        e.addSuppressed(original);
         return e;
       }
-      e = e.getCause();
+        e = e.getCause();
     }
     return e;
   }
