@@ -15,6 +15,8 @@ import java.io.File;
  */
 public abstract class ArgHandlerFile extends ArgHandler {
 
+  protected File file;
+
   @Override
   public Out1<String>[] getDefaultArgs() {
     return null;
@@ -37,6 +39,11 @@ public abstract class ArgHandlerFile extends ArgHandler {
     return -1;
   }
 
-  public abstract void setFile(File file);
+  public void setFile(File file) {
+    this.file = file;
+  }
 
+  public File getFile() {
+    return file;
+  }
 }
