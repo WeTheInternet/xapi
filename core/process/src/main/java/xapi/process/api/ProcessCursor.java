@@ -17,7 +17,7 @@ public class ProcessCursor <K extends Serializable> {
   private transient Iterable<K> stages;
   private final LazyPojo<Iterator<K>> path;
 
-  public ProcessCursor(Iterable<K> path, int size) {
+  public ProcessCursor(Iterable<K> path) {
     this.stages = path;
     this.path = new LazyPojo<Iterator<K>>() {
       @Override

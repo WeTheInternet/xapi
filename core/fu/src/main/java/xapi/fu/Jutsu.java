@@ -1,5 +1,7 @@
 package xapi.fu;
 
+import xapi.fu.api.RethrownException;
+
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
@@ -124,5 +126,10 @@ interface Jutsu {
 
   default void setArray(Object array, int pos, Object value) {
     Array.set(array, pos, value);
+  }
+
+  @SuppressWarnings("unchecked")
+  default <T extends Throwable> void sneakyThrow(Throwable t) throws T {
+    throw (T) t;
   }
 }

@@ -71,13 +71,15 @@ public class X_Time {
   public static void doLater(final Do runnable) {
     service.runLater(runnable.toRunnable());
   }
+
+  public static void doLaterUnsafe(final DoUnsafe runnable) {
+    service.runLater(runnable.toRunnable());
+  }
+
   public static void runLater(final Runnable runnable) {
     service.runLater(runnable);
   }
 
-  public static void runUnsafe(final DoUnsafe runnable) {
-    service.runLater(runnable.toRunnable());
-  }
 
   public static String difference(final Moment start, final Moment finish) {
     return X_String.toMetricSuffix((finish.millis() - start.millis())/1000.0)+"seconds";

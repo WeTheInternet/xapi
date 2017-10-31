@@ -3,11 +3,13 @@ package xapi.collect.api;
 import xapi.collect.proxy.CollectionProxy;
 import xapi.fu.Filter.Filter1;
 import xapi.fu.In1;
+import xapi.fu.In1.In1Unsafe;
 import xapi.fu.In1Out1;
 import xapi.fu.ListLike;
 import xapi.fu.MappedIterable;
 import xapi.fu.Out2;
 import xapi.fu.has.HasItems;
+import xapi.fu.has.HasLock;
 import xapi.fu.iterate.SizedIterable;
 import xapi.fu.iterate.SizedIterator;
 
@@ -195,9 +197,16 @@ extends CollectionProxy<Integer,T>, HasItems<T>, SizedIterable<T>
   default boolean removeOne(Filter1<T> callback) {
     return removeIf(callback, false);
   }
+
+  default void removeAllUnsafe(In1Unsafe<T> callback) {
+    removeAll(callback);
+  }
   default void removeAll(In1<T> callback) {
-    final T[] items = toArray();
-    clear();
+    final T[] items = HasLock.maybeLock(this, ()->{
+      final T[] result = toArray();
+      clear();
+      return result;
+    });
     for (T item : items) {
       callback.in(item);
     }

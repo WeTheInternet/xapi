@@ -70,6 +70,22 @@ public class X_Shell {
    * @return A {@link ShellSession} used to control the running process.
    */
   public static ShellSession launchJava(Class<?> mainClass, String[] classpath, String[] vmFlags, String[] args) {
+    return launchJava(mainClass, classpath, vmFlags, args, new StringReader(), new StringReader());
+  }
+  /**
+   * Launches a java process inside a shell environment.
+   * Currently, only the unix shell works, using xapi-dev-shell/src/main/resources/xapi/sh.sh,
+   * and is only tested on linux.
+   *
+   * @param mainClass - The class name with the main method to run
+   * @param classpath - The classpath for this execution.
+   * @param vmFlags   - Flags to pass to jvm (like system properties)
+   * @param args      - Arguments to pass to main method
+   * @param stdOut    - A line reader to accept output from process stdOut
+   * @param stdErr    - A line reader to accept output from process stdErr
+   * @return A {@link ShellSession} used to control the running process.
+   */
+  public static ShellSession launchJava(Class<?> mainClass, String[] classpath, String[] vmFlags, String[] args, LineReader stdOut, LineReader stdErr) {
     // Check if mainClass is in a folder or in a jar, so we know if we need to add it to the classpath
     try {
       exists_check:
@@ -93,7 +109,7 @@ public class X_Shell {
     String javaBin = javaHome +
         File.separator + "bin" +
         File.separator + "java";
-    String[] javaArgs = new String[4 + vmFlags.length + args.length];
+    String[] javaArgs = new String[4 + (vmFlags == null ? 0 : vmFlags.length) + (args == null ? 0 : args.length)];
     javaArgs[0] = javaBin;
     int pos = 1;
     if (vmFlags != null && vmFlags.length > 0) {
@@ -109,7 +125,7 @@ public class X_Shell {
     }
     X_Log.info(X_Shell.class, "Java command", X_String.join(" ", javaArgs));
     return globalService().runInShell(
-        false, new StringReader(), new StringReader(), javaArgs);
+        false, stdOut, stdErr, javaArgs);
   }
 
   public static ShellService globalService() {

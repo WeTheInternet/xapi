@@ -289,7 +289,10 @@ public class X_Collect {
 
   public static final CollectionOptions MUTABLE_INSERTION_ORDERED = asMutable(true).insertionOrdered(true).build();
 
+  public static final CollectionOptions MUTABLE_CONCURRENT_INSERTION_ORDERED = asMutable(true).concurrent(true).insertionOrdered(true).build();
+
   public static final CollectionOptions MUTABLE_KEY_ORDERED = asMutable(true).keyOrdered(true).build();
+  public static final CollectionOptions MUTABLE_CONCURRENT_KEY_ORDERED = asMutable(true).concurrent(true).keyOrdered(true).build();
 
   public static final CollectionOptions MUTABLE_LIST = asMutableList().build();
 

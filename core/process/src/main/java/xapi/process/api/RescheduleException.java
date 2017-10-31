@@ -12,7 +12,7 @@ public class RescheduleException extends RuntimeException{
     this.cursor = cursor;
   }
 
-  public ProcessCursor getCursor() {
+  public ProcessCursor<Integer> getCursor() {
     return cursor;
   }
 

@@ -29,6 +29,7 @@ import xapi.time.api.Moment;
 import xapi.time.impl.ImmutableMoment;
 import xapi.util.X_Properties;
 import xapi.util.X_Runtime;
+import xapi.util.X_Util;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -59,7 +60,10 @@ public class RuntimeInjector implements In2<String, PlatformChecker> {
     }
     File relative = new File(targetDir);
     if (new File("target/classes").equals(relative)) {
-      Class<?> mainClass = X_Reflect.getMainClass();
+      Class<?> mainClass = null;
+      try {
+        mainClass = X_Reflect.getMainClass();
+      } catch (Exception ignored){ }
       if (mainClass != null) {
         final String mainLoc = X_Reflect.getFileLoc(mainClass);
         relative = new File(mainLoc);
@@ -232,7 +236,14 @@ public class RuntimeInjector implements In2<String, PlatformChecker> {
     }
     final Moment startInject = now();
     for (final String iface : injectionTargets.keySet()) {
-      JavaInjector.registerSingletonProvider(iface, injectionTargets.get(iface).getName());
+      try {
+        JavaInjector.registerSingletonProvider(iface, injectionTargets.get(iface).getName());
+      } catch (Throwable t) {
+        if (X_Util.unwrap(t) instanceof InterruptedException) {
+          break;
+        }
+        X_Log.warn(RuntimeInjector.class, "Error attempting to bind instance ", iface, t);
+      }
     }
     try {
       writeMeta(injectionTargets, new File(target, singletonDir));
@@ -277,7 +288,14 @@ public class RuntimeInjector implements In2<String, PlatformChecker> {
       }
     }
     for (final String iface : injectionTargets.keySet()) {
-      JavaInjector.registerInstanceProvider(iface, injectionTargets.get(iface).getName());
+      try {
+        JavaInjector.registerInstanceProvider(iface, injectionTargets.get(iface).getName());
+      } catch (Throwable t) {
+        if (X_Util.unwrap(t) instanceof InterruptedException) {
+          break;
+        }
+        X_Log.warn(RuntimeInjector.class, "Error attempting to bind instance ", iface, t);
+      }
     }
     try{
       writeMeta(injectionTargets, new File(target, instanceDir));

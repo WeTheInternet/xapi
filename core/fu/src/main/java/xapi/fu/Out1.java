@@ -2,6 +2,8 @@ package xapi.fu;
 
 import xapi.fu.In1Out1.In1Out1Unsafe;
 import xapi.fu.Log.LogLevel;
+import xapi.fu.iterate.SingletonIterator;
+import xapi.fu.iterate.SizedIterable;
 
 import javax.inject.Provider;
 import java.util.function.Supplier;
@@ -285,4 +287,9 @@ public interface Out1<O> extends Rethrowable, Lambda, HasMutability {
         immutable1(o1), immutable1(o2)
       };
     }
+
+  default SizedIterable<O> asIterable() {
+    final SingletonIterator<Out1<O>> itr = SingletonIterator.singleItem(this);
+    return itr.map(Out1::out1);
+  }
 }

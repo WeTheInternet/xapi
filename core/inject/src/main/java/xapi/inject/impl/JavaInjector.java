@@ -150,9 +150,9 @@ public class JavaInjector {
         }
       });
     } catch (NoClassDefFoundError e) {
-      X_Log.error(e, "Cannot create interface class ",iface, "while registering instance provider");
+      X_Log.error(e, "Cannot create instance class ",iface, "while registering instance provider");
     } catch (ClassNotFoundException e) {
-      X_Log.error("Cannot create interface class ",iface, "while registering instance provider");
+      X_Log.error("Cannot create instance class ",iface, "while registering instance provider");
     }
   }
 

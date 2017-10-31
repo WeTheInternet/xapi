@@ -1,5 +1,6 @@
 package xapi.collect.impl;
 
+import xapi.fu.In1Out1;
 import xapi.gwt.collect.JsDictionary;
 import xapi.util.api.ConvertsValue;
 import xapi.util.api.ReceivesValue;
@@ -9,19 +10,19 @@ import java.util.Iterator;
 
 public class InitMapDefault <Key, Value> extends AbstractInitMap<Key,Value>{
 
-  protected final ConvertsValue<Key,Value> valueProvider;
+  protected final In1Out1<Key,Value> valueProvider;
 
-  private final JsDictionary<Value> map = 
+  private final JsDictionary<Value> map =
     JsDictionary.create(null);// we send null and promise not to use value[]
 
-  public InitMapDefault(ConvertsValue<Key,String> keyProvider, ConvertsValue<Key,Value> valueProvider) {
+  public InitMapDefault(In1Out1<Key,String> keyProvider, In1Out1<Key,Value> valueProvider) {
     super(keyProvider);
     assert valueProvider != null : "Cannot use null value provider for init map.";
     this.valueProvider = valueProvider;
   }
 
   public static <Key, Value> InitMapDefault<Key,Value> createInitMap(
-    ConvertsValue<Key,String> keyProvider, ConvertsValue<Key,Value> valueProvider) {
+    In1Out1<Key,String> keyProvider, In1Out1<Key,Value> valueProvider) {
     return new InitMapDefault<Key,Value>(keyProvider, valueProvider);
   }
 
@@ -52,7 +53,7 @@ public class InitMapDefault <Key, Value> extends AbstractInitMap<Key,Value>{
 
   @Override
   public Value initialize(Key k) {
-    return valueProvider.convert(k);
+    return valueProvider.io(k);
   }
 
 
@@ -65,7 +66,7 @@ public class InitMapDefault <Key, Value> extends AbstractInitMap<Key,Value>{
   public Iterable<String> keys() {
     return map.keys();
   }
-  
+
   public Iterator<Entry<String, Value>> iterator() {
     return map.entries().iterator();
   }

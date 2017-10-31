@@ -29,6 +29,7 @@ import xapi.collect.impl.AbstractMultiInitMap;
 import xapi.dev.resource.impl.StringDataResource;
 import xapi.dev.scanner.X_Scanner;
 import xapi.dev.scanner.impl.ClasspathResourceMap;
+import xapi.file.X_File;
 import xapi.fu.Filter.Filter1;
 import xapi.fu.Lazy;
 import xapi.fu.MappedIterable;
@@ -43,6 +44,8 @@ import xapi.mvn.service.MvnService;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
 import xapi.util.X_Debug;
+import xapi.util.X_Namespace;
+import xapi.util.X_Properties;
 import xapi.util.X_String;
 import xapi.util.X_Util;
 
@@ -55,6 +58,8 @@ import java.util.*;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
+
+import static xapi.util.X_Properties.getProperty;
 
 @SingletonDefault(implFor = MvnService.class)
 public class MvnServiceDefault implements MvnService {
@@ -165,7 +170,7 @@ public class MvnServiceDefault implements MvnService {
     );
 
     try {
-      LocalArtifactRequest request = new LocalArtifactRequest(artifact, null, null);
+      LocalArtifactRequest request = new LocalArtifactRequest(artifact, remoteRepos(), null);
       return session.getLocalRepositoryManager().find(session, request);
     } finally {
       if (X_Log.loggable(LogLevel.DEBUG)) {
@@ -205,15 +210,31 @@ public class MvnServiceDefault implements MvnService {
 
   protected RepositorySystemSession initLocalRepo() {
     DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
-    String userHome = System.getProperty("user.home");
-    String path = "target/local-repo";
-    if (userHome != null) {
-      File maybeUse = new File(userHome, ".m2/repository");
-      if (maybeUse.exists()) {
-        path = maybeUse.getAbsolutePath();
+    String localLocation = getProperty(X_Namespace.PROPERTY_MAVEN_REPO, ()->{
+      String userHome = getProperty("user.home");
+      File f = new File(userHome, ".m2" + File.separator + "repository");
+      if (f.exists()) {
+        return f.getAbsolutePath();
       }
-    }
-    LocalRepository localRepo = new LocalRepository(path);
+      if (new File("target").exists()) {
+        f = new File("target", "local-repo");
+      } else {
+        f = X_File.createTempDir("xapi", true);
+      }
+      if (!f.exists()) {
+        if ("false".equals(X_Properties.getProperty(X_Namespace.PROPERTY_MAVEN_REPO_AUTOCREATE))) {
+          X_Log.error(MvnServiceDefault.class, "Could not find .m2 repository in " + f.getAbsolutePath());
+          throw new IllegalStateException("No local repository available.  Set system property xapi.mvn.repo.autocreate to create repository in " + f.getAbsolutePath());
+        }
+        final boolean success = f.mkdirs();
+        if (!success) {
+          X_Log.warn(MvnServiceDefault.class, "Unable to create new local repository in ", f);
+        }
+      }
+      return f.getAbsolutePath();
+    });
+
+    LocalRepository localRepo = new LocalRepository(localLocation);
     localRepo.getBasedir().mkdirs();
     session.setLocalRepositoryManager(repoSystem.get()
         .newLocalRepositoryManager(session, localRepo));
@@ -253,23 +274,40 @@ public class MvnServiceDefault implements MvnService {
   @Override
   public Out1<MappedIterable<String>> downloadDependencies(MvnDependency dep) {
 
-    final Lazy<List<String>> artifact = Lazy.deferred1(()->{
-      final ArtifactResult result = X_Maven.loadArtifact(
+    final Lazy<List<String>> request = Lazy.deferred1(()->{
+      final LocalArtifactResult localArtifact = X_Maven.loadLocalArtifact(
           dep.getGroupId(),
           dep.getArtifactId(),
           dep.getClassifier(),
           dep.getPackaging(),
           dep.getVersion()
       );
-      return loadDependencies(result.getArtifact(), check->
+      Artifact artifact = null;
+      if (localArtifact.isAvailable()) {
+        artifact = localArtifact.getRequest().getArtifact();
+        // not sure why maven is lame and doesn't set this for us...
+        artifact = artifact.setFile(localArtifact.getFile());
+      }
+      if (artifact == null){
+        final ArtifactResult result = X_Maven.loadArtifact(
+            dep.getGroupId(),
+            dep.getArtifactId(),
+            dep.getClassifier(),
+            dep.getPackaging(),
+            dep.getVersion()
+        );
+        artifact = result.getArtifact();
+
+      }
+      return loadDependencies(artifact, check->
           !"test".equals(check.getScope()) && !"system".equals(check.getScope())
               && !check.isOptional()
       );
     });
     // Start download of artifact info immediately, but do not block
-    runLater(artifact.ignoreOut1().toRunnable());
+    runLater(request.ignoreOut1().toRunnable());
     // Return a string output that will block on the lazy initializer
-    return artifact.map(MappedIterable::mapped);
+    return request.map(MappedIterable::mapped);
   }
 
   protected void runLater(Runnable runnable) {
@@ -386,6 +424,7 @@ public class MvnServiceDefault implements MvnService {
 
   @Override
   public String localRepo() {
+
     return session.get().getLocalRepository().getBasedir().getAbsolutePath();
   }
 

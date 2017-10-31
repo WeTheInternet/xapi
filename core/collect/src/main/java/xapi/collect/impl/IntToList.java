@@ -7,26 +7,44 @@ import xapi.except.NotYetImplemented;
 import xapi.fu.In1.In1Serializable;
 import xapi.fu.In2;
 import xapi.fu.In2Out1;
+import xapi.fu.has.HasLock;
 import xapi.util.X_Util;
 import xapi.util.impl.AbstractPair;
-
-import static xapi.fu.In1.serializable1;
 
 import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.util.*;
 import java.util.Map.Entry;
 
-class IntToList<E> implements IntTo<E>, Serializable {
+import static xapi.fu.In1.serializable1;
+
+public class IntToList<E> implements IntTo<E>, Serializable {
 
   private final List<E> list;
   private final Class<E> type;
   private final In1Serializable<Integer> resizer;
 
   public <Generic extends E> IntToList(Class<Generic> cls) {
-    this(cls, new ArrayList<>(10), ArrayList::ensureCapacity);
+    this(cls, CollectionOptions.asMutableList().build());
   }
 
+  public <Generic extends E> IntToList(Class<Generic> cls, CollectionOptions opts) {
+    this(cls,
+        listFor(opts),
+        resizerFor(opts));
+  }
+
+  private static <E, L extends List<E>> In2<L, Integer> resizerFor(CollectionOptions opts) {
+    final In2 mapper = opts.concurrent() ?
+        (In2<Vector, Integer>)Vector::ensureCapacity :
+        (In2<ArrayList, Integer>)ArrayList::ensureCapacity;
+    return mapper;
+  }
+
+  private static <E> List<E> listFor(CollectionOptions opts) {
+    return opts.concurrent() ? new Vector<>() :
+        new ArrayList<>(10);
+  }
 
   public <Generic extends E, L extends List<E>> IntToList(Class<Generic> cls, L list, In2<L, Integer> resizer) {
     this.type = Class.class.cast(cls);

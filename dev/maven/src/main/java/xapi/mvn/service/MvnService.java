@@ -6,6 +6,7 @@ import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.repository.LocalArtifactResult;
+import org.eclipse.aether.repository.LocalRepository;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.ArtifactResult;
 import xapi.fu.Filter.Filter1;
@@ -19,35 +20,39 @@ import java.util.List;
 
 public interface MvnService {
 
-	String mvnHome();
+    String mvnHome();
 
-	String localRepo();
+    String localRepo();
 
-	List<RemoteRepository> remoteRepos();
+    List<RemoteRepository> remoteRepos();
 
-	Iterable<Model> findPoms(ClassLoader loader);
+    Iterable<Model> findPoms(ClassLoader loader);
 
-	ArtifactResult loadArtifact(String groupId, String artifactId,
-			String classifier, String extension, String version);
+    ArtifactResult loadArtifact(
+        String groupId, String artifactId,
+        String classifier, String extension, String version
+    );
 
-	Model loadPomString(String pomString)
-			throws IOException, XmlPullParserException;
+    Model loadPomString(String pomString)
+    throws IOException, XmlPullParserException;
 
-	Model loadPomFile(String pomFile)
-			throws IOException, XmlPullParserException;
+    Model loadPomFile(String pomFile)
+    throws IOException, XmlPullParserException;
 
-  RepositorySystemSession getRepoSession();
+    RepositorySystemSession getRepoSession();
 
     String normalize(String classifier);
 
     void setLogLevel(LogLevel logLevel);
 
-  ArtifactResult loadArtifact(String groupId, String artifactId, String version);
+    ArtifactResult loadArtifact(String groupId, String artifactId, String version);
 
-  LocalArtifactResult loadLocalArtifact(String groupId, String artifactId, String version);
+    LocalArtifactResult loadLocalArtifact(String groupId, String artifactId, String version);
 
-  LocalArtifactResult loadLocalArtifact(String groupId, String artifactId, String classifier, String extension,
-      String version);
+    LocalArtifactResult loadLocalArtifact(
+        String groupId, String artifactId, String classifier, String extension,
+        String version
+    );
 
     List<String> loadDependencies(Artifact artifact, Filter1<Dependency> filter);
 

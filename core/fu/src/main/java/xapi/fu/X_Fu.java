@@ -518,13 +518,13 @@ public interface X_Fu {
       return first;
     }
 
-  static <T> T[] slice(int from, int length, T ... items) {
-      assert from > 0;
-      assert from < items.length;
-      assert length >= 0;
-      assert from + length <= items.length;
+  static <T> T[] slice(int startInclusive, int endExclusive, T ... items) {
+      assert startInclusive > 0;
+      assert startInclusive < items.length;
+      assert endExclusive >= 0;
+      assert endExclusive <= items.length;
 
-      T[] copy = Fu.jutsu.arrayCopy(items, from, length);
+      T[] copy = Fu.jutsu.arrayCopy(items, startInclusive, endExclusive - startInclusive);
       return copy;
   }
 
@@ -576,4 +576,13 @@ public interface X_Fu {
         }
       };
   }
+
+  static RuntimeException rethrow(Throwable t) {
+    if (t == null) {
+      throw new NullPointerException();
+    }
+    Fu.jutsu.sneakyThrow(t);
+    return null;
+  }
+
 }

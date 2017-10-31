@@ -127,7 +127,7 @@ public class MultithreadedStringTrie<E> implements PrefixedMap<E> {
           key = next.lesser.key;
           if (k == key[0]) {
             int match = 0;
-            while (++match < key.length) {
+            while (pos +++match < key.length) {
               if (key[pos + match] != key[match]) {
                 if (next.greater != null) {
                   stack = new Stack(stack, next.greater);

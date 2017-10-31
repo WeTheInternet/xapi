@@ -2,6 +2,7 @@ package xapi.fu.iterate;
 
 import xapi.fu.Do;
 import xapi.fu.In1;
+import xapi.fu.In1.In1Unsafe;
 import xapi.fu.In2;
 import xapi.fu.In3;
 import xapi.fu.MappedIterable;
@@ -135,6 +136,9 @@ public class ChainBuilder<T> implements HasSize, MappedIterable<T> {
     return prev.value.out1();
   }
 
+  public void removeAllUnsafe(In1Unsafe<T> callback) {
+    removeAll(callback);
+  }
   public void removeAll(In1<T> callback) {
     final ReplayableIterable<T> items = cached();
     clear();

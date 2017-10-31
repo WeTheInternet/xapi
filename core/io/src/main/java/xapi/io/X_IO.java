@@ -2,6 +2,8 @@ package xapi.io;
 
 import xapi.collect.impl.SimpleFifo;
 import xapi.fu.has.HasSize;
+import xapi.fu.iterate.Chain;
+import xapi.fu.iterate.ChainBuilder;
 import xapi.inject.X_Inject;
 import xapi.io.api.DelegatingInputStream;
 import xapi.io.api.DelegatingOutputStream;
@@ -14,6 +16,7 @@ import xapi.io.impl.StringBufferOutputStream;
 import xapi.io.service.IOService;
 import xapi.log.X_Log;
 import xapi.log.api.LogLevel;
+import xapi.source.api.Chars;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
 import xapi.util.X_Debug;
@@ -176,6 +179,33 @@ public class X_IO {
       }
     });
     return failure[0];
+  }
+
+  /**
+   * Reads a line of chars from an InputStream (expects codepoint of chars).
+   * EXPECTS ONLY \n AS LINE DELIMITER.
+   *
+   * If you actually need to support \r|\n|\r\n, then put in a request
+   * and we will make a LineEndAwareInputStream which wraps any InputStream,
+   * and can internally cache some boolean state to ignore a \n after \r,
+   * plus convert all \r to \n,
+   * so we can still reliably detect line endings using this method.
+   *
+   * @param in
+   * @return
+   * @throws IOException
+   */
+  public static String readLine(final InputStream in) throws IOException {
+    ChainBuilder<Character> chars = Chain.startChain();
+    int next = in.read();
+    while (next != '\n') {
+      for (char c : Character.toChars(next)) {
+        // TODO: generate primitive versions of ChainBuilder
+        chars.add(c);
+      }
+      next = in.read();
+    }
+    return chars.join("","", "\n");
   }
 
   public static void drain(final OutputStream out, final InputStream in) throws IOException {

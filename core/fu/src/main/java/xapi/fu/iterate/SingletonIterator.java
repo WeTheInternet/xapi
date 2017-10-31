@@ -1,9 +1,5 @@
 package xapi.fu.iterate;
 
-import xapi.fu.MappedIterable;
-
-import java.util.Iterator;
-
 public class SingletonIterator <X> implements SizedIterable<X> {
 
   private final class Iter implements SizedIterator<X> {

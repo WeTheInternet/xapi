@@ -100,7 +100,7 @@ public class ExtensibleClassLoader extends URLClassLoader implements HasLock {
     }
 
     protected boolean cacheForeignResources() {
-        return false;
+        return true;
     }
 
     protected boolean cacheForeignClasses() {
@@ -130,11 +130,12 @@ public class ExtensibleClassLoader extends URLClassLoader implements HasLock {
                 }
             } else {
                 // consult the super loader first
-                result = super.loadClass(name, false);
-                if (result == null) {
-                    // Then check our map w/ factory to memoize values...
+                try {
+                    result = super.loadClass(name, false);
+                } catch (ClassNotFoundException e) {
                     result = loadedClasses.getOrCreate(name, classFinder);
-                } else if (cacheForeignClasses()){
+                }
+                if (result != null && cacheForeignClasses()){
                     loadedClasses.put(name, result);
                 }
             }

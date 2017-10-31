@@ -36,6 +36,9 @@
 package xapi.util;
 
 import xapi.annotation.compile.MagicMethod;
+import xapi.fu.In1;
+import xapi.fu.In1Out1;
+import xapi.fu.In1Out1.In1Out1Unsafe;
 import xapi.fu.Out1;
 import xapi.fu.Out1.Out1Unsafe;
 import xapi.inject.impl.SingletonProvider;
@@ -98,7 +101,8 @@ public final class X_Properties {
 	  return service.getProperty(property);
 	}
 
-  	@MagicMethod(doNotVisit=true)
+  	@SuppressWarnings("DefaultAnnotationParam")
+	@MagicMethod(doNotVisit=true)
 	public static String getProperty(final String property, final String dflt) {
 	  return service.getProperty(property, dflt);
 	}
@@ -107,9 +111,18 @@ public final class X_Properties {
 	  return service.getProperty(property, dflt);
 	}
 
+	public static <I1> String getProperty(final String property, final In1Out1<I1, String> dflt, I1 in1) {
+	  return service.getProperty(property, dflt.supply(in1));
+	}
+
 	public static String getPropertyUnsafe(final String property, final Out1Unsafe<String> dflt) {
 	  return service.getProperty(property, dflt);
 	}
+
+	public static <I1> String getPropertyUnsafe(final String property, final In1Out1Unsafe<I1, String> dflt, I1 in1) {
+	  return service.getProperty(property, dflt.supply(in1));
+	}
+	// TODO: generate n-arity InNOut1<I1, I2, IN, String> getProperty (I1 i1, I2 i2, IN in) methods.
 
 	public static void setProperty(final String property, final String value) {
 	  service.setProperty(property, value);

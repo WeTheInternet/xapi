@@ -42,7 +42,6 @@ import xapi.time.api.Moment;
 import xapi.util.X_Runtime;
 import xapi.util.X_Util;
 import xapi.util.api.ReceivesValue;
-import xapi.util.impl.RunUnsafe;
 
 /**
  * @author James X. Nelson (james@wetheinter.net, @james)
@@ -190,7 +189,7 @@ public class IOServiceDefault extends AbstractIOService <URLConnection> {
   protected void sendRequest(final URLConnection connect, final IORequestDefault request, final IOCallback<IOMessage<String>> callback, final String url, final StringDictionary<String> headers, final String body) {
     final LogLevel logLevel = logLevel();
     final Moment before = X_Time.now();
-    X_Time.runUnsafe(new DoUnsafe() {
+    X_Time.doLaterUnsafe(new DoUnsafe() {
       @Override
       public void doneUnsafe() throws Throwable {
         if (X_Log.loggable(logLevel)) {

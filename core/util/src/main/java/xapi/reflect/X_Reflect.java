@@ -6,6 +6,7 @@ import xapi.inject.X_Inject;
 import xapi.log.X_Log;
 import xapi.log.api.LogService;
 import xapi.reflect.service.ReflectionService;
+import xapi.source.X_Modifier;
 import xapi.util.X_Runtime;
 import xapi.util.X_String;
 import xapi.util.X_Util;
@@ -18,8 +19,10 @@ import java.net.URL;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import static xapi.util.X_String.joinClasses;
 
@@ -1342,4 +1345,39 @@ public class X_Reflect {
           cls.contains("netbeans");
     }
 
+  public static Class<?> rebase(Class<?> clazz, ClassLoader toLoader) {
+    if (clazz.isArray()) {
+      final Class<?> component = rebase(clazz.getComponentType(), toLoader);
+      return X_Reflect.newArray(component, 0).getClass();
+    }
+    try {
+      return toLoader.loadClass(clazz.getName());
+    } catch (ClassNotFoundException e) {
+      throw new RuntimeException(e);
+    }
   }
+
+  public static boolean isParentOrSelf(ClassLoader loader) {
+    ClassLoader self = Thread.currentThread().getContextClassLoader();
+    if (self == loader) {
+      return true;
+    }
+    while (self != null) {
+      self = self.getParent();
+      if (self == loader) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public static boolean hasPublicOverloads(Class<?> cls) {
+    Set<String> seen = new HashSet<>();
+    for (Method method : cls.getMethods()) {
+      if (!seen.add(method.getName())) {
+        return false;
+      }
+    }
+    return true;
+  }
+}

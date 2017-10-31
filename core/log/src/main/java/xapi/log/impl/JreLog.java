@@ -86,11 +86,16 @@ public class JreLog extends AbstractLog{
       while (enclosing.isAnonymousClass() && enclosing.getEnclosingClass() != null) {
         enclosing = enclosing.getEnclosingClass();
       }
+      String candidate = null;
       final StackTraceElement[] traces = new Throwable().getStackTrace();
       for (StackTraceElement trace : traces) {
         // try for exact match first
         if (trace.getClassName().equals(c.getName())) {
           return " "+trace;
+        } else if (candidate == null && trace.getClassName().startsWith(c.getName())) {
+          if (trace.getClassName().split("[$]")[0].equals(c.getName())) {
+            candidate = " " + trace;
+          }
         }
       }
       // loosen up and try enclosing types...
@@ -103,6 +108,9 @@ public class JreLog extends AbstractLog{
               return " " + trace;
             }
 
+          }
+          if (candidate == null) {
+            candidate = " " + trace;
           }
         }
       }

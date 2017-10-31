@@ -115,9 +115,6 @@ public class CollectionServiceDefault implements CollectionService{
     if (opts.insertionOrdered()) {
       if (opts.concurrent()) {
         // TODO: something with better performance...
-        // Perhaps supersource ConcurrentSkipListMap,
-        // and remove all the contention-worries that plague its implementation
-        // (why pay to handle concurrent threads in a single-threaded environment?)
         return synchronizedMap(new LinkedHashMap<>());
       } else {
         return new LinkedHashMap<>();
@@ -139,7 +136,7 @@ public class CollectionServiceDefault implements CollectionService{
 
   @Override
   public <Type, Generic extends Type>  IntTo<Type> newList(final Class<Generic> cls, final CollectionOptions opts) {
-    return new IntToList<>(cls);
+    return opts.concurrent() ? new IntToListConcurrent<>(cls) : new IntToList<>(cls);
   }
 
   @Override

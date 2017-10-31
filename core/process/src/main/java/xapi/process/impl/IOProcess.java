@@ -1,18 +1,18 @@
 package xapi.process.impl;
 
-
+import xapi.fu.In1;
+import xapi.fu.Out1;
+import xapi.process.api.ProcessCursor;
+import xapi.process.api.RescheduleException;
+import xapi.util.X_Util;
 
 public class IOProcess <T> extends AbstractProcess<T>{
 
-  public static interface Input<T> {
-    T input();
-  }
-  public static interface Output<T> {
-    boolean output(T object);
-  }
-  private Output<T> out;
-  public IOProcess(Output<T> output) {
+  In1<T> in;
+  Out1<T> out;
+  public IOProcess(In1<T> input, Out1<T> output) {
     this.out = output;
+    this.in = input;
   }
 
 //  public boolean process(Input<T> provider) throws Exception {
@@ -42,8 +42,23 @@ public class IOProcess <T> extends AbstractProcess<T>{
 //  }
 
   @Override
-  public boolean process(float milliTimeLimit) throws Exception {
-    return false;
+  public boolean process(float milliTimeLimit) {
+    try {
+      final T value = out.out1();
+      in.in(value);
+      return true;
+    } catch (Throwable t) {
+      final Throwable unwrapped = X_Util.unwrap(t);
+      if (unwrapped instanceof RescheduleException) {
+        // client wants to reschedule the process
+        RescheduleException r = (RescheduleException) unwrapped;
+        // TODO have a reschedule mode which may include "allow retry immediately"
+        final ProcessCursor cursor = r.getCursor();
+        return false;
+      }
+      // Any other exception is getting thrown.
+      throw t;
+    }
   }
 
 

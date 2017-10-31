@@ -18,6 +18,8 @@ import xapi.fu.iterate.SizedIterable;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
+import static xapi.fu.iterate.ArrayIterable.iterate;
+
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 7/31/16.
  */
@@ -100,17 +102,22 @@ public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
             }
         };
     }
+    default <To> MappedIterable<To> flattenUnsafe(In1Out1Unsafe<T, Iterable<To>> mapper) {
+        return flatten(mapper);
+    }
+
     default <To> MappedIterable<To> flatten(In1Out1<T, Iterable<To>> mapper) {
         return () -> new Iterator<To>() {
 
-            final Iterator<Iterable<To>> itr = map(mapper).iterator();
+            final Lazy<Iterator<Iterable<To>>> itr = Lazy.deferred1(()->map(mapper).iterator());
 
             Lazy<Iterator<To>> next = reset();
 
             private Lazy<Iterator<To>> reset() {
                 return Lazy.deferred1(()->{
-                    if (itr.hasNext()) {
-                        final Iterable<To> n = itr.next();
+                    final Iterator<Iterable<To>> i = itr.out1();
+                    if (i.hasNext()) {
+                        final Iterable<To> n = i.next();
                         return n.iterator();
                     }
                     return EmptyIterator.empty();
@@ -155,6 +162,14 @@ public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
         return ()->new MappedIterator<>(from.iterator(), mapper);
     }
 
+    default <With> boolean hasMatch1(In2Out1<With, T, Boolean> filter, With with) {
+        return hasMatch(filter.supply1(with));
+    }
+
+    default <With> boolean hasMatch2(In2Out1<T, With, Boolean> filter, With with) {
+        return hasMatch(filter.supply2(with));
+    }
+
     default boolean hasMatch(In1Out1<T, Boolean> filter) {
         return firstMatch(filter).isPresent();
     }
@@ -196,6 +211,25 @@ public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
         return filter(filter.supply2(extra1)::io);
     }
 
+    /**
+     * First calls {@link #filter}, then {@link #cached}.
+     *
+     * IF YOUR FILTER IS STATEFUL YOU MUST USE {@link #filterOnce(Filter1)},
+     * AS {@link #filter(Filter1)} WILL CALL YOUR Filter FROM EVERY PRODUCED Iterable.
+     *
+     */
+    default MappedIterable<T> filterOnce(Filter1<T> filter) {
+        return filter(filter).caching();
+    }
+
+
+    /**
+     * Filters out items for which the supplied filter returns fales.
+     *
+     * IF YOUR FILTER IS STATEFUL YOU MUST USE {@link #filterOnce(Filter1)},
+     * AS {@link #filter(Filter1)} WILL CALL YOUR Filter FROM EVERY PRODUCED Iterable.
+     *
+     */
     default MappedIterable<T> filter(Filter1<T> filter) {
         return ()->new Iterator<T>() {
             Iterator<T> iter = iterator();
@@ -626,6 +660,10 @@ public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
         return SizedIterable.of(size, this);
     }
 
+    default MappedIterable<T> appendItems(T ... items) {
+        return append(iterate(items));
+    }
+
     default MappedIterable<T> append(MappedIterable<T> after) {
         return Chain.<T>startChain()
             .addAll(this)
@@ -642,5 +680,9 @@ public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
 
     default MappedIterable<T> filterNull() {
         return filter(X_Fu::notNull);
+    }
+
+    default <To> MappedIterable<To> castTo(Class<To> type) {
+        return map(type::cast);
     }
 }

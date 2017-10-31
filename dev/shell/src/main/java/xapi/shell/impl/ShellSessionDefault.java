@@ -50,6 +50,8 @@ class ShellSessionDefault implements ShellSession, Do {
   private boolean normalCompletion;
   PipeOut out;
   private Integer status;
+  private LogLevel stdOutLevel = LogLevel.TRACE;
+  private LogLevel stdErrLevel = LogLevel.ERROR;
 
   public ShellSessionDefault(final ShellCommandDefault cmd,
       final ArgumentProcessor argProcessor, final SuccessHandler<ShellSession> onSuccess, final ErrorHandler<Throwable> onError) {
@@ -99,16 +101,16 @@ class ShellSessionDefault implements ShellSession, Do {
           return !finished;
         }
       };
-      X_IO.drain(LogLevel.TRACE, stdOut, onStdOut, check);
-      X_IO.drain(LogLevel.ERROR, stdErr, onStdErr, check);
+      X_IO.drain(getStdOutLevel(), stdOut, onStdOut, check);
+      X_IO.drain(getStdErrLevel(), stdErr, onStdErr, check);
     }
     join();
     drainStreams();
     if (status != 0) {
       if (callback instanceof ErrorHandler) {
-        ((ErrorHandler)callback).onError(new RuntimeException("Exit status "+status+" for "+command.commands));
+        ((ErrorHandler) callback).onError(new RuntimeException("Exit status " + status + " for " + command.commands));
       }
-      X_Log.error("Exit status",status,"for ",command.commands);
+      X_Log.error("Exit status", status, "for ", command.commands);
     }
     destroy();
     synchronized (this) {
@@ -473,4 +475,21 @@ class ShellSessionDefault implements ShellSession, Do {
     }
   }
 
+  public LogLevel getStdOutLevel() {
+    return stdOutLevel;
+  }
+
+  public ShellSessionDefault setStdOutLevel(LogLevel stdOutLevel) {
+    this.stdOutLevel = stdOutLevel;
+    return this;
+  }
+
+  public LogLevel getStdErrLevel() {
+    return stdErrLevel;
+  }
+
+  public ShellSessionDefault setStdErrLevel(LogLevel stdErrLevel) {
+    this.stdErrLevel = stdErrLevel;
+    return this;
+  }
 }

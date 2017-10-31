@@ -7,6 +7,7 @@ import xapi.fu.has.HasSize;
 import xapi.fu.iterate.SizedIterable;
 import xapi.fu.java.EntryIterable;
 
+import java.util.Iterator;
 import java.util.Map.Entry;
 
 public interface HasValues<K,V> extends EntryIterable<K,V>, HasSize, HasEmptiness {
@@ -35,6 +36,18 @@ public interface HasValues<K,V> extends EntryIterable<K,V>, HasSize, HasEmptines
   void addAll(Iterable<Out2<K,V>> items);
 
   void removeAll(Iterable<K> items);
+
+  default void removeWhileTrue(In2Out1<K, V, Boolean> filter) {
+    final Iterator<Entry<K, V>> itr = entries().iterator();
+    while (itr.hasNext()) {
+      final Entry<K, V> next = itr.next();
+      if (Boolean.TRUE.equals(filter.io(next.getKey(), next.getValue()))) {
+        itr.remove();
+      } else {
+        return;
+      }
+    }
+  }
 
   SizedIterable<K> keys();
 

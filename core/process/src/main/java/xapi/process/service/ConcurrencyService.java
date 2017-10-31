@@ -9,8 +9,11 @@ import xapi.time.service.TimeService;
 import xapi.util.api.ErrorHandler;
 
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 public interface ConcurrencyService {
+
+  void shutdown();
 
   /**
    * Experimental; may be deprecated.
@@ -181,4 +184,8 @@ public interface ConcurrencyService {
   AsyncLock newLock();
 
     boolean isInProcess();
+
+    void runInClassloader(ClassLoader loader, Do cmd);
+
+    void scheduleInterruption(long blocksFor, TimeUnit unit);
 }

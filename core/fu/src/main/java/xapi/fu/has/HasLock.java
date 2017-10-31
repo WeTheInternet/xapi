@@ -40,16 +40,18 @@ public interface HasLock {
      * AVOID CALLING THESE METHODS AS PART OF A HasLock IMPLEMENTATION, AS YOU COULD CAUSE INFINITE RECURSION
      * They are meant for non-lock-aware classes to be able to act on types that don't depend strictly on HasLock
      *
-     * @param source - An instance of HasLock
-     * @param todo
-     * @param <O>
+     * @param source - An instance of HasLock, or any non-null object
+     * @param todo - The supplier to return a value, if any, from this method
+     * @param <O> - The type of object to return.  Use <Void> and return null for non-synchronous use
      * @return
      */
     static <O> O maybeLock(Object source, Out1<O> todo) {
         if (source instanceof HasLock) {
             return ((HasLock)source).mutex(todo);
+        } else if (source == null) {
+            throw new NullPointerException("source");
         }
-        assert source == null || ArrayIterable.iterate(source.getClass().getInterfaces())
+        assert ArrayIterable.iterate(source.getClass().getInterfaces())
             .map(Class::getCanonicalName)
             .noneMatch(HasLock.class.getCanonicalName()::equals) :
             "Failed to lock HasLock from foreign classloader; " +

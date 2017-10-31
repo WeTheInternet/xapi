@@ -1,14 +1,23 @@
 package xapi.process.impl;
 
+import xapi.collect.X_Collect;
+import xapi.collect.api.ObjectTo;
 import xapi.collect.impl.AbstractMultiInitMap;
 import xapi.fu.Do;
 import xapi.fu.In1;
+import xapi.fu.In3Out1;
+import xapi.fu.Lazy;
+import xapi.fu.iterate.Chain;
+import xapi.fu.iterate.ChainBuilder;
 import xapi.log.X_Log;
 import xapi.process.api.ConcurrentEnvironment;
 import xapi.process.api.ConcurrentEnvironment.Priority;
 import xapi.process.api.Process;
 import xapi.process.api.ProcessController;
 import xapi.process.service.ConcurrencyService;
+import xapi.time.X_Time;
+import xapi.time.api.Moment;
+import xapi.time.impl.ImmutableMoment;
 import xapi.util.X_Runtime;
 import xapi.util.X_Util;
 import xapi.util.impl.AbstractPair;
@@ -18,71 +27,114 @@ import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static xapi.util.X_Debug.debug;
 
 public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
 
-  protected class WrappedRunnable implements Do {
+  protected final EnviroMap environments = initMap();
+  protected final Lazy<In3Out1<Thread, Long, TimeUnit, Thread>> interrupter;
+  protected volatile boolean shutdown;
 
-    private Do core;
+  private AtomicInteger threadCount = new AtomicInteger();
 
-    public WrappedRunnable(Do core) {
-      this.core = core;
+  protected ConcurrencyServiceAbstract() {
+    interrupter = Lazy.deferred1(this::prepareInterrupter);
+  }
+
+  @Override
+  public void shutdown() {
+    shutdown = true;
+    if (interrupter.isResolved()) {
+      interrupter.out1().io(null, null, null)
+          // interrupt our interrupter thread, so it knows to return.
+        .interrupt();
     }
+  }
 
-    @Override
-    public void done() {
-      core.done();
-      destroy(Thread.currentThread(), threadFlushTime());
+  @Override
+  protected void finalize() throws Throwable {
+  }
 
-      //Now that we've finished the job we were told to do,
-      //let's attempt to reuse our current thread
+  protected In3Out1<Thread, Long, TimeUnit, Thread> prepareInterrupter() {
+    ObjectTo.Many<Moment, Do> tasks = X_Collect.newMultiMap(Moment.class, Do.class,
+        X_Collect.MUTABLE_CONCURRENT_KEY_ORDERED);
+    class ThreadedThrowable extends RuntimeException {
 
+      final Thread thread;
 
-      //We should choose how to "steal work" wisely,
-      //using an algorithm which has known ETA times,
-      //so a thread which knows about an upcoming task
-      //can choose to reject long-running tasks;
-
-      //This will require coordination around the workload of other threads.
-      //If there is already one thread spinning, looking for work,
-      //and that thread is spending less than X % of time working,
-      //then we can take on any job.
-
-      //There will also be a necessary priority calculation;
-      //A big pending high priority job should take any live threads,
-      //and we can spin up more replacements for other tasks if needed.
-
-      //In order to prevent attention-starvation, a task's priority will get
-      //bumped up if it has to wait too long.
-
-      //Using a min-max latency and eta will help in determining the best job
-      //to take.
-
-      //First, check for immediate jobs scheduled by the current thread.
-      //this will help in cases when a thread simply wants to yield,
-      //or when a forking process wants to continue immediately,
-      //or when gluing together methods into a process.
-
-
-      //Next, check for high priority jobs scheduled by any thread.
-      //Anything with a timeout at or near expiration should be taken.
-      //If there are known tiny jobs available with a known eta less than
-      //the wait time for the high priority job, that job should be taken as well.
-      //If no such jobs exist, scan the work queue to elevate any starving tasks
-
-      //If no high priority jobs are waiting, scan the work queue for either
-      //a) work to do; if timeout ~expired, take and run immediately
-      //b) tasks to elevate;
-      //the iterator supplied when looking for work should elevate on its own.
-
-      //if no task is found, die unless you are the last thread.
-      //if timeout > now, drain the iterator to make sure anything needing
-      //elevation gets it.
+      ThreadedThrowable(Thread thread, Throwable cause) {
+        super(cause);
+        this.thread = thread;
+      }
     }
+    Thread interrupter = newThread(()->{
+        while (true) {
+          if (tasks.isEmpty()) {
+            synchronized (tasks) {
+              try {
+                tasks.wait();
+              } catch (InterruptedException e) {
+                return;
+              }
+            }
+          } else {
+            tasks.removeWhileTrue((time, jobs)-> {
+                if (X_Time.isFuture(time.millis())) {
+                  return false;
+                }
+                ChainBuilder<ThreadedThrowable> failures = Chain.startChain();
+                jobs.removeAll(job->{
+                  try {
+                    job.done();
+                  } catch (Throwable t) {
+                    if (t instanceof ThreadedThrowable) {
+                      failures.add((ThreadedThrowable) t);
+                    } else {
+                      X_Log.error(ConcurrencyServiceAbstract.class,
+                          "Interrupter callback ", job, " had unhandled error", t);
+                    }
+                  }
+                });
+                final UncaughtExceptionHandler handler =
+                    X_Util.firstNotNull(
+                    Thread.currentThread().getUncaughtExceptionHandler(),
+                    Thread.getDefaultUncaughtExceptionHandler()
+                );
+                if (handler != null) {
+                  failures.removeAll(failure->handler.uncaughtException(failure.thread, failure.getCause()));
+                }
+                return true;
+            });
+            if (!tasks.isEmpty()) {
+              tasks.first().readIfPresentUnsafe(e->{
+                long toWait = (long)e.out1().millis() - System.currentTimeMillis() + 1;
+                synchronized (tasks) {
+                  tasks.wait(toWait);
+                }
+              });
+            }
+          }
+        }
+    });
+    interrupter.setName("XApi Interrupter");
+    interrupter.setDaemon(true);
+    interrupter.start();
+    return In3Out1.unsafe((thread, time, unit) -> {
+        double millisToWait = unit.toNanos(time) / 1_000_000.;
+        Moment deadline = new ImmutableMoment(X_Time.nowPlus(millisToWait));
+        tasks.get(deadline).add(thread::interrupt);
+        synchronized (tasks) {
+          tasks.notifyAll();
+        }
+        return interrupter; // we return the interrupter thread so the service's finalize() can kill us
+    });
+  }
 
+  protected void prepareJob(Thread thread) {
+    // Left here for subclasses to perform per-task init on a given thread
   }
 
   protected class EnviroMap extends
@@ -114,16 +166,11 @@ public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
     }
   }
 
-
   protected abstract ConcurrentEnvironment initializeEnvironment(Thread key, UncaughtExceptionHandler params);
 
   protected int threadFlushTime() {
     return 2000;
   }
-
-  protected final EnviroMap environments = initMap();
-
-  private AtomicInteger threadCount = new AtomicInteger();
 
   @Override
   public Thread newThread(Do cmd) {
@@ -206,7 +253,7 @@ public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
   @Override
   @SuppressWarnings("deprecation")
   public boolean kill(Thread thread, int timeout) {
-    if (destroy(thread, timeout))
+    if (finishJob(thread, timeout))
       return true;
     try {
       thread.interrupt();
@@ -217,7 +264,7 @@ public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
     }
   }
 
-  private boolean destroy(Thread thread, int timeout) {
+  protected boolean finishJob(Thread thread, int timeout) {
     if (environments.hasKey(thread.getName())) {
       ConcurrentEnvironment enviro = environments.get(thread, thread.getUncaughtExceptionHandler());
       boolean success = enviro.destroy(timeout);
@@ -267,7 +314,7 @@ public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
         if (next != null)
           next.join(timeLeft);
         } catch (InterruptedException e) {
-          destroy(Thread.currentThread(), timeLeft);
+          finishJob(Thread.currentThread(), timeLeft);
           Thread.currentThread().interrupt();
         }
         if (System.currentTimeMillis()>deadline)
@@ -314,5 +361,85 @@ public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
     enviro.pushFinally(cmd);
   }
 
+  @Override
+  public void runInClassloader(ClassLoader loader, Do cmd) {
+    if (Thread.currentThread().getContextClassLoader() == loader) {
+      runDeferred(cmd);
+    } else {
+      // TODO: somehow / optionally encapsulate X_Scope.currentScope to survive in foreign classloader.
+      // If implemented, this should enforce parent classloaders,
+      // or some hideous thing to try to make reflection proxies of "everything dumped into scope".
+      final Thread thread = newThread(cmd);
+      thread.setContextClassLoader(loader);
+      thread.start();
+    }
+  }
+
+  @Override
+  public void scheduleInterruption(long blocksFor, TimeUnit unit) {
+    interrupter.out1().io(Thread.currentThread(), blocksFor, unit);
+  }
+
+  protected class WrappedRunnable implements Do {
+
+    private Do core;
+
+    public WrappedRunnable(Do core) {
+      this.core = core;
+    }
+
+    @Override
+    public void done() {
+      prepareJob(Thread.currentThread());
+      core.done();
+      finishJob(Thread.currentThread(), threadFlushTime());
+
+      //Now that we've finished the job we were told to do,
+      //let's attempt to reuse our current thread
+
+
+      //We should choose how to "steal work" wisely,
+      //using an algorithm which has known ETA times,
+      //so a thread which knows about an upcoming task
+      //can choose to reject long-running tasks;
+
+      //This will require coordination around the workload of other threads.
+      //If there is already one thread spinning, looking for work,
+      //and that thread is spending less than X % of time working,
+      //then we can take on any job.
+
+      //There will also be a necessary priority calculation;
+      //A big pending high priority job should take any live threads,
+      //and we can spin up more replacements for other tasks if needed.
+
+      //In order to prevent attention-starvation, a task's priority will get
+      //bumped up if it has to wait too long.
+
+      //Using a min-max latency and eta will help in determining the best job
+      //to take.
+
+      //First, check for immediate jobs scheduled by the current thread.
+      //this will help in cases when a thread simply wants to yield,
+      //or when a forking process wants to continue immediately,
+      //or when gluing together methods into a process.
+
+
+      //Next, check for high priority jobs scheduled by any thread.
+      //Anything with a timeout at or near expiration should be taken.
+      //If there are known tiny jobs available with a known eta less than
+      //the wait time for the high priority job, that job should be taken as well.
+      //If no such jobs exist, scan the work queue to elevate any starving tasks
+
+      //If no high priority jobs are waiting, scan the work queue for either
+      //a) work to do; if timeout ~expired, take and run immediately
+      //b) tasks to elevate;
+      //the iterator supplied when looking for work should elevate on its own.
+
+      //if no task is found, die unless you are the last thread.
+      //if timeout > now, drain the iterator to make sure anything needing
+      //elevation gets it.
+    }
+
+  }
 
 }

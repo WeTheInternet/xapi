@@ -8,4 +8,9 @@ public class ProcessController <T> {
     this.process = process;
   }
 
+  public void stop() {
+    if (process != null) {
+        process.onStop();
+    }
+  }
 }

@@ -91,4 +91,5 @@ class Fu implements Jutsu {
   public String lambdaName(Object o) {
     return o.getClass().getName();
   }
+
 }

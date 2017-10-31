@@ -8,6 +8,7 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.Fifo;
 import xapi.file.X_File;
 import xapi.log.X_Log;
+import xapi.log.api.LogLevel;
 import xapi.process.X_Process;
 import xapi.shell.api.ArgumentProcessor;
 import xapi.shell.api.ShellCommand;
@@ -22,6 +23,8 @@ public class ShellCommandDefault implements ShellCommand {
   final Fifo<String> commands;
   private String owner="User";
   private String directory;
+  private LogLevel stdOutLevel = LogLevel.TRACE;
+  private LogLevel stdErrLevel = LogLevel.ERROR;
 
   public ShellCommandDefault() {
     this.commands = X_Collect.newFifo();
@@ -83,14 +86,16 @@ public class ShellCommandDefault implements ShellCommand {
     return this;
   }
 
-  
+
   @Override
   @SuppressWarnings({ "unchecked", "rawtypes" })
   public ShellSession run(final SuccessHandler<ShellSession> callback, final ArgumentProcessor processor) {
     final ErrorHandler<Throwable> err = callback instanceof ErrorHandler ? (ErrorHandler) callback
         : X_Debug.defaultHandler();
-    
+
     final ShellSessionDefault result = new ShellSessionDefault(this, processor, callback, err);
+    result.setStdOutLevel(getStdOutLevel());
+    result.setStdErrLevel(getStdErrLevel());
     X_Process.newThread(result).start();
     return result;
   }
@@ -112,4 +117,25 @@ public class ShellCommandDefault implements ShellCommand {
     return pb.start();
   }
 
+  @Override
+  public LogLevel getStdOutLevel() {
+    return stdOutLevel;
+  }
+
+  @Override
+  public ShellCommandDefault setStdOutLevel(LogLevel stdOutLevel) {
+    this.stdOutLevel = stdOutLevel;
+    return this;
+  }
+
+  @Override
+  public LogLevel getStdErrLevel() {
+    return stdErrLevel;
+  }
+
+  @Override
+  public ShellCommandDefault setStdErrLevel(LogLevel stdErrLevel) {
+    this.stdErrLevel = stdErrLevel;
+    return this;
+  }
 }

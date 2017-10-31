@@ -5,7 +5,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 import xapi.fu.In1Out1;
-import xapi.util.api.ConvertsValue;
 import xapi.util.api.ReceivesValue;
 
 public class InitMapDefault <Key, Value> extends AbstractInitMap<Key,Value>{

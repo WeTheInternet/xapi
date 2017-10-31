@@ -10,6 +10,8 @@ import xapi.file.X_File;
 import xapi.inject.X_Inject;
 import xapi.io.api.LineReader;
 import xapi.log.X_Log;
+import xapi.log.api.HasLogLevel;
+import xapi.log.api.LogLevel;
 import xapi.shell.api.ShellCommand;
 import xapi.shell.api.ShellSession;
 import xapi.shell.service.ShellService;
@@ -32,17 +34,17 @@ public class ShellServiceDefault implements ShellService {
 
   static {
     new Thread() {
-      { 
-        Runtime.getRuntime().addShutdownHook(this); 
+      {
+        Runtime.getRuntime().addShutdownHook(this);
       }
       public void run() {
         while(!runningShells.isEmpty()){
           runningShells.remove().destroy();
         }
       }
-    }; 
+    };
   }
-  
+
   private static final Queue<ShellSession> runningShells = new ConcurrentLinkedQueue<>();
 
 //  private static abstract class ScriptProvider extends SingletonProvider<String> {
@@ -51,7 +53,7 @@ public class ShellServiceDefault implements ShellService {
 //      return X_File.getResourceMaybeUnzip(getScriptName(), Thread.currentThread().getContextClassLoader());
 //    }
 //  }
-  
+
   @Override
   public ShellSession runInShell(final boolean keepAlive, LineReader stdOut, LineReader stdErr, final String ... cmds) {
     final Moment start = X_Time.now();
@@ -62,10 +64,17 @@ public class ShellServiceDefault implements ShellService {
     } else {
       commands = cmds;
     }
-    final ShellSession runningShell = 
-      X_Inject.instance(ShellCommand.class)
-        .commands(commands)
-        .run(new SuccessHandler<ShellSession>() {
+    final ShellCommand command = X_Inject.instance(ShellCommand.class)
+        .commands(commands);
+    if (stdOut instanceof HasLogLevel) {
+        final LogLevel level = ((HasLogLevel) stdOut).getLogLevel();
+        command.setStdOutLevel(level);
+    }
+    if (stdErr instanceof HasLogLevel) {
+        final LogLevel level = ((HasLogLevel) stdErr).getLogLevel();
+        command.setStdErrLevel(level);
+    }
+    final ShellSession runningShell = command.run(new SuccessHandler<ShellSession>() {
             @Override
             public void onSuccess(ShellSession t) {
               X_Log.trace(getClass(), "Shell still running?", t.isRunning());
@@ -108,5 +117,5 @@ public class ShellServiceDefault implements ShellService {
       }
     }
   }
-  
+
 }

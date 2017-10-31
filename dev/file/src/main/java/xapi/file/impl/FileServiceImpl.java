@@ -4,7 +4,6 @@ import xapi.annotation.inject.SingletonDefault;
 import xapi.file.api.FileService;
 import xapi.fu.In2;
 import xapi.fu.MappedIterable;
-import xapi.fu.has.HasSize;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
 import xapi.fu.iterate.EmptyIterator;
@@ -86,7 +85,7 @@ public class FileServiceImpl implements FileService {
 
   @Override
   public void loadFile(File file, In2<String, Throwable> callback) {
-    X_Time.runUnsafe(()->{
+    X_Time.doLaterUnsafe(()->{
       String result;
       try {
         result = X_IO.toStringUtf8(new FileInputStream(file));

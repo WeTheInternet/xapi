@@ -15,6 +15,7 @@ import xapi.process.service.ConcurrencyService;
 
 import javax.inject.Provider;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 public class X_Process {
 
@@ -33,6 +34,10 @@ public class X_Process {
 
   public static void runDeferred(Do cmd) {
     service.get().runDeferred(cmd);
+  }
+
+  public static void runInClassloader(ClassLoader loader, DoUnsafe cmd) {
+    service.get().runInClassloader(loader, cmd);
   }
 
   public static void runDeferredUnsafe(DoUnsafe cmd) {
@@ -129,5 +134,9 @@ public class X_Process {
 
   public static boolean isInProcess() {
     return service.get().isInProcess();
+  }
+
+  public static void scheduleInterruption(long blocksFor, TimeUnit unit) {
+    service.get().scheduleInterruption(blocksFor, unit);
   }
 }
