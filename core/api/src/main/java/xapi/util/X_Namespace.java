@@ -20,6 +20,11 @@ public class X_Namespace {
    */
   public static final String XAPI_VERSION = "0.6-SNAPSHOT";
 
+  /**
+   * Latest published version of xapi.
+   */
+  public static final String XAPI_RELEASE_VERSION = "0.5";
+
   public static final String GWT_VERSION = "2.8.0";
 
   /**
@@ -165,6 +170,25 @@ public class X_Namespace {
    * Default is ~/.xapi
    */
   public static String PROPERTY_XAPI_HOME = "xapi.home";
+
+  /**
+   * "xapi.mvn.repo"
+   * The location of local maven repository to use.
+   *
+   * Default is ~/.m2/repository
+   */
+  public static String PROPERTY_MAVEN_REPO = "xapi.mvn.repo";
+
+  /**
+   * "xapi.mvn.repo.autocreate"
+   * Whether or not to autocreate a maven repository if there isn't one.
+   *
+   * Default is TRUE.
+   *
+   * This is so desktop software can still run on any user's machine,
+   * without requiring installation of maven in any way.
+   */
+  public static String PROPERTY_MAVEN_REPO_AUTOCREATE = "xapi.mvn.repo.autocreate";
 
 
 }
