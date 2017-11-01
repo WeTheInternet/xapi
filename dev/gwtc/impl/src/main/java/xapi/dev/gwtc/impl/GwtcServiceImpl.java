@@ -5,10 +5,13 @@ import xapi.annotation.inject.InstanceDefault;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.dev.api.ExtensibleClassLoader;
+import xapi.dev.api.MavenLoader;
 import xapi.dev.gwtc.api.AnnotatedDependency;
 import xapi.dev.gwtc.api.GwtcJobManager;
 import xapi.dev.gwtc.api.GwtcProjectGenerator;
+import xapi.dev.gwtc.api.GwtcProjectGeneratorAbstract;
 import xapi.dev.gwtc.api.GwtcService;
+import xapi.dev.source.ClassBuffer;
 import xapi.file.X_File;
 import xapi.fu.*;
 import xapi.fu.Do.DoUnsafe;
@@ -23,17 +26,23 @@ import xapi.gwtc.api.GwtcProperties;
 import xapi.gwtc.api.ServerRecompiler;
 import xapi.io.api.SimpleLineReader;
 import xapi.log.X_Log;
+import xapi.model.X_Model;
+import xapi.mvn.api.MvnDependency;
 import xapi.process.X_Process;
 import xapi.reflect.X_Reflect;
 import xapi.shell.X_Shell;
 import xapi.shell.api.ShellSession;
+import xapi.test.junit.JUnit4Runner;
+import xapi.test.junit.JUnitUi;
 import xapi.util.X_Debug;
+import xapi.util.X_Namespace;
 import xapi.util.X_Properties;
 import xapi.util.X_Util;
 
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -43,11 +52,14 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static xapi.fu.iterate.SingletonIterator.singleItem;
 
+import com.google.gwt.core.client.GWT;
+import com.google.gwt.dev.Compiler;
 import com.google.gwt.dev.GwtCompiler;
 
 @Gwtc(propertiesLaunch=@GwtcProperties)
@@ -84,7 +96,13 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
 
     final GwtcJobManager manager = jobs.getOrCreateFrom(manifest.getModuleName(), GwtcJobManagerImpl::new, this);
     manager.compileIfNecessary(manifest, callback);
-
+    if (unit != null) {
+      try {
+        manager.blockFor(manifest.getModuleName(), timeout, unit);
+      } catch (TimeoutException e) {
+        callback.in(null, e);
+      }
+    }
   }
 
   @Override
@@ -120,7 +138,7 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
     manifest.setRecompile(true);
     String id = manifest.getModuleName();
     GwtcJobStateImpl job = runningCompiles.getOrCreate(id, module ->
-      new GwtcJobStateImpl(manifest, manifest.getModuleName(), manifest.getModuleShortName(), GwtcServiceImpl.this));
+      new GwtcJobStateImpl(manifest, GwtcServiceImpl.this));
 
     job.startCompile(callback);
 
@@ -132,14 +150,20 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
     X_Log.info(GwtcServiceImpl.class, "Starting gwt compile", manifest.getModuleName());
     X_Log.debug(getClass(), manifest);
 
-    final String[] classpath = manifest.toClasspathFullCompile(compileHome);
+    final String[] classpath = manifest.toClasspathFullCompile(this);
     X_Log.debug(getClass(), "Requested Classpath\n", classpath);
 
     In1<Integer> cleanup = prepareCleanup(manifest);
 
     URL[] urls = fromClasspath(classpath);
+    // Ensure our list of urls contain
     URLClassLoader loader = manifestBackedClassloader(urls, manifest);
     return loader;
+  }
+
+  @Override
+  public MavenLoader getMavenLoader() {
+    return this;
   }
 
   @Override
@@ -241,7 +265,8 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
     final String[] programArgs = manifest.toProgramArgArray();
     final String[] jvmArgs = manifest.toJvmArgArray();
     X_Log.trace("Args: java ", jvmArgs, programArgs);
-    final String[] classpath = manifest.toClasspathFullCompile(gwtHome);
+    resolveClasspath(manifest, gwtHome);
+    final String[] classpath = manifest.toClasspathFullCompile(this);
     X_Log.debug("Requested Classpath\n", classpath);
 
     In1<Integer> cleanup = prepareCleanup(manifest);
@@ -312,7 +337,7 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
 //        URL url = super.getResource(name);
 //        if (url == null) {
 //          // Egregious hack; when running in the same jvm, the classloader is not able to use
-//          // the bootstrap classpath to load our newly generated resources out of our generated folder,
+//          // the caller's classloader to load our newly generated resources out of our generated folder,
 //          // so, we resort to manually looking up any failed resource loads here, in the classloader.
 //          try {
 //            File f = new File(inGeneratedDirectory(manifest, name));
@@ -327,10 +352,8 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
 //      }
 //    };
     final ExtensibleClassLoader loader = new ExtensibleClassLoader(urls, superLoader(manifest));
-    if (manifest.isIsolateClassLoader()) {
-      loader.setCheckMeFirst(true);
-    }
-    return loader.addResourceFinder(name-> {
+
+    loader.addResourceFinder(name-> {
           try {
             File f = new File(inGeneratedDirectory(manifest, name));
             if (f.exists()) {
@@ -341,11 +364,75 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
           }
           return null;
         });
+    return ensureMeetsMinimumRequirements(loader);
+  }
+
+  private URLClassLoader ensureMeetsMinimumRequirements(ExtensibleClassLoader classpath) {
+    // A valid classpath (currently) must have at least two available dependencies:
+    // Our Gwtc impl infrastructure, and a gwt compiler (of some sort).
+    // We are going to leave the selection of which gwt compiler up to subtypes,
+    // with the sane default of a standard GWT 2.X compilation.
+    boolean needsXapiGwtcImpl = false, needsXapiGwtcApi = false, needsGwtDev = false, needsGwtUser = false;
+
+    try {
+      classpath.loadClass(GwtcService.class.getName());
+    } catch (ClassNotFoundException e) {
+      // No class found.  We'll need to add one
+      needsXapiGwtcApi = true;
+    }
+    try {
+      classpath.loadClass(GwtcServiceImpl.class.getName());
+    } catch (ClassNotFoundException e) {
+      // No class found.  We'll need to add one
+      needsXapiGwtcImpl = true;
+    }
+    try {
+      classpath.loadClass(GWT.class.getName());
+    } catch (ClassNotFoundException e) {
+      // No class found.  We'll need to add one
+      needsGwtUser = true;
+    }
+    try {
+      classpath.loadClass(Compiler.class.getName());
+    } catch (ClassNotFoundException e) {
+      // No class found.  We'll need to add one
+      needsGwtDev = true;
+    }
+    if (needsGwtUser || needsGwtDev || needsXapiGwtcApi || needsXapiGwtcImpl ) {
+      // We'll need to prepare a wrapper around classloader...
+      ChainBuilder<Out1<Iterable<String>>> urls = Chain.startChain();
+      if (needsGwtDev) {
+        final MvnDependency dep = getDependency("net.wetheinter", "gwt-dev", X_Namespace.GWT_VERSION);
+        urls.add(downloadDependency(dep));
+      }
+      if (needsGwtUser) {
+        final MvnDependency dep = getDependency("net.wetheinter", "gwt-user", X_Namespace.GWT_VERSION);
+        urls.add(downloadDependency(dep));
+      }
+      if (needsXapiGwtcImpl) {
+        final MvnDependency dep = getDependency("xapi-gwtc-impl");
+        urls.add(downloadDependency(dep));
+      } else if (needsXapiGwtcApi) {
+        final MvnDependency dep = getDependency("xapi-gwtc-api");
+        urls.add(downloadDependency(dep));
+      }
+      final URL[] arr = urls
+          .map(Out1::out1)
+          .flatten(MappedIterable::mapped)
+          .map(file->file.startsWith("file:") ? file : "file:" + file)
+          .mapUnsafe(URL::new)
+          .toArray(URL[]::new);
+      @SuppressWarnings("UnnecessaryLocalVariable") // nice for debugging
+          URLClassLoader newLoader = new URLClassLoader(arr, classpath);
+      return newLoader;
+      }
+    return classpath;
   }
 
   protected ClassLoader superLoader(GwtManifest manifest) {
     if (manifest.isUseCurrentJvm()) {
       if (manifest.isIsolateClassLoader()) {
+          // TODO perhaps instead create a minimal super-loader that contains gwt-dev, gwt-user, (xapi-gwt || xapi-gwtc-api & xapi-gwtc-impl)
           return null;
       } else {
           X_Log.trace(GwtcServiceImpl.class, "Using context classloader for gwt compile", manifest);
@@ -385,9 +472,39 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
 
   @Override
   public String generateCompile(GwtManifest manifest) {
-    final GwtcProjectGenerator project = getProject(manifest.getModuleName(), null);
+    final GwtcProjectGenerator project = getProject(manifest.getModuleName());
     return project.generateCompile(manifest);
   }
+
+  public GwtcProjectGenerator getProject(String moduleName, ClassLoader resources) {
+    final ClassLoader loader = resources == null ? Thread.currentThread().getContextClassLoader() : resources;
+    return projects.getOrCreate(moduleName, mod->
+      new GwtcProjectGeneratorAbstract(this, loader, mod) {
+        @Override
+        protected void generateReportError(ClassBuffer classBuffer) {
+          super.generateReportError(classBuffer);
+          addClass(JUnit4Runner.class);
+          junitLoader = classBuffer.createInnerClass("private final class JUnit extends JUnitUi")
+              .createMethod("public void loadAllTests()");
+
+          classBuffer.createField(JUnitUi.class, "junit")
+              .setModifier(Modifier.FINAL | Modifier.PRIVATE)
+              .setInitializer("new JUnit()");
+
+          out.println("junit.onModuleLoad();");
+        }
+      }
+    );
+  }
+
+
+  //  @Override
+  protected void generateReportError(ClassBuffer classBuffer) {
+//    super.generateReportError(classBuffer);
+  }
+
+
+
 
   @Override
   public String inGeneratedDirectory(GwtManifest manifest, String filename) {
@@ -405,12 +522,15 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
       Matcher matcher = SPECIAL_DIRS.matcher(value);
       List<Replacement> replacements = new ArrayList<>();
       if (matcher.matches()) {
-        final GwtcProjectGenerator project = getProject(manifest.getModuleName(), null);
+        final GwtcProjectGenerator project = getProject(manifest.getModuleName());
         String type = matcher.group();
         switch (type) {
           case Dependency.DIR_BIN:
             if (binDir == null) {
-              binDir = X_Properties.getProperty("java.class.path", "bin");
+              binDir = X_Reflect.getFileLoc(X_Reflect.getMainClass());
+              if (binDir == null) {
+                binDir = "target/" + (manifest.isTestMode() ? "test-" : "") + "classes";
+              }
             }
             replacements.add(new Replacement(matcher.start(), matcher.end(), binDir));
             break;
@@ -484,7 +604,7 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
             }
           }
         }
-        return downloadFromMaven(dependency);
+        return downloadDependency(getDependency(dependency));
       default:
         throw new IllegalArgumentException("Unhandled case " + dependency.dependencyType());
     }
@@ -531,7 +651,25 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
    * Because the maven dependency list is long and conflicting, we avoid directly referencing it here.
    */
   protected Out1<Iterable<String>> downloadFromMaven(Dependency dependency) {
-    return Immutable.immutable1(EmptyIterator.none());
+    MvnDependency dep = X_Model.create(MvnDependency.class);
+    dep.setGroupId(dependency.groupId());
+    dep.setArtifactId(dependency.value());
+    dep.setVersion(dependency.version());
+    dep.setClassifier(dependency.classifier());
+    if (dependency.specifiers().length > 0) {
+      dep.setPackaging(dependency.specifiers()[0].type());
+    }
+    return getMavenLoader().downloadDependency(dep);
+  }
+
+  protected boolean canDownloadFromMaven() {
+    try {
+      Thread.currentThread().getContextClassLoader()
+          .loadClass("xapi.mvn.X_Maven");
+      return true;
+    } catch (ClassNotFoundException e) {
+      return false;
+    }
   }
 
   @Override

@@ -1,5 +1,6 @@
 package xapi.dev.gwtc.api;
 
+import xapi.dev.gwtc.api.GwtcJobMonitor.CompileStatus;
 import xapi.fu.In2Out1;
 import xapi.gwtc.api.GwtManifest;
 
@@ -30,4 +31,11 @@ public interface GwtcJobState {
     String getModuleName();
 
     String getModuleShortName();
+
+    static boolean isComplete(CompileStatus state) {
+        if (state == null) {
+            return false;
+        }
+        return state.isComplete();
+    }
 }

@@ -5,35 +5,54 @@ import xapi.dev.gwtc.api.GwtcJobManager;
 import xapi.dev.gwtc.api.GwtcJobMonitor;
 import xapi.dev.gwtc.api.GwtcJobMonitor.CompileStatus;
 import xapi.dev.gwtc.api.GwtcService;
+import xapi.dev.gwtc.api.IsAppSpace;
 import xapi.except.NotYetImplemented;
+import xapi.fu.Do.DoUnsafe;
 import xapi.fu.X_Fu;
+import xapi.fu.iterate.ArrayIterable;
 import xapi.gwtc.api.CompiledDirectory;
 import xapi.gwtc.api.GwtManifest;
 import xapi.inject.X_Inject;
+import xapi.io.api.LineReaderWithLogLevel;
 import xapi.log.X_Log;
 import xapi.model.api.PrimitiveSerializer;
 import xapi.model.impl.PrimitiveSerializerDefault;
+import xapi.process.X_Process;
 import xapi.shell.X_Shell;
 import xapi.shell.api.ShellSession;
 import xapi.source.api.CharIterator;
+import xapi.time.X_Time;
+import xapi.util.X_Debug;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.UncheckedIOException;
 import java.net.URLClassLoader;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.SortedSet;
 
-import static xapi.dev.gwtc.api.GwtcJobMonitor.ARG_LOG_FILE;
-
+import com.google.gwt.core.ext.TreeLogger;
+import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.dev.CompileTaskRunner;
 import com.google.gwt.dev.CompileTaskRunner.CompileTask;
 import com.google.gwt.dev.Compiler;
 import com.google.gwt.dev.Compiler.ArgProcessor;
 import com.google.gwt.dev.CompilerOptions;
 import com.google.gwt.dev.CompilerOptionsImpl;
+import com.google.gwt.dev.MinimalRebuildCacheManager;
 import com.google.gwt.dev.cfg.BindingProperty;
-import com.google.gwt.dev.codeserver.CompileStrategy;
+import com.google.gwt.dev.cfg.ResourceLoader;
+import com.google.gwt.dev.codeserver.*;
+import com.google.gwt.dev.codeserver.Job.Result;
+import com.google.gwt.dev.codeserver.JobEvent.Status;
+import com.google.gwt.dev.javac.StaleJarError;
+import com.google.gwt.dev.javac.UnitCache;
+import com.google.gwt.dev.javac.UnitCacheSingleton;
+import com.google.gwt.dev.jjs.JJSOptionsImpl;
+import com.google.gwt.dev.util.log.PrintWriterTreeLogger;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/14/17.
@@ -41,6 +60,9 @@ import com.google.gwt.dev.codeserver.CompileStrategy;
 public class GwtcJobManagerImpl extends GwtcJobManager {
 
     private final PrimitiveSerializer serializer;
+    private String currentEventId;
+    private Status status;
+    private String logFile;
 
     public GwtcJobManagerImpl(GwtcService service) {
         super(service);
@@ -65,23 +87,9 @@ public class GwtcJobManagerImpl extends GwtcJobManager {
             // When using the current jvm, we want to launch a thread with our classloader
             // We will talk to the other thread a shared monitor that has reflection proxies built in.
             job = new GwtcLocalProcessJob(manifest, classpath, gwtHome);
-
-
         } else {
             // When using a new process, we want must launch the process and bind it to a monitor
-            final String[] jvmArgs = manifest.toJvmArgArray();
-            final String[] programArgs = X_Fu.concat(manifest.toProgramArgArray(),
-                manifest.isRecompile() ? GwtcJobMonitor.JOB_RECOMPILE : GwtcJobMonitor.JOB_COMPILE
-            );
-            // TODO: ensure classpath has our gwtc impl embedded...
-            final String[] cp = manifest.toClasspathFullCompile(gwtHome);
-            final ShellSession process = X_Shell.launchJava(
-                GwtcJobMonitorImpl.class,
-                cp,
-                jvmArgs,
-                programArgs
-            );
-            job = new GwtcRemoteProcessJob(manifest, process);
+            job = new GwtcRemoteProcessJob(manifest, service);
 
         }
 
@@ -102,35 +110,56 @@ public class GwtcJobManagerImpl extends GwtcJobManager {
             .parseArgs(monitor, args);
     }
 
-    public void parseArgs(GwtcJobMonitorImpl monitor, String[] args) throws IOException {
+    public void parseArgs(GwtcJobMonitor monitor, String[] args) throws IOException {
 
         monitor.updateCompileStatus(CompileStatus.Preparing);
 
+
+        GwtcArgProcessor managerArgs = new GwtcArgProcessor();
+        args = processArgs(managerArgs, args);
         String command = args[0];
         args = X_Fu.slice(1, args.length, args);
 
-        // Now, check for log file
-        String logFile = null;
-        if (ARG_LOG_FILE.equals(command)) {
-            logFile = args[1];
-            command = args[2];
-            args = X_Fu.slice(3, args.length, args);
-        } else if (args.length > 0 && ARG_LOG_FILE.equals(args[0])) {
-            logFile = args[1];
-            args = X_Fu.slice(2, args.length, args);
+        switch (command) {
+            case "recompile":
+                runRecompile(monitor, managerArgs, args);
+                break;
+            case "compile":
+                runCompile(monitor, logFile, managerArgs, args);
+                break;
+            case "test":
+                runTestMode(monitor, args);
+                break;
+            case "help":
+                printHelp(args);
+                monitor.updateCompileStatus(CompileStatus.Success);
+                break;
+            default:
+                X_Log.error(GwtcJobMonitorImpl.class, "Incorrect arguments; must begin with one of: " +
+                    "recompile|compile|test|help.  You sent: ", command, "\nRemaining args:", args);
+                monitor.updateCompileStatus(CompileStatus.Failed);
         }
+    }
 
-        if (logFile != null) {
-            if (GwtcJobMonitor.STD_OUT_TO_STD_ERR.equals(logFile)) {
+    private String[] processArgs(GwtcArgProcessor managerArgs, String[] args) throws IOException {
+        args = managerArgs.processArgs(args);
+
+        // Now, grab our log file
+        final File log = managerArgs.getLogFile();
+
+        if (log != null) {
+            if (GwtcJobMonitor.STD_OUT_TO_STD_ERR.equals(log.getName())) {
                 // we are going to use stdErr for all program output
-                System.setErr(System.out);
+                System.setOut(System.err);
                 // in this case, we are not going to further indirect output streams
                 // (no files are piped to in this case; you just get everything interleaved on System.err)
                 logFile = null;
-            } else if (GwtcJobMonitor.NO_LOG_FILE.equals(logFile)) {
+            } else if (GwtcJobMonitor.NO_LOG_FILE.equals(log.getName())) {
                 // user sent `-logFile nlf` to tell us to not touch System streams.
                 // This is likely somebody calling our main method from other running java code.
                 logFile = null;
+            } else {
+                logFile = log.getAbsolutePath();
             }
         } else {
             // If no logFile is specified, we want to use a file in the tmp dir
@@ -153,32 +182,13 @@ public class GwtcJobManagerImpl extends GwtcJobManager {
             System.setOut(fout);
             System.setErr(fout);
         }
-
-        switch (command) {
-            case "recompile":
-                runRecompile(monitor, args);
-                break;
-            case "compile":
-                runCompile(monitor, logFile, args);
-                break;
-            case "test":
-                runTestMode(monitor, args);
-                break;
-            case "help":
-                printHelp(args);
-                monitor.updateCompileStatus(CompileStatus.Success);
-                break;
-            default:
-                X_Log.info(GwtcJobMonitorImpl.class, "Incorrect arguments; must begin with one of: " +
-                    "recompile|compile|test|help.  You sent: ", args);
-                monitor.updateCompileStatus(CompileStatus.Failed);
-        }
+        return args;
     }
 
     private void printHelp(String[] args) {
     }
 
-    protected void runTestMode(GwtcJobMonitorImpl monitor, String[] args) {
+    protected void runTestMode(GwtcJobMonitor monitor, String[] args) {
         for (String arg : args) {
             monitor.writeAsCompiler(arg);
         }
@@ -186,52 +196,204 @@ public class GwtcJobManagerImpl extends GwtcJobManager {
 
     }
 
-    protected void runRecompile(GwtcJobMonitorImpl monitor, String[] args) {
+    protected void runRecompile(GwtcJobMonitor monitor, GwtcArgProcessor managerArgs, String[] args) {
+        GwtcEventTable table = new GwtcEventTable();
+        final String moduleName = args[args.length-1]; // by convention, module name is always last
+        final IsAppSpace app = SuperDevUtil.newAppSpace(moduleName);
+        final OutboxDir outboxDir;
+        final LauncherDir launcher;
+        final Options opts;
+
+//        RecompileRunner runner = new RecompileRunner();
+        final String name = "myname";
+        table.listenForEvents(name, Status.COMPILING, false, ev->{
+            currentEventId = ev.getJobId();
+            status = ev.getStatus();
+        });
+        table.listenForEvents(name, null, false, ev->{
+            X_Log.info(GwtcJobStateImpl.class, "Gwt Event", ev.getJobId(), "status:", ev.getStatus());
+            if (ev.getJobId().equals(currentEventId)){
+                X_Log.info(GwtcJobStateImpl.class, "Setting job", ev.getJobId(), "status to ", ev.getStatus());
+                status = ev.getStatus();
+            }
+        });
+
+        opts = new Options();
+        final File cacheDir = managerArgs.getUnitCacheDir();
+
+        opts.parseArgs(args);
+        // We always want to disable Outbox precompile so that we control the job created.
+        opts.setNoPrecompile(true);
+        final TreeLogger logger = createLogger(opts);
+
+        try {
+            outboxDir = OutboxDir.create(opts.getLauncherDir(), logger);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        launcher = LauncherDir.maybeCreate(opts);
+
+        final JJSOptionsImpl options = new JJSOptionsImpl();
+        // The following two options are the only ones used by UnitCacheSingleton;
+        // we should put back / in support for these...
+        //    options.setGenerateJsInteropExports(false);
+        //    options.getJsInteropExportFilter().add("...");
+        final UnitCache cache = UnitCacheSingleton.get(logger, cacheDir, options);
+        final MinimalRebuildCacheManager rebinds = new MinimalRebuildCacheManager(logger, cacheDir, new HashMap<>());
+
+        Recompiler recompiler = new Recompiler(outboxDir, launcher, moduleName.split("/")[0], opts, cache, rebinds);
+
+        final RecompileRunner runner = new RecompileRunner(table, rebinds, moduleName, app);
+        final ResourceLoader currentLoader = recompiler.getResourceLoader();
+
+        table.listenForEvents(name, Status.SERVING, false, ev->{
+            if (ev.getJobId().equals(currentEventId)) {
+                X_Time.runLater(()->
+                    sendCompilerResults(monitor, ev.getCompileDir(), opts, ev.getCompileStrategy())
+                );
+            }
+        });
+
+
+        Map<String, String> defaultProps = getDefaultProps(opts, args);
+        Result dir;
+        final Outbox box;
+        try {
+            box = new Outbox(moduleName, recompiler, opts, logger);
+        } catch (UnableToCompleteException e) {
+            logger.log(TreeLogger.ERROR, "Unable to prepare recompiler", e);
+            monitor.updateCompileStatus(CompileStatus.Failed, "Unable to prepare recompiler");
+            throw new RuntimeException(e);
+        }
+        try{
+            final Job job = new Job(box, defaultProps, logger, opts);
+            runner.submit(job);
+            dir = job.waitForResult();
+            final CompileStrategy strategy = runner.getTable().getPublishedEvent(job).getCompileStrategy();
+            CompileDir result = dir.getOutputDir();
+            sendCompilerResults(monitor, result, opts, strategy);
+//            return Out3.out3(dir, strategy, currentLoader);
+        }catch (Throwable e) {
+            monitor.updateCompileStatus(CompileStatus.Failed, "Compilation failed (check logs): " + e);
+            if (e instanceof StaleJarError) {
+                // TODO: forcibly discard this thread and start a new one with a fresh classpath
+                logger.log(TreeLogger.WARN, "Stale jars detected; reinitializing GWT compiler");
+            }
+            e.printStackTrace();
+            logger.log(TreeLogger.ERROR, "Unable to compile module.", e);
+            throw new RuntimeException(e);
+        }
+        // Now that we have successfully compiled, lets stay alive to listen for requests to service
+        keepAlive(monitor, ()->{
+            try {
+                final Job newJob = new Job(box, defaultProps, logger, opts);
+                final Result newDir = newJob.waitForResult();
+                final CompileStrategy strategy = runner.getTable().getPublishedEvent(newJob).getCompileStrategy();
+                CompileDir result = newDir.getOutputDir();
+                sendCompilerResults(monitor, result, opts, strategy);
+            } catch (Throwable t) {
+                monitor.updateCompileStatus(CompileStatus.Failed, "Recompile failed: " + t.toString());
+                X_Log.error(GwtcJobManagerImpl.class, "Recompile failed", t);
+            }
+
+        });
     }
 
+    protected Map<String,String> getDefaultProps(Options opts, String[] args) {
+        final Map<String, String> defaultProps = new HashMap<String, String>();
+        defaultProps.put("user.agent", "safari");
+        defaultProps.put("locale", "en");
+        defaultProps.put("compiler.useSourceMaps", "true");
+        return defaultProps;
+    }
 
-    protected void runCompile(GwtcJobMonitorImpl monitor, String logFile, String[] args) {
+    protected TreeLogger createLogger(Options opts) {
+        final PrintWriterTreeLogger logger = new PrintWriterTreeLogger();
+        logger.setMaxDetail(opts.getLogLevel());
+        return logger;
+    }
+
+    protected void runCompile(GwtcJobMonitor monitor, String logFile, GwtcArgProcessor managerArgs, String[] args) {
         // All standard arguments to the compiler should have already been supplied as arguments to our main.
         final CompilerOptions options = new CompilerOptionsImpl();
         final ArgProcessor processor = new ArgProcessor(options);
         if (!processor.processArgs(args)) {
             // Send reason why?
-            monitor.updateCompileStatus(CompileStatus.Failed);
+            monitor.updateCompileStatus(CompileStatus.Failed, "Failed to process args: " +
+                ArrayIterable.iterate(args).join("|", "|", "|")
+            );
         }
         CompileTask task = logger -> {
             boolean success = new Compiler().compile(logger, options);
             return success;
         };
-        boolean result = CompileTaskRunner.runWithAppropriateLogger(options, task);
+        DoUnsafe runCompile = () -> {
 
-        if (result) {
-            // Now, we send back the assembled CompileDir...
-            //            protected String uri;
-            //            protected String warDir;
-            //            protected String workDir;
-            //            protected String deployDir;
-            //            protected String extraDir;
-            //            protected String genDir;
-            //            protected String logFile;
-            //            protected String sourceDir;
-            //            protected Map<String, String> userAgentMap;
-            //            protected int port;
-            //            private CompileStrategy strategy;
-            sendCompilerResults(monitor,
-                options.getWarDir().getAbsolutePath(),
-                options.getWorkDir().getAbsolutePath(),
-                options.getDeployDir().getAbsolutePath(),
-                options.getExtraDir().getAbsolutePath(),
-                options.getGenDir().getAbsolutePath(),
-                logFile,
-                new File(options.getExtraDir(), options.getModuleNames().get(0) + "/symbolMaps").getAbsolutePath(),
-                //                options.getSaveSourceOutput().getAbsolutePath(),
-                options.getFinalProperties().getBindingProperties(),
-                options.isIncrementalCompileEnabled() ? CompileStrategy.INCREMENTAL : CompileStrategy.FULL
-            );
-        } else {
-            monitor.updateCompileStatus(CompileStatus.Failed);
-        }
+            boolean result = CompileTaskRunner.runWithAppropriateLogger(options, task);
+
+            if (result) {
+                // Now, we send back the assembled CompileDir...
+                sendCompilerResults(monitor,
+                    path(options.getWarDir()),
+                    path(options.getWorkDir()),
+                    path(options.getDeployDir()),
+                    path(options.getExtraDir()),
+                    path(options.getGenDir()),
+                    logFile,
+                    new File(options.getExtraDir(), options.getModuleNames().get(0) + "/symbolMaps").getAbsolutePath(),
+                    //                options.getSaveSourceOutput().getAbsolutePath(),
+                    (options.getFinalProperties() == null ? null : options.getFinalProperties().getBindingProperties()),
+                    options.isIncrementalCompileEnabled() ? CompileStrategy.INCREMENTAL : CompileStrategy.FULL
+                );
+            } else {
+                monitor.updateCompileStatus(CompileStatus.Failed);
+            }
+        };
+        runCompile.done();
+
+        // Now, setup a thread to keep us alive, listening for messages to either recompile or die
+        keepAlive(monitor, runCompile);
+    }
+
+    private void keepAlive(GwtcJobMonitor monitor, DoUnsafe runCompile) {
+        X_Process.runDeferred(()->{
+            while (true) {
+                String message = monitor.readAsCompiler();
+                switch (message) {
+                    case GwtcJobMonitor.JOB_COMPILE:
+                    case GwtcJobMonitor.JOB_RECOMPILE:
+                        runCompile.done();
+                        break;
+                    case GwtcJobMonitor.JOB_DIE:
+                        return;
+                    default:
+                        X_Log.error(GwtcJobMonitorImpl.class, "Unsupported gwt process message ", message);
+                }
+            }
+        });
+    }
+
+    private void sendCompilerResults(
+        GwtcJobMonitor monitor,
+        CompileDir dir,
+        Options options,
+        CompileStrategy strategy
+    ) {
+        sendCompilerResults(monitor,
+            path(dir.getWarDir()),
+            path(dir.getWorkDir()),
+            path(dir.getDeployDir()),
+            path(dir.getExtraDir()),
+            path(dir.getGenDir()),
+            path(dir.getLogFile()),
+            new File(options.getLauncherDir().getAbsolutePath()/*getExtraDir()*/, options.getModuleNames().get(0) + "/symbolMaps").getAbsolutePath(),
+            null,
+            strategy
+        );
+    }
+
+    private String path(File file) {
+        return file == null ? null : file.getAbsolutePath();
     }
 
     private void sendCompilerResults(

@@ -4,20 +4,26 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
 import xapi.collect.impl.SimpleFifo;
+import xapi.dev.api.MavenLoader;
+import xapi.dev.gwtc.api.GwtcService;
 import xapi.fu.Filter;
 import xapi.fu.Immutable;
 import xapi.fu.In2;
 import xapi.fu.MappedIterable;
 import xapi.fu.Out1;
-import xapi.fu.iterate.SingletonIterator;
+import xapi.fu.iterate.ArrayIterable;
 import xapi.log.X_Log;
+import xapi.mvn.api.MvnDependency;
 import xapi.source.X_Source;
+import xapi.util.X_Namespace;
+import xapi.util.X_Properties;
+import xapi.util.X_Runtime;
+import xapi.util.X_String;
 
 import java.lang.reflect.Array;
 import java.util.Iterator;
 
 import static xapi.collect.X_Collect.*;
-import static xapi.fu.Immutable.immutable1;
 import static xapi.fu.In2.in2;
 import static xapi.fu.iterate.SingletonIterator.singleItem;
 import static xapi.gwtc.api.GwtManifest.CleanupMode.DELETE_ON_SUCCESSFUL_EXIT;
@@ -182,6 +188,7 @@ public class GwtManifest {
   private IntTo<String> systemProperties = newList(String.class);
   private String unitCacheDir;
   private String urlToOpen;
+  private String logFile;
   private boolean validateOnly;
   private String workDir;
   private String warDir;
@@ -198,6 +205,9 @@ public class GwtManifest {
   private boolean precompile;
   private boolean isolateClassLoader;
   private boolean j2cl;
+  private boolean testMode;
+  private String gwtNamespace;
+  private Integer debugPort;
 
   public GwtManifest() {
     includeGenDir = true;
@@ -209,12 +219,12 @@ public class GwtManifest {
   }
 
   public GwtManifest addDependency(String dep) {
-    dependencies.push(immutable1(singleItem(dep)));
+    dependencies.addAll(splitOnPathSeparator(singleItem(dep)));
     return this;
   }
 
   public GwtManifest addDependency(Out1<String> dep) {
-    dependencies.push(dep.map(SingletonIterator::singleItem));
+    dependencies.addAll(splitOnPathSeparator(dep.asIterable()));
     return this;
   }
 
@@ -318,7 +328,7 @@ public class GwtManifest {
   }
 
   public String getGwtVersion() {
-    return gwtVersion == null ? "" : gwtVersion;
+    return X_String.firstNotEmpty(gwtVersion, X_Namespace.GWT_VERSION);
   }
 
   public IntTo<String> getJvmArgs() {
@@ -367,6 +377,10 @@ public class GwtManifest {
 
   public IntTo<String> getSystemProperties() {
     return systemProperties;
+  }
+
+  public String getLogFile() {
+    return logFile;
   }
 
   public String getUnitCacheDir() {
@@ -445,11 +459,17 @@ public class GwtManifest {
   }
   public GwtManifest setDependencies(IntTo<String> dependencies) {
     this.dependencies.clear();
-    this.dependencies.addAll(dependencies.forEachItem()
-        .map(SingletonIterator::singleItem)
-        .map(Immutable::immutable1));
+    this.dependencies.addAll(splitOnPathSeparator(dependencies.forEachItem()));
     return this;
   }
+
+  private MappedIterable<Out1<? extends Iterable<String>>> splitOnPathSeparator(MappedIterable<String> strings) {
+    return strings
+        .map1(String::split, "[;:]") // server path:encoding:character may not == client path;encoding;character
+        .map(ArrayIterable::iterate)
+        .map(Immutable::immutable1);
+  }
+
   public GwtManifest setDeployDir(String deployDir) {
     this.deployDir = deployDir;
     return this;
@@ -581,6 +601,11 @@ public class GwtManifest {
 
   public GwtManifest setSystemProperties(IntTo<String> systemProperties) {
     this.systemProperties = systemProperties;
+    return this;
+  }
+
+  public GwtManifest setLogFile(String logFile) {
+    this.logFile = logFile;
     return this;
   }
 
@@ -749,11 +774,15 @@ public class GwtManifest {
 
   }
 
-  public String[] toClasspathFullCompile(String gwtHome) {
-    return toClasspath(false, gwtHome, getGwtVersion());
+  public String[] toClasspathFullCompile(GwtcService service) {
+    return toClasspath(service,false, getGwtVersion());
   }
 
-  public String[] toClasspath(boolean includeCodeserver, String gwtHome, String gwtVersion) {
+  public String[] toClasspath(
+      GwtcService service,
+      boolean includeCodeserver,
+      String gwtVersion
+  ) {
     IntTo<String> cp = newList(String.class);
     prefixClasspath(cp);
     // include our __gen dir?
@@ -800,18 +829,30 @@ public class GwtManifest {
       }
     }
     if (!hadGwtUser) {
-      addGwtArtifact(cp, gwtHome, gwtVersion, "gwt-user");
+      addFromMaven(cp, service.getMavenLoader(), "gwt-user", gwtVersion);
     }
     if (!hadGwtCodeserver) {
-      addGwtArtifact(cp, gwtHome, gwtVersion, "gwt-codeserver");
+      addFromMaven(cp, service.getMavenLoader(), "gwt-codeserver", gwtVersion);
     }
     if (!hadGwtDev) {
-      addGwtArtifact(cp, gwtHome, gwtVersion, "gwt-dev");
+      addFromMaven(cp, service.getMavenLoader(), "gwt-dev", gwtVersion);
     }
     suffixClasspath(cp);
     X_Log.trace(getClass(), cp);
     cp.findRemove("", true);
     return cp.toArray();
+  }
+
+  private void addFromMaven(
+      IntTo<String> cp,
+      MavenLoader loader,
+      String artifact,
+      String version
+  ) {
+    final MvnDependency dep = loader.getDependency(getGwtNamespace(), artifact, version);
+    final Out1<Iterable<String>> result = loader.downloadDependency(dep);
+    final Iterable<String> items = result.out1();
+    cp.addAll(items);
   }
 
   protected String fixRelativeSource(String source) {
@@ -1168,5 +1209,29 @@ public class GwtManifest {
 
   public void setJ2cl(boolean j2cl) {
     this.j2cl = j2cl;
+  }
+
+  public boolean isTestMode() {
+    return testMode;
+  }
+
+  public void setTestMode(boolean testMode) {
+    this.testMode = testMode;
+  }
+
+  public String getGwtNamespace() {
+    return X_String.firstNotEmpty(gwtNamespace, X_Namespace.XAPI_GROUP_ID);
+  }
+
+  public void setGwtNamespace(String gwtNamespace) {
+    this.gwtNamespace = gwtNamespace;
+  }
+
+  public Integer getDebugPort() {
+    return debugPort;
+  }
+
+  public void setDebugPort(Integer debugPort) {
+    this.debugPort = debugPort;
   }
 }

@@ -7,6 +7,10 @@ import xapi.fu.In2;
 import xapi.gwtc.api.CompiledDirectory;
 import xapi.gwtc.api.GwtManifest;
 
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.locks.LockSupport;
+
 /**
  * This class is the successor to the previously fragmented {@link GwtcService} and {@link GwtcJobState} and {@link com.google.gwt.dev.codeserver.RecompileRunner}.
  *
@@ -58,7 +62,7 @@ public abstract class GwtcJobManager {
         GwtcJob running = runningJobs.compute(name,
             existing -> {
                 // Job already existed; check if it is stale or not
-                if (existing.getState() == CompileStatus.Failed) {
+                if (existing.getState() == CompileStatus.Failed || looksBroken(manifest, existing)) {
                     existing.destroy();
                     runningJobs.remove(name);
                     runningJobs.put(name, launchJob(manifest));
@@ -67,6 +71,10 @@ public abstract class GwtcJobManager {
             ()-> launchJob(manifest)
         );
         running.onDone(callback);
+    }
+
+    protected boolean looksBroken(GwtManifest manifest, GwtcJob existing) {
+        return false;
     }
 
     protected abstract GwtcJob launchJob(GwtManifest manifest);
@@ -83,5 +91,24 @@ public abstract class GwtcJobManager {
             }
         }
         compileIfNecessary(manifest, callback);
+    }
+
+    public void blockFor(String moduleName, long timeout, TimeUnit unit) throws TimeoutException {
+        final GwtcJob job = runningJobs.get(moduleName);
+        long deadline = System.currentTimeMillis() + unit.toMillis(timeout);
+
+        while (!GwtcJobState.isComplete(job.getState())) {
+            if (job.getMonitor().hasMessageForCaller()) {
+                job.flushMonitor();
+            } else {
+                LockSupport.parkNanos(10_000_000);
+            }
+            if (System.currentTimeMillis() > deadline) {
+                throw new TimeoutException("Waited " + timeout + " " + unit + " but job state was set to " + job.getState());
+            }
+        }
+        while (job.getMonitor().hasMessageForCaller()) {
+            job.flushMonitor();
+        }
     }
 }

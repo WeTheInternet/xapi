@@ -73,10 +73,7 @@ public class GwtcEntryPointTest {
     }
     final Package pkg = CaseEntryPoint.class.getPackage();
     final GwtcService gwtc = X_Gwtc.getGeneratorForPackage(pkg, GENERATED_MODULE_NAME, false);
-    final GwtcProjectGenerator project = gwtc.getProject(
-        GENERATED_MODULE_NAME,
-        Thread.currentThread().getContextClassLoader()
-    );
+    final GwtcProjectGenerator project = gwtc.getProject(GENERATED_MODULE_NAME);
     final GwtManifest manifest = project.getManifest();
     manifest.setLogLevel(Type.WARN);
     manifest.addSystemProp("gwt.usearchives=false");
@@ -88,7 +85,7 @@ public class GwtcEntryPointTest {
       return;
     }
     final GwtcService gwtc = X_Gwtc.getGeneratorForClass(CaseEntryPoint.class, GENERATED_MODULE_NAME);
-    final GwtcProjectGenerator project = gwtc.getProject(GENERATED_MODULE_NAME, Thread.currentThread().getContextClassLoader());
+    final GwtcProjectGenerator project = gwtc.getProject(GENERATED_MODULE_NAME);
     project.addJUnitClass(GwtcCaseJunit4.class);
     project.addPackage(GwtcCaseJunit4.class.getPackage(), true);
     final GwtManifest manifest = project.getManifest();

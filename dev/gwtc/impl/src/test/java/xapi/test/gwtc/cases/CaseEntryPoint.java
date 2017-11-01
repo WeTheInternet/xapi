@@ -38,8 +38,8 @@ import com.google.gwt.dom.client.Element;
     @UiTemplate("<div id='logger' />")
   }
   ,dependencies={
-    @Dependency(dependencyType=DependencyType.MAVEN, loadChildren = false,
-      groupId="net.wetheinter", value="xapi-gwt",version=X_Namespace.XAPI_VERSION),
+    @Dependency(dependencyType=DependencyType.MAVEN,
+      groupId="net.wetheinter", value="xapi-elemental",version=X_Namespace.XAPI_VERSION)
   }
   ,propertiesLaunch=@GwtcProperties(
     obfuscationLevel=ObfuscationLevel.PRETTY
@@ -55,8 +55,9 @@ public class CaseEntryPoint implements EntryPoint {
     @Override
     public void doLog(LogLevel level, Fifo<Object> items) {
       Element pre = Document.get().createPreElement();
+      // TODO: something way better than this...
       pre.setInnerHTML("<span>"+items.join("</span> <span>")+"</span>");
-      getLogger().appendChild(pre);
+      logEl.appendChild(pre);
       super.doLog(level, items);
     }
     private native Element getLogger()

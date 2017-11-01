@@ -15,7 +15,7 @@ import xapi.elemental.X_Elemental;
 import xapi.fu.In1Out1;
 import xapi.fu.MappedIterable;
 import xapi.fu.iterate.CachingIterator.ReplayableIterable;
-import xapi.fu.iterate.ElementIterable;
+import xapi.elemental.api.ElementIterable;
 import xapi.ui.api.component.SlotController;
 
 import static jsinterop.base.Js.cast;

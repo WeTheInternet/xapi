@@ -115,7 +115,7 @@ public class GwtcSteps {
 
   private GwtcProjectGenerator createProject() {
       final GwtcService service = gwtc.out1();
-      final GwtcProjectGenerator project = service.getProject(GENERATED_TEST_MODULE, null);
+      final GwtcProjectGenerator project = service.getProject(GENERATED_TEST_MODULE);
       return project;
   }
 

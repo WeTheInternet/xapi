@@ -1,5 +1,6 @@
 package xapi.dev.gwtc.api;
 
+import xapi.dev.api.MavenLoader;
 import xapi.fu.In1;
 import xapi.fu.In2;
 import xapi.fu.In2.In2Unsafe;
@@ -17,14 +18,19 @@ import java.util.concurrent.TimeUnit;
 public interface GwtcService {
 
   default void addClassTo(String moduleName, Class<?> clazz) {
-    getProject(moduleName, null).addClass(clazz);
+    getProject(moduleName).addClass(clazz);
   }
 
 
   GwtcProjectGenerator getProject(String moduleName, ClassLoader resources);
 
+  default GwtcProjectGenerator getProject(String moduleName) {
+    return getProject(moduleName, Thread.currentThread().getContextClassLoader());
+  }
+
   String generateCompile(GwtManifest manifest);
   URLClassLoader resolveClasspath(GwtManifest manifest, String compileHome);
+  MavenLoader getMavenLoader();
   In1<Integer> prepareCleanup(GwtManifest manifest);
   In2Unsafe<Integer, TimeUnit> startTask(Runnable task, URLClassLoader loader);
   int compile(GwtManifest manifest);

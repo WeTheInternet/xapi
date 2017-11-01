@@ -244,7 +244,7 @@ public class RecompileController implements IsRecompiler {
     return recompiler.getOutputModuleName();
   }
 
-  public ResourceLoader getResourceLoader(){
+  protected ResourceLoader getResourceLoader(){
     return loader == null ? recompiler.getResourceLoader() : loader;
   }
 
@@ -263,8 +263,7 @@ public class RecompileController implements IsRecompiler {
         final Options opts = recompiler.getOptions();
         logger = new PrintWriterTreeLogger();
         logger.setMaxDetail(opts.getLogLevel());
-        final GwtManifest manifest = runner.getManifest();
-        String moduleName = manifest.getModuleName();
+        String moduleName = runner.getModuleName();
 
         boolean firstRun = job == null;
         final Outbox box;

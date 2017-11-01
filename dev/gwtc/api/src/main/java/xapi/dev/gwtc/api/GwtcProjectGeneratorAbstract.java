@@ -65,7 +65,6 @@ import com.google.gwt.reflect.shared.GwtReflect;
  */
 public class GwtcProjectGeneratorAbstract implements GwtcProjectGenerator {
     private final GwtcService service;
-    private ClassLoader resources;
 
     protected final GwtcGeneratedProject context;
     protected final String genName;
@@ -76,12 +75,11 @@ public class GwtcProjectGeneratorAbstract implements GwtcProjectGenerator {
     private boolean needsReportError = true;
     protected String manifestName;
     protected StringTo<Out1<String>> files;
-    private MethodBuffer junitLoader;
+    protected MethodBuffer junitLoader;
     private final Lazy<GwtManifest> manifest;
 
     public GwtcProjectGeneratorAbstract(GwtcService service, ClassLoader resources, String moduleName) {
         this.service = service;
-        this.resources = resources;
         context = new GwtcGeneratedProject(service, resources, moduleName);
         finished = new HashSet<>();
         files = X_Collect.newStringMap(Out1.class);
@@ -127,14 +125,6 @@ public class GwtcProjectGeneratorAbstract implements GwtcProjectGenerator {
 
     public GwtcService getService() {
         return service;
-    }
-
-    public ClassLoader getResources() {
-        return resources;
-    }
-
-    public void setResources(ClassLoader resources) {
-        this.resources = resources;
     }
 
     public void addClass(Class<?> clazz) {
@@ -347,6 +337,7 @@ public class GwtcProjectGeneratorAbstract implements GwtcProjectGenerator {
         }
     }
 
+    @Override
     public void copyModuleTo(String module, GwtManifest manifest) {
         String from = manifestName == null ? genName : manifestName;
         File f = new File(tempDir, from+".gwt.xml");
@@ -637,130 +628,116 @@ public class GwtcProjectGeneratorAbstract implements GwtcProjectGenerator {
         generateWar(manifest);
         return gwtHome;
     }
-//
-//    @Override
-//    public boolean addJUnitClass(Class<?> clazz) {
-//        if (!finished.add(clazz.getName())) {
-//            X_Log.info(getClass(), "Skipped JUnit 4 class",clazz);
-//            return false;
-//        }
-//        search: {
-//            for (Method m : clazz.getMethods()) {
-//                if (m.isAnnotationPresent(Test.class)) {
-//                    break search;
-//                }
-//            }
-//            return false;
-//        }
-//        Gwtc gwtc = clazz.getAnnotation(Gwtc.class);
-//        X_Log.info(getClass(), "generating JUnit class", clazz, "?"+(gwtc != null));
-//        if (gwtc != null) {
-//            context.addGwtcClass(gwtc, clazz);
-//        }
-//        addGwtModules(clazz);
-//        X_Log.info(getClass(), "added test class for JUnit 4",clazz);
-//        ensureReportError();
-//        inheritGwtXml(clazz, ResourceBuilder.buildResource("org.junit.JUnit4").build());
-//        inheritGwtXml(clazz, ResourceBuilder.buildResource("com.google.gwt.core.Core").build());
-//        ClassBuffer cb = classBuffer();
-//        String simple = cb.addImport(clazz);
-//        String methodName = "add"+simple+"Tests";
-//        String gwt = cb.addImport(GWT.class);
-//        String callback = cb.addImport(RunAsyncCallback.class);
-//        String magic = cb.addImportStatic(GwtReflect.class, "magicClass");
-//        cb.createMethod("void "+methodName)
-//            .println(gwt+".runAsync("+simple+".class,")
-//            .indent()
-//            .println("new "+callback+ "() {")
-//            .indent()
-//            .println("public void onSuccess() {")
-//            .indent()
-//            .println(magic+"("+simple+".class);")
-//            .startTry()
-//            .println("junit.addTests("+simple+".class);")
-//            .startCatch("Throwable", "e")
-//            .println("junit.print(\"Error adding "+simple+" to unit test\", e);")
-//            .endTry()
-//            .outdent()
-//            .println("}")
-//            .println()
-//            .println("public void onFailure(Throwable reason) {")
-//            .indent()
-//            .println("junit.print(\"Error loading "+simple+"\", reason);")
-//            .outdent()
-//            .println("}")
-//            .outdent()
-//            .println("}")
-//            .outdent()
-//            .println(");")
-//        ;
-//
-//        junitLoader.println(methodName+"();");
-//        return true;
-//    }
 
-//    Other version of addJunitClass.  Not sure which is better, so leaving both and will sort out later
     @Override
     public boolean addJUnitClass(Class<?> clazz) {
-        inheritGwtXml(clazz, ResourceBuilder.buildResource("org.junit.JUnit4").build());
-        X_Log.info(getClass(), "Adding class", clazz," to junit 4 module");
-        addDependency(
-            DependencyBuilder.buildDependency("gwt-reflect")
-                .setGroupId("net.wetheinter")
-                .setVersion(X_Namespace.GWT_VERSION)
-                .setClassifier("tests")
-                .setDependencyType(DependencyType.MAVEN)
-                .build()
-            , clazz);
-        List<Method>
-            beforeClass = new ArrayList<>(),
-            before = new ArrayList<>(),
-            test = new ArrayList<>(),
-            after = new ArrayList<>(),
-            afterClass = new ArrayList<>()
-                ;
-        List<Class<?>> hierarchy = new LinkedList<>();
-        {
-            Class<?> c = clazz;
-            while (c != Object.class) {
-                hierarchy.add(0, c);
-                c = c.getSuperclass();
-            }
+        if (!finished.add(clazz.getName())) {
+            X_Log.info(getClass(), "Skipped JUnit 4 class",clazz);
+            return false;
         }
-        for (Class<?> c : hierarchy) {
-            for (Method method : c.getMethods()) {
-                // TODO: move all junit-y things out to a test-module
-                if (method.getAnnotation(Test.class) != null) {
-                    test.add(method);
-                } else if (method.getAnnotation(Before.class) != null) {
-                    before.add(method);
-                } else if (method.getAnnotation(BeforeClass.class) != null) {
-                    beforeClass.add(method);
-                } else if (method.getAnnotation(After.class) != null) {
-                    after.add(method);
-                } else if (method.getAnnotation(AfterClass.class) != null) {
-                    afterClass.add(method);
+        search: {
+            for (Method m : clazz.getMethods()) {
+                if (m.isAnnotationPresent(Test.class)) {
+                    break search;
                 }
             }
+            return false;
         }
-        out.println(generateTestRunner(clazz, beforeClass, before, test, after, afterClass));
+        Gwtc gwtc = clazz.getAnnotation(Gwtc.class);
+        X_Log.info(getClass(), "generating JUnit class", clazz, "?"+(gwtc != null));
+        if (gwtc != null) {
+            context.addGwtcClass(gwtc, clazz);
+        }
+        addGwtModules(clazz);
+        X_Log.info(getClass(), "added test class for JUnit 4",clazz);
+        ensureReportError();
+        inheritGwtXml(clazz, ResourceBuilder.buildResource("org.junit.JUnit4").build());
+        inheritGwtXml(clazz, ResourceBuilder.buildResource("com.google.gwt.core.Core").build());
+        ClassBuffer cb = classBuffer();
+        String simple = cb.addImport(clazz);
+        String methodName = "add"+simple+"Tests";
+        String gwt = cb.addImport(GWT.class);
+        String callback = cb.addImport(RunAsyncCallback.class);
+        String magic = cb.addImportStatic(GwtReflect.class, "magicClass");
+        cb.createMethod("void "+methodName)
+            .println(gwt+".runAsync("+simple+".class,")
+            .indent()
+            .println("new "+callback+ "() {")
+            .indent()
+            .println("public void onSuccess() {")
+            .indent()
+            .println(magic+"("+simple+".class);")
+            .startTry()
+            .println("junit.addTests("+simple+".class);")
+            .startCatch("Throwable", "e")
+            .println("junit.print(\"Error adding "+simple+" to unit test\", e);")
+            .endTry()
+            .outdent()
+            .println("}")
+            .println()
+            .println("public void onFailure(Throwable reason) {")
+            .indent()
+            .println("junit.print(\"Error loading "+simple+"\", reason);")
+            .outdent()
+            .println("}")
+            .outdent()
+            .println("}")
+            .outdent()
+            .println(");")
+        ;
+
+        junitLoader.println(methodName+"();");
         return true;
     }
 
-
+////    Other version of addJunitClass.  Not sure which is better, so leaving both and will sort out later
 //    @Override
-//    protected void generateReportError(ClassBuffer classBuffer) {
-//        super.generateReportError(classBuffer);
-//        addClass(JUnit4Runner.class);
-//        junitLoader = classBuffer.createInnerClass("private final class JUnit extends JUnitUi")
-//            .createMethod("public void loadAllTests()");
-//
-//        classBuffer.createField(JUnitUi.class, "junit")
-//            .setModifier(Modifier.FINAL | Modifier.PRIVATE)
-//            .setInitializer("new JUnit()");
-//
-//        out.println("junit.onModuleLoad();");
+//    public boolean addJUnitClass(Class<?> clazz) {
+//        inheritGwtXml(clazz, ResourceBuilder.buildResource("org.junit.JUnit4").build());
+//        X_Log.info(getClass(), "Adding class", clazz," to junit 4 module");
+//        addDependency(
+//            DependencyBuilder.buildDependency("xapi-gwt-reflect")
+//                .setGroupId("net.wetheinter")
+//                .setVersion(X_Namespace.GWT_VERSION)
+//                .setClassifier("tests")
+//                .setDependencyType(DependencyType.MAVEN)
+//                .build()
+//            , clazz);
+//        List<Method>
+//            beforeClass = new ArrayList<>(),
+//            before = new ArrayList<>(),
+//            test = new ArrayList<>(),
+//            after = new ArrayList<>(),
+//            afterClass = new ArrayList<>()
+//                ;
+//        List<Class<?>> hierarchy = new LinkedList<>();
+//        {
+//            Class<?> c = clazz;
+//            while (c != Object.class) {
+//                hierarchy.add(0, c);
+//                c = c.getSuperclass();
+//            }
+//        }
+//        for (Class<?> c : hierarchy) {
+//            for (Method method : c.getMethods()) {
+//                // TODO: move all junit-y things out to a test-module
+//                if (method.getAnnotation(Test.class) != null) {
+//                    test.add(method);
+//                } else if (method.getAnnotation(Before.class) != null) {
+//                    before.add(method);
+//                } else if (method.getAnnotation(BeforeClass.class) != null) {
+//                    beforeClass.add(method);
+//                } else if (method.getAnnotation(After.class) != null) {
+//                    after.add(method);
+//                } else if (method.getAnnotation(AfterClass.class) != null) {
+//                    afterClass.add(method);
+//                }
+//            }
+//        }
+//        out.println(generateTestRunner(clazz, beforeClass, before, test, after, afterClass));
+//        return true;
 //    }
+
     protected void generateReportError(ClassBuffer classBuffer) {
         classBuffer.createMethod("private static void reportError"
             + "(Class<?> clazz, String method, Throwable e)")

@@ -26,7 +26,7 @@ import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.dev.codeserver.JobEvent;
 import com.google.gwt.dev.codeserver.JobEvent.Status;
 import com.google.gwt.dev.codeserver.RecompileController;
-import com.google.gwt.dev.codeserver.RecompileRunner.EventTable;
+import com.google.gwt.dev.codeserver.GwtcEventTable;
 import com.google.gwt.dev.codeserver.SuperDevUtil;
 import com.google.gwt.dev.util.log.PrintWriterTreeLogger;
 
@@ -53,9 +53,9 @@ public class GwtcJobStateImpl implements GwtcJobState {
     private final String moduleName;
     private final String moduleShortName;
 
-    public GwtcJobStateImpl(GwtManifest manifest, String moduleName, String moduleShortName, GwtcService gwtcService) {
-        this.moduleName = moduleName;
-        this.moduleShortName = moduleShortName;
+    public GwtcJobStateImpl(GwtManifest manifest, GwtcService gwtcService) {
+        this.moduleName = manifest.getModuleName();
+        this.moduleShortName = manifest.getModuleShortName();
         this.manifest = manifest;
         this.service = gwtcService;
         status = Status.WAITING;
@@ -126,7 +126,7 @@ public class GwtcJobStateImpl implements GwtcJobState {
             manifest,
             logger.out1()
         );
-        final EventTable table = controller.getRunner().getTable();
+        final GwtcEventTable table = controller.getRunner().getTable();
         final String name = manifest.getModuleName();
         table.listenForEvents(name, Status.COMPILING, false, ev->{
             currentEventId = ev.getJobId();
@@ -178,7 +178,7 @@ public class GwtcJobStateImpl implements GwtcJobState {
         if (compiler.isUnresolved()) {
             return false;
         }
-        final EventTable table = eventTable();
+        final GwtcEventTable table = eventTable();
         final JobEvent status = table.getCompilingJobEvent();
         if (status == null) {
             return false;
@@ -199,7 +199,7 @@ public class GwtcJobStateImpl implements GwtcJobState {
         if (compiler.isUnresolved()) {
             return false;
         }
-        final EventTable table = eventTable();
+        final GwtcEventTable table = eventTable();
         final JobEvent status = table.getCompilingJobEvent();
         if (status == null) {
             return false;
@@ -215,7 +215,7 @@ public class GwtcJobStateImpl implements GwtcJobState {
         if (compiler.isUnresolved()) {
             return false;
         }
-        final EventTable table = eventTable();
+        final GwtcEventTable table = eventTable();
         final JobEvent status = table.getCompilingJobEvent();
         if (status == null) {
             return false;
@@ -223,7 +223,7 @@ public class GwtcJobStateImpl implements GwtcJobState {
         return status.getStatus() == Status.SERVING;
     }
 
-    private EventTable eventTable() {
+    private GwtcEventTable eventTable() {
         return compiler.out1().getRunner().getTable();
     }
 

@@ -7,7 +7,7 @@ import elemental.html.DivElement;
 import elemental.html.Location;
 import xapi.fu.Do;
 import xapi.fu.In1;
-import xapi.fu.iterate.ElementIterable;
+import xapi.elemental.api.ElementIterable;
 import xapi.elemental.api.ElementalService;
 import xapi.elemental.api.PotentialNode;
 import xapi.inject.X_Inject;

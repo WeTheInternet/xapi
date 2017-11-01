@@ -54,6 +54,9 @@ public interface GwtcProjectGenerator {
     void addGwtInherit(String inherit);
     String getModuleName();
     SourceBuilder createJavaFile(String pkg, String filename, JavaType type);
+
+    void copyModuleTo(String module, GwtManifest manifest);
+
     void createFile(String pkg, String filename, Out1<String> sourceProvider);
     String modifyPackage(String pkgToUse);
     MethodBuffer getOnModuleLoad();

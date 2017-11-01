@@ -49,9 +49,6 @@ public class SuperDevUtil {
 
     IsAppSpace app = job.getAppSpace();
 
-    final OutboxDir outbox;
-    final LauncherDir launcher;
-    final Options opts;
     try {
       Set<File> sourcePath = new LinkedHashSet<>();
       List<String> args = new ArrayList<>();
@@ -174,10 +171,10 @@ public class SuperDevUtil {
 
       // TODO: Here is where we need to consider isolating ClassLoader
 
-      outbox = OutboxDir.create(warDir, logger);
-      opts = new Options();
+      final OutboxDir outbox = OutboxDir.create(warDir, logger);
+      final Options opts = new Options();
       opts.parseArgs(args.toArray(new String[args.size()]));
-      launcher = LauncherDir.maybeCreate(opts);
+      final LauncherDir launcher = LauncherDir.maybeCreate(opts);
 
       final File cacheFolder = manifest.getUnitCacheDir() == null ? null : new File(manifest.getUnitCacheDir());
       final JJSOptionsImpl options = new JJSOptionsImpl();
@@ -188,7 +185,7 @@ public class SuperDevUtil {
       final UnitCache cache = UnitCacheSingleton.get(logger, cacheFolder, options);
       final MinimalRebuildCacheManager rebinds = new MinimalRebuildCacheManager(logger, cacheFolder, new HashMap<>());
 
-      RecompileRunner runner = new RecompileRunner(rebinds, manifest, app);
+      RecompileRunner runner = new RecompileRunner(rebinds, manifest.getModuleName(), app);
 
       Recompiler compiler = new Recompiler(outbox, launcher, module.split("/")[0], opts, cache, rebinds);
       try {

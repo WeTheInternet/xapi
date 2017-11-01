@@ -31,6 +31,7 @@ import javax.inject.Provider;
 
 import xapi.annotation.compile.Resource;
 import xapi.gwtc.api.Gwtc;
+import xapi.log.X_Log;
 import xapi.util.X_Debug;
 
 @Gwtc(
@@ -133,7 +134,7 @@ public class JUnitUi {
 
       @Override
       public void onFailure(final Throwable reason) {
-
+        X_Log.error(JUnitUi.class, "RunAsync Failed", reason);
       }
     });
   }

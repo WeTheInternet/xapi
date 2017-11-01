@@ -77,6 +77,12 @@
           <artifactId>xapi-core-test</artifactId>
           <scope>compile</scope>
       </dependency>
+
+      <dependency>
+          <groupId>net.wetheinter</groupId>
+          <artifactId>xapi-dev-maven</artifactId>
+          <scope>test</scope>
+      </dependency>
   </dependencies>
 
   <build>

@@ -60,10 +60,7 @@ public interface ModelGwtc extends Model {
         final GwtManifest manifest = X_Inject.instance(GwtManifest.class);
         final GwtcService service = getService();
         if (service != null) {
-            final GwtcProjectGenerator project = service.getProject(
-                modName,
-                Thread.currentThread().getContextClassLoader()
-            );
+            final GwtcProjectGenerator project = service.getProject(modName);
             String root = project.getSuggestedRoot();
             manifest.setRelativeRoot(root);
         }

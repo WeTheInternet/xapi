@@ -1,4 +1,4 @@
-package xapi.fu.iterate;
+package xapi.elemental.api;
 
 import elemental.dom.Element;
 import elemental.dom.Node;

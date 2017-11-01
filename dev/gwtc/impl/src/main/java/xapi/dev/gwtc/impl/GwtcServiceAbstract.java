@@ -2,13 +2,14 @@ package xapi.dev.gwtc.impl;
 
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
+import xapi.dev.api.MavenLoader;
 import xapi.dev.gwtc.api.GwtcProjectGenerator;
 import xapi.dev.gwtc.api.GwtcProjectGeneratorAbstract;
 import xapi.dev.gwtc.api.GwtcService;
 import xapi.log.X_Log;
 import xapi.log.api.LogLevel;
 
-public abstract class GwtcServiceAbstract implements GwtcService {
+public abstract class GwtcServiceAbstract extends MavenLoader implements GwtcService {
 
   protected class Replacement {
     protected String newValue;
