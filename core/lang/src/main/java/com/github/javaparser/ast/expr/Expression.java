@@ -22,21 +22,33 @@
 package com.github.javaparser.ast.expr;
 
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.body.AnnotableNode;
 
 /**
  * @author Julio Vilmar Gesser
  */
 public abstract class Expression extends Node {
 
-	public Expression() {
-	}
+    public Expression() {
+    }
 
-	public Expression(final int beginLine, final int beginColumn, final int endLine, final int endColumn) {
-		super(beginLine, beginColumn, endLine, endColumn);
-	}
+    public Expression(final int beginLine, final int beginColumn, final int endLine, final int endColumn) {
+        super(beginLine, beginColumn, endLine, endColumn);
+    }
 
-	@Override
-	public Expression clone() {
-		return (Expression) super.clone();
-	}
+    @Override
+    public Expression clone() {
+        return (Expression) super.clone();
+    }
+
+    public boolean hasAnnotation(String name) {
+        if (this instanceof AnnotableNode) {
+            AnnotableNode hasAnnos = (AnnotableNode) this;
+            for (AnnotationExpr anno : hasAnnos.getAnnotations()) {
+                return anno.getNameString().equals(name);
+            }
+
+        }
+        return false;
+    }
 }

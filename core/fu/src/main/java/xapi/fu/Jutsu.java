@@ -1,7 +1,5 @@
 package xapi.fu;
 
-import xapi.fu.api.RethrownException;
-
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
