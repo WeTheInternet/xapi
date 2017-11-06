@@ -213,7 +213,7 @@ public class JreInjector implements Injector {
     )
     throws IOException {
         final String name = cls.getName();
-        final ClassLoader loader = cls.getClassLoader();
+        final ClassLoader loader = getBestLoader(cls.getClassLoader());
         if (!relativeUrl.endsWith("/")) {
             relativeUrl += "/";
         }
@@ -261,7 +261,7 @@ public class JreInjector implements Injector {
                         final Class<?> fromThreadLoader = Class.forName(
                             bits[0],
                             true,
-                            Thread.currentThread().getContextClassLoader()
+                            threadCl
                         );
                         clazz = fromThreadLoader;
                     } catch (ClassNotFoundException ex) {
@@ -287,6 +287,27 @@ public class JreInjector implements Injector {
             return cls;
         }
         return best;
+    }
+
+    private static ClassLoader getBestLoader(ClassLoader cl) {
+        final ClassLoader context = Thread.currentThread().getContextClassLoader();
+        if (cl == context) {
+            return cl;
+        }
+        if (isParent(cl, context)) {
+            return context;
+        }
+        return cl;
+    }
+
+    private static boolean isParent(ClassLoader cl, ClassLoader context) {
+        while (context != null) {
+            if (context.getParent() == cl) {
+                return true;
+            }
+            context = context.getParent();
+        }
+        return false;
     }
 
     protected static boolean isAcceptable(Class<?> clazz) {

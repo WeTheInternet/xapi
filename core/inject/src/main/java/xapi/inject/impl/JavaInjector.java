@@ -114,13 +114,13 @@ public class JavaInjector {
   }
 
   @SuppressWarnings({ "rawtypes", "unchecked" })
-  public static void registerSingletonProvider(String iface, final String name) {
+  public static void registerSingletonProvider(ClassLoader loader, String iface, final String name) {
     try {
-      singleton.get().setSingletonFactory(Class.forName(iface), new SingletonProvider() {
+      singleton.get().setSingletonFactory(loader.loadClass(iface), new SingletonProvider() {
         @Override
         public Object initialValue() {
           try {
-            return Class.forName(name).newInstance();
+            return loader.loadClass(name).newInstance();
           } catch (Exception e) {
             X_Log.error("Unable to instantiate ",name," using Class.newInstance", e);
             throw X_Util.rethrow(e);
@@ -135,10 +135,10 @@ public class JavaInjector {
   }
 
   @SuppressWarnings({ "rawtypes", "unchecked" })
-  public static void registerInstanceProvider(String iface, final String name) {
+  public static void registerInstanceProvider(ClassLoader loader, String iface, final String name) {
     try {
-      final Class cls = Class.forName(name);
-      singleton.get().setInstanceFactory(Class.forName(iface), new Provider() {
+      final Class cls = loader.loadClass(name);
+      singleton.get().setInstanceFactory(loader.loadClass(iface), new Provider() {
         @Override
         public Object get() {
           try {
