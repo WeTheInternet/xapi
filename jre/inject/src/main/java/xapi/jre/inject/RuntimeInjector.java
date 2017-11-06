@@ -237,7 +237,7 @@ public class RuntimeInjector implements In2<String, PlatformChecker> {
     final Moment startInject = now();
     for (final String iface : injectionTargets.keySet()) {
       try {
-        JavaInjector.registerSingletonProvider(iface, injectionTargets.get(iface).getName());
+        JavaInjector.registerSingletonProvider(targetClassloader(), iface, injectionTargets.get(iface).getName());
       } catch (Throwable t) {
         if (X_Util.unwrap(t) instanceof InterruptedException) {
           break;
@@ -289,7 +289,7 @@ public class RuntimeInjector implements In2<String, PlatformChecker> {
     }
     for (final String iface : injectionTargets.keySet()) {
       try {
-        JavaInjector.registerInstanceProvider(iface, injectionTargets.get(iface).getName());
+        JavaInjector.registerInstanceProvider(targetClassloader(), iface, injectionTargets.get(iface).getName());
       } catch (Throwable t) {
         if (X_Util.unwrap(t) instanceof InterruptedException) {
           break;

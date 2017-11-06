@@ -140,6 +140,9 @@ public class ConcurrencyServiceJre extends ConcurrencyServiceAbstract{
         .doBefore(inheritScope)
         .doAfter(scope::remove)
         .toRunnable());
+    final Thread me = Thread.currentThread();
+    t.setContextClassLoader(me.getContextClassLoader());
+    t.setUncaughtExceptionHandler(me.getUncaughtExceptionHandler());
     t.setName("xapi-thread-" + task);
     return t;
   }

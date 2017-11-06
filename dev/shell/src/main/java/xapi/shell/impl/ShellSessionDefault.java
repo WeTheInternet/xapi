@@ -219,19 +219,25 @@ class ShellSessionDefault implements ShellSession, Do {
 
   @Override
   public void destroy() {
-    if (status == null) {// don't clobber a real exit status
-      status = ShellCommandDefault.STATUS_DESTROYED;
-    }
-    finished = true;
-    // Don't block to notify stdErr and stdOut
-    X_Time.runLater(new Runnable() {
-      @Override
-      public void run() {
-        onStdOut.onEnd();
-        onStdErr.onEnd();
+    try {
+      if (status == null) {// don't clobber a real exit status
+        status = ShellCommandDefault.STATUS_DESTROYED;
       }
-    });
-    finish();
+      finished = true;
+      // Don't block to notify stdErr and stdOut
+      X_Time.runLater(new Runnable() {
+        @Override
+        public void run() {
+          onStdOut.onEnd();
+          onStdErr.onEnd();
+        }
+      });
+      finish();
+    } finally {
+      if (process != null) {
+        process.destroy();
+      }
+    }
   }
 
   protected void drainStreams() {
@@ -353,7 +359,7 @@ class ShellSessionDefault implements ShellSession, Do {
         return;
       }
       synchronized (blocking) {
-        blocking.notify();
+        blocking.notifyAll();
       }
     }
     OutputStream os;
@@ -415,7 +421,14 @@ class ShellSessionDefault implements ShellSession, Do {
         out = null;
         X_Log.info(getClass(), "Finished process", command.commands);
       }
-      status = process.exitValue();
+      try {
+        if (process.isAlive()) {
+          process.destroy();
+        }
+        status = process.waitFor();
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
     };
   }
 

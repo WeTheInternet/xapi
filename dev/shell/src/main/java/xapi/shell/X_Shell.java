@@ -31,7 +31,7 @@ public class X_Shell {
       public boolean isAlive() {
         try {
           int exit = process.exitValue();
-          X_Log.debug("Process ended with exit code " + exit);
+          X_Log.debug(X_Shell.class, "Process ended with exit code " + exit);
           return false;
         } catch (IllegalThreadStateException e) {
           return true;
@@ -119,11 +119,11 @@ public class X_Shell {
     javaArgs[pos] = "-classpath";
     javaArgs[++pos] = X_String.join(File.pathSeparator, classpath).trim();
     javaArgs[++pos] = mainClass.getCanonicalName();
-    X_Log.info(X_Shell.class, "Running java command", mainClass, args);
+    X_Log.trace(X_Shell.class, "Running java command", mainClass, args);
     if (args != null && args.length > 0) {
       System.arraycopy(args, 0, javaArgs, ++pos, args.length);
     }
-    X_Log.info(X_Shell.class, "Java command", X_String.join(" ", javaArgs));
+    X_Log.trace(X_Shell.class, "Java command", X_String.join(" ", javaArgs));
     return globalService().runInShell(
         false, stdOut, stdErr, javaArgs);
   }
