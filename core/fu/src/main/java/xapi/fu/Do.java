@@ -105,6 +105,10 @@ public interface Do extends AutoCloseable {
     return r::run;
   }
 
+  static <I1> Do of(In1<I1> of, I1 i1) {
+    return of.provide(i1);
+  }
+
   static Do ofUnsafe(Runnable r) {
     return r::run;
   }

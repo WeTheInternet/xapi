@@ -153,7 +153,9 @@ public class X_IO {
   }
 
   private static void start(final Runnable runnable) {
-    new Thread(runnable).start();
+    final Thread thread = new Thread(runnable);
+    thread.setName("X_IO drain thread");
+    thread.start();
   }
 
   public static void close(final InputStream in) {

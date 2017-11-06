@@ -111,8 +111,10 @@ public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
             if (!tasks.isEmpty()) {
               tasks.first().readIfPresentUnsafe(e->{
                 long toWait = (long)e.out1().millis() - System.currentTimeMillis() + 1;
-                synchronized (tasks) {
-                  tasks.wait(toWait);
+                if (toWait > 0) {
+                  synchronized (tasks) {
+                    tasks.wait(toWait);
+                  }
                 }
               });
             }
@@ -178,12 +180,12 @@ public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
     Thread running = Thread.currentThread();
     ConcurrentEnvironment enviro = environments.get(running, running.getUncaughtExceptionHandler());
     Thread childThread = new Thread(wrapped
-        .doAfter(()->{
-          enviro.shutdown();
-        })
-        .toRunnable());
+        .doAfter(enviro::shutdown).toRunnable());
     childThread.setName(cmd.getClass().getName()+"_"+threadCount.incrementAndGet());
     enviro.pushThread(childThread);
+    if (running.getUncaughtExceptionHandler() != null) {
+      childThread.setUncaughtExceptionHandler(running.getUncaughtExceptionHandler());
+    }
     return childThread;
   }
 

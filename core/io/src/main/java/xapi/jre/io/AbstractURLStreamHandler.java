@@ -1,10 +1,7 @@
 package xapi.jre.io;
 
-import xapi.collect.X_Collect;
-import xapi.collect.api.CollectionOptions;
 import xapi.collect.api.StringTo;
 import xapi.fu.In1Out1;
-import xapi.fu.Out1;
 import xapi.io.api.StringURLConnection;
 
 import java.io.IOException;

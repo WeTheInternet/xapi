@@ -102,4 +102,8 @@ public class NameGen {
         ID,
         ENCODED_TIMESTAMP
     }
+
+    public static NameGen notNull(NameGen id) {
+        return id == null ? GLOBAL.out1() : id;
+    }
 }

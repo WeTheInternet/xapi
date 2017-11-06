@@ -202,6 +202,12 @@ public interface Maybe <V> extends Rethrowable {
         }
         return this;
     }
+    default <I1> Maybe<V> readIfPresent1(In2<I1, V> val, I1 i1) {
+        return readIfPresent(val.provide1(i1));
+    }
+    default <I2> Maybe<V> readIfPresent2(In2<V, I2> val, I2 i2) {
+        return readIfPresent(val.provide2(i2));
+    }
 
     default Maybe<V> readIfAbsentUnsafe(In1Unsafe<V> val) {
         return readIfAbsent(val);

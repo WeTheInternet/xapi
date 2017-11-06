@@ -160,6 +160,7 @@ public class ChainBuilder<T> implements HasSize, MappedIterable<T> {
   public void clear() {
     tail = prev = head;
     head.next = null;
+    head.value = null;
     size = 0;
   }
 

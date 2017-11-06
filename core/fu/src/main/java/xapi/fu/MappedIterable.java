@@ -1,8 +1,10 @@
 package xapi.fu;
 
 import xapi.fu.Filter.Filter1;
+import xapi.fu.Filter.Filter1Unsafe;
 import xapi.fu.In1.In1Unsafe;
 import xapi.fu.In1Out1.In1Out1Unsafe;
+import xapi.fu.api.DoNotOverride;
 import xapi.fu.api.HasEmptiness;
 import xapi.fu.has.HasSize;
 import xapi.fu.iterate.ArrayIterable;
@@ -265,6 +267,10 @@ public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
         };
     }
 
+    @DoNotOverride
+    default MappedIterable<T> filterUnsafe(Filter1Unsafe<T> filter) {
+        return filter(filter);
+    }
     default T reduce(In2Out1<T, T, T> reducer, T seed) {
         for (T t : this) {
             seed = reducer.io(seed, t);

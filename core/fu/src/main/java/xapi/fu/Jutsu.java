@@ -81,11 +81,12 @@ interface Jutsu {
 
   default String lambdaName(Object o) {
     final Class<?> c = o.getClass();
+
     Method replaceMethod;
     try {
       replaceMethod = c.getDeclaredMethod("writeReplace");
     } catch (NoSuchMethodException e) {
-      return null;
+      return "Lambda" + System.identityHashCode(this);
     }
     replaceMethod.setAccessible(true);
     Object lambda;
@@ -108,10 +109,10 @@ interface Jutsu {
         name += "|" + System.identityHashCode(m.invoke(lambda, new Integer(i)));
       }
       return name;
-    } catch (Exception ignored) {
-      ignored.printStackTrace();
+    } catch (Exception failure) {
+      Log.tryLog(Jutsu.class, this, "Unable to compute name of ", o.getClass(), o, failure);
     }
-    return null;
+    return "Lambda" + System.identityHashCode(this);
   }
 
   default Type[] getGenericInterfaces(Class<?> c) {

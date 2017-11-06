@@ -582,7 +582,8 @@ public interface X_Fu {
       throw new NullPointerException();
     }
     Fu.jutsu.sneakyThrow(t);
-    return null;
+    assert false : "Can't get here";
+    return new RuntimeException(t); // can't get here
   }
 
 }
