@@ -3,16 +3,14 @@ package xapi.server.api;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseException;
 import com.github.javaparser.ast.expr.UiContainerExpr;
+import xapi.dev.gwtc.api.GwtcJobMonitor.CompileMessage;
 import xapi.dev.gwtc.api.GwtcProjectGenerator;
 import xapi.dev.gwtc.api.GwtcService;
 import xapi.except.NotConfiguredCorrectly;
 import xapi.except.NotYetImplemented;
-import xapi.fu.In1;
-import xapi.fu.iterate.Chain;
-import xapi.fu.iterate.ChainBuilder;
+import xapi.fu.In2;
 import xapi.gwtc.api.CompiledDirectory;
 import xapi.gwtc.api.GwtManifest;
-import xapi.gwtc.api.IsRecompiler;
 import xapi.gwtc.api.ServerRecompiler;
 import xapi.inject.X_Inject;
 import xapi.log.X_Log;
@@ -21,8 +19,8 @@ import xapi.reflect.X_Reflect;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/4/16.
@@ -72,32 +70,30 @@ public interface ModelGwtc extends Model {
     }
 
     default void warmupCompile() {
-        if (getRecompiler() == null) {
-            ChainBuilder<In1<IsRecompiler>> queued = Chain.startChain();
-            setRecompiler(queued::add);
-            final GwtcService gwtc = getOrCreateService();
-            final GwtManifest manifest = getOrCreateManifest();
+        final GwtcService gwtc = getOrCreateService();
+        final GwtManifest manifest = getOrCreateManifest();
+        CompileMessage status = gwtc.getJobManager().getStatus(manifest.getModuleName());
+        if (status == null) {
             gwtc.recompile(manifest, null, (comp, err)->{
-                if (err == null) {
-                    setRecompiler(comp);
-                    queued.removeAll(comp::useServer);
-                } else {
-                    X_Log.error(getClass(), "Failure in warmup compile", err, "module:\n", manifest);
+                if (err != null) {
+                    X_Log.error(ModelGwtc.class, "Failure in warmup compile", err, "module:\n", manifest);
                 }
             });
         }
     }
 
-    default void getCompiledDirectory(In1<CompiledDirectory> o) {
-        if (getRecompiler() == null) {
-            // If there is no recompiler, we should use the production compile directory
+    default void getCompiledDirectory(In2<CompiledDirectory, Throwable> callback) {
+        final GwtManifest manifest = getOrCreateManifest();
+        if (manifest.getCompileDirectory() != null) {
+            callback.in(manifest.getCompileDirectory(), null);
+            return;
+        }
+        final GwtcService service = getOrCreateService();
+        final CompileMessage status = service.getJobManager().getStatus(manifest.getModuleName());
+        if (status == null) {
+            // If there is no recompiler event started, we should use the production compile directory
             String loc = getPrecompileLocation();
             if (loc == null) {
-                final GwtManifest manifest = getOrCreateManifest();
-                if (manifest.getCompileDirectory() != null) {
-                    o.in(manifest.getCompileDirectory());
-                    return;
-                }
                 // We're about to do some really ugly guessing in here, which I'm sure will
                 // not work in all environments, but will suffice for our flagship use case;
                 // a more robust solution can be added later.
@@ -152,9 +148,11 @@ public interface ModelGwtc extends Model {
                 .readIfPresent(attr->dir.setExtraDir(attr.getStringExpression(false)));
             // TODO: figure out sourcemapdir, port, etc...
 
-            o.in(dir);
+            callback.in(dir, null);
         } else {
-            getRecompiler().useServer(o.map1(IsRecompiler::getOrCompile));
+            X_Log.info(ModelGwtc.class, "Status already known; ", status, " re-running compilation");
+            Long millis = manifest.getMaxCompileMillis();
+            service.doCompile(manifest, millis == null ? 0 : millis, millis == null ? null : TimeUnit.MILLISECONDS, callback);
         }
     }
 }

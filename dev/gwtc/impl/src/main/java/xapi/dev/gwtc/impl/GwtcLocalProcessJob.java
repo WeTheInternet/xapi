@@ -2,8 +2,8 @@ package xapi.dev.gwtc.impl;
 
 import xapi.dev.gwtc.api.GwtcJob;
 import xapi.dev.gwtc.api.GwtcJobMonitor;
-import xapi.fu.Do;
 import xapi.gwtc.api.GwtManifest;
+import xapi.model.api.PrimitiveSerializer;
 import xapi.process.X_Process;
 import xapi.reflect.X_Reflect;
 import xapi.util.X_Debug;
@@ -20,19 +20,27 @@ import java.util.concurrent.LinkedBlockingDeque;
 public class GwtcLocalProcessJob extends GwtcJob {
 
     private final GwtcJobMonitorImpl monitor;
-    private GwtcJobManagerImpl manager;
 
-    public GwtcLocalProcessJob(GwtManifest manifest, URLClassLoader classpath, String gwtHome) {
-        super(manifest);
+    public GwtcLocalProcessJob(
+        GwtManifest manifest,
+        URLClassLoader classpath,
+        PrimitiveSerializer serializer
+    ) {
+        super(manifest, serializer);
         final LinkedBlockingDeque<String> callerDeque = new LinkedBlockingDeque<>();
         final LinkedBlockingDeque<String> compilerDeque = new LinkedBlockingDeque<>();
         this.monitor = new GwtcJobMonitorImpl(callerDeque, compilerDeque);
 
-        final String[] args = toRecompileArgs(manifest);
+        if (manifest.getLogFile() == null) {
+            manifest.setLogFile(GwtcJobMonitor.NO_LOG_FILE);
+        }
+        final String[] args = toProgramArgs(manifest);
 
         Object remote = monitor.forClassloader(classpath, callerDeque, compilerDeque);
         Runnable task;
         try {
+            // We use Runnable here because it is loaded by bootstrap classloader.
+            // thus, we can more freely share them across classloaders
             task = (Runnable)X_Reflect.construct(
                 classpath.loadClass(IsolatedCompiler.class.getName()),
                 new Class[]{Object.class, String[].class}, remote, args
@@ -42,7 +50,10 @@ public class GwtcLocalProcessJob extends GwtcJob {
         }
         manifest.setOnline(true);
         X_Process.runInClassloader(classpath, task::run);
-        scheduleFlusher(manifest, Do.NOTHING);
+        scheduleFlusher(manifest, ()->
+            task.getClass().getMethod("destroy")
+                .invoke(task)
+        );
     }
 
     @Override

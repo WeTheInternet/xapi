@@ -4,6 +4,7 @@ import xapi.dev.api.MavenLoader;
 import xapi.fu.In1;
 import xapi.fu.In2;
 import xapi.fu.In2.In2Unsafe;
+import xapi.fu.Mutable;
 import xapi.fu.Out1;
 import xapi.gwtc.api.CompiledDirectory;
 import xapi.gwtc.api.DefaultValue;
@@ -21,22 +22,55 @@ public interface GwtcService {
     getProject(moduleName).addClass(clazz);
   }
 
+  URLClassLoader ensureMeetsMinimumRequirements(URLClassLoader classpath);
 
   GwtcProjectGenerator getProject(String moduleName, ClassLoader resources);
+
+  GwtcJobManager getJobManager();
 
   default GwtcProjectGenerator getProject(String moduleName) {
     return getProject(moduleName, Thread.currentThread().getContextClassLoader());
   }
 
-  String generateCompile(GwtManifest manifest);
-  URLClassLoader resolveClasspath(GwtManifest manifest, String compileHome);
+  void generateCompile(GwtManifest manifest);
+  URLClassLoader resolveClasspath(GwtManifest manifest);
+
   MavenLoader getMavenLoader();
   In1<Integer> prepareCleanup(GwtManifest manifest);
   In2Unsafe<Integer, TimeUnit> startTask(Runnable task, URLClassLoader loader);
-  int compile(GwtManifest manifest);
+
+  default int compile(GwtManifest manifest) {
+    final Mutable<Integer> result = new Mutable<>(-2);
+    final long ttl = getMillisToWait();
+    doCompile(manifest, ttl, TimeUnit.MILLISECONDS, (dir, error) -> {
+      result.in(error == null && dir != null? 0 : -1);
+      synchronized (result) {
+        result.notifyAll();
+      }
+    });
+    if (result.isNull()) {
+      // we probably don't need to do this, as the semantics of doCompile are currently blocking,
+      // we also don't want to have bugs should those semantics change (i.e. be configurable by subclassing)
+      synchronized (result) {
+        try {
+          result.wait(ttl, 0);
+        } catch (InterruptedException e) {
+          return -1;
+        }
+      }
+    }
+    return result.out1();
+  }
+
+  default long getMillisToWait() {
+    return TimeUnit.MINUTES.toMillis(3);
+  }
+
   GwtcJobState recompile(GwtManifest manifest, Long millisToWait, In2<ServerRecompiler, Throwable> callback);
-  void compile(GwtManifest manifest, long timeout, TimeUnit unit, In2<Integer, Throwable> callback);
-  void doCompile(GwtManifest manifest, long timeout, TimeUnit unit, In2<CompiledDirectory, Throwable> callback);
+  default void doCompile(GwtManifest manifest, long timeout, TimeUnit unit, In2<CompiledDirectory, Throwable> callback) {
+    doCompile(false, manifest, timeout, unit, callback);
+  }
+  void doCompile(boolean avoidWork, GwtManifest manifest, long timeout, TimeUnit unit, In2<CompiledDirectory, Throwable> callback);
 
 //  File getTempDir();
   String inGeneratedDirectory(GwtManifest manifest, String filename);
@@ -80,4 +114,5 @@ public interface GwtcService {
   GwtcProperties getDefaultLaunchProperties();
 
   Out1<? extends Iterable<String>> resolveDependency(GwtManifest manifest, AnnotatedDependency dependency);
+
 }

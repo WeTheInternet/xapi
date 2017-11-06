@@ -12,11 +12,11 @@
   <name>XApi - Gwt Gui for Gwt Compiler Api</name>
   <url>WeTheInter.net</url>
   <description>
-  A Gwt module for the gwt compiler api.
+  A Gwt client module for the gwt compiler api.
 
   Yes, this module was developed using the compiler it controls ;)
   </description>
-  
+
   <dependencies>
     <dependency>
       <groupId>net.wetheinter</groupId>
@@ -35,7 +35,7 @@
       <groupId>net.wetheinter</groupId>
       <artifactId>xapi-dev-maven</artifactId>
     </dependency>
-    
+
     <dependency>
       <groupId>${gwt.groupId}</groupId>
       <artifactId>gwt-dev</artifactId>

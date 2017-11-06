@@ -5,19 +5,17 @@ import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
 import xapi.collect.impl.SimpleFifo;
 import xapi.dev.api.MavenLoader;
-import xapi.dev.gwtc.api.GwtcService;
 import xapi.fu.Filter;
 import xapi.fu.Immutable;
 import xapi.fu.In2;
 import xapi.fu.MappedIterable;
 import xapi.fu.Out1;
+import xapi.fu.X_Fu;
 import xapi.fu.iterate.ArrayIterable;
 import xapi.log.X_Log;
 import xapi.mvn.api.MvnDependency;
 import xapi.source.X_Source;
 import xapi.util.X_Namespace;
-import xapi.util.X_Properties;
-import xapi.util.X_Runtime;
 import xapi.util.X_String;
 
 import java.lang.reflect.Array;
@@ -120,6 +118,8 @@ public class GwtManifest {
   private static final String ARG_WAR_DIR = "war";
   private static final String ARG_WORK_DIR = "workDir";
   private static final String ARG_INCREMENTAL = "incremental";
+  private static final String ARG_ENABLE_FILE_WATCHER = "gwt.watchFileModifications";
+  private static final String ENABLE_FILE_WATCHER = "-D" + ARG_ENABLE_FILE_WATCHER + "=true";
   private static final String NEW_ARG = " -";
   private static final String NEW_LINE = "\n ";
   private static final String NEW_ITEM = NEW_LINE + "- ";
@@ -206,8 +206,10 @@ public class GwtManifest {
   private boolean isolateClassLoader;
   private boolean j2cl;
   private boolean testMode;
+  private boolean watchFileChanges = true;
   private String gwtNamespace;
   private Integer debugPort;
+  private Long maxCompileMillis;
 
   public GwtManifest() {
     includeGenDir = true;
@@ -465,7 +467,7 @@ public class GwtManifest {
 
   private MappedIterable<Out1<? extends Iterable<String>>> splitOnPathSeparator(MappedIterable<String> strings) {
     return strings
-        .map1(String::split, "[;:]") // server path:encoding:character may not == client path;encoding;character
+        .map2(String::split, "[;:]") // server path:encoding:character may not == client path;encoding;character
         .map(ArrayIterable::iterate)
         .map(Immutable::immutable1);
   }
@@ -774,12 +776,12 @@ public class GwtManifest {
 
   }
 
-  public String[] toClasspathFullCompile(GwtcService service) {
-    return toClasspath(service,false, getGwtVersion());
+  public String[] toClasspathFullCompile(MavenLoader loader) {
+    return toClasspath(loader,false, getGwtVersion());
   }
 
   public String[] toClasspath(
-      GwtcService service,
+      MavenLoader loader,
       boolean includeCodeserver,
       String gwtVersion
   ) {
@@ -829,13 +831,13 @@ public class GwtManifest {
       }
     }
     if (!hadGwtUser) {
-      addFromMaven(cp, service.getMavenLoader(), "gwt-user", gwtVersion);
+      addFromMaven(cp, loader, "gwt-user", gwtVersion);
     }
     if (!hadGwtCodeserver) {
-      addFromMaven(cp, service.getMavenLoader(), "gwt-codeserver", gwtVersion);
+      addFromMaven(cp, loader, "gwt-codeserver", gwtVersion);
     }
     if (!hadGwtDev) {
-      addFromMaven(cp, service.getMavenLoader(), "gwt-dev", gwtVersion);
+      addFromMaven(cp, loader, "gwt-dev", gwtVersion);
     }
     suffixClasspath(cp);
     X_Log.trace(getClass(), cp);
@@ -928,12 +930,11 @@ public class GwtManifest {
       }
       args[pos++] = s;
     }
+    boolean hasFileWatchSetting = false;
     for (String s : systemProperties.forEach()) {
-      if (!s.startsWith("-")) {
-        if (!s.startsWith("D")) {
-          s = "D"+s;
-        }
-        s = "-"+s;
+      s = fixupSysProp(s);
+      if (s.startsWith("-D" + ARG_ENABLE_FILE_WATCHER)) {
+        hasFileWatchSetting = true;
       }
       args[pos++] = s;
     }
@@ -946,7 +947,9 @@ public class GwtManifest {
       args[pos++] = "-D"+ARG_UNIT_CACHE_DIR+ "="+unitCacheDir;
     } else if (disableUnitCache) {
       args[pos++] = "-D"+ARG_DISABLE_UNIT_CACHE+ "=true";
-
+    }
+    if (!hasFileWatchSetting) {
+      return X_Fu.concat(args, ENABLE_FILE_WATCHER);
     }
     return args;
   }
@@ -1033,13 +1036,24 @@ public class GwtManifest {
       }
       b.append("\n");
     }
-    if (systemProperties.size() > 0) {
-      b.append("\n ").append(ARG_SYS_PROPS).append(":");
+    b.append("\n ").append(ARG_SYS_PROPS).append(":");
+    if (systemProperties.size() == 0) {
+
+    } else {
+      boolean hadFileWatchSetting = false;
       for (int i = 0, m = systemProperties.size(); i < m; i++) {
-        b.append(NEW_LIST_ITEM).append(systemProperties.get(i));
+        final String prop = fixupSysProp(systemProperties.get(i));
+        b.append(NEW_LIST_ITEM).append(prop);
+        if (prop.startsWith("-D" + ARG_ENABLE_FILE_WATCHER)) {
+          hadFileWatchSetting = true;
+        }
+      }
+      if (!hadFileWatchSetting) {
+        b.append(NEW_LIST_ITEM).append(ENABLE_FILE_WATCHER);
       }
       b.append("\n");
     }
+
     if (autoOpen) {
       b.append(NEW_ITEM).append(ARG_AUTO_OPEN);
     }
@@ -1087,6 +1101,16 @@ public class GwtManifest {
     }
 
     return b.toString();
+  }
+
+  private String fixupSysProp(String s) {
+    if (!s.startsWith("-")) {
+      if (!s.startsWith("D")) {
+        s = "D"+s;
+      }
+      s = "-"+s;
+    }
+    return s;
   }
 
   public Iterable<String> getClasspath() {
@@ -1233,5 +1257,21 @@ public class GwtManifest {
 
   public void setDebugPort(Integer debugPort) {
     this.debugPort = debugPort;
+  }
+
+  public Long getMaxCompileMillis() {
+    return maxCompileMillis;
+  }
+
+  public void setMaxCompileMillis(Long maxCompileMillis) {
+    this.maxCompileMillis = maxCompileMillis;
+  }
+
+  public boolean isWatchFileChanges() {
+    return watchFileChanges;
+  }
+
+  public void setWatchFileChanges(boolean watchFileChanges) {
+    this.watchFileChanges = watchFileChanges;
   }
 }

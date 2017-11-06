@@ -1,10 +1,6 @@
-package xapi.dev.gwtc.api;
+package xapi.dev.gwtc.impl;
 
-import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import xapi.annotation.compile.Dependency;
 import xapi.annotation.compile.Dependency.DependencyType;
@@ -13,6 +9,11 @@ import xapi.annotation.compile.Resource;
 import xapi.annotation.compile.ResourceBuilder;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
+import xapi.dev.gwtc.api.AnnotatedDependency;
+import xapi.dev.gwtc.api.GwtcEntryPointBuilder;
+import xapi.dev.gwtc.api.GwtcGeneratedProject;
+import xapi.dev.gwtc.api.GwtcProjectGenerator;
+import xapi.dev.gwtc.api.GwtcService;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
@@ -31,7 +32,6 @@ import xapi.log.X_Log;
 import xapi.reflect.X_Reflect;
 import xapi.source.X_Source;
 import xapi.util.X_Debug;
-import xapi.util.X_Namespace;
 import xapi.util.X_Properties;
 
 import java.io.File;
@@ -42,10 +42,8 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -61,9 +59,23 @@ import com.google.gwt.junit.tools.GWTTestSuite;
 import com.google.gwt.reflect.shared.GwtReflect;
 
 /**
+ * All of the logic in this class was consolidated from (a rather bloated)
+ * GwtcService.  This was an early prototype of a Gwt project / configuration
+ * generator that creates gwt.xml based on @Gwtc annotations added to types
+ * and packages used in your compilation.
+ *
+ * While it has been improved, it still has... plenty of rough edges.
+ *
+ * Contributions welcome! :D
+ *
+ * Also, we are working on a J2CL target as well,
+ * which should read in the same annotations,
+ * and produce correct J2CL / closure arguments
+ * (and produce errors / warnings when used in an incompatible manner).
+ *
  * Created by James X. Nelson (james @wetheinter.net) on 10/16/17.
  */
-public class GwtcProjectGeneratorAbstract implements GwtcProjectGenerator {
+public class GwtcProjectGeneratorDefault implements GwtcProjectGenerator {
     private final GwtcService service;
 
     protected final GwtcGeneratedProject context;
@@ -78,7 +90,7 @@ public class GwtcProjectGeneratorAbstract implements GwtcProjectGenerator {
     protected MethodBuffer junitLoader;
     private final Lazy<GwtManifest> manifest;
 
-    public GwtcProjectGeneratorAbstract(GwtcService service, ClassLoader resources, String moduleName) {
+    public GwtcProjectGeneratorDefault(GwtcService service, ClassLoader resources, String moduleName) {
         this.service = service;
         context = new GwtcGeneratedProject(service, resources, moduleName);
         finished = new HashSet<>();
@@ -376,7 +388,7 @@ public class GwtcProjectGeneratorAbstract implements GwtcProjectGenerator {
 
     @Override
     public MethodBuffer getOnModuleLoad() {
-        return out.out;
+        return out.getOnModuleLoad();
     }
 
 
@@ -399,7 +411,7 @@ public class GwtcProjectGeneratorAbstract implements GwtcProjectGenerator {
     }
 
     protected void saveTempFile(String value, File dest) {
-        X_Log.trace(getClass(), "saving generated file to",dest);
+        X_Log.trace(GwtcProjectGeneratorDefault.class, "saving generated file to",dest);
         final boolean success = dest.getParentFile().mkdirs();
         assert success || dest.getParentFile().exists() : "Unable to create parent directories for " + dest.getAbsolutePath();
         try (FileWriter out = new FileWriter(dest)) {
@@ -466,7 +478,7 @@ public class GwtcProjectGeneratorAbstract implements GwtcProjectGenerator {
     }
 
     @Override
-    public String generateCompile(GwtManifest manifest) {
+    public void generateCompile(GwtManifest manifest) {
         assert tempDir.exists() : "No usable directory " + tempDir.getAbsolutePath();
         if (manifest.getModuleName() == null) {
             manifest.setModuleName(genName);
@@ -506,12 +518,8 @@ public class GwtcProjectGeneratorAbstract implements GwtcProjectGenerator {
         files.forBoth((path, body)->
             saveTempFile(body.out1(), new File(service.inGeneratedDirectory(manifest, path)))
         );
-        X_Log.info(GwtcProjectGeneratorAbstract.class, "Generated entry point", "\n", getEntryPoint());
-        X_Log.info(GwtcProjectGeneratorAbstract.class, "Generated module", "\n", getGwtXml(manifest));
-        return prepareCompile(manifest);
-    }
-
-    protected String prepareCompile(GwtManifest manifest) {
+        X_Log.info(GwtcProjectGeneratorDefault.class, "Generated entry point", "\n", getEntryPoint());
+        X_Log.info(GwtcProjectGeneratorDefault.class, "Generated module", manifest.getModuleName(), "\n", getGwtXml(manifest));
 
         String gwtHome = X_Properties.getProperty("gwt.home");
         if (manifest.getCompileDirectory() == null) {
@@ -535,37 +543,14 @@ public class GwtcProjectGeneratorAbstract implements GwtcProjectGenerator {
                     warDir = prop.warDir();
                 }
             }
-            if (warDir == null) {
-                warDir = GwtcProperties.DEFAULT_WAR;
-            }
+
             manifest.setLogLevel(level);
             if (manifest.getSystemProperties().noneMatch(String::startsWith, "xapi.log.level")) {
                 manifest.addSystemProp("xapi.log.level="+level.name());
             }
-            manifest.setWarDir(warDir);
 
-            if (warDir.contains("/tmp/")) {
-                File f = tempDir;
-                try {
-                    String tempCanonical = f.getCanonicalPath();
-                    if (!warDir.contains(tempCanonical)) {
-                        warDir = warDir.replaceAll("/tmp/", tempCanonical + File.separator);
-                    }
-                    manifest.setWarDir( warDir );
-                    warDir = new File(warDir).getCanonicalPath();
-                    manifest.setWarDir( warDir );
-                    X_Log.info(getClass(), "Manifest WAR: ",manifest.getWarDir());
-                    final boolean made = new File(warDir).mkdirs();
-                    if (!made) {
-                        X_Log.warn(getClass(), "Unable to create temporary war directory for GWT compile",
-                            "You will likely get an unwanted war folder in the directory you executed this program \ncheck " + warDir+"");
-                    }
-                } catch (IOException e) {
-                    X_Log.warn(getClass(), "Unable to create temporary war directory for GWT compile",
-                        "You will likely get an unwanted war folder in the directory you executed this program \ncheck " + warDir+"", e);
-                    X_Debug.maybeRethrow(e);
-                }
-            }
+            GwtcProjectGenerator.ensureWarDir(manifest, warDir, tempDir);
+
             if (manifest.getUnitCacheDir() == null) {
                 try {
                     File f = X_File.createTempDir("gwtc-"+manifest.getModuleName()+"UnitCache", manifest.isDisableUnitCache());
@@ -626,7 +611,6 @@ public class GwtcProjectGeneratorAbstract implements GwtcProjectGenerator {
         }
 
         generateWar(manifest);
-        return gwtHome;
     }
 
     @Override
@@ -769,7 +753,7 @@ public class GwtcProjectGeneratorAbstract implements GwtcProjectGenerator {
 
         String hostPage = buffer.toString();
         X_File.saveFile(warDir +"/public", "index.html", hostPage);
-        X_Log.info(GwtcProjectGeneratorAbstract.class, "Generated host page:\n", hostPage);
+        X_Log.info(GwtcProjectGeneratorDefault.class, "Generated host page:\n", hostPage);
         X_Log.info("Generate war into ", warDir);
     }
 

@@ -1,6 +1,6 @@
 package xapi.dev.gwtc.api;
 
-import xapi.dev.gwtc.api.GwtcJobMonitor.CompileStatus;
+import xapi.dev.gwtc.api.GwtcJobMonitor.CompileMessage;
 import xapi.fu.In2Out1;
 import xapi.gwtc.api.GwtManifest;
 
@@ -24,15 +24,13 @@ public interface GwtcJobState {
 
     boolean isReusable(GwtManifest manifest);
 
-    String getGwtHome();
-
     IsAppSpace getAppSpace();
 
     String getModuleName();
 
     String getModuleShortName();
 
-    static boolean isComplete(CompileStatus state) {
+    static boolean isComplete(CompileMessage state) {
         if (state == null) {
             return false;
         }

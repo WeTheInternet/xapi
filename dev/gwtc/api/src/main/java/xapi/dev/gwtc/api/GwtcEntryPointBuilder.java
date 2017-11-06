@@ -131,4 +131,7 @@ public class GwtcEntryPointBuilder {
     return b.toString();
   }
 
+  public MethodBuffer getOnModuleLoad() {
+    return out;
+  }
 }

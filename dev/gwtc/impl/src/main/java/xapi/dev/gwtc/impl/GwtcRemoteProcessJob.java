@@ -1,21 +1,25 @@
 package xapi.dev.gwtc.impl;
 
+import xapi.collect.X_Collect;
+import xapi.collect.api.IntTo;
 import xapi.dev.gwtc.api.GwtcJob;
 import xapi.dev.gwtc.api.GwtcJobMonitor;
-import xapi.dev.gwtc.api.GwtcJobMonitor.CompileStatus;
 import xapi.dev.gwtc.api.GwtcService;
 import xapi.fu.X_Fu;
+import xapi.fu.iterate.ArrayIterable;
 import xapi.gwtc.api.GwtManifest;
 import xapi.io.api.LineReader;
 import xapi.io.api.LineReaderWithLogLevel;
-import xapi.io.api.SimpleLineReader;
 import xapi.log.X_Log;
 import xapi.log.api.LogLevel;
+import xapi.model.api.PrimitiveSerializer;
 import xapi.process.X_Process;
 import xapi.shell.X_Shell;
 import xapi.shell.api.ShellSession;
 import xapi.util.X_Debug;
 
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.concurrent.LinkedBlockingDeque;
 
 /**
@@ -26,24 +30,58 @@ public class GwtcRemoteProcessJob extends GwtcJob {
     private final ShellSession process;
     private final GwtcJobMonitorImpl monitor;
 
-    public GwtcRemoteProcessJob(GwtManifest manifest, GwtcService service) {
-        super(manifest);
+    public GwtcRemoteProcessJob(
+        GwtManifest manifest,
+        GwtcService service,
+        PrimitiveSerializer serializer
+    ) {
+        super(manifest, serializer);
 
         Integer debugPort = manifest.getDebugPort();
         if (debugPort != null) {
             manifest.addJvmArg("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=" + debugPort);
         }
-        final String[] jvmArgs = manifest.toJvmArgArray();
+        String[] jvmArgs = manifest.toJvmArgArray();
         String[] programArgs = manifest.toProgramArgArray();
         if (manifest.getLogFile() != null) {
             programArgs = X_Fu.concat(new String[]{"-logFile", manifest.getLogFile()}, programArgs);
         }
+
+        // We want to respect tmp dir, since some people may want to check in prebuilt files.
+        String tmpDir = System.getProperty("java.io.tmpdir");
+        tmpSearch:
+        if (tmpDir != null) {
+            for (String jvmArg : jvmArgs) {
+                if (jvmArg.startsWith("-Djava.io.tmpdir")) {
+                    break tmpSearch;
+                }
+            }
+            jvmArgs = X_Fu.concat(jvmArgs, "-Djava.io.tmpdir="+tmpDir);
+        }
+
         programArgs = X_Fu.concat(
             manifest.isRecompile() ? GwtcJobMonitor.JOB_RECOMPILE : GwtcJobMonitor.JOB_COMPILE,
             programArgs
         );
 
-        final String[] cp = manifest.toClasspathFullCompile(service);
+        String[] cp = manifest.toClasspathFullCompile(service.getMavenLoader());
+        final URL[] asUrls = ArrayIterable.iterate(cp)
+            .map(item->"file:" + item)
+            .mapUnsafe(URL::new).toArray(URL[]::new);
+        final URLClassLoader urlLoader = new URLClassLoader(asUrls, null);
+        final URLClassLoader fixedUp = service.ensureMeetsMinimumRequirements(urlLoader);
+        if (fixedUp != urlLoader) {
+            // service had to add some items.  Lets pull them off and concat to our existing cp.
+            IntTo<String> all = X_Collect.newList(String.class, X_Collect.MUTABLE_INSERTION_ORDERED_SET);
+            all.addAll(cp);
+            X_Log.warn(GwtcRemoteProcessJob.class, "Had to fixup classpath urls", fixedUp.getURLs());
+            all.addAll(
+                ArrayIterable.iterate(fixedUp.getURLs())
+                    .map(URL::toExternalForm)
+                    .map(s->s.replace("file:", ""))
+            );
+            cp = all.toArray(String[]::new);
+        }
 
         LinkedBlockingDeque<String> fromCompiler = new LinkedBlockingDeque<>();
         LineReader stdOut = new LineReaderWithLogLevel() {
@@ -70,7 +108,7 @@ public class GwtcRemoteProcessJob extends GwtcJob {
             }
         }.setLogLevel(LogLevel.DEBUG);
 
-        final ShellSession process = X_Shell.launchJava(
+        process = X_Shell.launchJava(
             GwtcJobManagerImpl.class,
             cp,
             jvmArgs,
@@ -78,8 +116,6 @@ public class GwtcRemoteProcessJob extends GwtcJob {
             stdOut,
             stdErr
         );
-
-        this.process = process;
 
         this.monitor = new GwtcJobMonitorImpl(
             fromCompiler::take,
@@ -89,6 +125,21 @@ public class GwtcRemoteProcessJob extends GwtcJob {
 
         manifest.setOnline(true);
         scheduleFlusher(manifest, process::destroy);
+    }
+
+    @Override
+    protected void finalize() throws Throwable {
+        if (process != null) {
+            process.destroy();
+        }
+    }
+
+    @Override
+    public void destroy() {
+        super.destroy();
+        if (process != null) {
+            process.destroy();
+        }
     }
 
     private void logLine(String line) {

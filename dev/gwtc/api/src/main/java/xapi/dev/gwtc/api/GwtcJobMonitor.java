@@ -1,6 +1,8 @@
 package xapi.dev.gwtc.api;
 
+import xapi.fu.api.DoNotOverride;
 import xapi.fu.iterate.ArrayIterable;
+import xapi.util.X_String;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/12/17.
@@ -21,6 +23,8 @@ public interface GwtcJobMonitor {
      */
     String JOB_COMPILE = "compile";
     String JOB_J2CL = "j2cl";
+    String JOB_CHECK_FRESHNESS = "check";
+    String JOB_GET_RESOURCE = "find";
 
     /**
      * Runs in test mode, sends back the rest of the arguments,
@@ -59,19 +63,25 @@ public interface GwtcJobMonitor {
     String STD_OUT_TO_STD_ERR = "1>&2";
     String NO_LOG_FILE = "nlf";
 
-    enum CompileStatus {
-            DebugWait(CompileStatus.KEY_DEBUG_WAIT),
-            Preparing(CompileStatus.KEY_PREPARING),
-            Running(CompileStatus.KEY_RUNNING),
-            Success(CompileStatus.KEY_SUCCESS) {
+    enum CompileMessage {
+            DebugWait(CompileMessage.KEY_DEBUG_WAIT),
+            Preparing(CompileMessage.KEY_PREPARING),
+            Running(CompileMessage.KEY_RUNNING),
+            Success(CompileMessage.KEY_SUCCESS) {
                 @Override
                 public boolean isComplete() {
                     return true;
                 }
             },
-            Log(CompileStatus.KEY_LOG),
-            Ping(CompileStatus.KEY_PING),
-            Failed(CompileStatus.KEY_FAILED) {
+            Log(CompileMessage.KEY_LOG),
+            Failed(CompileMessage.KEY_FAILED) {
+                @Override
+                public boolean isComplete() {
+                    return true;
+                }
+            },
+            FoundResource(CompileMessage.KEY_FOUND_RESOURCE),
+            Destroyed(CompileMessage.KEY_DESTROYED) {
                 @Override
                 public boolean isComplete() {
                     return true;
@@ -83,18 +93,19 @@ public interface GwtcJobMonitor {
             KEY_RUNNING = 'r',
             KEY_PREPARING = 'i',
             KEY_LOG = '[',
+            KEY_FOUND_RESOURCE = 'F',
             KEY_DEBUG_WAIT = 'L',
             KEY_FAILED = 'f',
-            KEY_PING = 'p'
+            KEY_DESTROYED = 'd'
         ;
 
         private final char type;
 
-        CompileStatus(char type) {
+        CompileMessage(char type) {
             this.type = type;
         }
 
-        public static CompileStatus fromChar(char c) {
+        public static CompileMessage fromChar(char c) {
             switch (c) {
                 case KEY_PREPARING:
                     return Preparing;
@@ -108,8 +119,10 @@ public interface GwtcJobMonitor {
                     return Failed;
                 case KEY_LOG:
                     return Log;
-                case KEY_PING:
-                    return Ping;
+                case KEY_DESTROYED:
+                    return Destroyed;
+                case KEY_FOUND_RESOURCE:
+                    return FoundResource;
             }
             throw new IllegalArgumentException(c + " is not a supported status type");
         }
@@ -126,11 +139,16 @@ public interface GwtcJobMonitor {
 
     void writeAsCaller(String toCaller);
 
+    @DoNotOverride
+    default void writeAsCaller(String ... toCaller) {
+        writeAsCaller(X_String.join("", toCaller));
+    }
+
     String readAsCompiler();
 
     void writeAsCompiler(String toCompiler);
 
-    default void updateCompileStatus(CompileStatus status, String ... args) {
+    default void updateCompileStatus(CompileMessage status, String ... args) {
         writeAsCompiler(status.type + ArrayIterable.iterate(args).join(""));
     }
 

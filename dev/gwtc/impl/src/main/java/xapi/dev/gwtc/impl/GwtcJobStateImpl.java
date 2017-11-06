@@ -44,7 +44,7 @@ public class GwtcJobStateImpl implements GwtcJobState {
     private final GwtcService service;
     private final Lazy<RecompileController> compiler;
     private final Lazy<TreeLogger> logger;
-    private Lazy<String> gwtHome;
+//    private Lazy<String> gwtHome;
     private Lazy<IsAppSpace> appSpace;
     private Lazy<URLClassLoader> classloader;
     private Lazy<In1<Integer>> shutdown;
@@ -64,7 +64,6 @@ public class GwtcJobStateImpl implements GwtcJobState {
         compiler = Lazy.deferred1(this::createController);
         // TODO: make these lazies part of a "resettable group", so when we redo one, we redo all...
         appSpace = initAppSpace();
-        gwtHome = initGwtHome();
         classloader = initClassLoader();
         shutdown = initShutdown();
         api = initApi();
@@ -113,12 +112,12 @@ public class GwtcJobStateImpl implements GwtcJobState {
     }
 
     private Lazy<URLClassLoader> initClassLoader() {
-        return Lazy.deferAll(service::resolveClasspath, Immutable.immutable1(manifest), this::getGwtHome);
+        return Lazy.deferred1(()-> {
+            service.generateCompile(manifest);
+            return service.resolveClasspath(manifest);
+        });
     }
 
-    protected Lazy<String> initGwtHome() {
-        return Lazy.deferred1(service::generateCompile, manifest);
-    }
 
     protected RecompileController createController() {
         final RecompileController controller = SuperDevUtil.getOrMakeController(
@@ -237,8 +236,6 @@ public class GwtcJobStateImpl implements GwtcJobState {
         if (compiler.isResolved()) {
             compiler.out1().cleanup();
         }
-        // Consider cleaning gwtHome?
-        gwtHome = initGwtHome();
         classloader = initClassLoader();
         // TODO: actually use shutdown if we haven't already shutdown;
         // for now, ignoring this state management as there are bigger fish to fry
@@ -348,10 +345,6 @@ public class GwtcJobStateImpl implements GwtcJobState {
         In2Unsafe<Integer, TimeUnit> blocker = service.startTask(task, loader);
 
         setBlocker(blocker,  code);
-    }
-
-    public String getGwtHome() {
-        return gwtHome.out1();
     }
 
     @Override

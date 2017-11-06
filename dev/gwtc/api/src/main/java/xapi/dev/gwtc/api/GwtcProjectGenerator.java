@@ -1,13 +1,18 @@
 package xapi.dev.gwtc.api;
 
+import xapi.dev.gwtc.impl.GwtcProjectGeneratorDefault;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.dev.source.SourceBuilder.JavaType;
 import xapi.dev.source.XmlBuffer;
 import xapi.fu.Out1;
 import xapi.gwtc.api.GwtManifest;
+import xapi.gwtc.api.GwtcProperties;
+import xapi.log.X_Log;
+import xapi.util.X_Debug;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Method;
 
 import com.google.gwt.core.client.RunAsyncCallback;
@@ -28,7 +33,7 @@ import com.google.gwt.junit.tools.GWTTestSuite;
  *
  * Created by James X. Nelson (james @wetheinter.net) on 10/15/17.
  */
-public interface GwtcProjectGenerator {
+public interface  GwtcProjectGenerator {
 
     void addClass(Class<?> clazz);
     void addMethod(Method method);
@@ -61,9 +66,41 @@ public interface GwtcProjectGenerator {
     String modifyPackage(String pkgToUse);
     MethodBuffer getOnModuleLoad();
 
-    String generateCompile(GwtManifest manifest);
+    void generateCompile(GwtManifest manifest);
 
     String getSuggestedRoot();
 
     GwtManifest getManifest();
+
+    static void ensureWarDir(GwtManifest manifest, String warDir, File tempDir) {
+        if (manifest.getWarDir() != null) {
+            return;
+        }
+        if (warDir == null) {
+            warDir = GwtcProperties.DEFAULT_WAR;
+        }
+        manifest.setWarDir(warDir);
+        if (warDir.contains("/tmp/")) {
+            File f = tempDir;
+            try {
+                String tempCanonical = f.getCanonicalPath();
+                if (!warDir.contains(tempCanonical)) {
+                    warDir = warDir.replaceAll("/tmp/", tempCanonical + File.separator);
+                }
+                manifest.setWarDir( warDir );
+                warDir = new File(warDir).getCanonicalPath();
+                manifest.setWarDir( warDir );
+                X_Log.info(GwtcProjectGeneratorDefault.class, "Manifest WAR: ",manifest.getWarDir());
+                final boolean made = new File(warDir).mkdirs();
+                if (!made) {
+                    X_Log.warn(GwtcProjectGeneratorDefault.class, "Unable to create temporary war directory for GWT compile",
+                        "You will likely get an unwanted war folder in the directory you executed this program \ncheck " + warDir+"");
+                }
+            } catch (IOException e) {
+                X_Log.warn(GwtcProjectGeneratorDefault.class, "Unable to create temporary war directory for GWT compile",
+                    "You will likely get an unwanted war folder in the directory you executed this program \ncheck " + warDir+"", e);
+                X_Debug.maybeRethrow(e);
+            }
+        }
+    }
 }

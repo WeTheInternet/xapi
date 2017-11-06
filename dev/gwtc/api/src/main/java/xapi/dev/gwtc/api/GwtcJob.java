@@ -1,11 +1,18 @@
 package xapi.dev.gwtc.api;
 
-import xapi.dev.api.ExtensibleClassLoader;
-import xapi.dev.gwtc.api.GwtcJobMonitor.CompileStatus;
+import xapi.bytecode.NotFoundException;
+import xapi.collect.X_Collect;
+import xapi.collect.api.IntTo;
+import xapi.collect.api.StringTo;
+import xapi.collect.impl.SimpleLinkedList;
+import xapi.dev.gwtc.api.GwtcJobMonitor.CompileMessage;
 import xapi.except.MultiException;
-import xapi.except.NotConfiguredCorrectly;
 import xapi.fu.Do;
+import xapi.fu.Do.DoUnsafe;
+import xapi.fu.In1;
 import xapi.fu.In2;
+import xapi.fu.Maybe;
+import xapi.fu.X_Fu;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
 import xapi.gwtc.api.CompiledDirectory;
@@ -16,24 +23,26 @@ import xapi.model.api.PrimitiveSerializer;
 import xapi.process.X_Process;
 import xapi.reflect.X_Reflect;
 import xapi.source.api.CharIterator;
-import xapi.source.api.Chars;
-import xapi.util.X_Debug;
+import xapi.util.X_String;
 import xapi.util.api.Destroyable;
+import xapi.util.api.RemovalHandler;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLClassLoader;
+import java.security.CodeSource;
+import java.security.ProtectionDomain;
 import java.util.LinkedHashSet;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.locks.LockSupport;
 
-import static xapi.dev.gwtc.api.GwtcJobMonitor.CompileStatus.*;
+import static xapi.dev.gwtc.api.GwtcJobMonitor.CompileMessage.*;
 
 import com.google.gwt.core.ext.UnableToCompleteException;
-import com.google.gwt.dev.Compiler;
 import com.google.gwt.dev.codeserver.CompileStrategy;
 
 /**
@@ -43,46 +52,85 @@ public abstract class GwtcJob implements Destroyable {
 
     private final String moduleName;
     private final String moduleShortName;
-    private CompileStatus state;
+    protected final PrimitiveSerializer serializer;
+    private CompileMessage state;
     private final boolean recompiler;
     private final boolean j2cl;
     private CompiledDirectory directory;
-    private final ChainBuilder<In2<CompiledDirectory, Throwable>> callbacks;
+    private final ChainBuilder<In2<CompiledDirectory, Throwable>> doneCallbacks;
+    private final SimpleLinkedList<In1<CompileMessage>> statusUpdate;
+    private final StringTo.Many<In2<URL, Throwable>> resourceCallbacks;
     private Throwable error;
     private Throwable callbackError;
 
-    public GwtcJob(GwtManifest manifest) {
-        this(manifest.getModuleName(), manifest.getModuleShortName(), manifest.isRecompile(), manifest.isJ2cl());
+    public GwtcJob(GwtManifest manifest, PrimitiveSerializer serializer) {
+        this(manifest.getModuleName(), manifest.getModuleShortName(), manifest.isRecompile(), manifest.isJ2cl(), serializer);
     }
 
-    public GwtcJob(String moduleName, String moduleShortName, boolean recompiler, boolean j2cl) {
+    public GwtcJob(
+        String moduleName,
+        String moduleShortName,
+        boolean recompiler,
+        boolean j2cl,
+        PrimitiveSerializer serializer
+    ) {
         this.moduleName = moduleName;
         this.moduleShortName = moduleShortName;
         this.recompiler = recompiler;
         this.j2cl = j2cl;
-        callbacks = Chain.startChain();
+        this.serializer = serializer;
+        doneCallbacks = Chain.startChain();
+        statusUpdate = new SimpleLinkedList<>();
+        resourceCallbacks = X_Collect.newStringMultiMap(In2.class);
     }
 
     protected abstract GwtcJobMonitor getMonitor();
 
     @Override
     public void destroy() {
-
+        if (getState() != CompileMessage.Destroyed) {
+            X_Log.info(GwtcJob.class, "Telling gwtc process to die");
+            getMonitor().writeAsCaller(GwtcJobMonitor.JOB_DIE);
+            X_Process.scheduleInterruption(10, TimeUnit.SECONDS);
+            while (getState() != Destroyed) {
+                try {
+                    if (Thread.currentThread().isInterrupted()) {
+                        throw new InterruptedException();
+                    }
+                    flushMonitor();
+                } catch (Exception e) {
+                    if (e instanceof InterruptedException) {
+                        X_Log.warn(GwtcJob.class, "Process did not die within 10s", e);
+                    } else {
+                        X_Log.error(GwtcJob.class, "Unknown error trying to kill gwtc job", e);
+                    }
+                    break;
+                }
+            }
+        }
+        doneCallbacks.removeAllUnsafe(callback-> {
+            if (state == Success && directory != null) {
+                callback.in(directory, null);
+            } else {
+                callback.in(null, new IllegalStateException("Job restarted before completing previous requests"));
+            }
+        });
     }
 
-    public CompileStatus getState() {
+    public CompileMessage getState() {
         return state;
     }
 
-    public void setState(CompileStatus state) {
+    public void setState(CompileMessage state) {
         try {
             if (state.isComplete()) {
                 if (state == Failed) {
                     directory = null;
-                    // TODO actually get ral error reporting here
+                    // TODO actually get real error reporting here
                     error = new UnableToCompleteException();
+                    xapi.fu.Log.tryLog(GwtcJob.class, this, "Gwt Compilation state: failed");
                 }
-                callbacks.removeAll(callback-> {
+                doneCallbacks.removeAll(callback-> {
                     try {
                         callback.in(directory, error);
                     } catch (Throwable e) {
@@ -91,18 +139,28 @@ public abstract class GwtcJob implements Destroyable {
                 });
             }
             if (callbackError != null) {
-                throw new Error(callbackError);
+                throw new RuntimeException(callbackError);
             }
         } finally {
+            callbackError = null;
             this.state = state;
+            statusUpdate.forAll(In1::in, state);
         }
     }
 
+    public RemovalHandler onStatusChange(In1<CompileMessage> callback) {
+        if (state != null) {
+            callback.in(state);
+        }
+        statusUpdate.add(callback);
+        return ()->statusUpdate.remove(callback);
+
+    }
     public void onDone(In2<CompiledDirectory, Throwable> callback) {
         if (state == Success) {
             callback.in(getDirectory(), null);
         } else {
-            callbacks.add(callback);
+            doneCallbacks.add(callback);
             if (X_Process.isInProcess()) {
                 // If we're already running in an X_Process thread, we can be free to block
                 flushMonitor();
@@ -120,10 +178,6 @@ public abstract class GwtcJob implements Destroyable {
 
     protected synchronized void flushMonitor() {
         final GwtcJobMonitor monitor = getMonitor();
-        // In order to effectively block until we've handled all new messages,
-        // we will send a ping to the remote process, and then wait until we get
-        // our ping id back; this ensures happens-before semantics with regard to
-        // any pending operations
         while (monitor.hasMessageForCaller()) {
             readStatus(monitor, (status, extra)->{
                 switch (status) {
@@ -132,29 +186,59 @@ public abstract class GwtcJob implements Destroyable {
                         break;
                     case Success:
                         // We expect the extra bits to describe a CompiledDirectory
-                        directory = recordResult(extra);
+                        if (X_String.isNotEmptyTrimmed(extra)) {
+                            // freshness checks will just return the status without the CompileDir
+                            directory = recordResult(extra);
+                        }
                     case Running:
                     case Failed:
                     case Preparing:
+                    case DebugWait:
+                    case Destroyed:
                         this.setState(status);
-
+                        break;
+                    case FoundResource:
+                        notifyResource(extra);
+                        break;
                 }
             });
         }
     }
 
-    protected void readStatus(GwtcJobMonitor monitor, In2<CompileStatus, String> callback) {
+    private void notifyResource(String extra) {
+        CharIterator itr = CharIterator.forString(extra);
+        String fileName = serializer.deserializeString(itr);
+        String result = serializer.deserializeString(itr);
+        synchronized (resourceCallbacks) {
+            final IntTo<In2<URL, Throwable>> callbacks = resourceCallbacks.get(fileName);
+            URL url;
+            if (result == null) {
+                url = null;
+            } else {
+                try {
+                    url = new URL(result);
+                } catch (MalformedURLException e) {
+                    throw X_Fu.rethrow(e);
+                }
+            }
+            callbacks.removeAll(callback->callback.in(url, url == null ? new NotFoundException(extra) : null));
+            resourceCallbacks.remove(fileName);
+            resourceCallbacks.notifyAll();
+        }
+    }
+
+    protected void readStatus(GwtcJobMonitor monitor, In2<CompileMessage, String> callback) {
 
         String response = monitor.readAsCaller();
         if (response.isEmpty()) {
             X_Log.warn(GwtcJob.class, "Ignored empty response; did not call", callback);
             return;
         }
-        final CompileStatus status = CompileStatus.fromChar(response.charAt(0));
+        final CompileMessage status = CompileMessage.fromChar(response.charAt(0));
         if (response.length() == 1) {
-            X_Log.info(GwtcJob.class, "Received: ", status);
+            X_Log.trace(GwtcJob.class, "Received: ", status);
         } else {
-            X_Log.info(GwtcJob.class, "Received: ", status, " : ", response);
+            X_Log.trace(GwtcJob.class, "Received: ", status, " : ", response);
         }
         String rest = response.substring(1);
             callback.in(status,
@@ -203,27 +287,42 @@ public abstract class GwtcJob implements Destroyable {
         return recompiler;
     }
 
-    public void forceRecompile() {
-        // TODO implement me :-)
+    public synchronized void forceRecompile() {
+        if (state != Preparing && state != Running) {
+            setState(Preparing);
+            getMonitor().writeAsCaller(
+                isRecompiler() ?
+                GwtcJobMonitor.JOB_RECOMPILE :
+                GwtcJobMonitor.JOB_COMPILE
+            );
+        }
     }
 
-    public void scheduleFlusher(GwtManifest manifest, Do afterShutdown) {
+    public void scheduleFlusher(GwtManifest manifest, DoUnsafe afterShutdown) {
         assert manifest.isOnline() : "You must set GwtManifest.online = true";
         X_Process.runDeferred(()->{
-            while (manifest.isOnline()) {
-                try {
-                    flushMonitor();
-                } catch (Throwable t) {
-                    X_Log.warn(GwtcJob.class, "Failed to flush remote process monitor; thread bailing", t);
-                    manifest.setOnline(false);
-                    afterShutdown.done();
-                    throw t;
+            try {
+                while (manifest.isOnline()) {
+                    try {
+                        flushMonitor();
+                        synchronized (statusUpdate) {
+                            try {
+                                statusUpdate.wait(TimeUnit.SECONDS.toMillis(3));
+                            } catch (InterruptedException ignored) { }
+                        }
+                    } catch (Throwable t) {
+                        X_Log.warn(GwtcJob.class, "Failed to flush remote process monitor; thread bailing", t);
+                        manifest.setOnline(false);
+                        throw t;
+                    }
                 }
+            } finally {
+                afterShutdown.done();
             }
         });
     }
 
-    public String[] toRecompileArgs(GwtManifest manifest) {
+    public String[] toProgramArgs(GwtManifest manifest) {
 
         Set<File> sourcePath = new LinkedHashSet<>();
         ChainBuilder<String> args = Chain.startChain();
@@ -264,7 +363,11 @@ public abstract class GwtcJob implements Destroyable {
                             dir = new File(loc, src);
                         }
                         if (!dir.exists()) {
-                            final URL sourceLoc = main.getProtectionDomain().getCodeSource().getLocation();
+                            final URL sourceLoc =
+                                Maybe.nullable(main.getProtectionDomain())
+                                        .mapNullSafe(ProtectionDomain::getCodeSource)
+                                        .mapNullSafe(CodeSource::getLocation)
+                                        .get();
                             if (sourceLoc != null) {
                                 // yay!
                                 loc = sourceLoc.toString().replace("file:", "");
@@ -326,6 +429,21 @@ public abstract class GwtcJob implements Destroyable {
                 X_Log.warn(GwtcJobMonitor.class, "Unable to create war dir", manifest.getWarDir(), "expect more errors...");
             }
         }
+        args.add("-war");
+        args.add(warDir.getAbsolutePath());
+
+        if (manifest.getGenDir() != null) {
+            final File genDir = new File(manifest.getGenDir());
+            if (!genDir.isDirectory()) {
+                boolean result = genDir.mkdirs();
+                if (!result) {
+                    X_Log.warn(GwtcJobMonitor.class, "Unable to create gen dir", manifest.getWarDir(), "expect more errors...");
+                }
+            }
+            args.add("-gen");
+            args.add(genDir.getAbsolutePath());
+
+        }
 
         if (manifest.isRecompile()) {
             if (!manifest.isStrict()) {
@@ -344,30 +462,6 @@ public abstract class GwtcJob implements Destroyable {
                     throw new UncheckedIOException(e);
                 }
             }
-
-            if (!manifest.isPrecompile()) {
-                args.add("-noprecompile");
-            }
-            if (manifest.getPort() != 0) {
-                args.add("-port");
-                args.add(Integer.toString(manifest.getPort()));
-            }
-        }
-
-
-        if (manifest.getLogLevel() != null) {
-            args.add("-logLevel");
-            args.add(manifest.getLogLevel().getLabel());
-        }
-
-        if (manifest.getObfuscationLevel() != null) {
-            args.add("-style");
-            args.add(manifest.getObfuscationLevel().name());
-        }
-
-        if (manifest.getMethodNameMode() != null) {
-            args.add("-XmethodNameDisplayMode");
-            args.add(manifest.getMethodNameMode().name());
         }
 
         if (manifest.isIncremental()) {
@@ -376,10 +470,70 @@ public abstract class GwtcJob implements Destroyable {
             args.add("-noincremental");
         }
 
-        args.add(manifest.getModuleName());
+        // Add all other arguments from the manifest (those above required special care)
+        final String[] progArgs = manifest.toProgramArgArray();
+        for (int i = 0; i < progArgs.length; i++) {
+            switch (progArgs[i]) {
+                case "-war":
+                case "-gen":
+                case "-incremental":
+                case "-noincremental":
+                case "-src":
+                case "-strict":
+                case "-allowMissingSrc":
+                    if (i < progArgs.length-1) {
+                        if (!progArgs[i+1].startsWith("-")) {
+                            i++;
+                        }
+                    }
+                    continue;
+            }
+            args.add(progArgs[i]);
+        }
 
-        final String[] fromManifest = manifest.toProgramArgArray();
         return args.toArray(String[]::new);
     }
 
+    public void blockFor(long timeout, TimeUnit unit) throws TimeoutException {
+        long deadline = System.currentTimeMillis() + unit.toMillis(timeout);
+
+        while (!GwtcJobState.isComplete(getState())) {
+            if (getMonitor().hasMessageForCaller()) {
+                flushMonitor();
+            } else {
+                LockSupport.parkNanos(10_000_000);
+            }
+            if (System.currentTimeMillis() > deadline) {
+                throw new TimeoutException("Waited " + timeout + " " + unit + " but job state was set to " + getState());
+            }
+        }
+        while (getMonitor().hasMessageForCaller()) {
+            flushMonitor();
+        }
+    }
+
+    /**
+     * Request a given resource from a completed Gwt compilation.
+     *
+     *
+     * @param fileName - The java-classpath name of the resource to load
+     * @param callback - The callback to notify upon completion
+     * @return - A DoUnsafe which will block until the callback has been called.
+     */
+    public DoUnsafe requestResource(String fileName, In2<URL, Throwable> callback) {
+        synchronized (resourceCallbacks) {
+            resourceCallbacks.add(fileName, callback);
+        }
+        getMonitor().writeAsCaller(
+            GwtcJobMonitor.JOB_J2CL + fileName
+        );
+        return ()-> {
+            final IntTo<In2<URL, Throwable>> callbacks = resourceCallbacks.get(fileName);
+            while (callbacks.contains(callback)) {
+                synchronized (resourceCallbacks) {
+                    resourceCallbacks.wait();
+                }
+            }
+        };
+    }
 }

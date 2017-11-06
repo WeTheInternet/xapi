@@ -7,6 +7,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import xapi.dev.X_Gwtc;
+import xapi.dev.gwtc.api.GwtcJobMonitor;
 import xapi.dev.gwtc.api.GwtcProjectGenerator;
 import xapi.dev.gwtc.api.GwtcService;
 import xapi.dev.gwtc.impl.GwtcManifestImpl;
@@ -92,6 +93,7 @@ public class GwtcEntryPointTest {
     manifest.setLogLevel(Type.WARN);
     manifest.setUseCurrentJvm(false);
     manifest.addSystemProp("gwt.usearchives=false");
+    manifest.setLogFile(GwtcJobMonitor.STD_OUT_TO_STD_ERR);
     Assert.assertEquals(0, gwtc.compile(manifest));
   }
 

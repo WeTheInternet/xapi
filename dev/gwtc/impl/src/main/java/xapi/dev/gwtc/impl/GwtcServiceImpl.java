@@ -4,12 +4,12 @@ import xapi.annotation.compile.Dependency;
 import xapi.annotation.inject.InstanceDefault;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
-import xapi.dev.api.ExtensibleClassLoader;
-import xapi.dev.api.MavenLoader;
+import xapi.dev.impl.ExtensibleClassLoader;
+import xapi.dev.impl.ReflectiveMavenLoader;
 import xapi.dev.gwtc.api.AnnotatedDependency;
-import xapi.dev.gwtc.api.GwtcJobManager;
+import xapi.dev.gwtc.api.GwtcJob;
+import xapi.dev.gwtc.api.GwtcJobMonitor.CompileMessage;
 import xapi.dev.gwtc.api.GwtcProjectGenerator;
-import xapi.dev.gwtc.api.GwtcProjectGeneratorAbstract;
 import xapi.dev.gwtc.api.GwtcService;
 import xapi.dev.source.ClassBuffer;
 import xapi.file.X_File;
@@ -18,20 +18,16 @@ import xapi.fu.Do.DoUnsafe;
 import xapi.fu.In2.In2Unsafe;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
-import xapi.fu.iterate.EmptyIterator;
 import xapi.gwtc.api.CompiledDirectory;
 import xapi.gwtc.api.GwtManifest;
 import xapi.gwtc.api.Gwtc;
 import xapi.gwtc.api.GwtcProperties;
 import xapi.gwtc.api.ServerRecompiler;
-import xapi.io.api.SimpleLineReader;
+import xapi.jre.process.ConcurrencyServiceJre;
 import xapi.log.X_Log;
 import xapi.model.X_Model;
 import xapi.mvn.api.MvnDependency;
-import xapi.process.X_Process;
 import xapi.reflect.X_Reflect;
-import xapi.shell.X_Shell;
-import xapi.shell.api.ShellSession;
 import xapi.test.junit.JUnit4Runner;
 import xapi.test.junit.JUnitUi;
 import xapi.util.X_Debug;
@@ -60,13 +56,11 @@ import static xapi.fu.iterate.SingletonIterator.singleItem;
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.dev.Compiler;
-import com.google.gwt.dev.GwtCompiler;
 
 @Gwtc(propertiesLaunch=@GwtcProperties)
 @InstanceDefault(implFor=GwtcService.class)
 public class GwtcServiceImpl extends GwtcServiceAbstract {
 
-  private String binDir;
 
   Pattern SPECIAL_DIRS = Pattern.compile(
       "(" + Pattern.quote(Dependency.DIR_BIN) + ")|" +
@@ -75,7 +69,9 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
   );
 
   private final StringTo<GwtcJobStateImpl> runningCompiles;
-  private final StringTo<GwtcJobManager> jobs;
+  private final StringTo<GwtcJobManagerAbstract> jobs;
+  private final GwtcJobManagerImpl manager;
+  private String binDir;
 
   public GwtcServiceImpl() {
     this(Thread.currentThread().getContextClassLoader());
@@ -84,17 +80,26 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
   public GwtcServiceImpl(ClassLoader resourceLoader) {
     super(resourceLoader);
     runningCompiles = X_Collect.newStringMap(GwtcJobStateImpl.class);
-    jobs = X_Collect.newStringMap(GwtcJobManager.class);
+    jobs = X_Collect.newStringMap(GwtcJobManagerAbstract.class);
+    manager = new GwtcJobManagerImpl(this);
   }
 
-
+  @Override
+  public GwtcJobManagerAbstract getJobManager() {
+    return manager;
+  }
 
   @Override
   public void doCompile(
-      GwtManifest manifest, long timeout, TimeUnit unit, In2<CompiledDirectory, Throwable> callback
+      boolean avoidWork, GwtManifest manifest, long timeout, TimeUnit unit, In2<CompiledDirectory, Throwable> callback
   ) {
-
-    final GwtcJobManager manager = jobs.getOrCreateFrom(manifest.getModuleName(), GwtcJobManagerImpl::new, this);
+    if (avoidWork && manager.getStatus(manifest.getModuleName()) == CompileMessage.Success) {
+      CompiledDirectory dir = manifest.getCompileDirectory();
+      if (dir != null) {
+        callback.in(dir, null);
+        return;
+      }
+    }
     manager.compileIfNecessary(manifest, callback);
     if (unit != null) {
       try {
@@ -106,29 +111,6 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
   }
 
   @Override
-  public void compile(GwtManifest manifest, long timeout, TimeUnit unit, In2<Integer, Throwable> callback) {
-    final In2Out1<Long, TimeUnit, Integer> compilation = doCompile(manifest);
-    Lazy<Integer> doCompile = Lazy.deferred1(()->{
-      boolean called = false;
-      try {
-        final Integer result = compilation.io(timeout, unit);
-        called = true;
-        callback.in(result, null);
-        return result;
-      } catch (Throwable t) {
-        if (!called) {
-          callback.in(-1, t);
-        }
-        throw t;
-      }
-
-    });
-    X_Process.runWhenReady(doCompile, result->{
-      callback.in(result, null);
-    });
-  }
-
-  @Override
   public GwtcJobStateImpl recompile(
       GwtManifest manifest,
       Long millisToWait,
@@ -136,6 +118,7 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
   ) {
 
     manifest.setRecompile(true);
+
     String id = manifest.getModuleName();
     GwtcJobStateImpl job = runningCompiles.getOrCreate(id, module ->
       new GwtcJobStateImpl(manifest, GwtcServiceImpl.this));
@@ -146,7 +129,7 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
   }
 
   @Override
-  public URLClassLoader resolveClasspath(GwtManifest manifest, String compileHome) {
+  public URLClassLoader resolveClasspath(GwtManifest manifest) {
     X_Log.info(GwtcServiceImpl.class, "Starting gwt compile", manifest.getModuleName());
     X_Log.debug(getClass(), manifest);
 
@@ -162,7 +145,7 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
   }
 
   @Override
-  public MavenLoader getMavenLoader() {
+  public ReflectiveMavenLoader getMavenLoader() {
     return this;
   }
 
@@ -256,101 +239,7 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
     }
   }
 
-  protected In2Out1<Long, TimeUnit, Integer> doCompile(GwtManifest manifest) {
-    String gwtHome = generateCompile(manifest);
-    // Logging
-    X_Log.info(GwtcServiceImpl.class, "Starting gwt compile", manifest.getModuleName());
-    X_Log.trace(manifest);
-    manifest.setRecompile(false);
-    final String[] programArgs = manifest.toProgramArgArray();
-    final String[] jvmArgs = manifest.toJvmArgArray();
-    X_Log.trace("Args: java ", jvmArgs, programArgs);
-    resolveClasspath(manifest, gwtHome);
-    final String[] classpath = manifest.toClasspathFullCompile(this);
-    X_Log.debug("Requested Classpath\n", classpath);
-
-    In1<Integer> cleanup = prepareCleanup(manifest);
-
-    if (manifest.isUseCurrentJvm()) {
-      // this sanity check is expensive...
-      assert runtimeContainsClasspath(manifest.getGenDir(), classpath);
-      // TODO launch a worker thread for us to block on...
-      // Preferably using a brand new URLClassLoader
-      URL[] urls = fromClasspath(classpath);
-
-      URLClassLoader loader = manifestBackedClassloader(urls, manifest);
-
-      Mutable<Integer> code = new Mutable<>();
-      Thread t = new Thread(()->{
-        final boolean success = GwtCompiler.doCompile(programArgs);
-        code.in(success ? 0 : 1);
-        if (success) {
-          manifest.computeCompileDirectory();
-        }
-        cleanup.in(code.out1());
-      });
-      t.setContextClassLoader(loader);
-      t.start();
-      In2Unsafe<Long, TimeUnit> blocker= (sec, unit) ->{
-        try {
-          t.join(unit.toMillis(sec));
-        } catch (InterruptedException e) {
-          throw X_Debug.rethrow(e);
-        }
-      };
-      return blocker.supply1AfterRead(code);
-    } else {
-      ShellSession controller
-          = X_Shell.launchJava(GwtCompiler.class,
-          classpath,
-          jvmArgs,
-          programArgs
-      );
-      controller.stdErr(new SimpleLineReader() {
-        @Override
-        public void onLine(String errLog) {
-          warn("[ERROR] "+errLog);
-        }
-      });
-      controller.stdOut(new SimpleLineReader() {
-        @Override
-        public void onLine(String logLine) {
-          info(logLine);
-        }
-      });
-      controller.onFinished(session->{
-        int result = session.join();
-        if (result == 0) {
-          // successful compile; update compile dir
-          manifest.computeCompileDirectory();
-        }
-        cleanup.in(result);
-      });
-      return controller::block;
-    }
-  }
-
   private URLClassLoader manifestBackedClassloader(URL[] urls, GwtManifest manifest) {
-//     return new URLClassLoader(urls, superLoader(manifest)) {
-//      @Override
-//      public URL getResource(String name) {
-//        URL url = super.getResource(name);
-//        if (url == null) {
-//          // Egregious hack; when running in the same jvm, the classloader is not able to use
-//          // the caller's classloader to load our newly generated resources out of our generated folder,
-//          // so, we resort to manually looking up any failed resource loads here, in the classloader.
-//          try {
-//            File f = new File(inGeneratedDirectory(manifest, name));
-//            if (f.exists()) {
-//              return f.toURI().toURL();
-//            }
-//          } catch (IOException e) {
-//            X_Log.warn(GwtcServiceImpl.class, "Failure to load resources for " + name);
-//          }
-//        }
-//        return url;
-//      }
-//    };
     final ExtensibleClassLoader loader = new ExtensibleClassLoader(urls, superLoader(manifest));
 
     loader.addResourceFinder(name-> {
@@ -367,12 +256,13 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
     return ensureMeetsMinimumRequirements(loader);
   }
 
-  private URLClassLoader ensureMeetsMinimumRequirements(ExtensibleClassLoader classpath) {
+  @Override
+  public URLClassLoader ensureMeetsMinimumRequirements(URLClassLoader classpath) {
     // A valid classpath (currently) must have at least two available dependencies:
     // Our Gwtc impl infrastructure, and a gwt compiler (of some sort).
     // We are going to leave the selection of which gwt compiler up to subtypes,
     // with the sane default of a standard GWT 2.X compilation.
-    boolean needsXapiGwtcImpl = false, needsXapiGwtcApi = false, needsGwtDev = false, needsGwtUser = false;
+    boolean needsXapiGwtcImpl = false, needsXapiGwtcApi = false, needsGwtDev = false, needsGwtUser = false, needsJreProcess = false;
 
     try {
       classpath.loadClass(GwtcService.class.getName());
@@ -398,7 +288,13 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
       // No class found.  We'll need to add one
       needsGwtDev = true;
     }
-    if (needsGwtUser || needsGwtDev || needsXapiGwtcApi || needsXapiGwtcImpl ) {
+    try {
+      classpath.loadClass(ConcurrencyServiceJre.class.getName());
+    } catch (ClassNotFoundException e) {
+      // No class found.  We'll need to add one
+      needsJreProcess = true;
+    }
+    if (needsGwtUser || needsGwtDev || needsXapiGwtcApi || needsXapiGwtcImpl || needsJreProcess) {
       // We'll need to prepare a wrapper around classloader...
       ChainBuilder<Out1<Iterable<String>>> urls = Chain.startChain();
       if (needsGwtDev) {
@@ -412,10 +308,17 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
       if (needsXapiGwtcImpl) {
         final MvnDependency dep = getDependency("xapi-gwtc-impl");
         urls.add(downloadDependency(dep));
-      } else if (needsXapiGwtcApi) {
-        final MvnDependency dep = getDependency("xapi-gwtc-api");
-        urls.add(downloadDependency(dep));
+      } else {
+        if (needsXapiGwtcApi) {
+          final MvnDependency dep = getDependency("xapi-gwtc-api");
+          urls.add(downloadDependency(dep));
+        }
+        if (needsJreProcess) {
+          final MvnDependency dep = getDependency("xapi-jre-process");
+          urls.add(downloadDependency(dep));
+        }
       }
+
       final URL[] arr = urls
           .map(Out1::out1)
           .flatten(MappedIterable::mapped)
@@ -444,12 +347,6 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
     return Thread.currentThread().getContextClassLoader();
   }
 
-  @Override
-  public int compile(GwtManifest manifest) {
-    return doCompile(manifest)
-      .io(600L, TimeUnit.SECONDS);
-  }
-
   private boolean runtimeContainsClasspath(String genDir, String[] classpath) {
     final URL[] runtimeCp = ((URLClassLoader) getClass().getClassLoader()).getURLs();
     X_Log.debug("Runtime cp", runtimeCp);
@@ -471,19 +368,20 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
   }
 
   @Override
-  public String generateCompile(GwtManifest manifest) {
+  public void generateCompile(GwtManifest manifest) {
     final GwtcProjectGenerator project = getProject(manifest.getModuleName());
-    return project.generateCompile(manifest);
+    project.generateCompile(manifest);
   }
 
   public GwtcProjectGenerator getProject(String moduleName, ClassLoader resources) {
     final ClassLoader loader = resources == null ? Thread.currentThread().getContextClassLoader() : resources;
     return projects.getOrCreate(moduleName, mod->
-      new GwtcProjectGeneratorAbstract(this, loader, mod) {
+      new GwtcProjectGeneratorDefault(this, loader, mod) {
         @Override
         protected void generateReportError(ClassBuffer classBuffer) {
           super.generateReportError(classBuffer);
           addClass(JUnit4Runner.class);
+          // This needs to go in GwtcServiceJUnit
           junitLoader = classBuffer.createInnerClass("private final class JUnit extends JUnitUi")
               .createMethod("public void loadAllTests()");
 
@@ -553,7 +451,12 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
       if (!new File(value).isAbsolute()) {
         value = manifest.getRelativeRoot() + File.separator + value;
       }
-      return singleItem(value);
+      try {
+        return singleItem(new File(value).getCanonicalPath());
+      } catch (IOException e) {
+        X_Log.warn(GwtcServiceImpl.class, "Failed to canonicalize ", value, e);
+        return singleItem(value);
+      }
     };
   }
 

@@ -1,19 +1,15 @@
 package xapi.dev.gwtc.impl;
 
-import com.sun.tools.javac.resources.compiler;
 import org.junit.Assert;
 import org.junit.Test;
 import xapi.dev.gwtc.api.GwtcJobMonitor;
 import xapi.fu.Out1;
-import xapi.process.X_Process;
 import xapi.reflect.X_Reflect;
 
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 
@@ -55,7 +51,6 @@ public class GwtcJobMonitorTest {
             assertEquals("hello", received[0]);
             remote.writeAsCompiler("world");
             try {
-Thread.sleep(1000);
                 final String fromCaller = caller.take();
                 received[1] = fromCaller;
                 assertEquals("I said hello!", received[1]);

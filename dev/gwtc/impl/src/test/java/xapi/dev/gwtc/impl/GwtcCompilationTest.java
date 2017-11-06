@@ -6,6 +6,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
+import xapi.dev.gwtc.api.GwtcJob;
 import xapi.dev.gwtc.api.GwtcJobMonitor;
 import xapi.dev.gwtc.api.GwtcProjectGenerator;
 import xapi.dev.gwtc.api.GwtcService;
@@ -15,7 +16,6 @@ import xapi.gwtc.api.GwtManifest;
 import xapi.inject.X_Inject;
 import xapi.log.X_Log;
 import xapi.test.gwtc.cases.CaseEntryPoint;
-import xapi.util.X_Debug;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -73,7 +73,7 @@ public class GwtcCompilationTest {
         final GwtcProjectGenerator project = this.project.out1();
         final GwtManifest manifest = project.getManifest();
         configureProject(project);
-        gwtc.doCompile(manifest, 5, TimeUnit.MINUTES, (success, fail)->{
+        gwtc.doCompile(manifest, 80, TimeUnit.MINUTES, (success, fail)->{
             result[0] = success;
             failure[0] = fail;
         });
@@ -87,10 +87,12 @@ public class GwtcCompilationTest {
         final GwtManifest manifest = project.getManifest();
         project.addClass(CaseEntryPoint.class);
         manifest.setUseCurrentJvm(options.localProcess);
+//        manifest.setDebugPort(7788);
+//        manifest.addDependency(X_Reflect.getFileLoc(GwtcServiceImpl.class));
         if (options.localProcess) {
             manifest.setIsolateClassLoader(!options.sharedClassloader);
         }
-        manifest.setLogLevel(Type.TRACE);
+        manifest.setLogLevel(Type.INFO);
         manifest.setLogFile(options.localProcess ? GwtcJobMonitor.NO_LOG_FILE : GwtcJobMonitor.STD_OUT_TO_STD_ERR);
     }
 
@@ -113,7 +115,7 @@ public class GwtcCompilationTest {
         }
     }
 
-    @Parameters
+    @Parameters(name = "{0}")
     public static Collection<TestOptions> permutations() {
         final Collection<TestOptions> list = new ArrayList<>();
         list.add(new TestOptions(true, true));
@@ -123,11 +125,23 @@ public class GwtcCompilationTest {
         return list;
     }
 
+    private GwtcJob getJob() {
+        return service.out1().getJobManager().getJob(
+            project.out1().getModuleName()
+        );
+    }
+
     @Test
     public void testCompilation() {
+        X_Log.info(GwtcCompilationTest.class, "\n\n\nRunning compilation ", options, "\n\n");
         final CompiledDirectory result = compilerResult.out1();
         assertNotNull("", result);
         // Now... to handle recompilation :-)
+
+        // for now, just tell any running job to shutdown...
+        X_Log.info(GwtcCompilationTest.class, "Shutting down job after successful completion. Current state" + getJob().getState());
+        getJob().destroy();
+        project.out1().getManifest().setOnline(false);
     }
 
 }

@@ -1,48 +1,21 @@
 package xapi.dev.gwtc.impl;
 
 import xapi.dev.gwtc.api.GwtcJobMonitor;
-import xapi.fu.In1;
 import xapi.fu.In1.In1Unsafe;
-import xapi.fu.Out1;
 import xapi.fu.Out1.Out1Unsafe;
 import xapi.fu.X_Fu;
-import xapi.fu.iterate.ArrayIterable;
-import xapi.gwtc.api.CompiledDirectory;
-import xapi.gwtc.api.GwtManifest;
 import xapi.io.X_IO;
-import xapi.log.X_Log;
-import xapi.model.api.PrimitiveSerializer;
-import xapi.model.impl.PrimitiveSerializerDefault;
 import xapi.reflect.X_Reflect;
-import xapi.source.X_Modifier;
-import xapi.source.api.CharIterator;
 import xapi.util.X_Debug;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.net.URLClassLoader;
-import java.util.SortedSet;
 import java.util.concurrent.BlockingDeque;
-import java.util.concurrent.LinkedBlockingDeque;
 
 import static xapi.fu.iterate.ArrayIterable.iterate;
-
-import com.google.gwt.dev.CompileTaskRunner;
-import com.google.gwt.dev.CompileTaskRunner.CompileTask;
-import com.google.gwt.dev.Compiler;
-import com.google.gwt.dev.Compiler.ArgProcessor;
-import com.google.gwt.dev.CompilerOptions;
-import com.google.gwt.dev.CompilerOptionsImpl;
-import com.google.gwt.dev.cfg.BindingProperty;
-import com.google.gwt.dev.codeserver.CompileStrategy;
-import com.google.gwt.reflect.shared.GwtReflect;
 
 /**
  * This runs in the same classpath as the running Gwt compile, and is responsible
@@ -176,7 +149,7 @@ public class GwtcJobMonitorImpl implements GwtcJobMonitor {
             final Method readFromCompiler = foreignClass.getMethod("readAsCompiler");
             final Method hasMessageForCompiler = foreignClass.getMethod("hasMessageForCompiler");
 
-            final Class<?> statusClass = loader.loadClass(CompileStatus.class.getName());
+            final Class<?> statusClass = loader.loadClass(CompileMessage.class.getName());
             final ClassLoader callingLoader = Thread.currentThread().getContextClassLoader();
             final Class<?> monitorClass = loader.loadClass(GwtcJobMonitor.class.getName());
             assert loader.loadClass("java.lang.Enum") == Enum.class;

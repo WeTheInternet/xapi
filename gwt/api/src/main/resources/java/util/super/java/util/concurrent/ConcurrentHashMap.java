@@ -16,6 +16,7 @@
 
 package java.util.concurrent;
 
+import java.io.Serializable;
 import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -33,7 +34,7 @@ import java.util.Set;
  * @author Hayward Chan
  */
 public class ConcurrentHashMap<K, V>
-    extends AbstractMap<K, V> implements ConcurrentMap<K, V> {
+    extends AbstractMap<K, V> implements ConcurrentMap<K, V>, Cloneable, Serializable {
 
   private final Map<K, V> backingMap;
 

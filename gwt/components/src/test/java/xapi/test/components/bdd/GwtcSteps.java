@@ -31,7 +31,6 @@ import xapi.dev.components.XapiWebComponentGenerator;
 import xapi.dev.gen.FileBasedSourceHelper;
 import xapi.dev.gwtc.api.GwtcProjectGenerator;
 import xapi.dev.gwtc.api.GwtcService;
-import xapi.dev.gwtc.impl.GwtcManifestImpl;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.dev.source.SourceBuilder.JavaType;
