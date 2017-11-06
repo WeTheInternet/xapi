@@ -1,11 +1,12 @@
-package xapi.dev.api;
+package xapi.dev.impl;
 
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
+import xapi.dev.api.DynamicUrl;
+import xapi.dev.impl.dynamic.DynamicUrlBuilder;
 import xapi.fu.Immutable;
 import xapi.fu.In1Out1;
 import xapi.fu.Lazy;
-import xapi.fu.Out1;
 import xapi.fu.X_Fu;
 import xapi.fu.has.HasLock;
 import xapi.io.X_IO;
@@ -44,9 +45,10 @@ public class ExtensibleClassLoader extends URLClassLoader implements HasLock {
     private final StringTo<Class<?>> loadedClasses = X_Collect.newStringMap(Class.class, MUTABLE_CONCURRENT);
     private final StringTo<URL> loadedResources = X_Collect.newStringMap(URL.class, MUTABLE_CONCURRENT);
     private final Lazy<DynamicUrl> myUrl = Lazy.deferred1(()->{
-        DynamicUrl url = new DynamicUrl("cl" + System.identityHashCode(this));
-        url.withValue(this::getResourceUtf8);
-        return url;
+        DynamicUrlBuilder builder = new DynamicUrlBuilder();
+        builder.setPath("cl" + System.identityHashCode(this));
+        builder.withValue(this::getResourceUtf8);
+        return builder.build();
     });
 
     public ExtensibleClassLoader() {

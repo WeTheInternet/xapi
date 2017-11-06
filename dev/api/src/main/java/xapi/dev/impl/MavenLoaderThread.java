@@ -1,4 +1,4 @@
-package xapi.dev.api;
+package xapi.dev.impl;
 
 import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
@@ -22,7 +22,7 @@ public class MavenLoaderThread extends Thread {
     final StringTo<String[]> results;
 
     public MavenLoaderThread() {
-        super("MavenLoader");
+        super("ReflectiveMavenLoader");
         pendingCoords = X_Collect.newList(String.class, X_Collect.MUTABLE_CONCURRENT);
         results = X_Collect.newStringMap(String[].class, X_Collect.MUTABLE_CONCURRENT);
         setDaemon(true);
@@ -57,10 +57,10 @@ public class MavenLoaderThread extends Thread {
                     }
                 }
             } catch (InterruptedException e) {
-                X_Log.error(MavenLoader.class, "MavenLoader interrupted; returning immediately");
+                X_Log.error(ReflectiveMavenLoader.class, "ReflectiveMavenLoader interrupted; returning immediately");
                 return;
             } catch (Exception e) {
-                X_Log.error(MavenLoader.class, "Error draining maven downloads", e);
+                X_Log.error(ReflectiveMavenLoader.class, "Error draining maven downloads", e);
             }
         }
     }

@@ -1,6 +1,7 @@
 package xapi.dev.api;
 
 import org.junit.Test;
+import xapi.dev.impl.ExtensibleClassLoader;
 import xapi.fu.Do;
 import xapi.reflect.X_Reflect;
 

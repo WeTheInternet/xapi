@@ -2,6 +2,7 @@ package xapi.dev.api;
 
 import org.junit.Assert;
 import org.junit.Test;
+import xapi.dev.impl.ReflectiveMavenLoader;
 import xapi.fu.MappedIterable;
 import xapi.fu.Mutable;
 import xapi.fu.Out1;
@@ -20,13 +21,13 @@ import static xapi.mvn.X_Maven.downloadDependencies;
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/26/17.
  */
-public class MavenLoaderTest {
+public class ReflectiveMavenLoaderTest {
 
     @Test
     public void testSimpleLoad() {
         // Since we are doing our testing in the uber module,
-        // X_Maven will be on the classpath, so MavenLoader will have a much easier time.
-        MavenLoader loader = new MavenLoader();
+        // X_Maven will be on the classpath, so ReflectiveMavenLoader will have a much easier time.
+        ReflectiveMavenLoader loader = new ReflectiveMavenLoader();
         final MvnDependency dep = loader.getDependency("xapi-fu");
         final Out1<Iterable<String>> result = loader.downloadDependency(dep);
         final Iterable<String> items = result.out1();
@@ -43,8 +44,8 @@ public class MavenLoaderTest {
 
     @Test
     public void testIsolatedLoad() throws Throwable {
-        // Lets make it harder for MavenLoader...  take away the uber module classpath.
-        MavenLoader loader = new MavenLoader();
+        // Lets make it harder for ReflectiveMavenLoader...  take away the uber module classpath.
+        ReflectiveMavenLoader loader = new ReflectiveMavenLoader();
         Mutable<Throwable> failure = new Mutable<>(null);
         final HashSet<String> dedup = new HashSet<>();
         final URL[] classpath =
@@ -70,9 +71,9 @@ public class MavenLoaderTest {
 class IsolatedThread extends Thread {
     @Override
     public void run() {
-        // We are going to force MavenLoader to find a jar...
+        // We are going to force ReflectiveMavenLoader to find a jar...
         // (If your local maven repo is clean, we will download from central)
-        MavenLoader loader = new MavenLoader();
+        ReflectiveMavenLoader loader = new ReflectiveMavenLoader();
         final MvnDependency dep = loader.getDependency("xapi-dev-javac");
         final SizedIterable<String> result = MappedIterable.mapped(loader.downloadDependency(dep).out1())
             .counted();

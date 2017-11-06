@@ -1,10 +1,7 @@
 package xapi.dev.api;
 
-import xapi.dev.api.dynamic.Handler;
 import xapi.dev.source.NameGen;
-import xapi.fu.Immutable;
-import xapi.fu.In1Out1;
-import xapi.fu.Out1;
+import xapi.fu.Do;
 
 /**
  *
@@ -13,33 +10,39 @@ import xapi.fu.Out1;
  */
 public class DynamicUrl {
 
-    private final String id;
+    public static final String LIST_ALL = "$ls";
+    public static final String LIST_ALL_URL = "dynamic:$ls";
 
-    public DynamicUrl(NameGen id) {
-        this(id.newName("d/"));
+    private final String path;
+    private final Do clearHandler;
+
+    public DynamicUrl(NameGen nameGen) {
+        this(nameGen, Do.NOTHING);
     }
 
-    public DynamicUrl(String id) {
-        this.id = id;
+    public DynamicUrl(String path) {
+        this(path, Do.NOTHING);
     }
 
-    public In1Out1<String, String> withValue(String value) {
-        return withValue(Immutable.immutable1(value));
+    public DynamicUrl(NameGen nameGen, Do clearHandler) {
+        this(NameGen.notNull(nameGen).newName("d/"), clearHandler);
     }
 
-    public In1Out1<String, String> withValue(Out1<String> value) {
-        return withValue(value.ignoreIn1());
-    }
-
-    public In1Out1<String, String> withValue(In1Out1<String, String> value) {
-        return Handler.registerDynamicUrl(id, value);
-    }
-
-    public void clear() {
-        Handler.clearDynamicUrl(id);
+    public DynamicUrl(String path, Do clearHandler) {
+        this.path = path;
+        assert clearHandler != null : "Null clearHandler not supported";
+        this.clearHandler = clearHandler;
     }
 
     public String getUrl() {
-        return "dynamic:" + id;
+        return "dynamic:" + path;
+    }
+
+    public void clear() {
+        clearHandler.done();
+    }
+
+    public Do getClearHandler() {
+        return clearHandler;
     }
 }
