@@ -81,7 +81,6 @@ public class ModelSessionTest {
     @Test
     public void testStaticInit() throws Throwable {
         TestLambda l = ()->-1;
-        final URL loc = new URL("file:" + X_Reflect.getFileLoc(ClassloaderTest.class));
         TestLambda original = ClassloaderTest.lambda;
         Throwable[] failure = {null};
         final Class<TestLambda> lambdaClass = TestLambda.class;
@@ -102,11 +101,13 @@ public class ModelSessionTest {
             }
         });
         ClassLoader isolate = new URLClassLoader(new URL[]{}, null);
+        final URL testLoc = new URL("file:" + X_Reflect.getFileLoc(ClassloaderTest.class) + "/");
+        final URL[] urls = {testLoc};
         Thread space = new Thread(Do.unsafe(()->{
             int[] first = {0}, second = {0}, third = {0};
-            ClassLoader cl1 = new URLClassLoader(new URL[]{loc}, null);
-            ClassLoader cl2 = new URLClassLoader(new URL[]{loc}, isolate);
-            ClassLoader cl3 = new URLClassLoader(new URL[]{loc}, isolate);
+            ClassLoader cl1 = new URLClassLoader(urls, null);
+            ClassLoader cl2 = new URLClassLoader(urls, isolate);
+            ClassLoader cl3 = new URLClassLoader(urls, isolate);
             final In1Unsafe<int[]> task = into->{
                 final ClassLoader myCl = Thread.currentThread().getContextClassLoader();
                 final Class<?> cls = myCl.loadClass(ClassloaderTest.class.getName());

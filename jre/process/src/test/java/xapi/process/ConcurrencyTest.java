@@ -113,8 +113,8 @@ public class ConcurrencyTest {
         timeout.set(false);
     });
     first.start();
-    trySleep(50);
-    kill(first, 1500);
+    trySleep(150);
+    kill(first, 2500);
     Assert.assertTrue("Did not run",ran.get());
     Assert.assertTrue("Timing failed",timeout.get());
   }

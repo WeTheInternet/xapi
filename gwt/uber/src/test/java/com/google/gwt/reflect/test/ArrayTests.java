@@ -6,6 +6,7 @@ import java.util.Arrays;
 import org.junit.Test;
 
 import com.google.gwt.reflect.client.strategy.ReflectionStrategy;
+import com.google.gwt.reflect.shared.GwtReflect;
 
 /**
  * @author James X. Nelson (james@wetheinter.net, @james)
@@ -20,7 +21,7 @@ public class ArrayTests extends AbstractReflectionTest {
     long[] longs = (long[])Array.newInstance(long.class, 5);
     assertEquals(longs.length, 5);
     assertEquals(longs.getClass(), long[].class);
-    longs[0] = 1;   
+    longs[0] = 1;
     Array.setLong(longs, 1, 2);
     Array.setLong(longs, 2, longs[0] + 2);
     Array.setLong(longs, 3, Array.getLong(longs, 2) +1);
@@ -28,18 +29,19 @@ public class ArrayTests extends AbstractReflectionTest {
     assertTrue("Arrays not equals", Arrays.equals(longs, new long[] {1,2,3,4,5}));
   }
 
+
   @Test
   public void testSingleDimComplex() {
     long[][] longs = (long[][])Array.newInstance(long[].class, 5);
-    assertEquals(longs.length, 5);
-    assertEquals(longs[0], null);
-    assertEquals(longs.getClass(), long[][].class);
+    assertEquals(5, longs.length);
+    assertEquals(null, longs[0]);
+    assertEquals(long[][].class, longs.getClass());
 
     long[] subArr = longs[0] = new long[3];
     subArr[0] = 1;
     Array.setLong(subArr, 1, 2);
     Array.setLong(subArr, 2, subArr[0] + 2);
-    
+
     Array.set(longs, 1, new long[3]);
     subArr = (long[])Array.get(longs, 1);
     Array.setLong(subArr, 0, 1);
@@ -49,14 +51,14 @@ public class ArrayTests extends AbstractReflectionTest {
       new long[]{1,2,3},new long[]{1,2,3}, null, null, null
     }));
   }
-  
+
   @Test
   public void testArrayEqualsSanity() {
     long[][] arrays = new long[][]{
-      new long[]{1,2}, new long[]{3,4}  
+      new long[]{1,2}, new long[]{3,4}
     }
     , arrays2 = new long[][]{
-        new long[]{0,2}, new long[]{3,4}  
+        new long[]{0,2}, new long[]{3,4}
     };
     assertTrue("Arrays not equals", Arrays.deepEquals(arrays, arrays));
     assertFalse("Arrays.deepEquals fail", Arrays.deepEquals(arrays, arrays2));
@@ -93,7 +95,7 @@ public class ArrayTests extends AbstractReflectionTest {
       new long[]{1,2,3},new long[]{1,2,3}
     }));
   }
-  
+
   @Test
   public void testMultiDimObject() {
     Long[][] longs = (Long[][])Array.newInstance(Long.class, 2, 3);
@@ -118,8 +120,76 @@ public class ArrayTests extends AbstractReflectionTest {
 
   @Test
   public void testComplexDims() {
-//    long[][][][] longs = GwtReflect.newArray(long[][].class, 2, 3);
-//    long[][] one = new long[0][], two = new long[1][], three = new long[2][];
+    long[][][][] longs = (long[][][][]) Array.newInstance(long[][].class, 2, 3);
+    long[][][][] longsNone = (long[][][][]) Array.newInstance(long.class, 2, 1, 2, 3);
+    long[][][][] longsOne = (long[][][][]) Array.newInstance(long[].class, 2, 3, 2);
+    long[][][][] longsTwo = (long[][][][]) Array.newInstance(long[][].class, 2, 3);
+    long[][][][] longsThree = (long[][][][]) Array.newInstance(long[][][].class, 2);
+
+    assertTrue("longsNone not equals", Arrays.deepEquals(longsNone, new long[][][][]{
+        {
+            {
+                {0, 0, 0},
+                {0, 0, 0}
+            }
+        },
+        {
+            {
+                {0, 0, 0},
+                {0, 0, 0}
+            }
+        }
+    }));
+
+    assertTrue("longsOne not equals", Arrays.deepEquals(longsOne, new long[][][][]{
+        {
+            {null, null},
+            {null, null},
+            {null, null},
+        },
+        {
+            {null, null},
+            {null, null},
+            {null, null},
+        },
+    }));
+
+    assertTrue("longsTwo not equals", Arrays.deepEquals(longsTwo, new long[][][][]{
+        {
+            null,
+            null,
+            null,
+        },
+        {
+            null,
+            null,
+            null,
+        },
+    }));
+
+    assertTrue("longsThree not equals", Arrays.deepEquals(longsThree, new long[][][][]{
+        null,
+        null,
+    }));
+
+    // now do a little array manipulation to be sure those work
+
+    long[][] one = new long[0][], two = new long[1][], three = new long[][]{ { 1}, {1} };
+    Array.set(longs[0], 1, one);
+    longs[1][0] = two;
+    Array.set(longs[1], 1, three);
+    assertTrue("Arrays not equals", Arrays.deepEquals(longs, new long[][][][] {
+        {
+            null,
+            one,
+            null
+        },
+        {
+            two,
+            three,
+            null
+        }
+    }));
 
   }
 
