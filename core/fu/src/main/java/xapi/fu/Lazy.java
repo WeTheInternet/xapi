@@ -21,7 +21,7 @@ public class Lazy <T> implements Out1<T>, IsLazy {
   // This is volatile because the first read to this proxy will immutabilize the result of the constructot Out1,
   // thus, we want all other threads to notice that the Lazy has changed,
   // without calling the expensive synchronized proxy needed to safely "lock once" on a deferred value
-  private volatile Out1<T> proxy;
+  protected volatile Out1<T> proxy;
   private volatile boolean resolving;
 
   @Override
@@ -61,7 +61,7 @@ public class Lazy <T> implements Out1<T>, IsLazy {
     proxy = proxySupplier(supplier);
   }
 
-  private Out1<T> proxySupplier(Out1<T> supplier) {
+  protected Out1<T> proxySupplier(Out1<T> supplier) {
     // The constructor of Lazy closes over this constructor using this array as a writable reference.
     // Note that we are not putting this in a field because we don't want anyone to muck with it;
     final ProxySupplier<T>[] prox = new ProxySupplier[1];
