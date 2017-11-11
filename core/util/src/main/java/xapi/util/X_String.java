@@ -2,6 +2,7 @@ package xapi.util;
 
 import xapi.collect.api.CharPool;
 import xapi.fu.In1Out1;
+import xapi.fu.Out1;
 import xapi.fu.X_Fu;
 import xapi.inject.X_Inject;
 
@@ -388,6 +389,10 @@ public class X_String {
 
   public static String firstNotEmpty(String groupId1, String groupId2) {
     return isEmptyTrimmed(groupId1) ? groupId2 : groupId1;
+  }
+
+  public static String firstNotEmptyDeferred(String groupId1, Out1<String> groupId2) {
+    return isEmptyTrimmed(groupId1) ? groupId2.out1() : groupId1;
   }
 
   public static String firstNotEmpty(String first, String second, String ... rest) {

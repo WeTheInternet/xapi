@@ -2,8 +2,10 @@ package xapi.fu.iterate;
 
 import xapi.fu.Immutable;
 import xapi.fu.In1Out1;
+import xapi.fu.In1Out1.In1Out1Unsafe;
 import xapi.fu.MappedIterable;
 import xapi.fu.Out1;
+import xapi.fu.api.DoNotOverride;
 import xapi.fu.has.HasSize;
 
 import java.util.Iterator;
@@ -88,6 +90,12 @@ public interface SizedIterable <T> extends MappedIterable<T>, HasSize {
         return adaptSizedIterable(this, mapper);
     }
 
+    @Override
+    @DoNotOverride
+    default <To> SizedIterable<To> mapUnsafe(In1Out1Unsafe<T, To> mapper) {
+        return map(mapper);
+    }
+
     static <From, To> SizedIterable<To> adaptSizedIterable(SizedIterable<From> from, In1Out1<? super From, ? extends To> mapper) {
         return new SizedIterable<To>() {
             @Override
@@ -146,4 +154,5 @@ public interface SizedIterable <T> extends MappedIterable<T>, HasSize {
     default boolean isNotEmpty() {
         return MappedIterable.super.isNotEmpty();
     }
+
 }

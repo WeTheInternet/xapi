@@ -2,6 +2,9 @@ package xapi.collect.impl;
 
 import xapi.annotation.inject.InstanceDefault;
 import xapi.collect.api.Fifo;
+import xapi.fu.MappedIterable;
+import xapi.fu.iterate.SizedIterable;
+import xapi.fu.iterate.SizedIterator;
 import xapi.util.api.ConvertsValue;
 
 import java.io.Serializable;
@@ -9,12 +12,12 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
- * A simple, fast, threadsafe, one-way, single-linked list.
+ * A simple, (relatively) fast, threadsafe, one-way, single-linked list.
  *
  * This primitive collection eats nulls (ignores them on add),
  * it will only return null from take() when it is empty,
  * and it handles concurrency by synchronizing on a single object for the
- * whole collection.  A read in the middle of a write might get missed if
+ * whole collection.  An iteration in the middle of a write might miss live elements if
  * the timing is very close, but no reads will be missed it you call take()
  * until the fifo is drained.
  *
@@ -23,12 +26,13 @@ import java.util.NoSuchElementException;
  * @param <E> - The type of item stores in the fifo
  */
 @InstanceDefault(implFor=Fifo.class)
-public class SimpleFifo <E> implements Fifo<E>, Iterable<E>, Serializable{
+public class SimpleFifo <E> implements Fifo<E>, SizedIterable<E>, Serializable{
 
   private static final long serialVersionUID = 2525421548842680240L;
-  private class Itr implements Iterator<E> {
+  private class Itr implements SizedIterator<E> {
 
     Node<E> last = head, node = last;
+    int left, startSize = left = size;
 
     @Override
     public boolean hasNext() {
@@ -39,6 +43,7 @@ public class SimpleFifo <E> implements Fifo<E>, Iterable<E>, Serializable{
     public E next() {
       last = node;
       node = node.next;
+      left --;
       if (node == null)
         throw new NoSuchElementException();
       return node.item;
@@ -61,7 +66,13 @@ public class SimpleFifo <E> implements Fifo<E>, Iterable<E>, Serializable{
         node.next = null;//help gc
         node = last;
         size--;
+        startSize--;
       }
+    }
+
+    @Override
+    public int size() {
+      return (size-startSize) + left;
     }
   }
 
@@ -80,17 +91,17 @@ public class SimpleFifo <E> implements Fifo<E>, Iterable<E>, Serializable{
     }
 
     private static final long serialVersionUID = -4821223918445216546L;
-    public E item;
-    public Node<E> next;
+    public volatile E item;
+    public volatile Node<E> next;
     @Override
     public String toString() {
       return String.valueOf(item);
     }
   }
 
-  protected Node<E> head = new Node<>();
-  private transient Node<E> tail;
-  private int size;
+  protected final Node<E> head = new Node<>();
+  private volatile Node<E> tail;
+  private volatile int size;
 
   public SimpleFifo() {
     tail = head;
@@ -130,9 +141,16 @@ public class SimpleFifo <E> implements Fifo<E>, Iterable<E>, Serializable{
 
   @Override
   public void clear() {
-    head.next = null;
-    tail = head;
-    size = 0;
+    synchronized (head) {
+      head.next = null;
+      tail = head;
+      size = 0;
+    }
+  }
+
+  @Override
+  public boolean isNotEmpty() {
+    return head != tail;
   }
 
   @Override
@@ -211,9 +229,10 @@ public class SimpleFifo <E> implements Fifo<E>, Iterable<E>, Serializable{
   }
 
   @Override
-  public Iterator<E> iterator() {
+  public SizedIterator<E> iterator() {
     return new Itr();
   }
+
   @Override
   public Iterable<E> forEach() {
     return this;

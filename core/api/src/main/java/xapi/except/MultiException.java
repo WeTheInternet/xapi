@@ -6,7 +6,7 @@ import xapi.collect.impl.SimpleFifo;
 public class MultiException extends RuntimeException{
 
   private static final long serialVersionUID = -7586290946685197307L;
-  private Fifo<Throwable> throwables = new SimpleFifo<Throwable>();
+  private SimpleFifo<Throwable> throwables = new SimpleFifo<Throwable>();
 
   public MultiException() {
   }
@@ -29,7 +29,13 @@ public class MultiException extends RuntimeException{
     return throwables.forEach();
   }
 
-  @Override
+    @Override
+    public void printStackTrace() {
+        super.printStackTrace();
+        throwables.forAll(Throwable::printStackTrace);
+    }
+
+    @Override
   public String toString() {
     return super.toString() + "\n" +throwables.join("\n\n");
   }

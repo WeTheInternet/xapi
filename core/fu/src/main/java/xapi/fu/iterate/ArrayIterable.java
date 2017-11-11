@@ -81,6 +81,10 @@ public class ArrayIterable <E> implements SizedIterable <E> {
     return new ItrReverse();
   }
 
+  public SizedIterable<E> reversed() {
+    return SizedIterable.of(this::size, this::iteratorReverse);
+  }
+
   protected void remove(E key) {
     throw new UnsupportedOperationException("ArrayIterable does not support remove");
   }

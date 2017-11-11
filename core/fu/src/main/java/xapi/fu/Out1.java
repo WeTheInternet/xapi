@@ -189,6 +189,14 @@ public interface Out1<O> extends Rethrowable, Lambda, HasMutability {
     return factory.supply1Deferred(this).supplyDeferred(in1);
   }
 
+  default <In1, To> In1Out1<In1, To> mapDeferred(In2Out1<O, In1, To> factory) {
+    return factory.supply1Deferred(this);
+  }
+
+  default <In1, To> In1Out1<In1, To> mapImmediate(In2Out1<O, In1, To> factory) {
+    return factory.supply1Immediate(this);
+  }
+
   default <In, To> Out1<To> mapImmediate(In2Out1<O, In, To> factory, Out1<In> in1) {
     return factory.supply1(out1()).supplyDeferred(in1);
   }

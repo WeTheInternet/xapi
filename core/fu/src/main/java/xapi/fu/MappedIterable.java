@@ -300,7 +300,12 @@ public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
         // In case this iterator knows its size, we can skip a double-iterate
         final CountedIterator<T> counted = CountedIterator.count(this);
         T[] array = arrayCtor.io(counted.size());
-        return toArray(array);
+        // we will use our CountedIterator as source, in case our source
+        // iterator is (incorrectly) a single-use iterator.
+        for (int i = 0; i < array.length; i++) {
+            array[i] = counted.next();
+        }
+        return array;
     }
     default T[] toArray(T[] arr) {
         return toArray(arr, 0, arr.length);

@@ -3,6 +3,7 @@ package xapi.fu.java;
 import xapi.fu.ListLike;
 import xapi.fu.MapLike;
 import xapi.fu.SetLike;
+import xapi.fu.api.GwtIncompatible;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -69,6 +70,7 @@ public class X_Jdk {
         return toMap(new ConcurrentSkipListMap<>());
     }
 
+    @GwtIncompatible
     public static <V> ListLike<V> listArrayConcurrent() {
         return toList(new CopyOnWriteArrayList<>());
     }
@@ -97,4 +99,7 @@ public class X_Jdk {
         return toSet(Collections.synchronizedSet(new LinkedHashSet<V>()));
     }
 
+    public static boolean isEmpty(Collection<?> resources) {
+        return resources == null || resources.isEmpty();
+    }
 }
