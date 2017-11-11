@@ -25,16 +25,4 @@ import xapi.mvn.api.MvnDependency;
 @InstanceOverride(implFor = GwtcService.class, priority = 2)
 public class VertxGwtcService extends GwtcServiceImpl {
 
-    @Override
-    protected Out1<Iterable<String>> downloadFromMaven(Dependency dependency) {
-        MvnDependency dep = X_Model.create(MvnDependency.class);
-        dep.setGroupId(dependency.groupId());
-        dep.setArtifactId(dependency.value());
-        dep.setVersion(dependency.version());
-        dep.setClassifier(dependency.classifier());
-        if (dependency.specifiers().length > 0) {
-            dep.setPackaging(dependency.specifiers()[0].type());
-        }
-        return X_Maven.downloadDependencies(dep).map(X_Fu::downcast);
-    }
 }

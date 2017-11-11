@@ -147,7 +147,7 @@ public class GwtcRemoteProcessJob extends GwtcJob {
     }
 
     @Override
-    protected GwtcJobMonitor getMonitor() {
+    public GwtcJobMonitor getMonitor() {
         return monitor;
     }
 }

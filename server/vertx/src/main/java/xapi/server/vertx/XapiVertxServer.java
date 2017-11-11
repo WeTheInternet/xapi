@@ -774,7 +774,7 @@ public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
                                     }
                                     ind = newUrl.indexOf('/', ind+1);
                                     String fileName = newUrl.substring(ind+1);
-
+                                    done = true;
                                     job.requestResource(fileName, (url, fail)->{
                                         if (fail instanceof NotFoundException) {
                                             if (fileName.startsWith("gen/")) {

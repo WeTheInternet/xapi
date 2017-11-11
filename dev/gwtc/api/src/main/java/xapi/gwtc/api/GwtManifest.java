@@ -1204,7 +1204,7 @@ public class GwtManifest {
   }
 
   public String getRelativeRoot() {
-    return relativeRoot;
+    return relativeRoot == null ? "." : relativeRoot;
   }
 
   public void setRelativeRoot(String relativeRoot) {

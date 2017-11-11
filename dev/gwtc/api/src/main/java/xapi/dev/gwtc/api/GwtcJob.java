@@ -84,7 +84,7 @@ public abstract class GwtcJob implements Destroyable {
         resourceCallbacks = X_Collect.newStringMultiMap(In2.class);
     }
 
-    protected abstract GwtcJobMonitor getMonitor();
+    public abstract GwtcJobMonitor getMonitor();
 
     @Override
     public void destroy() {
@@ -139,7 +139,7 @@ public abstract class GwtcJob implements Destroyable {
                 });
             }
             if (callbackError != null) {
-                throw new RuntimeException(callbackError);
+                X_Fu.rethrow(callbackError);
             }
         } finally {
             callbackError = null;
@@ -176,7 +176,7 @@ public abstract class GwtcJob implements Destroyable {
         return directory;
     }
 
-    protected synchronized void flushMonitor() {
+    public synchronized void flushMonitor() {
         final GwtcJobMonitor monitor = getMonitor();
         while (monitor.hasMessageForCaller()) {
             readStatus(monitor, (status, extra)->{
@@ -432,25 +432,26 @@ public abstract class GwtcJob implements Destroyable {
         args.add("-war");
         args.add(warDir.getAbsolutePath());
 
-        if (manifest.getGenDir() != null) {
-            final File genDir = new File(manifest.getGenDir());
-            if (!genDir.isDirectory()) {
-                boolean result = genDir.mkdirs();
-                if (!result) {
-                    X_Log.warn(GwtcJobMonitor.class, "Unable to create gen dir", manifest.getWarDir(), "expect more errors...");
-                }
-            }
-            args.add("-gen");
-            args.add(genDir.getAbsolutePath());
-
-        }
 
         if (manifest.isRecompile()) {
             if (!manifest.isStrict()) {
                 args.add("-allowMissingSrc");
             }
-        } else if (manifest.isStrict()) {
-            args.add("-strict");
+        } else {
+            if (manifest.isStrict()) {
+                args.add("-strict");
+            }
+            if (manifest.getGenDir() != null) {
+                final File genDir = new File(manifest.getGenDir());
+                if (!genDir.isDirectory()) {
+                    boolean result = genDir.mkdirs();
+                    if (!result) {
+                        X_Log.warn(GwtcJobMonitor.class, "Unable to create gen dir", manifest.getWarDir(), "expect more errors...");
+                    }
+                }
+                args.add("-gen");
+                args.add(genDir.getAbsolutePath());
+            }
         }
 
         if (manifest.isRecompile()) {
@@ -474,6 +475,11 @@ public abstract class GwtcJob implements Destroyable {
         final String[] progArgs = manifest.toProgramArgArray();
         for (int i = 0; i < progArgs.length; i++) {
             switch (progArgs[i]) {
+                case "-localWorkers":
+                    if (isRecompiler()) {
+                        i++;
+                        continue;
+                    }
                 case "-war":
                 case "-gen":
                 case "-incremental":
@@ -525,7 +531,7 @@ public abstract class GwtcJob implements Destroyable {
             resourceCallbacks.add(fileName, callback);
         }
         getMonitor().writeAsCaller(
-            GwtcJobMonitor.JOB_J2CL + fileName
+            GwtcJobMonitor.JOB_GET_RESOURCE + fileName
         );
         return ()-> {
             final IntTo<In2<URL, Throwable>> callbacks = resourceCallbacks.get(fileName);
@@ -536,4 +542,5 @@ public abstract class GwtcJob implements Destroyable {
             }
         };
     }
+
 }

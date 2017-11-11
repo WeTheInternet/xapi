@@ -16,6 +16,7 @@ import xapi.file.X_File;
 import xapi.fu.*;
 import xapi.fu.Do.DoUnsafe;
 import xapi.fu.In2.In2Unsafe;
+import xapi.fu.iterate.ArrayIterable;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
 import xapi.gwtc.api.CompiledDirectory;
@@ -46,7 +47,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
@@ -240,20 +244,26 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
   }
 
   private URLClassLoader manifestBackedClassloader(URL[] urls, GwtManifest manifest) {
-    final ExtensibleClassLoader loader = new ExtensibleClassLoader(urls, superLoader(manifest));
+    String genDir = manifest.getGenDir();
+    try {
+      final URL genUrl = new URL("file:" + genDir);
+      if (ArrayIterable.iterate(urls).noneMatch(genUrl::equals)) {
+        urls = X_Fu.concat(genUrl, urls);
+      }
+    } catch (MalformedURLException e) {
+      X_Log.error(GwtcServiceImpl.class, "Cannot create URL from GwtManifest genDir", genDir, e);
+    }
+    final ExtensibleClassLoader loader = new ExtensibleClassLoader(dedup(urls), superLoader(manifest));
 
-    loader.addResourceFinder(name-> {
-          try {
-            File f = new File(inGeneratedDirectory(manifest, name));
-            if (f.exists()) {
-              return f.toURI().toURL();
-            }
-          } catch (IOException e) {
-            X_Log.warn(GwtcServiceImpl.class, "Failure to load resources for " + name);
-          }
-          return null;
-        });
     return ensureMeetsMinimumRequirements(loader);
+  }
+
+  private URL[] dedup(URL[] urls) {
+    Map<String, URL> dedup = new LinkedHashMap<>();
+    for (URL url : urls) {
+      dedup.put(url.getPath(), url);
+    }
+    return dedup.values().toArray(new URL[dedup.size()]);
   }
 
   @Override
@@ -325,10 +335,19 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
           .map(file->file.startsWith("file:") ? file : "file:" + file)
           .mapUnsafe(URL::new)
           .toArray(URL[]::new);
-      @SuppressWarnings("UnnecessaryLocalVariable") // nice for debugging
-          URLClassLoader newLoader = new URLClassLoader(arr, classpath);
-      return newLoader;
+      // TODO: just add these urls directly to our extensible classloader using a dynamic:classloaderId url,
+      // which, when accessed via dynamic:classloaderId/$ls, returns the list of source URLs,
+      // and when accessed with any other path, scans the supplied urls w/ ClasspathScanner to satisfy requests.
+      if (classpath instanceof ExtensibleClassLoader) {
+        ExtensibleClassLoader ex = (ExtensibleClassLoader) classpath;
+        ex.addUrls(arr);
+        return ex;
+      } else {
+        @SuppressWarnings("UnnecessaryLocalVariable") // nice for debugging
+        ExtensibleClassLoader newLoader = new ExtensibleClassLoader(dedup(arr), classpath);
+        return newLoader;
       }
+    }
     return classpath;
   }
 
@@ -426,8 +445,10 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
           case Dependency.DIR_BIN:
             if (binDir == null) {
               binDir = X_Reflect.getFileLoc(X_Reflect.getMainClass());
-              if (binDir == null) {
+              if (binDir == null || new File(binDir).getName().matches("rt[.]+jar")) {
                 binDir = "target/" + (manifest.isTestMode() ? "test-" : "") + "classes";
+              } else {
+                binDir = binDir.replace("file:", "");
               }
             }
             replacements.add(new Replacement(matcher.start(), matcher.end(), binDir));
@@ -548,40 +569,26 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
     }
   }
 
-  /**
-   * This method exists as a stub that can be implemented by a module with a dependency on our maven runner.
-   *
-   * Because the maven dependency list is long and conflicting, we avoid directly referencing it here.
-   */
-  protected Out1<Iterable<String>> downloadFromMaven(Dependency dependency) {
-    MvnDependency dep = X_Model.create(MvnDependency.class);
-    dep.setGroupId(dependency.groupId());
-    dep.setArtifactId(dependency.value());
-    dep.setVersion(dependency.version());
-    dep.setClassifier(dependency.classifier());
-    if (dependency.specifiers().length > 0) {
-      dep.setPackaging(dependency.specifiers()[0].type());
-    }
-    return getMavenLoader().downloadDependency(dep);
-  }
-
-  protected boolean canDownloadFromMaven() {
-    try {
-      Thread.currentThread().getContextClassLoader()
-          .loadClass("xapi.mvn.X_Maven");
-      return true;
-    } catch (ClassNotFoundException e) {
-      return false;
-    }
-  }
-
   @Override
   public GwtcProperties getDefaultLaunchProperties() {
-    Gwtc myGwtc = getClass().getAnnotation(Gwtc.class);
+    Gwtc myGwtc = getDefaultGwtc();
+    return myGwtc.propertiesLaunch()[0];
+  }
+
+  protected Gwtc getDefaultGwtc() {
+    Class<?> c = getClass();
+    Gwtc myGwtc;
+    do {
+      myGwtc = c.getAnnotation(Gwtc.class);
+      c = c.getSuperclass();
+    }
+    while (myGwtc == null && c != null);
+
     if (myGwtc == null) {
+      // help out subclasses by trying their own type first.
       myGwtc = GwtcServiceImpl.class.getAnnotation(Gwtc.class);
     }
-    return myGwtc.propertiesLaunch()[0];
+    return myGwtc;
   }
 
 }

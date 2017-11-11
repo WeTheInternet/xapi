@@ -39,11 +39,12 @@ import com.google.gwt.dom.client.Element;
   }
   ,dependencies={
     @Dependency(dependencyType=DependencyType.MAVEN,
-      groupId="net.wetheinter", value="xapi-elemental",version=X_Namespace.XAPI_VERSION)
+      groupId="net.wetheinter", value="xapi-elemental",version=X_Namespace.XAPI_VERSION),
+    @Dependency("src/test/java"),
+    @Dependency("src/test/resources"),
   }
   ,propertiesLaunch=@GwtcProperties(
     obfuscationLevel=ObfuscationLevel.PRETTY
-    ,logLevel=Type.INFO
   )
 )
 public class CaseEntryPoint implements EntryPoint {

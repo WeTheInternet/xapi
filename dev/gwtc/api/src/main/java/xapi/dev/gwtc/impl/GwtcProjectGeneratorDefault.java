@@ -125,6 +125,7 @@ public class GwtcProjectGeneratorDefault implements GwtcProjectGenerator {
         if (manifest.getGenDir() == null) {
             manifest.setGenDir(getTempDir().getAbsolutePath());
         }
+        manifest.setRelativeRoot(getSuggestedRoot());
         return manifest;
     }
 

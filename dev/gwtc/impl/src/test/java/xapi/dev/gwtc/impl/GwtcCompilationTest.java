@@ -16,6 +16,8 @@ import xapi.gwtc.api.GwtManifest;
 import xapi.inject.X_Inject;
 import xapi.log.X_Log;
 import xapi.test.gwtc.cases.CaseEntryPoint;
+import xapi.time.X_Time;
+import xapi.time.api.Moment;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -131,17 +133,35 @@ public class GwtcCompilationTest {
         );
     }
 
-    @Test
+    @Test(timeout = 120_000)
     public void testCompilation() {
-        X_Log.info(GwtcCompilationTest.class, "\n\n\nRunning compilation ", options, "\n\n");
-        final CompiledDirectory result = compilerResult.out1();
-        assertNotNull("", result);
-        // Now... to handle recompilation :-)
+        try {
+            X_Log.info(GwtcCompilationTest.class, "\n\n\nRunning compilation ", options, "\n\n");
+            final Moment start = X_Time.now();
+            final CompiledDirectory result = compilerResult.out1();
+            assertNotNull("", result);
+            Moment firstCompile = X_Time.now();
 
-        // for now, just tell any running job to shutdown...
-        X_Log.info(GwtcCompilationTest.class, "Shutting down job after successful completion. Current state" + getJob().getState());
-        getJob().destroy();
-        project.out1().getManifest().setOnline(false);
+            X_Log.info(GwtcCompilationTest.class, "Gwtc completed in", X_Time.difference(start, firstCompile));
+
+            // Now... to handle recompilation :-)
+            firstCompile = X_Time.now(); // we'll do a reset to avoid counting log times
+            getJob().forceRecompile();
+            Moment secondCompile = X_Time.now();
+            X_Log.info(GwtcCompilationTest.class, "Recompile completed in", X_Time.difference(firstCompile, secondCompile));
+
+            // TODO: actually test for changes being picked up
+
+            X_Log.info(GwtcCompilationTest.class, "Shutting down job after successful completion. Current state" + getJob().getState());
+        } finally {
+            // always clean up...
+            final GwtcJob job = getJob();
+            if (job != null) {
+                job.destroy();
+            }
+            project.out1().getManifest().setOnline(false);
+        }
+        // if we successfully cleaned up, lets ensure
     }
 
 }

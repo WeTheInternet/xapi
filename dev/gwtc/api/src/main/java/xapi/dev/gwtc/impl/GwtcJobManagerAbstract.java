@@ -82,21 +82,25 @@ public abstract class GwtcJobManagerAbstract implements GwtcJobManager {
         // where the server doesn't leak into gwt, and gwt doesn't leak into server.
 
         String name = manifest.getModuleName();
-        GwtcJob running = runningJobs.compute(name,
-            existing -> {
-                // Job already existed; check if it is stale or not
-                if (existing.getState() == CompileMessage.Failed || existing.getState() == CompileMessage.Destroyed) {
-                    existing.destroy();
-                    runningJobs.remove(name);
-                    statuses.put(name, CompileMessage.Preparing);
-                    runningJobs.put(name, launchJob(manifest));
-                } else {
-                    maybeRecompile(manifest, existing);
-                }
-            },
-            ()-> launchJob(manifest)
+        boolean[] isNew = {false};
+        GwtcJob existing = runningJobs.getOrCreate(name,
+            n-> {
+                isNew[0] = true;
+                return launchJob(manifest);
+            }
         );
-        running.onDone(callback.doBeforeMe((dir, fail)->{
+        if (!isNew[0]) {
+            // when we aren't new, we'll want to kick off some initialization.
+            if (existing.getState() == CompileMessage.Failed || existing.getState() == CompileMessage.Destroyed) {
+                existing.destroy();
+                runningJobs.remove(name);
+                statuses.put(name, CompileMessage.Preparing);
+                runningJobs.put(name, launchJob(manifest));
+            } else {
+                maybeRecompile(manifest, existing);
+            }
+        }
+        existing.onDone(callback.doBeforeMe((dir, fail)->{
             if (dir != null) {
                 manifest.setCompileDirectory(dir);
             }
@@ -144,18 +148,22 @@ public abstract class GwtcJobManagerAbstract implements GwtcJobManager {
         existing.onStatusChange(s->{
             status.in(s);
             synchronized (status) {
-                status.notify();
+                status.notifyAll();
             }
         });
         existing.forceRecompile();
         while (!existing.getState().isComplete()) {
-            synchronized (status) {
-                try {
-                    status.wait();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw X_Fu.rethrow(e);
+            try {
+                if (existing.getMonitor().hasMessageForCaller()) {
+                    existing.flushMonitor();
+                } else {
+                    synchronized (status) {
+                        status.wait(250);
+                    }
                 }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw X_Fu.rethrow(e);
             }
         }
 

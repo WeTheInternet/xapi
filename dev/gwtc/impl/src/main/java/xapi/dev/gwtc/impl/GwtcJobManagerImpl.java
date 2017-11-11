@@ -282,7 +282,12 @@ public class GwtcJobManagerImpl extends GwtcJobManagerAbstract {
             dir = job.waitForResult();
             final CompileStrategy strategy = runner.getTable().getPublishedEvent(job).getCompileStrategy();
             CompileDir result = dir.getOutputDir();
-            sendCompilerResults(monitor, dir.getOutputModuleName(), result, opts, strategy);
+            if (result == null) {
+                assert strategy == CompileStrategy.SKIPPED : "Result can only be null when skipping compilation";
+                monitor.updateCompileStatus(CompileMessage.Success);
+            } else {
+                sendCompilerResults(monitor, dir.getOutputModuleName(), result, opts, strategy);
+            }
         }catch (Throwable e) {
             monitor.updateCompileStatus(CompileMessage.Failed, "Compilation failed (check logs): " + e);
             if (e instanceof StaleJarError) {
@@ -471,7 +476,7 @@ public class GwtcJobManagerImpl extends GwtcJobManagerAbstract {
                             final URL url = getResource.io(fileName);
                             String serFile = serializer.serializeString(fileName);
                             String serUrl = serializer.serializeString(url.toExternalForm());
-                            monitor.writeAsCompiler(CompileMessage.KEY_LOG + serFile + serUrl);
+                            monitor.writeAsCompiler(CompileMessage.KEY_FOUND_RESOURCE + serFile + serUrl);
                         } else {
                             X_Log.error(GwtcJobMonitorImpl.class, "Unsupported gwt process message ", message);
                         }
