@@ -98,6 +98,11 @@ public class FileServiceImpl implements FileService {
   }
 
   @Override
+  public boolean exists(String path) {
+    return new File(path).exists();
+  }
+
+  @Override
   public MappedIterable<String> getAllFiles(String file) {
     final File f = new File(file);
     ChainBuilder<String> files = Chain.startChain();

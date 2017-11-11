@@ -16,6 +16,7 @@ import java.util.HashSet;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static xapi.mvn.X_Maven.downloadDependencies;
 
 /**
@@ -32,10 +33,21 @@ public class ReflectiveMavenLoaderTest {
         final Out1<Iterable<String>> result = loader.downloadDependency(dep);
         final Iterable<String> items = result.out1();
         final SizedIterable<String> counted = MappedIterable.mapped(items).counted();
-        assertEquals("Expected only 2 result", 2, counted.size());
-        assertTrue("Expected xapi-fu in result",
-            counted.hasMatch2(String::contains, "xapi-fu")
-        );
+        if (counted.size() == 2) {
+            // we loaded jars
+            assertTrue("Expected xapi-fu in result",
+                counted.hasMatch2(String::contains, "xapi-fu")
+            );
+        } else if (counted.size() == 4) {
+            // we loaded source folders
+            assertTrue("Expected xapi-fu in result",
+                counted
+                    .map(s->s.replace('\\', '/'))
+                    .hasMatch2(String::contains, "core/fu/src/main/java")
+            );
+        } else {
+            fail("Unexpected number of results for xapi-fu:\n" + counted.join("\n"));
+        }
 
         assertTrue("Expected validation api in result",
             counted.hasMatch2(String::contains, "validation")
@@ -52,13 +64,15 @@ public class ReflectiveMavenLoaderTest {
             downloadDependencies(loader.getDependency("xapi-dev-api"))
             .out1()
             .append(downloadDependencies(loader.getDependency("xapi-jre-model")).out1())
-            .appendItems(X_Reflect.getFileLoc(IsolatedThread.class), X_Reflect.getFileLoc(Assert.class))
-            .map(s->"file:" + s)
+            .appendItems(X_Reflect.getFileLoc(IsolatedMvnTestThread.class), X_Reflect.getFileLoc(Assert.class))
+            .map(s->"file://" + s)
             .filterOnce(dedup::add)
             .mapUnsafe(URL::new)
             .toArray(URL[]::new);
         final URLClassLoader isolated = new URLClassLoader(classpath, null);
-        Thread thread = (Thread) X_Reflect.construct(isolated.loadClass(IsolatedThread.class.getName()), new Class[]{});
+        final String name = IsolatedMvnTestThread.class.getName();
+        final Class<?> threadType = isolated.loadClass(name);
+        Thread thread = (Thread) X_Reflect.construct(threadType, new Class[]{});
         thread.setContextClassLoader(isolated);
         thread.setUncaughtExceptionHandler((t,e)-> failure.in(e) );
         thread.start();
@@ -66,17 +80,5 @@ public class ReflectiveMavenLoaderTest {
         if (failure.isNonNull()) {
             throw failure.out1();
         }
-    }
-}
-class IsolatedThread extends Thread {
-    @Override
-    public void run() {
-        // We are going to force ReflectiveMavenLoader to find a jar...
-        // (If your local maven repo is clean, we will download from central)
-        ReflectiveMavenLoader loader = new ReflectiveMavenLoader();
-        final MvnDependency dep = loader.getDependency("xapi-dev-javac");
-        final SizedIterable<String> result = MappedIterable.mapped(loader.downloadDependency(dep).out1())
-            .counted();
-        assertTrue(result.anyMatch(String::contains, "xapi-dev-javac"));
     }
 }

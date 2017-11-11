@@ -52,4 +52,6 @@ public interface FileService {
   MappedIterable<String> getAllFiles(String file);
 
   void loadFile(File file, In2<String, Throwable> callback);
+
+  boolean exists(String file);
 }

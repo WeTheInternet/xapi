@@ -190,5 +190,27 @@ public class X_Namespace {
    */
   public static String PROPERTY_MAVEN_REPO_AUTOCREATE = "xapi.mvn.repo.autocreate";
 
+  /**
+   * "xapi.mvn.search.groups"
+   * space-separated groupIds to use when searching for local workspace resolution of maven artifacts
+   *
+   * Default is "net.wetheinter de.mocra.cy"
+   */
+  public static String PROPERTY_MAVEN_SEARCH_GROUPS = "xapi.mvn.search.groups";
+
+  /**
+   * "xapi.mvn.workspace"
+   * space-separated paths for local workspace projects that you wish to have
+   * resolved from jars to output folders.
+   *
+   * Default is "/opt/xapi /opt/wti /opt/collide".
+   *
+   * Use "\ " to encode spaces in your paths (or, better yet, DON'T PUT SPACES IN PATHS).
+   *
+   * We may cheat a little and look at class file code sources to find xapi installs,
+   * should the default location be missing.
+   */
+  public static String PROPERTY_MAVEN_WORKSPACE = "xapi.mvn.workspace";
+
 
 }

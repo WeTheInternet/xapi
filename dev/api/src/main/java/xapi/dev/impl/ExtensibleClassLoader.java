@@ -9,7 +9,10 @@ import xapi.fu.In1Out1;
 import xapi.fu.Lazy;
 import xapi.fu.X_Fu;
 import xapi.fu.has.HasLock;
+import xapi.fu.has.HasReset;
+import xapi.fu.lazy.ResettableLazy;
 import xapi.io.X_IO;
+import xapi.log.X_Log;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,6 +26,7 @@ import java.security.PrivilegedExceptionAction;
 
 import static java.security.AccessController.doPrivileged;
 import static xapi.collect.X_Collect.MUTABLE_CONCURRENT;
+import static xapi.collect.X_Collect.MUTABLE_CONCURRENT_INSERTION_ORDERED;
 
 /**
  * A {@link URLClassLoader} subclass that is designed to load resources from extensible sources.
@@ -34,7 +38,7 @@ import static xapi.collect.X_Collect.MUTABLE_CONCURRENT;
  *
  * Created by James X. Nelson (james @wetheinter.net) on 10/7/17.
  */
-public class ExtensibleClassLoader extends URLClassLoader implements HasLock {
+public class ExtensibleClassLoader extends URLClassLoader implements HasLock, HasReset {
 
     private volatile boolean checkMeFirst;
     private volatile boolean frozen;
@@ -44,6 +48,13 @@ public class ExtensibleClassLoader extends URLClassLoader implements HasLock {
 
     private final StringTo<Class<?>> loadedClasses = X_Collect.newStringMap(Class.class, MUTABLE_CONCURRENT);
     private final StringTo<URL> loadedResources = X_Collect.newStringMap(URL.class, MUTABLE_CONCURRENT);
+    private final StringTo<URL> extraUrls = X_Collect.newStringMap(URL.class, MUTABLE_CONCURRENT_INSERTION_ORDERED);
+    private final ResettableLazy<URLClassLoader> extraLoader = new ResettableLazy<>(this::getExtraLoader);
+
+    private URLClassLoader getExtraLoader() {
+        return new URLClassLoader(extraUrls.forEachValue().toArray(URL[]::new));
+    }
+
     private final Lazy<DynamicUrl> myUrl = Lazy.deferred1(()->{
         DynamicUrlBuilder builder = new DynamicUrlBuilder();
         builder.setPath("cl" + System.identityHashCode(this));
@@ -51,20 +62,39 @@ public class ExtensibleClassLoader extends URLClassLoader implements HasLock {
         return builder.build();
     });
 
+    private static URL[] fixup(URL[] urls) {
+        for (int i = 0; i < urls.length; i++) {
+            final URL url = urls[i];
+            String path = url.getPath();
+            if (path.endsWith("jar")) {
+                continue;
+            }
+            if (!path.endsWith("/") && new java.io.File(path).isDirectory()) {
+                X_Log.trace(ExtensibleClassLoader.class, "Autofixing directory classpath entry without trailing /", url);
+                try {
+                    urls[i] = new URL(url.toString() + "/");
+                } catch (MalformedURLException e) {
+                    throw new IllegalArgumentException(e);
+                }
+            }
+        }
+        return urls;
+    }
+
     public ExtensibleClassLoader() {
         this(new URL[0], null);
     }
 
     public ExtensibleClassLoader(URL[] urls, ClassLoader parent) {
-        super(urls, parent);
+        super(fixup(urls), parent);
     }
 
     public ExtensibleClassLoader(URL[] urls) {
-        super(urls);
+        super(fixup(urls));
     }
 
     public ExtensibleClassLoader(URL[] urls, ClassLoader parent, URLStreamHandlerFactory factory) {
-        super(urls, parent, factory);
+        super(fixup(urls), parent, factory);
     }
 
     @Override
@@ -153,13 +183,22 @@ public class ExtensibleClassLoader extends URLClassLoader implements HasLock {
 
     @Override
     public URL[] getURLs() {
-        final URL[] givenUrls = super.getURLs();
-        String dynamicUrl = getDynamicUrl();
-        try {
-            return X_Fu.push(givenUrls, new URL(dynamicUrl));
-        } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
+        URL[] givenUrls = super.getURLs();
+
+        if (myUrl.isResolved()) {
+            String dynamicUrl = getDynamicUrl();
+            try {
+                givenUrls = X_Fu.push(givenUrls, new URL(dynamicUrl));
+            } catch (MalformedURLException e) {
+                throw new RuntimeException(e);
+            }
         }
+
+        if (extraUrls.isNotEmpty()) {
+            givenUrls = X_Fu.concat(extraLoader.out1().getURLs(), givenUrls);
+        }
+
+        return givenUrls;
     }
 
     @Override
@@ -233,6 +272,8 @@ public class ExtensibleClassLoader extends URLClassLoader implements HasLock {
         }
     }
 
+    // TODO: consider removing the resource/class finder abstractions, and just takes URLs.
+    // a future subclass which wishes to support functional interfaces can just supply dynamic URLs.
     public final ExtensibleClassLoader addResourceFinder(In1Out1<String, URL> finder) {
         checkNotFrozen();
         resourceFinder = mutex(()->
@@ -289,4 +330,29 @@ public class ExtensibleClassLoader extends URLClassLoader implements HasLock {
     protected String getDynamicUrl() {
         return myUrl.out1().getUrl();
     }
+
+    @Override
+    public void reset() {
+        melt();
+        clear();
+        if (extraLoader.isResolved()) {
+            extraLoader.reset();
+        }
+        if (getParent() instanceof HasReset) {
+            ((HasReset) getParent()).reset();
+        }
+    }
+
+    public void addUrls(URL ... arr) {
+        if (X_Fu.isEmpty(arr)) {
+            return;
+        }
+        for (URL url : arr) {
+            extraUrls.put(url.toString(), url);
+        }
+        extraLoader.reset();
+        // note that we need to use the lambda, because we
+        addResourceFinder(req->extraLoader.out1().findResource(req));
+    }
+
 }

@@ -110,4 +110,8 @@ public class X_File {
   public static void loadFile(File file, In2<String, Throwable> callback) {
     SERVICE.get().loadFile(file, callback);
   }
+
+  public static boolean exists(String s) {
+    return SERVICE.get().exists(s);
+  }
 }

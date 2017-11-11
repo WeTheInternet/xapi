@@ -9,10 +9,12 @@ import xapi.annotation.inject.InstanceDefault;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.fu.Lazy;
+import xapi.fu.Out1;
 import xapi.mvn.api.MvnCoords;
 import xapi.mvn.api.MvnModule;
 import xapi.mvn.api.MvnCache;
 import xapi.mvn.service.MvnService;
+import xapi.util.X_String;
 
 /**
  * In cases where we need to lookup values from jars and poms, we do not want to have to keep resolving artifacts,
@@ -96,6 +98,13 @@ public class MvnCacheImpl implements MvnCache {
         return property;
     }
 
+    public String getProperty(Model model, String propertyName, Out1<String> dflt) {
+        String value = getProperty(model, propertyName);
+        if (X_String.isEmpty(value) || value.equals(propertyName)) {
+            return dflt.out1();
+        }
+        return value;
+    }
     public String getProperty(Model model, String propertyName) {
         // remove ${wrapper}
         if (propertyName.startsWith("${")) {
