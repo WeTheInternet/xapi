@@ -1,0 +1,32 @@
+<app
+  ref = "root"
+  title = "XApi Admin"
+      data =
+      {
+          width: 300,
+          height: 400,
+          restartServer: "Restart"
+      }
+  class =
+    .{
+        .cls{
+        background-color: #111117;
+        }
+        .cls .btn {
+        background-color: #010931;
+        color: white;
+        }
+    }
+>
+    <box size = ( $root.data.width * $root.data.height )
+         align = center
+         type = HBox
+    >
+        <button ref="restart" text=$root.data.restartServer class="btn button1" onClick=e-> {
+            $source.restartServer();
+        } />
+
+        <button text="Quit" class="btn button2" onClick=System.exit(0) />
+
+    </box>
+</app>

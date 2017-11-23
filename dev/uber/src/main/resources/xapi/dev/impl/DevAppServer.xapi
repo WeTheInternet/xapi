@@ -1,0 +1,74 @@
+<web-app
+  name = "DevAppServer"
+  classpaths = {
+    xapiLang : [
+      $maven("net.wetheinter:xapi-gwt:0.6-SNAPSHOT")
+    ]
+  }
+  gwt = [
+    <gwtc
+      name = DevAppClient
+      entryPoint = xapi.demo.gwt.client.XapiLangPresentation
+      module = xapi.demo.gwt.client.XapiLangDist
+      inherit = xapi.demo.XapiLang
+      inherit = de.mocra.cy.WtiLang
+      logLevel = INFO
+      recompile = true
+      isolateClassLoader = false
+      useCurrentJvm = true
+      unitCacheDir = "/tmp/gwtcUnitCache"
+      obfuscationLevel = PRETTY
+      classpath = $classpath(xapiLang)
+      source = [
+        "src/main/java",
+        "src/main/resources",
+        "src/main/gen"
+      ]
+    />
+  ]
+  templates = [
+    <template name="session">
+        <page
+          script = `$static/sockjs.js`
+          script = `$static/vertxbus.js`
+          script = {
+            __session: {
+              sessionID : $user.id,
+              activeClient : $user.pageId,
+              name : $user.name
+            }
+          }
+        /page>
+    </template>
+  ]
+  routes = [
+    <route
+      path = "/"
+      method = "GET"
+      secure = true
+      title = "Dev App"
+      response =
+        <page
+          template = "session"
+          script = $gwt("DevAppClient")
+          script = {
+            user : {
+              name : $user.name,
+            }
+          }
+          style = .{
+            xapi-slides {
+              position: absolute;
+              top: 0;
+              left: 0;
+              bottom: 0;
+              right: 0;
+            }
+          }
+          dom = <xapi-slides
+                        id=home
+                        slide = home />
+        /page>
+    /route>
+  ]
+/web-app>
