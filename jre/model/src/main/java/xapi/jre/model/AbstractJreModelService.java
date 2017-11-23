@@ -1,11 +1,13 @@
 package xapi.jre.model;
 
+import xapi.bytecode.impl.BytecodeAdapterService;
 import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
 import xapi.collect.api.Dictionary;
 import xapi.collect.api.IntTo;
 import xapi.except.NotYetImplemented;
 import xapi.fu.In2;
+import xapi.fu.MappedIterable;
 import xapi.fu.Out1;
 import xapi.model.api.Model;
 import xapi.model.api.ModelKey;
@@ -17,6 +19,8 @@ import xapi.model.impl.AbstractModel;
 import xapi.model.impl.AbstractModelService;
 import xapi.model.impl.ModelUtil;
 import xapi.reflect.X_Reflect;
+import xapi.source.api.IsClass;
+import xapi.source.api.IsType;
 import xapi.util.X_Debug;
 import xapi.util.api.ConvertsTwoValues;
 import xapi.util.api.ConvertsValue;
@@ -422,4 +426,10 @@ public abstract class AbstractJreModelService extends AbstractModelService {
   protected void rethrow(Throwable e) {
     X_Debug.rethrow(e);
   }
+
+  @Override
+  public MappedIterable<Method> getMethodsInDeclaredOrder(Class<?> type) {
+    return BytecodeAdapterService.getMethodsInDeclaredOrder(type);
+  }
+
 }

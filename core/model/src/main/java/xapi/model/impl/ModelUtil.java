@@ -1,15 +1,26 @@
 package xapi.model.impl;
 
+import xapi.annotation.compile.MagicMethod;
 import xapi.annotation.model.DeleterFor;
 import xapi.annotation.model.GetterFor;
 import xapi.annotation.model.IsModel;
 import xapi.annotation.model.SetterFor;
 import xapi.annotation.reflect.Fluent;
+import xapi.bytecode.CtClass;
+import xapi.bytecode.CtClassType;
+import xapi.bytecode.impl.BytecodeAdapterService;
 import xapi.except.NotConfiguredCorrectly;
+import xapi.fu.MappedIterable;
+import xapi.fu.api.GwtIncompatible;
+import xapi.model.X_Model;
 import xapi.model.api.Model;
 import xapi.model.api.ModelManifest;
 import xapi.model.api.ModelManifest.MethodData;
+import xapi.reflect.X_Reflect;
 import xapi.source.X_Modifier;
+import xapi.source.api.IsClass;
+import xapi.source.api.IsType;
+import xapi.util.X_Runtime;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
@@ -34,7 +45,7 @@ public class ModelUtil {
       }
       final IsModel isModel = cls.getAnnotation(IsModel.class);
       String idField = isModel == null ? "id" : isModel.key().value();
-      for (final Method method : type.getMethods()) {
+      for (final Method method : getMethodsInOrder(type)) {
         if (method.getDeclaringClass() != Model.class) {
           if (method.isDefault() || X_Modifier.isStatic(method.getModifiers())) {
             continue; // no need to override default / static methods!
@@ -86,6 +97,10 @@ public class ModelUtil {
       }
     }
     return manifest;
+  }
+
+  private static MappedIterable<Method> getMethodsInOrder(Class<?> type) {
+    return X_Model.getMethodsInDeclaredOrder(type);
   }
 
   static Class[] getErasedTypeParameters(Type genericType) {

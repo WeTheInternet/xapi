@@ -10,6 +10,7 @@ import xapi.collect.api.ClassTo;
 import xapi.collect.api.StringDictionary;
 import xapi.dev.source.CharBuffer;
 import xapi.except.NotConfiguredCorrectly;
+import xapi.fu.MappedIterable;
 import xapi.io.X_IO;
 import xapi.io.api.DelegatingIOCallback;
 import xapi.log.X_Log;
@@ -27,6 +28,8 @@ import xapi.platform.GwtPlatform;
 import xapi.source.impl.StringCharIterator;
 import xapi.util.api.ProvidesValue;
 import xapi.util.api.SuccessHandler;
+
+import java.lang.reflect.Method;
 
 @GwtPlatform
 @SuppressWarnings({"rawtypes"})
@@ -212,5 +215,10 @@ public class ModelServiceGwt extends AbstractModelService
   @SuppressWarnings("unchecked")
   public <M extends Model> Class<M> typeToClass(final String kind) {
     return (Class<M>) typeNameToClass.get(kind);
+  }
+
+  @Override
+  public MappedIterable<Method> getMethodsInDeclaredOrder(Class<?> type) {
+    return MappedIterable.mapped(type.getMethods());
   }
 }

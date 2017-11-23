@@ -91,10 +91,11 @@ public class ModelServiceJre extends AbstractJreModelService {
           final String source = serialized.toSource();
           X_IO.drain(result, X_IO.toStreamUtf8(source));
           callback.onSuccess(model);
-          X_Log.info(getClass(), "Saved model to ", file);
+          X_Log.info(ModelServiceJre.class, "Saved model to ", file);
+          X_Log.info(ModelServiceJre.class, "Saved model source", source);
           assert deserialize(type, CharIterator.forString(source)).equals(model);
         } catch (final IOException e) {
-          X_Log.error(getClass(), "Unable to save model " + model, e);
+          X_Log.error(ModelServiceJre.class, "Unable to save model " + model, e);
           if (callback instanceof ErrorHandler) {
             ((ErrorHandler) callback).onError(e);
           } else {
@@ -173,7 +174,7 @@ public class ModelServiceJre extends AbstractJreModelService {
     try {
       return getFilesystemRoot();
     } catch (final IOException e) {
-      X_Log.error(getClass(), "Unable to load filesystem root", e);
+      X_Log.error(ModelServiceJre.class, "Unable to load filesystem root", e);
       if (callback instanceof ErrorHandler) {
         ((ErrorHandler) callback).onError(e);
       }
@@ -240,7 +241,7 @@ public class ModelServiceJre extends AbstractJreModelService {
           }
           callback.onSuccess(result);
         } catch (final Exception e) {
-          X_Log.error(getClass(), "Unable to load files for query "+query);
+          X_Log.error(ModelServiceJre.class, "Unable to load files for query "+query);
           if (callback instanceof ErrorHandler) {
             ((ErrorHandler) callback).onError(new RuntimeException("Unable to load files for query "+query));
           } else {
@@ -314,7 +315,7 @@ public class ModelServiceJre extends AbstractJreModelService {
           }
           callback.onSuccess(result);
         } catch (final Exception e) {
-          X_Log.error(getClass(), "Unable to load files for query "+query);
+          X_Log.error(ModelServiceJre.class, "Unable to load files for query "+query);
           if (callback instanceof ErrorHandler) {
             ((ErrorHandler) callback).onError(new RuntimeException("Unable to load files for query "+query));
           } else {

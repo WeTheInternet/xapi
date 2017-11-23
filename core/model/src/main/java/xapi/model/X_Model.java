@@ -3,6 +3,7 @@ package xapi.model;
 import xapi.annotation.compile.MagicMethod;
 import xapi.except.FatalException;
 import xapi.fu.In1Out1;
+import xapi.fu.MappedIterable;
 import xapi.inject.X_Inject;
 import xapi.model.api.Model;
 import xapi.model.api.ModelKey;
@@ -16,6 +17,7 @@ import xapi.util.api.ErrorHandler;
 import xapi.util.api.SuccessHandler;
 
 import javax.inject.Provider;
+import java.lang.reflect.Method;
 
 public class X_Model {
 
@@ -117,4 +119,7 @@ public class X_Model {
     service.get().query(query, callback);
   }
 
+  public static MappedIterable<Method> getMethodsInDeclaredOrder(Class<?> type) {
+    return service.get().getMethodsInDeclaredOrder(type);
+  }
 }

@@ -43,7 +43,7 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
 
   public ModelSerializerDefault(final ClassTo<PrimitiveReader> primitiveReaders) {
     this.primitiveReaders = primitiveReaders;
-    collectionFactories = X_Collect.newClassMap(Class.class.cast(ConvertsTwoValues.class));
+    collectionFactories = X_Collect.newClassMap(ConvertsTwoValues.class);
   }
 
   @Override

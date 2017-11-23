@@ -1,6 +1,7 @@
 package xapi.model.service;
 
 import xapi.dev.source.CharBuffer;
+import xapi.fu.MappedIterable;
 import xapi.model.api.Model;
 import xapi.model.api.ModelKey;
 import xapi.model.api.ModelManifest;
@@ -9,6 +10,8 @@ import xapi.model.api.ModelQueryResult;
 import xapi.model.api.PrimitiveSerializer;
 import xapi.source.api.CharIterator;
 import xapi.util.api.SuccessHandler;
+
+import java.lang.reflect.Method;
 
 public interface ModelService {
 
@@ -28,5 +31,5 @@ public interface ModelService {
   ModelKey newKey(String namespace, String kind);
   ModelKey newKey(String namespace, String kind, String id);
   <M extends Model> void load(Class<M> modelClass, ModelKey modelKey, SuccessHandler<M> callback);
-
+  MappedIterable<Method> getMethodsInDeclaredOrder(Class<?> type);
 }

@@ -4,6 +4,8 @@
 package xapi.test.model;
 
 import xapi.annotation.inject.SingletonOverride;
+import xapi.bytecode.impl.BytecodeAdapterService;
+import xapi.fu.MappedIterable;
 import xapi.log.X_Log;
 import xapi.model.api.Model;
 import xapi.model.api.ModelKey;
@@ -25,6 +27,7 @@ import xapi.test.model.content.ModelUserTest;
 import xapi.util.api.SuccessHandler;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -227,4 +230,8 @@ public class ModelServiceTestImpl extends AbstractModelService {
     throw new UnsupportedOperationException("Test Model Service does not support .typeToClass()");
   }
 
+  @Override
+  public MappedIterable<Method> getMethodsInDeclaredOrder(Class<?> type) {
+    return BytecodeAdapterService.getMethodsInDeclaredOrder(type);
+  }
 }

@@ -16,6 +16,7 @@ import xapi.collect.api.InitMap;
 import xapi.collect.impl.InitMapDefault;
 import xapi.except.NotImplemented;
 import xapi.except.NotYetImplemented;
+import xapi.fu.MappedIterable;
 import xapi.inject.impl.SingletonProvider;
 import xapi.log.X_Log;
 import xapi.log.api.LogLevel;
@@ -42,6 +43,7 @@ import xapi.util.api.Pair;
 import java.io.IOException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -886,5 +888,35 @@ public class BytecodeAdapterService implements
           param.getEnclosedName());
     }
     return types;
+  }
+
+  public static MappedIterable<Method> getMethodsInDeclaredOrder(Class<?> type) {
+    BytecodeAdapterService adapter = new BytecodeAdapterService();
+    final IsClass fromByteCode = adapter.toClass(type.getName());
+    final Method[] sourceMethods = type.getMethods();
+    final MappedIterable<Method> itr = MappedIterable.mapped(fromByteCode.getMethods())
+        .map(m -> {
+          loop:
+          for (Method method : sourceMethods) {
+            if (m.getName().equals(method.getName())) {
+              final IsType[] params = m.getParameters();
+              final Class<?>[] paramTypes = method.getParameterTypes();
+              if (params.length == paramTypes.length) {
+                for (int i = 0; i < params.length; i++) {
+                  if (!params[i].getQualifiedName().equals(paramTypes[i].getCanonicalName())) {
+                    continue loop;
+                  }
+                }
+                return method;
+              }
+            }
+          }
+          if (m.getEnclosingType().getQualifiedName().equals(type.getCanonicalName())) {
+            throw new RuntimeException("Class does not match bytecode for " + m);
+          }
+          return null;
+        })
+        .filterNull();
+    return itr;
   }
 }
