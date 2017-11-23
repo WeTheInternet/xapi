@@ -14,21 +14,21 @@
  <description>
   All Gwt jre emulation code goes in this module,
   as well as any gwt-compiler overrides.
-  
+
   xapi-gwt-api.jar must come before gwt-dev.jar on your compile classpath.
   A plugin is being built to automatically adjust maven runtime dependencies,
-  but users of ant or IDEs will need to ensure the super jar comes before 
+  but users of ant or IDEs will need to ensure the super jar comes before
   gwt-dev.  We will petition gwt to accept our mods, but, until then,
   if you want bleeding edge features, you gotta do bleeding edge configuration.
-  
-  
+
+
   Code that ties directly into other modules, like java.lang.reflect for
-  the reflection submodule, have their super-source here, and generators or 
+  the reflection submodule, have their super-source here, and generators or
   other implementations in their own modules.
-  
+
   This is to maintain consistency in what is or isn't whitelisted in XApi GWT.
-  
-  Some modules, like appengine, provide dependency-specific super-source 
+
+  Some modules, like appengine, provide dependency-specific super-source
   in their own packages.  This module is for jre, junit and core XApi services.
  </description>
 
@@ -41,6 +41,11 @@
   <dependency>
    <groupId>net.wetheinter</groupId>
    <artifactId>xapi-dev-source</artifactId>
+  </dependency>
+  <dependency>
+   <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-fu</artifactId>
+   <classifier>sources</classifier>
   </dependency>
   <dependency>
    <groupId>net.wetheinter</groupId>
@@ -87,6 +92,11 @@
    <groupId>${gwt.groupId}</groupId>
    <artifactId>gwt-user</artifactId>
    <scope>provided</scope>
+  </dependency>
+  <dependency>
+   <groupId>com.google.jsinterop</groupId>
+   <artifactId>base</artifactId>
+   <version>1.0.0-beta-1</version>
   </dependency>
   <dependency>
    <groupId>javax.inject</groupId>

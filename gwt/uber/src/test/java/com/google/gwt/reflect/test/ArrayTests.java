@@ -1,7 +1,9 @@
 package com.google.gwt.reflect.test;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.List;
 
 import org.junit.Test;
 
@@ -15,6 +17,25 @@ import com.google.gwt.reflect.shared.GwtReflect;
 public class ArrayTests extends AbstractReflectionTest {
 
   public ArrayTests() {}
+
+  class Child {
+
+  }
+  class Parent {
+    List<Child> list;
+    public Child[] array;
+  }
+
+  @Test
+  public void testComponentTypes() throws NoSuchFieldException, IllegalAccessException {
+    final Field arrayField = Parent.class.getField("array");
+    Parent parent = new Parent();
+    Child[] children = { new Child() };
+    arrayField.set(parent, children);
+    assertEquals(children, parent.array);
+    final Object get = arrayField.get(parent);
+    assertEquals(children, get);
+  }
 
   @Test
   public void testSingleDimPrimitive() {

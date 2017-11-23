@@ -39,7 +39,6 @@
         <dependency>
             <groupId>net.wetheinter</groupId>
             <artifactId>xapi-dev-javac</artifactId>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 

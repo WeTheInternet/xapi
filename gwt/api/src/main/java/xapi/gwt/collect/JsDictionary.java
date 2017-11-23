@@ -1,10 +1,8 @@
 package xapi.gwt.collect;
 
-import xapi.fu.java.EntryValueIterable;
+import xapi.fu.MappedIterable;
 import xapi.fu.iterate.ArrayIterable;
-import xapi.collect.impl.IteratorWrapper;
-
-import com.google.gwt.core.client.JavaScriptObject;
+import xapi.fu.java.EntryValueIterable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -12,6 +10,8 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import com.google.gwt.core.client.JavaScriptObject;
 
 public class JsDictionary <V> extends JavaScriptObject {
 
@@ -196,7 +196,7 @@ public class JsDictionary <V> extends JavaScriptObject {
   }
 
   public final Iterable<Entry<String,V>> entries() {
-    return new IteratorWrapper<Entry<String, V>>(new EntryItr(this));
+    return MappedIterable.mappedCaching(new EntryItr<>(this));
   }
 
   public final int size() {

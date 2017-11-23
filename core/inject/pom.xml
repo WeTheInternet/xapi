@@ -74,9 +74,6 @@
     </plugins>
     <testResources>
       <testResource>
-        <directory>${basedir}/src/test/resources</directory>
-      </testResource>
-      <testResource>
         <directory>${basedir}/src/test/java</directory>
         <includes>
           <include>**/*.java</include>

@@ -26,7 +26,7 @@ public class ConcurrencyTest {
     final Pointer<Boolean> success = new Pointer<Boolean>();
     runDeferred(()->success.set(true));
     success.set(false);
-    flush(1000);
+    flush(3000);
     Assert.assertTrue(success.get());
   }
   @Test
@@ -35,7 +35,7 @@ public class ConcurrencyTest {
     runFinally(()->success.set(false));
     runDeferred(()->success.set(true));
     success.set(false);
-    flush(1000);
+    flush(3000);
     Assert.assertTrue(success.get());
   }
   @Test
@@ -75,11 +75,13 @@ public class ConcurrencyTest {
     Assert.assertTrue(stage.get() == 4);
   }
 
-  @Test
+  @Test(timeout = 5000)
   public void testSimpleThread() throws InterruptedException {
     final Pointer<Boolean> success = new Pointer<Boolean>();
     Semaphore wait = new Semaphore(1);
     wait.acquire();
+    Semaphore finish = new Semaphore(1);
+    finish.acquire();
     Thread t = newThread(() -> {
         info("Thread start time: "+(now()-threadStartTime()));
         //make sure our thread flushed when it's done!
@@ -87,6 +89,7 @@ public class ConcurrencyTest {
             wait.acquire();
             info("To True: "+(now()-threadStartTime()));
             success.set(true);
+            finish.release();
         });
         info("To False: "+(now()-threadStartTime()));
         success.set(false);
@@ -98,8 +101,12 @@ public class ConcurrencyTest {
         wait.release();
     });
     t.start();
-    trySleep(500);
-    flush(t, 250);
+    finish.acquire();
+    while (success.get() != Boolean.TRUE) {
+        trySleep(100);
+        flush(t, 250);
+    }
+
     Assert.assertTrue(success.get());
   }
 

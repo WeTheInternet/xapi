@@ -21,6 +21,8 @@
   </properties>
 
   <dependencies>
+    <!-- TODO: remove this... ...some day -->
+
     <dependency>
       <groupId>net.wetheinter</groupId>
       <artifactId>xapi-elemental</artifactId>
@@ -31,6 +33,7 @@
       <artifactId>elemental2-dom</artifactId>
       <version>1.0.0-beta-1</version>
     </dependency>
+
 
     <dependency>
       <groupId>net.wetheinter</groupId>
@@ -59,16 +62,6 @@
       <classifier>sources</classifier>
     </dependency>
 
-    <dependency>
-      <groupId>${gwt.groupId}</groupId>
-      <artifactId>gwt-elemental</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>${gwt.groupId}</groupId>
-      <artifactId>gwt-dev</artifactId>
-      <scope>provided</scope>
-    </dependency>
     <dependency>
       <groupId>${gwt.groupId}</groupId>
       <artifactId>gwt-user</artifactId>
@@ -106,6 +99,13 @@
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
       <scope>test</scope>
+    </dependency>
+
+    <!-- Put gwt-dev last to avoid polluting... ...everything -->
+    <dependency>
+      <groupId>${gwt.groupId}</groupId>
+      <artifactId>gwt-dev</artifactId>
+      <scope>provided</scope>
     </dependency>
 
   </dependencies>

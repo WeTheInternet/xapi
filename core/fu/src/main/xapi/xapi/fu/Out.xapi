@@ -77,6 +77,10 @@ package xapi.fu.out;
                          );
                      }
 
+                     default Out$sizeUnsafe<$typeParams> unsafe() {
+                         if (this instanceof )
+                     }
+
 
                 }
             /generateInterface>

@@ -2,18 +2,18 @@ package xapi.gwt.collect;
 
 import xapi.annotation.inject.InstanceOverride;
 import xapi.collect.api.StringTo;
-import xapi.fu.iterate.ArrayIterable;
-import xapi.fu.java.EntryValueIterable;
-import xapi.collect.impl.IteratorWrapper;
+import xapi.fu.MappedIterable;
 import xapi.fu.Out2;
+import xapi.fu.iterate.ArrayIterable;
 import xapi.fu.iterate.SizedIterable;
+import xapi.fu.java.EntryValueIterable;
 import xapi.platform.GwtPlatform;
-
-import com.google.gwt.core.client.GwtScriptOnly;
-import com.google.gwt.core.client.JavaScriptObject;
 
 import java.util.Iterator;
 import java.util.Map.Entry;
+
+import com.google.gwt.core.client.GwtScriptOnly;
+import com.google.gwt.core.client.JavaScriptObject;
 
 /**
  * This is an old-school jso-style implementation of an insertion ordered map that is optimized for gwt.
@@ -283,7 +283,7 @@ public class StringToGwt <V> extends JavaScriptObject implements StringTo<V>{
 
   @Override
   public final Iterable<Entry<String,V>> entries() {
-    return new IteratorWrapper<>(new EntryItr(this));
+    return MappedIterable.mappedCaching(new EntryItr<>(this));
   }
 
   @Override

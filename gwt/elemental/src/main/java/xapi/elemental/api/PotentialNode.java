@@ -247,6 +247,7 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> {
     return this;
   }
 
+  @Override
   public String toSource() {
     StringBuilder b = new StringBuilder();
     toHtml(b);

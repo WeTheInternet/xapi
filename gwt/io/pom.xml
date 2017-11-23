@@ -45,6 +45,12 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>net.wetheinter</groupId>
+      <!-- net.wti's gwt-dev makes jetty and other server-y code optional.  codeserver makes it required. -->
+      <artifactId>gwt-codeserver</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>net.sourceforge.htmlunit</groupId>
       <artifactId>htmlunit</artifactId>
       <!-- Copied from gwt-dev -->
