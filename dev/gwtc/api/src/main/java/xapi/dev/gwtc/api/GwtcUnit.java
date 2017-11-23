@@ -49,7 +49,8 @@ class GwtcUnit {
   private Set<GwtcUnit> children = new LinkedHashSet<GwtcUnit>();
 
   public String generateGwtXml(String pkg, String name, Gwtc gwtc) {
-    xml = GwtcXmlBuilder.generateGwtXml(pkg, name, isDebug(), gwtc);
+    xml = GwtcXmlBuilder.generateGwtXml(pkg, name, "", isDebug(), gwtc);
+    xml.addSource("");
     return xml.getInheritName();
   }
 

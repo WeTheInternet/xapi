@@ -775,7 +775,7 @@ public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
                                     ind = newUrl.indexOf('/', ind+1);
                                     String fileName = newUrl.substring(ind+1);
                                     done = true;
-                                    job.requestResource(fileName, (url, fail)->{
+                                    final DoUnsafe blockOnRequest = job.requestResource(fileName, (url, fail) -> {
                                         if (fail instanceof NotFoundException) {
                                             if (fileName.startsWith("gen/")) {
                                                 Path genPath = Paths.get(manifest.getCompileDirectory().getGenDir());
@@ -786,28 +786,38 @@ public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
                                                     callback.in(scope, null);
                                                     return;
                                                 } else {
-                                                    X_Log.warn(XapiVertxServer.class, "No file found for path", genFile);
+                                                    X_Log.warn(
+                                                        XapiVertxServer.class,
+                                                        "No file found for path",
+                                                        genFile
+                                                    );
                                                 }
                                             }
-                                        } else if (fail == null){
+                                        } else if (fail == null) {
                                             // In case this is a url into a jar,
                                             // we save ourselves some headache, and just stream from whatever URL we get
+                                            boolean calledBack = false;
                                             try (
                                                 final InputStream in = url.openStream()
                                             ) {
                                                 final byte[] bytes = X_IO.toByteArray(in);
                                                 resp.prepareToClose();
                                                 resp.getResponse().end(Buffer.buffer(bytes));
+                                                calledBack = true;
                                                 callback.in(scope, null);
-                                                return;
-                                            } catch (IOException e) {
-                                                e.printStackTrace();
+                                            } catch (Exception e) {
+                                                if (calledBack) {
+                                                    X_Log.error(XapiVertxServer.class, "Failed sending source", fileName, e);
+                                                } else {
+                                                    callback.in(scope, e);
+                                                }
                                             }
                                         } else {
                                             X_Log.error(XapiVertxServer.class, "Failed sending source", fileName);
                                             callback.in(scope, fail);
                                         }
                                     });
+                                    X_Process.runDeferred(blockOnRequest);
                                 }
                             } else {
                                 X_Log.warn(XapiVertxServer.class, "No file to serve for ", file, "from url", newUrl);

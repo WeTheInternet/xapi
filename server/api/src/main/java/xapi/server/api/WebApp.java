@@ -6,6 +6,7 @@ import xapi.collect.api.StringTo;
 import xapi.dev.api.Classpath;
 import xapi.fu.Out1;
 import xapi.inject.X_Inject;
+import xapi.model.X_Model;
 import xapi.model.api.Model;
 import xapi.model.api.PrimitiveSerializer;
 
@@ -34,6 +35,15 @@ public interface WebApp extends Model {
 
     default StringTo<ModelGwtc> getOrCreateGwtModules() {
         return getOrCreate(this::getGwtModules, Out1.out1Deferred(X_Collect::newStringMap, ModelGwtc.class), this::setGwtModules);
+    }
+
+    default ModelGwtc getGwtModule(String moduleName) {
+        return getOrCreateGwtModules()
+            .getOrCreate(moduleName, m-> initGwtc(X_Model.create(ModelGwtc.class)));
+    }
+
+    default ModelGwtc initGwtc(ModelGwtc modelGwtc) {
+        return modelGwtc;
     }
 
     StringTo<Model> getTemplates();

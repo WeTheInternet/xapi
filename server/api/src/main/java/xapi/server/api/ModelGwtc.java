@@ -11,7 +11,6 @@ import xapi.except.NotYetImplemented;
 import xapi.fu.In2;
 import xapi.gwtc.api.CompiledDirectory;
 import xapi.gwtc.api.GwtManifest;
-import xapi.gwtc.api.ServerRecompiler;
 import xapi.inject.X_Inject;
 import xapi.log.X_Log;
 import xapi.model.api.Model;
@@ -34,10 +33,6 @@ public interface ModelGwtc extends Model {
     GwtcService getService();
 
     ModelGwtc setService(GwtcService service);
-
-    ServerRecompiler getRecompiler();
-
-    ModelGwtc setRecompiler(ServerRecompiler recompiler);
 
     String getPrecompileLocation();
 
@@ -69,7 +64,7 @@ public interface ModelGwtc extends Model {
         final GwtManifest manifest = getOrCreateManifest();
         CompileMessage status = gwtc.getJobManager().getStatus(manifest.getModuleName());
         if (status == null) {
-            gwtc.recompile(manifest, null, (comp, err)->{
+            gwtc.doCompile(manifest, 0,null, (comp, err)->{
                 if (err != null) {
                     X_Log.error(ModelGwtc.class, "Failure in warmup compile", err, "module:\n", manifest);
                 }

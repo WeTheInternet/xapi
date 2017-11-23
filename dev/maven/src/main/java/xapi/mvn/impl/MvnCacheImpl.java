@@ -16,6 +16,8 @@ import xapi.mvn.api.MvnCache;
 import xapi.mvn.service.MvnService;
 import xapi.util.X_String;
 
+import java.io.File;
+
 /**
  * In cases where we need to lookup values from jars and poms, we do not want to have to keep resolving artifacts,
  * and inspecting poms; so, we use this cache to help speed up repeated lookups.
@@ -107,40 +109,72 @@ public class MvnCacheImpl implements MvnCache {
     }
     public String getProperty(Model model, String propertyName) {
         // remove ${wrapper}
-        if (propertyName.startsWith("${")) {
-            propertyName = propertyName.substring(2, propertyName.length()-1);
+        String before = "";
+        String after = "";
+        int start = propertyName.indexOf("${");
+        if (start != -1) {
+            if (start > 0) {
+                before = propertyName.substring(0, start);
+            }
+            final int end = propertyName.indexOf('}', start);
+            if (end < propertyName.length()) {
+                after = propertyName.substring(end + 1);
+            }
+            propertyName = propertyName.substring(start + 2, end);
+        }
+        if ("project.build.directory".equals(propertyName) ) {
+            return before + getBuildDirectory(model) + after;
+        }
+        if ("project.build.sourceDirectory".equals(propertyName) ) {
+            return before + getSourceDirectory(model) + after;
+        }
+        if ("project.directory".equals(propertyName) || "basedir".equals(propertyName)) {
+            return before + model.getProjectDirectory() + after;
         }
         if ("project.version".equals(propertyName) || "pom.version".equals(propertyName)) {
             if (model.getVersion() != null) {
-                return model.getVersion();
+                return before + model.getVersion() + after;
             } else if (model.getParent() != null) {
-                return model.getParent().getVersion();
+                return before + model.getParent().getVersion() + after;
             }
         }
         if ("pom.groupId".equals(propertyName) || "project.groupId".equals(propertyName)) {
             if (model.getGroupId() != null) {
-                return model.getGroupId();
+                return before + model.getGroupId() + after;
             } else if (model.getParent() != null) {
-                return model.getParent().getGroupId();
+                return before + model.getParent().getGroupId() + after;
             }
         }
         if ("pom.artifactId".equals(propertyName) || "project.groupId".equals(propertyName)) {
-            return model.getArtifactId();
+            return before + model.getArtifactId() + after;
         }
         if (model.getProperties() != null) {
             String value = model.getProperties().getProperty(propertyName);
             if (value != null) {
-                return value;
+                return before + value + after;
             }
         }
         if (model.getParent() != null) {
-            return getProperty(getPom(model.getParent()), propertyName);
+            return before + getProperty(getPom(model.getParent()), propertyName) + after;
         }
         String result = service.normalize(propertyName);
         if (result.startsWith("$")) {
             throw new IllegalStateException("Model " + model + " does not contain property " + propertyName);
         }
-        return result;
+        return before + result + after;
+    }
+
+    private String getBuildDirectory(Model model) {
+        if (model.getBuild() == null || model.getBuild().getDirectory() == null) {
+            return new File(model.getProjectDirectory(), "target").getAbsolutePath();
+        }
+        return model.getBuild().getDirectory();
+    }
+    private String getSourceDirectory(Model model) {
+        if (model.getBuild() == null || model.getBuild().getSourceDirectory() == null) {
+            return new File(model.getProjectDirectory(), "src/main/java").getAbsolutePath();
+        }
+        return model.getBuild().getSourceDirectory();
     }
 
     public String toArtifactString(Model pom, Dependency artifact) {

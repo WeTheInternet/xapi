@@ -64,7 +64,7 @@ public class GwtcRemoteProcessJob extends GwtcJob {
             programArgs
         );
 
-        String[] cp = manifest.toClasspathFullCompile(service.getMavenLoader());
+        String[] cp = manifest.toClasspathFullCompile();
         final URL[] asUrls = ArrayIterable.iterate(cp)
             .map(item->"file:" + item)
             .mapUnsafe(URL::new).toArray(URL[]::new);

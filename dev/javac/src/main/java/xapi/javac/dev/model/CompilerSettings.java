@@ -16,7 +16,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.SplittableRandom;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
@@ -144,7 +143,12 @@ public class CompilerSettings implements Rethrowable {
                             if (asFile.exists()) {
                                 args.add(asFile.getCanonicalPath());
                             } else {
-                                throw new IllegalArgumentException("Cannot find file " + file + " in any classpath directories");
+                                final URL fromCl = Thread.currentThread().getContextClassLoader()
+                                    .getResource(file);
+                                if (fromCl == null) {
+                                    throw new IllegalArgumentException("Cannot find file " + file + " in any classpath directories");
+                                }
+                                args.add(fromCl.getPath());
                             }
                         }
                     }
@@ -206,10 +210,22 @@ public class CompilerSettings implements Rethrowable {
         return this;
     }
 
+    /**
+     * Sets javac -Ximplicit flag.
+     *
+     * NEWER will not reprocess source if its compiled output is newer.
+     * SOURCE will always reprocess source files if found on classpath.
+     */
     public enum PreferMode {
         NEWER, SOURCE
     }
 
+    /**
+     * Sets javac -implicit flag.
+     *
+     * CLASS means all dependencies should be on classpath.
+     * NONE allows missing dependencies to be ignored.
+     */
     public enum ImplicitMode {
         CLASS, NONE
     }
@@ -408,8 +424,9 @@ public class CompilerSettings implements Rethrowable {
         return plugins;
     }
 
-    public void setPlugins(List<String> plugins) {
+    public CompilerSettings setPlugins(List<String> plugins) {
         this.plugins = plugins;
+        return this;
     }
 
     public Set<String> getClasspath() {

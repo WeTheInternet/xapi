@@ -25,7 +25,7 @@ public abstract class GwtcServiceAbstract extends ReflectiveMavenLoader implemen
 
   protected final StringTo<GwtcProjectGenerator> projects;
 
-  public GwtcServiceAbstract(ClassLoader resourceLoader) {
+  public GwtcServiceAbstract() {
     projects = X_Collect.newStringMap(GwtcProjectGenerator.class);
 
   }

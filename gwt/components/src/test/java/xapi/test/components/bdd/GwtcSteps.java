@@ -100,9 +100,9 @@ public class GwtcSteps {
   private static final String GENERATED_TEST_MODULE = "xapi.test.pkg.TestModule";
 
   static {
-    X_Properties.setProperty(X_Namespace.PROPERTY_LOG_LEVEL, "ALL");
+    X_Properties.setProperty(X_Namespace.PROPERTY_LOG_LEVEL, "INFO");
     X_Properties.setProperty(X_Namespace.PROPERTY_MULTITHREADED, "10");
-    X_Log.logLevel(LogLevel.TRACE);
+    X_Log.logLevel(LogLevel.INFO);
   }
 
   private StringTo<CompiledComponent> compiledComponents;
@@ -373,13 +373,14 @@ public class GwtcSteps {
   private void initializeManifest(GwtcProjectGenerator service, GwtManifest manifest) {
     manifest.addSystemProp("gwt.usearchives=false");
     manifest.setDisableUnitCache(true);
-    manifest.setLogLevel(Type.TRACE);
+    manifest.setLogLevel(Type.INFO);
     manifest.setWorkDir(service.getTempDir().getAbsolutePath());
     manifest.setGenDir(manifest.getGenDir()); // make the default explicit, so the argument is sent to command line
-    manifest.setStrict(false); // break on any error
+    manifest.setStrict(true); // break on any error
     manifest.setCleanupMode(CleanupMode.DELETE_ON_SUCCESSFUL_EXIT);
 //    manifest.setCleanupMode(CleanupMode.NEVER_DELETE);
     manifest.setUseCurrentJvm(true);
+    manifest.setIsolateClassLoader(true);
   }
 
   private String getTagName(ClassOrInterfaceDeclaration cls) {

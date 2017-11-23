@@ -15,6 +15,7 @@ import com.sun.tools.javac.main.JavaCompiler;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Name;
+import org.apache.commons.io.Charsets;
 import xapi.annotation.inject.SingletonDefault;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
@@ -39,10 +40,13 @@ import xapi.source.X_Source;
 import xapi.util.X_Debug;
 
 import javax.lang.model.element.TypeElement;
+import javax.tools.DiagnosticListener;
 import javax.tools.FileObject;
+import javax.tools.JavaCompiler.CompilationTask;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
+import javax.tools.ToolProvider;
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.Writer;
@@ -88,6 +92,39 @@ public class CompilerServiceImpl implements CompilerService, Rethrowable {
     } catch (MalformedURLException e) {
       throw rethrow (e);
     }
+  }
+
+  public void doCompile(CompilerSettings settings, String ... files) {
+    final javax.tools.JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+    final Writer out = new PrintWriter(System.out);
+    final DiagnosticListener<? super JavaFileObject> diagnostics = s-> {
+      X_Log.info(CompilerServiceImpl.class,
+          s,
+          s.getCode(),
+          s.getKind(),
+          s.getStartPosition(),
+          s.getPosition(),
+          s.getEndPosition(),
+          s.getMessage(Locale.ENGLISH),
+          s.getLineNumber(),
+          s.getColumnNumber()
+      );
+    };
+    final Locale locale = Locale.ENGLISH;
+    final Charset charset = Charsets.UTF_8;
+    final JavaFileManager filer = compiler.getStandardFileManager(diagnostics, locale, charset);
+    final List<String> options = new ArrayList<>();
+    final List<String> classes = new ArrayList<>();
+    final Iterable<? extends JavaFileObject> comps = new ArrayList<>();
+    final CompilationTask task = compiler.getTask(
+        out,
+        filer,
+        diagnostics,
+        options,
+        classes,
+        comps
+    );
+    final Boolean result = task.call();
   }
 
   @Override

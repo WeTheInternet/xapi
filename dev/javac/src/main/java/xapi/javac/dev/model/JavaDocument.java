@@ -108,7 +108,7 @@ public class JavaDocument implements DebugRethrowable {
   }
 
   public void finish() {
-    X_Log.info(getClass(), "Finished compilation of document ",getTypeName(), this);
+    X_Log.info(JavaDocument.class, "Finished compilation of document ",getTypeName(), this);
   }
 
   public String getTypeName() {

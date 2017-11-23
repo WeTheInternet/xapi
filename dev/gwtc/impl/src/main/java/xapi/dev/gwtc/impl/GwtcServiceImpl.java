@@ -2,20 +2,15 @@ package xapi.dev.gwtc.impl;
 
 import xapi.annotation.compile.Dependency;
 import xapi.annotation.inject.InstanceDefault;
-import xapi.collect.X_Collect;
-import xapi.collect.api.StringTo;
-import xapi.dev.impl.ExtensibleClassLoader;
-import xapi.dev.impl.ReflectiveMavenLoader;
 import xapi.dev.gwtc.api.AnnotatedDependency;
-import xapi.dev.gwtc.api.GwtcJob;
 import xapi.dev.gwtc.api.GwtcJobMonitor.CompileMessage;
 import xapi.dev.gwtc.api.GwtcProjectGenerator;
 import xapi.dev.gwtc.api.GwtcService;
+import xapi.dev.impl.ExtensibleClassLoader;
+import xapi.dev.impl.ReflectiveMavenLoader;
 import xapi.dev.source.ClassBuffer;
 import xapi.file.X_File;
 import xapi.fu.*;
-import xapi.fu.Do.DoUnsafe;
-import xapi.fu.In2.In2Unsafe;
 import xapi.fu.iterate.ArrayIterable;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
@@ -23,10 +18,8 @@ import xapi.gwtc.api.CompiledDirectory;
 import xapi.gwtc.api.GwtManifest;
 import xapi.gwtc.api.Gwtc;
 import xapi.gwtc.api.GwtcProperties;
-import xapi.gwtc.api.ServerRecompiler;
 import xapi.jre.process.ConcurrencyServiceJre;
 import xapi.log.X_Log;
-import xapi.model.X_Model;
 import xapi.mvn.api.MvnDependency;
 import xapi.reflect.X_Reflect;
 import xapi.test.junit.JUnit4Runner;
@@ -50,7 +43,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
@@ -72,19 +64,10 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
           "(" + Pattern.quote(Dependency.DIR_TEMP) + ")|"
   );
 
-  private final StringTo<GwtcJobStateImpl> runningCompiles;
-  private final StringTo<GwtcJobManagerAbstract> jobs;
   private final GwtcJobManagerImpl manager;
   private String binDir;
 
   public GwtcServiceImpl() {
-    this(Thread.currentThread().getContextClassLoader());
-  }
-
-  public GwtcServiceImpl(ClassLoader resourceLoader) {
-    super(resourceLoader);
-    runningCompiles = X_Collect.newStringMap(GwtcJobStateImpl.class);
-    jobs = X_Collect.newStringMap(GwtcJobManagerAbstract.class);
     manager = new GwtcJobManagerImpl(this);
   }
 
@@ -97,6 +80,8 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
   public void doCompile(
       boolean avoidWork, GwtManifest manifest, long timeout, TimeUnit unit, In2<CompiledDirectory, Throwable> callback
   ) {
+    // TODO: consider supporting a TreeLogger argument, and being able to get the job to feed results back to it.
+    // (collIDE needs this; it was a feature we removed when gutting the Gwtc prototype).
     if (avoidWork && manager.getStatus(manifest.getModuleName()) == CompileMessage.Success) {
       CompiledDirectory dir = manifest.getCompileDirectory();
       if (dir != null) {
@@ -115,29 +100,11 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
   }
 
   @Override
-  public GwtcJobStateImpl recompile(
-      GwtManifest manifest,
-      Long millisToWait,
-      In2<ServerRecompiler, Throwable> callback
-  ) {
-
-    manifest.setRecompile(true);
-
-    String id = manifest.getModuleName();
-    GwtcJobStateImpl job = runningCompiles.getOrCreate(id, module ->
-      new GwtcJobStateImpl(manifest, GwtcServiceImpl.this));
-
-    job.startCompile(callback);
-
-    return job;
-  }
-
-  @Override
   public URLClassLoader resolveClasspath(GwtManifest manifest) {
     X_Log.info(GwtcServiceImpl.class, "Starting gwt compile", manifest.getModuleName());
     X_Log.debug(getClass(), manifest);
 
-    final String[] classpath = manifest.toClasspathFullCompile(this);
+    final String[] classpath = manifest.toClasspathFullCompile();
     X_Log.debug(getClass(), "Requested Classpath\n", classpath);
 
     In1<Integer> cleanup = prepareCleanup(manifest);
@@ -151,39 +118,6 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
   @Override
   public ReflectiveMavenLoader getMavenLoader() {
     return this;
-  }
-
-  @Override
-  public In2Unsafe<Integer, TimeUnit> startTask(Runnable task, URLClassLoader loader) {
-    Thread t = new Thread(task);
-    try {
-      loader.loadClass("com.google.gwt.core.ext.Linker");
-    } catch (ClassNotFoundException e) {
-      e.printStackTrace();
-    }
-    final DoUnsafe canceler = ()->{
-      t.interrupt();
-      t.join();
-    };
-    t.setUncaughtExceptionHandler((thread, error)->{
-      if (X_Util.unwrap(error) instanceof InterruptedException) {
-        // Someone was trying to cancel the job; ignore
-      } else {
-        // Not sure this is a wise thing to do... the thread should already be ending due to this handler running.
-        t.interrupt();
-      }
-    });
-    t.setContextClassLoader(loader);
-    t.start();
-    final In2Unsafe<Integer, TimeUnit> blocker = (sec, unit) -> {
-      try {
-        t.join(unit.toMillis(sec));
-      } catch (InterruptedException e) {
-        throw X_Debug.rethrow(e);
-      }
-    };
-
-    return blocker;
   }
 
   private URL[] fromClasspath(String[] classpath) {
@@ -253,7 +187,7 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
     } catch (MalformedURLException e) {
       X_Log.error(GwtcServiceImpl.class, "Cannot create URL from GwtManifest genDir", genDir, e);
     }
-    final ExtensibleClassLoader loader = new ExtensibleClassLoader(dedup(urls), superLoader(manifest));
+    final ExtensibleClassLoader loader = new ExtensibleClassLoader(dedup(urls), superLoader(manifest), "GwtcGroup" + System.identityHashCode(this));
 
     return ensureMeetsMinimumRequirements(loader);
   }
@@ -344,7 +278,7 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
         return ex;
       } else {
         @SuppressWarnings("UnnecessaryLocalVariable") // nice for debugging
-        ExtensibleClassLoader newLoader = new ExtensibleClassLoader(dedup(arr), classpath);
+        ExtensibleClassLoader newLoader = new ExtensibleClassLoader(dedup(arr), classpath, "GwtcGroup" + System.identityHashCode(this));
         return newLoader;
       }
     }
@@ -364,26 +298,6 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
     // When not set to reuse jvm, we are currently going to allow the current classloader to be used,
     // but we should likely update this to return null instead
     return Thread.currentThread().getContextClassLoader();
-  }
-
-  private boolean runtimeContainsClasspath(String genDir, String[] classpath) {
-    final URL[] runtimeCp = ((URLClassLoader) getClass().getClassLoader()).getURLs();
-    X_Log.debug("Runtime cp", runtimeCp);
-    searching:
-    for (URL url : runtimeCp) {
-      for (String s : classpath) {
-        if (genDir.equals(s)) {
-          continue searching;
-        }
-        final String external = url.toExternalForm();
-        if (external.endsWith(s) || external.contains("jre/lib")) {
-          continue searching;
-        }
-      }
-      return false;
-    }
-
-    return true;
   }
 
   @Override
@@ -414,14 +328,10 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
     );
   }
 
-
   //  @Override
   protected void generateReportError(ClassBuffer classBuffer) {
 //    super.generateReportError(classBuffer);
   }
-
-
-
 
   @Override
   public String inGeneratedDirectory(GwtManifest manifest, String filename) {
@@ -469,8 +379,14 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
         value = value.substring(0, replacement.start)
             + replacement.newValue+value.substring(replacement.end);
       }
-      if (!new File(value).isAbsolute()) {
-        value = manifest.getRelativeRoot() + File.separator + value;
+      if (!new File(val).isAbsolute()) {
+        final File f = new File(manifest.getRelativeRoot(), value);
+        if (f.exists()) {
+          value = f.getAbsolutePath();
+        }
+      }
+      if (!new File(val).exists()) {
+        return singleItem(value);
       }
       try {
         return singleItem(new File(value).getCanonicalPath());
@@ -565,7 +481,11 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
       if (!loc.isAbsolute()) {
         loc = Paths.get(manifest.getRelativeRoot()).resolve(loc);
       }
-      return singleItem(loc.resolve(item).toString());
+      try {
+        return singleItem(loc.resolve(item).toRealPath().toString());
+      } catch (IOException e) {
+        throw X_Debug.rethrow(e);
+      }
     }
   }
 

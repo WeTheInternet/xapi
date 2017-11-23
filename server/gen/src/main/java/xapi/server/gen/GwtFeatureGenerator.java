@@ -15,6 +15,7 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.api.ClasspathProvider;
+import xapi.dev.gwtc.api.GwtcProjectGenerator;
 import xapi.dev.gwtc.api.GwtcService;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.ui.api.ComponentBuffer;
@@ -114,7 +115,7 @@ public class GwtFeatureGenerator extends UiFeatureGenerator {
         final Maybe<UiAttrExpr> attrClasspath = gwtc.getAttribute("classpath");
         final Maybe<UiAttrExpr> attrSource = gwtc.getAttribute("source");
         final Maybe<UiAttrExpr> attrInherit = gwtc.getAttribute("inherit");
-        String module = attrModule
+        final String module = attrModule
             .mapIfAbsent(()->attrModule.getOrThrow(()->new IllegalArgumentException("A <gwtc /> element must have at least a name or module")))
             .mapNullSafe(UiAttrExpr::getExpression)
             .mapNullSafe(e->service.resolveString(ctx, e))
@@ -122,7 +123,7 @@ public class GwtFeatureGenerator extends UiFeatureGenerator {
         final Maybe<String> moduleShortName = gwtc.getAttribute("moduleShortName")
             .mapNullSafe(UiAttrExpr::getExpression)
             .mapNullSafe(e -> service.resolveString(ctx, e));
-        String name = attrName
+        final String name = attrName
             .mapNullSafe(WebAppGenerator::getExpressionSerialized, service, ctx)
             .get();
 
@@ -142,44 +143,53 @@ public class GwtFeatureGenerator extends UiFeatureGenerator {
         final ContainerMetadata root = source.getRoot();
         final String var = root.newVarName("gwtc" + X_Source.javaSafeName(name));
         final String comp = root.newVarName("compiler" + X_Source.javaSafeName(name));
-        final String manifest = source.getRoot().newVarName("manifest" + X_Source.javaSafeName(name));
+        final String proj = root.newVarName("project" + X_Source.javaSafeName(name));
+        final String mod = root.newVarName("module" + X_Source.javaSafeName(name));
+        final String man = source.getRoot().newVarName("manifest" + X_Source.javaSafeName(name));
         final String model = mb.addImport(ModelGwtc.class);
+        final String manifest = mb.addImport(GwtManifest.class);
         final String compiler = mb.addImport(GwtcService.class);
+        final String project = mb.addImport(GwtcProjectGenerator.class);
         final String create = mb.addImportStatic(X_Model.class, "create");
-        mb.println("final " + model + " " + var + " = " + create + "(" + model + ".class);");
-        mb.println("final " + compiler + " " + comp + " = " + var + ".getOrCreateService();");
 
+        mb.println("final String " + mod + " = \"" + module + "\";");
+        mb.println("final " + model + " " + var + " = app.getGwtModule(" + mod + ");");
+        mb.println("final " + compiler + " " + comp + " = " + var + ".getOrCreateService();");
+        mb.println("final " + project + " " + proj + " = " + comp + ".getProject(" + mod + ");");
+        mb.println("final " + manifest + " " + man + " = " + proj + ".getManifest();");
+        mb.println(var + ".setManifest(" + man + ");");
+
+            final String moduleName = X_Util.firstNotNull(module,name);
         if (attrInherit.isPresent()) {
             final IntTo<String> inherits = service.resolveToLiterals(ctx, attrInherit.get().getExpression());
             for (String inherit : inherits) {
-                mb.println(comp + ".addGwtInherit(\"" + inherit + "\");");
+                mb.println(proj + ".addGwtInherit(\"" + inherit + "\");");
             }
         }
 
         findEntryPoints(name, module, gwtc).forAll(
             cls ->
-                mb.println(compiler + ".addClass(" + mb.addImport(cls) + ".class);")
+                mb.println(proj + ".addClass(" + mb.addImport(cls) + ".class);")
         );
         findGwtXmls(name, module, gwtc).forAll(
             cls ->
-                mb.println(comp + ".addGwtInherit(\"" + cls + "\");")
+                mb.println(proj + ".addGwtInherit(\"" + cls + "\");")
         );
-        mb.println("final " + mb.addImport(GwtManifest.class) + " " + manifest + " = " + var + ".getOrCreateManifest();");
         if (module != null || name != null) {
-            mb.println(manifest + ".setModuleName(\"" + X_Util.firstNotNull(module,name) + "\");");
+            mb.println(man + ".setModuleName(\"" + moduleName + "\");");
         }
         if (moduleShortName.isPresent()) {
-            mb.println(manifest + ".setModuleShortName(\"" + moduleShortName + "\");");
+            mb.println(man + ".setModuleShortName(\"" + moduleShortName + "\");");
         } else if (name != null) {
-            mb.println(manifest + ".setModuleShortName(\"" + name + "\");");
+            mb.println(man + ".setModuleShortName(\"" + name + "\");");
         }
 
         // Lets add sources first
         for (String s : sources) {
             // TODO: allow specifying other web-app components as source?
-            mb.println(manifest+".addSource(\"" + X_Source.escape(s) + "\");");
+            mb.println(man+".addSource(\"" + X_Source.escape(s) + "\");");
         }
-        includeClasspath(service, ctx, mb, manifest, classpath);
+        includeClasspath(service, ctx, mb, man, classpath);
 
 
         Class<GwtManifest> cls = GwtManifest.class;
@@ -202,10 +212,10 @@ public class GwtFeatureGenerator extends UiFeatureGenerator {
                 hadPort = true;
             }
             // Next, add this field to the generated output, formatting it based on the field type.
-            printManifestSetter(service, ctx, mb, manifest, field.getType(), setterName, attr.get());
+            printManifestSetter(service, ctx, mb, man, field.getType(), setterName, attr.get());
         }
         if (!hadPort) {
-            mb.println(manifest+".setPort(app.getPort());");
+            mb.println(man+".setPort(app.getPort());");
         }
 
         /*

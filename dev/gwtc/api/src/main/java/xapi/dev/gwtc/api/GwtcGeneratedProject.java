@@ -1,5 +1,6 @@
 package xapi.dev.gwtc.api;
 
+import xapi.annotation.common.Property;
 import xapi.annotation.compile.Dependency;
 import xapi.annotation.compile.Resource;
 import xapi.bytecode.ClassFile;
@@ -10,6 +11,9 @@ import xapi.dev.scanner.impl.ClasspathResourceMap;
 import xapi.dev.source.XmlBuffer;
 import xapi.fu.In1Out1;
 import xapi.fu.MappedIterable;
+import xapi.fu.SetLike;
+import xapi.fu.iterate.SizedIterable;
+import xapi.fu.java.X_Jdk;
 import xapi.gwtc.api.GwtManifest;
 import xapi.gwtc.api.Gwtc;
 import xapi.gwtc.api.Gwtc.AncestorMode;
@@ -96,6 +100,9 @@ public class GwtcGeneratedProject {
 
   private final GwtcXmlBuilder module;
   private final Set<AnnotatedDependency> dependencies = new LinkedHashSet<>();
+  private final SetLike<Property> configProps = X_Jdk.setLinked();
+  private final SetLike<Property> props = X_Jdk.setLinked();
+  private final SetLike<Property> systemProps = X_Jdk.setLinked();
   private final Set<Resource> gwtXmlDeps = new LinkedHashSet<Resource>();
   private final Set<GwtcProperties> launchProperties = new LinkedHashSet<GwtcProperties>();
   private final Set<Object> needChildren = new HashSet<Object>();
@@ -134,13 +141,16 @@ public class GwtcGeneratedProject {
   }
 
   public boolean addClass(Class<?> cls) {
+    return addClass(cls, true);
+  }
+  protected boolean addClass(Class<?> cls, boolean warnDup) {
     if (finishedClasses.add(cls)) {
       if (finishedClasses.size() == 1) {
         firstClassAdded = cls;
       }
       scanClass(cls);
       return true;
-    } else {
+    } else if (warnDup) {
       X_Log.warn(GwtcGeneratedProject.class, "Skipping class we've already seen", cls);
     }
     return false;
@@ -174,7 +184,7 @@ public class GwtcGeneratedProject {
     } if (data.gwtc == null) {
       return;
     }
-    addClass(clazz);
+    addClass(clazz, false);
     Object parent;
     if (data.isFindParent()) {
       parent = findAncestor(data.source);
@@ -250,7 +260,7 @@ public class GwtcGeneratedProject {
       }
     }
     if (parent != null) {
-      X_Log.trace(getClass(), "Next annotated parent of ",c,"is",parent);
+      X_Log.trace(GwtcGeneratedProject.class, "Next annotated parent of ",c,"is",parent);
 
     }
   }
@@ -417,6 +427,22 @@ public class GwtcGeneratedProject {
     for (GwtcProperties prop : gwtc.propertiesLaunch()) {
       addLaunchProperty(prop);
     }
+    for (Property configProp : gwtc.propertiesGwtConfiguration()) {
+      addConfigProperty(configProp);
+    }
+
+  }
+
+  public boolean addConfigProperty(Property configProp) {
+    return configProps.add(configProp);
+  }
+
+  public boolean addProperty(Property configProp) {
+    return props.add(configProp);
+  }
+
+  public boolean addSystemProperty(Property configProp) {
+    return systemProps.add(configProp);
   }
 
   public boolean addLaunchProperty(GwtcProperties prop) {
@@ -435,10 +461,22 @@ public class GwtcGeneratedProject {
     return dependencies::iterator;
   }
 
+  public SizedIterable<Property> getConfigProps() {
+    return configProps;
+  }
+
+  public SizedIterable<Property> getProps() {
+    return props;
+  }
+
+  public SizedIterable<Property> getSystemProps() {
+    return systemProps;
+  }
+
   public void addGwtcClass(Gwtc gwtc, Class<?> clazz) {
     // Generate a new gwt.xml file and inherit it.
     GwtcUnit node = nodes.get(clazz);
-    String inheritName = node.generateGwtXml(clazz.getPackage().getName(), clazz.getSimpleName(), gwtc);
+    String inheritName = node.generateGwtXml(clazz.getPackage().getName(), clazz.getSimpleName() + "Module", gwtc);
     inheritGwtXml(inheritName);
     addGwtcSettings(gwtc, clazz);
   }

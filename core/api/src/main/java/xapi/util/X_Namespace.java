@@ -212,5 +212,41 @@ public class X_Namespace {
    */
   public static String PROPERTY_MAVEN_WORKSPACE = "xapi.mvn.workspace";
 
+  /**
+   * "xapi.mvn.resolvable"
+   *
+   *  Default value is .*
+   *
+   *  A regex property which is applied to maven:artifact:coordinates.
+   *  If the regex matches, the dependency will be resolved from a jar to local workspace.
+   */
+  public static String PROPERTY_MAVEN_RESOLVABLE = "xapi.mvn.resolvable";
+
+  /**
+   * "xapi.mvn.unresolvable"
+   *
+   *  Default value is .*uber.*
+   *
+   *  Set this property to empty string if you also wish to include uber modules,
+   *  even though those modules should be used as a compiled artifact.
+   *
+   *  A regex property which is applied to maven:artifact:coordinates.
+   *  If the regex matches, the dependency will be _not_ be resolved from a jar to local workspace.
+   *
+   *  A removal takes priority over an addition.
+   */
+  public static String PROPERTY_MAVEN_UNRESOLVABLE = "xapi.mvn.unresolvable";
+
+  /**
+   * If you are using the shared secrets from XapiSecrets to define a universal parent classloader,
+   * you can overwrite this property to decide an artifact to load as the universal root.
+   *
+   * Default value if "net.wetheinter:xapi-dev-api:" + X_Namespace.XAPI_VERSION
+   *
+   * Any types included by this module should be considered sealed,
+   * as they must be shared across all classworlds.
+   */
+  public static String PROPERTY_UNIVERSAL_COORDS = "xapi.universal.coord";
+
 
 }

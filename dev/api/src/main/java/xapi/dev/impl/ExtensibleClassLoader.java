@@ -3,6 +3,7 @@ package xapi.dev.impl;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.dev.api.DynamicUrl;
+import xapi.process.api.HasThreadGroup;
 import xapi.dev.impl.dynamic.DynamicUrlBuilder;
 import xapi.fu.Immutable;
 import xapi.fu.In1Out1;
@@ -13,6 +14,7 @@ import xapi.fu.has.HasReset;
 import xapi.fu.lazy.ResettableLazy;
 import xapi.io.X_IO;
 import xapi.log.X_Log;
+import xapi.util.X_Namespace;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,6 +25,7 @@ import java.net.URLClassLoader;
 import java.net.URLStreamHandlerFactory;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
+import java.util.Enumeration;
 
 import static java.security.AccessController.doPrivileged;
 import static xapi.collect.X_Collect.MUTABLE_CONCURRENT;
@@ -38,7 +41,7 @@ import static xapi.collect.X_Collect.MUTABLE_CONCURRENT_INSERTION_ORDERED;
  *
  * Created by James X. Nelson (james @wetheinter.net) on 10/7/17.
  */
-public class ExtensibleClassLoader extends URLClassLoader implements HasLock, HasReset {
+public class ExtensibleClassLoader extends URLClassLoader implements HasLock, HasReset, HasThreadGroup {
 
     private volatile boolean checkMeFirst;
     private volatile boolean frozen;
@@ -50,6 +53,7 @@ public class ExtensibleClassLoader extends URLClassLoader implements HasLock, Ha
     private final StringTo<URL> loadedResources = X_Collect.newStringMap(URL.class, MUTABLE_CONCURRENT);
     private final StringTo<URL> extraUrls = X_Collect.newStringMap(URL.class, MUTABLE_CONCURRENT_INSERTION_ORDERED);
     private final ResettableLazy<URLClassLoader> extraLoader = new ResettableLazy<>(this::getExtraLoader);
+    private final Lazy<ThreadGroup> group;
 
     private URLClassLoader getExtraLoader() {
         return new URLClassLoader(extraUrls.forEachValue().toArray(URL[]::new));
@@ -82,19 +86,25 @@ public class ExtensibleClassLoader extends URLClassLoader implements HasLock, Ha
     }
 
     public ExtensibleClassLoader() {
-        this(new URL[0], null);
+        this(new URL[0], ClassLoader.getSystemClassLoader());
     }
 
     public ExtensibleClassLoader(URL[] urls, ClassLoader parent) {
+        this(urls, parent, "XApiThread" + System.identityHashCode(urls));
+    }
+
+    public ExtensibleClassLoader(URL[] urls, ClassLoader parent, String groupName) {
         super(fixup(urls), parent);
+        group = Lazy.deferred1(ThreadGroup::new, groupName);
     }
 
     public ExtensibleClassLoader(URL[] urls) {
-        super(fixup(urls));
+        this(urls, ClassLoader.getSystemClassLoader());
     }
 
     public ExtensibleClassLoader(URL[] urls, ClassLoader parent, URLStreamHandlerFactory factory) {
         super(fixup(urls), parent, factory);
+        group = Lazy.deferred1(ThreadGroup::new, "XApiThread" + System.identityHashCode(this));
     }
 
     @Override
@@ -141,9 +151,9 @@ public class ExtensibleClassLoader extends URLClassLoader implements HasLock, Ha
 
     @Override
     protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-        // class loading already has an implicit locking on each name.
+        // class loading has an implicit locking mechanism on each name; use it!
+        Class<?> result;
         synchronized (getClassLoadingLock(name)) {
-            Class<?> result;
             if (checkMeFirst) {
                 // only consult the map if we're supposed to check ourselves first
                 result = loadedClasses.getOrCreate(name, classFinder);
@@ -177,28 +187,77 @@ public class ExtensibleClassLoader extends URLClassLoader implements HasLock, Ha
             if (resolve) {
                 resolveClass(result);
             }
-            return result;
         }
+        if (result.getPackage() == null) {
+            // no package; lets define one
+            String clsName = result.getName();
+            int ind = clsName.lastIndexOf('.');
+            String pkg = ind == -1 ? "" : clsName.substring(0, ind);
+
+            if (isWti(pkg)) {
+                definePackage(pkg, "XApi", X_Namespace.XAPI_VERSION, "We The Internet",
+                    "Xapi", X_Namespace.XAPI_VERSION, "We The Internet", maybeSeal(pkg, result)
+                );
+            } else {
+                definePackage(pkg, null,
+                    null, null,
+                    null, null,
+                    null, maybeSeal(pkg, result));
+            }
+            assert result.getPackage() != null;
+        }
+        return result;
+    }
+
+    protected boolean isWti(String pkg) {
+        if (pkg.length() < 5) {
+            return false;
+        }
+        switch (pkg.substring(0, 5)) {
+            case "net.w":
+                return pkg.startsWith("net.wti.")
+                        ||
+                        pkg.startsWith("net.wetheinter.");
+            case "xapi.":
+                return true;
+        }
+        return pkg.startsWith("de.mocra.cy");
+    }
+
+    protected URL maybeSeal(String pkg, Class<?> result) {
+        return null; // default to to not seal
+    }
+
+    protected boolean isIsolated() {
+        return getParent() == null;
     }
 
     @Override
     public URL[] getURLs() {
-        URL[] givenUrls = super.getURLs();
+        // While you might think it's expensive to dedup our URLs here,
+        // you probably haven't seen how hideously slow URL is in collections.
+        // So, we pay for a string-keyed hashmap, but don't have to pay for URL-keyed set.
+        StringTo<URL> dedup = X_Collect.newStringMapInsertionOrdered(URL.class);
+        for (URL url : super.getURLs()) {
+            dedup.put(url.toString(), url);
+        }
 
         if (myUrl.isResolved()) {
             String dynamicUrl = getDynamicUrl();
             try {
-                givenUrls = X_Fu.push(givenUrls, new URL(dynamicUrl));
+                dedup.put(dynamicUrl, new URL(dynamicUrl));
             } catch (MalformedURLException e) {
                 throw new RuntimeException(e);
             }
         }
 
         if (extraUrls.isNotEmpty()) {
-            givenUrls = X_Fu.concat(extraLoader.out1().getURLs(), givenUrls);
+            for (URL url : extraUrls.forEachValue()) {
+                dedup.put(url.toString(), url);
+            }
         }
 
-        return givenUrls;
+        return dedup.forEachValue().toArray(URL[]::new);
     }
 
     @Override
@@ -255,6 +314,15 @@ public class ExtensibleClassLoader extends URLClassLoader implements HasLock, Ha
             }
         }
         return result;
+    }
+
+    @Override
+    public Enumeration<URL> findResources(String name) throws IOException {
+        final Enumeration<URL> mine = super.findResources(name);
+        if (extraLoader.isResolved()) {
+            return new CompoundEnumeration<>(new Enumeration[]{mine, extraLoader.out1().findResources(name)});
+        }
+        return mine;
     }
 
     public boolean isCheckMeFirst() {
@@ -355,4 +423,69 @@ public class ExtensibleClassLoader extends URLClassLoader implements HasLock, Ha
         addResourceFinder(req->extraLoader.out1().findResource(req));
     }
 
+    /**
+     * Use to create a new copy of another classloader;
+     * when an underlying jar changes, to be able to recover,
+     * we must be able to "throw away" a given classloader,
+     * and start fresh in a new thread (or we can override the
+     * default URL stream handler to enable "expirable URLs",
+     * so we can just fix the classloader instead of replacing it).
+     *
+     * This method will scan the given classloader,
+     * and return a new, extensible loader that you can use to launch a new thread.
+     */
+    public static URLClassLoader cloneLoader(final ClassLoader cl) {
+
+        URL[] urls;
+        if (cl instanceof ExtensibleClassLoader) {
+            // an extensible classloader who was loaded by our thread
+            return ((ExtensibleClassLoader)cl).createClone();
+        } else if (isForeignExtensibleLoader(cl)) {
+            // an ExtensibleClassLoader created by foreign classloader.
+            // we try this before instanceof URLClassLoader,
+            // since it is likely that a foreign loader would still use the same URLClassLoader class,
+            // as it will have been loaded by the bootstrap classloader.
+            // we want to call createClone, to let subtypes, if any, control cloning.
+            try {
+                return (URLClassLoader) cl.getClass().getMethod("createClone").invoke(cl);
+            } catch (Exception e) {
+                X_Log.warn(ExtensibleClassLoader.class, "Failure calling createClone() on ExtensibleClassLoader", cl, e);
+            }
+        } else if (cl instanceof URLClassLoader){
+            urls = ((URLClassLoader) cl).getURLs();
+            return new ExtensibleClassLoader(urls, cl.getParent());
+        } else {
+            X_Log.warn(ExtensibleClassLoader.class, "Unhandled classloader type", cl.getClass(), cl);
+        }
+        throw new UnsupportedOperationException("Cannot clone loader " + cl + " of type " + cl.getClass());
+    }
+
+    private static boolean isForeignExtensibleLoader(ClassLoader cl) {
+        Class<?> cls = cl.getClass();
+        do {
+            if (cls.getName().equals(ExtensibleClassLoader.class.getName())) {
+                return true;
+            }
+        } while ( (cls = cls.getSuperclass()) != null);
+        return false;
+    }
+
+    public URLClassLoader createClone() {
+        URL[] urls = getURLs();
+        if (myUrl.isResolved()) {
+            try {
+                urls = X_Fu.concat(new URL(myUrl.out1().getUrl()), urls);
+            } catch (MalformedURLException e) {
+                X_Log.error(ExtensibleClassLoader.class, "Bad dynamic url", myUrl.out1());
+                throw X_Fu.rethrow(e);
+            }
+        }
+        final URLClassLoader inst = new URLClassLoader(urls, getParent());
+        return inst;
+    }
+
+    @Override
+    public ThreadGroup getThreadGroup() {
+        return group.out1();
+    }
 }

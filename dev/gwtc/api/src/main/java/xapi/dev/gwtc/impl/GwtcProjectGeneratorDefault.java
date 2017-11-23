@@ -2,6 +2,7 @@ package xapi.dev.gwtc.impl;
 
 import org.junit.Assert;
 import org.junit.Test;
+import xapi.annotation.common.Property;
 import xapi.annotation.compile.Dependency;
 import xapi.annotation.compile.Dependency.DependencyType;
 import xapi.annotation.compile.DependencyBuilder;
@@ -33,6 +34,7 @@ import xapi.reflect.X_Reflect;
 import xapi.source.X_Source;
 import xapi.util.X_Debug;
 import xapi.util.X_Properties;
+import xapi.util.X_String;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -511,18 +513,8 @@ public class GwtcProjectGeneratorDefault implements GwtcProjectGenerator {
         }
         String entryPointLocation = service.inGeneratedDirectory(manifest, entryPoint.getQualifiedName().replace('.', '/')+".java");
         XmlBuffer xml = getGwtXml(manifest);
-        saveGwtXmlFile(xml, manifest.getModuleName(), manifest);
-        manifest.getModules().forEach(mod->{
-            saveGwtXmlFile(mod.getBuffer(), mod.getInheritName(), manifest);
-        });
-        saveTempFile(entryPoint.toString(), new File(entryPointLocation));
-        files.forBoth((path, body)->
-            saveTempFile(body.out1(), new File(service.inGeneratedDirectory(manifest, path)))
-        );
-        X_Log.info(GwtcProjectGeneratorDefault.class, "Generated entry point", "\n", getEntryPoint());
-        X_Log.info(GwtcProjectGeneratorDefault.class, "Generated module", manifest.getModuleName(), "\n", getGwtXml(manifest));
 
-        String gwtHome = X_Properties.getProperty("gwt.home");
+
         if (manifest.getCompileDirectory() == null) {
 
             GwtcProperties defaultProp = service.getDefaultLaunchProperties();
@@ -570,46 +562,38 @@ public class GwtcProjectGeneratorDefault implements GwtcProjectGenerator {
                     manifest.addDependencies(service.resolveDependency(manifest, dependency));
                 }
             }
-            if (gwtHome == null) {
-                final Enumeration<URL> compilerLoc;
-                try {
-                    compilerLoc = Compiler.class.getClassLoader().getResources(Compiler.class.getName().replace(
-                        '.',
-                        '/'
-                    ) + ".class");
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-                URL gwtHomeLocation;
-                while (compilerLoc.hasMoreElements()) {
-                    gwtHomeLocation = compilerLoc.nextElement();
-                    if (gwtHomeLocation == null) {
-                        X_Log.warn("Unable to find gwt home from System property gwt.home, "
-                            , "nor from looking up the gwt compiler class from classloader.  Defaulting to ./lib");
-                        gwtHome = X_File.getPath(".");
-                    } else {
-                        gwtHome = gwtHomeLocation.toExternalForm();
-                        if (gwtHome.contains("jar!")) {
-                            gwtHome = gwtHome.split("jar!")[0]+"jar";
-                        }
-                        gwtHome = gwtHome.replace("file:", "").replace("jar:", "");
-                        if (manifest.getGwtVersion().length() == 0) {
-                            if (gwtHome.contains("gwt-dev.jar")) {
-                                manifest.setGwtVersion("");
-                            } else {
-                                manifest.setGwtVersion(service.extractGwtVersion(gwtHome));
-                            }
-                        }
-                        int ind = gwtHome.lastIndexOf("gwt-dev");
-                        if (ind == -1) {
-                            continue;
-                        }
-                        gwtHome = gwtHome.substring(0, ind-1);
-                    }
+            for (Property property : context.getConfigProps()) {
+                xml.makeTag("set-configuration-property")
+                    .setAttribute("name", property.name())
+                    .setAttribute("value", property.value());
+            }
+            for (Property property : context.getProps()) {
+                xml.makeTag("set-property")
+                    .setAttribute("name", property.name())
+                    .setAttribute("value", property.value());
+            }
+            for (Property sysProp : context.getSystemProps()) {
+                String propName = sysProp.name().startsWith("-") ? sysProp.name()
+                    : "-D" + sysProp.name();
+                if (X_String.isEmpty(sysProp.value())) {
+                    manifest.addSystemProp(propName);
+                } else {
+                    manifest.addSystemProp(propName + "="+sysProp.value());
                 }
             }
-            X_Properties.setProperty("gwt.home", gwtHome);
+
         }
+
+        saveGwtXmlFile(xml, manifest.getModuleName(), manifest);
+        manifest.getModules().forEach(mod->{
+            saveGwtXmlFile(mod.getBuffer(), mod.getInheritName(), manifest);
+        });
+        saveTempFile(entryPoint.toString(), new File(entryPointLocation));
+        files.forBoth((path, body)->
+            saveTempFile(body.out1(), new File(service.inGeneratedDirectory(manifest, path)))
+        );
+        X_Log.info(GwtcProjectGeneratorDefault.class, "Generated entry point", "\n", getEntryPoint());
+        X_Log.info(GwtcProjectGeneratorDefault.class, "Generated module", manifest.getModuleName(), "\n", getGwtXml(manifest));
 
         generateWar(manifest);
     }

@@ -158,7 +158,7 @@ public class ReflectiveMavenLoader implements MavenLoader {
 
     @Override
     public Out1<Iterable<String>> downloadDependency(MvnDependency dependency) {
-        X_Log.info(ReflectiveMavenLoader.class, "Requested dependency", dependency);
+        X_Log.trace(ReflectiveMavenLoader.class, "Requested dependency", dependency);
         if (canDownloadFromMaven()) {
             // Huzzah; X_Maven is already on our classpath.  Lets use it reflectively.
             try {

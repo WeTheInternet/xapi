@@ -1,6 +1,7 @@
 package xapi.dev.api;
 
 import xapi.annotation.compile.Dependency;
+import xapi.fu.MappedIterable;
 import xapi.fu.Out1;
 import xapi.model.X_Model;
 import xapi.mvn.api.MvnDependency;
@@ -46,4 +47,9 @@ public interface MavenLoader {
         }
         return dep;
     }
+
+    default MappedIterable<String> downloadDependencyNow(MvnDependency dependency) {
+        return MappedIterable.mapped(downloadDependency(dependency).out1());
+    }
+
 }

@@ -27,8 +27,12 @@ import org.eclipse.aether.transport.file.FileTransporterFactory;
 import org.eclipse.aether.transport.http.HttpTransporterFactory;
 import xapi.annotation.inject.SingletonDefault;
 import xapi.collect.X_Collect;
+import xapi.collect.api.Fifo;
+import xapi.collect.api.InitMap;
+import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
 import xapi.collect.impl.AbstractMultiInitMap;
+import xapi.collect.impl.InitMapDefault;
 import xapi.dev.api.ProjectSources;
 import xapi.dev.resource.impl.StringDataResource;
 import xapi.dev.scanner.X_Scanner;
@@ -39,6 +43,7 @@ import xapi.fu.In1Out1;
 import xapi.fu.Lazy;
 import xapi.fu.MappedIterable;
 import xapi.fu.Out1;
+import xapi.fu.Out1.Out1Unsafe;
 import xapi.fu.iterate.ArrayIterable;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
@@ -52,6 +57,7 @@ import xapi.log.api.LogLevel;
 import xapi.model.X_Model;
 import xapi.model.impl.ModelSerializerDefault;
 import xapi.mvn.X_Maven;
+import xapi.mvn.api.MvnCache;
 import xapi.mvn.api.MvnDependency;
 import xapi.mvn.service.MvnService;
 import xapi.reflect.X_Reflect;
@@ -73,6 +79,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.jar.JarFile;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 
@@ -87,6 +94,10 @@ public class MvnServiceDefault implements MvnService {
   private final Lazy<SizedIterable<String>> searchGroups;
   private final Lazy<StringTo<Model>> localProjects;
   private final Lazy<StringTo<ProjectSources>> localSources;
+  private final Lazy<In1Out1<String, Boolean>> allowedToResolve;
+  private final Lazy<In1Out1<String, Boolean>> notAllowedToResolve;
+
+  private final InitMap<Artifact, ArtifactResult> lookupCache;
 
   public MvnServiceDefault() {
     cache = new MvnCacheImpl(this);
@@ -94,6 +105,57 @@ public class MvnServiceDefault implements MvnService {
     searchGroups = Lazy.deferred1(this::loadSearchGroups);
     localProjects = Lazy.deferred1(this::loadLocalProjects);
     localSources = Lazy.deferred1(this::loadLocalSources);
+    allowedToResolve = Lazy.deferred1(this::loadAllowedToResolve);
+    notAllowedToResolve = Lazy.deferred1(this::loadNotAllowedToResolve);
+    lookupCache = new InitMapDefault<>(
+        Artifact::toString, this::resolveArtifact);
+  }
+
+  private ArtifactResult resolveArtifact(Artifact artifact) {
+      Moment before = X_Time.now();
+      RepositorySystem repoSystem = this.repoSystem.get();
+      RepositorySystemSession session = this.session.get();
+      try {
+        final LocalArtifactRequest localRequest = new LocalArtifactRequest(artifact, remoteRepos(), null);
+        final LocalArtifactResult result = session.getLocalRepositoryManager().find(session, localRequest);
+        ArtifactRequest request = new ArtifactRequest(artifact, remoteRepos(), null);
+        if (result.isAvailable()) {
+          final ArtifactResult artifactResult = new ArtifactResult(request);
+          final Artifact withFile = artifact.setFile(result.getFile());
+          artifactResult.setArtifact(withFile);
+          artifactResult.setRepository(result.getRepository());
+          return artifactResult;
+        }
+        return repoSystem.resolveArtifact(session, request);
+      } catch (ArtifactResolutionException e) {
+        X_Log.log(getClass(), getLogLevel(), "Resolved? ", e.getResult().isResolved(), e.getResult().getExceptions());
+        X_Log.log(getClass(), getLogLevel(), "Could not download " + artifact, e);
+        throw X_Debug.rethrow(e);
+      } finally {
+        if (X_Log.loggable(LogLevel.DEBUG)) {
+          X_Log.debug("Resolved: " + artifact.toString() + " in "
+              + X_Time.difference(before));
+        }
+      }
+  }
+
+  protected In1Out1<String, Boolean> loadAllowedToResolve() {
+    final String regex = X_Properties.getProperty(X_Namespace.PROPERTY_MAVEN_RESOLVABLE, ".*");
+    final Pattern pattern = Pattern.compile(regex);
+    return In1Out1.of(pattern::matcher)
+        .mapIn(String::toString)
+        .mapOut(Matcher::matches);
+  }
+
+  protected In1Out1<String, Boolean> loadNotAllowedToResolve() {
+    final String regex = X_Properties.getProperty(X_Namespace.PROPERTY_MAVEN_UNRESOLVABLE, ".*uber.*");
+    if (X_String.isEmpty(regex)) {
+      return In1Out1.RETURN_FALSE;
+    }
+    final Pattern pattern = Pattern.compile(regex);
+    return In1Out1.of(pattern::matcher)
+        .mapIn(String::toString)
+        .mapOut(Matcher::matches);
   }
 
   protected StringTo<ProjectSources> loadLocalSources() {
@@ -253,34 +315,10 @@ public class MvnServiceDefault implements MvnService {
   @Override
   public ArtifactResult loadArtifact(String groupId, String artifactId,
       String classifier, String extension, String version) {
-    Moment before = X_Time.now();
-    RepositorySystem repoSystem = this.repoSystem.get();
-    RepositorySystemSession session = this.session.get();
 
     DefaultArtifact artifact = new DefaultArtifact( groupId,artifactId, normalize(classifier), X_String.isEmpty(extension) ? "jar" : extension, version);
 
-    try {
-      final LocalArtifactRequest localRequest = new LocalArtifactRequest(artifact, remoteRepos(), null);
-      final LocalArtifactResult result = session.getLocalRepositoryManager().find(session, localRequest);
-      ArtifactRequest request = new ArtifactRequest(artifact, remoteRepos(), null);
-      if (result.isAvailable()) {
-        final ArtifactResult artifactResult = new ArtifactResult(request);
-        final Artifact withFile = artifact.setFile(result.getFile());
-        artifactResult.setArtifact(withFile);
-        artifactResult.setRepository(result.getRepository());
-        return artifactResult;
-      }
-      return repoSystem.resolveArtifact(session, request);
-    } catch (ArtifactResolutionException e) {
-      X_Log.log(getClass(), getLogLevel(), "Resolved? ", e.getResult().isResolved(), e.getResult().getExceptions());
-      X_Log.log(getClass(), getLogLevel(), "Could not download " + artifact, e);
-      throw X_Debug.rethrow(e);
-    } finally {
-      if (X_Log.loggable(LogLevel.DEBUG)) {
-        X_Log.debug("Resolved: " + artifact.toString() + " in "
-            + X_Time.difference(before));
-      }
-    }
+    return lookupCache.get(artifact);
   }
 
   @Override
@@ -442,7 +480,7 @@ public class MvnServiceDefault implements MvnService {
   }
 
   protected boolean shouldTransform(String dependency) {
-    return true;
+    return allowedToResolve.out1().io(dependency) && !notAllowedToResolve.out1().io(dependency);
   }
 
   protected ProjectSources maybeTransform(String dependency) {
@@ -601,9 +639,31 @@ public class MvnServiceDefault implements MvnService {
   }
 
   private SingletonIterator<String> getCanonical(Model model, String dir) throws IOException {
-    final File source = new File(dir);
+    File source = new File(dir);
     if (!source.isDirectory()) {
       File f = new File(model.getProjectDirectory(), dir);
+      if (f.isDirectory()) {
+        return singleItem(f.getCanonicalPath());
+      }
+      if (dir.contains("$")) {
+        String resolved = dir;
+        while (resolved.contains("$")) {
+          String newProp = cache.getProperty(model, resolved);
+          if (resolved.equals(newProp)) {
+            break;
+          }
+          resolved = newProp;
+        }
+        source = new File(resolved);
+        if (source.isDirectory()) {
+          return singleItem(source.getCanonicalPath());
+        }
+        source = new File(model.getProjectDirectory(), resolved);
+        if (source.isDirectory()) {
+          return singleItem(source.getCanonicalPath());
+        }
+        throw new IllegalArgumentException("Unable to resolve " + dir + "; last tried: " + source);
+      }
       return singleItem(f.getCanonicalPath());
     } else {
       return singleItem(source.getCanonicalPath());
@@ -732,7 +792,8 @@ public class MvnServiceDefault implements MvnService {
   }
 
   private void loadDependencies(Map<String, String> dependencies, JarFile jar, Model pom, Filter1<Dependency> filter) {
-    pom.getDependencies().parallelStream().forEach(dependency -> {
+    final List<Dependency> deps = pom.getDependencies();
+    deps.stream().forEach(dependency -> {
       if (filter.filter1(dependency)) {
         final ZipEntry pomEntry = jar.getEntry("META-INF/maven/" + cache.resolveProperty(pom, "${pom.groupId}") + "/" + dependency.getArtifactId() + "/pom.xml");
         if (pomEntry != null) {
@@ -752,31 +813,36 @@ public class MvnServiceDefault implements MvnService {
           }
           // ugh.  We have to look up parent dependency chains.
           Parent parent = pom.getParent();
-          while (parent != null) {
-            final ArtifactResult parentArtifact = loadArtifact(
-                parent.getGroupId(),
-                parent.getArtifactId(),
-                "",
-                "pom",
-                parent.getVersion()
-            );
-            try {
-              final Model parentPom = loadPomFile(parentArtifact.getArtifact().getFile().getAbsolutePath());
-              if (parentPom.getDependencyManagement() != null) {
-                for (Dependency dep : parentPom.getDependencyManagement().getDependencies()) {
-                  if (
-                      dep.getGroupId().equals(dependency.getGroupId()) &&
-                          dep.getArtifactId().equals(dependency.getArtifactId()) &&
-                          Objects.equals(dep.getClassifier(), dependency.getClassifier())) {
-                    loadDependency(dependencies, pom, dep, filter);
-                    return;
-                  }
+          IntTo<Out1Unsafe<Model>> stack = X_Collect.newList(Out1Unsafe.class);
+          loadParent(stack, parent);
+          String targetGroupId = cache.resolveProperty(pom, dependency.getGroupId());
+          String targetArtifactId = cache.resolveProperty(pom, dependency.getArtifactId());
+          String targetClassifier = cache.resolveProperty(pom, normalize(dependency.getClassifier()));
+          while (stack.isNotEmpty()) {
+            final Model parentPom = stack.pop().out1();
+            if (parentPom.getDependencyManagement() != null) {
+              int depIndex = 0;
+              for (Dependency dep : parentPom.getDependencyManagement().getDependencies()) {
+                if ("import".equals(dep.getScope())) {
+                  // An imported parent dependency... gross.
+                  // We'll push it onto the head of the search stack,
+                  loadImportDependency(stack, parentPom, dep, depIndex++);
+                  continue;
                 }
+                if (!targetGroupId.equals(cache.resolveProperty(parentPom, dep.getGroupId()))) {
+                  continue;
+                }
+                if (!targetArtifactId.equals(cache.resolveProperty(parentPom, dep.getArtifactId()))) {
+                  continue;
+                }
+                if (!targetClassifier.equals(cache.resolveProperty(parentPom, normalize(dep.getClassifier())))) {
+                  continue;
+                }
+                loadDependency(dependencies, parentPom, dep, filter);
+                return;
               }
-              parent = parentPom.getParent();
-            } catch (IOException | XmlPullParserException e) {
-              throw new RuntimeException(e);
             }
+
           }
         } else {
           loadDependency(dependencies, pom, dependency, filter);
@@ -784,6 +850,61 @@ public class MvnServiceDefault implements MvnService {
       }
     });
 
+  }
+
+  private void loadParent(IntTo<Out1Unsafe<Model>> stack, Parent parent) {
+    if (parent == null) {
+      return;
+    }
+    // parents we will add to the end of the lookup list
+    stack.add(()->{
+      final ArtifactResult parentArtifact = loadArtifact(
+          parent.getGroupId(),
+          parent.getArtifactId(),
+          "",
+          "pom",
+          parent.getVersion()
+      );
+      final Model parentPom = loadPomFile(parentArtifact.getArtifact().getFile().getAbsolutePath());
+      // If we have a parent, push a provider onto the search stack
+      loadParent(stack, parentPom.getParent());
+      return parentPom;
+    });
+  }
+
+  private void loadImportDependency(
+      IntTo<Out1Unsafe<Model>> stack,
+      Model parentPom,
+      Dependency dep,
+      int depIndex
+  ) {
+    if (dep == null) {
+      return;
+    }
+    // TODO: handle non-pom dependencies
+    if (!"pom".equals(dep.getType())) {
+      throw new IllegalArgumentException("Cannot load non-pom dependency: " + dep);
+    }
+    if (!"import".equals(dep.getScope())) {
+      throw new IllegalArgumentException("Cannot load non-import dependency: " + dep);
+    }
+    // We'll insert items at correct index, to ensure we lookup results in a delayed, depth-first, top-down manner.
+    stack.insert(depIndex, ()->{
+      final ArtifactResult parentArtifact = loadArtifact(
+          resolveProperties(parentPom, dep.getGroupId()),
+          resolveProperties(parentPom, dep.getArtifactId()),
+          resolveProperties(parentPom, normalize(dep.getClassifier())),
+          "pom",
+          resolveProperties(parentPom, dep.getVersion())
+      );
+      final Model pom = loadPomFile(parentArtifact.getArtifact().getFile().getAbsolutePath());
+      // we won't load the parent of an import, as that is not the correct semantics
+      return pom;
+    });
+  }
+
+  private String resolveProperties(Model model, String value) {
+    return value.startsWith("$") ? cache.getProperty(model, value) : value;
   }
 
   private void loadDependency(Map<String, String> dependencies, Model pom, Dependency dependency, Filter1<Dependency> filter) {

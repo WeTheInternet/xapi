@@ -2,6 +2,8 @@ package com.google.gwt.dev.codeserver;
 
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.NetSocket;
+import xapi.dev.gwtc.api.GwtcJob;
+import xapi.fu.In1.In1Unsafe;
 import xapi.fu.In1Out1;
 import xapi.gwtc.api.CompiledDirectory;
 import xapi.log.X_Log;
@@ -24,7 +26,7 @@ public class GwtCompilationServer {
     public void handleBuffer(
         NetSocket event,
         Buffer buffer,
-        RecompileController controller,
+        GwtcJob controller,
         In1Out1<String, CompiledDirectory> moduleGetter
     )
     throws IOException {
@@ -103,42 +105,54 @@ public class GwtCompilationServer {
             // event.sendFile(winner.getCanonicalPath());
         } else {
             // assume non-sourcemap request wants a java / resource file.
-            URL res = controller.getResource(path);
-            if (res == null) {
-                String resolved = path.replace(module+"/", "");
-                if (resolved.startsWith("gen/")) {
-                    resolved = resolved.replace("gen/", "");
-                    // Check the generated source filed
-                    if (dir == null) {
-                        X_Log.warn(getClass(), "No directory found for ",module," this gwt module may not have finished compiling.");
-                    } else {
-                        File genDir = new File(dir.getGenDir());
-                        if (genDir.exists()) {
-                            X_Log.debug(getClass(), "Checking gen dir ",genDir," for ",resolved);
-                            File genSrc = new File(genDir, resolved);
-                            if (genSrc.exists()) {
-                                X_Log.debug(getClass(), "Using ",genSrc," for ",path);
-                                resolved = genSrc.getCanonicalPath();
-                                res = genSrc.toURI().toURL();
-                            } else {
-                                X_Log.debug(getClass(), "No file exists @ ",genSrc," for ",path);
-                            }
-                        } else {
-                            X_Log.warn(getClass(), "gen dir ",genDir," does not exist for ", path);
-                        }
-                    }
+            final String finalPath = path;
+            final In1Unsafe<URL> finish = r->{
+                if (r == null) {
+                    String error = "Proxy only supports sourcemaps and webserver resources; you sent " + finalPath;
+                    X_Log.error(GwtCompilationServer.class, error);
+                    print(event, "<pre>" + error + "</pre>");
                 } else {
-                    res = controller.getResource(resolved);
+                    stream(event, r.openStream());
                 }
-                X_Log.trace(getClass(), "Could not find ", path," checking ",resolved," resulted in ", res);
-            }
-            if (res == null) {
-                String error = "Proxy only supports sourcemaps and webserver resources; you sent " + path;
-                X_Log.error(getClass(), error);
-                print(event, "<pre>" + error + "</pre>");
-            } else {
-                stream(event, res.openStream());
-            }
+            };
+            controller.requestResource(finalPath, (res, err)->{
+                if (res == null) {
+                    String resolved = finalPath.replace(module+"/", "");
+                    if (resolved.startsWith("gen/")) {
+                        resolved = resolved.replace("gen/", "");
+                        // Check the generated source filed
+                        if (dir == null) {
+                            X_Log.warn(getClass(), "No directory found for ",module," this gwt module may not have finished compiling.");
+                        } else {
+                            File genDir = new File(dir.getGenDir());
+                            if (genDir.exists()) {
+                                X_Log.debug(getClass(), "Checking gen dir ",genDir," for ",resolved);
+                                File genSrc = new File(genDir, resolved);
+                                if (genSrc.exists()) {
+                                    X_Log.debug(getClass(), "Using ",genSrc," for ",finalPath);
+                                    resolved = genSrc.getCanonicalPath();
+                                    res = genSrc.toURI().toURL();
+                                } else {
+                                    X_Log.debug(getClass(), "No file exists @ ",genSrc," for ",finalPath);
+                                }
+                            } else {
+                                X_Log.warn(getClass(), "gen dir ",genDir," does not exist for ", finalPath);
+                            }
+                        }
+                    } else {
+                        String finalResolved = resolved;
+                        controller.requestResource(resolved, (r2, e2)->{
+                            finish.in(r2);
+                            if (r2 == null) {
+                                X_Log.trace(GwtCompilationServer.class, "Could not find ", finalPath," checked ",finalResolved," resulted in ", e2);
+                            }
+                        });
+                        return;
+                    }
+                    X_Log.trace(GwtCompilationServer.class, "Could not find ", finalPath," checking ",resolved," resulted in ", res);
+                }
+                finish.in(res);
+            });
         }
     }
 

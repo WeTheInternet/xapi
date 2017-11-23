@@ -34,7 +34,8 @@ public class GwtcXmlBuilder {
   public GwtcXmlBuilder(String pkg, String name, boolean debug) {
     out = new XmlBuffer("module")
         .setNewLine(true)
-        .setTrimWhitespace(false);
+        .setTrimWhitespace(false)
+        .allowAbbreviation(true);
     this.debug = debug || X_Runtime.isDebug();
     if (pkg.length() > 0 && !pkg.endsWith(".")) {
       pkg = pkg + ".";
@@ -51,16 +52,22 @@ public class GwtcXmlBuilder {
     entryPoints = new HashMap<>();
   }
 
-  public static GwtcXmlBuilder generateGwtXml(String pkg, String name, boolean shouldDebug, Gwtc ... gwtcs) {
+  public static GwtcXmlBuilder generateGwtXml(String pkg, String name, String source, boolean shouldDebug, Gwtc ... gwtcs) {
     GwtcXmlBuilder builder = new GwtcXmlBuilder(pkg, name, gwtcs.length == 0 ? shouldDebug : gwtcs[0].debug());
     if (!pkg.endsWith(".")) {
       pkg = pkg + ".";
+    }
+    if (source != null) {
+      builder.addSource(source);
     }
     X_Log.info(GwtcXmlBuilder.class, "Generating gwt xml for ",pkg+name);
 
     for (Gwtc gwtc : gwtcs) {
       // We do no uniqueness filtering or validation for elements added here...
       builder.generate(gwtc);
+    }
+    if (builder.sources.isEmpty()) {
+      builder.sources.add("client");
     }
 
     return builder;
@@ -74,7 +81,11 @@ public class GwtcXmlBuilder {
     for (Resource gwtXml : gwtc.includeGwtXml()) {
       addResource(gwtXml);
     }
-    for (String source : gwtc.includeSource()) {
+    final String[] s = gwtc.includeSource();
+    if (s.length == 1 && "client".equals(s[0])) {
+      return;
+    }
+    for (String source : s) {
       addSource(source);
     }
   }

@@ -6,16 +6,20 @@ import xapi.dev.gwtc.api.GwtcJob;
 import xapi.dev.gwtc.api.GwtcJobManager;
 import xapi.dev.gwtc.api.GwtcJobMonitor;
 import xapi.dev.gwtc.api.GwtcJobMonitor.CompileMessage;
-import xapi.dev.gwtc.api.GwtcJobState;
 import xapi.dev.gwtc.api.GwtcService;
 import xapi.fu.In2;
 import xapi.fu.Mutable;
+import xapi.fu.Out2;
 import xapi.fu.X_Fu;
 import xapi.gwtc.api.CompiledDirectory;
 import xapi.gwtc.api.GwtManifest;
+import xapi.log.X_Log;
 import xapi.model.api.PrimitiveSerializer;
 import xapi.model.impl.PrimitiveSerializerDefault;
+import xapi.process.X_Process;
 import xapi.source.api.CharIterator;
+import xapi.time.X_Time;
+import xapi.time.api.Moment;
 
 import java.util.SortedSet;
 import java.util.concurrent.TimeUnit;
@@ -26,7 +30,7 @@ import com.google.gwt.dev.codeserver.CompileStrategy;
 import com.google.gwt.dev.resource.impl.ResourceAccumulatorManager;
 
 /**
- * This class is the successor to the previously fragmented {@link GwtcService} and {@link GwtcJobState} and {@link com.google.gwt.dev.codeserver.RecompileRunner}.
+ * This class is the successor to the previously fragmented {@link GwtcService} and {@link xapi.dev.gwtc.api.GwtcJobState} and {@link com.google.gwt.dev.codeserver.RecompileRunner}.
  *
  * The purpose of this class is to receive compile requests from a {@link GwtManifest} parameter,
  * generate the correct files and classpath, instantiate a runtime environment (classloader or process),
@@ -86,13 +90,16 @@ public abstract class GwtcJobManagerAbstract implements GwtcJobManager {
         GwtcJob existing = runningJobs.getOrCreate(name,
             n-> {
                 isNew[0] = true;
+                X_Log.info(GwtcJobManagerAbstract.class, "Starting compilation for ", manifest.getModuleName());
                 return launchJob(manifest);
             }
         );
         if (!isNew[0]) {
             // when we aren't new, we'll want to kick off some initialization.
             if (existing.getState() == CompileMessage.Failed || existing.getState() == CompileMessage.Destroyed) {
+                X_Log.info(GwtcJobManagerAbstract.class, "Restarting ", existing.getState(), " compilation for ", manifest.getModuleName());
                 existing.destroy();
+                // TODO we need to also "destroy" our classloader, or at least restart a thread from a sane copy
                 runningJobs.remove(name);
                 statuses.put(name, CompileMessage.Preparing);
                 runningJobs.put(name, launchJob(manifest));
@@ -109,9 +116,7 @@ public abstract class GwtcJobManagerAbstract implements GwtcJobManager {
 
     @SuppressWarnings("Duplicates")
     protected synchronized boolean maybeRecompile(GwtManifest manifest, GwtcJob existing) {
-        if (existing.getState() == null) {
-            return true;
-        }
+        final Moment start = X_Time.now();
         if (existing.getState() == CompileMessage.Success) {
             // now we also need to check freshness...
             Mutable<Boolean> result = new Mutable<>();
@@ -140,8 +145,8 @@ public abstract class GwtcJobManagerAbstract implements GwtcJobManager {
                     throw X_Fu.rethrow(e);
                 }
             }
-            if (!result.out1()) {
-                return false;
+            if (result.out1()) {
+                return true;
             }
         }
         Mutable<CompileMessage> status = new Mutable<>();
@@ -152,6 +157,13 @@ public abstract class GwtcJobManagerAbstract implements GwtcJobManager {
             }
         });
         existing.forceRecompile();
+        final Long limit = manifest.getMaxCompileMillis();
+        final Moment blockingStarted = X_Time.now();
+        X_Log.info(GwtcJobManagerAbstract.class, "Launched compilation for module", manifest.getModuleName(),
+            "in ", X_Time.difference(blockingStarted));
+        if (limit != null) {
+            X_Process.scheduleInterruption(limit, TimeUnit.MILLISECONDS);
+        }
         while (!existing.getState().isComplete()) {
             try {
                 if (existing.getMonitor().hasMessageForCaller()) {
@@ -161,13 +173,27 @@ public abstract class GwtcJobManagerAbstract implements GwtcJobManager {
                         status.wait(250);
                     }
                 }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw X_Fu.rethrow(e);
+            } catch (InterruptedException doneHere) {
+                break;
             }
         }
+        if (status.out1() == CompileMessage.Success) {
+            X_Log.info(GwtcJobManagerAbstract.class, "Module ", manifest.getModuleName(),
+                "compilation succeeded in ", X_Time.difference(start));
+            return true;
+        }
 
-        return status.out1() != CompileMessage.Success;
+        final double waited = X_Time.now().millis() - blockingStarted.millis();
+        if (limit != null) {
+            if (waited < limit) {
+                X_Log.warn(GwtcJobManagerAbstract.class, "Thread interrupted at unexpected time");
+            } else {
+                X_Log.warn(GwtcJobManagerAbstract.class, "Compilation aborted after ",
+                    X_Time.difference(blockingStarted, X_Time.now()), "for module", manifest.getModuleName()
+                );
+            }
+        }
+        return false;
     }
 
     protected abstract GwtcJob launchJob(GwtManifest manifest);
@@ -260,4 +286,9 @@ public abstract class GwtcJobManagerAbstract implements GwtcJobManager {
         return runningJobs.get(moduleName);
     }
 
+    public void killJobs() {
+        for (Out2<String, GwtcJob> item : runningJobs.removeAllItems()) {
+            item.out2().destroy();
+        }
+    }
 }

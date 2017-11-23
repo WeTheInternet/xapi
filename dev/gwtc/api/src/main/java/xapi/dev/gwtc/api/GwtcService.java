@@ -3,14 +3,12 @@ package xapi.dev.gwtc.api;
 import xapi.dev.api.MavenLoader;
 import xapi.fu.In1;
 import xapi.fu.In2;
-import xapi.fu.In2.In2Unsafe;
 import xapi.fu.Mutable;
 import xapi.fu.Out1;
 import xapi.gwtc.api.CompiledDirectory;
 import xapi.gwtc.api.DefaultValue;
 import xapi.gwtc.api.GwtManifest;
 import xapi.gwtc.api.GwtcProperties;
-import xapi.gwtc.api.ServerRecompiler;
 
 import java.lang.annotation.Annotation;
 import java.net.URLClassLoader;
@@ -37,7 +35,6 @@ public interface GwtcService {
 
   MavenLoader getMavenLoader();
   In1<Integer> prepareCleanup(GwtManifest manifest);
-  In2Unsafe<Integer, TimeUnit> startTask(Runnable task, URLClassLoader loader);
 
   default int compile(GwtManifest manifest) {
     final Mutable<Integer> result = new Mutable<>(-2);
@@ -66,7 +63,6 @@ public interface GwtcService {
     return TimeUnit.MINUTES.toMillis(3);
   }
 
-  GwtcJobState recompile(GwtManifest manifest, Long millisToWait, In2<ServerRecompiler, Throwable> callback);
   default void doCompile(GwtManifest manifest, long timeout, TimeUnit unit, In2<CompiledDirectory, Throwable> callback) {
     doCompile(false, manifest, timeout, unit, callback);
   }

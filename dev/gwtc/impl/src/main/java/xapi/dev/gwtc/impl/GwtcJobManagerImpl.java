@@ -21,6 +21,7 @@ import xapi.inject.X_Inject;
 import xapi.log.X_Log;
 import xapi.process.X_Process;
 import xapi.time.X_Time;
+import xapi.util.X_Util;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -105,35 +106,48 @@ public class GwtcJobManagerImpl extends GwtcJobManagerAbstract {
             .runJob(monitor, args);
     }
 
-    public void runJob(GwtcJobMonitor monitor, String[] args) throws IOException {
+    public void runJob(GwtcJobMonitor monitor, String[] args) {
 
         monitor.updateCompileStatus(CompileMessage.Preparing);
 
+        try {
 
-        GwtcArgProcessor managerArgs = new GwtcArgProcessor();
-        args = processArgs(managerArgs, args);
-        String command = args[0];
-        args = X_Fu.slice(1, args.length, args);
-
-        switch (command) {
-            case "recompile":
-                runRecompile(monitor, managerArgs, args);
-                break;
-            case "compile":
-                runCompile(monitor, managerArgs, args);
-                break;
-            case "test":
-                runTestMode(monitor, args);
-                break;
-            case "help":
-                printHelp(args);
-                monitor.updateCompileStatus(CompileMessage.Success);
-                break;
-            default:
-                X_Log.error(GwtcJobMonitorImpl.class, "Incorrect arguments; must begin with one of: " +
-                    "recompile|compile|test|help.  You sent: ", command, "\nRemaining args:", args);
+            GwtcArgProcessor managerArgs = new GwtcArgProcessor();
+            try {
+                args = processArgs(managerArgs, args);
+            } catch (IOException e) {
+                X_Log.error(GwtcJobManagerImpl.class, "Error parsing arguments", e);
                 monitor.updateCompileStatus(CompileMessage.Failed);
+                return;
+            }
+            String command = args[0];
+            args = X_Fu.slice(1, args.length, args);
+
+            switch (command) {
+                case "recompile":
+                    runRecompile(monitor, managerArgs, args);
+                    break;
+                case "compile":
+                    runCompile(monitor, managerArgs, args);
+                    break;
+                case "test":
+                    runTestMode(monitor, args);
+                    break;
+                case "help":
+                    printHelp(args);
+                    monitor.updateCompileStatus(CompileMessage.Success);
+                    break;
+                default:
+                    X_Log.error(GwtcJobMonitorImpl.class, "Incorrect arguments; must begin with one of: " +
+                        "recompile|compile|test|help.  You sent: ", command, "\nRemaining args:", args);
+                    monitor.updateCompileStatus(CompileMessage.Failed);
+            }
+        } catch (Throwable t) {
+            monitor.updateCompileStatus(CompileMessage.Failed, t.toString(),
+                ArrayIterable.iterate(t.getStackTrace()).join("\n"));
+            throw t;
         }
+
     }
 
     private String[] processArgs(GwtcArgProcessor managerArgs, String[] args) throws IOException {
@@ -335,10 +349,16 @@ public class GwtcJobManagerImpl extends GwtcJobManagerAbstract {
                 final Result newDir = newJob.waitForResult();
                 final CompileStrategy strategy = runner.getTable().getPublishedEvent(newJob).getCompileStrategy();
                 CompileDir result = newDir.getOutputDir();
-                sendCompilerResults(monitor, newDir.getOutputModuleName(), result, opts, strategy);
+                if (newDir.getError() != null) {
+                    monitor.updateCompileStatus(CompileMessage.Failed, newDir.getError().toString());
+                    X_Log.error(GwtcJobManagerImpl.class, "Recompile failed for", newDir.getOutputModuleName(), newDir.getError());
+                } else {
+                    sendCompilerResults(monitor, newDir.getOutputModuleName(), result, opts, strategy);
+                }
             } catch (Throwable t) {
                 monitor.updateCompileStatus(CompileMessage.Failed, "Recompile failed: " + t.toString());
                 X_Log.error(GwtcJobManagerImpl.class, "Recompile failed", t);
+                die(monitor);
             }
 
         });
@@ -453,6 +473,8 @@ public class GwtcJobManagerImpl extends GwtcJobManagerAbstract {
 
     private void keepAlive(GwtcJobMonitor monitor, In1Out1<String, URL> getResource,  Out1Unsafe<Boolean> checkFreshness, DoUnsafe runCompile) {
         final Thread task = X_Process.newThread(() -> {
+            try {
+
             while (true) {
                 String message = monitor.readAsCompiler().trim();
                 switch (message) {
@@ -473,14 +495,30 @@ public class GwtcJobManagerImpl extends GwtcJobManagerAbstract {
                     default:
                         if (message.startsWith(GwtcJobMonitor.JOB_GET_RESOURCE)) {
                             String fileName = message.substring(GwtcJobMonitor.JOB_GET_RESOURCE.length());
-                            final URL url = getResource.io(fileName);
+                            URL url = getResource.io(fileName);
                             String serFile = serializer.serializeString(fileName);
-                            String serUrl = serializer.serializeString(url.toExternalForm());
-                            monitor.writeAsCompiler(CompileMessage.KEY_FOUND_RESOURCE + serFile + serUrl);
+                            if (url == null) {
+                                String serUrl = serializer.serializeString("");
+                                if (!fileName.startsWith("gen/")) {
+                                    X_Log.error(GwtcJobManagerImpl.class, "No resource found for ", fileName);
+                                }
+                                monitor.writeAsCompiler(CompileMessage.KEY_FOUND_RESOURCE + serFile + serUrl);
+                            } else {
+                                String serUrl = serializer.serializeString(url.toExternalForm());
+                                monitor.writeAsCompiler(CompileMessage.KEY_FOUND_RESOURCE + serFile + serUrl);
+                            }
                         } else {
-                            X_Log.error(GwtcJobMonitorImpl.class, "Unsupported gwt process message ", message);
+                            X_Log.error(GwtcJobManagerImpl.class, "Unsupported gwt process message ", message);
                         }
                 }
+            }
+            } catch (Throwable t) {
+                X_Log.error(GwtcJobManagerImpl.class, "Unexpected error in " + getClass() + ".keepAlive", t);
+                final Throwable unwrapped = X_Util.unwrap(t);
+                if (unwrapped instanceof LinkageError || unwrapped instanceof ClassNotFoundException) {
+                    die(monitor);
+                }
+                throw t;
             }
         });
         task.setName(getClass().getName() +" KeepAlive");
@@ -492,10 +530,7 @@ public class GwtcJobManagerImpl extends GwtcJobManagerAbstract {
      */
     protected void die(GwtcJobMonitor monitor) {
         monitor.updateCompileStatus(CompileMessage.Destroyed);
-        for (Out2<String, GwtcJob> item : runningJobs.removeAllItems()) {
-            item.out2().destroy();
-        }
-
+        killJobs();
         X_Log.info(GwtcJobMonitorImpl.class, "Gwtc job manager told to die", this);
     }
 

@@ -22,7 +22,7 @@ import java.util.List;
 @SuppressWarnings("unused")
 public class UiTemplateGenerator {
 
-  protected static interface WrapElements{
+  protected interface WrapElements{
     GwtcUnitType type();
     boolean wrapsAll();
   }

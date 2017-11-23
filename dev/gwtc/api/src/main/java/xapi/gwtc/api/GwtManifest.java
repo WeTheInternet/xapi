@@ -4,7 +4,6 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
 import xapi.collect.impl.SimpleFifo;
-import xapi.dev.api.MavenLoader;
 import xapi.fu.Filter;
 import xapi.fu.Immutable;
 import xapi.fu.In2;
@@ -13,7 +12,6 @@ import xapi.fu.Out1;
 import xapi.fu.X_Fu;
 import xapi.fu.iterate.ArrayIterable;
 import xapi.log.X_Log;
-import xapi.mvn.api.MvnDependency;
 import xapi.source.X_Source;
 import xapi.util.X_Namespace;
 import xapi.util.X_String;
@@ -776,33 +774,29 @@ public class GwtManifest {
 
   }
 
-  public String[] toClasspathFullCompile(MavenLoader loader) {
-    return toClasspath(loader,false, getGwtVersion());
+  public String[] toClasspathFullCompile() {
+    return toClasspath(getGwtVersion());
   }
 
   public String[] toClasspath(
-      MavenLoader loader,
-      boolean includeCodeserver,
       String gwtVersion
   ) {
     IntTo<String> cp = newList(String.class);
     prefixClasspath(cp);
-    // include our __gen dir?
     if (includeGenDir) {
       cp.add(getGenDir());
     }
-    boolean hadGwtUser = false, hadGwtDev = false, hadGwtCodeserver = !includeCodeserver;
+//    boolean hadGwtUser = false, hadGwtDev = false, hadGwtCodeserver = !includeCodeserver;
     for (String source : sources.forEach()) {
-      if (source.contains("gwt-user")) {
-        hadGwtUser = true;
-      }
-      if (source.contains("gwt-codeserver")) {
-        hadGwtCodeserver = true;
-      }
-      if (source.contains("gwt-dev")) {
-        hadGwtDev = true;
-        addItemsBeforeGwtDev(cp, false);
-      }
+//      if (source.contains("gwt-user")) {
+//        hadGwtUser = true;
+//      }
+//      if (source.contains("gwt-codeserver")) {
+//        hadGwtCodeserver = true;
+//      }
+//      if (source.contains("gwt-dev")) {
+//        hadGwtDev = true;
+//      }
       if (source.startsWith("src/")) {
         // a relative source...
         source = fixRelativeSource(source);
@@ -817,45 +811,44 @@ public class GwtManifest {
         if (source == null) {
           continue;
         }
-        if (source.contains("gwt-user")) {
-          hadGwtUser = true;
-        }
-        if (source.contains("gwt-codeserver")) {
-          hadGwtCodeserver = true;
-        }
-        if (source.contains("gwt-dev")) {
-          hadGwtDev = true;
-          addItemsBeforeGwtDev(cp, true);
-        }
+//        if (source.contains("gwt-user")) {
+//          hadGwtUser = true;
+//        }
+//        if (source.contains("gwt-codeserver")) {
+//          hadGwtCodeserver = true;
+//        }
+//        if (source.contains("gwt-dev")) {
+//          hadGwtDev = true;
+//        }
         cp.add(source);
       }
     }
-    if (!hadGwtUser) {
-      addFromMaven(cp, loader, "gwt-user", gwtVersion);
-    }
-    if (!hadGwtCodeserver) {
-      addFromMaven(cp, loader, "gwt-codeserver", gwtVersion);
-    }
-    if (!hadGwtDev) {
-      addFromMaven(cp, loader, "gwt-dev", gwtVersion);
-    }
+//    if (!hadGwtUser) {
+//      addFromMaven(cp, loader, "gwt-user", gwtVersion);
+//    }
+//    if (!hadGwtCodeserver) {
+//      addFromMaven(cp, loader, "gwt-codeserver", gwtVersion);
+//    }
+//    if (!hadGwtDev) {
+//      addFromMaven(cp, loader, "gwt-dev", gwtVersion);
+//    }
     suffixClasspath(cp);
-    X_Log.trace(getClass(), cp);
+    X_Log.trace(GwtManifest.class, cp);
     cp.findRemove("", true);
     return cp.toArray();
   }
-
-  private void addFromMaven(
-      IntTo<String> cp,
-      MavenLoader loader,
-      String artifact,
-      String version
-  ) {
-    final MvnDependency dep = loader.getDependency(getGwtNamespace(), artifact, version);
-    final Out1<Iterable<String>> result = loader.downloadDependency(dep);
-    final Iterable<String> items = result.out1();
-    cp.addAll(items);
-  }
+//
+//  private void addFromMaven(
+//      IntTo<String> cp,
+//      MavenLoader loader,
+//      String artifact,
+//      String version
+//  ) {
+//    final Dependency dep = loader.getDependency(getGwtNamespace(), artifact, version);
+//    final Out1<Iterable<String>> result = loader.downloadDependency(dep);
+//    final Iterable<String> items = result.out1();
+//    cp.addAll(items);
+//  }
 
   protected String fixRelativeSource(String source) {
     return source;
@@ -898,21 +891,6 @@ public class GwtManifest {
     cp.add(file);
   }
 
-  /**
-   * This hook method is provided to allow subclasses to inject specific dependencies before gwt-dev.
-   *
-   * You really should be setting up your classpath in the correct order,
-   * but if you want to inject certain dependencies and do it before gwt-dev,
-   * this method is what you want to override.
-   *
-   * @param cp - Array of classpath elements; append to inject classpath items.
-   * @param inDependencies - Whether gwt-dev was found in source or in dependencies
-   *
-   * You are recommended to check {@link #getSources()} and {@link #getDependencies()} for
-   * duplicate artifacts; the inDependencies boolean will let you know how deeply you should search.
-   */
-  protected void addItemsBeforeGwtDev(IntTo<String> cp, boolean inDependencies) {
-  }
   public String toJvmArgs() {
     return new SimpleFifo<String>(toJvmArgArray()).join(" ");
   }

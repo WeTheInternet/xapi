@@ -127,6 +127,13 @@ public interface GwtcJobMonitor {
             throw new IllegalArgumentException(c + " is not a supported status type");
         }
 
+        public static boolean isComplete(CompileMessage state) {
+            if (state == null) {
+                return false;
+            }
+            return state.isComplete();
+        }
+
         public char controlChar() {
             return type;
         }

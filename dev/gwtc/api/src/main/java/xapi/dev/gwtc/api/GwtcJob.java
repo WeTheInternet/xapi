@@ -7,10 +7,10 @@ import xapi.collect.api.StringTo;
 import xapi.collect.impl.SimpleLinkedList;
 import xapi.dev.gwtc.api.GwtcJobMonitor.CompileMessage;
 import xapi.except.MultiException;
-import xapi.fu.Do;
 import xapi.fu.Do.DoUnsafe;
 import xapi.fu.In1;
 import xapi.fu.In2;
+import xapi.fu.In2.In2Unsafe;
 import xapi.fu.Maybe;
 import xapi.fu.X_Fu;
 import xapi.fu.iterate.Chain;
@@ -211,8 +211,8 @@ public abstract class GwtcJob implements Destroyable {
         String result = serializer.deserializeString(itr);
         synchronized (resourceCallbacks) {
             final IntTo<In2<URL, Throwable>> callbacks = resourceCallbacks.get(fileName);
-            URL url;
-            if (result == null) {
+            final URL url;
+            if (X_String.isEmpty(result)) {
                 url = null;
             } else {
                 try {
@@ -496,14 +496,14 @@ public abstract class GwtcJob implements Destroyable {
             }
             args.add(progArgs[i]);
         }
-
+        args.add(moduleName);
         return args.toArray(String[]::new);
     }
 
     public void blockFor(long timeout, TimeUnit unit) throws TimeoutException {
         long deadline = System.currentTimeMillis() + unit.toMillis(timeout);
 
-        while (!GwtcJobState.isComplete(getState())) {
+        while (!isComplete(getState())) {
             if (getMonitor().hasMessageForCaller()) {
                 flushMonitor();
             } else {
@@ -526,7 +526,7 @@ public abstract class GwtcJob implements Destroyable {
      * @param callback - The callback to notify upon completion
      * @return - A DoUnsafe which will block until the callback has been called.
      */
-    public DoUnsafe requestResource(String fileName, In2<URL, Throwable> callback) {
+    public DoUnsafe requestResource(String fileName, In2Unsafe<URL, Throwable> callback) {
         synchronized (resourceCallbacks) {
             resourceCallbacks.add(fileName, callback);
         }
@@ -536,8 +536,11 @@ public abstract class GwtcJob implements Destroyable {
         return ()-> {
             final IntTo<In2<URL, Throwable>> callbacks = resourceCallbacks.get(fileName);
             while (callbacks.contains(callback)) {
-                synchronized (resourceCallbacks) {
-                    resourceCallbacks.wait();
+                flushMonitor();
+                if (callbacks.contains(callback)) {
+                    synchronized (resourceCallbacks) {
+                        resourceCallbacks.wait(100);
+                    }
                 }
             }
         };
