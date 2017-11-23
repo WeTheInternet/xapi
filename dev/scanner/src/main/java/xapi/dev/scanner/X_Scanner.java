@@ -5,6 +5,7 @@ import xapi.dev.X_Dev;
 import xapi.dev.resource.impl.StringDataResource;
 import xapi.dev.scanner.api.ClasspathScanner;
 import xapi.dev.scanner.impl.ClasspathResourceMap;
+import xapi.fu.MappedIterable;
 import xapi.inject.X_Inject;
 import xapi.util.X_String;
 
@@ -83,12 +84,24 @@ public class X_Scanner {
   }
 
   @SafeVarargs
-  public static Iterable<ClassFile> findMethodsWithAnnotations(ClassLoader cl, String packageName, Class<? extends Annotation> ... annoClass) {
+  public static MappedIterable<ClassFile> findMethodsWithAnnotations(ClassLoader cl, String packageName, Class<? extends Annotation> ... annoClass) {
     return X_Inject.instance(ClasspathScanner.class)
         .matchClassFile(".*")
         .scanPackage(packageName)
         .scan(cl)
         .findClassWithAnnotatedMethods(annoClass);
+  }
+
+  @SafeVarargs
+  public static MappedIterable<ClassFile> findTypesWithAnnotations(ClassLoader cl, String packageName, Class<? extends Annotation> ... annoClass) {
+    final ClasspathResourceMap scanner = X_Inject.instance(ClasspathScanner.class)
+        .matchClassFile(".*")
+        .scanPackage(packageName)
+        .scan(cl);
+
+    final MappedIterable<ClassFile> result = scanner.findClassAnnotatedWith(annoClass).cached();
+    scanner.stop();
+    return result;
   }
 
   public static ClasspathResourceMap scanFolder(String url) {

@@ -235,7 +235,7 @@ public class ClasspathResourceMap {
     return sources.get(name);
   }
 
-  public final Iterable<SourceCodeResource> findSources(final String prefix, final Pattern ... patterns) {
+  public final MappedIterable<SourceCodeResource> findSources(final String prefix, final Pattern ... patterns) {
     if (patterns.length == 0) {
       return sources.findPrefixed(prefix);
     }
@@ -265,19 +265,14 @@ public class ClasspathResourceMap {
         throw new UnsupportedOperationException();
       }
     }
-    return new Iterable<SourceCodeResource>() {
-      @Override
-      public Iterator<SourceCodeResource> iterator() {
-        return new Itr();
-      }
-    };
+    return ()->new Itr();
   }
 
   public final StringDataResource findResource(final String name) {
     return resources.get(name);
   }
 
-  public final Iterable<StringDataResource> findResources(final String prefix, final Pattern ... patterns) {
+  public final MappedIterable<StringDataResource> findResources(final String prefix, final Pattern ... patterns) {
     if (patterns.length == 0) {
       return resources.findPrefixed(prefix);
     }
@@ -307,12 +302,7 @@ public class ClasspathResourceMap {
         throw new UnsupportedOperationException();
       }
     }
-    return new Iterable<StringDataResource>() {
-      @Override
-      public Iterator<StringDataResource> iterator() {
-        return new Itr();
-      }
-    };
+    return ()->new Itr();
   }
 
   public final ClassFile findClass(String clsName) {
@@ -409,11 +399,11 @@ public class ClasspathResourceMap {
     };
   }
 
-  public final Iterable<ClassFile> findImplementationOf(
+  public final MappedIterable<ClassFile> findImplementationOf(
     final Class<?> ... superClasses) {
     return findImplementationOf(X_Source.toStringBinary(superClasses));
   }
-  public final Iterable<ClassFile> findImplementationOf(
+  public final MappedIterable<ClassFile> findImplementationOf(
       final String ... superClasses) {
     // Local class to capture the final method parameter
     class Itr implements Iterator<ClassFile> {
@@ -442,15 +432,10 @@ public class ClasspathResourceMap {
         throw new UnsupportedOperationException();
       }
     }
-    return new Iterable<ClassFile>() {
-      @Override
-      public Iterator<ClassFile> iterator() {
-        return new Itr();
-      }
-    };
+    return ()->new Itr();
   }
 
-  public final Iterable<ClassFile> findClassAnnotatedWith(
+  public final MappedIterable<ClassFile> findClassAnnotatedWith(
      @SuppressWarnings("unchecked")
      final Class<? extends Annotation> ... annotations) {
     if (allAnnos == null) {
@@ -483,16 +468,12 @@ public class ClasspathResourceMap {
         throw new UnsupportedOperationException();
       }
     }
-    return new Iterable<ClassFile>() {
-      @Override
-      public Iterator<ClassFile> iterator() {
-        return new Itr();
-      }
-    };
+
+    return ()->new Itr();
   }
 
 
-public final Iterable<ClassFile> findClassWithAnnotatedMethods(
+public final MappedIterable<ClassFile> findClassWithAnnotatedMethods(
     @SuppressWarnings("unchecked")
     final Class<? extends Annotation> ... annotations) {
   if (allMethodsWithAnnos == null) {
@@ -529,13 +510,7 @@ public final Iterable<ClassFile> findClassWithAnnotatedMethods(
       throw new UnsupportedOperationException();
     }
   }
-  return new Iterable<ClassFile>() {
-    @Override
-    public Iterator<ClassFile> iterator() {
-      preloadClasses();
-      return new Itr();
-    }
-  };
+  return ()->new Itr();
 }
 
   protected ExecutorService getExecutor() {

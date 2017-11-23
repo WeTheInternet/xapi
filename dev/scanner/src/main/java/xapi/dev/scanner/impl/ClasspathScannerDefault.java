@@ -363,7 +363,9 @@ public class ClasspathScannerDefault implements ClasspathScanner {
 
   @Override
   public ClasspathScanner scanPackage(final String pkg) {
-    pkgs.add(pkg);
+    if (pkg != null) {
+      pkgs.add(pkg);
+    }
     return this;
   }
 
