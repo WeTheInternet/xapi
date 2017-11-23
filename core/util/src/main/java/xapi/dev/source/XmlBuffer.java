@@ -116,7 +116,9 @@ public class XmlBuffer extends PrintBuffer {
 
   public XmlBuffer makeTag(final String name) {
     final XmlBuffer buffer = new XmlBuffer(name);
-    buffer.setTrimWhitespace(true);
+    buffer.setNewLine(printNewline);
+    buffer.setTrimWhitespace(trimWhitespace);
+    buffer.abbr = abbr;
     buffer.indent = indent + INDENT;
     addToEnd(buffer);
     return buffer;
@@ -125,6 +127,7 @@ public class XmlBuffer extends PrintBuffer {
   public XmlBuffer makeTagNoIndent(final String name) {
     final XmlBuffer buffer = new XmlBuffer(name);
     buffer.setTrimWhitespace(trimWhitespace);
+    buffer.abbr = abbr;
     buffer.indent = indent + INDENT;
     buffer.setNewLine(false);
     addToEnd(buffer);
@@ -135,6 +138,8 @@ public class XmlBuffer extends PrintBuffer {
   public XmlBuffer makeTagAtBeginning(final String name) {
     final XmlBuffer buffer = new XmlBuffer(name);
     buffer.setTrimWhitespace(trimWhitespace);
+    buffer.abbr = abbr;
+    buffer.setNewLine(printNewline);
     buffer.indent = indent + INDENT;
     addToBeginning(buffer);
     return buffer;
@@ -143,6 +148,7 @@ public class XmlBuffer extends PrintBuffer {
   public XmlBuffer makeTagAtBeginningNoIndent(final String name) {
     final XmlBuffer buffer = new XmlBuffer(name);
     buffer.setNewLine(false);
+    buffer.abbr = abbr;
     buffer.setTrimWhitespace(trimWhitespace);
     buffer.indent = indent + INDENT;
     addToBeginning(buffer);

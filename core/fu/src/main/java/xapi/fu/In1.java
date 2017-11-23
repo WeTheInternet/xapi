@@ -109,7 +109,7 @@ public interface In1<I> extends HasInput, Rethrowable, Lambda {
     return ()->in(in);
   }
 
-  default Do provide(Out1<I> in) {
+  default Do provideDeferred(Out1<I> in) {
     return ()->in(in.out1());
   }
 

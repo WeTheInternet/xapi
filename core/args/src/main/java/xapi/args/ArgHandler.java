@@ -1,6 +1,8 @@
 package xapi.args;
 
+import xapi.fu.MappedIterable;
 import xapi.fu.Out1;
+import xapi.fu.iterate.EmptyIterator;
 
 /**
  * Base class for command line argument handlers.
@@ -12,6 +14,7 @@ import xapi.fu.Out1;
 public abstract class ArgHandler {
 
   protected static final String[] EMPTY = new String[0];
+  private boolean multiUse;
 
   public Out1<String>[] getDefaultArgs() {
     return null;
@@ -52,4 +55,19 @@ public abstract class ArgHandler {
     return false;
   }
 
+  /**
+   * When there are tags that you want to read, but leave in the resulting outputs,
+   * you should override this method to specify which matched tags you want to monitor.
+   */
+  protected MappedIterable<String> spyTags() {
+    return EmptyIterator.none();
+  }
+
+  public boolean isMultiUse() {
+    return multiUse;
+  }
+
+  public void setMultiUse(boolean multiUse) {
+    this.multiUse = multiUse;
+  }
 }

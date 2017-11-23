@@ -30,6 +30,10 @@ public interface Do extends AutoCloseable {
 
     void done();
 
+    default DoUnsafe unsafe() {
+      return this::done;
+    }
+
   @DoNotOverride
   default Runnable toRunnable() {
     return this::done;
@@ -115,6 +119,11 @@ public interface Do extends AutoCloseable {
 
   interface DoUnsafe extends Do, Rethrowable{
     void doneUnsafe() throws Throwable;
+
+    @Override
+    default DoUnsafe unsafe() {
+      return this;
+    }
 
     @Override
     default void done() {

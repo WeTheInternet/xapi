@@ -13,6 +13,7 @@ import xapi.util.X_Util;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.*;
 import java.net.URL;
@@ -815,9 +816,15 @@ public class X_Reflect {
   public static Package getPackage(final String name) {
     if (X_Runtime.isJavaScript()) {
       return Package.getPackage(name);
-    } else {
-      return reflectionService.get().getPackage(name);
     }
+    return reflectionService.get().getPackage(name);
+  }
+
+  public static Package getPackage(final String name, ClassLoader loader) {
+    if (X_Runtime.isJavaScript()) {
+      return Package.getPackage(name);
+    }
+    return reflectionService.get().getPackage(name, loader);
   }
 
   public static <T> Constructor<T> getPublicConstructor(final Class<T> c,
@@ -1257,6 +1264,10 @@ public class X_Reflect {
       // handle target/test-classes suffix (chop back to trailing \)
       if (loc.endsWith("/target")) {
         loc = loc.substring(0, loc.length() - 7);
+      }
+      File f = new File(loc, "src/main/java/" + srcName);
+      if (f.exists()) {
+        loc = f.getAbsolutePath();
       }
     }
     return loc;

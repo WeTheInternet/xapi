@@ -33,4 +33,8 @@ public class MappedIterator<From, To> implements Iterator<To> {
     public void remove() {
         from.remove();
     }
+
+    public MappedIterable<To> caching() {
+        return MappedIterable.mappedCaching(this);
+    }
 }

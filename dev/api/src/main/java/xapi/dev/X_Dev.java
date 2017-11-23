@@ -100,4 +100,33 @@ public class X_Dev {
         }
         return urls;
     }
+
+    public static String ensureProtocol(String s) {
+	    return ensureProtocol(s, false);
+    }
+    public static String ensureProtocol(String s, boolean mustBeFile) {
+        if (s == null) {
+            return null;
+        }
+        if (s.indexOf(':') == -1) {
+            if (new File(s).isDirectory()) {
+                return "file:" +
+                    // URLClassLoader requires directories to end with /
+                    (s.endsWith("/") ? s : s + "/");
+            } else if (new File(s).isFile()) {
+                return "file:" + s;
+            } else {
+                if (mustBeFile) {
+                    X_Log.warn(X_Dev.class, "No file found for", s, "ignoring...");
+                    return null;
+                }
+                // not actually a file... assume url.
+                // make it https so anyone who actually wants
+                // to serve data in plain text must opt in to doing so.
+                return "https:" +
+                    (s.startsWith("//") ? s : "//" + s);
+            }
+        }
+        return s;
+    }
 }

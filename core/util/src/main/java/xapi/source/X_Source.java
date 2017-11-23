@@ -13,6 +13,7 @@ import static xapi.util.X_String.toTitleCase;
 
 import javax.inject.Provider;
 import javax.validation.constraints.NotNull;
+import java.awt.ActiveEvent;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -197,6 +198,13 @@ public class X_Source {
       types[i] = toType(type);
     }
     return types;
+  }
+  public static String toPackageFromBinary(String cls) {
+    int lastPeriod = cls.lastIndexOf('.');
+    if (lastPeriod == -1) {
+      return "";
+    }
+    return cls.substring(0, lastPeriod);
   }
   public static String toPackage(String cls) {
     int lastPeriod = cls.lastIndexOf('.');
@@ -407,4 +415,5 @@ public class X_Source {
     // TODO: bother with other IDEs :-)
     return linkToDoc;
   }
+
 }

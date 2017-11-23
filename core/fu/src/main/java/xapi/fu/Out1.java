@@ -93,7 +93,7 @@ public interface Out1<O> extends Rethrowable, Lambda, HasMutability {
   /**
    * This method just exists to give you somewhere to create a lambda that will rethrow exceptions,
    * but exposes an exceptionless api.  If you don't have to call code with checked exceptions,
-   * prefer the standard {@link #Out1(Out1)}, as try/catch can disable / weaken some JIT compilers.
+   * prefer the standard {@link #newOut1(Out1)}, as try/catch can disable / weaken some JIT compilers.
    */
   static <O> Out1<O> out1Unsafe(Out1Unsafe<O> of) {
     return of;
@@ -182,7 +182,16 @@ public interface Out1<O> extends Rethrowable, Lambda, HasMutability {
   }
 
   default <In, To> Out1<To> map(In2Out1<O, In, To> factory, In in1) {
-    return factory.supply(out1(), in1);
+    return factory
+          .supply1Deferred(this)
+          .supply(in1);
+  }
+
+  default <In1, In2, To> Out1<To> map(In3Out1<O, In1, In2, To> factory, In1 in1, In2 in2) {
+    return factory
+        .supply1Deferred(this)
+        .supply1(in1)
+        .supply(in2);
   }
 
   default <In, To> Out1<To> mapDeferred(In2Out1<O, In, To> factory, Out1<In> in1) {

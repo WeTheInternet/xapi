@@ -200,7 +200,7 @@ public final class X_Util{
         return -1;
     }
 
-    public static void maybeRethrow(Exception e) {
+    public static void maybeRethrow(Throwable e) {
         if (unwrap(e) instanceof InterruptedException) {
             rethrow(e);
         }

@@ -43,6 +43,10 @@ public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
         return adaptIterable(this, mapper.supply2(i2));
     }
 
+    default <I1, I2, To> MappedIterable<To> map23(In3Out1<T, I1, I2, To> mapper, I1 i1, I2 i2) {
+        return adaptIterable(this, mapper.supply2(i1).supply2(i2));
+    }
+
     default MappedIterable<T> spy(In1<T> mapper) {
         return adaptIterable(this, mapper.returnArg());
     }
@@ -154,6 +158,14 @@ public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
 
     static <To> MappedIterable<To> mapped(Iterable<To> itr) {
         return itr instanceof MappedIterable ? (MappedIterable<To>) itr : itr::iterator;
+    }
+
+    static <To> MappedIterable<To> mappedCaching(Iterator<To> itr) {
+        return mapped(()->itr).caching();
+    }
+
+    static <To> MappedIterable<To> mappedFrom(Out1<Iterable<To>> itr) {
+        return mapped(itr.out1());
     }
 
     static <To> MappedIterable<To> mapped(To ... items) {

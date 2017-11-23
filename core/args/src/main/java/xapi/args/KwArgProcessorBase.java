@@ -1,5 +1,8 @@
 package xapi.args;
 
+import xapi.fu.Do;
+import xapi.fu.In1;
+import xapi.fu.In2;
 import xapi.fu.Out1;
 import xapi.fu.iterate.ArrayIterable;
 import xapi.fu.iterate.Chain;
@@ -18,8 +21,12 @@ import java.util.Set;
 public class KwArgProcessorBase extends ArgProcessorAbstract {
 
     public String[] processArgs(String ... args) {
+        return processArgs(In2.NULL, args);
+    }
+
+    public String[] processArgs(In2<Boolean, String[]> success, String ... args) {
+        boolean help = false;
         if (args.length > 0) {
-            boolean help = false;
             if ("-help".equalsIgnoreCase(args[0])) {
                 help = true;
             } else if ("-?".equals(args[0])) {
@@ -28,6 +35,7 @@ public class KwArgProcessorBase extends ArgProcessorAbstract {
 
             if (help) {
                 printHelp();
+                success.in(false, args);
                 return args;
             }
         }
@@ -36,13 +44,14 @@ public class KwArgProcessorBase extends ArgProcessorAbstract {
         Set<ArgHandler> receivedArg = new HashSet<ArgHandler>();
         ChainBuilder<String> unused = Chain.startChain();
         // Let the args drive the handlers.
-        boolean printHelp = false;
         for (int i = 0; i < args.length; i++) {
             String arg = args[i];
             ArgHandler handler;
+            boolean spy = false;
             if (arg.startsWith("-")) {
                 // Use the handler registered for this flag.
                 handler = argHandlers.get(arg);
+                spy = shouldSpy(handler, arg);
             } else {
                 unused.add(arg);
                 continue;
@@ -56,14 +65,22 @@ public class KwArgProcessorBase extends ArgProcessorAbstract {
             int addtlConsumed = handler.handle(args, i);
             if (addtlConsumed == -1) {
                 unused.add(arg);
-                printHelp = true;
+                help = true;
                 continue;
             }
 
-            i += addtlConsumed;
 
-            // We don't need to use this as a default handler.
-            defs.remove(handler);
+            i += addtlConsumed;
+            if (spy) {
+                // when spying, put our -name and all the values we just read back.
+                unused.add(arg);
+                while (addtlConsumed --> 0) {
+                    unused.add(args[i-addtlConsumed]);
+                }
+            }
+            if (!handler.isMultiUse()) {
+                defs.remove(handler);
+            }
 
             // Record that this handler saw a value
             receivedArg.add(handler);
@@ -83,7 +100,7 @@ public class KwArgProcessorBase extends ArgProcessorAbstract {
                 System.err.print(tagArg);
                 System.err.println("'");
 
-                printHelp = true;
+                help = true;
             }
         }
 
@@ -92,14 +109,20 @@ public class KwArgProcessorBase extends ArgProcessorAbstract {
             Out1<String>[] defArgs = def.getDefaultArgs();
             if (defArgs != null) {
                 if (def.handle(defArgs, 0) == -1) {
-                    printHelp = true;
+                    help = true;
                 }
             }
         }
-        if (printHelp) {
+        if (help) {
             System.err.println("Some errors detected processing args: " + ArrayIterable.iterate(args));
             printHelp();
         }
-        return unused.toArray(String[]::new);
+        final String[] result = unused.toArray(String[]::new);
+        success.in(!help, result);
+        return result;
+    }
+
+    private boolean shouldSpy(ArgHandler handler, String arg) {
+        return handler != null && handler.spyTags().anyMatch(arg::equals);
     }
 }

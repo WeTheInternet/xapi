@@ -83,11 +83,16 @@ public class X_Debug {
     return X_Runtime.isDebug();
   }
 
-  public static void inspect(String qualifiedBinaryName) {
-    X_Log.error(qualifiedBinaryName);
+  /**
+   * Print a string and a stacktrace of who called this method.
+   *
+   * This method should be unused, because you will delete it after you use it.
+   */
+  public static void findLocation(String message) {
+    X_Log.error(X_Debug.class, message);
     if (X_Runtime.isDebug()) {
       StackTraceElement[] trace = new RuntimeException().getStackTrace();
-      X_Log.error(Arrays.asList(trace).toString().replaceAll(", ", "\n  "));
+      X_Log.error(X_Debug.class, trace);
     }
   }
 
@@ -137,6 +142,7 @@ public class X_Debug {
    */
   public static void traceSystemOut(int ignoreDepth) {
     final PrintStream orig = System.out;
+
     // Avoid cyclic calls, but don't store references...
     if (orig instanceof DebugStream)
       return;

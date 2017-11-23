@@ -15,6 +15,8 @@ In1Out1<I, O> extends Rethrowable, Lambda {
   In1Out1<Integer, Integer> INCREMENT_INT = i->i==null?1:i+1;
   In1Out1<Integer, Integer> DECREMENT_INT = i->i==null?-1:i-1;
   In1Out1 RETURN_NULL = X_Fu::returnNull;
+  In1Out1 RETURN_TRUE = ignored->true;
+  In1Out1 RETURN_FALSE = ignored->false;
 
   static <O> In1Out1<O, O> identity() {
     return IDENTITY;
