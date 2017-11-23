@@ -1,6 +1,5 @@
 package xapi.components.api;
 
-import elemental.dom.Element;
 import elemental.dom.Node;
 import jsinterop.annotations.JsOverlay;
 import jsinterop.annotations.JsType;

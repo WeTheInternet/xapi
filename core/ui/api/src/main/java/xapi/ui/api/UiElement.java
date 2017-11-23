@@ -100,8 +100,8 @@ public interface UiElement
 
   void insertAdjacent(ElementPosition pos, Base child);
 
-  default void insertBefore(Base newChild) {
-    asInjector().insertBefore(newChild);
+  default void insertBefore(Base newChild, Base refChild) {
+    asInjector().insertBefore(newChild, refChild);
   }
 
   default void insertAtBegin(Base newChild) {

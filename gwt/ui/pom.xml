@@ -19,6 +19,7 @@
   </properties>
 
   <modules>
+    <module>api</module>
     <module>autoui</module>
     <module>html</module>
   </modules>

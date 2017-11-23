@@ -557,6 +557,12 @@ public abstract class ElementBuilder <E> extends NodeBuilder<E> {
     return this;
   }
 
+  public String toSource() {
+      StringBuilder b = new StringBuilder();
+      toHtml(b);
+      return b.toString();
+  }
+
   public StyleApplier getStyle() {
     return stylizer.get();
   }
@@ -602,4 +608,8 @@ public abstract class ElementBuilder <E> extends NodeBuilder<E> {
     return this;
   }
 
+  @Override
+  public ElementBuilder<E> createChild(String value) {
+    return (ElementBuilder<E>) super.createChild(value);
+  }
 }

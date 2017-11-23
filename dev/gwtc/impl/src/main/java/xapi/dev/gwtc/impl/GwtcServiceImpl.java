@@ -206,7 +206,7 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
     // Our Gwtc impl infrastructure, and a gwt compiler (of some sort).
     // We are going to leave the selection of which gwt compiler up to subtypes,
     // with the sane default of a standard GWT 2.X compilation.
-    boolean needsXapiGwtcImpl = false, needsXapiGwtcApi = false, needsGwtDev = false, needsGwtUser = false, needsJreProcess = false;
+    boolean needsXapiGwtcImpl = false, needsXapiGwtcApi = false, needsGwtDev = false, needsGwtUser = false, needsJreProcess = false, needsSlf4j = false;
 
     try {
       classpath.loadClass(GwtcService.class.getName());
@@ -232,6 +232,14 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
       // No class found.  We'll need to add one
       needsGwtDev = true;
     }
+    try {
+      // To avoid annoying warnings from any dependencies that include slf4j api
+      // but client does not have any impl, we'll automatically add simple logger if needed
+      classpath.loadClass("org.slf4j.LoggerFactory");
+      needsSlf4j = true;
+      classpath.loadClass("org.slf4j.impl.StaticLoggerBinder");
+      needsSlf4j = false;
+    } catch (ClassNotFoundException ignored) { }
     try {
       classpath.loadClass(ConcurrencyServiceJre.class.getName());
     } catch (ClassNotFoundException e) {
@@ -261,6 +269,10 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
           final MvnDependency dep = getDependency("xapi-jre-process");
           urls.add(downloadDependency(dep));
         }
+      }
+      if (needsSlf4j) {
+        final MvnDependency dep = getDependency("org.slf4j", "slf4j-simple", "1.7.25");
+        urls.add(downloadDependency(dep));
       }
 
       final URL[] arr = urls

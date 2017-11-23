@@ -148,6 +148,13 @@
       <version>${project.version}</version>
     </dependency>
 
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-fu</artifactId>
+      <version>${project.version}</version>
+      <classifier>sources</classifier>
+    </dependency>
+
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-core-api</artifactId>
@@ -432,6 +439,16 @@
    </dependency>
    <dependency>
     <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-gwt3</artifactId>
+    <version>${project.version}</version>
+   </dependency>
+   <dependency>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-gwt-ui-api</artifactId>
+    <version>${project.version}</version>
+   </dependency>
+   <dependency>
+    <groupId>net.wetheinter</groupId>
     <artifactId>xapi-gwt-ui-autoui</artifactId>
     <version>${project.version}</version>
    </dependency>
@@ -604,6 +621,11 @@
    <dependency>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-server-gen</artifactId>
+    <version>${project.version}</version>
+   </dependency>
+   <dependency>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-server-vertx</artifactId>
     <version>${project.version}</version>
    </dependency>
 

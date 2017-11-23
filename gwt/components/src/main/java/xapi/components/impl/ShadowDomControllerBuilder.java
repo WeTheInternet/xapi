@@ -8,14 +8,14 @@ import elemental2.core.Function;
 import elemental2.core.ObjectPropertyDescriptor;
 import elemental2.core.Reflect;
 import jsinterop.base.Js;
+import xapi.collect.impl.SimpleFifo;
 import xapi.components.api.ComponentNamespace;
 import xapi.components.api.JsObjectDescriptor;
 import xapi.components.api.ShadowDomPlugin;
-import xapi.elemental.X_Elemental;
 import xapi.fu.In1Out1;
 import xapi.fu.MappedIterable;
 import xapi.fu.iterate.CachingIterator.ReplayableIterable;
-import xapi.elemental.api.ElementIterable;
+import xapi.gwt.x.X_Gwt;
 import xapi.ui.api.component.SlotController;
 
 import static jsinterop.base.Js.cast;
@@ -152,8 +152,10 @@ public class ShadowDomControllerBuilder {
 
             // Then, let our initializer have a peek, and fill out shadow dom element
             Element root = initializer.io(element);
-            ElementIterable.forEach(element.getChildren())
-                .forAll(this::markShadowRoot);
+            for (int i = 0; i < element.getChildren().getLength(); i ++) {
+                final Node e = element.getChildren().item(i);
+                markShadowRoot((Element)e);
+            }
 
             // let the shadow dom plugins look at, but not touch the element (only legal for native shadow dom, and questionable even then)
             assert element == root : "VirtualDom may not return a different element than you were sent.";
@@ -181,7 +183,7 @@ public class ShadowDomControllerBuilder {
         // virtual shadow root must be resolved by the time we are attached.
         // this ensures that, even if nobody else initialized our shadyRoot,
         // it will be done by the time the element is attached to the page.
-        b.attachedCallback(X_Elemental::getShadowRoot);
+        b.attachedCallback(X_Gwt::getShadowRoot);
 
         // innerHTML is special; we need to get creative for this to work.
         // To get sane semantics, we want to remove all the shadow roots
@@ -199,7 +201,7 @@ public class ShadowDomControllerBuilder {
                                     .call(e, v);
                                 return;
                             }
-                            X_Elemental.getShadowRoot(e);
+                            X_Gwt.getShadowRoot(e);
                             JsSupport.flushElementTasks(e);
                             MappedIterable<Element> shadowRoots = getShadowRoots(e);
                             final SlotController<Element, Element> slotter;
@@ -237,9 +239,11 @@ public class ShadowDomControllerBuilder {
 
         if (controller != NO_SLOT_BUILDER) {
             controller.getSlotBinder().addToPrototype(b.getPrototype(), e->{
-
-                X_Elemental.getShadowRoot(e);
+                // Ensure our shadow roots are initialized...
+                X_Gwt.getShadowRoot(e);
+                // finish any queued tasks
                 JsSupport.flushElementTasks(e);
+                // grab our slotter from our controller (now that we have initialized)
                 final SlotController<Element, Element> slotter = controller.forElement(e);
 
                 return slotter;
@@ -250,9 +254,14 @@ public class ShadowDomControllerBuilder {
     }
 
     private MappedIterable<Element> getShadowRoots(Element e) {
-        return ElementIterable.forEach(e.getChildren())
-            .filter(ShadowDomControllerBuilder::isShadowRoot)
-            .cached();
+        SimpleFifo<Element> fifo = new SimpleFifo<>();
+        for (int i = 0; i < e.getChildren().length(); i++) {
+            final Node child = e.getChildren().item(i);
+            if (ShadowDomControllerBuilder.isShadowRoot(child)) {
+                fifo.give((Element)child);
+            }
+        }
+        return fifo;
     }
 
     private void markShadowRoot(Element element) {

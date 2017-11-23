@@ -28,13 +28,16 @@
 
  <dependencies>
 
-
   <dependency>
    <groupId>${gwt.groupId}</groupId>
-   <artifactId>gwt-dev</artifactId>
+   <artifactId>gwt-codeserver</artifactId>
    <scope>test</scope>
   </dependency>
 
+  <dependency>
+   <groupId>net.wetheinter</groupId>
+   <artifactId>xapi-gwt3</artifactId>
+  </dependency>
   <dependency>
    <groupId>net.wetheinter</groupId>
    <artifactId>xapi-dev-source</artifactId>

@@ -1,0 +1,26 @@
+package test;
+
+import elemental.dom.Element;
+import elemental.events.Event;
+
+public class HelloWorld {
+
+  private static final String hello = "<b>Hello</b>";
+
+  private final Element world = `<i>World</i>`;
+
+  final Element value;
+
+  public HelloWorld() {
+    value = `
+    <div onClick=this::onClick>
+        $hello $world
+    </div>
+    `;
+  }
+
+  void onClick(Event e) {
+
+  }
+
+}

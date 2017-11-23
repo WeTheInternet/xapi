@@ -12,6 +12,10 @@ import xapi.model.api.ModelBuilder;
 
 public interface ModelAsserter extends Model{
 
+  static KeyBuilder newKey () {
+    return ASSERTER_KEY_BUILDER.out1();
+  }
+
   public String MODEL_ASSERTER = "asserter";
 
   public Out1<KeyBuilder> ASSERTER_KEY_BUILDER = forType(MODEL_ASSERTER);

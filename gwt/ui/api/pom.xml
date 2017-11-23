@@ -8,12 +8,12 @@
     <version>0.6-SNAPSHOT</version>
   </parent>
 
-  <artifactId>xapi-gwt-ui-html</artifactId>
+  <artifactId>xapi-gwt-ui-api</artifactId>
   <packaging>jar</packaging>
-  <name>XApi - GWT Enhancements for zero-overhead Model-to-Html templating</name>
+  <name>XApi - Basic shared ui api Gwt implementations</name>
   <url>WeTheInter.net</url>
   <description>
-    A set of generator utils to create raw html from annotated data models.
+    All shared ui abstractions for Gwt components.
   </description>
 
   <properties>
@@ -22,10 +22,6 @@
 
 
   <dependencies>
-    <dependency>
-      <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-gwt-ui-api</artifactId>
-    </dependency>
     <dependency>
       <groupId>net.wetheinter</groupId>
       <artifactId>xapi-core-ui-html</artifactId>
@@ -37,11 +33,7 @@
     </dependency>
     <dependency>
       <groupId>net.wetheinter</groupId>
-      <artifactId>xapi-gwt-ui-autoui</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>${gwt.groupId}</groupId>
-      <artifactId>gwt-elemental</artifactId>
+      <artifactId>xapi-core-ui-autoui</artifactId>
     </dependency>
 
     <!-- Testing dependencies -->

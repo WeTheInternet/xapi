@@ -7,6 +7,7 @@ import xapi.components.api.Symbol;
 import xapi.fu.In1Out1;
 import xapi.fu.In2Out1;
 import xapi.fu.Out1;
+import xapi.log.X_Log;
 
 import static xapi.components.impl.JsFunctionSupport.reapplyThis;
 import static xapi.components.impl.JsFunctionSupport.wrapOut1;
@@ -139,6 +140,7 @@ public class JsLazyExpando<I, O> implements In2Out1<I, In1Out1<I, O>, O> {
 //            return result;
 //          }
           final I self = getCaller();
+          X_Log.info(JsLazyExpando.class, "Applying lazy expando; ", this, self);
           final O result = io(self, factory);
           if (makeImmutable && !isDefined(self)) {
             opts.setConfigurable(false);

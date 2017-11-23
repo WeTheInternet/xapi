@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-gwt-parent</artifactId>
+    <version>0.6-SNAPSHOT</version>
+  </parent>
+  <artifactId>xapi-gwt3</artifactId>
+  <packaging>jar</packaging>
+  <name>XApi - GWT 3</name>
+  <url>WeTheInter.net</url>
+  <description>
+    An experimental approach to "GWT 3",
+    not reviewed by any other GWT community members:
+    Uses Elemental 2 and JsInterop only (should be J2CL friendly).
+  </description>
+
+  <properties>
+    <java.version>1.8</java.version>
+    <gwt.version>2.8.0</gwt.version>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-gwt-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-gwt-ui-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.google.elemental2</groupId>
+      <artifactId>elemental2-dom</artifactId>
+      <version>1.0.0-beta-1</version>
+    </dependency>
+
+    <dependency>
+      <groupId>${gwt.groupId}</groupId>
+      <artifactId>gwt-dev</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>${gwt.groupId}</groupId>
+      <artifactId>gwt-user</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>info.cukes</groupId>
+      <artifactId>cucumber-java</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>info.cukes</groupId>
+      <artifactId>cucumber-junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest-library</artifactId>
+      <scope>test</scope>
+      <version>1.1</version>
+    </dependency>
+
+  </dependencies>
+
+  <profiles>
+    <profile>
+      <id>launch</id>
+      <activation>
+        <property>
+          <name>launch</name>
+        </property>
+      </activation>
+
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>net.wetheinter</groupId>
+            <artifactId>xapi-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>launch</id>
+                <phase>test</phase>
+                <goals>
+                  <goal>codeserver</goal>
+                </goals>
+                <inherited>false</inherited>
+                <configuration>
+                  <assertions>true</assertions>
+                  <includeTestSource>true</includeTestSource>
+                  <!-- 	<debugPort>7311</debugPort> -->
+                  <!--  <debugDelay>${debug.delay}</debugDelay>  -->
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+      <properties>
+        <debug.delay>0</debug.delay>
+        <xapi.log.level>TRACE</xapi.log.level>
+      </properties>
+    </profile>
+    <profile>
+      <id>test</id>
+      <activation>
+        <property>
+          <name>xapi.test</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <version>2.18</version>
+            <configuration>
+              <additionalClasspathElements>
+                <additionalClasspathElement>${project.build.sourceDirectory}</additionalClasspathElement>
+                <additionalClasspathElement>${project.build.testSourceDirectory}</additionalClasspathElement>
+              </additionalClasspathElements>
+              <useManifestOnlyJar>false</useManifestOnlyJar>
+              <forkMode>never</forkMode>
+              <forkCount>0</forkCount>
+              <enableAssertions>true</enableAssertions>
+
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
+</project>

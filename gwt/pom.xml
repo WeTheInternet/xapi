@@ -89,6 +89,9 @@
     <!-- Labs code for leveraging elemental to enable html5 features -->
     <module>elemental</module>
 
+    <!-- An experimental take on gwt3 apps (uses Elemental 2 and Js Interop exclusively). Deprecates elemental module -->
+    <module>gwt3</module>
+
     <!-- Contains the gwt-only implementation of our concurrency library.
       This module is VERY experimental, the internal apis WILL change.
       The basic X_Process.runLater() methods, will not.

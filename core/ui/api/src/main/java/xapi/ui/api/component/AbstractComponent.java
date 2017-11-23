@@ -1,12 +1,8 @@
 package xapi.ui.api.component;
 
-import xapi.collect.X_Collect;
-import xapi.collect.api.IntTo;
 import xapi.fu.Immutable;
 import xapi.fu.Lazy;
 import xapi.fu.Out1;
-import xapi.fu.iterate.EmptyIterator;
-import xapi.fu.iterate.SizedIterable;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 1/16/17.

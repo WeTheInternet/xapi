@@ -26,7 +26,7 @@ public class GwtAsserterComponent extends BaseAsserterComponent<Node, Element, P
     WebComponentBuilder component = new WebComponentBuilder(htmlElementClass(), WebComponentVersion.V1);
 
     component.setClassName("Asserter");
-    ComponentOptions<Node, Element, AsserterComponent<Node, Element>> opts = new ComponentOptions<>();
+    ComponentOptions<Node, Element, GwtAsserterComponent> opts = new ComponentOptions<>();
     getUi = WebComponentSupport.installFactory(component, GwtAsserterComponent::new, opts);
     component.createdCallback(e->{
       final GwtAsserterComponent c = getAsserterComponent(e);
@@ -37,9 +37,9 @@ public class GwtAsserterComponent extends BaseAsserterComponent<Node, Element, P
       "xapi-asserter", component);
   }
 
-  private static ComponentConstructor<Node, Element, AsserterComponent<Node, Element>> NEW_XAPI_ASSERTER;
+  private static ComponentConstructor<Node, Element, GwtAsserterComponent> NEW_XAPI_ASSERTER;
 
-  private static In1Out1<Element, AsserterComponent<Node, Element>> getUi;
+  private static In1Out1<Element, GwtAsserterComponent> getUi;
 
   public GwtAsserterComponent (Element el) {
     super(el);
@@ -52,15 +52,15 @@ public class GwtAsserterComponent extends BaseAsserterComponent<Node, Element, P
   public static GwtAsserterComponent getAsserterComponent (Element e) {
       assert e != null;
       assert e.getTagName().toLowerCase().equals("xapi-asserter");
-      final AsserterComponent component = ComponentNamespace.getComponent(e, getUi);
-      return (GwtAsserterComponent) component;
+      final GwtAsserterComponent component = ComponentNamespace.getComponent(e, getUi);
+      return component;
   }
 
-  public static GwtAsserterComponent create (ComponentOptions<Node, Element, AsserterComponent<Node, Element>> opts) {
+  public static GwtAsserterComponent create (ComponentOptions<Node, Element, GwtAsserterComponent> opts) {
     if (opts == null) {
       opts = new ComponentOptions<>();
     }
-    return (GwtAsserterComponent)NEW_XAPI_ASSERTER.constructComponent(opts, getUi);
+    return NEW_XAPI_ASSERTER.constructComponent(opts, getUi);
   }
 
 }

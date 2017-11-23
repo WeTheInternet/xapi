@@ -24,7 +24,7 @@ public class DelegateElementInjector <Node, Base extends UiElement<Node, ? exten
   }
 
   @Override
-  public void insertBefore(Base newChild) {
+  public void insertBefore(Base newChild, Base refChild) {
     anchor.insertAdjacent(ElementPosition.BEFORE_BEGIN, newChild);
     newChild.setParent(anchor.getParent());
   }

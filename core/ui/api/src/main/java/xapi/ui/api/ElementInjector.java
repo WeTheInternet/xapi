@@ -1,17 +1,14 @@
 package xapi.ui.api;
 
-import jsinterop.annotations.JsType;
-
 /**
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 4/18/16.
  */
-@JsType(isNative = true)
 public interface ElementInjector <Node, Base extends UiNode<Node, ? extends Node, Base>> {
 
   void appendChild(Base newChild);
 
-  void insertBefore(Base newChild);
+  void insertBefore(Base newChild, Base refChild);
 
   void insertAtBegin(Base newChild);
 

@@ -299,7 +299,7 @@ public class WebComponentBuilder {
   private boolean alwaysUseVirtualRoot() {
     // we will change the default to true for non-native browsers later,
     // once our "one at a time" implementations are fully supported
-    return true;//"true".equals(System.getProperty("virtual.shadow.root", "false"));
+    return "true".equals(System.getProperty("virtual.shadow.root", "false"));
   }
 
   private In1Out1Unsafe<String, UiContainerExpr> getParser() {
