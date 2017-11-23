@@ -9,9 +9,10 @@
     <gwtc
       name = "XapiLang"
       entryPoint = xapi.demo.gwt.client.XapiLangPresentation
-      module = "xapi.demo.XapiLangDist"
+      module = "xapi.demo.gwt.client.XapiLangDist"
       inherit = "xapi.demo.XapiLang"
-      logLevel = INFO
+      inherit = "de.mocra.cy.WtiLang"
+      logLevel = TRACE
       recompile = true
       isolateClassLoader = false
       useCurrentJvm = true
