@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-dev-parent</artifactId>
+    <version>0.6-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>xapi-dist</artifactId>
+  <packaging>jar</packaging>
+  <name>XApi - Dist Generator</name>
+  <url>WeTheInter.net</url>
+  <description>
+    Contains a main and javac plugin designed to create "dist builds" in other modules.
+
+    A "dist" build will have had all classes visited, looking for magic methods to replace,
+    as well as running other source-to-source transformations.  The end result is a finalized artifact
+    which should be capable of running as a standalone execution environment.
+
+    The two primary use cases for this are replacement of X_Inject calls with direct factory calls,
+    and (eventually) a GWT.create replacement which might be able to preserve the existing gwt generator framework.
+
+    The lessons learned from making X_Inject replacement will be used to decide whether we can
+    provide enough of the GWT generator APIs to be a replacement, or if we will need to consider
+    other alternatives, like actually running the first half of the GWT 2 compiler chain,
+    allowing generators to run, but then emitting java instead of javascript, to feed into J2CL.
+ </description>
+
+  <dependencies>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-server-vertx</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-jre-ui-javafx</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-jre-inject</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-dev-file</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-dev-shell</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-dev-scanner</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-dev-shell</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-dev-maven</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-gen</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-server-gen</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-core-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+</project>
