@@ -53,10 +53,10 @@ public abstract class ConcurrentEnvironment {
     try {
     do {
       if (hasFinalies()) {
-        X_Log.debug(getClass(), "run finallies");
+        X_Log.debug(ConcurrentEnvironment.class, "run finallies");
         runFinalies(max);
       }
-      X_Log.debug(getClass(), "check timeout");
+      X_Log.debug(ConcurrentEnvironment.class, "check timeout");
       checkTimeouts(max);
 
       Iterator<Do> iter = getDeferred().iterator();
@@ -66,14 +66,14 @@ public abstract class ConcurrentEnvironment {
           next = iter.next();
           iter.remove();
         }
-        X_Log.trace(getClass(), "iterating job", next);
+        X_Log.trace(ConcurrentEnvironment.class, "iterating job", next);
         next.done();
-        X_Log.debug(getClass(), "check finalies again");
+        X_Log.debug(ConcurrentEnvironment.class, "check finalies again");
         if (hasFinalies()) {
-          X_Log.trace(getClass(), "has finalies");
+          X_Log.trace(ConcurrentEnvironment.class, "has finalies");
           runFinalies(max);
         }
-        X_Log.debug(getClass(), "check timeout");
+        X_Log.debug(ConcurrentEnvironment.class, "check timeout");
         checkTimeouts(max);
       }
     }while(! isEmpty());

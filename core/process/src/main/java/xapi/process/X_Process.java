@@ -61,7 +61,7 @@ public class X_Process {
   }
 
   public static <T> void runFinally(In1<T> cmd, Out1<T> from) {
-    service.get().runFinally(cmd.provide(from));
+    service.get().runFinally(cmd.provideDeferred(from));
   }
 
   public static void runTimeout(Do cmd, int milliDelay) {
@@ -70,6 +70,10 @@ public class X_Process {
 
   public static Thread newThread(Do cmd) {
     return service.get().newThread(cmd);
+  }
+
+  public static Thread newThread(Do cmd, ThreadGroup group) {
+    return service.get().newThread(cmd, group);
   }
 
   public static <T> ProcessController<T> newProcess(Process<T> process) {

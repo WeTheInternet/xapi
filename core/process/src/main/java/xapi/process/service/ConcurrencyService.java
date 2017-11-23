@@ -2,6 +2,7 @@ package xapi.process.service;
 
 import xapi.fu.Do;
 import xapi.fu.In1;
+import xapi.fu.api.DoNotOverride;
 import xapi.process.api.AsyncLock;
 import xapi.process.api.Process;
 import xapi.process.api.ProcessController;
@@ -17,6 +18,7 @@ public interface ConcurrencyService {
 
   /**
    * Experimental; may be deprecated.
+   * Do not override this method; instead override {@link #newThread(Do, ThreadGroup)}.
    *
    * Creates a new thread for the given runnable.
    *
@@ -25,8 +27,27 @@ public interface ConcurrencyService {
    *
    * @param cmd - The command to wrap in a new thread.
    * @return - An unstarted thread that will run the given command.
+   *
    */
-  Thread newThread(Do cmd);
+  @DoNotOverride
+  default Thread newThread(Do cmd) {
+    return newThread(cmd, null);
+  }
+
+  /**
+   * Experimental; may be deprecated.
+   *
+   * Creates a new thread for the given runnable.
+   *
+   * If blacklisting Thread/ThreadGroup is a problem on some platforms,
+   * Thread may be replaced with a proxy class in the public api.
+   *
+   * @param cmd - The command to wrap in a new thread.
+   * @param group - The threadgroup you want the thread to belong to
+   * @return - An unstarted thread that will run the given command.
+   */
+  Thread newThread(Do cmd, ThreadGroup group);
+
   /**
    * Experimental; may replace {@link #newThread(Do)}.
    *
@@ -188,4 +209,5 @@ public interface ConcurrencyService {
     void runInClassloader(ClassLoader loader, Do cmd);
 
     void scheduleInterruption(long blocksFor, TimeUnit unit);
+
 }

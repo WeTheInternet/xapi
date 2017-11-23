@@ -12,6 +12,7 @@ import xapi.fu.iterate.ChainBuilder;
 import xapi.log.X_Log;
 import xapi.process.api.ConcurrentEnvironment;
 import xapi.process.api.ConcurrentEnvironment.Priority;
+import xapi.process.api.HasThreadGroup;
 import xapi.process.api.Process;
 import xapi.process.api.ProcessController;
 import xapi.process.service.ConcurrencyService;
@@ -175,13 +176,17 @@ public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
   }
 
   @Override
-  public Thread newThread(Do cmd) {
+  public Thread newThread(Do cmd, ThreadGroup group) {
     WrappedRunnable wrapped = wrap(cmd);
     Thread running = Thread.currentThread();
     ConcurrentEnvironment enviro = environments.get(running, running.getUncaughtExceptionHandler());
-    Thread childThread = new Thread(wrapped
-        .doAfter(enviro::shutdown).toRunnable());
-    childThread.setName(cmd.getClass().getName()+"_"+threadCount.incrementAndGet());
+    final Runnable job = wrapped
+        .doAfter(enviro::shutdown).toRunnable();
+    Thread childThread = group == null ? new Thread(job) : new Thread(group, job);
+    childThread.setName(
+        (group == null ? "" : group.getName()+"-") +
+        cmd.getClass().getName()+"_"+threadCount.incrementAndGet()
+    );
     enviro.pushThread(childThread);
     if (running.getUncaughtExceptionHandler() != null) {
       childThread.setUncaughtExceptionHandler(running.getUncaughtExceptionHandler());
@@ -371,6 +376,14 @@ public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
       // TODO: somehow / optionally encapsulate X_Scope.currentScope to survive in foreign classloader.
       // If implemented, this should enforce parent classloaders,
       // or some hideous thing to try to make reflection proxies of "everything dumped into scope".
+      if (loader instanceof HasThreadGroup) {
+        final ThreadGroup group = ((HasThreadGroup) loader).getThreadGroup();
+        if (group != null) {
+
+        }
+      } else {
+
+      }
       final Thread thread = newThread(cmd);
       thread.setContextClassLoader(loader);
       thread.start();
