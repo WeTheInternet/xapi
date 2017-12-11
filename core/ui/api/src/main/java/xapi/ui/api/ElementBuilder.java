@@ -2,6 +2,8 @@ package xapi.ui.api;
 
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
+import xapi.fu.In1;
+import xapi.fu.In2;
 import xapi.util.X_Debug;
 import xapi.util.X_String;
 import xapi.util.impl.LazyProvider;
@@ -598,6 +600,11 @@ public abstract class ElementBuilder <E> extends NodeBuilder<E> {
     return this;
   }
 
+  public ElementBuilder<E> setSlot(String slot) {
+    setAttribute("slot", slot);
+    return this;
+  }
+
   public ElementBuilder<E> setValue(String value) {
     setAttribute("value", value);
     return this;
@@ -608,8 +615,33 @@ public abstract class ElementBuilder <E> extends NodeBuilder<E> {
     return this;
   }
 
+  public ElementBuilder<E> setName(String name) {
+    setAttribute("name", name);
+    return this;
+  }
+
+  public abstract ElementBuilder<E> createNode(String tagName);
+
   @Override
-  public ElementBuilder<E> createChild(String value) {
-    return (ElementBuilder<E>) super.createChild(value);
+  public ElementBuilder<E> createChild(String tagName) {
+    final ElementBuilder<E> child = createNode(tagName);
+    addChild(child, X_String.isEmpty(tagName)); // If we are a document fragment, we need to make new children the target element for future inserts
+    return child;
+  }
+
+  public ElementBuilder<E> withChild(String value, In1<? super ElementBuilder<E>> childCallback) {
+    final ElementBuilder<E> child = createChild(value);
+    childCallback.in(child);
+    return this;
+  }
+  public <I1> ElementBuilder<E> withChild1(String value, In2<I1, ? super ElementBuilder<E>> childCallback, I1 in1) {
+    return withChild(value, childCallback.provide1(in1));
+  }
+  public <I2> ElementBuilder<E> withChild2(String value, In2<? super ElementBuilder<E>, I2> childCallback, I2 in2) {
+    return withChild(value, childCallback.provide2(in2));
+  }
+
+  public boolean isEmpty() {
+    return this.attributes.isEmpty() && isChildrenEmpty();
   }
 }

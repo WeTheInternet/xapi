@@ -5,17 +5,11 @@ import xapi.fu.Filter.Filter1Unsafe;
 import xapi.fu.In1.In1Unsafe;
 import xapi.fu.In1Out1.In1Out1Unsafe;
 import xapi.fu.api.DoNotOverride;
-import xapi.fu.api.HasEmptiness;
+import xapi.fu.has.HasEmptiness;
 import xapi.fu.has.HasSize;
-import xapi.fu.iterate.ArrayIterable;
-import xapi.fu.iterate.CachingIterator;
+import xapi.fu.iterate.*;
 import xapi.fu.iterate.CachingIterator.ReplayableIterable;
 import xapi.fu.iterate.CachingIterator.SizedReplayableIterable;
-import xapi.fu.iterate.Chain;
-import xapi.fu.iterate.ChainBuilder;
-import xapi.fu.iterate.CountedIterator;
-import xapi.fu.iterate.EmptyIterator;
-import xapi.fu.iterate.SizedIterable;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -29,6 +23,10 @@ public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
 
     default <To> MappedIterable<To> map(In1Out1<T, To> mapper) {
         return adaptIterable(this, mapper);
+    }
+
+    default <To> MappedIterable<To> mapIndexed(In2Out1<Integer, T, To> mapper) {
+        return adaptIterableIndexed(this, mapper);
     }
 
     default <To> MappedIterable<To> mapUnsafe(In1Out1Unsafe<T, To> mapper) {
@@ -161,7 +159,11 @@ public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
     }
 
     static <To> MappedIterable<To> mappedCaching(Iterator<To> itr) {
-        return mapped(()->itr).caching();
+        return mappedOneShot(itr).caching();
+    }
+
+    static <To> MappedIterable<To> mappedOneShot(Iterator<To> itr) {
+        return mapped(()->itr);
     }
 
     static <To> MappedIterable<To> mappedFrom(Out1<Iterable<To>> itr) {
@@ -174,6 +176,16 @@ public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
 
     static <From, To> MappedIterable<To> adaptIterable(Iterable<From> from, In1Out1<? super From, ? extends To> mapper) {
         return ()->new MappedIterator<>(from.iterator(), mapper);
+    }
+
+    static <From, To> MappedIterable<To> adaptIterableIndexed(Iterable<From> from, In2Out1<Integer, ? super From, ? extends To> mapper) {
+        return ()-> {
+            final Iterator<From> src = from.iterator();
+            final IndexedIterator<From> itr = new IndexedIterator<>(src);
+            @SuppressWarnings("UnnecessaryLocalVariable")
+            final MappedIterator<From, To> mapped = new MappedIterator<>(itr, mapper.supply1Deferred(itr::getIndex));
+            return mapped;
+        };
     }
 
     default <With> boolean hasMatch1(In2Out1<With, T, Boolean> filter, With with) {
@@ -236,6 +248,9 @@ public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
         return filter(filter).caching();
     }
 
+    default MappedIterable<T> reversed() {
+        return ReverseIterable.reversed(this);
+    }
 
     /**
      * Filters out items for which the supplied filter returns fales.

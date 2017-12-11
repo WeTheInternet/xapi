@@ -136,10 +136,10 @@ public class X_Gwt3 {
 
   private X_Gwt3() {}
 
-  public static Do removeFromParentTask(Element e) {
+  public static Do removeFromParentTask(Node e) {
     return In1.in1(X_Gwt3::removeFromParent).provide(e);
   }
-  public static void removeFromParent(Element e) {
+  public static void removeFromParent(Node e) {
     if (e.parentNode != null) {
       e.parentNode.removeChild(e);
     }

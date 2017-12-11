@@ -101,7 +101,7 @@ public class ModelSessionTest {
             }
         });
         ClassLoader isolate = new URLClassLoader(new URL[]{}, null);
-        final URL testLoc = new URL("file:" + X_Reflect.getFileLoc(ClassloaderTest.class) + "/");
+        final URL testLoc = new URL("file:" + X_Reflect.getFileLoc(ClassloaderTest.class));
         final URL[] urls = {testLoc};
         Thread space = new Thread(Do.unsafe(()->{
             int[] first = {0}, second = {0}, third = {0};

@@ -29,6 +29,7 @@
   <source path="scope"/> <!-- Scoping -->
   <source path="stream"/> <!-- Streaming -->
   <source path="gwt/annotation"/>
+  <source path="gwt/api"/> <!-- Basic js interop -->
   <source path="gwt/log"/>
   <source path="gwt/time"/>
   <source path="gwt/util"/>

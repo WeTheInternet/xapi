@@ -106,6 +106,7 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> {
     return el == null ? new ApplyPendingAttribute() : new ApplyLiveAttribute();
   }
 
+  @Override
   public PotentialNode<E> createNode(String tagName) {
     final NodeBuilder<E> child = newNode.apply(tagName, searchableChildren);
     assert child instanceof PotentialNode :
@@ -121,9 +122,7 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> {
 
   @Override
   public PotentialNode<E> createChild(String tagName) {
-    final PotentialNode<E> child = createNode(tagName);
-    addChild(child, X_String.isEmpty(tagName)); // If we are a document fragment, we need to make new children the target element for future inserts
-    return child;
+    return (PotentialNode<E>) super.createChild(tagName);
   }
 
   @Override
@@ -188,7 +187,7 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> {
       b.append("<");
       b.append(tagName);
       appendAttributes(b);
-      if (isEmpty()) {
+      if (isTagEmpty()) {
         b.append("/");
       }
       b.append(">");
@@ -197,8 +196,8 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> {
   }
 
   @Override
-  protected boolean isEmpty() {
-    if (super.isEmpty()) {
+  protected boolean isTagEmpty() {
+    if (super.isTagEmpty()) {
       switch(tagName.toLowerCase()) {
         case "br":
         case "img":
@@ -213,20 +212,20 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> {
   private void appendAttributes(StringBuilder b) {
     if (!attributes.isEmpty()) {
       for (String attribute : attributes.keys()) {
-        b.append(" ").append(attribute).append("='");
+        b.append(" ").append(attribute).append("=\"");
         String result = attributes.get(attribute).getElement();
-        b.append(sanitizeAttribute(result)).append("'");
+        b.append(sanitizeAttribute(result)).append("\"");
       }
     }
   }
 
   protected String sanitizeAttribute(String result) {
-    return  X_String.isEmpty(result) ? "" : result.replaceAll("'", "&apos;");
+    return  X_String.isEmpty(result) ? "" : result.replaceAll("\"", "&quot;");
   }
 
   @Override
   protected CharSequence getCharsAfter(CharSequence self) {
-    if (tagName != null && !isEmpty()) {
+    if (tagName != null && !isTagEmpty()) {
       return "</"+tagName+">";
     }
     return EMPTY;

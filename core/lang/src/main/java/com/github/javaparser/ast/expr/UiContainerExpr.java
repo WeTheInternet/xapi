@@ -173,6 +173,13 @@ public class UiContainerExpr extends UiExpr {
   }
 
   public String getAttributeRequiredString(String id) {
-    return getAttributeNotNull(id).getExpression().toSource();
+    final Expression expr = getAttributeNotNull(id).getExpression();
+    if (expr instanceof StringLiteralExpr) {
+      return ((StringLiteralExpr) expr).getValue();
+    }
+    if (expr instanceof TemplateLiteralExpr) {
+      return ((TemplateLiteralExpr) expr).getValueWithoutTicks();
+    }
+    return expr.toSource();
   }
 }

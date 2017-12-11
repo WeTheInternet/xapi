@@ -12,6 +12,8 @@ import xapi.model.api.PrimitiveSerializer;
 import xapi.source.api.CharIterator;
 import xapi.util.X_Debug;
 
+import java.util.Arrays;
+
 /**
  * @author James X. Nelson (james@wetheinter.net, @james)
  *
@@ -23,13 +25,13 @@ public class PrimitiveSerializerDefault implements PrimitiveSerializer {
    * The boundary which all negative ending numbers will be below.
    * A character below this bounadary is a termination digit that signifies the number is negative
    */
-  private static final char NEGATIVE_VALUE_BOUNDARY = '=';
+  private static final char NEGATIVE_VALUE_BOUNDARY = '>';
 
   /**
    * The boundary above which all continuation digits will occur.
    * And number below this value is a termination digit which signifies that the current number is complete.
    */
-  private static final char END_VALUE_BOUNDARY = '^';
+  private static final char END_VALUE_BOUNDARY = '_';
 
   /**
    * This continuation group of numbers is used to encode base 32 digits in a serialized number.
@@ -50,12 +52,13 @@ public class PrimitiveSerializerDefault implements PrimitiveSerializer {
    * far more likely to encounter the numbers 1 or 0 than 30 or 31.  The order chosen was
    * based upon http://en.wikipedia.org/wiki/Letter_frequency and other Google searches for
    * frequency of punctuation occurrence.
+   *
    */
   private static final char[] CONTINUATION_NUM_SECTION = new char[] {
     'e', 't', 'a', 'o', 'i', 'n', 's', 'h', 'r', 'd',
     'l', 'c', 'u', 'm', 'w', 'f', 'g', 'y', 'p', 'b',
     'v', 'k', 'j', 'x', 'q', 'z', '_', '{', '}', '|',
-    '~', '^', '`',
+    '~', '`',
   };
 
   /**
@@ -72,7 +75,7 @@ public class PrimitiveSerializerDefault implements PrimitiveSerializer {
     'E', 'T', 'A', 'O', 'I', 'N', 'S', 'H', 'R', 'D',
     'L', 'C', 'U', 'M', 'W', 'F', 'G', 'Y', 'P', 'B',
     'V', 'K', 'J', 'X', 'Q', 'Z', '?', '@', '[',  ']',
-    '>', '\\'
+    '^', '\\'
   };
 
   /**
@@ -101,9 +104,10 @@ public class PrimitiveSerializerDefault implements PrimitiveSerializer {
     // However, a value in the 0 position must be included for indexing to work correctly.
     // We never have a -0 due to how we pack numbers; a negative number's final digit
     // will always have a value of one or more; the only value capable of ending
-    // in 0 is +0 itself.
-   '\0', ' ', '2', '3', '4', '5', '6', '7',  '8', '9',
-    '0', '1', '.', ',', '-', '\'', '"', '/', '*', '(',
+    // in 0 is +0 itself.  So!  We use THAT slot to represent -1,
+    // and when we do, we special case it to store minimal characters
+   '\0', '1', '2', '3', '4', '5', '6', '7',  '8', '9',
+    '0', '>', '.', ',', '-', '\'', '"', '/', '*', '(',
     ')',  ':', ';', '!', '+', '=', '#', '$', '%', '&',
     '<', '\t'
   };
@@ -126,65 +130,76 @@ public class PrimitiveSerializerDefault implements PrimitiveSerializer {
    * much faster than they can handle UTF-8 encoded Strings.  (We use String.valueOf(char[]) as it skips any
    * UTF-8 encoding in GWT; we don't need it as we ensure all our serialized chars are < 127).
    */
-  private static final int[] VALUE_TO_NUM = new int[] {
-    0,  0,  0,  0,  0,   0,  0,  0,  0, 31,  // 0 - 10
-//                                      \t
+  private static final int[] VALUE_TO_NUM
+      = new int[] {
 
-    // TODO consider using this bitspace to remove certain characters from encoded values...
-    // like using \u0011 + instead of `/`, `%` or ` `
-    0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  // 10 - 20
-//
+      0,  0,  0,  0,  0,   0,  0,  0,  0, 31,  // 0 - 10
+   //                                     \t
 
-    0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  // 20 - 30
-//
+      0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  // 10 - 20
+   //
 
-    0,  0,  1, 23, 16,  26, 27, 28, 29, 15,  // 30 - 40
-//         ' '  !   "    #   $   %   &   '
-                                 // consider moving 17 into the "non-print" characters
-    19, 20, 18, 24, 13,  14, 12, 17, 10, 11,  // 40 - 50
-//   (   )   *   +   ,    -   .   /   0   1
+      0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  // 20 - 30
+   //
 
-    2,  3,  4,  5,  6,   7,  8,  9, 21, 22,  // 50 - 60
-//  2   3   4   5   6    7   8   9   :   ;
+      0,  0,  0, 23, 16,  26, 27, 28, 29, 15,  // 30 - 40
+   //              !   "    #   $   %   &   '
 
-    30, 25, 30, 26, 27,   2, 19, 11,  9,  0,  // 60 - 70
-//   <   =   >   ?   @    A   B   C   D   E
+      19, 20, 18, 24, 13,  14, 12, 17, 10,  1,  // 40 - 50
+   //  (   )   *   +   ,    -   .   /   0   1
 
-    15, 16,  7,  4, 22,  21, 10, 13,  5,  3,  // 70 - 80
-//   F   G   H   I   J    K   L   M   N   O
+      2,  3,  4,  5,  6,   7,  8,  9, 21, 22,  // 50 - 60
+   //  2   3   4   5   6    7   8   9   :   ;
 
-    18, 24,  8,  6,  1,  12, 20, 14, 23, 17,  // 80 - 90
-//   P   Q   R   S   T    U   V   W   X   Y
+      30, 25, 11, 26, 27,   2, 19, 11,  9,  0,  // 60 - 70
+   //  <   =   >   ?   @    A   B   C   D   E
 
-//                           Note this value of 32. It is used to handle integer MIN_VALUEs exceeding normal bitspace
-    25, 28, 31, 29, 31,  26, 32,  2, 19, 11,  // 90 - 100
-//   Z   [   \   ]   ^    _   `   a   b   c
+      15, 16,  7,  4, 22,  21, 10, 13,  5,  3,  // 70 - 80
+   //  F   G   H   I   J    K   L   M   N   O
 
-    9,  0, 15, 16,  7,   4, 22, 21, 10, 13,  // 100 - 110
-//  d   e   f   g   h    i   j   k   l   m
+      18, 24,  8,  6,  1,  12, 20, 14, 23, 17,  // 80 - 90
+   //  P   Q   R   S   T    U   V   W   X   Y
 
-    5,  3, 18, 24,  8,   6,  1, 12, 20, 14,  // 110 - 120
-//  n   o   p   q   r    s   t   u   v   w
+      25, 28, 31, 29, 30,  26, 31,  2, 19, 11,  // 90 - 100
+   //  Z   [   \   ]   ^    _   `   a   b   c
 
-    23, 17, 25, 27, 29,  28, 30,              // 120 - 127
-//   x   y   z   {   |    }   ~
+      9,  0, 15, 16,  7,   4, 22, 21, 10, 13,  // 100 - 110
+   //  d   e   f   g   h    i   j   k   l   m
+
+      5,  3, 18, 24,  8,   6,  1, 12, 20, 14,  // 110 - 120
+   //  n   o   p   q   r    s   t   u   v   w
+
+      23, 17, 25, 27, 29,  28, 30,              // 120 - 130
+   //  x   y   z   {   |    }   ~
+
   };
+  private static final char NEG_ONE = '\0';
 
+  public static void main(String ... a) {
+    final int[] computed = computeValueToNum();
+    System.out.println(Arrays.asList(computed));
+  }
 
   @SuppressWarnings("unused")
   // We only use this method if we update any of the ordering of serialization char->int mappings
   private static int[] computeValueToNum(){
     final int[] VALUE_TO_NUM = new int[127];
+    for (int i = VALUE_TO_NUM.length; i --> 0;) {
+      VALUE_TO_NUM[i] = -1;
+    }
     final char[] lookup = new char[127];
     for (int i = CONTINUATION_NUM_SECTION.length; i-->0; ) {
+      assert VALUE_TO_NUM[CONTINUATION_NUM_SECTION[i]] == -1;
       VALUE_TO_NUM[CONTINUATION_NUM_SECTION[i]] = i;
       lookup[CONTINUATION_NUM_SECTION[i]] = CONTINUATION_NUM_SECTION[i];
     }
     for (int i = POSITIVE_NUM_ENDING.length; i-->0; ) {
+      assert VALUE_TO_NUM[POSITIVE_NUM_ENDING[i]] == -1;
       VALUE_TO_NUM[POSITIVE_NUM_ENDING[i]] = i;
       lookup[POSITIVE_NUM_ENDING[i]] = POSITIVE_NUM_ENDING[i];
     }
     for (int i = NEGATIVE_NUM_ENDING.length; i-->0; ) {
+      assert VALUE_TO_NUM[NEGATIVE_NUM_ENDING[i]] == -1;
       VALUE_TO_NUM[NEGATIVE_NUM_ENDING[i]] = i;
       lookup[NEGATIVE_NUM_ENDING[i]] = NEGATIVE_NUM_ENDING[i];
     }
@@ -194,16 +209,17 @@ public class PrimitiveSerializerDefault implements PrimitiveSerializer {
     for (int i = 0; i < VALUE_TO_NUM.length; i ++) {
       final int pos = VALUE_TO_NUM[i];
       final int val = (char)i;
-      String num = Integer.toString(pos);
+      String num = pos == -1 ? " 0" : Integer.toString(pos);
       if (num.length() == 1) {
         num = " "+num;
       }
-      if (pos == 0) {
+      if (pos == -1) {
         l.append("    ");
       } else if (val == '\t') {
-        l.append("\\t  ");
+        l.append(" \\t");
       } else if (val == ' ') {
-        l.append("' ' ");
+          assert false : "Space characters no longer allowed in primitive serializer!";
+          l.append("' ' ");
       } else {
         l.append(" "+((char)val)+"  ");
       }
@@ -226,7 +242,7 @@ public class PrimitiveSerializerDefault implements PrimitiveSerializer {
     }
     // Print out the value so we can hard-code it instead of compute it;
     // this method should be unused.
-    System.out.println(b);
+    System.out.println(b.append("};"));
     return VALUE_TO_NUM;
   }
 
@@ -251,6 +267,22 @@ public class PrimitiveSerializerDefault implements PrimitiveSerializer {
     protected int slot;
     // The char of the current node
     protected char c;
+
+      public String serialize() {
+          if (c == NEG_ONE) {
+              return Character.toString(NEG_ONE);
+          }
+          // The very first buffer will have its slot set to size, since we know it will always exist and be in slot 0
+          final char[] data = new char[slot];
+          CharacterBuffer buffer = this;
+          // Reset the sizing slot to an index of zero for our loop
+          buffer.slot = 0;
+          for (;buffer != null; buffer = buffer.next) {
+              // Assemble the char[] computed as a linked list
+              data[buffer.slot] = buffer.c;
+          }
+          return String.valueOf(data);
+      }
   }
 
   /**
@@ -265,6 +297,10 @@ public class PrimitiveSerializerDefault implements PrimitiveSerializer {
     int value = 0, multi = 1;
     for (; i.hasNext();) {
       final char c = i.next();
+      if (c == NEG_ONE) {
+        assert value == 0 : "-1 should only occur at first char!";
+        return Integer.MIN_VALUE;
+      }
       final int delta = multi * VALUE_TO_NUM[c];
       assert delta >= 0 : "Unexpected Integer overlow; multi: " + multi + " ; char " + c  ;
       if (c < END_VALUE_BOUNDARY) {
@@ -297,6 +333,10 @@ public class PrimitiveSerializerDefault implements PrimitiveSerializer {
       long value = 0, multi = 1;
       for (; l.hasNext();) {
         final char c = l.next();
+        if (c == NEG_ONE) {
+          assert value == 0 : "-1 should only occur at first char!";
+          return Long.MIN_VALUE;
+        }
         final long delta = (VALUE_TO_NUM[c]*multi);
         assert delta >= 0 : "Unexpected Long overlow" ;
         if (c < END_VALUE_BOUNDARY) {        // We hit the end of this number
@@ -322,15 +362,7 @@ public class PrimitiveSerializerDefault implements PrimitiveSerializer {
   @Override
   public String serializeInt(final int i) {
     CharacterBuffer buffer = computeSerialization(i);
-    // The very first buffer will have its slot set to size, since we know it will always exist and be in slot 0
-    final char[] data = new char[buffer.slot];
-    // Reset the head slot to zero
-    buffer.slot = 0;
-    for (;buffer != null; buffer = buffer.next) {
-      // Assemble the char[] computed as a linked list
-      data[buffer.slot] = buffer.c;
-    }
-    return String.valueOf(data);
+    return buffer.serialize();
   }
 
   /**
@@ -339,15 +371,7 @@ public class PrimitiveSerializerDefault implements PrimitiveSerializer {
   @Override
   public String serializeLong(final long l) {
     CharacterBuffer buffer = computeSerialization(l);
-    // The very first buffer will have its slot set to size, since we know it will always exist and be in slot 0
-    final char[] data = new char[buffer.slot];
-    // Reset the slot to zero for our loop
-    buffer.slot = 0;
-    for (;buffer != null; buffer = buffer.next) {
-      // Assemble the char[] computed as a linked list
-      data[buffer.slot] = buffer.c;
-    }
-    return String.valueOf(data);
+    return buffer.serialize();
   }
 
   /**
@@ -362,20 +386,11 @@ public class PrimitiveSerializerDefault implements PrimitiveSerializer {
     if (i < 0) {
       negative = true;
       if (i == Integer.MIN_VALUE) {
-        // This is a sneaky trick to add the extra +1 for the fact that
-        // Math.abs(MIN_VALUE) = Math.abs(MAX_VALUE) +1.
-
-        // We set the value of the first digit to 32, which technically overflows our
-        // otherwise base 32 numbering system.
-
-        // When we deserialize, we will accumulate this extra +1, and then right
-        // at the end of the int deserialization, when we realize the number is negative,
-        // then we will switch the accumulated value and the last digit to
-        // negatives, so they won't overflow.
-        tail = pushItem(1, 32, head, tail);
-
-        // We remove an extra 1 here as well, so all the remaining bits will be 1s instead of 0s
-        i = i/-32 - 1;
+        // MIN_VALUE actually falls outside of our dual-32 bit address space;
+        // If you try to count up to MAX_VALUE and then invert the result, it will overflow
+        head.c = NEG_ONE;
+        head.slot ++;
+        return head;
       } else {
         i = -i;
       }
@@ -387,25 +402,18 @@ public class PrimitiveSerializerDefault implements PrimitiveSerializer {
       final int chunk = i%32;
       i = i/32;
       if (i == 0) {
-        head.slot ++;
-        if (negative) {
-          tail.c = NEGATIVE_NUM_ENDING[chunk];
-        } else {
-          tail.c = POSITIVE_NUM_ENDING[chunk];
-        }
-        return head;
+        return terminate(negative, head, tail, chunk);
       }
       tail = pushItem(pos, chunk, head, tail);
     }
   }
 
   private CharacterBuffer pushItem(final int slot, final int value, final CharacterBuffer head, CharacterBuffer tail) {
-    tail.c = CONTINUATION_NUM_SECTION[value];
+    tail.c = value == -1 ? NEG_ONE : CONTINUATION_NUM_SECTION[value];
     head.slot ++;
     final CharacterBuffer next = new CharacterBuffer();
     next.slot = slot;
     tail.next = next;
-    tail = next;
     return next;
   }
 
@@ -421,21 +429,11 @@ public class PrimitiveSerializerDefault implements PrimitiveSerializer {
     if (i < 0) {
       negative = true;
       if (i == Long.MIN_VALUE) {
-
-        // This is a sneaky trick to add the extra +1 for the fact that
-        // Math.abs(MIN_VALUE) = Math.abs(MAX_VALUE) +1.
-
-        // We set the value of the first digit to 32, which technically overflows our
-        // otherwise base 32 numbering system.
-
-        // When we deserialize, we will accumulate this extra +1, and then right
-        // at the end of the int deserialization, when we realize the number is negative,
-        // then we will switch the accumulated value and the last digit to
-        // negatives, so they won't overflow.
-        tail = pushItem(1, 32, head, tail);
-
-        // We remove an extra 1 here as well, so all the remaining bits will be 1s instead of 0s
-        i = i/-32L - 1;
+          // MIN_VALUE actually falls outside of our dual-32 bit address space;
+          // If you try to count up to MAX_VALUE and then invert the result, it will overflow
+        head.c = NEG_ONE;
+        head.slot++;
+        return head;
       } else {
         i = -i;
       }
@@ -447,19 +445,23 @@ public class PrimitiveSerializerDefault implements PrimitiveSerializer {
       final int chunk = (int)(i%32L);
       i = i/32L;
       if (i == 0) {
-        head.slot ++;
-        if (negative) {
-          tail.c = NEGATIVE_NUM_ENDING[chunk];
-        } else {
-          tail.c = POSITIVE_NUM_ENDING[chunk];
-        }
-        return head;
+        return terminate(negative, head, tail, chunk);
       }
       tail = pushItem(pos, chunk, head, tail);
     }
   }
 
-  @Override
+    private CharacterBuffer terminate(boolean negative, CharacterBuffer head, CharacterBuffer tail, int chunk) {
+        head.slot ++;
+        if (negative) {
+            tail.c = NEGATIVE_NUM_ENDING[chunk];
+        } else {
+            tail.c = POSITIVE_NUM_ENDING[chunk];
+        }
+        return head;
+    }
+
+    @Override
   public String serializeBoolean(final boolean z) {
     return z ? "1" : "0";
   }

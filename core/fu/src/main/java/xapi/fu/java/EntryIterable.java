@@ -8,6 +8,7 @@ import xapi.fu.In2Out1;
 import xapi.fu.MappedIterable;
 import xapi.fu.Maybe;
 import xapi.fu.Out2;
+import xapi.fu.api.DoNotOverride;
 import xapi.fu.has.HasItems;
 
 import java.util.Map.Entry;
@@ -50,6 +51,11 @@ public interface EntryIterable <K, V> extends HasItems<Out2<K, V>> {
   }
 
   default void forBoth(In2<K, V> callback) {
+    entries().forEach(callback.mapAdapter());
+  }
+
+  @DoNotOverride
+  default void forBothUnsafe(In2Unsafe<K, V> callback) {
     entries().forEach(callback.mapAdapter());
   }
 

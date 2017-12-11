@@ -382,7 +382,7 @@ public abstract class NodeBuilder<E> implements Widget<E> {
     return children == null && buffer == null;
   }
 
-  protected boolean isEmpty() {
+  protected boolean isTagEmpty() {
     return isChildrenEmpty();
   }
 
@@ -436,4 +436,9 @@ public abstract class NodeBuilder<E> implements Widget<E> {
   }
 
   protected abstract BiFunction<String, Boolean, NodeBuilder<E>> getCreator();
+
+
+  public boolean isEmpty() {
+    return this.children.isEmpty() && this.siblings.isEmpty();
+  }
 }

@@ -2,7 +2,7 @@ package xapi.collect.proxy;
 
 import xapi.collect.api.CollectionOptions;
 import xapi.fu.In1Out1;
-import xapi.fu.api.HasEmptiness;
+import xapi.fu.has.HasEmptiness;
 import xapi.collect.api.ObjectTo;
 import xapi.collect.impl.SimpleStack;
 import xapi.fu.In1;

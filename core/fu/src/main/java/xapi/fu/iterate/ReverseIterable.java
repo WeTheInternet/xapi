@@ -1,4 +1,4 @@
-package xapi.util.impl;
+package xapi.fu.iterate;
 
 import xapi.fu.MappedIterable;
 
@@ -22,11 +22,11 @@ public class ReverseIterable <T> implements MappedIterable<T> {
   }
 
   public static <T> ReverseIterable <T> reverse(Iterable<T> itr) {
-    return new ReverseIterable<T>(itr);
+    return new ReverseIterable<>(itr);
   }
 
   public static <T> ReverseIterable <T> reverse(Iterator<T> itr) {
-    return new ReverseIterable<T>(itr);
+    return new ReverseIterable<>(itr);
   }
 
   @Override
@@ -38,11 +38,29 @@ public class ReverseIterable <T> implements MappedIterable<T> {
     }
   }
 
+  @Override
+  public MappedIterable<T> reversed() {
+    return iterable == null
+        ? MappedIterable.mappedOneShot(iterator)
+        : MappedIterable.mapped(iterable);
+  }
+
   public Iterable<T> getIterable() {
     return iterable;
   }
 
   public Iterator<T> getIterator() {
     return iterator;
+  }
+
+  @SuppressWarnings("unchecked")
+  public static <T> MappedIterable<T> reversed(Iterable src) {
+    if (src instanceof ReverseIterable) {
+      // Only get to short-circuit when class is declared reversible.
+      // TODO: consider IsReversible interface instead of instanceof on a class
+      return ((MappedIterable<T>)src).reversed();
+    }
+    // All other iterable get wrapped.
+    return new ReverseIterable<>(src);
   }
 }

@@ -28,6 +28,11 @@ public class StringElementBuilder extends ElementBuilder<String> {
     }
 
     @Override
+    public ElementBuilder<String> createNode(String tagName) {
+        return new StringElementBuilder(tagName);
+    }
+
+    @Override
     protected String create(CharSequence node) {
         return node == null ? "" : node.toString();
     }

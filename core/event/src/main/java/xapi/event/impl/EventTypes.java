@@ -8,6 +8,9 @@ import xapi.event.api.IsEventType;
  * Created by James X. Nelson (james @wetheinter.net) on 7/16/16.
  */
 public enum EventTypes implements IsEventType {
+    Named("named"),
+    Unlock("unlock"),
+
     Select("select"),
     Unselect("unselect"),
 

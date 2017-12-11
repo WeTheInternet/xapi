@@ -1,6 +1,6 @@
-package xapi.util.impl;
+package xapi.fu.iterate;
 
-import xapi.util.api.ProvidesValue;
+import xapi.fu.Out1;
 
 import java.util.Iterator;
 
@@ -10,12 +10,12 @@ import java.util.Iterator;
  */
 public class ReverseIterator <T> implements Iterator<T> {
 
-  private static final ProvidesValue END/* http://goo.gl/W2Slg6 */ = () -> {
+  private static final Out1 END = () -> {
     assert false : "You should never attempt to get a value from the end provider";
     return null;
   };
 
-  private ProvidesValue<T> supplier;
+  private Out1<T> supplier;
   private Iterable<T> iterable;
   private final Iterator<T> original;
 
@@ -29,13 +29,13 @@ public class ReverseIterator <T> implements Iterator<T> {
     this.iterable = forward;
   }
 
-  private ProvidesValue<T> consume(final ProvidesValue<T> before, Iterator<T> forward, int count) {
+  private Out1<T> consume(final Out1<T> before, Iterator<T> forward, int count) {
     // yes, we are using recursion to form our stack (using call stack instead of stack object).
     assert count < 1024 * 1024 * 2 : "You are using a ReverseIterator on an iterable containing 2^21 objects; this iterator, " + forward + " either never runs out, " +
         "or you are using very large collections recklessly.";
     if (forward.hasNext()) {
       final T value = forward.next();
-      final ProvidesValue<T> here = () ->{
+      final Out1<T> here = () ->{
         supplier = before;
         return value;
       };
@@ -54,7 +54,7 @@ public class ReverseIterator <T> implements Iterator<T> {
 
   @Override
   public T next() {
-    return supplier.get();
+    return supplier.out1();
   }
 
   public Iterator<T> getOriginal() {

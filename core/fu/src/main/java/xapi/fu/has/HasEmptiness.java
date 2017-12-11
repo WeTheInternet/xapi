@@ -1,4 +1,4 @@
-package xapi.fu.api;
+package xapi.fu.has;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 1/12/17.

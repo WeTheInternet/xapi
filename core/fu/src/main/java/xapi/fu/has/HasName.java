@@ -1,7 +1,7 @@
-package xapi.ui.autoui.api;
+package xapi.fu.has;
 
 public interface HasName {
 
   String getName();
-  
+
 }

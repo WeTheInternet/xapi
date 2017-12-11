@@ -5,6 +5,7 @@ import elemental2.dom.DomGlobal;
 import elemental2.dom.Element;
 import elemental2.dom.HTMLElement;
 import elemental2.dom.Node;
+import jsinterop.base.Js;
 import jsinterop.base.JsPropertyMap;
 import xapi.elemental.X_Gwt3;
 import xapi.ui.api.AttributeApplier;
@@ -17,10 +18,7 @@ import xapi.util.impl.ImmutableProvider;
 
 import java.util.function.BiFunction;
 
-/**
- * TODO: rename this to ElementalBuilder?
- */
-public class ElementalBuilder<E extends HTMLElement> extends ElementBuilder<E> {
+public class ElementalBuilder<E extends Node> extends ElementBuilder<E> {
 
   public class ApplyLiveAttribute implements AttributeApplier {
 
@@ -42,19 +40,28 @@ public class ElementalBuilder<E extends HTMLElement> extends ElementBuilder<E> {
 
     @Override
     public void setAttribute(String name, String value) {
-      getElement().setAttribute(name, value);
+      getAsElement().setAttribute(name, value);
     }
 
     @Override
     public String getAttribute(String name) {
-      return getElement().getAttribute(name);
+      return getAsElement().getAttribute(name);
     }
 
     @Override
     public void removeAttribute(String name) {
-      getElement().removeAttribute(name);
+      getAsElement().removeAttribute(name);
     }
 
+  }
+
+  protected Element getAsElement() {
+    final E element = getElement();
+    if (element.nodeType != Node.ELEMENT_NODE) {
+      assert false : "Node " + element.nodeName + " does not support attributes";
+      throw X_Debug.recommendAssertions();
+    }
+    return (Element) element;
   }
 
   private String tagName;
@@ -123,9 +130,7 @@ public class ElementalBuilder<E extends HTMLElement> extends ElementBuilder<E> {
 
   @Override
   public ElementalBuilder<E> createChild(String tagName) {
-    final ElementalBuilder<E> child = createNode(tagName);
-    addChild(child, X_String.isEmpty(tagName)); // If we are a document fragment, we need to make new children the target element for future inserts
-    return child;
+    return (ElementalBuilder<E>) super.createChild(tagName);
   }
 
   @Override
@@ -146,10 +151,19 @@ public class ElementalBuilder<E extends HTMLElement> extends ElementBuilder<E> {
   protected E build(String html) {
     boolean isMulti = children != null && children.hasSiblings();
     if (isMulti) {
-      final DocumentFragment frag = X_Gwt3.toFragment(sanitizeHtml(html).trim());
-      return compressFragment(frag, html);
+      final String toAppend = sanitizeHtml(html).trim();
+      final DocumentFragment frag = X_Gwt3.toFragment(toAppend);
+      if (compressFragments()) {
+        return compressFragment(frag, html);
+      }
+      return Js.uncheckedCast(frag);
     }
-    return X_Gwt3.toElement(sanitizeHtml(html));
+    Element e = X_Gwt3.toElement(sanitizeHtml(html));
+    return (E) e;
+  }
+
+  protected boolean compressFragments() {
+    return false;
   }
 
   protected E compressFragment(DocumentFragment frag, String html) {
@@ -190,7 +204,7 @@ public class ElementalBuilder<E extends HTMLElement> extends ElementBuilder<E> {
       b.append("<");
       b.append(tagName);
       appendAttributes(b);
-      if (isEmpty()) {
+      if (isTagEmpty()) {
         b.append("/");
       }
       b.append(">");
@@ -199,9 +213,10 @@ public class ElementalBuilder<E extends HTMLElement> extends ElementBuilder<E> {
   }
 
   @Override
-  protected boolean isEmpty() {
-    if (super.isEmpty()) {
+  protected boolean isTagEmpty() {
+    if (super.isTagEmpty()) {
       switch(tagName.toLowerCase()) {
+        case "hr":
         case "br":
         case "img":
         case "input":
@@ -215,20 +230,20 @@ public class ElementalBuilder<E extends HTMLElement> extends ElementBuilder<E> {
   private void appendAttributes(StringBuilder b) {
     if (!attributes.isEmpty()) {
       for (String attribute : attributes.keys()) {
-        b.append(" ").append(attribute).append("='");
+        b.append(" ").append(attribute).append("=\"");
         String result = attributes.get(attribute).getElement();
-        b.append(sanitizeAttribute(result)).append("'");
+        b.append(sanitizeAttribute(result)).append("\"");
       }
     }
   }
 
   protected String sanitizeAttribute(String result) {
-    return  X_String.isEmpty(result) ? "" : result.replaceAll("'", "&apos;");
+    return  X_String.isEmpty(result) ? "" : result.replaceAll("\"", "&quot;");
   }
 
   @Override
   protected CharSequence getCharsAfter(CharSequence self) {
-    if (tagName != null && !isEmpty()) {
+    if (tagName != null && !isTagEmpty()) {
       return "</"+tagName+">";
     }
     return EMPTY;
@@ -278,12 +293,12 @@ public class ElementalBuilder<E extends HTMLElement> extends ElementBuilder<E> {
 
     @Override
     protected void removeStyle(E element, String key) {
-      element.style.removeProperty(key);
+      ((HTMLElement)element).style.removeProperty(key);
     }
 
     @Override
     protected void setStyle(E element, String key, String value) {
-      element.style.setProperty(key, value);
+      ((HTMLElement)element).style.setProperty(key, value);
     }
   }
 
@@ -310,15 +325,23 @@ public class ElementalBuilder<E extends HTMLElement> extends ElementBuilder<E> {
 
   @Override
   protected void startInitialize(E el) {
-    DomGlobal.document.body.appendChild(el);
+    if (isAutoAppend(el)) {
+      DomGlobal.document.body.appendChild(el);
+    }
     super.startInitialize(el);
+  }
+
+  protected boolean isAutoAppend(E el) {
+    return false;
   }
 
   @Override
   protected void finishInitialize(E el) {
-    final Element body = DomGlobal.document.body;
-    if (body == el.parentNode) {
-      body.removeChild(el);
+    if (isAutoAppend(el)) {
+      final Element body = DomGlobal.document.body;
+      if (body == el.parentNode) {
+        body.removeChild(el);
+      }
     }
     super.finishInitialize(el);
   }

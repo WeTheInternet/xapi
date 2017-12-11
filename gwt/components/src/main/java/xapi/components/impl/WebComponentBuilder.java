@@ -18,6 +18,9 @@ import xapi.collect.api.Fifo;
 import xapi.components.api.*;
 import xapi.fu.*;
 import xapi.fu.In1Out1.In1Out1Unsafe;
+import xapi.gwt.api.JsLazyExpando;
+import xapi.gwt.api.JsObjectDescriptor;
+import xapi.gwt.api.Symbol;
 import xapi.ui.api.component.ComponentOptions;
 import xapi.ui.api.component.IsComponent;
 import xapi.ui.api.component.Slot;
@@ -248,6 +251,11 @@ public class WebComponentBuilder {
 
   public WebComponentBuilder afterCreatedCallback(final Do function) {
     return afterCreatedCallback(wrapDo(function));
+  }
+
+  public <E extends Element, T> WebComponentBuilder afterCreatedCallbackMapped(
+      In1Out1<E, T> mapper, final In2<T, E> function) {
+    return afterCreatedCallback(wrapInputOfThis(function.map1(mapper)));
   }
 
 

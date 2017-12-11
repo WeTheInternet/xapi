@@ -27,6 +27,7 @@
   <inherits name="xapi.X_Inject" />
   <inherits name="com.google.gwt.reflect.Reflect" />
   <inherits name="jsinterop.base.Base" />
+  <inherits name="elemental2.core.Core" />
 	<!--
 
   This generator will iterate for all classes annotated with @GwtClass

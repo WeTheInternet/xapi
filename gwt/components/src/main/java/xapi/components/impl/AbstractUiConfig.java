@@ -145,7 +145,7 @@ public abstract class AbstractUiConfig <R extends GwtStyles>
     }
 
     protected void deferExecution(Do task) {
-        X_Time.doLater(task);
+        RunSoon.schedule(task);
     }
 
     protected Lazy<MappedIterable<In1Out1<Element, StyleElement>>> resetFactory() {

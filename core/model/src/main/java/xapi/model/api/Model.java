@@ -87,7 +87,7 @@ public interface Model {
                     Model myModel = (Model) myVal;
                     assert propType == myModel.getPropertyType(e.getKey());
                     // perform deeper absorb, to avoid clearing references...
-                    myModel.absorb((Model) yourVal);
+                    myModel.absorb((Model) yourVal, append);
                     return;
                 }
                 if (CollectionProxy.class.isAssignableFrom(propType)) {

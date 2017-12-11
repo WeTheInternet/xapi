@@ -1,7 +1,5 @@
 package xapi.fu.has;
 
-import xapi.fu.api.HasEmptiness;
-
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 11/4/16.
  */

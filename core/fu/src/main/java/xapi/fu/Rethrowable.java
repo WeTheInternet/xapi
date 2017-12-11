@@ -39,21 +39,27 @@ public interface Rethrowable {
       ((Debuggable)this).viewException(this, e);
     }
     if (e instanceof RuntimeException) {
-      throw (RuntimeException)e;
+      throw X_Fu.rethrow(e);
     }
     if (e instanceof Error) {
-      throw (Error)e;
+      throw X_Fu.rethrow(e);
     }
-//    if (e instanceof InvocationTargetException && e.getCause() != null) {
-//      e = e.getCause();
-//    }
-//    if (e instanceof ExecutionException && e.getCause() != null) {
-//      e = e.getCause();
-//    }
+    if (e instanceof InvocationTargetException && e.getCause() != null) {
+      // TODO: addSuppressed? Pretty sure that causes an infinite loop of death when printing out...
+      e = e.getCause();
+    }
+    if (e instanceof ExecutionException && e.getCause() != null) {
+      e = e.getCause();
+    }
     if (e instanceof InterruptedException) {
       Thread.currentThread().interrupt();
     }
-    throw newRuntimeException(e);
+    final RuntimeException override = newRuntimeException(e);
+    if (override.getClass() != RuntimeException.class || override.getMessage() != null) {
+      // Only wrap in a new runtime exception if newRuntimeException was meaningfully overloaded
+      throw override;
+    }
+    throw X_Fu.rethrow(e);
   }
 
   default RuntimeException newRuntimeException(Throwable e) {

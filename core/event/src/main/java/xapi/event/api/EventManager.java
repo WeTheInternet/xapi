@@ -37,7 +37,7 @@ public class EventManager implements Serializable {
         final IntTo<EventHandler<?, ?>> handles = handlers.get(type.getEventType());
         boolean added = handles.add(handler);
         if (!added) {
-            X_Log.warn(getClass(), "Added duplicate handler?", handler, handles.get(handles.indexOf(handler)));
+            X_Log.warn(EventManager.class, "Added duplicate handler?", handler, handles.get(handles.indexOf(handler)));
         }
         final RemovalHandler remover = () -> handles.remove(handler);
         lambda.storeRemover(remover);

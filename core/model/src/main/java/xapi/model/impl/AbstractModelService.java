@@ -21,6 +21,7 @@ import xapi.model.api.PrimitiveSerializer;
 import xapi.model.service.ModelService;
 import xapi.source.api.CharIterator;
 import xapi.source.impl.StringCharIterator;
+import xapi.util.X_String;
 import xapi.util.api.SuccessHandler;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
@@ -193,15 +194,24 @@ public abstract class AbstractModelService implements ModelService
       return null;
     }
     final int parentState = primitives.deserializeInt(chars);
-    if (parentState == -3) {// no parent key specified
-      final String namespace = primitives.deserializeString(chars);
+    if (parentState < 0) {
+      if (parentState == -1) {
+        // null key
+        return null;
+      }
+
+      // no key, or no parent key specified
+      final String namespace;
+      if (parentState == -2) {
+        namespace = "";
+      } else {
+        assert parentState == -3 : "Malformed key started with parentState " + parentState + " \nremaining: " + chars;
+        namespace = primitives.deserializeString(chars);
+      }
       final String kind = primitives.deserializeString(chars);
       final int keyType = primitives.deserializeInt(chars);
       final String id = primitives.deserializeString(chars);
       return newKey(namespace, kind, id).setKeyType(keyType);
-    } else if (parentState == -1){
-      // a null key...
-      return null;
     } else {
       final String parentString = chars.consume(parentState).toString();
       assert parentString != null;
@@ -224,10 +234,19 @@ public abstract class AbstractModelService implements ModelService
       return primitives.serializeInt(-1);
     }
     if (key.getParent() == null) {
-      b.append(primitives.serializeInt(-3));
-      b.append(primitives.serializeString(key.getNamespace()));
+      String ns = key.getNamespace();
+      if (X_String.isEmpty(ns)) {
+        b.append(primitives.serializeInt(-2));
+      } else {
+        b.append(primitives.serializeInt(-3));
+        b.append(primitives.serializeString(key.getNamespace()));
+      }
     } else {
-      b.append(primitives.serializeString(keyToString(key.getParent())));
+      // we double-serialize this string, such that its serialized form
+      // (with a length followed by chars) either starts with 0 or a positive integer.
+      // this is what allows us to use negative numbers for "special address space".
+      final String parentKey = keyToString(key.getParent());
+      b.append(primitives.serializeString(parentKey));
     }
     b.append(primitives.serializeString(key.getKind()));
     b.append(primitives.serializeInt(key.getKeyType()));

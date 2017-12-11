@@ -33,6 +33,12 @@
  </description>
 
  <dependencies>
+
+  <dependency>
+   <groupId>com.google.elemental2</groupId>
+   <artifactId>elemental2-core</artifactId>
+   <version>1.0.0-beta-1</version>
+  </dependency>
   <dependency>
    <groupId>net.wetheinter</groupId>
    <artifactId>xapi-dev-source</artifactId>

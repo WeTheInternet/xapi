@@ -15,8 +15,8 @@ import xapi.fu.iterate.ArrayIterable;
 import xapi.fu.iterate.EmptyIterator;
 import xapi.fu.iterate.SingletonIterator;
 import xapi.util.api.ReceivesValue;
-import xapi.util.impl.ReverseIterable;
-import xapi.util.impl.ReverseIterator;
+import xapi.fu.iterate.ReverseIterable;
+import xapi.fu.iterate.ReverseIterator;
 
 import java.lang.reflect.Array;
 import java.util.Collection;

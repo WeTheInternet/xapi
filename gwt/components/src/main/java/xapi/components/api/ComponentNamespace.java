@@ -4,8 +4,10 @@ import elemental.dom.Element;
 import elemental.dom.Node;
 import elemental2.core.Reflect;
 import jsinterop.base.Js;
+import jsinterop.base.JsPropertyMap;
 import xapi.components.impl.JsSupport;
 import xapi.fu.In1Out1;
+import xapi.gwt.api.Symbol;
 import xapi.ui.api.component.IsComponent;
 
 /**
@@ -56,11 +58,11 @@ public class ComponentNamespace {
     }
 
     public static void setSource(Element e, String textContent) {
-        Reflect.set(Js.cast(e), "source", textContent);
+        JsPropertyMap.of(e).set("source", textContent);
     }
 
     public static String getSource(Element element) {
-        String source = (String) Reflect.get(Js.cast(element), "source");
+        String source = (String)JsPropertyMap.of(element).get("source");
         if (source == null) {
             if (element.getChildren().getLength() == 1 && element.getFirstChild().getNodeType() == Node.TEXT_NODE) {
                 source = element.getFirstChild().getTextContent();

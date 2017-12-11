@@ -1,6 +1,7 @@
 package xapi.fu;
 
 import xapi.fu.api.DoNotOverride;
+import xapi.fu.api.Generate;
 
 import java.io.Closeable;
 
@@ -56,7 +57,20 @@ public interface Do extends AutoCloseable {
     return this;
   }
 
-  default Do doAfter(Do d) {
+  default Do doAfter(
+      @Generate({
+          // n-ary is used to expand a type parameter;
+          // we will insert automatically generated methods
+          // that extend input arguments by n dimensions.
+          // Example, n = 2
+          // (Do) -> <I1>(In1<I1>, I1), <I1, I2>(In2<I1, I2>, I1, I2)
+          "<n-ary" +
+          " n=3",
+          // TODO: have meaningful, concise configuration.
+          " public=true",
+          " final=true",
+          " />",
+      }) Do d) {
     return ()->{
       done();
       d.done();
@@ -75,6 +89,15 @@ public interface Do extends AutoCloseable {
       done();
       in1.in(i);
     };
+  }
+
+  default Do doIf(Out1<Boolean> filter) {
+      Do me = this;
+      return ()->{
+        if (filter.out1()) {
+          me.done();
+        }
+      };
   }
 
   default <I> In1<I> ignores1() {

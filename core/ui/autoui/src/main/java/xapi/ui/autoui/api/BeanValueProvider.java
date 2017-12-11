@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import xapi.collect.api.StringTo;
+import xapi.fu.has.HasName;
 import xapi.fu.iterate.ArrayIterable;
 import xapi.source.template.MappedTemplate;
 import xapi.util.api.ConvertsValue;

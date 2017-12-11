@@ -5,6 +5,8 @@ import jsinterop.annotations.JsOverlay;
 import jsinterop.annotations.JsType;
 import jsinterop.base.Js;
 import xapi.components.impl.JsSupport;
+import xapi.gwt.api.JsObjectDescriptor;
+import xapi.gwt.api.Symbol;
 
 @JsType(isNative = true, name = "Object")
 public interface JsObject {

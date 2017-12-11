@@ -20,12 +20,15 @@ import com.google.gwt.core.client.MagicMethod;
 
 public class X_Elemental {
 
-  public static boolean addClassName(final Element e, final String cls) {
-    if (!hasClassName(e, cls)) {
-      e.setClassName(e.getClassName() + " " + cls);
-      return true;
+  public static boolean addClassName(final Element e, final String ... clses) {
+    boolean added = false;
+    for (String cls : clses) {
+      if (!hasClassName(e, cls)) {
+        e.setClassName(e.getClassName() + " " + cls);
+        added = true;
+      }
     }
-    return false;
+    return added;
   }
 
   public static void alert(final String msg) {

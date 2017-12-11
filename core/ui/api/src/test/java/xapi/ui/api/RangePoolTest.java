@@ -4,7 +4,7 @@ import org.junit.Test;
 import xapi.fu.iterate.ArrayIterable;
 import xapi.ui.api.RangePool.ReservedNode;
 import xapi.ui.api.RangePool.UnreservedNode;
-import xapi.util.impl.ReverseIterable;
+import xapi.fu.iterate.ReverseIterable;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertTrue;

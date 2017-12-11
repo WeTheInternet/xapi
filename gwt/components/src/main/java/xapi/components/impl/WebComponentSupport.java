@@ -11,6 +11,7 @@ import xapi.fu.Do;
 import xapi.fu.In1Out1;
 import xapi.fu.In2Out1;
 import xapi.fu.Mutable;
+import xapi.gwt.api.JsLazyExpando;
 import xapi.ui.api.component.ComponentConstructor;
 import xapi.ui.api.component.ComponentOptions;
 import xapi.ui.api.component.IsComponent;

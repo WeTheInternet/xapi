@@ -1,4 +1,4 @@
-package xapi.components.api;
+package xapi.gwt.api;
 
 import elemental2.core.Function;
 import elemental2.core.ObjectPropertyDescriptor.GetCallbackFn;
@@ -6,9 +6,7 @@ import jsinterop.annotations.JsOverlay;
 import jsinterop.annotations.JsPackage;
 import jsinterop.annotations.JsProperty;
 import jsinterop.annotations.JsType;
-import xapi.components.impl.JsSupport;
-
-import com.google.gwt.core.client.JavaScriptObject;
+import jsinterop.base.Js;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 1/27/17.
@@ -48,7 +46,7 @@ public interface JsObjectDescriptor {
 
     @JsOverlay
     static JsObjectDescriptor create() {
-        return JsSupport.newDescriptor();
+        return Js.uncheckedCast(new Object());
     }
     @JsOverlay
     static JsObjectDescriptor createUnconfigurable() {

@@ -45,28 +45,35 @@ public class ConcurrencyTest {
     //We will use a closure object to make sure execution is happening in the expected order.
     final Pointer<Long> stage = new Pointer<Long>(0L);
     CountDownLatch latch = new CountDownLatch(2);
-    runFinally(() -> {
-        //runs first
-        Assert.assertEquals("1st defer ran before 1st finally",stage.get().longValue(), 0);
-        stage.set(1L);
+    synchronized (stage) {
+        Thread.yield();
+        // toss in a memory barrier and a yield to encourage the JVM to pause if we are running out of quorum.
+        // That is, if our thread is about to pause, we do _not_ want it to pause between our first two schedules.
+        // So, we encourage the jvm to stop here.  No big deal when running single threaded,
+        // but our build runs in parallel, so native OS is more likely to be busy enough to want to stop our thread.
+        runFinally(() -> {
+            //runs first
+            Assert.assertEquals("1st defer ran before 1st finally",stage.get().longValue(), 0);
+            stage.set(1L);
+            runDeferred(() -> {
+                //runs last
+                Assert.assertEquals("2nd defer ran before 2nd finally",stage.get().longValue(), 3);
+                stage.set(4L);
+                latch.countDown();
+            });
+        });
         runDeferred(() -> {
-            //runs last
-            Assert.assertEquals("2nd defer ran before 2nd finally",stage.get().longValue(), 3);
-            stage.set(4L);
-            latch.countDown();
+              //runs second
+              Assert.assertEquals("1st defer ran before 1st finally",stage.get().longValue(), 1);
+              stage.set(2L);
+              runFinally(() -> {
+                  //runs third, as a finally inside a defer should.
+                  Assert.assertEquals("2nd finally did not run after 1st defer",stage.get().longValue(), 2);
+                  stage.set(3L);
+                  latch.countDown();
+            });
         });
-    });
-    runDeferred(() -> {
-          //runs second
-          Assert.assertEquals("1st defer ran before 1st finally",stage.get().longValue(), 1);
-          stage.set(2L);
-          runFinally(() -> {
-              //runs third, as a finally inside a defer should.
-              Assert.assertEquals("2nd finally did not run after 1st defer",stage.get().longValue(), 2);
-              stage.set(3L);
-              latch.countDown();
-        });
-    });
+    }
 
     do {
         flush(200);

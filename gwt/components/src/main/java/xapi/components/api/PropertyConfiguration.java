@@ -1,10 +1,10 @@
 package xapi.components.api;
 
 import elemental2.core.JsObject;
-import elemental2.core.ObjectPropertyDescriptor;
 import elemental2.core.Reflect;
 import jsinterop.base.Js;
 import xapi.fu.In1Out1;
+import xapi.gwt.api.JsObjectDescriptor;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 7/13/17.
