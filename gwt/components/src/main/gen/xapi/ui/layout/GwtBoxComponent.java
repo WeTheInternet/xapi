@@ -1,11 +1,7 @@
-package xapi.demo.gwt.client.ui;
-
-import static xapi.components.impl.WebComponentBuilder.htmlElementClass;
-
+package xapi.ui.layout;
 
 import elemental.dom.Element;
 import elemental.html.StyleElement;
-
 import xapi.components.api.ComponentNamespace;
 import xapi.components.api.UiConfig;
 import xapi.components.impl.GwtModelComponentMixin;
@@ -19,28 +15,30 @@ import xapi.ui.api.component.ComponentConstructor;
 import xapi.ui.api.component.ComponentOptions;
 import xapi.ui.html.api.GwtStyles;
 
-public class GwtXapiTextComponent extends BaseXapiTextComponent<Element, PotentialNode<Element>> implements GwtModelComponentMixin<Element,ModelXapiText> {
+import static xapi.components.impl.WebComponentBuilder.htmlElementClass;
+
+public class GwtBoxComponent extends BaseBoxComponent<Element, PotentialNode<Element>> implements GwtModelComponentMixin<Element,ModelBox> {
 
   public static void assemble (UiConfig<Element, StyleElement, ? extends GwtStyles, ElementalService> assembler) {
     WebComponentBuilder component = new WebComponentBuilder(htmlElementClass(), WebComponentVersion.V1);
 
-    component.setClassName("XapiText");
-    ComponentOptions<Element, GwtXapiTextComponent> opts = new ComponentOptions<>();
-    getUi = WebComponentSupport.installFactory(component, GwtXapiTextComponent::new, opts);
+    component.setClassName("Box");
+    ComponentOptions<Element, GwtBoxComponent> opts = new ComponentOptions<>();
+    getUi = WebComponentSupport.installFactory(component, GwtBoxComponent::new, opts);
     component.createdCallback(e->{
-      final GwtXapiTextComponent c = getXapiTextComponent(e);
+      final GwtBoxComponent c = getBoxComponent(e);
       final Element child = c.toDom().getElement();
       e.appendChild(child);
     });
-    NEW_XAPI_TEXT = WebComponentSupport.define(
-      "xapi-text", component);
+    NEW_BOX = WebComponentSupport.define(
+      "box", component);
   }
 
-  private static ComponentConstructor<Element, GwtXapiTextComponent> NEW_XAPI_TEXT;
+  private static ComponentConstructor<Element, GwtBoxComponent> NEW_BOX;
 
-  private static In1Out1<Element, GwtXapiTextComponent> getUi;
+  private static In1Out1<Element, GwtBoxComponent> getUi;
 
-  public GwtXapiTextComponent (Element el) {
+  public GwtBoxComponent (Element el) {
     super(el);
   }
 
@@ -49,24 +47,28 @@ public class GwtXapiTextComponent extends BaseXapiTextComponent<Element, Potenti
   }
 
   @Override
-  public PotentialNode<Element> createText () {
+  public PotentialNode<Element> createRoot () {
     return newBuilder()
       .setTagName("div")
       ;
   }
 
-  public static GwtXapiTextComponent getXapiTextComponent (Element e) {
+  public static GwtBoxComponent getBoxComponent (Element e) {
       assert e != null;
-      assert e.getTagName().toLowerCase().equals("xapi-text");
-      final GwtXapiTextComponent component = ComponentNamespace.getComponent(e, getUi);
+      assert e.getTagName().toLowerCase().equals("box");
+      final GwtBoxComponent component = ComponentNamespace.getComponent(e, getUi);
       return component;
   }
 
-  public static GwtXapiTextComponent create (ComponentOptions<Element, GwtXapiTextComponent> opts) {
+  public static GwtBoxComponent create (ComponentOptions<Element, GwtBoxComponent> opts) {
     if (opts == null) {
       opts = new ComponentOptions<>();
     }
-    return NEW_XAPI_TEXT.constructComponent(opts, getUi);
+    return NEW_BOX.constructComponent(opts, getUi);
+  }
+
+  public Element getFirstChild() {
+    return getElement().getFirstElementChild();
   }
 
 }

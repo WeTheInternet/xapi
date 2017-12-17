@@ -12,10 +12,10 @@
     ]
     gwt-impl =
     [
-        public El getFirstChild() {
+        public Element getFirstChild() {
             // TODO: use an injected UiService to manage .firstChild?
             // that or force implementors to use UiElement...
-            return root.getElement().getFirstChildElement();
+            return getElement().getFirstElementChild();
         }
     ]
     javafx-impl =

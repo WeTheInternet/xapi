@@ -17,7 +17,7 @@ import xapi.fu.In1;
 public class AbstractComponentAssembler implements ComponentAssembler {
     @Override
     public ComponentAssembler asParent(
-        ComponentBuilder<?, ?, ?, ?> builder, In1<ComponentAssembler> childAssembler
+        ComponentBuilder<?, ?, ?> builder, In1<ComponentAssembler> childAssembler
     ) {
 
         return null;

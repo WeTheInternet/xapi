@@ -319,11 +319,11 @@ Feature: ComponentGenerator.feature: Transpile xapi templates into web component
     | public interface ToDosComponent {          |
     |                                            |
 
-    | public default String getModelType () {    |
+    | default String getModelType () {    |
     |   return "ToDos";                          |
     | }                                          |
     |                                            |
-    | public default ModelToDos createModel () { |
+    | default ModelToDos createModel () { |
     |   return create(ModelToDos.class);         |
     | }                                          |
     |                                            |

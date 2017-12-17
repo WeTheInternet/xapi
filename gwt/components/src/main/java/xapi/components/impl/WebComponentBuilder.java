@@ -241,7 +241,7 @@ public class WebComponentBuilder {
     return afterCreatedCallback(wrapIn1(callback));
   }
 
-  public <E extends Element, C extends IsComponent<Node, E>> WebComponentBuilder afterCreatedCallback(final In2<E, ComponentOptions<Node, E, C>> callback) {
+  public <E extends Element, C extends IsComponent<E>> WebComponentBuilder afterCreatedCallback(final In2<E, ComponentOptions<E, C>> callback) {
     return afterCreatedCallback(wrapIn2(callback));
   }
 
@@ -267,7 +267,7 @@ public class WebComponentBuilder {
     return createdCallback(wrapIn1(callback));
   }
 
-  public <E extends Element, C extends IsComponent<Node, E>> WebComponentBuilder createdCallback(final In2<E, ComponentOptions<Node, E, C>> callback) {
+  public <E extends Element, C extends IsComponent<E>> WebComponentBuilder createdCallback(final In2<E, ComponentOptions<E, C>> callback) {
     return createdCallback(wrapIn2(callback));
   }
 

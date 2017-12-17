@@ -5,33 +5,33 @@ import xapi.collect.api.IntTo;
 import xapi.fu.Out1;
 import xapi.fu.iterate.EmptyIterator;
 import xapi.fu.iterate.SizedIterable;
+import xapi.model.api.Model;
 
 /**
- * Created by James X. Nelson (james @wetheinter.net) on 8/20/17.
+ * A branching component (panel with parent / child) and a model.
+ *
+ * Created by James X. Nelson (james @wetheinter.net) on 12/16/17.
  */
-public class AbstractGraphComponent <
-    Node,
-    El extends Node,
-    Api extends IsComponent<El>
-    >
-    extends AbstractComponent<El, Api>
+public abstract class AbstractGraphModelComponent <Node, El extends Node, Mod extends Model,
+    Api extends IsGraphComponent<Node, El> & IsModelComponent<El, Mod>>
+    extends AbstractModelComponent<El, Mod, Api>
     implements IsGraphComponent<Node, El> {
 
     private IsComponent<? extends Node> parent;
     private IntTo<IsComponent<? extends Node>> children;
 
-    public AbstractGraphComponent(El element) {
+    public AbstractGraphModelComponent(El element) {
         super(element);
     }
 
-    public AbstractGraphComponent(
-        ComponentOptions<El, Api> opts,
+    public AbstractGraphModelComponent(
+        ModelComponentOptions<El, Mod, Api> opts,
         ComponentConstructor<El, Api> constructor
     ) {
         super(opts, constructor);
     }
 
-    public AbstractGraphComponent(Out1<El> element) {
+    public AbstractGraphModelComponent(Out1<El> element) {
         super(element);
     }
 

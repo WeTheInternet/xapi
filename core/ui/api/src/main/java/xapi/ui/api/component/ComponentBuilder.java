@@ -15,10 +15,9 @@ import xapi.scope.api.Scope;
  * Created by James X. Nelson (james @wetheinter.net) on 8/13/17.
  */
 public interface ComponentBuilder <
-    Node,
-    El extends Node,
-    O extends ComponentOptions<Node, El, C>,
-    C extends IsComponent<Node, El>
+    El,
+    O extends ComponentOptions<El, C>,
+    C extends IsComponent<El>
     > {
 
     static <C extends IsComponent, O extends ComponentOptions> void registerFactory(

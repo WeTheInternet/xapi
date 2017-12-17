@@ -8,14 +8,13 @@ import xapi.fu.Out1;
  * Created by James X. Nelson (james @wetheinter.net) on 1/16/17.
  */
 public abstract class AbstractComponent <
-    Node,
-    El extends Node,
-    Api extends IsComponent<Node, El>
+    El,
+    Api extends IsComponent<El>
 >
-implements IsComponent<Node, El> {
+implements IsComponent<El> {
 
     private final Lazy<El> element;
-    private ComponentOptions<Node, El, Api> opts;
+    private ComponentOptions<El, Api> opts;
     private String refName;
 
     public AbstractComponent(El element) {
@@ -23,7 +22,7 @@ implements IsComponent<Node, El> {
     }
 
     @SuppressWarnings("unchecked") //
-    public AbstractComponent(ComponentOptions<Node, El, Api> opts, ComponentConstructor<Node, El, Api> constructor) {
+    public AbstractComponent(ComponentOptions<El, Api> opts, ComponentConstructor<El, Api> constructor) {
         if (opts.needsComponent()) {
             opts.withComponent((Api)this);
         }
@@ -54,7 +53,7 @@ implements IsComponent<Node, El> {
         this.refName = refName;
     }
 
-    public ComponentOptions<Node, El, Api> getOpts() {
+    public ComponentOptions<El, Api> getOpts() {
         return opts;
     }
 

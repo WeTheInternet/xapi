@@ -8,6 +8,8 @@ import com.github.javaparser.ast.expr.UiAttrExpr;
 import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.ui.api.*;
 import xapi.dev.ui.impl.UiGeneratorTools;
+import xapi.fu.Maybe;
+import xapi.util.X_Properties;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 2/10/17.
@@ -34,23 +36,29 @@ public class UiTagApiGenerator extends UiFeatureGenerator {
     ) {
         final GeneratedUiComponent component = me.getGeneratedComponent();
         GeneratedUiLayer layer;
-        if (attr.getNameString().equals("api")) {
+        final Maybe<String> maybeAttr = isPlatformDisabled(attr.getNameString());
+        if (maybeAttr.isAbsent()) {
+            return UiVisitScope.FEATURE_NO_CHILDREN;
+        }
+        String attrName = maybeAttr.get();
+        if (attrName.equals("api")) {
             layer = component.getApi();
-        } else if (attr.getNameString().equals("impl")) {
+        } else if (attrName.equals("impl")) {
             layer = component.getBase();
-        } else if (attr.getNameString().startsWith("impl")) {
+        } else if (attrName.startsWith("impl")) {
             out : {
                 for (GeneratedUiImplementation impl : component.getImpls()) {
-                    if (attr.getNameString().equals("impl-" + impl.getPrefix())) {
+                    final String prefix = impl.getPrefix().toLowerCase();
+                    if (attrName.equals("impl-" + prefix)) {
                         layer = impl;
                         break out;
                     }
                 }
-                throw new UnsupportedOperationException("Unknown impl type " + attr.getNameString()
+                throw new UnsupportedOperationException("Unknown impl type " + attrName
                 +"\nin " + tools.debugNode(attr) + "\nof " + tools.debugNode(me.getUi()));
             }
         } else {
-            throw new UnsupportedOperationException("Unknown attribute name " + attr.getNameString()
+            throw new UnsupportedOperationException("Unknown attribute name " + attrName
             +"\nin " + tools.debugNode(attr) + "\nof " + tools.debugNode(me.getUi()));
         }
         final ApiGeneratorContext ctx = me.getContext();
@@ -89,5 +97,21 @@ public class UiTagApiGenerator extends UiFeatureGenerator {
         }
 
         return UiVisitScope.FEATURE_NO_CHILDREN;
+    }
+
+    protected Maybe<String> isPlatformDisabled(String implType) {
+        final String normalized = normalizeName(implType);
+        if (X_Properties.getProperty(UiGeneratorPlatform.SYSTEM_PROP_IGNORE_PLATFORM, "")
+            .contains(normalized.replace("impl-", ""))) {
+            return Maybe.not();
+        }
+        return Maybe.immutable(normalized);
+    }
+
+    protected String normalizeName(String attr) {
+        if (attr.endsWith("-impl")) {
+            return "impl-" + attr.replace("-impl", "").toLowerCase();
+        }
+        return attr.toLowerCase();
     }
 }

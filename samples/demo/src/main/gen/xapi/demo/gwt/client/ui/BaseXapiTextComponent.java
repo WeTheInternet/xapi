@@ -9,16 +9,15 @@ import xapi.ui.api.component.AbstractModelComponent;
 import xapi.ui.api.component.ComponentConstructor;
 import xapi.ui.api.component.ModelComponentOptions;
 
-public abstract class BaseXapiTextComponent <Node, El extends Node, ElBuilder extends NodeBuilder<El>> extends AbstractModelComponent<
-    Node,
+public abstract class BaseXapiTextComponent <El, ElBuilder extends NodeBuilder<El>> extends AbstractModelComponent<
     El,
     ModelXapiText,
-    XapiTextComponent<Node, El>
-  > implements XapiTextComponent<Node, El> {
+    XapiTextComponent<El>
+  > implements XapiTextComponent<El> {
 
   public ElBuilder text;
 
-  public BaseXapiTextComponent (ModelComponentOptions<Node, El, ModelXapiText, XapiTextComponent<Node, El>> opts, ComponentConstructor<Node, El, XapiTextComponent<Node, El>> ctor) {
+  public BaseXapiTextComponent (ModelComponentOptions<El, ModelXapiText, XapiTextComponent<El>> opts, ComponentConstructor<El, XapiTextComponent<El>> ctor) {
     super(opts, ctor);
   }
 

@@ -2,8 +2,6 @@ package xapi.dev.ui.api;
 
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
-import com.github.javaparser.ast.expr.NameExpr;
-import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import com.github.javaparser.ast.type.Type;
@@ -14,16 +12,15 @@ import xapi.dev.source.CanAddImports;
 import xapi.dev.source.DomBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
-import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.dev.ui.api.GeneratedUiImplementation.RequiredMethodType;
 import xapi.dev.ui.impl.InterestingNodeFinder.InterestingNodeResults;
+import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.fu.Lazy;
 import xapi.fu.Maybe;
 import xapi.fu.Out1;
 import xapi.source.X_Modifier;
 import xapi.source.read.JavaModel.IsQualified;
 
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -153,6 +150,7 @@ public class ComponentBuffer {
         final String elBuilder = otherBase.getElementBuilderType(namespace);
         final GeneratedUiApi myApi = getGeneratedComponent().getApi();
         String methodName = "create" + myApi.getWrappedName();
+        boolean firstTime = !otherBase.hasMethod(methodName);
         final MethodBuffer createMethod = otherBase.getOrCreateMethod(X_Modifier.PUBLIC_ABSTRACT, elBuilder, methodName);
         final GeneratedUiFactory externalBuilder = other.getFactory();
         GeneratedUiMethod method = component.createFactoryMethod(tools, ctx, namespace, externalBuilder);
@@ -172,7 +170,9 @@ public class ComponentBuffer {
                 assert member != null : "Cannot use a name expression without EXTRA_MODEL_INFO: " + tools.debugNode(modelNode);
                 final Type memberType = member.getMemberType();
                 final String typeName = tools.getComponentType(modelNode, memberType);
-                createMethod.addParameter(typeName, member.getMemberName());
+                if (firstTime) {
+                    createMethod.addParameter(typeName, member.getMemberName());
+                }
                 args.add(modelNode);
             }
 

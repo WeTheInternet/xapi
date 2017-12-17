@@ -23,11 +23,23 @@ import java.lang.annotation.Target;
 public @interface UiGeneratorPlatform {
 
     String PLATFORM_WEB_APP = "web-app";
-    String PLATFORM_WEB_COMPONENT = "component";
+    String PLATFORM_WEB_COMPONENT = "gwt";
     String PLATFORM_JAVA_FX = "jfx";
+    /**
+     * System property to explicitly mark a platform as ignored.
+     * If this is set, we will aggressively ignore content for these platforms.
+     *
+     * Current code using this:
+         protected boolean isPlatformDisabled(String implType) {
+            return X_Properties.getProperty(UiGeneratorPlatform.SYSTEM_PROP_IGNORE_PLATFORM, "")
+                .contains(normalizeName(implType).replace("impl-", ""));
+         }
+     *
+     */
     String SYSTEM_PROP_IGNORE_PLATFORM = "xapi.ui.impl.ignored";
 
     String value();
 
     int priority() default 0;
+
 }

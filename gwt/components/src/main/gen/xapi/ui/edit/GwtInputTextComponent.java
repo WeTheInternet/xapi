@@ -4,7 +4,6 @@ import static xapi.components.impl.WebComponentBuilder.htmlElementClass;
 
 
 import elemental.dom.Element;
-import elemental.dom.Node;
 import elemental.html.StyleElement;
 
 import xapi.components.api.ComponentNamespace;
@@ -20,13 +19,13 @@ import xapi.ui.api.component.ComponentConstructor;
 import xapi.ui.api.component.ComponentOptions;
 import xapi.ui.html.api.GwtStyles;
 
-public class GwtInputTextComponent extends BaseInputTextComponent<Node, Element, PotentialNode<Element>> implements GwtModelComponentMixin<Element,ModelInputText> {
+public class GwtInputTextComponent extends BaseInputTextComponent<Element, PotentialNode<Element>> implements GwtModelComponentMixin<Element,ModelInputText> {
 
   public static void assemble (UiConfig<Element, StyleElement, ? extends GwtStyles, ElementalService> assembler) {
     WebComponentBuilder component = new WebComponentBuilder(htmlElementClass(), WebComponentVersion.V1);
 
     component.setClassName("InputText");
-    ComponentOptions<Node, Element, InputTextComponent<Node, Element>> opts = new ComponentOptions<>();
+    ComponentOptions<Element, GwtInputTextComponent> opts = new ComponentOptions<>();
     getUi = WebComponentSupport.installFactory(component, GwtInputTextComponent::new, opts);
     component.createdCallback(e->{
       final GwtInputTextComponent c = getInputTextComponent(e);
@@ -37,9 +36,9 @@ public class GwtInputTextComponent extends BaseInputTextComponent<Node, Element,
       "input-text", component);
   }
 
-  private static ComponentConstructor<Node, Element, InputTextComponent<Node, Element>> NEW_INPUT_TEXT;
+  private static ComponentConstructor<Element, GwtInputTextComponent> NEW_INPUT_TEXT;
 
-  private static In1Out1<Element, InputTextComponent<Node, Element>> getUi;
+  private static In1Out1<Element, GwtInputTextComponent> getUi;
 
   public GwtInputTextComponent (Element el) {
     super(el);
@@ -59,15 +58,15 @@ public class GwtInputTextComponent extends BaseInputTextComponent<Node, Element,
   public static GwtInputTextComponent getInputTextComponent (Element e) {
       assert e != null;
       assert e.getTagName().toLowerCase().equals("input-text");
-      final InputTextComponent component = ComponentNamespace.getComponent(e, getUi);
-      return (GwtInputTextComponent) component;
+      final GwtInputTextComponent component = ComponentNamespace.getComponent(e, getUi);
+      return component;
   }
 
-  public static GwtInputTextComponent create (ComponentOptions<Node, Element, InputTextComponent<Node, Element>> opts) {
+  public static GwtInputTextComponent create (ComponentOptions<Element, GwtInputTextComponent> opts) {
     if (opts == null) {
       opts = new ComponentOptions<>();
     }
-    return (GwtInputTextComponent)NEW_INPUT_TEXT.constructComponent(opts, getUi);
+    return NEW_INPUT_TEXT.constructComponent(opts, getUi);
   }
 
 }

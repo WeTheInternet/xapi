@@ -4,7 +4,6 @@ import static xapi.components.impl.WebComponentBuilder.htmlElementClass;
 
 
 import elemental.dom.Element;
-import elemental.dom.Node;
 import elemental.html.StyleElement;
 
 import xapi.components.api.ComponentNamespace;
@@ -20,13 +19,13 @@ import xapi.ui.api.component.ComponentConstructor;
 import xapi.ui.api.component.ComponentOptions;
 import xapi.ui.html.api.GwtStyles;
 
-public class GwtAsserterComponent extends BaseAsserterComponent<Node, Element, PotentialNode<Element>> implements GwtModelComponentMixin<Element,ModelAsserter> {
+public class GwtAsserterComponent extends BaseAsserterComponent<Element, PotentialNode<Element>> implements GwtModelComponentMixin<Element,ModelAsserter> {
 
   public static void assemble (UiConfig<Element, StyleElement, ? extends GwtStyles, ElementalService> assembler) {
     WebComponentBuilder component = new WebComponentBuilder(htmlElementClass(), WebComponentVersion.V1);
 
     component.setClassName("Asserter");
-    ComponentOptions<Node, Element, GwtAsserterComponent> opts = new ComponentOptions<>();
+    ComponentOptions<Element, GwtAsserterComponent> opts = new ComponentOptions<>();
     getUi = WebComponentSupport.installFactory(component, GwtAsserterComponent::new, opts);
     component.createdCallback(e->{
       final GwtAsserterComponent c = getAsserterComponent(e);
@@ -37,7 +36,7 @@ public class GwtAsserterComponent extends BaseAsserterComponent<Node, Element, P
       "xapi-asserter", component);
   }
 
-  private static ComponentConstructor<Node, Element, GwtAsserterComponent> NEW_XAPI_ASSERTER;
+  private static ComponentConstructor<Element, GwtAsserterComponent> NEW_XAPI_ASSERTER;
 
   private static In1Out1<Element, GwtAsserterComponent> getUi;
 
@@ -56,7 +55,7 @@ public class GwtAsserterComponent extends BaseAsserterComponent<Node, Element, P
       return component;
   }
 
-  public static GwtAsserterComponent create (ComponentOptions<Node, Element, GwtAsserterComponent> opts) {
+  public static GwtAsserterComponent create (ComponentOptions<Element, GwtAsserterComponent> opts) {
     if (opts == null) {
       opts = new ComponentOptions<>();
     }

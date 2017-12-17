@@ -11,7 +11,7 @@ public interface GwtModelComponentMixin <El extends Element, Mod extends Model> 
 
     @Override
     default String getModelId(El element) {
-        final Object dataset = element.getDataset().at("modelId");
+        final Object dataset = element.getDataset().at(MODEL_DATA_NAME);
         if (dataset != null) {
             return String.valueOf(dataset);
         }

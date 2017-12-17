@@ -12,26 +12,30 @@ import xapi.model.api.ModelBuilder;
 
 public interface ModelInputText extends Model{
 
-  public String MODEL_INPUT_TEXT = "inputText";
+   static KeyBuilder newKey () {
+    return INPUT_TEXT_KEY_BUILDER.out1();
+  }
 
-  public Out1<KeyBuilder> INPUT_TEXT_KEY_BUILDER = forType(MODEL_INPUT_TEXT);
+  String MODEL_INPUT_TEXT = "inputText";
 
-  public Out1<ModelBuilder<ModelInputText>> INPUT_TEXT_MODEL_BUILDER = 
+  Out1<KeyBuilder> INPUT_TEXT_KEY_BUILDER = forType(MODEL_INPUT_TEXT);
+
+  Out1<ModelBuilder<ModelInputText>> INPUT_TEXT_MODEL_BUILDER = 
       ()->
         build(INPUT_TEXT_KEY_BUILDER.out1(),
         ()->create(ModelInputText.class));
 
 
-  abstract String getValue () ;
+   abstract String getValue () ;
 
-  abstract String setValue (String value) ;
+   abstract String setValue (String value) ;
 
-  abstract String getTitle () ;
+   abstract String getTitle () ;
 
-  abstract String setTitle (String title) ;
+   abstract String setTitle (String title) ;
 
-  abstract String getPlaceholder () ;
+   abstract String getPlaceholder () ;
 
-  abstract String setPlaceholder (String placeholder) ;
+   abstract String setPlaceholder (String placeholder) ;
 
 }

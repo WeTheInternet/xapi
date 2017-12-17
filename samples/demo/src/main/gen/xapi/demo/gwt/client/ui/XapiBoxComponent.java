@@ -5,17 +5,13 @@ import static xapi.model.X_Model.create;
 
 import xapi.ui.api.component.IsModelComponent;
 
-public interface XapiBoxComponent <Node, El extends Node> extends IsModelComponent<
-    Node,
-    El,
-    ModelXapiBox
-  >{
+public interface XapiBoxComponent <El> extends IsModelComponent< El, ModelXapiBox>{
 
-  public default String getModelType () {
+   default String getModelType () {
     return "XapiBox";
   }
 
-  public default ModelXapiBox createModel () {
+   default ModelXapiBox createModel () {
     return create(ModelXapiBox.class);
   }
 

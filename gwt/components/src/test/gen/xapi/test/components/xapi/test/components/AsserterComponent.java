@@ -6,17 +6,13 @@ import static xapi.model.X_Model.create;
 import xapi.ui.api.component.IsModelComponent;
 import xapi.util.X_Util;
 
-public interface AsserterComponent <Node, El extends Node> extends IsModelComponent<
-    Node,
-    El,
-    ModelAsserter
-  >{
+public interface AsserterComponent <El> extends IsModelComponent< El, ModelAsserter>{
 
-  public default String getModelType () {
+   default String getModelType () {
     return "Asserter";
   }
 
-  public default ModelAsserter createModel () {
+   default ModelAsserter createModel () {
     return create(ModelAsserter.class);
   }
 

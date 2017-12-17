@@ -8,14 +8,17 @@ import xapi.ui.api.component.AbstractModelComponent;
 import xapi.ui.api.component.ComponentConstructor;
 import xapi.ui.api.component.ModelComponentOptions;
 
-public abstract class BaseXapiSlideComponent <Node, El extends Node, ElBuilder extends NodeBuilder<El>> extends AbstractModelComponent<
-    Node,
+public abstract class BaseXapiSlideComponent <El, ElBuilder extends NodeBuilder<El>> extends AbstractModelComponent<
     El,
     ModelXapiSlide,
-    XapiSlideComponent<Node, El>
-  > implements XapiSlideComponent<Node, El> {
+    XapiSlideComponent<El>
+  > implements XapiSlideComponent<El> {
 
   public ElBuilder root;
+
+  public BaseXapiSlideComponent (ModelComponentOptions<El, ModelXapiSlide, XapiSlideComponent<El>> opts, ComponentConstructor<El, XapiSlideComponent<El>> ctor) {
+    super(opts, ctor);
+  }
 
   public BaseXapiSlideComponent (Out1<El> El) {
     super(El);
@@ -23,10 +26,6 @@ public abstract class BaseXapiSlideComponent <Node, El extends Node, ElBuilder e
 
   public BaseXapiSlideComponent (El El) {
     super(El);
-  }
-
-  public BaseXapiSlideComponent (ModelComponentOptions<Node, El, ModelXapiSlide, XapiSlideComponent<Node, El>> opts, ComponentConstructor<Node, El, XapiSlideComponent<Node, El>> ctor) {
-    super(opts, ctor);
   }
 
   public ElBuilder toDom () {

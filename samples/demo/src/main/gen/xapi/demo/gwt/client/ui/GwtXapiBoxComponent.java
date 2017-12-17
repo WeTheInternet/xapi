@@ -4,7 +4,6 @@ import static xapi.components.impl.WebComponentBuilder.htmlElementClass;
 
 
 import elemental.dom.Element;
-import elemental.dom.Node;
 import elemental.html.StyleElement;
 
 import xapi.components.api.ComponentNamespace;
@@ -23,13 +22,13 @@ import xapi.ui.api.component.ComponentConstructor;
 import xapi.ui.api.component.ComponentOptions;
 import xapi.ui.html.api.GwtStyles;
 
-public class GwtXapiBoxComponent extends BaseXapiBoxComponent<Node, Element, PotentialNode<Element>> implements GwtModelComponentMixin<Element,ModelXapiBox> {
+public class GwtXapiBoxComponent extends BaseXapiBoxComponent<Element, PotentialNode<Element>> implements GwtModelComponentMixin<Element,ModelXapiBox> {
 
   public static void assemble (UiConfig<Element, StyleElement, ? extends GwtStyles, ElementalService> assembler) {
     WebComponentBuilder component = new WebComponentBuilder(htmlElementClass(), WebComponentVersion.V1);
 
     component.setClassName("XapiBox");
-    ComponentOptions<Node, Element, GwtXapiBoxComponent> opts = new ComponentOptions<>();
+    ComponentOptions<Element, GwtXapiBoxComponent> opts = new ComponentOptions<>();
     getUi = WebComponentSupport.installFactory(component, GwtXapiBoxComponent::new, opts);
     component.createdCallback(e->{
       final GwtXapiBoxComponent c = getXapiBoxComponent(e);
@@ -40,7 +39,7 @@ public class GwtXapiBoxComponent extends BaseXapiBoxComponent<Node, Element, Pot
       "xapi-box", component);
   }
 
-  private static ComponentConstructor<Node, Element, GwtXapiBoxComponent> NEW_XAPI_BOX;
+  private static ComponentConstructor<Element, GwtXapiBoxComponent> NEW_XAPI_BOX;
 
   private static In1Out1<Element, GwtXapiBoxComponent> getUi;
 
@@ -59,7 +58,7 @@ public class GwtXapiBoxComponent extends BaseXapiBoxComponent<Node, Element, Pot
       return component;
   }
 
-  public static GwtXapiBoxComponent create (ComponentOptions<Node, Element, GwtXapiBoxComponent> opts) {
+  public static GwtXapiBoxComponent create (ComponentOptions<Element, GwtXapiBoxComponent> opts) {
     if (opts == null) {
       opts = new ComponentOptions<>();
     }

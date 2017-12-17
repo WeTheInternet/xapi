@@ -1,8 +1,6 @@
 package xapi.elemental.api;
 
 import elemental2.core.Function;
-import elemental2.core.JsObject;
-import elemental2.core.ObjectPropertyDescriptor;
 import elemental2.core.Reflect;
 import elemental2.dom.DomGlobal;
 import elemental2.dom.Element;
@@ -14,12 +12,8 @@ import elemental2.dom.Node;
 import jsinterop.base.Js;
 import jsinterop.base.JsPropertyMap;
 import xapi.annotation.inject.InstanceDefault;
-import xapi.fu.In1Out1;
-import xapi.fu.In2Out1;
-import xapi.fu.Out1;
 import xapi.gwt.api.JsLazyExpando;
 import xapi.inject.X_Inject;
-import xapi.log.X_Log;
 import xapi.ui.api.ElementInjector;
 import xapi.ui.api.ElementPosition;
 import xapi.ui.impl.AbstractUiElement;

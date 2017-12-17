@@ -7,14 +7,13 @@ import xapi.ui.api.component.AbstractModelComponent;
 import xapi.ui.api.component.ComponentConstructor;
 import xapi.ui.api.component.ModelComponentOptions;
 
-public abstract class BaseXapiBoxComponent <Node, El extends Node, ElBuilder extends NodeBuilder<El>> extends AbstractModelComponent<
-    Node,
+public abstract class BaseXapiBoxComponent <El, ElBuilder extends NodeBuilder<El>> extends AbstractModelComponent<
     El,
     ModelXapiBox,
-    XapiBoxComponent<Node, El>
-  > implements XapiBoxComponent<Node, El> {
+    XapiBoxComponent<El>
+  > implements XapiBoxComponent<El> {
 
-  public BaseXapiBoxComponent (ModelComponentOptions<Node, El, ModelXapiBox, XapiBoxComponent<Node, El>> opts, ComponentConstructor<Node, El, XapiBoxComponent<Node, El>> ctor) {
+  public BaseXapiBoxComponent (ModelComponentOptions<El, ModelXapiBox, XapiBoxComponent<El>> opts, ComponentConstructor<El, XapiBoxComponent<El>> ctor) {
     super(opts, ctor);
   }
 

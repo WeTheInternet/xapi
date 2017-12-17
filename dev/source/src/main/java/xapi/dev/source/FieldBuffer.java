@@ -198,8 +198,11 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> implements CanAddImpo
         b.append('@').append(anno).append(NEW_LINE).append(origIndent);
       }
     }
-    final String mods = Modifier.toString(modifier);
-    if (mods.length() > 0) {
+    String mods = Modifier.toString(modifier);
+    if (enclosing instanceof ClassBuffer && (((ClassBuffer)enclosing).isInterface())) {
+      mods = mods.replaceAll("(public|static|final)\\s*", "");
+    }
+    if (!mods.isEmpty()) {
       b.append(mods).append(" ");
     }
     // generics

@@ -1,6 +1,5 @@
 package xapi.ui.api.component;
 
-import xapi.fu.iterate.SizedIterable;
 import xapi.model.X_Model;
 import xapi.model.api.Model;
 import xapi.model.service.ModelCache;
@@ -18,17 +17,12 @@ import xapi.model.service.ModelCache;
 public interface IsModelComponent
     <
         /**
-         * Raw node; the lowest common denominator of generated api.
-         * Your parent and child nodes must be derived from this type
+         * The type of the native node representing this component
          */
-        Node,
-        /**
-         * Specific node; the final incarnation of generated api
-         */
-        El extends Node,
+        El,
         M extends Model
     >
-    extends IsComponent<Node, El>, ModelComponentMixin<El, M>
+    extends IsComponent<El>, ModelComponentMixin<El, M>
 {
 
     M getModel();

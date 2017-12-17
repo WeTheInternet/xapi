@@ -1,6 +1,5 @@
 package xapi.ui.api.component;
 
-import xapi.fu.Immutable;
 import xapi.fu.In1Out1;
 import xapi.model.api.Model;
 
@@ -12,12 +11,12 @@ import xapi.model.api.Model;
  * Created by James X. Nelson (james @wetheinter.net) on 5/25/17.
  */
 public class ModelComponentOptions
-    <N, E extends N, M extends Model, C extends IsModelComponent<N, E, M>>
-   extends ComponentOptions<N, E, C> {
+    <E, M extends Model, C extends IsModelComponent<E, M>>
+   extends ComponentOptions<E, C> {
 
     protected M model;
 
-    public ModelComponentOptions<N, E, M, C> withComponent(C component) {
+    public ModelComponentOptions<E, M, C> withComponent(C component) {
         super.withComponent(component);
         return this;
     }
@@ -29,7 +28,7 @@ public class ModelComponentOptions
         return component.io(element);
     }
 
-    public ModelComponentOptions<N, E, M, C> withComponent(In1Out1<E, C> componentFactory) {
+    public ModelComponentOptions<E, M, C> withComponent(In1Out1<E, C> componentFactory) {
         super.withComponent(componentFactory);
         return this;
     }

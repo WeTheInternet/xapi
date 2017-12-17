@@ -12,26 +12,26 @@ import xapi.model.api.ModelBuilder;
 
 public interface ModelAsserter extends Model{
 
-  static KeyBuilder newKey () {
+   static KeyBuilder newKey () {
     return ASSERTER_KEY_BUILDER.out1();
   }
 
-  public String MODEL_ASSERTER = "asserter";
+  String MODEL_ASSERTER = "asserter";
 
-  public Out1<KeyBuilder> ASSERTER_KEY_BUILDER = forType(MODEL_ASSERTER);
+  Out1<KeyBuilder> ASSERTER_KEY_BUILDER = forType(MODEL_ASSERTER);
 
-  public Out1<ModelBuilder<ModelAsserter>> ASSERTER_MODEL_BUILDER = 
+  Out1<ModelBuilder<ModelAsserter>> ASSERTER_MODEL_BUILDER = 
       ()->
         build(ASSERTER_KEY_BUILDER.out1(),
         ()->create(ModelAsserter.class));
 
 
-  abstract String getTemplate () ;
+    String getTemplate () ;
 
-  abstract String setTemplate (String template) ;
+    String setTemplate (String template) ;
 
-  abstract String getTag () ;
+    String getTag () ;
 
-  abstract String setTag (String tag) ;
+    String setTag (String tag) ;
 
 }

@@ -43,7 +43,7 @@ public class GeneratedUiBase extends GeneratedUiLayer {
     @Override
     public String getElementType(UiNamespace namespace) {
         // We want to force the base node type to come before the element type
-        getNodeType(namespace);
+//        getNodeType(namespace);
         return super.getElementType(namespace);
     }
 

@@ -43,17 +43,16 @@ import xapi.source.read.JavaVisitor.MethodVisitor;
 import xapi.source.read.JavaVisitor.ParameterVisitor;
 import xapi.source.read.JavaVisitor.TypeData;
 
-import static xapi.source.read.JavaVisitor.MODIFIER_DEFAULT;
-
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Map.Entry;
 
+import static xapi.source.read.JavaVisitor.MODIFIER_DEFAULT;
+
 public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
     MethodVisitor<SourceBuilder<?>>, CanAddImports {
 
-  private final ClassBuffer enclosing;
   protected SourceBuilder<?>          context;
   private boolean                     once;
   private boolean                     useJsni = true;
@@ -75,7 +74,6 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
     this.exceptions = from.exceptions;
     this.returnType = from.returnType;
     this.tryDepth = from.tryDepth;
-    this.enclosing = from.enclosing;
   }
 
   private MethodBuffer(MethodBuffer from, StringBuilder target) {
@@ -87,13 +85,11 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
     this.exceptions = from.exceptions;
     this.returnType = from.returnType;
     this.tryDepth = from.tryDepth;
-    this.enclosing = from.enclosing;
   }
 
   public MethodBuffer(final SourceBuilder<?> context, ClassBuffer enclosing, final String indent) {
     super(indent, enclosing);
     this.context = context;
-    this.enclosing = enclosing;
     this.indent = indent + INDENT;
     parameters = new LinkedHashSet<>();
     exceptions = new LinkedHashSet<>();
@@ -113,18 +109,13 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
     }
     boolean isDefault = (modifier & MODIFIER_DEFAULT) == MODIFIER_DEFAULT;
     String mods = Modifier.toString(modifier);
-    if (enclosing != null && enclosing.isInterface()) {
+    if (enclosing instanceof ClassBuffer && ((ClassBuffer)enclosing).isInterface()) {
       // remove public and abstract for interface methods, as they are implicit.
-      if (Modifier.isPublic(modifier)) {
-        mods = mods.replace("public ", "");
-      }
-      if (Modifier.isAbstract(modifier)) {
-        mods = mods.replace("abstract ", "");
-      }
+      mods = mods.replace("public", "").replace("abstract", "").replaceAll("\\s{2,}", " ");
     }
     b.append(mods);
     if (isDefault) {
-      b.append(" default");
+      b.append((mods.length() == 1 ? "" : " ")).append("default");
     }
     if (returnType.simpleName.length() > 0) {
       b.append(" ");
@@ -226,20 +217,23 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
   public MethodBuffer addParameters(final String... parameters) {
     for (final String parameter : parameters) {
       final IsParameter param = JavaLexer.lexParam(parameter);
-      this.parameters.add(param.toString());
+      final String toAdd = param.toString();
+      this.parameters.add(toAdd);
     }
     return this;
   }
 
   public MethodBuffer addParameter(final Class<?> type, final String name) {
     final String typeName = addImport(type);
-    this.parameters.add(typeName + " " + name);
+    final String toAdd = typeName + " " + name;
+    this.parameters.add(toAdd);
     return this;
   }
 
   public MethodBuffer addParameter(final String type, final String name) {
     final String typeName = addImport(type);
-    this.parameters.add(typeName + " " + name);
+    final String toAdd = typeName + " " + name;
+    this.parameters.add(toAdd);
     return this;
   }
 
@@ -356,7 +350,7 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
   }
 
   protected void onFirstAppend() {
-    if (enclosing != null && enclosing.isInterface()) {
+    if (enclosing instanceof ClassBuffer && ((ClassBuffer)enclosing).isInterface()) {
       // automatically add default if you are printing into a non-static interface method
       if (!Modifier.isStatic(modifier)) {
         modifier |= MODIFIER_DEFAULT;

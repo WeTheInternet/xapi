@@ -9,12 +9,11 @@ import xapi.ui.api.component.AbstractModelComponent;
 import xapi.ui.api.component.ComponentConstructor;
 import xapi.ui.api.component.ModelComponentOptions;
 
-public abstract class BaseInputTextComponent <Node, El extends Node, ElBuilder extends NodeBuilder<El>> extends AbstractModelComponent<
-    Node,
+public abstract class BaseInputTextComponent <El, ElBuilder extends NodeBuilder<El>> extends AbstractModelComponent<
     El,
     ModelInputText,
-    InputTextComponent<Node, El>
-  > implements InputTextComponent<Node, El> {
+    InputTextComponent<El>
+  > implements InputTextComponent<El> {
 
   public ElBuilder root;
 
@@ -22,7 +21,7 @@ public abstract class BaseInputTextComponent <Node, El extends Node, ElBuilder e
 
   public ElBuilder input;
 
-  public BaseInputTextComponent (ModelComponentOptions<Node, El, ModelInputText, InputTextComponent<Node, El>> opts, ComponentConstructor<Node, El, InputTextComponent<Node, El>> ctor) {
+  public BaseInputTextComponent (ModelComponentOptions<El, ModelInputText, InputTextComponent<El>> opts, ComponentConstructor<El, InputTextComponent<El>> ctor) {
     super(opts, ctor);
   }
 

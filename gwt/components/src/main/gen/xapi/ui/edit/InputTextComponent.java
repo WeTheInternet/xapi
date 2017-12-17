@@ -6,17 +6,13 @@ import static xapi.model.X_Model.create;
 import xapi.ui.api.component.IsModelComponent;
 import xapi.util.X_Util;
 
-public interface InputTextComponent <Node, El extends Node> extends IsModelComponent<
-    Node,
-    El,
-    ModelInputText
-  >{
+public interface InputTextComponent <El> extends IsModelComponent< El, ModelInputText>{
 
-  public default String getModelType () {
+   default String getModelType () {
     return "InputText";
   }
 
-  public default ModelInputText createModel () {
+   default ModelInputText createModel () {
     return create(ModelInputText.class);
   }
 

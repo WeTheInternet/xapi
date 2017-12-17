@@ -16,7 +16,7 @@ public class ElementalBuilderTest {
         final ElementBuilder<Node> b = new ElementalBuilder<>()
             .withChild("div", d->d.setName("one"))
             .withChild2("span", ElementBuilder::setId, "two");
-        assertEquals("<div name='one'></div><span id='two'></span>", b.toSource());
+        assertEquals("<div name=\"one\"></div><span id=\"two\"></span>", b.toSource());
     }
 
 }

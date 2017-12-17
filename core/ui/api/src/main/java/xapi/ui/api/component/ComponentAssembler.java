@@ -18,6 +18,6 @@ import xapi.fu.In1;
  */
 public interface ComponentAssembler {
 
-    ComponentAssembler asParent(ComponentBuilder<?, ?, ?, ?> builder, In1<ComponentAssembler> childAssembler);
+    ComponentAssembler asParent(ComponentBuilder<?, ?, ?> builder, In1<ComponentAssembler> childAssembler);
 
 }

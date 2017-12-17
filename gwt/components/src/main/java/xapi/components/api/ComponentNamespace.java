@@ -2,8 +2,6 @@ package xapi.components.api;
 
 import elemental.dom.Element;
 import elemental.dom.Node;
-import elemental2.core.Reflect;
-import jsinterop.base.Js;
 import jsinterop.base.JsPropertyMap;
 import xapi.components.impl.JsSupport;
 import xapi.fu.In1Out1;
@@ -27,7 +25,7 @@ public class ComponentNamespace {
 
     public static native <
         E,
-        Me extends IsComponent<? super E, E>> Me getComponent(E e, In1Out1<E, ? extends Me> getUi)
+        Me extends IsComponent<E>> Me getComponent(E e, In1Out1<E, ? extends Me> getUi)
     /*-{
         // you can check if the java class is initialized or not using the map,
         // but should defer to this method to ensure all creation routes through the factory (that you supplied).

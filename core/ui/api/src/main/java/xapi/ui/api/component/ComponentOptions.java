@@ -29,12 +29,12 @@ import xapi.fu.In1Out1;
  *
  * Created by James X. Nelson (james @wetheinter.net) on 2/5/17.
  */
-public class ComponentOptions <N, E extends N, C extends IsComponent<N, E>> {
+public class ComponentOptions <E, C extends IsComponent<E>> {
 
     protected In1Out1<E, C> component;
     protected C existing;
 
-    public ComponentOptions<N, E, C> withComponent(C component) {
+    public ComponentOptions<E, C> withComponent(C component) {
         existing = component;
         this.component = Immutable.immutable1(component).ignoreIn1();
         return this;
@@ -47,7 +47,7 @@ public class ComponentOptions <N, E extends N, C extends IsComponent<N, E>> {
         return component.io(element);
     }
 
-    public ComponentOptions<N, E, C> withComponent(In1Out1<E, C> componentFactory) {
+    public ComponentOptions<E, C> withComponent(In1Out1<E, C> componentFactory) {
         this.component = componentFactory;
         return this;
     }

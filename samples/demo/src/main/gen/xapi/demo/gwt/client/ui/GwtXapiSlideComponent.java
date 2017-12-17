@@ -4,7 +4,6 @@ import static xapi.components.impl.WebComponentBuilder.htmlElementClass;
 
 
 import elemental.dom.Element;
-import elemental.dom.Node;
 import elemental.html.StyleElement;
 
 import xapi.components.api.ComponentNamespace;
@@ -23,13 +22,13 @@ import xapi.ui.api.component.ComponentConstructor;
 import xapi.ui.api.component.ComponentOptions;
 import xapi.ui.html.api.GwtStyles;
 
-public class GwtXapiSlideComponent extends BaseXapiSlideComponent<Node, Element, PotentialNode<Element>> implements GwtModelComponentMixin<Element,ModelXapiSlide> {
+public class GwtXapiSlideComponent extends BaseXapiSlideComponent<Element, PotentialNode<Element>> implements GwtModelComponentMixin<Element,ModelXapiSlide> {
 
   public static void assemble (UiConfig<Element, StyleElement, ? extends GwtStyles, ElementalService> assembler) {
     WebComponentBuilder component = new WebComponentBuilder(htmlElementClass(), WebComponentVersion.V1);
 
     component.setClassName("XapiSlide");
-    ComponentOptions<Node, Element, GwtXapiSlideComponent> opts = new ComponentOptions<>();
+    ComponentOptions<Element, GwtXapiSlideComponent> opts = new ComponentOptions<>();
     getUi = WebComponentSupport.installFactory(component, GwtXapiSlideComponent::new, opts);
     component.createdCallback(e->{
       final GwtXapiSlideComponent c = getXapiSlideComponent(e);
@@ -40,7 +39,7 @@ public class GwtXapiSlideComponent extends BaseXapiSlideComponent<Node, Element,
       "xapi-slide", component);
   }
 
-  private static ComponentConstructor<Node, Element, GwtXapiSlideComponent> NEW_XAPI_SLIDE;
+  private static ComponentConstructor<Element, GwtXapiSlideComponent> NEW_XAPI_SLIDE;
 
   private static In1Out1<Element, GwtXapiSlideComponent> getUi;
 
@@ -59,7 +58,7 @@ public class GwtXapiSlideComponent extends BaseXapiSlideComponent<Node, Element,
       return component;
   }
 
-  public static GwtXapiSlideComponent create (ComponentOptions<Node, Element, GwtXapiSlideComponent> opts) {
+  public static GwtXapiSlideComponent create (ComponentOptions<Element, GwtXapiSlideComponent> opts) {
     if (opts == null) {
       opts = new ComponentOptions<>();
     }

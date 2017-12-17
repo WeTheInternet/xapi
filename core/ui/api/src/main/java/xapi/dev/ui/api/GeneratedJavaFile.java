@@ -179,6 +179,9 @@ public class GeneratedJavaFile {
         return owner;
     }
 
+    public boolean hasMethod(String name) {
+        return methods.isResolved() && methods.out1().has(name);
+    }
     public MethodBuffer getOrCreateMethod(int modifiers, String returnType, String name) {
         return methods.out1().getOrCreate(name, n->{
             final String realName = newMethodName(name);

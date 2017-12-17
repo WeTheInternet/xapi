@@ -10,13 +10,12 @@ import xapi.model.api.Model;
  * Created by James X. Nelson (james @wetheinter.net) on 1/16/17.
  */
 public abstract class AbstractModelComponent<
-    Node,
-    El extends Node,
+    El,
     Mod extends Model,
-    Api extends IsModelComponent<Node, El, Mod>
+    Api extends IsModelComponent<El, Mod>
 >
-extends AbstractComponent<Node, El, Api>
-implements IsModelComponent<Node, El, Mod> {
+extends AbstractComponent<El, Api>
+implements IsModelComponent<El, Mod> {
 
     private final Lazy<Mod> model;
 
@@ -30,7 +29,7 @@ implements IsModelComponent<Node, El, Mod> {
     }
 
     @SuppressWarnings("unchecked") //
-    public AbstractModelComponent(ModelComponentOptions<Node, El, Mod, Api> opts, ComponentConstructor<Node, El, Api> constructor) {
+    public AbstractModelComponent(ModelComponentOptions<El, Mod, Api> opts, ComponentConstructor<El, Api> constructor) {
         super(opts, constructor);
         model = Lazy.deferred1(this::initModel);
     }
@@ -56,16 +55,16 @@ implements IsModelComponent<Node, El, Mod> {
         return mod;
     }
 
-    public AbstractModelComponent<Node, El, Mod, Api> setModel(Mod model) {
+    public AbstractModelComponent<El, Mod, Api> setModel(Mod model) {
         final Mod myModel = this.model.out1();
         myModel.absorb(model);
         return this;
     }
 
     @Override
-    public ModelComponentOptions<Node, El, Mod, Api> getOpts() {
+    public ModelComponentOptions<El, Mod, Api> getOpts() {
         // our constructor forces this to be true...
-        return (ModelComponentOptions<Node, El, Mod, Api>) super.getOpts();
+        return (ModelComponentOptions<El, Mod, Api>) super.getOpts();
     }
 
     protected void initialize(Lazy<El> element) {

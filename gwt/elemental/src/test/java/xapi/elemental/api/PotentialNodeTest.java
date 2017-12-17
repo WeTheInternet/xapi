@@ -34,7 +34,7 @@ public class PotentialNodeTest {
     node.setTagName("div");
     node.setAttribute("class", "awesome");
     node.append("Hello World");
-    Assert.assertEquals("<div class='awesome'>Hello World</div>", node.toString());
+    Assert.assertEquals("<div class=\"awesome\">Hello World</div>", node.toString());
   }
 
   @Test
@@ -43,9 +43,9 @@ public class PotentialNodeTest {
     node.setTagName("div");
     node.setAttribute("style", "totally:awesome");
     node.append("Hello World");
-    Assert.assertEquals("<div style='totally:awesome;'>Hello World</div>", node.toString());
+    Assert.assertEquals("<div style=\"totally:awesome;\">Hello World</div>", node.toString());
     node.setAttribute("style", "really:great");
-    Assert.assertEquals("<div style='really:great;'>Hello World</div>", node.toString());
+    Assert.assertEquals("<div style=\"really:great;\">Hello World</div>", node.toString());
   }
 
   @Test
@@ -54,9 +54,9 @@ public class PotentialNodeTest {
     node.setTagName("div");
     node.addAttribute("style", "totally:awesome");
     node.append("Hello World");
-    Assert.assertEquals("<div style='totally:awesome;'>Hello World</div>", node.toString());
+    Assert.assertEquals("<div style=\"totally:awesome;\">Hello World</div>", node.toString());
     node.addAttribute("style", "really:great");
-    Assert.assertEquals("<div style='totally:awesome;really:great;'>Hello World</div>", node.toString());
+    Assert.assertEquals("<div style=\"totally:awesome;really:great;\">Hello World</div>", node.toString());
   }
 
   @Test
@@ -65,9 +65,9 @@ public class PotentialNodeTest {
     node.setTagName("div");
     node.setStyle("totally", "awesome");
     node.append("Hello World");
-    Assert.assertEquals("<div style='totally:awesome;'>Hello World</div>", node.toString());
+    Assert.assertEquals("<div style=\"totally:awesome;\">Hello World</div>", node.toString());
     node.setAttribute("style", "really:great");
-    Assert.assertEquals("<div style='really:great;'>Hello World</div>", node.toString());
+    Assert.assertEquals("<div style=\"really:great;\">Hello World</div>", node.toString());
   }
 
   @Test
@@ -76,9 +76,9 @@ public class PotentialNodeTest {
     node.setTagName("div");
     node.setStyle("totally","awesome");
     node.append("Hello World");
-    Assert.assertEquals("<div style='totally:awesome;'>Hello World</div>", node.toString());
+    Assert.assertEquals("<div style=\"totally:awesome;\">Hello World</div>", node.toString());
     node.setStyle("really","great");
-    Assert.assertEquals("<div style='totally:awesome;really:great;'>Hello World</div>", node.toString());
+    Assert.assertEquals("<div style=\"totally:awesome;really:great;\">Hello World</div>", node.toString());
   }
 
   @Test
@@ -92,8 +92,7 @@ public class PotentialNodeTest {
     child.setTagName("br");
     node.append("World");
 
-    System.out.println(node.toString());
-    Assert.assertEquals("<div class='awesome'>Hello<br/>World</div>", node.toString());
+    Assert.assertEquals("<div class=\"awesome\">Hello<br/>World</div>", node.toString());
   }
 
 }

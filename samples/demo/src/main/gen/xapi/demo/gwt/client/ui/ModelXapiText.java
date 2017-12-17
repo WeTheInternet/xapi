@@ -12,26 +12,26 @@ import xapi.model.api.ModelBuilder;
 
 public interface ModelXapiText extends Model{
 
-  static KeyBuilder newKey () {
+   static KeyBuilder newKey () {
     return XAPI_TEXT_KEY_BUILDER.out1();
   }
 
-  public String MODEL_XAPI_TEXT = "xapiText";
+  String MODEL_XAPI_TEXT = "xapiText";
 
-  public Out1<KeyBuilder> XAPI_TEXT_KEY_BUILDER = forType(MODEL_XAPI_TEXT);
+  Out1<KeyBuilder> XAPI_TEXT_KEY_BUILDER = forType(MODEL_XAPI_TEXT);
 
-  public Out1<ModelBuilder<ModelXapiText>> XAPI_TEXT_MODEL_BUILDER = 
+  Out1<ModelBuilder<ModelXapiText>> XAPI_TEXT_MODEL_BUILDER = 
       ()->
         build(XAPI_TEXT_KEY_BUILDER.out1(),
         ()->create(ModelXapiText.class));
 
 
-  abstract String getValue () ;
+    String getValue () ;
 
-  abstract String setValue (String value) ;
+    String setValue (String value) ;
 
-  abstract int[] getFormat () ;
+    int[] getFormat () ;
 
-  abstract int[] setFormat (int[] format) ;
+    int[] setFormat (int[] format) ;
 
 }
