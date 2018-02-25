@@ -7,4 +7,6 @@ public interface HasParent <Node> {
 
     IsComponent<? extends Node> getParentComponent();
 
+    void setParentComponent(IsComponent<? extends Node> parent);
+
 }

@@ -46,6 +46,7 @@ public class UiTagModelGenerator extends UiFeatureGenerator {
     ) {
         final GeneratedUiComponent component = me.getGeneratedComponent();
         final GeneratedUiApi api = component.getApi();
+        final GeneratedUiBase base = component.getBase();
         final GeneratedUiModel model = api.getModel();
         final ApiGeneratorContext ctx = me.getContext();
 
@@ -57,7 +58,7 @@ public class UiTagModelGenerator extends UiFeatureGenerator {
             component.getBase().getModelName(), apiFactory, baseFactory);
         final ClassBuffer out = api.getSource().getClassBuffer();
         // TODO: check for custom type hierarchy, and see if somebody defines getModel().
-        // right now that is implictly done by extending AbstractModelComponent
+        // right now that is implicitly done by extending AbstractModelComponent
 
 
        out.createMethod("default String getModelType()")
@@ -66,7 +67,7 @@ public class UiTagModelGenerator extends UiFeatureGenerator {
        out.createMethod("default " + modelName + " createModel()")
             .returnValue(out.addImportStatic(X_Model.class, "create") + "(" + modelName + ".class)");
 
-        component.getBase().ensureFieldDefined(model.getWrappedName(), "model", false);
+        base.ensureFieldDefined(model.getWrappedName(), "model", false);
 
         boolean immutable = attr.getAnnotation(anno->anno.getNameString().equalsIgnoreCase("immutable")).isPresent();
         final Expression expr = attr.getExpression();

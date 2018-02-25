@@ -9,4 +9,8 @@ public interface HasChildren <Node> {
 
     SizedIterable<IsComponent<? extends Node>> getChildComponents();
 
+    void addChildComponent(IsComponent<? extends Node> child);
+
+    void removeChild(IsComponent<? extends Node> me);
+
 }

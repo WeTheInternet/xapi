@@ -66,4 +66,9 @@ public class GeneratedUiApi extends GeneratedUiLayer {
     public String getConstantName() {
         return getTypeName().replaceAll("([a-z])([A-Z])", "$1_$2").toUpperCase();
     }
+
+    @Override
+    public GeneratedJavaFile getImplementor() {
+        return getOwner().getBase();
+    }
 }

@@ -12,6 +12,7 @@ import xapi.collect.api.ObjectTo;
 import xapi.collect.api.StringTo;
 import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.source.ClassBuffer;
+import xapi.dev.source.FieldBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.ui.api.*;
 import xapi.dev.ui.api.UiVisitScope.ScopeType;
@@ -27,6 +28,7 @@ import xapi.fu.iterate.ChainBuilder;
 import xapi.log.X_Log;
 import xapi.source.X_Modifier;
 import xapi.source.read.SourceUtil;
+import xapi.util.X_Debug;
 import xapi.util.X_String;
 import xapi.util.X_Util;
 
@@ -45,16 +47,20 @@ import static xapi.fu.Immutable.immutable1;
  */
 public class UiTagGenerator extends UiComponentGenerator {
 
-    protected static class UiMethodContext {
+    protected static class UiMemberContext extends ApiGeneratorContext<UiMemberContext> {
         private UiTagGenerator generator;
         private ContainerMetadata container;
         private UiGeneratorTools tools;
+
+        public UiMemberContext(ApiGeneratorContext ctx) {
+            super(ctx);
+        }
 
         public UiTagGenerator getGenerator() {
             return generator;
         }
 
-        public UiMethodContext setGenerator(UiTagGenerator generator) {
+        public UiMemberContext setGenerator(UiTagGenerator generator) {
             this.generator = generator;
             return this;
         }
@@ -63,7 +69,7 @@ public class UiTagGenerator extends UiComponentGenerator {
             return container;
         }
 
-        public UiMethodContext setContainer(ContainerMetadata container) {
+        public UiMemberContext setContainer(ContainerMetadata container) {
             this.container = container;
             return this;
         }
@@ -72,24 +78,26 @@ public class UiTagGenerator extends UiComponentGenerator {
             return tools;
         }
 
-        public UiMethodContext setTools(UiGeneratorTools context) {
+        public UiMemberContext setTools(UiGeneratorTools context) {
             this.tools = context;
             return this;
         }
 
     }
 
-    protected class UiMethodTransformer extends ModifierVisitorAdapter<UiMethodContext> {
+    protected class UiMemberTransformer extends ModifierVisitorAdapter<UiMemberContext> {
 
         private final GeneratedJavaFile ui;
+        private final ContainerMetadata me;
 
-        public UiMethodTransformer(GeneratedJavaFile ui) {
+        public UiMemberTransformer(GeneratedJavaFile ui, ContainerMetadata me) {
             this.ui = ui;
+            this.me = me;
         }
 
         @Override
         public Node visit(
-            DynamicDeclarationExpr n, UiMethodContext ctx
+            DynamicDeclarationExpr member, UiMemberContext ctx
         ) {
             // We want to transform this method declaration
             // into something safely toString()able.
@@ -99,20 +107,149 @@ public class UiTagGenerator extends UiComponentGenerator {
 
 //            final Do undos = resolveSpecialNames(apiCtx, ctx.getContainer().getGeneratedComponent(), ui, null);
 
-            if (n.getBody() instanceof MethodDeclaration) {
-                MethodDeclaration method = (MethodDeclaration) n.getBody();
-                if (ui.isInterface() && method.getBody() != null) {
-                    // Make this method default if it has a body
+            if (member.getBody() instanceof MethodDeclaration) {
+                MethodDeclaration method = (MethodDeclaration) member.getBody();
+                if (!method.isStatic() &&
+                    ui.isInterface() &&
+                    method.getBody() != null) {
+                    // Make this method default if it non-static with a body
                     method.setDefault(true);
                     method.setModifiers(
                         ( method.getModifiers() & ModifierSet.VISIBILITY_MASK)
                         | ModifierSet.DEFAULT
                     );
                 }
+            } else if (member.getBody() instanceof FieldDeclaration) {
+
+                final BodyDeclaration decl = member.getBody();
+                FieldDeclaration asField = (FieldDeclaration) decl;
+                addField(member, asField, ctx);
+                return templateLiteral("");
             }
-            String src = n.toSource(tools.getTransformer(apiCtx));
+            String src = member.toSource(tools.getTransformer(apiCtx));
 //            undos.done();
-            return templateLiteral(src);
+            return templateLiteral(src, member);
+        }
+
+        private void addField(
+            DynamicDeclarationExpr member,
+            FieldDeclaration asField,
+            UiMemberContext ctx
+        ) {
+            ChainBuilder<VariableDeclarator> toForward = Chain.startChain();
+            final UiGeneratorTools tools = ctx.getTools();
+
+            String typeName = asField.getType().toSource();
+            for (VariableDeclarator var : asField.getVariables()) {
+                Expression init = var.getInit();
+                boolean isConvenienceMethod = init instanceof MethodReferenceExpr &&
+                    isConvenienceMethod((MethodReferenceExpr)init);
+
+
+                if (isConvenienceMethod) {
+                    // when using a method reference, we will bind get/set to whatever is referenced.
+                    MethodReferenceExpr methodRef = (MethodReferenceExpr) init;
+
+                    String scope = tools.resolveString(ctx, methodRef.getScope());
+                    // Create getter and setter
+                    String nameToUse = ui.newFieldName(methodRef.getIdentifier());
+                    String getterName = SourceUtil.toGetterName(typeName, nameToUse);
+                    String setterName = SourceUtil.toSetterName(nameToUse);
+                    final ClassBuffer buf = ui.getSource().getClassBuffer();
+                    boolean addGetter = true, addSetter = true;
+                    if (nameToUse.startsWith("get")) {
+                        // getter only
+                        addSetter = false;
+                    } else if (nameToUse.startsWith("set")) {
+                        // setter only
+                        addGetter = false;
+                    }
+                    String modifierPrefix = ui.isInterface() ? "default " : "public ";
+                    if (addGetter) {
+                        buf.createMethod(modifierPrefix + typeName + " " + getterName+ "()")
+                            .print("return ")
+                            .printlns(scope + "." + getterName + "();");
+                    }
+                    if (addSetter) {
+                        buf.createMethod(modifierPrefix + "void " + setterName+ "()")
+                            .addParameter(typeName, nameToUse)
+                            .printlns(scope + "." + setterName + "(" + nameToUse + ");");
+                    }
+                    // TODO: consider allowing some means to add collection / map helper methods if the field type supports them
+                    continue; // do not fall through into .ensureField.
+                }
+
+                if (ui.isInterface()) {
+                    if (!X_Modifier.isStatic(asField.getModifiers())) {
+                        // instance fields on interfaces must be forwarded to getImplementor() class
+                        toForward.add(var);
+                        init = null; // we forward the var to implementor type, so to simplify logic here in interface,
+                        // we will null out the init variable, and let it be handled normally in the implementor.
+                    }
+                }
+
+                final FieldBuffer field = ui.getOrCreateField(
+                    asField.getModifiers(),
+                    typeName,
+                    var.getId().getName()
+                );
+                if (init != null) {
+                    boolean isStatic = X_Modifier.isStatic(asField.getModifiers());
+                    assert !ui.isInterface() || isStatic :
+                        "Interface failed to forward field with initializer and null init variable";
+
+                    String initializer = tools.resolveLiteral(ctx, init);
+                    if (isStatic) {
+                        // static fields we'll set in an initializer.
+                        // TODO: bother with throws clauses, to know when we need to generate a static intializer block.
+                        // for now, anyone who needs to call methods with checked exceptions will need to create their
+                        // own helper method to do so, and call that instead.
+                        field.setInitializer(initializer);
+                    } else {
+                        // non-static fields we want to initialize in the constructor,
+                        // so we can reference things sent to said constructor.
+                        ui.getDefaultConstructor() // TODO have .allConstructors(ctor->{}) construct
+                            .println(field.getName() +" = " + initializer + ";");
+                    }
+                }
+
+            } // end loop of field vars (FieldType var1, var2, etc;)
+
+            if (!toForward.isEmpty()) {
+                // for an interface, we turn a field into a pair of getter / setters (no field!)
+                final GeneratedJavaFile implementor = ui.getImplementor();
+                if (implementor == null) {
+                    assert false : "Unsupported interface type " + ui.getClass() + " must override getImplementor() and " +
+                        "return a class to install fields into; source dump:\n" + ui.toSource();
+                    throw X_Debug.recommendAssertions();
+                }
+                // Whatever instance fields we add to this interface, we also add to the implementor class.
+                final List<VariableDeclarator> oldVars = asField.getVariables();
+                asField.setVariables(Arrays.asList(toForward.toArray(VariableDeclarator[]::new)));
+                // recurse back into our transformer for the base class, because we are forwarding from interface to the class
+                final Node result = new UiMemberTransformer(implementor, me)
+                    .visit(member, ctx);
+
+                String src = tools.resolveLiteral(ctx, (Expression)result);
+
+                if (!src.trim().isEmpty()) {
+                    implementor.getSource().getClassBuffer()
+                        .println()
+                        .printlns(src);
+                }
+
+                asField.setVariables(oldVars);
+            }
+        }
+
+        private boolean isConvenienceMethod(MethodReferenceExpr init) {
+            String name = init.getScope().toSource();
+            switch (name) {
+                case "$model":
+                case "$data":
+                    return true;
+            }
+            return false;
         }
     }
 
@@ -254,6 +391,7 @@ public class UiTagGenerator extends UiComponentGenerator {
 
         // We already extract these manually
         features.put("name", UiFeatureGenerator.DO_NOTHING);
+        features.put("package", UiFeatureGenerator.DO_NOTHING);
         features.put("tagName", UiFeatureGenerator.DO_NOTHING);
 
         // TODO: preparse model features?
@@ -561,105 +699,25 @@ public class UiTagGenerator extends UiComponentGenerator {
 
         resolveReference(tools, ctx, me.getGeneratedComponent(), cls, null, member, true);
 
+        // whenever we resolve special names in an ast block's context, we always rollback anything we added.
+        // this prevents variables from leaking out of their intended scope, at the expense of ugly try/finally undo.done()s
         final Do undo = resolveSpecialNames(ctx, me.getGeneratedComponent(), cls, null);
         try {
 
-            final BodyDeclaration decl = member.getBody();
-            ChainBuilder<VariableDeclarator> toForward = Chain.startChain();
-            if (decl instanceof FieldDeclaration) {
-                FieldDeclaration asField = (FieldDeclaration) decl;
-                String typeName = asField.getType().toSource();
-                for (VariableDeclarator var : asField.getVariables()) {
-                    if (var.getInit() == null) {
-                        if (cls.isInterface()) {
-                            toForward.add(var);
-                        } else {
-                            // We want to create a field to back this var.
-                            cls.ensureField(typeName, var.getId().getName());
-                        }
-                    } else {
-                        // A field with an initializer.
-                        final Expression init = var.getInit();
-                        // If this is an interface, we may be able to use only default methods
-                        if (cls.isInterface()) {
-
-                            if (init instanceof MethodReferenceExpr) {
-                                // when using a method reference, we will bind get/set to whatever is referneced.
-                                MethodReferenceExpr methodRef = (MethodReferenceExpr) init;
-                                if ("$model".equals(methodRef.getScope().toSource())) {
-                                    String scope = tools.resolveString(ctx, methodRef.getScope());
-                                    // Create getter and setter
-                                    String nameToUse = cls.newFieldName(methodRef.getIdentifier());
-                                    String getterName = SourceUtil.toGetterName(typeName, nameToUse);
-                                    String setterName = SourceUtil.toSetterName(nameToUse);
-                                    final ClassBuffer buf = cls.getSource().getClassBuffer();
-                                    boolean addGetter = true, addSetter = true;
-                                    if (nameToUse.startsWith("get")) {
-                                        // getter only
-                                        addSetter = false;
-                                    } else if (nameToUse.startsWith("set")) {
-                                        // setter only
-                                        addGetter = false;
-                                    }
-                                    if (addGetter) {
-                                        buf.createMethod("default " + typeName + " " + getterName+ "()")
-                                            .print("return ")
-                                            .printlns(scope + "." + getterName + "();");
-                                    }
-                                    if (addSetter) {
-                                        buf.createMethod("default void " + setterName+ "()")
-                                            .addParameter(typeName, nameToUse)
-                                            .printlns(scope + "." + setterName + "(" + nameToUse + ");");
-                                    }
-                                    continue; // do not fall through into .ensureField.
-                                } else {
-                                    throw new NotYetImplemented("Can only support $model::fieldReferences; you sent " + tools.debugNode(init));
-                                }
-
-
-                            } else if (var.getInit() instanceof MethodCallExpr) {
-                                // no magic for these guys yet;
-                            } else {
-                                // assume this is a constant.  forward to base type to fill out.
-                                toForward.add(var);
-                                // falls through to .ensureField.
-                            }
-                        } else {
-                            // an initializer on a class;
-                            // create a field which is initialized in the constructor.
-                            // this can allow you to reference input vars by name.
-                            throw new NotYetImplemented("TODO: fill this out");
-                        }
-                    }
-                    cls.ensureField(typeName, var.getId().getName());
-                }
-
-                if (toForward.isEmpty()) {
-                    return;
-                } else {
-                    // for an interface, we turn a field into a pair of getter / setters (no field!)
-                    if (cls instanceof GeneratedUiApi) {
-                        // Whenever we add to the interface, we also add to the base class.
-                        final List<VariableDeclarator> oldVars = asField.getVariables();
-                        asField.setVariables(Arrays.asList(toForward.toArray(VariableDeclarator[]::new)));
-                        printMember(tools, me.getGeneratedComponent().getBase(), me, member);
-                        asField.setVariables(oldVars);
-                        return;
-                    }
-                }
-            }
-
-            UiMethodTransformer transformer = new UiMethodTransformer(cls);
-            final Node result = transformer.visit(member, new UiMethodContext()
+            UiMemberTransformer transformer = new UiMemberTransformer(cls, me);
+            final Node result = transformer.visit(member, new UiMemberContext(ctx)
                 .setContainer(me)
                 .setTools(tools)
                 .setGenerator(this)
             );
 
             final String src = tools.resolveLiteral(ctx, (Expression) result);
-            cls.getSource().getClassBuffer()
-                .println()
-                .printlns(src);
+            if (!src.trim().isEmpty()) {
+                // allow an escape hatch for the transformer to add (and index!) stuff added to the class buffer
+                cls.getSource().getClassBuffer()
+                    .println()
+                    .printlns(src);
+            }
 
         } finally {
             undo.done();

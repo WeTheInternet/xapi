@@ -9,14 +9,12 @@ public interface IsGraphComponent
         El extends Node
     > extends IsComponent<El>, HasParent<Node>, HasChildren<Node>
 {
-//    Inherited
+//    Inherited from HasParent
 //    IsComponent<? extends Node> getParentComponent();
+//    void setParentComponent(IsComponent<? extends Node> parent);
 
-//    Inherited
+//    Inherited from HasChildren
 //    SizedIterable<IsComponent<? extends Node>> getChildComponents();
-
-    void setParentComponent(IsComponent<? extends Node> parent);
-
-    void addChildComponent(IsComponent<? extends Node> child);
+//    void addChildComponent(IsComponent<? extends Node> child);
 
 }

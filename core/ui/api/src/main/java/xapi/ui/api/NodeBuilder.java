@@ -401,7 +401,7 @@ public abstract class NodeBuilder<E> implements Widget<E> {
     this.childTarget = null;
   }
 
-  public NodeBuilder<E> createChild(String value) {
+  protected NodeBuilder<E> newChild(String value) {
     return wrapChars(value);
   }
 

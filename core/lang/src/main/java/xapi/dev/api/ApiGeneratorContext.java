@@ -24,14 +24,24 @@ public class ApiGeneratorContext<Ctx extends ApiGeneratorContext<Ctx>>
 
     private String generatorDirectory;
     private String outputDirectory;
-
-    public ApiGeneratorContext() {
-    }
-
-    private StringTo<Node> vars = X_Collect.newStringMap(Node.class);
-    private StringTo<SourceBuilder<Ctx>> sources = X_Collect.newStringMap(SourceBuilder.class);
+    private StringTo<Node> vars;
+    private StringTo<SourceBuilder<Ctx>> sources;
     private boolean firstOfRange;
     private boolean inRange;
+
+    public ApiGeneratorContext() {
+        vars = X_Collect.newStringMap(Node.class);
+        sources = X_Collect.newStringMap(SourceBuilder.class);
+    }
+
+    public ApiGeneratorContext(ApiGeneratorContext from) {
+        this.generatorDirectory = from.generatorDirectory;
+        this.outputDirectory = from.outputDirectory;
+        this.vars = from.vars;
+        this.sources = from.sources;
+        this.firstOfRange = from.firstOfRange;
+        this.inRange = from.inRange;
+    }
 
     public Do addToContext(String id, Node node) {
         String key = id.startsWith("$") ? id.substring(1) : id;

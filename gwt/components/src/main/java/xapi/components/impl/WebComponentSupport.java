@@ -13,8 +13,9 @@ import xapi.fu.Mutable;
 import xapi.gwt.api.JsLazyExpando;
 import xapi.ui.api.component.ComponentConstructor;
 import xapi.ui.api.component.ComponentOptions;
+import xapi.ui.api.component.HasChildren;
+import xapi.ui.api.component.HasParent;
 import xapi.ui.api.component.IsComponent;
-import xapi.ui.api.component.IsGraphComponent;
 
 import javax.validation.constraints.NotNull;
 import java.util.function.Supplier;
@@ -42,7 +43,7 @@ public class WebComponentSupport {
     @SuppressWarnings("unchecked")
     public static
             <
-                E extends Element,
+                E,
                 Me extends IsComponent<E>
             >
     In1Out1<E, Me> installFactory(
@@ -82,14 +83,25 @@ public class WebComponentSupport {
 
         b.attachedCallback(e->{
             final Element parentComponent = findParentComponent(e);
-            if (parentComponent != null) {
-                final IsComponent parent = ComponentNamespace.getComponent(parentComponent, EXPECT_INITIALIZED);
-                final IsComponent me = ComponentNamespace.getComponent(e, EXPECT_INITIALIZED);
-                if (me instanceof IsGraphComponent) {
-                    ((IsGraphComponent)me).setParentComponent(parent);
+            final IsComponent me = ComponentNamespace.getComponent(e, EXPECT_INITIALIZED);
+            if (parentComponent == null) {
+                if (me instanceof HasParent) {
+                    final HasParent child = (HasParent) me;
+                    final IsComponent myParent = child.getParentComponent();
+                    if (myParent != null) {
+                        child.setParentComponent(null);
+                        if (myParent instanceof HasChildren) {
+                            ((HasChildren)myParent).removeChild(me);
+                        }
+                    }
                 }
-                if (parent instanceof IsGraphComponent) {
-                    ((IsGraphComponent)parent).addChildComponent(me);
+            } else {
+                final IsComponent parent = ComponentNamespace.getComponent(parentComponent, EXPECT_INITIALIZED);
+                if (me instanceof HasParent) {
+                    ((HasParent)me).setParentComponent(parent);
+                }
+                if (parent instanceof HasChildren) {
+                    ((HasChildren)parent).addChildComponent(me);
                 }
             }
         });

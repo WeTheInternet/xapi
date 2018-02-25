@@ -1,6 +1,7 @@
 package xapi.dev.ui.api;
 
 import xapi.collect.X_Collect;
+import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.FieldBuffer;
@@ -8,6 +9,7 @@ import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.fu.Lazy;
 import xapi.fu.X_Fu;
+import xapi.source.X_Modifier;
 import xapi.source.X_Source;
 import xapi.source.read.JavaModel.IsTypeDefinition;
 import xapi.source.read.SourceUtil;
@@ -19,15 +21,29 @@ import java.lang.reflect.Modifier;
  */
 public class GeneratedJavaFile {
     private final Lazy<SourceBuilder<GeneratedJavaFile>> source;
+    // lazy pointers to "next valid suffix" for newly requested fields (use getOrCreate methods for a single member per name)
     private final Lazy<StringTo<Integer>> fieldNames;
     private final Lazy<StringTo<Integer>> methodNames;
+    // lazy pointers to method and field buffers
     private final Lazy<StringTo<MethodBuffer>> methods;
     private final Lazy<StringTo<FieldBuffer>> fields;
+    private final Lazy<StringTo<MethodBuffer>> constructors;
+
     private final String packageName;
     private final String typeName;
+
     protected final GeneratedJavaFile superType;
+
     private final GeneratedUiComponent owner;
-    protected String prefix, suffix;
+    /**
+     * Arbitrary text to append
+     */
+    protected String suffix;
+    /**
+     * Arbitrary text to prepend
+     */
+    protected String prefix;
+
 //    protected final StringTo<In2Out1<UiNamespace, CanAddImports, String>> generics;
 
     private IsTypeDefinition type;
@@ -53,6 +69,7 @@ public class GeneratedJavaFile {
         methodNames = Lazy.deferred1(X_Collect::newStringMap, Integer.class);
         methods = Lazy.deferred1(X_Collect::newStringMap, MethodBuffer.class);
         fields = Lazy.deferred1(X_Collect::newStringMap, FieldBuffer.class);
+        constructors = Lazy.deferred1(X_Collect::newStringMap, MethodBuffer.class);
     }
 
     public String newFieldName(String prefix) {
@@ -188,5 +205,39 @@ public class GeneratedJavaFile {
             final MethodBuffer method = getSource().getClassBuffer().createMethod(modifiers, returnType, realName);
             return method;
         });
+    }
+
+    public boolean hasField(String name) {
+        return fields.isResolved() && fields.out1().has(name);
+    }
+    public FieldBuffer getOrCreateField(int modifiers, String returnType, String name) {
+        return fields.out1().getOrCreate(name, n->{
+            final String realName = newFieldName(name);
+            final FieldBuffer field = getSource().getClassBuffer().createField(returnType, realName, modifiers);
+            return field;
+        }).setModifier(modifiers); // always overwrite modifiers; last caller wins.  If you have exotic needs, submit a pull request
+    }
+
+    public MethodBuffer getDefaultConstructor() {
+        return getDefaultConstructor(-1);
+    }
+    public MethodBuffer getDefaultConstructor(int modifiers) {
+        final MethodBuffer buffer = constructors.out1().getOrCreateFrom("",
+            getSource().getClassBuffer()::createConstructor, X_Modifier.PUBLIC
+        );
+        if (modifiers != -1) {
+            // last caller of a non-default (-1) value wins.
+            buffer.setModifier(modifiers);
+        }
+        return buffer;
+    }
+
+    /**
+     * If you have an interface / implementation pair of classes,
+     * like {@link GeneratedUiApi} and {@link GeneratedUiBase},
+     * you should override this method to return the type that is expected to implement methods / house instance fields.
+     */
+    public GeneratedJavaFile getImplementor() {
+        return null;
     }
 }

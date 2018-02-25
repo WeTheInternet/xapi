@@ -3,7 +3,9 @@ package xapi.dev.ui.api;
 import com.github.javaparser.ast.TypeArguments;
 import com.github.javaparser.ast.TypeParameter;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
+import com.github.javaparser.ast.type.IntersectionType;
 import com.github.javaparser.ast.type.ReferenceType;
+import com.github.javaparser.ast.type.Type;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.dev.source.CanAddImports;
@@ -17,9 +19,11 @@ import xapi.fu.Maybe;
 import xapi.fu.X_Fu;
 import xapi.source.X_Source;
 import xapi.source.read.JavaModel.IsTypeDefinition;
+import xapi.ui.api.CreatesChildren;
 import xapi.ui.api.NodeBuilder;
 import xapi.util.X_String;
 
+import java.util.Arrays;
 import java.util.Collections;
 
 import static xapi.fu.Lazy.deferAll;
@@ -201,11 +205,19 @@ public abstract class GeneratedUiLayer extends GeneratedJavaFile {
                 final GeneratedTypeParameter generic = generics
                     .setLayerName(UiNamespace.TYPE_ELEMENT_BUILDER, layer, nameElementBuilder);
 
-                final ClassOrInterfaceType nodeType = new ClassOrInterfaceType(nodeBuilder);
-                nodeType.setTypeArguments(TypeArguments.withArguments(
-                    Collections.singletonList(new ClassOrInterfaceType(elementType))
+                final ClassOrInterfaceType builderType = new ClassOrInterfaceType(nodeBuilder);
+                builderType.setTypeArguments(TypeArguments.withArguments(
+                    Collections.singletonList(
+                        new ClassOrInterfaceType(elementType)
+                    )
                 ));
-                generic.absorb(new TypeParameter(nameElementBuilder, nodeType));
+
+                final ClassOrInterfaceType childBuilder = new ClassOrInterfaceType(getSource().addImport(CreatesChildren.class));
+                childBuilder.setTypeArguments(TypeArguments.withArguments(
+                    new ClassOrInterfaceType("String"), new ClassOrInterfaceType(nameElementBuilder)
+                ));
+
+                generic.absorb(new TypeParameter(nameElementBuilder, Arrays.asList(builderType, childBuilder)));
             } else {
                 nameElementBuilder = namespace.getElementBuilderType(getSource());
             }

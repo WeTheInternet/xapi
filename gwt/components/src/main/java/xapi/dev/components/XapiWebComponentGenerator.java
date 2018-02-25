@@ -13,11 +13,11 @@ import com.github.javaparser.ast.type.Type;
 import elemental.dom.Element;
 import xapi.components.api.ComponentNamespace;
 import xapi.components.api.UiConfig;
-import xapi.components.impl.GwtModelComponentMixin;
 import xapi.components.impl.WebComponentBuilder;
 import xapi.components.impl.WebComponentSupport;
 import xapi.components.impl.WebComponentVersion;
 import xapi.dev.api.ApiGeneratorContext;
+import xapi.dev.source.CanAddImports;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.ui.api.*;
@@ -51,7 +51,9 @@ import static xapi.dev.ui.api.UiGeneratorPlatform.PLATFORM_WEB_COMPONENT;
 public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator <WebComponentContext> {
 
     private String configType;
-    private Lazy<UiNamespace> namespace = Lazy.deferred1(()-> X_Inject.instance(UiNamespaceGwt.class));
+    private Lazy<UiNamespace> namespace = Lazy.deferred1(()->
+        X_Inject.instance(UiNamespaceGwt.class)
+    );
 
     @Override
     protected String getImplPrefix() {
@@ -284,7 +286,7 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
         mthd.println("getUi = " + support+".installFactory(component, " + type+"::new, opts);");
 
         // Now, add a "constructor" callback.
-        mthd.println("component.createdCallback(e->{")
+        mthd.println("component.afterCreatedCallback(e->{")
             .indent()
             .print("final " + type + " c = ")
             .println("get" + api.getWrappedName() + "(e);")
@@ -330,8 +332,11 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
             .returnValue(ctorName + ".constructComponent(opts, getUi)");
 
         if (model.isPresent()) {
+            final CanAddImports imp = component.getSource();
+            ns.getBaseStyleResourceType(imp);
+
             component.getSource().getClassBuffer()
-                .addGenericInterface(GwtModelComponentMixin.class, element, api.getModelName());
+                .addGenericInterface(ns.getModelComponentMixin(imp), element, api.getModelName());
         }
 
         component.getRequiredChildren().forAll(child->{

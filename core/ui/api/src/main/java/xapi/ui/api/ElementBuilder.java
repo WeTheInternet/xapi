@@ -53,6 +53,11 @@ public abstract class ElementBuilder <E> extends NodeBuilder<E> {
     return id;
   }
 
+  @Override
+  public ElementBuilder<E> append(CharSequence chars) {
+    return (ElementBuilder<E>) super.append(chars);
+  }
+
   @SuppressWarnings("unused")
   public abstract class StyleApplier extends AttributeBuilder implements Stylizer<NodeBuilder<E>> {
 
@@ -622,7 +627,6 @@ public abstract class ElementBuilder <E> extends NodeBuilder<E> {
 
   public abstract ElementBuilder<E> createNode(String tagName);
 
-  @Override
   public ElementBuilder<E> createChild(String tagName) {
     final ElementBuilder<E> child = createNode(tagName);
     addChild(child, X_String.isEmpty(tagName)); // If we are a document fragment, we need to make new children the target element for future inserts

@@ -5,8 +5,8 @@ import xapi.fu.Maybe;
 import xapi.ui.api.ElementBuilder;
 import xapi.ui.api.StyleCacheService;
 import xapi.ui.api.UiElement;
+import xapi.ui.api.component.IsModelComponent;
 import xapi.ui.api.style.HasStyleResources;
-import xapi.ui.impl.StringElementBuilder;
 import xapi.ui.impl.UiServiceImpl;
 
 /**
@@ -108,4 +108,7 @@ public interface UiNamespace {
         return importer.addImport(StyleCacheService.class);
     }
 
+    default String getModelComponentMixin(CanAddImports importer) {
+        return importer.addImport(IsModelComponent.class);
+    }
 }

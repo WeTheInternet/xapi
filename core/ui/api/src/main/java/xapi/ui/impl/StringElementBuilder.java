@@ -33,6 +33,11 @@ public class StringElementBuilder extends ElementBuilder<String> {
     }
 
     @Override
+    public StringElementBuilder createChild(String tagName) {
+        return (StringElementBuilder)super.createChild(tagName);
+    }
+
+    @Override
     protected String create(CharSequence node) {
         return node == null ? "" : node.toString();
     }

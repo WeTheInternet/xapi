@@ -5,10 +5,7 @@ import elemental.dom.DocumentFragment;
 import elemental.dom.Element;
 import elemental.dom.Node;
 import xapi.elemental.X_Elemental;
-import xapi.ui.api.AttributeApplier;
-import xapi.ui.api.ElementBuilder;
-import xapi.ui.api.NodeBuilder;
-import xapi.ui.api.Widget;
+import xapi.ui.api.*;
 import xapi.util.X_Debug;
 import xapi.util.X_String;
 import xapi.util.impl.ImmutableProvider;
@@ -18,7 +15,7 @@ import java.util.function.BiFunction;
 /**
  * TODO: rename this to ElementalBuilder?
  */
-public class PotentialNode <E extends Element> extends ElementBuilder<E> {
+public class PotentialNode <E extends Element> extends ElementBuilder<E> implements CreatesChildren<String, PotentialNode<E>> {
 
   public class ApplyLiveAttribute implements AttributeApplier {
 

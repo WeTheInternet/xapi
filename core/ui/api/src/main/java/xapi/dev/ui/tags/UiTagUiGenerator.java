@@ -14,15 +14,11 @@ import xapi.dev.ui.api.*;
 import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.except.NotConfiguredCorrectly;
 import xapi.except.NotYetImplemented;
-import xapi.fu.Do;
-import xapi.fu.In1;
-import xapi.fu.Lazy;
-import xapi.fu.Maybe;
-import xapi.fu.Mutable;
-import xapi.fu.X_Fu;
+import xapi.fu.*;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
 import xapi.log.X_Log;
+import xapi.util.X_String;
 
 import static xapi.dev.ui.api.UiConstants.EXTRA_MODEL_INFO;
 import static xapi.fu.Out1.out1Deferred;
@@ -140,8 +136,8 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
                             final MethodBuffer baseMethod = baseClass.getSource().getClassBuffer()
                                 .createMethod("protected abstract " + baseClass.getElementBuilderType(namespace) + " create" + info.getApiName() + "();");
 
+                            GeneratedUiMember member = nodeToUse.getExtra(UiConstants.EXTRA_MODEL_INFO);
                             if (nodeToUse instanceof NameExpr) {
-                                GeneratedUiMember member = nodeToUse.getExtra(UiConstants.EXTRA_MODEL_INFO);
                                 assert member != null : "Cannot use a name expression without EXTRA_MODEL_INFO: " + tools.debugNode(nodeToUse);
                                 // a local var reference will need to be passed to the method.
                                 final String sourceName = ((NameExpr)nodeToUse).getQualifiedName();
@@ -149,8 +145,20 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
                                 final String typeName = tools.getComponentType(nodeToUse, memberType);
                                 baseMethod.addParameter(typeName, sourceName);
                                 toDom.println(sourceName + ");");
-                            } else {
+                            } else if (nodeToUse instanceof MethodCallExpr){
+                                final MethodCallExpr asMethod = (MethodCallExpr) nodeToUse;
+                                assert member != null : "Cannot use a method call expression without EXTRA_MODEL_INFO: " + tools.debugNode(nodeToUse);
+
+                                final String sourceName = X_String.debean(asMethod.getName());
+                                final Type memberType = member.getMemberType();
+                                final String typeName = tools.getComponentType(nodeToUse, memberType);
+                                baseMethod.addParameter(typeName, sourceName);
+
+                                final String literal = tools.resolveLiteral(ctx, nodeToUse);
+                                toDom.print(literal);
                                 toDom.println(");");
+                            } else {
+                                assert false : "Unhandled node " + nodeToUse.getClass()+" : " + tools.debugNode(nodeToUse);
                             }
 
                             component.getImpls()
@@ -449,7 +457,11 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
                             // Also, the use of method references implies mutability,
                             // so we are also going to want to hookup listeners to data/model references.
                         } else {
-                            asExpr.accept(this, arg);
+                            if (asExpr instanceof NameExpr) {
+                                toDom.println(refFieldName + ".append(" + javaQuote(template) + ");");
+                            } else {
+                                asExpr.accept(this, arg);
+                            }
                         }
                     } catch (ParseException e) {
                         // Give up.
@@ -540,6 +552,13 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
         private void handleIfTag(UiContainerExpr n, UiContainerExpr arg) {
             boolean isRoot = arg == null;
 
+            if (isRoot) {
+                // when an if tag is the root, we will create a final variable to point to the root value,
+                // and then assign to that variable in the appropriate blocks...
+                // This will enforce matching if/else semantics (there must be an else in order to have a root <if />)
+                // This will forces all conditional terminals to have exactly one output
+            }
+
             // if tags are special.  We will use them to wrap the body of this container in a conditional
             toDom.print("if (");
 
@@ -623,7 +642,7 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
                     if (isRoot) {
                         assert whenTrue.isEmpty()  : "Cannot use whenTrue in an if tag that has a non-empty body; "
                             + tools.debugNode(n);
-                            assert myBody.getChildren()
+                            assert myBody==null || myBody.getChildren()
                                 .stream().filter(X_Fu::notNull)
                                 .filter(e->
                                     !(
@@ -638,9 +657,9 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
                                 + tools.debugNode(n);
                     }
                     if (myBody != null) {
-                        super.visit(myBody, n);
+                        super.visit(myBody, arg);
                     }
-                    whenTrue.forAll(Expression::accept, this, n);
+                    whenTrue.forAll(Expression::accept, this, arg);
                 } finally {
                     refNameSpy = was;
                 }
@@ -649,11 +668,11 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
                 assert whenTrue.size() == 1 : "A root <if /> element can only have 1 whenTrue value, to serve as document root;" +
                     " consider using <box><if whenTrue=... /></box> or <template />; you sent: \n" +
                     tools.debugNode(n);
-                whenTrue.forAll(Expression::accept, this, n);
+                whenTrue.forAll(Expression::accept, this, arg);
                 String result = tools.resolveString(ctx, whenTrue.first());
                 childRef.in(result);
             } else {
-                whenTrue.forAll(Expression::accept, this, n);
+                whenTrue.forAll(Expression::accept, this, arg);
             }
             if (isRoot && childRef.out1() != null) {
                 toDom.returnValue(childRef.out1());
@@ -693,7 +712,7 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
                         assert elsif.getAttribute("whenFalse").isAbsent() :
                             "An <if /> inside an elsif cannot have a <whenFalse /> child; you sent " + tools.debugNode(n);
                         // hokay!  We got us an if tag.  lets recurse (same parent node...)
-                        handleIfTag(elsif, n);
+                        handleIfTag(elsif, arg);
                     } else {
                         // template string?  ...fail
                         throw new IllegalArgumentException("elsif can only have <if /if> or [ <if /> ] children.");
@@ -715,9 +734,11 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
                     assert !isRoot || elseExpr.size() + whenFalse.size() == 1 : "A root else statement must return exactly one else node; " +
                         "you sent [" + elseExpr.join(tools::debugNode, ", ") + "] for else and [ " +
                         whenFalse.join(tools::debugNode, ", ") + "] for whenFalse \n from " + tools.debugNode(n);
-                    toDom.println(" else {");
+                    toDom.println(" else {").indent();
 
-                    elseExpr.forAll(Expression::accept, this, n);
+                    elseExpr.forAll(Expression::accept, this, arg);
+                    whenFalse.forAll(Expression::accept, this, arg);
+                    toDom.outdent();
                 } finally {
                     refNameSpy = was;
                 }

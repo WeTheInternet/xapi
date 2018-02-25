@@ -1,27 +1,25 @@
 package xapi.dev.components;
 
-import elemental.dom.Element;
-import elemental.dom.Node;
-import elemental.html.StyleElement;
-import xapi.components.impl.ElementalModelComponentMixin;
+import elemental2.dom.HTMLElement;
+import elemental2.dom.HTMLStyleElement;
+import elemental2.dom.Node;
+import xapi.components.impl.GwtModelComponentMixin;
 import xapi.dev.source.CanAddImports;
-import xapi.dev.ui.api.UiNamespace;
-import xapi.elemental.api.ElementalService;
-import xapi.elemental.api.PotentialNode;
+import xapi.elemental.api.ElementalBuilder;
+import xapi.elemental.impl.Gwt3ServiceDefault;
 import xapi.ui.html.api.GwtStyles;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 1/12/17.
  */
-public class UiNamespaceGwt implements UiNamespace {
+public class UiNamespaceGwt3 extends UiNamespaceGwt {
 
-    public UiNamespaceGwt() {
+    public UiNamespaceGwt3() {
     }
 
     @Override
     public String getElementBuilderType(CanAddImports importer) {
-
-        return importer.addImport(PotentialNode.class)
+        return importer.addImport(ElementalBuilder.class)
              + "<" + getElementType(importer) + ">";
     }
 
@@ -32,22 +30,22 @@ public class UiNamespaceGwt implements UiNamespace {
 
     @Override
     public String getElementType(CanAddImports importer) {
-        return importer.addImport(Element.class);
+        return importer.addImport(HTMLElement.class);
     }
 
     @Override
     public String getStyleElementType(CanAddImports importer) {
-        return importer.addImport(StyleElement.class);
+        return importer.addImport(HTMLStyleElement.class);
     }
 
     @Override
     public String getStyleCacheType(CanAddImports importer) {
-        return importer.addImport(ElementalService.class);
+        return importer.addImport(Gwt3ServiceDefault.class);
     }
 
     @Override
     public String getServiceType(CanAddImports importer) {
-        return importer.addImport(ElementalService.class);
+        return importer.addImport(Gwt3ServiceDefault.class);
     }
 
     @Override
@@ -57,6 +55,6 @@ public class UiNamespaceGwt implements UiNamespace {
 
     @Override
     public String getModelComponentMixin(CanAddImports importer) {
-        return importer.addImport(ElementalModelComponentMixin.class);
+        return importer.addImport(GwtModelComponentMixin.class);
     }
 }

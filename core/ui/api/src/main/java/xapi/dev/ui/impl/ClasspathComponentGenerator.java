@@ -7,6 +7,7 @@ import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
+import xapi.collect.impl.SimpleStack;
 import xapi.dev.X_Dev;
 import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.gen.FileBasedSourceHelper;
@@ -57,28 +58,57 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
             .replace("target/classes", "src/main/gen")
             .replace("target/test-classes", "src/test/gen");
     }
+    private final File genDir;
+    private final SimpleStack<File> backups;
 
     public ClasspathComponentGenerator(String myLoc) {
+        backups = new SimpleStack<>();
         this.genDir = new File(myLoc);
         if (genDir.isDirectory()) {
             clearGenDir(genDir);
-        }
-        if (!genDir.mkdirs()) {
+        } else if (!genDir.mkdirs()) {
             throw new IllegalStateException("Unable to create dir " + myLoc);
         }
     }
 
     private void clearGenDir(File myLoc) {
-            // TODO: either delete all, or mark all files stale.
-            // Avoiding timestamp churn would be best,
-            // so a mark-sweep is preferred...
-            // but, for now, we just want clean builds every time.
-        X_File.deepDelete(myLoc.getAbsolutePath());
+        // Moves all files found to have a .backup suffix;
+        // when we are finished, we will revisit all files,
+        // and either delete the backup, or put it back, depending if the generator created a new file or not
+        X_File.getAllFiles(myLoc.getAbsolutePath())
+            .forEach(file->{
+                File backup = new File(file+".backup");
+                boolean result;
+                if (backup.exists()) {
+                    result = backup.delete();
+                    assert result : "Unable to remove backup file " + file;
+                }
+                final File original = new File(file);
+                result = original.renameTo(backup);
+                assert result : "Unable to move file " + file;
+                backups.add(backup);
+            });
     }
 
-    private final File genDir;
 
     public <T> void generateComponents(UiGeneratorService<T> service) {
+        try {
+            doGenerateComponents(service);
+        } finally {
+            backups.forAll(backup -> {
+                File original = new File(backup.getParent(), backup.getName().replace(".backup", ""));
+                boolean result;
+                if (original.exists()) {
+                    result = backup.delete();
+                    assert result : "Unable to cleanup backup file " + backup;
+                } else {
+                    result = backup.renameTo(original);
+                    assert result : "Unable to restore backup file " + backup;
+                }
+            });
+        }
+    }
+    private <T> void doGenerateComponents(UiGeneratorService<T> service) {
 
         final Moment start = X_Time.now();
         X_Log.trace(TAG, "Output dir ", genDir.getAbsolutePath());
@@ -107,6 +137,9 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
                                 e instanceof ParseException ? (((ParseException) e).currentToken.beginLine) : 1)
                         , e);
                 }
+                continue;
+            }
+            if (!isAllowed(xapiFile, parsed)) {
                 continue;
             }
             if (parsed.getName().endsWith("define-tag")) {
@@ -149,8 +182,14 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
         int size = 0;
         for (GeneratedUiComponent generated : result) {
             size++;
+
+            X_Log.info(
+                "Generated ", generated.getTagName(),
+                X_Source.pathToLogLink(generated.getImpls().first().getQualifiedName()
+                .replace('.', '/') + ".java", 30)
+            );
             X_Log.trace(TAG,
-                "Generated ", generated.getTagName(), generated.getImpls().firstMaybe()
+                generated.getImpls().firstMaybe()
                 .mapNullSafe(GeneratedUiImplementation::toSource)
                 .ifAbsentReturn("No impl for " + generated));
         }
@@ -161,6 +200,10 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
             executor.shutdownNow();
         }
         X_Log.info(TAG, "Generated " + size + " components in ", X_Time.difference(start));
+    }
+
+    protected boolean isAllowed(StringDataResource xapiFile, UiContainerExpr parsed) {
+        return true;
     }
 
     /**

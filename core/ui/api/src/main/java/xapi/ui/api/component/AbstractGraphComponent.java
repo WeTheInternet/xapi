@@ -5,6 +5,7 @@ import xapi.collect.api.IntTo;
 import xapi.fu.Out1;
 import xapi.fu.iterate.EmptyIterator;
 import xapi.fu.iterate.SizedIterable;
+import xapi.log.X_Log;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 8/20/17.
@@ -47,6 +48,17 @@ public class AbstractGraphComponent <
             this.children = X_Collect.newList(Class.class.cast(IsComponent.class));
         }
         this.children.add(child);
+    }
+
+    @Override
+    public void removeChild(IsComponent<? extends Node> me) {
+        boolean result = false;
+        if (this.children != null) {
+            result = this.children.findRemove(me, true);
+        }
+        if (!result) {
+            X_Log.warn(AbstractGraphComponent.class, "Trying to remove a child who is not present", me);
+        }
     }
 
     @Override
