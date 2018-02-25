@@ -4,7 +4,7 @@ import elemental.dom.Element;
 import elemental.html.StyleElement;
 import xapi.components.api.ComponentNamespace;
 import xapi.components.api.UiConfig;
-import xapi.components.impl.GwtModelComponentMixin;
+import xapi.components.impl.ElementalModelComponentMixin;
 import xapi.components.impl.WebComponentBuilder;
 import xapi.components.impl.WebComponentSupport;
 import xapi.components.impl.WebComponentVersion;
@@ -17,7 +17,8 @@ import xapi.ui.html.api.GwtStyles;
 
 import static xapi.components.impl.WebComponentBuilder.htmlElementClass;
 
-public class GwtBoxComponent extends BaseBoxComponent<Element, PotentialNode<Element>> implements GwtModelComponentMixin<Element,ModelBox> {
+public class GwtBoxComponent extends BaseBoxComponent<Element, PotentialNode<Element>> implements
+    ElementalModelComponentMixin<Element,ModelBox> {
 
   public static void assemble (UiConfig<Element, StyleElement, ? extends GwtStyles, ElementalService> assembler) {
     WebComponentBuilder component = new WebComponentBuilder(htmlElementClass(), WebComponentVersion.V1);

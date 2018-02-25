@@ -8,7 +8,7 @@ import elemental.html.StyleElement;
 
 import xapi.components.api.ComponentNamespace;
 import xapi.components.api.UiConfig;
-import xapi.components.impl.GwtModelComponentMixin;
+import xapi.components.impl.ElementalModelComponentMixin;
 import xapi.components.impl.WebComponentBuilder;
 import xapi.components.impl.WebComponentSupport;
 import xapi.components.impl.WebComponentVersion;
@@ -19,7 +19,8 @@ import xapi.ui.api.component.ComponentConstructor;
 import xapi.ui.api.component.ComponentOptions;
 import xapi.ui.html.api.GwtStyles;
 
-public class GwtAsserterComponent extends BaseAsserterComponent<Element, PotentialNode<Element>> implements GwtModelComponentMixin<Element,ModelAsserter> {
+public class GwtAsserterComponent extends BaseAsserterComponent<Element, PotentialNode<Element>> implements
+    ElementalModelComponentMixin<Element,ModelAsserter> {
 
   public static void assemble (UiConfig<Element, StyleElement, ? extends GwtStyles, ElementalService> assembler) {
     WebComponentBuilder component = new WebComponentBuilder(htmlElementClass(), WebComponentVersion.V1);
