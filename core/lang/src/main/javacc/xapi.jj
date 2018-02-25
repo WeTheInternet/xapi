@@ -3583,7 +3583,7 @@ JsonContainerExpr JsonContainer():
     }
 
     (
-    ( LOOKAHEAD( { token_source.peekNext() == '@' } ) annotation = Annotation() { annotations = add(annotations, annotation); } )*
+    ( LOOKAHEAD( { (token.next != null && token.next.image.equals("@")) || token_source.peekNext() == '@' } ) annotation = Annotation() { annotations = add(annotations, annotation); } )*
 
       value = UiValue() {
         IntegerLiteralExpr key = new IntegerLiteralExpr(Integer.toString(cnt++));
