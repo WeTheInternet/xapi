@@ -1,5 +1,6 @@
 package com.github.javaparser.ast.expr;
 
+import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.visitor.GenericVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitor;
 
@@ -167,6 +168,11 @@ public class TemplateLiteralExpr extends UiExpr {
 
     public static TemplateLiteralExpr templateLiteral(String str) {
       return new TemplateLiteralExpr(-1, -1, -1, -1, str);
+    }
+
+    public static TemplateLiteralExpr templateLiteral(String str, Node source) {
+      return source == null ? templateLiteral(str) :
+          new TemplateLiteralExpr(source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn(), str);
     }
 
     public static boolean isWhitespaceLiteral(Expression child) {

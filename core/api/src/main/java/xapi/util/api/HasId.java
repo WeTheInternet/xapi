@@ -34,6 +34,8 @@
  */
 package xapi.util.api;
 
+import xapi.fu.Maybe;
+
 /**
  * An interface for objects that have String ids.
  *
@@ -49,4 +51,11 @@ public interface HasId {
    * @return A string id; often used as map keys.
    */
   String getId();
+
+  static Maybe<String> findId(Object o) {
+    if (o instanceof HasId) {
+      return Maybe.nullable(((HasId) o).getId());
+    }
+    return Maybe.not();
+  }
 }

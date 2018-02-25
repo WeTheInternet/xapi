@@ -7,7 +7,6 @@ import xapi.log.X_Log;
 import xapi.source.template.MappedTemplate;
 import xapi.ui.api.StyleService;
 import xapi.ui.autoui.api.BeanValueProvider;
-import xapi.ui.html.X_Html;
 import xapi.ui.html.api.FontFamily.HasGoogleFont;
 import xapi.ui.html.api.Style.AlignHorizontal;
 import xapi.ui.html.api.Style.AlignVertical;
@@ -126,14 +125,14 @@ public class HtmlSnippet <T> implements ConvertsValue<T, String> {
             b.append(value);
             if (HasGoogleFont.class.isAssignableFrom(fonts[i])) {
               value = GwtReflect.invoke(fonts[i], "googleFont", new Class<?>[0], null);
-              extra.append(X_Html.toGoogleFontUrl((String)value));
+              extra.append(StyleService.toGoogleFontUrl((String)value));
             }
           } else {
             FontFamily fontInstance = fonts[i].newInstance();
             b.append(fontInstance.name());
             if (fontInstance instanceof HasGoogleFont) {
               String font = ((HasGoogleFont) fontInstance).googleFont();
-              extra.append(X_Html.toGoogleFontUrl(font));
+              extra.append(StyleService.toGoogleFontUrl(font));
             }
           }
         } catch (final Throwable e) {

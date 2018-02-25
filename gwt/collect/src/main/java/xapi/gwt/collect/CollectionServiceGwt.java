@@ -12,6 +12,7 @@ import xapi.collect.api.StringTo;
 import xapi.collect.impl.ClassToManyList;
 import xapi.collect.impl.IntToSet;
 import xapi.collect.impl.ObjectToManyList;
+import xapi.collect.impl.StringToAbstract;
 import xapi.collect.impl.StringToManyList;
 import xapi.collect.proxy.CollectionProxy;
 import xapi.collect.proxy.MapOf;
@@ -20,6 +21,7 @@ import xapi.fu.X_Fu;
 import xapi.platform.GwtPlatform;
 
 import java.util.Map;
+import java.util.TreeMap;
 
 @GwtPlatform
 @SingletonOverride(implFor=CollectionService.class)
@@ -64,6 +66,9 @@ public class CollectionServiceGwt implements CollectionService{
     // we ignore options because js maps are, for now, all the same
     // all maps are insertion ordered an mutable;
     // there's nothing we can do to stop you from changing a jso value ;)
+    if (opts.keyOrdered()) {
+      return new StringToAbstract<>(cls, new TreeMap<>());
+    }
     return StringToGwt.create(cls);
   }
 

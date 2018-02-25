@@ -11,6 +11,7 @@ import xapi.fu.iterate.*;
 import xapi.fu.iterate.CachingIterator.ReplayableIterable;
 import xapi.fu.iterate.CachingIterator.SizedReplayableIterable;
 
+import java.lang.reflect.Array;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -321,6 +322,13 @@ public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
             }
         }
         return seed;
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    default <G extends T> T[] toArray(Class<G> type) {
+        final CountedIterator<T> counted = CountedIterator.count(this);
+        final Object array = Array.newInstance(type, counted.size());
+        return toArray((T[])array);
     }
 
     default T[] toArray(In1Out1<Integer, T[]> arrayCtor) {

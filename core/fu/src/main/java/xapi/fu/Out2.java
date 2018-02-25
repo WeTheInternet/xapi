@@ -30,6 +30,10 @@ public interface Out2<O1, O2> extends OutMany {
     return (Out1<O2>) out0()[1];
   }
 
+  default Out2<O1, O2> use(In2<O1, O2> callback) {
+    callback.in(out1(), out2());
+    return this;
+  }
   default Out2<O1, O2> use1(In1<O1> callback) {
     callback.in(out1());
     return this;
@@ -165,6 +169,28 @@ public interface Out2<O1, O2> extends OutMany {
     return entry instanceof Out2 ?
         (Out2<O1, O2>) entry :
         out2Immutable(entry.getKey(), entry.getValue());
+  }
+
+  default Entry<O1, O2> asEntry() {
+    if (this instanceof Entry) {
+      return (Entry<O1, O2>)this;
+    }
+    return new Entry<O1, O2>() {
+      @Override
+      public O1 getKey() {
+        return out1();
+      }
+
+      @Override
+      public O2 getValue() {
+        return out2();
+      }
+
+      @Override
+      public O2 setValue(O2 value) {
+        throw new UnsupportedOperationException();
+      }
+    };
   }
 
   default Out2<O2, O1> reverse() {

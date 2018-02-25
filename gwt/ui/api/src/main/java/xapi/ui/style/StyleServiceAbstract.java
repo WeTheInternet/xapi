@@ -3,14 +3,12 @@
  */
 package xapi.ui.style;
 
-import xapi.annotation.inject.SingletonDefault;
 import xapi.collect.api.StringTo;
 import xapi.fu.Out1;
 import xapi.inject.X_Inject;
 import xapi.platform.GwtPlatform;
 import xapi.ui.api.StyleCacheService;
 import xapi.ui.api.StyleService;
-import xapi.ui.html.X_Html;
 import xapi.ui.html.api.GwtStyles;
 
 import javax.inject.Provider;
@@ -99,7 +97,7 @@ public abstract class StyleServiceAbstract <StyleElement> implements StyleServic
 
   @Override
   public void loadGoogleFonts(String ... fonts) {
-    addCss(X_Html.toGoogleFontUrl(fonts), 0);
+    addCss(StyleService.toGoogleFontUrl(fonts), 0);
   }
 
   @Override

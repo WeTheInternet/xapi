@@ -36,19 +36,4 @@ public class X_Html {
     X_Inject.singleton(HtmlService.class).injectStyle(cls, context);
   }
 
-  public static String toGoogleFontUrl(String ... fonts) {
-    StringBuilder b = new StringBuilder(
-        "@import url("
-            + "https://fonts.googleapis.com/css?family=");
-    for (int i = 0; i < fonts.length; i++) {
-      String font = fonts[i];
-      if (i > 0) {
-        b.append("|");
-      }
-      // TODO proper uri encoding later
-      b.append(font.replace(' ', '+'));
-    }
-    b.append(");");
-    return b.toString();
-  }
 }

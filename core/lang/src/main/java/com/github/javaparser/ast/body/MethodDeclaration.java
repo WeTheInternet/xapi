@@ -3,12 +3,12 @@
  * Copyright (C) 2011, 2013-2015 The JavaParser Team.
  *
  * This file is part of JavaParser.
- * 
+ *
  * JavaParser can be used either under the terms of
  * a) the GNU Lesser General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * b) the terms of the Apache License 
+ * b) the terms of the Apache License
  *
  * You should have received a copy of both licenses in LICENCE.LGPL and
  * LICENCE.APACHE. Please refer to those files for details.
@@ -18,7 +18,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  */
- 
+
 package com.github.javaparser.ast.body;
 
 import com.github.javaparser.ast.*;
@@ -30,6 +30,7 @@ import com.github.javaparser.ast.type.ReferenceType;
 import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.visitor.GenericVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitor;
+import xapi.source.X_Modifier;
 
 import java.util.List;
 
@@ -121,7 +122,7 @@ public final class MethodDeclaration extends BodyDeclaration implements Document
 
 	/**
 	 * Return the modifiers of this member declaration.
-	 * 
+	 *
 	 * @see ModifierSet
 	 * @return modifiers
 	 */
@@ -205,6 +206,10 @@ public final class MethodDeclaration extends BodyDeclaration implements Document
         return isDefault;
     }
 
+    public boolean isStatic() {
+        return X_Modifier.isStatic(getModifiers());
+    }
+
     public void setDefault(boolean isDefault) {
         this.isDefault = isDefault;
     }
@@ -219,7 +224,7 @@ public final class MethodDeclaration extends BodyDeclaration implements Document
     public String getDeclarationAsString(boolean includingModifiers, boolean includingThrows) {
         return getDeclarationAsString(includingModifiers, includingThrows, true);
     }
-    
+
     /**
      * The declaration returned has this schema:
      *

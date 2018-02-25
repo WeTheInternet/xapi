@@ -38,7 +38,7 @@ public class HtmlSnippetTest {
 
     @Override
     public void loadGoogleFonts(String ... fonts) {
-      addCss(X_Html.toGoogleFontUrl(fonts), 0);
+      addCss(StyleService.toGoogleFontUrl(fonts), 0);
     }
 
     @Override

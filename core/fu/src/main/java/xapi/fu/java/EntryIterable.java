@@ -6,7 +6,6 @@ import xapi.fu.In2;
 import xapi.fu.In2.In2Unsafe;
 import xapi.fu.In2Out1;
 import xapi.fu.MappedIterable;
-import xapi.fu.Maybe;
 import xapi.fu.Out2;
 import xapi.fu.api.DoNotOverride;
 import xapi.fu.has.HasItems;
@@ -16,13 +15,6 @@ import java.util.Map.Entry;
 public interface EntryIterable <K, V> extends HasItems<Out2<K, V>> {
 
   Iterable<Entry<K,V>> entries();
-
-  default Maybe<Out2<K, V>> first() {
-    for (Entry<K, V> entry : entries()) {
-      return Maybe.immutable(Out2.fromEntry(entry));
-    }
-    return Maybe.not();
-  }
 
   @Override
   default MappedIterable<Out2<K, V>> forEachItem() {
@@ -81,6 +73,16 @@ public interface EntryIterable <K, V> extends HasItems<Out2<K, V>> {
         .<K>ignore1() // ignore the key portion of entry iterator
         .mapAdapter() // translate to Consumer<Entry<K, V>>
     );
+  }
+
+  default void useFirstUnsafe(In1Unsafe<Out2<K, V>>callback) {
+    useFirst(callback);
+  }
+  default void useFirst(In1<Out2<K, V>>callback) {
+    for (Entry<K, V> entry : entries()) {
+      callback.in(Out2.fromEntry(entry));
+      return;
+    }
   }
 
 }

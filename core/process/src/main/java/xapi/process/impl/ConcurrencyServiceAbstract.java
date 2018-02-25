@@ -110,7 +110,7 @@ public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
                 return true;
             });
             if (!tasks.isEmpty()) {
-              tasks.first().readIfPresentUnsafe(e->{
+              tasks.useFirstUnsafe(e->{
                 long toWait = (long)e.out1().millis() - System.currentTimeMillis() + 1;
                 if (toWait > 0) {
                   synchronized (tasks) {

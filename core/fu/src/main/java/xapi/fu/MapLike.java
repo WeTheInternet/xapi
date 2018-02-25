@@ -7,8 +7,9 @@ import xapi.fu.api.Clearable;
 import xapi.fu.has.HasItems;
 import xapi.fu.has.HasLock;
 import xapi.fu.has.HasSize;
-import xapi.fu.iterate.JoinedSizedIterable;
 import xapi.fu.iterate.SizedIterable;
+
+import java.util.Iterator;
 
 import static xapi.fu.iterate.EmptyIterator.NONE;
 
@@ -566,5 +567,35 @@ public interface MapLike<K, V> extends HasSize, HasItems<Out2<K, V>>, Clearable 
     if (pair != null) {
       put(pair.out1(), pair.out2());
     }
+  }
+
+  default Maybe<Out2<K,V>> first() {
+    final Iterator<Out2<K, V>> items = forItems(1).iterator();
+    if (items.hasNext()) {
+      return Maybe.immutable(items.next());
+    }
+    return Maybe.not();
+  }
+
+  default Maybe<Out2<K,V>> last() {
+    final SizedIterable keys = keys();
+    if (keys.isEmpty()) {
+      return Maybe.not();
+    }
+    // We don't know the class K (for our keys), but we don't really need to...
+    final Object[] items = keys.toArray(Object.class); // Avoids O(n) lookups if keys() is backed by something
+    // which can optimally supply us with keys in array format...
+    final K key = (K)items[items.length - 1];
+    return Maybe.immutable(Immutable.immutable2(key, get(key)));
+  }
+
+  default <To> Maybe<To> findAndMap(In2Out1<K, V, To> filter) {
+    for (Out2<K, V> item : forEachItem()) {
+      To result = filter.io(item.out1(), item.out2());
+      if (result != null) {
+        return Maybe.immutable(result);
+      }
+    }
+    return Maybe.not();
   }
 }

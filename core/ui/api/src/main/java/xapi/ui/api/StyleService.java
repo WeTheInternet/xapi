@@ -22,6 +22,22 @@ public interface StyleService<
      */
     Bundle extends HasStyleResources> {
 
+  static String toGoogleFontUrl(String... fonts) {
+    StringBuilder b = new StringBuilder(
+        "@import url("
+            + "https://fonts.googleapis.com/css?family=");
+    for (int i = 0; i < fonts.length; i++) {
+      String font = fonts[i];
+      if (i > 0) {
+        b.append("|");
+      }
+      // TODO proper uri encoding later
+      b.append(font.replace(' ', '+'));
+    }
+    b.append(");");
+    return b.toString();
+  }
+
   void addCss(String css, int priority);
 
   void flushCss();
@@ -31,6 +47,5 @@ public interface StyleService<
   Style injectStyle(Class<? extends Bundle> bundle, Class<?> ... styles);
 
   Out1<Style> registerStyle(Class<? extends Bundle> bundle, String css, Class<?> ... styles);
-
 
 }

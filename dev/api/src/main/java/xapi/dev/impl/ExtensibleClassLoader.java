@@ -3,7 +3,6 @@ package xapi.dev.impl;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.dev.api.DynamicUrl;
-import xapi.process.api.HasThreadGroup;
 import xapi.dev.impl.dynamic.DynamicUrlBuilder;
 import xapi.fu.Immutable;
 import xapi.fu.In1Out1;
@@ -14,6 +13,7 @@ import xapi.fu.has.HasReset;
 import xapi.fu.lazy.ResettableLazy;
 import xapi.io.X_IO;
 import xapi.log.X_Log;
+import xapi.process.api.HasThreadGroup;
 import xapi.util.X_Namespace;
 
 import java.io.IOException;
@@ -489,3 +489,99 @@ public class ExtensibleClassLoader extends URLClassLoader implements HasLock, Ha
         return group.out1();
     }
 }
+/*
+
+    / **
+     * Runs the given task in a clean classloader on a thread of its own.
+     * This means no static state is shared; this helps in cases where a single
+     * jvm might be running multiple tests at once.
+     * /
+public static Callable<Throwable> cleanRoom(Supplier<Boolean> task) {
+    return cleanRoom(task.getClass().getCanonicalName(), task, false);
+}
+
+    / **
+     * Runs the given task in a clean classloader on a thread of its own.
+     * This means no static state is shared; this helps in cases where a single
+     * jvm might be running multiple tests at once.
+     *
+     * @param name - Thread / logging name
+     * @param task - Thing to do.  Lambdas/method references recommended.
+     *            Return true to keep getting called until you are finished.  Return false to run once / finish
+     * @param expectFail - Whether you expect the task to fail or succeed
+     * @return - A callback that will return either a throwable or null,
+     * if the expectFail assertion holds.  If expectFail assertion is broken,
+     * the callable will rethrow the root cause.
+     * /
+    public static Callable<Throwable> cleanRoom(String name, Supplier<Boolean> task, boolean expectFail) {
+        URLClassLoader cleanRoom = cleanRoom();
+        Throwable[] fail = {null};
+        DoUnsafe t = new Thread() {
+
+            @Override
+            public void run() {
+                try {
+                    int wait = 10;
+                    while (task.get() == Boolean.TRUE) {
+                        synchronized (task) {
+                            task.wait(wait += 10);
+                        }
+                    }
+                    if (expectFail) {
+                        fail[0] = new IllegalStateException("Expected failure for clean room " + name +"; failed task: " + task );
+                    }
+                } catch (Throwable e) {
+                    if (!expectFail) {
+                        fail[0] = e;
+                        System.err.println("Expected success for clean room " + name + "; failed task: " + task);
+                        e.printStackTrace();
+                    }
+                } finally {
+                    try {
+                        cleanRoom.close();
+                    } catch (IOException ignored) {}
+                }
+            }
+
+            {
+                setName(name);
+                setContextClassLoader(cleanRoom);
+                setDaemon(true);
+                start();
+            }
+        }::join;
+
+        return ()->{
+            t.done();
+            synchronized (task) {
+                task.notifyAll();
+            }
+            if (expectFail) {
+                if (fail[0] == null) {
+                    throw new IllegalStateException("Expected failure for clean room " + name +"; failed task: " + task );
+                }
+            } else {
+                if (fail[0] != null) {
+                    throw X_Fu.rethrow(fail[0]);
+                }
+
+            }
+            return fail[0];
+        };
+    }
+
+    public static URLClassLoader cleanRoom() {
+        Set<URL> all = new LinkedHashSet<>();
+        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        while (cl != null) {
+            if (cl instanceof URLClassLoader) {
+                for (URL url : ((URLClassLoader) cl).getURLs()) {
+                    all.add(url);
+                }
+            }
+            cl = cl.getParent();
+        }
+        return new URLClassLoader(all.toArray(new URL[0]), null);
+    }
+
+*/

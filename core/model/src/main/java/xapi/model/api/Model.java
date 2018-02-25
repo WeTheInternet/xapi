@@ -1,5 +1,6 @@
 package xapi.model.api;
 
+import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
 import xapi.collect.proxy.CollectionProxy;
@@ -33,6 +34,14 @@ public interface Model {
       setter.in(is);
     }
     return is;
+  }
+
+  default <T, G extends T> StringTo<T> getOrCreateMap(Class<G> type, Out1<StringTo<T>> getter, In1<StringTo<T>> setter) {
+      return getOrCreate(getter, ()-> X_Collect.newStringMap(type), setter);
+  }
+
+  default <T, G extends T> IntTo<T> getOrCreateList(Class<G> type, Out1<IntTo<T>> getter, In1<IntTo<T>> setter) {
+      return getOrCreate(getter, ()-> X_Collect.newList(type), setter);
   }
 
   default <T> T compute(Out1<T> getter, In1Out1<T, T> mapper, In1<T> setter) {

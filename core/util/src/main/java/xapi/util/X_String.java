@@ -545,4 +545,19 @@ public class X_String {
       }
       return base + prefix;
     }
+
+  public static String debean(String name) {
+    if (name.startsWith("get") || name.startsWith("has") || name.startsWith("set") || name.startsWith("add")) {
+      if (name.length() > 3 && Character.isUpperCase(name.charAt(3))) {
+        name = Character.toLowerCase(name.charAt(3)) +
+            (name.length() > 4 ? name.substring(4) : "");
+      }
+    } else if (name.startsWith("is")) {
+      if (name.length() > 2 && Character.isUpperCase(name.charAt(2))) {
+        name = Character.toLowerCase(name.charAt(2)) +
+            (name.length() > 3 ? name.substring(3) : "");
+      }
+    }
+    return name;
+  }
 }

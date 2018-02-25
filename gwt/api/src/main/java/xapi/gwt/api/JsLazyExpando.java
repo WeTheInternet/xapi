@@ -123,7 +123,7 @@ public class JsLazyExpando<I, O> implements In2Out1<I, In1Out1<I, O>, O> {
 //            return result;
 //          }
           final I self = getCaller();
-          X_Log.info(JsLazyExpando.class, "Applying lazy expando; ", this, self);
+          X_Log.debug(JsLazyExpando.class, "Applying lazy expando; ", this, self);
           final O result = io(self, factory);
           if (makeImmutable && !isDefined(self)) {
             opts.setConfigurable(false);

@@ -104,7 +104,7 @@ public final class TypeParameter extends Node implements NamedNode {
 	 * Return the list of {@link ClassOrInterfaceType} that this parameter
 	 * extends. Return <code>null</code> null if there are no type.
 	 *
-	 * @return list of types that this paramente extends or <code>null</code>
+	 * @return list of types that this parameter extends or <code>null</code>
 	 */
 	public List<ClassOrInterfaceType> getTypeBound() {
         typeBound = ensureNotNull(typeBound);
