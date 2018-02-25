@@ -13,6 +13,8 @@ import jsinterop.base.Js;
 @JsType(isNative = true, name = "Object", namespace = JsPackage.GLOBAL)
 public class Jso {
 
+    public static native Any create(Object from);
+
     @JsMethod
     public static native void defineProperty(Object on, SymbolOrString name, JsObjectDescriptor props);
 

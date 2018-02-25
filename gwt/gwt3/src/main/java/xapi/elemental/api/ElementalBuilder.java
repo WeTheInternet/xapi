@@ -6,19 +6,15 @@ import elemental2.dom.Element;
 import elemental2.dom.HTMLElement;
 import elemental2.dom.Node;
 import jsinterop.base.Js;
-import jsinterop.base.JsPropertyMap;
 import xapi.elemental.X_Gwt3;
-import xapi.ui.api.AttributeApplier;
-import xapi.ui.api.ElementBuilder;
-import xapi.ui.api.NodeBuilder;
-import xapi.ui.api.Widget;
+import xapi.ui.api.*;
 import xapi.util.X_Debug;
 import xapi.util.X_String;
 import xapi.util.impl.ImmutableProvider;
 
 import java.util.function.BiFunction;
 
-public class ElementalBuilder<E extends Node> extends ElementBuilder<E> {
+public class ElementalBuilder<E extends Node> extends ElementBuilder<E> implements CreatesChildren<String, ElementalBuilder<E>> {
 
   public class ApplyLiveAttribute implements AttributeApplier {
 
@@ -273,7 +269,7 @@ public class ElementalBuilder<E extends Node> extends ElementBuilder<E> {
   @Override
   public String toString() {
     final E ele = getElement();
-    return ele == null ? "" : (String) JsPropertyMap.of(ele).get("outerHTML");
+    return ele == null ? "" : Js.asPropertyMap(ele).getAny("outerHTML").asString();
   }
 
   @Override

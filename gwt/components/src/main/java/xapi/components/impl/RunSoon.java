@@ -123,7 +123,7 @@ public class RunSoon extends Function {
     public final int doSchedule(Do task) {
         final RunLaterCallback once = RunOnce.runOnce(task)::done;
         final Object result = setImmediate().call(this, once);
-        return Js.castToInt(result);
+        return Js.coerceToInt(result);
     }
 
     @JsOverlay

@@ -10,7 +10,6 @@ import elemental2.dom.HTMLElement;
 import elemental2.dom.HTMLLabelElement;
 import elemental2.dom.Node;
 import jsinterop.base.Js;
-import jsinterop.base.JsPropertyMap;
 import xapi.annotation.inject.InstanceDefault;
 import xapi.gwt.api.JsLazyExpando;
 import xapi.inject.X_Inject;
@@ -92,7 +91,7 @@ public class UiElementGwt<E extends HTMLElement>
 
   @Override
   public String toSource() {
-    return (String) JsPropertyMap.of(getElement()).get("outerHTML");
+    return (String) Js.asPropertyMap(getElement()).get("outerHTML");
   }
 
   @Override

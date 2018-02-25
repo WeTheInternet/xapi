@@ -193,12 +193,12 @@ public class ShadowDomControllerBuilder {
                     final JsObjectDescriptor derived = Js.uncheckedCast(JavaScriptObject.createObject());
                     derived.setEnumerable(true);
                     derived.setConfigurable(false);
-                    derived.get(REAL_INNER_HTML.get);
+                    derived.get(REAL_INNER_HTML.getGet());
                     derived.set(JsFunctionSupport.<Element, String>curryThisIn1((e, v)-> {
                             // Before we set the innerHTML, we want to pull out all our shadow DOM elements,
                             // and disable the slotter, so we can put back the shadow DOM, then reslot our elements
                             if ("true".equals(e.getAttribute(DISABLE_SHADOW_SPLICING))) {
-                                Js.<Function>cast(REAL_INNER_HTML.set)
+                                Js.<Function>cast(REAL_INNER_HTML.getSet())
                                     .call(e, v);
                                 return;
                             }
@@ -221,7 +221,7 @@ public class ShadowDomControllerBuilder {
                             }
 
                             // actually sets .innerHTML
-                            Js.<Function>cast(REAL_INNER_HTML.set)
+                            Js.<Function>cast(REAL_INNER_HTML.getSet())
                                 .call(e, v);
 
                             // put back the shadow roots

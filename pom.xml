@@ -690,6 +690,24 @@
     <version>${gwt.version}</version>
    </dependency>
 
+
+   <dependency>
+    <groupId>com.google.elemental2</groupId>
+    <artifactId>elemental2-dom</artifactId>
+    <version>1.0.0-RC1</version>
+   </dependency>
+   <dependency>
+    <groupId>com.google.elemental2</groupId>
+    <artifactId>elemental2-core</artifactId>
+    <version>1.0.0-RC1</version>
+   </dependency>
+
+   <dependency>
+    <groupId>com.google.jsinterop</groupId>
+    <artifactId>base</artifactId>
+    <version>1.0.0-RC1</version>
+   </dependency>
+
    <dependency>
     <groupId>com.google.appengine</groupId>
     <artifactId>appengine</artifactId>

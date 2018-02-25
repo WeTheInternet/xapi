@@ -1,11 +1,8 @@
 package xapi.components.impl;
 
-import elemental2.core.Array;
-import jsinterop.annotations.JsOverlay;
 import jsinterop.annotations.JsProperty;
 import jsinterop.annotations.JsType;
 import xapi.components.api.JsoArray;
-import xapi.components.api.PropertyConfiguration;
 
 import com.google.gwt.core.client.JavaScriptObject;
 

@@ -29,9 +29,8 @@
 		</dependency>
 
 		<dependency>
-			<groupId>com.google.elemental2</groupId>
-			<artifactId>elemental2-dom</artifactId>
-			<version>1.0.0-beta-1</version>
+			<groupId>net.wetheinter</groupId>
+			<artifactId>xapi-gwt3</artifactId>
 		</dependency>
 
 		<dependency>

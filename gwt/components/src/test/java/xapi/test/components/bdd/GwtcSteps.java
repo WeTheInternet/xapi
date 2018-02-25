@@ -548,7 +548,7 @@ public class GwtcSteps {
 
             @Override
             protected String normalizePackage(String pkg) {
-              return X_String.isEmpty(pkg) ? searchPackage() : searchPackage() + "." + pkg;
+              return X_String.isEmpty(pkg) || pkg.equals(searchPackage()) ? searchPackage() : searchPackage() + "." + pkg;
             }
           };
           final UiGeneratorService service = tools.out1();

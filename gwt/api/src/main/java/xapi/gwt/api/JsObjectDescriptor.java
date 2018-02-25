@@ -1,12 +1,14 @@
 package xapi.gwt.api;
 
-import elemental2.core.Function;
-import elemental2.core.ObjectPropertyDescriptor.GetCallbackFn;
+import elemental2.core.JsObject;
+import elemental2.core.ObjectPropertyDescriptor.GetFn;
+import elemental2.core.ObjectPropertyDescriptor.SetFn;
 import jsinterop.annotations.JsOverlay;
 import jsinterop.annotations.JsPackage;
 import jsinterop.annotations.JsProperty;
 import jsinterop.annotations.JsType;
-import jsinterop.base.Js;
+
+import static jsinterop.base.Js.uncheckedCast;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 1/27/17.
@@ -35,18 +37,18 @@ public interface JsObjectDescriptor {
     void setValue(Object value);
 
     @JsProperty(name = "get")
-    GetCallbackFn get();
+    GetFn get();
     @JsProperty(name = "get")
-    void get(GetCallbackFn getter);
+    void get(GetFn getter);
 
     @JsProperty(name = "set")
-    Function set();
+    SetFn set();
     @JsProperty(name = "set")
-    void set(Function setter);
+    void set(SetFn setter);
 
     @JsOverlay
     static JsObjectDescriptor create() {
-        return Js.uncheckedCast(new Object());
+        return uncheckedCast(JsObject.create(null));
     }
     @JsOverlay
     static JsObjectDescriptor createUnconfigurable() {

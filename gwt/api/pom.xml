@@ -37,7 +37,6 @@
   <dependency>
    <groupId>com.google.elemental2</groupId>
    <artifactId>elemental2-core</artifactId>
-   <version>1.0.0-beta-1</version>
   </dependency>
   <dependency>
    <groupId>net.wetheinter</groupId>
@@ -102,7 +101,6 @@
   <dependency>
    <groupId>com.google.jsinterop</groupId>
    <artifactId>base</artifactId>
-   <version>1.0.0-beta-1</version>
   </dependency>
   <dependency>
    <groupId>javax.inject</groupId>

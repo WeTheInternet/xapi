@@ -267,7 +267,7 @@ public class WebComponentBuilder {
     return createdCallback(wrapIn1(callback));
   }
 
-  public <E extends Element, C extends IsComponent<E>> WebComponentBuilder createdCallback(final In2<E, ComponentOptions<E, C>> callback) {
+  public <E, C extends IsComponent<E>> WebComponentBuilder createdCallback(final In2<E, ComponentOptions<E, C>> callback) {
     return createdCallback(wrapIn2(callback));
   }
 
@@ -442,8 +442,8 @@ public class WebComponentBuilder {
         });
 
         final MutationObserverInit options = Js.uncheckedCast(JavaScriptObject.createObject());
-        options.childList = true;
-        options.subtree = false;
+        options.setChildList(true);
+        options.setSubtree(false);
         observer.observe(Js.cast(element), options);
       }
     });
@@ -627,8 +627,8 @@ public class WebComponentBuilder {
 
     MutationObserver observer = new MutationObserver(callback);
     final MutationObserverInit options = Js.uncheckedCast(JavaScriptObject.createObject());
-    options.childList = true;
-    options.subtree = false; // only handle insertions directly into root node; ignore any insertions to our children
+    options.setChildList(true);
+    options.setSubtree(false); // only handle insertions directly into root node; ignore any insertions to our children
     observer.observe(Js.cast(element), options);
 
     final MappedIterable<Slot<Element, Element>> slots = slotter.getSlots();

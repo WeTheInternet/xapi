@@ -2,7 +2,8 @@ package xapi.components.api;
 
 import elemental.dom.Element;
 import elemental.dom.Node;
-import jsinterop.base.JsPropertyMap;
+import jsinterop.base.Any;
+import jsinterop.base.Js;
 import xapi.components.impl.JsSupport;
 import xapi.fu.In1Out1;
 import xapi.gwt.api.Symbol;
@@ -56,11 +57,12 @@ public class ComponentNamespace {
     }
 
     public static void setSource(Element e, String textContent) {
-        JsPropertyMap.of(e).set("source", textContent);
+        Js.asPropertyMap(e).set("source", textContent);
     }
 
     public static String getSource(Element element) {
-        String source = (String)JsPropertyMap.of(element).get("source");
+        final Any any = Js.asPropertyMap(element).getAny("source");
+        String source = any == null ? null : any.asString();
         if (source == null) {
             if (element.getChildren().getLength() == 1 && element.getFirstChild().getNodeType() == Node.TEXT_NODE) {
                 source = element.getFirstChild().getTextContent();

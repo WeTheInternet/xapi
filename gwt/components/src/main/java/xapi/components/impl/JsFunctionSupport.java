@@ -3,6 +3,7 @@ package xapi.components.impl;
 import elemental.dom.Element;
 import elemental.events.Event;
 import elemental2.core.Function;
+import elemental2.core.ObjectPropertyDescriptor.SetFn;
 import xapi.components.api.JsEventListener;
 import xapi.components.api.OnWebComponentAttributeChanged;
 import xapi.fu.Do;
@@ -78,7 +79,7 @@ public class JsFunctionSupport {
 	  });
 	 }-*/;
 
-	public static native <This, Arg1> Function curryThisIn1(In2<This, Arg1> task)
+	public static native <This, Arg1> SetFn curryThisIn1(In2<This, Arg1> task)
 	/*-{
           return @JsFunctionSupport::maybeEnter(*)(function(){
             task.@In2::in(Ljava/lang/Object;Ljava/lang/Object;)(this, arguments[0]);

@@ -2,7 +2,7 @@ package xapi.components.impl;
 
 import elemental.dom.Element;
 import elemental.html.StyleElement;
-import elemental2.core.Set;
+import elemental2.core.JsSet;
 import elemental2.dom.DomGlobal;
 import jsinterop.base.Js;
 import xapi.components.api.UiConfig;
@@ -16,9 +16,7 @@ import xapi.fu.MappedIterable;
 import xapi.fu.Out1;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
-import xapi.time.X_Time;
 import xapi.ui.api.StyleAssembler;
-import xapi.ui.api.style.HasStyleResources;
 import xapi.ui.html.api.GwtStyles;
 import xapi.util.api.Destroyable;
 
@@ -104,7 +102,8 @@ public abstract class AbstractUiConfig <R extends GwtStyles>
 
 
     private ChainBuilder<In1<Element>> initListeners() {
-        Set<String> seen = new Set<>();
+        // TODO: don't use JsSet!  ...move that to xapi-gwt-collect
+        JsSet<String> seen = new JsSet<>();
         return Chain.toChain(e->
             factories.out1().forEach(
                 factory->

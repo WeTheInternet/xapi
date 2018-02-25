@@ -8,15 +8,11 @@ import elemental.js.util.JsArrayOfBoolean;
 import elemental.js.util.JsArrayOfInt;
 import elemental.js.util.JsArrayOfNumber;
 import elemental.js.util.JsArrayOfString;
-import elemental2.core.*;
-import elemental2.dom.*;
+import elemental2.core.ObjectPropertyDescriptor;
+import elemental2.core.Reflect;
+import elemental2.dom.DomGlobal;
 import jsinterop.base.Js;
 import xapi.components.api.*;
-import xapi.components.api.Console;
-import xapi.components.api.CustomElementRegistry;
-import xapi.components.api.Document;
-import xapi.components.api.JsObject;
-import xapi.components.api.Window;
 import xapi.fu.Do;
 import xapi.fu.In1;
 import xapi.fu.In1Out1;
@@ -28,8 +24,6 @@ import xapi.ui.api.component.ComponentConstructor;
 import xapi.ui.api.component.ComponentOptions;
 import xapi.ui.api.component.IsComponent;
 import xapi.util.api.RemovalHandler;
-
-import static xapi.util.X_String.isNotEmpty;
 
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.UnsafeNativeLong;
@@ -774,28 +768,28 @@ public class JsSupport {
   public static void installObject(elemental2.core.JsObject global, String name, Object o, boolean isFinal) {
     ObjectPropertyDescriptor descriptor = Reflect.getOwnPropertyDescriptor(global, name);
     if (descriptor != null) {
-      if (descriptor.value != null) {
-        descriptor.value = o;
+      if (descriptor.getValue() != null) {
+        descriptor.setValue(o);
         // If the value is not writable, the following check will fail
         //noinspection ConstantConditions
-        if (descriptor.value == o) {
+        if (descriptor.getValue() == o) {
           return;
         }
-      } else if (descriptor.set != null) {
-        descriptor.set.onInvoke(o);
-        if (descriptor.get == null || descriptor.get.onInvoke() == o) {
+      } else if (descriptor.getSet() != null) {
+        descriptor.getSet().onInvoke(o);
+        if (descriptor.getGet() == null || descriptor.getGet().onInvoke() == o) {
           return;
         }
       }
-      if (!descriptor.configurable) {
+      if (!descriptor.isConfigurable()) {
         throw new IllegalArgumentException("Cannot install on unwritable field " + name + " of " + global);
       }
     }
     // If we couldn't actually set the object to the descriptor, try to override the descriptor
     descriptor = JsSupport.descriptor();
-    descriptor.writable = !isFinal;
-    descriptor.value = o;
-    Reflect.defineProperty(global, name, Js.uncheckedCast(descriptor));
+    descriptor.setWritable(!isFinal);
+    descriptor.setValue(o);
+    Reflect.defineProperty(global, name, descriptor);
   }
 
   public static void addElementTasks(Element e, int task) {

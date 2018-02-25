@@ -3,6 +3,7 @@ package xapi.elemental.impl;
 import elemental2.dom.Element;
 import elemental2.dom.HTMLElement;
 import elemental2.dom.Node;
+import jsinterop.base.Js;
 import jsinterop.base.JsPropertyMap;
 import xapi.annotation.inject.SingletonOverride;
 import xapi.elemental.api.UiElementGwt;
@@ -10,7 +11,6 @@ import xapi.event.api.EventHandler;
 import xapi.event.api.IsEventType;
 import xapi.fu.In1Out1;
 import xapi.fu.In2;
-import xapi.gwt.collect.JsDictionary;
 import xapi.platform.GwtPlatform;
 import xapi.ui.api.UiWithAttributes;
 import xapi.ui.api.UiWithProperties;
@@ -50,13 +50,13 @@ public class Gwt3UiService extends UiServiceImpl <Node, UiElementGwt<?>> {
     @Override
     protected In1Out1<String, Object> findGetter(UiElementGwt<?> element) {
       final Element ele = element.getElement();
-      return JsPropertyMap.of(ele)::get;
+      return Js.asPropertyMap(ele)::get;
     }
 
     @Override
     protected In2<String, Object> findSetter(UiElementGwt<?> element) {
       final Element ele = element.getElement();
-      return JsPropertyMap.of(ele)::set;
+      return Js.asPropertyMap(ele)::set;
     }
   }
 

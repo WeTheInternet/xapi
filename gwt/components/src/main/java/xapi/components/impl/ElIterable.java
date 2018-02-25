@@ -1,9 +1,7 @@
 package xapi.components.impl;
 
 import elemental2.dom.Element;
-import elemental2.dom.HTMLCollection;
 import elemental2.dom.Node;
-import elemental2.dom.NodeList;
 import jsinterop.base.Js;
 import jsinterop.base.JsArrayLike;
 import xapi.fu.MappedIterable;
@@ -47,11 +45,7 @@ public class ElIterable implements MappedIterable<Element> {
 
   }
 
-  private ElIterable(HTMLCollection nodes) {
-    this.nodes = nodes;
-  }
-
-  private ElIterable(NodeList nodes) {
+  private ElIterable(JsArrayLike<Node> nodes) {
     this.nodes = nodes;
   }
 
@@ -60,16 +54,12 @@ public class ElIterable implements MappedIterable<Element> {
     return new Itr();
   }
 
-  public static MappedIterable<Element> forEach(HTMLCollection children) {
+  public static MappedIterable<Element> forEach(JsArrayLike<Node> children) {
     return new ElIterable(children);
   }
 
   public static MappedIterable<Element> forEach(Node node) {
     return new ElIterable(node.childNodes);
-  }
-
-  public static MappedIterable<Element> forEach(NodeList children) {
-    return new ElIterable(children);
   }
 
 }
