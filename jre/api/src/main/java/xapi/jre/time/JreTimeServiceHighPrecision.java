@@ -62,9 +62,9 @@ public class JreTimeServiceHighPrecision extends TimeServiceDefault{
     c.setTimeInMillis((long)millis);
     return X_String.toTimestamp(
         c.get(Calendar.YEAR),
-        c.get(Calendar.MONTH),
+        c.get(Calendar.MONTH) + 1,
         c.get(Calendar.DATE),
-        c.get(Calendar.HOUR),
+        c.get(Calendar.HOUR_OF_DAY),
         c.get(Calendar.MINUTE),
         c.get(Calendar.MILLISECOND),
         c.getTimeZone().getOffset(c.getTimeInMillis()) / 60000);
