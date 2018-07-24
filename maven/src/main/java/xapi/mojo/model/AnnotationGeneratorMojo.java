@@ -62,14 +62,14 @@ public class AnnotationGeneratorMojo extends AbstractXapiMojo{
     ClasspathResourceMap scanner = X_Maven.compileScopeScanner(getProject(), getSession());
     BytecodeAdapterService adapter = X_Maven.compileScopeAdapter(getProject(), getSession());
     Map<String, SourceBuilder<IsClass>> generated = new HashMap<String, SourceBuilder<IsClass>>();
-    X_Log.trace(getClass(), "Scanning compile scope dependencies", scanner);
+    X_Log.trace(AnnotationGeneratorMojo.class, "Scanning compile scope dependencies", scanner);
     for (ClassFile mirror : scanner.findClassAnnotatedWith(MirroredAnnotation.class)) {
-      X_Log.trace(getClass(), "Adding annotation type", mirror);
+      X_Log.trace(AnnotationGeneratorMojo.class, "Adding annotation type", mirror);
       addType(mirror.getName(), mirror.getPackage(), generated, adapter);
     }
 
     final String[] cp = getAdditionalClasspath();
-    X_Log.trace(getClass(), "Compiling generated annotations with classpath",cp);
+    X_Log.trace(AnnotationGeneratorMojo.class, "Compiling generated annotations with classpath",cp);
     ArrayList<Runnable> compileTasks = new ArrayList<Runnable>();
 
     for (String type : generated.keySet()) {

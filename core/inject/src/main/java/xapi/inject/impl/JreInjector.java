@@ -217,6 +217,22 @@ public class JreInjector implements Injector {
         if (!relativeUrl.endsWith("/")) {
             relativeUrl += "/";
         }
+        String fromProp;
+        fromProp = System.getProperty("xinject." +
+            (relativeUrl
+                .replace("META-INF/", "")
+                .replace('/', '.'))
+            + name);
+        if (fromProp == null) {
+            fromProp = System.getProperty("xinject." + name);
+        }
+        if (fromProp != null) {
+            try {
+                return loader.loadClass(fromProp);
+            } catch (ClassNotFoundException e) {
+                System.err.println("Cannot load " + fromProp + " from " + loader);
+            }
+        }
         Enumeration<URL> resources = loader.getResources(relativeUrl + name);
         if (resources == null || !resources.hasMoreElements()) {
             if (injector.initOnce) {

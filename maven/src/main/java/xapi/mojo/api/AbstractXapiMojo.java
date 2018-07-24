@@ -107,6 +107,9 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
   @Parameter(property = "assertions")
   private Boolean assertions;
 
+  @Parameter(property = "injection")
+  private Map<String, String> injection;
+
   /**
    * The Maven Session Object, injected by plexus
    *
@@ -192,6 +195,12 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
   @Override
   @SuppressWarnings("unchecked")
   public void execute() throws MojoExecutionException, MojoFailureException {
+    injection.forEach((k, v)->{
+      String key = "xinject." + k;
+      if (System.getProperty(key) == null) {
+        System.setProperty(key, v);
+      }
+    });
     try {
       X_Log.logLevel(LogLevel.valueOf(xapiLogLevel));
     } catch (Throwable e){getLog().warn("Could not set xapi.log.level to "+xapiLogLevel, e);}
