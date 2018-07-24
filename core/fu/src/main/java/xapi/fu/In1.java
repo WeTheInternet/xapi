@@ -180,6 +180,22 @@ public interface In1<I> extends HasInput, Rethrowable, Lambda {
     return i2 -> adapt.in(i1, i2);
   }
 
+  static <I2, I3> In1<In2<I2, I3>> in2Adapter(I2 i2, I3 i3) {
+    return from23(In2::in, i2, i3);
+  }
+
+  static <I1, I2, I3> In1<I1> from23(In3<I1, I2, I3> adapt, I2 i2, I3 i3) {
+    return i1 -> adapt.in(i1, i2, i3);
+  }
+
+  static <I1, I2, I3> In1<I3> from12(In3<I1, I2, I3> adapt, I1 i1, I2 i2) {
+    return i3 -> adapt.in(i1, i2, i3);
+  }
+
+  static <I1, I2, I3> In1<I2> from13(In3<I1, I2, I3> adapt, I1 i1, I3 i3) {
+    return i2 -> adapt.in(i1, i2, i3);
+  }
+
   static <I1> In1<In1<I1>> receiver(I1 value) {
     // We need to declare a variable with this type for type inferment to work.
     final In2<In1<I1>, I1> in2 = In1::in;

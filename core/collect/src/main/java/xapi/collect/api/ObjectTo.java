@@ -80,10 +80,10 @@ extends EntryIterable<K,V>, CollectionProxy<K,V>, HasValues<K,V>
         }
     }
 
-    default Maybe<V> firstWhereKey(Filter1<K> key) {
+    default Maybe<V> firstWhereKey(In1Out1<K, Boolean> key) {
         Maybe<V> result = Maybe.not();
         for (K cls : keys()) {
-            if (key.filter1(cls)) {
+            if (key.io(cls)) {
                 final V value = get(cls);
                 result = Maybe.nullable(value);
                 if (result.isPresent()) {
@@ -94,10 +94,10 @@ extends EntryIterable<K,V>, CollectionProxy<K,V>, HasValues<K,V>
         return result;
     }
 
-    default Maybe<V> firstWhereValue(Filter1<V> key) {
+    default Maybe<V> firstWhereValue(In1Out1<V, Boolean> key) {
         Maybe<V> result = Maybe.not();
         for (V value : values()) {
-            if (key.filter1(value)) {
+            if (key.io(value)) {
                 result = Maybe.nullable(value);
                 if (result.isPresent()) {
                     return result;
@@ -111,7 +111,7 @@ extends EntryIterable<K,V>, CollectionProxy<K,V>, HasValues<K,V>
      * Slowest lookup; filters both key and value at the same time,
      * meaning fuller reads (O(n) calls to .get()).
      *
-     * Use {@link #firstWhereKeyValue(Filter1, Filter1)} to filter keys before loading values.
+     * Use {@link #firstWhereKeyValue(In1Out1, In1Out1)} to filter keys before loading values.
      *
      * @param filter
      * @return
@@ -130,12 +130,12 @@ extends EntryIterable<K,V>, CollectionProxy<K,V>, HasValues<K,V>
         return result;
     }
 
-    default Maybe<V> firstWhereKeyValue(Filter1<K> keyFilter, Filter1<V> valueFilter) {
+    default Maybe<V> firstWhereKeyValue(In1Out1<K, Boolean> keyFilter, In1Out1<V, Boolean> valueFilter) {
         Maybe<V> result = Maybe.not();
         for (K key : keys()) {
-            if (keyFilter.filter1(key)) {
+            if (keyFilter.io(key)) {
                 V value = get(key);
-                if (valueFilter.filter1(value)) {
+                if (valueFilter.io(value)) {
                     result = Maybe.nullable(value);
                     if (result.isPresent()) {
                         return result;

@@ -560,4 +560,12 @@ public class X_String {
     }
     return name;
   }
+
+  public static String concatIfNotContains(String is, String value, String s) {
+    final String clsName = s + is + s;
+    return
+        clsName.contains(s + value + s)
+            ? is
+            : is + s + value;
+  }
 }

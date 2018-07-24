@@ -1,7 +1,5 @@
 package xapi.fu;
 
-import java.io.Serializable;
-
 /**
  * Marker interface with some helper methods for lambdas;
  * most notable, implementing {@link Comparable#compareTo(Object)} to net you easy equals (just check for 0).

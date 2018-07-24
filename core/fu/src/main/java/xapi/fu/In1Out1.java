@@ -30,6 +30,14 @@ In1Out1<I, O> extends Rethrowable, Lambda {
     return RETURN_NULL;
   }
 
+  static <I, O> In1Out1<I, O> returnTrue() {
+    return RETURN_TRUE;
+  }
+
+  static <I, O> In1Out1<I, O> returnFalse() {
+    return RETURN_FALSE;
+  }
+
   static <I, O> O[] mapArray(O[] into, In1Out1<I, O> mapper, I ... is) {
     if (into.length == 0) {
       into = X_Fu.copy(into, is.length);
