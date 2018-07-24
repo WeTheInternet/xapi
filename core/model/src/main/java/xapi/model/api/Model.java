@@ -4,10 +4,7 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
 import xapi.collect.proxy.CollectionProxy;
-import xapi.fu.In1;
-import xapi.fu.In1Out1;
-import xapi.fu.MappedIterable;
-import xapi.fu.Out1;
+import xapi.fu.*;
 
 import java.util.Map.Entry;
 
@@ -59,7 +56,12 @@ public interface Model {
   MappedIterable<Entry<String, Object>> getProperties();
   String[] getPropertyNames();
   Model setProperty(String key, Object value);
-  Model removeProperty(String key);
+
+    void onChange(String key, In2<Object, Object> callback);
+
+    void onGlobalChange(In3<String, Object, Object> callback);
+
+    Model removeProperty(String key);
   void clear();
 
   ModelKey getKey();

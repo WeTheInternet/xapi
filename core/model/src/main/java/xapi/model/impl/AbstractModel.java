@@ -2,25 +2,26 @@ package xapi.model.impl;
 
 import xapi.annotation.inject.InstanceDefault;
 import xapi.collect.X_Collect;
+import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
-import xapi.fu.MappedIterable;
-import xapi.fu.Out1;
+import xapi.fu.*;
 import xapi.log.X_Log;
 import xapi.model.X_Model;
 import xapi.model.api.Model;
 import xapi.model.api.ModelKey;
 import xapi.model.api.NestedModel;
 import xapi.model.api.PersistentModel;
+import xapi.util.X_Util;
 import xapi.util.api.ErrorHandler;
 import xapi.util.api.SuccessHandler;
-
-import static xapi.util.impl.PairBuilder.entryOf;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Objects;
+
+import static xapi.util.impl.PairBuilder.entryOf;
 
 @InstanceDefault(implFor=Model.class)
 public class AbstractModel implements Model, PersistentModel, NestedModel{
@@ -61,6 +62,8 @@ public class AbstractModel implements Model, PersistentModel, NestedModel{
 
 
   private static StringTo<Object> defaultValues = X_Collect.newStringMap(Object.class);
+  private static StringTo<In2<Object, Object>> changeListeners = X_Collect.newStringMap(In2.class);
+  private static IntTo<In3<String, Object, Object>> globalChangeListeners = X_Collect.newSet(In3.class);
   protected StringTo<Object> map;
   protected Model parent;
   protected ModelKey key;
@@ -137,11 +140,38 @@ public class AbstractModel implements Model, PersistentModel, NestedModel{
   @Override
   public Model setProperty(final String key, final Object value) {
     try {
-      map.put(key, value);
+      final Object was = map.put(key, value);
+      if (!X_Fu.equal(was, value)) {
+        fireChangeEvent(key, was, value);
+      }
     } catch (final Throwable e) {
-      X_Log.error(e);
+      X_Log.error(AbstractModel.class, e);
+      throw X_Util.rethrow(e);
     }
     return this;
+  }
+
+  private void fireChangeEvent(String key, Object was, Object value) {
+    changeListeners.getMaybe(key).readIfPresent(In1.in2Adapter(was, value));
+    for (In3<String, Object, Object> callback : globalChangeListeners.forEach()) {
+      callback.in(key, was, value);
+    }
+  }
+
+  @Override
+  public synchronized void onChange(String key, In2<Object, Object> callback) {
+    changeListeners.compute(key, (k, v)->{
+      if (v == null) {
+        return callback;
+      } else {
+        return v.doAfterMe(callback);
+      }
+    });
+  }
+
+  @Override
+  public synchronized void onGlobalChange(In3<String, Object, Object> callback) {
+    globalChangeListeners.add(callback);
   }
 
   protected AbstractModel createNew() {
