@@ -33,6 +33,7 @@ public abstract class NodeBuilder<E> implements Widget<E> {
 
   protected Function<String, String> bodySanitizer;
   protected BiFunction<String, Boolean, NodeBuilder<E>> newNode;
+  private boolean initialized;
 
   protected NodeBuilder() {
     this(false);
@@ -63,84 +64,6 @@ public abstract class NodeBuilder<E> implements Widget<E> {
 
   protected AttributeBuilder newAttributeBuilder(CharSequence attr) {
     return new AttributeBuilder(attr);
-  }
-
-  protected static class AttributeBuilder extends NodeBuilder<String> {
-
-    private final StringTo<String> existing;
-
-    protected AttributeBuilder(CharSequence value) {
-      this(value, false);
-    }
-
-    protected AttributeBuilder(CharSequence value, boolean searchableChildren) {
-      super(searchableChildren);
-      existing = newStringMap(String.class);
-      append(value);
-    }
-
-
-    @Override
-    public void append(Widget<String> child) {
-      append(child.getElement());
-    }
-
-    @Override
-    protected String create(CharSequence node) {
-      return node.toString();
-    }
-
-    @Override
-    protected NodeBuilder<String> wrapChars(CharSequence body) {
-      return newAttributeBuilder(body);
-    }
-
-    @Override
-    protected BiFunction<String, Boolean, NodeBuilder<String>> getCreator() {
-      Function<CharSequence, AttributeBuilder> ctor = AttributeBuilder::new;
-      // ignore the searchable attribute for now.
-      return (str, searchable)->ctor.apply(str);
-    }
-
-    @Override
-    public <C extends NodeBuilder<String>> C addChild(C child) {
-      String value = child.getElement();
-      final NodeBuilder<String> wrapped = wrapChars(value);
-      super.addChild(wrapped);
-      return child;
-    }
-
-    public <C extends NodeBuilder<String>> C addToSet(C child,
-                                                      String separator
-    ) {
-      return addToSet(child,
-          (c, txt)->(separator+txt+separator).split(separator), // take the list apart
-          ()->separator // put it back together.
-          );
-    }
-
-    public <C extends NodeBuilder<String>> C addToSet(C child,
-                                                      BiFunction<C, CharSequence, String[]> splitter,
-                                                      Supplier<CharSequence> joinChars
-    ) {
-      // The api of the bifunction demands that we figure out the string value from the element type we are working with.
-      String value = child.getElement();
-      // Since we are a string type, this seems pretty convoluted,
-      // but when working on live elements and nodes, this lets it see the object and the to string'd version at once.
-      for (String part : splitter.apply(child, value)) {
-        if (part.length() > 0) {
-          if (existing.put(part, part) == null) {
-            if (existing.size() > 1) {
-              part = part + joinChars.get();
-            }
-            super.addChild(wrapChars(part));
-          }
-        }
-      }
-      return child;
-    }
-
-
   }
 
   public <C extends NodeBuilder<E>> C addChild(C child) {
@@ -277,6 +200,7 @@ public abstract class NodeBuilder<E> implements Widget<E> {
   protected void startInitialize(E el) {}
 
   protected void onInitialize(E el) {
+    initialized = true;
     if (!createdCallbacks.isEmpty()) {
       final ReceivesValue<E>[] callbacks = createdCallbacks.toArray();
       createdCallbacks.clear();
@@ -441,4 +365,87 @@ public abstract class NodeBuilder<E> implements Widget<E> {
   public boolean isEmpty() {
     return this.children.isEmpty() && this.siblings.isEmpty();
   }
+
+  public boolean isInitialized() {
+    return initialized;
+  }
+
+
+  protected static class AttributeBuilder extends NodeBuilder<String> {
+
+    private final StringTo<String> existing;
+
+    protected AttributeBuilder(CharSequence value) {
+      this(value, false);
+    }
+
+    protected AttributeBuilder(CharSequence value, boolean searchableChildren) {
+      super(searchableChildren);
+      existing = newStringMap(String.class);
+      append(value);
+    }
+
+
+    @Override
+    public void append(Widget<String> child) {
+      append(child.getElement());
+    }
+
+    @Override
+    protected String create(CharSequence node) {
+      return node.toString();
+    }
+
+    @Override
+    protected NodeBuilder<String> wrapChars(CharSequence body) {
+      return newAttributeBuilder(body);
+    }
+
+    @Override
+    protected BiFunction<String, Boolean, NodeBuilder<String>> getCreator() {
+      Function<CharSequence, AttributeBuilder> ctor = AttributeBuilder::new;
+      // ignore the searchable attribute for now.
+      return (str, searchable)->ctor.apply(str);
+    }
+
+    @Override
+    public <C extends NodeBuilder<String>> C addChild(C child) {
+      String value = child.getElement();
+      final NodeBuilder<String> wrapped = wrapChars(value);
+      super.addChild(wrapped);
+      return child;
+    }
+
+    public <C extends NodeBuilder<String>> C addToSet(C child,
+                                                      String separator
+    ) {
+      return addToSet(child,
+          (c, txt)->(separator+txt+separator).split(separator), // take the list apart
+          ()->separator // put it back together.
+      );
+    }
+
+    public <C extends NodeBuilder<String>> C addToSet(C child,
+                                                      BiFunction<C, CharSequence, String[]> splitter,
+                                                      Supplier<CharSequence> joinChars
+    ) {
+      // The api of the bifunction demands that we figure out the string value from the element type we are working with.
+      String value = child.getElement();
+      // Since we are a string type, this seems pretty convoluted,
+      // but when working on live elements and nodes, this lets it see the object and the to string'd version at once.
+      for (String part : splitter.apply(child, value)) {
+        if (part.length() > 0) {
+          if (existing.put(part, part) == null) {
+            if (existing.size() > 1) {
+              part = part + joinChars.get();
+            }
+            super.addChild(wrapChars(part));
+          }
+        }
+      }
+      return child;
+    }
+
+  }
+
 }

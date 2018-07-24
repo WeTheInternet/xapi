@@ -3,6 +3,7 @@ package xapi.dev.ui.api;
 import xapi.dev.source.CanAddImports;
 import xapi.fu.Maybe;
 import xapi.ui.api.ElementBuilder;
+import xapi.ui.api.ElementInjector;
 import xapi.ui.api.StyleCacheService;
 import xapi.ui.api.UiElement;
 import xapi.ui.api.component.IsModelComponent;
@@ -65,6 +66,10 @@ public interface UiNamespace {
 
     default String getElementBuilderType(CanAddImports importer) {
         return importer.addImport(ElementBuilder.class);
+    }
+
+    default String getElementInjectorType(CanAddImports importer) {
+        return importer.addImport(ElementInjector.class);
     }
 
     default String getElementBuilderConstructor(CanAddImports importer) {

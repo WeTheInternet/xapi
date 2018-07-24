@@ -20,22 +20,6 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> impleme
   public class ApplyLiveAttribute implements AttributeApplier {
 
     @Override
-    public void addAttribute(String name, String value) {
-      String is = getAttribute(name);
-      if (X_String.isEmpty(is)) {
-        setAttribute(name, value);
-      } else {
-        setAttribute(name, concat(name, is, value));
-      }
-    }
-
-    protected String concat(String name, String is, String value) {
-      return "class".equals(name) ?
-          X_Elemental.concatClass(is, value)
-          : is.concat(value);
-    }
-
-    @Override
     public void setAttribute(String name, String value) {
       getElement().setAttribute(name, value);
     }
@@ -176,51 +160,6 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> impleme
   }
 
   @Override
-  protected CharSequence getCharsBefore() {
-    StringBuilder b = new StringBuilder();
-    if (tagName == null || tagName.isEmpty()) {
-      assert attributes.isEmpty() : "Cannot have attributes without a tagname";
-    } else {
-      b.append("<");
-      b.append(tagName);
-      appendAttributes(b);
-      if (isTagEmpty()) {
-        b.append("/");
-      }
-      b.append(">");
-    }
-    return b.length() == 0 ? EMPTY : b.toString();
-  }
-
-  @Override
-  protected boolean isTagEmpty() {
-    if (super.isTagEmpty()) {
-      switch(tagName.toLowerCase()) {
-        case "br":
-        case "img":
-        case "input":
-          // Any elements which should not be created with closing tags
-          return true;
-      }
-    }
-    return false;
-  }
-
-  private void appendAttributes(StringBuilder b) {
-    if (!attributes.isEmpty()) {
-      for (String attribute : attributes.keys()) {
-        b.append(" ").append(attribute).append("=\"");
-        String result = attributes.get(attribute).getElement();
-        b.append(sanitizeAttribute(result)).append("\"");
-      }
-    }
-  }
-
-  protected String sanitizeAttribute(String result) {
-    return  X_String.isEmpty(result) ? "" : result.replaceAll("\"", "&quot;");
-  }
-
-  @Override
   protected CharSequence getCharsAfter(CharSequence self) {
     if (tagName != null && !isTagEmpty()) {
       return "</"+tagName+">";
@@ -316,5 +255,11 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> impleme
       body.removeChild(el);
     }
     super.finishInitialize(el);
+  }
+
+  @Override
+  protected void clearChildren(E element) {
+    // lazy...
+    element.setTextContent("");
   }
 }

@@ -53,6 +53,7 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
     extends VoidVisitorAdapter<Ctx> implements ApiGeneratorTools<Ctx> {
 
     private static final String DUMP_WRAP_KEY = "wrapVisit";
+    private static final Out2<Do,Do> DEFAULT_REMAPPER = Out2.out2Immutable(Do.NOTHING, Do.NOTHING);
 
     private final Path relativePath;
     private String pkgName;
@@ -78,11 +79,12 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
                 case "generate":
                     generate(n, ctx);
                     return;
-                case "generateInterface":
-                    n.accept(generateInterface(), ctx);
+                case "generateType":
+                    n.accept(generateType(true), ctx);
                     break;
                 case "generateClass":
-
+                    n.accept(generateType(false), ctx);
+                    break;
                 case "loop":
                     final Expression from = n.getAttributeNotNull("from").getExpression();
                     final Expression to = n.getAttributeNotNull("to").getExpression();
@@ -135,7 +137,7 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
         try {
             for (UiAttrExpr attr : n.getAttributes()) {
                 switch (attr.getNameString().toLowerCase()) {
-                    case "generateInterface":
+                    case "generateType":
                     case "generateClass":
                     default:
                         try {
@@ -213,9 +215,9 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
         }
     }
 
-    public VoidVisitor<Ctx> generateInterface() {
+    public VoidVisitor<Ctx> generateType(boolean isInterface) {
         return new VoidVisitorAdapter<Ctx>() {
-            public Expression typeParams, extend, name;
+            public Expression typeParams, extend, implement, name;
             public JsonContainerExpr defaultMethods, staticMethods, methods;
 
             @Override
@@ -278,7 +280,7 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
                 // We've now visited all the named pairs;
                 // lets generate the types we expect!
                 if (name == null) {
-                    throw new IllegalStateException("generateInterface task must have a name entry");
+                    throw new IllegalStateException("generateType task must have a name entry");
                 }
                 String nameString;
                 if (name instanceof TemplateLiteralExpr) {
@@ -286,7 +288,7 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
                 } else if (name.getClass() == StringLiteralExpr.class) {
                     nameString = ((StringLiteralExpr)name).getValue();
                 } else {
-                    throw new IllegalArgumentException("name entry in generateInterface must be a string or template literal expression");
+                    throw new IllegalArgumentException("name entry in generateType must be a string or template literal expression");
                 }
                 int dollarInd = nameString.indexOf('$');
                 if (dollarInd != -1) {
@@ -301,8 +303,8 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
                     pkg = X_Source.toPackage(nameString);
                     nameString = X_Source.removePackage(pkg, nameString);
                 }
-                SourceBuilder<Ctx> builder = ctx.getOrMakeClass(pkg, nameString, true);
-                generateInterface(ctx, builder, typeParams, extend, methods, defaultMethods, staticMethods);
+                SourceBuilder<Ctx> builder = ctx.getOrMakeClass(pkg, nameString, isInterface);
+                generateType(ctx, builder, typeParams, extend, implement, methods, defaultMethods, staticMethods);
             }
 
             @Override
@@ -316,6 +318,9 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
                         break;
                     case "extend":
                         extend = n.getValueExpr();
+                        break;
+                    case "implement":
+                        implement = n.getValueExpr();
                         break;
                     case "methods":
                         if (n.getValueExpr() instanceof MethodCallExpr) {
@@ -332,6 +337,7 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
                         }
                         break;
                     case "defaultMethods":
+                        assert isInterface : "Classes should not have default methods! Bad node: " + n.getParentNode();
                         defaultMethods = (JsonContainerExpr) n.getValueExpr();
                         if (!defaultMethods.isArray()) {
                             List<JsonPairExpr> pairs = new ArrayList<>();
@@ -352,7 +358,7 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
                         }
                         break;
                     default:
-                        throw new IllegalArgumentException("Unhandled generateInterface json member " + n);
+                        throw new IllegalArgumentException("Unhandled generateType json member " + n);
                 }
             }
         };
@@ -403,7 +409,7 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
 
             @Override
             public void visit(SingleMemberAnnotationExpr n, Object arg) {
-                if (Boolean.TRUE.equals(n.getExtra("remove"))) {
+                if (isRemoveFromOutput(n)) {
                     return;
                 }
                 super.visit(n, arg);
@@ -411,7 +417,7 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
 
             @Override
             public void visit(NormalAnnotationExpr n, Object arg) {
-                if (Boolean.TRUE.equals(n.getExtra("remove"))) {
+                if (isRemoveFromOutput(n)) {
                     return;
                 }
                 super.visit(n, arg);
@@ -432,6 +438,23 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
             }
 
             @Override
+            public void visit(MethodReferenceExpr n, Object arg) {
+                if (n.getIdentifier().startsWith("$")) {
+                    final IntTo<String> result = resolveToLiterals(ctx, new NameExpr(n.getIdentifier()));
+                    MethodReferenceExpr copy = (MethodReferenceExpr) n.clone();
+                    copy.setIdentifier(result.join(""));
+                    super.visit(copy, arg);
+                } else {
+                    super.visit(n, arg);
+                }
+            }
+
+            @Override
+            public void visit(ClassOrInterfaceDeclaration n, Object arg) {
+                super.visit(n, arg);
+            }
+
+            @Override
             protected String resolveName(NameExpr name) {
                 return resolveTemplate(ctx, templateLiteral(name.getName()));
             }
@@ -449,7 +472,7 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
                         (Expression) ctx.getNode(typeParam.getName())
                     );
                     if (literals.size() > 1) {
-                        X_Log.trace(getClass(), "Type parameter as variable returned more than one item...", literals, " from ", typeParam.getName());
+                        X_Log.trace(GeneratorVisitor.class, "Type parameter as variable returned more than one item...", literals, " from ", typeParam.getName());
                     }
                     return literals.join(", "); // scary...
                 }
@@ -504,6 +527,9 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
                 for (
                     ;itr.hasPrevious(); ) {
                     final BodyDeclaration member = itr.previous();
+                    if (member instanceof TypeDeclaration) {
+                        // nested types get special treatment.
+                    }
                     String declKey = declarationKey(member);
                     if (remapping.containsKey(declKey)) {
                         itr.remove();
@@ -532,6 +558,9 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
                 } else if (member instanceof FieldDeclaration) {
                     FieldDeclaration asField = (FieldDeclaration) member;
                     return asField.getVariables().toString();
+                } else if (member instanceof TypeDeclaration) {
+                    TypeDeclaration asType = (TypeDeclaration) member;
+                    return asType.getQualifiedName();
                 } else {
                     throw new IllegalArgumentException("No declaration key for " + debugNode(member));
                 }
@@ -545,6 +574,9 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
                     for (AnnotationExpr anno : n.getAnnotations()) {
                         switch (anno.getNameString().toLowerCase()) {
                             case "unfold":
+                                if (isRemoveFromOutput(anno)) {
+                                    break;
+                                }
                                 removeFromOutput(anno);
                                 Mutable<Integer> from = new Mutable<>();
                                 Mutable<Integer> to = new Mutable<>();
@@ -581,23 +613,39 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
                                 });
                                 methods = newMethods;
                                 remapping.put(declarationKey(n), (IntTo<BodyDeclaration>) methods.narrow());
-                                break;
+                                methods.forAll(this::visit, ctx);
+                                return n;
                             case "var":
+                                if (isRemoveFromOutput(anno)) {
+                                    break;
+                                }
                                 removeFromOutput(anno);
                                 name = new Mutable<>();
                                 Mutable<Expression> value = new Mutable<>();
                                 Mutable<Boolean> isDefault = new Mutable<>();
+
+                                Out2<Do, Do> todo = n.getExtra(DUMP_WRAP_KEY);
+                                if (todo == null) {
+                                    todo = DEFAULT_REMAPPER;
+                                }
+                                todo.out1().done();
+
                                 anno.getMembers().forEach(pair-> {
                                     switch (pair.getName().toLowerCase()) {
                                         case "name":
-                                            name.in(resolveString(ctx, pair.getValue()));
+                                            final String nameString = resolveString(ctx, pair.getValue());
+                                            name.in(nameString);
                                             break;
                                         case "value":
-                                            value.in(resolveVar(ctx, pair.getValue()));
+                                            value.in(pair.getValue());
                                             break;
                                         case "default":
-                                            value.in(resolveVar(ctx, pair.getValue()));
-                                            isDefault.in(true);
+                                            if (value.isNull()) {
+                                                value.in(pair.getValue());
+                                                isDefault.in(true);
+                                            } else {
+                                                assert false : "You should not define both value= and default= in " + debugNode(anno);
+                                            }
                                             break;
                                         default:
                                             throw new IllegalArgumentException("Unsupported var member name " + pair.getName() + " in " + anno);
@@ -607,6 +655,7 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
                                 methods.forEachValue(decl->
                                     deferVarResolution(ctx, decl, name.out1(), value.out1(), Boolean.TRUE.equals(isDefault.out1()))
                                 );
+                                todo.out2().done();
                                 break;
                             default:
                                 // An annotation we don't treat as special...
@@ -623,16 +672,20 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
         node.addExtra("remove", true);
     }
 
-    protected void deferVarResolution(Ctx ctx, Node newDecl, String varName, Node value) {
+    protected boolean isRemoveFromOutput(Node node) {
+        return Boolean.TRUE.equals(node.getExtra("remove"));
+    }
+
+    protected void deferVarResolution(Ctx ctx, Node newDecl, String varName, Expression value) {
         deferVarResolution(ctx, newDecl, varName, value, false);
     }
-    protected void deferVarResolution(Ctx ctx, Node newDecl, String varName, Node value, boolean checkFirst) {
+    protected void deferVarResolution(Ctx ctx, Node newDecl, String varName, Expression value, boolean checkFirst) {
         Mutable<Do> undoer = new Mutable<>();
         final Out2<Do, Do> existing = newDecl.getExtra(DUMP_WRAP_KEY);
         final Out2<Do, Do> myTask = Out2.out2Immutable(
             () -> undoer.in(
                 !checkFirst || !ctx.hasNode(varName) ?
-                    ctx.addToContext(varName, value) :
+                    ctx.addToContext(varName, resolveVar(ctx, value)) :
                     Do.NOTHING
             ),
             () -> undoer.out1().done()
@@ -671,11 +724,12 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
         return undos.computeIfAbsent(container, k->new GrowableIterator<>());
     }
 
-    private void generateInterface(
+    private void generateType(
         Ctx arg,
         SourceBuilder<Ctx> builder,
         Expression typeParams,
         Expression extend,
+        Expression implement,
         JsonContainerExpr methods,
         JsonContainerExpr defaultMethods,
         JsonContainerExpr staticMethods
@@ -687,6 +741,9 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
         if (extend != null) {
             addExtends(arg, builder, extend);
         }
+        if (implement != null) {
+            addImplements(arg, builder, implement);
+        }
 
         if (methods != null) {
             // just add the method definitions.
@@ -694,6 +751,7 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
         }
 
         if (defaultMethods != null) {
+            assert builder.getClassBuffer().isInterface() : "Classes should not have default methods";
             addMethods(arg, builder, defaultMethods, Modifier.PUBLIC | JavaVisitor.MODIFIER_DEFAULT);
         }
 
@@ -778,20 +836,52 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
     }
 
     protected void addExtends(Ctx arg, SourceBuilder<Ctx> builder, Expression extend) {
+        if (builder.getClassBuffer().isInterface()) {
+            addImplements(arg, builder, extend);
+        } else {
+            if (extend instanceof JsonContainerExpr) {
+                JsonContainerExpr json = (JsonContainerExpr) extend;
+                assert json.isArray() : "extend members must be arrays, not objects";
+                int size = json.size();
+                if (size > 1) {
+                    throw new IllegalArgumentException("A class cannot extend more than one type; you sent " + extend);
+                }
+                extend = json.getNode(0);
+            }
+            if (extend instanceof QualifiedNameExpr) {
+                QualifiedNameExpr qualified = (QualifiedNameExpr) extend;
+                if (qualified.getName().equals("class")) {
+                    extend = qualified.getQualifier();
+                }
+            }
+            if (extend instanceof NameExpr) {
+                String name = ASTHelper.extractStringValue(extend);
+                if (name.indexOf('.') != -1) {
+                    if (name.substring(0, name.lastIndexOf('.')).equals(builder.getPackage())) {
+                        name = name.substring(builder.getPackage().length() + 1);
+                    } else {
+                        name = builder.addImport(name);
+                    }
+                }
+                builder.getClassBuffer().setSuperClass(name);
+            } else {
+                throw new IllegalArgumentException("Unable to transform node " + extend.getClass() + " : " + extend + " into a type literal");
+            }
+        }
+    }
+    protected void addImplements(Ctx arg, SourceBuilder<Ctx> builder, Expression extend) {
         if (extend instanceof JsonContainerExpr) {
             // We have a list type...
             JsonContainerExpr json = (JsonContainerExpr) extend;
             assert json.isArray() : "extend members must be arrays, not objects";
             json.getPairs().forEach(pair->
-                addExtends(arg, builder, pair.getValueExpr())
+                addImplements(arg, builder, pair.getValueExpr())
             );
             return;
         } else if (extend instanceof QualifiedNameExpr){
             QualifiedNameExpr qualified = (QualifiedNameExpr) extend;
             if (qualified.getName().equals("class")) {
                 extend = qualified.getQualifier();
-            } else {
-                extend = qualified;
             }
         }
         if (extend instanceof NameExpr) {
@@ -809,7 +899,28 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
         }
     }
 
-    public void generateInterface(UiAttrExpr attr, Ctx arg) {
+    @Override
+    public Expression resolveVar(Ctx ctx, Expression valueExpr) {
+        Out2<Do, Do> remapping = getRemapper(valueExpr);
+        remapping.out1().done();
+        try {
+            return ApiGeneratorTools.super.resolveVar(ctx, valueExpr);
+        } finally {
+            remapping.out2().done();
+        }
+    }
+
+    private Out2<Do,Do> getRemapper(Expression valueExpr) {
+        Out2<Do, Do> remapper = valueExpr.getExtra(DUMP_WRAP_KEY);
+        return remapper == null ? DEFAULT_REMAPPER : remapper;
+    }
+
+    @Override
+    public Expression resolveVarReverse(Expression value, Ctx ctx) {
+        return ApiGeneratorTools.super.resolveVarReverse(value, ctx);
+    }
+
+    public void generateType(UiAttrExpr attr, Ctx arg) {
         JsonContainerExpr body = (JsonContainerExpr) attr.getExpression();
         final Expression typeParams = body.getNode("typeParams");
         final Expression extend = body.getNode("extend");

@@ -6,8 +6,10 @@ import elemental.html.StyleElement;
 import xapi.components.impl.ElementalModelComponentMixin;
 import xapi.dev.source.CanAddImports;
 import xapi.dev.ui.api.UiNamespace;
+import xapi.elemental.api.Elemental1Injector;
 import xapi.elemental.api.ElementalService;
 import xapi.elemental.api.PotentialNode;
+import xapi.ui.api.ElementInjector;
 import xapi.ui.html.api.GwtStyles;
 
 /**
@@ -23,6 +25,11 @@ public class UiNamespaceGwt implements UiNamespace {
 
         return importer.addImport(PotentialNode.class)
              + "<" + getElementType(importer) + ">";
+    }
+
+    @Override
+    public String getElementInjectorType(CanAddImports importer) {
+        return importer.addImport(Elemental1Injector.class);
     }
 
     @Override

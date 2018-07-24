@@ -15,6 +15,7 @@ import xapi.dev.source.SourceBuilder;
 import xapi.dev.ui.api.GeneratedUiImplementation.RequiredMethodType;
 import xapi.dev.ui.impl.InterestingNodeFinder.InterestingNodeResults;
 import xapi.dev.ui.impl.UiGeneratorTools;
+import xapi.dev.ui.tags.assembler.AssembledUi;
 import xapi.fu.Lazy;
 import xapi.fu.Maybe;
 import xapi.fu.Out1;
@@ -42,6 +43,7 @@ public class ComponentBuffer {
     private InterestingNodeResults interestingNodes;
     private final GeneratedUiComponent component;
     private String tagName;
+    private AssembledUi assembled;
 
     public ComponentBuffer(String pkgName, String simpleName) {
         this(pkgName, simpleName, immutable1(instance(ContainerMetadata.class)), true);
@@ -235,5 +237,17 @@ public class ComponentBuffer {
 
     public ApiGeneratorContext getContext() {
         return getRoot().getContext();
+    }
+
+    public AssembledUi getAssembly(UiGeneratorTools tools, UiNamespace namespace) {
+        if (assembled == null) {
+            assembled = new AssembledUi(this, tools, namespace);
+        } else {
+            assert assembled.getTools() == tools : "Inconsistent assembly; saw two different sets of tools : " +
+                assembled.getTools() + " and " + tools;
+            assert assembled.getNamespace() == namespace : "Inconsistent assembly; saw two different namespaces : " +
+                assembled.getNamespace() + " and " + namespace;
+        }
+        return assembled;
     }
 }

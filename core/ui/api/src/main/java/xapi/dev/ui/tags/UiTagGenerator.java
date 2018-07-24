@@ -609,7 +609,7 @@ public class UiTagGenerator extends UiComponentGenerator {
         if (scope instanceof FieldAccessExpr) {
             return getScopeType(tools, ((FieldAccessExpr)scope).getScope());
         }
-        X_Log.trace(getClass(), "Unable to determine scope of ", Out1.newOut1(()->tools.debugNode(scope)));
+        X_Log.trace(UiTagGenerator.class, "Unable to determine scope of ", Out1.newOut1(()->tools.debugNode(scope)));
         return null;
     }
 
@@ -650,7 +650,7 @@ public class UiTagGenerator extends UiComponentGenerator {
     ) {
         ClassBuffer output = ui.getSource().getClassBuffer();
         String builderType = output.addImport(ui.getElementBuilderType(namespace));
-        // TODO check if this builderType expects generics...
+        // TODO check if this builderType expects type parameters...
         final MethodBuffer method = ui.getOrCreateMethod(X_Modifier.PUBLIC,  builderType, "toDom");
         return method;
 

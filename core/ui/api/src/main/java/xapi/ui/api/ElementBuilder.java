@@ -21,6 +21,61 @@ public abstract class ElementBuilder <E> extends NodeBuilder<E> {
   private static final Object sync = new Object();
 
   private int seed;
+  private String id;
+
+
+  protected Provider<AttributeApplier> attributeApplier;
+  protected Provider<StyleApplier> stylizer;
+  protected final StringTo<AttributeBuilder> attributes;
+  private String tagName;
+  private boolean sanitize;
+
+  public ElementBuilder() {
+    this(false);
+  }
+
+  public ElementBuilder(boolean searchableChildren) {
+    super(searchableChildren);
+    attributes = X_Collect.newStringMap(AttributeBuilder.class);
+    attributeApplier = new LazyProvider<>(this::createAttributeApplier);
+    stylizer = new LazyProvider<>(this::createStyleApplier);
+    sanitize = true;
+  }
+
+  public ElementBuilder(String tagName) {
+    this();
+    setTagName(tagName);
+  }
+
+  public ElementBuilder(String tagName, boolean searchableChildren) {
+    this(searchableChildren);
+    setDefaultFactories();
+    setTagName(tagName);
+  }
+
+  public ElementBuilder(E element) {
+    this(false);
+    setDefaultFactories();
+    el = element;
+    onInitialize(el);
+  }
+
+  public String getId() {
+    return id;
+  }
+
+  public String getId(boolean forceCreate) {
+    if (forceCreate) {
+      ensureId();
+    }
+    return id;
+  }
+
+  @Override
+  public ElementBuilder<E> append(CharSequence chars) {
+    return (ElementBuilder<E>) super.append(chars);
+  }
+
 
   public String ensureId() {
     if (X_String.isEmpty(id)) {
@@ -40,23 +95,313 @@ public abstract class ElementBuilder <E> extends NodeBuilder<E> {
     return "ele_"+seed;
   }
 
-  private String id;
-
-  public String getId() {
-    return id;
+  @Override
+  public void cleanup() {
+    super.cleanup();
+    attributeApplier = null;
+    stylizer = null;
+    attributes.clear();
   }
 
-  public String getId(boolean forceCreate) {
-    if (forceCreate) {
-      ensureId();
+  protected abstract StyleApplier createStyleApplier();
+  protected AttributeApplier createAttributeApplier() {
+    return new ApplyPendingAttribute();
+  }
+
+  public ElementBuilder<E> setAttribute(String name, String value) {
+    if (equalsIgnoreCase("style", name)) {
+      getStyle().setValue(value);
+    } else {
+      if (equalsIgnoreCase("id", name)) {
+        id = value;
+      }
+      attributeApplier.get().setAttribute(name, value);
     }
-    return id;
+    return this;
+  }
+
+  private boolean equalsIgnoreCase(String id, String name) {
+    return name == null ? id == null : id.equals(name.toLowerCase());
+  }
+
+  public ElementBuilder<E> setDataAttribute(String name, String value) {
+    return setAttribute("data-"+ withPrefix(name), value);
+  }
+
+  public ElementBuilder<E> setClass(String value) {
+    setAttribute("class", value);
+    return this;
+  }
+
+
+  public ElementBuilder<E> addAttribute(String name, String value) {
+    switch(name.toLowerCase()) {
+      case "style":
+        getStyle().addValue(value);
+        break;
+      case "id":
+        id = value;
+        attributeApplier.get().addAttribute(name, value);
+        return this;
+      case "class":
+        AttributeBuilder was = attributes.get(name);
+        if (was == null) {
+          attributes.put(name, newClassnameBuilder());
+        }
+      default:
+        attributeApplier.get().addAttribute(name, value);
+    }
+    return this;
+  }
+
+  public ElementBuilder<E> addDataAttribute(String name, String value) {
+    return addAttribute("data-"+ withPrefix(name), value);
+  }
+
+  public String withPrefix(String dataKey) {
+    return prefix()+dataKey;
+  }
+
+  protected String prefix() {
+    return getDefaultPrefix(); // == System.getProperty("data.attr.prefix", "xapi-");
+  }
+
+  protected AttributeBuilder newClassnameBuilder() {
+    return new ClassnameBuilder();
+  }
+
+  public ElementBuilder<E> removeAttribute(String name) {
+    attributeApplier.get().removeAttribute(name);
+    return this;
+  }
+
+  public ElementBuilder<E> setStyle(String name, String value) {
+    getStyle().applyStyle(this, name, value);
+    return this;
+  }
+
+  public String toSource() {
+      StringBuilder b = new StringBuilder();
+      toHtml(b);
+      return sanitize() ? sanitizeHtml(b.toString()) : b.toString();
+  }
+
+  protected boolean sanitize() {
+    return sanitize;
+  }
+
+  public StyleApplier getStyle() {
+    if (X_String.isEmpty(getTagName()) && children instanceof ElementBuilder) {
+      return ((ElementBuilder)children).getStyle();
+    }
+    return stylizer.get();
+  }
+
+  public ElementBuilder<E> setStyle(String value) {
+    setAttribute("style", value);
+    return this;
+  }
+
+  public ElementBuilder<E> removeStyle(String name) {
+    getStyle().applyStyle(this, name, null);
+    return this;
+  }
+
+  /**
+   * @return the tagName
+   */
+  public String getTagName() {
+    return tagName;
+  }
+
+  public ElementBuilder<E> setId(String id) {
+    this.id = id;
+    setAttribute("id", id);
+    return this;
+  }
+
+  public ElementBuilder<E> setSrc(String src) {
+    setAttribute("src", src);
+    return this;
+  }
+
+  public ElementBuilder<E> setHref(String href) {
+    setAttribute("href", href);
+    return this;
+  }
+
+  /**
+   * @param tagName the tagName to set
+   */
+  public ElementBuilder<E> setTagName(String tagName) {
+    this.tagName = tagName;
+    return this;
+  }
+
+  public ElementBuilder<E> setTitle(String title) {
+    setAttribute("title", title);
+    return this;
+  }
+
+  public ElementBuilder<E> setSlot(String slot) {
+    setAttribute("slot", slot);
+    return this;
+  }
+
+  public ElementBuilder<E> setValue(String value) {
+    setAttribute("value", value);
+    return this;
+  }
+
+  public ElementBuilder<E> setChecked(String checked) {
+    setAttribute("checked", checked);
+    return this;
+  }
+
+  public ElementBuilder<E> setName(String name) {
+    setAttribute("name", name);
+    return this;
+  }
+
+  public abstract ElementBuilder<E> createNode(String tagName);
+
+  public ElementBuilder<E> createChild(String tagName) {
+    final ElementBuilder<E> child = createNode(tagName);
+    addChild(child, isDocumentFragment(tagName)); // If we are a document fragment, we need to make new children the target element for future inserts
+    return child;
+  }
+
+  protected boolean isDocumentFragment(String tagName) {
+    return X_String.isEmptyTrimmed(tagName) || "#document-fragment".equals(tagName);
+  }
+
+  public ElementBuilder<E> withChild(String value, In1<? super ElementBuilder<E>> childCallback) {
+    final ElementBuilder<E> child = createChild(value);
+    childCallback.in(child);
+    return this;
+  }
+  public <I1> ElementBuilder<E> withChild1(String value, In2<I1, ? super ElementBuilder<E>> childCallback, I1 in1) {
+    return withChild(value, childCallback.provide1(in1));
+  }
+  public <I2> ElementBuilder<E> withChild2(String value, In2<? super ElementBuilder<E>, I2> childCallback, I2 in2) {
+    return withChild(value, childCallback.provide2(in2));
+  }
+
+  public boolean isEmpty() {
+    return this.attributes.isEmpty() && isChildrenEmpty();
   }
 
   @Override
-  public ElementBuilder<E> append(CharSequence chars) {
-    return (ElementBuilder<E>) super.append(chars);
+  protected void toHtml(Appendable out) {
+    if (tagName != null) {
+      // If we have a tagname, then we might expect our element to be addressable.
+      // In which case, we want to ensure it has an id
+      if (searchableChildren) {
+        ensureId();
+      }
+    }
+    super.toHtml(out);
   }
+
+
+  @Override
+  protected CharSequence getCharsBefore() {
+    StringBuilder b = new StringBuilder();
+    if (tagName == null || tagName.isEmpty()) {
+      assert attributes.isEmpty() : "Cannot have attributes without a tagname";
+    } else {
+      b.append("<");
+      b.append(tagName);
+      appendAttributes(b);
+      if (isTagEmpty()) {
+        b.append("/");
+      }
+      b.append(">");
+    }
+    return b.length() == 0 ? EMPTY : b.toString();
+  }
+
+  @Override
+  protected boolean isTagEmpty() {
+    if (super.isTagEmpty()) {
+      switch(tagName.toLowerCase()) {
+        case "hr":
+        case "br":
+        case "img":
+        case "input":
+        /*<- <for it in $.emptyTags>case "$it":
+        </for> ->*/
+
+          // Any elements which should not be created with closing tags
+          return true;
+      }
+    }
+    return false;
+  }
+
+  @Override
+  protected CharSequence getCharsAfter(CharSequence self) {
+    if (tagName != null && !isTagEmpty()) {
+      return "</"+tagName+">";
+    }
+    return EMPTY;
+  }
+
+  private void appendAttributes(StringBuilder b) {
+    if (!attributes.isEmpty()) {
+      for (String attribute : attributes.keys()) {
+        b.append(" ").append(attribute).append("=\"");
+        String result = attributes.get(attribute).getElement();
+        b.append(sanitizeAttribute(result)).append("\"");
+      }
+    }
+  }
+
+  protected String sanitizeAttribute(String result) {
+    return  X_String.isEmpty(result) ? "" : result.replaceAll("\"", "&quot;");
+  }
+
+
+  public class ApplyPendingAttribute implements AttributeApplier {
+
+    @Override
+    public void addAttribute(String name, String value) {
+      // This is semantically
+      AttributeBuilder attr = attributes.get(name);
+      if (attr == null) {
+        setAttribute(name, value);
+      } else {
+        concat(attr, value);
+      }
+    }
+
+    protected void concat(AttributeBuilder attr, String value) {
+      attr.addChild(attr.wrapChars(value));
+    }
+
+    @Override
+    public void setAttribute(String name, String value) {
+      if (equalsIgnoreCase("id", name)) {
+        id = value;
+      }
+      attributes.put(name, newAttributeBuilder(value));
+    }
+
+    @Override
+    public String getAttribute(String name) {
+      AttributeBuilder attr = attributes.get(name);
+      if (attr == null) {
+        return EMPTY;
+      }
+      return attr.getElement();
+    }
+
+    @Override
+    public void removeAttribute(String name) {
+      attributes.remove(name);
+    }
+  }
+
 
   @SuppressWarnings("unused")
   public abstract class StyleApplier extends AttributeBuilder implements Stylizer<NodeBuilder<E>> {
@@ -110,8 +455,8 @@ public abstract class ElementBuilder <E> extends NodeBuilder<E> {
         attributes.put("style", (attr=this));
       } else {
         if (!(attr instanceof ElementBuilder.StyleApplier)) {
-        assert false : "Only use the setStyle method to set the 'style' attribute";
-        throw X_Debug.recommendAssertions();
+          assert false : "Only use the setStyle method to set the 'style' attribute";
+          throw X_Debug.recommendAssertions();
         }
       }
       return (StyleApplier) attr;
@@ -415,237 +760,21 @@ public abstract class ElementBuilder <E> extends NodeBuilder<E> {
 
   }
 
-  public class ApplyPendingAttribute implements AttributeApplier {
-
-    @Override
-    public void addAttribute(String name, String value) {
-      AttributeBuilder attr = attributes.get(name);
-      if (attr == null) {
-        setAttribute(name, value);
-      } else {
-        concat(attr, value);
-      }
-    }
-
-    protected void concat(AttributeBuilder attr, String value) {
-      attr.addChild(attr.wrapChars(value));
-    }
-
-    @Override
-    public void setAttribute(String name, String value) {
-      if (equalsIgnoreCase("id", name)) {
-        id = value;
-      }
-      attributes.put(name, newAttributeBuilder(value));
-    }
-
-    @Override
-    public String getAttribute(String name) {
-      AttributeBuilder attr = attributes.get(name);
-      if (attr == null) {
-        return EMPTY;
-      }
-      return attr.getElement();
-    }
-
-    @Override
-    public void removeAttribute(String name) {
-      attributes.remove(name);
-    }
+  protected String sanitizeHtml(String html) {
+    return bodySanitizer.apply(html); // TODO: actually sanitize
   }
 
-  protected Provider<AttributeApplier> attributeApplier;
-  protected Provider<StyleApplier> stylizer;
-  protected final StringTo<AttributeBuilder> attributes;
-
-  public ElementBuilder() {
-      this(false);
-  }
-
-  public ElementBuilder(boolean searchableChildren) {
-    super(searchableChildren);
-    attributes = X_Collect.newStringMap(AttributeBuilder.class);
-    attributeApplier = new LazyProvider<>(new Provider<AttributeApplier>() {
-      @Override
-      public AttributeApplier get() {
-        return createAttributeApplier();
-      }
-    });
-    stylizer = new LazyProvider<>(new Provider<StyleApplier>() {
-      @Override
-      public StyleApplier get() {
-        return createStyleApplier();
-      }
-    });
+  protected boolean isAutoAppend(E el) {
+    return false;
   }
 
   @Override
-  public void cleanup() {
-    super.cleanup();
-    attributeApplier = null;
-    stylizer = null;
-    attributes.clear();
-  }
-
-  protected abstract StyleApplier createStyleApplier();
-  protected AttributeApplier createAttributeApplier() {
-    return new ApplyPendingAttribute();
-  }
-
-  public ElementBuilder<E> setAttribute(String name, String value) {
-    if (equalsIgnoreCase("style", name)) {
-      getStyle().setValue(value);
-    } else {
-      if (equalsIgnoreCase("id", name)) {
-        id = value;
-      }
-      attributeApplier.get().setAttribute(name, value);
+  public void clearChildren() {
+    if (isInitialized()) {
+      clearChildren(getElement());
     }
-    return this;
+    super.clearChildren();
   }
 
-  private boolean equalsIgnoreCase(String id, String name) {
-    return name == null ? id == null : id.equals(name.toLowerCase());
-  }
-
-  public ElementBuilder<E> setDataAttribute(String name, String value) {
-    return setAttribute("data-"+ withPrefix(name), value);
-  }
-
-  public ElementBuilder<E> setClass(String value) {
-    setAttribute("class", value);
-    return this;
-  }
-
-
-  public ElementBuilder<E> addAttribute(String name, String value) {
-    switch(name.toLowerCase()) {
-      case "style":
-        getStyle().addValue(value);
-        break;
-      case "id":
-        id = value;
-        attributeApplier.get().addAttribute(name, value);
-        return this;
-      case "class":
-        AttributeBuilder was = attributes.get(name);
-        if (was == null) {
-          attributes.put(name, newClassnameBuilder());
-        }
-      default:
-        attributeApplier.get().addAttribute(name, value);
-    }
-    return this;
-  }
-
-  public ElementBuilder<E> addDataAttribute(String name, String value) {
-    return addAttribute("data-"+ withPrefix(name), value);
-  }
-
-  public String withPrefix(String dataKey) {
-    return prefix()+dataKey;
-  }
-
-  protected String prefix() {
-    return getDefaultPrefix(); // == System.getProperty("data.attr.prefix", "xapi-");
-  }
-
-  protected AttributeBuilder newClassnameBuilder() {
-    return new ClassnameBuilder();
-  }
-
-  public ElementBuilder<E> removeAttribute(String name) {
-    attributeApplier.get().removeAttribute(name);
-    return this;
-  }
-
-  public ElementBuilder<E> setStyle(String name, String value) {
-    getStyle().applyStyle(this, name, value);
-    return this;
-  }
-
-  public String toSource() {
-      StringBuilder b = new StringBuilder();
-      toHtml(b);
-      return b.toString();
-  }
-
-  public StyleApplier getStyle() {
-    return stylizer.get();
-  }
-
-  public ElementBuilder<E> setStyle(String value) {
-    setAttribute("style", value);
-    return this;
-  }
-
-  public ElementBuilder<E> removeStyle(String name) {
-    getStyle().applyStyle(this, name, null);
-    return this;
-  }
-
-  public ElementBuilder<E> setId(String id) {
-    this.id = id;
-    setAttribute("id", id);
-    return this;
-  }
-
-  public ElementBuilder<E> setSrc(String src) {
-    setAttribute("src", src);
-    return this;
-  }
-
-  public ElementBuilder<E> setHref(String href) {
-    setAttribute("href", href);
-    return this;
-  }
-
-  public ElementBuilder<E> setTitle(String title) {
-    setAttribute("title", title);
-    return this;
-  }
-
-  public ElementBuilder<E> setSlot(String slot) {
-    setAttribute("slot", slot);
-    return this;
-  }
-
-  public ElementBuilder<E> setValue(String value) {
-    setAttribute("value", value);
-    return this;
-  }
-
-  public ElementBuilder<E> setChecked(String checked) {
-    setAttribute("checked", checked);
-    return this;
-  }
-
-  public ElementBuilder<E> setName(String name) {
-    setAttribute("name", name);
-    return this;
-  }
-
-  public abstract ElementBuilder<E> createNode(String tagName);
-
-  public ElementBuilder<E> createChild(String tagName) {
-    final ElementBuilder<E> child = createNode(tagName);
-    addChild(child, X_String.isEmpty(tagName)); // If we are a document fragment, we need to make new children the target element for future inserts
-    return child;
-  }
-
-  public ElementBuilder<E> withChild(String value, In1<? super ElementBuilder<E>> childCallback) {
-    final ElementBuilder<E> child = createChild(value);
-    childCallback.in(child);
-    return this;
-  }
-  public <I1> ElementBuilder<E> withChild1(String value, In2<I1, ? super ElementBuilder<E>> childCallback, I1 in1) {
-    return withChild(value, childCallback.provide1(in1));
-  }
-  public <I2> ElementBuilder<E> withChild2(String value, In2<? super ElementBuilder<E>, I2> childCallback, I2 in2) {
-    return withChild(value, childCallback.provide2(in2));
-  }
-
-  public boolean isEmpty() {
-    return this.attributes.isEmpty() && isChildrenEmpty();
-  }
+  protected abstract void clearChildren(E element);
 }

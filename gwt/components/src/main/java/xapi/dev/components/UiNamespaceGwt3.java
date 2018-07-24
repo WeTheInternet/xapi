@@ -6,7 +6,9 @@ import elemental2.dom.Node;
 import xapi.components.impl.GwtModelComponentMixin;
 import xapi.dev.source.CanAddImports;
 import xapi.elemental.api.ElementalBuilder;
+import xapi.elemental.api.ElementalInjector;
 import xapi.elemental.impl.Gwt3ServiceDefault;
+import xapi.ui.api.ElementInjector;
 import xapi.ui.html.api.GwtStyles;
 
 /**
@@ -21,6 +23,11 @@ public class UiNamespaceGwt3 extends UiNamespaceGwt {
     public String getElementBuilderType(CanAddImports importer) {
         return importer.addImport(ElementalBuilder.class)
              + "<" + getElementType(importer) + ">";
+    }
+
+    @Override
+    public String getElementInjectorType(CanAddImports importer) {
+        return importer.addImport(ElementalInjector.class);
     }
 
     @Override

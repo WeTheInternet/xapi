@@ -22,7 +22,7 @@ import javax.validation.constraints.NotNull;
 @JsType
 public interface UiElement
     <Node, Element extends Node, Base extends UiElement<Node, ? extends Node, Base>>
-    extends ElementInjector<Node, Base>, UiNode<Node, Element, Base> {
+    extends UiInjector<Node, Base>, UiNode<Node, Element, Base> {
 
   @JsProperty
   Base getParent();
@@ -117,7 +117,7 @@ public interface UiElement
   }
 
   @JsIgnore
-  default ElementInjector<Node, Base> asInjector() {
+  default UiInjector<Node, Base> asInjector() {
     // Platforms like Gwt might erase the type information off a
     // raw html / javascript type, so we return "real java objects" here.
     // This also allows implementors to insert control logic to the element attachment methods.

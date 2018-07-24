@@ -7,6 +7,7 @@ import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.FieldBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
+import xapi.fu.In1;
 import xapi.fu.Lazy;
 import xapi.fu.X_Fu;
 import xapi.source.X_Modifier;
@@ -200,9 +201,13 @@ public class GeneratedJavaFile {
         return methods.isResolved() && methods.out1().has(name);
     }
     public MethodBuffer getOrCreateMethod(int modifiers, String returnType, String name) {
+        return getOrCreateMethod(modifiers, returnType, name, In1.ignored());
+    }
+    public MethodBuffer getOrCreateMethod(int modifiers, String returnType, String name, In1<MethodBuffer> initMethod) {
         return methods.out1().getOrCreate(name, n->{
             final String realName = newMethodName(name);
             final MethodBuffer method = getSource().getClassBuffer().createMethod(modifiers, returnType, realName);
+            initMethod.in(method);
             return method;
         });
     }
@@ -211,9 +216,13 @@ public class GeneratedJavaFile {
         return fields.isResolved() && fields.out1().has(name);
     }
     public FieldBuffer getOrCreateField(int modifiers, String returnType, String name) {
+        return getOrCreateField(modifiers, returnType, name, In1.ignored());
+    }
+    public FieldBuffer getOrCreateField(int modifiers, String returnType, String name, In1<FieldBuffer> initField) {
         return fields.out1().getOrCreate(name, n->{
             final String realName = newFieldName(name);
             final FieldBuffer field = getSource().getClassBuffer().createField(returnType, realName, modifiers);
+            initField.in(field);
             return field;
         }).setModifier(modifiers); // always overwrite modifiers; last caller wins.  If you have exotic needs, submit a pull request
     }

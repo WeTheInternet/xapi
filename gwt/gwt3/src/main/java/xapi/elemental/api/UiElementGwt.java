@@ -13,7 +13,7 @@ import jsinterop.base.Js;
 import xapi.annotation.inject.InstanceDefault;
 import xapi.gwt.api.JsLazyExpando;
 import xapi.inject.X_Inject;
-import xapi.ui.api.ElementInjector;
+import xapi.ui.api.UiInjector;
 import xapi.ui.api.ElementPosition;
 import xapi.ui.impl.AbstractUiElement;
 
@@ -145,7 +145,7 @@ public class UiElementGwt<E extends HTMLElement>
   }
 
   @Override
-  public ElementInjector<Node, UiElementGwt<?>> asInjector() {
-    return new ElementalInjector(getElement());
+  public UiInjector<Node, UiElementGwt<?>> asInjector() {
+    return new ElementalUiInjector(getElement());
   }
 }

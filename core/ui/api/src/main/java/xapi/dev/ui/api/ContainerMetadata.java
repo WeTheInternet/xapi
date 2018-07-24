@@ -26,6 +26,7 @@ import xapi.fu.Out1;
 import xapi.source.X_Source;
 import xapi.ui.service.UiService;
 
+import static xapi.fu.In1Out1.returnTrue;
 import static xapi.fu.Lazy.deferred1;
 
 import java.util.IdentityHashMap;
@@ -430,10 +431,17 @@ public class ContainerMetadata {
         return copy;
     }
 
-    public boolean hasFactory(
+    public boolean hasResolvedFactory(
         Class<?> key
     ) {
         final Maybe<Lazy<?>> success = root.factories.firstWhereKeyValue(key::isAssignableFrom, Lazy::isFull1);
+        return success.isPresent();
+    }
+
+    public boolean hasRegisteredFactory(
+        Class<?> key
+    ) {
+        final Maybe<Lazy<?>> success = root.factories.firstWhereKey(key::isAssignableFrom);
         return success.isPresent();
     }
 

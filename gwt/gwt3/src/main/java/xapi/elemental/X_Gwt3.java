@@ -16,6 +16,7 @@ import xapi.elemental.api.ElementalIterable;
 import xapi.fu.Do;
 import xapi.fu.In1;
 import xapi.inject.X_Inject;
+import xapi.util.X_String;
 
 import javax.inject.Provider;
 
@@ -44,11 +45,7 @@ public class X_Gwt3 {
   }
 
   public static String concatClass(final String is, final String value) {
-    final String clsName = " " + is + " ";
-    return
-      clsName.contains(" " + value + " ")
-      ? is
-        : is + " " + value;
+    return X_String.concatIfNotContains(is, value, " ");
   }
 
   public static void detachElement(final Element el) {

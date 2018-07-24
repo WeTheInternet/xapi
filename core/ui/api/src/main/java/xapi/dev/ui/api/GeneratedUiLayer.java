@@ -20,6 +20,7 @@ import xapi.fu.X_Fu;
 import xapi.source.X_Source;
 import xapi.source.read.JavaModel.IsTypeDefinition;
 import xapi.ui.api.CreatesChildren;
+import xapi.ui.api.ElementBuilder;
 import xapi.ui.api.NodeBuilder;
 import xapi.util.X_String;
 
@@ -199,7 +200,7 @@ public abstract class GeneratedUiLayer extends GeneratedJavaFile {
                     "Builder",
                     "EB"
                 );
-                String nodeBuilder = getSource().addImport(NodeBuilder.class);
+                String nodeBuilder = getSource().addImport(ElementBuilder.class);
                 final String elementType = getElementType(namespace);
                 final GeneratedUiGenericInfo generics = getOwner().getGenericInfo();
                 final GeneratedTypeParameter generic = generics
@@ -212,12 +213,7 @@ public abstract class GeneratedUiLayer extends GeneratedJavaFile {
                     )
                 ));
 
-                final ClassOrInterfaceType childBuilder = new ClassOrInterfaceType(getSource().addImport(CreatesChildren.class));
-                childBuilder.setTypeArguments(TypeArguments.withArguments(
-                    new ClassOrInterfaceType("String"), new ClassOrInterfaceType(nameElementBuilder)
-                ));
-
-                generic.absorb(new TypeParameter(nameElementBuilder, Arrays.asList(builderType, childBuilder)));
+                generic.absorb(new TypeParameter(nameElementBuilder, Collections.singletonList(builderType)));
             } else {
                 nameElementBuilder = namespace.getElementBuilderType(getSource());
             }

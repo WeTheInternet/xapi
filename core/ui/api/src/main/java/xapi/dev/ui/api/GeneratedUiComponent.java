@@ -29,6 +29,7 @@ import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
 import xapi.fu.iterate.SizedIterable;
 import xapi.source.X_Modifier;
+import xapi.ui.api.ElementInjector;
 import xapi.util.X_String;
 
 import static com.github.javaparser.ast.expr.StringLiteralExpr.stringLiteral;
@@ -49,7 +50,7 @@ public class GeneratedUiComponent {
     private final StringTo<GeneratedUiSupertype> superInterfaces;
     private final StringTo<ReferenceType> globalDefs;
     private final StringTo<GeneratedJavaFile> extraLayers;
-    private String nameElementBuilderFactory;
+    private final ReservedUiMethods methods;
     private String tagName;
     private GeneratedUiSupertype superType;
 
@@ -65,6 +66,7 @@ public class GeneratedUiComponent {
         globalDefs = X_Collect.newStringMapInsertionOrdered(ReferenceType.class);
         genericInfo = new GeneratedUiGenericInfo();
         extraLayers = X_Collect.newStringMap(GeneratedUiLayer.class);
+        methods = new ReservedUiMethods(this);
     }
 
     public GeneratedUiImplementation getBestImpl(GeneratedUiImplementation similarToo) {
@@ -84,26 +86,12 @@ public class GeneratedUiComponent {
         return best;
     }
 
-
     public String getElementBuilderConstructor(UiNamespace namespace) {
-        if (nameElementBuilderFactory == null) {
-            final GeneratedUiBase baseClass = base.out1();
-            final String builderName = baseClass.newMethodName("newBuilder");
-            baseClass.getSource().getClassBuffer().makeAbstract();
-            String builderType = baseClass.getElementBuilderType(namespace);
-            // When in api/base layer, we will create an abstract method that impls must fill;
-            baseClass.getSource().getClassBuffer().createMethod("public abstract " +builderType +" " + builderName + "()");
-            getImpls().forAll(impl -> {
-                final UiNamespace ns = impl.reduceNamespace(namespace);
-                String type = impl.getElementBuilderType(ns);
-                impl.getSource()
-                    .getClassBuffer().createMethod("public " + type +" " + builderName + "()")
-                    .returnValue("new " + type + "()");
-            });
-            nameElementBuilderFactory = builderName + "()";
-        }
-        // Use the concrete type
-        return nameElementBuilderFactory;
+        return methods.newBuilder(namespace);
+    }
+
+    public String getElementInjectorConstructor(UiNamespace namespace) {
+        return methods.newInjector(namespace);
     }
 
 

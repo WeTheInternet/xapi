@@ -7,6 +7,7 @@ import xapi.annotation.inject.InstanceDefault;
 import xapi.dev.source.SourceBuilder;
 import xapi.inject.X_Inject;
 import xapi.io.X_IO;
+import xapi.log.X_Log;
 import xapi.reflect.X_Reflect;
 import xapi.time.X_Time;
 import xapi.util.api.Digester;
@@ -37,7 +38,7 @@ public class ApiGenerator {
         ApiGenerator generator = X_Inject.instance(ApiGenerator.class);
         for (String coord : coords) {
             Path path = Paths.get(coord);
-            System.out.println(path);
+            X_Log.info(ApiGenerator.class, "Checking for xapi source in", coord);
             Files.find(path, 50, (p, a)-> p.toString().endsWith("Out.xapi"))
                 .forEach(file->generator.generate(path, file));
         }
@@ -45,7 +46,12 @@ public class ApiGenerator {
 
     private <Ctx extends ApiGeneratorContext<Ctx>> void generate(Path path, Path file) {
         try {
+            X_Log.info(ApiGenerator.class, "Generating classes from", file.toString(), "in", path.toString());
             String sourceFile = X_IO.toStringUtf8(Files.newInputStream(file));
+            if (sourceFile.trim().isEmpty()) {
+                X_Log.trace(ApiGenerator.class, "Skipping empty source file", file.toString());
+                return;
+            }
             Path relativePath = path.relativize(file);
             final Node ast = JavaParser.parseNode(sourceFile);
             GeneratorVisitor<Ctx> visitor = new GeneratorVisitor<>(relativePath);

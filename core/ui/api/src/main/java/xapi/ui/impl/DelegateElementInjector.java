@@ -1,6 +1,6 @@
 package xapi.ui.impl;
 
-import xapi.ui.api.ElementInjector;
+import xapi.ui.api.UiInjector;
 import xapi.ui.api.ElementPosition;
 import xapi.ui.api.UiElement;
 
@@ -8,7 +8,7 @@ import xapi.ui.api.UiElement;
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 4/18/16.
  */
-public class DelegateElementInjector <Node, Base extends UiElement<Node, ? extends Node, Base>> implements ElementInjector <Node, Base> {
+public class DelegateElementInjector <Node, Base extends UiElement<Node, ? extends Node, Base>> implements UiInjector<Node, Base> {
 
   // The positional anchor of where to insert items.
   private final Base anchor;

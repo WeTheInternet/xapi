@@ -67,4 +67,15 @@ public class StringElementBuilder extends ElementBuilder<String> {
             }
         };
     }
+
+    @Override
+    protected void clearChildren(String element) {
+        if (children != null) {
+            // tricky tricky...
+            int was = 0;
+            assert ((was = el.length()) >= children.getElement().length());
+            el = el.replace(children.getElement(), "");
+            assert ((was != el.length())) : "Tried to remove a child we did not contain";
+        }
+    }
 }

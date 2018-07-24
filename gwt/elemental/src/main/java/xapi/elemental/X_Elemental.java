@@ -12,6 +12,7 @@ import xapi.elemental.api.ElementalService;
 import xapi.elemental.api.PotentialNode;
 import xapi.inject.X_Inject;
 import xapi.ui.html.X_Html;
+import xapi.util.X_String;
 import xapi.util.api.ConvertsValue;
 
 import javax.inject.Provider;
@@ -50,11 +51,7 @@ public class X_Elemental {
   }
 
   public static String concatClass(final String is, final String value) {
-    final String clsName = " " + is + " ";
-    return
-      clsName.contains(" " + value + " ")
-      ? is
-        : is + " " + value;
+    return X_String.concatIfNotContains(is, value, " ");
   }
 
   public static void detachElement(final Element el) {

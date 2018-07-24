@@ -1,33 +1,33 @@
 package xapi.elemental.api;
 
+import elemental.dom.Node;
 import elemental2.core.Function;
-import elemental2.dom.Node;
 import javaemul.internal.JsUtils;
-import jsinterop.base.Any;
 import jsinterop.base.Js;
 import xapi.ui.api.ElementInjector;
 import xapi.ui.api.ElementPosition;
 
+import com.google.gwt.core.client.JavaScriptObject;
+
 /**
- * Created by James X. Nelson (james @wetheinter.net) on 7/24/18.
+ * Created by James X. Nelson (james @wetheinter.net) on 7/23/18.
  */
-public class ElementalInjector implements ElementInjector<Node> {
+public class Elemental1Injector implements ElementInjector<Node> {
 
     protected static Function insertAdjacentNode = Js.uncheckedCast(
         JsUtils.getProperty(
             htmlElementPrototype(),
-            "insertAdjacentElement"
-        )
+            "insertAdjacentElement")
     );
 
-    private static native Any htmlElementPrototype()
+    private static native JavaScriptObject htmlElementPrototype()
     /*-{
       return Object.create($wnd.HTMLElement.prototype);
     }-*/;
 
     private final Node self;
 
-    public ElementalInjector(Node self) {
+    public Elemental1Injector(Node self) {
         this.self = self;
     }
 

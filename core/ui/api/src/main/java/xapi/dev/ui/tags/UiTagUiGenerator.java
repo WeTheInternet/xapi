@@ -12,6 +12,10 @@ import xapi.dev.source.FieldBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.ui.api.*;
 import xapi.dev.ui.impl.UiGeneratorTools;
+import xapi.dev.ui.tags.assembler.AssembledUi;
+import xapi.dev.ui.tags.assembler.DefaultUiAssembler;
+import xapi.dev.ui.tags.assembler.UiAssembler;
+import xapi.dev.ui.tags.assembler.UiAssemblerResult;
 import xapi.except.NotConfiguredCorrectly;
 import xapi.except.NotYetImplemented;
 import xapi.fu.*;
@@ -34,10 +38,13 @@ import static xapi.source.X_Source.javaQuote;
  */
 public class UiTagUiGenerator extends UiFeatureGenerator {
 
-    private class UiContainerExprVoidVisitorAdapter extends VoidVisitorAdapter<UiContainerExpr> {
+    public class UiTagGeneratorVisitor extends VoidVisitorAdapter<UiContainerExpr> {
+
+        public UiTagUiGenerator getOwner() {
+            return UiTagUiGenerator.this;
+        }
 
         private final GeneratedUiComponent component;
-        private final UiNamespace namespace;
         private final MethodBuffer toDom;
         private final UiGeneratorTools tools;
         private final ApiGeneratorContext ctx;
@@ -50,9 +57,9 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
         public String refFieldName;
         public String rootRef; // The name of the ref in the xapi source
         public String rootRefField; // The name of the ref field in generated java
-        Lazy<String> newBuilder;
+        public UiAssembler rootAssembler, parentAssembler;
 
-        public UiContainerExprVoidVisitorAdapter(
+        public UiTagGeneratorVisitor(
             GeneratedUiComponent component,
             GeneratedUiLayer layer,
             MethodBuffer toDom,
@@ -62,7 +69,6 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
         ) {
             this.layer = layer;
             this.component = component;
-            this.namespace = tools.namespace();
             this.toDom = toDom;
             this.tools = tools;
             this.ctx = me.getContext();
@@ -71,7 +77,6 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
             this.out = baseClass.getSource().getClassBuffer();
             this.me = me;
             refNameSpy = In1.ignored();
-            newBuilder = Lazy.deferred1(component::getElementBuilderConstructor, namespace);
         }
 
         @Override
@@ -97,6 +102,22 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
                     handleNativeTag(n, arg, refNode, ctx);
                     return;
             }
+
+//            DefaultUiAssembler assembler = new DefaultUiAssembler(this, refNode, tools, component, layer, rootRefs);
+//            final UiAssemblerResult result = assembler.generateAssembly(
+//                UiTagUiGenerator.this,
+//                n,
+//                parentAssembler
+//            );
+//            if (result.isSuccess()) {
+//                final UiAssembler oldParent = parentAssembler;
+//                parentAssembler = assembler;
+//                // visit body children and return
+//                visitBody(n);
+//                parentAssembler = oldParent;
+//                return;
+//            } // else fallthrough to legacy mess...
+
             String parentRefName = refFieldName;
             // TODO: if the container is a known xapi component,
             // then ask that component how it wants to render this node.
@@ -175,7 +196,7 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
                         printedVar = true;
                     } else {
                         // The model node was not a named key; it might be a json literal...
-                        X_Log.info(getClass(), "");
+                        X_Log.info(UiTagUiGenerator.class, "Model node was not a named key", tools.debugNode(modelExpr));
                     }
                 }
             }
@@ -183,17 +204,13 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
             try {
 
                 if (printedVar) {
-                    if (n.getBody() != null) {
-                        n.getBody().accept(this, n);
-                    }
+                    visitBody(n);
                 } else {
                     toDom.println(type + " " + refFieldName + " = " + newBuilder.out1() + ";")
                         .println(refFieldName + ".append(\"<" + n.getName() +
                             (compact ? "" : ">") + "\");");
                     try {
-                        // tricky... each ui container sends itself to its children as parent argument;
-                        // the visitor will visit all children in n with n as the nearest container parent.
-                        super.visit(n, n);
+                        visitBody(n);
                     } finally {
                         if (compact) {
                             toDom.println(refFieldName + ".append(\" />\");");
@@ -212,7 +229,13 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
             }
         }
 
-        private Do registerNode(UiContainerExpr n, Maybe<Expression> refNode, boolean isRoot) {
+        public void visitBody(UiContainerExpr n) {
+            if (n.getBody() != null) {
+                n.getBody().accept(this, n);
+            }
+        }
+
+        public Do registerNode(UiContainerExpr n, Maybe<Expression> refNode, boolean isRoot) {
             if (isRoot) {
                 // we force a ref to any root nodes.
                 // note that this can happen multiple times,
@@ -240,7 +263,7 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
             }
         }
 
-        private String setRootRef(Maybe<Expression> refNode) {
+        public String setRootRef(Maybe<Expression> refNode) {
             final Expression refExpr = refNode.ifAbsentSupply(
                 out1Deferred(
                     TemplateLiteralExpr::templateLiteral,
@@ -756,12 +779,32 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
     private final String name;
     private final String pkg;
     private final UiTagGenerator owner;
+    private Lazy<String> newBuilder;
+    private Lazy<String> newInjector;
+    private UiNamespace namespace;
 
 
     public UiTagUiGenerator(String pkg, String name, UiTagGenerator owner) {
         this.name = name;
         this.pkg = pkg;
         this.owner = owner;
+    }
+
+    /**
+     * Returns the method name for newBuilder() that should be used.
+     *
+     * Invoking this method ensures the required method is generated for you.
+     */
+    public String newBuilder() {
+        return newBuilder.out1();
+    }
+    /**
+     * Returns the method name for newInjector() that should be used.
+     *
+     * Invoking this method ensures the required method is generated for you.
+     */
+    public String newInjector() {
+        return newInjector.out1();
     }
 
     @Override
@@ -772,7 +815,13 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
         ContainerMetadata me,
         UiAttrExpr ui
     ) {
+        if (this.namespace == null) {
+            this.namespace = tools.namespace();
+        }
+        // hm... should likely check the name of the host tag for <shadow /> as well...
         final GeneratedUiComponent component = me.getGeneratedComponent();
+        this.newBuilder = Lazy.deferred1(component::getElementBuilderConstructor, namespace);
+        this.newInjector = Lazy.deferred1(component::getElementInjectorConstructor, namespace);
         boolean shadowUi = ui.getAnnotation(a->a.getNameString().equalsIgnoreCase("shadowdom")).isPresent();
         if (shadowUi || owner.alwaysUseShadowDom()) {
             // We explicitly want to generate shadow dom
@@ -783,7 +832,10 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
             MethodBuffer toDom = owner.toDomMethod(namespace, component.getBase());
             ChainBuilder<String> rootRefs = Chain.startChain();
 
-            final UiContainerExprVoidVisitorAdapter visitor = new UiContainerExprVoidVisitorAdapter(
+            AssembledUi assembled = source.getAssembly(tools, namespace);
+
+
+            final UiTagGeneratorVisitor visitor = new UiTagGeneratorVisitor(
                 component,
                 component.getBase(),
                 toDom,
@@ -839,4 +891,7 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
         return UiVisitScope.FEATURE_NO_CHILDREN;
     }
 
+    public UiNamespace getNamespace() {
+        return namespace;
+    }
 }
