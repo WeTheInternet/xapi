@@ -4,12 +4,12 @@
   <parent>
     <groupId>net.wetheinter</groupId>
     <artifactId>xapi-dev-gwtc</artifactId>
-    <version>0.6-SNAPSHOT</version>
+    <version>0.5.1-SNAPSHOT</version>
   </parent>
 
   <groupId>net.wetheinter</groupId>
   <artifactId>xapi-gwtc-impl</artifactId>
-  <version>0.6-SNAPSHOT</version>
+  <version>0.5.1-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>XApi - Gwt Compiler Implementation</name>
   <url>WeTheInter.net</url>
