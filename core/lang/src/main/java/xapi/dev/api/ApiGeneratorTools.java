@@ -413,15 +413,17 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
     }
 
     default int extractInt(Ctx ctx, Expression parameter) {
-        if (parameter instanceof StringLiteralExpr) {
-            return Integer.parseInt(ASTHelper.extractStringValue(parameter));
-        } else if (parameter instanceof NameExpr) {
-            String name = ((NameExpr)parameter).getName();
+        final Expression resolved = resolveVar(ctx, parameter);
+        if (resolved instanceof StringLiteralExpr) {
+            return Integer.parseInt(ASTHelper.extractStringValue(resolved));
+        } else if (resolved instanceof NameExpr) {
+            String name = ((NameExpr)resolved).getName();
             // Now that we have the variable name, lets pull it from context
             int size = Integer.parseInt(ctx.getString(name));
             return size;
         }
-        throw new IllegalArgumentException("Cannot extract int from " + parameter + " (at " + parameter.getCoordinates() + ")");
+        throw new IllegalArgumentException("Cannot extract int from " + debugNode(parameter) +
+            (resolved == parameter ? "" : "; resolved to: " + debugNode(resolved)));
     }
 
     default Expression resolveNode(Ctx ctx, Node node) {

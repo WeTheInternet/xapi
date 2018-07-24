@@ -4589,13 +4589,12 @@ Expression MemberValue():
 	   ret = Annotation()
 	 |
 	   ret = MemberValueArrayInitializer()
-	 | (
-	   type = Type() {
-	     ret = new TypeExpr(type);
-	   }
-	 )
 	 |
-	   ret = ConditionalExpression()
+	   ret = ConditionalExpression() {
+	     if (ret instanceof NameExpr) {
+	       ret = new TypeExpr(ReferenceType.ofClass(((NameExpr)ret).getQualifiedName()));
+	     }
+	   }
 	 |
 	   ret = UiContainer()
   )

@@ -48,7 +48,7 @@ public class ApiGeneratorContext<Ctx extends ApiGeneratorContext<Ctx>>
         final Node was = vars.get(key);
         vars.put(key, node);
         if (was != null && was != node) {
-            X_Log.warn(getClass(), "Overriding key ", id, "was", was, "is", node);
+            X_Log.warn(ApiGeneratorContext.class, "Overriding key ", id, "was", was, "is", node);
         }
         return was == null ? () -> vars.remove(key) : () -> vars.put(key, was);
     }

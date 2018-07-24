@@ -1508,7 +1508,6 @@ public class JavaLexer {
           pos = eatAnnotationBody(NO_OP_ANNOTATION_VISITOR, null, chars, pos);
         }
         pos = eatWhitespaceAndComments(chars, pos);
-        System.out.println(chars.charAt(pos)+"\n"+chars.subSequence(pos, pos + 10)+"\n\n\n");
       }
       pos = visitModifier(NO_OP_MOD_VISITOR, null, chars, pos);
       pos = eatJavaname(chars, pos);

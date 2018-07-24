@@ -338,7 +338,7 @@ public class DumpVisitor implements VoidVisitor<Object> {
                 printer.print("class ");
             }
 
-            printer.print(n.getName());
+            printer.print(resolveName(n.getNameExpr()));
 
             printTypeParameters(n.getTypeParameters(), arg);
 
@@ -1816,7 +1816,7 @@ public class DumpVisitor implements VoidVisitor<Object> {
             printer.print(">");
         }
         if (identifier != null) {
-            printer.print(identifier);
+            printer.print(resolveName(new NameExpr(identifier)));
         }
 
     }

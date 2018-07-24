@@ -17,6 +17,8 @@ import com.github.javaparser.ast.type.ReferenceType;
 import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.type.WellKnownTypes;
 import com.github.javaparser.ast.type.WildcardType;
+import xapi.collect.X_Collect;
+import xapi.collect.api.StringTo;
 import xapi.dev.api.AstMethodInvoker.AstMethodResult;
 import xapi.fu.Do;
 import xapi.fu.Filter;
@@ -327,6 +329,7 @@ public interface ApiGeneratorMethods<Ctx extends ApiGeneratorContext<Ctx>> exten
         final Statement filterBody = filter.getBody();
         ChainBuilder<Expression> chain = new ChainBuilder<>();
         int initial = start;
+        StringTo<Do> undos = X_Collect.newStringMap(Do.class);
         for (;start<=end;start++) {
             // Wraps a clone of the lambda body in a SysExpr,
             // which includes listeners that will set/unset the named variable when executing the body.
@@ -356,7 +359,9 @@ public interface ApiGeneratorMethods<Ctx extends ApiGeneratorContext<Ctx>> exten
                 return result;
             });
             sysExpr.addUniversalListener(ApiGeneratorContext.class, (node, ctx)->{
+                undos.getMaybe(varName).readIfPresent(Do::done);
                 final Do undo = ctx.addToContext(varName, IntegerLiteralExpr.intLiteral(n));
+                undos.put(varName, undo);
                 ctx.setInRange(true);
                 final boolean wasFirst = ctx.isFirstOfRange();
                 ctx.setFirstOfRange(n == initial);
@@ -367,7 +372,9 @@ public interface ApiGeneratorMethods<Ctx extends ApiGeneratorContext<Ctx>> exten
                 });
             });
             sysExpr.addVoidListener(null, ApiGeneratorContext.class, (vis, node, ctx) -> {
+                undos.getMaybe(filterName).readIfPresent(Do::done);
                 final Do undo = ctx.addToContext(filterName, IntegerLiteralExpr.intLiteral(n));
+                undos.put(filterName, undo);
                 ctx.setInRange(true);
                 final boolean wasFirst = ctx.isFirstOfRange();
                 ctx.setFirstOfRange(n == initial);

@@ -37,7 +37,7 @@ package xapi.dev.source;
 
 import xapi.fu.Printable;
 
-public class PrintBuffer extends CharBuffer implements Printable<PrintBuffer>{
+public class PrintBuffer extends CharBuffer implements Printable<PrintBuffer>, HasIndent {
 
   static final char NEW_LINE = '\n';
   static final String INDENT = "  ";

@@ -145,4 +145,8 @@ public final class ReferenceType extends Type implements TypedNode {
 		}
 		return getType().hasRawType(name);
 	}
+
+	public static ReferenceType ofClass(String name) {
+    		return new ReferenceType(new ClassOrInterfaceType(name));
+	}
 }

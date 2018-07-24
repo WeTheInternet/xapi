@@ -457,4 +457,8 @@ public abstract class MemberBuffer<Self extends MemberBuffer<Self>> extends
     super.add(values);
     return self();
   }
+
+  public String parameterizedType(String type, String ... typeParams) {
+    return getImports().parameterizedType(type, typeParams);
+  }
 }
