@@ -83,7 +83,7 @@ public class CharBuffer implements Coercible {
 
 
   public void addToBeginning(final CharBuffer buffer) {
-    assert notContained(buffer) : "Infinite recursion!";
+    assert notContained(buffer) : "Infinite recursion! On [" + buffer + "] in " + this;
     final CharBufferStack newHead = new CharBufferStack();
     newHead.next = head;
     newHead.setValue(buffer);
@@ -111,8 +111,7 @@ public class CharBuffer implements Coercible {
   }
 
   public void addToEnd(final CharBuffer buffer) {
-    assert notContained(buffer) : "Infinite recursion! On [" + buffer + "] in "
-        + this;
+    assert notContained(buffer) : "Infinite recursion! On [" + buffer + "] in " + this;
     final CharBufferStack newTail = new CharBufferStack();
     newTail.setValue(buffer);
     synchronized (target) { // we synchro on this volatile variable, because we only need the lock if we share a reference.

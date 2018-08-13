@@ -58,23 +58,100 @@ public class Lazy <T> implements Out1<T>, IsLazy {
 
   @SuppressWarnings("unchecked")
   public Lazy(Out1<T> supplier) {
-    proxy = proxySupplier(supplier);
+    proxy = simpleProxy(supplier);
   }
 
-  protected Out1<T> proxySupplier(Out1<T> supplier) {
+  /**
+   * Creates a lazily-initialized variable that is immutable after it is resolved.
+   *
+   * This constructor allows you to specify a spy function that will be called
+   * when the variable is successfully resolved, as well as whether you want
+   * to call that spy function while still holding the lock,
+   * or whether to release the lock before notifying the spy.
+   *
+   * By default, we will release the lock first, since that can avoid any
+   * potential reentrance issues.  So, beware that mutating shared state
+   * in your spy function will NOT, BY DEFAULT, BE SYNCHRONIZED ACROSS THREADS.
+   *
+   * @param supplier The function providing the value of our variable.
+   * @param spy The function to call when the supplier returns not-null
+   *            (or whatever you override {@link #valueAcceptable(Object)} to return true on)
+   * @param spyBeforeUnlock Whether to call the spy before exiting synchronized intializer. Default false.
+   *                        If you need to mutate state shared across threads in a manner that does not
+   *                        have it's own memory synchronization, you can send true here,
+   *                        and take advantage of the internal locking of our init proxy.
+   *                        When sending true here, beware that you CANNOT
+   */
+  public Lazy(Out1<T> supplier, In1<T> spy, boolean spyBeforeUnlock) {
+    proxy = complexProxy(supplier, spy, spyBeforeUnlock);
+  }
+
+  protected Out1<T> complexProxy(Out1<T> supplier, In1<T> spy, boolean spyBeforeUnlock) {
+    // When the spy is a no-op, we'll use a much simpler version of this code
+    if (spy == In1.IGNORED) {
+      return simpleProxy(supplier);
+    }
+    // The constructor of Lazy closes over this constructor using this array as a writable reference.
+    // Note that we are not putting this in a field because we don't want anyone to muck with it;
+    final ProxySupplier<T>[] prox = new ProxySupplier[1];
+    prox[0] = () -> {
+      // take turns looking at the memory slot
+      T resolved = null;
+      try {
+        synchronized (prox) {
+          startResolving();
+          try {
+            if (proxy == prox[0]) {
+              // first one in tries the provider;
+              T value = resolved = supplier.out1();
+              // default acceptable value is non-null
+              if (valueAcceptable(value)) {
+                // We only override the proxy if the value is non-null,
+                // or if you specifically implemented LazyNullable.
+                proxy = Immutable.immutable1(value);
+                prox[0] = null;
+                // let the spy see it after we've resolved the lazy, but before we return.
+                if (spyBeforeUnlock) {
+                  // the spy wants to act as a constructor to initialize the object before others see it.
+                  spy.in(resolved);
+                }
+              } else {
+                resolved = null;
+              }
+              return value;
+            }
+          } finally {
+            finishResolving();
+          }
+        } // release synchronization lock
+      } finally {
+        if (!spyBeforeUnlock && resolved != null) {
+          // the spy just wants to see the object after it's resolved,
+          // but does not want to hold the lock preventing others from doing work
+          // (if you have very expensive spies, it is important to get this right).
+          spy.in(resolved);
+        }
+      }
+      return proxy.out1();
+    };
+    return prox[0];
+  }
+
+  protected Out1<T> simpleProxy(Out1<T> supplier) {
+    if (supplier instanceof IsImmutable) {
+      return supplier;
+    }
     // The constructor of Lazy closes over this constructor using this array as a writable reference.
     // Note that we are not putting this in a field because we don't want anyone to muck with it;
     final ProxySupplier<T>[] prox = new ProxySupplier[1];
     prox[0] = () -> {
       // take turns looking at the memory slot
       synchronized (prox) {
-        // only possible in GWT, or if you actually have a provider that recurses into itself.
-        assert !resolving : "You are trying to access a Lazy while it is being initialized";
-        resolving = true;
+        startResolving();
         try {
           if (proxy == prox[0]) {
-            // first on in tries the provider;
-            T value = supplier.out1();
+            // first one in tries the provider;
+            final T value = supplier.out1();
             // default acceptable value is non-null
             if (valueAcceptable(value)) {
               // We only override the proxy if the value is non-null,
@@ -85,12 +162,26 @@ public class Lazy <T> implements Out1<T>, IsLazy {
             return value;
           }
         } finally {
-          resolving = false;
+          finishResolving();
         }
-      }
+      } // release mutex
       return proxy.out1();
     };
     return prox[0];
+  }
+
+  private void startResolving() {
+    // clearer message with stronger exception during development
+    assert !resolving : "You are trying to access a Lazy while it is being initialized";
+    if (resolving) {
+      // smaller messages for production (we compile this code into js, so no need for huge unused messages)
+      throw new IllegalStateException("no reentry");
+    }
+    resolving = true;
+  }
+
+  private void finishResolving() {
+    resolving = false;
   }
 
   /*
@@ -202,6 +293,14 @@ public class Lazy <T> implements Out1<T>, IsLazy {
     return supplier instanceof Lazy ?
         (Lazy<T>)supplier :
         new Lazy<>(supplier) ;
+  }
+
+  public static <T> Lazy<T> withSpy(Out1<T> supplier, In1<T> spy) {
+    return new Lazy<>(supplier, spy, false);
+  }
+
+  public static <T> Lazy<T> withSpy(Out1<T> supplier, In1<T> spy, boolean spyBeforeUnlock) {
+    return new Lazy<>(supplier, spy, spyBeforeUnlock);
   }
 
   public static <I, T> Lazy<T> deferred1(In1Out1<I, T> supplier, I input) {

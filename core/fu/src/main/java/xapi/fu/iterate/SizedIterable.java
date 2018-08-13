@@ -155,4 +155,8 @@ public interface SizedIterable <T> extends MappedIterable<T>, HasSize {
         return MappedIterable.super.isNotEmpty();
     }
 
+    default SizedIterable<T> plus(SizedIterable<T> more) {
+        final MappedIterable<T> mapped = MappedIterable.super.plus(more);
+        return of(()-> size() + more.size(), mapped);
+    }
 }

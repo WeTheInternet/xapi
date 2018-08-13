@@ -244,7 +244,7 @@ public class XmlBuffer extends PrintBuffer {
   }
 
   @Override
-  public XmlBuffer print(final String str) {
+  public XmlBuffer print(final CharSequence str) {
     super.print(str);
     return this;
   }

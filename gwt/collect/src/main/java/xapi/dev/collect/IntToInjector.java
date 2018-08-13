@@ -1,9 +1,13 @@
 package xapi.dev.collect;
 
+import xapi.dev.source.ClassBuffer;
+import xapi.dev.source.SourceBuilder;
+import xapi.fu.Out1;
+import xapi.gwt.collect.IntToListGwt;
+import xapi.source.X_Source;
+
 import java.io.PrintWriter;
 import java.util.Queue;
-
-import javax.inject.Provider;
 
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;
@@ -13,21 +17,9 @@ import com.google.gwt.dev.jjs.MagicMethodGenerator;
 import com.google.gwt.dev.jjs.SourceInfo;
 import com.google.gwt.dev.jjs.UnifyAstListener;
 import com.google.gwt.dev.jjs.UnifyAstView;
-import com.google.gwt.dev.jjs.ast.Context;
-import com.google.gwt.dev.jjs.ast.JClassLiteral;
-import com.google.gwt.dev.jjs.ast.JConstructor;
-import com.google.gwt.dev.jjs.ast.JDeclaredType;
-import com.google.gwt.dev.jjs.ast.JExpression;
-import com.google.gwt.dev.jjs.ast.JMethod;
-import com.google.gwt.dev.jjs.ast.JMethodCall;
-import com.google.gwt.dev.jjs.ast.JNewInstance;
+import com.google.gwt.dev.jjs.ast.*;
 import com.google.gwt.dev.jjs.impl.UnifyAst.UnifyVisitor;
 import com.google.gwt.reflect.rebind.ReflectionUtilAst;
-
-import xapi.dev.source.ClassBuffer;
-import xapi.dev.source.SourceBuilder;
-import xapi.gwt.collect.IntToListGwt;
-import xapi.source.X_Source;
 
 public class IntToInjector implements MagicMethodGenerator, UnifyAstListener {
 
@@ -95,13 +87,13 @@ public class IntToInjector implements MagicMethodGenerator, UnifyAstListener {
       final SourceBuilder<Object> builder = new SourceBuilder<>("public final class "+names[1]+"_ArrayProvider");
 
       final String simpleType = builder.getImports()
-          .addImports(Provider.class)
+          .addImports(Out1.class)
           .addImport(X_Source.qualifiedName(names[0], componentType));
 
       builder.setPackage(names[0]);
 
-      final ClassBuffer out = builder.getClassBuffer().addInterface("Provider<"+simpleType+"[]>");
-      out.createMethod("public final "+simpleType+"[] get()")
+      final ClassBuffer out = builder.getClassBuffer().addInterface("Out1<"+simpleType+"[]>");
+      out.createMethod("public final "+simpleType+"[] out1()")
       .returnValue("new "+simpleType.split("<")[0] +"[0]");
 
       final StandardGeneratorContext gen = ast.getGeneratorContext();

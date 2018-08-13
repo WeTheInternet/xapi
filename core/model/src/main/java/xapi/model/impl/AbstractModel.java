@@ -26,6 +26,12 @@ import static xapi.util.impl.PairBuilder.entryOf;
 @InstanceDefault(implFor=Model.class)
 public class AbstractModel implements Model, PersistentModel, NestedModel{
 
+  static {
+    // register In3[] for reflective creation in GWT (this is a magic method which records class literals
+    // to enable runtime class references to be used to initialize arrays of that type)
+    Array.newInstance(In3.class, 0);
+  }
+
   protected final class Itr implements MappedIterable<Entry<String, Object>> {
 
     private final String[] keys;

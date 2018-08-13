@@ -20,6 +20,16 @@ public interface Printable <Self extends Printable<Self>> extends Coercible {
 
   Self setIndent(String indent);
 
+  default Self setIndentCount(int indent) {
+    final char[] i = getIndent().toCharArray();
+    final char[] in = new char[i.length * indent];
+    while (indent-->0) {
+      System.arraycopy(i, 0, in, indent * i.length, i.length );
+    }
+    setIndent(new String(in));
+    return self();
+  }
+
   String toSource();
 
   static SimplePrintable newPrinter() {
@@ -107,7 +117,7 @@ public interface Printable <Self extends Printable<Self>> extends Coercible {
     return self();
   }
 
-  default Self print(final String str) {
+  default Self print(final CharSequence str) {
     printIndent();
     append(str);
     return self();

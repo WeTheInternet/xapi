@@ -384,7 +384,7 @@ public abstract class MemberBuffer<Self extends MemberBuffer<Self>> extends
   }
 
   @Override
-  public Self print(final String str) {
+  public Self print(final CharSequence str) {
     super.print(str);
     return self();
   }
@@ -460,5 +460,13 @@ public abstract class MemberBuffer<Self extends MemberBuffer<Self>> extends
 
   public String parameterizedType(String type, String ... typeParams) {
     return getImports().parameterizedType(type, typeParams);
+  }
+
+  public String getOrigIndent() {
+    return origIndent;
+  }
+
+  public MemberBuffer<?> getEnclosing() {
+    return enclosing;
   }
 }

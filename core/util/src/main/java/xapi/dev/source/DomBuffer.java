@@ -319,7 +319,7 @@ public class DomBuffer extends XmlBuffer {
   }
 
   @Override
-  public DomBuffer print(final String str) {
+  public DomBuffer print(final CharSequence str) {
     super.print(str);
     return this;
   }

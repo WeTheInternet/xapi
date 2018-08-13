@@ -2,9 +2,12 @@ package xapi.process.impl;
 
 import xapi.fu.In1;
 import xapi.fu.Out1;
+import xapi.process.X_Process;
 import xapi.process.api.ProcessCursor;
 import xapi.process.api.RescheduleException;
 import xapi.util.X_Util;
+
+import java.util.concurrent.TimeUnit;
 
 public class IOProcess <T> extends AbstractProcess<T>{
 
@@ -43,12 +46,16 @@ public class IOProcess <T> extends AbstractProcess<T>{
 
   @Override
   public boolean process(float milliTimeLimit) {
+    X_Process.scheduleInterruption((long)(1_000_000. * milliTimeLimit), TimeUnit.NANOSECONDS);
     try {
       final T value = out.out1();
       in.in(value);
       return true;
     } catch (Throwable t) {
       final Throwable unwrapped = X_Util.unwrap(t);
+      if (unwrapped instanceof InterruptedException) {
+        return false;
+      }
       if (unwrapped instanceof RescheduleException) {
         // client wants to reschedule the process
         RescheduleException r = (RescheduleException) unwrapped;

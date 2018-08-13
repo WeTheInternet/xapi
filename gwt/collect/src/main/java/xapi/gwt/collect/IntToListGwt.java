@@ -108,7 +108,7 @@ public class IntToListGwt <E> implements IntTo<E>{
   }
 
   @Override
-  public final MappedIterable<Out2<Integer, E>> forEachEntry() {
+  public final SizedIterable<Out2<Integer, E>> forEachEntry() {
     return IntTo.super.forEachEntry();
   }
 
@@ -151,7 +151,7 @@ public class IntToListGwt <E> implements IntTo<E>{
   @Override
   public final native void clear()
   /*-{
-    this.@IntToListGwt::array.splice(0, this.length);
+    this.@IntToListGwt::array.splice(0, this.@IntToListGwt::array.length);
   }-*/;
 
   @Override

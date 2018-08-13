@@ -365,8 +365,13 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
       }
       // Make sure it's not in a sub-package
       final String stripped = importName.substring(getPackage().length() + 1);
-      // Assuming java camel case naming convention.
-      if (Character.isUpperCase(stripped.charAt(0))) {
+      if (
+          // If the package is non-empty and the imported names has no . from anywhere else
+          stripped.indexOf('.') == -1 ||
+          // or, Assuming java camel case, we can detect same.pkg.Type.Subtype
+          Character.isUpperCase(stripped.charAt(0))
+          // if you do Same.Pkg.Not.Type.Subtype, terrible things will happen...  so don't.
+      ) {
         // This is our package. Don't import, but do try to strip package.
         if (context.getImports().canMinimize(importName)) {
           context.getImports().tryReserveSimpleName(

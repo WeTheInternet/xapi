@@ -12,6 +12,7 @@ import xapi.collect.api.StringTo;
 import xapi.collect.proxy.CollectionProxy;
 import xapi.collect.proxy.MapOf;
 import xapi.collect.service.CollectionService;
+import xapi.except.NotYetImplemented;
 import xapi.platform.AndroidPlatform;
 import xapi.platform.GwtDevPlatform;
 import xapi.platform.JrePlatform;
@@ -108,6 +109,12 @@ public class CollectionServiceDefault implements CollectionService{
   }
 
   protected <K, V> Map<K,V> newMap(final CollectionOptions opts) {
+    if (opts.multiplex() != null) {
+      throw new NotYetImplemented("Multiplexing");
+    }
+    if (opts.identityKeys()) {
+      throw new NotYetImplemented("Identity Keys");
+    }
     if (!opts.mutable()) {
       return Collections.unmodifiableMap(newMap(CollectionOptions.from(opts)
         .mutable(true).build()));

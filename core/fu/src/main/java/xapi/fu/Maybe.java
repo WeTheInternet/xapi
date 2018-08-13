@@ -72,6 +72,9 @@ public interface Maybe <V> extends Rethrowable {
         return new ImmutableMaybe<>(mapped);
     }
 
+    default <O> Maybe<O> map(In1Out1<V, O> mapper, Out1<O> ifMissing) {
+        return mapIfPresent(mapper).mapIfAbsent(ifMissing);
+    }
     default <O> Maybe<O> mapNullSafe(In1Out1<V, O> mapper) {
         return ()-> {
             V out = get();

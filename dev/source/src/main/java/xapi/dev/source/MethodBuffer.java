@@ -45,6 +45,7 @@ import xapi.source.read.JavaVisitor.TypeData;
 
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map.Entry;
 
@@ -53,14 +54,15 @@ import static xapi.source.read.JavaVisitor.MODIFIER_DEFAULT;
 public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
     MethodVisitor<SourceBuilder<?>>, CanAddImports {
 
-  protected SourceBuilder<?>          context;
-  private boolean                     once;
-  private boolean                     useJsni = true;
-  private String                      methodName;
-  private final LinkedHashSet<String> parameters;
-  private final LinkedHashSet<String> exceptions;
-  private TypeData                    returnType;
-  private int                         tryDepth;
+  protected SourceBuilder<?>                         context;
+  private boolean                                    once;
+  private boolean                                    useJsni = true;
+  private String                                     methodName;
+  private final LinkedHashSet<String>                parameters;
+  private final LinkedHashSet<String>                exceptions;
+  private TypeData                                   returnType;
+  private int                                        tryDepth;
+  private final LinkedHashMap<String, LocalVariable> variables;
 
   public MethodBuffer(final SourceBuilder<?> context) {
     this(context, context.getClassBuffer(), INDENT);
@@ -74,6 +76,7 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
     this.exceptions = from.exceptions;
     this.returnType = from.returnType;
     this.tryDepth = from.tryDepth;
+    this.variables = from.variables;
   }
 
   private MethodBuffer(MethodBuffer from, StringBuilder target) {
@@ -85,6 +88,7 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
     this.exceptions = from.exceptions;
     this.returnType = from.returnType;
     this.tryDepth = from.tryDepth;
+    this.variables = from.variables;
   }
 
   public MethodBuffer(final SourceBuilder<?> context, ClassBuffer enclosing, final String indent) {
@@ -93,6 +97,7 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
     this.indent = indent + INDENT;
     parameters = new LinkedHashSet<>();
     exceptions = new LinkedHashSet<>();
+    variables = new LinkedHashMap<>();
   }
 
   @Override
@@ -609,5 +614,45 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
     String imported = addImport(type);
     println("throw new "+imported+"(" + constructorArgs+");");
     return this;
+  }
+
+  public LocalVariable newVariable(String type, String name) {
+    return newVariable(type, name, false);
+  }
+
+  public LocalVariable newVariable(String type, String name, boolean reuseExisting) {
+    final LocalVariable was = variables.get(name);
+    final LocalVariable var;
+    if (was == null) {
+      // easy-peasy
+      var = new LocalVariable(this, type, name, getIndent());
+    } else if (reuseExisting){
+      // caller wants a stable name here...
+      // TODO: record something to elide the type information for the var reuse...
+      // so, return a modified duplicate here w/ doesn't print the type  again
+      // (to get this right, we would actually need a call stack matching printed code stack...
+      // which is unlikely to ever happen, as it is not a high value reward)
+      return was;
+    } else {
+      // make a new variable w/ an unused name
+      int unused = 0;
+      while(variables.containsKey(name + "_" + unused)) {
+        unused++;
+      }
+      name = name + "_" + unused;
+      var = new LocalVariable(this, type, name, getIndent());
+    }
+    variables.put(name, var);
+    boolean finishLine = !isIndentNeeded();
+    if (finishLine) {
+      println();
+    }
+    addToEnd(var);
+    println();
+    return var;
+  }
+
+  public boolean hasVariable(String name) {
+    return variables.containsKey(name);
   }
 }

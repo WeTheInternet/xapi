@@ -11,6 +11,12 @@ import xapi.collect.proxy.CollectionProxy;
 
 public interface CollectionService {
 
+  // This weird "double type parameter crap" <E, Generic extends E> is the necessary hoops to jump through
+  // in order to get valid, correct type inference when doing IntTo<MyType> list = X_Collect.newList(MyType.class);
+  // It is still ugly and causes warnings in the ide, but it actually is the most typesafe and correct option.
+  // It will be a compile error if you get the class wrong, and only a warning (that you can safely @Ignore).
+  // We (try to) use class literal lookups at compile time to inline calls that can safely bypass us altogether.
+
   <E, Generic extends E> IntTo<E> newList(Class<Generic> cls, CollectionOptions opts);
 
   <E, Generic extends E> IntTo<E> newSet(Class<Generic> cls, CollectionOptions opts);

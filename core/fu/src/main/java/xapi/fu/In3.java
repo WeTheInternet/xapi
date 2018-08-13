@@ -128,4 +128,8 @@ public interface In3<I1, I2, I3> extends HasInput, Rethrowable, Lambda {
       }
     }
   }
+
+    static <I1, I2, I3> In3<I1, I2, I3> ignored() {
+      return NULL;
+    }
 }

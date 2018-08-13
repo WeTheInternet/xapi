@@ -12,6 +12,7 @@ import xapi.fu.In2Out1;
 import xapi.fu.MappedIterable;
 import xapi.fu.Out2;
 import xapi.fu.iterate.ArrayIterable;
+import xapi.fu.iterate.SizedIterable;
 
 import java.util.Collection;
 import java.util.Map;
@@ -111,18 +112,17 @@ public interface CollectionProxy <K, V> extends HasEmptiness
      readWhileTrue(callback.supply1(true));
    }
 
-   default MappedIterable<Out2<K, V>> forEachEntry() {
+   default SizedIterable<Out2<K, V>> forEachEntry() {
      SimpleStack<Out2<K, V>> stack = new SimpleStack<>();
-     readWhileTrue(new In1<Out2<K, V>>() {
-         @Override
-         public void in(Out2<K, V> in) {
-             stack.add(in);
-         }
+     int[] cnt = {0};
+     readWhileTrue(item->{
+         stack.add(item);
+         cnt[0]++;
      }, In2Out1.RETURN_TRUE);
-     return stack;
+     return SizedIterable.of(cnt[0], stack);
    }
 
-  default Iterable<V> iterateValues() {
+  default SizedIterable<V> iterateValues() {
     final V[] arr = toArray();
     return new ArrayIterable<>(arr);
   }

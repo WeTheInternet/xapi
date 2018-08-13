@@ -23,7 +23,7 @@ import java.lang.reflect.Modifier;
  * @author "James X. Nelson (james@wetheinter.net)"
  *
  */
-public class FieldBuffer extends MemberBuffer<FieldBuffer> implements CanAddImports {
+public class FieldBuffer extends MemberBuffer<FieldBuffer> implements CanAddImports, VarBuffer<FieldBuffer> {
 
   private final ClassBuffer cls;
   private final TypeData fieldType;// The type of the field itself
@@ -139,20 +139,47 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> implements CanAddImpo
   }
 
   public PrintBuffer getInitializer() {
+    return getInitializer(true);
+  }
+
+  public PrintBuffer getInitializer(boolean newline) {
     if (initializer == null) {
       initializer = new PrintBuffer();
       initializer.indent = indent;
-      initializer.println().indent();
+      if (newline) {
+        initializer.println().indent();
+      }
     }
     return initializer;
   }
 
+  @Override
   public String getName() {
     return fieldName;
   }
 
   public String getSimpleType() {
     return simpleType;
+  }
+
+  @Override
+  public Iterable<String> getGenerics() {
+    return generics;
+  }
+
+  @Override
+  public int getModifier() {
+    return modifier;
+  }
+
+  @Override
+  public Iterable<String> getAnnotations() {
+    return annotations;
+  }
+
+  @Override
+  public PrintBuffer getJavaDoc() {
+    return javaDoc;
   }
 
   public boolean isFluent() {
@@ -187,50 +214,7 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> implements CanAddImpo
     if (fieldType == TypeData.NONE) {
       return super.toSource();
     }
-
-    final StringBuilder b = new StringBuilder(Character.toString(NEW_LINE));
-    if (javaDoc != null && javaDoc.isNotEmpty()) {
-      b.append(javaDoc.toString());
-    }
-    b.append(origIndent);
-    if (annotations.size() > 0) {
-      for (final String anno : annotations) {
-        b.append('@').append(anno).append(NEW_LINE).append(origIndent);
-      }
-    }
-    String mods = Modifier.toString(modifier);
-    if (enclosing instanceof ClassBuffer && (((ClassBuffer)enclosing).isInterface())) {
-      mods = mods.replaceAll("(public|static|final)\\s*", "");
-    }
-    if (!mods.isEmpty()) {
-      b.append(mods).append(" ");
-    }
-    // generics
-    if (generics.size() > 0) {
-      b.append("<");
-      String prefix = "";
-      for (final String generic : generics) {
-        b.append(prefix);
-        b.append(generic);
-        prefix = ", ";
-      }
-      b.append("> ");
-    }
-    // field type
-    b.append(simpleType).append(" ");
-    // field name
-    b.append(fieldName);
-    final String init = initializer == null ? "" : initializer.toString();
-    if (init.length() > 0) {
-      b.append(" = ").append(init);
-      if (!init.trim().endsWith(";")) {
-        b.append(";");
-      }
-    } else {
-      b.append(";");
-    }
-    b.append("\n");
-    return b.toString() + super.toSource();
+    return toVarDefinition() + super.toSource();
   }
 
   protected String fluentReturnType() {

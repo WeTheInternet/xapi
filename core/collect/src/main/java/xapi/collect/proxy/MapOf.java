@@ -240,9 +240,9 @@ implements CollectionProxy<K,V>, Map<K,V>, HasValues<K,V>, ObjectTo<K,V>
   @Override
   public String toString() {
     return "MapOf{" +
-        "keyClass=" + keyClass +
+        "map=" + map +
+        ", keyClass=" + keyClass +
         ", valueClass=" + valueClass +
-        ", map=" + map +
         '}';
   }
 }

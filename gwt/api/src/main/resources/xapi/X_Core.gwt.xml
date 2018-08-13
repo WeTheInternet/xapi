@@ -3,6 +3,7 @@
 <module>
 
   <inherits name="jsinterop.base.Base" />
+  <inherits name="elemental2.core.Core"/>
   <!-- TODO move all GWT 2 dependencies elsewhere -->
   <inherits name="com.google.gwt.typedarrays.TypedArrays" />
   <inherits name="com.google.gwt.core.MagicMethods" />

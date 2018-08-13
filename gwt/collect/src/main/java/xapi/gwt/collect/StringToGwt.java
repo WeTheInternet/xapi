@@ -32,7 +32,7 @@ public class StringToGwt <V> extends JavaScriptObject implements StringTo<V>{
     return create(Object.class);
   }
 
-  public static native <V> StringTo<V> create(Class<? extends V> valueType)
+  public static native <V, Generic extends V> StringTo<V> create(Class<Generic> valueType)
   /*-{
    return {_v$: valueType, _k: @xapi.gwt.collect.StringToGwt::newStringArray()() };
   }-*/;

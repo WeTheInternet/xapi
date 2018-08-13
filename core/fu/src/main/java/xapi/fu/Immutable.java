@@ -56,13 +56,15 @@ public class Immutable<O> implements Out1<O>, IsImmutable {
   }
 
   public static <O1, O2> Out2<O1, O2> from2(Out1<O1> item1, Out1<O2> item2) {
-    return new ImmutableCompressor(new Out1[]{
+    final Out2 o2 = new ImmutableCompressor(new Out1[]{
         from1(item1), from1(item2)
     }).compress2();
+    return o2;
   }
 
   public static <O1, O2> Out2<O1, O2> immutable2(O1 o1, O2 o2) {
-    return new ImmutableCompressor(o1, o2).compress2();
+    final Out2 out = new ImmutableCompressor(o1, o2).compress2();
+    return out;
   }
 
   @Override

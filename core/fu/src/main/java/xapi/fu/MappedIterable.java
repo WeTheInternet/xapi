@@ -155,6 +155,39 @@ public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
         };
     }
 
+    default MappedIterable<T> plus(Iterable<T> more) {
+        return ()->{
+            final Iterator<T> ours = MappedIterable.this.iterator();
+            final Iterator<T> yours = more.iterator();
+            return new Iterator<T>() {
+                volatile Iterator<T> delegate = ours, removable;
+                @Override
+                public boolean hasNext() {
+                    if (delegate.hasNext()) {
+                        return true;
+                    } else {
+                        delegate = yours;
+                    }
+                    return delegate.hasNext();
+                }
+
+                @Override
+                public T next() {
+                    // we'll track the source iterator that actually produced the value.
+                    // if we don't do this, calling hasNext() can ruin remove(),
+                    // and it would be valid to say "remove all but the last item".
+                    removable = delegate;
+                    return delegate.next();
+                }
+
+                @Override
+                public void remove() {
+                    removable.remove();
+                }
+            };
+        };
+    }
+
     static <To> MappedIterable<To> mapped(Iterable<To> itr) {
         return itr instanceof MappedIterable ? (MappedIterable<To>) itr : itr::iterator;
     }

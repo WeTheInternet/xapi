@@ -285,7 +285,9 @@ public class ImportSection implements CanAddImports {
     // check if we need to import this type...
     if (skipImports(importName, skipNoPackages)) {
       if (importName.startsWith("java.lang.")) {
-        importName = importName.substring(10);
+        final String was = importName;
+        importName = was.substring(10);
+        tryReserveSimpleName(importName, was);
       }
       return importName + suffix;
     }
@@ -385,7 +387,7 @@ public class ImportSection implements CanAddImports {
 
   private boolean skipImports(final String importName, boolean skipSingleNames) {
     if (importName.matches("("
-        + "(java[.]lang.[^.]*)" + // discard java.lang, but keep java.lang.reflect
+        + "(java[.]lang.[^.]*)" + // discard java.lang, but keep java.lang.reflect, etc.
         "|" +  // also discard primitives
           "(void)|(boolean)|(short)|(char)|(int)|(long)|(float)|(double)"
         + "|extends|super|import|static|[?]"

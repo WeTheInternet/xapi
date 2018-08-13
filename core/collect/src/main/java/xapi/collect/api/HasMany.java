@@ -5,6 +5,7 @@ import xapi.fu.In1Out1;
 import xapi.fu.MapLike;
 import xapi.fu.MappedIterable;
 import xapi.fu.Out2;
+import xapi.fu.iterate.EmptyIterator;
 import xapi.fu.iterate.SizedIterable;
 
 /**
@@ -23,6 +24,13 @@ public interface HasMany <K, V> extends HasValues<K, IntTo<V>>, MapLike<K, IntTo
   @Override
   default SizedIterable<Out2<K, IntTo<V>>> forEachItem() {
     return MapLike.super.forEachItem();
+  }
+
+  default SizedIterable<V> forEachValue(K key) {
+    if (!has(key)) {
+      return EmptyIterator.none();
+    }
+    return get(key);
   }
 
   default HasMany <K, V> addMany(K key, Iterable<V> value) {

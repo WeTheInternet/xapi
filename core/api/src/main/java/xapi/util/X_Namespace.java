@@ -18,7 +18,7 @@ public class X_Namespace {
    * but it's faster at runtime to use a constant field.
    *
    */
-  public static final String XAPI_VERSION = "0.6-SNAPSHOT";
+  public static final String XAPI_VERSION = "0.5.1-SNAPSHOT";
 
   /**
    * Latest published version of xapi.

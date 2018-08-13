@@ -37,10 +37,10 @@ package xapi.dev.source;
 
 import xapi.fu.Printable;
 
-public class PrintBuffer extends CharBuffer implements Printable<PrintBuffer>, HasIndent {
+public class PrintBuffer extends CharBuffer implements Printable<PrintBuffer>, HasIndent, PatternPrinter<PrintBuffer> {
 
   static final char NEW_LINE = '\n';
-  static final String INDENT = "  ";
+  static final String INDENT = System.getProperty("xapi.indent", "  ");
 
   protected static String join(final String sep, final String[] args) {
     if (args.length == 0) {
@@ -74,7 +74,7 @@ public class PrintBuffer extends CharBuffer implements Printable<PrintBuffer>, H
     super(target);
   }
 
-  public PrintBuffer print(final String str) {
+  public PrintBuffer print(final CharSequence str) {
     printIndent();
     append(str);
     return this;
@@ -306,6 +306,11 @@ public class PrintBuffer extends CharBuffer implements Printable<PrintBuffer>, H
     return this;
   }
 
+  @Override
+  public PrintBuffer self() {
+    return this;
+  }
+
   public boolean isEmpty() {
     return target.length() == 0 && head.next == null;
   }
@@ -341,9 +346,8 @@ public class PrintBuffer extends CharBuffer implements Printable<PrintBuffer>, H
 
   @Override
   public String toSource() {
-    final StringBuilder body = new StringBuilder(header());
-    body.append(head);
-    body.append(target.toString());
-    return body + footer();
+    return header() + head +
+        target.toString() +
+        footer();
   }
 }

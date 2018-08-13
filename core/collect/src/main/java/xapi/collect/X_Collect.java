@@ -134,6 +134,12 @@ public class X_Collect {
   public static <Type, Generic extends Type> ClassTo<Type> newClassMap(final Class<Generic> valueCls) {
     return service.newClassMap(valueCls, MUTABLE);
   }
+  public static <Type, Generic extends Type> ClassTo<Type> newClassMap(
+      final Class<Generic> valueCls,
+      CollectionOptions options
+  ) {
+    return service.newClassMap(valueCls, options);
+  }
 
   public static <Type, Generic extends Type> ClassTo.Many<Type> newClassMultiMap(final Class<Generic> valueCls) {
     return service.newClassMultiMap(valueCls, MUTABLE);

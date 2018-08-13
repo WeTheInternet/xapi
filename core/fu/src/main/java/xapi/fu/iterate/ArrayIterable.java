@@ -9,6 +9,14 @@ public class ArrayIterable <E> implements SizedIterable <E> {
     return new ArrayIterable<>(es);
   }
 
+  public static <E> ArrayIterable<E> iterate(int start, E ... es) {
+    return new ArrayIterable<>(es, start, es.length-1);
+  }
+
+  public static <E> ArrayIterable<E> iterate(int start, int end, E ... es) {
+    return new ArrayIterable<>(es, start, end);
+  }
+
   private final E[] array;
 
   private final class Itr implements SizedIterator<E> {
