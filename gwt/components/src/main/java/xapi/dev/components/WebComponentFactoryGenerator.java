@@ -17,8 +17,8 @@ import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.dev.source.SourceTransform;
-import xapi.dev.ui.api.ContainerMetadata;
-import xapi.dev.ui.api.ContainerMetadata.MetadataRoot;
+import xapi.dev.components.graveyard.OldContainerMetadata;
+import xapi.dev.ui.api.MetadataRoot;
 import xapi.inject.X_Inject;
 import xapi.io.X_IO;
 import xapi.log.X_Log;
@@ -166,7 +166,7 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
       return new RebindResult(RebindMode.USE_EXISTING, qualifiedName);
     }
 
-    final SourceBuilder<ContainerMetadata> sourceBuilder = new SourceBuilder<ContainerMetadata>
+    final SourceBuilder<OldContainerMetadata> sourceBuilder = new SourceBuilder<OldContainerMetadata>
     ("public final class " + factoryName)
     .setPackage(pkg);
     final ClassBuffer out =
@@ -251,7 +251,7 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
           // TODO: this is broken; the metadata no longer holds the source builder;
           // this implementation is deprecated,
           // as we now generate our components before GWT is compiled.
-          ContainerMetadata metadata = createMetadata();
+          OldContainerMetadata metadata = createMetadata();
           if (shadowStyle != null) {
             metadata.addModifier(shadowStyle);
           }
@@ -306,8 +306,8 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
     return new RebindResult(RebindMode.USE_ALL_NEW, qualifiedName);
   }
 
-  protected ContainerMetadata createMetadata() {
-      final ContainerMetadata container = new ContainerMetadata();
+  protected OldContainerMetadata createMetadata() {
+      final OldContainerMetadata container = new OldContainerMetadata();
       final MetadataRoot root = new MetadataRoot();
       container.setRoot(root);
     return container;
@@ -343,7 +343,7 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
     return list;
   }
 
-  private String resolveTemplate(TreeLogger logger, String template, GeneratorContext context, JClassType type, ContainerMetadata metadata) throws UnableToCompleteException {
+  private String resolveTemplate(TreeLogger logger, String template, GeneratorContext context, JClassType type, OldContainerMetadata metadata) throws UnableToCompleteException {
     String asString;
     boolean wasHtml = false;
     if (template.trim().startsWith("<")) {
@@ -395,7 +395,6 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
           final JPackage pkg = erased.getPackage();
           String pkgName = pkg == null ? "" : pkg.getName();
           String clsName = X_Source.removePackage(pkgName, erased.getQualifiedSourceName());
-          metadata.setControllerType(pkgName, clsName);
         }
       }
 
@@ -431,7 +430,7 @@ public class WebComponentFactoryGenerator extends IncrementalGenerator {
       TreeLogger logger,
       GeneratorContext context,
       JClassType type,
-      ContainerMetadata metadata,
+      OldContainerMetadata metadata,
       UiContainerExpr container
   ) {
 

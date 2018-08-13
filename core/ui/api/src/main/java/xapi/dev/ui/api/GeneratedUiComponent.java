@@ -2,7 +2,6 @@ package xapi.dev.ui.api;
 
 import com.github.javaparser.ast.TypeParameter;
 import com.github.javaparser.ast.body.Parameter;
-import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
@@ -18,6 +17,7 @@ import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.dev.ui.api.GeneratedUiLayer.ImplLayer;
 import xapi.dev.ui.impl.UiGeneratorTools;
+import xapi.dev.ui.tags.members.UserDefinedMethod;
 import xapi.fu.Do;
 import xapi.fu.In1Out1;
 import xapi.fu.In2Out1;
@@ -27,9 +27,9 @@ import xapi.fu.MappedIterable;
 import xapi.fu.Maybe;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
+import xapi.fu.iterate.EmptyIterator;
 import xapi.fu.iterate.SizedIterable;
 import xapi.source.X_Modifier;
-import xapi.ui.api.ElementInjector;
 import xapi.util.X_String;
 
 import static com.github.javaparser.ast.expr.StringLiteralExpr.stringLiteral;
@@ -86,6 +86,9 @@ public class GeneratedUiComponent {
         return best;
     }
 
+    public ReservedUiMethods getMethods() {
+        return methods;
+    }
     public String getElementBuilderConstructor(UiNamespace namespace) {
         return methods.newBuilder(namespace);
     }
@@ -119,6 +122,9 @@ public class GeneratedUiComponent {
 
     public GeneratedUiBase getBase() {
         return base.out1();
+    }
+    public ClassBuffer getBaseClass() {
+        return getBase().getSource().getClassBuffer();
     }
 
     public GeneratedUiFactory getFactory() {
@@ -154,6 +160,9 @@ public class GeneratedUiComponent {
 
     public boolean addImplementationFactory(Class<?> platform,
                                             In1Out1<GeneratedUiComponent, GeneratedUiImplementation> io) {
+        if (impls.containsKey(platform)) {
+            return false;
+        }
         io = io.spyOut(impl->globalDefs.forBoth(impl::addLocalDefinition));
         final Lazy<GeneratedUiImplementation> lazy = Lazy.deferSupplier(io, this);
         final Lazy<GeneratedUiImplementation> result = impls.put(platform, lazy);
@@ -562,4 +571,22 @@ public class GeneratedUiComponent {
     public GeneratedJavaFile getOrCreateExtraLayer(String id, String cls, In3Out1<GeneratedUiComponent, String, String, GeneratedJavaFile> factory) {
         return extraLayers.getOrCreate(id, factory.supply1(this).supply1(getPackageName()).supply(cls).ignoreIn1());
     }
+
+    public SizedIterable<UserDefinedMethod> findUserMethod(String name) {
+        final SizedIterable<UserDefinedMethod> apiMethods;
+        if (api.isResolved()) {
+            apiMethods = api.out1().findMethod(name);
+            if (base.isResolved()) {
+                final SizedIterable<UserDefinedMethod> baseMethods = base.out1().findMethod(name);
+                return apiMethods.plus(baseMethods);
+            } else {
+                return apiMethods;
+            }
+        } else if (base.isResolved()) {
+            return base.out1().findMethod(name);
+        } else {
+            return EmptyIterator.none();
+        }
+    }
+
 }

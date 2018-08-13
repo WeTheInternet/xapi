@@ -1,15 +1,17 @@
 package xapi.dev.ui.api;
 
 import xapi.collect.X_Collect;
-import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.FieldBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
+import xapi.dev.ui.tags.members.UserDefinedMethod;
 import xapi.fu.In1;
 import xapi.fu.Lazy;
 import xapi.fu.X_Fu;
+import xapi.fu.iterate.EmptyIterator;
+import xapi.fu.iterate.SizedIterable;
 import xapi.source.X_Modifier;
 import xapi.source.X_Source;
 import xapi.source.read.JavaModel.IsTypeDefinition;
@@ -27,6 +29,7 @@ public class GeneratedJavaFile {
     private final Lazy<StringTo<Integer>> methodNames;
     // lazy pointers to method and field buffers
     private final Lazy<StringTo<MethodBuffer>> methods;
+    private final Lazy<StringTo.Many<UserDefinedMethod>> userMethods;
     private final Lazy<StringTo<FieldBuffer>> fields;
     private final Lazy<StringTo<MethodBuffer>> constructors;
 
@@ -71,6 +74,7 @@ public class GeneratedJavaFile {
         methods = Lazy.deferred1(X_Collect::newStringMap, MethodBuffer.class);
         fields = Lazy.deferred1(X_Collect::newStringMap, FieldBuffer.class);
         constructors = Lazy.deferred1(X_Collect::newStringMap, MethodBuffer.class);
+        userMethods = Lazy.deferred1(X_Collect::newStringMultiMap, UserDefinedMethod.class);
     }
 
     public String newFieldName(String prefix) {
@@ -84,6 +88,12 @@ public class GeneratedJavaFile {
         return prefix + "_" + cnt;
     }
 
+    public String reserveMethodName(String prefix) {
+        if (methodNames.out1().put(prefix, 0) != null) {
+            throw new IllegalStateException("Method " + prefix + " already reserved / used!");
+        }
+        return prefix;
+    }
     public String newMethodName(String prefix) {
         final Integer cnt;
         synchronized (methodNames) {
@@ -248,5 +258,23 @@ public class GeneratedJavaFile {
      */
     public GeneratedJavaFile getImplementor() {
         return null;
+    }
+
+    public void addMethod(UserDefinedMethod userMethod) {
+        userMethods.out1().add(userMethod.getDecl().getName(), userMethod);
+    }
+
+    /**
+     * You probably shouldn't call this directly on a particular generated file.
+     *
+     * Instead, check with {@link GeneratedUiComponent#findUserMethod(String)},
+     * to have all relevant layers of generated code checked for your method.
+     */
+    protected SizedIterable<UserDefinedMethod> findMethod(String named) {
+        if (userMethods.isUnresolved()) {
+            return EmptyIterator.none();
+        }
+        return userMethods.out1().forEachValue(named);
+
     }
 }

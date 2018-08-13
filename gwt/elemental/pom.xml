@@ -36,6 +36,11 @@
     </dependency>
 
     <dependency>
+      <groupId>com.google.elemental2</groupId>
+      <artifactId>elemental2-dom</artifactId>
+    </dependency>
+
+    <dependency>
       <groupId>com.sun</groupId>
       <artifactId>java-tools</artifactId>
       <version>1.0</version>

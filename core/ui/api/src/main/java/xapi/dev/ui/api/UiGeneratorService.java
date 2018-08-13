@@ -7,7 +7,6 @@ import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.gen.SourceHelper;
 import xapi.dev.ui.impl.AbstractUiImplementationGenerator;
 import xapi.dev.ui.impl.UiGeneratorTools;
-import xapi.dev.ui.api.ContainerMetadata.MetadataRoot;
 import xapi.dev.ui.impl.UiGeneratorVisitor;
 import xapi.fu.Do;
 import xapi.fu.In1Out1;

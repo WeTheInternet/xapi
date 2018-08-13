@@ -1,14 +1,15 @@
 package xapi.dev.ui.tags.assembler;
 
 import com.github.javaparser.ast.expr.UiContainerExpr;
-import xapi.dev.ui.tags.UiTagUiGenerator;
+import xapi.dev.ui.tags.factories.GeneratedFactory;
+import xapi.dev.ui.tags.factories.MethodElementResolved;
 
 /**
  * Interface used to define behavior for assembling ui structure
  * and layout rules in {@link xapi.dev.ui.tags.UiTagUiGenerator}.
  *
  * Each UiAssembler is called for each tag within a ui= or shadow= block.
- * A new UiAssembler should be created for every use (you can make these stateful objects if you choose).
+ * Currently, at most two will be created per <define-tag /> (for ui/shadow features).
  *
  * For very basic tags, a default UiAssembler which does nothing more
  * than register the element for creation during structural assembly should suffice
@@ -31,8 +32,21 @@ import xapi.dev.ui.tags.UiTagUiGenerator;
  */
 public interface UiAssembler {
 
-    UiAssemblerResult generateAssembly(
-        UiTagUiGenerator owner, UiContainerExpr tag, UiAssembler parent
+    UiAssemblerResult addRoot(AssembledUi assembly, UiContainerExpr valueExpr);
+
+    UiAssemblerResult addChild(AssembledUi assembly, AssembledElement parent, UiContainerExpr el);
+
+    UiAssemblerResult assembleContents(
+        AssembledUi assembly,
+        GeneratedFactory factory,
+        AssembledElement e
     );
 
+    default TagAssembler selectAssembler(AssembledUi assembly, AssembledElement e) {
+        return assembly.getGenerator().getDefaultAssembler(this, assembly, e);
+    }
+
+    AssembledUi getAssembly();
+
+    MethodElementResolved getElementResolved();
 }

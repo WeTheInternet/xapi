@@ -50,6 +50,8 @@ import static xapi.dev.ui.api.UiGeneratorPlatform.PLATFORM_WEB_COMPONENT;
 @UiGeneratorPlatform(PLATFORM_WEB_COMPONENT)
 public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator <WebComponentContext> {
 
+    private static final In1Out1<GeneratedUiComponent,GeneratedUiImplementation> NEW_COMPONENT = GeneratedWebComponent::new;
+
     private String configType;
     private Lazy<UiNamespace> namespace = Lazy.deferred1(()->
         X_Inject.instance(UiNamespaceGwt.class)
@@ -62,7 +64,7 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
 
     @Override
     public void initializeComponent(GeneratedUiComponent result, ContainerMetadata metadata) {
-        if (result.addImplementationFactory(GwtPlatform.class, GeneratedWebComponent::new)) {
+        if (result.addImplementationFactory(GwtPlatform.class, NEW_COMPONENT)) {
             super.initializeComponent(result, metadata);
 
             final UiNamespace baseNs = getTools().namespace();
@@ -291,11 +293,9 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
             .print("final " + type + " c = ")
             .println("get" + api.getWrappedName() + "(e);")
             // Now, lets grab the inner dom and jam it into our element.
-            .println("final " + element + " child = c.toDom().getElement();")
+            .println("c.getElement(); // ensure ui is initialized")
             // TODO: add pre-override checks, in case an element wants to
             // check the element body for source code before generating interface
-            .println("e.appendChild(child);")
-
             .outdent()
             .println("});");
 
@@ -457,5 +457,8 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
         this.configType = configType;
     }
 
-
+    @Override
+    public UiComponentGenerator createTagGenerator() {
+        return super.createTagGenerator();
+    }
 }

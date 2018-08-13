@@ -1,9 +1,7 @@
 package xapi.server.api;
 
 import xapi.fu.In1;
-import xapi.scope.request.RequestLike;
 import xapi.scope.request.RequestScope;
-import xapi.scope.request.ResponseLike;
 
 /**
  * A plugin used to install some functionality into a XapiServer.

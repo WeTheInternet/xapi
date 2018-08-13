@@ -12,10 +12,7 @@ import xapi.dev.source.FieldBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.ui.api.*;
 import xapi.dev.ui.impl.UiGeneratorTools;
-import xapi.dev.ui.tags.assembler.AssembledUi;
-import xapi.dev.ui.tags.assembler.DefaultUiAssembler;
-import xapi.dev.ui.tags.assembler.UiAssembler;
-import xapi.dev.ui.tags.assembler.UiAssemblerResult;
+import xapi.dev.ui.tags.assembler.*;
 import xapi.except.NotConfiguredCorrectly;
 import xapi.except.NotYetImplemented;
 import xapi.fu.*;
@@ -38,11 +35,7 @@ import static xapi.source.X_Source.javaQuote;
  */
 public class UiTagUiGenerator extends UiFeatureGenerator {
 
-    public class UiTagGeneratorVisitor extends VoidVisitorAdapter<UiContainerExpr> {
-
-        public UiTagUiGenerator getOwner() {
-            return UiTagUiGenerator.this;
-        }
+    public static class UiTagGeneratorVisitor extends VoidVisitorAdapter<UiContainerExpr> {
 
         private final GeneratedUiComponent component;
         private final MethodBuffer toDom;
@@ -51,57 +44,46 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
         private final GeneratedUiBase baseClass;
         private final ChainBuilder<String> rootRefs;
         private final ClassBuffer out;
-        private final ContainerMetadata me;
         private final GeneratedUiLayer layer;
+        private final AssembledUi assembly;
+        private final UiTagGenerator generator;
         public In1<String> refNameSpy;
         public String refFieldName;
         public String rootRef; // The name of the ref in the xapi source
         public String rootRefField; // The name of the ref field in generated java
         public UiAssembler rootAssembler, parentAssembler;
+        private AssembledElement next;
 
         public UiTagGeneratorVisitor(
-            GeneratedUiComponent component,
-            GeneratedUiLayer layer,
+            AssembledUi assembly,
             MethodBuffer toDom,
-            UiGeneratorTools tools,
-            ChainBuilder<String> rootRefs,
-            ContainerMetadata me
+            ChainBuilder<String> rootRefs
         ) {
-            this.layer = layer;
-            this.component = component;
+            this.assembly = assembly;
             this.toDom = toDom;
-            this.tools = tools;
-            this.ctx = me.getContext();
+            this.component = assembly.getUi();
+            this.layer = component.getBase();
+            this.tools = assembly.getTools();
+            this.ctx = assembly.getContext();
             this.baseClass = component.getBase();
             this.rootRefs = rootRefs;
             this.out = baseClass.getSource().getClassBuffer();
-            this.me = me;
+            generator = assembly.getGenerator();
             refNameSpy = In1.ignored();
+            next = new AssemblyRoot(assembly);
         }
 
         @Override
         public void visit(UiContainerExpr n, UiContainerExpr arg) {
             boolean isRoot = arg == null;
 
+            next = generator.attachChild(assembly, next, n);
+
+            final UiNamespace namespace = assembly.getNamespace();
+            final UiTagGenerator owner = assembly.getGenerator();
+
             final Maybe<Expression> refNode = n.getAttribute(UiNamespace.ATTR_REF)
                 .mapNullSafe(UiAttrExpr::getExpression);
-            switch (n.getName().toLowerCase()) {
-                case "if":
-                    // if tag is special, it will wrap children into if/else block
-                    handleIfTag(n, arg);
-                    return;
-                case "for":
-                    // for tag is also special; we will unfold the underlying item type,
-                    // generating a for loop in the code, with the as=Name property
-                    // available for reference, by name, in shared context.
-                    handleForTag(n, arg);
-                    return;
-                case "native-element":
-                    // native elements are special; we are going to ask the current
-                    // component to just leave an abstract method for implementors to fill in.
-                    handleNativeTag(n, arg, refNode, ctx);
-                    return;
-            }
 
 //            DefaultUiAssembler assembler = new DefaultUiAssembler(this, refNode, tools, component, layer, rootRefs);
 //            final UiAssemblerResult result = assembler.generateAssembly(
@@ -126,7 +108,7 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
             // where we have whole-world knowledge available before generating code...
             assert isRoot || !refNode.isPresent() || n.getContainerParentNode() == arg;
             final Do undo = registerNode(n, refNode, isRoot);
-            boolean compact = owner.requireCompact(n);
+            boolean compact = assembly.requireCompact(n);
 
             final Maybe<Expression> modelNode = n.getAttribute(UiNamespace.ATTR_MODEL)
                 .mapNullSafe(UiAttrExpr::getExpression);
@@ -139,7 +121,7 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
                 Expression nodeToUse = tools.resolveVar(ctx, modelExpr);
                 if (nodeToUse != null) {
                     if (!nodeToUse.hasExtra(EXTRA_MODEL_INFO)) {
-                        nodeToUse = owner.resolveReference(tools, ctx, component, baseClass, rootRefField, nodeToUse, false);
+                        nodeToUse = owner.resolveReference(tools, ctx, component, baseClass, next.getRoot().maybeRequireRef(), next.maybeRequireRef(), nodeToUse, false);
                     }
                     if (nodeToUse.hasExtra(EXTRA_MODEL_INFO)) {
                         // yay, some model info for us!
@@ -187,9 +169,9 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
 
                         } else {
                             if (!nodeToUse.hasExtra(EXTRA_MODEL_INFO)) {
-                                nodeToUse = owner.resolveReference(tools, ctx, component, baseClass, rootRefField, nodeToUse, false);
+                                nodeToUse = owner.resolveReference(tools, ctx, component, baseClass, next.getRoot().maybeRequireRef(), next.maybeRequireRef(), nodeToUse, false);
                             }
-                            MethodCallExpr factoryMethod = otherTag.getTagFactory(tools, ctx, component, namespace, n, nodeToUse, toDom);
+                            MethodCallExpr factoryMethod = otherTag.getTagFactory(tools, ctx, component, namespace, n, nodeToUse);
                             String initializer = tools.resolveString(ctx, factoryMethod);
                                 toDom.println(type + " " + refFieldName + " = " + initializer + ";");
                         }
@@ -206,7 +188,7 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
                 if (printedVar) {
                     visitBody(n);
                 } else {
-                    toDom.println(type + " " + refFieldName + " = " + newBuilder.out1() + ";")
+                    toDom.println(type + " " + refFieldName + " = " + assembly.newBuilder(namespace) + ";")
                         .println(refFieldName + ".append(\"<" + n.getName() +
                             (compact ? "" : ">") + "\");");
                     try {
@@ -243,7 +225,7 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
 
                 setRootRef(refNode);
                 final FieldBuffer refField = out.createField(
-                    baseClass.getElementBuilderType(namespace),
+                    assembly.newBuilder(),
                     refFieldName
                 );
                 return component.registerRef(rootRef, refField);
@@ -252,12 +234,12 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
                     String ref = tools.resolveString(ctx, refNode.get());
                     refFieldName = baseClass.newFieldName(ref);
                     final FieldBuffer refField = out.createField(
-                        baseClass.getElementBuilderType(namespace),
+                        assembly.newBuilder(),
                         refFieldName
                     );
                     component.registerRef(ref, refField);
                 } else {
-                    refFieldName = me.newVarName("el" + tools.tagToJavaName(n));
+                    refFieldName = assembly.newVarName("el" + tools.tagToJavaName(n));
                 }
                 return Do.NOTHING;
             }
@@ -275,123 +257,6 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
             refNameSpy.in(rootRefField);
             rootRefs.add(rootRefField);
             return rootRefField;
-        }
-
-        private void handleNativeTag(
-            UiContainerExpr n,
-            UiContainerExpr arg,
-            Maybe<Expression> refNode,
-            ApiGeneratorContext ctx
-        ) {
-            newBuilder.out1();
-            final boolean isRoot = arg == null;
-            final String parentRef = refFieldName;
-            final Do undo = registerNode(n, refNode, isRoot);
-            try {
-                component.createNativeFactory(tools, ctx, n, toDom, namespace, refFieldName);
-            } finally {
-                if (parentRef != null) {
-                    toDom.println(parentRef + ".addChild(" + refFieldName + ");");
-                }
-                undo.done();
-                refFieldName = parentRef;
-            }
-
-        }
-
-        private void handleForTag(UiContainerExpr n, UiContainerExpr arg) {
-            toDom.print("for (");
-            n.getAttribute("allOf")
-                .readIfPresent(all->{
-                    final Expression startExpr = all.getExpression();
-                    final Expression endExpr = owner.resolveReference(tools, ctx, component, baseClass, rootRefField, all);
-
-                    final Maybe<UiAttrExpr> index = n.getAttribute("index");
-
-                    // TODO an alternative to as which exposes the index as well/instead
-                    n.getAttribute("as")
-                        .readIfPresent(as->{
-                            final String asName = tools.resolveString(ctx, as.getExpression());
-                            // Ok! We have allOf=someData, likely $model.fieldName,
-                            // and an as=name to put into the context.
-
-                            // Lets find out what type our elements are,
-                            // open our for loop, register the model information,
-                            // and then visit the children of the <for /> tag
-                            if (endExpr instanceof ScopedExpression) {
-                                // probably a $model/$data reference...
-                                Expression allOfRoot = ((ScopedExpression) endExpr)
-                                    .getRootScope();
-                                if (owner.isModelReference(allOfRoot)) {
-                                    GeneratedUiField modelInfo = (GeneratedUiField) endExpr.getExtras().get(
-                                        EXTRA_MODEL_INFO);
-                                    if (modelInfo == null) {
-                                        throw new IllegalArgumentException(
-                                            "Complex model expressions not yet supported by <for /> tag."
-                                                +"\nYou sent " + tools.debugNode(startExpr) + "; which was converted to " + tools.debugNode(endExpr));
-                                    }
-                                    String type = toDom.addImport(ASTHelper.extractGeneric(modelInfo.getMemberType()));
-                                    String call = tools.resolveString(ctx, endExpr);
-                                    final Type memberType = modelInfo.getMemberType();
-                                    if (memberType.hasRawType("IntTo")) {
-                                        call = call + ".forEach()"; // ew.  But. well, it is what it is.
-                                        // TODO: abstract this into something that understands the member type
-                                    }
-                                    toDom.append(type).append(" ").append(asName)
-                                        .append(" : ").append(call).println(") {")
-                                        .indent();
-
-                                    // Save our vars to ctx state.
-                                    // Since we are running inside a for loop,
-                                    // we want the var to point to the named instance we just used.
-                                    NameExpr var = new NameExpr(asName);
-                                    var.setExtras(endExpr.getExtras());
-                                    var.addExtra(UiConstants.EXTRA_FOR_LOOP_VAR, true);
-                                    Do undo = ctx.addToContext(asName, var);
-                                    // Now, we can visit children
-                                    if (index.isPresent()) {
-                                        String indexName = tools.resolveString(ctx, index.get().getExpression());
-                                        final UiBodyExpr body = n.getBody();
-                                        if (body != null) {
-                                            int cnt = 0;
-                                            for (Expression child : body.getChildren()) {
-                                                final Do indexUndo = ctx.addToContext(
-                                                    indexName,
-                                                    IntegerLiteralExpr.intLiteral(cnt++)
-                                                );
-                                                // child.addExtra(EXTRA_GENERATE_MODE, "");
-                                                child.accept(this, n);
-                                                indexUndo.done();
-                                            }
-
-                                        }
-                                    } else {
-                                        // No index; just visit children.
-                                        final UiBodyExpr body = n.getBody();
-                                        if (body != null) {
-                                            super.visit(body, n);
-                                        }
-                                    }
-
-                                    undo.done();
-
-                                    toDom.outdent();
-                                    toDom.println("}");
-                                    return;
-                                }
-                                throw new IllegalArgumentException("Non-model based for loop expressions not yet supported."
-                                    +"\nYou sent " + tools.debugNode(startExpr) + "; which was converted to " + tools.debugNode(endExpr));
-                            }
-                            throw new IllegalArgumentException("Non-ScopedExpression based for loop expressions not yet supported."
-                                +"\nYou sent " + tools.debugNode(startExpr) + "; which was converted to " + tools.debugNode(endExpr));
-                        })
-                        .readIfAbsent(noAs->{
-                            throw new IllegalArgumentException("For now, all <for /> tags *must* have an as=nameToReferenceItems attribute");
-                        });
-                })
-                .readIfAbsentUnsafe(noAllOf->{
-                    throw new IllegalArgumentException("For now, all <for /> tags *must* have an allOf= attribute");
-                });
         }
 
         @Override
@@ -438,7 +303,7 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
                             MethodReferenceExpr ref = (MethodReferenceExpr) asExpr;
                             String name;
                             final Expression scope = ref.getScope();
-                            String scopeName = owner.getScopeType(tools, scope);
+                            String scopeName = generator.getScopeType(tools, scope);
                             if (scopeName != null && scopeName.startsWith("$")) {
                                 // We have a method reference to a bound name ($model, $data, $Api, $Base, $Self)
                                 switch (scopeName.toLowerCase().split("<")[0]) {
@@ -457,8 +322,8 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
                                                     toDom.println(refFieldName + ".append(getModel().get" + field.getCapitalized()+"());");
                                                     break;
                                                 default:
-                                                    String elementType = baseClass.getElementType(namespace);
-                                                    if (elementType.equals(field.getMemberType())) {
+                                                    String elementType = assembly.getTypeElement();
+                                                    if (elementType.equals(field.getMemberType().toStringWithoutComments())) {
                                                         // a bit odd to have elements in your model, but we won't stop you...
                                                         toDom.println(refFieldName + ".addChild(getModel().get" + field.getCapitalized()+"());");
                                                     } else {
@@ -527,10 +392,10 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
                 boolean hasUnknownInput = false;
                 final Expression[] myArgs = asMethod.getArgs().toArray(new Expression[asMethod.getArgs().size()]);
                 for (Expression param : myArgs) {
-                    owner.resolveReference(tools, ctx, component, baseClass, rootRefField, param, true);
+                    generator.resolveReference(tools, ctx, component, baseClass, next.getRoot().maybeRequireRef(), next.maybeRequireRef(), param, true);
                 }
 
-                Do undo = owner.resolveSpecialNames(ctx, component, baseClass, rootRefField);
+                Do undo = generator.resolveSpecialNames(ctx, component, baseClass, next.getRoot().maybeRequireRef(), next.maybeRequireRef());
                 final String asString = tools.resolveString(ctx, resolved);
                 undo.done();
                 if (isUiRoot) {
@@ -569,209 +434,6 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
             if (n.getNameString().equalsIgnoreCase("children")) {
             }
             super.visit(n, arg);
-        }
-
-
-        private void handleIfTag(UiContainerExpr n, UiContainerExpr arg) {
-            boolean isRoot = arg == null;
-
-            if (isRoot) {
-                // when an if tag is the root, we will create a final variable to point to the root value,
-                // and then assign to that variable in the appropriate blocks...
-                // This will enforce matching if/else semantics (there must be an else in order to have a root <if />)
-                // This will forces all conditional terminals to have exactly one output
-            }
-
-            // if tags are special.  We will use them to wrap the body of this container in a conditional
-            toDom.print("if (");
-
-            boolean first = true;
-            ChainBuilder<Expression> elseExpr = Chain.startChain();
-            ChainBuilder<Expression> whenTrue = Chain.startChain();
-            ChainBuilder<Expression> whenFalse = Chain.startChain();
-            ChainBuilder<Expression> elsifExprs = Chain.startChain();
-            for (UiAttrExpr attr : n.getAttributes()) {
-                final Expression expr = owner.resolveReference(
-                    tools,
-                    ctx,
-                    component,
-                    baseClass,
-                    rootRefField,
-                    attr
-                );
-                if ("else".equals(attr.getNameString())) {
-                    elseExpr.add(expr);
-                    continue;
-                } else if ("elsif".equals(attr.getNameString())) {
-                    elsifExprs.add(expr);
-                    continue;
-                } else if ("whenTrue".equals(attr.getNameString())) {
-                    whenTrue.add(expr);
-                    continue;
-                } else if ("whenFalse".equals(attr.getNameString())) {
-                    whenFalse.add(expr);
-                    continue;
-                }
-                // TODO: consider "compile time conditionals", which
-                // control whether we even print the code or not;
-                // for example, platform-specific overrides for a given case
-                final String serialized = tools.resolveString(ctx, expr);
-                // TODO handle escaping...
-                if (!first) {
-                    toDom.print(" &&");
-                }
-                switch (attr.getName().getName()) {
-                    case "isNotNull":
-                    case "notNull":
-                        toDom.print(serialized + " != null");
-                        break;
-                    case "isNull":
-                        toDom.print(serialized + " == null");
-                        break;
-                    case "isTrue":
-                        toDom.print(serialized);
-                        break;
-                    case "isFalse":
-                        toDom.print("!" + serialized);
-                        break;
-                    case "isZero":
-                        toDom.print(serialized + " == 0");
-                        break;
-                    case "isOne":
-                        toDom.print(serialized + " == 1");
-                        break;
-                    case "isMinusOne":
-                        toDom.print(serialized + " == -1");
-                        break;
-                    default:
-
-                }
-                first = false;
-            }
-
-            toDom.println(") {");
-            toDom.indent();
-            UiBodyExpr myBody = n.getBody();
-            Mutable<String> childRef = new Mutable<>();
-            if (myBody != null || whenTrue.isNotEmpty()){
-                final In1<String> was = refNameSpy;
-                refNameSpy = In1.in1(i->{
-                    if (isRoot) {
-                        assert childRef.isNull() : "Root elements must not visit more than one node";
-                    }
-                    childRef.in(i);
-                });
-                try {
-                    if (isRoot) {
-                        assert whenTrue.isEmpty()  : "Cannot use whenTrue in an if tag that has a non-empty body; "
-                            + tools.debugNode(n);
-                            assert myBody==null || myBody.getChildren()
-                                .stream().filter(X_Fu::notNull)
-                                .filter(e->
-                                    !(
-                                        // ick... cleaning out whitespace.
-                                        e instanceof TemplateLiteralExpr
-                                            && ((TemplateLiteralExpr)e).getValue().trim().isEmpty()
-                                    )
-                                )
-                                .count() == 1 : "An <if /> tag as the root of a ui" +
-                                " must contain at most one element (either in the body of the <if/>," +
-                                " or using whenTrue=<resultCode/>.; you sent \n"
-                                + tools.debugNode(n);
-                    }
-                    if (myBody != null) {
-                        super.visit(myBody, arg);
-                    }
-                    whenTrue.forAll(Expression::accept, this, arg);
-                } finally {
-                    refNameSpy = was;
-                }
-            } else if (isRoot) {
-                // when we are root, and the body is empty, we can use whenTrue to supply value
-                assert whenTrue.size() == 1 : "A root <if /> element can only have 1 whenTrue value, to serve as document root;" +
-                    " consider using <box><if whenTrue=... /></box> or <template />; you sent: \n" +
-                    tools.debugNode(n);
-                whenTrue.forAll(Expression::accept, this, arg);
-                String result = tools.resolveString(ctx, whenTrue.first());
-                childRef.in(result);
-            } else {
-                whenTrue.forAll(Expression::accept, this, arg);
-            }
-            if (isRoot && childRef.out1() != null) {
-                toDom.returnValue(childRef.out1());
-            }
-            toDom.outdent();
-            toDom.print("}");
-
-            if (elsifExprs.isNotEmpty()) {
-                // print our elsifs.  Because there can be many of these,
-                // we expect them all to be <if /if> bodiless tags,
-                // to allow us to append an else before the nested if...
-                // note that we can't allow else/whenFalse in a nested elsif,
-                first = true;
-
-                In1<Expression>[] printChild = new In1[1];
-                printChild[0] = e->{
-                    if (e instanceof JsonContainerExpr) {
-                        // a list of conditionals
-                        boolean f = true;
-                        for (Expression child : ((JsonContainerExpr) e).getValues()) {
-                            if (f) {
-                                f = false;
-                            } else {
-                                toDom.print(" else ");
-                            }
-                            printChild[0].in(child);
-                        }
-                    } else if (e instanceof UiContainerExpr) {
-                        // better be an if tag...
-                        UiContainerExpr elsif = (UiContainerExpr) e;
-                        if (!elsif.getName().equals("if")) {
-                            throw new IllegalArgumentException("elsif can only have <if /if> or [ <if /> ] children; you sent " + tools.debugNode(n));
-                        }
-                        // now... enforce this elseif does not have BadStructures(tm)
-                        assert elsif.getAttribute("else").isAbsent() :
-                            "An <if /> inside an elsif cannot have an <else /> child; you sent " + tools.debugNode(n);
-                        assert elsif.getAttribute("whenFalse").isAbsent() :
-                            "An <if /> inside an elsif cannot have a <whenFalse /> child; you sent " + tools.debugNode(n);
-                        // hokay!  We got us an if tag.  lets recurse (same parent node...)
-                        handleIfTag(elsif, arg);
-                    } else {
-                        // template string?  ...fail
-                        throw new IllegalArgumentException("elsif can only have <if /if> or [ <if /> ] children.");
-                    }
-                };
-                for (Expression e : elsifExprs) {
-                    toDom.println().print(" else ");
-                    printChild[0].in(e);
-                }
-            }
-            if (elseExpr.isNotEmpty() || whenFalse.isNotEmpty()) {
-                childRef.set(null); // clear it out so we can enforce root semantics as needed
-                final In1<String> was = refNameSpy;
-                try {
-                    refNameSpy = In1.in1(i->{
-                        assert !isRoot || childRef.isNull() : "Root elements must not visit more than one node";
-                        childRef.in(i);
-                    });
-                    assert !isRoot || elseExpr.size() + whenFalse.size() == 1 : "A root else statement must return exactly one else node; " +
-                        "you sent [" + elseExpr.join(tools::debugNode, ", ") + "] for else and [ " +
-                        whenFalse.join(tools::debugNode, ", ") + "] for whenFalse \n from " + tools.debugNode(n);
-                    toDom.println(" else {").indent();
-
-                    elseExpr.forAll(Expression::accept, this, arg);
-                    whenFalse.forAll(Expression::accept, this, arg);
-                    toDom.outdent();
-                } finally {
-                    refNameSpy = was;
-                }
-                if (isRoot && childRef.out1() != null) {
-                    toDom.returnValue(childRef.out1());
-                }
-                toDom.print("}");
-
-            }
-            toDom.println();
         }
 
     }
@@ -818,75 +480,28 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
         if (this.namespace == null) {
             this.namespace = tools.namespace();
         }
-        // hm... should likely check the name of the host tag for <shadow /> as well...
+        AssembledUi assembled = source.getAssembly(tools, namespace, owner);
         final GeneratedUiComponent component = me.getGeneratedComponent();
         this.newBuilder = Lazy.deferred1(component::getElementBuilderConstructor, namespace);
         this.newInjector = Lazy.deferred1(component::getElementInjectorConstructor, namespace);
-        boolean shadowUi = ui.getAnnotation(a->a.getNameString().equalsIgnoreCase("shadowdom")).isPresent();
-        if (shadowUi || owner.alwaysUseShadowDom()) {
-            // We explicitly want to generate shadow dom
-            // (and inject the minimal amount of css needed)
-            final Expression uiExpr = ui.getExpression();
-            // TODO Look for template bindings, to figure out if we need to bind to any model fields
-            final UiNamespace namespace = tools.namespace();
-            MethodBuffer toDom = owner.toDomMethod(namespace, component.getBase());
-            ChainBuilder<String> rootRefs = Chain.startChain();
 
-            AssembledUi assembled = source.getAssembly(tools, namespace);
+        // we allow two layers of ui:
+        // a logical graph of connected nodes,
+        // and a rendered graph of connected nodes.
+        // if only one layer is provided, it acts as both layers.
+
+        // ui = <children /> // logical "lightdom"
+        // shadow = <children /> // rendered "shadowdom".
+
+        // When both layers are provided,
+        // "system objects" will look only in the ui layer for children,
+        // and only the renderer will switch to rendering the shadow layer.
 
 
-            final UiTagGeneratorVisitor visitor = new UiTagGeneratorVisitor(
-                component,
-                component.getBase(),
-                toDom,
-                tools,
-                rootRefs,
-                me);
-            final String newBuilder = component.getElementBuilderConstructor(namespace);
-            if (uiExpr instanceof JsonContainerExpr) {
-                // A ui w/ a json container must be an array,
-                final JsonContainerExpr json = (JsonContainerExpr) uiExpr;
-                if (!json.isArray()) {
-                    throw new IllegalArgumentException("Children of a ui=feature must be either an array or an element, " +
-                        "you sent: " + tools.debugNode(json));
-                }
+        boolean shadowUi = "shadow".equalsIgnoreCase(ui.getNameString()) ||
+            ui.getAnnotation(a->a.getNameString().startsWith("shadow")).isPresent();
 
-                // our element should act like / be a document fragment.
-                final String varName = visitor.setRootRef(Maybe.not());
-                String builderName = component.getBase().getElementBuilderType(namespace);
-                toDom.println(builderName + " " + varName + " = " + newBuilder + ";");
-
-                for (JsonPairExpr pair : json.getPairs()) {
-                    pair.getValueExpr().accept(visitor, null);
-                }
-                toDom.returnValue(varName);
-                return UiVisitScope.FEATURE_NO_CHILDREN;
-            }
-            if (uiExpr instanceof UiContainerExpr) {
-                // Now, visit any elements, storing variables to any refs.
-                uiExpr.accept(visitor, null);
-
-                // k.  All done.  Now to decide what to return.
-                if (rootRefs.size() == 1) {
-                    // With a single root ref and configured to allow non-template,
-                    // we will return the root node as-is
-                    toDom.returnValue(rootRefs.first());
-                } else {
-                    if (rootRefs.isEmpty()) {
-                        // no root refs; just return an empty builder.
-                        toDom.returnValue(newBuilder);
-                    } else {
-                        // For now, no support for multiple roots;
-                        throw new NotYetImplemented("Multiple root refs not yet supported in " + component);
-                    }
-                }
-            } else {
-                throw new IllegalArgumentException(
-                    "<define-tag only supports ui=<dom /> /> nodes;" +
-                        "\nYou sent " + uiExpr
-                );
-            }
-        }
+        assembled.addAssembly(ui.getExpression(), shadowUi);
 
         return UiVisitScope.FEATURE_NO_CHILDREN;
     }

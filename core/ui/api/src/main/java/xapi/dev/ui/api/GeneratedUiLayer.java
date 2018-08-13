@@ -56,7 +56,7 @@ public abstract class GeneratedUiLayer extends GeneratedJavaFile {
         return getTypeName(); // you may want to suffix your models.
     }
 
-    private String nameNode, nameElement, nameElementBuilder, nameModel, nameBase, nameApi;
+    private String nameNode, nameElement, nameElementBuilder, nameElementInjector, nameModel, nameBase, nameApi;
     private final StringTo<In1<GeneratedUiImplementation>> abstractMethods;
     private final StringTo<ReferenceType> localDefinitions;
 

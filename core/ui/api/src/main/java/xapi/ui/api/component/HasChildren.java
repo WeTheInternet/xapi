@@ -7,10 +7,10 @@ import xapi.fu.iterate.SizedIterable;
  */
 public interface HasChildren <Node> {
 
-    SizedIterable<IsComponent<? extends Node>> getChildComponents();
+    SizedIterable<Node> getChildComponents();
 
-    void addChildComponent(IsComponent<? extends Node> child);
+    void addChildComponent(Node child);
 
-    void removeChild(IsComponent<? extends Node> me);
+    void removeChild(Node me);
 
 }

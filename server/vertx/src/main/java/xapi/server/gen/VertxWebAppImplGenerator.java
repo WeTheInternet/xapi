@@ -15,7 +15,8 @@ public class VertxWebAppImplGenerator extends AbstractUiImplementationGenerator<
 
     public VertxWebAppImplGenerator(VertxWebAppGenerator generator) {
         super();
-        generator.getComponentGenerators().forEach(componentGenerators::putPair);
+        setGenerator(generator);
+        generator.getComponentGenerators().forEach(componentGenerators.out1()::putPair);
     }
 
     @Override

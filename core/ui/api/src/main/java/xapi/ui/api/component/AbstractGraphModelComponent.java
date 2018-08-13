@@ -35,8 +35,7 @@ public abstract class AbstractGraphModelComponent <Node, El extends Node, Mod ex
         super(element);
     }
 
-    @Override
-    public void setParentComponent(IsComponent<? extends Node> parent) {
+    public void setParent(IsComponent<? extends Node> parent) {
         this.parent = parent;
     }
 
@@ -50,7 +49,7 @@ public abstract class AbstractGraphModelComponent <Node, El extends Node, Mod ex
     }
 
     @Override
-    public IsComponent<? extends Node> getParentComponent() {
+    public IsComponent<? extends Node> getParent() {
         return parent;
     }
 

@@ -5,8 +5,9 @@ package xapi.ui.api.component;
  */
 public interface HasParent <Node> {
 
-    IsComponent<? extends Node> getParentComponent();
+    Node getParent();
 
-    void setParentComponent(IsComponent<? extends Node> parent);
-
+    default void setParent(Node node) {
+        throw new UnsupportedOperationException("Parent immutable");
+    }
 }

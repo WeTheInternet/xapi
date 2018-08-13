@@ -1,39 +1,29 @@
 package xapi.dev.ui.tags;
 
 import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.body.BodyDeclaration;
-import com.github.javaparser.ast.body.FieldDeclaration;
-import com.github.javaparser.ast.body.MethodDeclaration;
-import com.github.javaparser.ast.body.ModifierSet;
-import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.visitor.ModifierVisitorAdapter;
+import xapi.collect.X_Collect;
 import xapi.collect.api.ObjectTo;
 import xapi.collect.api.StringTo;
 import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.source.ClassBuffer;
-import xapi.dev.source.FieldBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.ui.api.*;
 import xapi.dev.ui.api.UiVisitScope.ScopeType;
 import xapi.dev.ui.impl.UiGeneratorTools;
-import xapi.except.NotYetImplemented;
-import xapi.fu.Do;
-import xapi.fu.Lazy;
-import xapi.fu.MappedIterable;
-import xapi.fu.Maybe;
-import xapi.fu.Out1;
+import xapi.dev.ui.tags.assembler.*;
+import xapi.dev.ui.tags.members.UserDefinedMethod;
+import xapi.fu.*;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
+import xapi.lang.api.AstConstants;
 import xapi.log.X_Log;
 import xapi.source.X_Modifier;
-import xapi.source.read.SourceUtil;
-import xapi.util.X_Debug;
 import xapi.util.X_String;
 import xapi.util.X_Util;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.Locale;
 
 import static com.github.javaparser.ast.expr.StringLiteralExpr.stringLiteral;
 import static com.github.javaparser.ast.expr.TemplateLiteralExpr.templateLiteral;
@@ -47,213 +37,13 @@ import static xapi.fu.Immutable.immutable1;
  */
 public class UiTagGenerator extends UiComponentGenerator {
 
-    protected static class UiMemberContext extends ApiGeneratorContext<UiMemberContext> {
-        private UiTagGenerator generator;
-        private ContainerMetadata container;
-        private UiGeneratorTools tools;
+    private final StringTo<In2Out1<AssembledUi, AssembledElement, TagAssembler>> tagFactories;
+    private final ChainBuilder<Do> undos;
 
-        public UiMemberContext(ApiGeneratorContext ctx) {
-            super(ctx);
-        }
-
-        public UiTagGenerator getGenerator() {
-            return generator;
-        }
-
-        public UiMemberContext setGenerator(UiTagGenerator generator) {
-            this.generator = generator;
-            return this;
-        }
-
-        public ContainerMetadata getContainer() {
-            return container;
-        }
-
-        public UiMemberContext setContainer(ContainerMetadata container) {
-            this.container = container;
-            return this;
-        }
-
-        public UiGeneratorTools getTools() {
-            return tools;
-        }
-
-        public UiMemberContext setTools(UiGeneratorTools context) {
-            this.tools = context;
-            return this;
-        }
-
+    public UiTagGenerator() {
+        tagFactories = X_Collect.newStringMapInsertionOrdered(In2Out1.class);
+        undos = Chain.startChain();
     }
-
-    protected class UiMemberTransformer extends ModifierVisitorAdapter<UiMemberContext> {
-
-        private final GeneratedJavaFile ui;
-        private final ContainerMetadata me;
-
-        public UiMemberTransformer(GeneratedJavaFile ui, ContainerMetadata me) {
-            this.ui = ui;
-            this.me = me;
-        }
-
-        @Override
-        public Node visit(
-            DynamicDeclarationExpr member, UiMemberContext ctx
-        ) {
-            // We want to transform this method declaration
-            // into something safely toString()able.
-            final UiGeneratorTools tools = ctx.getTools();
-            final ApiGeneratorContext<?> apiCtx = ctx.getContainer().getContext();
-
-
-//            final Do undos = resolveSpecialNames(apiCtx, ctx.getContainer().getGeneratedComponent(), ui, null);
-
-            if (member.getBody() instanceof MethodDeclaration) {
-                MethodDeclaration method = (MethodDeclaration) member.getBody();
-                if (!method.isStatic() &&
-                    ui.isInterface() &&
-                    method.getBody() != null) {
-                    // Make this method default if it non-static with a body
-                    method.setDefault(true);
-                    method.setModifiers(
-                        ( method.getModifiers() & ModifierSet.VISIBILITY_MASK)
-                        | ModifierSet.DEFAULT
-                    );
-                }
-            } else if (member.getBody() instanceof FieldDeclaration) {
-
-                final BodyDeclaration decl = member.getBody();
-                FieldDeclaration asField = (FieldDeclaration) decl;
-                addField(member, asField, ctx);
-                return templateLiteral("");
-            }
-            String src = member.toSource(tools.getTransformer(apiCtx));
-//            undos.done();
-            return templateLiteral(src, member);
-        }
-
-        private void addField(
-            DynamicDeclarationExpr member,
-            FieldDeclaration asField,
-            UiMemberContext ctx
-        ) {
-            ChainBuilder<VariableDeclarator> toForward = Chain.startChain();
-            final UiGeneratorTools tools = ctx.getTools();
-
-            String typeName = asField.getType().toSource();
-            for (VariableDeclarator var : asField.getVariables()) {
-                Expression init = var.getInit();
-                boolean isConvenienceMethod = init instanceof MethodReferenceExpr &&
-                    isConvenienceMethod((MethodReferenceExpr)init);
-
-
-                if (isConvenienceMethod) {
-                    // when using a method reference, we will bind get/set to whatever is referenced.
-                    MethodReferenceExpr methodRef = (MethodReferenceExpr) init;
-
-                    String scope = tools.resolveString(ctx, methodRef.getScope());
-                    // Create getter and setter
-                    String nameToUse = ui.newFieldName(methodRef.getIdentifier());
-                    String getterName = SourceUtil.toGetterName(typeName, nameToUse);
-                    String setterName = SourceUtil.toSetterName(nameToUse);
-                    final ClassBuffer buf = ui.getSource().getClassBuffer();
-                    boolean addGetter = true, addSetter = true;
-                    if (nameToUse.startsWith("get")) {
-                        // getter only
-                        addSetter = false;
-                    } else if (nameToUse.startsWith("set")) {
-                        // setter only
-                        addGetter = false;
-                    }
-                    String modifierPrefix = ui.isInterface() ? "default " : "public ";
-                    if (addGetter) {
-                        buf.createMethod(modifierPrefix + typeName + " " + getterName+ "()")
-                            .print("return ")
-                            .printlns(scope + "." + getterName + "();");
-                    }
-                    if (addSetter) {
-                        buf.createMethod(modifierPrefix + "void " + setterName+ "()")
-                            .addParameter(typeName, nameToUse)
-                            .printlns(scope + "." + setterName + "(" + nameToUse + ");");
-                    }
-                    // TODO: consider allowing some means to add collection / map helper methods if the field type supports them
-                    continue; // do not fall through into .ensureField.
-                }
-
-                if (ui.isInterface()) {
-                    if (!X_Modifier.isStatic(asField.getModifiers())) {
-                        // instance fields on interfaces must be forwarded to getImplementor() class
-                        toForward.add(var);
-                        init = null; // we forward the var to implementor type, so to simplify logic here in interface,
-                        // we will null out the init variable, and let it be handled normally in the implementor.
-                    }
-                }
-
-                final FieldBuffer field = ui.getOrCreateField(
-                    asField.getModifiers(),
-                    typeName,
-                    var.getId().getName()
-                );
-                if (init != null) {
-                    boolean isStatic = X_Modifier.isStatic(asField.getModifiers());
-                    assert !ui.isInterface() || isStatic :
-                        "Interface failed to forward field with initializer and null init variable";
-
-                    String initializer = tools.resolveLiteral(ctx, init);
-                    if (isStatic) {
-                        // static fields we'll set in an initializer.
-                        // TODO: bother with throws clauses, to know when we need to generate a static intializer block.
-                        // for now, anyone who needs to call methods with checked exceptions will need to create their
-                        // own helper method to do so, and call that instead.
-                        field.setInitializer(initializer);
-                    } else {
-                        // non-static fields we want to initialize in the constructor,
-                        // so we can reference things sent to said constructor.
-                        ui.getDefaultConstructor() // TODO have .allConstructors(ctor->{}) construct
-                            .println(field.getName() +" = " + initializer + ";");
-                    }
-                }
-
-            } // end loop of field vars (FieldType var1, var2, etc;)
-
-            if (!toForward.isEmpty()) {
-                // for an interface, we turn a field into a pair of getter / setters (no field!)
-                final GeneratedJavaFile implementor = ui.getImplementor();
-                if (implementor == null) {
-                    assert false : "Unsupported interface type " + ui.getClass() + " must override getImplementor() and " +
-                        "return a class to install fields into; source dump:\n" + ui.toSource();
-                    throw X_Debug.recommendAssertions();
-                }
-                // Whatever instance fields we add to this interface, we also add to the implementor class.
-                final List<VariableDeclarator> oldVars = asField.getVariables();
-                asField.setVariables(Arrays.asList(toForward.toArray(VariableDeclarator[]::new)));
-                // recurse back into our transformer for the base class, because we are forwarding from interface to the class
-                final Node result = new UiMemberTransformer(implementor, me)
-                    .visit(member, ctx);
-
-                String src = tools.resolveLiteral(ctx, (Expression)result);
-
-                if (!src.trim().isEmpty()) {
-                    implementor.getSource().getClassBuffer()
-                        .println()
-                        .printlns(src);
-                }
-
-                asField.setVariables(oldVars);
-            }
-        }
-
-        private boolean isConvenienceMethod(MethodReferenceExpr init) {
-            String name = init.getScope().toSource();
-            switch (name) {
-                case "$model":
-                case "$data":
-                    return true;
-            }
-            return false;
-        }
-    }
-
-    private ChainBuilder<Do> undos = Chain.startChain();
 
     public void addUndo(Do undo) {
         if (undo != null) {
@@ -430,7 +220,7 @@ public class UiTagGenerator extends UiComponentGenerator {
         return b.toString();
     }
 
-    protected boolean isModelReference(Expression expr) {
+    public boolean isModelReference(Expression expr) {
         if (expr instanceof NameExpr) {
             return "$model".equals(((NameExpr)expr).getName());
         } else if (expr instanceof MethodCallExpr) {
@@ -444,24 +234,26 @@ public class UiTagGenerator extends UiComponentGenerator {
         }
     }
 
-    protected Expression resolveReference(
+    public Expression resolveReference(
         UiGeneratorTools tools,
         ApiGeneratorContext ctx,
         GeneratedUiComponent component,
         GeneratedJavaFile target,
-        String rootRefField,
+        Out1<String> rootRefField,
+        Out1<String> parentField,
         UiAttrExpr attr
     ) {
-        resolveReference(tools, ctx, component, target, rootRefField, attr.getExpression(), true);
+        resolveReference(tools, ctx, component, target, rootRefField, parentField, attr.getExpression(), true);
         return attr.getExpression();
     }
 
-    protected Expression resolveReference(
+    public Expression resolveReference(
         UiGeneratorTools tools,
         ApiGeneratorContext ctx,
         GeneratedUiComponent component,
         GeneratedJavaFile target,
-        String rootRefField,
+        Out1<String> rootRefField,
+        Out1<String> parentField,
         Expression expression,
         boolean rewriteParent
     ) {
@@ -470,7 +262,8 @@ public class UiTagGenerator extends UiComponentGenerator {
             ctx,
             component,
             target,
-            rootRefField
+            rootRefField,
+            parentField
         );
         final Expression param;
         try {
@@ -511,18 +304,21 @@ public class UiTagGenerator extends UiComponentGenerator {
 
                     @Override
                     public Node visit(MethodReferenceExpr n, Expression arg) {
-                        if (n.getScope().toSource().equals("$model")) {
-                            final GeneratedUiField field = component.getPublicField(n.getIdentifier());
-                            if (field == null) {
-                                throw new IllegalArgumentException("No model field of name " + n.getIdentifier() + " declared");
-                            }
-                            // For now, model references in ui always assumed to be a read operation.
-                            // TODO: put in scope barriers so we only make this assumption in ui tags, but not in
-                            // structures which will have other interpretations.
-                            final Expression newScope = tools.resolveVar(ctx, n.getScope());
-                            MethodCallExpr replaceWith = new MethodCallExpr(newScope, field.getterName());
-                            replaceWith.addExtra(EXTRA_MODEL_INFO, field);
-                            return replaceWith;
+                        switch (n.getScope().toSource()) {
+                            case "$model":
+                                final GeneratedUiField field = component.getPublicField(n.getIdentifier());
+                                if (field == null) {
+                                    throw new IllegalArgumentException("No model field of name " + n.getIdentifier() + " declared");
+                                }
+                                // For now, model references in ui always assumed to be a read operation.
+                                // TODO: put in scope barriers so we only make this assumption in ui tags, but not in
+                                // structures which will have other interpretations.
+                                final Expression newScope = tools.resolveVar(ctx, n.getScope());
+                                MethodCallExpr replaceWith = new MethodCallExpr(newScope, field.getterName());
+                                replaceWith.addExtra(EXTRA_MODEL_INFO, field);
+                                return replaceWith;
+                            case "$this":
+                                return AstConstants.THIS_REF;
                         }
                         return super.visit(n, arg);
                     }
@@ -617,7 +413,8 @@ public class UiTagGenerator extends UiComponentGenerator {
         ApiGeneratorContext ctx,
         GeneratedUiComponent component,
         GeneratedJavaFile cls,
-        String rootRefField
+        Out1<String> rootRefField,
+        Out1<String> parentField
     ) {
         Do start = ctx.addToContext("$Self", templateLiteral(cls.getWrappedName()));
         start = start.doAfter(ctx.addToContext("$this", templateLiteral(cls.getWrappedName() + ".this")));
@@ -631,6 +428,9 @@ public class UiTagGenerator extends UiComponentGenerator {
         if (rootRefField != null) {
             start = start.doAfter(ctx.addToContext("$root", stringLiteral(rootRefField)));
         }
+        if (parentField != null) {
+            start = start.doAfter(ctx.addToContext("$parent", stringLiteral(parentField)));
+        }
         if (component.hasPublicModel()) {
             start = start.doAfter(ctx.addToContext("$model", templateLiteral("getModel()")));
         }
@@ -640,11 +440,12 @@ public class UiTagGenerator extends UiComponentGenerator {
         return start;
     }
 
-    protected boolean requireCompact(UiContainerExpr n) {
+    public boolean requireCompact(UiContainerExpr n) {
+
         return false;
     }
 
-    protected MethodBuffer toDomMethod(
+    public MethodBuffer toDomMethod(
         UiNamespace namespace,
         GeneratedUiLayer ui
     ) {
@@ -654,10 +455,6 @@ public class UiTagGenerator extends UiComponentGenerator {
         final MethodBuffer method = ui.getOrCreateMethod(X_Modifier.PUBLIC,  builderType, "toDom");
         return method;
 
-    }
-
-    protected boolean alwaysUseShadowDom() {
-        return true;
     }
 
     protected void maybeAddImports(
@@ -695,23 +492,24 @@ public class UiTagGenerator extends UiComponentGenerator {
         ContainerMetadata me,
         DynamicDeclarationExpr member
     ) {
+
         final ApiGeneratorContext ctx = me.getContext();
 
-        resolveReference(tools, ctx, me.getGeneratedComponent(), cls, null, member, true);
+        resolveReference(tools, ctx, me.getGeneratedComponent(), cls, null, null, member, true);
 
         // whenever we resolve special names in an ast block's context, we always rollback anything we added.
         // this prevents variables from leaking out of their intended scope, at the expense of ugly try/finally undo.done()s
-        final Do undo = resolveSpecialNames(ctx, me.getGeneratedComponent(), cls, null);
+        final Do undo = resolveSpecialNames(ctx, me.getGeneratedComponent(), cls, null, null);
         try {
 
             UiMemberTransformer transformer = new UiMemberTransformer(cls, me);
-            final Node result = transformer.visit(member, new UiMemberContext(ctx)
+            final Expression result = (Expression) transformer.visit(member, new UiMemberContext(ctx)
                 .setContainer(me)
                 .setTools(tools)
                 .setGenerator(this)
             );
 
-            final String src = tools.resolveLiteral(ctx, (Expression) result);
+            final String src = tools.resolveLiteral(ctx, result);
             if (!src.trim().isEmpty()) {
                 // allow an escape hatch for the transformer to add (and index!) stuff added to the class buffer
                 cls.getSource().getClassBuffer()
@@ -719,9 +517,20 @@ public class UiTagGenerator extends UiComponentGenerator {
                     .printlns(src);
             }
 
+            recordMember(cls, member, result, src);
+
         } finally {
             undo.done();
         }
+    }
+
+    private void recordMember(
+        GeneratedJavaFile cls,
+        DynamicDeclarationExpr member,
+        Expression result,
+        String src
+    ) {
+        cls.addMethod(new UserDefinedMethod(member, result, src));
     }
 
     @Override
@@ -746,4 +555,101 @@ public class UiTagGenerator extends UiComponentGenerator {
     public void onComponentComplete(Do task) {
         undos.add(task);
     }
+
+    public AssembledUi newAssembly(ComponentBuffer componentBuffer, UiGeneratorTools tools, UiNamespace namespace) {
+        return new AssembledUi(componentBuffer, tools, namespace, this);
+    }
+
+    public boolean isCompatible(UiTagGenerator generator) {
+        return generator == this;
+    }
+
+    public final AssembledElement attachChild(
+        AssembledUi assembly,
+        AssembledElement root,
+        UiContainerExpr n
+    ) {
+        final AssembledElement e;
+        switch (n.getName().toLowerCase(Locale.US)) {
+            case "if":
+                e = attachConditional(assembly, root, n);
+                break;
+            case "for":
+                e = attachLoop(assembly, root, n);
+                break;
+            case "native":
+            case "native-element":
+                e = attachNativeElement(assembly, root, n);
+                break;
+            default:
+                e = attachDefault(assembly, root, n);
+        }
+        return maybeSwap(assembly, root, e);
+    }
+
+    protected AssembledElement attachDefault(
+        AssembledUi assembly,
+        AssembledElement root,
+        UiContainerExpr n
+    ) {
+        return new AssembledElement(assembly, root, n);
+    }
+
+    protected AssembledElement attachNativeElement(
+        AssembledUi assembly,
+        AssembledElement root,
+        UiContainerExpr n
+    ) {
+        return new AssemblyNative(assembly, root, n);
+    }
+
+    protected AssembledElement attachLoop(
+        AssembledUi assembly,
+        AssembledElement root,
+        UiContainerExpr n
+    ) {
+        return new AssemblyFor(assembly, root, n);
+    }
+
+    protected AssembledElement attachConditional(
+        AssembledUi assembly,
+        AssembledElement root,
+        UiContainerExpr n
+    ) {
+        return new AssemblyIf(assembly, root, n);
+    }
+
+    protected AssembledElement maybeSwap(
+        AssembledUi assembly,
+        AssembledElement root,
+        AssembledElement e
+    ) {
+        return e.spyGenerator(this);
+    }
+
+    public UiAssembler startAssembly(
+        AssembledUi assembled,
+        Expression uiExpr,
+        boolean shadowUi
+    ) {
+        final AssemblyRoot root = shadowUi ? assembled.requireLayoutRoot() : assembled.requireLogicalRoot();
+        return new DefaultUiAssembler(assembled, root);
+    }
+
+    public TagAssembler getDefaultAssembler(
+        UiAssembler assembler,
+        AssembledUi assembly,
+        AssembledElement e
+    ) {
+        final UiContainerExpr ast = e.getAst();
+        String name = ast.getName();
+        return tagFactories.getMaybe(name)
+            .mapIfPresent(In2Out1::io, assembly, e)
+            .ifAbsentSupply(DefaultTagAssembler::new, assembly);
+    }
+
+    public void addTagFactory(String name, In2Out1<AssembledUi, AssembledElement, TagAssembler> assemblerFactory) {
+        tagFactories.put(name, assemblerFactory);
+    }
+
 }

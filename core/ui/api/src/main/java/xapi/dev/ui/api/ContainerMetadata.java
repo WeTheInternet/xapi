@@ -6,12 +6,10 @@ import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import com.github.javaparser.ast.plugin.NodeTransformer;
 import xapi.collect.X_Collect;
-import xapi.collect.api.ClassTo;
 import xapi.collect.api.Fifo;
 import xapi.collect.api.StringTo;
 import xapi.collect.impl.SimpleLinkedList;
 import xapi.dev.api.ApiGeneratorContext;
-import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.NameGen;
 import xapi.dev.source.SourceBuilder;
@@ -24,9 +22,7 @@ import xapi.fu.Lazy;
 import xapi.fu.Maybe;
 import xapi.fu.Out1;
 import xapi.source.X_Source;
-import xapi.ui.service.UiService;
 
-import static xapi.fu.In1Out1.returnTrue;
 import static xapi.fu.Lazy.deferred1;
 
 import java.util.IdentityHashMap;
@@ -37,83 +33,8 @@ import java.util.IdentityHashMap;
  */
 public class ContainerMetadata {
 
-    public static class MetadataRoot {
-
-        private String rootReference;
-        private final StringTo<Integer> nameCounts;
-        private final ClassTo<Lazy<?>> factories;
-        private final StringTo<StringTo<NodeTransformer>> fieldRenames;
-        private final NameGen names;
-        private ApiGeneratorContext<?> ctx;
-        private GeneratedUiComponent generatedComponent;
-
-        public MetadataRoot() {
-            nameCounts = X_Collect.newStringMap(Integer.class);
-            factories = X_Collect.newClassMap(Lazy.class);
-            fieldRenames = X_Collect.newStringDeepMap(NodeTransformer.class);
-            names = initNames();
-        }
-
-        protected NameGen initNames() {
-            return NameGen.getGlobal();
-        }
-
-        public String getRootReference() {
-            return rootReference;
-        }
-
-        public void setRootReference(String rootReference) {
-            this.rootReference = rootReference;
-        }
-
-        public String newVarName(String prefix) {
-            final Integer cnt;
-            synchronized (nameCounts) {
-                cnt = nameCounts.compute(prefix, (k, was) -> was == null ? 0 : was + 1);
-            }
-            if (cnt == 0) {
-                return prefix;
-            }
-            return prefix + "_" + cnt;
-        }
-
-        public void reserveName(String refName) {
-            Integer was = nameCounts.put(refName, 0);
-            assert was == null : "Tried to reserve a name, `" + refName + "` more than once\n" +
-                  "Existing items: " + nameCounts;
-        }
-
-        public void registerFieldMapping(String ref, String fieldName, NodeTransformer accessor) {
-            fieldRenames.get(ref).put(fieldName, accessor);
-        }
-
-        public NodeTransformer findReplacement(String ref, String var) {
-            if (fieldRenames.containsKey(ref)) {
-                return fieldRenames.get(ref).get(var);
-            }
-            return null;
-        }
-
-        public ApiGeneratorContext<?> getCtx() {
-            return ctx;
-        }
-
-        public void setCtx(ApiGeneratorContext<?> ctx) {
-            this.ctx = ctx;
-        }
-
-        public void setGeneratedComponent(GeneratedUiComponent generatedComponent) {
-            this.generatedComponent = generatedComponent;
-        }
-
-        public GeneratedUiComponent getGeneratedComponent() {
-            return generatedComponent;
-        }
-    }
-
     // WARNING: If you add new fields, update copyFrom method!
     private MetadataRoot root;
-    protected final Fifo<SourceTransform> modifiers;
     private StringTo<MethodBuffer> methods;
     private SimpleLinkedList<String> panelNames;
     private boolean allowedToFail;
@@ -123,12 +44,8 @@ public class ContainerMetadata {
     private Lazy<StyleMetadata> style = deferred1(StyleMetadata::new);
     private IdentityHashMap<UiContainerExpr, ContainerMetadata> children;
     private String refName;
-    private String elementType;
     private String componentType;
     private String controllerType;
-    private String type;
-    private boolean $thisPrinted;
-    private boolean $uiPrinted;
     private boolean searchTypes;
     private String controllerPkg;
     private String controllerName;
@@ -142,7 +59,6 @@ public class ContainerMetadata {
         this.panelNames = metadata.panelNames;
         this.root = metadata.root;
 
-        this.elementType = metadata.elementType;
         this.componentType = metadata.componentType;
         this.controllerPkg = metadata.controllerPkg;
         this.controllerType = metadata.controllerType;
@@ -151,13 +67,11 @@ public class ContainerMetadata {
         this.implementation = metadata.implementation;
         if (!child) {
             this.source = metadata.source;
-            this.type = metadata.type;
             this.style = metadata.style;
         }
     }
 
     public ContainerMetadata() {
-        modifiers = newFifo();
         searchTypes = true;
         methods = X_Collect.newStringMap(MethodBuffer.class);
         panelNames = new SimpleLinkedList<>();
@@ -172,10 +86,6 @@ public class ContainerMetadata {
     public ContainerMetadata(UiContainerExpr container) {
         this();
         setContainer(container);
-    }
-
-    public void addModifier(SourceTransform transform) {
-        modifiers.give(transform);
     }
 
     protected Fifo<SourceTransform> newFifo() {
@@ -196,7 +106,7 @@ public class ContainerMetadata {
     }
 
     public NameGen getNameGen() {
-        return root.names;
+        return root.getNames();
     }
 
     public StyleMetadata getStyle() {
@@ -239,11 +149,6 @@ public class ContainerMetadata {
         this.sideEffects = sideEffects;
     }
 
-    public void applyModifiers(ClassBuffer out, String input) {
-        // TODO intelligent handling of multiple modifiers...
-        modifiers.out(modifier -> out.printlns(modifier.transform(input)));
-    }
-
     public void saveMethod(String key, MethodBuffer method) {
         final MethodBuffer was = methods.put(key, method);
         assert was == null || was == method : "Attempting to reassign a method that already exists to key " + key +
@@ -256,18 +161,6 @@ public class ContainerMetadata {
 
     public MethodBuffer getMethod(String key, In1Out1<String, MethodBuffer> create) {
         return methods.getOrCreate(key, create);
-    }
-
-    public void setElementType(String elementType) {
-        this.elementType = elementType;
-    }
-
-    public String getElementType() {
-        return elementType;
-    }
-
-    public String getElementTypeImported() {
-        return getSourceBuilder().addImport(elementType);
     }
 
     public void setComponentType(String componentType) {
@@ -294,43 +187,6 @@ public class ContainerMetadata {
 
     public String getControllerType() {
         return controllerType;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public String getTypeImported() {
-        assert type.endsWith(getSourceBuilder().addImport(type))
-              : "Bad type import: " + type;
-        return getSourceBuilder().addImport(type);
-    }
-
-    public void ensure$this() {
-        ensure$ui();
-        if ($thisPrinted) {
-            return;
-        }
-        $thisPrinted = true;
-        String imported = getTypeImported();
-        addModifier(ele ->
-              imported + " $this = (" + imported + ") $ui.getHost(" + ele + ");"
-        );
-    }
-
-    public void ensure$ui() {
-        if ($uiPrinted) {
-            return;
-        }
-        $uiPrinted = true;
-        String service = getSourceBuilder().addImport(UiService.class);
-        addModifier(ele ->
-              service + " $ui = " + service + ".getUiService();"
-        );
     }
 
     public SourceBuilder<?> getSourceBuilder() {
@@ -388,17 +244,6 @@ public class ContainerMetadata {
         container.accept(new ComponentMetadataFinder(), query);
     }
 
-    public String getRootReference() {
-        if (root.rootReference == null) {
-            ContainerMetadata seed = this;
-            while (seed.getParent() != null) {
-                seed = seed.getParent();
-            }
-            root.rootReference = seed.getRefName();
-        }
-        return root.rootReference;
-    }
-
     public String newVarName(String prefix) {
         // TODO: look up at parents for scoping...
         return root.newVarName(prefix);
@@ -431,31 +276,11 @@ public class ContainerMetadata {
         return copy;
     }
 
-    public boolean hasResolvedFactory(
-        Class<?> key
-    ) {
-        final Maybe<Lazy<?>> success = root.factories.firstWhereKeyValue(key::isAssignableFrom, Lazy::isFull1);
-        return success.isPresent();
-    }
-
-    public boolean hasRegisteredFactory(
-        Class<?> key
-    ) {
-        final Maybe<Lazy<?>> success = root.factories.firstWhereKey(key::isAssignableFrom);
-        return success.isPresent();
-    }
-
     public <T, Generic extends T> T getOrCreateFactory(
         Class<Generic> key,
         In1Out1<Class<? super Generic>, T> factory
     ) {
-        final Lazy<?> existing = root.factories.getAssignable(key);
-        if (existing != null) {
-            return (T) existing.out1();
-        }
-        final Lazy<?> result = Lazy.deferred1(factory.supply(key));
-        root.factories.put(key, result);
-        return (T) result.out1();
+        return root.getOrCreateFactory(key, factory);
     }
 
     public ApiGeneratorContext getContext() {

@@ -1,8 +1,9 @@
 package xapi.dev.ui.api;
 
 import com.github.javaparser.ast.expr.UiContainerExpr;
+import xapi.dev.api.ApiGeneratorContext;
+import xapi.dev.ui.impl.AbstractUiGeneratorService;
 import xapi.dev.ui.impl.UiGeneratorTools;
-import xapi.dev.ui.api.ContainerMetadata.MetadataRoot;
 import xapi.dev.ui.impl.InterestingNodeFinder.InterestingNodeResults;
 import xapi.dev.ui.api.UiComponentGenerator.UiGenerateMode;
 
@@ -42,4 +43,5 @@ public interface UiImplementationGenerator {
     GeneratedUiImplementation getImpl(GeneratedUiComponent component);
 
     UiGenerateMode getMode(ComponentBuffer component, ContainerMetadata metadata);
+
 }

@@ -330,8 +330,8 @@ public class WebAppGenerator extends AbstractUiGeneratorService<WebAppGeneratorC
     protected Iterable<Out2<String, UiComponentGenerator>> getComponentGenerators() {
         return
                     Chain.<Out2<String, UiComponentGenerator>>toChain(
-                        out2Immutable("define-tags", new UiTagGenerator()),
-                        out2Immutable("define-tag", new UiTagGenerator()),
+                        out2Immutable("define-tags", tools().createTagGenerator()),
+                        out2Immutable("define-tag", tools().createTagGenerator()),
                         out2Immutable("web-app", new WebAppComponentGenerator(this)),
                         out2Immutable("classpath", new UiComponentGenerator()),
                         out2Immutable("gwtc", new GwtcComponentGenerator())

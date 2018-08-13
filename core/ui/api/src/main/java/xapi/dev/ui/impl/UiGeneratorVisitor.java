@@ -71,8 +71,8 @@ public class UiGeneratorVisitor extends VoidVisitorAdapter<UiGeneratorTools> {
             me = parent = myParent;
         } else {
             me = parent = myParent.createChild(n, service);
+            me.setImplementation(myParent.getImplementation());
         }
-        me.setImplementation(myParent.getImplementation());
         final UiComponentGenerator oldGenerator = generator;
         try {
             final UiComponentGenerator myGenerator = generator = service.getComponentGenerator(n, me);

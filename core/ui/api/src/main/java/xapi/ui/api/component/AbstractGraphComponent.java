@@ -36,8 +36,7 @@ public class AbstractGraphComponent <
         super(element);
     }
 
-    @Override
-    public void setParentComponent(IsComponent<? extends Node> parent) {
+    public void setParent(IsComponent<? extends Node> parent) {
         this.parent = parent;
     }
 
@@ -62,7 +61,7 @@ public class AbstractGraphComponent <
     }
 
     @Override
-    public IsComponent<? extends Node> getParentComponent() {
+    public IsComponent<? extends Node> getParent() {
         return parent;
     }
 

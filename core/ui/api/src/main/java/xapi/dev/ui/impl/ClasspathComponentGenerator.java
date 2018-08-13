@@ -77,6 +77,10 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
         // and either delete the backup, or put it back, depending if the generator created a new file or not
         X_File.getAllFiles(myLoc.getAbsolutePath())
             .forEach(file->{
+                if (file.endsWith(".backup")) {
+                    new File(file).delete();
+                    return;
+                }
                 File backup = new File(file+".backup");
                 boolean result;
                 if (backup.exists()) {
@@ -100,10 +104,14 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
                 boolean result;
                 if (original.exists()) {
                     result = backup.delete();
-                    assert result : "Unable to cleanup backup file " + backup;
+                    if (!result) {
+                        System.err.println("Unable to cleanup backup file " + backup);
+                    }
                 } else {
                     result = backup.renameTo(original);
-                    assert result : "Unable to restore backup file " + backup;
+                    if (!result) {
+                        System.err.println("Unable to restore backup file " + backup);
+                    }
                 }
             });
         }

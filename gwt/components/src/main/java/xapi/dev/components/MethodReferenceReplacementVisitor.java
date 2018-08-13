@@ -6,7 +6,7 @@ import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
-import xapi.dev.ui.api.ContainerMetadata;
+import xapi.dev.components.graveyard.OldContainerMetadata;
 import xapi.fu.Maybe;
 
 import static com.github.javaparser.ASTHelper.extractAttrValue;
@@ -18,11 +18,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 5/29/16.
  */
-public class MethodReferenceReplacementVisitor extends VoidVisitorAdapter<ContainerMetadata> {
+public class MethodReferenceReplacementVisitor extends VoidVisitorAdapter<OldContainerMetadata> {
 
   protected static final AtomicInteger random = new AtomicInteger();
 
-  public static MethodReferenceReplacementVisitor mutateExpression(UiContainerExpr container, ContainerMetadata metadata) {
+  public static MethodReferenceReplacementVisitor mutateExpression(UiContainerExpr container, OldContainerMetadata metadata) {
     MethodReferenceReplacementVisitor visitor = new MethodReferenceReplacementVisitor();
     container.accept(visitor, metadata);
     return visitor;
@@ -33,7 +33,7 @@ public class MethodReferenceReplacementVisitor extends VoidVisitorAdapter<Contai
 
   @Override
   public void visit(
-      UiContainerExpr n, ContainerMetadata arg
+      UiContainerExpr n, OldContainerMetadata arg
   ) {
     final UiContainerExpr oldContainer = container;
     container = n;
@@ -43,7 +43,7 @@ public class MethodReferenceReplacementVisitor extends VoidVisitorAdapter<Contai
 
   @Override
   public void visit(
-      UiAttrExpr n, ContainerMetadata arg
+      UiAttrExpr n, OldContainerMetadata arg
   ) {
     final UiAttrExpr oldAttr = attr;
     attr = n;
@@ -53,7 +53,7 @@ public class MethodReferenceReplacementVisitor extends VoidVisitorAdapter<Contai
 
   @Override
   public void visit(
-      MethodReferenceExpr n, ContainerMetadata arg
+      MethodReferenceExpr n, OldContainerMetadata arg
   ) {
     container.removeAttribute(attr);
     final Maybe<UiAttrExpr> idAttr = container.getAttribute("id");

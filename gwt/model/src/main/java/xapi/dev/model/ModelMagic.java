@@ -232,6 +232,11 @@ public class ModelMagic implements UnifyAstListener, MagicMethodGenerator {
     if (method.isDefaultMethod()) {
       return true;
     }
+    switch (method.getName()) {
+      case "onChange":
+      case "onGlobalChange":
+        return true;
+    }
     return shouldIgnore((HasAnnotations)method);
   }
 }

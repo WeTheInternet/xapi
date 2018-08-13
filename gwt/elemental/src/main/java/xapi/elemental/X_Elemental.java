@@ -3,6 +3,7 @@ package xapi.elemental;
 import elemental.client.Browser;
 import elemental.dom.DocumentFragment;
 import elemental.dom.Element;
+import elemental.dom.Node;
 import elemental.html.DivElement;
 import elemental.html.Location;
 import xapi.fu.Do;
@@ -126,10 +127,19 @@ public class X_Elemental {
   }
 
   @SuppressWarnings("unchecked" )
-  public static <E extends Element> E toElement(final String string) {
+  public static <E extends Node> E toElement(final String string) {
     final Element clone = (Element) X_Elemental.DIV.cloneNode(false);
     clone.setInnerHTML(string);
-    return (E) clone.getFirstElementChild();
+    Node el = clone.getFirstElementChild();
+    if (el == null) {
+      el = clone.getFirstChild();
+    }
+    if (el == null) {
+      el = clone;
+      clone.setClassName("empty");
+    }
+    // filthy lie... TODO: type safety here (maybe / how?)
+    return (E) el;
   }
 
   public static DocumentFragment toFragment(final String string) {

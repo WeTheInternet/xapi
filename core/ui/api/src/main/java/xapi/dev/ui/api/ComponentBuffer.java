@@ -15,6 +15,7 @@ import xapi.dev.source.SourceBuilder;
 import xapi.dev.ui.api.GeneratedUiImplementation.RequiredMethodType;
 import xapi.dev.ui.impl.InterestingNodeFinder.InterestingNodeResults;
 import xapi.dev.ui.impl.UiGeneratorTools;
+import xapi.dev.ui.tags.UiTagGenerator;
 import xapi.dev.ui.tags.assembler.AssembledUi;
 import xapi.fu.Lazy;
 import xapi.fu.Maybe;
@@ -58,9 +59,7 @@ public class ComponentBuffer {
     }
 
     public ComponentBuffer(String pkgName, String simpleName, Out1<ContainerMetadata> root, boolean immediate) {
-        this.root = immediate ? immutable1(root.out1()) : Lazy.deferred1(root);
-        implementations = X_Collect.newClassMap(ContainerMetadata.class);
-        component = new GeneratedUiComponent(pkgName, simpleName);
+        this(new GeneratedUiComponent(pkgName, simpleName), root, immediate);
     }
 
     public ComponentBuffer(GeneratedUiComponent component, ContainerMetadata root) {
@@ -141,8 +140,7 @@ public class ComponentBuffer {
         GeneratedUiComponent other,
         UiNamespace namespace,
         UiContainerExpr ui,
-        Expression modelNode,
-        MethodBuffer toDom
+        Expression modelNode
     ) {
         GeneratedUiBase otherBase = other.getBase();
         // Our tag factory should be a method generated onto the base class;
@@ -239,14 +237,16 @@ public class ComponentBuffer {
         return getRoot().getContext();
     }
 
-    public AssembledUi getAssembly(UiGeneratorTools tools, UiNamespace namespace) {
+    public AssembledUi getAssembly(UiGeneratorTools tools, UiNamespace namespace, UiTagGenerator generator) {
         if (assembled == null) {
-            assembled = new AssembledUi(this, tools, namespace);
+            assembled = generator.newAssembly(this, tools, namespace);
         } else {
             assert assembled.getTools() == tools : "Inconsistent assembly; saw two different sets of tools : " +
                 assembled.getTools() + " and " + tools;
             assert assembled.getNamespace() == namespace : "Inconsistent assembly; saw two different namespaces : " +
                 assembled.getNamespace() + " and " + namespace;
+            assert generator.isCompatible(assembled.getGenerator()) : "Inconsistent assembly; saw incompatible generators; " +
+                assembled.getGenerator() + " is rejected by " + generator;
         }
         return assembled;
     }

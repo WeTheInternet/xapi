@@ -6,21 +6,17 @@ import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.ui.api.*;
 import xapi.dev.ui.impl.UiGeneratorTools;
-import xapi.dev.ui.api.UiVisitScope.ScopeType;
 import xapi.fu.Do;
 import xapi.fu.Do.DoUnsafe;
 import xapi.fu.In1;
 import xapi.fu.In1.In1Unsafe;
-import xapi.fu.In2;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
 import xapi.log.X_Log;
 import xapi.scope.request.RequestScope;
-import xapi.scope.request.ResponseLike;
 import xapi.server.api.WebApp;
 import xapi.server.api.XapiServer;
 import xapi.server.api.XapiServerPlugin;
-import xapi.scope.request.RequestLike;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/9/16.

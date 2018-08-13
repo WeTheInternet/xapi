@@ -1,8 +1,7 @@
 package xapi.dev.ui.api;
 
 import xapi.dev.source.ClassBuffer;
-import xapi.dev.source.MethodBuffer;
-import xapi.source.X_Modifier;
+import xapi.dev.ui.tags.factories.MethodElementResolved;
 import xapi.ui.api.ElementInjector;
 
 /**
@@ -16,10 +15,13 @@ import xapi.ui.api.ElementInjector;
  */
 public class ReservedUiMethods {
 
+    public static final String ROOT_INJECTOR_VAR = "inj";
     private final GeneratedUiComponent ui;
 
     private String nameNewBuilder;
     private String nameNewInjector;
+    private String baseTypeInjector;
+    private MethodElementResolved elementResolved;
 
     public ReservedUiMethods(GeneratedUiComponent ui) {
         this.ui = ui;
@@ -28,17 +30,21 @@ public class ReservedUiMethods {
     public String newBuilder(UiNamespace namespace) {
         if (nameNewBuilder == null) {
             final GeneratedUiBase baseClass = ui.getBase();
+//            nameNewBuilder = baseClass.getElementBuilderType(namespace) + "()";
             final String builderName = baseClass.newMethodName("newBuilder");
             baseClass.getSource().getClassBuffer().makeAbstract();
             String builderType = baseClass.getElementBuilderType(namespace);
             // When in api/base layer, we will create an abstract method that impls must fill;
-            baseClass.getSource().getClassBuffer().createMethod("public abstract " +builderType +" " + builderName + "()");
+            baseClass.getSource().getClassBuffer().createMethod("public abstract " +builderType +" " + builderName + "()")
+                .addParameter(boolean.class, "searchable");
+            baseClass.getSource().getClassBuffer().createMethod("public " +builderType +" " + builderName + "()")
+                .returnValue(builderName + "(false)");
             ui.getImpls().forAll(impl -> {
                 final UiNamespace ns = impl.reduceNamespace(namespace);
                 String type = impl.getElementBuilderType(ns);
                 impl.getSource()
-                    .getClassBuffer().createMethod("public " + type +" " + builderName + "()")
-                    .returnValue("new " + type + "()");
+                    .getClassBuffer().createMethod("public " + type +" " + builderName + "(boolean searchable)")
+                    .returnValue("new " + type + "(searchable)");
             });
             nameNewBuilder = builderName + "()";
         }
@@ -46,25 +52,31 @@ public class ReservedUiMethods {
         return nameNewBuilder;
     }
 
+    public String getBaseTypeInjector(UiNamespace namespace) {
+        newInjector(namespace);
+        return baseTypeInjector;
+    }
+
     public String newInjector(UiNamespace namespace) {
         if (nameNewInjector == null) {
+
             final GeneratedUiBase baseClass = ui.getBase();
-            final String factoryName = baseClass.newMethodName("newInjector");
+            final String factoryName = baseClass.reserveMethodName("newInjector");
             final ClassBuffer src = baseClass.getSource().getClassBuffer();
             src.makeAbstract();
-            String baseType = src.addImport(ElementInjector.class);
             final String elType = baseClass.getElementType(namespace);
-            baseType += "<? super " + elType + ">";
+            baseTypeInjector = src.addImport(ElementInjector.class);
+            baseTypeInjector += "<? super " + elType + ">";
 
             // When in api/base layer, we will create an abstract method that impls must fill;
-            src.createMethod("public abstract " + baseType +" " + factoryName + "()")
+            src.createMethod("public abstract " + baseTypeInjector +" " + factoryName + "()")
                 .addParameter(elType, "el");
             ui.getImpls().forAll(impl -> {
                 final UiNamespace ns = impl.reduceNamespace(namespace);
                 String type = ns.getElementInjectorType(impl.getSource());
-                String el = impl.getElementType(ns);
-                impl.getSource()
-                    .getClassBuffer().createMethod("public " + type +" " + factoryName + "()")
+                final ClassBuffer cb = impl.getSource().getClassBuffer();
+                String el = ns.getElementType(cb);
+                cb.createMethod("public " + type +" " + factoryName + "()")
                     .addParameter(el, "el")
                     .returnValue("new " + type + "(el)");
             });
@@ -74,15 +86,11 @@ public class ReservedUiMethods {
         return nameNewInjector;
     }
 
-    public MethodBuffer elementResolved(UiNamespace namespace) {
-        final GeneratedUiBase base = ui.getBase();
-        return base.getOrCreateMethod(X_Modifier.PROTECTED,  "void", "elementResolved", init->{
-            ClassBuffer output = base.getSource().getClassBuffer();
-            init.setName(base.newMethodName("elementResolved"));
-            String builderType = namespace.getElementInjectorType(output);
-            init.addParameter(base.getElementType(namespace), "el");
-            init.println(builderType + " e = " + ui.getElementInjectorConstructor(namespace) + "(el);");
-        });
+    public MethodElementResolved elementResolved(UiNamespace namespace) {
+        if (elementResolved == null) {
+            elementResolved = new MethodElementResolved(ui, namespace);
+        }
+        return elementResolved;
 
     }
 }

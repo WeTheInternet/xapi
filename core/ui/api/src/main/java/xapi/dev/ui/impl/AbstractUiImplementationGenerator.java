@@ -132,4 +132,10 @@ public abstract class AbstractUiImplementationGenerator <Ctx extends ApiGenerato
         }
         return UiGenerateMode.UI_BUILDING;
     }
+
+    @Override
+    public UiComponentGenerator createTagGenerator() {
+        final UiGeneratorTools tools = generator.tools();
+        return tools == this ? super.createTagGenerator() : tools.createTagGenerator();
+    }
 }

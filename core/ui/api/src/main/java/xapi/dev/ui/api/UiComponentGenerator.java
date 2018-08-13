@@ -92,6 +92,6 @@ public class UiComponentGenerator {
     if (tools == null || ctx == null) {
       return transformer;
     }
-    return new GeneratorAwareTransformer<>(tools, ctx);
+    return new GeneratorAwareTransformer<>(tools, ctx, transformer);
   }
 }

@@ -24,15 +24,17 @@ implements IsComponent<El> {
         if (opts.needsComponent()) {
             opts.withComponent((Api)this);
         }
-        element = Lazy.deferred1(In1Out1.of(constructor::constructElement).supply(opts)
-            .spy1(this::elementResolved));
+        element = Lazy.withSpy(
+            In1Out1.of(constructor::constructElement).supply(opts),
+            this::elementResolved, true);
+
         this.opts = opts;
         initialize(element);
     }
 
 
     public AbstractComponent(Out1<El> element) {
-        this.element = Lazy.deferred1(element.spy1(this::elementResolved));
+        this.element = Lazy.withSpy(element, this::elementResolved, true);
         initialize(this.element);
     }
 

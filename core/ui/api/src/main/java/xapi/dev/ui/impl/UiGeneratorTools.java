@@ -11,14 +11,11 @@ import xapi.collect.impl.SimpleLinkedList;
 import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.api.ApiGeneratorTools;
 import xapi.dev.ui.api.*;
-import xapi.dev.ui.api.ContainerMetadata.MetadataRoot;
+import xapi.dev.ui.api.MetadataRoot;
 import xapi.dev.ui.api.GeneratedUiImplementation;
 import xapi.dev.ui.api.UiNamespace.DefaultUiNamespace;
 import xapi.dev.ui.tags.UiTagGenerator;
-import xapi.fu.Do;
-import xapi.fu.In1Out1;
-import xapi.fu.In2Out1;
-import xapi.fu.Out2;
+import xapi.fu.*;
 import xapi.fu.iterate.ArrayIterable;
 import xapi.fu.iterate.CachingIterator.ReplayableIterable;
 import xapi.fu.iterate.Chain;
@@ -39,7 +36,7 @@ import static xapi.fu.Out2.out2Immutable;
 public abstract class UiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> implements ApiGeneratorTools <Ctx> {
 
     protected final StringTo<Integer> numGenerated;
-    protected final StringTo<UiComponentGenerator> componentGenerators;
+    protected final Lazy<StringTo<UiComponentGenerator>> componentGenerators;
     protected final StringTo<UiFeatureGenerator> featureGenerators;
     protected final SimpleLinkedList<UiVisitScope> scopes;
     private final ChainBuilder<Do> roundEndListener;
@@ -47,9 +44,13 @@ public abstract class UiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> im
 
     public UiGeneratorTools() {
         numGenerated = X_Collect.newStringMap(Integer.class);
-        componentGenerators = X_Collect.newStringMap(UiComponentGenerator.class);
+        componentGenerators = Lazy.deferred1(()->{
+            final StringTo<UiComponentGenerator> generators = X_Collect.newStringMap(UiComponentGenerator.class);
+            // we use a lazy here so we can defer this initialization (gives caller a chance to mutate us)
+            generators.addAll(getComponentGenerators());
+            return generators;
+        });
         featureGenerators = X_Collect.newStringMap(UiFeatureGenerator.class);
-        componentGenerators.addAll(getComponentGenerators());
         featureGenerators.addAll(getFeatureGenerators());
         scopes = new SimpleLinkedList<>();
         roundEndListener = Chain.startChain();
@@ -61,9 +62,13 @@ public abstract class UiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> im
               out2Immutable("app", new UiComponentGenerator()),
               out2Immutable("import", new UiComponentGenerator()),
               out2Immutable("button", new UiComponentGenerator()),
-              out2Immutable("define-tags", new UiTagGenerator()),
-              out2Immutable("define-tag", new UiTagGenerator())
+              out2Immutable("define-tags", createTagGenerator()),
+              out2Immutable("define-tag", createTagGenerator())
         );
+    }
+
+    public UiComponentGenerator createTagGenerator() {
+        return new UiTagGenerator();
     }
 
     protected Iterable<Out2<String, UiFeatureGenerator>> getFeatureGenerators() {
@@ -88,7 +93,7 @@ public abstract class UiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> im
         if (scoped != null) {
             return scoped;
         }
-        return componentGenerators.get(name);
+        return componentGenerators.out1().get(name);
     }
 
     public UiFeatureGenerator getFeatureGenerator(UiAttrExpr container, UiComponentGenerator componentGenerator) {

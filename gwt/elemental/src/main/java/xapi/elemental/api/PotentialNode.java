@@ -36,8 +36,6 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> impleme
 
   }
 
-  private String tagName;
-
   public PotentialNode() {
     this(false);
   }
@@ -48,8 +46,7 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> impleme
   }
 
   public PotentialNode(String tagName) {
-    this();
-    setTagName(tagName);
+    super(tagName);
   }
 
   public PotentialNode(String tagName, boolean searchableChildren) {
@@ -72,7 +69,7 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> impleme
 
   @Override
   protected void toHtml(Appendable out) {
-    if (tagName != null) {
+    if (getTagName() != null) {
       // If we have a tagname, then we might expect our element to be addressable.
       // In which case, we want to ensure it has an id
       if (searchableChildren) {
@@ -160,29 +157,6 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> impleme
   }
 
   @Override
-  protected CharSequence getCharsAfter(CharSequence self) {
-    if (tagName != null && !isTagEmpty()) {
-      return "</"+tagName+">";
-    }
-    return EMPTY;
-  }
-
-  /**
-   * @return the tagName
-   */
-  public String getTagName() {
-    return tagName;
-  }
-
-  /**
-   * @param tagName the tagName to set
-   */
-  public PotentialNode<E> setTagName(String tagName) {
-    this.tagName = tagName;
-    return this;
-  }
-
-  @Override
   public String toSource() {
     StringBuilder b = new StringBuilder();
     toHtml(b);
@@ -261,5 +235,11 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> impleme
   protected void clearChildren(E element) {
     // lazy...
     element.setTextContent("");
+  }
+
+  @Override
+  public PotentialNode<E> setTagName(String tagName) {
+    super.setTagName(tagName);
+    return this;
   }
 }

@@ -87,9 +87,9 @@ public class WebComponentSupport {
             if (parentComponent == null) {
                 if (me instanceof HasParent) {
                     final HasParent child = (HasParent) me;
-                    final IsComponent myParent = child.getParentComponent();
+                    final IsComponent myParent = (IsComponent)child.getParent();
                     if (myParent != null) {
-                        child.setParentComponent(null);
+                        child.setParent(null);
                         if (myParent instanceof HasChildren) {
                             ((HasChildren)myParent).removeChild(me);
                         }
@@ -98,7 +98,7 @@ public class WebComponentSupport {
             } else {
                 final IsComponent parent = ComponentNamespace.getComponent(parentComponent, EXPECT_INITIALIZED);
                 if (me instanceof HasParent) {
-                    ((HasParent)me).setParentComponent(parent);
+                    ((HasParent)me).setParent(parent);
                 }
                 if (parent instanceof HasChildren) {
                     ((HasChildren)parent).addChildComponent(me);

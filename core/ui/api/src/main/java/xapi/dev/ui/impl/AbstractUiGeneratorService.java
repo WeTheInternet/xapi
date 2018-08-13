@@ -16,7 +16,7 @@ import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.gen.SourceHelper;
 import xapi.dev.source.SourceBuilder;
 import xapi.dev.ui.api.*;
-import xapi.dev.ui.api.ContainerMetadata.MetadataRoot;
+import xapi.dev.ui.api.MetadataRoot;
 import xapi.dev.ui.impl.InterestingNodeFinder.InterestingNodeResults;
 import xapi.fu.*;
 import xapi.fu.iterate.ArrayIterable;
@@ -392,7 +392,7 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
                     String replacement;
                     switch (name.getName()) {
                         case "$root":
-                            replacement = me.getRootReference();
+                            replacement = "$this";
                             break;
                         default:
                             if (query.isTemplateName(name.getName())) {
@@ -628,6 +628,7 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
             return type == null ||
                 (priorities.has(type.value()) && priorities.get(type.value()).equals(type.priority()));
         })
+        .spy(impl->impl.setGenerator(this))
         .cached();
     }
 

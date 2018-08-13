@@ -7,11 +7,11 @@ public interface IsGraphComponent
     <
         Node,
         El extends Node
-    > extends IsComponent<El>, HasParent<Node>, HasChildren<Node>
+    > extends IsComponent<El>, HasParent<IsComponent<? extends Node>>, HasChildren<IsComponent<? extends Node>>
 {
 //    Inherited from HasParent
-//    IsComponent<? extends Node> getParentComponent();
-//    void setParentComponent(IsComponent<? extends Node> parent);
+//    IsComponent<? extends Node> getParent();
+//    void setParent(IsComponent<? extends Node> parent);
 
 //    Inherited from HasChildren
 //    SizedIterable<IsComponent<? extends Node>> getChildComponents();

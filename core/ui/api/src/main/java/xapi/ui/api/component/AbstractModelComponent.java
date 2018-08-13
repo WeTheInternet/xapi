@@ -18,6 +18,7 @@ extends AbstractComponent<El, Api>
 implements IsModelComponent<El, Mod> {
 
     private final Lazy<Mod> model;
+    private String modelId;
 
     public AbstractModelComponent(El element) {
         this(Immutable.immutable1(element));
@@ -39,11 +40,15 @@ implements IsModelComponent<El, Mod> {
         model = Lazy.deferred1(this::initModel);
     }
 
+    @Override
+    protected void elementResolved(El el) {
+        modelId = getModelId(el);
+        super.elementResolved(el);
+    }
+
     private Mod initModel() {
-        final El el = getElement();
-        String id = getModelId(el);
-        if (id != null) {
-            final Model cached = X_Model.cache().getModel(id);
+        if (modelId != null) {
+            final Model cached = X_Model.cache().getModel(modelId);
             if (cached != null) {
                 return (Mod) cached;
             }
