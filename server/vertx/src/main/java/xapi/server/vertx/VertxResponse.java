@@ -6,7 +6,7 @@ import xapi.fu.MapLike;
 import xapi.fu.Out2;
 import xapi.log.X_Log;
 import xapi.scope.impl.AbstractResponse;
-import xapi.scope.request.ResponseLike;
+import xapi.scope.spi.ResponseLike;
 import xapi.util.X_String;
 import xapi.util.api.Destroyable;
 
@@ -27,7 +27,7 @@ public class VertxResponse extends AbstractResponse implements Destroyable {
         calledPrepareToClose = true;
         response.setStatusCode(getStatusCode());
         final MapLike<String, ListLike<String>> headers = getHeaders();
-        final String body = getResponseBody();
+        final String body = clearResponseBody();
         final boolean writeBody = !X_String.isEmpty(body);
         if (writeBody) {
             // TODO: use / check for chunked...

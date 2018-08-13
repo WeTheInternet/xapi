@@ -1,16 +1,10 @@
 package xapi.server.api;
 
-import xapi.fu.Do;
-import xapi.fu.In1.In1Unsafe;
-import xapi.fu.In1Out1;
-import xapi.fu.In2;
-import xapi.fu.In2.In2Unsafe;
+import xapi.fu.*;
 import xapi.fu.In3.In3Unsafe;
-import xapi.fu.Mutable;
-import xapi.scope.request.RequestLike;
 import xapi.scope.request.RequestScope;
-import xapi.scope.request.ResponseLike;
 import xapi.scope.request.SessionScope;
+import xapi.scope.spi.RequestContext;
 
 import java.util.concurrent.locks.LockSupport;
 
@@ -19,7 +13,9 @@ import java.util.concurrent.locks.LockSupport;
  */
 public interface XapiServer <Request extends RequestScope> {
 
-    void inScope(In1Out1<SessionScope, Request> scopeFactory, In3Unsafe<Request, Throwable, Do> callback);
+    <C extends RequestContext> void inContext(C ctx, In1Out1<C, Request> factory, In3Unsafe<Request, Throwable, In1<Throwable>> callback);
+
+    void inScope(String sessionId, In1Out1<SessionScope, Request> scopeFactory, In3Unsafe<Request, Throwable, Do> callback);
 
     void start(Do onDone);
 

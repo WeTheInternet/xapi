@@ -28,16 +28,27 @@ public class ScopeServiceDefault implements ScopeService {
         protected ClassTo<In1Out1<Class<? extends Scope>, Scope>> factories = X_Collect.newClassMap(In1Out1.class);
         protected AtomicReference<Scope> scope = new AtomicReference<>();
 
-        protected void inherit(ScopeMap map) {
+        protected void inherit(ScopeMap map, Do restoreScope) {
             scopes.putAll(map.scopes);
             factories.putAll(map.factories);
             scope.set(map.scope.get());
             multiplexed.get().putAll(map.multiplexed.get());
+            restoreScope.done();
+        }
+
+        public Do captureScope() {
+            Scope current = scope.get();
+            Do restore = Do.NOTHING;
+            while (current != null) {
+                restore = restore.doBefore(current.captureScope());
+                current = current.getParent();
+            }
+            return restore;
         }
     }
 
     private ThreadLocal<ScopeMap> currentScope;
-    private Lazy<GlobalScope> globalScope = Lazy.deferred1(this::newGlobalScope);
+    private Lazy<GlobalScope<?>> globalScope = Lazy.deferred1(this::newGlobalScope);
 
     public ScopeServiceDefault() {
         currentScope = new ThreadLocal<ScopeMap>() {
@@ -53,14 +64,14 @@ public class ScopeServiceDefault implements ScopeService {
     }
 
     protected <S extends Scope, Generic extends S> S createScope(Class<Generic> cls) {
-        if (GlobalScope.class.equals(cls)) {
+        if (GlobalScope.class.isAssignableFrom(cls)) {
             return (S) globalScope.out1();
         }
         final ScopeMap map = currentScope.get();
         Scope scope;
         // Check key type hierarchy to find .forScope() methods that we can run without an instance
 
-        final boolean multiplexed = cls.getAnnotation(Multiplexed.class) != null;
+        final boolean multiplexed = Scope.isMultiplexed(cls);
         final ClassTo<Scope> scopeMap = multiplexed ? map.multiplexed.get() : map.scopes;
         scope = scopeMap.get(cls);
         if (scope == null) {
@@ -88,11 +99,13 @@ public class ScopeServiceDefault implements ScopeService {
     @Override
     public Do inheritScope() {
         final ScopeMap map = currentScope.get();
-        return ()->currentScope.get().inherit(map);
+        // we need to close over any threadlocals that need to persist...
+        Do restoreScope = map.captureScope();
+        return ()->currentScope.get().inherit(map, restoreScope);
     }
 
-    protected GlobalScope newGlobalScope() {
-        final GlobalScope scope = X_Inject.instance(GlobalScope.class);
+    protected GlobalScope<?> newGlobalScope() {
+        final GlobalScope<?> scope = X_Inject.instance(GlobalScope.class);
         scope.isAttached();
         return scope;
     }
@@ -112,11 +125,14 @@ public class ScopeServiceDefault implements ScopeService {
             } else {
                 scopeMap.put(scope.forScope(), forType);
             }
-            if (scope.forScope() != GlobalScope.class) {
-                // never release the global scope.
-                scope.release();
-            }
+            maybeRelease(scope);
         });
+    }
+
+    protected <S extends Scope> void maybeRelease(S scope) {
+        if (scope.forScope() != GlobalScope.class) {
+            scope.release();
+        }
     }
 
     private <S extends Scope> void submitTask(In2Unsafe<S, Do> todo, S scope, Do onDone) {

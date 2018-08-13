@@ -6,32 +6,39 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.http.*;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.shareddata.Counter;
 import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.ext.auth.User;
+import io.vertx.ext.web.Router;
+import io.vertx.ext.web.RoutingContext;
+import io.vertx.ext.web.handler.CookieHandler;
+import io.vertx.ext.web.handler.SessionHandler;
+import io.vertx.ext.web.sstore.ClusteredSessionStore;
+import io.vertx.ext.web.sstore.LocalSessionStore;
+import io.vertx.ext.web.sstore.SessionStore;
 import xapi.annotation.model.IsModel;
 import xapi.bytecode.NotFoundException;
 import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
 import xapi.collect.api.InitMap;
+import xapi.collect.api.IntTo;
 import xapi.collect.api.IntTo.Many;
 import xapi.collect.api.StringTo;
 import xapi.collect.impl.InitMapDefault;
 import xapi.dev.gwtc.api.GwtcJob;
 import xapi.dev.gwtc.api.GwtcJobManager;
-import xapi.dev.gwtc.impl.GwtcJobManagerAbstract;
 import xapi.dev.gwtc.api.GwtcService;
 import xapi.except.MultiException;
 import xapi.except.NotConfiguredCorrectly;
 import xapi.fu.*;
 import xapi.fu.Do.DoUnsafe;
+import xapi.fu.In2.In2Unsafe;
 import xapi.fu.In3.In3Unsafe;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
+import xapi.fu.iterate.SizedIterator;
 import xapi.gwtc.api.GwtManifest;
 import xapi.inject.X_Inject;
 import xapi.io.X_IO;
@@ -46,22 +53,23 @@ import xapi.process.X_Process;
 import xapi.scope.X_Scope;
 import xapi.scope.api.Scope;
 import xapi.scope.request.SessionScope;
+import xapi.scope.service.ScopeService;
+import xapi.scope.spi.RequestContext;
 import xapi.server.X_Server;
-import xapi.server.api.ModelGwtc;
-import xapi.server.api.Route;
-import xapi.server.api.WebApp;
-import xapi.server.api.XapiEndpoint;
-import xapi.server.api.XapiServer;
+import xapi.server.api.*;
 import xapi.server.model.ModelSession;
+import xapi.server.vertx.scope.RequestScopeVertx;
+import xapi.server.vertx.scope.ScopeServiceVertx;
+import xapi.server.vertx.scope.SessionScopeVertx;
 import xapi.source.template.MappedTemplate;
 import xapi.time.X_Time;
+import xapi.util.X_Properties;
 import xapi.util.X_String;
 import xapi.util.X_Util;
 import xapi.util.api.ErrorHandler;
 import xapi.util.api.SuccessHandler;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -87,7 +95,7 @@ public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
         X_Model.register(ModelSession.class);
     }
 
-    private static final String SESSION_KEY = "wtis";
+    private static final String SESSION_KEY = X_Properties.getProperty("xapi.session.key", "xaz");
     private static final String INSTANCE_ID_COUNTER = "iids";
     private static final String EXPIRED = "Thu, 01 Jan 1970 00:00:00 GMT";
     // This is only used in non-clustered mode, and would benefit from a persistent source
@@ -109,11 +117,12 @@ public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
     private ClusterManager clusterManager;
     private final Lazy<Out1<String>> iidFactory;
     private Do onRelease;
+    private Router router;
 
     public XapiVertxServer(WebApp webApp) {
         this.webApp = webApp;
         endpoints = new InitMapDefault<>(
-            X_Fu::identity, this::findEndpoint
+            In1Out1.identity(), this::findEndpoint
         );
         onStarted = Chain.startChain();
         onShutdown = Chain.startChain();
@@ -224,7 +233,6 @@ public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
         });
     }
 
-
     protected XapiEndpoint<?> findEndpoint(String name) {
         // this is called during the init process of the underlying map,
         // but we made it protected so it could be overloaded, and that
@@ -267,6 +275,7 @@ public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
                     for (Object result : ServiceLoader.load(cls, cl)) {
                         // if you loaded through service loader, you are going to be static, and can worry about
                         // state management yourself.
+                        // TODO: test some things that use service loader to see what standards are, maybe revise above assumption
                         if (XapiEndpoint.class.isInstance(result)) {
                             final XapiEndpoint<?> endpoint = (XapiEndpoint<?>) result;
                             endpoints.put(name, endpoint);
@@ -287,68 +296,132 @@ public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
     }
 
     @Override
-    public void inScope(
-        In1Out1<SessionScope, RequestScopeVertx> scopeFactory, In3Unsafe<RequestScopeVertx, Throwable, Do> callback
+    // This terrrrible type parameter can go away once we rewire the Request driven model to use RequestContext
+    public <C extends RequestContext> void inContext(
+        C ctx, In1Out1<C, RequestScopeVertx> factory, In3Unsafe<RequestScopeVertx, Throwable, In1<Throwable>> callback
     ) {
-        X_Scope.service().runInNewScope(SessionScope.class, (session, done)->{
-
-            final RequestScopeVertx scope = scopeFactory.io(session);
-            final XapiServer was = scope.setLocal(XapiServer.class, this);
-            final MapLike<String, String> cookies = scope.getRequest().getCookies();
-            ModelSession model;
-            final SuccessHandler<ModelSession> saved = new IOCallbackDefault<ModelSession>(){
-                @Override
-                public void onSuccess(ModelSession t) {
-                    finish(null);
+        final ScopeServiceVertx scopes = getScopeService();
+        scopes.globalScopeVertx(global->{
+            final RequestScopeVertx req = factory.io(ctx);
+            scopes.runInScope(req, (session, done)->{
+                Throwable initError = null;
+                final XapiServer was = req.setLocal(XapiServer.class, this);
+                VertxContext vc = (VertxContext) ctx;
+                try {
+                    // this goes away when we change the type parameter of XapiVertxServer
+                    req.initialize(vc.getRequest(), vc.getResponse());
+                } catch (Throwable t) {
+                    initError = t;
                 }
-
-                @Override
-                public void onError(Throwable e) {
-                    if (!(e instanceof ModelNotFoundException)) {
-                        // not found is normal for a session that has been purged in the backend
-                        X_Log.error(XapiVertxServer.class, "Error loading session", e);
+                callback.in(req, initError, error->{
+                    if (was == null) {
+                        req.removeLocal(XapiServer.class);
+                    } else {
+                        req.setLocal(XapiServer.class, was);
                     }
-                    scope.getResponse().addHeader("Set-Cookie", SESSION_KEY+"=;path=/;expires=" + EXPIRED + ";");
-                    finish(e);
-                }
-
-                private void finish(Throwable e) {
-                    callback
-                        .in(scope, e, ()->{
-                            if (was == null) {
-                                scope.removeLocal(XapiServer.class);
-                            } else {
-                                scope.setLocal(XapiServer.class, was);
-                            }
-                            done.done();
-                    });
-                }
-            };
-            // TODO: if a request does not require a session, don't bother loading one.
-            // for now, we're just going to pay every time for speedier development,
-            // and will optimize once the platform matures
-            if (cookies.has(SESSION_KEY)) {
-                // There is a session key; let's ensure we're synced up
-                final String cookie = cookies.get(SESSION_KEY);
-                if (!cookie.trim().isEmpty()) {
-
-                    final ModelKey key = ModelSession.SESSION_KEY_BUILDER.out1()
-                        .withId(cookie).buildKey();
-                    X_Model.mutate(ModelSession.class, key, modelSession->{
-                        modelSession.setTouched(System.currentTimeMillis());
-                        return modelSession;
-                    }, saved);
-                    return;
-                }
-            }
-            // no session key... let's properly initialize our session, and send along a cookie to get session back
-            String sessionKey = generateSessionKey();
-            scope.getResponse().addHeader("Set-Cookie", SESSION_KEY+"="+X_String.encodeURIComponent(sessionKey)+";path=/;");
-            model = ModelSession.SESSION_MODEL_BUILDER.out1().buildModel();
-            model.getKey().setId(sessionKey);
-            model.setTouched(System.currentTimeMillis());
-            X_Model.persist(model, saved);
+                    if (error != null) {
+                        handleError(req.getRequest().getHttpRequest(), vc.getResponse(), error);
+                    }
+                    // finish response
+                    Integer code = vc.finish(error);
+                    if (VertxContext.SUCCESS.equals(code)) {
+                        X_Log.debug(XapiVertxServer.class, "Request succeeded for ", ctx, "\n", vc);
+                    } else {
+                        X_Log.warn(XapiVertxServer.class, "Request failed for ", ctx, "\n", vc, " had error:\n", error);
+                    }
+                    // release scope
+                    done.done();
+                });
+            });
         });
+    }
+
+    @Override
+    public void inScope(
+        String sessionId, In1Out1<SessionScope, RequestScopeVertx> scopeFactory, In3Unsafe<RequestScopeVertx, Throwable, Do> callback
+    ) {
+        final ScopeServiceVertx scopes = getScopeService();
+        scopes.globalScopeVertx(global->{
+            final In2Unsafe<SessionScopeVertx, Do> doWork = (session, done)->{
+
+                final RequestScopeVertx req = scopeFactory.io(session);
+                final XapiServer was = req.setLocal(XapiServer.class, this);
+                final VertxRequest nativeReq = req.getRequest();
+                final MapLike<String, String> cookies = nativeReq.getCookies();
+                ModelSession model;
+                final SuccessHandler<ModelSession> saved = new IOCallbackDefault<ModelSession>(){
+                    @Override
+                    public void onSuccess(ModelSession t) {
+                        finish(null);
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        if (!(e instanceof ModelNotFoundException)) {
+                            // not found is normal for a session that has been purged in the backend
+                            X_Log.error(XapiVertxServer.class, "Error loading session", e);
+                        }
+                        req.getResponse().addHeader("Set-Cookie", SESSION_KEY+"=;path=/;expires=" + EXPIRED + ";");
+                        finish(e);
+                    }
+
+                    private void finish(Throwable e) {
+                        callback
+                            .in(req, e, ()->{
+                                if (was == null) {
+                                    req.removeLocal(XapiServer.class);
+                                } else {
+                                    req.setLocal(XapiServer.class, was);
+                                }
+                                done.done();
+                            });
+                    }
+                };
+                // TODO: if a request does not require a session, don't bother loading one.
+                // for now, we're just going to pay every time for speedier development,
+                // and will optimize once the platform matures
+                final SessionHandler nativeSession = req.get(SessionHandler.class);
+                nativeSession.setSessionCookieName(SESSION_KEY);
+
+                if (cookies.has(SESSION_KEY)) {
+                    // There is a session key; let's ensure we're synced up
+                    final String cookie = cookies.get(SESSION_KEY);
+                    if (!cookie.trim().isEmpty()) {
+
+                        final ModelKey key = ModelSession.SESSION_KEY_BUILDER.out1()
+                            .withId(cookie).buildKey();
+                        X_Model.mutate(ModelSession.class, key, modelSession->{
+                            modelSession.setTouched(System.currentTimeMillis());
+
+                            return modelSession;
+                        }, saved);
+                        return;
+                    }
+                }
+                // no session key... let's properly initialize our session, and send along a cookie to get session back
+                String sessionKey = generateSessionKey();
+                req.getResponse().addHeader("Set-Cookie", SESSION_KEY+"="+X_String.encodeURIComponent(sessionKey)+";path=/;");
+                model = ModelSession.SESSION_MODEL_BUILDER.out1().buildModel();
+                model.getKey().setId(sessionKey);
+                model.setTouched(System.currentTimeMillis());
+                session.setModel(model);
+                X_Model.persist(model, saved);
+            };
+            final SessionScopeVertx session =  global.findOrCreateSession(sessionId, id->{
+                final SessionScope<User, VertxRequest, VertxResponse> s = X_Inject.instance(SessionScope.class);
+                return (SessionScopeVertx) s;
+            });
+            scopes.runInScope(session, doWork);
+        });
+    }
+
+    protected ScopeServiceVertx getScopeService() {
+        final ScopeService service = X_Scope.service();
+        assert service instanceof ScopeServiceVertx : "The scope service was not a ScopeServiceVertx; you have some other " +
+            "scope wiring that isn't going to work; where you extend XapiVertxServer, override getScopeService() and " +
+            "return your own singleton ScopeServiceVertx; you have: " +
+            (service == null ? "" : service.getClass()) + " : " + service;
+        return (ScopeServiceVertx) service;
     }
 
     protected String generateSessionKey() {
@@ -397,13 +470,84 @@ public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
                 final Scope scope = X_Scope.service().currentScope();
                 scope.setLocal(Vertx.class, vertx);
                 clusterManager = ((VertxInternal) vertx).getClusterManager();
-                if (clusterManager != null) {
+                SessionStore sessions;
+                if (clusterManager == null) {
+                    sessions = LocalSessionStore.create(vertx);
+                } else {
                     scope.setLocal(ClusterManager.class, clusterManager);
+                    sessions = ClusteredSessionStore.create(vertx);
                 }
                 scope.setLocal(WebApp.class, webApp);
                 scope.setLocal(XapiServer.class, XapiVertxServer.this);
+
+                router = Router.router(vertx);
+                // TODO: provide alternate cookie handler, which does not use cookies,
+                // and instead uses an alternate means of identifying user connection
+                // (for example, add a sequence of header ids that are all one-time use keys,
+                // computed from some entropy given from the server).
+                router.route().handler(CookieHandler.create());
+                SessionHandler sessionHandler = SessionHandler.create(sessions);
+                router.route().handler(sessionHandler);
+
+                installRoutesOverride(router);
+
+                // Go over our routes, and pick out the ones we can wire up direct routing for,
+                // as vertx should be a much faster lookup than going through abstraction layer.
+                for (
+                    final SizedIterator<Route> itr = webApp.getRoute().iterator();
+                    itr.hasNext();
+                    ) {
+                    final Route route = itr.next();
+                    // Move as much brains as possible here, as router.route() calls.
+                    // while still leaving behind the manual implementation
+                    // so that containers w/out routing infrastructure
+                    // can still leverage the manual routing we are doing today.
+                    if (route.getPath().contains("*")) {
+                        // xapi uses ant-style path matcher, * and **; vertx allows regex
+                        continue;
+                    }
+                    final String path = route.getPath();
+                    final io.vertx.ext.web.Route r = router.route(path);
+
+                    final IntTo<String> methods = route.getMethods();
+                    if (methods != null && methods.isNotEmpty()) {
+                        for (String method : methods) {
+                            r.method(HttpMethod.valueOf(method));
+                        }
+                    }
+                    In1Out1<Handler<RoutingContext>, io.vertx.ext.web.Route> target =
+                        route.getRouteType().isBlocking() ? r::blockingHandler : r::handler;
+                    target.io(rc->{
+                        final VertxContext vc = VertxContext.fromNative(rc);
+                        switch (route.getRouteType()) {
+                            case Gwt:
+                            case Text:
+                            case Callback:
+                            case File:
+                            case Template:
+                            case Service:
+                                inContext(vc, VertxContext::getScope, (req, t, done)->{
+                                    if (t != null) {
+                                        done.in(t);
+                                        return;
+                                    }
+                                    route.serve(path, req, (s, err)-> done.in(err));
+                                });
+                        }
+                    });
+                    // remove this route from the mapping, as we've chosen to handle it here.
+                    itr.remove();
+
+                } // end for-loop
+
+                // Now, if the above routes did not complete, delegate to standard xapi infrastructure,
+                // for features that vertx either doesn't support, or is not (currently) worth the effort to delegate to.
+                router.route().handler(this::onRequest);
+
+                installRoutesBackup(router);
+
                 vertx.createHttpServer(opts)
-                    .requestHandler(this::handleRequest)
+                    .requestHandler(router::accept)
                     .listen(result->{
                         if (result.failed()) {
                             throw new IllegalStateException("Server failed to start ", result.cause());
@@ -440,6 +584,12 @@ public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
 
     }
 
+    protected void installRoutesOverride(Router router) {
+    }
+
+    protected void installRoutesBackup(Router router) {
+    }
+
     public void onStarted(In2<Vertx, HttpServer> callback) {
         assert !onStarted.anyMatch(callback::equals) : "Duplicate onStarted callback added: " + callback;
         onStarted.add(callback);
@@ -449,19 +599,14 @@ public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
         onStarted.forAll(In2::in, vertx, result);
     }
 
-    protected void handleRequest(HttpServerRequest req) {
-        final VertxRequest request = new VertxRequest(req);
-        final VertxResponse response = new VertxResponse(req.response());
-        inScope(session->(RequestScopeVertx)session.getRequestScope(request, response), (scope, t, done)->{
-            serviceRequest(scope, (r, error)->{
-                if (error != null) {
-                  handleError(req, response, error);
-                }
-                // finish response
-                response.finish();
-                // release scope
-                done.done();
-            });
+    protected void onRequest(RoutingContext ctx) {
+        VertxContext vc = VertxContext.fromNative(ctx);
+        inContext(vc, VertxContext::getScope, (scope, t, done) -> {
+            if (t == null) {
+                serviceRequest(scope, (r, error)-> done.in(error));
+            } else {
+                ctx.fail(t);
+            }
         });
     }
 
@@ -571,9 +716,11 @@ public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
         Iterator<Route> routes,
         In2<RequestScopeVertx, Throwable> callback
     ) {
+        final Do restore = request.captureScope();
         X_Time.runLater(()->{
+            restore.done();
             final XapiServer was = request.setLocal(XapiServer.class, this);
-            // TODO cleanup server reference later...
+            // we'll cleanup server reference later...
             next.serve(request.getPath(), request, (s, t)->{
                 if (t == null) {
                     // success
@@ -594,6 +741,7 @@ public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
                         });
                     } else {
                         // Final route failed... get loud immediately.
+                        // TODO: "catch routes"
                         X_Log.warn(XapiVertxServer.class, "Route reported error", next, t);
                         callback.in(request, t);
                         request.removeLocal(XapiServer.class);

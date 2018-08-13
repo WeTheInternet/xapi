@@ -1,13 +1,16 @@
-package xapi.server.vertx;
+package xapi.server.vertx.scope;
 
+import io.vertx.ext.auth.User;
+import io.vertx.ext.web.RoutingContext;
 import xapi.annotation.inject.InstanceOverride;
 import xapi.annotation.process.Multiplexed;
-import xapi.fu.Maybe;
-import xapi.scope.request.RequestLike;
+import xapi.model.user.ModelUser;
 import xapi.scope.request.RequestScope;
-import xapi.scope.request.ResponseLike;
 import xapi.scope.request.SessionScope;
 import xapi.scope.impl.SessionScopeDefault;
+import xapi.server.model.ModelSession;
+import xapi.server.vertx.VertxRequest;
+import xapi.server.vertx.VertxResponse;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/2/16.
@@ -15,16 +18,18 @@ import xapi.scope.impl.SessionScopeDefault;
 @Multiplexed
 @InstanceOverride(implFor = SessionScope.class)
 public class SessionScopeVertx extends
-    SessionScopeDefault<CollideUser, VertxRequest, VertxResponse, SessionScopeVertx>{
+    SessionScopeDefault<User, VertxRequest, VertxResponse, SessionScopeVertx>{
 
-    private CollideUser user;
+    private User user;
+    private ModelSession model;
+    private RoutingContext context;
 
     public SessionScopeVertx() {
-        System.out.println();
+        System.out.println("New Session Scope " + this);
     }
 
     @Override
-    public CollideUser getUser() {
+    public User getUser() {
         return user;
     }
 
@@ -49,13 +54,34 @@ public class SessionScopeVertx extends
     }
 
     @Override
-    public SessionScope<CollideUser, VertxRequest, VertxResponse> setUser(CollideUser user) {
+    public SessionScope<User, VertxRequest, VertxResponse> setUser(User user) {
+        assert this.user == null || this.user.equals(user) : "Cannot change users...";
         this.user = user;
+
         return this;
+    }
+
+    public void setModel(ModelSession model) {
+        this.model = model;
+    }
+
+    public ModelSession getModel() {
+        return model;
     }
 
     @Override
     public void touch() {
+        if (context != null) {
+            context.session().setAccessed();
+        }
+        super.touch();
+    }
 
+    public void setContext(RoutingContext context) {
+        this.context = context;
+    }
+
+    public RoutingContext getContext() {
+        return context;
     }
 }

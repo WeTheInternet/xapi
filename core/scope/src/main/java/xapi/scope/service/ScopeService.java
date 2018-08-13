@@ -40,8 +40,8 @@ public interface ScopeService {
 
   Do inheritScope();
 
-  default <S extends GlobalScope> void globalScope(In1Unsafe<S> todo) {
-    final Class<S> cls = Class.class.cast(GlobalScope.class);
+  default <G extends GlobalScope> void globalScope(In1Unsafe<G> todo) {
+    final Class<G> cls = Class.class.cast(GlobalScope.class);
     runInNewScope(cls, todo);
   }
 

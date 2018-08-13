@@ -4,7 +4,7 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.ObjectTo;
 import xapi.fu.MapLike;
 import xapi.fu.iterate.SizedIterable;
-import xapi.scope.request.RequestLike;
+import xapi.scope.spi.RequestLike;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 11/26/16.

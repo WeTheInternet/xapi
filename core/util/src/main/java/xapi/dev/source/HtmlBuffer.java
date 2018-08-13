@@ -7,6 +7,22 @@ public class HtmlBuffer {
   private HeadBuffer head;
   private DomBuffer body;
 
+  public boolean isEmpty() {
+    if (head != null) {
+      if (head.buffer.isNotEmpty()) {
+        return false;
+      }
+      if (head.title != null && head.title.isNotEmpty()) {
+        return false;
+      }
+    }
+    if (body != null && body.isNotEmpty()) {
+      return false;
+    }
+    // we ignore root because it's not exposed for writing anywhere.
+    return true;
+  }
+
   public static class HeadBuffer {
 
     private XmlBuffer title;

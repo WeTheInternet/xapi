@@ -1,6 +1,7 @@
 package xapi.scope.api;
 
 import xapi.annotation.process.Multiplexed;
+import xapi.annotation.process.Uniplexed;
 import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
 import xapi.except.NotConfiguredCorrectly;
@@ -8,7 +9,11 @@ import xapi.except.NotYetImplemented;
 import xapi.fu.*;
 import xapi.fu.has.HasLock;
 import xapi.fu.iterate.SizedIterable;
+import xapi.log.X_Log;
+import xapi.log.api.LogLevel;
 
+import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.function.Predicate;
 
 /**
@@ -49,7 +54,7 @@ public interface Scope extends HasLock {
   }
 
   default <T, C extends T> T removeLocal(Class<C> cls) {
-    boolean isMultiplexed = cls.getAnnotation(Multiplexed.class) != null;
+    boolean isMultiplexed = isMultiplexed(cls);
     if (isMultiplexed) {
       final MultiplexedScope map = getOrCreate(MultiplexedScope.class, k->new MultiplexedScope());
       return (T) map.get().remove(cls);
@@ -57,9 +62,14 @@ public interface Scope extends HasLock {
     return mutex(()->this.<T, C>localData().remove(cls));
   }
 
+  static boolean isMultiplexed(Class<?> cls) {
+    return cls.getAnnotation(Uniplexed.class) == null &&
+           cls.getAnnotation(Multiplexed.class) != null;
+  }
+
   default <T, C extends T> T setLocal(Class<C> cls, T value) {
     assert !isReleased() : "Do not add values to a released scope; instead, implement Immortal and call reincarnateIfNeeded()";
-    boolean isMultiplexed = cls.getAnnotation(Multiplexed.class) != null;
+    boolean isMultiplexed = isMultiplexed(cls);
     if (isMultiplexed) {
       final MultiplexedScope map = getOrCreate(MultiplexedScope.class, k->new MultiplexedScope());
       return (T) map.get().put(cls, value);
@@ -77,6 +87,9 @@ public interface Scope extends HasLock {
 
   default void release() {
     removeLocal(ScopeKeys.ATTACHED_KEY);
+    if (has(MultiplexedScope.class)) {
+      get(MultiplexedScope.class).remove();
+    }
     final Scope parent = getParent();
     parent.removeLocal(forScope());
     removeLocal(parent.forScope());
@@ -258,9 +271,62 @@ public interface Scope extends HasLock {
   default Scope nullScope() {
     return ScopeKeys.NULL;
   }
+
+  default Do captureScope() {
+    Do capture = Do.NOTHING;
+    if (has(MultiplexedScope.class)) {
+      MultiplexedScope tl = get(MultiplexedScope.class);
+      if (tl.isInitialized()) {
+        final ClassTo<Object> data = tl.get();
+        // executed later to return to this scope.
+        return capture.doAfter(()->{
+          if (tl.isInitialized()) {
+            // copy data into existing map
+            final ClassTo<Object> existing = tl.get();
+            for (Out2<Class<?>, Object> o : data.forEachEntry()) {
+              final Object was = existing.get(o.out1());
+              if (was == null) {
+                existing.put(o.asEntry());
+              } else {
+                final Object v = o.out2();
+                if (v == null || v == was) {
+                  continue;
+                }
+                // There's a merge conflict here.
+                existing.put(o.out1(), resolveConflict(o.out1(), o.out2(), v));
+              }
+            }
+          } else {
+            // initialize current thread w/ previous data
+            tl.set(data);
+          }
+        });
+
+      }
+    }
+    return capture;
+  }
+
+  /**
+   * Used to resolve multiplexing conflicts when running the function returned from {@link #captureScope()}.
+   *
+   * @param type The class key for the scope entry
+   * @param previous The previous value of existing scope
+   * @param restored The value being restored by invoking
+   * @return
+   */
+  default Object resolveConflict(Class<?> type, Object previous, Object restored) {
+    if (X_Log.loggable(LogLevel.DEBUG)) {
+      X_Log.debug(Scope.class, "Conflict detected in ", getClass(), " : ", this, ";\n",
+        "Value ", type, " was overwritten from ", previous, " to ", restored);
+      // TODO: incorporate Undo somehow.
+    }
+    return restored;
+  }
 }
 
 @SuppressWarnings("unchecked")
+// Intentionally stuffed here because nobody else should be referencing them...
 final class ScopeKeys {
   static final Class<Scope> PARENT_KEY = Class.class.cast(ParentKey.class);
   static final Class<Object> ATTACHED_KEY = Class.class.cast(AttachedKey.class);
@@ -268,9 +334,18 @@ final class ScopeKeys {
   private interface ParentKey extends Scope {}
   private interface AttachedKey extends Scope {}
 }
-final class MultiplexedScope extends ThreadLocal<ClassTo> {
+// This class is intentionally stuffed here, because nobody else should be touching this.
+final class MultiplexedScope extends ThreadLocal<ClassTo<Object>> {
+
+  private final Map<Thread, Void> initialized = new WeakHashMap<>();
+
   @Override
-  protected ClassTo initialValue() {
-    return X_Collect.newClassMap(Object.class);
+  protected ClassTo<Object> initialValue() {
+    initialized.put(Thread.currentThread(), null);
+    return X_Collect.newClassMap(Object.class, X_Collect.MUTABLE_CONCURRENT);
+  }
+
+  public boolean isInitialized(){
+    return initialized.containsKey(Thread.currentThread());
   }
 }

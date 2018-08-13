@@ -1,8 +1,8 @@
 package xapi.scope.impl;
 
 import xapi.scope.request.RequestScope;
-import xapi.scope.request.RequestLike;
-import xapi.scope.request.ResponseLike;
+import xapi.scope.spi.RequestLike;
+import xapi.scope.spi.ResponseLike;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/4/16.

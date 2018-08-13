@@ -1,5 +1,8 @@
 package xapi.scope.api;
 
+import xapi.fu.In1Out1.In1Out1Unsafe;
+import xapi.scope.request.SessionScope;
+
 /**
  * A special singleton scope that we create on demand as the ultimate parent of all scopes.
  *
@@ -17,10 +20,13 @@ package xapi.scope.api;
  *
  * Created by James X. Nelson (james @wetheinter.net) on 10/8/16.
  */
-public interface GlobalScope extends Scope {
+public interface GlobalScope <Session extends SessionScope> extends Scope {
 
   @Override
   default Class<? extends Scope> forScope() {
     return xapi.scope.api.GlobalScope.class;
   }
+
+  Session findSession(String key);
+  Session findOrCreateSession(String key, In1Out1Unsafe<String, Session> factory);
 }

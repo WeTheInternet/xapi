@@ -5,16 +5,12 @@ import io.vertx.core.http.HttpServerResponse;
 import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
-import xapi.fu.In1Out1;
-import xapi.fu.In2Out1;
-import xapi.fu.Lazy;
-import xapi.fu.MapLike;
-import xapi.fu.Out1;
-import xapi.fu.Pointer;
+import xapi.fu.*;
 import xapi.fu.iterate.SizedIterable;
+import xapi.fu.lazy.ResettableLazy;
+import xapi.scope.spi.RequestLike;
 import xapi.util.X_String;
 import xapi.util.api.Destroyable;
-import xapi.scope.request.RequestLike;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/3/16.
@@ -34,25 +30,32 @@ public class VertxRequest implements Destroyable, RequestLike {
     };
 
     private HttpServerRequest httpRequest;
-    private final Lazy<String> body;
-    private final Lazy<MultimapAdapter> params;
-    private final Lazy<MultimapAdapter> headers;
-    private final Lazy<MapLike<String, String>> cookies;
+    private final ResettableLazy<String> body;
+    private final ResettableLazy<MultimapAdapter> params;
+    private final ResettableLazy<MultimapAdapter> headers;
+    private final ResettableLazy<MapLike<String, String>> cookies;
+    private final Do resetAll;
     private boolean autoclose;
 
     public VertxRequest(HttpServerRequest req) {
         httpRequest = req;
-        body = Lazy.deferred1(()->{
+        body = new ResettableLazy<>(()->{
             Pointer<byte[]> body = Pointer.pointer();
             getHttpRequest().bodyHandler(buffer->
                 body.in(buffer.getBytes())
             );
             return new String(body.out1());
         });
-        params = Lazy.deferred1(()->new MultimapAdapter(httpRequest.params()));
-        headers = Lazy.deferred1(()->new MultimapAdapter(httpRequest.headers()));
-        cookies = Lazy.deferred1(readCookies());
+        params =  new ResettableLazy<>(()->new MultimapAdapter(httpRequest.params()));
+        headers = new ResettableLazy<>(()->new MultimapAdapter(httpRequest.headers()));
+        cookies = new ResettableLazy<>(readCookies());
         autoclose = true;
+        resetAll = ()->{
+            body.reset();
+            params.reset();
+            headers.reset();
+            cookies.reset();
+        };
     }
 
     private Out1<MapLike<String, String>> readCookies() {
@@ -81,15 +84,7 @@ public class VertxRequest implements Destroyable, RequestLike {
 
     public void setHttpRequest(HttpServerRequest httpRequest) {
         this.httpRequest = httpRequest;
-    }
-
-    public static VertxRequest getOrMake(VertxRequest req, HttpServerRequest httpReq) {
-        if (req == null) {
-            return new VertxRequest(httpReq);
-        } else {
-            req.httpRequest = httpReq;
-            return req;
-        }
+        resetAll.done();
     }
 
     @Override

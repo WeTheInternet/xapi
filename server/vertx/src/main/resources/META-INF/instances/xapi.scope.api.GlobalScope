@@ -1,1 +1,1 @@
-xapi.scope.impl.GlobalScopeDefault
+xapi.server.vertx.scope.GlobalScopeVertx

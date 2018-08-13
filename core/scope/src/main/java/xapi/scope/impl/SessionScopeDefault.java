@@ -1,23 +1,25 @@
 package xapi.scope.impl;
 
-import xapi.fu.In1Out1;
+import xapi.annotation.process.Multiplexed;
 import xapi.fu.In2Out1;
 import xapi.fu.Maybe;
 import xapi.inject.X_Inject;
+import xapi.log.X_Log;
 import xapi.scope.X_Scope;
 import xapi.scope.request.RequestScope;
-import xapi.scope.request.ResponseLike;
 import xapi.scope.request.SessionScope;
+import xapi.scope.spi.RequestLike;
+import xapi.scope.spi.ResponseLike;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
 import xapi.util.api.Destroyable;
-import xapi.scope.request.RequestLike;
 
 import java.util.WeakHashMap;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 9/5/16.
  */
+@Multiplexed
 public class SessionScopeDefault <User, Request extends RequestLike, Response extends ResponseLike, Session extends SessionScopeDefault<User, Request, Response, Session>>
     extends AbstractScope<Session> implements SessionScope<User, Request, Response>, Destroyable {
 
@@ -66,6 +68,8 @@ public class SessionScopeDefault <User, Request extends RequestLike, Response ex
             final RequestScope<Request, Response> newScope = createRequestScope(req, resp);
             final RequestScope was = requests.put(req, newScope);
             if (was != null) {
+                // suspicious...
+                X_Log.warn(SessionScopeDefault.class, "Somehow reininitializing a new RequestScope for request ", req);
                 was.release();
             }
             newScope.setParent(X_Scope.currentScope());
@@ -74,9 +78,7 @@ public class SessionScopeDefault <User, Request extends RequestLike, Response ex
     }
 
     protected RequestScope<Request, Response> createRequestScope(Request request, Response response) {
-        final RequestScope<Request, Response> scope = new RequestScopeDefault<>();
-        scope.initialize(request, response);
-        return scope;
+        return scopeFactory.io(request, response);
     }
 
     @Override
@@ -88,6 +90,11 @@ public class SessionScopeDefault <User, Request extends RequestLike, Response ex
     @Override
     public void touch() {
         activity = X_Time.now();
+    }
+
+    @Override
+    public Moment lastTouch() {
+        return activity;
     }
 
     @Override

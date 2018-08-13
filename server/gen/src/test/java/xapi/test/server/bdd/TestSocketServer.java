@@ -2,16 +2,9 @@ package xapi.test.server.bdd;
 
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
-import xapi.fu.Do;
-import xapi.fu.In1;
-import xapi.fu.In1.In1Unsafe;
-import xapi.fu.In1Out1;
-import xapi.fu.In2;
-import xapi.fu.In2.In2Unsafe;
+import xapi.dev.api.Classpath;
+import xapi.fu.*;
 import xapi.fu.In3.In3Unsafe;
-import xapi.fu.Lazy;
-import xapi.fu.Mutable;
-import xapi.fu.Rethrowable;
 import xapi.inject.X_Inject;
 import xapi.io.X_IO;
 import xapi.log.X_Log;
@@ -19,30 +12,20 @@ import xapi.model.api.Model;
 import xapi.model.api.PrimitiveSerializer;
 import xapi.model.impl.AbstractModel;
 import xapi.process.X_Process;
-import xapi.scope.X_Scope;
 import xapi.scope.api.Scope;
 import xapi.scope.request.RequestScope;
 import xapi.scope.request.SessionScope;
+import xapi.scope.spi.RequestContext;
 import xapi.server.X_Server;
-import xapi.dev.api.Classpath;
-import xapi.server.api.ModelGwtc;
-import xapi.server.api.Route;
-import xapi.server.api.WebApp;
-import xapi.server.api.XapiEndpoint;
-import xapi.server.api.XapiServer;
+import xapi.server.api.*;
 import xapi.source.api.CharIterator;
 import xapi.source.impl.InputStreamCharIterator;
 import xapi.test.server.bdd.TestSocketServer.SocketScope;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.net.MalformedURLException;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.URL;
-import java.net.URLClassLoader;
+import java.net.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -200,11 +183,18 @@ class TestSocketServer extends AbstractModel implements WebApp, Rethrowable, Xap
     }
 
     @Override
-    public void inScope(
-        In1Out1<SessionScope, SocketScope> scopeFactory, In3Unsafe<SocketScope, Throwable, Do> callback
+    public <C extends RequestContext> void inContext(
+        C ctx, In1Out1<C, SocketScope> factory, In3Unsafe<SocketScope, Throwable, In1<Throwable>> callback
     ) {
 
+        final SocketScope s = factory.io(ctx);
+        callback.in(s, null, In1.ignored()); // terrible...
+    }
 
+    @Override
+    public void inScope(
+        String sessionId, In1Out1<SessionScope, SocketScope> scopeFactory, In3Unsafe<SocketScope, Throwable, Do> callback
+    ) {
     }
 
     @Override

@@ -1,12 +1,17 @@
-package xapi.scope.request;
+package xapi.scope.spi;
 
 import xapi.fu.MapLike;
 import xapi.fu.Out1;
-import xapi.fu.Out2;
 import xapi.fu.iterate.EmptyIterator;
 import xapi.fu.iterate.SizedIterable;
 
 /**
+ * A representation of a http-like request object;
+ * you should mostly just satisfy this interface with internal types,
+ * where you will probably use the "native" forms of these methods
+ * (i.e. call methods on your own req/resp container objects).
+ *
+ *
  * Created by James X. Nelson (james @wetheinter.net) on 11/26/16.
  */
 public interface RequestLike {

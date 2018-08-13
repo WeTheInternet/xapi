@@ -10,7 +10,7 @@ import xapi.fu.ListLike;
 import xapi.fu.MapLike;
 import xapi.fu.Mutable;
 import xapi.log.X_Log;
-import xapi.scope.request.ResponseLike;
+import xapi.scope.spi.ResponseLike;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 7/30/17.
@@ -123,7 +123,29 @@ public class AbstractResponse implements ResponseLike {
         return "";
     }
 
+    @Override
+    public String clearResponseBody() {
+        String body = getResponseBody();
+        raw = null;
+        html = null;
+        return body;
+    }
+
     public boolean isClosed() {
         return closed;
+    }
+
+    public boolean hasBody() {
+        if (raw != null) {
+            if (raw.isNotEmpty()) {
+                return true;
+            }
+        }
+        if (html != null) {
+            if (html.hasBody()) {
+                return true;
+            }
+        }
+        return false;
     }
 }

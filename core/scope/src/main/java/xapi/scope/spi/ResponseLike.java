@@ -1,4 +1,4 @@
-package xapi.scope.request;
+package xapi.scope.spi;
 
 import xapi.dev.source.HtmlBuffer;
 import xapi.dev.source.PrintBuffer;
@@ -45,4 +45,6 @@ public interface ResponseLike {
     }
 
     default String prepareToClose() {return null;}
+
+    String clearResponseBody();
 }

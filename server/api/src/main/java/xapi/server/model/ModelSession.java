@@ -8,6 +8,8 @@ import xapi.model.api.Model;
 import xapi.model.api.ModelBuilder;
 import xapi.model.api.ModelKey;
 
+import java.io.Serializable;
+
 import static xapi.model.X_Model.create;
 import static xapi.model.api.KeyBuilder.forType;
 import static xapi.model.api.ModelBuilder.build;
@@ -15,7 +17,7 @@ import static xapi.model.api.ModelBuilder.build;
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 7/24/17.
  */
-public interface ModelSession extends Model {
+public interface ModelSession extends Model, Serializable {
 
     String MODEL_SESSION = "session";
 

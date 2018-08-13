@@ -1,16 +1,15 @@
 package xapi.server.api;
 
+import xapi.collect.api.IntTo;
 import xapi.except.NotConfiguredCorrectly;
-import xapi.fu.In1;
 import xapi.fu.In2;
 import xapi.fu.Log;
 import xapi.fu.Log.LogLevel;
-import xapi.fu.Mutable;
 import xapi.model.api.Model;
 import xapi.scope.request.RequestScope;
-import xapi.scope.request.ResponseLike;
+import xapi.scope.spi.RequestLike;
+import xapi.scope.spi.ResponseLike;
 import xapi.source.write.Template;
-import xapi.scope.request.RequestLike;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/4/16.
@@ -23,7 +22,16 @@ public interface Route extends Model {
     };
 
     enum RouteType {
-        Text, Gwt, Callback, File, Template, Service
+        Text, Gwt {
+            @Override
+            public boolean isBlocking() {
+                return true;
+            }
+        }, Callback, File, Template, Service;
+
+        public boolean isBlocking() {
+            return false;
+        }
     }
 
     default <Req extends RequestLike, Resp extends ResponseLike> void serve(String path, RequestScope<Req, Resp> request, In2<RequestScope<Req, Resp>, Throwable> callback) {
@@ -103,6 +111,14 @@ public interface Route extends Model {
     String getPath();
 
     Route setPath(String path);
+
+    IntTo<String> getMethods();
+
+    Route setMethods(IntTo<String> path);
+
+    default IntTo<String> methods() {
+        return getOrCreateList(String.class, this::getMethods, this::setMethods);
+    }
 
     default double matches(String url) {
         final String path = getPath();

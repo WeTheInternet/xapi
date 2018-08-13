@@ -1,9 +1,11 @@
-package xapi.server.vertx;
+package xapi.server.vertx.scope;
 
 import xapi.annotation.inject.InstanceOverride;
 import xapi.annotation.process.Multiplexed;
 import xapi.scope.request.RequestScope;
 import xapi.scope.impl.AbstractScope;
+import xapi.server.vertx.VertxRequest;
+import xapi.server.vertx.VertxResponse;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/2/16.

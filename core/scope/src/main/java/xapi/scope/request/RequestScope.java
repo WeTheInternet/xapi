@@ -3,6 +3,8 @@ package xapi.scope.request;
 import xapi.annotation.process.Multiplexed;
 import xapi.fu.Maybe;
 import xapi.scope.api.Scope;
+import xapi.scope.spi.RequestLike;
+import xapi.scope.spi.ResponseLike;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/8/16.
