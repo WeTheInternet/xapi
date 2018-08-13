@@ -54,6 +54,7 @@ public class LongLiteralExpr extends StringLiteralExpr {
 	}
 
 	public final boolean isMinValue() {
+		String value = getValue();
 		return value != null && //
 				value.length() == 20 && //
 				value.startsWith(UNSIGNED_MIN_VALUE) && //
@@ -61,6 +62,7 @@ public class LongLiteralExpr extends StringLiteralExpr {
 	}
 
 	public Long longValue() {
+		String value = getValue();
 		return value == null ? null : Long.parseLong(value);
 	}
 

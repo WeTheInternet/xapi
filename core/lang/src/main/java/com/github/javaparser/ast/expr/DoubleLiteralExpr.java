@@ -50,6 +50,7 @@ public final class DoubleLiteralExpr extends StringLiteralExpr {
 	}
 
 	public Double doubleValue() {
+		String value = getValue();
 		return value == null ? null : Double.parseDouble(value);
 	}
 

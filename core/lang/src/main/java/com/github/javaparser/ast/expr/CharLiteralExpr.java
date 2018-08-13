@@ -51,6 +51,7 @@ public final class CharLiteralExpr extends StringLiteralExpr {
     }
 
     public Character charValue() {
+        String value = getValue();
         assert value == null || value.length() == 1 : "Not a valid char: " + value;
         return value == null ? null : value.charAt(0);
     }

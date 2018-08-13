@@ -433,6 +433,12 @@ public abstract class Node implements Serializable, Cloneable {
         }
         return (T) extras.get(key);
     }
+    public <T> T removeExtra(String key) {
+        if (extras == null) {
+            return null;
+        }
+        return (T) extras.remove(key);
+    }
 
     public StringTo<Object> getExtras() {
         return extras;

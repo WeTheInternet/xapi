@@ -17,6 +17,7 @@ import xapi.collect.api.ClassTo;
 import xapi.fu.In2;
 import xapi.fu.In2Out1;
 import xapi.fu.In3;
+import xapi.log.X_Log;
 
 import static xapi.fu.In2Out1.superIn1;
 
@@ -24,6 +25,56 @@ import static xapi.fu.In2Out1.superIn1;
  * Created by James X. Nelson (james @wetheinter.net) on 9/17/16.
  */
 public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
+
+    public static <Ctx, Generic extends Ctx> ComposableXapiVisitor<Ctx> onMissingIgnore(Class<Generic> logTo) {
+        return whenMissingIgnore(logTo);
+    }
+    public static <Ctx> ComposableXapiVisitor<Ctx> whenMissingIgnore(Class<?> logTo) {
+        final ComposableXapiVisitor<Ctx> visitor = new ComposableXapiVisitor<>();
+        return visitor
+            .withDefaultCallback((node, ctx, next)->{
+                X_Log.info(ComposableXapiVisitor.class,
+                    "Ignoring unhandled node", node.getClass(), node, visitor);
+                if (logTo != null) {
+                    X_Log.info(logTo, "<- visitor invoked from");
+                }
+            });
+    }
+
+    public static <Ctx, Generic extends Ctx> ComposableXapiVisitor<Ctx> onMissingLog(Class<Generic> logTo, boolean visitAll) {
+        return whenMissingLog(logTo, visitAll);
+    }
+    public static <Ctx> ComposableXapiVisitor<Ctx> whenMissingLog(Class<?> logTo, boolean visitAll) {
+        final ComposableXapiVisitor<Ctx> visitor = new ComposableXapiVisitor<>();
+        return visitor
+            .withDefaultCallback((node, ctx, next)-> {
+                X_Log.info(ComposableXapiVisitor.class,
+                    node, node.getClass(), " not handled by ", visitor);
+                if (logTo != null) {
+                    X_Log.info(logTo, "<- visitor invoked from");
+                }
+                if (visitAll) {
+                    next.in(node, ctx);
+                }
+            });
+    }
+
+    public static <Ctx, Generic extends Ctx> ComposableXapiVisitor<Ctx> onMissingFail(Class<Generic> logTo) {
+        return whenMissingFail(logTo);
+    }
+
+    public static <Ctx> ComposableXapiVisitor<Ctx> whenMissingFail(Class<?> logTo) {
+        final ComposableXapiVisitor<Ctx> visitor = new ComposableXapiVisitor<>();
+        return visitor
+            .withDefaultCallback((node, ctx, next)-> {
+                X_Log.error(ComposableXapiVisitor.class,
+                    node, node.getClass(), " not handled by ", visitor);
+                if (logTo != null) {
+                    X_Log.info(logTo, "<- visitor invoked from");
+                }
+                throw new UnsupportedOperationException("Node " + node + " of type " + node.getClass() + " not handled by " + visitor);
+            });
+    }
 
     private ClassTo<In2Out1<Node, Ctx, Boolean>> callbacks = X_Collect.newClassMap(In2Out1.class);
     private In3<Node, Ctx, In2<Node, Ctx>> defaultCallback = (n, c, i)->i.in(n, c);
@@ -566,6 +617,10 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
         putCallback(NameExpr.class, callback);
         return this;
     }
+    public ComposableXapiVisitor<Ctx> withNameTerminal(In2<NameExpr, Ctx> callback) {
+        putCallback(NameExpr.class, callback.supply1(false));
+        return this;
+    }
 
     @Override
     public void visit(NormalAnnotationExpr n, Ctx arg) {
@@ -706,6 +761,10 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
         putCallback(StringLiteralExpr.class, callback);
         return this;
     }
+    public ComposableXapiVisitor<Ctx> withStringLiteralTerminal(In2<StringLiteralExpr, Ctx> callback) {
+        putCallback(StringLiteralExpr.class, callback.supply1(false));
+        return this;
+    }
 
     @Override
     public void visit(TemplateLiteralExpr n, Ctx arg) {
@@ -714,6 +773,10 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
 
     public ComposableXapiVisitor<Ctx> withTemplateLiteralExpr(In2Out1<TemplateLiteralExpr, Ctx, Boolean> callback) {
         putCallback(TemplateLiteralExpr.class, callback);
+        return this;
+    }
+    public ComposableXapiVisitor<Ctx> withTemplateLiteralTerminal(In2<TemplateLiteralExpr, Ctx> callback) {
+        putCallback(TemplateLiteralExpr.class, callback.supply1(false));
         return this;
     }
 
@@ -906,6 +969,10 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
         putCallback(MethodReferenceExpr.class, callback);
         return this;
     }
+    public ComposableXapiVisitor<Ctx> withMethodReferenceRecurse(In2<MethodReferenceExpr, Ctx> callback) {
+        putCallback(MethodReferenceExpr.class, callback.supply1(true));
+        return this;
+    }
 
     @Override
     public void visit(TypeExpr n, Ctx arg) {
@@ -946,6 +1013,10 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
         putCallback(UiContainerExpr.class, callback);
         return this;
     }
+    public ComposableXapiVisitor<Ctx> withUiContainerExpr(In2<UiContainerExpr, Ctx> callback) {
+        putCallback(UiContainerExpr.class, callback.supply1(true)); // default is to visit children
+        return this;
+    }
 
     @Override
     public void visit(JsonContainerExpr n, Ctx arg) {
@@ -954,6 +1025,10 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
 
     public ComposableXapiVisitor<Ctx> withJsonContainerExpr(In2Out1<JsonContainerExpr, Ctx, Boolean> callback) {
         putCallback(JsonContainerExpr.class, callback);
+        return this;
+    }
+    public ComposableXapiVisitor<Ctx> withJsonContainerRecurse(In2<JsonContainerExpr, Ctx> callback) {
+        putCallback(JsonContainerExpr.class, callback.supply1(true));
         return this;
     }
 
@@ -1037,4 +1112,11 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
         return this;
     }
 
+    @Override
+    public String toString() {
+        return "ComposableXapiVisitor{" +
+            "callbacks=" + callbacks +
+            ", defaultCallback=" + defaultCallback +
+            "} ";
+    }
 }

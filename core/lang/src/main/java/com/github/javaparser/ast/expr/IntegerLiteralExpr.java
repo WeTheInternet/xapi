@@ -58,9 +58,11 @@ public class IntegerLiteralExpr extends StringLiteralExpr {
 	}
 
 	public final Integer intValue() {
+		String value = getValue();
 		return value == null ? null : Integer.parseInt(value);
 	}
 	public final boolean isMinValue() {
+		String value = getValue();
 		return value != null && //
 				value.length() == 10 && //
 				value.equals(UNSIGNED_MIN_VALUE);

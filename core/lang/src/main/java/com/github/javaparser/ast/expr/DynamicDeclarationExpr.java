@@ -43,13 +43,13 @@
 
 package com.github.javaparser.ast.expr;
 
-import com.github.javaparser.ast.body.BodyDeclaration;
+import com.github.javaparser.ast.body.*;
 import com.github.javaparser.ast.visitor.GenericVisitor;
+import com.github.javaparser.ast.visitor.GenericVisitorAdapter;
 import com.github.javaparser.ast.visitor.VoidVisitor;
+import xapi.fu.Maybe;
 
 public final class DynamicDeclarationExpr extends Expression {
-
-    private Expression scope;
 
     private BodyDeclaration body;
 
@@ -90,8 +90,36 @@ public final class DynamicDeclarationExpr extends Expression {
         v.visit(this, arg);
     }
 
-    public Expression getScope() {
-        return scope;
+    public String getName() {
+        return Maybe.nullable(body.accept(new GenericVisitorAdapter<String, Object>() {
+            @Override
+            public String visit(FieldDeclaration n, Object arg) {
+                assert n.getVariables().size() == 1 : "Do not declare multiple fields in a single expression (" + body.toSource() + ")";
+                return n.getVariables().get(0).getId().getName();
+            }
+
+            @Override
+            public String visit(MethodDeclaration n, Object arg) {
+                return n.getName();
+            }
+
+            @Override
+            public String visit(EnumDeclaration n, Object arg) {
+                return n.getName();
+            }
+
+            @Override
+            public String visit(AnnotationDeclaration n, Object arg) {
+                return n.getName();
+            }
+
+            @Override
+            public String visit(ClassOrInterfaceDeclaration n, Object arg) {
+                return n.getName();
+            }
+
+        }, null))
+            .getOrThrow(()->new UnsupportedOperationException("Cannot extract name from " + body.toSource()));
     }
 }
 

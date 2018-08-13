@@ -23,29 +23,36 @@ package com.github.javaparser.ast.expr;
 
 import com.github.javaparser.ast.visitor.GenericVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitor;
+import xapi.fu.Immutable;
+import xapi.fu.Lazy;
+import xapi.fu.Out1;
 
 /**
  * @author Julio Vilmar Gesser
  */
 public class StringLiteralExpr extends LiteralExpr {
 
-	protected String value;
+	private Out1<String> value;
 
 	public StringLiteralExpr() {
-        this.value = "";
+        this.value = Immutable.EMPTY_STRING;
 	}
 
 	public StringLiteralExpr(final String value) {
         if (value.contains("\n") || value.contains("\r")) {
             throw new IllegalArgumentException("Illegal literal expression: newlines (line feed or carriage return) have to be escaped");
         }
-		this.value = value;
+		setValue(value);
+	}
+
+	public StringLiteralExpr(final Out1<String> value) {
+		setValueFactory(value);
 	}
 
 	public StringLiteralExpr(final int beginLine, final int beginColumn, final int endLine, final int endColumn,
 			final String value) {
 		super(beginLine, beginColumn, endLine, endColumn);
-		this.value = value;
+		setValue(value);
 	}
 
 	@Override public <R, A> R accept(final GenericVisitor<R, A> v, final A arg) {
@@ -57,14 +64,22 @@ public class StringLiteralExpr extends LiteralExpr {
 	}
 
 	public final String getValue() {
-		return value;
+		return value.out1();
 	}
 
 	public final void setValue(final String value) {
-		this.value = value;
+		this.value = Immutable.immutable1(value);
+	}
+
+	public final void setValueFactory(final Out1<String> value) {
+		this.value = Lazy.deferred1(value);
 	}
 
 	public static StringLiteralExpr stringLiteral(String name) {
+		return new StringLiteralExpr(name);
+	}
+
+	public static StringLiteralExpr stringLiteral(Out1<String> name) {
 		return new StringLiteralExpr(name);
 	}
 }
