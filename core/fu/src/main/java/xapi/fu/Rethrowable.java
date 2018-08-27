@@ -3,6 +3,7 @@ package xapi.fu;
 import xapi.fu.Log.LogLevel;
 
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.UndeclaredThrowableException;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -10,6 +11,8 @@ import java.util.concurrent.ExecutionException;
  *         Created on 07/11/15.
  */
 public interface Rethrowable {
+
+  Rethrowable DEFAULT_RETHROW = new Rethrowable() {};
 
   /**
    * This method exists for cases when you want to override invocations to rethrow;
@@ -34,6 +37,9 @@ public interface Rethrowable {
   default <T> T sneakyThrow(Throwable e) {
     throw rethrow(e);
   }
+  default RuntimeException rethrowCause(Throwable e) {
+    return rethrow(e.getCause() == null ? e : e.getCause());
+  }
   default RuntimeException rethrow(Throwable e) {
     if (this instanceof Debuggable) {
       ((Debuggable)this).viewException(this, e);
@@ -44,12 +50,19 @@ public interface Rethrowable {
     if (e instanceof Error) {
       throw X_Fu.rethrow(e);
     }
-    if (e instanceof InvocationTargetException && e.getCause() != null) {
-      // TODO: addSuppressed? Pretty sure that causes an infinite loop of death when printing out...
-      e = e.getCause();
-    }
-    if (e instanceof ExecutionException && e.getCause() != null) {
-      e = e.getCause();
+    boolean hasCause = e.getCause() != null;
+    if (hasCause) {
+
+      if (e instanceof InvocationTargetException) {
+        // TODO: addSuppressed? Pretty sure that causes an infinite loop of death when printing out...
+        e = e.getCause();
+      }
+      if (e instanceof UndeclaredThrowableException) {
+        e = e.getCause();
+      }
+      if (e instanceof ExecutionException) {
+        e = e.getCause();
+      }
     }
     if (e instanceof InterruptedException) {
       Thread.currentThread().interrupt();
@@ -77,4 +90,23 @@ public interface Rethrowable {
       throw new Rethrowable(){}
         .rethrow(exception.out1());
     }
+
+  static Rethrowable firstRethrowable(Object first) {
+    if (first instanceof Rethrowable) {
+      return (Rethrowable) first;
+    }
+    return DEFAULT_RETHROW;
+  }
+  static Rethrowable firstRethrowable(Object first, Object ... rest) {
+    final Rethrowable winner = firstRethrowable(first);
+    if (winner != DEFAULT_RETHROW) {
+      return winner;
+    }
+    for (Object o : rest) {
+      if (o instanceof Rethrowable) {
+        return (Rethrowable) o;
+      }
+    }
+    return DEFAULT_RETHROW;
+  }
 }

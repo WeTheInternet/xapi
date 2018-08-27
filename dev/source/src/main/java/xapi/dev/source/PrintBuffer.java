@@ -39,7 +39,6 @@ import xapi.fu.Printable;
 
 public class PrintBuffer extends CharBuffer implements Printable<PrintBuffer>, HasIndent, PatternPrinter<PrintBuffer> {
 
-  static final char NEW_LINE = '\n';
   static final String INDENT = System.getProperty("xapi.indent", "  ");
 
   protected static String join(final String sep, final String[] args) {
@@ -219,7 +218,7 @@ public class PrintBuffer extends CharBuffer implements Printable<PrintBuffer>, H
 
   public PrintBuffer println() {
     onAppend();
-    target.append(NEW_LINE);
+    target.append(PatternPrinter.NEW_LINE);
     indented = false;
     return this;
   }
@@ -240,10 +239,9 @@ public class PrintBuffer extends CharBuffer implements Printable<PrintBuffer>, H
     return this;
   }
 
+  @Override
   public PrintBuffer printlns(String str) {
-    for (String line : str.split("\\r|(?:\\r?\\n)")) {
-      println(line);
-    }
+    PatternPrinter.super.printlns(str);
     return this;
   }
 

@@ -116,6 +116,11 @@ public class ChainBuilder<T> implements HasSize, MappedIterable<T> {
   }
 
   @Override
+  public SizedIterable<T> counted() {
+    return SizedIterable.of(this::size, this);
+  }
+
+  @Override
   public int size() {
     return size;
   }

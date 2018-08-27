@@ -259,6 +259,8 @@ public class DomBuffer extends XmlBuffer {
     return makeTag("body");
   }
 
+  // TODO: public XapiBuffer makeXapi(String tagName) { ...
+
   @Override
   public DomBuffer makeTag(final String name) {
     final DomBuffer buffer = new DomBuffer(name);

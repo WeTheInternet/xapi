@@ -3,8 +3,6 @@ package xapi.fu;
 import xapi.fu.api.DoNotOverride;
 import xapi.fu.api.Generate;
 
-import java.io.Closeable;
-
 /**
  * A marker interface we apply to immutable types.
  *
@@ -41,6 +39,9 @@ public interface Do extends AutoCloseable {
   }
 
   default Do doBefore(Do d) {
+      if (d == NOTHING) {
+        return this;
+      }
     return ()->{
       d.done();
       done();
@@ -70,11 +71,60 @@ public interface Do extends AutoCloseable {
           " public=true",
           " final=true",
           " />",
-      }) Do d) {
+      })
+      Do d) {
+      if (d == NOTHING) {
+        return this;
+      }
     return ()->{
       done();
       d.done();
     };
+  }
+
+  default Do once() {
+      Do[] target = {this};
+      return ()->{
+        // re-entrance sucks, avoid it
+        final Do run;
+        synchronized (target) {
+          run = target[0];
+          if (run == Do.NOTHING) {
+            return;
+          }
+          target[0] = ()->{
+            // interim target that forces racers to wait on whoever is actually doing the work.
+            Do check;
+            int delay = 10;
+            for(;;) {
+              synchronized (target) {
+                check = target[0];
+              }
+              if (check == Do.NOTHING) {
+                return;
+              }
+              try {
+                synchronized (target) {
+                  target.wait(++delay);
+                }
+              } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                Log.firstLog(this)
+                    .log(Do.class, "Interrupted waiting on ", Do.this);
+                throw Rethrowable.firstRethrowable(this).rethrow(e);
+              }
+            }
+          };
+        }
+        // actually do the work, exactly once. First one in starts the work,
+        // all others who made it here will wait.
+        run.done();
+        // all done, let the busy-waiters go...
+        synchronized (target) {
+          target[0] = Do.NOTHING;
+          target.notifyAll();
+        }
+      };
   }
 
   default <I> In1<I> requireBefore(In1<I> in1) {

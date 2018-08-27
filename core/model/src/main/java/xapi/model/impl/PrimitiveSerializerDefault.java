@@ -11,7 +11,9 @@ import xapi.collect.api.StringTo;
 import xapi.model.api.PrimitiveSerializer;
 import xapi.source.api.CharIterator;
 import xapi.util.X_Debug;
+import xapi.util.X_Runtime;
 
+import java.io.File;
 import java.util.Arrays;
 
 /**
@@ -745,9 +747,16 @@ function DoubleToIEEE(f)
       }
       return Class.forName(cls);
     } catch (final ClassNotFoundException e) {
-      assert false : "Could not deserialize class "+cls+"; make sure that reflection " +
-          "is enabled for this type.\n" +
-          "Calling Class.forName(\""+cls+"\"); with a string literal should suffice.";
+      try {
+        return Thread.currentThread().getContextClassLoader().loadClass(cls);
+      } catch (ClassNotFoundException e1) {
+        assert false : "Could not deserialize class "+cls+"; make sure that reflection " +
+            "is enabled for this type.\n" +
+            ( X_Runtime.isGwt()
+            ? "Calling Class.forName(\""+cls+"\"); with a string literal should suffice;\n"
+            : "Check your classpath:\n" + System.getProperty("java.class.path", "").replace(File.pathSeparatorChar, '\n')
+        );
+      }
       throw X_Debug.rethrow(e);
     }
   }

@@ -3,7 +3,9 @@ package xapi.util;
 import xapi.fu.In2Out1;
 import xapi.fu.X_Fu;
 
+import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.UndeclaredThrowableException;
 import java.util.concurrent.ExecutionException;
 
 import static xapi.fu.X_Fu.blank;
@@ -65,9 +67,11 @@ public final class X_Util{
      {
       throw ((Error)e);// Just rethrow errors without wrappers
     }
-    while (// unwrap checked wrappers, for ease later on
+    while (// unwrap common wrappers, for ease later on
         e instanceof InvocationTargetException
         || e instanceof ExecutionException
+        || e instanceof UndeclaredThrowableException
+        || e instanceof UncheckedIOException
     ) {
       if (e.getCause()!=null){
         e = e.getCause();
@@ -81,6 +85,7 @@ public final class X_Util{
     }
     // throw unchecked. we only claim to return so you can (choose to) write: `throw rethrow(e);`
     throw new RuntimeException(e);
+    // TODO: consider using sneakyThrow semantics instead?
   }
 
   public static int zeroSafeInt(final Integer i) {

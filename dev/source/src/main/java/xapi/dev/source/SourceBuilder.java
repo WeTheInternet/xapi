@@ -195,6 +195,10 @@ public class SourceBuilder<Payload> implements CanAddImports {
     return this;
   }
 
+  public String getSuperClass() {
+    return getClassBuffer().getSuperClass();
+  }
+
   public SourceBuilder<Payload> setSuperClass(String cls) {
     getClassBuffer().setSuperClass(cls);
     return this;

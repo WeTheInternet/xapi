@@ -25,6 +25,8 @@ public interface Out1<O> extends Rethrowable, Lambda, HasMutability {
   }
 
   Out1<String> EMPTY_STRING = immutable1("");
+  Out1<String> FALSE_STRING = immutable1("false");
+  Out1<String> TRUE_STRING = immutable1("true");
   Out1<String> SPACE = immutable1(" ");
   Out1<String> NEW_LINE = immutable1("\n");
 
@@ -308,5 +310,13 @@ public interface Out1<O> extends Rethrowable, Lambda, HasMutability {
   default SizedIterable<O> asIterable() {
     final SingletonIterator<Out1<O>> itr = SingletonIterator.singleItem(this);
     return itr.map(Out1::out1);
+  }
+
+  static <O> In2Out1<Out1<O>, Out1<O>, Out1<O>> reducer(In2Out1<O, O, O> valueReducer) {
+    return (a, b) -> () -> valueReducer.io(a.out1(), b.out1());
+  }
+
+  default <F, M> Out1<M> merge(Out1<F> other, In2Out1<O, F, M> mapper) {
+    return ()->mapper.io(out1(), other.out1());
   }
 }

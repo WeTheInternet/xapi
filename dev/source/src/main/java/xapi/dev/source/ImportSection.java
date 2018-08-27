@@ -43,7 +43,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static xapi.dev.source.PrintBuffer.NEW_LINE;
+import static xapi.dev.source.PatternPrinter.NEW_LINE;
 import static xapi.fu.iterate.ArrayIterable.iterate;
 
 public class ImportSection implements CanAddImports {
@@ -417,5 +417,11 @@ public class ImportSection implements CanAddImports {
 
   public void setReplaceDollarSign(boolean replaceDollarSign) {
     this.replaceDollarSign = replaceDollarSign;
+  }
+
+  public String qualify(String t) {
+    final String val = imports.getOrDefault(t, t);
+    // might be explicitly empty string to reserve a name
+    return val.isEmpty() ? t : val;
   }
 }

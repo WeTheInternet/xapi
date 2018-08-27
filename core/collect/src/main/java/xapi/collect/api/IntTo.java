@@ -1,13 +1,9 @@
 package xapi.collect.api;
 
 import xapi.collect.proxy.CollectionProxy;
+import xapi.fu.*;
 import xapi.fu.Filter.Filter1;
-import xapi.fu.In1;
 import xapi.fu.In1.In1Unsafe;
-import xapi.fu.In1Out1;
-import xapi.fu.ListLike;
-import xapi.fu.MappedIterable;
-import xapi.fu.Out2;
 import xapi.fu.has.HasItems;
 import xapi.fu.has.HasLock;
 import xapi.fu.iterate.SizedIterable;
@@ -279,6 +275,50 @@ extends CollectionProxy<Integer,T>, HasItems<T>, SizedIterable<T>
       }
 
       // TODO figure out any default methods that would be more efficient to override
+    };
+  }
+
+  /**
+   * Create a Do function that will remove the given value,
+   * starting from the supplied index (hint to use for more efficient removal searches).
+   *
+   * If you expect your list to vary wildly in size in order over time,
+   * you will probably see reduced performance using this method;
+   * if your list is mostly static, this method will perform great;
+   * if you use many of these functions to mutate the list,
+   * you will see better performance if you run them in reverse,
+   * as the indices will not shift on you mid-flight.
+   *
+   * @param index A hint of where to look in the list for this value.
+   * @param value The value to remove later
+   * @return A Do function you can invoke later to search for, then remove the value.
+   */
+  default Do removeLater(int index, T value) {
+    return ()->{
+      // user index should be treated as a hint only...
+      if (at(index) == value) {
+        remove(index);
+      } else {
+        // ok, list may have shifted... lets look forward and backward from this point.
+        for (
+            int size = size(),
+            head = index - 1,
+            tail = size - index - 1,
+            limit = Math.max(head, tail),
+            i = 0
+            ; ++i < limit; ) {
+          int before = index - i;
+          if (before > -1 && at(before) == value) {
+            remove(before);
+            return;
+          }
+          int after = index + i;
+          if (after < size && at(after) == value) {
+            remove(after);
+            return;
+          }
+        }
+      }
     };
   }
 }

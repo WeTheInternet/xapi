@@ -12,7 +12,9 @@ public class TimeServiceDefault extends AbstractTimeService {
 
   @Override
   public void runLater(Runnable runnable) {
-    new Thread(runnable).start();
+    final Thread t = new Thread(runnable);
+    t.setName("X_Time " + runnable);
+    t.start();
   }
 
   @Override

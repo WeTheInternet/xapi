@@ -36,14 +36,12 @@
 package xapi.dev.source;
 
 import xapi.collect.impl.SimpleStack;
-import xapi.fu.MappedIterable;
+import xapi.fu.Printable;
 import xapi.source.read.JavaLexer;
 
 import java.lang.reflect.Modifier;
 import java.util.Set;
 import java.util.TreeSet;
-
-import static xapi.fu.iterate.ArrayIterable.iterate;
 
 public class ClassBuffer extends MemberBuffer<ClassBuffer> {
 
@@ -133,13 +131,13 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
 
   @Override
   public String toSource() {
-    final StringBuilder b = new StringBuilder(Character.toString(NEW_LINE));
+    final StringBuilder b = new StringBuilder(Printable.NEW_LINE);
     if (javaDoc != null && javaDoc.isNotEmpty()) {
       b.append(javaDoc.toString());
     }
     if (annotations.size() > 0) {
       for (final String anno : annotations) {
-        b.append(origIndent).append("@").append(anno).append(NEW_LINE);
+        b.append(origIndent).append("@").append(anno).append(Printable.NEW_LINE);
       }
     }
     b.append(origIndent);
@@ -216,7 +214,7 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
       }
     }
     b.append("{");
-    b.append(NEW_LINE);
+    b.append(Printable.NEW_LINE);
     return b + super.toSource();
   }
 
@@ -463,7 +461,7 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
 
       @Override
       public String toSource() {
-        return NEW_LINE + origIndent + "new " + classDef + "() {" + NEW_LINE
+        return Printable.NEW_LINE + origIndent + "new " + classDef + "() {" + Printable.NEW_LINE
             + superString();
       }
 
@@ -489,6 +487,30 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
     return origIndent + INDENT;
   }
 
+  /**
+   * Makes a constructor with arguments that act as field initializers.
+   *
+   * Adds parameters to the constructor, and assigns to fields immediately.
+   *
+   * @param modifiers Modifiers for your constructor.
+   * @param initializers Fields that you want to intialize from constructor parameter.
+   * @return MethodBuffer for you to fill in constructor.
+   */
+  public MethodBuffer createConstructor(final int modifiers, final FieldBuffer ... initializers) {
+
+    final String[] params = new String[initializers.length];
+    for (int i = initializers.length; i-->0;) {
+      params[i] = initializers[i].toParameter();
+    }
+    final MethodBuffer buf = createConstructor(modifiers, params);
+    for (FieldBuffer init : initializers) {
+      buf.patternln("this.$1 = $1;", init.getName());
+    }
+    return buf;
+  }
+  public final MethodBuffer createConstructor(final int modifiers) {
+    return createConstructor(modifiers, new String[0]);
+  }
   public MethodBuffer createConstructor(final int modifiers, final String... params) {
     final MethodBuffer method = new MethodBuffer(context, this, memberIndent());
     method.setModifier(modifiers);
@@ -516,7 +538,6 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
     method.addParameters(params);
     addMethod(method);
     return method;
-
   }
 
   public final MethodBuffer createMethod(final int modifiers, final Class<?> returnType,
@@ -526,6 +547,12 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
 
   public FieldBuffer createField(final Class<?> type, final String name) {
     return createField(type.getCanonicalName(), name);
+  }
+
+  public FieldBuffer createField(final Class<?> type, final String name, String ... typeParams) {
+    final FieldBuffer field = createField(type.getCanonicalName(), name);
+    field.addGenerics(typeParams);
+    return field;
   }
 
   public FieldBuffer createField(final Class<?> type, final String name, final int modifier) {

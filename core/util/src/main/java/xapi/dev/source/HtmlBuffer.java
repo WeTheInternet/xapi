@@ -138,15 +138,19 @@ public class HtmlBuffer {
   }
 
   public final DomBuffer getBody() {
-    return body == null ? (setBody(createBody())) : body;
+    return hasBody() ? body : setBody(createBody());
   }
 
   public final boolean hasBody() {
     return body != null;
   }
 
+  public final boolean hasHead() {
+    return head != null;
+  }
+
   public final HeadBuffer getHead() {
-    return head == null ? (setHead(createHead())) : head;
+    return hasHead() ? head: setHead(createHead());
   }
 
   protected DomBuffer createBody() {

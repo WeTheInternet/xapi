@@ -3,6 +3,7 @@ package xapi.collect.api;
 import xapi.fu.In1;
 import xapi.fu.In1Out1;
 import xapi.fu.In2;
+import xapi.fu.In3;
 import xapi.util.api.ReceivesValue;
 
 /**
@@ -36,4 +37,9 @@ public interface Dictionary <K, V> {
   default void forEach(In2<K, V> in) {
     forKeys(in.adapt2(this::getValue)::in);
   }
+
+  default <E1> void forEach(In3<K, V, E1> in, E1 extra) {
+    forEach(in.provide3(extra));
+  }
+
 }

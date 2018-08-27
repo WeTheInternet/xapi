@@ -1,19 +1,16 @@
 package xapi.util;
 
-import xapi.collect.api.CharPool;
 import xapi.fu.In1Out1;
 import xapi.fu.Out1;
-import xapi.fu.X_Fu;
-import xapi.inject.X_Inject;
+
+import java.io.UnsupportedEncodingException;
+import java.util.BitSet;
+import java.util.Iterator;
 
 import static xapi.fu.MappedIterable.mapped;
 import static xapi.fu.iterate.ArrayIterable.iterate;
 import static xapi.util.service.StringService.binarySuffix;
 import static xapi.util.service.StringService.metricSuffix;
-
-import java.io.UnsupportedEncodingException;
-import java.util.BitSet;
-import java.util.Iterator;
 
 public class X_String {
 
@@ -157,10 +154,6 @@ public class X_String {
 
   public static byte[] getBytes(String source) {
     return source.getBytes();
-  }
-
-  public static CharPool getCharPool() {
-    return X_Inject.singleton(CharPool.class);
   }
 
   public static String toMetricSuffix(double val) {
@@ -454,7 +447,8 @@ public class X_String {
   public static String toTimestamp(int year, int month, int date, int hour, int minute, int milli, int offsetMinutes) {
 
     // Ya...  It's more lines of code than using a library,
-    // but it's also the minimum overhead possible.
+    // but it's also the minimum overhead possible...
+    // and no crazy "remember to +/- 1900 to your ints!" semantics ...java.util.Calender
 
     char[] result = "yyyy-MM-ddTHH:mm.sss+00:00".toCharArray();
 
@@ -568,4 +562,36 @@ public class X_String {
             ? is
             : is + s + value;
   }
+
+    public static String removePrefix(String from, String prefix) {
+      if (from == null || prefix == null) {
+        return from;
+      }
+      if (from.startsWith(prefix)) {
+        return from.substring(prefix.length());
+      }
+      return from;
+    }
+
+    public static String removeSuffix(String from, String suffix) {
+      if (from == null || suffix == null) {
+        return from;
+      }
+      if (from.endsWith(suffix)) {
+        return from.substring(0, from.length() - suffix.length());
+      }
+      return from;
+    }
+
+    public static boolean containsAny(String s, String ... choices) {
+      if (s == null) {
+        return false; // null contains nothing.
+      }
+      for (String choice : choices) {
+        if (s.equals(choice)) {
+          return true;
+        }
+      }
+      return false;
+    }
 }

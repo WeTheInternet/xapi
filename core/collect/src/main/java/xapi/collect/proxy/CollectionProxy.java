@@ -1,16 +1,11 @@
 package xapi.collect.proxy;
 
 import xapi.collect.api.CollectionOptions;
-import xapi.fu.In1Out1;
+import xapi.fu.*;
 import xapi.fu.has.HasEmptiness;
 import xapi.collect.api.ObjectTo;
 import xapi.collect.impl.SimpleStack;
-import xapi.fu.In1;
-import xapi.fu.In2;
 import xapi.fu.In2.In2Unsafe;
-import xapi.fu.In2Out1;
-import xapi.fu.MappedIterable;
-import xapi.fu.Out2;
 import xapi.fu.iterate.ArrayIterable;
 import xapi.fu.iterate.SizedIterable;
 
@@ -152,4 +147,8 @@ public interface CollectionProxy <K, V> extends HasEmptiness
                 .filter(o->filter.io(o.out1()));
 
    }
+
+    default Do removeKeyLater(K value) {
+       return ()->remove(value);
+    }
 }

@@ -1,11 +1,11 @@
 package xapi.collect.impl;
 
+import xapi.fu.In1Out1;
+import xapi.util.api.ReceivesValue;
+
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
-
-import xapi.fu.In1Out1;
-import xapi.util.api.ReceivesValue;
 
 public class InitMapDefault <Key, Value> extends AbstractInitMap<Key,Value>{
 
@@ -59,6 +59,10 @@ public class InitMapDefault <Key, Value> extends AbstractInitMap<Key,Value>{
   public void forKeys(ReceivesValue<String> receiver) {
      for (String key : map.keySet())
        receiver.set(key);
+  }
+
+  public int size() {
+    return map.size();
   }
 
   public Iterable<String> keys() {

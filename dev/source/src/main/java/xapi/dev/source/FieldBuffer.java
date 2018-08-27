@@ -5,8 +5,6 @@ import xapi.source.read.JavaLexer.TypeDef;
 import xapi.source.read.JavaVisitor.TypeData;
 import xapi.source.read.SourceUtil;
 
-import java.lang.reflect.Modifier;
-
 /**
  * A field buffer is used to add a field to a generated class.
  *
@@ -26,8 +24,7 @@ import java.lang.reflect.Modifier;
 public class FieldBuffer extends MemberBuffer<FieldBuffer> implements CanAddImports, VarBuffer<FieldBuffer> {
 
   private final ClassBuffer cls;
-  private final TypeData fieldType;// The type of the field itself
-  private final TypeDef methodType;// The type to expose on methods
+  private final TypeDef type;// The type of the field itself.
   private final String fieldName;
   private final String simpleType;// Shortest form possible for use in source
   private final String methodFragment;// Camel-case form of name, for getField, setField methods.
@@ -52,17 +49,19 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> implements CanAddImpo
     super(indent, enclosingClass);
     this.cls = enclosingClass;
     this.fieldName = name;
-    this.methodFragment = Character.toUpperCase(name.charAt(0))
-      + (name.length() == 0 ? "" : name.substring(1));
+    this.methodFragment = name.length() == 0 ? "" :
+        Character.toUpperCase(name.charAt(0)) + name.substring(1);
     this.indent = indent + INDENT;
-    // The type to expose on methods; usually == fieldType, unless exposing []
     this.simpleType = cls.addImport(type);
+    //noinspection StringEquality (we are testing whether addImport returned a different string instance)
     if (type == simpleType && !type.contains(".")) {
       final String simple = type.split("<")[0];
       cls.getImports().tryReserveSimpleName(simple, simple);
     }
-    this.methodType = JavaLexer.extractType(simpleType, 0);
-    this.fieldType = initGenerator(this.methodType);
+    this.type = JavaLexer.extractType(simpleType, 0);
+    if (this.type.generics.length() > 0) {
+//      addGenerics(this.type.generics);
+    }
   }
 
   public MethodBuffer addAdder() {
@@ -162,6 +161,16 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> implements CanAddImpo
     return simpleType;
   }
 
+  public String getRawType() {
+    return getSimpleType().split("<")[0];
+  }
+
+  public String getType() {
+    StringBuilder b = new StringBuilder(simpleType);
+    writeGenerics(b);
+    return b.toString();
+  }
+
   @Override
   public Iterable<String> getGenerics() {
     return generics;
@@ -211,7 +220,7 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> implements CanAddImpo
 
   @Override
   public String toSource() {
-    if (fieldType == TypeData.NONE) {
+    if (type == TypeData.NONE) {
       return super.toSource();
     }
     return toVarDefinition() + super.toSource();
@@ -227,7 +236,7 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> implements CanAddImpo
 
   protected String getterName() {
     return exact ? fieldName
-      : SourceUtil.toGetterName(fieldType.clsName, methodFragment);
+      : SourceUtil.toGetterName(type.clsName, methodFragment);
   }
 
   protected MethodBuffer initAdder() {
@@ -253,7 +262,7 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> implements CanAddImpo
   }
 
   protected MethodBuffer initGetter() {
-    return cls.createMethod("public " + methodType + " " + getterName() + "()")
+    return cls.createMethod("public " + type + " " + getterName() + "()")
       .returnValue(fieldName);
   }
 

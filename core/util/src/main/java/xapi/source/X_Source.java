@@ -8,16 +8,15 @@ import xapi.util.X_String;
 import xapi.util.api.Pair;
 import xapi.util.impl.PairBuilder;
 
-import static xapi.util.X_String.isEmpty;
-import static xapi.util.X_String.toTitleCase;
-
 import javax.inject.Provider;
 import javax.validation.constraints.NotNull;
-import java.awt.ActiveEvent;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Collections;
+
+import static xapi.util.X_String.isEmpty;
+import static xapi.util.X_String.toTitleCase;
 
 public class X_Source {
 

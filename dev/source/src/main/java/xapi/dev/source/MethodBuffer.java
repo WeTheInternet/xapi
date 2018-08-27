@@ -36,6 +36,7 @@
 package xapi.dev.source;
 
 import xapi.collect.impl.SimpleStack;
+import xapi.fu.Printable;
 import xapi.source.read.JavaLexer;
 import xapi.source.read.JavaModel.IsParameter;
 import xapi.source.read.JavaVisitor.AnnotationMemberVisitor;
@@ -49,6 +50,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map.Entry;
 
+import static xapi.fu.iterate.ArrayIterable.iterate;
 import static xapi.source.read.JavaVisitor.MODIFIER_DEFAULT;
 
 public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
@@ -102,14 +104,14 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
 
   @Override
   public String toSource() {
-    final StringBuilder b = new StringBuilder(Character.toString(NEW_LINE));
+    final StringBuilder b = new StringBuilder(Printable.NEW_LINE);
     if (javaDoc != null && javaDoc.isNotEmpty()) {
       b.append(javaDoc.toSource());
     }
     b.append(origIndent);
     if (annotations.size() > 0) {
       for (final String anno : annotations) {
-        b.append('@').append(anno).append(NEW_LINE).append(origIndent);
+        b.append('@').append(anno).append(Printable.NEW_LINE).append(origIndent);
       }
     }
     boolean isDefault = (modifier & MODIFIER_DEFAULT) == MODIFIER_DEFAULT;
@@ -166,14 +168,14 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
     } else if (Modifier.isNative(modifier)) {
       if (useJsni) {
         prefix = "/*-{\n";
-        suffix = (once ? NEW_LINE : "") + origIndent + "}-*/;\n";
+        suffix = (once ? Printable.NEW_LINE : "") + origIndent + "}-*/;\n";
       } else {
         prefix = ";\n";
         suffix = "";
       }
     } else {
       prefix = "{\n";
-      suffix = (once ? NEW_LINE : "") + origIndent + "}\n";
+      suffix = (once ? Printable.NEW_LINE : "") + origIndent + "}\n";
     }
     return b.toString() + prefix + super.toSource() + suffix;
   }
@@ -230,6 +232,18 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
 
   public MethodBuffer addParameter(final Class<?> type, final String name) {
     final String typeName = addImport(type);
+    final String toAdd = typeName + " " + name;
+    this.parameters.add(toAdd);
+    return this;
+  }
+
+  public MethodBuffer addParameter(final Class<?> type, final String name, String ... typeParams) {
+    String typeName = addImport(type);
+    if (typeParams.length > 0) {
+      typeName += iterate(typeParams)
+          .map(this::addImport)
+          .join("<", ", ", ">");
+    }
     final String toAdd = typeName + " " + name;
     this.parameters.add(toAdd);
     return this;
@@ -335,6 +349,10 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
     return this;
   }
 
+  public TypeData getReturnType() {
+    return returnType;
+  }
+
   public ClassBuffer createLocalClass(final String classDef) {
     final ClassBuffer cls = new ClassBuffer(context, this, indent);
     cls.setDefinition(classDef, classDef.trim().endsWith("{"));
@@ -407,6 +425,21 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
   public MethodBuffer returnValue(final String name) {
     return println((name.matches("\\s*(throw|return)\\s.*") ? "" : "return ")
       + name + (name.endsWith(";") ? "" : ";"));
+  }
+  public PrintBuffer stmtReturn() {
+    PrintBuffer ret = new PrintBuffer(getIndentCount()) {
+      @Override
+      public String toSource() {
+        String source = super.toSource();
+        source = source.endsWith(";") ? source.substring(0, source.length()-1) : source;
+        assert !source.trim().startsWith("return ") : "Do not add `return ` to the start of a stmtReturn";
+        return source;
+      }
+    };
+    print("return ");
+    addToEnd(ret);
+    println(";");
+    return ret;
   }
 
   @Override
@@ -654,5 +687,17 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
 
   public boolean hasVariable(String name) {
     return variables.containsKey(name);
+  }
+
+  public ClassBuffer getEnclosingClass() {
+    MemberBuffer<?> enclosed = super.getEnclosing();
+    while (enclosed != null) {
+      if (enclosed instanceof ClassBuffer) {
+        return (ClassBuffer) enclosed;
+      }
+      assert enclosed != enclosed.getEnclosing() : enclosed + " returns itself from getEnclosing()!";
+      enclosed = enclosed.getEnclosing();
+    }
+    return null;
   }
 }

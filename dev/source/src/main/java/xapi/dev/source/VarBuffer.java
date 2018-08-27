@@ -2,10 +2,12 @@ package xapi.dev.source;
 
 import xapi.fu.ReturnSelf;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.lang.reflect.Modifier;
 import java.util.Iterator;
 
-import static xapi.dev.source.PrintBuffer.NEW_LINE;
+import static xapi.dev.source.PatternPrinter.NEW_LINE;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 7/29/18.
@@ -41,22 +43,12 @@ public interface VarBuffer <Self extends CharBuffer & VarBuffer<Self>> extends R
         if (!mods.isEmpty()) {
             b.append(mods).append(" ");
         }
-        // generics
-        Iterable<String> generics = getGenerics();
-        final Iterator<String> itr = generics.iterator();
-        if (itr.hasNext()) {
-            b.append("<");
-            String prefix = "";
-            do {
-                String generic = itr.next();
-                b.append(prefix).append(generic);
-                prefix = ", ";
-            } while (itr.hasNext());
-            b.append("> ");
-        }
         // field type
         String simpleType = getSimpleType();
-        b.append(simpleType).append(" ");
+        b.append(simpleType);
+        // generics
+        writeGenerics(b);
+        b.append(" ");
         // field name
         String fieldName = getName();
         b.append(fieldName);
@@ -72,6 +64,33 @@ public interface VarBuffer <Self extends CharBuffer & VarBuffer<Self>> extends R
             b.append(";");
         }
         b.append("\n");
+        return b.toString();
+    }
+
+    default void writeGenerics(Appendable b) {
+        Iterable<String> generics = getGenerics();
+        final Iterator<String> itr = generics.iterator();
+        try {
+            if (itr.hasNext()) {
+                b.append("<");
+                String prefix = "";
+                do {
+                    String generic = itr.next();
+                    b.append(prefix).append(generic);
+                    prefix = ", ";
+                } while (itr.hasNext());
+                b.append("> ");
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    default String toParameter() {
+        StringBuilder b = new StringBuilder(getSimpleType());
+        writeGenerics(b);
+        b.append(' ');
+        b.append(getName());
         return b.toString();
     }
 
