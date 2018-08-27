@@ -140,7 +140,7 @@ public class X_Process {
     return service.get().isInProcess();
   }
 
-  public static void scheduleInterruption(long blocksFor, TimeUnit unit) {
-    service.get().scheduleInterruption(blocksFor, unit);
+  public static Do scheduleInterruption(long blocksFor, TimeUnit unit) {
+    return service.get().scheduleInterruption(blocksFor, unit);
   }
 }

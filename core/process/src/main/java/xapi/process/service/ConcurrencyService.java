@@ -208,6 +208,6 @@ public interface ConcurrencyService {
 
     void runInClassloader(ClassLoader loader, Do cmd);
 
-    void scheduleInterruption(long blocksFor, TimeUnit unit);
+    Do scheduleInterruption(long blocksFor, TimeUnit unit);
 
 }

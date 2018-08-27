@@ -1,6 +1,7 @@
 package xapi.process.impl;
 
 import xapi.collect.X_Collect;
+import xapi.collect.api.IntTo;
 import xapi.collect.api.ObjectTo;
 import xapi.collect.impl.AbstractMultiInitMap;
 import xapi.fu.Do;
@@ -25,6 +26,7 @@ import xapi.util.impl.AbstractPair;
 
 import java.lang.Thread.State;
 import java.lang.Thread.UncaughtExceptionHandler;
+import java.lang.ref.WeakReference;
 import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -35,8 +37,26 @@ import static xapi.util.X_Debug.debug;
 
 public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
 
+  public static class TimeoutEntry {
+    private final Do remove;
+    private final WeakReference<Thread> thread;
+
+    public TimeoutEntry(Do remove, Thread thread) {
+      this.remove = remove;
+      this.thread = new WeakReference<>(thread);
+    }
+
+    public Do getRemove() {
+      return remove;
+    }
+
+    public WeakReference<Thread> getThread() {
+      return thread;
+    }
+  }
+
   protected final EnviroMap environments = initMap();
-  protected final Lazy<In3Out1<Thread, Long, TimeUnit, Thread>> interrupter;
+  protected final Lazy<In3Out1<Thread, Long, TimeUnit, TimeoutEntry>> interrupter;
   protected volatile boolean shutdown;
 
   private AtomicInteger threadCount = new AtomicInteger();
@@ -49,9 +69,12 @@ public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
   public void shutdown() {
     shutdown = true;
     if (interrupter.isResolved()) {
-      interrupter.out1().io(null, null, null)
+      final Thread t = interrupter.out1().io(null, null, null)
           // interrupt our interrupter thread, so it knows to return.
-        .interrupt();
+          .getThread().get();
+      if (t != null) {
+        t.interrupt();
+      }
     }
   }
 
@@ -59,7 +82,7 @@ public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
   protected void finalize() throws Throwable {
   }
 
-  protected In3Out1<Thread, Long, TimeUnit, Thread> prepareInterrupter() {
+  protected In3Out1<Thread, Long, TimeUnit, TimeoutEntry> prepareInterrupter() {
     ObjectTo.Many<Moment, Do> tasks = X_Collect.newMultiMap(Moment.class, Do.class,
         X_Collect.MUTABLE_CONCURRENT_KEY_ORDERED);
     class ThreadedThrowable extends RuntimeException {
@@ -128,11 +151,19 @@ public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
     return In3Out1.unsafe((thread, time, unit) -> {
         double millisToWait = unit.toNanos(time) / 1_000_000.;
         Moment deadline = new ImmutableMoment(X_Time.nowPlus(millisToWait));
-        tasks.get(deadline).add(thread::interrupt);
+        final IntTo<Do> forMoment = tasks.get(deadline);
+        final Do task = thread::interrupt;
+        int index = forMoment.size();
+        forMoment.add(task);
         synchronized (tasks) {
           tasks.notifyAll();
         }
-        return interrupter; // we return the interrupter thread so the service's finalize() can kill us
+      final Do undo = forMoment.removeLater(
+          index,
+          task
+      );
+      final TimeoutEntry entry = new TimeoutEntry(undo, interrupter);
+      return entry;
     });
   }
 
@@ -156,7 +187,7 @@ public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
       if (key.isInterrupted()) {
         params.uncaughtException(key, new InterruptedException());
       }
-      X_Log.info(ConcurrencyServiceAbstract.class, "Initializing Concurrent Environment", key);
+      X_Log.trace(ConcurrencyServiceAbstract.class, "Initializing Concurrent Environment", key);
       final ConcurrentEnvironment inited = initializeEnvironment(key, params);
       inited.getThreads().forEach(t->
         environments.put(new AbstractPair<>(t, params), inited)
@@ -209,6 +240,7 @@ public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
 
   protected ConcurrentEnvironment currentEnvironment() {
     Thread running = Thread.currentThread();
+    // TODO: have a reaper to monitor the calling thread, and clean up it's enviro when it's done running...
     return environments.get(running, running.getUncaughtExceptionHandler());
   }
 
@@ -391,8 +423,8 @@ public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
   }
 
   @Override
-  public void scheduleInterruption(long blocksFor, TimeUnit unit) {
-    interrupter.out1().io(Thread.currentThread(), blocksFor, unit);
+  public Do scheduleInterruption(long blocksFor, TimeUnit unit) {
+    return interrupter.out1().io(Thread.currentThread(), blocksFor, unit).getRemove();
   }
 
   protected class WrappedRunnable implements Do {

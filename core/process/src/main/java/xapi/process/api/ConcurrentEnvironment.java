@@ -22,10 +22,13 @@ public abstract class ConcurrentEnvironment {
 
   private final Object synchro = new Object();
 
-  private static final double start = X_Process.now();
+  private final double start = X_Process.now();
+  private double touched = start;
   protected boolean stop;
+  // Enviros will stay alive when empty, by default, for 5s.
+  private double TTL = Double.parseDouble(System.getProperty("xapi.process.ttl", "5000"));
 
-  public void monitor(Priority priority, Provider<Boolean> gate, Runnable job) {
+    public void monitor(Priority priority, Provider<Boolean> gate, Runnable job) {
     pushDeferred(()->{
       if (Boolean.TRUE.equals(gate.get())) {
         job.run();
@@ -139,6 +142,27 @@ public abstract class ConcurrentEnvironment {
   }
 
   public boolean isStopped() {
-    return stop;
+    if (stop) {
+      return true;
+    }
+    for (Thread thread : getThreads()) {
+      if (thread == Thread.currentThread()) {
+        continue;
+      }
+      if (thread.isAlive()) {
+        touched = X_Process.now();
+        return false;
+      }
+    }
+    for (Do ignored : getDeferred()) {
+      touched = X_Process.now();
+      return false;
+    }
+    for (Do ignored : getFinally()) {
+      touched = X_Process.now();
+      return false;
+    }
+
+    return X_Process.now() - touched > TTL;
   }
 }
