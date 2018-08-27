@@ -1,7 +1,10 @@
 package xapi.dev.ui.tags.assembler;
 
+import com.github.javaparser.JavaParser;
+import com.github.javaparser.ParseException;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.type.Type;
+import com.github.javaparser.ast.visitor.ComposableXapiVisitor;
 import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.PrintBuffer;
@@ -163,27 +166,60 @@ public class DefaultTagAssembler implements TagAssembler {
         UiAssemblerResult res
     ) {
         if (n.getBody() != null) {
-            for (Expression child : n.getBody().getChildren()) {
-                if (child instanceof JsonContainerExpr) {
-                    final JsonContainerExpr json = (JsonContainerExpr) child;
+            ComposableXapiVisitor<Boolean> visitor = ComposableXapiVisitor.whenMissingFail(DefaultTagAssembler.class);
+            visitor
+                .withJsonContainerRecurse((json, first)->{
                     assert json.isArray() : "Object type bodies not supported!";
-                    json.getValues().forAll(expr -> {
-                        if (!(expr instanceof UiContainerExpr)) {
-                            throw new IllegalArgumentException("Cannot handle " + assembly.getTools().debugNode(child));
+                    // TODO: some extra wiring to handle multiple children?
+                })
+                .withMethodReferenceTerminal((mthd, first)->{
+                    final PrintBuffer init = e.getInitBuffer();
+                    if (first) {
+                        init.println(AssembledElement.BUILDER_VAR+".append(").indent();
+                    }
+                    final Expression resolved = e.resolveRef(e, mthd, false);
+                    // TODO: smart argument binding...
+                    init.printlns(resolved.toSource());
+                    if (first) {
+                        init.outdent().println(");");
+                    }
+
+                })
+                .withTemplateLiteralTerminal((template, first)->{
+                    String lit = template.getValueWithoutTicks();
+                    final PrintBuffer init = e.getInitBuffer();
+                    if (first) {
+                        init.println(AssembledElement.BUILDER_VAR+".append(").indent();
+                    }
+                    // If this literal is a method reference or method call, then we should
+                    // treat it as a supplier of an appendable value...
+                    if (lit.contains("::") || (lit.contains(".") && lit.contains("("))) {
+                        try {
+                            final Expression parsed = JavaParser.parseExpression(lit);
+                            // yay, we were parsed as some valid expression... visit it...
+                            parsed.accept(visitor, false);
+                            if (first) {
+                                init.outdent().println(");");
+                            }
+                            return;
+                        } catch (ParseException invalid) {
+                            // ignored... we will just serialize it into the body
                         }
-                        final UiAssemblerResult result = assembler.addChild(assembly, e, (UiContainerExpr) expr);
-                        res.adopt(result);
-                    });
-                } else if (child instanceof TemplateLiteralExpr) {
-                    String lit = ((TemplateLiteralExpr)child).getValueWithoutTicks();
-                    e.getInitBuffer()
-                        .printlns(AssembledElement.BUILDER_VAR+".append(" + X_Source.javaQuote(lit) + ");");
-                } else if (child instanceof UiContainerExpr) {
-                    final UiAssemblerResult result = assembler.addChild(assembly, e, (UiContainerExpr) child);
-                    res.adopt(result);
-                } else {
-                    throw new IllegalArgumentException("Cannot handle " + assembly.getTools().debugNode(child));
-                }
+                    }
+                    init.printlns(X_Source.javaQuote(lit));
+                    if (first) {
+                        init.outdent().println(");");
+                    }
+                })
+            .withUiContainerTerminal((ui, first) -> {
+                // when we aren't first, we'll need to do some fancy footwork to generate correct code
+                // (most likely, removing the lazy chaining and actually assign local variables for everything)
+                final UiAssemblerResult result = assembler.addChild(assembly, e, ui);
+                res.adopt(result);
+            })
+            ;
+            for (Expression child : n.getBody().getChildren()) {
+                child.accept(visitor, true);
             }
 
         }

@@ -1,11 +1,9 @@
 package xapi.dev.ui.tags;
 
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
-import com.github.javaparser.ast.expr.DynamicDeclarationExpr;
-import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.JsonContainerExpr;
-import com.github.javaparser.ast.expr.UiAttrExpr;
+import com.github.javaparser.ast.expr.*;
 import xapi.dev.api.ApiGeneratorContext;
+import xapi.dev.source.SourceBuilder;
 import xapi.dev.ui.api.*;
 import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.fu.Maybe;
@@ -34,6 +32,7 @@ public class UiTagApiGenerator extends UiFeatureGenerator {
         ContainerMetadata me,
         UiAttrExpr attr
     ) {
+
         final GeneratedUiComponent component = me.getGeneratedComponent();
         GeneratedUiLayer layer;
         final Maybe<String> maybeAttr = isPlatformDisabled(attr.getNameString());
@@ -61,7 +60,7 @@ public class UiTagApiGenerator extends UiFeatureGenerator {
             throw new UnsupportedOperationException("Unknown attribute name " + attrName
             +"\nin " + tools.debugNode(attr) + "\nof " + tools.debugNode(me.getUi()));
         }
-        final ApiGeneratorContext ctx = me.getContext();
+        final ApiGeneratorContext<?> ctx = me.getContext();
         owner.maybeAddImports(tools, ctx, layer, attr);
         final Expression resolved = tools.resolveVar(ctx, attr.getExpression());
         if (resolved instanceof JsonContainerExpr) {
@@ -94,6 +93,27 @@ public class UiTagApiGenerator extends UiFeatureGenerator {
             owner.printMember(tools, layer, me, member);
         } else {
             throw new IllegalArgumentException("Unhandled api= feature value " + tools.debugNode(resolved) + " from " + tools.debugNode(attr));
+        }
+        final SourceBuilder<GeneratedJavaFile> src = layer.getSource();
+        for (AnnotationExpr expr : attr.findAnnotations("extend", "extends")) {
+            for (String member : tools.getStringMembers(ctx, expr)) {
+                if (layer.isInterface()) {
+                    src.addInterfaces(member);
+                } else {
+                    // layer is a class...  we can only extend once...
+                    final String was = src.getSuperClass();
+                    src.setSuperClass(member);
+                    if (was != null && !was.equalsIgnoreCase(member)) {
+                        throw new IllegalStateException("Cannot change " + was + " to " + member +" (for " + src.getQualifiedName() + ")");
+                    }
+                }
+            }
+
+        }
+        for (AnnotationExpr expr : attr.findAnnotations("implement", "implements")) {
+            for (String member : tools.getStringMembers(ctx, expr)) {
+                src.addInterfaces(member);
+            }
         }
 
         return UiVisitScope.FEATURE_NO_CHILDREN;

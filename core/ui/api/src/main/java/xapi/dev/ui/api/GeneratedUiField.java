@@ -1,7 +1,5 @@
 package xapi.dev.ui.api;
 
-import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.TypeExpr;
 import com.github.javaparser.ast.type.Type;
 
 /**

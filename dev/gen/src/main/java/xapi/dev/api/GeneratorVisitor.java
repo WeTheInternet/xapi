@@ -317,9 +317,11 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
                         name = n.getValueExpr();
                         break;
                     case "extend":
+                    case "extends":
                         extend = n.getValueExpr();
                         break;
                     case "implement":
+                    case "implements":
                         implement = n.getValueExpr();
                         break;
                     case "methods":

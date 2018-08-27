@@ -15,7 +15,6 @@ import xapi.fu.In1Out1;
 import xapi.fu.Out1;
 import xapi.model.X_Model;
 import xapi.model.api.KeyBuilder;
-import xapi.model.api.Model;
 import xapi.model.api.ModelBuilder;
 import xapi.model.api.ModelKey;
 
@@ -54,7 +53,7 @@ public class UiTagModelGenerator extends UiFeatureGenerator {
         final String modelName = api.getModelName();
         final In1Out1<Type, String> apiFactory = Type::toSource;
         final In1Out1<Type, String> baseFactory = Type::toSource;
-        api.addExtension("pkgName", api.getModelName(),
+        api.addExtension(api.getPackageName(), api.getModelName(),
             component.getBase().getModelName(), apiFactory, baseFactory);
         final ClassBuffer out = api.getSource().getClassBuffer();
         // TODO: check for custom type hierarchy, and see if somebody defines getModel().
@@ -69,7 +68,9 @@ public class UiTagModelGenerator extends UiFeatureGenerator {
 
         base.ensureFieldDefined(model.getWrappedName(), "model", false);
 
-        boolean immutable = attr.getAnnotation(anno->anno.getNameString().equalsIgnoreCase("immutable")).isPresent();
+        boolean immutable = attr.hasAnnotationBool(true, "immutable");
+        boolean isPublic = attr.hasAnnotationBool(true, "public");
+
         final Expression expr = attr.getExpression();
         if (expr instanceof JsonContainerExpr) {
             JsonContainerExpr json = (JsonContainerExpr) expr;
@@ -92,10 +93,17 @@ public class UiTagModelGenerator extends UiFeatureGenerator {
                     Type type = tools.methods().$type(tools, ctx, typeExpr).getType();
                     // TODO smart import lookups...
                     boolean isImmutable = immutable;
+                    boolean isExposed = isPublic;
                     if (!isImmutable) {
-                        isImmutable = pair.getAnnotation(anno -> anno.getNameString().equalsIgnoreCase(
-                            "immutable")).isPresent();
+                        isImmutable = pair.hasAnnotationBool(true, "immutable");
                     }
+                    if (pair.hasAnnotationBool(true, "public")) {
+                        isExposed = true;
+                    }
+                    if (pair.hasAnnotationBool(true, "private")) {
+                        isExposed = false;
+                    }
+
                     switch (type.toSource()) {
                         case "IntTo":
                             type = new ClassOrInterfaceType(IntTo.class.getName());
@@ -114,7 +122,17 @@ public class UiTagModelGenerator extends UiFeatureGenerator {
                                     break;
                             }
                     }
-                    apiModel.addField(tools, type, rawFieldName, isImmutable);
+                    final GeneratedUiField field = apiModel.addField(tools, type, rawFieldName, isImmutable);
+                    // check if we should make this field public or not...
+                    if (isExposed) {
+                        String t = field.importType(api.getSource());
+                        // try to re-qualify the type t...
+                        t = modOut.getImports().qualify(t);
+                        t = api.getSource().addImport(t);
+                        api.getSource().getClassBuffer()
+                            .createMethod("default " + t + " " + field.getterName() + "()")
+                            .returnValue("getModel()." + field.getterName() + "()");
+                    }
                     modOut.getImports().reserveSimpleName(rawFieldName);
                 }
             });

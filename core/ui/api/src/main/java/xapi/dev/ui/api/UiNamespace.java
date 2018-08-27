@@ -25,6 +25,17 @@ public interface UiNamespace {
             TYPE_ELEMENT_BUILDER = "ElBuilder"
     ;
 
+    String  ATTR_ID = "id",
+            ATTR_REF = "ref",
+            ATTR_MODEL = "model",
+            ATTR_DATA = "data",
+            ATTR_STYLE = "style",
+            ATTR_HREF = "href"
+    ;
+
+    String  METHOD_BUILDER = "builder"
+    ;
+
     default Maybe<String> loadFromNamespace(String name, CanAddImports imports) {
         switch (name) {
             case TYPE_SELF:
@@ -47,13 +58,6 @@ public interface UiNamespace {
         }
         return Maybe.not();
     }
-
-    String  ATTR_ID = "id",
-            ATTR_REF = "ref",
-            ATTR_MODEL = "model",
-            ATTR_DATA = "data",
-            ATTR_STYLE = "style",
-            ATTR_HREF = "href";
 
     class DefaultUiNamespace implements UiNamespace {
         public static final DefaultUiNamespace DEFAULT = new DefaultUiNamespace();

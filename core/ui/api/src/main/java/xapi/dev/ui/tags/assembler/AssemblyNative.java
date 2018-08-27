@@ -1,13 +1,7 @@
 package xapi.dev.ui.tags.assembler;
 
 import com.github.javaparser.ast.expr.UiContainerExpr;
-import xapi.dev.api.ApiGeneratorContext;
-import xapi.dev.source.MethodBuffer;
-import xapi.dev.ui.api.GeneratedUiBase;
 import xapi.dev.ui.api.GeneratedUiComponent;
-import xapi.dev.ui.api.UiNamespace;
-import xapi.dev.ui.impl.UiGeneratorTools;
-import xapi.dev.ui.tags.UiTagGenerator;
 import xapi.dev.ui.tags.factories.GeneratedFactory;
 
 /**
@@ -33,25 +27,10 @@ public class AssemblyNative extends AssembledElement {
         AssembledElement parent,
         UiContainerExpr el
     ) {
-        final UiTagGenerator generator = ui.getGenerator();
-        final UiNamespace namespace = ui.getNamespace();
-        final MethodBuffer toDom = generator.toDomMethod(namespace, ui.getUi().getBase());
-        final UiGeneratorTools tools = ui.getTools();
         final GeneratedUiComponent component = ui.getUi();
-        final ApiGeneratorContext ctx = ui.getContext();
-        final GeneratedUiBase baseClass = component.getBase();
+        final GeneratedFactory factory = component.createNativeFactory(ui, this, el, ui.getNamespace(), requireRef());
 
-//        final Do undo = registerNode(n, refNode, isRoot);
-//        try {
-//            component.createNativeFactory(tools, ctx, n, toDom, ui.getNamespace(), refFieldName);
-//        } finally {
-//            if (parentRef != null) {
-//                toDom.println(parentRef + ".addChild(" + refFieldName + ");");
-//            }
-//            undo.done();
-//            refFieldName = parentRef;
-//        }
 
-        return null;
+        return factory;
     }
 }

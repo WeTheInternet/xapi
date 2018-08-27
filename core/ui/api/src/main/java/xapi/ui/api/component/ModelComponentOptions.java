@@ -1,5 +1,6 @@
 package xapi.ui.api.component;
 
+import xapi.fu.In1;
 import xapi.fu.In1Out1;
 import xapi.model.api.Model;
 
@@ -15,6 +16,7 @@ public class ModelComponentOptions
    extends ComponentOptions<E, C> {
 
     protected M model;
+    protected In1<M> modelListener;
 
     public ModelComponentOptions<E, M, C> withComponent(C component) {
         super.withComponent(component);
@@ -39,5 +41,21 @@ public class ModelComponentOptions
 
     public void setModel(M model) {
         this.model = model;
+    }
+
+    public In1<M> getModelListener() {
+        return modelListener;
+    }
+
+    public void setModelListener(In1<M> modelListener) {
+        this.modelListener = modelListener;
+    }
+
+    public void addModelListener(In1<M> callback) {
+        if (modelListener == null) {
+            modelListener = callback;
+        } else {
+            modelListener = modelListener.useAfterMe(callback);
+        }
     }
 }

@@ -70,6 +70,10 @@ public class ModelServiceGwt extends AbstractModelService
     if (provider == null) {
       throw new NotConfiguredCorrectly("Could not find provider for "+key+"; did you forget to call X_Model.register()?");
     }
+    return resolveProvider(key, provider);
+  }
+
+  protected <T extends Model> T resolveProvider(Class<T> key, ProvidesValue<? extends Model> provider) {
     if (!classToTypeName.containsKey(key)) {
       final T model = (T) provider.get();
       classToTypeName.put(key, model.getType());

@@ -1,6 +1,5 @@
 package xapi.dev.ui.tags;
 
-import com.github.javaparser.ASTHelper;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseException;
 import com.github.javaparser.ast.expr.*;
@@ -12,11 +11,15 @@ import xapi.dev.source.FieldBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.ui.api.*;
 import xapi.dev.ui.impl.UiGeneratorTools;
-import xapi.dev.ui.tags.assembler.*;
+import xapi.dev.ui.tags.assembler.AssembledElement;
+import xapi.dev.ui.tags.assembler.AssembledUi;
+import xapi.dev.ui.tags.assembler.AssemblyRoot;
+import xapi.dev.ui.tags.assembler.UiAssembler;
 import xapi.except.NotConfiguredCorrectly;
-import xapi.except.NotYetImplemented;
-import xapi.fu.*;
-import xapi.fu.iterate.Chain;
+import xapi.fu.Do;
+import xapi.fu.In1;
+import xapi.fu.Lazy;
+import xapi.fu.Maybe;
 import xapi.fu.iterate.ChainBuilder;
 import xapi.log.X_Log;
 import xapi.util.X_String;
@@ -500,8 +503,10 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
 
         boolean shadowUi = "shadow".equalsIgnoreCase(ui.getNameString()) ||
             ui.getAnnotation(a->a.getNameString().startsWith("shadow")).isPresent();
+        boolean hidden = "hidden".equalsIgnoreCase(ui.getNameString()) ||
+            ui.getAnnotation(a->a.getNameString().startsWith("hidden")).isPresent();
 
-        assembled.addAssembly(ui.getExpression(), shadowUi);
+        assembled.addAssembly(ui.getExpression(), shadowUi, hidden);
 
         return UiVisitScope.FEATURE_NO_CHILDREN;
     }

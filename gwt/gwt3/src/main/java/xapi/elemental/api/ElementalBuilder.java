@@ -1,15 +1,11 @@
 package xapi.elemental.api;
 
-import elemental2.dom.DocumentFragment;
-import elemental2.dom.DomGlobal;
-import elemental2.dom.Element;
-import elemental2.dom.HTMLElement;
-import elemental2.dom.Node;
+import elemental2.dom.*;
 import jsinterop.base.Js;
 import xapi.elemental.X_Gwt3;
 import xapi.ui.api.*;
 import xapi.util.X_Debug;
-import xapi.util.X_String;
+import xapi.util.api.ReceivesValue;
 import xapi.util.impl.ImmutableProvider;
 
 import java.util.function.BiFunction;
@@ -232,4 +228,16 @@ public class ElementalBuilder<E extends Node> extends ElementBuilder<E> implemen
     protected void clearChildren(E element) {
         element.textContent = "";
     }
+
+  @Override
+  public ElementalBuilder<E> onCreated(ReceivesValue<E> callback) {
+    super.onCreated(callback);
+    return this;
+  }
+
+  @Override
+  public ElementalBuilder<E> append(CharSequence chars) {
+    super.append(chars);
+    return this;
+  }
 }

@@ -5,14 +5,13 @@ import elemental2.dom.HTMLCollection;
 import elemental2.dom.Node;
 import elemental2.dom.NodeList;
 import jsinterop.base.JsArrayLike;
-import xapi.fu.MappedIterable;
+import xapi.fu.iterate.SizedIterable;
+import xapi.fu.iterate.SizedIterator;
 
-import java.util.Iterator;
-
-public class ElementalIterable implements MappedIterable<Element> {
+public class ElementalIterable implements SizedIterable<Element> {
 
   private final JsArrayLike<Element> nodes;
-  private final class Itr implements Iterator<Element> {
+  private final class Itr implements SizedIterator<Element> {
 
     int pos = 0;
     private Element was;
@@ -44,6 +43,10 @@ public class ElementalIterable implements MappedIterable<Element> {
       throw new UnsupportedOperationException();
     }
 
+    @Override
+    public int size() {
+      return nodes.getLength() - pos;
+    }
   }
 
   private ElementalIterable(HTMLCollection nodes) {
@@ -55,20 +58,24 @@ public class ElementalIterable implements MappedIterable<Element> {
   }
 
   @Override
-  public Iterator<Element> iterator() {
+  public SizedIterator<Element> iterator() {
     return new Itr();
   }
 
-  public static MappedIterable<Element> forEach(HTMLCollection<Element> children) {
+  public static SizedIterable<Element> forEach(HTMLCollection<Element> children) {
     return new ElementalIterable(children);
   }
 
-  public static MappedIterable<Element> forEach(Node node) {
+  public static SizedIterable<Element> forEach(Node node) {
     return new ElementalIterable(node.childNodes);
   }
 
-  public static MappedIterable<Element> forEach(NodeList children) {
+  public static SizedIterable<Element> forEach(NodeList children) {
     return new ElementalIterable(children);
   }
 
+  @Override
+  public int size() {
+    return nodes.getLength();
+  }
 }

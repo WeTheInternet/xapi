@@ -6,6 +6,7 @@ import xapi.collect.api.StringTo;
 import xapi.dev.ui.api.GeneratedUiLayer.ImplLayer;
 import xapi.fu.MappedIterable;
 import xapi.fu.Maybe;
+import xapi.fu.iterate.ArrayIterable;
 
 import java.util.EnumMap;
 
@@ -111,5 +112,23 @@ public class GeneratedUiGenericInfo {
                          .mapNullSafe(GeneratedTypeParameter::getImplNames)
                          .mapNullSafe(EnumMap::get, base)
                          .ifAbsentReturn(null);
+    }
+
+    public String findUnused(ImplLayer layer, boolean exposed, String ... opts) {
+        nextOp:
+        for (String opt : opts) {
+            for (GeneratedTypeParameter param : getTypeParameters(layer)) {
+                if (!exposed && !param.isExposed()) {
+                    continue;
+                }
+                if (opt.equals(param.getTypeName())) {
+                    continue nextOp;
+                }
+            }
+            // We won!  TODO: consider reserving this name somehow that is not generated?
+            return opt;
+        }
+        throw new IllegalArgumentException("All options taken " + ArrayIterable.iterate(opts) +
+            " in " + getTypeParameters(layer).join(", "));
     }
 }

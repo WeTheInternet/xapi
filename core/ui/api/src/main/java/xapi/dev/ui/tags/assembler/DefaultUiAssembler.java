@@ -35,14 +35,17 @@ public class DefaultUiAssembler implements UiAssembler {
     private final AssemblyRoot root;
     private final Lazy<MethodElementResolved> elementResolved;
     private final StringTo<In2Out1<AssembledUi, AssembledElement, TagAssembler>> tagFactories;
+    private final boolean hidden;
 
     public DefaultUiAssembler(
         AssembledUi assembly,
-        AssemblyRoot root
+        AssemblyRoot root,
+        boolean hidden
     ) {
         this.assembly = assembly;
         this.component = assembly.getUi();
         this.root = root;
+        this.hidden = hidden;
         baseClass = component.getBase();
         out = baseClass.getSource().getClassBuffer();
         elementResolved = Lazy.deferred1(()->assembly.getUi().getMethods().elementResolved(assembly.getNamespace()));
@@ -54,7 +57,7 @@ public class DefaultUiAssembler implements UiAssembler {
 
         UiAssemblerResult result = addChild(assembly, root, el);
 
-        if (result.isAttachToRoot()) {
+        if (!hidden && result.isAttachToRoot()) {
             // require / append to the elementResolved method.
             elementResolved.out1().append(result.getElement());
         }
@@ -68,6 +71,7 @@ public class DefaultUiAssembler implements UiAssembler {
         final GeneratedFactory factory = e.startElement(assembly, this, parent, el);
 
         final UiAssemblerResult result = assembleContents(assembly, factory, e);
+        result.setHidden(hidden);
 
         e.finishElement(assembly, this, factory, result, el);
 

@@ -2,6 +2,7 @@ package xapi.dev.ui.tags.factories;
 
 import xapi.dev.source.LocalVariable;
 import xapi.dev.source.PrintBuffer;
+import xapi.fu.api.DoNotOverride;
 
 /**
  * This is the interface exposed by {@link LazyInitFactory},
@@ -12,6 +13,12 @@ import xapi.dev.source.PrintBuffer;
  */
 public interface GeneratedFactory {
 
+    /**
+     * Adds a return statement to our target's init method (useful for conditionals;
+     * when you only have one return statement, instead use {@link #setReturn(String, boolean)}.
+     */
+    PrintBuffer addReturn();
+
     PrintBuffer getInitBuffer();
 
     PrintBuffer getInitializer();
@@ -19,6 +26,13 @@ public interface GeneratedFactory {
     LocalVariable getVar();
 
     LocalVariable setVar(String type, String name, boolean reuseExisting);
+
+    @DoNotOverride
+    default void setReturn(String value) {
+        setReturn(value, false);
+    }
+
+    void setReturn(String value, boolean addQuotes);
 
     String getGetter();
 

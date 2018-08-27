@@ -95,6 +95,7 @@ public class UiAssemblerResult {
     private boolean attachToRoot = true;
     private AssembledElement element;
     private GeneratedFactory factory;
+    private boolean hidden;
 
     public boolean hasChildLayout() {
         return childLayout;
@@ -289,5 +290,13 @@ public class UiAssemblerResult {
 
     public GeneratedFactory getFactory() {
         return factory;
+    }
+
+    public void setHidden(boolean hidden) {
+        this.hidden = hidden;
+    }
+
+    public boolean isHidden() {
+        return hidden;
     }
 }

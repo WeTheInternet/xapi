@@ -18,7 +18,7 @@ public interface JsObject {
     @JsOverlay
     default Object getProperty(Object name) {
         if (Symbol.isSymbol(name)) {
-            return JsSupport.getObject(this, (Symbol) name);
+            return JsSupport.getObject(this, Js.<Symbol>uncheckedCast(name));
         }
         return JsSupport.getObject(this, String.valueOf(name));
     }

@@ -176,8 +176,12 @@ public class UiTagGenerator extends UiComponentGenerator {
                                  cssGen = new UiTagCssGenerator(pkg, name, this),
                                  callbackGen = new UiTagCallbackGenerator(pkg, name, this)
                                  ;
+        // lightdom
         features.put("ui", uiGen);
+        // shadowdom
         features.put("shadow", uiGen);
+        // offscreen (things you want to plop in when actions happen)
+        features.put("hidden", uiGen);
 
         // We already extract these manually
         features.put("name", UiFeatureGenerator.DO_NOTHING);
@@ -282,7 +286,11 @@ public class UiTagGenerator extends UiComponentGenerator {
                             if (field == null) {
                                 throw new IllegalArgumentException("No model field of name " + n.getField() + " declared");
                             }
-                            MethodCallExpr replaceWith = new MethodCallExpr(n.getScope(), field.getterName());
+                            Expression newScope = tools.resolveVar(ctx, n.getScope());
+                            if (newScope == n.getScope()) {
+                                newScope = new MethodCallExpr(null, "getModel");
+                            }
+                            MethodCallExpr replaceWith = new MethodCallExpr(newScope, field.getterName());
                             replaceWith.addExtra(EXTRA_MODEL_INFO, field);
                             return replaceWith;
                         }
@@ -313,7 +321,10 @@ public class UiTagGenerator extends UiComponentGenerator {
                                 // For now, model references in ui always assumed to be a read operation.
                                 // TODO: put in scope barriers so we only make this assumption in ui tags, but not in
                                 // structures which will have other interpretations.
-                                final Expression newScope = tools.resolveVar(ctx, n.getScope());
+                                Expression newScope = tools.resolveVar(ctx, n.getScope());
+                                if (newScope == n.getScope()) {
+                                    newScope = new MethodCallExpr(null, "getModel");
+                                }
                                 MethodCallExpr replaceWith = new MethodCallExpr(newScope, field.getterName());
                                 replaceWith.addExtra(EXTRA_MODEL_INFO, field);
                                 return replaceWith;
@@ -399,6 +410,9 @@ public class UiTagGenerator extends UiComponentGenerator {
         if (scope instanceof NameExpr) {
             return ((NameExpr) scope).getName();
         }
+        if (scope instanceof TemplateLiteralExpr) {
+            return ((TemplateLiteralExpr) scope).getValueWithoutTicks();
+        }
         if (scope instanceof MethodCallExpr) {
             return getScopeType(tools, ((MethodCallExpr)scope).getScope());
         }
@@ -409,13 +423,14 @@ public class UiTagGenerator extends UiComponentGenerator {
         return null;
     }
 
-    protected Do resolveSpecialNames(
+    public Do resolveSpecialNames(
         ApiGeneratorContext ctx,
         GeneratedUiComponent component,
         GeneratedJavaFile cls,
         Out1<String> rootRefField,
         Out1<String> parentField
     ) {
+        // TODO: create and use a LiteralCache so equivalent templates pass object identity semantics
         Do start = ctx.addToContext("$Self", templateLiteral(cls.getWrappedName()));
         start = start.doAfter(ctx.addToContext("$this", templateLiteral(cls.getWrappedName() + ".this")));
         start = start.doAfter(ctx.addToContext("$Api", templateLiteral(
@@ -463,21 +478,25 @@ public class UiTagGenerator extends UiComponentGenerator {
         GeneratedJavaFile api,
         UiAttrExpr attr
     ) {
-        attr.getAnnotation(anno->anno.getNameString().toLowerCase().equals("import"))
-            .readIfPresent(anno->anno.getMembers().forEach(pair->{
+        // This is a really handy method... we should move it somewhere upstream for others to enjoy.
+        // like putting it in GeneratedJavaFile, or UiComponentGenerator (or both)
+        attr.getAnnotationsMatching(anno->X_String.containsAny(anno.getNameString().toLowerCase(), "import", "importstatic", "staticimport"))
+            .forAll(anno->anno.getMembers().forEach(pair->{
+                boolean isStatic = anno.getNameString().toLowerCase().contains("static");
+                In1<String> addImport = isStatic ? api.getSource()::addImportStatic : api.getSource()::addImport;
                 final Expression resolvedImport = tools.resolveVar(ctx, pair.getValue());
                 String toImport;
                 if (resolvedImport instanceof StringLiteralExpr) {
                     toImport = ((StringLiteralExpr)resolvedImport).getValue();
-                    api.getSource().addImport(toImport);
+                    addImport.in(toImport);
                 } else if (resolvedImport instanceof TemplateLiteralExpr) {
                     toImport = tools.resolveTemplate(ctx, (TemplateLiteralExpr) resolvedImport);
-                    api.getSource().addImport(toImport);
+                    addImport.in(toImport);
                 } else if (resolvedImport instanceof ArrayInitializerExpr) {
                     ArrayInitializerExpr many = (ArrayInitializerExpr) resolvedImport;
                     for (Expression expr : many.getValues()) {
                         toImport = tools.resolveString(ctx, expr);
-                        api.getSource().addImport(toImport);
+                        addImport.in(toImport);
                     }
                 } else {
                     throw new IllegalArgumentException("Unhandled @Import value " + tools.debugNode(resolvedImport));
@@ -630,10 +649,11 @@ public class UiTagGenerator extends UiComponentGenerator {
     public UiAssembler startAssembly(
         AssembledUi assembled,
         Expression uiExpr,
-        boolean shadowUi
+        boolean shadowUi,
+        boolean hidden
     ) {
         final AssemblyRoot root = shadowUi ? assembled.requireLayoutRoot() : assembled.requireLogicalRoot();
-        return new DefaultUiAssembler(assembled, root);
+        return new DefaultUiAssembler(assembled, root, hidden);
     }
 
     public TagAssembler getDefaultAssembler(

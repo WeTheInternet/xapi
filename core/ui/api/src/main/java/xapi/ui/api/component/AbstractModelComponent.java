@@ -5,6 +5,7 @@ import xapi.fu.Lazy;
 import xapi.fu.Out1;
 import xapi.model.X_Model;
 import xapi.model.api.Model;
+import xapi.model.api.ModelKey;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 1/16/17.
@@ -32,7 +33,19 @@ implements IsModelComponent<El, Mod> {
     @SuppressWarnings("unchecked") //
     public AbstractModelComponent(ModelComponentOptions<El, Mod, Api> opts, ComponentConstructor<El, Api> constructor) {
         super(opts, constructor);
-        model = Lazy.deferred1(this::initModel);
+        model = Lazy.deferred1(()->{
+            Mod mod = opts.getModel();
+            if (mod == null) {
+                mod = initModel();
+            } else if (modelId != null){
+                X_Model.cache().ensureKey(mod.getType(), mod);
+                mod.getKey().setId(modelId);
+            }
+            if (opts.getModelListener() != null) {
+                opts.getModelListener().in(mod);
+            }
+            return mod;
+        });
     }
 
     public AbstractModelComponent(Out1<El> element) {
@@ -56,7 +69,11 @@ implements IsModelComponent<El, Mod> {
         final Mod mod = createModel();
 
         // initialize to a blank, typed key
-        mod.setKey(X_Model.newKey(getModelType()));
+        final ModelKey key = X_Model.newKey(getModelType());
+        if (modelId != null) {
+            key.setId(modelId);
+        }
+        mod.setKey(key);
         return mod;
     }
 

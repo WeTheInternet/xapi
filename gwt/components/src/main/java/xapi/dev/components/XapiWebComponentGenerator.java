@@ -19,6 +19,7 @@ import xapi.components.impl.WebComponentVersion;
 import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.source.CanAddImports;
 import xapi.dev.source.ClassBuffer;
+import xapi.dev.source.FieldBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.ui.api.*;
 import xapi.dev.ui.api.UiComponentGenerator.UiGenerateMode;
@@ -33,13 +34,7 @@ import xapi.model.X_Model;
 import xapi.model.api.ModelKey;
 import xapi.model.service.ModelCache;
 import xapi.platform.GwtPlatform;
-import xapi.ui.api.component.AbstractComponent;
-import xapi.ui.api.component.AbstractModelComponent;
-import xapi.ui.api.component.ComponentConstructor;
-import xapi.ui.api.component.ComponentOptions;
-import xapi.ui.api.component.IsComponent;
-import xapi.ui.api.component.IsModelComponent;
-import xapi.ui.api.component.ModelComponentOptions;
+import xapi.ui.api.component.*;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -265,9 +260,9 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
         final String apiGenerics = "<" + element + ", " + genericName +">";
 
         String ctorName = "NEW_" + generated.getTagName().toUpperCase().replace('-', '_');
-        out.createField(ctor + apiGenerics, ctorName)
+        final FieldBuffer ctorField = out.createField(ctor + apiGenerics, ctorName)
             .makeStatic().makePrivate();
-        out.createField(i1o1+apiGenerics, "getUi").makeStatic().makePrivate();
+        final FieldBuffer getUi = out.createField(i1o1 + apiGenerics, "getUi").makeStatic().makePrivate();
 
         out.createConstructor(Modifier.PUBLIC, element+" el")
             .println("super(el);");
@@ -275,6 +270,10 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
         final MethodBuffer mthd = out
             .createMethod("public static void assemble()")
             .addParameter(configType(ns, out), "assembler");
+
+        component.setMetadata(mthd, ctorField, getUi);
+
+        mthd.patternln("if ($1 != null) { return; }", ctorName);
 
         mthd.println(builder + " component = new " + builder + "(" + clazz+"(), " + version + ".V1);");
         mthd.println();
@@ -405,7 +404,7 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
             if (keyName != null) {
                 createChild
                     .println("if (" + keyName + " != null) {")
-                    .indentln("builder.setAttribute(\"data-model-id\", " + keyName + ".toString());")
+                    .indentln("builder.setAttribute(\""+ ModelComponentMixin.MODEL_ATTR_NAME + "\", " + keyName + ".toString());")
                     .println("}");
             }
             if (printClosingBrace) {
@@ -457,8 +456,4 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
         this.configType = configType;
     }
 
-    @Override
-    public UiComponentGenerator createTagGenerator() {
-        return super.createTagGenerator();
-    }
 }

@@ -216,7 +216,8 @@ public class AssembledElement implements HasParent<AssembledElement> {
     }
 
     public Expression resolveRef(AssembledElement parent, UiAttrExpr attr) {
-        return resolveRef(parent, attr.getExpression(), true);
+        resolveRef(parent, attr.getExpression(), true);
+        return attr.getExpression();
     }
     public Expression resolveRef(AssembledElement parent, Expression expr, boolean rewriteParent) {
         if (parent == null) {

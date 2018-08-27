@@ -9,6 +9,7 @@ import xapi.dev.ui.api.*;
 import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.dev.ui.tags.UiTagGenerator;
 import xapi.source.X_Source;
+import xapi.util.X_String;
 
 /**
  * A container for information about a ui that is being assembled by a given component.
@@ -85,11 +86,11 @@ public class AssembledUi {
         return namespace;
     }
 
-    public UiAssemblerResult addAssembly(Expression uiExpr, boolean shadowUi) {
+    public UiAssemblerResult addAssembly(Expression uiExpr, boolean shadowUi, boolean hidden) {
 
         // TODO Look for template bindings, to figure out if we need to bind to any model fields
         // create a ui assembler for this root.
-        UiAssembler assembler = generator.startAssembly(this, uiExpr, shadowUi);
+        UiAssembler assembler = generator.startAssembly(this, uiExpr, shadowUi, hidden);
 
 //        final UiTagGeneratorVisitor visitor = new UiTagGeneratorVisitor(
 //            this,
@@ -181,12 +182,16 @@ public class AssembledUi {
         return getUi().getBase().getElementType(namespace);
     }
 
+    public boolean hasRef(AssembledElement el) {
+        return newRef(el, false) != null;
+    }
     public String newRef(AssembledElement el, boolean create) {
         final Expression expr = el.getAst();
         String refName = null;
 
         if (expr instanceof UiContainerExpr) {
             UiContainerExpr ast = (UiContainerExpr) expr;
+            final GeneratedUiBase base = getUi().getBase();
             refName = ast.getAttribute(UiNamespace.ATTR_REF)
                 .map(attr-> {
                     // there is a ref attribute.  use it.
@@ -200,13 +205,18 @@ public class AssembledUi {
                         attr
                     );
                     String refString = getTools().resolveString(getContext(), resolved);
+                    // Lets also create a public method exposing the raw element:
+                    String elType = base.getElementType(namespace);
+                    String nicified = X_String.toTitleCase(refString);
+                    getBaseClass().createMethod("public " + elType + " el" + nicified + "()")
+                        .returnValue(refString + ".out1().getElement()");
                     return refString;
                 }, ()-> {
                     if (!create) {
                         return null;
                     }
                     // no ref attribute... generate one.
-                    String refString = getUi().getBase().newFieldName((el.isParentRoot() ? "root" : "el") + X_Source.toCamelCase(ast.getName()));
+                    String refString = base.newFieldName((el.isParentRoot() ? "root" : "el") + X_Source.toCamelCase(ast.getName()));
                     ast.addAttribute(UiNamespace.ATTR_REF, StringLiteralExpr.stringLiteral(refString))
                         // mark our created ref attr as synthetic (not a user-requested ref)
                         .getExpression().addExtra(UiConstants.EXTRA_SYNTHENTIC, true);

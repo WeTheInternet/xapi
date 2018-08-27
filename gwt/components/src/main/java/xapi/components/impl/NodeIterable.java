@@ -1,6 +1,5 @@
 package xapi.components.impl;
 
-import elemental2.dom.Element;
 import elemental2.dom.HTMLCollection;
 import elemental2.dom.Node;
 import elemental2.dom.NodeList;
@@ -34,7 +33,7 @@ public class NodeIterable implements MappedIterable<Node> {
 
     @Override
     public Node next() {
-      was = Js.cast(nodes.getAt(pos++));
+      was = Js.uncheckedCast(nodes.getAt(pos++));
       return was;
     }
 

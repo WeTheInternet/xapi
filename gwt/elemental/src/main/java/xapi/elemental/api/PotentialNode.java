@@ -8,6 +8,7 @@ import xapi.elemental.X_Elemental;
 import xapi.ui.api.*;
 import xapi.util.X_Debug;
 import xapi.util.X_String;
+import xapi.util.api.ReceivesValue;
 import xapi.util.impl.ImmutableProvider;
 
 import java.util.function.BiFunction;
@@ -240,6 +241,24 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> impleme
   @Override
   public PotentialNode<E> setTagName(String tagName) {
     super.setTagName(tagName);
+    return this;
+  }
+
+  @Override
+  public PotentialNode<E> setAttribute(String name, String value) {
+    super.setAttribute(name, value);
+    return this;
+  }
+
+    @Override
+    public PotentialNode<E> onCreated(ReceivesValue<E> callback) {
+        super.onCreated(callback);
+        return this;
+    }
+
+  @Override
+  public PotentialNode<E> append(CharSequence chars) {
+    super.append(chars);
     return this;
   }
 }

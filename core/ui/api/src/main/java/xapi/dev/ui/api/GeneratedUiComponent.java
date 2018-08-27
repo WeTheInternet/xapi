@@ -11,20 +11,15 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
 import xapi.collect.api.StringTo;
 import xapi.dev.api.ApiGeneratorContext;
-import xapi.dev.source.ClassBuffer;
-import xapi.dev.source.FieldBuffer;
-import xapi.dev.source.MethodBuffer;
-import xapi.dev.source.SourceBuilder;
+import xapi.dev.source.*;
 import xapi.dev.ui.api.GeneratedUiLayer.ImplLayer;
 import xapi.dev.ui.impl.UiGeneratorTools;
+import xapi.dev.ui.tags.assembler.AssembledElement;
+import xapi.dev.ui.tags.assembler.AssembledUi;
+import xapi.dev.ui.tags.factories.GeneratedFactory;
+import xapi.dev.ui.tags.factories.LazyInitFactory;
 import xapi.dev.ui.tags.members.UserDefinedMethod;
-import xapi.fu.Do;
-import xapi.fu.In1Out1;
-import xapi.fu.In2Out1;
-import xapi.fu.In3Out1;
-import xapi.fu.Lazy;
-import xapi.fu.MappedIterable;
-import xapi.fu.Maybe;
+import xapi.fu.*;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
 import xapi.fu.iterate.EmptyIterator;
@@ -51,6 +46,7 @@ public class GeneratedUiComponent {
     private final StringTo<ReferenceType> globalDefs;
     private final StringTo<GeneratedJavaFile> extraLayers;
     private final ReservedUiMethods methods;
+    private final ChainBuilder<In1<UiGeneratorService<?>>> beforeSave;
     private String tagName;
     private GeneratedUiSupertype superType;
 
@@ -67,6 +63,7 @@ public class GeneratedUiComponent {
         genericInfo = new GeneratedUiGenericInfo();
         extraLayers = X_Collect.newStringMap(GeneratedUiLayer.class);
         methods = new ReservedUiMethods(this);
+        beforeSave = Chain.startChain();
     }
 
     public GeneratedUiImplementation getBestImpl(GeneratedUiImplementation similarToo) {
@@ -323,7 +320,12 @@ public class GeneratedUiComponent {
         }
     }
 
+    public void beforeSave(In1<UiGeneratorService<?>> callback) {
+        beforeSave.add(callback);
+    }
+
     public void saveSource(UiGeneratorService<?> gen) {
+        beforeSave.removeAll(In1::in,  gen);
         // Write api
         final UiGeneratorTools tools = gen.tools();
         if (api.isResolved() || base.isResolved()) {
@@ -338,12 +340,12 @@ public class GeneratedUiComponent {
             final ClassBuffer out = baseLayer.getSource().getClassBuffer();
             baseGenerics = baseLayer.getTypeParameters();
             String apiName = baseLayer.getApiName();
-            final MappedIterable<GeneratedTypeParameter> apiParams = api.out1().getTypeParameters();
+            final MappedIterable<GeneratedTypeParameter> apiParams = apiLayer.getTypeParameters();
             if (apiParams.isNotEmpty()) {
                 boolean first = true;
                 // TODO get namespace from somewhere better...
                 final UiNamespace ns = gen.tools().namespace();
-                for (GeneratedTypeParameter generic : apiLayer.getTypeParameters()) {
+                for (GeneratedTypeParameter generic : apiParams) {
                     if (baseLayer.hasLocalDefinition(generic.getSystemName())) {
                         continue;
                     }
@@ -373,15 +375,16 @@ public class GeneratedUiComponent {
             saveType(baseLayer, gen, tools, null);
         }
 
+        // Next up... generated builders.
+        final GeneratedUiFactory builder = factory.out1();
+        // let the impls have a peek at our builder
+        getImpls().forAll(GeneratedUiImplementation::finalizeBuilder, builder);
+        saveType(builder, gen, tools, null);
 
+        // Don't save the impls until they've had a chance to work with the generated builder.
         getImpls()
             .filter(GeneratedJavaFile::shouldSaveType)
             .forAll(this::saveType, gen, tools, baseGenerics);
-
-        final GeneratedUiFactory builder = factory.out1();
-        // let the impls have a peek at our builder
-        getImpls().forAll(GeneratedUiImplementation::registerBuilder, builder);
-        saveType(builder, gen, tools, null);
 
         // Save any extra layers... We do this last so other "mainstream" generation can create standalone Extras,
         // knowing they will be saved even if defined in an impl or builder type
@@ -484,15 +487,19 @@ public class GeneratedUiComponent {
         layer.addCoercion(field);
     }
 
-    public <Ctx extends ApiGeneratorContext<Ctx>> void createNativeFactory(
-        UiGeneratorTools<Ctx> tools,
-        Ctx ctx,
+    public GeneratedFactory createNativeFactory(
+        AssembledUi assembly,
+        AssembledElement el,
         UiContainerExpr n,
-        MethodBuffer toDom,
         UiNamespace namespace,
         String refName
     ) {
         // Create an abstract method for the native element we want to create.
+
+        final ApiGeneratorContext ctx = assembly.getContext();
+        final GeneratedUiComponent component = assembly.getUi();
+        Do release = assembly.getGenerator().resolveSpecialNames(ctx, component, component.getBase(), el.maybeRequireRefRoot(), el.maybeRequireRef());
+
         final String builder = getBase().getElementBuilderType(namespace);
         final ClassBuffer out = getBase().getSource().getClassBuffer();
         final String creator = "create" + X_String.toTitleCase(refName);
@@ -501,19 +508,26 @@ public class GeneratedUiComponent {
         final GeneratedUiMethod method = new GeneratedUiMethod(type, creator, (imp, ui)->
             imp.getElementBuilderType(namespace)
         );
-        out.createMethod("protected abstract " + builder + " " + creator);
-
-        toDom.println(refName + " = " + creator + "();");
+        final MethodBuffer creatorMethod = out.createMethod("protected abstract " + builder + " " + creator);
 
         for (GeneratedUiImplementation impl : getImpls()) {
             // The impl must have provided the generic, so we must prefer whatever
             // name was used in the concrete subtype
+            final boolean was = ctx.setIgnoreChanges(true);
+            Do rescope = assembly.getGenerator().resolveSpecialNames(ctx, component, impl, el.maybeRequireRefRoot(), el.maybeRequireRef());
             final Maybe<UiAttrExpr> attr = n.getAttribute(impl.getAttrKey());
-            impl.addNativeMethod(tools, ctx, namespace, method, attr
+            impl.addNativeMethod(assembly, namespace, method, el, attr
                 .mapNullSafe(a->(UiContainerExpr)a.getExpression())
                 .ifAbsentReturn(n));
+            rescope.done();
+            ctx.setIgnoreChanges(was);
         }
 
+        final LazyInitFactory nativeFactory = new LazyInitFactory(creatorMethod, builder, refName, false);
+//        nativeFactory.setReturn(creator + "()", false);
+
+        release.done();
+        return nativeFactory;
     }
 
     public String getTagName() {

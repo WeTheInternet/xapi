@@ -1,8 +1,11 @@
 package xapi.dev.ui.tags.members;
 
+import com.github.javaparser.ast.body.BodyDeclaration;
+import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.DynamicDeclarationExpr;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.type.Type;
 
 /**
  * A method created by a user via api= or impl= attributes.
@@ -37,7 +40,15 @@ public class UserDefinedMethod {
         return (MethodDeclaration) decl.getBody();
     }
 
-    public String getType() {
+    public Type getType() {
+        final BodyDeclaration body = decl.getBody();
+        if (body instanceof MethodDeclaration) {
+            return ((MethodDeclaration) body).getType();
+        }
+        if (body instanceof FieldDeclaration) {
+            return ((FieldDeclaration) body).getType();
+        }
+//        // TODO: nothing else supported / throw?
         return null;
     }
 }

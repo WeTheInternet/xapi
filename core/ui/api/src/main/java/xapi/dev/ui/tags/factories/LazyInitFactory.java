@@ -5,6 +5,7 @@ import xapi.dev.ui.tags.assembler.AssembledElement;
 import xapi.fu.Lazy;
 import xapi.fu.lazy.ResettableLazy;
 import xapi.source.X_Modifier;
+import xapi.source.X_Source;
 import xapi.util.X_String;
 
 /**
@@ -26,20 +27,18 @@ public class LazyInitFactory implements GeneratedFactory {
     private LocalVariable var;
     private String varName = AssembledElement.BUILDER_VAR;
     private PrintBuffer initBuffer;
+    private PrintBuffer returnStmt;
 
     public LazyInitFactory(
-        ClassBuffer out,
+        MethodBuffer init,
         String type,
         String name,
         boolean resetable
     ) {
-        String lazy = out.addImport(resetable ? ResettableLazy.class : Lazy.class);
+        this.init = init;
+        String lazy = init.addImport(resetable ? ResettableLazy.class : Lazy.class);
 
-        init = out.createMethod(
-            X_Modifier.PROTECTED,
-            type,
-            "init" + X_String.toTitleCase(name)
-        );
+        final ClassBuffer out = init.getEnclosingClass();
 
         final FieldBuffer refField = out.createField(
             out.parameterizedType(lazy, type),
@@ -50,6 +49,21 @@ public class LazyInitFactory implements GeneratedFactory {
         refField.setInitializer("new " + lazy + "<>(this::" + init.getName() + ");");
         getter = refField.getName()+".out1()";
         this.resettable = resetable;
+
+    }
+
+    public LazyInitFactory(
+        ClassBuffer out,
+        String type,
+        String name,
+        boolean resetable
+    ) {
+        this(out.createMethod(
+            X_Modifier.PROTECTED,
+            type,
+            "init" + X_String.toTitleCase(name)
+        ), type, name, resetable);
+
     }
 
     @Override
@@ -63,31 +77,60 @@ public class LazyInitFactory implements GeneratedFactory {
     }
 
     public LocalVariable setVar(String type, String name, boolean reuseExisting) {
-        assert initBuffer == null : "Do not double-set a generated lazy reference";
         // The user has supplied a variable to include at the head of the init method.
         var = init.newVariable(type, name, reuseExisting);
         this.varName = var.getName();
 
-        initBuffer = new PrintBuffer(init.getIndentCount());
-        init.addToEnd(initBuffer);
-        init.returnValue(var.getName());
+        if (initBuffer == null) {
+            initBuffer = new PrintBuffer(init.getIndentCount());
+            init.addToEnd(initBuffer);
+            returnStmt = init.stmtReturn();
+        }
+        setReturn(var.getName(), false);
         return var;
+    }
+
+    @Override
+    public void setReturn(String value, boolean ensureQuotes) {
+        if (ensureQuotes) {
+            value = X_Source.javaQuote(value);
+        }
+        getReturnStmt().clear().append(value);
     }
 
     public LocalVariable getOrCreateVar(String type, String name) {
-        assert initBuffer == null : "Do not double-set a generated lazy reference";
         // The user has supplied a variable to include at the head of the init method.
         final LocalVariable var = init.newVariable(type, name, true);
         this.varName = var.getName();
-        initBuffer = new PrintBuffer(init.getIndentCount());
-        init.addToEnd(initBuffer);
-        init.returnValue(var.getName());
+        setReturn(var.getName(), false);
         return var;
 
     }
 
+    private void ensureInit() {
+        if (initBuffer == null) {
+            initBuffer = new PrintBuffer(init.getIndentCount());
+            init.addToEnd(initBuffer);
+        }
+    }
+
+    public PrintBuffer getReturnStmt() {
+        if (returnStmt == null) {
+            ensureInit();
+            returnStmt = init.stmtReturn();
+        }
+        return returnStmt;
+    }
+
+    @Override
+    public PrintBuffer addReturn() {
+        ensureInit();
+        return init.stmtReturn();
+    }
+
     public PrintBuffer getInitBuffer() {
-        return initBuffer == null ? init : initBuffer;
+        ensureInit();
+        return initBuffer;
     }
 
     public PrintBuffer getInitializer() {

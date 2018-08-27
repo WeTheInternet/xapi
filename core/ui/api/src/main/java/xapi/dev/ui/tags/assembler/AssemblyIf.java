@@ -1,12 +1,13 @@
 package xapi.dev.ui.tags.assembler;
 
 import com.github.javaparser.ast.expr.*;
+import com.github.javaparser.ast.type.PrimitiveType;
+import com.github.javaparser.ast.type.ReferenceType;
+import com.github.javaparser.ast.type.Type;
+import com.github.javaparser.ast.type.VoidType;
 import com.github.javaparser.ast.visitor.ComposableXapiVisitor;
 import xapi.dev.api.ApiGeneratorContext;
-import xapi.dev.source.ClassBuffer;
-import xapi.dev.source.MethodBuffer;
-import xapi.dev.source.NameGen;
-import xapi.dev.source.PrintBuffer;
+import xapi.dev.source.*;
 import xapi.dev.ui.api.*;
 import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.dev.ui.tags.factories.GeneratedFactory;
@@ -32,7 +33,7 @@ public class AssemblyIf extends AssembledElement {
 
     public enum ConditionType {
         isNull("* == null"), whenNull("* == null"), // semantically equivalent
-        isNotNull("* != null"), whenNotNull("* != null"),
+        isNotNull("* != null"), whenNotNull("* != null"), notNull("* != null"),
         isTrue("*"), isFalse("!(*)"),
         isOne("* == 1"), isZero("* == 0"), isMinusOne("* == -1"),
         isNotOne("* != 1"), isNotZero("* != 0"), isNotMinusOne("* != -1"),
@@ -200,7 +201,7 @@ public class AssemblyIf extends AssembledElement {
         final UiContainerExpr ast = getAst();
 
         AssembledElement refTarget = this;
-        if (getSource().newRef(this, false) == null) {
+        if (!getSource().hasRef(this)) {
             // no ref field... LATER: try to deduce something nice like:
             // isNull=$model::thing -> isThingNull, etc.  ...seems like a waste of effort at this point;
             // if you want a human-friendly name on your if blocks, give them a ref.
@@ -209,8 +210,6 @@ public class AssemblyIf extends AssembledElement {
             }
         }
         factory = new LazyInitFactory(out, builder, requireRef(), true);
-//        factory.setVar(builder, BUILDER_VAR, false)
-//               .setInitializer(assembly.newBuilder());
 
         // Create a selectedElement field, so we can manage state transitions appropriately.
         selectedField = baseClass.newFieldName(prefixName("selected"));
@@ -274,12 +273,12 @@ public class AssemblyIf extends AssembledElement {
         UiContainerExpr el
     ) {
 
-        serialize(assembler, factory);
+        serialize(factory, assembler, result);
 
         super.finishElement(assembly, assembler, factory, result, el);
     }
 
-    private void serialize(UiAssembler assembler, GeneratedFactory rootFactory) {
+    private void serialize(GeneratedFactory rootFactory, UiAssembler assembler, UiAssemblerResult result) {
 
         PrintBuffer toDom = rootFactory.getInitBuffer();
 
@@ -296,7 +295,8 @@ public class AssemblyIf extends AssembledElement {
             if (elses.isEmpty() && whenFalse.isEmpty()) {
                 // really simple... it's just an if and a whenTrue.
                 simple = true;
-                toDom.println();
+                toDom.println()
+                     .println("return " + selectedField + " = null;");
             } else {
                 // there are else/whenFalse blocks, and we can safely
                 // merge them into a single else block (no elsifs).
@@ -559,7 +559,7 @@ public class AssemblyIf extends AssembledElement {
         } else {
             String field = baseClass.newFieldName(requireRef());
             factory = new LazyInitFactory(getSource().getBaseClass(), builder, field,true);
-            factory.setVar(builder, BUILDER_VAR, false)
+            final LocalVariable var = factory.setVar(builder, BUILDER_VAR, true)
                 .setInitializer(assembly.newBuilder());
 
             if (rootFactory.isResettable()) {
@@ -599,7 +599,8 @@ public class AssemblyIf extends AssembledElement {
                     );
                     String resolved = tools.resolveString(ctx, expr, true);
                     if (!resolved.trim().isEmpty()) {
-                        if (n.removeExtra(scopeKey) == null) {
+                        final AssemblyIf parent = n.removeExtra(scopeKey);
+                        if (parent == null) {
                             // no parent scope...
                             init.patternln("$1.append($2)", factory.getVarName(),  resolved);
                         } else {
@@ -613,8 +614,12 @@ public class AssemblyIf extends AssembledElement {
                         throw new IllegalArgumentException("<if /> cannot serialize json object " + getSource().getTools().debugNode(n));
                     }
                 })
-                .withMethodReferenceExpr((n, ifTag) -> {
-                    String methodName = n.getIdentifier();
+                .withMethodCallExpr((n, call)->{
+                    // TODO: handle properly by abstracting method reference handler below into a reusable method.
+                    return false;
+                })
+                .withMethodReferenceExpr((methodRef, ifTag) -> {
+                    String methodName = methodRef.getIdentifier();
                     // find the target for this method, so we can figure out type information.
                     final SizedIterable<UserDefinedMethod> results = component.findUserMethod(methodName);
                     final UserDefinedMethod winner;
@@ -622,25 +627,39 @@ public class AssemblyIf extends AssembledElement {
                         // yay!  we're done...
                         winner = results.first();
                     } else if (results.isEmpty()) {
-                        throw new UnsupportedOperationException(debugNode(n) + " not supported");
+                        throw new UnsupportedOperationException(debugNode(methodRef) + " not supported");
                     } else {
                         // more than one result for the method name...
                         throw new UnsupportedOperationException(
-                            "Overloading not supported " + results.join("("," + ", ")")
-                              + " found for " + debugNode(n)
+                            "Overloading not (yet) supported " + results.join("("," + ", ")")
+                              + " found for " + debugNode(methodRef)
                         );
                     }
-                    String type = winner.getType();
+                    Type type = winner.getType();
+                    methodRef.getScope().addExtra(scopeKey, AssemblyIf.this);
                     if (type == null) {
-                        X_Log.warn(AssemblyIf.class, "No type information found for ", n, " from ", winner);
+                        X_Log.warn(AssemblyIf.class, "No type information found for ", methodRef, " from ", winner);
 
                         init.pattern("$1.append(", factory.getVarName()).indent();
-                        n.getScope().addExtra(scopeKey, true); // TODO: an object of some kind to accurately encapsulate ParentScope
-                        n.getScope().accept(visitor, ifTag);
-                        init.outdent().patternln(".$1());", n.getIdentifier());
+                        methodRef.getScope().accept(visitor, ifTag);
+                        init.outdent().patternln(".$1());", methodRef.getIdentifier());
+
+
+//                        init.pattern("$1.append(", factory.getVarName()).indent();
+//                        methodRef.getScope().addExtra(scopeKey, true); // TODO: an object of some kind to accurately encapsulate ParentScope
+//                        methodRef.getScope().accept(visitor, ifTag);
+//                        init.outdent().patternln(".$1());", methodRef.getIdentifier());
                         // TODO: a printbuffer command that will shrink any empty multiline(
                         // ) parens (deferred until toSource(), of course)
+                        // See xapi.dev.source.statements.StatementBuffer
+                    } else if (type instanceof VoidType) {
+                        // a method w/out return type.  just call that method.
+                        methodRef.getScope().accept(visitor, ifTag);
+                        init.patternln(".$1()", methodRef.getIdentifier());
+                    } else if (type instanceof PrimitiveType || type instanceof ReferenceType) {
+
                     } else {
+
                         // TODO: actually implement something smart regarding supported types / actions.
                         // String / <dom/> -> append to buffer
                         // Out1 / Provider -> call factory and append result to buffer.

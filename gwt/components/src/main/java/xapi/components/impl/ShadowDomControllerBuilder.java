@@ -10,6 +10,7 @@ import elemental2.core.Reflect;
 import jsinterop.base.Js;
 import xapi.collect.impl.SimpleFifo;
 import xapi.components.api.ComponentNamespace;
+import xapi.components.api.JsObject;
 import xapi.gwt.api.JsLazyExpando;
 import xapi.gwt.api.JsObjectDescriptor;
 import xapi.components.api.ShadowDomPlugin;
@@ -258,7 +259,7 @@ public class ShadowDomControllerBuilder {
         SimpleFifo<Element> fifo = new SimpleFifo<>();
         for (int i = 0; i < e.getChildren().length(); i++) {
             final Node child = e.getChildren().item(i);
-            if (ShadowDomControllerBuilder.isShadowRoot(child)) {
+            if (isShadowRoot(child)) {
                 fifo.give((Element)child);
             }
         }
@@ -272,7 +273,8 @@ public class ShadowDomControllerBuilder {
     }
 
     public static boolean isShadowRoot(Node element) {
-        return xapi.components.api.JsObject.cast(element).hasProperty(ComponentNamespace.SHADOW_ROOT_KEY);
+        return element.getNodeType() == Node.ELEMENT_NODE &&
+            Js.<JsObject>uncheckedCast(element).hasProperty(ComponentNamespace.SHADOW_ROOT_KEY);
     }
 
 }

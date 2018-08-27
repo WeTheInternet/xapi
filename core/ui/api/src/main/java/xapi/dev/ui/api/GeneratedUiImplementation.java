@@ -1,10 +1,6 @@
 package xapi.dev.ui.api;
 
-import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.MethodCallExpr;
-import com.github.javaparser.ast.expr.TypeExpr;
-import com.github.javaparser.ast.expr.UiAttrExpr;
-import com.github.javaparser.ast.expr.UiContainerExpr;
+import com.github.javaparser.ast.expr.*;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.dev.api.ApiGeneratorContext;
@@ -12,17 +8,15 @@ import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.dev.ui.impl.UiGeneratorTools;
-import xapi.fu.In2;
-import xapi.fu.MappedIterable;
-import xapi.fu.Mutable;
-import xapi.fu.Out2;
-import xapi.fu.Out3;
-import xapi.fu.X_Fu;
+import xapi.dev.ui.tags.assembler.AssembledElement;
+import xapi.dev.ui.tags.assembler.AssembledUi;
+import xapi.fu.*;
 import xapi.fu.iterate.CachingIterator;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
 import xapi.fu.iterate.SizedIterable;
 import xapi.reflect.X_Reflect;
+import xapi.source.X_Source;
 import xapi.source.read.JavaModel.IsTypeDefinition;
 import xapi.util.X_String;
 
@@ -190,24 +184,63 @@ public class GeneratedUiImplementation extends GeneratedUiLayer {
         return 0;
     }
 
-    public <Ctx extends ApiGeneratorContext<Ctx>> void addNativeMethod(UiGeneratorTools<Ctx> tools, Ctx ctx, UiNamespace namespace, GeneratedUiMethod method, UiContainerExpr n) {
+    public void addNativeMethod(
+        AssembledUi assembly,
+        UiNamespace namespace,
+        GeneratedUiMethod method,
+        AssembledElement el,
+        UiContainerExpr n
+    ) {
 
         final MethodBuffer out = getSource().getClassBuffer()
             .createMethod(method.toSignature(this, n))
             .addAnnotation(Override.class);
         //        requireMethod(RequiredMethodType.CREATE, method);
-        String tagName = n.getName();
-        out.println("return newBuilder()")
-            .indent()
-            .println(".setTagName(\"" + tagName + "\")");
-//        for (UiAttrExpr attr : n.getAttributes()) {
-//            String name = tools.resolveString(ctx, attr.getName());
-//            final Expression val = tools.resolveVar(ctx, attr.getExpression());
-//            out.println(".setAttribute(\"" + name + "\", " + tools.resolveString(ctx, val) + "\")");
-//
-//        }
-        out.println(";");
 
+        final String newBuilder = getOwner().getElementBuilderConstructor(namespace);
+        String tagName = n.getName();
+        out.patternln("return $1", newBuilder.replace("()","(true)"))
+            .indent()
+            .patternln(".setTagName(\"$1\")", tagName);
+        for (UiAttrExpr attr : n.getAttributes()) {
+            resolveNativeAttr(assembly, attr, el, out);
+        }
+        // TODO: also handle bodies!
+        if (n.getBody() != null) {
+            for (Expression body : n.getBody().getChildren()) {
+                // Bah... we need something smarter here...
+                out.println(".append(" + X_Source.javaQuote(body.toSource()) + ")");
+            }
+
+        }
+        out.outdent().println(";");
+    }
+
+    protected void resolveNativeAttr(
+        AssembledUi assembly,
+        UiAttrExpr attr,
+        AssembledElement el,
+        MethodBuffer out
+    ) {
+        UiGeneratorTools tools = assembly.getTools();
+        ApiGeneratorContext ctx = assembly.getContext();
+        final Expression val = attr.getExpression();
+        final Expression modelized = assembly.getGenerator().resolveReference(
+            tools,
+            ctx,
+            assembly.getUi(),
+            assembly.getUi().getBase(),
+            el.maybeRequireRefRoot(),
+            el.maybeRequireRef(),
+            val,
+            false
+        );
+        final String resolved = tools.resolveString(ctx, modelized);
+        final String name = tools.resolveString(ctx, attr.getName());
+        boolean addQuotes = modelized instanceof StringLiteralExpr || modelized instanceof TemplateLiteralExpr;
+        out.println(".setAttribute(\"" + name + "\", " +
+            (addQuotes ? X_Source.javaQuote(resolved) : resolved) +
+        ")");
     }
 
     public void addChildFactory(GeneratedUiDefinition definition, Expression sourceNode) {
@@ -218,7 +251,7 @@ public class GeneratedUiImplementation extends GeneratedUiLayer {
         return childFactories.forEachValue();
     }
 
-    public void registerBuilder(GeneratedUiFactory builder) {
+    public void finalizeBuilder(GeneratedUiFactory builder) {
 
     }
 
@@ -230,4 +263,5 @@ public class GeneratedUiImplementation extends GeneratedUiLayer {
         assert callbackWriters.noneMatch(callback::equals);
         callbackWriters.add(callback);
     }
+
 }

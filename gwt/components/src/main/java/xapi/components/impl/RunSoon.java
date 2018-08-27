@@ -129,13 +129,13 @@ public class RunSoon extends Function {
     @JsOverlay
     public final boolean doCancel(int task) {
         boolean hadTask = getTasksByHandle().hasOwnProperty("" + task);
-        clearImmediate().call(this, task);
+        clearImmediate().call(this, (double)task); // don't send Integer to javascript
         return hadTask;
     }
 
     @JsOverlay
     public final Object doFinish(int task) {
-        return runNow().call(this, task);
+        return runNow().call(this, (double)task); // don't send Integer to javascript, kthx...
     }
 
     @JsOverlay

@@ -142,6 +142,8 @@ public class ComponentBuffer {
         UiContainerExpr ui,
         Expression modelNode
     ) {
+        // I hate this method and everything it does.
+        // ...but it works, so it stays...  for now.
         GeneratedUiBase otherBase = other.getBase();
         // Our tag factory should be a method generated onto the base class;
         // if the source tag supplied a model or a style, we must pass those references in as parameters.

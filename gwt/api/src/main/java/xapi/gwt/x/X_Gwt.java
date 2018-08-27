@@ -24,7 +24,7 @@ public class X_Gwt {
         return Js.asPropertyMap(from).has(key);
     }
 
-    public static native Object getShadowRoot(Object e)
+    public static native Object getShadowRoot(Object element)
     /*-{
       if (element.shadowController) {
         return element.shadowController;
