@@ -3,17 +3,16 @@ package xapi.dev.gwtc.impl;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.dev.gwtc.api.GwtcJob;
-import xapi.dev.gwtc.api.GwtcJobManager;
 import xapi.dev.gwtc.api.GwtcJobMonitor;
 import xapi.dev.gwtc.api.GwtcJobMonitor.CompileMessage;
 import xapi.dev.gwtc.api.GwtcService;
 import xapi.dev.gwtc.api.IsAppSpace;
 import xapi.except.NotYetImplemented;
+import xapi.fu.Do;
 import xapi.fu.Do.DoUnsafe;
 import xapi.fu.In1Out1;
 import xapi.fu.Mutable;
 import xapi.fu.Out1.Out1Unsafe;
-import xapi.fu.Out2;
 import xapi.fu.X_Fu;
 import xapi.fu.iterate.ArrayIterable;
 import xapi.gwtc.api.GwtManifest;
@@ -23,33 +22,27 @@ import xapi.process.X_Process;
 import xapi.time.X_Time;
 import xapi.util.X_Util;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.io.UncheckedIOException;
+import java.io.*;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static xapi.fu.iterate.ArrayIterable.iterate;
 
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
-import com.google.gwt.dev.CompileTaskRunner;
+import com.google.gwt.dev.*;
 import com.google.gwt.dev.CompileTaskRunner.CompileTask;
 import com.google.gwt.dev.Compiler;
 import com.google.gwt.dev.Compiler.ArgProcessor;
-import com.google.gwt.dev.CompilerOptions;
 import com.google.gwt.dev.CompilerOptionsImpl;
-import com.google.gwt.dev.MinimalRebuildCacheManager;
 import com.google.gwt.dev.cfg.ResourceLoader;
 import com.google.gwt.dev.cfg.ResourceLoaders;
 import com.google.gwt.dev.codeserver.*;
 import com.google.gwt.dev.codeserver.Job.Result;
 import com.google.gwt.dev.codeserver.JobEvent.Status;
-import com.google.gwt.dev.javac.StaleJarError;
 import com.google.gwt.dev.javac.UnitCache;
 import com.google.gwt.dev.javac.UnitCacheSingleton;
 import com.google.gwt.dev.jjs.JJSOptionsImpl;
@@ -61,6 +54,7 @@ import com.google.gwt.dev.util.log.PrintWriterTreeLogger;
  */
 public class GwtcJobManagerImpl extends GwtcJobManagerAbstract {
 
+    private static final long Process_TTL_Millis = TimeUnit.MINUTES.toMillis(45);
     private final StringTo<String> eventIds;
     private final StringTo<String> logFiles;
 
@@ -102,8 +96,8 @@ public class GwtcJobManagerImpl extends GwtcJobManagerAbstract {
         // and only be able to access the *AsCompiler methods (the *AsCaller should throw errors if used)
         final GwtcJobMonitorImpl monitor = new GwtcJobMonitorImpl(System.in, System.out);
         GwtcService compiler = X_Inject.instance(GwtcService.class);
-        new GwtcJobManagerImpl(compiler)
-            .runJob(monitor, args);
+        final GwtcJobManagerImpl manager = new GwtcJobManagerImpl(compiler);
+        manager.runJob(monitor, args);
     }
 
     public void runJob(GwtcJobMonitor monitor, String[] args) {
@@ -223,7 +217,7 @@ public class GwtcJobManagerImpl extends GwtcJobManagerAbstract {
             statuses.put(mod, status);
         });
         table.listenForEvents(name, null, false, ev->{
-            X_Log.info(GwtcJobManagerImpl.class, "Gwt Event", ev.getJobId(), "status:", ev.getStatus());
+            X_Log.trace(GwtcJobManagerImpl.class, "Gwt Event", ev.getJobId(), "status:", ev.getStatus());
             final String mod = ev.getInputModuleName();
             final String currentId = eventIds.get(mod);
             if (ev.getJobId().equals(currentId)){
@@ -304,7 +298,7 @@ public class GwtcJobManagerImpl extends GwtcJobManagerAbstract {
             }
         }catch (Throwable e) {
             monitor.updateCompileStatus(CompileMessage.Failed, "Compilation failed (check logs): " + e);
-            if (e instanceof StaleJarError) {
+            if (e.getClass().getName().contains("StaleJar")) {
                 // TODO: forcibly discard this thread and start a new one with a fresh classpath
                 logger.log(TreeLogger.WARN, "Stale jars detected; reinitializing GWT compiler");
             }
@@ -471,12 +465,18 @@ public class GwtcJobManagerImpl extends GwtcJobManagerAbstract {
         statuses.put(module, state);
     }
 
+    private volatile long touched;
+
     private void keepAlive(GwtcJobMonitor monitor, In1Out1<String, URL> getResource,  Out1Unsafe<Boolean> checkFreshness, DoUnsafe runCompile) {
         final Thread task = X_Process.newThread(() -> {
+            Do undo = X_Process.scheduleInterruption(Process_TTL_Millis, TimeUnit.MILLISECONDS);
             try {
-
-            while (true) {
+            touched = System.currentTimeMillis();
+            while (System.currentTimeMillis() - touched < Process_TTL_Millis) {
                 String message = monitor.readAsCompiler().trim();
+                touched = System.currentTimeMillis();
+                undo.done();
+                undo = X_Process.scheduleInterruption(Process_TTL_Millis, TimeUnit.MILLISECONDS);
                 switch (message) {
                     case GwtcJobMonitor.JOB_COMPILE:
                     case GwtcJobMonitor.JOB_RECOMPILE:
@@ -492,6 +492,8 @@ public class GwtcJobManagerImpl extends GwtcJobManagerAbstract {
                             runCompile.done();
                         }
                         break;
+                    case GwtcJobMonitor.JOB_PING:
+                        break; // do nothing, we already touched our keepalive timestamp.
                     default:
                         if (message.startsWith(GwtcJobMonitor.JOB_GET_RESOURCE)) {
                             String fileName = message.substring(GwtcJobMonitor.JOB_GET_RESOURCE.length());
@@ -513,12 +515,18 @@ public class GwtcJobManagerImpl extends GwtcJobManagerAbstract {
                 }
             }
             } catch (Throwable t) {
-                X_Log.error(GwtcJobManagerImpl.class, "Unexpected error in " + getClass() + ".keepAlive", t);
                 final Throwable unwrapped = X_Util.unwrap(t);
+                if (unwrapped instanceof InterruptedException) {
+                    die(monitor);
+                    return;
+                }
+                X_Log.error(GwtcJobManagerImpl.class, "Unexpected error in " + getClass() + ".keepAlive", t);
                 if (unwrapped instanceof LinkageError || unwrapped instanceof ClassNotFoundException) {
                     die(monitor);
                 }
                 throw t;
+            } finally {
+                undo.done();
             }
         });
         task.setName(getClass().getName() +" KeepAlive");

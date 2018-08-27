@@ -4,10 +4,10 @@ import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
 import xapi.annotation.inject.InstanceOverride;
 import xapi.annotation.process.Multiplexed;
-import xapi.model.user.ModelUser;
+import xapi.log.X_Log;
+import xapi.scope.impl.SessionScopeDefault;
 import xapi.scope.request.RequestScope;
 import xapi.scope.request.SessionScope;
-import xapi.scope.impl.SessionScopeDefault;
 import xapi.server.model.ModelSession;
 import xapi.server.vertx.VertxRequest;
 import xapi.server.vertx.VertxResponse;
@@ -20,17 +20,16 @@ import xapi.server.vertx.VertxResponse;
 public class SessionScopeVertx extends
     SessionScopeDefault<User, VertxRequest, VertxResponse, SessionScopeVertx>{
 
-    private User user;
+    // TODO: VertxModelSession which implements ClusterSerializable
     private ModelSession model;
-    private RoutingContext context;
+    private transient RoutingContext context;
 
     public SessionScopeVertx() {
-        System.out.println("New Session Scope " + this);
-    }
-
-    @Override
-    public User getUser() {
-        return user;
+        // This class is not serializable and likely never will be.
+        // So, instead, we should have a subset of serializable values
+        // which we will persist and reload, so we can have many SessionScope instances,
+        // but each one wraps the same subset of data.
+        X_Log.info(ScopeServiceVertx.class, "New Session Scope ", this);
     }
 
     @Override
@@ -51,14 +50,6 @@ public class SessionScopeVertx extends
             }
             return current;
         }
-    }
-
-    @Override
-    public SessionScope<User, VertxRequest, VertxResponse> setUser(User user) {
-        assert this.user == null || this.user.equals(user) : "Cannot change users...";
-        this.user = user;
-
-        return this;
     }
 
     public void setModel(ModelSession model) {

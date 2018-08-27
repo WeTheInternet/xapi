@@ -7,6 +7,7 @@ import xapi.fu.In1Out1;
 import xapi.fu.In1Out1.In1Out1Unsafe;
 import xapi.inject.X_Inject;
 import xapi.scope.api.GlobalScope;
+import xapi.scope.request.RequestScope;
 import xapi.scope.request.SessionScope;
 import xapi.scope.spi.RequestContext;
 import xapi.scope.spi.RequestLike;
@@ -31,9 +32,10 @@ public class GlobalScopeDefault <
     Request extends RequestLike,
     Response extends ResponseLike,
     Session extends SessionScope<User, Request, Response>,
-    Context extends RequestContext<User, Request, Response, Session>
+    Scope extends RequestScope<Request, Response>,
+    Context extends RequestContext<User, Request, Response, Session, Scope>
     >
-    extends AbstractScope<GlobalScopeDefault<User, Request, Response, Session, Context>>
+    extends AbstractScope<GlobalScopeDefault<User, Request, Response, Session, Scope, Context>>
     implements GlobalScope<Session> {
 
     private In1Out1<User, String> keySource;

@@ -18,16 +18,14 @@ import xapi.gwtc.api.CompiledDirectory;
 import xapi.gwtc.api.GwtManifest;
 import xapi.gwtc.api.Gwtc;
 import xapi.gwtc.api.GwtcProperties;
+import xapi.jre.inject.RuntimeInjector;
 import xapi.jre.process.ConcurrencyServiceJre;
 import xapi.log.X_Log;
 import xapi.mvn.api.MvnDependency;
 import xapi.reflect.X_Reflect;
 import xapi.test.junit.JUnit4Runner;
 import xapi.test.junit.JUnitUi;
-import xapi.util.X_Debug;
-import xapi.util.X_Namespace;
-import xapi.util.X_Properties;
-import xapi.util.X_Util;
+import xapi.util.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -110,8 +108,18 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
     In1<Integer> cleanup = prepareCleanup(manifest);
 
     URL[] urls = fromClasspath(classpath);
-    // Ensure our list of urls contain
+    final String cacheDir = RuntimeInjector.getInjectorCacheDir();
+    if (X_String.isNotEmptyTrimmed(cacheDir)) {
+      try {
+        urls = X_Fu.push(urls, new URL("file:" + cacheDir));
+      } catch (MalformedURLException e) {
+        X_Log.warn(GwtcServiceImpl.class, "Bad cache dir computed", cacheDir, " is not a valid URL");
+      }
+    }
+    // TODO: also add the runtime injection path to this set of urls.
+    // Ensure our list of urls contain all requested urls
     URLClassLoader loader = manifestBackedClassloader(urls, manifest);
+
     return loader;
   }
 
@@ -195,7 +203,10 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
   private URL[] dedup(URL[] urls) {
     Map<String, URL> dedup = new LinkedHashMap<>();
     for (URL url : urls) {
-      dedup.put(url.getPath(), url);
+      final URL was = dedup.put(url.getPath(), url);
+      if (was != null) {
+        X_Log.debug(GwtcServiceImpl.class, "Removing duplicated classpath url", was);
+      }
     }
     return dedup.values().toArray(new URL[dedup.size()]);
   }

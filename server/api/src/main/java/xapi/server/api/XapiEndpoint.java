@@ -13,8 +13,19 @@ public interface XapiEndpoint<Request extends RequestScope> {
 
     void serviceRequest(String path, Request req, String payload, In2<Request, Throwable> callback);
 
-    default void initialize(Scope scope, XapiServer<?> server) {
+    default void initialize(Scope scope, XapiServer<Request> server) {
 
     }
 
+    default void onFail(Request finalScope, Throwable fail) {
+
+    }
+
+    default void onSuccess(Request finalScope) {
+
+    }
+
+    default boolean isContextPath() {
+        return true;
+    }
 }

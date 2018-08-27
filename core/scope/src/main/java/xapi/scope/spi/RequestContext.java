@@ -1,5 +1,6 @@
 package xapi.scope.spi;
 
+import xapi.scope.request.RequestScope;
 import xapi.scope.request.SessionScope;
 
 /**
@@ -22,13 +23,16 @@ public interface RequestContext<
     User,
     Request extends RequestLike,
     Response extends ResponseLike,
-    Session extends SessionScope<User, Request, Response>
+    Session extends SessionScope<User, Request, Response>,
+    Scope extends RequestScope<Request, Response>
 > {
     User getUser();
 
     Request getRequest();
 
     Response getResponse();
+
+    Scope getScope();
 
     Session getSession();
 

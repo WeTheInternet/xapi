@@ -273,7 +273,7 @@ public interface Scope extends HasLock {
   }
 
   default Do captureScope() {
-    Do capture = Do.NOTHING;
+    Do capture = getParent() == null ? Do.NOTHING : getParent().captureScope();
     if (has(MultiplexedScope.class)) {
       MultiplexedScope tl = get(MultiplexedScope.class);
       if (tl.isInitialized()) {
@@ -323,6 +323,26 @@ public interface Scope extends HasLock {
     }
     return restored;
   }
+
+  default boolean hasRetainers() {
+    return mutex(()->hasLocal(ScopeKeys.RETAINER_KEY));
+  }
+
+  default Do retain() {
+    mutex(()->{
+      final Object retainers = getLocal(ScopeKeys.RETAINER_KEY);
+      setLocal(ScopeKeys.RETAINER_KEY, retainers == null ? 1 : ((Integer)retainers)+1);
+    });
+    return ()->
+      mutex(()->{
+        final Object current = getLocal(ScopeKeys.RETAINER_KEY);
+        if (current.equals(1)) {
+          removeLocal(ScopeKeys.RETAINER_KEY);
+        } else {
+          setLocal(ScopeKeys.RETAINER_KEY, ((Integer)current)-1);
+        }
+      });
+  }
 }
 
 @SuppressWarnings("unchecked")
@@ -330,9 +350,11 @@ public interface Scope extends HasLock {
 final class ScopeKeys {
   static final Class<Scope> PARENT_KEY = Class.class.cast(ParentKey.class);
   static final Class<Object> ATTACHED_KEY = Class.class.cast(AttachedKey.class);
+  static final Class<Object> RETAINER_KEY = Class.class.cast(RetainersKey.class);
   static final Scope NULL = MapLike::empty;
   private interface ParentKey extends Scope {}
   private interface AttachedKey extends Scope {}
+  private interface RetainersKey extends Scope {}
 }
 // This class is intentionally stuffed here, because nobody else should be touching this.
 final class MultiplexedScope extends ThreadLocal<ClassTo<Object>> {

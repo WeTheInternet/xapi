@@ -6,11 +6,7 @@ import xapi.annotation.inject.SingletonDefault;
 import xapi.annotation.inject.SingletonOverride;
 import xapi.annotation.reflect.KeepClass;
 import xapi.bytecode.ClassFile;
-import xapi.bytecode.annotation.Annotation;
-import xapi.bytecode.annotation.ArrayMemberValue;
-import xapi.bytecode.annotation.ClassMemberValue;
-import xapi.bytecode.annotation.IntegerMemberValue;
-import xapi.bytecode.annotation.MemberValue;
+import xapi.bytecode.annotation.*;
 import xapi.collect.api.Fifo;
 import xapi.collect.impl.SimpleFifo;
 import xapi.dev.scanner.api.ClasspathScanner;
@@ -29,28 +25,46 @@ import xapi.time.api.Moment;
 import xapi.time.impl.ImmutableMoment;
 import xapi.util.X_Properties;
 import xapi.util.X_Runtime;
+import xapi.util.X_String;
 import xapi.util.X_Util;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.io.*;
+import java.util.*;
 
 @KeepClass
 public class RuntimeInjector implements In2<String, PlatformChecker> {
 
   @Override
-  public void in(final String targetDir, PlatformChecker selector) {
-    final String prefix = "META-INF"+File.separator;
+  public void in(String targetDir, PlatformChecker selector) {
+
+    final String cacheDir = getInjectorCacheDir();
+    String prefix = cacheDir + "META-INF"+File.separator;
+    if (cacheDir.endsWith(X_String.ensureEndsWith(targetDir, File.separator))) {
+      targetDir = cacheDir;
+    }
     writeMetaInfo(targetDir, selector, prefix+"singletons", prefix+"instances");
+  }
+
+  public static String getInjectorCacheDir() {
+    String prefix = System.getProperty("xapi.injector.cache", System.getenv("xapi.injector.cache"));
+    if (prefix == null) {
+      try {
+        // Try to find the location of the current main class, and try to use it to improve our prefix
+        // (i.e. generating results somewhere usable...)
+        final Class<?> mainClass = X_Reflect.getMainClass();
+        if (mainClass != null) {
+          final String mainLoc = X_Reflect.getFileLoc(mainClass);
+          if (mainLoc != null) {
+            if (mainLoc.contains("jar")) {
+              return "";
+            }
+            return mainLoc + File.separator + X_String.ensureEndsWith(prefix, File.separator);
+          }
+        }
+      } catch (Exception ignored) {}
+      return ""; // uses working directory
+    }
+    return X_String.ensureEndsWith(prefix, File.separator);
   }
 
   @SuppressWarnings("unchecked")
@@ -246,7 +260,7 @@ public class RuntimeInjector implements In2<String, PlatformChecker> {
       }
     }
     try {
-      writeMeta(injectionTargets, new File(target, singletonDir));
+      writeMeta(injectionTargets, target, singletonDir);
     } catch( final Exception e) {e.printStackTrace();}
 
     injectionTargets.clear();
@@ -298,7 +312,7 @@ public class RuntimeInjector implements In2<String, PlatformChecker> {
       }
     }
     try{
-      writeMeta(injectionTargets, new File(target, instanceDir));
+      writeMeta(injectionTargets, target, instanceDir);
     } catch (final Throwable e) {
       X_Log.warn("Trouble encountered writing instance meta to ",new File(target, instanceDir),e);
     }
@@ -377,19 +391,26 @@ public class RuntimeInjector implements In2<String, PlatformChecker> {
     );
     throw error;
   }
-  protected void writeMeta(final Map<String, ClassFile> injectables,
-      final File target) {
-    X_Log.info(getClass(), "Writing meta to ",target.getAbsoluteFile());
+  protected void writeMeta(
+      final Map<String, ClassFile> injectables,
+      final File target,
+      String instanceDir
+  ) {
+    File dir = new File(instanceDir);
+    if (!dir.isAbsolute()) {
+      dir = new File(target, instanceDir);
+    }
+    X_Log.info(RuntimeInjector.class, "Writing meta to ",dir.getAbsoluteFile());
 
-    if (!target.exists()) {
-      if (!target.mkdirs()) {
-        throw new RuntimeException("Unable to create meta info directory for "+target.getAbsolutePath());
+    if (!dir.exists()) {
+      if (!dir.mkdirs()) {
+        throw new RuntimeException("Unable to create meta info directory for "+dir.getAbsolutePath());
       }
     }
 
     mainLoop:
     for (final String iface : injectables.keySet()){
-      final File metaInf = new File(target, iface);
+      final File metaInf = new File(dir, iface);
       final String impl = injectables.get(iface).getName();
       X_Log.debug("Injecting ",iface," -> ",impl);
       try{

@@ -12,6 +12,11 @@ import xapi.scope.api.Scope;
  */
 public interface ScopeService {
 
+  default <S extends Scope> void runInScopeNoRelease(S scope, In1Unsafe<S> todo) {
+    Do retain = scope.retain();
+    runInScope(scope, todo);
+    retain.done();
+  }
   default <S extends Scope> void runInScope(S scope, In1Unsafe<S> todo) {
     runInScope(scope, (s, onDone)->{
       try {
@@ -22,6 +27,7 @@ public interface ScopeService {
     });
   }
 
+  // TODO: make a version that accepts In2Out1Unsafe, and have it return a value, so we don't wind up with hideous "callback cheats".
   <S extends Scope> void runInScope(S scope, In2Unsafe<S, Do> todo);
 
   default <S extends Scope> void runInNewScope(Class<S> scope, In1Unsafe<S> todo) {

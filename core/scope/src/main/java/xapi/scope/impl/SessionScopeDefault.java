@@ -25,8 +25,8 @@ public class SessionScopeDefault <User, Request extends RequestLike, Response ex
 
     private User user;
     private Moment activity;
-    private In2Out1<Request, Response, RequestScope<Request, Response>> scopeFactory;
-    protected final WeakHashMap<Request, RequestScope<Request, Response>> requests;
+    private transient In2Out1<Request, Response, RequestScope<Request, Response>> scopeFactory;
+    protected transient final WeakHashMap<Request, RequestScope<Request, Response>> requests;
 
     protected SessionScopeDefault() {
         this((req, resp)->{
@@ -83,6 +83,7 @@ public class SessionScopeDefault <User, Request extends RequestLike, Response ex
 
     @Override
     public SessionScope<User, Request, Response> setUser(User user) {
+        assert this.user == null || this.user.equals(user) : "Cannot change users...";
         this.user = user;
         return this;
     }

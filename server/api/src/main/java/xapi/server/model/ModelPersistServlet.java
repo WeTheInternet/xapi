@@ -194,7 +194,7 @@ public class ModelPersistServlet extends HttpServlet {
       while (wait.get()) {
         X_Time.trySleep(30, 0);
         if (X_Time.isPast(deadline)) {
-          X_Log.error(getClass(), "Timeout while saving model",model);
+          X_Log.error(ModelPersistServlet.class, "Timeout while saving model",model);
           return;
         }
       }

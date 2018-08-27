@@ -15,7 +15,7 @@ import xapi.util.X_String;
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 8/12/18 @ 3:38 AM.
  */
-public class VertxContext implements RequestContext<User, VertxRequest, VertxResponse, SessionScopeVertx> {
+public class VertxContext implements RequestContext<User, VertxRequest, VertxResponse, SessionScopeVertx, RequestScopeVertx> {
 
     public static final Integer SUCCESS = 200;
     private static final String CONTEXT_KEY = "_xvc_";
@@ -43,14 +43,25 @@ public class VertxContext implements RequestContext<User, VertxRequest, VertxRes
         final Session rawSession = ctx.session();
         final String sessionId = rawSession.id();
         final SessionScopeVertx sess = global.findOrCreateSession(sessionId, id -> {
-            final SessionScopeVertx scope = new SessionScopeVertx();
+            final Object existing = ctx.session().data().get(id);
+            final SessionScopeVertx scope;
+            if (existing != null) {
+                // Actually make the data we save to the vertx session some smaller,
+                // serializable subset of local values... have a SerializableClassTo for localData,
+                // and we'll just copy those into a new SessionScopeVertx instance.
+                scope = (SessionScopeVertx) existing;
+            } else {
+                scope = new SessionScopeVertx();
+            }
+            scope.setUser(ctx.user());
+            scope.setContext(ctx);
             return scope;
         });
         sess.setUser(ctx.user());
-        scope = (RequestScopeVertx) sess.getRequestScope(req,resp);
         // We are only using the lazy here so we can check if it's been resolved by user or not.
         // This can allow us to fail-fast when considering whether to deal w/ session or not.
         session = Lazy.immutable1(sess);
+        scope = (RequestScopeVertx) sess.getRequestScope(req,resp);
 
     }
 
@@ -114,6 +125,7 @@ public class VertxContext implements RequestContext<User, VertxRequest, VertxRes
         return finished;
     }
 
+    @Override
     public RequestScopeVertx getScope() {
         return scope;
     }

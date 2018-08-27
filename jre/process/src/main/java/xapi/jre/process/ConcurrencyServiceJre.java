@@ -111,6 +111,7 @@ public class ConcurrencyServiceJre extends ConcurrencyServiceAbstract{
     Thread key, UncaughtExceptionHandler params) {
     ConcurrentEnvironment enviro = new JreConcurrentEnvironment();
     Mutable<Integer> delay = new Mutable<>(50_000);
+    final String caller = Thread.currentThread().getName();
     final Thread thread = createThread(() -> {
       while (!enviro.isStopped()) {
         if (enviro.flush(10)) {
@@ -121,11 +122,18 @@ public class ConcurrencyServiceJre extends ConcurrencyServiceAbstract{
           delay.in(50_000_000);
         }
       }
+      for (Thread t : enviro.getThreads()) {
+        environments.removeValue(t.getName());
+      }
+      environments.removeValue(caller);
+      X_Log.trace(ConcurrencyServiceJre.class, "Releasing thread ", Thread.currentThread(), "Active enviros: ", environments.size());
     });
-    thread.setName("X_Process Enviro Thread " + hashCode());
+    thread.setName("X_Process Enviro Thread " + System.identityHashCode(enviro));
     enviro.pushThread(thread);
     thread.setDaemon(true);
     thread.start();
+    // sentinel to ensure environment
+    enviro.pushDeferred(Do.NOTHING);
 
     return enviro;
   }
@@ -133,17 +141,19 @@ public class ConcurrencyServiceJre extends ConcurrencyServiceAbstract{
   protected Thread createThread(Do task) {
     Mutable<Scope> s = new Mutable<>(X_Scope.currentScope());
     Do inheritScope = X_Scope.service().inheritScope();
+    final String name = "xapi-thread-" + task;
     final Thread t = new Thread(task
         .doBefore(()->
             scope.set(s.out1())
         )
         .doBefore(inheritScope)
         .doAfter(scope::remove)
+        .doAfter(()->environments.removeValue(name))
         .toRunnable());
     final Thread me = Thread.currentThread();
     t.setContextClassLoader(me.getContextClassLoader());
     t.setUncaughtExceptionHandler(me.getUncaughtExceptionHandler());
-    t.setName("xapi-thread-" + task);
+    t.setName(name);
     return t;
   }
 

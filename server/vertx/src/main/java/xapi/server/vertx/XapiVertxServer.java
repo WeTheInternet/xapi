@@ -22,16 +22,13 @@ import xapi.annotation.model.IsModel;
 import xapi.bytecode.NotFoundException;
 import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
-import xapi.collect.api.InitMap;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.IntTo.Many;
 import xapi.collect.api.StringTo;
-import xapi.collect.impl.InitMapDefault;
 import xapi.dev.gwtc.api.GwtcJob;
 import xapi.dev.gwtc.api.GwtcJobManager;
 import xapi.dev.gwtc.api.GwtcService;
 import xapi.except.MultiException;
-import xapi.except.NotConfiguredCorrectly;
 import xapi.fu.*;
 import xapi.fu.Do.DoUnsafe;
 import xapi.fu.In2.In2Unsafe;
@@ -79,17 +76,18 @@ import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Iterator;
 import java.util.Map.Entry;
-import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.LockSupport;
 
 import static io.vertx.core.Future.succeededFuture;
+import static xapi.util.X_String.ensureEndsWith;
+import static xapi.util.X_String.ensureStartsWith;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/23/16.
  */
-public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
+public class XapiVertxServer extends AbstractXapiServer<RequestScopeVertx> {
 
     static {
         X_Model.register(ModelSession.class);
@@ -105,7 +103,6 @@ public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
     private final PrimitiveSerializer primitives;
     private Vertx vertx;
     private In1<DoUnsafe> exe;
-    private final InitMap<String, XapiEndpoint<?>> endpoints;
     /**
      * This instance id; by default, generated sequentially from static variable.
      * TODO: use a vert.x clustered counter
@@ -121,9 +118,6 @@ public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
 
     public XapiVertxServer(WebApp webApp) {
         this.webApp = webApp;
-        endpoints = new InitMapDefault<>(
-            In1Out1.identity(), this::findEndpoint
-        );
         onStarted = Chain.startChain();
         onShutdown = Chain.startChain();
         onStarted.add((v, s)->
@@ -207,87 +201,11 @@ public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
     }
 
     @Override
-    public void registerEndpoint(String name, XapiEndpoint<RequestScopeVertx> endpoint) {
-        endpoints.put(name, endpoint);
-    }
-
-    @Override
-    public void registerEndpointFactory(String name, boolean singleton, In1Out1<String, XapiEndpoint<RequestScopeVertx>> endpoint) {
-        synchronized (endpoints) {
-            endpoints.put(name, (path, requestLike, payload, callback) -> {
-                final XapiEndpoint realEndpoint = endpoint.io(name);
-                if (singleton) {
-                    endpoints.put(name, realEndpoint);
-                }
-                realEndpoint.initialize(requestLike, XapiVertxServer.this);
-                realEndpoint.serviceRequest(path, requestLike, payload, callback);
-            });
-        }
-    }
-
-    @Override
     public void onRelease() {
         onRelease.done();
         onRelease = Do.unsafe(()->{
             throw new IllegalStateException("Server already released");
         });
-    }
-
-    protected XapiEndpoint<?> findEndpoint(String name) {
-        // this is called during the init process of the underlying map,
-        // but we made it protected so it could be overloaded, and that
-        // means still want to route all endpoint loading through the caching map.
-        if (endpoints.containsKey(name)) {
-            return endpoints.get(name);
-        }
-        try {
-            final ClassLoader cl = Thread.currentThread().getContextClassLoader();
-            final Class<?> cls = cl.loadClass(name);
-            // once we have the class, lets inject it...
-            Object inst;
-            try {
-                inst = X_Inject.singleton(cls);
-                if (inst == null) {
-                    throw new NullPointerException();
-                }
-                assert XapiEndpoint.class.isInstance(inst) : "Injection result of " + name + ", " + inst.getClass() + " is not a XapiEndpoint" +
-                    " (or there is something nefarious happening with your classloader)";
-                final XapiEndpoint<?> endpoint = (XapiEndpoint<?>) inst;
-                // we'll cache singletons
-                endpoints.put(name, endpoint);
-                return endpoint;
-            } catch (RuntimeException ignored) {
-                // no dice... can we inject an instance?
-                try {
-                    inst = X_Inject.instance(cls);
-                    // huzzah!  we can create instances.  In this case, we'll return the one we just created,
-                    // plus create a simple delegate which knows to inject a new endpoint per invocation.
-                    final Class<XapiEndpoint<?>> c = Class.class.cast(cls);
-                    endpoints.put(name, (path, requestLike, payload, callback) -> {
-                        XapiEndpoint realInst = X_Inject.instance(c);
-                        realInst.serviceRequest(path, requestLike, payload, callback);
-                    });
-                    assert XapiEndpoint.class.isInstance(inst) : "Injection result of " + name + ", " + inst.getClass() + " is not a XapiEndpoint" +
-                        " (or there is something nefarious happening with your classloader)";
-                    return (XapiEndpoint<?>) inst;
-                } catch (RuntimeException stillIgnored) {
-                    // STILL no dice... try service loader then give up.
-                    for (Object result : ServiceLoader.load(cls, cl)) {
-                        // if you loaded through service loader, you are going to be static, and can worry about
-                        // state management yourself.
-                        // TODO: test some things that use service loader to see what standards are, maybe revise above assumption
-                        if (XapiEndpoint.class.isInstance(result)) {
-                            final XapiEndpoint<?> endpoint = (XapiEndpoint<?>) result;
-                            endpoints.put(name, endpoint);
-                            return endpoint;
-                        }
-                    }
-                }
-            }
-        } catch (ClassNotFoundException e) {
-            throw new NotConfiguredCorrectly("Could not load endpoint named " + name);
-        }
-        return null;
     }
 
     @Override
@@ -542,6 +460,8 @@ public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
 
                 // Now, if the above routes did not complete, delegate to standard xapi infrastructure,
                 // for features that vertx either doesn't support, or is not (currently) worth the effort to delegate to.
+                initializeEndpoints(scope);
+
                 router.route().handler(this::onRequest);
 
                 installRoutesBackup(router);
@@ -553,10 +473,10 @@ public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
                             throw new IllegalStateException("Server failed to start ", result.cause());
                         }
                         onStarted(vertx, result.result());
-                        X_Log.info(getClass(), "Server up and running at 0.0.0.0:" + webApp.getPort());
-                        endpoints.forEach((key, endpoint)->
-                            endpoint.initialize(scope, XapiVertxServer.this)
-                        );
+
+
+                        X_Log.info(XapiVertxServer.class, "Server up and running at 0.0.0.0:" + webApp.getPort());
+
                         onStart.done();
                         // we'll set the mutable's value last,
                         // as we want the calling thread to block until the job is really complete
@@ -582,6 +502,35 @@ public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
             LockSupport.parkNanos(100_000);
         }
 
+    }
+
+    @Override
+    protected void initializeEndpoint(
+        String path, XapiEndpoint<RequestScopeVertx> endpoint, Scope scope
+    ) {
+        // add us to the router as a high priority call.
+        // TODO: have http methods and content type matching from the endpoint done here.
+        final String pathRegex;
+        final Handler<RoutingContext> handler = rc -> {
+            final VertxContext vc = VertxContext.fromNative(rc);
+            endpoint.serviceRequest(rc.normalisedPath(), vc.getScope(), path, (finalScope, fail) -> {
+                if (fail != null) {
+                    endpoint.onFail(finalScope, fail);
+                } else {
+                    endpoint.onSuccess(finalScope);
+                }
+                vc.finish(fail);
+            });
+        };
+        if (endpoint.isContextPath()) {
+            pathRegex = ensureEndsWith(ensureStartsWith(path, "/"), "/.*");
+            router.routeWithRegex(pathRegex).handler(handler);
+        } else {
+            pathRegex = ensureStartsWith(path, "/");
+            router.route(pathRegex).handler(handler);
+        }
+
+        super.initializeEndpoint(path, endpoint, scope);
     }
 
     protected void installRoutesOverride(Router router) {
@@ -864,7 +813,6 @@ public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
                 final GwtManifest manifest = module.getOrCreateManifest();
                 final GwtcJobManager manager = service.getJobManager();
                 final GwtcJob job = manager.getJob(manifest.getModuleName());
-
                 assert !resp.getResponse().headWritten() : "Head already written!!";
 
                 Duration maxTime = gwtMaxCompileTime();
@@ -914,6 +862,10 @@ public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
                                         X_Log.warn(XapiVertxServer.class, "No file to serve for ", file, "from url", newUrl);
                                     }
                                 } else {
+                                    if (job == null) {
+                                        callback.in(scope, new IllegalStateException("No job for " + manifest.getModuleName()));
+                                        return;
+                                    }
                                     // This url is for an actual source file.
                                     int ind = newUrl.indexOf("$sourceroot_goes_here$");
                                     if (ind == -1) {
@@ -1002,6 +954,7 @@ public class XapiVertxServer implements XapiServer<RequestScopeVertx> {
         final XapiEndpoint endpoint = findEndpoint(payload);
         if (endpoint == null) {
             X_Log.warn(XapiVertxServer.class, "No endpoint found for", payload);
+            callback.in(request, new IllegalArgumentException("No endpoint: " + path));
         } else {
             endpoint.serviceRequest(path, request, payload, callback);
         }

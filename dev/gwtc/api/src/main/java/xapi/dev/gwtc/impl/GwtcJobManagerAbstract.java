@@ -55,6 +55,8 @@ import com.google.gwt.dev.resource.impl.ResourceAccumulatorManager;
  */
 public abstract class GwtcJobManagerAbstract implements GwtcJobManager {
 
+    class StaleJar extends Error {}
+
     protected final StringTo<GwtcJob> runningJobs;
     protected final StringTo<CompileMessage> statuses;
     protected final StringTo.Many<In2<CompiledDirectory, Throwable>> callbacks;
@@ -120,6 +122,11 @@ public abstract class GwtcJobManagerAbstract implements GwtcJobManager {
         if (existing.getState() == CompileMessage.Success) {
             // now we also need to check freshness...
             Mutable<Boolean> result = new Mutable<>();
+            try {
+                ResourceAccumulatorManager.class.getName();
+            } catch (NoClassDefFoundError staleJar) {
+                throw new StaleJar();
+            }
             ResourceAccumulatorManager.checkCompileFreshness(
                 ()->{
                     // when fresh, maybeRecompile returns false

@@ -25,6 +25,7 @@ public interface GwtcJobMonitor {
     String JOB_J2CL = "j2cl";
     String JOB_CHECK_FRESHNESS = "check";
     String JOB_GET_RESOURCE = "find";
+    String JOB_PING = "ping";
 
     /**
      * Runs in test mode, sends back the rest of the arguments,

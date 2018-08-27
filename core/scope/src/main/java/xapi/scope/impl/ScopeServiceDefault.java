@@ -118,6 +118,7 @@ public class ScopeServiceDefault implements ScopeService {
         final ClassTo<Scope> scopeMap = multiplexed ? map.multiplexed.get() : map.scopes;
         final Scope forType = scopeMap.get(scope.forScope());
         map.scope.set(scope);
+        Do retainer = scope.retain();
         submitTask(todo, scope, ()->{
             map.scope.set(curScope);
             if (forType == null) {
@@ -125,12 +126,14 @@ public class ScopeServiceDefault implements ScopeService {
             } else {
                 scopeMap.put(scope.forScope(), forType);
             }
+            retainer.done();
             maybeRelease(scope);
         });
     }
 
     protected <S extends Scope> void maybeRelease(S scope) {
-        if (scope.forScope() != GlobalScope.class) {
+        if (!scope.hasRetainers() && scope.forScope() != GlobalScope.class) {
+            // TODO: allow for registered retainers to prevent scope from being released...
             scope.release();
         }
     }

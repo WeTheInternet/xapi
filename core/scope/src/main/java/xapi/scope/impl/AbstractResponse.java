@@ -68,6 +68,18 @@ public class AbstractResponse implements ResponseLike {
         return new HtmlBuffer();
     }
 
+    public PrintBuffer errorBuffer() {
+        if (raw != null) {
+            // TODO: add a DomBuffer (w/ error styling) to raw and return that instead.
+            return raw;
+        }
+        if (html == null) {
+            html = initHtmlBuffer();
+        }
+        // TODO: add some error wrapping here (a tag inside the body)
+        return html.getBody();
+    }
+
     @Override
     public PrintBuffer buildRawResponse() {
         if (html != null) {
