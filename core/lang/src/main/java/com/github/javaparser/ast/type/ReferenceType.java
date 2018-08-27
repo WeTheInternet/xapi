@@ -35,6 +35,8 @@ import static com.github.javaparser.ast.internal.Utils.*;
  */
 public final class ReferenceType extends Type implements TypedNode {
 
+	// This type is only ever PrimitiveType or ClassOrInterfaceType;
+	// TODO: replace with AssignableType, and rewire everything else that calls into us.
 	private Type type;
 
 	private int arrayCount;
@@ -97,6 +99,8 @@ public final class ReferenceType extends Type implements TypedNode {
 
 	@Override
 	public void setType(final Type type) {
+    		assert type instanceof PrimitiveType || type instanceof ClassOrInterfaceType :
+			"A ReferenceType can only be primitives or non-array types; you sent " + type;
 		this.type = type;
 		setAsParentNodeOf(this.type);
 	}

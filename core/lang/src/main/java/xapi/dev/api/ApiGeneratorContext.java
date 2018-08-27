@@ -6,14 +6,9 @@ import com.github.javaparser.ast.expr.Expression;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.dev.source.SourceBuilder;
-import xapi.fu.Do;
-import xapi.fu.In1Out1;
-import xapi.fu.Lazy;
-import xapi.fu.Out1;
-import xapi.fu.ReturnSelf;
+import xapi.fu.*;
 import xapi.log.X_Log;
 import xapi.source.X_Source;
-import xapi.source.write.ToStringer;
 import xapi.source.write.Template;
 
 /**
@@ -28,6 +23,7 @@ public class ApiGeneratorContext<Ctx extends ApiGeneratorContext<Ctx>>
     private StringTo<SourceBuilder<Ctx>> sources;
     private boolean firstOfRange;
     private boolean inRange;
+    private boolean ignoreChanges;
 
     public ApiGeneratorContext() {
         vars = X_Collect.newStringMap(Node.class);
@@ -47,7 +43,7 @@ public class ApiGeneratorContext<Ctx extends ApiGeneratorContext<Ctx>>
         String key = id.startsWith("$") ? id.substring(1) : id;
         final Node was = vars.get(key);
         vars.put(key, node);
-        if (was != null && was != node) {
+        if (!ignoreChanges && was != null && !was.equals(node)) {
             X_Log.warn(ApiGeneratorContext.class, "Overriding key ", id, "was", was, "is", node);
         }
         return was == null ? () -> vars.remove(key) : () -> vars.put(key, was);
@@ -128,5 +124,11 @@ public class ApiGeneratorContext<Ctx extends ApiGeneratorContext<Ctx>>
 
     public void setOutputDirectory(String outputDirectory) {
         this.outputDirectory = outputDirectory;
+    }
+
+    public boolean setIgnoreChanges(boolean ignoreChanges) {
+        final boolean was = this.ignoreChanges;
+        this.ignoreChanges = ignoreChanges;
+        return was;
     }
 }

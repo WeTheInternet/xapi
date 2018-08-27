@@ -973,6 +973,10 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
         putCallback(MethodReferenceExpr.class, callback.supply1(true));
         return this;
     }
+    public ComposableXapiVisitor<Ctx> withMethodReferenceTerminal(In2<MethodReferenceExpr, Ctx> callback) {
+        putCallback(MethodReferenceExpr.class, callback.supply1(false));
+        return this;
+    }
 
     @Override
     public void visit(TypeExpr n, Ctx arg) {
@@ -1013,8 +1017,13 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
         putCallback(UiContainerExpr.class, callback);
         return this;
     }
-    public ComposableXapiVisitor<Ctx> withUiContainerExpr(In2<UiContainerExpr, Ctx> callback) {
-        putCallback(UiContainerExpr.class, callback.supply1(true)); // default is to visit children
+    public ComposableXapiVisitor<Ctx> withUiContainerRecurse(In2<UiContainerExpr, Ctx> callback) {
+        putCallback(UiContainerExpr.class, callback.supply1(true));
+        return this;
+    }
+
+    public ComposableXapiVisitor<Ctx> withUiContainerTerminal(In2<UiContainerExpr, Ctx> callback) {
+        putCallback(UiContainerExpr.class, callback.supply1(false));
         return this;
     }
 

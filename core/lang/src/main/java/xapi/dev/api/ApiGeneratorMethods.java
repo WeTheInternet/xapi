@@ -9,32 +9,17 @@ import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.Statement;
-import com.github.javaparser.ast.type.ClassOrInterfaceType;
-import com.github.javaparser.ast.type.IntersectionType;
-import com.github.javaparser.ast.type.PrimitiveType;
+import com.github.javaparser.ast.type.*;
 import com.github.javaparser.ast.type.PrimitiveType.Primitive;
-import com.github.javaparser.ast.type.ReferenceType;
-import com.github.javaparser.ast.type.Type;
-import com.github.javaparser.ast.type.WellKnownTypes;
-import com.github.javaparser.ast.type.WildcardType;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.dev.api.AstMethodInvoker.AstMethodResult;
-import xapi.fu.Do;
-import xapi.fu.Filter;
-import xapi.fu.In1Out1;
-import xapi.fu.Maybe;
-import xapi.fu.Rethrowable;
-import xapi.fu.X_Fu;
+import xapi.fu.*;
 import xapi.fu.has.HasSize;
 import xapi.fu.iterate.ChainBuilder;
 import xapi.util.X_Debug;
 
-import java.lang.annotation.Annotation;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -137,17 +122,28 @@ public interface ApiGeneratorMethods<Ctx extends ApiGeneratorContext<Ctx>> exten
         if ("?".equals(named)) {
             // make a WildcardType
             WildcardType wildcard = new WildcardType();
-            IntersectionType inter = new IntersectionType(refs);
-            final Type maybeSuper = refs.get(0).getType();
-            if (maybeSuper instanceof ClassOrInterfaceType) {
-            String firstArgName = ((ClassOrInterfaceType)maybeSuper).getName();
-                if ("super".equals(firstArgName)) {
-                    refs.remove(0);
-                    wildcard.setSuper(new ReferenceType(inter));
-                    return new TypeExpr(wildcard);
+            if (refs.size() > 0) {
+                final Type maybeSuper = refs.get(0).getType();
+                if (maybeSuper instanceof ClassOrInterfaceType) {
+                    String firstArgName = ((ClassOrInterfaceType)maybeSuper).getName();
+                    // We accept [ super, SomeTypeHere ] with super as a named type (ClassOrInterfaceType),
+                    // for ease of use during programmatic creation of wildcard bounds
+                    if ("super".equals(firstArgName)) {
+                        refs.remove(0);
+                        if (refs.size() > 1) {
+                            assert false : "A wildcard cannot extend more than one type; you sent `? super " + refs +"` to " + this;
+                            throw new IllegalArgumentException("Only 1 argument allowed: " + refs);
+                        }
+                        wildcard.setSuper(new ReferenceType(refs.remove(0)));
+                        return new TypeExpr(wildcard);
+                    }
                 }
+                if (refs.size() > 1) {
+                    assert false : "A wildcard cannot extend more than one type; you sent " + refs +" to " + this;
+                    throw new IllegalArgumentException("Only 1 argument allowed: " + refs);
+                }
+                wildcard.setExtends(new ReferenceType(maybeSuper));
             }
-            wildcard.setExtends(new ReferenceType(inter));
             return new TypeExpr(wildcard);
         } else {
             if (named.endsWith(".class")) {

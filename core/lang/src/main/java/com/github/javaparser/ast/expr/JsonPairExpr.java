@@ -1,19 +1,20 @@
 package com.github.javaparser.ast.expr;
 
 import com.github.javaparser.ASTHelper;
+import com.github.javaparser.ast.HasAnnotationExprs;
 import com.github.javaparser.ast.visitor.GenericVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitor;
-import xapi.fu.Filter.Filter1;
+import xapi.fu.In1Out1;
+import xapi.fu.Maybe;
 import xapi.source.X_Source;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 4/10/16.
  */
-public class JsonPairExpr extends UiExpr {
+public class JsonPairExpr extends UiExpr implements HasAnnotationExprs {
 
   private Expression keyExpr;
   private Expression valueExpr;
@@ -68,24 +69,13 @@ public class JsonPairExpr extends UiExpr {
     return asString.startsWith("\"") ? asString : "\"" + X_Source.escape(asString) + "\"";
   }
 
-
+  @Override
   public List<AnnotationExpr> getAnnotations() {
     return annotations;
   }
 
   public void setAnnotations(List<AnnotationExpr> annotations) {
     this.annotations = annotations;
-  }
-
-  public Optional<AnnotationExpr> getAnnotation(Filter1<AnnotationExpr> filter) {
-    if (annotations != null) {
-      for (AnnotationExpr annotation : annotations) {
-        if (filter.filter1(annotation)) {
-          return Optional.of(annotation);
-        }
-      }
-    }
-    return Optional.empty();
   }
 
   public static JsonPairExpr of(String fieldName, Expression expr) {

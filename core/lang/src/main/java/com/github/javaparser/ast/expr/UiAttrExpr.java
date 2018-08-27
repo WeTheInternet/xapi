@@ -1,19 +1,18 @@
 package com.github.javaparser.ast.expr;
 
+import com.github.javaparser.ast.HasAnnotationExprs;
 import com.github.javaparser.ast.visitor.GenericVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitor;
-import xapi.fu.In1Out1;
-import xapi.fu.Maybe;
-
-import static com.github.javaparser.ast.expr.StringLiteralExpr.stringLiteral;
 
 import java.util.List;
+
+import static com.github.javaparser.ast.expr.StringLiteralExpr.stringLiteral;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 4/10/16.
  */
-public class UiAttrExpr extends UiExpr {
+public class UiAttrExpr extends UiExpr implements HasAnnotationExprs {
 
   private NameExpr name;
   private boolean attribute;
@@ -115,27 +114,13 @@ public class UiAttrExpr extends UiExpr {
     return synthetic;
   }
 
+  @Override
   public List<AnnotationExpr> getAnnotations() {
     return annotations;
   }
 
   public void setAnnotations(List<AnnotationExpr> annotations) {
     this.annotations = annotations;
-  }
-
-  public <T> Maybe<AnnotationExpr> getAnnotation(In1Out1<AnnotationExpr, T> mapper, In1Out1<T, Boolean> filter) {
-    return getAnnotation(mapper.mapOut(filter));
-  }
-  public Maybe<AnnotationExpr> getAnnotation(In1Out1<AnnotationExpr, Boolean> filter) {
-    if (annotations == null) {
-      return Maybe.not();
-    }
-    for (AnnotationExpr annotation : annotations) {
-      if (filter.io(annotation)) {
-        return Maybe.nullable(annotation);
-      }
-    }
-    return Maybe.not();
   }
 
   public static UiAttrExpr of(String name, String stringValue) {

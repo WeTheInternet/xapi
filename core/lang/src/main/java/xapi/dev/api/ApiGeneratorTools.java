@@ -67,11 +67,18 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
     }
 
     default IntTo<String> resolveToLiterals(Ctx ctx, Expression typeParams) {
+        return resolveToLiterals(ctx, typeParams, false);
+    }
+    default IntTo<String> resolveToLiterals(Ctx ctx, Expression typeParams, boolean allowMisses) {
         IntTo<String> types = X_Collect.newList(String.class);
         ComposableXapiVisitor<Ctx> resolver = new ComposableXapiVisitor<>();
         resolver
             .withDefaultCallback((node, context, superCall)->{
-                throw new NotYetImplemented("No handler registered for " + debugNode(node));
+                if (!allowMisses) {
+                    throw new NotYetImplemented("No handler registered for " + debugNode(node));
+                }
+                final String sourced = node.toSource(getTransformer(ctx));
+                types.add(sourced);
             })
             .withEnclosedExpr((node, context)->{
                 node.getInner().accept(resolver, context);
@@ -296,7 +303,10 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
         return resolveString(ctx, value, false);
     }
     default String resolveString(Ctx ctx, Expression value, boolean allowEmpty) {
-        final IntTo<String> literals = resolveToLiterals(ctx, value);
+        return resolveString(ctx, value, allowEmpty, false);
+    }
+    default String resolveString(Ctx ctx, Expression value, boolean allowEmpty, boolean allowMisses) {
+        final IntTo<String> literals = resolveToLiterals(ctx, value, allowMisses);
         if (literals.size() != 1) {
             if (allowEmpty && literals.isEmpty()) {
                 return "";
@@ -1275,4 +1285,10 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
         return new TypeExpr(qualified);
     }
 
+    default String[] getStringMembers(Ctx ctx, AnnotationExpr expr) {
+        return expr.getMembers().map(pair-> {
+            final Expression val = pair.getValue();
+            return resolveToLiterals(ctx, val);
+        }).flatten(IntTo::forEach).toArray(String[]::new);
+    }
 }

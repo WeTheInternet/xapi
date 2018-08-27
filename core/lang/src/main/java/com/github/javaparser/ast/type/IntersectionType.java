@@ -10,7 +10,7 @@ import java.util.List;
  * As of Java 8 it is used in casts or while expressing bounds for generic types.
  *
  * For example:
- * public class A&gt;T extends Serializable &amp; Cloneable&lt; { }
+ * public class A&lt;T extends Serializable &amp; Cloneable&gt; { }
  *
  * Or:
  * void foo((Serializable &amp; Cloneable)myObject);

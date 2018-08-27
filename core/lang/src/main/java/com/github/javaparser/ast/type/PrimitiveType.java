@@ -29,7 +29,7 @@ import java.util.HashMap;
 /**
  * @author Julio Vilmar Gesser
  */
-public final class PrimitiveType extends Type {
+public final class PrimitiveType extends Type implements AssignableType {
 
 	public enum Primitive {
 		Boolean ("Boolean"),
@@ -97,5 +97,10 @@ public final class PrimitiveType extends Type {
 	@Override
 	public boolean hasRawType(String name) {
 		return type.name().toLowerCase().equals(name);
+	}
+
+	@Override
+	public String getName() {
+		return type.name().toLowerCase();
 	}
 }

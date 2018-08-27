@@ -23,7 +23,6 @@ package com.github.javaparser.ast.type;
 
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseException;
-import com.github.javaparser.ast.NamedNode;
 import com.github.javaparser.ast.TypeArguments;
 import com.github.javaparser.ast.visitor.GenericVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitor;
@@ -34,7 +33,7 @@ import java.util.List;
 /**
  * @author Julio Vilmar Gesser
  */
-public final class ClassOrInterfaceType extends Type implements NamedNode {
+public final class ClassOrInterfaceType extends Type implements AssignableType {
 
     private ClassOrInterfaceType scope;
 
