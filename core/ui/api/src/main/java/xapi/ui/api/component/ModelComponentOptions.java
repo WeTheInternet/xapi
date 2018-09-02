@@ -54,8 +54,16 @@ public class ModelComponentOptions
     public void addModelListener(In1<M> callback) {
         if (modelListener == null) {
             modelListener = callback;
-        } else {
+        } else if (modelListener != callback){
             modelListener = modelListener.useAfterMe(callback);
+        }
+    }
+
+    public <Mod extends Model> void fireListeners(Mod mod) {
+        if (modelListener != null) {
+            final In1<M> call = modelListener;
+            modelListener = In1.ignored();
+            call.in(model);
         }
     }
 }

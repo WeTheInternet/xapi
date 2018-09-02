@@ -15,7 +15,7 @@ public interface GwtModelComponentMixin<El extends HTMLElement, Mod extends Mode
     default String getModelId(El element) {
         final Object dataset = element.dataset.get(MODEL_DATA_NAME);
         if (dataset != null) {
-            return String.valueOf(dataset);
+            return ModelComponentMixin.rehydrate(getModelType(), String.valueOf(dataset));
         }
         return element.id;
     }

@@ -402,10 +402,12 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
             }
 
             if (keyName != null) {
+                String mixin = createChild.addImportStatic(ModelComponentMixin.class, ModelComponentMixin.METHOD_SHORTEN);
+                String attrName = createChild.addImportStatic(ModelComponentMixin.class, ModelComponentMixin.FIELD_MODEL_ATTR_NAME);
                 createChild
-                    .println("if (" + keyName + " != null) {")
-                    .indentln("builder.setAttribute(\""+ ModelComponentMixin.MODEL_ATTR_NAME + "\", " + keyName + ".toString());")
-                    .println("}");
+                    .patternln("if ($1 != null) {", keyName).indent()
+                    .patternln("builder.setAttribute(\"$1\", $2($3));", attrName, mixin, keyName)
+                    .outdent().println("}");
             }
             if (printClosingBrace) {
                 createChild.outdent().println("}");

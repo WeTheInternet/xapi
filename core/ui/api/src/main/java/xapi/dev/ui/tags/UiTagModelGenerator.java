@@ -139,11 +139,11 @@ public class UiTagModelGenerator extends UiFeatureGenerator {
 
             // Create some basic utilities in the model interface
             String constantName = api.getConstantName();
-            String modelField = api.getModelFieldName();
+//            String modelField = api.getModelFieldName();
             String modelType = api.getModelName();
 
             modOut.createField(String.class, "MODEL_" + constantName)
-                .setInitializer("\"" + modelField + "\"");
+                .setInitializer("\"" + modelType + "\"");
 
             final String out1 = modOut.addImport(Out1.class);
             final String keyBuilder = modOut.addImport(KeyBuilder.class);

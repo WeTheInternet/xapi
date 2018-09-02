@@ -67,6 +67,10 @@ implements IsComponent<El> {
         return element.out1();
     }
 
+    public boolean isElementResolved() {
+        return element.isResolved();
+    }
+
     @Override
     public String getRefName() {
         return refName;
@@ -80,7 +84,7 @@ implements IsComponent<El> {
         return opts;
     }
 
-    public <N extends ElementBuilder<?>> N intoBuilder(IsComponent<?> logicalParent, N into) {
+    public <N extends ElementBuilder<?>> N intoBuilder(IsComponent<?> logicalParent, ComponentOptions<El, Api> opts, N into) {
         final boolean addChild = logicalParent instanceof HasChildren;
         final boolean addParent = this instanceof HasParent;
         into.onCreated(el->{

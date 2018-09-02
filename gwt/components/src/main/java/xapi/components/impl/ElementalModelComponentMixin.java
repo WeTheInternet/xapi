@@ -15,7 +15,7 @@ public interface ElementalModelComponentMixin<El extends Element, Mod extends Mo
     default String getModelId(El element) {
         final Object dataset = element.getDataset().at(MODEL_DATA_NAME);
         if (dataset != null) {
-            return String.valueOf(dataset);
+            return ModelComponentMixin.rehydrate(getModelType(), String.valueOf(dataset));
         }
         return element.getId();
     }

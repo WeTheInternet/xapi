@@ -24,8 +24,7 @@ public class KeyBuilder {
 
   private String namespace = ModelKey.DEFAULT_NAMESPACE;
   private String kind = ModelKey.DEFAULT_KIND;
-  // For types that are application-wide singletons, the default key name is "_theOne_".
-  private String id = ModelKey.DEFAULT_ID;
+  private String id = "";//ModelKey.DEFAULT_ID;
 
   private KeyBuilder parent;
 
