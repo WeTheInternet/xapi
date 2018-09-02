@@ -81,7 +81,7 @@ public class JsSupport {
     public native E io(ComponentOptions<E, C> opts)
         /*-{
           var make = this.@JsAdapter::ctor;
-          return new make(opts);
+          return opts.@ComponentOptions::build()() || new make(opts);
         }-*/;
   }
 

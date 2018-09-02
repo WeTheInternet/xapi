@@ -8,13 +8,13 @@ import xapi.util.X_String;
 import xapi.util.api.ReceivesValue;
 import xapi.util.impl.DeferredCharSequence;
 
-import static xapi.collect.X_Collect.newStringMap;
-
 import javax.inject.Provider;
 import java.io.IOException;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
+
+import static xapi.collect.X_Collect.newStringMap;
 
 public abstract class NodeBuilder<E> implements Widget<E> {
 
@@ -183,11 +183,17 @@ public abstract class NodeBuilder<E> implements Widget<E> {
         }
         boolean initChildren = false;
         if (children != null) {
-          initChildren = children.resolveChildren(el);
+          initChildren = children.resolveChildren(this, el);
         }
         onInitialize(el);
         if (initChildren) {
-          children.onInitialize(children.getElement());
+            NodeBuilder<E> init = children;
+            while (init != null) {
+                if (init.searchableChildren) {
+                    init.onInitialize(init.getElement());
+                }
+                init = init.siblings;
+            }
         }
     } finally {
       finishInitialize(el);
@@ -213,10 +219,10 @@ public abstract class NodeBuilder<E> implements Widget<E> {
     }
   }
 
-  private boolean resolveChildren(E root) {
+  private boolean resolveChildren(NodeBuilder<E> parent, E root) {
     boolean needsCallback = false;
     if (children != null) {
-      if (children.resolveChildren(root)) {
+      if (children.resolveChildren(this, root)) {
         onCreated(
             new ReceivesValue<E>() {
               @Override
@@ -229,8 +235,8 @@ public abstract class NodeBuilder<E> implements Widget<E> {
       }
     }
     if (siblings != null) {
-      if (siblings.resolveChildren(root)) {
-        onCreated(
+      if (siblings.resolveChildren(parent, root)) {
+        siblings.onCreated(
             new ReceivesValue<E>() {
               @Override
               public void set(E value) {

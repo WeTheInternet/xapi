@@ -1,10 +1,10 @@
 package xapi.util;
 
+import xapi.fu.Do;
 import xapi.log.X_Log;
 import xapi.util.api.ErrorHandler;
 
 import java.io.PrintStream;
-import java.util.Arrays;
 
 public class X_Debug {
   private X_Debug() {}
@@ -149,10 +149,49 @@ public class X_Debug {
     System.setOut(new DebugStream(orig, ignoreDepth));
     System.out.println("Tracing system.out");
   }
+
+  private static volatile boolean flushing;
+
+  public static void preventInterleave(Do nothing) {
+    // in order to prevent deadlock,
+    // we'll avoid taking the lock if this boolean anti-recursion flag is set.
+    if (flushing) {
+      nothing.done();
+      return;
+    }
+    // now take the lock...
+    synchronized (DefaultHandler.lock) {
+      // if there was a race condition,
+      // we still have to do the whole thing
+      // to guarantee that whatever we printed
+      // is flushed to the output streams.
+      flushing = true;
+
+      // force-flush both output streams.
+      flushStreams();
+      // run user code inside this lock
+      nothing.done();
+      // re-flush after we're done,
+      // so if we're working with other code that is printing,
+      // we can ensure that at least whatever we printed
+      // is almost definitely printed in sane order.
+      flushStreams();
+
+      flushing = false;
+    }
+  }
+
+  private static void flushStreams() {
+    System.err.print("");
+    System.err.flush();
+    System.out.print("");
+    System.out.flush();
+  }
 }
 
 class DefaultHandler implements ErrorHandler<Throwable> {
   static final DefaultHandler handler = new DefaultHandler();
+  static final Object lock = new Object();
 
   private DefaultHandler() {
   }

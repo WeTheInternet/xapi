@@ -1,9 +1,6 @@
 package xapi.fu.lazy;
 
-import xapi.fu.Do;
-import xapi.fu.In1;
-import xapi.fu.Lazy;
-import xapi.fu.Out1;
+import xapi.fu.*;
 import xapi.fu.has.HasReset;
 
 /**
@@ -33,7 +30,21 @@ public class ResettableLazy <T> extends Lazy<T> implements HasReset {
     }
 
     @Override
-    public void reset() {
+    public final void reset() {
         proxy = resetter.out1();
+    }
+
+    public ResettableLazy<T> setResetter(Out1<Out1<T>> resetter) {
+        this.resetter = resetter;
+        return this;
+    }
+
+    public final void set(Out1<T> proxy) {
+        setResetter(Immutable.immutable1(proxy));
+        reset();
+    }
+
+    public final void set(T value) {
+        set(Immutable.immutable1(value));
     }
 }

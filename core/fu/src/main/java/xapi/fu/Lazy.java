@@ -456,4 +456,11 @@ public class Lazy <T> implements Out1<T>, IsLazy {
     }
   }
 
+  @Override
+  public String toString() {
+    if (isResolved()) {
+      return "Lazy(resolved: " + out1() + ")";
+    }
+    return "Lazy(unresolved: " + proxy + ")";
+  }
 }

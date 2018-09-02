@@ -122,4 +122,8 @@ public class X_Model {
   public static MappedIterable<Method> getMethodsInDeclaredOrder(Class<?> type) {
     return service.get().getMethodsInDeclaredOrder(type);
   }
+
+  public static ModelKey ensureKey(String type, Model mod) {
+    return cache().ensureKey(type, mod);
+  }
 }

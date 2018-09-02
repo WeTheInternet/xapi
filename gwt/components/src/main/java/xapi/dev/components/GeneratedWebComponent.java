@@ -1,5 +1,8 @@
 package xapi.dev.components;
 
+import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.LambdaExpr;
+import com.github.javaparser.ast.expr.SysExpr;
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.source.FieldBuffer;
@@ -11,6 +14,7 @@ import xapi.dev.ui.api.UiNamespace;
 import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.dev.ui.tags.assembler.AssembledElement;
 import xapi.dev.ui.tags.assembler.AssembledUi;
+import xapi.fu.Immutable;
 import xapi.fu.Lazy;
 import xapi.inject.X_Inject;
 
@@ -51,9 +55,12 @@ public class GeneratedWebComponent extends GeneratedUiImplementation {
         final ApiGeneratorContext ctx = assembly.getContext();
         final String name = tools.resolveString(ctx, attr.getName());
         if (name.startsWith("on")) {
+
+            boolean createdCallback = "oncreated".equals(name.toLowerCase());
             // for web components, "on*" event handlers are handled "for free".
             // TODO: something generic to serialize lambdas we want to dump into source...
-            final String func = tools.resolveString(ctx, attr.getExpression(), false, true);
+            final String func = tools.resolveString(ctx, condense(createdCallback, attr), false, true);
+
 
             boolean capture = attr.getAnnotation(a->
                 a.getNameString().toLowerCase().equals("capture") &&
@@ -63,12 +70,36 @@ public class GeneratedWebComponent extends GeneratedUiImplementation {
                 )
             ).isPresent();
 
-            out.println(".onCreated( e -> ").indent()
-               .patternln("e.addEventListener(\"$1\", $2, $3)", name.substring(2), func, capture)
-               .outdent().println(")");
+
+            out.println(".onCreated( e -> {").indent();
+            if (createdCallback) {
+                // special "magic" property we use to shove code into the init method for the given element.
+                out.printlns(func);
+            } else {
+                out.patternlns("e.addEventListener(\"$1\", $2, $3);", name.substring(2), func, capture);
+            }
+            out.outdent().println("})");
             return;
         }
         super.resolveNativeAttr(assembly, attr, el, out);
+    }
+
+    private Expression condense(boolean createdCallback, UiAttrExpr attr) {
+        final Expression expr = attr.getExpression();
+        if (createdCallback && expr instanceof LambdaExpr) {
+            final LambdaExpr lambda = (LambdaExpr) expr;
+            switch (lambda.getParameters().size()) {
+                case 1:
+                    if ("e".equals(lambda.getParameters().get(0).getId().getName())) {
+                        return new SysExpr(Immutable.immutable1(lambda.getBody()));
+                    }
+                    break;
+                case 0:
+                    return new SysExpr(Immutable.immutable1(lambda.getBody()));
+            }
+            throw new IllegalArgumentException("oncreated lambdas can have at most one parameter named `e`, you sent " + lambda.toSource());
+        }
+        return expr;
     }
 
     @Override

@@ -4,7 +4,10 @@ import elemental.client.Browser;
 import elemental.dom.DocumentFragment;
 import elemental.dom.Element;
 import elemental.dom.Node;
+import elemental2.dom.DomGlobal;
 import xapi.elemental.X_Elemental;
+import xapi.fu.Lazy;
+import xapi.fu.Out1;
 import xapi.ui.api.*;
 import xapi.util.X_Debug;
 import xapi.util.X_String;
@@ -36,6 +39,8 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> impleme
     }
 
   }
+
+  private Lazy<Element> attachTo = Lazy.deferred1(Browser.getDocument()::getBody);
 
   public PotentialNode() {
     this(false);
@@ -219,14 +224,14 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> impleme
 
   @Override
   protected void startInitialize(E el) {
-    Browser.getDocument().getBody().appendChild(el);
+    attachTo.out1().appendChild(el);
     super.startInitialize(el);
   }
 
   @Override
   protected void finishInitialize(E el) {
-    final Element body = Browser.getDocument().getBody();
-    if (body == el.getParentElement()) {
+    final Element body = attachTo.out1();
+    if (body == DomGlobal.document.body && body == el.getParentElement() && !"true".equals(el.getAttribute("no-remove"))) {
       body.removeChild(el);
     }
     super.finishInitialize(el);
@@ -259,6 +264,16 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> impleme
   @Override
   public PotentialNode<E> append(CharSequence chars) {
     super.append(chars);
+    return this;
+  }
+
+  public PotentialNode<E> attachTo(E el) {
+    attachTo = Lazy.immutable1(el);
+    return this;
+  }
+
+  public PotentialNode<E> attachTo(Out1<Element> el) {
+    attachTo = Lazy.deferred1(el);
     return this;
   }
 }

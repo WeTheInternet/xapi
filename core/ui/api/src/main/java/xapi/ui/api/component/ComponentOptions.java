@@ -2,6 +2,7 @@ package xapi.ui.api.component;
 
 import xapi.fu.Immutable;
 import xapi.fu.In1Out1;
+import xapi.ui.api.NodeBuilder;
 
 /**
  * Used as the core of a builder-like object, used to pass
@@ -33,6 +34,7 @@ public class ComponentOptions <E, C extends IsComponent<E>> {
 
     protected In1Out1<E, C> component;
     protected C existing;
+    private NodeBuilder<E> builder;
 
     public ComponentOptions<E, C> withComponent(C component) {
         existing = component;
@@ -62,5 +64,18 @@ public class ComponentOptions <E, C extends IsComponent<E>> {
 
     public boolean needsComponent() {
         return component == null;
+    }
+
+    public ComponentOptions<E, C> withBuilder(NodeBuilder<E> b) {
+        this.builder = b;
+        return this;
+    }
+
+    public boolean hasBuilder() {
+        return builder != null;
+    }
+
+    public E build() {
+        return builder == null ? null : builder.getElement();
     }
 }

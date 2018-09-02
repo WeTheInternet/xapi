@@ -3,26 +3,20 @@
  */
 package xapi.model.impl;
 
-import java.util.Objects;
-
 import xapi.annotation.compile.MagicMethod;
 import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
 import xapi.collect.api.StringTo;
 import xapi.dev.source.CharBuffer;
 import xapi.inject.X_Inject;
-import xapi.model.api.Model;
-import xapi.model.api.ModelDeserializationContext;
-import xapi.model.api.ModelKey;
-import xapi.model.api.ModelManifest;
-import xapi.model.api.ModelSerializationContext;
-import xapi.model.api.ModelSerializer;
-import xapi.model.api.PrimitiveSerializer;
+import xapi.model.api.*;
 import xapi.model.service.ModelService;
 import xapi.source.api.CharIterator;
 import xapi.source.impl.StringCharIterator;
 import xapi.util.X_String;
 import xapi.util.api.SuccessHandler;
+
+import java.util.Objects;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 public abstract class AbstractModelService implements ModelService

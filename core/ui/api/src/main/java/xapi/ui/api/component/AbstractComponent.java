@@ -1,6 +1,10 @@
 package xapi.ui.api.component;
 
-import xapi.fu.*;
+import xapi.fu.Immutable;
+import xapi.fu.In1Out1;
+import xapi.fu.Lazy;
+import xapi.fu.Out1;
+import xapi.ui.api.ElementBuilder;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 1/16/17.
@@ -76,4 +80,17 @@ implements IsComponent<El> {
         return opts;
     }
 
+    public <N extends ElementBuilder<?>> N intoBuilder(IsComponent<?> logicalParent, N into) {
+        final boolean addChild = logicalParent instanceof HasChildren;
+        final boolean addParent = this instanceof HasParent;
+        into.onCreated(el->{
+            if (addChild) {
+                ((HasChildren) logicalParent).addChildComponent(this);
+            }
+            if (addParent) {
+                ((HasParent) this).setParent(logicalParent);
+            }
+        });
+        return into;
+    }
 }

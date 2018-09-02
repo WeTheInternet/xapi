@@ -66,6 +66,15 @@ public interface Model {
 
   ModelKey getKey();
 
+  default boolean hasKey() {
+      return getKey() != null;
+  }
+
+  default boolean hasKeyFilled() {
+      final ModelKey key = getKey();
+      return key != null && key.isComplete();
+  }
+
   default ModelKey getOrComputeKey(Out1<ModelKey> backup) {
     ModelKey key = getKey();
     if (key == null) {

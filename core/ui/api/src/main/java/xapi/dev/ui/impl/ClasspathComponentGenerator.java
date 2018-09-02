@@ -139,11 +139,23 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
                 parsed = JavaParser.parseUiContainer(content);
             } catch (ParseException|Error e) {
                 if (content.startsWith("<define-tag")) {
-                    throw new RuntimeException(
-                        "Failure generating component for " +
-                            X_Source.pathToLogLink(xapiFile.getResourceName(),
-                                e instanceof ParseException ? (((ParseException) e).currentToken.beginLine) : 1)
-                        , e);
+                    int line = 1;
+                    if (e instanceof ParseException) {
+                        ParseException ex = (ParseException) e;
+                        if (ex.currentToken == null) {
+                            // grep line # from string
+                            try {
+                                String msg = ex.getMessage();
+                                int last = msg.lastIndexOf(" line ") + 6;
+                                line = Integer.parseInt( msg.substring(last, msg.indexOf(' ', last+1)) );
+                            } catch (Exception ignored) {}
+                        } else {
+                            // use line # from token
+                            line = ex.currentToken.beginLine;
+                        }
+                    }
+                    final String link = X_Source.pathToLogLink(xapiFile.getResourceName(),line);
+                    throw new RuntimeException(link + " parser error", e);
                 }
                 continue;
             }

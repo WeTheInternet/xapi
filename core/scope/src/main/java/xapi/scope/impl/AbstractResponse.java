@@ -4,13 +4,10 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.dev.source.HtmlBuffer;
 import xapi.dev.source.PrintBuffer;
-import xapi.fu.In1;
-import xapi.fu.In2;
-import xapi.fu.ListLike;
-import xapi.fu.MapLike;
-import xapi.fu.Mutable;
+import xapi.fu.*;
 import xapi.log.X_Log;
 import xapi.scope.spi.ResponseLike;
+import xapi.util.X_Debug;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 7/30/17.
@@ -98,7 +95,9 @@ public class AbstractResponse implements ResponseLike {
     @Override
     public ResponseLike finish() {
         if (closed) {
-            X_Log.warn(AbstractResponse.class, "Response already closed");
+            X_Debug.preventInterleave(()->
+                X_Log.warn(AbstractResponse.class, "Response already closed")
+            );
         } else {
             flushFinished();
             closed = true;

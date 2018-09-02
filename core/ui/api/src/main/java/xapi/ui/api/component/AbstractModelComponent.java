@@ -7,6 +7,8 @@ import xapi.model.X_Model;
 import xapi.model.api.Model;
 import xapi.model.api.ModelKey;
 
+import static xapi.model.X_Model.ensureKey;
+
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 1/16/17.
  */
@@ -38,8 +40,8 @@ implements IsModelComponent<El, Mod> {
             if (mod == null) {
                 mod = initModel();
             } else if (modelId != null){
-                X_Model.cache().ensureKey(mod.getType(), mod);
-                mod.getKey().setId(modelId);
+                ensureKey(mod.getType(), mod)
+                    .setId(modelId);
             }
             if (opts.getModelListener() != null) {
                 opts.getModelListener().in(mod);
