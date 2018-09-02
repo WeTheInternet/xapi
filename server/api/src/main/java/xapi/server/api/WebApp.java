@@ -9,6 +9,7 @@ import xapi.inject.X_Inject;
 import xapi.model.X_Model;
 import xapi.model.api.Model;
 import xapi.model.api.PrimitiveSerializer;
+import xapi.server.api.Route.RouteType;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/4/16.
@@ -132,6 +133,14 @@ public interface WebApp extends Model {
         if (isDestroyable()) {
             setDestroyed(true);
         }
+    }
+
+    default void addReroute(String from, String to) {
+        Route testRoute = X_Model.create(Route.class);
+        testRoute.setPath(from);
+        testRoute.setRouteType(RouteType.Reroute);
+        testRoute.setPayload(to);
+        getRoute().add(testRoute);
     }
 }
 class WebAppIdHolder {

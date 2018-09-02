@@ -2,9 +2,11 @@ package xapi.server.api;
 
 import xapi.fu.*;
 import xapi.fu.In3.In3Unsafe;
+import xapi.scope.api.HasRequestContext;
 import xapi.scope.request.RequestScope;
 import xapi.scope.request.SessionScope;
 import xapi.scope.spi.RequestContext;
+import xapi.scope.spi.RequestLike;
 
 import java.util.concurrent.locks.LockSupport;
 
@@ -58,5 +60,7 @@ public interface XapiServer <Request extends RequestScope> {
      * This is an important distinction with regard to cleaning up particular threads.
      * You should probably avoid overriding this unless you know what you are doing...
      */
-    void onRelease();
+    <Req extends RequestLike> void onRelease();
+
+    <Req extends HasRequestContext> void reroute(Req request, String payload, In2<Req, Throwable> callback);
 }

@@ -1,6 +1,5 @@
 package xapi.server.gen;
 
-import com.github.javaparser.ast.body.AnnotationDeclaration;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import xapi.dev.api.ApiGeneratorContext;
@@ -8,11 +7,7 @@ import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.DomBuffer;
 import xapi.dev.source.HtmlBuffer;
 import xapi.dev.source.MethodBuffer;
-import xapi.dev.ui.api.ComponentBuffer;
-import xapi.dev.ui.api.ContainerMetadata;
-import xapi.dev.ui.api.GeneratedUiBase;
-import xapi.dev.ui.api.GeneratedUiComponent;
-import xapi.dev.ui.api.GeneratedUiLayer;
+import xapi.dev.ui.api.*;
 import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.except.NotYetImplemented;
 import xapi.fu.Lazy;
@@ -48,6 +43,7 @@ class RouteMethodFactory {
     private final Lazy<String> TYPE_TEMPLATE;
     private final Lazy<String> TYPE_CALLBACK;
     private final Lazy<String> TYPE_TEXT;
+    private final Lazy<String> TYPE_REROUTE;
 
     public RouteMethodFactory(
         RouteFeatureGenerator generator,
@@ -77,6 +73,7 @@ class RouteMethodFactory {
         this.TYPE_TEXT = Lazy.deferSupplier(mb::addImportStatic, RouteType.class, RouteType.Text.name());
         this.TYPE_TEMPLATE = Lazy.deferSupplier(mb::addImportStatic, RouteType.class, RouteType.Template.name());
         this.TYPE_CALLBACK = Lazy.deferSupplier(mb::addImportStatic, RouteType.class, RouteType.Callback.name());
+        this.TYPE_REROUTE = Lazy.deferSupplier(mb::addImportStatic, RouteType.class, RouteType.Reroute.name());
     }
 
     public GeneratedRouteInfo ensureRouteExists(UiContainerExpr route) {
@@ -139,6 +136,10 @@ class RouteMethodFactory {
 
     private String tCallback() {
         return TYPE_CALLBACK.out1();
+    }
+
+    private String tReroute() {
+        return TYPE_REROUTE.out1();
     }
 
     private String mModelCreate() {
@@ -222,6 +223,8 @@ class RouteMethodFactory {
                 return tText();
             case File:
                 return tFile();
+            case Reroute:
+                return tReroute();
             case Gwt:
             case Service:
             default:

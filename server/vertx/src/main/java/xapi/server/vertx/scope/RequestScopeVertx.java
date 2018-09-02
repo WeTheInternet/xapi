@@ -52,4 +52,12 @@ public class RequestScopeVertx extends AbstractScope<RequestScopeVertx> implemen
     protected void preload(VertxRequest req, VertxResponse resp) {
 
     }
+
+    @Override
+    public String toString() {
+        return "RequestScopeVertx{" +
+            "req=" + req.toString() +
+            ", resp=" + resp +
+            "} " + super.toString();
+    }
 }

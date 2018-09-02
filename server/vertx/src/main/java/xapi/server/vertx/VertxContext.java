@@ -5,6 +5,7 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.Session;
 import xapi.fu.Lazy;
 import xapi.scope.X_Scope;
+import xapi.scope.api.HasRequestContext;
 import xapi.scope.api.RouteNotHandledException;
 import xapi.scope.spi.RequestContext;
 import xapi.server.vertx.scope.GlobalScopeVertx;
@@ -15,7 +16,8 @@ import xapi.util.X_String;
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 8/12/18 @ 3:38 AM.
  */
-public class VertxContext implements RequestContext<User, VertxRequest, VertxResponse, SessionScopeVertx, RequestScopeVertx> {
+public class VertxContext implements RequestContext<User, VertxRequest, VertxResponse, SessionScopeVertx, RequestScopeVertx>,
+    HasRequestContext<VertxContext> {
 
     public static final Integer SUCCESS = 200;
     private static final String CONTEXT_KEY = "_xvc_";
@@ -132,5 +134,10 @@ public class VertxContext implements RequestContext<User, VertxRequest, VertxRes
 
     public static VertxContext fromNative(RoutingContext ctx) {
         return (VertxContext) ctx.data().computeIfAbsent(CONTEXT_KEY, ignored->new VertxContext(ctx));
+    }
+
+    @Override
+    public VertxContext getContext() {
+        return this;
     }
 }

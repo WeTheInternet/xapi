@@ -105,4 +105,12 @@ public class VertxResponse extends AbstractResponse implements Destroyable {
     public HttpServerResponse getResponse() {
         return response;
     }
+
+    @Override
+    public String toString() {
+        return "VertxResponse{" +
+            "response=" + response +
+            ", calledPrepareToClose=" + calledPrepareToClose +
+            "} " + super.toString();
+    }
 }

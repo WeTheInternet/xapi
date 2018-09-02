@@ -12,6 +12,7 @@ import xapi.model.api.Model;
 import xapi.model.api.PrimitiveSerializer;
 import xapi.model.impl.AbstractModel;
 import xapi.process.X_Process;
+import xapi.scope.api.HasRequestContext;
 import xapi.scope.api.Scope;
 import xapi.scope.request.RequestScope;
 import xapi.scope.request.SessionScope;
@@ -175,6 +176,13 @@ class TestSocketServer extends AbstractModel implements WebApp, Rethrowable, Xap
         String name, boolean singleton, In1Out1<String, XapiEndpoint<SocketScope>> endpoint
     ) {
         throw new UnsupportedOperationException("registerEndpoint not supported");
+    }
+
+    @Override
+    public <Req extends HasRequestContext> void reroute(
+        Req request, String payload, In2<Req, Throwable> callback
+    ) {
+        throw new UnsupportedOperationException("reroute not supported");
     }
 
     @Override

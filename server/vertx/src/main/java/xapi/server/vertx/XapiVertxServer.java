@@ -48,12 +48,14 @@ import xapi.model.api.ModelNotFoundException;
 import xapi.model.api.PrimitiveSerializer;
 import xapi.process.X_Process;
 import xapi.scope.X_Scope;
+import xapi.scope.api.HasRequestContext;
 import xapi.scope.api.Scope;
 import xapi.scope.request.SessionScope;
 import xapi.scope.service.ScopeService;
 import xapi.scope.spi.RequestContext;
 import xapi.server.X_Server;
 import xapi.server.api.*;
+import xapi.server.api.Route.RouteType;
 import xapi.server.model.ModelSession;
 import xapi.server.vertx.scope.RequestScopeVertx;
 import xapi.server.vertx.scope.ScopeServiceVertx;
@@ -219,6 +221,12 @@ public class XapiVertxServer extends AbstractXapiServer<RequestScopeVertx> {
         C ctx, In1Out1<C, RequestScopeVertx> factory, In3Unsafe<RequestScopeVertx, Throwable, In1<Throwable>> callback
     ) {
         final ScopeServiceVertx scopes = getScopeService();
+        final Scope current = scopes.currentScope();
+        // TODO: check if this is already a request scope,
+        // and instead skip ahead to req.initialize()
+
+        // MAYBE: Test what happens if we remove this global scope wrapper (most likely sessions will go away...
+        // should do that anyway, and then just make session access handle ensuring the global scope...)
         scopes.globalScopeVertx(global->{
             final RequestScopeVertx req = factory.io(ctx);
             scopes.runInScope(req, (session, done)->{
@@ -433,11 +441,29 @@ public class XapiVertxServer extends AbstractXapiServer<RequestScopeVertx> {
                             r.method(HttpMethod.valueOf(method));
                         }
                     }
+                    final RouteType type = route.getRouteType();
                     In1Out1<Handler<RoutingContext>, io.vertx.ext.web.Route> target =
-                        route.getRouteType().isBlocking() ? r::blockingHandler : r::handler;
+                        type.isBlocking() ? r::blockingHandler : r::handler;
                     target.io(rc->{
                         final VertxContext vc = VertxContext.fromNative(rc);
                         switch (route.getRouteType()) {
+                            case Reroute:
+                                X_Log.trace(XapiVertxServer.class, "Rerouting", path, " to ", route.getPayload());
+                                if (route.getPayload().contains("$")) {
+                                    // There may be a template key in the redirection, we'll handle it in xapi server,
+                                    // which will be forced to issue a 307 redirect, instead of internal vertx rerouting.
+                                    inContext(vc, VertxContext::getScope, (req, t, done)->{
+                                        if (t != null) {
+                                            done.in(t);
+                                            return;
+                                        }
+                                        // TODO: move everybody into here, and make HasRequestContext the default "thing to pass around"
+                                        route.serveWithContext(path, vc, (s, err)-> done.in(err));
+                                    });
+                                } else {
+                                    rc.reroute(route.getPayload());
+                                }
+                                break;
                             case Gwt:
                             case Text:
                             case Callback:
@@ -451,6 +477,9 @@ public class XapiVertxServer extends AbstractXapiServer<RequestScopeVertx> {
                                     }
                                     route.serve(path, req, (s, err)-> done.in(err));
                                 });
+                                break;
+                            default:
+                                assert false : route.getRouteType() + " is not implemented by " + getClass();
                         }
                     });
                     // remove this route from the mapping, as we've chosen to handle it here.
@@ -567,6 +596,9 @@ public class XapiVertxServer extends AbstractXapiServer<RequestScopeVertx> {
                 "Our apologies, we cannot find anything to serve to:\n" +
                 dump(req) +
                 "</div>" +
+                "<pre>" +
+                error +
+                "</pre>" +
                 "</body>" +
                 "</html>";
             resp.getResponse().headers().set("Content-Length", Integer.toString(body.length()));
@@ -958,5 +990,17 @@ public class XapiVertxServer extends AbstractXapiServer<RequestScopeVertx> {
         } else {
             endpoint.serviceRequest(path, request, payload, callback);
         }
+    }
+
+    @Override
+    public <Req extends HasRequestContext> void reroute(
+        Req request, String payload, In2<Req, Throwable> callback
+    ) {
+        // This dirty hack can go away later...
+        VertxContext ctx = (VertxContext) request.getContext();
+        final VertxResponse resp = ctx.getResponse();
+        // lazy... we should probably template the payload to apply any properties in scope
+        resp.addHeader("Location", payload);
+        resp.setStatusCode(307);
     }
 }

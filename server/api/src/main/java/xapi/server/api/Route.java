@@ -6,6 +6,7 @@ import xapi.fu.In2;
 import xapi.fu.Log;
 import xapi.fu.Log.LogLevel;
 import xapi.model.api.Model;
+import xapi.scope.api.HasRequestContext;
 import xapi.scope.request.RequestScope;
 import xapi.scope.spi.RequestLike;
 import xapi.scope.spi.ResponseLike;
@@ -27,30 +28,53 @@ public interface Route extends Model {
             public boolean isBlocking() {
                 return true;
             }
-        }, Callback, File, Template, Service;
+        }, Callback, File, Template, Service, Reroute;
 
         public boolean isBlocking() {
             return false;
         }
     }
 
-    default <Req extends RequestLike, Resp extends ResponseLike> void serve(String path, RequestScope<Req, Resp> request, In2<RequestScope<Req, Resp>, Throwable> callback) {
+    default <Req extends HasRequestContext> void serveWithContext(String path, Req request, In2<Req, Throwable> callback) {
+
+        if (!validate(path, request, callback)) {
+            return;
+        }
+        XapiServer server = request.getContext().getScope().get(XapiServer.class);
+        final String payload = getPayload();
+        switch (getRouteType()) {
+            case Reroute:
+                server.reroute(request, payload, callback);
+                return;
+        }
+        callback.in(request, new NotConfiguredCorrectly("Type not handled: " + getRouteType()));
+    }
+
+    default <Req> boolean validate(String path, Req request, In2<Req, Throwable> callback) {
         RouteType type = getRouteType();
         if (type == null) {
             getOrCreateLog().log(getClass(), LogLevel.WARN,
                 "No route type specified; bailing ", this);
             callback.in(request, new NotConfiguredCorrectly("No route type in " + this));
-            return;
+            return false;
         }
         final String payload = getPayload();
         if (payload == null && type != RouteType.Template) {
             getOrCreateLog().log(getClass(), LogLevel.WARN,
                 "No payload specified; bailing ", this);
             callback.in(request, new NotConfiguredCorrectly("No payload in " + this));
+            return false;
+        }
+        return true;
+    }
+
+    default <Req extends RequestLike, Resp extends ResponseLike> void serve(String path, RequestScope<Req, Resp> request, In2<RequestScope<Req, Resp>, Throwable> callback) {
+        if (!validate(path, request, callback)) {
             return;
         }
         XapiServer server = request.get(XapiServer.class);
-        switch (type) {
+        final String payload = getPayload();
+        switch (getRouteType()) {
             case Text:
                 server.writeText(request, payload, callback);
                 return;
@@ -70,7 +94,7 @@ public interface Route extends Model {
                 server.writeService(path, request, payload, callback);
                 return;
         }
-        callback.in(request, new NotConfiguredCorrectly("Type not handled: " + type));
+        callback.in(request, new NotConfiguredCorrectly("Type not handled: " + getRouteType()));
     }
 
     Log getLog();

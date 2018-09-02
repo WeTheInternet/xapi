@@ -138,4 +138,17 @@ public class VertxRequest implements Destroyable, RequestLike {
     public MapLike<String, String> getCookies() {
         return cookies.out1();
     }
+
+    @Override
+    public String toString() {
+        return "VertxRequest{" +
+            "uri=" + httpRequest.uri() +
+            ", method=" + httpRequest.method() +
+            ", body=" + body +
+            ", params=" + params +
+            ", headers=" + headers +
+            ", cookies=" + cookies +
+            ", autoclose=" + autoclose +
+            '}';
+    }
 }
