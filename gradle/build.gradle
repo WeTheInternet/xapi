@@ -1,0 +1,6 @@
+import org.gradle.api.tasks.wrapper.Wrapper
+
+wrapper {
+    distributionType = Wrapper.DistributionType.ALL
+    gradleVersion = '4.6'
+}

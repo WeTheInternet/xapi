@@ -1,0 +1,162 @@
+package xapi.fu.out;
+@Generate(
+    in = {
+        <var name = "max"
+            default = 5 />,
+        <var name = "types"
+            default = ["Type", "Int", "Long", "Double", "Bool"] />
+    },
+    out = {
+        <loop
+            from = 1
+            to = $max
+            var = "size"
+        >
+            <generateInterface
+                var = {
+                    typeParams :
+                        $range(1, $size, $i->`O$i`),
+                    wrappedParams :
+                        $range(1, $size, $i->`Out1<O$i>`)
+                }
+                template=
+
+                    @Import({
+                        "xapi.fu.Rethrowable",
+                        // TODO: switch these to new types and remove dependency on legacy code...
+                        "xapi.fu.In1",
+                        "xapi.fu.In1Out1",
+                        "xapi.fu.Lambda"
+                    })
+                    public interface Out$size<$typeParams>
+                        extends Rethrowable, Lambda {
+
+                        interface Out$sizeUnsafe<$typeParams> extends Out$size<$typeParams> {
+
+                        }
+
+                        interface Immutable$size<$typeParams> extends Out$size<$typeParams> {
+
+                        }
+
+                        Immutable$size<$wrappedParams> outAll();
+
+                        @unfold(from = 1, to = $size, var = "n")
+                        default O$n out$n() {
+                            return out$nProvider().out1();
+                        }
+
+                        @unfold(from = 1, to = $size, var = "n")
+                        default Out1<O$n> out$nProvider() {
+                            return outAll().out$n();
+                        }
+
+                        @unfold(from = 1, to = $size, var = "n")
+                        default Out$size<$typeParams> read$n(In1<O$n> callback) {
+                            callback.in(out$n());
+                            return this;
+                        }
+
+                        @var(
+                            name = "outParams",
+                            value = $range(1, $size, $p ->
+                                $p == $n ? "To" : `O$p`)
+                        )
+                        @unfold(from = 1, to = $size, var = "n")
+                        default <To> Out$size<$outParams> mapped$n(In1Out1<O$n, To> mapper) {
+                            return Out.out$size(
+                                $range(1, $size, $p ->
+                                    $p == $n ? mapper.supplyDeferred(out$pProvider()) : out$pProvider()
+                                )
+                            );
+                        }
+
+                        @unfold(from = 1, to = $size, var = "n")
+                        default Out$size<$typeParams> spy$n(In1<O$n> callback) {
+                            return
+                                $if($size == 1, $print(() -> {
+                                    O1 out = out1();
+                                    callback.in(out);
+                                    return out;
+                                }))
+                                    .$else(
+                                        Out.out$size(
+                                            $range(1, $size, $p ->
+                                                $p == $n ? out$pProvider().spy1(callback) : out$pProvider()
+                                            )
+                                        )
+                                    );
+                        }
+
+                        default Out$sizeUnsafe<$typeParams> unsafe() {
+                            if (this instanceof Out$sizeUnsafe) {
+                                return (Out$sizeUnsafe<$typeParams>) this;
+                            }
+                            return this::outAll;
+                        }
+
+                    }
+            /generateInterface>
+
+        </loop>,
+
+        <generateClass
+                template=
+                public class Out {
+                    @unfold(from = 1, to = $max, var = "n")
+                    @var(
+                        name = typeParams,
+                        value = $range(1, $n, $i->`O$i`)
+                    )
+                    public static Out$n <$typeParams> out$n(@exploded({1, $size, "i"}) O$1 o$i) {
+
+                        Out1[] immutables = {}; // todo: $print() stuff...
+                        return ()->immutables;
+                    }
+                }
+        /generateClass>,
+
+        <loop
+            from = 1
+            to = 3
+            var = "size">
+            <var name = "asPrimitive"
+                value = {
+                    Type:"O$n",
+                    Int:"int",
+                    Long:"long",
+                    Double:"double",
+                    Bool:"boolean"
+                } />,
+            <var name = "asObject"
+                value = {
+                    Type:"O$n",
+                    Int: "Integer",
+                    Long: "Long",
+                    Double: "Double",
+                    Bool: "Boolean"
+                } />
+        </loop>
+    })
+public class Out {
+
+    static Out$n<$types> out$n(Out2<$typeList, @named(`O$n`) String> ... params) {
+        Immutable$n immutable = Immutable.immutable$n(
+            $for ( params, ($type $type, String $name) ->
+                $print(
+                    (
+                        $first() ? ""
+                              //, \n between method parameters when there are more than three params specified
+                            : "," + ( $n < 4 ? " " : "\n" )
+                    ) + (
+                        $ifType($type, Immutable.class, `$name`)
+                        .$elseIfType($type, Lazy.class, `$name.asImmutable()`)
+                        .$else(`Immutable.immutable1($name)`)
+                    )
+                    +  " " + name
+               )
+            )
+        );
+        return ()->immutable;
+    }
+}

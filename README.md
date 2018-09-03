@@ -167,3 +167,5 @@ Best of all, supporting multiple runtime platforms when everything is an injecte
 The XApi is still in its developmental infancy, but it is being built with limitless future extensibility in mind.  Runtimes with full support include java apps, android, all major web browsers via gwt, appengine, vert.x (in collIDE), and standard servlet containers.  The core depends on nothing, and every module being completed is designed to be as self-contained as possible; each major service is built as a maven module to avoid leaking dependencies, and to maximize the ability for compilers and pre-processors to optimize and prune as much as possible.
 
 
+## The Path to 1.0 ##
+

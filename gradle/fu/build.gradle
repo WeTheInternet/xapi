@@ -1,0 +1,44 @@
+import org.gradle.api.tasks.JavaExec
+
+plugins {
+    id 'java'
+}
+
+repositories {
+    mavenLocal()
+}
+
+configurations {
+    xapiGen
+}
+def xapiVersion = '0.5.1-SNAPSHOT'
+dependencies {
+    xapiGen group: 'net.wetheinter', name: 'xapi-gen', version: xapiVersion, changing: true
+    implementation group: 'net.wetheinter', name: 'xapi-fu', version: xapiVersion, changing: true
+    implementation group: 'net.wetheinter', name: 'xapi-core-api', version: xapiVersion, changing: true
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs 'src/main/java', 'src/main/gen'
+        }
+    }
+}
+
+task generateFu(type: JavaExec) { JavaExec java ->
+    java.classpath configurations.xapiGen
+    java.main = 'xapi.dev.api.ApiGenerator'
+    java.args file('src/main/xapi').absolutePath
+
+    java.debug findProperty('org.gradle.debug') == 'true'
+    java.systemProperties 'xinject.xapi.dev.api.ApiGenerator': 'xapi.dev.api.ApiGenerator',
+                          'xinject.xapi.log.api.LogService': 'xapi.log.impl.JreLog',
+                          'xinject.xapi.collect.service.CollectionService': 'xapi.collect.impl.CollectionServiceDefault',
+                          'xinject.xapi.util.api.Digester': 'xapi.jre.util.DigesterJre',
+                          'xinject.xapi.time.service.TimeService': 'xapi.jre.time.JreTimeServiceHighPrecision'
+    def logLevel = findProperty 'xapi.log.level'
+    logLevel && java.systemProperty('xapi.log.level', logLevel)
+}
+
+compileJava.dependsOn generateFu
