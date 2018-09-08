@@ -22,12 +22,7 @@ import xapi.ui.api.UiPhase;
 import xapi.util.X_Debug;
 import xapi.util.X_String;
 
-import javax.annotation.processing.AbstractProcessor;
-import javax.annotation.processing.Messager;
-import javax.annotation.processing.ProcessingEnvironment;
-import javax.annotation.processing.RoundEnvironment;
-import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.annotation.processing.SupportedSourceVersion;
+import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
@@ -153,6 +148,14 @@ public class UiAnnotationProcessor extends AbstractProcessor {
                 String source = X_String.join("\n", ui.value());
                 UiContainerExpr container;
                 try {
+                    if (!source.contains("define-tag")) {
+                        source = "<define-tag" +
+                            " tagName=\"" +
+                                (ui.type().length() == 0 ? "generated-tag" : ui.type()) +
+                                "\"" +
+                            " ui = " + source + "" +
+                            " /define-tag>";
+                    }
                     container= JavaParser.parseUiContainer(source);
                 } catch (ParseException e) {
                     throw X_Debug.rethrow(e);

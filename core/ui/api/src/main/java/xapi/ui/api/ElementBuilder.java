@@ -4,28 +4,27 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.fu.In1;
 import xapi.fu.In2;
+import xapi.fu.Lazy;
+import xapi.fu.Out1;
 import xapi.util.X_Debug;
 import xapi.util.X_String;
-import xapi.util.impl.LazyProvider;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static xapi.collect.X_Collect.newStringMap;
-
-import javax.inject.Provider;
 
 /**
  * Created by james on 16/10/15.
  */
 public abstract class ElementBuilder <E> extends NodeBuilder<E> {
 
-  private static volatile int idSeed = 1;
-  private static final Object sync = new Object();
+  private static final AtomicInteger idSeed = new AtomicInteger(0);
 
   private int seed;
   private String id;
 
-
-  protected Provider<AttributeApplier> attributeApplier;
-  protected Provider<StyleApplier> stylizer;
+  protected Out1<AttributeApplier> attributeApplier;
+  protected Out1<StyleApplier> stylizer;
   protected final StringTo<AttributeBuilder> attributes;
   private String tagName;
   private boolean sanitize;
@@ -37,8 +36,8 @@ public abstract class ElementBuilder <E> extends NodeBuilder<E> {
   public ElementBuilder(boolean searchableChildren) {
     super(searchableChildren);
     attributes = X_Collect.newStringMap(AttributeBuilder.class);
-    attributeApplier = new LazyProvider<>(this::createAttributeApplier);
-    stylizer = new LazyProvider<>(this::createStyleApplier);
+    attributeApplier = Lazy.deferred1(this::createAttributeApplier);
+    stylizer = Lazy.deferred1(this::createStyleApplier);
     sanitize = true;
   }
 
@@ -54,10 +53,21 @@ public abstract class ElementBuilder <E> extends NodeBuilder<E> {
   }
 
   public ElementBuilder(E element) {
-    this(false);
+    super(element);
     setDefaultFactories();
-    el = element;
-    onInitialize(el);
+    attributes = X_Collect.newStringMap(AttributeBuilder.class);
+    attributeApplier = Lazy.deferred1(this::createAttributeApplier);
+    stylizer = Lazy.deferred1(this::createStyleApplier);
+    sanitize = true;
+  }
+
+  public ElementBuilder(Out1<E> element) {
+    super(element);
+    setDefaultFactories();
+    attributes = X_Collect.newStringMap(AttributeBuilder.class);
+    attributeApplier = Lazy.deferred1(this::createAttributeApplier);
+    stylizer = Lazy.deferred1(this::createStyleApplier);
+    sanitize = true;
   }
 
   public String getId() {
@@ -79,9 +89,7 @@ public abstract class ElementBuilder <E> extends NodeBuilder<E> {
 
   public String ensureId() {
     if (X_String.isEmpty(id)) {
-      synchronized (sync) {
-        seed = idSeed++;
-      }
+      seed = idSeed.incrementAndGet();
       setId(generateId(seed));
     }
     return id;
@@ -115,7 +123,7 @@ public abstract class ElementBuilder <E> extends NodeBuilder<E> {
       if (equalsIgnoreCase("id", name)) {
         id = value;
       }
-      attributeApplier.get().setAttribute(name, value);
+      attributeApplier.out1().setAttribute(name, value);
     }
     return this;
   }
@@ -141,7 +149,7 @@ public abstract class ElementBuilder <E> extends NodeBuilder<E> {
         break;
       case "id":
         id = value;
-        attributeApplier.get().addAttribute(name, value);
+        attributeApplier.out1().addAttribute(name, value);
         return this;
       case "class":
         AttributeBuilder was = attributes.get(name);
@@ -149,7 +157,7 @@ public abstract class ElementBuilder <E> extends NodeBuilder<E> {
           attributes.put(name, newClassnameBuilder());
         }
       default:
-        attributeApplier.get().addAttribute(name, value);
+        attributeApplier.out1().addAttribute(name, value);
     }
     return this;
   }
@@ -171,7 +179,7 @@ public abstract class ElementBuilder <E> extends NodeBuilder<E> {
   }
 
   public ElementBuilder<E> removeAttribute(String name) {
-    attributeApplier.get().removeAttribute(name);
+    attributeApplier.out1().removeAttribute(name);
     return this;
   }
 
@@ -194,7 +202,7 @@ public abstract class ElementBuilder <E> extends NodeBuilder<E> {
     if (X_String.isEmpty(getTagName()) && children instanceof ElementBuilder) {
       return ((ElementBuilder)children).getStyle();
     }
-    return stylizer.get();
+    return stylizer.out1();
   }
 
   public ElementBuilder<E> setStyle(String value) {
@@ -471,7 +479,7 @@ public abstract class ElementBuilder <E> extends NodeBuilder<E> {
         addValue(value);
       } else {
 
-        attributeApplier.get().setAttribute("style", value);
+        attributeApplier.out1().setAttribute("style", value);
       }
     }
 

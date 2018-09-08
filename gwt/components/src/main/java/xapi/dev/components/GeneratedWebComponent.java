@@ -5,6 +5,7 @@ import com.github.javaparser.ast.expr.LambdaExpr;
 import com.github.javaparser.ast.expr.SysExpr;
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import xapi.dev.api.ApiGeneratorContext;
+import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.FieldBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.ui.api.GeneratedUiComponent;
@@ -16,7 +17,10 @@ import xapi.dev.ui.tags.assembler.AssembledElement;
 import xapi.dev.ui.tags.assembler.AssembledUi;
 import xapi.fu.Immutable;
 import xapi.fu.Lazy;
+import xapi.fu.Out1;
+import xapi.fu.api.Builderizable;
 import xapi.inject.X_Inject;
+import xapi.source.X_Modifier;
 
 import static xapi.source.X_Modifier.PUBLIC;
 import static xapi.source.X_Modifier.STATIC;
@@ -104,16 +108,53 @@ public class GeneratedWebComponent extends GeneratedUiImplementation {
 
     @Override
     public void finalizeBuilder(GeneratedUiFactory builder) {
-        final MethodBuffer builderMethod = getSource().getClassBuffer()
-            .createMethod(PUBLIC | STATIC, builder.getQualifiedName(), UiNamespace.METHOD_BUILDER);
-        builderMethod.patternln("return new $1<>($2, $3);"
-                // $1
-                , builderMethod.getReturnType()
-                // $2
-                , creator.getName()
-                // $3
-                , extractor.getName()
+        final ClassBuffer cb = getSource().getClassBuffer();
+
+        // We need to strengthen the return type of some inherited methods...
+        final UiNamespaceGwt ns = namespace.out1();
+        final String builderType = ns.getElementBuilderType(cb);
+
+        if (builder.shouldSaveType()) {
+            final MethodBuffer builderMethod = cb.createMethod(PUBLIC | STATIC,
+                builder.getQualifiedName(), UiNamespace.METHOD_BUILDER);
+            builderMethod.patternln("return new $1<>($2, $3);"
+                    // $1
+                    , builderMethod.getReturnType()
+                    // $2
+                    , creator.getName()
+                    // $3
+                    , extractor.getName()
+                );
+            cb.addInterface(
+                cb.parameterizedType(Builderizable.class, builderType)
             );
+        }
+
+
+        cb
+            .createMethod(X_Modifier.PUBLIC, builderType, UiNamespace.METHOD_AS_BUILDER)
+            .addAnnotation(Override.class) // fail to compile if this is not a valid override
+            .patternln("return ($1) super.$2();", builderType, UiNamespace.METHOD_AS_BUILDER);
+        /*
+@Override
+public PotentialNode<Element> asBuilder() {
+  return (PotentialNode<Element>) super.asBuilder();
+}
+        */
+
+        cb
+            .createMethod(X_Modifier.PROTECTED, builderType, UiNamespace.METHOD_NEW_BUILDER)
+            .addAnnotation(Override.class)
+            .addParameter(cb.parameterizedType(Out1.class, ns.getElementType(cb)), "e")
+            .patternln("return new $1<>(e);", builderType.split("<")[0]);
+        /*
+@Override
+protected PotentialNode<Element> newBuilder(Out1<Element> element) {
+  PotentialNode<Element> e = new PotentialNode<>(element);
+  return e;
+}
+        */
+
     }
 
     public void setMetadata(MethodBuffer assemble, FieldBuffer creator, FieldBuffer extractor) {

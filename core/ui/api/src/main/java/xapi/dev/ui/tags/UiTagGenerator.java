@@ -20,6 +20,7 @@ import xapi.fu.iterate.ChainBuilder;
 import xapi.lang.api.AstConstants;
 import xapi.log.X_Log;
 import xapi.source.X_Modifier;
+import xapi.source.X_Source;
 import xapi.util.X_String;
 import xapi.util.X_Util;
 
@@ -60,7 +61,11 @@ public class UiTagGenerator extends UiComponentGenerator {
             // we have a list of tags to consider
             return generateTagList(tools, source, me, n, mode);
         } else if (n.getName().equalsIgnoreCase("define-tag")) {
-            return generateTag(tools, source, me, n, null, null, mode);
+            final String tagName = n.getAttribute("tagName")
+                .mapNullSafe(UiAttrExpr::getExpression)
+                .mapNullSafe(expr->tools.resolveString(source.getContext(), expr))
+                .ifAbsentReturn(null);
+            return generateTag(tools, source, me, n, null, tagName, mode);
         } else {
             throw new IllegalArgumentException("Unhandled component type " + n.getName() + "; " + tools.debugNode(n));
         }
@@ -160,7 +165,9 @@ public class UiTagGenerator extends UiComponentGenerator {
             return defaultPackage;
         });
         String name = tools.resolveString(me.getContext(), n.getAttribute("name")
-            .ifAbsentSupplyLazy(UiAttrExpr::of, immutable1("name"), ()->stringLiteral(tagName))
+            .ifAbsentSupplyLazy(UiAttrExpr::of, immutable1("name"), ()->stringLiteral(
+                X_Source.toCamelCase(tagName)
+            ))
             .getExpression());
 
         final UiVisitScope scope = new UiVisitScope(ScopeType.CONTAINER);

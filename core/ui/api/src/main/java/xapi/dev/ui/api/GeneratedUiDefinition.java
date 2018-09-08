@@ -61,6 +61,7 @@ public class GeneratedUiDefinition {
 
     private String apiName;
     private String baseName;
+    private String builderName;
 
     public GeneratedUiDefinition() {
         modelFields = X_Collect.newStringMapInsertionOrdered(GeneratedUiField.class);
@@ -72,7 +73,9 @@ public class GeneratedUiDefinition {
         String tagName,
         String apiName,
         String baseName,
-        String modelName) {
+        String modelName,
+        String builderName
+    ) {
         this();
         this.packageName = packageName;
         this.typeName = typeName;
@@ -80,6 +83,9 @@ public class GeneratedUiDefinition {
         this.apiName = apiName;
         this.baseName = baseName;
         this.modelName = modelName;
+        this.builderName = builderName;
+        // TODO: accept / record api type parameter information as well, so we don't make assumptions
+        // about expected types (currently, a lot of code assumes CompName<El>, meaning always 1 param of type Element).
     }
 
     public UiContainerExpr toSettings() {
@@ -93,6 +99,7 @@ public class GeneratedUiDefinition {
         tag.addAttribute(false, UiAttrExpr.of("type", typeName));
         tag.addAttribute(false, UiAttrExpr.of("apiName", apiName));
         tag.addAttribute(false, UiAttrExpr.of("baseName", baseName));
+        tag.addAttribute(false, UiAttrExpr.of("builderName", builderName));
         if (modelFields.isNotEmpty()) {
             final List<JsonPairExpr> fields = new ArrayList<>();
             for (Out2<String, GeneratedUiField> field : modelFields.forEachItem()) {
@@ -122,13 +129,14 @@ public class GeneratedUiDefinition {
     }
 
     public static <Ctx extends ApiGeneratorContext<Ctx>> GeneratedUiDefinition
-        fromSettings(UiGeneratorTools<Ctx> tools, Ctx ctx, UiContainerExpr tag) {
+    fromSettings(UiGeneratorTools<Ctx> tools, Ctx ctx, UiContainerExpr tag) {
         final GeneratedUiDefinition definition = new GeneratedUiDefinition();
         final UiAttrExpr nameAttr = tag.getAttributeNotNull("name");
         final UiAttrExpr packageAttr = tag.getAttributeNotNull("package");
         final UiAttrExpr type = tag.getAttributeNotNull("type");
         final UiAttrExpr apiAttr = tag.getAttributeNotNull("apiName");
         final UiAttrExpr baseAttr = tag.getAttributeNotNull("baseName");
+        final UiAttrExpr builderAttr = tag.getAttributeNotNull("builderName");
         final Maybe<UiAttrExpr> modelAttr = tag.getAttribute("model");
 
         final String name = tools.resolveString(ctx, nameAttr.getExpression());
@@ -136,12 +144,14 @@ public class GeneratedUiDefinition {
         final String typeName = tools.resolveString(ctx, type.getExpression());
         final String apiName = tools.resolveString(ctx, apiAttr.getExpression());
         final String baseName = tools.resolveString(ctx, baseAttr.getExpression());
+        final String builderName = tools.resolveString(ctx, builderAttr.getExpression());
 
         definition.setTagName(name);
         definition.setPackageName(packageName);
         definition.setTypeName(typeName);
         definition.setApiName(apiName);
         definition.setBaseName(baseName);
+        definition.setBuilderName(builderName);
         if (modelAttr.isPresent()) {
             final UiAttrExpr model = modelAttr.get();
             final Expression modelExpr = model.getExpression();
@@ -161,7 +171,7 @@ public class GeneratedUiDefinition {
                 .mapNullSafe(MappedIterable::first)
                 .mapNullSafe(MemberValuePair::getValue)
                 .mapNullSafe(In2Out1.with1(tools::resolveString, ctx))
-                .ifAbsentSupply(()->"Model" + typeName);
+                .ifAbsentSupply(() -> "Model" + typeName);
 
             definition.setModelName(modelName);
             final List<JsonPairExpr> items = ((JsonContainerExpr) modelExpr).getPairs();
@@ -246,7 +256,9 @@ public class GeneratedUiDefinition {
             return false;
         if (apiName != null ? !apiName.equals(that.apiName) : that.apiName != null)
             return false;
-        return baseName != null ? baseName.equals(that.baseName) : that.baseName == null;
+        if (baseName != null ? !baseName.equals(that.baseName) : that.baseName != null)
+            return false;
+        return builderName != null ? builderName.equals(that.builderName) : that.builderName == null;
     }
 
     @Override
@@ -258,6 +270,7 @@ public class GeneratedUiDefinition {
         result = 31 * result + modelFields.hashCode();
         result = 31 * result + (apiName != null ? apiName.hashCode() : 0);
         result = 31 * result + (baseName != null ? baseName.hashCode() : 0);
+        result = 31 * result + (builderName != null ? builderName.hashCode() : 0);
         return result;
     }
 
@@ -271,6 +284,7 @@ public class GeneratedUiDefinition {
             ", modelFields=" + modelFields +
             ", apiName='" + apiName + '\'' +
             ", baseName='" + baseName + '\'' +
+            ", builderName='" + builderName + '\'' +
             '}';
     }
 
@@ -349,5 +363,13 @@ public class GeneratedUiDefinition {
 
     public String getModelKeyConstant() {
         return "MODEL_" + X_String.toConstantName(getTypeName());
+    }
+
+    public void setBuilderName(String builderName) {
+        this.builderName = builderName;
+    }
+
+    public String getBuilderName() {
+        return builderName;
     }
 }

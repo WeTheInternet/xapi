@@ -3,28 +3,19 @@ package xapi.dev.ui.api;
 import com.github.javaparser.ast.TypeArguments;
 import com.github.javaparser.ast.TypeParameter;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
-import com.github.javaparser.ast.type.IntersectionType;
 import com.github.javaparser.ast.type.ReferenceType;
-import com.github.javaparser.ast.type.Type;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.dev.source.CanAddImports;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.dev.ui.impl.UiGeneratorTools;
-import xapi.fu.In1;
-import xapi.fu.Lazy;
-import xapi.fu.MappedIterable;
-import xapi.fu.Maybe;
-import xapi.fu.X_Fu;
+import xapi.fu.*;
 import xapi.source.X_Source;
 import xapi.source.read.JavaModel.IsTypeDefinition;
-import xapi.ui.api.CreatesChildren;
 import xapi.ui.api.ElementBuilder;
-import xapi.ui.api.NodeBuilder;
 import xapi.util.X_String;
 
-import java.util.Arrays;
 import java.util.Collections;
 
 import static xapi.fu.Lazy.deferAll;
@@ -140,6 +131,10 @@ public abstract class GeneratedUiLayer extends GeneratedJavaFile {
             );
         }
         return nameElement;
+    }
+
+    public void setElementType(String type) {
+        this.nameElement = type;
     }
 
     public String getModelType(UiNamespace namespace) {
@@ -258,9 +253,11 @@ public abstract class GeneratedUiLayer extends GeneratedJavaFile {
 
     public String getGenericValue(GeneratedTypeParameter param) {
         // Check if this layer has a type provider for the requested type param.
-        return getOwner().addGeneric(param.getSystemName(), param.getType())
-            .setExposed(param.isExposed())
-            .absorb(param.getType());
+        final GeneratedTypeParameter newParam = getOwner().addGeneric(param.getSystemName(), param.getType());
+        if (param.isExposed()) {
+            newParam.setExposed(true);
+        }
+        return newParam.absorb(param.getType());
     }
 
     public ReferenceType getLocalDefinition(String systemName) {
@@ -293,5 +290,14 @@ public abstract class GeneratedUiLayer extends GeneratedJavaFile {
     }
 
     protected void prepareToSave(UiGeneratorTools<?> tools) {
+    }
+
+    public String getLayerName(String systemName) {
+        for (GeneratedTypeParameter param : getGenericInfo().getTypeParameters(getLayer())) {
+            if (systemName.equals(param.getSystemName())) {
+                return param.getTypeName();
+            }
+        }
+        throw new UnsupportedOperationException("No layer for " + systemName + " found in " + getLayer() + " : " + getGenericInfo().getTypeParameters(getLayer()));
     }
 }

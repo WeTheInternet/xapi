@@ -240,6 +240,36 @@ public abstract class MemberBuffer<Self extends MemberBuffer<Self>> extends
   }
 
   @Override
+  public final Self patternln(CharSequence source, Object replace1) {
+    super.patternln(source, replace1);
+    return self();
+  }
+
+  @Override
+  public final Self patternln(CharSequence source, Object replace1, Object... more) {
+    super.patternln(source, replace1, more);
+    return self();
+  }
+
+  @Override
+  public final Self patternlns(CharSequence source, Object replace1, Object... more) {
+    super.patternlns(source, replace1, more);
+    return self();
+  }
+
+  @Override
+  public final Self pattern(CharSequence source, Object replace1) {
+    super.pattern(source, replace1);
+    return self();
+  }
+
+  @Override
+  public final Self pattern(CharSequence source, Object replace1, Object... more) {
+    super.pattern(source, replace1, more);
+    return self();
+  }
+
+  @Override
   public final Self append(final boolean b) {
     super.append(b);
     return self();

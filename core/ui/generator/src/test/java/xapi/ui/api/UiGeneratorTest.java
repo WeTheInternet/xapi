@@ -17,6 +17,8 @@ public class UiGeneratorTest {
         CompilerService compiler = X_Inject.singleton(CompilerService.class);
         final PendingCompile output = compiler.startCompile(SimpleUiComponent.class);
         output.getSettings()
+            // this allows us to easily set a debugger in IDE, but breaks on CLI
+//            .setUseRuntimeClasspath(true)
             .setClearGenerateDirectory(false)
             .resetGenerateDirectory();
         boolean[] success = new boolean[1];

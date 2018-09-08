@@ -1,11 +1,10 @@
 package xapi.server.gen;
 
+import xapi.dev.source.ClassBuffer;
 import xapi.dev.ui.api.ContainerMetadata;
-import xapi.dev.ui.api.UiComponentGenerator;
-import xapi.dev.ui.impl.AbstractUiImplementationGenerator;
 import xapi.dev.ui.api.GeneratedUiComponent;
 import xapi.dev.ui.api.GeneratedUiImplementation;
-import xapi.fu.Out2;
+import xapi.dev.ui.impl.AbstractUiImplementationGenerator;
 import xapi.server.vertx.api.VertxPlatform;
 
 /**
@@ -29,7 +28,7 @@ public class VertxWebAppImplGenerator extends AbstractUiImplementationGenerator<
         GeneratedUiComponent result,
         ContainerMetadata metadata
     ) {
-        if (result.addImplementationFactory(VertxPlatform.class, GeneratedVertxComponent::new)) {
+        if (result.addImplementationFactory(this, VertxPlatform.class, GeneratedVertxComponent::new)) {
             super.initializeComponent(result, metadata);
         }
     }
@@ -42,5 +41,12 @@ public class VertxWebAppImplGenerator extends AbstractUiImplementationGenerator<
             }
         }
         throw new IllegalStateException("No vertx impl found in " + component.getImpls());
+    }
+
+    @Override
+    protected void standardInitialization(GeneratedUiComponent result, ContainerMetadata metadata) {
+//        super.standardInitialization(result, metadata);
+        final ClassBuffer cb = getImpl(result).getSource().getClassBuffer();
+        cb.setSuperClass(cb.getSuperClass().replace("<", "<RequestScope, "));
     }
 }

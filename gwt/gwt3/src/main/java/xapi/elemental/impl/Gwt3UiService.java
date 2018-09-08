@@ -4,14 +4,15 @@ import elemental2.dom.Element;
 import elemental2.dom.HTMLElement;
 import elemental2.dom.Node;
 import jsinterop.base.Js;
-import jsinterop.base.JsPropertyMap;
 import xapi.annotation.inject.SingletonOverride;
+import xapi.elemental.api.ElementalBuilder;
 import xapi.elemental.api.UiElementGwt;
 import xapi.event.api.EventHandler;
 import xapi.event.api.IsEventType;
 import xapi.fu.In1Out1;
 import xapi.fu.In2;
 import xapi.platform.GwtPlatform;
+import xapi.ui.api.ElementBuilder;
 import xapi.ui.api.UiWithAttributes;
 import xapi.ui.api.UiWithProperties;
 import xapi.ui.api.event.UiEventManager;
@@ -110,4 +111,8 @@ public class Gwt3UiService extends UiServiceImpl <Node, UiElementGwt<?>> {
     }, useCapture);
   }
 
+  @Override
+  public ElementBuilder<Node> newBuilder(boolean searchable) {
+    return new ElementalBuilder<>(searchable);
+  }
 }

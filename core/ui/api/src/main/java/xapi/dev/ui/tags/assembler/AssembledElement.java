@@ -242,4 +242,13 @@ public class AssembledElement implements HasParent<AssembledElement> {
         final String serialized = getSource().getTools().resolveString(getSource().getContext(), resolved);
         return serialized;
     }
+
+    @Override
+    public String toString() {
+        return "AssembledElement{" +
+            "ast=" + ast +
+            ", source=" + source +
+            ", ref='" + ref + '\'' +
+            '}';
+    }
 }

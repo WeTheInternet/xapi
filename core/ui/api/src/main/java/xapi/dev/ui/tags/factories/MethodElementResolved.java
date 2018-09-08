@@ -1,12 +1,17 @@
 package xapi.dev.ui.tags.factories;
 
-import xapi.dev.source.*;
+import xapi.dev.source.MethodBuffer;
+import xapi.dev.source.PrintBuffer;
 import xapi.dev.ui.api.GeneratedUiBase;
 import xapi.dev.ui.api.GeneratedUiComponent;
-import xapi.dev.ui.api.ReservedUiMethods;
 import xapi.dev.ui.api.UiNamespace;
 import xapi.dev.ui.tags.assembler.AssembledElement;
+import xapi.dev.ui.tags.assembler.AssemblyIf;
+import xapi.fu.Lazy;
 import xapi.source.X_Modifier;
+
+import static xapi.dev.ui.api.ReservedUiMethods.ROOT_INJECTOR_VAR;
+import static xapi.dev.ui.api.UiNamespace.VAR_ELEMENT;
 
 /**
  * Encapsulates generator-time info for the elementResolved method of a generated ui component.
@@ -14,41 +19,42 @@ import xapi.source.X_Modifier;
  * Created by James X. Nelson (james @wetheinter.net) on 7/26/18.
  */
 public class MethodElementResolved {
-    private final MethodBuffer beforeResolved, afterResolved;
+    private final Lazy<MethodBuffer> beforeResolved, afterResolved;
     private final PrintBuffer insertions;
     private final MethodBuffer method;
+    private final GeneratedUiComponent ui;
+    private final UiNamespace namespace;
 
     public MethodElementResolved(GeneratedUiComponent ui, UiNamespace namespace) {
+        this.ui = ui;
+        this.namespace = namespace;
         final GeneratedUiBase base = ui.getBase();
-        ClassBuffer output = base.getSource().getClassBuffer();
-        final String elType = base.getElementType(namespace);
+        String elType = base.getElementType(namespace);
 
-        beforeResolved = base.getOrCreateMethod(X_Modifier.PROTECTED, "void", "beforeResolved")
-            .addParameter(elType, "el");
-        afterResolved = base.getOrCreateMethod(X_Modifier.PROTECTED, "void", "afterResolved")
-            .addParameter(elType, "el");
+        beforeResolved = Lazy.deferred1(()->base.getOrCreateMethod(X_Modifier.PROTECTED, "void", "beforeResolved")
+            .addParameter(elType, VAR_ELEMENT));
+        afterResolved = Lazy.deferred1(()->base.getOrCreateMethod(X_Modifier.PROTECTED, "void", "afterResolved")
+            .addParameter(elType, VAR_ELEMENT));
         insertions = new PrintBuffer(2);
-        method = base.getOrCreateMethod(X_Modifier.PROTECTED, "void", "elementResolved", init -> {
+        method = base.getOrCreateMethod(X_Modifier.PROTECTED, "void", "onElementResolved", init -> {
             String builderType = ui.getMethods().getBaseTypeInjector(namespace);
-            init.addParameter(elType, "el");
+            init.addParameter(elType, VAR_ELEMENT);
 
-            init.println(beforeResolved.getName() +"(el);")
-                .println(builderType + " " + ReservedUiMethods.ROOT_INJECTOR_VAR + " = " +
-                    ui.getElementInjectorConstructor(namespace) + "(el);")
+            init.patternln("$1 $2 = $3($4);",
+                    builderType, ROOT_INJECTOR_VAR, ui.getElementInjectorConstructor(namespace), VAR_ELEMENT)
                 .addToEnd(insertions);
             init
-                .println("super.elementResolved(el);")
-                .println(afterResolved.getName() + "(el);");
+                .println("super.onElementResolved(el);");
         });
 
     }
 
     public PrintBuffer beforeResolved() {
-        return beforeResolved;
+        return beforeResolved.out1();
     }
 
     public PrintBuffer afterResolved() {
-        return afterResolved;
+        return afterResolved.out1();
     }
 
     public String getMethodName() {
@@ -56,8 +62,22 @@ public class MethodElementResolved {
     }
 
     public void append(AssembledElement e) {
-        insertions.println(ReservedUiMethods.ROOT_INJECTOR_VAR + ".appendChild(" +
-            e.requireRef() + ".out1().getElement()" +
-            ");");
+        if (e instanceof AssemblyIf && ((AssemblyIf) e).canBeEmpty()) {
+            final GeneratedUiBase base = ui.getBase();
+            String builder = base.getElementBuilderType(namespace);
+            String varName = method.reserveVariable("b");
+            insertions
+                .patternln("final $1 $2 = $3.out1();", builder, varName, e.requireRef());
+            insertions
+                .patternln("if ($1 != null) {", varName)
+                .indent()
+                    .patternln("$1.appendChild($2.getElement());", ROOT_INJECTOR_VAR, varName)
+                .outdent()
+                .println("}");
+        } else {
+            insertions.println(ROOT_INJECTOR_VAR + ".appendChild(" +
+                e.requireRef() + ".out1().getElement()" +
+                ");");
+        }
     }
 }

@@ -276,6 +276,8 @@ public class AssemblyIf extends AssembledElement {
         serialize(factory, assembler, result);
 
         super.finishElement(assembly, assembler, factory, result, el);
+
+        result.setDefaultBehavior(null);
     }
 
     private void serialize(GeneratedFactory rootFactory, UiAssembler assembler, UiAssemblerResult result) {
@@ -371,9 +373,14 @@ public class AssemblyIf extends AssembledElement {
             .println("}")
         ;
 
-        final PrintBuffer afterResolved = assembler.getElementResolved().beforeResolved();
-        afterResolved
-            .patternln("$1($2.out1().getElement());", redraw.getName(), attachTo);
+        final PrintBuffer beforeResolved = assembler.getElementResolved().beforeResolved();
+        if (isParentRoot()) {
+            beforeResolved
+                .patternln("$1(el);", redraw.getName());
+        } else {
+            beforeResolved
+                .patternln("$1($2.out1().getElement());", redraw.getName(), attachTo);
+        }
         // now, also hook up any model listeners necessary to trigger refreshes...
 
         /*
@@ -453,7 +460,11 @@ public class AssemblyIf extends AssembledElement {
             .patternln("getModel().onChange(\"$1\", (was, is)-> {", modelInfo.getMemberName())
             .indent();
         // bonus points for work avoidance here...
-        toDom.patternln("$1($2.out1().getElement());", redrawName, attachTo);
+        if (isParentRoot()) {
+            toDom.patternln("$1(el);", redrawName);
+        } else {
+            toDom.patternln("$1($2.out1().getElement());", redrawName, attachTo);
+        }
 
         toDom
             .outdent()
@@ -657,9 +668,9 @@ public class AssemblyIf extends AssembledElement {
                         methodRef.getScope().accept(visitor, ifTag);
                         init.patternln(".$1()", methodRef.getIdentifier());
                     } else if (type instanceof PrimitiveType || type instanceof ReferenceType) {
-
+                        X_Log.error(AssemblyIf.class, "Not handled", type.getClass(), type, "from", this);
                     } else {
-
+                        X_Log.error(AssemblyIf.class, "Not handled", type.getClass(), type);
                         // TODO: actually implement something smart regarding supported types / actions.
                         // String / <dom/> -> append to buffer
                         // Out1 / Provider -> call factory and append result to buffer.
@@ -804,5 +815,9 @@ public class AssemblyIf extends AssembledElement {
     @Override
     public PrintBuffer getInitBuffer() {
         return factory.getInitBuffer();
+    }
+
+    public boolean canBeEmpty() {
+        return elses.isEmpty();
     }
 }

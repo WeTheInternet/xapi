@@ -31,7 +31,7 @@ public class ReservedUiMethods {
         if (nameNewBuilder == null) {
             final GeneratedUiBase baseClass = ui.getBase();
 //            nameNewBuilder = baseClass.getElementBuilderType(namespace) + "()";
-            final String builderName = baseClass.newMethodName("newBuilder");
+            final String builderName = baseClass.newMethodName(UiNamespace.METHOD_NEW_BUILDER);
             baseClass.getSource().getClassBuffer().makeAbstract();
             String builderType = baseClass.getElementBuilderType(namespace);
             // When in api/base layer, we will create an abstract method that impls must fill;

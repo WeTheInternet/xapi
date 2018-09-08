@@ -57,6 +57,7 @@ public interface ServerTestHelper <ServerType extends XapiServer> extends Rethro
 
     default WebApp createWebApp(String name, UiContainerExpr app) {
         WebAppGenerator generator = createGenerator();
+        generator.setUiComponent(false);
         WebApp classpath = generator.generateWebApp(name, app, callback->{
 
             final DoUnsafe doInstall = ()->{

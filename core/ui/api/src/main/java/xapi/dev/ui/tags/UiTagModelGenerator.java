@@ -17,8 +17,13 @@ import xapi.model.X_Model;
 import xapi.model.api.KeyBuilder;
 import xapi.model.api.ModelBuilder;
 import xapi.model.api.ModelKey;
+import xapi.util.X_String;
 
 import java.lang.reflect.Modifier;
+
+import static xapi.dev.ui.api.UiNamespace.METHOD_NEW_MODEL;
+import static xapi.dev.ui.api.UiNamespace.METHOD_NEW_MODEL_BUILDER;
+import static xapi.dev.ui.api.UiNamespace.METHOD_NEW_MODEL_KEY;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 2/10/17.
@@ -143,7 +148,7 @@ public class UiTagModelGenerator extends UiFeatureGenerator {
             String modelType = api.getModelName();
 
             modOut.createField(String.class, "MODEL_" + constantName)
-                .setInitializer("\"" + modelType + "\"");
+                .setInitializer("\"" + X_String.firstCharToLowercase(model.getTypeName()) + "\"");
 
             final String out1 = modOut.addImport(Out1.class);
             final String keyBuilder = modOut.addImport(KeyBuilder.class);
@@ -155,8 +160,14 @@ public class UiTagModelGenerator extends UiFeatureGenerator {
             modOut.createField(out1 + "<" + keyBuilder+">", constantName + "_KEY_BUILDER")
                 .setInitializer(forType + "(MODEL_" + constantName + ")");
 
-            modOut.createMethod(Modifier.STATIC, keyBuilder, "newKey")
+            modOut.createMethod(Modifier.STATIC, keyBuilder, METHOD_NEW_MODEL_KEY)
                   .returnValue(constantName + "_KEY_BUILDER" + ".out1()");
+
+            modOut.createMethod(Modifier.STATIC, modBuilder + "<" + modelType + ">", METHOD_NEW_MODEL_BUILDER)
+                  .returnValue(constantName + "_MODEL_BUILDER" + ".out1()");
+
+            modOut.createMethod(Modifier.STATIC, modelType, METHOD_NEW_MODEL)
+                  .returnValue(METHOD_NEW_MODEL_BUILDER + "().buildModel()");
 
             modOut.createField(out1 + "<" + modBuilder + "<" + modelType + ">>", constantName + "_MODEL_BUILDER")
                 .getInitializer()

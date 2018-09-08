@@ -3,12 +3,15 @@ package xapi.ui.api;
 import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
+import xapi.fu.Immutable;
+import xapi.fu.In1;
+import xapi.fu.Lazy;
+import xapi.fu.Out1;
+import xapi.time.X_Time;
 import xapi.util.X_Debug;
 import xapi.util.X_String;
-import xapi.util.api.ReceivesValue;
 import xapi.util.impl.DeferredCharSequence;
 
-import javax.inject.Provider;
 import java.io.IOException;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -24,11 +27,11 @@ public abstract class NodeBuilder<E> implements Widget<E> {
   protected NodeBuilder<E> children;
   protected NodeBuilder<E> siblings;
   protected E el;
-  protected Provider<E> elementProvider;
+  protected Lazy<E> elementProvider;
   @SuppressWarnings("rawtypes")
   protected NodeBuilder childTarget = this;
 
-  protected final IntTo<ReceivesValue<E>> createdCallbacks;
+  protected final IntTo<In1<E>> createdCallbacks;
   protected final boolean searchableChildren;
 
   protected Function<String, String> bodySanitizer;
@@ -41,7 +44,23 @@ public abstract class NodeBuilder<E> implements Widget<E> {
 
   public NodeBuilder(boolean searchableChildren) {
     this.searchableChildren = searchableChildren;
-    createdCallbacks = X_Collect.newList(ReceivesValue.class);
+    createdCallbacks = X_Collect.newList(In1.class);
+  }
+
+  public NodeBuilder(Out1<E> elementProvider) {
+    this(true);
+    this.elementProvider = Lazy.deferred1(elementProvider);
+    if (elementProvider instanceof Immutable ||
+        (elementProvider instanceof Lazy && ((Lazy) elementProvider).isResolved())) {
+      this.el = this.elementProvider.out1();
+      onInitialize(el);
+    }
+  }
+
+  public NodeBuilder(E element) {
+    this(true);
+    this.el = element;
+    onInitialize(el);
   }
 
   public boolean hasSiblings() {
@@ -143,7 +162,7 @@ public abstract class NodeBuilder<E> implements Widget<E> {
     if (el == null) {
       // MAYBE: double checked lock for jvms?
       if (elementProvider != null) {
-        el = elementProvider.get();
+        el = elementProvider.out1();
       }
       if (el == null) {
         initialize();
@@ -155,15 +174,20 @@ public abstract class NodeBuilder<E> implements Widget<E> {
     return el;
   }
 
-  public NodeBuilder<E> onCreated(ReceivesValue<E> callback) {
+  public NodeBuilder<E> onCreated(In1<E> callback) {
     if (el == null) {
       assert searchableChildren : "Cannot handle created callbacks without searchableChildren in "+this;
       createdCallbacks.add(callback);
       if (elementProvider != null) {
-        getElement(); // will trigger our callback
+        if (!initialized) {
+          // ensure we get initialized eventually
+          // TODO: move RunSoon somewhere we can see it, and use that instead
+          // (or add X_Time.runSoon, and have it be pluggable from downstream
+          X_Time.runLater(this::getElement);
+        }
       }
     } else {
-      callback.set(el);
+      callback.in(el);
     }
     return this;
   }
@@ -186,6 +210,7 @@ public abstract class NodeBuilder<E> implements Widget<E> {
           initChildren = children.resolveChildren(this, el);
         }
         onInitialize(el);
+        // This bit below is pretty suspicious... we should try to delete it...
         if (initChildren) {
             NodeBuilder<E> init = children;
             while (init != null) {
@@ -205,13 +230,17 @@ public abstract class NodeBuilder<E> implements Widget<E> {
 
   protected void startInitialize(E el) {}
 
+  /**
+   * Called when the node is initialized, to flush any createdCallbacks that have accrued.
+   * @param el
+   */
   protected void onInitialize(E el) {
     initialized = true;
     if (!createdCallbacks.isEmpty()) {
-      final ReceivesValue<E>[] callbacks = createdCallbacks.toArray();
+      final In1<E>[] callbacks = createdCallbacks.toArray();
       createdCallbacks.clear();
-      for (ReceivesValue<E> callback : callbacks) {
-        callback.set(el);
+      for (In1<E> callback : callbacks) {
+        callback.in(el);
       }
       assert createdCallbacks.isEmpty() :
           "You are adding more created callbacks during onInitialize.";
@@ -223,27 +252,13 @@ public abstract class NodeBuilder<E> implements Widget<E> {
     boolean needsCallback = false;
     if (children != null) {
       if (children.resolveChildren(this, root)) {
-        onCreated(
-            new ReceivesValue<E>() {
-              @Override
-              public void set(E value) {
-                children.onInitialize(children.getElement());
-              }
-            }
-        );
+        onCreated(In1.in1Ignored(children::onInitialize, children::getElement));
         needsCallback = true;
       }
     }
     if (siblings != null) {
       if (siblings.resolveChildren(parent, root)) {
-        siblings.onCreated(
-            new ReceivesValue<E>() {
-              @Override
-              public void set(E value) {
-                siblings.onInitialize(siblings.getElement());
-              }
-            }
-        );
+        siblings.onCreated(siblings::onInitialize);
         needsCallback = true;
       }
     }
@@ -253,13 +268,8 @@ public abstract class NodeBuilder<E> implements Widget<E> {
 
   protected void resolve(final E root) {
     if (this.el == null) {
-      // We need to resolve our element!
-      elementProvider = new Provider<E>() {
-        @Override
-        public E get() {
-          return findSelf(root);
-        }
-      };
+      // We need to resolve our element from root!
+      elementProvider = Lazy.deferred1(Out1.out1Deferred(this::findSelf, root));
     }
   }
 
@@ -452,6 +462,10 @@ public abstract class NodeBuilder<E> implements Widget<E> {
       return child;
     }
 
+  }
+
+  public boolean isResolving() {
+    return elementProvider != null && elementProvider.isResolving();
   }
 
 }

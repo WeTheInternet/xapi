@@ -19,7 +19,7 @@ public class ComponentConstructor<E, C extends IsComponent<E>> {
 
     public C constructComponent(
         ComponentOptions<E, C> opts,
-        In1Out1<E, C> getUi
+        In1Out1<E, ? extends C> getUi
     ) {
         E element = constructElement(opts);
         return getUi.io(element);

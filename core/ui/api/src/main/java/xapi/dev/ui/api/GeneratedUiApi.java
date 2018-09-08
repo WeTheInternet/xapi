@@ -1,6 +1,7 @@
 package xapi.dev.ui.api;
 
 import com.github.javaparser.ast.type.Type;
+import xapi.dev.source.CanAddImports;
 import xapi.dev.source.SourceBuilder;
 import xapi.fu.In1Out1;
 import xapi.source.read.JavaModel.IsTypeDefinition;
@@ -70,5 +71,18 @@ public class GeneratedUiApi extends GeneratedUiLayer {
     @Override
     public GeneratedJavaFile getImplementor() {
         return getOwner().getBase();
+    }
+
+    public String getLocalName(
+        UiGeneratorService generator,
+        ImplLayer layer,
+        UiNamespace ns,
+        CanAddImports imports
+    ) {
+        return getWrappedName() +
+            getTypeParameters()
+                .filter(GeneratedTypeParameter::isExposed)
+                .map(p-> p.computeDeclaration(this, layer, generator, ns, imports))
+                .join("<",",", ">");
     }
 }

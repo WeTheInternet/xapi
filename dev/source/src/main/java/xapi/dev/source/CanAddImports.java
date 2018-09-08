@@ -33,7 +33,10 @@ public interface CanAddImports extends HasIndent {
     return getImports().addStaticImport(cls);
   }
 
-  default String parameterizedType(String cls, String[] typeParams) {
+  default String parameterizedType(Class<?> cls, String ... typeParams) {
+    return parameterizedType(addImport(cls), typeParams);
+  }
+  default String parameterizedType(String cls, String ... typeParams) {
 
     String type;
     if (Character.isLowerCase(cls.charAt(0))) {

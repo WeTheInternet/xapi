@@ -20,6 +20,8 @@ import xapi.dev.ui.api.UiComponentGenerator.UiGenerateMode;
  */
 public interface UiImplementationGenerator {
 
+    String getImplName(String pkgName, String className);
+
     UiGeneratorService getGenerator();
 
     UiGeneratorTools getTools();

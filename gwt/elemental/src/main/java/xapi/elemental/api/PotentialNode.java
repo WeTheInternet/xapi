@@ -6,15 +6,16 @@ import elemental.dom.Element;
 import elemental.dom.Node;
 import elemental2.dom.DomGlobal;
 import xapi.elemental.X_Elemental;
+import xapi.fu.In1;
 import xapi.fu.Lazy;
 import xapi.fu.Out1;
 import xapi.ui.api.*;
 import xapi.util.X_Debug;
 import xapi.util.X_String;
-import xapi.util.api.ReceivesValue;
-import xapi.util.impl.ImmutableProvider;
 
 import java.util.function.BiFunction;
+
+import static xapi.fu.Immutable.immutable1;
 
 /**
  * TODO: rename this to ElementalBuilder?
@@ -40,7 +41,7 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> impleme
 
   }
 
-  private Lazy<Element> attachTo = Lazy.deferred1(Browser.getDocument()::getBody);
+  private Lazy<Element> attachTo = Lazy.deferred1(()->Browser.getDocument().getBody());
 
   public PotentialNode() {
     this(false);
@@ -62,10 +63,11 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> impleme
   }
 
   public PotentialNode(E element) {
-    super(false);
-    setDefaultFactories();
-    el = element;
-    onInitialize(el);
+    super(element);
+  }
+
+  public PotentialNode(Out1<E> element) {
+    super(element);
   }
 
   @Override
@@ -94,7 +96,7 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> impleme
   public PotentialNode<E> createNode(String tagName) {
     final NodeBuilder<E> child = newNode.apply(tagName, searchableChildren);
     assert child instanceof PotentialNode :
-        "A potential node cannot have a factory which does not supply a new potential node" ;
+        "A potential node cannot have a factory which does not supply a new PotentialNode" ;
     return (PotentialNode<E>) child;
   }
 
@@ -120,7 +122,7 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> impleme
       E e = build(csq.toString());
       return e;
     } finally {
-      attributeApplier = new ImmutableProvider<>(new ApplyLiveAttribute());
+      attributeApplier = immutable1(new ApplyLiveAttribute());
     }
   }
 
@@ -256,7 +258,7 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> impleme
   }
 
     @Override
-    public PotentialNode<E> onCreated(ReceivesValue<E> callback) {
+    public PotentialNode<E> onCreated(In1<E> callback) {
         super.onCreated(callback);
         return this;
     }
@@ -276,4 +278,5 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> impleme
     attachTo = Lazy.deferred1(el);
     return this;
   }
+
 }

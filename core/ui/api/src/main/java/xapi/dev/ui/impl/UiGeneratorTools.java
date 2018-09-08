@@ -112,7 +112,7 @@ public abstract class UiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> im
         return getGenerator().createMetadata(root, n);
     }
 
-    public String calculateGeneratedName(String pkgName, String className, UiContainerExpr expr) {
+    public String calculateGeneratedName(String pkgName, String className) {
         String fqcn = X_Source.qualifiedName(pkgName, className);
         return "Component" + numGenerated.compute(fqcn, (k, i) -> i == null ? 0 : i++) + "_"+ className ;
     }

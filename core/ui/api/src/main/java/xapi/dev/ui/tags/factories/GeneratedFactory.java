@@ -13,6 +13,8 @@ import xapi.fu.api.DoNotOverride;
  */
 public interface GeneratedFactory {
 
+    PrintBuffer getReturnStmt();
+
     /**
      * Adds a return statement to our target's init method (useful for conditionals;
      * when you only have one return statement, instead use {@link #setReturn(String, boolean)}.

@@ -1,4 +1,4 @@
-package xapi.test.components.xapi.test.components;
+package xapi.test.components;
 
 import static xapi.model.X_Model.create;
 
@@ -7,6 +7,8 @@ import xapi.ui.api.component.IsModelComponent;
 import xapi.util.X_Util;
 
 public interface AsserterComponent <El> extends IsModelComponent< El, ModelAsserter>{
+
+  String TAG_NAME = "xapi-asserter";
 
    default String getModelType () {
     return "Asserter";

@@ -1,10 +1,10 @@
 package xapi.ui.api.component;
 
-import xapi.fu.Immutable;
-import xapi.fu.In1Out1;
 import xapi.fu.Lazy;
 import xapi.fu.Out1;
 import xapi.ui.api.ElementBuilder;
+
+import static xapi.fu.Immutable.immutable1;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 1/16/17.
@@ -16,11 +16,20 @@ public abstract class AbstractComponent <
 implements IsComponent<El> {
 
     private final Lazy<El> element;
+    private final Lazy<ElementBuilder<El>> self;
     private ComponentOptions<El, Api> opts;
     private String refName;
 
-    public AbstractComponent(El element) {
-        this(Immutable.immutable1(element));
+    public AbstractComponent(El el) {
+        this.element = Lazy.withSpy(immutable1(el), this::elementResolved, true);
+        initialize(this.element);
+        self = Lazy.deferred1(()->newBuilder(this.element));
+    }
+
+    public AbstractComponent(Out1<El> element) {
+        this.element = Lazy.withSpy(element, this::elementResolved, true);
+        initialize(this.element);
+        self = Lazy.deferred1(()->newBuilder(this.element));
     }
 
     @SuppressWarnings("unchecked") //
@@ -29,17 +38,30 @@ implements IsComponent<El> {
             opts.withComponent((Api)this);
         }
         element = Lazy.withSpy(
-            In1Out1.of(constructor::constructElement).supply(opts),
+            Out1.out1Deferred(opts::create, constructor),
             this::elementResolved, true);
+
 
         this.opts = opts;
         initialize(element);
+        self = Lazy.deferred1(()-> opts.hasBuilder()
+            ? opts.getBuilder() : newBuilder(element)
+        );
     }
 
 
-    public AbstractComponent(Out1<El> element) {
-        this.element = Lazy.withSpy(element, this::elementResolved, true);
-        initialize(this.element);
+    /**
+     * Subtypes that want to access a component as a builder
+     * will need to override this method.
+     *
+     * We give you a Lazy by default, so you can check if it's an instanceof Lazy,
+     * if you can be more efficient when it's resolved.
+     *
+     * @param element The Out1 instance for our element, will be a Lazy, but we'll make it Out1, so you can supply anything
+     * @return a new ElementBuilder which understands the platform-specific El type.
+     */
+    protected ElementBuilder<El> newBuilder(Out1<El> element) {
+        throw new UnsupportedOperationException(getClass() + " must implement newBuilder(Out1<El> element)");
     }
 
     protected void initialize(Lazy<El> element) {
@@ -59,12 +81,30 @@ implements IsComponent<El> {
      *
      * @param el - The element this component manipulates.
      */
-    protected void elementResolved(El el) {
+    protected final void elementResolved(El el) {
+        beforeResolved(el);
+        onElementResolved(el);
+        afterResolved(el);
+    }
+
+    protected void beforeResolved(El el) {
+    }
+    protected void afterResolved(El el) {
+    }
+    protected void onElementResolved(El el) {
     }
 
     @Override
     public El getElement() {
         return element.out1();
+    }
+
+    @Override
+    public boolean isResolving(ElementBuilder<El> builder) {
+        if (self.isResolved() && self.out1() == builder) {
+            return builder.isResolving();
+        }
+        return false;
     }
 
     public boolean isElementResolved() {
@@ -84,17 +124,25 @@ implements IsComponent<El> {
         return opts;
     }
 
-    public <N extends ElementBuilder<?>> N intoBuilder(IsComponent<?> logicalParent, ComponentOptions<El, Api> opts, N into) {
+    @Override
+    public <N extends ElementBuilder> N intoBuilder(IsComponent<?> logicalParent, ComponentOptions opts, N into) {
         final boolean addChild = logicalParent instanceof HasChildren;
         final boolean addParent = this instanceof HasParent;
-        into.onCreated(el->{
-            if (addChild) {
-                ((HasChildren) logicalParent).addChildComponent(this);
-            }
-            if (addParent) {
-                ((HasParent) this).setParent(logicalParent);
-            }
-        });
+        if (addChild || addParent) {
+            into.onCreated(el->{
+                if (addChild) {
+                    ((HasChildren) logicalParent).addChildComponent(this);
+                }
+                if (addParent) {
+                    ((HasParent) this).setParent(logicalParent);
+                }
+            });
+        }
         return into;
+    }
+
+    @Override
+    public ElementBuilder<El> asBuilder() {
+        return self.out1();
     }
 }

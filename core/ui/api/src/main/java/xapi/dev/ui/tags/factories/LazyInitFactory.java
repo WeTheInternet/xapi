@@ -114,6 +114,7 @@ public class LazyInitFactory implements GeneratedFactory {
         }
     }
 
+    @Override
     public PrintBuffer getReturnStmt() {
         if (returnStmt == null) {
             ensureInit();

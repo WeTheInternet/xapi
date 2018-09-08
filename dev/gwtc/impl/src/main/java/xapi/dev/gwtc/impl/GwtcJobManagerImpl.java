@@ -221,9 +221,13 @@ public class GwtcJobManagerImpl extends GwtcJobManagerAbstract {
             final String mod = ev.getInputModuleName();
             final String currentId = eventIds.get(mod);
             if (ev.getJobId().equals(currentId)){
-                X_Log.info(GwtcJobManagerImpl.class, "Setting job", ev.getJobId(), "status to ", ev.getStatus());
                 final CompileMessage state = convertStatus(ev.getStatus());
-                statuses.put(mod, state);
+                final CompileMessage was = statuses.put(mod, state);
+                if (was == null) {
+                    X_Log.info(GwtcJobManagerImpl.class, "Setting job", ev.getJobId(), "status to", ev.getStatus());
+                } else if (was != state) {
+                    X_Log.info(GwtcJobManagerImpl.class, "Changing job", ev.getJobId(), "status from", was, "to", ev.getStatus());
+                }
                 runningJobs.getMaybe(mod)
                     .readIfPresent2(GwtcJob::setState, state);
             }

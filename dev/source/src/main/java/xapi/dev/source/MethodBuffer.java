@@ -419,12 +419,20 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
    * This allows you to use the returnValue() to optionally throw instead of
    * return.
    *
-   * @param name
+   * @param expr
    * @return
    */
-  public MethodBuffer returnValue(final String name) {
-    return println((name.matches("\\s*(throw|return)\\s.*") ? "" : "return ")
-      + name + (name.endsWith(";") ? "" : ";"));
+  public MethodBuffer returnValue(final String expr) {
+    return println(validateForReturn(expr));
+  }
+
+  private String validateForReturn(String expr) {
+    return (expr.matches("\\s*(throw|return)\\s.*") ? "" : "return ")
+        + expr + (expr.endsWith(";") ? "" : ";");
+  }
+
+  public MethodBuffer returnPattern(final String expr, Object replace1, Object ... replacements) {
+    return patternln(validateForReturn(expr), replace1, replacements);
   }
   public PrintBuffer stmtReturn() {
     PrintBuffer ret = new PrintBuffer(getIndentCount()) {
@@ -435,8 +443,15 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
         assert !source.trim().startsWith("return ") : "Do not add `return ` to the start of a stmtReturn";
         return source;
       }
+
+      @Override
+      public CharBuffer clear() {
+        indented = true;
+        return super.clear();
+      }
     };
     print("return ");
+    ret.indented = true;
     addToEnd(ret);
     println(";");
     return ret;
@@ -649,17 +664,39 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
     return this;
   }
 
+  public LocalVariable newVariable(Class<?> type, String name) {
+    return newVariable(addImport(type), name);
+  }
+
   public LocalVariable newVariable(String type, String name) {
     return newVariable(type, name, false);
   }
 
+  public LocalVariable newVariable(Class<?> type, String name, boolean reuseExisting) {
+    return newVariable(addImport(type), name, reuseExisting);
+  }
+
+  public String reserveVariable(String name) {
+    if (!variables.containsKey(name)) {
+      variables.put(name, null);
+      return name;
+    }
+    int unused = 0;
+    while(variables.containsKey(name + "_" + unused)) {
+      unused++;
+    }
+    name = name + "_" + unused;
+    variables.put(name, null);
+    return name;
+  }
+
   public LocalVariable newVariable(String type, String name, boolean reuseExisting) {
-    final LocalVariable was = variables.get(name);
     final LocalVariable var;
-    if (was == null) {
+    final LocalVariable was = variables.get(name);
+    if (!variables.containsKey(name)) {
       // easy-peasy
       var = new LocalVariable(this, type, name, getIndent());
-    } else if (reuseExisting){
+    } else if (was != null && reuseExisting){
       // caller wants a stable name here...
       // TODO: record something to elide the type information for the var reuse...
       // so, return a modified duplicate here w/ doesn't print the type  again
@@ -667,12 +704,7 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
       // which is unlikely to ever happen, as it is not a high value reward)
       return was;
     } else {
-      // make a new variable w/ an unused name
-      int unused = 0;
-      while(variables.containsKey(name + "_" + unused)) {
-        unused++;
-      }
-      name = name + "_" + unused;
+      name = reserveVariable(name);
       var = new LocalVariable(this, type, name, getIndent());
     }
     variables.put(name, var);

@@ -42,19 +42,57 @@ public class DefaultTagAssembler implements TagAssembler {
         UiAssemblerResult res = new UiAssemblerResult();
         res.setFactory(factory);
 
-        final GeneratedUiComponent component = assembly.getUi();
-        final GeneratedUiBase baseClass = component.getBase();
-        final UiNamespace namespace = assembly.getNamespace();
-        final UiGeneratorTools tools = assembly.getTools();
-        final UiTagGenerator generator = assembly.getGenerator();
-        final ApiGeneratorContext ctx = assembly.getContext();
+        boolean printedVar = checkModelNode(e);
+
         final UiContainerExpr n = e.getAst();
+
+        try {
+
+            if (printedVar) {
+                visitBody(assembler, n, e, res);
+            } else {
+                if (shouldPrintTagName(n, res)) {
+                    res.addDefaultBehavior(()->{
+                        PrintBuffer toDom = e.getInitBuffer();
+                        toDom.println(factory.getVarName() + ".setTagName(\"" + n.getName() + "\");");
+                    });
+                }
+                visitBody(assembler, n, e, res);
+            }
+
+        } finally {
+//            if (!e.isParentRoot()) {
+//                component.getMethods().elementResolved(namespace)
+//                    .beforeResolved().println(
+//                    e.getParent().requireRef()+".out1().addChild(" + e.requireRef() + ".out1());"
+//                );
+//            }
+        }
+
+
+
+        return res;
+    }
+
+    public boolean checkModelNode(AssembledElement e) {
+        final UiContainerExpr n = e.getAst();
+
         final Maybe<Expression> modelNode = n.getAttribute(UiNamespace.ATTR_MODEL)
             .mapNullSafe(UiAttrExpr::getExpression);
 
+        final UiGeneratorTools tools = assembly.getTools();
+        final UiTagGenerator generator = assembly.getGenerator();
+        final ApiGeneratorContext ctx = assembly.getContext();
+        final GeneratedUiComponent component = assembly.getUi();
+
+        final GeneratedUiBase baseClass = component.getBase();
+        final UiNamespace namespace = assembly.getNamespace();
+
+
         String type = baseClass.getElementBuilderType(namespace);
+
+
         boolean printedVar = false;
-        PrintBuffer toDom = e.getInitBuffer();
         if (modelNode.isPresent()) {
             // When a modelNode is present, we should delegate to a generated element's toDom method.
             final Expression modelExpr = modelNode.get();
@@ -70,6 +108,8 @@ public class DefaultTagAssembler implements TagAssembler {
                     ComponentBuffer otherTag = tools.getGenerator().getComponent(ctx, n.getName());
                     // We'll want to defer to a factory method on the other component.
                     if (otherTag == null) {
+                        PrintBuffer toDom = e.getInitBuffer();
+
                         final GeneratedUiDefinition info = tools.getDefinition(ctx, n.getName());
                         if (info == null) {
                             throw new NotConfiguredCorrectly("No definition found for " + n.getName());
@@ -114,7 +154,7 @@ public class DefaultTagAssembler implements TagAssembler {
                         }
                         MethodCallExpr factoryMethod = otherTag.getTagFactory(tools, ctx, component, namespace, n, nodeToUse);
                         String initializer = tools.resolveString(ctx, factoryMethod);
-                        toDom.println("return " + initializer + ";");
+                        e.getInitBuffer().println("return " + initializer + ";");
                     }
                     printedVar = true;
                 } else {
@@ -123,30 +163,7 @@ public class DefaultTagAssembler implements TagAssembler {
                 }
             }
         }
-
-        try {
-
-            if (printedVar) {
-                visitBody(assembler, n, e, res);
-            } else {
-                if (shouldPrintTagName(n, res)) {
-                    toDom.println(factory.getVarName() + ".setTagName(\"" + n.getName() + "\");");
-                }
-                visitBody(assembler, n, e, res);
-            }
-
-        } finally {
-//            if (!e.isParentRoot()) {
-//                component.getMethods().elementResolved(namespace)
-//                    .beforeResolved().println(
-//                    e.getParent().requireRef()+".out1().addChild(" + e.requireRef() + ".out1());"
-//                );
-//            }
-        }
-
-
-
-        return res;
+        return printedVar;
     }
 
     protected boolean shouldPrintTagName(UiContainerExpr n, UiAssemblerResult res) {
@@ -166,62 +183,65 @@ public class DefaultTagAssembler implements TagAssembler {
         UiAssemblerResult res
     ) {
         if (n.getBody() != null) {
-            ComposableXapiVisitor<Boolean> visitor = ComposableXapiVisitor.whenMissingFail(DefaultTagAssembler.class);
-            visitor
-                .withJsonContainerRecurse((json, first)->{
-                    assert json.isArray() : "Object type bodies not supported!";
-                    // TODO: some extra wiring to handle multiple children?
-                })
-                .withMethodReferenceTerminal((mthd, first)->{
-                    final PrintBuffer init = e.getInitBuffer();
-                    if (first) {
-                        init.println(AssembledElement.BUILDER_VAR+".append(").indent();
-                    }
-                    final Expression resolved = e.resolveRef(e, mthd, false);
-                    // TODO: smart argument binding...
-                    init.printlns(resolved.toSource());
-                    if (first) {
-                        init.outdent().println(");");
-                    }
-
-                })
-                .withTemplateLiteralTerminal((template, first)->{
-                    String lit = template.getValueWithoutTicks();
-                    final PrintBuffer init = e.getInitBuffer();
-                    if (first) {
-                        init.println(AssembledElement.BUILDER_VAR+".append(").indent();
-                    }
-                    // If this literal is a method reference or method call, then we should
-                    // treat it as a supplier of an appendable value...
-                    if (lit.contains("::") || (lit.contains(".") && lit.contains("("))) {
-                        try {
-                            final Expression parsed = JavaParser.parseExpression(lit);
-                            // yay, we were parsed as some valid expression... visit it...
-                            parsed.accept(visitor, false);
-                            if (first) {
-                                init.outdent().println(");");
-                            }
-                            return;
-                        } catch (ParseException invalid) {
-                            // ignored... we will just serialize it into the body
+            // instead of actually printing the code,
+            // we just set the "default behavior if unhandled"
+            // perhaps put an extra on the ast node?  ...for now, we have the UiAssemblerResult in scope.
+            res.addDefaultBehavior(()->{
+                final PrintBuffer init = e.getInitBuffer();
+                ComposableXapiVisitor<Boolean> visitor = ComposableXapiVisitor.whenMissingFail(DefaultTagAssembler.class);
+                visitor
+                    .withJsonContainerRecurse((json, first)->{
+                        assert json.isArray() : "Object type bodies not supported!";
+                        // TODO: some extra wiring to handle multiple children?
+                    })
+                    .withMethodReferenceTerminal((mthd, first)->{
+                        if (first) {
+                            init.println(AssembledElement.BUILDER_VAR+".append(").indent();
                         }
-                    }
-                    init.printlns(X_Source.javaQuote(lit));
-                    if (first) {
-                        init.outdent().println(");");
-                    }
-                })
-            .withUiContainerTerminal((ui, first) -> {
-                // when we aren't first, we'll need to do some fancy footwork to generate correct code
-                // (most likely, removing the lazy chaining and actually assign local variables for everything)
-                final UiAssemblerResult result = assembler.addChild(assembly, e, ui);
-                res.adopt(result);
-            })
-            ;
-            for (Expression child : n.getBody().getChildren()) {
-                child.accept(visitor, true);
-            }
+                        final Expression resolved = e.resolveRef(e, mthd, false);
+                        // TODO: smart argument binding...
+                        init.printlns(resolved.toSource());
+                        if (first) {
+                            init.outdent().println(");");
+                        }
 
+                    })
+                    .withTemplateLiteralTerminal((template, first)->{
+                        String lit = template.getValueWithoutTicks();
+                        if (first) {
+                            init.println(AssembledElement.BUILDER_VAR+".append(").indent();
+                        }
+                        // If this literal is a method reference or method call, then we should
+                        // treat it as a supplier of an appendable value...
+                        if (lit.contains("::") || (lit.contains(".") && lit.contains("("))) {
+                            try {
+                                final Expression parsed = JavaParser.parseExpression(lit);
+                                // yay, we were parsed as some valid expression... visit it...
+                                parsed.accept(visitor, false);
+                                if (first) {
+                                    init.outdent().println(");");
+                                }
+                                return;
+                            } catch (ParseException invalid) {
+                                // ignored... we will just serialize it into the body
+                            }
+                        }
+                        init.printlns(X_Source.javaQuote(lit));
+                        if (first) {
+                            init.outdent().println(");");
+                        }
+                    })
+                .withUiContainerTerminal((ui, first) -> {
+                    // when we aren't first, we'll need to do some fancy footwork to generate correct code
+                    // (most likely, removing the lazy chaining and actually assign local variables for everything)
+                    final UiAssemblerResult result = assembler.addChild(assembly, e, ui);
+                    res.adopt(result);
+                })
+                ;
+                for (Expression child : n.getBody().getChildren()) {
+                    child.accept(visitor, true);
+                }
+            });
         }
     }
 }

@@ -232,6 +232,9 @@ public class ComponentBuffer {
             definition.setModelName(model.getWrappedName());
             definition.getModelFields().putAll(model.getFields());
         }
+        if (component.isUiComponent()) {
+            definition.setBuilderName(component.getFactory().getWrappedName());
+        }
         return definition;
     }
 

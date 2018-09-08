@@ -11,18 +11,15 @@ import xapi.except.NotYetImplemented;
 import xapi.fu.In1Out1;
 import xapi.fu.Out1;
 import xapi.inject.X_Inject;
-import xapi.ui.api.Ui;
-import xapi.ui.api.UiBuilder;
-import xapi.ui.api.UiElement;
+import xapi.ui.api.*;
 import xapi.ui.api.event.UiEventManager;
-import xapi.ui.api.UiWithAttributes;
-import xapi.ui.api.UiWithProperties;
 import xapi.ui.service.UiService;
+import xapi.util.X_Debug;
 import xapi.util.X_String;
 
-import static xapi.collect.X_Collect.newClassMap;
-
 import java.util.WeakHashMap;
+
+import static xapi.collect.X_Collect.newClassMap;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
@@ -95,6 +92,12 @@ public class UiServiceImpl <Node, E extends UiElement<Node, ? extends Node, E>>
     }
     return builder;
 
+  }
+
+  @Override
+  public ElementBuilder<? extends Node> newBuilder(boolean searchable) {
+    assert false : getClass() + " must implement newBuilder(boolean)";
+    throw X_Debug.recommendAssertions();
   }
 
   @Override

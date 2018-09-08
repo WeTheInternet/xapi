@@ -22,6 +22,7 @@ public interface TagAssembler {
         UiContainerExpr child
     ) {
         final UiAssemblerResult result = assembler.addChild(assembly, parent, child);
+        result.resolveDefaultBehavior();
         if (result.getElement() != null) {
             return result.getElement().requireRef() + ".out1()";
         }

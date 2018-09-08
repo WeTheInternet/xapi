@@ -7,6 +7,7 @@ import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
+import xapi.dev.ui.impl.AbstractUiImplementationGenerator;
 import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.dev.ui.tags.assembler.AssembledElement;
 import xapi.dev.ui.tags.assembler.AssembledUi;
@@ -40,6 +41,7 @@ public class GeneratedUiImplementation extends GeneratedUiLayer {
     private final EnumMap<RequiredMethodType, Out2<GeneratedUiMethod, MethodCallExpr>> requiredMethods;
     private final StringTo<RequiredChildFactory> childFactories;
     private final ChainBuilder<In2<GeneratedUiImplementation, MethodBuffer>> callbackWriters;
+    private AbstractUiImplementationGenerator<?> generator;
 
     public GeneratedUiImplementation(GeneratedUiComponent owner, String pkg) {
         super(owner.getApi(), pkg, owner.getApi().getTypeName(), ImplLayer.Impl, owner);
@@ -264,4 +266,19 @@ public class GeneratedUiImplementation extends GeneratedUiLayer {
         callbackWriters.add(callback);
     }
 
+    public String mangleName(GeneratedUiDefinition def) {
+        return generator.getImplName(def.getPackageName(), def.getApiName());
+    }
+
+    public String mangleName(String pkgName, String typeName) {
+        return generator.getImplName(pkgName, typeName);
+    }
+
+    public void setGenerator(AbstractUiImplementationGenerator<?> generator) {
+        this.generator = generator;
+    }
+
+    public AbstractUiImplementationGenerator<?> getGenerator() {
+        return generator;
+    }
 }

@@ -1,6 +1,7 @@
 package xapi.ui.api.component;
 
 import xapi.fu.Immutable;
+import xapi.fu.In1Out1;
 import xapi.fu.Lazy;
 import xapi.fu.Out1;
 import xapi.fu.lazy.ResettableLazy;
@@ -55,11 +56,32 @@ implements IsModelComponent<El, Mod> {
         model = new ResettableLazy<>(this::initModel);
     }
 
+    protected void initialize(Lazy<El> element) {
+    }
 
     @Override
-    protected void elementResolved(El el) {
-        modelId = getModelId(el);
-        super.elementResolved(el);
+    protected void beforeResolved(El el) {
+        checkModelId(el);
+        super.beforeResolved(el);
+    }
+
+    protected void checkModelId(El el) {
+        if (modelId == null) {
+            modelId = getModelId(el);
+        }
+    }
+
+    @Override
+    protected void onElementResolved(El el) {
+        checkModelId(el);
+        super.onElementResolved(el);
+    }
+
+    @Override
+    protected void afterResolved(El el) {
+        // we keep checking, in case a model-id gets added.
+        checkModelId(el);
+        super.afterResolved(el);
     }
 
     private Mod initModel() {
@@ -98,11 +120,10 @@ implements IsModelComponent<El, Mod> {
         return (ModelComponentOptions<El, Mod, Api>) super.getOpts();
     }
 
-    protected void initialize(Lazy<El> element) {
-    }
-
     @Override
-    public <N extends ElementBuilder<?>> N intoBuilder(IsComponent<?> logicalParent, ComponentOptions<El, Api> opts,  N into) {
+    public <N extends ElementBuilder> N intoBuilder(
+        IsComponent<?> logicalParent, ComponentOptions opts, N into
+    ) {
         ModelComponentOptions<?, ?, ?> modelOpts = (ModelComponentOptions) opts;
         if (model.isResolved()) {
             final Mod mod = model.out1();
@@ -116,10 +137,38 @@ implements IsModelComponent<El, Mod> {
                 applyAttribute(into, mod);
             }
         }
-
         into.onCreated(e->{
             modelOpts.fireListeners(model.out1());
         });
         return super.intoBuilder(logicalParent, opts, into);
     }
+
+    protected <
+        M extends Model,
+        B extends ElementBuilder<El>,
+        C extends IsModelComponent<El, M>,
+        I extends C
+    > B bindModel(
+        IsComponentBuilder<ModelComponentOptions<El, M, C>> builder,
+        String tagName,
+        Out1<M> ifMissing,
+        In1Out1<ModelComponentOptions<El, M, C>, I> createComponent,
+        In1Out1<I, B> toBuilder
+    ) {
+        final ModelComponentOptions<El, M, C> opts = builder.getOpts();
+
+        if (opts.getModel() == null) {
+            opts.setModel(ifMissing.out1());
+        }
+
+        final I component = createComponent.io(opts);
+
+        B b = toBuilder.io(component);
+
+        b.setTagName(tagName);
+        opts.withBuilder(b);
+        opts.withComponent(component);
+        return component.intoBuilder(this, opts, b);
+    }
+
 }

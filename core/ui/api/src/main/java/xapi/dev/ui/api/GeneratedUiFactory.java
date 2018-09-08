@@ -8,16 +8,15 @@ import xapi.dev.source.FieldBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.dev.ui.impl.UiGeneratorTools;
-import xapi.fu.Immutable;
-import xapi.fu.In1;
-import xapi.fu.In1Out1;
-import xapi.fu.Out1;
+import xapi.fu.*;
+import xapi.log.X_Log;
 import xapi.scope.X_Scope;
 import xapi.scope.api.Scope;
 import xapi.source.X_Modifier;
 import xapi.source.read.JavaModel.IsTypeDefinition;
 import xapi.ui.api.component.ComponentConstructor;
 import xapi.ui.api.component.ComponentOptions;
+import xapi.ui.api.component.IsComponentBuilder;
 import xapi.ui.api.component.ModelComponentOptions;
 
 /**
@@ -30,6 +29,8 @@ public class GeneratedUiFactory extends GeneratedUiLayer {
     private final String apiName;
     private final StringTo<GeneratedUiMethod> parameters;
     private final MethodBuffer builderMethod;
+    private boolean saved;
+    private In1<UiGeneratorTools<?>> onSave;
 
     public GeneratedUiFactory(GeneratedUiComponent owner, GeneratedUiApi api) {
         super(api, api.getPackageName(), api.getTypeName(), ImplLayer.Base, owner);
@@ -78,25 +79,28 @@ public class GeneratedUiFactory extends GeneratedUiLayer {
             String elType = null;
             String componentType = null;
             for (GeneratedTypeParameter param : api.getTypeParameters()) {
-                if (!param.isExposed()) {
-                    continue;
-                }
-                cb.addGenerics(param.getType().toSource());
                 if (UiNamespace.TYPE_ELEMENT.equals(param.getSystemName())) {
                     elType = param.getTypeName();
                 }
                 if (UiNamespace.TYPE_SELF.equals(param.getSystemName())) {
                     componentType = param.getTypeName();
                 }
+                if (!param.isExposed()) {
+                    continue;
+                }
+                cb.addGenerics(param.getType().toSource());
                 namesOnly.append(namesOnly.length() == 0 ? "<" : ", ")
                     .append(param.getTypeName());
 
             }
             if (elType == null) {
-                elType = api.getGenericInfo().findUnused(ImplLayer.Api, true, "E", "El", "Ele", "ElementType", "ET", "Element");
+                // if there is no element type, then we have a purely logical component.
+                X_Log.warn(GeneratedUiFactory.class, "Purely logical components not yet supported");
+                elType = api.getElementType(service.namespace());
                 namesOnly.append(namesOnly.length() == 0 ? "<" : ", ")
                     .append(elType);
                 cb.addGenerics(elType);
+                return;
             }
             if (namesOnly.length() > 0) {
                 namesOnly.append(">");
@@ -131,11 +135,18 @@ public class GeneratedUiFactory extends GeneratedUiLayer {
                 optsType += "<" + elType + ", " + modelType + ", " + componentType + ">";
             } else {
                 // non-model "pure" component.
-                optsType = cb.addImport(ComponentOptions.class) + namesOnly;
+                optsType = cb.addImport(ComponentOptions.class) ;//+ namesOnly;
+                // TODO: more testing here so we can rely on namesOnly better...
                 optsType += "<" + elType + ", " + componentType + ">";
             }
+            cb.addInterface(
+                cb.parameterizedType(IsComponentBuilder.class, optsType)
+            );
             final FieldBuffer optsField = cb.createField(optsType, "opts")
-                .makePrivate().makeFinal();
+                .makePrivate()
+                .makeFinal()
+                .createGetter(X_Modifier.PUBLIC)
+                ;
 
             cb.createConstructor(X_Modifier.PUBLIC, creator, extractor)
                 .patternln("this.opts = new $1<>();", optsField.getRawType());
@@ -159,10 +170,10 @@ public class GeneratedUiFactory extends GeneratedUiLayer {
 
     }
 
-    private In1<UiGeneratorTools<?>> onSave;
 
     @Override
     protected void prepareToSave(UiGeneratorTools<?> tools) {
+        saved = true;
         onSave.in(tools);
     }
 
@@ -190,14 +201,20 @@ public class GeneratedUiFactory extends GeneratedUiLayer {
     }
 
     @Override
-    public String getElementType(UiNamespace namespace) {
-        // We want to force the base node type to come before the element type
-//        getNodeType(namespace);
-        return super.getElementType(namespace);
+    public void addLocalDefinition(String sysName, ReferenceType param) {
+        super.addLocalDefinition(sysName, param);
     }
 
     @Override
-    public void addLocalDefinition(String sysName, ReferenceType param) {
-        super.addLocalDefinition(sysName, param);
+    public boolean shouldSaveType() {
+        return getOwner().isUiComponent();
+    }
+
+    public void onSave(Do callback){
+        if (saved) {
+            callback.done();
+        } else {
+            this.onSave = this.onSave.useAfterMe(callback.ignores1());
+        }
     }
 }

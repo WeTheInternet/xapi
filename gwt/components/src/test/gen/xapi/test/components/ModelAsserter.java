@@ -1,4 +1,4 @@
-package xapi.test.components.xapi.test.components;
+package xapi.test.components;
 
 import static xapi.model.X_Model.create;
 import static xapi.model.api.KeyBuilder.forType;
@@ -16,7 +16,7 @@ public interface ModelAsserter extends Model{
     return ASSERTER_KEY_BUILDER.out1();
   }
 
-  String MODEL_ASSERTER = "asserter";
+  String MODEL_ASSERTER = "ModelAsserter";
 
   Out1<KeyBuilder> ASSERTER_KEY_BUILDER = forType(MODEL_ASSERTER);
 

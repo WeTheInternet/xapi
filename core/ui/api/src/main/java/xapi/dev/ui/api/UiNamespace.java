@@ -2,12 +2,12 @@ package xapi.dev.ui.api;
 
 import xapi.dev.source.CanAddImports;
 import xapi.fu.Maybe;
-import xapi.ui.api.ElementBuilder;
-import xapi.ui.api.ElementInjector;
 import xapi.ui.api.StyleCacheService;
 import xapi.ui.api.UiElement;
+import xapi.ui.api.UiElementBuilder;
 import xapi.ui.api.component.IsModelComponent;
 import xapi.ui.api.style.HasStyleResources;
+import xapi.ui.impl.StubUiElementInjector;
 import xapi.ui.impl.UiServiceImpl;
 
 /**
@@ -24,6 +24,10 @@ public interface UiNamespace {
             TYPE_MODEL = "Mod",
             TYPE_ELEMENT_BUILDER = "ElBuilder"
     ;
+    String VAR_ELEMENT = "el",
+           VAR_BUILDER = "b",
+           VAR_TAG_NAME = "TAG_NAME"
+    ;
 
     String  ATTR_ID = "id",
             ATTR_REF = "ref",
@@ -33,7 +37,12 @@ public interface UiNamespace {
             ATTR_HREF = "href"
     ;
 
-    String  METHOD_BUILDER = "builder"
+    String  METHOD_BUILDER = "builder",
+            METHOD_NEW_BUILDER = "newBuilder",
+            METHOD_AS_BUILDER = "asBuilder",
+            METHOD_NEW_MODEL = "newModel",
+            METHOD_NEW_MODEL_BUILDER = "modelBuilder",
+            METHOD_NEW_MODEL_KEY = "newKey"
     ;
 
     default Maybe<String> loadFromNamespace(String name, CanAddImports imports) {
@@ -69,11 +78,13 @@ public interface UiNamespace {
     }
 
     default String getElementBuilderType(CanAddImports importer) {
-        return importer.addImport(ElementBuilder.class);
+        // dirty hack... the generic UiElementBuilder is non-functional anyway (we rely on implementation specific generators
+        // to specify usable element builder types).
+        return importer.addImport(UiElementBuilder.class) + "<" + getElementType(importer) + ">";
     }
 
     default String getElementInjectorType(CanAddImports importer) {
-        return importer.addImport(ElementInjector.class);
+        return importer.addImport(StubUiElementInjector.class);
     }
 
     default String getElementBuilderConstructor(CanAddImports importer) {

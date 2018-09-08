@@ -27,7 +27,9 @@ public class GeneratedUiDefinitionTest {
             "test-type",
             "RootTestType",
             "BaseTestType",
-            "ModelType");
+            "ModelType",
+            "BuildTestType"
+        );
         final GeneratedUiField field = new GeneratedUiField(new ClassOrInterfaceType("String"), "field");
         definition.getModelFields().put("field", field);
         final UiContainerExpr settings = definition.toSettings();

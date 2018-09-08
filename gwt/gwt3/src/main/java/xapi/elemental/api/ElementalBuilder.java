@@ -3,12 +3,13 @@ package xapi.elemental.api;
 import elemental2.dom.*;
 import jsinterop.base.Js;
 import xapi.elemental.X_Gwt3;
+import xapi.fu.In1;
 import xapi.ui.api.*;
 import xapi.util.X_Debug;
-import xapi.util.api.ReceivesValue;
-import xapi.util.impl.ImmutableProvider;
 
 import java.util.function.BiFunction;
+
+import static xapi.fu.Immutable.immutable1;
 
 public class ElementalBuilder<E extends Node> extends ElementBuilder<E> implements CreatesChildren<String, ElementalBuilder<E>> {
 
@@ -74,7 +75,7 @@ public class ElementalBuilder<E extends Node> extends ElementBuilder<E> implemen
   public ElementalBuilder<E> createNode(String tagName) {
     final NodeBuilder<E> child = newNode.apply(tagName, searchableChildren);
     assert child instanceof ElementalBuilder :
-        "A potential node cannot have a factory which does not supply a new potential node" ;
+        "A potential node cannot have a factory which does not supply a new ElementalBuilder" ;
     return (ElementalBuilder<E>) child;
   }
 
@@ -100,7 +101,7 @@ public class ElementalBuilder<E extends Node> extends ElementBuilder<E> implemen
       E e = build(csq.toString());
       return e;
     } finally {
-      attributeApplier = new ImmutableProvider<>(new ApplyLiveAttribute());
+      attributeApplier = immutable1(new ApplyLiveAttribute());
     }
   }
 
@@ -230,7 +231,7 @@ public class ElementalBuilder<E extends Node> extends ElementBuilder<E> implemen
     }
 
   @Override
-  public ElementalBuilder<E> onCreated(ReceivesValue<E> callback) {
+  public ElementalBuilder<E> onCreated(In1<E> callback) {
     super.onCreated(callback);
     return this;
   }

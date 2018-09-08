@@ -6,11 +6,8 @@ import xapi.event.api.EventManager;
 import xapi.event.api.IsEventType;
 import xapi.fu.In1Out1;
 import xapi.inject.X_Inject;
-import xapi.ui.api.UiBuilder;
-import xapi.ui.api.UiElement;
+import xapi.ui.api.*;
 import xapi.ui.api.event.UiEventManager;
-import xapi.ui.api.UiWithAttributes;
-import xapi.ui.api.UiWithProperties;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
@@ -24,6 +21,8 @@ public interface UiService <Node, E extends UiElement<Node, ? extends Node,  E>>
   }
 
   <Generic extends E> UiBuilder<E> newBuilder(Class<Generic> cls);
+
+  ElementBuilder<? extends Node> newBuilder(boolean searchable);
 
   ClassTo<In1Out1<String,Object>> getDeserializers();
 

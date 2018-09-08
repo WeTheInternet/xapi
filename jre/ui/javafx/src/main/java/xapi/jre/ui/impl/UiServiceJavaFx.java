@@ -13,6 +13,7 @@ import xapi.event.api.IsEventType;
 import xapi.event.impl.EventTypes;
 import xapi.except.NotImplemented;
 import xapi.fu.Pointer;
+import xapi.ui.api.ElementBuilder;
 import xapi.ui.impl.UiServiceImpl;
 import xapi.ui.service.UiService;
 
@@ -86,5 +87,11 @@ public class UiServiceJavaFx extends UiServiceImpl <Node, UiElementJavaFx<?>> {
             stage.setX(e.getScreenX() + x.out1());
             stage.setY(e.getScreenY() + y.out1());
         });
+    }
+
+    @Override
+    public ElementBuilder<? extends Node> newBuilder(boolean searchable) {
+        // TODO: _somehow_ make fxml shoulder this work....
+        throw new UnsupportedOperationException("ElementBuilder does not work in javafx yet :'(");
     }
 }

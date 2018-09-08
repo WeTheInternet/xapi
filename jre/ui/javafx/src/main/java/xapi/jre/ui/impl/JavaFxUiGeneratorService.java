@@ -46,9 +46,14 @@ public class JavaFxUiGeneratorService extends AbstractUiImplementationGenerator<
 
   @Override
   protected void initializeComponent(GeneratedUiComponent result, ContainerMetadata metadata) {
-      if (result.addImplementationFactory(JavaFxPlatform.class, GeneratedJavaFxComponent::new)) {
+      if (result.addImplementationFactory(this, JavaFxPlatform.class, GeneratedJavaFxComponent::new)) {
         super.initializeComponent(result, metadata);
       }
+  }
+
+  @Override
+  protected void standardInitialization(GeneratedUiComponent result, ContainerMetadata metadata) {
+//    super.standardInitialization(result, metadata);
   }
 
   @Override

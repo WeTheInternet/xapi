@@ -579,7 +579,7 @@ public class GwtcSteps {
         final Out2<Integer, URL> result = compiler.compileFiles(settings, loc);
         if (result.out1() != 0) {
 //          if (X_Log.loggable(LogLevel.TRACE)) {
-            X_Log.error(getClass(), "Failed to compile java files; dumping source (in ", loc, ") for your perusal");
+            X_Log.error(GwtcSteps.class, "Failed to compile java files; dumping source (in ", loc, ") for your perusal");
             compiler.javaFilesIn(loc)
                     .forAllUnsafe(file->{
                       X_Log.error(getClass(), "\nDumping ", file);

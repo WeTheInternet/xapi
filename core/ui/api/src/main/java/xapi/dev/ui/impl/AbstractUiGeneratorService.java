@@ -89,9 +89,10 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
     }
 
     protected volatile GeneratorState state;
-
+    private boolean uiComponent;
 
     public AbstractUiGeneratorService() {
+        uiComponent = "true".equals(System.getProperty("xapi.ui.generator", "true"));
         onDone = X_Collect.newIntMultiMap(Do.class);
         impls = Lazy.deferred1(()->
             CachingIterator.cachingIterable(getImplementations().iterator())
@@ -175,6 +176,7 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
         final ContainerMetadata metadata = createMetadata(root, container);
         final Ctx ctx = contextFor(type, container);
         final GeneratedUiComponent component = newComponent(pkgName, simpleName, metadata);
+        component.setUiComponent(isUiComponent());
         final ComponentBuffer buffer = new ComponentBuffer(component, metadata);
         if (container.getName().equals("define-tag")) {
             // TODO: handle define-tags by NOT storing the whole buffer.
@@ -556,6 +558,10 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
         return component;
     }
 
+    protected boolean isUiComponent() {
+        return uiComponent;
+    }
+
     protected MappedIterable<UiImplementationGenerator> getImplementations() {
         final ReplayableIterable<UiImplementationGenerator> itr =
             CachingIterator.cachingIterable(ServiceLoader.load(UiImplementationGenerator.class));
@@ -584,7 +590,7 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
             // make the settings reader sanely handle multi-file reads (perhaps someday enforcing
             // single-definition of source files / file hashes or other nice-to-have-but-not-right-nows).
 
-            return SingletonIterator.singleItem(new ApiOnlyGenerator());
+            return SingletonIterator.singleItem(new ApiOnlyGenerator().setUiStub(isUiComponent()));
         }
         // Otherwise, lets add a filter on UiGeneratorPlatform annotation, if present...
         StringTo<Integer> priorities = X_Collect.newStringMapInsertionOrdered(Integer.class);
@@ -892,5 +898,9 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
                 ((UiGeneratorTools)impl).initializeComponent(result, metadata);
             }
         }
+    }
+
+    public void setUiComponent(boolean uiComponent) {
+        this.uiComponent = uiComponent;
     }
 }

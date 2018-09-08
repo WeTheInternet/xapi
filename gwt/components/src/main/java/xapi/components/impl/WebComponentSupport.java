@@ -2,6 +2,7 @@ package xapi.components.impl;
 
 import elemental.dom.Element;
 import elemental.js.dom.JsElement;
+import jsinterop.base.Js;
 import xapi.components.api.ComponentNamespace;
 import xapi.components.api.Document;
 import xapi.components.api.IsWebComponent;
@@ -49,7 +50,7 @@ public class WebComponentSupport {
     In1Out1<E, Me> installFactory(
         WebComponentBuilder b,
         In1Out1<E, Me> defaultFactory,
-        ComponentOptions<E, Me> options
+        ComponentOptions<E, ? super Me> options
     ) {
 
         JsLazyExpando<E, Me> expando = new JsLazyExpando<>(ComponentNamespace.JS_KEY);
@@ -59,14 +60,15 @@ public class WebComponentSupport {
         // which will either use the factory in the supplied default options,
         // or we use the defaultFactory, which will call a component constructor
         expando.addToPrototype(b.getPrototype(), e->{
-            Me result;
+            Object result;
             if (options.needsComponent()) {
                 result = defaultFactory.io(e);
             } else {
                 result = options.newComponent(e);
             }
-            expando.setValue(e, result);
-            return result;
+            Me res = Js.uncheckedCast(result);
+            expando.setValue(e, res);
+            return res;
         }, false);
         // The component expando is a bit special,
         // since other created callbacks likely want to get the component instance,

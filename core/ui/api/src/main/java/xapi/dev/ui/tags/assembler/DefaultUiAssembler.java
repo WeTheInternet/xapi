@@ -71,9 +71,15 @@ public class DefaultUiAssembler implements UiAssembler {
         final GeneratedFactory factory = e.startElement(assembly, this, parent, el);
 
         final UiAssemblerResult result = assembleContents(assembly, factory, e);
+
         result.setHidden(hidden);
 
         e.finishElement(assembly, this, factory, result, el);
+
+        if (result.hasDefaultBehavior()) {
+            result.getDefaultBehavior().done();
+            result.setDefaultBehavior(null);
+        }
 
         return result;
     }

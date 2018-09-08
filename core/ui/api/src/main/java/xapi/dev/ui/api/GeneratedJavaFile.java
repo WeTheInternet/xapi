@@ -208,7 +208,7 @@ public class GeneratedJavaFile {
     }
 
     public boolean hasMethod(String name) {
-        return methods.isResolved() && methods.out1().has(name);
+        return methodNames.isResolved() && methodNames.out1().containsKey(name);
     }
     public MethodBuffer getOrCreateMethod(int modifiers, String returnType, String name) {
         return getOrCreateMethod(modifiers, returnType, name, In1.ignored());

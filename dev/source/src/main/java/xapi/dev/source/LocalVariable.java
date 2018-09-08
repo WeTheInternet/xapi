@@ -3,7 +3,6 @@ package xapi.dev.source;
 import xapi.source.read.JavaLexer;
 import xapi.source.read.JavaLexer.TypeDef;
 import xapi.source.read.JavaVisitor.TypeData;
-import xapi.source.read.SourceUtil;
 
 /**
  * Adapted from {@link FieldBuffer}, with all notion of getters / setters removed...
@@ -14,7 +13,7 @@ import xapi.source.read.SourceUtil;
 public class LocalVariable extends MemberBuffer<LocalVariable> implements CanAddImports, VarBuffer<LocalVariable> {
 
   private final MethodBuffer enclosing;
-  private final TypeData fieldType;// The type of the field itself
+  private TypeData fieldType;// The type of the field itself
   private final TypeDef methodType;// The type to expose on methods
   private final String name;
   private final String simpleType;// Shortest form possible for use in source
@@ -127,6 +126,11 @@ public class LocalVariable extends MemberBuffer<LocalVariable> implements CanAdd
     this.initializer.print(initializer);
     return this;
   }
+  public LocalVariable setInitializerPattern(final String initializer, Object replace1, Object ... more) {
+    this.initializer = new PrintBuffer();
+    this.initializer.pattern(initializer, replace1, more);
+    return this;
+  }
 
   @Override
   public String toSource() {
@@ -136,4 +140,24 @@ public class LocalVariable extends MemberBuffer<LocalVariable> implements CanAdd
     return toVarDefinition() + super.toSource();
   }
 
+  @Override
+  public CharBuffer clear() {
+    fieldType = TypeData.NONE;
+    return super.clear();
+  }
+
+  public LocalVariable invokeAndAssign(String expr, String assignType, String assignName, boolean reuseExisting) {
+    LocalVariable next = enclosing.newVariable(assignType, assignName, reuseExisting);
+    next.setInitializer(name + "." + coerceParens(expr));
+    return next;
+  }
+
+  protected String coerceParens(String expr) {
+    final String trimmed = expr.trim();
+    return trimmed.endsWith(";") ? expr : trimmed.endsWith(")") ? expr + ";" : expr + "();";
+  }
+
+  public void invoke(String mthd, Object ... more) {
+    enclosing.patternln("$1." + coerceParens(mthd), name, more);
+  }
 }

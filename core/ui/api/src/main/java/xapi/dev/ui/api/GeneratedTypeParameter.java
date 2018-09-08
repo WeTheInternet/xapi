@@ -23,7 +23,6 @@ public class GeneratedTypeParameter {
     private final EnumMap<ImplLayer, String> implNames;
 
     private boolean exposed;
-    private boolean addOwnTypeNames;
 
     public GeneratedTypeParameter(String systemName, TypeParameter type) {
         this.systemName = systemName;
@@ -158,11 +157,6 @@ public class GeneratedTypeParameter {
         return type;
     }
 
-    public GeneratedTypeParameter setAddOwnTypeNames() {
-        addOwnTypeNames = true;
-        return this;
-    }
-
     @Override
     public String toString() {
         return "GeneratedTypeParameter{" +
@@ -170,7 +164,6 @@ public class GeneratedTypeParameter {
             ", type=" + type +
             ", implNames=" + implNames +
             ", exposed=" + exposed +
-            ", addOwnTypeNames=" + addOwnTypeNames +
             '}';
     }
 

@@ -11,6 +11,8 @@ import java.util.function.BiFunction;
  */
 public class StringElementBuilder extends ElementBuilder<String> {
 
+    // TODO: consider making this class accept / wrap a DomBuffer?
+
     public StringElementBuilder(CharSequence body) {
         el = body.toString();
     }

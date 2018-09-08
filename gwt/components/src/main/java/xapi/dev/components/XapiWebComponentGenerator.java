@@ -1,14 +1,9 @@
 package xapi.dev.components;
 
-import com.github.javaparser.ast.TypeArguments;
-import com.github.javaparser.ast.TypeParameter;
-import com.github.javaparser.ast.body.Parameter;
-import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
-import com.github.javaparser.ast.type.ReferenceType;
 import com.github.javaparser.ast.type.Type;
 import elemental.dom.Element;
 import xapi.components.api.ComponentNamespace;
@@ -22,6 +17,7 @@ import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.FieldBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.ui.api.*;
+import xapi.dev.ui.api.GeneratedUiLayer.ImplLayer;
 import xapi.dev.ui.api.UiComponentGenerator.UiGenerateMode;
 import xapi.dev.ui.impl.AbstractUiImplementationGenerator;
 import xapi.dev.ui.impl.InterestingNodeFinder.InterestingNodeResults;
@@ -34,11 +30,12 @@ import xapi.model.X_Model;
 import xapi.model.api.ModelKey;
 import xapi.model.service.ModelCache;
 import xapi.platform.GwtPlatform;
-import xapi.ui.api.component.*;
+import xapi.ui.api.component.ComponentConstructor;
+import xapi.ui.api.component.ComponentOptions;
+import xapi.ui.api.component.ModelComponentMixin;
+import xapi.ui.api.component.ModelComponentOptions;
 
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.List;
 
 import static xapi.dev.ui.api.UiGeneratorPlatform.PLATFORM_WEB_COMPONENT;
 
@@ -59,143 +56,8 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
 
     @Override
     public void initializeComponent(GeneratedUiComponent result, ContainerMetadata metadata) {
-        if (result.addImplementationFactory(GwtPlatform.class, NEW_COMPONENT)) {
+        if (result.addImplementationFactory(this, GwtPlatform.class, NEW_COMPONENT)) {
             super.initializeComponent(result, metadata);
-
-            final UiNamespace baseNs = getTools().namespace();
-            final GeneratedUiApi api = result.getApi();
-            final GeneratedUiBase base = result.getBase();
-
-            final Maybe<String> model = metadata.getUi().getAttribute("model")
-                    .mapNullSafe(attr->{
-                        final GeneratedUiModel mod = api.getModel();
-                        for (AnnotationExpr anno : attr.getAnnotations()) {
-                            if ("Named".equalsIgnoreCase(anno.getNameString())) {
-
-                                String name = getTools().resolveString(new ApiGeneratorContext(), anno.getMembers().first().getValue());
-                                mod.overrideName(name);
-                                return name;
-                            }
-                        }
-                        return mod.getWrappedName();
-                    })
-                    .lazy();
-
-            final ClassBuffer baseOut = base.getSource().getClassBuffer();
-
-//            final String nodeName = base.getNodeType(baseNs);
-            final String eleName = base.getElementType(baseNs);
-            List<Type> types = new ArrayList<>();
-
-            final ClassOrInterfaceType rawEle = new ClassOrInterfaceType(eleName);
-//            final ClassOrInterfaceType nodeType = new ClassOrInterfaceType(nodeName);
-            final ClassOrInterfaceType apiType = new ClassOrInterfaceType(api.getWrappedName());
-//            types.add(nodeType);
-            types.add(rawEle);
-            apiType.setTypeArguments(TypeArguments.withArguments(types));
-            // provide local definitions for api.  TODO: also provide base type now?
-            result.addGlobalDefinition(UiNamespace.TYPE_API, new ReferenceType(apiType));
-
-//            final TypeParameter nodeParam = new TypeParameter(nodeName);
-            final String abstractCompPkg;
-            final String abstractCompName;
-            if (model.isPresent()) {
-                abstractCompPkg = AbstractModelComponent.class.getPackage().getName();
-                abstractCompName = AbstractModelComponent.class.getSimpleName();
-            } else {
-                abstractCompPkg = AbstractComponent.class.getPackage().getName();
-                abstractCompName = AbstractComponent.class.getSimpleName();
-
-            }
-            final GeneratedUiSupertype superType = new GeneratedUiSupertype(result, abstractCompPkg, abstractCompName,
-                new GeneratedTypeParameter(UiNamespace.TYPE_ELEMENT, new TypeParameter(eleName)),
-                new GeneratedTypeParameter(UiNamespace.TYPE_API, new TypeParameter(UiNamespace.TYPE_API, apiType))
-            );
-            if (model.isPresent()) {
-
-                final String baseModel = base.getModelType(baseNs);
-                final ClassOrInterfaceType modelType = new ClassOrInterfaceType(baseModel);
-
-                final GeneratedTypeParameter modelParam = new GeneratedTypeParameter(UiNamespace.TYPE_MODEL,
-                    new TypeParameter(baseModel, modelType));
-                superType.addTypeParameter(1, modelParam);
-                baseOut.makeAbstract();
-                base.addLocalDefinition(UiNamespace.TYPE_MODEL, new ReferenceType(modelType));
-            }
-            result.updateSupertype(superType);
-
-            superType.requireConstructor(new Parameter(UiNamespace.TYPE_ELEMENT, UiNamespace.TYPE_ELEMENT));
-
-            final String o1 = baseOut.addImport(Out1.class);
-            ClassOrInterfaceType out1 = new ClassOrInterfaceType(o1);
-            out1.setTypeArguments(TypeArguments.withArguments(rawEle));
-            superType.requireConstructor(new Parameter(out1, UiNamespace.TYPE_ELEMENT));
-
-            types = new ArrayList<>();
-            types.add(rawEle);
-            types.add(apiType);
-
-
-            final String opts;
-            if (api.hasModel()) {
-                opts = baseOut.addImport(ModelComponentOptions.class);
-            } else {
-                opts = baseOut.addImport(ComponentOptions.class);
-
-            }
-
-            String ctor = baseOut.addImport(ComponentConstructor.class);
-
-            final ClassOrInterfaceType ctorType = new ClassOrInterfaceType(ctor);
-            ctorType.setTypeArguments(TypeArguments.withArguments(types));
-
-            if (model.isPresent()) {
-                types = new ArrayList<>(types);
-                final ClassOrInterfaceType modelType = new ClassOrInterfaceType(
-                    api.getModelNameQualified()
-                );
-                types.add(1, modelType);
-            }
-            final ClassOrInterfaceType optsType = new ClassOrInterfaceType(opts);
-            optsType.setTypeArguments(TypeArguments.withArguments(types));
-
-            superType.requireConstructor(
-                new Parameter(optsType, "opts"),
-                new Parameter(ctorType, "ctor")
-            );
-
-            final String apiEle = api.getElementType(baseNs);
-            final GeneratedTypeParameter apiEleParam = result.addGeneric(
-                UiNamespace.TYPE_ELEMENT,
-                new TypeParameter(apiEle)
-            );
-            apiEleParam.setExposed(true);
-            final Class<? extends IsComponent> componentType;
-            if (api.hasModel()) {
-                componentType = IsModelComponent.class;
-            } else {
-                componentType = IsComponent.class;
-            }
-
-            String isCompPkg = componentType.getPackage().getName();
-            String isCompName = componentType.getSimpleName();
-            api.getSource().addImport(componentType);
-            final GeneratedUiSupertype superInterface = new GeneratedUiSupertype(result, isCompPkg, isCompName,
-                new GeneratedTypeParameter(UiNamespace.TYPE_ELEMENT, apiEleParam.getType())
-            );
-            if (api.hasModel()) {
-                final String apiModel = api.getModelType(baseNs);
-                final ClassOrInterfaceType modelType = new ClassOrInterfaceType(apiModel);
-                final GeneratedTypeParameter apiModelParam = result.addGeneric(
-                    UiNamespace.TYPE_MODEL,
-                    new TypeParameter(apiModel, modelType)
-                );
-                superInterface.addTypeParameter(1, apiModelParam);
-                api.addLocalDefinition(UiNamespace.TYPE_MODEL, new ReferenceType(modelType));
-            }
-
-            result.addSuperInterface(superInterface);
-
         }
     }
 
@@ -247,8 +109,9 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
         String version = out.addImport(WebComponentVersion.class);
         String support = out.addImport(WebComponentSupport.class);
         String clazz = out.addImportStatic(WebComponentBuilder.class, "htmlElementClass");
-        String opts = out.addImport(ComponentOptions.class);
+        String opts = model.isPresent() ? out.addImport(ModelComponentOptions.class) : out.addImport(ComponentOptions.class);
         String i1o1 = out.addImport(In1Out1.class);
+        String o1 = out.addImport(Out1.class);
         String ctor = out.addImport(ComponentConstructor.class);
         String compNs = out.addImport(ComponentNamespace.class);
         final String type = out.getSimpleName();
@@ -264,8 +127,24 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
             .makeStatic().makePrivate();
         final FieldBuffer getUi = out.createField(i1o1 + apiGenerics, "getUi").makeStatic().makePrivate();
 
+        final String genericApi = api.getLocalName(generator, ImplLayer.Impl, ns, out);
+
+        final String apiOptType = opts + "<" + element + ", " + (
+            model.isPresent() ?
+                buffer.getGeneratedComponent().getPublicModel().getWrappedName() + ", " : "")
+            + genericApi + ">";
+
+        final String optType = opts + "<" + element + ", " + (
+            model.isPresent() ?
+                buffer.getGeneratedComponent().getPublicModel().getWrappedName() + ", " : "")
+            + component.getWrappedName() + ">";
+
         out.createConstructor(Modifier.PUBLIC, element+" el")
             .println("super(el);");
+
+        out.createConstructor(Modifier.PUBLIC, apiOptType + " opts")
+            .addAnnotation(out.addImport(SuppressWarnings.class) + "(\"unchecked\")")
+            .patternln("super(opts, (ComponentConstructor)$1);", ctorName);
 
         final MethodBuffer mthd = out
             .createMethod("public static void assemble()")
@@ -281,8 +160,7 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
 
         // TODO generate CSS as needed
 
-
-        mthd.println(opts + apiGenerics + " opts = new " + opts + "<>();");
+        mthd.println(optType + " opts = new " + opts + "<>();");
 
         mthd.println("getUi = " + support+".installFactory(component, " + type+"::new, opts);");
 
@@ -324,7 +202,7 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
 
         out.createMethod(type + " create()" )
             .makePublic().makeStatic()
-            .addParameter(opts + apiGenerics, "opts")
+            .addParameter(optType, "opts")
             .println("if (opts == null) {")
             .indentln("opts = new " + opts + "<>();")
             .println("}")

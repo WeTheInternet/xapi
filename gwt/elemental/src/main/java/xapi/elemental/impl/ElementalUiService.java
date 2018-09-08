@@ -4,6 +4,7 @@ import elemental.dom.Element;
 import elemental.dom.Node;
 import elemental.js.dom.JsElement;
 import xapi.annotation.inject.SingletonOverride;
+import xapi.elemental.api.PotentialNode;
 import xapi.elemental.api.UiElementWeb;
 import xapi.event.api.EventHandler;
 import xapi.event.api.IsEventType;
@@ -11,6 +12,7 @@ import xapi.fu.In1Out1;
 import xapi.fu.In2;
 import xapi.gwt.collect.JsDictionary;
 import xapi.platform.GwtPlatform;
+import xapi.ui.api.ElementBuilder;
 import xapi.ui.api.UiWithAttributes;
 import xapi.ui.api.UiWithProperties;
 import xapi.ui.api.event.UiEventManager;
@@ -111,4 +113,8 @@ public class ElementalUiService extends UiServiceImpl <Node, UiElementWeb<Elemen
     }, useCapture);
   }
 
+  @Override
+  public ElementBuilder<? extends Node> newBuilder(boolean searchable) {
+    return new PotentialNode<>(searchable);
+  }
 }

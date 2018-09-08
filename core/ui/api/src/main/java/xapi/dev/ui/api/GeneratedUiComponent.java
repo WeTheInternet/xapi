@@ -13,6 +13,7 @@ import xapi.collect.api.StringTo;
 import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.source.*;
 import xapi.dev.ui.api.GeneratedUiLayer.ImplLayer;
+import xapi.dev.ui.impl.AbstractUiImplementationGenerator;
 import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.dev.ui.tags.assembler.AssembledElement;
 import xapi.dev.ui.tags.assembler.AssembledUi;
@@ -49,6 +50,7 @@ public class GeneratedUiComponent {
     private final ChainBuilder<In1<UiGeneratorService<?>>> beforeSave;
     private String tagName;
     private GeneratedUiSupertype superType;
+    private boolean uiComponent;
 
     public GeneratedUiComponent(String pkg, String cls) {
         api = Lazy.deferred1(this::createApi);
@@ -155,12 +157,17 @@ public class GeneratedUiComponent {
                     .map(Lazy::out1);
     }
 
-    public boolean addImplementationFactory(Class<?> platform,
-                                            In1Out1<GeneratedUiComponent, GeneratedUiImplementation> io) {
+    public boolean addImplementationFactory(
+            AbstractUiImplementationGenerator<?> generator,
+            Class<?> platform,
+            In1Out1<GeneratedUiComponent, GeneratedUiImplementation> io) {
         if (impls.containsKey(platform)) {
             return false;
         }
-        io = io.spyOut(impl->globalDefs.forBoth(impl::addLocalDefinition));
+        io = io.spyOut(impl-> {
+            impl.setGenerator(generator);
+            globalDefs.forBoth(impl::addLocalDefinition);
+        });
         final Lazy<GeneratedUiImplementation> lazy = Lazy.deferSupplier(io, this);
         final Lazy<GeneratedUiImplementation> result = impls.put(platform, lazy);
         if (result != null) {
@@ -328,9 +335,10 @@ public class GeneratedUiComponent {
         beforeSave.removeAll(In1::in,  gen);
         // Write api
         final UiGeneratorTools tools = gen.tools();
+        Do commit = Do.NOTHING;
         if (api.isResolved() || base.isResolved()) {
             // sending null generics because we already handled them
-            saveType(api.out1(), gen, tools, null);
+            commit = ()->saveType(api.out1(), gen, tools, null);
         }
         MappedIterable<GeneratedTypeParameter> baseGenerics = null;
         if (base.isResolved()) {
@@ -372,19 +380,24 @@ public class GeneratedUiComponent {
             if (api.isResolved() && api.out1().shouldSaveType()) {
                 out.addInterfaces(apiName);
             }
-            saveType(baseLayer, gen, tools, null);
+            commit = commit.doAfter(()->saveType(baseLayer, gen, tools, null));
         }
 
-        // Next up... generated builders.
         final GeneratedUiFactory builder = factory.out1();
         // let the impls have a peek at our builder
         getImpls().forAll(GeneratedUiImplementation::finalizeBuilder, builder);
-        saveType(builder, gen, tools, null);
 
-        // Don't save the impls until they've had a chance to work with the generated builder.
+        // Next up... generated builders.
+        commit = commit.doAfter(()->saveType(builder, gen, tools, null));
+
+
+        // write impls
         getImpls()
             .filter(GeneratedJavaFile::shouldSaveType)
             .forAll(this::saveType, gen, tools, baseGenerics);
+
+        // write api, base and builders
+        commit.done();
 
         // Save any extra layers... We do this last so other "mainstream" generation can create standalone Extras,
         // knowing they will be saved even if defined in an impl or builder type
@@ -535,6 +548,11 @@ public class GeneratedUiComponent {
     }
 
     public void setTagName(String tagName) {
+        if (this.tagName == null && tagName != null) {
+            api.out1().getSource().getClassBuffer()
+                .createField(String.class, UiNamespace.VAR_TAG_NAME)
+                .setInitializer("\"" + tagName + "\"");
+        }
         this.tagName = tagName;
     }
 
@@ -603,4 +621,11 @@ public class GeneratedUiComponent {
         }
     }
 
+    public void setUiComponent(boolean uiComponent) {
+        this.uiComponent = uiComponent;
+    }
+
+    public boolean isUiComponent() {
+        return uiComponent;
+    }
 }

@@ -96,6 +96,7 @@ public class UiAssemblerResult {
     private AssembledElement element;
     private GeneratedFactory factory;
     private boolean hidden;
+    private Do defaultBehavior;
 
     public boolean hasChildLayout() {
         return childLayout;
@@ -178,6 +179,9 @@ public class UiAssemblerResult {
             // If you use UiAssemblerResult.ABORT,
             // you can return a "do not use this result" released object
             return;
+        }
+        if (other.hasDefaultBehavior()) {
+            addDefaultBehavior(other.defaultBehavior);
         }
         if (!other.attachToRoot) {
             this.attachToRoot = false;
@@ -298,5 +302,32 @@ public class UiAssemblerResult {
 
     public boolean isHidden() {
         return hidden;
+    }
+
+    public void setDefaultBehavior(Do defaultBehavior) {
+        this.defaultBehavior = defaultBehavior;
+    }
+
+    public Do getDefaultBehavior() {
+        return defaultBehavior;
+    }
+
+    public void addDefaultBehavior(Do defaultBehavior) {
+        if (this.defaultBehavior == null) {
+            this.defaultBehavior = defaultBehavior;
+        } else {
+            this.defaultBehavior = this.defaultBehavior.doBefore(defaultBehavior);
+        }
+    }
+
+    public boolean hasDefaultBehavior() {
+        return defaultBehavior != null && defaultBehavior != Do.NOTHING;
+    }
+
+    public void resolveDefaultBehavior() {
+        if (defaultBehavior != null) {
+            defaultBehavior.done();
+            defaultBehavior = null;
+        }
     }
 }

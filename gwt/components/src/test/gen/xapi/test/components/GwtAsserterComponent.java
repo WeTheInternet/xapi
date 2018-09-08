@@ -1,4 +1,4 @@
-package xapi.test.components.xapi.test.components;
+package xapi.test.components;
 
 import static xapi.components.impl.WebComponentBuilder.htmlElementClass;
 
@@ -12,26 +12,27 @@ import xapi.components.impl.ElementalModelComponentMixin;
 import xapi.components.impl.WebComponentBuilder;
 import xapi.components.impl.WebComponentSupport;
 import xapi.components.impl.WebComponentVersion;
+import xapi.elemental.api.Elemental1Injector;
 import xapi.elemental.api.ElementalService;
 import xapi.elemental.api.PotentialNode;
 import xapi.fu.In1Out1;
+import xapi.fu.Out1;
 import xapi.ui.api.component.ComponentConstructor;
 import xapi.ui.api.component.ComponentOptions;
 import xapi.ui.html.api.GwtStyles;
 
-public class GwtAsserterComponent extends BaseAsserterComponent<Element, PotentialNode<Element>> implements
-    ElementalModelComponentMixin<Element,ModelAsserter> {
+public class GwtAsserterComponent extends BaseAsserterComponent<Element, PotentialNode<Element>> implements ElementalModelComponentMixin<Element,ModelAsserter> {
 
   public static void assemble (UiConfig<Element, StyleElement, ? extends GwtStyles, ElementalService> assembler) {
+    if (NEW_XAPI_ASSERTER != null) { return; }
     WebComponentBuilder component = new WebComponentBuilder(htmlElementClass(), WebComponentVersion.V1);
 
     component.setClassName("Asserter");
     ComponentOptions<Element, GwtAsserterComponent> opts = new ComponentOptions<>();
     getUi = WebComponentSupport.installFactory(component, GwtAsserterComponent::new, opts);
-    component.createdCallback(e->{
+    component.afterCreatedCallback(e->{
       final GwtAsserterComponent c = getAsserterComponent(e);
-      final Element child = c.toDom().getElement();
-      e.appendChild(child);
+      c.getElement(); // ensure ui is initialized
     });
     NEW_XAPI_ASSERTER = WebComponentSupport.define(
       "xapi-asserter", component);
@@ -45,8 +46,12 @@ public class GwtAsserterComponent extends BaseAsserterComponent<Element, Potenti
     super(el);
   }
 
-  public PotentialNode<Element> newBuilder () {
-    return new PotentialNode<Element>();
+  public PotentialNode<Element> newBuilder (boolean searchable) {
+    return new PotentialNode<Element>(searchable);
+  }
+
+  public Elemental1Injector newInjector (Element el) {
+    return new Elemental1Injector(el);
   }
 
   public static GwtAsserterComponent getAsserterComponent (Element e) {
@@ -61,6 +66,16 @@ public class GwtAsserterComponent extends BaseAsserterComponent<Element, Potenti
       opts = new ComponentOptions<>();
     }
     return NEW_XAPI_ASSERTER.constructComponent(opts, getUi);
+  }
+
+  @Override
+  public PotentialNode<Element> asBuilder () {
+    return (PotentialNode<Element>) super.asBuilder();
+  }
+
+  @Override
+  public PotentialNode<Element> newBuilder (Out1<Element> e) {
+    return new PotentialNode<>(e);
   }
 
 }

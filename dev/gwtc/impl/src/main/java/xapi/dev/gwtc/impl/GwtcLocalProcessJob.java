@@ -2,6 +2,7 @@ package xapi.dev.gwtc.impl;
 
 import xapi.dev.gwtc.api.GwtcJob;
 import xapi.dev.gwtc.api.GwtcJobMonitor;
+import xapi.dev.gwtc.api.GwtcJobMonitor.CompileMessage;
 import xapi.gwtc.api.GwtManifest;
 import xapi.model.api.PrimitiveSerializer;
 import xapi.process.X_Process;
@@ -49,7 +50,13 @@ public class GwtcLocalProcessJob extends GwtcJob {
             throw X_Debug.rethrow(throwable);
         }
         manifest.setOnline(true);
-        X_Process.runInClassloader(classpath, task::run);
+        X_Process.runInClassloader(classpath, ()->{
+            try {
+                task.run();
+            } catch (Throwable t) {
+                monitor.updateCompileStatus(CompileMessage.Failed, "Failed on " + t);
+            }
+        });
         scheduleFlusher(manifest, ()->
             task.getClass().getMethod("destroy")
                 .invoke(task)
