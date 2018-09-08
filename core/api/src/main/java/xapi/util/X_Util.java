@@ -101,9 +101,14 @@ public final class X_Util{
       e.printStackTrace();// Avoid losing information in debug mode.
     }
 
-    //don't use instanceof because we don't want to treat subclasses of RuntimeException as wrappers...
+    //don't use instanceof because we don't want to treat all subclasses of RuntimeException as wrappers...
+    //TODO: consider using classname equality, to be kind to people with terrible classloaders.
     final Throwable original = e;
-    while (e.getClass().equals(RuntimeException.class) || e.getClass().equals(ExecutionException.class)) {
+    while (
+        e.getClass().equals(RuntimeException.class) ||
+        e.getClass().equals(ExecutionException.class) ||
+        e.getClass().equals(UndeclaredThrowableException.class)
+    ) {
       if (e.getCause() == null) {
         // when unwrapping exceptions,
         // we want to add our parent throwable as a suppressed exception,
@@ -115,6 +120,7 @@ public final class X_Util{
         // This will maintain the deepest level of the call stack,
         // without exponentially increasing log sizes when by
         // adding multiple parent-child suppressed throwable relationships.
+        // That is, if you have a cause, we do not add the suppressed original.
         e.addSuppressed(original);
         return e;
       }

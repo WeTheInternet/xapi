@@ -108,6 +108,14 @@ In1Out1<I, O> extends Rethrowable, Lambda {
     };
   }
 
+  static <I1, I2, O> In1Out1<I2, O> from2_1(In2Out1<I1, I2, O> in, I1 out) {
+    return in.supply1(out);
+  }
+
+  static <I1, I2, O> In1Out1<I1, O> from2_2(In2Out1<I1, I2, O> in, I2 out) {
+    return in.supply2(out);
+  }
+
   /**
    * This method just exists to give you somewhere to create a lambda that will rethrow exceptions.
    */

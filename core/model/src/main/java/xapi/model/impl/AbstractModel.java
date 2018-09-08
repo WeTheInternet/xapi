@@ -68,8 +68,8 @@ public class AbstractModel implements Model, PersistentModel, NestedModel{
 
 
   private static StringTo<Object> defaultValues = X_Collect.newStringMap(Object.class);
-  private static StringTo<In2<Object, Object>> changeListeners = X_Collect.newStringMap(In2.class);
-  private static IntTo<In3<String, Object, Object>> globalChangeListeners = X_Collect.newSet(In3.class);
+  private StringTo<In2<Object, Object>> changeListeners = X_Collect.newStringMap(In2.class);
+  private IntTo<In3<String, Object, Object>> globalChangeListeners = X_Collect.newSet(In3.class);
   protected StringTo<Object> map;
   protected Model parent;
   protected ModelKey key;

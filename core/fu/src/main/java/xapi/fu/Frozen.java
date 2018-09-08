@@ -1,7 +1,5 @@
 package xapi.fu;
 
-import xapi.fu.later.Later;
-
 /**
  * A marker interface we apply to immutable types.
  *

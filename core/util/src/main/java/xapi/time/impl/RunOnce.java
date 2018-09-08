@@ -55,12 +55,16 @@ public class RunOnce {
       };
     } else {
       return new ReceivesValue<X>() {
-        ReceivesValue<X> once = job;
+        volatile ReceivesValue<X> once = job;
         @Override
         @SuppressWarnings("unchecked")
         public void set(X from) {
-          once.set(from);
-          once = NO_OP_RECEIVER;
+          final ReceivesValue<X> task;
+          synchronized (this) {
+            task = once;
+            once = NO_OP_RECEIVER;
+          }
+          task.set(from);
         }
       };
     }

@@ -275,4 +275,18 @@ public interface In1<I> extends HasInput, Rethrowable, Lambda {
         return i;
       };
     }
+
+    static <ITo, IFrom> In1<ITo> in1Mapped(In1<IFrom> onInitialize, In1Out1<ITo, IFrom> o) {
+      return i -> {
+        IFrom b = o.io(i);
+        onInitialize.in(b);
+      };
+    }
+
+    static <I1> In1<I1> in1Ignored(In1<I1> onInitialize, Out1<I1> o) {
+      return i -> {
+        I1 b = o.out1();
+        onInitialize.in(b);
+      };
+    }
 }

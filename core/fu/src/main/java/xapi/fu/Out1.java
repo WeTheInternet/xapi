@@ -80,7 +80,8 @@ public interface Out1<O> extends Rethrowable, Lambda, HasMutability {
   }
 
   static <I, O> Out1<O> out1Immediate(In1Out1<I, O> mapper, I input) {
-    return mapper.supply(input);
+    final O value = mapper.io(input);
+    return immutable1(value);
   }
 
 
