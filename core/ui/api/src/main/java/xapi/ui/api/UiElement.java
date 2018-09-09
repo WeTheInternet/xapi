@@ -98,6 +98,16 @@ public interface UiElement
     asInjector().removeChild(child);
   }
 
+  @Override
+  default void replaceChild(Base newChild, Base refChild) {
+    asInjector().replaceChild(newChild, refChild);
+  }
+
+  @Override
+  default Base getParent(Base child) {
+    return child.getParent();
+  }
+
   void insertAdjacent(ElementPosition pos, Base child);
 
   default void insertBefore(Base newChild, Base refChild) {

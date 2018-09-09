@@ -3,6 +3,7 @@ package xapi.elemental.api;
 import elemental2.dom.*;
 import jsinterop.base.Js;
 import xapi.elemental.X_Gwt3;
+import xapi.fu.Do;
 import xapi.fu.In1;
 import xapi.ui.api.*;
 import xapi.util.X_Debug;
@@ -233,6 +234,12 @@ public class ElementalBuilder<E extends Node> extends ElementBuilder<E> implemen
   @Override
   public ElementalBuilder<E> onCreated(In1<E> callback) {
     super.onCreated(callback);
+    return this;
+  }
+
+  @Override
+  public ElementalBuilder<E> onBeforeCreated(Do callback) {
+    super.onBeforeCreated(callback);
     return this;
   }
 

@@ -34,22 +34,6 @@ public class UiElementWeb <E extends Element>
   }
 
   @Override
-  public void appendChild(UiElementWeb<E> newChild) {
-    super.appendChild(newChild);
-    final E e = getElement();
-    final E c = newChild.getElement();
-    e.appendChild(c);
-  }
-
-  @Override
-  public void removeChild(UiElementWeb<E> child) {
-    super.removeChild(child);
-    final E e = getElement();
-    final E c = child.getElement();
-    e.appendChild(c);
-  }
-
-  @Override
   public String toSource() {
     return getElement().getOuterHTML();
   }

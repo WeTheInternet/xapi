@@ -74,13 +74,14 @@ public class GeneratedWebComponent extends GeneratedUiImplementation {
                 )
             ).isPresent();
 
-
             out.println(".onCreated( e -> {").indent();
             if (createdCallback) {
                 // special "magic" property we use to shove code into the init method for the given element.
                 out.printlns(func);
             } else {
-                out.patternlns("e.addEventListener(\"$1\", $2, $3);", name.substring(2), func, capture);
+                boolean multiline = func.contains("\n");
+                String fixed = (multiline ? "\n" : " ") + func.trim();
+                out.patternlns("e.addEventListener(\"$1\",$2, $3);", name.substring(2), fixed, capture);
             }
             out.outdent().println("})");
             return;

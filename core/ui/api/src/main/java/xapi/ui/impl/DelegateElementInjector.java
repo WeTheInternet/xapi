@@ -60,4 +60,14 @@ public class DelegateElementInjector <Node, Base extends UiElement<Node, ? exten
               "\nActual Parent: " + child.getParent().toSource() ;
     }
   }
+
+  @Override
+  public void replaceChild(Base newChild, Base refChild) {
+    anchor.replaceChild(newChild, refChild);
+  }
+
+  @Override
+  public Base getParent(Base child) {
+    return anchor.getParent();
+  }
 }

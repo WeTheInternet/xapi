@@ -374,10 +374,18 @@ public class X_String {
 
   public static String firstChunk(String string, char c) {
     assert string != null : "No nulls to X_String.firstChunk, please.";
-    int i = string.charAt(c);
+    int i = string.indexOf(c);
     if (i == -1)
       return string;
     return string.substring(0, i);
+  }
+
+  public static String lastChunk(String string, char c) {
+    assert string != null : "No nulls to X_String.lastChunk, please.";
+    int i = string.lastIndexOf(c);
+    if (i == -1)
+      return string;
+    return string.substring(i + 1);
   }
 
   public static String firstNotEmpty(String groupId1, String groupId2) {

@@ -11,10 +11,7 @@ import xapi.dev.source.FieldBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.ui.api.*;
 import xapi.dev.ui.impl.UiGeneratorTools;
-import xapi.dev.ui.tags.assembler.AssembledElement;
-import xapi.dev.ui.tags.assembler.AssembledUi;
-import xapi.dev.ui.tags.assembler.AssemblyRoot;
-import xapi.dev.ui.tags.assembler.UiAssembler;
+import xapi.dev.ui.tags.assembler.*;
 import xapi.except.NotConfiguredCorrectly;
 import xapi.fu.Do;
 import xapi.fu.In1;
@@ -506,7 +503,11 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
         boolean hidden = "hidden".equalsIgnoreCase(ui.getNameString()) ||
             ui.getAnnotation(a->a.getNameString().startsWith("hidden")).isPresent();
 
-        assembled.addAssembly(ui.getExpression(), shadowUi, hidden);
+        final UiAssemblerResult result = assembled.addAssembly(
+            ui.getExpression(),
+            shadowUi,
+            hidden
+        );
 
         return UiVisitScope.FEATURE_NO_CHILDREN;
     }

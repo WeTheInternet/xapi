@@ -3,11 +3,7 @@ package xapi.ui.api;
 import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
-import xapi.fu.Immutable;
-import xapi.fu.In1;
-import xapi.fu.Lazy;
-import xapi.fu.Out1;
-import xapi.time.X_Time;
+import xapi.fu.*;
 import xapi.util.X_Debug;
 import xapi.util.X_String;
 import xapi.util.impl.DeferredCharSequence;
@@ -32,6 +28,7 @@ public abstract class NodeBuilder<E> implements Widget<E> {
   protected NodeBuilder childTarget = this;
 
   protected final IntTo<In1<E>> createdCallbacks;
+  protected final IntTo<Do> beforeCreatedCallbacks;
   protected final boolean searchableChildren;
 
   protected Function<String, String> bodySanitizer;
@@ -45,6 +42,7 @@ public abstract class NodeBuilder<E> implements Widget<E> {
   public NodeBuilder(boolean searchableChildren) {
     this.searchableChildren = searchableChildren;
     createdCallbacks = X_Collect.newList(In1.class);
+    beforeCreatedCallbacks = X_Collect.newList(Do.class);
   }
 
   public NodeBuilder(Out1<E> elementProvider) {
@@ -162,9 +160,11 @@ public abstract class NodeBuilder<E> implements Widget<E> {
     if (el == null) {
       // MAYBE: double checked lock for jvms?
       if (elementProvider != null) {
+        flushBeforeCreated();
         el = elementProvider.out1();
       }
       if (el == null) {
+        flushBeforeCreated();
         initialize();
       } else {
         elementProvider = null;
@@ -174,6 +174,10 @@ public abstract class NodeBuilder<E> implements Widget<E> {
     return el;
   }
 
+  protected void flushBeforeCreated() {
+    beforeCreatedCallbacks.removeAll(Do.INVOKE);
+  }
+
   public NodeBuilder<E> onCreated(In1<E> callback) {
     if (el == null) {
       assert searchableChildren : "Cannot handle created callbacks without searchableChildren in "+this;
@@ -181,13 +185,21 @@ public abstract class NodeBuilder<E> implements Widget<E> {
       if (elementProvider != null) {
         if (!initialized) {
           // ensure we get initialized eventually
-          // TODO: move RunSoon somewhere we can see it, and use that instead
-          // (or add X_Time.runSoon, and have it be pluggable from downstream
-          X_Time.runLater(this::getElement);
+//          X_Time.runLater(this::getElement);
         }
       }
     } else {
       callback.in(el);
+    }
+    return this;
+  }
+
+  public NodeBuilder<E> onBeforeCreated(Do callback) {
+    if (el == null) {
+      assert searchableChildren : "Cannot handle before created callbacks without searchableChildren in "+this;
+      beforeCreatedCallbacks.add(callback);
+    } else {
+      callback.done();
     }
     return this;
   }

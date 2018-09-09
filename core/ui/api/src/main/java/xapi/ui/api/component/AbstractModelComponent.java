@@ -137,9 +137,9 @@ implements IsModelComponent<El, Mod> {
                 applyAttribute(into, mod);
             }
         }
-        into.onCreated(e->{
-            modelOpts.fireListeners(model.out1());
-        });
+        into.onBeforeCreated(()->
+            modelOpts.fireListeners(model.out1())
+        );
         return super.intoBuilder(logicalParent, opts, into);
     }
 

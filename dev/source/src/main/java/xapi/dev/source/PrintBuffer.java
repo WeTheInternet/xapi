@@ -288,6 +288,12 @@ public class PrintBuffer extends CharBuffer implements Printable<PrintBuffer>, H
     indented = false;
   }
 
+  @Override
+  public PrintBuffer clear() {
+    super.clear();
+    return this;
+  }
+
   public PrintBuffer clearIndent() {
     indent = "";
     return this;

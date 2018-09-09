@@ -127,7 +127,7 @@ public class AssembledUi {
             );
         }
 
-        return result;
+        return result.finish();
     }
 
     public final String newBuilder() {

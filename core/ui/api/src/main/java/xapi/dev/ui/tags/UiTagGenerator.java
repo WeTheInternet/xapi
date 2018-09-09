@@ -610,7 +610,9 @@ public class UiTagGenerator extends UiComponentGenerator {
             default:
                 e = attachDefault(assembly, root, n);
         }
-        return maybeSwap(assembly, root, e);
+        final AssembledElement result = maybeSwap(assembly, root, e);
+        n.addExtra(UiConstants.EXTRA_ASSEMBLED_ELEMENT, result);
+        return result;
     }
 
     protected AssembledElement attachDefault(

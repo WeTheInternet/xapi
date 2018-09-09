@@ -89,9 +89,11 @@ public class UiAssemblerResult {
     childStyle;
 
     private Do onRelease = Do.NOTHING;
+    private Do onFinish = Do.NOTHING;
+    private boolean finished;
     private boolean released;
     private ElementAssembly assembly;
-    // set this to false if you don't want to attach a
+    // set this to false if you don't want to attach your result to parent (causes adopt() to no-op)
     private boolean attachToRoot = true;
     private AssembledElement element;
     private GeneratedFactory factory;
@@ -216,9 +218,16 @@ public class UiAssemblerResult {
         if (other.childStyle) {
             this.childStyle = true;
         }
+        if (other.onFinish != Do.NOTHING) {
+            onFinish(other.onFinish);
+        }
+        if (other.onRelease != Do.NOTHING) {
+            onRelease(other.onRelease);
+        }
     }
 
     public void adopt(UiAssemblerResult child) {
+        onFinish(child::finish);
         if (!child.attachToRoot || child.released) {
             return;
         }
@@ -254,10 +263,26 @@ public class UiAssemblerResult {
         }
     }
 
+    public synchronized void onFinish(Do task) {
+        if (finished) {
+            task.done();
+        } else {
+            onFinish = onFinish.doAfter(task);
+        }
+    }
+
     public synchronized UiAssemblerResult release() {
         released = true;
         final Do todo = onRelease;
         onRelease = Do.NOTHING;
+        todo.done();
+        return this;
+    }
+
+    public synchronized UiAssemblerResult finish() {
+        finished = true;
+        final Do todo = onFinish;
+        onFinish = Do.NOTHING;
         todo.done();
         return this;
     }

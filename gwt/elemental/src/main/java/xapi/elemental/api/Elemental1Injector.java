@@ -60,4 +60,14 @@ public class Elemental1Injector implements ElementInjector<Node> {
     public void removeChild(Node child) {
         self.removeChild(child);
     }
+
+    @Override
+    public void replaceChild(Node newChild, Node refChild) {
+        self.replaceChild(newChild, refChild);
+    }
+
+    @Override
+    public Node getParent(Node child) {
+        return child.getParentNode();
+    }
 }

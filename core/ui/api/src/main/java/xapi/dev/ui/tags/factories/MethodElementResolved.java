@@ -63,17 +63,7 @@ public class MethodElementResolved {
 
     public void append(AssembledElement e) {
         if (e instanceof AssemblyIf && ((AssemblyIf) e).canBeEmpty()) {
-            final GeneratedUiBase base = ui.getBase();
-            String builder = base.getElementBuilderType(namespace);
-            String varName = method.reserveVariable("b");
-            insertions
-                .patternln("final $1 $2 = $3.out1();", builder, varName, e.requireRef());
-            insertions
-                .patternln("if ($1 != null) {", varName)
-                .indent()
-                    .patternln("$1.appendChild($2.getElement());", ROOT_INJECTOR_VAR, varName)
-                .outdent()
-                .println("}");
+            insertions.patternln("$1(el);", ((AssemblyIf)e).getRedrawMethod());
         } else {
             insertions.println(ROOT_INJECTOR_VAR + ".appendChild(" +
                 e.requireRef() + ".out1().getElement()" +

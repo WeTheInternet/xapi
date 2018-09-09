@@ -141,9 +141,10 @@ public class LocalVariable extends MemberBuffer<LocalVariable> implements CanAdd
   }
 
   @Override
-  public CharBuffer clear() {
+  public LocalVariable clear() {
     fieldType = TypeData.NONE;
-    return super.clear();
+    super.clear();
+    return this;
   }
 
   public LocalVariable invokeAndAssign(String expr, String assignType, String assignName, boolean reuseExisting) {

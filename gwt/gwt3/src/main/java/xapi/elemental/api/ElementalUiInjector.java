@@ -2,7 +2,6 @@ package xapi.elemental.api;
 
 import elemental2.dom.Element;
 import elemental2.dom.Node;
-import xapi.ui.api.ElementInjector;
 import xapi.ui.api.ElementPosition;
 import xapi.ui.api.UiInjector;
 
@@ -47,5 +46,15 @@ public class ElementalUiInjector implements UiInjector<Node, UiElementGwt<?>> {
     @Override
     public void removeChild(UiElementGwt<?> child) {
         self.removeChild(child.getElement());
+    }
+
+    @Override
+    public void replaceChild(UiElementGwt<?> newChild, UiElementGwt<?> refChild) {
+        self.replaceChild(newChild.getElement(), refChild.getElement());
+    }
+
+    @Override
+    public UiElementGwt<?> getParent(UiElementGwt<?> child) {
+        return child.getParent();
     }
 }

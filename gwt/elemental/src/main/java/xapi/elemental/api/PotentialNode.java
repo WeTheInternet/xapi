@@ -6,6 +6,7 @@ import elemental.dom.Element;
 import elemental.dom.Node;
 import elemental2.dom.DomGlobal;
 import xapi.elemental.X_Elemental;
+import xapi.fu.Do;
 import xapi.fu.In1;
 import xapi.fu.Lazy;
 import xapi.fu.Out1;
@@ -262,6 +263,12 @@ public class PotentialNode <E extends Element> extends ElementBuilder<E> impleme
         super.onCreated(callback);
         return this;
     }
+
+  @Override
+  public PotentialNode<E> onBeforeCreated(Do callback) {
+    super.onBeforeCreated(callback);
+    return this;
+  }
 
   @Override
   public PotentialNode<E> append(CharSequence chars) {

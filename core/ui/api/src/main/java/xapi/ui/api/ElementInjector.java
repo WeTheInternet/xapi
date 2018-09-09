@@ -17,4 +17,8 @@ public interface ElementInjector<Node> {
 
     void removeChild(Node child);
 
+    void replaceChild(Node newChild, Node refChild);
+
+    Node getParent(Node child);
+
 }

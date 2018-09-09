@@ -90,6 +90,24 @@ public class UiElementGwt<E extends HTMLElement>
   }
 
   @Override
+  public void replaceChild(UiElementGwt<?> newChild, UiElementGwt<?> refChild) {
+    assert refChild.getParent() == this;
+    if (refChild == newChild) {
+      return;
+    }
+    refChild.setParent(null);
+    final E e = getElement();
+    final Node child = newChild.getElement();
+    final HTMLElement ref = refChild.getElement();
+    e.replaceChild(child, ref);
+  }
+
+  @Override
+  public UiElementGwt<?> getParent(UiElementGwt<?> child) {
+    return child.getParent();
+  }
+
+  @Override
   public String toSource() {
     return (String) Js.asPropertyMap(getElement()).get("outerHTML");
   }

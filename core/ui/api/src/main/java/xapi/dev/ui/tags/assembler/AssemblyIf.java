@@ -1,5 +1,6 @@
 package xapi.dev.ui.tags.assembler;
 
+import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.type.PrimitiveType;
 import com.github.javaparser.ast.type.ReferenceType;
@@ -8,7 +9,10 @@ import com.github.javaparser.ast.type.VoidType;
 import com.github.javaparser.ast.visitor.ComposableXapiVisitor;
 import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.source.*;
-import xapi.dev.ui.api.*;
+import xapi.dev.ui.api.GeneratedUiBase;
+import xapi.dev.ui.api.GeneratedUiComponent;
+import xapi.dev.ui.api.GeneratedUiMember;
+import xapi.dev.ui.api.UiConstants;
 import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.dev.ui.tags.factories.GeneratedFactory;
 import xapi.dev.ui.tags.factories.LazyInitFactory;
@@ -16,6 +20,7 @@ import xapi.dev.ui.tags.members.UserDefinedMethod;
 import xapi.except.NotYetImplemented;
 import xapi.fu.In1Out1;
 import xapi.fu.MappedIterable;
+import xapi.fu.Maybe;
 import xapi.fu.MultiIterable;
 import xapi.fu.iterate.ArrayIterable;
 import xapi.fu.iterate.Chain;
@@ -25,6 +30,11 @@ import xapi.log.X_Log;
 import xapi.source.X_Modifier;
 import xapi.source.X_Source;
 import xapi.source.write.Template;
+import xapi.ui.api.component.ConditionalComponentMixin;
+
+import java.util.List;
+
+import static xapi.util.X_String.toTitleCase;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 7/26/18.
@@ -350,6 +360,8 @@ public class AssemblyIf extends AssembledElement {
         final String newInjector = ui.newInjector();
         final MethodBuffer redraw = baseClass.createMethod("private void " + redrawName + "()");
 
+        baseClass.addGenericInterface(ConditionalComponentMixin.class, typeEl, typeBuilder);
+
         redraw
             .addParameter(typeEl, "el")
             .patternln("final $1 was = $2;", typeBuilder, selectedField)
@@ -359,14 +371,80 @@ public class AssemblyIf extends AssembledElement {
             .indent()
                 .patternln("final $1 inj = $2(el);", typeInjector, newInjector)
                 .println("if (was == null) {")
-                    .indentln("// first time selecting a winner, just do an attach")
-                    .indentln("inj.appendChild(is.getElement());")
+                .indent()
+                    .println("// first time selecting a winner, just do an attach");
+
+        // we need to insert a buffer here, so we can wait until the rest of the ui
+        // has been visited, and then detect our sibling, so we can do correct insertBefore semantics.
+        PrintBuffer insertion = new PrintBuffer(redraw.getIndentCount())
+                    .println("inj.appendChild(is.getElement());");
+        redraw.addToEnd(insertion);
+
+        result.onFinish(()->{
+            // when the result is finished, check for siblings!
+            // need to go to root if tag, then check parent (json or dom nodes),
+            // pick the element after us, find the AssembledElement for our nextSibling,
+            // and then use "insertBefore if inserted, else appendChild" semantics.
+            Maybe<AssembledElement> sibling = findSibling();
+            sibling.readIfPresent(after-> {
+                if (after == this) {
+                    return;
+                }
+                final String varSib = redraw.reserveVariable("sibling");
+                // hokay!  so... technically, we should probably have a runtime check which
+                // looks forward from here for an attached element to insertBefore, and backwards from
+                // here, for an attached element to insertAfter (where runtime picks the first item).
+                // ...given such complexity, it seems like we really should make attachment and element
+                // ordering a separate bit of rendering logic, but for now, we can make due with a slight hack:
+                // we'll create a method to find the insertion element, so that chained <if /> siblings will
+                // naturally form a "find any nextSibling that's actually attached and insertBefore, otherwise, do an append"
+                // this will get even harder when we want <for /> to participate... but, one step at a time...
+                final MethodBuffer findSib = base.getOrCreateMethod(
+                    X_Modifier.PROTECTED,
+                    typeEl,
+                    "findSibling" + toTitleCase(requireRef())
+                );
+                findSib
+                    .patternln("$1 b = $2.out1();", typeBuilder, after.requireRef())
+                ;
+                if (after instanceof AssemblyIf) {
+                    // our next element can be nullable, so we need to defer to it's findSibling method...
+                    findSib
+                        .println("if (b == null) {")
+                        .indent()
+                            .patternln("return findSibling$1();", toTitleCase(after.requireRef()))
+                        .outdent()
+                        .println("} else {")
+                        .indent()
+                            .returnValue("b.getElement()")
+                        .outdent()
+                        .println("}");
+                } else {
+                    // our next element is not nullable, just return it.
+                    findSib.returnValue("b.getElement()");
+                }
+                insertion.clear()
+                        .patternln("$1 $2 = $3();", typeEl, varSib, findSib.getName())
+                        .patternln("if ($1 == null || inj.getParent($1) == null) {", varSib)
+                            .indentln("inj.appendChild(is.getElement());")
+                        .println("} else {")
+                        .indent()
+                        .patternln("inj.insertBefore(is.getElement(), $1);", varSib)
+                        .outdent()
+                        .println("}")
+                ;
+            });
+        });
+
+        redraw
+                .outdent()
+                .println("} else if (is == null) {")
+                    .indentln("inj.removeChild(was.getElement());")
                 .println("} else {")
                 .indent()
                     .println("// changing winners, swap elements")
                     .patternln("final $1 old = was.getElement();", typeEl)
-                    .println("inj.insertBefore(is.getElement(), old);")
-                    .println("inj.removeChild(old);")
+                    .println("inj.replaceChild(is.getElement(), old);")
                 .outdent()
                 .println("}")
             .outdent()
@@ -398,6 +476,42 @@ public class AssemblyIf extends AssembledElement {
     });
 
         */
+    }
+
+    private Maybe<AssembledElement> findSibling() {
+        AssemblyIf ai = this;
+        while (getParent() instanceof AssemblyIf) {
+            ai = (AssemblyIf) getParent();
+        }
+        final UiContainerExpr root = ai.getAst();
+        Node parent = root.getParentNode();
+        final Node sib;
+        if (parent instanceof UiBodyExpr) {
+            final List<Expression> children = ((UiBodyExpr) parent).getChildren();
+            final int ind = children.indexOf(parent);
+            assert ind != -1 : "Parent does not contain child; parent: " + parent + "\nchild:" + root;
+            if (children.size() > ind) {
+                sib = children.get(ind + 1);
+            } else {
+                // this if is the last node.  No sibling here.
+                // We may want to consider further recursing into parent nodes,
+                // but for now, it will be assumed that there's no reason to peek any further
+                return Maybe.not();
+            }
+        } else if (parent instanceof JsonPairExpr) {
+            JsonContainerExpr json = (JsonContainerExpr) parent.getParentNode();
+            int key = Integer.parseInt(((JsonPairExpr) parent).getKeyString());
+            if (json.size() > key) {
+                sib = json.getNode(key + 1);
+            } else {
+                // last element in array.
+                return Maybe.not();
+            }
+        } else {
+            return Maybe.not();
+        }
+        AssembledElement sibling = sib.getExtra(UiConstants.EXTRA_ASSEMBLED_ELEMENT);
+        return Maybe.nullable(sibling);
     }
 
     protected void writeIfBlock(UiAssembler assembler, PrintBuffer toDom) {
@@ -819,5 +933,9 @@ public class AssemblyIf extends AssembledElement {
 
     public boolean canBeEmpty() {
         return elses.isEmpty();
+    }
+
+    public String getRedrawMethod() {
+        return redrawName;
     }
 }

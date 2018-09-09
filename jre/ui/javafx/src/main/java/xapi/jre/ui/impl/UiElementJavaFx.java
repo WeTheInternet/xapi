@@ -82,6 +82,19 @@ public class UiElementJavaFx<N extends Node> extends AbstractUiElement<Node, N, 
   }
 
   @Override
+  public void replaceChild(UiElementJavaFx<?> newChild, UiElementJavaFx<?> refChild) {
+    final ObservableList<Node> list = getInsertionPoint();
+    final int ind = list.indexOf(refChild.getElement());
+    assert ind != -1 : "Cannot replace a child " + refChild + " that is not attached to us " + this;
+    list.set(ind, newChild.getElement());
+  }
+
+  @Override
+  public UiElementJavaFx<?> getParent(UiElementJavaFx<?> child) {
+    return child.getParent();
+  }
+
+  @Override
   public boolean removeFromParent() {
     final Parent par = getElement().getParent();
     if (par == null) {

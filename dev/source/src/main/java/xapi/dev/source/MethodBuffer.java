@@ -445,7 +445,7 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
       }
 
       @Override
-      public CharBuffer clear() {
+      public PrintBuffer clear() {
         indented = true;
         return super.clear();
       }

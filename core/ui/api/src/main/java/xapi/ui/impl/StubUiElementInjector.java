@@ -44,6 +44,16 @@ public class StubUiElementInjector implements UiInjector {
         throw unsupported();
     }
 
+    @Override
+    public void replaceChild(Object newChild, Object refChild) {
+        throw unsupported();
+    }
+
+    @Override
+    public Object getParent(Object child) {
+        throw unsupported();
+    }
+
     private RuntimeException unsupported() {
         return new UnsupportedOperationException("stub");
     }
