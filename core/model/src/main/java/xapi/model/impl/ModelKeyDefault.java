@@ -1,11 +1,11 @@
 package xapi.model.impl;
 
 
-import java.util.Objects;
-
 import xapi.annotation.inject.InstanceDefault;
 import xapi.model.X_Model;
 import xapi.model.api.ModelKey;
+
+import java.util.Objects;
 
 @InstanceDefault(implFor=ModelKey.class)
 public class ModelKeyDefault implements ModelKey{
@@ -46,6 +46,12 @@ public class ModelKeyDefault implements ModelKey{
   @Override
   public ModelKey getParent() {
     return parentKey;
+  }
+
+  @Override
+  public ModelKey setParent(ModelKey parent) {
+    this.parentKey = parent;
+    return this;
   }
 
   @Override

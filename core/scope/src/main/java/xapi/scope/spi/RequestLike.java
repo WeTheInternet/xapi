@@ -52,4 +52,5 @@ public interface RequestLike {
 
     MapLike<String, String> getCookies();
 
+    void reset();
 }

@@ -84,7 +84,6 @@ public class VertxRequest implements Destroyable, RequestLike {
 
     public void setHttpRequest(HttpServerRequest httpRequest) {
         this.httpRequest = httpRequest;
-        resetAll.done();
     }
 
     @Override
@@ -137,6 +136,11 @@ public class VertxRequest implements Destroyable, RequestLike {
     @Override
     public MapLike<String, String> getCookies() {
         return cookies.out1();
+    }
+
+    @Override
+    public void reset() {
+        resetAll.done();
     }
 
     @Override

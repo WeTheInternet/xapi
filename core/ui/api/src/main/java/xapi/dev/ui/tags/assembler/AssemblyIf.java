@@ -18,10 +18,7 @@ import xapi.dev.ui.tags.factories.GeneratedFactory;
 import xapi.dev.ui.tags.factories.LazyInitFactory;
 import xapi.dev.ui.tags.members.UserDefinedMethod;
 import xapi.except.NotYetImplemented;
-import xapi.fu.In1Out1;
-import xapi.fu.MappedIterable;
-import xapi.fu.Maybe;
-import xapi.fu.MultiIterable;
+import xapi.fu.*;
 import xapi.fu.iterate.ArrayIterable;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
@@ -364,20 +361,12 @@ public class AssemblyIf extends AssembledElement {
 
         redraw
             .addParameter(typeEl, "el")
-            .patternln("final $1 was = $2;", typeBuilder, selectedField)
-            .patternln("$1.reset();", requireRef())
-            .patternln("final $1 is = $2.out1();", typeBuilder, requireRef())
-            .println("if (was != is) {")
-            .indent()
-                .patternln("final $1 inj = $2(el);", typeInjector, newInjector)
-                .println("if (was == null) {")
-                .indent()
-                    .println("// first time selecting a winner, just do an attach");
+            // renderConditional(el, selectedRootIf, rootIf, this::findSiblingRootIf);
+            .pattern("renderConditional(el, $1, $2, ", selectedField, requireRef());
 
         // we need to insert a buffer here, so we can wait until the rest of the ui
         // has been visited, and then detect our sibling, so we can do correct insertBefore semantics.
-        PrintBuffer insertion = new PrintBuffer(redraw.getIndentCount())
-                    .println("inj.appendChild(is.getElement());");
+        PrintBuffer insertion = new PrintBuffer();
         redraw.addToEnd(insertion);
 
         result.onFinish(()->{
@@ -386,70 +375,40 @@ public class AssemblyIf extends AssembledElement {
             // pick the element after us, find the AssembledElement for our nextSibling,
             // and then use "insertBefore if inserted, else appendChild" semantics.
             Maybe<AssembledElement> sibling = findSibling();
-            sibling.readIfPresent(after-> {
-                if (after == this) {
-                    return;
-                }
-                final String varSib = redraw.reserveVariable("sibling");
-                // hokay!  so... technically, we should probably have a runtime check which
-                // looks forward from here for an attached element to insertBefore, and backwards from
-                // here, for an attached element to insertAfter (where runtime picks the first item).
-                // ...given such complexity, it seems like we really should make attachment and element
-                // ordering a separate bit of rendering logic, but for now, we can make due with a slight hack:
-                // we'll create a method to find the insertion element, so that chained <if /> siblings will
-                // naturally form a "find any nextSibling that's actually attached and insertBefore, otherwise, do an append"
-                // this will get even harder when we want <for /> to participate... but, one step at a time...
+            if (sibling.isAbsent() || sibling.get() == this) {
+                insertion.print(baseClass.addImport(Out1.class) + ".null1()");
+            } else {
+                final AssembledElement after = sibling.get();
                 final MethodBuffer findSib = base.getOrCreateMethod(
                     X_Modifier.PROTECTED,
                     typeEl,
-                    "findSibling" + toTitleCase(requireRef())
+                    "findSibling" + toTitleCase(requireRef()),
+                    init -> {
+                        init.patternln("$1 b = $2.out1();", typeBuilder, after.requireRef());
+                        if (after instanceof AssemblyIf) {
+                            // our next element can be nullable, so we need to defer to it's findSibling method...
+                            init
+                                .println("if (b == null) {")
+                                .indent()
+                                .patternln("return findSibling$1();", toTitleCase(after.requireRef()))
+                                .outdent()
+                                .println("} else {")
+                                .indent()
+                                .returnValue("b.getElement()")
+                                .outdent()
+                                .println("}");
+                        } else {
+                            // our next element is not nullable, just return it.
+                            init.returnValue("b.getElement()");
+                        }
+
+                    }
                 );
-                findSib
-                    .patternln("$1 b = $2.out1();", typeBuilder, after.requireRef())
-                ;
-                if (after instanceof AssemblyIf) {
-                    // our next element can be nullable, so we need to defer to it's findSibling method...
-                    findSib
-                        .println("if (b == null) {")
-                        .indent()
-                            .patternln("return findSibling$1();", toTitleCase(after.requireRef()))
-                        .outdent()
-                        .println("} else {")
-                        .indent()
-                            .returnValue("b.getElement()")
-                        .outdent()
-                        .println("}");
-                } else {
-                    // our next element is not nullable, just return it.
-                    findSib.returnValue("b.getElement()");
-                }
-                insertion.clear()
-                        .patternln("$1 $2 = $3();", typeEl, varSib, findSib.getName())
-                        .patternln("if ($1 == null || inj.getParent($1) == null) {", varSib)
-                            .indentln("inj.appendChild(is.getElement());")
-                        .println("} else {")
-                        .indent()
-                        .patternln("inj.insertBefore(is.getElement(), $1);", varSib)
-                        .outdent()
-                        .println("}")
-                ;
-            });
+                insertion.pattern("this::$1", findSib.getName());
+            }
         });
 
-        redraw
-                .outdent()
-                .println("} else if (is == null) {")
-                    .indentln("inj.removeChild(was.getElement());")
-                .println("} else {")
-                .indent()
-                    .println("// changing winners, swap elements")
-                    .patternln("final $1 old = was.getElement();", typeEl)
-                    .println("inj.replaceChild(is.getElement(), old);")
-                .outdent()
-                .println("}")
-            .outdent()
-            .println("}")
-        ;
+        redraw.println(");");
 
         final PrintBuffer beforeResolved = assembler.getElementResolved().beforeResolved();
         if (isParentRoot()) {

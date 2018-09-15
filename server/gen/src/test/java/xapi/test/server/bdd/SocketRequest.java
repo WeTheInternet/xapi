@@ -54,4 +54,9 @@ public class SocketRequest implements RequestLike {
     public MapLike<String, String> getCookies() {
         return null;
     }
+
+    @Override
+    public void reset() {
+
+    }
 }

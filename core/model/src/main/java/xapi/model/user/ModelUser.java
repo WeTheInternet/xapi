@@ -21,6 +21,8 @@ import xapi.util.validators.ChecksStringNotEmpty;
     )
 public interface ModelUser extends Model {
 
+  String MODEL_USER = "user";
+
   @GetterFor("id")
   @FieldValidator(validators=ChecksStringNotEmpty.class)
   String id();

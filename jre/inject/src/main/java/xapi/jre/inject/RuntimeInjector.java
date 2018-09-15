@@ -58,7 +58,7 @@ public class RuntimeInjector implements In2<String, PlatformChecker> {
             if (mainLoc.contains("jar")) {
               return "";
             }
-            return mainLoc + File.separator + X_String.ensureEndsWith(prefix, File.separator);
+            return X_String.ensureEndsWith(mainLoc, File.separator);
           }
         }
       } catch (Exception ignored) {}

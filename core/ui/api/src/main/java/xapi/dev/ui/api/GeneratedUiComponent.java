@@ -142,7 +142,7 @@ public class GeneratedUiComponent {
         return getApi().model.out1();
     }
 
-    public GeneratedUiField getPublicField(String name) {
+    public GeneratedUiMember getPublicField(String name) {
         name = name.replaceFirst("(is|get|set|has|add|remove|clear)([A-Z][a-zA-Z0-9]*)", "$2");
         name = X_String.firstCharToLowercase(name);
         return getPublicModel().getField(name);
@@ -469,7 +469,7 @@ public class GeneratedUiComponent {
         };
     }
 
-    public Maybe<GeneratedUiField> getModelField(String name) {
+    public Maybe<GeneratedUiMember> getModelField(String name) {
         if (hasPublicModel()) {
             return Maybe.nullable(getPublicModel().getField(name));
         }
@@ -494,7 +494,7 @@ public class GeneratedUiComponent {
             '}';
     }
 
-    public void requireCoercion(GeneratedUiLayer layer, GeneratedUiField field) {
+    public void requireCoercion(GeneratedUiLayer layer, GeneratedUiMember field) {
         // create a coerce method which handles the type of this field.
         // This method must accept an instance of this field, and return a serialized string
         layer.addCoercion(field);

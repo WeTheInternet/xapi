@@ -28,7 +28,12 @@ public abstract class AbstractModelService implements ModelService
 
   @Override
   @MagicMethod(doNotVisit=true, documentation="This magic method re-routes to the same provider as X_Inject.instance()")
-  public <T extends Model> T create(final Class<T> key) {
+  public final <T extends Model> T create(final Class<T> key) {
+    return doCreate(key);
+  }
+
+  @MagicMethod(doNotVisit=true, documentation="This magic method re-routes to the same provider as X_Inject.instance()")
+  protected <T extends Model> T doCreate(final Class<T> key) {
     // GWT dev will make it here, and it can handle non-class-literal injection.
     // GWT prod requires magic method injection here.
     final T instance = X_Inject.instance(key);
@@ -57,7 +62,7 @@ public abstract class AbstractModelService implements ModelService
     if (model == null) {
       return null;
     }
-    final ModelDeserializationContext context = new ModelDeserializationContext(create(cls), this, null);
+    final ModelDeserializationContext context = new ModelDeserializationContext(doCreate(cls), this, null);
     context.setClientToServer(isClientToServer());
     final ModelSerializer<M> serializer = getSerializer(getTypeName(cls));
     return serializer.modelFromString(model, context);

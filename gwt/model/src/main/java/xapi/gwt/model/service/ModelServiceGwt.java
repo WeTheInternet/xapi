@@ -1,9 +1,5 @@
 package xapi.gwt.model.service;
 
-import com.google.gwt.core.client.GWT;
-import com.google.gwt.reflect.client.strategy.GwtRetention;
-
-import xapi.annotation.compile.MagicMethod;
 import xapi.annotation.inject.SingletonOverride;
 import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
@@ -15,12 +11,7 @@ import xapi.io.X_IO;
 import xapi.io.api.DelegatingIOCallback;
 import xapi.log.X_Log;
 import xapi.model.X_Model;
-import xapi.model.api.Model;
-import xapi.model.api.ModelKey;
-import xapi.model.api.ModelQuery;
-import xapi.model.api.ModelQueryResult;
-import xapi.model.api.ModelSerializer;
-import xapi.model.api.PrimitiveSerializer;
+import xapi.model.api.*;
 import xapi.model.impl.AbstractModelService;
 import xapi.model.impl.ModelSerializerDefault;
 import xapi.model.service.ModelService;
@@ -31,12 +22,13 @@ import xapi.util.api.SuccessHandler;
 
 import java.lang.reflect.Method;
 
+import com.google.gwt.core.client.GWT;
+
 @GwtPlatform
 @SuppressWarnings({"rawtypes"})
 @SingletonOverride(implFor=ModelService.class)
 public class ModelServiceGwt extends AbstractModelService
 {
-
 
   @SuppressWarnings("unchecked")
   private static ClassTo<ProvidesValue<? extends Model>> PROVIDERS = X_Collect.newClassMap(
@@ -62,10 +54,7 @@ public class ModelServiceGwt extends AbstractModelService
     return type;
   }
 
-  @Override
-  @MagicMethod(doNotVisit = true)
-  @GwtRetention(privacy = 0) // this method is magic.  Do not try to expose it via generated reflection...
-  public <T extends Model> T create(final Class<T> key) {
+  protected <T extends Model> T doCreate(final Class<T> key) {
     final ProvidesValue<? extends Model> provider = PROVIDERS.get(key);
     if (provider == null) {
       throw new NotConfiguredCorrectly("Could not find provider for "+key+"; did you forget to call X_Model.register()?");
@@ -83,7 +72,7 @@ public class ModelServiceGwt extends AbstractModelService
   }
 
   /**
-   * @see xapi.model.impl.AbstractModelService#getDefaultSerializer(java.lang.Class)
+   * @see xapi.model.impl.AbstractModelService#getDefaultSerializer(java.lang.String)
    */
   @Override
   protected <M extends Model> ModelSerializer getDefaultSerializer(final String typeName) {

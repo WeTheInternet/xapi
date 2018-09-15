@@ -29,7 +29,18 @@ public class SessionScopeVertx extends
         // So, instead, we should have a subset of serializable values
         // which we will persist and reload, so we can have many SessionScope instances,
         // but each one wraps the same subset of data.
-        X_Log.info(ScopeServiceVertx.class, "New Session Scope ", this);
+        X_Log.info(SessionScopeVertx.class, "New Session Scope ", this);
+    }
+
+    @Override
+    public SessionScopeVertx setUser(User user) {
+        super.setUser(user);
+        // dirty hack... we'll live w/ it for now, but we should tie into official vert.x auth handlers...
+        if (context != null) {
+            context.setUser(user);
+            context.session().put(User.class.getName(), user);
+        }
+        return this;
     }
 
     @Override

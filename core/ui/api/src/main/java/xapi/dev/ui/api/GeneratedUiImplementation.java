@@ -11,21 +11,22 @@ import xapi.dev.ui.impl.AbstractUiImplementationGenerator;
 import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.dev.ui.tags.assembler.AssembledElement;
 import xapi.dev.ui.tags.assembler.AssembledUi;
+import xapi.except.NotYetImplemented;
 import xapi.fu.*;
 import xapi.fu.iterate.CachingIterator;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
 import xapi.fu.iterate.SizedIterable;
 import xapi.reflect.X_Reflect;
-import xapi.source.X_Source;
 import xapi.source.read.JavaModel.IsTypeDefinition;
-import xapi.util.X_String;
 
 import java.lang.reflect.Modifier;
 import java.util.EnumMap;
 import java.util.Map.Entry;
 
 import static xapi.fu.Out2.out2Immutable;
+import static xapi.source.X_Source.javaQuote;
+import static xapi.util.X_String.toTitleCase;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 2/10/17.
@@ -140,7 +141,7 @@ public class GeneratedUiImplementation extends GeneratedUiLayer {
         method.getParams()
             .spy(param -> {
                 // call setters for each field.
-                String titled = X_String.toTitleCase(param.out2());
+                String titled = toTitleCase(param.out2());
                 ctor.println("set" + titled + "(" + param.out2() + ");");
             })
             .forAllMapped(
@@ -210,8 +211,25 @@ public class GeneratedUiImplementation extends GeneratedUiLayer {
         // TODO: also handle bodies!
         if (n.getBody() != null) {
             for (Expression body : n.getBody().getChildren()) {
-                // Bah... we need something smarter here...
-                out.println(".append(" + X_Source.javaQuote(body.toSource()) + ")");
+                if (body instanceof MethodReferenceExpr) {
+                    final MethodReferenceExpr ref = (MethodReferenceExpr) body;
+                    if ("$model".equals(ref.getScope().toSource())) {
+                        // Hokayyy!  We have a model field for a body...
+                        // for now, we'll just simply append the value blindly
+                        out.patternln(".append(getModel().get$1())", toTitleCase(ref.getIdentifier()));
+                    } else {
+                        throw new NotYetImplemented("Only $model:: fields are supported inside native tag bodies");
+                    }
+                } else {
+                    // Bah... we need something smarter here...
+                    final String src = body.toSource();
+                    if (src.startsWith("$model::")) {
+                        // supernasty... we should really be sending the template literal body through the parser again...
+                        out.patternln(".append(getModel().get$1())", toTitleCase(src.substring(8)));
+                    } else {
+                        out.patternln(".append($1)", javaQuote(src));
+                    }
+                }
             }
 
         }
@@ -241,7 +259,7 @@ public class GeneratedUiImplementation extends GeneratedUiLayer {
         final String name = tools.resolveString(ctx, attr.getName());
         boolean addQuotes = modelized instanceof StringLiteralExpr || modelized instanceof TemplateLiteralExpr;
         out.println(".setAttribute(\"" + name + "\", " +
-            (addQuotes ? X_Source.javaQuote(resolved) : resolved) +
+            (addQuotes ? javaQuote(resolved) : resolved) +
         ")");
     }
 
@@ -280,5 +298,9 @@ public class GeneratedUiImplementation extends GeneratedUiLayer {
 
     public AbstractUiImplementationGenerator<?> getGenerator() {
         return generator;
+    }
+
+    public void addCss(ContainerMetadata container, UiAttrExpr attr) {
+        throw new NotYetImplemented(getClass() + " must implement addCss()");
     }
 }

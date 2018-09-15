@@ -3,21 +3,6 @@
  */
 package xapi.dev.model;
 
-import com.google.gwt.core.ext.Linker;
-import com.google.gwt.core.ext.LinkerContext;
-import com.google.gwt.core.ext.TreeLogger;
-import com.google.gwt.core.ext.UnableToCompleteException;
-import com.google.gwt.core.ext.linker.ArtifactSet;
-import com.google.gwt.core.ext.linker.EmittedArtifact.Visibility;
-import com.google.gwt.core.ext.linker.LinkerOrder;
-import com.google.gwt.core.ext.linker.LinkerOrder.Order;
-import com.google.gwt.core.ext.linker.Shardable;
-import com.google.gwt.core.ext.linker.SyntheticArtifact;
-
-import java.nio.charset.Charset;
-import java.util.Set;
-import java.util.SortedSet;
-
 import xapi.dev.gwt.linker.StrongNameArtifact;
 import xapi.dev.model.ModelField.ActionMethod;
 import xapi.dev.model.ModelField.GetterMethod;
@@ -30,7 +15,22 @@ import xapi.model.impl.ClusteringPrimitiveSerializer;
 import xapi.util.api.Digester;
 import xapi.util.api.ValidatesValue;
 
+import java.nio.charset.Charset;
+import java.util.Set;
+import java.util.SortedSet;
+
 import static com.google.gwt.core.ext.TreeLogger.Type.WARN;
+
+import com.google.gwt.core.ext.Linker;
+import com.google.gwt.core.ext.LinkerContext;
+import com.google.gwt.core.ext.TreeLogger;
+import com.google.gwt.core.ext.UnableToCompleteException;
+import com.google.gwt.core.ext.linker.ArtifactSet;
+import com.google.gwt.core.ext.linker.EmittedArtifact.Visibility;
+import com.google.gwt.core.ext.linker.LinkerOrder;
+import com.google.gwt.core.ext.linker.LinkerOrder.Order;
+import com.google.gwt.core.ext.linker.Shardable;
+import com.google.gwt.core.ext.linker.SyntheticArtifact;
 
 /**
  * @author James X. Nelson (james@wetheinter.net, @james)
@@ -152,12 +152,20 @@ public class ModelLinker extends Linker {
       }
       out.append(policy);
       // Serialize to bytes for transfer into our output artifact
-      result = out.toString().getBytes(utf8);
+      result = out.toSource().getBytes(utf8);
 
-      final SyntheticArtifact manifest = new SyntheticArtifact(getClass(), "xapi.rpc", result);
-      manifest.setVisibility(Visibility.Deploy);
       artifacts = new ArtifactSet(artifacts);
+
+      SyntheticArtifact manifest = new SyntheticArtifact(getClass(), "xapi.rpc", result);
+      manifest.setVisibility(Visibility.Deploy);
       artifacts.add(manifest);
+      // add strong-named copies of the .rpc file, so competing compiles can still be located directly,
+      // even if a newer compile owns the HEAD xapi.rpc file.
+      for (String name : names) {
+        manifest = new SyntheticArtifact(getClass(), name + ".rpc", result);
+        manifest.setVisibility(Visibility.Deploy);
+        artifacts.add(manifest);
+      }
     }
     return artifacts;
   }

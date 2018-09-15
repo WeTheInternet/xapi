@@ -206,7 +206,7 @@ public class ModelServiceTestImpl extends AbstractModelService {
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T extends Model> T create(final Class<T> key) {
+  public <T extends Model> T doCreate(final Class<T> key) {
     if (key == ModelText.class) {
       return (T) new ModelTextTest();
     }
@@ -222,7 +222,7 @@ public class ModelServiceTestImpl extends AbstractModelService {
     if (key == ModelComment.class) {
       return (T) new ModelCommentTest();
     }
-    return super.create(key);
+    return super.doCreate(key);
   }
 
   @Override

@@ -264,11 +264,11 @@ public abstract class GeneratedUiLayer extends GeneratedJavaFile {
         return localDefinitions.get(systemName);
     }
 
-    public boolean hasCoercion(GeneratedUiField field) {
+    public boolean hasCoercion(GeneratedUiMember field) {
         return coercions.has(field.getMemberType().toSource());
     }
 
-    public void addCoercion(GeneratedUiField field) {
+    public void addCoercion(GeneratedUiMember field) {
         if (!hasCoercion(field)) {
             // create a coercion method.
             final ClassBuffer out = getSource().getClassBuffer();

@@ -57,7 +57,7 @@ public class AbstractModelCache implements ModelCache{
       return null;
     }
     return mod.getOrComputeKey(()->
-        X_Model.newKey(type, "local-" + idNames.incrementAndGet())
+        X_Model.newKey("", type, "local-" + idNames.incrementAndGet())
      );
   }
 }

@@ -1,12 +1,12 @@
 package xapi.dev.gwtc.api;
 
-import xapi.bytecode.NotFoundException;
 import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
 import xapi.collect.impl.SimpleLinkedList;
 import xapi.dev.gwtc.api.GwtcJobMonitor.CompileMessage;
 import xapi.except.MultiException;
+import xapi.except.NoSuchItem;
 import xapi.fu.Do.DoUnsafe;
 import xapi.fu.In1;
 import xapi.fu.In2;
@@ -221,7 +221,7 @@ public abstract class GwtcJob implements Destroyable {
                     throw X_Fu.rethrow(e);
                 }
             }
-            callbacks.removeAll(callback->callback.in(url, url == null ? new NotFoundException(extra) : null));
+            callbacks.removeAll(callback->callback.in(url, url == null ? new NoSuchItem(extra) : null));
             resourceCallbacks.remove(fileName);
             resourceCallbacks.notifyAll();
         }

@@ -211,6 +211,10 @@ public class AssembledElement implements HasParent<AssembledElement> {
 
     }
 
+    public String debug() {
+        return debugNode(getAst());
+    }
+
     public String debugNode(Expression attr) {
         return getSource().getTools().debugNode(attr);
     }

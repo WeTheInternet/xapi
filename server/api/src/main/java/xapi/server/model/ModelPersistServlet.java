@@ -3,17 +3,12 @@
  */
 package xapi.server.model;
 
+import xapi.fu.In1Out1.In1Out1Unsafe;
 import xapi.io.X_IO;
 import xapi.jre.model.ModelServiceJre;
 import xapi.log.X_Log;
 import xapi.model.X_Model;
-import xapi.model.api.Model;
-import xapi.model.api.ModelKey;
-import xapi.model.api.ModelManifest;
-import xapi.model.api.ModelModule;
-import xapi.model.api.ModelQuery;
-import xapi.model.api.ModelQueryResult;
-import xapi.model.api.PrimitiveSerializer;
+import xapi.model.api.*;
 import xapi.model.service.ModelService;
 import xapi.source.api.CharIterator;
 import xapi.source.impl.StringCharIterator;
@@ -31,6 +26,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URLDecoder;
 
 /**
@@ -46,7 +42,7 @@ public class ModelPersistServlet extends HttpServlet {
    * @see javax.servlet.GenericServlet#init(javax.servlet.ServletConfig)
    */
   @Override
-  public void init(final ServletConfig config) throws ServletException {
+  public void init(final ServletConfig config) {
     context = config.getServletContext();
     final String modules = X_Properties.getProperty("gwt.modules");
     if (modules != null) {
@@ -54,17 +50,21 @@ public class ModelPersistServlet extends HttpServlet {
         module = module.trim();
         if (!module.isEmpty()) {
           final String moduleName = module;
-          ModelModuleLoader.get().preloadModule(context, moduleName);
+          ModelModuleLoader.get().preloadModule(asFinder(context), moduleName);
         }
       }
     }
+  }
+
+  private static In1Out1Unsafe<String,InputStream> asFinder(ServletContext context) {
+    return moduleName -> context.getResourceAsStream("/WEB-INF/deploy/"+moduleName+"/XapiModelLinker/xapi.rpc");
   }
 
   @SuppressWarnings("unchecked")
   @Override
   protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
     final String moduleName = req.getHeader("X-Gwt-Module");
-    final ModelModule module = ModelModuleLoader.get().loadModule(context, moduleName);
+    final ModelModule module = ModelModuleLoader.get().loadModule(asFinder(context), moduleName);
     final RemovalHandler handler = ModelServiceJre.registerModule(module);
     try {
       final String encoding = X_String.firstNotEmpty(req.getCharacterEncoding(), "UTF-8");
@@ -151,7 +151,7 @@ public class ModelPersistServlet extends HttpServlet {
     final String asString = X_IO.toStringUtf8(req.getInputStream());
     final String type = req.getHeader("X-Model-Type");
     final String moduleName = req.getHeader("X-Gwt-Module");
-    final ModelModule module = ModelModuleLoader.get().loadModule(context, moduleName);
+    final ModelModule module = ModelModuleLoader.get().loadModule(asFinder(context), moduleName);
     final RemovalHandler handler = ModelServiceJre.registerModule(module);
     try {
       final ModelManifest manifest = module.getManifest(type);
@@ -170,7 +170,7 @@ public class ModelPersistServlet extends HttpServlet {
         } catch (final Throwable e1) {
           manifestText = String.valueOf(manifest);
         }
-        X_Log.error(getClass(), "Error trying to deserialize model; ",e,"source: ","|"+asString+"|"
+        X_Log.error(ModelPersistServlet.class, "Error trying to deserialize model; ",e,"source: ","|"+asString+"|"
             , "\nManifest: ","|"+manifestText+"|"
             , "\nModule: ","|"+moduleText+"|");
         throw new ServletException(e);

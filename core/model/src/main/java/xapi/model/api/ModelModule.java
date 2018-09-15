@@ -3,11 +3,6 @@
  */
 package xapi.model.api;
 
-import java.io.Serializable;
-import java.io.UnsupportedEncodingException;
-import java.util.Map.Entry;
-import java.util.Objects;
-
 import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
@@ -20,6 +15,11 @@ import xapi.source.api.CharIterator;
 import xapi.source.impl.StringCharIterator;
 import xapi.util.X_Debug;
 import xapi.util.api.Digester;
+
+import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
+import java.util.Map.Entry;
+import java.util.Objects;
 
 /**
  * This class represents a module of model types; it contains the {@link ModelManifest}s for all types within this module.
@@ -177,6 +177,7 @@ public class ModelModule implements Serializable {
       @Override
       @SuppressWarnings("unchecked")
       public <C> Class<C> deserializeClass(final CharIterator c) {
+        // might be able to avoid this eager register() call...
         final Class<C> cls = super.deserializeClass(c);
         if (Model.class.isAssignableFrom(cls)) {
           X_Model.getService().register(Class.class.cast(cls));

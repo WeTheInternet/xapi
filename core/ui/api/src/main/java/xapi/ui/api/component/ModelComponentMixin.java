@@ -33,8 +33,11 @@ public interface ModelComponentMixin <El, Mod extends Model> {
     }
 
     default void applyAttribute(ElementBuilder<?> into, Mod mod) {
-        X_Model.ensureKey(getModelType(), mod);
-        final ModelKey key = mod.getKey();
+        ModelKey key = mod.getKey();
+        if (key == null) {
+            key = X_Model.newKey(mod.getType());
+            mod.setKey(key);
+        }
         if (!key.isComplete()) {
             String id = into.getId(true);
             key.setId(id);

@@ -19,7 +19,6 @@ import io.vertx.ext.web.sstore.ClusteredSessionStore;
 import io.vertx.ext.web.sstore.LocalSessionStore;
 import io.vertx.ext.web.sstore.SessionStore;
 import xapi.annotation.model.IsModel;
-import xapi.bytecode.NotFoundException;
 import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
 import xapi.collect.api.IntTo;
@@ -28,7 +27,9 @@ import xapi.collect.api.StringTo;
 import xapi.dev.gwtc.api.GwtcJob;
 import xapi.dev.gwtc.api.GwtcJobManager;
 import xapi.dev.gwtc.api.GwtcService;
+import xapi.dev.source.PrintBuffer;
 import xapi.except.MultiException;
+import xapi.except.NoSuchItem;
 import xapi.fu.*;
 import xapi.fu.Do.DoUnsafe;
 import xapi.fu.In2.In2Unsafe;
@@ -250,10 +251,16 @@ public class XapiVertxServer extends AbstractXapiServer<RequestScopeVertx> {
                     }
                     // finish response
                     Integer code = vc.finish(error);
+                    final Out1<String> dump = ()->XapiVertxServer.dump(req.getRequest().getHttpRequest());
+                    final Out1<String> user = ()->ctx.getUser() == null ? "anon user" : ctx.getUser().toString();
                     if (VertxContext.SUCCESS.equals(code)) {
-                        X_Log.debug(XapiVertxServer.class, "Request succeeded for ", ctx, "\n", vc);
+                        X_Log.debug(XapiVertxServer.class, user, ", request succeeded for ", req.getPath());
+                    } else if (code == 307) {
+                        X_Log.trace(XapiVertxServer.class, user, ", request redirected to", ctx.getResponse().getHeaders().get("Location"), ctx, "\n", dump);
+                    } else if (code == 404) {
+                        X_Log.trace(XapiVertxServer.class, user, ", nothing to serve for ", dump);
                     } else {
-                        X_Log.warn(XapiVertxServer.class, "Request failed for ", ctx, "\n", vc, " had error:\n", error);
+                        X_Log.warn(XapiVertxServer.class, user, ", request failed for ", ctx, "\n", dump, " had error:\n", error);
                     }
                     // release scope
                     done.done();
@@ -287,7 +294,7 @@ public class XapiVertxServer extends AbstractXapiServer<RequestScopeVertx> {
                             // not found is normal for a session that has been purged in the backend
                             X_Log.error(XapiVertxServer.class, "Error loading session", e);
                         }
-                        req.getResponse().addHeader("Set-Cookie", SESSION_KEY+"=;path=/;expires=" + EXPIRED + ";");
+                        req.getResponse().addHeader("Set-Cookie", expireCookie(SESSION_KEY));
                         finish(e);
                     }
 
@@ -339,6 +346,10 @@ public class XapiVertxServer extends AbstractXapiServer<RequestScopeVertx> {
             });
             scopes.runInScope(session, doWork);
         });
+    }
+
+    public static String expireCookie(String cookieKey) {
+        return cookieKey + "=;path=/;expires=" + EXPIRED + ";";
     }
 
     protected ScopeServiceVertx getScopeService() {
@@ -493,6 +504,38 @@ public class XapiVertxServer extends AbstractXapiServer<RequestScopeVertx> {
 
                 router.route().handler(this::onRequest);
 
+                router.route().failureHandler(rc->{
+                    final VertxContext vc = VertxContext.fromNative(rc);
+                    final Throwable failure = rc.failure();
+                    final VertxResponse resp = vc.getResponse();
+                    assert resp.getHttpResponse() == rc.response() : "Stale context " + vc + " has incorrect response";
+                    final int code = resp.getStatusCode() == VertxContext.SUCCESS ? VertxContext.FAILURE : resp.getStatusCode();
+                    resp.setStatusCode(code);
+
+                    final String returnedBody = resp.clearResponseBody();
+                    final PrintBuffer out = resp.errorBuffer();
+                    String msg = failure.getMessage();
+                    if (msg == null || msg.isEmpty()) {
+                        msg = failure.toString();
+                    } else if (msg.length() < 10) {
+                        msg = failure + " : " + msg;
+                    }
+                    X_Log.warn(XapiVertxServer.class, "Request failed", vc, failure);
+                    out.clear().append(msg);
+                    if (X_String.isNotEmptyTrimmed(returnedBody)) {
+                        // TODO: make this configurably hidden, or maybe non-visible to non-developers.
+                        out
+                            .append("<pre>Partial Response:\n")
+                            .append(returnedBody)
+                            .append("</pre>");
+                    }
+
+                    resp.finish(code);
+
+                    // lets clean up after ourselves...
+                    rc.data().remove(VertxContext.CONTEXT_KEY);
+            });
+
                 installRoutesBackup(router);
 
                 vertx.createHttpServer(opts)
@@ -543,12 +586,14 @@ public class XapiVertxServer extends AbstractXapiServer<RequestScopeVertx> {
         final Handler<RoutingContext> handler = rc -> {
             final VertxContext vc = VertxContext.fromNative(rc);
             endpoint.serviceRequest(rc.normalisedPath(), vc.getScope(), path, (finalScope, fail) -> {
-                if (fail != null) {
-                    endpoint.onFail(finalScope, fail);
-                } else {
+                if (fail == null) {
                     endpoint.onSuccess(finalScope);
+                    vc.finish(null);
+                } else {
+                    // give endpoint a chance to recover...
+                    Throwable error = endpoint.onFail(finalScope, fail);
+                    vc.finish(error);
                 }
-                vc.finish(fail);
             });
         };
         if (endpoint.isContextPath()) {
@@ -589,11 +634,13 @@ public class XapiVertxServer extends AbstractXapiServer<RequestScopeVertx> {
     }
 
     protected void handleError(HttpServerRequest req, VertxResponse resp, Throwable error) {
-        if (!resp.getResponse().ended()) {
             final String body = "<!DOCTYPE html><html>" +
                 "<body style=\"text-align: center; vertical-align: middle; display: block\">" +
                 "<div style=\"white-space:pre-wrap\">" +
-                "Our apologies, we cannot find anything to serve to:\n" +
+                (error instanceof NoSuchItem ?
+                "Our apologies, we cannot find anything to serve to:" :
+                "Request encountered an error: " + error) +
+                "\n" +
                 dump(req) +
                 "</div>" +
                 "<pre>" +
@@ -601,10 +648,9 @@ public class XapiVertxServer extends AbstractXapiServer<RequestScopeVertx> {
                 "</pre>" +
                 "</body>" +
                 "</html>";
-            resp.getResponse().headers().set("Content-Length", Integer.toString(body.length()));
-            resp.getResponse().write(body);
-            resp.finish(404);
-        }
+            resp.errorBuffer()
+                .print(body);
+            resp.setStatusCode(404);
     }
 
     public static String dump(HttpServerRequest req) {return dump(req, "\n");}
@@ -687,7 +733,7 @@ public class XapiVertxServer extends AbstractXapiServer<RequestScopeVertx> {
             serveRoute(next, request, routes, callback);
         } else {
             // Failed to route this request
-            callback.in(request, new NotFoundException(request.toString()));
+            callback.in(request, new NoSuchItem(request.getRequest().getPath()));
         }
     }
 
@@ -840,12 +886,12 @@ public class XapiVertxServer extends AbstractXapiServer<RequestScopeVertx> {
         String path = req.getPath();
         final GwtcService service = module.getOrCreateService();
         // request was for the nocache file; compile every time (for now)
-        assert !resp.getResponse().headWritten() : "Head already written!";
+        assert !resp.getHttpResponse().headWritten() : "Head already written!";
         X_Process.runDeferred(()->{
                 final GwtManifest manifest = module.getOrCreateManifest();
                 final GwtcJobManager manager = service.getJobManager();
                 final GwtcJob job = manager.getJob(manifest.getModuleName());
-                assert !resp.getResponse().headWritten() : "Head already written!!";
+                assert !resp.getHttpResponse().headWritten() : "Head already written!!";
 
                 Duration maxTime = gwtMaxCompileTime();
 
@@ -853,117 +899,124 @@ public class XapiVertxServer extends AbstractXapiServer<RequestScopeVertx> {
                 service.doCompile(
                     !rootLoad,
                     manifest, maxTime.toMillis(), TimeUnit.MILLISECONDS, (result, err)->{
-                    if (err == null) {
-                        manifest.setCompileDirectory(result);
+                    if (err != null) {
+                        X_Log.error(XapiVertxServer.class, "Gwt compilation failed", err);
+                        if(result != null) {
+                            manifest.setCompileDirectory(result);
+                        }
+                        callback.in(scope, err);
+                        return;
+                    }
+                    manifest.setCompileDirectory(result);
 
-                        boolean done = false;
+                    boolean done = false;
 
-                        assert !resp.getResponse().headWritten() : "Head already written!!!";
+                    assert !resp.getHttpResponse().headWritten() : "Head already written!!!";
 
-                        if (rootLoad) {
+                    if (rootLoad) {
 
-                            Path file = Paths.get(manifest.getCompiledWar());
-                            file = file.resolve(payload + File.separatorChar + payload + ".nocache.js");
-                            done = true;
+                        Path file = Paths.get(manifest.getCompiledWar());
+                        file = file.resolve(payload + File.separatorChar + payload + ".nocache.js");
+                        done = true;
+                        resp.prepareToClose();
+                        resp.getHttpResponse().sendFile(
+                            file.normalize().toString()
+                        );
+                    } else {
+                        // request was for a file from the compile result;
+                        // serve it up...
+                        String newUrl = path.startsWith("/") ? path.substring(1) : path;
+                        Path dir = Paths.get(newUrl.startsWith("sourcemaps") ? manifest.getCompileDirectory().getSourceMapDir() : manifest.getCompiledWar());
+                        Path file = dir.resolve(newUrl);
+                        if (Files.exists(file)) {
+                            final String normalized = file.normalize().toString();
                             resp.prepareToClose();
-                            resp.getResponse().sendFile(
-                                file.normalize().toString()
-                            );
-                            callback.in(scope, null);
-                        } else {
-                            // request was for a file from the compile result;
-                            // serve it up...
-                            String newUrl = path.startsWith("/") ? path.substring(1) : path;
-                            Path dir = Paths.get(newUrl.startsWith("sourcemaps") ? manifest.getCompileDirectory().getSourceMapDir() : manifest.getCompiledWar());
-                            Path file = dir.resolve(newUrl);
-                            if (Files.exists(file)) {
-                                final String normalized = file.normalize().toString();
-                                resp.prepareToClose();
-                                resp.getResponse().sendFile(normalized);
-                            } else if (newUrl.startsWith("sourcemaps")){
-                                if (newUrl.endsWith("json")) {
-                                    final String fileName = X_String.chopEndOrReturnEmpty(newUrl, "/")
-                                        // not really sure why super dev mode does this...
-                                        .replace("_sourcemap.json", "_sourceMap0.json");
-                                    file = dir.resolve(fileName);
-                                    if (Files.exists(file)) {
-                                        final String normalized = file.normalize().toString();
-                                        resp.prepareToClose();
-                                        resp.getResponse().sendFile(normalized);
-                                    } else {
-                                        X_Log.warn(XapiVertxServer.class, "No file to serve for ", file, "from url", newUrl);
-                                    }
+                            resp.getHttpResponse().sendFile(normalized);
+                        } else if (newUrl.startsWith("sourcemaps")){
+                            if (newUrl.endsWith("json")) {
+                                final String fileName = X_String.chopEndOrReturnEmpty(newUrl, "/")
+                                    // not really sure why super dev mode does this...
+                                    .replace("_sourcemap.json", "_sourceMap0.json");
+                                file = dir.resolve(fileName);
+                                if (Files.exists(file)) {
+                                    final String normalized = file.normalize().toString();
+                                    resp.prepareToClose();
+                                    resp.getHttpResponse().sendFile(normalized);
                                 } else {
-                                    if (job == null) {
-                                        callback.in(scope, new IllegalStateException("No job for " + manifest.getModuleName()));
-                                        return;
-                                    }
-                                    // This url is for an actual source file.
-                                    int ind = newUrl.indexOf("$sourceroot_goes_here$");
-                                    if (ind == -1) {
-                                        ind = newUrl.indexOf('/');
-                                        ind = newUrl.indexOf('/', ind+1);
-                                    }
-                                    ind = newUrl.indexOf('/', ind+1);
-                                    String fileName = newUrl.substring(ind+1);
-                                    done = true;
-                                    final DoUnsafe blockOnRequest = job.requestResource(fileName, (url, fail) -> {
-                                        if (fail instanceof NotFoundException) {
-                                            if (fileName.startsWith("gen/")) {
-                                                Path genPath = Paths.get(manifest.getCompileDirectory().getGenDir());
-                                                final Path genFile = genPath.resolve(fileName.substring(4));
-                                                if (Files.exists(genFile)) {
-                                                    resp.prepareToClose();
-                                                    resp.getResponse().sendFile(genFile.toString());
-                                                    callback.in(scope, null);
-                                                    return;
-                                                } else {
-                                                    X_Log.warn(
-                                                        XapiVertxServer.class,
-                                                        "No file found for path",
-                                                        genFile
-                                                    );
-                                                }
-                                            }
-                                        } else if (fail == null) {
-                                            // In case this is a url into a jar,
-                                            // we save ourselves some headache, and just stream from whatever URL we get
-                                            boolean calledBack = false;
-                                            try (
-                                                final InputStream in = url.openStream()
-                                            ) {
-                                                final byte[] bytes = X_IO.toByteArray(in);
-                                                resp.prepareToClose();
-                                                resp.getResponse().end(Buffer.buffer(bytes));
-                                                calledBack = true;
-                                                callback.in(scope, null);
-                                            } catch (Exception e) {
-                                                if (calledBack) {
-                                                    X_Log.error(XapiVertxServer.class, "Failed sending source", fileName, e);
-                                                } else {
-                                                    callback.in(scope, e);
-                                                }
-                                            }
-                                        } else {
-                                            X_Log.error(XapiVertxServer.class, "Failed sending source", fileName);
-                                            callback.in(scope, fail);
-                                        }
-                                    });
-                                    X_Process.runDeferred(blockOnRequest);
+                                    X_Log.warn(XapiVertxServer.class, "No file to serve for ", file, "from url", newUrl);
+                                    callback.in(scope, new NoSuchItem(file));
+                                    return;
                                 }
                             } else {
-                                X_Log.warn(XapiVertxServer.class, "No file to serve for ", file, "from url", newUrl);
+                                if (job == null) {
+                                    callback.in(scope, new IllegalStateException("No job for " + manifest.getModuleName()));
+                                    return;
+                                }
+                                // This url is for an actual source file.
+                                int ind = newUrl.indexOf("$sourceroot_goes_here$");
+                                if (ind == -1) {
+                                    ind = newUrl.indexOf('/');
+                                    ind = newUrl.indexOf('/', ind+1);
+                                }
+                                ind = newUrl.indexOf('/', ind+1);
+                                String fileName = newUrl.substring(ind+1);
+                                done = true;
+                                final DoUnsafe blockOnRequest = job.requestResource(fileName, (url, fail) -> {
+                                    if (fail instanceof NoSuchItem) {
+                                        if (fileName.startsWith("gen/")) {
+                                            Path genPath = Paths.get(manifest.getCompileDirectory().getGenDir());
+                                            final Path genFile = genPath.resolve(fileName.substring(4));
+                                            if (Files.exists(genFile)) {
+                                                resp.prepareToClose();
+                                                resp.getHttpResponse().sendFile(genFile.toString());
+                                                callback.in(scope, null);
+                                            } else {
+                                                X_Log.warn(
+                                                    XapiVertxServer.class,
+                                                    "No file found for path",
+                                                    genFile
+                                                );
+                                                callback.in(scope, new NoSuchItem(genFile));
+                                            }
+                                        } else {
+                                            callback.in(scope, fail);
+                                        }
+                                    } else if (fail == null) {
+                                        // In case this is a url into a jar,
+                                        // we save ourselves some headache, and just stream from whatever URL we get
+                                        boolean calledBack = false;
+                                        try (
+                                            final InputStream in = url.openStream()
+                                        ) {
+                                            final byte[] bytes = X_IO.toByteArray(in);
+                                            resp.prepareToClose();
+                                            resp.getHttpResponse().end(Buffer.buffer(bytes));
+                                            calledBack = true;
+                                            callback.in(scope, null);
+                                        } catch (Exception e) {
+                                            if (calledBack) {
+                                                X_Log.error(XapiVertxServer.class, "Failed sending source", fileName, e);
+                                            } else {
+                                                callback.in(scope, e);
+                                            }
+                                        }
+                                    } else {
+                                        X_Log.error(XapiVertxServer.class, "Failed sending source", fileName);
+                                        callback.in(scope, fail);
+                                    }
+                                });
+                                X_Process.runDeferred(blockOnRequest);
                             }
-                            if (!done && !resp.getResponse().headWritten()) {
-                                callback.in(scope, null);
-                            }
+                        } else {
+                            X_Log.warn(XapiVertxServer.class, "No file to serve for ", file, "from url", newUrl);
+                            done = true;
+                            callback.in(scope, new NoSuchItem(file));
                         }
-
-
-                    } else {
-                        X_Log.error(XapiVertxServer.class, "Gwt compilation failed", err);
-                        throw new IllegalStateException("Gwt compile failed for manifest " + manifest, err);
                     }
+                    if (!done) {
+                        callback.in(scope, null);
+                    }
+
                 });
             });
     }

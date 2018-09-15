@@ -3,13 +3,14 @@ package xapi.dev.ui.api;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.type.Type;
 import xapi.collect.X_Collect;
+import xapi.collect.api.ClassTo;
 import xapi.collect.api.StringTo;
 import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.ui.impl.UiGeneratorTools;
-import xapi.fu.In2Out1;
-import xapi.fu.MappedIterable;
-import xapi.fu.Maybe;
-import xapi.fu.Out2;
+import xapi.dev.ui.tags.assembler.AssembledElement;
+import xapi.dev.ui.tags.assembler.UiAssembler;
+import xapi.dev.ui.tags.factories.GeneratedFactory;
+import xapi.fu.*;
 import xapi.source.X_Source;
 import xapi.util.X_String;
 
@@ -57,14 +58,14 @@ public class GeneratedUiDefinition {
     private String packageName;
     private String modelName;
     @NotNull
-    private final StringTo<GeneratedUiField> modelFields;
+    private final StringTo<GeneratedUiMember> modelFields;
 
     private String apiName;
     private String baseName;
     private String builderName;
 
     public GeneratedUiDefinition() {
-        modelFields = X_Collect.newStringMapInsertionOrdered(GeneratedUiField.class);
+        modelFields = X_Collect.newStringMapInsertionOrdered(GeneratedUiMember.class);
     }
 
     public GeneratedUiDefinition(
@@ -102,9 +103,9 @@ public class GeneratedUiDefinition {
         tag.addAttribute(false, UiAttrExpr.of("builderName", builderName));
         if (modelFields.isNotEmpty()) {
             final List<JsonPairExpr> fields = new ArrayList<>();
-            for (Out2<String, GeneratedUiField> field : modelFields.forEachItem()) {
+            for (Out2<String, GeneratedUiMember> field : modelFields.forEachItem()) {
                 String fieldName = field.out1();
-                final GeneratedUiField fieldValue = field.out2();
+                final GeneratedUiMember fieldValue = field.out2();
                 final Type fieldType = fieldValue.getMemberType();
                 if (fieldType.getAnnotations() == null || fieldType.getAnnotations().isEmpty()) {
                     List<AnnotationExpr> annos = new ArrayList<>();
@@ -231,7 +232,7 @@ public class GeneratedUiDefinition {
         this.modelName = modelName;
     }
 
-    public StringTo<GeneratedUiField> getModelFields() {
+    public StringTo<GeneratedUiMember> getModelFields() {
         return modelFields;
     }
 
@@ -292,59 +293,6 @@ public class GeneratedUiDefinition {
         return X_Source.qualifiedName(getPackageName(), getTypeName());
     }
 
-//    public MethodCallExpr getTagFactory(
-//        UiGeneratorTools tools,
-//        ApiGeneratorContext ctx,
-//        GeneratedUiComponent other,
-//        UiNamespace namespace,
-//        UiContainerExpr ui
-//    ) {
-//        // Our tag factory should be a method generated onto the base class;
-//        // if the source tag supplied a model or a style, we must pass those references in as parameters.
-////        final GeneratedUiBase myBase = me.getBase();
-////        String myBaseName = myBase.getWrappedName();
-//
-//        GeneratedUiBase otherBase = other.getBase();
-//        final String myBaseName = otherBase.getSource().addImport(getBaseName());
-//        final Maybe<UiAttrExpr> model = ui.getAttribute("model");
-//        final Maybe<UiAttrExpr> style = ui.getAttribute("style");
-//        final String name = "create" + myBaseName;
-//        MethodCallExpr call = new MethodCallExpr(null, name);
-//        final Type returnType = tools.methods().$type(
-//            tools,
-//            ctx,
-//            StringLiteralExpr.stringLiteral(myBaseName)
-//        ).getType();
-//        GeneratedUiMethod method = new GeneratedUiMethod(returnType, name);
-//        method.setSource(ui);
-//        method.setContext(ctx);
-//        final String elBuilder = otherBase.getElementBuilderType(namespace);
-//        final MethodBuffer creator = other.getBase().getSource().getClassBuffer()
-//            .createMethod("public abstract " + elBuilder + " " + name);
-//        final List<Expression> args = new ArrayList<>();
-//        RequiredMethodType type = CREATE;
-//        if (model.isPresent()) {
-//            type = CREATE_FROM_MODEL;
-//            args.add(tools.resolveVar(ctx, model.get().getExpression()));
-//            method.addParam(getModelName(), "model");
-//            creator.addParameter(getModelName(), "model");
-//        }
-//        if (style.isPresent()) {
-//            type = type == CREATE_FROM_MODEL ? CREATE_FROM_MODEL_AND_STYLE : CREATE_FROM_STYLE;
-//            final Expression resolvedStyle = tools.resolveVar(ctx, style.get().getExpression());
-//            args.add(resolvedStyle);
-//            final String styleType = namespace.getBaseStyleResourceType(CanAddImports.NO_OP);
-//            method.addParam(styleType, "style");
-//            creator.addParameter(styleType, "style");
-//        }
-//        method.setType(type);
-//
-//        call.setArgs(args);
-//
-//        other.getImpls().forAll(GeneratedUiImplementation::requireMethod, type, method, call);
-//        return call;
-//    }
-
     public String getBaseName() {
         return baseName == null ? "Base" + getApiName() : baseName;
     }
@@ -371,5 +319,65 @@ public class GeneratedUiDefinition {
 
     public String getBuilderName() {
         return builderName;
+    }
+
+    public GeneratedUiMember addField(GeneratedUiMember member) {
+        final GeneratedUiMember was = getModelFields().put(member.getMemberName(), member);
+        assert was == null : "Overwriting model field " + member.getMemberName() + " ; was: " + was + " want: " + member;
+        return member;
+    }
+
+    public GeneratedUiMember addField(String type, String name) {
+        final GeneratedUiMember field = newField(type, name);
+        return addField(field);
+    }
+
+    public GeneratedUiMember addField(Type type, String name) {
+        final GeneratedUiMember field = newField(type, name);
+        return addField(field);
+    }
+
+    public GeneratedUiField newField(String type, String name) {
+        return newField(Type.simpleType(type), name);
+    }
+
+    public GeneratedUiField newField(Type type, String name) {
+        final GeneratedUiField field = new GeneratedUiField(type, name);
+        return field;
+    }
+
+    private final ClassTo<In1> callbacks = X_Collect.newClassMap(In1.class);
+
+    public void withAssembler(In1<UiAssembler> assembler) {
+        callbacks.compute(UiAssembler.class, assembler::useBeforeMe);
+    }
+
+    public void withFactory(In1<GeneratedFactory> factory) {
+        callbacks.compute(GeneratedFactory.class, factory::useBeforeMe);
+    }
+
+    public void withElement(In1<AssembledElement> element) {
+        callbacks.compute(AssembledElement.class, element::useBeforeMe);
+    }
+
+    public final void onEarly(Do task) {
+        onInit(task, true);
+    }
+    public final void onLate(Do task) {
+        onInit(task, false);
+    }
+    public void onInit(Do task, boolean early) {
+        In1 adapted = task.ignores1();
+        callbacks.compute(early ? Void.class : Do.class, adapted::useBeforeMe);
+    }
+
+    public void init(UiAssembler assembler, GeneratedFactory factory, AssembledElement e) {
+        // earlies will use Void as key
+        callbacks.getMaybe(Void.class).readIfPresent2(In1::in, null);
+        callbacks.getMaybe(UiAssembler.class).readIfPresent2(In1::in, assembler);
+        callbacks.getMaybe(GeneratedFactory.class).readIfPresent2(In1::in, factory);
+        callbacks.getMaybe(AssembledElement.class).readIfPresent2(In1::in, e);
+        // lates will use Do as key
+        callbacks.getMaybe(Do.class).readIfPresent2(In1::in, null);
     }
 }

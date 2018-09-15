@@ -3,13 +3,10 @@
  */
 package xapi.server.model;
 
-import java.io.InputStream;
-
-import javax.inject.Provider;
-import javax.servlet.ServletContext;
-
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
+import xapi.fu.In1Out1;
+import xapi.fu.In1Out1.In1Out1Unsafe;
 import xapi.io.X_IO;
 import xapi.model.X_Model;
 import xapi.model.api.ModelModule;
@@ -20,6 +17,9 @@ import xapi.time.X_Time;
 import xapi.util.X_Debug;
 import xapi.util.impl.LazyProvider;
 
+import javax.inject.Provider;
+import java.io.InputStream;
+
 /**
  * @author James X. Nelson (james@wetheinter.net, @james)
  *
@@ -28,12 +28,12 @@ public class ModelModuleLoader {
 
   private static class ModuleLoader extends LazyProvider<ModelModule> implements Runnable {
 
-    public ModuleLoader(final ServletContext context, final String moduleName) {
+    public ModuleLoader(final In1Out1<String, InputStream> manifestFinder, final String moduleName) {
       super(new Provider<ModelModule>() {
         @Override
         public ModelModule get() {
           try (
-              InputStream stream = context.getResourceAsStream("/WEB-INF/deploy/"+moduleName+"/XapiModelLinker/xapi.rpc");
+              InputStream stream = manifestFinder.io(moduleName)
           ){
             final CharIterator policy = new StringCharIterator(X_IO.toStringUtf8(stream));
             final ModelService modelService = X_Model.getService();
@@ -63,21 +63,21 @@ public class ModelModuleLoader {
     loaders = X_Collect.newStringMap(ModuleLoader.class);
   }
 
-  public void preloadModule(final ServletContext context, final String moduleName) {
+  public void preloadModule(final In1Out1Unsafe<String, InputStream> manifestFinder, final String moduleName) {
     if (!loaders.containsKey(moduleName)) {
-      X_Time.runLater(getOrMakeLoader(context, moduleName));
+      X_Time.runLater(getOrMakeLoader(manifestFinder, moduleName));
     }
   }
 
-  public ModelModule loadModule(final ServletContext context, final String moduleName) {
-    return getOrMakeLoader(context, moduleName).get();
+  public ModelModule loadModule(final In1Out1Unsafe<String, InputStream> manifestFinder, final String moduleName) {
+    return getOrMakeLoader(manifestFinder, moduleName).get();
   }
 
-  private synchronized ModuleLoader getOrMakeLoader(final ServletContext context, final String moduleName) {
+  private synchronized ModuleLoader getOrMakeLoader(final In1Out1<String, InputStream> manifestFinder, final String moduleName) {
     if (loaders.containsKey(moduleName)) {
       return loaders.get(moduleName);
     }
-    final ModuleLoader loader = new ModuleLoader(context, moduleName);
+    final ModuleLoader loader = new ModuleLoader(manifestFinder, moduleName);
     loaders.put(moduleName, loader);
     return loader;
   }

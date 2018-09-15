@@ -1,9 +1,7 @@
 package xapi.server.vertx;
 
 import io.vertx.core.http.HttpServerResponse;
-import xapi.fu.ListLike;
-import xapi.fu.MapLike;
-import xapi.fu.Out2;
+import xapi.fu.*;
 import xapi.log.X_Log;
 import xapi.scope.impl.AbstractResponse;
 import xapi.scope.spi.ResponseLike;
@@ -15,11 +13,13 @@ import xapi.util.api.Destroyable;
  */
 public class VertxResponse extends AbstractResponse implements Destroyable {
 
-    private final HttpServerResponse response;
+    private HttpServerResponse response;
     private boolean calledPrepareToClose;
+    private In2<String, Boolean> rerouter;
 
     public VertxResponse(HttpServerResponse response) {
         this.response = response;
+        rerouter = super::reroute;
     }
 
     @Override
@@ -92,7 +92,13 @@ public class VertxResponse extends AbstractResponse implements Destroyable {
     public ResponseLike finish() {
         super.finish();
         if (!response.ended()) {
-            response.end();
+            response.setStatusCode(getStatusCode());
+            if (!calledPrepareToClose) {
+                String body = prepareToClose();
+                response.end(body);
+            } else {
+                response.end();
+            }
         }
         return this;
     }
@@ -100,9 +106,10 @@ public class VertxResponse extends AbstractResponse implements Destroyable {
     @Override
     public void destroy() {
         // cleanup anything leftover here...
+        response = null;
     }
 
-    public HttpServerResponse getResponse() {
+    public HttpServerResponse getHttpResponse() {
         return response;
     }
 
@@ -112,5 +119,29 @@ public class VertxResponse extends AbstractResponse implements Destroyable {
             "response=" + response +
             ", calledPrepareToClose=" + calledPrepareToClose +
             "} " + super.toString();
+    }
+
+    public void setHttpResponse(HttpServerResponse httpResponse) {
+        this.response = httpResponse;
+        reset();
+    }
+
+    public In2<String, Boolean> getRerouter() {
+        return rerouter;
+    }
+
+    public void setRerouter(In2<String, Boolean> rerouter) {
+        this.rerouter = rerouter == null ? super::reroute : rerouter;
+    }
+
+    @Override
+    public void reroute(String newRoute, boolean updateUrl) {
+        rerouter.in(newRoute, updateUrl);
+    }
+
+    @Override
+    public void reset() {
+        calledPrepareToClose = false;
+        super.reset();
     }
 }

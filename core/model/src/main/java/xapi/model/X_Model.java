@@ -1,15 +1,12 @@
 package xapi.model;
 
 import xapi.annotation.compile.MagicMethod;
-import xapi.except.FatalException;
+import xapi.except.NoSuchItem;
 import xapi.fu.In1Out1;
 import xapi.fu.MappedIterable;
+import xapi.fu.Out1;
 import xapi.inject.X_Inject;
-import xapi.model.api.Model;
-import xapi.model.api.ModelKey;
-import xapi.model.api.ModelManifest;
-import xapi.model.api.ModelQuery;
-import xapi.model.api.ModelQueryResult;
+import xapi.model.api.*;
 import xapi.model.service.ModelCache;
 import xapi.model.service.ModelService;
 import xapi.source.impl.StringCharIterator;
@@ -52,12 +49,23 @@ public class X_Model {
     service.get().persist(model, callback);
   }
 
+  public static <M extends Model> void upsert(final Class<M> type, ModelKey key, In1Out1<M, M> mutator, Out1<M> creator, SuccessHandler<M> callback) {
+    mutate(type, key, mutator, SuccessHandler.handler(callback, error->{
+      if (error instanceof NoSuchItem) {
+        final M value = creator.out1();
+        persist(value, callback);
+      } else {
+        ErrorHandler.delegateTo(callback)
+            .onError(error);
+      }
+    }));
+  }
   public static <M extends Model> void mutate(final Class<M> type, ModelKey key, In1Out1<M, M> mutator, SuccessHandler<M> callback) {
     // TODO route back errors... force an error callback?
     load(type, key, SuccessHandler.handler(item->{
       if (item == null) {
         ErrorHandler.delegateTo(callback)
-            .onError(new FatalException("No entity exists with key " + key));
+            .onError(new NoSuchItem(key));
       } else {
         final M mutated = mutator.io(item);
         persist(mutated, callback);

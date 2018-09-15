@@ -4,12 +4,24 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
 import xapi.dev.api.Classpath;
+import xapi.fu.Immutable;
+import xapi.fu.In1Out1.In1Out1Unsafe;
+import xapi.fu.Mutable;
 import xapi.fu.Out1;
+import xapi.gwtc.api.CompiledDirectory;
 import xapi.inject.X_Inject;
 import xapi.model.X_Model;
 import xapi.model.api.Model;
 import xapi.model.api.PrimitiveSerializer;
+import xapi.scope.request.RequestScope;
+import xapi.scope.spi.RequestLike;
 import xapi.server.api.Route.RouteType;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+
+import static java.io.File.separator;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/4/16.
@@ -141,6 +153,43 @@ public interface WebApp extends Model {
         testRoute.setRouteType(RouteType.Reroute);
         testRoute.setPayload(to);
         getRoute().add(testRoute);
+    }
+
+    default In1Out1Unsafe<String,InputStream> getModuleLoader(RequestScope<?, ?> scope) {
+        return mn -> {
+            final RequestLike req = scope.getRequest();
+            final String moduleName = req.getHeader("X-Gwt-Module", Out1.null1());
+            final String moduleVersion = req.getHeader("X-Gwt-Version", Immutable.immutable1("xapi"));
+
+            File f = new File(
+                getContentRoot() + separator +
+                    "WEB-INF" + separator +
+                    "deploy" + separator +
+                    mn + separator +
+                    "XapiModelLinker",
+                moduleVersion + ".rpc"
+            );
+            if (!f.exists()) {
+                f = new File(f.getParentFile(), "xapi.rpc"); // default "HEAD" file
+            }
+            if (!f.exists()) {
+                // need to actually get the gwt compile from the server.
+                XapiServer server = scope.get(XapiServer.class);
+                final ModelGwtc gwt = server.getWebApp().getGwtModules().getMaybe(moduleName)
+                    .ifAbsentThrow(() -> new IllegalStateException("No such Gwt module " + moduleName))
+                    .get();
+                Mutable<CompiledDirectory> directory = new Mutable<>();
+                gwt.getCompiledDirectory((dir, error) -> {
+                    directory.set(dir);
+                });
+                String deployDir = directory.block().getDeployDir();
+                f = new File(deployDir + separator + mn + separator + "XapiModelLinker", moduleVersion + ".rpc");
+                if (!f.exists()) {
+                    f = new File(f.getParentFile(), "xapi.rpc"); // default "HEAD" file
+                }
+            }
+            return new FileInputStream(f);
+        };
     }
 }
 class WebAppIdHolder {

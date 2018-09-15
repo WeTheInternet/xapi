@@ -5,7 +5,6 @@ package xapi.gwt.io;
 
 import xapi.annotation.inject.SingletonOverride;
 import xapi.collect.X_Collect;
-import xapi.collect.api.Dictionary;
 import xapi.collect.api.StringDictionary;
 import xapi.collect.api.StringTo;
 import xapi.collect.api.StringTo.Many;
@@ -23,17 +22,12 @@ import xapi.platform.GwtPlatform;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
 import xapi.util.X_Runtime;
-import xapi.util.api.ReceivesValue;
-
-import com.google.gwt.core.client.GWT;
-import com.google.gwt.http.client.Header;
-import com.google.gwt.http.client.Request;
-import com.google.gwt.http.client.RequestBuilder;
-import com.google.gwt.http.client.RequestBuilder.Method;
-import com.google.gwt.http.client.RequestCallback;
-import com.google.gwt.http.client.Response;
 
 import javax.inject.Provider;
+
+import com.google.gwt.core.client.GWT;
+import com.google.gwt.http.client.*;
+import com.google.gwt.http.client.RequestBuilder.Method;
 
 /**
  * @author James X. Nelson (james@wetheinter.net, @james)
@@ -75,20 +69,15 @@ public class IOServiceGwt extends AbstractIOService <RequestBuilder> {
   }
 
   @Override
-  public IORequest<String> get(final String uri, final StringDictionary<String> headers, final IOCallback<IOMessage<String>> callback) {
+  public IORequest<String> get(final String uri, StringDictionary<String> headers, final IOCallback<IOMessage<String>> callback) {
     final String url = normalize(uri);
     if (callback.isCancelled()) {
       return cancelled;
     }
+    headers = normalizeHeaders(headers);
     try {
       final RequestBuilder request = newRequest(RequestBuilder.GET, url);
-      normalizeHeaders(headers).forKeys(new ReceivesValue<String>() {
-        @Override
-        public void set(final String key) {
-          final String value = headers.getValue(key);
-          request.setHeader(key, value);
-        }
-      });
+      headers.forEach(request::setHeader);
       applySettings(request, IOConstants.METHOD_GET);
       final IORequestGwt req = createRequest();
       sendRequest(request, req, callback, url, headers, IOConstants.METHOD_GET, null);
@@ -106,7 +95,7 @@ public class IOServiceGwt extends AbstractIOService <RequestBuilder> {
    * @see xapi.io.service.IOService#post(java.lang.String, java.lang.String, xapi.collect.api.StringDictionary, xapi.io.api.IOCallback)
    */
   @Override
-  public IORequest<String> post(final String uri, final String body, final StringDictionary<String> headers,
+  public IORequest<String> post(final String uri, final String body, StringDictionary<String> headers,
       final IOCallback<IOMessage<String>> callback) {
     final String url = normalize(uri);
     if (callback.isCancelled()) {
@@ -114,13 +103,10 @@ public class IOServiceGwt extends AbstractIOService <RequestBuilder> {
     }
     try {
       final RequestBuilder request = newRequest(RequestBuilder.POST, url);
-      normalizeHeaders(headers).forKeys(new ReceivesValue<String>() {
-        @Override
-        public void set(final String key) {
-          final String value = headers.getValue(key);
+      headers = normalizeHeaders(headers);
+      headers.forEach((key, value)-> {
           assert value != null : "Cannot set a null header value for "+key+"; url: "+url;
           request.setHeader(key, value);
-        }
       });
       applySettings(request, IOConstants.METHOD_POST);
       final IORequestGwt req = createRequest();
@@ -135,7 +121,7 @@ public class IOServiceGwt extends AbstractIOService <RequestBuilder> {
     }
   }
 
-  protected Dictionary<String, String> normalizeHeaders(StringDictionary<String> headers) {
+  protected StringDictionary<String> normalizeHeaders(StringDictionary<String> headers) {
     if (headers == null) {
       headers = X_Collect.newDictionary();
     }

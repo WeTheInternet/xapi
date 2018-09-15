@@ -43,8 +43,16 @@ public interface ResponseLike {
         getHeaders().get(name).add(value);
         return this;
     }
+    default ResponseLike setHeader(String name, String value) {
+        final ListLike<String> list = getHeaders().get(name);
+        list.clear();
+        list.add(value);
+        return this;
+    }
 
     default String prepareToClose() {return null;}
 
     String clearResponseBody();
+
+    void reroute(String newRoute, boolean updateUrl);
 }

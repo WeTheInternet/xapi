@@ -10,7 +10,6 @@ import xapi.dev.source.CanAddImports;
 import xapi.fu.iterate.SizedIterable;
 
 import java.io.Serializable;
-import java.util.Iterator;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 2/10/17.
@@ -51,6 +50,9 @@ public class GeneratedUiMember implements Serializable {
         return ("boolean".equals(memberType) || "Boolean".equals(memberType) ? "is" : "get")
             + getCapitalized();
     }
+    public String setterName() {
+        return "set" + getCapitalized();
+    }
 
     public String importType(CanAddImports out) {
         DumpVisitor v = new DumpVisitor(false) {
@@ -67,14 +69,16 @@ public class GeneratedUiMember implements Serializable {
         return v.getSource();
     }
 
-    public void addAnnotation(AnnotationExpr anno) {
+    public GeneratedUiMember addAnnotation(AnnotationExpr anno) {
         annotations.add(anno);
+        return this;
     }
 
-    public void addAnnotations(Iterable<AnnotationExpr> anno) {
+    public GeneratedUiMember addAnnotations(Iterable<AnnotationExpr> anno) {
         if (anno != null) {
             anno.forEach(annotations::add);
         }
+        return this;
     }
 
     public SizedIterable<AnnotationExpr> getAnnotations() {

@@ -2,8 +2,9 @@ package xapi.server.vertx.scope;
 
 import xapi.annotation.inject.InstanceOverride;
 import xapi.annotation.process.Multiplexed;
-import xapi.scope.request.RequestScope;
 import xapi.scope.impl.AbstractScope;
+import xapi.scope.request.RequestScope;
+import xapi.scope.request.SessionScope;
 import xapi.server.vertx.VertxRequest;
 import xapi.server.vertx.VertxResponse;
 
@@ -49,6 +50,11 @@ public class RequestScopeVertx extends AbstractScope<RequestScopeVertx> implemen
 
     }
 
+    public SessionScopeVertx session() {
+        final SessionScope session = getSession();
+        return (SessionScopeVertx) session;
+    }
+
     protected void preload(VertxRequest req, VertxResponse resp) {
 
     }
@@ -58,6 +64,6 @@ public class RequestScopeVertx extends AbstractScope<RequestScopeVertx> implemen
         return "RequestScopeVertx{" +
             "req=" + req.toString() +
             ", resp=" + resp +
-            "} " + super.toString();
+            "} ";
     }
 }

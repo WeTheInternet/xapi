@@ -10,8 +10,6 @@ import xapi.model.api.Model;
 import xapi.model.api.ModelKey;
 import xapi.ui.api.ElementBuilder;
 
-import static xapi.model.X_Model.ensureKey;
-
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 1/16/17.
  */
@@ -43,8 +41,7 @@ implements IsModelComponent<El, Mod> {
             if (mod == null) {
                 mod = initModel();
             } else if (modelId != null){
-                ensureKey(mod.getType(), mod)
-                    .setId(modelId);
+                mod.key().setId(modelId);
             }
             opts.fireListeners(mod);
             return mod;
@@ -127,12 +124,10 @@ implements IsModelComponent<El, Mod> {
         ModelComponentOptions<?, ?, ?> modelOpts = (ModelComponentOptions) opts;
         if (model.isResolved()) {
             final Mod mod = model.out1();
-            X_Model.ensureKey(getModelType(), mod);
             applyAttribute(into, mod);
         } else {
             final Mod mod = (Mod) modelOpts.getModel();
             if (mod != null) {
-                X_Model.ensureKey(getModelType(), mod);
                 model.set(mod);
                 applyAttribute(into, mod);
             }

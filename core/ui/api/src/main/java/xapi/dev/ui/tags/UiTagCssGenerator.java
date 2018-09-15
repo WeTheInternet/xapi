@@ -1,11 +1,7 @@
 package xapi.dev.ui.tags;
 
 import com.github.javaparser.ast.expr.UiAttrExpr;
-import xapi.dev.ui.api.ComponentBuffer;
-import xapi.dev.ui.api.ContainerMetadata;
-import xapi.dev.ui.api.UiComponentGenerator;
-import xapi.dev.ui.api.UiFeatureGenerator;
-import xapi.dev.ui.api.UiVisitScope;
+import xapi.dev.ui.api.*;
 import xapi.dev.ui.impl.UiGeneratorTools;
 
 /**
@@ -31,6 +27,11 @@ public class UiTagCssGenerator extends UiFeatureGenerator {
         ContainerMetadata container,
         UiAttrExpr attr
     ) {
-        return super.startVisit(service, generator, source, container, attr);
+        source.getGeneratedComponent().beforeSave(gen->{
+            for (GeneratedUiImplementation impl : source.getGeneratedComponent().getImpls()) {
+                impl.addCss(container, attr);
+            }
+        });
+        return UiVisitScope.FEATURE_NO_CHILDREN;
     }
 }

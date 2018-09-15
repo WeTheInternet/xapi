@@ -5,7 +5,7 @@ import xapi.fu.Maybe;
 import xapi.fu.Mutable;
 import xapi.fu.Out1;
 import xapi.fu.iterate.EmptyIterator;
-import xapi.util.impl.LinkedIterable;
+import xapi.fu.iterate.LinkedIterable;
 
 /**
  * The RangePool class is used to store a set of {@link Coord}s,

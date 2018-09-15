@@ -1,26 +1,27 @@
 package xapi.dev.components;
 
-import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.LambdaExpr;
-import com.github.javaparser.ast.expr.SysExpr;
-import com.github.javaparser.ast.expr.UiAttrExpr;
+import com.github.javaparser.ast.expr.*;
+import com.github.javaparser.ast.plugin.Transformer;
 import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.FieldBuffer;
 import xapi.dev.source.MethodBuffer;
-import xapi.dev.ui.api.GeneratedUiComponent;
-import xapi.dev.ui.api.GeneratedUiFactory;
-import xapi.dev.ui.api.GeneratedUiImplementation;
-import xapi.dev.ui.api.UiNamespace;
+import xapi.dev.ui.api.*;
 import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.dev.ui.tags.assembler.AssembledElement;
 import xapi.dev.ui.tags.assembler.AssembledUi;
+import xapi.elemental.X_Elemental;
 import xapi.fu.Immutable;
 import xapi.fu.Lazy;
+import xapi.fu.MappedIterable;
 import xapi.fu.Out1;
 import xapi.fu.api.Builderizable;
+import xapi.fu.iterate.ArrayIterable;
 import xapi.inject.X_Inject;
 import xapi.source.X_Modifier;
+import xapi.source.X_Source;
+
+import java.util.List;
 
 import static xapi.source.X_Modifier.PUBLIC;
 import static xapi.source.X_Modifier.STATIC;
@@ -186,5 +187,40 @@ protected PotentialNode<Element> newBuilder(Out1<Element> element) {
 
     public FieldBuffer getCreator() {
         return creator;
+    }
+
+    @Override
+    public void addCss(ContainerMetadata container, UiAttrExpr attr) {
+        // For now, we'll just dump the css text into a new stylesheet and inject it.
+        // we'll worry about shadow dom and the like later (likely revive UiConfig,
+        // make the impl accept a platform-specific subtype, and wire it in "officially").
+        // For now, we're just going to hack in something that works...
+
+        // TODO: have a base method for getService()
+        assemble.patternln("$1().addCss(", assemble.addImportStatic(X_Elemental.class, "getElementalService"));
+        // TODO: check attr() for method calls / references, to know if we need to bind dynamic styles...
+        String prefix = "  ";
+        for (String line : readLines(attr)) {
+            boolean putBack = line.endsWith(";");
+            assemble.print(prefix).println(X_Source.javaQuote(line + (putBack ? ";" : "")));
+            prefix = "+ ";
+        }
+        assemble.println(", 0);");
+
+    }
+
+    private MappedIterable<String> readLines(UiAttrExpr attr) {
+        final Expression expr = attr.getExpression();
+        if (expr instanceof CssBlockExpr) {
+            // TODO(later): something that emits nicer, structured code, plus respects dynamic values.
+            final List<CssContainerExpr> containers = ((CssBlockExpr) expr).getContainers();
+            final Transformer transformer = new Transformer();
+            transformer.setShouldQuote(false);
+            return MappedIterable.mapped(containers)
+                .map2(CssContainerExpr::toSource, transformer)
+                .flatten(s->ArrayIterable.iterate(s.split("\n")))
+                .map(String::trim);
+        }
+        return ArrayIterable.iterate(attr.getExpression().toSource().split("\n"));
     }
 }

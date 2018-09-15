@@ -171,9 +171,7 @@ public class UiTagModelGenerator extends UiFeatureGenerator {
 
             modOut.createField(out1 + "<" + modBuilder + "<" + modelType + ">>", constantName + "_MODEL_BUILDER")
                 .getInitializer()
-                .println("()->")
-                .indentln(build + "(" + constantName + "_KEY_BUILDER.out1(),")
-                .indentln("()->" + create + "(" + modelType + ".class));");
+                .patternln("()->$1(newKey(), ()->$2($3.class));", build, create, modelType);
 
         } else {
             throw new IllegalArgumentException("<define-tag model={mustBe: Jso}  />; you sent " + tools.debugNode(attr));

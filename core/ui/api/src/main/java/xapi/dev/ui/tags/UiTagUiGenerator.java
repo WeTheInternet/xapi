@@ -313,7 +313,7 @@ public class UiTagUiGenerator extends UiFeatureGenerator {
                                             throw new IllegalStateException("Cannot reference $model on a type without a model={ name: Type.class } feature.");
                                         }
                                         final GeneratedUiModel model = component.getPublicModel();
-                                        final GeneratedUiField field = model.getFields().get(ref.getIdentifier());
+                                        final GeneratedUiMember field = model.getFields().get(ref.getIdentifier());
                                         if (field != null) {
                                             switch (field.getMemberType().toSource()) {
                                                 case "String":

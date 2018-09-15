@@ -159,4 +159,18 @@ public class AbstractResponse implements ResponseLike {
         }
         return false;
     }
+
+    public void reset() {
+        closed = false;
+    }
+
+    @Override
+    public void reroute(String newRoute, boolean updateUrl) {
+        if (!updateUrl) {
+            X_Log.warn(AbstractResponse.class, getClass(), " should override reroute to handle updateUrl=false reroutes");
+        }
+        clearResponseBody();
+        setStatusCode(307);
+        setHeader("Location", newRoute);
+    }
 }

@@ -5,29 +5,21 @@ package xapi.jre.model;
 
 import xapi.annotation.inject.SingletonDefault;
 import xapi.dev.source.CharBuffer;
+import xapi.fu.Out1;
 import xapi.io.X_IO;
 import xapi.log.X_Log;
-import xapi.model.api.Model;
-import xapi.model.api.ModelKey;
-import xapi.model.api.ModelNotFoundException;
-import xapi.model.api.ModelQuery;
+import xapi.model.api.*;
 import xapi.model.api.ModelQuery.QueryParameter;
-import xapi.model.api.ModelQueryResult;
 import xapi.model.service.ModelService;
 import xapi.platform.JrePlatform;
 import xapi.source.api.CharIterator;
 import xapi.source.impl.StringCharIterator;
 import xapi.time.X_Time;
 import xapi.util.api.ErrorHandler;
-import xapi.util.api.ProvidesValue;
 import xapi.util.api.RemovalHandler;
 import xapi.util.api.SuccessHandler;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FilenameFilter;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 
 /**
@@ -59,6 +51,8 @@ public class ModelServiceJre extends AbstractJreModelService {
       f = new File(f, key.getNamespace());
     }
     f = new File(f, key.getKind());
+    // nest hierarchical keys in a directory structure
+    f = resolveParents(f, key.getParent());
     f.mkdirs();
     if (key.getId() == null) {
       // No id; generate one
@@ -87,12 +81,18 @@ public class ModelServiceJre extends AbstractJreModelService {
           if (file.exists()) {
             file.delete();
           }
+          if (!file.getParentFile().isDirectory()) {
+            final boolean created = file.getParentFile().mkdirs();
+            if (!created) {
+              X_Log.warn(ModelServiceJre.class, "Unable to create directory", file.getParentFile());
+            }
+          }
           final FileOutputStream result = new FileOutputStream(file);
           final String source = serialized.toSource();
           X_IO.drain(result, X_IO.toStreamUtf8(source));
           callback.onSuccess(model);
-          X_Log.info(ModelServiceJre.class, "Saved model to ", file);
-          X_Log.info(ModelServiceJre.class, "Saved model source", source);
+          X_Log.trace(ModelServiceJre.class, "Saved model to ", file);
+          X_Log.trace(ModelServiceJre.class, "Saved model source", source);
           assert deserialize(type, CharIterator.forString(source)).equals(model);
         } catch (final IOException e) {
           X_Log.error(ModelServiceJre.class, "Unable to save model " + model, e);
@@ -126,6 +126,8 @@ public class ModelServiceJre extends AbstractJreModelService {
       f = new File(f, modelKey.getNamespace());
     }
     f = new File(f, modelKey.getKind());
+    f = resolveParents(f, modelKey.getParent());
+    // TODO: use nested structure for hierarchical keys
     f = new File(f, modelKey.getId());
     if (!f.exists()) {
       if (callback instanceof ErrorHandler) {
@@ -134,34 +136,30 @@ public class ModelServiceJre extends AbstractJreModelService {
       }
     } else {
       final File file = f;
-      final ProvidesValue<RemovalHandler> scope = captureScope();
-      X_Time.runLater(new Runnable() {
-
-        @Override
-        public void run() {
-          final RemovalHandler handler = scope.get();
-          String result;
+      final Out1<RemovalHandler> scope = captureScope();
+      X_Time.runLater(() -> {
+        final RemovalHandler handler = scope.out1();
+        String result;
+        try {
+          result = X_IO.toStringUtf8(new FileInputStream(file));
+          final M model;
           try {
-            result = X_IO.toStringUtf8(new FileInputStream(file));
-            final M model;
-            try {
-              model = deserialize(modelClass, new StringCharIterator(result));
-            } catch (Throwable t) {
-              X_Log.error(ModelServiceJre.class, "Bad model string:\n" + result);
-              throw t;
-            }
-            callback.onSuccess(model);
-          } catch (final Throwable e) {
-            if (callback instanceof ErrorHandler) {
-              X_Log.trace(ModelServiceJre.class, "Unable to load file for model "+modelKey, e);
-              ((ErrorHandler) callback).onError(new ModelNotFoundException(modelKey));
-            } else {
-              X_Log.error(ModelServiceJre.class, "Unable to load file for model "+modelKey, e);
-              rethrow(e);
-            }
-          } finally {
-            handler.remove();
+            model = deserialize(modelClass, new StringCharIterator(result));
+          } catch (Throwable t) {
+            X_Log.error(ModelServiceJre.class, "Bad model string:\n" + result);
+            throw t;
           }
+          callback.onSuccess(model);
+        } catch (final Throwable e) {
+          if (callback instanceof ErrorHandler) {
+            X_Log.trace(ModelServiceJre.class, "Unable to load file for model "+modelKey, e);
+            ((ErrorHandler) callback).onError(new ModelNotFoundException(modelKey));
+          } else {
+            X_Log.error(ModelServiceJre.class, "Unable to load file for model "+modelKey, e);
+            rethrow(e);
+          }
+        } finally {
+          handler.remove();
         }
       });
     }
@@ -198,6 +196,9 @@ public class ModelServiceJre extends AbstractJreModelService {
     final String typeName = getTypeName(modelClass);
 
     f = new File(f, typeName);
+    // use ancestor to create proper model hierarchy.
+    ModelKey parent = query.getAncestor();
+    f = resolveParents(f, parent);
 
     File[] allFiles;
     if (query.getCursor() == null) {
@@ -226,32 +227,39 @@ public class ModelServiceJre extends AbstractJreModelService {
     }
     allFiles = null;
 
-    final ProvidesValue<RemovalHandler> scope = captureScope();
-    X_Time.runLater(new Runnable() {
-
-      @Override
-      public void run() {
-        final RemovalHandler handler = scope.get();
-        String fileResult;
-        try {
-          for (final File file : files) {
-            fileResult = X_IO.toStringUtf8(new FileInputStream(file));
-            final M model = deserialize(modelClass, new StringCharIterator(fileResult));
-            result.addModel(model);
-          }
-          callback.onSuccess(result);
-        } catch (final Exception e) {
-          X_Log.error(ModelServiceJre.class, "Unable to load files for query "+query);
-          if (callback instanceof ErrorHandler) {
-            ((ErrorHandler) callback).onError(new RuntimeException("Unable to load files for query "+query));
-          } else {
-            rethrow(e);
-          }
-        } finally {
-          handler.remove();
+    final Out1<RemovalHandler> scope = captureScope();
+    X_Time.runLater(() -> {
+      final RemovalHandler handler = scope.out1();
+      String fileResult;
+      try {
+        for (final File file : files) {
+          fileResult = X_IO.toStringUtf8(new FileInputStream(file));
+          final M model = deserialize(modelClass, new StringCharIterator(fileResult));
+          result.addModel(model);
         }
+        callback.onSuccess(result);
+      } catch (final Exception e) {
+        X_Log.error(ModelServiceJre.class, "Unable to load files for query "+query);
+        if (callback instanceof ErrorHandler) {
+          ((ErrorHandler) callback).onError(new RuntimeException("Unable to load files for query "+query));
+        } else {
+          rethrow(e);
+        }
+      } finally {
+        handler.remove();
       }
     });
+  }
+
+  private File resolveParents(File f, ModelKey parent) {
+    while (parent != null) {
+      f = new File(f, parent.getKind());
+      if (parent.isComplete()) {
+        f = new File(f, parent.getId());
+      }
+      parent = parent.getParent();
+    }
+    return f;
   }
 
   @Override
@@ -299,12 +307,12 @@ public class ModelServiceJre extends AbstractJreModelService {
       }
     }
 
-    final ProvidesValue<RemovalHandler> scope = captureScope();
+    final Out1<RemovalHandler> scope = captureScope();
     X_Time.runLater(new Runnable() {
 
       @Override
       public void run() {
-        final RemovalHandler handler = scope.get();
+        final RemovalHandler handler = scope.out1();
         String fileResult;
         try {
           for (final File file : files) {

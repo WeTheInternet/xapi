@@ -6,28 +6,15 @@ import xapi.collect.api.ClassTo;
 import xapi.collect.api.Dictionary;
 import xapi.collect.api.IntTo;
 import xapi.except.NotYetImplemented;
-import xapi.fu.In2;
-import xapi.fu.MappedIterable;
-import xapi.fu.Out1;
-import xapi.model.api.Model;
-import xapi.model.api.ModelKey;
-import xapi.model.api.ModelManifest;
+import xapi.fu.*;
+import xapi.model.api.*;
 import xapi.model.api.ModelManifest.MethodData;
-import xapi.model.api.ModelMethodType;
-import xapi.model.api.ModelModule;
 import xapi.model.impl.AbstractModel;
 import xapi.model.impl.AbstractModelService;
 import xapi.model.impl.ModelUtil;
 import xapi.reflect.X_Reflect;
-import xapi.source.api.IsClass;
-import xapi.source.api.IsType;
 import xapi.util.X_Debug;
-import xapi.util.api.ConvertsTwoValues;
-import xapi.util.api.ConvertsValue;
-import xapi.util.api.ProvidesValue;
 import xapi.util.api.RemovalHandler;
-
-import static xapi.util.impl.PairBuilder.entryOf;
 
 import javax.inject.Provider;
 import java.lang.reflect.Array;
@@ -38,6 +25,8 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.function.Supplier;
+
+import static xapi.util.impl.PairBuilder.entryOf;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
@@ -57,26 +46,20 @@ public abstract class AbstractJreModelService extends AbstractModelService {
     };
   }
 
-  public static ProvidesValue<RemovalHandler> captureScope() {
+  public static Out1<RemovalHandler> captureScope() {
     final ModelModule module = currentModule.get();
-    return new ProvidesValue<RemovalHandler>() {
-      @Override
-      public RemovalHandler get() {
-        final ModelModule was = currentModule.get();
-        currentModule.set(module);
-        return new RemovalHandler() {
-          @Override
-          public void remove() {
-            if (module == currentModule.get()) {
-              if (was == null) {
-                currentModule.remove();
-              } else {
-                currentModule.set(was);
-              }
-            }
+    return () -> {
+      final ModelModule was = currentModule.get();
+      currentModule.set(module);
+      return () -> {
+        if (module == currentModule.get()) {
+          if (was == null) {
+            currentModule.remove();
+          } else {
+            currentModule.set(was);
           }
-        };
-      }
+        }
+      };
     };
   }
 
@@ -161,7 +144,7 @@ public abstract class AbstractJreModelService extends AbstractModelService {
             }
           }
           if (result == null) {
-            return getDefaultValueProvider(manifest, values::setValue).convert((String)args[0]);
+            return getDefaultValueProvider(manifest, values::setValue).io((String)args[0]);
           }
           return result;
         case "hashCode":
@@ -199,7 +182,7 @@ public abstract class AbstractJreModelService extends AbstractModelService {
               } catch (Throwable ignored){}
               return args[1];
             }
-            return getDefaultValueProvider(manifest, values::setValue).convert(property.getName());
+            return getDefaultValueProvider(manifest, values::setValue).io(property.getName());
           }
           return result;
         case SET:
@@ -266,52 +249,46 @@ public abstract class AbstractJreModelService extends AbstractModelService {
 
   }
 
-  protected ConvertsValue<String,Object> getDefaultValueProvider(final ModelManifest manifest, In2<String, Object> setter) {
-    return new ConvertsValue<String, Object>() {
-      @Override
-      public Object convert(final String from) {
-        final MethodData typeData = manifest.getMethodData(from);
-        if (typeData.getType().isPrimitive()) {
-          return AbstractModel.getPrimitiveValue(typeData.getType());
-        } else if (typeData.getType().isArray()) {
-          final Object arr = Array.newInstance(typeData.getType().getComponentType(), 0);
-          setter.in(from, arr);
-          return arr;
-        } else {
-          maybeInitDefaults(defaultValueProvider);
-          // Handle other default values
-          final ConvertsTwoValues<ModelManifest, MethodData, Object> provider = defaultValueProvider.get(typeData.getType());
-          if (provider != null) {
-            final Object val = provider.convert(manifest, typeData);
-            setter.in(from, val);
-            return val;
-          }
+  protected In1Out1<String,Object> getDefaultValueProvider(final ModelManifest manifest, In2<String, Object> setter) {
+    return from -> {
+      final MethodData typeData = manifest.getMethodData(from);
+      if (typeData.getType().isPrimitive()) {
+        return AbstractModel.getPrimitiveValue(typeData.getType());
+      } else if (typeData.getType().isArray()) {
+        final Object arr = Array.newInstance(typeData.getType().getComponentType(), 0);
+        setter.in(from, arr);
+        return arr;
+      } else {
+        maybeInitDefaults(defaultValueProvider);
+        // Handle other default values
+        final In2Out1<ModelManifest, MethodData, Object> provider = defaultValueProvider.get(typeData.getType());
+        if (provider != null) {
+          final Object val = provider.io(manifest, typeData);
+          setter.in(from, val);
+          return val;
         }
-        return null;
       }
+      return null;
     };
   }
 
-  protected void maybeInitDefaults(ClassTo<ConvertsTwoValues<ModelManifest, MethodData, Object>> defaultValueProvider) {
+  protected void maybeInitDefaults(ClassTo<In2Out1<ModelManifest, MethodData, Object>> defaultValueProvider) {
     if (defaultValueProvider.isEmpty()) {
-      defaultValueProvider.put(IntTo.class, new ConvertsTwoValues<ModelManifest, MethodData, Object>() {
-            @Override
-            public Object convert(ModelManifest manifest, MethodData method) {
-              final Class[] types = method.getTypeParams();
-              assert types.length == 1 : "Expected exactly one type argument for IntTo instances";
-              return X_Collect.newList(types[0]);
-            }
-          });
+      defaultValueProvider.put(IntTo.class, (manifest, method) -> {
+          final Class[] types = method.getTypeParams();
+          assert types.length == 1 : "Expected exactly one type argument for IntTo instances";
+          return X_Collect.newList(types[0]);
+      });
     }
   }
 
-  private final class Itr implements Iterable<Entry<String, Object>> {
+  private final class Itr implements MappedIterable<Entry<String, Object>> {
 
     private final String[] keys;
     private final Dictionary<String, Object> map;
-    private final ConvertsValue<String, Object> defaultValueProvider;
+    private final In1Out1<String, Object> defaultValueProvider;
 
-    private Itr(final String[] keys, final Dictionary<String, Object> map, final ConvertsValue<String, Object> defaultValueProvider) {
+    private Itr(final String[] keys, final Dictionary<String, Object> map, final In1Out1<String, Object> defaultValueProvider) {
       this.keys = keys;
       this.map = map;
       this.defaultValueProvider = defaultValueProvider;
@@ -332,7 +309,7 @@ public abstract class AbstractJreModelService extends AbstractModelService {
           final String key = keys[pos++];
           Object value = map.getValue(key);
           if (value == null) {
-            value = defaultValueProvider.convert(key);
+            value = defaultValueProvider.io(key);
           }
           return entryOf(key, value);
         }
@@ -341,15 +318,15 @@ public abstract class AbstractJreModelService extends AbstractModelService {
 
   }
 
-  private final ClassTo<ProvidesValue<Object>> modelFactories;
-  private final ClassTo<ConvertsTwoValues<ModelManifest, MethodData, Object>> defaultValueProvider;
+  private final ClassTo<Out1<Object>> modelFactories;
+  private final ClassTo<In2Out1<ModelManifest, MethodData, Object>> defaultValueProvider;
   private final ClassTo<ModelManifest> modelManifests;
 
   @SuppressWarnings("unchecked")
   protected AbstractJreModelService() {
     modelManifests = X_Collect.newClassMap(ModelManifest.class);
-    modelFactories = X_Collect.newClassMap(Class.class.cast(ProvidesValue.class));
-    defaultValueProvider = X_Collect.newClassMap(Class.class.cast(ConvertsTwoValues.class));
+    modelFactories = X_Collect.newClassMap(Class.class.cast(Out1.class));
+    defaultValueProvider = X_Collect.newClassMap(Class.class.cast(In2Out1.class));
   }
 
 
@@ -360,29 +337,29 @@ public abstract class AbstractJreModelService extends AbstractModelService {
       "unchecked", "rawtypes"
   })
   @Override
-  public <M extends Model> M create(final Class<M> key) {
-    ProvidesValue factory = modelFactories.get(key);
+  public <M extends Model> M doCreate(final Class<M> key) {
+    Out1 factory = modelFactories.get(key);
     if (factory == null) {
       factory = createModelFactory(key);
       modelFactories.put(key, factory);
     }
-    return (M)factory.get();
+    M model = (M)factory.out1();
+
+    // JRE can do proper reflective registration on demand...
+    if (!classToTypeName.containsKey(key)) {
+      register(key);
+    }
+    return model;
   }
 
-  protected <M extends Model> ProvidesValue<M> createModelFactory(final Class<M> modelClass) {
+  @SuppressWarnings("unchecked")
+  protected <M extends Model> Out1<M> createModelFactory(final Class<M> modelClass) {
     // TODO: check for an X_Inject interface definition and prefer that, if possible...
     if (modelClass.isInterface()) {
-      return new ProvidesValue<M>() {
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public M get() {
-          return (M) Proxy.newProxyInstance(
+      return ()-> (M) Proxy.newProxyInstance(
               Thread.currentThread().getContextClassLoader(),
               new Class<?>[]{modelClass}, newInvocationHandler(modelClass)
           );
-        }
-      };
 
     } else {
       // The type is not an interface.  We are boned.

@@ -322,7 +322,7 @@ public class ModelManifest {
   private final Class<? extends Model> modelType;
 
   public static String serialize(final ModelManifest manifest) {
-    return serialize(new CharBuffer(), manifest, X_Model.getService().primitiveSerializer()).toString();
+    return serialize(new CharBuffer(), manifest, X_Model.getService().primitiveSerializer()).toSource();
   }
 
   public static CharBuffer serialize(CharBuffer out, final ModelManifest manifest, final PrimitiveSerializer primitives) {

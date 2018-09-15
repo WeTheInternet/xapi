@@ -524,7 +524,7 @@ public class GwtcJobManagerImpl extends GwtcJobManagerAbstract {
                     die(monitor);
                     return;
                 }
-                X_Log.error(GwtcJobManagerImpl.class, "Unexpected error in " + getClass() + ".keepAlive", t);
+                X_Log.error(GwtcJobManagerImpl.class, "Unexpected error in " + getClass() + ".keepAlive", unwrapped);
                 if (unwrapped instanceof LinkageError || unwrapped instanceof ClassNotFoundException) {
                     die(monitor);
                 }

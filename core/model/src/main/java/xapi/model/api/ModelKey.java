@@ -1,5 +1,7 @@
 package xapi.model.api;
 
+import xapi.fu.api.DoNotOverride;
+
 public interface ModelKey {
 
   String DEFAULT_NAMESPACE = "";
@@ -24,7 +26,14 @@ public interface ModelKey {
 
   ModelKey getParent();
 
+  ModelKey setParent(ModelKey parent);
+
   boolean isComplete();
+
+  @DoNotOverride
+  default boolean isIncomplete() {
+    return !isComplete();
+  }
 
   ModelKey getChild(String kind, String id);
 

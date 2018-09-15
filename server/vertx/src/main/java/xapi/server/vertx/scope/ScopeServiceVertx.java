@@ -1,7 +1,6 @@
 package xapi.server.vertx.scope;
 
 import io.vertx.core.http.HttpServerRequest;
-import io.vertx.ext.web.RoutingContext;
 import xapi.annotation.inject.InstanceOverride;
 import xapi.fu.In1.In1Unsafe;
 import xapi.model.user.ModelUser;
@@ -11,12 +10,8 @@ import xapi.scope.impl.ScopeServiceDefault;
 import xapi.scope.request.RequestScope;
 import xapi.scope.request.SessionScope;
 import xapi.scope.service.ScopeService;
-import xapi.scope.spi.RequestLike;
-import xapi.scope.spi.ResponseLike;
 import xapi.server.vertx.VertxRequest;
 import xapi.server.vertx.VertxResponse;
-import xapi.time.api.Moment;
-import xapi.time.impl.ImmutableMoment;
 
 import java.util.concurrent.TimeUnit;
 
@@ -74,4 +69,5 @@ public class ScopeServiceVertx extends ScopeServiceDefault {
     ) {
         super.globalScope(todo);
     }
+
 }

@@ -17,12 +17,25 @@ public interface XapiEndpoint<Request extends RequestScope> {
 
     }
 
-    default void onFail(Request finalScope, Throwable fail) {
-
+    /**
+     * Notifies endpoint of failure.
+     *
+     * You do NOT have to try to handle the error in any way;
+     * this is primarily for your cleanup, or possibly error recovery.
+     *
+     * @param scope The current request
+     * @param fail The failure (never null here)
+     * @return null to turn failure into success,
+     * any other Throwable (i.e. the fail parameter) to fail request.
+     *
+     * Standard behavior is to simply return the fail parameter.
+     *
+     */
+    default Throwable onFail(Request scope, Throwable fail) {
+        return fail;
     }
 
-    default void onSuccess(Request finalScope) {
-
+    default void onSuccess(Request scope) {
     }
 
     default boolean isContextPath() {

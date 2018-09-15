@@ -83,7 +83,7 @@ public class SessionScopeDefault <User, Request extends RequestLike, Response ex
 
     @Override
     public SessionScope<User, Request, Response> setUser(User user) {
-        assert this.user == null || this.user.equals(user) : "Cannot change users...";
+//        assert this.user == null || user == null || this.user.equals(user) : "Cannot change users...";
         this.user = user;
         return this;
     }

@@ -23,9 +23,16 @@ public class ClusteringPrimitiveSerializer extends DelegatingPrimitiveSerializer
     super(primitives);
     this.size = new CharBuffer();
     this.out = new CharBuffer();
+    // our final result will contain the total size of pooled strings
     out.addToEnd(this.size);
+    // then is followed by the structural content of the serialized message.
     out.addToEnd(this.out);
     strings = X_Collect.newStringMap(Integer.class, X_Collect.MUTABLE_CONCURRENT);
+    // TODO: in order to reduce data on the wire, we should have a set of hardcoded "well known types"
+    // with negative int ids that are never included in the string pool.  We should also support
+    // "connection clustering", where a client connection can send ACK messages for all types added to pool,
+    // so we can prime our string map with "strings already known and retained by client".
+    // (clients can also send DEL messages when they want to forget some LRU value)
   }
 
   @Override

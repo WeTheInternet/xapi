@@ -288,7 +288,7 @@ public class UiTagGenerator extends UiComponentGenerator {
                     @Override
                     public Node visit(FieldAccessExpr n, Expression arg) {
                         if (n.getScope().toSource().equals("$model")) {
-                            final GeneratedUiField field = component.getPublicModel().getFields().get(
+                            final GeneratedUiMember field = component.getPublicModel().getFields().get(
                                 n.getField());
                             if (field == null) {
                                 throw new IllegalArgumentException("No model field of name " + n.getField() + " declared");
@@ -321,7 +321,7 @@ public class UiTagGenerator extends UiComponentGenerator {
                     public Node visit(MethodReferenceExpr n, Expression arg) {
                         switch (n.getScope().toSource()) {
                             case "$model":
-                                final GeneratedUiField field = component.getPublicField(n.getIdentifier());
+                                final GeneratedUiMember field = component.getPublicField(n.getIdentifier());
                                 if (field == null) {
                                     throw new IllegalArgumentException("No model field of name " + n.getIdentifier() + " declared");
                                 }
@@ -349,7 +349,7 @@ public class UiTagGenerator extends UiComponentGenerator {
                                 if (lastQualified == null) {
                                     return getModel;
                                 } else {
-                                    final Maybe<GeneratedUiField> modelField = component.getModelField(lastQualified.getName());
+                                    final Maybe<GeneratedUiMember> modelField = component.getModelField(lastQualified.getName());
                                     replaceQualified = new MethodCallExpr(getModel, modelField.getOrThrow().getterName());
                                     replaceQualified.addExtra(EXTRA_MODEL_INFO, modelField.get());
                                 }
@@ -498,6 +498,10 @@ public class UiTagGenerator extends UiComponentGenerator {
                     addImport.in(toImport);
                 } else if (resolvedImport instanceof TemplateLiteralExpr) {
                     toImport = tools.resolveTemplate(ctx, (TemplateLiteralExpr) resolvedImport);
+                    addImport.in(toImport);
+                } else if (resolvedImport instanceof FieldAccessExpr) {
+                    final FieldAccessExpr asField = (FieldAccessExpr) resolvedImport;
+                    toImport = tools.resolveString(ctx, asField.getScope()) + "." + asField.getField();
                     addImport.in(toImport);
                 } else if (resolvedImport instanceof ArrayInitializerExpr) {
                     ArrayInitializerExpr many = (ArrayInitializerExpr) resolvedImport;

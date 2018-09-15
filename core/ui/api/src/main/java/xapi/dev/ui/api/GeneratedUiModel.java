@@ -14,7 +14,7 @@ import xapi.util.X_String;
  * Created by James X. Nelson (james @wetheinter.net) on 2/10/17.
  */
 public class GeneratedUiModel extends GeneratedJavaFile {
-    private final StringTo<GeneratedUiField> fields;
+    private final StringTo<GeneratedUiMember> fields;
     private String nameOverride;
 
     public GeneratedUiModel(GeneratedUiComponent owner, String packageName, String className) {
@@ -23,11 +23,11 @@ public class GeneratedUiModel extends GeneratedJavaFile {
 
     public GeneratedUiModel(GeneratedUiComponent owner, GeneratedJavaFile superType, String packageName, String className) {
         super(owner, superType, packageName, className);
-        fields = X_Collect.newStringMap(GeneratedUiField.class);
+        fields = X_Collect.newStringMap(GeneratedUiMember.class);
         setType(IsTypeDefinition.newInterface(packageName, className));
     }
 
-    public StringTo<GeneratedUiField> getFields() {
+    public StringTo<GeneratedUiMember> getFields() {
         return fields;
     }
 
@@ -88,7 +88,7 @@ public class GeneratedUiModel extends GeneratedJavaFile {
         return !fields.isEmpty();
     }
 
-    public GeneratedUiField getField(String name) {
+    public GeneratedUiMember getField(String name) {
         return fields.get(name);
     }
 
