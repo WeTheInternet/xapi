@@ -685,13 +685,13 @@ TOKEN:
      ) >
   | < CSS_SELECTOR: (
 
-        ( ( "." | "#" | ":" | "::" ) ( ["0"-"9"] | ["a"-"z"] | ["A"-"Z"] | "-" | "_" )+ )
+        ( ( "." | "#" | ":" | "::" ) ( ["0"-"9"] | ["a"-"z"] | ["A"-"Z"] | "::" | "-" | "_" )+ )
         |
-        ( ( ["a"-"z"] | ["A"-"Z"] )+ "-" ( ["0"-"9"] | ["a"-"z"] | ["A"-"Z"] "-" )* )
+        ( ( ["a"-"z"] | ["A"-"Z"] )+ ("-" | "::" ) ( ["0"-"9"] | ["a"-"z"] | ["A"-"Z"] ( "-" | "::" ) )* )
      )
      (
        ( ">" | "~" | "+" | ":" | "::" ) ?
-         ( ["." , "#"] )? ( ["0"-"9"] | ["a"-"z"] | ["A"-"Z"] | "-" | "_" )+
+         ( ["." , "#"] )? ( ["0"-"9"] | ["a"-"z"] | ["A"-"Z"] | "::" | "-" | "_" )+
      )*
  >
  | < CSS_SELECTOR_JOIN: ( ">" | "~" | "+" )>
@@ -3412,6 +3412,7 @@ Expression UiValue():
 Expression FeatureExpression():
 {
   Expression expr;
+  Expression qualify;
   NameExpr methodName;
   Statement statement;
 
@@ -3460,6 +3461,7 @@ Expression FeatureExpression():
           [ typeArgs = TypeParameters() { typeArgs.remove(0); } ]
           args = Arguments()
           {
+            // TODO: handle case where there is a call().moreCalls()
             NameExpr scope;
             if (expr instanceof QualifiedNameExpr) {
               QualifiedNameExpr qualified = (QualifiedNameExpr) expr;
@@ -3471,6 +3473,17 @@ Expression FeatureExpression():
             m.setNameExpr((NameExpr)expr);
             expr = m;
           }
+          // TODO: actually grab up call().suffix() chains properly...
+          (
+            "." qualify = FeatureExpression() {
+                if (qualify instanceof MethodCallExpr) {
+                  ((MethodCallExpr)qualify).setScope(expr);
+                  expr = qualify;
+                } else {
+                  throw new UnsupportedOperationException("Cannot handle " + qualify.getClass() + " : " + qualify);
+                }
+            }
+          )*
         )
         ]
 
@@ -3794,7 +3807,7 @@ CssRuleExpr CssRule():
 
 Expression CssExpression():
 {
-  Expression value;
+  Expression value, nextValue;
   ExpressionStmt stmt;
   String unit = null;
   boolean important = false;
@@ -3808,6 +3821,11 @@ Expression CssExpression():
     } [ <IMPORTANT> { important = true; } ] ";"
     ) | (
       value = Expression()
+      ("-" nextValue = Expression() {
+        // create `$value-$nextValue`
+        System.out.println("Value was a " + value.getClass());
+        value = TemplateLiteralExpr.templateLiteral(value.toSource() + "-" + nextValue.toSource());
+       } )*
       [ <CSS_UNIT> { unit = token.image; } ]
       [ <IDENTIFIER> {
        // TODO validate that this is a usable css unit
@@ -3816,6 +3834,10 @@ Expression CssExpression():
       [ <CSS_UNIT_WITH_PCT> { unit = token.image; } ]
       [ <IMPORTANT> { important = true; } ]
       ";"
+    ) | (
+      <CSS_SELECTOR> {
+          value = new StringLiteralExpr(token.image); //TODO: line numbers...
+      }
     )
     )
   {
