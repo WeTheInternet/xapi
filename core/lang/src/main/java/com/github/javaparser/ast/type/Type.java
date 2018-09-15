@@ -63,4 +63,8 @@ public abstract class Type extends Node {
     public boolean hasRawType(String name) {
         return false;
     }
+
+    public static ClassOrInterfaceType simpleType(String name) {
+        return new ClassOrInterfaceType(name);
+    }
 }

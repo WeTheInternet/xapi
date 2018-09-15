@@ -107,6 +107,7 @@ public final class X_Util{
     while (
         e.getClass().equals(RuntimeException.class) ||
         e.getClass().equals(ExecutionException.class) ||
+        e.getClass().equals(InvocationTargetException.class) ||
         e.getClass().equals(UndeclaredThrowableException.class)
     ) {
       if (e.getCause() == null) {

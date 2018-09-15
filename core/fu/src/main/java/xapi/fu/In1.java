@@ -40,27 +40,30 @@ public interface In1<I> extends HasInput, Rethrowable, Lambda {
     return this;
   }
 
-  default void useAfterMe(I in, In1<I> next) {
+  default void applyAfterMe(I in, In1<I> next) {
     in(in);
     next.in(in);
   }
 
-  default void useAfterMeUnsafe(I in, In1Unsafe<I> next) {
+  default void applyAfterMeUnsafe(I in, In1Unsafe<I> next) {
     in(in);
     next.in(in);
   }
 
-  default void useBeforeMe(I in, In1<I> next) {
+  default void applyBeforeMe(I in, In1<I> next) {
     next.in(in);
     in(in);
   }
 
-  default void useBeforeMeUnsafe(I in, In1Unsafe<I> next) {
+  default void applyBeforeMeUnsafe(I in, In1Unsafe<I> next) {
     next.in(in);
     in(in);
   }
 
   default In1<I> useAfterMe(In1<I> next) {
+    if (next == null || next == IGNORED) {
+      return this;
+    }
     return in->{
       in(in);
       next.in(in);
@@ -68,6 +71,9 @@ public interface In1<I> extends HasInput, Rethrowable, Lambda {
   }
 
   default In1Unsafe<I> useAfterMeUnsafe(In1Unsafe<I> next) {
+    if (next == null || next == IGNORED) {
+      return unsafe();
+    }
     return in->{
       in(in);
       next.in(in);
@@ -75,6 +81,9 @@ public interface In1<I> extends HasInput, Rethrowable, Lambda {
   }
 
   default In1<I> useBeforeMe(In1<I> next) {
+    if (next == null || next == IGNORED) {
+      return this;
+    }
     return in -> {
       next.in(in);
       in(in);
@@ -197,7 +206,7 @@ public interface In1<I> extends HasInput, Rethrowable, Lambda {
   }
 
   static <I1> In1<In1<I1>> receiver(I1 value) {
-    // We need to declare a variable with this type for type inferment to work.
+    // We need to declare a variable with this type for type inference to work.
     final In2<In1<I1>, I1> in2 = In1::in;
     return in2.provide2(value);
   }
@@ -289,4 +298,8 @@ public interface In1<I> extends HasInput, Rethrowable, Lambda {
         onInitialize.in(b);
       };
     }
+
+  static <T> In2<In1<T>, T> invoker() {
+    return In1::in;
+  }
 }

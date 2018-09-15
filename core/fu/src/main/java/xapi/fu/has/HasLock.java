@@ -1,12 +1,15 @@
 package xapi.fu.has;
 
 import xapi.fu.Do;
-import xapi.fu.MapLike;
+import xapi.fu.Log;
+import xapi.fu.Log.LogLevel;
 import xapi.fu.Out1;
-import xapi.fu.Out2;
+import xapi.fu.Rethrowable;
 import xapi.fu.api.DoNotOverride;
-import xapi.fu.iterate.ArrayIterable;
-import xapi.fu.iterate.SizedIterable;
+import xapi.fu.iterate.LinkedIterable;
+
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 8/6/17.
@@ -51,12 +54,57 @@ public interface HasLock {
         } else if (source == null) {
             throw new NullPointerException("source");
         }
-        assert ArrayIterable.iterate(source.getClass().getInterfaces())
-            .map(Class::getCanonicalName)
-            .noneMatch(HasLock.class.getCanonicalName()::equals) :
-            "Failed to lock HasLock from foreign classloader; " +
-                source.getClass().getCanonicalName() + " : " + source;
+
+        boolean shouldReflect = "true".equals(System.getProperty("xapi.reflect.enabled", "true"));
+        if (shouldReflect){
+            return reflect(source, todo);
+        }
         return todo.out1();
+    }
+
+    static <O> O reflect(Object source, Object todo) {
+        if (source == null) {
+            throw new NullPointerException("reflect.source");
+        }
+        if (source instanceof HasLock && todo instanceof Out1) {
+            return ((HasLock) source).mutex((Out1<O>)todo);
+        }
+        final ClassLoader cl = source.getClass().getClassLoader();
+        final Class<?> out1;
+        try {
+            out1 = cl.loadClass(Out1.class.getName());
+        } catch (ClassNotFoundException e) {
+            throw Rethrowable.firstRethrowable(source).rethrow(e);
+        }
+        final Method invoke;
+        try {
+            invoke = out1.getMethod("out1");
+        } catch (NoSuchMethodException e) {
+            throw Rethrowable.firstRethrowable(source).rethrow(e);
+        }
+        // look at this class and all of it's superclasses lists of interfaces.
+        return new LinkedIterable<Class<?>>(source.getClass(), Class::getSuperclass)
+            .flattenArray(Class::getInterfaces)
+            .filterMapped(Class::getCanonicalName, HasLock.class.getCanonicalName()::equals)
+            .firstMaybe()
+            .mapIfPresent(cls -> {
+                // attempt to handle foreign HasLock through reflection.
+                try {
+                    final Method mutex = cls.getMethod("mutex", out1);
+                    final Object proxy = Proxy.newProxyInstance(cl, new Class[]{out1}, (prox, m, args) ->
+                        invoke.invoke(todo)
+                    );
+                    final Object result = mutex.invoke(source, proxy);
+                    // good luck if you do something crazy like overriding mutex(Out1) method! :-)
+                    return (O) result;
+                } catch (Exception e) {
+                    Log.firstLog(source).log(HasLock.class, LogLevel.WARN,
+                        "Unable to use foreign HasLock instance", e
+                    );
+                    return null;
+                }
+            })
+            .ifAbsentSupplyUnsafe(()-> (O) invoke.invoke(todo));
     }
 
     /**
@@ -76,11 +124,19 @@ public interface HasLock {
         if (source instanceof HasLock) {
             return ((HasLock)source).mutex(todo);
         }
-        assert source == null || ArrayIterable.iterate(source.getClass().getInterfaces())
-            .map(Class::getCanonicalName)
-            .noneMatch(HasLock.class.getCanonicalName()::equals) :
-            "Failed to use lock HasLock from foreign classloader; " +
-                source.getClass().getCanonicalName() + " : " + source;
+        if (source == null) {
+            synchronized (todo) {
+                return todo.out1();
+            }
+        }
+
+        boolean shouldReflect = "true".equals(System.getProperty("xapi.reflect.enabled", "true"));
+        if (shouldReflect){
+            synchronized (source) {
+                return reflect(source, todo);
+            }
+        }
+
         synchronized (source) {
             return todo.out1();
         }

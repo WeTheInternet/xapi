@@ -31,6 +31,7 @@ import java.util.Arrays;
  */
 public abstract class AnnotationExpr extends Expression {
 
+    public static final AnnotationExpr NULLABLE = newMarkerAnnotation("Nullable");
     protected NameExpr name;
 
     public AnnotationExpr() {}

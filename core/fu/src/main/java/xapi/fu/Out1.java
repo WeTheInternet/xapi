@@ -2,10 +2,12 @@ package xapi.fu;
 
 import xapi.fu.In1Out1.In1Out1Unsafe;
 import xapi.fu.Log.LogLevel;
+import xapi.fu.has.HasLock;
 import xapi.fu.iterate.SingletonIterator;
 import xapi.fu.iterate.SizedIterable;
 
 import javax.inject.Provider;
+import java.util.concurrent.locks.LockSupport;
 import java.util.function.Supplier;
 
 import static xapi.fu.Filter.alwaysTrue;
@@ -15,9 +17,24 @@ import static xapi.fu.Immutable.immutable1;
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 07/11/15.
  */
+@SuppressWarnings("NonJREEmulationClassesInClientCode")
 public interface Out1<O> extends Rethrowable, Lambda, HasMutability {
 
   O out1();
+
+  default O block() {
+    O out = out1();
+    int delay = -100; // spin 100 times before sleeping.
+    while (out == null) {
+      // respect locks, and refresh memory every time.
+      out = HasLock.alwaysLock(this, this);
+      if (delay ++ > 0) {
+        // we'll spin 100 times, then start parking
+        LockSupport.parkUntil(System.currentTimeMillis() + delay);
+      }
+    }
+    return out;
+  }
 
   Out1 NULL = immutable1(null);
   static <T> Out1 <T> null1() {
@@ -110,7 +127,7 @@ public interface Out1<O> extends Rethrowable, Lambda, HasMutability {
       try {
         return outUnsafe();
       } catch (Throwable e) {
-        Log.tryLog(Out1.class, this,"msg", e);
+        Log.tryLog(Out1.class, this,getClass(), " threw ", e);
         throw rethrow(e);
       }
     }
@@ -320,4 +337,8 @@ public interface Out1<O> extends Rethrowable, Lambda, HasMutability {
   default <F, M> Out1<M> merge(Out1<F> other, In2Out1<O, F, M> mapper) {
     return ()->mapper.io(out1(), other.out1());
   }
+
+    static <O1> Out1<O1> immutable(O1 value) {
+      return immutable1(value);
+    }
 }

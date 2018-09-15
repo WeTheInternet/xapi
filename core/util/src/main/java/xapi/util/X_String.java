@@ -14,6 +14,8 @@ import static xapi.util.service.StringService.metricSuffix;
 
 public class X_String {
 
+  public static final String EMPTY_STRING = "";
+
   /**
    * Used for the encodeURIComponent function
    */

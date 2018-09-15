@@ -924,18 +924,26 @@ public class DumpVisitor implements VoidVisitor<Object> {
     @Override
     public void visit(final StringLiteralExpr n, final Object arg) {
         printJavaComment(n.getComment(), arg);
-        printer.print("\"");
+        if (!inCss) {
+            printer.print("\"");
+        }
         printer.print(n.getValue());
-        printer.print("\"");
+        if (!inCss) {
+            printer.print("\"");
+        }
     }
 
     @Override
     public void visit(final TemplateLiteralExpr n, final Object arg) {
         printJavaComment(n.getComment(), arg);
         // TODO: resolve tags to print valid, escaped java code.
-        printer.print("`");
+        if (!inCss) {
+            printer.print("`");
+        }
         printer.print(n.getValue());
-        printer.print("`");
+        if (!inCss) {
+            printer.print("`");
+        }
     }
 
     @Override
@@ -1829,7 +1837,7 @@ public class DumpVisitor implements VoidVisitor<Object> {
         }
     }
 
-    private boolean inArray;
+    private boolean inArray, inCss;
 
     @Override
     public void visit(JsonContainerExpr n, Object arg) {
@@ -1881,6 +1889,8 @@ public class DumpVisitor implements VoidVisitor<Object> {
 
     @Override
     public void visit(CssBlockExpr n, Object arg) {
+        final boolean was = this.inCss;
+        this.inCss = true;
         printer.println(".{");
         printer.indent();
         final List<CssContainerExpr> containers = n.getContainers();
@@ -1894,10 +1904,13 @@ public class DumpVisitor implements VoidVisitor<Object> {
         }
         printer.outdent();
         printer.print("}");
+        this.inCss = was;
     }
 
     @Override
     public void visit(CssContainerExpr n, Object arg) {
+        final boolean was = this.inCss;
+        this.inCss = true;
         final List<CssSelectorExpr> selectors = n.getSelectors();
         for (int i = 0; i < selectors.size(); i++) {
             if (i > 0) {
@@ -1907,22 +1920,29 @@ public class DumpVisitor implements VoidVisitor<Object> {
         }
         printer.println("{");
         printer.indent();
-        n.getRules().forEach(rule -> rule.accept(this, arg));
+        n.getRules().forEach(rule -> {
+            rule.accept(this, arg);
+        });
         printer.outdent();
         printer.println("}");
-
+        this.inCss = was;
     }
 
     @Override
     public void visit(CssRuleExpr n, Object arg) {
+        final boolean was = this.inCss;
+        this.inCss = true;
         n.getKey().accept(this, arg);
         printer.print(" : ");
         n.getValue().accept(this, arg);
         printer.println(";");
+        this.inCss = was;
     }
 
     @Override
     public void visit(CssValueExpr n, Object arg) {
+        final boolean was = this.inCss;
+        this.inCss = true;
         final Expression value = n.getValue();
         if (value != null) {
             value.accept(this, arg);
@@ -1933,6 +1953,7 @@ public class DumpVisitor implements VoidVisitor<Object> {
         if (n.isImportant()) {
             printer.print(" !important");
         }
+        this.inCss = was;
     }
 
     @Override
@@ -1942,7 +1963,10 @@ public class DumpVisitor implements VoidVisitor<Object> {
 
     @Override
     public void visit(CssSelectorExpr n, Object arg) {
+        final boolean was = this.inCss;
+        this.inCss = true;
         n.getParts().forEach(part -> printer.print(part + " "));
+        this.inCss = was;
     }
 
     @Override

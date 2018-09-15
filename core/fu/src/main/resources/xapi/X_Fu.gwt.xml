@@ -3,4 +3,15 @@
 <module>
   <source path="fu" />
   <super-source path="jutsu" />
+
+  <!--
+  We turn reflection property off to avoid attempting reflective operations that will either fail,
+  or cause unwanted code bloat.  This will not currently disable emulated reflection,
+  it's simply here so jvm-compatible source can do something like:
+  boolean shouldReflect = "true".equals(System.getProperty("xapi.reflect.enabled", "true"));
+  if (shouldReflect) // jvm-only stuff that won't work in gwt (like proxies... ...yet).
+   -->
+  <define-property values="true,false" name="xapi.reflect.enabled" />
+  <set-property name="xapi.reflect.enabled" value="false" />
+
 </module>

@@ -42,6 +42,11 @@ public interface CollectionProxy <K, V> extends HasEmptiness
 
   V get(Object key);
 
+  default Maybe<V> getMaybe(K key) {
+      V value = get(key);
+      return Maybe.nullable(value);
+  }
+
   void setValue(Object key, Object value);
 
   default void copyFrom(CollectionProxy<K, V> other) {

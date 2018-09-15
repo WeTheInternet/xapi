@@ -247,4 +247,12 @@ In1Out1<I, O> extends Rethrowable, Lambda {
           throw factory.io(value);
       });
     }
+
+    default <I2> In2Out1<I, I2, O> ignoresIn2() {
+      return (k, v) -> io(k);
+    }
+
+    default <I2> In2Out1<I2, I, O> ignoresIn1() {
+      return (k, v) -> io(v);
+    }
 }

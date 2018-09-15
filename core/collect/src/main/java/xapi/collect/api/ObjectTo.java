@@ -1,12 +1,9 @@
 package xapi.collect.api;
 
 import xapi.collect.proxy.CollectionProxy;
+import xapi.fu.*;
 import xapi.fu.Filter.Filter1;
 import xapi.fu.Filter.Filter2;
-import xapi.fu.In1;
-import xapi.fu.In1Out1;
-import xapi.fu.MapLike;
-import xapi.fu.Maybe;
 import xapi.fu.iterate.SizedIterable;
 import xapi.fu.java.EntryIterable;
 
@@ -15,6 +12,17 @@ extends EntryIterable<K,V>, CollectionProxy<K,V>, HasValues<K,V>
 {
 
   V getOrCompute(K key, In1Out1<K,V> factory);
+
+  default V compute(K key, In1Out1<V,V> factory) {
+      return computeBoth(key, factory.ignoresIn1());
+  }
+
+  default V computeBoth(K key, In2Out1<K, V,V> factory) {
+      final V was = get(key);
+      final V is = factory.io(key, was);
+      put(key, is);
+      return was;
+  }
 
   interface Many <K, V> extends ObjectTo<K, IntTo<V>> {
     default boolean add (K key, V value) {

@@ -461,6 +461,6 @@ public class Lazy <T> implements Out1<T>, IsLazy {
     if (isResolved()) {
       return "Lazy(resolved: " + out1() + ")";
     }
-    return "Lazy(unresolved: " + proxy + ")";
+    return "Lazy(unresolved)";
   }
 }

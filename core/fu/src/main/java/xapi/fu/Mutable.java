@@ -5,8 +5,6 @@ import xapi.fu.Out1.Out1Unsafe;
 import xapi.fu.api.Copyable;
 import xapi.fu.has.HasLock;
 
-import static xapi.fu.Immutable.immutable1;
-
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 6/18/16.
  */
@@ -65,7 +63,7 @@ public class Mutable <T> implements In1Unsafe<T>, Out1Unsafe<T>, HasLock {
   }
 
   public Immutable<T> freeze() {
-    return immutable1(value);
+    return Immutable.immutable1(value);
   }
 
   @Override

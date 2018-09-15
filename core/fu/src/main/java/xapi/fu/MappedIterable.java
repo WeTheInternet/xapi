@@ -111,19 +111,29 @@ public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
         return flatten(mapper);
     }
 
-    default <To> MappedIterable<To> flatten(In1Out1<T, Iterable<To>> mapper) {
+    default <To> MappedIterable<To> flattenArray(In1Out1<T, To[]> mapper) {
+        return map(mapper)
+            .flatten(ArrayIterable.arrayItr());
+    }
+
+    default <To> MappedIterable<To> flatten(In1Out1<T, ? extends Iterable<To>> mapper) {
         return () -> new Iterator<To>() {
 
-            final Lazy<Iterator<Iterable<To>>> itr = Lazy.deferred1(()->map(mapper).iterator());
+            final Lazy<Iterator<? extends Iterable<To>>> itr = Lazy.deferred1(()->map(mapper).iterator());
 
             Lazy<Iterator<To>> next = reset();
 
             private Lazy<Iterator<To>> reset() {
                 return Lazy.deferred1(()->{
-                    final Iterator<Iterable<To>> i = itr.out1();
-                    if (i.hasNext()) {
+                    final Iterator<? extends Iterable<To>> i = itr.out1();
+                    while (i.hasNext()) {
                         final Iterable<To> n = i.next();
-                        return n.iterator();
+                        if (n != null) {
+                            final Iterator<To> nextItr = n.iterator();
+                            if (nextItr != null && nextItr.hasNext()) {
+                                return nextItr;
+                            }
+                        }
                     }
                     return EmptyIterator.empty();
                 });
@@ -131,12 +141,15 @@ public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
 
             @Override
             public boolean hasNext() {
-                final Iterator<To> current = next.out1();
-                if (current.hasNext()) {
-                    return true;
-                }
+                synchronized (itr) {
 
-                return false;
+                    final Iterator<To> current = next.out1();
+                    if (current.hasNext()) {
+                        return true;
+                    }
+
+                    return false;
+                }
             }
 
             @Override

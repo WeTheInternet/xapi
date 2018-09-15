@@ -1,20 +1,34 @@
 package xapi.fu.iterate;
 
+import xapi.fu.In1Out1;
+import xapi.fu.MappedIterable;
+import xapi.fu.X_Fu;
+
 public class ArrayIterable <E> implements SizedIterable <E> {
 
+  // Hm. In Java 8 at least, this ARRAY constant _won't_ work if we use a raw In1Out1.
+  private static final In1Out1<Object[], MappedIterable> ARRAY = ArrayIterable::iterate;
+  @SuppressWarnings("unchecked")
+  public static final ArrayIterable EMPTY = new ArrayIterable(X_Fu.emptyArray());
   private final int start;
   private final int end;
 
   public static <E> ArrayIterable<E> iterate(E ... es) {
-    return new ArrayIterable<>(es);
+    return es == null || es.length == 0 ? EMPTY : new ArrayIterable<>(es);
   }
 
-  public static <E> ArrayIterable<E> iterate(int start, E ... es) {
+  public static <E> ArrayIterable<E> iterateFrom(int start, E ... es) {
     return new ArrayIterable<>(es, start, es.length-1);
   }
 
-  public static <E> ArrayIterable<E> iterate(int start, int end, E ... es) {
+  public static <E> ArrayIterable<E> iterateBetween(int start, int end, E ... es) {
     return new ArrayIterable<>(es, start, end);
+  }
+
+  public static <E> In1Out1<E[], MappedIterable<E>> arrayItr() {
+    // This is weird and terrible, but we can't use a raw type in the field, or this
+    // will break type inference when used in MappedIterable.flattenArray
+    return (In1Out1)ARRAY;
   }
 
   private final E[] array;
