@@ -1,6 +1,6 @@
 package xapi.fu.java;
 
-import xapi.fu.MapLike;
+import xapi.fu.data.MapLike;
 import xapi.fu.iterate.SizedIterable;
 
 import java.io.Serializable;

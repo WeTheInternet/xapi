@@ -2,6 +2,7 @@ package xapi.collect.proxy;
 
 import xapi.collect.api.CollectionOptions;
 import xapi.fu.*;
+import xapi.fu.data.MapLike;
 import xapi.fu.has.HasEmptiness;
 import xapi.collect.api.ObjectTo;
 import xapi.collect.impl.SimpleStack;
@@ -20,7 +21,7 @@ import java.util.Map.Entry;
  * which take Object instead of a typed parameter.
  *
  * All types which currently extend this type should instead extend something more universal,
- * like {@link xapi.fu.MapLike}
+ * like {@link MapLike}
  *
  * @param <K> - The key type
  * @param <V> - The value type

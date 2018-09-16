@@ -2,7 +2,7 @@ package xapi.test.server.bdd;
 
 import xapi.collect.X_Collect;
 import xapi.collect.api.ObjectTo;
-import xapi.fu.MapLike;
+import xapi.fu.data.MapLike;
 import xapi.fu.iterate.SizedIterable;
 import xapi.scope.spi.RequestLike;
 

@@ -1,5 +1,6 @@
-package xapi.fu;
+package xapi.fu.data;
 
+import xapi.fu.*;
 import xapi.fu.Filter.Filter1;
 import xapi.fu.Filter.Filter2;
 import xapi.fu.Out1.Out1Unsafe;

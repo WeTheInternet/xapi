@@ -2,6 +2,8 @@ package xapi.server.vertx;
 
 import io.vertx.core.http.HttpServerResponse;
 import xapi.fu.*;
+import xapi.fu.data.ListLike;
+import xapi.fu.data.MapLike;
 import xapi.log.X_Log;
 import xapi.scope.impl.AbstractResponse;
 import xapi.scope.spi.ResponseLike;

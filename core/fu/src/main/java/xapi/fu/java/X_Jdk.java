@@ -1,8 +1,8 @@
 package xapi.fu.java;
 
-import xapi.fu.ListLike;
-import xapi.fu.MapLike;
-import xapi.fu.SetLike;
+import xapi.fu.data.ListLike;
+import xapi.fu.data.MapLike;
+import xapi.fu.data.SetLike;
 import xapi.fu.api.GwtIncompatible;
 
 import java.util.*;

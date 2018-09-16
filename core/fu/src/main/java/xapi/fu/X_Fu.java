@@ -1,6 +1,7 @@
 package xapi.fu;
 
 import xapi.fu.Filter.Filter2;
+import xapi.fu.data.MapLike;
 import xapi.fu.iterate.SizedIterable;
 
 import javax.validation.constraints.NotNull;

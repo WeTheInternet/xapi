@@ -3,7 +3,7 @@ package xapi.collect.api;
 import xapi.fu.In1;
 import xapi.fu.In1Out1;
 import xapi.fu.In1Out1.In1Out1Unsafe;
-import xapi.fu.MapLike;
+import xapi.fu.data.MapLike;
 import xapi.fu.MappedIterable;
 import xapi.fu.Out2;
 import xapi.fu.has.HasLock;

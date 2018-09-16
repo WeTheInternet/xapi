@@ -4,7 +4,7 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
 import xapi.except.NotYetImplemented;
 import xapi.fu.Do;
-import xapi.fu.MapLike;
+import xapi.fu.data.MapLike;
 import xapi.fu.Mutable;
 import xapi.fu.ReturnSelf;
 import xapi.scope.api.Scope;

@@ -8,7 +8,7 @@ import xapi.dev.api.Classpath;
 import xapi.fu.Do;
 import xapi.fu.Do.DoUnsafe;
 import xapi.fu.In1;
-import xapi.fu.MapLike;
+import xapi.fu.data.MapLike;
 import xapi.fu.Out1;
 import xapi.fu.Out2;
 import xapi.fu.X_Fu;

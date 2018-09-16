@@ -58,7 +58,7 @@ interface Jutsu {
   }
 
   default <T> T[] pushCopy(T[] ts, T t) {
-    T[] result = Fu.jutsu.emptyArray(ts, ts.length + 1);
+    T[] result = emptyArray(ts, ts.length + 1);
     System.arraycopy(ts, 0, result, 0, ts.length);
     result[ts.length] = t;
     return result;

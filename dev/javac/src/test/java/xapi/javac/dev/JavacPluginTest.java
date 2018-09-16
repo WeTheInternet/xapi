@@ -1,7 +1,6 @@
 package xapi.javac.dev;
 
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import xapi.fu.Out2;
 import xapi.fu.Pointer;
@@ -15,12 +14,16 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 
+import com.google.gwt.core.server.ServerGwtBridge;
+
 public class JavacPluginTest {
 
   private static File root;
 
   @BeforeClass public static void install() throws IOException {
     root = new File(".").getCanonicalFile();
+    // dirty hack to let this test of a half-finished feature produce less noise.
+    ServerGwtBridge.getInstance();
   }
 
   @Test

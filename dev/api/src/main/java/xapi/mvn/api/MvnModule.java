@@ -2,7 +2,7 @@ package xapi.mvn.api;
 
 import xapi.collect.X_Collect;
 import xapi.fu.In1Out1;
-import xapi.fu.MapLike;
+import xapi.fu.data.MapLike;
 import xapi.fu.X_Fu;
 
 import static xapi.fu.Immutable.immutable1;

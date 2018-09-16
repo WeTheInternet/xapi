@@ -5,7 +5,7 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.Session;
 import xapi.except.NoSuchItem;
 import xapi.fu.Lazy;
-import xapi.fu.MapLike;
+import xapi.fu.data.MapLike;
 import xapi.fu.java.X_Jdk;
 import xapi.scope.X_Scope;
 import xapi.scope.api.HasRequestContext;

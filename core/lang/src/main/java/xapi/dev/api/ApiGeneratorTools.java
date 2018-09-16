@@ -1056,8 +1056,8 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
         "ConcurrentSkipListMap", "java.util.concurrent.ConcurrentSkipListMap",
         "java.util.concurrent.ConcurrentSkipListMap", "java.util.concurrent.ConcurrentSkipListMap",
 
-        "MapLike", "xapi.fu.MapLike",
-        "xapi.fu.MapLike", "xapi.fu.MapLike",
+        "MapLike", "xapi.fu.data.MapLike",
+        "xapi.fu.data.MapLike", "xapi.fu.data.MapLike",
 
         "StringTo", "xapi.collect.api.StringTo",
         "xapi.collect.api.StringTo", "xapi.collect.api.StringTo",
@@ -1116,10 +1116,10 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
         "ConcurrentLinkedDeque", "java.util.concurrent.ConcurrentLinkedDequeue",
         "java.util.concurrent.ConcurrentLinkedDeque", "java.util.concurrent.ConcurrentLinkedDequeue",
 
-        "ListLike", "xapi.fu.ListLike",
-        "xapi.fu.ListLike", "xapi.fu.ListLike",
-        "SetLike", "xapi.fu.SetLike",
-        "xapi.fu.SetLike", "xapi.fu.SetLike",
+        "ListLike", "xapi.fu.data.ListLike",
+        "xapi.fu.data.ListLike", "xapi.fu.data.ListLike",
+        "SetLike", "xapi.fu.data.SetLike",
+        "xapi.fu.data.SetLike", "xapi.fu.data.SetLike",
 
         "Fifo", "xapi.collect.api.Fifo",
         "xapi.collect.api.Fifo", "xapi.collect.api.Fifo",

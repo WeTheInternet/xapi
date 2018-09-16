@@ -4,8 +4,8 @@ import xapi.dev.source.HtmlBuffer;
 import xapi.dev.source.PrintBuffer;
 import xapi.fu.Do;
 import xapi.fu.In1;
-import xapi.fu.ListLike;
-import xapi.fu.MapLike;
+import xapi.fu.data.ListLike;
+import xapi.fu.data.MapLike;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 7/22/17.

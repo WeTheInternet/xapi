@@ -4,6 +4,7 @@ import xapi.collect.proxy.CollectionProxy;
 import xapi.fu.*;
 import xapi.fu.Filter.Filter1;
 import xapi.fu.Filter.Filter2;
+import xapi.fu.data.MapLike;
 import xapi.fu.iterate.SizedIterable;
 import xapi.fu.java.EntryIterable;
 

@@ -1,6 +1,6 @@
 package xapi.mvn.api;
 
-import xapi.fu.MapLike;
+import xapi.fu.data.MapLike;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 9/4/16.

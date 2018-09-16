@@ -2,8 +2,7 @@ package xapi.collect.api;
 
 import xapi.fu.Do;
 import xapi.fu.In1Out1;
-import xapi.fu.MapLike;
-import xapi.fu.MappedIterable;
+import xapi.fu.data.MapLike;
 import xapi.fu.Out2;
 import xapi.fu.iterate.EmptyIterator;
 import xapi.fu.iterate.SizedIterable;

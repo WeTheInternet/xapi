@@ -5,6 +5,8 @@ import xapi.collect.api.IntTo;
 import xapi.dev.source.HtmlBuffer;
 import xapi.dev.source.PrintBuffer;
 import xapi.fu.*;
+import xapi.fu.data.ListLike;
+import xapi.fu.data.MapLike;
 import xapi.log.X_Log;
 import xapi.scope.spi.ResponseLike;
 import xapi.util.X_Debug;

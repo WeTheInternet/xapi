@@ -4,7 +4,7 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.CollectionOptions;
 import xapi.dev.source.CharBuffer;
 import xapi.fu.In1Out1.In1Out1Unsafe;
-import xapi.fu.MapLike;
+import xapi.fu.data.MapLike;
 import xapi.fu.Mutable;
 import xapi.fu.Out1.Out1Unsafe;
 import xapi.fu.Rethrowable;

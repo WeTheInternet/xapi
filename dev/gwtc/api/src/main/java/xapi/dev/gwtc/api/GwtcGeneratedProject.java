@@ -11,7 +11,7 @@ import xapi.dev.scanner.impl.ClasspathResourceMap;
 import xapi.dev.source.XmlBuffer;
 import xapi.fu.In1Out1;
 import xapi.fu.MappedIterable;
-import xapi.fu.SetLike;
+import xapi.fu.data.SetLike;
 import xapi.fu.iterate.SizedIterable;
 import xapi.fu.java.X_Jdk;
 import xapi.gwtc.api.GwtManifest;

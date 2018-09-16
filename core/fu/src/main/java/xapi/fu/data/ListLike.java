@@ -1,5 +1,7 @@
-package xapi.fu;
+package xapi.fu.data;
 
+import xapi.fu.MappedIterable;
+import xapi.fu.Out2;
 import xapi.fu.api.Clearable;
 import xapi.fu.has.HasItems;
 import xapi.fu.iterate.SizedIterable;

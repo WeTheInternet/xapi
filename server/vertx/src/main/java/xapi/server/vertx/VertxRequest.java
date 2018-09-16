@@ -6,6 +6,7 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
 import xapi.fu.*;
+import xapi.fu.data.MapLike;
 import xapi.fu.iterate.SizedIterable;
 import xapi.fu.lazy.ResettableLazy;
 import xapi.scope.spi.RequestLike;

@@ -11,6 +11,10 @@ import xapi.util.X_Template;
  */
 public class TemplateTransformer extends Transformer {
 
+  public TemplateTransformer() {
+    setShouldQuote(true);
+  }
+
   @Override
   public String onTemplateStart(
       Printable printer, TemplateLiteralExpr template

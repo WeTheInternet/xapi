@@ -4,6 +4,7 @@ import xapi.collect.proxy.CollectionProxy;
 import xapi.fu.*;
 import xapi.fu.Filter.Filter1;
 import xapi.fu.In1.In1Unsafe;
+import xapi.fu.data.ListLike;
 import xapi.fu.has.HasItems;
 import xapi.fu.has.HasLock;
 import xapi.fu.iterate.SizedIterable;

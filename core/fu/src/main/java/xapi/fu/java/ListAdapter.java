@@ -1,6 +1,6 @@
 package xapi.fu.java;
 
-import xapi.fu.ListLike;
+import xapi.fu.data.ListLike;
 import xapi.fu.iterate.SizedIterator;
 
 import java.io.Serializable;

@@ -27,14 +27,10 @@ import com.google.gwt.core.shared.GWT;
 class Fu implements Jutsu {
   static final Fu jutsu = getFu();
 
-  Fu init(Fu jutsu) {
-    return jutsu;
-  }
-
   static Fu getFu() {
     // Using GWT.create will allow library authors to inject custom / generated types if they please.
     final Fu fu = GWT.create(Fu.class);
-    return fu.init(fu);
+    return fu;
   }
 
   public <T> T[] emptyArray(T[] notCopied, int length) {
