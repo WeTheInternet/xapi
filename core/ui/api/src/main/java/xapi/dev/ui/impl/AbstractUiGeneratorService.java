@@ -16,16 +16,10 @@ import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.gen.SourceHelper;
 import xapi.dev.source.SourceBuilder;
 import xapi.dev.ui.api.*;
-import xapi.dev.ui.api.MetadataRoot;
 import xapi.dev.ui.impl.InterestingNodeFinder.InterestingNodeResults;
 import xapi.fu.*;
-import xapi.fu.iterate.ArrayIterable;
-import xapi.fu.iterate.CachingIterator;
+import xapi.fu.iterate.*;
 import xapi.fu.iterate.CachingIterator.ReplayableIterable;
-import xapi.fu.iterate.Chain;
-import xapi.fu.iterate.ChainBuilder;
-import xapi.fu.iterate.SingletonIterator;
-import xapi.fu.iterate.SizedIterable;
 import xapi.io.X_IO;
 import xapi.log.X_Log;
 import xapi.source.X_Source;
@@ -33,11 +27,7 @@ import xapi.source.read.JavaModel.IsQualified;
 import xapi.ui.api.PhaseMap;
 import xapi.ui.api.PhaseMap.PhaseNode;
 import xapi.ui.api.UiPhase;
-import xapi.ui.api.UiPhase.PhaseBinding;
-import xapi.ui.api.UiPhase.PhaseImplementation;
-import xapi.ui.api.UiPhase.PhaseIntegration;
-import xapi.ui.api.UiPhase.PhasePreprocess;
-import xapi.ui.api.UiPhase.PhaseSupertype;
+import xapi.ui.api.UiPhase.*;
 import xapi.util.X_Debug;
 import xapi.util.X_Properties;
 import xapi.util.X_Util;
@@ -48,13 +38,9 @@ import javax.tools.StandardLocation;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URL;
-import java.util.Enumeration;
-import java.util.IdentityHashMap;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.ServiceLoader;
-import java.util.Set;
+import java.util.*;
+
+import static xapi.log.X_Log.warn;
 
 /**
  * Created by james on 6/17/16.
@@ -214,10 +200,6 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
 
     protected boolean ignoreMissingComponents() {
         return true;
-    }
-
-    protected void warn(Object ... logMe) {
-        X_Log.warn(logMe);
     }
 
     @Override
@@ -678,7 +660,7 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
                             // Treat the file as absolute classpath uri
                             src = filer.readSource("", loc, filer.filterHints(hints));
                         }
-                        final UiContainerExpr newContainer = JavaParser.parseUiContainer(src);
+                        final UiContainerExpr newContainer = JavaParser.parseUiContainer(loc, src);
                         return newContainer;
                     } catch (ParseException e) {
                         X_Log.error(getClass(), "Error trying to resolve import", n, "with source:\n",
@@ -770,7 +752,8 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
         final UiFeatureGenerator generator = super.getFeatureGenerator(container, componentGenerator);
         if (generator == null) {
             if (ignoreMissingFeatures()) {
-                warn(AbstractUiGeneratorService.class, "Ignoring missing feature ", container);
+                warn(UiConstants.location(container, AbstractUiGeneratorService.class)
+                    , "Ignoring missing feature ", container);
             } else {
                 throw new NullPointerException("Null feature for " + container.getName());
             }
@@ -782,7 +765,8 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
         final UiComponentGenerator generator = super.getComponentGenerator(container, metadata);
         if (generator == null) {
             if (ignoreMissingComponents()) {
-                warn(AbstractUiGeneratorService.class, "Ignoring missing component ", container);
+                warn(UiConstants.location(container, AbstractUiGeneratorService.class),
+                    "Ignoring missing component ", container);
             } else {
                 throw new NullPointerException("Null component for " + container.getName());
             }

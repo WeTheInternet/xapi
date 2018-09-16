@@ -415,4 +415,8 @@ public class X_Source {
     return linkToDoc;
   }
 
+    public static String raw(String type) {
+      return type == null ? null :
+          type.split("<")[0].trim();
+    }
 }

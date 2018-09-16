@@ -131,6 +131,11 @@ public class LocalVariable extends MemberBuffer<LocalVariable> implements CanAdd
     this.initializer.pattern(initializer, replace1, more);
     return this;
   }
+  public LocalVariable setInitializerPatternLns(final String initializer, Object replace1, Object ... more) {
+    this.initializer = new PrintBuffer(getIndentCount() + 1);
+    this.initializer.patternlns(initializer, replace1, more);
+    return this;
+  }
 
   @Override
   public String toSource() {
@@ -160,5 +165,23 @@ public class LocalVariable extends MemberBuffer<LocalVariable> implements CanAdd
 
   public void invoke(String mthd, Object ... more) {
     enclosing.patternln("$1." + coerceParens(mthd), name, more);
+  }
+
+  public void invokeLns(String mthd, Object ... more) {
+    enclosing.patternlns("$1." + coerceParens(mthd), name, more);
+  }
+
+  public void invokeConstructor(String paramPattern, Object ... more) {
+    enclosing.patternln("new $1(" + paramPattern + ")" , simpleType, more);
+  }
+  public void invokeConstructorLns(String paramPattern, Object ... more) {
+    enclosing.patternlns("new $1(" + paramPattern + ")" , simpleType, more);
+  }
+
+  public void initConstructor(String paramPattern, Object ... more) {
+    setInitializerPattern("new $1(" + paramPattern + ")" , simpleType, more);
+  }
+  public void initConstructorLns(String paramPattern, Object ... more) {
+    setInitializerPatternLns("\nnew $1(" + paramPattern + "\n)" , simpleType, more);
   }
 }

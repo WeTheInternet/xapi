@@ -11,6 +11,7 @@ import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.dev.ui.tags.assembler.AssembledElement;
 import xapi.dev.ui.tags.assembler.AssembledUi;
 import xapi.elemental.X_Elemental;
+import xapi.except.NotYetImplemented;
 import xapi.fu.Immutable;
 import xapi.fu.Lazy;
 import xapi.fu.MappedIterable;
@@ -59,13 +60,39 @@ public class GeneratedWebComponent extends GeneratedUiImplementation {
         final UiGeneratorTools tools = assembly.getTools();
         final ApiGeneratorContext ctx = assembly.getContext();
         final String name = tools.resolveString(ctx, attr.getName());
-        if (name.startsWith("on")) {
+        final String lower = name.toLowerCase();
+        if (lower.startsWith("on")) {
 
-            boolean createdCallback = "oncreated".equals(name.toLowerCase());
+            final boolean created, attached, detached, attribute;
+            switch (lower) {
+                // be forgiving to developers, at least until there are better tools to write xapi
+                case "oncreated":
+                case "oncreate":
+                    created = true;
+                    attached = detached = attribute = false;
+                    break;
+                case "onattached":
+                case "onattach":
+                    attached = true;
+                    created = detached = attribute = false;
+                    break;
+                case "ondetached":
+                case "ondetach":
+                    detached = true;
+                    created = attached = attribute = false;
+                    break;
+                case "onattribute":
+                case "onattributechanged":
+                case "onattributechange":
+                    attribute = true;
+                    created = attached = detached = false;
+                    break;
+                default:
+                    created = attached = detached = attribute = false;
+            }
             // for web components, "on*" event handlers are handled "for free".
             // TODO: something generic to serialize lambdas we want to dump into source...
-            final String func = tools.resolveString(ctx, condense(createdCallback, attr), false, true);
-
+            final String func = tools.resolveString(ctx, condense(created || attached || detached, attr), false, true);
 
             boolean capture = attr.getAnnotation(a->
                 a.getNameString().toLowerCase().equals("capture") &&
@@ -75,24 +102,62 @@ public class GeneratedWebComponent extends GeneratedUiImplementation {
                 )
             ).isPresent();
 
-            out.println(".onCreated( e -> {").indent();
-            if (createdCallback) {
-                // special "magic" property we use to shove code into the init method for the given element.
-                out.printlns(func);
+            if (attached || detached || attribute) {
+                // defer adding this so we can be sure component variable is defined,
+                // and that our "userspace" callbacks are serviced after basic wiring is in place.
+                // If/when we need more control, we'll need to make a manager class for the generated install method.
+                assembly.getUi().beforeSave(service->{
+
+                    // we'll put these guys into the web component definition installation method
+                    MethodBuffer install = getOwner().getAst().getExtra(UiConstants.EXTRA_INSTALL_METHOD);
+                    assert install != null : "No " + UiConstants.EXTRA_INSTALL_METHOD + " extra found in " + el.debugNode(getOwner().getAst());
+                    // add the appropriate callback in the install method
+
+                    install.patternln("component.$1Callback( $2::get$3, e ->",
+                        attached ? "attached" : detached ? "detached" : "attributeChanged",
+                        getWrappedName(), getOwner().getApi().getWrappedName()
+                    ).indent();
+
+                    install.printlns(func);
+
+                    install.outdent().println(");");
+                });
             } else {
-                boolean multiline = func.contains("\n");
-                String fixed = (multiline ? "\n" : " ") + func.trim();
-                out.patternlns("e.addEventListener(\"$1\",$2, $3);", name.substring(2), fixed, capture);
+                // created callbacks and other event-related stuff, we'll use the ElementBuilder's
+                // onCreate callback, as that is really the soonest that we can _mutate_ the element.
+                // afterCreated() will use RunSoon semantics, and created() is so early we won't be
+                // allowed to read or write DOM hierarchy / attributes / etc.
+                out.println(".onCreated( e -> {").indent();
+                if (created) {
+                    // special "magic" property we use to shove code into the init method for the given element.
+                    out.printlns(func);
+                } else {
+                    boolean multiline = func.contains("\n");
+                    String fixed = (multiline ? "\n" : " ") + func.trim();
+                    out.patternlns("e.addEventListener(\"$1\",$2, $3);", name.substring(2), fixed, capture);
+                }
+                out.outdent().println("})");
             }
-            out.outdent().println("})");
+
             return;
         }
-        super.resolveNativeAttr(assembly, attr, el, out);
+        switch (lower) {
+            case "class":
+            case "classname":
+                // bind up some css!
+                // ...should just call the standard css generator from visitor,
+                // and then add an additional "set classname" operation
+                throw new NotYetImplemented(name + " not yet supported in "+ el.debug());
+            default:
+                // just copy the attributes over...
+                super.resolveNativeAttr(assembly, attr, el, out);
+        }
+
     }
 
-    private Expression condense(boolean createdCallback, UiAttrExpr attr) {
+    private Expression condense(boolean specialCallback, UiAttrExpr attr) {
         final Expression expr = attr.getExpression();
-        if (createdCallback && expr instanceof LambdaExpr) {
+        if (specialCallback && expr instanceof LambdaExpr) {
             final LambdaExpr lambda = (LambdaExpr) expr;
             switch (lambda.getParameters().size()) {
                 case 1:
@@ -103,7 +168,7 @@ public class GeneratedWebComponent extends GeneratedUiImplementation {
                 case 0:
                     return new SysExpr(Immutable.immutable1(lambda.getBody()));
             }
-            throw new IllegalArgumentException("oncreated lambdas can have at most one parameter named `e`, you sent " + lambda.toSource());
+            throw new IllegalArgumentException("oncreated|attached|detached lambdas can have at most one parameter named `e`, you sent " + lambda.toSource());
         }
         return expr;
     }

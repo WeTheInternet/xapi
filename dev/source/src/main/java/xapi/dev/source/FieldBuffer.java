@@ -202,6 +202,11 @@ public class FieldBuffer extends MemberBuffer<FieldBuffer> implements CanAddImpo
     return this;
   }
 
+  public MethodBuffer createConstructor(int modifier) {
+    return cls.createConstructor(modifier, getType() + " " + fieldName)
+        .patternln("this.$1 = $1;", fieldName);
+  }
+
   public FieldBuffer setExactName(final boolean exact) {
     this.exact = exact;
     return this;

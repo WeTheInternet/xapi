@@ -31,6 +31,8 @@ import com.github.javaparser.ast.visitor.TransformVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitor;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
+import xapi.fu.Maybe;
+import xapi.fu.iterate.LinkedIterable;
 
 import java.io.Serializable;
 import java.util.Iterator;
@@ -432,6 +434,11 @@ public abstract class Node implements Serializable, Cloneable {
             return null;
         }
         return (T) extras.get(key);
+    }
+    public <T> Maybe<T> findExtra(String key) {
+        return new LinkedIterable<>(this, Node::getParentNode)
+            .map2(Node::<T>getExtra, key)
+            .firstMaybe();
     }
     public <T> T removeExtra(String key) {
         if (extras == null) {

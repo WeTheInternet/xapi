@@ -63,6 +63,7 @@ public class GeneratedUiDefinition {
     private String apiName;
     private String baseName;
     private String builderName;
+    private String prefix = "";
 
     public GeneratedUiDefinition() {
         modelFields = X_Collect.newStringMapInsertionOrdered(GeneratedUiMember.class);
@@ -195,6 +196,10 @@ public class GeneratedUiDefinition {
         ));
     }
 
+    public void setPrefix(String prefix) {
+        this.prefix = prefix;
+    }
+
     public String getTagName() {
         return tagName;
     }
@@ -302,7 +307,7 @@ public class GeneratedUiDefinition {
     }
 
     public String getApiName() {
-        return apiName == null ? getTypeName() + "Component" : apiName;
+        return apiName == null ? prefix + getTypeName() + "Component" : apiName;
     }
 
     public void setApiName(String apiName) {

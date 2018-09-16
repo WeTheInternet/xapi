@@ -150,7 +150,7 @@ public abstract class UiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> im
     }
 
     public GeneratedUiComponent newComponent(String pkg, String className, ContainerMetadata metadata) {
-        final GeneratedUiComponent component = new GeneratedUiComponent(pkg, className);
+        final GeneratedUiComponent component = new GeneratedUiComponent(pkg, className, metadata::getUi);
         initializeComponent(component, metadata);
         return component;
     }

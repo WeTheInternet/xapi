@@ -59,7 +59,7 @@ public class ComponentBuffer {
     }
 
     public ComponentBuffer(String pkgName, String simpleName, Out1<ContainerMetadata> root, boolean immediate) {
-        this(new GeneratedUiComponent(pkgName, simpleName), root, immediate);
+        this(new GeneratedUiComponent(pkgName, simpleName, root.map(ContainerMetadata::getUi)), root, immediate);
     }
 
     public ComponentBuffer(GeneratedUiComponent component, ContainerMetadata root) {

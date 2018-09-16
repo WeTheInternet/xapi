@@ -111,7 +111,7 @@ public interface In1<I> extends HasInput, Rethrowable, Lambda {
   }
 
   default Consumer<I> toConsumer() {
-    return this::in;
+    return this instanceof Consumer ? (Consumer<I>)this : this::in;
   }
 
   default Do provide(I in) {
@@ -159,7 +159,7 @@ public interface In1<I> extends HasInput, Rethrowable, Lambda {
     }
   }
 
-  static <I1, I2> In1<I1> from2(In2<I1, I2> adapt, I2 i2) {
+  static <I1, I2> In1<I1> from2(In2<? super I1, ? super I2> adapt, I2 i2) {
     return i1 -> adapt.in(i1, i2);
   }
 
@@ -255,6 +255,9 @@ public interface In1<I> extends HasInput, Rethrowable, Lambda {
         final In1<I> was;
         synchronized (once) {
           was = once[0];
+          // TODO: make once[0] a temporary blocker, and only set to IGNORED after completion.
+          // We still want to avoid running foreign code inside any monitors,
+          // as we don't want to contribute to any deadlock soup.
           once[0] = In1.IGNORED;
         }
         was.in(in);

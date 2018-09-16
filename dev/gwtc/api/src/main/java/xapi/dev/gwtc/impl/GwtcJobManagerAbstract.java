@@ -102,6 +102,7 @@ public abstract class GwtcJobManagerAbstract implements GwtcJobManager {
                 X_Log.info(GwtcJobManagerAbstract.class, "Restarting ", existing.getState(), " compilation for ", manifest.getModuleName());
                 existing.destroy();
                 // TODO we need to also "destroy" our classloader, or at least restart a thread from a sane copy
+                // May actually want to kill the job in the gwtc service as well...
                 runningJobs.remove(name);
                 statuses.put(name, CompileMessage.Preparing);
                 runningJobs.put(name, launchJob(manifest));

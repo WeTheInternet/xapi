@@ -66,7 +66,9 @@ public class GwtcJobManagerImpl extends GwtcJobManagerAbstract {
 
     @Override
     protected GwtcJob launchJob(GwtManifest manifest) {
-        service.generateCompile(manifest);
+        if (!service.hasProject(manifest.getModuleName())) {
+            service.generateCompile(manifest);
+        }
         if (manifest.isJ2cl()) {
             // TODO: hook this up w/ vertispan repo added to MvnService
             throw new NotYetImplemented("J2cl not yet public :-(");

@@ -72,6 +72,8 @@ public interface  GwtcProjectGenerator {
 
     GwtManifest getManifest();
 
+    boolean isGenerated();
+
     static void ensureWarDir(GwtManifest manifest, String warDir, File tempDir) {
         if (manifest.getWarDir() != null) {
             return;

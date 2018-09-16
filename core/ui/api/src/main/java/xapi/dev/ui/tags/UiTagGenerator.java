@@ -177,6 +177,7 @@ public class UiTagGenerator extends UiComponentGenerator {
         final UiFeatureGenerator apiGen = new UiTagApiGenerator(pkg, name, this),
                                  uiGen = new UiTagUiGenerator(pkg, name, this),
                                  modelGen = new UiTagModelGenerator(pkg, name, this),
+                                 assemblerGen = new UiTagAssemblerGenerator(pkg, name, this),
                                  renderGen = new UiTagRenderGenerator(pkg, name, this),
                                  genericsGen = new UiTagGenericsGenerator(pkg, name, this),
                                  inputGen = new UiTagInputGenerator(pkg, name, this),
@@ -191,9 +192,11 @@ public class UiTagGenerator extends UiComponentGenerator {
         features.put("hidden", uiGen);
 
         // We already extract these manually
-        features.put("name", UiFeatureGenerator.DO_NOTHING);
+        features.put("type", UiFeatureGenerator.DO_NOTHING);
         features.put("package", UiFeatureGenerator.DO_NOTHING);
         features.put("tagName", UiFeatureGenerator.DO_NOTHING);
+
+        features.put("assembler", assemblerGen);
 
         // TODO: preparse model features?
         features.put("model", modelGen);

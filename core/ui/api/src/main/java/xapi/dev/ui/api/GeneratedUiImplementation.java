@@ -1,10 +1,13 @@
 package xapi.dev.ui.api;
 
 import com.github.javaparser.ast.expr.*;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
+import com.github.javaparser.ast.type.Type;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.source.ClassBuffer;
+import xapi.dev.source.LocalVariable;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.dev.ui.impl.AbstractUiImplementationGenerator;
@@ -22,6 +25,7 @@ import xapi.source.read.JavaModel.IsTypeDefinition;
 
 import java.lang.reflect.Modifier;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map.Entry;
 
 import static xapi.fu.Out2.out2Immutable;
@@ -202,12 +206,16 @@ public class GeneratedUiImplementation extends GeneratedUiLayer {
 
         final String newBuilder = getOwner().getElementBuilderConstructor(namespace);
         String tagName = n.getName();
-        out.patternln("return $1", newBuilder.replace("()","(true)"))
-            .indent()
-            .patternln(".setTagName(\"$1\")", tagName);
+        final LocalVariable builder = out.newVariable(out.getReturnType().getQualifiedName(), "b");
+        builder.setInitializer(newBuilder.replace("()","(true)"));
+        out
+            .println(builder.getName()).indent()
+            .patternln(".setTagName(\"$1\")", tagName)
+            .indent();
         for (UiAttrExpr attr : n.getAttributes()) {
             resolveNativeAttr(assembly, attr, el, out);
         }
+        out.outdent().println(";");
         // TODO: also handle bodies!
         if (n.getBody() != null) {
             for (Expression body : n.getBody().getChildren()) {
@@ -215,8 +223,8 @@ public class GeneratedUiImplementation extends GeneratedUiLayer {
                     final MethodReferenceExpr ref = (MethodReferenceExpr) body;
                     if ("$model".equals(ref.getScope().toSource())) {
                         // Hokayyy!  We have a model field for a body...
-                        // for now, we'll just simply append the value blindly
-                        out.patternln(".append(getModel().get$1())", toTitleCase(ref.getIdentifier()));
+                        // for now, we'll do only minimal introspection
+                        addModelItem(assembly, out, builder, ref.getIdentifier());
                     } else {
                         throw new NotYetImplemented("Only $model:: fields are supported inside native tag bodies");
                     }
@@ -225,15 +233,66 @@ public class GeneratedUiImplementation extends GeneratedUiLayer {
                     final String src = body.toSource();
                     if (src.startsWith("$model::")) {
                         // supernasty... we should really be sending the template literal body through the parser again...
-                        out.patternln(".append(getModel().get$1())", toTitleCase(src.substring(8)));
+                        final String identifier = src.substring(8);
+                        assert identifier.chars().allMatch(Character::isJavaIdentifierPart) : "Invalid $model:: reference " + src;
+                        addModelItem(assembly, out, builder, identifier);
                     } else {
-                        out.patternln(".append($1)", javaQuote(src));
+                        out.patternln("$1.append($2)", builder.getName(), javaQuote(src));
                     }
                 }
             }
 
         }
-        out.outdent().println(";");
+        out.returnValue(builder.getName());
+    }
+
+    private void addModelItem(
+        AssembledUi assembly,
+        MethodBuffer out,
+        LocalVariable builder,
+        String identifier
+    ) {
+        final GeneratedUiMember modField = assembly.getUi().getPublicModel().getField(identifier);
+        final String titleName = toTitleCase(identifier);
+        final Type type = modField.getMemberType();
+        boolean listWrap = type.hasRawType("IntTo");
+        final UiNamespace ns = reduceNamespace(assembly.getNamespace());
+        if (listWrap) {
+            // We need to iterate items.
+            out.addImport(type.toSource());
+
+            out.patternln("getModel().get$1().forAll(c -> ", titleName)
+                .indent();
+            if (type instanceof ClassOrInterfaceType) {
+                final List<Type> typeArgs = ((ClassOrInterfaceType) type).getTypeArgs();
+                if (typeArgs.size() == 1) {
+                    if (typeArgs.get(0).hasRawType("IsComponent")) {
+                        // we have component children!
+                        out.patternln("(($1)$2).append(c.asBuilder())",
+                            ns.getElementBuilderType(out).split("<")[0], builder.getName());
+                    } // else if (isModelOfAComponentType(typeArgs[0]) { ... hook up builder here ... }
+                    else {
+                        out.patternln("$1.append(c);", builder.getName());
+                    }
+                    out.outdent().println(");");
+                } else {
+                    throw new IllegalArgumentException("IntTo $model::references must have type parameters, like model={key: IntTo.class.$generic(String.class) } " +
+                        "\nYou sent " + type);
+                }
+            } else {
+                throw new IllegalArgumentException("IntTo $model::references must have type parameters, like model={key: IntTo.class.$generic(String.class) } " +
+                    "\nYou sent " + type);
+            }
+        } else {
+            // It's a single item.
+            if (type.hasRawType("IsComponent")) {
+                out.patternln("(($1)$2).append(getModel().get$3().asBuilder())",
+                    ns.getElementBuilderType(out).split("<")[0], builder.getName(), titleName);
+            } else {
+                out.patternln("$1.append(getModel().get$2());", builder.getName(), titleName);
+            }
+        }
+
     }
 
     protected void resolveNativeAttr(

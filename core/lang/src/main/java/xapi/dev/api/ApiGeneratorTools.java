@@ -1135,7 +1135,7 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
         "xapi.collect.impl.SimpleFifo", "xapi.collect.impl.SimpleFifo",
         "SimpleLinkedList", "xapi.collect.impl.SimpleLinkedList",
         "xapi.collect.impl.SimpleLinkedList", "xapi.collect.impl.SimpleLinkedList"
-    );
+    );//TODO: .immutable()
 
     StringTo<String> DEFAULT_ITERATING_TYPES = X_Collect.newStringMap(
         "Iterator", "java.util.Iterator",

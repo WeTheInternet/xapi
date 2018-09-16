@@ -96,13 +96,16 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
 
 
     public <T> void generateComponents(UiGeneratorService<T> service) {
+        boolean success = false;
         try {
             doGenerateComponents(service);
+            success = true;
         } finally {
+            final boolean delete = success;
             backups.forAll(backup -> {
                 File original = new File(backup.getParent(), backup.getName().replace(".backup", ""));
                 boolean result;
-                if (original.exists()) {
+                if (delete || original.exists()) {
                     result = backup.delete();
                     if (!result) {
                         System.err.println("Unable to cleanup backup file " + backup);
@@ -136,7 +139,7 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
             String content = xapiFile.readAll();
             final UiContainerExpr parsed;
             try {
-                parsed = JavaParser.parseUiContainer(content);
+                parsed = JavaParser.parseUiContainer(xapiFile.getResourceName(), content);
             } catch (ParseException|Error e) {
                 if (content.startsWith("<define-tag")) {
                     int line = 1;
@@ -204,6 +207,7 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
             size++;
 
             X_Log.info(
+
                 "Generated ", generated.getTagName(),
                 X_Source.pathToLogLink(generated.getImpls().first().getQualifiedName()
                 .replace('.', '/') + ".java", 30)

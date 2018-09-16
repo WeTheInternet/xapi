@@ -58,6 +58,9 @@ public interface VarBuffer <Self extends CharBuffer & VarBuffer<Self>> extends R
         if (trimmed.length() > 0) {
             b.append(" = ").append(init);
             if (!trimmed.endsWith(";")) {
+                while(Character.isWhitespace(b.charAt(b.length()-1))) {
+                    b.setLength(b.length()-1);
+                }
                 b.append(";");
             }
         } else {

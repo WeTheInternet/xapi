@@ -1040,6 +1040,10 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
         putCallback(JsonContainerExpr.class, callback.supply1(true));
         return this;
     }
+    public ComposableXapiVisitor<Ctx> withJsonContainerTerminal(In2<JsonContainerExpr, Ctx> callback) {
+        putCallback(JsonContainerExpr.class, callback.supply1(false));
+        return this;
+    }
 
     @Override
     public void visit(JsonPairExpr n, Ctx arg) {

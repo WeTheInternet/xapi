@@ -87,7 +87,9 @@ public class JavaVisitor {
     }
 
     public String getQualifiedName() {
-      return (pkgName.length()==0?"":pkgName+".")+clsName;
+      return (pkgName.length()==0?"":pkgName+".")+clsName
+          + (generics == null || generics.length() == 0 ? "" :
+            generics.startsWith("<") ? generics : "<" + generics + ">");
     }
 
     public String getSimpleName() {

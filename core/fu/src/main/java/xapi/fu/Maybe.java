@@ -198,10 +198,10 @@ public interface Maybe <V> extends Rethrowable {
         return NULL;
     }
 
-    default Maybe<V> readIfPresentUnsafe(In1Unsafe<V> val) {
+    default Maybe<V> readIfPresentUnsafe(In1Unsafe<? super V> val) {
         return readIfPresent(val);
     }
-    default Maybe<V> readIfPresent(In1<V> val) {
+    default Maybe<V> readIfPresent(In1<? super V> val) {
         if (isPresent()) {
             val.in(get());
         }

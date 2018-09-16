@@ -128,6 +128,8 @@ public class UiTagModelGenerator extends UiFeatureGenerator {
                             }
                     }
                     final GeneratedUiField field = apiModel.addField(tools, type, rawFieldName, isImmutable);
+                    // copy imports
+                    field.copyImports(pair);
                     // check if we should make this field public or not...
                     if (isExposed) {
                         String t = field.importType(api.getSource());

@@ -22,6 +22,8 @@ public interface GwtcService {
 
   URLClassLoader ensureMeetsMinimumRequirements(URLClassLoader classpath);
 
+  boolean hasProject(String name);
+
   GwtcProjectGenerator getProject(String moduleName, ClassLoader resources);
 
   GwtcJobManager getJobManager();

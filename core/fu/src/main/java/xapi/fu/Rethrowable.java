@@ -68,7 +68,7 @@ public interface Rethrowable {
       Thread.currentThread().interrupt();
     }
     final RuntimeException override = newRuntimeException(e);
-    if (override.getClass() != RuntimeException.class || override.getMessage() != null) {
+    if (override.getClass() != RuntimeException.class) {
       // Only wrap in a new runtime exception if newRuntimeException was meaningfully overloaded
       throw override;
     }

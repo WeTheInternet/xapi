@@ -10,11 +10,7 @@ import xapi.annotation.compile.Resource;
 import xapi.annotation.compile.ResourceBuilder;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
-import xapi.dev.gwtc.api.AnnotatedDependency;
-import xapi.dev.gwtc.api.GwtcEntryPointBuilder;
-import xapi.dev.gwtc.api.GwtcGeneratedProject;
-import xapi.dev.gwtc.api.GwtcProjectGenerator;
-import xapi.dev.gwtc.api.GwtcService;
+import xapi.dev.gwtc.api.*;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
@@ -33,18 +29,14 @@ import xapi.log.X_Log;
 import xapi.reflect.X_Reflect;
 import xapi.source.X_Source;
 import xapi.util.X_Debug;
-import xapi.util.X_Properties;
 import xapi.util.X_String;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.net.URL;
-import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -55,7 +47,6 @@ import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.RunAsyncCallback;
 import com.google.gwt.core.ext.TreeLogger.Type;
-import com.google.gwt.dev.Compiler;
 import com.google.gwt.junit.client.GWTTestCase;
 import com.google.gwt.junit.tools.GWTTestSuite;
 import com.google.gwt.reflect.shared.GwtReflect;
@@ -91,6 +82,7 @@ public class GwtcProjectGeneratorDefault implements GwtcProjectGenerator {
     protected StringTo<Out1<String>> files;
     protected MethodBuffer junitLoader;
     private final Lazy<GwtManifest> manifest;
+    private boolean generated;
 
     public GwtcProjectGeneratorDefault(GwtcService service, ClassLoader resources, String moduleName) {
         this.service = service;
@@ -740,6 +732,7 @@ public class GwtcProjectGeneratorDefault implements GwtcProjectGenerator {
         X_File.saveFile(warDir +"/public", "index.html", hostPage);
         X_Log.info(GwtcProjectGeneratorDefault.class, "Generated host page:\n", hostPage);
         X_Log.info("Generate war into ", warDir);
+        generated = true;
     }
 
     protected String getHostPageDocType() {
@@ -754,5 +747,9 @@ public class GwtcProjectGeneratorDefault implements GwtcProjectGenerator {
     @Override
     public GwtManifest getManifest() {
         return manifest.out1();
+    }
+
+    public boolean isGenerated() {
+        return generated;
     }
 }

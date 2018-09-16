@@ -1,5 +1,8 @@
 package xapi.dev.ui.api;
 
+import com.github.javaparser.ast.Node;
+import xapi.source.X_Source;
+
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 1/22/17.
  */
@@ -11,4 +14,23 @@ public interface UiConstants {
     String EXTRA_RESOURCE_PATH = "__path__";
     String EXTRA_FILE_NAME = "__file_name__";
     String EXTRA_FOR_LOOP_VAR = "__for_var__";
+    String EXTRA_LOCATION = "location";
+    String EXTRA_INSTALL_METHOD = "__install__";
+
+    static Object location(Node el, Class<?> cls) {
+        final Node parent = el.getParentNode();
+        String location = el.<String>findExtra(EXTRA_LOCATION)
+            .ifAbsentSupply(()-> {
+                String loc = parent.getExtra(EXTRA_FILE_NAME);
+                if (loc != null) {
+                    loc += ".xapi";
+                    String path = parent.getExtra(EXTRA_RESOURCE_PATH);
+                    if (path != null) {
+                        return path.replace('.', '/') + "/" + loc;
+                    }
+                }
+                return null;
+            });
+        return location == null ? cls : X_Source.pathToLogLink(location, el.getBeginLine());
+    }
 }

@@ -57,6 +57,11 @@ public interface Model {
         return is;
     }
 
+    default <T> Maybe<T> getMaybe(String key) {
+        final T val = getProperty(key);
+        return Maybe.nullable(val);
+    }
+
     boolean hasProperty(String key);
 
     Class<?> getPropertyType(String key);

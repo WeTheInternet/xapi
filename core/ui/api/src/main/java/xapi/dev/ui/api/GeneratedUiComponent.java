@@ -48,11 +48,13 @@ public class GeneratedUiComponent {
     private final StringTo<GeneratedJavaFile> extraLayers;
     private final ReservedUiMethods methods;
     private final ChainBuilder<In1<UiGeneratorService<?>>> beforeSave;
+    private final Lazy<UiContainerExpr> ast;
     private String tagName;
     private GeneratedUiSupertype superType;
     private boolean uiComponent;
 
-    public GeneratedUiComponent(String pkg, String cls) {
+    public GeneratedUiComponent(String pkg, String cls, Out1<UiContainerExpr> ast) {
+        this.ast = Lazy.deferred1(ast);
         api = Lazy.deferred1(this::createApi);
         base = Lazy.deferred1(this::createBase);
         factory = Lazy.deferred1(this::createFactory);
@@ -130,6 +132,10 @@ public class GeneratedUiComponent {
         return factory.out1();
     }
 
+    public boolean hasFactory() {
+        return isUiComponent();
+    }
+
     public boolean hasPublicModel() {
         return getApi().hasModel();
     }
@@ -155,6 +161,10 @@ public class GeneratedUiComponent {
     public MappedIterable<GeneratedUiImplementation> getImpls() {
         return impls.forEachValue()
                     .map(Lazy::out1);
+    }
+
+    public UiContainerExpr getAst() {
+        return ast.out1();
     }
 
     public boolean addImplementationFactory(
@@ -596,8 +606,12 @@ public class GeneratedUiComponent {
         return method;
     }
 
-    public GeneratedJavaFile getOrCreateExtraLayer(String id, String baseName) {
-        return extraLayers.getOrCreate(id, ignored->new GeneratedJavaFile(this, getPackageName(), baseName));
+    public final GeneratedJavaFile getOrCreateExtraLayer(String id, String cls) {
+        return getOrCreateExtraLayer(id, getPackageName(), cls);
+    }
+
+    public GeneratedJavaFile getOrCreateExtraLayer(String id, String pkg, String cls) {
+        return extraLayers.getOrCreate(id, ignored->new GeneratedJavaFile(this, pkg, cls));
     }
 
     public GeneratedJavaFile getOrCreateExtraLayer(String id, String cls, In3Out1<GeneratedUiComponent, String, String, GeneratedJavaFile> factory) {

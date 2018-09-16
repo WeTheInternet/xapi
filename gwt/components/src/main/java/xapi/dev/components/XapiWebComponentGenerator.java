@@ -37,6 +37,7 @@ import xapi.ui.api.component.ModelComponentOptions;
 
 import java.lang.reflect.Modifier;
 
+import static xapi.dev.ui.api.UiConstants.EXTRA_INSTALL_METHOD;
 import static xapi.dev.ui.api.UiGeneratorPlatform.PLATFORM_WEB_COMPONENT;
 
 @UiGeneratorPlatform(PLATFORM_WEB_COMPONENT)
@@ -69,7 +70,25 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
     public GeneratedWebComponent getImpl(GeneratedUiComponent component) {
         for (GeneratedUiImplementation impl : component.getImpls()) {
             if (impl instanceof GeneratedWebComponent) {
-                return (GeneratedWebComponent) impl;
+                final GeneratedWebComponent winner = (GeneratedWebComponent) impl;
+                final UiContainerExpr ast = component.getAst();
+                if (!ast.hasExtra(EXTRA_INSTALL_METHOD)) {
+                    // this is normally called for us by calling code,
+                    // but we need to do this sooner, so we can install this "extra" method.
+                    // Might be wise to just make a proper manager class for this method,
+                    // and slap it into the GeneratedUiComponent (though, it only really
+                    // makes sense for ui components, the class _is_ specifically for UIs
+                    // [despite being usable for other purposes that just don't touch ui-only stuff]).
+                    winner.setPrefix(getImplPrefix());
+                    final ClassBuffer out = winner.getSource().getClassBuffer();
+                    final MethodBuffer mthd = out
+                        // TODO: rename to install()
+                        .createMethod("public static void assemble()");
+
+                    component.getAst().addExtra(EXTRA_INSTALL_METHOD, mthd);
+                }
+
+                return winner;
             }
         }
         throw new IllegalStateException("No GeneratedWebComponent impl found");
@@ -80,13 +99,16 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
         ContainerMetadata metadata, ComponentBuffer buffer,
         UiGenerateMode mode
     ) {
-
         final GeneratedUiImplementation component = super.generateComponent(metadata, buffer, mode);
         fillInImpl((GeneratedWebComponent) component, metadata, buffer);
         return component;
     }
 
-    protected void fillInImpl(GeneratedWebComponent component, ContainerMetadata metadata, ComponentBuffer buffer) {
+    protected void fillInImpl(
+        GeneratedWebComponent component,
+        ContainerMetadata metadata,
+        ComponentBuffer buffer
+    ) {
         final UiContainerExpr container = metadata.getUi();
         final Maybe<UiAttrExpr> data = container.getAttribute("data");
         final Maybe<UiAttrExpr> model = container.getAttribute("model");
@@ -146,10 +168,9 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
             .addAnnotation(out.addImport(SuppressWarnings.class) + "(\"unchecked\")")
             .patternln("super(opts, (ComponentConstructor)$1);", ctorName);
 
-        final MethodBuffer mthd = out
-            .createMethod("public static void assemble()")
-            .addParameter(configType(ns, out), "assembler");
+        MethodBuffer mthd = component.getOwner().getAst().getExtra(EXTRA_INSTALL_METHOD);
 
+        mthd.addParameter(configType(ns, out), "assembler");
         component.setMetadata(mthd, ctorField, getUi);
 
         mthd.patternln("if ($1 != null) { return; }", ctorName);

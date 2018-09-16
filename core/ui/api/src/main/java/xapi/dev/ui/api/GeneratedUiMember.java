@@ -1,5 +1,6 @@
 package xapi.dev.ui.api;
 
+import com.github.javaparser.ast.HasAnnotationExprs;
 import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
@@ -113,5 +114,9 @@ public class GeneratedUiMember implements Serializable {
             ", annotations=" + annotations +
             ", memberType=" + memberType +
             '}';
+    }
+
+    public void copyImports(HasAnnotationExprs annos) {
+        annotations.addAll(annos.getAnnotations());
     }
 }

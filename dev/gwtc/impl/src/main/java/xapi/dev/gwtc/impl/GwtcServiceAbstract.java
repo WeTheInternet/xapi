@@ -2,13 +2,11 @@ package xapi.dev.gwtc.impl;
 
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
-import xapi.dev.impl.ReflectiveMavenLoader;
 import xapi.dev.gwtc.api.GwtcProjectGenerator;
 import xapi.dev.gwtc.api.GwtcService;
+import xapi.dev.impl.ReflectiveMavenLoader;
 import xapi.log.X_Log;
 import xapi.log.api.LogLevel;
-
-import java.net.URLClassLoader;
 
 public abstract class GwtcServiceAbstract extends ReflectiveMavenLoader implements GwtcService {
 
@@ -27,7 +25,13 @@ public abstract class GwtcServiceAbstract extends ReflectiveMavenLoader implemen
 
   public GwtcServiceAbstract() {
     projects = X_Collect.newStringMap(GwtcProjectGenerator.class);
+  }
 
+  @Override
+  public boolean hasProject(String name) {
+    return projects.getMaybe(name)
+        .mapIfPresent(GwtcProjectGenerator::isGenerated)
+        .ifAbsentReturn(false);
   }
 
   @Override
