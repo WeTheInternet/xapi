@@ -50,7 +50,9 @@ public interface ResponseLike {
         return this;
     }
 
-    default String prepareToClose() {return null;}
+    default String prepareToClose() {
+        return null;
+    }
 
     String clearResponseBody();
 

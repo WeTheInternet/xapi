@@ -22,6 +22,7 @@ public class AbstractResponse implements ResponseLike {
     private PrintBuffer raw;
     private boolean closed;
     private Mutable<In1<ResponseLike>> onFinish = new Mutable<>(In1.ignored());
+    protected boolean calledPrepareToClose;
 
     @Override
     public int getStatusCode() {
@@ -174,5 +175,17 @@ public class AbstractResponse implements ResponseLike {
         clearResponseBody();
         setStatusCode(307);
         setHeader("Location", newRoute);
+    }
+
+    public void cancel(int code) {
+        calledPrepareToClose = true;
+        setStatusCode(code);
+        finish(code);
+    }
+
+    @Override
+    public String prepareToClose() {
+        calledPrepareToClose = true;
+        return null;
     }
 }

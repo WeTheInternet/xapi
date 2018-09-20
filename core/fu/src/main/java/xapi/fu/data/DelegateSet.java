@@ -8,18 +8,18 @@ import xapi.fu.iterate.SizedIterator;
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 9/16/18 @ 3:35 AM.
  */
-public class DelegateSet <T> implements SetLike <T> {
+public class DelegateSet <V> implements SetLike <V> {
 
-    private final In1Out1<T, T> adder;
-    private final In1Out1<T, T> remover;
-    private final Out1<SizedIterator<T>> iterator;
+    private final In1Out1<V, V> adder;
+    private final In1Out1<V, V> remover;
+    private final Out1<SizedIterator<V>> iterator;
     private final Do clearer;
     private final Out1<Integer> sizer;
 
     public DelegateSet(
-        In1Out1<T, T> adder,
-        In1Out1<T, T> remover,
-        Out1<SizedIterator<T>> iterator,
+        In1Out1<V, V> adder,
+        In1Out1<V, V> remover,
+        Out1<SizedIterator<V>> iterator,
         Do clearer,
         Out1<Integer> sizer
     ) {
@@ -31,17 +31,17 @@ public class DelegateSet <T> implements SetLike <T> {
     }
 
     @Override
-    public T addAndReturn(T value) {
+    public V addAndReturn(V value) {
         return adder.io(value);
     }
 
     @Override
-    public T removeAndReturn(T value) {
+    public V removeAndReturn(V value) {
         return remover.io(value);
     }
 
     @Override
-    public SizedIterator<T> iterator() {
+    public SizedIterator<V> iterator() {
         return iterator.out1();
     }
 

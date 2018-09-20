@@ -2,8 +2,10 @@ package xapi.collect.impl;
 
 import xapi.annotation.inject.InstanceDefault;
 import xapi.collect.api.StringTo;
+import xapi.fu.MappedIterable;
 import xapi.fu.Out2;
 import xapi.fu.iterate.SizedIterable;
+import xapi.fu.iterate.SizedIterator;
 import xapi.platform.GwtDevPlatform;
 import xapi.platform.JrePlatform;
 import xapi.util.X_Runtime;
@@ -11,6 +13,7 @@ import xapi.util.X_Runtime;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 @JrePlatform
@@ -38,6 +41,12 @@ public class StringToAbstract <V> implements StringTo<V>{
 
   protected boolean isMultithreaded() {
     return X_Runtime.isMultithreaded();
+  }
+
+  @Override
+  public SizedIterator<Out2<String, V>> iterator() {
+    final MappedIterable<Entry<String, V>> entries = MappedIterable.mapped(entries());
+    return SizedIterator.of(this::size, entries.map(Out2::fromEntry).iterator());
   }
 
   @Override

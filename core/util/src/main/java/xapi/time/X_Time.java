@@ -2,11 +2,11 @@ package xapi.time;
 
 import xapi.fu.Do;
 import xapi.fu.Do.DoUnsafe;
+import xapi.fu.Out1;
 import xapi.time.api.Moment;
 import xapi.time.impl.ImmutableMoment;
 import xapi.time.service.TimeService;
 import xapi.util.X_String;
-import xapi.util.impl.RunUnsafe;
 
 import static xapi.inject.X_Inject.singleton;
 
@@ -83,6 +83,10 @@ public class X_Time {
 
   public static String difference(final Moment start, final Moment finish) {
     return X_String.toMetricSuffix((finish.millis() - start.millis())/1000.0)+"seconds";
+  }
+  public static Out1<String> diff(final Moment start) {
+    final Moment now = now();
+    return ()->difference(start, now);
   }
   public static String difference(final Moment start) {
     return difference(start, now());

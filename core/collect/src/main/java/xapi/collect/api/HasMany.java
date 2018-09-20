@@ -61,7 +61,7 @@ public interface HasMany <K, V> extends HasValues<K, IntTo<V>>, MapLike<K, IntTo
   }
 
   default SizedIterable<Out2<K, Iterable<V>>> iterableOut() {
-    return mappedOut()
+    return forEachItem()
         .map(out->out.mapped2(IntTo::forEach))
         .promisedSize(this::size);
   }

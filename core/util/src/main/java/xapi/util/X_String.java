@@ -159,6 +159,9 @@ public class X_String {
   }
 
   public static String toMetricSuffix(double val) {
+    if (val < 0) {
+      return "-" + toMetricSuffix(-val);
+    }
     String suffix;
     int index = 3; //we go from nano to giga; up three and down three.
     if (val > 1) {

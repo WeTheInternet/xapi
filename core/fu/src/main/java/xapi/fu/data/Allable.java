@@ -1,6 +1,8 @@
 package xapi.fu.data;
 
+import xapi.fu.Do;
 import xapi.fu.In1;
+import xapi.fu.api.ShouldOverride;
 
 /**
  * A data collection that is "all"able.
@@ -16,9 +18,23 @@ import xapi.fu.In1;
  */
 public interface Allable<T> {
 
-    default void all(In1<T> callback) {
-        all(callback, In1.ignored());
+    default Do all(In1<T> callback) {
+        return all(callback, In1.ignored());
     }
 
-    void all(In1<T> onAdd, In1<T> onRemove);
+    /**
+     * Read all the current values in this collection, but do not listen for changes.
+     *
+     * You should override this to just directly iterate the real source data and call the callback.
+     *
+     * @param callback The callback to invoke on each item in this collection.
+     * @return this, for chaining
+     */
+    @ShouldOverride("Iterate source data directly")
+    default Allable<T> snapshot(In1<T> callback) {
+        all(callback, In1.ignored()).done();
+        return this;
+    }
+
+    Do all(In1<T> onAdd, In1<T> onRemove);
 }

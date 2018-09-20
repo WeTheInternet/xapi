@@ -15,19 +15,15 @@ import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.PrintBuffer;
 import xapi.except.NotImplemented;
-import xapi.fu.In1Out1;
-import xapi.fu.In2Out1;
-import xapi.fu.Lazy;
-import xapi.fu.Notifier;
-import xapi.fu.Out1;
+import xapi.fu.*;
 import xapi.source.X_Source;
-
-import static xapi.collect.X_Collect.newStringMap;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+
+import static xapi.collect.X_Collect.newStringMap;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 6/20/16.
@@ -402,9 +398,8 @@ public class NodeTransformer {
           }
           setter.println(nodeSource() + "." + set + "(" + escapeKey + ", val);");
           // Add a printbuffer that we can optionally add a notifier for
-          final PrintBuffer buffer = new PrintBuffer();
+          final PrintBuffer buffer = new PrintBuffer(setter.getIndentCount());
           setter.addToEnd(buffer);
-          buffer.setIndent(setter.getIndent());
           notificationSites.put(field.getField(), buffer);
           setter.returnValue("oldVal");
         } else {

@@ -3,13 +3,7 @@ package com.github.javaparser.ast.plugin;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseException;
 import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.expr.AnnotationExpr;
-import com.github.javaparser.ast.expr.MemberValuePair;
-import com.github.javaparser.ast.expr.SingleMemberAnnotationExpr;
-import com.github.javaparser.ast.expr.TemplateLiteralExpr;
-import com.github.javaparser.ast.expr.UiContainerExpr;
-import com.github.javaparser.ast.expr.UiExpr;
-import com.github.javaparser.ast.visitor.TransformVisitor;
+import com.github.javaparser.ast.expr.*;
 import xapi.fu.Printable;
 
 /**
@@ -17,6 +11,10 @@ import xapi.fu.Printable;
  *         Created on 4/11/16.
  */
 public class UiTransformer extends Transformer {
+
+  public UiTransformer() {
+    setShouldQuote(true);
+  }
 
   private UiTranslatorPlugin plugin;
   private Transformer delegate;

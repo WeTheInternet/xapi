@@ -1,10 +1,8 @@
 package xapi.fu.data;
 
-import xapi.fu.Do;
-import xapi.fu.In1Out1;
-import xapi.fu.In2Out1;
-import xapi.fu.Out1;
+import xapi.fu.*;
 import xapi.fu.iterate.SizedIterable;
+import xapi.fu.iterate.SizedIterator;
 
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 9/16/18 @ 3:38 AM.
@@ -15,7 +13,7 @@ public class DelegateMap <K, V> implements MapLike<K, V> {
     private final In1Out1<K, V> getter;
     private final In1Out1<K, Boolean> hasser;
     private final In1Out1<K, V> remover;
-    private final Out1<SizedIterable<K>> keys;
+    private final Out1<SizedIterable<Out2<K, V>>> entries;
     private final Do clear;
     private final Out1<Integer> sizer;
 
@@ -24,7 +22,7 @@ public class DelegateMap <K, V> implements MapLike<K, V> {
         In1Out1<K, V> getter,
         In1Out1<K, Boolean> hasser,
         In1Out1<K, V> remover,
-        Out1<SizedIterable<K>> keys,
+        Out1<SizedIterable<Out2<K, V>>> entries,
         Do clear,
         Out1<Integer> sizer
     ) {
@@ -32,7 +30,7 @@ public class DelegateMap <K, V> implements MapLike<K, V> {
         this.getter = getter;
         this.hasser = hasser;
         this.remover = remover;
-        this.keys = keys;
+        this.entries = entries;
         this.clear = clear;
         this.sizer = sizer;
     }
@@ -59,7 +57,7 @@ public class DelegateMap <K, V> implements MapLike<K, V> {
 
     @Override
     public SizedIterable<K> keys() {
-        return keys.out1();
+        return entries.out1().map(Out2::out1);
     }
 
     @Override
@@ -70,5 +68,10 @@ public class DelegateMap <K, V> implements MapLike<K, V> {
     @Override
     public int size() {
         return sizer.out1();
+    }
+
+    @Override
+    public SizedIterator<Out2<K, V>> iterator() {
+        return entries.out1().iterator();
     }
 }

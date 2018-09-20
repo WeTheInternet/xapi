@@ -519,6 +519,7 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
       writeString(out, X_Model.keyToString((ModelKey)value), primitives);
     } else if (isIterableType(valueType)) {
       writeIterable(out, (CollectionProxy)value, primitives, ctx);
+      // Figure out how to support either ComponentList, Allable, or some other not-CollectionProxy collection.
     } else if (isStringMapType(valueType)) {
       writeStringMap(out, (StringTo)value, primitives, ctx);
     } else if (isSupportedEnumType(valueType)) {

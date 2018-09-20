@@ -347,6 +347,7 @@ public abstract class Node implements Serializable, Cloneable {
      * @param parentNode node to be set as parent
      */
     public void setParentNode(Node parentNode) {
+        assert parentNode != this : "Cannot be your own parent: " + parentNode;
         // remove from old parent, if any
         if (this.parentNode != null) {
             this.parentNode.childrenNodes.remove(this);

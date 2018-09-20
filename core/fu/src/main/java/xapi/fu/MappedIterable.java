@@ -616,6 +616,7 @@ public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
         return this;
     }
 
+    // TODO: rename to forAll3
     default <S1, S2> MappedIterable<T> forAll(In3<T, S1, S2> consumer, S1 const1, S2 const2) {
         forEach(consumer.provide2(const1).provide2(const2).toConsumer());
         return this;

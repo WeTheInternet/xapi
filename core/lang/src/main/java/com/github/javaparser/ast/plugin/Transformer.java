@@ -16,7 +16,9 @@ public class Transformer {
   public static final String DO_NOT_PRINT = "\0\0\0";
   private boolean shouldQuote;
 
-  public Transformer(){}
+  public Transformer(){
+    shouldQuote = true;
+  }
 
   public String onTemplateStart(Printable printer, TemplateLiteralExpr template) {
     return template.getValue();
@@ -52,7 +54,7 @@ public class Transformer {
         String line = lines[i];
         printer.print(X_Source.escape(line));
         if (i < lines.length - 1) {
-          printer.println("\\n\" +");
+          printer.println(isQuote ? "\\n\" +" : "");
         }
         if (isQuote) {
           printer.print("\"");

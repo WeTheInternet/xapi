@@ -5,11 +5,20 @@ package xapi.fu;
  *         Created on 07/11/15.
  */
 @SuppressWarnings("unchecked")
+@FunctionalInterface
 public interface In3<I1, I2, I3> extends HasInput, Rethrowable, Lambda {
+
+  void in(I1 in1, I2 in2, I3 in3);
 
   In3 NULL = (ig,no,re)->{};
 
-  void in(I1 in1, I2 in2, I3 in3);
+  In3<In2, ?, ?> INVOKE_IN2 = In2::in;
+
+  static <I1, I2> In3<In2<I1, I2>, I1, I2> invokeIn2() {
+    In3 in = INVOKE_IN2;
+    return in;
+  }
+
 
   @Override
   default int accept(int position, Object... values) {

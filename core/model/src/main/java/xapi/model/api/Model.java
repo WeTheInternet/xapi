@@ -5,6 +5,7 @@ import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
 import xapi.collect.proxy.CollectionProxy;
 import xapi.fu.*;
+import xapi.fu.has.HasLock;
 import xapi.model.X_Model;
 
 import java.util.Map.Entry;
@@ -19,21 +20,25 @@ public interface Model {
     <T> T getProperty(String key, Out1<T> dflt);
 
     default <T> T getOrSaveProperty(String key, Out1<T> dflt) {
-        boolean save = !hasProperty(key);
-        T val = getProperty(key, dflt);
-        if (save) {
-            setProperty(key, val);
-        }
-        return val;
+        return HasLock.alwaysLock(this, ()->{
+            boolean save = !hasProperty(key);
+            T val = getProperty(key, dflt);
+            if (save) {
+                setProperty(key, val);
+            }
+            return val;
+        });
     }
 
     default <T> T getOrCreate(Out1<T> getter, Out1<T> factory, In1<T> setter) {
-        T is = getter.out1();
-        if (is == null) {
-            is = factory.out1();
-            setter.in(is);
-        }
-        return is;
+        return HasLock.alwaysLock(this, ()->{
+            T is = getter.out1();
+            if (is == null) {
+                is = factory.out1();
+                setter.in(is);
+            }
+            return is;
+        });
     }
 
     default <T, G extends T> StringTo<T> getOrCreateMap(
@@ -49,12 +54,14 @@ public interface Model {
     }
 
     default <T> T compute(Out1<T> getter, In1Out1<T, T> mapper, In1<T> setter) {
-        T was = getter.out1();
-        final T is = mapper.io(was);
-        if (was != is) {
-            setter.in(is);
-        }
-        return is;
+        return HasLock.alwaysLock(this, ()->{
+            T was = getter.out1();
+            final T is = mapper.io(was);
+            if (was != is) {
+                setter.in(is);
+            }
+            return is;
+        });
     }
 
     default <T> Maybe<T> getMaybe(String key) {
@@ -118,8 +125,8 @@ public interface Model {
     }
 
     default void absorb(Model model, boolean append) {
-        model.getProperties()
-            .forAll(e -> {
+        HasLock.alwaysLock(this, ()->{
+            model.getProperties().forAll(e -> {
                 final Object yourVal = e.getValue();
                 if (yourVal == null) {
                     if (!append) {
@@ -148,5 +155,7 @@ public interface Model {
                 // TODO handle more collection types...
                 setProperty(e.getKey(), e.getValue());
             });
+            return null;
+        });
     }
 }

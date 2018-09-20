@@ -1,11 +1,14 @@
 package xapi.fu.java;
 
+import xapi.fu.Out2;
 import xapi.fu.data.MapLike;
 import xapi.fu.iterate.SizedIterable;
+import xapi.fu.iterate.SizedIterator;
 
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Simple {@link MapLike} delegate over a java map.
@@ -51,7 +54,8 @@ public class MapAdapter <K, V> implements MapLike<K, V>, Serializable {
 
     @Override
     public SizedIterable<K> keys() {
-        return SizedIterable.of(this::size, map.keySet());
+        final Set<K> set = map.keySet();
+        return SizedIterable.of(set::size, set);
     }
 
     @Override
@@ -79,5 +83,12 @@ public class MapAdapter <K, V> implements MapLike<K, V>, Serializable {
     @Override
     public int hashCode() {
         return map.hashCode();
+    }
+
+    @Override
+    public SizedIterator<Out2<K, V>> iterator() {
+        return SizedIterable.of(this::size, map.entrySet())
+            .map(Out2::fromEntry)
+            .iterator();
     }
 }

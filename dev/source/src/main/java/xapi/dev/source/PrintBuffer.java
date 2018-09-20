@@ -39,8 +39,6 @@ import xapi.fu.Printable;
 
 public class PrintBuffer extends CharBuffer implements Printable<PrintBuffer>, HasIndent, PatternPrinter<PrintBuffer> {
 
-  static final String INDENT = System.getProperty("xapi.indent", "  ");
-
   protected static String join(final String sep, final String[] args) {
     if (args.length == 0) {
       return "";

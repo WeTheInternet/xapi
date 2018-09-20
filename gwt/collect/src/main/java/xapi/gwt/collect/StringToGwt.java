@@ -6,10 +6,10 @@ import xapi.fu.MappedIterable;
 import xapi.fu.Out2;
 import xapi.fu.iterate.ArrayIterable;
 import xapi.fu.iterate.SizedIterable;
+import xapi.fu.iterate.SizedIterator;
 import xapi.fu.java.EntryValueIterable;
 import xapi.platform.GwtPlatform;
 
-import java.util.Iterator;
 import java.util.Map.Entry;
 
 import com.google.gwt.core.client.GwtScriptOnly;
@@ -78,7 +78,7 @@ public class StringToGwt <V> extends JavaScriptObject implements StringTo<V>{
     }
   }
 
-  static class EntryItr <V> implements Iterator<Entry<String, V>> {
+  static class EntryItr <V> implements SizedIterator<Entry<String, V>> {
 
     final StringToGwt<V> src;
 
@@ -132,6 +132,10 @@ public class StringToGwt <V> extends JavaScriptObject implements StringTo<V>{
       src.remove(entry.getKey());
     }
 
+    @Override
+    public int size() {
+      return max - pos;
+    }
   }
 
   public final native JavaScriptObject toJso()
@@ -212,6 +216,11 @@ public class StringToGwt <V> extends JavaScriptObject implements StringTo<V>{
   }-*/;
 
   @Override
+  public final SizedIterator<Out2<String, V>> iterator() {
+    return SizedIterator.of(new EntryItr<>(this), Out2::fromEntry);
+  }
+
+  @Override
   public final native boolean isEmpty()
   /*-{
     return this._k.length == 0;
@@ -282,7 +291,7 @@ public class StringToGwt <V> extends JavaScriptObject implements StringTo<V>{
   }-*/;
 
   @Override
-  public final Iterable<Entry<String,V>> entries() {
+  public final MappedIterable<Entry<String,V>> entries() {
     return MappedIterable.mappedCaching(new EntryItr<>(this));
   }
 

@@ -44,6 +44,8 @@ import xapi.log.impl.AbstractLog;
 import xapi.platform.GwtPlatform;
 import xapi.util.api.Initable;
 
+import com.google.gwt.core.client.JavaScriptObject;
+
 /**
  * Our javascript-enabled console, which will log complete javascript objects, rather than a .toString() ->
  * "[Object]" mangling.
@@ -66,7 +68,7 @@ public class JsLog extends AbstractLog implements Initable {
   @Override
   @SuppressWarnings({ "unchecked", "rawtypes" })
   public Iterable<Object> shouldIterate(Object m) {
-    return m instanceof Iterable ? (Iterable)m : m instanceof SimpleFifo ? ((SimpleFifo)m).forEach() : null;
+    return m instanceof JavaScriptObject ? null : m instanceof Iterable ? (Iterable)m : m instanceof SimpleFifo ? ((SimpleFifo)m).forEach() : null;
   }
 
   private final native void initialize()

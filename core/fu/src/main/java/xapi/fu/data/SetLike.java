@@ -1,14 +1,9 @@
 package xapi.fu.data;
 
-import xapi.fu.MappedIterable;
-import xapi.fu.api.Clearable;
-import xapi.fu.has.HasItems;
-import xapi.fu.iterate.SizedIterable;
-
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/9/16.
  */
-public interface SetLike <V> extends SizedIterable<V>, Clearable, HasItems<V> {
+public interface SetLike <V> extends CollectionLike<V> {
 
     default boolean add(V value) {
         return addAndReturn(value) != null;
@@ -31,8 +26,4 @@ public interface SetLike <V> extends SizedIterable<V>, Clearable, HasItems<V> {
 
     V removeAndReturn(V value);
 
-    @Override
-    default MappedIterable<V> forEachItem() {
-        return this;
-    }
 }

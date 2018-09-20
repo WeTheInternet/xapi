@@ -1,14 +1,13 @@
 package xapi.fu.data;
 
-import xapi.fu.*;
 import xapi.fu.Filter.Filter1;
 import xapi.fu.Filter.Filter2;
+import xapi.fu.*;
 import xapi.fu.Out1.Out1Unsafe;
-import xapi.fu.api.Clearable;
-import xapi.fu.has.HasItems;
 import xapi.fu.has.HasLock;
-import xapi.fu.has.HasSize;
+import xapi.fu.iterate.EmptyIterator;
 import xapi.fu.iterate.SizedIterable;
+import xapi.fu.iterate.SizedIterator;
 
 import java.util.Iterator;
 
@@ -18,7 +17,8 @@ import static xapi.fu.iterate.EmptyIterator.NONE;
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 4/10/16.
  */
-public interface MapLike<K, V> extends HasSize, HasItems<Out2<K, V>>, Clearable {
+public interface MapLike<K, V> extends CollectionLike<Out2<K, V>> {
+//public interface MapLike<K, V> extends HasSize, HasItems<Out2<K, V>>, Clearable {
 
   /**
    * A put operation.  Returns the previous value, if any.
@@ -90,7 +90,7 @@ public interface MapLike<K, V> extends HasSize, HasItems<Out2<K, V>>, Clearable 
 
   @Override
   default SizedIterable<Out2<K, V>> forEachItem() {
-    return mappedOut();
+    return this;
   }
 
   default V[] removeAllValues(In1Out1<Integer, V[]> valueFactory) {
@@ -125,17 +125,8 @@ public interface MapLike<K, V> extends HasSize, HasItems<Out2<K, V>>, Clearable 
     });
   }
 
-  default MappedIterable<K> mappedKeys() {
-    final Iterable<K> itr = keys();
-    return MappedIterable.mapped(itr);
-  }
-
   default MappedIterable<V> mappedValues() {
-    return MappedIterable.adaptIterable(keys(), this::get);
-  }
-
-  default MappedIterable<Out2<K, V>> all() {
-    return MappedIterable.adaptIterable(keys(), in-> Out2.out2Immutable(in, get(in)));
+    return map(Out2::out2);
   }
 
   default V getOrCreate(K key, In1Out1<K, V> ifNull) {
@@ -254,6 +245,14 @@ public interface MapLike<K, V> extends HasSize, HasItems<Out2<K, V>>, Clearable 
     final MapLike<K, V> self = this;
     return new MapLike<NewKey, V>() {
       @Override
+      public SizedIterator<Out2<NewKey, V>> iterator() {
+        return SizedIterator.of(self.iterator(), o->{
+          final Out1<NewKey> key = toNewType.supplyDeferred(o.out1Provider());
+          return Out2.out2(key, o.out2());
+        });
+      }
+
+      @Override
       public V put(NewKey key, V value) {
         final K mappedKey = fromNewType.io(key);
         return self.put(mappedKey, value);
@@ -297,6 +296,14 @@ public interface MapLike<K, V> extends HasSize, HasItems<Out2<K, V>>, Clearable 
   default <NewValue> MapLike<K, NewValue> mapValue(In2Out1<K, NewValue, V> fromNewType, In1Out1<V, NewValue> toNewType) {
     final MapLike<K, V> self = this;
     return new MapLike<K, NewValue>() {
+      @Override
+      public SizedIterator<Out2<K, NewValue>> iterator() {
+        return SizedIterator.of(self.iterator(), o->{
+          final Out1<NewValue> value = toNewType.supplyDeferred(o.out2Provider());
+          return Out2.out2(o.out1Provider(), value);
+        });
+      }
+
       @Override
       public NewValue put(K key, NewValue value) {
         final V mappedValue = fromNewType.io(key, value);
@@ -513,13 +520,15 @@ public interface MapLike<K, V> extends HasSize, HasItems<Out2<K, V>>, Clearable 
     return existing;
   }
 
-  default SizedIterable<Out2<K, V>> mappedOut() {
-    return keys()
-        .map(key->Out2.out2Immutable(key, get(key)))
-        .promisedSize(this::size);
-  }
+  @Override
+  int size();
 
   MapLike EMPTY = new MapLike() {
+
+    @Override
+    public SizedIterator iterator() {
+      return EmptyIterator.EMPTY;
+    }
 
     @Override
     public void clear() {
@@ -570,7 +579,7 @@ public interface MapLike<K, V> extends HasSize, HasItems<Out2<K, V>>, Clearable 
     }
   }
 
-  default Maybe<Out2<K,V>> first() {
+  default Maybe<Out2<K,V>> firstMaybe() {
     final Iterator<Out2<K, V>> items = forItems(1).iterator();
     if (items.hasNext()) {
       return Maybe.immutable(items.next());
@@ -578,7 +587,7 @@ public interface MapLike<K, V> extends HasSize, HasItems<Out2<K, V>>, Clearable 
     return Maybe.not();
   }
 
-  default Maybe<Out2<K,V>> last() {
+  default Maybe<Out2<K,V>> lastMaybe() {
     final SizedIterable keys = keys();
     if (keys.isEmpty()) {
       return Maybe.not();

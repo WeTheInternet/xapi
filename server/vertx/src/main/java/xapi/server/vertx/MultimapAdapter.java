@@ -6,6 +6,7 @@ import xapi.collect.api.StringTo;
 import xapi.fu.MappedIterable;
 import xapi.fu.Out2;
 import xapi.fu.iterate.SizedIterable;
+import xapi.fu.iterate.SizedIterator;
 import xapi.util.X_Util;
 import xapi.util.impl.AbstractPair;
 
@@ -36,6 +37,11 @@ public class MultimapAdapter implements StringTo.Many<String> {
     @Override
     public int size() {
         return map.size();
+    }
+
+    @Override
+    public SizedIterator<Out2<String, IntTo<String>>> iterator() {
+        return SizedIterator.of(this::size, entries().map(Out2::fromEntry).iterator());
     }
 
     @Override
@@ -127,7 +133,7 @@ public class MultimapAdapter implements StringTo.Many<String> {
     }
 
     @Override
-    public Iterable<Entry<String, IntTo<String>>> entries() {
+    public MappedIterable<Entry<String, IntTo<String>>> entries() {
         return MappedIterable.mapped(map.names())
             .map(name->new AbstractPair<String, IntTo<String>>(name, new ListAdapter<>(map.getAll(name))));
     }

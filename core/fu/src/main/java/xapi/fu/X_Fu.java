@@ -1,8 +1,6 @@
 package xapi.fu;
 
 import xapi.fu.Filter.Filter2;
-import xapi.fu.data.MapLike;
-import xapi.fu.iterate.SizedIterable;
 
 import javax.validation.constraints.NotNull;
 import java.lang.reflect.ParameterizedType;
@@ -527,55 +525,6 @@ public interface X_Fu {
 
       T[] copy = Fu.jutsu.arrayCopy(items, startInclusive, endExclusive - startInclusive);
       return copy;
-  }
-
-  static <K, V> MapLike <K, V> newMap(
-      In2Out1<K, V, V> setter,
-      In1Out1<K, V> getter,
-      In1Out1<K, Boolean> hasser,
-      In1Out1<K, V> remover,
-      Out1<SizedIterable<K>> keys,
-      Out1<Integer> size,
-      Do clear
-  ) {
-      return new MapLike<K, V>() {
-        @Override
-        public void clear() {
-          if (clear != null) {
-            clear.done();
-          }
-        }
-
-        @Override
-        public V put(K key, V value) {
-          return setter.io(key, value);
-        }
-
-        @Override
-        public V get(K key) {
-          return getter.io(key);
-        }
-
-        @Override
-        public boolean has(K key) {
-          return hasser.io(key);
-        }
-
-        @Override
-        public V remove(K key) {
-          return remover.io(key);
-        }
-
-        @Override
-        public SizedIterable<K> keys() {
-          return keys.out1();
-        }
-
-        @Override
-        public int size() {
-          return size.out1();
-        }
-      };
   }
 
   static RuntimeException rethrow(Throwable t) {

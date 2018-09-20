@@ -67,7 +67,9 @@ public class JreLog extends AbstractLog{
   }
 
   protected void printLogString(LogLevel level, String logString) {
-    (level == LogLevel.ERROR ? errorStream() : logStream()).println(logString);
+    final PrintStream stream = (level == LogLevel.ERROR ? errorStream() : logStream());
+    stream.println(logString);
+    stream.flush();
   }
 
   protected PrintStream errorStream() {

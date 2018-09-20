@@ -8,6 +8,8 @@ public interface Printable <Self extends Printable<Self>> extends Coercible {
 
   String NEW_LINE = "\n";
 
+  String INDENT = System.getProperty("xapi.indent", "  ");
+
   Self append(final CharSequence s, final int start, final int end);
 
   Self append(final char[] str, final int offset, final int len);
@@ -21,7 +23,7 @@ public interface Printable <Self extends Printable<Self>> extends Coercible {
   Self setIndent(String indent);
 
   default Self setIndentCount(int indent) {
-    final char[] i = getIndent().toCharArray();
+    final char[] i = INDENT.toCharArray();
     final char[] in = new char[i.length * indent];
     while (indent-->0) {
       System.arraycopy(i, 0, in, indent * i.length, i.length );
@@ -158,7 +160,7 @@ public interface Printable <Self extends Printable<Self>> extends Coercible {
   }
 
   default String perIndent() {
-    return "  ";
+    return INDENT;
   }
 
   default Self indent() {

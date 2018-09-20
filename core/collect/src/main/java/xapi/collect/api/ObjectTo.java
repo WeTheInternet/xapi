@@ -6,6 +6,7 @@ import xapi.fu.Filter.Filter1;
 import xapi.fu.Filter.Filter2;
 import xapi.fu.data.MapLike;
 import xapi.fu.iterate.SizedIterable;
+import xapi.fu.iterate.SizedIterator;
 import xapi.fu.java.EntryIterable;
 
 public interface ObjectTo <K, V>
@@ -42,6 +43,11 @@ extends EntryIterable<K,V>, CollectionProxy<K,V>, HasValues<K,V>
   default MapLike<K, V> asMap() {
       ObjectTo<K, V> values = this;
       return new MapLike<K, V>() {
+          @Override
+          public SizedIterator<Out2<K, V>> iterator() {
+              return forEachEntry().iterator();
+          }
+
           @Override
           public void clear() {
               values.clear();
