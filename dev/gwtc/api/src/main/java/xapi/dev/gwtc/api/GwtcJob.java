@@ -7,12 +7,9 @@ import xapi.collect.impl.SimpleLinkedList;
 import xapi.dev.gwtc.api.GwtcJobMonitor.CompileMessage;
 import xapi.except.MultiException;
 import xapi.except.NoSuchItem;
+import xapi.fu.*;
 import xapi.fu.Do.DoUnsafe;
-import xapi.fu.In1;
-import xapi.fu.In2;
 import xapi.fu.In2.In2Unsafe;
-import xapi.fu.Maybe;
-import xapi.fu.X_Fu;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
 import xapi.gwtc.api.CompiledDirectory;
@@ -23,6 +20,8 @@ import xapi.model.api.PrimitiveSerializer;
 import xapi.process.X_Process;
 import xapi.reflect.X_Reflect;
 import xapi.source.api.CharIterator;
+import xapi.time.X_Time;
+import xapi.time.api.Moment;
 import xapi.util.X_String;
 import xapi.util.api.Destroyable;
 import xapi.util.api.RemovalHandler;
@@ -38,9 +37,11 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 
 import static xapi.dev.gwtc.api.GwtcJobMonitor.CompileMessage.*;
+import static xapi.fu.Rethrowable.firstRethrowable;
 
 import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.dev.codeserver.CompileStrategy;
@@ -62,6 +63,8 @@ public abstract class GwtcJob implements Destroyable {
     private final StringTo.Many<In2<URL, Throwable>> resourceCallbacks;
     private Throwable error;
     private Throwable callbackError;
+    private long touch;
+    private volatile Do onStale = Do.NOTHING, onFresh = Do.NOTHING;
 
     public GwtcJob(GwtManifest manifest, PrimitiveSerializer serializer) {
         this(manifest.getModuleName(), manifest.getModuleShortName(), manifest.isRecompile(), manifest.isJ2cl(), serializer);
@@ -82,12 +85,18 @@ public abstract class GwtcJob implements Destroyable {
         doneCallbacks = Chain.startChain();
         statusUpdate = new SimpleLinkedList<>();
         resourceCallbacks = X_Collect.newStringMultiMap(In2.class);
+        touch();
+    }
+
+    private void touch() {
+        touch = System.currentTimeMillis();
     }
 
     public abstract GwtcJobMonitor getMonitor();
 
     @Override
     public void destroy() {
+        touch();
         if (getState() != CompileMessage.Destroyed) {
             X_Log.info(GwtcJob.class, "Telling gwtc process to die");
             getMonitor().writeAsCaller(GwtcJobMonitor.JOB_DIE);
@@ -122,13 +131,14 @@ public abstract class GwtcJob implements Destroyable {
     }
 
     public void setState(CompileMessage state) {
+        touch();
         try {
             if (state.isComplete()) {
-                if (state == Failed) {
+                if (state == Failed || state == Destroyed) {
                     directory = null;
                     // TODO actually get real error reporting here
                     error = new UnableToCompleteException();
-                    xapi.fu.Log.tryLog(GwtcJob.class, this, "Gwt Compilation state: failed");
+                    xapi.fu.Log.tryLog(GwtcJob.class, this, "Gwt Compilation state: ", state);
                 }
                 doneCallbacks.removeAll(callback-> {
                     try {
@@ -180,6 +190,7 @@ public abstract class GwtcJob implements Destroyable {
         final GwtcJobMonitor monitor = getMonitor();
         while (monitor.hasMessageForCaller()) {
             readStatus(monitor, (status, extra)->{
+                touch();
                 switch (status) {
                     case Log:
                         X_Log.info(GwtcJob.class, extra);
@@ -200,12 +211,27 @@ public abstract class GwtcJob implements Destroyable {
                     case FoundResource:
                         notifyResource(extra);
                         break;
+                    case Fresh:
+                        notifyFresh();
+                        break;
+                    case Stale:
+                        notifyStale();
+                        break;
                 }
             });
         }
     }
 
+    private void notifyStale() {
+        onStale.done();
+    }
+
+    private void notifyFresh() {
+        onFresh.done();
+    }
+
     private void notifyResource(String extra) {
+        touch();
         CharIterator itr = CharIterator.forString(extra);
         String fileName = serializer.deserializeString(itr);
         String result = serializer.deserializeString(itr);
@@ -501,21 +527,23 @@ public abstract class GwtcJob implements Destroyable {
     }
 
     public void blockFor(long timeout, TimeUnit unit) throws TimeoutException {
-        long deadline = System.currentTimeMillis() + unit.toMillis(timeout);
+        final Moment start = X_Time.now();
+        Moment deadline = start.plus(unit.toMillis(timeout));
 
         while (!isComplete(getState())) {
             if (getMonitor().hasMessageForCaller()) {
                 flushMonitor();
             } else {
-                LockSupport.parkNanos(10_000_000);
+                LockSupport.parkNanos(50_000_000);
             }
-            if (System.currentTimeMillis() > deadline) {
+            if (deadline.compareTo(X_Time.now()) < 0) {
                 throw new TimeoutException("Waited " + timeout + " " + unit + " but job state was set to " + getState());
             }
         }
         while (getMonitor().hasMessageForCaller()) {
             flushMonitor();
         }
+        X_Log.debug(GwtcJob.class, "Blocked for ", X_Time.difference(start));
     }
 
     /**
@@ -546,4 +574,60 @@ public abstract class GwtcJob implements Destroyable {
         };
     }
 
+    public long lastChange() {
+        return touch;
+    }
+
+    public String getModuleName() {
+        return moduleName;
+    }
+
+    final AtomicBoolean result = new AtomicBoolean();
+    public boolean checkFreshness() {
+        synchronized (result) {
+            boolean first = onFresh == Do.NOTHING;
+
+            X_Log.debug(GwtcJob.class, "checking freshness... ", first);
+            if (first) {
+                onFresh = ()->{
+                    result.set(true);
+                    synchronized (result) {
+                        result.notifyAll();
+                        onFresh = onStale = Do.NOTHING;
+                    }
+                };
+                onStale = ()->{
+                    result.set(false);
+                    synchronized (result) {
+                        result.notifyAll();
+                        onFresh = onStale = Do.NOTHING;
+                    }
+                };
+                getMonitor().writeAsCaller(GwtcJobMonitor.JOB_CHECK_FRESHNESS);
+            }
+        }
+
+        int spins = 100;
+        try {
+            while (onFresh != Do.NOTHING) {
+                pingMonitor();
+                if (spins --< 0) {
+                    synchronized (result) {
+                        result.wait(10);
+                    }
+                }
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            firstRethrowable(this).rethrow(e);
+        }
+
+        return result.get();
+    }
+
+    public void pingMonitor() {
+        synchronized (statusUpdate) {
+            statusUpdate.notifyAll();
+        }
+    }
 }

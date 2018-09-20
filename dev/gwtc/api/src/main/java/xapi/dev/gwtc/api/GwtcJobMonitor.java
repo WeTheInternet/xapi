@@ -74,6 +74,8 @@ public interface GwtcJobMonitor {
                     return true;
                 }
             },
+            Fresh(CompileMessage.KEY_FRESH),
+            Stale(CompileMessage.KEY_STALE),
             Log(CompileMessage.KEY_LOG),
             Failed(CompileMessage.KEY_FAILED) {
                 @Override
@@ -90,6 +92,8 @@ public interface GwtcJobMonitor {
             }
         ;
         public static final char
+            KEY_FRESH = 'g',
+            KEY_STALE = 'b',
             KEY_SUCCESS = 's',
             KEY_RUNNING = 'r',
             KEY_PREPARING = 'i',
@@ -114,6 +118,10 @@ public interface GwtcJobMonitor {
                     return Running;
                 case KEY_SUCCESS:
                     return Success;
+                case KEY_FRESH:
+                    return Fresh;
+                case KEY_STALE:
+                    return Stale;
                 case KEY_DEBUG_WAIT:
                     return DebugWait;
                 case KEY_FAILED:

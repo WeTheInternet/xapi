@@ -3,6 +3,7 @@ package xapi.dev.gwtc.impl;
 import xapi.annotation.compile.Dependency;
 import xapi.annotation.inject.InstanceDefault;
 import xapi.dev.gwtc.api.AnnotatedDependency;
+import xapi.dev.gwtc.api.GwtcJob;
 import xapi.dev.gwtc.api.GwtcJobMonitor.CompileMessage;
 import xapi.dev.gwtc.api.GwtcProjectGenerator;
 import xapi.dev.gwtc.api.GwtcService;
@@ -25,6 +26,8 @@ import xapi.mvn.api.MvnDependency;
 import xapi.reflect.X_Reflect;
 import xapi.test.junit.JUnit4Runner;
 import xapi.test.junit.JUnitUi;
+import xapi.time.X_Time;
+import xapi.time.api.Moment;
 import xapi.util.*;
 
 import java.io.File;
@@ -47,10 +50,19 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static xapi.fu.iterate.SingletonIterator.singleItem;
+import static xapi.time.X_Time.diff;
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.dev.Compiler;
 
+/**
+ * This class is the ball of brains behind hosting multiple gwt compiles, concurrently,
+ * behind isolated classloader or processes, and using dynamic module generation / assembly.
+ *
+ * It is useful for both unit tests, development servers and in your build glue.
+ *
+ *
+ */
 @Gwtc(propertiesLaunch=@GwtcProperties)
 @InstanceDefault(implFor=GwtcService.class)
 public class GwtcServiceImpl extends GwtcServiceAbstract {
@@ -87,7 +99,9 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
         return;
       }
     }
+    final Moment start = X_Time.now();
     manager.compileIfNecessary(manifest, callback);
+    X_Log.trace(GwtcServiceImpl.class, "maybeCompile took", diff(start));
     if (unit != null) {
       try {
         manager.blockFor(manifest.getModuleName(), timeout, unit);
@@ -349,6 +363,13 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
         }
       }
     );
+  }
+
+  @Override
+  public void destroy(GwtcJob existing) {
+    // perhaps also delete the project?  we probably don't want that,
+    // as that's how the user configured the compilation to begin with.
+    getJobManager().destroy(existing);
   }
 
   //  @Override

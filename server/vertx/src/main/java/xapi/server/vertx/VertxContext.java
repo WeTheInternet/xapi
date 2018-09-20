@@ -3,6 +3,7 @@ package xapi.server.vertx;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.Session;
+import xapi.dev.gwtc.api.JobCanceledException;
 import xapi.except.NoSuchItem;
 import xapi.fu.Lazy;
 import xapi.fu.data.MapLike;
@@ -24,6 +25,7 @@ public class VertxContext implements RequestContext<User, VertxRequest, VertxRes
     HasRequestContext<VertxContext> {
 
     public static final Integer SUCCESS = 200;
+    public static final Integer CANCELLED = 499; // non-standard used by nginx... good enough
     public static final Integer FAILURE = 500;
     public static final String CONTEXT_KEY = "_xvc_";
 
@@ -60,19 +62,23 @@ public class VertxContext implements RequestContext<User, VertxRequest, VertxRes
         final Session rawSession = ctx.session();
         final String sessionId = rawSession.id();
         final SessionScopeVertx sess = global.findOrCreateSession(sessionId, id -> {
-            final Object existing = ctx.session().data().get(id);
+            // need locking here, or we wind up w/ dup'd sessions.
             final SessionScopeVertx scope;
-            if (existing != null) {
-                // Actually make the data we save to the vertx session some smaller,
-                // serializable subset of local values... have a SerializableClassTo for localData,
-                // and we'll just copy those into a new SessionScopeVertx instance.
-                scope = (SessionScopeVertx) existing;
-            } else {
-                scope = new SessionScopeVertx();
+            final Session vertxSession = ctx.session();
+            synchronized (pntr) {
+                final Object existing = vertxSession.data().get(id);
+                if (existing != null) {
+                    // Actually make the data we save to the vertx session some smaller,
+                    // serializable subset of local values... have a SerializableClassTo for localData,
+                    // and we'll just copy those into a new SessionScopeVertx instance.
+                    scope = (SessionScopeVertx) existing;
+                } else {
+                    scope = new SessionScopeVertx();
+                }
+                scope.setContext(ctx);
+                final MapLike mapProxy = X_Jdk.toMap(ctx.session().data());
+                scope.setLocal(MapLike.class, mapProxy);
             }
-            scope.setContext(ctx);
-            final MapLike mapProxy = X_Jdk.toMap(ctx.session().data());
-            scope.setLocal(MapLike.class, mapProxy);
             return scope;
         });
         // TODO: actually use vert.x auth wiring, so we can populate ctx.user() correctly.
@@ -127,6 +133,11 @@ public class VertxContext implements RequestContext<User, VertxRequest, VertxRes
             if (failures instanceof RouteNotHandledException) {
                 ctx.next();
                 autoclose = false;
+            } else if (failures instanceof JobCanceledException) {
+                resp.cancel(CANCELLED);
+                // lets clean up after ourselves...
+                ctx.data().remove(CONTEXT_KEY);
+                return CANCELLED;
             } else if (failures instanceof RedirectionException) {
                 final RedirectionException redirect = (RedirectionException) failures;
                 if (!redirect.getBody().isEmpty()) {

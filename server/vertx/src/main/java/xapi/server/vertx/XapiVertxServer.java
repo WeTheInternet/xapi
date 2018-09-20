@@ -27,6 +27,7 @@ import xapi.collect.api.StringTo;
 import xapi.dev.gwtc.api.GwtcJob;
 import xapi.dev.gwtc.api.GwtcJobManager;
 import xapi.dev.gwtc.api.GwtcService;
+import xapi.dev.gwtc.api.JobCanceledException;
 import xapi.dev.source.PrintBuffer;
 import xapi.except.MultiException;
 import xapi.except.NoSuchItem;
@@ -43,6 +44,7 @@ import xapi.inject.X_Inject;
 import xapi.io.X_IO;
 import xapi.io.impl.IOCallbackDefault;
 import xapi.log.X_Log;
+import xapi.log.api.LogLevel;
 import xapi.model.X_Model;
 import xapi.model.api.Model;
 import xapi.model.api.ModelKey;
@@ -64,6 +66,7 @@ import xapi.server.vertx.scope.ScopeServiceVertx;
 import xapi.server.vertx.scope.SessionScopeVertx;
 import xapi.source.template.MappedTemplate;
 import xapi.time.X_Time;
+import xapi.time.api.Moment;
 import xapi.util.X_Properties;
 import xapi.util.X_String;
 import xapi.util.X_Util;
@@ -256,6 +259,8 @@ public class XapiVertxServer extends AbstractXapiServer<RequestScopeVertx> {
                     final Out1<String> user = ()->ctx.getUser() == null ? "anon user" : ctx.getUser().toString();
                     if (VertxContext.SUCCESS.equals(code)) {
                         X_Log.debug(XapiVertxServer.class, user, ", request succeeded for ", req.getPath());
+                    } else if (code == VertxContext.CANCELLED) {
+                        X_Log.trace(XapiVertxServer.class, user, ", cancelled request for ", req.getPath());
                     } else if (code == 307) {
                         X_Log.trace(XapiVertxServer.class, user, ", request redirected to", ctx.getResponse().getHeaders().get("Location"), ctx, "\n", dump);
                     } else if (code == 404) {
@@ -770,7 +775,11 @@ public class XapiVertxServer extends AbstractXapiServer<RequestScopeVertx> {
                     } else {
                         // Final route failed... get loud immediately.
                         // TODO: "catch routes"
-                        X_Log.warn(XapiVertxServer.class, "Route reported error", next, t);
+                        if (t instanceof JobCanceledException) {
+                            X_Log.trace(XapiVertxServer.class, "Request canceled for ", request.getPath());
+                        } else {
+                            X_Log.warn(XapiVertxServer.class, "Route reported error", next, t);
+                        }
                         callback.in(request, t);
                         request.removeLocal(XapiServer.class);
                     }
@@ -882,6 +891,7 @@ public class XapiVertxServer extends AbstractXapiServer<RequestScopeVertx> {
     }
 
     private void writeGwtJs(RequestScopeVertx scope, String payload, ModelGwtc module, In2<RequestScopeVertx, Throwable> callback) {
+        final Moment start = X_Time.now();
         final VertxRequest req = scope.getRequest();
         final VertxResponse resp = scope.getResponse();
         String path = req.getPath();
@@ -891,25 +901,34 @@ public class XapiVertxServer extends AbstractXapiServer<RequestScopeVertx> {
         X_Process.runDeferred(()->{
                 final GwtManifest manifest = module.getOrCreateManifest();
                 final GwtcJobManager manager = service.getJobManager();
-                final GwtcJob job = manager.getJob(manifest.getModuleName());
                 assert !resp.getHttpResponse().headWritten() : "Head already written!!";
 
                 Duration maxTime = gwtMaxCompileTime();
 
                 boolean rootLoad = path.contains(".nocache.js");
+                X_Log.debug(XapiVertxServer.class, "Prepare thread took", X_Time.difference(start));
                 service.doCompile(
                     !rootLoad,
                     manifest, maxTime.toMillis(), TimeUnit.MILLISECONDS, (result, err)->{
+                    X_Log.log(XapiVertxServer.class,
+                        path.contains("nocache.js") ? LogLevel.INFO : LogLevel.TRACE,
+                        "Gwtc request", path, "serviced in ", X_Time.difference(start));
+                    if(result != null) {
+                        manifest.setCompileDirectory(result);
+                    }
                     if (err != null) {
                         X_Log.error(XapiVertxServer.class, "Gwt compilation failed", err);
-                        if(result != null) {
-                            manifest.setCompileDirectory(result);
-                        }
                         callback.in(scope, err);
                         return;
                     }
-                    manifest.setCompileDirectory(result);
-
+                    if (resp.getHttpResponse().closed()) {
+                        // user already closed response / gave up; underlying connection is dead...
+                        if (!resp.isClosed()) {
+                            // if we didn't close our scope, we should do so now... (may need to short circuit some handling here...)
+                            callback.in(scope, new JobCanceledException());
+                        }
+                        return;
+                    }
                     boolean done = false;
 
                     assert !resp.getHttpResponse().headWritten() : "Head already written!!!";
@@ -949,6 +968,8 @@ public class XapiVertxServer extends AbstractXapiServer<RequestScopeVertx> {
                                     return;
                                 }
                             } else {
+                                final GwtcJob job = manager.getJob(manifest.getModuleName());
+
                                 if (job == null) {
                                     callback.in(scope, new IllegalStateException("No job for " + manifest.getModuleName()));
                                     return;

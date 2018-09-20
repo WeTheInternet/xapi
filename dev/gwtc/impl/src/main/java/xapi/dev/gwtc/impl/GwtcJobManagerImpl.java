@@ -20,6 +20,7 @@ import xapi.inject.X_Inject;
 import xapi.log.X_Log;
 import xapi.process.X_Process;
 import xapi.time.X_Time;
+import xapi.time.api.Moment;
 import xapi.util.X_Util;
 
 import java.io.*;
@@ -30,6 +31,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static xapi.fu.iterate.ArrayIterable.iterate;
+import static xapi.time.X_Time.diff;
 
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
@@ -440,6 +442,7 @@ public class GwtcJobManagerImpl extends GwtcJobManagerAbstract {
 
         // Now, setup a thread to keep us alive, listening for messages to either recompile or die
         final Out1Unsafe<Boolean> checkFreshness = ()->{
+
             Mutable<Boolean> result = new Mutable<>();
             ResourceAccumulatorManager.checkCompileFreshness(
                 ()->{
@@ -492,11 +495,12 @@ public class GwtcJobManagerImpl extends GwtcJobManagerAbstract {
                         die(monitor);
                         return;
                     case GwtcJobMonitor.JOB_CHECK_FRESHNESS:
-                        if (checkFreshness.out1()) {
-                            monitor.writeAsCaller(Character.toString(CompileMessage.KEY_SUCCESS));
-                        } else {
-                            runCompile.done();
-                        }
+                        final Moment start = X_Time.now();
+                        boolean fresh = checkFreshness.out1();
+                        final Moment freshTime = X_Time.now();
+                        monitor.writeAsCompiler(Character.toString(fresh ? CompileMessage.KEY_FRESH : CompileMessage.KEY_STALE));
+                        X_Log.trace(GwtcJobManagerImpl.class, "Freshness check (", fresh, ") took", diff(start),
+                            " time to send reply", diff(freshTime));
                         break;
                     case GwtcJobMonitor.JOB_PING:
                         break; // do nothing, we already touched our keepalive timestamp.

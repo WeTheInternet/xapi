@@ -5,7 +5,10 @@ import xapi.fu.In1.In1Unsafe;
 import xapi.fu.Out1.Out1Unsafe;
 import xapi.fu.X_Fu;
 import xapi.io.X_IO;
+import xapi.log.X_Log;
 import xapi.reflect.X_Reflect;
+import xapi.time.X_Time;
+import xapi.time.api.Moment;
 import xapi.util.X_Debug;
 
 import java.io.InputStream;
@@ -58,6 +61,7 @@ public class GwtcJobMonitorImpl implements GwtcJobMonitor {
             } else {
                 out.println(line);
             }
+            out.flush();
         };
         hasCallerOutput = ()->in.available() > 0;
         readAsCaller = ()->{throw notSupported("caller");};
@@ -105,22 +109,32 @@ public class GwtcJobMonitorImpl implements GwtcJobMonitor {
 
     @Override
     public String readAsCaller() {
-        return readAsCaller.out1();
+        final Moment start = X_Time.now();
+        final String result = readAsCaller.out1();
+        X_Log.debug(GwtcJobMonitorImpl.class, "readAsCaller", result, "in", X_Time.difference(start));
+        return result;
     }
 
     @Override
     public void writeAsCaller(String toCaller) {
+        final Moment start = X_Time.now();
         writeAsCaller.in(toCaller);
+        X_Log.debug(GwtcJobMonitorImpl.class, "writeAsCaller", toCaller, "in", X_Time.difference(start));
     }
 
     @Override
     public String readAsCompiler() {
-        return readAsCompiler.out1();
+        final Moment start = X_Time.now();
+        final String result = readAsCompiler.out1();
+        X_Log.debug(GwtcJobMonitorImpl.class, "readAsCompiler", result, "in", X_Time.difference(start));
+        return result;
     }
 
     @Override
     public void writeAsCompiler(String toCompiler) {
+        final Moment start = X_Time.now();
         writeAsCompiler.in(toCompiler);
+        X_Log.debug(GwtcJobMonitorImpl.class, "writeAsCompiler", toCompiler, "in", X_Time.difference(start));
     }
 
     @Override

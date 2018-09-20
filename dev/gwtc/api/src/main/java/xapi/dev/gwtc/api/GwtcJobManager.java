@@ -21,4 +21,6 @@ public interface GwtcJobManager {
     CompileMessage getStatus(String moduleName);
 
     GwtcJob getJob(String moduleName);
+
+    void destroy(GwtcJob existing);
 }

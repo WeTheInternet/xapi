@@ -16,7 +16,6 @@ import xapi.util.api.Destroyable;
 public class VertxResponse extends AbstractResponse implements Destroyable {
 
     private HttpServerResponse response;
-    private boolean calledPrepareToClose;
     private In2<String, Boolean> rerouter;
 
     public VertxResponse(HttpServerResponse response) {
@@ -26,7 +25,13 @@ public class VertxResponse extends AbstractResponse implements Destroyable {
 
     @Override
     public String prepareToClose() {
-        calledPrepareToClose = true;
+        super.prepareToClose();
+        if (response.closed()) {
+            // user closed the response before we could get to it.
+            final String discarded = clearResponseBody();
+            X_Log.trace(VertxResponse.class, "Discarded response [[", discarded, "]] because user closed request");
+            return "";
+        }
         response.setStatusCode(getStatusCode());
         final MapLike<String, ListLike<String>> headers = getHeaders();
         final String body = clearResponseBody();
@@ -93,7 +98,7 @@ public class VertxResponse extends AbstractResponse implements Destroyable {
     @Override
     public ResponseLike finish() {
         super.finish();
-        if (!response.ended()) {
+        if (!response.ended() && !response.closed()) {
             response.setStatusCode(getStatusCode());
             if (!calledPrepareToClose) {
                 String body = prepareToClose();

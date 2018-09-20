@@ -14,6 +14,17 @@ import java.lang.annotation.Annotation;
 import java.net.URLClassLoader;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * This class is the api for the ball of brains behind hosting multiple gwt compiles, concurrently,
+ * behind isolated classloader or processes, and using dynamic module generation / assembly.
+ *
+ * It is useful for both unit tests, development servers and in your build glue.
+ *
+ * Use `X_Inject.instance(GwtcService.class)` to create one,
+ * or just call the constructor of an impl on your classpath
+ * (X_Inject will fail if it can't find an impl on classpath).
+ *
+ */
 public interface GwtcService {
 
   default void addClassTo(String moduleName, Class<?> clazz) {
@@ -113,4 +124,5 @@ public interface GwtcService {
 
   Out1<? extends Iterable<String>> resolveDependency(GwtManifest manifest, AnnotatedDependency dependency);
 
+  void destroy(GwtcJob existing);
 }
