@@ -17,18 +17,19 @@ import xapi.elemental.api.ElementalService;
 import xapi.elemental.api.PotentialNode;
 import xapi.fu.In1Out1;
 import xapi.fu.Out1;
+import xapi.fu.api.Builderizable;
 import xapi.ui.api.component.ComponentConstructor;
-import xapi.ui.api.component.ComponentOptions;
+import xapi.ui.api.component.ModelComponentOptions;
 import xapi.ui.html.api.GwtStyles;
 
-public class GwtAsserterComponent extends BaseAsserterComponent<Element, PotentialNode<Element>> implements ElementalModelComponentMixin<Element,ModelAsserter> {
+public class GwtAsserterComponent extends BaseAsserterComponent<Element, PotentialNode<Element>> implements Builderizable<PotentialNode<Element>>, ElementalModelComponentMixin<Element,ModelAsserter> {
 
   public static void assemble (UiConfig<Element, StyleElement, ? extends GwtStyles, ElementalService> assembler) {
     if (NEW_XAPI_ASSERTER != null) { return; }
     WebComponentBuilder component = new WebComponentBuilder(htmlElementClass(), WebComponentVersion.V1);
 
     component.setClassName("Asserter");
-    ComponentOptions<Element, GwtAsserterComponent> opts = new ComponentOptions<>();
+    ModelComponentOptions<Element, ModelAsserter, GwtAsserterComponent> opts = new ModelComponentOptions<>();
     getUi = WebComponentSupport.installFactory(component, GwtAsserterComponent::new, opts);
     component.afterCreatedCallback(e->{
       final GwtAsserterComponent c = getAsserterComponent(e);
@@ -38,12 +39,21 @@ public class GwtAsserterComponent extends BaseAsserterComponent<Element, Potenti
       "xapi-asserter", component);
   }
 
+  public static BuildAsserterComponent builder () {
+    return new BuildAsserterComponent<>(NEW_XAPI_ASSERTER, getUi);
+  }
+
   private static ComponentConstructor<Element, GwtAsserterComponent> NEW_XAPI_ASSERTER;
 
   private static In1Out1<Element, GwtAsserterComponent> getUi;
 
   public GwtAsserterComponent (Element el) {
     super(el);
+  }
+
+  @SuppressWarnings("unchecked")
+  public GwtAsserterComponent (ModelComponentOptions<Element, ModelAsserter, AsserterComponent<Element>> opts) {
+    super(opts, (ComponentConstructor)NEW_XAPI_ASSERTER);
   }
 
   public PotentialNode<Element> newBuilder (boolean searchable) {
@@ -61,9 +71,9 @@ public class GwtAsserterComponent extends BaseAsserterComponent<Element, Potenti
       return component;
   }
 
-  public static GwtAsserterComponent create (ComponentOptions<Element, GwtAsserterComponent> opts) {
+  public static GwtAsserterComponent create (ModelComponentOptions<Element, ModelAsserter, GwtAsserterComponent> opts) {
     if (opts == null) {
-      opts = new ComponentOptions<>();
+      opts = new ModelComponentOptions<>();
     }
     return NEW_XAPI_ASSERTER.constructComponent(opts, getUi);
   }
@@ -74,7 +84,7 @@ public class GwtAsserterComponent extends BaseAsserterComponent<Element, Potenti
   }
 
   @Override
-  public PotentialNode<Element> newBuilder (Out1<Element> e) {
+  protected PotentialNode<Element> newBuilder (Out1<Element> e) {
     return new PotentialNode<>(e);
   }
 

@@ -22,6 +22,7 @@ import xapi.fu.iterate.*;
 import xapi.fu.iterate.CachingIterator.ReplayableIterable;
 import xapi.io.X_IO;
 import xapi.log.X_Log;
+import xapi.log.api.LogLevel;
 import xapi.source.X_Source;
 import xapi.source.read.JavaModel.IsQualified;
 import xapi.ui.api.PhaseMap;
@@ -76,6 +77,8 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
 
     protected volatile GeneratorState state;
     private boolean uiComponent;
+    private boolean strict;
+    private LogLevel level;
 
     public AbstractUiGeneratorService() {
         uiComponent = "true".equals(System.getProperty("xapi.ui.generator", "true"));
@@ -660,7 +663,7 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
                             // Treat the file as absolute classpath uri
                             src = filer.readSource("", loc, filer.filterHints(hints));
                         }
-                        final UiContainerExpr newContainer = JavaParser.parseUiContainer(loc, src);
+                        final UiContainerExpr newContainer = JavaParser.parseUiContainer(loc, src, level);
                         return newContainer;
                     } catch (ParseException e) {
                         X_Log.error(getClass(), "Error trying to resolve import", n, "with source:\n",
@@ -858,10 +861,6 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
         return results;
     }
 
-    protected boolean isStrict() {
-        return false;
-    }
-
     public Do pauseState() {
         final GeneratorState currentState = state;
         resetState();
@@ -886,5 +885,25 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
 
     public void setUiComponent(boolean uiComponent) {
         this.uiComponent = uiComponent;
+    }
+
+    @Override
+    public boolean isStrict() {
+        return strict;
+    }
+
+    @Override
+    public void setStrict(boolean strict) {
+        this.strict = strict;
+    }
+
+    @Override
+    public LogLevel getLevel() {
+        return level;
+    }
+
+    @Override
+    public void setLevel(LogLevel level) {
+        this.level = level;
     }
 }

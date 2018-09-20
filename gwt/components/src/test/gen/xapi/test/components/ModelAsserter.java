@@ -16,14 +16,20 @@ public interface ModelAsserter extends Model{
     return ASSERTER_KEY_BUILDER.out1();
   }
 
-  String MODEL_ASSERTER = "ModelAsserter";
+   static ModelBuilder<ModelAsserter> modelBuilder () {
+    return ASSERTER_MODEL_BUILDER.out1();
+  }
+
+   static ModelAsserter newModel () {
+    return modelBuilder().buildModel();
+  }
+
+  String MODEL_ASSERTER = "asserter";
 
   Out1<KeyBuilder> ASSERTER_KEY_BUILDER = forType(MODEL_ASSERTER);
 
   Out1<ModelBuilder<ModelAsserter>> ASSERTER_MODEL_BUILDER = 
-      ()->
-        build(ASSERTER_KEY_BUILDER.out1(),
-        ()->create(ModelAsserter.class));
+      ()->build(newKey(), ()->create(ModelAsserter.class));
 
 
     String getTemplate () ;

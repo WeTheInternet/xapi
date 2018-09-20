@@ -7,6 +7,7 @@ import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.PrintBuffer;
 import xapi.dev.ui.api.*;
+import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.dev.ui.tags.factories.GeneratedFactory;
 import xapi.except.NotYetImplemented;
 import xapi.fu.Do;
@@ -23,6 +24,7 @@ import static com.github.javaparser.ast.expr.AnnotationExpr.NULLABLE;
 import static xapi.dev.ui.api.UiNamespace.*;
 import static xapi.source.X_Modifier.ABSTRACT;
 import static xapi.source.X_Modifier.PROTECTED;
+import static xapi.source.X_Source.raw;
 import static xapi.util.X_String.toTitleCase;
 
 /**
@@ -228,6 +230,27 @@ public abstract class ModelBindingAssembler implements TagAssembler {
             .withStringLiteralTerminal((str, i)->{
                 // any literal value should be copied over to the model directly.
                 out.patternln("mod.set$1($2);", toTitleCase(targetName), serialized(e, str, type));
+            })
+            .withJsonContainerTerminal((json, i) -> {
+                // when a model field assignment from an element is a json element,
+                // then we can do some collection/array/map juggling ("yay")
+                final AssembledUi assembly = getAssembly();
+                final UiGeneratorTools tools = assembly.getTools();
+                if (json.isArray()) {
+                    // collection type...  will need to sort out how to handle all our supported forms...
+                    // best bet here is a CollectionGenerator type, which we implement for our standard supported forms.
+                    // For tonight... just hacking in ComponentList, and nothing else.
+                    if (tools.allListTypes().noneMatch(raw(type)::equals)) {
+                        throw new IllegalArgumentException("Type " + type + " not a list type according to " + tools+"; " +
+                            "from " + e.debug());
+                    }
+                } else {
+                    if (tools.allMapTypes().noneMatch(raw(type)::equals)) {
+                        throw new IllegalArgumentException("Type " + type + " not a list type according to " + tools+"; " +
+                            "from " + e.debug());
+                    }
+                    // map
+                }
             })
             .withMethodReferenceTerminal((ref, i)->{
                 // for now, this is all we support because this is all we need atm.

@@ -11,6 +11,7 @@ import xapi.dev.ui.impl.UiGeneratorVisitor;
 import xapi.fu.Do;
 import xapi.fu.In1Out1;
 import xapi.fu.MappedIterable;
+import xapi.log.api.LogLevel;
 import xapi.source.read.JavaModel.IsQualified;
 
 /**
@@ -65,4 +66,12 @@ public interface UiGeneratorService <Raw> {
     ComponentBuffer getComponent(ApiGeneratorContext<?> ctx, String name);
 
     ReferenceType getDefaultComponentType(AbstractUiImplementationGenerator impl, GeneratedUiComponent component);
+
+    boolean isStrict();
+
+    void setStrict(boolean strict);
+
+    LogLevel getLevel();
+
+    void setLevel(LogLevel level);
 }

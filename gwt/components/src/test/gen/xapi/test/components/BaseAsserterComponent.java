@@ -8,13 +8,14 @@ import xapi.ui.api.ElementBuilder;
 import xapi.ui.api.ElementInjector;
 import xapi.ui.api.component.AbstractModelComponent;
 import xapi.ui.api.component.ComponentConstructor;
+import xapi.ui.api.component.ConditionalComponentMixin;
 import xapi.ui.api.component.ModelComponentOptions;
 
 public abstract class BaseAsserterComponent <El, ElBuilder extends ElementBuilder<El>> extends AbstractModelComponent<
     El,
     ModelAsserter,
     AsserterComponent<El>
-  > implements AsserterComponent<El> {
+  > implements AsserterComponent<El>, ConditionalComponentMixin<El,ElBuilder> {
 
   private Lazy<ElBuilder> rootBox = new Lazy<>(this::initRootBox);
 
@@ -89,21 +90,7 @@ public abstract class BaseAsserterComponent <El, ElBuilder extends ElementBuilde
   }
 
   private void redrawElIf (El el) {
-    final ElBuilder was = selectedElIf;
-    elIf.reset();
-    final ElBuilder is = elIf.out1();
-    if (was != is) {
-      final ElementInjector<? super El> inj = newInjector(el);
-      if (was == null) {
-        // first time selecting a winner, just do an attach
-        inj.appendChild(is.getElement());
-      } else {
-        // changing winners, swap elements
-        final El old = was.getElement();
-        inj.insertBefore(is.getElement(), old);
-        inj.removeChild(old);
-      }
-    }
+    renderConditional(el, selectedElIf, elIf, this::findSiblingElIf);
   }
 
   protected void beforeResolved (El el) {
@@ -116,6 +103,11 @@ public abstract class BaseAsserterComponent <El, ElBuilder extends ElementBuilde
 
     b.setTagName("template");
     return b;
+  }
+
+  protected El findSiblingElIf () {
+    ElBuilder b = elTemplate.out1();
+    return b.getElement();
   }
 
   public BaseAsserterComponent ui() {

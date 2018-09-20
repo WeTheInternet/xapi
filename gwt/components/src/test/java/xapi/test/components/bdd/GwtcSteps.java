@@ -43,10 +43,7 @@ import xapi.dev.ui.api.UiImplementationGenerator;
 import xapi.dev.ui.impl.ClasspathComponentGenerator;
 import xapi.dev.ui.impl.UiGeneratorVisitor;
 import xapi.dev.ui.tags.UiTagGenerator;
-import xapi.fu.In1;
-import xapi.fu.Lazy;
-import xapi.fu.MappedIterable;
-import xapi.fu.Out2;
+import xapi.fu.*;
 import xapi.fu.iterate.Chain;
 import xapi.fu.iterate.ChainBuilder;
 import xapi.fu.iterate.SingletonIterator;
@@ -552,6 +549,7 @@ public class GwtcSteps {
             }
           };
           final UiGeneratorService service = tools.out1();
+          service.setStrict(true);
           gen.generateComponents(service);
 
           X_Log.info(getClass(), "Finished classpath generator on " , loc);
@@ -578,14 +576,16 @@ public class GwtcSteps {
         settings.setVerbose(true);
         final Out2<Integer, URL> result = compiler.compileFiles(settings, loc);
         if (result.out1() != 0) {
-//          if (X_Log.loggable(LogLevel.TRACE)) {
-            X_Log.error(GwtcSteps.class, "Failed to compile java files; dumping source (in ", loc, ") for your perusal");
-            compiler.javaFilesIn(loc)
-                    .forAllUnsafe(file->{
-                      X_Log.error(getClass(), "\nDumping ", file);
-                      X_Log.error(getClass(), X_IO.toStringUtf8(new FileInputStream(file)));
-            });
-//          }
+            X_Log.error(GwtcSteps.class, "Failed to compile java files; dumping sources (in ", loc, ") for your perusal");
+            boolean any = false;
+          for (String file : compiler.javaFilesIn(loc)) {
+                any = true;
+                X_Log.error(getClass(), "\nDumping ", file);
+                X_Log.error(getClass(), X_IO.toStringUtf8(new FileInputStream(file)));
+          }
+            if (!any) {
+              X_Log.error(GwtcSteps.class, "No sources in ", loc);
+            }
 
 
           throw new AssertionError("Javac failed; check logs for details.");

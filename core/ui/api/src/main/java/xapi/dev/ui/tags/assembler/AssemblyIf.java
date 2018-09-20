@@ -447,9 +447,9 @@ public class AssemblyIf extends AssembledElement {
         final Node sib;
         if (parent instanceof UiBodyExpr) {
             final List<Expression> children = ((UiBodyExpr) parent).getChildren();
-            final int ind = children.indexOf(parent);
+            final int ind = children.indexOf(root);
             assert ind != -1 : "Parent does not contain child; parent: " + parent + "\nchild:" + root;
-            if (children.size() > ind) {
+            if (children.size() > ind + 1) {
                 sib = children.get(ind + 1);
             } else {
                 // this if is the last node.  No sibling here.

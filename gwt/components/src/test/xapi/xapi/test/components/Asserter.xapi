@@ -1,10 +1,10 @@
 <define-tag
-    name = "Asserter"
+    type = "Asserter"
     tagName = "xapi-asserter"
     model =
         {
             template: String.class,
-            
+
             // an optional tag to print before messages,
             // useful for grepping through logs
             tag: @Nullable String.class,

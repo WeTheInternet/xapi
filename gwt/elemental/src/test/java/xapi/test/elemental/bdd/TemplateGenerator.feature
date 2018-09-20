@@ -207,10 +207,10 @@ Feature: Compile templates into valid java files
       | String getFooter();                                                             |
       |                                                                                 |
       | static Test newInstance(String title, String footer, UiComponent... children) { |
-      | return new PotentialElement("Test")                                             |
-      | .set("title", xapi.fu.X_Fu.coerce(title))                                       |
-      | .set("footer", xapi.fu.X_Fu.coerce(footer))                                     |
-      | .set("children", xapi.fu.X_Fu.coerce(children))                                 |
-      | .build();                                                                       |
-      | }                                                                               |
+      |   return new PotentialElement("Test")                                             |
+      |     .set("title", xapi.fu.X_Fu.coerce(title))                                       |
+      |     .set("footer", xapi.fu.X_Fu.coerce(footer))                                     |
+      |     .set("children", xapi.fu.X_Fu.coerce(children))                                 |
+      |     .build();                                                                       |
+      |   }                                                                               |
       | }                                                                               |

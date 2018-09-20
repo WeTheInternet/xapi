@@ -193,7 +193,7 @@ Feature: ComponentGenerator.feature: Transpile xapi templates into web component
   Scenario:  Create a TODO list app
 
     Given compile the component:
-      | @Ui( javaPrefix="Test", // a prefix for all ui component classes generated                                                        |
+      | @Ui( javaPrefix="Test",                                                        |
       | value=`<define-tags>                                                                                                              |
       | <define-tag name="to-do"                                                                                                          |
       | dom=<div class="to-do">                                                                                                           |
