@@ -11,7 +11,7 @@ import xapi.dev.ui.api.UiComponentGenerator;
 import xapi.dev.ui.api.UiFeatureGenerator;
 import xapi.dev.ui.api.UiVisitScope;
 import xapi.dev.ui.impl.UiGeneratorTools;
-import xapi.fu.iterate.SingletonIterator;
+import xapi.fu.itr.SingletonIterator;
 import xapi.util.X_String;
 
 import static xapi.source.X_Source.javaSafeName;

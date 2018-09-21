@@ -9,12 +9,12 @@ import xapi.fu.In1Out1.In1Out1Unsafe;
 import xapi.fu.Mutable;
 import xapi.fu.Rethrowable;
 import xapi.fu.has.HasType;
-import xapi.fu.iterate.CachingIterator;
-import xapi.fu.iterate.Chain;
-import xapi.fu.iterate.ChainBuilder;
-import xapi.fu.iterate.EmptyIterator;
+import xapi.fu.itr.CachingIterator;
+import xapi.fu.itr.Chain;
+import xapi.fu.itr.ChainBuilder;
+import xapi.fu.itr.EmptyIterator;
 
-import static xapi.fu.iterate.SingletonIterator.singleItem;
+import static xapi.fu.itr.SingletonIterator.singleItem;
 
 import java.util.List;
 

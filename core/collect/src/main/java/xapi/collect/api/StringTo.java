@@ -4,10 +4,10 @@ import xapi.fu.In1;
 import xapi.fu.In1Out1;
 import xapi.fu.In1Out1.In1Out1Unsafe;
 import xapi.fu.data.MapLike;
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.fu.Out2;
 import xapi.fu.has.HasLock;
-import xapi.fu.iterate.SizedIterable;
+import xapi.fu.itr.SizedIterable;
 
 import java.io.Serializable;
 

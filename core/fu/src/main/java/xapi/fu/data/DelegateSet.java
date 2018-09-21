@@ -3,7 +3,7 @@ package xapi.fu.data;
 import xapi.fu.Do;
 import xapi.fu.In1Out1;
 import xapi.fu.Out1;
-import xapi.fu.iterate.SizedIterator;
+import xapi.fu.itr.SizedIterator;
 
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 9/16/18 @ 3:35 AM.

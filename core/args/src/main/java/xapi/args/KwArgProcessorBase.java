@@ -1,12 +1,10 @@
 package xapi.args;
 
-import xapi.fu.Do;
-import xapi.fu.In1;
 import xapi.fu.In2;
 import xapi.fu.Out1;
-import xapi.fu.iterate.ArrayIterable;
-import xapi.fu.iterate.Chain;
-import xapi.fu.iterate.ChainBuilder;
+import xapi.fu.itr.ArrayIterable;
+import xapi.fu.itr.Chain;
+import xapi.fu.itr.ChainBuilder;
 
 import java.util.HashSet;
 import java.util.Set;

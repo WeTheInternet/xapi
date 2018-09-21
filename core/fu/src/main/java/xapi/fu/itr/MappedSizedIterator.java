@@ -1,4 +1,4 @@
-package xapi.fu.iterate;
+package xapi.fu.itr;
 
 import xapi.fu.In1Out1;
 import xapi.fu.Out1;

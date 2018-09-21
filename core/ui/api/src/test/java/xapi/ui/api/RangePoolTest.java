@@ -1,10 +1,10 @@
 package xapi.ui.api;
 
 import org.junit.Test;
-import xapi.fu.iterate.ArrayIterable;
+import xapi.fu.itr.ArrayIterable;
 import xapi.ui.api.RangePool.ReservedNode;
 import xapi.ui.api.RangePool.UnreservedNode;
-import xapi.fu.iterate.ReverseIterable;
+import xapi.fu.itr.ReverseIterable;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertTrue;

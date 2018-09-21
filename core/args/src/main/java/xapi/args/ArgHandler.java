@@ -1,8 +1,8 @@
 package xapi.args;
 
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.fu.Out1;
-import xapi.fu.iterate.EmptyIterator;
+import xapi.fu.itr.EmptyIterator;
 
 /**
  * Base class for command line argument handlers.

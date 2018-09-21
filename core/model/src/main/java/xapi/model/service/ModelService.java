@@ -1,7 +1,7 @@
 package xapi.model.service;
 
 import xapi.dev.source.CharBuffer;
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.model.api.Model;
 import xapi.model.api.ModelKey;
 import xapi.model.api.ModelManifest;

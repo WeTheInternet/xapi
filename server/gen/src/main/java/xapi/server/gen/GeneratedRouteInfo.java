@@ -5,13 +5,11 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.dev.source.DomBuffer;
 import xapi.dev.source.HtmlBuffer;
-import xapi.dev.source.MethodBuffer;
 import xapi.fu.In1;
-import xapi.fu.In2;
 import xapi.fu.Lazy;
-import xapi.fu.MappedIterable;
-import xapi.fu.iterate.Chain;
-import xapi.fu.iterate.ChainBuilder;
+import xapi.fu.itr.MappedIterable;
+import xapi.fu.itr.Chain;
+import xapi.fu.itr.ChainBuilder;
 import xapi.server.gen.WebAppComponentGenerator.WebAppGeneratorScope;
 
 /**

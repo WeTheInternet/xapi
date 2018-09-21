@@ -5,6 +5,7 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
 import xapi.fu.*;
+import xapi.fu.itr.MappedIterable;
 import xapi.log.X_Log;
 import xapi.model.X_Model;
 import xapi.model.api.Model;

@@ -15,8 +15,8 @@ import xapi.gwt.api.JsLazyExpando;
 import xapi.gwt.api.JsObjectDescriptor;
 import xapi.components.api.ShadowDomPlugin;
 import xapi.fu.In1Out1;
-import xapi.fu.MappedIterable;
-import xapi.fu.iterate.CachingIterator.ReplayableIterable;
+import xapi.fu.itr.MappedIterable;
+import xapi.fu.itr.CachingIterator.ReplayableIterable;
 import xapi.gwt.x.X_Gwt;
 import xapi.ui.api.component.SlotController;
 

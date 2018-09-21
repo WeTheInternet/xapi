@@ -44,7 +44,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static xapi.dev.source.PatternPrinter.NEW_LINE;
-import static xapi.fu.iterate.ArrayIterable.iterate;
+import static xapi.fu.itr.ArrayIterable.iterate;
 
 public class ImportSection implements CanAddImports {
 

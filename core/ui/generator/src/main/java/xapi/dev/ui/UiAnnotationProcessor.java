@@ -37,7 +37,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static xapi.fu.iterate.SingletonIterator.singleItem;
+import static xapi.fu.itr.SingletonIterator.singleItem;
 import static xapi.source.X_Source.removePackage;
 
 /**

@@ -12,9 +12,10 @@ import xapi.dev.impl.ReflectiveMavenLoader;
 import xapi.dev.source.ClassBuffer;
 import xapi.file.X_File;
 import xapi.fu.*;
-import xapi.fu.iterate.ArrayIterable;
-import xapi.fu.iterate.Chain;
-import xapi.fu.iterate.ChainBuilder;
+import xapi.fu.itr.ArrayIterable;
+import xapi.fu.itr.Chain;
+import xapi.fu.itr.ChainBuilder;
+import xapi.fu.itr.MappedIterable;
 import xapi.gwtc.api.CompiledDirectory;
 import xapi.gwtc.api.GwtManifest;
 import xapi.gwtc.api.Gwtc;
@@ -49,7 +50,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static xapi.fu.iterate.SingletonIterator.singleItem;
+import static xapi.fu.itr.SingletonIterator.singleItem;
 import static xapi.time.X_Time.diff;
 
 import com.google.gwt.core.client.GWT;

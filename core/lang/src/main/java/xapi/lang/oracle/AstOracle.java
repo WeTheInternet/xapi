@@ -3,7 +3,7 @@ package xapi.lang.oracle;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.fu.X_Fu;
-import xapi.fu.iterate.SizedIterable;
+import xapi.fu.itr.SizedIterable;
 import xapi.lang.api.AstLayerType;
 import xapi.source.X_Source;
 import xapi.util.X_String;

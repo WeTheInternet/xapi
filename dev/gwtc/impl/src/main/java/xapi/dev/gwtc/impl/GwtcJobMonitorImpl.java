@@ -18,7 +18,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.concurrent.BlockingDeque;
 
-import static xapi.fu.iterate.ArrayIterable.iterate;
+import static xapi.fu.itr.ArrayIterable.iterate;
 
 /**
  * This runs in the same classpath as the running Gwt compile, and is responsible

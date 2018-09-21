@@ -3,8 +3,8 @@ package xapi.dev.ui.api;
 import com.github.javaparser.ast.body.Parameter;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
-import xapi.fu.iterate.ArrayIterable;
-import xapi.fu.iterate.SizedIterable;
+import xapi.fu.itr.ArrayIterable;
+import xapi.fu.itr.SizedIterable;
 import xapi.source.X_Modifier;
 import xapi.source.X_Source;
 

@@ -4,8 +4,8 @@ import xapi.fu.Do;
 import xapi.fu.In1Out1;
 import xapi.fu.data.MapLike;
 import xapi.fu.Out2;
-import xapi.fu.iterate.EmptyIterator;
-import xapi.fu.iterate.SizedIterable;
+import xapi.fu.itr.EmptyIterator;
+import xapi.fu.itr.SizedIterable;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)

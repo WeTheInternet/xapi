@@ -1,7 +1,7 @@
 package xapi.gwt.collect;
 
-import xapi.fu.MappedIterable;
-import xapi.fu.iterate.ArrayIterable;
+import xapi.fu.itr.MappedIterable;
+import xapi.fu.itr.ArrayIterable;
 import xapi.fu.java.EntryValueIterable;
 
 import java.util.ArrayList;

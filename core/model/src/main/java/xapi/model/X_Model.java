@@ -3,7 +3,7 @@ package xapi.model;
 import xapi.annotation.compile.MagicMethod;
 import xapi.except.NoSuchItem;
 import xapi.fu.In1Out1;
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.fu.Out1;
 import xapi.inject.X_Inject;
 import xapi.model.api.*;

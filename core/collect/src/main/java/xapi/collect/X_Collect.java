@@ -11,11 +11,11 @@ import xapi.collect.impl.StringToManyList;
 import xapi.collect.proxy.CollectionProxy;
 import xapi.collect.service.CollectionService;
 import xapi.fu.In2Out1;
-import xapi.fu.iterate.ArrayIterable;
-import xapi.fu.iterate.EmptyIterator;
-import xapi.fu.iterate.ReverseIterable;
-import xapi.fu.iterate.ReverseIterator;
-import xapi.fu.iterate.SingletonIterator;
+import xapi.fu.itr.ArrayIterable;
+import xapi.fu.itr.EmptyIterator;
+import xapi.fu.itr.ReverseIterable;
+import xapi.fu.itr.ReverseIterator;
+import xapi.fu.itr.SingletonIterator;
 import xapi.util.api.ReceivesValue;
 
 import java.lang.reflect.Array;

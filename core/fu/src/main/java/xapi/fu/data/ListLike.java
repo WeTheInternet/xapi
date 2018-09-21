@@ -1,7 +1,7 @@
 package xapi.fu.data;
 
 import xapi.fu.Out2;
-import xapi.fu.iterate.SizedIterable;
+import xapi.fu.itr.SizedIterable;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/9/16.

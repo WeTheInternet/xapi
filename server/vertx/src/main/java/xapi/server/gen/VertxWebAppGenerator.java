@@ -2,11 +2,9 @@ package xapi.server.gen;
 
 import xapi.dev.ui.api.UiImplementationGenerator;
 import xapi.fu.In1Out1;
-import xapi.fu.MappedIterable;
-import xapi.fu.iterate.SingletonIterator;
+import xapi.fu.itr.MappedIterable;
+import xapi.fu.itr.SingletonIterator;
 import xapi.javac.dev.model.CompilerSettings;
-
-import java.util.Collections;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/23/16.

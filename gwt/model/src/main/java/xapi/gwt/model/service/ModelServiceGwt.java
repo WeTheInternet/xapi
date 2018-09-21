@@ -6,7 +6,7 @@ import xapi.collect.api.ClassTo;
 import xapi.collect.api.StringDictionary;
 import xapi.dev.source.CharBuffer;
 import xapi.except.NotConfiguredCorrectly;
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.io.X_IO;
 import xapi.io.api.DelegatingIOCallback;
 import xapi.log.X_Log;

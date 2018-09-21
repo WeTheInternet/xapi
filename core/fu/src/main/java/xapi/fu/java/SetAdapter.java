@@ -1,7 +1,7 @@
 package xapi.fu.java;
 
 import xapi.fu.data.SetLike;
-import xapi.fu.iterate.SizedIterator;
+import xapi.fu.itr.SizedIterator;
 
 import java.util.Collection;
 import java.util.Iterator;

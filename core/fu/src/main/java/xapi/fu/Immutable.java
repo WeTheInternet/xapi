@@ -1,6 +1,6 @@
 package xapi.fu;
 
-import xapi.fu.iterate.ArrayIterable;
+import xapi.fu.itr.ArrayIterable;
 
 import java.io.Serializable;
 

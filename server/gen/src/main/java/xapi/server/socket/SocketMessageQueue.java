@@ -1,6 +1,6 @@
 package xapi.server.socket;
 
-import xapi.fu.iterate.Chain;
+import xapi.fu.itr.Chain;
 import xapi.fu.In1.In1Unsafe;
 import xapi.fu.In1Out1;
 import xapi.fu.Lazy;

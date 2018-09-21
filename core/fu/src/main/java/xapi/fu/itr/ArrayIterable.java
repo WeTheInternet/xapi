@@ -1,7 +1,6 @@
-package xapi.fu.iterate;
+package xapi.fu.itr;
 
 import xapi.fu.In1Out1;
-import xapi.fu.MappedIterable;
 import xapi.fu.X_Fu;
 
 public class ArrayIterable <E> implements SizedIterable <E> {

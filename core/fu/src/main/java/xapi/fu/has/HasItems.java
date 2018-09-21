@@ -1,6 +1,6 @@
 package xapi.fu.has;
 
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.fu.Mutable;
 import xapi.fu.X_Fu;
 

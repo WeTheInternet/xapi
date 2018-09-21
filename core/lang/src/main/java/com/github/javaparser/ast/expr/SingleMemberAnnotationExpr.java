@@ -23,10 +23,8 @@ package com.github.javaparser.ast.expr;
 
 import com.github.javaparser.ast.visitor.GenericVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitor;
-import xapi.fu.iterate.SingletonIterator;
-import xapi.fu.iterate.SizedIterable;
-
-import java.util.Collections;
+import xapi.fu.itr.SingletonIterator;
+import xapi.fu.itr.SizedIterable;
 
 /**
  * @author Julio Vilmar Gesser

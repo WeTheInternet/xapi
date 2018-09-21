@@ -9,7 +9,7 @@ import xapi.dev.resource.impl.SourceCodeResource;
 import xapi.dev.scanner.api.ClasspathScanner;
 import xapi.dev.scanner.impl.ClasspathResourceMap;
 import xapi.file.X_File;
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.fu.Out1;
 import xapi.fu.Out2;
 import xapi.inject.X_Inject;

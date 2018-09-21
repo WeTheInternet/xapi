@@ -32,7 +32,7 @@ import com.github.javaparser.ast.visitor.VoidVisitor;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.fu.Maybe;
-import xapi.fu.iterate.LinkedIterable;
+import xapi.fu.itr.LinkedIterable;
 
 import java.io.Serializable;
 import java.util.Iterator;

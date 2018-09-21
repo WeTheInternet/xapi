@@ -1,4 +1,4 @@
-package xapi.fu.iterate;
+package xapi.fu.itr;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/2/16.

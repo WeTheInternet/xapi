@@ -2,10 +2,10 @@ package xapi.collect.api;
 
 import xapi.fu.In1;
 import xapi.fu.In1Out1;
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.fu.Maybe;
-import xapi.fu.iterate.Chain;
-import xapi.fu.iterate.ChainBuilder;
+import xapi.fu.itr.Chain;
+import xapi.fu.itr.ChainBuilder;
 
 public interface ClassTo <V>
 extends ObjectTo<Class<?>, V>

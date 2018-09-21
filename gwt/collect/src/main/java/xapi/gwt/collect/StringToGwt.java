@@ -2,11 +2,11 @@ package xapi.gwt.collect;
 
 import xapi.annotation.inject.InstanceOverride;
 import xapi.collect.api.StringTo;
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.fu.Out2;
-import xapi.fu.iterate.ArrayIterable;
-import xapi.fu.iterate.SizedIterable;
-import xapi.fu.iterate.SizedIterator;
+import xapi.fu.itr.ArrayIterable;
+import xapi.fu.itr.SizedIterable;
+import xapi.fu.itr.SizedIterator;
 import xapi.fu.java.EntryValueIterable;
 import xapi.platform.GwtPlatform;
 

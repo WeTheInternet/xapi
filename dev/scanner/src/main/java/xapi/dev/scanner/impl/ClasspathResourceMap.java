@@ -14,7 +14,7 @@ import xapi.dev.resource.impl.ByteCodeResource;
 import xapi.dev.resource.impl.SourceCodeResource;
 import xapi.dev.resource.impl.StringDataResource;
 import xapi.fu.Lazy;
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.fu.Out1;
 import xapi.log.X_Log;
 import xapi.source.X_Source;

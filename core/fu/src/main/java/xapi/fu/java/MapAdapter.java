@@ -2,8 +2,8 @@ package xapi.fu.java;
 
 import xapi.fu.Out2;
 import xapi.fu.data.MapLike;
-import xapi.fu.iterate.SizedIterable;
-import xapi.fu.iterate.SizedIterator;
+import xapi.fu.itr.SizedIterable;
+import xapi.fu.itr.SizedIterator;
 
 import java.io.Serializable;
 import java.util.HashMap;

@@ -1,14 +1,13 @@
-package xapi.fu.iterate;
+package xapi.fu.itr;
 
 import xapi.fu.Do;
 import xapi.fu.In1;
 import xapi.fu.In1.In1Unsafe;
 import xapi.fu.In2;
 import xapi.fu.In3;
-import xapi.fu.MappedIterable;
 import xapi.fu.Out2;
 import xapi.fu.has.HasSize;
-import xapi.fu.iterate.CachingIterator.ReplayableIterable;
+import xapi.fu.itr.CachingIterator.ReplayableIterable;
 
 import java.util.Iterator;
 

@@ -4,7 +4,7 @@ import xapi.dev.api.MavenLoader;
 import xapi.fu.Lazy;
 import xapi.fu.Mutable;
 import xapi.fu.Out1;
-import xapi.fu.iterate.ArrayIterable;
+import xapi.fu.itr.ArrayIterable;
 import xapi.io.X_IO;
 import xapi.log.X_Log;
 import xapi.mvn.api.MvnDependency;

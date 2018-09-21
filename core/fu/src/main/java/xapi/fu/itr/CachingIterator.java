@@ -1,4 +1,4 @@
-package xapi.fu.iterate;
+package xapi.fu.itr;
 
 import xapi.fu.*;
 import xapi.fu.Filter.Filter1;

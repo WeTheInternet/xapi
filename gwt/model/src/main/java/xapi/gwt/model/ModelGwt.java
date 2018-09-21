@@ -1,6 +1,6 @@
 package xapi.gwt.model;
 
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.model.impl.AbstractModel;
 
 import java.util.Map.Entry;

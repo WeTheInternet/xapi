@@ -5,8 +5,8 @@ import elemental2.dom.HTMLCollection;
 import elemental2.dom.Node;
 import elemental2.dom.NodeList;
 import jsinterop.base.JsArrayLike;
-import xapi.fu.iterate.SizedIterable;
-import xapi.fu.iterate.SizedIterator;
+import xapi.fu.itr.SizedIterable;
+import xapi.fu.itr.SizedIterator;
 
 public class ElementalIterable implements SizedIterable<Element> {
 

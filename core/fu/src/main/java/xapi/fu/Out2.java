@@ -1,7 +1,8 @@
 package xapi.fu;
 
 import xapi.fu.Out1.Out1Unsafe;
-import xapi.fu.iterate.Chain;
+import xapi.fu.itr.Chain;
+import xapi.fu.itr.MappedIterable;
 
 import java.util.Map.Entry;
 

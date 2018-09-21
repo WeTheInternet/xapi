@@ -7,7 +7,7 @@ import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
 import xapi.fu.Filter.Filter1;
 import xapi.fu.In1Out1;
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.fu.Maybe;
 
 import static xapi.collect.X_Collect.newStringMultiMap;

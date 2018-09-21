@@ -17,7 +17,7 @@ import xapi.fu.Do;
 import xapi.fu.In1;
 import xapi.fu.Lazy;
 import xapi.fu.Maybe;
-import xapi.fu.iterate.ChainBuilder;
+import xapi.fu.itr.ChainBuilder;
 import xapi.log.X_Log;
 import xapi.util.X_String;
 

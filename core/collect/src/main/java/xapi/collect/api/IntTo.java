@@ -7,8 +7,9 @@ import xapi.fu.In1.In1Unsafe;
 import xapi.fu.data.ListLike;
 import xapi.fu.has.HasItems;
 import xapi.fu.has.HasLock;
-import xapi.fu.iterate.SizedIterable;
-import xapi.fu.iterate.SizedIterator;
+import xapi.fu.itr.SizedIterable;
+import xapi.fu.itr.SizedIterator;
+import xapi.fu.itr.MappedIterable;
 
 import java.util.Deque;
 import java.util.Iterator;
@@ -23,7 +24,7 @@ extends CollectionProxy<Integer,T>, HasItems<T>, SizedIterable<T>
     void add(int key, T item);
   }
 
-  class IntToIterable <T> implements MappedIterable <T> {
+  class IntToIterable <T> implements MappedIterable<T> {
     private final IntTo<T> self;
     public IntToIterable(IntTo<T> self) {
       this.self = self;

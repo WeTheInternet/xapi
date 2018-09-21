@@ -6,7 +6,7 @@ package xapi.collect.impl;
 import xapi.fu.Filter;
 import xapi.fu.Filter.Filter1;
 import xapi.fu.In1Out1;
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.fu.X_Fu;
 
 import java.util.Iterator;

@@ -1,4 +1,4 @@
-package xapi.fu.iterate;
+package xapi.fu.itr;
 
 /**
  * A {@link SizedIterable} comprised of two other sized iterables.

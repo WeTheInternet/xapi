@@ -8,9 +8,8 @@ import java.util.concurrent.locks.Lock;
 import static xapi.collect.api.CharPool.EMPTY_STRING;
 import xapi.collect.api.CharPool;
 import xapi.collect.api.PrefixedMap;
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.source.api.Chars;
-import xapi.util.X_String;
 
 /**
  * NSFW

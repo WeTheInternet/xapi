@@ -1,8 +1,8 @@
 package xapi.dev.api;
 
 import xapi.dev.impl.ReflectiveMavenLoader;
-import xapi.fu.MappedIterable;
-import xapi.fu.iterate.SizedIterable;
+import xapi.fu.itr.MappedIterable;
+import xapi.fu.itr.SizedIterable;
 import xapi.mvn.api.MvnDependency;
 import xapi.util.X_Namespace;
 

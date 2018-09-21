@@ -27,7 +27,8 @@ import xapi.except.NotYetImplemented;
 import xapi.fu.*;
 import xapi.fu.Filter.Filter1;
 import xapi.fu.api.DoNotOverride;
-import xapi.fu.iterate.CountedIterator;
+import xapi.fu.itr.CountedIterator;
+import xapi.fu.itr.MappedIterable;
 import xapi.log.X_Log;
 import xapi.source.X_Source;
 import xapi.source.write.Template;
@@ -1141,16 +1142,16 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
         "Iterator", "java.util.Iterator",
         "java.util.Iterator", "java.util.Iterator",
 
-        "MappedIterable", "xapi.fu.iterate.MappedIterable",
-        "xapi.fu.iterate.MappedIterable", "xapi.fu.iterate.MappedIterable",
-        "Chain", "xapi.fu.iterate.Chain",
-        "xapi.fu.iterate.Chain", "xapi.fu.iterate.Chain",
-        "ChainBuilder", "xapi.fu.iterate.ChainBuilder",
-        "xapi.fu.iterate.ChainBuilder", "xapi.fu.iterate.ChainBuilder",
-        "ArrayIterable", "xapi.fu.iterate.ArrayIterable",
-        "xapi.fu.iterate.ArrayIterable", "xapi.fu.iterate.ArrayIterable",
-        "CachingIterator", "xapi.fu.iterate.CachingIterator",
-        "xapi.fu.iterate.CachingIterator", "xapi.fu.iterate.CachingIterator"
+        "MappedIterable", "xapi.fu.itr.MappedIterable",
+        "xapi.fu.itr.MappedIterable", "xapi.fu.itr.MappedIterable",
+        "Chain", "xapi.fu.itr.Chain",
+        "xapi.fu.itr.Chain", "xapi.fu.itr.Chain",
+        "ChainBuilder", "xapi.fu.itr.ChainBuilder",
+        "xapi.fu.itr.ChainBuilder", "xapi.fu.itr.ChainBuilder",
+        "ArrayIterable", "xapi.fu.itr.ArrayIterable",
+        "xapi.fu.itr.ArrayIterable", "xapi.fu.itr.ArrayIterable",
+        "CachingIterator", "xapi.fu.itr.CachingIterator",
+        "xapi.fu.itr.CachingIterator", "xapi.fu.itr.CachingIterator"
     );
 
     default MappedIterable<String> allMapTypes() {

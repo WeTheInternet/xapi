@@ -37,7 +37,7 @@ import com.github.javaparser.ast.type.*;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MemberBuffer;
 import xapi.fu.In1;
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.fu.Printable;
 
 import java.lang.reflect.Modifier;

@@ -16,10 +16,11 @@ import xapi.dev.ui.tags.assembler.AssembledElement;
 import xapi.dev.ui.tags.assembler.AssembledUi;
 import xapi.except.NotYetImplemented;
 import xapi.fu.*;
-import xapi.fu.iterate.CachingIterator;
-import xapi.fu.iterate.Chain;
-import xapi.fu.iterate.ChainBuilder;
-import xapi.fu.iterate.SizedIterable;
+import xapi.fu.itr.CachingIterator;
+import xapi.fu.itr.Chain;
+import xapi.fu.itr.ChainBuilder;
+import xapi.fu.itr.SizedIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.reflect.X_Reflect;
 import xapi.source.read.JavaModel.IsTypeDefinition;
 

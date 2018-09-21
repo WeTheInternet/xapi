@@ -1,7 +1,7 @@
 package xapi.dev.api;
 
 import xapi.annotation.compile.Dependency;
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.fu.Out1;
 import xapi.model.X_Model;
 import xapi.mvn.api.MvnDependency;

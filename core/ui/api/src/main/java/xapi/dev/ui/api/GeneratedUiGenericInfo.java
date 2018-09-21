@@ -4,9 +4,9 @@ import com.github.javaparser.ast.TypeParameter;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.dev.ui.api.GeneratedUiLayer.ImplLayer;
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.fu.Maybe;
-import xapi.fu.iterate.ArrayIterable;
+import xapi.fu.itr.ArrayIterable;
 
 import java.util.EnumMap;
 

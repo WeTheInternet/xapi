@@ -5,8 +5,8 @@ import xapi.fu.*;
 import xapi.fu.Filter.Filter1;
 import xapi.fu.Filter.Filter2;
 import xapi.fu.data.MapLike;
-import xapi.fu.iterate.SizedIterable;
-import xapi.fu.iterate.SizedIterator;
+import xapi.fu.itr.SizedIterable;
+import xapi.fu.itr.SizedIterator;
 import xapi.fu.java.EntryIterable;
 
 public interface ObjectTo <K, V>

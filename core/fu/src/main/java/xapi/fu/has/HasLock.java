@@ -6,7 +6,7 @@ import xapi.fu.log.Log.LogLevel;
 import xapi.fu.Out1;
 import xapi.fu.Rethrowable;
 import xapi.fu.api.DoNotOverride;
-import xapi.fu.iterate.LinkedIterable;
+import xapi.fu.itr.LinkedIterable;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;

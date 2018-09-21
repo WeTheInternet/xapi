@@ -1,9 +1,8 @@
 package xapi.file;
 
 import xapi.file.api.FileService;
-import xapi.fu.Do;
 import xapi.fu.In2;
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.inject.X_Inject;
 
 import javax.inject.Provider;

@@ -1,9 +1,9 @@
 package xapi.ui.html.api;
 
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.ui.api.style.HasStyleResources;
 
-import static xapi.fu.iterate.ArrayIterable.iterate;
+import static xapi.fu.itr.ArrayIterable.iterate;
 
 import com.google.gwt.resources.client.ClientBundle;
 

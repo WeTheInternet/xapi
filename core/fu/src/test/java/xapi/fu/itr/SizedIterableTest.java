@@ -1,9 +1,8 @@
-package xapi.fu.iterate;
+package xapi.fu.itr;
 
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertFalse;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 11/28/16.

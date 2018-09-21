@@ -1,8 +1,8 @@
 package xapi.io.api;
 
-import xapi.fu.MappedIterable;
-import xapi.fu.iterate.Chain;
-import xapi.fu.iterate.SingletonIterator;
+import xapi.fu.itr.MappedIterable;
+import xapi.fu.itr.Chain;
+import xapi.fu.itr.SingletonIterator;
 
 /**
  * A delegating LineReader to allow you to wrap and combine other LineReaders,

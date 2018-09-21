@@ -3,10 +3,10 @@ package xapi.dev.api;
 import org.junit.Assert;
 import org.junit.Test;
 import xapi.dev.impl.ReflectiveMavenLoader;
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.fu.Mutable;
 import xapi.fu.Out1;
-import xapi.fu.iterate.SizedIterable;
+import xapi.fu.itr.SizedIterable;
 import xapi.mvn.api.MvnDependency;
 import xapi.reflect.X_Reflect;
 

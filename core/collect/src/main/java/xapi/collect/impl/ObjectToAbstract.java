@@ -7,7 +7,7 @@ import xapi.collect.proxy.CollectionProxy;
 import xapi.fu.In1Out1;
 import xapi.fu.In2Out1;
 import xapi.fu.Out2;
-import xapi.fu.iterate.SizedIterable;
+import xapi.fu.itr.SizedIterable;
 import xapi.fu.java.EntryKeyIterable;
 import xapi.fu.java.EntryValueIterable;
 

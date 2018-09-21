@@ -50,7 +50,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map.Entry;
 
-import static xapi.fu.iterate.ArrayIterable.iterate;
+import static xapi.fu.itr.ArrayIterable.iterate;
 import static xapi.source.read.JavaVisitor.MODIFIER_DEFAULT;
 
 public class MethodBuffer extends MemberBuffer<MethodBuffer> implements

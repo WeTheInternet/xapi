@@ -1,7 +1,7 @@
-package xapi.fu.iterate;
+package xapi.fu.itr;
 
 import org.junit.Test;
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertFalse;

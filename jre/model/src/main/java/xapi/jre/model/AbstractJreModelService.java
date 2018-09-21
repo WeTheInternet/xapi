@@ -7,6 +7,7 @@ import xapi.collect.api.Dictionary;
 import xapi.collect.api.IntTo;
 import xapi.except.NotYetImplemented;
 import xapi.fu.*;
+import xapi.fu.itr.MappedIterable;
 import xapi.model.api.*;
 import xapi.model.api.ModelManifest.MethodData;
 import xapi.model.impl.AbstractModel;

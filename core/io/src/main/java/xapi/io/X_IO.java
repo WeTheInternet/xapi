@@ -2,8 +2,8 @@ package xapi.io;
 
 import xapi.collect.impl.SimpleFifo;
 import xapi.fu.has.HasSize;
-import xapi.fu.iterate.Chain;
-import xapi.fu.iterate.ChainBuilder;
+import xapi.fu.itr.Chain;
+import xapi.fu.itr.ChainBuilder;
 import xapi.inject.X_Inject;
 import xapi.io.api.DelegatingInputStream;
 import xapi.io.api.DelegatingOutputStream;
@@ -16,7 +16,6 @@ import xapi.io.impl.StringBufferOutputStream;
 import xapi.io.service.IOService;
 import xapi.log.X_Log;
 import xapi.log.api.LogLevel;
-import xapi.source.api.Chars;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
 import xapi.util.X_Debug;

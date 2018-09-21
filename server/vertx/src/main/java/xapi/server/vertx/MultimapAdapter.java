@@ -3,10 +3,10 @@ package xapi.server.vertx;
 import io.vertx.core.MultiMap;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.fu.Out2;
-import xapi.fu.iterate.SizedIterable;
-import xapi.fu.iterate.SizedIterator;
+import xapi.fu.itr.SizedIterable;
+import xapi.fu.itr.SizedIterator;
 import xapi.util.X_Util;
 import xapi.util.impl.AbstractPair;
 

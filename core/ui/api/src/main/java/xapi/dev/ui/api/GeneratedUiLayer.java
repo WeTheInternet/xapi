@@ -11,6 +11,7 @@ import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.fu.*;
+import xapi.fu.itr.MappedIterable;
 import xapi.source.X_Source;
 import xapi.source.read.JavaModel.IsTypeDefinition;
 import xapi.ui.api.ElementBuilder;

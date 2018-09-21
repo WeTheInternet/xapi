@@ -14,7 +14,7 @@ import xapi.fu.In1Out1;
 import xapi.fu.Mutable;
 import xapi.fu.Out1.Out1Unsafe;
 import xapi.fu.X_Fu;
-import xapi.fu.iterate.ArrayIterable;
+import xapi.fu.itr.ArrayIterable;
 import xapi.gwtc.api.GwtManifest;
 import xapi.inject.X_Inject;
 import xapi.log.X_Log;
@@ -30,7 +30,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static xapi.fu.iterate.ArrayIterable.iterate;
+import static xapi.fu.itr.ArrayIterable.iterate;
 import static xapi.time.X_Time.diff;
 
 import com.google.gwt.core.ext.TreeLogger;

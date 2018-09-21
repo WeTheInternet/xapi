@@ -1,10 +1,10 @@
-package xapi.fu.iterate;
+package xapi.fu.itr;
 
 import xapi.fu.Immutable;
 import xapi.fu.Lazy;
 import xapi.fu.Out1;
 
-import static xapi.fu.iterate.SingletonIterator.singleItem;
+import static xapi.fu.itr.SingletonIterator.singleItem;
 
 import java.util.Iterator;
 

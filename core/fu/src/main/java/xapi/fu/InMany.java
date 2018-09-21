@@ -1,6 +1,7 @@
 package xapi.fu;
 
-import xapi.fu.iterate.Chain;
+import xapi.fu.itr.Chain;
+import xapi.fu.itr.MappedIterable;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)

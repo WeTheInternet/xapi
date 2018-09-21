@@ -4,7 +4,7 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
 import xapi.fu.In1Out1;
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.fu.Out1;
 import xapi.log.X_Log;
 import xapi.mvn.api.MvnDependency;

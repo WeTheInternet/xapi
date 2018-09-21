@@ -7,7 +7,7 @@ import xapi.collect.api.StringTo;
 import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.ui.api.GeneratedUiImplementation.RequiredMethodType;
 import xapi.fu.In2Out1;
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.fu.Out2;
 
 /**

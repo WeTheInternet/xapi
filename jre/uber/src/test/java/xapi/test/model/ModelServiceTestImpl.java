@@ -5,7 +5,7 @@ package xapi.test.model;
 
 import xapi.annotation.inject.SingletonOverride;
 import xapi.bytecode.impl.BytecodeAdapterService;
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.log.X_Log;
 import xapi.model.api.Model;
 import xapi.model.api.ModelKey;

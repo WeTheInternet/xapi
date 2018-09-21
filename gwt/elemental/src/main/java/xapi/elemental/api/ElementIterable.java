@@ -5,7 +5,7 @@ import elemental.dom.Node;
 import elemental.dom.NodeList;
 import elemental.html.HTMLCollection;
 import elemental.util.Indexable;
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 
 import java.util.Iterator;
 

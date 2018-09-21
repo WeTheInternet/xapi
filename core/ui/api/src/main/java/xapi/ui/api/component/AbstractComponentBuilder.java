@@ -1,7 +1,7 @@
 package xapi.ui.api.component;
 
-import xapi.fu.iterate.Chain;
-import xapi.fu.iterate.ChainBuilder;
+import xapi.fu.itr.Chain;
+import xapi.fu.itr.ChainBuilder;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 8/15/17.

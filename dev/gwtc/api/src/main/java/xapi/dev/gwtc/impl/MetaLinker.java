@@ -1,9 +1,9 @@
 package xapi.dev.gwtc.impl;
 
 import xapi.dev.source.XmlBuffer;
-import xapi.fu.MappedIterable;
-import xapi.fu.iterate.Chain;
-import xapi.fu.iterate.ChainBuilder;
+import xapi.fu.itr.MappedIterable;
+import xapi.fu.itr.Chain;
+import xapi.fu.itr.ChainBuilder;
 
 import java.util.Collection;
 import java.util.SortedSet;

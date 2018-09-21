@@ -5,7 +5,7 @@ import xapi.collect.api.ClassTo;
 import xapi.collect.api.IntTo;
 import xapi.fu.Immutable;
 import xapi.fu.Out1;
-import xapi.fu.iterate.SizedIterable;
+import xapi.fu.itr.SizedIterable;
 import xapi.scope.X_Scope;
 import xapi.scope.api.Scope;
 

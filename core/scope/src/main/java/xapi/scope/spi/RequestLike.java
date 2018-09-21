@@ -2,8 +2,8 @@ package xapi.scope.spi;
 
 import xapi.fu.data.MapLike;
 import xapi.fu.Out1;
-import xapi.fu.iterate.EmptyIterator;
-import xapi.fu.iterate.SizedIterable;
+import xapi.fu.itr.EmptyIterator;
+import xapi.fu.itr.SizedIterable;
 
 import static xapi.fu.Out1.immutable;
 

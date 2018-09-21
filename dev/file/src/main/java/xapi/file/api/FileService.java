@@ -1,7 +1,7 @@
 package xapi.file.api;
 
 import xapi.fu.In2;
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 
 import java.io.File;
 import java.util.jar.JarFile;

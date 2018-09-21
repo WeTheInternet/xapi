@@ -1,7 +1,7 @@
 package xapi.dist.api;
 
 import xapi.args.KwArgProcessorBase;
-import xapi.fu.iterate.SizedIterable;
+import xapi.fu.itr.SizedIterable;
 
 import java.io.File;
 

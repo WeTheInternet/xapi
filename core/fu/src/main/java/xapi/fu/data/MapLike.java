@@ -5,13 +5,14 @@ import xapi.fu.Filter.Filter2;
 import xapi.fu.*;
 import xapi.fu.Out1.Out1Unsafe;
 import xapi.fu.has.HasLock;
-import xapi.fu.iterate.EmptyIterator;
-import xapi.fu.iterate.SizedIterable;
-import xapi.fu.iterate.SizedIterator;
+import xapi.fu.itr.EmptyIterator;
+import xapi.fu.itr.SizedIterable;
+import xapi.fu.itr.SizedIterator;
+import xapi.fu.itr.MappedIterable;
 
 import java.util.Iterator;
 
-import static xapi.fu.iterate.EmptyIterator.NONE;
+import static xapi.fu.itr.EmptyIterator.NONE;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)

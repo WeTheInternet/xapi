@@ -1,11 +1,11 @@
 package xapi.ui.api;
 
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.fu.Maybe;
 import xapi.fu.Mutable;
 import xapi.fu.Out1;
-import xapi.fu.iterate.EmptyIterator;
-import xapi.fu.iterate.LinkedIterable;
+import xapi.fu.itr.EmptyIterator;
+import xapi.fu.itr.LinkedIterable;
 
 /**
  * The RangePool class is used to store a set of {@link Coord}s,

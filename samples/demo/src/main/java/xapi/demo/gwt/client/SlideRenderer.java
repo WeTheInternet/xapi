@@ -16,7 +16,7 @@ import xapi.source.X_Source;
 
 import java.io.StringReader;
 
-import static xapi.fu.iterate.ArrayIterable.iterate;
+import static xapi.fu.itr.ArrayIterable.iterate;
 
 /**
  * Used to transformed parsed xapi AST into functional HTML.

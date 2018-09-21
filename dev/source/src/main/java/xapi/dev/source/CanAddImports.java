@@ -1,8 +1,8 @@
 package xapi.dev.source;
 
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 
-import static xapi.fu.iterate.ArrayIterable.iterate;
+import static xapi.fu.itr.ArrayIterable.iterate;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 6/24/16.

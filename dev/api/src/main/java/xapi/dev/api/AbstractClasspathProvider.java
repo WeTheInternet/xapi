@@ -1,9 +1,9 @@
 package xapi.dev.api;
 
 import xapi.fu.Lazy;
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.fu.Out1;
-import xapi.fu.iterate.ArrayIterable;
+import xapi.fu.itr.ArrayIterable;
 import xapi.model.X_Model;
 import xapi.scope.api.Scope;
 

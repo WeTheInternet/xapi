@@ -21,7 +21,7 @@
 
 package com.github.javaparser.ast.expr;
 
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.fu.X_Fu;
 
 import java.util.Arrays;

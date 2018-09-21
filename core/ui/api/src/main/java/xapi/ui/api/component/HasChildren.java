@@ -1,6 +1,6 @@
 package xapi.ui.api.component;
 
-import xapi.fu.iterate.SizedIterable;
+import xapi.fu.itr.SizedIterable;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 12/16/17.

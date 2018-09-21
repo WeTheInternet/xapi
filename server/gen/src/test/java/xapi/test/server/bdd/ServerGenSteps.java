@@ -15,8 +15,8 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static xapi.fu.MappedIterable.adaptIterable;
-import static xapi.fu.iterate.ArrayIterable.iterate;
+import static xapi.fu.itr.MappedIterable.adaptIterable;
+import static xapi.fu.itr.ArrayIterable.iterate;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/10/16.

@@ -1,8 +1,8 @@
 package xapi.fu.data;
 
 import xapi.fu.*;
-import xapi.fu.iterate.SizedIterable;
-import xapi.fu.iterate.SizedIterator;
+import xapi.fu.itr.SizedIterable;
+import xapi.fu.itr.SizedIterator;
 
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 9/16/18 @ 3:38 AM.

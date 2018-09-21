@@ -1,7 +1,7 @@
 package xapi.dev.gwtc.api;
 
 import xapi.fu.api.DoNotOverride;
-import xapi.fu.iterate.ArrayIterable;
+import xapi.fu.itr.ArrayIterable;
 import xapi.util.X_String;
 
 /**

@@ -11,6 +11,7 @@ import xapi.dev.ui.tags.assembler.AssembledElement;
 import xapi.dev.ui.tags.assembler.UiAssembler;
 import xapi.dev.ui.tags.factories.GeneratedFactory;
 import xapi.fu.*;
+import xapi.fu.itr.MappedIterable;
 import xapi.source.X_Source;
 import xapi.util.X_String;
 

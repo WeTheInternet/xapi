@@ -2,7 +2,7 @@ package xapi.fu.data;
 
 import xapi.fu.api.Clearable;
 import xapi.fu.has.HasItems;
-import xapi.fu.iterate.SizedIterable;
+import xapi.fu.itr.SizedIterable;
 
 /**
  * Lists, Sets AND Maps all implement CollectionLike (with maps using Out2 tuples of K:V for standard iteration).

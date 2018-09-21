@@ -4,8 +4,8 @@ import xapi.fu.In1Out1.In1Out1Unsafe;
 import xapi.fu.log.Log;
 import xapi.fu.log.Log.LogLevel;
 import xapi.fu.has.HasLock;
-import xapi.fu.iterate.SingletonIterator;
-import xapi.fu.iterate.SizedIterable;
+import xapi.fu.itr.SingletonIterator;
+import xapi.fu.itr.SizedIterable;
 
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Supplier;

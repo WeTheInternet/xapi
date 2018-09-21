@@ -16,7 +16,7 @@ import xapi.collect.api.StringTo;
 import xapi.dev.api.AstMethodInvoker.AstMethodResult;
 import xapi.fu.*;
 import xapi.fu.has.HasSize;
-import xapi.fu.iterate.ChainBuilder;
+import xapi.fu.itr.ChainBuilder;
 import xapi.util.X_Debug;
 
 import java.lang.annotation.*;

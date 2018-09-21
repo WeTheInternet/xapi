@@ -3,7 +3,7 @@ package xapi.ui.api;
 import jsinterop.annotations.JsIgnore;
 import jsinterop.annotations.JsType;
 import xapi.fu.api.Ignore;
-import xapi.fu.iterate.SizedIterable;
+import xapi.fu.itr.SizedIterable;
 
 /**
  * An arbitrary ui node which wraps some kind of "native element".

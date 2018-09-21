@@ -5,7 +5,7 @@ import xapi.collect.api.ClassTo;
 import xapi.collect.api.IntTo;
 import xapi.except.NotImplemented;
 import xapi.fu.Lazy;
-import xapi.fu.iterate.SizedIterable;
+import xapi.fu.itr.SizedIterable;
 import xapi.ui.api.UiElement;
 import xapi.ui.api.UiFeature;
 

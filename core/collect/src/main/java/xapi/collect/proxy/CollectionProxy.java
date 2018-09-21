@@ -7,8 +7,9 @@ import xapi.fu.has.HasEmptiness;
 import xapi.collect.api.ObjectTo;
 import xapi.collect.impl.SimpleStack;
 import xapi.fu.In2.In2Unsafe;
-import xapi.fu.iterate.ArrayIterable;
-import xapi.fu.iterate.SizedIterable;
+import xapi.fu.itr.ArrayIterable;
+import xapi.fu.itr.SizedIterable;
+import xapi.fu.itr.MappedIterable;
 
 import java.util.Collection;
 import java.util.Map;

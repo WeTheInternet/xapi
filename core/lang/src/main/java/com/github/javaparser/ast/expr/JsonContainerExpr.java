@@ -5,7 +5,7 @@ import com.github.javaparser.ast.exception.NotFoundException;
 import com.github.javaparser.ast.visitor.GenericVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitor;
 import xapi.collect.X_Collect;
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.fu.Maybe;
 import xapi.fu.has.HasSize;
 

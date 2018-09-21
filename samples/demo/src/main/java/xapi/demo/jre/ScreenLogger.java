@@ -3,9 +3,8 @@ package xapi.demo.jre;
 import xapi.annotation.inject.SingletonOverride;
 import xapi.demo.jre.ScreenLogger.LogSpy;
 import xapi.fu.Lazy;
-import xapi.fu.X_Fu;
-import xapi.fu.iterate.Chain;
-import xapi.fu.iterate.ChainBuilder;
+import xapi.fu.itr.Chain;
+import xapi.fu.itr.ChainBuilder;
 import xapi.inject.X_Inject;
 import xapi.io.X_IO;
 import xapi.log.api.LogLevel;
@@ -15,7 +14,7 @@ import xapi.log.impl.JreLog;
 import java.io.OutputStream;
 import java.io.PrintStream;
 
-import static xapi.fu.iterate.Chain.startChain;
+import static xapi.fu.itr.Chain.startChain;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 9/19/17.

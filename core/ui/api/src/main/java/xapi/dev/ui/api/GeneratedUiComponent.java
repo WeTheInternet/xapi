@@ -21,10 +21,11 @@ import xapi.dev.ui.tags.factories.GeneratedFactory;
 import xapi.dev.ui.tags.factories.LazyInitFactory;
 import xapi.dev.ui.tags.members.UserDefinedMethod;
 import xapi.fu.*;
-import xapi.fu.iterate.Chain;
-import xapi.fu.iterate.ChainBuilder;
-import xapi.fu.iterate.EmptyIterator;
-import xapi.fu.iterate.SizedIterable;
+import xapi.fu.itr.Chain;
+import xapi.fu.itr.ChainBuilder;
+import xapi.fu.itr.EmptyIterator;
+import xapi.fu.itr.SizedIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.source.X_Modifier;
 import xapi.util.X_String;
 

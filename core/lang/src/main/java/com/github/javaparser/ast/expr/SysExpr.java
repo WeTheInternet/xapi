@@ -7,7 +7,8 @@ import com.github.javaparser.ast.visitor.VoidVisitor;
 import xapi.fu.*;
 import xapi.fu.Filter.Filter1;
 import xapi.fu.Filter.Filter2;
-import xapi.fu.iterate.CountedIterator;
+import xapi.fu.itr.CountedIterator;
+import xapi.fu.itr.MappedIterable;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 11/4/16.

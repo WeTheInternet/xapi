@@ -3,8 +3,8 @@ package xapi.ui.api.component;
 import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.fu.Out1;
-import xapi.fu.iterate.EmptyIterator;
-import xapi.fu.iterate.SizedIterable;
+import xapi.fu.itr.EmptyIterator;
+import xapi.fu.itr.SizedIterable;
 import xapi.model.api.Model;
 
 /**

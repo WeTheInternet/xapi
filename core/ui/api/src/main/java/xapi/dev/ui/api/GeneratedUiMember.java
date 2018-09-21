@@ -8,7 +8,7 @@ import com.github.javaparser.ast.visitor.DumpVisitor;
 import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.dev.source.CanAddImports;
-import xapi.fu.iterate.SizedIterable;
+import xapi.fu.itr.SizedIterable;
 
 import java.io.Serializable;
 

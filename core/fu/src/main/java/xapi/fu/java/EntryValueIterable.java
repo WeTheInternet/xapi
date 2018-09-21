@@ -1,8 +1,8 @@
 package xapi.fu.java;
 
 import xapi.fu.Out1;
-import xapi.fu.iterate.SizedIterable;
-import xapi.fu.iterate.SizedIterator;
+import xapi.fu.itr.SizedIterable;
+import xapi.fu.itr.SizedIterator;
 
 import java.util.Iterator;
 import java.util.Map.Entry;

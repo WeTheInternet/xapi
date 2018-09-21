@@ -5,7 +5,7 @@ import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.ReferenceType;
 import xapi.dev.source.CanAddImports;
 import xapi.dev.ui.api.GeneratedUiLayer.ImplLayer;
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.util.X_String;
 
 import java.util.ArrayList;

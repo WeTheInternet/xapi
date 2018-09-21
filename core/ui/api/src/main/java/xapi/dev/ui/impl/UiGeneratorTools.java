@@ -16,11 +16,11 @@ import xapi.dev.ui.api.GeneratedUiImplementation;
 import xapi.dev.ui.api.UiNamespace.DefaultUiNamespace;
 import xapi.dev.ui.tags.UiTagGenerator;
 import xapi.fu.*;
-import xapi.fu.iterate.ArrayIterable;
-import xapi.fu.iterate.CachingIterator.ReplayableIterable;
-import xapi.fu.iterate.Chain;
-import xapi.fu.iterate.ChainBuilder;
-import xapi.fu.iterate.SizedIterable;
+import xapi.fu.itr.ArrayIterable;
+import xapi.fu.itr.CachingIterator.ReplayableIterable;
+import xapi.fu.itr.Chain;
+import xapi.fu.itr.ChainBuilder;
+import xapi.fu.itr.SizedIterable;
 import xapi.source.X_Source;
 import xapi.util.X_String;
 

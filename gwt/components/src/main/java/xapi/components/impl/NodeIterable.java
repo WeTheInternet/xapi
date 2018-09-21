@@ -5,7 +5,7 @@ import elemental2.dom.Node;
 import elemental2.dom.NodeList;
 import jsinterop.base.Js;
 import jsinterop.base.JsArrayLike;
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 
 import java.util.Iterator;
 

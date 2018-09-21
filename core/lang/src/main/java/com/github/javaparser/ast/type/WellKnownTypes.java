@@ -41,7 +41,7 @@ public class WellKnownTypes {
             case "ChainBuilder":
             case "ArrayIterable":
             case "CachingIterator":
-                return "xapi.fu.iterate." + s;
+                return "xapi.fu.itr." + s;
             case "IntTo":
             case "StringTo":
             case "StringTo.Many":

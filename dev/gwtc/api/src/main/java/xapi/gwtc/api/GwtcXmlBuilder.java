@@ -2,7 +2,7 @@ package xapi.gwtc.api;
 
 import xapi.annotation.compile.Resource;
 import xapi.dev.source.XmlBuffer;
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.log.X_Log;
 import xapi.util.X_Runtime;
 

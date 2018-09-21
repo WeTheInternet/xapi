@@ -1,6 +1,6 @@
 package xapi.fu.in;
 
-import xapi.fu.iterate.GrowableIterator;
+import xapi.fu.itr.GrowableIterator;
 
 import java.io.IOException;
 import java.io.InputStream;

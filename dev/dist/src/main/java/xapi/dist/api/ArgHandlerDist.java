@@ -3,7 +3,7 @@ package xapi.dist.api;
 import xapi.args.ArgHandlerString;
 import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
-import xapi.fu.iterate.SizedIterable;
+import xapi.fu.itr.SizedIterable;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 11/12/17.

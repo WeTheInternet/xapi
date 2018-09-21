@@ -1,6 +1,7 @@
 package xapi.fu;
 
 import xapi.fu.Filter.Filter2;
+import xapi.fu.itr.MappedIterable;
 
 import javax.validation.constraints.NotNull;
 import java.lang.reflect.ParameterizedType;

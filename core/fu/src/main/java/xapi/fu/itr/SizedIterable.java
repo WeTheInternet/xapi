@@ -1,16 +1,15 @@
-package xapi.fu.iterate;
+package xapi.fu.itr;
 
 import xapi.fu.Immutable;
 import xapi.fu.In1Out1;
 import xapi.fu.In1Out1.In1Out1Unsafe;
-import xapi.fu.MappedIterable;
 import xapi.fu.Out1;
 import xapi.fu.api.DoNotOverride;
 import xapi.fu.has.HasSize;
 
 import java.util.Iterator;
 
-import static xapi.fu.iterate.SingletonIterator.singleItem;
+import static xapi.fu.itr.SingletonIterator.singleItem;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 2/5/17.

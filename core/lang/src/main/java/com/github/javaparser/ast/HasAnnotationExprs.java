@@ -3,10 +3,10 @@ package com.github.javaparser.ast;
 import com.github.javaparser.ast.expr.AnnotationExpr;
 import xapi.fu.In1Out1;
 import xapi.fu.Maybe;
-import xapi.fu.iterate.Chain;
-import xapi.fu.iterate.ChainBuilder;
-import xapi.fu.iterate.EmptyIterator;
-import xapi.fu.iterate.SizedIterable;
+import xapi.fu.itr.Chain;
+import xapi.fu.itr.ChainBuilder;
+import xapi.fu.itr.EmptyIterator;
+import xapi.fu.itr.SizedIterable;
 
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 8/20/18 @ 3:55 AM.

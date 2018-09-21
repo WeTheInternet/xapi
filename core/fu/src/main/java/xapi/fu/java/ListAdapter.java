@@ -1,7 +1,7 @@
 package xapi.fu.java;
 
 import xapi.fu.data.ListLike;
-import xapi.fu.iterate.SizedIterator;
+import xapi.fu.itr.SizedIterator;
 
 import java.io.Serializable;
 import java.util.ArrayList;

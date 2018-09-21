@@ -9,7 +9,7 @@ import xapi.except.NotYetImplemented;
 import xapi.fu.*;
 import xapi.fu.data.MapLike;
 import xapi.fu.has.HasLock;
-import xapi.fu.iterate.SizedIterable;
+import xapi.fu.itr.SizedIterable;
 import xapi.log.X_Log;
 import xapi.log.api.LogLevel;
 

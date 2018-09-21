@@ -1,6 +1,6 @@
 package xapi.collect.api;
 
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 
 public interface HasPrefixed <T>{
 

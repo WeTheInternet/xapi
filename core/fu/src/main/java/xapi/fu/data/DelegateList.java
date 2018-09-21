@@ -5,7 +5,7 @@ import xapi.fu.In1Out1;
 import xapi.fu.In2Out1;
 import xapi.fu.Out1;
 import xapi.fu.io.InAOutA;
-import xapi.fu.iterate.SizedIterator;
+import xapi.fu.itr.SizedIterator;
 
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 9/16/18 @ 3:29 AM.

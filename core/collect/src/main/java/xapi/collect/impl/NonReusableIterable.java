@@ -1,7 +1,7 @@
 package xapi.collect.impl;
 
 import xapi.annotation.gc.NotReusable;
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)

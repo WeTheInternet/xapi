@@ -4,7 +4,6 @@
 package xapi.test.gwt.io;
 
 import com.google.gwt.core.client.GWT;
-import com.google.gwt.core.client.GWT.UncaughtExceptionHandler;
 import com.google.gwt.core.client.JavaScriptException;
 import com.google.gwt.http.client.Request;
 import com.google.gwt.http.client.RequestBuilder;
@@ -12,7 +11,6 @@ import com.google.gwt.http.client.RequestBuilder.Method;
 import com.google.gwt.http.client.RequestCallback;
 import com.google.gwt.http.client.RequestException;
 import com.google.gwt.http.client.RequestPermissionException;
-import com.google.gwt.http.client.Response;
 import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.json.client.JSONParser;
 import com.google.gwt.json.client.JSONValue;
@@ -25,7 +23,6 @@ import org.junit.Ignore;
 
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringDictionary;
-import xapi.fu.iterate.ArrayIterable;
 import xapi.gwt.io.IOServiceGwt;
 import xapi.io.api.DelegatingIOCallback;
 import xapi.io.api.IORequest;

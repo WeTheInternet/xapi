@@ -1,9 +1,9 @@
 package xapi.ui.api.component;
 
 import xapi.fu.Do;
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.fu.Maybe;
-import xapi.fu.iterate.EmptyIterator;
+import xapi.fu.itr.EmptyIterator;
 
 /**
  * In order for components to "have children",

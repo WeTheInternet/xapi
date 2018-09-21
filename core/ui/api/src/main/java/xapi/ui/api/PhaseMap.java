@@ -1,7 +1,7 @@
 package xapi.ui.api;
 
 import xapi.fu.In1Out1;
-import xapi.fu.iterate.ReverseIterable;
+import xapi.fu.itr.ReverseIterable;
 
 import static xapi.util.X_Util.pushIfMissing;
 

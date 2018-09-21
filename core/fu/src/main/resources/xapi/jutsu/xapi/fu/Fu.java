@@ -1,6 +1,6 @@
 package xapi.fu;
 
-import xapi.fu.iterate.Chain;
+import xapi.fu.itr.Chain;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Type;

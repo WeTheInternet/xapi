@@ -1,5 +1,6 @@
-package xapi.fu;
+package xapi.fu.itr;
 
+import xapi.fu.*;
 import xapi.fu.Filter.Filter1;
 import xapi.fu.Filter.Filter1Unsafe;
 import xapi.fu.In1.In1Unsafe;
@@ -7,15 +8,14 @@ import xapi.fu.In1Out1.In1Out1Unsafe;
 import xapi.fu.api.DoNotOverride;
 import xapi.fu.has.HasEmptiness;
 import xapi.fu.has.HasSize;
-import xapi.fu.iterate.*;
-import xapi.fu.iterate.CachingIterator.ReplayableIterable;
-import xapi.fu.iterate.CachingIterator.SizedReplayableIterable;
+import xapi.fu.itr.CachingIterator.ReplayableIterable;
+import xapi.fu.itr.CachingIterator.SizedReplayableIterable;
 
 import java.lang.reflect.Array;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-import static xapi.fu.iterate.ArrayIterable.iterate;
+import static xapi.fu.itr.ArrayIterable.iterate;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 7/31/16.

@@ -1,6 +1,4 @@
-package xapi.fu.iterate;
-
-import xapi.fu.MappedIterable;
+package xapi.fu.itr;
 
 import java.util.Iterator;
 

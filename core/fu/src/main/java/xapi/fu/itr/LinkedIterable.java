@@ -1,7 +1,7 @@
-package xapi.fu.iterate;
+package xapi.fu.itr;
 
 import xapi.fu.In1Out1;
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;

@@ -1,26 +1,17 @@
 package xapi.model.impl;
 
-import xapi.annotation.compile.MagicMethod;
 import xapi.annotation.model.DeleterFor;
 import xapi.annotation.model.GetterFor;
 import xapi.annotation.model.IsModel;
 import xapi.annotation.model.SetterFor;
 import xapi.annotation.reflect.Fluent;
-import xapi.bytecode.CtClass;
-import xapi.bytecode.CtClassType;
-import xapi.bytecode.impl.BytecodeAdapterService;
 import xapi.except.NotConfiguredCorrectly;
-import xapi.fu.MappedIterable;
-import xapi.fu.api.GwtIncompatible;
+import xapi.fu.itr.MappedIterable;
 import xapi.model.X_Model;
 import xapi.model.api.Model;
 import xapi.model.api.ModelManifest;
 import xapi.model.api.ModelManifest.MethodData;
-import xapi.reflect.X_Reflect;
 import xapi.source.X_Modifier;
-import xapi.source.api.IsClass;
-import xapi.source.api.IsType;
-import xapi.util.X_Runtime;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;

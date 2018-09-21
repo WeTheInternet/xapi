@@ -7,10 +7,10 @@ import xapi.collect.impl.SimpleFifo;
 import xapi.fu.Filter;
 import xapi.fu.Immutable;
 import xapi.fu.In2;
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.fu.Out1;
 import xapi.fu.X_Fu;
-import xapi.fu.iterate.ArrayIterable;
+import xapi.fu.itr.ArrayIterable;
 import xapi.log.X_Log;
 import xapi.source.X_Source;
 import xapi.util.X_Namespace;
@@ -21,7 +21,7 @@ import java.util.Iterator;
 
 import static xapi.collect.X_Collect.*;
 import static xapi.fu.In2.in2;
-import static xapi.fu.iterate.SingletonIterator.singleItem;
+import static xapi.fu.itr.SingletonIterator.singleItem;
 import static xapi.gwtc.api.GwtManifest.CleanupMode.DELETE_ON_SUCCESSFUL_EXIT;
 
 import com.google.gwt.core.ext.TreeLogger.Type;

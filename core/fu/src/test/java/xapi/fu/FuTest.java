@@ -4,7 +4,7 @@ import org.junit.After;
 import org.junit.Before;
 import xapi.fu.Do.DoUnsafe;
 import xapi.fu.In1.In1Unsafe;
-import xapi.fu.iterate.SizedIterable;
+import xapi.fu.itr.SizedIterable;
 
 import java.io.IOException;
 import java.io.PrintStream;

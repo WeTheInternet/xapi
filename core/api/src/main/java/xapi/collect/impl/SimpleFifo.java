@@ -2,13 +2,11 @@ package xapi.collect.impl;
 
 import xapi.annotation.inject.InstanceDefault;
 import xapi.collect.api.Fifo;
-import xapi.fu.MappedIterable;
-import xapi.fu.iterate.SizedIterable;
-import xapi.fu.iterate.SizedIterator;
+import xapi.fu.itr.SizedIterable;
+import xapi.fu.itr.SizedIterator;
 import xapi.util.api.ConvertsValue;
 
 import java.io.Serializable;
-import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**

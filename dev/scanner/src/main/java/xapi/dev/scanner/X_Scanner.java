@@ -5,7 +5,7 @@ import xapi.dev.X_Dev;
 import xapi.dev.resource.impl.StringDataResource;
 import xapi.dev.scanner.api.ClasspathScanner;
 import xapi.dev.scanner.impl.ClasspathResourceMap;
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.inject.X_Inject;
 import xapi.util.X_String;
 

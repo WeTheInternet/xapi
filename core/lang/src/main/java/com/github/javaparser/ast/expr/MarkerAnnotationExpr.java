@@ -23,8 +23,8 @@ package com.github.javaparser.ast.expr;
 
 import com.github.javaparser.ast.visitor.GenericVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitor;
-import xapi.fu.MappedIterable;
-import xapi.fu.iterate.EmptyIterator;
+import xapi.fu.itr.MappedIterable;
+import xapi.fu.itr.EmptyIterator;
 
 /**
  * @author Julio Vilmar Gesser

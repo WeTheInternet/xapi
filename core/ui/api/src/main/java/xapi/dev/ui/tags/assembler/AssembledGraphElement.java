@@ -3,7 +3,7 @@ package xapi.dev.ui.tags.assembler;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
-import xapi.fu.iterate.SizedIterable;
+import xapi.fu.itr.SizedIterable;
 import xapi.ui.api.component.HasChildren;
 
 /**

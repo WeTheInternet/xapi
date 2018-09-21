@@ -1,15 +1,11 @@
 package xapi.server.gen;
 
-import com.github.javaparser.ASTHelper;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.JsonContainerExpr;
 import com.github.javaparser.ast.expr.JsonPairExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
-import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import xapi.dev.api.ApiGeneratorContext;
-import xapi.dev.source.ClassBuffer;
-import xapi.dev.source.MethodBuffer;
 import xapi.dev.ui.api.ComponentBuffer;
 import xapi.dev.ui.api.ContainerMetadata;
 import xapi.dev.ui.api.UiComponentGenerator;
@@ -19,13 +15,10 @@ import xapi.dev.ui.api.UiVisitScope;
 import xapi.dev.ui.api.UiVisitScope.ScopeType;
 import xapi.except.NotYetImplemented;
 import xapi.fu.In2Out1;
-import xapi.fu.In3Out1;
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.fu.Maybe;
-import xapi.javac.dev.util.NameUtil;
 import xapi.model.X_Model;
 import xapi.mvn.api.MvnCoords;
-import xapi.mvn.api.MvnDependency;
 import xapi.server.gen.GeneratedClasspathInfo.ClasspathItem;
 
 /**

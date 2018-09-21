@@ -19,6 +19,7 @@ import xapi.components.api.*;
 import xapi.fu.*;
 import xapi.fu.In1Out1.In1Out1Unsafe;
 import xapi.fu.data.MapLike;
+import xapi.fu.itr.MappedIterable;
 import xapi.gwt.api.JsLazyExpando;
 import xapi.gwt.api.JsObjectDescriptor;
 import xapi.gwt.api.Symbol;

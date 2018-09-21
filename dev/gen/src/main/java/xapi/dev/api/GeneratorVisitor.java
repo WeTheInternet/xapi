@@ -30,7 +30,7 @@ import xapi.fu.Maybe;
 import xapi.fu.Mutable;
 import xapi.fu.Out2;
 import xapi.fu.Printable;
-import xapi.fu.iterate.GrowableIterator;
+import xapi.fu.itr.GrowableIterator;
 import xapi.log.X_Log;
 import xapi.source.X_Source;
 import xapi.source.read.JavaVisitor;

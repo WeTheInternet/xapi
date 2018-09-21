@@ -16,7 +16,7 @@ import xapi.collect.api.InitMap;
 import xapi.collect.impl.InitMapDefault;
 import xapi.except.NotImplemented;
 import xapi.except.NotYetImplemented;
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.inject.impl.SingletonProvider;
 import xapi.log.X_Log;
 import xapi.log.api.LogLevel;

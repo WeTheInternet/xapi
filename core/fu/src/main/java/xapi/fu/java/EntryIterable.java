@@ -5,7 +5,7 @@ import xapi.fu.In1.In1Unsafe;
 import xapi.fu.In2;
 import xapi.fu.In2.In2Unsafe;
 import xapi.fu.In2Out1;
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.fu.Out2;
 import xapi.fu.api.DoNotOverride;
 import xapi.fu.has.HasItems;

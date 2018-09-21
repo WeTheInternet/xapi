@@ -13,7 +13,7 @@ import xapi.fu.Out1;
 import xapi.fu.Out2;
 import xapi.fu.X_Fu;
 import xapi.fu.has.HasLock;
-import xapi.fu.iterate.SizedIterable;
+import xapi.fu.itr.SizedIterable;
 import xapi.log.X_Log;
 import xapi.process.X_Process;
 import xapi.scope.X_Scope;

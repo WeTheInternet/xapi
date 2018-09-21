@@ -2,7 +2,7 @@ package xapi.mvn.impl;
 
 import xapi.dev.api.AbstractClasspathProvider;
 import xapi.fu.Lazy;
-import xapi.fu.MappedIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.fu.Out1;
 import xapi.model.X_Model;
 import xapi.mvn.X_Maven;

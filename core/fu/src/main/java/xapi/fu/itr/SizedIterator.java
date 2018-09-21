@@ -1,7 +1,6 @@
-package xapi.fu.iterate;
+package xapi.fu.itr;
 
 import xapi.fu.In1Out1;
-import xapi.fu.Lazy;
 import xapi.fu.Out1;
 import xapi.fu.has.HasSize;
 

@@ -4,7 +4,7 @@ import xapi.fu.In2Out1;
 import xapi.fu.Out2;
 import xapi.fu.has.HasEmptiness;
 import xapi.fu.has.HasSize;
-import xapi.fu.iterate.SizedIterable;
+import xapi.fu.itr.SizedIterable;
 import xapi.fu.java.EntryIterable;
 
 import java.util.Iterator;

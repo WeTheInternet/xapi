@@ -1,8 +1,6 @@
-package xapi.fu;
+package xapi.fu.itr;
 
-import xapi.fu.iterate.ArrayIterable;
-import xapi.fu.iterate.ChainBuilder;
-import xapi.fu.iterate.SizedIterable;
+import xapi.fu.In1Out1;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;

@@ -6,6 +6,7 @@ import xapi.collect.api.StringTo;
 import xapi.collect.proxy.CollectionProxy;
 import xapi.fu.*;
 import xapi.fu.has.HasLock;
+import xapi.fu.itr.MappedIterable;
 import xapi.model.X_Model;
 
 import java.util.Map.Entry;
