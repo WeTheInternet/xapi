@@ -67,7 +67,8 @@ public class Transformer {
     return shouldQuote;
   }
 
-  public void setShouldQuote(boolean shouldQuote) {
+  public Transformer setShouldQuote(boolean shouldQuote) {
     this.shouldQuote = shouldQuote;
+    return this;
   }
 }

@@ -163,6 +163,7 @@ implements IsModelComponent<El, Mod> {
         b.setTagName(tagName);
         opts.withBuilder(b);
         opts.withComponent(component);
+
         return component.intoBuilder(this, opts, b);
     }
 

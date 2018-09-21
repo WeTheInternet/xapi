@@ -141,7 +141,7 @@ public abstract class ModelBindingAssembler implements TagAssembler {
 
                 // consider each model field independently
                 modelFields.forEach(binding -> {
-                    bindModelField(e, binding.getType(), binding.getName(), binding.getSetter(), binding.getGetter());
+                    bindModelField(assembler, e, binding.getType(), binding.getName(), binding.getSetter(), binding.getGetter());
                 });
 
                 out.outdent()
@@ -216,12 +216,14 @@ public abstract class ModelBindingAssembler implements TagAssembler {
     }
 
     protected void bindModelField(
+        UiAssembler assembler,
         AssembledElement e,
-        String type,
+        Type fullType,
         String targetName,
         UiAttrExpr setter,
         UiAttrExpr getter
     ) {
+        String type = fullType.toSource();
         assert getter == setter : "Disparate getter and setter for " + targetName + " not yet supported;" +
             " you sent " + e.debug();
         final PrintBuffer out = e.getInitBuffer();
@@ -240,9 +242,25 @@ public abstract class ModelBindingAssembler implements TagAssembler {
                     // collection type...  will need to sort out how to handle all our supported forms...
                     // best bet here is a CollectionGenerator type, which we implement for our standard supported forms.
                     // For tonight... just hacking in ComponentList, and nothing else.
-                    if (tools.allListTypes().noneMatch(raw(type)::equals)) {
-                        throw new IllegalArgumentException("Type " + type + " not a list type according to " + tools+"; " +
-                            "from " + e.debug());
+                    if (fullType.hasRawType("ComponentList")) {
+                        // special handling here...
+                        System.out.println();
+                        json.getValues()
+                            .forAll(child->{
+                                final UiAssemblerResult added = assembler.addChild(
+                                    assembly,
+                                    e,
+                                    (UiContainerExpr) child
+                                );
+                                out.patternln("mod.$1().children().add($2.out1());",
+                                    targetName, added.getFactory().getGetter()
+                                );
+                            });
+                    } else {
+                        if (tools.allListTypes().noneMatch(raw(type)::equals)) {
+                            throw new IllegalArgumentException("Type " + type + " not a list type according to " + tools+"; " +
+                                "from " + e.debug());
+                        }
                     }
                 } else {
                     if (tools.allMapTypes().noneMatch(raw(type)::equals)) {

@@ -236,6 +236,9 @@ extends CollectionProxy<Integer,T>, HasItems<T>, SizedIterable<T>
     return join("", sep, "");
   }
 
+    static boolean isNotEmpty(IntTo<?> list) {
+      return !isEmpty(list);
+    }
     static boolean isEmpty(IntTo<?> list) {
       return list == null || list.isEmpty();
     }

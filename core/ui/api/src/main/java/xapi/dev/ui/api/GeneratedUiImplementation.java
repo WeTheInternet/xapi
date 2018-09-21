@@ -1,6 +1,7 @@
 package xapi.dev.ui.api;
 
 import com.github.javaparser.ast.expr.*;
+import com.github.javaparser.ast.plugin.Transformer;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
 import xapi.collect.X_Collect;
@@ -231,7 +232,7 @@ public class GeneratedUiImplementation extends GeneratedUiLayer {
                     }
                 } else {
                     // Bah... we need something smarter here...
-                    final String src = body.toSource();
+                    final String src = body.toSource(new Transformer().setShouldQuote(false));
                     if (src.startsWith("$model::")) {
                         // supernasty... we should really be sending the template literal body through the parser again...
                         final String identifier = src.substring(8);
@@ -256,9 +257,27 @@ public class GeneratedUiImplementation extends GeneratedUiLayer {
         final GeneratedUiMember modField = assembly.getUi().getPublicModel().getField(identifier);
         final String titleName = toTitleCase(identifier);
         final Type type = modField.getMemberType();
-        boolean listWrap = type.hasRawType("IntTo");
         final UiNamespace ns = reduceNamespace(assembly.getNamespace());
-        if (listWrap) {
+        boolean componentList = type.hasRawType("ComponentList");
+        boolean listWrap = type.hasRawType("IntTo");
+        if (componentList) {
+            // setup all() listeners
+            String injector = assembly.newInjector();
+            out
+                .patternln("$1().all(added -> ", identifier)
+                .indent()
+                    .patternln("$1.append(added.asBuilder())", builder.getName())
+                .outdent()
+                .println(", removed ->")
+                .indent()
+                    // going to need to use injector to handle removes...
+                    .patternln("$1($2.getElement()).removeChild(removed.getElement())",
+                        injector, builder.getName()
+                    )
+                .outdent()
+                .println(");")
+            ;
+        } else if (listWrap) {
             // We need to iterate items.
             out.addImport(type.toSource());
 

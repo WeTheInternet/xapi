@@ -30,6 +30,9 @@ public interface Model {
             return val;
         });
     }
+    default <T, I1> T getOrSaveProperty(String key, In1Out1<I1, T> dflt, I1 arg) {
+        return getOrSaveProperty(key, dflt.supply(arg));
+    }
 
     default <T> T getOrCreate(Out1<T> getter, Out1<T> factory, In1<T> setter) {
         return HasLock.alwaysLock(this, ()->{

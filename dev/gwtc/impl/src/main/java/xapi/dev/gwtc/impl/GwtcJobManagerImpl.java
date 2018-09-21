@@ -499,7 +499,7 @@ public class GwtcJobManagerImpl extends GwtcJobManagerAbstract {
                         boolean fresh = checkFreshness.out1();
                         final Moment freshTime = X_Time.now();
                         monitor.writeAsCompiler(Character.toString(fresh ? CompileMessage.KEY_FRESH : CompileMessage.KEY_STALE));
-                        X_Log.trace(GwtcJobManagerImpl.class, "Freshness check (", fresh, ") took", diff(start),
+                        X_Log.info(GwtcJobManagerImpl.class, "Freshness check (", fresh, ") took", diff(start),
                             " time to send reply", diff(freshTime));
                         break;
                     case GwtcJobMonitor.JOB_PING:

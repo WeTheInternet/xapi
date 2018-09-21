@@ -2,6 +2,7 @@ package xapi.fu.data;
 
 import xapi.fu.Do;
 import xapi.fu.In1;
+import xapi.fu.api.Ignore;
 import xapi.fu.api.ShouldOverride;
 
 /**
@@ -36,5 +37,6 @@ public interface Allable<T> {
         return this;
     }
 
+    @Ignore("model")
     Do all(In1<T> onAdd, In1<T> onRemove);
 }

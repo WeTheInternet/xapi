@@ -609,12 +609,18 @@ public abstract class GwtcJob implements Destroyable {
 
         int spins = 100;
         try {
+            double deadline = X_Time.nowPlus(5000);
             while (onFresh != Do.NOTHING) {
                 pingMonitor();
                 if (spins --< 0) {
                     synchronized (result) {
                         result.wait(10);
                     }
+                }
+                if (X_Time.isPast(deadline)) {
+                    X_Log.warn(GwtcJob.class, "Waited more than 5s for freshness check; assuming stale...");
+                    onStale.done();
+                    break;
                 }
             }
         } catch (InterruptedException e) {

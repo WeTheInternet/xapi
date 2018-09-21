@@ -1,6 +1,7 @@
 package xapi.dev.ui.tags.assembler;
 
 import com.github.javaparser.ast.expr.UiAttrExpr;
+import com.github.javaparser.ast.type.Type;
 import xapi.dev.ui.api.GeneratedUiMember;
 
 /**
@@ -32,8 +33,8 @@ public class ModelBinding {
         this.setter = expr;
     }
 
-    public String getType() {
-        return meta.getMemberType().toSource();
+    public Type getType() {
+        return meta.getMemberType();
     }
 
     public String getName() {

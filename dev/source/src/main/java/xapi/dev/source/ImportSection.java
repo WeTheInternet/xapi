@@ -420,8 +420,12 @@ public class ImportSection implements CanAddImports {
   }
 
   public String qualify(String t) {
-    final String val = imports.getOrDefault(t, t);
+      int ind = t.indexOf('<');
+      if (ind == -1) {
+          ind = t.indexOf('[');
+      }
+    final String val = imports.getOrDefault(t.split("<")[0].split("\\[")[0], t);
     // might be explicitly empty string to reserve a name
-    return val.isEmpty() ? t : val;
+    return val.isEmpty() ? t : val + (ind == -1 || (t.contains("<") || t.contains("[")) ? "" : t.substring(ind));
   }
 }
