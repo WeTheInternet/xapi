@@ -138,7 +138,7 @@ public abstract class GwtcJob implements Destroyable {
                     directory = null;
                     // TODO actually get real error reporting here
                     error = new UnableToCompleteException();
-                    xapi.fu.Log.tryLog(GwtcJob.class, this, "Gwt Compilation state: ", state);
+                    xapi.fu.log.Log.tryLog(GwtcJob.class, this, "Gwt Compilation state: ", state);
                 }
                 doneCallbacks.removeAll(callback-> {
                     try {

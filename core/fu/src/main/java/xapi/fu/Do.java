@@ -2,6 +2,7 @@ package xapi.fu;
 
 import xapi.fu.api.DoNotOverride;
 import xapi.fu.api.Generate;
+import xapi.fu.log.Log;
 
 /**
  * A composable Runnable interface.

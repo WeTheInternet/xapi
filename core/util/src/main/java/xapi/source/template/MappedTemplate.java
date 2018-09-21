@@ -2,7 +2,7 @@ package xapi.source.template;
 
 import xapi.fu.In1Out1;
 import xapi.fu.In2Out1;
-import xapi.fu.Log;
+import xapi.fu.log.Log;
 import xapi.fu.data.MapLike;
 import xapi.fu.java.X_Jdk;
 import xapi.source.write.ToStringer;

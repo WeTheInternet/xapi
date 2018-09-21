@@ -1,12 +1,12 @@
 package xapi.fu;
 
 import xapi.fu.In1Out1.In1Out1Unsafe;
-import xapi.fu.Log.LogLevel;
+import xapi.fu.log.Log;
+import xapi.fu.log.Log.LogLevel;
 import xapi.fu.has.HasLock;
 import xapi.fu.iterate.SingletonIterator;
 import xapi.fu.iterate.SizedIterable;
 
-import javax.inject.Provider;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Supplier;
 
@@ -80,9 +80,6 @@ public interface Out1<O> extends Rethrowable, Lambda, HasMutability {
   default Supplier<O> toSupplier() {
     return this::out1;
   }
-  default Provider<O> toProvider() {
-    return this::out1;
-  }
 
   static <O> Out1<O> out1Supplier(Supplier<O> of) {
     return of::get;
@@ -92,15 +89,10 @@ public interface Out1<O> extends Rethrowable, Lambda, HasMutability {
     return of;
   }
 
-  static <O> Out1<O> out1Provider(Provider<O> of) {
-    return of::get;
-  }
-
   static <I, O> Out1<O> out1Immediate(In1Out1<I, O> mapper, I input) {
     final O value = mapper.io(input);
     return immutable1(value);
   }
-
 
   static <I, O> Out1<O> out1DeferBoth(In1Out1<I, O> mapper, Out1<I> input) {
     return ()->mapper.io(input.out1());
@@ -161,9 +153,10 @@ public interface Out1<O> extends Rethrowable, Lambda, HasMutability {
           try {
             log.log(getClass(), e);
           } catch (Throwable loggingError) {
-            log.log(LogLevel.ERROR, "Error logging error! Errorception: ");
-            log.log(LogLevel.ERROR, "Error while logging: ", loggingError);
-            log.log(LogLevel.ERROR, "Original error: ", e);
+            System.err.println("Errorception while logging;" +
+                "\nOriginal error: " + e +
+                "\nlogging error:" + loggingError);
+            e.printStackTrace();
           }
         }
         throw rethrow(e);

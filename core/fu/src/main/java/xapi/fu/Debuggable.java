@@ -1,6 +1,6 @@
 package xapi.fu;
 
-import static xapi.fu.Log.allLogs;
+import static xapi.fu.log.Log.allLogs;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)

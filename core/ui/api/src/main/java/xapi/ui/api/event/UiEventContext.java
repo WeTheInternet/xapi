@@ -2,7 +2,7 @@ package xapi.ui.api.event;
 
 import xapi.fu.api.Ignore;
 import xapi.event.api.IsEventType;
-import xapi.fu.Log;
+import xapi.fu.log.Log;
 import xapi.log.X_Log;
 import xapi.model.api.Model;
 import xapi.ui.api.UiNode;

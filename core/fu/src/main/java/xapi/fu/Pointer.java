@@ -1,7 +1,8 @@
 package xapi.fu;
 
-import xapi.fu.Log.DefaultLog;
-import xapi.fu.Log.LogLevel;
+import xapi.fu.log.Log;
+import xapi.fu.log.Log.DefaultLog;
+import xapi.fu.log.Log.LogLevel;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)

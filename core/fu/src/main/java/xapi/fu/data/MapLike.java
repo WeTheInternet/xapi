@@ -138,31 +138,26 @@ public interface MapLike<K, V> extends CollectionLike<Out2<K, V>> {
     return is;
   }
 
+  default V getOrCreateFrom(K key, Out1<V> ifNull) {
+    return HasLock.alwaysLock(this, ()->{
+      V is = get(key);
+      if (is == null) {
+        is = ifNull.out1();
+        put(key, is);
+      }
+      return is;
+    });
+  }
   default <F> V getOrCreateFrom(K key, In1Out1<F, V> ifNull, F from) {
-    V is = get(key);
-    if (is == null) {
-      is = ifNull.io(from);
-      put(key, is);
-    }
-    return is;
+    return getOrCreateFrom(key, ifNull.supply(from));
   }
 
   default <F1, F2> V getOrCreateFrom(K key, In2Out1<F1, F2, V> ifNull, F1 from1, F2 from2) {
-    V is = get(key);
-    if (is == null) {
-      is = ifNull.io(from1, from2);
-      put(key, is);
-    }
-    return is;
+    return getOrCreateFrom(key, ifNull.supply1(from1).supply(from2));
   }
 
   default <F1, F2, F3> V getOrCreateFrom(K key, In3Out1<F1, F2, F3, V> ifNull, F1 from1, F2 from2, F3 from3) {
-    V is = get(key);
-    if (is == null) {
-      is = ifNull.io(from1, from2, from3);
-      put(key, is);
-    }
-    return is;
+    return getOrCreateFrom(key, ifNull.supply1(from1).supply1(from2).supply(from3));
   }
 
   default V getOrSupply(K key, Out1<V> ifNull) {
@@ -480,12 +475,14 @@ public interface MapLike<K, V> extends CollectionLike<Out2<K, V>> {
   }
 
   default V compute(K key, In2Out1<K, V, V> io) {
-    V existing = get(key);
-    final V computed = io.io(key, existing);
-    if (computed != existing) {
-      put(key, computed);
-    }
-    return computed;
+    return HasLock.alwaysLock(this, ()->{
+      V existing = get(key);
+      final V computed = io.io(key, existing);
+      if (computed != existing) {
+        put(key, computed);
+      }
+      return computed;
+    });
   }
 
 

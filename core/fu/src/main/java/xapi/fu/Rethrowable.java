@@ -1,6 +1,7 @@
 package xapi.fu;
 
-import xapi.fu.Log.LogLevel;
+import xapi.fu.log.Log;
+import xapi.fu.log.Log.LogLevel;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.UndeclaredThrowableException;

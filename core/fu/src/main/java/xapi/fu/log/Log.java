@@ -1,14 +1,23 @@
-package xapi.fu;
+package xapi.fu.log;
 
-import xapi.fu.Log.LogLevel;
+import xapi.fu.Debuggable;
 import xapi.fu.api.Ignore;
 
-import static xapi.fu.Log.printLevel;
+import static xapi.fu.log.Log.printLevel;
 
 /**
+ * A logging functional interface, complete with glue for static injection of a logger,
+ * and utility methods for finding a logger from arbitrary method-local objects {@link #firstLog(Object...)}.
+ *
+ * The functional interface method just gets a log level and a string; any kind of templating and brains
+ * can be configured by overriding the default methods.
+ *
+ * To control the default logger, see {@link LogInjector}
+ *
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 07/11/15.
  */
+@FunctionalInterface
 public interface Log extends Debuggable {
 
   enum LogLevel {
@@ -26,7 +35,7 @@ public interface Log extends Debuggable {
   interface DefaultLog extends Log {
     @Override
     default void print(LogLevel level, String debug) {
-      DefaultLoggers.DEFAULT.log(level, debug);
+      LogInjector.DEFAULT.log(level, debug);
     }
   }
 
@@ -64,8 +73,9 @@ public interface Log extends Debuggable {
     }
   }
 
-  @Ignore("model") // we can't see IsModel.NAMESPACE from this module, so use "magic string"
-  void print(LogLevel level, String debug);
+  // This tells our ModelMagic to ignore this method if it encountered in a Model class.
+  @Ignore("model") // we can't see IsModel.NAMESPACE from this module, so use "magic string constant"
+  void print(LogLevel level, String msg);
 
   default String maybePrintLevel(LogLevel level) {
     return printLevel(level);
@@ -121,19 +131,19 @@ public interface Log extends Debuggable {
   }
 
   static Log defaultLogger() {
-    return DefaultLoggers.DEFAULT;
+    return LogInjector.DEFAULT;
   }
 
   static Log sysOut() {
-    return DefaultLoggers.SYS_OUT;
+    return LogInjector.SYS_OUT;
   }
 
   static Log sysErr() {
-    return DefaultLoggers.SYS_ERR;
+    return LogInjector.SYS_ERR;
   }
 
   static Log voidLogger() {
-    return DefaultLoggers.VOID;
+    return LogInjector.VOID;
   }
 
   static void tryLog(Class<?> cls, Object inst, Object ... e) {
@@ -148,7 +158,7 @@ public interface Log extends Debuggable {
     // we should check first on the class of the instance,
     // then on the calling class,
     // then on any other supertypes, packages or super-packages.
-    return DefaultLoggers.DEFAULT;
+    return LogInjector.DEFAULT;
   }
 
   static void tryLog(Class<?> cls, Object inst, LogLevel level, Object ... e) {
@@ -156,24 +166,3 @@ public interface Log extends Debuggable {
   }
 }
 
-interface DefaultLoggers {
-
-  // Some default implementations for when you are lazy.
-  // We stash them in this ugly package-private class,
-  // to encourage the use of static methods in the Log class,
-  // Log.defaultLogger() or Log.sysOut/Err.
-  // This will allow magic-method injection to swap these out, if desired
-
-  Log VOID = (level, debug) -> {};
-
-  Log SYS_OUT = (level, debug) ->
-      System.out.println(printLevel(level) + debug);
-
-  Log SYS_ERR = (level, debug) ->
-      System.err.println(printLevel(level) + debug);
-
-  Log DEFAULT = (level, debug) ->
-      (level == LogLevel.ERROR ? SYS_OUT : SYS_ERR)
-          .print(level, debug);
-
-}

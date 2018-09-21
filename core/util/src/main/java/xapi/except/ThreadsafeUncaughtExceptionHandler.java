@@ -1,9 +1,9 @@
 package xapi.except;
 
-import java.lang.Thread.UncaughtExceptionHandler;
-
 import xapi.log.X_Log;
 import xapi.util.X_Util;
+
+import java.lang.Thread.UncaughtExceptionHandler;
 
 public class ThreadsafeUncaughtExceptionHandler implements UncaughtExceptionHandler {
 
@@ -20,7 +20,7 @@ public class ThreadsafeUncaughtExceptionHandler implements UncaughtExceptionHand
   @Override
   public void uncaughtException(Thread t, Throwable e) {
     try {
-      X_Log.error(e.getClass(), t, "threw uncaught exception", e);
+      X_Log.error(ThreadsafeUncaughtExceptionHandler.class, t, "threw uncaught exception", e);
     } catch (Throwable x){
       e.printStackTrace();
       if (X_Util.unwrap(x) instanceof InterruptedException) {
@@ -28,13 +28,13 @@ public class ThreadsafeUncaughtExceptionHandler implements UncaughtExceptionHand
         launchedThread.interrupt();
         if (launchedThread != launcherThread) {
           // Propagate interruption
-          X_Log.error(getClass(), "was interrupted; interrupting ",launcherThread); 
+          X_Log.error(getClass(), "was interrupted; interrupting ",launcherThread);
           launcherThread.interrupt();
         }
-        
+
       }
     }
-    
+
   }
 
 }

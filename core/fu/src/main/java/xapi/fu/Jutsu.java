@@ -1,5 +1,7 @@
 package xapi.fu;
 
+import xapi.fu.log.Log;
+
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;

@@ -1,8 +1,8 @@
 package xapi.fu.has;
 
 import xapi.fu.Do;
-import xapi.fu.Log;
-import xapi.fu.Log.LogLevel;
+import xapi.fu.log.Log;
+import xapi.fu.log.Log.LogLevel;
 import xapi.fu.Out1;
 import xapi.fu.Rethrowable;
 import xapi.fu.api.DoNotOverride;
