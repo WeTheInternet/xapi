@@ -30,4 +30,14 @@ public class RequestScopeDefault <Req extends RequestLike, Resp extends Response
         this.response = resp;
     }
 
+    @Override
+    public String getProtocol() {
+        return "https";
+    }
+
+    @Override
+    public String getHost() {
+        return request.getHeader("Host", "0.0.0.0");
+    }
+
 }

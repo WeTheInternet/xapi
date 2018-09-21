@@ -50,6 +50,16 @@ public class RequestScopeVertx extends AbstractScope<RequestScopeVertx> implemen
 
     }
 
+    @Override
+    public String getProtocol() {
+        return "http" + (req.getHttpRequest().isSSL() ? "s" : "") + "://";
+    }
+
+    @Override
+    public String getHost() {
+        return req.getHttpRequest().host();
+    }
+
     public SessionScopeVertx session() {
         final SessionScope session = getSession();
         return (SessionScopeVertx) session;

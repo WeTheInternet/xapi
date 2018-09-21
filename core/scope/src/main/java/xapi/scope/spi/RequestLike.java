@@ -5,6 +5,8 @@ import xapi.fu.Out1;
 import xapi.fu.iterate.EmptyIterator;
 import xapi.fu.iterate.SizedIterable;
 
+import static xapi.fu.Out1.immutable;
+
 /**
  * A representation of a http-like request object;
  * you should mostly just satisfy this interface with internal types,
@@ -20,6 +22,9 @@ public interface RequestLike {
 
     String getBody();
 
+    default String getHeader(String name, String dflt) {
+        return getHeader(name, immutable(dflt));
+    }
     default String getHeader(String name, Out1<String> dflt) {
         final SizedIterable<String> headers = getHeaders(name);
         if (headers.isEmpty()) {
@@ -28,6 +33,9 @@ public interface RequestLike {
         return headers.first();
     }
 
+    default String getParam(String name, String dflt) {
+        return getParam(name, immutable(dflt));
+    }
     default String getParam(String name, Out1<String> dflt) {
         final SizedIterable<String> params = getParams(name);
         if (params.isEmpty()) {

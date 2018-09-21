@@ -33,4 +33,11 @@ public interface RequestScope<RequestType extends RequestLike, ResponseType exte
         return getRequest().getPath();
     }
 
+    String getProtocol();
+
+    default String getProtocolHost() {
+        return getProtocol() + getHost();
+    }
+
+    String getHost();
 }
