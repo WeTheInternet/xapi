@@ -2,6 +2,7 @@ package xapi.dev.components;
 
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.plugin.Transformer;
+import com.github.javaparser.ast.visitor.ComposableXapiVisitor;
 import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.FieldBuffer;
@@ -10,20 +11,20 @@ import xapi.dev.ui.api.*;
 import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.dev.ui.tags.assembler.AssembledElement;
 import xapi.dev.ui.tags.assembler.AssembledUi;
+import xapi.dev.ui.tags.assembler.UiAssembler;
 import xapi.elemental.X_Elemental;
-import xapi.except.NotYetImplemented;
-import xapi.fu.Immutable;
-import xapi.fu.Lazy;
-import xapi.fu.itr.MappedIterable;
-import xapi.fu.Out1;
+import xapi.fu.*;
 import xapi.fu.api.Builderizable;
 import xapi.fu.itr.ArrayIterable;
+import xapi.fu.itr.MappedIterable;
 import xapi.inject.X_Inject;
 import xapi.source.X_Modifier;
 import xapi.source.X_Source;
 
 import java.util.List;
 
+import static com.github.javaparser.ast.visitor.ComposableXapiVisitor.whenMissingFail;
+import static xapi.fu.X_Fu.weakener;
 import static xapi.source.X_Modifier.PUBLIC;
 import static xapi.source.X_Modifier.STATIC;
 
@@ -55,8 +56,9 @@ public class GeneratedWebComponent extends GeneratedUiImplementation {
     @Override
     @SuppressWarnings("unchecked")
     protected void resolveNativeAttr(
-        AssembledUi assembly, UiAttrExpr attr, AssembledElement el, MethodBuffer out
+        UiAssembler assembler, UiAttrExpr attr, AssembledElement el, MethodBuffer out
     ) {
+        final AssembledUi assembly = assembler.getAssembly();
         final UiGeneratorTools tools = assembly.getTools();
         final ApiGeneratorContext ctx = assembly.getContext();
         final String name = tools.resolveString(ctx, attr.getName());
@@ -147,10 +149,68 @@ public class GeneratedWebComponent extends GeneratedUiImplementation {
                 // bind up some css!
                 // ...should just call the standard css generator from visitor,
                 // and then add an additional "set classname" operation
-                throw new NotYetImplemented(name + " not yet supported in "+ el.debug());
+
+                // hm.... this _should_ be pretty universal though,
+                // so lets consider moving this out (a la UiFeatureGenerator...),
+                // instead of squirreled away here, on native-element. (though, maybe this _is_ better,
+                // if shadow dom is used for native rendering)
+                final Expression resolved = el.resolveRef(el.getParent(), attr);
+                Mutable<String> clsToUse = new Mutable<>();
+                SysExpr dynamicCls = new SysExpr(clsToUse.mapWhenNotNull(TemplateLiteralExpr::templateLiteral));
+                final Do undo = ctx.addToContext("class", dynamicCls).once();
+                try {
+                    final ComposableXapiVisitor<Object> visitor = whenMissingFail(GeneratedWebComponent.class);
+                    final In2<Expression, Object> stringishNode = (Expression node, Object arg) -> {
+                        assert clsToUse.out1() == null;
+                        String cls = el.resolveSource(el.getParent(), node);
+                        clsToUse.in(X_Source.javaQuote(cls));
+                    };
+                    visitor
+                        .withJsonContainerTerminal((json, arg)->{
+                            // for json container, if it's an array, we blindly visit elements.
+                            // if it's a map, we use the keys for classnames, with values being css
+                            if (json.isArray()) {
+                                // just visit each element...
+                                json.getPairs().forEach(pair->pair.getValueExpr().accept(visitor, arg));
+                            } else {
+                                for (JsonPairExpr pair : json.getPairs()) {
+                                    String cls = assembly.getTools().resolveString(ctx, pair.getKeyExpr());
+                                    assert !cls.contains(" ") : name + " = { " + cls + " : ... } is not valid (keys cannot contain spaces)";
+                                    clsToUse.set(cls);
+                                    pair.getValueExpr().accept(visitor, arg);
+                                }
+                                clsToUse.in(null);
+                            }
+                        })
+                        .withCssBlockExpr((block, arg)->{
+                            return true;
+                        })
+                        .withCssContainerExpr((container, arg)->{
+                            return true;
+                        })
+                        .withCssRuleExpr((rule, arg)-> {
+                            return true;
+                        })
+                        .withCssValueExpr((val, arg) -> {
+                            return true;
+                        })
+                        .withStringLiteralTerminal(stringishNode.map1(weakener()))
+                        .withTemplateLiteralTerminal(stringishNode.map1(weakener()))
+                        .withNameTerminal(stringishNode.map1(weakener()))
+                        .withQualifiedNameTerminal(stringishNode.map1(weakener()))
+                    ;
+                    resolved.accept(visitor, null);
+                    attr.setExpression(dynamicCls);
+                    final String src = el.resolveSource(el.getParent(), dynamicCls);
+                    out.patternln(".setClass($1)", src);
+                    break;
+                }finally {
+                    // release scope variables; don't want other code addidentally seeing our values.
+                    undo.done();
+                }
             default:
                 // just copy the attributes over...
-                super.resolveNativeAttr(assembly, attr, el, out);
+                super.resolveNativeAttr(assembler, attr, el, out);
         }
 
     }
@@ -265,7 +325,7 @@ protected PotentialNode<Element> newBuilder(Out1<Element> element) {
         assemble.patternln("$1().addCss(", assemble.addImportStatic(X_Elemental.class, "getElementalService"));
         // TODO: check attr() for method calls / references, to know if we need to bind dynamic styles...
         String prefix = "  ";
-        for (String line : readLines(attr)) {
+        for (String line : readCssLines(attr)) {
             boolean putBack = line.endsWith(";");
             assemble.print(prefix).println(X_Source.javaQuote(line + (putBack ? ";" : "")));
             prefix = "+ ";
@@ -274,7 +334,7 @@ protected PotentialNode<Element> newBuilder(Out1<Element> element) {
 
     }
 
-    private MappedIterable<String> readLines(UiAttrExpr attr) {
+    private MappedIterable<String> readCssLines(UiAttrExpr attr) {
         final Expression expr = attr.getExpression();
         if (expr instanceof CssBlockExpr) {
             // TODO(later): something that emits nicer, structured code, plus respects dynamic values.

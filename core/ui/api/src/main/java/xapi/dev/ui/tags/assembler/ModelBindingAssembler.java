@@ -52,6 +52,9 @@ public abstract class ModelBindingAssembler implements TagAssembler {
 
 
         final UiAssemblerResult result = new UiAssemblerResult();
+        result.setDefinition(def);
+        result.setFactory(factory);
+        result.setElement(e);
         final UiContainerExpr ast = e.getAst();
 
         final GeneratedUiComponent ui = assembly.getUi();
@@ -94,20 +97,27 @@ public abstract class ModelBindingAssembler implements TagAssembler {
         out.clear();
 
         final String elType = ui.getBase().getElementType(ns);
-        String buildType = def.getBuilderName() +
+        final String elBuilderType = ui.getBase().getElementBuilderType(ns);
+        final String apiType = def.getApiName() + "<" + elType + ">";
+        final String buildType = def.getBuilderName() +
             "<" +
             elType + ", " +
-            def.getApiName() + "<" + elType + ">" +
+            apiType +
             ">";
+        // prepare a variable that we will initialize with a call to our bind* method
+        out.pattern("$1 $2;", elBuilderType, VAR_BUILDER);
 
+        // make sure we return said variable whenever we are done.
         final PrintBuffer ret = factory.getReturnStmt();
         ret.clear();
+        ret.println(VAR_BUILDER);
 
+        factory.addVisibility(X_Modifier.PROTECTED);
 
         if (modelFields.isEmpty() && model.isAbsent()) {
             // This element is not configured at all; no binding is possible,
             // so just create a blank element and carry on.
-            ret.pattern("$1($2, $3())", bindMethod, factory.getFieldName(), editTextBuilder);
+            out.patternln("$1 = $2($3, $4());", VAR_BUILDER, bindMethod, factory.getFieldName(), editTextBuilder);
         } else {
             // There is some model bindings to consider.
             /*Manual prototype:
@@ -148,9 +158,17 @@ public abstract class ModelBindingAssembler implements TagAssembler {
                     .println("});");
             }
 
-            ret.pattern("$1($2, builder)", bindMethod, factory.getFieldName());
+            out.patternln("$1 = $2($3, builder);", VAR_BUILDER, bindMethod, factory.getFieldName());
         }
-
+        // ok... lets also capture the component...
+        // TODO: make an on-demand dedicated Lazy for this, instead of relying on builder resolution...
+        // it also leads to a pile of fields pointing to components; these should only be created
+        // if we need to bind to the IsComponent instance later (to expose / assemble it)
+        final String componentField = componentFieldFor(result);
+        cb.createField(apiType, componentField);
+        factory.addVisibility(X_Modifier.PROTECTED);
+        out.patternln("$1 = $2.getOpts().getExisting();",
+            componentField, "builder");
 
         result.setDefaultBehavior(Do.NOTHING);
 
@@ -244,7 +262,6 @@ public abstract class ModelBindingAssembler implements TagAssembler {
                     // For tonight... just hacking in ComponentList, and nothing else.
                     if (fullType.hasRawType("ComponentList")) {
                         // special handling here...
-                        System.out.println();
                         json.getValues()
                             .forAll(child->{
                                 final UiAssemblerResult added = assembler.addChild(
@@ -252,9 +269,17 @@ public abstract class ModelBindingAssembler implements TagAssembler {
                                     e,
                                     (UiContainerExpr) child
                                 );
-                                out.patternln("mod.$1().children().add($2.out1());",
-                                    targetName, added.getFactory().getGetter()
-                                );
+
+                                String componentVar = componentFieldFor(added);
+
+                                out
+                                    .println()
+                                    .println("// Ensure the child component is initialized")
+                                    .patternln("$1;", added.getFactory().getGetter())
+                                    .println("// Append the IsComponent to our children's list")
+                                    .patternln("mod.$1().children().add($2);",
+                                        targetName, componentVar
+                                    );
                             });
                     } else {
                         if (tools.allListTypes().noneMatch(raw(type)::equals)) {
@@ -311,6 +336,10 @@ public abstract class ModelBindingAssembler implements TagAssembler {
         ;
         setter.getExpression().accept(visitor, null);
 
+    }
+
+    protected String componentFieldFor(UiAssemblerResult added) {
+        return added.getFactory().getFieldName() + "Component";
     }
 
     protected String serialized(AssembledElement e, Expression str, String type) {

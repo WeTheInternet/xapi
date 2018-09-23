@@ -17,6 +17,7 @@ import xapi.dev.ui.impl.AbstractUiImplementationGenerator;
 import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.dev.ui.tags.assembler.AssembledElement;
 import xapi.dev.ui.tags.assembler.AssembledUi;
+import xapi.dev.ui.tags.assembler.UiAssembler;
 import xapi.dev.ui.tags.factories.GeneratedFactory;
 import xapi.dev.ui.tags.factories.LazyInitFactory;
 import xapi.dev.ui.tags.members.UserDefinedMethod;
@@ -512,14 +513,14 @@ public class GeneratedUiComponent {
     }
 
     public GeneratedFactory createNativeFactory(
-        AssembledUi assembly,
+        UiAssembler assembler,
         AssembledElement el,
         UiContainerExpr n,
         UiNamespace namespace,
         String refName
     ) {
         // Create an abstract method for the native element we want to create.
-
+        final AssembledUi assembly = assembler.getAssembly();
         final ApiGeneratorContext ctx = assembly.getContext();
         final GeneratedUiComponent component = assembly.getUi();
         Do release = assembly.getGenerator().resolveSpecialNames(ctx, component, component.getBase(), el.maybeRequireRefRoot(), el.maybeRequireRef());
@@ -540,7 +541,7 @@ public class GeneratedUiComponent {
             final boolean was = ctx.setIgnoreChanges(true);
             Do rescope = assembly.getGenerator().resolveSpecialNames(ctx, component, impl, el.maybeRequireRefRoot(), el.maybeRequireRef());
             final Maybe<UiAttrExpr> attr = n.getAttribute(impl.getAttrKey());
-            impl.addNativeMethod(assembly, namespace, method, el, attr
+            impl.addNativeMethod(assembler, namespace, method, el, attr
                 .mapNullSafe(a->(UiContainerExpr)a.getExpression())
                 .ifAbsentReturn(n));
             rescope.done();

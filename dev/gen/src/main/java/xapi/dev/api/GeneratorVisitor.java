@@ -230,11 +230,13 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
                         final List<ImportDeclaration> imports = new ArrayList<>();
                         final List<AnnotationExpr> annos = new ArrayList<>();
                         n.getAnnotations().forEach(anno->{
-                            if ("import".equalsIgnoreCase(anno.getNameString().toLowerCase())) {
+                            final String lowered = anno.getNameString().toLowerCase();
+                            final boolean importStatic = lowered.equals("importstatic");
+                            if (importStatic || "import".equals(lowered)) {
                                 anno.getMembers().forEach(member->{
                                     IntTo<String> importDecls = resolveToLiterals(ctx, member.getValue());
                                     importDecls.forEachValue(importDecl->{
-                                        boolean isStatic = importDecl.contains("static ");
+                                        boolean isStatic = importStatic || importDecl.contains("static ");
                                         if (isStatic) {
                                             importDecl = importDecl.replace("static ", "").trim();
                                         }

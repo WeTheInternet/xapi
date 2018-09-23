@@ -102,7 +102,7 @@ public class VertxRequest implements Destroyable, RequestLike {
     }
 
     public MapLike<String, SizedIterable<String>> getParams() {
-        return params.out1().mapValue(LIST_MAPPER, In1Out1.downcast());
+        return params.out1().mapValue(LIST_MAPPER, In1Out1.weaken1());
     }
 
     @Override
@@ -115,7 +115,7 @@ public class VertxRequest implements Destroyable, RequestLike {
     }
 
     public MapLike<String, SizedIterable<String>> getHeaders() {
-        return headers.out1().mapValue(LIST_MAPPER, In1Out1.downcast());
+        return headers.out1().mapValue(LIST_MAPPER, In1Out1.weaken1());
     }
 
     public final HttpServerRequest getRequest() {

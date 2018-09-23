@@ -1,5 +1,6 @@
 package xapi.dev.ui.tags.assembler;
 
+import xapi.dev.ui.api.GeneratedUiDefinition;
 import xapi.dev.ui.tags.factories.GeneratedFactory;
 import xapi.fu.Do;
 
@@ -99,6 +100,7 @@ public class UiAssemblerResult {
     private GeneratedFactory factory;
     private boolean hidden;
     private Do defaultBehavior;
+    private GeneratedUiDefinition definition;
 
     public boolean hasChildLayout() {
         return childLayout;
@@ -354,5 +356,13 @@ public class UiAssemblerResult {
             defaultBehavior.done();
             defaultBehavior = null;
         }
+    }
+
+    public void setDefinition(GeneratedUiDefinition definition) {
+        this.definition = definition;
+    }
+
+    public GeneratedUiDefinition getDefinition() {
+        return definition;
     }
 }

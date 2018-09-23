@@ -10,24 +10,16 @@ import javafx.stage.Stage;
 import xapi.dev.X_Dev;
 import xapi.dev.api.MavenLoader;
 import xapi.dev.opts.DevOpts;
-import xapi.fu.Do;
 import xapi.fu.Do.DoUnsafe;
-import xapi.fu.In1;
 import xapi.fu.Lazy;
 import xapi.fu.Mutable;
 import xapi.fu.Out1;
 import xapi.fu.X_Fu;
-import xapi.javac.dev.model.CompilerSettings.ImplicitMode;
 import xapi.jre.ui.impl.SelfCompilingJavaFxApp;
 import xapi.log.X_Log;
 import xapi.mvn.X_Maven;
 import xapi.mvn.api.MvnDependency;
 import xapi.process.X_Process;
-import xapi.server.api.ServerManager;
-import xapi.server.api.WebApp;
-import xapi.server.api.XapiServer;
-import xapi.server.gen.VertxWebAppGenerator;
-import xapi.server.vertx.XapiVertxServer;
 import xapi.ui.api.Ui;
 import xapi.util.X_Namespace;
 import xapi.util.X_String;
@@ -158,6 +150,6 @@ public class DevApp extends Application implements SelfCompilingJavaFxApp, Maven
     @Override
     public Out1<Iterable<String>> downloadDependency(MvnDependency dependency) {
         return X_Maven.downloadDependencies(dependency)
-            .map(X_Fu::downcast);
+            .map(X_Fu::weaken);
     }
 }

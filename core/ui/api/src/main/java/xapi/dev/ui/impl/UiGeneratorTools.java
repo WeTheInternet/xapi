@@ -16,6 +16,7 @@ import xapi.dev.ui.api.GeneratedUiImplementation;
 import xapi.dev.ui.api.UiNamespace.DefaultUiNamespace;
 import xapi.dev.ui.tags.UiTagGenerator;
 import xapi.fu.*;
+import xapi.fu.data.SetLike;
 import xapi.fu.itr.ArrayIterable;
 import xapi.fu.itr.CachingIterator.ReplayableIterable;
 import xapi.fu.itr.Chain;
@@ -28,6 +29,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
+import static xapi.collect.X_Collect.newSet;
 import static xapi.fu.Out2.out2Immutable;
 
 /**
@@ -41,8 +43,11 @@ public abstract class UiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> im
     protected final SimpleLinkedList<UiVisitScope> scopes;
     private final ChainBuilder<Do> roundEndListener;
     private final ChainBuilder<Do> roundStartListener;
+    protected final SetLike<GeneratedUiComponent> seen;
 
     public UiGeneratorTools() {
+        seen = newSet(GeneratedUiComponent.class).asSetLike();
+
         numGenerated = X_Collect.newStringMap(Integer.class);
         componentGenerators = Lazy.deferred1(()->{
             final StringTo<UiComponentGenerator> generators = X_Collect.newStringMap(UiComponentGenerator.class);
@@ -140,12 +145,21 @@ public abstract class UiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> im
         return In2Out1.with1(this::resolveVar, ctx);
     }
 
+    protected boolean shouldInitialize(GeneratedUiComponent result) {
+        return !seen.contains(result);
+    }
+
     protected void initializeComponent(GeneratedUiComponent result, ContainerMetadata metadata) {
-        final UiGeneratorService gen = getGenerator();
-        if (gen != this && gen instanceof UiGeneratorTools) {
-            UiGeneratorTools tools = (UiGeneratorTools) gen;
-            // TODO: prevent hideous recursion sickness possible here...  refactor UiGeneratorTools into standalone successor
-            tools.initializeComponent(result, metadata);
+        if (seen.add(result)) {
+            final UiGeneratorService gen = getGenerator();
+            if (gen != this && gen instanceof UiGeneratorTools) {
+                UiGeneratorTools tools = (UiGeneratorTools) gen;
+                // hideous recursion sickness is avoided for now, using set semantics...
+                // generator service and impl generators will virally call each other's
+                // initializeComponent methods, exactly once.
+                // Use shouldInitialize(result) to guard calls into here
+                tools.initializeComponent(result, metadata);
+            }
         }
     }
 

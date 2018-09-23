@@ -222,7 +222,22 @@ public final class X_Modifier {
    * Clears the public, protected, and private bits.
    */
   public static int setPackage(int accflags) {
-      return (accflags & ~(X_Modifier.PROTECTED | X_Modifier.PUBLIC | X_Modifier.PRIVATE));
+      return (accflags & ~(PROTECTED | PUBLIC | PRIVATE));
+  }
+  /**
+   * Returns only the public, protected, and private bits.
+   */
+  public static int onlyPrivacy(int accflags) {
+      return (accflags & (PROTECTED | PUBLIC | PRIVATE));
+  }
+  public static boolean isValidPrivacy(int mod) {
+    mod = onlyPrivacy(mod);
+    return mod == PUBLIC || mod == PROTECTED || mod == PRIVATE;
+  }
+  public static int validatePrivacy(int mod) {
+    assert isValidPrivacy(mod) :
+        "Invalid privacy " + mod + "(" + Integer.toString(mod, 2) + ") only one of the last three bits may be set";
+    return mod;
   }
   /**
    * Truns the private bit on.  The protected and private bits are

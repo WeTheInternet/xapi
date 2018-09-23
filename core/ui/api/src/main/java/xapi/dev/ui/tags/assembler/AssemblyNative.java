@@ -28,7 +28,7 @@ public class AssemblyNative extends AssembledElement {
         UiContainerExpr el
     ) {
         final GeneratedUiComponent component = ui.getUi();
-        final GeneratedFactory factory = component.createNativeFactory(ui, this, el, ui.getNamespace(), requireRef());
+        final GeneratedFactory factory = component.createNativeFactory(assembler, this, el, ui.getNamespace(), requireRef());
 
 
         return factory;

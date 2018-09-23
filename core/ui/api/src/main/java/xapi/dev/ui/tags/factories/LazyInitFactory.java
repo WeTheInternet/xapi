@@ -8,6 +8,9 @@ import xapi.source.X_Modifier;
 import xapi.source.X_Source;
 import xapi.util.X_String;
 
+import static xapi.source.X_Modifier.onlyPrivacy;
+import static xapi.source.X_Modifier.validatePrivacy;
+
 /**
  * A class dedicated to generating a {@code Lazy<ElBuilder> } with an init method.
  *
@@ -23,7 +26,7 @@ public class LazyInitFactory implements GeneratedFactory {
     private final MethodBuffer init;
     private final String getter;
     private final boolean resettable;
-    private final String fieldName;
+    private final FieldBuffer field;
     private LocalVariable var;
     private String varName = AssembledElement.BUILDER_VAR;
     private PrintBuffer initBuffer;
@@ -40,14 +43,13 @@ public class LazyInitFactory implements GeneratedFactory {
 
         final ClassBuffer out = init.getEnclosingClass();
 
-        final FieldBuffer refField = out.createField(
+        field = out.createField(
             out.parameterizedType(lazy, type),
             name
         ).setModifier(X_Modifier.PRIVATE);
 
-        fieldName = refField.getName();
-        refField.setInitializer("new " + lazy + "<>(this::" + init.getName() + ");");
-        getter = refField.getName()+".out1()";
+        field.setInitializer("new " + lazy + "<>(this::" + init.getName() + ");");
+        getter = field.getName()+".out1()";
         this.resettable = resetable;
 
     }
@@ -155,6 +157,29 @@ public class LazyInitFactory implements GeneratedFactory {
 
     @Override
     public String getFieldName() {
-        return fieldName;
+        return field.getName();
+    }
+
+    @Override
+    public void addVisibility(int mod) {
+        final int newPriv = onlyPrivacy(validatePrivacy(mod));
+        int is = field.getModifier();
+        final int oldPriv = onlyPrivacy(is);
+        switch (newPriv) {
+            case 0: // package-protected loses to protected
+                if (oldPriv == X_Modifier.PUBLIC || oldPriv == X_Modifier.PROTECTED) {
+                    break;
+                }
+            case X_Modifier.PROTECTED:
+                // protected loses to public
+                if (oldPriv == X_Modifier.PUBLIC) {
+                    break;
+                }
+            case X_Modifier.PUBLIC:
+                // public loses to nothing
+                field.setModifier(is - oldPriv + newPriv);
+                break;
+            // private loses to everything.
+        }
     }
 }

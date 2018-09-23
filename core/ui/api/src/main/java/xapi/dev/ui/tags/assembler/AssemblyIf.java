@@ -369,6 +369,9 @@ public class AssemblyIf extends AssembledElement {
         // we need to insert a buffer here, so we can wait until the rest of the ui
         // has been visited, and then detect our sibling, so we can do correct insertBefore semantics.
         PrintBuffer insertion = new PrintBuffer();
+        insertion.setDefaultSource(()->
+            baseClass.addImport(Out1.class) + ".null1()"
+        );
         redraw.addToEnd(insertion);
 
         result.onFinish(()->{
@@ -377,9 +380,7 @@ public class AssemblyIf extends AssembledElement {
             // pick the element after us, find the AssembledElement for our nextSibling,
             // and then use "insertBefore if inserted, else appendChild" semantics.
             Maybe<AssembledElement> sibling = findSibling();
-            if (sibling.isAbsent() || sibling.get() == this) {
-                insertion.print(baseClass.addImport(Out1.class) + ".null1()");
-            } else {
+            if (sibling.isPresent() && sibling.get() != this) {
                 final AssembledElement after = sibling.get();
                 final MethodBuffer findSib = base.getOrCreateMethod(
                     X_Modifier.PROTECTED,
@@ -406,6 +407,7 @@ public class AssemblyIf extends AssembledElement {
 
                     }
                 );
+                insertion.clear();
                 insertion.pattern("this::$1", findSib.getName());
             }
         });

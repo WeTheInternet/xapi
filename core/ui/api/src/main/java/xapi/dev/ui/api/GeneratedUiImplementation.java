@@ -15,6 +15,8 @@ import xapi.dev.ui.impl.AbstractUiImplementationGenerator;
 import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.dev.ui.tags.assembler.AssembledElement;
 import xapi.dev.ui.tags.assembler.AssembledUi;
+import xapi.dev.ui.tags.assembler.UiAssembler;
+import xapi.dev.ui.tags.assembler.UiAssemblerResult;
 import xapi.except.NotYetImplemented;
 import xapi.fu.*;
 import xapi.fu.itr.CachingIterator;
@@ -23,6 +25,7 @@ import xapi.fu.itr.ChainBuilder;
 import xapi.fu.itr.SizedIterable;
 import xapi.fu.itr.MappedIterable;
 import xapi.reflect.X_Reflect;
+import xapi.source.X_Modifier;
 import xapi.source.read.JavaModel.IsTypeDefinition;
 
 import java.lang.reflect.Modifier;
@@ -194,7 +197,7 @@ public class GeneratedUiImplementation extends GeneratedUiLayer {
     }
 
     public void addNativeMethod(
-        AssembledUi assembly,
+        UiAssembler assembler,
         UiNamespace namespace,
         GeneratedUiMethod method,
         AssembledElement el,
@@ -215,7 +218,7 @@ public class GeneratedUiImplementation extends GeneratedUiLayer {
             .patternln(".setTagName(\"$1\")", tagName)
             .indent();
         for (UiAttrExpr attr : n.getAttributes()) {
-            resolveNativeAttr(assembly, attr, el, out);
+            resolveNativeAttr(assembler, attr, el, out);
         }
         out.outdent().println(";");
         // TODO: also handle bodies!
@@ -226,10 +229,17 @@ public class GeneratedUiImplementation extends GeneratedUiLayer {
                     if ("$model".equals(ref.getScope().toSource())) {
                         // Hokayyy!  We have a model field for a body...
                         // for now, we'll do only minimal introspection
-                        addModelItem(assembly, out, builder, ref.getIdentifier());
+                        addModelItem(assembler, out, builder, ref.getIdentifier());
                     } else {
                         throw new NotYetImplemented("Only $model:: fields are supported inside native tag bodies");
                     }
+                } else if (body instanceof UiContainerExpr){
+                    // need to nest a whole new element, and append to us...
+                    final UiAssemblerResult child = assembler.addChild(
+                        assembler.getAssembly(), el, (UiContainerExpr) body);
+                    final String getter = child.getFactory().getGetter();
+                    child.getFactory().addVisibility(X_Modifier.PROTECTED);
+                    out.patternln("$1.append($2);", builder.getName(), getter);
                 } else {
                     // Bah... we need something smarter here...
                     final String src = body.toSource(new Transformer().setShouldQuote(false));
@@ -237,9 +247,9 @@ public class GeneratedUiImplementation extends GeneratedUiLayer {
                         // supernasty... we should really be sending the template literal body through the parser again...
                         final String identifier = src.substring(8);
                         assert identifier.chars().allMatch(Character::isJavaIdentifierPart) : "Invalid $model:: reference " + src;
-                        addModelItem(assembly, out, builder, identifier);
+                        addModelItem(assembler, out, builder, identifier);
                     } else {
-                        out.patternln("$1.append($2)", builder.getName(), javaQuote(src));
+                        out.patternln("$1.append($2);", builder.getName(), javaQuote(src));
                     }
                 }
             }
@@ -249,11 +259,12 @@ public class GeneratedUiImplementation extends GeneratedUiLayer {
     }
 
     private void addModelItem(
-        AssembledUi assembly,
+        UiAssembler assembler,
         MethodBuffer out,
         LocalVariable builder,
         String identifier
     ) {
+        final AssembledUi assembly = assembler.getAssembly();
         final GeneratedUiMember modField = assembly.getUi().getPublicModel().getField(identifier);
         final String titleName = toTitleCase(identifier);
         final Type type = modField.getMemberType();
@@ -316,11 +327,12 @@ public class GeneratedUiImplementation extends GeneratedUiLayer {
     }
 
     protected void resolveNativeAttr(
-        AssembledUi assembly,
+        UiAssembler assembler,
         UiAttrExpr attr,
         AssembledElement el,
         MethodBuffer out
     ) {
+        final AssembledUi assembly = assembler.getAssembly();
         UiGeneratorTools tools = assembly.getTools();
         ApiGeneratorContext ctx = assembly.getContext();
         final Expression val = attr.getExpression();

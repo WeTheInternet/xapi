@@ -219,6 +219,13 @@ public class AssembledElement implements HasParent<AssembledElement> {
         return getSource().getTools().debugNode(attr);
     }
 
+    @SuppressWarnings("unchecked")
+    public String resolveSource(AssembledElement parent, Expression attr) {
+        final Expression resolved = resolveRef(parent, attr, false);
+        //noinspection UnnecessaryLocalVariable
+        final String src = getSource().getTools().resolveString(getSource().getContext(), resolved);
+        return src;
+    }
     public Expression resolveRef(AssembledElement parent, UiAttrExpr attr) {
         resolveRef(parent, attr.getExpression(), true);
         return attr.getExpression();

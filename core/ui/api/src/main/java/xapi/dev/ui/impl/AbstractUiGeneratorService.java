@@ -41,6 +41,7 @@ import java.io.UncheckedIOException;
 import java.net.URL;
 import java.util.*;
 
+import static xapi.collect.X_Collect.newSet;
 import static xapi.log.X_Log.warn;
 
 /**
@@ -53,7 +54,6 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
     protected SourceHelper<Raw> service;
     protected final Lazy<MappedIterable<UiImplementationGenerator>> impls;
     protected final In1Out1<Ctx, StringTo<GeneratedUiDefinition>> definitions;
-    protected final ChainBuilder<GeneratedUiComponent> seen;
     protected final StringTo<ComponentBuffer> allComponents;
 
     protected static class GeneratorState {
@@ -86,7 +86,6 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
         impls = Lazy.deferred1(()->
             CachingIterator.cachingIterable(getImplementations().iterator())
         );
-        seen = Chain.startChain();
         allComponents = X_Collect.newStringMap(ComponentBuffer.class);
         StringTo<GeneratedUiDefinition>[] map = new StringTo[1];
         definitions = In1Out1.of(this::loadClasspathDefinitions)
@@ -365,7 +364,7 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
         final ComponentMetadataQuery query = new ComponentMetadataQuery();
         query.setVisitAttributeContainers(false);
         query.setVisitChildContainers(false);
-        IntTo<String> refNames = X_Collect.newSet(String.class);
+        IntTo<String> refNames = newSet(String.class);
         interestingNodes.getRefNodes().values().forEach(attr->{
             String refName = resolveString(ctx, attr.getExpression());
             refNames.add("$" + refName);
@@ -874,13 +873,14 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
 
     @Override
     protected void initializeComponent(GeneratedUiComponent result, ContainerMetadata metadata) {
-        seen.add(result);
-//        super.initializeComponent(result, metadata);
-        for (UiImplementationGenerator impl : impls.out1()) {
-            if (impl instanceof UiGeneratorTools) {
-                ((UiGeneratorTools)impl).initializeComponent(result, metadata);
+        if (shouldInitialize(result)) {
+            for (UiImplementationGenerator impl : impls.out1()) {
+                if (impl instanceof UiGeneratorTools) {
+                    ((UiGeneratorTools)impl).initializeComponent(result, metadata);
+                }
             }
         }
+        super.initializeComponent(result, metadata);
     }
 
     public void setUiComponent(boolean uiComponent) {

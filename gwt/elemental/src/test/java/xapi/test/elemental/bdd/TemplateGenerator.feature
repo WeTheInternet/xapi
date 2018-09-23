@@ -112,7 +112,7 @@ Feature: Compile templates into valid java files
       | class = "cls"           |
       | css = .{                |
       | .cls{ left: 10px; }     |
-      | .cls div { top: 10px; } |
+      | .cls div { text-shadow: 0px -1px 0px rgba(0%,0%,0%,0.4); } |
       | }                       |
       | />                      |
     Then source code of HelloWorld is:
@@ -126,7 +126,7 @@ Feature: Compile templates into valid java files
       | )                                |
       | .addCss(                         |
       | ".cls div {" +                   |
-      | "top : 10px;" +                  |
+      | "text-shadow : 0px -1px 0px rgba(0% , 0% , 0% , 0.4);" +                  |
       | "}"                              |
       | )                                |
       | .build()                         |

@@ -47,4 +47,6 @@ public interface GeneratedFactory {
     }
 
     String getFieldName();
+
+    void addVisibility(int mod);
 }

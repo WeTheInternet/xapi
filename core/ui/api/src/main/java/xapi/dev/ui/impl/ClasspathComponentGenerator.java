@@ -223,7 +223,7 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
         if (executor != null) {
             executor.shutdownNow();
         }
-        X_Log.info(TAG, "Generated " + size + " components in ", X_Time.difference(start));
+        X_Log.info(TAG, "Generated " + size + " components in ", X_Time.difference(start), " from ", tagDefinitions.size(), "definitions");
     }
 
     protected boolean isAllowed(StringDataResource xapiFile, UiContainerExpr parsed) {

@@ -22,16 +22,16 @@ import xapi.javac.dev.api.JavacService;
 import xapi.javac.dev.model.JavaDocument;
 import xapi.util.X_String;
 
+import javax.lang.model.element.TypeElement;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 import static org.hamcrest.text.IsEqualIgnoringWhiteSpace.equalToIgnoringWhiteSpace;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static xapi.fu.X_Fu.notEmpty;
 import static xapi.util.X_String.join;
-
-import javax.lang.model.element.TypeElement;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 //import static org.assertj.core.api.Assertions.assertThat;
 
