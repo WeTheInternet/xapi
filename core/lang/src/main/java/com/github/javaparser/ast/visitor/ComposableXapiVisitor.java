@@ -702,6 +702,11 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
         return this;
     }
 
+    public ComposableXapiVisitor<Ctx> withQualifiedNameTerminal(In2<QualifiedNameExpr, Ctx> callback) {
+        putCallback(QualifiedNameExpr.class, callback.supply1(false));
+        return this;
+    }
+
     @Override
     public void visit(ReferenceType n, Ctx arg) {
         doVisit(ReferenceType.class, n, arg, super::visit);

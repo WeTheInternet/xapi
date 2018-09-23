@@ -43,22 +43,31 @@
 
 package com.github.javaparser.ast.expr;
 
+import com.github.javaparser.ast.HasAnnotationExprs;
 import com.github.javaparser.ast.body.*;
 import com.github.javaparser.ast.visitor.GenericVisitor;
 import com.github.javaparser.ast.visitor.GenericVisitorAdapter;
 import com.github.javaparser.ast.visitor.VoidVisitor;
 import xapi.fu.Maybe;
 
-public final class DynamicDeclarationExpr extends Expression {
+import java.util.List;
+
+public final class DynamicDeclarationExpr extends Expression implements HasAnnotationExprs {
 
     private BodyDeclaration body;
+    private List<AnnotationExpr> annotations;
 
     public DynamicDeclarationExpr() {
 
     }
 
     public DynamicDeclarationExpr(BodyDeclaration body) {
+        this(body, null);
+    }
+
+    public DynamicDeclarationExpr(BodyDeclaration body, List<AnnotationExpr> annotations) {
         this.body = body;
+        this.annotations = annotations;
         if (body != null) {
             setBeginLine(body.getBeginLine());
             setBeginColumn(body.getBeginColumn());
@@ -120,6 +129,15 @@ public final class DynamicDeclarationExpr extends Expression {
 
         }, null))
             .getOrThrow(()->new UnsupportedOperationException("Cannot extract name from " + body.toSource()));
+    }
+
+    @Override
+    public List<AnnotationExpr> getAnnotations() {
+        return annotations;
+    }
+
+    public void setAnnotations(List<AnnotationExpr> annotations) {
+        this.annotations = annotations;
     }
 }
 

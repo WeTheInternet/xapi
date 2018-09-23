@@ -120,7 +120,7 @@ public final class JavaParser {
 
     public static UiContainerExpr parseXapi(final InputStream in,
                                         final String encoding, boolean considerComments) throws ParseException {
-        return parse(in, encoding, considerComments, ASTParser::UiContainer);
+        return parse(in, encoding, considerComments, ASTParser::RootUiContainer);
     }
 
     public static <T extends Node> T parse(final InputStream in,
@@ -241,7 +241,7 @@ public final class JavaParser {
 
     public static UiContainerExpr parseXapi(final Reader reader, boolean considerComments)
             throws ParseException {
-        return parseReader(reader, considerComments, ASTParser::UiContainer);
+        return parseReader(reader, considerComments, ASTParser::RootUiContainer);
     }
 
     public static <T extends Node> T parseReader(final Reader reader, boolean considerComments,
@@ -348,7 +348,7 @@ public final class JavaParser {
     public static UiContainerExpr parseUiContainer(final String uiContainer) throws ParseException {
         StringReader sr = new StringReader(uiContainer);
         try {
-            final UiContainerExpr e = new ASTParser(sr).UiContainer();
+            final UiContainerExpr e = new ASTParser(sr).RootUiContainer();
             sr.close();
             return e;
         } catch (ParseException e) {
@@ -365,12 +365,12 @@ public final class JavaParser {
         }
         StringReader sr = new StringReader(uiContainer);
         try {
-            final UiContainerExpr e = new ASTParser(sr).UiContainer();
+            final UiContainerExpr e = new ASTParser(sr).RootUiContainer();
             e.addExtra("location", path);
             sr.close();
             return e;
         } catch (ParseException e) {
-            String linkToDoc = X_Source.pathToLogLink(path, e.currentToken.beginLine);
+            String linkToDoc = e.currentToken == null ? path : X_Source.pathToLogLink(path, e.currentToken.beginLine);
             X_Log.log(level, "Parse error at document: " + linkToDoc);
             // We do two separate logs, because the "who is logging this" link
             // created from JavaParser.class argument will prevent the linkToDoc from rendering

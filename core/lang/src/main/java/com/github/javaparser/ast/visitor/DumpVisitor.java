@@ -1958,6 +1958,9 @@ public class DumpVisitor implements VoidVisitor<Object> {
 
     @Override
     public void visit(DynamicDeclarationExpr n, Object arg) {
+        if (n.getAnnotations() != null) {
+            printMemberAnnotations(n.getAnnotations(), arg);
+        }
         n.getBody().accept(this, arg);
     }
 

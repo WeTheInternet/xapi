@@ -323,6 +323,40 @@ TOKEN_MGR_DECLS : {
     return backup;
   }
 
+  boolean isAnnotation(Token token) {
+    if (token.next != null) {
+      return token.next.image.equals("@");
+    }
+    return peekNext() == '@';
+  }
+
+  boolean isCommaNotTrailing(Token token) {
+    if (token.next != null) {
+      if (",".equals(token.next.image)) {
+        if (token.next.next != null) {
+          return !"}".equals(token.next.next.image);
+        }
+        return peekNext() != '}';
+      }
+      return false;
+    }
+    int backup = 0;
+    try {
+      backup += eatWhitespaceAndComments();
+      char c = input_stream.readChar();
+      backup ++;
+      if (c == ',') {
+        backup += eatWhitespaceAndComments();
+        c = input_stream.readChar();
+        backup ++;
+        return c != '}';
+      }
+    } catch (IOException e) {
+    } finally {
+        input_stream.backup(backup);
+    }
+    return false;
+  }
   boolean isMemberBody(Token token) {
     if (token.next != null) {
       return token.next.image.matches("public|private|protected");
@@ -3142,6 +3176,23 @@ Expression PrimarySuffixWithoutSuper(Expression scope):
   { return ret; }
 }
 
+UiContainerExpr RootUiContainer():
+{
+  String doctype = null;
+  UiContainerExpr expr;
+}
+{
+   ( <DOCTYPE> <IDENTIFIER> {
+     doctype = token.image;
+   } ">")?
+  expr = UiContainer()
+  {
+    if (doctype != null) {
+      expr.setDocType(doctype);
+    }
+    return expr;
+  }
+}
 UiContainerExpr UiContainer():
 {
   NameExpr tagName;
@@ -3154,12 +3205,8 @@ UiContainerExpr UiContainer():
   int endLine;
   int endColumn;
   boolean isInTemplate = false;
-  String doctype = null;
 }{
 
-   ( <DOCTYPE> <IDENTIFIER> {
-     doctype = token.image;
-   } ">")?
    (
      (
        <UI_COMMENT> {
@@ -3226,9 +3273,6 @@ UiContainerExpr UiContainer():
    UiContainerExpr xapi = new UiContainerExpr(beginLine, beginColumn, endLine, endColumn, tagName, attrs, body, isInTemplate);
    if (endTagName != null && body == null) {
      xapi.alwaysRenderClose();
-   }
-   if (doctype != null) {
-     xapi.setDocType(doctype);
    }
    return xapi;
  }
@@ -3332,11 +3376,11 @@ UiAttrExpr UiAttr():
  }{
     (
         // Optional: start an <elements @attributeName="with @ to map to string attributes" />
-        [ "@" {
-            isAttribute = true;
-            line=token.beginLine;
-            column=token.beginColumn;
-        } ]
+//        [ "@" {
+//            isAttribute = true;
+//            line=token.beginLine;
+//            column=token.beginColumn;
+//        } ]
         name = FeatureName() {
             if (!isAttribute) {
                 line=token.beginLine;
@@ -3346,7 +3390,7 @@ UiAttrExpr UiAttr():
         "=" (
 
           // Grab annotations on the values; @value = "asd" uses html attribute mapping, so `@value = @NotNull "asd"` is where the annotations go.
-          ( LOOKAHEAD( { token_source.peekNext() == '@' } ) annotation = Annotation() { annotations = add(annotations, annotation); } )*
+          ( LOOKAHEAD( { token_source.isAnnotation(token) } ) annotation = Annotation() { annotations = add(annotations, annotation); } )*
 
           expression = UiValue()
         )
@@ -3364,9 +3408,29 @@ Expression UiValue():
 {
     Expression expression;
     BodyDeclaration member;
+    List annotations = new ArrayList();
+    AnnotationExpr annotation;
+    Integer line = null;
+    int column = 0;
 }
 {
 (
+
+      LOOKAHEAD( { token_source.isAnnotation(token) } )
+      (
+        // expect @Annotations followed by a DynamicDeclarationExpr.
+        ( LOOKAHEAD( { token_source.isAnnotation(token) } ) annotation = Annotation() {
+                annotations = add(annotations, annotation);
+                if (line == null) {
+                  line = annotation.getBeginLine();
+                  column = annotation.getBeginColumn();
+                }
+              } )*
+            member = ClassOrInterfaceBodyDeclaration(true) {
+                expression = new DynamicDeclarationExpr(member, annotations);
+            }
+      )
+      |
         LOOKAHEAD( { token_source.isMemberBody(token) } )
       (
         member = ClassOrInterfaceBodyDeclaration(true)
@@ -3572,19 +3636,29 @@ JsonContainerExpr JsonContainer():
   JsonPairExpr pair = null;
   Expression value;
   boolean isArray = false;
-  int line;
-  int column;
+  Integer line = null;
+  int column = 0;
   int cnt = 0;
-  AnnotationExpr annotation;
-  List annotations = new ArrayList();
 }{
     (
     "{" {
-      line = token.beginLine;
-      column = token.beginColumn;
+      if (line == null) {
+        line = token.beginLine;
+        column = token.beginColumn;
+      }
     }
 
-    ( pair = JsonPair() { items.add(pair); }) *
+    // First, an item [optional]
+    [ pair = JsonPair() { items.add(pair); } ]
+    [
+      // Next, optionally, N `, name:expr()`s
+      (
+        LOOKAHEAD( { token_source.isCommaNotTrailing(token) } )
+        ( "," pair = JsonPair() { items.add(pair); } )
+      ) +
+      // Finally, an optional trailing ,
+      [ "," ]
+    ]
 
     "}" {
       return new JsonContainerExpr(line, column, token.endLine, token.endColumn, false, items);
@@ -3595,32 +3669,66 @@ JsonContainerExpr JsonContainer():
       column = token.beginColumn;
     }
 
-    (
-    ( LOOKAHEAD( { (token.next != null && token.next.image.equals("@")) || token_source.peekNext() == '@' } ) annotation = Annotation() { annotations = add(annotations, annotation); } )*
-
-      value = UiValue() {
-        IntegerLiteralExpr key = new IntegerLiteralExpr(Integer.toString(cnt++));
-        pair = new JsonPairExpr(
-                              value.getBeginLine(),
-                              value.getBeginColumn(),
-                              value.getEndLine(),
-                              value.getEndColumn(),
-                              key, value
-                       );
-        pair.setAnnotations(annotations);
-        items.add(pair);
-       } [","]
-     )*
+    // First, an item [optional]
+    [ JsonSingle(items) ]
+    [
+      // Next, optionally, N `, expr()`s
+      (
+        LOOKAHEAD( { token_source.isCommaNotTrailing(token) } )
+        ( "," JsonSingle(items) )
+      )+
+      // Finally, an optional trailing ,
+      [ "," ]
+    ]
 
     "]" )
 
   { return new JsonContainerExpr(line, column, token.endLine, token.endColumn, true, items); }
 }
 
+JsonPairExpr JsonSingle(List items):
+{
+  Integer line = null;
+  int column = 0;
+  Expression value;
+  AnnotationExpr annotation;
+  List annotations = new ArrayList();
+}
+{
+(
+      ( LOOKAHEAD( { token_source.isAnnotation(token) } ) annotation = Annotation() {
+        annotations = add(annotations, annotation);
+        if (line == null) {
+          line = annotation.getBeginLine();
+          column = annotation.getBeginColumn();
+        }
+      } )*
+       value = UiValue()
+
+  )
+  {
+    IntegerLiteralExpr key = new IntegerLiteralExpr(Integer.toString(items.size()));
+    if (line == null) {
+      line = value.getBeginLine();
+      column = value.getBeginColumn();
+    }
+    JsonPairExpr pair = new JsonPairExpr(
+                          line,
+                          column,
+                          value.getEndLine(),
+                          value.getEndColumn(),
+                          key, value
+                   );
+    pair.setAnnotations(annotations);
+    items.add(pair);
+    return pair;
+  }
+}
+
 JsonPairExpr JsonPair():
 {
-  int line;
-  int column;
+  Integer line = null;
+  int column = -1;
   Expression name;
   Expression value;
   AnnotationExpr annotation;
@@ -3628,13 +3736,23 @@ JsonPairExpr JsonPair():
 }
 {
 (
-      ( name = Expression() { line = name.getBeginLine(); column = name.getBeginColumn(); } )
-      ":"
       (
-      ( LOOKAHEAD( { token_source.peekNext() == '@' } ) annotation = Annotation() { annotations = add(annotations, annotation); } )*
+      ( LOOKAHEAD( { token_source.isAnnotation(token) } ) annotation = Annotation() {
+        annotations = add(annotations, annotation);
+        if (line == null) {
+          line = annotation.getBeginLine();
+          column = annotation.getBeginColumn();
+        }
+      } )*
+      ( name = Expression() {
+        if (line == null) {
+          line = name.getBeginLine();
+          column = name.getBeginColumn();
+        }
+      } )
+      ":"
        value = UiValue()
       )
-      [ "," ] // we allow trailing commas at the end of lists and maps (easier coding)
   )
   {
     JsonPairExpr pair = new JsonPairExpr(line, column, token.endLine, token.endColumn, name, value);
@@ -3763,21 +3881,21 @@ CssRuleExpr CssRule():
       <CSS_KEY> {
         line = token.beginLine;
         column = token.beginColumn;
-        key = new StringLiteralExpr(line, column, token.endLine, token.endColumn, token.image);
+        key = new TemplateLiteralExpr(line, column, token.endLine, token.endColumn, token.image);
       }
     )
     | (
       <IDENTIFIER> {
         line = token.beginLine;
         column = token.beginColumn;
-        key = new StringLiteralExpr(line, column, token.endLine, token.endColumn, token.image);
+        key = new TemplateLiteralExpr(line, column, token.endLine, token.endColumn, token.image);
       }
     )
     | (
       <FEATURE_IDENTIFIER> {
         line = token.beginLine;
         column = token.beginColumn;
-        key = new StringLiteralExpr(line, column, token.endLine, token.endColumn, token.image);
+        key = new TemplateLiteralExpr(line, column, token.endLine, token.endColumn, token.image);
       }
     )
     | (
@@ -3786,7 +3904,7 @@ CssRuleExpr CssRule():
         // as CSS_KEY can be mis-matched as a CssSelector
         line = token.beginLine;
         column = token.beginColumn;
-        key = new StringLiteralExpr(line, column, token.endLine, token.endColumn, token.image);
+        key = new TemplateLiteralExpr(line, column, token.endLine, token.endColumn, token.image);
       }
     )
     // TODO allow use of expressions only within parens
@@ -3816,33 +3934,81 @@ Expression CssExpression():
   (
     LOOKAHEAD( StatementExpression() )
     stmt = StatementExpression() { value = stmt.getExpression(); }
-    | ( <HEX_COLOR> {
-        value = new StringLiteralExpr(token.image);
-    } [ <IMPORTANT> { important = true; } ] ";"
-    ) | (
-      value = Expression()
-      ("-" nextValue = Expression() {
-        // create `$value-$nextValue`
-        System.out.println("Value was a " + value.getClass());
-        value = TemplateLiteralExpr.templateLiteral(value.toSource() + "-" + nextValue.toSource());
-       } )*
-      [ <CSS_UNIT> { unit = token.image; } ]
-      [ <IDENTIFIER> {
-       // TODO validate that this is a usable css unit
-       unit = token.image;
-       } ]
-      [ <CSS_UNIT_WITH_PCT> { unit = token.image; } ]
-      [ <IMPORTANT> { important = true; } ]
-      ";"
-    ) | (
-      <CSS_SELECTOR> {
-          value = new StringLiteralExpr(token.image); //TODO: line numbers...
-      }
-    )
+    |
+    value = CssExpressionList()
+    [ <IMPORTANT> { important = true; } ]
+    ";"
     )
   {
+    // This is wrong.  unit used to be grabbed here, now it is always null.
+    // We'll want to make a few new ast types: CssValueList, CssValue (just literal and optional unit), CssFunction,
+    // and perhaps something other than StatementExpression() to allow lambdas and method references (we want to handle ;)
     value = new CssValueExpr(value, unit, important);
   }
+  {
+    return value;
+  }
+}
+
+Expression CssExpressionList():
+{
+  Expression value, nextValue;
+  String extra = " ";
+}
+{
+  ( value = CssExpressionToken() )
+  ( ( "," { extra = ","; } )? // space is a SKIP token, so we can just look for * more "space or comma delimited" CssExpressionToken...
+   nextValue = CssExpressionToken() {
+      // consider actually making a CssExpressionList, for space-separated values...
+      // (also consider just using existing css javacc parsers in a switchable fashion)
+      value = TemplateLiteralExpr.templateLiteral(value, " " + extra + " ", nextValue);
+      extra = " "; // reset to space again, actual commas will reassign the var
+  }  )*
+  {
+    return value;
+  }
+}
+
+Expression CssExpressionToken():
+{
+  Expression value, nextValue;
+}
+{
+  ( <HEX_COLOR> {
+            value = TemplateLiteralExpr.templateLiteral(token.image);
+          }
+  | <CSS_KEY> {
+      value = TemplateLiteralExpr.templateLiteral(token.image);
+    }
+  | value = Expression()
+      ("-" nextValue = Expression() {
+        // create `$value-$nextValue`
+        // System.out.println("Value was a " + value.getClass());
+        value = TemplateLiteralExpr.templateLiteral(value, "-", nextValue);
+       } )*
+      [ <CSS_UNIT> {
+        // TODO: better object model that retains knowledge of the discovered unit; CssValueExpr is poorly designed.
+        value = TemplateLiteralExpr.templateLiteral(value, token.image, null, " ");
+      } ]
+      [ <IDENTIFIER> {
+        value = TemplateLiteralExpr.templateLiteral(value, " " + token.image, null, " ");
+       } ]
+      [ <CSS_UNIT_WITH_PCT> {
+        value = TemplateLiteralExpr.templateLiteral(value, token.image, null, " ");
+      } ]
+      |
+      <CSS_SELECTOR> {
+          value = TemplateLiteralExpr.templateLiteral(token.image + " "); //TODO: line numbers...
+      }
+    )
+    [
+      "(" [
+        nextValue = CssExpressionList() {
+          // TODO: CssFunctionExpr
+          value = TemplateLiteralExpr.templateLiteral(value, "(", nextValue, ") ");
+        }
+      ] ")"
+    ]
   {
     return value;
   }

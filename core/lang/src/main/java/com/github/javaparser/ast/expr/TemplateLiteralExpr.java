@@ -1,6 +1,7 @@
 package com.github.javaparser.ast.expr;
 
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.plugin.Transformer;
 import com.github.javaparser.ast.visitor.GenericVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitor;
 
@@ -165,6 +166,39 @@ public class TemplateLiteralExpr extends UiExpr {
     }
     return value;
   }
+
+    public static TemplateLiteralExpr templateLiteral(Expression before, String str, Expression after) {
+      return templateLiteral(before, str, after, "");
+    }
+
+    public static TemplateLiteralExpr templateLiteral(Expression before, String str, Expression after, String suffix) {
+      Transformer tr = new Transformer();
+      tr.setShouldQuote(false);
+      String start =
+          (before == null ? "" :
+              before.toSource(tr));
+      String mid = str.trim();
+      if (str.startsWith(" ")) {
+        start = start.trim();
+        mid = " " + mid;
+      }
+      String end = (after == null ? "" : after.toSource(tr));
+      if (str.endsWith(" ")) {
+        end = end.trim();
+        if (!mid.equals(" ")) {
+          mid = mid + " ";
+        }
+      }
+      if (end.endsWith(" ") && suffix.startsWith(" ")) {
+        end = end.trim();
+      }
+      if (",".equals(mid.trim())) {
+        mid = ",";
+      }
+
+      str = start + mid + end + suffix;
+      return new TemplateLiteralExpr(-1, -1, -1, -1, str.trim());
+    }
 
     public static TemplateLiteralExpr templateLiteral(String str) {
       return new TemplateLiteralExpr(-1, -1, -1, -1, str);
