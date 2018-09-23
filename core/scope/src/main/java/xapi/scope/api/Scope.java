@@ -171,7 +171,7 @@ public interface Scope extends HasLock {
       } else {
         final T value = factory.io(key);
         Maybe<S> s = findParentOrSelf(type, false);
-        s.mapDeferred(In1Out1.<S, Scope>downcast())
+        s.mapDeferred(In1Out1.<S, Scope>weaken1())
             .ifAbsentReturn(this)
             .setLocal(key, value);
         return value;
