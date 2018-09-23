@@ -11,19 +11,20 @@ public interface
 In1Out1<I, O> extends Rethrowable, Lambda {
 
   In1Out1 IDENTITY = X_Fu::identity;
-  In1Out1 DOWNCAST = X_Fu::downcast;
   In1Out1<Integer, Integer> INCREMENT_INT = i->i==null?1:i+1;
   In1Out1<Integer, Integer> DECREMENT_INT = i->i==null?-1:i-1;
   In1Out1 RETURN_NULL = X_Fu::returnNull;
   In1Out1 RETURN_TRUE = ignored->true;
   In1Out1 RETURN_FALSE = ignored->false;
+  In1Out1 IS_NULL = X_Fu::isNull;
+  In1Out1 IS_NOT_NULL = X_Fu::isNotNull;
 
   static <O> In1Out1<O, O> identity() {
     return IDENTITY;
   }
 
-  static <F extends T, T> In1Out1<F, T> downcast() {
-    return DOWNCAST;
+  static <F extends T, T> In1Out1<F, T> weaken1() {
+    return X_Fu.weakener();
   }
 
   static <I, O> In1Out1<I, O> returnNull() {
@@ -36,6 +37,14 @@ In1Out1<I, O> extends Rethrowable, Lambda {
 
   static <I, O> In1Out1<I, O> returnFalse() {
     return RETURN_FALSE;
+  }
+
+  static <I> In1Out1<I, Boolean> checkIsNull() {
+    return IS_NULL;
+  }
+
+  static <I> In1Out1<I, Boolean> checkIsNotNull() {
+    return IS_NOT_NULL;
   }
 
   static <I, O> O[] mapArray(O[] into, In1Out1<I, O> mapper, I ... is) {

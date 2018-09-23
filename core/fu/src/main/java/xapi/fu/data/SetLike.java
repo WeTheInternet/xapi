@@ -18,12 +18,41 @@ public interface SetLike <V> extends CollectionLike<V> {
         return false;
     }
 
+    /**
+     * Add the value to your set,
+     * and only return said value if you wrote anything.
+     *
+     * If you already contains() the argument, return null.
+     *
+     * Instead of "return true on add" semantics, this does
+     * "return useful value only if there was a state change".
+     *
+     * Note that, with standard hashCode/equals/compareTo semantics,
+     * it is possible to return a different value than what you sent
+     * (and this can be important information you can use to absorb state, etc).
+     *
+     * @param value The value to add
+     * @return The value you removed from underlying set/map.
+     *
+     * Do NOT prefer returning the argument sent to you,
+     * unless it really is impossible for you to read back your own discarded value.
+     */
     V addAndReturn(V value);
 
     default boolean remove(V value) {
         return removeAndReturn(value) != null;
     }
 
+    /**
+     * Remote the value from your set,
+     * and only return the removed value.
+     *
+     * Return null to signal "no value removed".
+     *
+     * @param value The value to remove
+     * @return The reference of the removed value from underlying collection
+     *         i.e. return the value of Map.remove(keyFor(value));
+     */
     V removeAndReturn(V value);
 
 }

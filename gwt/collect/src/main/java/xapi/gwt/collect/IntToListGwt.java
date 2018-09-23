@@ -5,12 +5,11 @@ import xapi.collect.api.CollectionOptions;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.ObjectTo;
 import xapi.except.NotYetImplemented;
-import xapi.fu.Filter.Filter1;
 import xapi.fu.In1;
 import xapi.fu.In2Out1;
-import xapi.fu.itr.MappedIterable;
 import xapi.fu.Out1;
 import xapi.fu.Out2;
+import xapi.fu.itr.MappedIterable;
 import xapi.fu.itr.SizedIterable;
 import xapi.platform.GwtPlatform;
 import xapi.util.X_Util;
@@ -173,11 +172,6 @@ public class IntToListGwt <E> implements IntTo<E>{
   @SuppressWarnings("unchecked")
   public final Entry<Integer, E> entryFor(final Object key) {
     return new AbstractPair<Integer, E>(size(), (E)key);
-  }
-
-  @Override
-  public final boolean removeIf(Filter1<E> value, boolean all) {
-    return IntTo.super.removeIf(value, all);
   }
 
   @Override

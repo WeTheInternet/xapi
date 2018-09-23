@@ -226,4 +226,15 @@ public interface In2<I1, I2> extends HasInput, Rethrowable, Lambda {
       was.in(i1, i2);
     };
   }
+
+    default <I1E extends I1> In2<I1E,I2> strengthen1() {
+      // The current In2 accepts a weaker type than we want;
+      // we strengthen our type by returning a stronger signature,
+      // which uses the weakener (`return this`) to call into us.
+      return map1(X_Fu.weakener());
+    }
+
+    default <I2E extends I2> In2<I1,I2E> strengthen2() {
+      return map2(X_Fu.weakener());
+    }
 }

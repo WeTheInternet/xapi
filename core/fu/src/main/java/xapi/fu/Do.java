@@ -2,7 +2,6 @@ package xapi.fu;
 
 import xapi.fu.api.DoNotOverride;
 import xapi.fu.api.Generate;
-import xapi.fu.log.Log;
 
 /**
  * A composable Runnable interface.
@@ -30,6 +29,11 @@ public interface Do extends AutoCloseable {
     };
 
     In1<Do> INVOKE = Do::done;
+
+    In1Out1<Do, Do> INVOKE_ONCE = task-> {
+        task.done();
+        return NOTHING;
+    };
 
     Out1<Do> NOTHING_FACTORY = Immutable.immutable1(NOTHING);
 
@@ -86,74 +90,6 @@ public interface Do extends AutoCloseable {
         return () -> {
             done();
             d.done();
-        };
-    }
-
-    default Do once() {
-        // re-entrance sucks, we avoid it by efficiently contending on a lock (the "array" below)
-        Do[] pointer = {this};
-        Mutable<Do> p = Mutable.mutable(Do.class);
-        return () -> {
-            // taking locks sucks, avoid it
-            Do run = pointer[0];
-            if (run == Do.NOTHING) {
-                // job completed by someone else
-                return;
-            }
-            // doing work inside a lock is bad, so just check / set the target array
-            synchronized (pointer) {
-                run = pointer[0];
-                if (run == Do.NOTHING) {
-                    // already done
-                    return;
-                }
-                // reset the target to a blocker callback
-                pointer[0] = () -> {
-                    // interim target that forces racers to wait on whoever is actually doing the work.
-                    // The code below is only ever run in the event of a race condition (or a long running task).
-                    Do check;
-                    // first, in the event of a race condition on a short task, spin, by default, 100 times...
-                    int delay = Integer.parseInt(System.getProperty("xapi.do.spins", "100"));
-                    while (delay-- > 0) {
-                        // acquire monitor / resync running thread's memory
-                        synchronized (pointer) {
-                            if (pointer[0] == Do.NOTHING) {
-                                return;
-                            }
-                        }
-                    }
-                    // ok, it's not a short task.  start waiting.
-                    delay = 50;
-                    for (; ; ) {
-                        synchronized (pointer) {
-                            check = pointer[0];
-                        }
-                        if (check == Do.NOTHING) {
-                            return;
-                        }
-                        try {
-                            synchronized (pointer) {
-                                pointer.wait(++delay);
-                            }
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                            Log.firstLog(this)
-                                .log(Do.class, "Interrupted waiting on ", Do.this);
-                            throw Rethrowable.firstRethrowable(this).rethrow(e);
-                        }
-                    }
-                };
-            }
-            // actually do the work, exactly once. First one in starts the work,
-            // all others who made it here will get a blocker task which spins, then waits.
-            run.done();
-            // all done.  let anyone waiting go
-            synchronized (pointer) {
-                // allow anyone who arrives in the future to no-op return w/out acquiring locks
-                pointer[0] = Do.NOTHING;
-                // wake up any busy-waiters who arrived while we were working go...
-                pointer.notifyAll();
-            } // anyone spinning will see the updated pointer[] soon
         };
     }
 
@@ -261,17 +197,15 @@ public interface Do extends AutoCloseable {
     }
 
     /**
-     * Semantically equivalent to {@link #once()}, but much less code,
-     * at the expense of always checking a lock every time the returned callback is invoked.
-     * <p>
-     * This probably isn't a big deal, and will be a better choice for GWT-compatible code
-     * (who has no reason to pay for the extra code in #once).
+     * Returns a Do which will only be run once.
      *
-     * @return
+     * Internally uses a Mutable to get mutex() semantics;
+     * we'll pay a volatile read before taking the lock,
+     * so you only pay for one full memory synchronization
+     * (plus N for any actual race conditions that we resolve).
      */
-    default Do onlyOnce() {
-        Mutable<Do> once = new Mutable<>(this);
-        return In2.in2(once::useThenSet).provide1(Do.INVOKE).provide(Do.NOTHING);
+    default Do once() {
+        return new DoOnce(this);
     }
 
     static Do unsafe(DoUnsafe o) {
@@ -288,12 +222,15 @@ final class DoOnce implements Do {
     }
 
     @Override
-    public final DoOnce onlyOnce() {
+    public final DoOnce once() {
         return this; // no need to double-wrap
     }
 
     @Override
     public void done() {
-        todo.useThenSet(Do.INVOKE, Do.NOTHING);
+        // avoid paying the lock if we're already used up.
+        if (todo.out1() != Do.NOTHING) {
+            todo.useThenSet(Do.INVOKE, Do.NOTHING);
+        }
     }
 }

@@ -126,7 +126,7 @@ public class WebComponentSupport {
           .fromUrl(getPolyfillUrl(VERSION))
           .setCallback(voidCallback(() -> {
             if (VERSION == V1) {
-              JsSupport.win().addEnteredListener("WebComponentsReady", onLoaded.onlyOnce().ignores1()::in, false);
+              JsSupport.win().addEnteredListener("WebComponentsReady", onLoaded.once().ignores1()::in, false);
             } else {
               onLoaded.done();
             }

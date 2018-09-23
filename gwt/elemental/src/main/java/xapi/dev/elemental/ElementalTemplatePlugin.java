@@ -181,6 +181,11 @@ public class ElementalTemplatePlugin <Ctx> implements UiTranslatorPlugin, DebugR
     }
 
     @Override
+    public void visit(TemplateLiteralExpr n, Ctx arg) {
+      printer.print(n.getValue());
+    }
+
+    @Override
     public void visit(DoubleLiteralExpr n, Ctx arg) {
       printer.print(n.getValue());
     }

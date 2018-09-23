@@ -106,13 +106,12 @@ public interface X_Fu {
   static <T> boolean isNotNull(T t) {
     return t != null;
   }
+  static <T> boolean notNull(final T value) {
+    return value != null;
+  }
 
   static <T> boolean isNull(T t) {
     return t == null;
-  }
-
-  static <T> boolean notNull(final T value) {
-    return value != null;
   }
 
   static <T> String reduceToString(Iterable<T> data, In1Out1<T, String> serializer, String separator) {
@@ -138,7 +137,7 @@ public interface X_Fu {
    *   Number defaultObject;
    *
    *   Number getThing(Maybe<T> from) {
-   *     return from.mapImmediate(X_Fu::downcast)
+   *     return from.mapImmediate(X_Fu::weaken)
    *         .ifAbsentReturn(defaultObject);
    *   }
    * }
@@ -152,9 +151,16 @@ public interface X_Fu {
    * however, some very complex and hideous generics
    * can be entirely avoided if you let type inference work for you:
    */
-  static <F extends T, T> T downcast(F from) {
+  static <F extends T, T> T weaken(F from) {
     return from;
   }
+
+  @SuppressWarnings("unchecked")
+  static <F extends T, T> In1Out1<F, T> weakener() {
+    return In1Out1.identityNarrowed();
+  }
+
+
   static String reduceToString(Iterable<? extends CharSequence> data, String separator) {
     StringBuilder b = new StringBuilder();
     final Iterator<? extends CharSequence> itr = data.iterator();

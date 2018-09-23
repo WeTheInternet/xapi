@@ -12,6 +12,9 @@ import java.util.function.Supplier;
 
 import static xapi.fu.Filter.alwaysTrue;
 import static xapi.fu.Immutable.immutable1;
+import static xapi.fu.In1Out1.checkIsNotNull;
+import static xapi.fu.In1Out1.checkIsNull;
+import static xapi.fu.In1Out1.returnNull;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
@@ -172,10 +175,39 @@ public interface Out1<O> extends Rethrowable, Lambda, HasMutability {
     return mapIf(X_Fu::isNull, mapper);
   }
 
+  /**
+   * When mapping only non-null elements, we can change the type;
+   * this is because null will still return null.
+   */
+  default <To> Out1<To> mapWhenNotNull(In1Out1<O, To> mapper) {
+    return mapIf(checkIsNotNull(), mapper, returnNull());
+  }
+
+  /**
+   * When replacing nulls, we can't strengthen the output type (safely).
+   *
+   * You will need to provide an additional step,
+   * or use the three-arg {@link #mapIf(In1Out1, In1Out1, In1Out1)} method directly.
+   *
+   * We avoid squatting on mapIfNull method, so In1Out1 can use it...
+   */
+  default Out1<O> mapWhenNull(In1Out1<O, O> mapper) {
+    return mapIf(checkIsNull(), mapper);
+  }
+
   default Out1<O> mapIf(In1Out1<O, Boolean> filter, In1Out1<O, O> mapper) {
     return ()->{
         O o = out1();
         if (filter.io(o)) {
+            o = mapper.io(o);
+        }
+        return o;
+    };
+  }
+  default Out1<O> mapIfNot(In1Out1<O, Boolean> filter, In1Out1<O, O> mapper) {
+    return ()->{
+        O o = out1();
+        if (!filter.io(o)) {
             o = mapper.io(o);
         }
         return o;

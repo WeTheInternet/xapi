@@ -5,6 +5,7 @@ package xapi.dev.source;
 
 import xapi.collect.impl.StringStack;
 import xapi.fu.Coercible;
+import xapi.fu.Out1;
 
 /**
  * A lightweight utility to assemble strings using a tree of linked nodes,
@@ -22,6 +23,7 @@ public class CharBuffer implements Coercible {
   protected String indent = "";
   CharBufferStack head;
   CharBufferStack tail;
+  private Out1<String> defaultSource;
 
   public CharBuffer() {
     this(new StringBuilder());
@@ -37,6 +39,7 @@ public class CharBuffer implements Coercible {
   }
 
   public CharBuffer(final StringBuilder target) {
+    defaultSource = Out1.EMPTY_STRING;
     this.target = target;
     tail = head = new CharBufferStack();
   }
@@ -176,6 +179,9 @@ public class CharBuffer implements Coercible {
     final StringBuilder body = new StringBuilder();
     body.append(head);
     body.append(target.toString());
+    if (body.length() == 0) {
+      return defaultSource.out1();
+    }
     return body.toString();
   }
 
@@ -185,5 +191,13 @@ public class CharBuffer implements Coercible {
 
   public boolean isEmpty() {
     return toSource().isEmpty();
+  }
+
+  public CharBuffer setDefaultSource(CharSequence defaultSource) {
+    return setDefaultSource(defaultSource::toString);
+  }
+  public CharBuffer setDefaultSource(Out1<String> defaultSource) {
+    this.defaultSource = defaultSource;
+    return this;
   }
 }

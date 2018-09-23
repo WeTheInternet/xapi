@@ -1,15 +1,19 @@
 package xapi.collect.api;
 
 import xapi.collect.proxy.CollectionProxy;
-import xapi.fu.*;
+import xapi.fu.Do;
 import xapi.fu.Filter.Filter1;
+import xapi.fu.In1;
 import xapi.fu.In1.In1Unsafe;
+import xapi.fu.In1Out1;
+import xapi.fu.Out2;
 import xapi.fu.data.ListLike;
+import xapi.fu.data.SetLike;
 import xapi.fu.has.HasItems;
 import xapi.fu.has.HasLock;
+import xapi.fu.itr.MappedIterable;
 import xapi.fu.itr.SizedIterable;
 import xapi.fu.itr.SizedIterator;
-import xapi.fu.itr.MappedIterable;
 
 import java.util.Deque;
 import java.util.Iterator;
@@ -247,8 +251,45 @@ extends CollectionProxy<Integer,T>, HasItems<T>, SizedIterable<T>
         return this;
     }
 
+    default SetLike<T> asSetLike() {
+      // upgrade anon class with a name!
+      class IntToSetLike implements SetLike <T> {
+            @Override
+            public T addAndReturn(T value) {
+                return IntTo.this.add(value) ? value : null;
+            }
+
+            @Override
+            public T removeAndReturn(T value) {
+              return IntTo.this.removeValue(value)
+              // TODO: change signature of removeValue, so we don't return the param :-/
+                ? value
+                : null;
+            }
+
+            @Override
+            public void clear() {
+              IntTo.this.clear();
+            }
+
+            @Override
+            public SizedIterator<T> iterator() {
+              return IntTo.this.iterator();
+            }
+
+            @Override
+            public int size() {
+              return IntTo.this.size();
+            }
+      }
+      return new IntToSetLike();
+    }
+
   default ListLike<T> asListLike() {
-    return new ListLike<T>() {
+    // TODO consider sparse/dense collections sanely here...
+
+    // Upgrade anon class with a name, at least!
+    class IntToListList implements ListLike<T> {
       @Override
       public T get(int pos) {
         return IntTo.this.get(pos);
@@ -281,6 +322,7 @@ extends CollectionProxy<Integer,T>, HasItems<T>, SizedIterable<T>
 
       // TODO figure out any default methods that would be more efficient to override
     };
+    return new IntToListList();
   }
 
   /**
@@ -327,3 +369,4 @@ extends CollectionProxy<Integer,T>, HasItems<T>, SizedIterable<T>
     };
   }
 }
+

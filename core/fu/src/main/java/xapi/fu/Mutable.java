@@ -195,6 +195,10 @@ public class Mutable <T> implements In1Unsafe<T>, Out1Unsafe<T>, HasLock {
       });
     }
 
+    public final Do useThenSetLater(In1<T> callback, T newVal) {
+      return ()->useThenSet(callback, newVal);
+    }
+
     public final Mutable<T> useThenSet(In1<T> callback, T newVal) {
       mutex(()->{
         callback.in(out1());

@@ -305,4 +305,11 @@ public interface In1<I> extends HasInput, Rethrowable, Lambda {
   static <T> In2<In1<T>, T> invoker() {
     return In1::in;
   }
+
+  default <I1E extends I> In1<I1E> strengthen1() {
+    // The current In1 accepts a weaker type than we want;
+    // we strengthen our type by returning a stronger signature,
+    // which uses the weakener (`return this`) to call into us.
+    return map1(X_Fu.weakener());
+  }
 }

@@ -348,8 +348,13 @@ public class PrintBuffer extends CharBuffer implements Printable<PrintBuffer>, H
 
   @Override
   public String toSource() {
-    return header() + head +
+    String src = header() + head +
         target.toString() +
         footer();
+    if (src.isEmpty()) {
+      // handles default source...
+      return super.toSource();
+    }
+    return src;
   }
 }

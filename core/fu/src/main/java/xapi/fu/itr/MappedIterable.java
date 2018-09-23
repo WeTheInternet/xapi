@@ -772,7 +772,7 @@ public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
     }
 
     default MappedIterable<T> filterNull() {
-        return filter(X_Fu::notNull);
+        return filter(X_Fu::isNotNull);
     }
 
     default <To> MappedIterable<To> castTo(Class<To> type) {
