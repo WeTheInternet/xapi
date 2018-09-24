@@ -74,7 +74,7 @@ Feature: Compile templates into valid java files
   Scenario: Parse a template with an inline style feature
     Given compile ui with name HelloWorld:
       | <template                |
-      | style = .{ left: 10px; } |
+      | style = :{ left: 10px; } |
       | />                       |
     Then source code of HelloWorld is:
       | new PotentialElement("template") |
@@ -84,7 +84,7 @@ Feature: Compile templates into valid java files
   Scenario: Parse a template with a hex color in a style feature
     Given compile ui with name HelloWorld:
       | <template                    |
-      | style = .{ color: #ffffff; } |
+      | style = :{ color: #ffffff; } |
       | />                           |
     Then source code of HelloWorld is:
       | new PotentialElement("template")  |
@@ -126,7 +126,7 @@ Feature: Compile templates into valid java files
       | )                                |
       | .addCss(                         |
       | ".cls div {" +                   |
-      | "text-shadow : 0px -1px 0px rgba(0% , 0% , 0% , 0.4);" +                  |
+      | "text-shadow : 0px -1px 0px rgba(0%,0%,0%,0.4);" +                  |
       | "}"                              |
       | )                                |
       | .build()                         |
@@ -135,8 +135,8 @@ Feature: Compile templates into valid java files
     Given compile ui with name HelloWorld:
       | <template                                                 |
       | css = .{                                                  |
-      | .cls-name > div:hover * { left: 4*5; }                    |
-      | .cls div, .clazz+.thing { background-color: ()->"10px"; } |
+      | .cls-name > div:hover * { left: $.4*5; }                    |
+      | .cls div, .clazz+.thing { background-color $: ()->"10px"; } |
       | }                                                         |
       | />                                                        |
     Then source code of HelloWorld is:

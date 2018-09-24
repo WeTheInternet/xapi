@@ -27,13 +27,13 @@ public class SysExpr extends Expression {
         >
     { }
 
-    private final Out1<Node>[] nodes;
+    private final Out1<? extends Node>[] nodes;
     private GenericFactory genericFactory;
     private In2Out1<Node, Object, Do> universalListener;
 
     private VoidFactory voidFactory;
 
-    public SysExpr(Out1<Node> ... fromNodes) {
+    public SysExpr(Out1<? extends Node> ... fromNodes) {
         nodes = fromNodes;
         universalListener = (n, o)->Do.NOTHING;
         genericFactory =
@@ -184,7 +184,7 @@ public class SysExpr extends Expression {
         return readNodesWhile(Filter1.TRUE, callback, arg);
     }
     public <A> SysExpr readNodesWhile(Filter1<Node> filter, In1<Node> callback, A arg) {
-        for (Out1<Node> node : nodes) {
+        for (Out1<? extends Node> node : nodes) {
             final Node n = node.out1();
             if (filter.filter1(n)) {
                 try (

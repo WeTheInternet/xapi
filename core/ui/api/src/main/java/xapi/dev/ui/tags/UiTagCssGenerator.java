@@ -29,7 +29,7 @@ public class UiTagCssGenerator extends UiFeatureGenerator {
     ) {
         source.getGeneratedComponent().beforeSave(gen->{
             for (GeneratedUiImplementation impl : source.getGeneratedComponent().getImpls()) {
-                impl.addCss(container, attr);
+                impl.addCss(attr.getExpression());
             }
         });
         return UiVisitScope.FEATURE_NO_CHILDREN;

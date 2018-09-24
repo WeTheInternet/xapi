@@ -191,8 +191,8 @@ public interface Out1<O> extends Rethrowable, Lambda, HasMutability {
    *
    * We avoid squatting on mapIfNull method, so In1Out1 can use it...
    */
-  default Out1<O> mapWhenNull(In1Out1<O, O> mapper) {
-    return mapIf(checkIsNull(), mapper);
+  default Out1<O> mapWhenNull(Out1<O> mapper) {
+    return mapIf(checkIsNull(), mapper.ignoreIn1());
   }
 
   default Out1<O> mapIf(In1Out1<O, Boolean> filter, In1Out1<O, O> mapper) {

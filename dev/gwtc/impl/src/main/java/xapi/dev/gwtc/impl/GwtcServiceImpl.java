@@ -101,7 +101,15 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
       }
     }
     final Moment start = X_Time.now();
-    manager.compileIfNecessary(manifest, callback);
+    try {
+
+      manager.compileIfNecessary(manifest, callback);
+    } catch (Exception e) {
+      X_Log.error(GwtcServiceImpl.class, "Attempt to compile had unexpected error", e, " Killing all jobs in GwtcService", this);
+      getJobManager().runningJobs.values().forEach(this::destroy);
+      callback.in(null, e);
+      return;
+    }
     X_Log.trace(GwtcServiceImpl.class, "maybeCompile took", diff(start));
     if (unit != null) {
       try {

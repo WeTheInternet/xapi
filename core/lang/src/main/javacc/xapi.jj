@@ -470,6 +470,36 @@ TOKEN_MGR_DECLS : {
     return false;
   }
 
+  boolean looksLikeNumber(Token token) {
+    if (token.next != null) {
+      token = token.next;
+      if ("-".equals(token.image)) {
+        if (token.next != null) {
+          return Character.isDigit(token.next.image.charAt(0));
+        }
+        // only the - token is found, fall through to "check stream for numbers" below
+      } else {
+          return Character.isDigit(token.image.charAt(0));
+      }
+    }
+    char c = peekNext();
+    if (c == '-') {
+      int backup = 0;
+      try {
+        backup = eatWhitespaceAndComments();
+        c = input_stream.readChar();
+        backup ++;
+        assert c == '-';
+        backup += eatWhitespaceAndComments();
+        c = input_stream.readChar();
+        return Character.isDigit(c);
+      } catch (IOException e) {
+      } finally {
+        input_stream.backup(backup);
+      }
+    }
+    return Character.isDigit(c);
+  }
   boolean looksLikeInitializer(Token token) {
     boolean checkStatic = true;
     if (token.next != null) {
@@ -714,7 +744,7 @@ TOKEN:
     <HEX_COLOR: "#" ( ( ["0"-"9"] | ["a"-"f"] | ["A"-"F"] ) {3} | ( ["0"-"9"] | ["a"-"f"] | ["A"-"F"] ) {6}  ) >
   | < CSS_KEY: ["-"] ( ["-"] )? (
      (
-        ( ["0"-"9"] | ["a"-"z"] | ["A"-"Z"] ) ( "-" ["0"-"9"] | ["a"-"z"] | ["A"-"Z"] ) *
+        ( ["a"-"z"] | ["A"-"Z"] | "_" ) ( "-" ["0"-"9"] | ["a"-"z"] | ["A"-"Z"] | "_" ) *
      )+
      ) >
   | < CSS_SELECTOR: (
@@ -730,10 +760,11 @@ TOKEN:
  >
  | < CSS_SELECTOR_JOIN: ( ">" | "~" | "+" )>
  | < START_CSS_BLOCK : ".{" >
+ | < START_CSS_INLINE : ":{" >
  | <IMPORTANT: "!important" >
  | <CSS_UNIT: ( "px" | "em" | "ems" | "pc" | "cm" | "mm" | "in" | "pt" | "ex" | "rem" |
-  "rad" | "grad" | "deg" | "s" | "ms" | "hz" | "khz" | "dpi" | "dpcm") >
- | <CSS_UNIT_WITH_PCT : ( <CSS_UNIT> | "%" ) >
+  "rad" | "grad" | "deg" | "eg" // matches deg when 180d is matches as a double literal...
+   | "s" | "ms" | "hz" | "khz" | "dpi" | "pi" | "dpcm" | "pcm" | "%" ) >
 
 }
 
@@ -796,6 +827,8 @@ TOKEN :
 | < WHILE: "while" >
 | < DOCTYPE: "<!" [ "d", "D" ] [ "o", "O" ] [ "c", "C" ] [ "t", "T" ] [ "y", "Y" ] [ "p", "P" ] [ "e", "E" ] " " >
 
+|  < BEGIN_EXPR: "$." >
+|  < BEGIN_DECL: "$:" >
 // xapi language escape sequences
 |  < START_JAVA: "`java:" >
 | < END_JAVA: ":java`" >
@@ -3241,7 +3274,10 @@ UiContainerExpr UiContainer():
    ( attr = UiAttr() { attrs.add(attr); } ) *
     (
       (
-        "/"
+        // allow \\ (two backslash) for auto-closing tags, precisely _because_ it's not a valid part of java expressions.
+        // This can be necessary for disambiguation between the final attribute, and the end of the tag expression.
+        // like: `<tag attr=()->doStuff /tag>...`.  This ambiguity is solved with: `<tag attr=()->doStuff \tag>...`
+        ( "/" | "\\\\" )
         [endTagName = TagName() {
           if (!tagName.equals(endTagName)) {
             throw new ParseException("Mismatched start/end tags: " + tagName + " != " + endTagName + " on line " + token.beginLine + " image: " + token.image);
@@ -3255,6 +3291,25 @@ UiContainerExpr UiContainer():
         )
       )
      | (
+          // allow an optional single backslash \ before the > in a tag-with-a-body,
+          // to allow for disambiguation from preceding java expressions:
+          // <tag attr=()->doStuff \>12</tag>
+          [
+            "\\"
+            // also allow for optional closing tagname when using \,
+            // as elements-with-bodies are most likely to benefit from "mismatched structure" error avoidance:
+            // i.e: <tag1 children = { some: huge(pile, of, code) } \tag1>
+            // <many children=ofTag1 \\many>
+            // </tag1>
+            // If a mismatch tries to swallow any \\close> or \tags> (versus `/>` and `>` respectively),
+            // it will fail _in the correct place_ (avoid getting junk errors later when trying to grab ast from wrong node type)
+            [endTagName = TagName() {
+              if (!tagName.equals(endTagName)) {
+                throw new ParseException("Mismatched start/end tags: " + tagName + " != " + endTagName + " on line " + token.beginLine + " image: " + token.image);
+              }
+            }]
+
+          ]
            ">"
            body = UiBody()
            "</" endTagName = TagName() {
@@ -3418,7 +3473,7 @@ Expression UiValue():
 
       LOOKAHEAD( { token_source.isAnnotation(token) } )
       (
-        // expect @Annotations followed by a DynamicDeclarationExpr.
+        // expect @Annotations followed by a DynamicDeclarationExpr.  Only dynamic members may have annotations (at this time).
         ( LOOKAHEAD( { token_source.isAnnotation(token) } ) annotation = Annotation() {
                 annotations = add(annotations, annotation);
                 if (line == null) {
@@ -3771,27 +3826,31 @@ CssBlockExpr CssBlock():
   int column;
 }
 {
-
-  <START_CSS_BLOCK> {
-    line = token.beginLine;
-    column = token.beginColumn;
-  }
   (
-     LOOKAHEAD( CssRule() )
-     (
-       (
-         rule = CssRule() { rules.add(rule); }
-       )+
-       {
-          container = new CssContainerExpr(line, column, token.endLine, token.endColumn, new ArrayList(), rules);
-          containers.add(container);
-       }
+    (
+      // :{ display: inline; }
+      <START_CSS_INLINE> {
+        line = token.beginLine;
+        column = token.beginColumn;
+      }
+      (
+        rule = CssRule() { rules.add(rule); }
+      )+
+      {
+         container = new CssContainerExpr(line, column, token.endLine, token.endColumn, new ArrayList(), rules);
+         containers.add(container);
+      }
     )
     |
     (
-        (
-          container = CssContainer() { containers.add(container); }
-        ) *
+      // .{ $class { display: inline; } }
+      <START_CSS_BLOCK> {
+        line = token.beginLine;
+        column = token.beginColumn;
+      }
+      (
+        container = CssContainer() { containers.add(container); }
+      ) +
     )
   )
   "}"
@@ -3872,6 +3931,7 @@ CssRuleExpr CssRule():
 {
   Expression key;
   Expression value;
+  ExpressionStmt stmt;
   int line;
   int column;
 }
@@ -3918,27 +3978,27 @@ CssRuleExpr CssRule():
       ")"
     )
   )
-  ":"
-  ( value = CssExpression() )
+  (
+    // normal css
+    ( ":" ( value = CssExpression() ) )
+    // java expressions...
+    | ( <BEGIN_DECL> ( stmt = StatementExpression() { value = stmt.getExpression(); } ) )
+    // ui expressions (<style>)...
+    | (">:" ( value = UiContainer() ) )
+  )
   { return new CssRuleExpr(line, column, token.endLine, token.endColumn, key, value); }
 }
 
 Expression CssExpression():
 {
   Expression value, nextValue;
-  ExpressionStmt stmt;
   String unit = null;
   boolean important = false;
 }
 {
-  (
-    LOOKAHEAD( StatementExpression() )
-    stmt = StatementExpression() { value = stmt.getExpression(); }
-    |
-    value = CssExpressionList()
-    [ <IMPORTANT> { important = true; } ]
-    ";"
-    )
+  value = CssExpressionList()
+  [ <IMPORTANT> { important = true; } ]
+  ";"
   {
     // This is wrong.  unit used to be grabbed here, now it is always null.
     // We'll want to make a few new ast types: CssValueList, CssValue (just literal and optional unit), CssFunction,
@@ -3974,41 +4034,59 @@ Expression CssExpressionToken():
   Expression value, nextValue;
 }
 {
-  ( <HEX_COLOR> {
-            value = TemplateLiteralExpr.templateLiteral(token.image);
+  (
+  // TODO: follow this spec: https://www.w3.org/TR/css-syntax-3/ or adapt closure css compiler
+    (
+      <HEX_COLOR> {
+          value = TemplateLiteralExpr.templateLiteral(token.image);
+        }
+        // Use $.com.fu.Qualified.staticMethod(...) or whatever Expression you want here.
+      | ( <BEGIN_EXPR> value = Expression() )
+        // TODO: add $:public String generate(This method) { ... }
+        // to inline a generated "method produces a value to put in css"
+      | value = FeatureName()
+      | ( LOOKAHEAD( { token_source.looksLikeNumber(token) } )
+          { boolean negative = false, putBackD = false; }
+          ["-"{ negative = true; } ]
+           // Literal() here will only grab numbers (may want to extract them for smaller reuse)
+          value = Literal() {
+            StringLiteralExpr string = (StringLiteralExpr)value;
+            String v = string.getValue();
+            if (negative) {
+              if (!v.startsWith("-")) {
+                v = "-" + v;
+              }
+            }
+            putBackD = token.image.toLowerCase().endsWith("d");
+            if (putBackD) {
+              v = v.substring(0, v.length()-1);
+            }
+            string.setValue(v);
           }
-  | <CSS_KEY> {
-      value = TemplateLiteralExpr.templateLiteral(token.image);
-    }
-  | value = Expression()
-      ("-" nextValue = Expression() {
-        // create `$value-$nextValue`
-        // System.out.println("Value was a " + value.getClass());
-        value = TemplateLiteralExpr.templateLiteral(value, "-", nextValue);
-       } )*
-      [ <CSS_UNIT> {
-        // TODO: better object model that retains knowledge of the discovered unit; CssValueExpr is poorly designed.
-        value = TemplateLiteralExpr.templateLiteral(value, token.image, null, " ");
-      } ]
-      [ <IDENTIFIER> {
-        value = TemplateLiteralExpr.templateLiteral(value, " " + token.image, null, " ");
-       } ]
-      [ <CSS_UNIT_WITH_PCT> {
-        value = TemplateLiteralExpr.templateLiteral(value, token.image, null, " ");
-      } ]
-      |
-      <CSS_SELECTOR> {
-          value = TemplateLiteralExpr.templateLiteral(token.image + " "); //TODO: line numbers...
-      }
+          [
+            <CSS_UNIT> {
+                String src = (putBackD ? "d" : "") + token.image; // put back any "d" stolen by matching double literals
+                // TODO: better object model that retains knowledge of the discovered unit; CssValueExpr is poorly designed.
+                value = TemplateLiteralExpr.templateLiteral(value, src, null, " ");
+              }
+          ]
+        )
+      | <CSS_KEY> {
+          value = TemplateLiteralExpr.templateLiteral(token.image);
+        }
+        // catch-all leftovers...
+      | value = Literal()
     )
     [
-      "(" [
-        nextValue = CssExpressionList() {
-          // TODO: CssFunctionExpr
-          value = TemplateLiteralExpr.templateLiteral(value, "(", nextValue, ") ");
-        }
-      ] ")"
+      "(" (
+          nextValue = CssExpressionList() {
+            // TODO: CssFunctionExpr
+            value = TemplateLiteralExpr.templateLiteral(value, "(", nextValue, ") ");
+          }
+      )? ")"
     ]
+
+    )
   {
     return value;
   }

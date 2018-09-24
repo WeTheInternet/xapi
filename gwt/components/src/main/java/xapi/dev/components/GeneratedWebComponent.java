@@ -17,6 +17,7 @@ import xapi.fu.*;
 import xapi.fu.api.Builderizable;
 import xapi.fu.itr.ArrayIterable;
 import xapi.fu.itr.MappedIterable;
+import xapi.fu.itr.SingletonIterator;
 import xapi.inject.X_Inject;
 import xapi.source.X_Modifier;
 import xapi.source.X_Source;
@@ -144,6 +145,7 @@ public class GeneratedWebComponent extends GeneratedUiImplementation {
             return;
         }
         switch (lower) {
+            case "css":
             case "class":
             case "classname":
                 // bind up some css!
@@ -156,7 +158,9 @@ public class GeneratedWebComponent extends GeneratedUiImplementation {
                 // if shadow dom is used for native rendering)
                 final Expression resolved = el.resolveRef(el.getParent(), attr);
                 Mutable<String> clsToUse = new Mutable<>();
-                SysExpr dynamicCls = new SysExpr(clsToUse.mapWhenNotNull(TemplateLiteralExpr::templateLiteral));
+                SysExpr dynamicCls = new SysExpr(clsToUse
+                    .mapIf(In1Out1.checkIsNotNull(), TemplateLiteralExpr::templateLiteral, nul->TemplateLiteralExpr.templateLiteral("cls"))
+                );
                 final Do undo = ctx.addToContext("class", dynamicCls).once();
                 try {
                     final ComposableXapiVisitor<Object> visitor = whenMissingFail(GeneratedWebComponent.class);
@@ -183,16 +187,29 @@ public class GeneratedWebComponent extends GeneratedUiImplementation {
                             }
                         })
                         .withCssBlockExpr((block, arg)->{
-                            return true;
+                            // inside the .{ } block expression, we'll bind up $class
+                            // which, if used, will trigger generating and assigning a classname.
+                            // For now, we'll just cheat a touch, and print the whole thing right now.
+                            assembly.getUi().beforeSave(serv->{
+                                addCss(block);
+                            });
+                            return false;
                         })
                         .withCssContainerExpr((container, arg)->{
-                            return true;
-                        })
-                        .withCssRuleExpr((rule, arg)-> {
-                            return true;
-                        })
-                        .withCssValueExpr((val, arg) -> {
-                            return true;
+                            // an inline container; if it defines a single class selector, we will add that class to this element.
+                            if (container.getSelectors().size() == 1) {
+                                final List<String> parts = container.getSelectors().get(0).getParts();
+                                if (parts.size() == 1) {
+                                    final String part = parts.get(0);
+                                    if (part.startsWith(".")) {
+                                        clsToUse.in(X_Source.javaQuote(part.substring(1)));
+                                    }
+                                }
+                            }
+                            assembly.getUi().beforeSave(serv->{
+                                addCss(container);
+                            });
+                            return false;
                         })
                         .withStringLiteralTerminal(stringishNode.map1(weakener()))
                         .withTemplateLiteralTerminal(stringishNode.map1(weakener()))
@@ -315,7 +332,10 @@ protected PotentialNode<Element> newBuilder(Out1<Element> element) {
     }
 
     @Override
-    public void addCss(ContainerMetadata container, UiAttrExpr attr) {
+    public void addCss(Expression cssExpr) {
+        if (cssExpr instanceof UiAttrExpr) {
+            cssExpr = ((UiAttrExpr) cssExpr).getExpression();
+        }
         // For now, we'll just dump the css text into a new stylesheet and inject it.
         // we'll worry about shadow dom and the like later (likely revive UiConfig,
         // make the impl accept a platform-specific subtype, and wire it in "officially").
@@ -325,7 +345,7 @@ protected PotentialNode<Element> newBuilder(Out1<Element> element) {
         assemble.patternln("$1().addCss(", assemble.addImportStatic(X_Elemental.class, "getElementalService"));
         // TODO: check attr() for method calls / references, to know if we need to bind dynamic styles...
         String prefix = "  ";
-        for (String line : readCssLines(attr)) {
+        for (String line : readCssLines(cssExpr)) {
             boolean putBack = line.endsWith(";");
             assemble.print(prefix).println(X_Source.javaQuote(line + (putBack ? ";" : "")));
             prefix = "+ ";
@@ -334,8 +354,7 @@ protected PotentialNode<Element> newBuilder(Out1<Element> element) {
 
     }
 
-    private MappedIterable<String> readCssLines(UiAttrExpr attr) {
-        final Expression expr = attr.getExpression();
+    private MappedIterable<String> readCssLines(Expression expr) {
         if (expr instanceof CssBlockExpr) {
             // TODO(later): something that emits nicer, structured code, plus respects dynamic values.
             final List<CssContainerExpr> containers = ((CssBlockExpr) expr).getContainers();
@@ -345,7 +364,11 @@ protected PotentialNode<Element> newBuilder(Out1<Element> element) {
                 .map2(CssContainerExpr::toSource, transformer)
                 .flatten(s->ArrayIterable.iterate(s.split("\n")))
                 .map(String::trim);
+        } else if (expr instanceof CssContainerExpr) {
+            final Transformer transformer = new Transformer();
+            transformer.setShouldQuote(false);
+            return SingletonIterator.singleItem(expr.toSource(transformer).trim());
         }
-        return ArrayIterable.iterate(attr.getExpression().toSource().split("\n"));
+        return ArrayIterable.iterate(expr.toSource().split("\n"));
     }
 }

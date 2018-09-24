@@ -95,6 +95,12 @@ public abstract class GwtcJobManagerAbstract implements GwtcJobManager {
                 return launchJob(manifest);
             }
         );
+        final In2<CompiledDirectory, Throwable> whenDone = callback.doBeforeMe((dir, fail)->{
+            X_Log.trace(GwtcJobManagerAbstract.class, "Gwtc job ", (fail == null ? "succeeded" : "failed"), "after waiting", diff(start));
+            if (dir != null) {
+                manifest.setCompileDirectory(dir);
+            }
+        });
         if (!isNew[0]) {
             // when we aren't new, we'll want to kick off some initialization.
             if (existing.getState() == CompileMessage.Failed || existing.getState() == CompileMessage.Destroyed) {
@@ -106,19 +112,16 @@ public abstract class GwtcJobManagerAbstract implements GwtcJobManager {
                     // killing the job should suffice; if not, we should use more-draconian gwt compile classloader / process isolation.
                     assert !runningJobs.containsKey(name) : "GwtcService " + service + " did not call getJobManager().destroy(job);";
                     statuses.put(name, CompileMessage.Preparing);
-                    runningJobs.put(name, launchJob(manifest));
+                    final GwtcJob newJob = launchJob(manifest);
+                    newJob.onDone(whenDone);
+                    runningJobs.put(name, newJob);
                 }
             } else {
                 maybeRecompile(manifest, existing);
                 X_Log.debug(GwtcJobManagerAbstract.class, "Sent recompile request in ", diff(start));
             }
         }
-        existing.onDone(callback.doBeforeMe((dir, fail)->{
-            X_Log.trace(GwtcJobManagerAbstract.class, "Gwtc job ", (fail == null ? "succeeded" : "failed"), "after waiting", diff(start));
-            if (dir != null) {
-                manifest.setCompileDirectory(dir);
-            }
-        }));
+        existing.onDone(whenDone);
     }
 
     @SuppressWarnings("Duplicates")

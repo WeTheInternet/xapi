@@ -3,6 +3,7 @@ package xapi.dev.ui.impl;
 import com.github.javaparser.ASTHelper;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseException;
+import com.github.javaparser.TokenMgrError;
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import xapi.collect.X_Collect;
@@ -156,6 +157,13 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
                             // use line # from token
                             line = ex.currentToken.beginLine;
                         }
+                    } else if (e instanceof TokenMgrError) {
+                        TokenMgrError ex = (TokenMgrError) e;
+                        // do some string parsing...
+                        try {
+                            final String val = ex.getMessage().split("error at line ")[1].split(",")[0];
+                            line = Integer.parseInt(val);
+                        } catch (ArrayIndexOutOfBoundsException | NumberFormatException ignored) {}
                     }
                     final String link = X_Source.pathToLogLink(xapiFile.getResourceName(),line);
                     throw new RuntimeException(link + " parser error", e);

@@ -391,7 +391,7 @@ public class GeneratedUiImplementation extends GeneratedUiLayer {
         return generator;
     }
 
-    public void addCss(ContainerMetadata container, UiAttrExpr attr) {
+    public void addCss(Expression attr) {
         throw new NotYetImplemented(getClass() + " must implement addCss()");
     }
 }
