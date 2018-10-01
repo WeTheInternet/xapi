@@ -398,4 +398,5 @@ class TestSocketServer extends AbstractModel implements WebApp, Rethrowable, Xap
     public boolean isDevMode() {
         return devMode;
     }
+
 }

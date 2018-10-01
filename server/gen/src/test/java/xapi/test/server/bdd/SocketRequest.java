@@ -14,6 +14,7 @@ public class SocketRequest implements RequestLike {
     private MapLike<String, SizedIterable<String>> headers;
     private String path;
     private String body;
+    private String method;
 
     public SocketRequest() {
         ObjectTo<String, SizedIterable<String>> map = X_Collect.newMap(String.class, SizedIterable.class);
@@ -58,5 +59,19 @@ public class SocketRequest implements RequestLike {
     @Override
     public void reset() {
 
+    }
+
+    @Override
+    public String getMethod() {
+        return method;
+    }
+
+    public void setMethod(String method) {
+        this.method = method;
+    }
+
+    @Override
+    public String getEncoding() {
+        return "UTF-8";
     }
 }

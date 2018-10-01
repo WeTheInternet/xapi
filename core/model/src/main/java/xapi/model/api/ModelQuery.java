@@ -6,16 +6,17 @@ package xapi.model.api;
 import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
 import xapi.collect.api.IntTo;
+import xapi.fu.itr.SizedIterable;
 import xapi.model.service.ModelService;
 import xapi.source.api.CharIterator;
-
-import static xapi.collect.X_Collect.newList;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+
+import static xapi.collect.X_Collect.newList;
 
 /**
  * A ModelQuery is a bean describing a query for a given model.
@@ -174,8 +175,8 @@ public class ModelQuery <M extends Model> {
     return addFilter(parameterName, QueryParameterType.CONTAINS, filterValue);
   }
 
-  public Iterable<QueryParameter> getParameters() {
-    return parameters.forEach();
+  public SizedIterable<QueryParameter> getParameters() {
+    return parameters.forEachItem();
   }
 
   public Iterable<SortOption> getSortOptions() {

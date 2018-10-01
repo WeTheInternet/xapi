@@ -17,6 +17,7 @@ import xapi.model.impl.ModelSerializerDefault;
 import xapi.model.service.ModelService;
 import xapi.platform.GwtPlatform;
 import xapi.source.impl.StringCharIterator;
+import xapi.util.api.ErrorHandler;
 import xapi.util.api.ProvidesValue;
 import xapi.util.api.SuccessHandler;
 
@@ -107,6 +108,7 @@ public class ModelServiceGwt extends AbstractModelService
     final String url = getUrlBase()+"model/persist";
     final StringDictionary<String> headers = X_Collect.newDictionary();
     headers.setValue("X-Model-Type", model.getType());
+    X_Log.warn(ModelServiceGwt.class, this, model);
     final CharBuffer serialized =  serialize(type, model);
     X_IO.getIOService().post(url, serialized.toString(), headers, new DelegatingIOCallback<>(
             resp -> {
@@ -116,7 +118,7 @@ public class ModelServiceGwt extends AbstractModelService
   }
 
   protected String getUrlBase() {
-    return GWT.getHostPageBaseURL();
+    return GWT.getModuleBaseURL().replace("/" + GWT.getModuleName(), "");
   }
 
   @Override
@@ -137,7 +139,12 @@ public class ModelServiceGwt extends AbstractModelService
       X_Log.error("Got response! "+resp.body());
       final M deserialized = deserialize(type, new StringCharIterator(resp.body()));
       callback.onSuccess(deserialized);
-    }, DelegatingIOCallback.failHandler(callback)));
+    }, f-> {
+      X_Log.error(ModelServiceGwt.class, "Load of ", type, modelKey, "failed", f);
+      if (callback instanceof ErrorHandler) {
+        ((ErrorHandler) callback).onError(f);
+      }
+    }));
 
   }
 

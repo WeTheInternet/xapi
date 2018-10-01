@@ -1,16 +1,10 @@
 package xapi.components.impl;
 
 import elemental.dom.Element;
-import elemental.events.Event;
-import elemental2.core.Function;
 import elemental2.core.ObjectPropertyDescriptor.SetFn;
 import xapi.components.api.JsEventListener;
 import xapi.components.api.OnWebComponentAttributeChanged;
-import xapi.fu.Do;
-import xapi.fu.In1;
-import xapi.fu.In2;
-import xapi.fu.In3;
-import xapi.fu.Out1;
+import xapi.fu.*;
 
 import java.util.function.Consumer;
 
@@ -189,7 +183,7 @@ public class JsFunctionSupport {
         }-*/;
 
 	@SuppressWarnings("unusable-by-js")
-	public static JsEventListener<?> fixListener(JsEventListener<?> callback) {
+	public static JsEventListener<?> fixListener(@SuppressWarnings("unusable-by-js") JsEventListener<?> callback) {
                 final JavaScriptObject fixed = wrapListener(callback);
 		@SuppressWarnings("unusable-by-js")
 		JsEventListener listener = event -> invoke(fixed, callback, event);

@@ -53,7 +53,7 @@ public class AbstractModel implements Model, PersistentModel, NestedModel{
 
         @Override
         public Entry<String, Object> next() {
-          final String key = keys[pos];
+          final String key = keys[pos++];
           Object value = getProperty(key);
           if (value == null) {
             final Class<?> type = getPropertyType(key);

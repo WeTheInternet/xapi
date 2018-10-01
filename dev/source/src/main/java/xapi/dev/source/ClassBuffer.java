@@ -246,9 +246,9 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
     prefix.addToBeginning(buffer);
   }
 
-  public ClassBuffer setDefinition(String definition, final boolean wellFormatted) {
+  public ClassBuffer setDefinition(String definition, final boolean skipTrailingBrace) {
     final JavaLexer metadata = new JavaLexer(definition);
-    isWellFormatted = wellFormatted;
+    isWellFormatted = skipTrailingBrace;
     privacy = metadata.getPrivacy();
     if (metadata.isStatic()) {
       makeStatic();
@@ -447,7 +447,7 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
 
   public ClassBuffer createInnerClass(final String classDef) {
     final ClassBuffer inner = new ClassBuffer(context, this, memberIndent());
-    inner.setDefinition(classDef, classDef.trim().endsWith("{"));
+    inner.setDefinition(classDef, false);
     addClass(inner);
     return inner;
   }
@@ -471,7 +471,7 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
       }
     }
     final ClassBuffer inner = new AnonymousClass(context, indent + INDENT);
-    inner.setDefinition(classDef, classDef.trim().endsWith("{"));
+    inner.setDefinition(classDef, false);
     addToEnd(inner);
     return inner;
   }

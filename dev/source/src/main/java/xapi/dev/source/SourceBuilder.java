@@ -35,6 +35,8 @@
 
 package xapi.dev.source;
 
+import java.lang.reflect.Modifier;
+
 public class SourceBuilder<Payload> implements CanAddImports {
 
   protected class SourceBuilderImports extends ImportSection implements HasPackage {
@@ -80,9 +82,16 @@ public class SourceBuilder<Payload> implements CanAddImports {
     setPayload(payload);
   }
 
+  public SourceBuilder(int modifier, String classname) {
+    this();
+    setClassDefinition(Modifier.toString(modifier) +
+            (Modifier.isInterface(modifier) ? " " : " class ") +
+        " " + classname + " {", false);
+  }
+
   public SourceBuilder(String classDef) {
     this();
-    setClassDefinition(classDef, classDef.trim().endsWith("{"));
+    setClassDefinition(classDef, false);
   }
 
   public SourceBuilder<Payload> replaceSource(CharSequence src) {

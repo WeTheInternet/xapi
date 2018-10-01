@@ -3,21 +3,19 @@
  */
 package xapi.server.model;
 
+import xapi.fu.In1Out1;
 import xapi.fu.In1Out1.In1Out1Unsafe;
+import xapi.fu.In2Out1;
+import xapi.fu.Out1;
 import xapi.io.X_IO;
-import xapi.jre.model.ModelServiceJre;
 import xapi.log.X_Log;
 import xapi.model.X_Model;
-import xapi.model.api.*;
+import xapi.model.api.PrimitiveSerializer;
 import xapi.model.service.ModelService;
 import xapi.source.api.CharIterator;
 import xapi.source.impl.StringCharIterator;
-import xapi.time.X_Time;
 import xapi.util.X_Properties;
 import xapi.util.X_String;
-import xapi.util.api.Pointer;
-import xapi.util.api.RemovalHandler;
-import xapi.util.api.SuccessHandler;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
@@ -27,13 +25,14 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URLDecoder;
 
 /**
  * @author James X. Nelson (james@wetheinter.net, @james)
  *
  */
-public class ModelPersistServlet extends HttpServlet {
+public class ModelPersistServlet extends HttpServlet implements ModelCrudMixin {
 
   private static final long serialVersionUID = -8873779568305155795L;
   protected ServletContext context;
@@ -60,146 +59,63 @@ public class ModelPersistServlet extends HttpServlet {
     return moduleName -> context.getResourceAsStream("/WEB-INF/deploy/"+moduleName+"/XapiModelLinker/xapi.rpc");
   }
 
+  @Override
+  public In1Out1<String, InputStream> findManifest(String moduleName) {
+    return asFinder(context);
+  }
+
   @SuppressWarnings("unchecked")
   @Override
-  protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
+  protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws IOException {
+
+    final ModelService service = getService();
     final String moduleName = req.getHeader("X-Gwt-Module");
-    final ModelModule module = ModelModuleLoader.get().loadModule(asFinder(context), moduleName);
-    final RemovalHandler handler = ModelServiceJre.registerModule(module);
-    try {
-      final String encoding = X_String.firstNotEmpty(req.getCharacterEncoding(), "UTF-8");
-      final String[] keySections = URLDecoder.decode(req.getRequestURI(), encoding).split("/");
-      final String requestType = keySections[keySections.length-4];
-      final PrimitiveSerializer primitives = X_Model.getService().primitiveSerializer();
-      String namespace = keySections[keySections.length-3];
-      namespace = primitives.deserializeString(new StringCharIterator(namespace));
+    final String encoding = X_String.firstNotEmpty(req.getCharacterEncoding(), "UTF-8");
+    final String uri = URLDecoder.decode(req.getRequestURI(), encoding);
+    final String[] keySections = uri.split("/");
+    final String requestType = keySections[keySections.length-4];
+    if ("query".equals(requestType)) {
       String kind = keySections[keySections.length-2];
+      final PrimitiveSerializer primitives = service.primitiveSerializer();
+      kind = primitives.deserializeString(new StringCharIterator(kind));
       final CharIterator ident = new StringCharIterator(keySections[keySections.length-1]);
-      if (requestType.equals("query")) {
-        kind = primitives.deserializeString(new StringCharIterator(kind));
-        runQuery(resp, module, primitives, namespace, kind, ident, encoding);
-        return;
-      }
-      final String type = req.getHeader("X-Model-Type");
-      final ModelManifest manifest = module.getManifest(type);
-      final int keyType = primitives.deserializeInt(ident);
-      final String id = ident.consumeAll().toString();
 
-      final ModelKey key = X_Model.newKey(namespace, kind, id).setKeyType(keyType);
-      final Pointer<Boolean> wait = new Pointer<>(true);
-      final Class<Model> modelType = (Class<Model>) manifest.getModelType();
-      X_Model.load(modelType, key,
-          new SuccessHandler<Model>() {
-        @Override
-        public void onSuccess(final Model m) {
-          final String serialized = X_Model.serialize(manifest, m);
-          try {
-            X_IO.drain(resp.getOutputStream(), X_IO.toStream(serialized, encoding));
-            wait.set(false);
-          } catch (final Exception e) {
-            X_Log.error(getClass(), "Error saving model",e);
-          }
-        }
+      performQuery(service, primitives, kind, ident, (query, result)->{
+        final String serialized = result.serialize(service, primitives);
+        X_IO.drain(resp.getOutputStream(), X_IO.toStream(serialized, encoding));
+      }, failure->{
+        X_Log.error(ModelPersistServlet.class, "Failed to query", uri, failure);
+        resp.sendError(500, "Unable to query " + uri + ": " + failure);
       });
-      blockUntilTrue(wait, key);
-    } finally {
-      handler.remove();
+
+      return;
     }
-  }
+    final String type = req.getHeader("X-Model-Type");
 
-  private void blockUntilTrue(final Pointer<Boolean> wait, final Object debugInfo) {
-    final long deadline = System.currentTimeMillis() + 5000;
-    while (wait.get()) {
-      X_Time.trySleep(30, 0);
-      if (X_Time.isPast(deadline)) {
-        X_Log.error(getClass(), "Timeout while loading model(s)",debugInfo);
-        return;
-      }
-    }
-  }
+    performGet(moduleName, uri, type, (manifest, model) -> {
+      final String serialized = X_Model.serialize(manifest, model);
+      final OutputStream out = resp.getOutputStream();
+      X_IO.drain(out, X_IO.toStream(serialized, encoding));
+    }, failure -> {
+      X_Log.error(ModelPersistServlet.class, "Failed to read", uri, failure);
+      resp.sendError(500, "Unable to read " + uri + ": " + failure);
+    });
 
-  protected void runQuery(final HttpServletResponse resp, final ModelModule module, final PrimitiveSerializer primitives, final String namespace, final String kind,
-      final CharIterator queryString, final String encoding) {
-    final ModelService service = X_Model.getService();
-    final ModelQuery query = ModelQuery.deserialize(service, primitives, queryString);
-    final Pointer<Boolean> wait = new Pointer<>(true);
-    final SuccessHandler callback = new SuccessHandler<ModelQueryResult>() {
-      @Override
-      public void onSuccess(final ModelQueryResult t) {
-        try {
-          final String serialized = t.serialize(service, primitives);
-          X_IO.drain(resp.getOutputStream(), X_IO.toStream(serialized, encoding));
-          wait.set(false);
-        } catch (final Exception e) {
-          X_Log.error(getClass(), "Error saving model",e);
-        }
-      }
-    };
-
-    if ("".equals(kind)) {
-      service.query(query, callback);
-    } else {
-      final Class<? extends Model> modelClass = service.typeToClass(kind);
-      service.query(modelClass, query, callback);
-    }
-
-    blockUntilTrue(wait, query);
   }
 
   @Override
   protected void doPost(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
-    final String asString = X_IO.toStringUtf8(req.getInputStream());
+    final String encoding = X_String.firstNotEmpty(req.getCharacterEncoding(), "UTF-8");
+    Out1<String> loader = In2Out1.unsafe(X_IO::toStringEncoded).supply1(req.getInputStream()).supply(encoding).lazy();
     final String type = req.getHeader("X-Model-Type");
     final String moduleName = req.getHeader("X-Gwt-Module");
-    final ModelModule module = ModelModuleLoader.get().loadModule(asFinder(context), moduleName);
-    final RemovalHandler handler = ModelServiceJre.registerModule(module);
-    try {
-      final ModelManifest manifest = module.getManifest(type);
-      final Model model;
-      try {
-        model = X_Model.deserialize(manifest, asString);
-      } catch (final Throwable e) {
-        String moduleText, manifestText;
-        try {
-          moduleText = ModelModule.serialize(module);
-        } catch (final Throwable e1) {
-          moduleText = String.valueOf(module);
-        }
-        try {
-          manifestText = ModelManifest.serialize(manifest);
-        } catch (final Throwable e1) {
-          manifestText = String.valueOf(manifest);
-        }
-        X_Log.error(ModelPersistServlet.class, "Error trying to deserialize model; ",e,"source: ","|"+asString+"|"
-            , "\nManifest: ","|"+manifestText+"|"
-            , "\nModule: ","|"+moduleText+"|");
-        throw new ServletException(e);
-      }
-      final Pointer<Boolean> wait = new Pointer<>(true);
-      X_Model.persist(model,
-          new SuccessHandler<Model>() {
-        @Override
-        public void onSuccess(final Model m) {
-          final String serialized = X_Model.serialize(manifest, m);
-          try {
-            X_IO.drain(resp.getOutputStream(), X_IO.toStreamUtf8(serialized));
-            wait.set(false);
-          } catch (final Exception e) {
-            X_Log.error(getClass(), "Error saving model",e);
-          }
-        }
-      });
 
-      final long deadline = System.currentTimeMillis() + 5000;
-      while (wait.get()) {
-        X_Time.trySleep(30, 0);
-        if (X_Time.isPast(deadline)) {
-          X_Log.error(ModelPersistServlet.class, "Timeout while saving model",model);
-          return;
-        }
-      }
-    } finally {
-      handler.remove();
-    }
+    ModelCrudMixin.super.performPost(moduleName, type, loader, (manifest, model)->{
+      final String serialized = X_Model.serialize(manifest, model);
+      X_IO.drain(resp.getOutputStream(), X_IO.toStreamUtf8(serialized));
+    }, failure -> {
+      X_Log.error(ModelPersistServlet.class, "Failed to save", loader.out1(), failure);
+      resp.sendError(500, "Unable to save " + loader.out1() + failure);
+    });
   }
 }

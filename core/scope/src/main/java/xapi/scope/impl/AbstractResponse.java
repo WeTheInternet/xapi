@@ -68,7 +68,8 @@ public class AbstractResponse implements ResponseLike {
         return new HtmlBuffer();
     }
 
-    public PrintBuffer errorBuffer() {
+    @Override
+    public PrintBuffer buildErrorResponse() {
         if (raw != null) {
             // TODO: add a DomBuffer (w/ error styling) to raw and return that instead.
             return raw;
@@ -110,7 +111,8 @@ public class AbstractResponse implements ResponseLike {
 
     private void flushFinished() {
         beforeFinished();
-        onFinish.out1().in(this);
+        // use only one, replace function with no-op.  Force races (which _shouldn't_ happen anyway) to block.
+        onFinish.useThenSet(cb->cb.in(this), In1.ignored());
         afterFinished();
     }
 

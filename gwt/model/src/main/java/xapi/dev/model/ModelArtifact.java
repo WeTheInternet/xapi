@@ -49,7 +49,7 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
 
   private static final long serialVersionUID = -4122808053849540655L;
 
-  final Map<JMethod,Annotation[]> methods = new LinkedHashMap<JMethod,Annotation[]>();
+  final Map<JMethod,Annotation[]> methods = new LinkedHashMap<>();
   String typeName;
   String typeClass;
   final Set<String> toGenerate = new HashSet<String>();
@@ -57,7 +57,7 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
 
   private boolean reused;
 
-  private String[] properties;
+  private String[] properties; // make this lazy
 
   private Persistent defaultPersistence;
 
@@ -148,9 +148,8 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
 
   }
 
-  Collection<JMethod> extractMethods(final TreeLogger logger, final SourceBuilder<ModelMagic> sb, final GeneratorContext ctx, final JClassType type) throws UnableToCompleteException {
+  Collection<JMethod> extractMethods(final TreeLogger logger, ModelMagic models, final GeneratorContext ctx, final JClassType type, In1<String> spyInterface) throws UnableToCompleteException {
     assert type.isInterface() != null;
-    final ModelMagic models = sb.getPayload();
     final Map<String,JMethod> uniqueMethods = new LinkedHashMap<String,JMethod>();
     JMethod[] existing = type.getInheritableMethods();
     final Set<? extends JClassType> hierarchy = type.getFlattenedSupertypeHierarchy();
@@ -166,7 +165,7 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
     final boolean debug = logger.isLoggable(Type.DEBUG);
     for (final JClassType next : hierarchy) {
       if (next.isInterface() != null) {
-        sb.getClassBuffer().addInterfaces(next.getQualifiedSourceName());
+        spyInterface.in(next.getQualifiedSourceName());
         for (final JMethod method : next.getMethods()) {
           if (isAllowed(method)) {
             final String sig = toSignature(method);
@@ -249,7 +248,7 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
         }
       }
 
-    //This will probably become jsni, if we can avoid jso interface sickness...
+    //This should turn into properly annotated JsInterop types
     generator.createFactory(type.getQualifiedSourceName());
 
     fieldMap.setDefaultSerializable(type.getAnnotation(Serializable.class));

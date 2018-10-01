@@ -2,6 +2,7 @@ package xapi.dev.model;
 
 import xapi.annotation.model.IsModel;
 import xapi.dev.api.ApiGeneratorTools;
+import xapi.fu.In1;
 import xapi.fu.api.Ignore;
 import xapi.gwt.model.ModelGwt;
 import xapi.inject.X_Inject;
@@ -9,12 +10,7 @@ import xapi.model.impl.ModelUtil;
 import xapi.util.X_Namespace;
 import xapi.util.X_Properties;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.StringTokenizer;
+import java.util.*;
 
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.RebindResult;
@@ -26,13 +22,7 @@ import com.google.gwt.dev.javac.StandardGeneratorContext;
 import com.google.gwt.dev.jjs.MagicMethodGenerator;
 import com.google.gwt.dev.jjs.UnifyAstListener;
 import com.google.gwt.dev.jjs.UnifyAstView;
-import com.google.gwt.dev.jjs.ast.Context;
-import com.google.gwt.dev.jjs.ast.JClassLiteral;
-import com.google.gwt.dev.jjs.ast.JClassType;
-import com.google.gwt.dev.jjs.ast.JDeclaredType;
-import com.google.gwt.dev.jjs.ast.JExpression;
-import com.google.gwt.dev.jjs.ast.JMethod;
-import com.google.gwt.dev.jjs.ast.JMethodCall;
+import com.google.gwt.dev.jjs.ast.*;
 import com.google.gwt.dev.jjs.impl.UnifyAst.UnifyVisitor;
 
 public class ModelMagic implements UnifyAstListener, MagicMethodGenerator {
@@ -50,7 +40,7 @@ public class ModelMagic implements UnifyAstListener, MagicMethodGenerator {
 
   public ModelMagic() {
     active.set(this);
-    models = new LinkedHashMap<String,ModelArtifact>();
+    models = new LinkedHashMap<>();
   }
 
   @SuppressWarnings("unused") // called by reflection
@@ -110,17 +100,31 @@ public class ModelMagic implements UnifyAstListener, MagicMethodGenerator {
     final String modelName = "xapi.model."+simpleName;
 
     JDeclaredType existing = ast.searchForTypeBySource(modelName);
+    final String fqcn = classLit.getRefType().getName();
+    final StandardGeneratorContext ctx = ast.getRebindPermutationOracle().getGeneratorContext();
     if (null == existing) {
       // Type does not yet exist, let's create one!
-      final StandardGeneratorContext ctx = ast.getRebindPermutationOracle().getGeneratorContext();
       final RebindResult result = ModelGeneratorGwt.execImpl(logger,
-        ctx, classLit.getRefType().getName());
+        ctx, fqcn);
       ctx.finish(logger);
       existing = ast.searchForTypeBySource(result.getResultTypeName());
       if (existing == null) {
         logger.log(Type.ERROR, "Unable to find model "+result.getResultTypeName()+"; perhaps it has compile errors?");
         throw new UnableToCompleteException();
       }
+    } else if (!models.containsKey(fqcn)) {
+      // The type was loaded from source; we still need to create an artifact for it.
+      final com.google.gwt.core.ext.typeinfo.JClassType type  = ModelGeneratorGwt.normalize(ctx, fqcn);
+      final ModelArtifact artifact = getOrMakeModel(logger, ctx, type);
+      ModelGeneratorGwt.visitModelStructure(logger, ctx, type, this, artifact, In1.ignored());
+      // TODO: do not require SourceBuilder here... gonna be tough to get rid of;
+      // need to cleanly separate "grab metadata" from "generate thing we need".
+      // Best bet is a new interface, that accepts an abstraction over gwt ast types,
+      // so we can run the same set of model-generating code in gwt, xapi, jvm, etc.
+      // This new interface would only be used to collect the information in ModelArtifact,
+      // (the extracted source-generating / gwt-committing logic gets it's own class).
+      artifact.generateModelClass(logger, ModelGeneratorGwt.createBuilder(type, this), ctx, type);
+      ctx.commitArtifact(logger, artifact);
     }
     final JClassType asCls = (JClassType)existing;
     final String targetMethod = "create".equals(methodName) ? "newInstance" : "register";

@@ -17,7 +17,6 @@ import xapi.time.X_Time;
 import xapi.util.X_Debug;
 import xapi.util.impl.LazyProvider;
 
-import javax.inject.Provider;
 import java.io.InputStream;
 
 /**
@@ -29,19 +28,16 @@ public class ModelModuleLoader {
   private static class ModuleLoader extends LazyProvider<ModelModule> implements Runnable {
 
     public ModuleLoader(final In1Out1<String, InputStream> manifestFinder, final String moduleName) {
-      super(new Provider<ModelModule>() {
-        @Override
-        public ModelModule get() {
+      super(() -> {
           try (
               InputStream stream = manifestFinder.io(moduleName)
           ){
-            final CharIterator policy = new StringCharIterator(X_IO.toStringUtf8(stream));
+            final CharIterator policy = new StringCharIterator(X_IO.toStringUtf8(512, stream));
             final ModelService modelService = X_Model.getService();
             return  ModelModule.deserialize(policy, modelService.primitiveSerializer());
           } catch (final Throwable e) {
             throw X_Debug.rethrow(e);
           }
-        }
       });
     }
 
@@ -69,7 +65,7 @@ public class ModelModuleLoader {
     }
   }
 
-  public ModelModule loadModule(final In1Out1Unsafe<String, InputStream> manifestFinder, final String moduleName) {
+  public ModelModule loadModule(final In1Out1<String, InputStream> manifestFinder, final String moduleName) {
     return getOrMakeLoader(manifestFinder, moduleName).get();
   }
 

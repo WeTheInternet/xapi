@@ -61,4 +61,8 @@ public interface RequestLike {
     MapLike<String, String> getCookies();
 
     void reset();
+
+    String getMethod();
+
+    String getEncoding();
 }

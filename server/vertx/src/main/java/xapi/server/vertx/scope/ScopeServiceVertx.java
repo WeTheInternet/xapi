@@ -26,7 +26,8 @@ public class ScopeServiceVertx extends ScopeServiceDefault {
     public RequestScope<VertxRequest, VertxResponse> requestScope(HttpServerRequest ctx) {
         final SessionScope<ModelUser, VertxRequest, VertxResponse> session = sessionScope();
         // This request will be ignored if the request scope is already initialized
-        VertxRequest vertxReq = new VertxRequest(ctx);
+        // the Content-Type header is lazy / bad...
+        VertxRequest vertxReq = new VertxRequest(ctx, ctx.getHeader("Content-Type"));
         VertxResponse vertxResp = new VertxResponse(ctx.response());
         final RequestScope<VertxRequest, VertxResponse> request = session.getRequestScope(
             vertxReq, vertxResp

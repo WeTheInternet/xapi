@@ -355,7 +355,7 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
 
   public ClassBuffer createLocalClass(final String classDef) {
     final ClassBuffer cls = new ClassBuffer(context, this, indent);
-    cls.setDefinition(classDef, classDef.trim().endsWith("{"));
+    cls.setDefinition(classDef, false);
     assert cls.privacy == 0 : "A local class cannot be "
       + Modifier.toString(cls.privacy);
     addToEnd(cls);

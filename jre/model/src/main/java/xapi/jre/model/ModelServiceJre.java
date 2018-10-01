@@ -183,49 +183,51 @@ public class ModelServiceJre extends AbstractJreModelService {
   @Override
   public <M extends Model> void query(final Class<M> modelClass, final ModelQuery<M> query,
       final SuccessHandler<ModelQueryResult<M>> callback) {
-    for (final QueryParameter param : query.getParameters()) {
-      throw new UnsupportedOperationException("The basic, file-backed "+getClass().getName()+" does not support any complex queries");
-    }
-    // The only query we will support is a parameterless "get all" query
-
-    File f = getRoot(callback);
-    if (query.getNamespace().length() > 0) {
-      f = new File(f, query.getNamespace());
+    if (query.getParameters().isNotEmpty()) {
+      ErrorHandler.delegateTo(callback)
+          .onError(new UnsupportedOperationException("The basic, file-backed "+getClass().getName()+" does not support any complex queries"));
     }
 
-    final String typeName = getTypeName(modelClass);
-
-    f = new File(f, typeName);
-    // use ancestor to create proper model hierarchy.
-    ModelKey parent = query.getAncestor();
-    f = resolveParents(f, parent);
-
-    File[] allFiles;
-    if (query.getCursor() == null) {
-      // Yes, listing all files is not going to be very performant; however, this implementation is
-      // far too naive to be used for a production system. It is primarily a proof-of-concept that can
-      // be usable for developing APIs against something that is simple to use and debug
-      allFiles = f.listFiles();
-    } else {
-      // If there is a cursor, we are continuing a query.
-      allFiles = f.listFiles(new FilenameFilter() {
-
-        @Override
-        public boolean accept(final File dir, final String name) {
-          return name.compareTo(query.getCursor()) > -1;
-        }
-      });
-    }
-    final int size = Math.min(query.getPageSize(), allFiles.length);
-    final ArrayList<File> files = new ArrayList<File>(size);
-    for (int i = 0; i < size; i++) {
-      files.add(allFiles[i]);
-    }
+    final ArrayList<File> files;
     final ModelQueryResult<M> result = new ModelQueryResult<>(modelClass);
-    if (size < allFiles.length) {
-      result.setCursor(allFiles[size].getName());
+    try {
+
+      // The only query we will support is a parameterless "get all" query
+      File f = getRoot(callback);
+      if (query.getNamespace().length() > 0) {
+        f = new File(f, query.getNamespace());
+      }
+
+      final String typeName = getTypeName(modelClass);
+
+      f = new File(f, typeName);
+      // use ancestor to create proper model hierarchy.
+      ModelKey parent = query.getAncestor();
+      f = resolveParents(f, parent);
+
+      File[] allFiles;
+      if (query.getCursor() == null) {
+        // Yes, listing all files is not going to be very performant; however, this implementation is
+        // far too naive to be used for a production system. It is primarily a proof-of-concept that can
+        // be usable for developing APIs against something that is simple to use and debug
+        allFiles = f.listFiles();
+      } else {
+        // If there is a cursor, we are continuing a query.
+        allFiles = f.listFiles((dir, name) -> name.compareTo(query.getCursor()) > -1);
+      }
+      final int size = Math.min(query.getPageSize(), allFiles.length);
+      files = new ArrayList<File>(size);
+      for (int i = 0; i < size; i++) {
+        files.add(allFiles[i]);
+      }
+      if (size < allFiles.length) {
+        result.setCursor(allFiles[size].getName());
+      }
+    } catch (Throwable t) {
+      ErrorHandler.delegateTo(callback)
+          .onError(t);
+      return;
     }
-    allFiles = null;
 
     final Out1<RemovalHandler> scope = captureScope();
     X_Time.runLater(() -> {
@@ -238,13 +240,10 @@ public class ModelServiceJre extends AbstractJreModelService {
           result.addModel(model);
         }
         callback.onSuccess(result);
-      } catch (final Exception e) {
+      } catch (final Throwable t) {
         X_Log.error(ModelServiceJre.class, "Unable to load files for query "+query);
-        if (callback instanceof ErrorHandler) {
-          ((ErrorHandler) callback).onError(new RuntimeException("Unable to load files for query "+query));
-        } else {
-          rethrow(e);
-        }
+        ErrorHandler.delegateTo(callback)
+            .onError(t);
       } finally {
         handler.remove();
       }

@@ -40,4 +40,9 @@ public class RequestScopeDefault <Req extends RequestLike, Resp extends Response
         return request.getHeader("Host", "0.0.0.0");
     }
 
+    @Override
+    public String getMethod() {
+        return request.getMethod();
+    }
+
 }

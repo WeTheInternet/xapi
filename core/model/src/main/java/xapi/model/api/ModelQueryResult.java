@@ -3,12 +3,13 @@
  */
 package xapi.model.api;
 
-import static xapi.collect.X_Collect.newList;
+import xapi.collect.api.IntTo;
+import xapi.model.X_Model;
+import xapi.model.service.ModelService;
 
 import java.util.List;
 
-import xapi.collect.api.IntTo;
-import xapi.model.service.ModelService;
+import static xapi.collect.X_Collect.newList;
 
 /**
  * @author James X. Nelson (james@wetheinter.net, @james)
@@ -83,5 +84,9 @@ public class ModelQueryResult <M extends Model> {
     return b.toString();
   }
 
-
+  @Override
+  public String toString() {
+    final ModelService srv = X_Model.getService();
+    return serialize(srv, srv.primitiveSerializer());
+  }
 }

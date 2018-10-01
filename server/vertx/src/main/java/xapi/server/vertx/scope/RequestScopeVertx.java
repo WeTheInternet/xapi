@@ -60,6 +60,11 @@ public class RequestScopeVertx extends AbstractScope<RequestScopeVertx> implemen
         return req.getHttpRequest().host();
     }
 
+    @Override
+    public String getMethod() {
+        return req.getMethod();
+    }
+
     public SessionScopeVertx session() {
         final SessionScope session = getSession();
         return (SessionScopeVertx) session;

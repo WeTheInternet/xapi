@@ -20,6 +20,8 @@ public interface ResponseLike {
 
     HtmlBuffer buildHtmlResponse();
 
+    PrintBuffer buildErrorResponse();
+
     PrintBuffer buildRawResponse();
 
     ResponseLike finish();

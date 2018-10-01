@@ -319,7 +319,7 @@ public class PrimitiveSerializerDefault implements PrimitiveSerializer {
       value += delta;
       multi <<= 5; // multiply by 32
     }
-    assert false : "Malformed encoded number: "+i;
+    assert false : "Malformed encoded number: `" + i + "` (outer ticks added)";
     return value;
   }
 
@@ -354,7 +354,7 @@ public class PrimitiveSerializerDefault implements PrimitiveSerializer {
         value += delta;
         multi <<= 5; // multiply by 32
       }
-      assert false : "Malformed encoded number: "+l;
+      assert false : "Malformed encoded number: `" + l + "` (outer ticks added)";
       return value;
     }
 

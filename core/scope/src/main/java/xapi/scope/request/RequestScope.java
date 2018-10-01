@@ -40,4 +40,6 @@ public interface RequestScope<RequestType extends RequestLike, ResponseType exte
     }
 
     String getHost();
+
+    String getMethod();
 }

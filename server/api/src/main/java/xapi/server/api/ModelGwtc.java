@@ -63,9 +63,22 @@ public interface ModelGwtc extends Model {
         final GwtcService gwtc = getOrCreateService();
         final GwtManifest manifest = getOrCreateManifest();
         CompileMessage status = gwtc.getJobManager().getStatus(manifest.getModuleName());
-        if (status == null) {
+        if (status == CompileMessage.Destroyed) {
             gwtc.doCompile(manifest, 0,null, (comp, err)->{
-                if (err != null) {
+                if (err == null) {
+                    // Now that a successful recompile has occurred, fixup the precompile location,
+                    // so everybody asks the service for latest code.  In production, this probably
+                    // should not happen (i.e. disable recompiler altogether).
+                    // However, we leave it hooked up so that we can use secret hooks to force a recompile,
+                    // and then force all user traffic to pick up the latest precompileLocation.
+                    if (isRecompileAllowed()) {
+                        // forces everyone to keep asking the service for a freshness check.
+                        setPrecompileLocation(null);
+                    } else {
+                        // TODO: check that this is correct
+                        setPrecompileLocation(comp.getWarDir());
+                    }
+                } else {
                     X_Log.error(ModelGwtc.class, "Failure in warmup compile", err, "module:\n", manifest);
                 }
             });
@@ -101,12 +114,14 @@ public interface ModelGwtc extends Model {
             // hokay!  we've found where gwt was compiled.  Now, extract our props.xapi file...
             File props = new File(loc, "props.xapi");
             if (!props.isFile()) {
-                throw new NotConfiguredCorrectly("In order to guess your gwt module structure, please inherit " +
-                    "xapi.X_Gwtc, or manually added MetaLinker to your gwt compile");
+                X_Log.warn(ModelGwtc.class, "Unable to find props.xapi in ", loc, " defaulting to recompilation...");
+                Long millis = manifest.getMaxCompileMillis();
+                service.doCompile(manifest, millis == null ? 0 : millis, millis == null ? null : TimeUnit.MILLISECONDS, callback);
+                return;
             }
             final UiContainerExpr container;
             try (
-                FileInputStream in  = new FileInputStream(props);
+                FileInputStream in  = new FileInputStream(props)
             ) {
                 container = JavaParser.parseXapi(in);
             } catch (IOException e) {
@@ -145,4 +160,7 @@ public interface ModelGwtc extends Model {
             service.doCompile(manifest, millis == null ? 0 : millis, millis == null ? null : TimeUnit.MILLISECONDS, callback);
         }
     }
+
+    boolean isRecompileAllowed();
+    ModelGwtc setRecompileAllowed(boolean allowed);
 }

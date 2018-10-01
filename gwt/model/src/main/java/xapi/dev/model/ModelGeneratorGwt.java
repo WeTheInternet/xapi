@@ -1,14 +1,11 @@
 package xapi.dev.model;
 
-import xapi.annotation.model.DeleterFor;
-import xapi.annotation.model.FieldName;
-import xapi.annotation.model.GetterFor;
-import xapi.annotation.model.Serializable;
-import xapi.annotation.model.SetterFor;
+import xapi.annotation.model.*;
 import xapi.annotation.reflect.Fluent;
 import xapi.dev.source.CharBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
+import xapi.fu.In1;
 import xapi.model.api.ModelDeserializationContext;
 import xapi.model.api.ModelSerializationContext;
 import xapi.model.api.ModelSerializer;
@@ -20,20 +17,13 @@ import xapi.util.X_Properties;
 import java.io.PrintWriter;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedHashSet;
-import java.util.List;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 
-import com.google.gwt.core.ext.GeneratorContext;
-import com.google.gwt.core.ext.IncrementalGenerator;
-import com.google.gwt.core.ext.RebindMode;
-import com.google.gwt.core.ext.RebindResult;
-import com.google.gwt.core.ext.TreeLogger;
+import static xapi.source.X_Modifier.PUBLIC;
+
+import com.google.gwt.core.ext.*;
 import com.google.gwt.core.ext.TreeLogger.Type;
-import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.JType;
@@ -41,6 +31,9 @@ import com.google.gwt.core.ext.typeinfo.NotFoundException;
 
 public class ModelGeneratorGwt extends IncrementalGenerator{
 
+  public ModelGeneratorGwt() {
+    System.out.println();
+  }
 
   private static final String MODEL_PACKAGE = "xapi.model";
   static final boolean MINIFY = Boolean.parseBoolean(X_Properties.getProperty("xapi.dist", "false"));
@@ -174,7 +167,7 @@ public class ModelGeneratorGwt extends IncrementalGenerator{
   public static RebindResult execImpl(final TreeLogger logger, final GeneratorContext ctx,
     final String typeName) throws UnableToCompleteException {
 
-    final JClassType type = ctx.getTypeOracle().findType(typeName.replace('$', '.'));
+    final JClassType type = normalize(ctx, typeName);
     if (type == null) {
       logger.log(Type.ERROR, "Unable to find source for model interface type "+typeName);
       throw new UnableToCompleteException();
@@ -198,26 +191,36 @@ public class ModelGeneratorGwt extends IncrementalGenerator{
       return new RebindResult(RebindMode.USE_EXISTING, fqcn);
     }
     final ModelArtifact model = magic.getOrMakeModel(logger, ctx, type);
-    final boolean isFinal = type.getSubtypes().length == 0;
-    final SourceBuilder<ModelMagic> builder = new SourceBuilder<ModelMagic>(
-      "public "+(isFinal?"final ":"")+"class "+mangledName
-      );
-    builder.setPayload(magic);
-    builder.setPackage(MODEL_PACKAGE);
+    final SourceBuilder<ModelMagic> builder = createBuilder(type, magic);
 
     // Step two; transverse type model.
-    visitModelStructure(logger, ctx, typeName, type, magic, model, builder);
+    visitModelStructure(logger, ctx, type, magic, model, builder.getClassBuffer()::addInterfaces);
 
-    // Step three, generate serialization protocols for this model type.
+    // Step three: Make sure we force Array.newInstance to work...
+    builder.getClassBuffer()
+          .println("static { ")
+          // This is a magic method the compiler uses to record the correct Type.class <--> Type[].class,
+          // to enable non-compile-time-literal use of Array.newInstance elsewhere in the code.
+          .indentln(builder.addImport(Array.class)+".newInstance(" + type.getSimpleSourceName() + ".class, 0);")
+          .println("}");
+
+    // Step four, generate serialization protocols for this model type.
     generateSerializers(logger, ctx, typeName, type, magic, model, builder);
 
-    // Step four, determine the fields we'll need to generate
+    // Step five, actually generate the type
+    // Sadly, this also fills in important metadata,
+    // which we should separate from generating code,
+    // so we can do one w/out the other.
+    // We're going to make a better, more explicit means to get model manifests created (api-generator).
     model.generateModelClass(logger, builder, ctx, type);
+
     final String src = builder.toString();
     final Type logLevel = logLevel();
     if (logger.isLoggable(logLevel)) {
       logger.log(logLevel, "Generated model class:\n"+src);
     }
+
+    // Step six, commit source and artifact
     pw.println(src);
     ctx.commit(logger, pw);
     if (!model.isReused()) {
@@ -225,6 +228,28 @@ public class ModelGeneratorGwt extends IncrementalGenerator{
     }
 
     return new RebindResult(RebindMode.USE_ALL_NEW, MODEL_PACKAGE + "." + mangledName);
+  }
+
+    public static SourceBuilder<ModelMagic> createBuilder(JClassType type, ModelMagic magic) {
+        final boolean isFinal = type.getSubtypes().length == 0;
+
+        final String mangledName = magic.mangleName(type.getQualifiedSourceName(), MINIFY);
+        final SourceBuilder<ModelMagic> builder = new SourceBuilder<>(PUBLIC, mangledName);
+        if (isFinal) {
+            builder.getClassBuffer().makeFinal();
+        }
+        builder.setPayload(magic);
+        builder.setPackage(MODEL_PACKAGE);
+        return builder;
+    }
+
+    public static JClassType normalize(GeneratorContext ctx, String typeName) {
+    JClassType type = ctx.getTypeOracle().findType(typeName);
+    if (type == null) {
+      final String name = typeName.replace('$', '.');
+      type = ctx.getTypeOracle().findType(name);
+    }
+    return type;
   }
 
   /**
@@ -238,6 +263,10 @@ public class ModelGeneratorGwt extends IncrementalGenerator{
    */
   private static void generateSerializers(final TreeLogger logger, final GeneratorContext ctx, final String typeName, final JClassType type,
       final ModelMagic magic, final ModelArtifact model, final SourceBuilder<ModelMagic> builder) {
+      // For now, this is going to no-op (it's not worth bothering atm)
+      if (magic != null) {
+          return;
+      }
     final List<JMethod> toClient = new ArrayList<JMethod>();
     final List<JMethod> toServer = new ArrayList<JMethod>();
     for (final Entry<JMethod, Annotation[]> method : model.methods.entrySet()) {
@@ -282,7 +311,7 @@ public class ModelGeneratorGwt extends IncrementalGenerator{
       stringToModel.returnValue("throw new " + out.getClassBuffer().addImport(UnsupportedOperationException.class)+"();");
     } else {
       // Print a deserializer for the model
-
+      // TODO: actually finish this and re-enable this method...
       stringToModel.returnValue("null");
     }
 
@@ -309,22 +338,24 @@ public class ModelGeneratorGwt extends IncrementalGenerator{
   /**
    * @param logger
    * @param ctx
-   * @param typeName
    * @param type
    * @param magic
    * @param model
-   * @param builder
+   * @param spyInterfaces
    * @throws UnableToCompleteException
    */
-  private static void visitModelStructure(final TreeLogger logger, final GeneratorContext ctx, final String typeName,
-      final JClassType type, final ModelMagic magic, final ModelArtifact model, final SourceBuilder<ModelMagic> builder)
+  public static void visitModelStructure(
+      final TreeLogger logger, final GeneratorContext ctx,
+      final JClassType type, final ModelMagic magic, final ModelArtifact model,
+      In1<String> spyInterfaces
+  )
       throws UnableToCompleteException {
     if (type.isInterface() == null) {
       // Client has specified their own base type.
       // Let's see if we're expected to generate any methods.
       if (type.isAbstract()) {
         // Find the methods the client didn't bother to implement.
-        final Collection<JMethod> interfaceMethods = model.extractMethods(logger, builder, ctx, type);
+        final Collection<JMethod> interfaceMethods = model.extractMethods(logger, magic, ctx, type, spyInterfaces);
         for (final JMethod ifaceMethod : interfaceMethods) {
           JMethod classMethod;
           try {
@@ -344,7 +375,7 @@ public class ModelGeneratorGwt extends IncrementalGenerator{
     } else {
       final JClassType root = magic.getRootType(logger, ctx);
       final Set<String> toSigs = getImplementedSignatures(root.getInheritableMethods());
-      for (final JMethod method :  model.extractMethods(logger, builder, ctx, type)) {
+      for (final JMethod method :  model.extractMethods(logger, magic, ctx, type, spyInterfaces)) {
         if (!ModelMagic.shouldIgnore(method)) {
           final String sig = ModelGeneratorGwt.toSignature(method);
           if (toSigs.add(sig)) {
@@ -353,12 +384,6 @@ public class ModelGeneratorGwt extends IncrementalGenerator{
         }
       }
     }
-    builder.getClassBuffer()
-        .println("static { ")
-        // This is a magic method the compiler uses to record the correct Type.class <--> Type[].class,
-        // to enable non-compile-time-literal use of Array.newInstance elsewhere in the code.
-        .indentln(builder.addImport(Array.class)+".newInstance(" + type.getSimpleSourceName() + ".class, 0);")
-        .println("}");
   }
 
   static Set<String> getImplementedSignatures(final JMethod[] inheritableMethods) {

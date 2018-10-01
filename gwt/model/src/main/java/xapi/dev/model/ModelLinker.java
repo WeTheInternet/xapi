@@ -136,7 +136,7 @@ public class ModelLinker extends Linker {
         }
       }
       // Next, compute the strong hash for this serialization policy.
-      final String policy = out.toString();
+      final String policy = out.toSource();
       final Charset utf8 = Charset.forName("UTF-8");
       byte[] result = policy.getBytes(utf8);
       final Digester digest = X_Inject.instance(Digester.class);
