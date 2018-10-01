@@ -1,20 +1,18 @@
 package xapi.fu;
 
-import xapi.fu.In1Out1.In1Out1Unsafe;
-import xapi.fu.log.Log;
-import xapi.fu.log.Log.LogLevel;
+import xapi.fu.In1Out1.*;
 import xapi.fu.has.HasLock;
 import xapi.fu.itr.SingletonIterator;
 import xapi.fu.itr.SizedIterable;
+import xapi.fu.log.Log;
+import xapi.fu.log.Log.LogLevel;
 
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Supplier;
 
 import static xapi.fu.Filter.alwaysTrue;
 import static xapi.fu.Immutable.immutable1;
-import static xapi.fu.In1Out1.checkIsNotNull;
-import static xapi.fu.In1Out1.checkIsNull;
-import static xapi.fu.In1Out1.returnNull;
+import static xapi.fu.In1Out1.*;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
@@ -26,14 +24,37 @@ public interface Out1<O> extends Rethrowable, Lambda, HasMutability {
   O out1();
 
   default O block() {
+    return block(0);
+  }
+  default O block(double limit) {
+    return block(this, limit);
+  }
+  default O block(Object blocker, double limit) {
     O out = out1();
     int delay = -100; // spin 100 times before sleeping.
+    // would be nice to have X_Time here...
+    final double now = System.nanoTime();
+    double deadline = limit > (System.currentTimeMillis() * 2) ? limit : limit * 1_000_000;
+    deadline += now;
     while (out == null) {
       // respect locks, and refresh memory every time.
-      out = HasLock.alwaysLock(this, this);
-      if (delay ++ > 0) {
-        // we'll spin 100 times, then start parking
-        LockSupport.parkUntil(System.currentTimeMillis() + delay);
+      out = HasLock.alwaysLock(blocker, this);
+      if (out == null && delay ++ > 0) {
+        // we'll spin 100 times before we start parking
+        double nanos = delay * 1_000_000.;
+        if (limit > 0) {
+          nanos =
+            Math.min(nanos,
+            // using substraction ensures overflows don't cause errors
+            deadline - System.nanoTime()
+            );
+        }
+        if (nanos > 0) {
+          LockSupport.parkNanos((long)nanos);
+        } else {
+          Log.firstLog(this).log(Out1.class, LogLevel.WARN, "block() did not complete in allotted time, " + ((deadline - now)/1_000_000.) + "ms");
+          return null;
+        }
       }
     }
     return out;
@@ -60,6 +81,13 @@ public interface Out1<O> extends Rethrowable, Lambda, HasMutability {
   Out1<Double> ONE_DOT = immutable1(1.);
   Out1<Double> NEG_ONE_DOT = immutable1(-1.);
 
+  default Out1<O> useIfNotNull(In1<O> callback) {
+    final O val = out1();
+    if (val != null) {
+      callback.in(val);
+    }
+    return this;
+  }
   default Out1<O> use(In1<O> callback) {
     callback.in(out1());
     return this;
@@ -366,4 +394,8 @@ public interface Out1<O> extends Rethrowable, Lambda, HasMutability {
     static <O1> Out1<O1> immutable(O1 value) {
       return immutable1(value);
     }
+
+  default Lazy<O> lazy() {
+    return Lazy.deferred1(this);
+  }
 }

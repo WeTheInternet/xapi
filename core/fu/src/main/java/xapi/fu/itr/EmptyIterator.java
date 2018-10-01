@@ -1,5 +1,7 @@
 package xapi.fu.itr;
 
+import java.util.NoSuchElementException;
+
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/2/16.
  */
@@ -24,7 +26,7 @@ public final class EmptyIterator <I> implements SizedIterator <I> {
 
     @Override
     public I next() {
-        throw new UnsupportedOperationException();
+        throw new NoSuchElementException("empty");
     }
 
     @Override

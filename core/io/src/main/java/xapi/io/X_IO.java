@@ -210,16 +210,22 @@ public class X_IO {
   }
 
   public static void drain(final OutputStream out, final InputStream in) throws IOException {
-    int size = 4096;
+    drain(4096, out, in);
+  }
+
+  public static void drain(int size, final OutputStream out, final InputStream in) throws IOException {
     byte[] buffer = new byte[size];
     int read;
     while ((read = in.read(buffer)) >= 0) {
       if (read == 0) {
         try {
+          // Add a little latency, and check if we are interrupted or not
           Thread.sleep(0, 10000);
         } catch (final InterruptedException e) {
+          // Stay interrupted
           Thread.currentThread().interrupt();
-          X_Log.warn("Interrupted while draining input stream",in,"to output stream",out);
+          // Exit early
+          X_Log.warn(X_IO.class, "Interrupted while draining input stream", in, "to output stream",out);
           return;
         }
         continue;
@@ -233,8 +239,19 @@ public class X_IO {
   }
 
   public static String toStringUtf8(final InputStream in) throws IOException {
+    return toStringUtf8(2048, in);
+  }
+  public static String toStringUtf8(int bufSize, final InputStream in) throws IOException {
     try (
         final StringBufferOutputStream b = new StringBufferOutputStream()
+    ) {
+      drain(bufSize, b, in);
+      return b.toString();
+    }
+  }
+  public static String toStringEncoded(final InputStream in, String charset) throws IOException {
+    try (
+        final StringBufferOutputStream b = new StringBufferOutputStream(charset)
     ) {
       drain(b, in);
       return b.toString();

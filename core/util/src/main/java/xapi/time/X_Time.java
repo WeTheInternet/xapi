@@ -82,7 +82,10 @@ public class X_Time {
 
 
   public static String difference(final Moment start, final Moment finish) {
-    return X_String.toMetricSuffix((finish.millis() - start.millis())/1000.0)+"seconds";
+    return print(finish.millis() - start.millis());
+  }
+  public static String print(double millis) {
+    return X_String.toMetricSuffix(millis/1000.0)+"seconds";
   }
   public static Out1<String> diff(final Moment start) {
     final Moment now = now();

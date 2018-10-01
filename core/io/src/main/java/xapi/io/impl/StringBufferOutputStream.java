@@ -13,25 +13,25 @@ public class StringBufferOutputStream extends OutputStream {
   public StringBufferOutputStream() {
     this("UTF-8");
   }
-  
+
   public StringBufferOutputStream(String charset) {
-    this.charset = charset;
+    this.charset = charset == null ? "UTF-8" : charset;
   }
-  
+
   @Override
   public void write(int b) throws IOException {
     bout.write(b);
   }
-  
+
   @Override
   public void write(byte[] b, int off, int len) throws IOException {
     bout.write(b, off, len);
   }
-  
+
   public String getContent() {
     return toString();
   }
-  
+
   public String toString() {
     try {
       return new String(bout.toByteArray(), charset);
@@ -45,5 +45,5 @@ public class StringBufferOutputStream extends OutputStream {
   public void close() throws IOException {
     bout.close();
   }
-  
+
 }

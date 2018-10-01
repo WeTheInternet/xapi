@@ -1,5 +1,7 @@
 package xapi.fu;
 
+import xapi.fu.In2Out1.In2Out1Unsafe;
+
 import java.util.function.Function;
 
 /**
@@ -120,8 +122,14 @@ In1Out1<I, O> extends Rethrowable, Lambda {
   static <I1, I2, O> In1Out1<I2, O> from2_1(In2Out1<I1, I2, O> in, I1 out) {
     return in.supply1(out);
   }
+  static <I1, I2, O> In1Out1<I2, O> from2_1Unsafe(In2Out1Unsafe<I1, I2, O> in, I1 out) {
+    return in.supply1(out);
+  }
 
   static <I1, I2, O> In1Out1<I1, O> from2_2(In2Out1<I1, I2, O> in, I2 out) {
+    return in.supply2(out);
+  }
+  static <I1, I2, O> In1Out1<I1, O> from2_2Unsafe(In2Out1Unsafe<I1, I2, O> in, I2 out) {
     return in.supply2(out);
   }
 

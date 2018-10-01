@@ -32,6 +32,12 @@ public class ResettableLazy <T> extends Lazy<T> implements HasReset {
     public final synchronized void onSet(In1<T> spy) {
         assert spy != null : "Don't send null callbacks!";
         this.onSet = this.onSet.useAfterMe(spy);
+        if (isResolved()) {
+            final T val = out1();
+            if (valueAcceptable(val)) {
+                spy.in(val);
+            }
+        }
     }
 
     @Override

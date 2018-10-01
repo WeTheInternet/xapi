@@ -5,6 +5,7 @@ import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
 import xapi.collect.proxy.CollectionProxy;
 import xapi.fu.*;
+import xapi.fu.api.DoNotOverride;
 import xapi.fu.has.HasLock;
 import xapi.fu.itr.MappedIterable;
 import xapi.model.X_Model;
@@ -161,5 +162,18 @@ public interface Model {
             });
             return null;
         });
+    }
+
+    default boolean isKeyResolved() {
+        final ModelKey key = getKey();
+        if (key == null) {
+            return false;
+        }
+        return key.isComplete();
+    }
+
+    @DoNotOverride
+    default boolean isKeyUnresolved() {
+        return !isKeyResolved();
     }
 }

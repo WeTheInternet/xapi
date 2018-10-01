@@ -55,7 +55,7 @@ public interface HasLock {
             throw new NullPointerException("source");
         }
 
-        boolean shouldReflect = "true".equals(System.getProperty("xapi.reflect.enabled", "true"));
+        boolean shouldReflect = shouldReflect(source);
         if (shouldReflect){
             return reflect(source, todo);
         }
@@ -130,8 +130,8 @@ public interface HasLock {
             }
         }
 
-        boolean shouldReflect = "true".equals(System.getProperty("xapi.reflect.enabled", "true"));
-        if (shouldReflect){
+        boolean shouldReflect = shouldReflect(source);
+        if (shouldReflect) {
             synchronized (source) {
                 return reflect(source, todo);
             }
@@ -140,5 +140,12 @@ public interface HasLock {
         synchronized (source) {
             return todo.out1();
         }
+    }
+
+    static boolean shouldReflect(Object source) {
+        if ("true".equals(System.getProperty("xapi.reflect.enabled", "true"))) {
+            return source.getClass().getClassLoader() != HasLock.class.getClassLoader();
+        }
+        return false;
     }
 }

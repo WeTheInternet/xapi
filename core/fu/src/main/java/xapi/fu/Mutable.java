@@ -162,8 +162,14 @@ public class Mutable <T> implements In1Unsafe<T>, Out1Unsafe<T>, HasLock {
     }
   }
 
-    public final void set(T b) {
-      in(b);
+    public final void set(T t) {
+      in(t);
+    }
+    public final void setIfNull(Out1<T> factory) {
+      if (out1() == null) {
+        final T value = factory.out1();
+        in(value);
+      }
     }
 
     public final T setReturnNew(T b) {

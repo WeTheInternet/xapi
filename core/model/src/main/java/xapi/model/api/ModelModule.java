@@ -8,6 +8,7 @@ import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
 import xapi.dev.source.CharBuffer;
 import xapi.inject.X_Inject;
+import xapi.log.X_Log;
 import xapi.model.X_Model;
 import xapi.model.impl.ClusteringPrimitiveDeserializer;
 import xapi.model.impl.ClusteringPrimitiveSerializer;
@@ -193,6 +194,10 @@ public class ModelModule implements Serializable {
         return cls;
       }
     };
+    if (!chars.hasNext()) {
+        X_Log.warn(ModelModule.class, "Encountered module with no model manifests", module);
+        return module;
+    }
     int manifests = primitives.deserializeInt(chars);
     while (manifests --> 0) {
       final ModelManifest manifest = ModelManifest.deserialize(chars, primitives);
