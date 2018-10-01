@@ -498,7 +498,7 @@ public class GwtcSteps {
         throw new ComparisonFailure(
             "Expected source failed on line " + match.expectedLine + ": \n" +
             match.expected + "\n" +
-            "Action source match @ line " + match.actualLine +  "\n" +
+            "Actual source match @ line " + match.actualLine +  "\n" +
             match.actual + "\n" +
             "Rest of expected source:\n" +
                 restExpected + "\n" +

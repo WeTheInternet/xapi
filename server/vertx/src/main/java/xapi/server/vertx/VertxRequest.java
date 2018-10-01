@@ -5,6 +5,7 @@ import io.vertx.core.http.HttpServerResponse;
 import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
+import xapi.except.FatalException;
 import xapi.fu.*;
 import xapi.fu.data.MapLike;
 import xapi.fu.itr.SizedIterable;
@@ -36,16 +37,23 @@ public class VertxRequest implements Destroyable, RequestLike {
     private final ResettableLazy<MultimapAdapter> headers;
     private final ResettableLazy<MapLike<String, String>> cookies;
     private final Do resetAll;
+    private final String contentType;
     private boolean autoclose;
 
-    public VertxRequest(HttpServerRequest req) {
+    public VertxRequest(HttpServerRequest req, String contentType) {
         httpRequest = req;
+        this.contentType = contentType == null ? "UTF-8" : contentType;
         body = new ResettableLazy<>(()->{
-            Pointer<byte[]> body = Pointer.pointer();
+            Mutable<byte[]> body = new Mutable<>();
             getHttpRequest().bodyHandler(buffer->
                 body.in(buffer.getBytes())
             );
-            return new String(body.out1());
+
+            final byte[] str = body.block(10_000);
+            if (str == null) {
+                throw new FatalException("Unable to read request body in 10s");
+            }
+            return new String(str);
         });
         params =  new ResettableLazy<>(()->new MultimapAdapter(httpRequest.params()));
         headers = new ResettableLazy<>(()->new MultimapAdapter(httpRequest.headers()));
@@ -57,6 +65,10 @@ public class VertxRequest implements Destroyable, RequestLike {
             headers.reset();
             cookies.reset();
         };
+    }
+
+    public void setBody(Out1<String> body) {
+        this.body.set(body);
     }
 
     private Out1<MapLike<String, String>> readCookies() {
@@ -142,6 +154,16 @@ public class VertxRequest implements Destroyable, RequestLike {
     @Override
     public void reset() {
         resetAll.done();
+    }
+
+    @Override
+    public String getMethod() {
+        return getHttpRequest().rawMethod();
+    }
+
+    @Override
+    public String getEncoding() {
+        return contentType;
     }
 
     @Override

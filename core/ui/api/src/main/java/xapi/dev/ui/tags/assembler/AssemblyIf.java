@@ -9,10 +9,7 @@ import com.github.javaparser.ast.type.VoidType;
 import com.github.javaparser.ast.visitor.ComposableXapiVisitor;
 import xapi.dev.api.ApiGeneratorContext;
 import xapi.dev.source.*;
-import xapi.dev.ui.api.GeneratedUiBase;
-import xapi.dev.ui.api.GeneratedUiComponent;
-import xapi.dev.ui.api.GeneratedUiMember;
-import xapi.dev.ui.api.UiConstants;
+import xapi.dev.ui.api.*;
 import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.dev.ui.tags.factories.GeneratedFactory;
 import xapi.dev.ui.tags.factories.LazyInitFactory;
@@ -194,7 +191,6 @@ public class AssemblyIf extends AssembledElement {
         UiContainerExpr el
     ) {
 
-
         // Create an Out1<ElBuilder> currentSelection; which is kept up-to-date
         // in "as automatic fashion as possible" (model change bindings),
         // along with a "big hammer" to forcibly recheck all conditional layout information.
@@ -290,7 +286,6 @@ public class AssemblyIf extends AssembledElement {
     }
 
     private void serialize(GeneratedFactory rootFactory, UiAssembler assembler, UiAssemblerResult result) {
-
         PrintBuffer toDom = rootFactory.getInitBuffer();
 
         redrawName = prefixName("redraw");
@@ -900,5 +895,13 @@ public class AssemblyIf extends AssembledElement {
 
     public String getRedrawMethod() {
         return redrawName;
+    }
+
+    @Override
+    protected void updateResult(
+        UiAssemblerResult result
+    ) {
+        result.withLogic();
+        super.updateResult(result);
     }
 }

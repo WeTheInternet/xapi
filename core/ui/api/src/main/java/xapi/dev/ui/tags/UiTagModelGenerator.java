@@ -66,7 +66,7 @@ public class UiTagModelGenerator extends UiFeatureGenerator {
 
 
        out.createMethod("default String getModelType()")
-            .returnValue("\"" + api.getModel().getTypeName() + "\"");
+            .returnValue("\"" + X_String.firstCharToLowercase(api.getModel().getTypeName()) + "\"");
 
        out.createMethod("default " + modelName + " createModel()")
             .returnValue(out.addImportStatic(X_Model.class, "create") + "(" + modelName + ".class)");

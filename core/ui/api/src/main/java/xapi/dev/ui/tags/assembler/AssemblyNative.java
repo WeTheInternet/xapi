@@ -33,4 +33,13 @@ public class AssemblyNative extends AssembledElement {
 
         return factory;
     }
+
+    @Override
+    protected void updateResult(
+        UiAssemblerResult result
+    ) {
+        // all native elements will be considered layout (and anything else that opts in to layout)
+        result.withLayout();
+        super.updateResult(result);
+    }
 }

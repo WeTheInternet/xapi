@@ -11,7 +11,7 @@ public interface AsserterComponent <El> extends IsModelComponent< El, ModelAsser
   String TAG_NAME = "xapi-asserter";
 
    default String getModelType () {
-    return "Asserter";
+    return "asserter";
   }
 
    default ModelAsserter createModel () {

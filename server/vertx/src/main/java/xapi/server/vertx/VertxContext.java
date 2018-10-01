@@ -8,6 +8,7 @@ import xapi.except.NoSuchItem;
 import xapi.fu.Lazy;
 import xapi.fu.data.MapLike;
 import xapi.fu.java.X_Jdk;
+import xapi.model.api.ModelNotFoundException;
 import xapi.scope.X_Scope;
 import xapi.scope.api.HasRequestContext;
 import xapi.scope.spi.RequestContext;
@@ -40,7 +41,8 @@ public class VertxContext implements RequestContext<User, VertxRequest, VertxRes
 
     public VertxContext(RoutingContext ctx) {
         this.ctx = ctx;
-        this.req = new VertxRequest(ctx.request());
+        this.req = new VertxRequest(ctx.request(), ctx.getAcceptableContentType());
+        this.req.setBody(ctx::getBodyAsString);
         this.resp = new VertxResponse(ctx.response());
         resp.setRerouter((route, updateUrl)->{
             if (updateUrl) {
@@ -158,10 +160,14 @@ public class VertxContext implements RequestContext<User, VertxRequest, VertxRes
                     autoclose = false;
                 }
             } else {
-                if (failures instanceof NoSuchItem) {
+                if (failures instanceof NoSuchItem || failures instanceof ModelNotFoundException) {
                     resp.setStatusCode(code = 404);
                 }
                 ctx.fail(failures);
+            }
+            if (resp.isClosed()) {
+                // The response is already completed, we just want to fail silently and return
+                return resp.getStatusCode();
             }
             if (code == 0) {
                 code = ctx.response().getStatusCode();
@@ -208,6 +214,7 @@ public class VertxContext implements RequestContext<User, VertxRequest, VertxRes
 
     private void updateContext(RoutingContext ctx) {
         req.setHttpRequest(ctx.request());
+        req.setBody(ctx::getBodyAsString);
         resp.setHttpResponse(ctx.response());
         this.ctx = ctx;
         finished = false;

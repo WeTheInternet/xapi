@@ -97,10 +97,6 @@ implements IsModelComponent<El, Mod> {
         }
         final Mod mod = createModel();
 
-        if (modelId != null) {
-            // in case user did something weird to set modelId in createModel (instead of just setting id themselves)
-            key.setId(modelId);
-        }
         mod.setKey(key);
         return mod;
     }

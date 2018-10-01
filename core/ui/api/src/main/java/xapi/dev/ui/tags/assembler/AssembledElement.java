@@ -3,9 +3,11 @@ package xapi.dev.ui.tags.assembler;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
-import xapi.dev.source.*;
+import xapi.dev.source.LocalVariable;
+import xapi.dev.source.PrintBuffer;
 import xapi.dev.ui.api.GeneratedUiBase;
 import xapi.dev.ui.api.GeneratedUiComponent;
+import xapi.dev.ui.api.GeneratedUiDefinition;
 import xapi.dev.ui.tags.UiTagGenerator;
 import xapi.dev.ui.tags.factories.GeneratedFactory;
 import xapi.dev.ui.tags.factories.LazyInitFactory;
@@ -261,5 +263,17 @@ public class AssembledElement implements HasParent<AssembledElement> {
             ", source=" + source +
             ", ref='" + ref + '\'' +
             '}';
+    }
+
+    /**
+     * This method is called immediately after the {@link UiAssemblerResult} has been created,
+     * so you can fill out your interesting metadata right away (or at least build Lazies that fill it out JIT).
+     *
+     * @param result The result object you are expected to update appropriately.
+     *
+     *               See {@link UiAssemblerResult#result(GeneratedUiDefinition, GeneratedFactory, AssembledElement)}
+     */
+    protected void updateResult(UiAssemblerResult result) {
+
     }
 }

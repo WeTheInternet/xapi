@@ -1,5 +1,6 @@
 package xapi.server.api;
 
+import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.except.NotConfiguredCorrectly;
 import xapi.fu.In2;
@@ -137,6 +138,10 @@ public interface Route extends Model {
     Route setPath(String path);
 
     IntTo<String> getMethods();
+
+    default Route setMethods(String ... path) {
+        return setMethods(X_Collect.asList(path));
+    }
 
     Route setMethods(IntTo<String> path);
 

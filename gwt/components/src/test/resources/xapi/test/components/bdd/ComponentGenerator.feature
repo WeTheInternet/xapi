@@ -320,7 +320,7 @@ Feature: ComponentGenerator.feature: Transpile xapi templates into web component
     |                                            |
 
     | default String getModelType () {    |
-    |   return "ToDos";                          |
+    |   return "toDos";                          |
     | }                                          |
     |                                            |
     | default ModelToDos createModel () { |

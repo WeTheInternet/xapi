@@ -87,7 +87,12 @@ public class UiAssemblerResult {
     /**
      * An element with structure whose children define styles.
      */
-    childStyle;
+    childStyle,
+    /**
+     * Whether this element represents a root element.  No user-defined node are root nodes,
+     * this is for the meta-node that hosts ui=, shadow= or hidden= dom nodes.
+     */
+    root;
 
     private Do onRelease = Do.NOTHING;
     private Do onFinish = Do.NOTHING;
@@ -101,6 +106,17 @@ public class UiAssemblerResult {
     private boolean hidden;
     private Do defaultBehavior;
     private GeneratedUiDefinition definition;
+
+    public UiAssemblerResult() {
+
+    }
+    protected UiAssemblerResult(boolean root) {
+        this.root = root;
+    }
+
+    public boolean isRoot() {
+        return root;
+    }
 
     public boolean hasChildLayout() {
         return childLayout;
@@ -364,5 +380,14 @@ public class UiAssemblerResult {
 
     public GeneratedUiDefinition getDefinition() {
         return definition;
+    }
+
+    public static UiAssemblerResult result(GeneratedUiDefinition def, GeneratedFactory factory, AssembledElement e) {
+        final UiAssemblerResult result = new UiAssemblerResult();
+        result.setElement(e);
+        result.setFactory(factory);
+        result.setDefinition(def);
+        e.updateResult(result);
+        return result;
     }
 }

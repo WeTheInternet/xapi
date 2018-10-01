@@ -8,12 +8,10 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.StringDictionary;
 import xapi.collect.api.StringTo;
 import xapi.collect.api.StringTo.Many;
+import xapi.except.NoSuchItem;
 import xapi.inject.impl.SingletonProvider;
 import xapi.io.IOConstants;
-import xapi.io.api.CancelledException;
-import xapi.io.api.IOCallback;
-import xapi.io.api.IOMessage;
-import xapi.io.api.IORequest;
+import xapi.io.api.*;
 import xapi.io.impl.AbstractIOService;
 import xapi.io.service.IOService;
 import xapi.log.X_Log;
@@ -146,7 +144,12 @@ public class IOServiceGwt extends AbstractIOService <RequestBuilder> {
             callback.onError(new CancelledException(request));
             return;
           }
-
+          int code = resp.getStatusCode();
+          if (code == 404) {
+            callback.onError(new NoSuchItem(url));
+            return;
+          }
+          boolean success = code >= 200 && code < 300;
           final Provider<Many<String>> resultHeaders = new SingletonProvider<Many<String>>() {
 
             @Override
@@ -158,13 +161,13 @@ public class IOServiceGwt extends AbstractIOService <RequestBuilder> {
               return headers;
             }
           };
-          request.setStatus(resp.getStatusCode(), resp.getStatusText());
+          request.setStatus(code, resp.getStatusText());
           request.setValue(resp.getText());
           request.setResultHeaders(resultHeaders);
 
           final Moment callbackTime = X_Time.now();
           try {
-            callback.onSuccess(new IOMessage<String>() {
+            final IOMessage<String> msg = new IOMessage<String>() {
               @Override
               public String body() {
                 return request.getValue();
@@ -194,13 +197,18 @@ public class IOServiceGwt extends AbstractIOService <RequestBuilder> {
               public StringTo.Many<String> headers() {
                 return resultHeaders.get();
               }
-            });
+            };
+            if (success) {
+              callback.onSuccess(msg);
+            } else {
+              callback.onError(new RequestFailed(msg));
+            }
           } catch (final Throwable t) {
             X_Log.error("Error invoking IO callback on",callback,"for request",url, t, t.getStackTrace());
             callback.onError(t);
           }
           if (X_Log.loggable(logLevel)) {
-            X_Log.log(getClass(), logLevel, "Callback time for ",url,"took",X_Time.difference(callbackTime));
+            X_Log.log(IOServiceGwt.class, logLevel, "Callback time for ",url,"took",X_Time.difference(callbackTime));
           }
 
         }

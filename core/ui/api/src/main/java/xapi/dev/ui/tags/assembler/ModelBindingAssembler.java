@@ -51,10 +51,7 @@ public abstract class ModelBindingAssembler implements TagAssembler {
         String editTextBuilder = "build" + def.getTypeName();
 
 
-        final UiAssemblerResult result = new UiAssemblerResult();
-        result.setDefinition(def);
-        result.setFactory(factory);
-        result.setElement(e);
+        final UiAssemblerResult result = UiAssemblerResult.result(def, factory, e);
         final UiContainerExpr ast = e.getAst();
 
         final GeneratedUiComponent ui = assembly.getUi();

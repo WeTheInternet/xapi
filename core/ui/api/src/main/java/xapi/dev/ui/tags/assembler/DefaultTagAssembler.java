@@ -39,8 +39,9 @@ public class DefaultTagAssembler implements TagAssembler {
         AssembledElement e
     ) {
 
-        UiAssemblerResult res = new UiAssemblerResult();
-        res.setFactory(factory);
+        // TODO: route a GeneratedUiDefinition into something we can use, like:
+//        assembler.getDefinition() // doesn't exist yet
+        UiAssemblerResult res = UiAssemblerResult.result(null, factory, e);
 
         boolean printedVar = checkModelNode(e);
 

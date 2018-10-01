@@ -98,7 +98,7 @@ public class AssembledUi {
 //            rootRefs);
 //        final String newBuilder = component.getElementBuilderConstructor(namespace);
 
-        UiAssemblerResult result = new UiAssemblerResult();
+        UiAssemblerResult result = new UiAssemblerResult(true);
 
         if (uiExpr instanceof JsonContainerExpr) {
             // A ui w/ a json container must be an array,

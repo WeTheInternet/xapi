@@ -239,7 +239,13 @@ public class GeneratedUiImplementation extends GeneratedUiLayer {
                         assembler.getAssembly(), el, (UiContainerExpr) body);
                     final String getter = child.getFactory().getGetter();
                     child.getFactory().addVisibility(X_Modifier.PROTECTED);
-                    out.patternln("$1.append($2);", builder.getName(), getter);
+                    if (child.hasLogic()) {
+                        // a logical child... need to defer to it...
+                        // appendConditional
+                        out.patternln("appendConditional($1, $2);", builder.getName(), child.getFactory().getFieldName());
+                    } else {
+                        out.patternln("$1.append($2);", builder.getName(), getter);
+                    }
                 } else {
                     // Bah... we need something smarter here...
                     final String src = body.toSource(new Transformer().setShouldQuote(false));

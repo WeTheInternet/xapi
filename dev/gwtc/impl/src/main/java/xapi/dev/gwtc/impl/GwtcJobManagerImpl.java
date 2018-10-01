@@ -299,8 +299,14 @@ public class GwtcJobManagerImpl extends GwtcJobManagerAbstract {
             final CompileStrategy strategy = runner.getTable().getPublishedEvent(job).getCompileStrategy();
             CompileDir result = dir.getOutputDir();
             if (result == null) {
-                assert strategy == CompileStrategy.SKIPPED : "Result can only be null when skipping compilation";
-                monitor.updateCompileStatus(CompileMessage.Success);
+                if (strategy == CompileStrategy.SKIPPED) {
+                    monitor.updateCompileStatus(CompileMessage.Success);
+                } else {
+                    // terminal error.  Just die.
+                    logger.log(TreeLogger.ERROR, "Terminal error encountered; gwtc shutting down");
+                    die(monitor);
+                    return;
+                }
             } else {
                 sendCompilerResults(monitor, dir.getOutputModuleName(), result, opts, strategy);
             }
@@ -499,7 +505,7 @@ public class GwtcJobManagerImpl extends GwtcJobManagerAbstract {
                         boolean fresh = checkFreshness.out1();
                         final Moment freshTime = X_Time.now();
                         monitor.writeAsCompiler(Character.toString(fresh ? CompileMessage.KEY_FRESH : CompileMessage.KEY_STALE));
-                        X_Log.info(GwtcJobManagerImpl.class, "Freshness check (", fresh, ") took", diff(start),
+                        X_Log.info(GwtcJobManagerImpl.class, "Freshness check (", fresh?"passed":"failed", ") took", diff(start),
                             " time to send reply", diff(freshTime));
                         break;
                     case GwtcJobMonitor.JOB_PING:
