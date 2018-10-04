@@ -1,12 +1,11 @@
-package xapi.dev.ui.api;
+package xapi.dev.api;
 
 import com.github.javaparser.ast.TypeParameter;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
-import xapi.dev.ui.api.GeneratedUiLayer.ImplLayer;
-import xapi.fu.itr.MappedIterable;
 import xapi.fu.Maybe;
 import xapi.fu.itr.ArrayIterable;
+import xapi.fu.itr.MappedIterable;
 
 import java.util.EnumMap;
 
@@ -15,7 +14,7 @@ import java.util.EnumMap;
  */
 public class GeneratedUiGenericInfo {
 
-    public GeneratedTypeParameter setLayerName(String sysName, ImplLayer layer, String nameElement) {
+    public GeneratedTypeParameter setLayerName(String sysName, SourceLayer layer, String nameElement) {
         return getOrCreateGeneric(sysName)
             .setLayerName(layer, nameElement);
     }
@@ -75,46 +74,46 @@ public class GeneratedUiGenericInfo {
         return inputTypes.forEachValue();
     }
 
-    public boolean hasGenerics(ImplLayer layer) {
+    public boolean hasGenerics(SourceLayer layer) {
         return inputTypes.forEachValue()
                     .map(GeneratedTypeParameter::getImplNames)
                     .anyMatch(EnumMap::containsKey, layer);
     }
 
-    public MappedIterable<String> getTypeParameterNames(ImplLayer layer) {
+    public MappedIterable<String> getTypeParameterNames(SourceLayer layer) {
         return inputTypes.forEachValue()
             .filter(p -> p.getImplNames().containsKey(layer))
             .map(GeneratedTypeParameter::getTypeName)
             ;
     }
 
-    public MappedIterable<GeneratedTypeParameter> getTypeParameters(ImplLayer layer) {
+    public MappedIterable<GeneratedTypeParameter> getTypeParameters(SourceLayer layer) {
         return inputTypes.forEachValue()
             .filter(p -> p.getImplNames().containsKey(layer));
     }
 
-    public MappedIterable<String> getSystemNames(ImplLayer layer) {
+    public MappedIterable<String> getSystemNames(SourceLayer layer) {
         return inputTypes.forEachValue()
                          .filter(p->p.getImplNames().containsKey(layer))
                          .map(GeneratedTypeParameter::getSystemName)
             ;
     }
 
-    public boolean hasTypeParameter(ImplLayer layer, String systemName) {
+    public boolean hasTypeParameter(SourceLayer layer, String systemName) {
         return inputTypes.getMaybe(systemName)
                    .mapNullSafe(GeneratedTypeParameter::getImplNames)
                    .mapNullSafe(EnumMap::containsKey, layer)
                    .isPresent();
     }
 
-    public String getLayerName(ImplLayer base, String name) {
+    public String getLayerName(SourceLayer base, String name) {
         return inputTypes.getMaybe(name)
                          .mapNullSafe(GeneratedTypeParameter::getImplNames)
                          .mapNullSafe(EnumMap::get, base)
                          .ifAbsentReturn(null);
     }
 
-    public String findUnused(ImplLayer layer, boolean exposed, String ... opts) {
+    public String findUnused(SourceLayer layer, boolean exposed, String ... opts) {
         nextOp:
         for (String opt : opts) {
             for (GeneratedTypeParameter param : getTypeParameters(layer)) {

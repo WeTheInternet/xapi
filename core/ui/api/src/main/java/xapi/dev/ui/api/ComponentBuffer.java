@@ -8,6 +8,8 @@ import com.github.javaparser.ast.type.Type;
 import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
 import xapi.dev.api.ApiGeneratorContext;
+import xapi.dev.api.GeneratedUiMember;
+import xapi.dev.api.GeneratedUiModel;
 import xapi.dev.source.CanAddImports;
 import xapi.dev.source.DomBuffer;
 import xapi.dev.source.MethodBuffer;

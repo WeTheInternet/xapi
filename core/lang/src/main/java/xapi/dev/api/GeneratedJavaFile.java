@@ -1,4 +1,4 @@
-package xapi.dev.ui.api;
+package xapi.dev.api;
 
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
@@ -6,7 +6,6 @@ import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.FieldBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
-import xapi.dev.ui.tags.members.UserDefinedMethod;
 import xapi.fu.In1;
 import xapi.fu.Lazy;
 import xapi.fu.X_Fu;
@@ -14,6 +13,7 @@ import xapi.fu.itr.EmptyIterator;
 import xapi.fu.itr.SizedIterable;
 import xapi.source.X_Modifier;
 import xapi.source.X_Source;
+import xapi.source.api.HasSourceBuilder;
 import xapi.source.read.JavaModel.IsTypeDefinition;
 import xapi.source.read.SourceUtil;
 
@@ -22,7 +22,7 @@ import java.lang.reflect.Modifier;
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 2/10/17.
  */
-public class GeneratedJavaFile {
+public class GeneratedJavaFile implements HasSourceBuilder<GeneratedJavaFile> {
     private final Lazy<SourceBuilder<GeneratedJavaFile>> source;
     // lazy pointers to "next valid suffix" for newly requested fields (use getOrCreate methods for a single member per name)
     private final Lazy<StringTo<Integer>> fieldNames;
@@ -38,7 +38,7 @@ public class GeneratedJavaFile {
 
     protected final GeneratedJavaFile superType;
 
-    private final GeneratedUiComponent owner;
+    private final GeneratedTypeOwner owner;
     /**
      * Arbitrary text to append
      */
@@ -57,12 +57,12 @@ public class GeneratedJavaFile {
         return true;
     }
 
-    public GeneratedJavaFile(GeneratedUiComponent owner, String pkg, String cls) {
+    public GeneratedJavaFile(GeneratedTypeOwner owner, String pkg, String cls) {
         this(owner, null, pkg, cls);
     }
 
     @SuppressWarnings("unchecked")
-    public GeneratedJavaFile(GeneratedUiComponent owner, GeneratedJavaFile superType, String pkg, String cls) {
+    public GeneratedJavaFile(GeneratedTypeOwner owner, GeneratedJavaFile superType, String pkg, String cls) {
         this.owner = owner;
         source = Lazy.deferred1(this::createSource);
         suffix = prefix = "";
@@ -127,18 +127,20 @@ public class GeneratedJavaFile {
         return prefix;
     }
 
-    public void setPrefix(String prefix) {
+    public GeneratedJavaFile setPrefix(String prefix) {
         assert prefix != null;
         this.prefix = prefix;
+        return this;
     }
 
     public String getSuffix() {
         return suffix;
     }
 
-    public void setSuffix(String suffix) {
+    public GeneratedJavaFile setSuffix(String suffix) {
         assert suffix != null;
         this.suffix = suffix;
+        return this;
     }
 
     protected String wrapName(String className) {
@@ -157,6 +159,7 @@ public class GeneratedJavaFile {
         return builder;
     }
 
+    @Override
     public SourceBuilder<GeneratedJavaFile> getSource() {
         return source.out1();
     }
@@ -203,7 +206,7 @@ public class GeneratedJavaFile {
         }
     }
 
-    public GeneratedUiComponent getOwner() {
+    public GeneratedTypeOwner getOwner() {
         return owner;
     }
 
@@ -270,11 +273,16 @@ public class GeneratedJavaFile {
      * Instead, check with {@link GeneratedUiComponent#findUserMethod(String)},
      * to have all relevant layers of generated code checked for your method.
      */
-    protected SizedIterable<UserDefinedMethod> findMethod(String named) {
+    public SizedIterable<UserDefinedMethod> findMethod(String named) {
         if (userMethods.isUnresolved()) {
             return EmptyIterator.none();
         }
         return userMethods.out1().forEachValue(named);
 
     }
+
+    public String getConstantName() {
+        return getTypeName().replaceAll("([a-z])([A-Z])", "$1_$2").toUpperCase();
+    }
+
 }

@@ -58,6 +58,12 @@ public interface UiGeneratorService <Raw> {
 
     MappedIterable<GeneratedUiComponent> allComponents();
 
+    MappedIterable<GeneratedApi> allApis();
+
+    MappedIterable<GeneratedApi> generateApis(SourceHelper<Raw> sources,
+                                                      In1Out1<UiContainerExpr, IsQualified> type,
+                                                      UiContainerExpr ... parsed);
+
     MappedIterable<GeneratedUiComponent> generateComponents(SourceHelper<Raw> sources,
                                                             In1Out1<UiContainerExpr, IsQualified> type,
                                                             UiContainerExpr ... parsed);

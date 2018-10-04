@@ -6,12 +6,11 @@ import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
-import xapi.dev.api.ApiGeneratorContext;
+import xapi.dev.api.*;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.LocalVariable;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
-import xapi.dev.ui.impl.AbstractUiImplementationGenerator;
 import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.dev.ui.tags.assembler.AssembledElement;
 import xapi.dev.ui.tags.assembler.AssembledUi;
@@ -19,11 +18,7 @@ import xapi.dev.ui.tags.assembler.UiAssembler;
 import xapi.dev.ui.tags.assembler.UiAssemblerResult;
 import xapi.except.NotYetImplemented;
 import xapi.fu.*;
-import xapi.fu.itr.CachingIterator;
-import xapi.fu.itr.Chain;
-import xapi.fu.itr.ChainBuilder;
-import xapi.fu.itr.SizedIterable;
-import xapi.fu.itr.MappedIterable;
+import xapi.fu.itr.*;
 import xapi.reflect.X_Reflect;
 import xapi.source.X_Modifier;
 import xapi.source.read.JavaModel.IsTypeDefinition;
@@ -40,7 +35,7 @@ import static xapi.util.X_String.toTitleCase;
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 2/10/17.
  */
-public class GeneratedUiImplementation extends GeneratedUiLayer {
+public class GeneratedUiImplementation extends ImplementationLayer {
 
     public enum RequiredMethodType {
         NEW_BUILDER, CREATE_FROM_MODEL, CREATE_FROM_STYLE, CREATE, CREATE_NATIVE, CREATE_FROM_MODEL_AND_STYLE
@@ -51,10 +46,9 @@ public class GeneratedUiImplementation extends GeneratedUiLayer {
     private final EnumMap<RequiredMethodType, Out2<GeneratedUiMethod, MethodCallExpr>> requiredMethods;
     private final StringTo<RequiredChildFactory> childFactories;
     private final ChainBuilder<In2<GeneratedUiImplementation, MethodBuffer>> callbackWriters;
-    private AbstractUiImplementationGenerator<?> generator;
 
-    public GeneratedUiImplementation(GeneratedUiComponent owner, String pkg) {
-        super(owner.getApi(), pkg, owner.getApi().getTypeName(), ImplLayer.Impl, owner);
+    public GeneratedUiImplementation(GeneratedTypeOwner owner, String pkg) {
+        super(owner.getApi(), pkg, owner.getApi().getTypeName(), SourceLayer.Impl, owner);
         apiName = owner.getApi().getWrappedName();
         implName = owner.getBase().getWrappedName();
         setSuffix("Component");
@@ -194,6 +188,13 @@ public class GeneratedUiImplementation extends GeneratedUiLayer {
             return 100;
         }
         return 0;
+    }
+
+    @Override
+    public GeneratedUiComponent getOwner() {
+        // our constructor makes this safe
+        assert super.getOwner() instanceof GeneratedUiComponent : "GeneratedUiImplementation must be owned by GeneratedUiComponent!";
+        return (GeneratedUiComponent) super.getOwner();
     }
 
     public void addNativeMethod(
@@ -379,22 +380,6 @@ public class GeneratedUiImplementation extends GeneratedUiLayer {
     public void registerCallbackWriter(In2<GeneratedUiImplementation, MethodBuffer> callback) {
         assert callbackWriters.noneMatch(callback::equals);
         callbackWriters.add(callback);
-    }
-
-    public String mangleName(GeneratedUiDefinition def) {
-        return generator.getImplName(def.getPackageName(), def.getApiName());
-    }
-
-    public String mangleName(String pkgName, String typeName) {
-        return generator.getImplName(pkgName, typeName);
-    }
-
-    public void setGenerator(AbstractUiImplementationGenerator<?> generator) {
-        this.generator = generator;
-    }
-
-    public AbstractUiImplementationGenerator<?> getGenerator() {
-        return generator;
     }
 
     public void addCss(Expression attr) {

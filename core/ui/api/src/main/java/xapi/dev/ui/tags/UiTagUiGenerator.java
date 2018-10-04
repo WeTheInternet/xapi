@@ -6,6 +6,8 @@ import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import xapi.dev.api.ApiGeneratorContext;
+import xapi.dev.api.GeneratedUiMember;
+import xapi.dev.api.GeneratedUiModel;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.FieldBuffer;
 import xapi.dev.source.MethodBuffer;

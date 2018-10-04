@@ -1,4 +1,4 @@
-package xapi.dev.ui.tags.members;
+package xapi.dev.api;
 
 import com.github.javaparser.ast.body.BodyDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;

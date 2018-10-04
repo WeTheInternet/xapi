@@ -1,6 +1,6 @@
 package xapi.jre.ui.impl;
 
-import xapi.dev.ui.api.GeneratedUiComponent;
+import xapi.dev.api.GeneratedTypeOwner;
 import xapi.dev.ui.api.GeneratedUiImplementation;
 
 /**
@@ -8,7 +8,7 @@ import xapi.dev.ui.api.GeneratedUiImplementation;
  */
 public class GeneratedJavaFxComponent extends GeneratedUiImplementation {
 
-    public GeneratedJavaFxComponent(GeneratedUiComponent ui) {
+    public GeneratedJavaFxComponent(GeneratedTypeOwner ui) {
         super(ui, ui.getPackageName());
     }
 

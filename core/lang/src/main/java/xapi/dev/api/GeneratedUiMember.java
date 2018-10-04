@@ -1,4 +1,4 @@
-package xapi.dev.ui.api;
+package xapi.dev.api;
 
 import com.github.javaparser.ast.HasAnnotationExprs;
 import com.github.javaparser.ast.expr.AnnotationExpr;

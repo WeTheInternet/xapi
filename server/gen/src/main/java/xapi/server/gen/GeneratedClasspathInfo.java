@@ -5,11 +5,11 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.dev.api.AbstractClasspathProvider;
 import xapi.dev.api.Classpath;
+import xapi.dev.api.GeneratedJavaFile;
 import xapi.dev.source.CanAddImports;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.ui.api.ComponentBuffer;
-import xapi.dev.ui.api.GeneratedJavaFile;
 import xapi.dev.ui.api.GeneratedUiComponent;
 import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.fu.Immutable;
@@ -195,7 +195,7 @@ public class GeneratedClasspathInfo {
             final ComponentBuffer source = getBuffer();
             final GeneratedUiComponent component = source.getGeneratedComponent();
             String ident = X_Source.javaSafeName(name);
-            GeneratedJavaFile layer = component.getOrCreateExtraLayer(ident, component.getClassName());
+            GeneratedJavaFile layer = component.getOrCreateExtraLayer(ident, component.getTypeName());
             // TODO: check expr for annotation to influence naming
             layer.setPrefix("Dep");
             if (!layer.getWrappedName().toLowerCase().contains(ident.toLowerCase())) {

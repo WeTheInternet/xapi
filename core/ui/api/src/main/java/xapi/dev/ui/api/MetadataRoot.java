@@ -9,6 +9,7 @@ import xapi.dev.source.NameGen;
 import xapi.fu.In1Out1;
 import xapi.fu.Lazy;
 import xapi.fu.Maybe;
+import xapi.fu.itr.SizedIterable;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 7/26/18.
@@ -19,6 +20,7 @@ public class MetadataRoot {
     private final ClassTo<Lazy<?>> factories;
     private final StringTo<StringTo<NodeTransformer>> fieldRenames;
     private final NameGen names;
+    private SizedIterable<String> recommendedImports;
     private ApiGeneratorContext<?> ctx;
     private GeneratedUiComponent generatedComponent;
 
@@ -102,5 +104,17 @@ public class MetadataRoot {
         final Lazy<?> result = Lazy.deferred1(factory.supply(key));
         factories.put(key, result);
         return (T) result.out1();
+    }
+
+    public void addRecommendedImports(SizedIterable<String> recommendedImports) {
+        if (this.recommendedImports == null) {
+            this.recommendedImports = recommendedImports;
+        } else {
+            this.recommendedImports = this.recommendedImports.plus(recommendedImports);
+        }
+    }
+
+    public SizedIterable<String> getRecommendedImports() {
+        return recommendedImports;
     }
 }

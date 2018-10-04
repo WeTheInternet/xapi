@@ -12,12 +12,14 @@ import xapi.components.impl.WebComponentBuilder;
 import xapi.components.impl.WebComponentSupport;
 import xapi.components.impl.WebComponentVersion;
 import xapi.dev.api.ApiGeneratorContext;
+import xapi.dev.api.GeneratedTypeOwner;
+import xapi.dev.api.GeneratedUiMember;
+import xapi.dev.api.SourceLayer;
 import xapi.dev.source.CanAddImports;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.FieldBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.ui.api.*;
-import xapi.dev.ui.api.GeneratedUiLayer.ImplLayer;
 import xapi.dev.ui.api.UiComponentGenerator.UiGenerateMode;
 import xapi.dev.ui.impl.AbstractUiImplementationGenerator;
 import xapi.dev.ui.impl.InterestingNodeFinder.InterestingNodeResults;
@@ -43,7 +45,7 @@ import static xapi.dev.ui.api.UiGeneratorPlatform.PLATFORM_WEB_COMPONENT;
 @UiGeneratorPlatform(PLATFORM_WEB_COMPONENT)
 public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator <WebComponentContext> {
 
-    private static final In1Out1<GeneratedUiComponent,GeneratedUiImplementation> NEW_COMPONENT = GeneratedWebComponent::new;
+    private static final In1Out1<GeneratedTypeOwner,GeneratedUiImplementation> NEW_COMPONENT = GeneratedWebComponent::new;
 
     private String configType;
     private Lazy<UiNamespace> namespace = Lazy.deferred1(()->
@@ -149,7 +151,7 @@ public class XapiWebComponentGenerator extends AbstractUiImplementationGenerator
             .makeStatic().makePrivate();
         final FieldBuffer getUi = out.createField(i1o1 + apiGenerics, "getUi").makeStatic().makePrivate();
 
-        final String genericApi = api.getLocalName(generator, ImplLayer.Impl, ns, out);
+        final String genericApi = api.getLocalName(generator, SourceLayer.Impl, ns, out);
 
         final String apiOptType = opts + "<" + element + ", " + (
             model.isPresent() ?

@@ -6,13 +6,16 @@ import com.github.javaparser.ast.expr.JsonContainerExpr;
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
+import jsinterop.annotations.JsMethod;
+import jsinterop.annotations.JsProperty;
 import xapi.collect.api.IntTo;
-import xapi.dev.api.ApiGeneratorContext;
+import xapi.dev.api.*;
 import xapi.dev.source.ClassBuffer;
+import xapi.dev.source.MethodBuffer;
 import xapi.dev.ui.api.*;
 import xapi.dev.ui.impl.UiGeneratorTools;
-import xapi.fu.In1Out1;
 import xapi.fu.Out1;
+import xapi.fu.Out2;
 import xapi.model.X_Model;
 import xapi.model.api.KeyBuilder;
 import xapi.model.api.ModelBuilder;
@@ -21,9 +24,9 @@ import xapi.util.X_String;
 
 import java.lang.reflect.Modifier;
 
-import static xapi.dev.ui.api.UiNamespace.METHOD_NEW_MODEL;
-import static xapi.dev.ui.api.UiNamespace.METHOD_NEW_MODEL_BUILDER;
-import static xapi.dev.ui.api.UiNamespace.METHOD_NEW_MODEL_KEY;
+import static xapi.dev.ui.api.UiNamespace.*;
+import static xapi.source.X_Modifier.DEFAULT;
+import static xapi.source.X_Modifier.STATIC;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 2/10/17.
@@ -48,30 +51,70 @@ public class UiTagModelGenerator extends UiFeatureGenerator {
         ContainerMetadata me,
         UiAttrExpr attr
     ) {
-        final GeneratedUiComponent component = me.getGeneratedComponent();
-        final GeneratedUiApi api = component.getApi();
-        final GeneratedUiBase base = component.getBase();
-        final GeneratedUiModel model = api.getModel();
-        final ApiGeneratorContext ctx = me.getContext();
+        final GeneratedTypeOwner component = me.getGeneratedComponent();
 
-        owner.maybeAddImports(tools, ctx, model, attr);
-        final String modelName = api.getModelName();
-        final In1Out1<Type, String> apiFactory = Type::toSource;
-        final In1Out1<Type, String> baseFactory = Type::toSource;
-        api.addExtension(api.getPackageName(), api.getModelName(),
-            component.getBase().getModelName(), apiFactory, baseFactory);
-        final ClassBuffer out = api.getSource().getClassBuffer();
+        generateModel(tools, me.getContext(), component, component.getPublicModel(), attr, false);
+
+        return UiVisitScope.FEATURE_NO_CHILDREN;
+    }
+
+    public static void generateModel(
+        UiGeneratorTools tools,
+        ApiGeneratorContext ctx,
+        GeneratedTypeOwner component,
+        final GeneratedUiModel model,
+        UiAttrExpr attr,
+        boolean apiMode
+    ) {
+        // Need to refactor these a little, so they make sense for use by xapi.dev.ui.api.GeneratedApi.addModels()
+        // for GeneratedApi, we'll likely want model related convenience methods in api+base,
+        // but the actual GeneratedUiModel will need to be a newly created type for each invocation of this method
+        // (ui components only have one public model, and it is bound to the api|base classes.
+        final GeneratedTypeWithModel api = component.getApi();
+
+        if (!apiMode) {
+            component.getBase().ensureFieldDefined(model.getWrappedName(), "model", false);
+        }
+
+        tools.maybeAddImports(ctx, model, attr);
+        final String modelName = model.getWrappedName();
+        final ClassBuffer apiOut = api.getSource().getClassBuffer();
         // TODO: check for custom type hierarchy, and see if somebody defines getModel().
         // right now that is implicitly done by extending AbstractModelComponent
 
+        // TODO: create an ApiWriter interface that we make callers pass in here;
+        // anywhere we check apiMode goes into a method of that interface.
+        int mod = apiMode ? STATIC : DEFAULT;
 
-       out.createMethod("default String getModelType()")
-            .returnValue("\"" + X_String.firstCharToLowercase(api.getModel().getTypeName()) + "\"");
+        final String modelType = X_String.firstCharToLowercase(model.getTypeName());
+        final String apiType = X_String.firstCharToLowercase(api.getTypeName());
+        MethodBuffer mthd = apiOut.createMethod(
+            mod, String.class,
+            "get" + (apiMode ? modelName + "Type" : "ModelType")
+        ).returnValue("\"" + modelType + "\"");
 
-       out.createMethod("default " + modelName + " createModel()")
-            .returnValue(out.addImportStatic(X_Model.class, "create") + "(" + modelName + ".class)");
+        if (apiMode) {
+            // TODO: move this into a ApiImplGenerator (wow, what a java-esque name!)
+            // @JsProperty(namespace = "xapi.model", name = "newType")
+            mthd.withAnnotation(JsProperty.class,
+                Out2.out2Immutable("namespace", "\"" + apiType + ".model\""),
+                Out2.out2Immutable("name", "\"" + model.getTypeName() + "\"")
+            );
+        }
 
-        base.ensureFieldDefined(model.getWrappedName(), "model", false);
+        mthd = apiOut.createMethod(
+            mod, modelName,
+            "create" + (apiMode ? modelName : "Model"))
+            .returnValue(apiOut.addImportStatic(X_Model.class, "create") + "(" + modelName + ".class)");
+
+        if (apiMode) {
+            // @JsMethod(namespace = "xapi.model", name = "newType")
+            mthd.withAnnotation(JsMethod.class,
+                Out2.out2Immutable("namespace", "\"" + apiType + ".model\""),
+                Out2.out2Immutable("name", "\"new" + model.getTypeName() + "\"")
+            );
+
+        }
 
         boolean immutable = attr.hasAnnotationBool(true, "immutable");
         boolean isPublic = attr.hasAnnotationBool(true, "public");
@@ -79,9 +122,8 @@ public class UiTagModelGenerator extends UiFeatureGenerator {
         final Expression expr = attr.getExpression();
         if (expr instanceof JsonContainerExpr) {
             JsonContainerExpr json = (JsonContainerExpr) expr;
-            final GeneratedUiModel apiModel = api.getModel();
 
-            final ClassBuffer modOut = api.getModel().getSource().getClassBuffer();
+            final ClassBuffer modOut = model.getSource().getClassBuffer();
             json.getPairs().forEach(pair->{
                 String rawFieldName = tools.resolveString(ctx, pair.getKeyExpr());
                 if (rawFieldName.matches("[0-9]+")) {
@@ -93,7 +135,7 @@ public class UiTagModelGenerator extends UiFeatureGenerator {
                 if (typeExpr instanceof DynamicDeclarationExpr) {
                     // Must be a default method.
                     DynamicDeclarationExpr method = (DynamicDeclarationExpr) typeExpr;
-                    owner.printMember(tools, api.getModel(), me, method);
+                    UiTagGenerator.printMember(tools, model, ctx, component, method);
                 } else {
                     Type type = tools.methods().$type(tools, ctx, typeExpr).getType();
                     // TODO smart import lookups...
@@ -127,27 +169,26 @@ public class UiTagModelGenerator extends UiFeatureGenerator {
                                     break;
                             }
                     }
-                    final GeneratedUiField field = apiModel.addField(tools, type, rawFieldName, isImmutable);
+                    final GeneratedUiMember field = model.addField(tools, type, rawFieldName, isImmutable);
                     // copy imports
                     field.copyImports(pair);
                     // check if we should make this field public or not...
-                    if (isExposed) {
-                        String t = field.importType(api.getSource());
+                    if (!apiMode && isExposed) {
+                        // api mode never exposes model fields because it does not have a getModel(); api is only a factory
+                        String t = field.importType(apiOut);
                         // try to re-qualify the type t...
                         t = modOut.getImports().qualify(t);
-                        t = api.getSource().addImport(t);
-                        api.getSource().getClassBuffer()
-                            .createMethod("default " + t + " " + field.getterName() + "()")
+                        t = apiOut.addImport(t);
+                        apiOut
+                            .createMethod(DEFAULT, t, field.getterName())
                             .returnValue("getModel()." + field.getterName() + "()");
                     }
-                    modOut.getImports().reserveSimpleName(rawFieldName);
+//                    modOut.getImports().reserveSimpleName(rawFieldName);
                 }
             });
 
             // Create some basic utilities in the model interface
-            String constantName = api.getConstantName();
-//            String modelField = api.getModelFieldName();
-            String modelType = api.getModelName();
+            String constantName = model.getConstantName();
 
             modOut.createField(String.class, "MODEL_" + constantName)
                 .setInitializer("\"" + X_String.firstCharToLowercase(model.getTypeName()) + "\"");
@@ -163,22 +204,24 @@ public class UiTagModelGenerator extends UiFeatureGenerator {
                 .setInitializer(forType + "(MODEL_" + constantName + ")");
 
             modOut.createMethod(Modifier.STATIC, keyBuilder, METHOD_NEW_MODEL_KEY)
-                  .returnValue(constantName + "_KEY_BUILDER" + ".out1()");
+                .returnValue(constantName + "_KEY_BUILDER" + ".out1()");
 
-            modOut.createMethod(Modifier.STATIC, modBuilder + "<" + modelType + ">", METHOD_NEW_MODEL_BUILDER)
-                  .returnValue(constantName + "_MODEL_BUILDER" + ".out1()");
+            modOut.createMethod(Modifier.STATIC, modBuilder + "<" + modelName + ">", METHOD_NEW_MODEL_BUILDER)
+                .returnValue(constantName + "_MODEL_BUILDER" + ".out1()");
 
-            modOut.createMethod(Modifier.STATIC, modelType, METHOD_NEW_MODEL)
-                  .returnValue(METHOD_NEW_MODEL_BUILDER + "().buildModel()");
+            modOut.createMethod(Modifier.STATIC, modelName, METHOD_NEW_MODEL)
+                .returnValue(METHOD_NEW_MODEL_BUILDER + "().buildModel()");
 
-            modOut.createField(out1 + "<" + modBuilder + "<" + modelType + ">>", constantName + "_MODEL_BUILDER")
+            modOut.createField(out1 + "<" + modBuilder + "<" + modelName + ">>", constantName + "_MODEL_BUILDER")
                 .getInitializer()
-                .patternln("()->$1(newKey(), ()->$2($3.class));", build, create, modelType);
+                .patternln("()->$1(newKey(), ()->$2($3.class));", build, create, modelName);
+
+            if (apiMode) {
+                component.addExtraLayer(model.getQualifiedName(), model);
+            }
 
         } else {
             throw new IllegalArgumentException("<define-tag model={mustBe: Jso}  />; you sent " + tools.debugNode(attr));
         }
-
-        return UiVisitScope.FEATURE_NO_CHILDREN;
     }
 }

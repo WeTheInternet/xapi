@@ -31,6 +31,7 @@ import xapi.fu.itr.CountedIterator;
 import xapi.fu.itr.MappedIterable;
 import xapi.log.X_Log;
 import xapi.source.X_Source;
+import xapi.source.api.HasSourceBuilder;
 import xapi.source.write.Template;
 import xapi.util.X_String;
 
@@ -49,7 +50,7 @@ import static com.github.javaparser.ast.expr.TemplateLiteralExpr.templateLiteral
  */
 public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extends Rethrowable {
 
-    default void addTypeParams(Ctx ctx, SourceBuilder<Ctx> builder, Expression typeParams) {
+    default void addTypeParams(Ctx ctx, SourceBuilder<?> builder, Expression typeParams) {
         resolveToLiterals(ctx, typeParams)
             .forEachValue(builder.getClassBuffer()::addGenerics);
     }
@@ -1291,5 +1292,41 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
             final Expression val = pair.getValue();
             return resolveToLiterals(ctx, val);
         }).flatten(IntTo::forEach).toArray(String[]::new);
+    }
+
+    default void maybeAddImports(
+        Ctx ctx,
+        HasSourceBuilder<?> api,
+        UiAttrExpr attr
+    ) {
+        // This is a really handy method... we should move it somewhere upstream for others to enjoy.
+        // like putting it in GeneratedJavaFile, or UiComponentGenerator (or both)
+        attr.getAnnotationsMatching(anno->X_String.containsAny(anno.getNameString().toLowerCase(), "import", "importstatic", "staticimport"))
+            .forAll(anno->anno.getMembers().forEach(pair->{
+                boolean isStatic = anno.getNameString().toLowerCase().contains("static");
+                In1<String> addImport = isStatic ? api.getSource()::addImportStatic : api.getSource()::addImport;
+                final Expression resolvedImport = resolveVar(ctx, pair.getValue());
+                String toImport;
+                if (resolvedImport instanceof StringLiteralExpr) {
+                    toImport = ((StringLiteralExpr)resolvedImport).getValue();
+                    addImport.in(toImport);
+                } else if (resolvedImport instanceof TemplateLiteralExpr) {
+                    toImport = resolveTemplate(ctx, (TemplateLiteralExpr) resolvedImport);
+                    addImport.in(toImport);
+                } else if (resolvedImport instanceof FieldAccessExpr) {
+                    final FieldAccessExpr asField = (FieldAccessExpr) resolvedImport;
+                    toImport = resolveString(ctx, asField.getScope()) + "." + asField.getField();
+                    addImport.in(toImport);
+                } else if (resolvedImport instanceof ArrayInitializerExpr) {
+                    ArrayInitializerExpr many = (ArrayInitializerExpr) resolvedImport;
+                    for (Expression expr : many.getValues()) {
+                        toImport = resolveString(ctx, expr);
+                        addImport.in(toImport);
+                    }
+                } else {
+                    throw new IllegalArgumentException("Unhandled @Import value " + debugNode(resolvedImport));
+                }
+            }));
+
     }
 }

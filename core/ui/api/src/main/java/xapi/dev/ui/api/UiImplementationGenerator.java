@@ -1,11 +1,8 @@
 package xapi.dev.ui.api;
 
 import com.github.javaparser.ast.expr.UiContainerExpr;
-import xapi.dev.api.ApiGeneratorContext;
-import xapi.dev.ui.impl.AbstractUiGeneratorService;
-import xapi.dev.ui.impl.UiGeneratorTools;
-import xapi.dev.ui.impl.InterestingNodeFinder.InterestingNodeResults;
 import xapi.dev.ui.api.UiComponentGenerator.UiGenerateMode;
+import xapi.dev.ui.impl.InterestingNodeFinder.InterestingNodeResults;
 
 /**
  * Instances of a {@link UiImplementationGenerator} are responsible
@@ -18,13 +15,7 @@ import xapi.dev.ui.api.UiComponentGenerator.UiGenerateMode;
  *
  * Created by James X. Nelson (james @wetheinter.net) on 6/28/16.
  */
-public interface UiImplementationGenerator {
-
-    String getImplName(String pkgName, String className);
-
-    UiGeneratorService getGenerator();
-
-    UiGeneratorTools getTools();
+public interface UiImplementationGenerator extends ImplementationGenerator <GeneratedUiComponent, GeneratedUiImplementation> {
 
     GeneratedUiImplementation generateComponent(
         ContainerMetadata metadata,
@@ -41,8 +32,6 @@ public interface UiImplementationGenerator {
     void spyOnInterestingNodes(ComponentBuffer component, InterestingNodeResults interestingNodes);
 
     void spyOnNewComponent(ComponentBuffer component);
-
-    GeneratedUiImplementation getImpl(GeneratedUiComponent component);
 
     UiGenerateMode getMode(ComponentBuffer component, ContainerMetadata metadata);
 

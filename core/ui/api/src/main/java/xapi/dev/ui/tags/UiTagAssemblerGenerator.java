@@ -4,6 +4,9 @@ import com.github.javaparser.ast.expr.BooleanLiteralExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import xapi.dev.api.ApiGeneratorContext;
+import xapi.dev.api.GeneratedJavaFile;
+import xapi.dev.api.GeneratedUiMember;
+import xapi.dev.api.GeneratedUiModel;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.FieldBuffer;
 import xapi.dev.source.LocalVariable;
@@ -42,11 +45,10 @@ public class UiTagAssemblerGenerator extends UiFeatureGenerator {
         UiAttrExpr attr
     ) {
         final GeneratedUiComponent component = me.getGeneratedComponent();
-        final GeneratedUiApi api = component.getApi();
-        final GeneratedUiBase base = component.getBase();
+        final GeneratedUiLayer api = component.getApi();
         final GeneratedUiModel model = api.getModel();
         final ApiGeneratorContext ctx = me.getContext();
-        owner.maybeAddImports(tools, ctx, model, attr);
+        tools.maybeAddImports(ctx, model, attr);
 
         final Expression resolved = tools.resolveVar(
             source.getContext(),
@@ -58,7 +60,7 @@ public class UiTagAssemblerGenerator extends UiFeatureGenerator {
                 final GeneratedJavaFile layer = component.getOrCreateExtraLayer(
                     "assembler",
                     "xapi.dev.gen.assembler",
-                    component.getClassName()
+                    component.getTypeName()
                 );
 
                 layer.setSuffix("Assembler");
@@ -93,7 +95,7 @@ public class UiTagAssemblerGenerator extends UiFeatureGenerator {
                     final LocalVariable local = definition.newVariable(GeneratedUiDefinition.class, "def");
                     local.initConstructorLns(
                         "\n  " + javaQuote(component.getPackageName())
-                        + "\n  ," + javaQuote(component.getClassName())
+                        + "\n  ," + javaQuote(component.getTypeName())
                         + "\n  ," + javaQuote(component.getTagName())
                         + "\n  ," + javaQuote(component.getApi().getWrappedName())
                         + "\n  ," + javaQuote(component.getBase().getWrappedName())

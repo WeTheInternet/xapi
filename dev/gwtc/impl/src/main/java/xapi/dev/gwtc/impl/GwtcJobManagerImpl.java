@@ -2,19 +2,14 @@ package xapi.dev.gwtc.impl;
 
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
-import xapi.dev.gwtc.api.GwtcJob;
-import xapi.dev.gwtc.api.GwtcJobMonitor;
+import xapi.dev.gwtc.api.*;
 import xapi.dev.gwtc.api.GwtcJobMonitor.CompileMessage;
-import xapi.dev.gwtc.api.GwtcService;
-import xapi.dev.gwtc.api.IsAppSpace;
 import xapi.except.NotYetImplemented;
-import xapi.fu.Do;
+import xapi.fu.*;
 import xapi.fu.Do.DoUnsafe;
-import xapi.fu.In1Out1;
-import xapi.fu.Mutable;
 import xapi.fu.Out1.Out1Unsafe;
-import xapi.fu.X_Fu;
 import xapi.fu.itr.ArrayIterable;
+import xapi.gwtc.api.CompiledDirectory;
 import xapi.gwtc.api.GwtManifest;
 import xapi.inject.X_Inject;
 import xapi.log.X_Log;
@@ -554,6 +549,11 @@ public class GwtcJobManagerImpl extends GwtcJobManagerAbstract {
      */
     protected void die(GwtcJobMonitor monitor) {
         monitor.updateCompileStatus(CompileMessage.Destroyed);
+        // Tell anyone waiting that we're going away...
+        callbacks.removeWhileTrue((key, callback)->{
+            callback.forAll(In2::in, (CompiledDirectory)null, new JobCanceledException());
+            return true;
+        });
         killJobs();
         X_Log.info(GwtcJobMonitorImpl.class, "Gwtc job manager told to die", this);
     }

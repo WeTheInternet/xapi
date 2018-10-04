@@ -10,7 +10,7 @@ import java.lang.reflect.Modifier;
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 6/7/17.
  */
-public class ApiOnlyGenerator extends AbstractUiImplementationGenerator<ApiOnlyGeneratorContext> {
+public class ApiOnlyUiGenerator extends AbstractUiImplementationGenerator<ApiOnlyGeneratorContext> {
 
     private boolean uiStub;
 
@@ -63,7 +63,7 @@ public class ApiOnlyGenerator extends AbstractUiImplementationGenerator<ApiOnlyG
         return uiStub;
     }
 
-    public ApiOnlyGenerator setUiStub(boolean uiStub) {
+    public ApiOnlyUiGenerator setUiStub(boolean uiStub) {
         this.uiStub = uiStub;
         return this;
     }

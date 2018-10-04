@@ -10,6 +10,8 @@ import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.ReferenceType;
 import com.github.javaparser.ast.type.Type;
 import xapi.dev.api.ApiGeneratorContext;
+import xapi.dev.api.GeneratedTypeParameter;
+import xapi.dev.api.GeneratedUiModel;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.ui.api.*;
 import xapi.dev.ui.api.GeneratedUiImplementation;

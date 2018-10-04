@@ -3,7 +3,6 @@ package xapi.dev.ui.impl;
 import com.github.javaparser.ASTHelper;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseException;
-import com.github.javaparser.TokenMgrError;
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import xapi.collect.X_Collect;
@@ -16,16 +15,16 @@ import xapi.dev.resource.impl.StringDataResource;
 import xapi.dev.scanner.api.ClasspathScanner;
 import xapi.dev.scanner.impl.ClasspathResourceMap;
 import xapi.dev.scanner.impl.ClasspathScannerDefault;
-import xapi.dev.ui.api.GeneratedUiComponent;
-import xapi.dev.ui.api.GeneratedUiImplementation;
-import xapi.dev.ui.api.UiConstants;
-import xapi.dev.ui.api.UiGeneratorService;
+import xapi.dev.ui.api.*;
 import xapi.file.X_File;
+import xapi.fu.In1Out1;
+import xapi.fu.In2;
 import xapi.fu.Lazy;
-import xapi.fu.itr.MappedIterable;
 import xapi.fu.X_Fu;
 import xapi.fu.itr.Chain;
 import xapi.fu.itr.ChainBuilder;
+import xapi.fu.itr.MappedIterable;
+import xapi.lang.oracle.AstOracle;
 import xapi.log.X_Log;
 import xapi.reflect.X_Reflect;
 import xapi.source.X_Source;
@@ -109,12 +108,12 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
                 if (delete || original.exists()) {
                     result = backup.delete();
                     if (!result) {
-                        System.err.println("Unable to cleanup backup file " + backup);
+                        X_Log.trace(ClasspathComponentGenerator.class, "Unable to cleanup backup file " + backup);
                     }
                 } else {
                     result = backup.renameTo(original);
                     if (!result) {
-                        System.err.println("Unable to restore backup file " + backup);
+                        X_Log.error(ClasspathComponentGenerator.class, "Unable to restore backup file " + backup);
                     }
                 }
             });
@@ -135,6 +134,8 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
         final ClasspathResourceMap results = scan(scanner, getClassLoader());
         X_Log.trace(TAG, "Classpath scan returned in ", Lazy.deferred1(()->X_Time.difference(now)));
         ChainBuilder<UiContainerExpr> tagDefinitions = Chain.startChain();
+        ChainBuilder<UiContainerExpr> apiDefinitions = Chain.startChain();
+
         for (StringDataResource xapiFile : results.getAllResources()) {
             X_Log.trace(TAG, "Processing " , xapiFile.getResourceName());
             String content = xapiFile.readAll();
@@ -142,29 +143,8 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
             try {
                 parsed = JavaParser.parseUiContainer(xapiFile.getResourceName(), content);
             } catch (ParseException|Error e) {
-                if (content.startsWith("<define-tag")) {
-                    int line = 1;
-                    if (e instanceof ParseException) {
-                        ParseException ex = (ParseException) e;
-                        if (ex.currentToken == null) {
-                            // grep line # from string
-                            try {
-                                String msg = ex.getMessage();
-                                int last = msg.lastIndexOf(" line ") + 6;
-                                line = Integer.parseInt( msg.substring(last, msg.indexOf(' ', last+1)) );
-                            } catch (Exception ignored) {}
-                        } else {
-                            // use line # from token
-                            line = ex.currentToken.beginLine;
-                        }
-                    } else if (e instanceof TokenMgrError) {
-                        TokenMgrError ex = (TokenMgrError) e;
-                        // do some string parsing...
-                        try {
-                            final String val = ex.getMessage().split("error at line ")[1].split(",")[0];
-                            line = Integer.parseInt(val);
-                        } catch (ArrayIndexOutOfBoundsException | NumberFormatException ignored) {}
-                    }
+                if (content.startsWith("<define-")) {
+                    int line = AstOracle.findLine(e);
                     final String link = X_Source.pathToLogLink(xapiFile.getResourceName(),line);
                     throw new RuntimeException(link + " parser error", e);
                 }
@@ -173,7 +153,9 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
             if (!isAllowed(xapiFile, parsed)) {
                 continue;
             }
-            if (parsed.getName().endsWith("define-tag")) {
+            boolean defineTag = parsed.getName().startsWith("define-tag");
+            boolean defineApi = parsed.getName().startsWith("define-api");
+            if (defineTag || defineApi) {
                 String pkg = xapiFile.getResourceName();
                 int ind = pkg.lastIndexOf('/');
                 String type = pkg.substring(ind+1).replace(".xapi", "");
@@ -190,27 +172,56 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
                 // We have a tag definition; lets create a component!
                 parsed.addExtra(EXTRA_RESOURCE_PATH, pkg);
                 parsed.addExtra(UiConstants.EXTRA_FILE_NAME, type);
-                tagDefinitions.add(parsed);
+                if (defineTag) {
+                    tagDefinitions.add(parsed);
+                } else  {
+                    //noinspection ConstantConditions
+                    assert defineApi : "if you addde more conditions to enter this block of code, " +
+                        "you need to add another `else if` block here";
+                    apiDefinitions.add(parsed);
+                }
             }
         }
-        final MappedIterable<GeneratedUiComponent> result = service.generateComponents(
-            sources,
-            ui->new IsQualified(
-                ASTHelper.extractStringValue(
-                    ui.getAttribute("package")
-                        .ifAbsentSupply(UiAttrExpr::of, "package", ui.<String>getExtra(EXTRA_RESOURCE_PATH))
-                        .getExpression()
-                ),
-                ASTHelper.extractStringValue(
-                    ui.getAttribute("type")
-                        .ifAbsentSupply(UiAttrExpr::of, "type", ui.<String>getExtra(EXTRA_FILE_NAME))
-                        .getExpression()
-                )
+
+        final In1Out1<UiContainerExpr, IsQualified> typeResolver = ui->new IsQualified(
+            ASTHelper.extractStringValue(
+                ui.getAttribute("package")
+                    .ifAbsentSupply(UiAttrExpr::of, "package", ui.<String>getExtra(EXTRA_RESOURCE_PATH))
+                    .getExpression()
             ),
-            tagDefinitions.toArray(UiContainerExpr[]::new)
+            ASTHelper.extractStringValue(
+                ui.getAttribute("type")
+                    .ifAbsentSupply(UiAttrExpr::of, "type", ui.<String>getExtra(EXTRA_FILE_NAME))
+                    .getExpression()
+            )
         );
 
+        final MappedIterable<GeneratedApi> apis = service.generateApis(
+            sources,
+            typeResolver,
+            apiDefinitions.toArray(UiContainerExpr.class)
+        );
+        // first, generate apis.  This lets one api file add imports / metadata for all generated components.
         int size = 0;
+        for (GeneratedApi generated : apis) {
+            size ++;
+            X_Log.info(
+                "Generated ", generated.getQualifiedName(),
+                X_Source.pathToLogLink(
+                    (generated.isBaseResolved() ? generated.getBase() : generated.getApi()).getQualifiedName()
+                .replace('.', '/') + ".java", 30)
+            );
+        }
+        final Moment apisDone = X_Time.now();
+        X_Log.info(TAG, "Generated " + size + " apis in ", X_Time.difference(start, apisDone), " from ", apiDefinitions.size(), "definitions");
+
+
+        final MappedIterable<GeneratedUiComponent> result = service.generateComponents(
+            sources,
+            typeResolver,
+            tagDefinitions.toArray(UiContainerExpr.class)
+        );
+        size = 0;
         for (GeneratedUiComponent generated : result) {
             size++;
 
@@ -224,14 +235,19 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
                 generated.getImpls().firstMaybe()
                 .mapNullSafe(GeneratedUiImplementation::toSource)
                 .ifAbsentReturn("No impl for " + generated));
+
+            final In2<GeneratedApi, GeneratedUiComponent> spy = GeneratedApi::spyComponent;
+            apis.forAll(spy, generated);
         }
+
+        apis.forAll(GeneratedApi::finish);
 
         results.stop();
         scanner.shutdown();
         if (executor != null) {
             executor.shutdownNow();
         }
-        X_Log.info(TAG, "Generated " + size + " components in ", X_Time.difference(start), " from ", tagDefinitions.size(), "definitions");
+        X_Log.info(TAG, "Generated " + size + " components in ", X_Time.difference(apisDone), " from ", tagDefinitions.size(), "definitions");
     }
 
     protected boolean isAllowed(StringDataResource xapiFile, UiContainerExpr parsed) {

@@ -3,6 +3,9 @@ package xapi.dev.ui.api;
 import com.github.javaparser.ast.type.ReferenceType;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
+import xapi.dev.api.GeneratedJavaFile;
+import xapi.dev.api.GeneratedTypeParameter;
+import xapi.dev.api.SourceLayer;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.FieldBuffer;
 import xapi.dev.source.MethodBuffer;
@@ -33,7 +36,7 @@ public class GeneratedUiFactory extends GeneratedUiLayer {
     private In1<UiGeneratorTools<?>> onSave;
 
     public GeneratedUiFactory(GeneratedUiComponent owner, GeneratedUiApi api) {
-        super(api, api.getPackageName(), api.getTypeName(), ImplLayer.Base, owner);
+        super(api, api.getPackageName(), api.getTypeName(), SourceLayer.Base, owner);
         this.apiName = api.getWrappedName();
         parameters = X_Collect.newStringMapInsertionOrdered(GeneratedUiMethod.class);
 
@@ -110,7 +113,7 @@ public class GeneratedUiFactory extends GeneratedUiLayer {
                 overload2.getReturnType().generics = generics;
             }
             if (componentType == null) {
-                componentType = api.getGenericInfo().findUnused(ImplLayer.Api, true, "C", "Comp", "Api", "A", "AC");
+                componentType = api.getGenericInfo().findUnused(SourceLayer.Api, true, "C", "Comp", "Api", "A", "AC");
             }
             // Now, add one more for the component type itself.
             final String qualifiedType = componentType + " extends " + apiName + namesOnly;

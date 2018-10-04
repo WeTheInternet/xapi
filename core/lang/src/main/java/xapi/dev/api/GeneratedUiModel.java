@@ -1,12 +1,10 @@
-package xapi.dev.ui.api;
+package xapi.dev.api;
 
 import com.github.javaparser.ast.type.Type;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.SourceBuilder;
-import xapi.dev.ui.impl.UiGeneratorTools;
-import xapi.model.api.Model;
 import xapi.source.read.JavaModel.IsTypeDefinition;
 import xapi.util.X_String;
 
@@ -17,11 +15,11 @@ public class GeneratedUiModel extends GeneratedJavaFile {
     private final StringTo<GeneratedUiMember> fields;
     private String nameOverride;
 
-    public GeneratedUiModel(GeneratedUiComponent owner, String packageName, String className) {
+    public GeneratedUiModel(GeneratedTypeOwner owner, String packageName, String className) {
         this(owner, null, packageName, className);
     }
 
-    public GeneratedUiModel(GeneratedUiComponent owner, GeneratedJavaFile superType, String packageName, String className) {
+    public GeneratedUiModel(GeneratedTypeOwner owner, GeneratedJavaFile superType, String packageName, String className) {
         super(owner, superType, packageName, className);
         fields = X_Collect.newStringMap(GeneratedUiMember.class);
         setType(IsTypeDefinition.newInterface(packageName, className));
@@ -42,9 +40,22 @@ public class GeneratedUiModel extends GeneratedJavaFile {
         final IsTypeDefinition type = IsTypeDefinition.newInterface(getPackageName(), getWrappedName());
         source.setClassDefinition(type.toDefinition(), false);
         source.setPackage(type.getPackage());
-        source.getClassBuffer().addInterface(Model.class);
+        // can't use a class reference here... :-/
+        source.getClassBuffer().addInterface("xapi.model.api.Model");
         assert source.toSource().contains("interface");
         return source;
+    }
+
+    public String getModelType() {
+        String name;
+        if (nameOverride == null) {
+            name = getTypeName();
+        } else {
+            name = nameOverride;
+        }
+        //noinspection UnnecessaryLocalVariable // nice for debugging.
+        final String modelType = X_String.firstCharToLowercase(name.replace("Model", ""));
+        return modelType;
     }
 
     @Override
@@ -52,8 +63,8 @@ public class GeneratedUiModel extends GeneratedJavaFile {
         return nameOverride == null ? "Model" + className : nameOverride;
     }
 
-    public GeneratedUiField addField(UiGeneratorTools tools, Type type, String fieldName, boolean immutable) {
-        final GeneratedUiField newField = new GeneratedUiField(type, fieldName);
+    public GeneratedUiMember addField(ApiGeneratorTools tools, Type type, String fieldName, boolean immutable) {
+        final GeneratedUiMember newField = new GeneratedUiMember(type, fieldName);
         fields.put(fieldName, newField);
 
         final ClassBuffer buf = getSource().getClassBuffer();

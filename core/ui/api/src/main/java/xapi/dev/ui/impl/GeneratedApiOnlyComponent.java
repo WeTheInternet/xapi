@@ -1,6 +1,6 @@
 package xapi.dev.ui.impl;
 
-import xapi.dev.ui.api.GeneratedUiComponent;
+import xapi.dev.api.GeneratedTypeOwner;
 import xapi.dev.ui.api.GeneratedUiImplementation;
 
 /**
@@ -8,7 +8,7 @@ import xapi.dev.ui.api.GeneratedUiImplementation;
  */
 public class GeneratedApiOnlyComponent extends GeneratedUiImplementation {
 
-    public GeneratedApiOnlyComponent(GeneratedUiComponent owner) {
+    public GeneratedApiOnlyComponent(GeneratedTypeOwner owner) {
         super(owner, owner.getPackageName());
     }
 

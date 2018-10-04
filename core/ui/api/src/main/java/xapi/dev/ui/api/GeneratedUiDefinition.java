@@ -6,6 +6,7 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
 import xapi.collect.api.StringTo;
 import xapi.dev.api.ApiGeneratorContext;
+import xapi.dev.api.GeneratedUiMember;
 import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.dev.ui.tags.assembler.AssembledElement;
 import xapi.dev.ui.tags.assembler.UiAssembler;

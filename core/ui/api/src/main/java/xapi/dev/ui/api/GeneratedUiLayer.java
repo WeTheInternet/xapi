@@ -6,88 +6,52 @@ import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.ReferenceType;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
-import xapi.dev.source.CanAddImports;
+import xapi.dev.api.*;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.dev.ui.impl.UiGeneratorTools;
-import xapi.fu.*;
+import xapi.fu.In1;
+import xapi.fu.Maybe;
+import xapi.fu.X_Fu;
 import xapi.fu.itr.MappedIterable;
-import xapi.source.X_Source;
 import xapi.source.read.JavaModel.IsTypeDefinition;
 import xapi.ui.api.ElementBuilder;
-import xapi.util.X_String;
 
 import java.util.Collections;
-
-import static xapi.fu.Lazy.deferAll;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 2/10/17.
  */
-public abstract class GeneratedUiLayer extends GeneratedJavaFile {
+public abstract class GeneratedUiLayer extends GeneratedTypeWithModel {
 
-    public enum ImplLayer {
-        Api, Super, Base, Impl, Mixin
-    }
-
-    private final ImplLayer layer;
+    private final SourceLayer layer;
     private final StringTo<String> coercions;
-
-    protected Lazy<GeneratedUiModel> model = deferAll(
-        GeneratedUiModel::new,
-        this::getOwner,
-        this::getPackageName,
-        this::getNameForModel
-    );
 
     public Maybe<GeneratedUiLayer> getSuperType() {
         return Maybe.nullable((GeneratedUiLayer) superType);
-    }
-
-    protected String getNameForModel() {
-        return getTypeName(); // you may want to suffix your models.
     }
 
     private String nameNode, nameElement, nameElementBuilder, nameElementInjector, nameModel, nameBase, nameApi;
     private final StringTo<In1<GeneratedUiImplementation>> abstractMethods;
     private final StringTo<ReferenceType> localDefinitions;
 
-    public GeneratedUiLayer(String pkg, String cls, ImplLayer layer, GeneratedUiComponent owner) {
+    public GeneratedUiLayer(String pkg, String cls, SourceLayer layer, GeneratedTypeOwner owner) {
         this(null, pkg, cls, layer, owner);
     }
 
     @SuppressWarnings("unchecked")
     public GeneratedUiLayer(
-        GeneratedUiLayer superType,
+        GeneratedJavaFile superType,
         String pkg,
         String cls,
-        ImplLayer layer,
-        GeneratedUiComponent owner
+        SourceLayer layer,
+        GeneratedTypeOwner owner
     ) {
         super(owner, superType, pkg, cls);
         this.layer = layer;
         abstractMethods = X_Collect.newStringMap(In1.class);
         localDefinitions = X_Collect.newStringMap(ReferenceType.class);
         coercions = X_Collect.newStringMap(String.class);
-    }
-
-    public String getModelName() {
-        return model.out1().getWrappedName();
-    }
-    public String getModelFieldName() {
-        return X_String.firstCharToLowercase(getTypeName());
-    }
-
-    public String getModelNameQualified() {
-        final String modelName = model.out1().getWrappedName();
-        if (modelName.indexOf('.') == 0) {
-            return X_Source.qualifiedName(getPackageName(), modelName);
-        }
-        return modelName;
-    }
-
-    public GeneratedUiModel getModel() {
-        return model.out1();
     }
 
     protected abstract IsTypeDefinition definition();
@@ -109,10 +73,6 @@ public abstract class GeneratedUiLayer extends GeneratedJavaFile {
             source.setPackage(definition.getPackage());
         }
         return source;
-    }
-
-    public boolean hasModel() {
-        return model.isResolved();
     }
 
     public String getNodeType(UiNamespace namespace) {
@@ -179,7 +139,7 @@ public abstract class GeneratedUiLayer extends GeneratedJavaFile {
             X_Fu.concat(new String[]{sysName}, backups)
         );
         final GeneratedTypeParameter generic = getGenericInfo().getOrCreateGeneric(sysName);
-        if (this.layer == ImplLayer.Api) {
+        if (this.layer == SourceLayer.Api) {
             generic.setExposed(true);
         }
         generic.setLayerName(this.layer, name);
@@ -238,17 +198,7 @@ public abstract class GeneratedUiLayer extends GeneratedJavaFile {
         return getOwner().getGenericInfo();
     }
 
-    public String getTypeWithGenerics(ImplLayer forLayer, UiGeneratorService generator, UiNamespace namespace, CanAddImports out) {
-        final MappedIterable<GeneratedTypeParameter> myParams = getGenericInfo().getTypeParameters(layer);
-        return getWrappedName() + (
-            myParams.isEmpty() ? "" :
-                    myParams
-                        .map(s->s.computeDeclaration(this, forLayer, generator, namespace, out))
-                        .join("<", ", ", ">")
-        );
-    }
-
-    public ImplLayer getLayer() {
+    public SourceLayer getLayer() {
         return layer;
     }
 
@@ -301,4 +251,5 @@ public abstract class GeneratedUiLayer extends GeneratedJavaFile {
         }
         throw new UnsupportedOperationException("No layer for " + systemName + " found in " + getLayer() + " : " + getGenericInfo().getTypeParameters(getLayer()));
     }
+
 }

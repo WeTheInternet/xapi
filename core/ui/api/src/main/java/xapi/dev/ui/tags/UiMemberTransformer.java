@@ -7,10 +7,9 @@ import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodReferenceExpr;
 import com.github.javaparser.ast.visitor.ModifierVisitorAdapter;
 import xapi.dev.api.ApiGeneratorContext;
+import xapi.dev.api.GeneratedJavaFile;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.FieldBuffer;
-import xapi.dev.ui.api.ContainerMetadata;
-import xapi.dev.ui.api.GeneratedJavaFile;
 import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.fu.itr.Chain;
 import xapi.fu.itr.ChainBuilder;
@@ -29,11 +28,9 @@ import static com.github.javaparser.ast.expr.TemplateLiteralExpr.templateLiteral
 class UiMemberTransformer extends ModifierVisitorAdapter<UiMemberContext> {
 
     private final GeneratedJavaFile ui;
-    private final ContainerMetadata me;
 
-    public UiMemberTransformer(GeneratedJavaFile ui, ContainerMetadata me) {
+    public UiMemberTransformer(GeneratedJavaFile ui) {
         this.ui = ui;
-        this.me = me;
     }
 
     @Override
@@ -43,7 +40,7 @@ class UiMemberTransformer extends ModifierVisitorAdapter<UiMemberContext> {
         // We want to transform this method declaration
         // into something safely toString()able.
         final UiGeneratorTools tools = ctx.getTools();
-        final ApiGeneratorContext<?> apiCtx = ctx.getContainer().getContext();
+        final ApiGeneratorContext<?> apiCtx = ctx.getApiContext();
 
         //            final Do undos = resolveSpecialNames(apiCtx, ctx.getContainer().getGeneratedComponent(), ui, null);
 
@@ -166,7 +163,7 @@ class UiMemberTransformer extends ModifierVisitorAdapter<UiMemberContext> {
             final List<VariableDeclarator> oldVars = asField.getVariables();
             asField.setVariables(Arrays.asList(toForward.toArray(VariableDeclarator[]::new)));
             // recurse back into our transformer for the base class, because we are forwarding from interface to the class
-            final Node result = new UiMemberTransformer(implementor, me)
+            final Node result = new UiMemberTransformer(implementor)
                 .visit(member, ctx);
 
             String src = tools.resolveLiteral(ctx, (Expression) result);

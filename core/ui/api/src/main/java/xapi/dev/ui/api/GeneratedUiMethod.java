@@ -5,6 +5,7 @@ import com.github.javaparser.ast.type.Type;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.dev.api.ApiGeneratorContext;
+import xapi.dev.api.GeneratedUiMember;
 import xapi.dev.ui.api.GeneratedUiImplementation.RequiredMethodType;
 import xapi.fu.In2Out1;
 import xapi.fu.itr.MappedIterable;

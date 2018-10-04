@@ -44,9 +44,11 @@ public abstract class UiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> im
     private final ChainBuilder<Do> roundEndListener;
     private final ChainBuilder<Do> roundStartListener;
     protected final SetLike<GeneratedUiComponent> seen;
+    protected final SetLike<GeneratedApi> apis;
 
     public UiGeneratorTools() {
         seen = newSet(GeneratedUiComponent.class).asSetLike();
+        apis = newSet(GeneratedApi.class).asSetLike();
 
         numGenerated = X_Collect.newStringMap(Integer.class);
         componentGenerators = Lazy.deferred1(()->{
@@ -151,6 +153,7 @@ public abstract class UiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> im
 
     protected void initializeComponent(GeneratedUiComponent result, ContainerMetadata metadata) {
         if (seen.add(result)) {
+            result.setRecommendedImports(metadata.getRecommendedImports());
             final UiGeneratorService gen = getGenerator();
             if (gen != this && gen instanceof UiGeneratorTools) {
                 UiGeneratorTools tools = (UiGeneratorTools) gen;

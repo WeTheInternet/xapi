@@ -1,17 +1,11 @@
-package xapi.dev.ui.api;
+package xapi.dev.api;
 
 import com.github.javaparser.ast.TypeParameter;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.ReferenceType;
-import xapi.dev.source.CanAddImports;
-import xapi.dev.ui.api.GeneratedUiLayer.ImplLayer;
-import xapi.fu.itr.MappedIterable;
 import xapi.util.X_String;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.EnumMap;
-import java.util.List;
 import java.util.Objects;
 
 /**
@@ -20,7 +14,7 @@ import java.util.Objects;
 public class GeneratedTypeParameter {
     private final String systemName;
     private final TypeParameter type;
-    private final EnumMap<ImplLayer, String> implNames;
+    private final EnumMap<SourceLayer, String> implNames;
 
     private boolean exposed;
 
@@ -35,10 +29,10 @@ public class GeneratedTypeParameter {
                 type.setName(systemName);
             }
         }
-        implNames = new EnumMap<>(ImplLayer.class);
+        implNames = new EnumMap<>(SourceLayer.class);
     }
 
-    protected EnumMap<ImplLayer, String> getImplNames() {
+    protected EnumMap<SourceLayer, String> getImplNames() {
         return implNames;
     }
 
@@ -86,61 +80,7 @@ public class GeneratedTypeParameter {
         return this;
     }
 
-    public String computeDeclaration(
-        GeneratedUiLayer layer,
-        ImplLayer forLayer,
-        UiGeneratorService generator,
-        UiNamespace namespace,
-        CanAddImports out
-    ) {
-        final List<ClassOrInterfaceType> bounds;
-        if (forLayer == ImplLayer.Impl) {
-            bounds = Collections.emptyList();
-        } else {
-            bounds = new ArrayList<>(type.getTypeBound());
-        }
-        String name;
-        if (forLayer == ImplLayer.Impl) {
-            name = namespace.loadFromNamespace(systemName, out)
-                     .ifAbsentSupply(type::getName);
-        } else {
-            return type.toString();
-        }
-        if (UiNamespace.TYPE_SELF.equals(name)) {
-            // When requesting a self type, we want to add the known bounds of the given layer.
-            final MappedIterable<String> names = layer.getGenericNames();
-            if (!names.isEmpty()) {
-                names
-                    .map(ClassOrInterfaceType::new)
-                    .forAll(bounds::add);
-            }
-        }
-        if (bounds.isEmpty()) {
-            return name;
-        }
-        final String baseName = namespace.loadFromNamespace(systemName, out)
-            .ifAbsentReturn(name);
-        StringBuilder b = new StringBuilder(baseName);
-        String spacer = bounds.size() > 2 ? ",\n" : ", ";
-        String toAdd = "<";
-        for (ClassOrInterfaceType param : bounds) {
-            b.append(toAdd);
-            toAdd = spacer;
-            // TODO: require UiGeneratorTools so we can normalize any magic strings in our name
-            String source = param.toSource();
-            if (generator != null) {
-//                generator.tools().resolveString()
-            }
-            b.append(source);
-        }
-        if (!"<".equals(toAdd)) {
-            b.append(">");
-        }
-
-        return b.toString();
-    }
-
-    public GeneratedTypeParameter setLayerName(ImplLayer layer, String nameElement) {
+    public GeneratedTypeParameter setLayerName(SourceLayer layer, String nameElement) {
         implNames.put(layer, nameElement);
         return this;
     }

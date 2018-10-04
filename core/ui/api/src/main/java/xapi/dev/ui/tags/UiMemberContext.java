@@ -1,7 +1,6 @@
 package xapi.dev.ui.tags;
 
 import xapi.dev.api.ApiGeneratorContext;
-import xapi.dev.ui.api.ContainerMetadata;
 import xapi.dev.ui.impl.UiGeneratorTools;
 
 /**
@@ -9,39 +8,20 @@ import xapi.dev.ui.impl.UiGeneratorTools;
  */
 class UiMemberContext extends ApiGeneratorContext<UiMemberContext> {
 
-    private UiTagGenerator generator;
-    private ContainerMetadata container;
-    private UiGeneratorTools tools;
+    private final UiGeneratorTools tools;
+    private final ApiGeneratorContext ctx;
 
-    public UiMemberContext(ApiGeneratorContext ctx) {
+    public UiMemberContext(UiGeneratorTools tools, ApiGeneratorContext ctx) {
         super(ctx);
-    }
-
-    public UiTagGenerator getGenerator() {
-        return generator;
-    }
-
-    public UiMemberContext setGenerator(UiTagGenerator generator) {
-        this.generator = generator;
-        return this;
-    }
-
-    public ContainerMetadata getContainer() {
-        return container;
-    }
-
-    public UiMemberContext setContainer(ContainerMetadata container) {
-        this.container = container;
-        return this;
+        this.tools = tools;
+        this.ctx = ctx;
     }
 
     public UiGeneratorTools getTools() {
         return tools;
     }
 
-    public UiMemberContext setTools(UiGeneratorTools context) {
-        this.tools = context;
-        return this;
+    public ApiGeneratorContext getApiContext() {
+        return ctx;
     }
-
 }

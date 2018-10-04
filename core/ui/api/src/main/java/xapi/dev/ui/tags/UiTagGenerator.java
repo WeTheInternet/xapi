@@ -6,14 +6,13 @@ import com.github.javaparser.ast.visitor.ModifierVisitorAdapter;
 import xapi.collect.X_Collect;
 import xapi.collect.api.ObjectTo;
 import xapi.collect.api.StringTo;
-import xapi.dev.api.ApiGeneratorContext;
+import xapi.dev.api.*;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.ui.api.*;
 import xapi.dev.ui.api.UiVisitScope.ScopeType;
 import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.dev.ui.tags.assembler.*;
-import xapi.dev.ui.tags.members.UserDefinedMethod;
 import xapi.fu.*;
 import xapi.fu.itr.Chain;
 import xapi.fu.itr.ChainBuilder;
@@ -22,7 +21,6 @@ import xapi.lang.api.AstConstants;
 import xapi.log.X_Log;
 import xapi.source.X_Modifier;
 import xapi.source.X_Source;
-import xapi.util.X_String;
 import xapi.util.X_Util;
 
 import java.util.Locale;
@@ -37,7 +35,7 @@ import static xapi.fu.Immutable.immutable1;
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 11/24/16.
  */
-public class UiTagGenerator extends UiComponentGenerator {
+public class UiTagGenerator extends UiComponentGenerator implements ApiResolver {
 
     private final StringTo<In2Out1<AssembledUi, AssembledElement, TagAssembler>> tagFactories;
     private final ChainBuilder<Do> undos;
@@ -226,29 +224,6 @@ public class UiTagGenerator extends UiComponentGenerator {
         return scope;
     }
 
-    private String toClassName(String name) {
-        String[] bits = name.split("-");
-        StringBuilder b = new StringBuilder();
-        for (String bit : bits) {
-            b.append(X_String.toTitleCase(bit));
-        }
-        return b.toString();
-    }
-
-    public boolean isModelReference(Expression expr) {
-        if (expr instanceof NameExpr) {
-            return "$model".equals(((NameExpr)expr).getName());
-        } else if (expr instanceof MethodCallExpr) {
-            return "getModel".equals(((MethodCallExpr)expr).getName());
-        } else if (expr instanceof FieldAccessExpr) {
-            return "$model".equals(((FieldAccessExpr)expr).getField());
-        } else if (expr instanceof TemplateLiteralExpr) {
-            return "getModel()".equals(((TemplateLiteralExpr)expr).getValueWithoutTicks());
-        } else {
-            return false;
-        }
-    }
-
     public Expression resolveReference(
         UiGeneratorTools tools,
         ApiGeneratorContext ctx,
@@ -262,10 +237,10 @@ public class UiTagGenerator extends UiComponentGenerator {
         return attr.getExpression();
     }
 
-    public Expression resolveReference(
+    public static Expression resolveReference(
         UiGeneratorTools tools,
         ApiGeneratorContext ctx,
-        GeneratedUiComponent component,
+        GeneratedTypeOwner component,
         GeneratedJavaFile target,
         Out1<String> rootRefField,
         Out1<String> parentField,
@@ -273,7 +248,7 @@ public class UiTagGenerator extends UiComponentGenerator {
         boolean rewriteParent
     ) {
 
-        final Do undo = UiTagGenerator.this.resolveSpecialNames(
+        final Do undo = resolveSpecialNames(
             ctx,
             component,
             target,
@@ -411,7 +386,7 @@ public class UiTagGenerator extends UiComponentGenerator {
         }
     }
 
-    protected String getScopeType(UiGeneratorTools tools, Expression scope) {
+    protected static String getScopeType(ApiGeneratorTools<?> tools, Expression scope) {
         if (scope == null) {
             return null;
         }
@@ -434,9 +409,9 @@ public class UiTagGenerator extends UiComponentGenerator {
         return null;
     }
 
-    public Do resolveSpecialNames(
+    public static Do resolveSpecialNames(
         ApiGeneratorContext ctx,
-        GeneratedUiComponent component,
+        GeneratedTypeOwner component,
         GeneratedJavaFile cls,
         Out1<String> rootRefField,
         Out1<String> parentField
@@ -483,65 +458,23 @@ public class UiTagGenerator extends UiComponentGenerator {
 
     }
 
-    protected void maybeAddImports(
-        UiGeneratorTools tools,
-        ApiGeneratorContext ctx,
-        GeneratedJavaFile api,
-        UiAttrExpr attr
-    ) {
-        // This is a really handy method... we should move it somewhere upstream for others to enjoy.
-        // like putting it in GeneratedJavaFile, or UiComponentGenerator (or both)
-        attr.getAnnotationsMatching(anno->X_String.containsAny(anno.getNameString().toLowerCase(), "import", "importstatic", "staticimport"))
-            .forAll(anno->anno.getMembers().forEach(pair->{
-                boolean isStatic = anno.getNameString().toLowerCase().contains("static");
-                In1<String> addImport = isStatic ? api.getSource()::addImportStatic : api.getSource()::addImport;
-                final Expression resolvedImport = tools.resolveVar(ctx, pair.getValue());
-                String toImport;
-                if (resolvedImport instanceof StringLiteralExpr) {
-                    toImport = ((StringLiteralExpr)resolvedImport).getValue();
-                    addImport.in(toImport);
-                } else if (resolvedImport instanceof TemplateLiteralExpr) {
-                    toImport = tools.resolveTemplate(ctx, (TemplateLiteralExpr) resolvedImport);
-                    addImport.in(toImport);
-                } else if (resolvedImport instanceof FieldAccessExpr) {
-                    final FieldAccessExpr asField = (FieldAccessExpr) resolvedImport;
-                    toImport = tools.resolveString(ctx, asField.getScope()) + "." + asField.getField();
-                    addImport.in(toImport);
-                } else if (resolvedImport instanceof ArrayInitializerExpr) {
-                    ArrayInitializerExpr many = (ArrayInitializerExpr) resolvedImport;
-                    for (Expression expr : many.getValues()) {
-                        toImport = tools.resolveString(ctx, expr);
-                        addImport.in(toImport);
-                    }
-                } else {
-                    throw new IllegalArgumentException("Unhandled @Import value " + tools.debugNode(resolvedImport));
-                }
-            }));
-
-    }
-
-    protected void printMember(
+    protected static void printMember(
         UiGeneratorTools tools,
         GeneratedJavaFile cls,
-        ContainerMetadata me,
+        final ApiGeneratorContext ctx,
+        final GeneratedTypeOwner owner,
         DynamicDeclarationExpr member
     ) {
 
-        final ApiGeneratorContext ctx = me.getContext();
-
-        resolveReference(tools, ctx, me.getGeneratedComponent(), cls, null, null, member, true);
+        resolveReference(tools, ctx, owner, cls, null, null, member, true);
 
         // whenever we resolve special names in an ast block's context, we always rollback anything we added.
         // this prevents variables from leaking out of their intended scope, at the expense of ugly try/finally undo.done()s
-        final Do undo = resolveSpecialNames(ctx, me.getGeneratedComponent(), cls, null, null);
+        final Do undo = resolveSpecialNames(ctx, owner, cls, null, null);
         try {
 
-            UiMemberTransformer transformer = new UiMemberTransformer(cls, me);
-            final Expression result = (Expression) transformer.visit(member, new UiMemberContext(ctx)
-                .setContainer(me)
-                .setTools(tools)
-                .setGenerator(this)
-            );
+            UiMemberTransformer transformer = new UiMemberTransformer(cls);
+            final Expression result = (Expression) transformer.visit(member, new UiMemberContext(tools, ctx));
 
             final String src = tools.resolveLiteral(ctx, result);
             if (!src.trim().isEmpty()) {
@@ -558,7 +491,7 @@ public class UiTagGenerator extends UiComponentGenerator {
         }
     }
 
-    private void recordMember(
+    private static void recordMember(
         GeneratedJavaFile cls,
         DynamicDeclarationExpr member,
         Expression result,

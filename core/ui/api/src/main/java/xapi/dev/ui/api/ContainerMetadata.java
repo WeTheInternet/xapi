@@ -14,18 +14,19 @@ import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.NameGen;
 import xapi.dev.source.SourceBuilder;
 import xapi.dev.source.SourceTransform;
-import xapi.dev.ui.impl.UiGeneratorTools;
-import xapi.dev.ui.impl.ComponentMetadataQuery;
 import xapi.dev.ui.impl.ComponentMetadataFinder;
+import xapi.dev.ui.impl.ComponentMetadataQuery;
+import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.fu.In1Out1;
 import xapi.fu.Lazy;
 import xapi.fu.Maybe;
 import xapi.fu.Out1;
+import xapi.fu.itr.SizedIterable;
 import xapi.source.X_Source;
 
-import static xapi.fu.Lazy.deferred1;
-
 import java.util.IdentityHashMap;
+
+import static xapi.fu.Lazy.deferred1;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
@@ -306,5 +307,11 @@ public class ContainerMetadata {
 
     public void setSource(Out1<SourceBuilder<?>> source) {
         this.source = source;
+    }
+
+    public SizedIterable<String> getRecommendedImports() {
+        // we don't want to close on the current recommended imports, rather,
+        // we return an abstraction over top that will delay asking the root for imports as long as possible.
+        return SizedIterable.adaptSizedIterable(root.getRecommendedImports(), In1Out1.identity());
     }
 }

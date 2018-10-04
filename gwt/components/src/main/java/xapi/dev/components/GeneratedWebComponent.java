@@ -4,6 +4,7 @@ import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.plugin.Transformer;
 import com.github.javaparser.ast.visitor.ComposableXapiVisitor;
 import xapi.dev.api.ApiGeneratorContext;
+import xapi.dev.api.GeneratedTypeOwner;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.FieldBuffer;
 import xapi.dev.source.MethodBuffer;
@@ -39,7 +40,7 @@ public class GeneratedWebComponent extends GeneratedUiImplementation {
     private MethodBuffer assemble;
     private FieldBuffer creator;
 
-    public GeneratedWebComponent(GeneratedUiComponent ui) {
+    public GeneratedWebComponent(GeneratedTypeOwner ui) {
         super(ui, ui.getPackageName());
         namespace = Lazy.deferred1(()-> X_Inject.instance(UiNamespaceGwt.class));
     }

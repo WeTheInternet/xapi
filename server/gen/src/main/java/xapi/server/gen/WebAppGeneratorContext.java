@@ -47,6 +47,11 @@ public class WebAppGeneratorContext extends ApiGeneratorContext<WebAppGeneratorC
         }
     }
 
+    @Override
+    public SourceBuilder<WebAppGeneratorContext> getOrMakeClass(String pkg, String cls, boolean isInterface) {
+        return (SourceBuilder<WebAppGeneratorContext>) super.getOrMakeClass(pkg, cls, isInterface);
+    }
+
     protected void initializeBuffer(SourceBuilder<WebAppGeneratorContext> buffer, String pkgName, String clsName) {
 
     }

@@ -2,7 +2,7 @@ package xapi.dev.ui.tags.assembler;
 
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.type.Type;
-import xapi.dev.ui.api.GeneratedUiMember;
+import xapi.dev.api.GeneratedUiMember;
 
 /**
  * Some glue for "things representing a model field with respect to ui assemble".

@@ -31,6 +31,7 @@ import xapi.ui.api.UiPhase;
 import xapi.ui.api.UiPhase.*;
 import xapi.util.X_Debug;
 import xapi.util.X_Properties;
+import xapi.util.X_String;
 import xapi.util.X_Util;
 
 import javax.tools.FileObject;
@@ -55,6 +56,7 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
     protected final Lazy<MappedIterable<UiImplementationGenerator>> impls;
     protected final In1Out1<Ctx, StringTo<GeneratedUiDefinition>> definitions;
     protected final StringTo<ComponentBuffer> allComponents;
+    protected final IntTo<String> recommendedImports;
 
     protected static class GeneratorState {
 
@@ -86,6 +88,7 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
         impls = Lazy.deferred1(()->
             CachingIterator.cachingIterable(getImplementations().iterator())
         );
+        recommendedImports = X_Collect.newSet(String.class, X_Collect.MUTABLE_INSERTION_ORDERED_SET);
         allComponents = X_Collect.newStringMap(ComponentBuffer.class);
         StringTo<GeneratedUiDefinition>[] map = new StringTo[1];
         definitions = In1Out1.of(this::loadClasspathDefinitions)
@@ -158,6 +161,9 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
         SourceHelper<Raw> service, IsQualified type, UiContainerExpr container
     ) {
         this.service = service;
+        if (container.getName().startsWith("define-api")) {
+            return null;
+        }
         final String pkgName = type.getPackage();
         final String simpleName = X_Source.enclosedNameFlattened(pkgName, type.getQualifiedName());
         final MetadataRoot root = state.metadata.out1();
@@ -212,7 +218,13 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
     @Override
     public ContainerMetadata createMetadata(MetadataRoot root, UiContainerExpr n) {
         final ContainerMetadata component = new ContainerMetadata(n);
-        component.setRoot(root == null ? createMetadataRoot() : root);
+        if (root == null) {
+            root = createMetadataRoot();
+        }
+        // add default imports to metadata root
+        root.addRecommendedImports(recommendedImports);
+
+        component.setRoot(root);
         return component;
     }
 
@@ -574,7 +586,7 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
             // make the settings reader sanely handle multi-file reads (perhaps someday enforcing
             // single-definition of source files / file hashes or other nice-to-have-but-not-right-nows).
 
-            return SingletonIterator.singleItem(new ApiOnlyGenerator().setUiStub(isUiComponent()));
+            return SingletonIterator.singleItem(new ApiOnlyUiGenerator().setUiStub(isUiComponent()));
         }
         // Otherwise, lets add a filter on UiGeneratorPlatform annotation, if present...
         StringTo<Integer> priorities = X_Collect.newStringMapInsertionOrdered(Integer.class);
@@ -635,6 +647,8 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
 
 
     protected UiContainerExpr resolveImports(SourceHelper<Raw> filer, IsQualified element, UiContainerExpr container, Raw hints) {
+        // we could consider also auto-qualifying all recommended imports... however, this is already complex enough as it is,
+        // so we'll leave it to specific code generators to ask the ImportSection to qualify specific ast nodes.
         return (UiContainerExpr) new ModifierVisitorAdapter<Object>(){
             @Override
             public Node visit(
@@ -666,7 +680,7 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
                         return newContainer;
                     } catch (ParseException e) {
                         X_Log.error(getClass(), "Error trying to resolve import", n, "with source:\n",
-                              X_Source.addLineNumbers(src), e);
+                              X_String.addLineNumbers(src), e);
                     }
                 }
                 return super.visit(n, arg);
@@ -782,8 +796,13 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
     }
 
     @Override
-    public MappedIterable<GeneratedUiComponent> allComponents() {
+    public SizedIterable<GeneratedUiComponent> allComponents() {
         return seen.cached();
+    }
+
+    @Override
+    public MappedIterable<GeneratedApi> allApis() {
+        return apis.cached();
     }
 
     @Override
@@ -857,6 +876,44 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
         resetState();
         seen.clear();
 
+        return results;
+    }
+
+    @Override
+    public MappedIterable<GeneratedApi> generateApis(
+        SourceHelper<Raw> sources, In1Out1<UiContainerExpr, IsQualified> typeFactory, UiContainerExpr... parsed
+    ) {
+        // actually do the necessary things to generate a bunch of api types...
+        for (UiContainerExpr expr : parsed) {
+            final IsQualified type = typeFactory.io(expr);
+            initialize(sources, type, expr);
+            GeneratedApi api = new GeneratedApi(this, sources, type, expr);
+            apis.add(api);
+            for (UiAttrExpr attr : expr.getAttributes()) {
+                switch (attr.getNameString()) {
+                    case "import":
+                    case "imports":
+                        api.addImports(attr);
+                        break;
+                    case "model":
+                    case "models":
+                        final Ctx ctx = contextFor(type, expr);
+                        api.addModels(tools(), ctx, attr);
+                        break;
+                    case "migration":
+                    case "migrations":
+                        api.addMigrations(attr);
+                        break;
+                    default:
+                        // log unhandled.
+                        X_Log.error(AbstractUiGeneratorService.class,
+                            "Unhandled define-api feature ", tools().debugNode(attr));
+                }
+            }
+
+        }
+
+        final MappedIterable<GeneratedApi> results = allApis();
         return results;
     }
 

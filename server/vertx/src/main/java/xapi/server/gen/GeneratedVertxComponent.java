@@ -1,6 +1,6 @@
 package xapi.server.gen;
 
-import xapi.dev.ui.api.GeneratedUiComponent;
+import xapi.dev.api.GeneratedTypeOwner;
 import xapi.dev.ui.api.GeneratedUiImplementation;
 
 /**
@@ -8,7 +8,7 @@ import xapi.dev.ui.api.GeneratedUiImplementation;
  */
 public class GeneratedVertxComponent extends GeneratedUiImplementation {
 
-    public GeneratedVertxComponent(GeneratedUiComponent ui) {
+    public GeneratedVertxComponent(GeneratedTypeOwner ui) {
         super(ui, ui.getPackageName());
     }
 

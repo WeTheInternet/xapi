@@ -3,6 +3,9 @@ package xapi.dev.ui.tags;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.expr.*;
 import xapi.dev.api.ApiGeneratorContext;
+import xapi.dev.api.GeneratedJavaFile;
+import xapi.dev.api.GeneratedTypeOwner;
+import xapi.dev.api.GeneratedTypeWithModel;
 import xapi.dev.source.SourceBuilder;
 import xapi.dev.ui.api.*;
 import xapi.dev.ui.impl.UiGeneratorTools;
@@ -33,8 +36,8 @@ public class UiTagApiGenerator extends UiFeatureGenerator {
         UiAttrExpr attr
     ) {
 
-        final GeneratedUiComponent component = me.getGeneratedComponent();
-        GeneratedUiLayer layer;
+        final GeneratedTypeOwner component = me.getGeneratedComponent();
+        GeneratedJavaFile layer;
         final Maybe<String> maybeAttr = isPlatformDisabled(attr.getNameString());
         if (maybeAttr.isAbsent()) {
             return UiVisitScope.FEATURE_NO_CHILDREN;
@@ -46,7 +49,7 @@ public class UiTagApiGenerator extends UiFeatureGenerator {
             layer = component.getBase();
         } else if (attrName.startsWith("impl")) {
             out : {
-                for (GeneratedUiImplementation impl : component.getImpls()) {
+                for (GeneratedTypeWithModel impl : component.getImpls()) {
                     final String prefix = impl.getPrefix().toLowerCase();
                     if (attrName.equals("impl-" + prefix)) {
                         layer = impl;
@@ -60,15 +63,15 @@ public class UiTagApiGenerator extends UiFeatureGenerator {
             throw new UnsupportedOperationException("Unknown attribute name " + attrName
             +"\nin " + tools.debugNode(attr) + "\nof " + tools.debugNode(me.getUi()));
         }
-        final ApiGeneratorContext<?> ctx = me.getContext();
-        owner.maybeAddImports(tools, ctx, layer, attr);
+        final ApiGeneratorContext ctx = me.getContext();
+        tools.maybeAddImports(ctx, layer, attr);
         final Expression resolved = tools.resolveVar(ctx, attr.getExpression());
         if (resolved instanceof JsonContainerExpr) {
             JsonContainerExpr asJson = (JsonContainerExpr) resolved;
             asJson.getValues().forAll(expr->{
                 if (expr instanceof DynamicDeclarationExpr) {
                     DynamicDeclarationExpr member = (DynamicDeclarationExpr) expr;
-                    owner.printMember(tools, layer, me, member);
+                    owner.printMember(tools, layer, ctx, component, member);
                 } else {
                     throw new IllegalArgumentException("Unhandled api= feature value " + tools.debugNode(expr) + " from " + tools.debugNode(attr));
                 }
@@ -90,7 +93,7 @@ public class UiTagApiGenerator extends UiFeatureGenerator {
                     // TODO add a @Nested annotation to prevent this behavior
                 }
             }
-            owner.printMember(tools, layer, me, member);
+            owner.printMember(tools, layer, ctx, component, member);
         } else {
             throw new IllegalArgumentException("Unhandled api= feature value " + tools.debugNode(resolved) + " from " + tools.debugNode(attr));
         }

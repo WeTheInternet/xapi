@@ -1,5 +1,8 @@
 package xapi.dev.ui.api;
 
+import xapi.dev.api.GeneratedJavaFile;
+import xapi.dev.api.GeneratedTypeOwner;
+import xapi.dev.api.SourceLayer;
 import xapi.dev.source.SourceBuilder;
 import xapi.source.read.JavaModel.IsTypeDefinition;
 
@@ -10,14 +13,17 @@ public class GeneratedUiBase extends GeneratedUiLayer {
 
     private final String apiName;
 
-    public GeneratedUiBase(GeneratedUiComponent owner, GeneratedUiApi api) {
-        super(api, api.getPackageName(), api.getTypeName(), ImplLayer.Base, owner);
+    public GeneratedUiBase(GeneratedTypeOwner owner, GeneratedUiApi api) {
+        super(api, api.getPackageName(), api.getTypeName(), SourceLayer.Base, owner);
         this.apiName = api.getWrappedName();
     }
 
     @Override
     protected SourceBuilder<GeneratedJavaFile> createSource() {
         final SourceBuilder<GeneratedJavaFile> builder = super.createSource();
+        // When the source builder is created, we finally resolve the recommended imports.
+        // This will allow you to call xapi.dev.source.ImportSection.qualify() and get back a canonical classname.
+        getOwner().getRecommendedImports().forEach(builder.getImports()::reserveSimpleName);
         return builder;
     }
 
