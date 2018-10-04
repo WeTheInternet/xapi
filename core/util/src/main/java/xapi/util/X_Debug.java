@@ -49,7 +49,7 @@ public class X_Debug {
       }
     }
 
-    private void flush(PrintStream orig2) {
+    private void flush(PrintStream orig) {
       orig.flush();
     }
 
@@ -127,7 +127,7 @@ public class X_Debug {
   public static void traceSystemErr(int ignoreDepth) {
     final PrintStream orig = System.err;
     // Avoid cyclic calls, but don't store references...
-    if (orig instanceof DebugStream)
+    if (orig instanceof DebugStream || orig.getClass().getCanonicalName().equals(DebugStream.class.getCanonicalName()))
       return;
     System.setErr(new DebugStream(orig, ignoreDepth));
     System.err.println("Tracing system.err");
@@ -144,7 +144,7 @@ public class X_Debug {
     final PrintStream orig = System.out;
 
     // Avoid cyclic calls, but don't store references...
-    if (orig instanceof DebugStream)
+    if (orig instanceof DebugStream || orig.getClass().getCanonicalName().equals(DebugStream.class.getCanonicalName()))
       return;
     System.setOut(new DebugStream(orig, ignoreDepth));
     System.out.println("Tracing system.out");

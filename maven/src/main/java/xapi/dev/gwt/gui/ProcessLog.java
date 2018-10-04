@@ -1,6 +1,7 @@
 package xapi.dev.gwt.gui;
 
-import java.awt.Rectangle;
+import javax.swing.*;
+import java.awt.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -9,12 +10,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.WeakHashMap;
-
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.SwingUtilities;
 
 @SuppressWarnings("serial")
 public class ProcessLog extends Box {

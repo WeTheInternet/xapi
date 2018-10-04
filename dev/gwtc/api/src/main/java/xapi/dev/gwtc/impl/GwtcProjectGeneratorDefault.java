@@ -26,6 +26,7 @@ import xapi.gwtc.api.GwtcProperties;
 import xapi.gwtc.api.GwtcXmlBuilder;
 import xapi.inject.X_Inject;
 import xapi.log.X_Log;
+import xapi.log.api.LogLevel;
 import xapi.reflect.X_Reflect;
 import xapi.source.X_Source;
 import xapi.util.X_Debug;
@@ -584,9 +585,12 @@ public class GwtcProjectGeneratorDefault implements GwtcProjectGenerator {
         files.forBoth((path, body)->
             saveTempFile(body.out1(), new File(service.inGeneratedDirectory(manifest, path)))
         );
-        X_Log.info(GwtcProjectGeneratorDefault.class, "Generated entry point", "\n", getEntryPoint());
-        X_Log.info(GwtcProjectGeneratorDefault.class, "Generated module", manifest.getModuleName(), "\n", getGwtXml(manifest));
-
+        if (X_Log.loggable(LogLevel.TRACE)) {
+            X_Log.trace(GwtcProjectGeneratorDefault.class, "Generated entry point", "\n", getEntryPoint());
+            X_Log.trace(GwtcProjectGeneratorDefault.class, "Generated module", manifest.getModuleName(), "\n", getGwtXml(manifest));
+        } else {
+            X_Log.trace(GwtcProjectGeneratorDefault.class, "Generated module", manifest.getModuleName(), "\nIncrease logLevel to TRACE or better to see generated code.");
+        }
         generateWar(manifest);
     }
 

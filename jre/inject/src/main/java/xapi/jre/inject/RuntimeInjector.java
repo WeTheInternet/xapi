@@ -89,9 +89,20 @@ public class RuntimeInjector implements In2<String, PlatformChecker> {
       }
     }
     final File target = relative.getAbsoluteFile();
+    if (target.getAbsolutePath().contains(".jar")) {
+      final String prop = System.getProperty("xapi.injector.cache", System.getenv("xapi.injector.cache"));
+      throw new Error("Illegal injection target " + target + "; (" + relative + ")\n" +
+          (
+              X_String.isEmptyTrimmed(prop)
+              ?
+              "Consider setting xapi.injector.cache property to a writable directory!"
+              : "The configured xapi.injector.cache property of " + prop + "is invalid"
+          )
+      );
+    }
     if (!target.isDirectory()) {
       if (!target.mkdirs()) {
-        throw new RuntimeException("Unable to get or make jre injection generator output directory: "+
+        throw new Error("Unable to get or make jre injection generator output directory: "+
             target.getAbsolutePath());
       }
     }
@@ -406,6 +417,10 @@ public class RuntimeInjector implements In2<String, PlatformChecker> {
       if (!dir.mkdirs()) {
         throw new RuntimeException("Unable to create meta info directory for "+dir.getAbsolutePath());
       }
+    }
+
+    if (dir.getAbsolutePath().contains("jar")) {
+      throw new IllegalArgumentException("Cannot write meta info to jar " + dir);
     }
 
     mainLoop:
