@@ -1,6 +1,7 @@
 package xapi.fu;
 
 import xapi.fu.In1Out1.In1Out1Unsafe;
+import xapi.fu.has.HasResolution;
 
 /**
  * A lazy-initialized object.
@@ -16,7 +17,7 @@ import xapi.fu.In1Out1.In1Out1Unsafe;
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 14/12/15.
  */
-public class Lazy <T> implements Out1<T>, IsLazy {
+public class Lazy <T> implements Out1<T>, IsLazy, HasResolution {
 
   // This is volatile because the first read to this proxy will immutabilize the result of the constructot Out1,
   // thus, we want all other threads to notice that the Lazy has changed,
@@ -212,6 +213,7 @@ public class Lazy <T> implements Out1<T>, IsLazy {
     return value != NULL && value != null && value.out1() != null;
   }
 
+  @Override
   public final boolean isResolved() {
     return !isUnresolved();
   }
@@ -226,10 +228,11 @@ public class Lazy <T> implements Out1<T>, IsLazy {
    *
    */
   public final boolean isResolving() {
-    assert !resolving || isUnresolved(); // must not thing we are resolving when we are resolved.
+    assert !resolving || isUnresolved(); // must not think we are resolving when we are resolved.
     return resolving;
   }
 
+  @Override
   public final boolean isUnresolved() {
     return proxy instanceof ProxySupplier;
   }

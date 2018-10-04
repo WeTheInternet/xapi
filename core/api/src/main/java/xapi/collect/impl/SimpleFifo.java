@@ -213,7 +213,7 @@ public class SimpleFifo <E> implements Fifo<E>, SizedIterable<E>, Serializable{
   }
 
   @Override
-  protected void finalize() throws Throwable {
+  protected void finalize() {
     synchronized (head) {
       head.next = null;
       tail = null;

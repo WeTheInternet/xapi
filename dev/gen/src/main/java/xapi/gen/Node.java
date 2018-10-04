@@ -5,7 +5,7 @@ package xapi.gen;
  * TODO transform this into a full-featured, dynamic object graph-style collection.
  *
  * Also, create a "sparse array" using linked list node w/ indexes, so when adding new nodes,
- * you can just look forward until you go to far, then insert yourself in between.
+ * you can just look forward until you go too far, then insert yourself in between.
  * Add in an optimization for adjacent nodes that are within a "step size" to merge into a "list block",
  * so searches can skip ahead quickly through a dense block of indices.
  * Using a dense array for these blocks can reduce time spent retrieving / setting within a used range of memory.

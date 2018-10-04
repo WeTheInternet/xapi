@@ -120,6 +120,9 @@ public class MethodBuffer extends MemberBuffer<MethodBuffer> implements
       // remove public and abstract for interface methods, as they are implicit.
       mods = mods.replace("public", "").replace("abstract", "").replaceAll("\\s{2,}", " ");
     }
+    if (mods.startsWith(" ")) {
+      mods = mods.substring(1);
+    }
     b.append(mods);
     if (isDefault) {
       b.append((mods.length() == 1 ? "" : " ")).append("default");

@@ -9,14 +9,14 @@ import java.util.Iterator;
 
 import static xapi.fu.itr.MappedIterable.mapped;
 import static xapi.fu.itr.ArrayIterable.iterate;
-import static xapi.util.service.StringService.binarySuffix;
-import static xapi.util.service.StringService.metricSuffix;
 
 public class X_String {
 
   public static final String EMPTY_STRING = "";
+  private static final String[] binarySuffix = new String[]{"","K","M","G","T","P","E","Z"};
+  private static final String[] metricSuffix = new String[]{" nano"," micro"," milli"," "," kilo"," mega"," giga"};
 
-  /**
+    /**
    * Used for the encodeURIComponent function
    */
   private static final BitSet notEncoded;
@@ -606,5 +606,15 @@ public class X_String {
         }
       }
       return false;
+    }
+
+    public static String addLineNumbers(String src) {
+      final String[] lines = src.split("\n");
+      int maxSize = (int)(Math.log10(lines.length) + 1);
+      for (int i = 0; i < lines.length; i++) {
+        String line = lines[i];
+        lines[i] = (i + 1) + repeat(" ", maxSize - i + 1) + line;
+      }
+      return join("\n", lines);
     }
 }

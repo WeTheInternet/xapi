@@ -305,7 +305,7 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
                     pkg = X_Source.toPackage(nameString);
                     nameString = X_Source.removePackage(pkg, nameString);
                 }
-                SourceBuilder<Ctx> builder = ctx.getOrMakeClass(pkg, nameString, isInterface);
+                SourceBuilder<?> builder = ctx.getOrMakeClass(pkg, nameString, isInterface);
                 generateType(ctx, builder, typeParams, extend, implement, methods, defaultMethods, staticMethods);
             }
 
@@ -384,7 +384,7 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
             primary.getName()
         ));
         primary.setName(typeName);
-        final SourceBuilder<Ctx> builder = ctx.getOrMakeClass(
+        final SourceBuilder<?> builder = ctx.getOrMakeClass(
             pkgName,
             typeName,
             primary.isInterface()
@@ -730,7 +730,7 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
 
     private void generateType(
         Ctx arg,
-        SourceBuilder<Ctx> builder,
+        SourceBuilder<?> builder,
         Expression typeParams,
         Expression extend,
         Expression implement,
@@ -765,7 +765,7 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
 
     }
 
-    protected void addMethods(Ctx ctx, SourceBuilder<Ctx> builder, JsonContainerExpr methods, int modifiers) {
+    protected void addMethods(Ctx ctx, SourceBuilder<?> builder, JsonContainerExpr methods, int modifiers) {
         methods.getPairs().forEach(pair->{
             Expression value = pair.getValueExpr();
             if (value instanceof MethodCallExpr) {
@@ -788,7 +788,7 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
         });
     }
 
-    protected void addMethod(Ctx ctx, SourceBuilder<Ctx> builder, JsonContainerExpr json, int modifiers) {
+    protected void addMethod(Ctx ctx, SourceBuilder<?> builder, JsonContainerExpr json, int modifiers) {
         if (json.hasNode("tasks")) {
             // We are running an internal loop here.
             // lets setup our vars and run the tasks...
@@ -839,7 +839,7 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
         }
     }
 
-    protected void addExtends(Ctx arg, SourceBuilder<Ctx> builder, Expression extend) {
+    protected void addExtends(Ctx arg, SourceBuilder<?> builder, Expression extend) {
         if (builder.getClassBuffer().isInterface()) {
             addImplements(arg, builder, extend);
         } else {
@@ -873,7 +873,7 @@ public class GeneratorVisitor <Ctx extends ApiGeneratorContext<Ctx>>
             }
         }
     }
-    protected void addImplements(Ctx arg, SourceBuilder<Ctx> builder, Expression extend) {
+    protected void addImplements(Ctx arg, SourceBuilder<?> builder, Expression extend) {
         if (extend instanceof JsonContainerExpr) {
             // We have a list type...
             JsonContainerExpr json = (JsonContainerExpr) extend;

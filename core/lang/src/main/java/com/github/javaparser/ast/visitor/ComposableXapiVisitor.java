@@ -1060,6 +1060,16 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
         return this;
     }
 
+    public ComposableXapiVisitor<Ctx> withJsonPairTerminal(In2<JsonPairExpr, Ctx> callback) {
+        putCallback(JsonPairExpr.class, callback.supply1(false));
+        return this;
+    }
+
+    public ComposableXapiVisitor<Ctx> withJsonPairRecurse(In2<JsonPairExpr, Ctx> callback) {
+        putCallback(JsonPairExpr.class, callback.supply1(true));
+        return this;
+    }
+
     @Override
     public void visit(CssBlockExpr n, Ctx arg) {
         doVisit(CssBlockExpr.class, n, arg, super::visit);

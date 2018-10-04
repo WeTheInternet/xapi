@@ -48,7 +48,7 @@ public interface Log extends Debuggable {
 
   default Log log(Class forClass, LogLevel level, Object ... values) {
     if (isLoggable(level)) {
-      log(forClass, values);
+      log(forClass, debug(values));
     }
     return this;
   }
@@ -163,6 +163,15 @@ public interface Log extends Debuggable {
 
   static void tryLog(Class<?> cls, Object inst, LogLevel level, Object ... e) {
     loggerFor(cls, inst).log(cls, level, e);
+  }
+
+  @Override
+  default String coerceNonArray(Object obj, boolean first) {
+    if (first && obj instanceof Class) {
+      // classes get special treatment...
+      return Debuggable.classLink((Class<?>) obj);
+    }
+    return Debuggable.super.coerceNonArray(obj, first);
   }
 }
 

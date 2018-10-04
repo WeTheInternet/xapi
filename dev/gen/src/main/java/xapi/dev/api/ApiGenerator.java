@@ -78,7 +78,7 @@ public class ApiGenerator {
             }
 
             Digester digester = X_Inject.instance(Digester.class);
-            for (SourceBuilder<Ctx> source : ctx.getSourceFiles()) {
+            for (SourceBuilder<?> source : ctx.getSourceFiles()) {
                 String src = source.toSource();
                 final byte[] digest = digester.digest(src.getBytes());
                 String hash = digester.toString(digest);

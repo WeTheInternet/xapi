@@ -16,7 +16,7 @@ import java.lang.reflect.Modifier;
  */
 public class ApiMethodGenerator <Ctx extends ApiGeneratorContext<Ctx>> extends VoidVisitorAdapter<Ctx> {
 
-    private final SourceBuilder<Ctx> builder;
+    private final SourceBuilder<?> builder;
     private final JsonContainerExpr json;
     private final SimpleStack<Do> undos;
     private final int modifiers;
@@ -29,7 +29,7 @@ public class ApiMethodGenerator <Ctx extends ApiGeneratorContext<Ctx>> extends V
 
     public ApiMethodGenerator(
         ApiGeneratorTools<Ctx> tools,
-        SourceBuilder<Ctx> builder,
+        SourceBuilder<?> builder,
         JsonContainerExpr json,
         int modifiers
     ) {

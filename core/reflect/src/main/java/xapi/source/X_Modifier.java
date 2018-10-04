@@ -34,6 +34,9 @@ public final class X_Modifier {
 
   public static final int SYNTHETIC = 0x1000;
 
+  // There is not a java.lang.reflect.Modifier field for default methods, so we use this unused value instead.
+  public static final int DEFAULT = 0x10000;
+
   public static final int TRANSIENT = 0x0080;
 
   public static final int VARARGS   = 0x0080;     // for method_info
@@ -170,6 +173,9 @@ public final class X_Modifier {
   public static boolean isStatic(int mod) {
       return (mod & X_Modifier.STATIC) != 0;
   }
+  public static boolean isDefaultVirtual(int mod) {
+      return (mod & X_Modifier.DEFAULT) != 0;
+  }
   /**
    * Returns true if the modifiers include the <tt>strictfp</tt>
    * modifier.
@@ -206,6 +212,7 @@ public final class X_Modifier {
         : isAbstract(protection) ? " abstract" : ""
       ) +
       (isFinal(protection) ? " final" : "") +
+      (isDefaultVirtual(protection) ? " default" : "") +
       (isSynchronized(protection) ? " synchronized" : "") +
       (isNative(protection) ? " native" : "") +
       (isStrict(protection) ? " strictfp" : "")

@@ -20,11 +20,12 @@ public class ApiGeneratorContext<Ctx extends ApiGeneratorContext<Ctx>>
     private String generatorDirectory;
     private String outputDirectory;
     private StringTo<Node> vars;
-    private StringTo<SourceBuilder<Ctx>> sources;
+    private StringTo<SourceBuilder<?>> sources;
     private boolean firstOfRange;
     private boolean inRange;
     private boolean ignoreChanges;
 
+    @SuppressWarnings("unchecked")
     public ApiGeneratorContext() {
         vars = X_Collect.newStringMap(Node.class);
         sources = X_Collect.newStringMap(SourceBuilder.class);
@@ -79,9 +80,9 @@ public class ApiGeneratorContext<Ctx extends ApiGeneratorContext<Ctx>>
         return node == null ? null : ASTHelper.extractStringValue((Expression) node);
     }
 
-    public SourceBuilder<Ctx> getOrMakeClass(String pkg, String cls, boolean isInterface) {
+    public SourceBuilder<?> getOrMakeClass(String pkg, String cls, boolean isInterface) {
         final String fqcn = X_Source.qualifiedName(pkg, cls);
-        return sources.getOrCreate(fqcn, create -> new SourceBuilder<>(self())
+        return sources.getOrCreate(fqcn, create -> new SourceBuilder<>(this)
             .setClassDefinition("public " + (isInterface ? "interface" : "class") + " " + cls, false)
             .setPackage(pkg)
         );
@@ -106,7 +107,7 @@ public class ApiGeneratorContext<Ctx extends ApiGeneratorContext<Ctx>>
         return inRange;
     }
 
-    public Iterable<SourceBuilder<Ctx>> getSourceFiles() {
+    public Iterable<SourceBuilder<?>> getSourceFiles() {
         return sources.values();
     }
 

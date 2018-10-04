@@ -272,4 +272,19 @@ In1Out1<I, O> extends Rethrowable, Lambda {
     default <I2> In2Out1<I2, I, O> ignoresIn1() {
       return (k, v) -> io(v);
     }
+
+
+  default <I1E extends I> In1Out1<I1E, O> strengthenInput() {
+    // The current In1 accepts a weaker type than we want;
+    // we strengthen our type by returning a stronger signature,
+    // which uses the weakener (`return this`) to call into us.
+    return mapIn(X_Fu.weakener());
+  }
+
+  /**
+   * Annoyingly, this method must be static, as we cannot express lower type bounds on instance methods.
+   */
+  static <I, O1, O extends O1> In1Out1<I, O1> weakenOutput(In1Out1<I, O> from) {
+    return from.mapOut(X_Fu.weakener());
+  }
 }

@@ -36,6 +36,7 @@ package xapi.log.impl;
 
 import xapi.annotation.inject.SingletonDefault;
 import xapi.collect.api.Fifo;
+import xapi.fu.Debuggable;
 import xapi.log.api.LogLevel;
 import xapi.log.api.LogService;
 import xapi.util.X_Namespace;
@@ -83,40 +84,7 @@ public class JreLog extends AbstractLog{
   @Override
   public Object unwrap(LogLevel level, Object m) {
     if (m instanceof Class) {
-      Class<?> c = (Class<?>)m;
-      Class<?> enclosing = c;
-      while (enclosing.isAnonymousClass() && enclosing.getEnclosingClass() != null) {
-        enclosing = enclosing.getEnclosingClass();
-      }
-      String candidate = null;
-      final StackTraceElement[] traces = new Throwable().getStackTrace();
-      for (StackTraceElement trace : traces) {
-        // try for exact match first
-        if (trace.getClassName().equals(c.getName())) {
-          return " "+trace;
-        } else if (candidate == null && trace.getClassName().startsWith(c.getName())) {
-          if (trace.getClassName().split("[$]")[0].equals(c.getName())) {
-            candidate = " " + trace;
-          }
-        }
-      }
-      // loosen up and try enclosing types...
-      for (StackTraceElement trace : traces) {
-        final String cls = trace.getClassName();
-        if (cls.contains(enclosing.getName())) {
-          while (c.getEnclosingClass() != null) {
-            c = c.getEnclosingClass();
-            if (trace.getClassName().equals(c.getName())) {
-              return " " + trace;
-            }
-
-          }
-          if (candidate == null) {
-            candidate = " " + trace;
-          }
-        }
-      }
-      return c.getCanonicalName();
+      return Debuggable.classLink((Class<?>) m);
     }
     return super.unwrap(level, m);
   }

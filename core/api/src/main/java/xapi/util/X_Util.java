@@ -20,7 +20,9 @@ import static xapi.util.X_Runtime.isJavaScript;
  */
 public final class X_Util{
 
-  private X_Util() {}
+    public static final String arrayRegex = "\\[\\]";
+
+    private X_Util() {}
 
   public static boolean equal(final Object one, final Object two){
     return

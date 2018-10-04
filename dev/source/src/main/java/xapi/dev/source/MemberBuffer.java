@@ -1,5 +1,8 @@
 package xapi.dev.source;
 
+import xapi.fu.Out2;
+import xapi.fu.itr.ArrayIterable;
+import xapi.fu.itr.SizedIterator;
 import xapi.source.read.JavaLexer;
 import xapi.source.read.JavaVisitor.TypeData;
 
@@ -85,6 +88,91 @@ public abstract class MemberBuffer<Self extends MemberBuffer<Self>> extends
 
   public final Self addAnnotation(final Class<?> anno) {
     this.annotations.add(addImport(anno));
+    return self();
+  }
+
+  public final Self withAnnotation(final Class<?> anno, Out2<String, String> ... members) {
+    return withAnnotation(addImport(anno), members);
+  }
+
+  public final Self withAnnotation(String type, Out2<String, String> ... members) {
+    // TODO: create a nice AnnotationBuilder class, so we can make this less-spaghetti-y...
+    final int len = members.length;
+    type = addImport(type);
+    if (len > 0) {
+      final SizedIterator<Out2<String, String>> itr = ArrayIterable.once(members);
+      boolean
+          nl = len > 2,
+          first = true,
+          // we use size() instead of members.length, to take advantage of null check in once(), above
+          singleItem = itr.size() == 1;
+
+      PrintBuffer b = new PrintBuffer(getIndentCount());
+      b.append(type).append("(");
+      while(itr.hasNext()) {
+
+        final Out2<String, String> next = itr.next();
+        final String name = next.out1();
+        final String val = next.out2();
+        final boolean hasNl = val.contains("\n");
+        if (first) {
+          first = false;
+          if (singleItem && "value".equals(name)) {
+            if (hasNl) {
+              b.indent();
+              b.printlns(val);
+              b.outdent();
+            } else {
+              b.append(val);
+            }
+            break;
+          }
+          if (hasNl || nl) {
+            b.println().print("  "); // when newlines, first item should shift left 2 chars (for leading `, `)
+          }
+        } else {
+          // if there were more than two items, nl was already true.
+          if (len == 2) {
+            // when there are two items
+            if (hasNl) {
+              // and the second item has a newline
+              if (!nl) {
+                // but the first item did not have a newline,
+                // at least print the missing trailing newline
+                b.println();
+                nl = true;
+              }
+            }
+          }
+          // not first..., add commas
+            if (hasNl || nl) {
+              b.print(", ");
+            } else {
+              b.append(", ");
+            }
+        }
+        b.append(name).append(" = ");
+        if (nl || hasNl) {
+          nl = true; // propagate "use newlines" forward
+          // print newlines between members, for readability.
+          b.indent();
+          b.printlns(val);
+          b.outdent();
+        } else {
+          // print one or two items (without newlines) wholly inline
+          b.append(val);
+        }
+      }
+      if (nl) {
+        b.outdent().print(")");
+      } else {
+        b.append(")");
+      }
+
+      this.annotations.add(b.toSource());
+    } else {
+      this.annotations.add(type);
+    }
     return self();
   }
 

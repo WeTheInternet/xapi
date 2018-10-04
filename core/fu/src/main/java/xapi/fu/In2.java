@@ -15,6 +15,10 @@ public interface In2<I1, I2> extends HasInput, Rethrowable, Lambda {
 
     void in(I1 in1, I2 in2);
 
+  static <I1, I2> In2<I1, I2> ignoreAll() {
+    return NULL;
+  }
+
   @Override
   default int accept(int position, Object... values) {
     in((I1)values[position++], (I2)values[position++]);

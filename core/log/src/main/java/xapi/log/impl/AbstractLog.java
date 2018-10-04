@@ -37,6 +37,7 @@ package xapi.log.impl;
 import xapi.collect.api.Fifo;
 import xapi.collect.impl.SimpleFifo;
 import xapi.fu.Out1;
+import xapi.fu.itr.ArrayIterable;
 import xapi.log.api.LogLevel;
 import xapi.log.api.LogService;
 
@@ -45,80 +46,80 @@ import java.util.Iterator;
 
 public abstract class AbstractLog implements LogService {
 
-	protected LogLevel logLevel = LogLevel.INFO;
+    protected LogLevel logLevel = LogLevel.INFO;
 
-	@Override
-	public boolean shouldLog(LogLevel logLevel) {
-		return this.logLevel.ordinal() <= logLevel.ordinal();
-	}
+    @Override
+    public boolean shouldLog(LogLevel logLevel) {
+        return this.logLevel.ordinal() <= logLevel.ordinal();
+    }
 
-	@Override
-	public void log(LogLevel level, Object o) {
-		if (shouldLog(level)) {
-			Fifo<Object> arr = newFifo();
-			arr.give(unwrap(level, o));
-			doLog(level, arr);
-		}
-	}
+    @Override
+    public void log(LogLevel level, Object o) {
+        if (shouldLog(level)) {
+            Fifo<Object> arr = newFifo();
+            arr.give(unwrap(level, o));
+            doLog(level, arr);
+        }
+    }
 
     @Override
     @SuppressWarnings({
         "unchecked", "rawtypes"
     })
-	public Iterable<Object> shouldIterate(Object m) {
-	  return m instanceof Fifo ? ((Fifo)m).forEach() : m instanceof Iterable ? (Iterable)m : null;
-	}
+    public Iterable<Object> shouldIterate(Object m) {
+        return m instanceof Fifo ? ((Fifo) m).forEach() : m instanceof Iterable ? (Iterable) m : null;
+    }
 
-	@Override
-	public Fifo<Object> newFifo() {
-    return new SimpleFifo<Object>();
-  }
+    @Override
+    public Fifo<Object> newFifo() {
+        return new SimpleFifo<Object>();
+    }
 
-  @Override
-  @SuppressWarnings({"rawtypes", "unchecked"})
-	public Object unwrap(LogLevel level, Object m) {
-		// unwrap throwables and log strack trace elements
-		if (m instanceof Throwable) {
-			StackTraceElement[] trace = ((Throwable) m).getStackTrace();
-			String serialized = m + "\n";
-			if (trace != null) {
-        for (StackTraceElement el : trace) {
-          serialized += String.valueOf(el)+"\n";
-        }
-      }
-			return serialized;
-		} else if (m != null && m.getClass().isArray()) {
-          return new SimpleFifo<Object>((Object[])m).join(", ");
+    @Override
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public Object unwrap(LogLevel level, Object m) {
+        // unwrap throwables and log strack trace elements
+        if (m instanceof Throwable) {
+            StackTraceElement[] trace = ((Throwable) m).getStackTrace();
+            String serialized = m + "\n";
+            if (trace != null) {
+                for (StackTraceElement el : trace) {
+                    serialized += String.valueOf(el) + "\n";
+                }
+            }
+            return serialized;
+        } else if (m != null && m.getClass().isArray()) {
+            return ArrayIterable.iterate((Object[]) m).join(", ");
         } else if (m instanceof Out1) {
-          return unwrap(level, ((Out1)m).out1());
+            return unwrap(level, ((Out1) m).out1());
         } else if (m instanceof Provider) {
-          return unwrap(level, ((Provider)m).get());
+            return unwrap(level, ((Provider) m).get());
         } else if (m instanceof Iterable) {
-		  Iterator iter = ((Iterable)m).iterator();
-		  SimpleFifo fifo = new SimpleFifo();
-		  while(iter.hasNext()) {
-        fifo.give(String.valueOf(iter.next()));
-      }
-		  return "["+fifo.join(", ")+"]";
-		} else if (m instanceof Fifo)
-      return "{"+((Fifo)m).join(", ")+"}";
-		return m == null ? "null" : m;
-	}
+            Iterator iter = ((Iterable) m).iterator();
+            SimpleFifo fifo = new SimpleFifo();
+            while (iter.hasNext()) {
+                fifo.give(String.valueOf(iter.next()));
+            }
+            return "[" + fifo.join(", ") + "]";
+        } else if (m instanceof Fifo)
+            return "{" + ((Fifo) m).join(", ") + "}";
+        return m == null ? "null" : m;
+    }
 
-	protected void writeLog(LogLevel level, StringBuilder b, Object object) {
-		// TODO: inspect w/ conditional reflection
-		b.append(unwrap(level, object));
-		b.append("\t");
-	}
+    protected void writeLog(LogLevel level, StringBuilder b, Object object) {
+        // TODO: inspect w/ conditional reflection
+        b.append(unwrap(level, object));
+        b.append("\t");
+    }
 
-	@Override
-	public LogLevel getLogLevel() {
-		return logLevel;
-	}
+    @Override
+    public LogLevel getLogLevel() {
+        return logLevel;
+    }
 
-	@Override
-	public void setLogLevel(LogLevel logLevel) {
-		this.logLevel = logLevel;
-	}
+    @Override
+    public void setLogLevel(LogLevel logLevel) {
+        this.logLevel = logLevel;
+    }
 
 }

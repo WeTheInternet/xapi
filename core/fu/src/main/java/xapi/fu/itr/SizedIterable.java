@@ -155,6 +155,10 @@ public interface SizedIterable <T> extends MappedIterable<T>, HasSize {
     }
 
     default SizedIterable<T> plus(SizedIterable<T> more) {
+        if (more == EmptyIterator.NONE || more == null) {
+            // never concat empty items; no need to pay extra recursion.
+            return this;
+        }
         final MappedIterable<T> mapped = MappedIterable.super.plus(more);
         return of(()-> size() + more.size(), mapped);
     }

@@ -16,6 +16,10 @@ public class ArrayIterable <E> implements SizedIterable <E> {
     return es == null || es.length == 0 ? EMPTY : new ArrayIterable<>(es);
   }
 
+  public static <E> SizedIterator<E> once(E ... es) {
+    return es == null || es.length == 0 ? EMPTY.iterator() : new ArrayIterable<>(es).iterator();
+  }
+
   public static <E> ArrayIterable<E> iterateFrom(int start, E ... es) {
     return new ArrayIterable<>(es, start, es.length-1);
   }

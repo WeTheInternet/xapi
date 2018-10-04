@@ -1,5 +1,7 @@
 package xapi.lang.oracle;
 
+import com.github.javaparser.ParseException;
+import com.github.javaparser.TokenMgrError;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.fu.X_Fu;
@@ -28,6 +30,32 @@ public class AstOracle<Extra> implements Serializable {
     private final StringTo<AstInfo<Extra>> builderTypes;
     private final StringTo<AstInfo<Extra>> generatorTypes;
     private final StringTo<AstInfo<Extra>> modelTypes;
+
+    public static int findLine(Throwable e) {
+        int line = 1;
+        if (e instanceof ParseException) {
+            ParseException ex = (ParseException) e;
+            if (ex.currentToken == null) {
+                // grep line # from string
+                try {
+                    String msg = ex.getMessage();
+                    int last = msg.lastIndexOf(" line ") + 6;
+                    line = Integer.parseInt( msg.substring(last, msg.indexOf(' ', last+1)) );
+                } catch (Exception ignored) {}
+            } else {
+                // use line # from token
+                line = ex.currentToken.beginLine;
+            }
+        } else if (e instanceof TokenMgrError) {
+            TokenMgrError ex = (TokenMgrError) e;
+            // do some string parsing...
+            try {
+                final String val = ex.getMessage().split("error at line ")[1].split(",")[0];
+                line = Integer.parseInt(val);
+            } catch (ArrayIndexOutOfBoundsException | NumberFormatException ignored) {}
+        }
+        return line;
+    }
 
     public AstInfo<Extra> getOrCreate(Extra extra, String pkg, String ... enclosed) {
         String key = X_Source.qualifiedName(pkg, X_String.join(".", enclosed));

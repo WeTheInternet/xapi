@@ -5,8 +5,6 @@ import xapi.source.api.HasQualifiedName;
 import xapi.source.api.IsType;
 import xapi.source.service.SourceService;
 import xapi.util.X_String;
-import xapi.util.api.Pair;
-import xapi.util.impl.PairBuilder;
 
 import javax.inject.Provider;
 import javax.validation.constraints.NotNull;
@@ -21,8 +19,6 @@ import static xapi.util.X_String.toTitleCase;
 public class X_Source {
 
   private X_Source() {}
-
-  private static final String arrays = "\\[\\]";
 
   private static final Provider<SourceService> service = X_Inject.singletonLazy(SourceService.class);
 
@@ -217,16 +213,8 @@ public class X_Source {
     else
       return cls.substring(0, lastPeriod);
   }
-  public static Pair<String, Integer> extractArrayDepth(String from) {
-    int arrayDepth = 0;
-    while (from.matches(".*"+arrays)) {
-      arrayDepth ++;
-      from = from.replaceFirst(arrays, "");
-    }
-    return PairBuilder.pairOf(from, arrayDepth);
-  }
 
-  public static boolean isJavaLangObject(HasQualifiedName type) {
+    public static boolean isJavaLangObject(HasQualifiedName type) {
     return type.getQualifiedName().equals("java.lang.Object");
   }
   public static String qualifiedName(String pkg, String enclosed) {
@@ -367,16 +355,6 @@ public class X_Source {
         return enclosed.replace('.', '_');
     }
 
-  public static String addLineNumbers(String src) {
-    final String[] lines = src.split("\n");
-    int maxSize = (int)(Math.log10(lines.length) + 1);
-    for (int i = 0; i < lines.length; i++) {
-      String line = lines[i];
-      lines[i] = (i + 1) + X_String.repeat(" ", maxSize - i + 1) + line;
-    }
-    return X_String.join("\n", lines);
-  }
-
     public static String javaSafeName(String path) {
       if(isEmpty(path)) {
         return "";
@@ -399,8 +377,18 @@ public class X_Source {
       return new String(chars);
     }
 
+  public static String pathToLogLink(String pkg, String file) {
+      return pathToLogLink(pkg, file, null);
+  }
+  public static String pathToLogLink(String pkg, String file, Integer line) {
+      if (line == null) {
+          line = 27;
+      }
+      return X_Source.qualifiedName(pkg, "(" + (file.contains(".") ? file : file + ".java") + ":" + line + ")");
+  }
+
   public static String pathToLogLink(String path) {
-    return pathToLogLink(path, null);
+    return pathToLogLink(path, (Integer)null);
   }
   public static String pathToLogLink(String path, Integer line) {
     String unixed = path.replace('\\', '/');
@@ -410,7 +398,7 @@ public class X_Source {
         - (lastBit.length() == unixed.length() ? 0 : 1));
     // If we have the path of the document, we can render a link that intellij will pick up.
     String linkToDoc = prefix.replace('/', '.') + // make it look like a java qualified name
-        "(" + lastBit + ":" + (line == null ? 1 : line) + ")"; // print the file name and the line number to jump to source
+        "(" + lastBit + ":" + (line == null ? 27 : line) + ")"; // print the file name and the line number to jump to source
     // TODO: bother with other IDEs :-)
     return linkToDoc;
   }

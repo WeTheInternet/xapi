@@ -73,7 +73,7 @@ public class BytecodeAdapterService implements
 
   InitMap<String, IsClass> classes = new InitMapDefault<String, IsClass>(
       InitMapDefault.PASS_THRU, classString -> {
-          Pair<String, Integer> cls = X_Source.extractArrayDepth(classString);
+          Pair<String, Integer> cls = Pair.extractArrayDepth(classString);
           String clsName = cls.get0().split("/")[0]; // lambdas can have / in classname...
           final ClassLoader cl = getClassLoader();
           URL location = X_Source.classToUrl(clsName, cl);
