@@ -864,8 +864,10 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
                 .map(Out2::out1);
             finish(itr, UiPhase.CLEANUP);
         } catch (Throwable t) {
-            X_Log.error(AbstractUiGeneratorService.class,
-                "Did not generate ui successfully;", t, "for", parsed);
+            X_Debug.preventInterleave(()->{
+                X_Log.error(AbstractUiGeneratorService.class,
+                    "Did not generate ui successfully;", t, "for", parsed);
+            });
             if (isStrict()) {
                 throw t;
             }

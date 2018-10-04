@@ -13,7 +13,6 @@ import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.FieldBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
-import xapi.dev.api.SourceLayer;
 import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.dev.ui.tags.assembler.AssembledElement;
 import xapi.dev.ui.tags.assembler.AssembledUi;
@@ -22,6 +21,7 @@ import xapi.dev.ui.tags.factories.GeneratedFactory;
 import xapi.dev.ui.tags.factories.LazyInitFactory;
 import xapi.fu.*;
 import xapi.fu.itr.*;
+import xapi.log.X_Log;
 import xapi.source.X_Modifier;
 import xapi.util.X_String;
 
@@ -382,6 +382,10 @@ public class GeneratedUiComponent extends GeneratedTypeOwnerBase <GeneratedUiApi
     }
 
     public String getTagName() {
+        if (tagName == null) {
+            X_Log.warn(GeneratedUiComponent.class, "No tagName set for ", getTypeName());
+            return getTypeName();
+        }
         return tagName;
     }
 
