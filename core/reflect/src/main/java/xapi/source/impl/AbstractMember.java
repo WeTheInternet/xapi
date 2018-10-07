@@ -10,7 +10,7 @@ import xapi.source.api.IsMethod;
 import xapi.source.api.IsType;
 import xapi.source.service.SourceService;
 
-public class AbstractMember <Self extends AbstractMember<Self>> implements IsMember{
+public abstract class AbstractMember <Self extends AbstractMember<Self>> implements IsMember{
 
   IsType enclosingType;
   final Fifo<IsAnnotation> annotations;
@@ -43,9 +43,9 @@ public class AbstractMember <Self extends AbstractMember<Self>> implements IsMem
 
   /**
    * This method is final to remind you to always call setEnclosingType();
-   * A class may be enclosed by an IsClass or IsMethod, 
+   * A class may be enclosed by an IsClass or IsMethod,
    * while an IsMethod or IsField will always be enclosed by IsClass.
-   * 
+   *
    * Thus, we reserve this method for any kind of enclosing type,
    * and leave it to subclasses to expose their own typed getEnclosing____() method.
    */
@@ -92,7 +92,7 @@ public class AbstractMember <Self extends AbstractMember<Self>> implements IsMem
   public Iterable<IsAnnotation> getAnnotations() {
     return annotations.forEach();
   }
-  
+
   @Override
   public IsAnnotation getAnnotation(String name) {
     if (name.indexOf('.')==-1)
@@ -100,7 +100,7 @@ public class AbstractMember <Self extends AbstractMember<Self>> implements IsMem
       if (anno.getSimpleName().equals(name))
         return anno;
     }
-    else 
+    else
     for (IsAnnotation anno : getAnnotations()) {
       if (anno.getQualifiedName().equals(name))
         return anno;

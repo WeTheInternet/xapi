@@ -9,6 +9,7 @@ import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.except.NotConfiguredCorrectly;
 import xapi.fu.In1;
+import xapi.fu.X_Fu;
 import xapi.gwt.model.service.ModelServiceGwt;
 import xapi.model.X_Model;
 import xapi.model.api.Model;
@@ -17,6 +18,11 @@ import xapi.model.impl.ModelNameUtil;
 import xapi.model.impl.ModelUtil;
 import xapi.source.X_Source;
 import xapi.source.api.IsType;
+import xapi.source.api.IsTypeArgument;
+import xapi.source.impl.ImmutableClassArgument;
+import xapi.source.impl.ImmutableParameterizedType;
+import xapi.source.impl.ImmutableType;
+import xapi.source.impl.ImmutableWildcardArgument;
 import xapi.util.X_Runtime;
 
 import javax.inject.Named;
@@ -36,13 +42,7 @@ import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.linker.Artifact;
 import com.google.gwt.core.ext.linker.Transferable;
 import com.google.gwt.core.ext.linker.impl.StandardLinkerContext;
-import com.google.gwt.core.ext.typeinfo.JClassType;
-import com.google.gwt.core.ext.typeinfo.JMethod;
-import com.google.gwt.core.ext.typeinfo.JParameter;
-import com.google.gwt.core.ext.typeinfo.JParameterizedType;
-import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
-import com.google.gwt.core.ext.typeinfo.JType;
-import com.google.gwt.core.ext.typeinfo.NotFoundException;
+import com.google.gwt.core.ext.typeinfo.*;
 
 @Transferable
 public class ModelArtifact extends Artifact<ModelArtifact> {
@@ -227,15 +227,16 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
             "make sure you have xapi-gwt-model:sources.jar on classpath.");
           throw new UnableToCompleteException();
         }
+        assert model != null : "Could not find " + Model.class.getCanonicalName() + " on the classpath";
         concrete = model;
         for (final JClassType supertype : concrete.getFlattenedSupertypeHierarchy()) {
           // Only interfaces explicitly extending Model become concrete.
           if (canBeSupertype(type, supertype)) {
-            // prefer the concrete type with the most methods in common.
+            // LATER: prefer the concrete type with the most methods in common (check before set).
             concrete = supertype;
           }
         }
-        if (concrete == null || concrete == model) {
+        if (concrete == model) {
           concrete = models.getRootType(logger, ctx);
           generator.setSuperClass(concrete.getQualifiedSourceName());
         } else {
@@ -307,8 +308,13 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
       final String params = typeToParameterString(method.getParameterTypes());
 
       final String simpleReturnType = out.addImport(method.getReturnType().getQualifiedSourceName());
-      final IsType returns = binaryToSource(method.getReturnType().getQualifiedBinaryName());
+      IsType returns = binaryToSource(method.getReturnType().getQualifiedBinaryName());
       final List<IsType> generics = getGenerics(method.getReturnType());
+//      if (generics.size() > 0) {
+      if (method.getReturnType().isParameterized() != null) {
+        // fixup the returns...
+        returns = new ImmutableParameterizedType(null, returns, toTypeBounds(method.getReturnType().isParameterized().getTypeArgs()));
+      }
       final IsType[] parameters = toTypes(method.getParameterTypes());
 
       if (isInteresting(method.getReturnType(), modelInterface)) {
@@ -429,10 +435,88 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
     List<IsType> generics = new ArrayList<>();
     if (genericType != null) {
       for (JClassType parameter : genericType.getTypeArgs()) {
-        generics.add(binaryToSource(parameter.getErasedType().getQualifiedBinaryName()));
+        IsType raw = binaryToSource(parameter.getErasedType().getQualifiedBinaryName());
+        final JParameterizedType param = parameter.isParameterized();
+        if (param != null) {
+          // nested parameter...
+          raw = raw.withTypeBounds(toTypeBounds(param.getTypeArgs()));
+        }
+        // leaving this here, in case there
+        generics.add(raw);
       }
     }
     return generics;
+  }
+
+  private IsTypeArgument[] toTypeBounds(JType ... typeArgs) {
+    final IsTypeArgument[] result = new IsTypeArgument[typeArgs.length];
+    for (int i = 0; i < typeArgs.length; i++) {
+      final JWildcardType wildcard = typeArgs[i].isWildcard();
+      if (wildcard != null) {
+        boolean noLower = X_Fu.isEmpty(wildcard.getLowerBounds());
+        if (isEmptyWildcard(wildcard.getUpperBounds())) {
+          if (noLower) {
+            // plain ?
+            result[i] = new ImmutableWildcardArgument(null);
+          } else {
+            final IsTypeArgument[] lowers = toTypeBounds(wildcard.getLowerBounds());
+            result[i] = new ImmutableWildcardArgument(null, true, lowers);
+          }
+        } else {
+          // There are upper bounds
+            final IsTypeArgument[] uppers = toTypeBounds(wildcard.getUpperBounds());
+          result[i] = new ImmutableWildcardArgument(null, uppers);
+        }
+      } else {
+        final JTypeParameter typeParam = typeArgs[i].isTypeParameter();
+        if (typeParam == null) {
+          // Check for array type...
+          final JArrayType arrayType = typeArgs[i].isArray();
+          if (arrayType == null) {
+            final JClassType arg = typeArgs[i].isClassOrInterface();
+
+            // The argument is a class type... check if it's parameterized or not.
+            final JParameterizedType params = arg.isParameterized();
+            IsType raw = new ImmutableType(arg.getPackage().getName(), enclosingName(arg));
+            if (params == null) {
+              // nope, raw type...
+              result[i] = new ImmutableClassArgument(null, raw, 0);
+            } else {
+              // child is a parameterized type as well... recurse
+              final IsTypeArgument[] args = toTypeBounds(params.getTypeArgs());
+              result[i] = new ImmutableClassArgument(null, raw, 0, args);
+            }
+
+          } else {
+            IsTypeArgument component = toTypeBounds(arrayType.getComponentType())[0];
+            final IsType array = component.getArrayType();
+            result[i] = new ImmutableClassArgument(null, array, 0);
+          }
+        } else {
+          // we have a type parameter.  Convert to just use the name ?
+          // ugh.  should check where this type parameter is defined, and act accordingly
+          final IsType raw = new ImmutableType("", typeParam.getName());
+          result[i] = new ImmutableClassArgument(null, raw, 0);
+        }
+      }
+    }
+    return result;
+  }
+
+  private boolean isEmptyWildcard(JClassType[] upperBounds) {
+    if (X_Fu.isEmpty(upperBounds)) {
+      return true;
+    }
+    return upperBounds.length == 1 && upperBounds[0].getQualifiedSourceName().equals(Object.class.getName());
+  }
+
+  private String enclosingName(JClassType arg) {
+    final JClassType enclosing = arg.getEnclosingType();
+    if (enclosing == null) {
+      return arg.getSimpleSourceName();
+    }
+    String enc = enclosingName(arg.getEnclosingType());
+    return enc + "." + arg.getSimpleSourceName();
   }
 
   /**

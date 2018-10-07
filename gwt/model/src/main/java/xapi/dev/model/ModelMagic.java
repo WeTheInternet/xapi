@@ -229,6 +229,7 @@ public class ModelMagic implements UnifyAstListener, MagicMethodGenerator {
           return true;
       }
     }
+    // Empty ignore value counts as "always ignore"
     return anno.value().length == 0;
   }
 

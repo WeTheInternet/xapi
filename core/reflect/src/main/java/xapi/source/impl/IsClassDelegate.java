@@ -1,11 +1,7 @@
 package xapi.source.impl;
 
-import xapi.source.api.IsAnnotation;
-import xapi.source.api.IsClass;
-import xapi.source.api.IsField;
-import xapi.source.api.IsGeneric;
-import xapi.source.api.IsMethod;
-import xapi.source.api.IsType;
+import xapi.fu.itr.SizedIterable;
+import xapi.source.api.*;
 
 public class IsClassDelegate implements IsClass{
 
@@ -29,6 +25,16 @@ public class IsClassDelegate implements IsClass{
   @Override
   public IsType getEnclosingType() {
     return cls.getEnclosingType();
+  }
+
+  @Override
+  public IsType getRawType() {
+    return new IsClassDelegate((IsClass)cls.getRawType(), arrayDepth);
+  }
+
+  @Override
+  public String getObjectName() {
+    return cls.getObjectName();
   }
 
   @Override
@@ -72,10 +78,10 @@ public class IsClassDelegate implements IsClass{
   public String toSignature() {
     return cls.toSignature()+ arrayString();
   }
-  
+
   @Override
   public boolean isArray() {
-    return cls.isArray();
+    return arrayDepth > 0 || cls.isArray();
   }
 
   @Override
@@ -107,7 +113,7 @@ public class IsClassDelegate implements IsClass{
   public Iterable<IsMethod> getDeclaredMethods() {
     return cls.getDeclaredMethods();
   }
-  
+
   @Override
   public int getModifier() {
     return cls.getModifier();
@@ -140,18 +146,18 @@ public class IsClassDelegate implements IsClass{
   }
 
   @Override
-  public Iterable<IsGeneric> getGenerics() {
-    return cls.getGenerics();
+  public SizedIterable<IsTypeParameter> getTypeParams() {
+    return cls.getTypeParams();
   }
 
   @Override
-  public IsGeneric getGeneric(String name) {
-    return cls.getGeneric(name);
+  public IsTypeParameter getTypeParam(String name) {
+    return cls.getTypeParam(name);
   }
 
   @Override
-  public boolean hasGenerics() {
-    return cls.hasGenerics();
+  public boolean hasTypeParams() {
+    return cls.hasTypeParams();
   }
 
   @Override
@@ -208,20 +214,20 @@ public class IsClassDelegate implements IsClass{
   public Class<?> toClass(ClassLoader loader) throws ClassNotFoundException {
     return loader.loadClass(cls.getQualifiedName());
   }
-  
+
   @Override
   public String toString() {
     return cls.toString();
   }
-  
+
   @Override
   public int hashCode() {
     return cls.hashCode();
   }
-  
+
   @Override
   public boolean equals(Object obj) {
     return cls.equals(obj);
   }
-  
+
 }

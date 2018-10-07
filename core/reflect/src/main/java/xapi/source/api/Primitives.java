@@ -1,7 +1,9 @@
 package xapi.source.api;
 
-import xapi.collect.impl.EmptyIterator;
+import xapi.fu.itr.SizedIterable;
 import xapi.source.X_Modifier;
+
+import static xapi.fu.itr.EmptyIterator.none;
 
 public enum Primitives implements IsClass{
   _void {
@@ -136,14 +138,12 @@ public enum Primitives implements IsClass{
   public final boolean isPrimitive() {
     return true;
   }
-  
+
   @Override
   public boolean isArray() {
     return false;
   }
 
-  public abstract String getObjectName();
-  
   @Override
   public final IsType getEnclosingType() {
     return null;
@@ -166,7 +166,7 @@ public enum Primitives implements IsClass{
 
   @Override
   public final Iterable<IsAnnotation> getAnnotations() {
-    return EmptyIterator.getEmptyIterable();
+    return none();
   }
 
   @Override
@@ -212,8 +212,13 @@ public enum Primitives implements IsClass{
   }
 
   @Override
+  public IsType getRawType() {
+    return this;
+  }
+
+  @Override
   public final Iterable<IsMethod> getDeclaredMethods() {
-    return EmptyIterator.getEmptyIterable();
+    return none();
   }
 
   @Override
@@ -223,7 +228,7 @@ public enum Primitives implements IsClass{
 
   @Override
   public final Iterable<IsMethod> getMethods() {
-    return EmptyIterator.getEmptyIterable();
+    return none();
   }
 
   @Override
@@ -239,7 +244,7 @@ public enum Primitives implements IsClass{
 
   @Override
   public final Iterable<IsField> getFields() {
-    return EmptyIterator.getEmptyIterable();
+    return none();
   }
 
   @Override
@@ -248,23 +253,23 @@ public enum Primitives implements IsClass{
   }
 
   @Override
-  public final Iterable<IsGeneric> getGenerics() {
-    return EmptyIterator.getEmptyIterable();
+  public final SizedIterable<IsTypeParameter> getTypeParams() {
+    return none();
   }
 
   @Override
-  public final IsGeneric getGeneric(String name) {
+  public final IsTypeParameter getTypeParam(String name) {
     return null;
   }
 
   @Override
-  public final boolean hasGenerics() {
+  public final boolean hasTypeParams() {
     return false;
   }
 
   @Override
   public final Iterable<IsClass> getInterfaces() {
-    return EmptyIterator.getEmptyIterable();
+    return none();
   }
 
   @Override
@@ -309,7 +314,7 @@ public enum Primitives implements IsClass{
 
   @Override
   public final Iterable<IsClass> getInnerClasses() {
-    return EmptyIterator.getEmptyIterable();
+    return none();
   }
 
 }

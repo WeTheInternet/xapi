@@ -1,6 +1,6 @@
 package xapi.source.api;
 
-
+// Hm, should probably make this class named IsTypeParameter
 public interface IsGeneric extends IsType{
 
   /**
@@ -22,7 +22,7 @@ public interface IsGeneric extends IsType{
   int NILLABLE = 4;
 
   /**
-   * @return The arbitrary name of this generic; defaults to ?
+   * @return The arbitrary name of this type argument; defaults to ?
    *
    * If it is a fully qualified classname, it will be imported;
    * if the writer has access to a TypePool, it will attempt to shorten the

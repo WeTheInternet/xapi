@@ -1,11 +1,6 @@
 package xapi.bytecode.impl;
 
-import xapi.bytecode.ClassPool;
-import xapi.bytecode.CtClass;
-import xapi.bytecode.CtClassType;
-import xapi.bytecode.CtField;
-import xapi.bytecode.CtMethod;
-import xapi.bytecode.NotFoundException;
+import xapi.bytecode.*;
 import xapi.bytecode.annotation.Annotation;
 import xapi.bytecode.annotation.AnnotationDefaultAttribute;
 import xapi.bytecode.annotation.MemberValue;
@@ -16,27 +11,22 @@ import xapi.collect.api.InitMap;
 import xapi.collect.impl.InitMapDefault;
 import xapi.except.NotImplemented;
 import xapi.except.NotYetImplemented;
+import xapi.fu.itr.EmptyIterator;
 import xapi.fu.itr.MappedIterable;
+import xapi.fu.itr.SizedIterable;
 import xapi.inject.impl.SingletonProvider;
 import xapi.log.X_Log;
 import xapi.log.api.LogLevel;
 import xapi.source.X_Modifier;
 import xapi.source.X_Source;
-import xapi.source.api.IsAnnotation;
-import xapi.source.api.IsAnnotationValue;
-import xapi.source.api.IsClass;
-import xapi.source.api.IsField;
-import xapi.source.api.IsGeneric;
-import xapi.source.api.IsMember;
-import xapi.source.api.IsMethod;
-import xapi.source.api.IsType;
-import xapi.source.api.Primitives;
+import xapi.source.api.*;
 import xapi.source.impl.DeclaredMemberFilter;
 import xapi.source.impl.ImmutableType;
 import xapi.source.impl.IsClassDelegate;
 import xapi.source.service.SourceAdapterService;
 import xapi.util.X_Debug;
 import xapi.util.X_String;
+import xapi.util.X_Util;
 import xapi.util.api.ConvertsValue;
 import xapi.util.api.Pair;
 
@@ -46,7 +36,6 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 
 public class BytecodeAdapterService implements
@@ -130,7 +119,13 @@ public class BytecodeAdapterService implements
 
   @Override
   public IsClass toClass(String binaryName) {
-    return classes.get(binaryName);
+    int arrayCount = 0;
+    while (binaryName.matches(".*" + X_Util.arrayRegex)) {
+      arrayCount += 1;
+      binaryName = binaryName.replaceFirst(X_Util.arrayRegex, "");
+    }
+    IsClass cls = classes.get(binaryName);
+    return cls.toArray(arrayCount);
   }
 
   protected ClassLoader getClassLoader() {
@@ -214,7 +209,12 @@ public class BytecodeAdapterService implements
       return annoClass.get().getEnclosingType();
     }
 
-    @Override
+      @Override
+      public IsType getRawType() {
+          return annoClass.get().getRawType();
+      }
+
+      @Override
     public String getPackage() {
       return annoClass.get().getPackage();
     }
@@ -602,20 +602,21 @@ public class BytecodeAdapterService implements
 
     @Override
     @SuppressWarnings("unchecked")
-    public Iterable<IsGeneric> getGenerics() {
+    public SizedIterable<IsTypeParameter> getTypeParams() {
       SignatureAttribute attr = (SignatureAttribute) cls.getClassFile2()
           .getAttribute(SignatureAttribute.tag);
       if (attr == null) {
-        return Collections.EMPTY_LIST;
+        return EmptyIterator.none();
       }
+
       System.err.println(attr);
-      return Collections.EMPTY_LIST;
+      return EmptyIterator.none();
     }
 
     @Override
-    public IsGeneric getGeneric(String name) {
-      for (IsGeneric g : getGenerics()) {
-        if (g.genericName().equals(name)) {
+    public IsTypeParameter getTypeParam(String name) {
+      for (IsTypeParameter g : getTypeParams()) {
+        if (g.getName().equals(name)) {
           return g;
         }
       }
@@ -623,8 +624,8 @@ public class BytecodeAdapterService implements
     }
 
     @Override
-    public boolean hasGenerics() {
-      return getGenerics().iterator().hasNext();
+    public boolean hasTypeParams() {
+      return getTypeParams().iterator().hasNext();
     }
 
     @Override
@@ -721,6 +722,14 @@ public class BytecodeAdapterService implements
     public final String toString() {
       return cls.getName();
     }
+
+      @Override
+      public IsType getRawType() {
+          if (hasTypeParams()) {
+              return new ImmutableType(getPackage(), getEnclosedName());
+          }
+          return this;
+      }
   }
 
   class MethodAdapter extends MemberAdapter implements IsMethod {
@@ -744,7 +753,12 @@ public class BytecodeAdapterService implements
           + type.getEnclosedName().replace('.', '$'));
     }
 
-    @Override
+      @Override
+      public IsType getRawType() {
+          return getReturnType().getRawType();
+      }
+
+      @Override
     public boolean isAbstract() {
       return X_Modifier.isAbstract(getModifier());
     }
@@ -848,7 +862,19 @@ public class BytecodeAdapterService implements
       return (IsClass) super.getEnclosingType();
     }
 
-    @Override
+      @Override
+      public IsType getRawType() {
+          final CtClass t;
+          try {
+              t = field.getType();
+          } catch (NotFoundException e) {
+              throw new RuntimeException(e);
+          }
+          return X_Source.toType(t.getPackageName(),
+              t.getEnclosedName());
+      }
+
+      @Override
     public String getName() {
       return field.getName();
     }

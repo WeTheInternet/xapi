@@ -1,12 +1,16 @@
 package xapi.source.impl;
 
-import java.io.Serializable;
+import xapi.annotation.reflect.KeepConstructor;
+import xapi.fu.Maybe;
+import xapi.fu.X_Fu;
+import xapi.fu.itr.ArrayIterable;
+import xapi.source.api.HasTypeParams;
+import xapi.source.api.IsType;
+import xapi.source.api.IsTypeParameter;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-
-import xapi.annotation.reflect.KeepConstructor;
-import xapi.source.api.IsType;
+import java.io.Serializable;
 
 public final class ImmutableType implements IsType, Serializable{
 
@@ -15,12 +19,14 @@ public final class ImmutableType implements IsType, Serializable{
   private final String pkg;
   private final String simple;
   private final IsType enclosing;
+  private final IsTypeParameter[] params;
 
   @Inject
   @KeepConstructor
   public ImmutableType(
     @Named("pkg") String pkg,
-    @Named("cls") String simpleName) {
+    @Named("cls") String simpleName,
+    IsTypeParameter ... params) {
     simpleName = simpleName.replace('$', '.');
     int ind = simpleName.lastIndexOf('.');
     if (ind == -1) {
@@ -31,16 +37,19 @@ public final class ImmutableType implements IsType, Serializable{
       this.enclosing = new ImmutableType(pkg, simpleName.substring(0, ind));
     }
     this.pkg = pkg;
+    this.params = params;
   }
 
   @Inject
   @KeepConstructor
   public ImmutableType(
     @Named("parent") IsType enclosingType,
-    @Named("cls") String simpleName) {
+    @Named("cls") String simpleName,
+    IsTypeParameter ... params) {
     this.pkg = enclosingType.getPackage();
     this.enclosing = enclosingType;
     this.simple = simpleName;
+    this.params = params;
   }
 
 
@@ -94,7 +103,7 @@ public final class ImmutableType implements IsType, Serializable{
   public String toString() {
     return getQualifiedName();
   }
-  
+
   @Override
   public boolean equals(Object obj) {
     if (obj == this)return true;
@@ -106,4 +115,20 @@ public final class ImmutableType implements IsType, Serializable{
         enclosing.equals(type.getEnclosingType());
   }
 
+  @Override
+  public Maybe<HasTypeParams> ifTypeParams() {
+    if (X_Fu.isEmpty(params)) {
+      return Maybe.not();
+    }
+    final ArrayIterable<IsTypeParameter> itr = ArrayIterable.iterate(params);
+    return Maybe.immutable(()-> itr);
+  }
+
+  @Override
+  public IsType getRawType() {
+    if (X_Fu.isEmpty(params)) {
+      return this;
+    }
+    return new ImmutableType(getPackage(), getEnclosedName());
+  }
 }

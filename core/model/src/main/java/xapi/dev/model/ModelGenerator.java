@@ -9,9 +9,7 @@ import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.fu.In2Out1;
-import xapi.fu.Maybe;
 import xapi.fu.Out1;
-import xapi.source.api.HasTypeParams;
 import xapi.source.api.IsType;
 
 import java.lang.reflect.Array;
@@ -122,10 +120,6 @@ public class ModelGenerator {
         s -> s.equals(cls.getCanonicalName()),
         (buffer, mthd) -> {
           final String collect = buffer.addImport(X_Collect.class);
-          final Maybe<HasTypeParams> params = mthd.returnType.ifTypeParams();
-          if (params.isPresent()) {
-
-          }
           assert mthd.generics.length == 1 : "Expected only one type parameter for a collections class "+cls;
           String component = buffer.addImport(mthd.generics[0].getQualifiedName());
           return "return "+collect+"."+method+"("+component+".class);";
@@ -169,7 +163,7 @@ public class ModelGenerator {
             "Perhaps you are lacking a getter/model annotation?  Check that get/set method names match.");
       }
       for (final GetterMethod getter : field.getGetters()) {
-        final String qualified = getter.returnType.getQualifiedName();
+        final String qualified = getter.returnType.toSource();
         final String imported = cb.addImport(qualified);
         final MethodBuffer mb = createMethod(imported,
           getter.methodName, "");

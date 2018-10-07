@@ -1,5 +1,7 @@
 package xapi.source.api;
 
+import xapi.util.X_Util;
+
 import java.io.Serializable;
 
 public interface HasQualifiedName extends Serializable
@@ -16,7 +18,10 @@ public interface HasQualifiedName extends Serializable
    * then try enclosed name.  If that is missing, the fully qualified name
    * is used instead.
    */
-  String getSimpleName();
+  default String getSimpleName() {
+    final String[] name = getEnclosedName().split(".");
+    return name[name.length-1];
+  }
   /**
    * @return ParentClass.SimpleName
    */
@@ -24,5 +29,13 @@ public interface HasQualifiedName extends Serializable
   /**
    * @return {@link #getPackage()} + "." + {@link #getEnclosedName()}
    */
-  String getQualifiedName();
+  default String getQualifiedName() {
+    String pkg = getPackage();
+    String enclosed = getEnclosedName();
+      return pkg == null || pkg.isEmpty() ? enclosed : enclosed == null || enclosed.isEmpty() ? pkg : enclosed.startsWith(pkg+".") ? enclosed : pkg + "." + enclosed;
+  }
+
+  default String getQualifiedComponentName() {
+    return getQualifiedName().replaceAll(X_Util.arrayRegex, "");
+  }
 }

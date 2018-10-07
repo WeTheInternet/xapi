@@ -3,13 +3,12 @@ package xapi.source.impl;
 import xapi.collect.api.Fifo;
 import xapi.collect.impl.SimpleFifo;
 import xapi.except.NotYetImplemented;
+import xapi.fu.data.MapLike;
+import xapi.fu.itr.ArrayIterable;
+import xapi.fu.itr.SizedIterable;
+import xapi.fu.java.X_Jdk;
 import xapi.source.X_Modifier;
-import xapi.source.api.IsAnnotation;
-import xapi.source.api.IsClass;
-import xapi.source.api.IsField;
-import xapi.source.api.IsGeneric;
-import xapi.source.api.IsMethod;
-import xapi.source.api.IsType;
+import xapi.source.api.*;
 import xapi.source.service.SourceService;
 
 public class AbstractClass extends AbstractMember<AbstractClass> implements IsClass{
@@ -17,7 +16,7 @@ public class AbstractClass extends AbstractMember<AbstractClass> implements IsCl
   IsClass parentClass;
   private boolean isInterface;
   final Fifo<IsClass> interfaces;
-  final Fifo<IsGeneric> generics;
+  final MapLike<String, IsTypeParameter> generics;
   final Fifo<IsClass> exceptions;
   final Fifo<IsClass> innerClasses;
   final Fifo<IsMethod> methods;
@@ -32,7 +31,7 @@ public class AbstractClass extends AbstractMember<AbstractClass> implements IsCl
     methods = new SimpleFifo<IsMethod>();
     fields = new SimpleFifo<IsField>();
     interfaces = new SimpleFifo<IsClass>();
-    generics = new SimpleFifo<IsGeneric>();
+    generics = X_Jdk.mapOrderedInsertion();
     exceptions = new SimpleFifo<IsClass>();
 
   }
@@ -42,7 +41,12 @@ public class AbstractClass extends AbstractMember<AbstractClass> implements IsCl
     return "java.lang".equals(getPackage()) && Character.isLowerCase(getSimpleName().charAt(0));
   }
 
-  @Override
+    @Override
+    public IsType getRawType() {
+        return null;
+    }
+
+    @Override
   public String getPackage() {
     return packageName;
   }
@@ -83,7 +87,7 @@ public class AbstractClass extends AbstractMember<AbstractClass> implements IsCl
   public Iterable<IsMethod> getDeclaredMethods() {
     return new DeclaredMemberFilter<IsMethod>(getMethods(), this);
   }
-  
+
   @Override
   public Iterable<IsMethod> getMethods() {
     return methods.forEach();
@@ -110,13 +114,13 @@ public class AbstractClass extends AbstractMember<AbstractClass> implements IsCl
   }
 
   @Override
-  public Iterable<IsGeneric> getGenerics() {
-    return generics.forEach();
+  public SizedIterable<IsTypeParameter> getTypeParams() {
+    return generics.mappedValues();
   }
 
   @Override
-  public IsGeneric getGeneric(String name) {
-    throw new NotYetImplemented("getGeneric in AbstractClass not yet implemented");
+  public IsTypeParameter getTypeParam(String name) {
+    return generics.get(name);
   }
 
   @Override
@@ -145,7 +149,7 @@ public class AbstractClass extends AbstractMember<AbstractClass> implements IsCl
   }
 
   @Override
-  public boolean hasGenerics() {
+  public boolean hasTypeParams() {
     return !generics.isEmpty();
   }
 
@@ -209,14 +213,17 @@ public class AbstractClass extends AbstractMember<AbstractClass> implements IsCl
     return this;
   }
 
-  protected AbstractClass setGenerics(Iterable<IsGeneric> generics) {
+  protected AbstractClass setTypeParameters(Iterable<IsTypeParameter> typeParams) {
     this.generics.clear();
-    addGenerics(generics);
+    addTypeParameters(typeParams);
     return this;
   }
-  protected AbstractClass addGenerics(Iterable<IsGeneric> generics) {
-    for (IsGeneric generic : generics) {
-      this.generics.give(generic);
+  public AbstractClass addTypeParameters(IsTypeParameter ... generics) {
+    return addTypeParameters(ArrayIterable.iterate(generics));
+  }
+  public AbstractClass addTypeParameters(Iterable<IsTypeParameter> generics) {
+    for (IsTypeParameter generic : generics) {
+      this.generics.put(generic.getName(), generic);
     }
     return this;
   }
@@ -254,7 +261,7 @@ public class AbstractClass extends AbstractMember<AbstractClass> implements IsCl
     return
         X_Modifier.classModifiers(getModifier())
       + (hasInterface() ? " interface " : " class ")
-      + (hasGenerics() ? "<"+ generics.join(", ") + ">" : "")
+      + (hasTypeParams() ? "<"+ generics.join(", ") + ">" : "")
       + (parentClass == null ?
           ( // no superclass, maybe print interface extends
             hasInterface() ? "\nextends " + interfaces.join(", ") : ""
@@ -271,12 +278,12 @@ public class AbstractClass extends AbstractMember<AbstractClass> implements IsCl
   public boolean isInterface() {
     return isInterface;
   }
-  
+
   @Override
   public boolean isAnnotation() {
     return hasModifier(X_Modifier.ANNOTATION);
   }
-  
+
   @Override
   public boolean isEnum() {
     return hasModifier(X_Modifier.ENUM);
@@ -286,7 +293,7 @@ public class AbstractClass extends AbstractMember<AbstractClass> implements IsCl
     isInterface = add;
     return this;
   }
-  
+
   public boolean isArray() {
     return getSimpleName().contains("[]");
   };
