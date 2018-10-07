@@ -17,22 +17,15 @@ import xapi.log.X_Log;
 import xapi.mojo.api.AbstractXapiMojo;
 import xapi.mvn.X_Maven;
 import xapi.source.X_Modifier;
-import xapi.source.api.IsAnnotation;
-import xapi.source.api.IsAnnotationValue;
-import xapi.source.api.IsClass;
-import xapi.source.api.IsMethod;
-import xapi.source.api.IsType;
-import xapi.source.api.Primitives;
+import xapi.source.api.*;
 import xapi.util.X_Debug;
 import xapi.util.X_Namespace;
 
 import java.io.File;
 import java.lang.annotation.Annotation;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
+import static xapi.util.X_Util.arrayRegex;
 
 /**
  * This goal will lookup all annotation that are themselves
@@ -91,7 +84,7 @@ public class AnnotationGeneratorMojo extends AbstractXapiMojo{
           continue;
         }
         String returnType = out.addImport(method.getReturnType().toString());
-        IsClass returnClass = adapter.toClass(method.getReturnType().getQualifiedName().replace("[]", ""));
+        IsClass returnClass = adapter.toClass(method.getReturnType().getQualifiedName());
         if (!method.getName().equals("annotationType")) {
           out
             .createField(returnType, method.getName())
@@ -125,7 +118,7 @@ public class AnnotationGeneratorMojo extends AbstractXapiMojo{
       factory.returnValue("proxy");
 
       // Saves the source file to generated-sources directory, and returns a compile job
-      String javaName = cls.getQualifiedName().replace("[]", "")+"Proxy";
+      String javaName = cls.getQualifiedName().replaceAll(arrayRegex, "")+"Proxy";
       String source = builder.toString();
       File file = saveModel(javaName, source, true);
 //      compileTasks.add(prepareCompile(file, javaName, source, true, cp));
@@ -159,15 +152,30 @@ public class AnnotationGeneratorMojo extends AbstractXapiMojo{
 
   private String getExtractor(ClassBuffer out, IsClass returnClass,
       IsMethod method, String returnType) {
-    if (returnClass.isAnnotation()) {
-      String proxyType = out.addImport(returnClass.getQualifiedName()+"Proxy");
-      return proxyType+".build((IsAnnotation)__value.getRawValue())";
-    } else if (returnClass instanceof Primitives) {
-      Primitives primitive = (Primitives) returnClass;
-      return "(" +primitive.getObjectName()+")__value.getRawValue()";
-    } else {
-      return "(" +returnType+")__value.getRawValue()";
+    String before = "", after = "", val;
+    if (returnClass.isArray() && returnClass.isAnnotation()) {
+      final String qname = returnClass.getQualifiedName();
+      String type = out.addImport(qname);
+      int i = type.indexOf('<');
+      if (i == -1) {
+        before = "new " + type +"{ ";
+      } else {
+        int o = type.lastIndexOf('>');
+        before = "new " + type.substring(0, i) + type.substring(o+1) +"{ ";
+      }
+        after = " }";
     }
+    if (returnClass.isAnnotation()) {
+      String proxyType = out.addImport(returnClass.getQualifiedComponentName()+"Proxy");
+      val = proxyType+".build((IsAnnotation)__value.getRawValue())";
+    } else if (returnClass.isPrimitive() && !"java.lang".equals(returnClass.getPackage())) {
+      Primitives primitive = (Primitives) returnClass;
+      val = "(" +primitive.getObjectName()+")__value.getRawValue()";
+    } else {
+      val = "(" +returnType+")__value.getRawValue()";
+    }
+
+    return before + val + after;
   }
 
   private String[] getAdditionalClasspath() {

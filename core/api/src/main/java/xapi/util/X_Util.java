@@ -20,7 +20,7 @@ import static xapi.util.X_Runtime.isJavaScript;
  */
 public final class X_Util{
 
-    public static final String arrayRegex = "\\[\\]";
+    public static final String arrayRegex = "\\[.*\\]";
 
     private X_Util() {}
 

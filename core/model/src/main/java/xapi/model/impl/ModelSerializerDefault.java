@@ -14,17 +14,9 @@ import xapi.dev.source.CharBuffer;
 import xapi.fu.In2Out1;
 import xapi.log.X_Log;
 import xapi.model.X_Model;
-import xapi.model.api.Model;
-import xapi.model.api.ModelDeserializationContext;
-import xapi.model.api.ModelKey;
-import xapi.model.api.ModelManifest;
-import xapi.model.api.ModelSerializationContext;
-import xapi.model.api.ModelSerializer;
-import xapi.model.api.PrimitiveReader;
-import xapi.model.api.PrimitiveSerializer;
+import xapi.model.api.*;
 import xapi.source.api.CharIterator;
 import xapi.util.X_Debug;
-import xapi.util.api.ConvertsTwoValues;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
@@ -35,7 +27,7 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
 
   private final ClassTo<PrimitiveReader> primitiveReaders;
 
-  private final ClassTo<ConvertsTwoValues<Class, Class, Object>> collectionFactories;
+  private final ClassTo<In2Out1<Class, Class, Object>> collectionFactories;
 
   public ModelSerializerDefault() {
     this(X_Collect.newClassMap(PrimitiveReader.class));
@@ -43,7 +35,7 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
 
   public ModelSerializerDefault(final ClassTo<PrimitiveReader> primitiveReaders) {
     this.primitiveReaders = primitiveReaders;
-    collectionFactories = X_Collect.newClassMap(ConvertsTwoValues.class);
+    collectionFactories = X_Collect.newClassMap(In2Out1.class);
   }
 
   @Override
@@ -390,70 +382,27 @@ public class ModelSerializerDefault <M extends Model> implements ModelSerializer
     if (collectionFactories.isEmpty()) {
       initializeCollectionFactories(collectionFactories);
     }
-    final ConvertsTwoValues<Class, Class, Object> factory = collectionFactories.get(collectionType);
-    return (CollectionProxy) factory.convert(keyType, valueType);
+    final In2Out1<Class, Class, Object> factory = collectionFactories.get(collectionType);
+    return (CollectionProxy) factory.io(keyType, valueType);
   }
 
-  protected void initializeCollectionFactories(ClassTo<ConvertsTwoValues<Class,Class,Object>> factories) {
+  protected void initializeCollectionFactories(ClassTo<In2Out1<Class,Class,Object>> factories) {
     // TODO use whole-world compiler knowledge to erase factories we will never use, as this likely sucks in a lot of code.
     // This would likely be best done in a ModelSerializerGwt that is generated and injected in place of this serializer
-    factories.put(IntTo.class, new ConvertsTwoValues<Class, Class, Object>() {
-      @Override
-      public Object convert(Class key, Class value) {
-        return X_Collect.newList(value);
+    factories.put(IntTo.class, (key, value) -> X_Collect.newList(value));
+    factories.put(StringTo.class, (key, value) -> {
+      if (value == StringTo.class) {
+        return X_Collect.newStringDeepMap(value);
       }
+      return X_Collect.newStringMap(value);
     });
-    factories.put(StringTo.class, new ConvertsTwoValues<Class, Class, Object>() {
-      @Override
-      public Object convert(Class key, Class value) {
-        if (value == StringTo.class) {
-          return X_Collect.newStringDeepMap(value);
-        }
-        return X_Collect.newStringMap(value);
-      }
-    });
-    factories.put(MapOf.class, new ConvertsTwoValues<Class, Class, Object>() {
-      @Override
-      public Object convert(Class key, Class value) {
-        return new MapOf(newMap(key, value), key, value);
-      }
-    });
-    factories.put(ObjectTo.class, new ConvertsTwoValues<Class, Class, Object>() {
-      @Override
-      public Object convert(Class key, Class value) {
-        return X_Collect.newMap(key, value);
-      }
-    });
-    factories.put(ClassTo.class, new ConvertsTwoValues<Class, Class, Object>() {
-      @Override
-      public Object convert(Class key, Class value) {
-        return X_Collect.newClassMap(value);
-      }
-    });
-    factories.put(IntTo.Many.class, new ConvertsTwoValues<Class, Class, Object>() {
-      @Override
-      public Object convert(Class key, Class value) {
-        return X_Collect.newIntMultiMap(value);
-      }
-    });
-    factories.put(StringTo.Many.class, new ConvertsTwoValues<Class, Class, Object>() {
-      @Override
-      public Object convert(Class key, Class value) {
-        return X_Collect.newStringMultiMap(value);
-      }
-    });
-    factories.put(ObjectTo.Many.class, new ConvertsTwoValues<Class, Class, Object>() {
-      @Override
-      public Object convert(Class key, Class value) {
-        return X_Collect.newMultiMap(key, value);
-      }
-    });
-    factories.put(ClassTo.Many.class, new ConvertsTwoValues<Class, Class, Object>() {
-      @Override
-      public Object convert(Class key, Class value) {
-        return X_Collect.newClassMultiMap(value);
-      }
-    });
+    factories.put(MapOf.class, (key, value) -> new MapOf(newMap(key, value), key, value));
+    factories.put(ObjectTo.class, (key, value) -> X_Collect.newMap(key, value));
+    factories.put(ClassTo.class, (key, value) -> X_Collect.newClassMap(value));
+    factories.put(IntTo.Many.class, (key, value) -> X_Collect.newIntMultiMap(value));
+    factories.put(StringTo.Many.class, (key, value) -> X_Collect.newStringMultiMap(value));
+    factories.put(ObjectTo.Many.class, (key, value) -> X_Collect.newMultiMap(key, value));
+    factories.put(ClassTo.Many.class, (key, value) -> X_Collect.newClassMultiMap(value));
   }
 
   protected Map newMap(Class key, Class value) {

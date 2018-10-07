@@ -1,16 +1,17 @@
 package xapi.util.api;
 
-import xapi.util.X_Util;
 import xapi.util.impl.PairBuilder;
+
+import static xapi.util.X_Util.arrayRegex;
 
 public interface Pair <X,Y>{
 
   static Pair<String, Integer> extractArrayDepth(String from) {
     int arrayDepth = 0;
 
-      while (from.matches(".*"+ X_Util.arrayRegex)) {
+      while (from.matches(".*"+ arrayRegex)) {
       arrayDepth ++;
-      from = from.replaceFirst(X_Util.arrayRegex, "");
+      from = from.replaceFirst(arrayRegex, "");
     }
     return PairBuilder.pairOf(from, arrayDepth);
   }

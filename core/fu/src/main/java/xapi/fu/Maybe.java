@@ -15,6 +15,10 @@ public interface Maybe <V> extends Rethrowable {
 
     V get();
 
+    default V getOrNull() {
+        return ifAbsentReturn(null);
+    }
+
     class ImmutableMaybe<V> implements Maybe<V>, IsImmutable {
 
         private final V value;
@@ -26,6 +30,20 @@ public interface Maybe <V> extends Rethrowable {
         @Override
         public V get() {
             return value;
+        }
+    }
+
+    class DeferredMaybe<V> implements Maybe<V>, IsImmutable {
+
+        private final Out1<V> value;
+
+        public DeferredMaybe(Out1<V> value) {
+            this.value = value;
+        }
+
+        @Override
+        public V get() {
+            return value.out1();
         }
     }
 
@@ -69,6 +87,10 @@ public interface Maybe <V> extends Rethrowable {
 
     static <O> Maybe<O> nullable(O mapped) {
         return mapped == null ? not() : immutable(mapped);
+    }
+
+    static <O> Maybe<O> deferred(Out1<O> mapped) {
+        return mapped == null || mapped == Out1.NULL ? not() : deferred(mapped);
     }
     static <O> ImmutableMaybe<O> immutable(O mapped) {
         return new ImmutableMaybe<>(mapped);

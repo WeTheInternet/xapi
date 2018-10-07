@@ -29,6 +29,11 @@ import java.lang.annotation.Target;
 public @interface Ignore {
 
     String ALL = "all";
+    /**
+     * In case you need to generate @Ignore statements,
+     * and it's easier to ternary ? Ignore.ALL : Ignore.NONE;
+     */
+    String NONE = "none";
 
     /**
      * Specify any token other than "all"

@@ -6,7 +6,6 @@ import xapi.inject.X_Inject;
 import xapi.log.X_Log;
 import xapi.log.api.LogService;
 import xapi.reflect.service.ReflectionService;
-import xapi.source.X_Modifier;
 import xapi.util.X_Runtime;
 import xapi.util.X_String;
 import xapi.util.X_Util;
@@ -1333,11 +1332,17 @@ public class X_Reflect {
               cls = best.getClassName();
             }
           }
+          Class mainClass;
           try {
-            Class mainClass = Class.forName(best.getClassName());
+            mainClass = Thread.currentThread().getContextClassLoader().loadClass(best.getClassName());
             return mainClass;
-          } catch (ClassNotFoundException e) {
-            throw X_Util.rethrow(e);
+          } catch (NoClassDefFoundError|ClassNotFoundException e) {
+            try {
+              mainClass = X_Reflect.class.getClassLoader().loadClass(best.getClassName());
+              return mainClass;
+            } catch (NoClassDefFoundError|ClassNotFoundException e1) {
+              X_Log.warn(X_Reflect.class, "Found ", best.getClassName(), "but could not load it from any available classloader");
+            }
           }
         }
       }

@@ -22,6 +22,7 @@ public class X_Debug {
 
     private final PrintStream orig;
     private final int depth;
+    private boolean recurse;
 
     public DebugStream(PrintStream orig, int ignoreDepth) {
       super(orig);
@@ -35,17 +36,26 @@ public class X_Debug {
       debugCaller();
     };
 
-    private void debugCaller() {
-      RuntimeException e = new RuntimeException();
-      e.fillInStackTrace();
-      StackTraceElement[] traces = e.getStackTrace();
-      int index = depth, end = Math.min(depth+maxLines, traces.length);
-      orig.print("\n\t\t @ ");
-      for(;index < end; index++ ) {
-        orig.print(traces[index]+": ");
+    private synchronized void debugCaller() {
+      if (recurse) {
+        return;
       }
-      if (X_Runtime.isJava()) {
-        flush(orig);
+      recurse = true;
+      try {
+
+        RuntimeException e = new RuntimeException();
+        e.fillInStackTrace();
+        StackTraceElement[] traces = e.getStackTrace();
+        int index = depth, end = Math.min(depth+maxLines, traces.length);
+        orig.print("\n\t\t @ ");
+        for(;index < end; index++ ) {
+          orig.print(traces[index]+": ");
+        }
+        if (X_Runtime.isJava()) {
+          flush(orig);
+        }
+      } finally {
+        recurse = false;
       }
     }
 

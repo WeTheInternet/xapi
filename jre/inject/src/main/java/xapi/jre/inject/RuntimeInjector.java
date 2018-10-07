@@ -61,7 +61,9 @@ public class RuntimeInjector implements In2<String, PlatformChecker> {
             return X_String.ensureEndsWith(mainLoc, File.separator);
           }
         }
-      } catch (Exception ignored) {}
+      } catch (Exception ignored) {
+        ignored.printStackTrace();
+      }
       return ""; // uses working directory
     }
     return X_String.ensureEndsWith(prefix, File.separator);
@@ -77,7 +79,9 @@ public class RuntimeInjector implements In2<String, PlatformChecker> {
       Class<?> mainClass = null;
       try {
         mainClass = X_Reflect.getMainClass();
-      } catch (Exception ignored){ }
+      } catch (Exception ignored){
+        ignored.printStackTrace();
+      }
       if (mainClass != null) {
         final String mainLoc = X_Reflect.getFileLoc(mainClass);
         relative = new File(mainLoc);

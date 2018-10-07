@@ -12,13 +12,13 @@
   <name>XApi - Core reflection apis and interfaces</name>
   <url>WeTheInter.net</url>
   <description>
-  All of our modules, somewhere along the way, use reflective structures 
-  wrapping java objects from various apis.  
-  Gwt uses JDT AST, Jre uses actual reflection, and our injection library uses 
-  a bytecode scanner to read in .class files.  
+  All of our modules, somewhere along the way, use reflective structures
+  wrapping java objects from various apis.
+  Gwt uses JDT AST, Jre uses actual reflection, and our injection library uses
+  a bytecode scanner to read in .class files.
   In order to abstract over the various apis we wrap,
-  we have our own interface layer to describe java metadata, 
-  so we can create tools to utilize java structure 
+  we have our own interface layer to describe java metadata,
+  so we can create tools to utilize java structure
   independent of any given dependencies.
   </description>
 

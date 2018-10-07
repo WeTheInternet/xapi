@@ -5,10 +5,10 @@ import xapi.fu.Filter.Filter2;
 import xapi.fu.*;
 import xapi.fu.Out1.Out1Unsafe;
 import xapi.fu.has.HasLock;
+import xapi.fu.itr.ArrayIterable;
 import xapi.fu.itr.EmptyIterator;
 import xapi.fu.itr.SizedIterable;
 import xapi.fu.itr.SizedIterator;
-import xapi.fu.itr.MappedIterable;
 
 import java.util.Iterator;
 
@@ -54,6 +54,20 @@ public interface MapLike<K, V> extends CollectionLike<Out2<K, V>> {
    */
   default Maybe<V> getMaybe(K key) {
     return Maybe.nullable(get(key));
+  }
+
+  default V putFromValue(V value, In1Out1<V, K> keyFinder) {
+    final K key = keyFinder.io(value);
+    return put(key, value);
+  }
+
+  default void putFromValues(Iterable<V> value, In1Out1<V, K> keyFinder) {
+    for (V v : value) {
+      putFromValue(v, keyFinder);
+    }
+  }
+  default void putFromValues(In1Out1<V, K> keyFinder, V ... values) {
+    putFromValues(ArrayIterable.iterate(values), keyFinder);
   }
 
   /**
@@ -126,7 +140,7 @@ public interface MapLike<K, V> extends CollectionLike<Out2<K, V>> {
     });
   }
 
-  default MappedIterable<V> mappedValues() {
+  default SizedIterable<V> mappedValues() {
     return map(Out2::out2);
   }
 

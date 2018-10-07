@@ -25,6 +25,8 @@ public class ModelField implements java.io.Serializable {
   class ModelMethod implements java.io.Serializable {
     private static final long serialVersionUID = -7865206427761038557L;
     String fieldName;
+    // hm... this needs to be something that has type arguments, not type parameters...
+    // IsTypeWithArgs?  IsTypeParameterized?
     IsType returnType;
     String methodName;
     public IsType[] generics;

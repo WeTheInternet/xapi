@@ -7,8 +7,8 @@ import java.io.UnsupportedEncodingException;
 import java.util.BitSet;
 import java.util.Iterator;
 
-import static xapi.fu.itr.MappedIterable.mapped;
 import static xapi.fu.itr.ArrayIterable.iterate;
+import static xapi.fu.itr.MappedIterable.mapped;
 
 public class X_String {
 

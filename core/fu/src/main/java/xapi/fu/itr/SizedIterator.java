@@ -2,14 +2,16 @@ package xapi.fu.itr;
 
 import xapi.fu.In1Out1;
 import xapi.fu.Out1;
+import xapi.fu.has.HasItems;
 import xapi.fu.has.HasSize;
+import xapi.fu.itr.CachingIterator.ReplayableIterable;
 
 import java.util.Iterator;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 2/5/17.
  */
-public interface SizedIterator<T> extends Iterator<T>, HasSize {
+public interface SizedIterator<T> extends Iterator<T>, HasSize, HasItems {
 
     static <T> SizedIterator<T> of(Out1<Integer> size, Iterator<T> result) {
         return of(size.out1(), result);
@@ -22,6 +24,7 @@ public interface SizedIterator<T> extends Iterator<T>, HasSize {
         return new SizedIterator<T>() {
 
             int remaining = size;
+
             @Override
             public boolean hasNext() {
                 return result.hasNext();
@@ -118,5 +121,33 @@ public interface SizedIterator<T> extends Iterator<T>, HasSize {
                 source.remove();
             }
         };
+    }
+
+    /**
+     * Turns this iterator back into an iterable, for convenience.
+     *
+     * Note, calling ArrayIterable.once(someArray).itr() is wasteful,
+     * once() just returns the iterator of an iterable it already had in memory.
+     *
+     */
+    default SizedIterable<T> itr() {
+        return SizedIterable.of(size(), MappedIterable.mappedOneShot(this));
+    }
+
+    /**
+     * @return A caching iterable over the elements in this iterator.
+     * If you use this method, or the fact we implement HasItems,
+     * you should not also be accessing this object like it was an iterator;
+     * each item we return can only be seen once, so make sure you use this iterable entirely.
+     *
+     * Even though we are a one-shot item, we can return an object that can be reused.
+     * Obviously not going to work well if you also use this iterator instance;
+     * i.e. if you use ArrayIterable.once(someArray); use that iterator,
+     * but also try to use the iterable created here,
+     * you are
+     */
+    @Override
+    default ReplayableIterable<T> forEachItem() {
+        return MappedIterable.mappedCaching(this);
     }
 }

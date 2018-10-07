@@ -34,13 +34,13 @@
  */
 package xapi.log;
 
-import javax.inject.Provider;
-
 import xapi.collect.api.Fifo;
 import xapi.collect.impl.SimpleFifo;
 import xapi.inject.X_Inject;
 import xapi.log.api.LogLevel;
 import xapi.log.api.LogService;
+
+import javax.inject.Provider;
 /**
  * A cross platform logging class.
  *
@@ -55,7 +55,6 @@ public class X_Log {
   private X_Log(){}
 
   private static final Provider<LogService> singleton = X_Inject.singletonLazy(LogService.class);
-
 
   public static LogLevel logLevel(){
     return singleton.get().getLogLevel();

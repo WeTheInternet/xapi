@@ -288,6 +288,7 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
       }
       File f = new File(generateDirectory);
       if (f.isAbsolute()) {
+        X_Log.info(AbstractXapiMojo.class, "Using generated directory:", f, " (ignoring ", targetProjectDirectory.get(), ")");
         return f;
       }
       X_Log.error(AbstractXapiMojo.class, "Using generated directory:", targetProjectDirectory.get(), "+", generateDirectory);

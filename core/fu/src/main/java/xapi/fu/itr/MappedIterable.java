@@ -205,7 +205,7 @@ public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
         return itr instanceof MappedIterable ? (MappedIterable<To>) itr : itr::iterator;
     }
 
-    static <To> MappedIterable<To> mappedCaching(Iterator<To> itr) {
+    static <To> ReplayableIterable<To> mappedCaching(Iterator<To> itr) {
         return mappedOneShot(itr).caching();
     }
 
@@ -662,7 +662,7 @@ public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
      *
      * Good for situations when you want to create things lazily.
      */
-    default MappedIterable<T> caching() {
+    default ReplayableIterable<T> caching() {
         return CachingIterator.cachingIterable(iterator());
     }
 

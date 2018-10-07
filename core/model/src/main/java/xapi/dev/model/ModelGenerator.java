@@ -3,26 +3,24 @@ package xapi.dev.model;
 import xapi.annotation.model.ClientToServer;
 import xapi.annotation.model.ServerToClient;
 import xapi.collect.X_Collect;
-import xapi.collect.api.ClassTo;
-import xapi.collect.api.Fifo;
-import xapi.collect.api.IntTo;
-import xapi.collect.api.ObjectTo;
-import xapi.collect.api.StringTo;
+import xapi.collect.api.*;
 import xapi.dev.model.ModelField.GetterMethod;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
+import xapi.fu.In2Out1;
+import xapi.fu.Maybe;
 import xapi.fu.Out1;
+import xapi.source.api.HasTypeParams;
 import xapi.source.api.IsType;
-import xapi.util.api.ConvertsTwoValues;
-
-import static xapi.source.X_Source.primitiveToObject;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Predicate;
+
+import static xapi.source.X_Source.primitiveToObject;
 
 public class ModelGenerator {
 
@@ -38,9 +36,9 @@ public class ModelGenerator {
 
   private static class DefaultProvider {
     private final Predicate<String> matcher;
-    private final ConvertsTwoValues<MethodBuffer, GetterMethod, String> initializer;
+    private final In2Out1<MethodBuffer, GetterMethod, String> initializer;
 
-    private DefaultProvider(Predicate<String> matcher, ConvertsTwoValues<MethodBuffer, GetterMethod, String> initializer) {
+    private DefaultProvider(Predicate<String> matcher, In2Out1<MethodBuffer, GetterMethod, String> initializer) {
       this.matcher = matcher;
       this.initializer = initializer;
     }
@@ -63,22 +61,14 @@ public class ModelGenerator {
   protected void initializeDefaults(List<DefaultProvider> providers) {
     providers.add(
         new DefaultProvider(
-            new Predicate<String>() {
-              @Override
-              public boolean test(String s) {
-                return s.contains("[]");
-              }
-            }, new ConvertsTwoValues<MethodBuffer, GetterMethod, String>() {
-          @Override
-          public String convert(MethodBuffer mb, GetterMethod data) {
-            String datatype = mb.addImport(data.returnType.getQualifiedName());
-            final String array = mb.addImport(Array.class);
-            return
-                "return ("+ datatype +")" + // we need to cast because array.newInstance returns Object
-                array + ".newInstance(" + datatype.replace("[]", "") + // only replaces one [], thus allowing int[][] to become Array.newInstance(int[].class, 0);
-                                                      ".class, 0);";
-          }
-        }
+            s -> s.contains("[]"), (mb, data) -> {
+              String datatype = mb.addImport(data.returnType.getQualifiedName());
+              final String array = mb.addImport(Array.class);
+              return
+                  "return ("+ datatype +")" + // we need to cast because array.newInstance returns Object
+                  array + ".newInstance(" + datatype.replace("[]", "") + // only replaces one [], thus allowing int[][] to become Array.newInstance(int[].class, 0);
+                                                        ".class, 0);";
+            }
         )
     );
     providers.add(newCollectionType(IntTo.class, "newList"));
@@ -121,58 +111,38 @@ public class ModelGenerator {
 //    );
     providers.add(
         new DefaultProvider(
-            new Predicate<String>() {
-              @Override
-              public boolean test(String s) {
-                return "java.lang.Boolean".equals(s);
-              }
-            },
-            new ConvertsTwoValues<MethodBuffer, GetterMethod, String>() {
-              @Override
-              public String convert(MethodBuffer one, GetterMethod two) {
-                return "return false;";
-              }
-            }
+            s -> "java.lang.Boolean".equals(s),
+            (one, two) -> "return false;"
         )
     );
   }
 
   protected DefaultProvider newCollectionType(final Class<?> cls, final String method) {
     return new DefaultProvider(
-        new Predicate<String>() {
-          @Override
-          public boolean test(String s) {
-            return s.equals(cls.getCanonicalName());
+        s -> s.equals(cls.getCanonicalName()),
+        (buffer, mthd) -> {
+          final String collect = buffer.addImport(X_Collect.class);
+          final Maybe<HasTypeParams> params = mthd.returnType.ifTypeParams();
+          if (params.isPresent()) {
+
           }
-        }, new ConvertsTwoValues<MethodBuffer, GetterMethod, String>() {
-      @Override
-      public String convert(MethodBuffer one, GetterMethod two) {
-        final String collect = one.addImport(X_Collect.class);
-        assert two.generics.length == 1 : "Expected only one generic type for a collections class "+cls;
-        String component = one.addImport(two.generics[0].getQualifiedName());
-        return "return "+collect+"."+method+"("+component+".class);";
-      }
-    }
+          assert mthd.generics.length == 1 : "Expected only one type parameter for a collections class "+cls;
+          String component = buffer.addImport(mthd.generics[0].getQualifiedName());
+          return "return "+collect+"."+method+"("+component+".class);";
+        }
     );
   }
 
   protected DefaultProvider newMapType(final Class<?> cls, final String method) {
     return new DefaultProvider(
-        new Predicate<String>() {
-          @Override
-          public boolean test(String s) {
-            return s.equals(cls.getCanonicalName());
-          }
-        }, new ConvertsTwoValues<MethodBuffer, GetterMethod, String>() {
-      @Override
-      public String convert(MethodBuffer one, GetterMethod two) {
-        final String collect = one.addImport(X_Collect.class);
-        assert two.generics.length == 2 : "Expected exactly two generic types for a map class "+cls;
-        String keyType = one.addImport(two.generics[0].getQualifiedName());
-        String valueType = one.addImport(two.generics[1].getQualifiedName());
-        return "return "+collect+"."+method+"("+keyType+".class, "+valueType+".class);";
-      }
-    }
+        s -> s.equals(cls.getCanonicalName()),
+        (one, two) -> {
+          final String collect = one.addImport(X_Collect.class);
+          assert two.generics.length == 2 : "Expected exactly two generic types for a map class "+cls;
+          String keyType = one.addImport(two.generics[0].getQualifiedName());
+          String valueType = one.addImport(two.generics[1].getQualifiedName());
+          return "return "+collect+"."+method+"("+keyType+".class, "+valueType+".class);";
+        }
     );
   }
 
@@ -221,7 +191,7 @@ public class ModelGenerator {
                   .indent()
                   .print("public ").print(imported).println(" out1() {")
                   .indent()
-                  .println(defaultProvider.initializer.convert(mb, getter))
+                  .println(defaultProvider.initializer.io(mb, getter))
                   .outdent()
                   .println("}")
                   .outdent()

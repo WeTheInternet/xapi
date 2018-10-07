@@ -4,6 +4,7 @@ import xapi.collect.api.IntTo;
 import xapi.fu.Do;
 import xapi.fu.In1;
 import xapi.fu.data.Allable;
+import xapi.model.X_Model;
 import xapi.model.api.Model;
 
 /**
@@ -12,6 +13,11 @@ import xapi.model.api.Model;
  * Created by James X. Nelson (James@WeTheInter.net) on 9/16/18 @ 4:32 AM.
  */
 public interface ComponentList <S extends IsComponent> extends Model, Allable<S> {
+
+    @SuppressWarnings("unchecked")
+    static <S extends IsComponent> ComponentList<S> create() {
+        return X_Model.create(ComponentList.class);
+    }
 
     Class<? extends S> getChildType();
     void setChildType(Class<? extends S> type);

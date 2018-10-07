@@ -186,7 +186,10 @@ public class JsFunctionSupport {
 	public static JsEventListener<?> fixListener(@SuppressWarnings("unusable-by-js") JsEventListener<?> callback) {
                 final JavaScriptObject fixed = wrapListener(callback);
 		@SuppressWarnings("unusable-by-js")
-		JsEventListener listener = event -> invoke(fixed, callback, event);
+		JsEventListener<?> listener = event -> {
+			final Object[] args = {event};
+			invoke(fixed, callback, args);
+		};
 		return listener;
 	}
 
@@ -195,6 +198,8 @@ public class JsFunctionSupport {
 		return () -> invoke(fixed, callback);
 	}
 
+
+	@SuppressWarnings("unusable-by-js")
 	public static native JavaScriptObject wrapListener(JsEventListener<?> callback)
 	/*-{
           return function() {
