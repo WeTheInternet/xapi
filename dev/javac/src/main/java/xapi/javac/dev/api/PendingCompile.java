@@ -6,6 +6,7 @@ import xapi.fu.Out2;
 import xapi.javac.dev.model.CompilerSettings;
 import xapi.log.X_Log;
 import xapi.reflect.X_Reflect;
+import xapi.source.X_Source;
 import xapi.util.X_Debug;
 
 import javax.annotation.processing.Processor;
@@ -41,9 +42,9 @@ public class PendingCompile {
 
     protected String normalizeLocation(String loc, boolean test) {
         if (test) {
-            loc = loc.replace("target/test-classes", "src/test/java");
+            loc = X_Source.rebaseTest(loc, "src/test/java");
         } else {
-            loc = loc.replace("target/classes", "src/main/java");
+            loc = X_Source.rebaseMain(loc, "src/main/java");
         }
         return loc;
     }

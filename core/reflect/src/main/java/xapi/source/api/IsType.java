@@ -27,6 +27,10 @@ extends HasQualifiedName
     return Maybe.not();
   }
 
+  default Maybe<IsParameterizedType> ifParameterized() {
+    return Maybe.not();
+  }
+
   default Maybe<HasBounds> ifBounds() {
     return Maybe.not();
   }

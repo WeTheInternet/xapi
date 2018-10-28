@@ -30,6 +30,15 @@ public class X_Jdk {
         return new MapAdapter<>(map);
     }
 
+    public static <V> List<V> itrToList(Iterable<? extends V> items) {
+        if (items instanceof List) {
+            return (List<V>) items;
+        }
+        final ArrayList<V> list = new ArrayList<>();
+        items.forEach(list::add);
+        return list;
+    }
+
     public static <V> ListLike<V> toList(List<V> list) {
         return new ListAdapter<>(list);
     }

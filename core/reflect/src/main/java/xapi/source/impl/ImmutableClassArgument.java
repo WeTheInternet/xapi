@@ -1,6 +1,7 @@
 package xapi.source.impl;
 
 import xapi.fu.X_Fu;
+import xapi.fu.itr.ArrayIterable;
 import xapi.fu.itr.SizedIterable;
 import xapi.source.api.IsClassArgument;
 import xapi.source.api.IsType;
@@ -26,10 +27,10 @@ public class ImmutableClassArgument extends ImmutableTypeArgument implements IsC
         StringBuilder b = new StringBuilder(super.toSource());
         if (X_Fu.isNotEmpty(bounds)) {
             b.append("<");
-            String suffix = "";
+            String prefix = "";
             for (IsTypeArgument bound : bounds) {
-                b.append(bound.toSource()).append(suffix);
-                suffix = ", ";
+                b.append(prefix).append(bound.toSource());
+                prefix = ", ";
             }
             b.append(">");
         }
@@ -42,7 +43,15 @@ public class ImmutableClassArgument extends ImmutableTypeArgument implements IsC
     }
 
     @Override
+    public IsType getRawType() {
+        if (getParameter() != null && X_Fu.isNotEmpty(bounds)) {
+            return bounds[0].getRawType();
+        }
+        return super.getRawType();
+    }
+
+    @Override
     public SizedIterable<? extends IsTypeArgument> getBounds() {
-        return getBounds();
+        return ArrayIterable.iterate(bounds);
     }
 }

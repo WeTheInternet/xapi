@@ -1,5 +1,6 @@
 package xapi.source.impl;
 
+import xapi.fu.X_Fu;
 import xapi.fu.itr.ArrayIterable;
 import xapi.fu.itr.SizedIterable;
 import xapi.source.api.IsTypeArgument;
@@ -40,4 +41,19 @@ abstract class S <X extends List<? super X>> implements List<List<? super X>[]> 
     public boolean isSuperArgument() {
         return superArgument;
     }
+
+    @Override
+    public String toSource() {
+        StringBuilder b = new StringBuilder(super.toSource());
+        if (X_Fu.isEmpty(bounds)) {
+            return b.toString();
+        }
+        String prefix = " extends ";
+        for (IsTypeArgument bound : bounds) {
+            b.append(prefix).append(bound.toSource());
+            prefix = " & ";
+        }
+        return b.toString();
+    }
+
 }

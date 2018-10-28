@@ -1,11 +1,13 @@
 package xapi.fu.data;
 
 import xapi.fu.Out2;
+import xapi.fu.api.Ignore;
 import xapi.fu.itr.SizedIterable;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/9/16.
  */
+@Ignore("model") // a model that implements ListLike will be implementing all methods itself; ignore anything defined in this type.
 public interface ListLike <V> extends CollectionLike<V> {
 
     V get(int pos);

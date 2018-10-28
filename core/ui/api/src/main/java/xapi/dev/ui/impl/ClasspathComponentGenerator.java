@@ -15,6 +15,7 @@ import xapi.dev.resource.impl.StringDataResource;
 import xapi.dev.scanner.api.ClasspathScanner;
 import xapi.dev.scanner.impl.ClasspathResourceMap;
 import xapi.dev.scanner.impl.ClasspathScannerDefault;
+import xapi.dev.source.DomBuffer;
 import xapi.dev.ui.api.*;
 import xapi.file.X_File;
 import xapi.fu.In1Out1;
@@ -24,17 +25,24 @@ import xapi.fu.X_Fu;
 import xapi.fu.itr.Chain;
 import xapi.fu.itr.ChainBuilder;
 import xapi.fu.itr.MappedIterable;
+import xapi.inject.X_Inject;
+import xapi.io.X_IO;
 import xapi.lang.oracle.AstOracle;
 import xapi.log.X_Log;
 import xapi.reflect.X_Reflect;
+import xapi.source.X_Base64;
 import xapi.source.X_Source;
 import xapi.source.read.JavaModel.IsQualified;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
 import xapi.util.X_Debug;
 import xapi.util.X_String;
+import xapi.util.api.Digester;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -43,6 +51,8 @@ import java.util.concurrent.Executors;
 
 import static xapi.dev.ui.api.UiConstants.EXTRA_FILE_NAME;
 import static xapi.dev.ui.api.UiConstants.EXTRA_RESOURCE_PATH;
+import static xapi.source.X_Source.rebaseMain;
+import static xapi.source.X_Source.rebaseTest;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 4/1/17.
@@ -50,18 +60,34 @@ import static xapi.dev.ui.api.UiConstants.EXTRA_RESOURCE_PATH;
 public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
 
     private static final Class<?> TAG = ClasspathComponentGenerator.class;
+    private final String manifestOutput;
     private ExecutorService executor;
 
     public static String genDir(Class<?> cls) {
-        return X_Reflect.getFileLoc(cls)
-            .replace('\\', '/')
-            .replace("target/classes", "src/main/gen")
-            .replace("target/test-classes", "src/test/gen");
+        final String loc = X_Reflect.getFileLoc(cls)
+            .replace('\\', '/');
+        return rebaseMain(rebaseTest(loc, "src/test/gen"), "src/main/gen");
     }
     private final File genDir;
     private final SimpleStack<File> backups;
 
     public ClasspathComponentGenerator(String myLoc) {
+        this(myLoc, "build/xapi-gen/manifest.xapi");
+    }
+    public ClasspathComponentGenerator(String myLoc, String manifestOutput) {
+        if (new File(manifestOutput).getParentFile().isDirectory()) {
+            this.manifestOutput = manifestOutput;
+        } else {
+            File f = new File(".", manifestOutput).getAbsoluteFile();
+            if (!f.getParentFile().isDirectory()) {
+                boolean result = f.getParentFile().mkdirs();
+                if (!result) {
+                    X_Log.warn(ClasspathComponentGenerator.class,
+                        "Could not create ", f.getParentFile(), " will not correctly output manifest to ", manifestOutput);
+                }
+            }
+            this.manifestOutput = f.getAbsolutePath();
+        }
         backups = new SimpleStack<>();
         this.genDir = new File(myLoc);
         if (genDir.isDirectory()) {
@@ -98,13 +124,14 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
     public <T> void generateComponents(UiGeneratorService<T> service) {
         boolean success = false;
         try {
-            doGenerateComponents(service);
-            success = true;
+            int generated = doGenerateComponents(service);
+            success = generated > 0;
         } finally {
             final boolean delete = success;
             backups.forAll(backup -> {
                 File original = new File(backup.getParent(), backup.getName().replace(".backup", ""));
                 boolean result;
+                // TODO: a mark/sweep of some kind?
                 if (delete || original.exists()) {
                     result = backup.delete();
                     if (!result) {
@@ -119,9 +146,10 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
             });
         }
     }
-    private <T> void doGenerateComponents(UiGeneratorService<T> service) {
+    private <T> int doGenerateComponents(UiGeneratorService<T> service) {
 
         final Moment start = X_Time.now();
+        int totalSize = 0;
         X_Log.trace(TAG, "Output dir ", genDir.getAbsolutePath());
         // find all .xapi files in our search package
         final FileBasedSourceHelper<T> sources = new FileBasedSourceHelper<>(genDir::getAbsolutePath, genDir::getAbsolutePath);
@@ -214,7 +242,7 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
         }
         final Moment apisDone = X_Time.now();
         X_Log.info(TAG, "Generated " + size + " apis in ", X_Time.difference(start, apisDone), " from ", apiDefinitions.size(), "definitions");
-
+        totalSize += size;
 
         final MappedIterable<GeneratedUiComponent> result = service.generateComponents(
             sources,
@@ -239,6 +267,7 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
             final In2<GeneratedApi, GeneratedUiComponent> spy = GeneratedApi::spyComponent;
             apis.forAll(spy, generated);
         }
+        totalSize += size;
 
         apis.forAll(GeneratedApi::finish);
 
@@ -248,6 +277,47 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
             executor.shutdownNow();
         }
         X_Log.info(TAG, "Generated " + size + " components in ", X_Time.difference(apisDone), " from ", tagDefinitions.size(), "definitions");
+
+        writeManifest(apis, result);
+
+        return totalSize;
+    }
+
+    private void writeManifest(MappedIterable<GeneratedApi> apis, MappedIterable<GeneratedUiComponent> components) {
+        if (apis.isEmpty() && components.isEmpty()) {
+            return;
+        }
+        DomBuffer d = new DomBuffer().setNewLine(true);
+
+        final DomBuffer generated = d.makeTag("generated");
+        DomBuffer out = generated.makeTag("apis");
+        for (GeneratedApi api : apis) {
+            final DomBuffer item = out.makeTag("api").allowAbbreviation(true);
+            item.setAttribute("name", api.getQualifiedName());
+            final Digester digest = X_Inject.instance(Digester.class);
+            byte[] hash = digest.digest(api.getAst().toSource().getBytes());
+            item.setAttribute("hash", digest.toString(hash));
+        }
+        out = generated.makeTag("components");
+        for (GeneratedUiComponent component : components) {
+            final DomBuffer item = out.makeTag("component").allowAbbreviation(true);
+            item.setAttribute("name", component.getQualifiedName());
+            item.setAttribute("tagName", component.getTagName());
+            // TODO: etc, as needed...  for now, we really just want this file to serve
+            // as a placeholder for gradle to track whether anything meaningful has changed (so the file hashes are useful, at least).
+            // This will allow us to register jobs to do more work based on whether this file has changed...
+            final Digester digest = X_Inject.instance(Digester.class);
+            byte[] hash = digest.digest(component.getAst().toSource().getBytes());
+            item.setAttribute("hash", digest.toString(hash));
+        }
+
+        String src = d.toSource();
+        try {
+            X_IO.drain(new FileOutputStream(manifestOutput), X_IO.toStreamUtf8(src));
+        } catch (IOException e) {
+            X_Log.error(ClasspathComponentGenerator.class, "Unable to save manifest", src, e);
+            throw new UncheckedIOException(e);
+        }
     }
 
     protected boolean isAllowed(StringDataResource xapiFile, UiContainerExpr parsed) {
@@ -270,11 +340,8 @@ public class ClasspathComponentGenerator<Ctx extends ApiGeneratorContext<Ctx>> {
             String path = url.getPath().replace('\\', '/');
             final String xapiPath;
             X_Log.debug(TAG, "Considering", path);
-            if (path.endsWith("target/classes/")) {
-                xapiPath = path.replace("target/classes/", "src/main/xapi/");
-            }else if (path.endsWith("target/test-classes/")) {
-                xapiPath = path.replace("target/test-classes/", "src/test/xapi/");
-            } else {
+            xapiPath = X_Source.rebaseMain(X_Source.rebaseTest(path, "src/test/xapi"), "src/main/xapi");
+            if (path.equals(xapiPath)) {
                 continue;
             }
             try {

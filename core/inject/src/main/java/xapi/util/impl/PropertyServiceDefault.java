@@ -17,21 +17,37 @@ public class PropertyServiceDefault implements PropertyService{
   @Override
   @MagicMethod(doNotVisit=true)
   public String getProperty(final String key) {
-    return System.getProperty(key, null);
+    String check = System.getProperty(key, null);
+    if (check == null) {
+      check = System.getenv(envKey(key));
+    }
+    return check;
+  }
+
+  protected String envKey(String key) {
+    return key;
   }
 
   @Override
   @MagicMethod(doNotVisit=true)
   public String getProperty(final String key, final String dflt) {
-    return System.getProperty(key, dflt);
+    String check = System.getProperty(key, dflt);
+    if (check == null) {
+      check = System.getenv(envKey(key));
+    }
+    return check;
   }
 
   @Override
   @MagicMethod(doNotVisit=true)
+  @SuppressWarnings("StringEquality") //
   public String getProperty(final String key, final Out1<String> dflt) {
-    final String value = System.getProperty(key, DEFAULT);
+    String value = System.getProperty(key, DEFAULT);
     if (value == DEFAULT) { // we actually want referential comparison here, to distinguish between set to "" and empty...
-      return dflt.out1();
+      value = System.getenv(envKey(key));
+      if (value == null) {
+        return dflt.out1();
+      }
     }
     return value;
   }

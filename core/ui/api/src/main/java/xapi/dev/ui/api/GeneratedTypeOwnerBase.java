@@ -125,6 +125,14 @@ public abstract class GeneratedTypeOwnerBase <Api extends GeneratedUiLayer, Base
         this.recommendedImports = recommendedImports;
     }
 
+    public void addRecommendedImports(SizedIterable<String> recommendedImports) {
+        if (this.recommendedImports == null) {
+            setRecommendedImports(recommendedImports);
+        } else {
+            this.recommendedImports = this.recommendedImports.plus(recommendedImports);
+        }
+    }
+
     public GeneratedJavaFile getOrCreateExtraLayer(String id, String pkg, String cls) {
         return extraLayers.getOrCreate(id, ignored->new GeneratedJavaFile(this, pkg, cls));
     }

@@ -43,6 +43,9 @@ import java.util.List;
 import java.util.Set;
 
 import static xapi.gwtc.api.GwtManifest.GEN_PREFIX;
+import static xapi.source.X_Source.hasMainPath;
+import static xapi.source.X_Source.rebaseMain;
+import static xapi.source.X_Source.rebaseTest;
 
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
@@ -210,31 +213,30 @@ public class GwtcProjectGeneratorDefault implements GwtcProjectGenerator {
         context.addDependency(builder.build(), cls);
         // if loc is a src/main/java or src/test/java, also include resources module:
         String unixed = loc.replace('\\', '/');
-        int index = unixed.indexOf("target/classes");
-        if (index != -1) {
+        if (hasMainPath(unixed)) {
 
             context.addDependency(builder
-                .setValue(unixed.replace("target/classes", "src/main/java"))
+                .setValue(rebaseMain(unixed, "src/main/java"))
                 .build(), cls);
 
             context.addDependency(builder
-                .setValue(unixed.replace("target/classes", "src/main/resources"))
+                .setValue(rebaseMain(unixed, "src/main/resources"))
                 .build(), cls);
 
-        } else if (unixed.contains("target/test-classes")) {
+        } else if (X_Source.hasTestPath(unixed)) {
 
             context.addDependency(builder
-                .setValue(unixed.replace("target/test-classes", "src/test/java"))
+                .setValue(rebaseTest(unixed,"src/test/java"))
                 .build(), cls);
 
             context.addDependency(builder
-                .setValue(unixed.replace("target/test-classes", "src/test/resources"))
+                .setValue(rebaseTest(unixed, "src/test/resources"))
                 .build(), cls);
             context.addDependency(builder
-                .setValue(unixed.replace("target/test-classes", "src/main/java"))
+                .setValue(rebaseTest(unixed,"src/main/java"))
                 .build(), cls);
             context.addDependency(builder
-                .setValue(unixed.replace("target/test-classes", "src/main/resources"))
+                .setValue(rebaseTest(unixed, "src/main/resources"))
                 .build(), cls);
 
         }

@@ -2,9 +2,7 @@ package xapi.dev.ui.tags;
 
 import com.github.javaparser.ast.body.BodyDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
-import com.github.javaparser.ast.expr.DynamicDeclarationExpr;
-import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.UiAttrExpr;
+import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.visitor.DumpVisitor;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
@@ -48,11 +46,6 @@ public class UiTagCallbackGenerator extends UiFeatureGenerator {
             source.getContext(),
             attr.getExpression()
         );
-        if (!(toPrint instanceof DynamicDeclarationExpr)) {
-            // TODO also handle lambdas
-            throw new UnsupportedOperationException("ui callbacks presently only support dynamic declarations" +
-                " (`public void myMethod(...)`)");
-        }
         final String methodName;
         switch (attr.getNameString()) {
             case "onCreated":
@@ -70,24 +63,52 @@ public class UiTagCallbackGenerator extends UiFeatureGenerator {
             default:
                 throw new IllegalArgumentException("Cannot create callback for " + service.debugNode(attr));
         }
-        writer = (impl, out)->{
-            // TODO detect if the declaration is platform-specific or not,
-            // so we can put the method into either the base, or the impl type.
-            DynamicDeclarationExpr decl = (DynamicDeclarationExpr) toPrint;
-            if ("gwt".equals(impl.getAttrKey())) {
-                final ClassBuffer cb = impl.getSource().getClassBuffer();
-                cb.printlns(decl.getBody().toSource());
-                if (decl.getBody() instanceof MethodDeclaration) {
-                    MethodDeclaration mthd = (MethodDeclaration) decl.getBody();
-                    // TODO: actually lookup method definition and check expected argument types in some sane manner
-                    out.println("component." + methodName + "(getUi, " + cb.getSimpleName() + "::" + mthd.getName()+");");
+        if (toPrint instanceof DynamicDeclarationExpr) {
+
+            writer = (impl, out)->{
+                // TODO detect if the declaration is platform-specific or not,
+                // so we can put the method into either the base, or the impl type.
+                DynamicDeclarationExpr decl = (DynamicDeclarationExpr) toPrint;
+                if ("gwt".equals(impl.getAttrKey())) {
+                    final ClassBuffer cb = impl.getSource().getClassBuffer();
+                    cb.printlns(decl.getBody().toSource());
+                    if (decl.getBody() instanceof MethodDeclaration) {
+                        MethodDeclaration mthd = (MethodDeclaration) decl.getBody();
+                        // TODO: actually lookup method definition and check expected argument types in some sane manner
+                        out.println("component." + methodName + "(getUi, " + cb.getSimpleName() + "::" + mthd.getName()+");");
+                    } else {
+                        throw new UnsupportedOperationException("on" + X_String.toTitleCase(methodName) + " only supports method declarations");
+                    }
                 } else {
-                    throw new UnsupportedOperationException("on" + X_String.toTitleCase(methodName) + " only supports method declarations");
+                    throw new UnsupportedOperationException("on" + X_String.toTitleCase(methodName) + " not yet supported for " + impl.getAttrKey() + " components");
                 }
-            } else {
-                throw new UnsupportedOperationException("on" + X_String.toTitleCase(methodName) + " not yet supported for " + impl.getAttrKey() + " components");
-            }
-        };
+            };
+        } else if (toPrint instanceof MethodReferenceExpr) {
+            writer = (impl, out)->{
+                MethodReferenceExpr decl = (MethodReferenceExpr) toPrint;
+                if ("gwt".equals(impl.getAttrKey())) {
+                    // TODO: some kind of type inference in case we need to massage args somehow.  Unlikely to do this for a long time...
+                    out.printlns("component." + methodName + "(getUi, " + decl.toSource() + ");");
+                } else {
+                    throw new UnsupportedOperationException("on" + X_String.toTitleCase(methodName) + " not yet supported for " + impl.getAttrKey() + " components");
+                }
+            };
+        } else if (toPrint instanceof MethodCallExpr) {
+            writer = (impl, out)->{
+                MethodCallExpr decl = (MethodCallExpr) toPrint;
+                if ("gwt".equals(impl.getAttrKey())) {
+                    out.printlns("component." + methodName + "(getUi, ()->" + decl.toSource() + ");");
+                } else {
+                    throw new UnsupportedOperationException("on" + X_String.toTitleCase(methodName) + " not yet supported for " + impl.getAttrKey() + " components");
+                }
+            };
+        } else {
+            throw new UnsupportedOperationException("ui callbacks presently only supports " +
+                "method calls (`myMethod(...)`)," +
+                " method references (`SomeScope::myMethod`)" +
+                " and dynamic method declarations" +
+                " (`public void myMethod(...)`)");
+        }
 
         component.getImpls()
             .forAll(GeneratedUiImplementation::registerCallbackWriter, writer);

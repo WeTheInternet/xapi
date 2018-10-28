@@ -68,6 +68,11 @@
       <groupId>net.wetheinter</groupId>
       <artifactId>xapi-jre-api</artifactId>
     </dependency>
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-core-test</artifactId>
+      <scope>test</scope>
+    </dependency>
      <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>

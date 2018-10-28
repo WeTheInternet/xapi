@@ -1,6 +1,7 @@
 package xapi.fu.data;
 
 import xapi.fu.api.Clearable;
+import xapi.fu.api.Ignore;
 import xapi.fu.has.HasItems;
 import xapi.fu.itr.SizedIterable;
 
@@ -11,6 +12,7 @@ import xapi.fu.itr.SizedIterable;
  *
  * Created by James X. Nelson (James@WeTheInter.net) on 9/16/18 @ 4:44 AM.
  */
+@Ignore("model")
 public interface CollectionLike <V> extends Clearable, SizedIterable<V>, HasItems<V> {
 
     @Override

@@ -25,6 +25,7 @@ import xapi.jre.process.ConcurrencyServiceJre;
 import xapi.log.X_Log;
 import xapi.mvn.api.MvnDependency;
 import xapi.reflect.X_Reflect;
+import xapi.source.X_Source;
 import xapi.test.junit.JUnit4Runner;
 import xapi.test.junit.JUnitUi;
 import xapi.time.X_Time;
@@ -51,6 +52,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static xapi.fu.itr.SingletonIterator.singleItem;
+import static xapi.source.X_Source.removeClassDirs;
 import static xapi.time.X_Time.diff;
 
 import com.google.gwt.core.client.GWT;
@@ -509,11 +511,13 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
     }
     final String fileLoc;
     if (dep.getSource() instanceof Class<?>) {
-      fileLoc = X_Reflect.getFileLoc((Class<?>) dep.getSource()).replaceAll("/target/(test-)?classes", "");
+      final String raw = X_Reflect.getFileLoc((Class<?>) dep.getSource());
+      fileLoc = removeClassDirs(raw);
     } else if (dep.getSource() instanceof Package) {
       String pkgInfo = ((Package) dep.getSource()).getName().replace('.', '/') + "/package-info.class";
       final URL res = Thread.currentThread().getContextClassLoader().getResource(pkgInfo);
-      fileLoc = res.toExternalForm().replace("file:", "").replaceAll("/target/(test-)?classes", "")
+      final String raw = res.toExternalForm().replace("file:", "");
+      fileLoc = removeClassDirs(raw)
           .replace(pkgInfo, "");
     } else {
       // use the manifest for relativization of resources

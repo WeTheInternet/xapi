@@ -4,6 +4,7 @@ import xapi.fu.Filter.Filter1;
 import xapi.fu.Filter.Filter2;
 import xapi.fu.*;
 import xapi.fu.Out1.Out1Unsafe;
+import xapi.fu.api.Ignore;
 import xapi.fu.has.HasLock;
 import xapi.fu.itr.ArrayIterable;
 import xapi.fu.itr.EmptyIterator;
@@ -18,6 +19,7 @@ import static xapi.fu.itr.EmptyIterator.NONE;
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 4/10/16.
  */
+@Ignore("model") // a model that implements MapLike will be implementing all methods itself; ignore anything defined in this type.
 public interface MapLike<K, V> extends CollectionLike<Out2<K, V>> {
 //public interface MapLike<K, V> extends HasSize, HasItems<Out2<K, V>>, Clearable {
 

@@ -43,6 +43,7 @@ public class GeneratedUiModel extends GeneratedJavaFile {
         // can't use a class reference here... :-/
         source.getClassBuffer().addInterface("xapi.model.api.Model");
         assert source.toSource().contains("interface");
+        getOwner().getRecommendedImports().forEach(source.getImports()::autoImportName);
         return source;
     }
 
@@ -68,8 +69,9 @@ public class GeneratedUiModel extends GeneratedJavaFile {
         fields.put(fieldName, newField);
 
         final ClassBuffer buf = getSource().getClassBuffer();
-        String typeName = tools.lookupType(type.toSource());
+        String typeName = tools.lookupType(buf.getImports(), type.toSource());
         if (typeName.contains(".")) {
+            // If we turned a simple name into a complex one, be sure to import it
             typeName = buf.addImport(typeName);
         }
         String capitalized = X_String.toTitleCase(fieldName);

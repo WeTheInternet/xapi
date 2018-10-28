@@ -54,7 +54,7 @@ public class UiAnnotationProcessor extends AbstractProcessor {
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
         messages = processingEnv.getMessager();
-        if ("true".equals(System.getProperty("xapi.no.javac.plugin"))) {
+        if (shouldSkip(processingEnv)) {
             messages.printMessage(Kind.NOTE, "Skipping ui annotations because system property xapi.no.javac.plugin was set to true");
             return;
         }
@@ -62,6 +62,10 @@ public class UiAnnotationProcessor extends AbstractProcessor {
 
         messages.printMessage(Kind.NOTE, "UiAnnotationProcessor is ready.");
         super.init(processingEnv);
+    }
+
+    protected boolean shouldSkip(ProcessingEnvironment processingEnv) {
+        return "true".equals(System.getProperty("xapi.no.javac.plugin")) || "true".equals(processingEnv.getOptions().get("xapi.no.javac.plugin"));
     }
 
     @Override

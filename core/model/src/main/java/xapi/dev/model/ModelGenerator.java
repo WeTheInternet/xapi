@@ -10,7 +10,10 @@ import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.fu.In2Out1;
 import xapi.fu.Out1;
+import xapi.source.api.HasTypeParams;
+import xapi.source.api.IsParameterizedType;
 import xapi.source.api.IsType;
+import xapi.source.api.IsTypeArgument;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -61,10 +64,15 @@ public class ModelGenerator {
         new DefaultProvider(
             s -> s.contains("[]"), (mb, data) -> {
               String datatype = mb.addImport(data.returnType.getQualifiedName());
+              String reduced = datatype.replace("[]", "");
+              int slice = reduced.indexOf('<');
+              if (slice != -1) {
+                reduced = reduced.substring(0, slice) + reduced.substring(reduced.lastIndexOf('>') + 1);
+              }
               final String array = mb.addImport(Array.class);
               return
                   "return ("+ datatype +")" + // we need to cast because array.newInstance returns Object
-                  array + ".newInstance(" + datatype.replace("[]", "") + // only replaces one [], thus allowing int[][] to become Array.newInstance(int[].class, 0);
+                  array + ".newInstance(" + reduced + // only replaces one [], thus allowing int[][] to become Array.newInstance(int[].class, 0);
                                                         ".class, 0);";
             }
         )
@@ -117,25 +125,43 @@ public class ModelGenerator {
 
   protected DefaultProvider newCollectionType(final Class<?> cls, final String method) {
     return new DefaultProvider(
-        s -> s.equals(cls.getCanonicalName()),
+        s -> s.split("<")[0].equals(cls.getCanonicalName()),
         (buffer, mthd) -> {
           final String collect = buffer.addImport(X_Collect.class);
-          assert mthd.generics.length == 1 : "Expected only one type parameter for a collections class "+cls;
-          String component = buffer.addImport(mthd.generics[0].getQualifiedName());
-          return "return "+collect+"."+method+"("+component+".class);";
+          String component;
+          if (mthd.componentGetter == null || mthd.componentGetter[0] == null) {
+            assert mthd.generics.length == 1 : "Expected only one type parameter for a collections class "+cls;
+            component = buffer.addImport(mthd.generics[0].getRawType().getQualifiedName()) + ".class";
+          } else {
+            component = mthd.componentGetter[0];
+          }
+          return "return "+collect+"."+method+"("+component+");";
         }
     );
   }
 
   protected DefaultProvider newMapType(final Class<?> cls, final String method) {
     return new DefaultProvider(
-        s -> s.equals(cls.getCanonicalName()),
-        (one, two) -> {
+        s -> s.split("<")[0].equals(cls.getCanonicalName()),
+        (one, mthd) -> {
           final String collect = one.addImport(X_Collect.class);
-          assert two.generics.length == 2 : "Expected exactly two generic types for a map class "+cls;
-          String keyType = one.addImport(two.generics[0].getQualifiedName());
-          String valueType = one.addImport(two.generics[1].getQualifiedName());
-          return "return "+collect+"."+method+"("+keyType+".class, "+valueType+".class);";
+          assert mthd.generics.length == 2 : "Expected exactly two generic types for a map class "+cls;
+          String keyType, valueType = keyType = null;
+          if (mthd.componentGetter != null) {
+            if (mthd.componentGetter[0] != null) {
+              valueType = mthd.componentGetter[0];
+            }
+            if (mthd.componentGetter.length > 1 && mthd.componentGetter[1] != null) {
+              keyType = mthd.componentGetter[1];
+            }
+          }
+          if (keyType == null) {
+            keyType = one.addImport(mthd.generics[0].getRawType().getQualifiedName()) + ".class";
+          }
+          if (valueType == null) {
+            valueType = one.addImport(mthd.generics[1].getRawType().getQualifiedName()) + ".class";
+          }
+          return "return "+collect+"."+method+"("+keyType+", "+valueType+");";
         }
     );
   }
@@ -154,7 +180,7 @@ public class ModelGenerator {
     cb.setSuperClass(qualifiedSourceName);
   }
 
-  public void generateModel(final IsType type, final HasModelFields fields) {
+  public void generateModel(IsType sourceType, final IsType type, final HasModelFields fields) {
 
     // Write getters for all fields.
     for (final ModelField field : fields.getAllFields()) {
@@ -173,12 +199,15 @@ public class ModelGenerator {
           mb.println(field.getName() + "\", "+ getDefaultValue(imported) +");");
         } else {
           String getterName = "getProperty";
-          if (field.isListType() || field.isMapType()) {
+          boolean isMulti = field.isListType() || field.isMapType();
+          if (isMulti) {
             getterName = "getOrSaveProperty";
           }
           mb.print("return this.<" + imported + ">"+ getterName + "(\"" + field.getName() + "\"");
+          boolean didWork = false;
           for (DefaultProvider defaultProvider : providers) {
             if (defaultProvider.tryMatch(qualified)) {
+              didWork = true;
               final String provider = mb.addImport(Out1.class);
               mb.print(", ")
                   .print("new ").print(provider).print("<").print(imported).println(">() {")
@@ -195,7 +224,9 @@ public class ModelGenerator {
               break;
             }
           }
+          if (!didWork && isMulti) {
 
+          }
           mb.println(");");
         }
       }

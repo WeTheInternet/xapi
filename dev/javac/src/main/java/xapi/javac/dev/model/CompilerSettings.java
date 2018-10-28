@@ -4,6 +4,7 @@ import xapi.file.X_File;
 import xapi.fu.Rethrowable;
 import xapi.log.X_Log;
 import xapi.reflect.X_Reflect;
+import xapi.source.X_Source;
 import xapi.util.X_Debug;
 import xapi.util.X_Namespace;
 import xapi.util.X_String;
@@ -245,7 +246,7 @@ public class CompilerSettings implements Rethrowable {
                         if (file.isDirectory()) {
                             // we have a directory to use as our root.  Strip off target/classes (or other likely variants)
                             final String rootLoc = file.getCanonicalPath();
-                            root = rootLoc.split(getClassLocationRegex())[0];
+                            root = X_Source.findBase(rootLoc);
                             X_Log.info(CompilerSettings.class, "Using root location ", root);
                             return root;
                         }
@@ -257,26 +258,6 @@ public class CompilerSettings implements Rethrowable {
             }
         }
         return root;
-    }
-
-    /**
-     * @return a regex that can be used to strip off a build output directory, like target/classes,
-     * from your files.  We use these regexes in cases where you don't specify all directories,
-     * so we have to guess where you are running from.  IDEs like intellij will launch tests
-     * from the rootmost directory of your project, while cli tools like maven will run each
-     * modules from that module's root.  So, we prefer inspecting the stacktrace of the
-     * main thread to find the first bit of client code that was run, and check if it's
-     * being run from a compiled classes directory.
-     *
-     * It's a bit hacky, but it enables things to "just work" out of the box without bothering
-     * to configure any directories (which can lead to issues when building on other machines).
-     */
-    protected String getClassLocationRegex() {
-        return
-            "[" + File.separatorChar + "]" +
-                "(target|build|out|dist|lib)" +
-                "[" + File.separatorChar + "]" +
-                "(test-)*classes";
     }
 
     private Boolean isClientCode(String className) {

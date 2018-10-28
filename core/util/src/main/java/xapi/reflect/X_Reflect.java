@@ -2,10 +2,12 @@ package xapi.reflect;
 
 import xapi.annotation.compile.MagicMethod;
 import xapi.fu.In1Out1;
+import xapi.fu.Lazy;
 import xapi.inject.X_Inject;
 import xapi.log.X_Log;
 import xapi.log.api.LogService;
 import xapi.reflect.service.ReflectionService;
+import xapi.source.X_Source;
 import xapi.util.X_Runtime;
 import xapi.util.X_String;
 import xapi.util.X_Util;
@@ -46,6 +48,40 @@ public class X_Reflect {
 
   @Inject static Provider<ReflectionService> reflectionService = X_Inject.singletonLazy(ReflectionService.class);
   @Inject static LogService logService;
+
+  private static final Lazy<Class<?>> MAIN = Lazy.deferred1(X_Reflect::findMainClass);
+  private static final Lazy<Boolean> IS_GRADLE = Lazy.deferred1(()->{
+    final String prop = System.getProperty("xapi.gradle", null);
+    // An explicit property always wins
+    if ("true".equals(prop)) {
+      return true;
+    }
+    if ("false".equals(prop)) {
+      return false;
+    }
+    // fallback will rely on an env var that was present in gradle 5.0.
+    // anybody else should either set the system property, or add the env var themselves
+    String env = System.getenv("_");
+    if (env != null && env.contains("gradle")) {
+      return true;
+    }
+    return false;
+  });
+  private static final Lazy<Boolean> IS_MAVEN = Lazy.deferred1(()->{
+    final String prop = System.getProperty("xapi.maven", null);
+    // An explicit property always wins
+    if ("true".equals(prop)) {
+      return true;
+    }
+    if ("false".equals(prop)) {
+      return false;
+    }
+    try {
+      final URL loc = Thread.currentThread().getContextClassLoader().getResource("org/apache/maven/project/MavenProject.class");
+      return loc != null;
+    } catch (Throwable ignored) {}
+    return false;
+  });
 
   /**
    * Retrieve an object from a given array using the most efficient solution for
@@ -1246,7 +1282,7 @@ public class X_Reflect {
           while (choices.hasMoreElements()) {
             sourceFile = choices.nextElement();
             loc = sourceFile.toExternalForm().replace("file:", "").replace(srcName, "");
-            if (!loc.endsWith("classes/")) {
+            if (!loc.endsWith("classes/") && !loc.contains("rt.jar")) {
               // it doesn't end in classes; it's probably the source we are looking for
               return loc;
             }
@@ -1255,18 +1291,28 @@ public class X_Reflect {
       }
 
     }
-    if (loc != null && loc.endsWith("classes/")) {
-      int ind = loc.lastIndexOf('/', loc.length() - 8);
-      if (ind != -1) {
-        loc = loc.substring(0, ind);
-      }
-      // handle target/test-classes suffix (chop back to trailing \)
-      if (loc.endsWith("/target")) {
-        loc = loc.substring(0, loc.length() - 7);
-      }
-      File f = new File(loc, "src/main/java/" + srcName);
-      if (f.exists()) {
-        loc = f.getAbsolutePath();
+    if (loc != null && loc.contains("classes/")) {
+      // TODO: use CompilerService somehow, to get configurable source directories...
+      String fixed = X_Source.rebase(loc, "src/main/java", "src/test/java");
+      if (fixed.equals(loc)) {
+        // old, hacky version that likely only works in maven...
+        int ind = loc.lastIndexOf('/', loc.length() - 8);
+        if (ind != -1) {
+          loc = loc.substring(0, ind);
+        }
+        // handle target/test-classes suffix (chop back to trailing \)
+        if (loc.endsWith("/target")) {
+          loc = loc.substring(0, loc.length() - 7);
+        }
+        File f = new File(loc, "src/main/java/" + srcName);
+        if (f.exists()) {
+          loc = f.getAbsolutePath();
+        }
+      } else {
+        File f = new File(fixed, srcName);
+        if (f.exists()) {
+          loc = f.getAbsolutePath();
+        }
       }
     }
     return loc;
@@ -1304,7 +1350,10 @@ public class X_Reflect {
       return null;
     }
     public static Class<?> getMainClass() {
-      // find the class that called us, and use their "target/classes"
+      return MAIN.out1();
+    }
+    private static Class<?> findMainClass() {
+      // finds any loadable class that is present as a stack trace w/ method `name`.
       final Map<Thread, StackTraceElement[]> traces = Thread.getAllStackTraces();
       for (Entry<Thread, StackTraceElement[]> trace : traces.entrySet()) {
         if ("main".equals(trace.getKey().getName())) {
@@ -1313,6 +1362,7 @@ public class X_Reflect {
           int i = els.length;
           StackTraceElement best = els[--i];
           String cls = best.getClassName();
+          // loop until we have a main that isn't deemed to be a system class...
           while (i > 0 && isSystemClass(cls)) {
             // if the main class is likely an ide,
             // then we should look higher...
@@ -1395,5 +1445,13 @@ public class X_Reflect {
       }
     }
     return true;
+  }
+
+  public static boolean isGradle() {
+    return IS_GRADLE.out1();
+  }
+
+  public static boolean isMaven() {
+    return IS_MAVEN.out1();
   }
 }

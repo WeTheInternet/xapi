@@ -116,8 +116,9 @@ public class UiTagModelGenerator extends UiFeatureGenerator {
 
         }
 
-        boolean immutable = attr.hasAnnotationBool(true, "immutable");
-        boolean isPublic = attr.hasAnnotationBool(true, "public");
+        boolean defaultImmutable = attr.hasAnnotationBool(true, "immutable");
+        boolean defaultPublic = attr.hasAnnotationBool(true, "public");
+        boolean defaultExposed = attr.hasAnnotationBool(true, "exposed");
 
         final Expression expr = attr.getExpression();
         if (expr instanceof JsonContainerExpr) {
@@ -139,16 +140,20 @@ public class UiTagModelGenerator extends UiFeatureGenerator {
                 } else {
                     Type type = tools.methods().$type(tools, ctx, typeExpr).getType();
                     // TODO smart import lookups...
-                    boolean isImmutable = immutable;
-                    boolean isExposed = isPublic;
+                    boolean isImmutable = defaultImmutable;
+                    boolean isPublic = defaultPublic;
+                    boolean isExposed = defaultExposed;
                     if (!isImmutable) {
                         isImmutable = pair.hasAnnotationBool(true, "immutable");
                     }
-                    if (pair.hasAnnotationBool(true, "public")) {
+                    if (pair.hasAnnotationBool(false, "exposed")) {
                         isExposed = true;
                     }
+                    if (pair.hasAnnotationBool(true, "public")) {
+                        isPublic = true;
+                    }
                     if (pair.hasAnnotationBool(true, "private")) {
-                        isExposed = false;
+                        isPublic = false;
                     }
 
                     switch (type.toSource()) {
@@ -160,12 +165,22 @@ public class UiTagModelGenerator extends UiFeatureGenerator {
                             break;
                         default:
                             final String typeSrc = type.toSource();
-                            switch (typeSrc.split("<")[0]) {
+                            String simple = typeSrc.split("<")[0];
+                            switch (simple) {
                                 case "IntTo":
                                     type = new ClassOrInterfaceType(IntTo.class.getName() + typeSrc.substring(5)) ;
                                     break;
                                 case "ModelKey":
                                     type = new ClassOrInterfaceType(ModelKey.class.getName() + typeSrc.substring(8));
+                                    break;
+                                default:
+                                    String qualified = modOut.getImports().qualify(simple);
+                                    if (!qualified.equals(simple)) {
+                                        type = new ClassOrInterfaceType(
+                                            qualified +
+                                                (typeSrc.contains("<") ? typeSrc.substring(simple.length()) : "")
+                                        );
+                                    }
                                     break;
                             }
                     }
@@ -173,7 +188,7 @@ public class UiTagModelGenerator extends UiFeatureGenerator {
                     // copy imports
                     field.copyImports(pair);
                     // check if we should make this field public or not...
-                    if (!apiMode && isExposed) {
+                    if (!apiMode && isPublic) {
                         // api mode never exposes model fields because it does not have a getModel(); api is only a factory
                         String t = field.importType(apiOut);
                         // try to re-qualify the type t...
@@ -182,6 +197,11 @@ public class UiTagModelGenerator extends UiFeatureGenerator {
                         apiOut
                             .createMethod(DEFAULT, t, field.getterName())
                             .returnValue("getModel()." + field.getterName() + "()");
+                    }
+                    if (isExposed) {
+                        // add two-way binding from model fields to raw element
+                        // (will only apply in web mode for now; may look into fxml support some day...
+
                     }
 //                    modOut.getImports().reserveSimpleName(rawFieldName);
                 }

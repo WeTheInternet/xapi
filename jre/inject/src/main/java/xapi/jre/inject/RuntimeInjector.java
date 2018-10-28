@@ -20,6 +20,7 @@ import xapi.inject.impl.JavaInjector;
 import xapi.log.X_Log;
 import xapi.platform.Platform;
 import xapi.reflect.X_Reflect;
+import xapi.source.X_Source;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
 import xapi.time.impl.ImmutableMoment;
@@ -74,8 +75,11 @@ public class RuntimeInjector implements In2<String, PlatformChecker> {
     if (!targetDir.endsWith(File.separator)) {
       targetDir += File.separator;
     }
+    targetDir = targetDir.replace('\\', '/');
+
     File relative = new File(targetDir);
-    if (new File("target/classes").equals(relative)) {
+
+    if (X_Source.hasMainPath(targetDir)) {
       Class<?> mainClass = null;
       try {
         mainClass = X_Reflect.getMainClass();
@@ -85,12 +89,12 @@ public class RuntimeInjector implements In2<String, PlatformChecker> {
       if (mainClass != null) {
         final String mainLoc = X_Reflect.getFileLoc(mainClass);
         relative = new File(mainLoc);
-        if (relative.isFile()) {
-          // Our search landed on a file (likely a jar);
-          // revert to "target/classes", and assume semi-sane $PWD
-          relative = new File(targetDir);
-        }
       }
+    }
+    if (relative.isFile()) {
+      // Our search landed on a file (likely a jar);
+      // revert to trusting relative directories, and assume semi-sane $PWD
+      relative = new File(targetDir);
     }
     final File target = relative.getAbsoluteFile();
     if (target.getAbsolutePath().contains(".jar")) {

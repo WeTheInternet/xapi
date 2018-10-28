@@ -1,5 +1,7 @@
 package xapi.source;
 
+import xapi.fu.itr.Chain;
+import xapi.fu.itr.ChainBuilder;
 import xapi.inject.X_Inject;
 import xapi.source.api.HasQualifiedName;
 import xapi.source.api.IsType;
@@ -17,6 +19,52 @@ import static xapi.util.X_String.isEmpty;
 import static xapi.util.X_String.toTitleCase;
 
 public class X_Source {
+
+  private static final String[] MAIN_PATHS;
+  private static final String[] TEST_PATHS;
+
+  static {
+    String[] pathTypes = System.getProperty("xapi.path.types", "gradle:maven:intellij").split(":");
+    ChainBuilder<String> mains = Chain.startChain(), tests = Chain.startChain();
+    for (String pathType : pathTypes) {
+      String path = System.getProperty("xapi.path." + pathType);
+      if (path == null) {
+        switch (pathType) {
+          case "gradle":
+            mains.add("build/classes/main");
+            path = "build/classes/java/main";
+            break;
+          case "maven":
+            path = "target/classes";
+            break;
+          case "intellij":
+            path = "out/production/classes";
+            break;
+        }
+      }
+      mains.add(path);
+
+      path = System.getProperty("xapi.path.test." + pathType);
+      if (path == null) {
+        switch (pathType) {
+          case "gradle":
+            tests.add("build/classes/test");
+            path = "build/classes/java/test";
+            break;
+          case "maven":
+            path = "target/test-classes";
+            break;
+          case "intellij":
+            path = "out/test/classes";
+            break;
+        }
+      }
+      tests.add(path);
+    }
+
+    MAIN_PATHS = mains.toArray(String.class);
+    TEST_PATHS = tests.toArray(String.class);
+  }
 
   private X_Source() {}
 
@@ -407,4 +455,56 @@ public class X_Source {
       return type == null ? null :
           type.split("<")[0].trim();
     }
+
+  public static String removeClassDirs(String raw) {
+    return raw.replaceAll("(" +
+        "/target/(test-)?classes" +
+        "|/out/(production|test)/classes" +
+        "|/build/classes/(java|groovy)/(main|test)" +
+        ")", "");
+  }
+
+  public static boolean hasMainPath(String unixed) {
+    for (String path : MAIN_PATHS) {
+      if (unixed.contains(path)) {
+        return true;
+      }
+    }
+    return false;
+  }
+  public static boolean hasTestPath(String unixed) {
+    for (String path : TEST_PATHS) {
+      if (unixed.contains(path)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public static String rebase(String unixed, String newMain, String newTest) {
+    return rebaseTest(rebaseMain(unixed, newMain), newTest);
+  }
+  public static String rebaseMain(String unixed, String newVal) {
+    for (String path : MAIN_PATHS) {
+      unixed = unixed.replace(path, newVal);
+    }
+    return unixed;
+  }
+
+  public static String rebaseTest(String unixed, String newVal) {
+    for (String path : TEST_PATHS) {
+      unixed = unixed.replace(path, newVal);
+    }
+    return unixed;
+  }
+
+  public static String findBase(String loc) {
+    for (String path : MAIN_PATHS) {
+      loc = loc.split(path)[0];
+    }
+    for (String path : TEST_PATHS) {
+      loc = loc.split(path)[0];
+    }
+    return loc;
+  }
 }

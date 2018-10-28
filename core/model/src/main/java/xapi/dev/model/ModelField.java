@@ -9,13 +9,17 @@ import xapi.annotation.model.Serializable;
 import xapi.annotation.model.SerializationStrategy;
 import xapi.annotation.model.ServerToClient;
 import xapi.collect.impl.SimpleFifo;
+import xapi.fu.Maybe;
+import xapi.fu.X_Fu;
 import xapi.log.X_Log;
+import xapi.source.api.IsParameterizedType;
 import xapi.source.api.IsType;
+import xapi.source.api.IsTypeArgument;
 import xapi.util.api.ValidatesValue;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.List;
 
 public class ModelField implements java.io.Serializable {
 
@@ -30,6 +34,16 @@ public class ModelField implements java.io.Serializable {
     IsType returnType;
     String methodName;
     public IsType[] generics;
+    String[] componentGetter;
+
+    public void addComponentGetter(int index, String val) {
+      if (componentGetter == null) {
+        componentGetter = (String[]) X_Fu.newArray(String.class, index+1);
+      } else if (componentGetter.length < index+1) {
+        componentGetter = X_Fu.copy(componentGetter, index+1);
+      }
+      componentGetter[index] = val;
+    }
   }
 
   class GetterMethod extends ModelMethod{
@@ -242,12 +256,49 @@ public class ModelField implements java.io.Serializable {
   }
 
   public GetterMethod addGetter(
-      final IsType returns, final String propertyName,
-      final String methodName, final Annotation[] annotations, List<IsType> generics
+      IsType sourceType, final IsType returns, final String propertyName,
+      final String methodName, final Annotation[] annotations, IsTypeArgument[] generics
   ) {
     final GetterMethod mthd = new GetterMethod();
     mthd.returnType = returns;
-    mthd.generics = generics.toArray(new IsType[generics.size()]);
+    final Maybe<IsParameterizedType> params = returns.ifParameterized();
+    // Leaving previous hacks commented out for one commit; will delete later.
+//    if (params.isPresent()) {
+//      mthd.generics = params.get().getBounds()
+//          .<IsType>map(X_Fu.weakener())
+//          .toArray(IsType[]::new);
+//    } else {
+//      mthd.generics = new IsType[0];
+//    }
+    // TODO: move this egregious hack to some kind of service,
+    // so we can at least generalize this nastiness (until we can expose better metadata)
+    for (Annotation annotation : annotations) {
+      if (annotation.annotationType().getSimpleName().equals("ComponentType")) {
+        int index = 0;
+        try {
+          Object result = annotation.annotationType().getMethod("index").invoke(annotation);
+          index = (Integer) result;
+        } catch (IllegalAccessException | InvocationTargetException e) {
+          X_Log.error(ModelField.class, "Unexpected exception", e);
+        } catch (NoSuchMethodException ignored) {
+          // index is optional; default is 0
+        }
+        try {
+          String val = (String) annotation.annotationType().getMethod("value").invoke(annotation);
+          mthd.addComponentGetter(index, val);
+        } catch (IllegalAccessException | InvocationTargetException e) {
+          X_Log.error(ModelField.class, "Unexpected exception", e);
+        } catch (NoSuchMethodException e) {
+          X_Log.error(ModelField.class, annotation.annotationType(), " should have method `String value()`", e);
+        }
+        break;
+      }
+    }
+
+//    if ("children".equals(propertyName) && sourceType.getQualifiedName().equals("xapi.ui.api.component.ComponentList")) {
+//      mthd.componentGetter = "getChildType()";
+//    }
+    mthd.generics = generics;
     mthd.fieldName = propertyName;
     mthd.methodName = methodName;
     getters.give(mthd);

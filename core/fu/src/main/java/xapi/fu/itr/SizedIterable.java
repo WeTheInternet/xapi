@@ -5,6 +5,7 @@ import xapi.fu.In1Out1;
 import xapi.fu.In1Out1.In1Out1Unsafe;
 import xapi.fu.Out1;
 import xapi.fu.api.DoNotOverride;
+import xapi.fu.api.Ignore;
 import xapi.fu.has.HasSize;
 
 import java.util.Iterator;
@@ -14,6 +15,7 @@ import static xapi.fu.itr.SingletonIterator.singleItem;
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 2/5/17.
  */
+@Ignore("model")
 public interface SizedIterable <T> extends MappedIterable<T>, HasSize {
 
     @Override

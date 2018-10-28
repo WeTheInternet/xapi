@@ -1,5 +1,6 @@
 package xapi.ui.api.component;
 
+import xapi.annotation.model.ComponentType;
 import xapi.collect.api.IntTo;
 import xapi.fu.Do;
 import xapi.fu.In1;
@@ -31,6 +32,7 @@ public interface ComponentList <S extends IsComponent> extends Model, Allable<S>
         return cls;
     }
 
+    @ComponentType("getChildType()")
     IntTo<S> getChildren();
     void setChildren(IntTo<S> children);
     default IntTo<S> children() {

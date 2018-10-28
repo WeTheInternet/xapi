@@ -1,7 +1,9 @@
 package xapi.model.api;
 
 import xapi.collect.X_Collect;
+import xapi.collect.api.CollectionOptions;
 import xapi.collect.api.IntTo;
+import xapi.collect.api.ObjectTo;
 import xapi.collect.api.StringTo;
 import xapi.collect.proxy.CollectionProxy;
 import xapi.fu.*;
@@ -11,6 +13,8 @@ import xapi.fu.itr.MappedIterable;
 import xapi.model.X_Model;
 
 import java.util.Map.Entry;
+
+import static xapi.collect.X_Collect.MUTABLE_CONCURRENT_INSERTION_ORDERED;
 
 public interface Model {
 
@@ -46,12 +50,31 @@ public interface Model {
         });
     }
 
-    default <T, G extends T> StringTo<T> getOrCreateMap(
+    default <T, G extends T> StringTo<T> getOrCreateStringMap(
         Class<G> type,
         Out1<StringTo<T>> getter,
         In1<StringTo<T>> setter
     ) {
         return getOrCreate(getter, () -> X_Collect.newStringMap(type), setter);
+    }
+    default <K, Key extends K, V, Val extends V> ObjectTo<K, V> getOrCreateMap(
+        Class<Key> keyType,
+        Class<Val> type,
+        Out1<ObjectTo<K, V>> getter,
+        In1<ObjectTo<K, V>> setter
+    ) {
+        return getOrCreateMap(keyType, type, getter, setter, null);
+    }
+    default <K, Key extends K, V, Val extends V> ObjectTo<K, V> getOrCreateMap(
+        Class<Key> keyType,
+        Class<Val> type,
+        Out1<ObjectTo<K, V>> getter,
+        In1<ObjectTo<K, V>> setter,
+        CollectionOptions opts
+    ) {
+        return getOrCreate(getter, () ->
+            X_Collect.newMap(keyType, type, opts == null ? MUTABLE_CONCURRENT_INSERTION_ORDERED : opts)
+            , setter);
     }
 
     default <T, G extends T> IntTo<T> getOrCreateList(Class<G> type, Out1<IntTo<T>> getter, In1<IntTo<T>> setter) {
@@ -87,6 +110,16 @@ public interface Model {
     void onChange(String key, In2<Object, Object> callback);
 
     void onGlobalChange(In3<String, Object, Object> callback);
+
+    default void globalChange(In3<String, Object, Object> callback) {
+        onGlobalChange(callback);
+        for (Entry<String, Object> prop : getProperties()) {
+            if (prop.getValue() != null) {
+                callback.in(prop.getKey(), null, prop.getValue());
+            }
+        }
+
+    }
 
     Model removeProperty(String key);
 

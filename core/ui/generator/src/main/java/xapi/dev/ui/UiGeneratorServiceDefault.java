@@ -18,7 +18,6 @@ import xapi.dev.ui.impl.AbstractUiGeneratorService;
 public class UiGeneratorServiceDefault <Raw, Ctx extends ApiGeneratorContext<Ctx>> extends AbstractUiGeneratorService<Raw, Ctx> {
 
     public UiGeneratorServiceDefault() {
-        resetFactories();
     }
 
     @Override

@@ -128,7 +128,7 @@ public class MvnCacheImpl implements MvnCache {
         if ("project.build.sourceDirectory".equals(propertyName) ) {
             return before + getSourceDirectory(model) + after;
         }
-        if ("project.directory".equals(propertyName) || "basedir".equals(propertyName)) {
+        if ("project.directory".equals(propertyName) || "project.basedir".equals(propertyName) || "basedir".equals(propertyName)) {
             return before + model.getProjectDirectory() + after;
         }
         if ("project.version".equals(propertyName) || "pom.version".equals(propertyName)) {
@@ -151,7 +151,7 @@ public class MvnCacheImpl implements MvnCache {
         if (model.getProperties() != null) {
             String value = model.getProperties().getProperty(propertyName);
             if (value != null) {
-                return before + value + after;
+                return before + getProperty(model, value) + after;
             }
         }
         if (model.getParent() != null) {

@@ -144,8 +144,8 @@ public class ImportSection implements CanAddImports {
       return;
     }
     String prefix = prefixOf(values[0]);
-    for (final String importName : values) {
-      if (importName.length() > 0) {
+    for (String importName : values) {
+      if (importName.length() > 0 && !importName.startsWith("@")) {
         final String newPrefix = prefixOf(importName);
         if (!newPrefix.equals(prefix)) {
           b.append(NEW_LINE);
@@ -194,6 +194,18 @@ public class ImportSection implements CanAddImports {
       }
     }
     throw new IllegalArgumentException("The names " + iterate(classes) + " are unavailable");
+  }
+  public void autoImportName(final String ... classes) {
+    for (String cls : classes) {
+      int ind = cls.lastIndexOf('.');
+      if (ind == -1) {
+        continue;
+      }
+      String simple = cls.substring(ind+1);
+      if (!imports.containsKey(simple)) {
+        imports.put(simple, "@" + cls);
+      }
+    }
   }
 
   public String addImport(final Class<?> cls) {
@@ -257,7 +269,7 @@ public class ImportSection implements CanAddImports {
       importName = importName.substring(0, index);
     }
     if (hasDot) {
-      if (Character.isUpperCase(importName.charAt(0))) {
+      if (Character.isUpperCase(importName.charAt(0)) && !importName.contains(" ")) {
         // Trying to add a package-local nested type...
         tryReserveSimpleName(importName.substring(importName.lastIndexOf('.')+1), importName);
         return importName + suffix;
@@ -326,10 +338,17 @@ public class ImportSection implements CanAddImports {
       return importName;
     }
 
-    final String existing = map.get(shortname);
+    String existing = map.get(shortname);
     if (existing == null) {
       map.put(shortname, importName);
       return shortname + suffix;
+    }
+    if (existing.startsWith("@")) {
+        // Trying to import something registered as an auto-import
+        existing = existing.substring(1);
+        if (existing.equals(importName)) {
+            map.put(shortname, existing);
+        }
     }
     // if the existing match was this classname, we are allowed to return shortname
     if (existing.equals(importName)) {
@@ -424,8 +443,12 @@ public class ImportSection implements CanAddImports {
       if (ind == -1) {
           ind = t.indexOf('[');
       }
-    final String val = imports.getOrDefault(t.split("<")[0].split("\\[")[0], t);
+    String val = imports.getOrDefault(t.split("<")[0].split("\\[")[0].trim(), t);
     // might be explicitly empty string to reserve a name
-    return val.isEmpty() ? t : val + (ind == -1 || (t.contains("<") || t.contains("[")) ? "" : t.substring(ind));
+    val = val.isEmpty() ? t : val + (ind == -1 || (t.contains("<") || t.contains("[")) ? "" : t.substring(ind));
+    if (val.startsWith("@")) {
+        return val.substring(1);
+    }
+    return val;
   }
 }

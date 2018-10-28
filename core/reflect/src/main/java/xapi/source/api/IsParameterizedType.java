@@ -25,6 +25,11 @@ public interface IsParameterizedType extends IsTypeArgument, HasBounds {
     // we're going to cheat and allow IsType, since we just want to limp this
     // along until WTI is released, and then come back around to make this ActuallyGood(tm)
 
+    @Override
+    default Maybe<IsParameterizedType> ifParameterized() {
+        return Maybe.immutable(this);
+    }
+
     /**
      * TODO: track when a class argument is the bounds of a type argument,
      * as this might enable us to better resolve IsTypeParameter

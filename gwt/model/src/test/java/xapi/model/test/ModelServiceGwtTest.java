@@ -6,20 +6,21 @@ import xapi.collect.api.IntTo;
 import xapi.log.X_Log;
 import xapi.model.X_Model;
 import xapi.model.api.ModelKey;
+import xapi.model.api.ModelList;
 import xapi.model.content.ModelContent;
 import xapi.model.content.ModelText;
+import xapi.model.user.ModelUser;
 import xapi.time.X_Time;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static xapi.model.X_Model.newKey;
-
-import com.google.gwt.reflect.shared.GwtReflect;
 
 import java.util.Arrays;
 
+import static xapi.model.X_Model.newKey;
+
+import com.google.gwt.junit.client.GWTTestCase;
+import com.google.gwt.reflect.shared.GwtReflect;
+
 public class ModelServiceGwtTest
-//    extends GWTTestCase
+    extends GWTTestCase
 {
 
   @Test
@@ -158,6 +159,14 @@ public class ModelServiceGwtTest
   }
 
   @Test
+  public void testModelList() {
+    final ModelList<ModelUser> model = X_Model.create(ModelList.class);
+    model.setModelType(ModelUser.class);
+    final ModelUser user = X_Model.create(ModelUser.class);
+    model.add(user);
+  }
+
+  @Test
   public void testModelWithEverything() {
     final ModelWithEverything model = X_Model.create(ModelWithEverything.class);
     assertNotNull(model.getModelArray());
@@ -178,7 +187,11 @@ public class ModelServiceGwtTest
 //    }
   }
 
-//
+  public String getModuleName() {
+    return "xapi.test.ModelTest";
+  }
+
+  //
 //  /**
 //   * @see com.google.gwt.junit.client.GWTTestCase#getModuleName()
 //   */

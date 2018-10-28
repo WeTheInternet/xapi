@@ -12,10 +12,7 @@ import xapi.log.api.LogLevel;
 import xapi.log.api.LogService;
 import xapi.log.impl.JreLog;
 import xapi.util.X_Runtime;
-import xapi.util.api.ConvertsValue;
 import xapi.util.impl.ImmutableProvider;
-
-import static xapi.util.X_Namespace.*;
 
 import javax.inject.Provider;
 import java.io.IOException;
@@ -24,6 +21,8 @@ import java.net.URL;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import static xapi.util.X_Namespace.*;
 
 public class JreInjector implements Injector {
 

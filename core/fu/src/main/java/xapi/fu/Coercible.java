@@ -1,5 +1,8 @@
 package xapi.fu;
 
+import xapi.fu.api.AutoOverload;
+import xapi.fu.api.DoNotOverride;
+import xapi.fu.api.ShouldOverride;
 import xapi.fu.has.HasResolution;
 
 import java.util.Iterator;
@@ -22,10 +25,12 @@ public interface Coercible {
     return "";
   }
 
+  @DoNotOverride
   default String coerce(Object obj) {
     return coerce(false, obj, LEFT_BRACE, RIGHT_BRACE, NEW_LINE, EMPTY_STRING);
   }
 
+  @DoNotOverride
   default String coerce(Object obj, boolean first) {
     StringBuilder b = new StringBuilder();
     if (!first) {
@@ -36,6 +41,25 @@ public interface Coercible {
     return b.toString();
   }
 
+  /**
+   * All other coerce methods funnel to here, where we handle iterables and arrays,
+   * along with escaping those list items.
+   *
+   * You should only override this method if you want direct access to
+   * iterables before they are unwrapped.
+   *
+   * If you want this high-levels of control,
+   * it comes at the cost of a higher complexity method signature.
+   *
+   * @param first
+   * @param obj
+   * @param before
+   * @param after
+   * @param newline
+   * @param emptyString
+   * @return
+   */
+  // @ShouldProbablyNotOverride ;-)
   default String coerce(boolean first, Object obj, Out1<String> before, Out1<String> after, Out1<String> newline, Out1<String> emptyString) {
     if (obj == null) {
       return "null";
@@ -122,6 +146,7 @@ public interface Coercible {
     }
   }
 
+  @ShouldOverride
   default String coerceNonArray(Object obj, boolean first) {
     if (obj instanceof Out1) {
       if (obj instanceof HasResolution) {
@@ -148,5 +173,42 @@ public interface Coercible {
 
   default String perIndent() {
     return "  ";
+  }
+
+  class DelegatingCoercible implements Coercible {
+    private Coercible coercer = this;
+
+    @Override
+    public String coerce(
+        boolean first,
+        Object obj,
+        Out1<String> before,
+        Out1<String> after,
+        Out1<String> newline,
+        Out1<String> emptyString
+    ) {
+      if (coercer == this) {
+        return Coercible.super.coerce(first, obj, before, after, newline, emptyString);
+      }
+      return coercer.coerce(first, obj, before, after, newline, emptyString);
+    }
+
+    @Override
+    public String coerceNonArray(Object obj, boolean first) {
+      if (coercer == this) {
+        return Coercible.super.coerceNonArray(obj, first);
+      }
+      return coercer.coerceNonArray(obj, first);
+    }
+
+    public Coercible getCoercer() {
+      return coercer;
+    }
+
+    @AutoOverload
+    public DelegatingCoercible setCoercer(Coercible coercer) {
+      this.coercer = coercer;
+      return this;
+    }
   }
 }

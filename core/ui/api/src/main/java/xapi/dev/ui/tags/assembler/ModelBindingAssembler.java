@@ -103,7 +103,7 @@ public abstract class ModelBindingAssembler implements TagAssembler {
             apiType +
             ">";
         // prepare a variable that we will initialize with a call to our bind* method
-        out.pattern("$1 $2;", elBuilderType, VAR_BUILDER);
+        out.patternln("$1 $2;", elBuilderType, VAR_BUILDER);
 
         // make sure we return said variable whenever we are done.
         final PrintBuffer ret = factory.getReturnStmt();
@@ -112,10 +112,14 @@ public abstract class ModelBindingAssembler implements TagAssembler {
 
         factory.addVisibility(X_Modifier.PROTECTED);
 
+        out
+            .patternln("final $1 builder = $2();", buildType, editTextBuilder);
+
         if (modelFields.isEmpty() && model.isAbsent()) {
             // This element is not configured at all; no binding is possible,
             // so just create a blank element and carry on.
-            out.patternln("$1 = $2($3, $4());", VAR_BUILDER, bindMethod, factory.getFieldName(), editTextBuilder);
+
+            out.patternln("$1 = $2($3, builder);", VAR_BUILDER, bindMethod, factory.getFieldName());
         } else {
             // There is some model bindings to consider.
             /*Manual prototype:
@@ -132,9 +136,6 @@ public abstract class ModelBindingAssembler implements TagAssembler {
     });
     return bindTitle(title, builder);
             */
-            out
-                .println("@SuppressWarnings(\"unchecked\")")
-                .patternln("final $1 builder = $2();", buildType, editTextBuilder);
 
             if (model.isPresent()) {
                 // when a model is present, none of the others should be present...

@@ -21,7 +21,7 @@ In1Out1<I, O> extends Rethrowable, Lambda {
   In1Out1 IS_NULL = X_Fu::isNull;
   In1Out1 IS_NOT_NULL = X_Fu::isNotNull;
 
-  static <O> In1Out1<O, O> identity() {
+    static <O> In1Out1<O, O> identity() {
     return IDENTITY;
   }
 

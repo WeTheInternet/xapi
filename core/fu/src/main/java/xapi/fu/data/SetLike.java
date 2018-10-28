@@ -1,8 +1,11 @@
 package xapi.fu.data;
 
+import xapi.fu.api.Ignore;
+
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 10/9/16.
  */
+@Ignore("model") // a model that implements SetLike will be implementing all methods itself; ignore anything defined in this type.
 public interface SetLike <V> extends CollectionLike<V> {
 
     default boolean add(V value) {

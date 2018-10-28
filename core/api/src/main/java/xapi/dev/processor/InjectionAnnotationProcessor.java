@@ -126,6 +126,7 @@ public class InjectionAnnotationProcessor extends AbstractProcessor{
     }
   }
 
+  private boolean skip;
 
   public InjectionAnnotationProcessor() {}
 
@@ -137,10 +138,16 @@ public class InjectionAnnotationProcessor extends AbstractProcessor{
     super.init(processingEnv);
     filer = processingEnv.getFiler();
     writer = initWriter(processingEnv);
+    skip = shouldSkip(processingEnv);
   }
 
   protected ManifestWriter initWriter(final ProcessingEnvironment processingEnv) {
     return new ManifestWriter();
+  }
+
+
+  protected boolean shouldSkip(ProcessingEnvironment processingEnv) {
+    return "true".equals(System.getProperty("xapi.no.javac.plugin")) || "true".equals(processingEnv.getOptions().get("xapi.no.javac.plugin"));
   }
 
   @Override
@@ -148,7 +155,7 @@ public class InjectionAnnotationProcessor extends AbstractProcessor{
       final Set<? extends TypeElement> annotations,
       final RoundEnvironment roundEnv
   ) {
-    if ("true".equals(System.getProperty("xapi.no.javac.plugin"))) {
+    if (skip) {
       return true;
     }
     final Elements elements = processingEnv.getElementUtils();

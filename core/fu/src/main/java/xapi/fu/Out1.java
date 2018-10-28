@@ -7,6 +7,7 @@ import xapi.fu.itr.SizedIterable;
 import xapi.fu.log.Log;
 import xapi.fu.log.Log.LogLevel;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Supplier;
 
@@ -26,33 +27,54 @@ public interface Out1<O> extends Rethrowable, Lambda, HasMutability {
   default O block() {
     return block(0);
   }
-  default O block(double limit) {
-    return block(this, limit);
+  default O block(double millis) {
+    return block(this, millis);
   }
-  default O block(Object blocker, double limit) {
+
+  /**
+   * Blocks until this factory produces a non-null result.
+   *
+   * @param blocker Object to call {@link HasLock#alwaysLock(Object, Out1)} upon.
+   * @param millis Floating point number of milliseconds to wait.
+   *               Can be either a number of milliseconds, or a specific point in time in the future.
+   *               (that is, a timestamp greater than a year ago will have the current system time removed from it).
+   * @return A possibly null result.
+   * Will be not null if we finished before the given deadline,
+   * but you should only use this information to fast-path sure-success;
+   * you will still want to do null checks as a fallback in the case of a race.
+   */
+  default O block(Object blocker, double millis) {
     O out = out1();
     int delay = -100; // spin 100 times before sleeping.
     // would be nice to have X_Time here...
     final double now = System.nanoTime();
-    double deadline = limit > (System.currentTimeMillis() * 2) ? limit : limit * 1_000_000;
-    deadline += now;
+    // compute the number of nanos we will wait
+    double deadline =
+        (
+            // If you sent a specific moment in time, we'll remove the current time from your millis
+            millis > (System.currentTimeMillis() - TimeUnit.DAYS.toMillis(370))
+                ? millis - System.currentTimeMillis()
+                : millis
+        ) * 1_000_000; // to nano
+    deadline += now; // Add the nanoTime to our deadline, so we can safely use subtraction to avoid any nano overflow math errors.
     while (out == null) {
       // respect locks, and refresh memory every time.
       out = HasLock.alwaysLock(blocker, this);
       if (out == null && delay ++ > 0) {
         // we'll spin 100 times before we start parking
         double nanos = delay * 1_000_000.;
-        if (limit > 0) {
+        if (millis > 0) {
           nanos =
             Math.min(nanos,
-            // using substraction ensures overflows don't cause errors
-            deadline - System.nanoTime()
+              // using subtraction ensures overflows don't cause errors
+              deadline - System.nanoTime()
             );
         }
         if (nanos > 0) {
           LockSupport.parkNanos((long)nanos);
         } else {
-          Log.firstLog(this).log(Out1.class, LogLevel.WARN, "block() did not complete in allotted time, " + ((deadline - now)/1_000_000.) + "ms");
+          Log.firstLog(this, blocker)
+              .log(Out1.class, LogLevel.WARN, "block() did not complete in allotted time, " + ((deadline - now)/1_000_000.) + "ms");
           return null;
         }
       }

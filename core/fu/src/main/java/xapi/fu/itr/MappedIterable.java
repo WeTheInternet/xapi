@@ -6,6 +6,7 @@ import xapi.fu.Filter.Filter1Unsafe;
 import xapi.fu.In1.In1Unsafe;
 import xapi.fu.In1Out1.In1Out1Unsafe;
 import xapi.fu.api.DoNotOverride;
+import xapi.fu.api.Ignore;
 import xapi.fu.has.HasEmptiness;
 import xapi.fu.has.HasSize;
 import xapi.fu.itr.CachingIterator.ReplayableIterable;
@@ -20,6 +21,7 @@ import static xapi.fu.itr.ArrayIterable.iterate;
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 7/31/16.
  */
+@Ignore("model")
 public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
 
     default <To> MappedIterable<To> map(In1Out1<T, To> mapper) {

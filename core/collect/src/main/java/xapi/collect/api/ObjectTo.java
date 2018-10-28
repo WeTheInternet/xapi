@@ -40,7 +40,12 @@ extends EntryIterable<K,V>, CollectionProxy<K,V>, HasValues<K,V>
 
   Class<?> componentType();
 
-  default MapLike<K, V> asMap() {
+    @Override
+    default SizedIterable<V> forEachValue() {
+        return HasValues.super.forEachValue();
+    }
+
+    default MapLike<K, V> asMap() {
       ObjectTo<K, V> values = this;
       return new MapLike<K, V>() {
           @Override

@@ -54,6 +54,11 @@ extends HasValues<String,V>, Serializable, MapLike<String, V>
     return MapLike.super.forEachItem();
   }
 
+  @Override
+  default SizedIterable<V> forEachValue() {
+    return HasValues.super.forEachValue();
+  }
+
   interface Many <V> extends StringTo<IntTo<V>>, HasMany<String, V> {
     @Override
     default SizedIterable<Out2<String, IntTo<V>>> forEachItem() {

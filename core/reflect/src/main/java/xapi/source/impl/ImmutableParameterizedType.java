@@ -1,5 +1,6 @@
 package xapi.source.impl;
 
+import xapi.fu.Maybe;
 import xapi.fu.X_Fu;
 import xapi.fu.itr.ArrayIterable;
 import xapi.fu.itr.SizedIterable;
@@ -23,16 +24,21 @@ public class ImmutableParameterizedType extends ImmutableTypeArgument implements
 //    }
 
     @Override
+    public String getName() {
+        return getType().getEnclosedName();
+    }
+
+    @Override
     public String toSource() {
         StringBuilder b = new StringBuilder(super.toSource());
         if (X_Fu.isEmpty(bounds)) {
             return b.toString();
         }
         b.append("<");
-        String suffix = "";
+        String prefix = "";
         for (IsTypeArgument bound : bounds) {
-            b.append(bound.toSource()).append(suffix);
-            suffix = ", ";
+            b.append(prefix).append(bound.toSource());
+            prefix = ", ";
         }
         b.append(">");
         return b.toString();

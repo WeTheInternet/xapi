@@ -9,6 +9,7 @@ import xapi.inject.X_Inject;
 import xapi.io.X_IO;
 import xapi.log.X_Log;
 import xapi.reflect.X_Reflect;
+import xapi.source.X_Source;
 import xapi.time.X_Time;
 import xapi.util.api.Digester;
 
@@ -16,6 +17,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import static xapi.source.X_Source.rebaseMain;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 9/17/16.
@@ -27,18 +30,21 @@ public class ApiGenerator {
         if (coords.length == 0) {
             final String loc = X_Reflect.getFileLoc(ApiGenerator.class);
             coords = new String[]{
-                loc
+                rebaseMain(loc
                     .replace('\\', '/') // windows
+                    // what a dirty hack... lol.
                     .replace(
-                        "dev/gen/target/classes",
-                        "core/fu/src/main/xapi"
+                        "dev/gen",
+                        "core/fu"
                     )
+                    , "src/main/xapi")
             };
         }
         ApiGenerator generator = X_Inject.instance(ApiGenerator.class);
         for (String coord : coords) {
             Path path = Paths.get(coord);
             X_Log.info(ApiGenerator.class, "Checking for xapi source in", coord);
+                                                                        // TODO: not this...
             Files.find(path, 50, (p, a)-> p.toString().endsWith("Out.xapi"))
                 .forEach(file->generator.generate(path, file));
         }

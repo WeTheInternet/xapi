@@ -23,7 +23,7 @@ public class GeneratedUiBase extends GeneratedUiLayer {
         final SourceBuilder<GeneratedJavaFile> builder = super.createSource();
         // When the source builder is created, we finally resolve the recommended imports.
         // This will allow you to call xapi.dev.source.ImportSection.qualify() and get back a canonical classname.
-        getOwner().getRecommendedImports().forEach(builder.getImports()::reserveSimpleName);
+        getOwner().getRecommendedImports().forEach(builder.getImports()::autoImportName);
         return builder;
     }
 

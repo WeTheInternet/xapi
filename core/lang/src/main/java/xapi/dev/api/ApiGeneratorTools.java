@@ -22,6 +22,8 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
 import xapi.dev.api.AstMethodInvoker.AstMethodResult;
+import xapi.dev.source.ClassBuffer;
+import xapi.dev.source.ImportSection;
 import xapi.dev.source.SourceBuilder;
 import xapi.except.NotYetImplemented;
 import xapi.fu.*;
@@ -1032,8 +1034,12 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
         }
     }
 
-    default String lookupType(String s) {
-        return WellKnownTypes.qualifyType(s);
+    default String lookupType(ImportSection buf, String s) {
+        String tryOne = WellKnownTypes.qualifyType(s);
+        if (s.equals(tryOne)) {
+            return buf.qualify(s);
+        }
+        return tryOne;
     }
 
     StringTo<String> DEFAULT_MAP_TYPES = X_Collect.newStringMap(

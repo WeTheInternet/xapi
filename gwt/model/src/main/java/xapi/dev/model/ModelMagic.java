@@ -24,6 +24,7 @@ import com.google.gwt.dev.jjs.UnifyAstListener;
 import com.google.gwt.dev.jjs.UnifyAstView;
 import com.google.gwt.dev.jjs.ast.*;
 import com.google.gwt.dev.jjs.impl.UnifyAst.UnifyVisitor;
+import com.google.gwt.dev.shell.rewrite.HasAnnotation;
 
 public class ModelMagic implements UnifyAstListener, MagicMethodGenerator {
 
@@ -116,7 +117,7 @@ public class ModelMagic implements UnifyAstListener, MagicMethodGenerator {
       // The type was loaded from source; we still need to create an artifact for it.
       final com.google.gwt.core.ext.typeinfo.JClassType type  = ModelGeneratorGwt.normalize(ctx, fqcn);
       final ModelArtifact artifact = getOrMakeModel(logger, ctx, type);
-      ModelGeneratorGwt.visitModelStructure(logger, ctx, type, this, artifact, In1.ignored());
+      ModelGeneratorGwt.visitModelStructure(logger, ctx, type, this, artifact);
       // TODO: do not require SourceBuilder here... gonna be tough to get rid of;
       // need to cleanly separate "grab metadata" from "generate thing we need".
       // Best bet is a new interface, that accepts an abstraction over gwt ast types,
@@ -242,6 +243,9 @@ public class ModelMagic implements UnifyAstListener, MagicMethodGenerator {
       case "onGlobalChange":
         return true;
     }
-    return shouldIgnore((HasAnnotations)method);
+    if (method.getEnclosingType().getPackage().getName().startsWith("java.")) {
+        return true;
+    }
+    return shouldIgnore((HasAnnotations)method) || shouldIgnore(method.getEnclosingType());
   }
 }

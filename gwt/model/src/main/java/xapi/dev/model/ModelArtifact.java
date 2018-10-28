@@ -10,6 +10,7 @@ import xapi.dev.source.SourceBuilder;
 import xapi.except.NotConfiguredCorrectly;
 import xapi.fu.In1;
 import xapi.fu.X_Fu;
+import xapi.fu.itr.SizedIterable;
 import xapi.gwt.model.service.ModelServiceGwt;
 import xapi.model.X_Model;
 import xapi.model.api.Model;
@@ -17,12 +18,8 @@ import xapi.model.api.ModelMethodType;
 import xapi.model.impl.ModelNameUtil;
 import xapi.model.impl.ModelUtil;
 import xapi.source.X_Source;
-import xapi.source.api.IsType;
-import xapi.source.api.IsTypeArgument;
-import xapi.source.impl.ImmutableClassArgument;
-import xapi.source.impl.ImmutableParameterizedType;
-import xapi.source.impl.ImmutableType;
-import xapi.source.impl.ImmutableWildcardArgument;
+import xapi.source.api.*;
+import xapi.source.impl.*;
 import xapi.util.X_Runtime;
 
 import javax.inject.Named;
@@ -148,7 +145,7 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
 
   }
 
-  Collection<JMethod> extractMethods(final TreeLogger logger, ModelMagic models, final GeneratorContext ctx, final JClassType type, In1<String> spyInterface) throws UnableToCompleteException {
+  Collection<JMethod> extractMethods(final TreeLogger logger, ModelMagic models, final GeneratorContext ctx, final JClassType type) throws UnableToCompleteException {
     assert type.isInterface() != null;
     final Map<String,JMethod> uniqueMethods = new LinkedHashMap<String,JMethod>();
     JMethod[] existing = type.getInheritableMethods();
@@ -165,7 +162,6 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
     final boolean debug = logger.isLoggable(Type.DEBUG);
     for (final JClassType next : hierarchy) {
       if (next.isInterface() != null) {
-        spyInterface.in(next.getQualifiedSourceName());
         for (final JMethod method : next.getMethods()) {
           if (isAllowed(method)) {
             final String sig = toSignature(method);
@@ -210,6 +206,30 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
     JClassType concrete;
     final JClassType root = models.getRootType(logger, ctx);
     final String modelType = type.getQualifiedSourceName();
+    final IsType sourceType = toTypeBounds(true, type)[0];
+
+    if (sourceType.ifParameterized().isPresent()) {
+      final IsParameterizedType parameterized = sourceType.ifParameterized().get();
+      for (IsTypeArgument arg : parameterized.getBounds()) {
+        StringBuilder b = new StringBuilder();
+        serializeParameter(arg, b, builder);
+        builder.getClassBuffer().addGenerics(b.toString());
+      }
+    }
+
+    if (type.isInterface() != null) {
+      builder.addInterfaces(type.getParameterizedQualifiedSourceName());
+    } // TODO: move the other setSuperType to here... for now, we only use interfaces
+//    Map<String, String> parameterized = new LinkedHashMap<>();
+//    for (JClassType t : type.getFlattenedSupertypeHierarchy()) {
+//      if (t.isInterface() != null) {
+////        if (t != type) {
+//
+//          builder.addInterfaces(t.getParameterizedQualifiedSourceName());
+////        }
+//      }
+//    }
+
     if (type.isInterface() == null && type != root) {
       concrete = type;
       generator.setSuperClass(modelType);
@@ -309,11 +329,15 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
 
       final String simpleReturnType = out.addImport(method.getReturnType().getQualifiedSourceName());
       IsType returns = binaryToSource(method.getReturnType().getQualifiedBinaryName());
-      final List<IsType> generics = getGenerics(method.getReturnType());
+//      List<IsType> generics = getGenerics(method.getReturnType());
 //      if (generics.size() > 0) {
+      IsTypeArgument[] generics;
       if (method.getReturnType().isParameterized() != null) {
         // fixup the returns...
-        returns = new ImmutableParameterizedType(null, returns, toTypeBounds(method.getReturnType().isParameterized().getTypeArgs()));
+        returns = new ImmutableParameterizedType(null, returns, toTypeBounds(false, method.getReturnType().isParameterized().getTypeArgs()));
+        generics = toTypeBounds(true, method.getReturnType().isParameterized().getTypeArgs());
+      } else {
+        generics = new IsTypeArgument[0];
       }
       final IsType[] parameters = toTypes(method.getParameterTypes());
 
@@ -332,7 +356,7 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
         assert parameters.length == 0 : "A getter method cannot have parameters. " +
         		"Generated code requires using getter methods without args.  You provided "+method.getJsniSignature();
         grabAnnotations(logger, models, fieldMap, method, annos, type);
-        field.addGetter(returns, name, methodName, method.getAnnotations(), generics);
+        field.addGetter(sourceType, returns, name, methodName, method.getAnnotations(), generics);
 
         getPropertyType.println("case \""+propName+"\":")
           .indentln("return "+out.addImport(method.getReturnType().getQualifiedSourceName())+".class;");
@@ -399,7 +423,7 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
           final String name = ModelNameUtil.stripGetter(method.getName());
           final ModelField field = fieldMap.getOrMakeField(name);
           field.setType(returnType);
-          field.addGetter(returns, name, methodName, method.getAnnotations(), generics);
+          field.addGetter(sourceType, returns, name, methodName, method.getAnnotations(), generics);
           grabAnnotations(logger, models, fieldMap, method, annos, type);
         } else if (isSetter) {
           final MethodBuffer mb = generator.createMethod(simpleReturnType, methodName, params);
@@ -427,7 +451,35 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
     // The type we are currently generating is not considered interesting, as we have already seen it.
     implementInterestingTypes(type, out, modelInterface, interestingTypes);
 
-    generator.generateModel(X_Source.toType(builder.getPackage(), builder.getClassBuffer().getSimpleName()), fieldMap);
+    generator.generateModel(sourceType, X_Source.toType(builder.getPackage(), builder.getClassBuffer().getSimpleName()), fieldMap);
+  }
+
+  private void serializeParameter(
+      IsTypeArgument arg,
+      StringBuilder b,
+      SourceBuilder<ModelMagic> builder
+  ) {
+
+    String argName = arg.getQualifiedName();
+    if (argName.indexOf('.') != -1) {
+      argName = builder.addImport(argName);
+    }
+    b.append(argName);
+    if (arg instanceof HasBounds) {
+      final SizedIterable<? extends IsTypeArgument> subBounds = ((HasBounds) arg).getBounds();
+      if (subBounds.isNotEmpty()) {
+        b.append(" extends ");
+        boolean first = true;
+        for (IsTypeArgument subBound : subBounds) {
+          if (first) {
+            first = false;
+          } else {
+            b.append(" & ");
+          }
+          serializeParameter(subBound, b, builder);
+        }
+      }
+    }
   }
 
   private List<IsType> getGenerics(JType type) {
@@ -435,11 +487,11 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
     List<IsType> generics = new ArrayList<>();
     if (genericType != null) {
       for (JClassType parameter : genericType.getTypeArgs()) {
-        IsType raw = binaryToSource(parameter.getErasedType().getQualifiedBinaryName());
+        IsType raw = binaryToSource(parameter.getQualifiedBinaryName());
         final JParameterizedType param = parameter.isParameterized();
         if (param != null) {
           // nested parameter...
-          raw = raw.withTypeBounds(toTypeBounds(param.getTypeArgs()));
+          raw = raw.withTypeBounds(toTypeBounds(false, param.getTypeArgs()));
         }
         // leaving this here, in case there
         generics.add(raw);
@@ -448,7 +500,7 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
     return generics;
   }
 
-  private IsTypeArgument[] toTypeBounds(JType ... typeArgs) {
+  private IsTypeArgument[] toTypeBounds(boolean declaration, JType ... typeArgs) {
     final IsTypeArgument[] result = new IsTypeArgument[typeArgs.length];
     for (int i = 0; i < typeArgs.length; i++) {
       final JWildcardType wildcard = typeArgs[i].isWildcard();
@@ -459,12 +511,12 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
             // plain ?
             result[i] = new ImmutableWildcardArgument(null);
           } else {
-            final IsTypeArgument[] lowers = toTypeBounds(wildcard.getLowerBounds());
+            final IsTypeArgument[] lowers = toTypeBounds(declaration, wildcard.getLowerBounds());
             result[i] = new ImmutableWildcardArgument(null, true, lowers);
           }
         } else {
           // There are upper bounds
-            final IsTypeArgument[] uppers = toTypeBounds(wildcard.getUpperBounds());
+            final IsTypeArgument[] uppers = toTypeBounds(declaration, wildcard.getUpperBounds());
           result[i] = new ImmutableWildcardArgument(null, uppers);
         }
       } else {
@@ -477,18 +529,28 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
 
             // The argument is a class type... check if it's parameterized or not.
             final JParameterizedType params = arg.isParameterized();
-            IsType raw = new ImmutableType(arg.getPackage().getName(), enclosingName(arg));
+            final String simpleName = enclosingName(arg);
+            final String pkg = arg.getPackage().getName();
+            IsType raw = new ImmutableType(pkg, simpleName);
             if (params == null) {
-              // nope, raw type...
-              result[i] = new ImmutableClassArgument(null, raw, 0);
+              // Try for a generic type...
+              final JGenericType generic = arg.isGenericType();
+              if (generic == null) {
+                // nope, raw type...
+                result[i] = new ImmutableClassArgument(null, raw, 0);
+              } else {
+                final JTypeParameter[] typeParams = generic.getTypeParameters();
+                final IsTypeArgument[] bounds = toTypeBounds(declaration, typeParams);
+                result[i] = new ImmutableParameterizedType(null, raw, bounds);
+              }
             } else {
               // child is a parameterized type as well... recurse
-              final IsTypeArgument[] args = toTypeBounds(params.getTypeArgs());
+              final IsTypeArgument[] args = toTypeBounds(declaration, params.getTypeArgs());
               result[i] = new ImmutableClassArgument(null, raw, 0, args);
             }
 
           } else {
-            IsTypeArgument component = toTypeBounds(arrayType.getComponentType())[0];
+            IsTypeArgument component = toTypeBounds(declaration, arrayType.getComponentType())[0];
             final IsType array = component.getArrayType();
             result[i] = new ImmutableClassArgument(null, array, 0);
           }
@@ -496,7 +558,8 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
           // we have a type parameter.  Convert to just use the name ?
           // ugh.  should check where this type parameter is defined, and act accordingly
           final IsType raw = new ImmutableType("", typeParam.getName());
-          result[i] = new ImmutableClassArgument(null, raw, 0);
+          final IsTypeArgument[] bounds = declaration ? toTypeBounds(declaration, typeParam.getBounds()) : new IsTypeArgument[0];
+          result[i] = new ImmutableClassArgument(new ImmutableTypeParameter(typeParam.getName()), raw, 0, bounds);
         }
       }
     }

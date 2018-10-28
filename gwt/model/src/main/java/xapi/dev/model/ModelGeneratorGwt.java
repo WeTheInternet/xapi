@@ -194,7 +194,7 @@ public class ModelGeneratorGwt extends IncrementalGenerator{
     final SourceBuilder<ModelMagic> builder = createBuilder(type, magic);
 
     // Step two; transverse type model.
-    visitModelStructure(logger, ctx, type, magic, model, builder.getClassBuffer()::addInterfaces);
+    visitModelStructure(logger, ctx, type, magic, model);
 
     // Step three: Make sure we force Array.newInstance to work...
     builder.getClassBuffer()
@@ -341,13 +341,11 @@ public class ModelGeneratorGwt extends IncrementalGenerator{
    * @param type
    * @param magic
    * @param model
-   * @param spyInterfaces
    * @throws UnableToCompleteException
    */
   public static void visitModelStructure(
       final TreeLogger logger, final GeneratorContext ctx,
-      final JClassType type, final ModelMagic magic, final ModelArtifact model,
-      In1<String> spyInterfaces
+      final JClassType type, final ModelMagic magic, final ModelArtifact model
   )
       throws UnableToCompleteException {
     if (type.isInterface() == null) {
@@ -355,7 +353,7 @@ public class ModelGeneratorGwt extends IncrementalGenerator{
       // Let's see if we're expected to generate any methods.
       if (type.isAbstract()) {
         // Find the methods the client didn't bother to implement.
-        final Collection<JMethod> interfaceMethods = model.extractMethods(logger, magic, ctx, type, spyInterfaces);
+        final Collection<JMethod> interfaceMethods = model.extractMethods(logger, magic, ctx, type);
         for (final JMethod ifaceMethod : interfaceMethods) {
           JMethod classMethod;
           try {
@@ -375,7 +373,7 @@ public class ModelGeneratorGwt extends IncrementalGenerator{
     } else {
       final JClassType root = magic.getRootType(logger, ctx);
       final Set<String> toSigs = getImplementedSignatures(root.getInheritableMethods());
-      for (final JMethod method :  model.extractMethods(logger, magic, ctx, type, spyInterfaces)) {
+      for (final JMethod method :  model.extractMethods(logger, magic, ctx, type)) {
         if (!ModelMagic.shouldIgnore(method)) {
           final String sig = ModelGeneratorGwt.toSignature(method);
           if (toSigs.add(sig)) {
@@ -396,7 +394,7 @@ public class ModelGeneratorGwt extends IncrementalGenerator{
     return sigs;
   }
 
-  public static IsType[] toTypes(final JType[] parameterTypes) {
+  public static IsType[] toTypes(final JType ... parameterTypes) {
     int i = parameterTypes.length;
     final IsType[] arr = new IsType[i];
     for (; i-->0;) {

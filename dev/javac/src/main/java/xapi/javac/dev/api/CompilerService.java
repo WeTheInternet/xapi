@@ -12,6 +12,7 @@ import xapi.javac.dev.model.CompilerSettings.ImplicitMode;
 import xapi.javac.dev.model.CompilerSettings.ProcessorMode;
 import xapi.javac.dev.model.JavaDocument;
 import xapi.reflect.X_Reflect;
+import xapi.source.X_Source;
 import xapi.util.X_String;
 
 import javax.lang.model.element.TypeElement;
@@ -103,7 +104,7 @@ public interface CompilerService {
 
   default CompilerSettings settingsForClass(Class<?> cls) {
     String loc = X_Reflect.getFileLoc(cls);
-    boolean test = loc.contains("test-classes");
+    boolean test = X_Source.hasTestPath(loc);
     final CompilerSettings settings = defaultSettings()
           .setTest(test)
           .setImplicitMode(ImplicitMode.CLASS)
@@ -111,18 +112,38 @@ public interface CompilerService {
 
     if (test) {
       settings.setOutputDirectory(loc);
-      loc = loc.replace("target/test-classes", "target/generated-test-sources/test-annotations");
+      String testOutput = getTestSrc();
+      loc = X_Source.rebaseTest(loc, testOutput);
       settings.setGenerateDirectory(loc);
-      loc = loc.replace("target/generated-test-sources/test-annotations", "src/test/java");
+      loc = loc.replace(testOutput, getTestSrc());
       settings.setSourceDirectory(loc);
     } else {
       settings.setOutputDirectory(loc);
-      loc = loc.replace("target/classes", "target/generated-sources/annotations");
+      String mainOutput = getMainAnnotationOutput();
+      loc = X_Source.rebaseMain(loc, mainOutput);
       settings.setGenerateDirectory(loc);
-      loc = loc.replace("target/generated-sources/annotations", "src/main/java");
+      loc = loc.replace(mainOutput, getMainSrc());
       settings.setSourceDirectory(loc);
     }
     return settings;
+  }
+
+  // TODO: at least put the following behind system/env props of some kind,
+  // and/or add some basic "detect if maven or gradle" is present (i.e. ask a classloader for something.)
+  default String getMainSrc() {
+    return "src/main/java";
+  }
+
+  default String getTestSrc() {
+    return "src/test/java";
+  }
+
+  default String getMainAnnotationOutput() {
+    return "target/generated-sources/annotations";
+  }
+
+  default String getTestAnnotationOutput() {
+    return "target/generated-test-sources/test-annotations";
   }
 
 }
