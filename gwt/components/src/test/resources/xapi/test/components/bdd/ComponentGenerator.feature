@@ -73,122 +73,122 @@ Feature: ComponentGenerator.feature: Transpile xapi templates into web component
       | }                                                                                                           |
 
 
-  Scenario: Generate a component with a simple click handler
-    Given compile the component:
-      | package xapi.test.components.client;    |
-      |                                         |
-      | import xapi.ui.api.Ui;                  |
-      | import xapi.ui.api.UiElement;           |
-      | import xapi.util.api.RemovalHandler;    |
-      | import xapi.fu.In1;                     |
-      | import elemental.dom.Element;           |
-      | import elemental.events.Event;          |
-      |                                         |
-      | @WebComponent(tagName="test-component", |
-      | shadowDom=@ShadowDom(`                  |
-      | <box                                    |
-      | onClick=$this::onClick                  |
-      | text = "Hello $world"                   |
-      | />                                      |
-      | `))                                     |
-      | public interface TestComponent          |
-      | extends IsWebComponent<Element> {       |
-      | void onClick(Event handler);            |
-      | String getWorld();                      |
-      | TestComponent setWorld(String world);   |
-      | }                                       |
-    And save generated source of component "test-component" as "UseTheSource"
-    Then confirm source "UseTheSource" matches:
-      | package xapi.test.components.client;                                                                          |
-      |                                                                                                               |
-      |                                                                                                               |
-      | import com.google.gwt.core.client.JavaScriptObject;                                                           |
-      |                                                                                                               |
-      | import elemental.dom.Element;                                                                                 |
-      |                                                                                                               |
-      | import java.util.function.Supplier;                                                                           |
-      |                                                                                                               |
-      | import xapi.components.api.HasElemente_d_Element_JsFunctionAccess;                                            |
-      | import xapi.components.api.IsWebComponente_d_Element_JsFunctionAccess;                                        |
-      | import xapi.components.api.JsoConsumer;                                                                       |
-      | import xapi.components.api.JsoSupplier;                                                                       |
-      | import xapi.components.api.WebComponentFactory;                                                               |
-      | import xapi.components.impl.WebComponentBuilder;                                                              |
-      | import xapi.components.impl.WebComponentSupport;                                                              |
-      | import xapi.inject.X_Inject;                                                                                  |
-      | import xapi.test.components.client.TestComponent;                                                             |
-      | import xapi.ui.service.UiService;                                                                             |
-      |                                                                                                               |
-      | public final class TestComponent_WebComponentFactory implements WebComponentFactory<TestComponent> {          |
-      |                                                                                                               |
-      | private static native JavaScriptObject proto () /*-{                                                          |
-      | return Object.create(HTMLElement.prototype);                                                                  |
-      | }-*/;                                                                                                         |
-      |                                                                                                               |
-      | private static WebComponentBuilder applyProperty_element (WebComponentBuilder builder) {                      |
-      | builder.addProperty(CONST_ELEMENT,                                                                            |
-      | new JsoSupplier(HasElemente_d_Element_JsFunctionAccess.get_element()),                                        |
-      | null,                                                                                                         |
-      | false, true);                                                                                                 |
-      | return builder;                                                                                               |
-      | }                                                                                                             |
-      |                                                                                                               |
-      | private static WebComponentBuilder applyValue_element (WebComponentBuilder builder) {                         |
-      | builder.addValue(CONST_ELEMENT, IsWebComponente_d_Element_JsFunctionAccess.element(null),false, true, false); |
-      | return builder;                                                                                               |
-      | }                                                                                                             |
-      |                                                                                                               |
-      | private static WebComponentBuilder applyProperty_onClick (WebComponentBuilder builder) {                      |
-      | builder.addProperty(CONST_ONCLICK,                                                                            |
-      | null,                                                                                                         |
-      | new JsoConsumer(TestComponent_JsFunctionAccess.set_onClick()),                                                |
-      | false, true);                                                                                                 |
-      | return builder;                                                                                               |
-      | }                                                                                                             |
-      |                                                                                                               |
-      | private static WebComponentBuilder applyProperty_world (WebComponentBuilder builder) {                        |
-      | builder.addProperty(CONST_WORLD,                                                                              |
-      | new JsoSupplier(TestComponent_JsFunctionAccess.get_getWorld()),                                               |
-      | new JsoConsumer(TestComponent_JsFunctionAccess.set_setWorld()),                                               |
-      | false, true);                                                                                                 |
-      | return builder;                                                                                               |
-      | }                                                                                                             |
-      |                                                                                                               |
-      | private static Supplier<TestComponent> ctor;                                                                  |
-      |                                                                                                               |
-      | private static final String CONST_ELEMENT = "element";                                                        |
-      |                                                                                                               |
-      | private static final String CONST_ONCLICK = "onClick";                                                        |
-      |                                                                                                               |
-      | private static final String CONST_WORLD = "world";                                                            |
-      |                                                                                                               |
-      | public TestComponent newComponent () {                                                                        |
-      | return ctor.get();                                                                                            |
-      | }                                                                                                             |
-      |                                                                                                               |
-      | public String querySelector () {                                                                              |
-      | return "test-component";                                                                                      |
-      | }                                                                                                             |
-      | static {                                                                                                      |
-      | WebComponentBuilder builder = WebComponentBuilder.create(proto());                                            |
-      | applyProperty_element(builder);                                                                               |
-      | applyValue_element(builder);                                                                                  |
-      | applyProperty_onClick(builder);                                                                               |
-      | applyProperty_world(builder);                                                                                 |
-      | builder.addShadowRoot("<box\n  text = \"Hello $world\"\n  id = \"gen1\"/>"                                    |
-      | , (host, shadow) -> {                                                                                         |
-      | UiService $ui = UiService.getUiService();                                                                     |
-      | TestComponent $this = (TestComponent) $ui.getHost(shadow);                                                    |
-      | Element gen1 = shadow.querySelector("#gen1");                                                                 |
-      | gen1.addEventListener("click",                                                                                |
-      | $this::onClick                                                                                                |
-      | );                                                                                                            |
-      | return shadow;                                                                                                |
-      | });                                                                                                           |
-      | ctor = WebComponentSupport.register("test-component", builder.build());                                       |
-      | }                                                                                                             |
-      |                                                                                                               |
-      | }                                                                                                             |
+#  Scenario: Generate a component with a simple click handler
+#    Given compile the component:
+#      | package xapi.test.components.client;    |
+#      |                                         |
+#      | import xapi.ui.api.Ui;                  |
+#      | import xapi.ui.api.UiElement;           |
+#      | import xapi.util.api.RemovalHandler;    |
+#      | import xapi.fu.In1;                     |
+#      | import elemental.dom.Element;           |
+#      | import elemental.events.Event;          |
+#      |                                         |
+#      | @WebComponent(tagName="test-component", |
+#      | shadowDom=@ShadowDom(`                  |
+#      | <box                                    |
+#      | onClick=$this::onClick                  |
+#      | text = "Hello $world"                   |
+#      | />                                      |
+#      | `))                                     |
+#      | public interface TestComponent          |
+#      | extends IsWebComponent<Element> {       |
+#      | void onClick(Event handler);            |
+#      | String getWorld();                      |
+#      | TestComponent setWorld(String world);   |
+#      | }                                       |
+#    And save generated source of component "test-component" as "UseTheSource"
+#    Then confirm source "UseTheSource" matches:
+#      | package xapi.test.components.client;                                                                          |
+#      |                                                                                                               |
+#      |                                                                                                               |
+#      | import com.google.gwt.core.client.JavaScriptObject;                                                           |
+#      |                                                                                                               |
+#      | import elemental.dom.Element;                                                                                 |
+#      |                                                                                                               |
+#      | import java.util.function.Supplier;                                                                           |
+#      |                                                                                                               |
+#      | import xapi.components.api.HasElemente_d_Element_JsFunctionAccess;                                            |
+#      | import xapi.components.api.IsWebComponente_d_Element_JsFunctionAccess;                                        |
+#      | import xapi.components.api.JsoConsumer;                                                                       |
+#      | import xapi.components.api.JsoSupplier;                                                                       |
+#      | import xapi.components.api.WebComponentFactory;                                                               |
+#      | import xapi.components.impl.WebComponentBuilder;                                                              |
+#      | import xapi.components.impl.WebComponentSupport;                                                              |
+#      | import xapi.inject.X_Inject;                                                                                  |
+#      | import xapi.test.components.client.TestComponent;                                                             |
+#      | import xapi.ui.service.UiService;                                                                             |
+#      |                                                                                                               |
+#      | public final class TestComponent_WebComponentFactory implements WebComponentFactory<TestComponent> {          |
+#      |                                                                                                               |
+#      | private static native JavaScriptObject proto () /*-{                                                          |
+#      | return Object.create(HTMLElement.prototype);                                                                  |
+#      | }-*/;                                                                                                         |
+#      |                                                                                                               |
+#      | private static WebComponentBuilder applyProperty_element (WebComponentBuilder builder) {                      |
+#      | builder.addProperty(CONST_ELEMENT,                                                                            |
+#      | new JsoSupplier(HasElemente_d_Element_JsFunctionAccess.get_element()),                                        |
+#      | null,                                                                                                         |
+#      | false, true);                                                                                                 |
+#      | return builder;                                                                                               |
+#      | }                                                                                                             |
+#      |                                                                                                               |
+#      | private static WebComponentBuilder applyValue_element (WebComponentBuilder builder) {                         |
+#      | builder.addValue(CONST_ELEMENT, IsWebComponente_d_Element_JsFunctionAccess.element(null),false, true, false); |
+#      | return builder;                                                                                               |
+#      | }                                                                                                             |
+#      |                                                                                                               |
+#      | private static WebComponentBuilder applyProperty_onClick (WebComponentBuilder builder) {                      |
+#      | builder.addProperty(CONST_ONCLICK,                                                                            |
+#      | null,                                                                                                         |
+#      | new JsoConsumer(TestComponent_JsFunctionAccess.set_onClick()),                                                |
+#      | false, true);                                                                                                 |
+#      | return builder;                                                                                               |
+#      | }                                                                                                             |
+#      |                                                                                                               |
+#      | private static WebComponentBuilder applyProperty_world (WebComponentBuilder builder) {                        |
+#      | builder.addProperty(CONST_WORLD,                                                                              |
+#      | new JsoSupplier(TestComponent_JsFunctionAccess.get_getWorld()),                                               |
+#      | new JsoConsumer(TestComponent_JsFunctionAccess.set_setWorld()),                                               |
+#      | false, true);                                                                                                 |
+#      | return builder;                                                                                               |
+#      | }                                                                                                             |
+#      |                                                                                                               |
+#      | private static Supplier<TestComponent> ctor;                                                                  |
+#      |                                                                                                               |
+#      | private static final String CONST_ELEMENT = "element";                                                        |
+#      |                                                                                                               |
+#      | private static final String CONST_ONCLICK = "onClick";                                                        |
+#      |                                                                                                               |
+#      | private static final String CONST_WORLD = "world";                                                            |
+#      |                                                                                                               |
+#      | public TestComponent newComponent () {                                                                        |
+#      | return ctor.get();                                                                                            |
+#      | }                                                                                                             |
+#      |                                                                                                               |
+#      | public String querySelector () {                                                                              |
+#      | return "test-component";                                                                                      |
+#      | }                                                                                                             |
+#      | static {                                                                                                      |
+#      | WebComponentBuilder builder = WebComponentBuilder.create(proto());                                            |
+#      | applyProperty_element(builder);                                                                               |
+#      | applyValue_element(builder);                                                                                  |
+#      | applyProperty_onClick(builder);                                                                               |
+#      | applyProperty_world(builder);                                                                                 |
+#      | builder.addShadowRoot("<box\n  text = \"Hello $world\"\n  id = \"gen1\"/>"                                    |
+#      | , (host, shadow) -> {                                                                                         |
+#      | UiService $ui = UiService.getUiService();                                                                     |
+#      | TestComponent $this = (TestComponent) $ui.getHost(shadow);                                                    |
+#      | Element gen1 = shadow.querySelector("#gen1");                                                                 |
+#      | gen1.addEventListener("click",                                                                                |
+#      | $this::onClick                                                                                                |
+#      | );                                                                                                            |
+#      | return shadow;                                                                                                |
+#      | });                                                                                                           |
+#      | ctor = WebComponentSupport.register("test-component", builder.build());                                       |
+#      | }                                                                                                             |
+#      |                                                                                                               |
+#      | }                                                                                                             |
 
   Scenario:  Create a TODO list app
 

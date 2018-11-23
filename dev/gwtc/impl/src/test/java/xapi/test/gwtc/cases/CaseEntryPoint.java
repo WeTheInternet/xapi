@@ -40,6 +40,14 @@ import com.google.gwt.dom.client.Element;
   ,dependencies={
     @Dependency(dependencyType=DependencyType.MAVEN,
       groupId="net.wetheinter", value="xapi-elemental",version=X_Namespace.XAPI_VERSION),
+    @Dependency(dependencyType=DependencyType.MAVEN,
+      groupId="net.wetheinter", value="xapi-gwtc-impl",version=X_Namespace.XAPI_VERSION),
+    @Dependency(dependencyType=DependencyType.MAVEN,
+      groupId="net.wetheinter", value="xapi-gwt-test",version=X_Namespace.XAPI_VERSION),
+    @Dependency(dependencyType=DependencyType.MAVEN,
+      groupId="net.wetheinter", value="xapi-gwt-api",version=X_Namespace.XAPI_VERSION),
+    @Dependency(dependencyType=DependencyType.MAVEN,
+      groupId="net.wetheinter", value="xapi-gwt-process",version=X_Namespace.XAPI_VERSION),
     @Dependency("src/test/java"),
     @Dependency("src/test/resources"),
   }

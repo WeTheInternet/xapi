@@ -366,6 +366,9 @@ public class CompilerSettings implements Rethrowable {
     public String getGenerateDirectory() {
         if (generateDirectory == null) {
             try {
+                // Man, this whole file is completely out of whack now that we're ditching maven and associated hacks.
+                // We need to be getting this information from a gradle-produced manifest describing our source layout.
+                // We'll leave it alone for now, but will get this taken care of after committing and pushing a mountain of work.
                 File f = new File(getRoot(), "target/generated-" + (test ? "test-" : "") + "sources/gwt");
                 generateDirectory = f.getCanonicalPath();
                 if (!f.exists()) {
