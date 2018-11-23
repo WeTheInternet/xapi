@@ -8,8 +8,18 @@ import xapi.fu.api.Ignore;
 @Ignore("model") // a model that implements SetLike will be implementing all methods itself; ignore anything defined in this type.
 public interface SetLike <V> extends CollectionLike<V> {
 
-    default boolean add(V value) {
+    default SetLike<V> add(V value) {
+        addAndReturn(value);
+        return this;
+    }
+
+    default boolean addIfMissing(V value) {
         return addAndReturn(value) != null;
+    }
+
+    default SetLike<V> addNow(Iterable<? extends V> items) {
+        CollectionLike.super.addNow(items);
+        return this;
     }
 
     default boolean contains(V value) {

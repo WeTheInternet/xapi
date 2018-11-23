@@ -3,6 +3,7 @@ package xapi.process;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import xapi.fu.Mutable;
 import xapi.util.X_Namespace;
 import xapi.util.api.Pointer;
 
@@ -21,24 +22,24 @@ public class ConcurrencyTest {
     System.setProperty(X_Namespace.PROPERTY_MULTITHREADED, "5");
   }
 
-  @Test
+  @Test(timeout = 20_000)
   public void testSimpleDeferment() throws Exception{
     final Pointer<Boolean> success = new Pointer<Boolean>();
     runDeferred(()->success.set(true));
     success.set(false);
-    flush(3000);
+    flush(5000);
     Assert.assertTrue(success.get());
   }
-  @Test
+  @Test(timeout = 20_000)
   public void testMultiDeferment() throws Exception{
     final Pointer<Boolean> success = new Pointer<Boolean>();
     runFinally(()->success.set(false));
     runDeferred(()->success.set(true));
     success.set(false);
-    flush(3000);
+    flush(5000);
     Assert.assertTrue(success.get());
   }
-  @Test
+  @Test(timeout = 35_000)
   public void testComplexDeferment() throws Exception{
     //When launching multiple finalies and defers,
     //we expect all finalies to run between all deferred commands.
@@ -82,39 +83,40 @@ public class ConcurrencyTest {
     Assert.assertTrue(stage.get() == 4);
   }
 
-  @Test(timeout = 5000)
+  @Test(timeout = 10_000)
   public void testSimpleThread() throws InterruptedException {
-    final Pointer<Boolean> success = new Pointer<Boolean>();
-    Semaphore wait = new Semaphore(1);
+    final Mutable<Boolean> success = new Mutable<>();
+    Semaphore wait = new Semaphore(1, true);
     wait.acquire();
     Semaphore finish = new Semaphore(1);
     finish.acquire();
-    Thread t = newThread(() -> {
+    Thread t = newThreadUnsafe(() -> {
         info("Thread start time: "+(now()-threadStartTime()));
         //make sure our thread flushed when it's done!
+        wait.acquire();
         runFinallyUnsafe(() -> {
             wait.acquire();
             info("To True: "+(now()-threadStartTime()));
             success.set(true);
             finish.release();
         });
-        info("To False: "+(now()-threadStartTime()));
+        info("To False 2: "+(now()-threadStartTime()));
         success.set(false);
+        wait.release();
     });
     success.set(false);
     runFinally(() -> {
-        info("To False: "+(now()-threadStartTime()));
+        info("To False 1: "+(now()-threadStartTime()));
         success.set(false);
         wait.release();
     });
     t.start();
-    finish.acquire();
-    while (success.get() != Boolean.TRUE) {
+    while (success.out1() != Boolean.TRUE) {
         trySleep(100);
         flush(t, 250);
     }
 
-    Assert.assertTrue(success.get());
+    Assert.assertTrue(success.out1());
   }
 
   @Test

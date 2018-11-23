@@ -76,7 +76,7 @@
        It is also synchronous; if you wish to use codesplitting, see X_Inject.singletonAsync.
         -->
 	<extend-configuration-property name="gwt.magic.methods"
-		value="xapi.inject.X_Inject.singletonLazy(Ljava/lang/Class;)Ljavax/inject/Provider; *= xapi.dev.inject.MagicMethods::rebindSingletonLazy"/>
+		value="xapi.inject.X_Inject.singletonLazy(Ljava/lang/Class;)Lxapi/fu/Lazy; *= xapi.dev.inject.MagicMethods::rebindSingletonLazy"/>
 
 
 	<!-- Accepts a class literal to inject as a singleton, as well as a callback object.
@@ -89,7 +89,7 @@
        See below for the optimal method.
    -->
   <extend-configuration-property name="gwt.magic.methods"
-		value="xapi.inject.X_Inject.singletonAsync(Ljava/lang/Class;Lwetheinter/net/api/ReceivesValue;)V *= xapi.dev.inject.MagicMethods::rebindSingletonAsync"/>
+		value="xapi.inject.X_Inject.singletonAsync(Ljava/lang/Class;Lxapi/fu/In1;)V *= xapi.dev.inject.MagicMethods::rebindSingletonAsync"/>
 
 
 	<!-- Accepts a class literal to inject as a singleton, as well as a callback class, which is also injected.

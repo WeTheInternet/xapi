@@ -1,7 +1,7 @@
 package xapi.dev.source;
 
+import xapi.fu.In1Out1;
 import xapi.util.X_String;
-import xapi.util.api.ConvertsValue;
 
 public class DomBuffer extends XmlBuffer {
 
@@ -493,7 +493,7 @@ public class DomBuffer extends XmlBuffer {
   }
 
   @Override
-  public DomBuffer setEscaper(final ConvertsValue<String, String> escaper) {
+  public DomBuffer setEscaper(final In1Out1<String, String> escaper) {
     super.setEscaper(escaper);
     return this;
   }

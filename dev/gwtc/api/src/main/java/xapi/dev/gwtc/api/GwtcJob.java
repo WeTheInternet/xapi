@@ -66,6 +66,8 @@ public abstract class GwtcJob implements Destroyable {
     private long touch;
     private volatile Do onStale = Do.NOTHING, onFresh = Do.NOTHING;
 
+    private Mutable<In2<CompileMessage, String>> pending = new Mutable<>(In2.ignoreAll());
+
     public GwtcJob(GwtManifest manifest, PrimitiveSerializer serializer) {
         this(manifest.getModuleName(), manifest.getModuleShortName(), manifest.isRecompile(), manifest.isJ2cl(), serializer);
     }
@@ -256,6 +258,7 @@ public abstract class GwtcJob implements Destroyable {
     protected void readStatus(GwtcJobMonitor monitor, In2<CompileMessage, String> callback) {
 
         String response = monitor.readAsCaller();
+        pending.process(In2::doAfterMe, callback);
         if (response.isEmpty()) {
             X_Log.warn(GwtcJob.class, "Ignored empty response; did not call", callback);
             return;
@@ -267,10 +270,10 @@ public abstract class GwtcJob implements Destroyable {
             X_Log.trace(GwtcJob.class, "Received: ", status, " : ", response);
         }
         String rest = response.substring(1);
-            callback.in(status,
-                (status == DebugWait ? "L" : "") +
-                (rest.endsWith("\n") ? rest.substring(0, rest.length() - 1) : rest)
-            );
+        final String message = (status == DebugWait ? "L" : "") +
+            (rest.endsWith("\n") ? rest.substring(0, rest.length() - 1) : rest);
+
+        pending.useThenSet(cb->cb.in(status, message), In2.ignoreAll());
     }
 
 

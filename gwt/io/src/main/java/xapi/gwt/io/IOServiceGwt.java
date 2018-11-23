@@ -9,7 +9,8 @@ import xapi.collect.api.StringDictionary;
 import xapi.collect.api.StringTo;
 import xapi.collect.api.StringTo.Many;
 import xapi.except.NoSuchItem;
-import xapi.inject.impl.SingletonProvider;
+import xapi.fu.Lazy;
+import xapi.fu.Out1;
 import xapi.io.IOConstants;
 import xapi.io.api.*;
 import xapi.io.impl.AbstractIOService;
@@ -20,8 +21,6 @@ import xapi.platform.GwtPlatform;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
 import xapi.util.X_Runtime;
-
-import javax.inject.Provider;
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.http.client.*;
@@ -150,17 +149,14 @@ public class IOServiceGwt extends AbstractIOService <RequestBuilder> {
             return;
           }
           boolean success = code >= 200 && code < 300;
-          final Provider<Many<String>> resultHeaders = new SingletonProvider<Many<String>>() {
-
-            @Override
-            protected Many<String> initialValue() {
+          final Out1<Many<String>> resultHeaders = Lazy.deferred1(() -> {
               final Many<String> headers = X_Collect.newStringMultiMap(String.class);
               for (final Header header : resp.getHeaders()) {
                 headers.add(header.getName(), header.getValue());
               }
               return headers;
             }
-          };
+          );
           request.setStatus(code, resp.getStatusText());
           request.setValue(resp.getText());
           request.setResultHeaders(resultHeaders);
@@ -195,7 +191,7 @@ public class IOServiceGwt extends AbstractIOService <RequestBuilder> {
 
               @Override
               public StringTo.Many<String> headers() {
-                return resultHeaders.get();
+                return resultHeaders.out1();
               }
             };
             if (success) {

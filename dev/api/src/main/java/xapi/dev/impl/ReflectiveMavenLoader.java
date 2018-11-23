@@ -14,8 +14,11 @@ import xapi.util.X_Debug;
 import xapi.util.X_Namespace;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.reflect.Method;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.concurrent.TimeUnit;
@@ -94,6 +97,39 @@ public class ReflectiveMavenLoader implements MavenLoader {
     }
 
     private static final Lazy<MavenLoaderChannel> devJar = Lazy.deferred1Unsafe(()-> {
+        String repo = System.getProperty("xapi.maven.repo", System.getenv("xapi.maven.repo"));
+        URL jarUrl;
+        if (repo == null) {
+            jarUrl = mavenLocalFromUserHome();
+        } else {
+            jarUrl = new URL(repo.contains(":") ? repo : "file:" + repo);
+        }
+        assert jarUrl != null : "No jar url...";
+
+        // set the classloader with xapi-dev artifact...
+        URLClassLoader loader = new URLClassLoader(new URL[]{jarUrl}, null);
+        final Class<?> threadClass = loader.loadClass(MavenLoaderThread.class.getName());
+        final Class<?> out1Class = loader.loadClass(Out1.class.getName());
+
+        Method loadCoords = X_Reflect.getPublicMethod(threadClass,"loadCoords", String.class);
+        Method out1 = out1Class.getMethod("out1");
+        Thread downloadThread = (Thread) threadClass.newInstance();
+        downloadThread.setContextClassLoader(loader);
+        downloadThread.start();
+        return coord -> {
+            try {
+                Object result = loadCoords.invoke(downloadThread, coord);
+                return Out1.out1Unsafe(()->{
+                    String[] urls = (String[]) out1.invoke(result);
+                    return urls;
+                });
+            } catch (Exception e) {
+                throw X_Debug.rethrow(e);
+            }
+        };
+    });
+
+    private static URL mavenLocalFromUserHome() throws IOException {
         String home = System.getProperty("user.home", System.getenv("user.home"));
         URL jarUrl = null;
         if (home != null) {
@@ -131,30 +167,9 @@ public class ReflectiveMavenLoader implements MavenLoader {
                 jarUrl = jarFile.toURI().toURL();
             }
         }
-        assert jarUrl != null : "No jar url...";
 
-        // set the classloader with xapi-dev artifact...
-        URLClassLoader loader = new URLClassLoader(new URL[]{jarUrl}, null);
-        final Class<?> threadClass = loader.loadClass(MavenLoaderThread.class.getName());
-        final Class<?> out1Class = loader.loadClass(Out1.class.getName());
-
-        Method loadCoords = X_Reflect.getPublicMethod(threadClass,"loadCoords", String.class);
-        Method out1 = out1Class.getMethod("out1");
-        Thread downloadThread = (Thread) threadClass.newInstance();
-        downloadThread.setContextClassLoader(loader);
-        downloadThread.start();
-        return coord -> {
-            try {
-                Object result = loadCoords.invoke(downloadThread, coord);
-                return Out1.out1Unsafe(()->{
-                    String[] urls = (String[]) out1.invoke(result);
-                    return urls;
-                });
-            } catch (Exception e) {
-                throw X_Debug.rethrow(e);
-            }
-        };
-    });
+        return jarUrl;
+    }
 
     @Override
     public Out1<Iterable<String>> downloadDependency(MvnDependency dependency) {

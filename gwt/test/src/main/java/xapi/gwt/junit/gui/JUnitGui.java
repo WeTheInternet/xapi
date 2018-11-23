@@ -4,6 +4,7 @@ import elemental.client.Browser;
 import elemental.dom.Element;
 import xapi.elemental.X_Elemental;
 import xapi.elemental.api.PotentialNode;
+import xapi.fu.Out1;
 import xapi.gwt.junit.impl.JUnit4Executor;
 import xapi.util.X_Debug;
 
@@ -267,7 +268,7 @@ public abstract class JUnitGui {
     }
 
     Element[] view = new Element[0];
-    final Provider<Element> stageProvider = () -> {
+    final Out1<Element> stageProvider = () -> {
       view[0] = X_Elemental.newDiv();
       final Element result = initialize(view[0], controller, inst);
       return result;
@@ -324,7 +325,7 @@ public abstract class JUnitGui {
         controller = new JUnitGuiController(()->updateTestClass(m.getDeclaringClass()));
       }
       Element[] view = new Element[0];
-      final Provider<Element> stageProvider = () -> {
+      final Out1<Element> stageProvider = () -> {
         view[0] = X_Elemental.newDiv();
         final Element result = initialize(view[0], controller, inst);
         if (result.getParentElement() == null) {

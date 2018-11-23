@@ -8,9 +8,9 @@ import xapi.test.gwt.inject.SplitPointTest.ImportTestInterface;
 public class ImportTestCallback_NeverCalled implements ImportTestReceiver{
 
   public static final String DO_NOT_INCLUDE = "Never Included";
-  
+
   @Override
-  public void set(ImportTestInterface value) {
+  public void in(ImportTestInterface value) {
     X_Log.info(DO_NOT_INCLUDE);
   }
 

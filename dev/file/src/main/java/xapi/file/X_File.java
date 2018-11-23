@@ -2,10 +2,10 @@ package xapi.file;
 
 import xapi.file.api.FileService;
 import xapi.fu.In2;
+import xapi.fu.Out1;
 import xapi.fu.itr.MappedIterable;
 import xapi.inject.X_Inject;
 
-import javax.inject.Provider;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -14,7 +14,7 @@ import java.util.jar.JarFile;
 
 public class X_File {
 
-  private static final Provider<FileService> SERVICE = X_Inject.singletonLazy(FileService.class);
+  private static final Out1<FileService> SERVICE = X_Inject.singletonLazy(FileService.class);
 
   /**
    * Performs a chmod-like operation on a file.
@@ -34,7 +34,7 @@ public class X_File {
    * @return That same file.
    */
   public static File chmod(int chmod, final File file) {
-    return SERVICE.get().chmod(chmod, file);
+    return SERVICE.out1().chmod(chmod, file);
   }
 
   public static String unzip(String resource, JarFile jarFile) {
@@ -42,7 +42,7 @@ public class X_File {
   }
 
   public static String unzip(String resource, JarFile jarFile, int chmod) {
-    return SERVICE.get().unzip(resource, jarFile, chmod);
+    return SERVICE.out1().unzip(resource, jarFile, chmod);
   }
 
   public static InputStream unzipFile(String file) throws FileNotFoundException {
@@ -69,48 +69,48 @@ public class X_File {
   }
 
   public static String unzippedResourcePath(String resource, ClassLoader cl, int chmod) {
-    return SERVICE.get().getResourceMaybeUnzip(resource, cl, chmod);
+    return SERVICE.out1().getResourceMaybeUnzip(resource, cl, chmod);
   }
 
   public static String unzippedFilePath(String file, int chmod) {
-    return SERVICE.get().getFileMaybeUnzip(file, chmod);
+    return SERVICE.out1().getFileMaybeUnzip(file, chmod);
   }
 
   public static File createTempDir(String prefix) {
-    return SERVICE.get().createTempDir(prefix, false);
+    return SERVICE.out1().createTempDir(prefix, false);
   }
 
   public static File createTempDir(String prefix, boolean deleteOnExit) {
-    return SERVICE.get().createTempDir(prefix, deleteOnExit);
+    return SERVICE.out1().createTempDir(prefix, deleteOnExit);
   }
 
   public static String getPath(String path) {
-    return SERVICE.get().getPath(path);
+    return SERVICE.out1().getPath(path);
   }
 
   public static void saveFile(String path, String fileName, String contents) {
-    SERVICE.get().saveFile(path, fileName, contents);
+    SERVICE.out1().saveFile(path, fileName, contents);
   }
 
   public static void mkdirsTransient(File dest) {
-    SERVICE.get().mkdirsTransient(dest);
+    SERVICE.out1().mkdirsTransient(dest);
   }
 
   public static void deepDelete(String dir) {
     if (dir != null) {
-      SERVICE.get().delete(dir, true);
+      SERVICE.out1().delete(dir, true);
     }
   }
 
     public static MappedIterable<String> getAllFiles(String file) {
-      return SERVICE.get().getAllFiles(file);
+      return SERVICE.out1().getAllFiles(file);
     }
 
   public static void loadFile(File file, In2<String, Throwable> callback) {
-    SERVICE.get().loadFile(file, callback);
+    SERVICE.out1().loadFile(file, callback);
   }
 
   public static boolean exists(String s) {
-    return SERVICE.get().exists(s);
+    return SERVICE.out1().exists(s);
   }
 }

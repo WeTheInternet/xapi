@@ -28,6 +28,8 @@ import xapi.util.api.SuccessHandler;
  */
 public interface ModelList<T extends Model> extends Model, SetLike<T> {
 
+    String MODEL_LIST = "n";
+
     /**
      * Yes, we want to record the class literal of the model type;
      * it's our key to let us easily use otherwise-overly-generic helper methods.

@@ -1,11 +1,12 @@
 package xapi.platform;
 
+import xapi.annotation.reflect.MirroredAnnotation;
+import xapi.platform.PlatformSelector.AlwaysTrue;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-
-import xapi.platform.PlatformSelector.AlwaysTrue;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
@@ -13,6 +14,7 @@ import xapi.platform.PlatformSelector.AlwaysTrue;
   isGwt = true,
   isJava = false
   )
+@MirroredAnnotation
 public @interface GwtPlatform {
 
   boolean isGwt() default true;

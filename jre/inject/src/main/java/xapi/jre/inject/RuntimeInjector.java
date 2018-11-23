@@ -32,6 +32,8 @@ import xapi.util.X_Util;
 import java.io.*;
 import java.util.*;
 
+// TODO: move this type into somewhere with extremely severely limited classpath.
+// It's nasty if we try to load it somewhere with a minimal classpath...
 @KeepClass
 public class RuntimeInjector implements In2<String, PlatformChecker> {
 
@@ -88,7 +90,7 @@ public class RuntimeInjector implements In2<String, PlatformChecker> {
       }
       if (mainClass != null) {
         final String mainLoc = X_Reflect.getFileLoc(mainClass);
-        relative = new File(mainLoc);
+        relative = new File(mainLoc.replace("file:", ""));
       }
     }
     if (relative.isFile()) {
@@ -128,6 +130,7 @@ public class RuntimeInjector implements In2<String, PlatformChecker> {
         SingletonDefault.class, SingletonOverride.class,
         InstanceDefault.class, InstanceOverride.class
       )
+      // TODO: add |xapi, and use manifests describing injection strategies
       .matchResource("META[-]INF/(instances|singletons)")
       .matchClassFile(".*")
       .scan(targetClassloader())
@@ -142,7 +145,7 @@ public class RuntimeInjector implements In2<String, PlatformChecker> {
 
     ClassFile bestMatch = null;
     final HashMap<String,ClassFile> platformMap = new HashMap<String, ClassFile>();
-    String shortName = X_Properties.platform.get();
+    String shortName = X_Properties.platform.out1();
 
     final Set<String> scopes = new LinkedHashSet<String>();
     final ArrayList<ClassFile> platforms = new ArrayList<ClassFile>();

@@ -44,7 +44,12 @@ public interface Out1<O> extends Rethrowable, Lambda, HasMutability {
    * you will still want to do null checks as a fallback in the case of a race.
    */
   default O block(Object blocker, double millis) {
+    // TODO: need to be able to see X_Process to set an interrupt thread for us.
+    // Or, more likely, move just the InterrupterThread
     O out = out1();
+    if (out != null) {
+      return out;
+    }
     int delay = -100; // spin 100 times before sleeping.
     // would be nice to have X_Time here...
     final double now = System.nanoTime();

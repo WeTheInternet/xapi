@@ -77,9 +77,9 @@ import xapi.dev.generators.AsyncProxyGenerator;
 import xapi.dev.generators.InstanceInjectionGenerator;
 import xapi.dev.generators.SyncInjectionGenerator;
 import xapi.dev.util.InjectionCallbackArtifact;
+import xapi.fu.Out1;
 import xapi.inject.AsyncProxy;
 import xapi.inject.X_Inject;
-import xapi.inject.impl.SingletonProvider;
 
 /**
  * A collection of magic method providers used for gwt production mode. These methods are mapped over top of
@@ -105,7 +105,7 @@ import xapi.inject.impl.SingletonProvider;
 public class MagicMethods {
 
   /**
-   * Replaces a call from {@link X_Inject#singletonAsync(Class, xapi.util.api.ReceivesValue)} by first a)
+   * Replaces a call from {@link X_Inject#singletonAsync(Class, xapi.fu.In1)} by first a)
    * generating an async provider, and then b) sending the value receiver into the async provider as a
    * callback. See the {@link AsyncProxy} class and {@link AsyncInjectionGenerator} for implementation.
    *
@@ -135,9 +135,9 @@ public class MagicMethods {
     final JClassLiteral classLiteral = (JClassLiteral)classParam;
     final JDeclaredType answerType = injectSingletonAsync(logger, classLiteral, methodCall, ast);
 
-    final JDeclaredType receiverType = ast.searchForTypeBySource("xapi.util.api.ReceivesValue");
+    final JDeclaredType receiverType = ast.searchForTypeBySource("xapi.fu.In1");
     for (final JMethod method : receiverType.getMethods()) {
-      if (method.getName().equals("set")) {
+      if (method.getName().equals("in")) {
 
         final SourceInfo info = methodCall.getSourceInfo().makeChild(SourceOrigin.UNKNOWN);
         final Optional<JNewInstance> result = newInstance(logger, info, ast, answerType);
@@ -224,7 +224,7 @@ public class MagicMethods {
   }
 
   /**
-   * Replaces a call from {@link X_Inject#singletonAsync(Class, xapi.util.api.ReceivesValue)} by first a)
+   * Replaces a call from {@link X_Inject#singletonAsync(Class, xapi.fu.In1)} by first a)
    * generating an async provider, and then b) sending the value receiver into the async provider as a
    * callback. See the {@link AsyncProxy} class and {@link AsyncInjectionGenerator} for implementation.
    *
@@ -327,7 +327,7 @@ public class MagicMethods {
    * be synchronous if an async call hasn't already been made, or a-1) generating a provider which will route
    * through the async provider, and return null before inited. then b) returning a simple lazy provider which
    * will poll the actual provider until it is set. If you use the
-   * {@link X_Inject#singletonAsync(Class, xapi.util.api.ReceivesValue)} once, you should not use the
+   * {@link X_Inject#singletonAsync(Class, xapi.fu.In1)} once, you should not use the
    * other two synchronous provider methods, as they may return null if you happen to request them before the
    * code split containing the service is downloaded.
    *
@@ -368,7 +368,7 @@ public class MagicMethods {
     String answer = classLiteral.getRefType().getName();
     answer = answer.substring(0, answer.lastIndexOf('.') + 1) + "impl.SingletonFor_" +
       names[names.length - 1];
-    JDeclaredType answerType = null;
+    JDeclaredType answerType;
     final JDeclaredType knownType = ast.getProgram().getFromTypeMap(answer);
     if (knownType != null) {// if the singleton already exists, just use it
       answerType = ast.searchForTypeBySource(answer);
@@ -422,7 +422,7 @@ public class MagicMethods {
    * synchronous if an async call hasn't already been made, or a-1) generating a provider which will route
    * through the async provider, and return null before inited. then b) creates a lazy provider to call into
    * the synchronous provider finally c) calls .get() on the provider and return the value. If you use the
-   * {@link X_Inject#singletonAsync(Class, xapi.util.api.ReceivesValue)} once, you should not use the
+   * {@link X_Inject#singletonAsync(Class, xapi.fu.In1)} once, you should not use the
    * other two synchronous provider methods, as they may return null if you happen to request them before the
    * code split containing the service is downloaded.
    *
@@ -467,9 +467,9 @@ public class MagicMethods {
       names[names.length - 1];
 
     final JDeclaredType enclosing = ast.searchForTypeBySource(answer);
-    final JDeclaredType lazyProvider = ast.searchForTypeBySource(SingletonProvider.class.getName());
-    for (final JMethod method : lazyProvider.getMethods()) {
-      if (method.getName().equals("get")) {
+    final JDeclaredType out1 = ast.searchForTypeBySource(Out1.class.getName());
+    for (final JMethod method : out1.getMethods()) {
+      if (method.getName().equals("out1")) {
         // Create a new method for each singleton to access the desired provider
         SourceInfo info = null;
         JMethod getSingleton = null;
@@ -490,6 +490,7 @@ public class MagicMethods {
             AccessModifier.PRIVATE);
           // insert our generated method into the enclosing type; needed for super dev mode
           enclosing.addMethod(getSingleton);
+          body.setMethod(getSingleton);
 
           // freeze this method
           getSingleton.setBody(body);
@@ -539,7 +540,7 @@ public class MagicMethods {
    * synchronous if an async call hasn't already been made, or a-1) generating a provider which will route
    * through the async provider, and return null before inited. then b) creates a lazy provider to call into
    * the synchronous provider finally c) calls .get() on the provider and return the value. If you use the
-   * {@link X_Inject#singletonAsync(Class, xapi.util.api.ReceivesValue)} once, you should not use the
+   * {@link X_Inject#singletonAsync(Class, xapi.fu.In1)} once, you should not use the
    * other two synchronous provider methods, as they may return null if you happen to request them before the
    * code split containing the service is downloaded.
    *

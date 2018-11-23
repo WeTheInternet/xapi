@@ -115,7 +115,7 @@ public class X_Collect {
     });
   }
   public static <K, V> void copyInto(final HasValues<K, V> from, final HasValues<K, V> into) {
-    into.putAll(from.entries());
+    into.putEntries(from.entries());
   }
   public static <T> Comparator<T> getComparator(final CollectionOptions opts) {
     return new HashComparator<T>();

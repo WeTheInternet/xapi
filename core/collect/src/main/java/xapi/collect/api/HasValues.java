@@ -27,10 +27,10 @@ public interface HasValues<K,V> extends EntryIterable<K,V>, HasSize, HasEmptines
   boolean containsValue(Object key);
 
   // We can also safely use generics as they will be erased
-  void putAll(Iterable<Entry<K,V>> items);
+  void putEntries(Iterable<Entry<K,V>> items);
 
-  default void putAll(HasValues<K,V> items) {
-    putAll(items.entries());
+  default void putEntries(HasValues<K,V> items) {
+    putEntries(items.entries());
   }
 
   void addAll(Iterable<Out2<K,V>> items);

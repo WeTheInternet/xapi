@@ -1,18 +1,14 @@
 package xapi.util.impl;
 
-import javax.inject.Provider;
+import xapi.fu.Lazy;
+import xapi.fu.Out1;
 
 public class DeferredCharSequence<E> implements CharSequence {
 
-  private final LazyProvider<String> join;
+  private final Out1<String> join;
 
   public DeferredCharSequence(final CharSequence body, final CharSequence chars) {
-    join = new LazyProvider<String>(new Provider<String>() {
-      @Override
-      public String get() {
-        return init(body.toString(), chars.toString());
-      }
-    });
+    join = Lazy.deferred1(()->init(body.toString(), chars.toString()));
   }
 
   protected String init(String str0, String str1) {
@@ -21,7 +17,7 @@ public class DeferredCharSequence<E> implements CharSequence {
 
   @Override
   public String toString() {
-    return join.get();
+    return join.out1();
   }
 
   @Override

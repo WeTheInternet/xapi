@@ -2,7 +2,11 @@ package xapi.reflect;
 
 import xapi.annotation.compile.MagicMethod;
 import xapi.fu.In1Out1;
+import xapi.fu.In1Out1.In1Out1Unsafe;
 import xapi.fu.Lazy;
+import xapi.fu.Out1;
+import xapi.fu.itr.Chain;
+import xapi.fu.itr.ChainBuilder;
 import xapi.inject.X_Inject;
 import xapi.log.X_Log;
 import xapi.log.api.LogService;
@@ -12,8 +16,6 @@ import xapi.util.X_Runtime;
 import xapi.util.X_String;
 import xapi.util.X_Util;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.*;
@@ -46,8 +48,8 @@ import static xapi.util.X_String.joinClasses;
  */
 public class X_Reflect {
 
-  @Inject static Provider<ReflectionService> reflectionService = X_Inject.singletonLazy(ReflectionService.class);
-  @Inject static LogService logService;
+  static Out1<ReflectionService> reflectionService = X_Inject.singletonLazy(ReflectionService.class);
+  static LogService logService;
 
   private static final Lazy<Class<?>> MAIN = Lazy.deferred1(X_Reflect::findMainClass);
   private static final Lazy<Boolean> IS_GRADLE = Lazy.deferred1(()->{
@@ -852,14 +854,14 @@ public class X_Reflect {
     if (X_Runtime.isJavaScript()) {
       return Package.getPackage(name);
     }
-    return reflectionService.get().getPackage(name);
+    return reflectionService.out1().getPackage(name);
   }
 
   public static Package getPackage(final String name, ClassLoader loader) {
     if (X_Runtime.isJavaScript()) {
       return Package.getPackage(name);
     }
-    return reflectionService.get().getPackage(name, loader);
+    return reflectionService.out1().getPackage(name, loader);
   }
 
   public static <T> Constructor<T> getPublicConstructor(final Class<T> c,
@@ -938,7 +940,7 @@ public class X_Reflect {
       } catch (final NoSuchMethodException e) {
         method = cls.getMethod(name, paramTypes);
       }
-      return reflectionService.get().invokeDefaultMethod(inst, method, params);
+      return reflectionService.out1().invokeDefaultMethod(inst, method, params);
   }
 
   public static Object invoke(final Class<?> cls, final String name,
@@ -958,7 +960,7 @@ public class X_Reflect {
           inst == null &&
           method.getDeclaringClass().isInterface() &&
           !Modifier.isAbstract(method.getModifiers())) {
-        return reflectionService.get().invokeDefaultMethod(method, params);
+        return reflectionService.out1().invokeDefaultMethod(method, params);
       }
       if (method.getReturnType() == void.class) {
         method.invoke(inst, params);
@@ -1032,7 +1034,7 @@ public class X_Reflect {
    * @return new T[dimension]
    */
   public static <T> T[] newArray(final Class<T> classLit, final int size) {
-    return reflectionService.get().newArray(classLit, size);
+    return reflectionService.out1().newArray(classLit, size);
   }
 
   /**
@@ -1068,7 +1070,7 @@ public class X_Reflect {
    * @return new T[dim1][dim2];
    */
   public static <T, R extends T> T[][] newArray(final Class<R> classLit, final int dim1, final int dim2) {
-    return reflectionService.get().newArray(classLit, dim1, dim2);
+    return reflectionService.out1().newArray(classLit, dim1, dim2);
   }
 
   public static <T extends Throwable> T doThrow(final T exception) throws T {
@@ -1221,25 +1223,44 @@ public class X_Reflect {
         loc = source.getLocation();
       }
     }
+
+    String suffix = getOuterName(mainClass).replace('.', '/')+".class";
     if (loc == null) {
       ClassLoader cl = mainClass.getClassLoader();
       if (cl == null) {
         cl = Thread.currentThread().getContextClassLoader();
       }
-      loc = cl.getResource(mainClass.getCanonicalName().replace('.', '/')+".class");
+      loc = cl.getResource(suffix);
     }
     boolean isJar = loc.getProtocol().equals("jar") || loc.toExternalForm().contains("jar!");
     if (isJar) {
       // When the main class is in a jar, we need to make sure that jar is on the classpath
-      String jar = loc.toExternalForm().replace("jar:", "").split("jar!")[0] + ".jar";
+      String jar = loc.toExternalForm().replace("jar:", "").split("jar!")[0] + "jar";
       return jar;
     } else {
       // location is a source path; add it directly
-      return loc.toExternalForm().replace("file:", "");
+      return loc.toExternalForm().replace("file:", "").replace(suffix, "");
     }
   }
 
-    public static <T> T mostDerived(T ours, T theirs) {
+  private static String getOuterName(Class<?> cls) {
+    while (cls.getEnclosingClass() != null) {
+      cls = cls.getEnclosingClass();
+    }
+    return cls.getCanonicalName();
+  }
+
+  private static String getCanonicalName(Class<?> cls) {
+    ChainBuilder<String> b = Chain.startChain();
+    while (cls.getEnclosingClass() != null) {
+      b.insert(cls.getSimpleName());
+      cls = cls.getEnclosingClass();
+    }
+    return cls.getCanonicalName()
+        + b.join(".", "$", "");
+  }
+
+  public static <T> T mostDerived(T ours, T theirs) {
       final Class<?> ourClass = ours.getClass();
       final Class<?> theirClass = theirs.getClass();
       if (ourClass == theirClass) {
@@ -1318,7 +1339,7 @@ public class X_Reflect {
     return loc;
   }
 
-    public static Class<?> getRootClass(In1Out1<StackTraceElement, Boolean> filter) {
+    public static Class<?> getRootClass(In1Out1Unsafe<StackTraceElement, Boolean> filter) {
       // find the main thread, then pick the deepest stack element that matches the filter
       final Map<Thread, StackTraceElement[]> traces = Thread.getAllStackTraces();
       for (Entry<Thread, StackTraceElement[]> trace : traces.entrySet()) {
@@ -1353,21 +1374,31 @@ public class X_Reflect {
       return MAIN.out1();
     }
     private static Class<?> findMainClass() {
+        return findMainClass(In1Out1.<StackTraceElement, Boolean>returnTrue().unsafeIn1Out1());
+    }
+    private static Class<?> findMainClass(In1Out1Unsafe<StackTraceElement, Boolean> filter) {
       // finds any loadable class that is present as a stack trace w/ method `name`.
       final Map<Thread, StackTraceElement[]> traces = Thread.getAllStackTraces();
+      Class mainClass = null;
       for (Entry<Thread, StackTraceElement[]> trace : traces.entrySet()) {
-        if ("main".equals(trace.getKey().getName())) {
+        if ("main".equals(trace.getKey().getName())
+            // TODO: put this looser check back ...later
+//           || (trace.getKey().getName().contains("worker") && trace.getKey().getThreadGroup() != null && "main".equals(trace.getKey().getThreadGroup().getName()))
+        ) {
           // Using a thread named main is best...
           final StackTraceElement[] els = trace.getValue();
           int i = els.length;
           StackTraceElement best = els[--i];
+          if (!filter.io(best)) {
+            continue;
+          }
           String cls = best.getClassName();
           // loop until we have a main that isn't deemed to be a system class...
           while (i > 0 && isSystemClass(cls)) {
             // if the main class is likely an ide,
             // then we should look higher...
             while (i-- > 0) {
-              if ("main".equals(els[i].getMethodName())) {
+              if (filter.io(els[i]) && "main".equals(els[i].getMethodName())) {
                 best = els[i];
                 cls = best.getClassName();
                 break;
@@ -1376,38 +1407,71 @@ public class X_Reflect {
           }
           if (isSystemClass(cls)) {
             i = els.length - 1;
-            best = els[i];
-            while (isSystemClass(cls) && i-- > 0) {
+            if (filter.io(els[i])) {
               best = els[i];
+            }
+            while (isSystemClass(cls) && i-- > 0) {
+              if (filter.io(els[i])) {
+                best = els[i];
+              }
               cls = best.getClassName();
             }
           }
-          Class mainClass;
+          boolean shouldUse = !isSystemClass(best.getClassName());
           try {
             mainClass = Thread.currentThread().getContextClassLoader().loadClass(best.getClassName());
-            return mainClass;
+            if (shouldUse) {
+              return mainClass;
+            }
           } catch (NoClassDefFoundError|ClassNotFoundException e) {
             try {
               mainClass = X_Reflect.class.getClassLoader().loadClass(best.getClassName());
-              return mainClass;
+              if (shouldUse) {
+                return mainClass;
+              }
             } catch (NoClassDefFoundError|ClassNotFoundException e1) {
-              X_Log.warn(X_Reflect.class, "Found ", best.getClassName(), "but could not load it from any available classloader");
+              if (shouldUse) {
+                X_Log.warn(X_Reflect.class, "Found ", best.getClassName(), "but could not load it from any available classloader");
+              }
             }
           }
         }
       }
-      return null;
+      final StackTraceElement[] els = Thread.currentThread().getStackTrace();
+      for (int i = els.length; i-->0;) {
+        if (!isSystemClass(els[i].getClassName())) {
+          try {
+            return Thread.currentThread().getContextClassLoader().loadClass(els[i].getClassName());
+          } catch (NoClassDefFoundError|ClassNotFoundException e) {
+            try {
+              return X_Reflect.class.getClassLoader().loadClass(els[i].getClassName());
+            } catch (NoClassDefFoundError|ClassNotFoundException e1) {
+              X_Log.warn(X_Reflect.class, "Found ", els[i], "but could not load it from any available classloader");
+            }
+          }
+
+        }
+      }
+
+      return mainClass;
     }
 
     private static boolean isSystemClass(String cls) {
+      // TODO: this has gotten crazy.  This should be configurable w/ a nice default.
       return cls.startsWith("java.") ||
           cls.startsWith("sun.") ||
+          cls.startsWith("com.sun.") ||
+          cls.startsWith("com.esotericsoftware.") ||
           cls.startsWith("org.apache.maven.") ||
           cls.contains(".intellij.") ||
+          cls.startsWith("org.spockframework") ||
           cls.startsWith("org.junit") ||
           cls.startsWith("junit.") ||
           cls.startsWith("cucumber.") ||
           cls.contains(".eclipse") ||
+          cls.contains("org.gradle") ||
+          "xapi.dev.impl.ReflectiveMavenLoader".equals(cls) ||
+          "xapi.dev.impl.MavenLoaderThread".equals(cls) ||
           cls.contains("netbeans");
     }
 

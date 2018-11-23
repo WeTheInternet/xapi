@@ -13,6 +13,7 @@ import static xapi.fu.itr.MappedIterable.mapped;
 public class X_String {
 
   public static final String EMPTY_STRING = "";
+  public static final String FILE_SEPARATOR = System.getProperty("file.separator", "/");
   private static final String[] binarySuffix = new String[]{"","K","M","G","T","P","E","Z"};
   private static final String[] metricSuffix = new String[]{" nano"," micro"," milli"," "," kilo"," mega"," giga"};
 
@@ -267,7 +268,7 @@ public class X_String {
     for(;i-->0;){
       Class<?> cls = values[i];
       if (cls != null)
-        copy[i] = cls.getCanonicalName().replace('.', X_Runtime.fileSeparatorChar()) + ".java";
+        copy[i] = cls.getCanonicalName().replace('.', FILE_SEPARATOR.charAt(0)) + ".java";
     }
     return copy;
   }

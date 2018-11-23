@@ -1,12 +1,12 @@
 package xapi.collect.impl;
 
+import xapi.fu.Lazy;
+
 import java.util.TreeMap;
 
-import xapi.inject.impl.SingletonProvider;
+public class LazyTreeMap <K, V> extends Lazy<TreeMap<K, V>> {
 
-public class LazyTreeMap <K, V> extends SingletonProvider<TreeMap<K, V>>{
-  @Override
-  protected TreeMap<K, V> initialValue() {
-    return new TreeMap<K, V>();
+  public LazyTreeMap() {
+    super(TreeMap::new);
   }
 }

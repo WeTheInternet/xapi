@@ -403,7 +403,8 @@ public class XapiVertxServer extends AbstractXapiServer<RequestScopeVertx> {
 
         if (webApp.isDevMode()) {
             vertxOptions
-                .setBlockedThreadCheckInterval(2000)
+                .setBlockedThreadCheckInterval(600_000)
+//                .setBlockedThreadCheckInterval(2000)
                 .setQuorumSize(5)
                 .setHAEnabled(true)
                 .setMaxEventLoopExecuteTime(60_000_000_000L) // one minute for event loop when debugging

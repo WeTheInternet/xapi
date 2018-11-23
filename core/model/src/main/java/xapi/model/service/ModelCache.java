@@ -1,6 +1,5 @@
 package xapi.model.service;
 
-import xapi.model.X_Model;
 import xapi.model.api.Model;
 import xapi.model.api.ModelKey;
 import xapi.util.api.SuccessHandler;

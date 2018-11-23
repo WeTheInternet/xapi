@@ -3,15 +3,13 @@ package xapi.collect.api;
 import xapi.fu.In1;
 import xapi.fu.In1Out1;
 import xapi.fu.In1Out1.In1Out1Unsafe;
-import xapi.fu.data.MapLike;
-import xapi.fu.itr.MappedIterable;
 import xapi.fu.Out2;
+import xapi.fu.data.MapLike;
 import xapi.fu.has.HasLock;
+import xapi.fu.itr.MappedIterable;
 import xapi.fu.itr.SizedIterable;
 
 import java.io.Serializable;
-
-import static xapi.fu.In2.in2;
 
 /**
  * StringTo is a special mapping interface,
@@ -73,7 +71,7 @@ extends HasValues<String,V>, Serializable, MapLike<String, V>
   }
 
   default In1<V> adapter(In1Out1<V, String> adapter) {
-    return in2(this::put).adapt1(adapter);
+    return In1.mapped2(this::put, adapter);
   }
 
 }

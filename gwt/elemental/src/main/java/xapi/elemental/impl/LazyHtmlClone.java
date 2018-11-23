@@ -4,23 +4,24 @@ import static xapi.elemental.X_Elemental.toElement;
 
 import javax.inject.Provider;
 
+import xapi.elemental.X_Elemental;
+import xapi.fu.Lazy;
+import xapi.fu.Out1;
 import xapi.util.api.ConvertsValue;
-import xapi.util.impl.ImmutableProvider;
-import xapi.util.impl.LazyProvider;
 import elemental.dom.Element;
 
 public class LazyHtmlClone <E extends Element> implements Provider<E> {
 
-  private final Provider<E> provider;
+  private final Out1<E> provider;
   @SuppressWarnings("unchecked" )
   private ConvertsValue<E, E> converter = ConvertsValue.PASS_THRU;
 
   public LazyHtmlClone(String html) {
-    provider = new LazyProvider<E>(() -> toElement(html));
+    provider = Lazy.deferred1(X_Elemental::toElement, html);
   }
 
   public LazyHtmlClone(Provider<String> html) {
-    provider = new LazyProvider<E>(() -> {
+    provider = Lazy.deferred1(() -> {
       String val = html.get();
       return val == null ? null : toElement(val);
     });
@@ -39,19 +40,19 @@ public class LazyHtmlClone <E extends Element> implements Provider<E> {
       "rawtypes", "unchecked"
   } )
   public LazyHtmlClone(Element e) {
-    provider = new ImmutableProvider(e);
+    provider = Out1.immutable((E)e);
   }
 
   @SuppressWarnings({
     "rawtypes", "unchecked"
   } )
   public LazyHtmlClone(Element e, String backup) {
-    provider = new LazyProvider(e, () -> toElement(backup));
+    provider = Lazy.withBackup((E)e, () -> toElement(backup));
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public E get() {
-    return init((E)provider.get().cloneNode(true));
+    return init((E)provider.out1().cloneNode(true));
   }
 }

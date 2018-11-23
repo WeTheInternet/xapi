@@ -152,7 +152,7 @@ public abstract class UiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> im
     }
 
     protected void initializeComponent(GeneratedUiComponent result, ContainerMetadata metadata) {
-        if (seen.add(result)) {
+        if (seen.addIfMissing(result)) {
             result.setRecommendedImports(metadata.getRecommendedImports());
             final UiGeneratorService gen = getGenerator();
             if (gen != this && gen instanceof UiGeneratorTools) {

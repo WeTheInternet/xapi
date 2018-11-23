@@ -28,12 +28,7 @@ public class BasicIOTest {
   }
 
   protected static TestServer server;
-  private static final ConvertsValue<String,String> pass_thru = new ConvertsValue<String,String>() {
-    @Override
-    public String convert(final String from) {
-      return from;
-    }
-  };
+  private static final ConvertsValue<String,String> pass_thru = from -> from;
 
   @BeforeClass
   public static void setupServer() {

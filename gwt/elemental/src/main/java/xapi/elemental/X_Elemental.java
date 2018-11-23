@@ -11,6 +11,7 @@ import xapi.fu.In1;
 import xapi.elemental.api.ElementIterable;
 import xapi.elemental.api.ElementalService;
 import xapi.elemental.api.PotentialNode;
+import xapi.fu.Out1;
 import xapi.inject.X_Inject;
 import xapi.ui.html.X_Html;
 import xapi.util.X_String;
@@ -68,7 +69,7 @@ public class X_Elemental {
   }-*/;
 
   public static ElementalService getElementalService() {
-    return SERVICE.get();
+    return SERVICE.out1();
   }
 
   public static String getHost() {
@@ -97,7 +98,7 @@ public class X_Elemental {
 
   @MagicMethod(doNotVisit=true)
   public static void injectCss(final Class<?> cls) {
-    X_Html.injectCss(cls, SERVICE.get());
+    X_Html.injectCss(cls, SERVICE.out1());
   }
 
   public static Element newDiv() {
@@ -116,14 +117,14 @@ public class X_Elemental {
   @MagicMethod(doNotVisit=true)
   public static <T, E extends Element> E toElement(
     final Class<? super T> model, final Class<?> template, final T obj) {
-    return SERVICE.get().toElement(model, template, obj);
+    return SERVICE.out1().toElement(model, template, obj);
   }
 
   @MagicMethod(doNotVisit=true)
   public static <T, E extends Element> E toElement(
     final Class<? super T> cls,
     final T obj) {
-    return SERVICE.get().toElement(cls, obj);
+    return SERVICE.out1().toElement(cls, obj);
   }
 
   @SuppressWarnings("unchecked" )
@@ -155,13 +156,13 @@ public class X_Elemental {
   @MagicMethod(doNotVisit=true)
   public static <T, E extends Element> ConvertsValue<T, PotentialNode<E>> toElementBuilder(
     final Class<T> cls) {
-    return SERVICE.get().toElementBuilder(cls);
+    return SERVICE.out1().toElementBuilder(cls);
   }
 
   @MagicMethod(doNotVisit=true)
   public static <T, E extends Element> ConvertsValue<T, PotentialNode<E>> toElementBuilder(
     final Class<T> model, final Class<?> template) {
-    return SERVICE.get().toElementBuilder(model, template);
+    return SERVICE.out1().toElementBuilder(model, template);
   }
 
   public static Iterable<Element> toElements(final String string) {
@@ -172,13 +173,13 @@ public class X_Elemental {
 
   static final DivElement DIV = Browser.getDocument().createDivElement();
 
-  private static final Provider<ElementalService> SERVICE = X_Inject
+  private static final Out1<ElementalService> SERVICE = X_Inject
     .singletonLazy(ElementalService.class);
 
   private X_Elemental() {}
 
   public static Do removeFromParentTask(Element e) {
-    return In1.in1(X_Elemental::removeFromParent).provide(e);
+    return Do.of(X_Elemental::removeFromParent, e);
   }
   public static void removeFromParent(Element e) {
     if (e.getParentElement() != null) {

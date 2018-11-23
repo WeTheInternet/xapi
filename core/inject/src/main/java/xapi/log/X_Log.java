@@ -36,11 +36,13 @@ package xapi.log;
 
 import xapi.collect.api.Fifo;
 import xapi.collect.impl.SimpleFifo;
+import xapi.fu.Lazy;
+import xapi.fu.Out1;
 import xapi.inject.X_Inject;
 import xapi.log.api.LogLevel;
 import xapi.log.api.LogService;
+import xapi.log.impl.JreLog;
 
-import javax.inject.Provider;
 /**
  * A cross platform logging class.
  *
@@ -54,20 +56,19 @@ public class X_Log {
   //you may not have one of these; this method is static only.
   private X_Log(){}
 
-  private static final Provider<LogService> singleton = X_Inject.singletonLazy(LogService.class);
+  private static final Lazy<LogService> singleton = X_Inject.singletonLazy(LogService.class);
 
   public static LogLevel logLevel(){
-    return singleton.get().getLogLevel();
+    return service().getLogLevel();
   }
   public static boolean loggable(LogLevel logLevel){
-    return singleton.get().shouldLog(logLevel);
+    return service().shouldLog(logLevel);
   }
   public static void logLevel(LogLevel logLevel){
-    singleton.get().setLogLevel(logLevel);
+    service().setLogLevel(logLevel);
   }
 
-  private static void log(LogService service, LogLevel l,String level, Object[] message){
-    LogService log = singleton.get();
+  private static void log(LogService log, LogLevel l,String level, Object[] message){
     Fifo<Object> logMsg = log.newFifo();
     logMsg.give("[" +level+"]");
     for (Object m : message){
@@ -84,34 +85,38 @@ public class X_Log {
   }
 
   public static void error(Object ... message){
-    LogService service = singleton.get();
+    LogService service = service();
     if (service.shouldLog(LogLevel.ERROR))
       log(service, LogLevel.ERROR,"ERROR",message);
   }
 
+  private static LogService service() {
+    return singleton.isResolving() ? new JreLog() : singleton.out1();
+  }
+
   public static void warn(Object ... message){
-    LogService service = singleton.get();
+    LogService service = service();
     if (service.shouldLog(LogLevel.WARN))
       log(service,LogLevel.WARN,"WARN",message);
   }
   public static void info(Object ... message){
-    LogService service = singleton.get();
+    LogService service = service();
     if (service.shouldLog(LogLevel.INFO))
       log(service,LogLevel.INFO,"INFO",message);
   }
   public static void trace(Object ... message){
-    LogService service = singleton.get();
+    LogService service = service();
     if (service.shouldLog(LogLevel.TRACE))
       log(service,LogLevel.TRACE,"TRACE",message);
   }
   public static void debug(Object ... message){
-    LogService service = singleton.get();
+    LogService service = service();
     if (service.shouldLog(LogLevel.DEBUG))
       log(service,LogLevel.DEBUG,"DEBUG",message);
   }
   public static void log(Class<?> caller, LogLevel info, Object ... objects) {
     // TODO adjust log-level based on caller class criteria
-    Object o = new SimpleFifo<Object>(objects);
+    Object o = new SimpleFifo<>(objects);
     switch(info) {
       case ALL:
       case DEBUG:

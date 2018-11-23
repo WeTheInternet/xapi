@@ -31,10 +31,13 @@ import xapi.util.X_String;
  */
 public interface ProjectSources extends Model {
 
-    String getOutput();
-    void setOutput(String output);
-    default String output() {
-        return X_String.firstNotEmpty(getOutput(), "./target/classes");
+    IntTo<String> getOutputs();
+    void setOutputs(IntTo<String> output);
+    default IntTo<String> outputs() {
+        return getOrCreate(this::getOutputs, ()-> X_Collect.newList(String.class), this::setOutputs);
+    }
+    default boolean addOutput(String source) {
+        return outputs().add(source);
     }
 
     String getStaging();
@@ -48,11 +51,17 @@ public interface ProjectSources extends Model {
     default IntTo<String> sources() {
         return getOrCreate(this::getSources, ()-> X_Collect.newList(String.class), this::setSources);
     }
+    default boolean addSource(String source) {
+        return sources().add(source);
+    }
 
     IntTo<String> getResources();
     void setResources(IntTo<String> resources);
     default IntTo<String> resources() {
         return getOrCreate(this::getResources, ()-> X_Collect.newList(String.class), this::setResources);
+    }
+    default boolean addResource(String resource) {
+        return resources().add(resource);
     }
 
     IntTo<String> getTestSources();

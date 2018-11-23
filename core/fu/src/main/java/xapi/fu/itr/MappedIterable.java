@@ -28,8 +28,18 @@ public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
         return adaptIterable(this, mapper);
     }
 
-    default <To> MappedIterable<To> mapIndexed(In2Out1<Integer, T, To> mapper) {
+    default <To> MappedIterable<To> mapIndexed(In2Out1<T, Integer, To> mapper) {
         return adaptIterableIndexed(this, mapper);
+    }
+
+    default void forAllIndexed(In2<T, Integer> mapper) {
+        final Iterator<T> src = iterator();
+        final IndexedIterator<T> itr = new IndexedIterator<>(src);
+        while (itr.hasNext()) {
+            final T next = itr.next();
+            final int ind = itr.getIndex();
+            mapper.in(next, ind);
+        }
     }
 
     default <To> MappedIterable<To> mapUnsafe(In1Out1Unsafe<T, To> mapper) {
@@ -170,6 +180,9 @@ public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
         };
     }
 
+    default MappedIterable<T> plus(T more) {
+        return plus(SingletonIterator.singleItem(more));
+    }
     default MappedIterable<T> plus(Iterable<T> more) {
         return ()->{
             final Iterator<T> ours = MappedIterable.this.iterator();
@@ -227,12 +240,12 @@ public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
         return ()->new MappedIterator<>(from.iterator(), mapper);
     }
 
-    static <From, To> MappedIterable<To> adaptIterableIndexed(Iterable<From> from, In2Out1<Integer, ? super From, ? extends To> mapper) {
+    static <From, To> MappedIterable<To> adaptIterableIndexed(Iterable<From> from, In2Out1<? super From, Integer, ? extends To> mapper) {
         return ()-> {
             final Iterator<From> src = from.iterator();
             final IndexedIterator<From> itr = new IndexedIterator<>(src);
             @SuppressWarnings("UnnecessaryLocalVariable")
-            final MappedIterator<From, To> mapped = new MappedIterator<>(itr, mapper.supply1Deferred(itr::getIndex));
+            final MappedIterator<From, To> mapped = new MappedIterator<>(itr, mapper.supply2Deferred(itr::getIndex));
             return mapped;
         };
     }

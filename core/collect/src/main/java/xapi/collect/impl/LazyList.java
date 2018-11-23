@@ -1,20 +1,20 @@
 package xapi.collect.impl;
 
-import java.util.ArrayList;
+import xapi.fu.Lazy;
 
-import xapi.inject.impl.SingletonProvider;
+import java.util.ArrayList;
 
 /**
  * LazyList is backed by an ArrayList<>, created on demand.
- * 
+ *
  * @author "James X. Nelson (james@wetheinter.net)"
  *
  * @param <T>
  */
-public class LazyList <T> extends SingletonProvider<ArrayList<T>>{
-  @Override
-  protected ArrayList<T> initialValue() {
-    return new ArrayList<T>();
+public class LazyList <T> extends Lazy<ArrayList<T>> {
+
+  public LazyList() {
+    super(ArrayList::new);
   }
 
 }

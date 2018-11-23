@@ -70,7 +70,7 @@ public class MultimapAdapter implements StringTo.Many<String> {
     }
 
     @Override
-    public void putAll(Iterable<Entry<String, IntTo<String>>> items) {
+    public void putEntries(Iterable<Entry<String, IntTo<String>>> items) {
         for (Entry<String, IntTo<String>> item : items) {
             map.set(item.getKey(), item.getValue().forEach());
         }

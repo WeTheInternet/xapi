@@ -133,7 +133,7 @@ public class ClassBuffer extends MemberBuffer<ClassBuffer> {
   public String toSource() {
     final StringBuilder b = new StringBuilder(Printable.NEW_LINE);
     if (javaDoc != null && javaDoc.isNotEmpty()) {
-      b.append(javaDoc.toString());
+      b.append(javaDoc.toSource());
     }
     if (annotations.size() > 0) {
       for (final String anno : annotations) {

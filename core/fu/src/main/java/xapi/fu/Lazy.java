@@ -25,7 +25,11 @@ public class Lazy <T> implements Out1<T>, IsLazy, HasResolution {
   protected volatile Out1<T> proxy;
   private volatile boolean resolving;
 
-  @Override
+    public static <T> Lazy<T> withBackup(T e, Out1<T> o) {
+      return e == null ? Lazy.deferred1(o) : Lazy.immutable1(e);
+    }
+
+    @Override
   public final T out1() {
     return proxy.out1();
   }

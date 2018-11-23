@@ -1,19 +1,19 @@
 package xapi.collect.impl;
 
-import java.util.HashSet;
+import xapi.fu.Lazy;
 
-import xapi.inject.impl.SingletonProvider;
+import java.util.HashSet;
 
 /**
  * A LazySet, backed by a {@link HashSet}.
- * 
+ *
  * @author "James X. Nelson (james@wetheinter.net)"
  *
  * @param <T>
  */
-public class LazySet <T> extends SingletonProvider<HashSet<T>>{
-  @Override
-  protected HashSet<T> initialValue() {
-    return new HashSet<T>();
+public class LazySet <T> extends Lazy<HashSet<T>> {
+
+  public LazySet() {
+    super(HashSet::new);
   }
 }

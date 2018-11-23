@@ -1,18 +1,11 @@
 package xapi.dev.gwtc;
 
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
+import org.junit.*;
 import xapi.dev.X_Gwtc;
 import xapi.dev.gwtc.api.GwtcJobMonitor;
 import xapi.dev.gwtc.api.GwtcProjectGenerator;
 import xapi.dev.gwtc.api.GwtcService;
-import xapi.dev.gwtc.impl.GwtcManifestImpl;
 import xapi.gwtc.api.GwtManifest;
-import xapi.inject.X_Inject;
 import xapi.test.Assert;
 import xapi.test.gwtc.cases.CaseEntryPoint;
 import xapi.test.gwtc.cases.GwtcCaseJunit4;

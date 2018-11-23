@@ -94,6 +94,13 @@ public interface MapLike<K, V> extends CollectionLike<Out2<K, V>> {
     }
     return false;
   }
+
+  @Override
+  default MapLike<K, V> add(Out2<K, V> value) {
+    putPair(value);
+    return this;
+  }
+
   /**
    * A remove operation.  Returns the deleted value, if any.
      */
@@ -537,7 +544,7 @@ public interface MapLike<K, V> extends CollectionLike<Out2<K, V>> {
   @Override
   int size();
 
-  MapLike EMPTY = new MapLike() {
+  MapLike EMPTY = new MapLike<Object, Object>() {
 
     @Override
     public SizedIterator iterator() {
@@ -574,7 +581,7 @@ public interface MapLike<K, V> extends CollectionLike<Out2<K, V>> {
     }
 
     @Override
-    public SizedIterable keys() {
+    public SizedIterable<Object> keys() {
       return NONE;
     }
   };

@@ -36,12 +36,11 @@
 package xapi.util;
 
 import xapi.annotation.compile.MagicMethod;
-import xapi.fu.In1;
 import xapi.fu.In1Out1;
 import xapi.fu.In1Out1.In1Out1Unsafe;
+import xapi.fu.Lazy;
 import xapi.fu.Out1;
 import xapi.fu.Out1.Out1Unsafe;
-import xapi.inject.impl.SingletonProvider;
 import xapi.util.impl.PropertyServiceDefault;
 import xapi.util.service.PropertyService;
 
@@ -57,12 +56,9 @@ public final class X_Properties {
 
   private X_Properties() {}
 
-	public static final SingletonProvider<String> platform = new SingletonProvider<String>(){
-	  @Override
-	  protected String initialValue() {
-	    return getProperty(X_Namespace.PROPERTY_PLATFORM, "xapi.platform.JrePlatform");
-	  };
-	};
+	public static final Lazy<String> platform = Lazy.deferred1(() ->
+	    getProperty(X_Namespace.PROPERTY_PLATFORM, "xapi.platform.JrePlatform")
+	);
 
 	private static final PropertyService service;
 	static {

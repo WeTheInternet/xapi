@@ -4,6 +4,9 @@
 package com.google.gwt.reflect.test.annotations;
 
 import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
  * An inherited annotation, used to test that our compiler magic properly obeys requests
@@ -13,6 +16,7 @@ import java.lang.annotation.Inherited;
  *
  */
 @Inherited
+@Retention(RUNTIME)
 public @interface InheritedAnnotation {
   String blah() default "";
 }

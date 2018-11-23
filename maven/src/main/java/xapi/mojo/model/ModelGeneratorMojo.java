@@ -1,11 +1,5 @@
 package xapi.mojo.model;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
-import java.util.IdentityHashMap;
-import java.util.Iterator;
-import java.util.Map.Entry;
-
 import org.apache.maven.model.Build;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -13,7 +7,6 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
-
 import xapi.annotation.model.IsModel;
 import xapi.bytecode.ClassFile;
 import xapi.bytecode.impl.BytecodeAdapterService;
@@ -21,7 +14,7 @@ import xapi.dev.model.HasModelFields;
 import xapi.dev.model.ModelField;
 import xapi.dev.scanner.X_Scanner;
 import xapi.dev.scanner.impl.ClasspathResourceMap;
-import xapi.inject.impl.SingletonProvider;
+import xapi.fu.Lazy;
 import xapi.log.X_Log;
 import xapi.model.api.Model;
 import xapi.mojo.api.AbstractXapiMojo;
@@ -32,6 +25,12 @@ import xapi.source.api.IsClass;
 import xapi.source.api.IsMethod;
 import xapi.util.X_Debug;
 import xapi.util.api.ConvertsValue;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.util.IdentityHashMap;
+import java.util.Iterator;
+import java.util.Map.Entry;
 
 
 /**
@@ -93,9 +92,8 @@ public class ModelGeneratorMojo extends AbstractXapiMojo {
     // Run a javac for annotation processing.
   }
 
-  private final SingletonProvider<ConvertsValue<IsAnnotation, IsModel>> builder = new SingletonProvider<ConvertsValue<IsAnnotation,IsModel>>() {
-    protected xapi.util.api.ConvertsValue<IsAnnotation,IsModel> initialValue() {
-      return new ConvertsValue<IsAnnotation, IsModel>() {
+  private final Lazy<ConvertsValue<IsAnnotation, IsModel>> builder = Lazy.deferred1(() ->
+      new ConvertsValue<IsAnnotation, IsModel>() {
         Method cls;
         @Override
         public IsModel convert(IsAnnotation from) {
@@ -109,9 +107,8 @@ public class ModelGeneratorMojo extends AbstractXapiMojo {
             throw X_Debug.rethrow(e);
           }
         }
-      };
-    };
-  };
+    }
+  );
 
   void buildModel(ClassFile clsFile, BytecodeAdapterService adapter, ClasspathResourceMap classpath) {
     X_Log.info("Building model ",clsFile);
@@ -119,7 +116,7 @@ public class ModelGeneratorMojo extends AbstractXapiMojo {
     IsAnnotation modelAnno = cls.getAnnotation(IsModel.class.getName());
     HasModelFields model = new HasModelFields();
     if (modelAnno != null) {
-      IsModel isModel = builder.get().convert(modelAnno);
+      IsModel isModel = builder.out1().convert(modelAnno);
       model.setDefaultSerializable(isModel.serializable());
       model.setDefaultPersistence(isModel.persistence());
       model.setKey(isModel.key());

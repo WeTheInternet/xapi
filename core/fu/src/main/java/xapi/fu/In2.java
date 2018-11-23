@@ -90,7 +90,7 @@ public interface In2<I1, I2> extends HasInput, Rethrowable, Lambda {
     return of::accept;
   }
 
-  static <I1, I2> In2<I1, I2> in2(In1<I1> in1, In1<I2> in2) {
+  static <I1, I2> In2<I1, I2> combine(In1<I1> in1, In1<I2> in2) {
     return (i1, i2)->{
       in1.in(i1);
       in2.in(i2);

@@ -1,6 +1,7 @@
 package xapi.io;
 
 import xapi.collect.impl.SimpleFifo;
+import xapi.fu.Out1;
 import xapi.fu.has.HasSize;
 import xapi.fu.itr.Chain;
 import xapi.fu.itr.ChainBuilder;
@@ -22,7 +23,6 @@ import xapi.util.X_Debug;
 import xapi.util.X_Util;
 import xapi.util.api.ErrorHandler;
 
-import javax.inject.Provider;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -36,10 +36,10 @@ import static xapi.io.api.StreamDelegate.fromLineReader;
 
 public class X_IO {
 
-  private static final Provider<IOService> service = X_Inject.singletonLazy(IOService.class);
+  private static final Out1<IOService> service = X_Inject.singletonLazy(IOService.class);
 
   public static IOService getIOService() {
-    return service.get();
+    return service.out1();
   }
 
   public static void drain(final LogLevel info, final InputStream in,

@@ -3,20 +3,6 @@
  */
 package xapi.jre.io;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.SocketException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.List;
-import java.util.Map.Entry;
-
-import javax.inject.Provider;
-
 import xapi.annotation.inject.InstanceDefault;
 import xapi.annotation.inject.SingletonDefault;
 import xapi.collect.X_Collect;
@@ -24,14 +10,11 @@ import xapi.collect.api.StringDictionary;
 import xapi.collect.api.StringTo;
 import xapi.collect.api.StringTo.Many;
 import xapi.fu.Do.DoUnsafe;
-import xapi.inject.impl.SingletonProvider;
+import xapi.fu.Lazy;
+import xapi.fu.Out1;
 import xapi.io.IOConstants;
 import xapi.io.X_IO;
-import xapi.io.api.CancelledException;
-import xapi.io.api.IOCallback;
-import xapi.io.api.IOMessage;
-import xapi.io.api.IORequest;
-import xapi.io.api.LineReader;
+import xapi.io.api.*;
 import xapi.io.api.StringReader;
 import xapi.io.impl.AbstractIOService;
 import xapi.io.service.IOService;
@@ -42,6 +25,14 @@ import xapi.time.api.Moment;
 import xapi.util.X_Runtime;
 import xapi.util.X_Util;
 import xapi.util.api.ReceivesValue;
+
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.SocketException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.List;
+import java.util.Map.Entry;
 
 /**
  * @author James X. Nelson (james@wetheinter.net, @james)
@@ -248,10 +239,7 @@ public class IOServiceDefault extends AbstractIOService <URLConnection> {
             return;
           }
 
-          final Provider<Many<String>> resultHeaders = new SingletonProvider<Many<String>>() {
-
-            @Override
-            protected Many<String> initialValue() {
+          final Out1<Many<String>> resultHeaders = Lazy.deferred1(() -> {
               final Many<String> headers = X_Collect.newStringMultiMap(String.class);
               for (final Entry<String, List<String>> entry : connect.getHeaderFields().entrySet()) {
                 for (final String value : entry.getValue()) {
@@ -260,7 +248,7 @@ public class IOServiceDefault extends AbstractIOService <URLConnection> {
               }
               return headers;
             }
-          };
+          );
           request.setValue(res);
           request.setResultHeaders(resultHeaders);
           if (connect instanceof HttpURLConnection) {
@@ -291,7 +279,7 @@ public class IOServiceDefault extends AbstractIOService <URLConnection> {
 
               @Override
               public StringTo.Many<String> headers() {
-                return resultHeaders.get();
+                return resultHeaders.out1();
               }
 
               @Override

@@ -1,12 +1,12 @@
 package xapi.collect.impl;
 
+import xapi.fu.Lazy;
+
 import java.util.LinkedList;
 
-import xapi.inject.impl.SingletonProvider;
+public class LazyLinkedList <T> extends Lazy<LinkedList<T>> {
 
-public class LazyLinkedList <T> extends SingletonProvider<LinkedList<T>>{
-  @Override
-  protected LinkedList<T> initialValue() {
-    return new LinkedList<T>();
+  public LazyLinkedList() {
+    super(LinkedList::new);
   }
 }

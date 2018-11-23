@@ -459,7 +459,7 @@ public abstract class Node implements Serializable, Cloneable {
             this.extras.clear();
         }
         if (extras != null) {
-            this.extras.putAll(extras);
+            this.extras.putEntries(extras);
         }
     }
 

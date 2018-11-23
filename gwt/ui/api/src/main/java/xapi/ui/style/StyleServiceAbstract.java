@@ -11,7 +11,6 @@ import xapi.ui.api.StyleCacheService;
 import xapi.ui.api.StyleService;
 import xapi.ui.html.api.GwtStyles;
 
-import javax.inject.Provider;
 import java.util.Arrays;
 
 import static xapi.collect.X_Collect.newStringMap;
@@ -27,7 +26,7 @@ import com.google.gwt.core.client.Scheduler.ScheduledCommand;
 @GwtPlatform
 public abstract class StyleServiceAbstract <StyleElement> implements StyleService<StyleElement, GwtStyles> {
 
-  private final Provider<StyleCacheService<StyleElement, GwtStyles>> styleCache = X_Inject.singletonLazy(StyleCacheService.class);
+  private final Out1<StyleCacheService<StyleElement, GwtStyles>> styleCache = X_Inject.singletonLazy(StyleCacheService.class);
 
 
   protected ScheduledCommand printPendingCss;
@@ -104,7 +103,7 @@ public abstract class StyleServiceAbstract <StyleElement> implements StyleServic
   public StyleElement injectStyle(
       Class<? extends GwtStyles> bundle, Class<?> ... styles
   ) {
-    return styleCache.get().injectStyle(bundle, styles);
+    return styleCache.out1().injectStyle(bundle, styles);
   }
 
   @Override
@@ -112,7 +111,7 @@ public abstract class StyleServiceAbstract <StyleElement> implements StyleServic
   public final Out1<StyleElement> registerStyle(
       Class<? extends GwtStyles> bundle, String css, Class<?>... styles
   ) {
-    styleCache.get().registerStyle(bundle, css, styles);
+    styleCache.out1().registerStyle(bundle, css, styles);
     return ()->injectStyle(bundle, styles);
   }
 

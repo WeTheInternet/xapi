@@ -35,7 +35,7 @@ public class PendingCompile {
         this.compiler = compiler;
 
         String loc = X_Reflect.getFileLoc(cls);
-        test = loc.contains("test-classes");
+        test = X_Source.hasTestPath(loc);
         final String canonicalFile = normalizeLocation(loc, test) + classToSourceFiles(cls);
         javaFiles.put(canonicalFile, cls);
     }

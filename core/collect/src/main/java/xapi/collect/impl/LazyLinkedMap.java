@@ -1,8 +1,8 @@
 package xapi.collect.impl;
 
-import java.util.LinkedHashMap;
+import xapi.fu.Lazy;
 
-import xapi.inject.impl.SingletonProvider;
+import java.util.LinkedHashMap;
 
 /**
  * A LazyMap, backed by a LinkedHashMap.
@@ -11,9 +11,9 @@ import xapi.inject.impl.SingletonProvider;
  * @param <K>
  * @param <V>
  */
-public class LazyLinkedMap <K, V> extends SingletonProvider<LinkedHashMap<K, V>>{
-  @Override
-  protected LinkedHashMap<K, V> initialValue() {
-    return new LinkedHashMap<K, V>();
+public class LazyLinkedMap <K, V> extends Lazy<LinkedHashMap<K, V>> {
+
+  public LazyLinkedMap() {
+    super(LinkedHashMap::new);
   }
 }

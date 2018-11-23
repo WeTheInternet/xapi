@@ -213,22 +213,22 @@ public class UiTemplateGenerator {
     final ArrayList<UiTemplate> list;
     switch (template.location()) {
       case Body_Insert:
-        list = htmlBody.get();
+        list = htmlBody.out1();
         break;
       case Body_Prefix:
-        list = htmlBodyBefore.get();
+        list = htmlBodyBefore.out1();
         break;
       case Body_Suffix:
-        list = htmlBodyAfter.get();
+        list = htmlBodyAfter.out1();
         break;
       case Head_Insert:
-        list = htmlHeadBefore.get();
+        list = htmlHeadBefore.out1();
         break;
       case Head_Prefix:
-        list = htmlHead.get();
+        list = htmlHead.out1();
         break;
       case Head_Suffix:
-        list = htmlHeadAfter.get();
+        list = htmlHeadAfter.out1();
         break;
       default:
         throw new IllegalStateException("Unhanded location type "+template.location());//impossible
@@ -278,23 +278,23 @@ public class UiTemplateGenerator {
       final PrintBuffer headBefore, final PrintBuffer head, final PrintBuffer headAfter,
       final PrintBuffer bodyBefore, final PrintBuffer body, final PrintBuffer bodyAfter) {
 
-    if (htmlHeadBefore.isSet()) {
-      for (final UiTemplate headResource : htmlHeadBefore.get()) {
+    if (htmlHeadBefore.isResolved()) {
+      for (final UiTemplate headResource : htmlHeadBefore.out1()) {
         printResource(headBefore, headResource);
       }
     }
-    if (htmlHead.isSet()) {
-      for (final UiTemplate headResource : htmlHead.get()) {
+    if (htmlHead.isResolved()) {
+      for (final UiTemplate headResource : htmlHead.out1()) {
         printResource(head, headResource);
       }
     }
-    if (htmlBodyBefore.isSet()) {
-      for (final UiTemplate headResource : htmlBodyBefore.get()) {
+    if (htmlBodyBefore.isResolved()) {
+      for (final UiTemplate headResource : htmlBodyBefore.out1()) {
         printResource(bodyBefore, headResource);
       }
     }
-    if (htmlBody.isSet()) {
-      for (final UiTemplate headResource : htmlBody.get()) {
+    if (htmlBody.isResolved()) {
+      for (final UiTemplate headResource : htmlBody.out1()) {
         printResource(body, headResource);
       }
     }
@@ -305,13 +305,13 @@ public class UiTemplateGenerator {
       }
     }
 
-    if (htmlHeadAfter.isSet()) {
-      for (final UiTemplate headResource : htmlHeadAfter.get()) {
+    if (htmlHeadAfter.isResolved()) {
+      for (final UiTemplate headResource : htmlHeadAfter.out1()) {
         printResource(headAfter, headResource);
       }
     }
-    if (htmlBodyAfter.isSet()) {
-      for (final UiTemplate headResource : htmlBodyAfter.get()) {
+    if (htmlBodyAfter.isResolved()) {
+      for (final UiTemplate headResource : htmlBodyAfter.out1()) {
         printResource(bodyAfter, headResource);
       }
     }

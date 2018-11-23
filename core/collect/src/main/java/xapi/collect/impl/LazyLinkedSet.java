@@ -1,17 +1,17 @@
 package xapi.collect.impl;
 
-import java.util.LinkedHashSet;
+import xapi.fu.Lazy;
 
-import xapi.inject.impl.SingletonProvider;
+import java.util.LinkedHashSet;
 /**
- * LazyLinkedSet, backed by a {@link LinkedHashSet}. 
+ * LazyLinkedSet, backed by a {@link LinkedHashSet}.
  * @author "James X. Nelson (james@wetheinter.net)"
  *
  * @param <T>
  */
-public class LazyLinkedSet <T> extends SingletonProvider<LinkedHashSet<T>>{
-  @Override
-  protected LinkedHashSet<T> initialValue() {
-    return new LinkedHashSet<T>();
+public class LazyLinkedSet <T> extends Lazy<LinkedHashSet<T>> {
+
+  public LazyLinkedSet() {
+    super(LinkedHashSet::new);
   }
 }

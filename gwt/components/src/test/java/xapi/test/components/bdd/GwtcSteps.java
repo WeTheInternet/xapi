@@ -9,13 +9,9 @@ import com.github.javaparser.ast.PackageDeclaration;
 import com.github.javaparser.ast.body.AnnotationDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.EnumDeclaration;
-import com.github.javaparser.ast.expr.AnnotationExpr;
-import com.github.javaparser.ast.expr.MemberValuePair;
-import com.github.javaparser.ast.expr.NameExpr;
-import com.github.javaparser.ast.expr.NormalAnnotationExpr;
-import com.github.javaparser.ast.expr.UiAttrExpr;
-import com.github.javaparser.ast.expr.UiContainerExpr;
+import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
+import cucumber.api.java.After;
 import cucumber.api.java.Before;
 import cucumber.api.java.en.And;
 import cucumber.api.java.en.Given;
@@ -35,19 +31,17 @@ import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.dev.source.SourceBuilder.JavaType;
 import xapi.dev.ui.UiGeneratorServiceDefault;
-import xapi.dev.ui.api.ComponentBuffer;
-import xapi.dev.ui.api.GeneratedUiApi;
-import xapi.dev.ui.api.UiComponentGenerator;
-import xapi.dev.ui.api.UiGeneratorService;
-import xapi.dev.ui.api.UiImplementationGenerator;
+import xapi.dev.ui.api.*;
 import xapi.dev.ui.impl.ClasspathComponentGenerator;
 import xapi.dev.ui.impl.UiGeneratorVisitor;
 import xapi.dev.ui.tags.UiTagGenerator;
-import xapi.fu.*;
+import xapi.fu.In1;
+import xapi.fu.Lazy;
+import xapi.fu.Out2;
 import xapi.fu.itr.Chain;
 import xapi.fu.itr.ChainBuilder;
-import xapi.fu.itr.SingletonIterator;
 import xapi.fu.itr.MappedIterable;
+import xapi.fu.itr.SingletonIterator;
 import xapi.gwtc.api.CompiledDirectory;
 import xapi.gwtc.api.GwtManifest;
 import xapi.gwtc.api.GwtManifest.CleanupMode;
@@ -58,6 +52,7 @@ import xapi.javac.dev.api.CompilerService;
 import xapi.javac.dev.model.CompilerSettings;
 import xapi.log.X_Log;
 import xapi.log.api.LogLevel;
+import xapi.process.X_Process;
 import xapi.reflect.X_Reflect;
 import xapi.source.X_Source;
 import xapi.source.read.JavaModel.IsQualified;
@@ -78,6 +73,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.Semaphore;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -101,6 +97,7 @@ public class GwtcSteps {
     X_Properties.setProperty(X_Namespace.PROPERTY_LOG_LEVEL, "INFO");
     X_Properties.setProperty(X_Namespace.PROPERTY_MULTITHREADED, "10");
     X_Log.logLevel(LogLevel.INFO);
+    System.setProperty("xapi.injector.cache", X_Reflect.getSourceLoc(GwtcSteps.class));
   }
 
   private StringTo<CompiledComponent> compiledComponents;
@@ -144,13 +141,23 @@ public class GwtcSteps {
     };
   }
 
+  private Semaphore lock = new Semaphore(1);
   @Before
-  public void before() {
+  public void before() throws InterruptedException {
+      lock.acquire();
+      // Forcibly hold open a process environment for the duration of the test.
+      X_Process.runDeferredUnsafe(lock::acquire);
     compiledComponents = X_Collect.newStringMap(CompiledComponent.class);
     generatedComponents = X_Collect.newStringMap(ComponentBuffer.class);
     sources = X_Collect.newStringMap(String.class);
     resetGwtCompiler();
     resetApiGenerator();
+  }
+
+  @After
+  public void after() {
+      // release the process environment once we're done.
+      lock.release();
   }
 
   protected void resetApiGenerator() {
@@ -378,6 +385,7 @@ public class GwtcSteps {
     manifest.setCleanupMode(CleanupMode.DELETE_ON_SUCCESSFUL_EXIT);
 //    manifest.setCleanupMode(CleanupMode.NEVER_DELETE);
     manifest.setUseCurrentJvm(true);
+    manifest.setMaxHeap("2G");
     manifest.setIsolateClassLoader(true);
   }
 

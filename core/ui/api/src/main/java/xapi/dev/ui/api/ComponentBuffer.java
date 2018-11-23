@@ -232,7 +232,7 @@ public class ComponentBuffer {
         if (component.getApi().hasModel()) {
             final GeneratedUiModel model = component.getApi().getModel();
             definition.setModelName(model.getWrappedName());
-            definition.getModelFields().putAll(model.getFields());
+            definition.getModelFields().putEntries(model.getFields());
         }
         if (component.isUiComponent()) {
             definition.setBuilderName(component.getFactory().getWrappedName());

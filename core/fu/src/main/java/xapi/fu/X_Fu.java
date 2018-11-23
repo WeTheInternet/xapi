@@ -160,6 +160,20 @@ public interface X_Fu {
     return In1Out1.identityNarrowed();
   }
 
+  /**
+   * Deprecated because this is an unsafe cast, and you should be explaining yourself
+   * (i.e. suppress the warning with a comment why it's safe).
+   *
+   * @return a function which performs an strengthenUnsafe strengthening cast.
+   *
+   * It's slightly better than just a free-for-all unsafe cast, but not by much.
+   * ...If only java allowed super in type parameters, so we could
+   */
+  @Deprecated
+  static <F, T extends F> In1Out1<F, T> strengthenUnsafe() {
+    return t->(T)t;
+  }
+
 
   static String reduceToString(Iterable<? extends CharSequence> data, String separator) {
     StringBuilder b = new StringBuilder();

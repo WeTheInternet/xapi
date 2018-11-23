@@ -2,24 +2,24 @@ package xapi.ui.html.impl;
 
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
+import xapi.fu.In1Out1;
+import xapi.fu.Lazy;
+import xapi.fu.Out1;
 import xapi.ui.api.StyleService;
 import xapi.ui.html.X_Html;
 import xapi.ui.html.api.HtmlSnippet;
 import xapi.util.api.ConvertsValue;
-import xapi.util.impl.LazyProvider;
-
-import javax.inject.Provider;
 
 public class HtmlRenderer {
 
   @SuppressWarnings("unchecked")
-  private StringTo<ConvertsValue<?, String>> map = X_Collect.newStringMap(
+  private StringTo<In1Out1<?, String>> map = X_Collect.newStringMap(
       Class.class.cast(ConvertsValue.class)
   );
 
   @SuppressWarnings("unchecked")
-  public <T> ConvertsValue<T, String> getRenderer(Class<T> type, StyleService<?, ?> context) {
-    ConvertsValue<T, String> converter = (ConvertsValue<T, String>) map.get(type.getName());
+  public <T> In1Out1<T, String> getRenderer(Class<T> type, StyleService<?, ?> context) {
+    In1Out1<T, String> converter = (In1Out1<T, String>) map.get(type.getName());
     if (converter == null) {
       converter = buildConverter(type, context);
       map.put(type.getName(), converter);
@@ -27,20 +27,9 @@ public class HtmlRenderer {
     return converter;
   }
 
-  protected <T> ConvertsValue<T, String> buildConverter(final Class<T> type, final StyleService<? ,?> context) {
-    final Provider<HtmlSnippet<T>> snippet =
-      new LazyProvider<>(new Provider<HtmlSnippet<T>>() {
-        @Override
-        public HtmlSnippet<T> get() {
-          return X_Html.toSnippet(type, context);
-        }
-      });
-    return new ConvertsValue<T, String>(){
-      @Override
-      public String convert(T from) {
-        return snippet.get().convert(from);
-      }
-    };
+  protected <T> In1Out1<T, String> buildConverter(final Class<T> type, final StyleService<? ,?> context) {
+    final Out1<HtmlSnippet<T>> snippet = Lazy.deferred1(X_Html::toSnippet, type, context);
+    return from -> snippet.out1().convert(from);
   }
 
 }

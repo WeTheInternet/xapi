@@ -7,6 +7,7 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.fu.In1Out1;
 import xapi.fu.In1Out1.In1Out1Unsafe;
+import xapi.fu.Lazy;
 import xapi.io.X_IO;
 import xapi.model.X_Model;
 import xapi.model.api.ModelModule;
@@ -15,7 +16,6 @@ import xapi.source.api.CharIterator;
 import xapi.source.impl.StringCharIterator;
 import xapi.time.X_Time;
 import xapi.util.X_Debug;
-import xapi.util.impl.LazyProvider;
 
 import java.io.InputStream;
 
@@ -25,7 +25,7 @@ import java.io.InputStream;
  */
 public class ModelModuleLoader {
 
-  private static class ModuleLoader extends LazyProvider<ModelModule> implements Runnable {
+  private static class ModuleLoader extends Lazy<ModelModule> implements Runnable {
 
     public ModuleLoader(final In1Out1<String, InputStream> manifestFinder, final String moduleName) {
       super(() -> {
@@ -66,7 +66,7 @@ public class ModelModuleLoader {
   }
 
   public ModelModule loadModule(final In1Out1<String, InputStream> manifestFinder, final String moduleName) {
-    return getOrMakeLoader(manifestFinder, moduleName).get();
+    return getOrMakeLoader(manifestFinder, moduleName).out1();
   }
 
   private synchronized ModuleLoader getOrMakeLoader(final In1Out1<String, InputStream> manifestFinder, final String moduleName) {

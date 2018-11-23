@@ -24,7 +24,8 @@ import com.google.gwt.core.ext.TreeLogger.Type;
         @Resource("xapi.X_Components"),
         @Resource("xapi.X_Gwtc"),
         @Resource("xapi.X_Elemental"),
-        @Resource("xapi.test.components.ComponentTest")
+        @Resource("xapi.test.components.ComponentTest"),
+        @Resource("com.google.gwt.user.User"),
     }
     ,includeSource=""
     ,includeHostHtml={

@@ -44,7 +44,7 @@ public class PlatformChecker {
         runtime = new HashSet<>();
         allPlatforms = new HashMap<>();
         platformScore = new HashMap<>();
-        for (String allowed : X_Properties.platform.get().split(",")) {
+        for (String allowed : X_Properties.platform.out1().split(",")) {
             runtime.add(allowed);
         }
         knownPlatforms = getKnownPlatforms();

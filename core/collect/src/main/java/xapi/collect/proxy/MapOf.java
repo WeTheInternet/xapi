@@ -142,7 +142,7 @@ implements CollectionProxy<K,V>, Map<K,V>, HasValues<K,V>, ObjectTo<K,V>
   }
 
   @Override
-  public void putAll(final Iterable<java.util.Map.Entry<K,V>> items) {
+  public void putEntries(final Iterable<java.util.Map.Entry<K,V>> items) {
     for (final Entry<K, V> entry : items) {
       map.put(entry.getKey(), entry.getValue());
     }

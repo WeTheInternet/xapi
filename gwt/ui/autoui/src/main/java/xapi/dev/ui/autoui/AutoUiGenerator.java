@@ -186,9 +186,15 @@ public class AutoUiGenerator {
         .createConstructor(PRIVATE)
         .print("setChildKeys(new String[]{");
     if (!simpleNames.isEmpty()) {
-      beanCtor
-      .println()
-      .indentln("\""+simpleNames.join("\", \"")+"\"");
+      if (simpleNames.allMatch(s->s.contains("constants.Const"))) {
+        beanCtor
+        .println()
+        .indentln(simpleNames.join(", "));
+      } else {
+        beanCtor
+        .println()
+        .indentln("\""+simpleNames.join("\", \"")+"\"");
+      }
     }
     beanCtor.println("});");
 

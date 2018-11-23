@@ -10,8 +10,10 @@ import xapi.dev.scanner.X_Scanner;
 import xapi.dev.scanner.impl.ClasspathResourceMap;
 import xapi.dev.source.XmlBuffer;
 import xapi.fu.In1Out1;
-import xapi.fu.itr.MappedIterable;
+import xapi.fu.Lazy;
+import xapi.fu.Out1;
 import xapi.fu.data.SetLike;
+import xapi.fu.itr.MappedIterable;
 import xapi.fu.itr.SizedIterable;
 import xapi.fu.java.X_Jdk;
 import xapi.gwtc.api.GwtManifest;
@@ -19,26 +21,19 @@ import xapi.gwtc.api.Gwtc;
 import xapi.gwtc.api.Gwtc.AncestorMode;
 import xapi.gwtc.api.GwtcProperties;
 import xapi.gwtc.api.GwtcXmlBuilder;
-import xapi.inject.impl.SingletonProvider;
 import xapi.io.X_IO;
 import xapi.log.X_Log;
 import xapi.source.X_Source;
-import xapi.util.X_Debug;
 import xapi.util.X_Runtime;
 import xapi.util.api.ReceivesValue;
 
-import javax.inject.Provider;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Callable;
 
 import com.google.gwt.reflect.shared.GwtReflect;
@@ -111,7 +106,7 @@ public class GwtcGeneratedProject {
   // ===Scan the classpath while looking added entities===
   // =====================================================
 
-  private final Provider<ClasspathResourceMap> classpath;
+  private final Out1<ClasspathResourceMap> classpath;
   private final GwtcService gwtcService;
   private boolean debug = X_Runtime.isDebug();
   private Class<?> firstClassAdded;
@@ -120,16 +115,7 @@ public class GwtcGeneratedProject {
     this.gwtcService = gwtcService;
     // Start scanning the classpath, but don't block until we need to.
     final Callable<ClasspathResourceMap> scanner = X_Scanner.scanClassloaderAsync(resourceLoader);
-    classpath = new SingletonProvider<ClasspathResourceMap>() {
-      @Override
-      protected ClasspathResourceMap initialValue() {
-        try {
-          return scanner.call();
-        } catch (Exception e) {
-          throw X_Debug.rethrow(e);
-        }
-      }
-    };
+    classpath = Lazy.deferred1Unsafe(scanner::call);
     final String[] fullName = X_Source.splitClassName(moduleName);
     module = new GwtcXmlBuilder(fullName[0], fullName[1], false);
     module.addConfigurationProperty("xsiframe.failIfScriptTag", "FALSE");
@@ -293,7 +279,7 @@ public class GwtcGeneratedProject {
     X_Log.trace(getClass(), "Parent of ",pkg,"is",data.getParent());
 
     ClassLoader cl = Thread.currentThread().getContextClassLoader();
-    for (ClassFile file : classpath.get().findClassesInPackage(pkg.getName())) {
+    for (ClassFile file : classpath.out1().findClassesInPackage(pkg.getName())) {
       X_Log.trace(getClass(), "Checking class file ", file.getName());
       try {
         if (file.getEnclosedName().equals("package-info")) {
@@ -434,15 +420,15 @@ public class GwtcGeneratedProject {
   }
 
   public boolean addConfigProperty(Property configProp) {
-    return configProps.add(configProp);
+    return configProps.addIfMissing(configProp);
   }
 
   public boolean addProperty(Property configProp) {
-    return props.add(configProp);
+    return props.addIfMissing(configProp);
   }
 
   public boolean addSystemProperty(Property configProp) {
-    return systemProps.add(configProp);
+    return systemProps.addIfMissing(configProp);
   }
 
   public boolean addLaunchProperty(GwtcProperties prop) {
@@ -682,9 +668,9 @@ public class GwtcGeneratedProject {
   public void addPackages(Package pkg, GwtcProjectGenerator gwtc, boolean recursive) {
     Iterable<ClassFile> iter;
     if (recursive) {
-      iter = classpath.get().findClassesBelowPackage(pkg.getName());
+      iter = classpath.out1().findClassesBelowPackage(pkg.getName());
     } else {
-      iter = classpath.get().findClassesInPackage(pkg.getName());
+      iter = classpath.out1().findClassesInPackage(pkg.getName());
     }
     for (ClassFile file : iter) {
       X_Log.info(GwtcGeneratedProject.class, "Scanning file ",file);

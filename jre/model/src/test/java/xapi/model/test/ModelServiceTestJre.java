@@ -109,18 +109,6 @@ public class ModelServiceTestJre {
   }
 
   @Test
-  public void testLiveExample() {
-    final ModelModule module = ModelModule.deserialize("G3gmqkyvrvshfl7tdTeTDFD444A63B7C8030BDB6EDBB406508FEMWeTheInternetZHcontent\\xapi.model.content.ModelContentHrelatedItextItimeHupvotesDdownvotesaT[Lxapi.model.content.ModelContent;Gjava.lang.StringSdoubletT[Lxapi.model.content.ModelRating;[xapi.model.content.ModelTextSrating>xapi.model.content.ModelRatingSauthorZxapi.model.user.ModelUserIuserAidNemailDfirstNameRlastNameNvaliddTxapi.util.validators.ChecksStringNotEmptyHbooleanHisValidIETNAOINSAHNOTEE EAE T ORNOTEE EAE T IDNOTEE EAT E NLNOTEE EAT E SLNOTEE EAE T OCAOIORNOTEE EAE T IDNOTEE EAT E UMAUWUDNOTEE EAT E WFNOTEE EAT E GFNYPBVKYRNOTEE TJAEYT PRNOTEE TJAT E BRNOTEE TJAT E VRNOTEE TJAT E KXNOTEE ETEQ");
-    final RemovalHandler handler = ModelServiceJre.registerModule(module);
-    try {
-      final ModelManifest manifest = module.getManifest("content");
-      final Model model = X_Model.deserialize(manifest, "U EHcontentTETnT EHcontentEZqes6dvg09t023fa2h5fwxko6r UTest Me Out!E   E  ");
-    } finally {
-      handler.remove();
-    }
-  }
-
-  @Test
   public void testModelPersistence() {
     final ModelContent content = X_Model.create(ModelContent.class);
     final long time = System.currentTimeMillis();

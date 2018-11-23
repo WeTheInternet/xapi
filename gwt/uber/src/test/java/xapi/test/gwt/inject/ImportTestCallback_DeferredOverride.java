@@ -10,9 +10,9 @@ import xapi.test.gwt.inject.SplitPointTest.ImportTestInterface;
 public class ImportTestCallback_DeferredOverride implements ImportTestReceiver{
 
   public static final String MUST_INCLUDE = "Always Included";
-  
+
   @Override
-  public void set(ImportTestInterface value) {
+  public void in(ImportTestInterface value) {
     X_Log.info(MUST_INCLUDE);
     //pull in some extra dependencies to make sure they are getting sucked into the correct split point
     RootPanel.get().add(new PopupPanel());

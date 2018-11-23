@@ -25,9 +25,15 @@ public class BeanValueProvider {
     throw new IllegalArgumentException("Value for field named "+name+" not found");
   }
 
-  private class Converter {
+  private static class Converter {
+    private final BeanValueProvider bean;
+
+    private Converter(BeanValueProvider bean) {
+      this.bean = bean;
+    }
+
     protected Object valueOf(String name, Object object) {
-      return BeanValueProvider.this.valueOf(name, object);
+      return bean.valueOf(name, object);
     }
   }
 
@@ -125,14 +131,14 @@ public class BeanValueProvider {
   }
 
   public BeanValueProvider rebase(String methodName) {
-    BeanValueProvider bean = new RebasedBeanValueProvider(methodName, new Converter());
+    BeanValueProvider bean = new RebasedBeanValueProvider(methodName, new Converter(this));
     bean.childKeys = childKeys;
     bean.map = map;
     return bean;
   }
 
   public BeanValueProvider rebaseAll() {
-    BeanValueProvider bean = new RebaseAllBeanValueProvider(new Converter());
+    BeanValueProvider bean = new RebaseAllBeanValueProvider(new Converter(this));
     bean.childKeys = childKeys;
     bean.map = map;
     return bean;

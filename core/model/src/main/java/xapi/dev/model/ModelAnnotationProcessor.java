@@ -25,6 +25,8 @@ import xapi.log.X_Log;
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class ModelAnnotationProcessor extends AbstractProcessor{
 
+  private boolean noop;
+
   public ModelAnnotationProcessor() {}
 
   protected Filer filer;
@@ -33,6 +35,12 @@ public class ModelAnnotationProcessor extends AbstractProcessor{
   public final synchronized void init(ProcessingEnvironment processingEnv) {
     super.init(processingEnv);
     filer = processingEnv.getFiler();
+    noop = shouldSkip(processingEnv);
+  }
+
+
+  protected boolean shouldSkip(ProcessingEnvironment processingEnv) {
+    return "true".equals(System.getProperty("xapi.no.javac.plugin")) || "true".equals(processingEnv.getOptions().get("xapi.no.javac.plugin"));
   }
 
   @Override
@@ -40,6 +48,9 @@ public class ModelAnnotationProcessor extends AbstractProcessor{
       Set<? extends TypeElement> annotations,
       RoundEnvironment roundEnv
   ) {
+    if (noop) {
+      return true;
+    }
     ClassLoader parentCl = ModelAnnotationProcessor.class.getClassLoader();
     URL[] urls = ((URLClassLoader)parentCl).getURLs();
     URLClassLoader cl = new URLClassLoader(urls, Thread.currentThread().getContextClassLoader());

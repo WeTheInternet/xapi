@@ -29,10 +29,10 @@ public class ScopeServiceDefault implements ScopeService {
         protected AtomicReference<Scope> scope = new AtomicReference<>();
 
         protected void inherit(ScopeMap map, Do restoreScope) {
-            scopes.putAll(map.scopes);
-            factories.putAll(map.factories);
+            scopes.putEntries(map.scopes);
+            factories.putEntries(map.factories);
             scope.set(map.scope.get());
-            multiplexed.get().putAll(map.multiplexed.get());
+            multiplexed.get().putEntries(map.multiplexed.get());
             restoreScope.done();
         }
 

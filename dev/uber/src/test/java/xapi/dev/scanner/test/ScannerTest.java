@@ -16,7 +16,8 @@ import java.util.concurrent.locks.LockSupport;
 
 public class ScannerTest {
 
-  private static class PrivateSubclass extends ScannerTest{}
+  private static class Base {}
+  private static class PrivateSubclass extends Base{}
   private static class SecondSubclass extends PrivateSubclass{}
 
   @Before
@@ -51,8 +52,8 @@ public class ScannerTest {
   @Test(timeout = 35_000)
   public void testFindDirectSubclasses() {
     Moment start = X_Time.now();
-    for (ClassFile cls : X_Scanner.findDirectSubclasses(getClass().getClassLoader(), ScannerTest.class)) {
-      if (cls.hasSuperClass(getClass().getName())) {
+    for (ClassFile cls : X_Scanner.findDirectSubclasses(getClass().getClassLoader(), PrivateSubclass.class)) {
+      if (cls.hasSuperClass(PrivateSubclass.class.getName())) {
         X_Log.info("Found private subclass in "+X_Time.difference(start), cls);
         return;
       }
@@ -63,7 +64,7 @@ public class ScannerTest {
   @Test(timeout = 35_000)
   public void testFindImplementationsOf() {
     Moment start = X_Time.now();
-    for (ClassFile cls : X_Scanner.findImplementationsOf(getClass().getClassLoader(), ScannerTest.class)) {
+    for (ClassFile cls : X_Scanner.findImplementationsOf(getClass().getClassLoader(), Base.class)) {
       if (cls.hasSuperClass(PrivateSubclass.class.getName())) {
         X_Log.info("Found class ancestor in "+X_Time.difference(start), cls);
         return;

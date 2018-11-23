@@ -27,75 +27,6 @@ import java.util.NoSuchElementException;
 public class SimpleFifo <E> implements Fifo<E>, SizedIterable<E>, Serializable{
 
   private static final long serialVersionUID = 2525421548842680240L;
-  private class Itr implements SizedIterator<E> {
-
-    Node<E> last = head, node = last;
-    int left, startSize = left = size;
-
-    @Override
-    public boolean hasNext() {
-      return node.next != null;
-    }
-
-    @Override
-    public E next() {
-      last = node;
-      node = node.next;
-      left --;
-      if (node == null)
-        throw new NoSuchElementException();
-      return node.item;
-    }
-
-    @Override
-    public void remove() {
-      Node<E> expected = node;
-      synchronized(head) {
-        if (last.next != expected)
-          return;
-        if (node == tail)
-          tail = last;
-        if (last == node) {
-          if (last == head)
-            throw new IllegalStateException();
-          return;
-        }
-        last.next = node.next;
-        node.next = null;//help gc
-        node = last;
-        size--;
-        startSize--;
-      }
-    }
-
-    @Override
-    public int size() {
-      return (size-startSize) + left;
-    }
-  }
-
-  @Override
-  public boolean contains(E item) {
-    for (E e : forEach())
-      if (equals(item,e))
-        return true;
-    return false;
-  }
-
-  protected final static class Node <E> implements Serializable {
-
-    public Node() {
-
-    }
-
-    private static final long serialVersionUID = -4821223918445216546L;
-    public volatile E item;
-    public volatile Node<E> next;
-    @Override
-    public String toString() {
-      return String.valueOf(item);
-    }
-  }
 
   protected final Node<E> head = new Node<>();
   private volatile Node<E> tail;
@@ -277,6 +208,76 @@ public class SimpleFifo <E> implements Fifo<E>, SizedIterable<E>, Serializable{
     for (E element : elements)
       give(element);
     return this;
+  }
+
+  private class Itr implements SizedIterator<E> {
+
+    Node<E> last = head, node = last;
+    int left, startSize = left = size;
+
+    @Override
+    public boolean hasNext() {
+      return node.next != null;
+    }
+
+    @Override
+    public E next() {
+      last = node;
+      node = node.next;
+      left --;
+      if (node == null)
+        throw new NoSuchElementException();
+      return node.item;
+    }
+
+    @Override
+    public void remove() {
+      Node<E> expected = node;
+      synchronized(head) {
+        if (last.next != expected)
+          return;
+        if (node == tail)
+          tail = last;
+        if (last == node) {
+          if (last == head)
+            throw new IllegalStateException();
+          return;
+        }
+        last.next = node.next;
+        node.next = null;//help gc
+        node = last;
+        size--;
+        startSize--;
+      }
+    }
+
+    @Override
+    public int size() {
+      return (size-startSize) + left;
+    }
+  }
+
+  @Override
+  public boolean contains(E item) {
+    for (E e : forEach())
+      if (equals(item,e))
+        return true;
+    return false;
+  }
+
+  protected final static class Node <E> implements Serializable {
+
+    public Node() {
+
+    }
+
+    private static final long serialVersionUID = -4821223918445216546L;
+    public volatile E item;
+    public volatile Node<E> next;
+    @Override
+    public String toString() {
+      return String.valueOf(item);
+    }
   }
 
 }

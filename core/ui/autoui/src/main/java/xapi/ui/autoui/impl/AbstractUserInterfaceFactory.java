@@ -28,7 +28,7 @@ public abstract class AbstractUserInterfaceFactory implements UserInterfaceFacto
 
   @SuppressWarnings("unchecked")
   @Override
-  public <T, U extends UserInterface<T>> U createUi(Class<? extends T> type, Class<? super U> uiType) {
+  public <T, U extends UserInterface<T>> U createUi(Class<? extends T> type, Class<? extends U> uiType) {
     UiRenderingContext[] options = getOptions(type);
     List<UiRenderingContext>
       head = new ArrayList<UiRenderingContext>(),

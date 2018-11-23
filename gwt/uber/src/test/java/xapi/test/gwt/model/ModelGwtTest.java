@@ -1,7 +1,9 @@
 package xapi.test.gwt.model;
 
 import xapi.annotation.model.GetterFor;
+import xapi.gwt.model.service.ModelServiceGwt;
 import xapi.model.X_Model;
+import xapi.model.service.ModelService;
 import xapi.model.user.ModelUser;
 import xapi.test.Assert;
 
@@ -9,13 +11,16 @@ import com.google.gwt.junit.client.GWTTestCase;
 
 public class ModelGwtTest extends GWTTestCase{
 
+  static {
+    new ModelServiceGwt();
+  }
   private static final String EMAIL = "test@test.com";
   private static final String FIRST_NAME = "Admin";
   private static final String LAST_NAME = "Istrator";
   private static final String KEY = "myProp";
   private static final String VALUE = "myVal";
 
-  public static interface ModelGroup extends ModelUser {
+  public interface ModelGroup extends ModelUser {
     @GetterFor
     String groupName();
     void setGroupName(String groupName);

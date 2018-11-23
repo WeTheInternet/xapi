@@ -2,7 +2,6 @@ package xapi.gwt.time;
 
 import xapi.annotation.inject.SingletonOverride;
 import xapi.fu.Lazy;
-import xapi.inject.impl.SingletonProvider;
 import xapi.platform.GwtPlatform;
 import xapi.time.impl.AbstractTimeService;
 import xapi.time.service.TimeService;

@@ -123,11 +123,11 @@ public interface In1<I> extends HasInput, Rethrowable, Lambda {
   }
 
   default <N> In2<N, I> requireBefore(In1<N> and) {
-    return In2.in2(and, this);
+    return In2.combine(and, this);
   }
 
   default <N> In2<I, N> requireAfter(In1<N> and) {
-    return In2.in2(this, and);
+    return In2.combine(this, and);
   }
 
   static <I> In1<I> in1(Consumer<I> of) {

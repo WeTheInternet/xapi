@@ -5,6 +5,8 @@ import xapi.collect.impl.AbstractInitMap;
 import xapi.collect.impl.InitMapDefault;
 import xapi.fu.In1Out1;
 import xapi.fu.In2;
+import xapi.fu.Lazy;
+import xapi.fu.Out1;
 import xapi.inject.api.Injector;
 import xapi.inject.api.PlatformChecker;
 import xapi.log.X_Log;
@@ -12,9 +14,7 @@ import xapi.log.api.LogLevel;
 import xapi.log.api.LogService;
 import xapi.log.impl.JreLog;
 import xapi.util.X_Runtime;
-import xapi.util.impl.ImmutableProvider;
 
-import javax.inject.Provider;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -29,27 +29,30 @@ public class JreInjector implements Injector {
     static final String DEFAULT_INJECTOR = "xapi.jre.inject.RuntimeInjector";
 
     private static final class RuntimeProxy
-        extends SingletonProvider<In2<String, PlatformChecker>>
+        extends Lazy<In2<String, PlatformChecker>>
         implements In2<String, PlatformChecker> {
-        @SuppressWarnings("unchecked")
-        @Override
-        protected In2<String, PlatformChecker> initialValue() {
-            final String injector = System.getProperty(
-                PROPERTY_INJECTOR,
-                DEFAULT_INJECTOR
-            );
-            try {
-                final Class<?> cls =
-                    Class.forName(injector);
-                return (In2<String, PlatformChecker>) cls.newInstance();
-            } catch (final ClassNotFoundException e) {
-                X_Log.warn(getClass(), "Unable to find injector ", injector, "on the classpath");
-            } catch (final Exception e) {
-                e.printStackTrace();
-                final Thread t = Thread.currentThread();
-                t.getUncaughtExceptionHandler().uncaughtException(t, e);
-            }
-            return this;
+
+        public RuntimeProxy() {
+            super(()->{
+                final String injector = System.getProperty(
+                    PROPERTY_INJECTOR,
+                    DEFAULT_INJECTOR
+                );
+                try {
+                    final Class<?> cls =
+                        Class.forName(injector);
+                    return (In2<String, PlatformChecker>) cls.newInstance();
+                } catch (final ClassNotFoundException e) {
+                    X_Log.warn(JreInjector.class, "Unable to find injector ", injector, "on the classpath");
+                } catch (final Exception e) {
+                    e.printStackTrace();
+                    final Thread t = Thread.currentThread();
+                    t.getUncaughtExceptionHandler().uncaughtException(t, e);
+                }
+                return (val, checker) ->
+                    X_Log.warn(JreInjector.class, "No-op injection on ", val)
+                ;
+            });
 
         }
 
@@ -73,44 +76,34 @@ public class JreInjector implements Injector {
         }
     }
 
-    private static final SingletonProvider<String> instanceUrlFragment
-        = new SingletonProvider<String>() {
-        @Override
-        protected String initialValue() {
+    private static final Out1<String> instanceUrlFragment = Lazy.deferred1(() -> {
             final String value = System.getProperty(
                 PROPERTY_INSTANCES,
                 DEFAULT_INSTANCES_LOCATION
             );
             return value.endsWith("/") ? value : value + "/";
         }
-
-        ;
-    };
-    private static final SingletonProvider<String> singletonUrlFragment
-        = new SingletonProvider<String>() {
-        @Override
-        protected String initialValue() {
+    );
+    private static final Lazy<String> singletonUrlFragment = Lazy.deferred1(() -> {
             final String value = System.getProperty(
                 PROPERTY_SINGLETONS,
                 DEFAULT_SINGLETONS_LOCATION
             );
             return value.endsWith("/") ? value : value + "/";
         }
+    );
 
-        ;
-    };
-
-    private final AbstractInitMap<Class<?>, Provider<?>> instanceProviders
+    private final AbstractInitMap<Class<?>, Out1<?>> instanceProviders
         = InitMapDefault.createInitMap(
         AbstractInitMap.CLASS_NAME,
-        new In1Out1<Class<?>, Provider<?>>() {
+        new In1Out1<Class<?>, Out1<?>>() {
 
             @Override
-            public Provider<?> io(Class<?> clazz) {
+            public Out1<?> io(Class<?> clazz) {
                 //First, lookup META-INF/instances for a replacement.
                 final Class<?> cls;
                 try {
-                    cls = lookup(clazz, instanceUrlFragment.get(), JreInjector.this, instanceProviders);
+                    cls = lookup(clazz, instanceUrlFragment.out1(), JreInjector.this, instanceProviders);
                     if (cls == clazz) {
                         if (instanceProviders.containsKey(cls)) {
                             return instanceProviders.get(cls);
@@ -151,21 +144,21 @@ public class JreInjector implements Injector {
      * <p>
      * Note that this method will use whatever ClassLoader loaded the key class.
      */
-    private final InitMap<Class<?>, Provider<Object>> singletonProviders =
+    private final InitMap<Class<?>, Out1<?>> singletonProviders =
         InitMapDefault.createInitMap(AbstractInitMap.CLASS_NAME, new
-            In1Out1<Class<?>, Provider<Object>>() {
+            In1Out1<Class<?>, Out1<?>>() {
                 @Override
-                public Provider<Object> io(final Class<?> clazz) {
+                public Out1<?> io(final Class<?> clazz) {
                     //TODO: optionally run through java.util.ServiceLoader,
                     //in case client code already uses ServiceLoader directly (unlikely edge case)
-                    Class<?> cls;
+                    Class<?> cls = clazz;
                     try {
                         //First, lookup META-INF/singletons for a replacement.
-                        cls = lookup(clazz, singletonUrlFragment.get(), JreInjector.this, singletonProviders);
+                        cls = lookup(clazz, singletonUrlFragment.out1(), JreInjector.this, singletonProviders);
                         if (cls == clazz && singletonProviders.containsKey(cls)) {
                             return singletonProviders.get(cls);
                         }
-                        return new ImmutableProvider<>(cls.newInstance());
+                        return Out1.immutable(cls.newInstance());
                     } catch (final Throwable e) {
                         if (singletonProviders.containsKey(clazz)) {
                             return singletonProviders.get(clazz);
@@ -173,12 +166,12 @@ public class JreInjector implements Injector {
                         //Try to log the exception, but do not recurse into X_Inject methods
                         if (clazz == LogService.class) {
                             final LogService serv = new JreLog();
-                            final ImmutableProvider<Object> provider = new ImmutableProvider<Object>(serv);
+                            final Out1<Object> provider = Out1.immutable(serv);
                             singletonProviders.setValue(clazz.getName(), provider);
                             return provider;
                         }
                         e.printStackTrace();
-                        String message = "Could not instantiate singleton for " + clazz.getName() + " for " + clazz;
+                        String message = "Could not instantiate singleton for " + cls.getName() + " for " + clazz.getName();
                         if (instanceProviders.containsKey(clazz)) {
                             message += "\nThe type " + clazz + " does have a mapping for an instance scope;\n" +
                             "use X_Inject.instance(" + clazz.getSimpleName()+".class) instead";
@@ -196,7 +189,7 @@ public class JreInjector implements Injector {
 
     private void tryLog(final String message, final Throwable e) {
         try {
-            final LogService log = (LogService) singletonProviders.get(LogService.class).get();
+            final LogService log = (LogService) singletonProviders.get(LogService.class).out1();
             log.log(LogLevel.ERROR, message);
         } catch (final Exception ex) {
             System.err.println(message);
@@ -238,7 +231,7 @@ public class JreInjector implements Injector {
                 injector.initOnce = false;
                 injector.init(cls, map);
                 resources = loader.getResources(relativeUrl + name);
-                if (relativeUrl.contains(instanceUrlFragment.get())) {
+                if (relativeUrl.contains(instanceUrlFragment.out1())) {
                     if (injector.instanceProviders.containsKey(cls)) {
                         return cls;
                     }
@@ -334,7 +327,7 @@ public class JreInjector implements Injector {
     @SuppressWarnings("unchecked")
     public <T, C extends Class<? extends T>> T create(final C cls) {
         try {
-            return (T) instanceProviders.get(cls).get();
+            return (T) instanceProviders.get(cls).out1();
         } catch (final Exception e) {
             if (initOnce) {
                 X_Log.warn("Instance provider failed; attempting runtime injection", e);
@@ -353,7 +346,7 @@ public class JreInjector implements Injector {
     @SuppressWarnings("unchecked")
     public <T, C extends Class<? extends T>> T provide(final C cls) {
         try {
-            return (T) singletonProviders.get(cls).get();
+            return (T) singletonProviders.get(cls).out1();
         } catch (final Exception e) {
             if (initOnce) {
                 X_Log.warn("Singleton provider failed; attempting runtime injection", e);
@@ -372,26 +365,35 @@ public class JreInjector implements Injector {
 
     protected void init(final Class<?> on, final InitMap<Class<?>, ?> map) {
 
-        X_Log.warn(getClass(), "X_Inject encountered a class without injection metadata:", on);
+        boolean shouldLog = on != LogService.class;
+        if (shouldLog) {
+            X_Log.warn(JreInjector.class, "X_Inject encountered a class without injection metadata:", on);
+        }
         if (!"false".equals(System.getProperty("xinject.no.runtime.injection"))) {
-            X_Log.info(getClass(), "Attempting runtime injection.");
+            if (shouldLog) {
+                X_Log.info(JreInjector.class, "Attempting runtime injection.");
+            }
             try {
                 scanClasspath();
-                X_Log.info(getClass(), "Runtime injection success.");
+                if (shouldLog) {
+                    X_Log.info(JreInjector.class, "Runtime injection success.");
+                }
             } catch (final Exception e) {
-                X_Log.warn(getClass(), "Runtime injection failure.", e);
+                if (shouldLog) {
+                    X_Log.warn(JreInjector.class, "Runtime injection failure.", e);
+                }
             }
         }
     }
 
     private void scanClasspath() {
-        runtimeInjector.get().in(
+        runtimeInjector.out1().in(
             System.getProperty(PROPERTY_RUNTIME_META, "target/classes"), checker
         );
     }
 
     @Override
-    public <T> void setInstanceFactory(final Class<T> cls, final Provider<T> provider) {
+    public <T> void setInstanceFactory(final Class<T> cls, final Out1<T> provider) {
         if (X_Runtime.isDebug()) {
             X_Log.debug("Setting instance factory for ", cls);
         }
@@ -400,11 +402,11 @@ public class JreInjector implements Injector {
 
     @Override
     @SuppressWarnings({"unchecked", "rawtypes"}) // Our target is already erased to Object
-    public <T> void setSingletonFactory(final Class<T> cls, final Provider<T> provider) {
+    public <T> void setSingletonFactory(final Class<T> cls, final Out1<T> provider) {
         if (X_Runtime.isDebug()) {
             X_Log.debug("Setting singleton factory for ", cls);
         }
-        singletonProviders.put(cls, (Provider) provider);
+        singletonProviders.put(cls, provider);
     }
 
     public void initialize(final Object o) {

@@ -7,9 +7,11 @@ import xapi.fu.itr.MappedIterable;
 import xapi.fu.Mutable;
 import xapi.fu.Out1;
 import xapi.fu.itr.SizedIterable;
+import xapi.log.X_Log;
 import xapi.mvn.api.MvnDependency;
 import xapi.reflect.X_Reflect;
 
+import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.HashSet;
@@ -24,7 +26,17 @@ import static xapi.mvn.X_Maven.downloadDependencies;
  */
 public class ReflectiveMavenLoaderTest {
 
-    @Test
+    static {
+        String repoLoc = X_Reflect.getFileLoc(ReflectiveMavenLoaderTest.class);
+        repoLoc = repoLoc.replace("dev/uber/build/classes/java/test", "repo");
+        if (new File(repoLoc).isDirectory()) {
+            System.setProperty("xapi.mvn.repo", repoLoc);
+        } else {
+            X_Log.error(ReflectiveMavenLoaderTest.class, "No ", repoLoc, " found; consider setting -Dxapi.mvn.repo to $xapiRoot/repo");
+        }
+    }
+
+    @Test(timeout = 30_000)
     public void testSimpleLoad() {
         // Since we are doing our testing in the uber module,
         // X_Maven will be on the classpath, so ReflectiveMavenLoader will have a much easier time.
@@ -54,7 +66,7 @@ public class ReflectiveMavenLoaderTest {
         );
     }
 
-    @Test
+    @Test(timeout = 830_000)
     public void testIsolatedLoad() throws Throwable {
         // Lets make it harder for ReflectiveMavenLoader...  take away the uber module classpath.
         ReflectiveMavenLoader loader = new ReflectiveMavenLoader();
@@ -64,6 +76,7 @@ public class ReflectiveMavenLoaderTest {
             downloadDependencies(loader.getDependency("xapi-dev-api"))
             .out1()
             .append(downloadDependencies(loader.getDependency("xapi-jre-model")).out1())
+            .append(downloadDependencies(loader.getDependency("xapi-jre-collect")).out1())
             .appendItems(X_Reflect.getFileLoc(IsolatedMvnTestThread.class), X_Reflect.getFileLoc(Assert.class))
             .map(s->"file://" + s)
             .filterOnce(dedup::add)

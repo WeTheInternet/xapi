@@ -72,6 +72,14 @@
   </dependencies>
 
   <build>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+      </resource>
+      <resource>
+        <directory>src/main/java</directory>
+      </resource>
+    </resources>
     <plugins>
       <plugin>
           <groupId>org.codehaus.mojo</groupId>

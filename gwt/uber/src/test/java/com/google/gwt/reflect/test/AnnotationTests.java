@@ -2,6 +2,7 @@ package com.google.gwt.reflect.test;
 
 import org.junit.Test;
 import xapi.gwt.junit.api.JUnitExecution;
+import xapi.util.X_Runtime;
 
 import static com.google.gwt.reflect.shared.GwtReflect.magicClass;
 import static com.google.gwt.reflect.test.annotations.AbstractAnnotation.MemberType.Annotation;
@@ -321,7 +322,9 @@ public class AnnotationTests extends AbstractReflectionTest{
     final Method method = AnnotationTests.class.getMethod("testOtherEquals");
     final ComplexAnnotation onMethod = method.getAnnotation(ComplexAnnotation.class);
     assertTrue(onType.equals(onMethod));
-    log(onType.toString());
+    if (X_Runtime.isGwt()) {
+      log(onType.toString());
+    }
   }
 
   /**
@@ -376,10 +379,11 @@ public class AnnotationTests extends AbstractReflectionTest{
 
   @Test
   public void testInheritsAnnotations() throws Throwable {
+//    final InheritedAnnotation[] t = ReflectionCaseHasAllAnnos.class.getAnnotationsByType(InheritedAnnotation.class);
     final InheritedAnnotation inherited = ReflectionCaseHasAllAnnos.class.getAnnotation(InheritedAnnotation.class);
     final UninheritedAnnotation uninherited = ReflectionCaseHasAllAnnos.class.getAnnotation(UninheritedAnnotation.class);
-    assertNotNull(inherited);
     assertNull(uninherited);
+    assertNotNull(inherited);
   }
 
   @Test
@@ -390,7 +394,14 @@ public class AnnotationTests extends AbstractReflectionTest{
     final Class<ReflectionCaseSubclass> cls = Math.random() == -1 ? null : ReflectionCaseSubclass.class;
     final InheritedAnnotation inherited = cls.getAnnotation(InheritedAnnotation.class);
     final UninheritedAnnotation uninherited = cls.getAnnotation(UninheritedAnnotation.class);
-    assertNull(inherited);
+    if (X_Runtime.isGwt()) {
+      // GWT expressly removes this annotation
+      assertNull(inherited);
+    } else {
+      // Standard jvm doesn't have support for this yet,
+      // though we could probably bake in something like progaurd or our own processor to strip class files.
+      assertNotNull(inherited);
+    }
     assertNull(uninherited);
   }
 

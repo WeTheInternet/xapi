@@ -144,6 +144,11 @@ public class ChainBuilder<T> implements HasSize, MappedIterable<T> {
     removeAll(callback);
   }
   public void removeAll(In1<T> callback) {
+    while (isNotEmpty()) {
+      removeAllOnce(callback);
+    }
+  }
+  public void removeAllOnce(In1<T> callback) {
     final ReplayableIterable<T> items = cached();
     clear();
     items.forAll(callback);

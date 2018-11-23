@@ -3,7 +3,6 @@
  */
 package xapi.test.collect;
 
-import static junit.framework.Assert.fail;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -37,7 +36,7 @@ public abstract class AbstractLinkedListTest<L extends AbstractLinkedList<String
     final Iterator<String> iter = stack.iterator();
     assertFalse(iter.hasNext());
     for (final String v : stack) {
-      fail();
+      throw new AssertionError("Expect stack to be empty");
     };
   }
 

@@ -70,7 +70,10 @@ public class StringReader implements LineReader {
   }
 
   public synchronized void forwardTo(LineReader callback) {
-    X_Log.debug(getClass(),getClass().getName(),"forwardingTo", callback.getClass().getName(),":", callback);
+    if (callback == null) {
+      return;
+    }
+    X_Log.debug(StringReader.class,getClass().getName(),"forwardingTo", callback.getClass().getName(),":", callback);
     if (b != null) {// not null only after we have started streaming
       callback.onStart();
       for (String line : X_String.splitNewLine(b.toString())) {

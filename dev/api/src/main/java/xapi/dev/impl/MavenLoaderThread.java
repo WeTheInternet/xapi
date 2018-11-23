@@ -20,6 +20,7 @@ public class MavenLoaderThread extends Thread {
 
     final IntTo<String> pendingCoords;
     final StringTo<String[]> results;
+    private long maxTtl;
 
     public MavenLoaderThread() {
         super("ReflectiveMavenLoader");
@@ -32,12 +33,13 @@ public class MavenLoaderThread extends Thread {
         String[] paths;
         while ((paths = results.get(coords)) == null) {
             synchronized (results) {
-                results.wait();
+                results.wait(getMaxTtl());
             }
         }
         return paths;
     }
 
+    @SuppressWarnings("unused")// called reflectively
     public Out1<String[]> loadCoords(String coords) {
         pendingCoords.add(coords);
         synchronized (this) {
@@ -48,13 +50,14 @@ public class MavenLoaderThread extends Thread {
 
     @Override
     public void run() {
-        while (true) {
+        long millis = getMaxTtl();
+        final long deadline = System.currentTimeMillis() + millis;
+        long now;
+        while ((now=System.currentTimeMillis()) < deadline) {
             try {
                 drainQueuedTasks();
                 if (pendingCoords.isEmpty()) {
-                    synchronized (this) {
-                        wait();
-                    }
+                    X_Process.flush((int) (deadline - now)/2 + 1);
                 }
             } catch (InterruptedException e) {
                 X_Log.error(ReflectiveMavenLoader.class, "ReflectiveMavenLoader interrupted; returning immediately");
@@ -63,6 +66,7 @@ public class MavenLoaderThread extends Thread {
                 X_Log.error(ReflectiveMavenLoader.class, "Error draining maven downloads", e);
             }
         }
+        X_Log.error(ReflectiveMavenLoader.class, "Maven dependencies loading failed after", millis, "ms");
     }
 
 
@@ -97,4 +101,11 @@ public class MavenLoaderThread extends Thread {
 
     }
 
+    public long getMaxTtl() {
+        return maxTtl == 0 ? 200_000 : maxTtl;
+    }
+
+    public void setMaxTtl(long maxTtl) {
+        this.maxTtl = maxTtl;
+    }
 }

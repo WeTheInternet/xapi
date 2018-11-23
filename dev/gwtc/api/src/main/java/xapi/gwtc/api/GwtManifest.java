@@ -20,7 +20,6 @@ import java.lang.reflect.Array;
 import java.util.Iterator;
 
 import static xapi.collect.X_Collect.*;
-import static xapi.fu.In2.in2;
 import static xapi.fu.itr.SingletonIterator.singleItem;
 import static xapi.gwtc.api.GwtManifest.CleanupMode.DELETE_ON_SUCCESSFUL_EXIT;
 
@@ -208,6 +207,8 @@ public class GwtManifest {
   private String gwtNamespace;
   private Integer debugPort;
   private Long maxCompileMillis;
+  private String maxHeap;
+  private String minHeap;
 
   public GwtManifest() {
     includeGenDir = true;
@@ -656,7 +657,7 @@ public class GwtManifest {
 
   public String toProgramArgs() {
     StringBuilder b = new StringBuilder();
-    readProgramArgs(in2(
+    readProgramArgs(In2.combine(
         arg1 -> {
           if (!arg1.trim().isEmpty()) {
             b.append(NEW_ARG);
@@ -899,7 +900,8 @@ public class GwtManifest {
        jvmArgs.size()+
        systemProperties.size()+
        (disableThreadedWorkers?0:2)+
-       (disableUnitCache || unitCacheDir!=null?1:0)
+       (disableUnitCache || unitCacheDir!=null?1:0)+
+       (maxHeap == null ? minHeap == null ? 0 : 1 : 2)
      ];
     int pos = 0;
     for (String s : jvmArgs.forEach()) {
@@ -926,9 +928,16 @@ public class GwtManifest {
     } else if (disableUnitCache) {
       args[pos++] = "-D"+ARG_DISABLE_UNIT_CACHE+ "=true";
     }
+    if (maxHeap != null) {
+      args[pos++] = "-Xmx" + maxHeap;
+      args[pos++] = "-Xms" + (minHeap == null ? maxHeap : minHeap);
+    } else if (minHeap != null) {
+      args[pos++] = "-Xms" + minHeap;
+    }
     if (!hasFileWatchSetting) {
       return X_Fu.concat(args, ENABLE_FILE_WATCHER);
     }
+
     return args;
   }
 
@@ -1251,5 +1260,21 @@ public class GwtManifest {
 
   public void setWatchFileChanges(boolean watchFileChanges) {
     this.watchFileChanges = watchFileChanges;
+  }
+
+    public void setMaxHeap(String maxHeap) {
+        this.maxHeap = maxHeap;
+    }
+
+    public String getMaxHeap() {
+        return maxHeap;
+    }
+
+  public String getMinHeap() {
+    return minHeap;
+  }
+
+  public void setMinHeap(String minHeap) {
+    this.minHeap = minHeap;
   }
 }

@@ -1,8 +1,10 @@
 package xapi.dev.source;
 
-import xapi.collect.X_Collect;
-import xapi.collect.api.StringTo;
-import xapi.util.api.ConvertsValue;
+import xapi.fu.In1Out1;
+import xapi.fu.data.MapLike;
+import xapi.fu.java.X_Jdk;
+
+import static xapi.fu.In1Out1.identity;
 
 public class XmlBuffer extends PrintBuffer {
 
@@ -15,10 +17,20 @@ public class XmlBuffer extends PrintBuffer {
   private final PrintBuffer comment;
 
   private final PrintBuffer before;
-  private StringTo<StringBuilder> attributeMap;
+
+  protected static class AttrNode {
+    protected final StringBuilder raw;
+    protected PrintBuffer live;
+
+    public AttrNode(StringBuilder raw) {
+      this.raw = raw;
+    }
+  }
+
+  private MapLike<String, AttrNode> attributeMap;
   protected boolean printNewline = false;
   private boolean abbr = false;
-  private ConvertsValue<String, String> escaper;
+  private In1Out1<String, String> escaper;
   protected boolean trimWhitespace;
   private String doctype;
 
@@ -43,7 +55,7 @@ public class XmlBuffer extends PrintBuffer {
 
   protected void init() {
     indent = INDENT;
-    escaper = ConvertsValue.PASS_THRU;
+    escaper = identity();
   }
 
   public XmlBuffer setTagName(final String name) {
@@ -76,9 +88,18 @@ public class XmlBuffer extends PrintBuffer {
     // TODO consider a null value to mean "clear this attribute"?
     // This is a widely used class, so these semantics should not be changed
     // without tests, or in a commit without any unrelated changes.
-    final String val = encodeValue ? escapeAttribute(value) : value == null ? " " : " = " + value + " ";
+    final String val = encodeValue ? escapeAttribute(value) : value == null ? " " : " = " + (value.isEmpty() ? "" : value + " ");
     setRawAttribute(name, val);
     return this;
+  }
+
+  public PrintBuffer attribute(final String name) {
+    ensureAttributes();
+    if (attributeMap.has(name)) {
+      return attributeMap.get(name).live;
+    }
+    setAttribute(name, "", false);
+    return attributeMap.get(name).live;
   }
 
   protected String escapeAttribute(final String value) {
@@ -94,23 +115,23 @@ public class XmlBuffer extends PrintBuffer {
   }
 
   protected void setRawAttribute(final String name, final String val) {
-    StringBuilder attr = attributeMap.get(name);
+    AttrNode attr = attributeMap.get(name);
     if (attr == null) {
       attributes.print(name);
-      attr = new StringBuilder(val);
+      attr = new AttrNode(new StringBuilder(val));
       attributeMap.put(name, attr);
-      final PrintBuffer attrBuf = new PrintBuffer(attr);
-      attributes.addToEnd(attrBuf);
+      attr.live = new PrintBuffer(attr.raw);
+      attributes.addToEnd(attr.live);
     } else {
-      attr.setLength(0);
-      attr.append(val);
+      attr.raw.setLength(0);
+      attr.raw.append(val);
     }
   }
 
   protected void ensureAttributes() {
     if (attributes == null) {
       attributes = new PrintBuffer();
-      attributeMap = X_Collect.newStringMapInsertionOrdered(StringBuilder.class);
+      attributeMap = X_Jdk.mapOrderedInsertion();
     }
   }
 
@@ -213,10 +234,10 @@ public class XmlBuffer extends PrintBuffer {
   }
 
   public String escape(final String text) {
-    return escaper.convert(text);
+    return escaper.io(text);
   }
 
-  public XmlBuffer setEscaper(final ConvertsValue<String, String> escaper) {
+  public XmlBuffer setEscaper(final In1Out1<String, String> escaper) {
     this.escaper = escaper;
     return this;
   }
@@ -436,25 +457,25 @@ public class XmlBuffer extends PrintBuffer {
   }
 
   public String getId() {
-    if (!attributeMap.containsKey("id")) {
+    if (!attributeMap.has("id")) {
       setId("x-"+hashCode());
     }
-    final StringBuilder id = attributeMap.get("id");
-    return id.substring(2, id.length()-2);
+    final AttrNode id = attributeMap.get("id");
+    return id.raw.substring(2, id.raw.length()-2);
   }
 
   public boolean hasAttribute(final String name) {
     ensureAttributes();
-    return attributeMap.containsKey(name);
+    return attributeMap.has(name);
   }
 
   public String getAttribute(final String name) {
     if (hasAttribute(name)) {
-      final StringBuilder attr = attributeMap.get(name);
-      if (isRemoveQuotes(attr)) {
-        return attr.substring(2, attr.length()-2);
+      final AttrNode attr = attributeMap.get(name);
+      if (isRemoveQuotes(attr.raw)) {
+        return attr.raw.substring(2, attr.raw.length()-2);
       }
-      return attr.substring(1, attr.length());
+      return attr.raw.substring(1, attr.raw.length());
     }
     return null;
   }

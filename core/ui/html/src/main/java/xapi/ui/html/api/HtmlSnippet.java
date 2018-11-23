@@ -3,38 +3,22 @@ package xapi.ui.html.api;
 import xapi.annotation.common.Property;
 import xapi.collect.api.StringTo;
 import xapi.dev.source.DomBuffer;
+import xapi.fu.Lazy;
+import xapi.fu.Out1;
 import xapi.log.X_Log;
 import xapi.source.template.MappedTemplate;
 import xapi.ui.api.StyleService;
 import xapi.ui.autoui.api.BeanValueProvider;
 import xapi.ui.html.api.FontFamily.HasGoogleFont;
-import xapi.ui.html.api.Style.AlignHorizontal;
-import xapi.ui.html.api.Style.AlignVertical;
-import xapi.ui.html.api.Style.BorderStyle;
-import xapi.ui.html.api.Style.BoxSizing;
-import xapi.ui.html.api.Style.Clear;
-import xapi.ui.html.api.Style.Cursor;
-import xapi.ui.html.api.Style.Display;
-import xapi.ui.html.api.Style.Floats;
-import xapi.ui.html.api.Style.FontStyle;
-import xapi.ui.html.api.Style.FontWeight;
-import xapi.ui.html.api.Style.Overflow;
-import xapi.ui.html.api.Style.Position;
-import xapi.ui.html.api.Style.Rgb;
-import xapi.ui.html.api.Style.TextDecoration;
-import xapi.ui.html.api.Style.Transition;
-import xapi.ui.html.api.Style.Unit;
-import xapi.ui.html.api.Style.UnitType;
+import xapi.ui.html.api.Style.*;
 import xapi.util.X_String;
 import xapi.util.api.ConvertsValue;
-import xapi.util.impl.LazyProvider;
+
+import java.io.IOException;
 
 import static xapi.collect.X_Collect.newStringMap;
 
 import com.google.gwt.reflect.shared.GwtReflect;
-
-import javax.inject.Provider;
-import java.io.IOException;
 
 public class HtmlSnippet <T> implements ConvertsValue<T, String> {
 
@@ -336,7 +320,7 @@ public class HtmlSnippet <T> implements ConvertsValue<T, String> {
     @Override public void run() {}
   };
 
-  private final Provider<ConvertsValue<T, DomBuffer>> generator;
+  private final Out1<ConvertsValue<T, DomBuffer>> generator;
 
   public HtmlSnippet(
       final Html html,
@@ -345,44 +329,35 @@ public class HtmlSnippet <T> implements ConvertsValue<T, String> {
       ) {
     assert html != null : "Do not send null @Html to HtmlSnippet!";
     assert values != null : "Do not send null BeanValueProvider to HtmlSnippet!";
-    generator = new LazyProvider<>(new Provider<ConvertsValue<T, DomBuffer>>() {
-      @Override
-      public ConvertsValue<T, DomBuffer> get() {
-        return new ConvertsValue<T, DomBuffer>() {
-          @Override
-          public DomBuffer convert(final T from) {
-            final DomBuffer buffer = newBuffer(html, from);
-            final Iterable<String> keys = values.getChildKeys();
-            for (final El el : html.body()) {
-              final DomBuffer child = newChild(buffer, el);
-              for (final Property prop : el.properties()) {
-                child.setAttribute(prop.name(), toValue(values, keys, prop.value(), from));
-              }
-              for (final Style style : el.style()) {
-                toStyleSheet(style, context);
-              }
-              for (final String clsName : el.className()) {
-                child.addClassName(toValue(values, keys, clsName, from));
-              }
+    generator = Lazy.deferred1(() -> from -> {
+      final DomBuffer buffer = newBuffer(html, from);
+      final Iterable<String> keys = values.getChildKeys();
+      for (final El el : html.body()) {
+        final DomBuffer child = newChild(buffer, el);
+        for (final Property prop : el.properties()) {
+          child.setAttribute(prop.name(), toValue(values, keys, prop.value(), from));
+        }
+        for (final Style style : el.style()) {
+          toStyleSheet(style, context);
+        }
+        for (final String clsName : el.className()) {
+          child.addClassName(toValue(values, keys, clsName, from));
+        }
 
-              for (final String html : el.html()) {
-                final MappedTemplate m = new MappedTemplate(html, keys);
-                final StringTo<Object> vals = newStringMap(Object.class);
-                values.fillMap("", m, vals, from);
-                child.append(m.applyMap(vals.entries()));
-              }
-            }
-
-            return buffer;
-          }
-
-        };
+        for (final String html1 : el.html()) {
+          final MappedTemplate m = new MappedTemplate(html1, keys);
+          final StringTo<Object> vals = newStringMap(Object.class);
+          values.fillMap("", m, vals, from);
+          child.append(m.applyMap(vals.entries()));
+        }
       }
+
+      return buffer;
     });
   }
 
-  public HtmlSnippet(final Provider<ConvertsValue<T, DomBuffer>> generator) {
-    this.generator = new LazyProvider<>(generator);
+  public HtmlSnippet(final Out1<ConvertsValue<T, DomBuffer>> generator) {
+    this.generator = Lazy.deferred1(generator);
   }
 
   @Override
@@ -391,7 +366,7 @@ public class HtmlSnippet <T> implements ConvertsValue<T, String> {
   }
 
   public DomBuffer toBuffer(final T from) {
-    return generator.get().convert(from);
+    return generator.out1().convert(from);
   }
 
   protected DomBuffer newBuffer(final Html html, final T from) {

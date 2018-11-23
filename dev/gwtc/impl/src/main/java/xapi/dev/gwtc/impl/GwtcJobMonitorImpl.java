@@ -17,6 +17,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.TimeUnit;
 
 import static xapi.fu.itr.ArrayIterable.iterate;
 
@@ -44,8 +45,8 @@ public class GwtcJobMonitorImpl implements GwtcJobMonitor {
     public GwtcJobMonitorImpl(BlockingDeque<String> caller, BlockingDeque<String> compiler) {
         // We were instantiated directly, so assume we are running in a foreign classloader,
         // and that our parameters are a pair of LinkedBlockingDeque's that we can use to communicate with.
-        readAsCaller = compiler::take;
-        readAsCompiler = caller::take;
+        readAsCaller = ()->compiler.pollFirst(100, TimeUnit.SECONDS); // Make this timing configurable...
+        readAsCompiler = ()->caller.pollFirst(100, TimeUnit.SECONDS);
         writeAsCaller = caller::put;
         writeAsCompiler = compiler::put;
         hasCallerOutput = ()->!caller.isEmpty();
@@ -112,7 +113,7 @@ public class GwtcJobMonitorImpl implements GwtcJobMonitor {
         final Moment start = X_Time.now();
         final String result = readAsCaller.out1();
         X_Log.debug(GwtcJobMonitorImpl.class, "readAsCaller", result, "in", X_Time.difference(start));
-        return result;
+        return result == null ? "" : result;
     }
 
     @Override

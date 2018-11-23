@@ -220,8 +220,8 @@ public class PhaseMap <K extends Comparable<K>> {
 //                              + o.id + " cannot both be prerequisite of each other");
 //                    }
 //                    o.block.getOrCreate(id, i -> this);
-//                    prerequisite.putAll(o.prerequisite.entries());
-//                    o.block.putAll(block.entries());
+//                    prerequisite.putEntries(o.prerequisite.entries());
+//                    o.block.putEntries(block.entries());
 //                    relation = 1;
 //                }
 //                if (block.get(o.id) != null) {
@@ -230,23 +230,23 @@ public class PhaseMap <K extends Comparable<K>> {
 //                              + o.id + " cannot both block each other");
 //                    }
 //                    o.prerequisite.getOrCreate(id, i -> this);
-//                    block.putAll(o.block.entries());
-//                    o.prerequisite.putAll(prerequisite.entries());
+//                    block.putEntries(o.block.entries());
+//                    o.prerequisite.putEntries(prerequisite.entries());
 //                    assert relation != 1;
 //                    relation = -1;
 //                }
 //
 //                if (o.prerequisite.get(id) != null) {
 //                    block.getOrCreate(id, i -> o);
-//                    o.prerequisite.putAll(prerequisite.entries());
-//                    block.putAll(o.block.entries());
+//                    o.prerequisite.putEntries(prerequisite.entries());
+//                    block.putEntries(o.block.entries());
 //                    assert relation != 1;
 //                    relation = -1;
 //                }
 //                if (o.block.get(id) != null) {
 //                    prerequisite.getOrCreate(id, i -> o);
-//                    o.block.putAll(block.entries());
-//                    prerequisite.putAll(o.prerequisite.entries());
+//                    o.block.putEntries(block.entries());
+//                    prerequisite.putEntries(o.prerequisite.entries());
 //                    assert relation != -1;
 //                    relation = 1;
 //                }

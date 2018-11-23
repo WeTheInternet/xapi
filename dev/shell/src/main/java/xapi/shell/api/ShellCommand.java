@@ -1,6 +1,7 @@
 package xapi.shell.api;
 
 import xapi.collect.api.Fifo;
+import xapi.io.api.LineReader;
 import xapi.log.api.LogLevel;
 import xapi.shell.impl.ShellCommandDefault;
 import xapi.util.api.SuccessHandler;
@@ -37,7 +38,25 @@ public interface ShellCommand {
 	 * @param processor - optional argument handler, to manipulate the command being run.
 	 * @return - A {@link ShellSession} future, for platforms that can afford to block on results.
 	 */
-	ShellSession run(SuccessHandler<ShellSession> callback, ArgumentProcessor processor);
+	default ShellSession run(SuccessHandler<ShellSession> callback, ArgumentProcessor processor) {
+		return run(callback, processor, null, null);
+	}
+
+	/**
+	 * Starts the command; returns a future and accepts a callback.
+	 *
+	 * @param callback optional success handler, to allow pushing work forward
+	 * @param processor optional argument handler, to manipulate the command being run.
+	 * @param stdOut optional line reader to consume stdOut messages
+	 * @param stdErr optional line reader to consume stdErr messages
+	 * @return - A {@link ShellSession} future, for platforms that can afford to block on results.
+	 */
+	ShellSession run(
+		SuccessHandler<ShellSession> callback,
+		ArgumentProcessor processor,
+		LineReader stdOut,
+		LineReader stdErr
+	);
 
 	LogLevel getStdOutLevel();
 

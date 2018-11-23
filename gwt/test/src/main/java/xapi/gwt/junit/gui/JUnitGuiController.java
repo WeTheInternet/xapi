@@ -4,6 +4,7 @@ import elemental.client.Browser;
 import elemental.dom.Element;
 import elemental.dom.Node;
 import xapi.elemental.X_Elemental;
+import xapi.fu.Out1;
 import xapi.gwt.junit.api.JUnitExecution;
 import xapi.gwt.junit.impl.JUnit4Executor;
 
@@ -18,7 +19,7 @@ import java.util.function.BooleanSupplier;
 public class JUnitGuiController extends JUnit4Executor {
 
   private Object currentTest; // The current test instance.
-  private Provider<Element> stageProvider;
+  private Out1<Element> stageProvider;
   private final Runnable updater;
 
   public JUnitGuiController(Runnable updater) {this.updater = updater;}
@@ -28,7 +29,7 @@ public class JUnitGuiController extends JUnit4Executor {
       return ((JUnitGuiExecution)execution).getStage();
     }
     assert stageProvider != null : "Call .onTestState() before calling .getStage() in "+getClass()+" "+this;
-    return stageProvider.get();
+    return stageProvider.out1();
   }
 
   /**
@@ -36,7 +37,7 @@ public class JUnitGuiController extends JUnit4Executor {
    *
    * @return false to skip the test.
    */
-  protected boolean onTestClassStart(Provider<Element> stageProvider, Object inst){
+  protected boolean onTestClassStart(Out1<Element> stageProvider, Object inst){
     this.stageProvider = stageProvider;
     currentTest = inst;
     findAndSetField(JUnitGuiController.class::isAssignableFrom, this, inst, false);

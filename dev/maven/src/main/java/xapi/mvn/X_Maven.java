@@ -16,10 +16,10 @@ import xapi.dev.X_Dev;
 import xapi.dev.scanner.X_Scanner;
 import xapi.dev.scanner.impl.ClasspathResourceMap;
 import xapi.fu.Filter.Filter1;
+import xapi.fu.Lazy;
 import xapi.fu.itr.MappedIterable;
 import xapi.fu.Out1;
 import xapi.inject.X_Inject;
-import xapi.inject.impl.SingletonProvider;
 import xapi.log.X_Log;
 import xapi.mvn.impl.ProjectIterable;
 import xapi.mvn.api.MvnDependency;
@@ -158,17 +158,16 @@ public class X_Maven {
   private static class CompileScopeBytecodeAdapter extends BytecodeAdapterService {
 
     private final URL[] urls;
-    private final SingletonProvider<ClassLoader> cl = new SingletonProvider<ClassLoader>() {
-      @Override
-      protected ClassLoader initialValue() {
-        if (X_Runtime.isDebug()) {
-          X_Log.info("Maven compile scope: "+X_String.joinObjects(urls));
-        }
-        return new URLClassLoader(urls, X_Maven.class.getClassLoader());
-      };
-    };
+    private final Lazy<ClassLoader> cl;
     public CompileScopeBytecodeAdapter(MavenProject project, MavenSession session) {
       this.urls = compileScopeUrls(project, session);
+      cl = Lazy.deferred1(() -> {
+          if (X_Runtime.isDebug()) {
+            X_Log.info("Maven compile scope: "+X_String.joinObjects(urls));
+          }
+          return new URLClassLoader(urls, X_Maven.class.getClassLoader());
+        }
+      );
     }
     @Override
     protected URL[] getScanUrls() {
@@ -177,7 +176,7 @@ public class X_Maven {
 
     @Override
     protected ClassLoader getClassLoader() {
-      return cl.get();
+      return cl.out1();
     }
 
   }

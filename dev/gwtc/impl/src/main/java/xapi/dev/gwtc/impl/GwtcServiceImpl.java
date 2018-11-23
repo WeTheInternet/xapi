@@ -1,25 +1,25 @@
 package xapi.dev.gwtc.impl;
 
+import com.github.javaparser.JavaParser;
+import com.github.javaparser.ParseException;
+import com.github.javaparser.ast.expr.UiContainerExpr;
+import com.github.javaparser.ast.visitor.ComposableXapiVisitor;
 import xapi.annotation.compile.Dependency;
+import xapi.annotation.compile.Dependency.DependencyType;
 import xapi.annotation.inject.InstanceDefault;
-import xapi.dev.gwtc.api.AnnotatedDependency;
-import xapi.dev.gwtc.api.GwtcJob;
+import xapi.dev.gwtc.api.*;
 import xapi.dev.gwtc.api.GwtcJobMonitor.CompileMessage;
-import xapi.dev.gwtc.api.GwtcProjectGenerator;
-import xapi.dev.gwtc.api.GwtcService;
 import xapi.dev.impl.ExtensibleClassLoader;
 import xapi.dev.impl.ReflectiveMavenLoader;
 import xapi.dev.source.ClassBuffer;
 import xapi.file.X_File;
 import xapi.fu.*;
-import xapi.fu.itr.ArrayIterable;
-import xapi.fu.itr.Chain;
-import xapi.fu.itr.ChainBuilder;
-import xapi.fu.itr.MappedIterable;
+import xapi.fu.itr.*;
 import xapi.gwtc.api.CompiledDirectory;
 import xapi.gwtc.api.GwtManifest;
 import xapi.gwtc.api.Gwtc;
 import xapi.gwtc.api.GwtcProperties;
+import xapi.io.X_IO;
 import xapi.jre.inject.RuntimeInjector;
 import xapi.jre.process.ConcurrencyServiceJre;
 import xapi.log.X_Log;
@@ -33,6 +33,8 @@ import xapi.time.api.Moment;
 import xapi.util.*;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Modifier;
@@ -48,9 +50,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
 
+import static xapi.fu.itr.ArrayIterable.iterate;
 import static xapi.fu.itr.SingletonIterator.singleItem;
 import static xapi.source.X_Source.removeClassDirs;
 import static xapi.time.X_Time.diff;
@@ -70,6 +75,14 @@ import com.google.gwt.dev.Compiler;
 @InstanceDefault(implFor=GwtcService.class)
 public class GwtcServiceImpl extends GwtcServiceAbstract {
 
+  static {
+    if (System.getProperty("javax.xml.parsers.DocumentBuilderFactory") == null) {
+      System.setProperty("javax.xml.parsers.DocumentBuilderFactory", "com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl");
+    }
+    if (System.getProperty("javax.xml.parsers.SAXParserFactory") == null) {
+      System.setProperty("javax.xml.parsers.SAXParserFactory", "com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl");
+    }
+  }
 
   Pattern SPECIAL_DIRS = Pattern.compile(
       "(" + Pattern.quote(Dependency.DIR_BIN) + ")|" +
@@ -212,10 +225,16 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
 
   private URLClassLoader manifestBackedClassloader(URL[] urls, GwtManifest manifest) {
     String genDir = manifest.getGenDir();
+    // TODO: use the bundled xapi manifests to get the full gwtc classpath into here.
+    final String monitorApi = X_Reflect.getFileLoc(GwtcJobMonitorImpl.class);
     try {
       final URL genUrl = new URL("file:" + genDir);
-      if (ArrayIterable.iterate(urls).noneMatch(genUrl::equals)) {
+      if (iterate(urls).noneMatch(genUrl::equals)) {
         urls = X_Fu.concat(genUrl, urls);
+      }
+      final URL monitorApiUrl = new URL("file:" + monitorApi);
+      if (iterate(urls).noneMatch(monitorApiUrl::equals)) {
+        urls = X_Fu.concat(monitorApiUrl, urls);
       }
     } catch (MalformedURLException e) {
       X_Log.error(GwtcServiceImpl.class, "Cannot create URL from GwtManifest genDir", genDir, e);
@@ -411,7 +430,9 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
             if (binDir == null) {
               binDir = X_Reflect.getFileLoc(X_Reflect.getMainClass());
               if (binDir == null || new File(binDir).getName().matches("rt[.]+jar")) {
-                binDir = "target/" + (manifest.isTestMode() ? "test-" : "") + "classes";
+                // TODO: we should be exposing a configurable "class path generator",
+                // so users can easily switch between gradle or ...other build tools.
+                binDir = "build/classes/java/" + (manifest.isTestMode() ? "test" : "main");
               } else {
                 binDir = binDir.replace("file:", "");
               }
@@ -458,11 +479,18 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
     switch (dependency.dependencyType()) {
       case ABSOLUTE:
         return replaceLocationVars(manifest, dependency.value(), dep.getSource());
+      case CLASSPATH_FILE:
       case RELATIVE:
         return replaceLocationVars(manifest, dependency.value(), dep.getSource())
             .map(itr->
-                itr.map(item->relativize(item, manifest, dep))
-                    .flatten(MappedIterable::mapped)
+                itr.map(item-> {
+                  if (dependency.dependencyType() == DependencyType.RELATIVE) {
+                    return relativize(item, manifest, dep);
+                  } else {
+                    return loadClasspathFile(item, manifest, dep);
+                  }
+                })
+                .flatten(In1Out1.identity())
             );
       case MAVEN:
         if (!dependency.loadChildren()) {
@@ -505,6 +533,33 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
     }
   }
 
+  private Iterable<String> loadClasspathFile(String item, GwtManifest manifest, AnnotatedDependency dep) {
+    if (Files.exists(Paths.get(item))) {
+      try (
+          FileInputStream in = new FileInputStream(item)
+      ) {
+          String classpath = X_IO.toStringUtf8(in);
+          return iterate(classpath.split("[:;]"));
+      } catch (IOException e) {
+        X_Log.error(GwtcServiceImpl.class, "Cannot load classpath file", item, e);
+      }
+
+    } else {
+      final URL res = Thread.currentThread().getContextClassLoader().getResource(item);
+      if (res == null) {
+        X_Log.warn(GwtcServiceImpl.class, "Classpath file does not exist", item);
+      } else {
+        try {
+          String classpath = X_IO.toStringUtf8(res.openStream());
+          return iterate(classpath.split("[:;]"));
+        } catch (IOException e) {
+          X_Log.error(GwtcServiceImpl.class, "Cannot load ", item, "from classloader url", res, e);
+        }
+      }
+    }
+    return EmptyIterator.none();
+  }
+
   private Iterable<String> relativize(String item, GwtManifest manifest, AnnotatedDependency dep) {
     if (Files.exists(Paths.get(item))) {
       return singleItem(item);
@@ -537,6 +592,59 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
     } else {
       if (!loc.isAbsolute()) {
         loc = Paths.get(manifest.getRelativeRoot()).resolve(loc);
+      }
+
+      String path = loc.getFileName().toString();
+      if (path.contains("jar")) {
+        path = path.split("jar!")[0] + "jar";
+      try (
+          JarFile jar = new JarFile(path)
+          ) {
+        final ZipEntry entry = jar.getEntry("META-INF/xapi/settings.xapi");
+
+        String settings  = X_IO.toStringUtf8(jar.getInputStream(entry));
+        // h'ray... xapi settings.
+        final UiContainerExpr el = JavaParser.parseUiContainer(
+            path + "!META-INF/xapi/settings.xapi",
+            settings
+        );
+        ChainBuilder<String> chain = Chain.startChain();
+        final ComposableXapiVisitor<GwtcServiceImpl> vis = ComposableXapiVisitor.onMissingLog(GwtcServiceImpl.class, true);
+            vis.withUiAttrExpr((atr, s)->{
+                switch(atr.getNameString()) {
+                  case "sources":
+                  case "resources":
+                  case "outputs":
+                    atr.getExpression().accept(vis, s);
+                }
+              return false;
+            })
+            .withStringLiteralTerminal((str, s) -> {
+                  if (new File(str.getValue()).exists()) {
+                    chain.add(str.getValue());
+                  } else {
+                    X_Log.warn(GwtcServiceImpl.class, "Ignoring missing source", str);
+                  }
+                }
+            )
+            .withJsonContainerRecurse(In2.ignoreAll())
+            .withUiContainerTerminal(In2.ignoreAll())
+            .visit(el, this);
+
+            if (chain.isNotEmpty()) {
+              return chain;
+            }
+
+      } catch (IOException ignored){} catch (ParseException e) {
+        X_Log.error(GwtcServiceImpl.class, "Invalid source for ", path, e);
+      }
+
+        path = loc.toString()
+              .split("build/libs")[0]
+              .split("build/classes")[0]
+              .split("target/")[0];
+
+          loc = Paths.get(path);
       }
       try {
         return singleItem(loc.resolve(item).toRealPath().toString());

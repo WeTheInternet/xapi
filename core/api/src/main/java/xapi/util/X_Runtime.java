@@ -44,11 +44,10 @@ public class X_Runtime {
   private static final boolean debug;
   private static final boolean test;
   private static final boolean gwt;
-  private static final String fileSeparator;
+
   static {
     debug = "true".equals(System.getProperty(PROPERTY_DEBUG, "false"));
     test = "true".equals(System.getProperty(PROPERTY_TEST, "false"));
-    fileSeparator = System.getProperty("file.separator", "false");
 
     boolean success = "true".equals(System.getProperty(PROPERTY_USE_X_INJECT, "true"));
     try {
@@ -220,10 +219,10 @@ public class X_Runtime {
   }
 
   public static String fileSeparator() {
-    return fileSeparator;
+    return X_String.FILE_SEPARATOR;
   }
 
   public static char fileSeparatorChar() {
-    return fileSeparator.charAt(0);
+    return X_String.FILE_SEPARATOR.charAt(0);
   }
 }

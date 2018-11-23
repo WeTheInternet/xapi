@@ -13,39 +13,38 @@ import xapi.process.api.Process;
 import xapi.process.api.ProcessController;
 import xapi.process.service.ConcurrencyService;
 
-import javax.inject.Provider;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 public class X_Process {
 
-  private static final Provider<ConcurrencyService> service = X_Inject
+  private static final Out1<ConcurrencyService> service = X_Inject
       .singletonLazy(ConcurrencyService.class);
 
   public static <T> void resolve(Future<T> future, In1<T> receiver) {
-    service.get().resolve(future, receiver);
+    service.out1().resolve(future, receiver);
   }
 
   public static <T> void blockInBackground(Future<T> future, In1<T> receiver) {
     runDeferred(()->
-      service.get().resolve(future, receiver)
+      service.out1().resolve(future, receiver)
     );
   }
 
   public static void runDeferred(Do cmd) {
-    service.get().runDeferred(cmd);
+    service.out1().runDeferred(cmd);
   }
 
   public static void runInClassloader(ClassLoader loader, DoUnsafe cmd) {
-    service.get().runInClassloader(loader, cmd);
+    service.out1().runInClassloader(loader, cmd);
   }
 
   public static void runDeferredUnsafe(DoUnsafe cmd) {
-    service.get().runDeferred(cmd);
+    service.out1().runDeferred(cmd);
   }
 
   public static void runEventually(Do cmd) {
-    service.get().runEventually(cmd);
+    service.out1().runEventually(cmd);
   }
 
   public static void runFinallyUnsafe(DoUnsafe cmd) {
@@ -57,27 +56,31 @@ public class X_Process {
     );
   }
   public static void runFinally(Do cmd) {
-    service.get().runFinally(cmd);
+    service.out1().runFinally(cmd);
   }
 
   public static <T> void runFinally(In1<T> cmd, Out1<T> from) {
-    service.get().runFinally(cmd.provideDeferred(from));
+    service.out1().runFinally(cmd.provideDeferred(from));
   }
 
   public static void runTimeout(Do cmd, int milliDelay) {
-    service.get().runTimeout(cmd, milliDelay);
+    service.out1().runTimeout(cmd, milliDelay);
   }
 
   public static Thread newThread(Do cmd) {
-    return service.get().newThread(cmd);
+    return service.out1().newThread(cmd);
+  }
+
+  public static Thread newThreadUnsafe(DoUnsafe cmd) {
+    return service.out1().newThread(cmd);
   }
 
   public static Thread newThread(Do cmd, ThreadGroup group) {
-    return service.get().newThread(cmd, group);
+    return service.out1().newThread(cmd, group);
   }
 
   public static <T> ProcessController<T> newProcess(Process<T> process) {
-    return service.get().newProcess(process);
+    return service.out1().newProcess(process);
   }
 
   public static boolean flush(int timeout) {
@@ -85,27 +88,27 @@ public class X_Process {
   }
 
   public static boolean flush(Thread thread, int timeout) {
-    return service.get().flush(thread, timeout);
+    return service.out1().flush(thread, timeout);
   }
 
   public static boolean trySleep(int millis) {
-    return service.get().trySleep(millis);
+    return service.out1().trySleep(millis);
   }
 
   public static void kill(Thread thread, int timeout) {
-    service.get().kill(thread, timeout);
+    service.out1().kill(thread, timeout);
   }
 
   public static double threadStartTime() {
-    return service.get().threadStartTime(Thread.currentThread());
+    return service.out1().threadStartTime(Thread.currentThread());
   }
 
   public static double now() {
-    return service.get().now();
+    return service.out1().now();
   }
 
   public static AsyncLock newLock() {
-    return service.get().newLock();
+    return service.out1().newLock();
   }
 
   public static <T> void runWhenReadyUnsafe(Lazy<T> io, In1Unsafe<T> callback) {
@@ -137,10 +140,10 @@ public class X_Process {
   }
 
   public static boolean isInProcess() {
-    return service.get().isInProcess();
+    return service.out1().isInProcess();
   }
 
   public static Do scheduleInterruption(long blocksFor, TimeUnit unit) {
-    return service.get().scheduleInterruption(blocksFor, unit);
+    return service.out1().scheduleInterruption(blocksFor, unit);
   }
 }

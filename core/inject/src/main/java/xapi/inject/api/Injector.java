@@ -36,9 +36,8 @@ package xapi.inject.api;
 
 import xapi.annotation.inject.SingletonDefault;
 import xapi.annotation.inject.SingletonOverride;
+import xapi.fu.Out1;
 import xapi.inject.impl.JavaInjector;
-
-import javax.inject.Provider;
 
 /**
  * A simple injection interface used for java-based dependency injection.
@@ -85,8 +84,8 @@ public interface Injector {
 
   <T, C extends Class<? extends T>> T create(C cls);
 
-  <T> void setSingletonFactory(Class<T> cls, Provider<T> provider);
+  <T> void setSingletonFactory(Class<T> cls, Out1<T> provider);
 
-  <T> void setInstanceFactory(Class<T> cls, Provider<T> provider);
+  <T> void setInstanceFactory(Class<T> cls, Out1<T> provider);
 
 }

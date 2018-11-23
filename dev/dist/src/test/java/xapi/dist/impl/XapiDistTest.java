@@ -3,6 +3,7 @@ package xapi.dist.impl;
 import org.junit.Test;
 import xapi.dist.api.DistOpts;
 import xapi.reflect.X_Reflect;
+import xapi.source.X_Source;
 
 import java.io.File;
 
@@ -17,8 +18,8 @@ public class XapiDistTest {
         // using our output folder as the location to dump output.
         DistGenerator generator = new DistGenerator();
         DistOpts opts = new DistOpts();
-        String output = X_Reflect.getFileLoc(XapiDistTest.class)
-            .replace("test-classes" + File.separator, "");
+        String output = X_Reflect.getFileLoc(XapiDistTest.class);
+        output = X_Source.rebase(output, "", "");
         opts.setOutputDir(new File(output, "dist"));
         opts.setWorkDir(new File(output, "work"));
         opts.addEntryPoint(DistEntryPoint.class.getCanonicalName());

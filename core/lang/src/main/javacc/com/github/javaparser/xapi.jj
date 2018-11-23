@@ -198,6 +198,7 @@ final class ASTParser {
             token.next = null;
           }
           jj_ntk = -1;
+          jj_lastpos = jj_scanpos;
           return true;
     }
 
@@ -331,25 +332,33 @@ TOKEN_MGR_DECLS : {
   }
 
   boolean isCommaNotTrailing(Token token) {
+    char c;
     if (token.next != null) {
       if (",".equals(token.next.image)) {
         if (token.next.next != null) {
-          return !"}".equals(token.next.next.image);
+          switch(token.next.next.image) {
+            case "}":
+            case "]":
+              return true;
+            default:
+              return false;
+          }
         }
-        return peekNext() != '}';
+        c = peekNext();
+        return c != '}' && c != ']';
       }
       return false;
     }
     int backup = 0;
     try {
       backup += eatWhitespaceAndComments();
-      char c = input_stream.readChar();
+      c = input_stream.readChar();
       backup ++;
       if (c == ',') {
         backup += eatWhitespaceAndComments();
         c = input_stream.readChar();
         backup ++;
-        return c != '}';
+        return c != '}' && c != ']';
       }
     } catch (IOException e) {
     } finally {
@@ -3711,9 +3720,9 @@ JsonContainerExpr JsonContainer():
         LOOKAHEAD( { token_source.isCommaNotTrailing(token) } )
         ( "," pair = JsonPair() { items.add(pair); } )
       ) +
-      // Finally, an optional trailing ,
-      [ "," ]
     ]
+    // Finally, an optional trailing ,
+    [ "," ]
 
     "}" {
       return new JsonContainerExpr(line, column, token.endLine, token.endColumn, false, items);
@@ -3725,23 +3734,23 @@ JsonContainerExpr JsonContainer():
     }
 
     // First, an item [optional]
-    [ JsonSingle(items) ]
+    [ JsonSingle(items, true) ]
     [
       // Next, optionally, N `, expr()`s
       (
-        LOOKAHEAD( { token_source.isCommaNotTrailing(token) } )
-        ( "," JsonSingle(items) )
+        ( LOOKAHEAD( { token_source.isCommaNotTrailing(token) } )
+         "," JsonSingle(items, false) )
       )+
-      // Finally, an optional trailing ,
-      [ "," ]
     ]
+    // Finally, an optional trailing ,
+    [ "," ]
 
     "]" )
 
   { return new JsonContainerExpr(line, column, token.endLine, token.endColumn, true, items); }
 }
 
-JsonPairExpr JsonSingle(List items):
+JsonPairExpr JsonSingle(List items, boolean first):
 {
   Integer line = null;
   int column = 0;
@@ -3758,6 +3767,7 @@ JsonPairExpr JsonSingle(List items):
           column = annotation.getBeginColumn();
         }
       } )*
+
        value = UiValue()
 
   )

@@ -212,7 +212,7 @@ public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
     Thread running = Thread.currentThread();
     ConcurrentEnvironment enviro = environments.get(running, running.getUncaughtExceptionHandler());
     final Runnable job = wrapped
-        .doAfter(enviro::shutdown).toRunnable();
+        .doAfter(enviro::maybeShutdown).toRunnable();
     Thread childThread = group == null ? new Thread(job) : new Thread(group, job);
     childThread.setName(
         (group == null ? "" : group.getName()+"-") +
@@ -356,8 +356,10 @@ public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
           finishJob(Thread.currentThread(), timeLeft);
           Thread.currentThread().interrupt();
         }
-        if (System.currentTimeMillis()>deadline)
+        if (System.currentTimeMillis()>deadline) {
+          System.out.println("Not done when deadline was hit");
           return false;
+        }
       }
       return true;
     }else {

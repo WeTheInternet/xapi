@@ -74,7 +74,7 @@ public class StringToAbstract <V> implements StringTo<V>{
 
   @Override
   @SuppressWarnings({"unchecked","rawtypes"})
-  public void putAll(final Iterable<java.util.Map.Entry<String,V>> items) {
+  public void putEntries(final Iterable<java.util.Map.Entry<String,V>> items) {
     if (items instanceof java.util.Map) {
       map.putAll((java.util.Map)items);
     } else {

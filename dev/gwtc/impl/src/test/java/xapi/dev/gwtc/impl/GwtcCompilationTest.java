@@ -75,7 +75,7 @@ public class GwtcCompilationTest {
         final GwtcProjectGenerator project = this.project.out1();
         final GwtManifest manifest = project.getManifest();
         configureProject(project);
-        gwtc.doCompile(manifest, 80, TimeUnit.MINUTES, (success, fail)->{
+        gwtc.doCompile(manifest, 8, TimeUnit.MINUTES, (success, fail)->{
             result[0] = success;
             failure[0] = fail;
         });
@@ -136,7 +136,7 @@ public class GwtcCompilationTest {
     @Test(timeout = 120_000)
     public void testCompilation() {
         try {
-            X_Log.info(GwtcCompilationTest.class, "\n\n\nRunning compilation ", options, "\n\n");
+            X_Log.info(GwtcCompilationTest.class, "\n\nRunning compilation ", options, "\n\n");
             final Moment start = X_Time.now();
             final CompiledDirectory result = compilerResult.out1();
             assertNotNull("", result);

@@ -7,6 +7,7 @@ import xapi.collect.api.IntTo;
 import xapi.collect.api.StringTo;
 import xapi.dev.source.SourceBuilder;
 import xapi.except.NotYetImplemented;
+import xapi.fu.Out1;
 import xapi.source.X_Source;
 import xapi.source.template.MappedTemplate;
 import xapi.source.write.ToStringer;
@@ -17,7 +18,6 @@ import xapi.ui.html.api.HtmlTemplate;
 import xapi.ui.html.api.Style;
 import xapi.util.X_String;
 import xapi.util.api.ConvertsValue;
-import xapi.util.impl.LazyProvider;
 
 import static xapi.collect.X_Collect.newStringMap;
 import static xapi.ui.html.api.HtmlSnippet.appendTo;
@@ -45,16 +45,11 @@ public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> im
 
   protected static final String KEY_FROM = "from";
 
-  private static final Provider<Boolean> isDev = new LazyProvider<>(new Provider<Boolean>() {
-    @Override
-    public Boolean get() {
-      return true;
-    }
-  });
+  private static final Out1<Boolean> isDev = Out1.TRUE;
 
   protected static <Ctx extends HtmlGeneratorResult> Ctx existingTypesUnchanged(final TreeLogger logger,
       final UnifyAstView ast, final Ctx result, final String verify) {
-    if (isDev.get()) {
+    if (isDev.out1()) {
       // During development, never reuse existing types, as we're likely changing generators
       return null;
     }
@@ -76,7 +71,7 @@ public abstract class AbstractHtmlGenerator <Ctx extends HtmlGeneratorResult> im
     return null;
   }
 
-  protected static String toHash(final UnifyAstView ast, final String ... types) throws UnableToCompleteException {
+  protected static String toHash(final UnifyAstView ast, final String ... types) {
     final StringBuilder b = new StringBuilder();
     for (final String type : types) {
       b.append(ast.searchForTypeBySource(type).toSource());

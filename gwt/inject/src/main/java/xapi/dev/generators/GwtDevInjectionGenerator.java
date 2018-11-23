@@ -34,13 +34,6 @@
  */
 package xapi.dev.generators;
 
-import java.io.PrintWriter;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.HashMap;
-
-import javax.inject.Provider;
-
 import xapi.annotation.inject.InstanceOverride;
 import xapi.annotation.inject.SingletonDefault;
 import xapi.annotation.inject.SingletonOverride;
@@ -48,17 +41,20 @@ import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.dev.util.GwtInjectionMap;
 import xapi.dev.util.InjectionUtils;
+import xapi.fu.In1;
+import xapi.fu.Out1;
 import xapi.inject.api.Injector;
 import xapi.source.read.SourceUtil;
 import xapi.util.X_Runtime;
 
+import java.io.PrintWriter;
+import java.util.HashMap;
+import java.util.Map.Entry;
+import java.util.Set;
+
 import com.google.gwt.core.client.GWT;
-import com.google.gwt.core.ext.GeneratorContext;
-import com.google.gwt.core.ext.RebindMode;
-import com.google.gwt.core.ext.RebindResult;
-import com.google.gwt.core.ext.TreeLogger;
+import com.google.gwt.core.ext.*;
 import com.google.gwt.core.ext.TreeLogger.Type;
-import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 
 
@@ -97,10 +93,10 @@ public class GwtDevInjectionGenerator extends AbstractInjectionGenerator {
       .setPackage(packageName)
     ;
     sb.getImports().addImports(
-        "xapi.util.api.ReceivesValue"
-        ,HashMap.class.getName()
-        ,Provider.class.getName()
-        ,GWT.class.getName()
+        In1.class
+        ,HashMap.class
+        ,Out1.class
+        ,GWT.class
       )
       ;
     //Let's disable this for now; we can write META-INF manually outside of gwt compile
@@ -134,42 +130,36 @@ public class GwtDevInjectionGenerator extends AbstractInjectionGenerator {
       "+cls.getName()+\" and it is marked with either @\"+type+\"Default or @" +
       "\"+type+\"Override.\"+")
       .println("\"Also, be sure to check for invalidated units " +
-      "that may have removed your injection target from compile.\");");
+      "that may have removed your injection target from compile.\");")
     ;
+
 
     // Since gwt dev is the only user of this service,
     // we try to avoid jsni, and instead just use a hash map to provider instance
     cb
-      .println("private final HashMap<Class<?>, Provider<?>> singletons;")
-      .println("private final HashMap<Class<?>, Provider<?>> instances;")
+      .println("private final HashMap<Class<?>, Out1<?>> singletons;")
+      .println("private final HashMap<Class<?>, Out1<?>> instances;")
       .println()
       // We setup all known injection types in the constructor,
       // which will load all the classes eagerly.
       // The runtime hit is better than anomalies from using jsni and lazy loading
       .println("public "+simpleName+"() {")
       .indent()
-        .println("singletons = new HashMap<Class<?>, Provider<?>>();")
-        .println("instances = new HashMap<Class<?>, Provider<?>>();")
+        .println("singletons = new HashMap<Class<?>, Out1<?>>();")
+        .println("instances = new HashMap<Class<?>, Out1<?>>();")
     ;
     for (Entry<Class<?>, JClassType> entry : gwtSingletons) {
       Class<?> cls = entry.getKey();
       cb
         .println("setSingletonFactory("+cls.getCanonicalName()+".class, ")
-        .indentln(cls.getPackage().getName()+"."+InjectionUtils.generatedProviderName(cls.getSimpleName())+".theProvider);")
+        .indentln(cls.getPackage().getName()+"."+InjectionUtils.generatedProviderName(cls.getSimpleName())+".theProvider")
+        .println(");")
       ;
     }
     for (Entry<Class<?>, JClassType> entry : gwtInjectionMap.getGwtInstances()) {
       cb
         .println("setInstanceFactory("+entry.getKey().getCanonicalName()+".class, ")
-        .indent()
-          .println("new Provider() {")
-          .indent()
-            .println("public Object get() {")
-            .indentln("return GWT.create("+entry.getValue().getQualifiedSourceName()+".class);")
-            .println("}")
-          .outdent()
-          .println("}")
-        .outdent()
+        .indentln("()->GWT.create("+entry.getValue().getQualifiedSourceName()+".class)")
         .println(");")
       ;
     }
@@ -181,44 +171,44 @@ public class GwtDevInjectionGenerator extends AbstractInjectionGenerator {
 
     // Print setters for factories, to allow runtime injection support.
     cb
-    .createMethod("public <T> void setSingletonFactory(Class<T> cls, Provider<T> provider)")
+    .createMethod("public <T> void setSingletonFactory(Class<T> cls, Out1<T> provider)")
     .addAnnotation("Override")
     .println("singletons.put(cls, provider);")
     ;
     cb
-    .createMethod("public <T> void setInstanceFactory(Class<T> cls, Provider<T> provider)")
+    .createMethod("public <T> void setInstanceFactory(Class<T> cls, Out1<T> provider)")
     .addAnnotation("Override")
     .println("instances.put(cls, provider);")
     ;
 
     // Print the factory provider methods, which throw exception instead of return null
     cb
-      .createMethod("public <T> Provider<T> getSingletonFactory(Class<? super T> cls)")
+      .createMethod("public <T> Out1<T> getSingletonFactory(Class<? super T> cls)")
 //      .addAnnotation("Override")
       .addAnnotation("SuppressWarnings({\"rawtypes\", \"unchecked\"})")
-      .println("Provider p = singletons.get(cls);")
+      .println("Out1 p = singletons.get(cls);")
       .println("if (p == null) throwNotFound(true, cls);")
-      .println("return (Provider<T>)p;")
+      .println("return (Out1<T>)p;")
     ;
     cb
-      .createMethod("public <T> Provider<T> getInstanceFactory(Class<? super T> cls)")
+      .createMethod("public <T> Out1<T> getInstanceFactory(Class<? super T> cls)")
 //      .addAnnotation("Override")
       .addAnnotation("SuppressWarnings({\"rawtypes\", \"unchecked\"})")
-      .println("Provider p = instances.get(cls);")
+      .println("Out1 p = instances.get(cls);")
       .println("if (p == null) throwNotFound(false, cls);")
-      .println("return (Provider<T>)p;")
+      .println("return (Out1<T>)p;")
     ;
 
 
     cb
       .createMethod("public final <T> T provide(Class<? super T> cls)")
       .addAnnotation("@Override")
-      .println("return getSingletonFactory(cls).get();")
+      .println("return getSingletonFactory(cls).out1();")
     ;
     cb
       .createMethod("public final <T> T create(Class<? super T> cls)")
       .addAnnotation("@Override")
-      .println("return getInstanceFactory(cls).get();")
+      .println("return getInstanceFactory(cls).out1();")
     ;
 
     if (X_Runtime.isDebug()) {

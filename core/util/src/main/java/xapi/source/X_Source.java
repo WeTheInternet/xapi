@@ -1,5 +1,6 @@
 package xapi.source;
 
+import xapi.fu.Out1;
 import xapi.fu.itr.Chain;
 import xapi.fu.itr.ChainBuilder;
 import xapi.inject.X_Inject;
@@ -8,8 +9,6 @@ import xapi.source.api.IsType;
 import xapi.source.service.SourceService;
 import xapi.util.X_String;
 
-import javax.inject.Provider;
-import javax.validation.constraints.NotNull;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -27,39 +26,26 @@ public class X_Source {
     String[] pathTypes = System.getProperty("xapi.path.types", "gradle:maven:intellij").split(":");
     ChainBuilder<String> mains = Chain.startChain(), tests = Chain.startChain();
     for (String pathType : pathTypes) {
-      String path = System.getProperty("xapi.path." + pathType);
-      if (path == null) {
-        switch (pathType) {
-          case "gradle":
-            mains.add("build/classes/main");
-            path = "build/classes/java/main";
-            break;
-          case "maven":
-            path = "target/classes";
-            break;
-          case "intellij":
-            path = "out/production/classes";
-            break;
-        }
+      String path, testPath;
+      switch (pathType) {
+        case "gradle":
+          // We purposely go the extra mile to use string literals, so we can do magic-method cleanup on these expressions.
+          path = System.getProperty("xapi.path.gradle", "build/classes/main:build/classes/java/main");
+          testPath = System.getProperty("xapi.path.test.gradle","build/classes/test:build/classes/java/test");
+          break;
+        case "maven":
+          path = System.getProperty("xapi.path.maven", "target/classes");
+          testPath = System.getProperty("xapi.path.test.maven","target/test-classes");
+          break;
+        case "intellij":
+          path = System.getProperty("xapi.path.intellij", "out/production/classes");
+          testPath = System.getProperty("xapi.path.test.intellij","out/test/classes");
+          break;
+        default:
+          continue;
       }
-      mains.add(path);
-
-      path = System.getProperty("xapi.path.test." + pathType);
-      if (path == null) {
-        switch (pathType) {
-          case "gradle":
-            tests.add("build/classes/test");
-            path = "build/classes/java/test";
-            break;
-          case "maven":
-            path = "target/test-classes";
-            break;
-          case "intellij":
-            path = "out/test/classes";
-            break;
-        }
-      }
-      tests.add(path);
+      mains.addAll(path.split(":"));
+      tests.addAll(testPath.split(":"));
     }
 
     MAIN_PATHS = mains.toArray(String.class);
@@ -68,10 +54,10 @@ public class X_Source {
 
   private X_Source() {}
 
-  private static final Provider<SourceService> service = X_Inject.singletonLazy(SourceService.class);
+  private static final Out1<SourceService> service = X_Inject.singletonLazy(SourceService.class);
 
   public static IsType toType(Class<?> cls) {
-    return service.get().toType(cls);
+    return service.out1().toType(cls);
   }
   protected static IsType toType(String qualifiedName) {
     String pkg = toPackage(qualifiedName);
@@ -81,7 +67,7 @@ public class X_Source {
   }
 
   public static IsType toType(String pkg, String enclosedName) {
-    return service.get().toType(X_String.notNull(pkg).replace('/', '.'), enclosedName.replace('$', '.'));
+    return service.out1().toType(X_String.notNull(pkg).replace('/', '.'), enclosedName.replace('$', '.'));
   }
 
   /**
@@ -392,7 +378,7 @@ public class X_Source {
     return result.toString();
   }
 
-    public static String removePackage(String pkgName, @NotNull String typeName) {
+    public static String removePackage(String pkgName, String typeName) {
         assert typeName != null : "Do not send null typenames to X_Source.removePackage";
         return pkgName == null ? typeName :
               typeName.replace(pkgName + ".", "");
@@ -460,7 +446,7 @@ public class X_Source {
     return raw.replaceAll("(" +
         "/target/(test-)?classes" +
         "|/out/(production|test)/classes" +
-        "|/build/classes/(java|groovy)/(main|test)" +
+        "|/build/classes/(java/|groovy/)?(main|test)" +
         ")", "");
   }
 

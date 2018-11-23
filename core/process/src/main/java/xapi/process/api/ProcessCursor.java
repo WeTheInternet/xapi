@@ -1,9 +1,10 @@
 package xapi.process.api;
 
+import xapi.fu.lazy.ResettableLazy;
+
 import java.io.Serializable;
 import java.util.Iterator;
 
-import xapi.inject.impl.LazyPojo;
 import static xapi.util.X_Util.equal;
 
 /**
@@ -15,19 +16,11 @@ import static xapi.util.X_Util.equal;
 public class ProcessCursor <K extends Serializable> {
 
   private transient Iterable<K> stages;
-  private final LazyPojo<Iterator<K>> path;
+  private final ResettableLazy<Iterator<K>> path;
 
   public ProcessCursor(Iterable<K> path) {
     this.stages = path;
-    this.path = new LazyPojo<Iterator<K>>() {
-      @Override
-      protected java.util.Iterator<K> initialValue() {
-        if (stages == null) {
-
-        }
-        return stages.iterator();
-      };
-    };
+    this.path = new ResettableLazy<>(stages::iterator);
   }
 
   K[] done;

@@ -1,5 +1,6 @@
 package org.slf4j.impl;
 
+import org.slf4j.helpers.FormattingTuple;
 import org.slf4j.helpers.MarkerIgnoringBase;
 import org.slf4j.helpers.MessageFormatter;
 
@@ -43,7 +44,7 @@ public class SimpleLogger extends MarkerIgnoringBase {
 
     long millis = System.currentTimeMillis();
     buf.append(millis - startTime);
-    
+
     buf.append(" [");
     buf.append(level);
     buf.append("] ");
@@ -79,8 +80,19 @@ public class SimpleLogger extends MarkerIgnoringBase {
    */
   private void formatAndLog(
     LogLevel level, String format, Object arg1, Object arg2) {
-    String message = MessageFormatter.format(format, arg1, arg2);
-    log(level, message, null);
+    Object message = MessageFormatter.format(format, arg1, arg2);
+    Throwable error = null;
+    if (message instanceof FormattingTuple) {
+      final FormattingTuple tuple = (FormattingTuple) message;
+      String msg = tuple.getMessage();
+      error = tuple.getThrowable();
+      for (Object o : tuple.getArgArray()) {
+        msg = msg.replace("{}", String.valueOf(o));
+      }
+      message = msg;
+
+    }
+    log(level, (String)message, error);
   }
 
   /**
@@ -91,8 +103,16 @@ public class SimpleLogger extends MarkerIgnoringBase {
    * @param argArray
    */
   private void formatAndLog(LogLevel level, String format, Object[] argArray) {
-    String message = MessageFormatter.arrayFormat(format, argArray);
-    log(level, message, null);
+    FormattingTuple tuple = MessageFormatter.arrayFormat(format, argArray);
+    Throwable error = null;
+
+    String msg = tuple.getMessage();
+    error = tuple.getThrowable();
+    for (Object o : tuple.getArgArray()) {
+      msg = msg.replace("{}", String.valueOf(o));
+    }
+
+    log(level, msg, error);
   }
 
   /**

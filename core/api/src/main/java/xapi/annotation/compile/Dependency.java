@@ -109,7 +109,33 @@ public @interface Dependency {
   Specifier[] specifiers() default @Specifier;
 
   enum DependencyType {
-    RELATIVE, ABSOLUTE, MAVEN
+    /**
+     * Relative urls will be resolved against the best-guess "location of the annotated element's project root".
+     *
+     * If your class is in myProj/module/src/main/java/foo/MyClass.java,
+     * then a relative url will be based against myProject/module
+     */
+    RELATIVE,
+    /**
+     * An absolute path. Suitable for insertion by build tools who just want to point to artifacts / directories.
+     */
+    ABSOLUTE,
+    /**
+     * Use a maven coordinate string.  Maven service will still attempt to look for
+     * currently-only-generated-in-gradle settings files, to help bridge migrations to gradle.
+     */
+    MAVEN,
+    /**
+     * Assumes META-INF/xapi on classloader contains information usable to lookup a maven coordinate string,
+     * or, in the future, something more exotic.
+     *
+     * Currently experimental...
+     */
+    GRADLE,
+    /**
+     * Points to a classpath file which contains a xapi-lang manifest of a classpath to use.
+     */
+    CLASSPATH_FILE
   }
 
 }

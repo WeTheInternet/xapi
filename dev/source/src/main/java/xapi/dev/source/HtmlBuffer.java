@@ -1,6 +1,5 @@
 package xapi.dev.source;
 
-
 public class HtmlBuffer {
 
   private final XmlBuffer root;

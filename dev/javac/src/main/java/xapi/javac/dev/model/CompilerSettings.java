@@ -18,6 +18,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import static xapi.reflect.X_Reflect.getFileLoc;
+
 /**
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 4/3/16.
@@ -69,7 +71,7 @@ public class CompilerSettings implements Rethrowable {
                     + File.pathSeparator + sources.replace("src/test/java", "target/generated-test-sources/test");
             }
         }
-            args.add(sources);
+        args.add(sources);
 
         String genDir = getGenerateDirectory();
         args.add("-s");
@@ -238,21 +240,26 @@ public class CompilerSettings implements Rethrowable {
     public String getRoot() {
         if (root == null) {
             try {
-                final Class<?> mainClass = X_Reflect.getRootClass(el->isClientCode(el.getClassName()));
+                X_Log.info(CompilerSettings.class, "Guessing project root");
+                final Class<?> mainClass = X_Reflect.getRootClass(el->
+                    isClientCode(el.getClassName()) &&
+                        getFileLoc(Thread.currentThread().getContextClassLoader().loadClass(el.getClassName()))!=null
+                );
                 if (mainClass != null) {
-                    String loc = X_Reflect.getFileLoc(mainClass);
+                    String loc = getFileLoc(mainClass);
                     if (loc != null) {
                         final File file = new File(loc);
                         if (file.isDirectory()) {
                             // we have a directory to use as our root.  Strip off target/classes (or other likely variants)
                             final String rootLoc = file.getCanonicalPath();
                             root = X_Source.findBase(rootLoc);
-                            X_Log.info(CompilerSettings.class, "Using root location ", root);
+                            X_Log.info(CompilerSettings.class, "Using guessed project root location: ", root);
                             return root;
                         }
                     }
                 }
                 root = new File(".").getCanonicalPath();
+                X_Log.info(CompilerSettings.class, "Guessed project root to be ", root);
             } catch (IOException e) {
                 throw rethrow(e);
             }

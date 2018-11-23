@@ -76,12 +76,14 @@ public class Benchmark {
     public Timing() {
     }
     public void finish() {
+      int val;
       synchronized (Benchmark.this) {
         done ++;
+        val = done;
       }
       stop();
-      if (done == limit) {
-        System.out.println("Done "+done+" of "+limit);
+//      System.out.println("Done "+val+" of "+limit);
+      if (val == limit) {
         onComplete.run();
       }
     }

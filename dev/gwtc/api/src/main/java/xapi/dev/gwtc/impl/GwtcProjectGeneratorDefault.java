@@ -5,9 +5,9 @@ import org.junit.Test;
 import xapi.annotation.common.Property;
 import xapi.annotation.compile.Dependency;
 import xapi.annotation.compile.Dependency.DependencyType;
-import xapi.annotation.compile.DependencyBuilder;
+import xapi.annotation.compile.Dependency_Builder;
 import xapi.annotation.compile.Resource;
-import xapi.annotation.compile.ResourceBuilder;
+import xapi.annotation.compile.Resource_Builder;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.dev.gwtc.api.*;
@@ -206,7 +206,7 @@ public class GwtcProjectGeneratorDefault implements GwtcProjectGenerator {
 
         String loc = X_Reflect.getFileLoc(cls);
 
-        final DependencyBuilder builder = DependencyBuilder
+        final Dependency_Builder builder = Dependency_Builder
             .buildDependency(loc)
             .setDependencyType(DependencyType.ABSOLUTE);
 
@@ -618,8 +618,8 @@ public class GwtcProjectGeneratorDefault implements GwtcProjectGenerator {
         addGwtModules(clazz);
         X_Log.info(getClass(), "added test class for JUnit 4",clazz);
         ensureReportError();
-        inheritGwtXml(clazz, ResourceBuilder.buildResource("org.junit.JUnit4").build());
-        inheritGwtXml(clazz, ResourceBuilder.buildResource("com.google.gwt.core.Core").build());
+        inheritGwtXml(clazz, Resource_Builder.buildResource("org.junit.JUnit4").build());
+        inheritGwtXml(clazz, Resource_Builder.buildResource("com.google.gwt.core.Core").build());
         ClassBuffer cb = classBuffer();
         String simple = cb.addImport(clazz);
         String methodName = "add"+simple+"Tests";

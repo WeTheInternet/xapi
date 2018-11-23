@@ -5,7 +5,6 @@ import xapi.annotation.reflect.Fluent;
 import xapi.dev.source.CharBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
-import xapi.fu.In1;
 import xapi.model.api.ModelDeserializationContext;
 import xapi.model.api.ModelSerializationContext;
 import xapi.model.api.ModelSerializer;

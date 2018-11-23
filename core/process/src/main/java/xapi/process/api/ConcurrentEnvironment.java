@@ -1,14 +1,20 @@
 package xapi.process.api;
 
 import xapi.fu.Do;
+import xapi.fu.In1Out1;
+import xapi.fu.Mutable;
+import xapi.fu.has.HasPreload;
 import xapi.log.X_Log;
 import xapi.process.X_Process;
+import xapi.time.X_Time;
 import xapi.util.X_Debug;
 
 import javax.inject.Provider;
 import java.util.Iterator;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeoutException;
 
+import static xapi.process.X_Process.newThread;
 import static xapi.process.X_Process.now;
 
 public abstract class ConcurrentEnvironment {
@@ -25,6 +31,7 @@ public abstract class ConcurrentEnvironment {
   private final double start = X_Process.now();
   private double touched = start;
   protected boolean stop;
+  protected Mutable<Integer> flushing = new Mutable<>(0);
   // Enviros will stay alive when empty, by default, for 5s.
   private double TTL = Double.parseDouble(System.getProperty("xapi.process.ttl", "5000"));
 
@@ -46,18 +53,24 @@ public abstract class ConcurrentEnvironment {
   }
 
   public boolean isEmpty() {
-    return (!(hasFinalies()||!hasDefers()));
+    return (!(
+        hasFinalies()||hasDefers()||flushing.out1() > 0
+    ));
   }
 
   public boolean flush(int timeout) {
     if (isEmpty())
       return true;
     double max = now()+timeout;
+    // while we are running, we should hold a sentinel "do not discard me" value.
     try {
+    flushing.process(In1Out1.INCREMENT_INT);
     do {
+      boolean didWork = false;
       if (hasFinalies()) {
         X_Log.debug(ConcurrentEnvironment.class, "run finallies");
         runFinalies(max);
+        didWork = true;
       }
       X_Log.debug(ConcurrentEnvironment.class, "check timeout");
       checkTimeouts(max);
@@ -69,8 +82,20 @@ public abstract class ConcurrentEnvironment {
           next = iter.next();
           iter.remove();
         }
+        didWork = true;
         X_Log.trace(ConcurrentEnvironment.class, "iterating job", next);
-        next.done();
+        flushing.process(In1Out1.INCREMENT_INT);
+        if (next instanceof HasPreload) {
+          ((HasPreload) next).preload();
+        }
+        final Thread t = newThread(() -> {
+          next.done();
+          flushing.process(In1Out1.DECREMENT_INT);
+        });
+        t.setName("X_Process Blocker for " + next);
+        t.setDaemon(true);
+        t.start();
+
         X_Log.debug(ConcurrentEnvironment.class, "check finalies again");
         if (hasFinalies()) {
           X_Log.trace(ConcurrentEnvironment.class, "has finalies");
@@ -79,13 +104,17 @@ public abstract class ConcurrentEnvironment {
         X_Log.debug(ConcurrentEnvironment.class, "check timeout");
         checkTimeouts(max);
       }
-    }while(! isEmpty());
+      if (!didWork) {
+        return true;
+      }
+    }while(max > now() && ! isEmpty());
     }catch (TimeoutException e) {
       return false;
     }finally {
       if (X_Debug.isBenchmark()) {
-        X_Log.debug("Spent "+(now()-(max-timeout))+" millis flushing environment");
+        X_Log.debug(ConcurrentEnvironment.class, "Spent ", X_Time.print(now()-(max-timeout)), " flushing environment");
       }
+      flushing.process(In1Out1.DECREMENT_INT);
     }
     return false;
   }
@@ -141,15 +170,25 @@ public abstract class ConcurrentEnvironment {
     stop = true;
   }
 
+  public void maybeShutdown() {
+    if (isEmpty() && !getThreads().iterator().hasNext()) {
+      System.out.println("Doing shutdown of " + this);
+      shutdown();
+    }
+  }
+
   public boolean isStopped() {
     if (stop) {
       return true;
+    }
+    if (flushing.out1() > 0) {
+      return false;
     }
     for (Thread thread : getThreads()) {
       if (thread == Thread.currentThread()) {
         continue;
       }
-      if (thread.isAlive()) {
+      if (thread.isAlive() && !thread.isDaemon()) {
         touched = X_Process.now();
         return false;
       }

@@ -20,7 +20,7 @@ public interface VarBuffer <Self extends CharBuffer & VarBuffer<Self>> extends R
         final StringBuilder b = new StringBuilder(Character.toString(NEW_LINE));
         PrintBuffer javaDoc = getJavaDoc();
         if (javaDoc != null && javaDoc.isNotEmpty()) {
-            b.append(javaDoc.toString());
+            b.append(javaDoc.toSource());
         }
 
         String origIndent = getOrigIndent();

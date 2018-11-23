@@ -1,14 +1,11 @@
 package xapi.dev.gwt;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.lang.management.ManagementFactory;
 
 import xapi.dev.gwt.gui.CodeServerGui;
 import xapi.dev.gwt.i18n.CodeServerDebugMessages.Debug;
-import xapi.inject.impl.SingletonProvider;
+import xapi.fu.Lazy;
+
+import java.io.*;
+import java.lang.management.ManagementFactory;
 
 public class CodeServerMain {
 
@@ -80,13 +77,7 @@ public class CodeServerMain {
     return guiPid;
   }
 
-  private static final SingletonProvider<File> fileProvider =
-    new SingletonProvider<File>() {
-      @Override
-      protected File initialValue() {
-        return getSharedFile();
-      }
-    };
+  private static final Lazy<File> fileProvider = Lazy.deferred1(CodeServerMain::getSharedFile);
 
   private static Long getCurrentPid(){
     try{
@@ -100,7 +91,7 @@ public class CodeServerMain {
   }
 
   private static Long getRunningGui() {
-    File shared = fileProvider.get();
+    File shared = fileProvider.out1();
     if (null!=shared){
       BufferedReader read = null;
       try {

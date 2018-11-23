@@ -190,7 +190,7 @@ public abstract class ObjectToAbstract<K,V> implements ObjectTo<K,V> {
   }
 
   @Override
-  public void putAll(Iterable<Entry<K,V>> items) {
+  public void putEntries(Iterable<Entry<K,V>> items) {
     for (Entry<K,V> item : items) {
       assert item != null;
       put(item.getKey(), item.getValue());

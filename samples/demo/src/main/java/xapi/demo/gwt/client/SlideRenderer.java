@@ -172,7 +172,7 @@ public class SlideRenderer {
         }
     }
 
-    protected String renderContent(WtiContentAst content) {
+    private String renderContent(WtiContentAst content) {
         DomBuffer out = new DomBuffer();
         // TODO: apply formatting as well...
         content.jjtAccept(new WtiAstDefaultVisitor(){

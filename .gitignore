@@ -4,6 +4,10 @@
 .DS_Store
 .idea
 classes
+build
+out
+.gradle
+repo
 target
 war
 bin

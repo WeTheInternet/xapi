@@ -249,7 +249,7 @@ public class StringToGwt <V> extends JavaScriptObject implements StringTo<V>{
   }-*/;
 
   @Override
-  public final void putAll(final Iterable<Entry<String,V>> items) {
+  public final void putEntries(final Iterable<Entry<String,V>> items) {
     for (final Entry<String, V> item : items) {
       put(item.getKey(), item.getValue());
     }

@@ -5,7 +5,6 @@ import xapi.except.NotYetImplemented;
 import xapi.fu.Do;
 import xapi.fu.Lazy;
 import xapi.fu.Mutable;
-import xapi.inject.impl.SingletonProvider;
 import xapi.log.X_Log;
 import xapi.platform.JrePlatform;
 import xapi.process.api.AsyncCondition;
@@ -63,17 +62,17 @@ public class ConcurrencyServiceJre extends ConcurrencyServiceAbstract{
 
     @Override
     public void pushDeferred(Do cmd) {
-      defers.out1().add(cmd);
+      defers.out1().add(cmd.once());
     }
 
     @Override
     public void pushEventually(Do cmd) {
-      eventualies.out1().add(cmd);
+      eventualies.out1().add(cmd.once());
     }
 
     @Override
     public void pushFinally(Do cmd) {
-      finalies.out1().add(cmd);
+      finalies.out1().add(cmd.once());
     }
 
     @Override
@@ -90,16 +89,13 @@ public class ConcurrencyServiceJre extends ConcurrencyServiceAbstract{
       if (finalies.isResolved()) {
         return finalies.out1().isEmpty();
       }
-      return true;
+      return flushing.out1() == 0;
     }
   }
 
-  private final SingletonProvider<Integer> maxThreads = new SingletonProvider<Integer>() {
-    @Override
-    protected Integer initialValue() {
-      return Integer.parseInt(System.getProperty(X_Namespace.PROPERTY_MULTITHREADED, "5"));
-    }
-  };
+  private final Lazy<Integer> maxThreads = Lazy.deferred1(()->
+      Integer.parseInt(System.getProperty(X_Namespace.PROPERTY_MULTITHREADED, "5"))
+  );
 
   @Override
   public boolean isInProcess() {
@@ -126,7 +122,7 @@ public class ConcurrencyServiceJre extends ConcurrencyServiceAbstract{
         environments.removeValue(t.getName());
       }
       environments.removeValue(caller);
-      X_Log.trace(ConcurrencyServiceJre.class, "Releasing thread ", Thread.currentThread(), "Active enviros: ", environments.size());
+      X_Log.info(ConcurrencyServiceJre.class, "Releasing thread ", Thread.currentThread(), "Active enviros: ", environments.size());
     });
     thread.setName("X_Process Enviro Thread " + System.identityHashCode(enviro));
     enviro.pushThread(thread);
@@ -158,7 +154,7 @@ public class ConcurrencyServiceJre extends ConcurrencyServiceAbstract{
   }
 
   protected int maxThreads() {
-    return maxThreads.get();
+    return maxThreads.out1();
   }
 
   @Override

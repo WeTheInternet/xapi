@@ -17,6 +17,7 @@ import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.DomBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.PrintBuffer;
+import xapi.fu.Out1;
 import xapi.source.X_Source;
 import xapi.ui.api.StyleService;
 import xapi.ui.html.api.El;
@@ -77,7 +78,7 @@ public class HtmlSnippetGenerator extends AbstractHtmlGenerator <HtmlGeneratorRe
     ">";
 
     final ClassBuffer provider = cls.createInnerClass("private static final class SnippetProvider")
-       .addInterface(cls.addImport(Provider.class) + " <" + sig + ">");
+       .addInterface(cls.addImport(Out1.class) + " <" + sig + ">");
 
     cls
       .createConstructor(Modifier.PUBLIC, cssService+" cssService")
@@ -99,7 +100,7 @@ public class HtmlSnippetGenerator extends AbstractHtmlGenerator <HtmlGeneratorRe
       .outdent()
       .println("};");
 
-    final MethodBuffer converter = provider.createMethod("public "+sig+" get()");
+    final MethodBuffer converter = provider.createMethod("public "+sig+" out1()");
 
     converter
       .println("return new "+sig+"() {")

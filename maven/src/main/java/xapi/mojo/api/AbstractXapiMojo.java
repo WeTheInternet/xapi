@@ -21,7 +21,7 @@ import org.codehaus.plexus.component.repository.ComponentDependency;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.repository.WorkspaceReader;
 import xapi.dev.X_Dev;
-import xapi.inject.impl.SingletonProvider;
+import xapi.fu.Lazy;
 import xapi.log.X_Log;
 import xapi.log.api.LogLevel;
 import xapi.mojo.gwt.MavenServiceMojo;
@@ -177,7 +177,7 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
   }
 
   public File getGenerateDirectory() {
-    return generateDirectoryProvider.get();
+    return generateDirectoryProvider.out1();
   }
 
   public MavenSession getSession() {
@@ -212,9 +212,7 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
 
   protected abstract void doExecute() throws MojoExecutionException, MojoFailureException;
 
-  private Provider<Map<String, MavenProject>> localWorkspace = new SingletonProvider<Map<String, MavenProject>>() {
-    @Override
-    protected Map<String, MavenProject> initialValue() {
+  private Lazy<Map<String, MavenProject>> localWorkspace = Lazy.deferred1(() -> {
       final MavenProject root = X_Maven.getRootArtifact(getProject());
       final Iterable<MavenProject> children = X_Maven.getAllChildren(
           root,
@@ -271,34 +269,10 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
 
       return map;
     }
-  };
+  );
 
 
-  private final Provider<File> generateDirectoryProvider = new SingletonProvider<File>() {
-    @Override
-    protected File initialValue() {
-      if (outputDirectory != null) {
-        File f = new File(outputDirectory);
-        if (f.exists()) {
-          return f;
-        }
-      }
-      if (targetProject == null) {
-        return new File(getSourceRoot(), generateDirectory);
-      }
-      File f = new File(generateDirectory);
-      if (f.isAbsolute()) {
-        X_Log.info(AbstractXapiMojo.class, "Using generated directory:", f, " (ignoring ", targetProjectDirectory.get(), ")");
-        return f;
-      }
-      X_Log.error(AbstractXapiMojo.class, "Using generated directory:", targetProjectDirectory.get(), "+", generateDirectory);
-      return new File(targetProjectDirectory.get(), generateDirectory);
-    };
-  };
-
-  private final Provider<File> targetProjectDirectory = new SingletonProvider<File>() {
-    @Override
-    protected File initialValue() {
+  private final Lazy<File> targetProjectDirectory = Lazy.deferred1(() -> {
       Preconditions
           .checkNotNull(
               targetProject,
@@ -392,30 +366,43 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
                 " (using groupId:artifactId only works if the given project "
                 + "is accessible to WorkspaceReader)");
       }
-  };
+  );
+
+  private final Lazy<File> generateDirectoryProvider = Lazy.deferred1(() -> {
+      if (outputDirectory != null) {
+        File f = new File(outputDirectory);
+        if (f.exists()) {
+          return f;
+        }
+      }
+      if (targetProject == null) {
+        return new File(getSourceRoot(), generateDirectory);
+      }
+      File f = new File(generateDirectory);
+      if (f.isAbsolute()) {
+        X_Log.info(AbstractXapiMojo.class, "Using generated directory:", f, " (ignoring ", targetProjectDirectory.out1(), ")");
+        return f;
+      }
+      X_Log.error(AbstractXapiMojo.class, "Using generated directory:", targetProjectDirectory.out1(), "+", generateDirectory);
+      return new File(targetProjectDirectory.out1(), generateDirectory);
+    }
+  );
 
   public File getTargetProjectDirectory() {
-    return targetProjectDirectory.get();
+    return targetProjectDirectory.out1();
   }
 
-  public final SingletonProvider<JavaCompiler> compiler = new SingletonProvider<JavaCompiler>() {
-    @Override
-    protected JavaCompiler initialValue() {
-      return initCompiler();
-    };
-  };
+  public final Lazy<JavaCompiler> compiler = Lazy.deferred1(this::initCompiler);
 
-  public final SingletonProvider<String[]> compileClasspath = new SingletonProvider<String[]>() {
-    @Override
-    protected String[] initialValue() {
+  public final Lazy<String[]> compileClasspath = Lazy.deferred1(() -> {
       URL[] cp = X_Maven.compileScopeUrls(getProject(), getSession());
       return X_Dev.toStrings(cp);
-    };
-  };
+    }
+  );
 
   public MavenProject findInWorkspace(String groupId, String artifactId) {
 
-    Map<String, MavenProject> projects = localWorkspace.get();
+    Map<String, MavenProject> projects = localWorkspace.out1();
     return projects.get(groupId+":"+artifactId);
   }
 
@@ -465,7 +452,7 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
   public Runnable prepareCompile(File srcFile,final String javaName, final String source,
       boolean overwrite, String... additionalClasspath) {
     File genDir = getGenerateDirectory();
-    String[] cp = compileClasspath.get();
+    String[] cp = compileClasspath.out1();
     if (additionalClasspath.length > 0) {
       String[] clone = Arrays.copyOf(additionalClasspath,
           additionalClasspath.length + cp.length);
@@ -483,20 +470,17 @@ public abstract class AbstractXapiMojo extends AbstractMojo {
 
     X_Log.log(getClass(), logLevel(), "Compile arguments", finalArgs);
 
-    return new Runnable() {
-      @Override
-      public void run() {
-        int result;
-        try {
-          result = compiler.get().run(null, null, null, finalArgs);
-        } catch (Exception e) {
-          X_Log.error("Cannot compile", javaName, ":\n", source, e);
-          throw X_Debug.rethrow(e);
-        }
-        if (result != 0) {
-          throw new RuntimeException("Unable to compile generated source("
-              + result + ")" + "\nClass: " + javaName + "\nSource: " + source);
-        }
+    return () -> {
+      int result;
+      try {
+        result = compiler.out1().run(null, null, null, finalArgs);
+      } catch (Exception e) {
+        X_Log.error("Cannot compile", javaName, ":\n", source, e);
+        throw X_Debug.rethrow(e);
+      }
+      if (result != 0) {
+        throw new RuntimeException("Unable to compile generated source("
+            + result + ")" + "\nClass: " + javaName + "\nSource: " + source);
       }
     };
 

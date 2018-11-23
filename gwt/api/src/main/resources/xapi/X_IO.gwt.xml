@@ -7,4 +7,5 @@
 <inherits name="com.google.gwt.http.HTTP" />
 <source path="io" />
 <source path="gwt/io" />
+
 </module>

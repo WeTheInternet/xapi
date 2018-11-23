@@ -11,10 +11,10 @@ import xapi.collect.api.InitMap;
 import xapi.collect.impl.InitMapDefault;
 import xapi.except.NotImplemented;
 import xapi.except.NotYetImplemented;
+import xapi.fu.Lazy;
 import xapi.fu.itr.EmptyIterator;
 import xapi.fu.itr.MappedIterable;
 import xapi.fu.itr.SizedIterable;
-import xapi.inject.impl.SingletonProvider;
 import xapi.log.X_Log;
 import xapi.log.api.LogLevel;
 import xapi.source.X_Modifier;
@@ -46,19 +46,21 @@ public class BytecodeAdapterService implements
   // called,
   // We use a lazy provider to delay the call until the class pool is actually
   // needed.
-  protected final SingletonProvider<ClassPool> classPool = new SingletonProvider<ClassPool>() {
-    @Override
-    protected ClassPool initialValue() {
+  protected final Lazy<ClassPool> classPool = Lazy.deferred1(() -> {
       for (URL url : getScanUrls()) {
         try {
-          pool.appendClassPath(url.toExternalForm().replace("file:", ""));
+          getPool().appendClassPath(url.toExternalForm().replace("file:", ""));
         } catch (NotFoundException e) {
           e.printStackTrace();
         }
       }
-      return pool;
-    };
-  };
+      return getPool();
+    }
+  );
+
+  private ClassPool getPool() {
+    return pool;
+  }
 
   InitMap<String, IsClass> classes = new InitMapDefault<String, IsClass>(
       InitMapDefault.PASS_THRU, classString -> {
@@ -88,7 +90,7 @@ public class BytecodeAdapterService implements
               X_Log.debug("Converting",cls.get0(),"to",location);
             }
             asClass = new ClassAdapter(new CtClassType(location.openStream(),
-                classPool.get()));
+                classPool.out1()));
           } catch (NullPointerException e) {
             if (cls.get0().equals(cls.get0().toLowerCase())) {
               asClass = Primitives.valueOf("_"+cls.get0());
@@ -151,18 +153,10 @@ public class BytecodeAdapterService implements
   class AnnotationAdapter implements xapi.source.api.IsAnnotation {
 
     private Annotation anno;
-    private SingletonProvider<IsClass> annoClass = new SingletonProvider<IsClass>() {
-      @Override
-      protected IsClass initialValue() {
-        return toClass(anno.getTypeName());
-      };
-    };
-    private SingletonProvider<IsAnnotation> retentionAnno = new SingletonProvider<IsAnnotation>() {
-      @Override
-      protected IsAnnotation initialValue() {
-        return annoClass.get().getAnnotation(Retention.class.getName());
-      };
-    };
+    private Lazy<IsClass> annoClass = Lazy.deferred1(() -> toClass(anno.getTypeName()));
+    private Lazy<IsAnnotation> retentionAnno = Lazy.deferred1(() ->
+        annoClass.out1().getAnnotation(Retention.class.getName())
+    );
 
     public AnnotationAdapter(Annotation type) {
       this.anno = type;
@@ -175,7 +169,7 @@ public class BytecodeAdapterService implements
 
     @Override
     public boolean isCompile() {
-      IsAnnotation retention = retentionAnno.get();
+      IsAnnotation retention = retentionAnno.out1();
       if (retention == null) {
         return true;
       }
@@ -185,7 +179,7 @@ public class BytecodeAdapterService implements
     }
     @Override
     public boolean isRuntime() {
-      IsAnnotation retention = retentionAnno.get();
+      IsAnnotation retention = retentionAnno.out1();
       if (retention == null) {
         return false;
       }
@@ -195,7 +189,7 @@ public class BytecodeAdapterService implements
     }
     @Override
     public boolean isSource() {
-      IsAnnotation retention = retentionAnno.get();
+      IsAnnotation retention = retentionAnno.out1();
       if (retention == null) {
         return false;
       }
@@ -206,52 +200,52 @@ public class BytecodeAdapterService implements
 
     @Override
     public IsType getEnclosingType() {
-      return annoClass.get().getEnclosingType();
+      return annoClass.out1().getEnclosingType();
     }
 
       @Override
       public IsType getRawType() {
-          return annoClass.get().getRawType();
+          return annoClass.out1().getRawType();
       }
 
       @Override
     public String getPackage() {
-      return annoClass.get().getPackage();
+      return annoClass.out1().getPackage();
     }
 
     @Override
     public String getSimpleName() {
-      return annoClass.get().getSimpleName();
+      return annoClass.out1().getSimpleName();
     }
 
     @Override
     public String getEnclosedName() {
-      return annoClass.get().getEnclosedName();
+      return annoClass.out1().getEnclosedName();
     }
 
     @Override
     public String getQualifiedName() {
-      return annoClass.get().getQualifiedName();
+      return annoClass.out1().getQualifiedName();
     }
 
     @Override
     public Iterable<IsMethod> getMethods() {
-      return annoClass.get().getMethods();
+      return annoClass.out1().getMethods();
     }
 
     @Override
     public Iterable<IsMethod> getDeclaredMethods() {
-      return annoClass.get().getDeclaredMethods();
+      return annoClass.out1().getDeclaredMethods();
     }
 
     @Override
     public IsMethod getMethod(String name, IsType... params) {
-      return annoClass.get().getMethod(name, params);
+      return annoClass.out1().getMethod(name, params);
     }
 
     @Override
     public IsMethod getMethod(String name, boolean checkErased, Class<?>... params) {
-      return annoClass.get().getMethod(name, checkErased, params);
+      return annoClass.out1().getMethod(name, checkErased, params);
     }
 
     @Override
@@ -298,17 +292,14 @@ public class BytecodeAdapterService implements
     int modifier;
     ImmutableType type;
 
-    protected final SingletonProvider<Iterable<IsAnnotation>> annotations = new SingletonProvider<Iterable<IsAnnotation>>() {
-      @Override
-      protected Iterable<IsAnnotation> initialValue() {
+    protected final Lazy<Iterable<IsAnnotation>> annotations = Lazy.deferred1(() -> {
         Annotation[] annos = getRawAnnotations();
         if (annos == null) {
           annos = new Annotation[0];
         }
-        return new MemberIterable<Annotation, IsAnnotation>(annotationBuilder,
-            annos);
-      };
-    };
+        return new MemberIterable<>(annotationBuilder, annos);
+      }
+    );
 
     MemberAdapter(int modifier, String pkg, String enclosedName) {
       this.modifier = modifier;
@@ -349,7 +340,7 @@ public class BytecodeAdapterService implements
 
     @Override
     public Iterable<xapi.source.api.IsAnnotation> getAnnotations() {
-      return annotations.get();
+      return annotations.out1();
     }
 
     @Override
@@ -489,25 +480,17 @@ public class BytecodeAdapterService implements
 
     private CtClass cls;
 
-    private SingletonProvider<Iterable<IsMethod>> methods = new SingletonProvider<Iterable<IsMethod>>() {
-      @Override
-      protected Iterable<IsMethod> initialValue() {
-        return new MemberIterable<CtMethod, IsMethod>(methodBuilder,
-            cls.getMethods());
-      };
-    };
+    private Lazy<Iterable<IsMethod>> methods = Lazy.deferred1(()->
+        new MemberIterable<>(methodBuilder,
+            cls.getMethods())
+    );
 
-    private SingletonProvider<Iterable<IsField>> fields = new SingletonProvider<Iterable<IsField>>() {
-      @Override
-      protected Iterable<IsField> initialValue() {
-        return new MemberIterable<CtField, IsField>(fieldBuilder,
-            cls.getFields());
-      };
-    };
+    private Lazy<Iterable<IsField>> fields = Lazy.deferred1(() ->
+        new MemberIterable<CtField, IsField>(fieldBuilder,
+            cls.getFields())
+    );
 
-    private SingletonProvider<Iterable<IsClass>> interfaces = new SingletonProvider<Iterable<IsClass>>() {
-      @Override
-      protected Iterable<IsClass> initialValue() {
+    private Lazy<Iterable<IsClass>> interfaces = Lazy.deferred1(() -> {
         try {
           return new MemberIterable<CtClass, IsClass>(interfaceBuilder,
               cls.getInterfaces());
@@ -515,12 +498,10 @@ public class BytecodeAdapterService implements
           throw new RuntimeException("Unable to load interfaces for "
               + X_String.join(", ", cls.getClassFile2().getInterfaces()), e);
         }
-      };
-    };
+      }
+    );
 
-    private SingletonProvider<Iterable<IsClass>> innerClasses = new SingletonProvider<Iterable<IsClass>>() {
-      @Override
-      protected Iterable<IsClass> initialValue() {
+    private Lazy<Iterable<IsClass>> innerClasses = Lazy.deferred1(()-> {
         try {
           return new MemberIterable<CtClass, IsClass>(interfaceBuilder,
               cls.getNestedClasses());
@@ -528,8 +509,8 @@ public class BytecodeAdapterService implements
           throw new RuntimeException("Unable to load interfaces for "
               + cls.getAttribute(InnerClassesAttribute.tag), e);
         }
-      };
-    };
+      }
+    );
 
     public ClassAdapter(CtClass type) {
       super(type.getModifiers(), type.getPackageName(), type.getEnclosedName());
@@ -548,7 +529,7 @@ public class BytecodeAdapterService implements
 
     @Override
     public Iterable<IsMethod> getMethods() {
-      return methods.get();
+      return methods.out1();
     }
 
     @Override
@@ -587,7 +568,7 @@ public class BytecodeAdapterService implements
 
     @Override
     public Iterable<IsField> getFields() {
-      return fields.get();
+      return fields.out1();
     }
 
     @Override
@@ -630,7 +611,7 @@ public class BytecodeAdapterService implements
 
     @Override
     public Iterable<IsClass> getInterfaces() {
-      return interfaces.get();
+      return interfaces.out1();
     }
 
     @Override
@@ -701,7 +682,7 @@ public class BytecodeAdapterService implements
       } catch (NotFoundException e) {
         throw X_Debug.rethrow(e);
       }
-      ArrayList<IsClass> asClasses = new ArrayList<IsClass>(clses.length);
+      ArrayList<IsClass> asClasses = new ArrayList<>(clses.length);
       for (CtClass cls : clses) {
         asClasses.add(new ClassAdapter(cls));
       }

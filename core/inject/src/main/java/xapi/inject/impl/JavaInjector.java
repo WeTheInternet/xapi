@@ -34,12 +34,13 @@
  */
 package xapi.inject.impl;
 
+import xapi.fu.Lazy;
+import xapi.fu.Out1;
 import xapi.inject.api.Injector;
 import xapi.log.X_Log;
 import xapi.util.X_Runtime;
 import xapi.util.X_Util;
 
-import javax.inject.Provider;
 import java.lang.reflect.Method;
 
 public class JavaInjector {
@@ -54,14 +55,9 @@ public class JavaInjector {
    *
    * @param <X>
    */
-  private static class LazySingletonInjector <X> extends SingletonInitializer<X>{
-    private Class<? extends X> cls;
+  private static class LazySingletonInjector <X> extends Lazy<X> {
     public <C extends Class<? extends X>> LazySingletonInjector(C cls) {
-      this.cls=cls;
-    }
-    @Override
-    protected X initialValue() {
-      return singleton.get().provide(cls);
+      super(()->singleton.out1().provide(cls));
     }
   }
 
@@ -70,29 +66,31 @@ public class JavaInjector {
      *
      * @author James X. Nelson (james@wetheinter.net, @james)
      */
-    private static class XInjectSingleton extends SingletonProvider<Injector>{
-      @Override
-      protected Injector initialValue() {
-        //This method is only ever called once.
-        if (X_Runtime.isGwt()){
-          // gwt-dev mode
-          // allow the generator to create a custom injector.
-          // in gwt-dev, we can't super-source or use magic methods.
-          try {
-            // use reflection here so jres without gwt on classpath don't mind
-            Class<?> cls = Class.forName("com.google.gwt.core.shared.GWT");
-            Method m = cls.getDeclaredMethod("create", Class.class);
-            return (Injector)m.invoke(null, Injector.class);
-          }catch (Exception e) {
-            throw X_Util.rethrow(e);
-          }
-        }
-        // pure jre
-        try {
-          return (Injector)Class.forName("xapi.inject.impl.JreInjector").newInstance();
-        } catch (Exception e) {
-          throw X_Util.rethrow(e);
-        }
+    private static class XInjectSingleton extends Lazy<Injector>{
+
+      public XInjectSingleton() {
+        super(()->{
+            //This method is only ever called once.
+            if (X_Runtime.isGwt()){
+              // gwt-dev mode
+              // allow the generator to create a custom injector.
+              // in gwt-dev, we can't super-source or use magic methods.
+              try {
+                // use reflection here so jres without gwt on classpath don't mind
+                Class<?> cls = Class.forName("com.google.gwt.core.shared.GWT");
+                Method m = cls.getDeclaredMethod("create", Class.class);
+                return (Injector)m.invoke(null, Injector.class);
+              }catch (Exception e) {
+                throw X_Util.rethrow(e);
+              }
+            }
+            // pure jre
+            try {
+              return (Injector)Class.forName("xapi.inject.impl.JreInjector").newInstance();
+            } catch (Exception e) {
+              throw X_Util.rethrow(e);
+            }
+        });
       }
     }
 
@@ -101,10 +99,10 @@ public class JavaInjector {
    */
   private static final XInjectSingleton singleton = new XInjectSingleton();
   public static <T, C extends Class<? extends T>> T instance(C cls) {
-    return singleton.get().create(cls);
+    return singleton.out1().create(cls);
   }
 
-  public static <T, C extends Class<? extends T>> Provider<T> singletonLazy(C cls) {
+  public static <T, C extends Class<? extends T>> Lazy<T> singletonLazy(C cls) {
     return new LazySingletonInjector<>(cls);
   }
 
@@ -116,43 +114,41 @@ public class JavaInjector {
   @SuppressWarnings({ "rawtypes", "unchecked" })
   public static void registerSingletonProvider(ClassLoader loader, String iface, final String name) {
     try {
-      singleton.get().setSingletonFactory(loader.loadClass(iface), new SingletonProvider() {
-        @Override
-        public Object initialValue() {
-          try {
-            return loader.loadClass(name).newInstance();
-          } catch (Exception e) {
-            X_Log.error("Unable to instantiate ",name," using Class.newInstance", e);
-            throw X_Util.rethrow(e);
+      final Class cls = loader.loadClass(iface);
+      singleton.out1().setSingletonFactory(cls, ()-> {
+            try {
+              return loader.loadClass(name).newInstance();
+            } catch (Exception e) {
+              X_Log.error("Unable to instantiate ", name, " using Class.newInstance", e);
+              throw X_Util.rethrow(e);
+            }
           }
-        }
-      });
+        );
     } catch (NoClassDefFoundError e) {
       X_Log.error(e, "Cannot create interface class ",iface, "while registering singleton provider");
     } catch (ClassNotFoundException e) {
       X_Log.error(e, "Cannot create interface class ",iface, "while registering singleton provider");
     }
+
   }
 
   @SuppressWarnings({ "rawtypes", "unchecked" })
   public static void registerInstanceProvider(ClassLoader loader, String iface, final String name) {
     try {
+      final Class key = loader.loadClass(iface);
       final Class cls = loader.loadClass(name);
-      singleton.get().setInstanceFactory(loader.loadClass(iface), new Provider() {
-        @Override
-        public Object get() {
+      singleton.out1().setInstanceFactory(key, ()->{
           try {
             return cls.newInstance();
           } catch (Exception e) {
             X_Log.error("Unable to instantiate ",name," using Class.newInstance", e);
             throw X_Util.rethrow(e);
           }
-        }
       });
     } catch (NoClassDefFoundError e) {
-      X_Log.error(e, "Cannot create instance class ",iface, "while registering instance provider");
+      X_Log.error(JavaInjector.class, e, "Cannot create instance class ", name, "while registering instance provider");
     } catch (ClassNotFoundException e) {
-      X_Log.error("Cannot create instance class ",iface, "while registering instance provider");
+      X_Log.error(JavaInjector.class, "Cannot create instance class ", name, "while registering instance provider");
     }
   }
 

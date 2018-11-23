@@ -22,7 +22,7 @@ import org.codehaus.plexus.util.xml.Xpp3DomBuilder;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.eclipse.aether.resolution.ArtifactResult;
 import xapi.dev.gwt.gui.CodeServerGui;
-import xapi.inject.impl.SingletonProvider;
+import xapi.fu.Out1;
 import xapi.log.X_Log;
 import xapi.mojo.api.AbstractXapiMojo;
 import xapi.mojo.api.SourceDependency;
@@ -148,9 +148,7 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
   }
 
 
-  private final SingletonProvider<String> _gwtVersion = new SingletonProvider<String>() {
-    @Override
-    protected String initialValue() {
+  private final Out1<String> _gwtVersion = () -> {
       if (X_String.isNotEmpty(gwtVersion)) {
         return gwtVersion;
       }
@@ -162,8 +160,8 @@ public class CodeServerMojo extends AbstractXapiMojo implements ContextEnabled {
 //      if (version != null)
 //        return version;
       return superGuess("com.google.gwt", X_Namespace.GWT_VERSION);
-    };
   };
+
 
   /**
    * Whether or not to compile immediately.

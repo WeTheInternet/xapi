@@ -14,6 +14,7 @@ public class ToHtmlUiRenderer<T> implements UiRenderer<T>, UiRendererSelector {
   @Override
   public UiRenderer<T> renderInto(UserInterface<?> ui, UiRenderingContext ctx, String path, T data) {
     assert (ui instanceof IsSafeHtmlBuilder);
+    assert data != null : "Don't be rendering null data, yo!";
     SafeHtmlBuilder out = ((IsSafeHtmlBuilder)ui).getSafeHtmlBuilder();
     if (ctx.isTemplateSet()) {
       String html = ctx.applyTemplate(path, data);

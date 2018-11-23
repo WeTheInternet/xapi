@@ -33,20 +33,21 @@
  *
  */
 package xapi.dev.generators;
+
 import xapi.collect.api.Fifo;
 import xapi.dev.util.DefermentWriter;
 import xapi.dev.util.DefermentWriter.DefermentStrategy;
 import xapi.dev.util.GwtInjectionMap;
 import xapi.dev.util.InjectionCallbackArtifact;
 import xapi.dev.util.InjectionUtils;
+import xapi.fu.In1;
+import xapi.fu.Lazy;
+import xapi.fu.Out1;
+import xapi.fu.lazy.ResettableLazy;
 import xapi.gwt.collect.JsFifo;
 import xapi.inject.AsyncProxy;
-import xapi.inject.impl.SingletonInitializer;
-import xapi.inject.impl.SingletonProvider;
 import xapi.source.read.SourceUtil;
 import xapi.util.api.ApplyMethod;
-import xapi.util.api.ReceivesValue;
-import xapi.util.impl.ReceiverAdapter;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -55,14 +56,8 @@ import java.util.List;
 import static java.io.File.separator;
 
 import com.google.gwt.core.client.RunAsyncCallback;
-import com.google.gwt.core.ext.BadPropertyValueException;
-import com.google.gwt.core.ext.ConfigurationProperty;
-import com.google.gwt.core.ext.GeneratorContext;
-import com.google.gwt.core.ext.IncrementalGenerator;
-import com.google.gwt.core.ext.PropertyOracle;
-import com.google.gwt.core.ext.TreeLogger;
+import com.google.gwt.core.ext.*;
 import com.google.gwt.core.ext.TreeLogger.Type;
-import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.linker.EmittedArtifact.Visibility;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.shared.GWT;
@@ -164,7 +159,7 @@ public abstract class AbstractInjectionGenerator extends IncrementalGenerator{
         res.write(serviceImplementation.getBytes());
         context.commitResource(logger, res).setVisibility(Visibility.Public);
       } catch (UnableToCompleteException e) {
-        logger.log(Type.ERROR, "Couldn't write java services to META-INF/singeltons",e);
+        logger.log(Type.ERROR, "Couldn't write java services to META-INF/singletons",e);
       } catch (IOException e) {
         logger.log(Type.ERROR, "Couldn't write java services to META-INF/singletons; please ensure the war folder has full write access and the disk is not full.",e);
         e.printStackTrace();
@@ -312,10 +307,8 @@ public abstract class AbstractInjectionGenerator extends IncrementalGenerator{
       composer.addImport(JsFifo.class.getName());
       composer.addImport(AsyncProxy.class.getName());
       composer.addImport(ApplyMethod.class.getName());
-      composer.addImport(ReceivesValue.class.getName());
-      composer.addImport(ReceiverAdapter.class.getCanonicalName());
+      composer.addImport(In1.class.getName());
       composer.addImport(artifact.getCanonicalName());
-
 
       String simpleName = artifact.getSimpleName();
       SourceWriter sw = composer.createSourceWriter(ctx, printWriter);
@@ -330,24 +323,24 @@ public abstract class AbstractInjectionGenerator extends IncrementalGenerator{
       sw.println();
 
 
-      sw.println("static final class Deproxy implements ReceivesValue<"+simpleName+">{");
+      sw.println("static final class Deproxy implements In1<"+simpleName+">{");
       sw.indent();
-      sw.println("public final void set(final "+simpleName+" value){");
-      sw.indentln("getter = new ReceiverAdapter<"+simpleName+">(value);");
+      sw.println("public final void in(final "+simpleName+" value){");
+      sw.indentln("getter = In1.immutable(value);");
       sw.println("}");
       sw.outdent();
       sw.println("}");
       sw.println();
 
 
-      sw.println("private static final class Proxy implements ReceivesValue<ReceivesValue<"+simpleName+">>{");
+      sw.println("private static final class Proxy implements In1<In1<"+simpleName+">>{");
       sw.indent();
-      sw.println("public final void set(final ReceivesValue<"+simpleName+"> receiver){");
+      sw.println("public final void in(final In1<"+simpleName+"> receiver){");
       sw.indent();
 
 
       sw.print("GWT.runAsync(");
-      sw.println(artifact.getCanonicalName()+".class,new Request(receiver));");
+      sw.println(artifact.getCanonicalName()+".class, new Request(receiver));");
 
       sw.outdent();
       sw.println("}");
@@ -364,17 +357,17 @@ public abstract class AbstractInjectionGenerator extends IncrementalGenerator{
       DefermentWriter defer = new DefermentWriter(sw);
       defer.setStrategy(DefermentStrategy.NONE);
 
-      sw.println("private static final Fifo<ReceivesValue<" +simpleName+">> pending =");
+      sw.println("private static final Fifo<In1<" +simpleName+">> pending =");
       sw.indentln("JsFifo.newFifo();");
       sw.println();
 
-      sw.println("protected Request(ReceivesValue<" +simpleName+"> receiver){");
+      sw.println("protected Request(In1<" +simpleName+"> receiver){");
       sw.indentln("accept(receiver);");
       sw.println("}");
       sw.println();
 
       sw.println("@Override");
-      sw.println("protected final Fifo<ReceivesValue<" +simpleName+">> pending(){");
+      sw.println("protected final Fifo<In1<" +simpleName+">> pending(){");
       sw.indentln("return pending;");
       sw.println("}");
       sw.println();
@@ -390,7 +383,7 @@ public abstract class AbstractInjectionGenerator extends IncrementalGenerator{
 
       sw.println("final "+simpleName+" value = ");
       sw.print(packageName+"."+InjectionUtils.generatedProviderName(simpleName));
-      sw.println(".theProvider.get();");
+      sw.println(".theProvider.out1();");
       sw.println();
 
       sw.print("final ApplyMethod callbacks = GWT.create(");
@@ -408,14 +401,15 @@ public abstract class AbstractInjectionGenerator extends IncrementalGenerator{
       sw.println();
 
 
-      sw.println("private static ReceivesValue<ReceivesValue<"+simpleName+">> getter = new Proxy();");
+      sw.println("private static In1<In1<"+simpleName+">> getter = new Proxy();");
       sw.println();
 
-      sw.println("static void request(final ReceivesValue<"+simpleName+"> request){");
-      sw.indentln("getter.set(request);");
+      sw.println("static void request(final In1<"+simpleName+"> request){");
+      sw.indentln("getter.in(request);");
       sw.println("}");
       sw.println();
 
+      // this doesn't appear to be called anywhere... try deleting it (later)
       sw.println("static void go(){");
       sw.indentln("request(null);");
       sw.println("}");
@@ -452,27 +446,26 @@ public abstract class AbstractInjectionGenerator extends IncrementalGenerator{
 
         ClassSourceFileComposerFactory composer =
             new ClassSourceFileComposerFactory(packageName, generatedName);
-        composer.setSuperclass(SingletonInitializer.class.getName() +
+        composer.setSuperclass(Lazy.class.getName() +
         		                  "<" +simpleName0+">");
         composer.addImport(cleanedCanonical);
         composer.addImport(GWT.class.getName());
-        composer.addImport(SingletonProvider.class.getName());
+        composer.addImport(Out1.class.getName());
 
           SourceWriter sw = composer.createSourceWriter(ctx, printWriter);
 
-            sw.println("@Override");
-            sw.println("public "+simpleName+" initialValue(){");
-            sw.indent();
+          sw.println("public "+ generatedName +"(){");
+          sw.indent();
 
-            sw.print("return GWT.<" +cleanedCanonical+">create(");
+            sw.print("super(() -> GWT.<" +cleanedCanonical+">create(");
             sw.print(SourceUtil.toSourceName(qualifiedSourceName)+".class");
-            sw.println(");");
+            sw.println("));");
 
-            sw.outdent();
-            sw.println("}");
+          sw.outdent();
+          sw.println("}");
           sw.println();
           //now, print a static final provider instance
-          sw.print("public static final SingletonProvider<");
+          sw.print("public static final Out1<");
           sw.print(simpleName0+"> ");
           sw.print("theProvider = ");
           sw.println("new "+generatedName+"();");

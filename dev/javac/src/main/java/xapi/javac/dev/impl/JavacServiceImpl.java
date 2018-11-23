@@ -20,12 +20,7 @@ import com.sun.tools.javac.main.JavaCompiler;
 import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.model.JavacTypes;
 import com.sun.tools.javac.tree.JCTree;
-import com.sun.tools.javac.tree.JCTree.JCClassDecl;
-import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
-import com.sun.tools.javac.tree.JCTree.JCFieldAccess;
-import com.sun.tools.javac.tree.JCTree.JCIdent;
-import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
-import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
+import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
@@ -372,8 +367,10 @@ public class JavacServiceImpl implements JavacService {
   @Override
   public IsNamedType getName(CompilationUnitTree cup, MethodInvocationTree node) {
     if (node instanceof JCMethodInvocation) {
-      final String simpleName = TreeInfo.name(((JCMethodInvocation) node).meth).toString();
-      String fullName = TreeInfo.fullName(((JCMethodInvocation) node).meth).toString();
+      final JCExpression meth = ((JCMethodInvocation) node).meth;
+      final String simpleName = TreeInfo.name(meth).toString();
+      final Name full = TreeInfo.fullName(meth);
+      String fullName = full == null ? simpleName : full.toString();
       String className = fullName.indexOf('.') == -1 ? fullName : fullName.replaceFirst("[.](?:[^.]+)$", "");
       if (fullName.equals(className)) {
         // This is a local method reference.  Find the enclosing class type

@@ -34,22 +34,18 @@
  */
 package xapi.dev.generators;
 
-import java.io.PrintWriter;
-
 import xapi.annotation.inject.SingletonDefault;
 import xapi.annotation.inject.SingletonOverride;
 import xapi.dev.util.CurrentGwtPlatform;
 import xapi.dev.util.InjectionUtils;
 import xapi.dev.util.PlatformSet;
+import xapi.fu.In1;
 import xapi.source.read.SourceUtil;
-import xapi.util.api.ReceivesValue;
 
-import com.google.gwt.core.ext.GeneratorContext;
-import com.google.gwt.core.ext.RebindMode;
-import com.google.gwt.core.ext.RebindResult;
-import com.google.gwt.core.ext.TreeLogger;
+import java.io.PrintWriter;
+
+import com.google.gwt.core.ext.*;
 import com.google.gwt.core.ext.TreeLogger.Type;
-import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.NotFoundException;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
@@ -105,10 +101,10 @@ public class AsyncInjectionGenerator extends AbstractInjectionGenerator{
     ClassSourceFileComposerFactory composer =
         new ClassSourceFileComposerFactory(packageName, generatedName);
     composer.setPrivacy("public final");
-    composer.addImplementedInterface("ReceivesValue<ReceivesValue<" +simpleName+">>"
+    composer.addImplementedInterface("In1<In1<" +simpleName+">>"
         );
     composer.addImport(type.getQualifiedSourceName());
-    composer.addImport(ReceivesValue.class.getName());
+    composer.addImport(In1.class.getName());
 
     SourceWriter sw = composer.createSourceWriter(context, printWriter);
     sw.println();
@@ -116,9 +112,10 @@ public class AsyncInjectionGenerator extends AbstractInjectionGenerator{
     sw.indent();
 
     sw.println("@Override");
-    sw.println("public final void set(ReceivesValue<" +simpleName+"> x) {");
+    sw.println("public final void in(In1<" +simpleName+"> x) {");
     sw.indent();
 
+    // sigh...  clearly not even working :-/
 //      sw.println(packageName+"."+generatedCallbackName(simpleName)+".deferred.push(x);");
 //      sw.println(packageName+"."+generatedCallbackName(simpleName)+".go();");
 

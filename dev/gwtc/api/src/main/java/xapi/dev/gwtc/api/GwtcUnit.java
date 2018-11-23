@@ -1,6 +1,6 @@
 package xapi.dev.gwtc.api;
 
-import xapi.annotation.ui.UiTemplateBuilder;
+import xapi.annotation.ui.UiTemplate_Builder;
 import xapi.gwtc.api.Gwtc;
 import xapi.gwtc.api.Gwtc.AncestorMode;
 import xapi.gwtc.api.GwtcXmlBuilder;
@@ -41,7 +41,7 @@ class GwtcUnit {
 
   protected final Gwtc gwtc;
   protected GwtcXmlBuilder xml;
-  protected UiTemplateBuilder html;
+  protected UiTemplate_Builder html;
   protected final List<Package> packages = new ArrayList<Package>();
   protected final List<Class<?>> classes = new ArrayList<Class<?>>();
   public final Object source;

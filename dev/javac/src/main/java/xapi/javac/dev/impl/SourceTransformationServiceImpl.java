@@ -22,6 +22,7 @@ import xapi.javac.dev.model.SourceTransformation.SourceTransformType;
 
 import javax.tools.JavaFileObject;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Optional;
 
 /**
@@ -82,7 +83,7 @@ public class SourceTransformationServiceImpl implements SourceTransformationServ
           compiler.overwriteCompilationUnit(doc, newSource);
         }
       });
-    };
+    }
     return jobs;
   }
 
@@ -101,7 +102,7 @@ public class SourceTransformationServiceImpl implements SourceTransformationServ
     final JavaFileObject sourceFile = doc.getSourceFile();
     String source = doc.getSource();
     if (jobs.length > 0) {
-      Arrays.sort(jobs, (a, b)->a.getRange().compareTo(b.getRange()));
+      Arrays.sort(jobs, Comparator.comparing(SourceTransformation::getRange));
       // Grab the expected source so we don't accidentally overwrite an index that has moved.
       for (SourceTransformation job : jobs) {
         job.setExpected(job.getRange().slice(source));
@@ -136,7 +137,7 @@ public class SourceTransformationServiceImpl implements SourceTransformationServ
     switch (job.getTransformType()) {
       case REMOVE:
         if (range.getStart() > 0) {
-          b.append(source.substring(0, range.getStart()));
+          b.append(source, 0, range.getStart());
         }
         if (range.getEnd() < source.length()) {
           b.append(source.substring(range.getEnd()));
@@ -144,7 +145,7 @@ public class SourceTransformationServiceImpl implements SourceTransformationServ
         break;
       case REPLACE:
         if (range.getStart() > 0) {
-          b.append(source.substring(0, range.getStart()));
+          b.append(source, 0, range.getStart());
         }
         b.append(job.getText());
         if (range.getEnd() < source.length()) {
@@ -166,7 +167,6 @@ public class SourceTransformationServiceImpl implements SourceTransformationServ
         String oldPkg = job.getExtraText();
         final CompilationUnit ast = doc.getAst();
         ast.getImports()
-            .stream()
             .forEach(importDecl -> {
               String name = importDecl.getName().getName();
               String repackaged = name.replace(oldPkg, newPkg);
@@ -192,7 +192,7 @@ public class SourceTransformationServiceImpl implements SourceTransformationServ
         return Optional.of(doc.getAst().toSource(service.getTransformer()));
       case WRAP:
         if (range.getStart() > 0) {
-          b.append(source.substring(0, range.getStart()));
+          b.append(source, 0, range.getStart());
         }
         if (job.getText() != null) {
           b.append(job.getText());

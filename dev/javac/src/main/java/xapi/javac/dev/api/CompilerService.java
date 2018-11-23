@@ -112,7 +112,7 @@ public interface CompilerService {
 
     if (test) {
       settings.setOutputDirectory(loc);
-      String testOutput = getTestSrc();
+      String testOutput = getTestAnnotationOutput();
       loc = X_Source.rebaseTest(loc, testOutput);
       settings.setGenerateDirectory(loc);
       loc = loc.replace(testOutput, getTestSrc());

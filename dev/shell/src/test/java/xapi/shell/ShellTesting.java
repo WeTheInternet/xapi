@@ -29,20 +29,20 @@ public class ShellTesting {
     System.setProperty(X_Namespace.PROPERTY_MULTITHREADED, "10");
     JavaInjector.instance(ShellCommand.class);
   }
-  
+
   public static void main(String[] args) {
     System.out.print(success);
     System.exit(exitStatus);// Test custom exit status
   }
-  
-  @Test(timeout=15000)
+
+  @Test(timeout=150_000)
   public void testInvokeJavaMain() {
     Moment start = X_Time.now();
     String[] classpath = System.getProperty("java.class.path").split(File.pathSeparator);
     StringReader reader = new StringReader();
     ShellSession result = X_Shell.launchJava(ShellTesting.class, classpath, new String[]{"-Xmx128M"}, new String[0]);
     result.stdOut(reader);
-    X_Log.debug(getClass(), "Bootstrap shell", X_Time.difference(start));
+    X_Log.debug(ShellTesting.class, "Bootstrap shell", X_Time.difference(start));
     try {
       reader.waitToEnd(14000, 0);
     } catch (InterruptedException e) {
@@ -50,12 +50,12 @@ public class ShellTesting {
     }
     Assert.assertEquals(success, reader.toString());
     Assert.assertEquals(exitStatus, result.join());
-    X_Log.trace(getClass(), "Process Runtime", X_Time.difference(start));
+    X_Log.trace(ShellTesting.class, "Process Runtime", X_Time.difference(start));
   }
-  
-  @Test(timeout=10000)
+
+  @Test(timeout=100_000)
   public void testShell() throws Throwable {
-    
+
     final CountDownLatch job = new CountDownLatch(1);
     final Throwable[] error = new Throwable[1];
     X_Time.runLater(new Runnable() {
@@ -78,27 +78,26 @@ public class ShellTesting {
   }
   private void runTest() throws Exception {
     final StringReader d = new StringReader();
-    final LineReader e = new StringReader();
+    final StringReader e = new StringReader();
     final boolean[] success = new boolean[1];
     final ShellSession shell = X_Shell.newService().newCommand(
         "sh"
         ,"-ac",X_File.unzippedResourcePath("xapi/sh.sh", null)
         )
-        .run(new SuccessHandler<ShellSession>() {
-          @Override
-          public void onSuccess(ShellSession t) {
+        .run(t -> {
+          synchronized (success){
             success[0] = true;
           }
-        }, null);
-    
-    shell.stdOut(d);
-    shell.stdErr(e);
+        }, null, d, e);
+
     shell.stdIn("echo \"test success\"");
     shell.stdIn("exit");
     d.waitToEnd();
     Assert.assertEquals("test success", d.toString().trim());
-    Assert.assertTrue(success[0]);
-    
+    synchronized (success) {
+      Assert.assertTrue(success[0]);
+    }
+
 //    X_Log.info(shell.stdIn("javac ~/XApi.java -d /tmp && cd /tmp; java XApi"));
   }
 

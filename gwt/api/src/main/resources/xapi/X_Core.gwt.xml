@@ -93,4 +93,8 @@ You may set it back to false if you wish to use monolithic factory generators in
 
  <define-linker name="StrongName" class="xapi.dev.gwt.linker.StrongNameLinker"/>
  <add-linker name="StrongName"/>
+
+  <inherits name="com.google.gwt.user.RemoteServiceWarnings" />
+  <set-property name="gwt.suppressNonStaticFinalFieldWarnings" value="true" />
+
 </module>

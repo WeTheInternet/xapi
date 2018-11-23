@@ -123,7 +123,7 @@ public class ModelModule implements Serializable {
   public static String serialize(final ModelModule module) {
     final CharBuffer buffer = new CharBuffer();
     serialize(buffer, module, X_Inject.instance(PrimitiveSerializer.class));
-    return buffer.toString();
+    return buffer.toSource();
   }
 
   public static CharBuffer serialize(final CharBuffer into, final ModelModule module, final PrimitiveSerializer primitives) {
@@ -157,7 +157,7 @@ public class ModelModule implements Serializable {
       ModelManifest.serialize(policy, manifest, primitives);
     }
 
-    serialized = policy.toString();
+    serialized = policy.toSource();
     return serialized;
   }
 

@@ -15,10 +15,9 @@ import xapi.elemental.api.BrowserService;
 import xapi.elemental.api.ElementalIterable;
 import xapi.fu.Do;
 import xapi.fu.In1;
+import xapi.fu.Out1;
 import xapi.inject.X_Inject;
 import xapi.util.X_String;
-
-import javax.inject.Provider;
 
 public class X_Gwt3 {
 
@@ -61,7 +60,7 @@ public class X_Gwt3 {
   }-*/;
 
   public static BrowserService getElementalService() {
-    return SERVICE.get();
+    return SERVICE.out1();
   }
 
   public static String getHost() {
@@ -128,13 +127,13 @@ public class X_Gwt3 {
 
   static final HTMLDivElement DIV = (HTMLDivElement) DomGlobal.document.createElement("div");
 
-  private static final Provider<BrowserService> SERVICE = X_Inject
+  private static final Out1<BrowserService> SERVICE = X_Inject
     .singletonLazy(BrowserService.class);
 
   private X_Gwt3() {}
 
   public static Do removeFromParentTask(Node e) {
-    return In1.in1(X_Gwt3::removeFromParent).provide(e);
+    return Do.of(X_Gwt3::removeFromParent, e);
   }
   public static void removeFromParent(Node e) {
     if (e.parentNode != null) {

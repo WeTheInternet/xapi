@@ -586,6 +586,10 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
         putCallback(IntegerLiteralExpr.class, callback);
         return this;
     }
+    public ComposableXapiVisitor<Ctx> withIntegerLiteralTerminal(In2<IntegerLiteralExpr, Ctx> callback) {
+        putCallback(IntegerLiteralExpr.class, callback.supply1(false));
+        return this;
+    }
 
     @Override
     public void visit(IntegerLiteralMinValueExpr n, Ctx arg) {
@@ -1079,6 +1083,16 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
 
     public ComposableXapiVisitor<Ctx> withUiAttrExpr(In2Out1<UiAttrExpr, Ctx, Boolean> callback) {
         putCallback(UiAttrExpr.class, callback);
+        return this;
+    }
+
+    public ComposableXapiVisitor<Ctx> withUiAttrTerminal(In2<UiAttrExpr, Ctx> callback) {
+        putCallback(UiAttrExpr.class, callback.supply1(false));
+        return this;
+    }
+
+    public ComposableXapiVisitor<Ctx> withUiAttrRecurse(In2<UiAttrExpr, Ctx> callback) {
+        putCallback(UiAttrExpr.class, callback.supply1(true));
         return this;
     }
 

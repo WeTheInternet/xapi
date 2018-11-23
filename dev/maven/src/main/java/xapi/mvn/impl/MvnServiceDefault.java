@@ -1,5 +1,9 @@
 package xapi.mvn.impl;
 
+import com.github.javaparser.JavaParser;
+import com.github.javaparser.ParseException;
+import com.github.javaparser.ast.expr.UiContainerExpr;
+import com.github.javaparser.ast.visitor.ComposableXapiVisitor;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Parent;
@@ -37,11 +41,9 @@ import xapi.dev.resource.impl.StringDataResource;
 import xapi.dev.scanner.X_Scanner;
 import xapi.dev.scanner.impl.ClasspathResourceMap;
 import xapi.file.X_File;
+import xapi.fu.*;
 import xapi.fu.Filter.Filter1;
-import xapi.fu.In1Out1;
-import xapi.fu.Lazy;
 import xapi.fu.itr.MappedIterable;
-import xapi.fu.Out1;
 import xapi.fu.Out1.Out1Unsafe;
 import xapi.fu.itr.ArrayIterable;
 import xapi.fu.itr.Chain;
@@ -49,7 +51,6 @@ import xapi.fu.itr.ChainBuilder;
 import xapi.fu.itr.SingletonIterator;
 import xapi.fu.itr.SizedIterable;
 import xapi.fu.java.X_Jdk;
-import xapi.inject.impl.SingletonInitializer;
 import xapi.io.X_IO;
 import xapi.log.X_Log;
 import xapi.log.api.LogLevel;
@@ -81,8 +82,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 
+import static xapi.fu.itr.Chain.startChain;
 import static xapi.fu.itr.SingletonIterator.singleItem;
 import static xapi.util.X_Properties.getProperty;
+import static xapi.util.X_String.isEmpty;
 
 @SingletonDefault(implFor = MvnService.class)
 public class MvnServiceDefault implements MvnService {
@@ -111,8 +114,8 @@ public class MvnServiceDefault implements MvnService {
 
   private ArtifactResult resolveArtifact(Artifact artifact) {
       Moment before = X_Time.now();
-      RepositorySystem repoSystem = this.repoSystem.get();
-      RepositorySystemSession session = this.session.get();
+      RepositorySystem repoSystem = this.repoSystem.out1();
+      RepositorySystemSession session = this.session.out1();
       try {
         final LocalArtifactRequest localRequest = new LocalArtifactRequest(artifact, remoteRepos(), null);
         final LocalArtifactResult result = session.getLocalRepositoryManager().find(session, localRequest);
@@ -147,7 +150,7 @@ public class MvnServiceDefault implements MvnService {
 
   protected In1Out1<String, Boolean> loadNotAllowedToResolve() {
     final String regex = X_Properties.getProperty(X_Namespace.PROPERTY_MAVEN_UNRESOLVABLE, ".*uber.*");
-    if (X_String.isEmpty(regex)) {
+    if (isEmpty(regex)) {
       return In1Out1.RETURN_FALSE;
     }
     final Pattern pattern = Pattern.compile(regex);
@@ -166,12 +169,15 @@ public class MvnServiceDefault implements MvnService {
     StringTo<Model> models = X_Collect.newStringMap(Model.class);
     workspaces.out1().forAllUnsafe(p->{
       final Model root = loadPomFile(p.resolve("pom.xml").toString());
-      recursiveLoadLocalProject(models, root, p);
+      if (root != null) {
+          recursiveLoadLocalProject(models, root, p);
+      }
     });
     return models;
   }
 
   protected void recursiveLoadLocalProject(StringTo<Model> models, Model root, Path path) {
+      findXapiMeta(root, path);
     String groupId = findGroupId(root);
     if (groupId != null) {
       models.put(groupId + ":" + root.getArtifactId(), root);
@@ -196,7 +202,95 @@ public class MvnServiceDefault implements MvnService {
     }
   }
 
-  private String findGroupId(Model root) {
+    private void findXapiMeta(Model root, Path path) {
+        final Path mavenPath = path.resolve("target/xapi-paths/META-INF/xapi/settings.xapi");
+        if (Files.exists(mavenPath)) {
+            addXapiMeta(root, mavenPath);
+        } else {
+            // As a backup for maven...  gradle may be used to produce the settings files,
+            // despite the fact that poms are still left in the project (current state of xapi).
+            // Be forgiving in such cases, and grab those gradle paths.
+            final Path gradlePath = path.resolve("build/xapi-paths/META-INF/xapi/settings.xapi");
+            if (Files.exists(gradlePath)) {
+                addXapiMeta(root, gradlePath);
+
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void addXapiMeta(Model root, Path path) {
+        try {
+            String settings = MappedIterable.mapped(Files.readAllLines(path)).join("\n");
+            final UiContainerExpr el = JavaParser.parseUiContainer(path.toString(), settings);
+            final ComposableXapiVisitor<MvnServiceDefault> vis = ComposableXapiVisitor.onMissingFail(MvnServiceDefault.class);
+
+            ChainBuilder<String> sources = startChain(), resources = startChain(), outputs = startChain();
+            ChainBuilder<String>[] target = new ChainBuilder[1];
+            vis
+                .withUiContainerTerminal((els, ignr)-> {
+                    els.getAttribute("sources")
+                        .readIfPresent(s->s.accept(vis, ignr));
+                    els.getAttribute("resources")
+                        .readIfPresent(s->s.accept(vis, ignr));
+                    els.getAttribute("outputs")
+                        .readIfPresent(s->s.accept(vis, ignr));
+                })
+                .withJsonContainerRecurse(In2.ignoreAll())
+                .withJsonPairRecurse(In2.ignoreAll())
+                .withIntegerLiteralTerminal(In2.ignoreAll())
+                .withUiAttrTerminal((attr, ignr)->{
+                    switch (attr.getNameString()) {
+                        case "sources":
+                            target[0] = sources;
+                            attr.getExpression().accept(vis, ignr);
+                            target[0] = null;
+                            break;
+                        case "resources":
+                            target[0] = resources;
+                            attr.getExpression().accept(vis, ignr);
+                            target[0] = null;
+                            break;
+                        case "outputs":
+                            target[0] = outputs;
+                            attr.getExpression().accept(vis, ignr);
+                            target[0] = null;
+                            break;
+                    }
+                })
+                .withStringLiteralTerminal((str, ignr)->{
+                    assert target[0] != null : "Invalid settings.xapi; visited string literal without first visiting " +
+                        "a supported attribute; bad source: " + el.toSource();
+                    final String val = str.getValue();
+                    if (new File(val).exists()) {
+                        target[0].add(val);
+                    }
+                })
+                .visit(el, this);
+
+            if (sources.isEmpty() && resources.isEmpty() && outputs.isEmpty()) {
+                return;
+            }
+            final Properties props = root.getProperties();
+            props.setProperty("xapi-paths", "true");
+            if (sources.isNotEmpty()) {
+                props.setProperty("xapi-source-length", Integer.toString(sources.size()));
+                sources.forAllIndexed((src, i)->props.setProperty("xapi-source-" + i, src));
+            }
+            if (resources.isNotEmpty()) {
+                props.setProperty("xapi-resource-length", Integer.toString(sources.size()));
+                sources.forAllIndexed((src, i)->props.setProperty("xapi-resource-" + i, src));
+            }
+            if (outputs.isNotEmpty()) {
+                props.setProperty("xapi-output-length", Integer.toString(sources.size()));
+                sources.forAllIndexed((src, i)->props.setProperty("xapi-output-" + i, src));
+            }
+        } catch (IOException|ParseException e) {
+            X_Log.warn(MvnServiceDefault.class, "Error reading ", path, e);
+        }
+    }
+
+    private String findGroupId(Model root) {
       if (root.getGroupId() != null) {
         return root.getGroupId();
       }
@@ -266,9 +360,7 @@ public class MvnServiceDefault implements MvnService {
 
   protected final DefaultServiceLocator maven = MavenRepositorySystemUtils.newServiceLocator();
 
-  protected final SingletonInitializer<RepositorySystem> repoSystem = new SingletonInitializer<RepositorySystem>() {
-    @Override
-    protected RepositorySystem initialValue() {
+  protected final Lazy<RepositorySystem> repoSystem = Lazy.deferred1(() -> {
       // use netty to stream from maven
 
       maven.addService( RepositoryConnectorFactory.class, BasicRepositoryConnectorFactory.class );
@@ -276,19 +368,14 @@ public class MvnServiceDefault implements MvnService {
       maven.addService( TransporterFactory.class, HttpTransporterFactory.class );
       return maven.getService(RepositorySystem.class);
     }
-  };
+  );
 
   @Override
   public RepositorySystemSession getRepoSession() {
-    return session.get();
+    return session.out1();
   }
 
-  protected final SingletonInitializer<RepositorySystemSession> session = new SingletonInitializer<RepositorySystemSession>() {
-    @Override
-    protected RepositorySystemSession initialValue() {
-      return initLocalRepo();
-    }
-  };
+  protected final Lazy<RepositorySystemSession> session = Lazy.deferred1(this::initLocalRepo);
 
   private LogLevel logLevel = LogLevel.INFO;
 
@@ -314,7 +401,7 @@ public class MvnServiceDefault implements MvnService {
   public ArtifactResult loadArtifact(String groupId, String artifactId,
       String classifier, String extension, String version) {
 
-    DefaultArtifact artifact = new DefaultArtifact( groupId,artifactId, normalize(classifier), X_String.isEmpty(extension) ? "jar" : extension, version);
+    DefaultArtifact artifact = new DefaultArtifact( groupId,artifactId, normalize(classifier), isEmpty(extension) ? "jar" : extension, version);
 
     return lookupCache.get(artifact);
   }
@@ -328,12 +415,12 @@ public class MvnServiceDefault implements MvnService {
   public LocalArtifactResult loadLocalArtifact(String groupId, String artifactId,
       String classifier, String extension, String version) {
     Moment before = X_Time.now();
-    RepositorySystemSession session = this.session.get();
+    RepositorySystemSession session = this.session.out1();
     DefaultArtifact artifact = new DefaultArtifact(
         groupId,
         artifactId,
         normalize(classifier),
-        X_String.isEmpty(extension) ? "jar" : extension,
+        isEmpty(extension) ? "jar" : extension,
         version
     );
 
@@ -404,7 +491,7 @@ public class MvnServiceDefault implements MvnService {
 
     LocalRepository localRepo = new LocalRepository(localLocation);
     localRepo.getBasedir().mkdirs();
-    session.setLocalRepositoryManager(repoSystem.get()
+    session.setLocalRepositoryManager(repoSystem.out1()
         .newLocalRepositoryManager(session, localRepo));
     return session;
   }
@@ -413,6 +500,9 @@ public class MvnServiceDefault implements MvnService {
   public Model loadPomFile(String pomLocation) throws IOException,
       XmlPullParserException {
     File pomfile = new File(pomLocation);
+    if (!pomfile.isFile()) {
+        return null;
+    }
     FileReader reader;
     MavenXpp3Reader mavenreader = new MavenXpp3Reader();
     reader = new FileReader(pomfile);
@@ -463,7 +553,8 @@ public class MvnServiceDefault implements MvnService {
             sources.testSources().forAll(items::add);
             sources.testResources().forAll(items::add);
           }
-          items.add(sources.getOutput());
+          // check for properties that define gradle output directories
+          sources.outputs().forAll(items::add);
         } else if (new File(dependency).isDirectory()) {
           if (!dependency.endsWith("/")) {
             items.add(dependency + "/");
@@ -534,7 +625,7 @@ public class MvnServiceDefault implements MvnService {
         }
         if (groupId == null) {
           // try looking at parents until we encounter "repository".
-          ChainBuilder<String> gId = Chain.startChain();
+          ChainBuilder<String> gId = startChain();
           while (lastGroupId != null) {
             if ("repository".equals(lastGroupId.getFileName().toString())) {
               groupId = gId.join(".");
@@ -577,20 +668,27 @@ public class MvnServiceDefault implements MvnService {
 
     ProjectSources project = X_Model.create(ProjectSources.class);
 
-    String output = model.getBuild() == null ? null : model.getBuild().getOutputDirectory();
-    if (output == null) {
-      output = Paths.get(model.getProjectDirectory().toString(), "target/classes").toString();
-    }
-    output = slashify.io(output);
-    Path outputPath = Paths.get(output);
-    if (!Files.isDirectory(outputPath)) {
-      try {
-        Files.createDirectories(outputPath);
-      } catch (IOException e) {
-        X_Log.warn(ModelSerializerDefault.class, "Unable to create output directory", outputPath, e);
+    final Properties props = model.getProperties();
+    if (props != null && "true".equals(props.getProperty("xapi-paths"))) {
+      grabPaths(project, props, "source", project::addSource);
+      grabPaths(project, props, "resource", project::addResource);
+      grabPaths(project, props, "output", project::addOutput);
+    } else {
+      String output = model.getBuild() == null ? null : model.getBuild().getOutputDirectory();
+      if (output == null) {
+        output = Paths.get(model.getProjectDirectory().toString(), "target/classes").toString();
       }
+      output = slashify.io(output);
+      Path outputPath = Paths.get(output);
+      if (!Files.isDirectory(outputPath)) {
+        try {
+          Files.createDirectories(outputPath);
+        } catch (IOException e) {
+          X_Log.warn(ModelSerializerDefault.class, "Unable to create output directory", outputPath, e);
+        }
+      }
+      project.addOutput(output);
     }
-    project.setOutput(output);
 
     String staging = cache.getProperty(model, "xapi.staging", ()->
         Paths.get(model.getProjectDirectory().toString(), "src/main/staging").toString()
@@ -626,10 +724,21 @@ public class MvnServiceDefault implements MvnService {
     return project;
   }
 
-  protected SizedIterable<String> getSources(Model model) throws IOException {
+    private void grabPaths(ProjectSources project, Properties props, String type, In1<String> addSource) {
+        final String length = props.getProperty("xapi-" + type + "-length");
+        if (length != null) {
+            int len = Integer.parseInt(length);
+            for (int i = 0; i < len; i++) {
+                final String source = props.getProperty("xapi-" + type + "-" + i);
+                addSource.in(source);
+            }
+        }
+    }
+
+    protected SizedIterable<String> getSources(Model model) throws IOException {
     // TODO: snoop on build-helper-maven-plugin ... should really use a live reactor for this.
     // See DefaultMaven.newRepositorySession for getting a real maven parsing of the root model.
-    if (model.getBuild() == null || X_String.isEmpty(model.getBuild().getSourceDirectory())) {
+    if (model.getBuild() == null || isEmpty(model.getBuild().getSourceDirectory())) {
       File defaultSources = new File(model.getProjectDirectory(), "./src/main/java");
       return singleItem(defaultSources.getCanonicalPath());
     }
@@ -669,7 +778,7 @@ public class MvnServiceDefault implements MvnService {
   }
 
   protected SizedIterable<String> getTestSources(Model model) throws IOException {
-    if (model.getBuild() == null || X_String.isEmpty(model.getBuild().getTestSourceDirectory())) {
+    if (model.getBuild() == null || isEmpty(model.getBuild().getTestSourceDirectory())) {
       File defaultSources = new File(model.getProjectDirectory(), "./src/test/java");
       return singleItem(defaultSources.getCanonicalPath());
     }
@@ -758,11 +867,27 @@ public class MvnServiceDefault implements MvnService {
           JarFile jar = new JarFile(artifact.getFile())
        ) {
         final ZipEntry pomEntry = jar.getEntry("META-INF/maven/" + artifact.getGroupId() + "/" + artifact.getArtifactId() + "/pom.xml");
+        final Model pom;
         if (pomEntry != null) {
           // some jars, like javax.inject, do not package a pom inside the jar :-/
           String pomString = X_IO.toStringUtf8(jar.getInputStream(pomEntry));
-          final Model pom = loadPomString(pomString);
+          pom = loadPomString(pomString);
           loadDependencies(dependencies, jar, pom, filter);
+        } else {
+          pom = null;
+        }
+        // TODO: get the platform type into here as well, so we can select the correct runtime.
+        // We can likely infer it from the artifact's embedded pom... later.
+        final ZipEntry xapiEntry = jar.getEntry("META-INF/xapi/settings.xapi");
+        if (xapiEntry != null) {
+          String xapiString = X_IO.toStringUtf8(jar.getInputStream(xapiEntry));
+          try {
+            UiContainerExpr el = JavaParser.parseUiContainer(artifact.getFile().getAbsolutePath()+"!META-INF/xapi/settings.xapi", xapiString);
+            // Pull any source / output paths, and make those available as well...
+
+          } catch (ParseException e) {
+            X_Log.error(MvnServiceDefault.class, "Invalid xapi source", xapiString, " from ", artifact.getFile(), "\n", e);
+          }
         }
       } catch (IOException e) {
         throw new UncheckedIOException(e);
@@ -773,15 +898,15 @@ public class MvnServiceDefault implements MvnService {
   }
 
   private String toArtifactString(Artifact artifact) {
-    if (artifact.getExtension() == null) {
-      if (artifact.getClassifier() == null) {
+    if (isEmpty(artifact.getExtension()) || "jar".equals(artifact.getExtension())) {
+      if (isEmpty(artifact.getClassifier())) {
         return artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + artifact.getVersion();
       } else {
         // classifier is the fifth coordinate type, which implicitly uses jar for extension / packaging type
         return artifact.getGroupId() + ":" + artifact.getArtifactId() + ":jar:" + artifact.getClassifier() + ":" + artifact.getVersion();
       }
     } else {
-      if (artifact.getClassifier() == null) {
+      if (isEmpty(artifact.getClassifier())) {
         return artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + artifact.getExtension() + ":" + artifact.getVersion();
       } else {
         return artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + artifact.getExtension() + ":" + artifact.getClassifier() + ":" + artifact.getVersion();
@@ -920,8 +1045,7 @@ public class MvnServiceDefault implements MvnService {
 
   @Override
   public String localRepo() {
-
-    return session.get().getLocalRepository().getBasedir().getAbsolutePath();
+    return session.out1().getLocalRepository().getBasedir().getAbsolutePath();
   }
 
   @Override

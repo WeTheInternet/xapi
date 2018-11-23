@@ -54,15 +54,10 @@ import com.google.gwt.core.client.JavaScriptObject;
  */
 @GwtPlatform
 @SingletonOverride(implFor = LogService.class, priority=Integer.MIN_VALUE+1)
-public class JsLog extends AbstractLog implements Initable {
-  public JsLog() {
-  }
+public class JsLog extends AbstractLog {
 
-  public void init() {
-    initialize();// pull the log level from a url param
-    // TODO: implement a hard-coded version which uses the gwt user.agent property
-    // to compile out lower-level log commands.
-    // Production builds can just inject a JsLog subclass which hardcodes limit
+  public JsLog() {
+    initialize();
   }
 
   @Override
@@ -80,7 +75,7 @@ public class JsLog extends AbstractLog implements Initable {
       };
     else if (!$wnd.console.log) $wnd.console.log = function() {
     };
-    var logLevel = @xapi.log.api.LogLevel::ALL;
+    var logLevel;
     try {
       switch (this.@xapi.gwt.log.JsLog::initLogLevel()()) {
       case 'ALL':
@@ -101,6 +96,8 @@ public class JsLog extends AbstractLog implements Initable {
       case 'ERROR':
         logLevel = @xapi.log.api.LogLevel::ERROR;
         break;
+      default:
+        logLevel = @xapi.log.api.LogLevel::ALL;
       }
     } catch (e) {
       $wnd.console.log('log init error', e);

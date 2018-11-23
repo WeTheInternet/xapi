@@ -20,6 +20,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
+import javax.tools.Diagnostic.Kind;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -46,12 +47,20 @@ public class MagicMethodAnnotationProcessor extends AbstractProcessor {
   @Override
   public synchronized void init(ProcessingEnvironment processingEnv) {
     super.init(processingEnv);
+    if (shouldSkip(processingEnv)) {
+      processingEnv.getMessager().printMessage(Kind.NOTE, "Skipping ui annotations because system property xapi.no.javac.plugin was set to true");
+      return;
+    }
     elements = processingEnv.getElementUtils();
     filer = processingEnv.getFiler();
     log = processingEnv.getMessager();
     types = processingEnv.getTypeUtils();
     service = JavacService.instanceFor(processingEnv);
     trees = Trees.instance(processingEnv);
+  }
+
+  protected boolean shouldSkip(ProcessingEnvironment processingEnv) {
+    return "true".equals(System.getProperty("xapi.no.javac.plugin")) || "true".equals(processingEnv.getOptions().get("xapi.no.javac.plugin"));
   }
 
   @Override

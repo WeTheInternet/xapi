@@ -7,6 +7,7 @@ import xapi.annotation.inject.InstanceDefault;
 import xapi.collect.X_Collect;
 import xapi.collect.api.Fifo;
 import xapi.file.X_File;
+import xapi.io.api.LineReader;
 import xapi.log.X_Log;
 import xapi.log.api.LogLevel;
 import xapi.process.X_Process;
@@ -86,16 +87,21 @@ public class ShellCommandDefault implements ShellCommand {
     return this;
   }
 
-
-  @Override
   @SuppressWarnings({ "unchecked", "rawtypes" })
-  public ShellSession run(final SuccessHandler<ShellSession> callback, final ArgumentProcessor processor) {
+  @Override
+  public ShellSession run(final SuccessHandler<ShellSession> callback, final ArgumentProcessor processor, LineReader stdOut, LineReader stdErr) {
     final ErrorHandler<Throwable> err = callback instanceof ErrorHandler ? (ErrorHandler) callback
         : X_Debug.defaultHandler();
 
     final ShellSessionDefault result = new ShellSessionDefault(this, processor, callback, err);
     result.setStdOutLevel(getStdOutLevel());
     result.setStdErrLevel(getStdErrLevel());
+    if (stdOut != null) {
+      result.stdOut(stdOut);
+    }
+    if (stdErr != null) {
+      result.stdErr(stdErr);
+    }
     X_Process.newThread(result).start();
     return result;
   }

@@ -20,7 +20,7 @@ public class ModelNameUtil {
   );
 
   private static final RegExp SETTER_MATCHER = RegExp.compile(
-    "(?:setAll|putAll|addAll|add|put|set)(\\w+)"
+    "(?:setAll|putAll|putEntries|addAll|add|put|set)(\\w+)"
     );
 
   private static final RegExp REMOVER_MATCHER = RegExp.compile(

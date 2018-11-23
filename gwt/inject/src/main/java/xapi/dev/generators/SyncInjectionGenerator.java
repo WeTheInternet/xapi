@@ -34,24 +34,21 @@
  */
 package xapi.dev.generators;
 
-import java.io.PrintWriter;
-
 import xapi.annotation.inject.SingletonDefault;
 import xapi.annotation.inject.SingletonOverride;
 import xapi.dev.util.CurrentGwtPlatform;
 import xapi.dev.util.InjectionUtils;
 import xapi.dev.util.PlatformSet;
-import xapi.inject.impl.SingletonInitializer;
+import xapi.fu.In1;
+import xapi.fu.Lazy;
+import xapi.fu.Out1;
 import xapi.log.X_Log;
 import xapi.source.read.SourceUtil;
-import xapi.util.api.ReceivesValue;
 
-import com.google.gwt.core.ext.GeneratorContext;
-import com.google.gwt.core.ext.RebindMode;
-import com.google.gwt.core.ext.RebindResult;
-import com.google.gwt.core.ext.TreeLogger;
+import java.io.PrintWriter;
+
+import com.google.gwt.core.ext.*;
 import com.google.gwt.core.ext.TreeLogger.Type;
-import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.NotFoundException;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
@@ -67,7 +64,7 @@ public class SyncInjectionGenerator extends AbstractInjectionGenerator{
   public static RebindResult execImpl(TreeLogger logger, GeneratorContext context, JClassType type) throws ClassNotFoundException{
     PlatformSet allowed = CurrentGwtPlatform.getPlatforms(context);
     JClassType targetType = type;
-    String simpleName = "SingletonFor_"+type.getSimpleSourceName();
+    String simpleName = InjectionUtils.generatedSingletonName(type.getSimpleSourceName());
     SingletonOverride winningOverride=null;
     JClassType winningType=null;
     boolean trace = logger.isLoggable(Type.TRACE);
@@ -102,16 +99,32 @@ public class SyncInjectionGenerator extends AbstractInjectionGenerator{
     if (trace)
     X_Log.info("Singleton Injection Winner: "+winningType.getName());
     String packageName = type.getPackage().getName();
-        ensureProviderClass(logger, packageName,type.getSimpleSourceName(),type.getQualifiedSourceName(), SourceUtil.toSourceName(winningType.getQualifiedSourceName()), context);
+    ensureProviderClass(logger, packageName,type.getSimpleSourceName(),type.getQualifiedSourceName(), SourceUtil.toSourceName(winningType.getQualifiedSourceName()), context);
     packageName = packageName+".impl";
     PrintWriter printWriter = context.tryCreate(logger, packageName, simpleName);
     if (printWriter == null) {
+      X_Log.info("Using existing: "+packageName + "." +simpleName);
       return new RebindResult(RebindMode.USE_EXISTING, packageName+"."+simpleName);
     }
     ClassSourceFileComposerFactory composer = new ClassSourceFileComposerFactory(packageName, simpleName);
-    composer.setSuperclass(SingletonInitializer.class.getName()+
-        "<" + type.getQualifiedSourceName()+">");
-    composer.addImport(ReceivesValue.class.getName());
+    composer.addImport(In1.class.getName());
+
+    boolean interimProvider =
+        context.isProdMode()
+        && isAsyncProvided(logger,packageName, type.getSimpleSourceName(),context)
+        && !isCallbackInjected(logger, packageName, type.getSimpleSourceName(), context);
+
+    if (interimProvider) {
+      //this edge case happens when a service is accessed synchronously
+      //inside of its own asynchronous callback
+      //TODO use GWT's AsyncProxy class to queue up requests...
+      logger.log(Type.WARN, "Generating interim singleton provider for " + composer.getCreatedClassName());
+      composer.addImplementedInterface(Out1.class.getName()+
+          "<" + type.getQualifiedSourceName()+">");
+    } else {
+      composer.setSuperclass(Lazy.class.getName()+
+          "<" + type.getQualifiedSourceName()+">");
+    }
 
     SourceWriter sw = composer.createSourceWriter(context, printWriter);
     sw.println();
@@ -120,51 +133,33 @@ public class SyncInjectionGenerator extends AbstractInjectionGenerator{
 
     //if async is already generated when this singleton access occurs,
     //but we haven't yet injected the callback which accesses the global singleton,
-    //we'll have to route our get() through the existing async callback block
+    //we'll have to route our out1() through the existing async callback block
     //to prevents code splitting from falling apart. This will, at worst,
     //cause providers to return null until the service is actually initialized.
-    if (
-        context.isProdMode()
-        && isAsyncProvided(logger,packageName, type.getSimpleSourceName(),context)
-        && !isCallbackInjected(logger, packageName, type.getSimpleSourceName(), context)
-    ){
-
-      //this edge case happens when a service is accessed synchronously
-      //inside of its own asynchronous callback
-      //TODO use GWT's AsyncProxy class to queue up requests...
-        logger.log(Type.WARN, "Generating interim singleton provider");
+    if (interimProvider){
       sw.indent();
       sw.println("private static "+type.getQualifiedSourceName()+" value = null;");
       sw.println("@Override");
-      sw.println("public final "+type.getQualifiedSourceName()+" initialValue(){");
+      sw.println("public final "+type.getQualifiedSourceName()+" out1(){");
       sw.indent();
       sw.println("if (value!=null)return value;");
       sw.println(packageName+"."+InjectionUtils.generatedAsyncProviderName(type.getSimpleSourceName()));
-      sw.indent();
 
-      sw.print(".request(new ReceivesValue<");
-      sw.println(type.getQualifiedSourceName()+">(){");
-        sw.indent();
-        sw.println("@Override");
-        sw.print("public void set(");
-        sw.println(type.getQualifiedSourceName()+" x){");
-        sw.indent();
-        sw.println("value=x;");
-        sw.outdent();
-        sw.println("}");
-        sw.outdent();
+      sw.indentln(".request(x->value=x);");
 
-      sw.println("});");
-      sw.outdent();
       sw.println("return value;");
     }else{
+
       //all non-prod or non-async providers can safely access the singleton directly
-      sw.println("@Override");
-      sw.println("public final "+type.getQualifiedSourceName()+" initialValue(){");
+      sw.println("public "+simpleName+"(){");
+      sw.indent();
+      sw.println("super(");
       sw.indent();
       //normal operation; just wrap the static final singleton provider.
-      sw.print("return "+type.getPackage().getName()+"."+InjectionUtils.generatedProviderName(type.getSimpleSourceName()));
-      sw.println(".theProvider.get();");
+      sw.print(type.getPackage().getName()+"."+InjectionUtils.generatedProviderName(type.getSimpleSourceName()));
+      sw.println(".theProvider");
+      sw.outdent();
+      sw.println(");");
     }
     sw.outdent();
     sw.println("}");

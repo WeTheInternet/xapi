@@ -3,10 +3,12 @@ package xapi.gwt.junit.gui;
 import elemental.client.Browser;
 import elemental.dom.Element;
 import xapi.elemental.X_Elemental;
+import xapi.fu.Lazy;
+import xapi.fu.Out1;
+import xapi.fu.lazy.ResettableLazy;
 import xapi.gwt.junit.api.JUnitExecution;
 import xapi.gwt.junit.impl.JUnit4Executor;
 import xapi.util.api.ProvidesValue;
-import xapi.util.impl.LazyProvider;
 
 import javax.inject.Provider;
 import java.lang.reflect.Method;
@@ -17,13 +19,11 @@ import java.util.concurrent.Callable;
  */
 public class JUnitGuiExecution extends JUnitExecution<JUnitGuiController> {
 
-  private ProvidesValue<Element> stageProvider;
-  private final Provider<Element> originalProvider;
+  private ResettableLazy<Element> stageProvider;
   private Element stageRoot;
 
-  public JUnitGuiExecution(Provider<Element> stageProvider, Runnable update) {
-    this.originalProvider = stageProvider;
-    this.stageProvider = new LazyProvider<>(stageProvider);
+  public JUnitGuiExecution(Out1<Element> stageProvider, Runnable update) {
+    this.stageProvider = new ResettableLazy<Element>(stageProvider);
     Element[] running = new Element[1];
     onStartMethod(
         m -> {
@@ -64,12 +64,12 @@ public class JUnitGuiExecution extends JUnitExecution<JUnitGuiController> {
 
   @Override
   public Iterable<Callable<Boolean>> startMethod(Method method) {
-    stageProvider = new LazyProvider<>(originalProvider);
+    stageProvider.reset();
     return super.startMethod(method);
   }
 
   public Element getStage() {
-    final Element stage = stageProvider.get();
+    final Element stage = stageProvider.out1();
     if (stage.getParentElement() == null) {
       stageRoot.appendChild(stage);
     }

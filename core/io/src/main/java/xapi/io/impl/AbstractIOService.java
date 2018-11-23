@@ -1,13 +1,10 @@
 package xapi.io.impl;
 
-import static xapi.collect.X_Collect.newClassMap;
-
-import javax.inject.Provider;
-
 import xapi.collect.X_Collect;
 import xapi.collect.api.ClassTo;
 import xapi.collect.api.StringDictionary;
 import xapi.collect.api.StringTo.Many;
+import xapi.fu.Out1;
 import xapi.io.IOConstants;
 import xapi.io.api.IOCallback;
 import xapi.io.api.IOMessage;
@@ -20,6 +17,8 @@ import xapi.util.X_Properties;
 import xapi.util.api.ConvertsValue;
 import xapi.util.api.ReceivesValue;
 import xapi.util.api.RemovalHandler;
+
+import static xapi.collect.X_Collect.newClassMap;
 
 public abstract class AbstractIOService <Transport> implements IOService{
 
@@ -69,7 +68,7 @@ public abstract class AbstractIOService <Transport> implements IOService{
     private String value;
     private volatile boolean cancel;
     private boolean started;
-    protected Provider<Many<String>> resultHeaders;
+    protected Out1<Many<String>> resultHeaders;
     private int statusCode = STATUS_INCOMPLETE;
     private String statusText = "Request Incomplete";
 
@@ -95,7 +94,7 @@ public abstract class AbstractIOService <Transport> implements IOService{
 
     @Override
     public Many<String> headers() {
-      return resultHeaders == null ? X_Collect.newStringMultiMap(String.class) : resultHeaders.get();
+      return resultHeaders == null ? X_Collect.newStringMultiMap(String.class) : resultHeaders.out1();
     }
 
     public boolean isStarted() {
@@ -121,7 +120,7 @@ public abstract class AbstractIOService <Transport> implements IOService{
       this.value = value;
     }
 
-    public void setResultHeaders(final Provider<Many<String>> resultHeaders) {
+    public void setResultHeaders(final Out1<Many<String>> resultHeaders) {
       this.resultHeaders = resultHeaders;
     }
 

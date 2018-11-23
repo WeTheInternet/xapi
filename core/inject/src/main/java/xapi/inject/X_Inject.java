@@ -42,14 +42,16 @@ import xapi.annotation.inject.SingletonDefault;
 import xapi.annotation.inject.SingletonOverride;
 import xapi.annotation.reflect.KeepMethod;
 import xapi.except.NotConfiguredCorrectly;
+import xapi.fu.In1;
+import xapi.fu.Lazy;
+import xapi.fu.Out1;
 import xapi.inject.api.Injector;
 import xapi.inject.impl.JavaInjector;
 import xapi.util.api.ReceivesValue;
 
-import static xapi.util.X_Runtime.isJava;
-
-import javax.inject.Provider;
 import java.util.ServiceLoader;
+
+import static xapi.util.X_Runtime.isJava;
 
 /**
  * A static accessor class for in an instance of {@link Injector}.
@@ -127,14 +129,14 @@ public class X_Inject{
    *
    * WARNING: When running in compiled gwt mode with code splitting,
    * if you use the asynchronous provider method
-   * {@link #singletonAsync(Class, ReceivesValue)}, then the synchronous providers,
+   * {@link #singletonAsync(Class, In1)}, then the synchronous providers,
    * {@link #singleton(Class)} and {@link #singletonLazy(Class)} will return null until
    * the code split containing the service is loaded.
    *
    * TODO: use AsyncProxy from
    *
    * If you have ANY doubt about whether a service is already loaded or not,
-   * please prefer the async provider method {@link #singletonAsync(Class, ReceivesValue)
+   * please prefer the async provider method {@link #singletonAsync(Class, In1)
    *
    * <br/><br/>
    *
@@ -161,17 +163,17 @@ public class X_Inject{
   @MagicMethod(doNotVisit=true)
   public static <T, C extends Class<? extends T>> T singleton(C cls){
     if (isJava()) {
-      final Provider<T> provider = xapi.inject.impl.JavaInjector.singletonLazy(cls);
-      return provider.get();
+      final Out1<T> provider = xapi.inject.impl.JavaInjector.singletonLazy(cls);
+      return provider.out1();
     } else {
       throw notConfiguredCorrectly();
     }
   }
   @KeepMethod
   @MagicMethod(doNotVisit=true)
-  public static <T, C extends Class<? extends T>> void singletonAsync(final C cls,final Class<? extends ReceivesValue<T>> callback){
+  public static <T, C extends T> void singletonAsync(final Class<? extends C> cls,final Class<? extends In1<T>> callback){
     if (isJava()){
-      final ReceivesValue<T> receiver = singleton(callback);
+      final In1<T> receiver = singleton(callback);
       singletonAsync(cls, receiver);
     } else {
       throw  notConfiguredCorrectly();
@@ -223,10 +225,10 @@ public class X_Inject{
    */
   @KeepMethod
   @MagicMethod(doNotVisit=true)
-  public static <T, C extends Class<? extends T>> void singletonAsync(final C cls, final ReceivesValue<T> callback){
+  public static <T, C extends Class<? extends T>> void singletonAsync(final C cls, final In1<T> callback){
     if (isJava()) {
-      final Provider<T> provider = xapi.inject.impl.JavaInjector.singletonLazy(cls);
-      callback.set(provider.get());
+      final Lazy<T> provider = xapi.inject.impl.JavaInjector.singletonLazy(cls);
+      callback.in(provider.out1());
     } else {
       throw notConfiguredCorrectly();
     }
@@ -247,12 +249,12 @@ public class X_Inject{
    * any other split points which use synchronous access will return null until loaded.
    *
    * If you have any doubts about the timing and load sequence,
-   * always prefer the {@link #singletonAsync(Class, ReceivesValue)} method.
+   * always prefer the {@link #singletonAsync(Class, In1)} method.
    *
    */
   @KeepMethod
   @MagicMethod(doNotVisit=true)
-  public static <Type, Generic extends Type> Provider<Type> singletonLazy(final Class<Generic> cls) {
+  public static <Type, Generic extends Type> Lazy<Type> singletonLazy(final Class<Generic> cls) {
     if (isJava()) {
       return xapi.inject.impl.JavaInjector.singletonLazy(cls);
     } else {

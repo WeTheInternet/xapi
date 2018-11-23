@@ -66,7 +66,7 @@ public class ModelTester {
     assertEquals(IntTo.class, method.getType());
 
     method = manifest.getMethodData("getWideTypeVariablesWithConcreteType");
-    assertArrayEquals(new Class[]{Collection.class}, method.getTypeParams());
+    assertArrayEquals(new Class[]{Set.class}, method.getTypeParams());
     assertEquals(IntTo.class, method.getType());
 
     method = manifest.getMethodData("getWideTypeVariablesWithMultipleMatches");
