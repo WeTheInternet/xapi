@@ -1,0 +1,21 @@
+plugins {
+    id 'java'
+}
+evaluationDependsOn ':'
+
+repositories {
+    maven {
+        name = 'xapiLocal'
+        url = new URI("file://$rootDir/repo")
+    }
+    jcenter()
+}
+
+dependencies {
+    compile project(':xapi-core-parent:xapi-core-api')
+    testCompile 'junit:junit:4.12'
+    implementation project(':xapi-core-parent:xapi-core-args')
+    compileOnly 'net.wetheinter:gwt-dev:2.8.0'
+}
+
+description = 'XApi - Basic logger interface'

@@ -1,0 +1,15 @@
+plugins {
+    id 'java-library'
+}
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    compile project(':xapi-core-parent:xapi-core-util')
+    testCompile project(':xapi-core-parent:xapi-core-test')
+    testCompile 'org.json:json:20141113'
+}
+
+description = 'XApi - IO core API'

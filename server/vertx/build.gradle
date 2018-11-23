@@ -1,0 +1,29 @@
+plugins { id 'xapi' }
+
+dependencies {
+    compile project(':xapi-server-parent:xapi-server-gen')
+    compile project(':xapi-server-parent:xapi-server-api')
+    compile project(':xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-impl')
+    compile project(':xapi-jre-parent:xapi-jre-process')
+    compile project(':xapi-core-parent:xapi-core-lang')
+    compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api')
+    compile project(':xapi-dev-parent:xapi-dev-maven')
+    compile project(':xapi-dev-parent:xapi-dev-javac')
+    compile 'io.vertx:vertx-web:3.5.3'
+    compile 'io.vertx:vertx-hazelcast:3.5.3'
+    compile 'io.vertx:vertx-auth-oauth2:3.5.3'
+    testCompile project(':xapi-dev-parent:xapi-dev-scanner')
+    testCompile project(path: ':xapi-dev-parent:xapi-dev-scanner', configuration: 'testRuntime')
+    testCompile project(':xapi-server-parent:xapi-server-gen')
+    testCompile project(path: ':xapi-server-parent:xapi-server-gen', configuration: 'testRuntime')
+    testCompile project(':xapi-dev-parent:xapi-dev-javac')
+    testCompile project(path: ':xapi-dev-parent:xapi-dev-javac', configuration: 'testRuntime')
+    testCompile 'info.cukes:cucumber-java:1.2.5'
+    testCompile 'info.cukes:cucumber-junit:1.2.5'
+}
+
+test {
+    maxHeapSize = '1G'
+}
+
+description = 'XApi - Vertx Server Implementation'

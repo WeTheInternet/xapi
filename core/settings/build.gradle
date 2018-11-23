@@ -1,0 +1,15 @@
+buildscript.dependencies.add 'classpath',
+        'net.wti.gradle:xapi-gradle-plugin:0.5.1'
+
+apply plugin: 'xapi'
+
+dependencies {
+    compile project(':xapi-core-parent:xapi-core-lang')
+    compile project(':xapi-core-parent:xapi-core-io')
+    compile project(':xapi-core-parent:xapi-core-model')
+    testCompile 'junit:junit:4.12'
+    testCompile project(':xapi-jre-parent:xapi-jre-collect')
+    testCompile project(':xapi-jre-parent:xapi-jre-model')
+}
+
+description = 'XApi - Settings API'

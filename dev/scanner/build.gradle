@@ -1,0 +1,10 @@
+plugins { id 'xapi' }
+
+dependencies {
+    compile project(':xapi-core-parent:xapi-core-collect')
+    compile project(':xapi-dev-parent:xapi-dev-api')
+    compile project(':xapi-dev-parent:xapi-dev-bytecode')
+    testCompile project(':xapi-core-parent:xapi-core-test')
+}
+
+description = 'XApi - Classpath Scanner'

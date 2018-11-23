@@ -1,0 +1,14 @@
+plugins {
+    id 'java-library'
+}
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    compile project(':xapi-core-parent:xapi-core-io')
+    testCompile project(':xapi-core-parent:xapi-core-test')
+}
+
+description = 'XApi - java.io.File utilities'

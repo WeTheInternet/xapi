@@ -1,0 +1,25 @@
+import org.gradle.internal.jvm.Jvm
+
+plugins {
+    id 'java-library'
+}
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api')
+    compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api')
+    compile project(':xapi-dev-parent:xapi-dev-javac')
+    compile project(':xapi-dev-parent:xapi-dev-javac')
+    testCompile 'junit:junit:4.12'
+    testCompile project(':xapi-jre-parent:xapi-jre-inject')
+    testCompile project(':xapi-core-parent:xapi-core-test')
+    testCompile 'org.assertj:assertj-core:3.2.0'
+    compileOnly files(Jvm.current().toolsJar)
+    testCompile files(Jvm.current().toolsJar)
+
+}
+
+description = 'XApi - Core UI Generator'

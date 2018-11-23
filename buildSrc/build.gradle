@@ -1,0 +1,55 @@
+import java.util.concurrent.TimeUnit
+
+plugins {
+    id 'java-library'
+    id 'groovy'
+    id 'idea'
+}
+
+repositories {
+    jcenter()
+    maven {
+        name = 'xapiLocal'
+        url = new File(rootDir.parentFile, 'repo')
+    }
+}
+
+dependencies {
+    api group: 'net.wti.gradle', name: 'xapi-gradle-plugin', version: '0.5.1', changing: true
+    runtime localGroovy()
+}
+
+configurations.all {
+    Configuration c->
+        c.resolutionStrategy.cacheChangingModulesFor(
+                gradle.startParameter.rerunTasks ? 0 :
+                        (findProperty('cacheTTL') as Integer ?: 60)
+                , TimeUnit.MINUTES)
+}
+
+// We copy all the code below into wti buildSrc as well, to force all projects to pre-build the net.wti.gradle project.
+
+// This is dirty, buuut...  We want our build scripts to pre-deploy the gradle plugin to a local maven repo.
+// So, we make the buildSrc project run this gradle build before it compiles java source;
+// this ensures that when the root build is executed, the jars will for sure have been deployed before classloaders are primed.
+
+// We may want to do this w/ an init script instead, but for now, this makes the developer experience far more tolerable.
+// We may also want to introduce some kind of timestamp file, so that buildSrc of a composite won't take action if the
+// buildSrc of the root project already ran this. 
+
+def buildPlugin = tasks.create 'buildPlugin', GradleBuild, {
+    GradleBuild b ->
+        b.dir = new File(rootDir.parentFile, 'net.wti.gradle')
+        b.tasks = ['build']
+        b.startParameter.excludedTaskNames = ['test']
+        b.startParameter.parallelProjectExecutionEnabled = true
+        b.startParameter.buildCacheEnabled = true
+        b.onlyIf {
+            'true' != System.getProperty('xapi.tools.built')
+        }
+        b.doFirst {
+            System.setProperty('xapi.tools.built', 'true')
+        }
+}
+tasks.getByName(JavaPlugin.COMPILE_JAVA_TASK_NAME).dependsOn buildPlugin
+tasks.getByName(BasePlugin.ASSEMBLE_TASK_NAME).dependsOn buildPlugin

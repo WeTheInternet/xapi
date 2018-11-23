@@ -1,0 +1,24 @@
+plugins { id 'xapi' }
+
+import org.gradle.internal.jvm.Jvm
+
+dependencies {
+    compile project(':xapi-server-parent:xapi-server-vertx')
+    compile project(':xapi-jre-parent:xapi-jre-ui-parent:xapi-jre-ui-javafx')
+    compile project(':xapi-jre-parent:xapi-jre-inject')
+    compile project(':xapi-dev-parent:xapi-dev-file')
+    compile project(':xapi-dev-parent:xapi-dev-shell')
+    compile project(':xapi-dev-parent:xapi-dev-scanner')
+    compile project(':xapi-dev-parent:xapi-dev-maven')
+    compile project(':xapi-dev-parent:xapi-gen')
+    compile project(':xapi-server-parent:xapi-server-gen')
+    compileOnly files(Jvm.current().toolsJar)
+    testCompile files(Jvm.current().toolsJar)
+    testCompile project(':xapi-core-parent:xapi-core-test')
+}
+
+test {
+    maxHeapSize = '2G'
+}
+
+description = 'XApi - Dist Generator'

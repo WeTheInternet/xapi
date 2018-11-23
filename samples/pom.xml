@@ -18,8 +18,8 @@
         </description>
 
         <modules>
-          <!-- Demo app for gwtcon 2017 -->
-          <module>demo</module>
+          <!-- Demo app for gwtcon 2017; deprecated -->
+          <!--<module>demo</module> -->
         </modules>
 	<properties>
 		<xapi.include.test>true</xapi.include.test>

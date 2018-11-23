@@ -1,0 +1,56 @@
+buildscript {
+    repositories {
+        jcenter()
+        maven {
+            name = 'xapiLocal'
+            url = new URI("file://$rootDir/repo")
+        }
+    }
+    dependencies {
+        classpath 'com.github.jengelman.gradle.plugins:shadowTest:4.0.3-SNAPSHOT'
+    }
+}
+
+plugins {
+    id 'java-library'
+    id 'xapi'
+}
+setProperty('xapi.main.component', 'shadow')
+plugins.apply 'com.github.johnrengelman.shadow'
+
+tasks.jar.configure {
+    classifier = 'default'
+}
+
+tasks.shadowJar.configure {
+    classifier = null
+}
+
+dependencies {
+    compile project(':xapi-gwt-parent:xapi-gwt3')
+    compile project(':xapi-dev-parent:xapi-dev-source')
+    compile project(':xapi-core-parent:xapi-core-lang')
+    compile project(':xapi-core-parent:xapi-core-reflect')
+    compile project(':xapi-core-parent:xapi-core-util')
+    compile project(':xapi-gwt-parent:xapi-elemental')
+    compile project(':xapi-gwt-parent:xapi-gwt-inject')
+    compile project(':xapi-gwt-parent:xapi-gwt-model')
+    compile project(':xapi-gwt-parent:xapi-gwt-collect')
+    compile project(':xapi-gwt-parent:xapi-gwt-process')
+    compile project(':xapi-gwt-parent:xapi-gwt-io')
+    compile project(':xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-api')
+    compile project(':xapi-gwt-parent:xapi-gwt-test')
+    testCompile 'net.wetheinter:gwt-codeserver:2.8.0'
+    testCompile 'net.wetheinter:gwt-user:2.8.0'
+    testCompile 'net.sourceforge.htmlunit:htmlunit:2.19'
+    testCompile 'junit:junit:4.12'
+    testRuntime 'junit:junit:4.12:sources'
+}
+
+task packageTests(type: Jar) {
+    classifier = 'tests'
+    from(sourceSets.test.output)
+}
+
+description = 'XApi - Gwt uber jar'
+artifacts.archives(tasks.packageTests)

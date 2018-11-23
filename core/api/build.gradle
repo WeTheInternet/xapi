@@ -1,0 +1,24 @@
+plugins {
+    id 'java-library'
+}
+
+repositories {
+    jcenter()
+    maven {
+        name = 'xapiLocal'
+        url = new URI("file://$rootDir/repo")
+    }
+}
+
+apply from: "$rootDir/gradle/processor.gradle"
+
+dependencies {
+    api project(':xapi-dev-parent:xapi-dev-source')
+    api project(':xapi-core-parent:xapi-fu')
+    api project(':xapi-annotations')
+    api 'javax.inject:javax.inject:1'
+    annotationProcessor 'net.wti.gradle:xapi-dev-mirror:0.5.1'
+    testCompile 'junit:junit:4.12'
+}
+
+description = 'XApi - Core Interfaces and Abstractions'

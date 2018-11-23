@@ -1,0 +1,113 @@
+package xapi.gradle.api;
+
+import org.gradle.api.Task;
+
+/**
+ * Created by James X. Nelson (James@WeTheInter.net) on 11/4/18 @ 1:15 AM.
+ */
+public interface ArchiveType {
+
+    // The only non-default method, and it's implemented for you when creating enums.
+    String name();
+
+    default String[] getFileTypes() {
+        return new String[0];
+    }
+    default Class<? extends Task>[] getTaskTypes() {
+        return new Class[0];
+    }
+    default String getExtension() {
+        return "jar";
+    }
+    default boolean isClasses() {
+        return true;
+    }
+    default boolean isSources() {
+        return false;
+    }
+    default boolean isDocs() {
+        return false;
+    }
+
+    /**
+     * @return true for the "main artifact of this module".
+     *
+     * This archive should include, if present, any api or spi module,
+     * (where api maps to gradle api configuration, and spi maps to implementation)
+     * as well as any "common glue" (shared abstractions that should be transitive dependencies).
+     *
+     * This can allow you to move heavier dependencies to your spi layer (each impl will depend on spi directly),
+     * to protect downstream api consumers from heavy classpaths and superfluous rebuilds.
+     *
+     * The main module will be published without classifiers, and will contain all default transitive dependencies.
+     * The main module will also have a compileOnly view of any stub or staging modules,
+     * so you can reference types that "will exist in the future" (i.e. each mutually-exclusive impl creates com.foo.MyImpl).
+     *
+     * You can think of the main module as supplying "core" or "common" code.
+     * Has compile-time transitivity on api, and run-time transitivity on spi.
+     *
+     * For very simple modules, there may only be a main module.
+     *
+     */
+    default boolean isMain() {
+        return false;
+    }
+
+    /**
+     * @return
+     */
+    default boolean isTest() {
+        return false;
+    }
+
+    /**
+     * @return true for artifacts that define the set of interfaces / types
+     * that consuming code would compile against to use this code.
+     *
+     * This should contain the minimum possible set of classes needed to define a service,
+     * with minimum transitive dependencies.
+     *
+     * You should feel free to add code to api modules, but be afraid to take any away.
+     */
+    default boolean isApi() {
+        return false;
+    }
+
+    /**
+     * @return true for artifacts the define the set of interfaces / types
+     * that implementing code would need to fulfill in order to be fulfill a given API.
+     *
+     * That is, where an api artifact defines how a module can be used,
+     * and a main artifact artifact defines common tools to implement that api,
+     * the spi (service provider interface) defines the api surface of "native magic"
+     * that is needed in common code to fulfill exposed requests.
+     *
+     * Both main (common) artifacts and implementation artifacts should reference the spi.
+     * The main artifact has common glue to "use an spi to fulfill an api",
+     * while the impl artifact just references the spi and native code to "do stuff";
+     * it may or may not even reference the exposed api (i.e. the spi is for i18n messages, db code, etc)
+     */
+    default boolean isSpi() {
+        return false;
+    }
+    default boolean isStub() {
+        return false;
+    }
+    default boolean isImpl() {
+        return isStub();
+    }
+
+    default boolean isIncludeAll() {
+        final String[] types = getFileTypes();
+        return types.length == 0 ||
+            ( types.length == 1 && "*".equals(types[0]) );
+    }
+
+    default ArchiveType[] getTypes() {
+        return new ArchiveType[0];
+    }
+
+    default String sourceName() {
+        return name().toLowerCase();
+    }
+}

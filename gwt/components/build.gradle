@@ -1,0 +1,45 @@
+plugins {
+    id 'java-library'
+}
+
+repositories {
+    maven {
+        name = 'xapiLocal'
+        url = new URI("file://$rootDir/repo")
+    }
+    jcenter()
+}
+
+sourceSets.getByName('main').java {
+    srcDirs 'src/main/java',
+            // for now, we'll do this manually.
+            'src/main/gen'
+}
+
+dependencies {
+    compile project(':xapi-gwt-parent:xapi-elemental')
+    compile project(':xapi-gwt-parent:xapi-gwt3')
+    compile project(':xapi-jre-parent:xapi-jre-io')
+    compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-generator')
+    compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api')
+    compile project(':xapi-core-parent:xapi-core-lang')
+    compile project(':xapi-core-parent:xapi-core-lang')
+    compile 'net.wetheinter:gwt-user:2.8.0'
+    testCompile project(':xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-impl')
+    testCompile project(':xapi-dev-parent:xapi-dev-javac')
+    testRuntime project(':xapi-jre-parent:xapi-jre-inject')
+    testCompile 'junit:junit:4.12'
+    testCompile 'info.cukes:cucumber-java:1.2.5'
+    testCompile 'info.cukes:cucumber-junit:1.2.5'
+    testCompile 'org.assertj:assertj-core:3.2.0'
+    compileOnly 'net.wetheinter:gwt-dev:2.8.0'
+    testRuntime 'net.wetheinter:gwt-dev:2.8.0'
+}
+
+description = 'XApi - Web Component Implementation'
+
+gradle.projectsEvaluated {
+    test {
+        maxHeapSize = '2G'
+    }
+}

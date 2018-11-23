@@ -1,0 +1,36 @@
+plugins {
+    id 'java-library'
+}
+
+repositories {
+    maven {
+        name = 'xapiLocal'
+        url = new URI("file://$rootDir/repo")
+    }
+    jcenter()
+}
+
+dependencies {
+    compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api')
+    compile project(':xapi-core-parent:xapi-core-event')
+    compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui')
+    compile project(':xapi-core-parent:xapi-core-collect')
+    compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui')
+    compile project(':xapi-gwt-parent:xapi-gwt-model')
+    compile project(':xapi-dev-parent:xapi-dev-source')
+    compile project(':xapi-dev-parent:xapi-dev-source')
+    compile project(':xapi-jre-parent:xapi-jre-inject')
+    testCompile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui')
+    testCompile project(path: ':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui', configuration: 'testRuntime')
+    testRuntime project(':xapi-gwt-parent:xapi-gwt-test')
+    compileOnly 'net.wetheinter:gwt-dev:2.8.0'
+    compileOnly 'net.wetheinter:gwt-user:2.8.0'
+    testRuntime 'net.wetheinter:gwt-dev:2.8.0'
+    testRuntime 'net.wetheinter:gwt-user:2.8.0'
+    testRuntime 'net.wetheinter:gwt-codeserver:2.8.0'
+    testRuntime 'net.sourceforge.htmlunit:htmlunit:2.19'
+}
+
+apply from: "$rootDir/gradle/gwt-test.gradle"
+
+description = 'XApi - GWT AutoUi (generating GWT UI\'s based on model interfaces)'

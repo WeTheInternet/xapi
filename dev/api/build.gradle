@@ -1,0 +1,15 @@
+plugins { id 'xapi' }
+
+dependencies {
+    compile project(':xapi-core-parent:xapi-core-process')
+    compile project(':xapi-core-parent:xapi-core-model')
+    compile project(':xapi-core-parent:xapi-core-io')
+    compile project(':xapi-core-parent:xapi-core-scope')
+    compile project(':xapi-core-parent:xapi-core-lang')
+}
+
+test {
+    systemProperty 'xapi.maven.repo', "$rootDir/repo"
+}
+
+description = 'XApi - Common dev mode tools'

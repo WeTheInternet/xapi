@@ -1,0 +1,16 @@
+plugins {
+    id 'java-library'
+}
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api')
+    testCompile 'junit:junit:4.12'
+    testCompile project(':xapi-jre-parent:xapi-jre-inject')
+    testCompile project(':xapi-core-parent:xapi-core-test')
+}
+
+description = 'XApi - Core UI Generator'

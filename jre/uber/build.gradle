@@ -1,0 +1,23 @@
+plugins {
+    id 'java-library'
+}
+
+repositories {
+    maven {
+        name = 'xapiLocal'
+        url = new URI("file://$rootDir/repo")
+    }
+    jcenter()
+}
+
+dependencies {
+    compile project(':xapi-jre-parent:xapi-jre-process')
+    compile project(':xapi-jre-parent:xapi-jre-collect')
+    compile project(':xapi-jre-parent:xapi-jre-io')
+    compile project(':xapi-jre-parent:xapi-jre-api')
+    compile project(':xapi-dev-parent:xapi-dev-scanner')
+    compile project(':xapi-jre-parent:xapi-jre-ui-parent:xapi-jre-ui-javafx')
+    testCompile project(':xapi-core-parent:xapi-core-test')
+}
+
+description = 'XApi - Jre uber jar'

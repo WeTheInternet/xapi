@@ -1,0 +1,25 @@
+plugins {
+    id 'java-library'
+}
+
+repositories {
+    maven {
+        name = 'xapiLocal'
+        url = new URI("file://$rootDir/repo")
+    }
+    jcenter()
+}
+
+dependencies {
+    compile project(':xapi-core-parent:xapi-fu')
+    compile project(':xapi-core-parent:xapi-core-inject')
+    compile project(':xapi-core-parent:xapi-core-inject')
+    compile project(':xapi-core-parent:xapi-core-log')
+    compile project(':xapi-gwt-parent:xapi-gwt-api')
+    compile project(':xapi-dev-parent:xapi-dev-source')
+    compile project(':xapi-dev-parent:xapi-dev-source')
+    compileOnly 'net.wetheinter:gwt-dev:2.8.0'
+    compileOnly 'net.wetheinter:gwt-user:2.8.0'
+}
+
+description = 'XApi - Gwt Injection Service'

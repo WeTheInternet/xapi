@@ -1,0 +1,26 @@
+plugins {
+    id 'java-library'
+}
+
+repositories {
+    jcenter()
+    maven {
+        name = 'xapiLocal'
+        url = new URI("file://$rootDir/repo")
+    }
+}
+
+dependencies {
+    compile project(':xapi-gwt-parent:xapi-gwt-api')
+    compile project(':xapi-gwt-parent:xapi-gwt-ui-parent:xapi-gwt-ui-api')
+    compile 'com.google.elemental2:elemental2-dom:1.0.0-RC1'
+    compile 'com.google.jsinterop:base:1.0.0-RC1'
+    testCompile 'junit:junit:4.12'
+    testCompile 'info.cukes:cucumber-java:1.2.5'
+    testCompile 'info.cukes:cucumber-junit:1.2.5'
+    testCompile 'org.hamcrest:hamcrest-library:1.1'
+    compileOnly 'net.wetheinter:gwt-dev:2.8.0'
+    compileOnly 'net.wetheinter:gwt-user:2.8.0'
+}
+
+description = 'XApi - GWT 3'

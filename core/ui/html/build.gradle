@@ -1,0 +1,25 @@
+plugins {
+    id 'java-library'
+}
+
+repositories {
+    maven {
+        name = 'xapiLocal'
+        url = new URI("file://$rootDir/repo")
+    }
+    jcenter()
+}
+
+dependencies {
+    compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui')
+    compile project(':xapi-core-parent:xapi-core-collect')
+    implementation 'net.wetheinter:gwt-user:2.8.0'
+    testCompile 'junit:junit:4.12'
+    testCompile project(':xapi-jre-parent:xapi-jre-inject')
+    testCompile project(path:':xapi-jre-parent:xapi-jre-inject', configuration: 'testRuntime')
+    testCompile project(':xapi-core-parent:xapi-core-test')
+    testCompile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui')
+    testCompile project(path: ':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui', configuration: 'testRuntime')
+}
+
+description = 'XApi - Core Html utils'

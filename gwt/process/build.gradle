@@ -1,0 +1,22 @@
+plugins {
+    id 'java-library'
+}
+
+repositories {
+    maven {
+        name = 'xapiLocal'
+        url = new URI("file://$rootDir/repo")
+    }
+    jcenter()
+}
+
+dependencies {
+    compile project(':xapi-gwt-parent:xapi-gwt-inject')
+    compile project(':xapi-core-parent:xapi-core-process')
+    compile project(':xapi-core-parent:xapi-core-process')
+    compile project(':xapi-core-parent:xapi-core-scope')
+    testCompile project(':xapi-core-parent:xapi-core-test')
+    compileOnly 'net.wetheinter:gwt-user:2.8.0'
+}
+
+description = 'XApi - GWT concurrency implementation'

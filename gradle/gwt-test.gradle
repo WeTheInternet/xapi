@@ -1,0 +1,29 @@
+import java.time.Duration
+
+configurations[JavaPlugin.TEST_RUNTIME_CLASSPATH_CONFIGURATION_NAME].allDependencies.forEach {
+    Dependency d ->
+        if (d instanceof ProjectDependency) {
+            dependencies.add(JavaPlugin.TEST_RUNTIME_ONLY_CONFIGURATION_NAME, files(d.dependencyProject.sourceSets[SourceSet.MAIN_SOURCE_SET_NAME].allJava.srcDirs))
+            dependencies.add(JavaPlugin.TEST_RUNTIME_ONLY_CONFIGURATION_NAME, files(d.dependencyProject.sourceSets[SourceSet.MAIN_SOURCE_SET_NAME].resources.srcDirs))
+            dependencies.add(JavaPlugin.TEST_RUNTIME_ONLY_CONFIGURATION_NAME, files(d.dependencyProject.sourceSets[SourceSet.TEST_SOURCE_SET_NAME].allJava.srcDirs))
+            dependencies.add(JavaPlugin.TEST_RUNTIME_ONLY_CONFIGURATION_NAME, files(d.dependencyProject.sourceSets[SourceSet.TEST_SOURCE_SET_NAME].resources.srcDirs))
+        }
+}
+ConfigurableFileCollection sources = files(
+        sourceSets[SourceSet.MAIN_SOURCE_SET_NAME].allJava.srcDirs,
+        sourceSets[SourceSet.MAIN_SOURCE_SET_NAME].resources.srcDirs,
+        sourceSets[SourceSet.TEST_SOURCE_SET_NAME].allJava.srcDirs,
+        sourceSets[SourceSet.TEST_SOURCE_SET_NAME].resources.srcDirs,
+)
+dependencies.add(JavaPlugin.TEST_RUNTIME_ONLY_CONFIGURATION_NAME, sources)
+
+dependencies.add(JavaPlugin.TEST_RUNTIME_ONLY_CONFIGURATION_NAME, 'net.wetheinter:gwt-dev:2.8.0')
+
+test {
+    logging.level = LogLevel.INFO
+    forkEvery = 1
+    maxHeapSize = '2G'
+    timeout = Duration.ofMinutes(10)
+//    systemProperty('gwt.args', "-logLevel TRACE -noincremental  -ea -userAgents safari -runStyle Manual -style PRETTY -gen $buildDir/www-test/gen -nodevMode -war $buildDir/www-test ")
+    systemProperty('gwt.args', "-logLevel INFO -noincremental  -ea -userAgents gecko1_8 -runStyle HtmlUnit -nodevMode -war $buildDir/www-test ")
+}

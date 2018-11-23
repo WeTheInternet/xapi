@@ -1,0 +1,12 @@
+plugins { id 'xapi' }
+
+dependencies {
+    compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-components')
+    compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-generator')
+    compile project(':xapi-jre-parent:xapi-jre-io')
+    compile project(':xapi-jre-parent:xapi-jre-collect')
+    compile project(':xapi-core-parent:xapi-core-io')
+    compile project(':xapi-dev-parent:xapi-dev-javac')
+}
+
+description = 'XApi - Jre JavaFx UI'

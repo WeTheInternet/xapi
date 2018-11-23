@@ -1,0 +1,31 @@
+plugins {
+    id 'java-library'
+}
+import org.gradle.internal.jvm.Jvm
+
+repositories {
+    maven {
+        name = 'xapiLocal'
+        url = new URI("file://$rootDir/repo")
+    }
+    jcenter()
+}
+
+dependencies {
+    compile project(':xapi-core-parent:xapi-core-lang')
+    compile project(':xapi-jre-parent:xapi-jre-io')
+    compile project(':xapi-core-parent:xapi-core-scope')
+    compile project(':xapi-jre-parent:xapi-jre-inject')
+    compile project(':xapi-dev-parent:xapi-dev-file')
+    compileOnly 'net.wetheinter:gwt-dev:2.8.0'
+    compileOnly files(Jvm.current().toolsJar)
+    testCompile'net.wetheinter:gwt-dev:2.8.0'
+    testCompile files(Jvm.current().toolsJar)
+    testCompile 'net.wetheinter:gwt-user:2.8.0'
+    testCompile 'net.wetheinter:gwt-elemental:2.8.0'
+    testCompile project(':xapi-core-parent:xapi-core-test')
+    testCompile 'org.assertj:assertj-core-java8:1.0.0m1'
+
+}
+
+description = 'XApi - Java 8 compiler plugins'

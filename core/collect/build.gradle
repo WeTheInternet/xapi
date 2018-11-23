@@ -1,0 +1,20 @@
+plugins {
+    id 'java-library'
+}
+
+evaluationDependsOn ':'
+
+repositories {
+    maven {
+        name = 'xapiLocal'
+        url = new URI("file://$rootDir/repo")
+    }
+    jcenter()
+}
+
+dependencies {
+    compile project(':xapi-core-parent:xapi-core-inject')
+    testCompile 'junit:junit:4.12'
+}
+
+description = 'XApi - Collections Utilities'

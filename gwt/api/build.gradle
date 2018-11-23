@@ -1,0 +1,30 @@
+plugins {
+    id 'java-library'
+}
+
+repositories {
+    maven {
+        name = 'xapiLocal'
+        url = new URI("file://$rootDir/repo")
+    }
+    jcenter()
+}
+
+dependencies {
+    compile 'com.google.elemental2:elemental2-core:1.0.0-RC1'
+    compile project(':xapi-dev-parent:xapi-dev-source')
+    compile project(':xapi-core-parent:xapi-fu')
+    compile project(':xapi-core-parent:xapi-core-api')
+    compile project(':xapi-core-parent:xapi-core-inject')
+    compile project(':xapi-core-parent:xapi-core-reflect')
+    compile project(':xapi-core-parent:xapi-core-util')
+    compile 'com.google.jsinterop:base:1.0.0-RC1'
+    compile 'javax.inject:javax.inject:1'
+    compile 'javax.inject:javax.inject:1:sources'
+    compile 'javax.validation:validation-api:1.0.0.GA'
+    compile 'javax.validation:validation-api:1.0.0.GA:sources'
+    compileOnly 'net.wetheinter:gwt-dev:2.8.0'
+    compileOnly 'net.wetheinter:gwt-user:2.8.0'
+}
+
+description = 'XApi - Gwt core emulation layer'

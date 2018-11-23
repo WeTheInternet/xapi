@@ -1,0 +1,14 @@
+plugins {
+    id 'java-library'
+}
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    api project(':xapi-gradle-fu')
+    testCompile 'junit:junit:4.12'
+}
+
+description = 'XApi - Dev mode tools for source generation'

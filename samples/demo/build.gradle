@@ -1,0 +1,25 @@
+plugins {
+    id 'java-library'
+}
+
+repositories {
+    maven {
+        name = 'wtiLocal'
+        url = "$rootDir.parent/wti/repo"
+    }
+}
+
+dependencies {
+    compile project(':xapi-core-parent:xapi-core-api')
+    compile project(':xapi-dev-parent:xapi-dev')
+    implementation ('de.mocra.cy:wti-shared:0.1-SNAPSHOT') {
+        exclude group: 'net.wetheinter'
+    }
+    compile project(':xapi-gwt-parent:xapi-gwt3')
+    compile project(':xapi-gwt-parent:xapi-components')
+    compile project(':xapi-jre-parent:xapi-jre-ui-parent:xapi-jre-ui-javafx')
+}
+
+description = 'XApi - Demo Application'
+
+sourceSets.main.java.srcDirs( 'src/main/java', 'src/main/gen')

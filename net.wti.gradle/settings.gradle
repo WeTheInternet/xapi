@@ -1,0 +1,41 @@
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.nio.file.Path
+
+rootProject.name = 'net.wti.gradle'
+
+List<String> projects = [
+        'fu', 'plugin', 'gen', 'anno', 'mirror', 'meta', 'api'
+]
+include(projects as String[])
+
+def artifactId = {
+    switch (it) {
+        // TODO: move all the rest into here and then make it the default.
+        // Requires moving source, and git backlog is already really big;
+        // We're just going to do the minimum required to get the annotation mirror processor working.
+        case 'mirror':
+            return "dev-$it"
+    }
+    return "gradle-$it"
+}
+
+projects.forEach({p->
+    project(":$p").buildFileName = "dev-${p}.gradle"
+    project(":$p").name = "xapi-${artifactId(p)}"
+})
+
+Path srcLink = Paths.get(rootDir.absolutePath, 'fu', 'src')
+if (!Files.isSymbolicLink(srcLink)) {
+    Files.createSymbolicLink(srcLink, Paths.get(rootDir.parentFile.absolutePath, 'core', 'fu', 'src'))
+}
+
+srcLink = Paths.get(rootDir.absolutePath, 'gen', 'src')
+if (!Files.isSymbolicLink(srcLink)) {
+    Files.createSymbolicLink(srcLink, Paths.get(rootDir.parentFile.absolutePath, 'dev', 'source', 'src'))
+}
+
+srcLink = Paths.get(rootDir.absolutePath, 'anno', 'src')
+if (!Files.isSymbolicLink(srcLink)) {
+    Files.createSymbolicLink(srcLink, Paths.get(rootDir.parentFile.absolutePath, 'anno', 'src'))
+}

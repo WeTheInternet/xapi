@@ -1,0 +1,19 @@
+plugins { id 'xapi' }
+
+dependencies {
+    compile 'org.slf4j:slf4j-api:1.7.25'
+    compile project(':xapi-server-parent:xapi-server-api')
+    compile project(':xapi-dev-parent:xapi-dev-scanner')
+    compile project(':xapi-dev-parent:xapi-dev-api')
+    compile project(':xapi-jre-parent:xapi-jre-model')
+    compile project(':xapi-jre-parent:xapi-jre-inject')
+    compile 'org.eclipse.aether:aether-connector-basic:1.0.1.v20141111'
+    compile 'org.eclipse.aether:aether-transport-file:1.0.1.v20141111'
+    compile 'org.eclipse.aether:aether-transport-http:1.0.1.v20141111'
+    compile 'org.eclipse.aether:aether-impl:1.0.1.v20141111'
+    compile 'org.apache.maven:maven-core:3.2.5'
+    testCompile project(':xapi-core-parent:xapi-core-test')
+    testCompile project(':xapi-jre-parent:xapi-jre-io')
+}
+
+description = 'XApi - Pom scanner and portable maven api'

@@ -68,7 +68,7 @@
 				<directory>src/main/resources</directory>
 			</resource>
 		</resources>
-		<plugins>
+		<plugins><!--
 			<plugin>
         <groupId>org.bsc.maven</groupId>
         <artifactId>maven-processor-plugin</artifactId>
@@ -89,7 +89,7 @@
             </configuration>
           </execution>
         </executions>
-			</plugin>
+			</plugin>-->
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>build-helper-maven-plugin</artifactId>
@@ -105,6 +105,7 @@
 							<sources>
 								<source>${project.build.directory}/generated-sources/apt</source>
 								<source>${project.build.directory}/generated-sources/xapi</source>
+								<source>${project.basedir}/build/generated/main</source>
 							</sources>
 						</configuration>
 					</execution>

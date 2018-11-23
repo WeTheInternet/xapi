@@ -1,0 +1,12 @@
+
+evaluationDependsOn ':xapi-core-parent'
+apply plugin: 'xapi'
+import xapi.gradle.tools.Depend
+Depend depend = new Depend(project)
+
+dependencies {
+    compile depend.onXapi(':xapi-core-parent:xapi-core-collect'),
+            depend.onXapi(':xapi-jre-parent:xapi-jre-inject')
+}
+
+description = 'XApi - Events: Generic event handling code'

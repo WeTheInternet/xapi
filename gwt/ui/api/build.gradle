@@ -1,0 +1,18 @@
+plugins {
+    id 'java-library'
+}
+
+repositories {
+    jcenter()
+    maven {
+        name = 'xapiLocal'
+        url = new URI("file://$rootDir/repo")
+    }
+}
+
+dependencies {
+    compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api')
+    compileOnly 'net.wetheinter:gwt-user:2.8.0'
+}
+
+description = 'XApi - Basic shared ui api Gwt implementations'

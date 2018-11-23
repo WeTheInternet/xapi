@@ -1,0 +1,34 @@
+plugins {
+    id 'java-library'
+}
+import xapi.gradle.X_Gradle
+X_Gradle.init project
+
+dependencies {
+    compile project(':xapi-core-parent:xapi-core-lang')
+    compile project(':xapi-server-parent:xapi-server-api')
+    compile project(':xapi-dev-parent:xapi-dev-javac')
+    compile project(':xapi-dev-parent:xapi-dev-api')
+    compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-generator')
+    compile project(':xapi-jre-parent:xapi-jre-process')
+    compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api')
+    implementation 'net.wetheinter:gwt-user:2.8.0'
+    testCompile 'javax.servlet:javax.servlet-api:3.1-b02'
+    testCompile 'org.eclipse.jetty:jetty-server:9.0.0.M3'
+    testCompile 'org.eclipse.jetty:jetty-servlet:9.0.0.M3'
+    testCompile project(':xapi-dev-parent:xapi-dev-scanner')
+    testCompile project(':xapi-jre-parent:xapi-jre-collect')
+    testCompile 'junit:junit:4.12'
+    testCompile 'info.cukes:cucumber-java:1.2.5'
+    testCompile 'info.cukes:cucumber-junit:1.2.5'
+    compileOnly project(':xapi-dev-parent:xapi-dev-javac')
+    testRuntime project(':xapi-dev-parent:xapi-dev-javac')
+}
+
+task packageTests(type: Jar) {
+    classifier = 'tests'
+    from(sourceSets.test.output)
+}
+
+description = 'XApi - Server generator'
+artifacts.archives(tasks.packageTests)

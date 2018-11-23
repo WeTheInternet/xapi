@@ -1,0 +1,15 @@
+plugins {
+    id 'java-library'
+}
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    compile project(':xapi-core-parent:xapi-core-collect')
+    compile project(':xapi-core-parent:xapi-core-reflect')
+    testCompile 'junit:junit:4.12'
+}
+
+description = 'XApi - Public services exposed by XApi core'

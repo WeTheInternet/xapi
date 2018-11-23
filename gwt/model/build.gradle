@@ -1,0 +1,40 @@
+plugins {
+    id 'java-library'
+}
+
+repositories {
+    jcenter()
+    maven {
+        name = 'xapiLocal'
+        url = new URI("file://$rootDir/repo")
+    }
+}
+
+dependencies {
+    compile project(':xapi-gwt-parent:xapi-gwt-io')
+    compile project(':xapi-gwt-parent:xapi-gwt-collect')
+    compile project(':xapi-core-parent:xapi-core-model')
+    compile project(':xapi-dev-parent:xapi-gen')
+    compile project(':xapi-dev-parent:xapi-dev-source')
+    compile project(':xapi-core-parent:xapi-core-reflect')
+    compile project(':xapi-jre-parent:xapi-jre-collect')
+    compile project(':xapi-jre-parent:xapi-jre-inject')
+    compile project(':xapi-jre-parent:xapi-jre-api')
+    testCompile project(':xapi-core-parent:xapi-core-test')
+    testCompile 'junit:junit:4.12'
+    testCompile 'net.sourceforge.htmlunit:htmlunit:2.19'
+    testRuntime project(':xapi-jre-parent:xapi-jre-inject')
+    testCompile project(':xapi-jre-parent:xapi-jre-model')
+    testCompile project(':xapi-gwt-parent:xapi-gwt-io')
+    testCompile project(':xapi-server-parent:xapi-server-api')
+    compileOnly 'net.wetheinter:gwt-dev:2.8.0'
+    implementation 'net.wetheinter:gwt-user:2.8.0'
+}
+
+task packageTests(type: Jar) {
+    classifier = 'tests'
+    from(sourceSets.test.output)
+}
+
+description = 'XApi - GWT implementation of data model'
+artifacts.archives(tasks.packageTests)

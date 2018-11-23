@@ -39,6 +39,7 @@
 
   <build>
     <plugins>
+<!--
       <plugin>
         <groupId>org.bsc.maven</groupId>
         <artifactId>maven-processor-plugin</artifactId>
@@ -67,10 +68,12 @@
           </execution>
         </executions>
       </plugin>
+-->
         <plugin>
             <groupId>net.wetheinter</groupId>
             <artifactId>xapi-maven-plugin</artifactId>
             <version>${xapi.plugin.version}</version>
+          <!-- Disabling for now...  should just move to gradle already... -->
             <executions>
                 <execution>
                     <id>annogen</id>
@@ -100,6 +103,7 @@
               <sources>
                 <source>${project.build.directory}/generated-sources/annotations</source>
                 <source>${project.build.directory}/generated-sources/xapi</source>
+                <source>${project.basedir}/build/generated/main</source>
               </sources>
             </configuration>
           </execution>

@@ -1,0 +1,26 @@
+plugins {
+    id 'java-library'
+}
+
+repositories {
+    jcenter()
+    maven {
+        name = 'xapiLocal'
+        url = new URI("file://$rootDir/repo")
+    }
+}
+
+dependencies {
+    compile project(':xapi-core-parent:xapi-core-lang')
+    compile project(':xapi-core-parent:xapi-core-scope')
+    compileOnly 'net.wetheinter:jsinterop-annotations:2.8.0'
+    compile project(':xapi-core-parent:xapi-core-event')
+    compile project(':xapi-core-parent:xapi-core-model')
+    compile project(':xapi-dev-parent:xapi-dev-file')
+    testCompile 'junit:junit:4.12'
+    testCompile 'org.assertj:assertj-core:3.2.0'
+    testCompile project(':xapi-jre-parent:xapi-jre-model')
+    testCompile project(':xapi-core-parent:xapi-core-test')
+}
+
+description = 'XApi - Core UI Apis'

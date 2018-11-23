@@ -1,0 +1,8 @@
+plugins { id 'xapi' }
+
+dependencies {
+    compile project(':xapi-jre-parent:xapi-jre-inject')
+    compile project(':xapi-core-parent:xapi-core-collect')
+}
+
+description = 'XApi - Jre collections implementation'

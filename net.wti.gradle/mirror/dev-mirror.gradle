@@ -1,0 +1,12 @@
+plugins {
+    id 'java-library'
+}
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    api project(':xapi-gradle-gen'),
+        project(':xapi-gradle-anno')
+}

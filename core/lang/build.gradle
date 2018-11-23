@@ -1,0 +1,30 @@
+plugins {
+    id 'java-library'
+    id 'groovy'
+    id "ca.coglinc.javacc" version "2.4.0"
+}
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    compile project(':xapi-core-parent:xapi-core-util')
+    testCompile "org.spockframework:spock-core:1.2-groovy-2.4"
+    testRuntime project(':xapi-jre-parent:xapi-jre-collect')
+    javacc 'net.java.dev.javacc:javacc:7.0.4'
+}
+
+sourceSets.getByName('main') {
+    java {
+        srcDirs = ['src/main/java', 'src/main/gen',
+                   compileJavacc.outputDirectory
+        ]
+    }
+    groovy {
+        // explicitly empty; we only use groovy for testing.
+        srcDirs = []
+    }
+}
+
+description = 'XApi - Java language extensions / parsing tools'

@@ -1,0 +1,7 @@
+plugins { id 'xapi' }
+
+dependencies {
+    compile project(':xapi-core-parent:xapi-core-io')
+}
+
+description = 'XApi - Jre core API'

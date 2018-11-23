@@ -1,0 +1,17 @@
+plugins {
+    id 'idea'
+    id 'java-library'
+}
+import xapi.gradle.X_Gradle
+X_Gradle.init project
+
+dependencies {
+    compile project(':xapi-core-parent:xapi-core-io')
+    compile project(':xapi-jre-parent:xapi-jre-process')
+    compile project(':xapi-server-parent:xapi-server-api')
+    compile project(':xapi-dev-parent:xapi-dev-file')
+    testCompile project(':xapi-core-parent:xapi-core-test')
+    testRuntime project(':xapi-jre-parent:xapi-jre-inject')
+}
+
+description = 'XApi - Command line interface.'

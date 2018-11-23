@@ -1,0 +1,27 @@
+plugins {
+    id 'java-gradle-plugin'
+    id 'groovy'
+}
+
+repositories {
+    jcenter()
+    maven {
+        name = 'xapiLocal'
+        url = new URI("file://$rootDir.parent/repo")
+    }
+}
+
+dependencies {
+    api project(":xapi-gradle-api")
+    api project(":xapi-gradle-gen")
+    compileOnly gradleApi()
+    // we'll leave it up to scripts to decide which plugin/version they want to use...
+    compileOnly 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.0',
+                'org.jfrog.buildinfo:build-info-extractor-gradle:4.8.1'
+
+    // TODO: change this back to real identifier once already-merged patches are deployed
+    compileOnly 'com.github.jengelman.gradle.plugins:shadowTest:4.0.3-SNAPSHOT'
+
+    testCompile 'org.spockframework:spock-core:1.2-groovy-2.5'
+    testCompile gradleTestKit()
+}

@@ -1,0 +1,20 @@
+plugins {
+    id 'java-library'
+}
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    compile project(':xapi-core-parent:xapi-core-lang')
+    compile project(':xapi-core-parent:xapi-core-io')
+    compile project(':xapi-dev-parent:xapi-dev-javac')
+    compile project(':xapi-dev-parent:xapi-dev-scanner')
+    compile project(':xapi-jre-parent:xapi-jre-inject')
+    compile project(':xapi-jre-parent:xapi-jre-api')
+    testCompile 'junit:junit:4.12'
+    testCompile 'org.assertj:assertj-core-java8:1.0.0m1'
+}
+
+description = 'XApi - Code Generator API'

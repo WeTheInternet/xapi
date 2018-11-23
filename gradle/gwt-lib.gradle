@@ -1,0 +1,32 @@
+import xapi.gradle.gwt.Gwt
+tasks.create 'sourceJar2', Jar, {
+    dependsOn classes
+    classifier = 'sources'
+    from sourceSets.main.allJava
+}
+
+artifacts {
+    archives sourceJar
+}
+
+configurations.all {
+    Configuration c ->
+        boolean isTest = c.name.toLowerCase().contains('test')
+        c.dependencies.all {
+            Dependency d ->
+                if (d instanceof ProjectDependency) {
+                    // Whenever there is a project dependency,
+                    // we want to add that project's source jar to our runtime classpath
+                    Project other = d.dependencyProject
+                    FileCollection added = Gwt.findSources(other, isTest)
+                    logger.quiet("Adding $added.files \nto $c")
+                    project.dependencies.add(
+                            c.name == 'api' ? 'runtime' :
+                                c.name.replace('compile', 'runtime')
+                                      .replace('Compile', 'Runtime')
+                            , added)
+                }
+        }
+}
+
+dependencies.add JavaPlugin.TEST_RUNTIME_CONFIGURATION_NAME, Gwt.findSources(project, true)

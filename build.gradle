@@ -1,0 +1,101 @@
+plugins {
+    id 'groovy'
+    id 'idea'
+    id 'xapi-root'
+}
+
+import org.gradle.internal.jvm.Jvm
+
+import static org.gradle.api.tasks.wrapper.Wrapper.DistributionType
+
+System.setProperty("uniqueVersion", "false")
+
+plugins.apply 'xapi-root'
+
+xapi {
+    preload('javax.validation:validation-api:1.0.0.GA')
+    preload('javax.validation:validation-api:1.0.0.GA:sources')
+}
+
+import xapi.gradle.gwt.Gwt
+allprojects {
+    group = 'net.wetheinter'
+    version = '0.5.1-SNAPSHOT'
+
+    plugins.apply 'maven'
+    plugins.apply 'idea'
+    repositories.jcenter()
+    repositories.maven {
+        name = 'xapiLocal'
+        url = new URI("file://$rootDir/repo")
+    }
+    // we want all projects to have xapi plugin,
+    // but we'll wait until they are resolved,
+    // to give each project a chance to pick a more specific plugin.
+    afterEvaluate {
+        plugins.apply 'xapi'
+        test {
+            if (!maxHeapSize) {
+                maxHeapSize = '1G'
+            }
+        }
+    }
+}
+
+gradle.beforeProject {
+    Project p ->
+        if (p.buildscript.repositories.empty) {
+            p.buildscript.repositories.jcenter()
+            p.buildscript.repositories.maven {
+                name = 'xapiLocal'
+                url = new File(rootDir, 'repo')
+            }
+        }
+        xapi.gradle.publish.Publish.addPublishing(p)
+}
+
+subprojects {
+    Project p -> p.with {
+        plugins.apply 'java-library'
+
+        tasks.create 'testJar', Jar, {
+            Jar jar ->
+                jar.classifier = 'test'
+                jar.from sourceSets.test.output
+        }
+        Gwt.maybeInstall(p)
+
+        p.dependencies.add JavaPlugin.RUNTIME_ONLY_CONFIGURATION_NAME,
+                p.files(Jvm.current().toolsJar)
+
+        p.tasks.withType(JavaCompile).all {
+            JavaCompile javac ->
+                // For now, we'll disable this; in the future,
+                // we'll get some modules that run the javac plugins during the build;
+//                javac.options.fork = true
+//                javac.options.forkOptions.jvmArgs << '-Dxapi.no.javac.plugin=true'
+//                javac.options.compilerArgs << '-Axapi.no.javac.plugin=true'
+//    //            javac.options.compilerArgs << '-implicit:none'
+//    //            javac.options.compilerArgs << '-Xprefer:newer'
+                javac.options.sourcepath = files()
+        }
+
+        artifacts {
+            testRuntime testJar
+        }
+
+        sourceCompatibility = '1.8'
+
+        tasks.withType(JavaCompile) {
+            options.encoding = 'UTF-8'
+
+        }
+    }
+}
+
+tasks.named('wrapper', {
+    Wrapper w -> w.with {
+        gradleVersion = '5.0-rc-4'
+        distributionType = DistributionType.ALL
+    }
+})

@@ -1,0 +1,21 @@
+buildscript {
+    dependencies {
+        classpath 'net.wti.gradle:xapi-gradle-plugin:0.5.1'
+    }
+}
+import xapi.gradle.tools.Depend
+plugins {
+    id 'java-library'
+}
+
+repositories {
+    jcenter()
+}
+
+Depend depend = new Depend(project)
+dependencies {
+    compile depend.onXapi(':xapi-core-parent:xapi-fu')
+    testCompile 'junit:junit:4.12'
+}
+
+description = 'XApi - Argument Processors'

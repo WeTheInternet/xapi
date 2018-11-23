@@ -1,0 +1,24 @@
+plugins {
+    id 'java-library'
+}
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api')
+    compile project(':xapi-core-parent:xapi-core-util')
+    compile project(':xapi-core-parent:xapi-core-collect')
+    testCompile 'junit:junit:4.12'
+    testCompile project(':xapi-jre-parent:xapi-jre-inject')
+    testCompile project(':xapi-core-parent:xapi-core-test')
+}
+
+task packageTests(type: Jar) {
+    classifier = 'tests'
+    from(sourceSets.test.output)
+}
+
+description = 'XApi - Core AutoUi'
+artifacts.archives(tasks.packageTests)

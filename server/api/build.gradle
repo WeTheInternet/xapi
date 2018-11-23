@@ -1,0 +1,17 @@
+apply plugin: 'xapi'
+
+dependencies {
+    compile project(':xapi-dev-parent:xapi-dev-api')
+    compile project(':xapi-core-parent:xapi-core-process')
+    compile project(':xapi-jre-parent:xapi-jre-model')
+    compile project(':xapi-core-parent:xapi-core-io')
+    compile project(':xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-api')
+    implementation 'net.wetheinter:gwt-user:2.8.0'
+    testCompile project(':xapi-core-parent:xapi-core-test')
+    testCompile 'org.eclipse.jetty:jetty-server:9.2.14.v20151106'
+    testCompile 'org.eclipse.jetty:jetty-servlet:9.2.14.v20151106'
+    testCompile project(':xapi-dev-parent:xapi-dev-scanner')
+    compileOnly 'javax.servlet:javax.servlet-api:3.1-b02'
+}
+
+description = 'XApi - Server server api'

@@ -1,0 +1,35 @@
+plugins {
+    id 'java-library'
+}
+
+repositories {
+    jcenter()
+    maven {
+        name = 'xapiLocal'
+        url = new URI("file://$rootDir/repo")
+    }
+}
+
+sourceSets.getByName('main').java {
+    srcDirs 'src/main/java'
+}
+
+apply from: "$rootDir/gradle/processor.gradle"
+
+dependencies {
+
+    annotationProcessor 'net.wti.gradle:xapi-dev-mirror:0.5.1'
+
+    compile project(':xapi-dev-parent:xapi-dev-source')
+    compile project(':xapi-core-parent:xapi-core-model')
+    compile project(':xapi-core-parent:xapi-core-process')
+    implementation project(':xapi-jre-parent:xapi-jre-inject')
+    compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api')
+    compile project(':xapi-core-parent:xapi-core-io')
+    implementation 'net.wetheinter:gwt-user:2.8.0'
+    compileOnly 'junit:junit:4.12'
+    compileOnly 'net.wetheinter:gwt-dev:2.8.0'
+    compileOnly 'net.wetheinter:gwt-user:2.8.0'
+}
+
+description = 'XApi - Gwt Compiler Api'

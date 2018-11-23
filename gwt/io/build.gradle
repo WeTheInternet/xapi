@@ -1,0 +1,30 @@
+plugins {
+    id 'java-library'
+}
+
+repositories {
+    jcenter()
+    maven {
+        name = 'xapiLocal'
+        url = new URI("file://$rootDir/repo")
+    }
+}
+
+dependencies {
+    api project(':xapi-core-parent:xapi-core-io')
+    api project(':xapi-gwt-parent:xapi-gwt-collect')
+    implementation 'net.wetheinter:gwt-user:2.8.0'
+    api 'net.wetheinter:jsinterop-annotations:2.8.0'
+    testCompile 'net.wetheinter:gwt-dev:2.8.0'
+    testCompile 'net.wetheinter:gwt-codeserver:2.8.0'
+    testCompile 'net.sourceforge.htmlunit:htmlunit:2.19'
+    testCompile 'junit:junit:4.12'
+}
+
+task packageTests(type: Jar) {
+    classifier = 'tests'
+    from(sourceSets.test.output)
+}
+
+description = 'XApi - Gwt IO implementation'
+artifacts.archives(tasks.packageTests)

@@ -1,0 +1,50 @@
+buildscript {
+    repositories {
+        jcenter()
+        maven {
+            name = 'xapiLocal'
+            url = new URI("file://$rootDir/repo")
+        }
+    }
+    dependencies {
+        classpath 'com.github.jengelman.gradle.plugins:shadowTest:4.0.3-SNAPSHOT'
+        classpath 'net.wti.gradle:xapi-gradle-plugin:0.5.1'
+    }
+}
+
+plugins {
+    id 'java-library'
+    id 'xapi-base'
+}
+setProperty('xapi.main.component', 'shadow')
+plugins.apply 'com.github.johnrengelman.shadow'
+gradle.projectsEvaluated {
+}
+tasks.jar.configure {
+    classifier = 'default'
+}
+
+tasks.shadowJar.configure {
+    classifier = null
+}
+artifacts {
+    archives shadowJar
+}
+assemble.dependsOn(shadowJar)
+
+dependencies {
+    compile project(':xapi-server-parent:xapi-server-vertx')
+    compile project(':xapi-jre-parent:xapi-jre-ui-parent:xapi-jre-ui-javafx')
+    compile project(':xapi-jre-parent:xapi-jre-inject')
+    compile project(':xapi-dev-parent:xapi-dev-file')
+    compile project(':xapi-dev-parent:xapi-dev-shell')
+    compile project(':xapi-dev-parent:xapi-dev-scanner')
+    compile project(':xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-api')
+    compile project(':xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-impl')
+    compile project(':xapi-dev-parent:xapi-dev-maven')
+    compile project(':xapi-dev-parent:xapi-gen')
+    compile project(':xapi-server-parent:xapi-server-gen')
+    testCompile project(':xapi-core-parent:xapi-core-test')
+}
+
+description = 'XApi - Dev uber jar'

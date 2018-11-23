@@ -1,0 +1,17 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'net.wti.gradle:xapi-gradle-plugin:0.5.1'
+    }
+}
+
+plugins {
+    id 'java-library'
+//    id 'xapi-dist'
+}
+
+dependencies {
+
+}

@@ -1,0 +1,59 @@
+plugins {
+    id 'java-library'
+    id 'java-gradle-plugin'
+}
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    api project(":xapi-gradle-api")
+    api project(":xapi-gradle-gen")
+    compileOnly gradleApi()
+}
+version = '0.5.1'
+String doc = '''The meta project converts gradle paths / git coordinates into a single "unified build".
+
+All claims below are of an idealist roadmapped version of what this presently can do.
+
+You might use this to glue together working branches from five different repos,
+or you might simply want to take N project/remote dependencies,
+process them as sources in some way,
+and emit a new, as-dependency-free-as-possible/configurable working project / source set.
+
+
+We will check out sources (from a git repo or file url) into a (by default) build/ directory,
+then melt together all of the build files / buildSrc (and required compositing)
+to create a single "normal gradle project" made up of many source repositories,
+which you can open in IDE, run from main build as GradleBuild tasks,
+or just point to with a monolithic compiler like Gwtc.
+
+It can also do lighter meta-work, like symlinking together various source directories,
+so other build tools can simply point to one directory to get 731 modules combined.
+'''
+description = doc
+GradlePluginDevelopmentExtension plugin = extensions.getByName("gradlePlugin")
+plugin.plugins.register('xapi.meta', {
+    PluginDeclaration decl->
+        decl.id = 'xapi.meta'
+        decl.displayName = "Xapi Meta Plugin"
+        decl.description = doc
+        decl.implementationClass = "xapi.gradle.meta.MetaPlugin"
+})
+
+// Add
+// plugins {
+//  id "com.gradle.plugin-publish" version "0.10.0"
+// }
+// Then uncomment:
+//pluginBundle {
+//    website = "https://wti.net/xapi"
+//    vcsUrl = "https://github.com/WeTheInternet/xapi"
+//    description = doc
+//    tags = listOf("java", "gradle", "git")
+//    mavenCoordinates {
+//        groupId = project.group.toString()
+//        artifactId = project.name
+//    }
+//}
