@@ -4,15 +4,16 @@ import com.github.javaparser.ASTHelper;
 import com.github.javaparser.ast.exception.NotFoundException;
 import com.github.javaparser.ast.visitor.GenericVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitor;
-import xapi.collect.X_Collect;
-import xapi.fu.itr.MappedIterable;
 import xapi.fu.Maybe;
 import xapi.fu.has.HasSize;
+import xapi.fu.itr.MappedIterable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+
+import static xapi.fu.itr.ArrayIterable.iterate;
 
 /**
  * @author James X. Nelson (james@wetheinter.net)
@@ -135,7 +136,7 @@ public class JsonContainerExpr extends JsonExpr implements HasSize {
   }
 
   public static <N extends Expression> JsonContainerExpr jsonArray(N ... nodes) {
-    return jsonArray(X_Collect.arrayIterable(nodes));
+    return jsonArray(iterate(nodes));
   }
 
   public static JsonContainerExpr jsonObject(Expression ... nodes) {

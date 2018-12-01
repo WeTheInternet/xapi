@@ -33,7 +33,12 @@ public class MavenLoaderThread extends Thread {
         String[] paths;
         while ((paths = results.get(coords)) == null) {
             synchronized (results) {
-                results.wait(getMaxTtl());
+                paths = results.get(coords);
+                if (paths == null) {
+                    results.wait(getMaxTtl());
+                } else {
+                    return paths;
+                }
             }
         }
         return paths;

@@ -1,6 +1,6 @@
 package xapi.gradle.task;
 
-import xapi.gradle.api.DefaultArchiveTypes;
+import xapi.gradle.api.DefaultArchiveType;
 
 /**
  * Creates the "main jar" for a given project.
@@ -19,9 +19,9 @@ import xapi.gradle.api.DefaultArchiveTypes;
 public class MainJar extends AbstractXapiJar {
 
     public MainJar() {
-        setArchiveType(DefaultArchiveTypes.MAIN);
+        setArchiveType(DefaultArchiveType.MAIN);
         setClassifier("gwt");
-        addArchiveTypes(DefaultArchiveTypes.API, DefaultArchiveTypes.API);
+        addArchiveTypes(DefaultArchiveType.API, DefaultArchiveType.API);
     }
 
 }

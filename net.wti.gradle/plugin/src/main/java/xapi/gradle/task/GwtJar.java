@@ -1,6 +1,7 @@
 package xapi.gradle.task;
 
-import xapi.gradle.api.DefaultArchiveTypes;
+import xapi.gradle.api.DefaultArchiveType;
+import xapi.gradle.api.PlatformType;
 
 /**
  * Creates a jar tailored for gwt.
@@ -12,9 +13,9 @@ import xapi.gradle.api.DefaultArchiveTypes;
 public class GwtJar extends AbstractXapiJar {
 
     public GwtJar() {
-        setArchiveType(DefaultArchiveTypes.GWT);
+        setArchiveType(PlatformType.GWT);
         setClassifier("gwt");
-        addArchiveTypes(DefaultArchiveTypes.MAIN, DefaultArchiveTypes.SOURCE, DefaultArchiveTypes.API);
+        addArchiveTypes(DefaultArchiveType.MAIN, DefaultArchiveType.SOURCE, DefaultArchiveType.API);
     }
 
 }

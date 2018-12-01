@@ -26,7 +26,7 @@ dependencies {
     compileOnly 'net.wetheinter:gwt-dev:2.8.0'
     compileOnly 'net.wetheinter:gwt-user:2.8.0'
     testRuntime 'net.wetheinter:gwt-dev:2.8.0'
-    testRuntime 'net.wetheinter:gwt-user:2.8.0'
+    testCompile 'net.wetheinter:gwt-user:2.8.0'
     testRuntime 'net.wetheinter:gwt-codeserver:2.8.0'
     testRuntime 'net.sourceforge.htmlunit:htmlunit:2.19'
 }

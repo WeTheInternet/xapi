@@ -46,7 +46,7 @@ subprojects {
             ptml.dependsOn(BasePlugin.ASSEMBLE_TASK_NAME)
             p.tasks.getByName(LifecycleBasePlugin.BUILD_TASK_NAME).dependsOn(ptml)
     }
-    publishing.publications.create 'mavenJava', MavenPublication, {
+    publishing.publications.create 'main', MavenPublication, {
         MavenPublication pub ->
             pub.from p.components.java
             def finish = {
@@ -81,6 +81,6 @@ subprojects {
 }
 
 wrapper {
-    gradleVersion = '5.0-rc-4'
+    gradleVersion = '5.0'
     distributionType = Wrapper.DistributionType.ALL
 }

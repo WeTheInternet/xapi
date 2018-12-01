@@ -395,6 +395,28 @@ public interface MapLike<K, V> extends CollectionLike<Out2<K, V>> {
     }
   }
 
+  default V findByKey(Filter1<K> filter) {
+    K key;
+    for (Out2<K, V> item : this) {
+      key = item.out1();
+      if (filter.filter1(key)) {
+        return item.out2();
+      }
+    }
+    return null;
+  }
+
+  default V findByValue(Filter1<V> filter) {
+    V value;
+    for (Out2<K, V> item : this) {
+      value = item.out2();
+      if (filter.filter1(value)) {
+        return value;
+      }
+    }
+    return null;
+  }
+
   default V filterKeyMapValue(K key, Filter1<K> filter, In1Out1<V, V> mapper) {
     final V is = get(key);
     if (filter.filter1(key)) {
@@ -441,6 +463,7 @@ public interface MapLike<K, V> extends CollectionLike<Out2<K, V>> {
     return is;
   }
 
+  // TODO: rename all these to ifKey*Compute*Both
   default MapLike<K, V> ifKeyMapBoth(K key, Filter1<K> filter, In2Out1<K, V, V> mapper) {
     filterKeyMapBoth(key, filter, mapper);
     return this;
@@ -523,22 +546,40 @@ public interface MapLike<K, V> extends CollectionLike<Out2<K, V>> {
     });
   }
 
+  default V computeIfAbsent(K key, Out1<V> ifAbsent) {
+    return compute(key, In1.ignored(), ifAbsent);
+  }
+
+  default V computeIfAbsent(K key, In1Out1<K, V> ifAbsent) {
+    return compute(key, (k, v)-> {
+      if (v == null) {
+        v = ifAbsent.io(key);
+        put(key, v);
+      }
+      return v;
+    });
+  }
+
   default V computeValue(K key, In1Out1<V, V> io) {
-    V existing = get(key);
-    final V computed = io.io(existing);
-    if (computed != existing) {
-      put(key, computed);
-    }
-    return computed;
+    return HasLock.alwaysLock(this, ()->{
+      V existing = get(key);
+      final V computed = io.io(existing);
+      if (computed != existing) {
+        put(key, computed);
+      }
+      return computed;
+    });
   }
 
   default V computeReturnPrevious(K key, In2Out1<K, V, V> io) {
-    V existing = get(key);
-    final V computed = io.io(key, existing);
-    if (computed != existing) {
-      put(key, computed);
-    }
-    return existing;
+    return HasLock.alwaysLock(this, ()-> {
+      V existing = get(key);
+      final V computed = io.io(key, existing);
+      if (computed != existing) {
+        put(key, computed);
+      }
+      return existing;
+    });
   }
 
   @Override

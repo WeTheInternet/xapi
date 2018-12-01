@@ -99,6 +99,14 @@ public interface Maybe <V> extends Rethrowable {
     default <O> Maybe<O> map(In1Out1<V, O> mapper, Out1<O> ifMissing) {
         return mapIfPresent(mapper).mapIfAbsent(ifMissing);
     }
+
+    default <O> Maybe<O> map(In1Out1<V, O> mapper) {
+        return ()-> {
+            V out = get();
+            return mapper.io(out);
+        };
+
+    }
     default <O> Maybe<O> mapNullSafe(In1Out1<V, O> mapper) {
         return ()-> {
             V out = get();
@@ -286,6 +294,19 @@ public interface Maybe <V> extends Rethrowable {
     default V ifAbsentSupplyUnsafe(Out1Unsafe<V> val) {
         return ifAbsentSupply(val);
     }
+    default <A> Maybe<V> ifAbsent(In1Out1<A, Maybe<? extends V>> val, A arg) {
+        if (isPresent()) {
+            return this;
+        }
+        return val.io(arg)
+            .map(X_Fu.weakener());
+    }
+    default Maybe<V> ifAbsent(Out1<Maybe<V>> val) {
+        if (isPresent()) {
+            return this;
+        }
+        return val.out1();
+    }
     default V ifAbsentSupply(Out1<V> val) {
         if (isPresent()) {
             return get();
@@ -351,4 +372,14 @@ public interface Maybe <V> extends Rethrowable {
             return (V)value[0].out1();
         };
     }
+
+    /**
+     * The java type system kinda sucks;
+     * the only way to weaken a type argument (safely) is through a static method.
+     */
+    @SuppressWarnings("unchecked")
+    static <V1 extends V, V> Maybe<V> weaken(Maybe<V1> from) {
+        return (Maybe<V>) from;
+    }
+
 }

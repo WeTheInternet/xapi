@@ -8,7 +8,7 @@ import org.gradle.api.artifacts.Dependency;
  */
 public class Depend {
 
-    private final String xapiVersion = "0.5.1-SNAPSHOT";
+    private final String xapiVersion = "0.5.1";
     private final Project source;
     private final boolean composited;
     public Depend(Project source) {

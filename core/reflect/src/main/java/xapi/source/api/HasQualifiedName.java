@@ -4,8 +4,12 @@ import xapi.util.X_Util;
 
 import java.io.Serializable;
 
-public interface HasQualifiedName extends Serializable
-{
+public interface HasQualifiedName extends Serializable {
+
+  static boolean isJavaLangObject(HasQualifiedName type) {
+    return type.getQualifiedName().equals("java.lang.Object");
+  }
+
   /**
    * @return the package in which this resource lives.
    */

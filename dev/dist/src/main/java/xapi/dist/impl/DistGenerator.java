@@ -4,6 +4,7 @@ import xapi.bytecode.ClassFile;
 import xapi.dev.api.Dist;
 import xapi.dev.api.MavenLoader;
 import xapi.dev.impl.ReflectiveMavenLoader;
+import xapi.dev.template.CompilationFailed;
 import xapi.dist.api.DistOpts;
 import xapi.dev.resource.impl.SourceCodeResource;
 import xapi.dev.scanner.api.ClasspathScanner;
@@ -131,6 +132,7 @@ public class DistGenerator {
                 }
             } else {
                 X_Log.error(DistGenerator.class, "javac returned ", code, " while running on ", entryPoints, "Check previous log for errors");
+                throw new CompilationFailed("javac returned " + code + " for " + entryPoints.join(","));
             }
         } finally {
             GENERATOR.remove();

@@ -1,5 +1,6 @@
 package xapi.collect.api;
 
+import xapi.fu.In2;
 import xapi.fu.In2Out1;
 import xapi.fu.Out2;
 import xapi.fu.has.HasEmptiness;
@@ -36,6 +37,10 @@ public interface HasValues<K,V> extends EntryIterable<K,V>, HasSize, HasEmptines
   void addAll(Iterable<Out2<K,V>> items);
 
   void removeAll(Iterable<K> items);
+
+  default void removeAll(In2<K, V> callback) {
+    removeWhileTrue(callback.supply1(true));
+  }
 
   default void removeWhileTrue(In2Out1<K, V, Boolean> filter) {
     final Iterator<Entry<K, V>> itr = entries().iterator();

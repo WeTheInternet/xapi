@@ -557,4 +557,33 @@ public interface X_Fu {
     return new RuntimeException(t); // can't get here
   }
 
+    static In1Out1<String, String> toLowerCase() {
+      return ToLowerCase.INST;
+    }
+
+    static In1Out1<String, String> toUpperCase() {
+      return ToUpperCase.INST;
+    }
+}
+final class ToLowerCase implements In1Out1<String, String> {
+
+  static final ToLowerCase INST = new ToLowerCase();
+
+  private ToLowerCase(){}
+
+  @Override
+  public String io(String in) {
+    return in.toLowerCase();
+  }
+}
+final class ToUpperCase implements In1Out1<String, String> {
+
+  static final ToUpperCase INST = new ToUpperCase();
+
+  private ToUpperCase(){}
+
+  @Override
+  public String io(String in) {
+    return in.toUpperCase();
+  }
 }

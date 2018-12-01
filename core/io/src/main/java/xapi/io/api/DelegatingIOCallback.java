@@ -1,6 +1,3 @@
-/**
- *
- */
 package xapi.io.api;
 
 import xapi.util.X_Debug;
@@ -26,16 +23,12 @@ public class DelegatingIOCallback <V> implements IOCallback<V>{
     this.failure = failure;
   }
 
+  @SuppressWarnings("unchecked")
   public static ErrorHandler<Throwable> failHandler(SuccessHandler<?> callback) {
     if (callback instanceof ErrorHandler) {
       return (ErrorHandler)callback;
     }
-    return new ErrorHandler<Throwable>() {
-      @Override
-      public void onError(Throwable e) {
-        X_Debug.rethrow(e);
-      }
-    };
+    return X_Debug::rethrow;
   }
 
   @Override

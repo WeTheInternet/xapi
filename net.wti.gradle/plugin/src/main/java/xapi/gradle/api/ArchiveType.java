@@ -1,6 +1,17 @@
 package xapi.gradle.api;
 
+import groovy.lang.Closure;
+import org.gradle.api.GradleException;
+import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.Task;
+import org.gradle.api.provider.Provider;
+import xapi.fu.Maybe;
+import xapi.fu.Out1;
+import xapi.fu.X_Fu;
+
+import java.util.concurrent.Callable;
+
+import static xapi.fu.itr.ArrayIterable.iterate;
 
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 11/4/18 @ 1:15 AM.
@@ -9,6 +20,10 @@ public interface ArchiveType {
 
     // The only non-default method, and it's implemented for you when creating enums.
     String name();
+
+    default String sourceName() {
+        return name().toLowerCase();
+    }
 
     default String[] getFileTypes() {
         return new String[0];
@@ -107,7 +122,47 @@ public interface ArchiveType {
         return new ArchiveType[0];
     }
 
-    default String sourceName() {
-        return name().toLowerCase();
+    static ArchiveType coerceArchiveType(Object o) {
+        if (o instanceof ArchiveType) {
+            return (ArchiveType) o;
+        }
+        if (o instanceof CharSequence) {
+            String s = o.toString();
+            final ArchiveType type = PlatformType.find(s)
+                .ifAbsent(DefaultArchiveType::find, s)
+                .ifAbsent(DistType::find, s)
+                .getOrThrow(() ->
+                    new InvalidUserDataException("Unknown archive type " + s)
+                );
+            return type;
+        }
+        if (o instanceof Out1) {
+            final Object val = ((Out1) o).out1();
+            return coerceArchiveType(val);
+        }
+        if (o instanceof Provider) {
+            final Object val = ((Provider) o).get();
+            return coerceArchiveType(val);
+        }
+        if (o instanceof Closure) {
+            final Object val = ((Closure) o).call();
+            return coerceArchiveType(val);
+        }
+        if (o instanceof Callable) {
+            final Object val;
+            try {
+                val = ((Callable<Object>) o).call();
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw new GradleException("Unexpected exception calling " + o, e);
+            }
+            return coerceArchiveType(val);
+        }
+
+        throw new InvalidUserDataException("Unsupported archive type " + o);
+    }
+
+    default boolean includes(ArchiveType type) {
+        return type == this || iterate(getTypes()).containsReference(type);
     }
 }

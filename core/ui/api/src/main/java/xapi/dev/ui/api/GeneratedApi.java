@@ -1,8 +1,6 @@
 package xapi.dev.ui.api;
 
-import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.AnnotationExpr;
-import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.UiAttrExpr;
 import com.github.javaparser.ast.expr.UiContainerExpr;
 import com.github.javaparser.ast.visitor.ComposableXapiVisitor;
@@ -15,10 +13,8 @@ import xapi.dev.gen.SourceHelper;
 import xapi.dev.ui.impl.AbstractUiGeneratorService;
 import xapi.dev.ui.impl.UiGeneratorTools;
 import xapi.dev.ui.tags.UiTagModelGenerator;
-import xapi.fu.In1;
 import xapi.fu.In2;
 import xapi.fu.Out1;
-import xapi.fu.itr.ArrayIterable;
 import xapi.fu.itr.MappedIterable;
 import xapi.fu.itr.SizedIterable;
 import xapi.log.X_Log;
@@ -29,7 +25,7 @@ import xapi.util.X_String;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.github.javaparser.ast.visitor.ComposableXapiVisitor.slurpStrings;
+import static xapi.dev.ui.impl.ExpressionSlurper.slurpStrings;
 import static xapi.fu.itr.ArrayIterable.iterate;
 import static xapi.fu.itr.EmptyIterator.none;
 

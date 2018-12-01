@@ -183,8 +183,8 @@ public abstract class AbstractLinkedList<T, N extends AbstractLinkedList.Node<T,
     return containsMatch(Filter.equalsFilter(value));
   }
 
-  public boolean containsReference(final T value) {
-    return containsMatch(Filter.referenceFilter(value));
+  public boolean containsReference(final T key) {
+    return containsMatch(Filter.referenceFilter(key));
   }
 
   public boolean containsMatch(final Filter1<T> consumer) {

@@ -56,7 +56,7 @@ class Xapi {
     // grab references to the real, system out/err streams, so we can replace them
     private static final PrintStream run = System.out;
     private static final PrintStream log = System.err;
-    private static final String XAPI_VERSION = "0.5.1-SNAPSHOT";
+    private static final String XAPI_VERSION = "0.5.1";
     private static final Path out = Paths.get("out");
     private static final Path err = Paths.get("err");
 

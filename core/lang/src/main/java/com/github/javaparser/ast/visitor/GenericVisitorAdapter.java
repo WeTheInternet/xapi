@@ -21,11 +21,7 @@
 
 package com.github.javaparser.ast.visitor;
 
-import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.ImportDeclaration;
-import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.PackageDeclaration;
-import com.github.javaparser.ast.TypeParameter;
+import com.github.javaparser.ast.*;
 import com.github.javaparser.ast.body.*;
 import com.github.javaparser.ast.comments.BlockComment;
 import com.github.javaparser.ast.comments.JavadocComment;
@@ -33,13 +29,14 @@ import com.github.javaparser.ast.comments.LineComment;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.*;
 import com.github.javaparser.ast.type.*;
-import xapi.collect.X_Collect;
 import xapi.fu.In1Out1;
 import xapi.fu.In3Out1;
 import xapi.fu.Mutable;
 import xapi.fu.Out1;
 
 import java.util.Iterator;
+
+import static xapi.fu.itr.ArrayIterable.iterate;
 
 /**
  * @author Julio Vilmar Gesser
@@ -1727,7 +1724,7 @@ public abstract class GenericVisitorAdapter<R, A> implements GenericVisitor<R, A
     }
 
     protected <N extends Node> R checkItems(A arg, In3Out1<N, GenericVisitor<R, A>, A, R> mapper, N... nodes) {
-        return checkAllItems(arg, mapper, X_Collect.arrayIterable(nodes));
+        return checkAllItems(arg, mapper, iterate(nodes));
     }
 
     protected <N extends Node> R checkAllItems(A arg, In3Out1<N, GenericVisitor<R, A>, A, R> mapper, Iterable<N> nodes, Out1<R> ifNull) {

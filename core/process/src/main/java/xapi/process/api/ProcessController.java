@@ -10,7 +10,9 @@ public class ProcessController <T> {
 
   public void stop() {
     if (process != null) {
-        process.onStop();
+        if (process.onStop()) {
+          process.onDestroy();
+        }
     }
   }
 }

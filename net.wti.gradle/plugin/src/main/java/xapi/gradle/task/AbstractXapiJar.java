@@ -1,16 +1,13 @@
 package xapi.gradle.task;
 
 import org.gradle.api.Task;
-import org.gradle.api.file.CopySpec;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.bundling.Jar;
 import xapi.gradle.api.ArchiveType;
-import xapi.gradle.api.DefaultArchiveTypes;
+import xapi.gradle.api.DefaultArchiveType;
 import xapi.gradle.api.HasArchiveType;
 
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 11/5/18 @ 12:34 AM.
@@ -27,8 +24,8 @@ public class AbstractXapiJar extends Jar implements HasArchiveType {
     public ArchiveType getArchiveType() {
         return archiveType != null ? archiveType :
             getArchivePath().getAbsolutePath().contains("test") ?
-                DefaultArchiveTypes.TEST :
-                DefaultArchiveTypes.MAIN;
+                DefaultArchiveType.TEST :
+                DefaultArchiveType.MAIN;
     }
 
     @Override

@@ -1,15 +1,15 @@
 import xapi.gradle.gwt.Gwt
-tasks.create 'sourceJar2', Jar, {
-    dependsOn classes
-    classifier = 'sources'
-    from sourceSets.main.allJava
-}
 
 artifacts {
     archives sourceJar
 }
 
-configurations.all {
+[
+        JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME,
+        JavaPlugin.RUNTIME_CLASSPATH_CONFIGURATION_NAME,
+        JavaPlugin.TEST_COMPILE_CLASSPATH_CONFIGURATION_NAME,
+        JavaPlugin.TEST_RUNTIME_CLASSPATH_CONFIGURATION_NAME,
+].collect(configurations.&getByName).each {
     Configuration c ->
         boolean isTest = c.name.toLowerCase().contains('test')
         c.dependencies.all {

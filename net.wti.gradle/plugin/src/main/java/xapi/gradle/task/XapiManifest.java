@@ -1,29 +1,22 @@
 package xapi.gradle.task;
 
 import org.gradle.api.DefaultTask;
-import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.file.Directory;
 import org.gradle.api.file.DirectoryProperty;
-import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.provider.Provider;
+import org.gradle.api.tasks.OutputDirectories;
 import org.gradle.api.tasks.OutputDirectory;
-import org.gradle.api.tasks.SourceSet;
+import org.gradle.api.tasks.OutputFiles;
 import org.gradle.api.tasks.TaskAction;
-import org.gradle.util.GFileUtils;
 import xapi.dev.source.DomBuffer;
-import xapi.dev.source.PrintBuffer;
-import xapi.fu.Lazy;
 import xapi.fu.data.SetLike;
-import xapi.fu.itr.MappedIterable;
-import xapi.fu.itr.SizedIterable;
 import xapi.fu.java.X_Jdk;
 import xapi.gradle.api.ArchiveType;
-import xapi.gradle.api.DefaultArchiveTypes;
+import xapi.gradle.config.ManifestGenerator;
 import xapi.gradle.plugin.XapiExtension;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -31,20 +24,95 @@ import java.util.concurrent.Callable;
 import static xapi.fu.itr.MappedIterable.mapped;
 
 /**
- * This task is used to generate build/xapi-meta/settings.xapi
- * which is, itself, placed into META-INF/xapi/settings.xapi.
+ * This task is used to generate build/xapi-paths/META-INF/xapi/$artifactId.xapi (and paths.xapi)
+ * which is, itself, placed into the META-INF/xapi directory of our jars.
  *
- * In the future, we will also have support for META-INF/xapi/$platform/settings.xapi,
- * which are embedded into the correct jars; the root META-INF/settings.xapi file
+ * We also generate #N META-INF/xapi/$platform/$archiveType.xapi files, for each archiveType and platform,
+ * which are embedded into the correct jars; the root META-INF/paths.xapi file
  * will represent the "for my intended runtime" collection of settings.
- * So, a gwt jar would have META-INF/xapi/gwt/settings.xapi === META-INF/xapi/settings.xapi,
- * but would also have META-INF/xapi/main/settings.xapi, and .../xapi/api/...
- * so the gwt manifest can simply `include = [main, api]` to melt in inherited settings,
- * and it will behave sanely whether it was loaded from the platform specific location,
- * or the default location.
+ * So, a gwt jar would have META-INF/xapi/gwt/main.xapi === META-INF/xapi/paths.xapi
  *
  * Stub implementations can reference the resources at /META-INF/xapi/settings.xapi,
  * while platform specific implementations will load /META-INF/xapi/$platform/settings.xapi.
+ *
+ * <pre>
+      This is some prototype psuedocode to guide us, for an imaginary setup w/ main, api, dev/main and dev/api:
+{@code <xapi}
+module = "xapi-lang"
+type = "main"
+sources = [
+  "/opt/xapi/core/lang/src/main/java"
+  ,  "/opt/xapi/core/lang/src/main/gen"
+]
+resources = [
+  "/opt/xapi/core/lang/src/main/resources"
+]
+outputs = [
+  "/opt/xapi/core/lang/build/classes/java/main"
+  ,
+  "/opt/xapi/core/lang/build/classes/groovy/main"
+  ,
+  "/opt/xapi/core/lang/build/resources/main"
+]
+// Any internally-created modules, if any, included in this module (loaded and absorbed)
+includes = {
+  api : "xapi-lang/api"
+}
+// Any internally-created modules, if any, that this module supercedes (expunged from other dependencies by our inclusion)
+provides = {
+  spi : "mod-name/spi" // for example, maybe we had to hack the spi across a release version
+}
+
+// List of external module paths.
+inherits = [ 'xapi-fu', 'xapi-source/api' ]
+
+compilePath = "/paths/to:all:outputs" // use classes dirs
+runtimePath = "/added:to:$compilePath" // optional to use dirs (dev mode) or jars (prod mode)
+devPath = "$runtimePath:plus:sources"
+// optionals, when archive type is a DistType:
+gwtPath = "$devPath:plus:gwt-only:stuff-here"
+
+// List only our own dependencies (and those dependencies' transitive inheritances).
+// The full classpath can be built by loading the includes/inherits as needed,
+// or from the computed path string, above.  This enables a fallback scenario,
+// where some file in the precomputed values is missing,
+// and we need to get back the source dependency, and download / check cache for values to use.
+// This list should be empty for dist-builds.
+compileDependency = {
+  "net.fu:external-dep:v1.2.3":"/path/to/file/if/exists.jar",
+  "xapi-internal/name":"$root/path/to/manifest/file/if/exists.xapi",
+}
+
+runtimeDependency = [
+  'net.fu:external-dep-impl:v1.2.3',
+  ':xapi-internal-name-impl'
+]
+// The map of all platforms, if any, for this module.
+// This can be ommitted if the value is platforms = { main: 'main' }
+platforms = {
+  // defines the root platform
+  main: "main",
+  api: "api",
+  // defines any sub-platforms (which must inherit from us, not the other way around)
+  dev: {
+    main: "xapi-lang/main"
+    api: "xapi-lang/api"
+  }
+  devTest: {
+    main: "xapi-lang-test/main"
+  }
+}
+// A list of all archives that we can expect to exist.
+// Can be ommitted if `archives = { '$moduleName': 'main' }`
+archives = {
+    'xapi-lang': 'main',
+    'xapi-lang-api': 'api',
+    'xapi-lang-dev': 'dev/main',
+    'xapi-lang-dev-api': 'dev/api',
+  }
+{@code />}
+
+ * </pre>
  *
  * Created by James X. Nelson (James@WeTheInter.net) on 11/12/18 @ 2:56 AM.
  */
@@ -52,6 +120,7 @@ public class XapiManifest extends DefaultTask {
 
     public static final String MANIFEST_TASK_NAME = "xapiManifest";
     private static final String DEFAULT_OUTPUT_DIR = "xapi-paths";
+    private final ManifestGenerator builder;
 
     private DirectoryProperty outputDir;
     private final Set<ArchiveType> seenTypes;
@@ -68,31 +137,28 @@ public class XapiManifest extends DefaultTask {
         setGroup("xapi");
         setDescription("Transfer gradle meta data into xapi manifest files");
         seenTypes = new LinkedHashSet<>();
+        final XapiExtension ext = XapiExtension.from(getProject());
+        builder = new ManifestGenerator(ext);
     }
 
     @TaskAction
     public void buildManifest() {
         outputDir.finalizeValue();
-        // For now, we'll just build a default settings.xapi
-        // which lists everything known about the current assembly.
         final File out = outputDir.get().getAsFile();
         final File file = new File(out, "META-INF" + File.separator + "xapi");
-        final File dest = writeSettings(file, DefaultArchiveTypes.MAIN);
-        getLogger().info("Wrote xapi manifest {}", dest.toURI());
+        final XapiExtension ext = XapiExtension.from(getProject());
+
+
+        final String main = writeSettings(ext, file, builder);
+
+        getLogger().info("Wrote xapi manifest {};\nuse trace logging to see manifest contents.", file.toURI());
+        getLogger().trace("Manifest contents: {}", main);
     }
 
-    protected File writeSettings(File out, ArchiveType type) {
-        File local = new File(out, type.name() + File.separator + "settings.xapi");
-        File main = new File(out, "settings.xapi");
-        XapiExtension ext = XapiExtension.from(getProject());
-        String settings = ext.exportSettings(this, type);
-        boolean isMain = ext.getJars().get().getMainType().equals(type);
-        GFileUtils.writeFile(settings, local);
-        if (isMain) {
-            // Also write to the root settings.xapi file.
-            GFileUtils.writeFile(settings, main);
-        }
-        return local;
+    protected String writeSettings(XapiExtension ext, File dir, ManifestGenerator builder) {
+        ext.getMainArtifact().finalizeValue();
+        final String main = builder.printMain(dir);
+        return main;
     }
 
     @OutputDirectory
@@ -112,62 +178,11 @@ public class XapiManifest extends DefaultTask {
         this.outputDir.set(outputDir);
     }
 
-    public void printArchive(DomBuffer out, XapiManifest manifest, ArchiveType type) {
-        seenTypes.add(type);
-        final PrintBuffer sources = out.attribute("sources");
-        final PrintBuffer resources = out.attribute("resources");
-        final PrintBuffer outputs = out.attribute("outputs");
-        sources.println("[").indent();
-        resources.println("[").indent();
-        outputs.println("[").indent();
-        final JavaPluginConvention java = manifest.getProject().getConvention().getPlugin(JavaPluginConvention.class);
-
-        final SourceSet source = java.getSourceSets().getByName(type.name().toLowerCase());
-
-        // If you add more data sources here, be sure to update computeFreshness()
-        printSources(sources, source.getAllJava().getSrcDirs());
-        printSources(resources, source.getResources().getSrcDirs());
-        printSources(outputs,
-            mapped(source.getOutput().getDirs())
-            .plus(source.getOutput().getClassesDirs())
-            .plus(source.getOutput().getResourcesDir())
-        );
-        // If you add more data sources here, be sure to update computeFreshness()
-
-        //        // Now, also print all inherited dependencies! yikes... let's wait until we have magic sourceSets to bother...
-        //        for (String item : source.getRuntimeClasspath().getAsPath().split(File.pathSeparator)) {
-        //
-        //        }
-
-        // TODO: also compute additional links to supported platforms
-
-        sources.outdent().println("]");
-        resources.outdent().println("]");
-        outputs.outdent().println("]");
-
-    }
-
-    private void printSources(PrintBuffer sources, Iterable<File> src) {
-        SizedIterable<File> srcDirs = mapped(src).cached(); // cached iterables are sized.
-        final String ws = srcDirs.size() > 2 ? "\n" : " ";
-        String prefix = "\"";
-        for (File srcDir : srcDirs) {
-            try {
-                allDirs.add(srcDir);
-                sources.printlns(prefix + srcDir.getCanonicalPath() + "\"");
-                prefix = ", " + ws + "\"";
-            } catch (IOException e) {
-                throw new GradleException("Could not resolve " + srcDir, e);
-            }
-        }
-
-    }
-
     public XapiExtension getXapi() {
         return (XapiExtension) getProject().getExtensions().getByName(XapiExtension.EXT_NAME);
     }
 
     public Callable<String> computeFreshness() {
-        return ()->allDirs.join(":");
+        return builder::summary;
     }
 }

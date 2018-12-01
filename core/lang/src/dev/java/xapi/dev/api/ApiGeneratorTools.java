@@ -129,7 +129,7 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
                         printer.print(template);
                     }
                 };
-                types.add(resolveTemplate(ctx, templateLiteral(copy.toSource(LITERAL_TRANSFORMER))));
+                types.add(resolveTemplate(ctx, TemplateLiteralExpr.templateLiteral(copy.toSource(LITERAL_TRANSFORMER))));
                 return false;
             })
             .withSysExpr((expr, c)->{
@@ -146,12 +146,12 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
                 return false;
             })
             .withFieldAccessExpr((fa, c)->{
-                String result = resolveTemplate(ctx, templateLiteral(fa.toSource()));
+                String result = resolveTemplate(ctx, TemplateLiteralExpr.templateLiteral(fa.toSource()));
                 types.add(result);
                 return false;
             })
             .withTypeExpr((expr, c)->{
-                String result = resolveTemplate(ctx, templateLiteral(expr.getType().toSource()));
+                String result = resolveTemplate(ctx, TemplateLiteralExpr.templateLiteral(expr.getType().toSource()));
                 types.add(result);
                 return false;
             })
@@ -177,7 +177,7 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
                                 "\nwhich returned " + paramType +
                                 "\nfrom " + debugNode(json));
                         }
-                        final String name = resolveString(ctx, templateLiteral(pair.getKeyString()));
+                        final String name = resolveString(ctx, TemplateLiteralExpr.templateLiteral(pair.getKeyString()));
                         types.add(paramType.get(0) + " " + name);
                     });
                 }
@@ -201,13 +201,13 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
                     return true;
                 }
                 // Serialize this name and finish
-                types.add(resolveTemplate(c, templateLiteral(expr.getQualifiedName())));
+                types.add(resolveTemplate(c, TemplateLiteralExpr.templateLiteral(expr.getQualifiedName())));
                 return false;
             })
             .withNameExpr((expr, c)->{
                 String name = expr.getName();
                 if (name.contains("$")) {
-                    types.add(resolveTemplate(c, templateLiteral(name)));
+                    types.add(resolveTemplate(c, TemplateLiteralExpr.templateLiteral(name)));
                 } else {
                     types.add(name);
                 }
@@ -270,7 +270,7 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
 
             @Override
             public String resolveType(ClassOrInterfaceType type) {
-                return resolveString(ctx, templateLiteral(type.getName()));
+                return resolveString(ctx, TemplateLiteralExpr.templateLiteral(type.getName()));
             }
 
             @Override
@@ -282,7 +282,7 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
                     );
                     return literals.join(", ");
                 }
-                return resolveString(ctx, templateLiteral(typeParam.toSource()));
+                return resolveString(ctx, TemplateLiteralExpr.templateLiteral(typeParam.toSource()));
             }
 
             @Override
@@ -375,7 +375,7 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
             final Expression filterExpression = ((ExpressionStmt) filterBody).getExpression();
             String filterName = filterLambda.getParameters().get(0).getId().getName();
             filter = i->{
-                Do undo = ctx.addToContext(filterName, intLiteral(i));
+                Do undo = ctx.addToContext(filterName, IntegerLiteralExpr.intLiteral(i));
                 boolean allowed = isConditionTrue(ctx, filterExpression);
                 undo.done();
                 return allowed;
@@ -397,7 +397,7 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
                     if (first) {
                         first = false;
                     }
-                    final Do undo = ctx.addToContext(varName, intLiteral(start));
+                    final Do undo = ctx.addToContext(varName, IntegerLiteralExpr.intLiteral(start));
                     try {
                         if (lambda.getBody() instanceof ExpressionStmt) {
                             // A lambda with a single expression for a body
@@ -612,19 +612,19 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
                       if (areIntTypes(ctx, left, right)) {
                           Integer leftI = ((IntegerLiteralExpr)left).intValue();
                           Integer rightI = ((IntegerLiteralExpr)right).intValue();
-                          return intLiteral(leftI + rightI);
+                          return IntegerLiteralExpr.intLiteral(leftI + rightI);
                       } else if (areDoubleTypes(ctx, left, right)) {
                           Double leftD = ((DoubleLiteralExpr)left).doubleValue();
                           Double rightD = ((DoubleLiteralExpr)right).doubleValue();
-                          return doubleLiteral(leftD + rightD);
+                          return DoubleLiteralExpr.doubleLiteral(leftD + rightD);
                       } else if (areLongTypes(ctx, left, right)) {
                           Long leftL = ((LongLiteralExpr)left).longValue();
                           Long rightL = ((LongLiteralExpr)right).longValue();
-                          return longLiteral(leftL + rightL);
+                          return LongLiteralExpr.longLiteral(leftL + rightL);
                       } else if (areCharTypes(ctx, left, right)) {
                           Character leftL = ((CharLiteralExpr)left).charValue();
                           Character rightL = ((CharLiteralExpr)right).charValue();
-                          return charLiteral((char)((int)leftL.charValue() + (int)rightL.charValue()));
+                          return CharLiteralExpr.charLiteral((char)((int)leftL.charValue() + (int)rightL.charValue()));
                       } else {
                           throw new UnsupportedOperationException("Cannot add the nodes of " + debugNode(expr));
                       }
@@ -649,22 +649,22 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
                         Integer leftI = ((IntegerLiteralExpr)left).intValue();
                         Integer rightI = ((IntegerLiteralExpr)right).intValue();
                         int result = apply(expr.getOperator(), leftI, rightI);
-                        return intLiteral(result);
+                        return IntegerLiteralExpr.intLiteral(result);
                     } else if (areDoubleTypes(ctx, left, right)) {
                         Double leftD = ((DoubleLiteralExpr)left).doubleValue();
                         Double rightD = ((DoubleLiteralExpr)right).doubleValue();
                         double result = apply(expr.getOperator(), leftD, rightD);
-                        return doubleLiteral(result);
+                        return DoubleLiteralExpr.doubleLiteral(result);
                     } else if (areLongTypes(ctx, left, right)) {
                         Long leftL = ((LongLiteralExpr) left).longValue();
                         Long rightL = ((LongLiteralExpr) right).longValue();
                         long result = apply(expr.getOperator(), leftL, rightL);
-                        return longLiteral(result);
+                        return LongLiteralExpr.longLiteral(result);
                     } else if (areCharTypes(ctx, left, right)) {
                         Character leftC = ((CharLiteralExpr)left).charValue();
                         Character rightC = ((CharLiteralExpr)right).charValue();
                         char result = apply(expr.getOperator(), leftC, rightC);
-                        return charLiteral(result);
+                        return CharLiteralExpr.charLiteral(result);
                     } else {
                         throw new UnsupportedOperationException("Cannot " + expr.getOperator() + " the nodes of " + debugNode(expr) +
                         "\nLeft: " + debugNode(left) + ", Right: " + debugNode(right));
@@ -677,19 +677,19 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
                     if (areIntTypes(ctx, left, right)) {
                         Integer leftI = ((IntegerLiteralExpr)left).intValue();
                         Integer rightI = ((IntegerLiteralExpr)right).intValue();
-                        return boolLiteral(check(expr.getOperator(), leftI, rightI));
+                        return BooleanLiteralExpr.boolLiteral(check(expr.getOperator(), leftI, rightI));
                     } else if (areDoubleTypes(ctx, left, right)) {
                         Double leftD = ((DoubleLiteralExpr)left).doubleValue();
                         Double rightD = ((DoubleLiteralExpr)right).doubleValue();
-                        return boolLiteral(check(expr.getOperator(), leftD, rightD));
+                        return BooleanLiteralExpr.boolLiteral(check(expr.getOperator(), leftD, rightD));
                     } else if (areLongTypes(ctx, left, right)) {
                         Long leftL = ((LongLiteralExpr) left).longValue();
                         Long rightL = ((LongLiteralExpr) right).longValue();
-                        return boolLiteral(check(expr.getOperator(), leftL, rightL));
+                        return BooleanLiteralExpr.boolLiteral(check(expr.getOperator(), leftL, rightL));
                     } else if (areCharTypes(ctx, left, right)) {
                         Character leftC = ((CharLiteralExpr)left).charValue();
                         Character rightC = ((CharLiteralExpr)right).charValue();
-                        return boolLiteral(check(expr.getOperator(), (int)leftC.charValue(), (int)rightC.charValue()));
+                        return BooleanLiteralExpr.boolLiteral(check(expr.getOperator(), (int)leftC.charValue(), (int)rightC.charValue()));
                     } else {
                         throw new UnsupportedOperationException("Cannot " + expr.getOperator() + " the nodes of " + debugNode(expr) +
                             "\nLeft: " + debugNode(left) + ", Right: " + debugNode(right));
@@ -708,9 +708,10 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
                     boolean l = ((BooleanLiteralExpr)left).getValue();
                     boolean r = ((BooleanLiteralExpr)right).getValue();
                     if (expr.getOperator() == Operator.and) {
-                        return boolLiteral(l && r);
-                    } else if (expr.getOperator() == Operator.or) {
-                        return boolLiteral(l && r);
+                        return BooleanLiteralExpr.boolLiteral(l && r);
+                    } else //noinspection ConstantConditions (switch fallthrough not accounted for)
+                        if (expr.getOperator() == Operator.or) {
+                        return BooleanLiteralExpr.boolLiteral(l && r);
                     } else {
                         throw new IllegalStateException("Can't get here; bad node: " + debugNode(expr));
                     }
@@ -731,9 +732,9 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
                     }
                     boolean equal = leftString.equals(rightString);
                     if (expr.getOperator() == Operator.equals) {
-                        return boolLiteral(equal);
+                        return BooleanLiteralExpr.boolLiteral(equal);
                     } else if (expr.getOperator() == Operator.notEquals) {
-                        return boolLiteral(!equal);
+                        return BooleanLiteralExpr.boolLiteral(!equal);
                     } else {
                         throw new IllegalStateException("Can't get here; bad node: " + debugNode(expr));
                     }
@@ -766,17 +767,17 @@ public interface ApiGeneratorTools <Ctx extends ApiGeneratorContext<Ctx>> extend
 
                 ComposableXapiVisitor<Ctx> nameVisitor = new ComposableXapiVisitor<>();
                 nameVisitor.withNameExpr((name, con)->{
-                    String newName = resolveTemplate(con, templateLiteral(name.getName()));
+                    String newName = resolveTemplate(con, TemplateLiteralExpr.templateLiteral(name.getName()));
                     name.setName(newName);
                     return false;
                 });
                 nameVisitor.withMethodCallExpr((name, con)->{
-                    String newValue = resolveTemplate(con, templateLiteral(name.getName()));
+                    String newValue = resolveTemplate(con, TemplateLiteralExpr.templateLiteral(name.getName()));
                     name.setName(newValue);
                     return true;
                 });
                 nameVisitor.withStringLiteralExpr((name, con)->{
-                    String newValue = resolveTemplate(con, templateLiteral(name.getValue()));
+                    String newValue = resolveTemplate(con, TemplateLiteralExpr.templateLiteral(name.getValue()));
                     name.setValue(newValue);
                     return false;
                 });

@@ -191,7 +191,7 @@ public class X_Debug {
     }
   }
 
-  private static void flushStreams() {
+  public static void flushStreams() {
     System.err.print("");
     System.err.flush();
     System.out.print("");

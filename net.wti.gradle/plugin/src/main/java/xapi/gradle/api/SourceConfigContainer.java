@@ -8,9 +8,9 @@ import org.gradle.internal.reflect.Instantiator;
  *
  * Created by James X. Nelson (James@WeTheInter.net) on 11/15/18 @ 12:28 AM.
  */
-public class AllSources extends DefaultNamedDomainObjectSet<SourceConfig> {
+public class SourceConfigContainer extends DefaultNamedDomainObjectSet<SourceConfig> {
 
-    public AllSources(Instantiator instantiator) {
+    public SourceConfigContainer(Instantiator instantiator) {
         super(SourceConfig.class, instantiator);
     }
 }

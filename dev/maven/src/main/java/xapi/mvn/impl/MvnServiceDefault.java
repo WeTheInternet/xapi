@@ -43,13 +43,8 @@ import xapi.dev.scanner.impl.ClasspathResourceMap;
 import xapi.file.X_File;
 import xapi.fu.*;
 import xapi.fu.Filter.Filter1;
-import xapi.fu.itr.MappedIterable;
+import xapi.fu.itr.*;
 import xapi.fu.Out1.Out1Unsafe;
-import xapi.fu.itr.ArrayIterable;
-import xapi.fu.itr.Chain;
-import xapi.fu.itr.ChainBuilder;
-import xapi.fu.itr.SingletonIterator;
-import xapi.fu.itr.SizedIterable;
 import xapi.fu.java.X_Jdk;
 import xapi.io.X_IO;
 import xapi.log.X_Log;
@@ -127,6 +122,7 @@ public class MvnServiceDefault implements MvnService {
           artifactResult.setRepository(result.getRepository());
           return artifactResult;
         }
+        // TODO: add a flag to cache any missed resources into the xapiBuild cache.
         return repoSystem.resolveArtifact(session, request);
       } catch (ArtifactResolutionException e) {
         X_Log.log(getClass(), getLogLevel(), "Resolved? ", e.getResult().isResolved(), e.getResult().getExceptions());
@@ -815,36 +811,42 @@ public class MvnServiceDefault implements MvnService {
   @Override
   public Out1<MappedIterable<String>> downloadDependencies(MvnDependency dep) {
 
-    final Lazy<List<String>> request = Lazy.deferred1(()->{
-      final LocalArtifactResult localArtifact = X_Maven.loadLocalArtifact(
-          dep.getGroupId(),
-          dep.getArtifactId(),
-          dep.getClassifier(),
-          dep.getPackaging(),
-          dep.getVersion()
-      );
-      Artifact artifact = null;
-      if (localArtifact.isAvailable()) {
-        artifact = localArtifact.getRequest().getArtifact();
-        // not sure why maven is lame and doesn't set this for us...
-        artifact = artifact.setFile(localArtifact.getFile());
-      }
-      if (artifact == null){
-        final ArtifactResult result = X_Maven.loadArtifact(
-            dep.getGroupId(),
-            dep.getArtifactId(),
-            dep.getClassifier(),
-            dep.getPackaging(),
-            dep.getVersion()
-        );
-        artifact = result.getArtifact();
-      }
-      return loadDependencies(artifact, this::shouldLoad);
+    final Lazy<MappedIterable<String>> request = Lazy.deferred1(()->{
+        try {
+
+          final LocalArtifactResult localArtifact = X_Maven.loadLocalArtifact(
+              dep.getGroupId(),
+              dep.getArtifactId(),
+              dep.getClassifier(),
+              dep.getPackaging(),
+              dep.getVersion()
+          );
+          Artifact artifact = null;
+          if (localArtifact.isAvailable()) {
+            artifact = localArtifact.getRequest().getArtifact();
+            // not sure why maven is lame and doesn't set this for us...
+            artifact = artifact.setFile(localArtifact.getFile());
+          }
+          if (artifact == null){
+            final ArtifactResult result = X_Maven.loadArtifact(
+                dep.getGroupId(),
+                dep.getArtifactId(),
+                dep.getClassifier(),
+                dep.getPackaging(),
+                dep.getVersion()
+            );
+            artifact = result.getArtifact();
+          }
+          return MappedIterable.mapped(loadDependencies(artifact, this::shouldLoad));
+        } catch (Throwable t) {
+            X_Log.error("Error encountered downloading artifact ", dep, t);
+            return EmptyIterator.none();
+        }
     });
     // Start download of artifact info immediately, but do not block
     runLater(request.ignoreOut1().toRunnable());
     // Return a string output that will block on the lazy initializer
-    return request.map(MappedIterable::mapped);
+    return request;
   }
 
   protected boolean shouldLoad(Dependency check) {

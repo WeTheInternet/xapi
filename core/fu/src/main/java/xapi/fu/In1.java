@@ -130,7 +130,7 @@ public interface In1<I> extends HasInput, Rethrowable, Lambda {
     return In2.combine(this, and);
   }
 
-  static <I> In1<I> in1(Consumer<I> of) {
+  static <T> In1<T> in1(Consumer<T> of) {
     return of::accept;
   }
 

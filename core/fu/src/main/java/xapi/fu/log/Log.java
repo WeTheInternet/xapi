@@ -123,6 +123,20 @@ public interface Log extends Debuggable {
       return defaultLogger();
     }
     for (Object maybe : log) {
+      if (maybe == null) {
+        continue;
+      }
+      if (maybe.getClass().isArray()) {
+        final Class<?> cmp = maybe.getClass().getComponentType();
+        if (cmp != null && cmp.isPrimitive()) {
+          // no logs to see here...  null check is for gwt / optimized / stripped builds.
+          continue;
+        }
+        maybe = firstLog((Object[])maybe);
+        if (maybe == defaultLogger()) {
+          continue;
+        }
+      }
       if (maybe instanceof Log) {
         return (Log) maybe;
       }

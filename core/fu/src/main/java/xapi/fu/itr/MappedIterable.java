@@ -7,6 +7,8 @@ import xapi.fu.In1.In1Unsafe;
 import xapi.fu.In1Out1.In1Out1Unsafe;
 import xapi.fu.api.DoNotOverride;
 import xapi.fu.api.Ignore;
+import xapi.fu.api.ShouldOverride;
+import xapi.fu.data.SetLike;
 import xapi.fu.has.HasEmptiness;
 import xapi.fu.has.HasSize;
 import xapi.fu.itr.CachingIterator.ReplayableIterable;
@@ -607,7 +609,9 @@ public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
     }
 
     default MappedIterable<T> forAll(In1<T> consumer) {
-        forEach(consumer.toConsumer());
+        for (T t : this) {
+            consumer.in(t);
+        }
         return this;
     }
 
@@ -792,5 +796,56 @@ public interface MappedIterable<T> extends Iterable<T>, HasEmptiness {
 
     default <To> MappedIterable<To> castTo(Class<To> type) {
         return map(type::cast);
+    }
+
+    /**
+     * Search for a value that has the same pointer as your key.
+     *
+     * This is much, much faster than hashing and equality searching
+     * for objects with expensive hashcodes and equality tests
+     * (at least, until your iterables get very large,
+     * in which case we should provide a lazily-initialized hash-cache
+     * (something like WeakMap<MappedIterable<T>, SetLike<T>> might suffice)
+     *
+     * @param key The reference to search for.
+     * @return
+     */
+    default boolean containsReference(T key) {
+        int num = 0;
+        for (T t : this) {
+            //noinspection AssertWithSideEffects
+            assert num++ < 25_000 : "Using O(n) operation on very large iterable";
+            if (t == key) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @ShouldOverride("if you don't accept null, you should return true for $type.containsNull() (perhaps still assert you are null-free anyway).")
+    default boolean containsNull() {
+        for (T t : this) {
+            if (t == null) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    default boolean containsEquality(T type) {
+        if (type == null) {
+            return containsNull();
+        }
+        for (T t : this) {
+            // type is known non-null
+            if (type.equals(t)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    default MappedIterable<T> unique(SetLike<T> unique) {
+        return filter(unique::addIfMissing);
     }
 }

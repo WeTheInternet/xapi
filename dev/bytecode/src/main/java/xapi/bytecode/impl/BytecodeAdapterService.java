@@ -537,7 +537,7 @@ public class BytecodeAdapterService implements
       assert name != null;
       for (IsMethod method : getMethods()) {
         if (method.getName().equals(name)) {
-          if (X_Source.typesEqual(method.getParameters(), params)) {
+          if (BytecodeUtil.typesEqual(method.getParameters(), params)) {
             return method;
           }
         }
@@ -555,7 +555,7 @@ public class BytecodeAdapterService implements
       assert name != null;
       for (IsMethod method : getMethods()) {
         if (method.getName().equals(name)) {
-          if (X_Source.typesEqual(method.getParameters(), params)) {
+          if (BytecodeUtil.typesEqual(method.getParameters(), params)) {
             return method;
           }
         }
@@ -763,7 +763,7 @@ public class BytecodeAdapterService implements
     public IsType getReturnType() {
       try {
         CtClass returnType = method.getReturnType();
-        return X_Source.toType(returnType.getPackageName(),
+        return BytecodeUtil.toType(returnType.getPackageName(),
             returnType.getEnclosedName());
       } catch (NotFoundException e) {
         throw new AssertionError(e);
@@ -791,7 +791,7 @@ public class BytecodeAdapterService implements
       } catch (NotFoundException e) {
         ExceptionsAttribute exceptions = method.getMethodInfo2()
             .getExceptionsAttribute();
-        return X_Source.toTypes(exceptions.getExceptions());
+        return BytecodeUtil.toTypes(exceptions.getExceptions());
       }
     }
 
@@ -851,7 +851,7 @@ public class BytecodeAdapterService implements
           } catch (NotFoundException e) {
               throw new RuntimeException(e);
           }
-          return X_Source.toType(t.getPackageName(),
+          return BytecodeUtil.toType(t.getPackageName(),
               t.getEnclosedName());
       }
 
@@ -891,7 +891,7 @@ public class BytecodeAdapterService implements
     IsType[] types = new IsType[parameterTypes.length];
     for (int i = 0, m = parameterTypes.length; i < m; ++i) {
       CtClass param = parameterTypes[i];
-      types[i] = X_Source.toType(param.getPackageName(),
+      types[i] = BytecodeUtil.toType(param.getPackageName(),
           param.getEnclosedName());
     }
     return types;

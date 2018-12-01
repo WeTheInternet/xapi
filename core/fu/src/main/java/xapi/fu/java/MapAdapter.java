@@ -20,7 +20,7 @@ public class MapAdapter <K, V> implements MapLike<K, V>, Serializable {
     private final Map<K, V> map;
 
     public MapAdapter() {
-        this(new HashMap<>());
+        this(X_Jdk.defaultMap());
     }
 
     public MapAdapter(Map<K, V> map) {

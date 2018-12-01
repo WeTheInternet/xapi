@@ -8,6 +8,7 @@ repositories {
 
 dependencies {
     compile project(':xapi-core-parent:xapi-core-lang')
+    compile project(path: ':xapi-core-parent:xapi-core-lang', configuration: 'xapiDevRuntime')
     compile project(':xapi-core-parent:xapi-core-io')
     compile project(':xapi-dev-parent:xapi-dev-javac')
     compile project(':xapi-dev-parent:xapi-dev-scanner')

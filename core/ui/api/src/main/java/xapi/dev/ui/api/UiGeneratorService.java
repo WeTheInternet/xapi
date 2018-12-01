@@ -11,7 +11,7 @@ import xapi.dev.ui.impl.UiGeneratorVisitor;
 import xapi.fu.Do;
 import xapi.fu.In1Out1;
 import xapi.fu.itr.MappedIterable;
-import xapi.log.api.LogLevel;
+import xapi.fu.log.Log.LogLevel;
 import xapi.source.read.JavaModel.IsQualified;
 
 /**

@@ -48,6 +48,10 @@ public interface Do extends AutoCloseable {
         return this::done;
     }
 
+    @DoNotOverride("Instead override doBefore()")
+    default Do doBeforeUnsafe(DoUnsafe d) {
+        return doBefore(d);
+    }
     default Do doBefore(Do d) {
         if (d == NOTHING || d == this || d == null) {
             return this;
@@ -68,6 +72,10 @@ public interface Do extends AutoCloseable {
         return this;
     }
 
+    @DoNotOverride("override doAfter() instead")
+    default Do doAfterUnsafe(DoUnsafe d){
+        return doAfter(d);
+    }
     default Do doAfter(
         @Generate({
             // n-ary is used to expand a type parameter;

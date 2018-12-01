@@ -1,6 +1,7 @@
 package xapi.dev.model;
 
 import xapi.annotation.model.*;
+import xapi.bytecode.impl.BytecodeUtil;
 import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.dev.api.ApiGeneratorTools;
@@ -17,7 +18,6 @@ import xapi.model.api.Model;
 import xapi.model.api.ModelMethodType;
 import xapi.model.impl.ModelNameUtil;
 import xapi.model.impl.ModelUtil;
-import xapi.source.X_Source;
 import xapi.source.api.*;
 import xapi.source.impl.*;
 import xapi.util.X_Runtime;
@@ -29,7 +29,7 @@ import java.util.*;
 
 import static xapi.dev.model.ModelGeneratorGwt.*;
 import static xapi.gwt.model.service.ModelServiceGwt.REGISTER_CREATOR_METHOD;
-import static xapi.source.X_Source.binaryToSource;
+import static xapi.bytecode.impl.BytecodeUtil.binaryToSource;
 
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.RebindResult;
@@ -451,7 +451,7 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
     // The type we are currently generating is not considered interesting, as we have already seen it.
     implementInterestingTypes(type, out, modelInterface, interestingTypes);
 
-    generator.generateModel(sourceType, X_Source.toType(builder.getPackage(), builder.getClassBuffer().getSimpleName()), fieldMap);
+    generator.generateModel(sourceType, BytecodeUtil.toType(builder.getPackage(), builder.getClassBuffer().getSimpleName()), fieldMap);
   }
 
   private void serializeParameter(
@@ -843,7 +843,7 @@ public class ModelArtifact extends Artifact<ModelArtifact> {
     final String name = ModelGeneratorGwt.fieldName(method, manifest);
     final ModelField field = models.getOrMakeField(name);
     field.addSetter(
-      X_Source.binaryToSource(method.getReturnType().getQualifiedBinaryName()),
+      BytecodeUtil.binaryToSource(method.getReturnType().getQualifiedBinaryName()),
       name, method.getName(),
       method.getAnnotations(),
       ModelGeneratorGwt.toTypes(method.getParameterTypes())

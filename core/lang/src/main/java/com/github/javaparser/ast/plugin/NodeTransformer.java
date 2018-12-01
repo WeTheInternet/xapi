@@ -10,12 +10,12 @@ import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.type.UnknownType;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
-import xapi.collect.api.StringTo;
 import xapi.dev.source.ClassBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.PrintBuffer;
 import xapi.except.NotImplemented;
 import xapi.fu.*;
+import xapi.fu.data.MapLike;
 import xapi.source.X_Source;
 
 import java.util.ArrayList;
@@ -23,7 +23,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-import static xapi.collect.X_Collect.newStringMap;
+import static xapi.fu.java.X_Jdk.mapOrderedInsertion;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 6/20/16.
@@ -90,11 +90,11 @@ public class NodeTransformer {
   protected final In2Out1<Node, Expression, Node> compute;
   protected final ClassBuffer out;
 
-  private final StringTo<String> computeNames;
-  private final StringTo<String> getterNames;
-  private final StringTo<String> setterNames;
-  private final StringTo<String> notifierNames;
-  private final StringTo<PrintBuffer> notificationSites;
+  private final MapLike<String, String> computeNames;
+  private final MapLike<String, String> getterNames;
+  private final MapLike<String, String> setterNames;
+  private final MapLike<String, String> notifierNames;
+  private final MapLike<String, PrintBuffer> notificationSites;
 
   public NodeTransformer(
       Node newNode,
@@ -154,11 +154,11 @@ public class NodeTransformer {
     this.compute = compute;
     this.addImport = addImport;
     this.out = out;
-    computeNames = newStringMap(String.class);
-    getterNames = newStringMap(String.class);
-    setterNames = newStringMap(String.class);
-    notifierNames = newStringMap(String.class);
-    notificationSites = newStringMap(MethodBuffer.class);
+    computeNames = mapOrderedInsertion();
+    getterNames = mapOrderedInsertion();
+    setterNames = mapOrderedInsertion();
+    notifierNames = mapOrderedInsertion();
+    notificationSites = mapOrderedInsertion();
   }
 
 

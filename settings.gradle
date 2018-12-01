@@ -245,16 +245,14 @@ System.properties: ${System.properties.toString().split(", ")}
 def composite = System.getProperty('xapi.composite') ?:
         startParameter.projectProperties.get('xapi.composite')
 if (composite != 'false') {
-    includeBuild('net.wti.gradle') {
-//        ConfigurableIncludedBuild build ->
-//            build.dependencySubstitution {
-//                subs ->
-//                subs.substitute(
-//                        subs.module('net.wti.gradle:xapi-gradle-plugin:0.5.1')
-//                ).with(
-//                        subs.project(':xapi-gradle-plugin')
-//                )
-//            }
+    def was = System.getProperty('xapi.composite')
+    System.setProperty('xapi.composite', 'false')
+    includeBuild('net.wti.core')
+    includeBuild('net.wti.gradle')
+    if (was) {
+        System.setProperty("xapi.composite", was)
+    } else {
+        System.clearProperty("xapi.composite")
     }
 }
 

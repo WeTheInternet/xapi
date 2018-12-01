@@ -19,8 +19,7 @@ dependencies {
     compileOnly 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.0',
                 'org.jfrog.buildinfo:build-info-extractor-gradle:4.8.1'
 
-    // TODO: change this back to real identifier once already-merged patches are deployed
-    compileOnly 'com.github.jengelman.gradle.plugins:shadowTest:4.0.3-SNAPSHOT'
+    compileOnly 'com.github.jengelman.gradle.plugins:shadow:4.0.4'
 
     testCompile 'org.spockframework:spock-core:1.2-groovy-2.5'
     testCompile gradleTestKit()

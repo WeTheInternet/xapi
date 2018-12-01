@@ -1,0 +1,15 @@
+import java.util.function.Function
+
+// This file is only suitable for use from buildSrc projects
+File f = new File("$rootDir/gradle/xapi-env.gradle")
+if (f.exists()) {
+    apply from: f
+}
+
+Task core = (extensions.findByName('installRebuild') as Function)
+        ?.apply('net.wti.core')
+
+Task tools = (extensions.findByName('installRebuild') as Function)
+        ?.apply('net.wti.gradle')
+
+tools.dependsOn(core)

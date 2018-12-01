@@ -1,0 +1,20 @@
+plugins {
+    id 'java-library'
+}
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    api project(':xapi-gradle-fu')
+    api project(':xapi-gradle-gen')
+}
+
+description = 'XApi - Build tools copy of xapi lang'
+
+sourceSets.getByName('main') {
+    java {
+        srcDirs = ['src/main/java', 'src/main/gen']
+    }
+}

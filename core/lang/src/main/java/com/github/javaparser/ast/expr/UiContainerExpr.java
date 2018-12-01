@@ -3,14 +3,13 @@ package com.github.javaparser.ast.expr;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.visitor.GenericVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitor;
-import xapi.collect.api.IntTo;
-import xapi.collect.api.StringTo;
 import xapi.fu.Filter.Filter1;
 import xapi.fu.In1Out1;
-import xapi.fu.itr.MappedIterable;
 import xapi.fu.Maybe;
-
-import static xapi.collect.X_Collect.newStringMultiMap;
+import xapi.fu.data.ListLike;
+import xapi.fu.data.MultiList;
+import xapi.fu.itr.MappedIterable;
+import xapi.fu.java.X_Jdk;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +24,7 @@ public class UiContainerExpr extends UiExpr {
   private boolean alwaysRenderClose;
   private NameExpr name;
   private UiBodyExpr body;
-  private StringTo.Many<UiAttrExpr> attrs;
+  private MultiList<String, UiAttrExpr> attrs;
   private String docType;
 
   public UiContainerExpr(String name) {
@@ -35,7 +34,7 @@ public class UiContainerExpr extends UiExpr {
   public UiContainerExpr(final int beginLine, final int beginColumn, final int endLine, final int endColumn,
                          NameExpr name, List<UiAttrExpr> attributes, UiBodyExpr body, boolean isInTemplate) {
     super(beginLine, beginColumn, endLine, endColumn);
-    attrs = newStringMultiMap(UiAttrExpr.class);
+    attrs = X_Jdk.multiList();
     this.name = name;
     this.body = body;
     this.inTemplate = isInTemplate;
@@ -44,7 +43,11 @@ public class UiContainerExpr extends UiExpr {
   }
 
   public List<UiAttrExpr> getAttributes() {
-    return attrs.flatten().asList();
+    return X_Jdk.asList(attrs.flatten());
+  }
+
+  public MappedIterable<UiAttrExpr> attrs() {
+    return attrs.mappedValues().flatten(ListLike::forEachItem);
   }
 
   public UiAttrExpr addAttribute(String name, Expression value) {
@@ -55,9 +58,9 @@ public class UiContainerExpr extends UiExpr {
 
   public UiAttrExpr addAttribute(boolean replace, UiAttrExpr attr) {
     final List<Node> children = getChildrenNodes();
-    final IntTo<UiAttrExpr> into = attrs.get(attr.getNameString());
+    final ListLike<UiAttrExpr> into = attrs.get(attr.getNameString());
     if (replace) {
-      into.forEachValue(children::remove);
+      into.forAll(children::remove);
       into.clear();
     }
     into.add(attr);
@@ -66,7 +69,7 @@ public class UiContainerExpr extends UiExpr {
     return attr;
   }
 
-  public IntTo<UiAttrExpr> getAttributes(String name) {
+  public ListLike<UiAttrExpr> getAttributes(String name) {
     return attrs.get(name);
   }
 
@@ -74,7 +77,7 @@ public class UiContainerExpr extends UiExpr {
     return getAttribute(name).getOrThrow(()->new NullPointerException("No feature named " + name + " found in " + this));
   }
   public MappedIterable<UiAttrExpr> getAttributesMatching(Filter1<UiAttrExpr> filter) {
-    return attrs.flattenedValues()
+    return attrs.flatten()
             .filter(filter);
   }
 
@@ -85,9 +88,9 @@ public class UiContainerExpr extends UiExpr {
   }
 
   public Maybe<UiAttrExpr> getAttribute(String name) {
-    final IntTo<UiAttrExpr> avail = attrs.get(name);
+    final ListLike<UiAttrExpr> avail = attrs.get(name);
     assert avail.size() < 2 : "Asked for a single attribute, but value of " + name +" had more than 1 item: " + avail;
-    return avail.isEmpty() ? Maybe.not() : Maybe.nullable(avail.at(0));
+    return avail.isEmpty() ? Maybe.not() : Maybe.nullable(avail.get(0));
   }
 
   public void setAttributes(List<UiAttrExpr> attributes) {
@@ -141,9 +144,9 @@ public class UiContainerExpr extends UiExpr {
   }
 
   public boolean removeAttribute(UiAttrExpr attr) {
-    final IntTo<UiAttrExpr> list = attrs.get(attr.getNameString());
+    final ListLike<UiAttrExpr> list = attrs.get(attr.getNameString());
     getChildrenNodes().remove(attr);
-    if (list.findRemove(attr, false)) {
+    if (-1 != list.removeFirst(attr, false)) {
       if (list.isEmpty()) {
         attrs.remove(attr.getNameString());
       }

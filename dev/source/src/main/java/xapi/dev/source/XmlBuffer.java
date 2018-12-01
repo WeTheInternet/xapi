@@ -29,6 +29,7 @@ public class XmlBuffer extends PrintBuffer {
 
   private MapLike<String, AttrNode> attributeMap;
   protected boolean printNewline = false;
+  private boolean attributeNewline = false;
   private boolean abbr = false;
   private In1Out1<String, String> escaper;
   protected boolean trimWhitespace;
@@ -102,6 +103,13 @@ public class XmlBuffer extends PrintBuffer {
     return attributeMap.get(name).live;
   }
 
+  public String escapeAttributeValue(String value) {
+    if (value == null) {
+      return "\"\"";
+    }
+    return "\"" + value.replaceAll(QUOTE, QUOTE_ENTITY) + "\" ";
+  }
+
   protected String escapeAttribute(final String value) {
     if (value == null) {
       return " ";
@@ -109,14 +117,18 @@ public class XmlBuffer extends PrintBuffer {
       if (value.startsWith("//")) {
         return "=" + escape(value.substring(2));
       } else {
-        return "=\"" + value.replaceAll(QUOTE, QUOTE_ENTITY) + "\" ";
+        return "=" + escapeAttributeValue(value);
       }
     }
   }
 
-  protected void setRawAttribute(final String name, final String val) {
+  protected void setRawAttribute(final String name, String val) {
     AttrNode attr = attributeMap.get(name);
     if (attr == null) {
+      if (isAttributeNewline()) {
+        attributes.println();
+        val = val.trim();
+      }
       attributes.print(name);
       attr = new AttrNode(new StringBuilder(val));
       attributeMap.put(name, attr);
@@ -141,6 +153,7 @@ public class XmlBuffer extends PrintBuffer {
     buffer.setTrimWhitespace(trimWhitespace);
     buffer.abbr = abbr;
     buffer.indent = indent + INDENT;
+    buffer.attributeNewline = attributeNewline;
     addToEnd(buffer);
     return buffer;
   }
@@ -151,6 +164,7 @@ public class XmlBuffer extends PrintBuffer {
     buffer.abbr = abbr;
     buffer.indent = indent + INDENT;
     buffer.setNewLine(false);
+    buffer.attributeNewline = attributeNewline;
     addToEnd(buffer);
     buffer.setIndentNeeded(false);
     return buffer;
@@ -162,6 +176,7 @@ public class XmlBuffer extends PrintBuffer {
     buffer.abbr = abbr;
     buffer.setNewLine(printNewline);
     buffer.indent = indent + INDENT;
+    buffer.attributeNewline = attributeNewline;
     addToBeginning(buffer);
     return buffer;
   }
@@ -172,6 +187,7 @@ public class XmlBuffer extends PrintBuffer {
     buffer.abbr = abbr;
     buffer.setTrimWhitespace(trimWhitespace);
     buffer.indent = indent + INDENT;
+    buffer.attributeNewline = attributeNewline;
     addToBeginning(buffer);
     buffer.setIndentNeeded(false);
     return buffer;
@@ -217,7 +233,13 @@ public class XmlBuffer extends PrintBuffer {
     }
     b.append(tag);
     if (attributes != null && !attributes.isEmpty()) {
-      b.append(" ").append(attributes);
+      String s = attributes.toSource();
+      if (!s.isEmpty()) {
+        if (!Character.isWhitespace(s.charAt(0))) {
+          b.append(" ");
+        }
+      }
+      b.append(s);
     }
     final String body = super.toSource();
     if (abbr && body.length() == 0) {
@@ -512,5 +534,21 @@ public class XmlBuffer extends PrintBuffer {
   public XmlBuffer setDoctype(String doctype) {
     this.doctype = doctype;
     return this;
+  }
+
+  public boolean isAttributeNewline() {
+    return attributeNewline;
+  }
+
+  public XmlBuffer setAttributeNewline(boolean attributeNewline) {
+    this.attributeNewline = attributeNewline;
+    return this;
+  }
+
+  @Override
+  public XmlBuffer makeChild() {
+    XmlBuffer child = (XmlBuffer) super.makeChild();
+    child.attributeNewline = attributeNewline;
+    return child;
   }
 }

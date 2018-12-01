@@ -39,8 +39,8 @@ import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
 import xapi.fu.In1Out1.In1Out1Unsafe;
-import xapi.log.X_Log;
-import xapi.log.api.LogLevel;
+import xapi.fu.log.Log;
+import xapi.fu.log.Log.LogLevel;
 import xapi.source.X_Source;
 import xapi.util.X_String;
 
@@ -371,10 +371,32 @@ public final class JavaParser {
             return e;
         } catch (ParseException e) {
             String linkToDoc = e.currentToken == null ? path : X_Source.pathToLogLink(path, e.currentToken.beginLine);
-            X_Log.log(level, "Parse error at document: " + linkToDoc);
+            final Log log = Log.defaultLogger();
+            log.log(level, "Parse error at document: " + linkToDoc);
             // We do two separate logs, because the "who is logging this" link
             // created from JavaParser.class argument will prevent the linkToDoc from rendering
-            X_Log.log(JavaParser.class, level, "\n[" + level + "] parsing", e);
+            log.log(JavaParser.class, level, "\n[" + level + "] parsing", e);
+            throw e;
+        }
+    }
+    public static UiContainerExpr parseUiContainer(final String path, final InputStream uiContainer, LogLevel level) throws ParseException {
+        final String src = SourcesHelper.streamToString(uiContainer);
+        if (X_String.isEmptyTrimmed(src)) {
+            return null;
+        }
+        StringReader sr = new StringReader(src);
+        try {
+            final UiContainerExpr e = new ASTParser(sr).RootUiContainer();
+            e.addExtra("location", path);
+            sr.close();
+            return e;
+        } catch (ParseException e) {
+            String linkToDoc = e.currentToken == null ? path : X_Source.pathToLogLink(path, e.currentToken.beginLine);
+            final Log log = Log.defaultLogger();
+            log.log(level, "Parse error at document: " + linkToDoc);
+            // We do two separate logs, because the "who is logging this" link
+            // created from JavaParser.class argument will prevent the linkToDoc from rendering
+            log.log(JavaParser.class, level, "\n[" + level + "] parsing", e);
             throw e;
         }
     }

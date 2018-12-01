@@ -1,0 +1,8 @@
+// This file is only suitable for use from buildSrc projects
+File f = new File("$rootDir/gradle/xapi-env.gradle")
+if (f.exists()) {
+    apply from: f
+}
+
+(extensions.findByName('installRebuild') as Action)
+        ?.execute('net.wti.core')

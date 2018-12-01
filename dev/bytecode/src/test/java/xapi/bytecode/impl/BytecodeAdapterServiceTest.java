@@ -115,8 +115,8 @@ public class BytecodeAdapterServiceTest {
       Assert.assertEquals(testCase, method.getName(), imethod.getName());
       Assert.assertEquals(testCase, method.getModifiers(), imethod.getModifier());
       Assert.assertEquals(testCase, imethod.getReturnType().getQualifiedName(), method.getReturnType().getCanonicalName());
-      Assert.assertTrue(testCase, X_Source.typesEqual(imethod.getParameters(), method.getParameterTypes()));
-      Assert.assertTrue(testCase, X_Source.typesEqual(imethod.getExceptions(), method.getExceptionTypes()));
+      Assert.assertTrue(testCase, BytecodeUtil.typesEqual(imethod.getParameters(), method.getParameterTypes()));
+      Assert.assertTrue(testCase, BytecodeUtil.typesEqual(imethod.getExceptions(), method.getExceptionTypes()));
 
       testAnnos(method.getDeclaredAnnotations(), imethod);
     }

@@ -1,10 +1,6 @@
 package com.github.javaparser.ast.visitor;
 
-import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.ImportDeclaration;
-import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.PackageDeclaration;
-import com.github.javaparser.ast.TypeParameter;
+import com.github.javaparser.ast.*;
 import com.github.javaparser.ast.body.*;
 import com.github.javaparser.ast.comments.BlockComment;
 import com.github.javaparser.ast.comments.JavadocComment;
@@ -12,11 +8,10 @@ import com.github.javaparser.ast.comments.LineComment;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.*;
 import com.github.javaparser.ast.type.*;
-import xapi.collect.api.ClassTo;
 import xapi.fu.Filter.Filter1;
 import xapi.fu.Filter.Filter1Unsafe;
-
-import static xapi.collect.X_Collect.newClassMap;
+import xapi.fu.data.MapLike;
+import xapi.fu.java.X_Jdk;
 
 import java.lang.reflect.Method;
 
@@ -27,7 +22,7 @@ import java.lang.reflect.Method;
 public class DelegatingVisitor <T, C extends DelegatingVisitor.Context<T>> extends GenericVisitorAdapter<Boolean, C> {
 
   protected Filter1<Node> filter;
-  protected final ClassTo<Filter1Unsafe<Node>> nodeFilter;
+  protected final MapLike<Class<?>, Filter1Unsafe<Node>> nodeFilter;
 
   private C context;
 
@@ -36,7 +31,7 @@ public class DelegatingVisitor <T, C extends DelegatingVisitor.Context<T>> exten
   }
 
   public DelegatingVisitor(Filter1<Node> filter) {
-    nodeFilter = newClassMap(Filter1Unsafe.class);
+    nodeFilter = X_Jdk.mapOrderedInsertion();
     this.filter = filter;
   }
 
@@ -95,7 +90,7 @@ public class DelegatingVisitor <T, C extends DelegatingVisitor.Context<T>> exten
   }
 
   private boolean checkNodeFilter(Class<? extends Node> cls, Node n) {
-    if (nodeFilter.containsKey(cls)) {
+    if (nodeFilter.has(cls)) {
       return nodeFilter.get(cls).filter1(n);
     }
     return true;

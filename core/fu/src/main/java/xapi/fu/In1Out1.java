@@ -5,6 +5,7 @@ import xapi.fu.In2Out1.In2Out1Unsafe;
 import java.util.function.Function;
 
 /**
+ *
  * @author James X. Nelson (james@wetheinter.net)
  *         Created on 07/11/15.
  */
@@ -287,4 +288,55 @@ In1Out1<I, O> extends Rethrowable, Lambda {
   static <I, O1, O extends O1> In1Out1<I, O1> weakenOutput(In1Out1<I, O> from) {
     return from.mapOut(X_Fu.weakener());
   }
+
+  /*
+   * Idea:
+   * interface Out1In1 <O1, I1> {
+   *     void oi(Out1<O1> out, In2<I1, Throwable> callback);
+   * }
+   *
+   * hm, let's see....
+   *
+   * In1Out1<String, Integer> blue = Integer::parseInt; // pretend this is a long running operation.
+   * Out1In1<String, Integer> red = blue.async();
+   * Lazy<O1> factory = red.oi(
+   *    "42"::toString, // also pretend this is long-running
+   *    (value, next, error) -> {
+   *      // do expensive things
+   *      next.in1(value / 4, error);
+   *    }
+   * );
+   * // later...
+   * assert factory.out1().equals(10);
+   *
+   *
+   * Another idea / version:
+   *
+   * interface Out1In1Async <O1, I1> extends Out1In1<O1, I1> {
+   *
+   *     Lazy<O1> oiAsync(Out1<O1> out, In3<I1, In2<I1, Throwable>, Throwable> callback);
+   *     // oiAsync's return value should actually be a form of lazy which does not block indefinitely on acquiring a monitor.
+   *
+   *     default void oi(Out1<O1> out, In2<I1, Throwable> callback) {
+   *       oiAsync(out,
+   *          (val, next, err)->
+   *              // When next is EMPTY, it will have the optimized useBeforeMe implementation (just returns callback).
+   *              next.useBeforeMe(callback)
+   *                  .in2(val, err)
+   *       );
+   *     }
+   * }
+   * In1Out1<String, Integer> blue = Integer::parseInt; // pretend this is a long running operation.
+   * Out1In1<String, Integer> red = blue.async();
+   * Lazy<O1> factory = red.oi(
+   *    "42"::toString, // also pretend this is long-running
+   *    (value, next, error) -> {
+   *      // do expensive things with value, move off thread, etc.
+   *      next.in1(value / 4, error); //
+   *    }
+   * );
+   * // later...
+   * assert factory.out1().equals(10);
+   *
+   */
 }

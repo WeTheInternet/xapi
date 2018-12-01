@@ -17,7 +17,6 @@ import xapi.dev.api.AstMethodInvoker.AstMethodResult;
 import xapi.fu.*;
 import xapi.fu.has.HasSize;
 import xapi.fu.itr.ChainBuilder;
-import xapi.util.X_Debug;
 
 import java.lang.annotation.*;
 import java.lang.reflect.Method;
@@ -59,7 +58,7 @@ public interface ApiGeneratorMethods<Ctx extends ApiGeneratorContext<Ctx>> exten
 
     default TemplateLiteralExpr $print(ApiGeneratorTools<Ctx> tools, Ctx ctx, Expression arg) {
         final Expression resolved = tools.resolveVar(ctx, arg);
-        return templateLiteral(resolved.toSource());
+        return TemplateLiteralExpr.templateLiteral(resolved.toSource());
     }
 
     default Expression $if(ApiGeneratorTools<Ctx> tools, Ctx ctx, Expression condition, Expression thenClause) {
@@ -207,7 +206,7 @@ public interface ApiGeneratorMethods<Ctx extends ApiGeneratorContext<Ctx>> exten
             // This allows you to send a single string with generics as one expression.
             parsed = JavaParser.parseTypeParameter(named);
         } catch (ParseException e) {
-            throw X_Debug.rethrow(e);
+            throw rethrow(e);
         }
         if (X_Fu.isEmpty(generics)) {
             return parsed;
@@ -223,7 +222,7 @@ public interface ApiGeneratorMethods<Ctx extends ApiGeneratorContext<Ctx>> exten
                     // as this may be a rather common way for expressions to multiplex
                     parsedChildren = JavaParser.parseTypeList(typeString);
                 } catch (ParseException e) {
-                    throw X_Debug.rethrow(e);
+                    throw rethrow(e);
                 }
                 refs.addAll(parsedChildren);
             }
@@ -254,7 +253,7 @@ public interface ApiGeneratorMethods<Ctx extends ApiGeneratorContext<Ctx>> exten
             expression = tools.resolveVar(ctx, expression);
             String original = tools.resolveString(ctx, expression);
             final String newValue = regex.matcher(original).replaceAll(replacementString);
-            all.add(templateLiteral(newValue));
+            all.add(TemplateLiteralExpr.templateLiteral(newValue));
         }
         final AstMethodResult result = new AstMethodResult(all);
         return result;
@@ -279,7 +278,7 @@ public interface ApiGeneratorMethods<Ctx extends ApiGeneratorContext<Ctx>> exten
             expression = tools.resolveVar(ctx, expression);
             String original = tools.resolveString(ctx, expression);
             final String newValue = regex.matcher(original).replaceAll("");
-            all.add(templateLiteral(newValue));
+            all.add(TemplateLiteralExpr.templateLiteral(newValue));
         }
         final AstMethodResult result = new AstMethodResult(all);
         return result;

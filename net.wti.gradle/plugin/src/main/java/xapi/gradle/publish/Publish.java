@@ -3,38 +3,33 @@ package xapi.gradle.publish;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
-import org.gradle.api.artifacts.dsl.RepositoryHandler;
-import org.gradle.api.artifacts.repositories.MavenArtifactRepository;
 import org.gradle.api.execution.TaskExecutionGraph;
-import org.gradle.api.internal.artifacts.repositories.DefaultMavenArtifactRepository;
 import org.gradle.api.plugins.BasePlugin;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.publish.PublishingExtension;
 import org.gradle.api.publish.maven.MavenArtifact;
 import org.gradle.api.publish.maven.MavenPublication;
-import org.gradle.api.publish.maven.internal.publication.MavenPublicationInternal;
 import org.gradle.api.publish.maven.plugins.MavenPublishPlugin;
 import org.gradle.api.publish.maven.tasks.PublishToMavenRepository;
 import org.gradle.api.publish.plugins.PublishingPlugin;
-import org.gradle.api.tasks.*;
+import org.gradle.api.tasks.SourceSet;
+import org.gradle.api.tasks.SourceSetContainer;
+import org.gradle.api.tasks.TaskContainer;
+import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.bundling.Jar;
 import org.gradle.api.tasks.javadoc.Javadoc;
-import org.gradle.internal.impldep.aQute.bnd.osgi.Clazz.Def;
 import org.gradle.plugins.signing.SigningExtension;
 import org.gradle.plugins.signing.SigningPlugin;
 import org.gradle.util.GFileUtils;
 import xapi.fu.In1Out1;
 import xapi.gradle.api.ArchiveType;
-import xapi.gradle.api.DefaultArchiveTypes;
+import xapi.gradle.api.DefaultArchiveType;
 import xapi.gradle.plugin.XapiBasePlugin;
 import xapi.gradle.plugin.XapiExtension;
 import xapi.gradle.task.SourceJar;
-import xapi.gradle.tools.Ensure;
 
 import java.io.File;
-import java.net.URL;
-import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
@@ -52,13 +47,13 @@ import java.util.stream.Collectors;
 public class Publish {
 
     private static final ArchiveType[] DEFAULT_TYPES = {
-        DefaultArchiveTypes.MAIN,
-        DefaultArchiveTypes.SOURCE,
-        DefaultArchiveTypes.JAVADOC,
+        DefaultArchiveType.MAIN,
+        DefaultArchiveType.SOURCE,
+        DefaultArchiveType.JAVADOC,
         // Test archives will be published with a modified artifactId, not a classifier.
         // This allows their transitive dependency graph to persist as a standalone pom file.
-        DefaultArchiveTypes.TEST,
-        DefaultArchiveTypes.TEST_SOURCE
+        DefaultArchiveType.TEST,
+        DefaultArchiveType.TEST_SOURCE
     };
 
     public static void addPublishing(Project p, ArchiveType ... types) {
@@ -148,26 +143,29 @@ public class Publish {
                         String coords = ptml.getPublication().getGroupId() + ":"
                             + ptml.getPublication().getArtifactId() + ":"
                             + ptml.getPublication().getVersion();
-                        ptml.getLogger().quiet("Published {} to {}", coords, ptml.getRepository().getUrl());
-                        ptml.getLogger().trace("Files copied: {}", ptml.getPublication().getArtifacts().stream()
-                            .map(In1Out1.<MavenArtifact, String>unsafe(i->i.getFile().getAbsolutePath()).toFunction())
-                            .collect(Collectors.joining("/n")));
+                        p.getGradle().buildFinished(res->{
+
+                            ptml.getLogger().info("Published artifact to {} -> {}", ptml.getRepository().getUrl(), coords);
+                            ptml.getLogger().trace("Files copied: {}", ptml.getPublication().getArtifacts().stream()
+                                .map(In1Out1.<MavenArtifact, String>unsafe(i->i.getFile().getAbsolutePath()).toFunction())
+                                .collect(Collectors.joining("/n")));
+                        });
                     });
                     tasks.getByName("build").finalizedBy(ptml);
                 });
-                publishing.getPublications().create("mavenJava", MavenPublication.class,
+                publishing.getPublications().create("main", MavenPublication.class,
                     pub -> {
-//                    pub.setVersion("0.5.1");
-
-                        ((MavenPublicationInternal)pub).getMavenProjectIdentity().getVersion().set("0.5.1-SNAPSHOT");
+                        // Was trying to get gradle to not publish SNAPSHOT as timestamp'd entities,
+                        // but it's hardcoded into the build logic... could consider groovy MOP to swap out the method...
+//                      ((MavenPublicationInternal)pub).getMavenProjectIdentity().getVersion().set("0.5.1");
                     p.getGradle().projectsEvaluated(ready->{
                         String type = (String) p.findProperty("xapi.main.component");
                         if (type == null) {
                             type = "java";
                         }
                         pub.from(p.getComponents().getByName("java"));
-                            final String baseName = ((Jar)p.getTasks().getByName("jar")).getBaseName();
-                            Ensure.projectEvaluated(p, ignore->pub.setArtifactId(baseName));
+                        final String baseName = ((Jar)p.getTasks().getByName("jar")).getBaseName();
+                        pub.setArtifactId(baseName);
                         final Task shadowJar = p.getTasks().findByName("shadowJar");
                         if (shadowJar != null) {
                             pub.artifact(shadowJar);
@@ -187,15 +185,24 @@ public class Publish {
 
                     Javadoc javadoc = (Javadoc) tasks.getByName("javadoc");
                     File javadocOpts = new File(p.getBuildDir(), "javadoc.opts");
-                    final Set<File> srcDirs = sourceSets.getByName(SourceSet.MAIN_SOURCE_SET_NAME).getAllJava()
-                        .getSrcDirs();
-                    final String sources = srcDirs.stream().map(File::getAbsolutePath).collect(Collectors.joining(File.pathSeparator));
-                    GFileUtils.writeFile("-Xdoclint:none\n" +
-                        "-sourcepath " + sources, javadocOpts);
-                    tasks.named(JavaPlugin.JAVADOC_TASK_NAME, task->{
-                        Javadoc doc = (Javadoc)task;
+                    final TaskProvider<Task> jdoc = tasks.named(JavaPlugin.JAVADOC_TASK_NAME, task -> {
+                        final Set<File> srcDirs = sourceSets.getByName(SourceSet.MAIN_SOURCE_SET_NAME).getAllJava()
+                            .getSrcDirs();
+                        task.doFirst(t -> {
+                            final String sources = srcDirs.stream()
+                                .filter(File::exists)
+                                .map(File::getAbsolutePath).collect(Collectors.joining(
+                                File.pathSeparator));
+                            GFileUtils.writeFile("-Xdoclint:none\n" +
+                                "-sourcepath " + sources, javadocOpts);
+
+                        });
+                        Javadoc doc = (Javadoc) task;
                         doc.exclude("**/google/gwt/**");
-                        srcDirs.forEach(doc.getInputs()::dir);
+                        srcDirs
+                            .stream()
+                            .filter(File::exists)
+                            .forEach(doc.getInputs()::dir);
                         doc.getOptions().quiet();
                         doc.getOptions().source("1.8");
 
@@ -203,7 +210,7 @@ public class Publish {
 
                     });
                     final Jar javadocJar = tasks.create("javadocJar", Jar.class, jar -> {
-                        jar.dependsOn(javadoc); // TODO: test and see if we can delete this...
+                        jar.dependsOn(jdoc); // TODO: test and see if we can delete this...
                         jar.setClassifier("javadoc");
                         jar.from(javadoc.getDestinationDir());
                     });

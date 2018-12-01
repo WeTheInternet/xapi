@@ -161,6 +161,7 @@ public class TemplateGeneratorSteps {
   @Given("^compile ui with name (\\S)+:$")
   public void compileTemplate(String name, List<String> lines) throws Throwable {
     String src = join("\n", lines);
+    //noinspection deprecation
     final UiContainerExpr ui = JavaParser.parseUiContainer(src);
     compiledByName.put(name, ui);
   }

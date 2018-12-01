@@ -30,7 +30,6 @@ import xapi.io.X_IO;
 import xapi.lang.oracle.AstOracle;
 import xapi.log.X_Log;
 import xapi.reflect.X_Reflect;
-import xapi.source.X_Base64;
 import xapi.source.X_Source;
 import xapi.source.read.JavaModel.IsQualified;
 import xapi.time.X_Time;

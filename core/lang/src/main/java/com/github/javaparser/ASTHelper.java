@@ -24,27 +24,22 @@ package com.github.javaparser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.TypeArguments;
-import com.github.javaparser.ast.body.BodyDeclaration;
-import com.github.javaparser.ast.body.FieldDeclaration;
-import com.github.javaparser.ast.body.MethodDeclaration;
-import com.github.javaparser.ast.body.Parameter;
-import com.github.javaparser.ast.body.TypeDeclaration;
-import com.github.javaparser.ast.body.VariableDeclarator;
-import com.github.javaparser.ast.body.VariableDeclaratorId;
+import com.github.javaparser.ast.body.*;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.type.*;
 import com.github.javaparser.ast.type.PrimitiveType.Primitive;
-import xapi.fu.itr.MappedIterable;
 import xapi.fu.Out1.Out1Unsafe;
-import xapi.log.X_Log;
-
-import static com.github.javaparser.ast.internal.Utils.isNullOrEmpty;
+import xapi.fu.itr.MappedIterable;
+import xapi.fu.log.Log;
+import xapi.fu.log.Log.LogLevel;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.github.javaparser.ast.internal.Utils.isNullOrEmpty;
 
 /**
  * This class helps to construct new nodes.
@@ -354,7 +349,7 @@ public final class ASTHelper {
             return b.toString();
         } else {
             String error = "Unhandled attribute value; cannot extract compile time string literal from " + value.getClass() + " : " + value;
-            X_Log.error(ASTHelper.class, error);
+            Log.defaultLogger().log(ASTHelper.class, LogLevel.ERROR, error);
             throw new IllegalArgumentException(error);
         }
     }

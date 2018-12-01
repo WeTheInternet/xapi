@@ -20,9 +20,10 @@ import xapi.dev.ui.impl.InterestingNodeFinder.InterestingNodeResults;
 import xapi.fu.*;
 import xapi.fu.itr.*;
 import xapi.fu.itr.CachingIterator.ReplayableIterable;
+import xapi.fu.log.Log;
+import xapi.fu.log.Log.LogLevel;
 import xapi.io.X_IO;
 import xapi.log.X_Log;
-import xapi.log.api.LogLevel;
 import xapi.source.X_Source;
 import xapi.source.read.JavaModel.IsQualified;
 import xapi.ui.api.PhaseMap;
@@ -80,7 +81,7 @@ public abstract class AbstractUiGeneratorService <Raw, Ctx extends ApiGeneratorC
     protected volatile GeneratorState state;
     private boolean uiComponent;
     private boolean strict;
-    private LogLevel level;
+    private Log.LogLevel level;
 
     public AbstractUiGeneratorService() {
         uiComponent = "true".equals(System.getProperty("xapi.ui.generator", "true"));

@@ -21,19 +21,26 @@ import xapi.bytecode.annotation.MemberValueVisitor;
 import xapi.bytecode.annotation.ShortMemberValue;
 import xapi.bytecode.annotation.StringMemberValue;
 import xapi.collect.impl.ToStringFifo;
+import xapi.fu.Out1;
+import xapi.inject.X_Inject;
 import xapi.log.X_Log;
 import xapi.source.X_Modifier;
+import xapi.source.X_Source;
 import xapi.source.api.IsAnnotationValue;
 import xapi.source.api.IsClass;
 import xapi.source.api.IsType;
 import xapi.source.impl.ImmutableAnnotationValue;
+import xapi.source.service.SourceService;
 import xapi.util.X_Debug;
+import xapi.util.X_String;
 import xapi.util.api.ConvertsValue;
 
 public class BytecodeUtil {
 
+  private static final Out1<SourceService> service = X_Inject.singletonLazy(SourceService.class);
+
   public static Annotation[] extractAnnotations(AnnotationsAttribute visible, AnnotationsAttribute invisible) {
-    Annotation[] 
+    Annotation[]
         vis = visible == null ? null : visible.getAnnotations()
         , invis = invisible == null ? null : invisible.getAnnotations();
     if (vis == null) {
@@ -49,7 +56,7 @@ public class BytecodeUtil {
   public static IsAnnotationValue extractValue(MemberValue value, BytecodeAdapterService service, IsType type) {
     return new ValueExtractor().extract(value, service, type);
   }
-  
+
   private static final class ArrayTypeExtractor implements MemberValueVisitor {
     String type;
     int modifier;
@@ -121,7 +128,7 @@ public class BytecodeUtil {
     IsAnnotationValue value;
     private BytecodeAdapterService service;
     private IsType knownType;
-    
+
     public IsAnnotationValue extract(MemberValue member, BytecodeAdapterService service, IsType type) {
       this.service = service;
       this.knownType = type;
@@ -152,7 +159,7 @@ public class BytecodeUtil {
         } catch (ClassNotFoundException e) {
           if (val.length == 0 && this.knownType != null) {
               // We have a zero-arg array value of a known type; we can create the necessary value
-            
+
             IsClass cls = service.toClass(knownType.getQualifiedName());
             Object value;
             ConvertsValue<Object, String> toStringer = new ConvertsValue<Object, String>() {
@@ -309,7 +316,95 @@ public class BytecodeUtil {
         }
       }, 0);
     }
-    
+
   }
-   
+
+  public static IsType[] toTypes(String[] from) {
+    IsType[] types = new IsType[from.length];
+    for (int i = 0, m = from.length; i < m; ++i) {
+      String type = from[i];
+      types[i] = toType(type);
+    }
+    return types;
+  }
+
+  public static IsType toType(Class<?> cls) {
+    return service.out1().toType(cls);
+  }
+
+  protected static IsType toType(String qualifiedName) {
+    String pkg = X_Source.toPackage(qualifiedName);
+    return toType(pkg,
+        pkg.length() == 0 ? qualifiedName :
+        qualifiedName.substring(pkg.length()+1));
+  }
+
+  public static IsType toType(String pkg, String enclosedName) {
+    return service.out1().toType(X_String.notNull(pkg).replace('/', '.'), enclosedName.replace('$', '.'));
+  }
+
+  /**
+   * Send in com.pkg.Clazz$InnerClass
+   * or com/pkg/Clazz$InnerClass
+   * Get back Pair<"com.pkg", "Clazz.InnerClass"
+   * @param qualifiedBinaryName - The cls.getCanonicalName, or cls.getQualifiedBinaryName
+   * @return - A pair of source names ('.' delimited), [pac.kage, Enclosing.Name]
+   */
+  public static IsType binaryToSource(String qualifiedBinaryName) {
+    int arrDepth = 0;
+    while(qualifiedBinaryName.charAt(0) == '[') {
+      arrDepth++;
+      qualifiedBinaryName = qualifiedBinaryName.substring(1);
+    }
+    qualifiedBinaryName = qualifiedBinaryName.replace('/', '.');
+    int lastPkg = qualifiedBinaryName.lastIndexOf('.');
+    String pkg;
+    if (lastPkg == -1) {
+      pkg = "";
+    } else {
+      pkg = qualifiedBinaryName.substring(0, lastPkg);
+      assert pkg.equals(pkg.toLowerCase()) :
+        "Either you are using an uppercase letter in your package name (stop that!)\n" +
+        "or you are sending an inner class using period encoding instead of $ (also stop that!)\n" +
+        "You sent "+qualifiedBinaryName+"; expected com.package.OuterClass$InnerClass";
+    }
+    String enclosed = X_Modifier.toEnclosingType(qualifiedBinaryName.substring(lastPkg+1));
+    return toType(pkg, X_Modifier.addArrayBrackets(enclosed, arrDepth));
+  }
+
+  public static boolean typesEqual(IsType[] one, IsType[] two) {
+    if (one == null)
+      return two == null;
+    if (one.length != two.length)
+      return false;
+    for (int i = 0, m = one.length; i < m; ++i) {
+      if (!one[i].equals(two[i]))
+        return false;
+    }
+    return true;
+  }
+
+  public static boolean typesEqual(IsType[] one, Class<?> ... two) {
+    if (one == null)
+      return two == null;
+    if (one.length != two.length)
+      return false;
+    for (int i = 0, m = one.length; i < m; ++i) {
+      if (!one[i].getQualifiedName().equals(two[i].getCanonicalName()))
+        return false;
+    }
+    return true;
+  }
+
+  public static boolean typesEqual(Class<?>[] one, IsType ... two) {
+    if (one == null)
+      return two == null;
+    if (one.length != two.length)
+      return false;
+    for (int i = 0, m = one.length; i < m; ++i) {
+      if (!one[i].getCanonicalName().equals(two[i].getQualifiedName()))
+        return false;
+    }
+    return true;
+  }
 }

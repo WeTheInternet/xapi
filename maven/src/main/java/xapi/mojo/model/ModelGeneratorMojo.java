@@ -19,7 +19,7 @@ import xapi.log.X_Log;
 import xapi.model.api.Model;
 import xapi.mojo.api.AbstractXapiMojo;
 import xapi.mvn.X_Maven;
-import xapi.source.X_Source;
+import xapi.source.api.HasQualifiedName;
 import xapi.source.api.IsAnnotation;
 import xapi.source.api.IsClass;
 import xapi.source.api.IsMethod;
@@ -132,7 +132,7 @@ public class ModelGeneratorMojo extends AbstractXapiMojo {
       // They will also be able to select superclass based on platform type
       for (IsMethod method : cls.getMethods()) {
 
-        if (X_Source.isJavaLangObject(method.getEnclosingType()))
+        if (HasQualifiedName.isJavaLangObject(method.getEnclosingType()))
           continue;
         if (HasModelFields.isModel(method.getEnclosingType()))
           continue;

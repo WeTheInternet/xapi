@@ -26,7 +26,7 @@ public class AllJars {
 
     public static final String SOURCE_JAR = "sourceJar";
     private final TaskProvider<SourceJar> sourceJar;
-    private ArchiveType mainType = DefaultArchiveTypes.MAIN;
+    private ArchiveType mainType = DefaultArchiveType.MAIN;
 
     public AllJars(Project project) {
 

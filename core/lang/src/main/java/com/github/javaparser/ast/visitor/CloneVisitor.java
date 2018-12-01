@@ -21,12 +21,7 @@
 
 package com.github.javaparser.ast.visitor;
 
-import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.ImportDeclaration;
-import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.PackageDeclaration;
-import com.github.javaparser.ast.TypeArguments;
-import com.github.javaparser.ast.TypeParameter;
+import com.github.javaparser.ast.*;
 import com.github.javaparser.ast.body.*;
 import com.github.javaparser.ast.comments.BlockComment;
 import com.github.javaparser.ast.comments.Comment;
@@ -35,7 +30,7 @@ import com.github.javaparser.ast.comments.LineComment;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.*;
 import com.github.javaparser.ast.type.*;
-import xapi.collect.api.StringTo;
+import xapi.fu.data.MapLike;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -56,7 +51,7 @@ public class CloneVisitor implements GenericVisitor<Node, Object> {
 	}
 
 	protected <N extends Node> N copyExtras(N oldNode, N newNode) {
-            final StringTo<Object> oldExtras = oldNode.getExtras();
+            final MapLike<String, Object> oldExtras = oldNode.getExtras();
             if (oldExtras != null && !oldExtras.isEmpty()) {
 		newNode.setExtras(oldExtras);
             }

@@ -1,15 +1,12 @@
 package xapi.gradle.task;
 
-import org.gradle.api.Action;
 import org.gradle.api.DefaultTask;
-import org.gradle.api.Project;
 import org.gradle.api.Task;
-import org.gradle.api.plugins.JavaBasePlugin;
-import org.gradle.api.plugins.JavaPlugin;
-import org.gradle.api.tasks.TaskAction;
-import org.gradle.api.tasks.TaskProvider;
-import org.gradle.api.tasks.bundling.Jar;
-import xapi.fu.Lazy;
+import org.gradle.api.file.RegularFile;
+import org.gradle.api.file.RegularFileProperty;
+import org.gradle.api.provider.Property;
+import org.gradle.api.tasks.*;
+import org.gradle.util.GFileUtils;
 import xapi.gradle.plugin.XapiExtension;
 
 /**
@@ -52,13 +49,39 @@ public class XapiInit extends DefaultTask {
 
     private final TaskProvider<Task> postInit;
     private final TaskProvider<Task> preInit;
+    private volatile boolean use;
+    private final RegularFileProperty initFile;
+    private final Property<String> initFileName;
 
     public XapiInit() {
         postInit = getProject().getTasks().register(POST_INIT_TASK_NAME, task -> {
+            use = true;
             task.dependsOn(this);
-            finalizedBy(task);
+            if (getState().isConfigurable()) {
+                finalizedBy(task);
+            }
         });
-        preInit = getProject().getTasks().register(PRE_INIT_TASK_NAME, this::dependsOn);
+        preInit = getProject().getTasks().register(PRE_INIT_TASK_NAME, task-> {
+            use = true;
+            if (getState().isConfigurable()) {
+                dependsOn(task);
+            }
+        });
+        onlyIf(t-> use || !t.getActions().isEmpty());
+        initFile = getProject().getObjects().fileProperty();
+        initFileName = getProject().getObjects().property(String.class);
+        initFileName.set(".xapi.initFile");
+        initFile.set(getProject().getLayout().getBuildDirectory().file(initFileName));
+    }
+
+    @Input
+    public Property<String> getInitFileName() {
+        return initFileName;
+    }
+
+    @OutputFile
+    public RegularFileProperty getInitFile() {
+        return initFile;
     }
 
     public void configure(XapiExtension ext) {
@@ -66,10 +89,12 @@ public class XapiInit extends DefaultTask {
     }
 
     @TaskAction
-    public void initialize() {
-        // We don't actually do anything here.
-        // This task exists mostly to give you something to bind task dependencies to.
+    public void doInit() {
+        GFileUtils.writeFile(getInitFileContents(), initFile.getAsFile().get(), "UTF-8");
+    }
 
+    protected String getInitFileContents() {
+        return Long.toString(System.currentTimeMillis());
     }
 
     public TaskProvider<Task> getPostInit() {
@@ -80,7 +105,7 @@ public class XapiInit extends DefaultTask {
     }
 
     public TaskProvider<Task> getPreInit() {
-        dependsOn(postInit);
-        return postInit;
+        dependsOn(preInit);
+        return preInit;
     }
 }

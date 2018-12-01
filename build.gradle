@@ -8,8 +8,6 @@ import org.gradle.internal.jvm.Jvm
 
 import static org.gradle.api.tasks.wrapper.Wrapper.DistributionType
 
-System.setProperty("uniqueVersion", "false")
-
 plugins.apply 'xapi-root'
 
 xapi {
@@ -18,22 +16,33 @@ xapi {
 }
 
 import xapi.gradle.gwt.Gwt
+File mvnRepo = new File(rootDir, 'repo')
+
+def shouldApply = { String path->
+    return ! (
+            (path.split(':')?:[''])[-1]
+                    .contains("parent")
+            )
+}
+
 allprojects {
     group = 'net.wetheinter'
-    version = '0.5.1-SNAPSHOT'
+    version = '0.5.1'
 
     plugins.apply 'maven'
     plugins.apply 'idea'
     repositories.jcenter()
     repositories.maven {
         name = 'xapiLocal'
-        url = new URI("file://$rootDir/repo")
+        url = mvnRepo.toURI()
     }
     // we want all projects to have xapi plugin,
     // but we'll wait until they are resolved,
     // to give each project a chance to pick a more specific plugin.
     afterEvaluate {
-        plugins.apply 'xapi'
+        if (shouldApply(path)) {
+            plugins.apply 'xapi-base'
+        }
         test {
             if (!maxHeapSize) {
                 maxHeapSize = '1G'
@@ -51,11 +60,14 @@ gradle.beforeProject {
                 url = new File(rootDir, 'repo')
             }
         }
-        xapi.gradle.publish.Publish.addPublishing(p)
 }
 
 subprojects {
-    Project p -> p.with {
+    Project p ->
+    if (!shouldApply(p.path)) {
+        return
+    }
+    p.with {
         plugins.apply 'java-library'
 
         tasks.create 'testJar', Jar, {
@@ -67,6 +79,11 @@ subprojects {
 
         p.dependencies.add JavaPlugin.RUNTIME_ONLY_CONFIGURATION_NAME,
                 p.files(Jvm.current().toolsJar)
+
+        p.tasks.withType(Test).all {
+            Test test ->
+                test.systemProperty('xapi.mvn.repo', mvnRepo.absolutePath)
+        }
 
         p.tasks.withType(JavaCompile).all {
             JavaCompile javac ->
@@ -95,7 +112,7 @@ subprojects {
 
 tasks.named('wrapper', {
     Wrapper w -> w.with {
-        gradleVersion = '5.0-rc-4'
+        gradleVersion = '5.0'
         distributionType = DistributionType.ALL
     }
 })

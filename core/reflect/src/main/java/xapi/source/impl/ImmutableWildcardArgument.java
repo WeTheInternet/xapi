@@ -16,12 +16,12 @@ public class ImmutableWildcardArgument extends ImmutableTypeArgument implements 
 
     private final IsTypeArgument[] bounds;
     private final boolean superArgument;
-abstract class S <X extends List<? super X>> implements List<List<? super X>[]> {
-    <Y extends List<? super X>> List<? super X> s(List<? extends X> s){
-        return (List<? super X>) s;
-    }
-
-}
+    // Some ugly test code...
+//abstract class S <X extends List<? super X>> implements List<List<? super X>[]> {
+//    <Y extends List<? super X>> List<? super X> s(List<? extends X> s){
+//        return (List<? super X>) s;
+//    }
+//}
     public ImmutableWildcardArgument(IsTypeParameter parameter, IsTypeArgument... bounds) {
         this(parameter, false, bounds);
     }

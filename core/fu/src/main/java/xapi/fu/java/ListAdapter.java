@@ -111,4 +111,8 @@ public class ListAdapter<T> implements ListLike<T>, Serializable {
     public int hashCode() {
         return list.hashCode();
     }
+
+    public List<T> getList() {
+        return list;
+    }
 }

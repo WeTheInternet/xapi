@@ -1,3 +1,14 @@
+// This module is as simple as it gets.
+// A single java artifact, which automatically publishes sources et al.
 plugins {
-    id 'java-library'
+    id 'xapi-base'
 }
+
+description = '''Xapi Annotations (and some interfaces / enums)
+
+This module has no dependencies, and only publishes a standard jar.
+Many more-specialized annotations can be found in xapi-core-api;
+we want to keep this jar as slim as possible.'''
+
+// We only contains definitions of annotations, interfaces, enums, and maybe a couple simple classes.
+// xapi-fu will inherit us, and everything else will inherit xapi-fu (or later).

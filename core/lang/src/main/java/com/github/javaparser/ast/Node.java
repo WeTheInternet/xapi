@@ -29,10 +29,10 @@ import com.github.javaparser.ast.visitor.EqualsVisitor;
 import com.github.javaparser.ast.visitor.GenericVisitor;
 import com.github.javaparser.ast.visitor.TransformVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitor;
-import xapi.collect.X_Collect;
-import xapi.collect.api.StringTo;
 import xapi.fu.Maybe;
+import xapi.fu.data.MapLike;
 import xapi.fu.itr.LinkedIterable;
+import xapi.fu.java.X_Jdk;
 
 import java.io.Serializable;
 import java.util.Iterator;
@@ -64,7 +64,7 @@ public abstract class Node implements Serializable, Cloneable {
 
     private List<Node> childrenNodes = new LinkedList<Node>();
     private List<Comment> orphanComments = new LinkedList<Comment>();
-    private StringTo<Object> extras;
+    private MapLike<String, Object> extras;
 
     /**
      * This attribute can store additional information from semantic analysis.
@@ -419,7 +419,7 @@ public abstract class Node implements Serializable, Cloneable {
 
     public void addExtra(String key, Object value) {
         if (extras == null) {
-            extras = X_Collect.newStringMap(Object.class);
+            extras = X_Jdk.mapOrderedInsertion();
         }
         extras.put(key, value);
     }
@@ -428,7 +428,7 @@ public abstract class Node implements Serializable, Cloneable {
         if (extras == null) {
             return false;
         }
-        return extras.containsKey(key);
+        return extras.has(key);
     }
     public <T> T getExtra(String key) {
         if (extras == null) {
@@ -448,24 +448,24 @@ public abstract class Node implements Serializable, Cloneable {
         return (T) extras.remove(key);
     }
 
-    public StringTo<Object> getExtras() {
+    public MapLike<String, Object> getExtras() {
         return extras;
     }
 
-    public void setExtras(StringTo<Object> extras) {
+    public void setExtras(MapLike<String, Object> extras) {
         if (this.extras == null) {
-            this.extras = X_Collect.newStringMap(Object.class);
+            this.extras = X_Jdk.mapOrderedInsertion();
         } else {
             this.extras.clear();
         }
         if (extras != null) {
-            this.extras.putEntries(extras);
+            this.extras.putMap(extras);
         }
     }
 
     public void borrowExtras(Node from) {
-        if (from.extras != null) {
-            from.extras.forBoth(this::addExtra);
+        if (from.extras != null && extras != null) {
+            from.extras.putMap(extras);
         }
     }
 }

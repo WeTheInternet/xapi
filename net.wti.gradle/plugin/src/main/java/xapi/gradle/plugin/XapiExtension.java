@@ -6,29 +6,25 @@ import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.internal.DefaultDomainObjectSet;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.plugins.JavaPlugin;
-import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.provider.Property;
 import org.gradle.api.provider.Provider;
-import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.TaskProvider;
+import org.gradle.api.tasks.bundling.AbstractArchiveTask;
 import org.gradle.internal.reflect.Instantiator;
 import xapi.dev.source.DomBuffer;
-import xapi.dev.source.PrintBuffer;
-import xapi.fu.Do;
-import xapi.fu.In1Out1;
-import xapi.fu.Lazy;
-import xapi.fu.Out1;
+import xapi.fu.*;
 import xapi.fu.itr.Chain;
 import xapi.fu.itr.ChainBuilder;
-import xapi.gradle.api.AllSources;
-import xapi.gradle.api.AllJars;
-import xapi.gradle.api.ArchiveType;
+import xapi.gradle.api.*;
+import xapi.gradle.config.PlatformConfig;
+import xapi.gradle.config.PlatformConfigContainer;
 import xapi.gradle.config.PublishConfig;
 import xapi.gradle.task.XapiInit;
 import xapi.gradle.task.XapiManifest;
 
-import java.io.File;
-import java.io.IOException;
+import java.util.concurrent.Callable;
+
+import static xapi.fu.Out1.out1Unsafe;
 
 /**
  * This is the `xapi { }` project extension object which is configured in your build script.
@@ -47,9 +43,10 @@ public class XapiExtension {
 
     public static final String EXT_NAME = "xapi";
     private final Property<String> prefix;
+    private final Property<String> module;
     private final Property<Boolean> autoPlugin;
     private final Property<PublishConfig> publish;
-    private final Property<AllSources> sources;
+    private final Property<SourceConfigContainer> sources;
     private final Property<AllJars> jars;
     private final DirectoryProperty outputMeta;
     private final TaskProvider<XapiInit> initTask;
@@ -57,16 +54,57 @@ public class XapiExtension {
     private final Out1<XapiInit> init;
     private final ChainBuilder<Do> onInit, onPrepare, onFinish;
     private final Logger logger;
+    private final PlatformConfigContainer platform;
+    private final Callable<String> defaultModule;
+    private final Property<ArchiveType> mainArtifact;
+
+    /*
+     * TODO: make a bunch of helper methods:
+     * requireDev
+     * requireApi
+     * requireGwt
+     * etc etc.
+     *
+     * or, perhaps:
+     *
+     * xapi {
+     *   // adding a main artifact to a main artifact
+     *   require 'xapi-lang' // require adds to main
+     *   // we may want a "dev" artifact in main
+     *   require 'xapi-lang', 'dev'
+     *   platform {
+     *     gwt {
+     *       // to add specific extras to a given platform:
+     *       require 'xapi-lang', 'gwt'
+     *       require 'xapi-lang' // maybe make this do `, 'gwt'` i.e. allow this line and the one above to be ==
+     *       // in either case, both lines above should be redundant, as platform should automatically inherit classifiers
+     *       // whenever there is a main `require()` on another main artifact.
+     *     }
+     *   }
+     *   // to add specific extras to a specific artifact:
+     *   requireApi 'xapi-lang', 'api'
+     * }
+     */
 
     public XapiExtension(Project project, Instantiator instantiator) {
         logger = project.getLogger();
+        platform = new PlatformConfigContainer(project.getObjects(), instantiator);
         autoPlugin = lockable(project, Boolean.class);
         prefix = lockable(project, String.class);
         publish = lockable(project, PublishConfig.class);
-        sources = lockable(project, AllSources.class);
+        sources = lockable(project, SourceConfigContainer.class);
         jars = lockable(project, AllJars.class);
+        mainArtifact = lockable(project, ArchiveType.class);
+        mainArtifact.set(DefaultArchiveType.MAIN);
 
-        Lazy<AllSources> lazySource = Lazy.deferred1(this::prepareSources, instantiator);
+        module = lockable(project, String.class);
+        defaultModule = ()->
+            ((AbstractArchiveTask)project.getTasks().getByName(mainJarTask()))
+                .getBaseName()
+        ;
+        module.set(project.provider(defaultModule));
+
+        Lazy<SourceConfigContainer> lazySource = Lazy.deferred1(this::prepareSources, instantiator);
         sources.set(project.provider(lazySource::out1));
         Lazy<AllJars> lazyJars = Lazy.deferred1(this::prepareJars, project);
         jars.set(project.provider(lazyJars::out1));
@@ -75,6 +113,7 @@ public class XapiExtension {
         outputMeta.set(
             project.getLayout().getBuildDirectory().dir("xapi-paths")
         );
+
 
         onInit = Chain.startChain();
         onPrepare = Chain.startChain();
@@ -140,6 +179,7 @@ public class XapiExtension {
                     // eagerly realize the postInit task, so it can dependOn this afterInit task
                     init.getPostInit().get().dependsOn(task);
                 });
+
             }
         });
 
@@ -151,6 +191,10 @@ public class XapiExtension {
             }
             return (XapiInit)task;
         });
+    }
+
+    protected String mainJarTask() {
+        return JavaPlugin.JAR_TASK_NAME;
     }
 
     public static XapiExtension from(Project project) {
@@ -176,8 +220,9 @@ public class XapiExtension {
     protected AllJars prepareJars(Project project) {
         return new AllJars(project);
     }
-    protected AllSources prepareSources(Instantiator instantiator) {
-        return new AllSources(instantiator);
+
+    protected SourceConfigContainer prepareSources(Instantiator instantiator) {
+        return new SourceConfigContainer(instantiator);
     }
 
     protected <T> FreezingLockProperty<T> lockable(Project project, Class<T> cls) {
@@ -210,20 +255,22 @@ public class XapiExtension {
 
         publish.set(new PublishConfig());
 
-        // look for xapiPrefix String property.  System prop wins
-        String pre = System.getProperty("xapiPrefix");
-        if (pre == null) {
-            // next, check the project for properties.  This should be the most common way to configure.
-            pre = (String) project.findProperty("xapiPrefix");
-        }
-        if (pre == null) {
-            // next, check with the environment
-            pre = System.getenv("xapiPrefix");
-        }
-        if (pre == null) {
-            pre = "";
-        }
-        this.prefix.set(pre);
+        this.prefix.set(project.provider(()->{
+            // look for xapiPrefix String property.  System prop wins
+            String pre = System.getProperty("xapiPrefix");
+            if (pre == null) {
+                // next, check the project for properties.  This should be the most common way to configure.
+                pre = (String) project.findProperty("xapiPrefix");
+            }
+            if (pre == null) {
+                // next, check with the environment, for global defaults. (Forced overrides go in ~/.gradle/gradle.properties)
+                pre = System.getenv("xapiPrefix");
+            }
+            if (pre == null) {
+                pre = "";
+            }
+            return pre;
+        }));
     }
 
     protected void inherit(XapiExtension config) {
@@ -327,8 +374,13 @@ public class XapiExtension {
         return jars;
     }
 
-    public Property<AllSources> getSources() {
+    public Property<SourceConfigContainer> getSources() {
         return sources;
+    }
+
+    public SourceConfigContainer sources() {
+        sources.finalizeValue();
+        return sources.get();
     }
 
     public TaskProvider<XapiInit> getInitProvider() {
@@ -374,13 +426,13 @@ public class XapiExtension {
             onFinish.add(task);
         }
     }
-
-    public String exportSettings(XapiManifest manifest, ArchiveType type) {
-        DomBuffer out = new DomBuffer("xapi", false);
-        out.allowAbbreviation(true);
-        manifest.printArchive(out, manifest, type);
-        return out.toSource();
-    }
+//
+//    public String exportSettings(XapiManifest manifest, ArchiveType type) {
+//        DomBuffer out = new DomBuffer("xapi", false);
+//        out.allowAbbreviation(true);
+//        manifest.printMain(out, manifest, type);
+//        return out.toSource();
+//    }
 
     public DirectoryProperty getOutputMeta() {
         return outputMeta;
@@ -393,5 +445,57 @@ public class XapiExtension {
 
     public Logger getLogger() {
         return logger;
+    }
+
+    public PlatformConfigContainer getPlatform() {
+        return platform;
+    }
+
+    public void platform(Action<? super PlatformConfigContainer> container) {
+        container.execute(getPlatform());
+    }
+
+    public Property<String> getModule() {
+        return module;
+    }
+
+    public String module() {
+        module.finalizeValue();
+        assert module.get().equals(out1Unsafe(defaultModule::call).out1()) :
+            "Edited jar.baseName '" + out1Unsafe(defaultModule::call).out1() + "'; after xapi.module was finalized to '" + module.get() + "'";
+        return module.get();
+    }
+
+    public Property<ArchiveType> getMainArtifact() {
+        return mainArtifact;
+    }
+
+    public void setMainArtifact(Provider<ArchiveType> mainArtifact) {
+        this.mainArtifact.set(mainArtifact);
+    }
+
+    public void setMainArtifact(ArchiveType mainArtifact) {
+        this.mainArtifact.set(mainArtifact);
+    }
+
+    public void forArchiveTypes(In1<String> in1) {
+        // Check w/ root extensions for common types as well...
+        for (DefaultArchiveType value : DefaultArchiveType.values()) {
+            if (value.isDocs()) {
+                continue;
+            }
+            in1.in(value.sourceName());
+        }
+        for (ArchiveType value : PlatformType.all()) {
+            in1.in(value.sourceName());
+        }
+
+    }
+
+    public PlatformConfig findPlatform(String type) {
+        return PlatformType.find(type)
+                    .mapIfPresent(ArchiveType::sourceName)
+                    .mapIfPresent(getPlatform()::maybeCreate)
+                    .getOrNull();
     }
 }

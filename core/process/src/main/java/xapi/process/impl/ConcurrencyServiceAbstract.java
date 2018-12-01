@@ -11,11 +11,9 @@ import xapi.fu.Lazy;
 import xapi.fu.itr.Chain;
 import xapi.fu.itr.ChainBuilder;
 import xapi.log.X_Log;
-import xapi.process.api.ConcurrentEnvironment;
+import xapi.process.api.*;
 import xapi.process.api.ConcurrentEnvironment.Priority;
-import xapi.process.api.HasThreadGroup;
 import xapi.process.api.Process;
-import xapi.process.api.ProcessController;
 import xapi.process.service.ConcurrencyService;
 import xapi.time.X_Time;
 import xapi.time.api.Moment;
@@ -56,7 +54,7 @@ public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
   }
 
   protected final EnviroMap environments = initMap();
-  protected final Lazy<In3Out1<Thread, Long, TimeUnit, TimeoutEntry>> interrupter;
+  protected final Lazy<InterruptManager> interrupter;
   protected volatile boolean shutdown;
 
   private AtomicInteger threadCount = new AtomicInteger();
@@ -69,12 +67,7 @@ public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
   public void shutdown() {
     shutdown = true;
     if (interrupter.isResolved()) {
-      final Thread t = interrupter.out1().io(null, null, null)
-          // interrupt our interrupter thread, so it knows to return.
-          .getThread().get();
-      if (t != null) {
-        t.interrupt();
-      }
+      interrupter.out1().shutdown();
     }
   }
 
@@ -82,7 +75,7 @@ public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
   protected void finalize() throws Throwable {
   }
 
-  protected In3Out1<Thread, Long, TimeUnit, TimeoutEntry> prepareInterrupter() {
+  protected InterruptManager prepareInterrupter() {
     ObjectTo.Many<Moment, Do> tasks = X_Collect.newMultiMap(Moment.class, Do.class,
         X_Collect.MUTABLE_CONCURRENT_KEY_ORDERED);
     class ThreadedThrowable extends RuntimeException {
@@ -148,23 +141,7 @@ public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
     interrupter.setName("XApi Interrupter");
     interrupter.setDaemon(true);
     interrupter.start();
-    return In3Out1.unsafe((thread, time, unit) -> {
-        double millisToWait = unit.toNanos(time) / 1_000_000.;
-        Moment deadline = new ImmutableMoment(X_Time.nowPlus(millisToWait));
-        final IntTo<Do> forMoment = tasks.get(deadline);
-        final Do task = thread::interrupt;
-        int index = forMoment.size();
-        forMoment.add(task);
-        synchronized (tasks) {
-          tasks.notifyAll();
-        }
-      final Do undo = forMoment.removeLater(
-          index,
-          task
-      );
-      final TimeoutEntry entry = new TimeoutEntry(undo, interrupter);
-      return entry;
-    });
+    return new InterruptManager(interrupter, tasks);
   }
 
   protected void prepareJob(Thread thread) {
@@ -426,7 +403,7 @@ public abstract class ConcurrencyServiceAbstract implements ConcurrencyService{
 
   @Override
   public Do scheduleInterruption(long blocksFor, TimeUnit unit) {
-    return interrupter.out1().io(Thread.currentThread(), blocksFor, unit).getRemove();
+    return interrupter.out1().requestInterruption(Thread.currentThread(), blocksFor, unit).getRemove();
   }
 
   protected class WrappedRunnable implements Do {

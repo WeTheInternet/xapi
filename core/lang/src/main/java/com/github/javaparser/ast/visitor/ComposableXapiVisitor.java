@@ -1,10 +1,6 @@
 package com.github.javaparser.ast.visitor;
 
-import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.ImportDeclaration;
-import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.PackageDeclaration;
-import com.github.javaparser.ast.TypeParameter;
+import com.github.javaparser.ast.*;
 import com.github.javaparser.ast.body.*;
 import com.github.javaparser.ast.comments.BlockComment;
 import com.github.javaparser.ast.comments.JavadocComment;
@@ -12,19 +8,13 @@ import com.github.javaparser.ast.comments.LineComment;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.*;
 import com.github.javaparser.ast.type.*;
-import xapi.collect.X_Collect;
-import xapi.collect.api.ClassTo;
-import xapi.fu.*;
-import xapi.fu.Do.DoUnsafe;
-import xapi.fu.itr.CachingIterator.ReplayableIterable;
-import xapi.fu.itr.MappedIterable;
-import xapi.log.X_Log;
-import xapi.time.X_Time;
-
-import java.util.Iterator;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.ForkJoinTask;
-import java.util.concurrent.TimeUnit;
+import xapi.fu.In2;
+import xapi.fu.In2Out1;
+import xapi.fu.In3;
+import xapi.fu.data.MapLike;
+import xapi.fu.java.X_Jdk;
+import xapi.fu.log.Log;
+import xapi.fu.log.Log.LogLevel;
 
 import static xapi.fu.In2Out1.superIn1;
 
@@ -33,8 +23,6 @@ import static xapi.fu.In2Out1.superIn1;
  */
 public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
 
-    private static final String TERMINATOR = "\0";
-
     public static <Ctx, Generic extends Ctx> ComposableXapiVisitor<Ctx> onMissingIgnore(Class<Generic> logTo) {
         return whenMissingIgnore(logTo);
     }
@@ -42,12 +30,17 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
         final ComposableXapiVisitor<Ctx> visitor = new ComposableXapiVisitor<>();
         return visitor
             .withDefaultCallback((node, ctx, next)->{
-                X_Log.info(ComposableXapiVisitor.class,
+                Log log = visitor.findLog(ctx, node);
+                log.log(ComposableXapiVisitor.class, LogLevel.INFO,
                     "Ignoring unhandled node", node.getClass(), node, visitor);
                 if (logTo != null) {
-                    X_Log.info(logTo, "<- visitor invoked from");
+                    log.log(logTo, LogLevel.INFO, "<- visitor invoked from");
                 }
             });
+    }
+
+    protected Log findLog(Object ... from) {
+        return Log.firstLog(this, from);
     }
 
     public static <Ctx, Generic extends Ctx> ComposableXapiVisitor<Ctx> onMissingLog(Class<Generic> logTo, boolean visitAll) {
@@ -57,10 +50,11 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
         final ComposableXapiVisitor<Ctx> visitor = new ComposableXapiVisitor<>();
         return visitor
             .withDefaultCallback((node, ctx, next)-> {
-                X_Log.info(ComposableXapiVisitor.class,
+                Log log = visitor.findLog(ctx, node);
+                log.log(ComposableXapiVisitor.class, LogLevel.INFO,
                     node, node.getClass(), " not handled by ", visitor);
                 if (logTo != null) {
-                    X_Log.info(logTo, "<- visitor invoked from");
+                    log.log(logTo, LogLevel.INFO, logTo.getName()," <- visitor invoked from");
                 }
                 if (visitAll) {
                     next.in(node, ctx);
@@ -76,87 +70,18 @@ public class ComposableXapiVisitor<Ctx> extends VoidVisitorAdapter<Ctx> {
         final ComposableXapiVisitor<Ctx> visitor = new ComposableXapiVisitor<>();
         return visitor
             .withDefaultCallback((node, ctx, next)-> {
-                X_Log.error(ComposableXapiVisitor.class,
+                Log log = visitor.findLog(ctx, node);
+                log.log(ComposableXapiVisitor.class, LogLevel.ERROR,
                     node, node.getClass(), " not handled by ", visitor);
                 if (logTo != null) {
-                    X_Log.info(logTo, "<- visitor invoked from");
+                    log.log(logTo, LogLevel.ERROR, "<- visitor invoked from");
                 }
                 throw new UnsupportedOperationException("Node " + node + " of type " + node.getClass() + " not handled by " + visitor);
             });
     }
 
-    private ClassTo<In2Out1<Node, Ctx, Boolean>> callbacks = X_Collect.newClassMap(In2Out1.class);
+    private MapLike<Class<?>, In2Out1<Node, Ctx, Boolean>> callbacks = X_Jdk.mapOrderedInsertion();
     private In3<Node, Ctx, In2<Node, Ctx>> defaultCallback = (n, c, i)->i.in(n, c);
-
-    public static ReplayableIterable<String> slurpStrings(Class<?> logTo, Expression expression) {
-        return slurpStrings(logTo, expression, 10_000, TimeUnit.MINUTES.toMillis(60));
-    }
-    public static ReplayableIterable<String> slurpStrings(Class<?> logTo, Expression expression, double waitTime, double lifespan) {
-        final ComposableXapiVisitor<Object> visitor = onMissingFail(logTo);
-        Mutable<String> next = new Mutable<>();
-        // This entire pattern of "go through a possibly json container and slurp up lists of strings"
-        // should be entirely generic, and move somewhere more reusable
-        long ttl = lifespan <= 0 ? TimeUnit.DAYS.toMillis(7) : (long)Math.ceil(lifespan);
-        Do pause = Do.unsafe(()->{
-            synchronized (next) {
-                next.wait(ttl);
-            }
-        });
-        Do unpause = Do.unsafe(()->{
-            synchronized (next) {
-                next.notify();
-            }
-        });
-        visitor.withJsonContainerTerminal((json, arg) -> {
-            assert json.isArray() : "Only arrays may be used for imports!";
-            json.getValues().forAll(Expression::accept, visitor, arg);
-        })
-            .withJsonPairRecurse(In2.ignoreAll())
-            .withTemplateLiteralTerminal((tmp, arg) -> {
-                next.set(tmp.getValueWithoutTicks());
-                pause.done();
-            })
-            .withQualifiedNameTerminal((str, arg) -> {
-                // no need to import unqualified names...
-                next.set(str.getQualifiedName());
-                pause.done();
-
-            })
-            .withStringLiteralTerminal((str, arg) -> {
-                next.set(str.getValue());
-                pause.done();
-            });
-        X_Time.runLater(()->{
-            // Ugh, need X_Process to be able to schedule an interrupt...
-            expression.accept(visitor, null);
-            next.in(TERMINATOR);
-        });
-
-        return MappedIterable.mappedCaching(new Iterator<String>() {
-            private String val;
-
-            @Override
-            @SuppressWarnings("StringEquality") // we mean to do this.  We send TERMINATOR to signal completion.
-            public boolean hasNext() {
-                if (val == null) {
-                    val = next.block(waitTime);
-                    if (val == TERMINATOR) {
-                        val = null;
-                    } else {
-                        unpause.done();
-                    }
-                }
-                return val != null;
-            }
-
-            @Override
-            public String next() {
-                final String v = val;
-                val = null;
-                return v;
-            }
-        });
-    }
 
     private <N extends Node> void doVisit(Class<N> cls, N node, Ctx ctx, In2<N, Ctx> superCall) {
         In2Out1<Node, Ctx, Boolean> filter = callbacks.get(cls);

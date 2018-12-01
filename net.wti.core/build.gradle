@@ -1,0 +1,73 @@
+buildscript {
+    dependencies {
+    }
+}
+
+plugins {
+    id 'idea'
+    id 'wrapper'
+    id 'groovy'
+}
+
+def repo = new File(buildDir, 'repo')
+allprojects {
+    group 'net.wti.core'
+    version '0.5.1'
+}
+subprojects {
+    Project p ->
+
+    p.apply plugin: 'java-library'
+    p.apply plugin: 'maven-publish'
+    p.apply plugin: 'idea'
+
+    PublishingExtension publishing = p.extensions.getByType(PublishingExtension)
+    publishing.repositories {
+        RepositoryHandler repos ->
+            repos.maven {
+                MavenArtifactRepository maven ->
+                    maven.name = 'xapiLocal'
+                    maven.url = "$rootDir.parentFile/repo"
+            }
+    }
+
+    p.repositories.maven {
+        name = 'xapiLocal'
+        url = new URI("file://$rootDir.parent/repo")
+    }
+    p.tasks.withType(PublishToMavenRepository).all {
+        PublishToMavenRepository ptml ->
+            ptml.doLast {
+                String coords = "$ptml.publication.groupId:$ptml.publication.artifactId:$ptml.publication.version"
+                URI url = ptml.repository.url
+                p.gradle.buildFinished({
+                    BuildResult b ->
+                        if (ptml.didWork) {
+                            p.logger.info """Published $coords to ${url}"""
+                        }
+                })
+                ptml.logger.info "Files copied: ${ptml.publication.artifacts.collect({i->"file:" + i.file.absolutePath}).join('/n')}"
+            }
+            ptml.dependsOn(BasePlugin.ASSEMBLE_TASK_NAME)
+            p.tasks.getByName(LifecycleBasePlugin.BUILD_TASK_NAME).dependsOn(ptml)
+    }
+    publishing.publications.create 'main', MavenPublication, {
+        MavenPublication pub ->
+            pub.from p.components.java
+            def finish = {
+                pub.artifactId = p.jar.baseName
+            }
+            if (p.state.executed) {
+                finish()
+            } else {
+                p.afterEvaluate finish
+            }
+
+    }
+
+}
+
+wrapper {
+    gradleVersion = '5.0'
+    distributionType = Wrapper.DistributionType.ALL
+}

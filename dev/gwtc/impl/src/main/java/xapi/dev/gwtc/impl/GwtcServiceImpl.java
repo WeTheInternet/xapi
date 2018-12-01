@@ -226,14 +226,15 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
   private URLClassLoader manifestBackedClassloader(URL[] urls, GwtManifest manifest) {
     String genDir = manifest.getGenDir();
     // TODO: use the bundled xapi manifests to get the full gwtc classpath into here.
-    final String monitorApi = X_Reflect.getFileLoc(GwtcJobMonitorImpl.class);
+    final String monitorImpl = X_Reflect.getFileLoc(GwtcJobMonitorImpl.class);
     try {
       final URL genUrl = new URL("file:" + genDir);
       if (iterate(urls).noneMatch(genUrl::equals)) {
         urls = X_Fu.concat(genUrl, urls);
       }
-      final URL monitorApiUrl = new URL("file:" + monitorApi);
+      final URL monitorApiUrl = new URL("file:" + monitorImpl);
       if (iterate(urls).noneMatch(monitorApiUrl::equals)) {
+        // Hm... should really be downloading if non match...
         urls = X_Fu.concat(monitorApiUrl, urls);
       }
     } catch (MalformedURLException e) {
@@ -600,12 +601,12 @@ public class GwtcServiceImpl extends GwtcServiceAbstract {
       try (
           JarFile jar = new JarFile(path)
           ) {
-        final ZipEntry entry = jar.getEntry("META-INF/xapi/settings.xapi");
+        final ZipEntry entry = jar.getEntry("META-INF/xapi/paths.xapi");
 
         String settings  = X_IO.toStringUtf8(jar.getInputStream(entry));
         // h'ray... xapi settings.
         final UiContainerExpr el = JavaParser.parseUiContainer(
-            path + "!META-INF/xapi/settings.xapi",
+            path + "!META-INF/xapi/paths.xapi",
             settings
         );
         ChainBuilder<String> chain = Chain.startChain();

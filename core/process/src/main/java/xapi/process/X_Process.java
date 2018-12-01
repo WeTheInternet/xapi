@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 
 public class X_Process {
 
-  private static final Out1<ConcurrencyService> service = X_Inject
+  private static final Lazy<ConcurrencyService> service = X_Inject
       .singletonLazy(ConcurrencyService.class);
 
   public static <T> void resolve(Future<T> future, In1<T> receiver) {
@@ -145,5 +145,11 @@ public class X_Process {
 
   public static Do scheduleInterruption(long blocksFor, TimeUnit unit) {
     return service.out1().scheduleInterruption(blocksFor, unit);
+  }
+
+  public static void shutdown() {
+    if (service.isResolved()) {
+      service.out1().shutdown();
+    }
   }
 }

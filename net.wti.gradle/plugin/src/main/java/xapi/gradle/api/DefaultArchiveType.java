@@ -2,6 +2,12 @@ package xapi.gradle.api;
 
 import org.gradle.api.Task;
 import org.gradle.api.tasks.bundling.Jar;
+import xapi.fu.In1Out1;
+import xapi.fu.Maybe;
+import xapi.fu.data.MapLike;
+import xapi.fu.java.X_Jdk;
+
+import static xapi.fu.X_Fu.toLowerCase;
 
 /**
  * The standard archive types currently supported (excluding {@link DistType},
@@ -32,10 +38,16 @@ import org.gradle.api.tasks.bundling.Jar;
  *
  * Created by James X. Nelson (James@WeTheInter.net) on 11/4/18 @ 1:38 AM.
  */
-public enum DefaultArchiveTypes implements ArchiveType {
+public enum DefaultArchiveType implements ArchiveType {
     API(".class", ".xapi") {
         @Override
         public boolean isApi() {
+            return true;
+        }
+    },
+    SPI(".class", ".xapi") {
+        @Override
+        public boolean isSpi() {
             return true;
         }
     },
@@ -51,6 +63,38 @@ public enum DefaultArchiveTypes implements ArchiveType {
         }
 
     },
+    API_SOURCE(".java", ".xapi") {
+        @Override
+        public boolean isApi() {
+            return true;
+        }
+
+        @Override
+        public boolean isSources() {
+            return true;
+        }
+
+        @Override
+        public boolean isClasses() {
+            return false;
+        }
+    },
+    SPI_SOURCE(".java", ".xapi") {
+        @Override
+        public boolean isSpi() {
+            return true;
+        }
+
+        @Override
+        public boolean isSources() {
+            return true;
+        }
+
+        @Override
+        public boolean isClasses() {
+            return false;
+        }
+    },
     SOURCE(".java") {
         @Override
         public boolean isSources() {
@@ -65,12 +109,6 @@ public enum DefaultArchiveTypes implements ArchiveType {
         @Override
         public ArchiveType[] getTypes() {
             return new ArchiveType[]{API_SOURCE};
-        }
-    },
-    SPI(".class") {
-        @Override
-        public boolean isSpi() {
-            return true;
         }
     },
     JAVADOC {
@@ -108,7 +146,8 @@ public enum DefaultArchiveTypes implements ArchiveType {
     },
     /**
      * A default archive is the result of running a "local dist build"
-     * on your
+     * on any given module; it uses STUB implementations, if any,
+     * and should likely be used only for local/automated testing.
      */
     DEFAULT(".*") {
         @Override
@@ -190,139 +229,28 @@ public enum DefaultArchiveTypes implements ArchiveType {
         public ArchiveType[] getTypes() {
             return new ArchiveType[]{API_SOURCE, SPI_SOURCE, SOURCE, STUB};
         }
-    },
-    API_SOURCE(".java", ".xapi") {
-        @Override
-        public boolean isApi() {
-            return true;
-        }
-
-        @Override
-        public boolean isSources() {
-            return true;
-        }
-
-        @Override
-        public boolean isClasses() {
-            return false;
-        }
-    },
-    SPI_SOURCE(".java", ".xapi") {
-        @Override
-        public boolean isSpi() {
-            return true;
-        }
-
-        @Override
-        public boolean isSources() {
-            return true;
-        }
-
-        @Override
-        public boolean isClasses() {
-            return false;
-        }
-    },
-
-    /**
-     * A GWT jar type is sources, classes and resources...
-     */
-    GWT(".class", ".java", ".gwt.xml", ".js", ".css", ".html", ".png", ".gif", ".jpg", ".svg", ".ttf") {
-        @Override
-        public boolean isSources() {
-            return true;
-        }
-
-        @Override
-        public boolean isImpl() {
-            return true;
-        }
-
-        @Override
-        public ArchiveType[] getTypes() {
-            return new ArchiveType[]{SOURCE};
-        }
-    },
-    /**
-     * A jszip, containing output produced by j2cl compiler.
-     */
-    JSZIP(".js") {
-        @Override
-        public boolean isImpl() {
-            return true;
-        }
-    },
-    /**
-     * A zip of js externs, suitable for use by closure compiler.
-     */
-    EXTERNS(".js") {
-        @Override
-        public boolean isImpl() {
-            return true;
-        }
-    },
-    /**
-     * A J2cl jar is classes and .native.js files, suitable for use during j2cl transpilation
-     */
-    J2CL(".class", ".native.js") {
-        @Override
-        public boolean isImpl() {
-            return true;
-        }
-    },
-    /**
-     * J2cl source jars contain the results of pre-processed java->j2cl sources,
-     * which are then fed into the javac to produce a j2cl jar that then
-     */
-    J2CL_SOURCE {
-        @Override
-        public boolean isClasses() {
-            return false;
-        }
-
-        @Override
-        public boolean isSources() {
-            return true;
-        }
-
-        @Override
-        public boolean isImpl() {
-            return true;
-        }
-
-        @Override
-        public ArchiveType[] getTypes() {
-            // ONLY take the Api source.  We don't want main sources, we want _transformed_ main sources.
-            return new ArchiveType[]{API_SOURCE};
-        }
-    },
-    /**
-     * A distribution archive tailored for running on vert.x.
-     *
-     * We should make a special DistType instead,
-     * which adds the concept of containing other ArchiveTypes.
-     *
-     *
-     */
-    VERTX {
-        @Override
-        public boolean isImpl() {
-            return true;
-        }
-
-        @Override
-        public ArchiveType[] getTypes() {
-            return new ArchiveType[]{MAIN};
-        }
-    };
-    private static final String[] EMPTY = {};
+    }
+    ;
     private String[] fileTypes;
 
-    DefaultArchiveTypes() {
+    static final MapLike<String, DefaultArchiveType> all = X_Jdk.mapOrderedInsertion();
+
+    static {
+        final In1Out1<DefaultArchiveType, String> name = DefaultArchiveType::name;
+        final In1Out1<DefaultArchiveType, String> sourceName = DefaultArchiveType::sourceName;
+
+        final DefaultArchiveType[] values = values();
+        all.putFromValues(name, values);
+        all.putFromValues(sourceName, values);
+        all.putFromValues(name.mapOut(toLowerCase()), values);
+        all.putFromValues(sourceName.mapOut(toLowerCase()), values);
+    }
+
+    DefaultArchiveType() {
         this(".class");
     }
 
-    DefaultArchiveTypes(String... additionalFiles) {
+    DefaultArchiveType(String... additionalFiles) {
         this.fileTypes = additionalFiles;
     }
 
@@ -333,5 +261,9 @@ public enum DefaultArchiveTypes implements ArchiveType {
 
     public void setFileTypes(String... types) {
         this.fileTypes = types;
+    }
+
+    public static Maybe<DefaultArchiveType> find(String key) {
+        return all.getMaybe(key);
     }
 }

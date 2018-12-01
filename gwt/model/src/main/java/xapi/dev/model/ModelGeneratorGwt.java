@@ -2,13 +2,13 @@ package xapi.dev.model;
 
 import xapi.annotation.model.*;
 import xapi.annotation.reflect.Fluent;
+import xapi.bytecode.impl.BytecodeUtil;
 import xapi.dev.source.CharBuffer;
 import xapi.dev.source.MethodBuffer;
 import xapi.dev.source.SourceBuilder;
 import xapi.model.api.ModelDeserializationContext;
 import xapi.model.api.ModelSerializationContext;
 import xapi.model.api.ModelSerializer;
-import xapi.source.X_Source;
 import xapi.source.api.CharIterator;
 import xapi.source.api.IsType;
 import xapi.util.X_Properties;
@@ -398,7 +398,7 @@ public class ModelGeneratorGwt extends IncrementalGenerator{
     final IsType[] arr = new IsType[i];
     for (; i-->0;) {
       final JType t = parameterTypes[i];
-      arr[i] = X_Source.binaryToSource(t.getQualifiedBinaryName());
+      arr[i] = BytecodeUtil.binaryToSource(t.getQualifiedBinaryName());
     }
     return arr;
   }

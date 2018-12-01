@@ -72,6 +72,7 @@ import com.google.gwt.reflect.shared.GwtReflect;
  *
  * Created by James X. Nelson (james @wetheinter.net) on 10/16/17.
  */
+@SuppressWarnings("WeakerAccess")
 public class GwtcProjectGeneratorDefault implements GwtcProjectGenerator {
     private final GwtcService service;
 
@@ -92,6 +93,7 @@ public class GwtcProjectGeneratorDefault implements GwtcProjectGenerator {
         this.service = service;
         context = new GwtcGeneratedProject(service, resources, moduleName);
         finished = new HashSet<>();
+        //noinspection unchecked
         files = X_Collect.newStringMap(Out1.class);
 
 
@@ -734,7 +736,7 @@ public class GwtcProjectGeneratorDefault implements GwtcProjectGenerator {
             .setAttribute("type", "text/javascript")
             .setAttribute("src", getScriptLocation(moduleName));
 
-        String hostPage = buffer.toString();
+        String hostPage = buffer.toSource();
         X_File.saveFile(warDir +"/public", "index.html", hostPage);
         X_Log.info(GwtcProjectGeneratorDefault.class, "Generated host page:\n", hostPage);
         X_Log.info("Generate war into ", warDir);

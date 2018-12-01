@@ -56,6 +56,14 @@ public interface SetLike <V> extends CollectionLike<V> {
         return removeAndReturn(value) != null;
     }
 
+    default boolean removeAll(V value) {
+        boolean removed = false;
+        while(remove(value)) {
+            removed = true;
+        }
+        return removed;
+    }
+
     /**
      * Remote the value from your set,
      * and only return the removed value.
