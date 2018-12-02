@@ -5,8 +5,6 @@ List<String> projects = [
 ]
 include(projects as String[])
 
-def artifactId = { "core-$it" }
-
 projects.forEach({p->
     project(":$p").buildFileName = "${p}.gradle"
     project(":$p").name = "xapi-$p"

@@ -1,11 +1,10 @@
 import java.nio.file.Files
 import java.nio.file.Paths
-import java.nio.file.Path
 
 rootProject.name = 'net.wti.gradle'
 
 List<String> projects = [
-        'fu', 'plugin', 'gen', 'anno', 'mirror', 'meta', 'api', 'lang'
+        'plugin', 'gen', 'anno', 'mirror', 'meta', 'api', 'lang'
 ]
 include(projects as String[])
 
@@ -32,12 +31,7 @@ if (composite != 'false') {
     includeBuild('../net.wti.core')
 }
 
-Path srcLink = Paths.get(rootDir.absolutePath, 'fu', 'src')
-if (!Files.isSymbolicLink(srcLink)) {
-    Files.createSymbolicLink(srcLink, Paths.get(rootDir.parentFile.absolutePath, 'core', 'fu', 'src'))
-}
-
-srcLink = Paths.get(rootDir.absolutePath, 'gen', 'src')
+java.nio.file.Path srcLink = Paths.get(rootDir.absolutePath, 'gen', 'src')
 if (!Files.isSymbolicLink(srcLink)) {
     Files.createSymbolicLink(srcLink, Paths.get(rootDir.parentFile.absolutePath, 'dev', 'source', 'src'))
 }

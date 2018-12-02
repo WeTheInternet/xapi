@@ -8,7 +8,10 @@ import org.gradle.internal.jvm.Jvm
 
 import static org.gradle.api.tasks.wrapper.Wrapper.DistributionType
 
+apply from: "$rootDir/gradle/xapi-env.gradle"
+
 plugins.apply 'xapi-root'
+
 
 xapi {
     preload('javax.validation:validation-api:1.0.0.GA')
@@ -27,7 +30,7 @@ def shouldApply = { String path->
 
 allprojects {
     group = 'net.wetheinter'
-    version = '0.5.1'
+    version = findProperty('xapiVersion')
 
     plugins.apply 'maven'
     plugins.apply 'idea'
@@ -87,13 +90,8 @@ subprojects {
 
         p.tasks.withType(JavaCompile).all {
             JavaCompile javac ->
-                // For now, we'll disable this; in the future,
-                // we'll get some modules that run the javac plugins during the build;
-//                javac.options.fork = true
-//                javac.options.forkOptions.jvmArgs << '-Dxapi.no.javac.plugin=true'
-//                javac.options.compilerArgs << '-Axapi.no.javac.plugin=true'
-//    //            javac.options.compilerArgs << '-implicit:none'
-//    //            javac.options.compilerArgs << '-Xprefer:newer'
+                // explicitly empty sourcepath.
+                // If we want to recompile anything that isn't ours, we'll do so explicitly.
                 javac.options.sourcepath = files()
         }
 
@@ -102,10 +100,10 @@ subprojects {
         }
 
         sourceCompatibility = '1.8'
+        targetCompatibility = '1.8'
 
         tasks.withType(JavaCompile) {
             options.encoding = 'UTF-8'
-
         }
     }
 }

@@ -19,6 +19,7 @@ import xapi.dev.ui.tags.assembler.UiAssemblerResult;
 import xapi.except.NotYetImplemented;
 import xapi.fu.*;
 import xapi.fu.itr.*;
+import xapi.log.X_Log;
 import xapi.reflect.X_Reflect;
 import xapi.source.X_Modifier;
 import xapi.source.read.JavaModel.IsTypeDefinition;
@@ -274,6 +275,11 @@ public class GeneratedUiImplementation extends ImplementationLayer {
         final AssembledUi assembly = assembler.getAssembly();
         final GeneratedUiMember modField = assembly.getUi().getPublicModel().getField(identifier);
         final String titleName = toTitleCase(identifier);
+        if (modField == null) {
+            X_Log.error(GeneratedUiImplementation.class, "No model field found for ", identifier, " in ",
+                assembly.getUi().getPublicModel().getFields());
+            return;
+        }
         final Type type = modField.getMemberType();
         final UiNamespace ns = reduceNamespace(assembly.getNamespace());
         boolean componentList = type.hasRawType("ComponentList");

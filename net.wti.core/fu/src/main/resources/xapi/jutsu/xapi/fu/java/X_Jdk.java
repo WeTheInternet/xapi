@@ -1,15 +1,10 @@
 package xapi.fu.java;
 
-import xapi.fu.In1Out1;
-import xapi.fu.data.*;
-import xapi.fu.api.GwtIncompatible;
+import xapi.fu.data.ListLike;
+import xapi.fu.data.MapLike;
+import xapi.fu.data.SetLike;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-
-import static java.util.Collections.synchronizedMap;
 
 /**
  * A helper class which uses jdk-standard objects, like HashMap, ArrayList, etc.
@@ -23,9 +18,13 @@ import static java.util.Collections.synchronizedMap;
  *
  * Gwt already contains super-source of this, erasing the concurrent type references.
  *
+ * IF YOU ADD ANY METHODS, BE SURE TO UPDATE THE SUPER-SOURCED COPY!
+ *
  * Created by James X. Nelson (james @wetheinter.net) on 7/21/17.
  */
 public class X_Jdk {
+
+    // If you add any methods, be sure to update super-sourced copy in resources/xapi/jutsu/xapi/java/X_Jdk.java
 
     public static <K, V> MapLike<K, V> toMap(Map<K, V> map) {
         return new MapAdapter<>(map);
@@ -56,16 +55,12 @@ public class X_Jdk {
         return new SetAdapter<>(list);
     }
 
-    public static <V> SetLike<V> toSet(Map<V, ?> map) {
-        return new SetAdapter<>(map, null);
-    }
-
     public static <K, V> MapLike<K, V> mapHash() {
         return toMap(new HashMap<>());
     }
 
     public static <K, V> MapLike<K, V> mapHashConcurrent() {
-        return toMap(new ConcurrentHashMap<>());
+        return toMap(new HashMap<>());
     }
 
     public static <K, V> MapLike<K, V> mapIdentity() {
@@ -73,7 +68,7 @@ public class X_Jdk {
     }
 
     public static <K, V> MapLike<K, V> mapWeak() {
-        return toMap(new WeakHashMap<K, V>());
+        return toMap(new HashMap<K, V>());
     }
 
     public static <K, V> MapLike<K, V> mapOrderedInsertion() {
@@ -85,7 +80,7 @@ public class X_Jdk {
     }
 
     public static <K, V> MapLike<K, V> mapOrderedKeyConcurrent() {
-        return toMap(new ConcurrentSkipListMap<>());
+        return toMap(new TreeMap<>());
     }
 
     public static <K, V> JdkMultiList<K, V> multiList() {
@@ -96,9 +91,8 @@ public class X_Jdk {
         return toMultiSet(defaultMap(), defaultSetFactory());
     }
 
-    @GwtIncompatible
     public static <V> ListLike<V> listArrayConcurrent() {
-        return toList(new CopyOnWriteArrayList<>());
+        return toList(new ArrayList<>());
     }
 
     public static <V> ListLike<V> list() {
@@ -122,7 +116,7 @@ public class X_Jdk {
     }
 
     public static <V> SetLike<V> setHashConcurrent() {
-        return toSet(new ConcurrentHashMap<>());
+        return toSet(new HashSet<>());
     }
 
     public static <V> SetLike<V> setHashIdentity() {
@@ -130,20 +124,13 @@ public class X_Jdk {
     }
 
     public static <V> SetLike<V> setHashIdentitySynchronized() {
-        return toSet(synchronizedMap(new IdentityHashMap<>()));
+        return toSet(new IdentityHashMap<>());
     }
 
     public static <V> SetLike<V> setLinked() {
         return toSet(new LinkedHashSet<V>());
     }
 
-    public static <V> SetLike<V> setLinkedSynchronized() {
-        return toSet(Collections.synchronizedSet(new LinkedHashSet<V>()));
-    }
-
-    public static boolean isEmpty(Collection<?> resources) {
-        return resources == null || resources.isEmpty();
-    }
 
     public static <K, V> Map<K, V> defaultMap() {
         return new HashMap<>();
@@ -178,4 +165,6 @@ public class X_Jdk {
         flatten.forAll(list::add);
         return list;
     }
+
+    // If you add any methods, be sure to update super-sourced copy in resources/xapi/jutsu/xapi/java/X_Jdk.java
 }

@@ -11,6 +11,9 @@ xapi {
     }
 }
 
+apply from: "$rootDir/gradle/xapi-env.gradle"
+String xapiVersion = findProperty('xapiVersion')
+
 repositories {
     jcenter()
 }
@@ -30,9 +33,9 @@ SourceSet main = sourceSets.getByName('main') {
 
 
 dependencies {
-
-    compile project(':xapi-core-parent:xapi-fu')
-    compile project(':xapi-dev-parent:xapi-dev-source')
+    api "net.wti.core:xapi-fu:$xapiVersion"
+    // TODO: drop this to implementation?
+    api project(':xapi-dev-parent:xapi-dev-source')
     xapiDev project(':xapi-core-parent:xapi-core-collect')
     xapiDev project(':xapi-core-parent:xapi-core-reflect')
     testCompile "org.spockframework:spock-core:1.2-groovy-2.4"

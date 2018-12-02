@@ -34,7 +34,7 @@ public class UiContainerExpr extends UiExpr {
   public UiContainerExpr(final int beginLine, final int beginColumn, final int endLine, final int endColumn,
                          NameExpr name, List<UiAttrExpr> attributes, UiBodyExpr body, boolean isInTemplate) {
     super(beginLine, beginColumn, endLine, endColumn);
-    attrs = X_Jdk.multiList();
+    attrs = X_Jdk.multiListOrderedInsertion();
     this.name = name;
     this.body = body;
     this.inTemplate = isInTemplate;

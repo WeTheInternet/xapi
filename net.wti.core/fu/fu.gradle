@@ -3,12 +3,11 @@ plugins {
 }
 
 repositories {
+    // TODO: instead sync spock, junit and assertj into xapiLocal and just use that... 
     jcenter()
 }
 
 dependencies {
-    compile 'javax.validation:validation-api:1.0.0.GA'
-    compile 'javax.inject:javax.inject:1'
     testCompile 'junit:junit:4.12'
     testCompile 'org.assertj:assertj-core:3.2.0'
 }

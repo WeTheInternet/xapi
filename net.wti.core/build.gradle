@@ -9,7 +9,10 @@ plugins {
     id 'groovy'
 }
 
-def repo = new File(buildDir, 'repo')
+apply from: "$rootDir.parent/gradle/xapi-env.gradle"
+
+String xapiHome = extensions.getByName('xapiHome')
+
 allprojects {
     group 'net.wti.core'
     version '0.5.1'
@@ -27,13 +30,13 @@ subprojects {
             repos.maven {
                 MavenArtifactRepository maven ->
                     maven.name = 'xapiLocal'
-                    maven.url = "$rootDir.parentFile/repo"
+                    maven.url = "$xapiHome/repo"
             }
     }
 
     p.repositories.maven {
         name = 'xapiLocal'
-        url = new URI("file://$rootDir.parent/repo")
+        url = "$xapiHome/repo"
     }
     p.tasks.withType(PublishToMavenRepository).all {
         PublishToMavenRepository ptml ->
@@ -46,7 +49,7 @@ subprojects {
                             p.logger.info """Published $coords to ${url}"""
                         }
                 })
-                ptml.logger.info "Files copied: ${ptml.publication.artifacts.collect({i->"file:" + i.file.absolutePath}).join('/n')}"
+                ptml.logger.info "Files copied: ${ptml.publication.artifacts.collect({i->"file://" + i.file.absolutePath}).join('/n')}"
             }
             ptml.dependsOn(BasePlugin.ASSEMBLE_TASK_NAME)
             p.tasks.getByName(LifecycleBasePlugin.BUILD_TASK_NAME).dependsOn(ptml)

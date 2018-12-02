@@ -5,7 +5,6 @@ project(':anno').name = 'xapi-annotations'
 // yes, the map backing the list of projects is mutable :-)
 project(':xapi-annotations').buildFileName = 'anno.gradle'
 
-include(':xapi-core-parent:xapi-fu')
 include(':xapi-core-parent:xapi-core-api')
 include(':xapi-core-parent:xapi-core-log')
 include(':xapi-core-parent:xapi-core-reflect')
@@ -81,7 +80,6 @@ include(':xapi-samples')
 
 Map<String, Map<String, Map<String, String>>> all = [
         core: [
-                fu: null,
                 api: [:],
                 log: [:],
                 reflect: [:],
@@ -163,7 +161,6 @@ Map<String, Map<String, Map<String, String>>> all = [
                 demo: null,
         ]
 ]
-project(':xapi-core-parent:xapi-fu').projectDir = file('core/fu')
 project(':xapi-core-parent:xapi-core-api').projectDir = file('core/api')
 project(':xapi-core-parent:xapi-core-log').projectDir = file('core/log')
 project(':xapi-core-parent:xapi-core-reflect').projectDir = file('core/reflect')

@@ -1,22 +1,15 @@
-import java.util.concurrent.TimeUnit
-
 plugins {
     id 'java-library'
-    id 'groovy'
     id 'idea'
 }
+import java.util.concurrent.TimeUnit
 
-repositories {
-    jcenter()
-    maven {
-        name = 'xapiLocal'
-        url = new File(rootDir.parentFile, 'repo')
-    }
-}
+apply from: "$rootDir.parent/gradle/xapi-env.gradle"
+
+String xapiHome = findProperty('xapiHome')
 
 dependencies {
-    api group: 'net.wti.gradle', name: 'xapi-gradle-plugin', version: '0.5.1', changing: true
-    runtime localGroovy()
+    api group: 'net.wti.gradle', name: 'xapi-gradle-plugin', version: findProperty('xapiVersion'), changing: true
 }
 
 configurations.all {
@@ -30,5 +23,5 @@ configurations.all {
 if ('true' == System.getProperty('xapi.changing') ||
     'true' == findProperty('xapi.changing')
 ) {
-    apply from: "$rootDir.parent/gradle/rebuild-tools.gradle"
+    apply from: "$xapiHome/gradle/rebuild-tools.gradle"
 }

@@ -2,22 +2,22 @@ plugins {
     id 'xapi'
 }
 
+apply from: "$rootDir/gradle/xapi-env.gradle"
+String xapiVersion = findProperty('xapiVersion')
+
 repositories {
     jcenter()
-    maven {
-        name = 'xapiLocal'
-        url = new URI("file://$rootDir/repo")
-    }
 }
 
 apply from: "$rootDir/gradle/processor.gradle"
 
+
 dependencies {
     api project(':xapi-dev-parent:xapi-dev-source')
-    api project(':xapi-core-parent:xapi-fu')
+    api "net.wti.core:xapi-fu:$xapiVersion"
     api project(':xapi-annotations')
     api 'javax.inject:javax.inject:1'
-    annotationProcessor 'net.wti.gradle:xapi-dev-mirror:0.5.1'
+    annotationProcessor "net.wti.gradle:xapi-dev-mirror:$xapiVersion"
     testCompile 'junit:junit:4.12'
 }
 

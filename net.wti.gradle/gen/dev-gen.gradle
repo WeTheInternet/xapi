@@ -2,12 +2,15 @@ plugins {
     id 'java-library'
 }
 
+apply from: "$rootDir.parentFile/gradle/xapi-env.gradle"
+String xapiVersion = findProperty('xapiVersion')
+
 repositories {
     jcenter()
 }
 
 dependencies {
-    api project(':xapi-gradle-fu')
+    api "net.wti.core:xapi-fu:$xapiVersion"
     testCompile 'junit:junit:4.12'
 }
 

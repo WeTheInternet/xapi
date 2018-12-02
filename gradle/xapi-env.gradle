@@ -1,3 +1,5 @@
+import java.util.function.Function
+
 // This is a special file, which is designed to be included from many places.
 // We will install some extensions into the project,
 // like the location of the $xapiRoot directory,
@@ -10,74 +12,101 @@
 
 // Find xapiHome, and set it as an extension.
 
-File xapiHome = rootDir
-if (!extensions.findByName('xapiHome')) {
+def xapiHome = findProperty('xapiHome')
+if (!xapiHome) {
     // look in the root project, to avoid expensive horsing around.
-    def root = rootProject.extensions.findByName('xapiHome')
+    def root = rootProject.findProperty('xapiHome')
     if (root) {
         extensions.add('xapiHome', xapiHome = root)
+    } else {
+        Set<File> maybe = [xapiHome = rootDir]
+        while (!maybe.isEmpty()) {
+            Iterator<File> itr = maybe.iterator()
+            File search = itr.next()
+            itr.remove()
+            while (search != null) {
+                File f = new File(search, 'gradle/xapi-env.gradle')
+                if (f.exists()) {
+                    xapiHome = search
+                    maybe.clear()
+                    break
+                }
+                f = new File(search, 'xapi')
+                if (f.exists()) {
+                    maybe.add(new File(search, 'xapi'))
+                }
+                search = search.parentFile
+            }
+        }
+        extensions.add('xapiHome', xapiHome.absolutePath)
+        // if rootProject already had it, we would never get to this block of code
+        if (project != rootProject) {
+            rootProject.extensions.add('xapiHome', xapiHome.absolutePath)
+        }
     }
 }
-if (!extensions.findByName('xapiHome')) {
-    Set<File> maybe = [xapiHome]
-    loop:
-    while (!maybe.isEmpty()) {
-        Iterator<File> itr = maybe.iterator()
-        File search = itr.next()
-        itr.remove()
-        while (search != null) {
-            File f = new File(search, 'gradle/xapi-env.gradle')
-            if (f.exists()) {
-                xapiHome = search
-                break loop
+
+
+if (!extensions.findByName('installRebuild')) {
+    // Install a rebuild task, only suitable for use in buildSrc
+    Function<String, Task> installRebuild = {
+        String mod ->
+            boolean xapiChanging = 'true' == System.getProperty('xapi.changing') ||
+                                    'true' == findProperty('xapi.changing')
+            if (!xapiChanging) {
+                return null
             }
-            f = new File(search, 'xapi')
-            if (f.exists()) {
-                maybe.add(new File(search, 'xapi'))
+            if (!rootDir.name == 'buildSrc') {
+                logger.error "installRebuild tasks should only be installed into buildSrc, not $rootDir"
             }
-            search = search.parentFile
-        }
+            plugins.apply 'java'
+
+            def buildPlugin = tasks.create "buildProject_${mod.replace('.' as char, '_' as char)}", GradleBuild, {
+                GradleBuild b ->
+                    b.dir = new File(xapiHome, "gradle/$mod".toString())
+                    b.tasks = ['jar', 'publishXapiLocal']
+                    b.startParameter.excludedTaskNames = ['test']
+                    b.startParameter.parallelProjectExecutionEnabled = true
+                    b.startParameter.buildCacheEnabled = true
+                    // whatever buildSrc is creating these "build other gradle worlds"
+                    // will be in charge of adding _all_ desired rebuilds;
+                    // we will not attempt to deal with cascading rebuilds.
+                    b.startParameter.projectProperties << ['xapi.changing' : 'false']
+                    b.onlyIf {
+                        xapiChanging && 'true' != System.getProperty("xapi.built.$mod")
+
+                    }
+                    b.doFirst {
+                        System.setProperty("xapi.built.$mod", 'true')
+                    }
+            }
+
+            tasks.getByName(JavaPlugin.COMPILE_JAVA_TASK_NAME).dependsOn buildPlugin
+            tasks.getByName(BasePlugin.ASSEMBLE_TASK_NAME).dependsOn buildPlugin
+            return buildPlugin
     }
-    extensions.add('xapiHome', xapiHome)
-    // if rootProject already had it, we would never get to this block of code
-    rootProject.extensions.add('xapiHome', xapiHome)
+    extensions.add('installRebuild', installRebuild)
 }
 
 
-
-// Install a rebuild task, only suitable for use in buildSrc
-Function<String, Task> installRebuild = {
-    String mod ->
-        if (!rootDir.name == 'buildSrc') {
-            logger.error "installRebuild tasks should only be installed into buildSrc, not $rootDir"
-        }
-        plugins.apply 'java'
-
-        def buildPlugin = tasks.create "buildProject_${mod.replace('.' as char, '_' as char)}", GradleBuild, {
-            GradleBuild b ->
-                b.dir = new File(xapiHome, "gradle/$mod".toString())
-                b.tasks = ['jar', 'publishXapiLocal']
-                b.startParameter.excludedTaskNames = ['test']
-                b.startParameter.parallelProjectExecutionEnabled = true
-                b.startParameter.buildCacheEnabled = true
-                // whatever buildSrc is creating these "build other gradle worlds"
-                // will be in charge of adding _all_ desired rebuilds;
-                // we will not attempt to deal with cascading rebuilds.
-                b.startParameter.projectProperties << ['xapi.changing' : 'false']
-                b.onlyIf {
-                    'true' != System.getProperty("xapi.built.$mod") &&
-                    (
-                        'true' == System.getProperty('xapi.changing') ||
-                        'true' == findProperty('xapi.changing')
-                    )
-                }
-                b.doFirst {
-                    System.setProperty("xapi.built.$mod", 'true')
-                }
-        }
-
-        tasks.getByName(JavaPlugin.COMPILE_JAVA_TASK_NAME).dependsOn buildPlugin
-        tasks.getByName(BasePlugin.ASSEMBLE_TASK_NAME).dependsOn buildPlugin
-        return buildPlugin
+if (!findProperty('xapiVersion')) {
+    extensions.add('xapiVersion', '0.5.1')
 }
-extensions.add('installRebuild', installRebuild)
+if (version == 'unspecified') {
+    version = findProperty('xapiVersion')
+}
+
+if (repositories.empty) {
+    repositories.maven {
+        name = 'xapiLocal'
+        url = new File(xapiHome, 'repo')
+    }
+}
+
+if (System.getProperty('xapiIntoBuildscript') == 'true') {
+    System.clearProperty('xapiIntoBuildscript')
+    buildscript.repositories.maven {
+        name = 'xapiLocal'
+        url = new File(xapiHome, 'repo')
+    }
+}

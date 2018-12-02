@@ -3,7 +3,6 @@ package xapi.fu;
 import xapi.fu.Filter.Filter2;
 import xapi.fu.itr.MappedIterable;
 
-import javax.validation.constraints.NotNull;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collection;
@@ -359,7 +358,7 @@ public interface X_Fu {
     }
     return iterEqualNullsafe(v1, v2);
   }
-  static boolean iterEqualNullsafe(@NotNull Iterator v1, @NotNull Iterator v2) {
+  static boolean iterEqualNullsafe(Iterator v1, Iterator v2) {
     while (v1.hasNext()) {
       if (!v2.hasNext()) {
         return false;

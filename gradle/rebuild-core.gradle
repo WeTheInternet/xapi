@@ -1,8 +1,10 @@
-// This file is only suitable for use from buildSrc projects
-File f = new File("$rootDir/gradle/xapi-env.gradle")
-if (f.exists()) {
-    apply from: f
-}
+import java.util.function.Function
 
-(extensions.findByName('installRebuild') as Action)
-        ?.execute('net.wti.core')
+// This file is only suitable for use from buildSrc projects
+Function<String, Task> installRebuild = extensions.findByName('installRebuild')
+
+if (installRebuild == null) {
+    logger.error 'You must apply xapi-env.gradle before rebuild-core.gradle'
+} else {
+    installRebuild.apply('net.wti.core')
+}
