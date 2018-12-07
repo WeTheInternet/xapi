@@ -1,5 +1,5 @@
 plugins {
-    id 'java-library'
+    id 'xapi-base'
 }
 
 apply from: "$rootDir/gradle/xapi-env.gradle"

@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>net.wetheinter</groupId>
+    <artifactId>xapi-core-parent</artifactId>
+    <version>0.5.1-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>xapi-core-lang</artifactId>
+  <packaging>jar</packaging>
+  <name>XApi - Java language extensions / parsing tools</name>
+  <url>WeTheInter.net</url>
+
+  <licenses>
+    <license>
+      <name>Apache License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+      <comments>A business-friendly OSS license</comments>
+    </license>
+    <license>
+      <name>GNU Lesser General Public License</name>
+      <url>http://www.gnu.org/licenses/lgpl-3.0.html</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <description>
+    This module contains a fork of the javaparser project,
+    which uses javacc to generate a java language parser.
+
+    http://github.com/javaparser/javaparser -> git@github.com:WeTheInternet/javaparser.git
+
+    The fork adds support for `template string,
+    which do not require escaping any characters,
+    except the \` tick character, for nice, easy
+    to write multi-line strings`.
+
+    This fork also includes support for expression
+    structures that resemble html, json and css.
+    See README for details.
+  </description>
+
+
+  <developers>
+    <developer>
+      <name>James X. Nelson</name>
+      <email>James@WeTheInter.net</email>
+      <url>https://github.com/WeTheInternet</url>
+      <id>JamesXNelson</id>
+    </developer>
+    <!-- Original contributors to javaparser which we forked: -->
+    <developer>
+      <name>Danny van Bruggen</name>
+      <email>hexagonaal@gmail.com</email>
+      <url>https://github.com/matozoid</url>
+      <id>matozoid</id>
+    </developer>
+    <developer>
+      <name>Júlio Vilmar Gesser</name>
+      <email>jgesser@gmail.com</email>
+    </developer>
+    <developer>
+      <name>Sebastian Kirsch</name>
+      <email>sebastian.kirsch@immobilienscout24.de</email>
+      <url>https://github.com/sebastiankirsch</url>
+      <id>sebastiankirsch</id>
+    </developer>
+    <developer>
+      <name>André Rouél</name>
+      <url>https://github.com/before</url>
+      <id>before</id>
+    </developer>
+    <developer>
+      <name>Nicholas Smith</name>
+      <email>smiddypence@gmail.com</email>
+      <url>https://github.com/SmiddyPence</url>
+      <id>SmiddyPence</id>
+    </developer>
+    <developer>
+      <name>Federico Tomassetti</name>
+      <email>federico@tomassetti.me</email>
+      <url>https://github.com/ftomassetti</url>
+      <id>ftomassetti</id>
+    </developer>
+    <developer>
+      <name>Didier Villevalois</name>
+      <email>ptitjes@free.fr</email>
+      <url>https://github.com/ptitjes</url>
+      <id>ptitjes</id>
+    </developer>
+  </developers>
+  <contributors>
+    <contributor>
+      <name>Junfei Liang</name>
+      <email>fly2best@gmail.com</email>
+      <url>https://github.com/fly2best</url>
+    </contributor>
+    <contributor>
+      <name>Jarkko Miettinen</name>
+      <url>https://github.com/jmiettinen</url>
+    </contributor>
+    <contributor>
+      <name>Alexey Morozov</name>
+      <email>morozov@altlinux.org</email>
+      <url>https://github.com/amorozov</url>
+    </contributor>
+    <contributor>
+      <name>Donny Nadolny</name>
+      <email>donny.nadolny@gmail.com</email>
+      <url>https://github.com/dnadolny</url>
+    </contributor>
+    <contributor>
+      <name>Raquel Pau</name>
+      <email>raquelpau@gmail.com</email>
+      <url>https://github.com/rpau</url>
+    </contributor>
+    <contributor>
+      <name>Chao Shi</name>
+      <email>stepinto@live.com</email>
+      <url>https://github.com/stepinto</url>
+    </contributor>
+    <contributor>
+      <name>Michael Schieder</name>
+      <email>michael.schieder@gmail.com</email>
+      <url>https://github.com/mschieder</url>
+    </contributor>
+  </contributors>
+
+  <dependencies>
+
+    <dependency>
+      <groupId>net.wetheinter</groupId>
+      <artifactId>xapi-core-util</artifactId>
+    </dependency>
+
+    <!-- Testing dependencies -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>javacc-maven-plugin</artifactId>
+        <version>2.6</version>
+        <executions>
+          <execution>
+            <id>javacc</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>javacc</goal>
+            </goals>
+            <configuration>
+              <grammarEncoding>${project.build.sourceEncoding}</grammarEncoding>
+              <jdkVersion>${java.version}</jdkVersion>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.3</version>
+      </plugin>
+
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>add-source</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <inherited>false</inherited>
+            <configuration>
+              <sources>
+                <source>${project.build.directory}/generated-sources/javacc</source>
+                <source>${project.build.directory}/generated-sources/annotations</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+    </plugins>
+  </build>
+
+
+
+</project>

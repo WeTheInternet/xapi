@@ -232,6 +232,9 @@ public class MetaPlugin implements Plugin<Project> {
     }
 
     private boolean loadFromJar(SetLike<String> results, File item) throws IOException {
+        if (!item.isFile()) {
+            return false;
+        }
         try (
             JarFile jar = new JarFile(item)
         ) {

@@ -16,9 +16,9 @@ plugins {
     id 'java-library'
     id 'xapi'
 }
-setProperty('xapi.main.component', 'shadow')
 plugins.apply 'xapi.meta'
 plugins.apply 'com.github.johnrengelman.shadow'
+setProperty('xapi.main.component', 'shadow')
 
 tasks.jar.configure {
     classifier = 'default'
@@ -31,7 +31,7 @@ tasks.shadowJar.configure {
 dependencies {
     compile project(':xapi-gwt-parent:xapi-gwt3')
     compile project(':xapi-dev-parent:xapi-dev-source')
-    compile project(':xapi-core-parent:xapi-core-lang')
+    compile "net.wti.core:xapi-lang-core:${->version}"
     compile project(':xapi-core-parent:xapi-core-reflect')
     compile project(':xapi-core-parent:xapi-core-util')
     compile project(':xapi-gwt-parent:xapi-elemental')

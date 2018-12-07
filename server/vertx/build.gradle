@@ -5,7 +5,7 @@ dependencies {
     compile project(':xapi-server-parent:xapi-server-api')
     compile project(':xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-impl')
     compile project(':xapi-jre-parent:xapi-jre-process')
-    compile project(':xapi-core-parent:xapi-core-lang')
+    compile "net.wti.core:xapi-lang-core:${->version}"
     compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api')
     compile project(':xapi-dev-parent:xapi-dev-maven')
     compile project(':xapi-dev-parent:xapi-dev-javac')

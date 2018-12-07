@@ -1,5 +1,5 @@
 plugins { id 'xapi' }
-
+apply from: "$rootDir/gradle/xapi-env.gradle"
 import org.gradle.internal.jvm.Jvm
 
 dependencies {
@@ -10,7 +10,7 @@ dependencies {
     compile project(':xapi-dev-parent:xapi-dev-shell')
     compile project(':xapi-dev-parent:xapi-dev-scanner')
     compile project(':xapi-dev-parent:xapi-dev-maven')
-    compile project(':xapi-dev-parent:xapi-gen')
+    compile "net.wti.core:xapi-gen:$version"
     compile project(':xapi-server-parent:xapi-server-gen')
     compileOnly files(Jvm.current().toolsJar)
     testCompile files(Jvm.current().toolsJar)

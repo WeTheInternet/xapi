@@ -35,7 +35,7 @@ public interface PatternPrinter <S extends PatternPrinter<S>> {
         return self();
     }
 
-    default S pattern(CharSequence source, Object replace1, Object ... more) {
+    default S pattern(CharSequence source, Object replace1, Object... more) {
         final String resolved = resolve(source, replace1, more);
         print(resolved);
         return self();
@@ -54,13 +54,13 @@ public interface PatternPrinter <S extends PatternPrinter<S>> {
         return resolved;
     }
 
-    default S patternln(CharSequence source, Object replace1, Object ... more) {
+    default S patternln(CharSequence source, Object replace1, Object... more) {
         pattern(source, replace1, more);
         println();
         return self();
     }
 
-    default S patternlns(CharSequence source, Object replace1, Object ... more) {
+    default S patternlns(CharSequence source, Object replace1, Object... more) {
         final String resolved = resolve(source, replace1, more);
         printlns(resolved);
         return self();

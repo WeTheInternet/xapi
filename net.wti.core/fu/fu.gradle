@@ -3,7 +3,7 @@ plugins {
 }
 
 repositories {
-    // TODO: instead sync spock, junit and assertj into xapiLocal and just use that... 
+    // TODO: instead sync spock, junit and assertj into xapiLocal and just use that...
     jcenter()
 }
 
@@ -11,3 +11,5 @@ dependencies {
     testCompile 'junit:junit:4.12'
     testCompile 'org.assertj:assertj-core:3.2.0'
 }
+
+description = 'XApi - FuJutsu: Functional objects, helpers and composers'

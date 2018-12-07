@@ -5,7 +5,7 @@ dependencies {
     compile project(':xapi-core-parent:xapi-core-model')
     compile project(':xapi-core-parent:xapi-core-io')
     compile project(':xapi-core-parent:xapi-core-scope')
-    compile project(':xapi-core-parent:xapi-core-lang')
+    compile "net.wti.core:xapi-lang-core:${->version}"
 }
 
 test {

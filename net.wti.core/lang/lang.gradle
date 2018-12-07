@@ -1,0 +1,20 @@
+plugins {
+    id 'java-library'
+    id "ca.coglinc.javacc" version "2.4.0"
+}
+
+apply from: "$rootDir.parent/gradle/xapi-env.gradle"
+
+repositories {
+    jcenter()
+}
+
+compileJavacc.outputDirectory = file('src/main/gen')
+
+dependencies {
+    api "net.wti.core:xapi-fu:${->version}"
+    api "net.wti.core:xapi-gen:${->version}"
+    javacc 'net.java.dev.javacc:javacc:7.0.4'
+}
+
+description = 'XApi - Java language extensions / parsing tools'

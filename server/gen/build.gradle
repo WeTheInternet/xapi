@@ -5,7 +5,7 @@ import xapi.gradle.X_Gradle
 X_Gradle.init project
 
 dependencies {
-    compile project(':xapi-core-parent:xapi-core-lang')
+    compile "net.wti.core:xapi-lang-core:${->version}"
     compile project(':xapi-server-parent:xapi-server-api')
     compile project(':xapi-dev-parent:xapi-dev-javac')
     compile project(':xapi-dev-parent:xapi-dev-api')

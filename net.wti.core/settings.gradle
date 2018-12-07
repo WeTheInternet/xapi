@@ -1,11 +1,14 @@
 rootProject.name = 'net.wti.core'
 
 List<String> projects = [
-        'anno', 'fu', 'gen',
+        'anno', 'fu', 'gen', 'lang'
 ]
 include(projects as String[])
 
 projects.forEach({p->
     project(":$p").buildFileName = "${p}.gradle"
+    project(":$p").projectDir = file(p)
     project(":$p").name = "xapi-$p"
 })
+
+project(':xapi-lang').name = 'xapi-lang-core'

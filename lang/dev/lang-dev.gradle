@@ -1,0 +1,8 @@
+plugins { id 'xapi' }
+
+dependencies {
+    api project(':xapi-core-parent:xapi-core-collect')
+    api project(':xapi-core-parent:xapi-core-reflect')
+    api "net.wti.core:xapi-fu:${->version}"
+    api "net.wti.core:xapi-lang-core:${->version}"
+}

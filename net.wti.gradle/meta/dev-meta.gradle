@@ -8,9 +8,9 @@ repositories {
 }
 
 dependencies {
+    api "net.wti.core:xapi-gen:${->version}"
     api project(":xapi-gradle-api")
-    api project(":xapi-gradle-gen")
-    api project(":xapi-gradle-lang")
+    api "net.wti.core:xapi-lang-core:${->version}"
     compileOnly gradleApi()
 }
 version = '0.5.1'

@@ -9,6 +9,6 @@ if (installRebuild == null) {
     Task core = installRebuild.apply('net.wti.core')
     Task tools = installRebuild.apply('net.wti.gradle')
     if (tools && core) {
-        tools.dependsOn(core)
+        tools.mustRunAfter(core)
     }
 }

@@ -1,9 +1,6 @@
-plugins {
-    id 'xapi'
-}
+plugins { id 'xapi' }
 
 apply from: "$rootDir/gradle/xapi-env.gradle"
-String xapiVersion = findProperty('xapiVersion')
 
 repositories {
     jcenter()
@@ -13,11 +10,11 @@ apply from: "$rootDir/gradle/processor.gradle"
 
 
 dependencies {
-    api project(':xapi-dev-parent:xapi-dev-source')
-    api "net.wti.core:xapi-fu:$xapiVersion"
-    api project(':xapi-annotations')
+    api "net.wti.core:xapi-fu:$version"
+    api "net.wti.core:xapi-annotations:$version"
+    api "net.wti.core:xapi-gen:$version"
     api 'javax.inject:javax.inject:1'
-    annotationProcessor "net.wti.gradle:xapi-dev-mirror:$xapiVersion"
+    annotationProcessor "net.wti.gradle:xapi-dev-mirror:$version"
     testCompile 'junit:junit:4.12'
 }
 

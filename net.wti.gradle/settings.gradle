@@ -1,10 +1,7 @@
-import java.nio.file.Files
-import java.nio.file.Paths
-
 rootProject.name = 'net.wti.gradle'
 
 List<String> projects = [
-        'plugin', 'gen', 'anno', 'mirror', 'meta', 'api', 'lang'
+        'api', 'mirror', 'plugin', 'meta'
 ]
 include(projects as String[])
 
@@ -27,21 +24,7 @@ projects.forEach({p->
 def composite = System.getProperty('xapi.composite') ?:
         startParameter.projectProperties.get('xapi.composite')
 if (composite != 'false') {
+    logger.quiet "Adding composite from net.wti.gradle to net.wti.core because composite=$composite"
     System.setProperty('xapi.composite', 'false')
     includeBuild('../net.wti.core')
-}
-
-java.nio.file.Path srcLink = Paths.get(rootDir.absolutePath, 'gen', 'src')
-if (!Files.isSymbolicLink(srcLink)) {
-    Files.createSymbolicLink(srcLink, Paths.get(rootDir.parentFile.absolutePath, 'dev', 'source', 'src'))
-}
-
-srcLink = Paths.get(rootDir.absolutePath, 'anno', 'src')
-if (!Files.isSymbolicLink(srcLink)) {
-    Files.createSymbolicLink(srcLink, Paths.get(rootDir.parentFile.absolutePath, 'anno', 'src'))
-}
-
-srcLink = Paths.get(rootDir.absolutePath, 'lang', 'src')
-if (!Files.isSymbolicLink(srcLink)) {
-    Files.createSymbolicLink(srcLink, Paths.get(rootDir.parentFile.absolutePath, 'core', 'lang', 'src'))
 }

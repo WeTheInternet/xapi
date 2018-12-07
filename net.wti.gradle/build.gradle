@@ -4,10 +4,9 @@ plugins {
     id 'groovy'
 }
 
-def repo = new File(buildDir, 'repo')
 allprojects {
     group 'net.wti.gradle'
-    version '0.5.1'
+    apply from: "$rootDir.parent/gradle/xapi-env.gradle"
 }
 subprojects {
     Project p ->

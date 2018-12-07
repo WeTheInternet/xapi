@@ -1,20 +1,14 @@
-plugins {
-    id 'java-library'
-}
+plugins { id 'xapi' }
+apply from: "$rootDir/gradle/xapi-env.gradle"
 
-repositories {
-    jcenter()
-    maven {
-        name = 'xapiLocal'
-        url = new URI("file://$rootDir/repo")
-    }
-}
+repositories.jcenter()
 
 dependencies {
     compile project(':xapi-gwt-parent:xapi-gwt-io')
     compile project(':xapi-gwt-parent:xapi-gwt-collect')
     compile project(':xapi-core-parent:xapi-core-model')
-    compile project(':xapi-dev-parent:xapi-gen')
+    compile "net.wti.core:xapi-gen:$version"
+    compile project(':xapi-lang-dev')
     compile project(':xapi-dev-parent:xapi-dev-source')
     compile project(':xapi-core-parent:xapi-core-reflect')
     compile project(':xapi-jre-parent:xapi-jre-collect')

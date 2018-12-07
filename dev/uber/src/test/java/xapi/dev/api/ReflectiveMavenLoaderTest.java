@@ -41,7 +41,7 @@ public class ReflectiveMavenLoaderTest {
         // Since we are doing our testing in the uber module,
         // X_Maven will be on the classpath, so ReflectiveMavenLoader will have a much easier time.
         ReflectiveMavenLoader loader = new ReflectiveMavenLoader();
-        final MvnDependency dep = loader.getDependency("xapi-fu");
+        final MvnDependency dep = loader.getDependency("net.wti.core", "xapi-fu");
         final Out1<Iterable<String>> result = loader.downloadDependency(dep);
         final Iterable<String> items = result.out1();
         final SizedIterable<String> counted = MappedIterable.mapped(items).counted();

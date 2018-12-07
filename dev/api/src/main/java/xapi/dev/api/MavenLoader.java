@@ -27,6 +27,10 @@ public interface MavenLoader {
         return getDependency(X_Namespace.XAPI_GROUP_ID, artifactId, "jar", null, X_Namespace.XAPI_VERSION);
     }
 
+    default MvnDependency getDependency(String groupId, String artifactId) {
+        return getDependency(groupId, artifactId, "jar", null, X_Namespace.XAPI_VERSION);
+    }
+
     default MvnDependency getDependency(String groupId, String artifactId, String version) {
         return getDependency(groupId, artifactId, "jar", null, version);
     }

@@ -12,7 +12,7 @@ repositories {
 }
 
 dependencies {
-    compile project(':xapi-core-parent:xapi-core-lang')
+    compile "net.wti.core:xapi-lang-core:${->version}"
     compile project(':xapi-jre-parent:xapi-jre-io')
     compile project(':xapi-core-parent:xapi-core-scope')
     compile project(':xapi-jre-parent:xapi-jre-inject')

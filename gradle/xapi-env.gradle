@@ -51,6 +51,7 @@ if (!extensions.findByName('installRebuild')) {
     // Install a rebuild task, only suitable for use in buildSrc
     Function<String, Task> installRebuild = {
         String mod ->
+
             boolean xapiChanging = 'true' == System.getProperty('xapi.changing') ||
                                     'true' == findProperty('xapi.changing')
             if (!xapiChanging) {
@@ -63,18 +64,21 @@ if (!extensions.findByName('installRebuild')) {
 
             def buildPlugin = tasks.create "buildProject_${mod.replace('.' as char, '_' as char)}", GradleBuild, {
                 GradleBuild b ->
-                    b.dir = new File(xapiHome, "gradle/$mod".toString())
-                    b.tasks = ['jar', 'publishXapiLocal']
+                    b.dir = new File(xapiHome.toString(), "$mod".toString())
+                    b.tasks = ['build']
                     b.startParameter.excludedTaskNames = ['test']
                     b.startParameter.parallelProjectExecutionEnabled = true
                     b.startParameter.buildCacheEnabled = true
                     // whatever buildSrc is creating these "build other gradle worlds"
                     // will be in charge of adding _all_ desired rebuilds;
                     // we will not attempt to deal with cascading rebuilds.
-                    b.startParameter.projectProperties << ['xapi.changing' : 'false']
+                    b.startParameter.projectProperties << ['xapi.changing' : 'false', 'xapi.composite': 'false']
                     b.onlyIf {
-                        xapiChanging && 'true' != System.getProperty("xapi.built.$mod")
-
+                        boolean build = xapiChanging && 'true' != System.getProperty("xapi.built.$mod")
+                        if (build) {
+                            logger.quiet "Adding composite $b.dir"
+                        }
+                        return build
                     }
                     b.doFirst {
                         System.setProperty("xapi.built.$mod", 'true')
@@ -99,7 +103,7 @@ if (version == 'unspecified') {
 if (repositories.empty) {
     repositories.maven {
         name = 'xapiLocal'
-        url = new File(xapiHome, 'repo')
+        url = new File(xapiHome.toString(), 'repo')
     }
 }
 
@@ -107,6 +111,15 @@ if (System.getProperty('xapiIntoBuildscript') == 'true') {
     System.clearProperty('xapiIntoBuildscript')
     buildscript.repositories.maven {
         name = 'xapiLocal'
-        url = new File(xapiHome, 'repo')
+        url = new File(xapiHome.toString(), 'repo')
     }
+}
+
+if (extensions.findByName('buildsPresent') == null) {
+    LinkedHashMap<String, IncludedBuild> buildsPresent = [:]
+    gradle.includedBuilds.each {
+        IncludedBuild b ->
+            buildsPresent.put(b.name, b)
+    }
+    extensions.add('buildsPresent', buildsPresent)
 }

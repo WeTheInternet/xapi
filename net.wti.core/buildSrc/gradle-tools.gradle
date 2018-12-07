@@ -1,0 +1,53 @@
+buildscript.dependencies.add 'classpath', buildscript.dependencies.localGroovy()
+plugins.apply('java-library')
+plugins.apply('maven-publish')
+description = '''Xapi Gradle Tools: Pure gradle tools, suitable for (re)use by all modules.
+This handles the basics of publishing and path manifest production.
+for more details, see $xapiHome/net.wti.core/buildSrc/gradle-tools.gradle'''
+
+// A root buildscript should always start out w/ xapi-env, so we have xapiHome extension variable set.
+apply from: "$rootDir.parentFile.parent/gradle/xapi-env.gradle"
+String xapiHome = extensions.getByName('xapiHome')
+
+version = findProperty('xapiVersion')
+
+// for this ultra-core, zero-dependency buildSrc project, we want to always install 
+// our jars to xapiLocal repo, so other projects can reference us.
+tasks.findByName(BasePlugin.ASSEMBLE_TASK_NAME).finalizedBy(
+        PublishingPlugin.PUBLISH_LIFECYCLE_TASK_NAME
+)
+// We're creating this here, manually, so we can get picked up when someone runs
+// ./gradlew publishXapi or `gw pX` if you have gw alias for ./gradlew-finder (google "gradle gw gist")
+Task publishXapi = tasks.create('publishXapi')
+publishXapi.group = 'Publishing'
+publishXapi.description = 'Publish jars to xapiLocal repository'
+tasks.withType(PublishToMavenLocal).all {
+    PublishToMavenLocal pub ->
+        assemble.finalizedBy pub
+        publishXapi.dependsOn pub
+}
+
+PublishingExtension ext = extensions.findByName(PublishingExtension.NAME) as PublishingExtension
+ext.repositories.maven {
+    MavenArtifactRepository repo ->
+        repo.name = 'xapiLocal'
+        repo.url = "file://$xapiHome/repo"
+}
+Jar sourceJar = tasks.create 'sourceJar', Jar.class, {
+    Jar jar ->
+        jar.classifier = 'sources'
+        jar.from sourceSets.main.allSource
+        return
+}
+
+PublishArtifact art = project.artifacts.add('archives', sourceJar)
+
+ext.publications.create("main", MavenPublication, {
+    pub ->
+        pub.from(project.components.getByName('java'))
+        pub.groupId = 'net.wti.gradle.tools'
+        pub.artifactId = 'xapi-gradle-tools'
+        pub.artifact(art)
+})
+
+project.dependencies.add('api', project.dependencies.gradleApi())

@@ -16,10 +16,10 @@ plugins {
     id 'java-library'
     id 'xapi-base'
 }
-setProperty('xapi.main.component', 'shadow')
 plugins.apply 'com.github.johnrengelman.shadow'
-gradle.projectsEvaluated {
-}
+setProperty('xapi.main.component', 'shadow')
+apply from: "$rootDir/gradle/xapi-env.gradle"
+
 tasks.jar.configure {
     classifier = 'default'
 }
@@ -42,7 +42,7 @@ dependencies {
     compile project(':xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-api')
     compile project(':xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-impl')
     compile project(':xapi-dev-parent:xapi-dev-maven')
-    compile project(':xapi-dev-parent:xapi-gen')
+    compile "net.wti.core:xapi-gen:$version"
     compile project(':xapi-server-parent:xapi-server-gen')
     testCompile project(':xapi-core-parent:xapi-core-test')
 }

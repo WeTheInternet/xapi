@@ -34,8 +34,7 @@ SourceSet main = sourceSets.getByName('main') {
 
 dependencies {
     api "net.wti.core:xapi-fu:$xapiVersion"
-    // TODO: drop this to implementation?
-    api project(':xapi-dev-parent:xapi-dev-source')
+    api "net.wti.core:xapi-gen:$xapiVersion"
     xapiDev project(':xapi-core-parent:xapi-core-collect')
     xapiDev project(':xapi-core-parent:xapi-core-reflect')
     testCompile "org.spockframework:spock-core:1.2-groovy-2.4"

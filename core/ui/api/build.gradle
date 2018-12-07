@@ -11,8 +11,8 @@ repositories {
 }
 
 dependencies {
-    compile project(':xapi-core-parent:xapi-core-lang')
-    compile project(path: ':xapi-core-parent:xapi-core-lang', configuration: 'xapiDevRuntime')
+    compile "net.wti.core:xapi-lang-core:${->version}"
+    compile project(':xapi-lang-dev')
     compile project(':xapi-core-parent:xapi-core-scope')
     compileOnly 'net.wetheinter:jsinterop-annotations:2.8.0'
     compile project(':xapi-core-parent:xapi-core-event')

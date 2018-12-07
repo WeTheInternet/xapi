@@ -1,0 +1,11 @@
+<xapi
+module="xapi-fu"
+type="main"
+sources=["/opt/xapi/net.wti.core/fu/src/main/java"]
+
+resources=["/opt/xapi/net.wti.core/fu/src/main/resources"]
+
+outputs=["/opt/xapi/net.wti.core/fu/build/classes/java/main", "/opt/xapi/net.wti.core/fu/build/resources/main"]
+
+generated=[]
+/>

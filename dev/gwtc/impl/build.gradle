@@ -1,12 +1,10 @@
 plugins {
-    id 'java-library'
+    id 'xapi-base'
 }
 
+apply from: "$rootDir/gradle/xapi-env.gradle"
+
 repositories {
-    maven {
-        name = 'xapiLocal'
-        url = new URI("file://$rootDir/repo")
-    }
     jcenter()
 }
 

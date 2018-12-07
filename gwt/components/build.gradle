@@ -22,8 +22,7 @@ dependencies {
     compile project(':xapi-jre-parent:xapi-jre-io')
     compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-generator')
     compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api')
-    compile project(':xapi-core-parent:xapi-core-lang')
-    compile project(':xapi-core-parent:xapi-core-lang')
+    compile "net.wti.core:xapi-lang-core:${->version}"
     compile 'net.wetheinter:gwt-user:2.8.0'
     testCompile project(':xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-impl')
     testCompile project(':xapi-dev-parent:xapi-dev-javac')

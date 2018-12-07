@@ -14,7 +14,6 @@ repositories {
     jcenter()
 }
 
-
 dependencies {
     compile 'com.google.elemental2:elemental2-core:1.0.0-RC1'
     compile project(':xapi-dev-parent:xapi-dev-source')

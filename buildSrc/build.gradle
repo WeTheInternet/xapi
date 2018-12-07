@@ -4,9 +4,8 @@ plugins {
 }
 import java.util.concurrent.TimeUnit
 
+String xapiHome = "$rootDir.parent"
 apply from: "$rootDir.parent/gradle/xapi-env.gradle"
-
-String xapiHome = findProperty('xapiHome')
 
 dependencies {
     api group: 'net.wti.gradle', name: 'xapi-gradle-plugin', version: findProperty('xapiVersion'), changing: true
@@ -20,8 +19,11 @@ configurations.all {
                 , TimeUnit.MINUTES)
 }
 
-if ('true' == System.getProperty('xapi.changing') ||
-    'true' == findProperty('xapi.changing')
+if (
+    'true' == System.getProperty('xapi.changing') ||
+    'true' == findProperty('xapi.changing') ||
+    '1' == System.getProperty('xC') ||
+    '1' == findProperty('xC')
 ) {
     apply from: "$xapiHome/gradle/rebuild-tools.gradle"
 }

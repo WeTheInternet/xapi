@@ -1,5 +1,9 @@
+import org.gradle.api.internal.artifacts.ArtifactAttributes
+import org.gradle.api.internal.artifacts.publish.ArchivePublishArtifact
+
 buildscript {
     dependencies {
+        classpath localGroovy()
     }
 }
 
@@ -38,6 +42,30 @@ subprojects {
         name = 'xapiLocal'
         url = "$xapiHome/repo"
     }
+    p.configurations {
+        sources
+    }
+
+    Jar sourceJar = p.tasks.findByName('sourceJar') as Jar
+    if (!sourceJar) {
+        sourceJar = p.tasks.create 'sourceJar', Jar.class, {
+            Jar jar ->
+                jar.classifier = 'sources'
+                jar.from sourceSets.main.allSource
+                return
+        }
+    }
+    ConfigurationPublications publications = configurations.sources.outgoing
+
+    PublishArtifact publish = new ArchivePublishArtifact(sourceJar)
+    publications.getArtifacts().add(publish)
+    publications.getAttributes().attribute(ArtifactAttributes.ARTIFACT_FORMAT, "jar")
+
+    ConfigurationPublications outgoing = configurations.sources.outgoing
+    outgoing.artifact(publish)
+
+
+    p.artifacts.add('sources', sourceJar)
     p.tasks.withType(PublishToMavenRepository).all {
         PublishToMavenRepository ptml ->
             ptml.doLast {
@@ -51,14 +79,31 @@ subprojects {
                 })
                 ptml.logger.info "Files copied: ${ptml.publication.artifacts.collect({i->"file://" + i.file.absolutePath}).join('/n')}"
             }
-            ptml.dependsOn(BasePlugin.ASSEMBLE_TASK_NAME)
+            ptml.dependsOn(BasePlugin.ASSEMBLE_TASK_NAME, sourceJar)
             p.tasks.getByName(LifecycleBasePlugin.BUILD_TASK_NAME).dependsOn(ptml)
     }
-    publishing.publications.create 'main', MavenPublication, {
+    publishing.publications.create "${name}.jar", MavenPublication, {
         MavenPublication pub ->
             pub.from p.components.java
+            // attach the sourceJar as an additional artifact (w/ classifier)
+            pub.artifact(publish)
             def finish = {
                 pub.artifactId = p.jar.baseName
+            }
+            if (p.state.executed) {
+                finish()
+            } else {
+                p.afterEvaluate finish
+            }
+
+    }
+    // also create a "full-fledged", "has a transitive-dependency-graph" sources jar
+    publishing.publications.create "$name-sources.jar", MavenPublication, {
+        MavenPublication pub ->
+
+            pub.artifact(sourceJar).classifier = null // remove the fact that the sourceJar has a classifier
+            def finish = {
+                pub.artifactId = "$p.jar.baseName-sources"
             }
             if (p.state.executed) {
                 finish()

@@ -1,9 +1,8 @@
 rootProject.name = 'xapi'
 
-include(':anno')
-project(':anno').name = 'xapi-annotations'
-// yes, the map backing the list of projects is mutable :-)
-project(':xapi-annotations').buildFileName = 'anno.gradle'
+include(':xapi-lang-dev')
+project(':xapi-lang-dev').buildFileName = 'lang-dev.gradle'
+project(':xapi-lang-dev').projectDir = file('lang/dev')
 
 include(':xapi-core-parent:xapi-core-api')
 include(':xapi-core-parent:xapi-core-log')
@@ -16,7 +15,6 @@ include(':xapi-core-parent:xapi-core-collect')
 include(':xapi-core-parent:xapi-core-scope')
 include(':xapi-core-parent:xapi-core-process')
 include(':xapi-core-parent:xapi-core-args')
-include(':xapi-core-parent:xapi-core-lang')
 include(':xapi-core-parent:xapi-core-event')
 include(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api')
 include(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-components')
@@ -54,7 +52,6 @@ include(':xapi-jre-parent:xapi-jre-ui-parent:xapi-jre-ui-javafx')
 include(':xapi-jre-parent:xapi-jre-ui-parent')
 include(':xapi-jre-parent:xapi-jre')
 include(':xapi-jre-parent')
-include(':xapi-dev-parent:xapi-gen')
 include(':xapi-dev-parent:xapi-dev-api')
 include(':xapi-dev-parent:xapi-dev-source')
 include(':xapi-dev-parent:xapi-dev-bytecode')
@@ -91,7 +88,6 @@ Map<String, Map<String, Map<String, String>>> all = [
                 scope: [:],
                 process: [:],
                 args: [:],
-                lang: [:],
                 event: [:],
                 ui: [
                         api: [:],
@@ -172,7 +168,6 @@ project(':xapi-core-parent:xapi-core-collect').projectDir = file('core/collect')
 project(':xapi-core-parent:xapi-core-scope').projectDir = file('core/scope')
 project(':xapi-core-parent:xapi-core-process').projectDir = file('core/process')
 project(':xapi-core-parent:xapi-core-args').projectDir = file('core/args')
-project(':xapi-core-parent:xapi-core-lang').projectDir = file('core/lang')
 project(':xapi-core-parent:xapi-core-event').projectDir = file('core/event')
 project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api').projectDir = file('core/ui/api')
 project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-components').projectDir = file('core/ui/components')
@@ -210,7 +205,6 @@ project(':xapi-jre-parent:xapi-jre-ui-parent:xapi-jre-ui-javafx').projectDir = f
 project(':xapi-jre-parent:xapi-jre-ui-parent').projectDir = file('jre/ui')
 project(':xapi-jre-parent:xapi-jre').projectDir = file('jre/uber')
 project(':xapi-jre-parent').projectDir = file('jre')
-project(':xapi-dev-parent:xapi-gen').projectDir = file('dev/gen')
 project(':xapi-dev-parent:xapi-dev-api').projectDir = file('dev/api')
 project(':xapi-dev-parent:xapi-dev-source').projectDir = file('dev/source')
 project(':xapi-dev-parent:xapi-dev-bytecode').projectDir = file('dev/bytecode')
@@ -242,15 +236,9 @@ System.properties: ${System.properties.toString().split(", ")}
 def composite = System.getProperty('xapi.composite') ?:
         startParameter.projectProperties.get('xapi.composite')
 if (composite != 'false') {
-    def was = System.getProperty('xapi.composite')
     System.setProperty('xapi.composite', 'false')
     includeBuild('net.wti.core')
     includeBuild('net.wti.gradle')
-    if (was) {
-        System.setProperty("xapi.composite", was)
-    } else {
-        System.clearProperty("xapi.composite")
-    }
 }
 
 
