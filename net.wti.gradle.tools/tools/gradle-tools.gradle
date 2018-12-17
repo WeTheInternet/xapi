@@ -1,0 +1,18 @@
+plugins {
+    id 'java-library'
+    id 'groovy'
+}
+
+description = '''Xapi Gradle Tools: Pure gradle tools, suitable for (re)use by all modules.
+This handles the basics of publishing and path manifest production.'''
+
+String xapiHome = findProperty('xapiHome')
+apply from: "$xapiHome/gradle/int-test.gradle"
+
+project.dependencies.add('api', project.dependencies.gradleApi())
+
+sourceSets {
+    main {
+        groovy.srcDirs = []
+    }
+}

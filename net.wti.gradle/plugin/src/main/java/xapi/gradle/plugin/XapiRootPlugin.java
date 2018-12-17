@@ -1,13 +1,18 @@
 package xapi.gradle.plugin;
 
+import net.wti.gradle.system.service.GradleService;
+import net.wti.gradle.system.spi.GradleServiceFinder;
 import org.gradle.BuildAdapter;
 import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.*;
 import org.gradle.api.invocation.Gradle;
+import org.gradle.api.tasks.TaskProvider;
 import org.gradle.internal.reflect.Instantiator;
 import xapi.fu.Lazy;
+import xapi.fu.Out1;
+import xapi.gradle.task.XapiInit;
 import xapi.gradle.task.XapiPreload;
 
 import javax.inject.Inject;
@@ -33,13 +38,10 @@ public class XapiRootPlugin implements Plugin<Project> {
         if (project != project.getRootProject()) {
             throw new GradleException("xapi-root plugin may only be installed on the root project!");
         }
+        final GradleService service = GradleServiceFinder.getService(project);
 
-        final XapiExtensionRoot root = project.getExtensions().create(
-            XapiExtension.EXT_NAME,
-            XapiExtensionRoot.class,
-            project,
-            instantiator
-        );
+        final XapiExtensionRoot root = createRootExtension(project, instantiator);
+        project.getExtensions().add(XapiExtension.class, XapiExtension.EXT_NAME, root);
 
         project.getPlugins().apply(XapiBasePlugin.class);
 
@@ -64,6 +66,18 @@ public class XapiRootPlugin implements Plugin<Project> {
 //            }
 //        });
 
+    }
+
+    /**
+     * TODO move this method into {@link GradleService} so it can control how this extension is created.
+     */
+    private XapiExtensionRoot createRootExtension(Project project, Instantiator instantiator) {
+        return project.getExtensions().create(
+            XapiExtensionRoot.EXT_NAME,
+            XapiExtensionRoot.class,
+            project,
+            instantiator
+        );
     }
 
     protected void preload(
@@ -93,26 +107,33 @@ public class XapiRootPlugin implements Plugin<Project> {
         // kick off the preloads eagerly.
         new PreloadThread().start();
 
-        project.getTasks().register("xapiPreload", XapiPreload.class, preload->{
-            Callable<Object> defer = ()->{
-                final ResolvedConfiguration resolved = resolve.out1();
-                if (resolved.hasError() && root.isStrict()) {
-                    resolved.rethrowFailure();
-                }
-                final LenientConfiguration lenient = resolved.getLenientConfiguration();
-                preload.addArtifacts(lenient.getArtifacts());
-                return lenient.getFiles();
-            };
-            // using the callable as source mainly just to get input file tracking,
-            // and work-deferment, of course...
-            preload.source(defer);
-            // Make the preInit task depend on preload (so it happens as early as possible).
-            root.getInit().getPreInit().configure(task ->
-                task.dependsOn(preload)
-            );
+        final TaskProvider<XapiPreload> pre = project.getTasks().register(
+            "xapiPreload",
+            XapiPreload.class,
+            preload -> {
+                Callable<Object> defer = () -> {
+                    final ResolvedConfiguration resolved = resolve.out1();
+                    if (resolved.hasError() && root.isStrict()) {
+                        resolved.rethrowFailure();
+                    }
+                    final LenientConfiguration lenient = resolved.getLenientConfiguration();
+
+                    preload.addArtifacts(lenient);
+                    return lenient.getFiles();
+                };
+
+                // using the callable as source mainly just to get input file tracking,
+                // and work-deferment, of course...
+                preload.source(defer);
+            }
+        );
+        // Make the preInit task depend on preload (so it happens as early as possible).
+        project.getTasks().configureEach(t->{
+            // TODO: make a generalized "forTaskNamed()" function so we can stay lazily evaluated
+            // without adding 700 configureEach callbacks.
+            if (XapiInit.INIT_TASK_NAME.equals(t.getName())) {
+                ((XapiInit)t).getPreInit().get().dependsOn(pre);
+            }
         });
-
-
-
     }
 }

@@ -20,7 +20,6 @@ import xapi.bytecode.annotation.MemberValue;
 import xapi.bytecode.annotation.MemberValueVisitor;
 import xapi.bytecode.annotation.ShortMemberValue;
 import xapi.bytecode.annotation.StringMemberValue;
-import xapi.collect.impl.ToStringFifo;
 import xapi.fu.Out1;
 import xapi.inject.X_Inject;
 import xapi.log.X_Log;

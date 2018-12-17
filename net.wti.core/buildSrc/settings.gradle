@@ -1,2 +1,2 @@
-rootProject.name = 'net.wti.gradle.tools'
-rootProject.buildFileName = 'gradle-tools.gradle'
+rootProject.name = 'plugin-buildSrc'
+rootProject.buildFileName = 'plugin-buildSrc.gradle'

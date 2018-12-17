@@ -21,10 +21,11 @@ projects.forEach({p->
     project(":$p").name = "xapi-${artifactId(p)}"
 })
 
-def composite = System.getProperty('xapi.composite') ?:
-        startParameter.projectProperties.get('xapi.composite')
-if (composite != 'false') {
-    logger.quiet "Adding composite from net.wti.gradle to net.wti.core because composite=$composite"
-    System.setProperty('xapi.composite', 'false')
+def composite = System.getProperty('xapi.gradle.composite') ?:
+        startParameter.projectProperties.get('xapi.gradle.composite')
+if (composite == 'true') {
+    logger.quiet "Adding composite from net.wti.gradle to net.wti.core because xapi.gradle.composite=$composite"
+    System.setProperty('xapi.gradle.composite', 'false')
+    includeBuild('../net.wti.gradle.tools')
     includeBuild('../net.wti.core')
 }

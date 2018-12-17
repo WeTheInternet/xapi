@@ -1,11 +1,14 @@
 package xapi.gradle.task;
 
 import org.gradle.api.Task;
+import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.artifacts.ConfigurationVariant;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.bundling.Jar;
 import xapi.gradle.api.ArchiveType;
 import xapi.gradle.api.DefaultArchiveType;
 import xapi.gradle.api.HasArchiveType;
+import xapi.gradle.plugin.XapiExtension;
 
 import java.util.*;
 
@@ -19,6 +22,26 @@ public class AbstractXapiJar extends Jar implements HasArchiveType {
 
     @Input
     private boolean includeAll;
+
+    public AbstractXapiJar() {
+        final XapiExtension ext = XapiExtension.from(getProject());
+        ext.onFinish(()->{
+            // get the main publication, and plug ourselves in.
+            // This is currently a hack just to see if it will work,
+            // so corners will be cut, just to see if it is possible / worth doing right.
+            if (archiveType == DefaultArchiveType.API) {
+                final String name = archiveType.prefixedName(ext.getPrefix());
+                final Configuration con = getProject().getConfigurations().getByName(name);
+
+                ext.getMainPublication().artifact(this);
+
+                con.getOutgoing().variants(vars->{
+                    final ConfigurationVariant variant = vars.maybeCreate(name);
+                    variant.artifact(this);
+                });
+            }
+        });
+    }
 
     @Override
     public ArchiveType getArchiveType() {

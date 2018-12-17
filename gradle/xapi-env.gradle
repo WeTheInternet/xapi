@@ -46,6 +46,18 @@ if (!xapiHome) {
     }
 }
 
+if (System.getProperty('xapiIntoBuildscript') == 'true') {
+    // TODO: check into the behavior of buildSrc in composites (relative to the rootProject; can buildSrc see composite root buildSrc?)
+    if (buildscript.configurations.getByName('classpath').state != Configuration.State.UNRESOLVED) {
+        throw new IllegalStateException("-DxapiIntoBuildscript=true, but build script already resolved when xapi-env.gradle was applied;\n" +
+                "You need to apply xapi-env within the buildscript {} closure")
+    }
+    System.clearProperty('xapiIntoBuildscript')
+    buildscript.repositories.maven {
+        name = 'xapiLocal'
+        url = new File(xapiHome.toString(), 'repo')
+    }
+}
 
 if (!extensions.findByName('installRebuild')) {
     // Install a rebuild task, only suitable for use in buildSrc
@@ -102,14 +114,6 @@ if (version == 'unspecified') {
 
 if (repositories.empty) {
     repositories.maven {
-        name = 'xapiLocal'
-        url = new File(xapiHome.toString(), 'repo')
-    }
-}
-
-if (System.getProperty('xapiIntoBuildscript') == 'true') {
-    System.clearProperty('xapiIntoBuildscript')
-    buildscript.repositories.maven {
         name = 'xapiLocal'
         url = new File(xapiHome.toString(), 'repo')
     }

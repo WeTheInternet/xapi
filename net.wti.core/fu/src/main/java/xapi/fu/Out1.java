@@ -7,6 +7,7 @@ import xapi.fu.itr.SizedIterable;
 import xapi.fu.log.Log;
 import xapi.fu.log.Log.LogLevel;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Supplier;
@@ -424,5 +425,10 @@ public interface Out1<O> extends Rethrowable, Lambda, HasMutability {
 
   default Lazy<O> lazy() {
     return Lazy.deferred1(this);
+  }
+
+  @SuppressWarnings("unchecked")
+  default Callable<O> asCallable() {
+    return this instanceof Callable ? (Callable<O>) this : this::out1;
   }
 }

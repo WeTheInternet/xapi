@@ -1,5 +1,8 @@
 package xapi.gradle.plugin;
 
+import net.wti.gradle.PublishXapi;
+import net.wti.gradle.system.service.GradleService;
+import net.wti.gradle.system.spi.GradleServiceFinder;
 import org.gradle.BuildAdapter;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Plugin;
@@ -12,7 +15,6 @@ import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.internal.TaskOutputsInternal;
 import org.gradle.api.internal.artifacts.ArtifactAttributes;
-import org.gradle.api.internal.artifacts.dependencies.DefaultSelfResolvingDependency;
 import org.gradle.api.internal.artifacts.dsl.LazyPublishArtifact;
 import org.gradle.api.internal.artifacts.publish.AbstractPublishArtifact;
 import org.gradle.api.invocation.Gradle;
@@ -23,19 +25,19 @@ import org.gradle.api.publish.PublishingExtension;
 import org.gradle.api.publish.maven.MavenPublication;
 import org.gradle.api.publish.maven.plugins.MavenPublishPlugin;
 import org.gradle.api.publish.maven.tasks.GenerateMavenPom;
+import org.gradle.api.publish.maven.tasks.PublishToMavenRepository;
 import org.gradle.api.publish.plugins.PublishingPlugin;
-import org.gradle.api.tasks.SourceSet;
-import org.gradle.api.tasks.SourceSetContainer;
-import org.gradle.api.tasks.TaskContainer;
-import org.gradle.api.tasks.TaskProvider;
+import org.gradle.api.tasks.*;
 import org.gradle.api.tasks.bundling.Jar;
 import org.gradle.api.tasks.compile.JavaCompile;
+import org.gradle.configuration.project.ProjectConfigurationActionContainer;
+import org.gradle.internal.impldep.aQute.bnd.build.Run;
 import org.gradle.internal.reflect.Instantiator;
 import org.gradle.language.jvm.tasks.ProcessResources;
 import org.gradle.plugins.ide.idea.IdeaPlugin;
 import org.gradle.plugins.ide.idea.model.IdeaModule;
 import org.gradle.util.GFileUtils;
-import xapi.fu.In1;
+import xapi.fu.Lazy;
 import xapi.gradle.X_Gradle;
 import xapi.gradle.api.ArchiveType;
 import xapi.gradle.api.DefaultArchiveType;
@@ -51,7 +53,14 @@ import xapi.util.X_String;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import static org.gradle.api.attributes.Usage.USAGE_ATTRIBUTE;
 import static xapi.fu.itr.ArrayIterable.iterate;
@@ -73,16 +82,22 @@ public class XapiBasePlugin implements Plugin<Project> {
 
     private final Instantiator instantiator;
     private final ObjectFactory objectFactory;
+    private final ProjectConfigurationActionContainer actions;
+    private Lazy<String> prefix;
+    private String path;
+    private final Map<String, Boolean> created;
 
     @Inject
-    public XapiBasePlugin(Instantiator instantiator, ObjectFactory objectFactory) {
+    public XapiBasePlugin(Instantiator instantiator, ObjectFactory objectFactory, ProjectConfigurationActionContainer actions) {
         this.instantiator = instantiator;
         this.objectFactory = objectFactory;
+        created = new ConcurrentHashMap<>();
+        this.actions = actions;
     }
 
     @Override
     public void apply(Project project) {
-
+        path = project.getPath();
         project.getPlugins().apply(JavaLibraryPlugin.class);
         project.getPlugins().apply(MavenPublishPlugin.class);
         final ExtensionContainer ext = project.getExtensions();
@@ -95,6 +110,7 @@ public class XapiBasePlugin implements Plugin<Project> {
         } else {
             config = existing;
         }
+        prefix = Lazy.deferred1(config::getPrefix);
 
         PublishingExtension publishing = (PublishingExtension) project.getExtensions().getByName(PublishingExtension.NAME);
 
@@ -107,20 +123,16 @@ public class XapiBasePlugin implements Plugin<Project> {
 
         Ensure.projectEvaluated(project, p -> {
             project.getLogger().trace("Project {} initializing config {}", p, config);
-            config.initialize(project);
-            final TaskProvider<XapiManifest> provider = prepareManifest(project, config);
 
-            project.getGradle().projectsEvaluated(g ->
-                provider.configure(man ->
-                    man.getInputs().property("paths", man.computeFreshness())
-                )
-            );
+            config.initialize(project);
+            prepareManifest(project, config);
+
         });
 
         project.getGradle().projectsEvaluated(gradle -> {
             project.getLogger().trace("Preparing config {}", config);
             config.prepare(project);
-            installPomWiring(project, publishing);
+            installPomWiring(project, publishing, config);
 
         });
 
@@ -149,43 +161,7 @@ public class XapiBasePlugin implements Plugin<Project> {
         final ConfigurationContainer configurations = project.getConfigurations();
 
         config.forArchiveTypes(type -> {
-            final String name = toTypeName(type);
-            boolean dirExists = new File(project.getProjectDir(), "src/" + type).isDirectory();
-            final boolean[] created = {dirExists};
-            configurations.register(name, con -> {
-
-                // Bah... BasePlugin uses configurations.all,
-                // so we can't actually depend on lazy registration to work here.
-
-                // Instead, we'll hack around it by looking for any dependencies being added...
-                con.getDependencies().configureEach(dep -> {
-                    if (created[0]) {
-                        return;
-                    }
-                    project.getLogger().quiet("Detected dependency for " + name + " in " + project.getPath());
-                    created[0] = true;
-                    // Now, prepare for non-standard source-sets / configurations to be added.
-                    // We'll want to activate each configuration if there is a) files in src/$type/java,
-                    // or b) configuration of xapi { platform { $type { } } } in build script.
-                    // Unfortunately, we cannot rely on simply creating the configuration to say "yes, I want this",
-                    // as Gradle 5.0 eagerly resolves all configurations.
-                    config.defer(()->installSourceSet(project, type, name, con));
-                });
-            });
-            if (dirExists) {
-                configurations.getByName(name);
-            }
-            // wait until the project is fully evaluated,
-            // to give the user code a chance to create xapiDev or xapiApi, etc, dependencies.
-            // Otherwise, we'd create a vast number of unused configurations and sourcesets
-            // (not to mention deploying piles of unused jars, etc.)
-            Ensure.projectEvaluated(project, p -> {
-                if (created[0]) {
-                    project.getLogger().info("Installing xapi flavor {} to {}", type, project.getPath());
-                    final Configuration con = configurations.getByName(name);
-                    installSourceSet(project, type, name, con);
-                }
-            });
+            addType(project, config, type);
         });
         final SourceSetContainer sourceSets = Java.sources(project);
         SourceSet main = sourceSets.getByName(SourceSet.MAIN_SOURCE_SET_NAME);
@@ -219,12 +195,26 @@ public class XapiBasePlugin implements Plugin<Project> {
 
         final ConfigurationContainer configurations = project.getConfigurations();
 
+//        final Set<? extends UsageContext> usages = new LinkedHashSet<>();
+//
+//        project.getComponents().add(new SoftwareComponentInternal() {
+//            @Override
+//            public Set<? extends UsageContext> getUsages() {
+//                return usages;
+//            }
+//
+//            @Override
+//            public String getName() {
+//                return name;
+//            }
+//        });
+
         final SourceSet main = sourceSets.getByName(SourceSet.MAIN_SOURCE_SET_NAME);
         final SourceSet test = sourceSets.getByName(SourceSet.TEST_SOURCE_SET_NAME);
 
         // As of 5.0-rc-4, SourceSetContainer.register() is always immediately processed,
         // as the java and java-base plugins have .all() listeners on sourcesets.
-        SourceSet dev = sourceSets.create(name);
+        SourceSet src = sourceSets.create(name);
 
         final PlatformConfig isPlatform = ext.findPlatform(type);
 
@@ -236,9 +226,9 @@ public class XapiBasePlugin implements Plugin<Project> {
         }
 
         //noinspection ConstantConditions,NewObjectEquality
-        assert new SourceConfig(project, con, archiveType, dev) != null : "";
+        assert new SourceConfig(project, con, archiveType, src) != null : "";
         // ^ here for jump-to-source to show you where we are actually creating it, below
-        SourceConfig config = dev.getExtensions().create("xapi", SourceConfig.class, project, con, archiveType, dev);
+        SourceConfig config = src.getExtensions().create("xapi", SourceConfig.class, project, con, archiveType, src);
 
         ext.sources().add(config);
 
@@ -248,22 +238,71 @@ public class XapiBasePlugin implements Plugin<Project> {
 
         // This should be conditional; api and spi would have the reverse relationship.
         final Configuration mainCompileClasspath = configurations.getByName(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME);
-        con.extendsFrom(mainCompileClasspath);
-        project.getDependencies().add(con.getName(), main.getOutput());
+        for (ArchiveType includes : archiveType.allTypes()) {
+            if (includes == DefaultArchiveType.MAIN) {
+                project.getDependencies().add(con.getName(), main.getOutput());
+                con.extendsFrom(mainCompileClasspath);
+            } else {
+                final String includeName = includes.prefixedName(getPrefix());
+                final Configuration toInclude = configurations.getByName(includeName);
+                String srcSetName = includeName;
+                if (includes.isSources()) {
+                    final ArchiveType srcFor = includes.sourceFor();
+                    if (srcFor == null) {
+                        continue;
+                    }
+                    if (srcFor == DefaultArchiveType.MAIN) {
+                        srcSetName = SourceSet.MAIN_SOURCE_SET_NAME;
+                    } else {
+                        srcSetName = srcFor.prefixedName(getPrefix());
+                        created.put(srcSetName, true);
+                        configurations.getByName(srcSetName);
+                    }
+                }
+                String theName = srcSetName;
 
-        final Object groovy = dev.getExtensions().findByName("groovy");
+                installSourceSet(project, includes.sourceName(), theName, toInclude);
+                final SourceSet includeSrc = Java.sources(project).getByName(theName);
+                if (includes.isSources()) {
+                    for (File srcDir : includeSrc.getAllSource().getSrcDirs()) {
+                        try {
+                            // consider allowing archive type to filter on filename... later.
+                            if (srcDir.isDirectory() && Files.list(Paths.get(srcDir.getAbsolutePath())).findAny().isPresent()) {
+                                // Only add directories that exist and have contents.  It will greatly reduce noise.
+                                // We may need to loosen this requirement later, in case generated dirs have been cleaned
+                                // (or, just make an isGenerated check for this conditional).
+                                project.getDependencies().add(con.getName(), project.files(srcDir));
+                            }
+                        } catch (IOException e) {
+                            project.getLogger().warn("Unexpected IOE checking {}", srcDir, e);
+                        }
+                    }
+
+                } else {
+                    project.getDependencies().add(con.getName(), includeSrc.getOutput());
+                    con.extendsFrom(toInclude);
+                }
+            }
+        }
+
+        if (DefaultArchiveType.MAIN.includes(archiveType)) {
+            mainCompileClasspath.extendsFrom(con);
+            project.getDependencies().add("implementation", src.getOutput());
+        }
+
+        final Object groovy = src.getExtensions().findByName("groovy");
         if (groovy != null) {
             ((SourceDirectorySet) groovy).setSrcDirs(none());
         }
-        dev.getJava().setSrcDirs(iterate("src/" + type + "/java"));
-        dev.getResources().setSrcDirs(iterate("src/" + type + "/resources"));
-        Configuration compileClasspath = configurations.getByName(dev.getCompileClasspathConfigurationName());
+        src.getJava().setSrcDirs(iterate("src/" + type + "/java"));
+        src.getResources().setSrcDirs(iterate("src/" + type + "/resources"));
+        Configuration compileClasspath = configurations.getByName(src.getCompileClasspathConfigurationName());
         compileClasspath.extendsFrom(con);
 
-        Configuration runtimeClasspath = configurations.getByName(dev.getRuntimeClasspathConfigurationName());
+        Configuration runtimeClasspath = configurations.getByName(src.getRuntimeClasspathConfigurationName());
         runtimeClasspath.extendsFrom(con);
 
-        Configuration runtime = configurations.getByName(dev.getRuntimeConfigurationName());
+        Configuration runtime = configurations.getByName(src.getRuntimeConfigurationName());
         //                    Configuration apiElements = configurations.getByName(dev.getApiElementsConfigurationName());
         //                    Configuration runtimeElements = configurations.getByName(dev.getRuntimeElementsConfigurationName());
 
@@ -275,22 +314,30 @@ public class XapiBasePlugin implements Plugin<Project> {
         //                        }));
 
         // Add (optional) transitivity for annotationProcessor paths (inherit main)...
-        TaskProvider<Jar> jar = project.getTasks().register(dev.getJarTaskName(), Jar.class,
+        TaskProvider<Jar> jar = project.getTasks().register(src.getJarTaskName(), Jar.class,
             j -> {
-                j.setDescription("Assembles a jar archive containing the dev classes.");
+                j.setDescription("Assembles a jar archive containing the " + name + " classes.");
                 j.setGroup(BasePlugin.BUILD_GROUP);
 
-                j.from(dev.getOutput());
+                j.from(src.getOutput());
                 String baseName = j.getBaseName();
                 final String prefix = getPrefix();
-                if (prefix.isEmpty()) {
+                if (prefix.isEmpty() || baseName.startsWith(prefix)) {
                     baseName = baseName + "-" + type;
-                } else if (baseName.startsWith(prefix)) {
-                    baseName = baseName.replaceFirst(prefix + "(-core|-gwt|-jre|-dev)?", prefix + "-" + type);
+//                } else if (baseName.startsWith(prefix)) {
+//                    baseName = baseName.replaceFirst(prefix + "(-core|-gwt|-jre|-dev)?", prefix + "-" + type);
                 } else {
                     baseName = baseName + "-" + type;
                 }
                 j.setBaseName(baseName);
+//                // Tell gradle that this jar can be used if someone addresses it's final published coordinates
+//                String coords = project.getGroup() + ":" +
+//                    baseName + ":" +
+//                    project.getVersion();
+//                con.getOutgoing().capability(coords);
+
+//                j.setAppendix(type);
+                project.getLogger().debug("Setting up artifact {}", j.getBaseName());
             }
         );
 
@@ -299,16 +346,13 @@ public class XapiBasePlugin implements Plugin<Project> {
         //                    project.getExtensions().getByType(DefaultArtifactPublicationSet.class).addCandidate(publish);
 
         TaskProvider<JavaCompile> javaCompile = project.getTasks().named(
-            dev.getCompileJavaTaskName(),
+            src.getCompileJavaTaskName(),
             JavaCompile.class
         );
         TaskProvider<ProcessResources> processResources = project.getTasks().named(
-            dev.getProcessResourcesTaskName(),
+            src.getProcessResourcesTaskName(),
             ProcessResources.class
         );
-
-        //                    addJar(apiElements, publish);
-        addJar(runtime, publish);
 
         addRuntimeVariants(runtime, publish, type, javaCompile, processResources);
         //                    addRuntimeVariants(runtimeElements, publish, javaCompile, processResources);
@@ -318,15 +362,22 @@ public class XapiBasePlugin implements Plugin<Project> {
 
         //        project.artifacts.add("xapiDev", publish)
         project.getArtifacts().add("archives", publish);
+        project.getArtifacts().add(con.getName(), publish);
 
         project.getPlugins().withType(PublishingPlugin.class).configureEach(plugin -> {
             PublishingExtension publishing = project.getExtensions().getByType(PublishingExtension.class);
+            // Instead of this, try adding variants to the main publication instead.
             publishing.getPublications().create(name, MavenPublication.class,
                 pub -> jar.configure(j -> {
+                    // We need to be adding an entire SoftwareComponent, instead of just an artifact.
                     pub.artifact(j);
                     pub.setArtifactId(j.getBaseName());
                 })
             );
+            // TODO: make this way less hacky / possible to change as gradle task names evolve.
+            String publishTask = "publish" + X_String.toTitleCase(name) + "PublicationToXapiLocalRepository";
+            final Task xapiPublish = PublishXapi.getPublishXapiTask(project);
+            project.getTasks().named(publishTask, PublishToMavenRepository.class, xapiPublish::dependsOn);
         });
 
         config.init(jar, javaCompile, processResources, publish);
@@ -334,23 +385,26 @@ public class XapiBasePlugin implements Plugin<Project> {
 
     }
 
-    private void installPomWiring(Project project, PublishingExtension publishing) {
+    private void installPomWiring(
+        Project project,
+        PublishingExtension publishing,
+        XapiExtension config
+    ) {
         project.getTasks().withType(GenerateMavenPom.class).all(
             pom -> {
-                final MavenPublication main = (MavenPublication) publishing.getPublications().findByName("main");
-                if (main != null) {
-                    project.getTasks().named(JavaPlugin.JAR_TASK_NAME, t -> {
-                        Jar jar = (Jar) t;
-                        jar.from(pom.getDestination(), spec -> {
-                            spec.into("META-INF/maven/" + main.getGroupId() + "/" + main.getArtifactId());
-                            spec.rename(".*", "pom.xml");
-                        });
-                        // TODO: consider pom.properties as well?
-                        // We won't be relying on maven properties for gradle,
-                        // so we'll only use them if it makes sense to pick them
-                        // back out later in code like X_Maven.
+                final MavenPublication main = config.getMainPublication();
+                project.getTasks().named(JavaPlugin.JAR_TASK_NAME, t -> {
+                    Jar jar = (Jar) t;
+                    jar.from(pom.getDestination(), spec -> {
+                        spec.into("META-INF/maven/" + main.getGroupId() + "/" + main.getArtifactId());
+                        spec.rename(".*", "pom.xml");
                     });
-                }
+                    // TODO: consider pom.properties as well?
+                    // We won't be relying on maven properties for gradle,
+                    // so we'll only use them if it makes sense to pick them
+                    // back out later in code like X_Maven.
+                });
+
                 if ("true".equals(project.findProperty("dumpPom"))) {
                     pom.doLast(t -> {
                         t.getLogger().quiet(
@@ -368,11 +422,9 @@ public class XapiBasePlugin implements Plugin<Project> {
     protected TaskProvider<XapiManifest> prepareManifest(Project project, XapiExtension config) {
 
         final TaskContainer tasks = project.getTasks();
-        //noinspection NewObjectEquality,ConstantConditions,PointlessBooleanExpression
-        assert 1 == 1 || (new XapiManifest() != null); // just here for find-by-source to map constructor to register()
         TaskProvider<XapiManifest> manifest = tasks.register(XapiManifest.MANIFEST_TASK_NAME, XapiManifest.class,
             man -> {
-                //            project.getLogger().quiet("Preparing now... " + project.getConfigurations().getByName(JavaPlugin.API_CONFIGURATION_NAME).getState());
+
                 man.setOutputDir(config.outputMeta());
 
                 final FileCollection outputs = man.getOutputs().getFiles();
@@ -388,16 +440,17 @@ public class XapiBasePlugin implements Plugin<Project> {
                     final Gradle gradle = project.getGradle();
                     boolean uptodate = true;
                     for (Task task : gradle.getTaskGraph().getAllTasks()) {
+                        final TaskState state = task.getState();
                         if (task instanceof JavaCompile) {
                             JavaCompile javac = (JavaCompile) task;
-                            uptodate &= javac.getState().getUpToDate();
+                            uptodate &= state.getUpToDate() || state.getNoSource() || state.getSkipped();
                             // pre-emptively create output directories
                             if (!javac.getSource().isEmpty()) {
                                 javac.getDestinationDir().mkdirs();
                             }
                         } else if (task instanceof ProcessResources) {
                             ProcessResources resources = (ProcessResources) task;
-                            uptodate &= resources.getState().getUpToDate();
+                            uptodate &= state.getUpToDate() || state.getNoSource() || state.getSkipped();
                             // pre-emptively create output directories
                             if (!resources.getSource().isEmpty()) {
                                 resources.getDestinationDir().mkdirs();
@@ -408,7 +461,8 @@ public class XapiBasePlugin implements Plugin<Project> {
                     }
                     return uptodate;
                 });
-                //            project.getLogger().quiet("Preparing now... " + project.getConfigurations().getByName(JavaPlugin.API_CONFIGURATION_NAME).getState());
+
+                man.getInputs().property("paths", man.computeFreshness());
             }
         );
         // Wire into standard java plugin tasks.
@@ -437,16 +491,6 @@ public class XapiBasePlugin implements Plugin<Project> {
         return manifest;
     }
 
-    /**
-     * Copied wholesale from {@link JavaPlugin#addJar(Configuration, PublishArtifact)}
-     */
-    private void addJar(Configuration configuration, PublishArtifact publish) {
-        ConfigurationPublications publications = configuration.getOutgoing();
-
-        // Configure an implicit variant
-        publications.getArtifacts().add(publish);
-        publications.getAttributes().attribute(ArtifactAttributes.ARTIFACT_FORMAT, ArtifactTypeDefinition.JAR_TYPE);
-    }
 
     /**
      * Copied wholesale from {@link JavaPlugin#addRuntimeVariants(Configuration, PublishArtifact, Provider, Provider)}
@@ -467,21 +511,24 @@ public class XapiBasePlugin implements Plugin<Project> {
         // Define some additional variants
         NamedDomainObjectContainer<ConfigurationVariant> runtimeVariants = publications.getVariants();
         // not sure we actually need / want the `type+` prefix used here, and for resources, below.
-        ConfigurationVariant classesVariant = runtimeVariants.create(type + "classes");
+        ConfigurationVariant classesVariant = runtimeVariants.create(type + "Classes");
         classesVariant.getAttributes().attribute(
             USAGE_ATTRIBUTE,
-            objectFactory.named(Usage.class, Usage.JAVA_RUNTIME_CLASSES)
+            getClassUsage()
         );
+
+        // Must have a Usage.JAVA_API usage case, for compile-scoping
+
         classesVariant.artifact(new IntermediateJavaArtifact(ArtifactTypeDefinition.JVM_CLASS_DIRECTORY, javaCompile) {
             @Override
             public File getFile() {
                 return javaCompile.get().getDestinationDir();
             }
         });
-        ConfigurationVariant resourcesVariant = runtimeVariants.create(type + "resources");
+        ConfigurationVariant resourcesVariant = runtimeVariants.create(type + "Resources");
         resourcesVariant.getAttributes().attribute(
             USAGE_ATTRIBUTE,
-            objectFactory.named(Usage.class, Usage.JAVA_RUNTIME_RESOURCES)
+            getResourceUsage()
         );
         resourcesVariant.artifact(new IntermediateJavaArtifact(
             ArtifactTypeDefinition.JVM_RESOURCES_DIRECTORY,
@@ -494,16 +541,16 @@ public class XapiBasePlugin implements Plugin<Project> {
         });
     }
 
-    protected String getPrefix() {
-        return "xapi";
+    private Usage getResourceUsage() {
+        return objectFactory.named(Usage.class, Usage.JAVA_RUNTIME_RESOURCES);
     }
 
-    protected String toTypeName(String type) {
-        final String prefix = getPrefix();
-        if (X_String.isEmpty(prefix)) {
-            return type;
-        }
-        return prefix + X_String.toTitleCase(type);
+    private Usage getClassUsage() {
+        return objectFactory.named(Usage.class, Usage.JAVA_RUNTIME_CLASSES);
+    }
+
+    protected String getPrefix() {
+        return prefix.out1();
     }
 
     protected Iterable<String> getXapiTypes() {
@@ -569,5 +616,63 @@ public class XapiBasePlugin implements Plugin<Project> {
         public Date getDate() {
             return null;
         }
+    }
+
+    public void addTypes(Project project, String ... types) {
+        final XapiExtension ext = (XapiExtension) project.getExtensions().getByName(XapiExtension.EXT_NAME);
+//        ext.onInit(()->{
+            for (String type : types) {
+                addType(project, ext, type);
+            }
+//        });
+
+    }
+    private void addType(Project project, XapiExtension config, String type) {
+        final String name = ArchiveType.toTypeName(getPrefix(), type);
+        final ConfigurationContainer configurations = project.getConfigurations();
+        if (configurations.findByName(name) != null) {
+            project.getLogger().info("Configuration {} already exists; not creating Xapi config.", name);
+            return;
+        }
+        boolean dirExists = new File(project.getProjectDir(), "src/" + type).isDirectory();
+        this.created.put(name, dirExists);
+        configurations.register(name, con -> {
+
+            // Bah... BasePlugin uses configurations.all,
+            // so we can't actually depend on lazy registration to work here.
+
+            // Instead, we'll hack around it by looking for any dependencies being added...
+            con.getDependencies().configureEach(dep -> {
+                if (Boolean.TRUE.equals(created.get(name))) {
+                    return;
+                }
+                project.getLogger().quiet("Detected dependency for " + name + " in " + project.getPath());
+                created.put(name, true);
+                // Now, prepare for non-standard source-sets / configurations to be added.
+                // We'll want to activate each configuration if there is a) files in src/$type/java,
+                // or b) configuration of xapi { platform { $type { } } } in build script.
+                // Unfortunately, we cannot rely on simply creating the configuration to say "yes, I want this",
+                // as Gradle 5.0 eagerly resolves all configurations.
+                config.defer(()->
+                    installSourceSet(project, type, name, con)
+                )
+                ;
+            });
+        });
+        if (dirExists) {
+            configurations.getByName(name);
+        }
+        // wait until the project is fully evaluated,
+        // to give the user code a chance to create xapiDev or xapiApi, etc, dependencies.
+        // Otherwise, we'd create a vast number of unused configurations and sourcesets
+        // (not to mention deploying piles of unused jars, etc.)
+        Ensure.projectEvaluated(project, p -> {
+            if (Boolean.TRUE.equals(created.get(name))) {
+                project.getLogger().info("Installing xapi flavor {} to {}", type, project.getPath());
+                final Configuration con = configurations.getByName(name);
+
+                installSourceSet(project, type, name, con);
+            }
+        });
     }
 }

@@ -16,6 +16,6 @@ public class SourceJar extends AbstractXapiJar {
         setClassifier("sources");
         final JavaPluginConvention sources = getProject().getConvention().getPlugin(JavaPluginConvention.class);
         final SourceSet main = sources.getSourceSets().getByName(SourceSet.MAIN_SOURCE_SET_NAME);
-        from(main.getAllJava().getSrcDirs());
+        from(main.getAllSource().getSrcDirs());
     }
 }

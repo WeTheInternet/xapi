@@ -63,13 +63,15 @@ public interface MapLike<K, V> extends CollectionLike<Out2<K, V>> {
     return put(key, value);
   }
 
-  default void putFromValues(Iterable<V> value, In1Out1<V, K> keyFinder) {
+  default MapLike<K, V> putFromValuesItr(Iterable<V> value, In1Out1<V, K> keyFinder) {
     for (V v : value) {
       putFromValue(v, keyFinder);
     }
+    return this;
   }
-  default void putFromValues(In1Out1<V, K> keyFinder, V ... values) {
-    putFromValues(ArrayIterable.iterate(values), keyFinder);
+  default MapLike<K, V> putFromValues(In1Out1<V, K> keyFinder, V ... values) {
+    putFromValuesItr(ArrayIterable.iterate(values), keyFinder);
+    return this;
   }
 
   /**

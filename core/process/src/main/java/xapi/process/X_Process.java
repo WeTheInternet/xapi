@@ -120,6 +120,10 @@ public class X_Process {
   }
 
   public static <T> void runWhenReady(Lazy<T> io, In2<T, Throwable> callback) {
+    runWhenReady(io, callback, 0);
+  }
+
+  public static <T> void runWhenReady(Lazy<T> io, In2<T, Throwable> callback, int cnt) {
     if (io.isFull1()) {
       boolean calledCallback = false;
       try {
@@ -133,9 +137,13 @@ public class X_Process {
         throw t;
       }
     } else {
-      runDeferred(()->
-        runWhenReady(io, callback)
-      );
+      if (cnt < 10) {
+        runDeferred(()->
+          runWhenReady(io, callback)
+        );
+      } else {
+        runTimeout(()-> runWhenReady(io, callback, cnt+1), cnt * 2);
+      }
     }
   }
 

@@ -17,8 +17,8 @@ sourceSets.getByName('main').java {
 }
 
 dependencies {
-    compile project(':xapi-gwt-parent:xapi-elemental')
-    compile project(':xapi-gwt-parent:xapi-gwt3')
+    compile project(':xapi-elemental')
+    compile project(':xapi-gwt3')
     compile project(':xapi-jre-parent:xapi-jre-io')
     compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-generator')
     compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-api')

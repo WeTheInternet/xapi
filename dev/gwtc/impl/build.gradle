@@ -13,13 +13,13 @@ dependencies {
     compile 'net.wetheinter:gwt-dev:2.8.0'
     compile 'org.eclipse.jetty:jetty-server:9.2.14.v20151106'
     compile 'net.wetheinter:gwt-user:2.8.0'
-    compile project(':xapi-gwt-parent:xapi-gwt')
+    compile project(':xapi-gwt')
     compile project(':xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-api')
     runtime project(':xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-impl')
     compile project(':xapi-dev-parent:xapi-dev-shell')
     compile 'junit:junit:4.12'
     compile project(':xapi-core-parent:xapi-core-test')
-    testCompile project(':xapi-gwt-parent:xapi-gwt-test')
+    testCompile project(':xapi-gwt-test')
     testCompile project(':xapi-dev-parent:xapi-dev-maven')
 }
 

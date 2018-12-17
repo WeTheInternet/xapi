@@ -75,6 +75,11 @@ public enum DefaultArchiveType implements ArchiveType {
         }
 
         @Override
+        public ArchiveType sourceFor() {
+            return API;
+        }
+
+        @Override
         public boolean isClasses() {
             return false;
         }
@@ -91,6 +96,11 @@ public enum DefaultArchiveType implements ArchiveType {
         }
 
         @Override
+        public ArchiveType sourceFor() {
+            return SPI;
+        }
+
+        @Override
         public boolean isClasses() {
             return false;
         }
@@ -99,6 +109,11 @@ public enum DefaultArchiveType implements ArchiveType {
         @Override
         public boolean isSources() {
             return true;
+        }
+
+        @Override
+        public ArchiveType sourceFor() {
+            return MAIN;
         }
 
         @Override
@@ -179,6 +194,11 @@ public enum DefaultArchiveType implements ArchiveType {
         }
 
         @Override
+        public ArchiveType sourceFor() {
+            return TEST;
+        }
+
+        @Override
         public boolean isClasses() {
             return false;
         }
@@ -218,6 +238,11 @@ public enum DefaultArchiveType implements ArchiveType {
         @Override
         public boolean isSources() {
             return true;
+        }
+
+        @Override
+        public ArchiveType sourceFor() {
+            return DEFAULT;
         }
 
         @Override

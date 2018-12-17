@@ -34,6 +34,17 @@ public enum PlatformType implements ArchiveType {
 
         @Override
         public ArchiveType[] getTypes() {
+            return new ArchiveType[]{JRE};
+        }
+    },
+    JRE {
+        @Override
+        public boolean isImpl() {
+            return true;
+        }
+
+        @Override
+        public ArchiveType[] getTypes() {
             return new ArchiveType[]{MAIN};
         }
     },
@@ -57,7 +68,7 @@ public enum PlatformType implements ArchiveType {
 
         @Override
         public ArchiveType[] getTypes() {
-            return new ArchiveType[]{SOURCE};
+            return new ArchiveType[]{API, SPI, SOURCE, SPI_SOURCE};
         }
     },
     /**
@@ -100,6 +111,11 @@ public enum PlatformType implements ArchiveType {
         @Override
         public boolean isSources() {
             return true;
+        }
+
+        @Override
+        public ArchiveType sourceFor() {
+            return J2CL;
         }
 
         @Override

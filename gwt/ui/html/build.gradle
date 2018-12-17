@@ -11,9 +11,9 @@ repositories {
 }
 
 dependencies {
-    compile project(':xapi-gwt-parent:xapi-gwt-ui-parent:xapi-gwt-ui-api')
+    compile project(':xapi-gwt-ui-parent:xapi-gwt-ui-api')
     compile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-html')
-    compile project(':xapi-gwt-parent:xapi-gwt-ui-parent:xapi-gwt-ui-autoui')
+    compile project(':xapi-gwt-ui-parent:xapi-gwt-ui-autoui')
     compile 'net.wetheinter:gwt-elemental:2.8.0'
     compile project(':xapi-jre-parent:xapi-jre-inject')
     testCompile project(':xapi-core-parent:xapi-core-ui-parent:xapi-core-ui-autoui')

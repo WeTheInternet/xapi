@@ -1,5 +1,7 @@
 package xapi.gradle.plugin;
 
+import net.wti.gradle.PublishXapi;
+import net.wti.gradle.system.spi.GradleServiceFinder;
 import org.gradle.api.*;
 import org.gradle.api.file.Directory;
 import org.gradle.api.file.DirectoryProperty;
@@ -8,10 +10,10 @@ import org.gradle.api.logging.Logger;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.provider.Property;
 import org.gradle.api.provider.Provider;
+import org.gradle.api.publish.maven.MavenPublication;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.bundling.AbstractArchiveTask;
 import org.gradle.internal.reflect.Instantiator;
-import xapi.dev.source.DomBuffer;
 import xapi.fu.*;
 import xapi.fu.itr.Chain;
 import xapi.fu.itr.ChainBuilder;
@@ -20,8 +22,8 @@ import xapi.gradle.config.PlatformConfig;
 import xapi.gradle.config.PlatformConfigContainer;
 import xapi.gradle.config.PublishConfig;
 import xapi.gradle.task.XapiInit;
-import xapi.gradle.task.XapiManifest;
 
+import javax.annotation.Nonnull;
 import java.util.concurrent.Callable;
 
 import static xapi.fu.Out1.out1Unsafe;
@@ -57,6 +59,7 @@ public class XapiExtension {
     private final PlatformConfigContainer platform;
     private final Callable<String> defaultModule;
     private final Property<ArchiveType> mainArtifact;
+    private final Lazy<MavenPublication> mainPublication;
 
     /*
      * TODO: make a bunch of helper methods:
@@ -104,7 +107,7 @@ public class XapiExtension {
         ;
         module.set(project.provider(defaultModule));
 
-        Lazy<SourceConfigContainer> lazySource = Lazy.deferred1(this::prepareSources, instantiator);
+        Lazy<SourceConfigContainer> lazySource = Lazy.deferred1(this::prepareSources, project, instantiator);
         sources.set(project.provider(lazySource::out1));
         Lazy<AllJars> lazyJars = Lazy.deferred1(this::prepareJars, project);
         jars.set(project.provider(lazyJars::out1));
@@ -123,10 +126,10 @@ public class XapiExtension {
         onPrepare.add(Do.NOTHING);
         onFinish.add(Do.NOTHING);
 
-        configureDefaults(project);
-
         beforeInit = new DefaultDomainObjectSet<In1Out1<TaskProvider<XapiInit>, TaskProvider<?>>>(Class.class.cast(In1Out1.class));
         afterInit = new DefaultDomainObjectSet<In1Out1<TaskProvider<XapiInit>, TaskProvider<?>>>(Class.class.cast(In1Out1.class));
+
+        configureDefaults(project);
 
         // Register a xapiInit task.  Do not realize it yet, as it's quite expensive to bind.
         // Implicitly depends on parent xapiInit tasks.
@@ -191,6 +194,7 @@ public class XapiExtension {
             }
             return (XapiInit)task;
         });
+        mainPublication = Lazy.deferred1(PublishXapi::addPublishXapiTask, project);
     }
 
     protected String mainJarTask() {
@@ -221,8 +225,8 @@ public class XapiExtension {
         return new AllJars(project);
     }
 
-    protected SourceConfigContainer prepareSources(Instantiator instantiator) {
-        return new SourceConfigContainer(instantiator);
+    protected SourceConfigContainer prepareSources(Project project, Instantiator instantiator) {
+        return new SourceConfigContainer(project, instantiator);
     }
 
     protected <T> FreezingLockProperty<T> lockable(Project project, Class<T> cls) {
@@ -254,24 +258,17 @@ public class XapiExtension {
         autoPlugin.set(true);
 
         publish.set(new PublishConfig());
-
-        this.prefix.set(project.provider(()->{
-            // look for xapiPrefix String property.  System prop wins
-            String pre = System.getProperty("xapiPrefix");
-            if (pre == null) {
-                // next, check the project for properties.  This should be the most common way to configure.
-                pre = (String) project.findProperty("xapiPrefix");
+        final Project root = project.getRootProject();
+        this.prefix.set(project.provider(()-> {
+            if (project == root) {
+                return GradleServiceFinder.getService(project).guessPrefix();
             }
-            if (pre == null) {
-                // next, check with the environment, for global defaults. (Forced overrides go in ~/.gradle/gradle.properties)
-                pre = System.getenv("xapiPrefix");
-            }
-            if (pre == null) {
-                pre = "";
-            }
-            return pre;
+            root.getPlugins().apply(XapiRootPlugin.class);
+            XapiExtensionRoot rootExt = (XapiExtensionRoot) project.getExtensions().getByName(XapiExtensionRoot.EXT_NAME);
+            return rootExt.getPrefix();
         }));
     }
+
 
     protected void inherit(XapiExtension config) {
         if (config == this) {
@@ -296,6 +293,7 @@ public class XapiExtension {
     }
 
     public void setPrefix(String prefix) {
+        // TODO: add onPrefix listeners, to execute immediately after the prefix is known.
         this.prefix.set(prefix);
     }
     /**
@@ -336,6 +334,11 @@ public class XapiExtension {
      * @param project
      */
     protected void prepare(Project project) {
+
+        // let onPrepare callbacks edit publishing settings
+        onPrepare.removeAll(Do.INVOKE);
+
+        // finalize publishing...
         publish.finalizeValue();
         PublishConfig config = publish.get();
 
@@ -344,7 +347,6 @@ public class XapiExtension {
                 sourceJar.onlyIf(ignored->config.isSources())
             );
         }
-        onPrepare.removeAll(Do.INVOKE);
     }
 
     /**
@@ -455,6 +457,10 @@ public class XapiExtension {
         container.execute(getPlatform());
     }
 
+    public void source(Action<? super SourceConfigContainer> container) {
+        container.execute(sources());
+    }
+
     public Property<String> getModule() {
         return module;
     }
@@ -497,5 +503,15 @@ public class XapiExtension {
                     .mapIfPresent(ArchiveType::sourceName)
                     .mapIfPresent(getPlatform()::maybeCreate)
                     .getOrNull();
+    }
+
+    @Nonnull
+    public MavenPublication getMainPublication() {
+        return mainPublication.out1();
+    }
+
+    public String getPrefix() {
+        prefix.finalizeValue();
+        return prefix.get();
     }
 }

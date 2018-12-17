@@ -1,8 +1,83 @@
 rootProject.name = 'xapi'
 
-include(':xapi-lang-dev')
-project(':xapi-lang-dev').buildFileName = 'lang-dev.gradle'
-project(':xapi-lang-dev').projectDir = file('lang/dev')
+def prop = {
+    String key -> System.getProperty(key) ?: 
+            System.getenv("ORG_GRADLE_PROJECT_$key") ?:
+            startParameter.projectProperties.get(key)
+}
+
+def multiProject = [
+        // multiProject groups are where we choose to use multiple gradle projects
+        // to represent various logical chunks of a larger service.
+        // The key of the map is the directory/artifact name.
+        // The value is the list of sub-directories to create as "child modules".
+        // All multiProject children are created as normal projects all the time.
+        'lang': ['dev', 'test']
+]
+def singleProject = [
+        // For singleProject mode, the key is the directory/artifact name.
+        // The value is an array of "realizable platforms"; where a "realized platform"
+        // is an implementation-target that has finalized, generated "staging resources"
+        // on the classpath and available to browse and debug.
+        'inject': ['gwt', 'jre'],
+        'collect': ['gwt', 'jre'],
+        // Whole platforms can be realized via -Pxapi.platform=gwt,jre,etc
+        // Specific projects can be realized via -Pxapi.${projName}.${platform}=true
+        // So, -Pxapi.inject.gwt=true would realize only a ':inject-gwt' project,
+        // where we use all gwt-staging sources and resources for classpaths.
+        // The child projects will, by default, be mounted in the build directory,
+        // as a clue to you that all your changes are going to get blown away.
+]
+
+String prefix = prop('xapi.prefix') ?: 'xapi'
+
+def checkPlatform = {
+    String proj, platform ->
+        def set = prop('xapi.platform')
+        if (set) {
+            for (String i : set.split(",")) {
+                if (i.toLowerCase() == platform.toLowerCase()) {
+                    return true
+                }
+            }
+        }
+        return 'true' == 
+                (
+                        prop("${prefix}.${proj}.${platform}") ?:
+                        prop("xapi.${proj}.${platform}")
+                )
+}
+
+def base = {parent->prefix ? ":$prefix-$parent" : ":$parent"}
+multiProject.forEach({
+    parent, children ->
+        String name = base(parent)
+        for (String child : children) {
+            String mod = "$name-$child"
+            include(mod)
+            project(mod).buildFileName = "$parent-${child}.gradle"
+            project(mod).projectDir = file "$parent/${child}".toString()
+        }
+})
+
+String realizedPath = prop('xapi.realized.path') ?: 'build/realized/'
+
+singleProject.forEach({
+    parent, children ->
+        String name = base(parent)
+        
+        include(name)
+        project(name).buildFileName = "${parent}.gradle"
+        project(name).projectDir = file parent
+        for (String child : children) {
+            if (checkPlatform(parent, child)) {
+                String mod = ":$name-$child".toString()
+                include(mod)
+                project(mod).buildFileName = "$parent-${child}.gradle"
+                project(mod).projectDir = file "$parent/$realizedPath${child}".toString()
+            }
+        }
+})
 
 include(':xapi-core-parent:xapi-core-api')
 include(':xapi-core-parent:xapi-core-log')
@@ -25,23 +100,22 @@ include(':xapi-core-parent:xapi-core-ui-parent')
 include(':xapi-core-parent:xapi-core-settings')
 include(':xapi-core-parent:xapi-core-test')
 include(':xapi-core-parent')
-include(':xapi-gwt-parent:xapi-gwt-api')
-include(':xapi-gwt-parent:xapi-gwt-inject')
-include(':xapi-gwt-parent:xapi-gwt-collect')
-include(':xapi-gwt-parent:xapi-elemental')
-include(':xapi-gwt-parent:xapi-gwt3')
-include(':xapi-gwt-parent:xapi-gwt-process')
-include(':xapi-gwt-parent:xapi-gwt-model')
-include(':xapi-gwt-parent:xapi-gwt-io')
-include(':xapi-gwt-parent:xapi-gwt-ui-parent:xapi-gwt-ui-api')
-include(':xapi-gwt-parent:xapi-gwt-ui-parent:xapi-gwt-ui-autoui')
-include(':xapi-gwt-parent:xapi-gwt-ui-parent:xapi-gwt-ui-html')
-include(':xapi-gwt-parent:xapi-gwt-ui-parent')
-include(':xapi-gwt-parent:xapi-components')
-include(':xapi-gwt-parent:xapi-polymer')
-include(':xapi-gwt-parent:xapi-gwt')
-include(':xapi-gwt-parent:xapi-gwt-test')
-include(':xapi-gwt-parent')
+include(':xapi-gwt-api')
+include(':xapi-gwt-inject')
+include(':xapi-gwt-collect')
+include(':xapi-elemental')
+include(':xapi-gwt3')
+include(':xapi-gwt-process')
+include(':xapi-gwt-model')
+include(':xapi-gwt-io')
+include(':xapi-gwt-ui-parent:xapi-gwt-ui-api')
+include(':xapi-gwt-ui-parent:xapi-gwt-ui-autoui')
+include(':xapi-gwt-ui-parent:xapi-gwt-ui-html')
+include(':xapi-gwt-ui-parent')
+include(':xapi-components')
+include(':xapi-polymer')
+include(':xapi-gwt')
+include(':xapi-gwt-test')
 include(':xapi-jre-parent:xapi-jre-api')
 include(':xapi-jre-parent:xapi-jre-inject')
 include(':xapi-jre-parent:xapi-jre-collect')
@@ -75,88 +149,6 @@ include(':xapi-maven-plugin')
 include(':xapi-samples:xapi-demo')
 include(':xapi-samples')
 
-Map<String, Map<String, Map<String, String>>> all = [
-        core: [
-                api: [:],
-                log: [:],
-                reflect: [:],
-                inject: [:],
-                util: [:],
-                model: [:],
-                io: [:],
-                collect: [:],
-                scope: [:],
-                process: [:],
-                args: [:],
-                event: [:],
-                ui: [
-                        api: [:],
-                        components: [:],
-                        generator: [:],
-                        autoui: [:],
-                        html: [:],
-                ],
-                settings: [:],
-                test: [:]
-        ],
-        gwt: [
-                api: [:],
-                inject: [:],
-                collect: [:],
-                elemental: null,
-                gwt3: null,
-                process: [:],
-                model: [:],
-                io: [:],
-                ui: [
-                        api: [:],
-                        autoui: [:],
-                        html: [:],
-                ],
-                components: null,
-                polymer: null,
-                gwt: null,
-                test: [:]
-        ],
-        jre: [
-                api: [:],
-                inject: [:],
-                collection: [:],
-                process: [:],
-                model: [:],
-                io: [:],
-                ui: [
-                        javafx: [:]
-                ]
-        ],
-        dev: [
-                gen: null,
-                api: [:],
-                source: [:],
-                bytecode: [:],
-                scanner: [:],
-                javac: [:],
-                template: [:],
-                file: [:],
-                maven: [:],
-                dist: null,
-                shell: [:],
-                gwtc: [
-                        api: null,
-                        impl: null,
-                ],
-                dev: null,
-        ],
-        server: [
-                api: [:],
-                gen: [:],
-                vertx: [:],
-        ],
-        'maven-plugin': [:],
-        samples: [
-                demo: null,
-        ]
-]
 project(':xapi-core-parent:xapi-core-api').projectDir = file('core/api')
 project(':xapi-core-parent:xapi-core-log').projectDir = file('core/log')
 project(':xapi-core-parent:xapi-core-reflect').projectDir = file('core/reflect')
@@ -178,23 +170,22 @@ project(':xapi-core-parent:xapi-core-ui-parent').projectDir = file('core/ui')
 project(':xapi-core-parent:xapi-core-settings').projectDir = file('core/settings')
 project(':xapi-core-parent:xapi-core-test').projectDir = file('core/test')
 project(':xapi-core-parent').projectDir = file('core')
-project(':xapi-gwt-parent:xapi-gwt-api').projectDir = file('gwt/api')
-project(':xapi-gwt-parent:xapi-gwt-inject').projectDir = file('gwt/inject')
-project(':xapi-gwt-parent:xapi-gwt-collect').projectDir = file('gwt/collect')
-project(':xapi-gwt-parent:xapi-elemental').projectDir = file('gwt/elemental')
-project(':xapi-gwt-parent:xapi-gwt3').projectDir = file('gwt/gwt3')
-project(':xapi-gwt-parent:xapi-gwt-process').projectDir = file('gwt/process')
-project(':xapi-gwt-parent:xapi-gwt-model').projectDir = file('gwt/model')
-project(':xapi-gwt-parent:xapi-gwt-io').projectDir = file('gwt/io')
-project(':xapi-gwt-parent:xapi-gwt-ui-parent:xapi-gwt-ui-api').projectDir = file('gwt/ui/api')
-project(':xapi-gwt-parent:xapi-gwt-ui-parent:xapi-gwt-ui-autoui').projectDir = file('gwt/ui/autoui')
-project(':xapi-gwt-parent:xapi-gwt-ui-parent:xapi-gwt-ui-html').projectDir = file('gwt/ui/html')
-project(':xapi-gwt-parent:xapi-gwt-ui-parent').projectDir = file('gwt/ui')
-project(':xapi-gwt-parent:xapi-components').projectDir = file('gwt/components')
-project(':xapi-gwt-parent:xapi-polymer').projectDir = file('gwt/polymer')
-project(':xapi-gwt-parent:xapi-gwt').projectDir = file('gwt/uber')
-project(':xapi-gwt-parent:xapi-gwt-test').projectDir = file('gwt/test')
-project(':xapi-gwt-parent').projectDir = file('gwt')
+project(':xapi-gwt-api').projectDir = file('gwt/api')
+project(':xapi-gwt-inject').projectDir = file('gwt/inject')
+project(':xapi-gwt-collect').projectDir = file('gwt/collect')
+project(':xapi-elemental').projectDir = file('gwt/elemental')
+project(':xapi-gwt3').projectDir = file('gwt/gwt3')
+project(':xapi-gwt-process').projectDir = file('gwt/process')
+project(':xapi-gwt-model').projectDir = file('gwt/model')
+project(':xapi-gwt-io').projectDir = file('gwt/io')
+project(':xapi-gwt-ui-parent:xapi-gwt-ui-api').projectDir = file('gwt/ui/api')
+project(':xapi-gwt-ui-parent:xapi-gwt-ui-autoui').projectDir = file('gwt/ui/autoui')
+project(':xapi-gwt-ui-parent:xapi-gwt-ui-html').projectDir = file('gwt/ui/html')
+project(':xapi-gwt-ui-parent').projectDir = file('gwt/ui')
+project(':xapi-components').projectDir = file('gwt/components')
+project(':xapi-polymer').projectDir = file('gwt/polymer')
+project(':xapi-gwt').projectDir = file('gwt/uber')
+project(':xapi-gwt-test').projectDir = file('gwt/test')
 project(':xapi-jre-parent:xapi-jre-api').projectDir = file('jre/api')
 project(':xapi-jre-parent:xapi-jre-inject').projectDir = file('jre/inject')
 project(':xapi-jre-parent:xapi-jre-collect').projectDir = file('jre/collect')
@@ -233,10 +224,12 @@ logger.debug """Project properties: $startParameter.projectProperties
 System Property Args: $startParameter.systemPropertiesArgs
 System.properties: ${System.properties.toString().split(", ")}
 """
-def composite = System.getProperty('xapi.composite') ?:
-        startParameter.projectProperties.get('xapi.composite')
+
+def composite = prop('xapi.composite')
 if (composite != 'false') {
     System.setProperty('xapi.composite', 'false')
+    logger.quiet("Including net.wti.core|gradle as included builds because composite={}", composite.toString())
+    includeBuild('net.wti.gradle.tools')
     includeBuild('net.wti.core')
     includeBuild('net.wti.gradle')
 }
@@ -251,3 +244,5 @@ dist.each {
         p.buildFileName = "dist-${s}.gradle"
         p.projectDir = file("dist/${s}".toString())
 }
+
+enableFeaturePreview('GRADLE_METADATA')

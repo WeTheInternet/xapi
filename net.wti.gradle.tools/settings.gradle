@@ -1,0 +1,5 @@
+rootProject.name = 'net.wti.gradle.tools'
+rootProject.buildFileName = 'root-tools.gradle'
+include('tools')
+project(':tools').buildFileName = 'gradle-tools.gradle'
+project(':tools').name = 'xapi-gradle-tools'

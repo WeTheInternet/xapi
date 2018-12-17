@@ -8,6 +8,7 @@ repositories {
 }
 
 dependencies {
+    api "net.wti.gradle.tools:xapi-gradle-tools:${->version}"
     api "net.wti.core:xapi-gen:${->version}"
     api project(":xapi-gradle-api")
     api "net.wti.core:xapi-lang-core:${->version}"

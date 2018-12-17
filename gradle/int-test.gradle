@@ -1,0 +1,7 @@
+repositories.jcenter()
+
+project.dependencies.add('testCompile', project.dependencies.module('org.spockframework:spock-core:1.2-groovy-2.5'))
+project.dependencies.add('testCompile', project.dependencies.gradleTestKit())
+
+// TODO: bother with a custom sourceset.
+// For now, we'll just treat `test` as integration tests

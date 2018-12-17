@@ -11,8 +11,8 @@ repositories {
 }
 
 dependencies {
-    compile project(':xapi-gwt-parent:xapi-components')
-    compile project(':xapi-gwt-parent:xapi-elemental')
+    compile project(':xapi-components')
+    compile project(':xapi-elemental')
     compile 'net.wetheinter:gwt-elemental:2.8.0'
     compile 'net.wetheinter:gwt-user:2.8.0'
     testCompile 'junit:junit:4.12'

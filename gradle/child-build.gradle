@@ -1,0 +1,26 @@
+// designed to be applied from the root build script of a child build;
+// performs actions only suitable 
+
+import java.nio.file.Files
+import java.nio.file.Path
+
+import static java.nio.file.Paths.get
+
+Path root = get(rootDir.absolutePath)
+def ensure = {
+    Path p ->
+        Path full = root.resolve(p)
+        if (!Files.exists(full)) {
+            Files.createDirectories(full.parent)
+            String xapiHome = findProperty('xapiHome')
+            if (!xapiHome) {
+                throw new GradleException("You must apply xapi-env.gradle before child-build.gradle")
+            }
+            Path target = get(xapiHome).resolve(p)
+            Files.createSymbolicLink(full, target)
+        }
+}
+ensure(get("gradlew"))
+ensure(get("gradlew.bat"))
+ensure(get("gradle/wrapper/gradle-wrapper.jar"))
+ensure(get("gradle/wrapper/gradle-wrapper.properties"))

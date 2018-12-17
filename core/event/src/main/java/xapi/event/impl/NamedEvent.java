@@ -2,9 +2,9 @@ package xapi.event.impl;
 
 import xapi.event.api.IsEvent;
 import xapi.event.api.IsEventType;
+import xapi.fu.has.HasId;
 import xapi.fu.has.HasName;
 import xapi.util.X_Debug;
-import xapi.util.api.HasId;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 12/10/17.

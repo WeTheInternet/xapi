@@ -1,0 +1,13 @@
+plugins {
+    id 'groovy'
+    id 'xapi'
+}
+
+dependencies {
+    api "org.spockframework:spock-core:1.2-groovy-2.5"
+    api project(':xapi-core-parent:xapi-core-collect')
+    implementation project(':xapi-core-parent:xapi-core-reflect')
+    api "net.wti.core:xapi-fu:${->version}"
+    api "net.wti.core:xapi-lang-core:${->version}"
+    runtime project(':xapi-jre-parent:xapi-jre-collect')
+}

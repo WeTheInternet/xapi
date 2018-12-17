@@ -11,8 +11,8 @@ repositories {
 }
 
 dependencies {
-    compile project(':xapi-gwt-parent:xapi-gwt-api')
-    compile project(':xapi-gwt-parent:xapi-gwt-ui-parent:xapi-gwt-ui-api')
+    compile project(':xapi-gwt-api')
+    compile project(':xapi-gwt-ui-parent:xapi-gwt-ui-api')
     compile 'com.google.elemental2:elemental2-dom:1.0.0-RC1'
     compile 'com.google.jsinterop:base:1.0.0-RC1'
     testCompile 'junit:junit:4.12'

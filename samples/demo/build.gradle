@@ -15,8 +15,8 @@ dependencies {
     implementation ('de.mocra.cy:wti-shared:0.1') {
         exclude group: 'net.wetheinter'
     }
-    compile project(':xapi-gwt-parent:xapi-gwt3')
-    compile project(':xapi-gwt-parent:xapi-components')
+    compile project(':xapi-gwt3')
+    compile project(':xapi-components')
     compile project(':xapi-jre-parent:xapi-jre-ui-parent:xapi-jre-ui-javafx')
 }
 

@@ -1,8 +1,8 @@
 package xapi.util.impl;
 
-import xapi.util.api.HasId;
+import xapi.fu.has.HasId;
 
-public class StringId implements HasId{
+public class StringId implements HasId {
 
   private String id;
 
@@ -10,7 +10,7 @@ public class StringId implements HasId{
     assert id != null;
     this.id = id;
   }
-  
+
   @Override
   public String getId() {
     return id;
@@ -20,10 +20,10 @@ public class StringId implements HasId{
   public int hashCode() {
     return id.hashCode();
   }
-  
+
   @Override
   public boolean equals(Object obj) {
     return obj == this || id.equals(((HasId)obj).getId());
   }
-  
+
 }

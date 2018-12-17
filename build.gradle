@@ -108,9 +108,5 @@ subprojects {
     }
 }
 
-tasks.named('wrapper', {
-    Wrapper w -> w.with {
-        gradleVersion = '5.0'
-        distributionType = DistributionType.ALL
-    }
-})
+import net.wti.gradle.system.spi.GradleServiceFinder
+GradleServiceFinder.getService(project).configureWrapper(project)

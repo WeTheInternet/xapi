@@ -81,8 +81,8 @@ public class Gwt {
         }
         from.getPlugins().apply(XapiBasePlugin.class);
         into.getLogger().debug("Mapping config from {}.{} to {}.{}", from, readFrom, into, writeTo);
-
-        Ensure.projectEvaluated(from, ignored->{
+        XapiExtension ext = (XapiExtension) from.getExtensions().getByName(XapiExtension.EXT_NAME);
+        ext.onInit(()->{
             final Configuration read = from.getConfigurations().getByName(readFrom);
             into.getLogger().debug("{}.{} dependencies {}", from, readFrom, read.getAllDependencies().toArray());
             SingletonIterator
@@ -101,13 +101,9 @@ public class Gwt {
                                 return; //lambda-ese for continue;
                             }
                             source.getPlugins().apply(XapiBasePlugin.class);
+                            String targetConfig = projectDep.getTargetConfiguration();
                             projectEvaluated(source, ignore-> {
-
-                                String targetConfig = projectDep.getTargetConfiguration();
-                                if (targetConfig == null) {
-                                    targetConfig = "default";
-                                }
-                                writeDep(into, source, writeTo, targetConfig);
+                                writeDep(into, source, writeTo, targetConfig == null ? "default" : targetConfig);
                                 mapConfig(seen, into, source, readFrom, writeTo);
                             });
 
@@ -115,8 +111,6 @@ public class Gwt {
                     });
                 }
             );
-            read.getAllDependencies().all(dep->{
-            });
         });
     }
 

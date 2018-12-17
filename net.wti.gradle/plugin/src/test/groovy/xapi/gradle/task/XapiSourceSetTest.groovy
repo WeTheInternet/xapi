@@ -25,13 +25,12 @@ class XapiSourceSetTest extends Specification implements XapiTestMixin {
         buildFile << """
             plugins {
                 id 'java-library'
-                id 'xapi-base'
+                id 'xapi'
             }
             group = 'testing'
             version = '1.0'
-            dependencies {
-                xapiDev 'javax.validation:validation-api:1.0.0.GA'
-            }
+            dependencies.add 'xapiDev', dependencies.create('javax.validation:validation-api:1.0.0.GA')
+            
         """
         // If a directory does not exist, it is not added to the manifest.
         // We may want to revisit those semantics later, but for now, it is ideal to trim as much noise as possible.
@@ -41,26 +40,31 @@ class XapiSourceSetTest extends Specification implements XapiTestMixin {
         new File(buildFile.parentFile, 'src/main/java').mkdirs()
 
         when:
-        def result = exec('build')
+        def result = exec('build', '--stacktrace')
         then:
         result.task(":xapiDevJar").outcome == SUCCESS
 
         when:
         File manifest = builtManifest
+        File root = testProjectDir.root
         then:
         manifest.text.contains("src/main/java")
-//        manifest.text ==
-//                """<xapi sources = [
-//  "$root/src/main/java"
-//]
-//resources = [
-//  "$root/src/main/resources"
-//]
-//outputs = [
-//  "$root/build/classes/java/main"
-//  ,  "$root/build/resources/main"
-//]
-///>"""
+        manifest.text ==
+"""<xapi
+module="$root.name"
+type="main"
+sources=["$root.absolutePath/src/main/java"]
+
+resources=[]
+
+outputs=[]
+
+generated=[]
+
+includes={  api: "$root.name/api",
+  spi: "$root.name/spi"
+}
+/>"""
     }
 
     void touch(String s) {

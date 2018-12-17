@@ -96,4 +96,15 @@ public class PublishConfig implements Freezable {
         freezeCheck(frozen);
         this.sources = sources;
     }
+
+    @Override
+    public String toString() {
+        return "PublishConfig{" +
+            "hidden=" + hidden +
+            ", sources=" + sources +
+            ", tests=" + tests +
+            ", frozen=" + frozen +
+            ", frozenAfter=XapiExtension.onPrepare" +
+            '}';
+    }
 }

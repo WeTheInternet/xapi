@@ -5,6 +5,7 @@ import xapi.collect.X_Collect;
 import xapi.collect.api.StringTo;
 import xapi.fu.In1Out1;
 import xapi.fu.In1Out1.In1Out1Unsafe;
+import xapi.fu.has.HasId;
 import xapi.inject.X_Inject;
 import xapi.scope.api.GlobalScope;
 import xapi.scope.request.RequestScope;
@@ -12,7 +13,6 @@ import xapi.scope.request.SessionScope;
 import xapi.scope.spi.RequestContext;
 import xapi.scope.spi.RequestLike;
 import xapi.scope.spi.ResponseLike;
-import xapi.util.api.HasId;
 
 /**
  * A generic implementation of a {@link GlobalScope}.

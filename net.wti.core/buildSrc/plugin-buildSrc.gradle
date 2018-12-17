@@ -1,0 +1,11 @@
+plugins.apply 'java'
+
+String xapiHome = rootDir.parentFile.parent
+apply from: "$xapiHome/gradle/xapi-env.gradle"
+repositories {
+    maven {
+        name = 'xapiLocal'
+        url = "file://$xapiHome/repo"
+    }
+}
+dependencies.add('runtime', "net.wti.gradle.tools:xapi-gradle-tools:${->version}")

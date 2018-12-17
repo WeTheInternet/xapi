@@ -29,19 +29,19 @@ tasks.shadowJar.configure {
 }
 
 dependencies {
-    compile project(':xapi-gwt-parent:xapi-gwt3')
+    compile project(':xapi-gwt3')
     compile project(':xapi-dev-parent:xapi-dev-source')
     compile "net.wti.core:xapi-lang-core:${->version}"
     compile project(':xapi-core-parent:xapi-core-reflect')
     compile project(':xapi-core-parent:xapi-core-util')
-    compile project(':xapi-gwt-parent:xapi-elemental')
-    compile project(':xapi-gwt-parent:xapi-gwt-inject')
-    compile project(':xapi-gwt-parent:xapi-gwt-model')
-    compile project(':xapi-gwt-parent:xapi-gwt-collect')
-    compile project(':xapi-gwt-parent:xapi-gwt-process')
-    compile project(':xapi-gwt-parent:xapi-gwt-io')
-    compile project(':xapi-dev-parent:xapi-dev-gwtc:xapi-gwtc-api')
-    compile project(':xapi-gwt-parent:xapi-gwt-test')
+    compile project(':xapi-elemental')
+    compile project(':xapi-gwt-inject')
+    compile project(':xapi-gwt-model')
+    compile project(':xapi-gwt-collect')
+    compile project(':xapi-gwt-process')
+    compile project(':xapi-gwt-io')
+    compile project(':xapi-dev-gwtc:xapi-gwtc-api')
+    compile project(':xapi-gwt-test')
     testCompile 'net.wetheinter:gwt-codeserver:2.8.0'
     testCompile 'net.wetheinter:gwt-user:2.8.0'
     testCompile 'net.sourceforge.htmlunit:htmlunit:2.19'

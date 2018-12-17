@@ -4,8 +4,8 @@ apply from: "$rootDir/gradle/xapi-env.gradle"
 repositories.jcenter()
 
 dependencies {
-    compile project(':xapi-gwt-parent:xapi-gwt-io')
-    compile project(':xapi-gwt-parent:xapi-gwt-collect')
+    compile project(':xapi-gwt-io')
+    compile project(':xapi-gwt-collect')
     compile project(':xapi-core-parent:xapi-core-model')
     compile "net.wti.core:xapi-gen:$version"
     compile project(':xapi-lang-dev')
@@ -19,7 +19,7 @@ dependencies {
     testCompile 'net.sourceforge.htmlunit:htmlunit:2.19'
     testRuntime project(':xapi-jre-parent:xapi-jre-inject')
     testCompile project(':xapi-jre-parent:xapi-jre-model')
-    testCompile project(':xapi-gwt-parent:xapi-gwt-io')
+    testCompile project(':xapi-gwt-io')
     testCompile project(':xapi-server-parent:xapi-server-api')
     compileOnly 'net.wetheinter:gwt-dev:2.8.0'
     implementation 'net.wetheinter:gwt-user:2.8.0'

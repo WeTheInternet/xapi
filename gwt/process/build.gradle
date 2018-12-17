@@ -11,7 +11,7 @@ repositories {
 }
 
 dependencies {
-    compile project(':xapi-gwt-parent:xapi-gwt-inject')
+    compile project(':xapi-gwt-inject')
     compile project(':xapi-core-parent:xapi-core-process')
     compile project(':xapi-core-parent:xapi-core-process')
     compile project(':xapi-core-parent:xapi-core-scope')

@@ -12,7 +12,7 @@ repositories {
 
 dependencies {
     api project(':xapi-core-parent:xapi-core-io')
-    api project(':xapi-gwt-parent:xapi-gwt-collect')
+    api project(':xapi-gwt-collect')
     implementation 'net.wetheinter:gwt-user:2.8.0'
     api 'net.wetheinter:jsinterop-annotations:2.8.0'
     testCompile 'net.wetheinter:gwt-dev:2.8.0'

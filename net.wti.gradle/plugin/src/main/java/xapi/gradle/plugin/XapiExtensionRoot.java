@@ -14,9 +14,13 @@ import xapi.fu.In1Out1;
 import static java.lang.String.valueOf;
 
 /**
+ * TODO: move this type into the tools package, so we can use it globally (in pre-plugin projects).
+ *
  * Created by James X. Nelson (James@WeTheInter.net) on 11/22/18 @ 10:29 PM.
  */
 public class XapiExtensionRoot extends XapiExtension {
+
+    public static final String EXT_NAME = "xapiRoot";
 
     private final ListProperty<ModuleDependency> localCache;
     private final Property<Boolean> strictCaching;

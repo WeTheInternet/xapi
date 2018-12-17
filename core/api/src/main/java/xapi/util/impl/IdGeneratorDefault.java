@@ -2,12 +2,10 @@ package xapi.util.impl;
 
 import xapi.annotation.inject.InstanceDefault;
 import xapi.fu.Lazy;
-import xapi.util.api.HasId;
+import xapi.fu.has.HasId;
 import xapi.util.api.IdGenerator;
 
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static xapi.fu.Out1.out1Deferred;
 
 /**
  * Created by James X. Nelson (james @wetheinter.net) on 7/29/16.

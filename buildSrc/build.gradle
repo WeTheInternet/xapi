@@ -1,14 +1,24 @@
+buildscript {
+    apply from: "$rootDir.parent/gradle/xapi-env.gradle"
+    repositories.maven {
+        name = 'xapiLocal'
+        url = new URI("file://$rootDir.parent/repo")
+    }
+    dependencies {
+        classpath "net.wti.gradle.tools:xapi-gradle-tools:${->version}"
+    }
+}
+
 plugins {
     id 'java-library'
     id 'idea'
 }
 import java.util.concurrent.TimeUnit
 
-String xapiHome = "$rootDir.parent"
-apply from: "$rootDir.parent/gradle/xapi-env.gradle"
 
 dependencies {
     api group: 'net.wti.gradle', name: 'xapi-gradle-plugin', version: findProperty('xapiVersion'), changing: true
+    api group: 'net.wti.gradle.tools', name: 'xapi-gradle-tools', version: findProperty('xapiVersion')
 }
 
 configurations.all {
@@ -25,5 +35,6 @@ if (
     '1' == System.getProperty('xC') ||
     '1' == findProperty('xC')
 ) {
+    String xapiHome = "$rootDir.parent"
     apply from: "$xapiHome/gradle/rebuild-tools.gradle"
 }

@@ -1,0 +1,20 @@
+import xapi.gradle.plugin.XapiBasePlugin
+
+buildscript({
+    dependencies {
+        classpath 'net.wti.gradle:xapi-gradle-plugin:0.5.1'
+    }
+})
+
+plugins { id 'xapi' }
+plugins.withType(XapiBasePlugin).configureEach({ p->
+    p.addTypes project, 'api', 'spi', 'main', 'gwt', 'jre'
+})
+
+dependencies {
+    xapiApi "net.wti.core:xapi-fu:${->version}"
+    // TODO: delete/reduce this dependency
+    xapiApi "net.wetheinter:xapi-core-api:${->version}"
+}
+
+components['java']

@@ -43,7 +43,7 @@ extends HasQualifiedName
     if (mine.isPresent()) {
       // combine; prefer values from parameters by putting ours in the map first.
       MapLike<String, IsTypeParameter> combined = X_Jdk.mapOrderedInsertion();
-      combined.putFromValues(mine.get().getTypeParams(), IsTypeParameter::getName);
+      combined.putFromValuesItr(mine.get().getTypeParams(), IsTypeParameter::getName);
       combined.putFromValues(IsTypeParameter::getName, params);
       return new ImmutableType(getPackage(), getEnclosedName(),
           combined.mappedValues().toArray(IsTypeParameter.class));

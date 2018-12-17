@@ -3,7 +3,7 @@ package xapi.test.util;
 import org.junit.Assert;
 import org.junit.Test;
 import xapi.fu.Lazy;
-import xapi.util.api.HasId;
+import xapi.fu.has.HasId;
 import xapi.util.api.IdGenerator;
 import xapi.util.impl.IdGeneratorDefault;
 

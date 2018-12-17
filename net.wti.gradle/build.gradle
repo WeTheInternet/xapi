@@ -8,6 +8,10 @@ allprojects {
     group 'net.wti.gradle'
     apply from: "$rootDir.parent/gradle/xapi-env.gradle"
 }
+
+String xapiHome = extensions.getByName('xapiHome')
+apply from: "$xapiHome/gradle/child-build.gradle"
+
 subprojects {
     Project p ->
 
@@ -79,7 +83,5 @@ subprojects {
 
 }
 
-wrapper {
-    gradleVersion = '5.0'
-    distributionType = Wrapper.DistributionType.ALL
-}
+import net.wti.gradle.system.spi.GradleServiceFinder
+GradleServiceFinder.getService(project)

@@ -8,6 +8,11 @@ import org.gradle.api.provider.Provider;
 import xapi.fu.Maybe;
 import xapi.fu.Out1;
 import xapi.fu.X_Fu;
+import xapi.fu.data.SetLike;
+import xapi.fu.itr.ArrayIterable;
+import xapi.fu.itr.MappedIterable;
+import xapi.fu.java.X_Jdk;
+import xapi.util.X_String;
 
 import java.util.concurrent.Callable;
 
@@ -39,6 +44,9 @@ public interface ArchiveType {
     }
     default boolean isSources() {
         return false;
+    }
+    default ArchiveType sourceFor() {
+        return null;
     }
     default boolean isDocs() {
         return false;
@@ -122,6 +130,16 @@ public interface ArchiveType {
         return new ArchiveType[0];
     }
 
+    default MappedIterable<ArchiveType> allTypes() {
+        SetLike<ArchiveType> all = X_Jdk.setLinked();
+        for (ArchiveType type : getTypes()) {
+            if (all.addIfMissing(type)) {
+                all.addNow(type.allTypes());
+            }
+        }
+        return all;
+    }
+
     static ArchiveType coerceArchiveType(Object o) {
         if (o instanceof ArchiveType) {
             return (ArchiveType) o;
@@ -165,4 +183,16 @@ public interface ArchiveType {
     default boolean includes(ArchiveType type) {
         return type == this || iterate(getTypes()).containsReference(type);
     }
+
+    default String prefixedName(String prefix) {
+        return toTypeName(prefix, sourceName());
+    }
+
+    static String toTypeName(String prefix, String type) {
+        if (X_String.isEmpty(prefix)) {
+            return type;
+        }
+        return prefix + X_String.toTitleCase(type);
+    }
+
 }
