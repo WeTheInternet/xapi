@@ -12,7 +12,7 @@ subprojects {
     apply from: "$rootDir.parentFile/gradle/xapi-env.gradle"
     plugins.apply('java-library')
     plugins.apply('maven-publish')
-    
+
     // for this ultra-core, zero-dependency buildSrc project, we want to always install
     // our jars to xapiLocal repo, so other projects can reference us.
     tasks.findByName(BasePlugin.ASSEMBLE_TASK_NAME).finalizedBy(
@@ -23,12 +23,17 @@ subprojects {
     Task publishXapi = tasks.create('publishXapi')
     publishXapi.group = 'Publishing'
     publishXapi.description = 'Publish jars to xapiLocal repository'
-    tasks.withType(PublishToMavenLocal).all {
-        PublishToMavenLocal pub ->
-            assemble.finalizedBy pub
-            publishXapi.dependsOn pub
+    tasks.withType(PublishToMavenRepository).all {
+        PublishToMavenRepository pub ->
+            afterEvaluate {
+
+                if (pub.repository.name == 'xapiLocal') {
+                    assemble.finalizedBy pub
+                    publishXapi.dependsOn pub
+                }
+            }
     }
-    
+
     PublishingExtension ext = extensions.findByName(PublishingExtension.NAME) as PublishingExtension
     ext.repositories.maven {
         MavenArtifactRepository repo ->
@@ -41,9 +46,9 @@ subprojects {
             jar.from sourceSets.main.allSource
             return
     }
-    
+
     PublishArtifact art = project.artifacts.add('archives', sourceJar)
-    
+
     ext.publications.create("main", MavenPublication, {
         pub ->
             pub.from(project.components.getByName('java'))

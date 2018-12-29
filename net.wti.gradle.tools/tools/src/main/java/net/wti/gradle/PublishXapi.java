@@ -9,13 +9,13 @@ import org.gradle.api.Task;
 import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.SelfResolvingDependency;
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository.MetadataSources;
-import org.gradle.api.plugins.BasePlugin;
 import org.gradle.api.publish.PublicationArtifact;
 import org.gradle.api.publish.PublishingExtension;
 import org.gradle.api.publish.maven.MavenPublication;
 import org.gradle.api.publish.maven.tasks.PublishToMavenRepository;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.bundling.Jar;
+import org.gradle.language.base.plugins.LifecycleBasePlugin;
 
 import java.io.File;
 import java.util.stream.Collectors;
@@ -87,7 +87,7 @@ public class PublishXapi {
                 (PublishToMavenRepository ptml) -> {
                     if (ptml.getName().contains("XapiLocal")) {
                         pubXapi.dependsOn(ptml);
-                        ptml.dependsOn(BasePlugin.ASSEMBLE_TASK_NAME);
+                        ptml.dependsOn(LifecycleBasePlugin.ASSEMBLE_TASK_NAME);
                     }
                     ptml.doLast(t->{
                         // TODO: if these tasks are actually in the task graph,

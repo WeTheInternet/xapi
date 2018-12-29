@@ -9,6 +9,10 @@ import org.gradle.api.Project;
 import org.gradle.api.artifacts.*;
 import org.gradle.api.invocation.Gradle;
 import org.gradle.api.tasks.TaskProvider;
+import org.gradle.internal.concurrent.ExecutorFactory;
+import org.gradle.internal.concurrent.GradleThread;
+import org.gradle.internal.concurrent.ManagedExecutor;
+import org.gradle.internal.operations.BuildOperationExecutor;
 import org.gradle.internal.reflect.Instantiator;
 import xapi.fu.Lazy;
 import xapi.fu.Out1;
@@ -25,10 +29,12 @@ import java.util.concurrent.Callable;
 public class XapiRootPlugin implements Plugin<Project> {
 
     private final Instantiator instantiator;
+    private final ExecutorFactory exec;
 
     @Inject
-    public XapiRootPlugin(Instantiator instantiator) {
+    public XapiRootPlugin(Instantiator instantiator, ExecutorFactory exec) {
         this.instantiator = instantiator;
+        this.exec = exec;
     }
 
 
@@ -89,23 +95,8 @@ public class XapiRootPlugin implements Plugin<Project> {
             .detachedConfiguration(local.toArray(new Dependency[0]));
         // TODO: also allow configuration of custom sources / repositories for preload-only.
         Lazy<ResolvedConfiguration> resolve = Lazy.deferred1(detached::getResolvedConfiguration);
-        // Using an inline class here mostly for nice names when debugging threads.
-        class PreloadThread extends Thread {
-            private PreloadThread() {
-                setName("xapi-preload-thread");
-                setDaemon(true);
-                setPriority(Thread.MIN_PRIORITY+2);
-                setUncaughtExceptionHandler((t, e)->{
-                    project.getLogger().error("Xapi preload failed; expect more errors", e);
-                });
-            }
-            @Override
-            public void run() {
-                resolve.out1();
-            }
-        }
-        // kick off the preloads eagerly.
-        new PreloadThread().start();
+        final ManagedExecutor exe = exec.create("xapi-preload", 1);
+        exe.submit(resolve.asCallable());
 
         final TaskProvider<XapiPreload> pre = project.getTasks().register(
             "xapiPreload",

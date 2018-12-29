@@ -1,14 +1,13 @@
 plugins {
     id 'java-gradle-plugin'
     id 'groovy'
+    id 'java-library'
 }
-String xapiHome = "$rootDir.parent/repo"
+String xapiHome = "$rootDir.parent"
+apply from: "$xapiHome/gradle/xapi-env.gradle"
+apply from: "$xapiHome/gradle/int-test.gradle"
 repositories.jcenter()
-repositories.maven {
-        name = 'xapiLocal'
-        url = xapiHome
-//        url = new URI("file://$rootDir.parent/repo")
-}
+
 def module = project.dependencies.&create
 def local = { path -> project.dependencies.project(path: path) }
 def depend = { String key, Object item ->
@@ -35,6 +34,5 @@ depend 'compileOnly', [
         module('com.github.jengelman.gradle.plugins:shadow:4.0.4')
 ]
 depend('testCompile', [
-        module('org.spockframework:spock-core:1.2-groovy-2.5'),
-        project.dependencies.gradleTestKit()
+        module("net.wti.gradle.tools:xapi-gradle-test:$version".toString())
 ])

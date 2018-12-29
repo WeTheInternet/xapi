@@ -12,7 +12,7 @@ import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 11/24/18 @ 5:36 AM.
  */
-class XapiSourceSetTest extends Specification implements XapiTestMixin {
+class XapiSourceSetTest extends Specification implements XapiProjectTestMixin {
     @Rule final TemporaryFolder testProjectDir = new TemporaryFolder()
     File buildFile
 
@@ -46,7 +46,6 @@ class XapiSourceSetTest extends Specification implements XapiTestMixin {
 
         when:
         File manifest = builtManifest
-        File root = testProjectDir.root
         then:
         manifest.text.contains("src/main/java")
         manifest.text ==

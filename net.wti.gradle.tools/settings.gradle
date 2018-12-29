@@ -1,5 +1,14 @@
 rootProject.name = 'net.wti.gradle.tools'
 rootProject.buildFileName = 'root-tools.gradle'
-include('tools')
-project(':tools').buildFileName = 'gradle-tools.gradle'
-project(':tools').name = 'xapi-gradle-tools'
+
+def add = {
+    String name ->
+    include("$name")
+    project(":$name").buildFileName = "gradle-${name}.gradle"
+    project(":$name").name = "xapi-gradle-$name"
+}
+
+add('tools')
+add('test')
+
+enableFeaturePreview('GRADLE_METADATA')

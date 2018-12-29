@@ -33,6 +33,7 @@ import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.configuration.project.ProjectConfigurationActionContainer;
 import org.gradle.internal.impldep.aQute.bnd.build.Run;
 import org.gradle.internal.reflect.Instantiator;
+import org.gradle.language.base.plugins.LifecycleBasePlugin;
 import org.gradle.language.jvm.tasks.ProcessResources;
 import org.gradle.plugins.ide.idea.IdeaPlugin;
 import org.gradle.plugins.ide.idea.model.IdeaModule;
@@ -317,10 +318,10 @@ public class XapiBasePlugin implements Plugin<Project> {
         TaskProvider<Jar> jar = project.getTasks().register(src.getJarTaskName(), Jar.class,
             j -> {
                 j.setDescription("Assembles a jar archive containing the " + name + " classes.");
-                j.setGroup(BasePlugin.BUILD_GROUP);
+                j.setGroup(LifecycleBasePlugin.BUILD_GROUP);
 
                 j.from(src.getOutput());
-                String baseName = j.getBaseName();
+                String baseName = j.getArchiveBaseName().get();
                 final String prefix = getPrefix();
                 if (prefix.isEmpty() || baseName.startsWith(prefix)) {
                     baseName = baseName + "-" + type;
@@ -329,7 +330,7 @@ public class XapiBasePlugin implements Plugin<Project> {
                 } else {
                     baseName = baseName + "-" + type;
                 }
-                j.setBaseName(baseName);
+                j.getArchiveBaseName().set(baseName);
 //                // Tell gradle that this jar can be used if someone addresses it's final published coordinates
 //                String coords = project.getGroup() + ":" +
 //                    baseName + ":" +

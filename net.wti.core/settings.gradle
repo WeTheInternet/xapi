@@ -12,3 +12,5 @@ projects.forEach({p->
 })
 
 project(':xapi-lang').name = 'xapi-lang-core'
+
+enableFeaturePreview('GRADLE_METADATA')

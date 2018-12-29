@@ -1,16 +1,12 @@
 package net.wti.gradle.internal.api;
 
-import org.gradle.api.DomainObjectSet;
+import org.gradle.api.*;
 import org.gradle.api.component.ComponentWithVariants;
 import org.gradle.api.internal.CompositeDomainObjectSet;
-import org.gradle.api.internal.DefaultDomainObjectSet;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.Property;
 import org.gradle.api.provider.ProviderFactory;
-import org.gradle.api.provider.SetProperty;
-
-import java.util.NoSuchElementException;
-import java.util.Set;
+import org.gradle.internal.reflect.Instantiator;
 
 import static org.gradle.api.internal.CollectionCallbackActionDecorator.NOOP;
 
@@ -44,7 +40,7 @@ import static org.gradle.api.internal.CollectionCallbackActionDecorator.NOOP;
  */
 public class XapiLibrary implements XapiVariant, ComponentWithVariants {
 
-    private final SetProperty<XapiPlatform> platforms;
+    private final XapiPlatformContainer platforms;
     private final CompositeDomainObjectSet<XapiUsageContext> all;
     /**
      * main is the implicit "gradle java plugin's main" sourceset.
@@ -57,20 +53,18 @@ public class XapiLibrary implements XapiVariant, ComponentWithVariants {
      * while the platform that takes over gets prefix-less artifactIds.
      */
     private final Property<XapiPlatform> main;
+    private final ObjectFactory objects;
 
     @SuppressWarnings("unchecked")
-    public XapiLibrary(ObjectFactory factory, ProviderFactory providers) {
-        platforms = factory.setProperty(XapiPlatform.class);
-        main = factory.property(XapiPlatform.class);
+    public XapiLibrary(ObjectFactory objects, ProviderFactory providers, Instantiator instantiator) {
+        platforms = new XapiPlatformContainer(instantiator, objects);
+        main = objects.property(XapiPlatform.class);
         all = CompositeDomainObjectSet.create(XapiUsageContext.class, NOOP);
-        platforms.convention(providers.provider(()-> {
-            final DefaultDomainObjectSet<XapiPlatform> plat = new DefaultDomainObjectSet<>(XapiPlatform.class, NOOP);
-            plat.whenObjectAdded(p-> all.addCollection(p.getUsages()));
-            return plat;
-        }));
+        platforms.whenObjectAdded(p-> all.addCollection(p.getUsages()));
         main.convention(providers.provider(()->
             getPlatform("main")
         ));
+        this.objects = objects;
     }
 
     /**
@@ -103,15 +97,13 @@ public class XapiLibrary implements XapiVariant, ComponentWithVariants {
      *
      */
     @Override
-    public Set<XapiPlatform> getVariants() {
+    public NamedDomainObjectSet<XapiPlatform> getVariants() {
         // Return the various XapiPlatform that exist for this module / library
-        platforms.finalizeValue();
-        return platforms.get();
+        return platforms;
     }
 
     public XapiPlatform getPlatform(String named) {
-        return getVariants().stream().findFirst()
-            .orElseThrow(()->new NoSuchElementException("no such platform: " + named + " in " + this));
+        return platforms.maybeCreate(named);
     }
 
     /**
@@ -152,7 +144,7 @@ public class XapiLibrary implements XapiVariant, ComponentWithVariants {
         return "xapi";
     }
 
-    public SetProperty<XapiPlatform> getPlatforms() {
+    public NamedDomainObjectSet<XapiPlatform> getPlatforms() {
         return platforms;
     }
 

@@ -1,13 +1,9 @@
 package net.wti.gradle.internal.api;
 
 import org.gradle.api.DomainObjectSet;
-import org.gradle.api.internal.CollectionCallbackActionDecorator;
 import org.gradle.api.internal.DefaultDomainObjectSet;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.Property;
-import org.gradle.api.provider.SetProperty;
-
-import java.util.Set;
 
 import static org.gradle.api.internal.CollectionCallbackActionDecorator.NOOP;
 

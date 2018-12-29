@@ -140,9 +140,8 @@ public interface GradleService {
     }
 
     default void configureWrapper(Project project) {
-        project.getLogger().quiet("configure wrapper for " + project);
+        project.getLogger().quiet("scheduling wrapper configuration for " + project);
         doOnce(project.getRootProject(), "xapi.gradle.root", root->{
-        project.getLogger().quiet("actually configuring wrapper for " + root);
 
             String gradleRoot = System.getProperty("xapi.gradle.root");
             if (gradleRoot == null) {
@@ -154,11 +153,15 @@ public interface GradleService {
 
             File gradleLoc = new File(gradleRoot);
             if (!gradleLoc.isDirectory()) {
-                gradleLoc = new File(project.getRootDir().getParentFile().getParent(), gradleRoot);
+                gradleLoc = new File(project.getRootDir().getParent(), gradleRoot);
+                if (!gradleLoc.isDirectory()) {
+                    gradleLoc = new File(project.getRootDir().getParentFile().getParent(), gradleRoot);
+                }
             }
 
             final File loc = gradleLoc;
-            final String gradleVersion = "5.1-x-1";
+            project.getLogger().quiet("configuring wrapper for {} using {}", root, loc);
+            final String gradleVersion = "5.1-x-2";
             final String zipSeg = "gradle-" + gradleVersion + ".zip";
             final File zipLoc = new File(loc.getParentFile(), zipSeg);
 
@@ -174,10 +177,11 @@ public interface GradleService {
                     zip.from(project.files(loc), spec->{
                         spec.into("gradle-" + gradleVersion);
                     });
-                    zip.setDestinationDir(zipLoc.getParentFile());
-                    zip.setArchiveName(zipLoc.getName());
-//                    zip.getDestinationDirectory().set(zipLoc.getParentFile());
-//                    zip.getArchiveFileName().set(zipLoc.getName());
+//                    zip.setDestinationDir(zipLoc.getParentFile());
+//                    zip.setArchiveName(zipLoc.getName());
+                    zip.getDestinationDirectory().set(zipLoc.getParentFile());
+                    zip.getArchiveFileName().set(zipLoc.getName());
+                    zip.getInputs().property("gradleVersion", gradleVersion);
                     zip.onlyIf(t->!zipLoc.isFile());
                 }
             );

@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit
 
 dependencies {
     api group: 'net.wti.gradle', name: 'xapi-gradle-plugin', version: findProperty('xapiVersion'), changing: true
-    api group: 'net.wti.gradle.tools', name: 'xapi-gradle-tools', version: findProperty('xapiVersion')
+    api group: 'net.wti.gradle.tools', name: 'xapi-gradle-tools', version: findProperty('xapiVersion'), changing: true
 }
 
 configurations.all {
