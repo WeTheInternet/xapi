@@ -11,6 +11,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -35,6 +36,9 @@ public class GradleCoerce {
     };
 
     public static String unwrapString(Object o) {
+        if (o instanceof CharSequence) {
+            return o.toString();
+        }
         final List<String> unwrapped = unwrapStrings(o);
         assert unwrapped.size() < 2 : "Got more than one string unwrapping " + o + " : " + unwrapped;
         return unwrapped.isEmpty() ? null : unwrapped.get(0);
@@ -64,6 +68,16 @@ public class GradleCoerce {
         } else if (o instanceof Closure) {
             final Object item = ((Closure) o).call();
             result.addAll(unwrap(item));
+        } else if (o instanceof Callable) {
+            final Object item;
+            try {
+                item = ((Callable) o).call();
+                result.addAll(unwrap(item));
+            } catch (Exception e) {
+                throw new GradleException("Unexpected exception invoking " + o, e);
+            }
+        } else if (o == null) {
+            return result;
         } else if (o instanceof Supplier) {
             final Object item = ((Supplier) o).get();
             result.addAll(unwrap(item));

@@ -2,6 +2,7 @@ package net.wti.gradle.schema.api;
 
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
+import net.wti.gradle.schema.internal.ArchiveConfigContainerInternal;
 import net.wti.gradle.schema.internal.DefaultArchiveConfigContainer;
 import net.wti.gradle.schema.internal.DefaultPlatformConfigContainer;
 import net.wti.gradle.schema.internal.PlatformConfigInternal;
@@ -124,18 +125,18 @@ import java.util.List;
 public class XapiSchema {
 
     private final PlatformConfigContainer platforms;
-    private final ArchiveConfigContainer archives;
+    private final ArchiveConfigContainerInternal archives;
 
     public XapiSchema(ObjectFactory objects, Instantiator instantiator) {
-        platforms = instantiator.newInstance(DefaultPlatformConfigContainer.class, instantiator);
         archives = instantiator.newInstance(DefaultArchiveConfigContainer.class, instantiator);
+        platforms = instantiator.newInstance(DefaultPlatformConfigContainer.class, instantiator, archives);
     }
 
     public PlatformConfigContainer getPlatforms() {
         return platforms;
     }
 
-    public ArchiveConfigContainer getArchives() {
+    public ArchiveConfigContainerInternal getArchives() {
         return archives;
     }
 
@@ -169,5 +170,17 @@ public class XapiSchema {
             plat = platforms.findByName(need);
         }
         return (PlatformConfigInternal) plat;
+    }
+
+    public void initialize(XapiSchema rootSchema) {
+        rootSchema.platforms.configureEach(platforms::add);
+        rootSchema.archives.configureEach(archives::add);
+        archives.setWithClassifier(rootSchema.archives.isWithClassifier());
+        archives.setWithCoordinate(rootSchema.archives.isWithCoordinate());
+        archives.setWithSourceJar(rootSchema.archives.isWithSourceJar());
+    }
+
+    public PlatformConfig getMainPlatform() {
+        return platforms.maybeCreate("main");
     }
 }

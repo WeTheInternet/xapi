@@ -18,4 +18,8 @@ public interface ArchiveConfig extends Named {
     void require(Object ... units);
 
     Set<String> required();
+
+    boolean isSourceAllowed();
+
+    void setSourceAllowed(boolean allowed);
 }

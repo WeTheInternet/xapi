@@ -1,6 +1,6 @@
 package net.wti.gradle.test
 
-
+import groovy.transform.CompileStatic
 import org.gradle.api.Action
 import org.gradle.util.ConfigureUtil
 import spock.lang.Specification
@@ -15,7 +15,7 @@ trait MultiProjectTestMixin <S extends Specification & MultiProjectTestMixin<S>>
     private final LinkedHashMap<Object, Action<? super TestProject>> pendingProjects = [:]
     private final LinkedHashMap<String, TestProject> realizedProjects = [:]
 
-    S withProject(Object name, @DelegatesTo(value = TestProject.class, strategy = Closure.DELEGATE_FIRST) Closure<?> a) {
+    S withProject(Object name, @DelegatesTo(value = TestProject.class, strategy = Closure.OWNER_FIRST) Closure<?> a) {
         return withProject(name, ConfigureUtil.configureUsing(a))
     }
     S withProject(Object name, Action<? super TestProject> a) {
@@ -30,7 +30,7 @@ trait MultiProjectTestMixin <S extends Specification & MultiProjectTestMixin<S>>
     @SuppressWarnings("GrUnnecessaryPublicModifier") // it is necessary w/ type parameters
     public <K, V> Action<? super V> insert(Map<K, Action<? super V>> into, K name, Action<? super V> a) {
         into.compute(name, {key, val->
-            val ? { p -> val.execute(p); a.execute(p) } : a
+            val ? { p -> val.execute(p); a.execute(p) } as Action<? super V> : a
         })
     }
 
@@ -54,6 +54,7 @@ trait MultiProjectTestMixin <S extends Specification & MultiProjectTestMixin<S>>
         }
     }
 
+    @CompileStatic
     private LinkedHashMap<String, TestProject> realize() {
         while (!pendingProjects.isEmpty()) {
             LinkedHashMap<Object, Action<? super TestProject>> copy = new LinkedHashMap<>(pendingProjects)
@@ -62,8 +63,10 @@ trait MultiProjectTestMixin <S extends Specification & MultiProjectTestMixin<S>>
                 k, v ->
                     String key = coerceString(k)
                     TestProject proj
+
+                    File dir = key == ':' ? rootDir : newFolder(key.split(':'))
                     proj = realizedProjects.computeIfAbsent(key, {
-                        new TestProject(key, key == ':' ? rootDir : newFolder(key.split(':')))
+                        new TestProject(key, dir)
                     })
                     v.execute(proj)
             }

@@ -23,7 +23,6 @@ trait TestFileTools {
 
     File file(String ... paths) {
         File f = folder(paths.init()).apply(paths.last())
-        System.err.println("Testing ${paths.init()} $f: $f.parentFile.directory")
         !f.exists() && f.createNewFile()
         assert f.file : "Not a file: $f"
         return f

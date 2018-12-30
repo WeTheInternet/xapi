@@ -1,5 +1,6 @@
 package net.wti.gradle.schema.internal;
 
+import net.wti.gradle.schema.api.ArchiveConfigContainer;
 import net.wti.gradle.schema.api.PlatformConfig;
 import net.wti.gradle.schema.api.PlatformConfigContainer;
 import org.gradle.api.internal.AbstractNamedDomainObjectContainer;
@@ -13,12 +14,15 @@ import org.gradle.internal.reflect.Instantiator;
 public class DefaultPlatformConfigContainer extends AbstractNamedDomainObjectContainer<PlatformConfig> implements
     PlatformConfigContainer {
 
-    public DefaultPlatformConfigContainer(Instantiator instantiator) {
+    private final ArchiveConfigContainer schemaArchives;
+
+    public DefaultPlatformConfigContainer(Instantiator instantiator, ArchiveConfigContainer schemaArchives) {
         super(PlatformConfig.class, instantiator, CollectionCallbackActionDecorator.NOOP);
+        this.schemaArchives = schemaArchives;
     }
 
     @Override
     protected PlatformConfig doCreate(String name) {
-        return new DefaultPlatformConfig(name, this, getInstantiator());
+        return new DefaultPlatformConfig(name, this, getInstantiator(), schemaArchives);
     }
 }

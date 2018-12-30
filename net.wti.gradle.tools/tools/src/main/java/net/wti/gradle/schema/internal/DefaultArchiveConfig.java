@@ -1,6 +1,5 @@
 package net.wti.gradle.schema.internal;
 
-import net.wti.gradle.schema.api.ArchiveConfig;
 import net.wti.gradle.system.tools.GradleCoerce;
 
 import java.util.Arrays;
@@ -10,19 +9,23 @@ import java.util.Set;
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 12/28/18 @ 1:45 PM.
  */
-public class DefaultArchiveConfig implements ArchiveConfig {
+public class DefaultArchiveConfig implements ArchiveConfigInternal {
 
     private final String name;
     private final Set<Object> required;
+    private boolean sourceAllowed;
 
     public DefaultArchiveConfig(String name) {
         this.name = name;
         required = new LinkedHashSet<>();
+        sourceAllowed = true;
     }
 
     @Override
     public void require(Object ... units) {
-        required.addAll(Arrays.asList(units));
+        if (units != null && units.length > 0) {
+            required.addAll(Arrays.asList(units));
+        }
     }
 
     @Override
@@ -73,5 +76,15 @@ public class DefaultArchiveConfig implements ArchiveConfig {
             "name='" + name + '\'' +
             ", required=" + required +
             '}';
+    }
+
+    @Override
+    public boolean isSourceAllowed() {
+        return sourceAllowed;
+    }
+
+    @Override
+    public void setSourceAllowed(boolean sourceAllowed) {
+        this.sourceAllowed = sourceAllowed;
     }
 }

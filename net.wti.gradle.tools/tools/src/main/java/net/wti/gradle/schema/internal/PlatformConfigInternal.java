@@ -12,6 +12,9 @@ public interface PlatformConfigInternal extends PlatformConfig {
     PlatformConfigInternal getParent();
 
     @Override
+    ArchiveConfigInternal getMainArchive();
+
+    @Override
     default boolean isRoot() {
         return getParent() == null;
     }

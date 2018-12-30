@@ -18,7 +18,7 @@ public class DefaultPlatformConfig implements PlatformConfigInternal {
     private static final Pattern NEED_SOURCES = Pattern.compile("gwt|j2cl|j2objc", Pattern.CASE_INSENSITIVE);
 
     private final String name;
-    private final ArchiveConfigContainer archives;
+    private final DefaultArchiveConfigContainer archives;
     private final PlatformConfigContainer container;
 //    private final SourceSetContainer srcs;
     private PlatformConfigInternal parent;
@@ -29,16 +29,24 @@ public class DefaultPlatformConfig implements PlatformConfigInternal {
     public DefaultPlatformConfig(
         String name,
         PlatformConfigContainer container,
-        Instantiator instantiator
+        Instantiator instantiator,
+        ArchiveConfigContainer schemaArchives
     ) {
-        this(null, name, container, instantiator);
+        this(null, name, container, instantiator, schemaArchives);
     }
 
-    protected DefaultPlatformConfig(PlatformConfigInternal parent, String name, PlatformConfigContainer container, Instantiator instantiator) {
+    protected DefaultPlatformConfig(
+        PlatformConfigInternal parent,
+        String name,
+        PlatformConfigContainer container,
+        Instantiator instantiator,
+        ArchiveConfigContainer schemaArchives
+    ) {
         this.name = name;
         // TODO: A smart delegate where we can check the platform for archives first,
         // then default to the schema itself.
         archives = new DefaultArchiveConfigContainer(instantiator);
+        schemaArchives.configureEach(archives::add);
         this.parent = parent;
         this.container = container;
         requireSource = NEED_SOURCES.matcher(name).find();
@@ -52,6 +60,11 @@ public class DefaultPlatformConfig implements PlatformConfigInternal {
     @Override
     public PlatformConfigInternal getParent() {
         return parent;
+    }
+
+    @Override
+    public ArchiveConfigInternal getMainArchive() {
+        return archives.maybeCreate(getName());
     }
 
     @Override

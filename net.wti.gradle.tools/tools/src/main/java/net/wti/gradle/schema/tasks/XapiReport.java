@@ -4,14 +4,11 @@ import net.wti.gradle.internal.api.XapiLibrary;
 import net.wti.gradle.schema.api.PlatformConfig;
 import net.wti.gradle.schema.api.XapiSchema;
 import net.wti.gradle.system.tools.GradleCoerce;
-import org.gradle.BuildAdapter;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.artifacts.*;
-import org.gradle.api.artifacts.component.ComponentIdentifier;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.internal.artifacts.dependencies.DefaultSelfResolvingDependency;
-import org.gradle.api.invocation.Gradle;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.Property;
 import org.gradle.api.provider.SetProperty;
@@ -21,9 +18,7 @@ import xapi.gradle.java.Java;
 
 import javax.inject.Inject;
 import java.io.File;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -51,7 +46,7 @@ public class XapiReport extends DefaultTask {
         sourceSets = objects.setProperty(String.class);
         location = objects.fileProperty();
         final String loc = getDefaultLocation();
-        report.convention("Xapi Report: <empty>");
+        report.convention("Xapi Report " + getProject().getPath() + " -> <empty>");
         log.convention("true".equals(getProject().findProperty("xapi.debug")));
         location.convention(getProject().getLayout().getBuildDirectory().file(loc));
         getProject().getGradle().getTaskGraph().whenReady(g->{
@@ -80,7 +75,8 @@ public class XapiReport extends DefaultTask {
     }
 
     public void generate() {
-        StringBuilder b = new StringBuilder("\nXapi Report:\n");
+        StringBuilder b = new StringBuilder("\nXapi Report ");
+        b.append(getProject().getPath()).append(" ->\n");
         final SourceSetContainer srcs = Java.sources(getProject());
         for (String platform : sourceSets.get()) {
             final SourceSet src = srcs.getByName(platform);
@@ -89,6 +85,8 @@ public class XapiReport extends DefaultTask {
                 .append(platform)
                 .append(":\n\tCompile classpath\n\t\t")
                 .append(fixPath(src.getCompileClasspath().getAsPath()))
+                .append(":\n\tRuntime classpath\n\t\t")
+                .append(fixPath(src.getRuntimeClasspath().getAsPath()))
                 .append(":\n\tConfigurations\n\t\t")
             ;
             final ConfigurationContainer configs = getProject().getConfigurations();
@@ -129,19 +127,43 @@ public class XapiReport extends DefaultTask {
                 b.append("(");
                 boolean nl = deps.size() > 2;
                 for (Dependency dep : deps) {
-                    if (dep instanceof DefaultSelfResolvingDependency) {
+                    b.append(nl ? "\n" + indent + "\t" : " ");
+                    if (dep instanceof ProjectDependency) {
+                        b.append("project(path: '")
+                         .append(((ProjectDependency) dep).getDependencyProject().getPath())
+                         .append("', configuration: '")
+                         .append(((ProjectDependency) dep).getTargetConfiguration())
+                         .append("'");
+                    }
+                    else if (dep instanceof DefaultSelfResolvingDependency) {
                         final TaskDependency buildDep = ((DefaultSelfResolvingDependency) dep).getBuildDependencies();
-                        if (buildDep instanceof FileCollection) {
+                        final FileCollection resolved = ((DefaultSelfResolvingDependency) dep).getFiles();
+                        b.append("self resolving: ").append(buildDep);
+                        if (resolved.isEmpty()) {
+                            b.append(" <empty>");
+                        } else {
+                            b.append(": ");
+                            final Set<File> all = resolved.getFiles();
+                            for (File file : all) {
+                                b.append(file).append( " and ")
+                                    .append(all.size()-1).append(" more");
+                                break;
+                            }
 
                         }
+                    } else if (dep.getGroup() == null) {
+                        b.append(dep);
+                    } else {
+                        b
+                            .append(dep.getGroup())
+                            .append(":")
+                            .append(dep.getName())
+                            .append(":")
+                            .append(dep.getVersion())
+                            .append(" ")
+                            .append(dep)
+                        ;
                     }
-                    b
-                        .append(nl ? "\n" : " ")
-                        .append(dep.getGroup())
-                        .append(":")
-                        .append(dep.getName())
-                        .append(":")
-                        .append(dep.getVersion());
                 }
                 b.append(" )");
             }

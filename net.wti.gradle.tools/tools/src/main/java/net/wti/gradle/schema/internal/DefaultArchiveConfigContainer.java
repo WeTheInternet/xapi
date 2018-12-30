@@ -10,7 +10,7 @@ import org.gradle.internal.reflect.Instantiator;
  * Created by James X. Nelson (James@WeTheInter.net) on 12/28/18 @ 1:47 PM.
  */
 public class DefaultArchiveConfigContainer extends AbstractNamedDomainObjectContainer<ArchiveConfig> implements
-    ArchiveConfigContainer {
+    ArchiveConfigContainerInternal {
 
     private boolean withClassifier, withCoordinate, withSourceJar;
 
@@ -21,10 +21,16 @@ public class DefaultArchiveConfigContainer extends AbstractNamedDomainObjectCont
     }
 
     @Override
-    protected ArchiveConfig doCreate(String name) {
+    protected ArchiveConfigInternal doCreate(String name) {
         return new DefaultArchiveConfig(name);
     }
 
+    @Override
+    public ArchiveConfigInternal maybeCreate(String name) {
+        return (ArchiveConfigInternal) super.maybeCreate(name);
+    }
+
+    @Override
     public boolean isWithClassifier() {
         return withClassifier;
     }
@@ -34,6 +40,7 @@ public class DefaultArchiveConfigContainer extends AbstractNamedDomainObjectCont
         this.withClassifier = withClassifier;
     }
 
+    @Override
     public boolean isWithCoordinate() {
         return withCoordinate;
     }
@@ -43,6 +50,7 @@ public class DefaultArchiveConfigContainer extends AbstractNamedDomainObjectCont
         this.withCoordinate = withCoordinate;
     }
 
+    @Override
     public boolean isWithSourceJar() {
         return withSourceJar;
     }

@@ -27,6 +27,8 @@ public interface PlatformConfig extends Named {
 
     ArchiveConfigContainer getArchives();
 
+    ArchiveConfig getMainArchive();
+
     /**
      * Set requireSource = true to cause all non-source dependencies
      * to have their source-equivalent artifacts requested.
