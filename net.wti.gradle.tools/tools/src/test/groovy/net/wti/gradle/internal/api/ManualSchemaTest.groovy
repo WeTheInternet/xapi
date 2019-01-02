@@ -7,6 +7,7 @@ import org.gradle.api.artifacts.ResolvedDependency
 import org.gradle.api.artifacts.dsl.DependencyHandler
 import org.gradle.api.artifacts.transform.VariantTransform
 import org.gradle.testkit.runner.TaskOutcome
+import spock.lang.Ignore
 import spock.lang.Specification
 
 /**
@@ -17,6 +18,7 @@ import spock.lang.Specification
  *
  * Created by James X. Nelson (James@WeTheInter.net) on 12/27/18 @ 12:53 AM.
  */
+@Ignore("Experiment abandoned for now; need to play w/ disambiguation, and we might as well use real classes instead of scripts-in-tests")
 class ManualSchemaTest extends Specification implements MultiProjectTestMixin<ManualSchemaTest> {
 
 

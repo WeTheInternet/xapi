@@ -1,0 +1,41 @@
+buildscript({
+    // either sourced from composite build (-Pxapi.composite=true), or init/root cross-project configuration adds xapiRepo.
+    dependencies {
+        classpath 'net.wti.gradle.tools:xapi-gradle-tools:0.5.1'
+    }
+})
+
+plugins {
+    id 'xapi-schema'
+}
+
+xapiSchema {
+    platforms {
+        main
+        gwt {
+            replace main
+        }
+        jre {
+            replace main
+        }
+        server {
+            replace jre
+        }
+        vertx {
+            replace server
+        }
+        appengine {
+            replace server
+        }
+    }
+    archives {
+        main
+        api
+        spi
+    }
+}
+tasks.create 'testSchema', {
+    doLast {
+        logger.quiet "$xapiSchema"
+    }
+}

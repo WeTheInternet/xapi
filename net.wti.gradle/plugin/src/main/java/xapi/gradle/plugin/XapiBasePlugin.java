@@ -1,8 +1,7 @@
 package xapi.gradle.plugin;
 
 import net.wti.gradle.PublishXapi;
-import net.wti.gradle.system.service.GradleService;
-import net.wti.gradle.system.spi.GradleServiceFinder;
+import net.wti.gradle.internal.impl.IntermediateJavaArtifact;
 import org.gradle.BuildAdapter;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Plugin;
@@ -16,10 +15,11 @@ import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.internal.TaskOutputsInternal;
 import org.gradle.api.internal.artifacts.ArtifactAttributes;
 import org.gradle.api.internal.artifacts.dsl.LazyPublishArtifact;
-import org.gradle.api.internal.artifacts.publish.AbstractPublishArtifact;
 import org.gradle.api.invocation.Gradle;
 import org.gradle.api.model.ObjectFactory;
-import org.gradle.api.plugins.*;
+import org.gradle.api.plugins.ExtensionContainer;
+import org.gradle.api.plugins.JavaLibraryPlugin;
+import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.publish.PublishingExtension;
 import org.gradle.api.publish.maven.MavenPublication;
@@ -31,7 +31,6 @@ import org.gradle.api.tasks.*;
 import org.gradle.api.tasks.bundling.Jar;
 import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.configuration.project.ProjectConfigurationActionContainer;
-import org.gradle.internal.impldep.aQute.bnd.build.Run;
 import org.gradle.internal.reflect.Instantiator;
 import org.gradle.language.base.plugins.LifecycleBasePlugin;
 import org.gradle.language.jvm.tasks.ProcessResources;
@@ -42,8 +41,8 @@ import xapi.fu.Lazy;
 import xapi.gradle.X_Gradle;
 import xapi.gradle.api.ArchiveType;
 import xapi.gradle.api.DefaultArchiveType;
-import xapi.gradle.config.PlatformConfig;
 import xapi.gradle.api.SourceConfig;
+import xapi.gradle.config.PlatformConfig;
 import xapi.gradle.java.Java;
 import xapi.gradle.publish.Publish;
 import xapi.gradle.task.XapiManifest;
@@ -51,17 +50,13 @@ import xapi.gradle.tools.Depend;
 import xapi.gradle.tools.Ensure;
 import xapi.util.X_String;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 import static org.gradle.api.attributes.Usage.USAGE_ATTRIBUTE;
 import static xapi.fu.itr.ArrayIterable.iterate;
@@ -314,6 +309,8 @@ public class XapiBasePlugin implements Plugin<Project> {
         ////                                cap.addCapability("group", "name", "version"));
         //                        }));
 
+
+
         // Add (optional) transitivity for annotationProcessor paths (inherit main)...
         TaskProvider<Jar> jar = project.getTasks().register(src.getJarTaskName(), Jar.class,
             j -> {
@@ -511,22 +508,21 @@ public class XapiBasePlugin implements Plugin<Project> {
 
         // Define some additional variants
         NamedDomainObjectContainer<ConfigurationVariant> runtimeVariants = publications.getVariants();
-        // not sure we actually need / want the `type+` prefix used here, and for resources, below.
-        ConfigurationVariant classesVariant = runtimeVariants.create(type + "Classes");
+        ConfigurationVariant classesVariant = runtimeVariants.create("classes");
         classesVariant.getAttributes().attribute(
             USAGE_ATTRIBUTE,
             getClassUsage()
         );
 
         // Must have a Usage.JAVA_API usage case, for compile-scoping
-
         classesVariant.artifact(new IntermediateJavaArtifact(ArtifactTypeDefinition.JVM_CLASS_DIRECTORY, javaCompile) {
             @Override
             public File getFile() {
                 return javaCompile.get().getDestinationDir();
             }
         });
-        ConfigurationVariant resourcesVariant = runtimeVariants.create(type + "Resources");
+
+        ConfigurationVariant resourcesVariant = runtimeVariants.create("resources");
         resourcesVariant.getAttributes().attribute(
             USAGE_ATTRIBUTE,
             getResourceUsage()
@@ -579,45 +575,6 @@ public class XapiBasePlugin implements Plugin<Project> {
     }
 
     */
-
-    /**
-     * Borrowed from {@link JavaPlugin}; it's a pain it's not visible...
-     * hopefully that isn't a warning sign we're ignoring...
-     */
-    abstract static class IntermediateJavaArtifact extends AbstractPublishArtifact {
-        private final String type;
-
-        IntermediateJavaArtifact(String type, Object task) {
-            super(task);
-            this.type = type;
-        }
-
-        @Override
-        public String getName() {
-            return getFile().getName();
-        }
-
-        @Override
-        public String getExtension() {
-            return "";
-        }
-
-        @Override
-        public String getType() {
-            return type;
-        }
-
-        @Nullable
-        @Override
-        public String getClassifier() {
-            return null;
-        }
-
-        @Override
-        public Date getDate() {
-            return null;
-        }
-    }
 
     public void addTypes(Project project, String ... types) {
         final XapiExtension ext = (XapiExtension) project.getExtensions().getByName(XapiExtension.EXT_NAME);

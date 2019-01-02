@@ -7,7 +7,7 @@ repositories {
 }
 
 dependencies {
-    api "net.wti.core:xapi-fu:${->version}"
+    api project(':xapi-fu')
     testCompile 'junit:junit:4.12'
 }
 

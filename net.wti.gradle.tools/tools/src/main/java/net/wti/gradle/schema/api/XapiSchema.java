@@ -2,10 +2,8 @@ package net.wti.gradle.schema.api;
 
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
-import net.wti.gradle.schema.internal.ArchiveConfigContainerInternal;
-import net.wti.gradle.schema.internal.DefaultArchiveConfigContainer;
-import net.wti.gradle.schema.internal.DefaultPlatformConfigContainer;
-import net.wti.gradle.schema.internal.PlatformConfigInternal;
+import net.wti.gradle.internal.api.ProjectView;
+import net.wti.gradle.schema.internal.*;
 import org.gradle.api.Action;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.tasks.SourceSetContainer;
@@ -13,6 +11,7 @@ import org.gradle.internal.reflect.Instantiator;
 import org.gradle.util.ConfigureUtil;
 
 import java.util.List;
+import java.util.concurrent.Callable;
 
 /**
  *
@@ -124,15 +123,20 @@ import java.util.List;
 @SuppressWarnings("UnstableApiUsage")
 public class XapiSchema {
 
-    private final PlatformConfigContainer platforms;
+    public static final String EXT_NAME = "xapiSchema";
+    private final PlatformConfigContainerInternal platforms;
     private final ArchiveConfigContainerInternal archives;
 
-    public XapiSchema(ObjectFactory objects, Instantiator instantiator) {
-        archives = instantiator.newInstance(DefaultArchiveConfigContainer.class, instantiator);
+    public XapiSchema(ProjectView pv) {
+        final Instantiator instantiator = pv.getInstantiator();
+        // There's a nasty diamond problem around the main platform, and the schema containers
+        // for platform and archive types.  We work around it by sending deferred "provide main platform" logic.
+        Callable<PlatformConfigInternal> getMain = this::getMainPlatform;
+        archives = instantiator.newInstance(DefaultArchiveConfigContainer.class, getMain, instantiator);
         platforms = instantiator.newInstance(DefaultPlatformConfigContainer.class, instantiator, archives);
     }
 
-    public PlatformConfigContainer getPlatforms() {
+    public PlatformConfigContainerInternal getPlatforms() {
         return platforms;
     }
 
@@ -178,9 +182,10 @@ public class XapiSchema {
         archives.setWithClassifier(rootSchema.archives.isWithClassifier());
         archives.setWithCoordinate(rootSchema.archives.isWithCoordinate());
         archives.setWithSourceJar(rootSchema.archives.isWithSourceJar());
+
     }
 
-    public PlatformConfig getMainPlatform() {
+    public PlatformConfigInternal getMainPlatform() {
         return platforms.maybeCreate("main");
     }
 }

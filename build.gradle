@@ -4,9 +4,10 @@ plugins {
     id 'xapi-root'
 }
 
-import org.gradle.internal.jvm.Jvm
 
-import static org.gradle.api.tasks.wrapper.Wrapper.DistributionType
+import net.wti.gradle.system.spi.GradleServiceFinder
+import org.gradle.internal.jvm.Jvm
+import xapi.gradle.gwt.Gwt 
 
 apply from: "$rootDir/gradle/xapi-env.gradle"
 
@@ -18,12 +19,13 @@ xapi {
     preload('javax.validation:validation-api:1.0.0.GA:sources')
 }
 
-import xapi.gradle.gwt.Gwt
 File mvnRepo = new File(rootDir, 'repo')
 
-def shouldApply = { String path->
+def shouldApply = { Project p->
     return ! (
-            (path.split(':')?:[''])[-1]
+            p.plugins.hasPlugin('xapi-schema') ||
+            p.plugins.hasPlugin('xapi-require') ||
+            (p.path.split(':')?:[''])[-1]
                     .contains("parent")
             )
 }
@@ -43,7 +45,7 @@ allprojects {
     // but we'll wait until they are resolved,
     // to give each project a chance to pick a more specific plugin.
     afterEvaluate {
-        if (shouldApply(path)) {
+        if (shouldApply(project)) {
             plugins.apply 'xapi-base'
         }
         test {
@@ -67,7 +69,7 @@ gradle.beforeProject {
 
 subprojects {
     Project p ->
-    if (!shouldApply(p.path)) {
+    if (!shouldApply(p)) {
         return
     }
     p.with {
@@ -108,5 +110,4 @@ subprojects {
     }
 }
 
-import net.wti.gradle.system.spi.GradleServiceFinder
 GradleServiceFinder.getService(project).configureWrapper(project)

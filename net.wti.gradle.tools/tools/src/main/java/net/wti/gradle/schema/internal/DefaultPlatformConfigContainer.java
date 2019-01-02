@@ -12,7 +12,7 @@ import org.gradle.internal.reflect.Instantiator;
  * Created by James X. Nelson (James@WeTheInter.net) on 12/28/18 @ 2:34 PM.
  */
 public class DefaultPlatformConfigContainer extends AbstractNamedDomainObjectContainer<PlatformConfig> implements
-    PlatformConfigContainer {
+    PlatformConfigContainerInternal {
 
     private final ArchiveConfigContainer schemaArchives;
 
@@ -22,7 +22,12 @@ public class DefaultPlatformConfigContainer extends AbstractNamedDomainObjectCon
     }
 
     @Override
-    protected PlatformConfig doCreate(String name) {
+    protected PlatformConfigInternal doCreate(String name) {
         return new DefaultPlatformConfig(name, this, getInstantiator(), schemaArchives);
+    }
+
+    @Override
+    public PlatformConfigInternal maybeCreate(String name) {
+        return (PlatformConfigInternal) super.maybeCreate(name);
     }
 }

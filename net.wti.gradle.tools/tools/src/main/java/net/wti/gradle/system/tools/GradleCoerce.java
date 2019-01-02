@@ -4,6 +4,7 @@ import groovy.lang.Closure;
 import org.gradle.api.GradleException;
 import org.gradle.api.Named;
 import org.gradle.api.provider.Provider;
+import org.gradle.util.GUtil;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
@@ -34,6 +35,10 @@ public class GradleCoerce {
         }
         return item;
     };
+
+    public static String unwrapStringOr(Object o, String dflt) {
+        return GUtil.elvis(unwrapString(o), dflt);
+    }
 
     public static String unwrapString(Object o) {
         if (o instanceof CharSequence) {

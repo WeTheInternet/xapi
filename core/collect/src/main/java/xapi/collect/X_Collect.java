@@ -212,7 +212,7 @@ public class X_Collect {
     return service.newMap(keyCls, valueCls, opts);
   }
 
-  public static <X> StringTo<StringTo<X>> newStringDeepMap(final Class<? extends X> component) {
+  public static <K, Key extends K> StringTo<StringTo<K>> newStringDeepMap(final Class<Key> component) {
     return new StringToDeepMap<>(component);
   }
 

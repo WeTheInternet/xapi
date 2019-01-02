@@ -29,5 +29,9 @@ gradlePlugin {
             id = 'xapi-schema'
             implementationClass = 'net.wti.gradle.schema.plugin.XapiSchemaPlugin'
         }
+        xapiRequire {
+            id = 'xapi-require'
+            implementationClass = 'net.wti.gradle.require.plugin.XapiRequirePlugin'
+        }
     }
 }

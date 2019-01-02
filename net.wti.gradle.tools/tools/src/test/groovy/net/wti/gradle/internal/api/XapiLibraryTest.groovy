@@ -1,26 +1,30 @@
 package net.wti.gradle.internal.api
 
+import net.wti.gradle.schema.plugin.XapiSchemaPlugin
 import net.wti.gradle.test.MultiProjectTestMixin
-import org.gradle.api.logging.LogLevel
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.TaskOutcome
 import spock.lang.Specification
-
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 12/17/18 @ 4:42 AM.
  */
 class XapiLibraryTest extends Specification implements MultiProjectTestMixin<XapiLibraryTest> {
 
-    private String setupSimpleGwt(String name="gwtP") {
+    protected String getDefaultPlugin() {
+        return "xapi-schema"
+    }
+
+    private String setupSimpleGwt(String name="gwtP", String plugin='') {
         if (buildFile.length() == 0) {
             buildFile << simpleSchema()
         }
 
         withProject(name, {
+            def use = plugin ?: defaultPlugin
             buildFile << """
-plugins { 
+plugins {
     id 'java'
-    id 'xapi-schema'
+    ${use.startsWith('id') ? use : "id '$use'"}
 }
 """
             addSource("com.foo.$name", 'Main', """
@@ -48,13 +52,13 @@ class GwtMain {
     def "Intra-build dependencies correctly inherit their own platform+archive dependencies"() {
         given:
         setupSimpleGwt('gwt1')
-        setupSimpleGwt('gwt2')
+        setupSimpleGwt('gwt2', "xapi-require")
         getProject('gwt2').buildFile << '''
 xapiRequire.project 'gwt1'
 '''
 
         when:
-        BuildResult res = runSucceed(LogLevel.INFO, ':gwt2:compileGwtJava', 'xapiReport', '-Pxapi.debug=true')
+        BuildResult res = runSucceed('xapiReport', ':gwt2:compileGwtJava', '-Pxapi.debug=true')
         then:
         res.task(':gwt1:compileGwtJava').outcome == TaskOutcome.SUCCESS
         res.task(':gwt1:compileJava').outcome == TaskOutcome.SUCCESS
@@ -69,7 +73,7 @@ xapiRequire.project 'gwt1'
 
         when:
         // We use -Pxapi.debug=true to get results printed to stdOut.  We could / should also check the report file.
-        BuildResult res = runSucceed(LogLevel.INFO, 'compileGwtJava', 'xapiReport', '-Pxapi.debug=true')
+        BuildResult res = runSucceed('compileGwtJava', 'xapiReport', '-Pxapi.debug=true')
         then:
         res.task(":$proj:compileGwtJava").outcome == TaskOutcome.SUCCESS
         res.task(":$proj:compileJava").outcome == TaskOutcome.SUCCESS
@@ -79,27 +83,59 @@ xapiRequire.project 'gwt1'
     def "Plugin is compatible with 'java' plugin"() {
         given:
         String proj = setupSimpleGwt()
-        getProject(proj).buildFile << """
-apply plugin: 'java'
-"""
-        when:
-        BuildResult res = runSucceed(LogLevel.INFO, 'compileGwtJava')
+
+        when : "Set gradle property to tell xapi to apply java plugin"
+        String was = getProject(proj).propertiesFile.text
+        getProject(proj).propertiesFile << "$XapiSchemaPlugin.PROP_SCHEMA_APPLIES_JAVA=true"
+        BuildResult res = runSucceed('compileGwtJava')
+
         then:
         res.task(":$proj:compileGwtJava").outcome == TaskOutcome.SUCCESS
         res.task(":$proj:compileJava").outcome == TaskOutcome.SUCCESS
+
+        when: "Explicitly apply java plugin and re-run"
+        getProject(proj).buildFile << """
+apply plugin: 'java'"""
+        res = runSucceed('compileGwtJava')
+        then:
+        res.task(":$proj:compileGwtJava").outcome == TaskOutcome.UP_TO_DATE
+        res.task(":$proj:compileJava").outcome == TaskOutcome.UP_TO_DATE
+
+        when: "Remove the gradle.properties changes and run again"
+        getProject(proj).propertiesFile.text = was
+        res = runSucceed('compileGwtJava')
+        then:
+        res.task(":$proj:compileGwtJava").outcome == TaskOutcome.UP_TO_DATE
+        res.task(":$proj:compileJava").outcome == TaskOutcome.UP_TO_DATE
     }
 
     def "Plugin is compatible with 'java-library' plugin"() {
         given:
         String proj = setupSimpleGwt()
-        getProject(proj).buildFile << """
-apply plugin: 'java-library'
-"""
-        when:
-        BuildResult res = runSucceed(LogLevel.INFO, 'compileGwtJava')
+
+        when : "Set gradle property to tell xapi to apply java library plugin"
+        String was = getProject(proj).propertiesFile.text
+        getProject(proj).propertiesFile << "$XapiSchemaPlugin.PROP_SCHEMA_APPLIES_JAVA_LIBRARY=true"
+        BuildResult res = runSucceed('compileGwtJava')
+
         then:
         res.task(":$proj:compileGwtJava").outcome == TaskOutcome.SUCCESS
         res.task(":$proj:compileJava").outcome == TaskOutcome.SUCCESS
+
+        when: "Explicitly apply java-library plugin and re-run"
+        getProject(proj).buildFile << """
+apply plugin: 'java-library'"""
+        res = runSucceed('compileGwtJava')
+        then:
+        res.task(":$proj:compileGwtJava").outcome == TaskOutcome.UP_TO_DATE
+        res.task(":$proj:compileJava").outcome == TaskOutcome.UP_TO_DATE
+
+        when: "Remove the gradle.properties changes and run again"
+        getProject(proj).propertiesFile.text = was
+        res = runSucceed('compileGwtJava')
+        then:
+        res.task(":$proj:compileGwtJava").outcome == TaskOutcome.UP_TO_DATE
+        res.task(":$proj:compileJava").outcome == TaskOutcome.UP_TO_DATE
     }
 
     String simpleSchema() {

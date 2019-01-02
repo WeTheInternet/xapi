@@ -1,5 +1,6 @@
 package net.wti.gradle.internal.api;
 
+import net.wti.gradle.schema.api.XapiSchema;
 import org.gradle.api.*;
 import org.gradle.api.component.ComponentWithVariants;
 import org.gradle.api.internal.CompositeDomainObjectSet;
@@ -56,7 +57,12 @@ public class XapiLibrary implements XapiVariant, ComponentWithVariants {
     private final ObjectFactory objects;
 
     @SuppressWarnings("unchecked")
-    public XapiLibrary(ObjectFactory objects, ProviderFactory providers, Instantiator instantiator) {
+    public XapiLibrary(
+        XapiSchema schema,
+        ObjectFactory objects,
+        ProviderFactory providers,
+        Instantiator instantiator
+    ) {
         platforms = new XapiPlatformContainer(instantiator, objects);
         main = objects.property(XapiPlatform.class);
         all = CompositeDomainObjectSet.create(XapiUsageContext.class, NOOP);

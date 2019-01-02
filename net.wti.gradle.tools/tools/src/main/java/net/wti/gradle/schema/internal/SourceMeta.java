@@ -20,11 +20,13 @@ public class SourceMeta {
     private final ArchiveConfig archive;
     private final PlatformConfig platform;
     private final SourceSet src;
+    private final String srcName;
 
     public SourceMeta(PlatformConfig platform, ArchiveConfig archive, SourceSet src) {
         this.archive = archive;
         this.platform = platform;
         this.src = src;
+        this.srcName = platform.sourceName(archive);
     }
 
     public ArchiveConfig getArchive() {
@@ -40,8 +42,18 @@ public class SourceMeta {
     }
 
     public Dependency depend(DependencyHandler deps) {
-        final Dependency dep = deps.create(src.getRuntimeClasspath());
+        final Dependency dep = deps.create(
+            src.getRuntimeClasspath()
+        );
         ((ExtensionAware)dep).getExtensions().add(EXT_NAME, this);
         return dep;
+    }
+
+    public String getApiConfigurationName() {
+        return srcName + "Transitive";
+    }
+
+    public String getImplementationConfigurationName() {
+        return srcName + "Impl";
     }
 }

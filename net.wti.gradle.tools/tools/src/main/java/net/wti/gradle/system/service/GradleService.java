@@ -1,8 +1,12 @@
 package net.wti.gradle.system.service;
 
+import net.wti.gradle.internal.api.ProjectView;
+import net.wti.gradle.require.internal.BuildGraph;
+import net.wti.gradle.require.internal.DefaultBuildGraph;
 import org.gradle.api.Action;
 import org.gradle.api.Project;
 import org.gradle.api.plugins.ExtensionAware;
+import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.bundling.Zip;
 import org.gradle.api.tasks.wrapper.Wrapper;
@@ -84,6 +88,14 @@ public interface GradleService {
 
     Project getProject();
 
+    default Class<? extends BuildGraph> typeBuildGraph() {
+        return DefaultBuildGraph.class;
+    }
+
+    // The method below are some logical tools for performing operations on ExtensionAware objects;
+    // The interface-scoped methods are based on the project this service wraps,
+    // and the static-scoped methods take an arbitrary ExtensionAware object.
+
     default void doOnce(String key, Action<? super Project> callback) {
         doOnce(getProject(), key, callback);
     }
@@ -94,6 +106,14 @@ public interface GradleService {
 
     default <O> O buildOnce(String key, BiFunction<Project, String, ? extends O> factory) {
         return buildOnce(getProject(), key, factory);
+    }
+
+    default <O> O buildOnce(Class<? super O> publicType, String key, Function<Project, ? extends O> factory) {
+        return buildOnce(publicType, key, (p, k)->factory.apply(p));
+    }
+
+    default <O> O buildOnce(Class<? super O> publicType, String key, BiFunction<Project, String, ? extends O> factory) {
+        return buildOnce(publicType, getProject(), key, factory);
     }
 
     default String guessPrefix() {
@@ -122,17 +142,29 @@ public interface GradleService {
     }
 
     static <T extends ExtensionAware, O> O buildOnce(T ext, String key, Function<? super T, ? extends O> factory) {
-        return buildOnce(ext, key, (p, k)->factory.apply(p));
+        return buildOnce(null, ext, key, factory);
+    }
+
+    static <T extends ExtensionAware, O> O buildOnce(Class<? super O> publicType, T ext, String key, Function<? super T, ? extends O> factory) {
+        return buildOnce(publicType, ext, key, (p, k)->factory.apply(p));
+    }
+
+    static <T extends ExtensionAware, O> O buildOnce(T ext, String key, BiFunction<? super T, String, ? extends O> factory) {
+        return buildOnce(null, ext, key, factory);
     }
 
     @SuppressWarnings("unchecked")
-    static <T extends ExtensionAware, O> O buildOnce(T ext, String key, BiFunction<? super T, String, ? extends O> factory) {
+    static <T extends ExtensionAware, O> O buildOnce(Class<? super O> publicType, T ext, String key, BiFunction<? super T, String, ? extends O> factory) {
         final Object val = ext.getExtensions().findByName(key);
         if (val == null) {
             final O created = factory.apply(ext, key);
             if (null == ext.getExtensions().findByName(key)) {
-                // In case the user code already installed the object, we don't want to double-add
-                ext.getExtensions().add(key, created);
+                // In case the user code already installed the object, we don't want to double-add...
+                if (publicType == null) {
+                    ext.getExtensions().add(key, created);
+                } else {
+                    ext.getExtensions().add(publicType, key, created);
+                }
             }
             return created;
         }
@@ -140,7 +172,7 @@ public interface GradleService {
     }
 
     default void configureWrapper(Project project) {
-        project.getLogger().quiet("scheduling wrapper configuration for " + project);
+        project.getLogger().trace("scheduling wrapper configuration for " + project);
         doOnce(project.getRootProject(), "xapi.gradle.root", root->{
 
             String gradleRoot = System.getProperty("xapi.gradle.root");
@@ -160,8 +192,8 @@ public interface GradleService {
             }
 
             final File loc = gradleLoc;
-            project.getLogger().quiet("configuring wrapper for {} using {}", root, loc);
-            final String gradleVersion = "5.1-x-2";
+            project.getLogger().trace("configuring wrapper for {} using {}", root, loc);
+            final String gradleVersion = "5.1-x-5";
             final String zipSeg = "gradle-" + gradleVersion + ".zip";
             final File zipLoc = new File(loc.getParentFile(), zipSeg);
 
@@ -169,7 +201,8 @@ public interface GradleService {
             // put them into a dist/gradle-v.zip, then make the wrapper dependent on this task.
             // This allows you to specify a local, custom-built gradle distribution,
             // and we'll handle zipping it up for you (so default "use custom gradle" instructions work OOTB)
-            final TaskProvider<Zip> distZip = project.getTasks().register(
+            final TaskContainer rootTasks = root.getTasks();
+            final TaskProvider<Zip> distZip = rootTasks.register(
                 CUSTOM_GRADLE_ZIP_TASK,
                 Zip.class,
                 zip -> {
@@ -177,15 +210,13 @@ public interface GradleService {
                     zip.from(project.files(loc), spec->{
                         spec.into("gradle-" + gradleVersion);
                     });
-//                    zip.setDestinationDir(zipLoc.getParentFile());
-//                    zip.setArchiveName(zipLoc.getName());
                     zip.getDestinationDirectory().set(zipLoc.getParentFile());
                     zip.getArchiveFileName().set(zipLoc.getName());
                     zip.getInputs().property("gradleVersion", gradleVersion);
                     zip.onlyIf(t->!zipLoc.isFile());
                 }
             );
-            root.getTasks().named("wrapper", Wrapper.class, wrapper -> {
+            rootTasks.named("wrapper", Wrapper.class, wrapper -> {
                 if (loc.isDirectory()) {
                     project.getLogger().quiet("Configuring wrapper task to point to version {} @ {}", gradleVersion, zipLoc);
                     wrapper.setGradleVersion(gradleVersion);
@@ -196,10 +227,19 @@ public interface GradleService {
                         project.getLogger().quiet("No dist zip found @ {}, creating one", zipLoc);
                         wrapper.dependsOn(distZip);
                     }
+
                 }
             });
             }
         );
     }
 
+    @SuppressWarnings("UnnecessaryLocalVariable")
+    default BuildGraph buildGraph() {
+        final Project p = getProject();
+        final ProjectView view = ProjectView.fromProject(p);
+        final BuildGraph graph = view.getInstantiator()
+            .newInstance(typeBuildGraph(), this, view);
+        return graph;
+    }
 }

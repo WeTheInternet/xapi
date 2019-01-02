@@ -1,9 +1,15 @@
 package net.wti.gradle.schema.plugin;
 
+import net.wti.gradle.internal.api.ProjectView;
 import net.wti.gradle.internal.api.XapiLibrary;
 import net.wti.gradle.internal.api.XapiPlatform;
-import net.wti.gradle.schema.api.*;
-import net.wti.gradle.schema.internal.*;
+import net.wti.gradle.require.plugin.XapiRequirePlugin;
+import net.wti.gradle.schema.api.ArchiveConfig;
+import net.wti.gradle.schema.api.PlatformConfig;
+import net.wti.gradle.schema.api.XapiSchema;
+import net.wti.gradle.schema.internal.ArchiveConfigContainerInternal;
+import net.wti.gradle.schema.internal.PlatformConfigInternal;
+import net.wti.gradle.schema.internal.SourceMeta;
 import net.wti.gradle.schema.tasks.XapiReport;
 import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
@@ -17,14 +23,14 @@ import org.gradle.api.internal.artifacts.dsl.LazyPublishArtifact;
 import org.gradle.api.invocation.Gradle;
 import org.gradle.api.plugins.ExtensionAware;
 import org.gradle.api.plugins.JavaBasePlugin;
-import org.gradle.api.provider.ListProperty;
+import org.gradle.api.plugins.JavaLibraryPlugin;
+import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.provider.ProviderFactory;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.SourceSetContainer;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.TaskProvider;
-import org.gradle.configuration.project.ProjectConfigurationActionContainer;
 import org.gradle.internal.reflect.Instantiator;
 import org.gradle.jvm.tasks.Jar;
 import org.gradle.language.base.plugins.LifecycleBasePlugin;
@@ -33,9 +39,7 @@ import xapi.gradle.java.Java;
 
 import javax.inject.Inject;
 import java.io.File;
-import java.util.Collections;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -70,36 +74,47 @@ import java.util.Set;
 @SuppressWarnings("UnstableApiUsage")
 public class XapiSchemaPlugin implements Plugin<Project> {
 
+    public static final String PROP_SCHEMA_APPLIES_JAVA = "xapi.apply.java";
+    public static final String PROP_SCHEMA_APPLIES_JAVA_LIBRARY = "xapi.apply.java-library";
+
     Attribute<String> ATTR_USAGE = Attribute.of("usage", String.class);
     Attribute<String> ATTR_ARTIFACT_TYPE = Attribute.of("artifactType", String.class);
     Attribute<String> ATTR_PLATFORM_TYPE = Attribute.of("platformType", String.class);
 
     private final Instantiator instantiator;
     private Gradle gradle;
-    private final ProjectConfigurationActionContainer actions;
 
     @Inject
-    public XapiSchemaPlugin(Instantiator instantiator, ProjectConfigurationActionContainer actions) {
+    public XapiSchemaPlugin(Instantiator instantiator) {
         this.instantiator = instantiator;
-        this.actions = actions;
-
     }
 
     @Override
     public void apply(Project project) {
         gradle = project.getGradle();
         project.getPlugins().apply(JavaBasePlugin.class);
+        if ("true".equals(project.findProperty(PROP_SCHEMA_APPLIES_JAVA))) {
+            project.getPlugins().apply(JavaPlugin.class);
+        }
+        if ("true".equals(project.findProperty(PROP_SCHEMA_APPLIES_JAVA_LIBRARY))) {
+            project.getPlugins().apply(JavaLibraryPlugin.class);
+        }
         final String schemaRoot = schemaRootPath(project);
         final Project root = project.project(schemaRoot);
-        // This stupid assert is here to do nothing, but still give a nice contructor reference,
+        ProjectView view = ProjectView.fromProject(project);
+
+        // This stupid assert is here to do nothing, but still give a nice constructor reference,
         // for better IDE navigation (decorated extensions.create instantiation below)
         //noinspection all
-        assert 1 == 1 || null == new XapiSchema(null, null);
-        final XapiSchema schema = project.getExtensions().create("xapiSchema", XapiSchema.class, project.getObjects(), instantiator);
+        assert 1 == 1 || null == new XapiSchema(view);
+        final XapiSchema schema = project.getExtensions().create(XapiSchema.EXT_NAME, XapiSchema.class, view);
+
         if (project != root) {
+            // TODO: only allow xapiSchema {} _before_ xapiRequire {} is accessed / used in any way.
+
             // If we aren't in the root project, then we should read from the root project,
             // and apply those settings to ourselves.
-            XapiSchema rootSchema = (XapiSchema) root.getExtensions().findByName("xapiSchema");
+            XapiSchema rootSchema = (XapiSchema) root.getExtensions().findByName(XapiSchema.EXT_NAME);
             if (rootSchema == null) {
                 // help the user out with a useful error
                 throw new GradleException("You must apply `plugins { id 'xapi-schema' }` in " + schemaRoot +
@@ -112,7 +127,7 @@ public class XapiSchemaPlugin implements Plugin<Project> {
             // Ok, we have our root schema, now use it to apply any necessary configurations / sourceSets.
             final ArchiveConfigContainerInternal archives = schema.getArchives();
 
-            XapiLibrary lib = new XapiLibrary(project.getObjects(), project.getProviders(), instantiator);
+            XapiLibrary lib = new XapiLibrary(schema, project.getObjects(), project.getProviders(), instantiator);
             schema.getPlatforms().configureEach(platform -> {
                 String name = platform.getName();
                 File src = project.file("src/" + name);
@@ -131,89 +146,13 @@ public class XapiSchemaPlugin implements Plugin<Project> {
         project.getTasks().register(XapiReport.TASK_NAME, XapiReport.class, report ->
             report.record(schema, lib)
         );
-        project.getPlugins().withId("java-base", ignored->{
+        project.getPlugins().withId("java-base", ignored-> {
             // The java base plugin was applied.  Create a xapiRegister extension.
-            String xapiRegClass = (String) project.findProperty("xapi.register.class");
-            final XapiRegister reg;
-            if (xapiRegClass == null) {
-                reg = project.getExtensions().create(
-                    XapiRegister.EXT_NAME,
-                    XapiRegister.class,
-                    schema,
-                    project.getObjects()
-                );
-            } else {
-                final ClassLoader cl = Thread.currentThread().getContextClassLoader();
-                try {
-                    Class<? extends XapiRegister> xapiReg = (Class<? extends XapiRegister>) cl.loadClass(xapiRegClass);
-                    reg = project.getExtensions().create(
-                        XapiRegister.class,
-                        XapiRegister.EXT_NAME,
-                        xapiReg,
-                        schema,
-                        project.getObjects()
-                    );
-                } catch (ClassNotFoundException e) {
-                    throw new GradleException("Could not load " + xapiRegClass + " from " + cl, e);
-                }
-            }
-            register(project, schema, lib, reg);
+            project.getPlugins().apply(XapiRequirePlugin.class);
         });
-    }
-
-    private void register(Project project, XapiSchema schema, XapiLibrary lib, XapiRegister reg) {
-        // Wire up listeners for XapiRegister to trigger lazy factories in schema/lib.
-        actions.add(proj->{
-            final ListProperty<XapiRegistration> regs = reg.getRegistrations();
-            final List<XapiRegistration> items = regs.get();
-            regs.set(Collections.emptyList());
-            regs.finalizeValue();
-            for (XapiRegistration include : items) {
-                final String incProj = include.getProject();
-                final String incPlat = include.getPlatform();
-                final String incArch = include.getArchive();
-                if (incArch == null) {
-                    if (incPlat == null) {
-                        // project-wide requirement; bind all
-                        schema.getPlatforms().configureEach(plat ->
-                            plat.getArchives().configureEach(arch ->
-                                include(project, incProj, lib, plat, arch)
-                        ));
-                    } else {
-                        // platform-wide requirement. This will get sticky if we allow
-                        // subprojects to customize archive types, as we don't want to
-                        // mess around w/ evaluating the foreign project.
-                        final PlatformConfig plat = schema.getPlatforms().maybeCreate(incPlat);
-                        plat.getArchives().configureEach(arch -> include(project, incProj, lib, plat, arch));
-                    }
-                } else {
-                    // a single project:platform:archive selector
-                    final PlatformConfig plat = schema.getPlatforms().maybeCreate(incPlat);
-                    final ArchiveConfig arch = plat.getArchives().maybeCreate(incArch);
-                    include(project, incProj, lib, plat, arch);
-                }
-            }
-        });
-    }
-
-    @SuppressWarnings("unchecked")
-    private void include(
-        Project project,
-        String incProj,
-        XapiLibrary lib,
-        PlatformConfig plat,
-        ArchiveConfig arch
-    ) {
-        if (!incProj.startsWith(":")) {
-            incProj = ":" + incProj;
-        }
-        final String name = plat.sourceName(arch);
-        final DependencyHandler deps = project.getDependencies();
-        final Dependency dep = deps.project(GUtil.map(
-            "path", incProj,
-            "configuration", name
-        ));
-        deps.add(name, dep);
+//        ((TaskExecutionGraphInternal)project.getGradle().getTaskGraph()).populate();
+//        final boolean exists = gradle.getTaskGraph().hasTask(project.getPath() + ":compileJava");
+//        project.getLogger().quiet("\n\n\nMEOW{}", exists);
     }
 
     @SuppressWarnings("unchecked")
@@ -230,17 +169,15 @@ public class XapiSchemaPlugin implements Plugin<Project> {
         final XapiPlatform plat = lib.getPlatform(name);
 
         final PlatformConfigInternal parent = platform.getParent();
-        boolean needsSources = platform.isRequireSource(), isMain = "main".equals(name);
+        boolean needsSources = platform.isRequireSource();
 
         final SourceSetContainer srcs = Java.sources(project);
         // The main sourceSet for this platform.
-        final String mainArchive = platform.sourceName("main");
         final PlatformConfigInternal mainPlatform = schema.findPlatform("main");
         final ArchiveConfig mainAch = archives.maybeCreate(mainPlatform.sourceName(platform.isTest() ? "test" : "main"));
         final SourceMeta mainMeta = mainPlatform.sourceFor(srcs, mainAch);
-        final SourceSet main = mainMeta.getSrc();
         final DependencyHandler deps = project.getDependencies();
-        final SourceMeta meta = platform.sourceFor(srcs, archives.maybeCreate(mainArchive));
+        final SourceMeta meta = platform.sourceFor(srcs, archives.maybeCreate("main"));
         final SourceSet src = meta.getSrc();
         project.getTasks().named(LifecycleBasePlugin.ASSEMBLE_TASK_NAME, t->{
             t.dependsOn(src.getCompileJavaTaskName());
@@ -250,10 +187,18 @@ public class XapiSchemaPlugin implements Plugin<Project> {
         // Need to setup the various configurations...
 
         final ConfigurationContainer configs = project.getConfigurations();
-        final Configuration myApi = configs.maybeCreate(src.getApiConfigurationName());
-        final Configuration myApiElements = configs.maybeCreate(src.getApiElementsConfigurationName());
+        final Configuration myGlobal = configs.maybeCreate(platform.getName());
+        final Configuration assembled = configs.maybeCreate(platform.getName() + "Assembled");
+        final Configuration myApi = configs.maybeCreate(meta.getApiConfigurationName());
+        final Configuration myImpl = configs.maybeCreate(meta.getImplementationConfigurationName());
         final Configuration compile = configs.getByName(src.getCompileConfigurationName());
-        compile.extendsFrom(myApi);
+        myImpl.extendsFrom(myApi);
+        myApi.extendsFrom(myGlobal);
+        compile.extendsFrom(myImpl);
+        assembled.extendsFrom(myApi);
+        deps.add(
+            assembled.getName(), src.getOutput()
+        );
 
         if (needsSources) {
             // Must add our own source, as well as the source of all dependencies to our classpath.
@@ -272,7 +217,11 @@ public class XapiSchemaPlugin implements Plugin<Project> {
                         // default configuration.  Convert this to "source for default configuration"
                         target = "mainSource";
                     } else if (!target.endsWith("Source")){
-                        target = target + "Source";
+                        if (target.contains("Assembled")) {
+                            target = target.replace("Assembled", "Source");
+                        } else {
+                            target = target + "Source";
+                        }
                     }
                     extras.add(deps.project(GUtil.map(
                         "path", projDep.getDependencyProject().getPath(),
@@ -314,15 +263,15 @@ public class XapiSchemaPlugin implements Plugin<Project> {
                 }
             });
         }
-        if (!platform.isRoot() && src != main) {
+        if (!platform.isRoot() && src != mainMeta.getSrc()) {
             deps.add(myApi.getName(), mainMeta.depend(deps));
         }
 
         final ArchiveConfig[] all = archives.toArray(new ArchiveConfig[0]);
         for (ArchiveConfig archive : all) {
             final Set<String> needed = archive.required();
-            String myCfg = platform.configurationName(archive);
             final SourceMeta myMeta = platform.sourceFor(srcs, archive);
+            String myCfg = platform.configurationName(archive);
             final SourceSet source = myMeta.getSrc();
             final Configuration cfg = configs.maybeCreate(myCfg);
 
@@ -431,6 +380,24 @@ public class XapiSchemaPlugin implements Plugin<Project> {
 
     protected String schemaRootPath(Project project) {
         String path = (String) project.findProperty("xapi.schema.root");
-        return path == null ? ":" : path;
+        if (path == null) {
+            if (project.findProject(":schema") != null) {
+                path = ":schema";
+            }
+        }
+        return path == null ? ":" : path.startsWith(":") ? path : ":" + path;
+    }
+
+    public static Project schemaRootProject(Project project) {
+        String path = (String) project.findProperty("xapi.schema.root");
+        if (path == null) {
+            project = project.getRootProject();
+            final XapiSchemaPlugin plugin = project.getPlugins().apply(XapiSchemaPlugin.class);
+            path = plugin.schemaRootPath(project);
+        } else {
+            project = project.project(path);
+            project.getPlugins().apply(XapiSchemaPlugin.class);
+        }
+        return project.project(path);
     }
 }

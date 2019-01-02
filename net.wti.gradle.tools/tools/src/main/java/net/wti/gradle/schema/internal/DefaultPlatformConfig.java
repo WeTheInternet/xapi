@@ -45,7 +45,7 @@ public class DefaultPlatformConfig implements PlatformConfigInternal {
         this.name = name;
         // TODO: A smart delegate where we can check the platform for archives first,
         // then default to the schema itself.
-        archives = new DefaultArchiveConfigContainer(instantiator);
+        archives = new DefaultArchiveConfigContainer(()->this, instantiator);
         schemaArchives.configureEach(archives::add);
         this.parent = parent;
         this.container = container;
@@ -102,8 +102,7 @@ public class DefaultPlatformConfig implements PlatformConfigInternal {
 
     @Override
     public String sourceName(String archive) {
-        return isRoot() ? archive :
-            "main".equals(archive) || getName().equals(archive) ? getName() :
+        return "main".equals(archive) ? getName() :
             getName() + GUtil.toCamelCase(archive);
     }
 
@@ -133,7 +132,7 @@ public class DefaultPlatformConfig implements PlatformConfigInternal {
     @Override
     public String configurationName(ArchiveConfig archive) {
         String n = archive.getName();
-        return getName().equals(n) || "main".equals(n) ? getName() : getName() + GUtil.toCamelCase(n);
+        return "main".equals(n) || getName().equals(n) ? getName() : getName() + GUtil.toCamelCase(n);
     }
 
     @Override

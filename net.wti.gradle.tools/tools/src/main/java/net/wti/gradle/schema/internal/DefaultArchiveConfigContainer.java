@@ -6,23 +6,32 @@ import org.gradle.api.internal.AbstractNamedDomainObjectContainer;
 import org.gradle.api.internal.CollectionCallbackActionDecorator;
 import org.gradle.internal.reflect.Instantiator;
 
+import java.util.concurrent.Callable;
+
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 12/28/18 @ 1:47 PM.
  */
 public class DefaultArchiveConfigContainer extends AbstractNamedDomainObjectContainer<ArchiveConfig> implements
     ArchiveConfigContainerInternal {
 
+    private final Callable<PlatformConfigInternal> platform;
+
     private boolean withClassifier, withCoordinate, withSourceJar;
 
     public DefaultArchiveConfigContainer(
-        Instantiator instantiator
+        Callable<PlatformConfigInternal> platform, Instantiator instantiator
     ) {
         super(ArchiveConfig.class, instantiator, CollectionCallbackActionDecorator.NOOP);
+        this.platform = platform;
     }
 
     @Override
     protected ArchiveConfigInternal doCreate(String name) {
-        return new DefaultArchiveConfig(name);
+        try {
+            return new DefaultArchiveConfig(platform.call(), name);
+        } catch (Exception e) {
+            throw new UnsupportedOperationException("Could not create " + name, e);
+        }
     }
 
     @Override

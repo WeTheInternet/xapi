@@ -1,6 +1,8 @@
 package net.wti.gradle.schema.internal;
 
 import net.wti.gradle.system.tools.GradleCoerce;
+import org.gradle.api.ProjectView;
+import org.gradle.api.artifacts.Configuration;
 
 import java.util.Arrays;
 import java.util.LinkedHashSet;
@@ -13,10 +15,12 @@ public class DefaultArchiveConfig implements ArchiveConfigInternal {
 
     private final String name;
     private final Set<Object> required;
+    private final PlatformConfigInternal platform;
     private boolean sourceAllowed;
 
-    public DefaultArchiveConfig(String name) {
+    public DefaultArchiveConfig(PlatformConfigInternal platform, String name) {
         this.name = name;
+        this.platform = platform;
         required = new LinkedHashSet<>();
         sourceAllowed = true;
     }
@@ -86,5 +90,34 @@ public class DefaultArchiveConfig implements ArchiveConfigInternal {
     @Override
     public void setSourceAllowed(boolean sourceAllowed) {
         this.sourceAllowed = sourceAllowed;
+    }
+
+    protected String baseName() {
+        return getPlatform().sourceName(this);
+    }
+
+    @Override
+    public Configuration getTransitive(ProjectView forProject) {
+
+        return forProject.getConfigurations().maybeCreate(baseName() + "Transitive");
+    }
+
+    @Override
+    public Configuration getIntransitive(ProjectView forProject) {
+        return forProject.getConfigurations().maybeCreate(baseName() + "Intransitive");
+    }
+
+    @Override
+    public Configuration getImplementation(ProjectView forProject) {
+        return forProject.getConfigurations().maybeCreate(baseName() + "Impl");
+    }
+
+    @Override
+    public Configuration getRuntime(ProjectView forProject) {
+        return forProject.getConfigurations().maybeCreate(baseName() + "Runtime");
+    }
+
+    public PlatformConfigInternal getPlatform() {
+        return platform;
     }
 }

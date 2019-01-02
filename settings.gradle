@@ -219,6 +219,9 @@ project(':xapi-maven-plugin').projectDir = file('maven')
 project(':xapi-samples:xapi-demo').projectDir = file('samples/demo')
 project(':xapi-samples').projectDir = file('samples')
 
+include(':schema')
+project(':schema').buildFileName = "schema.gradle"
+
 // Instead of buildSrc, we're using an included, composite build, and putting it on buildSrc classpath configuration
 logger.debug """Project properties: $startParameter.projectProperties
 System Property Args: $startParameter.systemPropertiesArgs

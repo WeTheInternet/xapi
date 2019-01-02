@@ -11,4 +11,10 @@ trait TestProjectDir extends TestFileTools {
         this.@buildFile ?: (this.@buildFile = file('build.gradle'))
     }
 
+    private File propertiesFile
+
+    File getPropertiesFile() {
+        this.@propertiesFile ?: (this.@propertiesFile = file('gradle.properties'))
+    }
+
 }
