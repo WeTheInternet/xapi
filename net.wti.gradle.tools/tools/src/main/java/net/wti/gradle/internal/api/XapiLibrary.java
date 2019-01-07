@@ -1,7 +1,9 @@
 package net.wti.gradle.internal.api;
 
+import net.wti.gradle.internal.require.api.ProjectGraph;
 import net.wti.gradle.schema.api.XapiSchema;
-import org.gradle.api.*;
+import org.gradle.api.DomainObjectSet;
+import org.gradle.api.NamedDomainObjectSet;
 import org.gradle.api.component.ComponentWithVariants;
 import org.gradle.api.internal.CompositeDomainObjectSet;
 import org.gradle.api.model.ObjectFactory;
@@ -36,6 +38,9 @@ import static org.gradle.api.internal.CollectionCallbackActionDecorator.NOOP;
  * all mains will automatically inherit api, while all implementation mains (platforms)
  * will, by default (if no explicit dependencies added) inherit main, api AND spi,
  * as it's presumed that your platform-native code is implementing the spi and glue for the api to work.
+ *
+ * TODO: either rename this to XapiPublishLibrary, or otherwise use this object to encapsulate
+ * the output of realizing a given {@link ProjectGraph}
  *
  * Created by James X. Nelson (James@WeTheInter.net) on 12/10/18 @ 2:15 AM.
  */

@@ -1,6 +1,5 @@
 package net.wti.gradle.schema.tasks;
 
-import net.wti.gradle.internal.api.XapiLibrary;
 import net.wti.gradle.schema.api.PlatformConfig;
 import net.wti.gradle.schema.api.XapiSchema;
 import net.wti.gradle.system.tools.GradleCoerce;
@@ -13,6 +12,7 @@ import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.Property;
 import org.gradle.api.provider.SetProperty;
 import org.gradle.api.tasks.*;
+import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.util.GFileUtils;
 import xapi.gradle.java.Java;
 
@@ -21,6 +21,7 @@ import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 12/29/18 @ 12:35 AM.
@@ -49,6 +50,8 @@ public class XapiReport extends DefaultTask {
         report.convention("Xapi Report " + getProject().getPath() + " -> <empty>");
         log.convention("true".equals(getProject().findProperty("xapi.debug")));
         location.convention(getProject().getLayout().getBuildDirectory().file(loc));
+        getProject().getTasks().withType(JavaCompile.class)
+            .configureEach(javac-> javac.shouldRunAfter(this));
         getProject().getGradle().getTaskGraph().whenReady(g->{
                 generate();
         });
@@ -67,7 +70,7 @@ public class XapiReport extends DefaultTask {
         return prop == null ? "xapiReport/report" : GradleCoerce.unwrapStrings(prop).get(0);
     }
 
-    public void record(XapiSchema schema, XapiLibrary lib) {
+    public void record(XapiSchema schema) {
         for (PlatformConfig platform : schema.getPlatforms()) {
 
             sourceSets.add(platform.getName());
@@ -76,22 +79,40 @@ public class XapiReport extends DefaultTask {
 
     public void generate() {
         StringBuilder b = new StringBuilder("\nXapi Report ");
-        b.append(getProject().getPath()).append(" ->\n");
+        b.append(getProject().getPath()).append(" ->\n")
+                .append(":\n\tAll Configurations\n\t\t")
+                .append(getProject().getConfigurations().stream()
+                    .map(c->c.getName() + " extends [" +
+                            c.getExtendsFrom().stream().map(Configuration::getName).collect(Collectors.joining(","))
+                    + "]")
+                    .collect(Collectors.joining("\n")));
         final SourceSetContainer srcs = Java.sources(getProject());
         for (String platform : sourceSets.get()) {
-            final SourceSet src = srcs.getByName(platform);
+            final SourceSet src = srcs.findByName(platform);
             b
                 .append("\n")
-                .append(platform)
-                .append(":\n\tCompile classpath\n\t\t")
-                .append(fixPath(src.getCompileClasspath().getAsPath()))
-                .append(":\n\tRuntime classpath\n\t\t")
-                .append(fixPath(src.getRuntimeClasspath().getAsPath()))
-                .append(":\n\tConfigurations\n\t\t")
-            ;
+                .append(platform);
+            if (src == null) {
+                b.append(": <no source>\n\t\t");
+            } else {
+                b
+                    .append("\n\tCompile classpath of ")
+                    .append(getProject().getPath())
+                    .append(":\n\t\t")
+                    .append(fixPath(src.getCompileClasspath().getAsPath()))
+                    .append("\n\tRuntime classpath of ")
+                    .append(getProject().getPath())
+                    .append(":\n\t\t")
+                    .append(fixPath(src.getRuntimeClasspath().getAsPath()))
+                ;
+            }
+            b.append(":\n\tConfigurations of ")
+                .append(getProject().getPath())
+                .append(":\n\t\t");
             final ConfigurationContainer configs = getProject().getConfigurations();
             Set<String> seen = new HashSet<>();
-            printConfigs(src.getCompileConfigurationName(), "\t\t", configs, b, seen);
+            printConfigs(platform + "Assembled", "\t\t", configs, b, seen);
+            printConfigs(platform + "CompileClasspath", "\t\t", configs, b, seen);
 
         }
         String is = b.toString();
@@ -100,7 +121,9 @@ public class XapiReport extends DefaultTask {
             if (is.equals(was)) {
                 return;
             }
-            is = was + "\n" + is;
+            if (!was.contains("<empty>")) {
+                is = was + "\n" + is;
+            }
         }
         report.set(is);
     }

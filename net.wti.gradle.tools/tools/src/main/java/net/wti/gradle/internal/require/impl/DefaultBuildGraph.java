@@ -1,7 +1,8 @@
-package net.wti.gradle.require.internal;
+package net.wti.gradle.internal.require.impl;
 
 import net.wti.gradle.internal.api.ProjectView;
-import net.wti.gradle.require.internal.BuildGraph.ProjectGraph;
+import net.wti.gradle.internal.require.api.BuildGraph;
+import net.wti.gradle.internal.require.api.ProjectGraph;
 import net.wti.gradle.system.service.GradleService;
 import net.wti.gradle.system.tools.GradleCoerce;
 import org.gradle.api.NamedDomainObjectProvider;
@@ -19,20 +20,25 @@ public class DefaultBuildGraph extends AbstractBuildGraphNode<ProjectGraph> impl
 
     @Inject
     public DefaultBuildGraph(GradleService service, ProjectView project) {
-        super(ProjectGraph.class, project.getInstantiator());
+        super(ProjectGraph.class, project);
         this.service = service;
         this.project = project;
     }
 
     @Override
     protected ProjectGraph createItem(String name) {
-        return new DefaultProjectGraph(DefaultBuildGraph.this, project);
+        name = toPath(name);
+        return new DefaultProjectGraph(DefaultBuildGraph.this, project.findProject(name));
+    }
+
+    private String toPath(String name) {
+        return name.startsWith(":") ? name : ":" + name;
     }
 
     @Override
     public NamedDomainObjectProvider<ProjectGraph> project(Object path) {
         String p = GradleCoerce.unwrapStringOr(path, ":");
-        return getOrRegister(p);
+        return getOrRegister(p.startsWith(":") ? p : ":" + p);
     }
 
     @Override
@@ -42,7 +48,7 @@ public class DefaultBuildGraph extends AbstractBuildGraphNode<ProjectGraph> impl
 
     @Override
     public ProjectView rootProject() {
-        return ProjectView.fromProject(service.getProject());
+        return service.getView();
     }
 
     @Override

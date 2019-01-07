@@ -1,18 +1,33 @@
 package net.wti.gradle.internal.api;
 
 import net.wti.gradle.internal.impl.DefaultProjectView;
+import net.wti.gradle.internal.require.api.BuildGraph;
+import net.wti.gradle.internal.require.api.ProjectGraph;
+import net.wti.gradle.schema.api.XapiSchema;
+import net.wti.gradle.system.service.GradleService;
+import org.gradle.api.NamedDomainObjectProvider;
 import org.gradle.api.Project;
+import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.ConfigurationContainer;
+import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.dsl.ArtifactHandler;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.api.artifacts.dsl.RepositoryHandler;
+import org.gradle.api.file.ProjectLayout;
+import org.gradle.api.internal.CollectionCallbackActionDecorator;
+import org.gradle.api.internal.artifacts.dsl.dependencies.ProjectFinder;
 import org.gradle.api.internal.project.ProjectInternal;
+import org.gradle.api.invocation.Gradle;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.model.ObjectFactory;
+import org.gradle.api.plugins.ExtensionAware;
 import org.gradle.api.provider.ProviderFactory;
 import org.gradle.api.tasks.SourceSetContainer;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.internal.reflect.Instantiator;
+import org.gradle.util.GUtil;
+
+import java.io.File;
 
 /**
  * A "lightweight view" of commonly-passed-around objects from a given gradle {@link Project}.
@@ -24,7 +39,9 @@ import org.gradle.internal.reflect.Instantiator;
  *
  * Created by James X. Nelson (James@WeTheInter.net) on 12/31/18 @ 12:45 AM.
  */
-public interface ProjectView {
+public interface ProjectView extends ExtensionAware {
+
+    String EXT_NAME = "_xapiProject";
 
     String getPath();
     ObjectFactory getObjects();
@@ -38,10 +55,70 @@ public interface ProjectView {
     ArtifactHandler getArtifacts();
     SourceSetContainer getSourceSets();
     Object findProperty(String named);
+    ProjectView findProject(String named);
+    String getVersion();
 
     static ProjectView fromProject(Project project) {
-        final Instantiator inst = ((ProjectInternal) project).getServices().get(Instantiator.class);
-        return new DefaultProjectView(inst, project);
+        return GradleService.buildOnce(project, ProjectView.EXT_NAME, ignored-> {
+            ProjectInternal p = (ProjectInternal) project;
+            final Instantiator inst = p.getServices().get(Instantiator.class);
+            final CollectionCallbackActionDecorator dec = p.getServices().get(CollectionCallbackActionDecorator.class);
+            ProjectFinder finder = p.getServices().get(ProjectFinder.class);
+            return new DefaultProjectView(project, inst, dec, finder);
+        });
+    }
+
+    default XapiSchema getSchema() {
+        return GradleService.buildOnce(this, XapiSchema.EXT_NAME, XapiSchema::new);
+    }
+
+    CollectionCallbackActionDecorator getDecorator();
+
+    BuildGraph getBuildGraph();
+
+    default NamedDomainObjectProvider<ProjectGraph> projectGraph() {
+        return getBuildGraph().project(getPath());
+    }
+
+    default ProjectGraph getProjectGraph() {
+        return projectGraph().get();
+    }
+
+    default ProjectView getRootProject() {
+        return findProject(":");
+    }
+
+    ProjectLayout getLayout();
+
+    default File getProjectDir() {
+        final File f = getLayout().getProjectDirectory().getAsFile();
+        return f;
+    }
+
+    default File getBuildDir() {
+        return getLayout().getProjectDirectory().getAsFile();
+    }
+
+    Gradle getGradle();
+
+    default File file(String path) {
+        return new File(getProjectDir(), path);
+    }
+
+    default Dependency dependencyFor(Configuration config) {
+        return dependencyFor(getPath(), config);
+    }
+
+    default Dependency dependencyFor(String path, Configuration config) {
+        final DependencyHandler deps = getDependencies();
+        return deps.project(GUtil.map(
+                "path", path,
+                // Important: We are not adding the configuration itself;
+                // we are adding a dependency to the same-named configuration
+                // in a possibly different project.
+                "configuration", config.getName()
+            )
+        );
     }
 
 }

@@ -1,7 +1,8 @@
 package net.wti.gradle.schema.api;
 
-import net.wti.gradle.schema.internal.SourceMeta;
+import net.wti.gradle.system.tools.GradleCoerce;
 import org.gradle.api.Named;
+import org.gradle.internal.HasInternalProtocol;
 
 /**
  * A configuration object to describe the available platforms within the gradle build.
@@ -23,11 +24,19 @@ import org.gradle.api.Named;
  *
  * Created by James X. Nelson (James@WeTheInter.net) on 12/28/18 @ 2:32 PM.
  */
+@HasInternalProtocol
 public interface PlatformConfig extends Named {
+
+    PlatformConfig getParent();
 
     ArchiveConfigContainer getArchives();
 
     ArchiveConfig getMainArchive();
+
+    default ArchiveConfig getArchive(Object named) {
+        final String name = GradleCoerce.unwrapString(named);
+        return getArchives().maybeCreate(name);
+    }
 
     /**
      * Set requireSource = true to cause all non-source dependencies
@@ -53,12 +62,7 @@ public interface PlatformConfig extends Named {
 
     void addChild(PlatformConfig platform);
 
-    default String sourceName(ArchiveConfig archive) {
-        return sourceName(archive.getName());
-    }
-
-    String sourceName(String archive);
-
     boolean isRoot();
 
+    boolean isRequireSource();
 }

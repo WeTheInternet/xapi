@@ -58,7 +58,7 @@ xapiRequire.project 'gwt1'
 '''
 
         when:
-        BuildResult res = runSucceed('xapiReport', ':gwt2:compileGwtJava', '-Pxapi.debug=true')
+        BuildResult res = runSucceed(':gwt2:xapiReport', ':gwt2:compileGwtJava', '-Pxapi.debug=true')
         then:
         res.task(':gwt1:compileGwtJava').outcome == TaskOutcome.SUCCESS
         res.task(':gwt1:compileJava').outcome == TaskOutcome.SUCCESS
@@ -73,14 +73,14 @@ xapiRequire.project 'gwt1'
 
         when:
         // We use -Pxapi.debug=true to get results printed to stdOut.  We could / should also check the report file.
-        BuildResult res = runSucceed('compileGwtJava', 'xapiReport', '-Pxapi.debug=true')
+        BuildResult res = runSucceed('compileGwtJava', ":$proj:xapiReport", '-Pxapi.debug=true')
         then:
         res.task(":$proj:compileGwtJava").outcome == TaskOutcome.SUCCESS
         res.task(":$proj:compileJava").outcome == TaskOutcome.SUCCESS
         res.output.contains "$rootDir/$proj/src/main/java"
     }
 
-    def "Plugin is compatible with 'java' plugin"() {
+    def "Plugin is compatible with java plugin"() {
         given:
         String proj = setupSimpleGwt()
 
@@ -109,7 +109,7 @@ apply plugin: 'java'"""
         res.task(":$proj:compileJava").outcome == TaskOutcome.UP_TO_DATE
     }
 
-    def "Plugin is compatible with 'java-library' plugin"() {
+    def "Plugin is compatible with java-library plugin"() {
         given:
         String proj = setupSimpleGwt()
 

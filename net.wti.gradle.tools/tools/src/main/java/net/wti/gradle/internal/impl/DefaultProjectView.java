@@ -1,13 +1,21 @@
 package net.wti.gradle.internal.impl;
 
 import net.wti.gradle.internal.api.ProjectView;
+import net.wti.gradle.internal.require.api.BuildGraph;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.ConfigurationContainer;
 import org.gradle.api.artifacts.dsl.ArtifactHandler;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.api.artifacts.dsl.RepositoryHandler;
+import org.gradle.api.file.ProjectLayout;
+import org.gradle.api.internal.CollectionCallbackActionDecorator;
+import org.gradle.api.internal.artifacts.dsl.dependencies.ProjectFinder;
+import org.gradle.api.internal.project.ProjectInternal;
+import org.gradle.api.invocation.Gradle;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.model.ObjectFactory;
+import org.gradle.api.plugins.ExtensionContainer;
+import org.gradle.api.provider.Provider;
 import org.gradle.api.provider.ProviderFactory;
 import org.gradle.api.tasks.SourceSetContainer;
 import org.gradle.api.tasks.TaskContainer;
@@ -34,13 +42,26 @@ public class DefaultProjectView implements ProjectView {
     private final ArtifactHandler artifacts;
     private final SourceSetContainer sourceSets;
     private final Function<String, Object> propFinder;
+    private final ExtensionContainer extensions;
+    private final CollectionCallbackActionDecorator decorator;
+    private final Provider<BuildGraph> buildGraph;
+    private final ProjectFinder projectFinder;
+    private final ProjectLayout layout;
+    private final Gradle gradle;
+    private final Provider<Object> version;
 
     public DefaultProjectView(
-        Instantiator instantiator, Project project) {
+        Project project,
+        Instantiator instantiator,
+        CollectionCallbackActionDecorator dec,
+        ProjectFinder finder
+    ) {
         this(
+            project.getGradle(),
             project.getPath(),
             project.getObjects(),
             instantiator,
+            project.getExtensions(),
             project.getProviders(),
             project.getLogger(),
             project.getTasks(),
@@ -48,15 +69,22 @@ public class DefaultProjectView implements ProjectView {
             project.getRepositories(),
             project.getDependencies(),
             project.getArtifacts(),
+            project.getLayout(),
             Java.sources(project),
-            project::findProperty
+            project::findProperty,
+            dec,
+            finder,
+            project.getProviders().provider(project::getVersion),
+            project.getProviders().provider(()->BuildGraph.findBuildGraph(project))
         );
     }
 
     public DefaultProjectView(
+        Gradle gradle,
         String path,
         ObjectFactory objects,
         Instantiator instantiator,
+        ExtensionContainer extensions,
         ProviderFactory providers,
         Logger logger,
         TaskContainer tasks,
@@ -64,12 +92,19 @@ public class DefaultProjectView implements ProjectView {
         RepositoryHandler repositories,
         DependencyHandler dependencies,
         ArtifactHandler artifacts,
+        ProjectLayout layout,
         SourceSetContainer sourceSets,
-        Function<String, Object> propFinder
+        Function<String, Object> propFinder,
+        CollectionCallbackActionDecorator decorator,
+        ProjectFinder projectFinder,
+        Provider<Object> version,
+        Provider<BuildGraph> buildGraph
     ) {
+        this.gradle = gradle;
         this.path = path;
         this.objects = objects;
         this.instantiator = instantiator;
+        this.extensions = extensions;
         this.providers = providers;
         this.logger = logger;
         this.tasks = tasks;
@@ -79,6 +114,11 @@ public class DefaultProjectView implements ProjectView {
         this.artifacts = artifacts;
         this.sourceSets = sourceSets;
         this.propFinder = propFinder;
+        this.decorator = decorator;
+        this.projectFinder = projectFinder;
+        this.buildGraph = buildGraph;
+        this.layout = layout;
+        this.version = version;
     }
 
     @Override
@@ -139,5 +179,61 @@ public class DefaultProjectView implements ProjectView {
     @Override
     public Object findProperty(String named) {
         return propFinder.apply(named);
+    }
+
+    @Override
+    public ProjectView findProject(String named) {
+        if (named.equals(getPath())) {
+            return this;
+        }
+        final ProjectInternal proj = projectFinder.findProject(named);
+        if (proj == null) {
+            return null;
+        }
+        return ProjectView.fromProject(proj);
+    }
+
+    @Override
+    public CollectionCallbackActionDecorator getDecorator() {
+        return decorator;
+    }
+
+    @Override
+    public ExtensionContainer getExtensions() {
+        return extensions;
+    }
+
+    @Override
+    public BuildGraph getBuildGraph() {
+        return buildGraph.get();
+    }
+
+    @Override
+    public ProjectLayout getLayout() {
+        return layout;
+    }
+
+    @Override
+    public Gradle getGradle() {
+        return gradle;
+    }
+
+    @Override
+    public String getVersion() {
+        final Object v = version.get();
+        if ("unspecified".equals(v)) {
+            // TODO: get a decent default version
+            getLogger().warn("Version accessed but not configured in {}", getPath(), new RuntimeException());
+            return "0.0.1";
+        }
+        return String.valueOf(v);
+    }
+
+    @Override
+    public String toString() {
+        return "DefaultProjectView{" +
+            "path='" + path + '\'' +
+            ", version=" + getVersion() +
+            '}';
     }
 }

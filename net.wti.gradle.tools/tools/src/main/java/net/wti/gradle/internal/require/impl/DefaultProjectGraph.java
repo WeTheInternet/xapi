@@ -1,8 +1,10 @@
-package net.wti.gradle.require.internal;
+package net.wti.gradle.internal.require.impl;
 
 import net.wti.gradle.internal.api.ProjectView;
-import net.wti.gradle.require.internal.BuildGraph.PlatformGraph;
-import net.wti.gradle.require.internal.BuildGraph.ProjectGraph;
+import net.wti.gradle.internal.require.api.BuildGraph;
+import net.wti.gradle.internal.require.api.PlatformGraph;
+import net.wti.gradle.internal.require.api.ProjectGraph;
+import org.gradle.api.Action;
 import org.gradle.api.NamedDomainObjectContainer;
 
 import java.util.Set;
@@ -15,14 +17,14 @@ public class DefaultProjectGraph extends AbstractBuildGraphNode<PlatformGraph> i
     private final ProjectView project;
 
     public DefaultProjectGraph(BuildGraph graph, ProjectView project) {
-        super(PlatformGraph.class, project.getInstantiator());
+        super(PlatformGraph.class, project);
         this.graph = graph;
         this.project = project;
     }
 
     @Override
     protected PlatformGraph createItem(String name) {
-        return null;
+        return new DefaultPlatformGraph(this, name);
     }
 
     @Override
@@ -38,6 +40,11 @@ public class DefaultProjectGraph extends AbstractBuildGraphNode<PlatformGraph> i
     @Override
     public NamedDomainObjectContainer<PlatformGraph> platforms() {
         return super.getItems();
+    }
+
+    @Override
+    public void realizedPlatforms(Action<? super PlatformGraph> action) {
+        whenRealized(action);
     }
 
     @Override

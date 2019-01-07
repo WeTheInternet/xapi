@@ -1,5 +1,6 @@
 package net.wti.gradle.schema.api;
 
+import net.wti.gradle.schema.internal.ArchiveConfigInternal;
 import org.gradle.api.NamedDomainObjectContainer;
 
 /**
@@ -9,4 +10,7 @@ public interface ArchiveConfigContainer extends NamedDomainObjectContainer<Archi
     void setWithClassifier(boolean classifier);
     void setWithCoordinate(boolean coordinate);
     void setWithSourceJar(boolean sourceJar);
+
+    @Override
+    ArchiveConfigInternal maybeCreate(String name);
 }

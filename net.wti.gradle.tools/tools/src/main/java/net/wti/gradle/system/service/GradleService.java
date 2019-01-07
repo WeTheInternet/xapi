@@ -1,10 +1,11 @@
 package net.wti.gradle.system.service;
 
 import net.wti.gradle.internal.api.ProjectView;
-import net.wti.gradle.require.internal.BuildGraph;
-import net.wti.gradle.require.internal.DefaultBuildGraph;
+import net.wti.gradle.internal.require.api.BuildGraph;
+import net.wti.gradle.internal.require.impl.DefaultBuildGraph;
 import org.gradle.api.Action;
 import org.gradle.api.Project;
+import org.gradle.api.internal.GradleInternal;
 import org.gradle.api.plugins.ExtensionAware;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.TaskProvider;
@@ -88,8 +89,21 @@ public interface GradleService {
 
     Project getProject();
 
+    default ProjectView getView() {
+        return ProjectView.fromProject(getProject());
+    }
+
     default Class<? extends BuildGraph> typeBuildGraph() {
         return DefaultBuildGraph.class;
+    }
+
+    default boolean isCompositeRoot() {
+        GradleInternal self = (GradleInternal) getProject().getGradle();
+        return self.getRoot() == self;
+    }
+
+    default boolean hasComposite() {
+        return !getProject().getGradle().getIncludedBuilds().isEmpty();
     }
 
     // The method below are some logical tools for performing operations on ExtensionAware objects;
@@ -235,9 +249,8 @@ public interface GradleService {
     }
 
     @SuppressWarnings("UnnecessaryLocalVariable")
-    default BuildGraph buildGraph() {
-        final Project p = getProject();
-        final ProjectView view = ProjectView.fromProject(p);
+    default BuildGraph createBuildGraph() {
+        final ProjectView view = getView();
         final BuildGraph graph = view.getInstantiator()
             .newInstance(typeBuildGraph(), this, view);
         return graph;

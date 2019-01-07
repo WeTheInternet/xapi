@@ -9,4 +9,7 @@ public interface ArchiveConfigContainerInternal extends ArchiveConfigContainer {
     boolean isWithClassifier();
     boolean isWithCoordinate();
     boolean isWithSourceJar();
+
+    @Override
+    ArchiveConfigInternal maybeCreate(String name);
 }

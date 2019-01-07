@@ -1,13 +1,12 @@
 package net.wti.gradle.require.api;
 
+import net.wti.gradle.internal.api.ProjectView;
 import net.wti.gradle.schema.api.XapiSchema;
 import net.wti.gradle.schema.internal.PlatformConfigInternal;
 import net.wti.gradle.schema.internal.XapiRegistration;
-import net.wti.gradle.system.tools.GradleCoerce;
-import org.gradle.api.model.ObjectFactory;
-import org.gradle.api.provider.ListProperty;
-
-import java.util.concurrent.Callable;
+import org.gradle.api.Named.Namer;
+import org.gradle.api.NamedDomainObjectList;
+import org.gradle.api.internal.DefaultNamedDomainObjectList;
 
 /**
  * An extension object to enable easy "hands off" wiring of dependencies.
@@ -19,12 +18,16 @@ public class XapiRequire {
 
     public static final String EXT_NAME = "xapiRequire";
 
-    private final ListProperty<XapiRegistration> registrations;
+    private final NamedDomainObjectList<XapiRegistration> registrations;
     private final XapiSchema schema;
 
-    public XapiRequire(XapiSchema schema, ObjectFactory factory) {
-        this.schema = schema;
-        this.registrations = factory.listProperty(XapiRegistration.class);
+    public XapiRequire(ProjectView project) {
+        this.schema = project.getSchema();
+        this.registrations = new DefaultNamedDomainObjectList<>(
+            XapiRegistration.class,
+            project.getInstantiator(),
+            Namer.forType(XapiRegistration.class)
+        );
     }
 
     /**
@@ -97,7 +100,7 @@ public class XapiRequire {
         return platform;
     }
 
-    public ListProperty<XapiRegistration> getRegistrations() {
+    public NamedDomainObjectList<XapiRegistration> getRegistrations() {
         return registrations;
     }
 }

@@ -1,13 +1,14 @@
 package net.wti.gradle.schema.internal;
 
 import net.wti.gradle.system.tools.GradleCoerce;
+import org.gradle.api.Named;
 
 import java.util.Objects;
 
 /**
  * Created by James X. Nelson (James@WeTheInter.net) on 12/29/18 @ 10:35 PM.
  */
-public class XapiRegistration {
+public class XapiRegistration implements Named {
 
     private Object project;
     private Object platform;
@@ -90,13 +91,10 @@ public class XapiRegistration {
         final XapiRegistration that = (XapiRegistration) o;
         maybeResolve();
         that.maybeResolve();
-        if (!project.equals(that.project))
-            return false;
-        if (!Objects.equals(platform, that.platform))
-            return false;
-        if (!Objects.equals(archive, that.archive))
-            return false;
-        return Objects.equals(into, that.into);
+        return project.equals(that.project)
+               && Objects.equals(platform, that.platform)
+               && Objects.equals(archive, that.archive)
+               && Objects.equals(into, that.into);
     }
 
     @Override
@@ -107,5 +105,18 @@ public class XapiRegistration {
         result = 31 * result + (archive != null ? archive.hashCode() : 0);
         result = 31 * result + (into != null ? into.hashCode() : 0);
         return result;
+    }
+
+    @Override
+    public String getName() {
+        maybeResolve();
+        StringBuilder b = new StringBuilder();
+        b
+            .append(project)
+            .append("/")
+            .append(platform)
+            .append(":")
+            .append(archive);
+        return b.toString();
     }
 }

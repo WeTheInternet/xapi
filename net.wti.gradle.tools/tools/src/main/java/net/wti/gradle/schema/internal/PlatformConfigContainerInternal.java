@@ -9,4 +9,5 @@ public interface PlatformConfigContainerInternal extends PlatformConfigContainer
 
     @Override
     PlatformConfigInternal maybeCreate(String name);
+
 }

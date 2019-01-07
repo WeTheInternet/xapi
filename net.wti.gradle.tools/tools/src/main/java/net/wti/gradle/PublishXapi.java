@@ -141,7 +141,7 @@ public class PublishXapi {
                     } else {
                         pub.from(p.getComponents().getByName(type));
                     }
-                    final String baseName = ((Jar)p.getTasks().getByName("jar")).getBaseName();
+                    final String baseName = ((Jar)p.getTasks().getByName("jar")).getArchiveBaseName().get();
                     pub.setArtifactId(baseName);
 
                 })

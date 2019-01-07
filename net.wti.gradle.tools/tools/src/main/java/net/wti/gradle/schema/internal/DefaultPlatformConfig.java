@@ -1,10 +1,9 @@
 package net.wti.gradle.schema.internal;
 
-import net.wti.gradle.schema.api.*;
-import org.gradle.api.tasks.SourceSet;
-import org.gradle.api.tasks.SourceSetContainer;
+import net.wti.gradle.schema.api.ArchiveConfigContainer;
+import net.wti.gradle.schema.api.PlatformConfig;
+import net.wti.gradle.schema.api.PlatformConfigContainer;
 import org.gradle.internal.reflect.Instantiator;
-import org.gradle.util.GUtil;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -20,7 +19,6 @@ public class DefaultPlatformConfig implements PlatformConfigInternal {
     private final String name;
     private final DefaultArchiveConfigContainer archives;
     private final PlatformConfigContainer container;
-//    private final SourceSetContainer srcs;
     private PlatformConfigInternal parent;
     private Map<PlatformConfig, PlatformConfig> children = new IdentityHashMap<>();
     private boolean requireSource;
@@ -73,7 +71,7 @@ public class DefaultPlatformConfig implements PlatformConfigInternal {
     }
 
     @Override
-    public ArchiveConfigContainer getArchives() {
+    public ArchiveConfigContainerInternal getArchives() {
         return archives;
     }
 
@@ -101,38 +99,8 @@ public class DefaultPlatformConfig implements PlatformConfigInternal {
     }
 
     @Override
-    public String sourceName(String archive) {
-        return "main".equals(archive) ? getName() :
-            getName() + GUtil.toCamelCase(archive);
-    }
-
-    @Override
     public boolean isTest() {
         return test;
-    }
-
-    @Override
-    public SourceMeta sourceFor(SourceSetContainer srcs, ArchiveConfig archive) {
-//        assert archives.contains(archive) : "Archive " + archive + " does not belong to " + this;
-        final String srcName = sourceName(archive);
-        SourceSet src = srcs.findByName(srcName);
-        SourceMeta meta = null;
-        if (src == null) {
-            src = srcs.create(srcName);
-        } else {
-            meta = (SourceMeta) src.getExtensions().findByName(SourceMeta.EXT_NAME);
-        }
-        if (meta == null) {
-            meta = new SourceMeta(this, archive, src);
-            src.getExtensions().add(SourceMeta.EXT_NAME, meta);
-        }
-        return meta;
-    }
-
-    @Override
-    public String configurationName(ArchiveConfig archive) {
-        String n = archive.getName();
-        return "main".equals(n) || getName().equals(n) ? getName() : getName() + GUtil.toCamelCase(n);
     }
 
     @Override

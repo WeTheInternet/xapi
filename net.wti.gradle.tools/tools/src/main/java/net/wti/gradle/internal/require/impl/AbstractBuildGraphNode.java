@@ -1,9 +1,7 @@
-package net.wti.gradle.require.internal;
+package net.wti.gradle.internal.require.impl;
 
-import net.wti.gradle.require.internal.BuildGraph.ProjectGraph;
-import org.gradle.api.NamedDomainObjectContainer;
-import org.gradle.api.NamedDomainObjectProvider;
-import org.gradle.api.Namer;
+import net.wti.gradle.internal.api.ProjectView;
+import org.gradle.api.*;
 import org.gradle.api.internal.AbstractNamedDomainObjectContainer;
 import org.gradle.api.internal.CollectionCallbackActionDecorator;
 import org.gradle.internal.reflect.Instantiator;
@@ -47,22 +45,26 @@ public abstract class AbstractBuildGraphNode <T> {
 
     protected abstract T createItem(String name);
 
-    public AbstractBuildGraphNode(Class<T> type, Instantiator inst) {
+    public AbstractBuildGraphNode(Class<T> type, ProjectView project) {
         registeredItems = new LinkedHashSet<>();
         realizedItems = new LinkedHashSet<>();
-        items = new GraphNodeContainer(type, inst, CollectionCallbackActionDecorator.NOOP);
+        items = new GraphNodeContainer(type, project.getInstantiator(), project.getDecorator());
     }
 
     protected NamedDomainObjectContainer<T> getItems() {
         return items;
     }
 
-    protected NamedDomainObjectProvider<T> getOrRegister(String p) {
+    public NamedDomainObjectProvider<T> getOrRegister(String p) {
         if (registeredItems.add(p)) {
             return items.register(p);
         } else {
             return items.named(p);
         }
+    }
+
+    public void whenRealized(Action<? super T> action) {
+        items.configureEach(action);
     }
 
     protected Set<T> realizedItems() {
