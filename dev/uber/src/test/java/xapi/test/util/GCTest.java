@@ -2,7 +2,6 @@ package xapi.test.util;
 
 import org.junit.Assert;
 import org.junit.Test;
-
 import xapi.annotation.gc.OnGC;
 import xapi.test.AbstractInjectionTest;
 import xapi.time.X_Time;
@@ -18,14 +17,14 @@ public class GCTest extends AbstractInjectionTest{
 
   //Won't get destroyed, but lets us check that it's fields were cleared
   private static final Utils TheUtils = new Utils();
-  
+
   // Some fields to destroy
   Utils util = TheUtils; // will be null
   int primitive = 10; // won't be touched (primitives)
   boolean destroyed = false; // ditto
   static boolean destroyed_static = false; // gets called in static destroy
   String str = "hasValue"; // will be null
-  
+
   // Tests GC chaining
   @OnGC(deleteInstanceFields=true)
   static class Utils {
@@ -49,7 +48,7 @@ public class GCTest extends AbstractInjectionTest{
       });
     }
   }
-  
+
   @Test
   public void testGC() {
     X_GC.destroy(GCTest.class, this);
@@ -61,9 +60,9 @@ public class GCTest extends AbstractInjectionTest{
     // give time for Utils to run its assert
     X_Time.trySleep(500, 0);
   }
-  
+
   public void destroy() {
     destroyed = true;
   }
-  
+
 }

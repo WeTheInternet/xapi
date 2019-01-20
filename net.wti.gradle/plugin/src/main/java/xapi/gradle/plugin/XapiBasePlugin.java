@@ -310,7 +310,6 @@ public class XapiBasePlugin implements Plugin<Project> {
         //                        }));
 
 
-
         // Add (optional) transitivity for annotationProcessor paths (inherit main)...
         TaskProvider<Jar> jar = project.getTasks().register(src.getJarTaskName(), Jar.class,
             j -> {

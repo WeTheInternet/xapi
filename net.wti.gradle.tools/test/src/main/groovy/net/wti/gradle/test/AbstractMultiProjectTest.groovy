@@ -41,6 +41,7 @@ abstract class AbstractMultiProjectTest<S extends AbstractMultiProjectTest<S>> e
     ) {
         flush()
         List<String> args = [*task, '--stacktrace', toFlag(logLevel)]
+
         GradleRunner.create()
                 .withProjectDir(projectDir)
                 .withPluginClasspath()
